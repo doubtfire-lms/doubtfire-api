@@ -3,7 +3,7 @@ class CreateTeams < ActiveRecord::Migration
     create_table :teams do |t|
       t.references :project
       t.references :user
-      t.datetime :meeting_time
+      t.string :meeting_time
       t.string :meeting_location
 
       t.timestamps
