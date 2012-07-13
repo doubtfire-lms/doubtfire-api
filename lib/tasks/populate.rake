@@ -10,6 +10,8 @@ namespace :db do
 					"Games Programming",
 					"AI For Games"]
 
+		days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+
 		# Clear the database
 		[Project, ProjectMembership, ProjectStatus, Task, TaskInstance, TaskStatus, Team, User].each(&:delete_all)
 	
@@ -25,7 +27,7 @@ namespace :db do
 		# Create 2 tutors
 		tutor_num = 1
 		User.populate(2) do |tutor|
-			tutor.email = Faker::Internet.email
+			tutor.email = "tutor#{tutor_num}@doubtfire.com"
 			tutor.encrypted_password = BCrypt::Password.create("password")
 			tutor.first_name = "Tutor"
 			tutor.last_name =  "#{tutor_num}"
@@ -63,18 +65,25 @@ namespace :db do
 				team_num = 1
 				Team.populate(2) do |team|
 					team.project_id = project.id
+					team.meeting_time = "#{days.sample} #{rand(8..19)}:#{['00', '30'].sample}"	# Mon-Fri 8am-7:30pm
+					team.meeting_location = "#{['EN', 'BA'].sample}#{rand(1..7)}#{rand(0..1)}#{rand(1..9)}" 
+					
 					if team_num == 1
-						team.meeting_time = "Wednesday 2:30pm" if team_num == 1
-						team.meeting_location = "EN305" 
 						team.user_id = 5	# Tutor 1
 					else
-						team.meeting_time = "Friday 8:30am" if team_num == 2
-						team.meeting_location = "BA406"
-						team.user_id = 6   	# Tutor 2
+						team.user_id = 6	# Tutor 2
 					end
 					
 					team_num += 1
 				end
+
+				# Put each user in a team
+				#User.all.each do |user|
+				#	TeamMembership.populate(1) do |team_membership|
+				#		team_membership.user_id = user.id
+				#       team_membership.team_id = Team.where("project_id = ?", project.id).sample.id 	# Random team for the current project
+				#	end
+				#end
 			end
 		end
 	end

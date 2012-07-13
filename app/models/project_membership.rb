@@ -5,6 +5,7 @@ class ProjectMembership < ActiveRecord::Base
   	belongs_to :team				# Foreign key
  	belongs_to :project_status		# Foreign key
   	belongs_to :project 			# Foreign key
+  	belongs_to :team_membership		# Foreign key
 
   	has_many :task_instances
 end
