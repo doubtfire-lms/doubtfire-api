@@ -1,14 +1,23 @@
-<div class="span3">&nbsp;</div>
 <div class="hero-unit offset3 span6">
-	<h1 style="text-align: center">Doubtfire</h1>
-	<p style="text-align: center">Because we don't trust you to be adults on your own.</p>
-	<%= form_for("user", :url => user_session_path) do |f| %>
-		<%= f.label :email %>
-	  <%= f.text_field :email, :class=>"span3", :placeholder => "Email" %>
-	  <%= f.password_field :password, :class=>"span3", :placeholder => "Password" %>
-	  <%= f.check_box :remember_me %>
-	  <%= f.label :remember_me %>
-	  <%= f.submit 'Sign in' %>
-	  <%= link_to "Forgot your password?", new_password_path('user') %>
-	<% end %>
+  <div class="row">
+    <h1 style="text-align: center">Doubtfire</h1>
+    <p style="text-align: center">Because we don't trust you to be adults on your own.</p>
+  </div>
+  <div class="row offset1">
+  <%= form_for("user", :url => user_session_path) do |f| %>
+    <%= f.label :email %>
+    <div class="controls">
+      <%= f.text_field :email, :class=>"span3", :placeholder => "Email" %>
+    </div>
+    <%= f.label :password %>
+    <div class="controls">
+      <%= f.password_field :password, :class=>"span3", :placeholder => "Password" %>
+    </div>
+    <label class="checkbox">
+      <%= f.check_box :remember_me %>Remember me
+    </label>
+    <%= f.submit 'Sign in', :class=>"btn" %>
+    <%= link_to "Forgot your password?", new_password_path('user') %>
+  <% end %>
+  </div>
 </div>
