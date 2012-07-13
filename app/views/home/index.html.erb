@@ -3,8 +3,8 @@
 	<h1 style="text-align: center">Doubtfire</h1>
 	<p style="text-align: center">Because we don't trust you to be adults on your own.</p>
 	<%= form_for("user", :url => user_session_path) do |f| %>
-		<%= f.label :student_id %>
-	  <%= f.text_field :student_id, :class=>"span3", :placeholder => "Student ID" %>
+		<%= f.label :email %>
+	  <%= f.text_field :email, :class=>"span3", :placeholder => "Email" %>
 	  <%= f.password_field :password, :class=>"span3", :placeholder => "Password" %>
 	  <%= f.check_box :remember_me %>
 	  <%= f.label :remember_me %>
