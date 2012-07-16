@@ -13,7 +13,7 @@ namespace :db do
 		days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
 
 		# Clear the database
-		[Project, ProjectMembership, ProjectStatus, Task, TaskInstance, TaskStatus, Team, User].each(&:delete_all)
+		[Project, ProjectMembership, ProjectStatus, Task, TaskInstance, TaskStatus, Team, TeamMembership, User].each(&:delete_all)
 	
 		# Create 4 users
 		User.populate(4) do |user|
@@ -65,8 +65,8 @@ namespace :db do
 				team_num = 1
 				Team.populate(2) do |team|
 					team.project_id = project.id
-					team.meeting_time = "#{days.sample} #{rand(8..19)}:#{['00', '30'].sample}"	# Mon-Fri 8am-7:30pm
-					team.meeting_location = "#{['EN', 'BA'].sample}#{rand(1..7)}#{rand(0..1)}#{rand(1..9)}" 
+					team.meeting_time = "#{days.sample} #{rand(8..19)}:#{['00', '30'].sample}"				# Mon-Fri 8am-7:30pm
+					team.meeting_location = "#{['EN', 'BA'].sample}#{rand(1..7)}#{rand(0..1)}#{rand(1..9)}" # EN###/BA###
 					
 					if team_num == 1
 						team.user_id = 5	# Tutor 1
@@ -76,14 +76,28 @@ namespace :db do
 					
 					team_num += 1
 				end
+			end
+		end
 
-				# Put each user in a team
-				#User.all.each do |user|
-				#	TeamMembership.populate(1) do |team_membership|
-				#		team_membership.user_id = user.id
-				#       team_membership.team_id = Team.where("project_id = ?", project.id).sample.id 	# Random team for the current project
-				#	end
-				#end
+		# Put each user in each project, in one team or the other
+		User.all[0..3].each_with_index do |user, i|
+			current_project = 1
+			TeamMembership.populate(Project.count) do |team_membership|
+				team_membership.team_id = Team.where("project_id = ?", current_project).sample.id
+				team_membership.user_id = user.id
+
+				# For each team membership, create a corresponding project membership
+				ProjectMembership.populate(1) do |project_membership|
+					project_membership.project_status_id = 1
+					project_membership.project_id = current_project
+					project_membership.project_role = "student"
+
+					# Set the foreign keys for the 1:1 relationship
+					project_membership.team_membership_id = team_membership.id
+					team_membership.project_membership_id = project_membership.id
+				end
+
+				current_project += 1
 			end
 		end
 	end

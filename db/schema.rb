@@ -14,7 +14,6 @@
 ActiveRecord::Schema.define(:version => 20120713033807) do
 
   create_table "project_memberships", :force => true do |t|
-    t.integer  "team_id"
     t.integer  "project_status_id"
     t.integer  "project_id"
     t.integer  "team_membership_id"
@@ -25,7 +24,6 @@ ActiveRecord::Schema.define(:version => 20120713033807) do
 
   add_index "project_memberships", ["project_id"], :name => "index_project_memberships_on_project_id"
   add_index "project_memberships", ["project_status_id"], :name => "index_project_memberships_on_project_status_id"
-  add_index "project_memberships", ["team_id"], :name => "index_project_memberships_on_team_id"
   add_index "project_memberships", ["team_membership_id"], :name => "index_project_memberships_on_team_membership_id"
 
   create_table "project_statuses", :force => true do |t|
