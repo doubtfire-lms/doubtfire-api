@@ -45,7 +45,6 @@ ActiveRecord::Schema.define(:version => 20120713033807) do
     t.integer  "task_id"
     t.integer  "project_membership_id"
     t.integer  "task_status_id"
-    t.string   "task_status"
     t.boolean  "awaiting_signoff"
     t.datetime "created_at",            :null => false
     t.datetime "updated_at",            :null => false

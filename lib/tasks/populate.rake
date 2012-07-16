@@ -59,6 +59,7 @@ namespace :db do
 					task.description = Populator.words(5..10)
 					task.weighting = 1/num_tasks
 					task.required = rand < 0.9 	# 10% chance of being false
+					task.recommended_completion_date = assignment_num.weeks.from_now	# Assignment 6 due week 6, etc.
 				end
 
 				# Create 2 teams per project
@@ -95,6 +96,18 @@ namespace :db do
 					# Set the foreign keys for the 1:1 relationship
 					project_membership.team_membership_id = team_membership.id
 					team_membership.project_membership_id = project_membership.id
+
+					# Create a set of task instances for the current project membership
+					tasks_for_project = Task.where("project_id = ?", current_project)
+					tasks_for_project.each do |task|
+						TaskInstance.populate(1) do |task_instance|
+							task_instance.task_id = task.id
+							task_instance.project_membership_id = project_membership.id
+							task_instance.task_status_id = 1
+							task_instance.awaiting_signoff = false
+						end
+					end
+
 				end
 
 				current_project += 1

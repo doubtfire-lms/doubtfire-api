@@ -4,7 +4,6 @@ class CreateTaskInstances < ActiveRecord::Migration
       t.references :task
       t.references :project_membership
       t.references :task_status
-      t.string :task_status
       t.boolean :awaiting_signoff
 
       t.timestamps
