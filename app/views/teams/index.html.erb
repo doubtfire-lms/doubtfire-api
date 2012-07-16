@@ -1,0 +1,40 @@
+<%- model_class = Team.new.class -%>
+<div class="page-header">
+  <h1><%=t '.title', :default => model_class.model_name.human.pluralize %></h1>
+</div>
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th><%= model_class.human_attribute_name(:id) %></th>
+      <th><%= model_class.human_attribute_name(:project_id) %></th>
+      <th>Tutor</th>
+      <th><%= model_class.human_attribute_name(:meeting_time) %></th>
+      <th><%= model_class.human_attribute_name(:meeting_location) %></th>
+      <th><%=t '.actions', :default => t("helpers.actions") %></th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @teams.each do |team| %>
+      <tr>
+        <td><%= link_to team.id, team_path(team) %></td>
+        <td><%= Project.find(team.project_id).name %></td>
+        <td><%= User.find(team.user_id).first_name %> <%= User.find(team.user_id).last_name %></td>
+        <td><%= team.meeting_time %></td>
+        <td><%= team.meeting_location %></td>
+        <td>
+          <%= link_to t('.edit', :default => t("helpers.links.edit")),
+                      edit_team_path(team), :class => 'btn btn-mini' %>
+          <%= link_to t('.destroy', :default => t("helpers.links.destroy")),
+                      team_path(team),
+                      :method => :delete,
+                      :confirm => t('.confirm', :default => t("helpers.links.confirm", :default => 'Are you sure?')),
+                      :class => 'btn btn-mini btn-danger' %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<%= link_to t('.new', :default => t("helpers.links.new")),
+            new_team_path,
+            :class => 'btn btn-primary' %>

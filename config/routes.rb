@@ -5,6 +5,9 @@ Doubtfire::Application.routes.draw do
   resources :home, :only => :index
   resources :projects
   resources :tasks
+  resources :task_statuses
+  resources :project_statuses
+  resources :teams
 
   root :to => "home#index"
 end
