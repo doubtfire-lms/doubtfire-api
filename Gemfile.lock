@@ -48,6 +48,8 @@ GEM
       multi_json (~> 1.0)
     faker (1.0.1)
       i18n (~> 0.4)
+    font-awesome-rails (0.2.1)
+      railties (~> 3.1)
     hike (1.2.1)
     hirb (0.7.0)
     i18n (0.6.0)
@@ -132,8 +134,10 @@ DEPENDENCIES
   coffee-rails (~> 3.2.1)
   devise
   faker
+  font-awesome-rails
   hirb
   jquery-rails
+  less-rails
   populator
   rails (= 3.2.6)
   sass-rails (~> 3.2.3)
