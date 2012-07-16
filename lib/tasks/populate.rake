@@ -47,7 +47,7 @@ namespace :db do
 				project.name = subject
 				project.description = Populator.words(10..15)
 				project.start_date = Date.today
-				project.end_date = 12.weeks.from_now
+				project.end_date = 13.weeks.from_now
 
 				# Create 6-12 tasks per project
 				num_tasks = 6 + rand(6)

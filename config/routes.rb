@@ -3,6 +3,8 @@ Doubtfire::Application.routes.draw do
 	
   resources :users, :only => ["index", "show", "edit", "update"]
   resources :home, :only => :index
+  resources :projects
+  resources :tasks
 
   root :to => "home#index"
 end
