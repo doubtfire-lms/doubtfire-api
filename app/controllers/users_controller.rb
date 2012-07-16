@@ -1,6 +1,10 @@
 class UsersController < ApplicationController
 	before_filter :load_current_user, :only => [:edit, :update]
 
+	def index
+		@users = User.all
+	end
+
 	def show
 		@user = User.find(params[:id])
 	end
@@ -10,13 +14,13 @@ class UsersController < ApplicationController
 
 	def update
 		@user.attributes = params[:user]
-    @user.save!
-    redirect_to @user, :notice => "Successfully updated profile."
+    	@user.save!
+    	redirect_to @user, :notice => "Successfully updated profile."
 	end
 
 	private
 
-  def load_current_user
-    @user = current_user
-  end
+	def load_current_user
+		@user = current_user
+	end
 end
