@@ -1,0 +1,12 @@
+<div class="subject-summary">
+	<h3><%= project.name %></h3>
+	<%= status_badge(nil) %>
+	
+	<%= project_status_summary(nil) %>
+
+	<div class="chart" style="height: 200px"></div>
+
+	<%= will_complete_based_on_velocity %>
+	<%= guidance_based_on_velocity %>
+	<%= projected_date_of_completion_vs_deadline(project) %>
+</div>
