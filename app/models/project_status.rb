@@ -1,6 +1,6 @@
 class ProjectStatus < ActiveRecord::Base
-	attr_accessible :health
+  attr_accessible :health
 
-	# Model associations
-	has_many :project_memberships
+  # Model associations
+  has_many :project_memberships
 end

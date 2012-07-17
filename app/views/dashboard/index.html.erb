@@ -26,14 +26,9 @@
 	<div class="span4 widget">
 		<h2>Progress</h2>
 		<div class="widget-content">
-			<div class="subject-summary">
-				<h3>AI for Games</h3>
-				<span class="label label-success">Ahead</span>
-				<p>You're ahead of schedule. Keep up the great work!</p>
-				<p>At this rate, your set to finish one week earlier than expected</span></p>
-                <p>If you haven't already, you should consider <a href="#">going the extra mile for a D or HD</a></p>
-                <p>Projected end date is the <strong>25th of October</strong> <span style="color: #AAAAAA">(deadline is 3rd of November)</span></p>
-			</div>
+			<% @projects.each do |project| %>
+				<%= render 'dashboard/project_progress', :project => project %>
+			<% end %>
 		</div>
 	</div>
 </div>

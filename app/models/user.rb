@@ -13,5 +13,5 @@ class User < ActiveRecord::Base
   attr_accessible :first_name, :last_name
 
   # Model associations
-  has_many :teams
+  has_many :team_memberships
 end
