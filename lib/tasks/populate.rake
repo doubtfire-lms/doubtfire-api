@@ -78,8 +78,8 @@ namespace :db do
 				team_num = 1
 				Team.populate(2) do |team|
 					team.project_id = project.id
-					team.meeting_time = "#{days.sample} #{rand(8..19)}:#{['00', '30'].sample}"				# Mon-Fri 8am-7:30pm
-					team.meeting_location = "#{['EN', 'BA'].sample}#{rand(1..7)}#{rand(0..1)}#{rand(1..9)}" # EN###/BA###
+					team.meeting_time = "#{days.sample} #{8 + rand(12)}:#{['00', '30'].sample}"				# Mon-Fri 8am-7:30pm
+					team.meeting_location = "#{['EN', 'BA'].sample}#{rand(7)}#{rand(1)}#{rand(9)}" # EN###/BA###
 					
 					if team_num == 1
 						team.user_id = 5	# Tutor 1
