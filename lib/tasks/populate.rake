@@ -24,6 +24,14 @@ namespace :db do
 			user.sign_in_count = 0
 		end
 
+		User.populate(1) do |user|
+			user.email = "student@doubtfire.com"
+			user.encrypted_password = BCrypt::Password.create("password")
+			user.first_name = "Hercules"
+			user.last_name = "Noobston"
+			user.sign_in_count = 0
+		end
+
 		# Create 2 tutors
 		tutor_num = 1
 		User.populate(2) do |tutor|
@@ -81,7 +89,7 @@ namespace :db do
 		end
 
 		# Put each user in each project, in one team or the other
-		User.all[0..3].each_with_index do |user, i|
+		User.all[0..4].each_with_index do |user, i|
 			current_project = 1
 			TeamMembership.populate(Project.count) do |team_membership|
 				team_membership.team_id = Team.where("project_id = ?", current_project).sample.id
