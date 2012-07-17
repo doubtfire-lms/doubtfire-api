@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20120713033807) do
+ActiveRecord::Schema.define(:version => 20120716013213) do
 
   create_table "project_memberships", :force => true do |t|
     t.integer  "project_status_id"
@@ -45,6 +45,7 @@ ActiveRecord::Schema.define(:version => 20120713033807) do
     t.integer  "task_id"
     t.integer  "project_membership_id"
     t.integer  "task_status_id"
+    t.string   "task_status"
     t.boolean  "awaiting_signoff"
     t.datetime "created_at",            :null => false
     t.datetime "updated_at",            :null => false
@@ -113,6 +114,7 @@ ActiveRecord::Schema.define(:version => 20120713033807) do
     t.datetime "updated_at",                                            :null => false
     t.string   "first_name"
     t.string   "last_name"
+    t.string   "username"
   end
 
   add_index "users", ["email"], :name => "index_users_on_email", :unique => true
