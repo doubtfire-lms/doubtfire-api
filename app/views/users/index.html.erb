@@ -10,6 +10,7 @@
       <th><%= model_class.human_attribute_name(:first_name) %></th>
       <th><%= model_class.human_attribute_name(:last_name) %></th>
       <th><%= model_class.human_attribute_name(:sign_in_count) %></th>
+      <th>System role</th>
       <th><%=t '.actions', :default => t("helpers.actions") %></th>
     </tr>
   </thead>
@@ -21,6 +22,7 @@
         <td><%= user.first_name %></td>
         <td><%= user.last_name %></td>
         <td><%= user.sign_in_count %></td>
+        <td><%= if user.is_admin then "Administrator" else "User" end %></td>
         <td>
           <%= link_to t('.edit', :default => t("helpers.links.edit")),
                       edit_user_path(user), :class => 'btn btn-mini' %>

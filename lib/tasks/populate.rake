@@ -22,6 +22,7 @@ namespace :db do
 			user.first_name = Faker::Name.first_name
 			user.last_name = Faker::Name.last_name
 			user.sign_in_count = 0
+			user.is_admin = false
 		end
 
 		# Create 2 tutors
@@ -32,7 +33,18 @@ namespace :db do
 			tutor.first_name = "Tutor"
 			tutor.last_name =  "#{tutor_num}"
 			tutor.sign_in_count = 0
+			tutor.is_admin = false
 			tutor_num += 1
+		end
+
+		# Create 1 admin
+		User.populate(1) do |admin|
+			admin.email = "admin@doubtfire.com"
+			admin.encrypted_password = BCrypt::Password.create("password")
+			admin.first_name = "System"
+			admin.last_name = "Administrator"
+			admin.sign_in_count = 0
+			admin.is_admin = true
 		end
 
 		# Populate project/task statuses
