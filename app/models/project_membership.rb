@@ -1,11 +1,11 @@
 class ProjectMembership < ActiveRecord::Base
-  	attr_accessible :project_role
+  attr_accessible :project_role
 
-  	# Model associations
-  	belongs_to :team				# Foreign key
- 	belongs_to :project_status		# Foreign key
-  	belongs_to :project 			# Foreign key
-  	belongs_to :team_membership		# Foreign key
+  # Model associations
+  belongs_to :team            # Foreign key
+  belongs_to :project_status  # Foreign key
+  belongs_to :project         # Foreign key
+  belongs_to :team_membership # Foreign key
 
-  	has_many :task_instances
+  has_many :task_instances
 end
