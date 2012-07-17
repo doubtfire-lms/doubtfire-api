@@ -12,6 +12,10 @@ Doubtfire::Application.routes.draw do
 	resources :project_statuses
 	resources :teams
 
+	authenticate :user do
+		root :to => "dashboard#index"
+	end
+
 	# Otherwise, go to the home page
-	root :to => "dashboard#index"
+	root :to => "home#index"
 end
