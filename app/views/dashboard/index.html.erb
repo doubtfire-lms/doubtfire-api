@@ -1,34 +1,44 @@
-<div class="row-fluid">
-	<div class="span6 widget">
-		<h2>Activity</h2>
-		<div class="widget-content">
-			<div class="activity-feed-entry">
-				<div class="feed-entry-body">
-					<p>You're falling behind in <a href="#">Advanced .NET</a></p>
-	          	  	<p>Tasks that are <strong>overdue</strong>:</p>
-	          	  	<ul>
-	          	  	  <li><a href="#">Task 8</a></li>
-	          	  	  <li><a href="#">Task 9</a></li>
-	          	  	  <li><a href="#">Task 10</a></li>
-	          	  	</ul>
-	          	  	<p>Tasks due <strong>this week</strong>:</p>
-	          	  	<ul>
-	              	  	<li><a href="#">Task 11</a></li>
-	              	  	<li><a href="#">Task 12</a></li>
-	          	  	</ul>
-				</div>
-				<span class="feed-entry-time">
-					8 hours ago
-				</span>
+<div class="span2">
+	<div class="well sidebar-nav">
+	<ul class="nav nav-list">
+		<li class="nav-header">Projects</li>
+		<li class="active"><a href="#">All Projects</a></li>
+
+		<% @projects.each do |project| %>
+			<li><%= link_to project.name, project_path(project) %></li>
+		<% end %>
+	</ul>
+	</div>
+</div>
+<div class="span6 widget">
+	<h2>Activity</h2>
+	<div class="widget-content">
+		<div class="activity-feed-entry">
+			<div class="feed-entry-body">
+				<p>You're falling behind in <a href="#">Advanced .NET</a></p>
+				<p>Tasks that are <strong>overdue</strong>:</p>
+				<ul>
+					<li><a href="#">Task 8</a></li>
+					<li><a href="#">Task 9</a></li>
+					<li><a href="#">Task 10</a></li>
+				</ul>
+				<p>Tasks due <strong>this week</strong>:</p>
+				<ul>
+					<li><a href="#">Task 11</a></li>
+					<li><a href="#">Task 12</a></li>
+				</ul>
 			</div>
+			<span class="feed-entry-time">
+			8 hours ago
+			</span>
 		</div>
 	</div>
-	<div class="span4 widget">
-		<h2>Progress</h2>
-		<div class="widget-content">
-			<% @projects.each do |project| %>
-				<%= render 'dashboard/project_progress', :project => project %>
-			<% end %>
-		</div>
+</div>
+<div class="span4 widget">
+	<h2>Progress</h2>
+	<div class="widget-content">
+		<% @projects.each do |project| %>
+			<%= render 'dashboard/project_progress', :project => project %>
+		<% end %>
 	</div>
 </div>
