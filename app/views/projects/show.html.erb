@@ -1,6 +1,7 @@
-<%= render 'layouts/projects_list', :projects => @projects, :selected_project => nil %>
+<%= render 'layouts/projects_list', :projects => @projects, :selected_project => @project %>
+
 <div class="span6 widget">
-	<h2>Activity</h2>
+	<h2><%= @project.project_template.name %></h2>
 	<div class="widget-content">
 		<div class="activity-feed-entry">
 			<div class="feed-entry-body">
@@ -21,13 +22,5 @@
 			8 hours ago
 			</span>
 		</div>
-	</div>
-</div>
-<div class="span4 widget">
-	<h2>Progress</h2>
-	<div class="widget-content">
-		<% @projects.each do |project| %>
-			<%= render 'dashboard/project_progress', :project => project %>
-		<% end %>
 	</div>
 </div>

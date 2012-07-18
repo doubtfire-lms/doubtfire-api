@@ -29,12 +29,12 @@ module DashboardHelper
   end
 
   def projected_date_of_completion_vs_deadline(project)
-    deadline = project.end_date 
+    deadline = project.project_template.end_date 
 
-    project_date_string = deadline.strftime("#{project.end_date.day.ordinalize} of %B")
+    project_date_string = deadline.strftime("#{deadline.day.ordinalize} of %B")
     project_date_of_completion_text = "Projected end date is the <strong>#{project_date_string}</strong>"
 
-    deadline_date_string = deadline.strftime("#{project.end_date.day.ordinalize} of %B")
+    deadline_date_string = deadline.strftime("#{deadline.day.ordinalize} of %B")
     deadline_text = "<span style=\"color: #AAAAAA\">(deadline is the #{deadline_date_string})</span>"
 
     raw("<p>#{project_date_of_completion_text} #{deadline_text}</p>")

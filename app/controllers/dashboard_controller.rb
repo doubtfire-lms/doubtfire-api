@@ -3,8 +3,7 @@ class DashboardController < ApplicationController
   before_filter :load_current_user
 
   def index
-    @teams = @user.team_memberships.map{|team_membership| team_membership.team }
-    @project_templates = @teams.map{|team| team.project_template }
+    @projects = @user.team_memberships.map{|tm| tm.project }
   end
 
   private

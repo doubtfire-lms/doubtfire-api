@@ -1,0 +1,7 @@
+<h1>Tasks</h1>
+
+<% @tasks.each do |task| %>
+	<h2><%= task.task_template.name %></h2>
+	<p>(<%= task.task_status.name %>)</p>
+	<p><%= task.task_template.description %></p>
+<% end %>
