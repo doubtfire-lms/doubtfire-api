@@ -1,21 +1,14 @@
 Doubtfire::Application.routes.draw do
+  devise_for :users
 
-  get "dashboard/index"
+  resources :users
+  resources :home, :only => :index
+  resources :project_templates
+  resources :tasks
+  resources :task_statuses
+  resources :project_statuses
+  resources :teams
 
-	devise_for :users, :path_prefix => 'd'
-
-	resources :users
-	resources :home, :only => :index
-	resources :projects
-	resources :tasks
-	resources :task_statuses
-	resources :project_statuses
-	resources :teams
-
-	authenticate :user do
-		root :to => "dashboard#index"
-	end
-
-	# Otherwise, go to the home page
-	root :to => "home#index"
+  # Otherwise, go to the home page
+  root :to => "dashboard#index"
 end

@@ -1,10 +1,11 @@
 class Project < ActiveRecord::Base
-  attr_accessible :description, :end_date, :name, :start_date
+  attr_accessible :project_role
 
   # Model associations
-  has_many :tasks
-  has_many :project_memberships
-  has_many :teams
-  has_many :project_administrators
+  belongs_to :team              # Foreign key
+  belongs_to :project_status    # Foreign key
+  belongs_to :project_template  # Foreign key
+  belongs_to :team_membership   # Foreign key
 
+  has_many :tasks
 end

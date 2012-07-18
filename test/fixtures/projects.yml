@@ -1,13 +1,13 @@
 # Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/Fixtures.html
 
 one:
-  name: MyString
-  description: MyString
-  start_date: 2012-07-12 14:54:33
-  end_date: 2012-07-12 14:54:33
+  team: 
+  project_status: 
+  project_template: 
+  project_role: MyString
 
 two:
-  name: MyString
-  description: MyString
-  start_date: 2012-07-12 14:54:33
-  end_date: 2012-07-12 14:54:33
+  team: 
+  project_status: 
+  project_template: 
+  project_role: MyString

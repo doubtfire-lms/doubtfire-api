@@ -1,7 +1,7 @@
-class CreateTasks < ActiveRecord::Migration
+class CreateTaskTemplates < ActiveRecord::Migration
   def change
-    create_table :tasks do |t|
-      t.references :project
+    create_table :task_templates do |t|
+      t.references :project_template
       t.string :name
       t.string :description
       t.decimal :weighting
@@ -10,6 +10,6 @@ class CreateTasks < ActiveRecord::Migration
 
       t.timestamps
     end
-    add_index :tasks, :project_id
+    add_index :task_templates, :project_template_id
   end
 end

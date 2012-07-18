@@ -1,6 +1,6 @@
-class CreateProjects < ActiveRecord::Migration
+class CreateProjectTemplates < ActiveRecord::Migration
   def change
-    create_table :projects do |t|
+    create_table :project_templates do |t|
       t.string :name
       t.string :description
       t.datetime :start_date

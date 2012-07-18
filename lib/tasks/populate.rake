@@ -13,7 +13,7 @@ namespace :db do
 		days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
 
 		# Clear the database
-		[Project, ProjectMembership, ProjectStatus, Task, TaskInstance, TaskStatus, Team, TeamMembership, User, ProjectAdministrator, SystemRole].each(&:delete_all)
+		[ProjectTemplate, Project, ProjectStatus, TaskTemplate, Task, TaskStatus, Team, TeamMembership, User, ProjectAdministrator, SystemRole].each(&:delete_all)
 	
 		# Populate static tables - project/task statuses and system roles
 		ProjectStatus.create(:health => 100)
@@ -32,6 +32,14 @@ namespace :db do
 			user.last_name = Faker::Name.last_name
 			user.sign_in_count = 0
 			user.system_role_id = 1
+		end
+
+		User.populate(1) do |user|
+			user.email = "student@doubtfire.com"
+			user.encrypted_password = BCrypt::Password.create("password")
+			user.first_name = "Hercules"
+			user.last_name = "Noobston"
+			user.sign_in_count = 0
 		end
 
 		# Create 2 tutors
@@ -68,31 +76,31 @@ namespace :db do
 
 		# Create 4 projects (subjects)
 		subjects.each do |subject|
-			Project.populate(1) do |project|
-				project.name = subject
-				project.description = Populator.words(10..15)
-				project.start_date = Date.today
-				project.end_date = 13.weeks.from_now
+			ProjectTemplate.populate(1) do |project_template|
+				project_template.name = subject
+				project_template.description = Populator.words(10..15)
+				project_template.start_date = Date.today
+				project_template.end_date = 13.weeks.from_now
 
 				# Create 6-12 tasks per project
 				num_tasks = 6 + rand(6)
 				assignment_num = 0
-				Task.populate(num_tasks) do |task|
+				TaskTemplate.populate(num_tasks) do |task_template|
 					assignment_num += 1
-					task.name = "Assignment #{assignment_num}"
-					task.project_id = project.id
-					task.description = Populator.words(5..10)
-					task.weighting = 1/num_tasks
-					task.required = rand < 0.9 	# 10% chance of being false
-					task.recommended_completion_date = assignment_num.weeks.from_now	# Assignment 6 due week 6, etc.
+					task_template.name = "Assignment #{assignment_num}"
+					task_template.project_template_id = project_template.id
+					task_template.description = Populator.words(5..10)
+					task_template.weighting = 1/num_tasks
+					task_template.required = rand < 0.9 	# 10% chance of being false
+					task_template.recommended_completion_date = assignment_num.weeks.from_now	# Assignment 6 due week 6, etc.
 				end
 
 				# Create 2 teams per project
 				team_num = 1
 				Team.populate(2) do |team|
-					team.project_id = project.id
-					team.meeting_time = "#{days.sample} #{8 + rand(12)}:#{['00', '30'].sample}"	   	# Mon-Fri 8am-7:30pm
-					team.meeting_location = "#{['EN', 'BA'].sample}#{rand(7)}#{rand(1)}#{rand(9)}" 	# EN###/BA###
+					team.project_template_id = project_template.id
+					team.meeting_time = "#{days.sample} #{8 + rand(12)}:#{['00', '30'].sample}"				# Mon-Fri 8am-7:30pm
+					team.meeting_location = "#{['EN', 'BA'].sample}#{rand(7)}#{rand(1)}#{rand(9)}" # EN###/BA###
 					
 					if team_num == 1
 						team.user_id = 5	# Tutor 1
@@ -106,36 +114,36 @@ namespace :db do
 		end
 
 		# Put each user in each project, in one team or the other
-		User.all[0..3].each_with_index do |user, i|
-			current_project = 1
-			TeamMembership.populate(Project.count) do |team_membership|
-				team_membership.team_id = Team.where("project_id = ?", current_project).sample.id
+		User.all[0..4].each_with_index do |user, i|
+			current_project_template_id = 1
+			TeamMembership.populate(ProjectTemplate.count) do |team_membership|
+				team_membership.team_id = Team.where("project_template_id = ?", current_project_template_id).sample.id
 				team_membership.user_id = user.id
 
 				# For each team membership, create a corresponding project membership
-				ProjectMembership.populate(1) do |project_membership|
-					project_membership.project_status_id = 1
-					project_membership.project_id = current_project
-					project_membership.project_role = "student"
+				Project.populate(1) do |project|
+					project.project_status_id = 1
+					project.project_template_id = current_project_template_id
+					project.project_role = "student"
 
 					# Set the foreign keys for the 1:1 relationship
-					project_membership.team_membership_id = team_membership.id
-					team_membership.project_membership_id = project_membership.id
+					project.team_membership_id = team_membership.id
+					team_membership.project_id = project.id
 
 					# Create a set of task instances for the current project membership
-					tasks_for_project = Task.where("project_id = ?", current_project)
-					tasks_for_project.each do |task|
-						TaskInstance.populate(1) do |task_instance|
-							task_instance.task_id = task.id
-							task_instance.project_membership_id = project_membership.id
-							task_instance.task_status_id = 1
-							task_instance.awaiting_signoff = false
+					template_tasks_for_project = TaskTemplate.where("project_template_id = ?", current_project_template_id)
+					template_tasks_for_project.each do |task_template|
+						Task.populate(1) do |task|
+							task.task_template_id = task_template.id
+							task.project_id = project.id
+							task.task_status_id = 1
+							task.awaiting_signoff = false
 						end
 					end
 
 				end
 
-				current_project += 1
+				current_project_template_id += 1
 			end
 		end
 	end

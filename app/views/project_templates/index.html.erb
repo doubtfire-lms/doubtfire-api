@@ -1,4 +1,4 @@
-<%- model_class = Project.new.class -%>
+<%- model_class = ProjectTemplate.new.class -%>
 <div class="page-header">
   <h1><%=t '.title', :default => model_class.model_name.human.pluralize %></h1>
 </div>
@@ -14,18 +14,18 @@
     </tr>
   </thead>
   <tbody>
-    <% @projects.each do |project| %>
+    <% @project_templates.each do |project_template| %>
       <tr>
-        <td><%= link_to project.name, project_path(project) %></td>
-        <td><%= project.description %></td>
-        <td><%= project.start_date.strftime("%d %B %Y") %></td>
-        <td><%= project.end_date.strftime("%d %B %Y") %></td>
-        <td><%= project.created_at.strftime("%d %b %Y at %I:%M%p") %></td>
+        <td><%= link_to project_template.name, project_template_path(project_template) %></td>
+        <td><%= project_template.description %></td>
+        <td><%= project_template.start_date.strftime("%d %B %Y") %></td>
+        <td><%= project_template.end_date.strftime("%d %B %Y") %></td>
+        <td><%= project_template.created_at.strftime("%d %b %Y at %I:%M%p") %></td>
         <td>
           <%= link_to t('.edit', :default => t("helpers.links.edit")),
-                      edit_project_path(project), :class => 'btn btn-mini' %>
+                      edit_project_template_path(project_template), :class => 'btn btn-mini' %>
           <%= link_to t('.destroy', :default => t("helpers.links.destroy")),
-                      project_path(project),
+                      project_template_path(project_template),
                       :method => :delete,
                       :confirm => t('.confirm', :default => t("helpers.links.confirm", :default => 'Are you sure?')),
                       :class => 'btn btn-mini btn-danger' %>
@@ -36,5 +36,5 @@
 </table>
 
 <%= link_to t('.new', :default => t("helpers.links.new")),
-            new_project_path,
+            new_project_template_path,
             :class => 'btn btn-primary' %>
