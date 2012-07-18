@@ -1,15 +1,4 @@
-<div class="span2">
-	<div class="well sidebar-nav">
-	<ul class="nav nav-list">
-		<li class="nav-header">Projects</li>
-		<li class="active"><a href="#">All Projects</a></li>
-
-		<% @projects.each do |project| %>
-			<li><%= link_to project.name, project_path(project) %></li>
-		<% end %>
-	</ul>
-	</div>
-</div>
+<%= render 'layouts/projects_list', :project_templates => @project_templates %>
 <div class="span6 widget">
 	<h2>Activity</h2>
 	<div class="widget-content">
@@ -37,8 +26,8 @@
 <div class="span4 widget">
 	<h2>Progress</h2>
 	<div class="widget-content">
-		<% @projects.each do |project| %>
-			<%= render 'dashboard/project_progress', :project => project %>
+		<% @project_templates.each do |project_template| %>
+			<%= render 'dashboard/project_progress', :project_template => project_template %>
 		<% end %>
 	</div>
 </div>

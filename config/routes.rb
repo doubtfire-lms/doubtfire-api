@@ -3,7 +3,7 @@ Doubtfire::Application.routes.draw do
 
   resources :users, :only => ["index", "show", "edit", "update"]
   resources :home, :only => :index
-  resources :projects
+  resources :project_templates
   resources :tasks
   resources :task_statuses
   resources :project_statuses

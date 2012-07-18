@@ -1,8 +1,8 @@
 class Task < ActiveRecord::Base
-	attr_accessible :description, :name, :recommended_completion_date, :required, :weighting
+  attr_accessible :awaiting_signoff
 
-	# Model associations
-	belongs_to :project		# Foreign key
-
-	has_many :task_instances
+  # Model associations
+  belongs_to :task_template         # Foreign key
+  belongs_to :project               # Foreign key
+  belongs_to :task_status           # Foreign key
 end

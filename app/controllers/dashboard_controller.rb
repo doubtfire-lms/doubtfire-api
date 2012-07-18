@@ -4,7 +4,7 @@ class DashboardController < ApplicationController
 
   def index
     @teams = @user.team_memberships.map{|team_membership| team_membership.team }
-    @projects = @teams.map{|team| team.project }
+    @project_templates = @teams.map{|team| team.project_template }
   end
 
   private

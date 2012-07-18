@@ -13,26 +13,13 @@
 
 ActiveRecord::Schema.define(:version => 20120713033807) do
 
-  create_table "project_memberships", :force => true do |t|
-    t.integer  "project_status_id"
-    t.integer  "project_id"
-    t.integer  "team_membership_id"
-    t.string   "project_role"
-    t.datetime "created_at",         :null => false
-    t.datetime "updated_at",         :null => false
-  end
-
-  add_index "project_memberships", ["project_id"], :name => "index_project_memberships_on_project_id"
-  add_index "project_memberships", ["project_status_id"], :name => "index_project_memberships_on_project_status_id"
-  add_index "project_memberships", ["team_membership_id"], :name => "index_project_memberships_on_team_membership_id"
-
   create_table "project_statuses", :force => true do |t|
     t.decimal  "health"
     t.datetime "created_at", :null => false
     t.datetime "updated_at", :null => false
   end
 
-  create_table "projects", :force => true do |t|
+  create_table "project_templates", :force => true do |t|
     t.string   "name"
     t.string   "description"
     t.datetime "start_date"
@@ -41,18 +28,18 @@ ActiveRecord::Schema.define(:version => 20120713033807) do
     t.datetime "updated_at",  :null => false
   end
 
-  create_table "task_instances", :force => true do |t|
-    t.integer  "task_id"
-    t.integer  "project_membership_id"
-    t.integer  "task_status_id"
-    t.boolean  "awaiting_signoff"
-    t.datetime "created_at",            :null => false
-    t.datetime "updated_at",            :null => false
+  create_table "projects", :force => true do |t|
+    t.integer  "project_status_id"
+    t.integer  "project_template_id"
+    t.integer  "team_membership_id"
+    t.string   "project_role"
+    t.datetime "created_at",          :null => false
+    t.datetime "updated_at",          :null => false
   end
 
-  add_index "task_instances", ["project_membership_id"], :name => "index_task_instances_on_project_membership_id"
-  add_index "task_instances", ["task_id"], :name => "index_task_instances_on_task_id"
-  add_index "task_instances", ["task_status_id"], :name => "index_task_instances_on_task_status_id"
+  add_index "projects", ["project_status_id"], :name => "index_projects_on_project_status_id"
+  add_index "projects", ["project_template_id"], :name => "index_projects_on_project_template_id"
+  add_index "projects", ["team_membership_id"], :name => "index_projects_on_team_membership_id"
 
   create_table "task_statuses", :force => true do |t|
     t.string   "name"
@@ -61,8 +48,8 @@ ActiveRecord::Schema.define(:version => 20120713033807) do
     t.datetime "updated_at",  :null => false
   end
 
-  create_table "tasks", :force => true do |t|
-    t.integer  "project_id"
+  create_table "task_templates", :force => true do |t|
+    t.integer  "project_template_id"
     t.string   "name"
     t.string   "description"
     t.decimal  "weighting"
@@ -72,30 +59,43 @@ ActiveRecord::Schema.define(:version => 20120713033807) do
     t.datetime "updated_at",                  :null => false
   end
 
-  add_index "tasks", ["project_id"], :name => "index_tasks_on_project_id"
+  add_index "task_templates", ["project_template_id"], :name => "index_task_templates_on_project_template_id"
 
-  create_table "team_memberships", :force => true do |t|
-    t.integer  "user_id"
-    t.integer  "team_id"
-    t.integer  "project_membership_id"
-    t.datetime "created_at",            :null => false
-    t.datetime "updated_at",            :null => false
-  end
-
-  add_index "team_memberships", ["project_membership_id"], :name => "index_team_memberships_on_project_membership_id"
-  add_index "team_memberships", ["team_id"], :name => "index_team_memberships_on_team_id"
-  add_index "team_memberships", ["user_id"], :name => "index_team_memberships_on_user_id"
-
-  create_table "teams", :force => true do |t|
+  create_table "tasks", :force => true do |t|
+    t.integer  "task_template_id"
     t.integer  "project_id"
-    t.integer  "user_id"
-    t.string   "meeting_time"
-    t.string   "meeting_location"
+    t.integer  "task_status_id"
+    t.boolean  "awaiting_signoff"
     t.datetime "created_at",       :null => false
     t.datetime "updated_at",       :null => false
   end
 
-  add_index "teams", ["project_id"], :name => "index_teams_on_project_id"
+  add_index "tasks", ["project_id"], :name => "index_tasks_on_project_id"
+  add_index "tasks", ["task_status_id"], :name => "index_tasks_on_task_status_id"
+  add_index "tasks", ["task_template_id"], :name => "index_tasks_on_task_template_id"
+
+  create_table "team_memberships", :force => true do |t|
+    t.integer  "user_id"
+    t.integer  "team_id"
+    t.integer  "project_id"
+    t.datetime "created_at", :null => false
+    t.datetime "updated_at", :null => false
+  end
+
+  add_index "team_memberships", ["project_id"], :name => "index_team_memberships_on_project_id"
+  add_index "team_memberships", ["team_id"], :name => "index_team_memberships_on_team_id"
+  add_index "team_memberships", ["user_id"], :name => "index_team_memberships_on_user_id"
+
+  create_table "teams", :force => true do |t|
+    t.integer  "project_template_id"
+    t.integer  "user_id"
+    t.string   "meeting_time"
+    t.string   "meeting_location"
+    t.datetime "created_at",          :null => false
+    t.datetime "updated_at",          :null => false
+  end
+
+  add_index "teams", ["project_template_id"], :name => "index_teams_on_project_template_id"
   add_index "teams", ["user_id"], :name => "index_teams_on_user_id"
 
   create_table "users", :force => true do |t|
