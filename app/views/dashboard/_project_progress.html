@@ -1,5 +1,5 @@
 <div class="subject-summary">
-	<h3><%= project_template.name %></h3>
+	<h3><%= project.project_template.name %></h3>
 	<%= status_badge(nil) %>
 	
 	<%= project_status_summary(nil) %>
@@ -8,5 +8,5 @@
 
 	<%= will_complete_based_on_velocity %>
 	<%= guidance_based_on_velocity %>
-	<%= projected_date_of_completion_vs_deadline(project_template) %>
+	<%= projected_date_of_completion_vs_deadline(project) %>
 </div>

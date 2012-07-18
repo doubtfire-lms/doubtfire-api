@@ -2,9 +2,17 @@
 	<div class="well sidebar-nav">
 	<ul class="nav nav-list">
 		<li class="nav-header">Projects</li>
-		<li class="active"><%= link_to 'All Projects', root_url %></li>
-		<% project_templates.each do |project_template| %>
-			<li><%= link_to project_template.name, project_template_path(project_template) %></li>
+		<% if selected_project.nil? %>
+			<li class="active"><%= link_to 'All Projects', root_url %></li>
+		<% else %>
+			<li><%= link_to 'All Projects', root_url %></li>
+		<% end %>
+		<% projects.each do |project| %>
+			<% if !selected_project.nil? && project.id == selected_project.id %>
+				<li class="active"><%= link_to project.project_template.name, project_path(project) %></li>
+			<% else %>	
+				<li><%= link_to project.project_template.name, project_path(project) %></li>
+			<% end %>
 		<% end %>
 	</ul>
 	</div>
