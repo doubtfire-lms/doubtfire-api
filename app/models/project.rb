@@ -5,5 +5,6 @@ class Project < ActiveRecord::Base
   has_many :tasks
   has_many :project_memberships
   has_many :teams
+  has_many :project_administrators
 
 end

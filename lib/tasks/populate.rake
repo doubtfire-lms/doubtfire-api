@@ -13,8 +13,17 @@ namespace :db do
 		days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
 
 		# Clear the database
-		[Project, ProjectMembership, ProjectStatus, Task, TaskInstance, TaskStatus, Team, TeamMembership, User].each(&:delete_all)
+		[Project, ProjectMembership, ProjectStatus, Task, TaskInstance, TaskStatus, Team, TeamMembership, User, ProjectAdministrator, SystemRole].each(&:delete_all)
 	
+		# Populate static tables - project/task statuses and system roles
+		ProjectStatus.create(:health => 100)
+		TaskStatus.create(:name => "Not complete", :description => "This task has not been signed off by your tutor.")
+		TaskStatus.create(:name => "Needs fixing", :description => "This task must be resubmitted after fixing some issues.")
+		TaskStatus.create(:name => "Complete", :description => "This task has been signed off by your tutor.")
+		SystemRole.create(:name => "user")
+		SystemRole.create(:name => "admin")
+		SystemRole.create(:name => "superuser")
+
 		# Create 4 users
 		User.populate(4) do |user|
 			user.email = Faker::Internet.email
@@ -22,7 +31,7 @@ namespace :db do
 			user.first_name = Faker::Name.first_name
 			user.last_name = Faker::Name.last_name
 			user.sign_in_count = 0
-			user.is_admin = false
+			user.system_role_id = 1
 		end
 
 		# Create 2 tutors
@@ -33,7 +42,7 @@ namespace :db do
 			tutor.first_name = "Tutor"
 			tutor.last_name =  "#{tutor_num}"
 			tutor.sign_in_count = 0
-			tutor.is_admin = false
+			tutor.system_role_id = 1
 			tutor_num += 1
 		end
 
@@ -44,14 +53,18 @@ namespace :db do
 			admin.first_name = "System"
 			admin.last_name = "Administrator"
 			admin.sign_in_count = 0
-			admin.is_admin = true
+			admin.system_role_id = 2
 		end
 
-		# Populate project/task statuses
-		ProjectStatus.create(:health => 100)
-		TaskStatus.create(:name => "Not complete", :description => "This task has not been signed off by your tutor.")
-		TaskStatus.create(:name => "Needs fixing", :description => "This task must be resubmitted after fixing some issues.")
-		TaskStatus.create(:name => "Complete", :description => "This task has been signed off by your tutor.")
+		# Create 1 superuser
+		User.populate(1) do |su|
+			su.email = "superuser@doubtfire.com"
+			su.encrypted_password = BCrypt::Password.create("password")
+			su.first_name = "System"
+			su.last_name = "Administrator"
+			su.sign_in_count = 0
+			su.system_role_id = 3
+		end
 
 		# Create 4 projects (subjects)
 		subjects.each do |subject|
@@ -78,8 +91,8 @@ namespace :db do
 				team_num = 1
 				Team.populate(2) do |team|
 					team.project_id = project.id
-					team.meeting_time = "#{days.sample} #{8 + rand(12)}:#{['00', '30'].sample}"				# Mon-Fri 8am-7:30pm
-					team.meeting_location = "#{['EN', 'BA'].sample}#{rand(7)}#{rand(1)}#{rand(9)}" # EN###/BA###
+					team.meeting_time = "#{days.sample} #{8 + rand(12)}:#{['00', '30'].sample}"	   	# Mon-Fri 8am-7:30pm
+					team.meeting_location = "#{['EN', 'BA'].sample}#{rand(7)}#{rand(1)}#{rand(9)}" 	# EN###/BA###
 					
 					if team_num == 1
 						team.user_id = 5	# Tutor 1

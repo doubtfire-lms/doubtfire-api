@@ -2,9 +2,9 @@ Doubtfire::Application.routes.draw do
 
   get "dashboard/index"
 
-	devise_for :users
+	devise_for :users, :path_prefix => 'd'
 
-	resources :users, :only => ["index", "show", "edit", "update"]
+	resources :users
 	resources :home, :only => :index
 	resources :projects
 	resources :tasks

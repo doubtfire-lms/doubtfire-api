@@ -6,8 +6,10 @@
         <% if user_signed_in? %>
             <li><p class="navbar-text">Signed in as <%= current_user.email %></li>
             <li class="divider-vertical"></li>
-            <li><p class="navbar-text"><%= link_to 'Edit account', edit_user_registration_path %></p></li>
-            <li class="divider-vertical"></li>
+            <% if current_user.system_role_id != 3 # Don't show "Edit account" for superuser %>
+                <li><p class="navbar-text"><%= link_to 'Edit account', edit_user_registration_path %></p></li>
+                <li class="divider-vertical"></li>
+            <% end %>
             <li><p class="navbar-text"><%= link_to 'Sign out', destroy_user_session_path, :method=>'delete' %></p></li>
             <li class="divider-vertical"></li>
         <% else %>

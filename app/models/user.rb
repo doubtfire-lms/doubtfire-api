@@ -8,10 +8,13 @@ class User < ActiveRecord::Base
 
   # Devise fields
   attr_accessible :email, :password, :password_confirmation, :remember_me
-
   # Model fields
-  attr_accessible :first_name, :last_name
+  attr_accessible :first_name, :last_name, :system_role_id
 
   # Model associations
   has_many :team_memberships
+  has_many :project_administrators    # Sounds weird - it means "may be an administrator for many projects"
+  
+  belongs_to :system_role   # Foreign key
+
 end
