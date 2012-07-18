@@ -13,16 +13,14 @@ namespace :db do
 		days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
 
 		# Clear the database
-		[ProjectTemplate, Project, ProjectStatus, TaskTemplate, Task, TaskStatus, Team, TeamMembership, User, ProjectAdministrator, SystemRole].each(&:delete_all)
+		[ProjectTemplate, Project, ProjectStatus, TaskTemplate, Task, 
+						  TaskStatus, Team, TeamMembership, User, ProjectAdministrator].each(&:delete_all)
 	
-		# Populate static tables - project/task statuses and system roles
+		# Populate project/task statuses
 		ProjectStatus.create(:health => 100)
 		TaskStatus.create(:name => "Not complete", :description => "This task has not been signed off by your tutor.")
 		TaskStatus.create(:name => "Needs fixing", :description => "This task must be resubmitted after fixing some issues.")
 		TaskStatus.create(:name => "Complete", :description => "This task has been signed off by your tutor.")
-		SystemRole.create(:name => "user")
-		SystemRole.create(:name => "admin")
-		SystemRole.create(:name => "superuser")
 
 		# Create 4 users
 		User.populate(4) do |user|
@@ -31,7 +29,7 @@ namespace :db do
 			user.first_name = Faker::Name.first_name
 			user.last_name = Faker::Name.last_name
 			user.sign_in_count = 0
-			user.system_role_id = 1
+			user.system_role = "user"
 		end
 
 		User.populate(1) do |user|
@@ -40,6 +38,7 @@ namespace :db do
 			user.first_name = "Hercules"
 			user.last_name = "Noobston"
 			user.sign_in_count = 0
+			user.system_role = "user"
 		end
 
 		# Create 2 tutors
@@ -50,7 +49,7 @@ namespace :db do
 			tutor.first_name = "Tutor"
 			tutor.last_name =  "#{tutor_num}"
 			tutor.sign_in_count = 0
-			tutor.system_role_id = 1
+			tutor.system_role = "user"
 			tutor_num += 1
 		end
 
@@ -61,17 +60,17 @@ namespace :db do
 			admin.first_name = "System"
 			admin.last_name = "Administrator"
 			admin.sign_in_count = 0
-			admin.system_role_id = 2
+			admin.system_role = "admin"
 		end
 
 		# Create 1 superuser
 		User.populate(1) do |su|
 			su.email = "superuser@doubtfire.com"
 			su.encrypted_password = BCrypt::Password.create("password")
-			su.first_name = "System"
-			su.last_name = "Administrator"
+			su.first_name = "Super"
+			su.last_name = "User"
 			su.sign_in_count = 0
-			su.system_role_id = 3
+			su.system_role = "superuser"
 		end
 
 		# Create 4 projects (subjects)

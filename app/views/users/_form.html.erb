@@ -43,7 +43,7 @@
   <div class="control-group">
     <%= f.label :system_role_id, :class => 'control-label' %>
     <div class="controls">
-      <%= f.select :system_role_id, options_for_select([["User", 1], ["Admin", 2]], @user.system_role_id) %>
+      <%= f.select :system_role, options_for_select([["User", "user"], ["Admin", "admin"]], @user.system_role) %>
     </div>
   </div>
 

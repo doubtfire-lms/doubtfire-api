@@ -58,21 +58,21 @@ class UsersController < ApplicationController
   # PUT /users/1.json
   def update
 
-  	@user = User.find(params[:id])
+  @user = User.find(params[:id])
 
 	if params[:user][:password].blank?
 		params[:user].delete(:password)
-	  	params[:user].delete(:password_confirmation)
+	  params[:user].delete(:password_confirmation)
 	end
 
     respond_to do |format|
       if @user.update_attributes(params[:user])
 
       	# If the user is being updated by the superuser, redirect to the users index instead of the individual user
-      	if(current_user.system_role_id != 3)
-	        format.html { redirect_to @user, notice: 'User was successfully updated.' }
+      	if(@user.is_superuser?)
+	        format.html { redirect_to users_path, notice: 'User was successfully updated.' }
   	    else
-  	    	format.html { redirect_to users_path, notice: 'User was successfully updated.' }
+  	    	format.html { redirect_to @user, notice: 'User was successfully updated.' }
   	    end
 
 	      format.json { head :no_content }

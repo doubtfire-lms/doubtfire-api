@@ -5,9 +5,9 @@ namespace :db do
 		require 'faker'
 		require 'bcrypt'
 
-		# Clear database
-		[Project, ProjectMembership, ProjectStatus, Task, TaskInstance, TaskStatus, 
-				  Team, TeamMembership, User, ProjectAdministrator, SystemRole].each(&:delete_all)
+		# Clear the database
+		[ProjectTemplate, Project, ProjectStatus, TaskTemplate, Task, 
+						  TaskStatus, Team, TeamMembership, User, ProjectAdministrator].each(&:delete_all)
 
 		# Create superuser
 		User.populate(1) do |superuser|
@@ -16,7 +16,7 @@ namespace :db do
 			superuser.first_name = "Super"
 			superuser.last_name = "User"
 			superuser.sign_in_count = 0
-			superuser.system_role_id = 3
+			superuser.system_role = "superuser"
 		end
 	end
 end
