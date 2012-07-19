@@ -8,4 +8,8 @@ class Project < ActiveRecord::Base
   belongs_to :team_membership   # Foreign key
 
   has_many :tasks
+
+  def self.overdue_tasks(date=Date.today)
+    tasks.select{|task| task.overdue? date }
+  end
 end

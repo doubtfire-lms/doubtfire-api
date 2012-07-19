@@ -18,5 +18,4 @@ class User < ActiveRecord::Base
   def is_superuser?
     @system_role == "superuser"
   end
-
 end
