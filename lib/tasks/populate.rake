@@ -5,6 +5,12 @@ namespace :db do
 		require 'faker'
 		require 'bcrypt'
 
+		# Collection of tutor/convenor/superuser ids to avoid hard-coding
+		ids = {"tutor1" => -1,
+			   "tutor2" => -1,
+			   "convenor" => -1,
+			   "superuser" => -1}
+
 		# List of first and last names to use
 		names = {"Allan" => "Jones",
 				 "Rohan" => "Liston",
@@ -51,6 +57,7 @@ namespace :db do
 			tutor.last_name =  "#{tutor_num}"
 			tutor.sign_in_count = 0
 			tutor.system_role = "user"
+			ids["tutor#{tutor_num}"] = tutor.id
 			tutor_num += 1
 		end
 
@@ -62,6 +69,7 @@ namespace :db do
 			admin.last_name = "1"
 			admin.sign_in_count = 0
 			admin.system_role = "admin"
+			ids["convenor"] = admin.id
 		end
 
 		# Create 1 superuser
@@ -72,6 +80,7 @@ namespace :db do
 			su.last_name = "User"
 			su.sign_in_count = 0
 			su.system_role = "superuser"
+			ids["superuser"] = su.id
 		end
 
 		# Create 4 projects (subjects)
@@ -81,6 +90,12 @@ namespace :db do
 				project_template.description = Populator.words(10..15)
 				project_template.start_date = Date.today
 				project_template.end_date = 13.weeks.from_now
+
+				# Assign a convenor to each project
+				ProjectAdministrator.populate(1) do |pa|
+					pa.user_id = ids["convenor"] 	 # Convenor 1
+					pa.project_template_id = project_template.id
+				end
 
 				# Create 6-12 tasks per project
 				num_tasks = 6 + rand(6)
@@ -99,13 +114,13 @@ namespace :db do
 				team_num = 1
 				Team.populate(2) do |team|
 					team.project_template_id = project_template.id
-					team.meeting_time = "#{days.sample} #{8 + rand(12)}:#{['00', '30'].sample}"				# Mon-Fri 8am-7:30pm
+					team.meeting_time = "#{days.sample} #{8 + rand(12)}:#{['00', '30'].sample}"	   # Mon-Fri 8am-7:30pm
 					team.meeting_location = "#{['EN', 'BA'].sample}#{rand(7)}#{rand(1)}#{rand(9)}" # EN###/BA###
 					
 					if team_num == 1
-						team.user_id = 5	# Tutor 1
+						team.user_id = ids["tutor1"]	# Tutor 1
 					else
-						team.user_id = 6	# Tutor 2
+						team.user_id = ids["tutor2"]	# Tutor 2
 					end
 					
 					team_num += 1

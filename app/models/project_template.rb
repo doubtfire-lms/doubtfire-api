@@ -5,5 +5,6 @@ class ProjectTemplate < ActiveRecord::Base
   has_many :task_templates
   has_many :projects
   has_many :teams
-
+  has_many :project_administrators
+  
 end
