@@ -27,8 +27,7 @@ namespace :db do
 		days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
 
 		# Clear the database
-		[ProjectTemplate, Project, ProjectStatus, TaskTemplate, Task, 
-						  TaskStatus, Team, TeamMembership, User, ProjectAdministrator].each(&:delete_all)
+		# [ProjectTemplate, Project, ProjectStatus, TaskTemplate, Task, TaskStatus, Team, TeamMembership, User, ProjectAdministrator].each(&:delete_all)
 	
 		# Populate project/task statuses
 		ProjectStatus.create(:health => 100)
