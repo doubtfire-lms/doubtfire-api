@@ -14,10 +14,10 @@
 ActiveRecord::Schema.define(:version => 20120717081019) do
 
   create_table "project_administrators", :force => true do |t|
-    t.integer  "project_id"
+    t.integer  "project_template_id"
     t.integer  "user_id"
-    t.datetime "created_at", :null => false
-    t.datetime "updated_at", :null => false
+    t.datetime "created_at",          :null => false
+    t.datetime "updated_at",          :null => false
   end
 
   create_table "project_statuses", :force => true do |t|
