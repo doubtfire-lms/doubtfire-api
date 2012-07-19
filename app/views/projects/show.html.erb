@@ -1,26 +1,9 @@
 <%= render 'layouts/projects_list', :projects => @projects, :selected_project => @project %>
+<%= render 'layouts/activity_stream' %>
 
-<div class="span6 widget">
-	<h2><%= @project.project_template.name %></h2>
-	<div class="widget-content">
-		<div class="activity-feed-entry">
-			<div class="feed-entry-body">
-				<p>You're falling behind in <a href="#">Advanced .NET</a></p>
-				<p>Tasks that are <strong>overdue</strong>:</p>
-				<ul>
-					<li><a href="#">Task 8</a></li>
-					<li><a href="#">Task 9</a></li>
-					<li><a href="#">Task 10</a></li>
-				</ul>
-				<p>Tasks due <strong>this week</strong>:</p>
-				<ul>
-					<li><a href="#">Task 11</a></li>
-					<li><a href="#">Task 12</a></li>
-				</ul>
-			</div>
-			<span class="feed-entry-time">
-			8 hours ago
-			</span>
-		</div>
+<div class="span4 widget">
+	<h2>Progress</h2>
+	<div class="widget-content" id="progress-widget">
+		<%= render 'dashboard/project_progress', :project => @project %>
 	</div>
 </div>
