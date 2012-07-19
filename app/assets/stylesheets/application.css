@@ -10,6 +10,6 @@
  *
  *= require_self
  *= require_tree .
+ *= require font-awesome
+ *= require d3
  */
-
-*= require 'font-awesome'

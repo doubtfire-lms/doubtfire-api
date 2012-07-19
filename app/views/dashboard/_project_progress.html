@@ -4,7 +4,9 @@
 	
 	<%= project_status_summary(nil) %>
 
-	<div class="chart" style="height: 200px"></div>
+	<div id="burndownchart" style="height: 200px">
+		<svg style="height: 200px; width: 450px"></svg>
+	</div>
 
 	<%= will_complete_based_on_velocity %>
 	<%= guidance_based_on_velocity %>
