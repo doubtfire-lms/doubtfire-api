@@ -1,4 +1,4 @@
-class AdministrationController < ApplicationController
+class SuperuserAdministrationController < ApplicationController
 
 	before_filter :authenticate_user!
 	before_filter :load_current_user
