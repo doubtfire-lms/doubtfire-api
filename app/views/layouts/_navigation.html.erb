@@ -6,7 +6,7 @@
         <% if user_signed_in? %>
             <li><p class="navbar-text">Signed in as <%= current_user.email %></li>
             <li class="divider-vertical"></li>
-            <% if current_user.system_role_id != 3 # Don't show "Edit account" for superuser %>
+            <% if not current_user.is_superuser? # Don't show "Edit account" for superuser %>
                 <li><p class="navbar-text"><%= link_to 'Edit account', edit_user_registration_path %></p></li>
                 <li class="divider-vertical"></li>
             <% end %>

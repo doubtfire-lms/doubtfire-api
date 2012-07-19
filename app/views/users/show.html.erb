@@ -28,8 +28,8 @@
     <dd><%= if @user.current_sign_in_ip then @user.current_sign_in_ip else "---" end %></dd>
   <dt><strong><%= model_class.human_attribute_name(:last_sign_in_ip) %>:</strong></dt>
     <dd><%= if @user.last_sign_in_ip then @user.last_sign_in_ip else "---" end %></dd>
-  <dt><strong><%= model_class.human_attribute_name(:system_role_id) %>:</strong></dt>
-    <dd><%= if @user.system_role_id then @user.system_role_id else "---" end %></dd>
+  <dt><strong><%= model_class.human_attribute_name(:system_role) %>:</strong></dt>
+    <dd><%= if @user.system_role then @user.system_role else "---" end %></dd>
 </dl>
 
 <div class="form-actions">

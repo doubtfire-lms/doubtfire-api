@@ -3,6 +3,11 @@ class DashboardController < ApplicationController
   before_filter :load_current_user
 
   def index
+    # Redirect to the administration page if the user is superuser
+    if @user.is_superuser?
+      redirect_to administration_index_path
+    end
+
     @projects = @user.team_memberships.map{|tm| tm.project }
   end
 
