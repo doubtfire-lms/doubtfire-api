@@ -48,6 +48,10 @@ ActiveRecord::Schema.define(:version => 20120717081019) do
   add_index "projects", ["project_template_id"], :name => "index_projects_on_project_template_id"
   add_index "projects", ["team_membership_id"], :name => "index_projects_on_team_membership_id"
 
+  create_table "system_roles", :force => true do |t|
+    t.string "name"
+  end
+
   create_table "task_statuses", :force => true do |t|
     t.string   "name"
     t.string   "description"
@@ -120,7 +124,7 @@ ActiveRecord::Schema.define(:version => 20120717081019) do
     t.datetime "updated_at",                             :null => false
     t.string   "first_name"
     t.string   "last_name"
-    t.string   "system_role"
+    t.integer  "system_role_id"
   end
 
 end

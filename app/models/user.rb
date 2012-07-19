@@ -16,7 +16,7 @@ class User < ActiveRecord::Base
   has_many :project_administrators    # Sounds weird - it means "may be an administrator for many projects"
 
   def is_superuser?
-    self.system_role == "superuser"
+    @system_role == "superuser"
   end
 
   def is_admin?
