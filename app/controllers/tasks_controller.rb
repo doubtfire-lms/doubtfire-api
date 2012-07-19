@@ -8,9 +8,7 @@ class TasksController < ApplicationController
     @tasks    = @project.tasks
 
     respond_to do |format|
-      format.html # index.html.erb
-      # format.json { render json: @tasks.to_json(:include => [{:project => {:include => :project_template}}, :task_template]) }
-
+      format.html
       format.json { render json: @tasks}
     end
   end
