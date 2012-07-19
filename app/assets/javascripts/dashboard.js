@@ -1,25 +1,3 @@
-nv.addGraph(function() {  
-  var advancedDotNetChart = nv.models.lineChart();
-
-  advancedDotNetChart.xAxis // chart sub-models (ie. xAxis, yAxis, etc) when accessed directly, return themselves, not the partent chart, so need to chain separately
-      .axisLabel('Week (w)')
-      .tickFormat(d3.format('d'));
-
-  advancedDotNetChart.yAxis
-      .axisLabel('Tasks (t)')
-      .tickFormat(d3.format(',.2f'));
-
-  d3.select('#chart svg')
-      .datum(advancedDotNetBurndown())
-    .transition().duration(500)
-      .call(advancedDotNetChart);
-
-  //TODO: Figure out a good way to do this automatically
-  nv.utils.windowResize(advancedDotNetChart.update);
-
-  return advancedDotNetChart;
-});
-
 function advancedDotNetBurndown() {
   var projected = [
     {x: 0, y: 100},
@@ -62,3 +40,27 @@ function advancedDotNetBurndown() {
     }
   ];
 }
+
+$(document).ready(function() {
+    nv.addGraph(function() {  
+    var advancedDotNetChart = nv.models.lineChart();
+
+    advancedDotNetChart.xAxis // chart sub-models (ie. xAxis, yAxis, etc) when accessed directly, return themselves, not the partent chart, so need to chain separately
+        .axisLabel('Week (w)')
+        .tickFormat(d3.format('d'));
+
+    advancedDotNetChart.yAxis
+        .axisLabel('Tasks (t)')
+        .tickFormat(d3.format(',.2f'));
+
+    d3.select('#chart svg')
+        .datum(advancedDotNetBurndown())
+      .transition().duration(500)
+        .call(advancedDotNetChart);
+
+    //TODO: Figure out a good way to do this automatically
+    nv.utils.windowResize(advancedDotNetChart.update);
+
+    return advancedDotNetChart;
+  });
+});
