@@ -1,0 +1,42 @@
+<div class="row-fluid"
+	<div class="page-header">
+		<h1>Convenor Dashboard</h1>  
+		<p class="lead">&nbsp;&nbsp;&nbsp;<%= "#{@user.first_name} #{@user.last_name}" %></p>
+	</div>
+</div>
+<hr />
+<div class="container-fluid">
+  <div class="row-fluid">
+    
+    <!-- Sidebar -->
+    <div class="span2">
+      	<%= render 'admin_menu', :projects => @projects, :selected_project => nil %>
+    </div>
+
+    <!-- Body -->
+    <div class="span10">
+		<% @projects.each do |project| %>
+			<div class="subjectbox">
+				<div class="span6">
+					<div class="hero-unit">
+						<div class="row">
+							<%= image_tag "doomface_damage#{rand(4)}.gif" %><h2><%= link_to project.name, project_template_path(project)%></h2>
+							<span class="badge badge-important"><%= link_to "#{2+rand(10)} new notifications", project_template_path(project)%></span>
+						</div>
+						<div class="row">
+							<p>Semester progress:</p>
+							<div class="progress">
+								<div class="bar" style="width: 60%;"></div>
+							</div>
+							<p>Average student progress:</p>
+							<div class="progress progress-success">
+								<div class="bar" style="width: 40%;"></div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		<% end %>
+    </div>
+  </div>
+</div>

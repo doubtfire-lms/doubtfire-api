@@ -6,6 +6,8 @@ class DashboardController < ApplicationController
     # Redirect to the administration page if the user is superuser
     if @user.is_superuser?
       redirect_to superuser_administration_index_path
+    elsif @user.is_convenor?
+      redirect_to convenor_index_path
     end
 
     @projects = @user.team_memberships.map{|tm| tm.project }

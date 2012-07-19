@@ -19,8 +19,8 @@ class User < ActiveRecord::Base
     self.system_role == "superuser"
   end
 
-  def is_admin?
-    self.system_role == "admin"
+  def is_convenor?
+    self.system_role == "convenor"
   end
 
   def is_regular_user?

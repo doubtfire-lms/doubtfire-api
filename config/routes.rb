@@ -12,6 +12,7 @@ Doubtfire::Application.routes.draw do
     resources :project_statuses
     resources :teams
     resources :superuser_administration, :only => :index, :path => 'administration'
+    resources :convenor, :only => :index
 
     resources :projects do  
         resources :tasks, :only => :index  

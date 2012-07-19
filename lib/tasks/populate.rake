@@ -14,7 +14,7 @@ namespace :db do
 		# List of first and last names to use
 		names = {"Allan" => "Jones",
 				 "Rohan" => "Liston",
-				 "Joost" => "Cornelius Pocohontas Archimedes Funke Kupper",
+				 "Joost" => "Cornelius Pocohontas Archimedes Samantha Evelyn Funke Kupper",
 				 "Akihiro" => "Noguchi"}
 
 		# List of subject names to use
@@ -61,14 +61,14 @@ namespace :db do
 			tutor_num += 1
 		end
 
-		# Create 1 admin
+		# Create 1 convenor
 		User.populate(1) do |admin|
 			admin.email = "convenor@doubtfire.com"
 			admin.encrypted_password = BCrypt::Password.create("password")
-			admin.first_name = "Convenor"
-			admin.last_name = "1"
+			admin.first_name = "Clinton"
+			admin.last_name = "Woodward"
 			admin.sign_in_count = 0
-			admin.system_role = "admin"
+			admin.system_role = "convenor"
 			ids["convenor"] = admin.id
 		end
 

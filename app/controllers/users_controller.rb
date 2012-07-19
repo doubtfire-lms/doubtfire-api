@@ -3,7 +3,8 @@ class UsersController < ApplicationController
   # GET /users
   # GET /users.json
   def index
-    @users = User.where("id NOT IN (?)", current_user.id) # don't display the current user in the users list
+    # don't display the current user or the superuser in the users list
+    @users = User.where("id NOT IN (?)", current_user.id).where("email NOT IN (?)", "superuser@doubtfire.com") 
     
     respond_to do |format|
       format.html # index.html.erb
