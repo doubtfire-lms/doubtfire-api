@@ -15,4 +15,5 @@
 //= require twitter/bootstrap
 //= require d3.v2
 //= require nv.d3
+//= require moment
 //= require_tree .

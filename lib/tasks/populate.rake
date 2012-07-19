@@ -87,9 +87,9 @@ namespace :db do
 		subjects.each do |subject|
 			ProjectTemplate.populate(1) do |project_template|
 				project_template.name = subject
-				project_template.description = Populator.words(10..15)
-				project_template.start_date = Date.today
-				project_template.end_date = 13.weeks.from_now
+				project_template.description 	= Populator.words(10..15)
+				project_template.start_date 	= Date.today
+				project_template.end_date 		= 13.weeks.from_now
 
 				# Assign a convenor to each project
 				ProjectAdministrator.populate(1) do |pa|

@@ -295,7 +295,6 @@ svg .title {
   stroke-opacity: 0;
 }
 
-
 .nvd3 .groups .point {
   transition: stroke-width 250ms linear, stroke-opacity 250ms linear;
   -moz-transition: stroke-width 250ms linear, stroke-opacity 250ms linear;

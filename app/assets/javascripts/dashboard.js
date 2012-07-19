@@ -1,66 +1,75 @@
-function advancedDotNetBurndown() {
-  var projected = [
-    {x: 0, y: 100},
-    {x: 1, y: 90},
-    {x: 2, y: 80},
-    {x: 3, y: 80},
-    {x: 4, y: 70},
-    {x: 5, y: 60},
-    {x: 6, y: 50},
-    {x: 7, y: 40},
-    {x: 8, y: 30},
-    {x: 9, y: 20},
-    {x: 10, y: 10},
-    {x: 11, y: 0},
-  ],
-    actual = [
-    {x: 0, y: 100},
-    {x: 1, y: 100},
-    {x: 3, y: 90},
-    {x: 3, y: 80},
-    {x: 4, y: 70},
-    {x: 4, y: 60},
-    {x: 4, y: 50},
-    {x: 4, y: 40},
-    {x: 5, y: 30},
-    {x: 6, y: 20},
-    {x: 7, y: 10}
+$(document).ready(function() {
+  var projectJSONURL = projectURL + ".json";
+
+  d3.json(projectJSONURL, function(projectJSON) {
+    var projectChartData = dataForProjectJSON(projectJSON);
+
+    nv.addGraph(function() {  
+      var projectProgressChart = nv.models.lineChart();
+
+      projectProgressChart.xAxis // chart sub-models (ie. xAxis, yAxis, etc) when accessed directly, return themselves, not the partent chart, so need to chain separately
+          .axisLabel('Week (w)')
+          .tickFormat(d3.format('d'));
+
+      projectProgressChart.yAxis
+          .axisLabel('Tasks (t)')
+          .tickFormat(d3.format(',.2f'));
+
+      d3.select('#burndownchart svg')
+          .datum(projectChartData)
+        .transition().duration(500)
+          .call(projectProgressChart);
+
+      return projectProgressChart;
+    });
+  });
+});
+
+function dataForProjectJSON(projectJSON) {
+
+  // TODO: Get rid of this constant once the project
+  // weight is being properly set
+  var TASK_WEIGHT = 2;
+
+  // Get the project's template
+  var templateProject = projectJSON.project_template;
+  
+  // Get the project's start and end date and wrap them as 'moment' objects
+  var projectStartDate = moment(templateProject.start_date);
+  var projectCompletionDate = moment(new Date(templateProject.end_date));
+
+  var projectTasks = projectJSON.tasks;
+  var taskCount = projectTasks.length
+
+  // Determine the starting weight for the project based
+  // on the number of tasks in the project and the task
+  // weight constant
+  var remainingWeight = taskCount * TASK_WEIGHT;
+
+  // Set an initial point for the week prior to starting,
+  // when no tasks have yet been completed
+  var recommendedTaskCompletion = [
+    {x: 0, y: remainingWeight}
   ];
+
+  // 
+  $.each(projectTasks, function(i, task){
+    // Determine the remaining weight value (i.e. y value for the chart)
+    remainingWeight = remainingWeight - TASK_WEIGHT;
+
+    // Determine the week at which the task is to be completed at by comparing
+    // the 'due date' to the current 
+    var week = moment(task.task_template.recommended_completion_date).diff(projectStartDate, 'weeks');
+    recommendedTaskCompletion.push({x: week, y: remainingWeight});
+  });
+
+  recommendedTaskCompletion.push({x: projectCompletionDate.diff(projectStartDate, 'weeks'), y: 0});
 
   return [
     {
-      values: projected,
-      key: "Expected",
+      values: recommendedTaskCompletion,
+      key: "Recommended",
       color: "#999999"
-    },
-    {
-      values: actual,
-      key: "Actual",
-      color: "#F9560F"
     }
   ];
 }
-
-$(document).ready(function() {
-    nv.addGraph(function() {  
-    var advancedDotNetChart = nv.models.lineChart();
-
-    advancedDotNetChart.xAxis // chart sub-models (ie. xAxis, yAxis, etc) when accessed directly, return themselves, not the partent chart, so need to chain separately
-        .axisLabel('Week (w)')
-        .tickFormat(d3.format('d'));
-
-    advancedDotNetChart.yAxis
-        .axisLabel('Tasks (t)')
-        .tickFormat(d3.format(',.2f'));
-
-    d3.select('#chart svg')
-        .datum(advancedDotNetBurndown())
-      .transition().duration(500)
-        .call(advancedDotNetChart);
-
-    //TODO: Figure out a good way to do this automatically
-    nv.utils.windowResize(advancedDotNetChart.update);
-
-    return advancedDotNetChart;
-  });
-});
