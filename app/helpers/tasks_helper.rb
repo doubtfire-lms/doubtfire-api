@@ -21,6 +21,6 @@ module TasksHelper
 
   def badge_for_task(task)
     label_class_for_task = label_for_task(task)
-    raw "<span class=\"label#{label_class_for_task ? "" : " #{label_class_for_task}"}\">#{task.task_status.name}</span>"
+    raw "<span class=\"label#{label_class_for_task.nil? ? "" : " #{label_class_for_task}"}\">#{task.task_status.name}</span>"
   end
 end

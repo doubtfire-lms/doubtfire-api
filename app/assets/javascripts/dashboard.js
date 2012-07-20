@@ -1,5 +1,11 @@
 $(document).ready(function() {
-  var projectJSONURL = projectURL + ".json";
+  $.each($(".burndownchart"), function(i, burndownChartContainer) {
+    constructBurndownChart(burndownChartContainer);
+  });
+});
+
+function constructBurndownChart(burndownChartContainer) {
+  var projectJSONURL = $(burndownChartContainer).attr("data-url");
 
   d3.json(projectJSONURL, function(projectJSON) {
     var projectChartData = dataForProjectJSON(projectJSON);
@@ -15,7 +21,7 @@ $(document).ready(function() {
           .axisLabel('Tasks (t)')
           .tickFormat(d3.format(',.2f'));
 
-      d3.select('#burndownchart svg')
+      d3.select($(burndownChartContainer).children("svg")[0])
           .datum(projectChartData)
         .transition().duration(500)
           .call(projectProgressChart);
@@ -23,7 +29,7 @@ $(document).ready(function() {
       return projectProgressChart;
     });
   });
-});
+}
 
 function dataForProjectJSON(projectJSON) {
 
@@ -52,15 +58,24 @@ function dataForProjectJSON(projectJSON) {
     {x: 0, y: remainingWeight}
   ];
 
-  // 
+  var actualTaskCompletion = [
+    {x: 0, y: remainingWeight}
+  ];
+
   $.each(projectTasks, function(i, task){
     // Determine the remaining weight value (i.e. y value for the chart)
     remainingWeight = remainingWeight - TASK_WEIGHT;
 
     // Determine the week at which the task is to be completed at by comparing
     // the 'due date' to the current 
-    var week = moment(task.task_template.recommended_completion_date).diff(projectStartDate, 'weeks');
-    recommendedTaskCompletion.push({x: week, y: remainingWeight});
+    var taskDueWeek         = moment(task.task_template.recommended_completion_date).diff(projectStartDate, 'weeks');
+
+    if (task.task_status_id == 3) {
+      var taskCompletionWeek  = moment(task.completion_date).diff(projectStartDate, 'weeks');
+      actualTaskCompletion.push({x: taskDueWeek, y: remainingWeight});
+    }
+
+    recommendedTaskCompletion.push({x: taskDueWeek, y: remainingWeight});
   });
 
   recommendedTaskCompletion.push({x: projectCompletionDate.diff(projectStartDate, 'weeks'), y: 0});
@@ -70,6 +85,11 @@ function dataForProjectJSON(projectJSON) {
       values: recommendedTaskCompletion,
       key: "Recommended",
       color: "#999999"
+    },
+    {
+      values: actualTaskCompletion,
+      key: "Completed",
+      color: "#48842c"
     }
   ];
 }
