@@ -4,7 +4,7 @@ class ConvenorController < ApplicationController
 	before_filter :load_current_user
 
 	def index
-		@projects = @user.project_administrators.map{|pm| pm.project_template }
+		@project_templates = @user.project_administrators.map{|pm| pm.project_template }
 	end
 
   	def load_current_user
