@@ -16,15 +16,15 @@ class User < ActiveRecord::Base
   has_many :project_administrators    # Sounds weird - it means "may be an administrator for many projects"
 
   def is_superuser?
-    self.system_role == "superuser"
+    system_role == "superuser"
   end
 
   def is_convenor?
-    self.system_role == "convenor"
+    system_role == "convenor"
   end
 
   def is_regular_user?
-    self.system_role == "user"
+    system_role == "user"
   end
   
 end
