@@ -4,10 +4,9 @@
 	
 	<%= project_status_summary(nil) %>
 
-	<div id="burndownchart" style="height: 200px">
+	<%= content_tag "div", class: "burndownchart", data: {url: project_url(project)} do %>
 		<svg style="height: 200px"></svg>
-	</div>
-
+	<% end %>
 	<%= will_complete_based_on_velocity %>
 	<%= guidance_based_on_velocity %>
 	<%= projected_date_of_completion_vs_deadline(project) %>
