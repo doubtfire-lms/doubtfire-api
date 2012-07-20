@@ -10,18 +10,19 @@
     
     <!-- Sidebar -->
     <div class="span2">
-      	<%= render 'admin_menu', :projects => @projects, :selected_project => nil %>
+      	<%= render '/layouts/admin_menu', :projects => @project_templates, :selected_project => nil %>
     </div>
 
     <!-- Body -->
     <div class="span10">
-		<% @projects.each do |project| %>
+		<% @project_templates.each do |project_template| %>
 			<div class="subjectbox">
 				<div class="span6">
 					<div class="hero-unit">
 						<div class="row">
-							<%= image_tag "doomface_damage#{rand(4)}.gif" %><h2><%= link_to project.name, project_template_path(project)%></h2>
-							<span class="badge badge-important"><%= link_to "#{2+rand(10)} new notifications", project_template_path(project)%></span>
+							<%= image_tag "doomface_damage#{rand(4)}.gif" %>
+							<h2><%= link_to project_template.name, "/convenor/projects/#{project_template.id}" %></h2>
+							<span class="badge badge-important"><%= link_to "#{2+rand(10)} new notifications", project_template_path(project_template)%></span>
 						</div>
 						<div class="row">
 							<p>Semester progress:</p>

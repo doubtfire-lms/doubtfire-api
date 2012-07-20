@@ -1,0 +1,38 @@
+<div class="row-fluid"
+	<div class="page-header">
+		<h1><%= @project_template.name %></h1>  
+		<p class="lead"></p>
+	</div>
+</div>
+<hr />
+<div class="container-fluid">
+  <div class="row-fluid">
+    
+    <!-- Sidebar -->
+    <div class="span2">
+      	<%= render '/layouts/admin_menu', :projects => @project_templates, :selected_project => nil %>
+    </div>
+
+    <!-- Body -->
+    <div class="span10">
+		<div class="tabbable"> 
+			<ul class="nav nav-pills">
+				<li class="active"><a href="#activity" data-toggle="tab">Activity</a></li>
+				<li><a href="#students" data-toggle="tab">Students</a></li>
+				<li><a href="#analysis" data-toggle="tab">Analysis</a></li>
+			</ul>
+			<div class="tab-content">
+				<div class="tab-pane active" id="activity">
+					<%= render "activity_feed" %>
+				</div>
+				<div class="tab-pane" id="students">
+					<%= render "student_list" %>
+				</div>
+				<div class="tab-pane" id="analysis">
+					<%= render "analysis" %>
+				</div>
+			</div>
+		</div>
+    </div>
+  </div>
+</div>
