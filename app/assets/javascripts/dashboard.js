@@ -70,9 +70,11 @@ function dataForProjectJSON(projectJSON) {
     // the 'due date' to the current 
     var taskDueWeek         = moment(task.task_template.recommended_completion_date).diff(projectStartDate, 'weeks');
 
-    if (task.task_status_id == 3) {
-      var taskCompletionWeek  = moment(task.completion_date).diff(projectStartDate, 'weeks');
-      actualTaskCompletion.push({x: taskDueWeek, y: remainingWeight});
+    if (task.task_status_id == 3) { // 3 = Complete; TODO: Fix
+      var taskCompletionDate = task.completion_date != null ? moment(task.completion_date) : moment(new Date());
+
+      var taskCompletionWeek  = taskCompletionDate.diff(projectStartDate, 'weeks');
+      actualTaskCompletion.push({x: taskCompletionWeek, y: remainingWeight});
     }
 
     recommendedTaskCompletion.push({x: taskDueWeek, y: remainingWeight});

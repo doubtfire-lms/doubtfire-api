@@ -13,6 +13,15 @@ class TasksController < ApplicationController
     end
   end
 
+  def complete
+    @task         = Task.find(params[:task_id])
+    @task.task_status  = TaskStatus.where(:name => "Complete").first
+    @project      = Project.find(params[:project_id])
+
+    @task.save
+    redirect_to @project, notice: 'Task was successfully completed.'
+  end
+
   private 
 
   def load_current_user

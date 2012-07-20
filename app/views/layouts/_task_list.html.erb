@@ -8,6 +8,7 @@
 		</h3>
 		<div class="task-entry-body">
 			<p><%= task.task_template.description %></p>
+			<p><%= link_to "Submit", project_complete_path(task.project, task), :method => :put %></p>
 		</div>
 	</div>
 	<% end %>
