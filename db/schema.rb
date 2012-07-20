@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20120717081019) do
+ActiveRecord::Schema.define(:version => 20120719234620) do
 
   create_table "project_administrators", :force => true do |t|
     t.integer  "project_template_id"
@@ -75,6 +75,7 @@ ActiveRecord::Schema.define(:version => 20120717081019) do
     t.boolean  "awaiting_signoff"
     t.datetime "created_at",       :null => false
     t.datetime "updated_at",       :null => false
+    t.date     "completion_date"
   end
 
   add_index "tasks", ["project_id"], :name => "index_tasks_on_project_id"
