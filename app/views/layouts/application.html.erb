@@ -15,6 +15,7 @@
 	<header class="navbar navbar-fixed-top">
     <nav class="navbar-inner">
       <div class="container-fluid">
+        <%= link_to "Doubtfire", root_path, :class => 'brand' %>
         <%= render 'layouts/navigation' %>
       </div>
     </nav>
@@ -23,6 +24,7 @@
   <div id="main" role="main">
     <div class="container-fluid">  
       <div class="row-fluid">
+
         <%= yield %>
       </div>  
     </div>
