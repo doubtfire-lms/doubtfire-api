@@ -3,17 +3,34 @@
 	<% tasks.each do |task| %>
 	<div class="task-list-entry">
 		<h3 style="display: inline">
-			<%= task.task_template.name %>
-			<%= badge_for_task task %>
+			<%= task.task_template.name %>			
 		</h3>
+		<%= status_badge_for_task task %>
+		<% if task.awaiting_signoff? %>
+			<span class="task-awaiting-signoff-label label label-info">Awaiting Sign-off</span>
+		<% end %>
 		<div class="task-entry-body" id="task-<%= task.id %>-entry">
 			<p><%= task.task_template.description %></p>
-			<p>
-				<a href="<%= project_complete_task_path(task.project, task) %>" data-method="put" class="task-status-button btn btn-primary" data-remote="true">
-					Submit
-					<i class="icon-external-link"></i>
+			<div class="task-status-controls">
+				<% if task.task_status.name != "Complete" %>
+					<% if task.awaiting_signoff? %>
+						<a href="<%= awaiting_signoff_path(task, "false") %>" data-method="put" class="ready-to-mark-button btn" data-remote="true">
+							Set as Not Ready to Mark
+							<i class="icon-remove"></i>
+						</a>
+					<% else %>
+						<a href="<%= awaiting_signoff_path(task, "true") %>" data-method="put" class="ready-to-mark-button btn" data-remote="true">
+							Set as Ready to Mark
+							<i class="icon-ok"></i>
+						</a>
+					<% end %>
+
+				<a href="<%= update_task_status_path(task, "Complete") %>" data-method="put" class="task-status-button btn btn-success" data-remote="true">
+					Complete Task
+					<i class="icon-ok"></i>
 				</a>
-			</p>
+				<% end %>
+			</div>
 		</div>
 	</div>
 	<% end %>

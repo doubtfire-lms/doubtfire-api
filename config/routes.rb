@@ -17,8 +17,10 @@ Doubtfire::Application.routes.draw do
 
   resources :projects do
     resources :tasks, :only => :index
-    put 'tasks/:task_id/complete' => 'tasks#complete', :via => :put, :as => 'complete_task'
   end
+
+  put 'tasks/:task_id/awaiting_signoff/:awaiting_signoff' => 'tasks#awaiting_signoff', :via => :put, :as => 'awaiting_signoff'
+  put 'tasks/:task_id/update_task_status/:status' => 'tasks#update_task_status', :via => :put, :as => 'update_task_status'
 
   root :to => "dashboard#index" 
 

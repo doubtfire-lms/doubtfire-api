@@ -4,23 +4,31 @@ module TasksHelper
     # TODO: Determining the colour/urgency of something
     # is repetitive. Refactoring it out of here.
     case task.status
-    when :incomplete
+    when :not_submitted
       if task.overdue?
         if task.long_overdue?
-          "label-important" # Show a more urgent label if the task is long overdue
+          "label label-important" # Show a more urgent label if the task is long overdue
         else
-          "label-warning" # Just show a warning label if task is overdue
+          "label label-warning" # Just show a warning label if task is overdue
         end
       else
-        nil # Just return nil if there is nothing exceptional about the task's status
+        "label" # Just return nil if there is nothing exceptional about the task's status
       end
+    when :needs_fixing
     when :complete
-      "label-success" # Success if the task is complete
+      "label label-success" # Success if the task is complete
     end
   end
 
-  def badge_for_task(task)
-    label_class_for_task = label_for_task(task)
-    raw "<span class=\"label#{label_class_for_task.nil? ? "" : " #{label_class_for_task}"}\">#{task.task_status.name}</span>"
+  def label_text_for_task(task)
+    task.task_status.name
+  end
+
+  def status_badge_for_task(task)
+    raw "<span class=\"task-status-label #{label_for_task(task)}\">#{label_text_for_task(task)}</span>"
+  end
+
+  def awaiting_signoff_badge_for_task(task)
+    raw "<span class=\"task-awaiting-signoff-label label label-info\">Awaiting Sign-off</span>"
   end
 end

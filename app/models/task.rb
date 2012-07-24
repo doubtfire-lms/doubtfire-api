@@ -32,10 +32,8 @@ class Task < ActiveRecord::Base
     case task_status.name
     when "Complete"
       :complete
-    when "Needs fixing"
-      :fix
-    when "Not complete"
-      :incomplete
+    when "Not Submitted"
+      :not_submitted
     end
   end
 end

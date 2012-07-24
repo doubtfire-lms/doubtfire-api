@@ -1,0 +1,43 @@
+function updateTaskEntryAwaitingSignOff() {
+	var taskContainer 	= $("#task-"+<%= @task.id %>+"-entry");
+	var awaitingSignoff = <%= @task.awaiting_signoff %>;
+	updateAwaitingSignoffBadge(taskContainer, awaitingSignoff);
+	updateReadyToMarkButton(taskContainer, awaitingSignoff);
+}
+
+function updateAwaitingSignoffBadge(taskContainer, awaitingSignoff) {
+	var awaitingSignoffLabels = taskContainer.parent().find(".task-awaiting-signoff-label");
+
+	if (awaitingSignoff) {
+		if (awaitingSignoffLabels.length !== 0) {
+			var awaitingSignoffLabel = awaitingSignoffLabels.first();
+			awaitingSignoffLabel.show();
+		}
+		else {
+			var taskStatusLabel = taskContainer.parent().find(".task-status-label").first();
+			taskStatusLabel.after("<span class=\"task-awaiting-signoff-label label label-info\" style=\"margin-left: 4px\">Awaiting Sign-off</span>");
+		}
+	}
+	else {
+		if (awaitingSignoffLabels.length !== 0) {
+			var awaitingSignoffLabel = awaitingSignoffLabels.first();
+			awaitingSignoffLabel.hide();
+		}
+	}
+}
+
+function updateReadyToMarkButton(taskContainer, awaitingSignoff) {
+	var readyToMarkButton = taskContainer.find(".ready-to-mark-button").first();
+
+	if (awaitingSignoff) {
+		readyToMarkButton.html("Set as Not Ready to Mark<i class=\"icon-remove\" style=\"margin-left: 4px\"></i>");
+		var href = readyToMarkButton.attr("href").replace('awaiting_signoff/true', 'awaiting_signoff/false');
+		readyToMarkButton.attr("href", href);
+	} else {
+		readyToMarkButton.html("Set as Ready to Mark<i class=\"icon-ok\" style=\"margin-left: 4px\"></i>");
+		var href = readyToMarkButton.attr("href").replace('awaiting_signoff/false', 'awaiting_signoff/true');
+		readyToMarkButton.attr("href", href);
+	}
+}
+
+updateTaskEntryAwaitingSignOff();
