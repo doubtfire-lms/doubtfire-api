@@ -14,9 +14,9 @@
 
 		<!-- Sidebar -->
 		<div class="span2">
-		  	<%= render '/layouts/admin_menu', :projects => @project_templates, :selected_project => nil %>
+		  	<%= render 'layouts/admin_menu' %>
 		</div>
-
+		
 		<!-- Body -->
 		<div class="span10">
 			<% @project_templates.each_with_index do |project_template, i| %>

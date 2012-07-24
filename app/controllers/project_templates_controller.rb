@@ -2,6 +2,7 @@ class ProjectTemplatesController < ApplicationController
   # GET /project_templates
   # GET /project_templates.json
   def index
+    @user = current_user
     @project_templates = ProjectTemplate.all
 
     respond_to do |format|

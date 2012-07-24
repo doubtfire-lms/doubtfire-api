@@ -4,6 +4,7 @@ class UsersController < ApplicationController
   # GET /users.json
   def index
     # don't display the current user or the superuser in the users list
+    @user = current_user
     @users = User.where("id NOT IN (?)", current_user.id).where("email NOT IN (?)", "superuser@doubtfire.com") 
     
     respond_to do |format|

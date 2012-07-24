@@ -1,40 +1,57 @@
-<%- model_class = ProjectTemplate.new.class -%>
-<div class="page-header">
-  <h1><%=t '.title', :default => model_class.model_name.human.pluralize %></h1>
+<% stylesheets 'dashboard.css' %>
+<div class="row-fluid">
+  <div class="page-header">
+    <h1>Convenor Dashboard</h1>  
+    <p class="lead"><%= "#{@user.first_name} #{@user.last_name}" %></p>
+  </div>
 </div>
-<table class="table table-striped">
-  <thead>
-    <tr>
-      <th><%= model_class.human_attribute_name(:name) %></th>
-      <th><%= model_class.human_attribute_name(:description) %></th>
-      <th><%= model_class.human_attribute_name(:start_date) %></th>
-      <th><%= model_class.human_attribute_name(:end_date) %></th>
-      <th><%= model_class.human_attribute_name(:created_at) %></th>
-      <th><%=t '.actions', :default => t("helpers.actions") %></th>
-    </tr>
-  </thead>
-  <tbody>
-    <% @project_templates.each do |project_template| %>
-      <tr>
-        <td><%= link_to project_template.name, project_template_path(project_template) %></td>
-        <td><%= project_template.description %></td>
-        <td><%= project_template.start_date.strftime("%d %B %Y") %></td>
-        <td><%= project_template.end_date.strftime("%d %B %Y") %></td>
-        <td><%= project_template.created_at.strftime("%d %b %Y at %I:%M%p") %></td>
-        <td>
-          <%= link_to t('.edit', :default => t("helpers.links.edit")),
-                      edit_project_template_path(project_template), :class => 'btn btn-mini' %>
-          <%= link_to t('.destroy', :default => t("helpers.links.destroy")),
-                      project_template_path(project_template),
-                      :method => :delete,
-                      :confirm => t('.confirm', :default => t("helpers.links.confirm", :default => 'Are you sure?')),
-                      :class => 'btn btn-mini btn-danger' %>
-        </td>
-      </tr>
-    <% end %>
-  </tbody>
-</table>
+<%- model_class = ProjectTemplate.new.class -%>
+<div class="row-fluid">
+  <!-- Sidebar -->
+  <div class="span2">
+      <%= render 'layouts/admin_menu' %>
+  </div>
+  <div class="widget span10">
+    <h2>
+        Project Templates
+    </h2>
+    <div class="widget-content">
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th><%= model_class.human_attribute_name(:name) %></th>
+            <th><%= model_class.human_attribute_name(:description) %></th>
+            <th><%= model_class.human_attribute_name(:start_date) %></th>
+            <th><%= model_class.human_attribute_name(:end_date) %></th>
+            <th><%= model_class.human_attribute_name(:created_at) %></th>
+            <th><%=t '.actions', :default => t("helpers.actions") %></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @project_templates.each do |project_template| %>
+            <tr>
+              <td><%= link_to project_template.name, project_template_path(project_template) %></td>
+              <td><%= project_template.description %></td>
+              <td><%= project_template.start_date.strftime("%d %B %Y") %></td>
+              <td><%= project_template.end_date.strftime("%d %B %Y") %></td>
+              <td><%= project_template.created_at.strftime("%d %b %Y at %I:%M%p") %></td>
+              <td>
+                <%= link_to t('.edit', :default => t("helpers.links.edit")),
+                            edit_project_template_path(project_template), :class => 'btn btn-mini' %>
+                <%= link_to t('.destroy', :default => t("helpers.links.destroy")),
+                            project_template_path(project_template),
+                            :method => :delete,
+                            :confirm => t('.confirm', :default => t("helpers.links.confirm", :default => 'Are you sure?')),
+                            :class => 'btn btn-mini btn-danger' %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
 
-<%= link_to t('.new', :default => t("helpers.links.new")),
-            new_project_template_path,
-            :class => 'btn btn-primary' %>
+      <%= link_to t('.new', :default => t("helpers.links.new")),
+                  new_project_template_path,
+                  :class => 'btn btn-primary' %>
+    </div>
+  </div>
+</div>

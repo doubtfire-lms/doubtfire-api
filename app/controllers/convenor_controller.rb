@@ -7,8 +7,8 @@ class ConvenorController < ApplicationController
 		@project_templates = @user.project_administrators.map{|pm| pm.project_template }
 	end
 
-  	def load_current_user
-    	@user = current_user
-  	end
+	def load_current_user
+  	@user = current_user
+	end
 
 end
