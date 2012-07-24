@@ -10,6 +10,7 @@ gem 'populator'
 gem 'faker'
 gem 'cancan'
 gem 'simple_form'
+gem 'bootstrap-datepicker-rails'
 
 # Gems used only for assets and not required
 # in production environments by default.

@@ -1,9 +1,9 @@
 <%= simple_form_for @task_template, :html => { :class => 'well form-horizontal' } do |f| %>
   <%= f.association :project_template, :prompt => "Select a project..." %>
   <%= f.input :name %>
-  <%= f.input :description %>
+  <%= f.input :description, :as => :text, :input_html => { :rows => 5 } %>
   <%= f.input :weighting %>
   <%= f.input :required %>
-  <%= f.input :recommended_completion_date, :as => :date %>
+  <%= f.input :recommended_completion_date, :as => :string, :input_html => { "data-behaviour" => "datepicker", :value => "#{Date.today.strftime('%Y-%m-%d')}"}  %>
   <%= f.button :submit %>
 <% end %>

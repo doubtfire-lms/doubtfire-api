@@ -30,6 +30,8 @@ GEM
       multi_json (~> 1.0)
     arel (3.0.2)
     bcrypt-ruby (3.0.1)
+    bootstrap-datepicker-rails (0.6.16)
+      railties (>= 3.0)
     builder (3.0.0)
     cancan (1.6.8)
     coffee-rails (3.2.2)
@@ -138,6 +140,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  bootstrap-datepicker-rails
   cancan
   coffee-rails (~> 3.2.1)
   d3_rails

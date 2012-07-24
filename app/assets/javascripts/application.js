@@ -16,3 +16,9 @@
 //= require d3.v2
 //= require nv.d3
 //= require moment
+//= require bootstrap-datepicker
+
+// Makes date inputs look sick
+$(document).on("focus", "[data-behaviour~='datepicker']", function(e){
+    $(this).datepicker({"format": "yyyy-mm-dd", "weekStart": 1, "autoclose": true});
+});
