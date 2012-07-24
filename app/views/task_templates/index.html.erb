@@ -1,4 +1,4 @@
-<%- model_class = Task.new.class -%>
+<%- model_class = TaskTemplate.new.class -%>
 <div class="page-header">
   <h1><%=t '.title', :default => model_class.model_name.human.pluralize %></h1>
 </div>
@@ -15,19 +15,19 @@
     </tr>
   </thead>
   <tbody>
-    <% @tasks.each do |task| %>
+    <% @task_templates.each do |task_template| %>
       <tr>
-        <td><%= link_to task.name, task_path(task) %></td>
-        <td><%= Project.find(task.project_id).name %></td>
-        <td><%= task.description %></td>
-        <td><%= task.weighting %></td>
-        <td><%= "Required" if task.required %><%= "Optional" if not task.required %></td>
-        <td><%= task.recommended_completion_date.strftime("%d %B %Y") %></td>
+        <td><%= link_to task_template.name, task_template_path(task_template) %></td>
+        <td><%= ProjectTemplate.find(task_template.project_template_id).name %></td>
+        <td><%= task_template.description %></td>
+        <td><%= task_template.weighting %></td>
+        <td><%= "Required" if task_template.required %><%= "Optional" if not task_template.required %></td>
+        <td><%= task_template.recommended_completion_date.strftime("%d %B %Y") %></td>
         <td>
           <%= link_to t('.edit', :default => t("helpers.links.edit")),
-                      edit_task_path(task), :class => 'btn btn-mini' %>
+                      edit_task_template_path(task_template), :class => 'btn btn-mini' %>
           <%= link_to t('.destroy', :default => t("helpers.links.destroy")),
-                      task_path(task),
+                      task_template_path(task_template),
                       :method => :delete,
                       :confirm => t('.confirm', :default => t("helpers.links.confirm", :default => 'Are you sure?')),
                       :class => 'btn btn-mini btn-danger' %>
@@ -38,5 +38,5 @@
 </table>
 
 <%= link_to t('.new', :default => t("helpers.links.new")),
-            new_task_path,
+            new_task_template_path,
             :class => 'btn btn-primary' %>

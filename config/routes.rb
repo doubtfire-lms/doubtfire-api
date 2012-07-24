@@ -8,7 +8,7 @@ Doubtfire::Application.routes.draw do
   resources :home, :only => :index
   resources :projects
   resources :project_templates
-  resources :task_statuses
+  resources :task_templates
   resources :project_statuses
   resources :teams
   resources :superuser_administration, :only => :index, :path => 'administration'
