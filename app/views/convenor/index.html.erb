@@ -1,45 +1,61 @@
+<% stylesheets 'doubtfire.css' %>
 <% stylesheets 'dashboard.css' %>
 <% stylesheets 'convenor.css' %>
-<div class="row-fluid"
+
+<div class="row-fluid">
 	<div class="page-header">
 		<h1>Convenor Dashboard</h1>  
-		<p class="lead">&nbsp;&nbsp;<%= "#{@user.first_name} #{@user.last_name}" %></p>
+		<p class="lead"><%= "#{@user.first_name} #{@user.last_name}" %></p>
 	</div>
 </div>
 <hr />
 <div class="container-fluid">
-  <div class="row-fluid">
-    
-    <!-- Sidebar -->
-    <div class="span2">
-      	<%= render '/layouts/admin_menu', :projects => @project_templates, :selected_project => nil %>
-    </div>
+	<div class="row-fluid">
 
-    <!-- Body -->
-    <div class="span10">
-		<% @project_templates.each do |project_template| %>
-			<div class="subjectbox">
-				<div class="span6">
-					<div class="hero-unit">
-						<div class="row">
-							<%= image_tag "doomface_damage#{rand(4)}.gif" %>
-							<h2><%= link_to project_template.name, "/convenor/projects/#{project_template.id}" %></h2>
-							<span class="badge badge-important"><%= link_to "#{2+rand(10)} new notifications", project_template_path(project_template)%></span>
-						</div>
-						<div class="row">
-							<p>Semester progress:</p>
-							<div class="progress">
-								<div class="bar" style="width: 60%;"></div>
+		<!-- Sidebar -->
+		<div class="span2">
+		  	<%= render '/layouts/admin_menu', :projects => @project_templates, :selected_project => nil %>
+		</div>
+
+		<!-- Body -->
+		<div class="span10">
+			<% @project_templates.each_with_index do |project_template, i| %>
+				<% if i % 2 == 0 %>
+				<div class="row-fluid">
+				<% end %>
+					<div class="span6 widget">
+						<h2>
+							<%= link_to project_template.name, "/convenor/projects/#{project_template.id}" %>
+						</h2>
+						<div class="widget-content">
+							<div class="project-identity">
+								<div class="doom-image"><%= image_tag "doomface_damage#{rand(4)}.gif" %></div>
+								<span class="badge badge-important"><%= link_to "#{2+rand(10)} new notifications", project_template_path(project_template)%></span>
 							</div>
-							<p>Average student progress:</p>
-							<div class="progress progress-success">
-								<div class="bar" style="width: 40%;"></div>
+							<div class="progress-bands">
+								<div class="progress-band">
+									<span class="progress-percentage-figure">20%</span>
+									<span class="progress-band-name">are ahead</span>
+								</div>
+								<div class="progress-band">
+									<span class="progress-percentage-figure">20%</span>
+									<span class="progress-band-name">are on track</span>
+								</div>
+								<div class="progress-band">
+									<span class="progress-percentage-figure">40%</span>
+									<span class="progress-band-name">are behind</span>
+								</div>
+								<div class="progress-band">
+									<span class="progress-percentage-figure">20%</span>
+									<span class="progress-band-name">are doomed</span>
+								</div>
 							</div>
 						</div>
 					</div>
+				<% if i % 2 == 1 %>
 				</div>
-			</div>
-		<% end %>
-    </div>
-  </div>
+				<% end %>
+			<% end %>
+		</div>
+	</div>
 </div>

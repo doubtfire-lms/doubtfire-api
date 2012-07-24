@@ -13,7 +13,7 @@ Doubtfire::Application.routes.draw do
   resources :teams
   resources :superuser_administration, :only => :index, :path => 'administration'
   resources :convenor, :only => :index
-  match "/convenor/projects/:id" => "convenor_project#index"
+  get "/convenor/projects/:id" => "convenor_project#index", :as => 'convenor_project'
 
   resources :projects do
     resources :tasks, :only => :index
