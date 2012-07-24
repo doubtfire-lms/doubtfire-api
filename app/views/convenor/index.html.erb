@@ -16,7 +16,7 @@
 		<div class="span2">
 		  	<%= render 'layouts/admin_menu' %>
 		</div>
-		
+
 		<!-- Body -->
 		<div class="span10">
 			<% @project_templates.each_with_index do |project_template, i| %>
@@ -24,9 +24,7 @@
 				<div class="row-fluid">
 				<% end %>
 					<div class="span6 widget">
-						<h2>
-							<%= link_to project_template.name, "/convenor/projects/#{project_template.id}" %>
-						</h2>
+						<h2><i class="icon-book"></i><%= project_template.name %></h2>
 						<div class="widget-content">
 							<div class="project-identity">
 								<div class="doom-image"><%= image_tag "doomface_damage#{rand(4)}.gif" %></div>
