@@ -11,8 +11,6 @@ class User < ActiveRecord::Base
   # Model fields
   attr_accessible :first_name, :last_name, :system_role
 
-  #alias_attribute :name, :first_name 
-
   # Model associations
   has_many :team_memberships
   has_many :project_administrators    # Sounds weird - it means "may be an administrator for many projects"
@@ -29,4 +27,7 @@ class User < ActiveRecord::Base
     system_role == "user"
   end
   
+  def full_name                                                                                                                                                                                     
+    ([first_name, last_name] - ['']).compact.join(' ')                         
+  end
 end

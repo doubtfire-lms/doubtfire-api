@@ -1,7 +1,10 @@
 <%= simple_form_for @project_template, :html => { :class => 'well form-horizontal' } do |f| %>
   <%= f.input :name %>
-  <%= f.input :description %>
+  <%= f.input :description, :as => :text %>
   <%= f.input :start_date, :as => :date %>
   <%= f.input :end_date, :as => :date %>
+  <% if current_user.is_superuser? %>
+  	<%= f.input :convenor_id, :label => "Convenor(s)" do select_tag :convenor, options_from_collection_for_select(@convenors, "id", "full_name"), :multiple => true end %>
+  <% end %>
   <%= f.button :submit %>
 <% end %>

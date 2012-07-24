@@ -17,28 +17,33 @@
 
     <!-- Body -->
     <div class="span10">
-		<% @project_templates.each do |project_template| %>
-			<div class="subjectbox">
-				<div class="span6">
-					<div class="hero-unit">
-						<div class="row">
-							<%= image_tag "doomface_damage#{rand(4)}.gif" %>
-							<h2><%= link_to project_template.name, "/convenor/projects/#{project_template.id}" %></h2>
-							<span class="badge badge-important"><%= link_to "#{2+rand(10)} new notifications", project_template_path(project_template)%></span>
-						</div>
-						<div class="row">
-							<p>Semester progress:</p>
-							<div class="progress">
-								<div class="bar" style="width: 60%;"></div>
+    	<% if @project_templates.empty? %>
+			<h2>You do not have any active projects.</h2>
+			<h3><%= link_to "Create one now", new_project_template_path %></h3>
+    	<% else %>
+			<% @project_templates.each do |project_template| %>
+				<div class="subjectbox">
+					<div class="span6">
+						<div class="hero-unit">
+							<div class="row">
+								<%= image_tag "doomface_damage#{rand(4)}.gif" %>
+								<h2><%= link_to project_template.name, "/convenor/projects/#{project_template.id}" %></h2>
+								<span class="badge badge-important"><%= link_to "#{2+rand(10)} new notifications", project_template_path(project_template)%></span>
 							</div>
-							<p>Average student progress:</p>
-							<div class="progress progress-success">
-								<div class="bar" style="width: 40%;"></div>
+							<div class="row">
+								<p>Semester progress:</p>
+								<div class="progress">
+									<div class="bar" style="width: 60%;"></div>
+								</div>
+								<p>Average student progress:</p>
+								<div class="progress progress-success">
+									<div class="bar" style="width: 40%;"></div>
+								</div>
 							</div>
 						</div>
 					</div>
 				</div>
-			</div>
+			<% end %>
 		<% end %>
     </div>
   </div>
