@@ -1,21 +1,24 @@
 @import "twitter/bootstrap/variables";
 @import "twitter/bootstrap/mixins";
 
+@widgetCornerRadius: 5px;
+
 .widget {
 	border: 1px solid #CCCCCC;
 	background-color: white;
-	.border-radius(5px);
+	.border-radius(@widgetCornerRadius);
 	margin-bottom: 20px;
 }
 
 .widget h2
 {
 	font-size: 12pt;
-	font-weight: normal;
+	font-weight: 800;
 	padding: 5px 0 5px 20px;
 	border-bottom: 1px solid #CCCCCC;
 	color: #555555;
-	#gradient > .vertical(#FFFFFF, #DDDDDD);
+	#gradient > .vertical(#FAFAFA, #E9E9E9);
+	.border-radius(@widgetCornerRadius @widgetCornerRadius 0 0);
 }
 
 .widget-content
