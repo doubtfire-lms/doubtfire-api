@@ -6,9 +6,14 @@
 			<%= task.task_template.name %>
 			<%= badge_for_task task %>
 		</h3>
-		<div class="task-entry-body">
+		<div class="task-entry-body" id="task-<%= task.id %>-entry">
 			<p><%= task.task_template.description %></p>
-			<p><%= link_to "Submit", project_complete_path(task.project, task), :method => :put %></p>
+			<p>
+				<a href="<%= project_complete_task_path(task.project, task) %>" data-method="put" class="task-status-button btn btn-primary" data-remote="true">
+					Submit
+					<i class="icon-external-link"></i>
+				</a>
+			</p>
 		</div>
 	</div>
 	<% end %>

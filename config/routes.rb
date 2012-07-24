@@ -17,7 +17,7 @@ Doubtfire::Application.routes.draw do
 
   resources :projects do
     resources :tasks, :only => :index
-    put 'tasks/:task_id/complete' => 'tasks#complete', :via => :put, :as => 'complete'
+    put 'tasks/:task_id/complete' => 'tasks#complete', :via => :put, :as => 'complete_task'
   end
 
   root :to => "dashboard#index" 

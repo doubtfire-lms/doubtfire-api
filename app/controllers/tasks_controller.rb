@@ -18,8 +18,12 @@ class TasksController < ApplicationController
     @task.task_status  = TaskStatus.where(:name => "Complete").first
     @project      = Project.find(params[:project_id])
 
-    @task.save
-    redirect_to @project, notice: 'Task was successfully completed.'
+    if @task.save
+      respond_to do |format|
+        format.html { redirect_to @project, notice: 'Task was successfully completed.' }
+        format.js
+      end
+    end
   end
 
   private 
