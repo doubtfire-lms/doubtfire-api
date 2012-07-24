@@ -1,6 +1,6 @@
 <%- model_class = ProjectTemplate.new.class -%>
 <div class="page-header">
-  <h1><%=t '.title', :default => model_class.model_name.human.pluralize %></h1>
+  <h1>Projects for <%= current_user.full_name %></h1>
 </div>
 <table class="table table-striped">
   <thead>
@@ -37,6 +37,4 @@
   </tbody>
 </table>
 
-<%= link_to t('.new', :default => t("helpers.links.new")),
-            new_project_template_path,
-            :class => 'btn btn-primary' %>
+<%= link_to "New project", new_project_template_path, :class => 'btn btn-primary' %>

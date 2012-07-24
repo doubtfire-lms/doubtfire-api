@@ -44,7 +44,7 @@ class TaskTemplatesController < ApplicationController
 
     respond_to do |format|
       if @task_template.save
-        format.html { redirect_to @task_template, notice: 'TaskTemplate was successfully created.' }
+        format.html { redirect_to project_template_path(@task_template.project_template_id), notice: "TaskTemplate was successfully updated."}
         format.json { render json: @task_template, status: :created, location: @task_template }
       else
         format.html { render action: "new" }
@@ -60,7 +60,7 @@ class TaskTemplatesController < ApplicationController
 
     respond_to do |format|
       if @task_template.update_attributes(params[:task_template])
-        format.html { redirect_to @task_template, notice: 'TaskTemplate was successfully updated.' }
+        format.html { redirect_to project_template_path(@task_template.project_template_id), notice: "TaskTemplate was successfully updated."}
         format.json { head :no_content }
       else
         format.html { render action: "edit" }

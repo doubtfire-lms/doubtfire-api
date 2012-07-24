@@ -14,6 +14,7 @@ class ProjectTemplatesController < ApplicationController
   # GET /project_templates/1.json
   def show
     @project_template = ProjectTemplate.find(params[:id])
+    @task_templates = TaskTemplate.where(:project_template_id => params[:id])
 
     respond_to do |format|
       format.html # show.html.erb
