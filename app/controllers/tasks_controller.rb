@@ -13,10 +13,23 @@ class TasksController < ApplicationController
     end
   end
 
-  def complete
-    @task         = Task.find(params[:task_id])
-    @task.task_status  = TaskStatus.where(:name => "Complete").first
-    @project      = Project.find(params[:project_id])
+  def update_task_status
+    @task               = Task.find(params[:task_id])
+    task_status         = TaskStatus.where(:name => params[:status]).first
+    @task.task_status   = task_status
+    @task.awaiting_signoff = false # Because only staff should be able to change task status
+
+    if @task.save
+      respond_to do |format|
+        format.html { redirect_to @project, notice: 'Task was successfully completed.' }
+        format.js
+      end
+    end
+  end
+
+  def awaiting_signoff
+    @task                   = Task.find(params[:task_id])
+    @task.awaiting_signoff  = params[:awaiting_signoff] != "false"
 
     if @task.save
       respond_to do |format|

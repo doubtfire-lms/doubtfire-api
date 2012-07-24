@@ -32,8 +32,9 @@ namespace :db do
   
     # Populate project/task statuses
     ProjectStatus.create(:health => 100)
-    TaskStatus.create(:name => "Not complete", :description => "This task has not been signed off by your tutor.")
-    TaskStatus.create(:name => "Needs fixing", :description => "This task must be resubmitted after fixing some issues.")
+    
+    TaskStatus.create(:name => "Not Submitted", :description => "This task has not been submitted to marked by your tutor.")
+    TaskStatus.create(:name => "Needs Fixing", :description => "This task must be resubmitted after fixing some issues.")
     TaskStatus.create(:name => "Complete", :description => "This task has been signed off by your tutor.")
 
     # Create 4 students
