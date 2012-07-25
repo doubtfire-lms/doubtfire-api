@@ -1,58 +1,60 @@
 <% stylesheets 'dashboard.css' %>
 <% stylesheets 'convenor.css' %>
 
-<div class="row-fluid">
-	<div class="page-header">
-		<h1>Convenor Dashboard</h1>  
-		<p class="lead"><%= "#{@user.first_name} #{@user.last_name}" %></p>
-	</div>
-</div>
-<hr />
-<div class="container-fluid">
-	<div class="row-fluid">
+<% content_for :sidebar do %>
+	<ul class="nav nav-list">
+	  <li class="nav-header">
+	    Navigation
+	  </li>
+	  <li class="active">
+	    <%= link_to "Dashboard", root_url %>
+	  </li>
+	  <li class="nav-header">
+	    Administration
+	  </li>
+	  <li>
+	  	<%= link_to "Projects", project_templates_path %>
+	  </li>
+	  <li>
+	    <%= link_to "Students", users_path %>
+	  </li>
+	</ul>
+<% end %>
 
-		<!-- Sidebar -->
-		<div class="span2">
-		  	<%= render 'layouts/admin_menu' %>
-		</div>
-
-		<!-- Body -->
-		<div class="span10">
-			<% @project_templates.each_with_index do |project_template, i| %>
-				<% if i % 2 == 0 %>
-				<div class="row-fluid">
-				<% end %>
-					<div class="span6 widget">
-						<h2><i class="icon-book"></i><%= project_template.name %></h2>
-						<div class="widget-content">
-							<div class="project-identity">
-								<div class="doom-image"><%= image_tag "doomface_damage#{rand(4)}.gif" %></div>
-								<span class="badge badge-important"><%= link_to "#{2+rand(10)} new notifications", project_template_path(project_template)%></span>
-							</div>
-							<div class="progress-bands">
-								<div class="progress-band">
-									<span class="statistical-figure">20%</span>
-									<span class="progress-band-name">are ahead</span>
-								</div>
-								<div class="progress-band">
-									<span class="statistical-figure">20%</span>
-									<span class="progress-band-name">are on track</span>
-								</div>
-								<div class="progress-band">
-									<span class="statistical-figure">40%</span>
-									<span class="progress-band-name">are behind</span>
-								</div>
-								<div class="progress-band">
-									<span class="statistical-figure">20%</span>
-									<span class="progress-band-name">are doomed</span>
-								</div>
-							</div>
+<div class="span10">
+	<% @project_templates.each_with_index do |project_template, i| %>
+		<% if i % 2 == 0 %>
+		<div class="row-fluid">
+		<% end %>
+			<div class="span6 widget">
+				<h2><i class="icon-book"></i><%= project_template.name %></h2>
+				<div class="widget-content">
+					<div class="project-identity">
+						<div class="doom-image"><%= image_tag "doomface_damage#{rand(4)}.gif" %></div>
+						<span class="badge badge-important"><%= link_to "#{2+rand(10)} new notifications", project_template_path(project_template)%></span>
+					</div>
+					<div class="progress-bands">
+						<div class="progress-band">
+							<span class="statistical-figure">20%</span>
+							<span class="progress-band-name">are ahead</span>
+						</div>
+						<div class="progress-band">
+							<span class="statistical-figure">20%</span>
+							<span class="progress-band-name">are on track</span>
+						</div>
+						<div class="progress-band">
+							<span class="statistical-figure">40%</span>
+							<span class="progress-band-name">are behind</span>
+						</div>
+						<div class="progress-band">
+							<span class="statistical-figure">20%</span>
+							<span class="progress-band-name">are doomed</span>
 						</div>
 					</div>
-				<% if i % 2 == 1 %>
 				</div>
-				<% end %>
-			<% end %>
+			</div>
+		<% if i % 2 == 1 %>
 		</div>
-	</div>
+		<% end %>
+	<% end %>
 </div>
