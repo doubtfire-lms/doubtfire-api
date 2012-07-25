@@ -25,7 +25,7 @@
 
 <!-- Table of tasks for the current project -->
 <div class="widget">
-  <h2><i class="icon-book"></i>Tasks</h2>
+  <h2><i class="icon-pencil"></i>Tasks</h2>
   <div class="widget-content">
     <% if @task_templates.empty? %>
       <p>This project has no tasks.</p>
@@ -68,9 +68,50 @@
   </div>
 </div>
 
+<!-- Table of teams for the current project -->
+<div class="widget">
+  <h2><i class="icon-group"></i>Teams</h2>
+  <div class="widget-content">
+    <% if @project_teams.empty? %>
+      <p>This project has no teams.</p>
+    <% else %>
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>Manager</th>
+            <th><%= Team.human_attribute_name(:meeting_time) %></th>
+            <th><%= Team.human_attribute_name(:meeting_location) %></th>
+            <th><%=t '.actions', :default => t("helpers.actions") %></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @project_teams.each do |team| %>
+            <tr>
+              <td><%= User.find(team.user_id).full_name %></td>
+              <td><%= team.meeting_time %></td>
+              <td><%= team.meeting_location %></td>
+              <td>
+                <%= link_to t('.edit', :default => t("helpers.links.edit")),
+                            edit_team_path(team), :class => 'btn btn-mini' %>
+                <%= link_to t('.destroy', :default => t("helpers.links.destroy")),
+                            team_path(team),
+                            :method => :delete,
+                            :confirm => t('.confirm', :default => t("helpers.links.confirm", :default => 'Are you sure?')),
+                            :class => 'btn btn-mini btn-danger' %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% end %>
+
+    <%= link_to "Create new team", new_project_team_path(@project_template), :class => 'btn btn-primary' %>
+  </div>
+</div>
+
 <!-- Table of users for the current project -->
 <div class="widget">
-  <h2><i class="icon-book"></i>Users</h2>
+  <h2><i class="icon-user"></i>Users</h2>
   <div class="widget-content">
     <% if @project_users.empty? %>
       <p>This project has no tasks.</p>

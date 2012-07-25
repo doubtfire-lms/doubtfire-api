@@ -1,5 +1,5 @@
 class Team < ActiveRecord::Base
-  attr_accessible :meeting_location, :meeting_time
+  attr_accessible :project_template_id, :user_id, :meeting_location, :meeting_time
 
   # Model associations
   belongs_to :project_template  # Foreign key

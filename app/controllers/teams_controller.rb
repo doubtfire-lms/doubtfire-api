@@ -25,6 +25,11 @@ class TeamsController < ApplicationController
   # GET /teams/new.json
   def new
     @team = Team.new
+    @project_template = ProjectTemplate.find(params[:project_template_id])
+    
+    if not @project_template.nil?
+      @team.update_attributes(:project_template_id => @project_template.id)
+    end
 
     respond_to do |format|
       format.html # new.html.erb
@@ -35,6 +40,7 @@ class TeamsController < ApplicationController
   # GET /teams/1/edit
   def edit
     @team = Team.find(params[:id])
+    @project_template = ProjectTemplate.find(@team.project_template_id)
   end
 
   # POST /teams
@@ -44,7 +50,7 @@ class TeamsController < ApplicationController
 
     respond_to do |format|
       if @team.save
-        format.html { redirect_to @team, notice: 'Team was successfully created.' }
+        format.html { redirect_to project_template_path(@team.project_template_id), notice: "Team was successfully updated."}
         format.json { render json: @team, status: :created, location: @team }
       else
         format.html { render action: "new" }
@@ -60,7 +66,7 @@ class TeamsController < ApplicationController
 
     respond_to do |format|
       if @team.update_attributes(params[:team])
-        format.html { redirect_to @team, notice: 'Team was successfully updated.' }
+        format.html { redirect_to project_template_path(@team.project_template_id), notice: "Team was successfully updated."}
         format.json { head :no_content }
       else
         format.html { render action: "edit" }
