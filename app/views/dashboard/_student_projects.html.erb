@@ -1,0 +1,13 @@
+<% student_projects.each_with_index do |student_project, i| %>
+	<% if i % 2 == 0 %>
+	<div class="row-fluid">
+	<% end %>
+		<div class="span6 widget">
+			<h2><i class="icon-book"></i><%= student_project.project_template.name %> (Student)</h2>
+			<div class="widget-content">
+			</div>
+		</div>
+	<% if i % 2 == 1 %>
+	</div>
+	<% end %>
+<% end %>

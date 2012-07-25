@@ -1,0 +1,8 @@
+<li class="nav-header">Tutor Projects</li>
+<% tutor_projects.each do |project| %>
+	<% if !selected_tutor_project.nil? && project.id == selected_tutor_project.id %>
+		<li class="active"><%= link_to project.name, project_path(project) %></li>
+	<% else %>	
+		<li><%= link_to project.name, project_path(project) %></li>
+	<% end %>
+<% end %>

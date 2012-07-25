@@ -1,0 +1,13 @@
+<% tutor_project_templates.each_with_index do |tutor_project_template, i| %>
+	<% if i % 2 == 0 %>
+	<div class="row-fluid">
+	<% end %>
+		<div class="span6 widget">
+			<h2><i class="icon-book"></i><%= tutor_project_template.name %> (Tutor)</h2>
+			<div class="widget-content">
+			</div>
+		</div>
+	<% if i % 2 == 1 %>
+	</div>
+	<% end %>
+<% end %>

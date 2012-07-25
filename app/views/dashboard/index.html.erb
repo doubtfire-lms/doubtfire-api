@@ -1,7 +1,18 @@
 <% stylesheets 'dashboard.css' %>
 <% javascript 'dashboard.js' %>
 
-<%= render 'layouts/projects_list', :projects => @projects, :selected_project => nil %>
+<% content_for :sidebar do %>
+	<ul class="nav nav-list">
+		<li class="nav-header">Dashboard</li>
+		<li class="active"><%= link_to 'Home', root_url %></li>
+		<% unless @student_projects.empty? %>
+			<%= render 'dashboard/student_projects_links', :student_projects => @student_projects, :selected_student_project => nil %>
+		<% end %>
+		<% unless @tutor_project_templates.empty? %>
+			<%= render 'dashboard/tutor_projects_links', :tutor_projects => @tutor_project_templates, :selected_tutor_project => nil %>
+		<% end %>
+	</ul>
+<% end %>
 
 <div class="span10">
 	<div class="row-fluid">
@@ -9,17 +20,14 @@
 			<li class="active"><%= link_to "Summary", root_path %></li>
 		</ul>
 	</div>
-	<div class="row-fluid">
-		<div class="span7 widget">
-			<%= render 'layouts/activity_stream' %>
-		</div>
-		<div class="span5 widget">
-			<h2><i class="icon-bar-chart"></i>Progress</h2>
-			<div class="widget-content" id="progress-widget">
-				<% @projects.each do |project| %>
-					<%= render 'dashboard/project_progress', :project => project %>
-				<% end %>
-			</div>
+	<div class="span7">
+		<div class="row-fluid">
+			<% unless @student_projects.empty? %>
+				<%= render 'dashboard/student_projects', :student_projects => @student_projects %>
+			<% end %>
+			<% unless @tutor_project_templates.empty? %>
+				<%= render 'dashboard/tutor_projects', :tutor_project_templates => @tutor_project_templates %>
+			<% end %>
 		</div>
 	</div>
 </div>

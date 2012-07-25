@@ -7,7 +7,7 @@ class ProjectsController < ApplicationController
   end
 
   def show
-    @projects = @user.team_memberships.map{|tm| tm.project }
+    @student_projects = @user.team_memberships.map{|tm| tm.project }
     @project = Project.find(params[:id])
 
     respond_to do |format|

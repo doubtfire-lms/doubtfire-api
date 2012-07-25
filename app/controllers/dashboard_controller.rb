@@ -9,8 +9,9 @@ class DashboardController < ApplicationController
     elsif @user.is_convenor?
       redirect_to convenor_index_path
     end
-
-    @projects = @user.team_memberships.map{|tm| tm.project }
+    
+    @student_projects         = @user.team_memberships.map{|tm| tm.project } || []
+    @tutor_project_templates  = Team.where(:user_id => @user.id).map{|team| team.project_template }
   end
 
   private
