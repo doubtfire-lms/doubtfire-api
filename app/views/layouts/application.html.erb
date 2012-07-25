@@ -25,7 +25,12 @@
   </header>
 
   <div id="main" role="main">
-    <div class="container-fluid">  
+    <div class="container-fluid">
+      <div class="row-fluid">
+        <div class="page-banner">
+          <%= yield(:page_banner) %>
+        </div>
+      </div>
       <div class="row-fluid">
         <% if user_signed_in? %>
           <div class="span2">

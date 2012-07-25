@@ -13,3 +13,72 @@ body
 	background-color: white;
 	border: 1px solid #CCCCCC;
 }
+
+@widgetCornerRadius: 5px;
+
+.widget {
+	border: 1px solid #CCCCCC;
+	background-color: white;
+	.border-radius(@widgetCornerRadius);
+	margin-bottom: 20px;
+}
+
+.widget h2
+{
+	font-size: 12pt;
+	font-weight: 800;
+	padding: 5px 0 5px 20px;
+	border-bottom: 1px solid #CCCCCC;
+	color: #555555;
+	#gradient > .vertical(#FAFAFA, #E9E9E9);
+	.border-radius(@widgetCornerRadius @widgetCornerRadius 0 0);
+}
+
+.widget h2 i
+{
+	margin-right: 10px;	
+}
+
+.widget-content
+{
+	padding: 20px;
+	margin-top: -10px;
+	color: #888888;
+	font-size: 10pt;
+}
+
+.activity-feed-entry
+{
+	border-bottom: 1px dotted #CCCCCC;
+	padding: 10px 0;
+}
+
+.feed-entry-body
+{
+	width: 79%;
+	display: inline-block;
+}
+
+.feed-entry-time
+{
+	width: 20%;
+	display: inline-block;
+	color: #CCCCCC;
+	text-align: right;
+}
+
+.subject-summary
+{
+	border-bottom: 1px dotted #CCCCCC;
+	padding: 10px 0 10px 0;
+}
+
+.subject-summary h3
+{
+	display: inline;	
+}
+
+.page-banner .lead
+{
+	margin-left: 10px;
+}

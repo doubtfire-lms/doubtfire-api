@@ -1,4 +1,9 @@
-<% stylesheets 'dashboard.css' %>
+<% content_for :page_banner do %>
+  <h1>Convenor Dashboard</h1>  
+  <p class="lead"><%= "#{@user.first_name} #{@user.last_name}" %></p>
+  <hr />
+<% end %>
+
 <% content_for :sidebar do %>
   <ul class="nav nav-list">
     <li class="nav-header">

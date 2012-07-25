@@ -1,5 +1,9 @@
-<% stylesheets 'dashboard.css' %>
-<%- model_class = ProjectTemplate.new.class -%>
+<% content_for :page_banner do %>
+  <h1>Convenor Dashboard</h1>  
+  <p class="lead"><%= "#{@user.first_name} #{@user.last_name}" %></p>
+  <hr />
+<% end %>
+
 <% content_for :sidebar do %>
   <ul class="nav nav-list">
     <li class="nav-header">
@@ -25,6 +29,7 @@
         Project Templates
     </h2>
     <div class="widget-content">
+      <%- model_class = ProjectTemplate.new.class -%>
       <table class="table table-striped">
         <thead>
           <tr>
