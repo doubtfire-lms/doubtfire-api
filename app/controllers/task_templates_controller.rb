@@ -26,6 +26,7 @@ class TaskTemplatesController < ApplicationController
   def new
     @task_template = TaskTemplate.new
     @project_template = ProjectTemplate.find(params[:project_template_id])
+    @task_template.update_attributes(:project_template_id => @project_template.id)
 
     respond_to do |format|
       format.html # new.html.erb
@@ -74,10 +75,11 @@ class TaskTemplatesController < ApplicationController
   # DELETE /task_templates/1.json
   def destroy
     @task_template = TaskTemplate.find(params[:id])
+    @project_template = ProjectTemplate.find(@task_template.project_template_id)
     @task_template.destroy
 
     respond_to do |format|
-      format.html { redirect_to task_templates_url }
+      format.html { redirect_to project_template_path(@project_template.id), notice: "TaskTemplate was successfully deleted."}
       format.json { head :no_content }
     end
   end

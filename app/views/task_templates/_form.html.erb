@@ -1,5 +1,7 @@
 <%= simple_form_for @task_template, :html => { :class => 'well form-horizontal' } do |f| %>
-  <%= f.association :project_template, :prompt => "Select a project..." %>
+  <% if @project_template.nil? %>
+  	<%= f.association :project_template, :prompt => "Select a project..." %>
+  <% end %>
   <%= f.input :name %>
   <%= f.input :description, :as => :text, :input_html => { :rows => 5 } %>
   <%= f.input :weighting %>
