@@ -16,7 +16,8 @@ class ProjectTemplatesController < ApplicationController
   def show
     @project_template = ProjectTemplate.find(params[:id])
     @task_templates = TaskTemplate.where(:project_template_id => params[:id])
-
+    @project_users = User.joins(:team_memberships => :project).where(:projects => {:project_template_id => 1})
+    
     respond_to do |format|
       format.html # show.html.erb
       format.json { render json: @project_template }
