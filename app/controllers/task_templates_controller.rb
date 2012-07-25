@@ -25,6 +25,7 @@ class TaskTemplatesController < ApplicationController
   # GET /task_templates/new.json
   def new
     @task_template = TaskTemplate.new
+    @project_template = ProjectTemplate.find(params[:project_template_id])
 
     respond_to do |format|
       format.html # new.html.erb
