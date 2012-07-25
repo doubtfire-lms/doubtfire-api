@@ -15,6 +15,7 @@ class ProjectTemplatesController < ApplicationController
   # GET /project_templates/1.json
   def show
     @project_template = ProjectTemplate.find(params[:id])
+    @task_templates = TaskTemplate.where(:project_template_id => params[:id])
 
     respond_to do |format|
       format.html # show.html.erb
@@ -26,6 +27,7 @@ class ProjectTemplatesController < ApplicationController
   # GET /project_templates/new.json
   def new
     @project_template = ProjectTemplate.new
+    @convenors = User.where(:system_role => "convenor")
 
     respond_to do |format|
       format.html # new.html.erb
@@ -36,6 +38,7 @@ class ProjectTemplatesController < ApplicationController
   # GET /project_templates/1/edit
   def edit
     @project_template = ProjectTemplate.find(params[:id])
+    @convenors = User.where(:system_role => "convenor")
   end
 
   # POST /project_templates
@@ -45,6 +48,19 @@ class ProjectTemplatesController < ApplicationController
 
     respond_to do |format|
       if @project_template.save
+      
+        # Convenors can only add themselves as a convenor at the moment
+        if current_user.is_convenor?
+          @project_administrator = ProjectAdministrator.new(:project_template_id => @project_template.id, :user_id => current_user.id)
+          @project_administrator.save
+        elsif current_user.is_superuser?
+          # For superusers, create a corresponding ProjectAdministrator entry for each convenor
+          params[:convenor].each do |convenor_id|
+            @project_administrator = ProjectAdministrator.new(:project_template_id => @project_template.id, :user_id => convenor_id)
+            @project_administrator.save
+          end
+        end
+
         format.html { redirect_to @project_template, notice: 'ProjectTemplate was successfully created.' }
         format.json { render json: @project_template, status: :created, location: @project_template }
       else

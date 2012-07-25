@@ -12,4 +12,5 @@
  *= require bootstrap_and_overrides
  *= require d3
  *= require doubtfire
+ *= require bootstrap-datepicker
  */

@@ -4,27 +4,27 @@
 </div>
 
 <dl class="dl-horizontal">
-  <dt><strong><%= model_class.human_attribute_name(:project_id) %>:</strong></dt>
-  <dd><%= @task.project_id %></dd>
+  <dt><strong><%= model_class.human_attribute_name(:project_template_id) %>:</strong></dt>
+  <dd><%= @task_template.project_template_id %></dd>
   <dt><strong><%= model_class.human_attribute_name(:name) %>:</strong></dt>
-  <dd><%= @task.name %></dd>
+  <dd><%= @task_template.name %></dd>
   <dt><strong><%= model_class.human_attribute_name(:description) %>:</strong></dt>
-  <dd><%= @task.description %></dd>
+  <dd><%= @task_template.description %></dd>
   <dt><strong><%= model_class.human_attribute_name(:weighting) %>:</strong></dt>
-  <dd><%= @task.weighting %></dd>
+  <dd><%= @task_template.weighting %></dd>
   <dt><strong><%= model_class.human_attribute_name(:required) %>:</strong></dt>
-  <dd><%= @task.required %></dd>
+  <dd><%= @task_template.required %></dd>
   <dt><strong><%= model_class.human_attribute_name(:recommended_completion_date) %>:</strong></dt>
-  <dd><%= @task.recommended_completion_date %></dd>
+  <dd><%= @task_template.recommended_completion_date %></dd>
 </dl>
 
 <div class="form-actions">
   <%= link_to t('.back', :default => t("helpers.links.back")),
-              tasks_path, :class => 'btn'  %>
+              task_templates_path, :class => 'btn'  %>
   <%= link_to t('.edit', :default => t("helpers.links.edit")),
-              edit_task_path(@task), :class => 'btn' %>
+              edit_task_template_path(@task_template), :class => 'btn' %>
   <%= link_to t('.destroy', :default => t("helpers.links.destroy")),
-              task_path(@task),
+              task_template_path(@task_template),
               :method => 'delete',
               :confirm => t('.confirm', :default => t("helpers.links.confirm", :default => 'Are you sure?')),
               :class => 'btn btn-danger' %>

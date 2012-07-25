@@ -1,27 +1,75 @@
-<%- model_class = @project_template.class -%>
 <div class="page-header">
-  <h1><%=t '.title', :default => model_class.model_name.human %></h1>
+  <h1><%= @project_template.name %></h1>
 </div>
 
-<dl class="dl-horizontal">
-  <dt><strong><%= model_class.human_attribute_name(:name) %>:</strong></dt>
-  <dd><%= @project_template.name %></dd>
-  <dt><strong><%= model_class.human_attribute_name(:description) %>:</strong></dt>
-  <dd><%= @project_template.description %></dd>
-  <dt><strong><%= model_class.human_attribute_name(:start_date) %>:</strong></dt>
-  <dd><%= @project_template.start_date.strftime("%d %B %Y") %></dd>
-  <dt><strong><%= model_class.human_attribute_name(:end_date) %>:</strong></dt>
-  <dd><%= @project_template.end_date.strftime("%d %B %Y") %></dd>
-</dl>
+<!-- Information about the current project -->
+<div class="well">
+  <h2>Project Information</h2>
+  <hr />
+  <dl class="dl-horizontal">
+    <dt><strong><%= ProjectTemplate.human_attribute_name(:name) %>:</strong></dt>
+    <dd><%= @project_template.name %></dd>
+    <dt><strong><%= ProjectTemplate.human_attribute_name(:description) %>:</strong></dt>
+    <dd><%= @project_template.description %></dd>
+    <dt><strong><%= ProjectTemplate.human_attribute_name(:start_date) %>:</strong></dt>
+    <dd><%= @project_template.start_date.strftime("%d %B %Y") %></dd>
+    <dt><strong><%= ProjectTemplate.human_attribute_name(:end_date) %>:</strong></dt>
+    <dd><%= @project_template.end_date.strftime("%d %B %Y") %></dd>
+  </dl>
+  <hr />
+  <%= link_to t('.edit', :default => t("helpers.links.edit")), edit_project_template_path(@project_template), :class => 'btn' %>
+</div>
 
+<!-- Table of tasks for the current project -->
+<div class="well">
+  <h2>Project Tasks</h2>
+  <hr />
+  <% if @task_templates.empty? %>
+    <p>This project has no tasks.</p>
+  <% else %>
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th><%= TaskTemplate.human_attribute_name(:name) %></th>
+          <th><%= TaskTemplate.human_attribute_name(:description) %></th>
+          <th><%= TaskTemplate.human_attribute_name(:weighting) %></th>
+          <th><%= TaskTemplate.human_attribute_name(:required) %></th>
+          <th><%= TaskTemplate.human_attribute_name(:recommended_completion_date) %></th>
+          <th><%=t '.actions', :default => t("helpers.actions") %></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @task_templates.each do |task_template| %>
+          <tr>
+            <td><%= link_to task_template.name, task_template_path(task_template) %></td>
+            <td><%= task_template.description %></td>
+            <td><%= task_template.weighting %></td>
+            <td><%= "Required" if task_template.required %><%= "Optional" if not task_template.required %></td>
+            <td><%= task_template.recommended_completion_date.strftime("%d %B %Y") %></td>
+            <td>
+              <%= link_to t('.edit', :default => t("helpers.links.edit")),
+                          edit_task_template_path(task_template), :class => 'btn btn-mini' %>
+              <%= link_to t('.destroy', :default => t("helpers.links.destroy")),
+                          task_template_path(task_template),
+                          :method => :delete,
+                          :confirm => t('.confirm', :default => t("helpers.links.confirm", :default => 'Are you sure?')),
+                          :class => 'btn btn-mini btn-danger' %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+  <hr />
+  <%= link_to "Add new task", new_task_template_path, :class => 'btn btn-primary' %>
+</div>
+
+<!-- Action buttons (back, destroy) -->
 <div class="form-actions">
-  <%= link_to t('.back', :default => t("helpers.links.back")),
-              project_templates_path, :class => 'btn'  %>
-  <%= link_to t('.edit', :default => t("helpers.links.edit")),
-              edit_project_template_path(@project_template), :class => 'btn' %>
-  <%= link_to t('.destroy', :default => t("helpers.links.destroy")),
+  <%= link_to "Back to projects list", project_templates_path, :class => 'btn' %>
+  <%= link_to "Destroy project",
               project_template_path(@project_template),
               :method => 'delete',
-              :confirm => t('.confirm', :default => t("helpers.links.confirm", :default => 'Are you sure?')),
+              :confirm => t('.confirm', :default => t("helpers.links.confirm", :default => 'This project will be completely obliterated! Are you sure?')),
               :class => 'btn btn-danger' %>
 </div>
