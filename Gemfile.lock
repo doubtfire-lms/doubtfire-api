@@ -52,8 +52,6 @@ GEM
       multi_json (~> 1.0)
     faker (1.0.1)
       i18n (~> 0.4)
-    font-awesome-rails (0.2.1)
-      railties (~> 3.1)
     hike (1.2.1)
     hirb (0.7.0)
     i18n (0.6.0)
@@ -67,6 +65,9 @@ GEM
     less-rails (2.2.3)
       actionpack (>= 3.1)
       less (~> 2.2.0)
+    less-rails-fontawesome (0.2.1)
+      less-rails (>= 2.1.7)
+      railties (>= 3.1.1)
     libv8 (3.3.10.4)
     mail (2.4.4)
       i18n (>= 0.4.0)
@@ -143,10 +144,10 @@ DEPENDENCIES
   d3_rails
   devise
   faker
-  font-awesome-rails
   hirb
   jquery-rails
   less-rails
+  less-rails-fontawesome
   populator
   rails (= 3.2.6)
   sass-rails (~> 3.2.3)
