@@ -14,28 +14,19 @@
 				<div class="span7 widget">
 					<%= render 'layouts/activity_stream' %>
 				</div>
-				<div class="span5 widget">
-					<h2><i class="icon-bar-chart"></i>Progress</h2>
-					<div class="widget-content" id="progress-widget">
-						<%= render 'dashboard/project_progress', :project => @project %>
-					</div>
-				</div>
 			</div>
 
 			<div class="tab-pane" id="tasks-tab">
 				<div class="span7 widget">
 					<%= render 'layouts/task_list', :tasks => @project.tasks %>
 				</div>
-				<div class="span5 widget">
-					<h2><i class="icon-bar-chart"></i>Progress</h2>
-					<div class="widget-content" id="progress-widget">
-						<%= render 'dashboard/project_progress', :project => @project %>
-					</div>
+			</div>
+			<div class="span5 widget">
+				<h2><i class="icon-bar-chart"></i>Progress</h2>
+				<div class="widget-content" id="progress-widget">
+					<%= render 'dashboard/project_progress', :project => @project %>
 				</div>
 			</div>
 		</div>
 	</div>
-	<!-- <div class="row-fluid">
-		
-	</div> -->
 </div>
