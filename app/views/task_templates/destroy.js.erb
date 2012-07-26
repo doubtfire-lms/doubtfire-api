@@ -1,2 +1,5 @@
+// Build the row id string from the task_template
 var taskRowId = "task-" + "<%= @task_template.id %>" +  "-row";
+
+// Delete the corresponding row in the table
 $("#" + taskRowId).remove();
