@@ -165,8 +165,19 @@ namespace :db do
  
     complete_status = TaskStatus.where(:name=> "Complete").first
 
-    User.where(:first_name => ["Allan", "Rohan"]).each do |good_student|
-      good_student.team_memberships.each do |team_membership|
+    User.where(:first_name => "Allan").each do |allan|
+      allan.team_memberships.each do |team_membership|
+        project = team_membership.project
+
+        project.tasks.each do |task|
+          task.awaiting_signoff = true
+          task.save
+        end
+      end
+    end
+
+    User.where(:first_name => "Rohan").each do |rohan|
+      rohan.team_memberships.each do |team_membership|
         project = team_membership.project
 
         project.tasks.each do |task|
@@ -176,5 +187,6 @@ namespace :db do
         end
       end
     end
+
   end
 end

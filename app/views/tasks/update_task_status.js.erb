@@ -10,7 +10,7 @@ function labelForTaskStatus(status) {
 function updateTaskEntryStatus() {
 	var taskContainer 	= $("#task-"+<%= @task.id %>+"-entry");
 	var taskStatus = "<%= @task.task_status.name %>";
-	updateTaskStatusBadge(taskContainer, taskStatus);
+	// updateTaskStatusBadge(taskContainer, taskStatus);
 	updateTaskStatusControls(taskContainer, taskStatus);
 }
 
