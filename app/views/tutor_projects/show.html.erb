@@ -51,8 +51,12 @@
 								<div class="task-entry-body" id="task-<%= task.id %>-entry">
 									<p><%= task.project.team_membership.user.full_name %></p>
 									<div class="task-status-controls">
+										<a href="<%= update_task_status_path(task, "Needs Fixing") %>" data-method="put" class="task-status-button btn" data-remote="true">
+											Mark as Fix
+											<i class="icon-wrench"></i>
+										</a>
 										<a href="<%= update_task_status_path(task, "Complete") %>" data-method="put" class="task-status-button btn btn-success" data-remote="true">
-											Complete Task
+											Mark as Complete
 											<i class="icon-ok"></i>
 										</a>
 									</div>
