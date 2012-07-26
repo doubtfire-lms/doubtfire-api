@@ -34,6 +34,8 @@ class Task < ActiveRecord::Base
       :complete
     when "Not Submitted"
       :not_submitted
+    when "Needs Fixing"
+      :needs_fixing
     end
   end
 end

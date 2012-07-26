@@ -1,0 +1,79 @@
+<%= stylesheets 'tasks.css' %>
+
+<% content_for :sidebar do %>
+	<ul class="nav nav-list">
+		<li class="nav-header">Dashboard</li>
+		<li><%= link_to 'Home', root_url %></li>
+		<% unless @student_projects.empty? %>
+			<%= render 'dashboard/student_projects_links', :student_projects => @student_projects, :selected_student_project => @project %>
+		<% end %>
+		<% unless @tutor_project_templates.empty? %>
+			<%= render 'dashboard/tutor_projects_links', :tutor_projects => @tutor_project_templates, :selected_tutor_project => @project_template %>
+		<% end %>
+	</ul>
+<% end %>
+
+<div class="span10">
+	<div class="row-fluid tabbable">
+		<ul class="nav nav-pills">
+			<li><a href="#teams-tab" data-toggle="tab">Teams</a></li>
+			<li><a href="#marking-tab" data-toggle="tab">Marking</a></li>
+		</ul>
+		<div class="tab-content">
+			<div class="tab-pane active" id="teams-tab">
+				<div class="span7 widget">
+					<h2><i class="icon-group"></i>Teams</h2>
+					<div class="widget-content">
+						<% @tutor_teams.each do |team| %>
+							<h3><%= team.meeting_time %></h3>
+							<% team.team_memberships.each do |team_membership| %>
+								<p><%= team_membership.user.full_name %></p>
+								<p><%= team_membership.project.project_status.health %></p>
+							<% end %>
+						<% end %>
+					</div>
+				</div>
+			</div>
+
+			<div class="tab-pane" id="marking-tab">
+				<div class="span7 widget">
+					<h2><i class="icon-tasks"></i>Marking</h2>
+					<div class="widget-content">
+						<% if @unmarked_tasks.empty? %>
+							<p>There are currently no tasks that have been assigned to you to mark.</p>
+						<% else %>
+							<% @unmarked_tasks.each do |task| %>
+							<div class="task-list-entry">
+								<h3 style="display: inline">
+									<%= task.task_template.name %>			
+								</h3>
+								<%= status_badge_for_task task %>
+								<div class="task-entry-body" id="task-<%= task.id %>-entry">
+									<p><%= task.project.team_membership.user.full_name %></p>
+									<div class="task-status-controls">
+										<a href="<%= update_task_status_path(task, "Needs Fixing") %>" data-method="put" class="task-status-button btn" data-remote="true">
+											Mark as Fix
+											<i class="icon-wrench"></i>
+										</a>
+										<a href="<%= update_task_status_path(task, "Complete") %>" data-method="put" class="task-status-button btn btn-success" data-remote="true">
+											Mark as Complete
+											<i class="icon-ok"></i>
+										</a>
+									</div>
+								</div>
+							</div>
+							<% end %>
+						<% end %>
+					</div>
+				</div>
+			</div>
+
+			<div class="span5 widget">
+				<h2><i class="icon-bar-chart"></i>Summary</h2>
+				<div class="widget-content">
+					
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

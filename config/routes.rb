@@ -1,4 +1,6 @@
 Doubtfire::Application.routes.draw do
+  get "tutor_projects/show"
+
   get "tasks/index"
   get "tasks/show"
 
@@ -13,7 +15,8 @@ Doubtfire::Application.routes.draw do
   resources :teams
   resources :superuser_administration, :only => :index, :path => 'administration'
   resources :convenor, :only => :index
-  get "/convenor/projects/:id" => "convenor_project#index", :as => 'convenor_project'
+  get "/convenor/projects/:id"  => "convenor_project#index",  :as => 'convenor_project'
+  get "/tutor/projects/:id"     => "tutor_projects#show",     :as => 'tutor_project'
 
   resources :projects do
     resources :tasks, :only => :index

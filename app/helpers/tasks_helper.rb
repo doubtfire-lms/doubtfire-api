@@ -12,9 +12,10 @@ module TasksHelper
           "label label-warning" # Just show a warning label if task is overdue
         end
       else
-        "label" # Just return nil if there is nothing exceptional about the task's status
+        "label" # Just return standard if there is nothing exceptional about the task's status
       end
     when :needs_fixing
+      "label label-info" # Info for needs fixing
     when :complete
       "label label-success" # Success if the task is complete
     end

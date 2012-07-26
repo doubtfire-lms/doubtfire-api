@@ -1,21 +1,35 @@
-<% stylesheets 'dashboard.css' %>
-<div class="row-fluid">
-  <div class="page-header">
-    <h1>Convenor Dashboard</h1>  
-    <p class="lead"><%= "#{@user.first_name} #{@user.last_name}" %></p>
-  </div>
-</div>
-<%- model_class = ProjectTemplate.new.class -%>
-<div class="row-fluid">
-  <!-- Sidebar -->
-  <div class="span2">
-      <%= render 'layouts/admin_menu' %>
-  </div>
-  <div class="widget span10">
+<% content_for :page_banner do %>
+  <h1>Convenor Dashboard</h1>  
+  <p class="lead"><%= "#{@user.first_name} #{@user.last_name}" %></p>
+  <hr />
+<% end %>
+
+<% content_for :sidebar do %>
+  <ul class="nav nav-list">
+    <li class="nav-header">
+      Navigation
+    </li>
+    <li>
+      <%= link_to "Dashboard", root_url %>
+    </li>
+    <li class="nav-header">
+      Administration
+    </li>
+    <li class="active">
+      <%= link_to "Projects", project_templates_path %>
+    </li>
+    <li>
+      <%= link_to "Students", users_path %>
+    </li>
+  </ul>
+<% end %>
+<div class="span10">
+  <div class="widget">
     <h2>
         Project Templates
     </h2>
     <div class="widget-content">
+      <%- model_class = ProjectTemplate.new.class -%>
       <table class="table table-striped">
         <thead>
           <tr>

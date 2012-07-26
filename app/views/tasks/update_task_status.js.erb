@@ -2,6 +2,9 @@ function labelForTaskStatus(status) {
  	if (status === "Complete") {
  		return "label label-success";
  	}
+ 	else if (status === "Needs Fixing") {
+ 		return "label label-info";
+ 	}
  	else {
  		return "label";
  	}
