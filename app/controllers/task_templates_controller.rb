@@ -40,6 +40,11 @@ class TaskTemplatesController < ApplicationController
   # GET /task_templates/1/edit
   def edit
     @task_template = TaskTemplate.find(params[:id])
+
+    respond_to do |format|
+      format.html
+      format.js
+    end
   end
 
   # POST /task_templates
@@ -61,15 +66,17 @@ class TaskTemplatesController < ApplicationController
   # PUT /task_templates/1
   # PUT /task_templates/1.json
   def update
-    @task_template = TaskTemplate.find(params[:id])
-
+    @task_template = TaskTemplate.find(params[:task_template_id])
+    
     respond_to do |format|
       if @task_template.update_attributes(params[:task_template])
         format.html { redirect_to project_template_path(@task_template.project_template_id), notice: "TaskTemplate was successfully updated."}
         format.json { head :no_content }
+        format.js
       else
         format.html { render action: "edit" }
         format.json { render json: @task_template.errors, status: :unprocessable_entity }
+        format.js 
       end
     end
   end
@@ -83,7 +90,35 @@ class TaskTemplatesController < ApplicationController
 
     respond_to do |format|
       format.html { redirect_to project_template_path(@project_template.id), notice: "TaskTemplate was successfully deleted."}
+      format.js
       format.json { head :no_content }
+    end
+  end
+
+  # Updates a task template
+  # POST /project_templates/:project_template_id/update_task/:task_template_id
+  def update_project_task
+    @task_template = TaskTemplate.find(params[:task_template_id])
+    
+    respond_to do |format|
+
+      # Update each of the model fields from the params. 
+      # @TODO:It would be nice to find a better way of doing this.
+      @task_template.name = params[:name]
+      @task_template.description = params[:description]
+      @task_template.weighting = params[:weighting]
+      @task_template.required = params[:required]
+      @task_template.recommended_completion_date = params[:recommended_completion_date]
+
+      if @task_template.save
+        format.html { redirect_to project_template_path(@task_template.project_template_id), notice: "TaskTemplate was successfully updated."}
+        format.json { head :no_content }
+        format.js
+      else
+        format.html { render action: "edit" }
+        format.json { render json: @task_template.errors, status: :unprocessable_entity }
+        format.js 
+      end
     end
   end
 end

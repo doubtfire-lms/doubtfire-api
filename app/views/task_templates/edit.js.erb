@@ -1,0 +1,5 @@
+// Build the row id string from the task_template
+var taskRowId = "task-" + "<%= @task_template.id %>" +  "-row";
+
+// Replace the row with the partial in _task_table_row_form.html.erb.
+$("#" + taskRowId).replaceWith("<%=j render :partial => 'tasks_table_row_form', :locals => { :task_template => @task_template } %>");

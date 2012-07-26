@@ -15,7 +15,7 @@ namespace :db do
     # List of first and last names to use
     names = {"Allan" => "Jones",
          "Rohan" => "Liston",
-         "Joost" => "Cornelius Pocohontas Archimedes Samantha Evelyn Goldmember Funke Kupper",
+         "Joost" => "Cornelius Copernicus Pocohontas Archimedes Gandalf Bilbo Samantha Evelyn Goldmember Funke Kupper",
          "Akihiro" => "Noguchi"}
 
     # List of subject names to use

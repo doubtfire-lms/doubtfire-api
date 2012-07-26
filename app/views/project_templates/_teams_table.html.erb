@@ -1,0 +1,28 @@
+ <table class="table table-striped">
+  <thead>
+    <tr>
+      <th>Manager</th>
+      <th><%= Team.human_attribute_name(:meeting_time) %></th>
+      <th><%= Team.human_attribute_name(:meeting_location) %></th>
+      <th><%=t '.actions', :default => t("helpers.actions") %></th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @project_teams.each do |team| %>
+      <tr>
+        <td><%= User.find(team.user_id).full_name %></td>
+        <td><%= team.meeting_time %></td>
+        <td><%= team.meeting_location %></td>
+        <td>
+          <%= link_to t('.edit', :default => t("helpers.links.edit")),
+                      edit_team_path(team), :class => 'btn btn-mini' %>
+          <%= link_to t('.destroy', :default => t("helpers.links.destroy")),
+                      team_path(team),
+                      :method => :delete,
+                      :confirm => t('.confirm', :default => t("helpers.links.confirm", :default => 'Are you sure?')),
+                      :class => 'btn btn-mini btn-danger' %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
