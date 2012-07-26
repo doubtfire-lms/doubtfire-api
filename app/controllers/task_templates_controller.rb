@@ -66,7 +66,7 @@ class TaskTemplatesController < ApplicationController
   # PUT /task_templates/1
   # PUT /task_templates/1.json
   def update
-    @task_template = TaskTemplate.find(params[:task_template_id])
+    @task_template = TaskTemplate.find(params[:id])
     
     respond_to do |format|
       if @task_template.update_attributes(params[:task_template])
@@ -99,26 +99,23 @@ class TaskTemplatesController < ApplicationController
   # POST /project_templates/:project_template_id/update_task/:task_template_id
   def update_project_task
     @task_template = TaskTemplate.find(params[:task_template_id])
-    
+    Rails.logger.info("============PARAMS: #{params.inspect}")
     respond_to do |format|
-
-      # Update each of the model fields from the params. 
-      # @TODO:It would be nice to find a better way of doing this.
-      @task_template.name = params[:name]
-      @task_template.description = params[:description]
-      @task_template.weighting = params[:weighting]
-      @task_template.required = params[:required]
-      @task_template.recommended_completion_date = params[:recommended_completion_date]
-
-      if @task_template.save
+      if @task_template.update_attributes(params[:task_template])
         format.html { redirect_to project_template_path(@task_template.project_template_id), notice: "TaskTemplate was successfully updated."}
         format.json { head :no_content }
         format.js
       else
         format.html { render action: "edit" }
         format.json { render json: @task_template.errors, status: :unprocessable_entity }
-        format.js 
+        format.js { render action: "edit" }
       end
+    end
+  end
+
+  def cancel
+    respond_to do |format|
+      format.js
     end
   end
 end

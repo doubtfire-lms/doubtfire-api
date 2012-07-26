@@ -1,14 +1,13 @@
 <tr id="task-<%= task_template.id %>-row">
-  <form id="task-<%= task_template.id %>-form" action="<%= update_project_task_path(task_template.project_template_id, task_template) %>" method="post" data-method="post" data-remote="true">
-  	<td><input type="text" name="name" value="<%= task_template.name %>" /></td>
-  	<td><input type="text" name="description" value="<%= task_template.description %>" /></td>
-  	<td><input type="text" name="weighting" value="<%= task_template.weighting %>" /></td>
-  	<td><input type="checkbox" name="required" checked="<%= task_template.required %>" /></td>
-  	<td><input type="text" name="recommended_completion_date" value="<%= task_template.recommended_completion_date.strftime('%Y-%m-%d') %>" data-behaviour="datepicker"/></td>
-  	<td>
-  		<input type="submit" value="Update" class="btn btn-mini btn-success" />
-  		<input type="button" 
-  			   value="Cancel" 
-  			   class="btn btn-mini btn-danger" />
-  	</td>
+	<%= simple_form_for task_template, :url => update_project_task_path(task_template.project_template_id, task_template), :remote => true do |f| %>
+		<td><%= f.input :name, :label => false %></td>
+		<td><%= f.input :description, :label => false %></td>
+		<td><%= f.input :weighting, :label => false %></td>
+		<td><%= f.input :required, :label => false %></td>
+		<td><%= f.input :recommended_completion_date, :as => :string, :label => false, :input_html => {"data-behaviour" => "datepicker", :value => "#{task_template.recommended_completion_date.strftime('%Y-%m-%d')}"}  %></td>
+		<td>
+			<%= f.button :submit, "Update", :class => "btn btn-mini btn-success" %>
+			<a href="#" class="btn btn-mini btn-danger">Cancel</a>
+		</td>
+	<% end %>
 </tr>
