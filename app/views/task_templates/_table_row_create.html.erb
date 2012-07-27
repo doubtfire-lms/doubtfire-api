@@ -1,0 +1,13 @@
+<tr id="task-<%= task_template.id %>-row">
+	<%= simple_form_for task_template, :url => create_project_task_path(project_template.id), :remote => true do |f| %>
+		<td><%= f.input :name, :label => false %></td>
+		<td><%= f.input :description, :label => false %></td>
+		<td><%= f.input :weighting, :label => false %></td>
+		<td><%= f.input :required, :label => false %></td>
+		<td><%= f.input :recommended_completion_date, :as => :string, :label => false, :input_html => {"data-behaviour" => "datepicker", :value => "#{Date.today.strftime('%Y-%m-%d')}"}  %></td>
+		<td>
+			<%= f.button :submit, "Create", :class => "btn btn-mini btn-success" %>
+			<a href="#" data-remote="true" data-method="get" class="btn btn-mini btn-danger">Cancel</a>
+		</td>
+	<% end %>
+</tr>

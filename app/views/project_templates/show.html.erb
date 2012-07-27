@@ -31,7 +31,7 @@
       <%= render 'task_templates/table' %>
     <% end %>
     <hr />
-    <button class="btn btn-primary" onclick="createNewTask()">Create new task</a>
+    <%= link_to "Create new task", new_project_task_path(@project_template), :class => 'btn btn-primary', "data-remote" => true %>
   </div>
 </div>
 
