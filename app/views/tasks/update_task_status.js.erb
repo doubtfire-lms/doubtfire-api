@@ -14,7 +14,7 @@ function updateTaskEntryStatus() {
 	var taskContainer 	= $("#task-"+<%= @task.id %>+"-entry");
 	var taskStatus = "<%= @task.task_status.name %>";
 	updateTaskStatusBadge(taskContainer, taskStatus);
-	updateTaskStatusControls(taskContainer, taskStatus);
+	// updateTaskStatusControls(taskContainer, taskStatus);
 }
 
 function updateTaskStatusControls(taskContainer, status) {
