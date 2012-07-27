@@ -29,7 +29,8 @@ Doubtfire::Application.routes.draw do
   get "/convenor/projects/:id"  => "convenor_project#index",  :as => 'convenor_project'
 
   # Tutor context routes
-  get "/tutor/projects/:id"     => "tutor_projects#show",     :as => 'tutor_project'
+  get "/tutor/projects/:id" =>                                "tutor_projects#show",  :as => 'tutor_project'
+  get "/tutor/projects/:project_id/students/:student_id"  =>  "tutor_project_students#show",  :as => 'tutor_project_student'
 
   # Go to dashboard home by default
   root :to => "dashboard#index" 
