@@ -17,12 +17,14 @@ Doubtfire::Application.routes.draw do
 
   put 'tasks/:task_id/awaiting_signoff/:awaiting_signoff' => 'tasks#awaiting_signoff', :via => :put, :as => 'awaiting_signoff'
   put 'tasks/:task_id/update_task_status/:status' => 'tasks#update_task_status', :via => :put, :as => 'update_task_status'
-
-  # Project administrator context routes
-  get 'project_templates/:project_template_id/new_task' => 'task_templates#new', :as => 'new_project_task'
-  get 'project_templates/:project_template_id/new_team' => 'teams#new', :as => 'new_project_team'
   get "tasks/index"
   get "tasks/show"
+
+  # Project administrator context routes
+  get 'project_templates/:project_template_id/new_task' => 'task_templates#new_project_task', :as => 'new_project_task'
+  get 'project_templates/:project_template_id/new_team' => 'teams#new', :as => 'new_project_team'
+  post 'project_templates/:project_template_id/update_task/:task_template_id' => 'task_templates#update_project_task', :via => :post, :as => 'update_project_task'
+  get 'project_templates/:project_template_id/cancel_update_task/:task_template_id' => 'task_templates#cancel_update_task', :as => 'cancel_update_task'
 
   # Convenor context routes
   resources :convenor, :only => :index
@@ -36,3 +38,4 @@ Doubtfire::Application.routes.draw do
   root :to => "dashboard#index" 
 
 end
+

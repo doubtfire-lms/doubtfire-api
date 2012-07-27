@@ -1,0 +1,9 @@
+// Build the row id string from the task_template
+var taskRowId = "task-" + "<%= @task_template.id %>" +  "-row";
+var partial = "<%=j render :partial => 'task_templates/table_row_edit', :locals => { :task_template => @task_template } %>"
+
+// Render the table_row_edit partial. If we just created a new task via the 'Create' button, it won't have a row in the table yet. 
+if(document.getElementById(taskRowId) != null)
+	$("#" + taskRowId).replaceWith(partial);	// Row already exists - replace it with the form
+else
+	$("#tasks-table").append(partial);			// No row exists yet - append one

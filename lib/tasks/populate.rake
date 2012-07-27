@@ -21,7 +21,7 @@ namespace :db do
     names = {
       "Allan" => "Jones",
       "Rohan" => "Liston",
-      "Joost" => "Cornelius Pocohontas Archimedes Samantha Evelyn Goldmember Funke Kupper",
+      "Joost" => "Cornelius Copernicus Pocohontas Archimedes Gandalf Bilbo Samantha Evelyn Goldmember Funke Kupper",
       "Akihiro" => "Noguchi"
     }
 
