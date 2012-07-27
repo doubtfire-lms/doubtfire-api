@@ -1,4 +1,6 @@
 class TutorProjectsController < ApplicationController
+  include TutorProjectsHelper
+
   before_filter :authenticate_user!
   before_filter :load_current_user
 
@@ -10,7 +12,8 @@ class TutorProjectsController < ApplicationController
     @tutor_team_projects      = @tutor_teams.map{|team| team.team_memberships }.flatten.map{|team_membership| team_membership.project }
 
     @project_template         = ProjectTemplate.find(params[:id])
-    @unmarked_tasks           = @tutor_team_projects.map{|project| project.tasks }.flatten.select{|task| task.awaiting_signoff }
+
+    @unmarked_tasks = unmarked_project_tasks(@project_template, @user)
   end
 
   def load_current_user
