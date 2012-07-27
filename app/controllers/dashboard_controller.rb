@@ -11,7 +11,7 @@ class DashboardController < ApplicationController
     end
     
     @student_projects         = @user.team_memberships.map{|tm| tm.project } || []
-    @tutor_project_templates  = Team.where(:user_id => @user.id).map{|team| team.project_template }
+    @tutor_project_templates  = Team.where(:user_id => @user.id).map{|team| team.project_template }.uniq
   end
 
   private
