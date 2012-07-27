@@ -30,8 +30,6 @@ Doubtfire::Application.routes.draw do
 
   # Tutor context routes
   get "/tutor/projects/:id"     => "tutor_projects#show",     :as => 'tutor_project'
-  get "tutor_projects/show"
-
 
   # Go to dashboard home by default
   root :to => "dashboard#index" 
