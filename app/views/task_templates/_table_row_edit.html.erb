@@ -7,7 +7,7 @@
 		<td><%= f.input :recommended_completion_date, :as => :string, :label => false, :input_html => {"data-behaviour" => "datepicker", :value => "#{task_template.recommended_completion_date.strftime('%Y-%m-%d')}"}  %></td>
 		<td>
 			<%= f.button :submit, "Update", :class => "btn btn-mini btn-success" %>
-			<a href="#" class="btn btn-mini btn-danger">Cancel</a>
+			<a href="<%= cancel_update_task_path(task_template.project_template_id, task_template.id) %>" data-remote="true" data-method="get" class="btn btn-mini btn-danger">Cancel</a>
 		</td>
 	<% end %>
 </tr>

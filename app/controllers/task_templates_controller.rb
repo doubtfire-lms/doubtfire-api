@@ -99,7 +99,7 @@ class TaskTemplatesController < ApplicationController
   # POST /project_templates/:project_template_id/update_task/:task_template_id
   def update_project_task
     @task_template = TaskTemplate.find(params[:task_template_id])
-    Rails.logger.info("============PARAMS: #{params.inspect}")
+    
     respond_to do |format|
       if @task_template.update_attributes(params[:task_template])
         format.html { redirect_to project_template_path(@task_template.project_template_id), notice: "TaskTemplate was successfully updated."}
@@ -113,9 +113,15 @@ class TaskTemplatesController < ApplicationController
     end
   end
 
-  def cancel
+  # Cancels updating a project task
+  def cancel_update_task
+    @task_template = TaskTemplate.find(params[:task_template_id])
+
     respond_to do |format|
-      format.js
+        format.html { redirect_to project_template_path(@task_template.project_template_id) }
+        format.json { head :no_content }
+        format.js
     end
   end
+
 end
