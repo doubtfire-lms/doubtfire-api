@@ -7,25 +7,34 @@ namespace :db do
     require 'bcrypt'
 
     # Collection of tutor/convenor/superuser ids to avoid hard-coding
-    ids = {"tutor1" => -1,
-         "tutor2" => -1,
-         "convenor" => -1,
-         "superuser" => -1}
+    ids = {
+      "convenor" => -1,
+      "superuser" => -1
+    }
+
+    tutors = {
+      acain:      {first: "Andrew",   last: "Cain", id: -1},
+      cwoodward:  {first: "Clinton",  last: "Woodward", id: -1 },
+    }
 
     # List of first and last names to use
-    names = {"Allan" => "Jones",
-         "Rohan" => "Liston",
-         "Joost" => "Cornelius Pocohontas Archimedes Samantha Evelyn Goldmember Funke Kupper",
-         "Akihiro" => "Noguchi"}
+    names = {
+      "Allan" => "Jones",
+      "Rohan" => "Liston",
+      "Joost" => "Cornelius Pocohontas Archimedes Samantha Evelyn Goldmember Funke Kupper",
+      "Akihiro" => "Noguchi"
+    }
 
     # List of subject names to use
-    subjects = ["Introduction To Programming",
-          "Object-Oriented Programming",
-          "Games Programming",
-          "AI For Games"]
+    subjects = [
+      "Introduction To Programming",
+      "Object-Oriented Programming",
+      "Games Programming",
+      "AI For Games"
+    ]
 
     # Collection of weekdays
-    days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+    days = %w[Monday Tuesday Wednesday Thursday Friday]
 
     # Clear the database
     [ProjectTemplate, Project, ProjectStatus, TaskTemplate, Task, TaskStatus, Team, TeamMembership, User, ProjectAdministrator].each(&:delete_all)
@@ -50,16 +59,16 @@ namespace :db do
     end
 
     # Create 2 tutors
-    tutor_num = 1
-    User.populate(2) do |tutor|
-      tutor.email = "tutor#{tutor_num}@doubtfire.com"
-      tutor.encrypted_password = BCrypt::Password.create("password")
-      tutor.first_name = "Tutor"
-      tutor.last_name =  "#{tutor_num}"
-      tutor.sign_in_count = 0
-      tutor.system_role = "user"
-      ids["tutor#{tutor_num}"] = tutor.id
-      tutor_num += 1
+    tutors.each do |username, info|
+      User.populate(1) do |tutor|
+        tutor.email = "#{username.to_s}@doubtfire.com"
+        tutor.encrypted_password  = BCrypt::Password.create("password")
+        tutor.first_name          = info[:first]
+        tutor.last_name           = info[:last]
+        tutor.sign_in_count       = 0
+        tutor.system_role         = "user"
+        tutors[username][:id]     = tutor.id
+      end
     end
 
     # Create 1 convenor
@@ -118,10 +127,10 @@ namespace :db do
           team.meeting_time = "#{days.sample} #{8 + rand(12)}:#{['00', '30'].sample}"    # Mon-Fri 8am-7:30pm
           team.meeting_location = "#{['EN', 'BA'].sample}#{rand(7)}#{rand(1)}#{rand(9)}" # EN###/BA###
           
-          if team_num == 1
-            team.user_id = ids["tutor1"]  # Tutor 1
+          if ["Introduction To Programming", "Object-Oriented Programming"].include? subject
+            team.user_id = tutors[:acain][:id]  # Tutor 1
           else
-            team.user_id = ids["tutor2"]  # Tutor 2
+            team.user_id = tutors[:cwoodward][:id]  # Tutor 2
           end
           
           team_num += 1
@@ -171,18 +180,6 @@ namespace :db do
 
         project.tasks.each do |task|
           task.awaiting_signoff = true
-          task.save
-        end
-      end
-    end
-
-    User.where(:first_name => "Rohan").each do |rohan|
-      rohan.team_memberships.each do |team_membership|
-        project = team_membership.project
-
-        project.tasks.each do |task|
-          task.completion_date  = Date.today
-          task.task_status      = complete_status
           task.save
         end
       end
