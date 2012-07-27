@@ -2,14 +2,14 @@
 
 <div class="subject-summary">
 	<h3><%= project.project_template.name %></h3>
-	<%= status_badge(nil) %>
+	<%= status_badge(project) %>
 	
-	<%= project_status_summary(nil) %>
+	<%= project_status_summary(project) %>
 
 	<%= content_tag "div", class: "burndownchart", data: {url: project_url(project)} do %>
 		<svg style="height: 200px"></svg>
 	<% end %>
-	<%= will_complete_based_on_velocity %>
-	<%= guidance_based_on_velocity %>
+	<%= will_complete_based_on_velocity(project) %>
 	<%= projected_date_of_completion_vs_deadline(project) %>
+	<%= guidance_based_on_velocity(project) %>
 </div>

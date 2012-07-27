@@ -28,6 +28,10 @@ class Task < ActiveRecord::Base
     date > recommended_date and date.weeks_ago(2) > recommended_date
   end
 
+  def complete?
+    status == :complete
+  end
+
   def status
     case task_status.name
     when "Complete"

@@ -9,7 +9,15 @@ class Project < ActiveRecord::Base
 
   has_many :tasks
 
-  def self.overdue_tasks(date=Date.today)
+  def overdue_tasks(date=Date.today)
     tasks.select{|task| task.overdue? date }
+  end
+
+  def has_commenced?
+    Time.zone.now > project_template.start_date
+  end
+
+  def has_concluded?
+    Time.zone.now > project_template.end_date
   end
 end

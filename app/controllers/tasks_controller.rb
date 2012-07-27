@@ -19,6 +19,10 @@ class TasksController < ApplicationController
     @task.task_status   = task_status
     @task.awaiting_signoff = false # Because only staff should be able to change task status
 
+    if @task.complete?
+      @task.completion_date = Time.zone.now
+    end
+
     if @task.save
       respond_to do |format|
         format.html { redirect_to @project, notice: 'Task was successfully completed.' }

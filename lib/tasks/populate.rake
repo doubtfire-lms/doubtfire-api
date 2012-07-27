@@ -98,8 +98,8 @@ namespace :db do
       ProjectTemplate.populate(1) do |project_template|
         project_template.name = subject
         project_template.description  = Populator.words(10..15)
-        project_template.start_date   = Date.today
-        project_template.end_date     = 13.weeks.from_now
+        project_template.start_date   = Date.new(2012, 8, 6)
+        project_template.end_date     = 13.weeks.since project_template.start_date
 
         # Assign a convenor to each project
         ProjectAdministrator.populate(1) do |pa|
@@ -115,7 +115,7 @@ namespace :db do
           task_template.name = "Assignment #{assignment_num}"
           task_template.project_template_id = project_template.id
           task_template.description = Populator.words(5..10)
-          task_template.weighting = BigDecimal.new("#{1 / num_tasks}")
+          task_template.weighting = BigDecimal.new("#{1.to_f / num_tasks.to_f}")
           task_template.required = rand < 0.9   # 10% chance of being false
           task_template.recommended_completion_date = assignment_num.weeks.from_now # Assignment 6 due week 6, etc.
         end
@@ -185,5 +185,15 @@ namespace :db do
       end
     end
 
+    User.where(:first_name => "Rohan").each do |rohan|
+      rohan.team_memberships.each do |team_membership|
+        project = team_membership.project
+
+        project.tasks.each do |task|
+          task.task_status = complete_status
+          task.save
+        end
+      end
+    end
   end
 end
