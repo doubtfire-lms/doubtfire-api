@@ -15,7 +15,6 @@ class Project < ActiveRecord::Base
 
   def has_commenced?
     Time.zone.now > project_template.start_date
-    true
   end
 
   def has_concluded?
