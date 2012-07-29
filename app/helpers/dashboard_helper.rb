@@ -40,6 +40,22 @@ module DashboardHelper
     end
   end
 
+  def task_completion(project)
+    tasks = project.tasks
+    completed_tasks         = tasks.select{|task| task.task_status.name == "Complete" }
+    completed_task_count    = completed_tasks.size
+    total_task_count        = tasks.size
+
+    raw("<p><strong>#{completed_task_count}</strong> out of <strong>#{total_task_count}</strong> tasks remaining.</p>")
+  end
+
+  def health_label(project)
+    raw(["<div class=\"health-label\">",
+          "\t<span class=\"statistical-figure\">70%</span>",
+          "\t<p class=\"statistical-figure-subtext\">Health</p>",
+        "</div>"].join("\n"))
+  end
+
   def guidance_based_on_velocity(project)
     if !project.has_commenced?
       raw("<p>To achieve the best result possible for this subject, ensure that you are getting tasks marked off regularly and often.</p>")
@@ -49,12 +65,14 @@ module DashboardHelper
   end
 
   def projected_date_of_completion_vs_deadline(project)
-    deadline = project.project_template.end_date 
+    start_date  = project.project_template.start_date
+    deadline    = project.project_template.end_date
 
     if !project.has_commenced?
-      raw("<p>This project is yet commence. Make sure you set a good pace early on to avoid falling behind.</p>")
+      start_date_string = start_date.strftime("#{start_date.day.ordinalize} of %B")
+      raw("<p>This project commences on the <strong>#{start_date_string}</strong>. Make sure you set a good pace early on to avoid falling behind.</p>")
     elsif project.has_concluded?
-      raw("<p>Project has concluded</p>")
+      raw("<p>This project ended on the #{deadline.strftime("#{deadline.day.ordinalize} of %B")}</p>")
     else
       project_date_string = deadline.strftime("#{deadline.day.ordinalize} of %B")
       project_date_of_completion_text = "Projected end date is the <strong>#{project_date_string}</strong>"
