@@ -50,21 +50,22 @@ function dataForProjectJSON(projectJSON) {
   // Determine the starting weight for the project based
   // on the number of tasks in the project and the task
   // weight constant
-  var remainingWeight = taskCount * TASK_WEIGHT;
+  var weightCountdown = taskCount * TASK_WEIGHT;
+  var remainingWeight = weightCountdown;
 
   // Set an initial point for the week prior to starting,
   // when no tasks have yet been completed
   var recommendedTaskCompletion = [
-    {x: 0, y: remainingWeight}
+    {x: 0, y: weightCountdown}
   ];
 
   var actualTaskCompletion = [
-    {x: 0, y: remainingWeight}
+    {x: 0, y: weightCountdown}
   ];
 
   $.each(projectTasks, function(i, task){
     // Determine the remaining weight value (i.e. y value for the chart)
-    remainingWeight = remainingWeight - TASK_WEIGHT;
+    weightCountdown = weightCountdown - TASK_WEIGHT;
 
     // Determine the week at which the task is to be completed at by comparing
     // the 'due date' to the current 
@@ -72,6 +73,7 @@ function dataForProjectJSON(projectJSON) {
 
     if (task.task_status_id == 3) { // 3 = Complete; TODO: Fix
 
+      remainingWeight = remainingWeight - TASK_WEIGHT;
       var taskCompletionDate = null;
 
       if (task.completion_date != null) {
@@ -85,7 +87,7 @@ function dataForProjectJSON(projectJSON) {
       actualTaskCompletion.push({x: taskCompletionWeek, y: remainingWeight});
     }
 
-    recommendedTaskCompletion.push({x: taskDueWeek, y: remainingWeight});
+    recommendedTaskCompletion.push({x: taskDueWeek, y: weightCountdown});
   });
 
   recommendedTaskCompletion.push({x: projectCompletionDate.diff(projectStartDate, 'weeks'), y: 0});
