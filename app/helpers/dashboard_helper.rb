@@ -33,7 +33,7 @@ module DashboardHelper
   def will_complete_based_on_velocity(project)
     complete_based_on_velocity = early_finish
 
-    if !project.has_commenced? or project.has_concluded
+    if !project.has_commenced? or project.has_concluded?
       nil
     else
       raw("<p>#{complete_based_on_velocity}</p>")
@@ -69,7 +69,7 @@ module DashboardHelper
   def project_status_summary(project)
     if !project.has_commenced?
     status_summary = "This project has not commenced. Best of luck for the upcoming start of the project!"
-    elsif project.has_concluded
+    elsif project.has_concluded?
       status_summary = "This project has concluded. Congratulations on the great result!"
     else
       status_summary = ahead_of_schedule_text
