@@ -25,11 +25,10 @@ class TeamsController < ApplicationController
   # GET /teams/new.json
   def new
     @team = Team.new
-    @project_template = ProjectTemplate.find(params[:project_template_id])
     
     # Create a new task template, populate it with sample data, and save it immediately.
-    @team.project_template_id = @project_template.id
-    @team.user_id = 1 #ProjectAdministrator.where(:project_template_id => @project_template.id).first.select(:user_id)
+    @team.project_template_id = params[:project_template_id]
+    @team.user_id = current_user.id
     @team.meeting_time = "Enter a regular meeting time."
     @team.meeting_location = "Enter a location."
     @team.save
@@ -37,7 +36,7 @@ class TeamsController < ApplicationController
     respond_to do |format|
       format.html # new.html.erb
       format.json { render json: @team }
-      format.js { render :action => :edit }
+      format.js { render action: "edit" }
     end
   end
 
