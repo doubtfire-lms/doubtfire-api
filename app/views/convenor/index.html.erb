@@ -7,23 +7,7 @@
 <% end %>
 
 <% content_for :sidebar do %>
-	<ul class="nav nav-list">
-	  <li class="nav-header">
-	    Navigation
-	  </li>
-	  <li class="active">
-	    <%= link_to "Dashboard", root_url %>
-	  </li>
-	  <li class="nav-header">
-	    Administration
-	  </li>
-	  <li>
-	  	<%= link_to "Projects", project_templates_path %>
-	  </li>
-	  <li>
-	    <%= link_to "Students", users_path %>
-	  </li>
-	</ul>
+	<%= render :partial => 'layouts/admin_menu' %>
 <% end %>
 
 <div class="span10">

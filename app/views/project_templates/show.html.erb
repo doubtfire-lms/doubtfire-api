@@ -1,76 +1,84 @@
-<div class="page-header">
-  <h1><%= @project_template.name %></h1>
-</div>
+<% content_for :page_banner do %>
+  <h1><%= @project_template.name %></h1>  
+  <hr />
+<% end %>
 
-<!-- Information about the current project -->
-<div class="widget">
-  <h2><i class="icon-book"></i>Information</h2>
-  <div class="widget-content">
-    <dl class="dl-horizontal">
-      <dt><strong><%= ProjectTemplate.human_attribute_name(:name) %>:</strong></dt>
-      <dd><%= @project_template.name %></dd>
-      <dt><strong><%= ProjectTemplate.human_attribute_name(:description) %>:</strong></dt>
-      <dd><%= @project_template.description %></dd>
-      <dt><strong><%= ProjectTemplate.human_attribute_name(:start_date) %>:</strong></dt>
-      <dd><%= @project_template.start_date.strftime("%d %B %Y") %></dd>
-      <dt><strong><%= ProjectTemplate.human_attribute_name(:end_date) %>:</strong></dt>
-      <dd><%= @project_template.end_date.strftime("%d %B %Y") %></dd>
-    </dl>
-    <hr />
-    <%= link_to t('.edit', :default => t("helpers.links.edit")), edit_project_template_path(@project_template), :class => 'btn' %>
+<!-- Sidebar -->
+<% content_for :sidebar do %>
+  <%= render :partial => 'convenor/navigation_sidebar' %>
+<% end %>
+
+<div class="span10">
+  <!-- Information about the current project -->
+  <div class="widget">
+    <h2><i class="icon-book"></i>Information</h2>
+    <div class="widget-content">
+      <dl class="dl-horizontal">
+        <dt><strong><%= ProjectTemplate.human_attribute_name(:name) %>:</strong></dt>
+        <dd><%= @project_template.name %></dd>
+        <dt><strong><%= ProjectTemplate.human_attribute_name(:description) %>:</strong></dt>
+        <dd><%= @project_template.description %></dd>
+        <dt><strong><%= ProjectTemplate.human_attribute_name(:start_date) %>:</strong></dt>
+        <dd><%= @project_template.start_date.strftime("%d %B %Y") %></dd>
+        <dt><strong><%= ProjectTemplate.human_attribute_name(:end_date) %>:</strong></dt>
+        <dd><%= @project_template.end_date.strftime("%d %B %Y") %></dd>
+      </dl>
+      <hr />
+      <%= link_to t('.edit', :default => t("helpers.links.edit")), edit_project_template_path(@project_template), :class => 'btn' %>
+    </div>
   </div>
-</div>
 
-<!-- Table of tasks for the current project -->
-<div class="widget">
-  <h2><i class="icon-pencil"></i>Tasks</h2>
-  <div class="widget-content">
-    <% if @task_templates.empty? %>
-      <p>This project has no tasks.</p>
-    <% else %>
-      <%= render 'task_templates/table' %>
-    <% end %>
-    <hr />
-    <%= link_to "Create new task", new_project_task_path(@project_template), :class => 'btn btn-primary', "data-remote" => true %>
+  <!-- Table of tasks for the current project -->
+  <div class="widget">
+    <h2><i class="icon-pencil"></i>Tasks</h2>
+    <div class="widget-content">
+      <% if @task_templates.empty? %>
+        <p>This project has no tasks.</p>
+      <% else %>
+        <%= render 'task_templates/table' %>
+      <% end %>
+      <hr />
+      <%= link_to "Create new task", new_project_task_path(@project_template), :class => 'btn btn-primary', "data-remote" => true %>
+    </div>
   </div>
-</div>
 
-<!-- Table of teams for the current project -->
-<div class="widget">
-  <h2><i class="icon-group"></i>Teams</h2>
-  <div class="widget-content">
-    <% if @project_teams.empty? %>
-      <p>This project has no teams.</p>
-    <% else %>
-      <%= render 'teams/table' %>
-    <% end %>
+  <!-- Table of teams for the current project -->
+  <div class="widget">
+    <h2><i class="icon-group"></i>Teams</h2>
+    <div class="widget-content">
+      <% if @project_teams.empty? %>
+        <p>This project has no teams.</p>
+      <% else %>
+        <%= render 'teams/table' %>
+      <% end %>
 
-    <%= link_to "Create new team", new_project_team_path(@project_template), :class => 'btn btn-primary', "data-remote" => true %>
+      <%= link_to "Create new team", new_project_team_path(@project_template), :class => 'btn btn-primary', "data-remote" => true %>
+    </div>
   </div>
-</div>
 
-<!-- Table of users for the current project -->
-<div class="widget">
-  <h2><i class="icon-user"></i>Users</h2>
-  <div class="widget-content">
-    <% if @project_users.empty? %>
-      <p>This project has no users.</p>
-    <% else %>
-      <%= render 'users_table' %>
-    <% end %>
+  <!-- Table of users for the current project -->
+  <div class="widget">
+    <h2><i class="icon-user"></i>Users</h2>
+    <div class="widget-content">
+      <% if @project_users.empty? %>
+        <p>This project has no users.</p>
+      <% else %>
+        <%= render 'users/table' %>
+      <% end %>
 
-    <%= link_to "Add users", new_user_path, :class => 'btn btn-primary' %>
+      <%= link_to "Add users", new_user_path, :class => 'btn btn-primary' %>
+    </div>
   </div>
-</div>
 
-<!-- Action buttons (back, destroy) -->
-<div class="widget">
-  <div class="widget-content">
-  <%= link_to "Back to projects list", project_templates_path, :class => 'btn' %>
-  <%= link_to "Destroy project",
-              project_template_path(@project_template),
-              :method => 'delete',
-              :confirm => t('.confirm', :default => t("helpers.links.confirm", :default => 'This project will be completely obliterated! Are you sure?')),
-              :class => 'btn btn-danger' %>
+  <!-- Action buttons (back, destroy) -->
+  <div class="widget">
+    <div class="widget-content">
+    <%= link_to "Back to projects list", project_templates_path, :class => 'btn' %>
+    <%= link_to "Destroy project",
+                project_template_path(@project_template),
+                :method => 'delete',
+                :confirm => t('.confirm', :default => t("helpers.links.confirm", :default => 'This project will be completely obliterated! Are you sure?')),
+                :class => 'btn btn-danger' %>
+    </div>
   </div>
 </div>
