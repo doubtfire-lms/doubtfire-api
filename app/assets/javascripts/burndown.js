@@ -26,6 +26,8 @@ function constructBurndownChart(burndownChartContainer) {
         .transition().duration(500)
           .call(projectProgressChart);
 
+      nv.utils.windowResize(function() { d3.select(".burndownchart").call(chart) });
+
       return projectProgressChart;
     });
   });
