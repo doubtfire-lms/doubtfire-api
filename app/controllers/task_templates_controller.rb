@@ -26,10 +26,19 @@ class TaskTemplatesController < ApplicationController
   def new
     @task_template = TaskTemplate.new
 
+    # Create a new task template, populate it with sample data, and save it immediately.
+    @task_template.project_template_id = params[:project_template_id]
+    @task_template.name = "New Task"
+    @task_template.description = "Enter a description for this task."
+    @task_template.weighting = 0.0
+    @task_template.required = true
+    @task_template.recommended_completion_date = Date.today
+    @task_template.save
+
     respond_to do |format|
       format.html # new.html.erb
       format.json { render json: @task_template }
-      format.js
+      format.js { render action: "edit" }
     end
   end
 
@@ -47,17 +56,11 @@ class TaskTemplatesController < ApplicationController
   # POST /task_templates.json
   def create
     @task_template = TaskTemplate.new(params[:task_template])
-    @project_template = ProjectTemplate.find(params[:project_template_id])
-
-    if not @project_template.nil?
-       @task_template.update_attributes(:project_template_id => @project_template.id)
-    end
 
     respond_to do |format|
       if @task_template.save
         format.html { redirect_to project_template_path(@task_template.project_template_id), notice: "TaskTemplate was successfully updated."}
         format.json { render json: @task_template, status: :created, location: @task_template }
-        format.js
       else
         format.html { render action: "new" }
         format.json { render json: @task_template.errors, status: :unprocessable_entity }
@@ -68,13 +71,13 @@ class TaskTemplatesController < ApplicationController
   # PUT /task_templates/1
   # PUT /task_templates/1.json
   def update
-    @task_template = TaskTemplate.find(params[:id])
+    @task_template = TaskTemplate.find(params[:task_template_id])
     
     respond_to do |format|
       if @task_template.update_attributes(params[:task_template])
         format.html { redirect_to project_template_path(@task_template.project_template_id), notice: "TaskTemplate was successfully updated."}
         format.json { head :no_content }
-        format.js
+        format.js { render action: "finish_update" }
       else
         format.html { render action: "edit" }
         format.json { render json: @task_template.errors, status: :unprocessable_entity }
@@ -97,55 +100,12 @@ class TaskTemplatesController < ApplicationController
     end
   end
 
-  # GET /task_templates/new
-  # GET /task_templates/new.json
-  def new_project_task
-    @task_template = TaskTemplate.new
-    @project_template = ProjectTemplate.find(params[:project_template_id])
-
-    # Create a new task template, populate it with sample data, and save it immediately.
-    @task_template.project_template_id = @project_template.id
-    @task_template.name = "New Task"
-    @task_template.description = "Enter a description for this task."
-    @task_template.weighting = 0.0
-    @task_template.required = true
-    @task_template.recommended_completion_date = Date.today
-    @task_template.save
-
-    respond_to do |format|
-      format.html # new.html.erb
-      format.json { render json: @task_template }
-      format.js { render :action => :edit }
-    end
-  end
-
-  # Updates a task template
-  # POST /project_templates/:project_template_id/update_task/:task_template_id
-  def update_project_task
-    @task_template = TaskTemplate.find(params[:task_template_id])
-    
-    respond_to do |format|
-      if @task_template.update_attributes(params[:task_template])
-        format.html { redirect_to project_template_path(@task_template.project_template_id), notice: "TaskTemplate was successfully updated."}
-        format.json { head :no_content }
-        format.js
-      else
-        format.html { render action: "edit" }
-        format.json { render json: @task_template.errors, status: :unprocessable_entity }
-        format.js { render action: "edit" }
-      end
-    end
-  end
-
-  # Cancels updating a project task
-  def cancel_update_task
+  # Restores the row in the Teams table to its original state after saving or cancelling from editing mode.
+  def finish_update
     @task_template = TaskTemplate.find(params[:task_template_id])
 
     respond_to do |format|
-        format.html { redirect_to project_template_path(@task_template.project_template_id) }
-        format.json { head :no_content }
-        format.js
+        format.js  # finish_update.js.erb
     end
   end
-
 end
