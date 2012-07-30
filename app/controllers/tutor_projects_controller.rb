@@ -13,7 +13,7 @@ class TutorProjectsController < ApplicationController
 
     @project_template         = ProjectTemplate.find(params[:id])
 
-    @unmarked_tasks           = unmarked_project_tasks(@tutor_team_projects, @user)
+    @unmarked_tasks           = unmarked_tasks(@tutor_team_projects)
   end
 
   def load_current_user
