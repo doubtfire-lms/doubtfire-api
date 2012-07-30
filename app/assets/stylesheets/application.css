@@ -11,6 +11,7 @@
  *= require_self
  *= require bootstrap_and_overrides
  *= require d3
+ *= require nv.d3
  *= require doubtfire
  *= require bootstrap-datepicker
  */
