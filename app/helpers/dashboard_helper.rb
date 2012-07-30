@@ -1,27 +1,4 @@
 module DashboardHelper
-  def project_health(project)
-    tasks = project.tasks
-    completed_tasks         = tasks.select{|task| task.task_status.name == "Complete" }
-    completed_tasks_weight  = completed_tasks.map{|task| task.task_template.weight }.inject(:+)
-    total_task_weight       = tasks.map{|task| task.task_template.weight }.inject(:+)
-  end
-
-  def ahead_of_schedule_text
-    "You're ahead of schedule. Keep up the great work!"
-  end
-
-  def falling_behind_text
-    "It looks like you're falling behind. Time to get some work done."
-  end
-
-  def status_badge(project)
-    if !project.has_commenced?
-      raw("<span class=\"label\">Not Started</span>")
-    else
-      raw("<span class=\"label label-success\">Ahead</span>")
-    end
-  end
-
   def not_going_to_finish_in_time
     "At this rate, you're not going to complete the remaining tasks in time"
   end
@@ -30,12 +7,27 @@ module DashboardHelper
     "At this rate, your set to finish one week earlier than expected"
   end
 
-  def will_complete_based_on_velocity(project)
-    complete_based_on_velocity = early_finish
+  def status_badge(project)
+    if !project.has_commenced?
+      raw("<span class=\"label\">Not Started</span>")
+    else
+      progress = project.relative_progress
 
+      case progress
+        when :ahead     then raw("<span class=\"label label-success\">Ahead</span>")
+        when :on_track  then raw("<span class=\"label label-info\">On Track</span>")
+        when :behind    then raw("<span class=\"label label-warning\">Behind</span>")
+        when :danger    then raw("<span class=\"label label-important\">Danger</span>")
+        when :doomed    then raw("<span class=\"label label-inverse\">Doomed</span>")
+      end
+    end
+  end
+
+  def will_complete_based_on_velocity(project)
     if !project.has_commenced? or project.has_concluded?
       nil
     else
+      complete_based_on_velocity = early_finish
       raw("<p>#{complete_based_on_velocity}</p>")
     end
   end
@@ -46,12 +38,12 @@ module DashboardHelper
     completed_task_count    = completed_tasks.size
     total_task_count        = tasks.size
 
-    raw("<p><strong>#{completed_task_count}</strong> out of <strong>#{total_task_count}</strong> tasks remaining.</p>")
+    raw("<p><strong>#{completed_task_count}</strong> out of <strong>#{total_task_count}</strong> tasks completed.</p>")
   end
 
   def health_label(project)
     raw(["<div class=\"health-label\">",
-          "\t<span class=\"statistical-figure\">70%</span>",
+          "\t<span class=\"statistical-figure\">#{(project.health * 100).floor}%</span>",
           "\t<p class=\"statistical-figure-subtext\">Health</p>",
         "</div>"].join("\n"))
   end
@@ -90,8 +82,36 @@ module DashboardHelper
     elsif project.has_concluded?
       status_summary = "This project has concluded. Congratulations on the great result!"
     else
-      status_summary = ahead_of_schedule_text
+      project_progress = project.relative_progress
+
+      status_summary = case project_progress
+        when :ahead     then ahead_of_schedule_text
+        when :on_track  then on_track_text
+        when :behind    then falling_behind_text
+        when :danger    then in_danger_text
+        when :doomed    then doomed_text
+      end
     end
     raw("<p>#{status_summary}</p>")
+  end
+
+  def ahead_of_schedule_text
+    "You're ahead of schedule. Keep up the great work!"
+  end
+
+  def on_track_text
+    "You're on track at the moment. Make sure you keep up the pace so you don't fall behind."
+  end
+
+  def falling_behind_text
+    "It looks like you're falling behind. Time to get some work done."
+  end
+
+  def in_danger_text
+    "You're way behind. Get some tasks done as soon as possible or it may be too late."
+  end
+
+  def doomed_text
+    "You're in serious trouble. Talk to the convenor about your remaining options in this subject."
   end
 end

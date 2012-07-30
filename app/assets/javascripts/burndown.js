@@ -101,7 +101,32 @@ function dataForProjectJSON(projectJSON) {
     {
       values: actualTaskCompletion,
       key: "Completed",
-      color: "#48842c"
+      color: colourForProjectProgress(projectJSON.relative_progress)
     }
   ];
+}
+
+function colourForProjectProgress(progress) {
+  var colour = null;
+
+  switch (progress)
+  {
+    case "ahead":
+      colour = "#48842c"; // Twitter Bootstrap @green
+      break;
+    case "on_track":
+      colour = "#049cdb"; // Twitter Bootstrap @blue
+      break;
+    case "behind":
+      colour = "#f89406"; // Twitter Bootstrap @orange
+      break;
+    case "danger":
+      colour = "#9d261d"; // Twitter Bootstrap @red
+      break;
+    case "doomed":
+      colour = "#ffffff";
+      break;
+  }
+
+  return colour;
 }
