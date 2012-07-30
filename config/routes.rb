@@ -26,7 +26,7 @@ Doubtfire::Application.routes.draw do
   post 'project_templates/:project_template_id/update_task/:task_template_id' => 'task_templates#update_project_task', :via => :post, :as => 'update_project_task'
   get 'project_templates/:project_template_id/cancel_update_task/:task_template_id' => 'task_templates#cancel_update_task', :as => 'cancel_update_task'
   post 'project_templates/:project_template_id/update_team/:team_id' => 'teams#update', :via => :post, :as => 'update_project_team'
-  get 'project_templates/:project_template_id/cancel_update_team/:team_id' => 'teams#cancel_update', :as => 'cancel_update_project_team'
+  get 'project_templates/:project_template_id/cancel_update_team/:team_id' => 'teams#finish_update', :as => 'cancel_update_project_team'
 
   # Convenor context routes
   resources :convenor, :only => :index
