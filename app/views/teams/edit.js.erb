@@ -1,0 +1,13 @@
+// Build the row id string from the team id
+var teamRowId = "team-" + "<%= @team.id %>" +  "-row";
+var partial = "<%=j render :partial => 'teams/table_row_edit', :locals => { :team => @team } %>"
+//var currentID;
+
+// Only allow editing of one row at a time
+//$(".editable").each(function(index, row) { currentID = row.getAttribute("name"); return row }).replaceWith(/* render the appropriate partial here... somehow. */)
+
+// Render the table_row_edit partial. If we just created a new team via the 'Create' button, it won't have a row in the table yet. 
+if(document.getElementById(teamRowId) != null)
+	$("#" + teamRowId).replaceWith(partial);	// Row already exists - replace it with the form
+else
+	$("#teams-table").append(partial);			// No row exists yet - append one

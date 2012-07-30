@@ -78,7 +78,7 @@ class TaskTemplatesController < ApplicationController
       else
         format.html { render action: "edit" }
         format.json { render json: @task_template.errors, status: :unprocessable_entity }
-        format.js 
+        format.js { render action: "edit" }
       end
     end
   end
