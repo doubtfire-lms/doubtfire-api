@@ -10,7 +10,7 @@
   <tbody>
     <!-- Rows are rendered as a partial so that they can be re-rendered from JavaScript after editing a row. See "teams/edit.js.erb" and "teams/edit.js.erb". -->
     <% @project_teams.each do |team| %>
-     <%= render :partial => 'teams/table_row', :locals => { :team => team } %>
+      <%= render :partial => 'teams/table_row', :locals => { :team => team } %>
     <% end %>
   </tbody>
 </table>
