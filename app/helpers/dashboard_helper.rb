@@ -1,12 +1,4 @@
 module DashboardHelper
-  def not_going_to_finish_in_time
-    "At this rate, you're not going to complete the remaining tasks in time"
-  end
-
-  def early_finish
-    "At this rate, your set to finish one week earlier than expected"
-  end
-
   def status_badge(project)
     if !project.has_commenced?
       raw("<span class=\"label\">Not Started</span>")
@@ -30,6 +22,14 @@ module DashboardHelper
       complete_based_on_velocity = early_finish
       raw("<p>#{complete_based_on_velocity}</p>")
     end
+  end
+
+  def early_finish
+    "At this rate, your set to finish one week earlier than expected"
+  end
+
+  def not_going_to_finish_in_time
+    "At this rate, you're not going to complete the remaining tasks in time"
   end
 
   def task_completion(project)
@@ -66,13 +66,14 @@ module DashboardHelper
     elsif project.has_concluded?
       raw("<p>This project ended on the #{deadline.strftime("#{deadline.day.ordinalize} of %B")}</p>")
     else
-      project_date_string = deadline.strftime("#{deadline.day.ordinalize} of %B")
-      project_date_of_completion_text = "Projected end date is the <strong>#{project_date_string}</strong>"
+      projected_end_date                = project.projected_end_date
+      projected_date_string             = projected_end_date.strftime("#{projected_end_date.day.ordinalize} of %B")
+      projected_date_of_completion_text = "Projected end date is the <strong>#{projected_date_string}</strong>"
 
       deadline_date_string = deadline.strftime("#{deadline.day.ordinalize} of %B")
       deadline_text = "<span style=\"color: #AAAAAA\">(deadline is the #{deadline_date_string})</span>"
 
-      raw("<p>#{project_date_of_completion_text} #{deadline_text}</p>")
+      raw("<p>#{projected_date_of_completion_text} #{deadline_text}</p>")
     end 
   end
 
@@ -113,5 +114,16 @@ module DashboardHelper
 
   def doomed_text
     "You're in serious trouble. Talk to the convenor about your remaining options in this subject."
+  end
+
+  def rate_of_completion(project)
+    rate_of_completion_string             = "%5.1f" % (project.rate_of_completion * 7)        # 7 days in a week
+    required_task_completion_rate_string  = "%5.1f" % (project.required_task_completion_rate * 7) # 7 days in a week
+    raw(
+        ["<p>",
+          "\tCurrent rate of completion is #{rate_of_completion_string} task points per week",
+          "\t<span style=\"color: #AAAAAA\">(required rate to finish on time is #{required_task_completion_rate_string} tasks points per week)</span>",
+        "</p>"].join("\n")
+      )
   end
 end

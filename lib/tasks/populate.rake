@@ -115,7 +115,7 @@ namespace :db do
           task_template.name = "Assignment #{assignment_num}"
           task_template.project_template_id = project_template.id
           task_template.description = Populator.words(5..10)
-          task_template.weighting = BigDecimal.new("#{1.to_f / num_tasks.to_f}")
+          task_template.weighting = BigDecimal.new("2")
           task_template.required = rand < 0.9   # 10% chance of being false
           task_template.recommended_completion_date = assignment_num.weeks.from_now # Assignment 6 due week 6, etc.
         end
