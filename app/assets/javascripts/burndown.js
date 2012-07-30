@@ -82,7 +82,7 @@ function dataForProjectJSON(projectJSON) {
         var momentedTaskCompletionDate = moment(task.completion_date);
         taskCompletionDate = momentedTaskCompletionDate.diff(projectStartDate) < 0 ? projectStartDate : momentedTaskCompletionDate;
       } else {
-        taskCompletionDate = moment(new Date());
+        taskCompletionDate = moment(projectStartDate);
       }
 
       var taskCompletionWeek  = taskCompletionDate.diff(projectStartDate, 'weeks');
