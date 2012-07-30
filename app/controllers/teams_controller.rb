@@ -76,7 +76,7 @@ class TeamsController < ApplicationController
       if @team.update_attributes(params[:team])
         format.html { redirect_to project_template_path(@team.project_template_id), notice: "Team was successfully updated."}
         format.json { head :no_content }
-        format.js 
+        format.js { render action: "finish_update" }
       else
         format.html { render action: "edit" }
         format.json { render json: @team.errors, status: :unprocessable_entity }
@@ -94,18 +94,16 @@ class TeamsController < ApplicationController
     respond_to do |format|
       format.html { redirect_to teams_url }
       format.json { head :no_content }
-      format.js
+      format.js  # destroy.js.erb
     end
   end
 
-  # Cancels updating a project team
-  def cancel_update
+  # Restores the row in the Teams table to its original state after saving or cancelling from editing mode.
+  def finish_update
     @team = Team.find(params[:team_id])
 
     respond_to do |format|
-        format.html { redirect_to project_template_path(@task_template.project_template_id) }
-        format.json { head :no_content }
-        format.js
+        format.js  # finish_update.js.erb
     end
   end
 end
