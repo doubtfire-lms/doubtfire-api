@@ -27,20 +27,28 @@ class TeamsController < ApplicationController
     @team = Team.new
     @project_template = ProjectTemplate.find(params[:project_template_id])
     
-    if not @project_template.nil?
-      @team.update_attributes(:project_template_id => @project_template.id)
-    end
+    # Create a new task template, populate it with sample data, and save it immediately.
+    @team.project_template_id = @project_template.id
+    @team.user_id = 1 #ProjectAdministrator.where(:project_template_id => @project_template.id).first.select(:user_id)
+    @team.meeting_time = "Enter a regular meeting time."
+    @team.meeting_location = "Enter a location."
+    @team.save
 
     respond_to do |format|
       format.html # new.html.erb
       format.json { render json: @team }
+      format.js { render :action => :edit }
     end
   end
 
   # GET /teams/1/edit
   def edit
     @team = Team.find(params[:id])
-    @project_template = ProjectTemplate.find(@team.project_template_id)
+    
+    respond_to do |format|
+      format.html
+      format.js
+    end
   end
 
   # POST /teams
@@ -62,15 +70,17 @@ class TeamsController < ApplicationController
   # PUT /teams/1
   # PUT /teams/1.json
   def update
-    @team = Team.find(params[:id])
+    @team = Team.find(params[:team_id])
 
     respond_to do |format|
       if @team.update_attributes(params[:team])
         format.html { redirect_to project_template_path(@team.project_template_id), notice: "Team was successfully updated."}
         format.json { head :no_content }
+        format.js 
       else
         format.html { render action: "edit" }
         format.json { render json: @team.errors, status: :unprocessable_entity }
+        format.js { render action: "edit" }
       end
     end
   end
@@ -84,6 +94,18 @@ class TeamsController < ApplicationController
     respond_to do |format|
       format.html { redirect_to teams_url }
       format.json { head :no_content }
+      format.js
+    end
+  end
+
+  # Cancels updating a project team
+  def cancel_update
+    @team = Team.find(params[:team_id])
+
+    respond_to do |format|
+        format.html { redirect_to project_template_path(@task_template.project_template_id) }
+        format.json { head :no_content }
+        format.js
     end
   end
 end

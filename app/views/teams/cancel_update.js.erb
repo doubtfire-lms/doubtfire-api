@@ -1,0 +1,5 @@
+// Build the row id string from the team id
+var teamRowId = "team-" + "<%= @team.id %>" +  "-row";
+
+// Replace the row with the partial in _table_row.html.erb.
+$("#" + teamRowId).replaceWith("<%=j render :partial => 'teams/table_row', :locals => { :team => @team } %>");

@@ -1,0 +1,13 @@
+ <tr id="team-<%= team.id %>-row">
+  <td><%= User.find(team.user_id).full_name %></td>
+  <td><%= team.meeting_time %></td>
+  <td><%= team.meeting_location %></td>
+  <td>
+    <%= link_to t('.edit', :default => t("helpers.links.edit")), edit_team_path(team), :class => 'btn btn-mini', "data-remote" => true %>
+    <%= link_to t('.destroy', :default => t("helpers.links.destroy")), team_path(team),
+                "data-remote" => true,
+                :method => :delete,
+                :confirm => t('.confirm', :default => t("helpers.links.confirm", :default => 'Are you sure?')),
+                :class => 'btn btn-mini btn-danger' %>
+  </td>
+</tr>

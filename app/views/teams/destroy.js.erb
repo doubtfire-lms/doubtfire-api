@@ -1,0 +1,5 @@
+// Build the row id string from the team id
+var teamRowId = "team-" + "<%= @team.id %>" +  "-row";
+
+// Delete the corresponding row in the table
+$("#" + teamRowId).remove();

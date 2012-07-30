@@ -42,10 +42,10 @@
     <% if @project_teams.empty? %>
       <p>This project has no teams.</p>
     <% else %>
-      <%= render 'teams_table' %>
+      <%= render 'teams/table' %>
     <% end %>
 
-    <%= link_to "Create new team", new_project_team_path(@project_template), :class => 'btn btn-primary' %>
+    <%= link_to "Create new team", new_project_team_path(@project_template), :class => 'btn btn-primary', "data-remote" => true %>
   </div>
 </div>
 

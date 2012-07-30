@@ -1,6 +1,10 @@
 // Build the row id string from the task_template
 var taskRowId = "task-" + "<%= @task_template.id %>" +  "-row";
 var partial = "<%=j render :partial => 'task_templates/table_row_edit', :locals => { :task_template => @task_template } %>"
+//var currentID;
+
+// Only allow editing of one row at a time
+//$(".editable").each(function(index, row) { currentID = row.getAttribute("name"); return row }).replaceWith(/* render the appropriate partial here... somehow. */)
 
 // Render the table_row_edit partial. If we just created a new task via the 'Create' button, it won't have a row in the table yet. 
 if(document.getElementById(taskRowId) != null)

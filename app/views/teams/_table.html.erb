@@ -1,0 +1,16 @@
+ <table id="teams-table" class="table table-striped">
+  <thead>
+    <tr>
+      <th>Manager</th>
+      <th><%= Team.human_attribute_name(:meeting_time) %></th>
+      <th><%= Team.human_attribute_name(:meeting_location) %></th>
+      <th><%=t '.actions', :default => t("helpers.actions") %></th>
+    </tr>
+  </thead>
+  <tbody>
+    <!-- Rows are rendered as a partial so that they can be re-rendered from JavaScript after editing a row. See "teams/edit.js.erb" and "teams/edit.js.erb". -->
+    <% @project_teams.each do |team| %>
+     <%= render :partial => 'teams/table_row', :locals => { :team => team } %>
+    <% end %>
+  </tbody>
+</table>
