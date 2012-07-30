@@ -3,12 +3,12 @@ class ProjectsController < ApplicationController
   before_filter :load_current_user
 
   def index
-    @projects = @user.team_memberships.map{|tm| tm.project }
+    @projects = Project.where(:team_membership => @user.team_memberships)
   end
 
   def show
-    @student_projects = @user.team_memberships.map{|tm| tm.project }
-    @project = Project.find(params[:id])
+    @student_projects = Project.find(@user.team_memberships.map{|membership| membership.project_id})
+    @project = Project.includes(:tasks => [:task_template]).find(params[:id])
 
     respond_to do |format|
       format.html
