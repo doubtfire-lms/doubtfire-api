@@ -1,4 +1,4 @@
-<%= stylesheets 'tasks.css' %>
+<%= stylesheets 'tasks.css', 'tutor_projects.css' %>
 
 <% content_for :sidebar do %>
 	<ul class="nav nav-list">
@@ -16,26 +16,32 @@
 <div class="span10">
 	<div class="row-fluid tabbable">
 		<ul class="nav nav-pills">
-			<!-- <li><a class="active" href="#teams-tab" data-toggle="tab">Teams</a></li> -->
-			<li class="active"><a href="#marking-tab" data-toggle="tab">Marking</a></li>
+			<li class="active"><a href="#teams-tab" data-toggle="tab">Teams</a></li>
+			<li><a href="#marking-tab" data-toggle="tab">Marking</a></li>
 		</ul>
 		<div class="tab-content">
-			<!-- <div class="tab-pane active" id="teams-tab">
+
+			<div class="tab-pane active" id="teams-tab">
 				<div class="span7 widget">
 					<h2><i class="icon-group"></i>Teams</h2>
 					<div class="widget-content">
 						<% @tutor_teams.each do |team| %>
+						<div class="team-entry">
 							<h3><%= team.meeting_time %></h3>
 							<% team.team_memberships.each do |team_membership| %>
-								<p><%= team_membership.user.full_name %></p>
-								<p><%= team_membership.project.project_status.health %></p>
+								<div class="team-member-entry">
+									<h4><%= link_to truncate(team_membership.user.full_name, :length => 30), tutor_project_student_path(team_membership.project, team_membership.user) %></h4>
+									<p><strong>Health:</strong> <%= "#{"%5.1f" % (team_membership.project.health * 100)}%" %></p>
+									<%= render 'layouts/tasks_progress_bar', :project => team_membership.project, :student => team_membership.user %>
+								</div>
 							<% end %>
+						</div>
 						<% end %>
 					</div>
 				</div>
-			</div> -->
+			</div>
 
-			<div class="tab-pane active" id="marking-tab">
+			<div class="tab-pane" id="marking-tab">
 				<div class="span7 widget">
 					<h2><i class="icon-tasks"></i>Marking</h2>
 					<div class="widget-content">

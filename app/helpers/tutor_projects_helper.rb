@@ -12,4 +12,19 @@ module TutorProjectsHelper
   def unmarked_tasks(tutors_projects)
     tutors_projects.map{|project| project.tasks }.flatten.select{|task| task.awaiting_signoff? }
   end
+
+  def tasks_progress_bar(project, student)
+    tasks = project.tasks
+
+    progress = project.relative_progress
+
+    raw(
+      tasks.each_with_index.map{|task, i|
+          task_class  = task.complete? ? progress.to_s.gsub("_", "-") : "incomplete-task"
+          href        = "/tutor/projects/#{project.id}/students/#{student.id}/tasks/#{task.id}"
+
+          "<a class=\"task-progress-item progress-#{task_class}\" href=\"#{href}\">#{i + 1}</a>"
+        }.join("\n")
+    )
+  end
 end

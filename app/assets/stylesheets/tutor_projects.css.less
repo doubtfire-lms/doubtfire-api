@@ -1,0 +1,56 @@
+@import "twitter/bootstrap/variables";
+@import "twitter/bootstrap/mixins";
+
+.team-entry
+{
+	border-bottom: 1px dotted #CCCCCC;
+	padding: 10px 0 10px 0;
+}
+
+.team-member-entry
+{
+	background-color: #EEEEEE;
+	margin: 10px 0;
+	overflow: hidden;
+}
+
+.team-member-entry h4
+{
+	margin-bottom: 10px;
+}
+
+.tasks-progress-bar
+{
+	margin-bottom: 10px;
+	overflow: hidden;
+}
+
+@taskProgressItemHeight: 20px;
+@taskProgressItemWidth: 20px;
+@taskProgressItemCornerRadius: 5px;
+
+.task-progress-item
+{
+	display: block;
+	float: left;
+	
+	width: @taskProgressItemWidth;
+	height: @taskProgressItemHeight;
+	margin: 0 2px;
+	text-align: center;
+
+	color: white;
+
+	border: 1px solid #CCCCCC;
+	.border-radius(@taskProgressItemCornerRadius);
+}
+
+/***** TODO: No reason below can't be global *****/
+
+.progress-ahead 	{ #gradient > .vertical(#62c462, #51a351); }
+.progress-on-track 	{ #gradient > .vertical(#5bc0de, #2f96b4); }
+.progress-behind 	{ #gradient > .vertical(#fbb450, #f89406); }
+.progress-danger 	{ #gradient > .vertical(#ee5f5b, #bd362f); }
+.progress-doomed 	{ #gradient > .vertical(#555555, #222222); }
+
+.progress-incomplete-task { #gradient > .vertical(#ffffff, #e6e6e6); }
