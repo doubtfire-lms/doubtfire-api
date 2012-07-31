@@ -9,14 +9,26 @@
 
 .team-member-entry
 {
-	background-color: #EEEEEE;
-	margin: 10px 0;
-	overflow: hidden;
+	margin: -5px 0;
 }
 
 .team-member-entry h4
 {
-	margin-bottom: 10px;
+	display: inline;
+	float: left;
+	width: 200px;
+	margin-right: 10px;
+	padding-top: 5px;
+}
+
+.team-member-entry p.health
+{
+	width: 60px;
+	float: left;
+	font-size: 1.5em;
+	font-weight: bold;
+	margin-right: 10px;	
+	padding-top: 5px;
 }
 
 .tasks-progress-bar
@@ -25,8 +37,8 @@
 	overflow: hidden;
 }
 
-@taskProgressItemHeight: 20px;
-@taskProgressItemWidth: 20px;
+@taskProgressItemHeight: 25px;
+@taskProgressItemWidth: 25px;
 @taskProgressItemCornerRadius: 5px;
 
 .task-progress-item
@@ -37,6 +49,7 @@
 	width: @taskProgressItemWidth;
 	height: @taskProgressItemHeight;
 	margin: 0 2px;
+	padding-top: 5px;
 	text-align: center;
 
 	color: white;
@@ -53,4 +66,15 @@
 .progress-danger 	{ #gradient > .vertical(#ee5f5b, #bd362f); }
 .progress-doomed 	{ #gradient > .vertical(#555555, #222222); }
 
-.progress-incomplete-task { #gradient > .vertical(#ffffff, #e6e6e6); }
+.progress-ahead:hover,
+.progress-on-track:hover,
+.progress-behind:hover,
+.progress-danger:hover,
+.progress-doomed:hover
+{
+	color: #ffffff;
+}
+
+.progress-incomplete-task { #gradient > .vertical(#ffffff, #e6e6e6); color: #BBBBBB; }
+
+.progress-incomplete-task:hover { color: #BBBBBB; }
