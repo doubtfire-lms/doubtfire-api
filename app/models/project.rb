@@ -11,9 +11,9 @@ class Project < ActiveRecord::Base
   belongs_to :team              # Foreign key
   belongs_to :project_status    # Foreign key
   belongs_to :project_template  # Foreign key
-  belongs_to :team_membership   # Foreign key
+  belongs_to :team_membership, :dependent => :destroy   # Foreign key
 
-  has_many :tasks
+  has_many :tasks, :dependent => :destroy   # Destroying a project will also nuke all of its tasks
 
   def health(date=Date.today)
     completed_tasks_weight        = completed_tasks.empty? ? 0.0 : completed_tasks.map{|task| task.task_template.weighting }.inject(:+)

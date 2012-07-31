@@ -12,9 +12,9 @@ class User < ActiveRecord::Base
   attr_accessible :first_name, :last_name, :system_role
 
   # Model associations
-  has_many :team_memberships
-  has_many :project_administrators    # Sounds weird - it means "may be an administrator for many projects"
-
+  has_many :team_memberships, :dependent => :destroy
+  has_many :project_administrators, :dependent => :destroy   # Sounds weird - it means "may be an administrator for many projects"
+  
   def is_superuser?
     system_role == "superuser"
   end
