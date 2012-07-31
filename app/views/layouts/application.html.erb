@@ -15,7 +15,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
-	<header class="navbar navbar-fixed-top">
+  <header class="navbar navbar-fixed-top">
     <nav class="navbar-inner">
       <div class="container-fluid">
         <%= link_to "Doubtfire", root_path, :class => 'brand' %>
@@ -23,6 +23,15 @@
       </div>
     </nav>
   </header>
+
+  <% [:notice, :error, :alert].each do |level| %>
+    <% unless flash[level].blank? %>
+      <div class="alert alert-<%= flash_class(level) %>">
+        <a class="close" href="#">×</a>
+        <%= content_tag :p, flash[level] %>
+      </div>
+    <% end %>
+  <% end %>
 
   <div id="main" role="main">
     <div class="container-fluid">
