@@ -1,4 +1,4 @@
-<table class="table table-striped">
+<table id="users-table" class="table table-striped">
   <thead>
     <tr>
       <th><%= User.human_attribute_name(:email) %></th>
@@ -11,7 +11,7 @@
   </thead>
   <tbody>
     <!-- Rows are rendered as a partial so that they can be re-rendered from JavaScript after editing a row. See "users/edit.js.erb" and "users/edit.js.erb". -->
-    <% @project_users.each do |user| %>
+    <% user_list.each do |user| %>
       <%= render :partial => 'users/table_row', :locals => { :user => user } %>
     <% end %>
   </tbody>

@@ -32,6 +32,7 @@ class UsersController < ApplicationController
     respond_to do |format|
       format.html # new.html.erb
       format.json { render json: @user }
+      format.js
     end
   end
 
@@ -77,10 +78,12 @@ class UsersController < ApplicationController
   	    	format.html { redirect_to @user, notice: 'User was successfully updated.' }
   	    end
 
+        format.js { render action: "finish_update" }
 	      format.json { head :no_content }
       else
         format.html { render action: "edit" }
         format.json { render json: @user.errors, status: :unprocessable_entity }
+        format.js { render action: "edit" }
       end
     end
   end
@@ -94,6 +97,16 @@ class UsersController < ApplicationController
     respond_to do |format|
       format.html { redirect_to users_url }
       format.json { head :no_content }
+      format.js  # destroy.js.erb
+    end
+  end
+
+  # Restores the row in the Teams table to its original state after saving or cancelling from editing mode.
+  def finish_update
+    @user = User.find(params[:id])
+
+    respond_to do |format|
+        format.js  # finish_update.js.erb
     end
   end
 end

@@ -10,6 +10,9 @@ Doubtfire::Application.routes.draw do
   resources :teams
   resources :superuser_administration, :only => :index, :path => 'administration'
 
+  post 'users/update/:id' => 'users#update', :via => :post, :as => 'update_user'
+  get 'users/cancel_update_user/:id' => 'users#finish_update', :as => 'cancel_update_user'
+
   # Student context routes
   resources :projects do
     resources :tasks, :only => :index

@@ -1,0 +1,5 @@
+// Build the row id string from the user id
+var userRowId = "user-" + "<%= @user.id %>" +  "-row";
+
+// Delete the corresponding row in the table
+$("#" + userRowId).remove();

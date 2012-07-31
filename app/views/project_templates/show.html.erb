@@ -35,7 +35,7 @@
       <% if @task_templates.empty? %>
         <p>This project has no tasks.</p>
       <% else %>
-        <%= render 'task_templates/table' %>
+        <%= render :partial => 'task_templates/table' %>
       <% end %>
       <hr />
       <%= link_to "Create new task", new_project_task_path(@project_template), :class => 'btn btn-primary', "data-remote" => true %>
@@ -63,10 +63,10 @@
       <% if @project_users.empty? %>
         <p>This project has no users.</p>
       <% else %>
-        <%= render 'users/table' %>
+        <%= render :partial => 'users/table', :locals => { :user_list => @project_users } %>
       <% end %>
 
-      <%= link_to "Add users", new_user_path, :class => 'btn btn-primary' %>
+      <%= link_to "Add users", new_user_path, :class => 'btn btn-primary', "data-remote" => true %>
     </div>
   </div>
 
