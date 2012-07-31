@@ -6,6 +6,6 @@ class Team < ActiveRecord::Base
   # Model associations
   belongs_to :project_template  # Foreign key
   belongs_to :user              # Foreign key
+  has_one    :project  			# Foreign key
   has_many   :team_memberships
-  has_one    :project  # Foreign key
 end
