@@ -16,8 +16,6 @@ class Project < ActiveRecord::Base
   has_many :tasks, :dependent => :destroy   # Destroying a project will also nuke all of its tasks
 
   def health(date=Date.today)
-    date = Date.new(2012, 10, 10)
-
     completed_tasks_weight        = completed_tasks.empty? ? 0.0 : completed_tasks.map{|task| task.task_template.weighting }.inject(:+)
     recommended_remaining_weight  = recommended_completed_tasks(date).empty? ? 0.0 : recommended_completed_tasks(date).map{|task| task.task_template.weighting }.inject(:+)
 
@@ -108,7 +106,6 @@ class Project < ActiveRecord::Base
 
   def has_commenced?
     Time.zone.now > project_template.start_date
-    true
   end
 
   def has_concluded?
