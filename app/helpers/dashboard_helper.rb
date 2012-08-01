@@ -22,11 +22,21 @@ module DashboardHelper
   end
 
   def will_complete_based_on_velocity(project)
-    if !project.has_commenced? or project.has_concluded?
-      nil
-    else
-      complete_based_on_velocity = early_finish
+    if project.in_progress?
+      days_left_before_deadline  = ((project.projected_end_date - project.project_template.end_date).to_i / 1.day)
+      weeks_left_before_deadline = -(days_left_before_deadline / 7.to_f).ceil
+
+      if weeks_left_before_deadline > 0
+        complete_based_on_velocity = "At this rate, you're set to finish #{weeks_left_before_deadline.abs} weeks before the deadline"
+      elsif weeks_left_before_deadline < 0
+        complete_based_on_velocity = "At this rate, you're set to finish #{weeks_left_before_deadline.abs} weeks after the deadline"
+      else
+        complete_based_on_velocity = "At this rate, you're set to finish right on the deadline"
+      end
+
       raw("<p>#{complete_based_on_velocity}</p>")
+    else
+      nil
     end
   end
 
@@ -87,7 +97,10 @@ module DashboardHelper
     if !project.has_commenced?
       raw("<p>To achieve the best result possible for this subject, ensure that you are getting tasks marked off regularly and often.</p>")
     else
-      raw("<p>If you haven't already, you should consider <a href=\"#\">going the extra mile for a D or HD</a></p>")
+      case project.relative_progress
+      when :ahead
+        raw("<p>If you haven't already, you should consider <a href=\"#\">going the extra mile for a D or HD</a></p>")
+      end
     end
   end
 

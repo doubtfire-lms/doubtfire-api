@@ -71,10 +71,7 @@ class Project < ActiveRecord::Base
   end
 
   def required_task_completion_rate
-    # Determine the number of weeks elapsed
-    project_days_remaining = (project_template.end_date - reference_date).to_i / 1.day
-
-    remaining_tasks_weight / project_days_remaining
+    remaining_tasks_weight / remaining_days
   end
 
   def recommended_completed_tasks
@@ -108,6 +105,14 @@ class Project < ActiveRecord::Base
 
   def overdue_tasks
     tasks.select{|task| task.overdue? date }
+  end
+
+  def remaining_days
+    (project_template.end_date - reference_date).to_i / 1.day
+  end
+
+  def in_progress?
+    has_commenced? && !has_concluded?
   end
 
   def has_commenced?
