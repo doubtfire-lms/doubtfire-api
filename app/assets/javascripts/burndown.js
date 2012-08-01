@@ -124,7 +124,7 @@ function colourForProjectProgress(progress) {
       colour = "#9d261d"; // Twitter Bootstrap @red
       break;
     case "doomed":
-      colour = "#ffffff";
+      colour = "#000000";
       break;
   }
 
