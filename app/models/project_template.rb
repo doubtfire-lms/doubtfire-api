@@ -25,6 +25,10 @@ class ProjectTemplate < ActiveRecord::Base
         project.project_template_id = self.id
         project.project_role = project_role
 
+        # Set the foreign keys for the 1:1 relationship
+        project.team_membership_id = team_membership.id
+        team_membership.project_id = project.id
+
         # Create task instances for the project
         task_templates_for_project = TaskTemplate.where(:project_template_id => self.id)
         task_templates_for_project.each do |task_template|
