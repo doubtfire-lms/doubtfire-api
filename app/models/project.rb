@@ -1,4 +1,5 @@
 class Project < ActiveRecord::Base
+  include ApplicationHelper
 
   # TODO: Remove this once each project has an individual weight.
   # For now, this assumes that the project is core (i.e. non-optional)
@@ -15,9 +16,9 @@ class Project < ActiveRecord::Base
 
   has_many :tasks, :dependent => :destroy   # Destroying a project will also nuke all of its tasks
 
-  def health(date=Date.today)
+  def health
     completed_tasks_weight        = completed_tasks.empty? ? 0.0 : completed_tasks.map{|task| task.task_template.weighting }.inject(:+)
-    recommended_remaining_weight  = recommended_completed_tasks(date).empty? ? 0.0 : recommended_completed_tasks(date).map{|task| task.task_template.weighting }.inject(:+)
+    recommended_remaining_weight  = recommended_completed_tasks.empty? ? 0.0 : recommended_completed_tasks.map{|task| task.task_template.weighting }.inject(:+)
 
     # Project health is at 100% when the project is yet to start
     return 1.0 unless has_commenced?
@@ -51,37 +52,42 @@ class Project < ActiveRecord::Base
     end
   end
 
-  def projected_end_date(date=Date.today)
+  def projected_end_date
     return project_template.end_date if rate_of_completion == 0.0
 
-    (remaining_tasks_weight / rate_of_completion).ceil.days.since date
+    (remaining_tasks_weight / rate_of_completion).ceil.days.since reference_date
   end
 
-  def rate_of_completion(date=Date.today)
+  def rate_of_completion
     # Return a completion rate of 0.0 if the project is yet to have commenced
     return 0.0 if !has_commenced?
 
     # Determine the number of weeks elapsed
-    project_days_elapsed = (date - project_template.start_date.to_datetime).to_i
+    project_days_elapsed = (reference_date - project_template.start_date).to_i / 1.day
 
     # TODO: Might make sense to take in the resolution (i.e. days, weeks), rather
     # than just assuming days
     completed_tasks_weight / project_days_elapsed
   end
 
-  def required_task_completion_rate(date=Date.today)
+  def required_task_completion_rate
     # Determine the number of weeks elapsed
-    project_days_remaining = (project_template.end_date.to_datetime - date).to_i
+    project_days_remaining = (project_template.end_date - reference_date).to_i / 1.day
 
     remaining_tasks_weight / project_days_remaining
   end
 
-  def recommended_completed_tasks(date=Date.today)
-    tasks.select{|task| task.task_template.recommended_completion_date < date }
+  def recommended_completed_tasks
+    tasks.select{|task| task.task_template.recommended_completion_date < reference_date }
   end
 
   def completed_tasks
     tasks.select{|task| task.task_status.name == "Complete" }
+  end
+
+  def completed?
+    # TODO: Have a status flag on the project instead
+    tasks.all?{|task| task.task_status.name == "Complete" }
   end
 
   def incomplete_tasks
@@ -100,16 +106,16 @@ class Project < ActiveRecord::Base
     tasks.map{|task| task.task_template.weighting }.inject(:+)
   end
 
-  def overdue_tasks(date=Date.today)
+  def overdue_tasks
     tasks.select{|task| task.overdue? date }
   end
 
   def has_commenced?
-    Time.zone.now > project_template.start_date
+    reference_date > project_template.start_date
   end
 
   def has_concluded?
-    Time.zone.now > project_template.end_date
+    reference_date > project_template.end_date
   end
 
   def weight

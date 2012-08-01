@@ -13,8 +13,10 @@
 					<%= project_status_summary(project) %>					
 					<h3>Remaining Work</h3>
 					<%= task_completion(project) %>
-					<h3>Projected Completion</h3>
-					<%= rate_of_completion(project) %>
+					<% unless project.has_concluded? %>
+						<h3>Projected Completion</h3>
+						<%= rate_of_completion(project) %>
+					<% end %>
 				<% end %>				
 
 				<%= projected_date_of_completion_vs_deadline(project) %>

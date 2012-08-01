@@ -2,6 +2,12 @@ module DashboardHelper
   def status_badge(project)
     if !project.has_commenced?
       raw("<span class=\"label\">Not Started</span>")
+    elsif project.has_concluded?
+      if project.completed?
+        raw("<span class=\"label label-success\">Completed</span>")
+      else
+        raw("<span class=\"label label-important\">Not Completed</span>")
+      end
     else
       progress = project.relative_progress
 
@@ -38,7 +44,38 @@ module DashboardHelper
     completed_task_count    = completed_tasks.size
     total_task_count        = tasks.size
 
-    raw("<p><strong>#{completed_task_count}</strong> out of <strong>#{total_task_count}</strong> tasks completed.</p>")
+    if project.has_concluded?
+      if project.completed?
+        raw(
+          [
+            "<p>",
+              "You successfully completed all <strong>#{total_task_count} tasks</strong>. Well done!",
+            "</p>"
+          ].join("\n")
+        )
+      else
+        raw(
+          [
+            "<p>",
+              "You were unable to complete <strong>#{total_task_count - completed_task_count} tasks</strong>",
+              "of the total of <strong>#{total_task_count} tasks</strong> for this project.",
+            "</p>"
+          ].join("\n")
+        )
+      end
+    elsif
+      raw(
+        [
+          "<p>",
+            "You have <strong>#{total_task_count - completed_task_count} tasks</strong> remaining",
+            "(<span class=\"supplementary-text\">#{completed_task_count}",
+            "out of #{total_task_count}</strong> tasks completed)</span>",
+          "</p>"
+        ].join("\n")
+      )
+    else
+
+    end
   end
 
   def health_label(project)
@@ -81,7 +118,11 @@ module DashboardHelper
     if !project.has_commenced?
     status_summary = "This project has not commenced. Best of luck for the upcoming start of the project!"
     elsif project.has_concluded?
-      status_summary = "This project has concluded. Congratulations on the great result!"
+      if project.completed? 
+        status_summary = "This project has concluded. Congratulations on completing all of the allocated tasks!"
+      else
+        status_summary = "This project has concluded. Unfortunately you did not complete all of the set tasks."
+      end
     else
       project_progress = project.relative_progress
 
@@ -122,7 +163,7 @@ module DashboardHelper
     raw(
         ["<p>",
           "\tCurrent rate of completion is #{rate_of_completion_string} task points per week",
-          "\t<span style=\"color: #AAAAAA\">(required rate to finish on time is #{required_task_completion_rate_string} tasks points per week)</span>",
+          "\t<span class=\"supplementary-text\">(required rate to finish on time is #{required_task_completion_rate_string} tasks points per week)</span>",
         "</p>"].join("\n")
       )
   end
