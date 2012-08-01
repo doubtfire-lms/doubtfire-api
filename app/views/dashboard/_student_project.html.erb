@@ -1,0 +1,23 @@
+<div class="span<%= "#{grid_size}" %> widget project-overview">
+	<h2><i class="icon-book"></i><%= project.project_template.name %></h2>
+	<div class="widget-content">
+		<%= status_badge(project) %>
+
+		<% if project.has_commenced? %>
+			<% unless project.has_concluded? %>
+				<%= health_label(project) %>
+			<% end %>
+			<h3>Project Status</h3>
+			<%= project_status_summary(project) %>					
+			<h3>Remaining Work</h3>
+			<%= task_completion(project) %>
+			<% unless project.has_concluded? %>
+				<h3>Projected Completion</h3>
+				<%= rate_of_completion(project) %>
+			<% end %>
+		<% end %>				
+
+		<%= projected_date_of_completion_vs_deadline(project) %>
+		<p class="project-link"><%= link_to "Go to Project", project_path(project), class: "btn" %></p>
+	</div>
+</div>
