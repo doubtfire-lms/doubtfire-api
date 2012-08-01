@@ -92,18 +92,25 @@ function dataForProjectJSON(projectJSON) {
 
   recommendedTaskCompletion.push({x: projectCompletionDate.diff(projectStartDate, 'weeks'), y: 0});
 
-  return [
-    {
-      values: recommendedTaskCompletion,
-      key: "Recommended",
-      color: "#999999"
-    },
-    {
-      values: actualTaskCompletion,
-      key: "Completed",
-      color: colourForProjectProgress(projectJSON.relative_progress)
-    }
-  ];
+  var recommendedSeries = {
+    values: recommendedTaskCompletion,
+    key: "Recommended",
+    color: "#999999"
+  };
+
+  var completedSeries = {
+    values: actualTaskCompletion,
+    key: "Completed",
+    color: colourForProjectProgress(projectJSON.relative_progress)
+  }
+
+  var seriesToPlot = [recommendedSeries];
+
+  if (moment(new Date()) >= projectStartDate) {
+    seriesToPlot.push(completedSeries);
+  }
+
+  return seriesToPlot;
 }
 
 function colourForProjectProgress(progress) {
