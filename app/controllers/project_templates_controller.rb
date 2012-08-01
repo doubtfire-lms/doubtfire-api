@@ -4,6 +4,7 @@ class ProjectTemplatesController < ApplicationController
   def index
     @user = current_user
     @project_templates = ProjectTemplate.all
+    @convenors = User.where(:system_role => "convenor")
 
     respond_to do |format|
       format.html # index.html.erb
@@ -117,6 +118,7 @@ class ProjectTemplatesController < ApplicationController
     respond_to do |format|
       format.html { redirect_to project_templates_url }
       format.json { head :no_content }
+      format.js
     end
   end
 

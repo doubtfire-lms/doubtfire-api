@@ -1,6 +1,7 @@
 <tr id="project-<%= project_template.id %>-row">
   <td><%= link_to project_template.name, project_template_path(project_template) %></td>
   <td><%= project_template.description %></td>
+  <td><%= get_convenors_string(project_template.id) %></td>
   <td><%= project_template.start_date.strftime("%d %B %Y") %></td>
   <td><%= project_template.end_date.strftime("%d %B %Y") %></td>
   <td><%= project_template.created_at.strftime("%d %b %Y at %I:%M%p") %></td>

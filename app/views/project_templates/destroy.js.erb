@@ -1,0 +1,5 @@
+// Build the row id string from the project template id
+var projectTemplateRowId = "project-" + "<%= @project_template.id %>" +  "-row";
+
+// Delete the corresponding row in the table
+$("#" + projectTemplateRowId).remove();
