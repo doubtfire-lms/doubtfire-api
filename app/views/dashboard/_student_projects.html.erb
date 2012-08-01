@@ -8,7 +8,9 @@
 				<%= status_badge(project) %>
 
 				<% if project.has_commenced? %>
-					<%= health_label(project) %>
+					<% unless project.has_concluded? %>
+						<%= health_label(project) %>
+					<% end %>
 					<h3>Project Status</h3>
 					<%= project_status_summary(project) %>					
 					<h3>Remaining Work</h3>
