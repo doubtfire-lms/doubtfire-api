@@ -139,36 +139,10 @@ namespace :db do
     end
 
     # Put each user in each project, in one team or the other
-    User.all[0..3].each_with_index do |user, i|
-      current_project_template_id = 1
-      TeamMembership.populate(ProjectTemplate.count) do |team_membership|
-        team_membership.team_id = Team.where("project_template_id = ?", current_project_template_id).sample.id
-        team_membership.user_id = user.id
-
-        # For each team membership, create a corresponding project membership
-        Project.populate(1) do |project|
-          project.project_status_id = 1
-          project.project_template_id = current_project_template_id
-          project.project_role = "student"
-
-          # Set the foreign keys for the 1:1 relationship
-          project.team_membership_id = team_membership.id
-          team_membership.project_id = project.id
-
-          # Create a set of task instances for the current project membership
-          template_tasks_for_project = TaskTemplate.where("project_template_id = ?", current_project_template_id)
-          template_tasks_for_project.each do |task_template|
-            Task.populate(1) do |task|
-              task.task_template_id = task_template.id
-              task.project_id = project.id
-              task.task_status_id = 1
-              task.awaiting_signoff = false
-            end
-          end
-
-        end
-
-        current_project_template_id += 1
+    User.all[0..3].each do |user|
+      ProjectTemplate.all.each do |project_template|
+        random_project_team = Team.where(:project_template_id => project_template.id).sample
+        project_template.add_user(user.id, random_project_team.id, "student")
       end
     end
  
