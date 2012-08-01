@@ -25,7 +25,9 @@ function constructBurndownChart(burndownChartContainer) {
           .datum(projectChartData)
         .transition().duration(500)
           .call(projectProgressChart);
-          
+      
+      nv.utils.windowResize(projectProgressChart.update);
+
       return projectProgressChart;
     });
   });
