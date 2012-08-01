@@ -29,11 +29,24 @@ class ProjectTemplatesController < ApplicationController
   # GET /project_templates/new.json
   def new
     @project_template = ProjectTemplate.new
-    @convenors = User.where(:system_role => "convenor")
+
+    # Create a new project template, populate it with sample data, and save it immediately.
+    @project_template.name = "New Project"
+    @project_template.description = "Enter a description for this project."
+    @project_template.start_date = Date.today
+    @project_template.end_date = 13.weeks.from_now
+    
+    if @project_template.save
+      ProjectAdministrator.populate(1) do |project_admin|
+        project_admin.user_id = current_user.id
+        project_admin.project_template_id = @project_template.id
+      end
+    end
 
     respond_to do |format|
       format.html # new.html.erb
       format.json { render json: @project_template }
+      format.js { render action: "edit" }
     end
   end
 
@@ -41,6 +54,11 @@ class ProjectTemplatesController < ApplicationController
   def edit
     @project_template = ProjectTemplate.find(params[:id])
     @convenors = User.where(:system_role => "convenor")
+
+    respond_to do |format|
+      format.html # new.html.erb
+      format.js   # new.js.erb
+    end
   end
 
   # POST /project_templates
@@ -81,9 +99,11 @@ class ProjectTemplatesController < ApplicationController
       if @project_template.update_attributes(params[:project_template])
         format.html { redirect_to @project_template, notice: 'ProjectTemplate was successfully updated.' }
         format.json { head :no_content }
+        format.js { render action: "finish_update" }
       else
         format.html { render action: "edit" }
         format.json { render json: @project_template.errors, status: :unprocessable_entity }
+        format.js { render action: "edit" }
       end
     end
   end
@@ -100,4 +120,12 @@ class ProjectTemplatesController < ApplicationController
     end
   end
 
+  # Restores the row in the project templates table to its original state after saving or cancelling from editing mode.
+  def finish_update
+    @project_template = ProjectTemplate.find(params[:id])
+
+    respond_to do |format|
+        format.js  # finish_update.js.erb
+    end
+  end
 end

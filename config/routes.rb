@@ -25,6 +25,10 @@ Doubtfire::Application.routes.draw do
 
   # Project administrator context routes
     
+    # Project templates
+    post 'project_templates/:id/update' => 'project_templates#update', :via => :post, :as => 'update_project_template'
+    get 'project_templates/:id/cancel_update' => 'project_templates#finish_update', :as => 'cancel_update_project_template'
+    
     # Project tasks
     get 'project_templates/:project_template_id/new_task' => 'task_templates#new', :as => 'new_project_task'
     post 'project_templates/:project_template_id/update_task/:task_template_id' => 'task_templates#update', :via => :post, :as => 'update_project_task'

@@ -1,0 +1,17 @@
+<table id="project-templates-table" class="table table-striped">
+  <thead>
+    <tr>
+      <th><%= ProjectTemplate.human_attribute_name(:name) %></th>
+      <th><%= ProjectTemplate.human_attribute_name(:description) %></th>
+      <th><%= ProjectTemplate.human_attribute_name(:start_date) %></th>
+      <th><%= ProjectTemplate.human_attribute_name(:end_date) %></th>
+      <th><%= ProjectTemplate.human_attribute_name(:created_at) %></th>
+      <th><%=t '.actions', :default => t("helpers.actions") %></th>
+    </tr>
+  </thead>
+  <tbody>
+    <% project_templates.each do |project_template| %>
+      <%= render :partial => 'table_row', :locals => {:project_template => project_template} %>
+    <% end %>
+  </tbody>
+</table>

@@ -1,0 +1,13 @@
+<tr id="project-<%= project_template.id %>-row" class="editable" name="<%= project_template.id %>">
+	<%= simple_form_for project_template, :url => update_project_template_path(project_template), :remote => true do |f| %>
+  		<td><%= f.input :name, :label => false %></td>
+  		<td><%= f.input :description, :label => false %></td>
+  		<td><%= f.input :start_date, :as => :string, :label => false, :input_html => {"data-behaviour" => "datepicker", :value => "#{project_template.start_date.strftime('%Y-%m-%d')}"} %></td>
+  		<td><%= f.input :end_date, :as => :string, :label => false, :input_html => {"data-behaviour" => "datepicker", :value => "#{project_template.end_date.strftime('%Y-%m-%d')}"} %></td>
+  		<td><%= project_template.created_at %></td>
+  		<td>
+  			<%= f.button :submit, "Save", :class => "btn btn-mini btn-success" %>
+  			<a href="<%= cancel_update_project_template_path(project_template.id) %>" data-remote="true" data-method="get" class="btn btn-mini btn-danger">Cancel</a>
+  		</td>
+  	<% end %>
+</tr>

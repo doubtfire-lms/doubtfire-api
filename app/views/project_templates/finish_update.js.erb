@@ -1,0 +1,5 @@
+// Build the row id string from the project template id
+var projectTemplateRowId = "project-" + "<%= @project_template.id %>" +  "-row";
+
+// Replace the row with the partial in _table_row.html.erb.
+$("#" + projectTemplateRowId).replaceWith("<%=j render :partial => 'project_templates/table_row', :locals => { :project_template => @project_template } %>");
