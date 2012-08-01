@@ -63,7 +63,7 @@ module DashboardHelper
           ].join("\n")
         )
       end
-    elsif
+    else
       raw(
         [
           "<p>",
@@ -73,8 +73,6 @@ module DashboardHelper
           "</p>"
         ].join("\n")
       )
-    else
-
     end
   end
 
