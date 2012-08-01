@@ -6,6 +6,10 @@ Doubtfire::Application.configure do
   # since you don't have to restart the web server when you make code changes.
   config.cache_classes = false
 
+  # Sets the reference date to be used when performing date
+  # comparisons. By default, the date will be Time.zone.now
+  # config.reference_date = '2012-10-10 00:00:00'
+
   # Log error messages when you accidentally call methods on nil.
   config.whiny_nils = true
 

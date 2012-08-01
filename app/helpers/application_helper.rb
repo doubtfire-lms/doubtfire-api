@@ -1,4 +1,12 @@
 module ApplicationHelper
+  def reference_date
+    @@reference_date ||= if Doubtfire::Application::config.respond_to? :reference_date
+      Time.zone.parse(Doubtfire::Application::config.reference_date)
+    else
+      Time.zone.now
+    end
+  end
+
   def flash_class(level)
     case level
     when :notice  then "info"
