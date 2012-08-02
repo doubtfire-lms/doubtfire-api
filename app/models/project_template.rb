@@ -43,7 +43,7 @@ class ProjectTemplate < ActiveRecord::Base
     end
   end
 
-  # Removes a user from this project, as well as their tasks and so on.
+  # Removes a user (and their tasks etc.) from this project
   def remove_user(user_id)
     team_memberships = TeamMembership.joins(:project => :project_template).where(:user_id => user_id, :projects => {:project_template_id => self.id})
 

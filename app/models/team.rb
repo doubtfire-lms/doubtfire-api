@@ -8,4 +8,5 @@ class Team < ActiveRecord::Base
   belongs_to :user              # Foreign key
   has_one    :project  			# Foreign key
   has_many   :team_memberships
+  
 end

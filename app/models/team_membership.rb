@@ -5,4 +5,7 @@ class TeamMembership < ActiveRecord::Base
   has_one 	 :project, :dependent => :destroy  # Foreign key
   belongs_to :team 		# Foreign key
 
+  # Model validations/constraints
+  validates_uniqueness_of :user_id, :scope => :team_id		# A user can only be added to a project once
+
 end
