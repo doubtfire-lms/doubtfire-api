@@ -1,20 +1,17 @@
-<div class="row-fluid"
-	<div class="page-header">
-		<h1><%= @project_template.name %></h1>  
-		<p class="lead"></p>
-	</div>
-</div>
-<hr />
-<div class="container-fluid">
-  <div class="row-fluid">
-    
-    <!-- Sidebar -->
-    <div class="span2">
-      	<%= render '/layouts/admin_menu', :projects => @project_templates, :selected_project => nil %>
-    </div>
+<% stylesheets 'convenor.css' %>
 
-    <!-- Body -->
-    <div class="span9">
+<% content_for :page_banner do %>
+  <h1><%= @project_template.name %></h1>  
+  <p class="lead"><%= "#{current_user.first_name} #{current_user.last_name}" %></p>
+  <hr />
+<% end %>
+
+<% content_for :sidebar do %>
+	<%= render :partial => 'layouts/admin_menu' %>
+<% end %>
+
+<div class="span9">
+	<div class="row-fluid">
 		<div class="tabbable"> 
 			<ul class="nav nav-pills">
 				<li class="active"><a href="#activity" data-toggle="tab">Activity</a></li>
@@ -34,5 +31,4 @@
 			</div>
 		</div>
     </div>
-  </div>
 </div>
