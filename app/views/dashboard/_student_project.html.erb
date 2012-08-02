@@ -5,7 +5,7 @@
 
 		<% if project.has_commenced? %>
 			<% unless project.has_concluded? %>
-				<%= health_label(project) %>
+				<%= tasks_completed_label(project) %>
 			<% end %>
 			<h3>Project Status</h3>
 			<%= project_status_summary(project) %>					

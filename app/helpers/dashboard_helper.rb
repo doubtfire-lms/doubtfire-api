@@ -93,6 +93,13 @@ module DashboardHelper
         "</div>"].join("\n"))
   end
 
+  def tasks_completed_label(project)
+    raw(["<div class=\"health-label\">",
+          "\t<span class=\"statistical-figure\">#{project.completed_tasks.size}/#{project.tasks.size}</span>",
+          "\t<p class=\"statistical-figure-subtext\">Tasks Completed</p>",
+        "</div>"].join("\n"))
+  end
+
   def guidance_based_on_velocity(project)
     if !project.has_commenced?
       raw("<p>To achieve the best result possible for this subject, ensure that you are getting tasks marked off regularly and often.</p>")
