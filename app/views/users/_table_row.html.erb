@@ -5,11 +5,18 @@
   <td><%= user.sign_in_count %></td>
   <td><%= user.system_role %></td>
   <td>
-    <%= link_to t('.edit', :default => t("helpers.links.edit")), edit_user_path(user), :class => 'btn btn-mini', "data-remote" => true%>
-    <%= link_to t('.destroy', :default => t("helpers.links.destroy")), user_path(user),
-                "data-remote" => true,
-                :method => :delete,
-                :confirm => t('.confirm', :default => t("helpers.links.confirm", :default => 'Are you sure?')),
-                :class => 'btn btn-mini btn-danger' %>
+    <% if current_user.is_superuser? %>
+      <%= link_to t('.destroy', :default => t("helpers.links.destroy")), user_path(user),
+                  "data-remote" => true,
+                  :method => :delete,
+                  :confirm => t('.confirm', :default => t("helpers.links.confirm", :default => 'Are you sure?')),
+                  :class => 'btn btn-mini btn-danger' %>
+    <% elsif current_user.is_convenor? %>
+      <%= link_to "Remove", remove_project_user_path(project_template.id, user.id),
+                  "data-remote" => true,
+                  :method => :get,
+                  :confirm => t('.confirm', :default => t("helpers.links.confirm", :default => 'Are you sure?')),
+                  :class => 'btn btn-mini btn-danger' %>
+    <% end %>
   </td>
 </tr>

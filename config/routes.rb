@@ -39,6 +39,10 @@ Doubtfire::Application.routes.draw do
     post 'project_templates/:project_template_id/update_team/:team_id' => 'teams#update', :via => :post, :as => 'update_project_team'
     get 'project_templates/:project_template_id/cancel_update_team/:team_id' => 'teams#finish_update', :as => 'cancel_update_project_team'
 
+    # Project users
+    get 'project_templates/:project_template_id/add_user' => 'project_templates#add_user', :as => 'add_project_user'
+    get 'project_templates/:project_template_id/remove_user/:user_id' => 'project_templates#remove_user', :as => 'remove_project_user'
+
   # Convenor context routes
   resources :convenor, :only => :index
   get "/convenor/projects/:id"  => "convenor_project#index",  :as => 'convenor_project'

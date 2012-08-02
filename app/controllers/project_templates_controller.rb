@@ -131,4 +131,24 @@ class ProjectTemplatesController < ApplicationController
         format.js  # finish_update.js.erb
     end
   end
+
+  def add_user
+    @project_template = ProjectTemplate.find(params[:project_template_id])
+
+    respond_to do |format|
+      format.js 
+    end
+  end
+
+  def remove_user
+    @project_template = ProjectTemplate.find(params[:project_template_id])
+    @user = User.find(params[:user_id])
+
+    @project_template.remove_user(@user.id)
+
+    respond_to do |format|
+      format.js { render "users/destroy.js" }
+    end
+  end
+
 end

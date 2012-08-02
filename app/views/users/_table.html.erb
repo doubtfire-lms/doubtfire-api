@@ -13,7 +13,7 @@
   <tbody>
     <!-- Rows are rendered as a partial so that they can be re-rendered from JavaScript after editing a row. See "users/edit.js.erb" and "users/edit.js.erb". -->
     <% user_list.each do |user| %>
-      <%= render :partial => 'users/table_row', :locals => { :user => user } %>
+      <%= render :partial => 'users/table_row', :locals => { :user => user, :project_template => project_template } %>
     <% end %>
   </tbody>
 </table>

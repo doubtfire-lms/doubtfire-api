@@ -30,4 +30,9 @@ class User < ActiveRecord::Base
   def full_name                                                                                                                                                                                     
     ([first_name, last_name] - ['']).compact.join(' ')
   end
+
+   def username_plus_full_name
+    ([username, "-", full_name] - ['']).compact.join(' ')
+  end
+
 end

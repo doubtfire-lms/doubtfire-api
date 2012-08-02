@@ -16,5 +16,4 @@ module ProjectTemplatesHelper
 		# Return the string without the last comma and space
 		convenors_string[0..-3]
 	end
-
 end

@@ -21,13 +21,19 @@ namespace :db do
     joosts_long_ass_name = %w[
       Cornelius
       Copernicus
+      Indiana
       Pocohontas
+      Albus
+      Severus
       Archimedes
       Gandalf
       Bilbo
       Samantha
       Evelyn
       Goldmember
+      Ernie
+      Bert
+      Grover
       Funke
       Kupper
     ].join(" ")
