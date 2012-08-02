@@ -1,4 +1,6 @@
 class Task < ActiveRecord::Base
+  include ApplicationHelper
+
   attr_accessible :awaiting_signoff
 
   # Model associations
@@ -6,26 +8,24 @@ class Task < ActiveRecord::Base
   belongs_to :project               # Foreign key
   belongs_to :task_status           # Foreign key
 
-  def overdue?(date=Time.zone.now)
+  def overdue?
     # A task cannot be overdue if it is marked complete
-    # TODO: Fix this. It is fucked and I want to burn it with fire.
-    return false if self.task_status.name == "Complete"
+    return false if task.complete?
 
     # Compare the recommended date with the date given to determine
     # if the task is overdue
     recommended_date = self.task_template.recommended_completion_date
-    date > recommended_date
+    reference_date > recommended_date
   end
 
-  def long_overdue?(date=Time.zone.now)
+  def long_overdue?
     # A task cannot be overdue if it is marked complete
-    # TODO: Fix this. It is fucked and I want to burn it with fire.
-    return false if status == :complete
+    return false if task.complete?
 
     # Compare the recommended date with the date given to determine
     # if the task is overdue
     recommended_date = task_template.recommended_completion_date
-    date > recommended_date and date.weeks_ago(2) > recommended_date
+    reference_date > recommended_date and date.weeks_ago(2) > recommended_date
   end
 
   def complete?
