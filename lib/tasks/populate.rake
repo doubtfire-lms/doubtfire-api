@@ -17,12 +17,26 @@ namespace :db do
       cwoodward:  {first: "Clinton",  last: "Woodward", id: -1 },
     }
 
-    # List of first and last names to use
-    names = {
-      "Allan" => "Jones",
-      "Rohan" => "Liston",
-      "Joost" => "Cornelius Copernicus Pocohontas Archimedes Gandalf Bilbo Samantha Evelyn Goldmember Funke Kupper",
-      "Akihiro" => "Noguchi"
+    # FIXME: Not enough hilarious names
+    joosts_long_ass_name = %w[
+      Cornelius
+      Copernicus
+      Pocohontas
+      Archimedes
+      Gandalf
+      Bilbo
+      Samantha
+      Evelyn
+      Goldmember
+      Funke
+      Kupper
+    ].join(" ")
+
+    randies = {
+      allan:   {first: "Allan",    last: "Jones",                nickname: "P-Jiddy"},
+      rohan:   {first: "Rohan",    last: "Liston",               nickname: "Gunner"},
+      aki:     {first: "Akihiro",  last: "Noguchi",              nickname: "Unneccesary Animations"},
+      joost:   {first: "Joost",    last: joosts_long_ass_name,   nickname: "Joe"}
     }
 
     # List of subject names to use
@@ -47,20 +61,24 @@ namespace :db do
     TaskStatus.create(:name => "Complete", :description => "This task has been signed off by your tutor.")
 
     # Create 4 students
-    names.each do |first, last|
+    randies.each do |username, profile|
       User.populate(1) do |user|
-        user.email = "#{first.downcase}@doubtfire.com"
+        user.username           = username.to_s
+        user.nickname           = profile[:nickname]
+        user.email              = "#{username}@doubtfire.com"
         user.encrypted_password = BCrypt::Password.create("password")
-        user.first_name = first
-        user.last_name = last
-        user.sign_in_count = 0
-        user.system_role = "user"
+        user.first_name         = profile[:first]
+        user.last_name          = profile[:last]
+        user.sign_in_count      = 0
+        user.system_role        = "user"
       end
     end
 
     # Create 2 tutors
     tutors.each do |username, info|
       User.populate(1) do |tutor|
+        tutor.username             = username.to_s
+        tutor.nickname             = info[:nickname]
         tutor.email = "#{username.to_s}@doubtfire.com"
         tutor.encrypted_password  = BCrypt::Password.create("password")
         tutor.first_name          = info[:first]
@@ -73,17 +91,21 @@ namespace :db do
 
     # Create 1 convenor
     User.populate(1) do |admin|
-      admin.email = "convenor@doubtfire.com"
-      admin.encrypted_password = BCrypt::Password.create("password")
-      admin.first_name = "Clinton"
-      admin.last_name = "Woodward"
-      admin.sign_in_count = 0
-      admin.system_role = "convenor"
-      ids["convenor"] = admin.id
+      admin.username            = "convenor"
+      admin.nickname            = "Strict"
+      admin.email               = "convenor@doubtfire.com"
+      admin.encrypted_password  = BCrypt::Password.create("password")
+      admin.first_name          = "Somedude"
+      admin.last_name           = "Withlotsapower"
+      admin.sign_in_count       = 0
+      admin.system_role         = "convenor"
+      ids["convenor"]           = admin.id
     end
 
     # Create 1 superuser
     User.populate(1) do |su|
+      su.username = "superuser"
+      su.nickname = "God"
       su.email = "superuser@doubtfire.com"
       su.encrypted_password = BCrypt::Password.create("password")
       su.first_name = "Super"
@@ -148,7 +170,7 @@ namespace :db do
  
     complete_status = TaskStatus.where(:name=> "Complete").first
 
-    User.where(:first_name => "Allan").each do |allan|
+    User.where(:username => "allan").each do |allan|
       allan.team_memberships.each do |team_membership|
         project = team_membership.project
 
@@ -159,7 +181,7 @@ namespace :db do
       end
     end
 
-    User.where(:first_name => "Rohan").each do |rohan|
+    User.where(:username => "rohan").each do |rohan|
       rohan.team_memberships.each do |team_membership|
         project = team_membership.project
 

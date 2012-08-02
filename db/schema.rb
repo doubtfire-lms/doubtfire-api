@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20120719234620) do
+ActiveRecord::Schema.define(:version => 20120802053203) do
 
   create_table "project_administrators", :force => true do |t|
     t.integer  "project_template_id"
@@ -122,6 +122,8 @@ ActiveRecord::Schema.define(:version => 20120719234620) do
     t.string   "first_name"
     t.string   "last_name"
     t.string   "system_role"
+    t.string   "username"
+    t.string   "nickname"
   end
 
 end

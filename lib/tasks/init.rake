@@ -11,7 +11,9 @@ namespace :db do
 
 		# Create superuser
 		User.populate(1) do |superuser|
-			superuser.email = "superuser@doubtfire.com"
+			superuser.username = "superuser"
+			superuser.nickname = "superuser"
+			superuser.email = "#{superuser.username}@doubtfire.com"
 			superuser.encrypted_password = BCrypt::Password.create("password")
 			superuser.first_name = "Super"
 			superuser.last_name = "User"
@@ -21,7 +23,9 @@ namespace :db do
 
 		# Create convenor 1
 		User.populate(1) do |superuser|
-			superuser.email = "convenor@doubtfire.com"
+			superuser.username = "convenor1"
+			superuser.nickname = "convenor1"
+			superuser.email = "#{superuser.username}@doubtfire.com"
 			superuser.encrypted_password = BCrypt::Password.create("password")
 			superuser.first_name = "Clinton"
 			superuser.last_name = "Woodward"
@@ -31,7 +35,9 @@ namespace :db do
 
 		# Create convenor 2
 		User.populate(1) do |superuser|
-			superuser.email = "convenor2@doubtfire.com"
+			superuser.username = "convenor2"
+			superuser.nickname = "convenor2"
+			superuser.email = "#{superuser.username}@doubtfire.com"
 			superuser.encrypted_password = BCrypt::Password.create("password")
 			superuser.first_name = "Andrew"
 			superuser.last_name = "Cain"

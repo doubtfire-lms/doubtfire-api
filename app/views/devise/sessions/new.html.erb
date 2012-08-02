@@ -4,8 +4,8 @@
   <h1>Doubtfire</h1>
   <h2>Sign In</h2>
   <%= form_for(resource, :as => resource_name, :url => session_path(resource_name)) do |f| %>
-    <div><%= f.label :email %>
-    <%= f.email_field :email %></div>
+    <div><%= f.label :username %>
+    <%= f.text_field :username %></div>
 
     <div><%= f.label :password %>
     <%= f.password_field :password %></div>
