@@ -33,7 +33,7 @@ class ProjectTemplate < ActiveRecord::Base
         task_templates_for_project = TaskTemplate.where(:project_template_id => self.id)
         task_templates_for_project.each do |task_template|
           Task.populate(1) do |task|
-            task.task_template_id = user_id
+            task.task_template_id = task_template.id
             task.project_id = project.id
             task.task_status_id = 1     # @TODO: Remove hard-coded value
             task.awaiting_signoff = false
