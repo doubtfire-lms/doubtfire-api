@@ -16,7 +16,7 @@ class ProjectTemplatesController < ApplicationController
   # GET /project_templates/1.json
   def show
     @project_template = ProjectTemplate.find(params[:id])
-    @task_templates = TaskTemplate.where(:project_template_id => params[:id])
+    @project_tasks = TaskTemplate.where(:project_template_id => params[:id])
     @project_users = User.joins(:team_memberships => :project).where(:projects => {:project_template_id => params[:id]})
     @project_teams = Team.where(:project_template_id => params[:id])
     
@@ -30,6 +30,7 @@ class ProjectTemplatesController < ApplicationController
   # GET /project_templates/new.json
   def new
     @project_template = ProjectTemplate.new
+    @convenors = User.where(:system_role => "convenor")
 
     # Create a new project template, populate it with sample data, and save it immediately.
     @project_template.name = "New Project"

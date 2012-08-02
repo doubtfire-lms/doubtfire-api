@@ -1,4 +1,5 @@
- <table id="teams-table" class="table table-striped">
+ <p id="no-teams-message" <%= "hidden='hidden'" if not team_list.empty? %> >This project has no teams.</p>
+ <table id="teams-table" class="table table-striped" <%= "hidden='hidden'" if team_list.empty? %> >
   <thead>
     <tr>
       <th>Manager</th>
@@ -9,7 +10,7 @@
   </thead>
   <tbody>
     <!-- Rows are rendered as a partial so that they can be re-rendered from JavaScript after editing a row. See "teams/edit.js.erb" and "teams/edit.js.erb". -->
-    <% @project_teams.each do |team| %>
+    <% team_list.each do |team| %>
       <%= render :partial => 'teams/table_row', :locals => { :team => team } %>
     <% end %>
   </tbody>

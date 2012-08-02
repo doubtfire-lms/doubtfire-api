@@ -3,3 +3,10 @@ var teamRowId = "team-" + "<%= @team.id %>" +  "-row";
 
 // Delete the corresponding row in the table
 $("#" + teamRowId).remove();
+
+// Replace the table with a message if there are no more rows
+if($("#teams-table").find("tbody").children().length == 0)
+{
+	$("#teams-table").hide();
+	$("#no-teams-message").show();
+}

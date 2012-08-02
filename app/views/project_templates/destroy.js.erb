@@ -3,3 +3,10 @@ var projectTemplateRowId = "project-" + "<%= @project_template.id %>" +  "-row";
 
 // Delete the corresponding row in the table
 $("#" + projectTemplateRowId).remove();
+
+// Replace the table with a message if there are no more rows
+if($("#project-templates-table").find("tbody").children().length == 0)
+{
+	$("#project-templates-table").hide();
+	$("#no-project-templates-message").show();
+}

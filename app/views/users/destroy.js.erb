@@ -3,3 +3,10 @@ var userRowId = "user-" + "<%= @user.id %>" +  "-row";
 
 // Delete the corresponding row in the table
 $("#" + userRowId).remove();
+
+// Replace the table with a message if there are no more rows
+if($("#users-table").find("tbody").children().length == 0)
+{
+	$("#users-table").hide();
+	$("#no-users-message").show();
+}

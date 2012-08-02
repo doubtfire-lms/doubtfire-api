@@ -3,3 +3,10 @@ var taskRowId = "task-" + "<%= @task_template.id %>" +  "-row";
 
 // Delete the corresponding row in the table
 $("#" + taskRowId).remove();
+
+// Replace the table with a message if there are no more rows
+if($("#tasks-table").find("tbody").children().length == 0)
+{
+	$("#tasks-table").hide();
+	$("#no-tasks-message").show();
+}

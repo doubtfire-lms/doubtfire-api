@@ -1,4 +1,5 @@
-<table id="users-table" class="table table-striped">
+<p id="no-users-message" <%= "hidden='hidden'" if not @project_users.empty? %> >This project has no users.</p>
+<table id="users-table" class="table table-striped" <%= "hidden='hidden'" if user_list.empty? %>>
   <thead>
     <tr>
       <th><%= User.human_attribute_name(:email) %></th>

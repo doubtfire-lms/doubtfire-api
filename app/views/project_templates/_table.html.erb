@@ -1,4 +1,5 @@
-<table id="project-templates-table" class="table table-striped">
+<p id="no-project-templates-message" <%= "hidden='hidden'" if not project_templates.empty? %> ><%= empty_table_string %></p>
+<table id="project-templates-table" class="table table-striped" <%= "hidden='hidden'" if project_templates.empty? %> <%= empty_table_string %>>
   <thead>
     <tr>
       <th><%= ProjectTemplate.human_attribute_name(:name) %></th>

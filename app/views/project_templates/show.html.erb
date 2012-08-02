@@ -32,11 +32,8 @@
   <div class="widget">
     <h2><i class="icon-pencil"></i>Tasks</h2>
     <div class="widget-content">
-      <% if @task_templates.empty? %>
-        <p>This project has no tasks.</p>
-      <% else %>
-        <%= render :partial => 'task_templates/table' %>
-      <% end %>
+      <%= render :partial => 'task_templates/table', :locals => { :task_list => @project_tasks, 
+                                                                  :empty_table_string => "This project has no tasks."} %>
       <hr />
       <%= link_to "Create new task", new_project_task_path(@project_template), :class => 'btn btn-primary', "data-remote" => true %>
     </div>
@@ -46,12 +43,9 @@
   <div class="widget">
     <h2><i class="icon-group"></i>Teams</h2>
     <div class="widget-content">
-      <% if @project_teams.empty? %>
-        <p>This project has no teams.</p>
-      <% else %>
-        <%= render 'teams/table' %>
-      <% end %>
-
+      <%= render :partial => 'teams/table', :locals => { :team_list => @project_teams,
+                                                         :empty_table_string => "This project has no teams."} %>
+      <hr />
       <%= link_to "Create new team", new_project_team_path(@project_template), :class => 'btn btn-primary', "data-remote" => true %>
     </div>
   </div>
@@ -60,12 +54,9 @@
   <div class="widget">
     <h2><i class="icon-user"></i>Users</h2>
     <div class="widget-content">
-      <% if @project_users.empty? %>
-        <p>This project has no users.</p>
-      <% else %>
-        <%= render :partial => 'users/table', :locals => { :user_list => @project_users } %>
-      <% end %>
-
+      <%= render :partial => 'users/table', :locals => { :user_list => @project_users,
+                                                         :empty_table_string => "This project has no users."} %>
+      <hr />
       <%= link_to "Add users", new_user_path, :class => 'btn btn-primary', "data-remote" => true %>
     </div>
   </div>

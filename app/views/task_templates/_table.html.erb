@@ -1,18 +1,19 @@
-<table id="tasks-table"class="table table-striped">
-  <thead>
-    <tr>
-      <th><%= TaskTemplate.human_attribute_name(:name) %></th>
-      <th><%= TaskTemplate.human_attribute_name(:description) %></th>
-      <th><%= TaskTemplate.human_attribute_name(:weighting) %></th>
-      <th><%= TaskTemplate.human_attribute_name(:required) %></th>
-      <th><%= TaskTemplate.human_attribute_name(:recommended_completion_date) %></th>
-      <th><%=t '.actions', :default => t("helpers.actions") %></th>
-    </tr>
-  </thead>
-  <tbody>
-    <!-- Rows are rendered as a partial so that they can be re-rendered from JavaScript after editing a row. See "task_templates/edit.js.erb" and "task_templates/edit.js.erb". -->
-    <% @task_templates.each do |task_template| %>
-      <%= render :partial => 'task_templates/table_row', :locals => { :task_template => task_template } %>
-    <% end %>
-  </tbody>
+<p id="no-tasks-message" <%= "hidden='hidden'" if not task_list.empty? %> ><%= empty_table_string %></p>
+<table id="tasks-table" class="table table-striped" <%= "hidden='hidden'" if task_list.empty? %> >
+    <thead>
+      <tr>
+        <th><%= TaskTemplate.human_attribute_name(:name) %></th>
+        <th><%= TaskTemplate.human_attribute_name(:description) %></th>
+        <th><%= TaskTemplate.human_attribute_name(:weighting) %></th>
+        <th><%= TaskTemplate.human_attribute_name(:required) %></th>
+        <th><%= TaskTemplate.human_attribute_name(:recommended_completion_date) %></th>
+        <th><%=t '.actions', :default => t("helpers.actions") %></th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Rows are rendered as a partial so that they can be re-rendered from JavaScript after editing a row. See "task_templates/edit.js.erb" and "task_templates/edit.js.erb". -->
+      <% task_list.each do |task_template| %>
+        <%= render :partial => 'task_templates/table_row', :locals => { :task_template => task_template } %>
+      <% end %>
+    </tbody>
 </table>
