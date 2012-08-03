@@ -2,6 +2,7 @@
 <div class="widget-content">
 	<div class="activity-feed-entry">
 		<div class="feed-entry-body">
+			<h3>Tasks Due</h3>
 			<% unless @project.overdue_tasks.empty? %>
 				<h4>Overdue</h4>
 				<ol>
@@ -12,7 +13,7 @@
 			<% end %>
 
 			<% unless @project.currently_due_tasks.empty? %>
-				<h4>Due This Week</h4>
+				<h4>This Week</h4>
 				<ol>
 					<% @project.currently_due_tasks.each do |currently_due_task| %>
 						<li><%= link_to currently_due_task.task_template.name, project_task_path(currently_due_task) %></li>
