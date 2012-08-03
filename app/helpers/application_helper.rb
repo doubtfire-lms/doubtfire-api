@@ -5,8 +5,6 @@ module ApplicationHelper
     else
       Time.zone.now
     end
-
-    Time.zone.parse('2012-9-10')
   end
 
   def flash_class(level)
