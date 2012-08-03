@@ -1,38 +1,43 @@
+<%= javascript 'projects.js' %>
 <%= stylesheets 'tasks.css' %>
 
 <h2><i class="icon-tasks"></i>Tasks</h2>
 <div class="widget-content" id="task-list-widget">
 	<% tasks.each do |task| %>
-	<div class="task-list-entry">
-		<h3 style="display: inline">
-			<%= task.task_template.name %>			
+	<div class="task-list-entry row-fluid" id="task-<%= task.id %>-entry">
+		<h3>
+			<%= link_to truncate(task.task_template.name, :length => 15), project_task_path(task) %>
 		</h3>
-		<%= status_badge_for_task task %>
-		<% if task.awaiting_signoff? %>
-			<span class="task-awaiting-signoff-label label label-info">Awaiting Sign-off</span>
-		<% end %>
-		<div class="task-entry-body" id="task-<%= task.id %>-entry">
-			<p><%= task.task_template.description %></p>
-			<div class="task-status-controls">
-				<% if task.task_status.name != "Complete" %>
-					<% if task.awaiting_signoff? %>
-						<a href="<%= awaiting_signoff_path(task, "false") %>" data-method="put" class="ready-to-mark-button btn" data-remote="true">
-							Set as Not Ready to Mark
-							<i class="icon-remove"></i>
-						</a>
-					<% else %>
-						<a href="<%= awaiting_signoff_path(task, "true") %>" data-method="put" class="ready-to-mark-button btn" data-remote="true">
-							Set as Ready to Mark
-							<i class="icon-ok"></i>
-						</a>
-					<% end %>
-
-				<a href="<%= update_task_status_path(task, "Complete") %>" data-method="put" class="task-status-button btn btn-success" data-remote="true">
-					Complete Task
-					<i class="icon-ok"></i>
-				</a>
+		<p class="task-weighting-points">(<%= task.task_template.weighting %> points)</p>
+		<p class="toggle-task-description-container"><a href="#" class="toggle-task-description btn"><i class="icon-chevron-down"></i></a></p>
+		<%= task_submission_vs_time(task) %>
+		<div class="task-status-controls" style="display: inline-block;">
+			<div class="btn-group">
+				<% if task.awaiting_signoff? %>
+				<button class="btn btn-success status-display-button" style="width: 160px; text-align: left;">
+					Ready to Mark <i class="icon-ok" style="display: block; float: right; margin-top: 2px;"></i>
+				</button>
+				<button class="btn btn-success dropdown-toggle" data-toggle="dropdown">
+				<% else %>
+				<button class="btn status-display-button" style="width: 160px; text-align: left;">
+					Not Ready to Mark
+				</button>
+				<button class="btn dropdown-toggle" data-toggle="dropdown">
 				<% end %>
+					<span class="caret"></span>
+				</button>
+				<ul class="dropdown-menu">
+					<li>
+						<a href="<%= awaiting_signoff_path(task, "true") %>" data-method="put" class="ready-to-mark-button" data-remote="true">Ready to Mark <i style="display: block; float: right;" class="icon-ok"></i></a>
+					</li>
+					<li>
+						<a href="<%= awaiting_signoff_path(task, "false") %>" data-method="put" class="ready-to-mark-button" data-remote="true">Not Ready to Mark <i style="display: block; float: right;" class="icon-remove"></i></a>
+					</li>
+				</ul>
 			</div>
+		</div>
+		<div class="task-description" style="display: none; clear: left; margin-top: 10px">
+			<p><%= task.task_template.description %></p>
 		</div>
 	</div>
 	<% end %>

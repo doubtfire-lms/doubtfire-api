@@ -1,42 +1,32 @@
 function updateTaskEntryAwaitingSignOff() {
 	var taskContainer 	= $("#task-"+<%= @task.id %>+"-entry");
 	var awaitingSignoff = <%= @task.awaiting_signoff %>;
-	updateAwaitingSignoffBadge(taskContainer, awaitingSignoff);
-	updateReadyToMarkButton(taskContainer, awaitingSignoff);
+	updateTaskStatusLabel(taskContainer, awaitingSignoff);
+	updateStatusDisplayButton(taskContainer, awaitingSignoff);
 }
 
-function updateAwaitingSignoffBadge(taskContainer, awaitingSignoff) {
-	var awaitingSignoffLabels = taskContainer.parent().find(".task-awaiting-signoff-label");
-
+function updateTaskStatusLabel(taskContainer, awaitingSignoff) {
+	var statusLabel = taskContainer.find(".task-status");
 	if (awaitingSignoff) {
-		if (awaitingSignoffLabels.length !== 0) {
-			var awaitingSignoffLabel = awaitingSignoffLabels.first();
-			awaitingSignoffLabel.show();
-		}
-		else {
-			var taskStatusLabel = taskContainer.parent().find(".task-status-label").first();
-			taskStatusLabel.after("<span class=\"task-awaiting-signoff-label label label-info\" style=\"margin-left: 4px\">Awaiting Sign-off</span>");
-		}
+		statusLabel.text("Awaiting Signoff");
 	}
 	else {
-		if (awaitingSignoffLabels.length !== 0) {
-			var awaitingSignoffLabel = awaitingSignoffLabels.first();
-			awaitingSignoffLabel.hide();
-		}
+		statusLabel.text("Not submitted");
 	}
 }
 
-function updateReadyToMarkButton(taskContainer, awaitingSignoff) {
-	var readyToMarkButton = taskContainer.find(".ready-to-mark-button").first();
 
+
+function updateStatusDisplayButton(taskContainer, awaitingSignoff) {
+	
 	if (awaitingSignoff) {
-		readyToMarkButton.html("Set as Not Ready to Mark<i class=\"icon-remove\" style=\"margin-left: 4px\"></i>");
-		var href = readyToMarkButton.attr("href").replace('awaiting_signoff/true', 'awaiting_signoff/false');
-		readyToMarkButton.attr("href", href);
+		taskContainer.find(".status-display-button").html("Ready to Mark <i class=\"icon-ok\" style=\"display: block; float: right; margin-top: 2px;\"></i>");
+		taskContainer.find(".status-display-button").attr("class", "btn btn-success status-display-button");
+		taskContainer.find(".dropdown-toggle").attr("class", "btn btn-success dropdown-toggle");
 	} else {
-		readyToMarkButton.html("Set as Ready to Mark<i class=\"icon-ok\" style=\"margin-left: 4px\"></i>");
-		var href = readyToMarkButton.attr("href").replace('awaiting_signoff/false', 'awaiting_signoff/true');
-		readyToMarkButton.attr("href", href);
+		taskContainer.find(".status-display-button").html("Not Ready to Mark");
+		taskContainer.find(".status-display-button").attr("class", "btn status-display-button");
+		taskContainer.find(".dropdown-toggle").attr("class", "btn dropdown-toggle");
 	}
 }
 

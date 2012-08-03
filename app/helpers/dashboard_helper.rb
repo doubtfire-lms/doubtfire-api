@@ -12,11 +12,11 @@ module DashboardHelper
       progress = project.relative_progress
 
       case progress
-        when :ahead     then raw("<span class=\"label label-success\">Ahead</span>")
-        when :on_track  then raw("<span class=\"label label-info\">On Track</span>")
-        when :behind    then raw("<span class=\"label label-warning\">Behind</span>")
-        when :danger    then raw("<span class=\"label label-important\">Danger</span>")
-        when :doomed    then raw("<span class=\"label label-inverse\">Doomed</span>")
+        when :ahead     then raw("<span class=\"status-badge label label-success\">Ahead</span>")
+        when :on_track  then raw("<span class=\"status-badge label label-info\">On Track</span>")
+        when :behind    then raw("<span class=\"status-badge label label-warning\">Behind</span>")
+        when :danger    then raw("<span class=\"status-badge label label-important\">Danger</span>")
+        when :doomed    then raw("<span class=\"status-badge label label-inverse\">Doomed</span>")
       end
     end
   end

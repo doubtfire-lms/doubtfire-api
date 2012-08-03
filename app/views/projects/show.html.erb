@@ -17,23 +17,23 @@
 			<li><a href="#tasks-tab" data-toggle="tab">Tasks</a></li>
 		</ul>
 		<div class="tab-content">
-			<div class="tab-pane active" id="summary-tab">
+			<div class="tab-pane" id="summary-tab">
 				<div class="span7 widget">
 					<h2><i class="icon-bar-chart"></i>Progress</h2>
 					<div class="widget-content" id="progress-widget">
 						<%= render 'dashboard/project_progress', :project => @project %>
 					</div>
 				</div>
+
+				<div class="span5 widget" id="task-highlights-widget">
+					<%= render 'dashboard/task_highlights' %>
+				</div>
 			</div>
 
-			<div class="tab-pane" id="tasks-tab">
+			<div class="tab-pane active" id="tasks-tab">
 				<div class="span7 widget">
 					<%= render 'layouts/task_list', :tasks => @project.tasks %>
 				</div>
-			</div>
-			
-			<div class="span5 widget" id="task-highlights-widget">
-				<%= render 'dashboard/task_highlights' %>
 			</div>
 		</div>
 	</div>
