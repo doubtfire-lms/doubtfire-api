@@ -37,7 +37,6 @@
                                                                   :empty_table_string => "This project has no tasks."} %>
       <hr />
       <%= link_to "Create new task", new_project_task_path(@project_template), :class => 'btn', "data-remote" => true %>
-      <%= link_to "Import tasks from CSV", "#", :class => 'btn', "data-remote" => true %>
     </div>
   </div>
 
@@ -49,7 +48,6 @@
                                                          :empty_table_string => "This project has no teams."} %>
       <hr />
       <%= link_to "Create new team", new_project_team_path(@project_template), :class => 'btn', "data-remote" => true %>
-      <%= link_to "Import teams from CSV", "#", :class => 'btn', "data-remote" => true %>
     </div>
   </div>
 
@@ -61,7 +59,12 @@
                                                          :empty_table_string => "This project has no users.",
                                                          :project_template => @project_template } %>
       <hr />
-      <%= link_to "Import users from CSV", "#", :class => 'btn', "data-remote" => true %>
+      <div class="well">
+        <%= form_tag "#{@project_template.id}/import_users", :remote => true do %>
+          <%= file_field(:csv_file, :file) %>
+          <%= submit_tag "Import users from CSV", :class => "btn" %>
+        <% end %>
+      </div>
     </div>
   </div>
 

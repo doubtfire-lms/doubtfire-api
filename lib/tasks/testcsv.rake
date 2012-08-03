@@ -81,6 +81,6 @@ namespace :db do
 		    end
       	end
 
-      	ProjectTemplate.find(1).import_users_from_csv('./oop.csv')
+      	#ProjectTemplate.find(1).import_users_from_csv('./oop.csv')
 	end
 end

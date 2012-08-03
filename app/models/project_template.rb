@@ -61,7 +61,7 @@ class ProjectTemplate < ActiveRecord::Base
   # Only Student ID, First Name, and Surname are used.
   def import_users_from_csv(file)
     CSV.foreach(file) do |row|
-
+      
       # Make sure we're not looking at the header or an empty line
       next if row[0][0] != '['     
       next if row.length != 8
@@ -69,32 +69,42 @@ class ProjectTemplate < ActiveRecord::Base
       username = row[0][1..-2]    # 1st column: Student ID with [] trimmed off
       first_name = row[2]         # 3rd column: First name 
       last_name = row[4]          # 4th column: Last name
-      team_id = Team.where(:project_template_id => self.id).sample.id
+      team_id = 1 
 
-      user_to_add = User.where(:username => username).first
-
+      Rails.logger.info("==========================================================SEARCHING FOR #{username}...")
+      # user_to_add = User.where(:username => username)
+      
       # If the user doesn't exist in the system yet, create an account for them.
-      if user_to_add.nil? 
-        User.populate(1) do |user|
-          user.username = username
-          user.first_name = first_name.titleize
-          user.last_name = last_name.titleize
-          user.email = "#{username}@swin.edu.au"
-          user.encrypted_password = BCrypt::Password.create("password")   # @TODO: Generate password and email it to the user
-          user.nickname = "Noob"
-          user_to_add = user
-        end
-      end
+      # if user_to_add.count == 0
+      #   Rails.logger.info("==========================================================CREATING USER #{username}")
+      #   user_to_add = User.create(:username => username,
+      #               :first_name => first_name.titleize,
+      #               :last_name => last_name.titleize,
+      #               :email => "#{username}@swin.edu.au",
+      #               :encrypted_password => BCrypt::Password.create("password"),
+      #               :nickname => "noob"
+      #     )
+      # else
+      #   Rails.logger.info("==========================================================USER #{username} ALREADY EXISTS")
+      # end
 
-      user_to_add = User.where(:username => username).first
-      user_not_in_project = TeamMembership.joins(:project => :project_template).where(:user_id => user_to_add.id, :projects => {:project_template_id => self.id})[0].nil?
+      user_to_add = User.find_or_create_by_username(username)
+      Rails.logger.info("==========================================================#{user_to_add.username} PERSISTED? #{user_to_add.persisted?}")
+      user_to_add.save
+
+      # user_to_add = User.where(:username => username).first
+      Rails.logger.info("==========================================================#{user_to_add.username}")
+      user_not_in_project = TeamMembership.joins(:project => :project_template).where(
+        :user_id => user_to_add.id,
+        :projects => {:project_template_id => self.id}
+      ).count == 0
       
       # Add the user to the project (if not already in there)
       if user_not_in_project
-        puts "ADDING USER #{user_to_add.id}: #{username} - #{user_to_add.full_name} TO PROJECT #{self.name}"
+        Rails.logger.info("ADDING USER #{user_to_add.id}: #{username} - #{user_to_add.full_name} TO PROJECT #{self.name}")
         self.add_user(user_to_add.id, team_id, "student")    # @TODO: Get tute ID somehow instead of hard-coding 
       else
-        puts "USER #{user_to_add.id}: #{username} - #{user_to_add.full_name} ALREADY IN PROJECT #{self.name}"
+        Rails.logger.info("USER #{user_to_add.id}: #{username} - #{user_to_add.full_name} ALREADY IN PROJECT #{self.name}")
       end
     end
   end

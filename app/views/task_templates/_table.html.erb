@@ -1,4 +1,4 @@
-<p id="no-tasks-message" <%= "hidden='hidden'" if not task_list.empty? %> ><%= empty_table_string %></p>
+<p id="no-tasks-message" <%= "hidden='hidden'" unless task_list.empty? %> ><%= empty_table_string %></p>
 <table id="tasks-table" class="table table-striped" <%= "hidden='hidden'" if task_list.empty? %> >
     <thead>
       <tr>
