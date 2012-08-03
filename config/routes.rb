@@ -15,33 +15,31 @@ Doubtfire::Application.routes.draw do
 
   # Student context routes
   resources :projects do
-    resources :tasks, :only => :index
+    resources :tasks, :only => [:index, :show]
   end
 
   put 'tasks/:task_id/awaiting_signoff/:awaiting_signoff' => 'tasks#awaiting_signoff', :via => :put, :as => 'awaiting_signoff'
   put 'tasks/:task_id/update_task_status/:status' => 'tasks#update_task_status', :via => :put, :as => 'update_task_status'
-  get "tasks/index"
-  get "tasks/show"
 
   # Project convenor context routes
     
-    # Project templates
-    post 'project_templates/:id/update' => 'project_templates#update', :via => :post, :as => 'update_project_template'
-    get 'project_templates/:id/cancel_update' => 'project_templates#finish_update', :as => 'cancel_update_project_template'
-    
-    # Project tasks
-    get 'project_templates/:project_template_id/new_task' => 'task_templates#new', :as => 'new_project_task'
-    post 'project_templates/:project_template_id/update_task/:task_template_id' => 'task_templates#update', :via => :post, :as => 'update_project_task'
-    get 'project_templates/:project_template_id/cancel_update_task/:task_template_id' => 'task_templates#finish_update', :as => 'cancel_update_project_task'
-    
-    # Project teams
-    get 'project_templates/:project_template_id/new_team' => 'teams#new', :as => 'new_project_team'
-    post 'project_templates/:project_template_id/update_team/:team_id' => 'teams#update', :via => :post, :as => 'update_project_team'
-    get 'project_templates/:project_template_id/cancel_update_team/:team_id' => 'teams#finish_update', :as => 'cancel_update_project_team'
+  # Project templates
+  post 'project_templates/:id/update' => 'project_templates#update', :via => :post, :as => 'update_project_template'
+  get 'project_templates/:id/cancel_update' => 'project_templates#finish_update', :as => 'cancel_update_project_template'
+  
+  # Project tasks
+  get 'project_templates/:project_template_id/new_task' => 'task_templates#new', :as => 'new_project_task'
+  post 'project_templates/:project_template_id/update_task/:task_template_id' => 'task_templates#update', :via => :post, :as => 'update_project_task'
+  get 'project_templates/:project_template_id/cancel_update_task/:task_template_id' => 'task_templates#finish_update', :as => 'cancel_update_project_task'
+  
+  # Project teams
+  get 'project_templates/:project_template_id/new_team' => 'teams#new', :as => 'new_project_team'
+  post 'project_templates/:project_template_id/update_team/:team_id' => 'teams#update', :via => :post, :as => 'update_project_team'
+  get 'project_templates/:project_template_id/cancel_update_team/:team_id' => 'teams#finish_update', :as => 'cancel_update_project_team'
 
-    # Project users
-    get 'project_templates/:project_template_id/add_user' => 'project_templates#add_user', :as => 'add_project_user'
-    get 'project_templates/:project_template_id/remove_user/:user_id' => 'project_templates#remove_user', :as => 'remove_project_user'
+  # Project users
+  get 'project_templates/:project_template_id/add_user' => 'project_templates#add_user', :as => 'add_project_user'
+  get 'project_templates/:project_template_id/remove_user/:user_id' => 'project_templates#remove_user', :as => 'remove_project_user'
 
   # Convenor context routes
   resources :convenor, :only => :index

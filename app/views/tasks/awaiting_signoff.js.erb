@@ -20,9 +20,9 @@ function updateTaskStatusLabel(taskContainer, awaitingSignoff) {
 function updateStatusDisplayButton(taskContainer, awaitingSignoff) {
 	
 	if (awaitingSignoff) {
-		taskContainer.find(".status-display-button").html("Ready to Mark <i class=\"icon-ok\" style=\"display: block; float: right; margin-top: 2px;\"></i>");
-		taskContainer.find(".status-display-button").attr("class", "btn btn-success status-display-button");
-		taskContainer.find(".dropdown-toggle").attr("class", "btn btn-success dropdown-toggle");
+		taskContainer.find(".status-display-button").html("Ready to Mark <i class=\"icon-thumbs-up\" style=\"display: block; float: right; margin-top: 2px;\"></i>");
+		taskContainer.find(".status-display-button").attr("class", "btn btn-primary status-display-button");
+		taskContainer.find(".dropdown-toggle").attr("class", "btn btn-primary dropdown-toggle");
 	} else {
 		taskContainer.find(".status-display-button").html("Not Ready to Mark");
 		taskContainer.find(".status-display-button").attr("class", "btn status-display-button");

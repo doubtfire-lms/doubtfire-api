@@ -13,14 +13,17 @@
 		<p class="toggle-task-description-container"><a href="#" class="toggle-task-description btn"><i class="icon-chevron-down"></i></a></p>
 		<%= task_submission_vs_time(task) %>
 		<div class="task-status-controls" style="display: inline-block;">
+			<% if task.complete? %>
+				<button class="btn btn-success status-display-button">Complete <i class="icon-ok button-icon"></i></button>
+			<% else %>
 			<div class="btn-group">
 				<% if task.awaiting_signoff? %>
-				<button class="btn btn-success status-display-button" style="width: 160px; text-align: left;">
-					Ready to Mark <i class="icon-ok" style="display: block; float: right; margin-top: 2px;"></i>
+				<button class="btn btn-primary status-display-button">
+					Ready to Mark <i class="icon-thumbs-up button-icon" style=""></i>
 				</button>
-				<button class="btn btn-success dropdown-toggle" data-toggle="dropdown">
+				<button class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
 				<% else %>
-				<button class="btn status-display-button" style="width: 160px; text-align: left;">
+				<button class="btn status-display-button">
 					Not Ready to Mark
 				</button>
 				<button class="btn dropdown-toggle" data-toggle="dropdown">
@@ -29,15 +32,16 @@
 				</button>
 				<ul class="dropdown-menu">
 					<li>
-						<a href="<%= awaiting_signoff_path(task, "true") %>" data-method="put" class="ready-to-mark-button" data-remote="true">Ready to Mark <i style="display: block; float: right;" class="icon-ok"></i></a>
+						<a href="<%= awaiting_signoff_path(task, "true") %>" data-method="put" class="ready-to-mark-button" data-remote="true">Ready to Mark <i class="icon-thumbs-up button-icon"></i></a>
 					</li>
 					<li>
-						<a href="<%= awaiting_signoff_path(task, "false") %>" data-method="put" class="ready-to-mark-button" data-remote="true">Not Ready to Mark <i style="display: block; float: right;" class="icon-remove"></i></a>
+						<a href="<%= awaiting_signoff_path(task, "false") %>" data-method="put" class="ready-to-mark-button" data-remote="true">Not Ready to Mark <i class="icon-remove button-icon"></i></a>
 					</li>
 				</ul>
 			</div>
+			<% end %>
 		</div>
-		<div class="task-description" style="display: none; clear: left; margin-top: 10px">
+		<div class="task-description">
 			<p><%= task.task_template.description %></p>
 		</div>
 	</div>
