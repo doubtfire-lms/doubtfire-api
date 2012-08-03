@@ -14,10 +14,10 @@ class TasksController < ApplicationController
   end
 
   def update_task_status
-    @task               = Task.find(params[:task_id])
-    task_status         = TaskStatus.where(:name => params[:status]).first
-    @task.task_status   = task_status
-    @task.awaiting_signoff = false # Because only staff should be able to change task status
+    @task                   = Task.find(params[:task_id])
+    task_status             = status_for_shortname(params[:status])
+    @task.task_status       = task_status
+    @task.awaiting_signoff  = false # Because only staff should be able to change task status
 
     if @task.complete?
       @task.completion_date = Time.zone.now
@@ -44,6 +44,19 @@ class TasksController < ApplicationController
   end
 
   private 
+
+  def status_for_shortname(status_shortname)
+    status_name = case status_shortname
+    when "complete"
+      "Complete"
+    when "fix"
+      "Needs Fixing"
+    when "not_submitted"
+      "Not Submitted"
+    end
+
+    TaskStatus.where(:name => status_name).first
+  end
 
   def load_current_user
     @user = current_user

@@ -1,39 +1,23 @@
-function labelForTaskStatus(status) {
- 	if (status === "Complete") {
- 		return "label label-success";
- 	}
- 	else if (status === "Needs Fixing") {
- 		return "label label-info";
- 	}
- 	else {
- 		return "label";
- 	}
-}
-
 function updateTaskEntryStatus() {
 	var taskContainer 	= $("#task-"+<%= @task.id %>+"-entry");
 	var taskStatus = "<%= @task.task_status.name %>";
-	updateTaskStatusBadge(taskContainer, taskStatus);
-	// updateTaskStatusControls(taskContainer, taskStatus);
+	updateStatusDisplayButton(taskContainer, taskStatus);
 }
 
-function updateTaskStatusControls(taskContainer, status) {
-	var taskStatusControls = taskContainer.find(".task-status-controls");
+function updateStatusDisplayButton(taskContainer, taskStatus) {
 	
-	if (status === "Complete") {
-		taskStatusControls.empty();
-	}
-}
-
-function updateTaskStatusBadge(taskContainer, status) {
-	var taskLabel = taskContainer.parent().find(".task-status-label").first();
-	taskLabel.text(status);
-	taskLabel.attr("class", "task-status-label " + labelForTaskStatus(status));
-
-	var awaitingSignoffLabels = taskContainer.parent().find(".task-awaiting-signoff-label");
-	if (awaitingSignoffLabels.length !== 0) {
-		var awaitingSignoffLabel = awaitingSignoffLabels.first();
-		awaitingSignoffLabel.remove();
+	if (taskStatus === "Complete") {
+		taskContainer.find(".status-display-button").html("Complete <i class=\"icon-ok button-icon\"></i>");
+		taskContainer.find(".status-display-button").attr("class", "btn btn-success status-display-button");
+		taskContainer.find(".dropdown-toggle").attr("class", "btn btn-success dropdown-toggle");
+	} else if (taskStatus === "Needs Fixing") {
+		taskContainer.find(".status-display-button").html("Fix <i class=\"icon-wrench button-icon\"></i>");
+		taskContainer.find(".status-display-button").attr("class", "btn btn-warning status-display-button");
+		taskContainer.find(".dropdown-toggle").attr("class", "btn btn-warning dropdown-toggle");
+	} else if (taskStatus === "Not Submitted") {
+		taskContainer.find(".status-display-button").html("Not Submitted <i class=\"icon-minus-sign button-icon\"></i>");
+		taskContainer.find(".status-display-button").attr("class", "btn status-display-button");
+		taskContainer.find(".dropdown-toggle").attr("class", "btn dropdown-toggle");
 	}
 }
 
