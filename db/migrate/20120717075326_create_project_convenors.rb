@@ -1,6 +1,6 @@
-class CreateProjectAdministrators < ActiveRecord::Migration
+class CreateProjectConvenors < ActiveRecord::Migration
   def change
-    create_table :project_administrators do |t|
+    create_table :project_convenors do |t|
     	t.references :project_template
     	t.references :user
 

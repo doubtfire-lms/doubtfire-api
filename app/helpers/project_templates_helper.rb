@@ -4,8 +4,8 @@ module ProjectTemplatesHelper
 	def get_convenors_string(project_template_id)
 
 		# Get all users who are convenors for the specified project
-		convenors = User.joins(:project_administrators => :project_template)
-		    			.where(:project_administrators => {:project_template_id => project_template_id})
+		convenors = User.joins(:project_convenors => :project_template)
+		    			.where(:project_convenors => {:project_template_id => project_template_id})
 		
 		# Concatenate their names into a string
 		convenors_string = ""

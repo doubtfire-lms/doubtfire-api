@@ -7,7 +7,7 @@ namespace :db do
 
 		# Clear the database
 		[ProjectTemplate, Project, ProjectStatus, TaskTemplate, Task, 
-						  TaskStatus, Team, TeamMembership, User, ProjectAdministrator].each(&:delete_all)
+						  TaskStatus, Team, TeamMembership, User, ProjectConvenor].each(&:delete_all)
 
 		# Create superuser
 		User.populate(1) do |superuser|

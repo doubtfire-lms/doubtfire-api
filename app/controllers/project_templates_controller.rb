@@ -39,7 +39,7 @@ class ProjectTemplatesController < ApplicationController
     @project_template.end_date = 13.weeks.from_now
     
     if @project_template.save
-      ProjectAdministrator.populate(1) do |project_admin|
+      ProjectConvenor.populate(1) do |project_admin|
         project_admin.user_id = current_user.id
         project_admin.project_template_id = @project_template.id
       end
@@ -73,13 +73,13 @@ class ProjectTemplatesController < ApplicationController
       
         # Convenors can only add themselves as a convenor at the moment
         if current_user.is_convenor?
-          @project_administrator = ProjectAdministrator.new(:project_template_id => @project_template.id, :user_id => current_user.id)
-          @project_administrator.save
+          @project_convenor = ProjectConvenor.new(:project_template_id => @project_template.id, :user_id => current_user.id)
+          @project_convenor.save
         elsif current_user.is_superuser?
-          # For superusers, create a corresponding ProjectAdministrator entry for each convenor
+          # For superusers, create a corresponding ProjectConvenor entry for each convenor
           params[:convenor].each do |convenor_id|
-            @project_administrator = ProjectAdministrator.new(:project_template_id => @project_template.id, :user_id => convenor_id)
-            @project_administrator.save
+            @project_convenor = ProjectConvenor.new(:project_template_id => @project_template.id, :user_id => convenor_id)
+            @project_convenor.save
           end
         end
 

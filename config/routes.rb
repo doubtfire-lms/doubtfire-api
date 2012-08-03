@@ -23,7 +23,7 @@ Doubtfire::Application.routes.draw do
   get "tasks/index"
   get "tasks/show"
 
-  # Project administrator context routes
+  # Project convenor context routes
     
     # Project templates
     post 'project_templates/:id/update' => 'project_templates#update', :via => :post, :as => 'update_project_template'

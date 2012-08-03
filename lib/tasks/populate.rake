@@ -57,7 +57,7 @@ namespace :db do
     days = %w[Monday Tuesday Wednesday Thursday Friday]
 
     # Clear the database
-    [ProjectTemplate, Project, ProjectStatus, TaskTemplate, Task, TaskStatus, Team, TeamMembership, User, ProjectAdministrator].each(&:delete_all)
+    [ProjectTemplate, Project, ProjectStatus, TaskTemplate, Task, TaskStatus, Team, TeamMembership, User, ProjectConvenor].each(&:delete_all)
   
     # Populate project/task statuses
     ProjectStatus.create(:health => 100)
@@ -96,16 +96,16 @@ namespace :db do
     end
 
     # Create 1 convenor
-    User.populate(1) do |admin|
-      admin.username            = "convenor"
-      admin.nickname            = "Strict"
-      admin.email               = "convenor@doubtfire.com"
-      admin.encrypted_password  = BCrypt::Password.create("password")
-      admin.first_name          = "Somedude"
-      admin.last_name           = "Withlotsapower"
-      admin.sign_in_count       = 0
-      admin.system_role         = "convenor"
-      ids["convenor"]           = admin.id
+    User.populate(1) do |convenor|
+      convenor.username            = "convenor"
+      convenor.nickname            = "Strict"
+      convenor.email               = "convenor@doubtfire.com"
+      convenor.encrypted_password  = BCrypt::Password.create("password")
+      convenor.first_name          = "Somedude"
+      convenor.last_name           = "Withlotsapower"
+      convenor.sign_in_count       = 0
+      convenor.system_role         = "convenor"
+      ids["convenor"]           = convenor.id
     end
 
     # Create 1 superuser
@@ -130,7 +130,7 @@ namespace :db do
         project_template.end_date     = 13.weeks.since project_template.start_date
 
         # Assign a convenor to each project
-        ProjectAdministrator.populate(1) do |pa|
+        ProjectConvenor.populate(1) do |pa|
           pa.user_id = ids["convenor"]   # Convenor 1
           pa.project_template_id = project_template.id
         end

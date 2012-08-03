@@ -1,4 +1,4 @@
-class ProjectAdministrator < ActiveRecord::Base
+class ProjectConvenor < ActiveRecord::Base
   attr_accessible :project_template_id, :user_id
   
   # Model associations

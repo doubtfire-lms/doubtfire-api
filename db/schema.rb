@@ -13,7 +13,7 @@
 
 ActiveRecord::Schema.define(:version => 20120802053203) do
 
-  create_table "project_administrators", :force => true do |t|
+  create_table "project_convenors", :force => true do |t|
     t.integer  "project_template_id"
     t.integer  "user_id"
     t.datetime "created_at",          :null => false
