@@ -10,7 +10,7 @@ class Task < ActiveRecord::Base
 
   def overdue?
     # A task cannot be overdue if it is marked complete
-    return false if task.complete?
+    return false if complete?
 
     # Compare the recommended date with the date given to determine
     # if the task is overdue
@@ -20,7 +20,7 @@ class Task < ActiveRecord::Base
 
   def long_overdue?
     # A task cannot be overdue if it is marked complete
-    return false if task.complete?
+    return false if complete?
 
     # Compare the recommended date with the date given to determine
     # if the task is overdue

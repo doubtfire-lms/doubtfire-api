@@ -2,6 +2,7 @@
 
 <h2><i class="icon-tasks"></i>Tasks</h2>
 <div class="widget-content" id="task-list-widget">
+	<% Rails.logger.info("TASKS: #{tasks}") %>
 	<% tasks.each do |task| %>
 	<div class="task-list-entry">
 		<h3 style="display: inline">
