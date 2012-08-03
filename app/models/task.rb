@@ -28,6 +28,12 @@ class Task < ActiveRecord::Base
     reference_date > recommended_date and weeks_overdue > 2
   end
 
+  def currently_due?
+    # A task is currently due if it is not complete and over/under the due date by less than
+    # 7 days
+    !complete? and days_overdue.between?(-7, 7)
+  end
+
   def weeks_until_due
     days_until_due / 7
   end

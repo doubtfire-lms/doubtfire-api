@@ -103,8 +103,12 @@ class Project < ActiveRecord::Base
     tasks.map{|task| task.task_template.weighting }.inject(:+)
   end
 
+  def currently_due_tasks
+    tasks.select{|task| task.currently_due? }
+  end
+
   def overdue_tasks
-    tasks.select{|task| task.overdue? date }
+    tasks.select{|task| task.overdue? }
   end
 
   def remaining_days
