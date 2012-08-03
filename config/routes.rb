@@ -22,7 +22,8 @@ Doubtfire::Application.routes.draw do
   put 'tasks/:task_id/update_task_status/:status' => 'tasks#update_task_status', :via => :put, :as => 'update_task_status'
 
   # Project convenor context routes
-    
+  post 'project_templates/:project_template_id/import_users' => 'project_templates#import_users', :via => :post
+
   # Project templates
   post 'project_templates/:id/update' => 'project_templates#update', :via => :post, :as => 'update_project_template'
   get 'project_templates/:id/cancel_update' => 'project_templates#finish_update', :as => 'cancel_update_project_template'
