@@ -1,7 +1,7 @@
 <div class="nav-collapse">
     <ul class="nav pull-right">
         <% if user_signed_in? %>
-            <li><p class="navbar-text">Signed in as <%= current_user.username %></li>
+            <li><p class="navbar-text">Signed in as <%= current_user.full_name %></li>
             <li class="divider-vertical"></li>
             <% if not current_user.is_superuser? # Don't show "Edit account" for superuser %>
                 <li><p class="navbar-text"><%= link_to 'Edit account', edit_user_registration_path %></p></li>
