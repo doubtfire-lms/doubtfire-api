@@ -43,6 +43,16 @@
 	width: 255px;
 }
 
+#username-field
+{
+	background: url(/assets/user.png) no-repeat;	
+}
+
+#password-field
+{
+	background: url(/assets/password.png) no-repeat;
+}
+
 .login-actions
 {
 	float: left;
@@ -58,10 +68,10 @@
 	margin-top: 31px;
 }
 
-span.login-checkbox > input[type="checkbox"]
-{
-	float: left;
-	width: 15px;
+span.login-checkbox > input[type='checkbox'] {
+    opacity: 0;
+    float: left;
+    width: 15px;
 }
 
 span.login-checkbox > input[type="checkbox"] + label {
@@ -72,8 +82,12 @@ span.login-checkbox > input[type="checkbox"] + label {
 	margin: 0;
 	font-size: 12px;
 	line-height: 1.2em;
-	background: url(../../img/signin/check.png) no-repeat 0 0;
+	background: url(/assets/check.png) no-repeat 0 0;
 	cursor: pointer;
+}
+
+span.login-checkbox > input[type='checkbox']:checked + label {	
+	background-position: 0 -15px;
 }
 
 .btn
