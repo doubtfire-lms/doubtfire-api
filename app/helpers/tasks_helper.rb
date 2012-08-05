@@ -37,24 +37,20 @@ module TasksHelper
     end
   end
 
-  def task_submission_vs_time(task)
-    # Task is complete, so we don't really care
-    # when
-    return raw "<p class=\"task-submission-vs-time\"></p>" if task.complete?
-
+  def task_submission_vs_time_text(task)
     if task.overdue?
       weeks_overdue = task.weeks_overdue
 
       if weeks_overdue > 0
-        raw "<p class=\"task-submission-vs-time\">Overdue (#{pluralize(weeks_overdue, 'week')})</p>"
+        raw "Overdue (#{pluralize(weeks_overdue, 'week')})"
       else
-        raw "<p class=\"task-submission-vs-time\">Due this week</p>"
+        raw "Due this week"
       end
     else
       if task.weeks_until_due > 0
-        raw "<p class=\"task-submission-vs-time\">Due in #{pluralize(task.weeks_until_due, 'weeks')}</p>"
+        "Due in #{pluralize(task.weeks_until_due, 'weeks')}"
       else
-        raw "<p class=\"task-submission-vs-time\">Due this week</p>"
+        raw "Due this week"
       end
     end
   end

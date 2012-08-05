@@ -1,2 +1,45 @@
-<h1>Tasks#show</h1>
-<p>Find me in app/views/tasks/show.html.erb</p>
+<% stylesheets 'tasks.css' %>
+
+<% content_for :sidebar do %>
+<ul class="nav nav-list">
+	<li class="nav-header">Dashboard</li>
+	<li><%= link_to 'Home', root_url %></li>
+	<% unless @student_projects.empty? %>
+		<%= render 'dashboard/student_projects_links', :student_projects => @student_projects, :selected_student_project => @project %>
+	<% end %>
+</ul>
+<% end %>
+
+<div class="span5 widget">
+	<h2><i class="icon-file"></i><%= @task.task_template.name %></h2>
+	<div class="widget-content">
+		<h3>Status</h3>
+		<p>
+			<%= @task.status.to_s.titleize %>
+			<% if @task.awaiting_signoff? %>
+				(Awaiting Signoff)
+			<% end %>
+		</p>
+		<h3>Weight</h3>
+		<p><%= @task.task_template.weighting %> (of total <%= @project.total_task_weight %>)</p>
+		<h3>Recommended Completion Date</h3>
+		<p><%= due = @task.task_template.recommended_completion_date; due.strftime("#{due.day.ordinalize} of %B") %> &mdash; <%= task_submission_vs_time_text(@task) %></p>
+		<h3>Description</h3>
+		<p><%= @task.task_template.description %></p>
+	</div>
+</div>
+
+<div class="span4 widget">
+	<h2><i class="icon-tasks"></i>Tasks</h2>
+	<div class="widget-content">
+	<% if @project.tasks.empty? %>
+		<p>There are currently no tasks for this project. Please check again at a later stage.</p>
+	<% else %>
+		<ol>
+		<% @project.tasks.each_with_index do |task| %>
+			<li><%= link_to task.task_template.name, project_task_path(@project, task) %></li>
+		<% end %>
+		</ol>
+	<% end %>
+	</div>
+</div>

@@ -10,7 +10,7 @@
 		</h3>
 		<p class="task-weighting-points">(<%= task.task_template.weighting %> points)</p>
 		<p class="toggle-task-description-container"><a href="#" class="toggle-task-description btn"><i class="icon-chevron-down"></i></a></p>
-		<%= task_submission_vs_time(task) %>
+		<p class="task-submission-vs-time"><%= task_submission_vs_time_text(task) %></p>
 		<div class="task-status-controls" style="display: inline-block;">
 			<% if task.complete? %>
 				<button class="btn btn-success status-display-button">Complete <i class="icon-ok button-icon"></i></button>

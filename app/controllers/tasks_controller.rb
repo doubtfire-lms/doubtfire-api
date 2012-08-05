@@ -13,6 +13,12 @@ class TasksController < ApplicationController
     end
   end
 
+  def show
+    @student_projects = Project.find(@user.team_memberships.map{|membership| membership.project_id})
+    @project          = Project.find(params[:project_id])
+    @task             = Task.includes(:task_template).find(params[:id])
+  end
+
   def update_task_status
     @task                   = Task.find(params[:task_id])
     task_status             = status_for_shortname(params[:status])
