@@ -1,7 +1,7 @@
 Doubtfire::Application.routes.draw do
   devise_for :users, :skip => [:registrations]
   
-  resources :users, :except => [:edit] # custom :path separates CRUD interface from Devise
+  resources :users # custom :path separates CRUD interface from Devise
   resources :home, :only => :index
   resources :projects
   resources :project_templates
