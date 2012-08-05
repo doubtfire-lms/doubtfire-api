@@ -6,6 +6,7 @@ class TasksController < ApplicationController
     @projects = current_user.team_memberships.map{|tm| tm.project }
     @project  = Project.find(params[:project_id])
     @tasks    = @project.tasks
+    authorize! :read, @project, :message => "You are not authorised to view tasks for Project ##{@project.id}"
 
     respond_to do |format|
       format.html
@@ -17,6 +18,8 @@ class TasksController < ApplicationController
     @student_projects = Project.find(@user.team_memberships.map{|membership| membership.project_id})
     @project          = Project.find(params[:project_id])
     @task             = Task.includes(:task_template).find(params[:id])
+
+    authorize! :read, @task, :message => "You are not authorised to view Task ##{@task.id}"
   end
 
   def update_task_status

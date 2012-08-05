@@ -7,6 +7,12 @@ class Ability
         project.team_membership.user == user
       end
 
+      can :read, Task do |task|
+        # TODO: Update this once the idea of groups is
+        # incorporated
+        task.project.team_membership.user == user
+      end
+
       if user.regular_user?
         cannot :access, ProjectTemplate
       end
