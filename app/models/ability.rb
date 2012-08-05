@@ -11,6 +11,13 @@ class Ability
         cannot :access, ProjectTemplate
       end
 
+      if user.convenor?
+        can :manage, ProjectTemplate do |project_template|
+          project_template.project_convenors.map{|pc| pc.id }.include? user.id
+          true
+        end
+      end
+
       # Superuser
       if user.superuser?
         can :assign_roles, User
