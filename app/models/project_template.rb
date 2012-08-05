@@ -67,44 +67,39 @@ class ProjectTemplate < ActiveRecord::Base
       next if row.length != 8
 
       username = row[0][1..-2]    # 1st column: Student ID with [] trimmed off
-      first_name = row[2]         # 3rd column: First name 
-      last_name = row[4]          # 4th column: Last name
+      first_name, last_name = [row[2], row[4]].map{|name| name.titleize }
       team_id = 1 
-
-      Rails.logger.info("==========================================================SEARCHING FOR #{username}...")
+      
       user_to_add = User.where(:username => username)
       
       # If the user doesn't exist in the system yet, create an account for them.
       if user_to_add.count == 0
-        Rails.logger.info("==========================================================CREATING USER #{username}")
+        logger.info("==========================================================CREATING USER #{username}")
         user = User.where(:username => username).first_or_initialize
 
-        user.username = username
-        user.first_name = ""
-        user.last_name = ""
-        user.email = "#{username}@swin.edu.au"
+        user.username           = username
+        user.first_name         = first_name
+        user.last_name          = last_name
+        user.email              = "#{username}@swin.edu.au"
         user.encrypted_password = BCrypt::Password.create("password")
-        user.nickname = "noob"
+        user.nickname           = "noob"
+
         user.save!(:validate => false)
 
-        # user_to_add = User.where(:username => username).first
-      # Rails.logger.info("==========================================================#{user_to_add.username}")
-      user_not_in_project = TeamMembership.joins(:project => :project_template).where(
-        :user_id => user.id,
-        :projects => {:project_template_id => self.id}
-      ).count == 0
+        # Rails.logger.info("==========================================================#{user_to_add.username}")
+        user_not_in_project = TeamMembership.joins(:project => :project_template).where(
+          :user_id => user.id,
+          :projects => {:project_template_id => self.id}
+        ).count == 0
       
-      # Add the user to the project (if not already in there)
-      if user_not_in_project
-        # Rails.logger.info("ADDING USER #{user_to_add.id}: #{username} - #{user_to_add.full_name} TO PROJECT #{self.name}")
-        self.add_user(user.id, team_id, "student")    # @TODO: Get tute ID somehow instead of hard-coding 
+        # Add the user to the project (if not already in there)
+        if user_not_in_project
+          self.add_user(user.id, team_id, "student")    # @TODO: Get tute ID somehow instead of hard-coding 
+        else
+          logger.info("USER #{user.id}: #{username} - #{user.full_name} ALREADY IN PROJECT #{self.name}")
+        end
       else
-        Rails.logger.info("USER #{user.id}: #{username} - #{user.full_name} ALREADY IN PROJECT #{self.name}")
-      end
-
-        Rails.logger.info("==========================================================CREATED USER #{username}")
-      else
-        Rails.logger.info("==========================================================USER #{username} ALREADY EXISTS")
+        logger.info("==========================================================USER #{username} ALREADY EXISTS")
       end
     end
   end
