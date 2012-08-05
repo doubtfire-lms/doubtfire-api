@@ -3,7 +3,7 @@
   <%= f.input :description, :as => :text, :input_html => { :rows => 5 } %>
   <%= f.input :start_date, :as => :string, :input_html => { "data-behaviour" => "datepicker", :value => "#{Date.today.strftime('%Y-%m-%d')}"}  %>
   <%= f.input :end_date, :as => :string, :input_html => { "data-behaviour" => "datepicker", :value => "#{13.weeks.from_now.strftime('%Y-%m-%d')}"}  %>
-  <% if current_user.is_superuser? %>
+  <% if current_user.superuser? %>
   	<%= f.input :convenors, :label => "Convenor(s)" do select_tag :convenor, options_from_collection_for_select(@convenors, "id", "full_name"), :multiple => true end %>
   <% end %>
   <%= f.button :submit %>

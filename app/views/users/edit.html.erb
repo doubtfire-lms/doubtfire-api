@@ -1,6 +1,7 @@
 <%- model_class = @user.class -%>
-<div class="page-header">
-  <h1><%=t '.title', :default => t('helpers.titles.edit', :model => model_class.model_name.human,
-                                   :default => "Edit #{model_class.model_name.human}") %></h1>
+<div class="span7 widget">
+	<h2><i class="icon-bar-chart"></i>Your Profile</h2>
+	<div class="widget-content">
+		<%= render :partial => 'form' %>
+	</div>
 </div>
-<%= render :partial => 'form' %>

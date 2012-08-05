@@ -72,10 +72,10 @@ class ProjectTemplatesController < ApplicationController
       if @project_template.save
       
         # Convenors can only add themselves as a convenor at the moment
-        if current_user.is_convenor?
+        if current_user.convenor?
           @project_convenor = ProjectConvenor.new(:project_template_id => @project_template.id, :user_id => current_user.id)
           @project_convenor.save
-        elsif current_user.is_superuser?
+        elsif current_user.superuser?
           # For superusers, create a corresponding ProjectConvenor entry for each convenor
           params[:convenor].each do |convenor_id|
             @project_convenor = ProjectConvenor.new(:project_template_id => @project_template.id, :user_id => convenor_id)

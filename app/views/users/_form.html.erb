@@ -1,9 +1,9 @@
-<%= simple_form_for(@user, :html => {:class => 'well form-horizontal' }) do |f| %>
-    <%= f.input :email %>
-    <%= f.input :password %>
-    <%= f.input :password_confirmation %>
+<%= simple_form_for(@user, :html => {:class => 'form-horizontal' }) do |f| %>
     <%= f.input :first_name %>
     <%= f.input :last_name %>
-    <%= f.input :system_role, :collection => [["User", "user"], ["Convenor", "convenor"]], :include_blank => false %>
+    <%= f.input :nickname %>
+   	<% if can? :assign_roles, @user %>
+    	<%= f.input :system_role, :collection => [["User", "user"], ["Convenor", "convenor"]], :include_blank => false %>
+    <% end %>
     <%= f.button :submit %>
 <% end %>

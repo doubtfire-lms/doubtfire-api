@@ -4,9 +4,9 @@ class DashboardController < ApplicationController
 
   def index
     # Redirect to the administration page if the user is superuser
-    if @user.is_superuser?
+    if @user.superuser?
       redirect_to superuser_administration_index_path
-    elsif @user.is_convenor?
+    elsif @user.convenor?
       redirect_to convenor_index_path
     end
     

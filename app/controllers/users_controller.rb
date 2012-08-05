@@ -72,7 +72,7 @@ class UsersController < ApplicationController
       if @user.update_attributes(params[:user])
 
       	# If the user is being updated by the superuser, redirect to the users index instead of the individual user
-      	if(@user.is_superuser?)
+      	if(@user.superuser?)
 	        format.html { redirect_to users_path, notice: 'User was successfully updated.' }
   	    else
   	    	format.html { redirect_to @user, notice: 'User was successfully updated.' }

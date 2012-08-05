@@ -18,15 +18,15 @@ class User < ActiveRecord::Base
   # Model validations/constraints
   validates_uniqueness_of :username, :email
 
-  def is_superuser?
+  def superuser?
     system_role == "superuser"
   end
 
-  def is_convenor?
+  def convenor?
     system_role == "convenor"
   end
 
-  def is_regular_user?
+  def regular_user?
     system_role == "user"
   end
   

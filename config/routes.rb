@@ -1,7 +1,7 @@
 Doubtfire::Application.routes.draw do
-  devise_for :users
-
-  resources :users, :path => 'administration/users'   # custom :path separates CRUD interface from Devise
+  devise_for :users, :skip => [:registrations]
+  
+  resources :users, :except => [:edit] # custom :path separates CRUD interface from Devise
   resources :home, :only => :index
   resources :projects
   resources :project_templates
@@ -10,6 +10,7 @@ Doubtfire::Application.routes.draw do
   resources :teams
   resources :superuser_administration, :only => :index, :path => 'administration'
 
+  get 'profile' => 'users#edit', :as => 'edit_profile'
   post 'users/update/:id' => 'users#update', :via => :post, :as => 'update_user'
   get 'users/cancel_update_user/:id' => 'users#finish_update', :as => 'cancel_update_user'
 
@@ -51,7 +52,6 @@ Doubtfire::Application.routes.draw do
   get "/tutor/projects/:project_id/students/:student_id"  =>  "tutor_project_students#show",  :as => 'tutor_project_student'
 
   # Go to dashboard home by default
-  root :to => "dashboard#index" 
-
+  root :to => "dashboard#index"
 end
 

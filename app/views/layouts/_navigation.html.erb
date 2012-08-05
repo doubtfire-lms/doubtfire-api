@@ -3,15 +3,14 @@
         <% if user_signed_in? %>
             <li><p class="navbar-text">Signed in as <%= current_user.full_name %></li>
             <li class="divider-vertical"></li>
-            <% if not current_user.is_superuser? # Don't show "Edit account" for superuser %>
-                <li><p class="navbar-text"><%= link_to 'Edit account', edit_user_registration_path %></p></li>
+            <% if not current_user.superuser? # Don't show "Edit account" for superuser %>
+                <li><p class="navbar-text"><%= link_to 'Edit account', edit_profile_path %></p></li>
                 <li class="divider-vertical"></li>
             <% end %>
             <li><p class="navbar-text"><%= link_to 'Sign out', destroy_user_session_path, :method=>'delete' %></p></li>
             <li class="divider-vertical"></li>
         <% else %>
             <li><%= link_to 'Sign in', new_user_session_path %></li>
-            <li><%= link_to 'Sign up', new_user_registration_path %></li>
         <% end %>
     </ul>
 </div>
