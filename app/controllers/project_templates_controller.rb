@@ -20,6 +20,8 @@ class ProjectTemplatesController < ApplicationController
     @project_users = User.joins(:team_memberships => :project).where(:projects => {:project_template_id => params[:id]})
     @project_teams = Team.where(:project_template_id => params[:id])
     
+    authorize! :access, @project_template, :message => "You are not authorised to view Project Template ##{@project_template.id}"
+
     respond_to do |format|
       format.html # show.html.erb
       format.json { render json: @project_template }

@@ -7,6 +7,10 @@ class Ability
         project.team_membership.user == user
       end
 
+      if user.regular_user?
+        cannot :access, ProjectTemplate
+      end
+
       # Superuser
       if user.superuser?
         can :assign_roles, User
