@@ -26,6 +26,11 @@ function constructBurndownChart(burndownChartContainer) {
         .transition().duration(500)
           .call(projectProgressChart);
       
+      projectProgressChart.tooltipContent(function(key, x, y, e, graph){
+        return "<h3>" + key + "</h3>"
+        + "<p>" + y + " at Week " + x + "</p>";
+      });
+
       nv.utils.windowResize(projectProgressChart.update);
 
       return projectProgressChart;
