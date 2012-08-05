@@ -1,3 +1,6 @@
+@import "twitter/bootstrap/variables";
+@import "twitter/bootstrap/mixins";
+
 .hero-unit form {
 	margin-top: 30px;
 }
@@ -8,4 +11,87 @@
 
 .hero-unit h2 {
 	margin-bottom: 10px;	
+}
+
+.login-container
+{
+	width: 380px;
+	display: block;
+	margin: 60px auto 0 auto;
+	overflow: hidden;
+
+	background-color: #f9f9f9;
+	border: 1px solid #d5d5d5;
+	.border-radius(5px 5px 0 0);
+}
+
+.login-container .content
+{
+	display: block;
+	padding: 16px 28px 23px;
+}
+
+.login-container .content h2
+{
+	margin-bottom: 15px;
+}
+
+#username-field,
+#password-field
+{
+	padding: 11px 15px 10px 50px;
+	width: 255px;
+}
+
+.login-actions
+{
+	float: left;
+	width: 100%;
+	margin-top: -1em;
+	margin-bottom: 1.50em;
+	display: block;
+}
+
+.login-checkbox
+{
+	float: left;
+	margin-top: 31px;
+}
+
+span.login-checkbox > input[type="checkbox"]
+{
+	float: left;
+	width: 15px;
+}
+
+span.login-checkbox > input[type="checkbox"] + label {
+	clear: none;
+	height: 15px;
+	display: block;
+	padding: 0 0 0 22px;
+	margin: 0;
+	font-size: 12px;
+	line-height: 1.2em;
+	background: url(../../img/signin/check.png) no-repeat 0 0;
+	cursor: pointer;
+}
+
+.btn
+{
+	display: inline-block;
+	float: right;
+	margin-top: 25px;
+}
+
+@media (max-width: 480px) {
+	
+	.login-container {
+		width: 320px;	
+		margin-top: 35px;
+	}
+
+	#username-field,
+	#password-field {
+		width: 200px;
+	}
 }

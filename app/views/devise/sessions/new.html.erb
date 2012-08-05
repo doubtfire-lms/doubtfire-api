@@ -1,19 +1,24 @@
 <% stylesheets 'users.css' %>
+<div class="login-container">
+  <div class="content">
+    <h2>Sign In</h2>
+    <p>Sign in using your SIMS account:</p>
+    <%= form_for(resource, :as => resource_name, :url => session_path(resource_name)) do |f| %>
+      <div>
+      <%= f.text_field :username, "value placeholder" => "Username", :id => "username-field" %></div>
 
-<div class="hero-unit offset3 span6">
-  <h1>Doubtfire</h1>
-  <h2>Sign In</h2>
-  <%= form_for(resource, :as => resource_name, :url => session_path(resource_name)) do |f| %>
-    <div><%= f.label :username %>
-    <%= f.text_field :username %></div>
+      <div>
+      <%= f.password_field :password, "value placeholder" => "Password", :id => "password-field" %></div>
 
-    <div><%= f.label :password %>
-    <%= f.password_field :password %></div>
-
-    <% if devise_mapping.rememberable? -%>
-      <div><%= f.check_box :remember_me %><%= f.label :remember_me %></div>
-    <% end -%>
-
-    <div><%= f.submit "Sign in", :class => "btn" %></div>
-  <% end %>
+      <div class="login-actions">
+      <% if devise_mapping.rememberable? -%>
+        <span class="login-checkbox">
+          <%= f.check_box :remember_me %>
+          <%= f.label "Keep me signed in" %>
+        </span>  
+      <% end -%>
+        <%= f.submit "Sign in", :class => "btn" %>
+      </div>
+    <% end %>
+  </div>
 </div>
