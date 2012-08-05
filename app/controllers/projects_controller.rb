@@ -9,6 +9,7 @@ class ProjectsController < ApplicationController
   def show
     @student_projects = Project.find(@user.team_memberships.map{|membership| membership.project_id})
     @project = Project.includes(:tasks => [:task_template]).find(params[:id])
+    authorize! :read, @project, :message => "You are not authorised to view Project ##{@project.id}"
 
     respond_to do |format|
       format.html
