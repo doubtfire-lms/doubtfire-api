@@ -22,10 +22,15 @@
 				</button>
 				<button class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
 				<% else %>
+				<% if task.needs_fixing? %>
+				<button class="btn btn-warning status-display-button">Fix <i class="icon-wrench button-icon"></i></button>
+				<button class="btn btn-warning dropdown-toggle" data-toggle="dropdown">
+				<% else %>
 				<button class="btn status-display-button">
 					Not Ready to Mark
 				</button>
 				<button class="btn dropdown-toggle" data-toggle="dropdown">
+				<% end %>
 				<% end %>
 					<span class="caret"></span>
 				</button>

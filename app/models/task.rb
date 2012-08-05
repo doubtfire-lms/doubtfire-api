@@ -54,6 +54,10 @@ class Task < ActiveRecord::Base
     status == :complete
   end
 
+  def needs_fixing?
+    status == :needs_fixing
+  end
+
   def status
     case task_status.name
     when "Complete"
