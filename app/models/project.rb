@@ -51,8 +51,6 @@ class Project < ActiveRecord::Base
   def progress_in_days
     current_progress = completed_tasks_weight
 
-    return 0 if current_progress == 0
-
     current_week  = weeks_elapsed
     date_progress = Time.zone.now
 
@@ -71,16 +69,16 @@ class Project < ActiveRecord::Base
   def relative_progress
     progress      = progress_in_weeks
 
-    if progress > 0
+    if progress >= 1
       :ahead
-    elsif progress == 0
+    elsif progress == 0 or progress == -1
       :on_track
     else
       weeks_behind = progress.abs
-
-      if weeks_behind < 2
+      
+      if weeks_behind <= 2
         :behind
-      elsif weeks_behind < 4
+      elsif weeks_behind > 2 and weeks_behind < 4
         :danger
       else
         :doomed
