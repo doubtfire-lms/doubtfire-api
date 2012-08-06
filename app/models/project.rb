@@ -36,22 +36,27 @@ class Project < ActiveRecord::Base
     end
   end
 
+  def progress_points
+    date_accumulated_weight_map = {}
+
+    tasks.sort{|a, b| a.task_template.recommended_completion_date <=>  b.task_template.recommended_completion_date}.each do |project_task|
+      date_accumulated_weight_map[project_task.task_template.recommended_completion_date] = tasks.select{|task| 
+        task.task_template.recommended_completion_date <= project_task.task_template.recommended_completion_date
+      }.map{|task| task.task_template.weighting.to_f}.inject(:+)
+    end
+
+    date_accumulated_weight_map
+  end
+
   def progress_in_days
     current_progress = completed_tasks_weight
 
     return 0 if current_progress == 0
 
-    date_accumulated_weight_map = {}
-
-    tasks.sort{|a, b| a.task_template.recommended_completion_date <=>  b.task_template.recommended_completion_date}.each do |task|
-      date_accumulated_weight_map[task.task_template.recommended_completion_date] ||= 0.0
-      date_accumulated_weight_map[task.task_template.recommended_completion_date] += task.task_template.weighting.to_f
-    end
-
     current_week  = weeks_elapsed
     date_progress = Time.zone.now
 
-    date_accumulated_weight_map.each do |date, weight|
+    progress_points.each do |date, weight|
       break if weight > current_progress
       date_progress = date
     end
