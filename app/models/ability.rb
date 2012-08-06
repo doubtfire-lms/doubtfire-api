@@ -21,6 +21,8 @@ class Ability
         can :manage, ProjectTemplate do |project_template|
           project_template.project_convenors.map{|convenor| convenor.user }.include? user
         end
+
+        can :manage, User
       end
 
       # Superuser
