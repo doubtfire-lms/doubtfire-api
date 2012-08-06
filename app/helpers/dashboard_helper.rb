@@ -171,7 +171,7 @@ module DashboardHelper
   end
 
   def not_started_text
-    "You've not yet started this project. Start completing some tasks to improve your progress in this project."
+    "You've not yet started this project. Start completing some tasks to improve your progress."
   end
 
   def ahead_of_schedule_text
