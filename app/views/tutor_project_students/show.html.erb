@@ -29,36 +29,13 @@
 			</div>
 			<div class="tab-pane" id="marking-tab">
 				<div class="span7 widget">
-					<h2><i class="icon-pencil"></i>Marks</h2>
-					<div class="widget-content">
-					<% @student_project.tasks.each do |task| %>
-						<div class="task-list-entry">
-							<h3 style="display: inline">
-								<%= task.task_template.name %>			
-							</h3>
-							<%= status_badge_for_task task %>
-							<div class="task-entry-body" id="task-<%= task.id %>-entry">
-								<p><%= link_to task.project.team_membership.user.full_name, tutor_project_student_path(task.project, task.project.team_membership.user) %></p>
-								<div class="task-status-controls">
-									<a href="<%= update_task_status_path(task, "Needs Fixing") %>" data-method="put" class="task-status-button btn" data-remote="true">
-										Mark as Fix
-										<i class="icon-wrench"></i>
-									</a>
-									<a href="<%= update_task_status_path(task, "Complete") %>" data-method="put" class="task-status-button btn btn-success" data-remote="true">
-										Mark as Complete
-										<i class="icon-ok"></i>
-									</a>
-								</div>
-							</div>
-						</div>
-					<% end %>
-					</div>
+					<%= render 'tutor_projects/tutor_task_backlog', :tasks => @student_project.tasks %>
 				</div>
 			</div>
 			<div class="span5 widget">
 				<h2><i class="icon-bar-chart"></i>Summary</h2>
 				<div class="widget-content">
-									
+
 				</div>
 			</div>
 		</div>

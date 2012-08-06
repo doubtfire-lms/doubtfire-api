@@ -6,7 +6,7 @@
 	<% tasks.each do |task| %>
 	<div class="task-list-entry row-fluid" id="task-<%= task.id %>-entry">
 		<h3>
-			<%= link_to truncate(task.task_template.name, :length => 15), project_task_path(task) %>
+			<%= link_to truncate(task.task_template.name, :length => 15), project_task_path(task.project, task) %>
 		</h3>
 		<p class="task-weighting-points">(<%= task.task_template.weighting %> points)</p>
 		<p class="toggle-task-description-container"><a href="#" class="toggle-task-description btn"><i class="icon-chevron-down"></i></a></p>
