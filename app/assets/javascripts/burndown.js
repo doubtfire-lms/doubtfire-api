@@ -113,7 +113,7 @@ function dataForProjectJSON(projectJSON) {
 
   var seriesToPlot = [recommendedSeries];
 
-  if (moment(new Date()) >= projectStartDate) {
+  if (moment(new Date()) >= projectStartDate && projectJSON.started) {
     seriesToPlot.push(completedSeries);
   }
 

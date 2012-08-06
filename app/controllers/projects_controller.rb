@@ -21,7 +21,7 @@ class ProjectsController < ApplicationController
             },
             :project_template => {:except => [:updated_at, :created_at]}
           ],
-          :methods => [:relative_progress],
+          :methods => [:relative_progress, :started?],
           :except => [:updated_at, :created_at]
         )
       }
