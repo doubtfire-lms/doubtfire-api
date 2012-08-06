@@ -153,9 +153,9 @@ module DashboardHelper
         status_summary = "This project has concluded. Unfortunately you did not complete all of the set tasks."
       end
     else
-      if project.started?
-        project_progress = project.relative_progress
+      project_progress = project.relative_progress
 
+      if project.started?
         status_summary = case project_progress
           when :ahead     then ahead_of_schedule_text
           when :on_track  then on_track_text
@@ -164,7 +164,12 @@ module DashboardHelper
           when :doomed    then doomed_text
         end
       else
-        status_summary = not_started_text
+        status_summary = case project_progress
+          when :behind    then falling_behind_text
+          when :danger    then in_danger_text
+          when :doomed    then doomed_text
+          else not_started_text
+        end
       end
     end
     raw("<p>#{status_summary}</p>")
