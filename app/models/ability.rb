@@ -19,8 +19,7 @@ class Ability
 
       if user.convenor?
         can :manage, ProjectTemplate do |project_template|
-          project_template.project_convenors.map{|pc| pc.id }.include? user.id
-          true
+          project_template.project_convenors.map{|convenor| convenor.user }.include? user
         end
       end
 
