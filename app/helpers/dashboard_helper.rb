@@ -1,8 +1,8 @@
 module DashboardHelper
   def status_badge(project)
-    if !project.has_commenced?
+    if !project.commenced?
       raw("<span class=\"label\">Not Started</span>")
-    elsif project.has_concluded?
+    elsif project.concluded?
       if project.completed?
         raw("<span class=\"label label-success\">Completed</span>")
       else
@@ -11,12 +11,24 @@ module DashboardHelper
     else
       progress = project.relative_progress
 
-      case progress
-        when :ahead     then raw("<span class=\"status-badge label label-success\">Ahead</span>")
-        when :on_track  then raw("<span class=\"status-badge label label-info\">On Track</span>")
-        when :behind    then raw("<span class=\"status-badge label label-warning\">Behind</span>")
-        when :danger    then raw("<span class=\"status-badge label label-important\">Danger</span>")
-        when :doomed    then raw("<span class=\"status-badge label label-inverse\">Doomed</span>")
+      if project.started?
+        
+        case progress
+          when :ahead     then raw("<span class=\"status-badge label label-success\">Ahead</span>")
+          when :on_track  then raw("<span class=\"status-badge label label-info\">On Track</span>")
+          when :behind    then raw("<span class=\"status-badge label label-warning\">Behind</span>")
+          when :danger    then raw("<span class=\"status-badge label label-important\">Danger</span>")
+          when :doomed    then raw("<span class=\"status-badge label label-inverse\">Doomed</span>")
+        end
+      else
+        # If the student has not started the project, only show
+        # progress if it is negative, otherwise show 'Not Started'
+        case progress
+          when :behind    then raw("<span class=\"status-badge label label-warning\">Behind</span>")
+          when :danger    then raw("<span class=\"status-badge label label-important\">Danger</span>")
+          when :doomed    then raw("<span class=\"status-badge label label-inverse\">Doomed</span>")
+          else raw("<span class=\"status-badge label\">Not Started</span>")          
+        end
       end
     end
   end
@@ -54,7 +66,7 @@ module DashboardHelper
     completed_task_count    = completed_tasks.size
     total_task_count        = tasks.size
 
-    if project.has_concluded?
+    if project.concluded?
       if project.completed?
         raw(
           [
@@ -94,7 +106,7 @@ module DashboardHelper
   end
 
   def guidance_based_on_velocity(project)
-    if !project.has_commenced?
+    if !project.commenced?
       raw("<p>To achieve the best result possible for this subject, ensure that you are getting tasks marked off regularly and often.</p>")
     else
       case project.relative_progress
@@ -108,17 +120,23 @@ module DashboardHelper
     start_date  = project.project_template.start_date
     deadline    = project.project_template.end_date
 
-    if !project.has_commenced?
+    if !project.commenced?
       start_date_string = start_date.strftime("#{start_date.day.ordinalize} of %B")
       raw("<p>This project commences on the <strong>#{start_date_string}</strong>. Make sure you set a good pace early on to avoid falling behind.</p>")
-    elsif project.has_concluded?
+    elsif project.concluded?
       raw("<p>This project ended on the #{deadline.strftime("#{deadline.day.ordinalize} of %B")}</p>")
     else
       projected_end_date                = project.projected_end_date
-      projected_date_string             = projected_end_date.strftime("#{projected_end_date.day.ordinalize} of %B")
-      projected_date_of_completion_text = "Projected end date is the <strong>#{projected_date_string}</strong>"
 
-      deadline_date_string = deadline.strftime("#{deadline.day.ordinalize} of %B")
+      if projected_end_date.year == deadline.year
+        projected_date_string             = projected_end_date.strftime("#{projected_end_date.day.ordinalize} of %B")
+        deadline_date_string              = deadline.strftime("#{deadline.day.ordinalize} of %B")
+      else
+        projected_date_string             = projected_end_date.strftime("#{projected_end_date.day.ordinalize} of %B, %Y")
+        deadline_date_string              = deadline.strftime("#{deadline.day.ordinalize} of %B, %Y")
+      end
+
+      projected_date_of_completion_text = "Projected end date is the <strong>#{projected_date_string}</strong>"
       deadline_text = "<span style=\"color: #AAAAAA\">(deadline is the #{deadline_date_string})</span>"
 
       raw("<p>#{projected_date_of_completion_text} #{deadline_text}</p>")
@@ -126,26 +144,34 @@ module DashboardHelper
   end
 
   def project_status_summary(project)
-    if !project.has_commenced?
+    if !project.commenced?
     status_summary = "This project has not commenced. Best of luck for the upcoming start of the project!"
-    elsif project.has_concluded?
+    elsif project.concluded?
       if project.completed? 
         status_summary = "This project has concluded. Congratulations on completing all of the allocated tasks!"
       else
         status_summary = "This project has concluded. Unfortunately you did not complete all of the set tasks."
       end
     else
-      project_progress = project.relative_progress
+      if project.started?
+        project_progress = project.relative_progress
 
-      status_summary = case project_progress
-        when :ahead     then ahead_of_schedule_text
-        when :on_track  then on_track_text
-        when :behind    then falling_behind_text
-        when :danger    then in_danger_text
-        when :doomed    then doomed_text
+        status_summary = case project_progress
+          when :ahead     then ahead_of_schedule_text
+          when :on_track  then on_track_text
+          when :behind    then falling_behind_text
+          when :danger    then in_danger_text
+          when :doomed    then doomed_text
+        end
+      else
+        status_summary = not_started_text
       end
     end
     raw("<p>#{status_summary}</p>")
+  end
+
+  def not_started_text
+    "You've not yet started this project. Start completing some tasks to improve your progress in this project."
   end
 
   def ahead_of_schedule_text

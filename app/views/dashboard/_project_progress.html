@@ -10,7 +10,9 @@
 	<%= content_tag "div", class: "burndownchart", data: {url: project_url(project)} do %>
 		<svg style="height: 300px"></svg>
 	<% end %>
-	<%= will_complete_based_on_velocity(project) %>
-	<%= projected_date_of_completion_vs_deadline(project) %>
+	<% if !project.completed_tasks.empty? %>
+		<%= will_complete_based_on_velocity(project) %>
+		<%= projected_date_of_completion_vs_deadline(project) %>
+	<% end %>
 	<%= guidance_based_on_velocity(project) %>
 </div>

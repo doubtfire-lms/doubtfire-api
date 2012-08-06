@@ -21,7 +21,7 @@ class Project < ActiveRecord::Base
     recommended_remaining_weight  = recommended_completed_tasks.empty? ? 0.0 : recommended_completed_tasks.map{|task| task.task_template.weighting }.inject(:+)
 
     # Project health is at 100% when the project is yet to start
-    return 1.0 unless has_commenced?
+    return 1.0 unless commenced?
 
     relative_health = (completed_tasks_weight / recommended_remaining_weight)
 
@@ -36,38 +36,79 @@ class Project < ActiveRecord::Base
     end
   end
 
-  def relative_progress
-    project_health = health
+  def progress_in_days
+    current_progress = completed_tasks_weight
 
-    if health > 0.75
+    return 0 if current_progress == 0
+
+    date_accumulated_weight_map = {}
+
+    tasks.sort{|a, b| a.task_template.recommended_completion_date <=>  b.task_template.recommended_completion_date}.each do |task|
+      date_accumulated_weight_map[task.task_template.recommended_completion_date] ||= 0.0
+      date_accumulated_weight_map[task.task_template.recommended_completion_date] += task.task_template.weighting.to_f
+    end
+
+    current_week  = weeks_elapsed
+    date_progress = Time.zone.now
+
+    date_accumulated_weight_map.each do |date, weight|
+      break if weight > current_progress
+      date_progress = date
+    end
+    
+    (date_progress - reference_date).to_i / 1.day
+  end
+
+  def progress_in_weeks
+    progress_in_days / 7
+  end
+
+  def relative_progress
+    progress      = progress_in_weeks
+
+    if progress > 0
       :ahead
-    elsif health >= 0.5 and health <= 0.75
+    elsif progress == 0
       :on_track
-    elsif health >= 0.25 and health < 0.5
-      :behind
-    elsif health >= 0.10 and health < 0.25
-      :danger
     else
-      :doomed
+      weeks_behind = progress.abs
+
+      if weeks_behind < 2
+        :behind
+      elsif weeks_behind < 4
+        :danger
+      else
+        :doomed
+      end
     end
   end
 
   def projected_end_date
     return project_template.end_date if rate_of_completion == 0.0
-
     (remaining_tasks_weight / rate_of_completion).ceil.days.since reference_date
+  end
+
+  def days_elapsed
+    (reference_date - project_template.start_date).to_i / 1.day
+  end
+
+  def weeks_elapsed
+    days_elapsed / 7
   end
 
   def rate_of_completion
     # Return a completion rate of 0.0 if the project is yet to have commenced
-    return 0.0 if !has_commenced?
-
-    # Determine the number of weeks elapsed
-    project_days_elapsed = (reference_date - project_template.start_date).to_i / 1.day
+    return 0.0 if !commenced? or completed_tasks.empty?
 
     # TODO: Might make sense to take in the resolution (i.e. days, weeks), rather
     # than just assuming days
-    completed_tasks_weight / project_days_elapsed
+
+    # If on the first day (i.e. a day has not yet passed, but the project
+    # has commenced), force days elapsed to be 1 to avoid divide by zero
+    days = days_elapsed
+    days = 1 if days_elapsed < 1
+
+    completed_tasks_weight / days
   end
 
   def required_task_completion_rate
@@ -116,14 +157,18 @@ class Project < ActiveRecord::Base
   end
 
   def in_progress?
-    has_commenced? && !has_concluded?
+    commenced? && !concluded?
   end
 
-  def has_commenced?
-    reference_date > project_template.start_date
+  def started?
+    completed_tasks.any?
   end
 
-  def has_concluded?
+  def commenced?
+    reference_date >= project_template.start_date
+  end
+
+  def concluded?
     reference_date > project_template.end_date
   end
 
