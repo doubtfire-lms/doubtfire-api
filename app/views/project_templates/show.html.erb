@@ -6,7 +6,11 @@
 
 <!-- Sidebar -->
 <% content_for :sidebar do %>
-  <%= render :partial => 'layouts/admin_menu' %>
+  <% if current_user.superuser? %>
+    <%= render :partial => 'layouts/superuser_menu' %>
+  <% else %>
+    <%= render :partial => 'layouts/admin_menu' %>
+  <% end %>
 <% end %>
 
 <div class="span9">

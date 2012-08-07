@@ -13,7 +13,7 @@
   </thead>
   <tbody>
     <% project_templates.each do |project_template| %>
-      <%= render :partial => 'table_row', :locals => {:project_template => project_template} %>
+      <%= render :partial => '/project_templates/table_row', :locals => {:project_template => project_template} %>
     <% end %>
   </tbody>
 </table>

@@ -6,6 +6,6 @@
   <%= f.input :description, :as => :text, :input_html => { :rows => 5 } %>
   <%= f.input :weighting %>
   <%= f.input :required %>
-  <%= f.input :recommended_completion_date, :as => :string, :input_html => { "data-behaviour" => "datepicker", :value => "#{Date.today.strftime('%Y-%m-%d')}"}  %>
+  <%= f.input :recommended_completion_date, :as => :string, :input_html => {:class => "datepicker", "data-behaviour" => "datepicker", :value => "#{Date.today.strftime('%Y-%m-%d')}"}  %>
   <%= f.button :submit %>
 <% end %>

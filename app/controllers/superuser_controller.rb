@@ -1,11 +1,11 @@
-class SuperuserAdministrationController < ApplicationController
+class SuperuserController < ApplicationController
 
 	before_filter :authenticate_user!
 	before_filter :load_current_user
 
 	def index
-		@users = User.all
-		@projects = Project.all
+		@project_templates = ProjectTemplate.all
+		@users = User.where("system_role != 'superuser'")
 	end
 
 	private

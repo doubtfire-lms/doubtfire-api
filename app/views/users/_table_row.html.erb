@@ -1,11 +1,17 @@
 <tr id="user-<%= user.id %>-row">
-  <td><%= link_to user.email, user %></td> 
+  <td><%= link_to user.username, user %></td>
+  <td><%= user.nickname %></td>
+  <td><%= user.email %></td> 
   <td><%= user.first_name %></td>
   <td><%= user.last_name %></td>
   <td><%= user.sign_in_count %></td>
   <td><%= user.system_role %></td>
   <td>
     <% if current_user.superuser? %>
+      <%= link_to t('.edit', :default => t("helpers.links.edit")),
+                edit_user_path(user), 
+                "data-remote" => true,
+                :class => 'btn btn-mini' %>
       <%= link_to t('.destroy', :default => t("helpers.links.destroy")), user_path(user),
                   "data-remote" => true,
                   :method => :delete,

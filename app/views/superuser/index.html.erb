@@ -1,0 +1,26 @@
+<%= javascript "superuser.js" %>
+
+<% content_for :page_banner do %>
+  <h1>5UP3RU53R</h1>  
+  <p class="lead">Administration area</p>
+  <hr />
+<% end %>
+
+<div class="span12">
+	<div class="row-fluid">
+		<div class="tabbable"> 
+			<ul class="nav nav-pills">
+				<li class="active"><a href="#project-admin" data-toggle="tab">Project Administration</a></li>
+				<li><a href="#user-admin" data-toggle="tab">User Administration</a></li>
+			</ul>
+			<div class="tab-content">
+				<div class="tab-pane active" id="project-admin">
+					<%= render "project_admin" %>
+				</div>
+				<div class="tab-pane" id="user-admin">
+					<%= render "user_admin" %>
+				</div>
+			</div>
+		</div>
+    </div>
+</div>

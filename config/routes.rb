@@ -14,7 +14,6 @@ Doubtfire::Application.routes.draw do
   resources :task_templates
   resources :project_statuses
   resources :teams
-  resources :superuser_administration, :only => :index, :path => 'administration'
 
   get 'profile' => 'users#edit', :as => 'edit_profile'
   post 'users/update/:id' => 'users#update', :via => :post, :as => 'update_user'
@@ -56,6 +55,9 @@ Doubtfire::Application.routes.draw do
   # Tutor context routes
   get "/tutor/projects/:id" =>                                "tutor_projects#show",  :as => 'tutor_project'
   get "/tutor/projects/:project_id/students/:student_id"  =>  "tutor_project_students#show",  :as => 'tutor_project_student'
+
+  # Superuser context routes
+  get '/administration' => 'superuser#index', :as => 'superuser_index'
 
   # Go to dashboard home by default
   root :to => "dashboard#index"

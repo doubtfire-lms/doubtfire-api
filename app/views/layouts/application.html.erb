@@ -40,7 +40,7 @@
         </div>
       </div>
       <div class="row-fluid">
-        <% if user_signed_in? %>
+        <% if user_signed_in? and not current_user.superuser? %>
           <div class="span3">
           <div class="well sidebar-nav">
             <%= yield(:sidebar) %>

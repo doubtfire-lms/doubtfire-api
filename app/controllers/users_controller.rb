@@ -34,13 +34,29 @@ class UsersController < ApplicationController
     respond_to do |format|
       format.html # new.html.erb
       format.json { render json: @user }
-      format.js
+      format.js {
+        @user.username           = "username"
+        @user.first_name         = "First"
+        @user.last_name          = "Last"
+        @user.email              = "XXXXXXX@swin.edu.au"
+        @user.encrypted_password = BCrypt::Password.create("password")
+        @user.nickname           = "noob"
+        @user.system_role        = "user"
+
+        @user.save!(:validate => false)
+        render action: "edit"
+      }
     end
   end
 
   # GET /users/1/edit
   def edit
     @user = params[:id] ? User.find(params[:id]) : current_user
+
+    respond_to do |format|
+      format.html
+      format.js
+    end
   end
 
   # POST /users
