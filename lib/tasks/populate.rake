@@ -152,7 +152,8 @@ namespace :db do
         team_num = 1
         Team.populate(2) do |team|
           team.project_template_id = project_template.id
-          team.meeting_time = "#{days.sample} #{8 + rand(12)}:#{['00', '30'].sample}"    # Mon-Fri 8am-7:30pm
+          team.meeting_time = "#{8 + rand(12)}:#{['00', '30'].sample}"    # Mon-Fri 8am-7:30pm
+          team.meeting_day  = "#{days.sample}"
           team.meeting_location = "#{['EN', 'BA'].sample}#{rand(7)}#{rand(1)}#{rand(9)}" # EN###/BA###
           
           if ["Introduction To Programming", "Object-Oriented Programming"].include? subject

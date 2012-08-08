@@ -97,6 +97,7 @@ ActiveRecord::Schema.define(:version => 20120802053203) do
   create_table "teams", :force => true do |t|
     t.integer  "project_template_id"
     t.integer  "user_id"
+    t.string   "meeting_day"
     t.string   "meeting_time"
     t.string   "meeting_location"
     t.datetime "created_at",          :null => false

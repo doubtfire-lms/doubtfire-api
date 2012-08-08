@@ -1,5 +1,6 @@
  <tr id="team-<%= team.id %>-row">
   <td><%= User.find(team.user_id).full_name %></td>
+  <td><%= team.meeting_day %></td>
   <td><%= team.meeting_time %></td>
   <td><%= team.meeting_location %></td>
   <td>

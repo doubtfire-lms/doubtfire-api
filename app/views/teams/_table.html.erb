@@ -3,6 +3,7 @@
   <thead>
     <tr>
       <th>Manager</th>
+      <th><%= Team.human_attribute_name(:meeting_day) %></th>
       <th><%= Team.human_attribute_name(:meeting_time) %></th>
       <th><%= Team.human_attribute_name(:meeting_location) %></th>
       <th><%=t '.actions', :default => t("helpers.actions") %></th>

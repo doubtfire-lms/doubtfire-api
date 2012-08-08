@@ -29,6 +29,7 @@ class TeamsController < ApplicationController
     # Create a new task template, populate it with sample data, and save it immediately.
     @team.project_template_id = params[:project_template_id]
     @team.user_id = current_user.id
+    @team.meeting_day = "Enter a regular meeting day."
     @team.meeting_time = "Enter a regular meeting time."
     @team.meeting_location = "Enter a location."
     @team.save

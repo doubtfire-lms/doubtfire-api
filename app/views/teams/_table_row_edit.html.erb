@@ -1,6 +1,7 @@
 <tr id="team-<%= team.id %>-row" class="editable" name="<%= team.id %>">
   <%= simple_form_for team, :url => update_project_team_path(team.project_template_id, team), :remote => true do |f| %>
     <td><%= f.input :user_id, :as => :select, :collection => User.where("system_role != 'superuser'"), :label_method => :full_name, :value_method => :id, :label => false %></td>
+    <td><%= f.input :meeting_day, :label => false %></td>
     <td><%= f.input :meeting_time, :label => false %></td>
     <td><%= f.input :meeting_location, :label => false %></td>
     <td>

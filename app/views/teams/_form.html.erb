@@ -3,6 +3,7 @@
 		<%= f.association :project_template, :prompt => "Select a project..." %>
 	<% end %>
 	<%= f.association :user, :label => "Manager", :label_method => lambda { |user| "#{user.first_name} #{user.last_name}" }, :prompt => "Select a manager..." %>
+	<%= f.input :meeting_day %>
 	<%= f.input :meeting_time %>
 	<%= f.input :meeting_location %>
 	<%= f.button :submit %>

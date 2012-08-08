@@ -74,7 +74,8 @@ namespace :db do
 		        # Create 2 teams per project
 		        Team.populate(2) do |team|
 		          team.project_template_id = project_template.id
-		          team.meeting_time = "#{days.sample} #{8 + rand(12)}:#{['00', '30'].sample}"    # Mon-Fri 8am-7:30pm
+		          team.meeting_day = days.sample
+		          team.meeting_time = "#{8 + rand(12)}:#{['00', '30'].sample}"    # Mon-Fri 8am-7:30pm
 		          team.meeting_location = "#{['EN', 'BA'].sample}#{rand(7)}#{rand(1)}#{rand(9)}" # EN###/BA###
 		          team.user_id = 2
 		        end

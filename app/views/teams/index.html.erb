@@ -8,6 +8,7 @@
       <th><%= model_class.human_attribute_name(:id) %></th>
       <th><%= model_class.human_attribute_name(:project_template_id) %></th>
       <th>Tutor</th>
+      <th><%= model_class.human_attribute_name(:meeting_day) %></th>
       <th><%= model_class.human_attribute_name(:meeting_time) %></th>
       <th><%= model_class.human_attribute_name(:meeting_location) %></th>
       <th><%=t '.actions', :default => t("helpers.actions") %></th>
@@ -19,6 +20,7 @@
         <td><%= link_to team.id, team_path(team) %></td>
         <td><%= ProjectTemplate.find(team.project_template_id).name %></td>
         <td><%= User.find(team.user_id).first_name %> <%= User.find(team.user_id).last_name %></td>
+        <td><%= team.meeting_day %></td>
         <td><%= team.meeting_time %></td>
         <td><%= team.meeting_location %></td>
         <td>

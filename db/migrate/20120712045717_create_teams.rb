@@ -3,6 +3,7 @@ class CreateTeams < ActiveRecord::Migration
     create_table :teams do |t|
       t.references :project_template
       t.references :user
+      t.string :meeting_day
       t.string :meeting_time
       t.string :meeting_location
 
