@@ -2,6 +2,7 @@ source 'https://rubygems.org'
 
 gem 'rails', '3.2.6'
 
+gem 'mysql'
 gem 'sqlite3'
 gem 'devise'
 gem 'hirb'
@@ -23,7 +24,7 @@ group :assets do
   gem 'less-rails-fontawesome'
 
   # See https://github.com/sstephenson/execjs#readme for more supported runtimes
-  # gem 'therubyracer', :platforms => :ruby
+  gem 'therubyracer', :platforms => :ruby
 
   gem 'uglifier', '>= 1.0.3'
 end
