@@ -5,6 +5,7 @@ gem 'rails', '3.2.6'
 gem 'mysql'
 gem 'sqlite3'
 gem 'devise'
+gem 'devise_ldap_authenticatable', :git => "git://github.com/cschiewek/devise_ldap_authenticatable.git"
 gem 'hirb'
 
 gem 'populator'
