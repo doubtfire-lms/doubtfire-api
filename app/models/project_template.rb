@@ -82,7 +82,7 @@ class ProjectTemplate < ActiveRecord::Base
         user.last_name          = last_name
         user.email              = "#{username}@swin.edu.au"
         user.encrypted_password = BCrypt::Password.create("password")
-        user.nickname           = "noob"
+        user.nickname           = first_name
 
         user.save!(:validate => false)
 
