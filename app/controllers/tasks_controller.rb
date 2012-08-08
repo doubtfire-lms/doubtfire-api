@@ -45,6 +45,19 @@ class TasksController < ApplicationController
     @task.awaiting_signoff  = params[:awaiting_signoff] != "false"
 
     if @task.save
+      submission = TaskSubmission.where(task_id: @task.id).order(:submission_time).reverse_order.first
+
+      if submission.nil?
+        TaskSubmission.create!(task: @task, submission_time: Time.zone.now)
+      else
+        if submission.submission_time < 1.hour.since(Time.zone.now)
+          submission.submission_time = Time.zone.now
+          submission.save!
+        else
+          TaskSubmission.create!(task: @task, submission_time: Time.zone.now)
+        end
+      end
+
       respond_to do |format|
         format.html { redirect_to @project, notice: 'Task was successfully completed.' }
         format.js

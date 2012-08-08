@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20120808133306) do
+ActiveRecord::Schema.define(:version => 20120808141243) do
 
   create_table "logins", :force => true do |t|
     t.datetime "timestamp"
@@ -72,6 +72,17 @@ ActiveRecord::Schema.define(:version => 20120808133306) do
     t.datetime "created_at",  :null => false
     t.datetime "updated_at",  :null => false
   end
+
+  create_table "task_submissions", :force => true do |t|
+    t.datetime "submission_time"
+    t.datetime "assessment_time"
+    t.string   "outcome"
+    t.integer  "task_id"
+    t.datetime "created_at",      :null => false
+    t.datetime "updated_at",      :null => false
+  end
+
+  add_index "task_submissions", ["task_id"], :name => "index_task_submissions_on_task_id"
 
   create_table "task_templates", :force => true do |t|
     t.integer  "project_template_id"
