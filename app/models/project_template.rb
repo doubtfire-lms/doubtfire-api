@@ -1,4 +1,4 @@
-require 'CSV'
+require 'csv'
 require 'bcrypt'
 
 class ProjectTemplate < ActiveRecord::Base
