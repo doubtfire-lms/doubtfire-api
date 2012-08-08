@@ -39,10 +39,10 @@ namespace :db do
     ].join(" ")
 
     randies = {
-      allan:   {first: "Allan",    last: "Jones",                nickname: "P-Jiddy"},
-      rohan:   {first: "Rohan",    last: "Liston",               nickname: "Gunner"},
-      aki:     {first: "Akihiro",  last: "Noguchi",              nickname: "Unneccesary Animations"},
-      joost:   {first: "Joost",    last: joosts_long_ass_name,   nickname: "Joe"}
+      ajones:              {first: "Allan",    last: "Jones",                nickname: "P-Jiddy"},
+      rliston:              {first: "Rohan",    last: "Liston",               nickname: "Gunner"},
+      akihironoguchi:     {first: "Akihiro",  last: "Noguchi",              nickname: "Unneccesary Animations"},
+      joostfunkekupper:   {first: "Joost",    last: joosts_long_ass_name,   nickname: "Joe"}
     }
 
     # List of subject names to use
@@ -177,7 +177,7 @@ namespace :db do
  
     complete_status = TaskStatus.where(:name=> "Complete").first
 
-    User.where(:username => "allan").each do |allan|
+    User.where(:username => "ajones").each do |allan|
       allan.team_memberships.each do |team_membership|
         project = team_membership.project
 
@@ -188,7 +188,7 @@ namespace :db do
       end
     end
 
-    User.where(:username => "rohan").each do |rohan|
+    User.where(:username => "rliston").each do |rohan|
       rohan.team_memberships.each do |team_membership|
         project = team_membership.project
 
