@@ -1,0 +1,2 @@
+$(".team-allocation-button").text("<%= @new_team.name %>");
+$("#team-membership-details").replaceWith("<%= j render :partial => 'team_memberships/team_allocation_details', :locals => { :team_membership => @team_membership } %>");

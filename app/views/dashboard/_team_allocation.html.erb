@@ -1,0 +1,31 @@
+<% stylesheets 'dashboard.css' %>
+
+<h2><i class="icon-group"></i>Tutorial Allocation</h2>
+
+<div class="widget-content" id="task-list-widget">
+	<h3>Your Tutorial</h3>
+	<p>The tutorial you're allocated to is:</p>
+	
+	<%= render :partial => "team_memberships/team_allocation_details", :locals => { :team_membership => team_membership } %>
+
+	<h3>Change Tutorial</h3>
+	<p>To change your tutorial allocation, select from one of the following options:</p>
+
+	<div class="btn-group">
+		<button class="btn status-display-button team-allocation-button">
+			<%= team_membership.team.name %>
+		</button>
+		<button class="btn dropdown-toggle" data-toggle="dropdown">
+			<span class="caret"></span>
+		</button>
+		<ul class="dropdown-menu">
+		<% project.project_template.teams.each do |available_team| %>
+			<li>
+				<a href="<%= change_team_allocation_path(team_membership, available_team)%>" data-method="put" class="ready-to-mark-button" data-remote="true" data-method="put">
+					<%= available_team.name %>
+				</a>
+			</li>
+		<% end %>
+		</ul>
+	</div>
+</div>

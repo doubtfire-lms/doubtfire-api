@@ -7,7 +7,7 @@
 <% if user_signed_in? %>
 <div class="btn-group pull-right">
     <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
-      <i class="icon-user"></i> <%= current_user.full_name %> (<%= current_user.username %>)
+      <i class="icon-user"></i> <%= truncate(current_user.full_name, length: 20) %> (<%= current_user.username %>)
       <span class="caret"></span>
     </a>
     <ul class="dropdown-menu">

@@ -9,4 +9,9 @@ class Team < ActiveRecord::Base
   has_one    :project  			# Foreign key
   has_many   :team_memberships
   
+  def name
+    # TODO: Will probably need to make this more flexible when
+    # a team is representing something other than a tutorial
+    "#{meeting_time} (#{meeting_location} - #{user.full_name})"
+  end
 end

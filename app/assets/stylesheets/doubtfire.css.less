@@ -50,6 +50,11 @@ body
 	font-size: 1.2em;
 }
 
+.widget-content li
+{
+	font-size: 1.2em;
+}
+
 .activity-feed-entry
 {
 	border-bottom: 1px dotted #CCCCCC;
@@ -117,7 +122,8 @@ td select
 	max-width:50px;
 }
 
-
-
-
-
+// Fixes problem where dropdowns are clipped by overflow setting for tab-content
+.tab-content {
+	display: table; // prevent content from running below tabs
+	width: 100%;
+}
