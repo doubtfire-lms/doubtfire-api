@@ -20,7 +20,12 @@ module TutorProjectsHelper
 
     raw(
       tasks.each_with_index.map{|task, i|
-          task_class  = task.complete? ? progress.to_s.gsub("_", "-") : "incomplete-task"
+          task_class  = if task.complete?
+            progress.to_s.gsub("_", "-")
+          else
+            task.awaiting_signoff? ? "awaiting-signoff" : "incomplete-task"
+          end
+
           href        = "/tutor/projects/#{project.id}/students/#{student.id}/tasks/#{task.id}"
 
           "<a class=\"task-progress-item progress-#{task_class}\" href=\"#{href}\">#{i + 1}</a>"
