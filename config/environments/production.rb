@@ -17,6 +17,23 @@ Doubtfire::Application.configure do
   # Don't fallback to assets pipeline if a precompiled asset is missed
   config.assets.compile = false
 
+  # Pre-compiled CSS
+  config.assets.precompile += %w[
+    dashboard.css
+    convenor.css
+    tasks.css
+    users.css
+    tutor_projects.css
+  ]
+
+  # Pre-compiled JS
+  config.assets.precompile += %w[
+    burndown.js
+    projects.js
+    users.js
+    superuser.js
+  ]
+
   # Generate digests for assets URLs
   config.assets.digest = true
 
