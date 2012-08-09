@@ -30,12 +30,11 @@ class User < ActiveRecord::Base
     system_role == "user"
   end
   
-  def full_name                                                                                                                                                                                     
-    ([first_name, last_name] - ['']).compact.join(' ')
+  def name
+    "#{first_name} #{last_name}"
   end
 
-   def username_plus_full_name
-    ([username, "-", full_name] - ['']).compact.join(' ')
+  def username_plus_name
+    "#{username}-#{name}"
   end
-
 end

@@ -25,12 +25,17 @@
 				<div class="span12 widget">
 					<h2><i class="icon-group"></i>Teams</h2>
 					<div class="widget-content">
+						<ul style="margin: 0;">
 						<% @tutor_teams.each do |team| %>
-						<div class="team-entry">
-							<h3><%= team.meeting_time %></h3>
+							<li style="float: left; list-style-type: none; background-color: pink; margin-right: 10px;"><%= team.meeting_day %> <%= team.meeting_time %></li>
+						<% end %>
+						</ul>
+						<% @tutor_teams.each do |team| %>
+						<div class="team-entry" style="clear: left">
+							<h3><%= team.meeting_day %> <%= team.meeting_time %></h3>
 							<% team.team_memberships.each do |team_membership| %>
 							<div class="team-member-entry">
-								<h4><%= link_to truncate(team_membership.user.full_name, :length => 24, :separator => ' '), tutor_project_student_path(team_membership.project, team_membership.user) %></h4>
+								<h4><%= link_to truncate(team_membership.user.name, :length => 24, :separator => ' '), tutor_project_student_path(team_membership.project, team_membership.user) %></h4>
 								<p class="health"><%= "#{"%5.1f" % (team_membership.project.health * 100)}%" %></p>
 								<%= render 'layouts/tasks_progress_bar', :project => team_membership.project, :student => team_membership.user %>
 							</div>
