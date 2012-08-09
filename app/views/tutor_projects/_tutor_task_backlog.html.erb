@@ -12,11 +12,11 @@
 		<p class="toggle-task-description-container"><a href="#" class="toggle-task-description btn"><i class="icon-chevron-down"></i></a></p>
 		<p class="task-submission-vs-time"><%= task_submission_vs_time_text(task) %></p>
 		<div class="task-status-controls" style="display: inline-block;">
-			<% if task.complete? %>
-				<button class="btn btn-success status-display-button">Complete <i class="icon-ok button-icon"></i></button>
-			<% else %>
 			<div class="btn-group">
-				<% if task.awaiting_signoff? %>
+				<% if task.complete? %>
+				<button class="btn btn-success status-display-button">Complete <i class="icon-ok button-icon"></i></button>
+				<button class="btn btn-success dropdown-toggle" data-toggle="dropdown">
+				<% elsif task.awaiting_signoff? %>
 				<button class="btn btn-primary status-display-button">
 					Ready to Mark <i class="icon-thumbs-up button-icon" style=""></i>
 				</button>
@@ -41,7 +41,6 @@
 					</li>
 				</ul>
 			</div>
-			<% end %>
 		</div>
 		<div class="task-description">
 			<p><%= task.task_template.description %></p>
