@@ -135,6 +135,10 @@ class Project < ActiveRecord::Base
     tasks.select{|task| task.task_status.name != "Complete" }
   end
 
+  def percentage_complete
+    (completed_tasks_weight / total_task_weight) * 100
+  end
+
   def remaining_tasks_weight
     incomplete_tasks.empty? ? 0.0 : incomplete_tasks.map{|task| task.task_template.weighting }.inject(:+)
   end

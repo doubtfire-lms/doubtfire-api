@@ -209,4 +209,22 @@ module DashboardHelper
         "</p>"].join("\n")
       )
   end
+
+  def class_for_project_status(project)
+    class_for_project = if project.commenced?
+      if project.started?
+        project.relative_progress
+      else
+        :not_started
+      end
+    else
+      :not_commenced
+    end.to_s.gsub("_", "-")
+  end
+
+  def project_progress_bar(project)
+    raw ["<div class=\"progress progress-#{class_for_project_status(project)}\">",
+          "\t<div class=\"bar\" style=\"width: #{project.percentage_complete}%;\"></div>",
+        '</div>'].join("\n")
+  end
 end

@@ -11,7 +11,8 @@
 				</div>
 			<% end %>
 			<h3>Project Status</h3>
-			<%= project_status_summary(project) %>					
+			<%= project_status_summary(project) %>
+			<%= project_progress_bar(project) %>
 			<h3>Remaining Work</h3>
 			<%= task_completion(project) %>
 			<% unless project.concluded? %>
