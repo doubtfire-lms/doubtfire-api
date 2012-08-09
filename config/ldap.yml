@@ -21,12 +21,12 @@ authorizations: &AUTHORIZATIONS
 ## Enviornments
 
 development:
-  host: ictlinsvr1.ict.swin.edu.au 
+  host: ictlinsvr1.ict.swin.edu.au
   port: 636
   attribute: cn
   base: ou=People,ou=csg,dc=ict,dc=swin,dc=edu,dc=au
-  admin_user: 
-  admin_password: 
+  admin_user:
+  admin_password:
   ssl: true
   # <<: *AUTHORIZATIONS
 
@@ -41,11 +41,11 @@ test:
   # <<: *AUTHORIZATIONS
 
 production:
-  host: localhost
+  host: ictlinsvr1.ict.swin.edu.au
   port: 636
   attribute: cn
-  base: ou=people,dc=test,dc=com
-  admin_user: cn=admin,dc=test,dc=com
-  admin_password: admin_password
-  ssl: start_tls
+  base: ou=People,ou=csg,dc=ict,dc=swin,dc=edu,dc=au
+  admin_user:
+  admin_password:
+  ssl: true
   # <<: *AUTHORIZATIONS
