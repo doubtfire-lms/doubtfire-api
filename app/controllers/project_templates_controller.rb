@@ -39,14 +39,8 @@ class ProjectTemplatesController < ApplicationController
     @project_template.description = "Enter a description for this project."
     @project_template.start_date = Date.today
     @project_template.end_date = 13.weeks.from_now
+    @project_template.save!
     
-    if @project_template.save
-      ProjectConvenor.populate(1) do |project_admin|
-        project_admin.user_id = current_user.id
-        project_admin.project_template_id = @project_template.id
-      end
-    end
-
     respond_to do |format|
       format.html # new.html.erb
       format.json { render json: @project_template }
@@ -72,19 +66,6 @@ class ProjectTemplatesController < ApplicationController
 
     respond_to do |format|
       if @project_template.save
-      
-        # Convenors can only add themselves as a convenor at the moment
-        if current_user.convenor?
-          @project_convenor = ProjectConvenor.new(:project_template_id => @project_template.id, :user_id => current_user.id)
-          @project_convenor.save
-        elsif current_user.superuser?
-          # For superusers, create a corresponding ProjectConvenor entry for each convenor
-          params[:convenor].each do |convenor_id|
-            @project_convenor = ProjectConvenor.new(:project_template_id => @project_template.id, :user_id => convenor_id)
-            @project_convenor.save
-          end
-        end
-
         format.html { redirect_to @project_template, notice: 'ProjectTemplate was successfully created.' }
         format.json { render json: @project_template, status: :created, location: @project_template }
       else
@@ -98,9 +79,17 @@ class ProjectTemplatesController < ApplicationController
   # PUT /project_templates/1.json
   def update
     @project_template = ProjectTemplate.find(params[:id])
-
+  
     respond_to do |format|
       if @project_template.update_attributes(params[:project_template])
+
+        # Replace the current list of convenors for this project with the new list selected by the user
+        ProjectConvenor.where(:project_template_id => @project_template.id).delete_all
+        params[:convenor].each do |convenor_id|
+          @project_convenor = ProjectConvenor.find_or_create_by_project_template_id_and_user_id(:project_template_id => @project_template.id, :user_id => convenor_id)
+          @project_convenor.save!
+        end
+
         format.html { redirect_to @project_template, notice: 'ProjectTemplate was successfully updated.' }
         format.json { head :no_content }
         format.js { render action: "finish_update" }
