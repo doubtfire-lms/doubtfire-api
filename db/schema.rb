@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20120808141243) do
+ActiveRecord::Schema.define(:version => 20120810070733) do
 
   create_table "logins", :force => true do |t|
     t.datetime "timestamp"
@@ -40,8 +40,9 @@ ActiveRecord::Schema.define(:version => 20120808141243) do
     t.string   "description"
     t.datetime "start_date"
     t.datetime "end_date"
-    t.datetime "created_at",  :null => false
-    t.datetime "updated_at",  :null => false
+    t.datetime "created_at",    :null => false
+    t.datetime "updated_at",    :null => false
+    t.string   "official_name"
   end
 
   create_table "projects", :force => true do |t|
@@ -122,6 +123,7 @@ ActiveRecord::Schema.define(:version => 20120808141243) do
     t.string   "meeting_location"
     t.datetime "created_at",          :null => false
     t.datetime "updated_at",          :null => false
+    t.string   "official_name"
   end
 
   add_index "teams", ["project_template_id"], :name => "index_teams_on_project_template_id"

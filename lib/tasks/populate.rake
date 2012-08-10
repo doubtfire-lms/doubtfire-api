@@ -46,12 +46,12 @@ namespace :db do
     }
 
     # List of subject names to use
-    subjects = [
-      "Introduction To Programming",
-      "Object-Oriented Programming",
-      "Games Programming",
-      "AI For Games"
-    ]
+    subjects = {
+      "HIT2080" => "Introduction To Programming",
+      "HIT2302" => "Object-Oriented Programming",
+      "HIT3243" => "Games Programming",
+      "HIT3046" => "Artificial Intelligence for Games"
+    }
 
     # Collection of weekdays
     days = %w[Monday Tuesday Wednesday Thursday Friday]
@@ -122,12 +122,13 @@ namespace :db do
     end
 
     # Create 4 projects (subjects)
-    subjects.each do |subject|
+    subjects.each do |subject_code, subject_name|
       ProjectTemplate.populate(1) do |project_template|
-        project_template.name = subject
-        project_template.description  = Populator.words(10..15)
-        project_template.start_date   = Date.new(2012, 8, 6)
-        project_template.end_date     = 13.weeks.since project_template.start_date
+        project_template.official_name  = subject_code
+        project_template.name           = subject_name
+        project_template.description    = Populator.words(10..15)
+        project_template.start_date     = Date.new(2012, 8, 6)
+        project_template.end_date       = 13.weeks.since project_template.start_date
 
         # Assign a convenor to each project
         ProjectConvenor.populate(1) do |pa|
@@ -156,7 +157,7 @@ namespace :db do
           team.meeting_day  = "#{days.sample}"
           team.meeting_location = "#{['EN', 'BA'].sample}#{rand(7)}#{rand(1)}#{rand(9)}" # EN###/BA###
           
-          if ["Introduction To Programming", "Object-Oriented Programming"].include? subject
+          if ["Introduction To Programming", "Object-Oriented Programming"].include? subject_name
             team.user_id = tutors[:acain][:id]  # Tutor 1
           else
             team.user_id = tutors[:cwoodward][:id]  # Tutor 2

@@ -156,4 +156,13 @@ class ProjectTemplatesController < ApplicationController
 
   end
 
+  def import_teams
+    @project_template = ProjectTemplate.find(params[:project_template_id])
+    @project_template.import_teams_from_csv(params[:csv_file][:file])
+
+    respond_to do |format|
+      format.js
+    end
+  end
+
 end

@@ -2,7 +2,7 @@ require 'csv'
 require 'bcrypt'
 
 class ProjectTemplate < ActiveRecord::Base
-  attr_accessible :description, :end_date, :name, :start_date
+  attr_accessible :official_name, :description, :end_date, :name, :start_date
   validates_presence_of :name, :description, :start_date, :end_date
 
   # Accessor to allow setting of convenors via the new/edit form
@@ -60,46 +60,50 @@ class ProjectTemplate < ActiveRecord::Base
   # Format: Student ID,Course ID,First Name,Initials,Surname,Mark,Assessment,Status
   # Only Student ID, First Name, and Surname are used.
   def import_users_from_csv(file)
+    team_cache = {}
+
     CSV.foreach(file) do |row|
-      
       # Make sure we're not looking at the header or an empty line
-      next if row[0][0] != '['     
-      next if row.length != 8
+      next if row =~ /Subject Code/
 
-      username = row[0][1..-2]    # 1st column: Student ID with [] trimmed off
-      first_name, last_name = [row[2], row[4]].map{|name| name.titleize }
-      team_id = 1 
+      username, first_name, last_name, email, class_id = [row[0]] + [row[3], row[4]].map{|name| name.titleize } + [row[5]]
+
+      project_participant = User.find_or_create_by_username(:username => username) {|new_user|
+        new_user.username           = username
+        new_user.first_name         = first_name
+        new_user.last_name          = last_name
+        new_user.email              = email
+        new_user.nickname           = first_name
+      }
+
+      user_not_in_project = TeamMembership.joins(:project => :project_template).where(
+        :user_id => project_participant.id,
+        :projects => {:project_template_id => self.id}
+      ).count == 0
+
+      team = team_cache[class_id] || Team.where(:official_name => class_id).first
+      team_cache[class_id] ||= team
       
-      user_to_add = User.where(:username => username)
-      
-      # If the user doesn't exist in the system yet, create an account for them.
-      if user_to_add.count == 0
-        logger.info("==========================================================CREATING USER #{username}")
-        user = User.where(:username => username).first_or_initialize
+      # Add the user to the project (if not already in there)
+      if user_not_in_project
+        puts team.id
+        add_user(project_participant.id, team.id, "student")
+      end
+    end
+  end
 
-        user.username           = username
-        user.first_name         = first_name
-        user.last_name          = last_name
-        user.email              = "#{username}@swin.edu.au"
-        user.encrypted_password = BCrypt::Password.create("password")
-        user.nickname           = first_name
+  def import_teams_from_csv(file)
+    CSV.foreach(file) do |row|
+      next if row[0] =~ /Subject Code/ # Skip header
 
-        user.save!(:validate => false)
+      class_type, class_id, day, time, location = row[2..-1]
+      next if class_type !~ /Lab/
 
-        # Rails.logger.info("==========================================================#{user_to_add.username}")
-        user_not_in_project = TeamMembership.joins(:project => :project_template).where(
-          :user_id => user.id,
-          :projects => {:project_template_id => self.id}
-        ).count == 0
-      
-        # Add the user to the project (if not already in there)
-        if user_not_in_project
-          self.add_user(user.id, team_id, "student")    # @TODO: Get tute ID somehow instead of hard-coding 
-        else
-          logger.info("USER #{user.id}: #{username} - #{user.name} ALREADY IN PROJECT #{self.name}")
-        end
-      else
-        logger.info("==========================================================USER #{username} ALREADY EXISTS")
+      Team.find_or_create_by_project_template_id_and_official_name(id, class_id) do |team|
+        team.meeting_day      = day
+        team.meeting_time     = time
+        team.meeting_location = location
+        team.user_id          = User.find(1)
       end
     end
   end

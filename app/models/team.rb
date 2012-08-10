@@ -1,5 +1,5 @@
 class Team < ActiveRecord::Base
-  attr_accessible :project_template_id, :user_id, :meeting_day, :meeting_location, :meeting_time
+  attr_accessible :project_template_id, :user_id, :official_name, :meeting_day, :meeting_location, :meeting_time
 
   validates_presence_of :user_id
   
