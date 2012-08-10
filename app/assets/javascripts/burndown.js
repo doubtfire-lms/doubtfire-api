@@ -119,28 +119,3 @@ function dataForProjectJSON(projectJSON) {
 
   return seriesToPlot;
 }
-
-function colourForProjectProgress(progress) {
-  var colour = null;
-
-  switch (progress)
-  {
-    case "ahead":
-      colour = "#48842c"; // Twitter Bootstrap @green
-      break;
-    case "on_track":
-      colour = "#049cdb"; // Twitter Bootstrap @blue
-      break;
-    case "behind":
-      colour = "#f89406"; // Twitter Bootstrap @orange
-      break;
-    case "danger":
-      colour = "#9d261d"; // Twitter Bootstrap @red
-      break;
-    case "doomed":
-      colour = "#000000";
-      break;
-  }
-
-  return colour;
-}
