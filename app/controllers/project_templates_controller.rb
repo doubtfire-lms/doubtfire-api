@@ -1,4 +1,5 @@
 class ProjectTemplatesController < ApplicationController
+
   # GET /project_templates
   # GET /project_templates.json
   def index
@@ -21,10 +22,12 @@ class ProjectTemplatesController < ApplicationController
     @project_teams = Team.where(:project_template_id => params[:id])
     
     authorize! :manage, @project_template, :message => "You are not authorised to manage Project Template ##{@project_template.id}"
-
+    
     respond_to do |format|
       format.html # show.html.erb
-      format.json { render json: @project_template }
+      format.json { render json: @project_template.to_json(
+          :methods => [:status_distribution]
+        ) }
     end
   end
 

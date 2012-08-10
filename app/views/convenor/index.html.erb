@@ -1,5 +1,5 @@
 <% stylesheets 'convenor.css' %>
-
+<% javascript 'status_distribution.js' %>
 <% content_for :page_banner do %>
   <h1>Convenor Dashboard</h1>  
   <p class="lead"><%= "#{@user.first_name} #{@user.last_name}" %></p>
@@ -13,33 +13,25 @@
 <div class="span9">
 	<% @project_templates.each_with_index do |project_template, i| %>
 		<% if i % 2 == 0 %>
-		<div class="row-fluid">
+			<div class="row-fluid">
 		<% end %>
 			<div class="span6 widget">
-				<h2><i class="icon-book"></i><%= project_template.name %></h2>
+				<h2>
+					<span class="widget-header">
+						<i class="icon-book"></i>
+						<%= h(project_template.name) %>
+					</span>
+				</h2>
 				<div class="widget-content">
-					<div class="project-identity">
-						<div class="doom-image"><%= image_tag "doomface_damage#{rand(4)}.gif" %></div>
-						<span class="badge badge-important"><%= link_to "#{2+rand(10)} new notifications", convenor_project_path(project_template)%></span>
+
+					<div class="badge badge-important pull-right">
+						<%= link_to "#{2+rand(10)} new notifications", convenor_project_path(project_template) %>
 					</div>
-					<div class="progress-bands">
-						<div class="progress-band">
-							<span class="statistical-figure">20%</span>
-							<span class="progress-band-name">are ahead</span>
-						</div>
-						<div class="progress-band">
-							<span class="statistical-figure">20%</span>
-							<span class="progress-band-name">are on track</span>
-						</div>
-						<div class="progress-band">
-							<span class="statistical-figure">40%</span>
-							<span class="progress-band-name">are behind</span>
-						</div>
-						<div class="progress-band">
-							<span class="statistical-figure">20%</span>
-							<span class="progress-band-name">are doomed</span>
-						</div>
-					</div>
+					
+					<%= content_tag "div", class: "status-distribution-chart", data: {url: project_template_url(project_template)} do %>
+						<svg style="height: 150px"></svg>
+					<% end %>
+					
 					<%= link_to "Go to project", convenor_project_path(project_template), :class => "btn" %>
 				</div>
 			</div>
