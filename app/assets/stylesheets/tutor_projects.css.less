@@ -58,6 +58,23 @@
 	.border-radius(@taskProgressItemCornerRadius);
 }
 
+.team-entry
+{
+	clear: left
+}
+
+#team-list-options
+{
+	margin: 0;
+}
+
+#team-list-options li
+{
+	float: left;
+	list-style-type: none;
+	margin-right: 10px;
+}
+
 /***** TODO: No reason below can't be global *****/
 
 .progress-ahead 	{ #gradient > .vertical(#62c462, #51a351); }
@@ -75,6 +92,8 @@
 	color: #ffffff;
 }
 
-.progress-incomplete-task { #gradient > .vertical(#ffffff, #e6e6e6); color: #BBBBBB; }
+.progress-incomplete-task 	{ #gradient > .vertical(#ffffff, #e6e6e6); color: #BBBBBB; }
+.progress-awaiting-signoff 	{ #gradient > .vertical(#C8C8CA, #89888E); color: #ffffff; }
 
 .progress-incomplete-task:hover { color: #BBBBBB; }
+.progress-awaiting-signoff:hover { color: #ffffff; }

@@ -10,7 +10,7 @@ module ProjectTemplatesHelper
 		# Concatenate their names into a string
 		convenors_string = ""
 		convenors.each do |convenor|
-			convenors_string += convenor.full_name + ", "
+			convenors_string += convenor.name + ", "
 		end
 
 		# Return the string without the last comma and space

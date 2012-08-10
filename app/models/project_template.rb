@@ -96,7 +96,7 @@ class ProjectTemplate < ActiveRecord::Base
         if user_not_in_project
           self.add_user(user.id, team_id, "student")    # @TODO: Get tute ID somehow instead of hard-coding 
         else
-          logger.info("USER #{user.id}: #{username} - #{user.full_name} ALREADY IN PROJECT #{self.name}")
+          logger.info("USER #{user.id}: #{username} - #{user.name} ALREADY IN PROJECT #{self.name}")
         end
       else
         logger.info("==========================================================USER #{username} ALREADY EXISTS")
