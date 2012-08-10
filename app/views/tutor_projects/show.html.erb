@@ -1,4 +1,5 @@
 <%= stylesheets 'tasks.css', 'tutor_projects.css' %>
+<%= javascript 'tutor_projects.js' %>
 
 <% content_for :sidebar do %>
 	<ul class="nav nav-list">
@@ -25,18 +26,12 @@
 				<div class="span12 widget">
 					<h2><i class="icon-group"></i>Teams</h2>
 					<div class="widget-content">
+						<ul id="team-list-options">
 						<% @tutor_teams.each do |team| %>
-						<div class="team-entry">
-							<h3><%= team.meeting_time %></h3>
-							<% team.team_memberships.each do |team_membership| %>
-							<div class="team-member-entry">
-								<h4><%= link_to truncate(team_membership.user.full_name, :length => 24, :separator => ' '), tutor_project_student_path(team_membership.project, team_membership.user) %></h4>
-								<p class="health"><%= "#{"%5.1f" % (team_membership.project.health * 100)}%" %></p>
-								<%= render 'layouts/tasks_progress_bar', :project => team_membership.project, :student => team_membership.user %>
-							</div>
-							<% end %>
-						</div>
+							<li><%= link_to "#{team.meeting_day} #{team.meeting_time}", root_url, "data-include" => "true", id: "team-#{team.id}-toggle" %></li>
 						<% end %>
+						</ul>
+						<%= render :partial => "tutor_projects/team_project_list", :locals => { :tutor_teams => @tutor_teams } %>
 					</div>
 				</div>
 			</div>

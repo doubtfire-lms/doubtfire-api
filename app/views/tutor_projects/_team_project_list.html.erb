@@ -1,0 +1,12 @@
+<% tutor_teams.each do |team| %>
+<div class="team-entry" id="team-<%= team.id %>-students">
+	<h3><%= team.meeting_day %> <%= team.meeting_time %></h3>
+	<% team.team_memberships.sort{|a,b| a.user.name <=> b.user.name }.each do |team_membership| %>
+	<div class="team-member-entry">
+		<h4><%= link_to truncate(team_membership.user.name, :length => 24, :separator => ' '), tutor_project_student_path(team_membership.project, team_membership.user) %></h4>
+		<p class="health"><%= "#{"%5.1f" % (team_membership.project.health * 100)}%" %></p>
+		<%= render 'layouts/tasks_progress_bar', :project => team_membership.project, :student => team_membership.user %>
+	</div>
+	<% end %>
+</div>
+<% end %>
