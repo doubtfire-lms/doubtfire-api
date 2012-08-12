@@ -16,16 +16,17 @@ class ProjectTemplate < ActiveRecord::Base
   has_many :project_convenors, :dependent => :destroy
   
   # Adds a user to this project.
-  def add_user(user_id, team_id, project_role) 
+  def add_user(user_id, team_id, project_role)
     # Put the user in the appropriate team (ie. create a new team_membership)
     TeamMembership.populate(1) do |team_membership|
+      puts "add_user: Adding User ##{user_id} to Team ##{team_id}"
       team_membership.team_id = team_id
       team_membership.user_id = user_id
 
       # Create a project instance
       Project.populate(1) do |project|
         project.project_status_id = 1   # @TODO: Remove hard-coded value
-        project.project_template_id = self.id
+        project.project_template_id = id
         project.project_role = project_role
 
         # Set the foreign keys for the 1:1 relationship
@@ -64,9 +65,12 @@ class ProjectTemplate < ActiveRecord::Base
 
     CSV.foreach(file) do |row|
       # Make sure we're not looking at the header or an empty line
-      next if row =~ /Subject Code/
+      next if row[0] =~ /Subject Code/
+      next if row[5] !~ /^LA\d/
 
-      username, first_name, last_name, email, class_id = [row[0]] + [row[3], row[4]].map{|name| name.titleize } + [row[5]]
+      subject_code, username  = row[0..1]
+      first_name, last_name   = [row[2], row[3]].map{|name| name.titleize }
+      email, class_id         = row[4..5]
 
       project_participant = User.find_or_create_by_username(:username => username) {|new_user|
         new_user.username           = username
@@ -74,11 +78,15 @@ class ProjectTemplate < ActiveRecord::Base
         new_user.last_name          = last_name
         new_user.email              = email
         new_user.nickname           = first_name
+        new_user.password           = "password"
+        new_user.system_role        = "student"
       }
+
+      project_participant.save!
 
       user_not_in_project = TeamMembership.joins(:project => :project_template).where(
         :user_id => project_participant.id,
-        :projects => {:project_template_id => self.id}
+        :projects => {:project_template_id => id}
       ).count == 0
 
       team = team_cache[class_id] || Team.where(:official_name => class_id).first
@@ -86,7 +94,7 @@ class ProjectTemplate < ActiveRecord::Base
       
       # Add the user to the project (if not already in there)
       if user_not_in_project
-        puts team.id
+        puts "Adding User #{project_participant.id} to team ##{team.id} in project ##{id}"
         add_user(project_participant.id, team.id, "student")
       end
     end
