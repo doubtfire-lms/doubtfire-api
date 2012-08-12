@@ -39,8 +39,8 @@ namespace :db do
     ].join(" ")
 
     randies = {
-      ajones:              {first: "Allan",    last: "Jones",                nickname: "P-Jiddy"},
-      rliston:              {first: "Rohan",    last: "Liston",               nickname: "Gunner"},
+      ajones:             {first: "Allan",    last: "Jones",                nickname: "P-Jiddy"},
+      rliston:            {first: "Rohan",    last: "Liston",               nickname: "Gunner"},
       akihironoguchi:     {first: "Akihiro",  last: "Noguchi",              nickname: "Unneccesary Animations"},
       joostfunkekupper:   {first: "Joost",    last: joosts_long_ass_name,   nickname: "Joe"}
     }
