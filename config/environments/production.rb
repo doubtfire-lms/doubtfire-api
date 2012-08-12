@@ -19,11 +19,14 @@ Doubtfire::Application.configure do
 
   # Pre-compiled CSS
   config.assets.precompile += %w[
-    dashboard.css
+    burndown.css
     convenor.css
+    convenor_project.css
+    dashboard.css
+    home.css
     tasks.css
-    users.css
     tutor_projects.css
+    users.css
   ]
 
   # Pre-compiled JS
