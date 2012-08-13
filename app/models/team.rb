@@ -12,6 +12,6 @@ class Team < ActiveRecord::Base
   def name
     # TODO: Will probably need to make this more flexible when
     # a team is representing something other than a tutorial
-    "#{meeting_day} #{meeting_time} (#{meeting_location} - #{user.name})"
+    "#{meeting_day} #{meeting_time} (#{meeting_location})"
   end
 end
