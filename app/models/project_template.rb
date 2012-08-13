@@ -122,6 +122,17 @@ class ProjectTemplate < ActiveRecord::Base
 
       name, description, weighting, required, target_date = row
 
+      if target_date !~ /20\d\d\-\d{1,2}\-\d{1,2}/ # Matches YYYY-mm-dd by default
+        if target_date =~ /\d{1,2}\-\d{1,2}\-20\d\d/ # Matches dd-mm-YYYY
+          target_date = target_date.split("-").reverse.join("-")
+        elsif target_date =~ /\d{1,2}\/\d{1,2}\/20\d\d/ # Matches dd/mm/YYYY
+          target_date = target_date.split("/").reverse.join("-")
+        elsif target_date =~ /\d{1,2}\/\d{1,2}\/\d\d/ # Matches dd/mm/YY
+          target_date = target_date.split("/").reverse.join("-")
+        elsif target_date =~ /\d{1,2}\-\d{1,2}\-\d\d/ # Matches dd-mm-YY
+        end
+      end
+
       # TODO: Should background/task queue this work
       task = TaskTemplate.find_or_create_by_name(name) do |task_template|
         task_template.name                        = name
