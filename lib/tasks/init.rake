@@ -10,9 +10,7 @@ namespace :db do
 
 		admins = {
       ajones:             {first: "Allan",    last: "Jones",                nickname: "P-Jiddy"},
-      rliston:            {first: "Rohan",    last: "Liston",               nickname: "Gunner"},
-      akihironoguchi:     {first: "Akihiro",  last: "Noguchi",              nickname: "Unneccesary Animations"},
-      joostfunkekupper:   {first: "Joost",    last: "Funke Kupper",   			nickname: "Joe"}
+      akihironoguchi:     {first: "Akihiro",  last: "Noguchi",              nickname: "Unneccesary Animations"}
     }
 
     convenors = {
