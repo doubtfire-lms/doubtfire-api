@@ -19,7 +19,6 @@ class ProjectTemplate < ActiveRecord::Base
   def add_user(user_id, team_id, project_role)
     # Put the user in the appropriate team (ie. create a new team_membership)
     TeamMembership.populate(1) do |team_membership|
-      puts "add_user: Adding User ##{user_id} to Team ##{team_id}"
       team_membership.team_id = team_id
       team_membership.user_id = user_id
 
@@ -94,7 +93,6 @@ class ProjectTemplate < ActiveRecord::Base
       
       # Add the user to the project (if not already in there)
       if user_not_in_project
-        puts "Adding User #{project_participant.id} to team ##{team.id} in project ##{id}"
         add_user(project_participant.id, team.id, "student")
       end
     end
