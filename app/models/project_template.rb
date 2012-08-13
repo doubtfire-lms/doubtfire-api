@@ -78,11 +78,11 @@ class ProjectTemplate < ActiveRecord::Base
         new_user.last_name          = last_name
         new_user.email              = email
         new_user.nickname           = first_name
-        new_user.password           = "password"
+        new_user.encrypted_password = BCrypt::Password.create("password")
         new_user.system_role        = "student"
       }
 
-      project_participant.save!
+      project_participant.save!(:validate => false) unless project_participant.persisted?
 
       user_not_in_project = TeamMembership.joins(:project => :project_template).where(
         :user_id => project_participant.id,
@@ -104,14 +104,16 @@ class ProjectTemplate < ActiveRecord::Base
     CSV.foreach(file) do |row|
       next if row[0] =~ /Subject Code/ # Skip header
 
-      class_type, class_id, day, time, location = row[2..-1]
+      class_type, class_id, day, time, location, tutor_username = row[2..-1]
       next if class_type !~ /Lab/
 
       Team.find_or_create_by_project_template_id_and_official_name(id, class_id) do |team|
         team.meeting_day      = day
         team.meeting_time     = time
         team.meeting_location = location
-        team.user_id          = User.find(1)
+        
+        user_for_tutor = User.where(:username => tutor_username).first
+        team.user_id          = user_for_tutor.id
       end
     end
   end

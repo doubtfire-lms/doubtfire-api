@@ -54,7 +54,7 @@
       <%= link_to "Create new team", new_project_team_path(@project_template), :class => 'btn', "data-remote" => true %>
       <hr />
       <div class="well">
-        <%= form_tag "#{@project_template.id}/import_teams", :remote => true do %>
+        <%= form_tag "#{@project_template.id}/import_teams", :multipart => true, :remote => true do %>
           <%= file_field(:csv_file, :file) %>
           <%= submit_tag "Import Teams from CSV", :class => "btn" %>
         <% end %>
@@ -71,7 +71,7 @@
                                                          :project_template => @project_template } %>
       <hr />
       <div class="well">
-        <%= form_tag "#{@project_template.id}/import_users", :remote => true do %>
+        <%= form_tag "#{@project_template.id}/import_users", :multipart => true, :remote => true do %>
           <%= file_field(:csv_file, :file) %>
           <%= submit_tag "Import Users from CSV", :class => "btn" %>
         <% end %>

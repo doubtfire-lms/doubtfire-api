@@ -1,5 +1,6 @@
-class ProjectTemplatesController < ApplicationController
+require 'fileutils'
 
+class ProjectTemplatesController < ApplicationController
   # GET /project_templates
   # GET /project_templates.json
   def index
@@ -151,8 +152,14 @@ class ProjectTemplatesController < ApplicationController
 
   def import_users
     
+    tmp = params[:csv_file][:file].tempfile
+    csv_file = File.join("public", params[:csv_file][:file].original_filename)
+    FileUtils.cp tmp.path, csv_file
+
     @project_template = ProjectTemplate.find(params[:project_template_id])
-    @project_template.import_users_from_csv(params[:csv_file][:file])
+    @project_template.import_users_from_csv(csv_file)
+
+    FileUtils.rm csv_file
 
     respond_to do |format|
       format.js
@@ -161,8 +168,14 @@ class ProjectTemplatesController < ApplicationController
   end
 
   def import_teams
+    tmp = params[:csv_file][:file].tempfile
+    csv_file = File.join("public", params[:csv_file][:file].original_filename)
+    FileUtils.cp tmp.path, csv_file
+
     @project_template = ProjectTemplate.find(params[:project_template_id])
-    @project_template.import_teams_from_csv(params[:csv_file][:file])
+    @project_template.import_teams_from_csv(csv_file)
+
+    FileUtils.rm csv_file
 
     respond_to do |format|
       format.js

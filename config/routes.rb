@@ -1,9 +1,9 @@
 Doubtfire::Application.routes.draw do
-  devise_for :users, :skip => [:registrations]
-  devise_for :users, :skip => [:sessions]
+  devise_for :users, :skip => [:registrations, :sessions]
+
   as :user do
-    get 'login' => 'devise/sessions#new', :as => :new_user_session
-    post 'login' => 'devise/sessions#create', :as => :user_session
+    get 'login'     => 'devise/sessions#new', :as => :new_user_session
+    post 'login'    => 'devise/sessions#create', :as => :user_session
     delete 'logout' => 'devise/sessions#destroy', :as => :destroy_user_session
   end
   
@@ -61,6 +61,7 @@ Doubtfire::Application.routes.draw do
 
   # Superuser context routes
   get '/administration' => 'superuser#index', :as => 'superuser_index'
+  post 'users/import' => 'users#import', :via => :post
 
   # Go to dashboard home by default
   root :to => "dashboard#index"

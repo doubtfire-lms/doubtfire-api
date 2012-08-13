@@ -136,7 +136,7 @@ class Project < ActiveRecord::Base
   end
 
   def percentage_complete
-    (completed_tasks_weight / total_task_weight) * 100
+    completed_tasks.empty? ? 0.0 : (completed_tasks_weight / total_task_weight) * 100
   end
 
   def remaining_tasks_weight

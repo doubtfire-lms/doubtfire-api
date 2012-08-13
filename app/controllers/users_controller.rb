@@ -127,4 +127,18 @@ class UsersController < ApplicationController
         format.js  # finish_update.js.erb
     end
   end
+
+  def import
+    tmp = params[:csv_file][:file].tempfile
+    csv_file = File.join("public", params[:csv_file][:file].original_filename)
+    FileUtils.cp tmp.path, csv_file
+
+    User.import_from_csv(csv_file)
+
+    FileUtils.rm csv_file
+
+    respond_to do |format|
+      format.js
+    end
+  end
 end
