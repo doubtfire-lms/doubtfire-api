@@ -35,7 +35,8 @@ class ProjectTemplatesController < ApplicationController
   # GET /project_templates/new.json
   def new
     @project_template = ProjectTemplate.new
-    @convenors = User.where(:system_role => "convenor")
+    @all_convenors = User.where(:system_role => "convenor")
+    @project_convenors = User.where(:id => current_user.id);
 
     # Create a new project template, populate it with sample data, and save it immediately.
     @project_template.name = "New Project"
@@ -54,7 +55,8 @@ class ProjectTemplatesController < ApplicationController
   # GET /project_templates/1/edit
   def edit
     @project_template = ProjectTemplate.find(params[:id])
-    @convenors = User.where(:system_role => "convenor")
+    @all_convenors = User.where(:system_role => "convenor")
+    @project_convenors = User.joins(:project_convenors).where(:system_role => "convenor", :project_convenors => {:project_template_id => @project_template.id})
 
     respond_to do |format|
       format.html # new.html.erb
@@ -85,12 +87,14 @@ class ProjectTemplatesController < ApplicationController
   
     respond_to do |format|
       if @project_template.update_attributes(params[:project_template])
-
+        Rails.logger.info("PARAMS: #{params[:convenors]}")
         # Replace the current list of convenors for this project with the new list selected by the user
-        ProjectConvenor.where(:project_template_id => @project_template.id).delete_all
-        params[:convenor].each do |convenor_id|
-          @project_convenor = ProjectConvenor.find_or_create_by_project_template_id_and_user_id(:project_template_id => @project_template.id, :user_id => convenor_id)
-          @project_convenor.save!
+        unless params[:convenors].nil?
+          ProjectConvenor.where(:project_template_id => @project_template.id).delete_all
+          params[:convenors].each do |convenor_id|
+            @project_convenor = ProjectConvenor.find_or_create_by_project_template_id_and_user_id(:project_template_id => @project_template.id, :user_id => convenor_id)
+            @project_convenor.save!
+          end
         end
 
         format.html { redirect_to @project_template, notice: 'ProjectTemplate was successfully updated.' }
