@@ -30,11 +30,19 @@ Doubtfire::Application.configure do
   ]
 
   # Pre-compiled JS
-  config.assets.precompile += %w[
+  config.assets.precompile += %[
+    administration.js
+    application.js
+    bootstrap.js
     burndown.js
+    convenor.js
+    convenor_project.js
+    home.js
     projects.js
+    status_distribution.js
+    tasks.js
+    tutor_projects.js
     users.js
-    superuser.js
   ]
 
   # Generate digests for assets URLs
