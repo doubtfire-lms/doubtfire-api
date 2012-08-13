@@ -30,7 +30,7 @@ Doubtfire::Application.configure do
   ]
 
   # Pre-compiled JS
-  config.assets.precompile += %[
+  config.assets.precompile += %w[
     administration.js
     application.js
     bootstrap.js
