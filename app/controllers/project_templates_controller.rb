@@ -181,10 +181,25 @@ class ProjectTemplatesController < ApplicationController
       format.js
     end
   end
-
+  
   def destroy_all_tasks
     @project_template = ProjectTemplate.find(params[:project_template_id])
     @project_tasks = TaskTemplate.where(:project_template_id => @project_template.id)
     @project_tasks.delete_all
+  end
+
+  def import_tasks
+    tmp = params[:csv_file][:file].tempfile
+    csv_file = File.join("public", params[:csv_file][:file].original_filename)
+    FileUtils.cp tmp.path, csv_file
+
+    @project_template = ProjectTemplate.find(params[:project_template_id])
+    @project_template.import_tasks_from_csv(csv_file)
+
+    FileUtils.rm csv_file
+
+    respond_to do |format|
+      format.js
+    end
   end
 end

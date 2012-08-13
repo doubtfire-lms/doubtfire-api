@@ -116,6 +116,26 @@ class ProjectTemplate < ActiveRecord::Base
     end
   end
 
+  def import_tasks_from_csv(file)
+    CSV.foreach(file) do |row|
+      next if row[0] =~ /Task Name/ # Skip header
+
+      name, description, weighting, required, target_date = row
+
+      # TODO: Should background/task queue this work
+      task = TaskTemplate.find_or_create_by_name(name) do |task_template|
+        task_template.name                        = name
+        task_template.project_template_id         = id
+        task_template.description                 = description
+        task_template.weighting                   = BigDecimal.new(weighting)
+        task_template.required                    = ["Yes", "y", "Y", "yes", "true"].include? required
+        task_template.recommended_completion_date = Time.zone.parse(target_date)
+      end
+
+      task.save! unless task.persisted?
+    end
+  end
+
   def status_distribution
     project_instances = Project.where(:project_template_id => id)
     total_project_instances = project_instances.length

@@ -30,6 +30,7 @@ Doubtfire::Application.routes.draw do
   # Project convenor context routes
   post 'project_templates/:project_template_id/import_users' => 'project_templates#import_users', :via => :post
   post 'project_templates/:project_template_id/import_teams' => 'project_templates#import_teams', :via => :post
+  post 'project_templates/:project_template_id/import_tasks' => 'project_templates#import_tasks', :via => :post
 
   # Project templates
   post 'project_templates/:id/update' => 'project_templates#update', :via => :post, :as => 'update_project_template'
