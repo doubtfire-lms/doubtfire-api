@@ -1,4 +1,6 @@
 Doubtfire::Application.routes.draw do
+  get "resources/download_task_import_template"
+
   devise_for :users, :skip => [:registrations, :sessions]
 
   as :user do
@@ -28,6 +30,7 @@ Doubtfire::Application.routes.draw do
   put 'tasks/:task_id/update_task_status/:status' => 'tasks#update_task_status', :via => :put, :as => 'update_task_status'
 
   # Project convenor context routes
+  get 'resources/download_task_import_template' => 'resources#download_task_import_template', :as => 'task_import_template'
   post 'project_templates/:project_template_id/import_users' => 'project_templates#import_users', :via => :post
   post 'project_templates/:project_template_id/import_teams' => 'project_templates#import_teams', :via => :post
   post 'project_templates/:project_template_id/import_tasks' => 'project_templates#import_tasks', :via => :post

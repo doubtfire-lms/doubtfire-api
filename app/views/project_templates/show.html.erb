@@ -63,6 +63,7 @@
           <%= file_field(:csv_file, :file) %>
           <%= submit_tag "Import Tasks from CSV", :class => "btn" %>
         <% end %>
+        <%= link_to "Download Import Template", task_import_template_path %>
       </div>
     </div>
   </div>
