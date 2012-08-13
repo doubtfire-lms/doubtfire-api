@@ -39,6 +39,7 @@ Doubtfire::Application.routes.draw do
   get 'project_templates/:project_template_id/new_task' => 'task_templates#new', :as => 'new_project_task'
   post 'project_templates/:project_template_id/update_task/:task_template_id' => 'task_templates#update', :via => :post, :as => 'update_project_task'
   get 'project_templates/:project_template_id/cancel_update_task/:task_template_id' => 'task_templates#finish_update', :as => 'cancel_update_project_task'
+  get 'project_templates/:project_template_id/destroy_all_tasks' => 'project_templates#destroy_all_tasks', :as => 'destroy_all_project_tasks'
   
   # Project teams
   get 'project_templates/:project_template_id/new_team' => 'teams#new', :as => 'new_project_team'

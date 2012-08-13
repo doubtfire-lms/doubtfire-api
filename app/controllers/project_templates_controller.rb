@@ -182,4 +182,9 @@ class ProjectTemplatesController < ApplicationController
     end
   end
 
+  def destroy_all_tasks
+    @project_template = ProjectTemplate.find(params[:project_template_id])
+    @project_tasks = TaskTemplate.where(:project_template_id => @project_template.id)
+    @project_tasks.delete_all
+  end
 end

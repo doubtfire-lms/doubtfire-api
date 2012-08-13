@@ -1,5 +1,5 @@
-<p id="no-tasks-message" <%= "hidden='hidden'" unless task_list.empty? %> ><%= empty_table_string %></p>
-<table id="tasks-table" class="table table-striped" <%= "hidden='hidden'" if task_list.empty? %> >
+<p id="no-tasks-message" <%= "hidden='hidden'" unless task_list.blank? %> ><%= empty_table_string %></p>
+<table id="tasks-table" class="table table-striped" <%= "hidden='hidden'" if task_list.blank? %> >
     <thead>
       <tr>
         <th><%= TaskTemplate.human_attribute_name(:name) %></th>
@@ -11,9 +11,11 @@
       </tr>
     </thead>
     <tbody>
-      <!-- Rows are rendered as a partial so that they can be re-rendered from JavaScript after editing a row. See "task_templates/edit.js.erb" and "task_templates/edit.js.erb". -->
-      <% task_list.each do |task_template| %>
-        <%= render :partial => 'task_templates/table_row', :locals => { :task_template => task_template } %>
+      <% unless task_list.blank? %>
+        <!-- Rows are rendered as a partial so that they can be re-rendered from JavaScript after editing a row. See "task_templates/edit.js.erb" and "task_templates/edit.js.erb". -->
+        <% task_list.each do |task_template| %>
+          <%= render :partial => 'task_templates/table_row', :locals => { :task_template => task_template } %>
+        <% end %>
       <% end %>
     </tbody>
 </table>
