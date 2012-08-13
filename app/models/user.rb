@@ -49,12 +49,11 @@ class User < ActiveRecord::Base
         user.last_name          = last_name
         user.email              = email
         user.nickname           = first_name
-        user.password           = "password"
         user.system_role        = role
       }
 
       unless user.persisted?
-        user.save!
+        user.save!(:validate => false)
       end
     end
 
