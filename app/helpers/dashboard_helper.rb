@@ -61,7 +61,7 @@ module DashboardHelper
   end
 
   def task_completion(project)
-    tasks = project.tasks
+    tasks = project.assigned_tasks
     completed_tasks         = tasks.select{|task| task.task_status.name == "Complete" }
     completed_task_count    = completed_tasks.size
     total_task_count        = tasks.size

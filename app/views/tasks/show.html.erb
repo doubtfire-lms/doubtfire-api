@@ -39,7 +39,7 @@
 		<p>There are currently no tasks for this project. Please check again at a later stage.</p>
 	<% else %>
 		<ol>
-		<% @project.tasks.each_with_index do |task| %>
+		<% @project.assigned_tasks.each_with_index do |task| %>
 			<li><%= link_to task.task_template.name, project_task_path(@project, task) %></li>
 		<% end %>
 		</ol>

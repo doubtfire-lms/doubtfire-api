@@ -3,7 +3,7 @@
 
 <h2><i class="icon-tasks"></i>Tasks</h2>
 <div class="widget-content" id="task-list-widget">
-	<% tasks.each do |task| %>
+	<% tasks.sort{|a,b| a.task_template.recommended_completion_date <=> b.task_template.recommended_completion_date}.each do |task| %>
 	<div class="task-list-entry row-fluid" id="task-<%= task.id %>-entry">
 		<h4>
 			<%= link_to truncate(task.task_template.name, :length => 30), project_task_path(@project, task) %>
