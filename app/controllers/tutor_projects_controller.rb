@@ -14,6 +14,15 @@ class TutorProjectsController < ApplicationController
     @project_template         = ProjectTemplate.find(params[:id])
 
     @unmarked_tasks           = unmarked_tasks(@tutor_team_projects)
+
+    @user_unmarked_tasks      = {}
+
+    @unmarked_tasks.each do |unmarked_task|
+      user_for_task = unmarked_task.project.team_membership.user
+
+      @user_unmarked_tasks[user_for_task] ||= []
+      @user_unmarked_tasks[user_for_task] << unmarked_task
+    end
   end
 
   def load_current_user

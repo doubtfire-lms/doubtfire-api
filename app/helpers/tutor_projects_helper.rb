@@ -14,7 +14,7 @@ module TutorProjectsHelper
   end
 
   def tasks_progress_bar(project, student)
-    tasks = project.tasks
+    tasks = project.assigned_tasks
 
     progress = project.relative_progress
 
