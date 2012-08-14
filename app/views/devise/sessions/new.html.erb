@@ -12,12 +12,6 @@
       <%= f.password_field :password, "value placeholder" => "Password", :id => "password-field" %></div>
 
       <div class="login-actions">
-      <% if devise_mapping.rememberable? -%>
-        <span class="login-checkbox">
-          <%= f.check_box :remember_me %>
-          <%= f.label "Keep me signed in" %>
-        </span>  
-      <% end -%>
         <%= f.submit "Sign in", :class => "btn btn-primary" %>
       </div>
     <% end %>
