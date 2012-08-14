@@ -16,6 +16,18 @@ class Project < ActiveRecord::Base
 
   has_many :tasks, :dependent => :destroy   # Destroying a project will also nuke all of its tasks
 
+  def assigned_tasks
+    required_tasks
+  end
+
+  def required_tasks
+    tasks.select{|task| task.task_template.required? }
+  end
+
+  def optional_tasks
+    tasks.select{|task| !task.task_template.required? }
+  end
+
   def health
     completed_tasks_weight        = completed_tasks.empty? ? 0.0 : completed_tasks.map{|task| task.task_template.weighting }.inject(:+)
     recommended_remaining_weight  = recommended_completed_tasks.empty? ? 0.0 : recommended_completed_tasks.map{|task| task.task_template.weighting }.inject(:+)
@@ -39,8 +51,8 @@ class Project < ActiveRecord::Base
   def progress_points
     date_accumulated_weight_map = {}
 
-    tasks.sort{|a, b| a.task_template.recommended_completion_date <=>  b.task_template.recommended_completion_date}.each do |project_task|
-      date_accumulated_weight_map[project_task.task_template.recommended_completion_date] = tasks.select{|task| 
+    assigned_tasks.sort{|a, b| a.task_template.recommended_completion_date <=>  b.task_template.recommended_completion_date}.each do |project_task|
+      date_accumulated_weight_map[project_task.task_template.recommended_completion_date] = assigned_tasks.select{|task| 
         task.task_template.recommended_completion_date <= project_task.task_template.recommended_completion_date
       }.map{|task| task.task_template.weighting.to_f}.inject(:+)
     end
@@ -119,20 +131,20 @@ class Project < ActiveRecord::Base
   end
 
   def recommended_completed_tasks
-    tasks.select{|task| task.task_template.recommended_completion_date < reference_date }
+    assigned_tasks.select{|task| task.task_template.recommended_completion_date < reference_date }
   end
 
   def completed_tasks
-    tasks.select{|task| task.task_status.name == "Complete" }
+    assigned_tasks.select{|task| task.task_status.name == "Complete" }
   end
 
   def completed?
     # TODO: Have a status flag on the project instead
-    tasks.all?{|task| task.task_status.name == "Complete" }
+    assigned_tasks.all?{|task| task.task_status.name == "Complete" }
   end
 
   def incomplete_tasks
-    tasks.select{|task| task.task_status.name != "Complete" }
+    assigned_tasks.select{|task| task.task_status.name != "Complete" }
   end
 
   def percentage_complete
@@ -148,15 +160,15 @@ class Project < ActiveRecord::Base
   end
 
   def total_task_weight
-    tasks.map{|task| task.task_template.weighting }.inject(:+)
+    assigned_tasks.map{|task| task.task_template.weighting }.inject(:+)
   end
 
   def currently_due_tasks
-    tasks.select{|task| task.currently_due? }
+    assigned_tasks.select{|task| task.currently_due? }
   end
 
   def overdue_tasks
-    tasks.select{|task| task.overdue? }
+    assigned_tasks.select{|task| task.overdue? }
   end
 
   def remaining_days

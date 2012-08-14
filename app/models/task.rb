@@ -68,4 +68,8 @@ class Task < ActiveRecord::Base
       :needs_fixing
     end
   end
+
+  def weight
+    task_template.weighting.to_f
+  end
 end

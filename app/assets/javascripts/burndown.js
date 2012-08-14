@@ -38,12 +38,20 @@ function constructBurndownChart(burndownChartContainer) {
   });
 }
 
+function sortTasksByDate(taskA, taskB) {
+
+  var taskADate = moment(taskA.task_template.recommended_completion_date);
+  var taskBDate = moment(taskB.task_template.recommended_completion_date);
+
+  if (taskADate > taskBDate)
+    return 1;
+  if (taskADate < taskBDate)
+    return -1;
+
+  return 0;
+}
+
 function dataForProjectJSON(projectJSON) {
-
-  // TODO: Get rid of this constant once the project
-  // weight is being properly set
-  var TASK_WEIGHT = 2;
-
   // Get the project's template
   var templateProject = projectJSON.project_template;
   
@@ -52,12 +60,14 @@ function dataForProjectJSON(projectJSON) {
   var projectCompletionDate = moment(new Date(templateProject.end_date));
 
   var projectTasks = projectJSON.tasks;
+  projectTasks.sort(sortTasksByDate);
+  
   var taskCount = projectTasks.length
 
   // Determine the starting weight for the project based
   // on the number of tasks in the project and the task
   // weight constant
-  var weightCountdown = taskCount * TASK_WEIGHT;
+  var weightCountdown = projectJSON.total_task_weight;
   var remainingWeight = weightCountdown;
 
   // Set an initial point for the week prior to starting,
@@ -71,8 +81,12 @@ function dataForProjectJSON(projectJSON) {
   ];
 
   $.each(projectTasks, function(i, task){
+    if (task.task_template.required === false) {
+      return true;
+    }
+
     // Determine the remaining weight value (i.e. y value for the chart)
-    weightCountdown = weightCountdown - TASK_WEIGHT;
+    weightCountdown = weightCountdown - task.weight;
 
     // Determine the week at which the task is to be completed at by comparing
     // the 'due date' to the current 
@@ -80,7 +94,7 @@ function dataForProjectJSON(projectJSON) {
 
     if (task.task_status_id == 3) { // 3 = Complete; TODO: Fix
 
-      remainingWeight = remainingWeight - TASK_WEIGHT;
+      remainingWeight = remainingWeight - task.weight;
       var taskCompletionDate = null;
 
       if (task.completion_date != null) {
@@ -96,8 +110,6 @@ function dataForProjectJSON(projectJSON) {
 
     recommendedTaskCompletion.push({x: taskDueWeek, y: weightCountdown});
   });
-
-  recommendedTaskCompletion.push({x: projectCompletionDate.diff(projectStartDate, 'weeks'), y: 0});
 
   var recommendedSeries = {
     values: recommendedTaskCompletion,
