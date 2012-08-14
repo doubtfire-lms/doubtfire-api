@@ -1,33 +1,18 @@
 function updateTaskEntryAwaitingSignOff() {
-	var taskContainer 	= $("#task-"+<%= @task.id %>+"-entry");
+	var taskControls 	= $("#task-"+<%= @task.id %>+"-controls");
 	var awaitingSignoff = <%= @task.awaiting_signoff %>;
-	updateTaskStatusLabel(taskContainer, awaitingSignoff);
-	updateStatusDisplayButton(taskContainer, awaitingSignoff);
+	updateStatusDisplayButton(taskControls, awaitingSignoff);
 }
 
-function updateTaskStatusLabel(taskContainer, awaitingSignoff) {
-	var statusLabel = taskContainer.find(".task-status");
+function updateStatusDisplayButton(taskControls, awaitingSignoff) {
 	if (awaitingSignoff) {
-		statusLabel.text("Awaiting Signoff");
-	}
-	else {
-		statusLabel.text("Not submitted");
-	}
-}
-
-
-
-function updateStatusDisplayButton(taskContainer, awaitingSignoff) {
-	
-	if (awaitingSignoff) {
-		taskContainer.find(".status-display-button").html("Ready to Mark <i class=\"icon-thumbs-up\" style=\"display: block; float: right; margin-top: 2px;\"></i>");
-		taskContainer.find(".status-display-button").attr("class", "btn btn-primary status-display-button");
-		taskContainer.find(".dropdown-toggle").attr("class", "btn btn-primary dropdown-toggle");
+		taskControls.find(".status-display-button").html("Ready to Mark <i class=\"icon-thumbs-up\" style=\"display: block; float: right; margin-top: 2px;\"></i>");
+		taskControls.find(".status-display-button").attr("class", "btn btn-primary status-display-button");
+		taskControls.find(".dropdown-toggle").attr("class", "btn btn-primary dropdown-toggle");
 	} else {
-		taskContainer.find(".status-display-button").html("Not Ready to Mark");
-		taskContainer.find(".status-display-button").attr("class", "btn status-display-button");
-		taskContainer.find(".dropdown-toggle").attr("class", "btn dropdown-toggle");
+		taskControls.find(".status-display-button").html("Not Ready to Mark");
+		taskControls.find(".status-display-button").attr("class", "btn status-display-button");
+		taskControls.find(".dropdown-toggle").attr("class", "btn dropdown-toggle");
 	}
 }
-
 updateTaskEntryAwaitingSignOff();

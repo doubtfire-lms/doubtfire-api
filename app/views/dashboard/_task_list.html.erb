@@ -11,7 +11,7 @@
 		<p class="task-weighting-points">(<%= task.task_template.weighting %> points)</p>
 		<p class="toggle-task-description-container"><a href="#" class="toggle-task-description btn"><i class="icon-chevron-down"></i></a></p>
 		<p class="task-submission-vs-time"><%= task_submission_vs_time_text(task) %></p>
-		<div class="task-status-controls" style="display: inline-block;">
+		<div  id="task-<%= task.id %>-controls" class="task-status-controls" style="display: inline-block;">
 			<%= render :partial => "tasks/task_status_control", :locals => { :task => task } %>
 		</div>
 		<div class="task-description">
