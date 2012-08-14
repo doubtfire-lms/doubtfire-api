@@ -33,6 +33,17 @@ class TasksController < ApplicationController
     end
 
     if @task.save
+      submission = TaskSubmission.where(task_id: @task.id).order(:submission_time).reverse_order.first
+
+      if submission.nil?
+        TaskSubmission.create!(task: @task, assessment_time: Time.zone.now, assessor: @user, outcome: task_status.name)
+      else
+        submission.assessment_time  = Time.zone.now
+        submission.assessor         = @user
+        submission.outcome          = task_status.name
+        submission.save!
+      end
+
       respond_to do |format|
         format.html { redirect_to @project, notice: 'Task was successfully completed.' }
         format.js
