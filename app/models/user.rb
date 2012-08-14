@@ -48,6 +48,7 @@ class User < ActiveRecord::Base
         user.first_name         = first_name
         user.last_name          = last_name
         user.email              = email
+        user.encrypted_password = BCrypt::Password.create("password")
         user.nickname           = first_name
         user.system_role        = role
       }
