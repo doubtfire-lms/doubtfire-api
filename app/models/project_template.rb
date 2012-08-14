@@ -120,7 +120,7 @@ class ProjectTemplate < ActiveRecord::Base
     CSV.foreach(file) do |row|
       next if row[0] =~ /Task Name/ # Skip header
 
-      name, description, weighting, required, target_date = row
+      name, description, weighting, required, target_date = row[0..4]
 
       if target_date !~ /20\d\d\-\d{1,2}\-\d{1,2}/ # Matches YYYY-mm-dd by default
         if target_date =~ /\d{1,2}\-\d{1,2}\-20\d\d/ # Matches dd-mm-YYYY
@@ -130,16 +130,19 @@ class ProjectTemplate < ActiveRecord::Base
         elsif target_date =~ /\d{1,2}\/\d{1,2}\/\d\d/ # Matches dd/mm/YY
           target_date = target_date.split("/").reverse.join("-")
         elsif target_date =~ /\d{1,2}\-\d{1,2}\-\d\d/ # Matches dd-mm-YY
+          target_date = target_date.split("-").reverse.join("-")
+        elsif target_date =~ /\d{1,2}\-\d{1,2}\-\d\d \d\d:\d\d:\d\d/ # Matches dd-mm-YY
+          target_date = target_date.split(" ").first
         end
       end
 
       # TODO: Should background/task queue this work
-      task = TaskTemplate.find_or_create_by_name(name) do |task_template|
+      task = TaskTemplate.find_or_create_by_project_template_id_and_name(id, name) do |task_template|
         task_template.name                        = name
         task_template.project_template_id         = id
         task_template.description                 = description
         task_template.weighting                   = BigDecimal.new(weighting)
-        task_template.required                    = ["Yes", "y", "Y", "yes", "true"].include? required
+        task_template.required                    = ["Yes", "y", "Y", "yes", "true", "1"].include? required
         task_template.recommended_completion_date = Time.zone.parse(target_date)
       end
 
