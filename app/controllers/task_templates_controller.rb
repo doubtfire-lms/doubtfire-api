@@ -26,19 +26,21 @@ class TaskTemplatesController < ApplicationController
   def new
     @task_template = TaskTemplate.new
 
-    # Create a new task template, populate it with sample data, and save it immediately.
-    @task_template.project_template_id = params[:project_template_id]
-    @task_template.name = "New Task"
-    @task_template.description = "Enter a description for this task."
-    @task_template.weighting = 0.0
-    @task_template.required = true
-    @task_template.recommended_completion_date = Date.today
-    @task_template.save
-
     respond_to do |format|
       format.html # new.html.erb
       format.json { render json: @task_template }
-      format.js { render action: "edit" }
+      format.js { 
+        # Create a new task template and populate it with sample data
+        @task_template.project_template_id = params[:project_template_id]
+        @task_template.name = "New Task"
+        @task_template.description = "Enter a description for this task."
+        @task_template.weighting = 0.0
+        @task_template.required = true
+        @task_template.recommended_completion_date = Date.today
+
+        # Call the create action, which saves the object and creates task instances for any existing users
+        create()
+      }
     end
   end
 
@@ -55,15 +57,29 @@ class TaskTemplatesController < ApplicationController
   # POST /task_templates
   # POST /task_templates.json
   def create
-    @task_template = TaskTemplate.new(params[:task_template])
+    # Initialise @task_template from the params unless we are coming from 'new', in which case @task_template already exists.
+    @task_template = TaskTemplate.new(params[:task_template]) unless params[:task_template].nil?
+    @user_projects = @task_template.project_template.projects
 
     respond_to do |format|
       if @task_template.save
+        # Create a task instance for all current users of the project
+        @user_projects.each do |project|
+          task = Task.new
+          task.task_template_id = @task_template.id
+          task.project_id = project.id
+          task.task_status_id = 1
+          task.awaiting_signoff = false 
+          task.save!  
+        end
+
         format.html { redirect_to project_template_path(@task_template.project_template_id), notice: "TaskTemplate was successfully updated."}
+        format.js { render action: "edit" }
         format.json { render json: @task_template, status: :created, location: @task_template }
       else
         format.html { render action: "new" }
         format.json { render json: @task_template.errors, status: :unprocessable_entity }
+        format.js { render action: "new" }
       end
     end
   end

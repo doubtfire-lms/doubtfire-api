@@ -8,4 +8,5 @@ class TaskTemplate < ActiveRecord::Base
 	# Model validations/constraints
 	validates_uniqueness_of :name, :scope => :project_template_id		# Task template names within a project template must be unique
 
+
 end
