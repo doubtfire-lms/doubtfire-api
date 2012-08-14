@@ -10,7 +10,15 @@
 					<h4>Overdue</h4>
 					<ol>
 						<% @project.overdue_tasks.each do |overdue_task| %>
-							<li><%= link_to overdue_task.task_template.name, project_task_path(@project, overdue_task) %> (<%= pluralize(overdue_task.weeks_overdue, 'week') %> overdue)</li>
+							<li>
+							<% if overdue_task.days_overdue < 7 %>
+							<%= link_to overdue_task.task_template.name, project_task_path(@project, overdue_task) %>
+							(<%= pluralize(overdue_task.days_overdue, 'days') %> overdue)
+							<% else %>
+							<%= link_to overdue_task.task_template.name, project_task_path(@project, overdue_task) %>
+							(<%= pluralize(overdue_task.weeks_overdue, 'week') %> overdue)
+							<% end %>
+							</li>
 						<% end %>
 					</ol>
 				<% end %>

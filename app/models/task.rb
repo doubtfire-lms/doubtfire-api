@@ -15,7 +15,7 @@ class Task < ActiveRecord::Base
     # Compare the recommended date with the date given to determine
     # if the task is overdue
     recommended_date = task_template.recommended_completion_date
-    reference_date > recommended_date
+    reference_date > recommended_date and weeks_overdue >= 1
   end
 
   def long_overdue?
