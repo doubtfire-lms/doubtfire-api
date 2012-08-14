@@ -8,6 +8,10 @@ namespace :db do
 		# Clear the database
 		[ProjectTemplate, Project, ProjectStatus, TaskTemplate, Task, TaskStatus, Team, TeamMembership, User, ProjectConvenor].each(&:delete_all)
 
+    TaskStatus.create(:name => "Not Submitted", :description => "This task has not been submitted to marked by your tutor.")
+    TaskStatus.create(:name => "Needs Fixing", :description => "This task must be resubmitted after fixing some issues.")
+    TaskStatus.create(:name => "Complete", :description => "This task has been signed off by your tutor.")
+
 		admins = {
       ajones:             {first: "Allan",    last: "Jones",                nickname: "P-Jiddy"},
       akihironoguchi:     {first: "Akihiro",  last: "Noguchi",              nickname: "Unneccesary Animations"}
