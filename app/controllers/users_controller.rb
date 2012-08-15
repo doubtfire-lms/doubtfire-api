@@ -79,25 +79,25 @@ class UsersController < ApplicationController
   # PUT /users/1.json
   def update
 
-  @user = User.find(params[:id])
+    @user = User.find(params[:id])
 
-	if params[:user][:password].blank?
-		params[:user].delete(:password)
-	  params[:user].delete(:password_confirmation)
-	end
+    if params[:user][:password].blank?
+    	params[:user].delete(:password)
+      params[:user].delete(:password_confirmation)
+    end
 
     respond_to do |format|
       if @user.update_attributes(params[:user])
 
       	# If the user is being updated by the superuser, redirect to the users index instead of the individual user
       	if(@user.superuser?)
-	        format.html { redirect_to users_path, notice: 'User was successfully updated.' }
+          format.html { redirect_to users_path, notice: 'User was successfully updated.' }
   	    else
   	    	format.html { redirect_to @user, notice: 'User was successfully updated.' }
   	    end
 
         format.js { render action: "finish_update" }
-	      format.json { head :no_content }
+        format.json { head :no_content }
       else
         format.html { render action: "edit" }
         format.json { render json: @user.errors, status: :unprocessable_entity }
