@@ -29,7 +29,10 @@
 			</div>
 			<div class="tab-pane" id="marking-tab">
 				<div class="span7 widget">
-					<%= render 'tutor_projects/tutor_task_backlog', :tasks => @student_project.tasks %>
+					<h2><i class="icon-tasks"></i>Marking</h2>
+					<div class="widget-content" id="task-list-widget">
+					<%= render 'tutor_projects/tutor_task_backlog', :unmarked_tasks => @student_project.assigned_tasks %>
+					</div>
 				</div>
 			</div>
 			<div class="span5 widget">

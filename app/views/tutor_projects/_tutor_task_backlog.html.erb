@@ -1,53 +1,47 @@
 <%= javascript 'projects.js' %>
 <%= stylesheets 'tasks.css' %>
 
-<h2><i class="icon-tasks"></i>Marking</h2>
-<div class="widget-content" id="task-list-widget">
-	<% user_unmarked_tasks.each do |user, unmarked_tasks| %>
-		<h3><%= user.name %> (<%= user.username %>)</h3>
-		<% unmarked_tasks.each do |task| %>
-		<div class="task-list-entry row-fluid" id="task-<%= task.id %>-entry">
-			<h4>
-				<%= link_to truncate(task.task_template.name, :length => 30), project_task_path(task.project, task) %>
-			</h4>
-			<p class="task-weighting-points">(<%= task.task_template.weighting %> points)</p>
-			<p class="toggle-task-description-container"><a href="#" class="toggle-task-description btn"><i class="icon-chevron-down"></i></a></p>
-			<p class="task-submission-vs-time"><%= task_submission_vs_time_text(task) %></p>
-			<div class="task-status-controls" style="display: inline-block;">
-				<div class="btn-group">
-					<% if task.complete? %>
-					<button class="btn btn-success status-display-button">Complete <i class="icon-ok button-icon"></i></button>
-					<button class="btn btn-success dropdown-toggle" data-toggle="dropdown">
-					<% elsif task.awaiting_signoff? %>
-					<button class="btn btn-primary status-display-button">
-						Ready to Mark <i class="icon-thumbs-up button-icon" style=""></i>
-					</button>
-					<button class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
-					<% else %>
-					<button class="btn status-display-button">
-						Not Ready to Mark
-					</button>
-					<button class="btn dropdown-toggle" data-toggle="dropdown">
-					<% end %>
-						<span class="caret"></span>
-					</button>
-					<ul class="dropdown-menu">
-						<li>
-							<a href="<%= update_task_status_path(task, "complete") %>" data-method="put" class="ready-to-mark-button" data-remote="true">Complete <i class="icon-ok button-icon"></i></a>
-						</li>
-						<li>
-							<a href="<%= update_task_status_path(task, "fix") %>" data-method="put" class="ready-to-mark-button" data-remote="true">Fix <i class="icon-wrench button-icon"></i></a>
-						</li>
-						<li>
-							<a href="<%= update_task_status_path(task, "not_submitted") %>" data-method="put" class="ready-to-mark-button" data-remote="true">Not Submitted <i class="icon-minus-sign button-icon"></i></a>
-						</li>
-					</ul>
-				</div>
-			</div>
-			<div class="task-description">
-				<p><%= task.task_template.description %></p>
-			</div>
+<% unmarked_tasks.each do |task| %>
+<div class="task-list-entry row-fluid" id="task-<%= task.id %>-entry">
+	<h4>
+		<%= link_to truncate(task.task_template.name, :length => 30), project_task_path(task.project, task) %>
+	</h4>
+	<p class="task-weighting-points">(<%= task.task_template.weighting %> points)</p>
+	<p class="toggle-task-description-container"><a href="#" class="toggle-task-description btn"><i class="icon-chevron-down"></i></a></p>
+	<p class="task-submission-vs-time"><%= task_submission_vs_time_text(task) %></p>
+	<div class="task-status-controls" style="display: inline-block;">
+		<div class="btn-group">
+			<% if task.complete? %>
+			<button class="btn btn-success status-display-button">Complete <i class="icon-ok button-icon"></i></button>
+			<button class="btn btn-success dropdown-toggle" data-toggle="dropdown">
+			<% elsif task.awaiting_signoff? %>
+			<button class="btn btn-primary status-display-button">
+				Ready to Mark <i class="icon-thumbs-up button-icon" style=""></i>
+			</button>
+			<button class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
+			<% else %>
+			<button class="btn status-display-button">
+				Not Ready to Mark
+			</button>
+			<button class="btn dropdown-toggle" data-toggle="dropdown">
+			<% end %>
+				<span class="caret"></span>
+			</button>
+			<ul class="dropdown-menu">
+				<li>
+					<a href="<%= update_task_status_path(task, "complete") %>" data-method="put" class="ready-to-mark-button" data-remote="true">Complete <i class="icon-ok button-icon"></i></a>
+				</li>
+				<li>
+					<a href="<%= update_task_status_path(task, "fix") %>" data-method="put" class="ready-to-mark-button" data-remote="true">Fix <i class="icon-wrench button-icon"></i></a>
+				</li>
+				<li>
+					<a href="<%= update_task_status_path(task, "not_submitted") %>" data-method="put" class="ready-to-mark-button" data-remote="true">Not Submitted <i class="icon-minus-sign button-icon"></i></a>
+				</li>
+			</ul>
 		</div>
-		<% end %>
-	<% end %>
+	</div>
+	<div class="task-description">
+		<p><%= task.task_template.description %></p>
+	</div>
 </div>
+<% end %>

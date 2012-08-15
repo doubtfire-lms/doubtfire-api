@@ -38,9 +38,17 @@
 
 			<div class="tab-pane" id="marking-tab">
 				<div class="span9 widget">
-
-					<%= render 'tutor_projects/tutor_task_backlog', :user_unmarked_tasks => @user_unmarked_tasks %>
-
+					<h2><i class="icon-tasks"></i>Marking</h2>
+					<div class="widget-content" id="task-list-widget">
+					<% if @user_unmarked_tasks.empty? %>
+						<p>Your marking backlog is currently empty. Great success!</p>
+					<% else %>
+						<% @user_unmarked_tasks.each do |user, unmarked_tasks| %>
+							<h3><%= user.name %> (<%= user.username %>)</h3>
+							<%= render 'tutor_projects/tutor_task_backlog', :unmarked_tasks => @unmarked_tasks %>
+						<% end %>
+					<% end %>
+					</div>
 				</div>
 			</div>
 		</div>

@@ -1,35 +1,17 @@
 <div class="span<%= "#{grid_size}" %> widget">
 	<h2><i class="icon-book"></i><%= tutor_project_template.name %> (Tutor)</h2>
 	<div class="widget-content">
-		<div class="widget-content">
-			<% tasks_awaiting_signoff = unmarked_project_tasks(tutor_project_template, @user) %>
-			<% if tasks_awaiting_signoff.empty? %>
-				<p>
-					No tasks currently awaiting sign-off
-				</p>
-			<% else %>
-				<p>
-					You have <%= link_to "#{tasks_awaiting_signoff.size} tasks", tutor_project_path(tutor_project_template)%> awaiting sign-off
-				</p>
-			<% end %>
-			<div class="progress-bands">
-				<div class="progress-band">
-					<span class="statistical-figure">20%</span>
-					<span class="progress-band-name">are ahead</span>
-				</div>
-				<div class="progress-band">
-					<span class="statistical-figure">20%</span>
-					<span class="progress-band-name">are on track</span>
-				</div>
-				<div class="progress-band">
-					<span class="statistical-figure">40%</span>
-					<span class="progress-band-name">are behind</span>
-				</div>
-				<div class="progress-band">
-					<span class="statistical-figure">20%</span>
-					<span class="progress-band-name">are doomed</span>
-				</div>
-			</div>
-		</div>
+		<% tasks_awaiting_signoff = unmarked_project_tasks(tutor_project_template, @user) %>
+		<% if tasks_awaiting_signoff.empty? %>
+			<p>
+				No tasks currently awaiting sign-off
+			</p>
+		<% else %>
+			<p>
+				You have <%= link_to "#{tasks_awaiting_signoff.size} tasks", tutor_project_path(tutor_project_template)%> awaiting sign-off
+			</p>
+		<% end %>
+
+		<p class="project-link"><%= link_to "Go to Project", tutor_project_path(tutor_project_template), class: "btn" %></p>
 	</div>
 </div>
