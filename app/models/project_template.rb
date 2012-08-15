@@ -88,7 +88,7 @@ class ProjectTemplate < ActiveRecord::Base
         :projects => {:project_template_id => id}
       ).count == 0
 
-      team = team_cache[class_id] || Team.where(:official_name => class_id).first
+      team = team_cache[class_id] || Team.where(:official_name => class_id, :project_template_id => id).first
       team_cache[class_id] ||= team
       
       # Add the user to the project (if not already in there)
