@@ -1,0 +1,49 @@
+<div class="span<%= "#{grid_size}" %> widget">
+	<h2><i class="icon-book"></i><%= project_template.name %></h2>
+
+	<div class="widget-content">
+	<% if status_distribution[:total] > 0 %>
+		<div class="row-fluid">
+			<%= content_tag "div", class: "status-distribution-chart pull-left", data: {url: project_template_url(project_template)} do %>
+				<svg style="height: 300px"></svg>
+			<% end %>
+
+			<div class="progress-bands">
+				<div class="progress-band ahead">
+					<span class="statistical-figure"><%= status_distribution[:ahead].round %>%</span>
+					<span class="progress-band-name"><strong>ahead</strong></span>
+				</div>
+				<div class="progress-band on-track">
+					<span class="statistical-figure"><%= status_distribution[:on_track].round %>%</span>
+					<span class="progress-band-name"><strong>on track</strong></span>
+				</div>
+				<div class="progress-band behind">
+					<span class="statistical-figure"><%= status_distribution[:behind].round %>%</span>
+					<span class="progress-band-name"><strong>behind</strong></span>
+				</div>
+				<div class="progress-band danger">
+					<span class="statistical-figure"><%= status_distribution[:danger].round %>%</span>
+					<span class="progress-band-name"><strong>in danger</strong></span>
+				</div>
+				<div class="progress-band doomed">
+					<span class="statistical-figure"><%= status_distribution[:doomed].round %>%</span>
+					<span class="progress-band-name"><strong>doomed</strong></span>
+				</div>
+				<% if status_distribution[:not_started] > 0 %>
+				<div class="progress-band not-started">
+					<span class="statistical-figure"><%= status_distribution[:not_started].round %>%</span>
+					<span class="progress-band-name"><strong>haven't started</strong></span>
+				</div>
+				<% end %>
+			</div>
+		</div>
+
+		<div class="row-fluid">
+			<%= link_to "Go to project", convenor_project_path(project_template), :class => "btn" %>
+		</div>
+	<% else %>
+		<p>This project does not have any members.</p>
+		<%= link_to "Set up project", project_template_path(project_template), :class => "btn" %>
+	<% end %>
+	</div>
+</div>

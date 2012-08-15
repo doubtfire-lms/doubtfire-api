@@ -151,8 +151,8 @@ class ProjectTemplate < ActiveRecord::Base
   end
 
   def status_distribution
-    project_instances = Project.where(:project_template_id => id)
-    total_project_instances = project_instances.length
+    projects = Project.where(:project_template_id => id)
+    project_count = projects.length
     
     status_totals = {
       :ahead => 0.0,
@@ -160,27 +160,19 @@ class ProjectTemplate < ActiveRecord::Base
       :behind => 0.0,
       :danger => 0.0,
       :doomed => 0.0,
+      :not_started => 0.0,
       :total => 0.0
     }
 
-    project_instances.each do |project|     
-      status_totals[project.relative_progress] += (1.0 / total_project_instances * 100.0)
+    projects.each do |project|
+      if project.started?
+        status_totals[project.relative_progress] += (1.0 / project_count * 100.0)
+      else
+        status_totals[:not_started] += (1.0 / project_count * 100.0)
+      end
     end
 
-    status_totals[:total] = total_project_instances
+    status_totals[:total] = project_count
     Hash[status_totals.sort_by{ |status, percentage| percentage }.reverse]
   end   
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
