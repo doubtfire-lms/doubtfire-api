@@ -17,9 +17,15 @@
 	<div class="widget-content">
 		<h3>Status</h3>
 		<p>
-			<%= @task.status.to_s.titleize %>
 			<% if @task.awaiting_signoff? %>
-				(Awaiting Signoff)
+				<% if @task.status == :not_submitted %>
+					Awaiting Signoff
+				<% else %>
+					<%= @task.status.to_s.titleize %>
+					(Awaiting Signoff)
+				<% end %>
+			<% else %>
+				<%= @task.status.to_s.titleize %>
 			<% end %>
 		</p>
 		<div id="task-<%= @task.id %>-controls" class="task-status-controls" style="display: inline-block;">
