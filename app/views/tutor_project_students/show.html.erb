@@ -16,29 +16,15 @@
 <div class="span9">
 	<div class="row-fluid tabbable">
 		<ul class="nav nav-pills">
-			<li class="active"><a href="#summary-tab" data-toggle="tab">Summary</a></li>
-			<li><a href="#marking-tab" data-toggle="tab">Marking</a></li>
+			<li class="active"><a href="#tasks-tab" data-toggle="tab">Tasks</a></li>
 		</ul>
 		<div class="tab-content">
-			<div class="tab-pane active" id="summary-tab">
+			<div class="tab-pane active" id="tasks-tab">
 				<div class="span7 widget">
-					<h2><i class="icon-user"></i><%= truncate(@student.name, :length => 50) %></h2>
-					<div class="widget-content">
-					</div>
-				</div>
-			</div>
-			<div class="tab-pane" id="marking-tab">
-				<div class="span7 widget">
-					<h2><i class="icon-tasks"></i>Marking</h2>
+					<h2><i class="icon-tasks"></i><%= @student.name %></h2>
 					<div class="widget-content" id="task-list-widget">
 					<%= render 'tutor_projects/tutor_task_backlog', :unmarked_tasks => @student_project.assigned_tasks %>
 					</div>
-				</div>
-			</div>
-			<div class="span5 widget">
-				<h2><i class="icon-bar-chart"></i>Summary</h2>
-				<div class="widget-content">
-
 				</div>
 			</div>
 		</div>
