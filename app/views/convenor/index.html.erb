@@ -19,12 +19,14 @@
 		</div>
 		<% end %>
 	<% else %>
-		<% if i % 2 == 0 %>
-		<div class="row-fluid">
-		<% end %>
-			<%= render 'convenor_project/convenor_project', :project_template => project_template, :status_distribution => project_template.status_distribution, :grid_size => 6 %>
-		<% if i % 2 == 1 %>
-		</div>
-		<% end %>
+		<% @project_templates.each_with_index do |project_template, i| %>
+			<% if i % 2 == 0 %>
+			<div class="row-fluid">
+			<% end %>
+				<%= render 'convenor_project/convenor_project', :project_template => project_template, :status_distribution => project_template.status_distribution, :grid_size => 6 %>
+			<% if i % 2 == 1 %>
+			</div>
+			<% end %>
+		<% end %>		
 	<% end %>
 </div>

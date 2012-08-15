@@ -155,24 +155,24 @@ class ProjectTemplate < ActiveRecord::Base
     project_count = projects.length
     
     status_totals = {
-      :ahead => 0.0,
-      :on_track => 0.0,
-      :behind => 0.0,
-      :danger => 0.0,
-      :doomed => 0.0,
-      :not_started => 0.0,
-      :total => 0.0
+      :ahead => 0,
+      :on_track => 0,
+      :behind => 0,
+      :danger => 0,
+      :doomed => 0,
+      :not_started => 0,
+      :total => 0
     }
 
     projects.each do |project|
       if project.started?
-        status_totals[project.relative_progress] += (1.0 / project_count * 100.0)
+        status_totals[project.relative_progress] += 1
       else
-        status_totals[:not_started] += (1.0 / project_count * 100.0)
+        status_totals[:not_started] += 1
       end
     end
 
     status_totals[:total] = project_count
-    Hash[status_totals.sort_by{ |status, percentage| percentage }.reverse]
+    Hash[status_totals.sort_by{ |status, count| count }.reverse]
   end   
 end

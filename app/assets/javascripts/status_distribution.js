@@ -26,7 +26,7 @@ function constructStatusDistributionChart(statusDistributionContainer)
         colourForProjectProgress("not_started")
       ];
 
-      var chart = nv.models.pieChart()
+      var statusDistributionChart = nv.models.pieChart()
           .x(function(d) { return d.label })
           .y(function(d) { return d.value })
           .color(colours)
@@ -36,9 +36,14 @@ function constructStatusDistributionChart(statusDistributionContainer)
       d3.select($(statusDistributionContainer).children("svg")[0])
           .datum(distributionData)
         .transition().duration(1200)
-          .call(chart);
+          .call(statusDistributionChart);
 
-      return chart;
+      statusDistributionChart.tooltipContent(function(key, y, e, graph){
+        return "<h3>" + "Status Distribution" + "</h3>"
+        + "<p>" + y + " project(s) '" + key + "'</p>";
+      });
+
+      return statusDistributionChart;
     });
   });
 }
@@ -81,7 +86,7 @@ function statusDistributionDataForProjectJSON(project) {
             "value" : project.status_distribution.ahead
           }, 
           { 
-            "label" : "On track" , 
+            "label" : "On Track" , 
             "value" : project.status_distribution.on_track
           }, 
           { 
