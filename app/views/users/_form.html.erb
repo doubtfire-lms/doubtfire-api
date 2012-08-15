@@ -1,6 +1,11 @@
 <%= simple_form_for(@user, :html => {:class => 'form-horizontal' }) do |f| %>
-    <%= f.input :first_name %>
-    <%= f.input :last_name %>
+	<% if can? :assign_roles, @user %>
+    	<%= f.input :first_name %>
+    	<%= f.input :last_name %>
+    <% else %>
+    	<%= f.input :first_name, :input_html => {:disabled => true} %>
+    	<%= f.input :last_name, :input_html => {:disabled => true} %>
+    <% end %>
     <%= f.input :nickname %>
    	<% if can? :assign_roles, @user %>
     	<%= f.input :system_role, :collection => [["User", "user"], ["Convenor", "convenor"]], :include_blank => false %>
