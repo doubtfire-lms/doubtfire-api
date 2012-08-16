@@ -12,6 +12,12 @@ class DashboardController < ApplicationController
     
     @student_projects         = Project.includes(:tasks).find(@user.team_memberships.map{|membership| membership.project_id })
     @tutor_project_templates  = ProjectTemplate.find(Team.where(:user_id => @user.id).map{|team| team.project_template_id }).uniq
+
+    # If user has no projects, redirect
+    if @student_projects.empty? and @tutor_project_templates.empty?
+      redirect_to no_projects_path
+    end
+
   end
 
   private

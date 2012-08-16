@@ -3,6 +3,7 @@ source 'https://rubygems.org'
 gem 'rails', '3.2.6'
 
 gem 'mysql'
+gem 'letter_opener'
 gem 'sqlite3'
 gem 'devise'
 gem 'devise_ldap_authenticatable'

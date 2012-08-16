@@ -227,4 +227,5 @@ module DashboardHelper
           "\t<div class=\"bar\" style=\"width: #{project.percentage_complete}%;\"></div>",
         '</div>'].join("\n")
   end
+
 end

@@ -41,10 +41,10 @@
           </div>
         </div>
         <div class="row-fluid">
-          <% if user_signed_in? %>
+          <% if content_for?(:sidebar) %>
             <div class="span3">
-            <div class="well sidebar-nav">
-              <%= yield(:sidebar) %>
+              <div class="well sidebar-nav">
+                <%= yield(:sidebar) %>
               </div>
             </div>
           <% end %>

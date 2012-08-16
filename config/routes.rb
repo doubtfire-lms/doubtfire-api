@@ -17,10 +17,16 @@ Doubtfire::Application.routes.draw do
   resources :project_statuses
   resources :teams
 
+  # Routes for when the user has no projects
+  get 'no_projects' => 'convenor_contact_forms#new', :as => 'no_projects'
+  post 'convenor_contact' => 'convenor_contact_forms#create', :as => 'convenor_contact'
+
+  resources :convenor_contact_forms, :path_names => { :new => 'welcome' }
+
   get 'profile' => 'users#edit', :as => 'edit_profile'
   post 'users/update/:id' => 'users#update', :via => :post, :as => 'update_user'
   get 'users/cancel_update_user/:id' => 'users#finish_update', :as => 'cancel_update_user'
-
+  
   # Student context routes
   resources :projects do
     resources :tasks, :only => [:index, :show]

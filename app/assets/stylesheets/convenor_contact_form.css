@@ -1,0 +1,28 @@
+.widget-content
+{
+	color:#444;
+	padding: 50px 50px 50px 50px;
+}
+
+.widget-content h1
+{
+	font-size:3.3em;
+	margin-bottom:20px;
+}
+
+.widget-content h3
+{
+	font-size:1.8em;
+	color:#888;
+	margin-bottom: 5px;
+}
+
+.widget-content p
+{
+	color:#888;
+}
+
+#contact-form
+{
+	margin-top: 30px;
+}

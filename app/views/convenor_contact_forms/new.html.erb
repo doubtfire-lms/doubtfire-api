@@ -1,0 +1,19 @@
+<%= stylesheets 'convenor_contact_form.css' %>
+
+<div class="span12 widget">
+	<div class="widget-content">
+	<h1>Welcome to Doubtfire</h1>
+	<h3>You have not been added to any projects yet.</h3>
+	<% unless ProjectTemplate.all.blank? %>
+		<p>If this is incorrect, use the form below to contact a convenor.</p>
+		<div id="contact-form" class="row-fluid">
+			<%= simple_form_for @convenor_contact_form, :html => {:class => "span3 well"} do |f| %>
+				<%= f.select :project_template, options_from_collection_for_select(ProjectTemplate.all, "id", "name"), :prompt => "Select a project...", :label => 'Your username please'%>
+				<%= f.select :role, "<option>Student</option><option>Tutor</option>".html_safe, :prompt => "Select a role..." %>
+				<%= f.submit "Please add me!", :class => "btn btn-primary" %>
+			<% end %>
+		</div>
+	<% end %>	
+	</div>
+</div>
+
