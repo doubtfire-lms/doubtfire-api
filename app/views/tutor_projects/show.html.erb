@@ -29,7 +29,14 @@
 	<div class="row-fluid tabbable">
 		<ul class="nav nav-pills">
 			<li class="active"><a href="#teams-tab" data-toggle="tab">Teams</a></li>
-			<li><a href="#marking-tab" data-toggle="tab">Marking</a></li>
+			<li>
+				<a href="#marking-tab" data-toggle="tab">
+				Marking
+				<% unless @user_unmarked_tasks.values.flatten.empty? %>
+					<%= " (#{@user_unmarked_tasks.values.flatten.size})" %>
+				<% end %>
+				</a>
+			</li>
 		</ul>
 		<div class="tab-content">
 
