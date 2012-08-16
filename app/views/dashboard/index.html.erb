@@ -16,11 +16,15 @@
 <% end %>
 
 <div class="span9">
-	<div class="row-fluid">
-		<ul class="nav nav-pills">
-			<li class="active"><%= link_to "Summary", root_path %></li>
-		</ul>
-	</div>
+	<ul class="breadcrumb">
+		<li class="active">
+			<%= link_to "Home", root_url %>
+		</li>
+	</ul>
+
+	<ul class="nav nav-pills">
+		<li class="active"><%= link_to "Summary", root_path %></li>
+	</ul>
 	<div class="row-fluid">
 		<% unless @student_projects.empty? %>
 			<%= render 'dashboard/student_projects', :student_projects => @student_projects %>
