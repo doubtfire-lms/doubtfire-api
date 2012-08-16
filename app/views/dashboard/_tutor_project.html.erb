@@ -1,5 +1,5 @@
 <div class="span<%= "#{grid_size}" %> widget">
-	<h2><i class="icon-book"></i><%= tutor_project_template.name %> (Tutor)</h2>
+	<h2><i class="icon-book"></i><%= tutor_project_template.name %></h2>
 	<div class="widget-content">
 		<% tasks_awaiting_signoff = unmarked_project_tasks(tutor_project_template, @user) %>
 		<% if tasks_awaiting_signoff.empty? %>

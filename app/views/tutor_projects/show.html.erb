@@ -17,6 +17,15 @@
 <% end %>
 
 <div class="span9">
+
+	<ul class="breadcrumb">
+		<li>
+			<%= link_to "Home", root_url %>
+			<span class="divider">/</span>
+		</li>
+		<li class="active"><%= @project_template.name %></li>
+	</ul>
+
 	<div class="row-fluid tabbable">
 		<ul class="nav nav-pills">
 			<li class="active"><a href="#teams-tab" data-toggle="tab">Teams</a></li>

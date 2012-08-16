@@ -17,6 +17,19 @@
 
 <div class="span9">
 	<div class="row-fluid tabbable">
+
+		<ul class="breadcrumb">
+			<li>
+				<%= link_to "Home", root_url %>
+				<span class="divider">/</span>
+			</li>
+			<li>
+				<%= link_to @student_project.project_template.name, tutor_project_path(@student_project.project_template) %>
+				<span class="divider">/</span>
+			</li>
+			<li class="active"><%= @student.name %> (<%= @student.username %>)</li>
+		</ul>
+
 		<ul class="nav nav-pills">
 			<li class="active"><a href="#tasks-tab" data-toggle="tab">Tasks</a></li>
 		</ul>
