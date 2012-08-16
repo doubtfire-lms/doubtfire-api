@@ -143,7 +143,7 @@ class ProjectTemplate < ActiveRecord::Base
         task_template.description                 = description
         task_template.weighting                   = BigDecimal.new(weighting)
         task_template.required                    = ["Yes", "y", "Y", "yes", "true", "1"].include? required
-        task_template.recommended_completion_date = Time.zone.parse(target_date)
+        task_template.target_date                 = Time.zone.parse(target_date)
       end
 
       task.save! unless task.persisted?

@@ -14,7 +14,7 @@ class Task < ActiveRecord::Base
 
     # Compare the recommended date with the date given to determine
     # if the task is overdue
-    recommended_date = task_template.recommended_completion_date
+    recommended_date = task_template.target_date
     reference_date > recommended_date and weeks_overdue >= 1
   end
 
@@ -24,7 +24,7 @@ class Task < ActiveRecord::Base
 
     # Compare the recommended date with the date given to determine
     # if the task is overdue
-    recommended_date = task_template.recommended_completion_date
+    recommended_date = task_template.target_date
     reference_date > recommended_date and weeks_overdue > 2
   end
 
@@ -39,7 +39,7 @@ class Task < ActiveRecord::Base
   end
 
   def days_until_due
-    (task_template.recommended_completion_date - reference_date).to_i / 1.day
+    (task_template.target_date - reference_date).to_i / 1.day
   end
 
   def weeks_overdue
@@ -47,7 +47,7 @@ class Task < ActiveRecord::Base
   end
 
   def days_overdue
-    (reference_date - task_template.recommended_completion_date).to_i / 1.day
+    (reference_date - task_template.target_date).to_i / 1.day
   end
 
   def complete?

@@ -146,7 +146,7 @@ namespace :db do
           task_template.description = Populator.words(5..10)
           task_template.weighting = BigDecimal.new("2")
           task_template.required = rand < 0.9   # 10% chance of being false
-          task_template.recommended_completion_date = assignment_num.weeks.from_now # Assignment 6 due week 6, etc.
+          task_template.target_date = assignment_num.weeks.from_now # Assignment 6 due week 6, etc.
         end
 
         # Create 2 teams per project

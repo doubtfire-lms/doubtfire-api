@@ -3,7 +3,7 @@
   <td><%= task_template.description %></td>
   <td><%= task_template.weighting %></td>
   <td><%= "Required" if task_template.required %><%= "Optional" if not task_template.required %></td>
-  <td><%= task_template.recommended_completion_date.strftime("%d %B %Y") %></td>
+  <td><%= task_template.target_date.strftime("%d %B %Y") %></td>
   <td>
     <%= link_to t('.edit', :default => t("helpers.links.edit")), edit_task_template_path(task_template), "data-remote" => true, :class => 'btn btn-mini' %>
     <%= link_to t('.destroy', :default => t("helpers.links.destroy")), task_template_path(task_template),

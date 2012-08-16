@@ -40,8 +40,8 @@ function constructBurndownChart(burndownChartContainer) {
 
 function sortTasksByDate(taskA, taskB) {
 
-  var taskADate = moment(taskA.task_template.recommended_completion_date);
-  var taskBDate = moment(taskB.task_template.recommended_completion_date);
+  var taskADate = moment(taskA.task_template.target_date);
+  var taskBDate = moment(taskB.task_template.target_date);
 
   if (taskADate > taskBDate)
     return 1;
@@ -90,7 +90,7 @@ function dataForProjectJSON(projectJSON) {
 
     // Determine the week at which the task is to be completed at by comparing
     // the 'due date' to the current 
-    var taskDueWeek         = moment(task.task_template.recommended_completion_date).diff(projectStartDate, 'weeks');
+    var taskDueWeek         = moment(task.task_template.target_date).diff(projectStartDate, 'weeks');
 
     if (task.task_status_id == 3) { // 3 = Complete; TODO: Fix
 

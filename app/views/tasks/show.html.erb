@@ -45,10 +45,13 @@
 				<div id="task-<%= @task.id %>-controls" class="task-status-controls" style="display: inline-block;">
 					<%= render :partial => "tasks/task_status_control", :locals => { :task => @task } %>
 				</div>
+
 				<h3>Weight</h3>
 				<p><%= @task.task_template.weighting %> (of total <%= @project.total_task_weight %>)</p>
+
 				<h3>Target Date</h3>
-				<p><%= due = @task.task_template.recommended_completion_date; due.strftime("#{due.day.ordinalize} of %B") %> &mdash; <%= task_submission_vs_time_text(@task) %></p>
+				<p><%= due = @task.task_template.target_date; due.strftime("#{due.day.ordinalize} of %B") %> &mdash; <%= task_submission_vs_time_text(@task) %></p>
+
 				<h3>Description</h3>
 				<p><%= @task.task_template.description %></p>
 			</div>

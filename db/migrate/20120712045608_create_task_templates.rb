@@ -6,7 +6,7 @@ class CreateTaskTemplates < ActiveRecord::Migration
       t.string :description
       t.decimal :weighting
       t.boolean :required
-      t.datetime :recommended_completion_date
+      t.datetime :target_date
 
       t.timestamps
     end

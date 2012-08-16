@@ -51,9 +51,9 @@ class Project < ActiveRecord::Base
   def progress_points
     date_accumulated_weight_map = {}
 
-    assigned_tasks.sort{|a, b| a.task_template.recommended_completion_date <=>  b.task_template.recommended_completion_date}.each do |project_task|
-      date_accumulated_weight_map[project_task.task_template.recommended_completion_date] = assigned_tasks.select{|task| 
-        task.task_template.recommended_completion_date <= project_task.task_template.recommended_completion_date
+    assigned_tasks.sort{|a, b| a.task_template.target_date <=>  b.task_template.target_date}.each do |project_task|
+      date_accumulated_weight_map[project_task.task_template.target_date] = assigned_tasks.select{|task| 
+        task.task_template.target_date <= project_task.task_template.target_date
       }.map{|task| task.task_template.weighting.to_f}.inject(:+)
     end
 
@@ -131,7 +131,7 @@ class Project < ActiveRecord::Base
   end
 
   def recommended_completed_tasks
-    assigned_tasks.select{|task| task.task_template.recommended_completion_date < reference_date }
+    assigned_tasks.select{|task| task.task_template.target_date < reference_date }
   end
 
   def completed_tasks

@@ -36,7 +36,7 @@ class TaskTemplatesController < ApplicationController
         @task_template.description = "Enter a description for this task."
         @task_template.weighting = 0.0
         @task_template.required = true
-        @task_template.recommended_completion_date = Date.today
+        @task_template.target_date = Date.today
 
         # Call the create action, which saves the object and creates task instances for any existing users
         create()
