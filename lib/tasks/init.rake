@@ -8,22 +8,22 @@ namespace :db do
 		# Clear the database
 		[ProjectTemplate, Project, ProjectStatus, TaskTemplate, Task, TaskStatus, Team, TeamMembership, User, ProjectConvenor].each(&:delete_all)
 
-	    TaskStatus.create(:name => "Not Submitted", :description => "This task has not been submitted to marked by your tutor.")
-	    TaskStatus.create(:name => "Needs Fixing", :description => "This task must be resubmitted after fixing some issues.")
-	    TaskStatus.create(:name => "Complete", :description => "This task has been signed off by your tutor.")
+    TaskStatus.create(:name => "Not Submitted", :description => "This task has not been submitted to marked by your tutor.")
+    TaskStatus.create(:name => "Needs Fixing", :description => "This task must be resubmitted after fixing some issues.")
+    TaskStatus.create(:name => "Complete", :description => "This task has been signed off by your tutor.")
 
 		admins = {
      	ajones:         {first: "Allan",   last: "Jones",   nickname: "P-Jiddy"},
-      	akihironoguchi: {first: "Akihiro", last: "Noguchi", nickname: "Unneccesary Animations"}
-    	}
+    	akihironoguchi: {first: "Akihiro", last: "Noguchi", nickname: "Unneccesary Animations"}
+  	}
 
-	    convenors = {
-	    	acain: 	   {first: "Andrew",   last: "Cain",     nickname: "Macite"},
-	    	cwoodward: {first: "Clinton",  last: "Woodward", nickname: "Tall"},
-	    }
+    convenors = {
+    	acain: 	   {first: "Andrew",   last: "Cain",     nickname: "Macite"},
+    	cwoodward: {first: "Clinton",  last: "Woodward", nickname: "Tall"},
+    }
 
-	    admins.each do |username, info|
-	    	# Create superuser
+    admins.each do |username, info|
+    	# Create superuser
 			User.populate(1) do |superuser|
 				superuser.username 			 = username.to_s
 				superuser.nickname 			 = info[:nickname]
@@ -34,10 +34,10 @@ namespace :db do
 				superuser.sign_in_count 	 = 0
 				superuser.system_role 		 = "superuser"
 			end
-	    end
+    end
 
-	    convenors.each do |username, info|
-    		# Create convenor
+    convenors.each do |username, info|
+  		# Create convenor
 			User.populate(1) do |convenor|
 				convenor.username 			 = username.to_s
 				convenor.nickname 			 = info[:nickname]
@@ -48,6 +48,6 @@ namespace :db do
 				convenor.sign_in_count 		 = 0
 				convenor.system_role 		 = "convenor"
 			end
-	    end
+    end
 	end
 end
