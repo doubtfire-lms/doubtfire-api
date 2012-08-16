@@ -1,4 +1,4 @@
-$(document).ready(function() {
+ $(document).ready(function() {
   $.each($(".burndownchart"), function(i, burndownChartContainer) {
     constructBurndownChart(burndownChartContainer);
   });
