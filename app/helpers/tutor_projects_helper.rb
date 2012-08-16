@@ -18,18 +18,21 @@ module TutorProjectsHelper
 
     progress = project.relative_progress
 
-    raw(
-      tasks.each_with_index.map{|task, i|
-          task_class  = if task.complete?
-            progress.to_s.gsub("_", "-")
-          else
-            task.awaiting_signoff? ? "awaiting-signoff" : "incomplete-task"
-          end
+    raw(tasks.each_with_index.map{|task, i|
+      task_class  = if task.complete?
+        progress.to_s.gsub("_", "-")
+      else
+        task.awaiting_signoff? ? "awaiting-signoff" : "incomplete-task"
+      end
 
-          href        = "/tutor/projects/#{project.id}/students/#{student.id}"
-
-          "<a class=\"task-progress-item progress-#{task_class}\" href=\"#{href}\">#{i + 1}</a>"
-        }.join("\n")
-    )
+      link_to(
+        "#{i + 1}",
+        tutor_project_student_path(project, student),
+        :rel => "popover",
+        :class => "task-progress-item progress-#{task_class}",
+        "data-original-title" => "#{task.task_template.name}",
+        "data-content"        => "#{task.task_template.description}"
+      )
+    }.join("\n"))
   end
 end

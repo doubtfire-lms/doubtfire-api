@@ -41,6 +41,7 @@ Doubtfire::Application.configure do
     projects.js
     status_distribution.js
     tasks.js
+    task_popover.js
     tutor_projects.js
     users.js
   ]
