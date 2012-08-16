@@ -13,39 +13,46 @@
 <% end %>
 
 <div class="span9">
-	<div class="row-fluid tabbable">
-		<ul class="nav nav-pills">
-			<li class="active"><a href="#summary-tab" data-toggle="tab">Summary</a></li>
-			<li><a href="#tasks-tab" data-toggle="tab">Tasks</a></li>
-			<li><a href="#team-tab" data-toggle="tab">Tutorials</a></li>
-		</ul>
-		<div class="tab-content">
-			<div class="tab-pane active" id="summary-tab">
-				<div class="span7 widget">
-					<h2><i class="icon-bar-chart"></i>Progress</h2>
-					<div class="widget-content" id="progress-widget">
-						<%= render 'dashboard/project_progress', :project => @project %>
-					</div>
-				</div>
+	<ul class="breadcrumb">
+		<li>
+			<%= link_to "Home", root_url %>
+			<span class="divider">/</span>
+		</li>
+		<li class="active"><%= @project.project_template.name %></li>
+	</ul>
+	
+	<ul class="nav nav-pills">
+		<li class="active"><a href="#summary-tab" data-toggle="tab">Summary</a></li>
+		<li><a href="#tasks-tab" data-toggle="tab">Tasks</a></li>
+		<li><a href="#team-tab" data-toggle="tab">Tutorials</a></li>
+	</ul>
 
-				<div class="span5 widget" id="task-highlights-widget">
-					<%= render 'dashboard/task_highlights', :project => @project %>
+	<div class="tab-content">
+		<div class="tab-pane active" id="summary-tab">
+			<div class="span7 widget">
+				<h2><i class="icon-bar-chart"></i>Progress</h2>
+				<div class="widget-content" id="progress-widget">
+					<%= render 'dashboard/project_progress', :project => @project %>
 				</div>
 			</div>
 
-			<div class="tab-pane" id="tasks-tab">
-				<div class="span9 widget">
-					<%= render 'dashboard/task_list', :tasks => @project.assigned_tasks %>
-				</div>
+			<div class="span5 widget" id="task-highlights-widget">
+				<%= render 'dashboard/task_highlights', :project => @project %>
 			</div>
+		</div>
 
-			<div class="tab-pane" id="team-tab">
-				<div class="span7 widget">
-					<%= render 'dashboard/team_allocation', :project => @project, :team_membership => @project.team_membership %>
-				</div>
-				<div class="span5 widget">
-					<%= render 'dashboard/project_team_list', :project_teams => @project.project_template.teams %>
-				</div>
+		<div class="tab-pane" id="tasks-tab">
+			<div class="span9 widget">
+				<%= render 'dashboard/task_list', :tasks => @project.assigned_tasks %>
+			</div>
+		</div>
+
+		<div class="tab-pane" id="team-tab">
+			<div class="span7 widget">
+				<%= render 'dashboard/team_allocation', :project => @project, :team_membership => @project.team_membership %>
+			</div>
+			<div class="span5 widget">
+				<%= render 'dashboard/project_team_list', :project_teams => @project.project_template.teams %>
 			</div>
 		</div>
 	</div>
