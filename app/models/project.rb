@@ -191,6 +191,10 @@ class Project < ActiveRecord::Base
     reference_date > project_template.end_date
   end
 
+  def has_optional_tasks?
+    tasks.any?{|task| !task.task_template.required }
+  end
+
   def weight
     DEFAULT_PROJECT_WEIGHT
   end
