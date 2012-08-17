@@ -5,9 +5,9 @@ class DashboardController < ApplicationController
   def index
     # Redirect to the administration page if the user is superuser
     if @user.superuser?
-      redirect_to superuser_index_path
+      redirect_to superuser_index_path and return
     elsif @user.convenor?
-      redirect_to convenor_index_path
+      redirect_to convenor_index_path and return
     end
     
     @student_projects         = Project.includes(:tasks).find(@user.team_memberships.map{|membership| membership.project_id })
@@ -17,7 +17,6 @@ class DashboardController < ApplicationController
     if @student_projects.empty? and @tutor_project_templates.empty?
       redirect_to no_projects_path
     end
-
   end
 
   private
