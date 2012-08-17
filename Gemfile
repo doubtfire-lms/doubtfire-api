@@ -3,6 +3,7 @@ source 'https://rubygems.org'
 gem 'rails', '3.2.6'
 
 gem 'mysql'
+gem 'thin'
 gem 'letter_opener'
 gem 'sqlite3'
 gem 'devise'
