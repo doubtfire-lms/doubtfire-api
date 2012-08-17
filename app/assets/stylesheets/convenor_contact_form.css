@@ -26,3 +26,8 @@
 {
 	margin-top: 30px;
 }
+
+input, select
+{
+	font: 11px/1.7em 'Open Sans', Helvetica;	
+}
