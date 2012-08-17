@@ -35,6 +35,24 @@
     </div>
   </div>
 
+  <!-- Table of teams for the current project -->
+  <div class="widget">
+    <h2><i class="icon-group"></i>Teams</h2>
+    <div class="widget-content">
+      <%= render :partial => 'teams/table', :locals => { :team_list => @project_teams,
+                                                         :empty_table_string => "This project has no teams."} %>
+      <hr />
+      <%= link_to "Create new team", new_project_team_path(@project_template), :class => 'btn', "data-remote" => true %>
+      <hr />
+      <div class="well">
+        <%= form_tag "#{@project_template.id}/import_teams", :multipart => true, :remote => true do %>
+          <%= file_field(:csv_file, :file) %>
+          <%= submit_tag "Import Teams from CSV", :class => "btn" %>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
   <!-- Table of tasks for the current project -->
   <div class="widget">
     <h2><i class="icon-pencil"></i>Tasks</h2>
@@ -66,24 +84,6 @@
           <%= submit_tag "Import Tasks from CSV", :class => "btn" %>
         <% end %>
         <%= link_to "Download Import Template", task_import_template_path %>
-      </div>
-    </div>
-  </div>
-
-  <!-- Table of teams for the current project -->
-  <div class="widget">
-    <h2><i class="icon-group"></i>Teams</h2>
-    <div class="widget-content">
-      <%= render :partial => 'teams/table', :locals => { :team_list => @project_teams,
-                                                         :empty_table_string => "This project has no teams."} %>
-      <hr />
-      <%= link_to "Create new team", new_project_team_path(@project_template), :class => 'btn', "data-remote" => true %>
-      <hr />
-      <div class="well">
-        <%= form_tag "#{@project_template.id}/import_teams", :multipart => true, :remote => true do %>
-          <%= file_field(:csv_file, :file) %>
-          <%= submit_tag "Import Teams from CSV", :class => "btn" %>
-        <% end %>
       </div>
     </div>
   </div>
