@@ -23,9 +23,20 @@ class TutorProjectsController < ApplicationController
       @user_unmarked_tasks[user_for_task] ||= []
       @user_unmarked_tasks[user_for_task] << unmarked_task
     end
+
+    @other_teams        = Team.includes(:team_memberships => [{:project => [{:tasks => [:task_template]}]}]).where(Team.arel_table[:user_id].not_eq(@user.id), :project_template_id => params[:id]).order(:official_name)
+    @initial_other_team = @other_teams.first
   end
 
   def load_current_user
     @user = current_user
+  end
+
+  def display_other_team
+    @other_team = Team.includes(:team_memberships => [{:project => [{:tasks => [:task_template]}]}]).find(params[:team_id])
+    
+    respond_to do |format|
+      format.js
+    end
   end
 end

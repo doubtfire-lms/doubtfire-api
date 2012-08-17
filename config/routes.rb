@@ -65,8 +65,9 @@ Doubtfire::Application.routes.draw do
   get "/convenor/projects/:id"  => "convenor_project#index",  :as => 'convenor_project'
 
   # Tutor context routes
-  get "/tutor/projects/:id" =>                                "tutor_projects#show",  :as => 'tutor_project'
-  get "/tutor/projects/:project_id/students/:student_id"  =>  "tutor_project_students#show",  :as => 'tutor_project_student'
+  get "/tutor/projects/:id"                                       =>  "tutor_projects#show",                :as => 'tutor_project'
+  get "/tutor/projects/:project_id/display_other_team/:team_id"   =>  "tutor_projects#display_other_team",  :as => 'display_other_team'
+  get "/tutor/projects/:project_id/students/:student_id"          =>  "tutor_project_students#show",        :as => 'tutor_project_student'
 
   put "team_memberships/:team_membership_id/change_team_allocation/:new_team_id" => "team_memberships#change_team_allocation", :as => 'change_team_allocation'
 

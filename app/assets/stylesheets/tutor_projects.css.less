@@ -16,7 +16,7 @@
 {
 	display: inline;
 	float: left;
-	width: 200px;
+	width: 220px;
 	margin-right: 10px;
 	padding-top: 5px;
 }
@@ -75,6 +75,30 @@
 	margin-right: 10px;
 }
 
+.team-member-username
+{
+	display: inline;
+	float: left;
+	margin: 5px 15px 0 0;
+}
+
+#display-other-team-dropdown
+{
+	width: 260px;
+	text-align: left;
+}
+
+#display-other-team-dropdown span.caret
+{
+	display: inline-block;
+	float: right;
+}
+
+.other-team-selection-item
+{
+	width: 250px;
+}
+
 /***** TODO: No reason below can't be global *****/
 
 .progress-ahead 	{ #gradient > .vertical(#62c462, #51a351); }
@@ -97,3 +121,11 @@
 
 .progress-incomplete-task:hover { color: #BBBBBB; }
 .progress-awaiting-signoff:hover { color: #ffffff; }
+
+@media (max-width: 480px) {
+	.tasks-progress-bar
+	{
+		clear: left;
+		margin-top: 10px;
+	}
+}
