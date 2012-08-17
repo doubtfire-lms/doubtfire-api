@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20120814004221) do
+ActiveRecord::Schema.define(:version => 20120817005120) do
 
   create_table "logins", :force => true do |t|
     t.datetime "timestamp"
