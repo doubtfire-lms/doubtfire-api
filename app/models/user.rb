@@ -18,6 +18,10 @@ class User < ActiveRecord::Base
   # Model validations/constraints
   validates_uniqueness_of :username, :email
 
+  def email_required?
+    false
+  end
+
   def superuser?
     system_role == "superuser"
   end
