@@ -14,7 +14,7 @@
                 project_template_path(project_template),
                 "data-remote" => true,
                 :method => :delete,
-                :confirm => t('.confirm', :default => t("helpers.links.confirm", :default => 'Are you sure?')),
+                :data => { :confirm => t('.confirm', :default => t("helpers.links.confirm", :default => 'Are you sure?'))},
                 :class => 'btn btn-mini btn-danger' %>
   </td>
 </tr>
