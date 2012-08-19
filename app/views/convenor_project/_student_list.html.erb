@@ -1,24 +1,29 @@
 <%- model_class = User.new.class -%>
 <h2>Students</h2>
 <div class="widget-content" id="users-table">
+	<%= paginate @project_users %>
+
 	<table class="table table-striped">
 		<thead>
 			<tr>
-				<th><%= model_class.human_attribute_name(:email) %></th>
+				<th><%= model_class.human_attribute_name(:username) %></th>
 				<th><%= model_class.human_attribute_name(:first_name) %></th>
 				<th><%= model_class.human_attribute_name(:last_name) %></th>
-				<th><%= model_class.human_attribute_name(:sign_in_count) %></th>
-				<th><%= model_class.human_attribute_name(:last_sign_in_at) %></th>
+				<th><%= model_class.human_attribute_name(:progress) %></th>
+				<th><%= model_class.human_attribute_name(:tasks_completed) %></th>
+				<th><%= model_class.human_attribute_name(:completion_rate) %></th>
 			</tr>
 		</thead>
 		<tbody>
 			<% @project_users.each do |user| # @TODO: Change this to current filter %>
+				<% user_project = user.team_memberships.select{|tm| tm.project.project_template_id == @project_template.id }.first.project %>
 				<tr>
-					<td><%= link_to user.email, user %></td>
+					<td><%= link_to user.username, user %></td>
 					<td><%= user.first_name %></td>
 					<td><%= user.last_name %></td>
-					<td><%= user.sign_in_count %></td>
-					<td><%= if user.last_sign_in_at then user.last_sign_in_at.strftime("%d %B %Y at %I:%M%p") else "---" end %></td>
+					<td><%= user_project.relative_progress.to_s.titleize %></td>
+					<td><%= user_project.completed_tasks.size %> / <%= @project_template.task_templates.size %></td>
+					<td><%= user_project.rate_of_completion %></td>
 				</tr>
 			<% end %>
 		</tbody>
