@@ -22,6 +22,7 @@ Doubtfire::Application.configure do
     burndown.css
     convenor.css
     convenor_project.css
+    convenor_contact_form.css
     dashboard.css
     home.css
     tasks.css
@@ -32,7 +33,6 @@ Doubtfire::Application.configure do
   # Pre-compiled JS
   config.assets.precompile += %w[
     administration.js
-    application.js
     bootstrap.js
     burndown.js
     convenor.js
@@ -40,8 +40,8 @@ Doubtfire::Application.configure do
     home.js
     projects.js
     status_distribution.js
-    tasks.js
     task_popover.js
+    tasks.js
     tutor_projects.js
     users.js
   ]
