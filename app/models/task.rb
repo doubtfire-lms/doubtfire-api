@@ -58,6 +58,14 @@ class Task < ActiveRecord::Base
     status == :needs_fixing
   end
 
+  def need_help?
+    status == :need_help
+  end
+
+  def working_on_it?
+    status == :working_on_it
+  end
+
   def status
     case task_status.name
     when "Complete"
@@ -66,6 +74,10 @@ class Task < ActiveRecord::Base
       :not_submitted
     when "Needs Fixing"
       :needs_fixing
+    when "Need Help"
+      :need_help
+    when "Working On It"
+      :working_on_it
     end
   end
 

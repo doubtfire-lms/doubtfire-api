@@ -2,30 +2,23 @@
 	<button class="btn btn-success status-display-button">Complete <i class="icon-ok button-icon"></i></button>
 <% else %>
 <div class="btn-group">
-	<% if task.awaiting_signoff? %>
-	<button class="btn btn-primary status-display-button">
-		Ready to Mark <i class="icon-thumbs-up button-icon" style=""></i>
-	</button>
-	<button class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
-	<% else %>
-	<% if task.needs_fixing? %>
-	<button class="btn btn-warning status-display-button">Fix <i class="icon-wrench button-icon"></i></button>
-	<button class="btn btn-warning dropdown-toggle" data-toggle="dropdown">
-	<% else %>
-	<button class="btn status-display-button">
-		Not Ready to Mark
-	</button>
-	<button class="btn dropdown-toggle" data-toggle="dropdown">
-	<% end %>
-	<% end %>
-		<span class="caret"></span>
-	</button>
+	<%= task_status_active_button(task) %>
 	<ul class="dropdown-menu">
 		<li>
 			<a href="<%= awaiting_signoff_path(task, "true") %>" data-method="put" class="ready-to-mark-button" data-remote="true">Ready to Mark <i class="icon-thumbs-up button-icon"></i></a>
 		</li>
-		<li style="width: 170px">
+		<li style="width: 180px">
 			<a href="<%= awaiting_signoff_path(task, "false") %>" data-method="put" class="ready-to-mark-button" data-remote="true">Not Ready to Mark <i class="icon-remove button-icon"></i></a>
+		</li>
+
+		<li class="divider"></li>
+
+		<li>
+			<a href="<%= update_task_status_path(task, "working_on_it") %>" data-method="put" class="ready-to-mark-button" data-remote="true">Working On It <i class="icon-bolt button-icon"></i></a>
+		</li>
+
+		<li>
+			<a href="<%= update_task_status_path(task, "need_help") %>" data-method="put" class="ready-to-mark-button" data-remote="true">Need Some Help <i class="icon-exclamation-sign button-icon"></i></a>
 		</li>
 	</ul>
 </div>

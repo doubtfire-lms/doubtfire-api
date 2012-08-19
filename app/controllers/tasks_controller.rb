@@ -33,15 +33,19 @@ class TasksController < ApplicationController
     end
 
     if @task.save
-      submission = TaskSubmission.where(task_id: @task.id).order(:submission_time).reverse_order.first
+      if @task.needs_fixing? || @task.complete?
+        submission = TaskSubmission.where(task_id: @task.id).order(:submission_time).reverse_order.first
 
-      if submission.nil?
-        TaskSubmission.create!(task: @task, assessment_time: Time.zone.now, assessor: @user, outcome: task_status.name)
+        if submission.nil?
+          TaskSubmission.create!(task: @task, assessment_time: Time.zone.now, assessor: @user, outcome: task_status.name)
+        else
+          submission.assessment_time  = Time.zone.now
+          submission.assessor         = @user
+          submission.outcome          = task_status.name
+          submission.save!
+        end
       else
-        submission.assessment_time  = Time.zone.now
-        submission.assessor         = @user
-        submission.outcome          = task_status.name
-        submission.save!
+        TaskEngagement.create!(task: @task, engagement_time: Time.zone.now, engagement: task_status.name)
       end
 
       respond_to do |format|
@@ -86,6 +90,10 @@ class TasksController < ApplicationController
       "Needs Fixing"
     when "not_submitted"
       "Not Submitted"
+    when "need_help"
+      "Need Help"
+    when "working_on_it"
+      "Working On It"
     end
 
     TaskStatus.where(:name => status_name).first

@@ -62,4 +62,40 @@ module TasksHelper
   def awaiting_signoff_badge_for_task(task)
     raw "<span class=\"task-awaiting-signoff-label label label-info\">Awaiting Sign-off</span>"
   end
+
+  def task_status_active_button(task)
+    button_class  = nil
+    button_text   = ""
+    button_icon   = nil
+
+    if task.awaiting_signoff?
+      button_class  = 'btn-primary'
+      button_text   = 'Ready to Mark'
+      button_icon   = 'icon-thumbs-up'
+    else
+      if task.needs_fixing?
+        button_class  = 'btn-warning'
+        button_text   = 'Needs Fixing'
+        button_icon   = 'icon-wrench'
+      elsif task.need_help?
+        button_class  = 'btn-danger'
+        button_text   = 'Need Some Help'
+        button_icon   = 'icon-exclamation-sign'
+      elsif task.working_on_it?
+        button_class  = 'btn-info'
+        button_text   = 'Working On It'
+        button_icon   = 'icon-bolt'
+      else
+        button_text   = 'Not Ready to Mark'
+      end
+    end
+
+    raw ["<button class=\"btn #{button_class} status-display-button\">",
+            "#{button_text}",
+            (button_icon ? "<i class=\"#{button_icon} button-icon\"></i>" : ""),
+        '</button>',
+        "<button class=\"btn #{button_class} dropdown-toggle\" data-toggle=\"dropdown\">",
+          '<span class="caret"></span>',
+        '</button>'].join("\n")
+  end
 end
