@@ -1,29 +1,26 @@
 <%- model_class = User.new.class -%>
-<div class="row-fluid">
-	<div class="span12 widget">
-		<div class="widget-content" id="users-table">
-			<table class="table table-striped">
-				<thead>
-					<tr>
-						<th><%= model_class.human_attribute_name(:email) %></th>
-						<th><%= model_class.human_attribute_name(:first_name) %></th>
-						<th><%= model_class.human_attribute_name(:last_name) %></th>
-						<th><%= model_class.human_attribute_name(:sign_in_count) %></th>
-						<th><%= model_class.human_attribute_name(:last_sign_in_at) %></th>
-					</tr>
-				</thead>
-				<tbody>
-					<% @project_users.each do |user| # @TODO: Change this to current filter %>
-						<tr>
-							<td><%= link_to user.email, user %></td>
-							<td><%= user.first_name %></td>
-							<td><%= user.last_name %></td>
-							<td><%= user.sign_in_count %></td>
-							<td><%= if user.last_sign_in_at then user.last_sign_in_at.strftime("%d %B %Y at %I:%M%p") else "---" end %></td>
-						</tr>
-					<% end %>
-				</tbody>
-			</table>
-		</div>
-	</div>
+<h2>Students</h2>
+<div class="widget-content" id="users-table">
+	<table class="table table-striped">
+		<thead>
+			<tr>
+				<th><%= model_class.human_attribute_name(:email) %></th>
+				<th><%= model_class.human_attribute_name(:first_name) %></th>
+				<th><%= model_class.human_attribute_name(:last_name) %></th>
+				<th><%= model_class.human_attribute_name(:sign_in_count) %></th>
+				<th><%= model_class.human_attribute_name(:last_sign_in_at) %></th>
+			</tr>
+		</thead>
+		<tbody>
+			<% @project_users.each do |user| # @TODO: Change this to current filter %>
+				<tr>
+					<td><%= link_to user.email, user %></td>
+					<td><%= user.first_name %></td>
+					<td><%= user.last_name %></td>
+					<td><%= user.sign_in_count %></td>
+					<td><%= if user.last_sign_in_at then user.last_sign_in_at.strftime("%d %B %Y at %I:%M%p") else "---" end %></td>
+				</tr>
+			<% end %>
+		</tbody>
+	</table>
 </div>
