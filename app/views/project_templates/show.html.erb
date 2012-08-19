@@ -63,7 +63,7 @@
       <span id="task-buttons">
         <%= link_to "Create new task", new_project_task_path(@project_template), :onclick => "$('#destroy-tasks-button').show()", :class => 'btn', "data-remote" => true %>
 
-        <% if @project_template.task_templates.empty? %>
+        <% if @project_tasks.empty? %>
         <%= link_to "Destroy all tasks", destroy_all_project_tasks_path(@project_template), 
                     :class => 'btn btn-danger', 
                     :id => 'destroy-tasks-button',
