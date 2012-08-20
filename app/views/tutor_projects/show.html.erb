@@ -30,8 +30,8 @@
 		<ul class="nav nav-pills">
 			<li class="active"><a href="#teams-tab" data-toggle="tab">Teams</a></li>
 			<li>
-				<a href="#marking-tab" data-toggle="tab">
-				Marking
+				<a href="#awaiting-signoff-tab" data-toggle="tab">
+				Awaiting Signoff
 				<% unless @user_unmarked_tasks.values.flatten.empty? %>
 					<%= " (#{@user_unmarked_tasks.values.flatten.size})" %>
 				<% end %>
@@ -119,7 +119,7 @@
 				</div>
 			</div>
 
-			<div class="tab-pane" id="marking-tab">
+			<div class="tab-pane" id="awaiting-signoff-tab">
 				<div class="span9 widget">
 					<h2><i class="icon-tasks"></i>Marking</h2>
 					<div class="widget-content" id="task-list-widget">
