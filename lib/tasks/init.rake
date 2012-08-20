@@ -11,6 +11,8 @@ namespace :db do
     TaskStatus.create(:name => "Not Submitted", :description => "This task has not been submitted to marked by your tutor.")
     TaskStatus.create(:name => "Needs Fixing", :description => "This task must be resubmitted after fixing some issues.")
     TaskStatus.create(:name => "Complete", :description => "This task has been signed off by your tutor.")
+    TaskStatus.create(:name => "Need Help", :description => "Some help is required in order to complete this task.")
+    TaskStatus.create(:name => "Working On It", :description => "This task is currently being worked on.")
 
 		admins = {
      	ajones:         {first: "Allan",   last: "Jones",   nickname: "P-Jiddy"},
