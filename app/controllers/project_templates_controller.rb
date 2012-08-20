@@ -88,7 +88,6 @@ class ProjectTemplatesController < ApplicationController
   
     respond_to do |format|
       if @project_template.update_attributes(params[:project_template])
-        Rails.logger.info("PARAMS: #{params[:convenors]}")
         # Replace the current list of convenors for this project with the new list selected by the user
         unless params[:convenors].nil?
           ProjectConvenor.where(:project_template_id => @project_template.id).delete_all
@@ -184,8 +183,7 @@ class ProjectTemplatesController < ApplicationController
   
   def destroy_all_tasks
     @project_template = ProjectTemplate.find(params[:project_template_id])
-    @project_tasks = TaskTemplate.where(:project_template_id => @project_template.id)
-    @project_tasks.delete_all
+    TaskTemplate.destroy_all(:project_template_id => @project_template.id)
   end
 
   def import_tasks

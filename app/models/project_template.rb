@@ -117,27 +117,31 @@ class ProjectTemplate < ActiveRecord::Base
   end
 
   def import_tasks_from_csv(file)
+    project_cache = nil
+
     CSV.foreach(file) do |row|
       next if row[0] =~ /Task Name/ # Skip header
 
       name, description, weighting, required, target_date = row[0..4]
 
-      if target_date !~ /20\d\d\-\d{1,2}\-\d{1,2}/ # Matches YYYY-mm-dd by default
+      if target_date !~ /20\d\d\-\d{1,2}\-\d{1,2}$/ # Matches YYYY-mm-dd by default
         if target_date =~ /\d{1,2}\-\d{1,2}\-20\d\d/ # Matches dd-mm-YYYY
           target_date = target_date.split("-").reverse.join("-")
-        elsif target_date =~ /\d{1,2}\/\d{1,2}\/20\d\d/ # Matches dd/mm/YYYY
+        elsif target_date =~ /\d{1,2}\/\d{1,2}\/20\d\d$/ # Matches dd/mm/YYYY
           target_date = target_date.split("/").reverse.join("-")
-        elsif target_date =~ /\d{1,2}\/\d{1,2}\/\d\d/ # Matches dd/mm/YY
+        elsif target_date =~ /\d{1,2}\/\d{1,2}\/\d\d$/ # Matches dd/mm/YY
           target_date = target_date.split("/").reverse.join("-")
-        elsif target_date =~ /\d{1,2}\-\d{1,2}\-\d\d/ # Matches dd-mm-YY
+        elsif target_date =~ /\d{1,2}\-\d{1,2}\-\d\d$/ # Matches dd-mm-YY
           target_date = target_date.split("-").reverse.join("-")
-        elsif target_date =~ /\d{1,2}\-\d{1,2}\-\d\d \d\d:\d\d:\d\d/ # Matches dd-mm-YY
+        elsif target_date =~ /\d{1,2}\-\d{1,2}\-\d\d \d\d:\d\d:\d\d$/ # Matches dd-mm-YY
           target_date = target_date.split(" ").first
+        elsif target_date =~ /\d{1,2}\/\d{1,2}\/\d\d [\d:]+$/ # Matches dd/mm/YY 00:00:00
+          target_date = target_date.split(" ").first.split("/").reverse.join("-")
         end
       end
 
       # TODO: Should background/task queue this work
-      task = TaskTemplate.find_or_create_by_project_template_id_and_name(id, name) do |task_template|
+      task_template = TaskTemplate.find_or_create_by_project_template_id_and_name(id, name) do |task_template|
         task_template.name                        = name
         task_template.project_template_id         = id
         task_template.description                 = description
@@ -146,7 +150,19 @@ class ProjectTemplate < ActiveRecord::Base
         task_template.target_date                 = Time.zone.parse(target_date)
       end
 
-      task.save! unless task.persisted?
+      task_template.save! unless task_template.persisted?
+
+      project_cache ||= Project.where(:project_template_id => id)
+
+      project_cache.each do |project|
+        Task.create(
+          task_template_id: task_template.id,
+          project_id:       project.id,
+          task_status_id:   1,
+          awaiting_signoff: false,
+          completion_date:  nil
+        )
+      end
     end
   end
 

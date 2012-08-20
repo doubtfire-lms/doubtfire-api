@@ -1,7 +1,7 @@
 class Task < ActiveRecord::Base
   include ApplicationHelper
 
-  attr_accessible :awaiting_signoff
+  attr_accessible :task_template_id, :project_id, :awaiting_signoff, :completion_date, :task_status_id
 
   # Model associations
   belongs_to :task_template         # Foreign key
