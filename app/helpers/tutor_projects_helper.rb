@@ -25,13 +25,15 @@ module TutorProjectsHelper
         task.awaiting_signoff? ? "awaiting-signoff" : "incomplete-task"
       end
 
+      description_text = (task.task_template.description.nil? or task.task_template.description == "NULL") ? "(No description provided)" : task.task_template.description
+
       link_to(
         "#{i + 1}",
         tutor_project_student_path(project, student),
         :rel => "popover",
         :class => "task-progress-item progress-#{task_class}",
         "data-original-title" => "#{task.task_template.name}",
-        "data-content"        => "#{task.task_template.description}"
+        "data-content"        => "#{description_text}"
       )
     }.join("\n"))
   end

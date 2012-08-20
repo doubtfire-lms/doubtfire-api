@@ -41,7 +41,7 @@
 		</div>
 	</div>
 	<div class="task-description">
-		<p><%= task.task_template.description %></p>
+		<p><%= task.task_template.description != "NULL" ? task.task_template.description : "(No description provided)" %></p>
 	</div>
 </div>
 <% end %>
