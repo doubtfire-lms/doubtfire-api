@@ -12,7 +12,7 @@ class ProjectsController < ApplicationController
     authorize! :read, @project, :message => "You are not authorised to view Project ##{@project.id}"
 
     respond_to do |format|
-      format.html
+      format.html {render :action => 'show'}
       format.json { 
         render json: @project.to_json(
           :include => [
