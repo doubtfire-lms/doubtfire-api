@@ -24,7 +24,10 @@ class TutorProjectsController < ApplicationController
       @user_unmarked_tasks[user_for_task] << unmarked_task
     end
 
-    @other_teams        = Team.includes(:team_memberships => [{:project => [{:tasks => [:task_template]}]}]).where(Team.arel_table[:user_id].not_eq(@user.id), :project_template_id => params[:id]).order(:official_name)
+    @other_teams        = Team.includes(:team_memberships => [{:project => [{:tasks => [:task_template]}]}])
+                              .where("user_id != ? AND project_template_id = ?", @user.id, @project_template.id)
+                              .order(:official_name)
+
     @initial_other_team = @other_teams.first
   end
 
