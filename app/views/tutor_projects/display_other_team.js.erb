@@ -9,3 +9,5 @@ $("#display-team-<%= @other_team.id %>-students").css("font-weight", "bold");
 
 var partial = "<%=j render :partial => 'tutor_projects/team_project_list', :locals => { :team => @other_team } %>";
 otherTeamsContainer.children("div").first().replaceWith(partial);
+
+$(".task-progress-item").popover({"placement" : "top"});
