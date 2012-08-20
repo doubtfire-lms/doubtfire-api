@@ -11,22 +11,7 @@
 	<p class="task-submission-vs-time"><%= task_submission_vs_time_text(task) %></p>
 	<div class="task-status-controls" style="display: inline-block;">
 		<div class="btn-group">
-			<% if task.complete? %>
-			<button class="btn btn-success status-display-button">Complete <i class="icon-ok button-icon"></i></button>
-			<button class="btn btn-success dropdown-toggle" data-toggle="dropdown">
-			<% elsif task.awaiting_signoff? %>
-			<button class="btn btn-primary status-display-button">
-				Ready to Mark <i class="icon-thumbs-up button-icon" style=""></i>
-			</button>
-			<button class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
-			<% else %>
-			<button class="btn status-display-button">
-				Not Ready to Mark
-			</button>
-			<button class="btn dropdown-toggle" data-toggle="dropdown">
-			<% end %>
-				<span class="caret"></span>
-			</button>
+			<%= task_status_active_button(task) %>
 			<ul class="dropdown-menu">
 				<li>
 					<a href="<%= update_task_status_path(task, "complete") %>" data-method="put" class="ready-to-mark-button" data-remote="true">Complete <i class="icon-ok button-icon"></i></a>

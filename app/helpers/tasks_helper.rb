@@ -85,6 +85,10 @@ module TasksHelper
         button_class  = 'btn-info'
         button_text   = 'Working On It'
         button_icon   = 'icon-bolt'
+      elsif task.complete?
+        button_class  = 'btn-success'
+        button_text   = 'Complete'
+        button_icon   = 'icon-ok'
       else
         button_text   = 'Not Ready to Mark'
       end
