@@ -1,0 +1,26 @@
+<div class="btn-group">
+	<a class="btn dropdown-toggle" id="display-other-team-dropdown" data-toggle="dropdown" href="#">
+	    <%= "#{initial_other_team.meeting_day}" %>
+		<%= "#{initial_other_team.meeting_time}" %>
+		<%= "(#{initial_other_team.user.name})" %>
+    	<span class="caret"></span>
+  	</a>
+  	<ul class="dropdown-menu">
+  		<% other_teams.each do |team| %>
+	    <li>
+	    	<a href="<%= display_other_team_path(project_template, team) %>"
+	    		id="display-team-<%= team.id %>-students"
+	    		class="other-team-selection-item"
+	    		data-remote="true"
+	    		<% if initial_other_team == team %>
+	    		style="font-weight: bold;"
+	    		<% end %>
+	    	>
+	    		<%= "#{team.meeting_day}" %>
+				<%= "#{team.meeting_time}" %>
+				<%= "(#{team.user.name})" %>
+	    	</a>
+		</li>
+		<% end %>
+  	</ul>
+</div>

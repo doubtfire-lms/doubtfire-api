@@ -13,6 +13,21 @@ module TutorProjectsHelper
     tutors_projects.map{|project| project.tasks }.flatten.select{|task| task.awaiting_signoff? }
   end
 
+  def user_unmarked_tasks(projects)
+    unmarked_tasks = unmarked_tasks(projects)
+
+    user_unmarked_tasks      = {}
+
+    unmarked_tasks.each do |unmarked_task|
+      user_for_task = unmarked_task.project.team_membership.user
+
+      user_unmarked_tasks[user_for_task] ||= []
+      user_unmarked_tasks[user_for_task] << unmarked_task
+    end
+
+    user_unmarked_tasks
+  end
+
   def tasks_progress_bar(project, student)
     tasks = project.assigned_tasks
 

@@ -77,32 +77,8 @@
 
 								<div class="tab-pane" id="other-teams">
 									<h3>Other Teams</h3>
-									<div class="btn-group">
-										<a class="btn dropdown-toggle" id="display-other-team-dropdown" data-toggle="dropdown" href="#">
-										    <%= "#{@initial_other_team.meeting_day}" %>
-											<%= "#{@initial_other_team.meeting_time}" %>
-											<%= "(#{@initial_other_team.user.name})" %>
-									    	<span class="caret"></span>
-									  	</a>
-									  	<ul class="dropdown-menu">
-									  		<% @other_teams.each do |team| %>
-										    <li>
-										    	<a href="<%= display_other_team_path(@project_template, team) %>"
-										    		id="display-team-<%= team.id %>-students"
-										    		class="other-team-selection-item"
-										    		data-remote="true"
-										    		<% if @initial_other_team == team %>
-										    		style="font-weight: bold;"
-										    		<% end %>
-										    	>
-										    		<%= "#{team.meeting_day}" %>
-													<%= "#{team.meeting_time}" %>
-													<%= "(#{team.user.name})" %>
-										    	</a>
-											</li>
-											<% end %>
-									  	</ul>
-									</div>
+									
+									<%= render :partial => "tutor_projects/other_team_dropdown", :locals => { :initial_other_team => @initial_other_team, :other_teams => @other_teams, :project_template => @project_template } %>
 
 									<div class="team-entry" id="team-<%= @initial_other_team.id %>-students">
 										<h3><%= @initial_other_team.meeting_day %> <%= @initial_other_team.meeting_time %> (<%= @initial_other_team.user.name %>)</h3>
