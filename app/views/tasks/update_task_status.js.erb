@@ -20,12 +20,12 @@ function updateStatusDisplayButton(taskContainer, taskStatus) {
 		taskContainer.find(".dropdown-toggle").attr("class", "btn dropdown-toggle");
 	} else if (taskStatus === "Working On It") {
 		taskContainer.find(".status-display-button").html("Working On It <i class=\"icon-bolt button-icon\"></i>");
-		taskContainer.find(".status-display-button").attr("class", "btn btn-info status-display-button");
-		taskContainer.find(".dropdown-toggle").attr("class", "btn btn-info dropdown-toggle");
+		taskContainer.find(".status-display-button").attr("class", "btn btn-working-on-it status-display-button");
+		taskContainer.find(".dropdown-toggle").attr("class", "btn btn-working-on-it dropdown-toggle");
 	} else if (taskStatus === "Need Help") {
 		taskContainer.find(".status-display-button").html("Need Some Help <i class=\"icon-exclamation-sign button-icon\"></i>");
-		taskContainer.find(".status-display-button").attr("class", "btn btn-danger status-display-button");
-		taskContainer.find(".dropdown-toggle").attr("class", "btn btn-danger dropdown-toggle");
+		taskContainer.find(".status-display-button").attr("class", "btn btn-need-help status-display-button");
+		taskContainer.find(".dropdown-toggle").attr("class", "btn btn-need-help dropdown-toggle");
 	}
 }
 

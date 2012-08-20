@@ -78,11 +78,11 @@ module TasksHelper
         button_text   = 'Needs Fixing'
         button_icon   = 'icon-wrench'
       elsif task.need_help?
-        button_class  = 'btn-danger'
+        button_class  = 'btn-need-help'
         button_text   = 'Need Some Help'
         button_icon   = 'icon-exclamation-sign'
       elsif task.working_on_it?
-        button_class  = 'btn-info'
+        button_class  = 'btn-working-on-it'
         button_text   = 'Working On It'
         button_icon   = 'icon-bolt'
       elsif task.complete?
