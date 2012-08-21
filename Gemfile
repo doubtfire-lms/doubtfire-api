@@ -6,7 +6,6 @@ gem 'rails', '3.2.6'
 # Databases? ALL THE DATABASES
 gem 'sqlite3'
 gem 'mysql'
-gem 'pg'
 
 # This is how we get creative
 gem 'populator'

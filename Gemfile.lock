@@ -94,7 +94,6 @@ GEM
     mysql (2.8.1)
     net-ldap (0.2.2)
     orm_adapter (0.4.0)
-    pg (0.14.0)
     polyglot (0.3.3)
     populator (1.0.0)
     rack (1.4.1)
@@ -176,7 +175,6 @@ DEPENDENCIES
   less-rails-fontawesome
   letter_opener
   mysql
-  pg
   populator
   rails (= 3.2.6)
   sass-rails (~> 3.2.3)
