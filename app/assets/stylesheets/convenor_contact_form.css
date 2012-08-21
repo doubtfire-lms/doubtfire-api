@@ -27,7 +27,17 @@
 	margin-top: 30px;
 }
 
+.well
+{
+	min-width: 200px !important;
+}
+
 input, select
 {
 	font: 11px/1.7em 'Open Sans', Helvetica;	
+}
+
+#sign-out-button
+{
+	margin-top:20px;
 }
