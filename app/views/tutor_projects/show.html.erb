@@ -121,7 +121,7 @@
 					<% else %>
 						<% @user_unmarked_tasks.each do |user, unmarked_tasks| %>
 							<h3><%= user.name %> (<%= user.username %>)</h3>
-							<%= render 'tutor_projects/tutor_task_backlog', :actionable_tasks => @unmarked_tasks %>
+							<%= render 'tutor_projects/tutor_task_backlog', :actionable_tasks => unmarked_tasks %>
 						<% end %>
 					<% end %>
 					</div>
@@ -137,7 +137,7 @@
 					<% else %>
 						<% @user_needing_help_tasks.each do |user, needing_help_tasks| %>
 							<h3><%= user.name %> (<%= user.username %>)</h3>
-							<%= render 'tutor_projects/tutor_task_backlog', :actionable_tasks => needing_help_tasks %>
+							<%= render :partial => 'tutor_projects/tutor_task_backlog', :locals => {:actionable_tasks => needing_help_tasks} %>
 						<% end %>
 					<% end %>
 					</div>
@@ -153,7 +153,7 @@
 					<% else %>
 						<% @user_working_on_it_tasks.each do |user, working_on_it_tasks| %>
 							<h3><%= user.name %> (<%= user.username %>)</h3>
-							<%= render 'tutor_projects/tutor_task_backlog', :actionable_tasks => working_on_it_tasks %>
+							<%= render :partial => 'tutor_projects/tutor_task_backlog', :locals => { :actionable_tasks => working_on_it_tasks} %>
 						<% end %>
 					<% end %>
 					</div>
