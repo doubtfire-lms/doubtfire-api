@@ -64,13 +64,13 @@
 						<div class="tabbable">
 							<ul class="nav nav-tabs">
 								<li class="active">
-									<a href="#your-teams" data-toggle="tab">Your Teams</a>
+									<a href="#your-teams-tab" data-toggle="tab">Your Teams</a>
 								</li>
-								<li><a href="#other-teams" data-toggle="tab">Other Teams</a></li>
+								<li><a href="#other-teams-tab" data-toggle="tab">Other Teams</a></li>
 							</ul>
 
 							<div class="tab-content">
-								<div class="tab-pane active" id="your-teams">
+								<div class="tab-pane active" id="your-teams-tab">
 									<ul id="team-list-options">
 									<% @tutor_teams.each do |team| %>
 										<li>
@@ -91,18 +91,19 @@
 									<% end %>
 								</div>
 
-								<div class="tab-pane" id="other-teams">
+								<div class="tab-pane" id="other-teams-tab">
 									<h3>Other Teams</h3>
 									
 									<%= render :partial => "tutor_projects/other_team_dropdown", :locals => { :initial_other_team => @initial_other_team, :other_teams => @other_teams, :project_template => @project_template } %>
 
-									<div class="team-entry" id="team-<%= @initial_other_team.id %>-students">
-										<h3><%= @initial_other_team.meeting_day %> <%= @initial_other_team.meeting_time %> (<%= @initial_other_team.user.name %>)</h3>
-										<div class="team-members">
-											<%= render :partial => "tutor_projects/team_project_list", :locals => { :team => @initial_other_team } %>
+									<div id="other-teams-entries">
+										<div class="team-entry" id="team-<%= @initial_other_team.id %>-students">
+											<h3 id="other-team-header"><%= @initial_other_team.meeting_day %> <%= @initial_other_team.meeting_time %> (<%= @initial_other_team.user.name %>)</h3>
+											<div class="team-members">
+												<%= render :partial => "tutor_projects/team_project_list", :locals => { :team => @initial_other_team } %>
+											</div>
 										</div>
 									</div>
-
 								</div>
 							</div>
 						</div>

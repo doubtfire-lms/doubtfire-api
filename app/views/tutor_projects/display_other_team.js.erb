@@ -1,14 +1,12 @@
-var otherTeamsContainer = $("#other-teams .team-entry");
 var otherTeamName 		= "<%= "#{@other_team.meeting_day} #{@other_team.meeting_time} (#{@other_team.user.name})" %>";
 var teamNameText = otherTeamName + '<span class="caret"></span>';
 
-otherTeamsContainer.children("h3").first().text(otherTeamName);
+$("#other-team-header").text(otherTeamName);
 $("#display-other-team-dropdown").html(teamNameText);
 $(".other-team-selection-item").css("font-weight", "");
 $("#display-team-<%= @other_team.id %>-students").css("font-weight", "bold");
 
 var partial = "<%=j render :partial => 'tutor_projects/team_project_list', :locals => { :team => @other_team } %>";
-alert(otherTeamsContainer.children("div").first().html());
-otherTeamsContainer.children("div").first().replaceWith(partial);
+$("#other-teams-entries .team-members").html(partial);
 
 $(".task-progress-item").popover({"placement" : "top"});
