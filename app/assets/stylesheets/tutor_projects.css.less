@@ -116,17 +116,24 @@
 	color: #ffffff;
 }
 
-.progress-incomplete-task 	{ #gradient > .vertical(#ffffff, #e6e6e6); color: #BBBBBB; }
-.progress-awaiting-signoff 	{ #gradient > .vertical(#C8C8CA, #89888E); color: #ffffff; }
-.progress-working-on-it 	{ #gradient > .vertical(#FCFA43, #FBF80E); color: #BBBBBB; }
-.progress-need-help 		{ #gradient > .vertical(#F6A895, #F38266); color: #ffffff; }
-.progress-needs-fixing 		{ #gradient > .vertical(#fbb450, #f89406); color: #ffffff; }
+.action-complete 			{ #gradient > .vertical(#62c462, #51a351); color: #ffffff; }
+.action-incomplete 			{ #gradient > .vertical(#ffffff, #e6e6e6); color: #BBBBBB; }
+.action-awaiting-signoff 	{ #gradient > .vertical(#C8C8CA, #89888E); color: #ffffff; }
+.action-working-on-it 		{ #gradient > .vertical(#FCFA43, #FBF80E); color: #BBBBBB; }
+.action-need-help 			{ #gradient > .vertical(#F6A895, #F38266); color: #ffffff; }
+.action-needs-fixing 		{ #gradient > .vertical(#fbb450, #f89406); color: #ffffff; }
 
-.progress-incomplete-task:hover { color: #BBBBBB; }
-.progress-awaiting-signoff:hover { color: #ffffff; }
-.progress-needs-fixing:hover { color: #ffffff; }
-.progress-working-on-it:hover { color: #BBBBBB; }
-.progress-need-help:hover { color: #ffffff; }
+.action-complete:hover 			{ color: #ffffff; }
+.action-incomplete:hover 		{ color: #BBBBBB; }
+.action-awaiting-signoff:hover 	{ color: #ffffff; }
+.action-needs-fixing:hover 		{ color: #ffffff; }
+.action-working-on-it:hover 	{ color: #BBBBBB; }
+.action-need-help:hover 		{ color: #ffffff; }
+
+.task-indicator-controls
+{
+	margin-bottom: 20px;
+}
 
 @media (max-width: 480px) {
 	.tasks-progress-bar

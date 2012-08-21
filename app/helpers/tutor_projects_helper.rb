@@ -48,43 +48,53 @@ module TutorProjectsHelper
     user_task_map(working_on_it_tasks(projects))
   end
 
-  def tasks_progress_bar(project, student)
+  def tasks_progress_bar(project, student, mode=:progress)
     tasks = project.assigned_tasks
 
     progress = project.relative_progress
 
     raw(tasks.each_with_index.map{|task, i|
       task_class  = nil
+
       if task.complete?
-        task_class  = progress.to_s.gsub("_", "-")
-        status_text = "Complete"
+        progress_suffix = progress.to_s.gsub("_", "-")
+        progress_class  = "progress-#{progress_suffix}"
+        action_class    = "action-complete"
+        status_text     = "Complete"
+      elsif task.awaiting_signoff?
+        progress_class  = "action-awaiting-signoff"
+        action_class    = "action-awaiting-signoff"
+        status_text     = "Awaiting Signoff"
+      elsif task.needs_fixing?
+        progress_class  = "action-incomplete"
+        action_class    = "action-needs-fixing"
+        status_text     = "Needs Fixing"
+      elsif task.need_help?
+        progress_class  = "action-incomplete"
+        action_class    = "action-need-help"
+        status_text     = "Need Some Help"
+      elsif task.working_on_it?
+        progress_class  = "action-incomplete"
+        action_class    = "action-working-on-it"
+        status_text     = "Working On It"
       else
-        if task.awaiting_signoff?
-          task_class = "awaiting-signoff"
-          status_text = "Awaiting Signoff"
-        elsif task.needs_fixing?
-          task_class = "needs-fixing"
-          status_text = "Needs Fixing"
-        elsif task.need_help?
-          task_class = "need-help"
-          status_text = "Need Some Help"
-        elsif task.working_on_it?
-          task_class = "working-on-it"
-          status_text = "Working On It"
-        else
-          task_class = "incomplete-task"
-          status_text = "Incomplete"
-        end
+        progress_class  = "action-incomplete"
+        action_class    = "action-incomplete"
+        status_text     = "Incomplete"
       end
 
       status_html = "<strong>Status:</strong> #{status_text}<br/><br/>"
       description_text = (task.task_template.description.nil? or task.task_template.description == "NULL") ? "(No description provided)" : task.task_template.description
 
+      active_class = mode == :progress ? progress_class : action_class
+
       link_to(
         "#{i + 1}",
         tutor_project_student_path(project, student),
         :rel => "popover",
-        :class => "task-progress-item progress-#{task_class}",
+        :class => "task-progress-item #{active_class}",
+        "data-progress-class" => progress_class,
+        "data-action-class"   => action_class,
         "data-original-title" => "#{task.task_template.name}",
         "data-content"        => "#{status_html} #{description_text}"
       )
