@@ -18,7 +18,7 @@ class ProjectTemplatesController < ApplicationController
   # GET /project_templates/1.json
   def show
     @project_template = ProjectTemplate.find(params[:id])
-    @project_tasks = TaskTemplate.where(:project_template_id => params[:id]).order(:target_date)
+    @project_tasks = TaskTemplate.where(:project_template_id => params[:id]).order(:by => [:target_date, :id])
     @project_users = User.joins(:team_memberships => :project).where(:projects => {:project_template_id => params[:id]})
     @project_teams = Team.where(:project_template_id => params[:id])
     
