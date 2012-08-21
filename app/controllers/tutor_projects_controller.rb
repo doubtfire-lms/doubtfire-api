@@ -13,7 +13,9 @@ class TutorProjectsController < ApplicationController
 
     @project_template         = ProjectTemplate.find(params[:id])
 
-    @user_unmarked_tasks      = user_unmarked_tasks(@tutor_team_projects)
+    @user_unmarked_tasks        = user_unmarked_tasks(@tutor_team_projects)
+    @user_needing_help_tasks    = user_needing_help_tasks(@tutor_team_projects)
+    @user_working_on_it_tasks   = user_working_on_it_tasks(@tutor_team_projects)
 
     @other_teams        = Team.includes(:team_memberships => [{:project => [{:tasks => [:task_template]}]}])
                               .where("user_id != ? AND project_template_id = ?", @user.id, @project_template.id)

@@ -1,7 +1,7 @@
 <%= javascript 'projects.js' %>
 <%= stylesheets 'tasks.css' %>
 
-<% unmarked_tasks.sort{|a, b| a.task_template.target_date <=> b.task_template.target_date}.each do |task| %>
+<% actionable_tasks.sort{|a, b| a.task_template.target_date <=> b.task_template.target_date}.each do |task| %>
 <div class="task-list-entry row-fluid" id="task-<%= task.id %>-entry">
 	<h4>
 		<%= link_to truncate(task.task_template.name, :length => 30), project_task_path(task.project, task) %>

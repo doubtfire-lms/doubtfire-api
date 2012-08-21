@@ -2,7 +2,7 @@
 <%= stylesheets 'tasks.css' %>
 
 <h2><i class="icon-tasks"></i>Tasks</h2>
-<div class="widget-content" id="task-list-widget">
+<div class="widget-content">
 	<% if @project.has_optional_tasks? %>
 	<h3>Assigned Tasks</h3>
 	<%= render 	:partial => "tasks/assigned_task_list",

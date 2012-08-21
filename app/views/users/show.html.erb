@@ -11,7 +11,7 @@
   <%- model_class = @user.class -%>
 
   <h2><i class="icon-user"></i><%= @user.name %></h2>
-  <div class="widget-content" id="task-list-widget">
+  <div class="widget-content">
 
   <% if can? :assign_roles, @user %>
   <dl class="dl-horizontal">

@@ -9,23 +9,43 @@ module TutorProjectsHelper
     tutors_projects.map{|project| project.tasks }.flatten.select{|task| task.awaiting_signoff? }
   end
 
-  def unmarked_tasks(tutors_projects)
-    tutors_projects.map{|project| project.tasks }.flatten.select{|task| task.awaiting_signoff? }
+  def user_task_map(tasks)
+    user_tasks      = {}
+
+    tasks.each do |task|
+      user_for_task = task.project.team_membership.user
+
+      user_tasks[user_for_task] ||= []
+      user_tasks[user_for_task] << task
+    end
+
+    user_tasks
+  end
+
+  def unmarked_tasks(projects)
+    projects.map{|project| project.tasks }.flatten.select{|task| task.awaiting_signoff? }
   end
 
   def user_unmarked_tasks(projects)
-    unmarked_tasks = unmarked_tasks(projects)
+    user_task_map(unmarked_tasks(projects))
+  end
 
-    user_unmarked_tasks      = {}
+  def needing_help_tasks(projects)
+    need_help_status = TaskStatus.where(:name => "Need Help").first
+    projects.map{|project| project.tasks }.flatten.select{|task| task.task_status.id == need_help_status.id }
+  end
 
-    unmarked_tasks.each do |unmarked_task|
-      user_for_task = unmarked_task.project.team_membership.user
+  def user_needing_help_tasks(projects)
+    user_task_map(needing_help_tasks(projects))
+  end
 
-      user_unmarked_tasks[user_for_task] ||= []
-      user_unmarked_tasks[user_for_task] << unmarked_task
-    end
+  def working_on_it_tasks(projects)
+    working_on_it_status = TaskStatus.where(:name => "Working On It").first
+    projects.map{|project| project.tasks }.flatten.select{|task| task.task_status.id == working_on_it_status.id }
+  end
 
-    user_unmarked_tasks
+  def user_working_on_it_tasks(projects)
+    user_task_map(working_on_it_tasks(projects))
   end
 
   def tasks_progress_bar(project, student)

@@ -32,9 +32,25 @@
 			<li>
 				<a href="#awaiting-signoff-tab" data-toggle="tab">
 				Awaiting Signoff
-				<% unless @user_unmarked_tasks.values.flatten.empty? %>
+				<% unless @user_unmarked_tasks.empty? %>
 					<%= " (#{@user_unmarked_tasks.values.flatten.size})" %>
 				<% end %>
+				</a>
+			</li>
+			<li>
+				<a href="#needing-help-tab" data-toggle="tab">
+					Needing Help
+					<% unless @user_needing_help_tasks.empty? %>
+						<%= " (#{@user_needing_help_tasks.values.flatten.size})" %>
+					<% end %>
+				</a>
+			</li>
+			<li>
+				<a href="#working-on-it-tab" data-toggle="tab">
+					Working On It
+					<% unless @user_working_on_it_tasks.empty? %>
+						<%= " (#{@user_working_on_it_tasks.values.flatten.size})" %>
+					<% end %>
 				</a>
 			</li>
 		</ul>
@@ -97,19 +113,52 @@
 
 			<div class="tab-pane" id="awaiting-signoff-tab">
 				<div class="span9 widget">
-					<h2><i class="icon-tasks"></i>Marking</h2>
-					<div class="widget-content" id="task-list-widget">
+					<h2><i class="icon-tasks"></i>Awaiting Signoff</h2>
+					<div class="widget-content">
 					<% if @user_unmarked_tasks.empty? %>
 						<p>Your marking backlog is currently empty. Great success!</p>
 					<% else %>
 						<% @user_unmarked_tasks.each do |user, unmarked_tasks| %>
 							<h3><%= user.name %> (<%= user.username %>)</h3>
-							<%= render 'tutor_projects/tutor_task_backlog', :unmarked_tasks => @unmarked_tasks %>
+							<%= render 'tutor_projects/tutor_task_backlog', :actionable_tasks => @unmarked_tasks %>
 						<% end %>
 					<% end %>
 					</div>
 				</div>
 			</div>
+
+			<div class="tab-pane" id="needing-help-tab">
+				<div class="span9 widget">
+					<h2><i class="icon-tasks"></i>Needing Help</h2>
+					<div class="widget-content">
+					<% if @user_needing_help_tasks.empty? %>
+						<p>There is no one currently in need of help with any tasks. Feet up and scotch rocks!</p>
+					<% else %>
+						<% @user_needing_help_tasks.each do |user, needing_help_tasks| %>
+							<h3><%= user.name %> (<%= user.username %>)</h3>
+							<%= render 'tutor_projects/tutor_task_backlog', :actionable_tasks => needing_help_tasks %>
+						<% end %>
+					<% end %>
+					</div>
+				</div>
+			</div>
+
+			<div class="tab-pane" id="working-on-it-tab">
+				<div class="span9 widget">
+					<h2><i class="icon-tasks"></i>Working On It</h2>
+					<div class="widget-content">
+					<% if @user_working_on_it_tasks.empty? %>
+						<p>There is no one currently no one working on tasks. Son, I am disappoint.</p>
+					<% else %>
+						<% @user_working_on_it_tasks.each do |user, working_on_it_tasks| %>
+							<h3><%= user.name %> (<%= user.username %>)</h3>
+							<%= render 'tutor_projects/tutor_task_backlog', :actionable_tasks => working_on_it_tasks %>
+						<% end %>
+					<% end %>
+					</div>
+				</div>
+			</div>
+
 		</div>
 	</div>
 </div>
