@@ -78,7 +78,7 @@ class ProjectTemplate < ActiveRecord::Base
         new_user.email              = email
         new_user.nickname           = first_name
         new_user.encrypted_password = BCrypt::Password.create("password")
-        new_user.system_role        = "student"
+        new_user.system_role        = "user"
       }
 
       project_participant.save!(:validate => false) unless project_participant.persisted?

@@ -40,7 +40,7 @@ class UsersController < ApplicationController
         @user.last_name          = "Last"
         @user.email              = "XXXXXXX@swin.edu.au"
         @user.encrypted_password = BCrypt::Password.create("password")
-        @user.nickname           = "noob"
+        @user.nickname           = "Nickname"
         @user.system_role        = "user"
 
         @user.save!(:validate => false)
