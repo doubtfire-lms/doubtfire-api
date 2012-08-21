@@ -1,3 +1,8 @@
+<% if team.team_memberships.empty? %>
+<p>You do not have anyone in your team.</p>
+<%= image_tag "forever-alone.gif" %>
+<% else %>
+
 <% team.team_memberships.sort{|a,b| a.user.name <=> b.user.name }.each do |team_membership| %>
 <div class="team-member-entry">
 	<h4>
@@ -6,4 +11,5 @@
 	<p class="team-member-username">(<%= team_membership.user.username %>)</p>
 	<%= render 'dashboard/tasks_progress_bar', :project => team_membership.project, :student => team_membership.user %>
 </div>
+<% end %>
 <% end %>
