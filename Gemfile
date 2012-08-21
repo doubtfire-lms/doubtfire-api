@@ -1,20 +1,38 @@
 source 'https://rubygems.org'
 
+# The venerable, almighty Rails
 gem 'rails', '3.2.6'
 
-gem 'mysql'
-gem 'thin'
-gem 'letter_opener'
+# Databases? ALL THE DATABASES
 gem 'sqlite3'
-gem 'devise'
-gem 'devise_ldap_authenticatable'
-gem 'hirb'
+gem 'mysql'
+gem 'pg'
 
+# This is how we get creative
 gem 'populator'
 gem 'faker'
+
+# Auth
+gem 'devise'
+gem 'devise_ldap_authenticatable'
 gem 'cancan'
+
+# Show off our Gucci emails before they get sent off
+gem 'letter_opener'
+
+# Paging and JS
+gem 'kaminari'
+gem 'jquery-rails'
+
+# Hey girl, I like your form. Why don't you come over here
+# and validate me.
 gem 'simple_form'
 gem 'bootstrap-datepicker-rails'
+
+group :development do
+  gem 'thin'
+  gem 'hirb'
+end
 
 # Gems used only for assets and not required
 # in production environments by default.
@@ -32,5 +50,3 @@ group :assets do
   gem 'uglifier', '>= 1.0.3'
 end
 
-gem 'jquery-rails'
-gem 'kaminari'
