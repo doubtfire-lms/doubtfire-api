@@ -4,7 +4,6 @@ source 'https://rubygems.org'
 gem 'rails', '3.2.6'
 
 # Databases? ALL THE DATABASES
-gem 'sqlite3'
 gem 'mysql'
 
 # This is how we get creative
@@ -31,9 +30,14 @@ gem 'bootstrap-datepicker-rails'
 group :development do
   gem 'thin'
   gem 'hirb'
+  gem 'sqlite3'
 end
 
 group :demo do
+  gem 'pg'
+end
+
+group :production do
   gem 'pg'
 end
 
