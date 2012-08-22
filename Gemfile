@@ -28,7 +28,6 @@ gem 'simple_form'
 gem 'bootstrap-datepicker-rails'
 
 group :development do
-  gem 'thin'
   gem 'hirb'
   gem 'sqlite3'
 end
@@ -37,8 +36,12 @@ group :demo do
   gem 'pg'
 end
 
+group :development, :demo do
+  gem 'thin'
+end
+
 group :production do
-  gem 'pg'
+  gem 'mysql'
 end
 
 # Gems used only for assets and not required
