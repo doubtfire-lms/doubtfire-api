@@ -1,4 +1,3 @@
-<%= javascript 'projects.js' %>
 <%= stylesheets 'tasks.css' %>
 
 <% actionable_tasks.sort{|a, b| a.task_template.target_date <=> b.task_template.target_date}.each do |task| %>
