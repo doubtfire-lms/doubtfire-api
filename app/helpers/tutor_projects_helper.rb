@@ -48,7 +48,7 @@ module TutorProjectsHelper
     user_task_map(working_on_it_tasks(projects))
   end
 
-  def tasks_progress_bar(project, student, mode=:progress)
+  def tasks_progress_bar(project, student, mode=:actions)
     tasks = project.assigned_tasks
 
     progress = project.relative_progress
