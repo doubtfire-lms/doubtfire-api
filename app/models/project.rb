@@ -64,7 +64,7 @@ class Project < ActiveRecord::Base
     current_progress = completed_tasks_weight
 
     current_week  = weeks_elapsed
-    date_progress = Time.zone.now
+    date_progress = project_template.start_date
 
     progress_points.each do |date, weight|
       break if weight > current_progress
