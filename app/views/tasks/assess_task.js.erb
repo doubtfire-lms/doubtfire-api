@@ -27,7 +27,7 @@ if (taskBarItems.length > 0) {
 			
 			var currentProgressClass = $(projectTaskItem).attr("data-progress-class");
 
-			if (/progress/.test(currentProgressClass))
+			if (/progress/.test(currentProgressClass) && /progress/.test(progressClassForTask))
 			{
 				$(projectTaskItem).attr("data-progress-class", progressClassForTask);
 
