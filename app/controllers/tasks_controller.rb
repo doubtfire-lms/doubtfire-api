@@ -22,8 +22,25 @@ class TasksController < ApplicationController
     authorize! :read, @task, :message => "You are not authorised to view Task ##{@task.id}"
   end
 
-  def update_task_status
+  def engage_with_task
     @task                   = Task.find(params[:task_id])
+    task_status             = status_for_shortname(params[:status])
+    @task.task_status       = task_status
+    
+    if @task.save
+      TaskEngagement.create!(task: @task, engagement_time: Time.zone.now, engagement: task_status.name)
+
+      respond_to do |format|
+        format.html { redirect_to @project, notice: 'Task was successfully completed.' }
+        format.js
+      end
+    end
+  end
+
+  def assess_task
+    @task                   = Task.find(params[:task_id])
+    @project                = @task.project
+    @student                = @project.team_membership.user
     task_status             = status_for_shortname(params[:status])
     @task.task_status       = task_status
     @task.awaiting_signoff  = false # Because only staff should be able to change task status
@@ -44,8 +61,6 @@ class TasksController < ApplicationController
           submission.outcome          = task_status.name
           submission.save!
         end
-      else
-        TaskEngagement.create!(task: @task, engagement_time: Time.zone.now, engagement: task_status.name)
       end
 
       respond_to do |format|

@@ -1,5 +1,5 @@
 function updateTaskEntryStatus() {
-	var taskContainer 	= $("#task-"+<%= @task.id %>+"-entry");
+	var taskContainer = $("#task-"+<%= @task.id %>+"-entry");
 	var taskStatus = "<%= @task.task_status.name %>";
 	updateStatusDisplayButton(taskContainer, taskStatus);
 }

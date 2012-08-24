@@ -9,20 +9,7 @@
 	<p class="toggle-task-description-container"><a href="#" class="toggle-task-description btn"><i class="icon-chevron-down"></i></a></p>
 	<p class="task-submission-vs-time"><%= task_submission_vs_time_text(task) %></p>
 	<div class="task-status-controls" style="display: inline-block;">
-		<div class="btn-group">
-			<%= task_status_active_button(task) %>
-			<ul class="dropdown-menu">
-				<li>
-					<a href="<%= update_task_status_path(task, "complete") %>" data-method="put" class="ready-to-mark-button" data-remote="true">Complete <i class="icon-ok button-icon"></i></a>
-				</li>
-				<li>
-					<a href="<%= update_task_status_path(task, "fix") %>" data-method="put" class="ready-to-mark-button" data-remote="true">Fix <i class="icon-wrench button-icon"></i></a>
-				</li>
-				<li>
-					<a href="<%= update_task_status_path(task, "not_submitted") %>" data-method="put" class="ready-to-mark-button" data-remote="true">Not Submitted <i class="icon-minus-sign button-icon"></i></a>
-				</li>
-			</ul>
-		</div>
+		<%= render :partial => "tutor_projects/assessor_task_status_control", :locals => { :task => task } %>
 	</div>
 	<div class="task-description">
 		<p><%= task.task_template.description != "NULL" ? task.task_template.description : "(No description provided)" %></p>

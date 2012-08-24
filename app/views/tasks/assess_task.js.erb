@@ -1,0 +1,41 @@
+var taskStatusControlClass = ".task-" + "<%= @task.id %>" + "-status-control";
+var taskStatusControlPartial = "<%= j render :partial => 'tutor_projects/assessor_task_status_control', :locals => { :task => @task } %>";
+$(taskStatusControlClass).replaceWith(taskStatusControlPartial);
+
+var taskBarItemClass = "task-<%= @task.id %>-bar-item";
+var taskBarItems = $("."+taskBarItemClass);
+
+if (taskBarItems.length > 0) {
+	var actionClassForTask 		= "<%= task_bar_item_class_for_mode(@task, @project.relative_progress, :action) %>";
+	var progressClassForTask 	= "<%= task_bar_item_class_for_mode(@task, @project.relative_progress, :progress) %>";
+
+	taskBarItems.attr("data-action-class", actionClassForTask);
+	taskBarItems.attr("data-progress-class", progressClassForTask);
+	
+
+	var indicatorButtonSelectedClass = $(".task-indicator-button.active").attr("class");
+	var indicator = indicatorButtonSelectedClass.split(" ")[2].split("-")[1];
+
+	if (indicator === "action") {
+		taskBarItems.attr("class", "task-progress-item" + " " + taskBarItemClass + " " + actionClassForTask);
+	} else {
+		taskBarItems.attr("class", "task-progress-item" + " " + taskBarItemClass + " " + progressClassForTask);
+	}
+
+	$.each(taskBarItems, function(i, taskBarItem) {
+		$.each($(taskBarItem).parent().children(".task-progress-item"), function(j, projectTaskItem) {
+			
+			var currentProgressClass = $(projectTaskItem).attr("data-progress-class");
+
+			if (/progress/.test(currentProgressClass))
+			{
+				$(projectTaskItem).attr("data-progress-class", progressClassForTask);
+
+				if (indicator === "progress") {
+					var taskIDClass = $(projectTaskItem).attr("class").split(" ")[1];
+					$(projectTaskItem).attr("class", "task-progress-item" + " " + taskIDClass + " " + progressClassForTask);
+				}
+			}
+		});
+	});
+}

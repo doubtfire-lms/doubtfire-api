@@ -9,13 +9,16 @@ $(document).ready(function(){
 
 	$(".task-indicator-button").click(function(){
 
-		var buttonClicked 	= $(this);
-		var buttonIdTokens 	= buttonClicked.attr("class").split(" ")[2].split("-");
-		var indicate 		= buttonIdTokens[buttonIdTokens.length - 1];
+		var buttonClicked 			= $(this);
+		var buttonIdTokens 			= buttonClicked.attr("class").split(" ")[2].split("-");
+
+		var indicate = buttonIdTokens[buttonIdTokens.length - 1];
+		buttonClicked.attr("data-active-indicator", indicate);
 
 		$(".task-progress-item").attr("class", function(){
 			var progressItem = $(this);
-			return "task-progress-item" + " " + progressItem.attr("data-" + indicate + "-class");
+			var taskIDClass = progressItem.attr("class").split(" ")[1];
+			return "task-progress-item" + " " + taskIDClass + " " + progressItem.attr("data-" + indicate + "-class");
 		});
 	});
 });

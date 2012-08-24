@@ -14,11 +14,11 @@
 		<li class="divider"></li>
 
 		<li>
-			<a href="<%= update_task_status_path(task, "working_on_it") %>" data-method="put" class="ready-to-mark-button" data-remote="true">Working On It <i class="icon-bolt button-icon"></i></a>
+			<a href="<%= engage_with_task_path(task, "working_on_it") %>" data-method="put" class="ready-to-mark-button" data-remote="true">Working On It <i class="icon-bolt button-icon"></i></a>
 		</li>
 
 		<li>
-			<a href="<%= update_task_status_path(task, "need_help") %>" data-method="put" class="ready-to-mark-button" data-remote="true">Need Some Help <i class="icon-exclamation-sign button-icon"></i></a>
+			<a href="<%= engage_with_task_path(task, "need_help") %>" data-method="put" class="ready-to-mark-button" data-remote="true">Need Some Help <i class="icon-exclamation-sign button-icon"></i></a>
 		</li>
 	</ul>
 </div>

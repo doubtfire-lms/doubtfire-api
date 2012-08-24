@@ -32,8 +32,9 @@ Doubtfire::Application.routes.draw do
     resources :tasks, :only => [:index, :show]
   end
 
-  put 'tasks/:task_id/awaiting_signoff/:awaiting_signoff' => 'tasks#awaiting_signoff', :via => :put, :as => 'awaiting_signoff'
-  put 'tasks/:task_id/update_task_status/:status' => 'tasks#update_task_status', :via => :put, :as => 'update_task_status'
+  put 'tasks/:task_id/awaiting_signoff/:awaiting_signoff' => 'tasks#awaiting_signoff', :via => :put,  :as => 'awaiting_signoff'
+  put 'tasks/:task_id/engage_with_task/:status'           => 'tasks#engage_with_task', :via => :put,  :as => 'engage_with_task'
+  put 'tasks/:task_id/assess_task/:status'                => 'tasks#assess_task',      :via => :put,  :as => 'assess_task'
 
   # Project convenor context routes
   get 'resources/download_task_import_template' => 'resources#download_task_import_template', :as => 'task_import_template'
