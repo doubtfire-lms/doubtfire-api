@@ -1,6 +1,6 @@
 <div class="span12">
 	<div class="widget">
-    	<h2><i class="icon-book"></i>Users</h2>
+    	<h2><i class="icon-user"></i>Users</h2>
     	<div class="widget-content">
 			<%= render :partial => 'users/table', :locals => {:user_list => @users, :project_template => nil, :empty_table_string => "There are no users in the system yet."} %>
 			<%= link_to "New user", new_user_path, :class => 'btn btn-primary', "data-remote" => true %>
