@@ -11,7 +11,8 @@
 				<th><%= model_class.human_attribute_name(:last_name) %></th>
 				<th><%= model_class.human_attribute_name(:progress) %></th>
 				<th><%= model_class.human_attribute_name(:tasks_completed) %></th>
-				<th><%= model_class.human_attribute_name(:completion_rate) %></th>
+				<th>Rate (per week)</th>
+				<th>Team</th>
 			</tr>
 		</thead>
 		<tbody>
@@ -23,7 +24,12 @@
 					<td><%= user.last_name %></td>
 					<td><%= user_project.relative_progress.to_s.titleize %></td>
 					<td><%= user_project.completed_tasks.size %> / <%= @project_template.task_templates.size %></td>
-					<td><%= user_project.rate_of_completion %></td>
+					<td><%= "%3.2f" % user_project.rate_of_completion %></td>
+					<td>
+						<%= user_project.team_membership.team.meeting_day %>
+						<%= user_project.team_membership.team.meeting_time %>
+						<%= user_project.team_membership.team.user.name %>
+					</td>
 				</tr>
 			<% end %>
 		</tbody>
