@@ -22,7 +22,7 @@
 					<td><%= link_to user.username, user %></td>
 					<td><%= user.first_name %></td>
 					<td><%= user.last_name %></td>
-					<td><%= user_project.relative_progress.to_s.titleize %></td>
+					<td><%= status_badge(user_project) %></td>
 					<td><%= user_project.completed_tasks.size %> / <%= @project_template.task_templates.size %></td>
 					<td><%= "%3.2f" % user_project.rate_of_completion %></td>
 					<td>
