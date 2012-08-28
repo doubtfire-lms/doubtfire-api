@@ -40,7 +40,7 @@ function constructStatusDistributionChart(statusDistributionContainer)
 
       statusDistributionChart.tooltipContent(function(key, y, e, graph){
         return "<h3>" + "Status Distribution" + "</h3>"
-        + "<p>" + y + " project(s) '" + key + "'</p>";
+        + "<p>" + parseFloat(y).toFixed() + " project(s) '" + key + "'</p>";
       });
 
       return statusDistributionChart;
