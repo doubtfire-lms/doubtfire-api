@@ -42,15 +42,31 @@ module TasksHelper
       weeks_overdue = task.weeks_overdue
 
       if weeks_overdue > 0
-        raw "Overdue (#{pluralize(weeks_overdue, 'week')})"
+        "Overdue (#{pluralize(weeks_overdue, 'week')})"
       else
-        raw "Due this week"
+        "Due this week"
       end
     else
-      if task.weeks_until_due > 0
-        "Due in #{pluralize(task.weeks_until_due, 'weeks')}"
+      if task.complete?
+        weeks_since_completion = task.weeks_since_completion
+
+        if weeks_since_completion == 0
+          "Completed this week"
+        elsif weeks_since_completion == 1
+          "Completed last week"
+        else
+          "Completed #{pluralize(weeks_since_completion, 'weeks')} ago"
+        end
       else
-        raw "Due this week"
+        weeks_until_due = task.weeks_until_due
+
+        if weeks_until_due == 0
+          "Due this week"
+        elsif weeks_until_due == 1
+          "Due next week"
+        else
+          "Due in #{pluralize(task.weeks_until_due, 'weeks')}"
+        end
       end
     end
   end

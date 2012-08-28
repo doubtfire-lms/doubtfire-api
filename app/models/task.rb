@@ -46,6 +46,14 @@ class Task < ActiveRecord::Base
     days_overdue / 7
   end
 
+  def days_since_completion
+    (reference_date - completion_date.to_datetime).to_i / 1.day
+  end
+  
+  def weeks_since_completion
+    days_since_completion / 7
+  end
+
   def days_overdue
     (reference_date - task_template.target_date).to_i / 1.day
   end
