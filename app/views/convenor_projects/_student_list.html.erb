@@ -26,9 +26,11 @@
 					<td><%= user_project.completed_tasks.size %> / <%= @project_template.task_templates.size %></td>
 					<td><%= "%3.2f" % user_project.rate_of_completion %></td>
 					<td>
-						<%= user_project.team_membership.team.meeting_day %>
-						<%= user_project.team_membership.team.meeting_time %>
-						<%= user_project.team_membership.team.user.name %>
+						<%= link_to [
+							"#{user_project.team_membership.team.meeting_day}",
+							"#{user_project.team_membership.team.meeting_time}",
+							"(#{user_project.team_membership.team.user.name})"
+						].join(" "), convenor_project_team_path(user_project.project_template, user_project.team_membership.team) %>
 					</td>
 				</tr>
 			<% end %>

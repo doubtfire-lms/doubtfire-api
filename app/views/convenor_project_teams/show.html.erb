@@ -1,0 +1,21 @@
+<% title "#{@project_template.name} - #{@team.name}" %>
+
+<% content_for :sidebar do %>
+	<%= render :partial => 'layouts/admin_menu' %>
+<% end %>
+
+<div class="span9">
+	<div class="row-fluid">
+		<ul class="breadcrumb">
+			<li>
+				<%= link_to "Home", root_url %>
+				<span class="divider">/</span>
+			</li>
+			<li>
+				<%= link_to @project_template.name, convenor_project_path(@project_template) %>
+				<span class="divider">/</span>
+			</li>
+			<li class="active"><%= @team.name %></li>
+		</ul>
+	</div>
+</div>	

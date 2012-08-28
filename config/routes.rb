@@ -64,6 +64,7 @@ Doubtfire::Application.routes.draw do
   # Convenor context routes
   resources :convenor, :only => :index
   get "/convenor/projects/:id"  => "convenor_projects#show",  :as => 'convenor_project'
+  get "/convenor/project/:project_template_id/teams/:team_id"  => "convenor_project_teams#show",  :as => 'convenor_project_team'
 
   # Tutor context routes
   get "/tutor/projects/:id"                                       =>  "tutor_projects#show",                :as => 'tutor_project'
