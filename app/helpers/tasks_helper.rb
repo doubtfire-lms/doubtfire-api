@@ -62,7 +62,7 @@ module TasksHelper
 
         if weeks_until_due == -1
           "Due last week"
-        if weeks_until_due == 0
+        elsif weeks_until_due == 0
           "Due this week"
         elsif weeks_until_due == 1
           "Due next week"
