@@ -60,6 +60,8 @@ module TasksHelper
       else
         weeks_until_due = task.weeks_until_due
 
+        if weeks_until_due == -1
+          "Due last week"
         if weeks_until_due == 0
           "Due this week"
         elsif weeks_until_due == 1
