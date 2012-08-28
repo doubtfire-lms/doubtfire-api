@@ -1,5 +1,5 @@
-class ConvenorProjectController < ApplicationController
-	def index
+class ConvenorProjectsController < ApplicationController
+	def show
 		@project_template = ProjectTemplate.find(params[:id])
     
 		@project_users = User.joins(:team_memberships => {:project => :project_template})

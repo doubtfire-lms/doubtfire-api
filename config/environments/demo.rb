@@ -36,7 +36,7 @@ Doubtfire::Application.configure do
     bootstrap.js
     burndown.js
     convenor.js
-    convenor_project.js
+    convenor_projects.js
     home.js
     projects.js
     status_distribution.js
