@@ -3,12 +3,6 @@
 
 <% title "Convenor Dashboard" %>
 
-<% content_for :page_banner do %>
-  <h1>Convenor Dashboard</h1>  
-  <p class="lead"><%= "#{@user.first_name} #{@user.last_name}" %></p>
-  <hr />
-<% end %>
-
 <% content_for :sidebar do %>
 	<%= render :partial => 'layouts/admin_menu' %>
 <% end %>

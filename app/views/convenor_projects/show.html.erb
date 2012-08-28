@@ -1,10 +1,6 @@
 <% stylesheets 'convenor.css' %>
 
-<% content_for :page_banner do %>
-  <h1><%= @project_template.name %></h1>  
-  <p class="lead">Project view</p>
-  <hr />
-<% end %>
+<% title @project_template.name %>
 
 <% content_for :sidebar do %>
 	<%= render :partial => 'layouts/admin_menu' %>
@@ -12,6 +8,14 @@
 
 <div class="span9">
 	<div class="row-fluid">
+		<ul class="breadcrumb">
+			<li>
+				<%= link_to "Home", root_url %>
+				<span class="divider">/</span>
+			</li>
+			<li class="active"><%= @project_template.name %></li>
+		</ul>
+
 		<div class="tabbable"> 
 			<ul class="nav nav-pills">
 				<li class="active"><a href="#students" data-toggle="tab">Students</a></li>
