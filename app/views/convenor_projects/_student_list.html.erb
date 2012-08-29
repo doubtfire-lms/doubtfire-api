@@ -23,7 +23,9 @@
 					<td><%= user.first_name %></td>
 					<td><%= user.last_name %></td>
 					<td><%= status_badge(user_project) %></td>
-					<td><%= user_project.completed_tasks.size %> / <%= @project_template.task_templates.size %></td>
+					<td>
+						<%= link_to "#{user_project.completed_tasks.size} / #{@project_template.task_templates.size}", project_path(user_project) %>
+					</td>
 					<td><%= "%3.2f" % user_project.rate_of_completion %></td>
 					<td>
 						<%= link_to [

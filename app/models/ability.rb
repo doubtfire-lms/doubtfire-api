@@ -22,6 +22,10 @@ class Ability
           project_template.project_convenors.map{|convenor| convenor.user }.include? user
         end
 
+        can :manage, Project do |project|
+          project.project_template.project_convenors.map{|convenor| convenor.user }.include? user
+        end
+
         can :manage, User
       end
 

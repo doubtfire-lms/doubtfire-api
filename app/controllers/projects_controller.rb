@@ -1,13 +1,13 @@
 class ProjectsController < ApplicationController
   before_filter :authenticate_user!
   before_filter :load_current_user
+  before_filter :load_student_projects
 
   def index
     @projects = Project.where(:team_membership => @user.team_memberships)
   end
 
   def show
-    @student_projects = Project.find(@user.team_memberships.map{|membership| membership.project_id})
     @project = Project.includes(:tasks => [:task_template]).find(params[:id])
     authorize! :read, @project, :message => "You are not authorised to view Project ##{@project.id}"
 
@@ -26,6 +26,10 @@ class ProjectsController < ApplicationController
         )
       }
     end
+  end
+
+  def load_student_projects
+    @student_projects = Project.find(@user.team_memberships.map{|membership| membership.project_id})
   end
 
   def load_current_user
