@@ -19,14 +19,10 @@
 		<div class="tabbable"> 
 			<ul class="nav nav-pills">
 				<li class="active"><a href="#students" data-toggle="tab">Students</a></li>
-				<li><a href="#analysis" data-toggle="tab">Analysis</a></li>
 			</ul>
 			<div class="tab-content">
 				<div class="tab-pane active widget" id="students">
-					<%= render "student_list" %>
-				</div>
-				<div class="tab-pane widget" id="analysis">
-					<%= render "analysis" %>
+					<%= render :partial => "student_list" %>
 				</div>
 			</div>
 		</div>
