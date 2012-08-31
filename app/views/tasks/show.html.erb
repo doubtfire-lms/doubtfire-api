@@ -53,7 +53,7 @@
 				<p><%= due = @task.task_template.target_date; due.strftime("#{due.day.ordinalize} of %B") %> &mdash; <%= task_submission_vs_time_text(@task) %></p>
 
 				<h3>Description</h3>
-				<p><%= @task.task_template.description %></p>
+				<p><%= (@task.task_template.description.nil? or @task.task_template.description == "NULL") ? "(No description provided)" : @task.task_template.description %></p>
 			</div>
 		</div>
 

@@ -7,8 +7,11 @@
 		<p class="task-weighting-points">(<%= task.task_template.weighting %> points)</p>
 		<p class="toggle-task-description-container"><a href="#" class="toggle-task-description btn"><i class="icon-chevron-down"></i></a></p>
 		<p class="task-submission-vs-time"><%= task_submission_vs_time_text(task) %></p>
+		<div id="task-<%= task.id %>-controls" class="task-status-controls" style="display: inline-block;">
+			<%= render :partial => "tasks/task_status_control", :locals => { :task => task } %>
+		</div>
 		<div class="task-description">
-			<p><%= task.task_template.description %></p>
+			<p><%= (task.task_template.description.nil? or task.task_template.description == "NULL") ? "(No description provided)" : task.task_template.description %></p>
 		</div>
 	</div>
 <% end %>
