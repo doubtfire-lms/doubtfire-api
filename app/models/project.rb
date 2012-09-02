@@ -135,16 +135,16 @@ class Project < ActiveRecord::Base
   end
 
   def completed_tasks
-    assigned_tasks.select{|task| task.task_status.name == "Complete" }
+    assigned_tasks.select{|task| task.complete? }
   end
 
   def completed?
     # TODO: Have a status flag on the project instead
-    assigned_tasks.all?{|task| task.task_status.name == "Complete" }
+    assigned_tasks.all?{|task| task.complete? }
   end
 
   def incomplete_tasks
-    assigned_tasks.select{|task| task.task_status.name != "Complete" }
+    assigned_tasks.select{|task| task.complete? }
   end
 
   def percentage_complete
