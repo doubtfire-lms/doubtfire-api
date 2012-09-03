@@ -87,10 +87,10 @@ class Project < ActiveRecord::Base
       :on_track
     else
       weeks_behind = progress.abs
-      
+
       if weeks_behind <= 2
         :behind
-      elsif weeks_behind > 2 and weeks_behind < 4
+      elsif weeks_behind > 2 and weeks_behind <= 5
         :danger
       else
         :doomed
