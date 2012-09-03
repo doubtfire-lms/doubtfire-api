@@ -19,7 +19,7 @@
 			<% @project_users.each do |user| # @TODO: Change this to current filter %>
 				<% user_project = user.team_memberships.select{|tm| tm.project.project_template_id == @project_template.id }.first.project %>
 				<tr>
-					<td><%= link_to user.username, user %></td>
+					<td><%= link_to user.username, project_path(user_project) %></td>
 					<td><%= user.first_name %></td>
 					<td><%= user.last_name %></td>
 					<td><%= status_badge(user_project) %></td>
