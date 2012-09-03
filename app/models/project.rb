@@ -6,7 +6,7 @@ class Project < ActiveRecord::Base
   # and it its completion is worth a credit
   DEFAULT_PROJECT_WEIGHT = 0.65
 
-  attr_accessible :project_role
+  attr_accessible :project_role, :started
 
   # Model associations
   belongs_to :team              # Foreign key
@@ -191,10 +191,6 @@ class Project < ActiveRecord::Base
 
   def in_progress?
     commenced? && !concluded?
-  end
-
-  def started?
-    completed_tasks.any?
   end
 
   def commenced?

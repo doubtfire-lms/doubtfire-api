@@ -28,6 +28,7 @@ class TasksController < ApplicationController
     @task.task_status       = task_status
     
     if @task.save
+      @task.project.update_attribute(:started, true)
       TaskEngagement.create!(task: @task, engagement_time: Time.zone.now, engagement: task_status.name)
 
       respond_to do |format|
@@ -50,6 +51,8 @@ class TasksController < ApplicationController
     end
 
     if @task.save
+      @task.project.update_attribute(:started, true)
+
       if @task.needs_fixing? || @task.complete?
         submission = TaskSubmission.where(task_id: @task.id).order(:submission_time).reverse_order.first
 
@@ -75,6 +78,7 @@ class TasksController < ApplicationController
     @task.awaiting_signoff  = params[:awaiting_signoff] != "false"
 
     if @task.save
+      @task.project.update_attribute(:started, true)
       submission = TaskSubmission.where(task_id: @task.id).order(:submission_time).reverse_order.first
 
       if submission.nil?

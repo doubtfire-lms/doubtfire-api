@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20120819132403) do
+ActiveRecord::Schema.define(:version => 20120903040421) do
 
   create_table "logins", :force => true do |t|
     t.datetime "timestamp"
@@ -52,6 +52,7 @@ ActiveRecord::Schema.define(:version => 20120819132403) do
     t.string   "project_role"
     t.datetime "created_at",          :null => false
     t.datetime "updated_at",          :null => false
+    t.boolean  "started"
   end
 
   add_index "projects", ["project_status_id"], :name => "index_projects_on_project_status_id"
