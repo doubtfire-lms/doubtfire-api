@@ -1,3 +1,9 @@
+<%= stylesheets 'tasks.css', 'tutor_projects.css' %>
+
+<%= javascript 'tutor_projects.js' %>
+<%= javascript 'tasks.js' %>
+<%= javascript "task_popover.js" %>
+
 <% title "#{@project_template.name} - #{@team.name}" %>
 
 <% content_for :sidebar do %>
@@ -5,17 +11,29 @@
 <% end %>
 
 <div class="span9">
+	
+	<ul class="breadcrumb">
+		<li>
+			<%= link_to "Home", root_url %>
+			<span class="divider">/</span>
+		</li>
+		<li>
+			<%= link_to @project_template.name, convenor_project_path(@project_template) %>
+			<span class="divider">/</span>
+		</li>
+		<li class="active"><%= @team.name %></li>
+	</ul>
+
 	<div class="row-fluid">
-		<ul class="breadcrumb">
-			<li>
-				<%= link_to "Home", root_url %>
-				<span class="divider">/</span>
-			</li>
-			<li>
-				<%= link_to @project_template.name, convenor_project_path(@project_template) %>
-				<span class="divider">/</span>
-			</li>
-			<li class="active"><%= @team.name %></li>
-		</ul>
+		<div class="span12 widget">
+			<h2><i class="icon-group"></i>
+			 	<%= @team.meeting_day %>
+			 	<%= @team.meeting_time %>
+			 	(<%= @team.user.name %>)
+			</h2>
+			<div class="widget-content" style="padding-top: 30px;">
+				<%= render :partial => "tutor_projects/team_project_list", :locals => { :team => @team } %>
+			</div>
+		</div>
 	</div>
-</div>	
+</div>
