@@ -182,7 +182,7 @@ class ProjectTemplate < ActiveRecord::Base
 
     projects.each do |project|
       if project.started?
-        status_totals[project.relative_progress] += 1
+        status_totals[project.progress] += 1
       else
         status_totals[:not_started] += 1
       end

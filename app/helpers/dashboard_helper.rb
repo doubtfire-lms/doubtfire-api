@@ -1,35 +1,23 @@
 module DashboardHelper
-  def status_badge(project)
-    if !project.commenced?
-      raw("<span class=\"label\">Not Started</span>")
-    elsif project.concluded?
-      if project.completed?
-        raw("<span class=\"label label-success\">Completed</span>")
-      else
-        raw("<span class=\"label label-important\">Not Completed</span>")
-      end
+  def status_badge(project, precedence=:status)
+    if precedence == :progress
+      badge_for_status(project.progress)
     else
-      progress = project.relative_progress
+      badge_for_status(project.status)
+    end
+  end
 
-      if project.started?
-        
-        case progress
-          when :ahead     then raw("<span class=\"status-badge label label-success\">Ahead</span>")
-          when :on_track  then raw("<span class=\"status-badge label label-info\">On Track</span>")
-          when :behind    then raw("<span class=\"status-badge label label-warning\">Behind</span>")
-          when :danger    then raw("<span class=\"status-badge label label-important\">Danger</span>")
-          when :doomed    then raw("<span class=\"status-badge label label-inverse\">Doomed</span>")
-        end
-      else
-        # If the student has not started the project, only show
-        # progress if it is negative, otherwise show 'Not Started'
-        case progress
-          when :behind    then raw("<span class=\"status-badge label label-warning\">Behind</span>")
-          when :danger    then raw("<span class=\"status-badge label label-important\">Danger</span>")
-          when :doomed    then raw("<span class=\"status-badge label label-inverse\">Doomed</span>")
-          else raw("<span class=\"status-badge label\">Not Started</span>")          
-        end
-      end
+  def badge_for_status(status)
+    case status
+      when :ahead         then raw("<span class=\"status-badge label label-success\">Ahead</span>")
+      when :on_track      then raw("<span class=\"status-badge label label-info\">On Track</span>")
+      when :behind        then raw("<span class=\"status-badge label label-warning\">Behind</span>")
+      when :danger        then raw("<span class=\"status-badge label label-important\">Danger</span>")
+      when :doomed        then raw("<span class=\"status-badge label label-inverse\">Doomed</span>")
+      when :completed     then raw("<span class=\"status-badge label label-success\">Completed</span>")
+      when :not_completed then raw("<span class=\"status-badge label label-important\">Not Completed</span>")
+      when :not_commenced then raw("<span class=\"status-badge label\">Not Commenced</span>")
+      when :not_started   then raw("<span class=\"status-badge label\">Not Started</span>")
     end
   end
 
@@ -109,7 +97,7 @@ module DashboardHelper
     if !project.commenced?
       raw("<p>To achieve the best result possible for this subject, ensure that you are getting tasks marked off regularly and often.</p>")
     else
-      case project.relative_progress
+      case project.progress
       when :ahead
         raw("<p>If you haven't already, you should consider <a href=\"#\">going the extra mile for a D or HD</a></p>")
       end
@@ -153,7 +141,7 @@ module DashboardHelper
         status_summary = "This project has concluded. Unfortunately you did not complete all of the set tasks."
       end
     else
-      project_progress = project.relative_progress
+      project_progress = project.progress
 
       if project.started?
         status_summary = case project_progress
@@ -213,7 +201,7 @@ module DashboardHelper
   def class_for_project_status(project)
     class_for_project = if project.commenced?
       if project.started?
-        project.relative_progress
+        project.progress
       else
         :not_started
       end

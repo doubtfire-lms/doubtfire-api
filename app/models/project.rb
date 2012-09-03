@@ -78,15 +78,29 @@ class Project < ActiveRecord::Base
     progress_in_days / 7
   end
 
-  def relative_progress
-    progress      = progress_in_weeks
+  def status
+    if !commenced?
+      :not_commenced
+    elsif concluded?
+      completed? ? :completed : :not_completed
+    else
+      if started?
+        progress
+      else
+        :not_started
+      end
+    end
+  end
 
-    if progress >= 1
+  def progress
+    relative_progress      = progress_in_weeks
+
+    if relative_progress >= 1
       :ahead
-    elsif progress == 0 or progress == -1
+    elsif relative_progress == 0 or relative_progress == -1
       :on_track
     else
-      weeks_behind = progress.abs
+      weeks_behind = relative_progress.abs
 
       if weeks_behind <= 2
         :behind

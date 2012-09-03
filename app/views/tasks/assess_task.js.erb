@@ -6,8 +6,8 @@ var taskBarItemClass = "task-<%= @task.id %>-bar-item";
 var taskBarItems = $("."+taskBarItemClass);
 
 if (taskBarItems.length > 0) {
-	var actionClassForTask 		= "<%= task_bar_item_class_for_mode(@task, @project.relative_progress, :action) %>";
-	var progressClassForTask 	= "<%= task_bar_item_class_for_mode(@task, @project.relative_progress, :progress) %>";
+	var actionClassForTask 		= "<%= task_bar_item_class_for_mode(@task, @project.progress, :action) %>";
+	var progressClassForTask 	= "<%= task_bar_item_class_for_mode(@task, @project.progress, :progress) %>";
 
 	taskBarItems.attr("data-action-class", actionClassForTask);
 	taskBarItems.attr("data-progress-class", progressClassForTask);

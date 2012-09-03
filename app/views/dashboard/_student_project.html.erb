@@ -1,7 +1,7 @@
 <div class="span<%= "#{grid_size}" %> widget project-overview">
 	<h2><i class="icon-book"></i><%= project.project_template.name %></h2>
 	<div class="widget-content">
-		<%= status_badge(project) %>
+		<%= status_badge(project, :progress) %>
 
 		<% if project.commenced? %>
 			<% unless project.concluded? %>

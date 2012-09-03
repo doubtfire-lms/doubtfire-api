@@ -120,7 +120,7 @@ function dataForProjectJSON(projectJSON) {
   var completedSeries = {
     values: actualTaskCompletion,
     key: "Completed",
-    color: colourForProjectProgress(projectJSON.relative_progress)
+    color: colourForProjectProgress(projectJSON.progress)
   }
 
   var seriesToPlot = [recommendedSeries];

@@ -102,7 +102,7 @@ module TutorProjectsHelper
   def tasks_progress_bar(project, student, mode=:action)
     tasks = project.assigned_tasks
 
-    progress = project.relative_progress
+    progress = project.progress
 
     raw(tasks.each_with_index.map{|task, i|
       task_bar_item(project, task, tutor_project_student_path(project, student), progress, mode, i + 1)
