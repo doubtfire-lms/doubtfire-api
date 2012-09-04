@@ -84,7 +84,7 @@ class TasksController < ApplicationController
       if submission.nil?
         TaskSubmission.create!(task: @task, submission_time: Time.zone.now)
       else
-        if submission.submission_time < 1.hour.since(Time.zone.now)
+        if !submission.submission_time.nil? && submission.submission_time < 1.hour.since(Time.zone.now)
           submission.submission_time = Time.zone.now
           submission.save!
         else
