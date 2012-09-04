@@ -8,15 +8,16 @@ function constructTaskDistributionChart(taskDistributionContainer) {
 	var projectTemplateJSONURL = $(taskDistributionContainer).attr("data-url");
 
 	d3.json(projectTemplateJSONURL, function(projectTemplateJSON) {
-		var projectTemplateChartData = dataForProjectTemplateJSON(projectTemplateJSON);
+
+		var requiredTasks = getRequiredTasks(projectTemplateJSON);
+		var taskDistributionData = dataForTasks(requiredTasks);
+
 		nv.addGraph(function() {
 			var chart = nv.models.multiBarChart();
 
 			chart.xAxis.tickFormat(function(d, i){
-				return projectTemplateJSON.task_templates[d - 1].name;
+				return d;
 			});
-
-			chart.rotateLabels(-90);
 
 			chart.yAxis
 			 .tickFormat(d3.format(',f'));
@@ -24,12 +25,12 @@ function constructTaskDistributionChart(taskDistributionContainer) {
 			chart.stacked(true);
 
 			chart.tooltipContent(function(key, x, y, e, graph){
-				return "<h3>" + x + "</h3>"
+				return "<h3>" + requiredTasks[x - 1].name + "</h3>"
 				+ "<p>" + y + " '" + key + "'</p>";
 			});
 
 			d3.select($(taskDistributionContainer).children("svg")[0])
-			 .datum(projectTemplateChartData)
+			 .datum(taskDistributionData)
 			.transition().duration(500).call(chart);
 
 			nv.utils.windowResize(chart.update);
@@ -39,7 +40,18 @@ function constructTaskDistributionChart(taskDistributionContainer) {
 	});
 }
 
-function dataForProjectTemplateJSON(projectTemplateJSON) {
+function getRequiredTasks(projectTemplateJSON) {
+	var requiredTasks = [];
+	$.each(projectTemplateJSON.task_templates, function(i, task){
+		if (task.required) {
+			requiredTasks.push(task);
+		}
+	});
+
+	return requiredTasks;
+}
+
+function dataForTasks(tasks) {
 	var taskDistributionData = [
 		{ key: "Not Submitted", 	values: [], color: "#999999"},
 		{ key: "Need Help", 		values: [], color: "#F6A895"},
@@ -48,12 +60,10 @@ function dataForProjectTemplateJSON(projectTemplateJSON) {
 		{ key: "Complete", 			values: [], color: "#62C462"}
 	];
 
-	$.each(projectTemplateJSON.task_templates, function(i, task){
-		if (!task.required) {
-			return;
-		}
+	var index = 0;
+	$.each(tasks, function(i, task){
+		index += 1;
 
-		var index = i + 1;
 		var taskStatusDistribution = task.status_distribution;
 		taskDistributionData[0].values.push({ x: index, y: taskStatusDistribution.not_submitted });
 		taskDistributionData[1].values.push({ x: index, y: taskStatusDistribution.need_help });
