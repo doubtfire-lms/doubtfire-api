@@ -21,15 +21,15 @@ function constructBurndownChart(burndownChartContainer) {
           .axisLabel('Tasks (t)')
           .tickFormat(d3.format(',.2f'));
 
-      d3.select($(burndownChartContainer).children("svg")[0])
-          .datum(projectChartData)
-        .transition().duration(500)
-          .call(projectProgressChart);
-      
       projectProgressChart.tooltipContent(function(key, x, y, e, graph){
         return "<h3>" + key + "</h3>"
         + "<p>" + y + " at Week " + x + "</p>";
       });
+
+      d3.select($(burndownChartContainer).children("svg")[0])
+          .datum(projectChartData)
+        .transition().duration(500)
+          .call(projectProgressChart);
 
       nv.utils.windowResize(projectProgressChart.update);
 

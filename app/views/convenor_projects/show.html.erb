@@ -1,3 +1,5 @@
+<% javascript 'task_status_breakdown.js' %>
+
 <% stylesheets 'convenor.css' %>
 
 <% title @project_template.name %>
@@ -19,11 +21,16 @@
 		<div class="tabbable"> 
 			<ul class="nav nav-pills">
 				<li class="active"><a href="#students" data-toggle="tab">Students</a></li>
+				<li><a href="#tasks" data-toggle="tab">Tasks</a></li>
 				<li><a href="#teams" data-toggle="tab">Teams</a></li>
 			</ul>
 			<div class="tab-content">
 				<div class="tab-pane active widget" id="students">
 					<%= render :partial => "student_list" %>
+				</div>
+
+				<div class="tab-pane widget" id="tasks">
+					<%= render :partial => "task_status_breakdown", :locals => {project_template: @project_template} %>
 				</div>
 
 				<div class="tab-pane widget" id="teams">

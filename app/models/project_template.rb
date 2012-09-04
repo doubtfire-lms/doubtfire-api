@@ -190,5 +190,5 @@ class ProjectTemplate < ActiveRecord::Base
 
     status_totals[:total] = project_count
     Hash[status_totals.sort_by{ |status, count| count }.reverse]
-  end   
+  end
 end
