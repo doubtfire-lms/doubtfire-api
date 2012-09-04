@@ -2,124 +2,53 @@
 
 <!-- Sidebar -->
 <% content_for :sidebar do %>
-  <% if current_user.superuser? %>
-    <%= render :partial => 'layouts/superuser_menu' %>
-  <% else %>
-    <%= render :partial => 'layouts/admin_menu' %>
-  <% end %>
+    <% if current_user.superuser? %>
+        <%= render :partial => 'layouts/superuser_menu' %>
+    <% else %>
+        <%= render :partial => 'layouts/admin_menu' %>
+    <% end %>
 <% end %>
 
 <div class="span9">
-  <ul class="breadcrumb">
-    <li>
-      <%= link_to "Home", root_url %>
-      <span class="divider">/</span>
-    </li>
-    <li>
-      <%= link_to "Project Templates", project_templates_url %>
-      <span class="divider">/</span>
-    </li>
-    <li class="active"><%= @project_template.name %> (Adminstration)</li>
-  </ul>
+    <ul class="breadcrumb">
+        <li>
+            <%= link_to "Home", root_url %>
+            <span class="divider">/</span>
+        </li>
+        <li>
+            <%= link_to "Project Templates", project_templates_url %>
+            <span class="divider">/</span>
+        </li>
+        <li class="active"><%= @project_template.name %> (Adminstration)</li>
+    </ul>
 
-  <!-- Information about the current project -->
-  <div class="widget">
-    <h2><i class="icon-book"></i>Information</h2>
-    <div class="widget-content">
-      <dl class="dl-horizontal">
-        <dt><strong><%= ProjectTemplate.human_attribute_name(:name) %>:</strong></dt>
-        <dd><%= @project_template.name %></dd>
-        <dt><strong><%= ProjectTemplate.human_attribute_name(:description) %>:</strong></dt>
-        <dd><%= @project_template.description %></dd>
-        <dt><strong><%= ProjectTemplate.human_attribute_name(:start_date) %>:</strong></dt>
-        <dd><%= @project_template.start_date.strftime("%d %B %Y") %></dd>
-        <dt><strong><%= ProjectTemplate.human_attribute_name(:end_date) %>:</strong></dt>
-        <dd><%= @project_template.end_date.strftime("%d %B %Y") %></dd>
-      </dl>
-      <hr />
-      <%= link_to t('.edit', :default => t("helpers.links.edit")), edit_project_template_path(@project_template), :class => 'btn' %>
+    <div class="tabbable"> 
+        <ul class="nav nav-pills">
+            <li><a href="#summary" data-toggle="tab">Summary</a></li>
+            <li class="active"><a href="#tasks" data-toggle="tab">Tasks</a></li>
+            <li><a href="#teams" data-toggle="tab">Teams</a></li>
+            <li><a href="#participants" data-toggle="tab">Participants</a></li>
+        </ul>
+        <div class="tab-content">
+            <!-- Information about the current project -->
+            <div class="tab-pane widget" id="summary">
+                <%= render :partial => 'summary_information', locals: {project_template: @project_template} %>
+            </div>
+            
+            <!-- Table of tasks for the current project -->
+            <div class="tab-pane active widget" id="tasks">
+                <%= render :partial => 'tasks', locals: {project_template: @project_template, task_templates: @project_tasks} %>
+            </div>
+
+            <!-- Table of teams for the current project -->
+            <div class="tab-pane widget" id="teams">
+                <%= render :partial => 'teams', locals: {project_template: @project_template, project_teams: @project_teams} %>
+            </div>
+
+            <!-- Table of users for the current project -->
+            <div class="tab-pane widget" id="participants">
+                <%= render :partial => 'participants', locals: {project_template: @project_template, participants: @project_users} %>
+            </div>
+        </div>
     </div>
-  </div>
-
-  <!-- Table of teams for the current project -->
-  <div class="widget">
-    <h2><i class="icon-group"></i>Teams</h2>
-    <div class="widget-content">
-      <%= render :partial => 'teams/table', :locals => { :team_list => @project_teams,
-                                                         :empty_table_string => "This project has no teams."} %>
-      <hr />
-      <%= link_to "Create new team", new_project_team_path(@project_template), :class => 'btn', "data-remote" => true %>
-      <hr />
-      <div class="well">
-        <%= form_tag "#{@project_template.id}/import_teams", :multipart => true, :remote => true do %>
-          <%= file_field(:csv_file, :file) %>
-          <%= submit_tag "Import Teams from CSV", :class => "btn" %>
-        <% end %>
-      </div>
-    </div>
-  </div>
-
-  <!-- Table of tasks for the current project -->
-  <div class="widget">
-    <h2><i class="icon-pencil"></i>Tasks</h2>
-    <div class="widget-content">
-      <%= render :partial => 'task_templates/table', :locals => { :task_list => @project_tasks, 
-                                                                  :empty_table_string => "This project has no tasks."} %>
-      <hr />
-      <span id="task-buttons">
-        <%= link_to "Create new task", new_project_task_path(@project_template), :onclick => "$('#destroy-tasks-button').show()", :class => 'btn', "data-remote" => true %>
-
-        <% if @project_tasks.empty? %>
-        <%= link_to "Destroy all tasks", destroy_all_project_tasks_path(@project_template), 
-                    :class => 'btn btn-danger', 
-                    :id => 'destroy-tasks-button',
-                    "data-remote" => true,
-                    :data => { :confirm => t('.confirm', :default => t("helpers.links.confirm", :default => 'All tasks (including instances assigned to users) will be destroyed. Are you sure?'))}, :style => "display: none;" %>
-        <% else %>
-        <%= link_to "Destroy all tasks", destroy_all_project_tasks_path(@project_template), 
-                    :class => 'btn btn-danger', 
-                    :id => 'destroy-tasks-button',
-                    "data-remote" => true,
-                    :data => { :confirm => t('.confirm', :default => t("helpers.links.confirm", :default => 'All tasks (including instances assigned to users) will be destroyed. Are you sure?'))} %>
-        <% end %>
-      </span>
-      <hr />
-      <div class="well">
-        <%= form_tag "#{@project_template.id}/import_tasks", :multipart => true, :remote => true do %>
-          <%= file_field(:csv_file, :file) %>
-          <%= submit_tag "Import Tasks from CSV", :class => "btn" %>
-        <% end %>
-        <%= link_to "Download Import Template", task_import_template_path %>
-      </div>
-    </div>
-  </div>
-
-  <!-- Table of users for the current project -->
-  <div class="widget">
-    <h2><i class="icon-user"></i>Users</h2>
-    <div class="widget-content">
-      <%= render :partial => 'users/table', :locals => { :user_list => @project_users,
-                                                         :empty_table_string => "This project has no users.",
-                                                         :project_template => @project_template } %>
-      <hr />
-      <div class="well">
-        <%= form_tag "#{@project_template.id}/import_users", :multipart => true, :remote => true do %>
-          <%= file_field(:csv_file, :file) %>
-          <%= submit_tag "Import Users from CSV", :class => "btn" %>
-        <% end %>
-      </div>
-    </div>
-  </div>
-
-  <!-- Action buttons (back, destroy) -->
-  <div class="widget">
-    <div class="widget-content">
-    <%= link_to "Back to projects list", project_templates_path, :class => 'btn' %>
-    <%= link_to "Destroy project",
-                project_template_path(@project_template),
-                :method => 'delete',
-                :data => { :confirm => t('.confirm', :default => t("helpers.links.confirm", :default => 'This project will be completely obliterated! Are you sure?'))},
-                :class => 'btn btn-danger' %>
-    </div>
-  </div>
 </div>

@@ -1,0 +1,15 @@
+<h2><i class="icon-user"></i>Users</h2>
+<div class="widget-content">
+    <%= render :partial => 'users/table', :locals => {
+        :user_list => participants,
+        :empty_table_string => "This project has no users.",
+        :project_template => project_template
+    } %>
+    <hr />
+    <div class="well">
+        <%= form_tag "#{project_template.id}/import_users", :multipart => true, :remote => true do %>
+        <%= file_field(:csv_file, :file) %>
+        <%= submit_tag "Import Users from CSV", :class => "btn" %>
+        <% end %>
+    </div>
+</div>

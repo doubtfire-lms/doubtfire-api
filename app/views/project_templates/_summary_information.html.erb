@@ -1,0 +1,15 @@
+<h2><i class="icon-book"></i>Summary</h2>
+<div class="widget-content">
+    <dl class="dl-horizontal">
+        <dt><strong><%= ProjectTemplate.human_attribute_name(:name) %>:</strong></dt>
+        <dd><%= project_template.name %></dd>
+        <dt><strong><%= ProjectTemplate.human_attribute_name(:description) %>:</strong></dt>
+        <dd><%= project_template.description %></dd>
+        <dt><strong><%= ProjectTemplate.human_attribute_name(:start_date) %>:</strong></dt>
+        <dd><%= project_template.start_date.strftime("%d %B %Y") %></dd>
+        <dt><strong><%= ProjectTemplate.human_attribute_name(:end_date) %>:</strong></dt>
+        <dd><%= project_template.end_date.strftime("%d %B %Y") %></dd>
+    </dl>
+    <hr />
+    <%= link_to t('.edit', :default => t("helpers.links.edit")), edit_project_template_path(project_template), :class => 'btn' %>
+</div>

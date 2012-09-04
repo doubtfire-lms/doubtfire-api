@@ -1,0 +1,35 @@
+<h2><i class="icon-pencil"></i>Tasks</h2>
+<div class="widget-content">
+    <%= render :partial => 'task_templates/table', locals: {
+        :task_list => task_templates,
+        :empty_table_string => "This project has no tasks."
+    } %>
+
+    <hr />
+    
+    <span id="task-buttons">
+        <%= link_to "Create new task", new_project_task_path(project_template), :onclick => "$('#destroy-tasks-button').show()", :class => 'btn', "data-remote" => true %>
+
+        <% if task_templates.empty? %>
+        <%= link_to "Destroy all tasks", destroy_all_project_tasks_path(project_template), 
+                    :class => 'btn btn-danger', 
+                    :id => 'destroy-tasks-button',
+                    "data-remote" => true,
+                    :data => { :confirm => t('.confirm', :default => t("helpers.links.confirm", :default => 'All tasks (including instances assigned to users) will be destroyed. Are you sure?'))}, :style => "display: none;" %>
+        <% else %>
+        <%= link_to "Destroy all tasks", destroy_all_project_tasks_path(project_template), 
+                    :class => 'btn btn-danger', 
+                    :id => 'destroy-tasks-button',
+                    "data-remote" => true,
+                    :data => { :confirm => t('.confirm', :default => t("helpers.links.confirm", :default => 'All tasks (including instances assigned to users) will be destroyed. Are you sure?'))} %>
+        <% end %>
+    </span>
+    <hr />
+    <div class="well">
+    <%= form_tag "#{project_template.id}/import_tasks", :multipart => true, :remote => true do %>
+        <%= file_field(:csv_file, :file) %>
+        <%= submit_tag "Import Tasks from CSV", :class => "btn" %>
+    <% end %>
+    <%= link_to "Download Import Template", task_import_template_path %>
+    </div>
+</div>
