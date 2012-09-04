@@ -1,11 +1,5 @@
 <% title "Project Templates" %>
 
-<% content_for :page_banner do %>
-  <h1>Convenor Dashboard</h1>  
-  <p class="lead"><%= "#{@user.first_name} #{@user.last_name}" %></p>
-  <hr />
-<% end %>
-
 <% content_for :sidebar do %>
   <ul class="nav nav-list">
     <li class="nav-header">
@@ -27,6 +21,14 @@
 <% end %>
 
 <div class="span9">
+  <ul class="breadcrumb">
+    <li>
+      <%= link_to "Home", root_url %>
+      <span class="divider">/</span>
+    </li>
+    <li class="active">Project Templates</li>
+  </ul>
+
   <div class="widget">
     <h2>
       <i class="icon-book"></i>

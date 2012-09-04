@@ -1,0 +1,46 @@
+<div class="progress-bands">
+	<div class="progress-band ahead">
+		<span class="statistical-figure"><%= status_distribution[:ahead] %></span>
+		<span class="statistical-figure" style="font-size: 1.3em;">
+			(<%= "%3.2f" % ((status_distribution[:ahead] / status_distribution[:total].to_f) * 100.0) %>%)
+		</span>
+		<span class="progress-band-name"><strong>ahead</strong></span>
+	</div>
+	<div class="progress-band on-track">
+		<span class="statistical-figure"><%= status_distribution[:on_track] %></span>
+		<span class="statistical-figure" style="font-size: 1.3em;">
+			(<%= "%3.2f" % ((status_distribution[:on_track] / status_distribution[:total].to_f) * 100.0) %>%)
+		</span>
+		<span class="progress-band-name"><strong>on track</strong></span>
+	</div>
+	<div class="progress-band behind">
+		<span class="statistical-figure"><%= status_distribution[:behind] %></span>
+		<span class="statistical-figure" style="font-size: 1.3em;">
+			(<%= "%3.2f" % ((status_distribution[:behind] / status_distribution[:total].to_f) * 100.0) %>%)
+		</span>
+		<span class="progress-band-name"><strong>behind</strong></span>
+	</div>
+	<div class="progress-band danger">
+		<span class="statistical-figure"><%= status_distribution[:danger] %></span>
+		<span class="statistical-figure" style="font-size: 1.3em;">
+			(<%= "%3.2f" % ((status_distribution[:danger] / status_distribution[:total].to_f) * 100.0).to_f %>%)
+		</span>
+		<span class="progress-band-name"><strong>in danger</strong></span>
+	</div>
+	<div class="progress-band doomed">
+		<span class="statistical-figure"><%= status_distribution[:doomed] %></span>
+		<span class="statistical-figure" style="font-size: 1.3em;">
+			(<%= "%3.2f" % ((status_distribution[:doomed] / status_distribution[:total].to_f) * 100.0) %>%)
+		</span>
+		<span class="progress-band-name"><strong>doomed</strong></span>
+	</div>
+	<% if status_distribution[:not_started] > 0 %>
+	<div class="progress-band not-started">
+		<span class="statistical-figure"><%= status_distribution[:not_started] %></span>
+		<span class="statistical-figure" style="font-size: 1.3em;">
+			(<%= "%3.2f" % "#{((status_distribution[:not_started] / status_distribution[:total].to_f) * 100.0)}" %>%)
+		</span>
+		<span class="progress-band-name"><strong>haven't started</strong></span>
+	</div>
+	<% end %>
+</div>
