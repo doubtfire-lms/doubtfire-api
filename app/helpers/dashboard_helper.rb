@@ -1,7 +1,13 @@
 module DashboardHelper
   def status_badge(project, precedence=:status)
     if precedence == :progress
-      badge_for_status(project.progress)
+      # Completed should have a higher precedence
+      # than progress
+      if project.status == :completed
+        badge_for_status(:completed)
+      else
+        badge_for_status(project.progress)
+      end
     else
       badge_for_status(project.status)
     end
@@ -23,15 +29,40 @@ module DashboardHelper
 
   def will_complete_based_on_velocity(project)
     if project.in_progress?
-      days_left_before_deadline  = ((project.projected_end_date - project.project_template.end_date).to_i / 1.day)
-      weeks_left_before_deadline = -(days_left_before_deadline / 7.to_f).ceil
 
-      if weeks_left_before_deadline > 0
-        complete_based_on_velocity = "At this rate, you're set to finish #{weeks_left_before_deadline.abs} weeks before the deadline"
-      elsif weeks_left_before_deadline < 0
-        complete_based_on_velocity = "At this rate, you're set to finish #{weeks_left_before_deadline.abs} weeks after the deadline"
+      if project.completed?
+        completion_date = project.last_task_completed.completion_date.to_time
+
+        days_left_before_deadline  = ((project.project_template.end_date - completion_date).to_i / 1.day)
+        
+        if days_left_before_deadline < 7
+          if days_left_before_deadline == 0
+            complete_based_on_velocity = "You finished right on the target date."
+          elsif days_left_before_deadline == 1
+            complete_based_on_velocity = "You finished a day before the target date."
+          else
+            complete_based_on_velocity = "You finished #{days_left_before_deadline} days before the target date."
+          end
+        else
+          weeks_left_before_deadline = (days_left_before_deadline / 7.to_f).ceil
+
+          if weeks_left_before_deadline == 1
+            complete_based_on_velocity = "You finished a week before the target date."
+          else
+            complete_based_on_velocity = "You finished #{weeks_left_before_deadline} weeks before the target date."
+          end
+        end
       else
-        complete_based_on_velocity = "At this rate, you're set to finish right on the deadline"
+        days_left_before_deadline  = ((project.projected_end_date - project.project_template.end_date).to_i / 1.day)
+        weeks_left_before_deadline = -(days_left_before_deadline / 7.to_f).ceil
+
+        if weeks_left_before_deadline > 0
+          complete_based_on_velocity = "At this rate, you're set to finish #{weeks_left_before_deadline.abs} weeks before the deadline"
+        elsif weeks_left_before_deadline < 0
+          complete_based_on_velocity = "At this rate, you're set to finish #{weeks_left_before_deadline.abs} weeks after the deadline"
+        else
+          complete_based_on_velocity = "At this rate, you're set to finish right on the deadline"
+        end
       end
 
       raw("<p>#{complete_based_on_velocity}</p>")
@@ -74,15 +105,25 @@ module DashboardHelper
         )
       end
     else
-      raw(
-        [
-          "<p>",
-            "You have <strong>#{total_task_count - completed_task_count} tasks</strong> remaining",
-            "(<span class=\"supplementary-text\">#{completed_task_count}",
-            "out of #{total_task_count}</strong> tasks completed)</span>",
-          "</p>"
-        ].join("\n")
-      )
+      if project.completed?
+        raw(
+          [
+            "<p>",
+              "You've successfully completed all <strong>#{total_task_count} tasks</strong>. Well done!",
+            "</p>"
+          ].join("\n")
+        )
+      else
+        raw(
+          [
+            "<p>",
+              "You have <strong>#{total_task_count - completed_task_count} tasks</strong> remaining",
+              "(<span class=\"supplementary-text\">#{completed_task_count}",
+              "out of #{total_task_count}</strong> tasks completed)</span>",
+            "</p>"
+          ].join("\n")
+        )
+      end
     end
   end
 
@@ -97,9 +138,13 @@ module DashboardHelper
     if !project.commenced?
       raw("<p>To achieve the best result possible for this subject, ensure that you are getting tasks marked off regularly and often.</p>")
     else
-      case project.progress
-      when :ahead
-        raw("<p>If you haven't already, you should consider <a href=\"#\">going the extra mile for a D or HD</a></p>")
+      if project.completed?
+        # TODO: Suggest completing optional tasks if all required tasks are finished.
+      else
+        case project.progress
+        when :ahead
+          raw("<p>If you haven't already, you should consider <a href=\"#\">going the extra mile for a D or HD</a></p>")
+        end
       end
     end
   end
@@ -114,88 +159,81 @@ module DashboardHelper
     elsif project.concluded?
       raw("<p>This project ended on the #{deadline.strftime("#{deadline.day.ordinalize} of %B")}</p>")
     else
-      projected_end_date                = project.projected_end_date
-
-      if projected_end_date.year == deadline.year
-        projected_date_string             = projected_end_date.strftime("#{projected_end_date.day.ordinalize} of %B")
-        deadline_date_string              = deadline.strftime("#{deadline.day.ordinalize} of %B")
+      if project.completed?
+        completion_date = project.last_task_completed.completion_date
+        completion_date_string = completion_date.strftime("#{completion_date.day.ordinalize} of %B")
+        raw("<p>This project was completed on the #{completion_date_string}.</p>")
       else
-        projected_date_string             = projected_end_date.strftime("#{projected_end_date.day.ordinalize} of %B, %Y")
-        deadline_date_string              = deadline.strftime("#{deadline.day.ordinalize} of %B, %Y")
+        projected_end_date                = project.projected_end_date
+
+        if projected_end_date.year == deadline.year
+          projected_date_string             = projected_end_date.strftime("#{projected_end_date.day.ordinalize} of %B")
+          deadline_date_string              = deadline.strftime("#{deadline.day.ordinalize} of %B")
+        else
+          projected_date_string             = projected_end_date.strftime("#{projected_end_date.day.ordinalize} of %B, %Y")
+          deadline_date_string              = deadline.strftime("#{deadline.day.ordinalize} of %B, %Y")
+        end
+
+        projected_date_of_completion_text = "Projected end date is the <strong>#{projected_date_string}</strong>"
+        deadline_text = "<span style=\"color: #AAAAAA\">(deadline is the #{deadline_date_string})</span>"
+
+        raw("<p>#{projected_date_of_completion_text} #{deadline_text}</p>")
       end
-
-      projected_date_of_completion_text = "Projected end date is the <strong>#{projected_date_string}</strong>"
-      deadline_text = "<span style=\"color: #AAAAAA\">(deadline is the #{deadline_date_string})</span>"
-
-      raw("<p>#{projected_date_of_completion_text} #{deadline_text}</p>")
     end 
   end
 
   def project_status_summary(project)
-    if !project.commenced?
-    status_summary = "This project has not commenced. Best of luck for the upcoming start of the project!"
+    status_summary = if !project.commenced?
+      "This project has not commenced. Best of luck for the upcoming start of the project!"
     elsif project.concluded?
       if project.completed? 
-        status_summary = "This project has concluded. Congratulations on completing all of the allocated tasks!"
+        "This project has concluded. Congratulations on completing all of the allocated tasks!"
       else
-        status_summary = "This project has concluded. Unfortunately you did not complete all of the set tasks."
+        "This project has concluded. Unfortunately you did not complete all of the set tasks."
       end
     else
-      project_progress = project.progress
-
-      if project.started?
-        status_summary = case project_progress
-          when :ahead     then ahead_of_schedule_text
-          when :on_track  then on_track_text
-          when :behind    then falling_behind_text
-          when :danger    then in_danger_text
-          when :doomed    then doomed_text
-        end
+      if project.completed?
+        project_complete_text
       else
-        status_summary = case project_progress
-          when :behind    then falling_behind_text
-          when :danger    then in_danger_text
-          when :doomed    then doomed_text
-          else not_started_text
-        end
+        status_text(project.status)
       end
     end
+
     raw("<p>#{status_summary}</p>")
   end
 
-  def not_started_text
-    "You've not yet started this project. Start completing some tasks to improve your progress."
-  end
-
-  def ahead_of_schedule_text
-    "You're ahead of schedule. Keep up the great work!"
-  end
-
-  def on_track_text
-    "You're on track at the moment. Make sure you keep up the pace so you don't fall behind."
-  end
-
-  def falling_behind_text
-    "It looks like you're falling behind. Time to get some work done."
-  end
-
-  def in_danger_text
-    "You're way behind. Get some tasks done as soon as possible or it may be too late."
-  end
-
-  def doomed_text
-    "You're in serious trouble. Talk to the convenor about your remaining options in this subject."
+  def status_text(status)
+    case status
+      when :ahead       then ahead_of_schedule_text
+      when :on_track    then on_track_text
+      when :behind      then falling_behind_text
+      when :danger      then in_danger_text
+      when :doomed      then doomed_text
+      when :not_started then not_started_text
+    end
   end
 
   def rate_of_completion(project)
     rate_of_completion_string             = "%5.1f" % (project.rate_of_completion * 7)        # 7 days in a week
-    required_task_completion_rate_string  = "%5.1f" % (project.required_task_completion_rate * 7) # 7 days in a week
-    raw(
+
+    if project.completed?
+      completion_date = project.last_task_completed.completion_date.to_time
+      rate_per_week = project.rate_of_completion(completion_date) * 7
+
+      raw(
+        ["<p>",
+          "\tYour rate of completion throughout the project was #{rate_of_completion_string} task points per week.",
+        "</p>"].join("\n")
+      )
+    else
+      required_task_completion_rate_string  = "%5.1f" % (project.required_task_completion_rate * 7) # 7 days in a week
+      raw(
         ["<p>",
           "\tCurrent rate of completion is #{rate_of_completion_string} task points per week",
           "\t<span class=\"supplementary-text\">(required rate to finish on time is #{required_task_completion_rate_string} tasks points per week)</span>",
         "</p>"].join("\n")
       )
+    end
   end
 
   def class_for_project_status(project)
@@ -216,4 +254,31 @@ module DashboardHelper
         '</div>'].join("\n")
   end
 
+  def not_started_text
+    "You've not yet started this project. Start completing some tasks to improve your progress."
+  end
+
+  def ahead_of_schedule_text
+    "You're ahead of schedule. Keep up the great work!"
+  end
+
+  def project_complete_text
+    "You've completed this project before the end of the allocated time period. Well done!"
+  end
+
+  def on_track_text
+    "You're on track at the moment. Make sure you keep up the pace so you don't fall behind."
+  end
+
+  def falling_behind_text
+    "It looks like you're falling behind. Time to get some work done."
+  end
+
+  def in_danger_text
+    "You're way behind. Get some tasks done as soon as possible or it may be too late."
+  end
+
+  def doomed_text
+    "You're in serious trouble. Talk to the convenor about your remaining options in this subject."
+  end
 end

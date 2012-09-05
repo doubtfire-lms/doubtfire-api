@@ -84,7 +84,9 @@ class Project < ActiveRecord::Base
     elsif concluded?
       completed? ? :completed : :not_completed
     else
-      if started?
+      if completed?
+        :completed
+      elsif started?
         progress
       else
         :not_started
@@ -117,25 +119,28 @@ class Project < ActiveRecord::Base
     (remaining_tasks_weight / rate_of_completion).ceil.days.since reference_date
   end
 
-  def days_elapsed
-    (reference_date - project_template.start_date).to_i / 1.day
+  def days_elapsed(date=nil)
+    date ||= reference_date
+    (date - project_template.start_date).to_i / 1.day
   end
 
   def weeks_elapsed
     days_elapsed / 7
   end
 
-  def rate_of_completion
+  def rate_of_completion(date=nil)
     # Return a completion rate of 0.0 if the project is yet to have commenced
     return 0.0 if !commenced? or completed_tasks.empty?
+
+    date ||= reference_date
 
     # TODO: Might make sense to take in the resolution (i.e. days, weeks), rather
     # than just assuming days
 
     # If on the first day (i.e. a day has not yet passed, but the project
     # has commenced), force days elapsed to be 1 to avoid divide by zero
-    days = days_elapsed
-    days = 1 if days_elapsed < 1
+    days = days_elapsed(date)
+    days = 1 if days_elapsed(date) < 1
 
     completed_tasks_weight / days
   end
@@ -207,5 +212,9 @@ class Project < ActiveRecord::Base
 
   def weight
     DEFAULT_PROJECT_WEIGHT
+  end
+
+  def last_task_completed
+    completed_tasks.sort{|a, b| a.completion_date <=> b.completion_date }.last
   end
 end
