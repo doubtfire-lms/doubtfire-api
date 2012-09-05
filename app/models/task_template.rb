@@ -10,12 +10,17 @@ class TaskTemplate < ActiveRecord::Base
 
   def status_distribution    
     task_instances = tasks
+
+    awaiting_signoff = task_instances.select{|task| task.awaiting_signoff? }
+
+    task_instances = task_instances - awaiting_signoff
     {
-      not_submitted:  task_instances.select{|task| task.task_status_id == 1 }.size,
-      need_help:      task_instances.select{|task| task.task_status_id == 4 }.size,
-      working_on_it:  task_instances.select{|task| task.task_status_id == 5 }.size,
-      needs_fixing:   task_instances.select{|task| task.task_status_id == 2 }.size,
-      complete:       task_instances.select{|task| task.task_status_id == 3 }.size
+      awaiting_signoff: awaiting_signoff.size,
+      not_submitted:    task_instances.select{|task| task.task_status_id == 1 }.size,
+      need_help:        task_instances.select{|task| task.task_status_id == 4 }.size,
+      working_on_it:    task_instances.select{|task| task.task_status_id == 5 }.size,
+      needs_fixing:     task_instances.select{|task| task.task_status_id == 2 }.size,
+      complete:         task_instances.select{|task| task.task_status_id == 3 }.size
     }
   end
 end
