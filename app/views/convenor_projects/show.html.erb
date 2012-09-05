@@ -26,15 +26,34 @@
 			</ul>
 			<div class="tab-content">
 				<div class="tab-pane active widget" id="students">
-					<%= render :partial => "student_list" %>
+					<h2><i class="icon-user"></i>Students</h2>
+					<div class="widget-content" id="users-table">
+						<div class="tabbable">
+							<ul class="nav nav-tabs">
+								<li class="active">
+									<a href="#overview-tab" data-toggle="tab">Overview</a>
+								</li>
+								<li><a href="#progress-tab" data-toggle="tab">Progress</a></li>
+							</ul>
+							<div class="tab-content">
+								<div class="tab-pane active" id="overview-tab">
+									<%= render :partial => "student_list" %>
+								</div>
+
+								<div class="tab-pane" id="progress-tab">
+									<%= render :partial => "student_progress", locals: {teams: @project_teams} %>
+								</div>
+							</div>
+						</div>
+					</div>
 				</div>
 
 				<div class="tab-pane widget" id="tasks">
-					<%= render :partial => "task_status_breakdown", :locals => {project_template: @project_template} %>
+					<%= render partial: "task_status_breakdown", locals: {project_template: @project_template} %>
 				</div>
 
 				<div class="tab-pane widget" id="teams">
-					<%= render :partial => "team_list", :locals => {teams: @project_teams} %>
+					<%= render partial: "team_list", :locals => {teams: @project_teams} %>
 				</div>
 			</div>
 		</div>

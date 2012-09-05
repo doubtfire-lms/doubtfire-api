@@ -1,39 +1,36 @@
 <%- model_class = User.new.class -%>
-<h2><i class="icon-user"></i>Students</h2>
-<div class="widget-content" id="users-table">
-	<table class="table table-striped">
-		<thead>
+<table class="table table-striped">
+	<thead>
+		<tr>
+			<th><%= model_class.human_attribute_name(:username) %></th>
+			<th><%= model_class.human_attribute_name(:first_name) %></th>
+			<th><%= model_class.human_attribute_name(:last_name) %></th>
+			<th><%= model_class.human_attribute_name(:progress) %></th>
+			<th><%= model_class.human_attribute_name(:tasks_completed) %></th>
+			<th>Rate (per week)</th>
+			<th>Team</th>
+		</tr>
+	</thead>
+	<tbody>
+		<% @project_users.each do |user| # @TODO: Change this to current filter %>
+			<% user_project = user.team_memberships.select{|tm| tm.project.project_template_id == @project_template.id }.first.project %>
 			<tr>
-				<th><%= model_class.human_attribute_name(:username) %></th>
-				<th><%= model_class.human_attribute_name(:first_name) %></th>
-				<th><%= model_class.human_attribute_name(:last_name) %></th>
-				<th><%= model_class.human_attribute_name(:progress) %></th>
-				<th><%= model_class.human_attribute_name(:tasks_completed) %></th>
-				<th>Rate (per week)</th>
-				<th>Team</th>
+				<td><%= link_to user.username, project_path(user_project) %></td>
+				<td><%= user.first_name %></td>
+				<td><%= user.last_name %></td>
+				<td><%= status_badge(user_project) %></td>
+				<td>
+					<%= link_to "#{user_project.completed_tasks.size} / #{@project_template.task_templates.size}", project_path(user_project) %>
+				</td>
+				<td><%= "%3.2f" % user_project.rate_of_completion %></td>
+				<td>
+					<%= link_to [
+						"#{user_project.team_membership.team.meeting_day}",
+						"#{user_project.team_membership.team.meeting_time}",
+						"(#{user_project.team_membership.team.user.name})"
+					].join(" "), convenor_project_team_path(user_project.project_template, user_project.team_membership.team) %>
+				</td>
 			</tr>
-		</thead>
-		<tbody>
-			<% @project_users.each do |user| # @TODO: Change this to current filter %>
-				<% user_project = user.team_memberships.select{|tm| tm.project.project_template_id == @project_template.id }.first.project %>
-				<tr>
-					<td><%= link_to user.username, project_path(user_project) %></td>
-					<td><%= user.first_name %></td>
-					<td><%= user.last_name %></td>
-					<td><%= status_badge(user_project) %></td>
-					<td>
-						<%= link_to "#{user_project.completed_tasks.size} / #{@project_template.task_templates.size}", project_path(user_project) %>
-					</td>
-					<td><%= "%3.2f" % user_project.rate_of_completion %></td>
-					<td>
-						<%= link_to [
-							"#{user_project.team_membership.team.meeting_day}",
-							"#{user_project.team_membership.team.meeting_time}",
-							"(#{user_project.team_membership.team.user.name})"
-						].join(" "), convenor_project_team_path(user_project.project_template, user_project.team_membership.team) %>
-					</td>
-				</tr>
-			<% end %>
-		</tbody>
-	</table>
-</div>
+		<% end %>
+	</tbody>
+</table>
