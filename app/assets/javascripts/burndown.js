@@ -7,8 +7,8 @@
 function constructBurndownChart(burndownChartContainer) {
   var projectJSONURL = $(burndownChartContainer).attr("data-url");
 
-  d3.json(projectJSONURL, function(projectJSON) {
-    var projectChartData = dataForProjectJSON(projectJSON);
+  d3.json(projectJSONURL, function(project) {
+    var projectChartData = dataForProject(project);
 
     nv.addGraph(function() {  
       var projectProgressChart = nv.models.lineChart();
@@ -18,12 +18,20 @@ function constructBurndownChart(burndownChartContainer) {
           .tickFormat(d3.format('d'));
 
       projectProgressChart.yAxis
-          .axisLabel('Tasks (t)')
+          .axisLabel('Task Units Completed (t)')
           .tickFormat(d3.format(',.2f'));
 
       projectProgressChart.tooltipContent(function(key, x, y, e, graph){
-        return "<h3>" + key + "</h3>"
-        + "<p>" + y + " at Week " + x + "</p>";
+        var displayString = "<h3>" + key + "</h3>";
+
+        if (key === "Target Completion") {
+          displayString += "<p>" + y + " by Week " + x + "</p>";
+        }
+        else {
+          displayString += "<p>" + y + " at Week " + x + "</p>";
+        }
+
+        return displayString;
       });
 
       d3.select($(burndownChartContainer).children("svg")[0])
@@ -38,7 +46,7 @@ function constructBurndownChart(burndownChartContainer) {
   });
 }
 
-function sortTasksByDate(taskA, taskB) {
+function sortTasksByTargetDate(taskA, taskB) {
 
   var taskADate = moment(taskA.task_template.target_date);
   var taskBDate = moment(taskB.task_template.target_date);
@@ -51,81 +59,106 @@ function sortTasksByDate(taskA, taskB) {
   return 0;
 }
 
-function dataForProjectJSON(projectJSON) {
-  // Get the project's template
-  var templateProject = projectJSON.project_template;
-  
+function sortTasksByCompletionDate(taskA, taskB) {
+
+  var taskADate = moment(taskA.completion_date);
+  var taskBDate = moment(taskB.completion_date);
+
+  if (taskADate > taskBDate)
+    return 1;
+  if (taskADate < taskBDate)
+    return -1;
+
+  return 0;
+}
+
+function getCompletedTasks(project) {
+  var completedTasks = [];
+
+  $.each(project.tasks, function(i, task){
+    if (task.task_status_id === 3) {
+      completedTasks.push(task);
+    }
+  });
+
+  return completedTasks.sort(sortTasksByCompletionDate);
+}
+
+function targetCompletionData(project) {
+  var weightCountdown = project.total_task_weight;
+
   // Get the project's start and end date and wrap them as 'moment' objects
-  var projectStartDate = moment(templateProject.start_date);
-  var projectCompletionDate = moment(new Date(templateProject.end_date));
+  var projectStartDate = moment(project.project_template.start_date);
 
-  var projectTasks = projectJSON.tasks;
-  projectTasks.sort(sortTasksByDate);
-  
-  var taskCount = projectTasks.length
+  var projectTasks = project.tasks.sort(sortTasksByTargetDate);
 
-  // Determine the starting weight for the project based
-  // on the number of tasks in the project and the task
-  // weight constant
-  var weightCountdown = projectJSON.total_task_weight;
-  var remainingWeight = weightCountdown;
-
-  // Set an initial point for the week prior to starting,
-  // when no tasks have yet been completed
-  var recommendedTaskCompletion = [
-    {x: 0, y: weightCountdown}
-  ];
-
-  var actualTaskCompletion = [
-    {x: 0, y: weightCountdown}
-  ];
+  var data = [{x: 0, y: weightCountdown}];
 
   $.each(projectTasks, function(i, task){
     if (task.task_template.required === false) {
       return true;
     }
 
-    // Determine the remaining weight value (i.e. y value for the chart)
-    weightCountdown = weightCountdown - task.weight;
-
     // Determine the week at which the task is to be completed at by comparing
     // the 'due date' to the current 
     var taskDueWeek         = moment(task.task_template.target_date).diff(projectStartDate, 'weeks');
 
-    if (task.task_status_id == 3) { // 3 = Complete; TODO: Fix
+    // Determine the remaining weight value (i.e. y value for the chart)
+    weightCountdown = weightCountdown - task.weight;
+    data.push({x: taskDueWeek, y: weightCountdown});
+  });
+  
+  return data;
+}
 
-      remainingWeight = remainingWeight - task.weight;
-      var taskCompletionDate = null;
+function actualTaskCompletionData(project) {
+  var weightCountdown = project.total_task_weight;
+  var data = [{x: 0, y: weightCountdown}];
 
-      if (task.completion_date != null) {
-        var momentedTaskCompletionDate = moment(task.completion_date);
-        taskCompletionDate = momentedTaskCompletionDate.diff(projectStartDate) < 0 ? projectStartDate : momentedTaskCompletionDate;
-      } else {
-        taskCompletionDate = moment(projectStartDate);
-      }
+  // Get the project's start and end date and wrap them as 'moment' objects
+  var projectStartDate  = moment(project.project_template.start_date);
+  var completedTasks    = getCompletedTasks(project);
 
-      var taskCompletionWeek  = taskCompletionDate.diff(projectStartDate, 'weeks');
-      actualTaskCompletion.push({x: taskCompletionWeek, y: remainingWeight});
+  var remainingWeight = weightCountdown;
+
+  $.each(completedTasks, function(i, task){
+    if (task.task_template.required === false) {
+      return true;
     }
 
-    recommendedTaskCompletion.push({x: taskDueWeek, y: weightCountdown});
+    remainingWeight = remainingWeight - task.weight;
+    var taskCompletionDate = null;
+
+    if (task.completion_date != null) {
+      var momentedTaskCompletionDate = moment(task.completion_date);
+      taskCompletionDate = momentedTaskCompletionDate.diff(projectStartDate) < 0 ? projectStartDate : momentedTaskCompletionDate;
+    } else {
+      taskCompletionDate = moment(projectStartDate);
+    }
+
+    var taskCompletionWeek = moment(task.task_template.completion_date).diff(projectStartDate, 'weeks');
+    data.push({x: taskCompletionWeek, y: remainingWeight});
   });
 
-  var recommendedSeries = {
-    values: recommendedTaskCompletion,
-    key: "Recommended",
+  return data;
+}
+
+function dataForProject(project) {
+  var targetSeries = {
+    key: "Target Completion",
+    values: targetCompletionData(project),
     color: "#999999"
   };
 
   var completedSeries = {
-    values: actualTaskCompletion,
-    key: "Completed",
-    color: colourForProjectProgress(projectJSON.progress)
+    key: "Actual Completion",
+    values: actualTaskCompletionData(project),
+    color: colourForProjectProgress(project.progress)
   }
 
-  var seriesToPlot = [recommendedSeries];
+  var seriesToPlot = [targetSeries];
 
-  if (moment(new Date()) >= projectStartDate && projectJSON.completed_tasks_weight > 0) {
+  if (moment(new Date()) >= moment(project.project_template.start_date) && project.completed_tasks_weight > 0) {
     seriesToPlot.push(completedSeries);
   }
 
