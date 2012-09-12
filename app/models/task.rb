@@ -8,6 +8,13 @@ class Task < ActiveRecord::Base
   belongs_to :project               # Foreign key
   belongs_to :task_status           # Foreign key
 
+  after_save :update_project
+
+  def update_project
+    project.update_attribute(:progress, project.calculate_progress)
+    project.update_attribute(:status, project.calculate_status)
+  end
+
   def overdue?
     # A task cannot be overdue if it is marked complete
     return false if complete?

@@ -1,29 +1,23 @@
 module DashboardHelper
-  def status_badge(project, precedence=:status)
-    if precedence == :progress
-      # Completed should have a higher precedence
-      # than progress
-      if project.status == :completed
-        badge_for_status(:completed)
-      else
-        badge_for_status(project.progress)
-      end
-    else
-      badge_for_status(project.status)
+  def status_badge(status)
+    case status
+      when :completed     then raw("<span class=\"status-badge label label-success\">Completed</span>")
+      when :not_completed then raw("<span class=\"status-badge label label-important\">Not Completed</span>")
+      when :not_commenced then raw("<span class=\"status-badge label\">Not Commenced</span>")
+      when :not_started   then raw("<span class=\"status-badge label\">Not Started</span>")
+      when :in_progress   then raw("<span class=\"status-badge label\">In Progress</span>")
+      else raw("<span class=\"status-badge label\">Unknown Status</span>")
     end
   end
 
-  def badge_for_status(status)
-    case status
+  def progress_badge(progress)
+    case progress
       when :ahead         then raw("<span class=\"status-badge label label-success\">Ahead</span>")
       when :on_track      then raw("<span class=\"status-badge label label-info\">On Track</span>")
       when :behind        then raw("<span class=\"status-badge label label-warning\">Behind</span>")
       when :danger        then raw("<span class=\"status-badge label label-important\">Danger</span>")
       when :doomed        then raw("<span class=\"status-badge label label-inverse\">Doomed</span>")
-      when :completed     then raw("<span class=\"status-badge label label-success\">Completed</span>")
-      when :not_completed then raw("<span class=\"status-badge label label-important\">Not Completed</span>")
-      when :not_commenced then raw("<span class=\"status-badge label\">Not Commenced</span>")
-      when :not_started   then raw("<span class=\"status-badge label\">Not Started</span>")
+      else raw("<span class=\"status-badge label\">Unknown Progress</span>")
     end
   end
 

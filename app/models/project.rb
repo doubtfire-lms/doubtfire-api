@@ -1,12 +1,7 @@
 class Project < ActiveRecord::Base
   include ApplicationHelper
 
-  # TODO: Remove this once each project has an individual weight.
-  # For now, this assumes that the project is core (i.e. non-optional)
-  # and it its completion is worth a credit
-  DEFAULT_PROJECT_WEIGHT = 0.65
-
-  attr_accessible :project_role, :started
+  attr_accessible :project_role, :started, :progress
 
   # Model associations
   belongs_to :team              # Foreign key
@@ -48,6 +43,22 @@ class Project < ActiveRecord::Base
     end
   end
 
+  def progress
+    read_attribute(:progress).to_sym
+  end
+
+  def progress=(value)
+    write_attribute(:progress, value.to_s)
+  end
+
+  def status
+    read_attribute(:status).to_sym
+  end
+
+  def status=(value)
+    write_attribute(:status, value.to_s)
+  end
+
   def progress_points
     date_accumulated_weight_map = {}
 
@@ -78,7 +89,7 @@ class Project < ActiveRecord::Base
     progress_in_days / 7
   end
 
-  def status
+  def calculate_status
     if !commenced?
       :not_commenced
     elsif concluded?
@@ -87,14 +98,14 @@ class Project < ActiveRecord::Base
       if completed?
         :completed
       elsif started?
-        progress
+        :in_progress
       else
         :not_started
       end
     end
   end
 
-  def progress
+  def calculate_progress
     relative_progress      = progress_in_weeks
 
     if relative_progress >= 1
@@ -208,10 +219,6 @@ class Project < ActiveRecord::Base
 
   def has_optional_tasks?
     tasks.any?{|task| !task.task_template.required }
-  end
-
-  def weight
-    DEFAULT_PROJECT_WEIGHT
   end
 
   def last_task_completed
