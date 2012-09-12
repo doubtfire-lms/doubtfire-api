@@ -1,5 +1,5 @@
-set :output, "/path/to/my/cron_log.log"
+set :output, "#{path}/log/cron.log"
 
-every 1.minutes do
-  command "echo hi >> /Users/ajones/test.txt"
+every 1.day, :at => '3:00 am' do
+  rake "db:update_temporal"
 end
