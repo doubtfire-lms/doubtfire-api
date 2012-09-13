@@ -32,7 +32,10 @@ class ProjectTemplatesController < ApplicationController
           :methods => [:status_distribution],
           :include => [
             {
-              :task_templates => {:except => [:updated_at, :created_at], :methods => [:status_distribution]}
+              :task_templates => {
+                :except => [:updated_at, :created_at],
+                :methods => [:status_distribution]
+              }
             }
           ]
         )

@@ -1,11 +1,25 @@
 class ConvenorProjectsController < ApplicationController
 	def show
-		@project_template = ProjectTemplate.find(params[:id])
+		@project_template = ProjectTemplate.includes(:task_templates).find(params[:id])
     
-		@project_users = User.joins(:team_memberships => {:project => :project_template})
-                      .where(:projects => {:project_template_id => params[:id]})
-                      .order(:first_name)
+    @projects = Project.includes(team_membership:
+                  [
+                    {
+                      project: [
+                      { 
+                        tasks: :task_template
+                      }
+                    ]},
+                    :team,
+                    :user
+                  ]
+                )
+                .where(project_template_id: params[:id])
 
-    @project_teams = @project_template.teams
+    @projects.sort!{|a,b| a.team_membership.user.name <=> b.team_membership.user.name }
+
+    @project_teams = @projects.map {|project|
+      project.team_membership.team
+    }.uniq
 	end
 end
