@@ -82,30 +82,30 @@ function statusDistributionDataForProjectJSON(project) {
       key: "Status",
         values: [
           { 
-            "label" : "Ahead" ,
+            "label" : "Going Well",
             "value" : project.status_distribution.ahead
           }, 
           { 
-            "label" : "On Track" , 
+            "label" : "Progressing", 
             "value" : project.status_distribution.on_track
           }, 
           { 
-            "label" : "Behind" , 
+            "label" : "Need to Catch Up",
             "value" : project.status_distribution.behind
             
           }, 
           { 
-            "label" : "In danger" , 
+            "label" : "Seek Help",
             "value" : project.status_distribution.danger
             
           }, 
           { 
-            "label" : "Doomed" ,
+            "label" : "Running Out of Time",
             "value" : project.status_distribution.doomed
             
           },
           { 
-            "label" : "Not Started" ,
+            "label" : "Not Started",
             "value" : project.status_distribution.not_started
           }
         ]

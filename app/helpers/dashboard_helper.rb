@@ -12,11 +12,11 @@ module DashboardHelper
 
   def progress_badge(progress)
     case progress
-      when :ahead         then raw("<span class=\"status-badge label label-success\">Ahead</span>")
-      when :on_track      then raw("<span class=\"status-badge label label-info\">On Track</span>")
-      when :behind        then raw("<span class=\"status-badge label label-warning\">Behind</span>")
-      when :danger        then raw("<span class=\"status-badge label label-important\">Danger</span>")
-      when :doomed        then raw("<span class=\"status-badge label label-inverse\">Doomed</span>")
+      when :ahead         then raw("<span class=\"status-badge label label-success\">Going Well</span>")
+      when :on_track      then raw("<span class=\"status-badge label label-info\">Progressing</span>")
+      when :behind        then raw("<span class=\"status-badge label label-warning\">Need to Catch Up</span>")
+      when :danger        then raw("<span class=\"status-badge label label-important\">Seek Help</span>")
+      when :doomed        then raw("<span class=\"status-badge label label-inverse\">Talk to Convenor</span>")
       else raw("<span class=\"status-badge label\">Unknown Progress</span>")
     end
   end

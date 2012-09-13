@@ -108,16 +108,16 @@ class Project < ActiveRecord::Base
   def calculate_progress
     relative_progress      = progress_in_weeks
 
-    if relative_progress >= 1
+    if relative_progress >= 0
       :ahead
-    elsif relative_progress == 0 or relative_progress == -1
+    elsif relative_progress == -1 or relative_progress == -2
       :on_track
     else
       weeks_behind = relative_progress.abs
 
-      if weeks_behind <= 2
+      if weeks_behind <= 3
         :behind
-      elsif weeks_behind > 2 and weeks_behind <= 5
+      elsif weeks_behind > 3 and weeks_behind <= 5
         :danger
       else
         :doomed
