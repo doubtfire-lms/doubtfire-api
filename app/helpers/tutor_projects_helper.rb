@@ -31,8 +31,7 @@ module TutorProjectsHelper
   end
 
   def needing_help_tasks(projects)
-    need_help_status = TaskStatus.where(:name => "Need Help").first
-    projects.map{|project| project.tasks }.flatten.select{|task| task.task_status.id == need_help_status.id }
+    projects.map{|project| project.tasks }.flatten.select{|task| task.need_help? && !task.awaiting_signoff }
   end
 
   def user_needing_help_tasks(projects)
@@ -40,8 +39,7 @@ module TutorProjectsHelper
   end
 
   def working_on_it_tasks(projects)
-    working_on_it_status = TaskStatus.where(:name => "Working On It").first
-    projects.map{|project| project.tasks }.flatten.select{|task| task.task_status.id == working_on_it_status.id }
+    projects.map{|project| project.tasks }.flatten.select{|task| task.working_on_it? && !task.awaiting_signoff }
   end
 
   def user_working_on_it_tasks(projects)
