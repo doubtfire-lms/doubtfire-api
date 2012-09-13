@@ -14,6 +14,10 @@ function updateStatusDisplayButton(taskContainer, taskStatus) {
 		taskContainer.find(".status-display-button").html("Fix <i class=\"icon-wrench button-icon\"></i>");
 		taskContainer.find(".status-display-button").attr("class", "btn btn-warning status-display-button");
 		taskContainer.find(".dropdown-toggle").attr("class", "btn btn-warning dropdown-toggle");
+	} else if (taskStatus === "Needs Redoing") {
+		taskContainer.find(".status-display-button").html("Fix <i class=\"icon-refresh button-icon\"></i>");
+		taskContainer.find(".status-display-button").attr("class", "btn btn-needs-redoing status-display-button");
+		taskContainer.find(".dropdown-toggle").attr("class", "btn btn-needs-redoing dropdown-toggle");
 	} else if (taskStatus === "Not Submitted") {
 		taskContainer.find(".status-display-button").html("Not Submitted <i class=\"icon-minus-sign button-icon\"></i>");
 		taskContainer.find(".status-display-button").attr("class", "btn status-display-button");

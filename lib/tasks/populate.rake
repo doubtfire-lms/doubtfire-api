@@ -67,6 +67,7 @@ namespace :db do
     TaskStatus.create(:name => "Complete", :description => "This task has been signed off by your tutor.")
     TaskStatus.create(:name => "Need Help", :description => "Some help is required in order to complete this task.")
     TaskStatus.create(:name => "Working On It", :description => "This task is currently being worked on.")
+    TaskStatus.create(:name => "Needs Redoing", :description => "This task needs to be redone.")
 
     # Create 4 students
     randies.each do |username, profile|

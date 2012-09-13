@@ -16,6 +16,8 @@ module TasksHelper
       end
     when :needs_fixing
       "label label-info" # Info for needs fixing
+    when :needs_redoing
+      "label label-info" # Info for needs fixing
     when :complete
       "label label-success" # Success if the task is complete
     end
@@ -95,6 +97,10 @@ module TasksHelper
         button_class  = 'btn-warning'
         button_text   = 'Needs Fixing'
         button_icon   = 'icon-wrench'
+      elsif task.needs_redoing?
+        button_class  = 'btn-needs-redoing'
+        button_text   = 'Redo'
+        button_icon   = 'icon-refresh'
       elsif task.need_help?
         button_class  = 'btn-need-help'
         button_text   = 'Need Some Help'

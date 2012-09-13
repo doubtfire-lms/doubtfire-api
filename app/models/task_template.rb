@@ -19,6 +19,7 @@ class TaskTemplate < ActiveRecord::Base
       not_submitted:    task_instances.select{|task| task.task_status_id == 1 }.size,
       need_help:        task_instances.select{|task| task.task_status_id == 4 }.size,
       working_on_it:    task_instances.select{|task| task.task_status_id == 5 }.size,
+      needs_redoing:    task_instances.select{|task| task.task_status_id == 6 }.size,
       needs_fixing:     task_instances.select{|task| task.task_status_id == 2 }.size,
       complete:         task_instances.select{|task| task.task_status_id == 3 }.size
     }

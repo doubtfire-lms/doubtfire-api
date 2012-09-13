@@ -57,6 +57,7 @@ function dataForTasks(tasks) {
 		{ key: "Need Help", 		values: [], color: "#F6A895"},
 		{ key: "Working On It", 	values: [],	color: "#FCEC21"},
 		{ key: "Needs Fixing", 		values: [], color: "#FBB450"},
+		{ key: "Needs Redoing", 	values: [], color: "#B06C4E"},
 		{ key: "Awaiting Signoff", 	values: [], color: "#0074CC"},
 		{ key: "Complete", 			values: [], color: "#62C462"}
 	];
@@ -70,8 +71,9 @@ function dataForTasks(tasks) {
 		taskDistributionData[1].values.push({ x: index, y: taskStatusDistribution.need_help });
 		taskDistributionData[2].values.push({ x: index, y: taskStatusDistribution.working_on_it });
 		taskDistributionData[3].values.push({ x: index, y: taskStatusDistribution.needs_fixing });
-		taskDistributionData[4].values.push({ x: index, y: taskStatusDistribution.awaiting_signoff });
-		taskDistributionData[5].values.push({ x: index, y: taskStatusDistribution.complete });
+		taskDistributionData[4].values.push({ x: index, y: taskStatusDistribution.needs_redoing });
+		taskDistributionData[5].values.push({ x: index, y: taskStatusDistribution.awaiting_signoff });
+		taskDistributionData[6].values.push({ x: index, y: taskStatusDistribution.complete });
 	});
 
 	return taskDistributionData;

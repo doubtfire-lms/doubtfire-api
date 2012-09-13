@@ -56,6 +56,8 @@ module TutorProjectsHelper
         "action-awaiting-signoff"
       elsif task.needs_fixing?
         "action-needs-fixing"
+      elsif task.needs_redoing?
+        "action-needs-redoing"
       elsif task.need_help?
         "action-need-help"
       elsif task.working_on_it?

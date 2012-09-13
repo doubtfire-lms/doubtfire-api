@@ -43,6 +43,7 @@ class TasksController < ApplicationController
     @project                = @task.project
     @student                = @project.team_membership.user
     task_status             = status_for_shortname(params[:status])
+    
     @task.task_status       = task_status
     @task.awaiting_signoff  = false # Because only staff should be able to change task status
 
@@ -53,7 +54,7 @@ class TasksController < ApplicationController
     if @task.save
       @task.project.update_attribute(:started, true)
 
-      if @task.needs_fixing? || @task.complete?
+      if @task.needs_redoing? || @task.needs_fixing? || @task.complete?
         submission = TaskSubmission.where(task_id: @task.id).order(:submission_time).reverse_order.first
 
         if submission.nil?
@@ -107,6 +108,8 @@ class TasksController < ApplicationController
       "Complete"
     when "fix"
       "Needs Fixing"
+    when "redo"
+      "Needs Redoing"
     when "not_submitted"
       "Not Submitted"
     when "need_help"

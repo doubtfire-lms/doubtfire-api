@@ -73,6 +73,10 @@ class Task < ActiveRecord::Base
     status == :needs_fixing
   end
 
+  def needs_redoing?
+    status == :needs_redoing
+  end
+
   def need_help?
     status == :need_help
   end
@@ -89,6 +93,8 @@ class Task < ActiveRecord::Base
       :not_submitted
     when "Needs Fixing"
       :needs_fixing
+    when "Needs Redoing"
+      :needs_redoing
     when "Need Help"
       :need_help
     when "Working On It"
