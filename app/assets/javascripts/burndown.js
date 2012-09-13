@@ -85,62 +85,93 @@ function getCompletedTasks(project) {
 }
 
 function targetCompletionData(project) {
-  var weightCountdown = project.total_task_weight;
-
   // Get the project's start and end date and wrap them as 'moment' objects
-  var projectStartDate = moment(project.project_template.start_date);
+  var projectStartDate  = moment(project.project_template.start_date);
+  var projectEndDate    = project.project_template.end_date
+  // Determine the number of weeks after the project starts that it ends
+  var projectEndWeek    = moment(projectEndDate).diff(projectStartDate, 'weeks');
 
   var projectTasks = project.tasks.sort(sortTasksByTargetDate);
 
-  var data = [{x: 0, y: weightCountdown}];
+  var projectWeight           = project.total_task_weight
+  var remainingWeight         = projectWeight;
+  var weekTaskWeightCompleted = {};
+
+  for (var i = 0; i <= projectEndWeek; i++) {
+    weekTaskWeightCompleted[i] = 0;
+  }
 
   $.each(projectTasks, function(i, task){
-    if (task.task_template.required === false) {
-      return true;
-    }
+
+    // Skip the task if it's optional
+    if (task.task_template.required === false) {  return true; }
 
     // Determine the week at which the task is to be completed at by comparing
-    // the 'due date' to the current 
-    var taskDueWeek         = moment(task.task_template.target_date).diff(projectStartDate, 'weeks');
+    // the 'due date' to the current date
+    var taskDueDate = task.task_template.target_date;
+    var taskDueWeek = moment(taskDueDate).diff(projectStartDate, 'weeks');
 
-    // Determine the remaining weight value (i.e. y value for the chart)
-    weightCountdown = weightCountdown - task.weight;
-    data.push({x: taskDueWeek, y: weightCountdown});
+    weekTaskWeightCompleted[taskDueWeek] += task.weight;
   });
+
+  var taskCompletionVsWeek = [{x: 0, y: projectWeight}];
+
+  for (var week in weekTaskWeightCompleted) {
+    remainingWeight -=  weekTaskWeightCompleted[week];
+    taskCompletionVsWeek.push({x: week, y: remainingWeight});
+  }
+
+  var lastTaskDueDate = projectTasks[projectTasks.length -1].task_template.target_date;
+  var lastTaskDueWeek = moment(lastTaskDueDate).diff(projectStartDate, 'weeks');
+
+  for (var week = lastTaskDueWeek; week <= projectEndWeek; week++) {
+    taskCompletionVsWeek.push({x: week, y: 0});
+  }
   
-  return data;
+  return taskCompletionVsWeek;
 }
 
 function actualTaskCompletionData(project) {
-  var weightCountdown = project.total_task_weight;
-  var data = [{x: 0, y: weightCountdown}];
+  // Get the project's start and end date and wrap them as 'moment' objects
+  var projectStartDate  = moment(project.project_template.start_date);
+  var projectEndDate    = project.project_template.end_date;
+
+  // Determine the current week
+  var currentWeek       = moment().diff(projectStartDate, 'weeks');
 
   // Get the project's start and end date and wrap them as 'moment' objects
   var projectStartDate  = moment(project.project_template.start_date);
   var completedTasks    = getCompletedTasks(project);
 
-  var remainingWeight = weightCountdown;
+  var projectWeight           = project.total_task_weight
+  var remainingWeight         = projectWeight;
+  var weekTaskWeightCompleted = {};
+
+  for (var i = 0; i <= currentWeek; i++) {
+    weekTaskWeightCompleted[i] = 0;
+  }
 
   $.each(completedTasks, function(i, task){
-    if (task.task_template.required === false) {
-      return true;
-    }
 
-    remainingWeight = remainingWeight - task.weight;
-    var taskCompletionDate = null;
+    // Skip the task if it's optional
+    if (task.task_template.required === false) {  return true; }
 
-    if (task.completion_date != null) {
-      var momentedTaskCompletionDate = moment(task.completion_date);
-      taskCompletionDate = momentedTaskCompletionDate.diff(projectStartDate) < 0 ? projectStartDate : momentedTaskCompletionDate;
-    } else {
-      taskCompletionDate = moment(projectStartDate);
-    }
+    // Determine the week at which the task is to be completed at by comparing
+    // the 'due date' to the current date
+    var taskCompletionDate = moment(task.completion_date);
+    var taskCompletionWeek = moment(taskCompletionDate).diff(projectStartDate, 'weeks');
 
-    var taskCompletionWeek = moment(task.task_template.completion_date).diff(projectStartDate, 'weeks');
-    data.push({x: taskCompletionWeek, y: remainingWeight});
+    weekTaskWeightCompleted[taskCompletionWeek] += task.weight;
   });
 
-  return data;
+  var taskCompletionVsWeek = [{x: 0, y: projectWeight}];
+
+   for (var week in weekTaskWeightCompleted) {
+    remainingWeight -=  weekTaskWeightCompleted[week];
+    taskCompletionVsWeek.push({x: week, y: remainingWeight});
+  }
+
+  return taskCompletionVsWeek;
 }
 
 function dataForProject(project) {
