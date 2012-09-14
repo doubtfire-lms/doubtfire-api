@@ -174,11 +174,53 @@ function actualTaskCompletionData(project) {
   return taskCompletionVsWeek;
 }
 
+function projectedTaskCompletionData(project) {
+  // Get the project's start and end date and wrap them as 'moment' objects
+  var projectStartDate  = moment(project.project_template.start_date);
+  var projectEndDate    = project.project_template.end_date
+  // Determine the number of weeks after the project starts that it ends
+  var projectEndWeek   = moment(projectEndDate).diff(projectStartDate, 'weeks');
+
+  var currentWeek       = moment().diff(projectStartDate, 'weeks');
+
+  var projectWeight = project.total_task_weight;
+  var taskWeightCompletedPerWeek = project.completed_tasks_weight / currentWeek;
+
+  var taskCompletionVsWeek = [{x: 0, y: projectWeight}];
+
+  var weekTaskWeightCompleted = {};
+
+  var week = 1;
+  var remainingWeight = projectWeight;
+
+  while (week <= projectEndWeek && remainingWeight > 0) {
+    remainingWeight -= taskWeightCompletedPerWeek;
+    
+    if (remainingWeight < 0) {
+      weekTaskWeightCompleted[week] = (remainingWeight + taskWeightCompletedPerWeek);
+    } else {
+      weekTaskWeightCompleted[week] =  taskWeightCompletedPerWeek;
+    }
+
+    week++;
+  }
+
+  var taskCompletionVsWeek = [{x: 0, y: projectWeight}];
+  remainingWeight = projectWeight;
+
+  for (var week in weekTaskWeightCompleted) {
+    remainingWeight -=  weekTaskWeightCompleted[week];
+    taskCompletionVsWeek.push({x: week, y: remainingWeight});
+  }
+
+  return taskCompletionVsWeek;
+}
+
 function dataForProject(project) {
   var targetSeries = {
     key: "Target Completion",
     values: targetCompletionData(project),
-    color: "#999999"
+    color: "#666666"
   };
 
   var completedSeries = {
@@ -187,10 +229,17 @@ function dataForProject(project) {
     color: colourForProjectProgress(project.progress)
   }
 
+  var projectedSeries = {
+    key: "Projected Completion",
+    values: projectedTaskCompletionData(project),
+    color: "#BBBBBB"
+  }
+
   var seriesToPlot = [targetSeries];
 
   if (moment(new Date()) >= moment(project.project_template.start_date) && project.completed_tasks_weight > 0) {
     seriesToPlot.push(completedSeries);
+    seriesToPlot.push(projectedSeries);
   }
 
   return seriesToPlot;
