@@ -60,7 +60,7 @@ module DashboardHelper
           if weeks_left_before_deadline.abs == 1
             complete_based_on_velocity = "At this rate, you're set to finish a week after the deadline."
           else
-            complete_based_on_velocity = "At this rate, you're set to finish #{weeks_left_before_deadline.abs} weeks before the deadline"
+            complete_based_on_velocity = "At this rate, you're set to finish #{weeks_left_before_deadline.abs} weeks after the deadline"
           end
         else
           complete_based_on_velocity = "At this rate, you're set to finish right on the deadline."
