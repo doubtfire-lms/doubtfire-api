@@ -19,7 +19,7 @@
 				<td><%= project.team_membership.user.last_name %></td>
 				<td><%= project.in_progress? ? progress_badge(project.progress) : status_badge(project.status) %></td>
 				<td>
-					<%= link_to "#{project.completed_tasks.size} / #{@project_template.task_templates.size}", project_path(project) %>
+					<%= link_to "#{project.completed_tasks.size} / #{project.assigned_tasks.size}", project_path(project) %>
 				</td>
 				<td><%= "%3.2f" % project.rate_of_completion %></td>
 				<td>
