@@ -167,7 +167,6 @@ module DashboardHelper
         raw("<p>This project was completed on the #{completion_date_string}.</p>")
       else
         projected_end_date                = project.projected_end_date
-        puts projected_end_date
 
         if projected_end_date.year == deadline.year
           projected_date_string             = projected_end_date.strftime("#{projected_end_date.day.ordinalize} of %B")
