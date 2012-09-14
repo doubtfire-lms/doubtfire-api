@@ -51,11 +51,19 @@ module DashboardHelper
         weeks_left_before_deadline = -(days_left_before_deadline / 7.to_f).ceil
 
         if weeks_left_before_deadline > 0
-          complete_based_on_velocity = "At this rate, you're set to finish #{weeks_left_before_deadline.abs} weeks before the deadline"
+          if weeks_left_before_deadline == 1
+            complete_based_on_velocity = "At this rate, you're set to finish #{weeks_left_before_deadline.abs} weeks before the deadline"
+          else
+            complete_based_on_velocity = "At this rate, you're set to finish a week before the deadline."
+          end
         elsif weeks_left_before_deadline < 0
-          complete_based_on_velocity = "At this rate, you're set to finish #{weeks_left_before_deadline.abs} weeks after the deadline"
+          if weeks_left_before_deadline.abs == 1
+            complete_based_on_velocity = "At this rate, you're set to finish a week after the deadline."
+          else
+            complete_based_on_velocity = "At this rate, you're set to finish #{weeks_left_before_deadline.abs} weeks before the deadline"
+          end
         else
-          complete_based_on_velocity = "At this rate, you're set to finish right on the deadline"
+          complete_based_on_velocity = "At this rate, you're set to finish right on the deadline."
         end
       end
 
@@ -159,6 +167,7 @@ module DashboardHelper
         raw("<p>This project was completed on the #{completion_date_string}.</p>")
       else
         projected_end_date                = project.projected_end_date
+        puts projected_end_date
 
         if projected_end_date.year == deadline.year
           projected_date_string             = projected_end_date.strftime("#{projected_end_date.day.ordinalize} of %B")
