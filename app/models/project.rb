@@ -126,6 +126,7 @@ class Project < ActiveRecord::Base
   end
 
   def projected_end_date
+    return project_template.end_date if rate_of_completion == 0.0
     (remaining_tasks_weight / rate_of_completion).ceil.days.since reference_date
   end
 
