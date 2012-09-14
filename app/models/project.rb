@@ -142,7 +142,6 @@ class Project < ActiveRecord::Base
   def rate_of_completion(date=nil)
     # Return a completion rate of 0.0 if the project is yet to have commenced
     return 0.0 if !commenced? or completed_tasks.empty?
-
     date ||= reference_date
 
     # TODO: Might make sense to take in the resolution (i.e. days, weeks), rather
@@ -153,7 +152,7 @@ class Project < ActiveRecord::Base
     days = days_elapsed(date)
     days = 1 if days_elapsed(date) < 1
 
-    completed_tasks_weight / days
+    completed_tasks_weight / days.to_f
   end
 
   def required_task_completion_rate
