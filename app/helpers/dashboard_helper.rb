@@ -1,23 +1,23 @@
 module DashboardHelper
   def status_badge(status)
     case status
-      when :completed     then raw("<span class=\"status-badge label label-success\">Completed</span>")
-      when :not_completed then raw("<span class=\"status-badge label label-important\">Not Completed</span>")
-      when :not_commenced then raw("<span class=\"status-badge label\">Not Commenced</span>")
-      when :not_started   then raw("<span class=\"status-badge label\">Not Started</span>")
-      when :in_progress   then raw("<span class=\"status-badge label\">In Progress</span>")
-      else raw("<span class=\"status-badge label\">Unknown Status</span>")
+      when :completed     then content_tag(:span, "Completed",     class: "status-badge label label-success")
+      when :not_completed then content_tag(:span, "Not Completed", class: "status-badge label label-important")
+      when :not_commenced then content_tag(:span, "Not Commenced", class: "status-badge label")
+      when :not_started   then content_tag(:span, "Not Commenced", class: "status-badge label")
+      when :in_progress   then content_tag(:span, "In Progress",   class: "status-badge label")
+      else content_tag(:span, "Unknown Progress",   class: "status-badge label")
     end
   end
 
   def progress_badge(progress)
     case progress
-      when :ahead         then raw("<span class=\"status-badge label label-success\">Going Well</span>")
-      when :on_track      then raw("<span class=\"status-badge label label-info\">Progressing</span>")
-      when :behind        then raw("<span class=\"status-badge label label-warning\">Need to Catch Up</span>")
-      when :danger        then raw("<span class=\"status-badge label label-important\">Seek Help</span>")
-      when :doomed        then raw("<span class=\"status-badge label label-inverse\">Talk to Convenor</span>")
-      else raw("<span class=\"status-badge label\">Unknown Progress</span>")
+      when :ahead         then content_tag(:span, "Going Well",       class: "status-badge label label-success")
+      when :on_track      then content_tag(:span, "Progressing",      class: "status-badge label label-info")
+      when :behind        then content_tag(:span, "Need to Catch Up", class: "status-badge label label-warning")
+      when :danger        then content_tag(:span, "Seek Help",        class: "status-badge label label-important")
+      when :doomed        then content_tag(:span, "Talk to Convenor", class: "status-badge label label-inverse")
+      else content_tag(:span, "Unknown Progress", class: "status-badge label")
     end
   end
 
