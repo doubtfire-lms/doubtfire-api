@@ -85,7 +85,7 @@ module TutorProjectsHelper
     status_control_partial = render(:partial => "tutor_projects/assessor_task_status_control", :locals => { :task => task })
 
     link_to(
-      relative_number,
+      task.task_template.abbreviation || relative_number,
       link,
       :rel => "popover",
       :class => "task-progress-item task-#{task.id}-bar-item #{active_class}",

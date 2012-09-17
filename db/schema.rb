@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20120911232016) do
+ActiveRecord::Schema.define(:version => 20120917032431) do
 
   create_table "logins", :force => true do |t|
     t.datetime "timestamp"
@@ -99,6 +99,7 @@ ActiveRecord::Schema.define(:version => 20120911232016) do
     t.datetime "target_date"
     t.datetime "created_at",          :null => false
     t.datetime "updated_at",          :null => false
+    t.string   "abbreviation"
   end
 
   add_index "task_templates", ["project_template_id"], :name => "index_task_templates_on_project_template_id"

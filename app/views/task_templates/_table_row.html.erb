@@ -1,5 +1,6 @@
 <tr id="task-<%= task_template.id %>-row">
   <td><%= link_to task_template.name, task_template_path(task_template) %></td>
+  <td><%= task_template.abbreviation %></td>
   <td><%= task_template.description %></td>
   <td><%= task_template.weighting %></td>
   <td><%= "Required" if task_template.required %><%= "Optional" if not task_template.required %></td>
