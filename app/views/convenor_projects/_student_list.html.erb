@@ -17,7 +17,7 @@
 				<td><%= link_to project.team_membership.user.username, project_path(project) %></td>
 				<td><%= project.team_membership.user.first_name %></td>
 				<td><%= project.team_membership.user.last_name %></td>
-				<td><%= project.in_progress? ? progress_badge(project.progress) : status_badge(project.status) %></td>
+				<td><%= project.in_progress? and !project.completed? ? progress_badge(project.progress) : status_badge(project.status) %></td>
 				<td>
 					<%= link_to "#{project.completed_tasks.size} / #{project.assigned_tasks.size}", project_path(project) %>
 				</td>

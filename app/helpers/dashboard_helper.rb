@@ -1,12 +1,12 @@
 module DashboardHelper
   def status_badge(status)
     case status
-      when :completed     then content_tag(:span, "Completed",     class: "status-badge label label-success")
-      when :not_completed then content_tag(:span, "Not Completed", class: "status-badge label label-important")
-      when :not_commenced then content_tag(:span, "Not Commenced", class: "status-badge label")
-      when :not_started   then content_tag(:span, "Not Commenced", class: "status-badge label")
-      when :in_progress   then content_tag(:span, "In Progress",   class: "status-badge label")
-      else content_tag(:span, "Unknown Progress",   class: "status-badge label")
+      when :completed     then content_tag(:span, completed_badge,      class: "status-badge label label-success")
+      when :not_completed then content_tag(:span, not_completed_badge,  class: "status-badge label label-important")
+      when :not_commenced then content_tag(:span, "Not Commenced",      class: "status-badge label")
+      when :not_started   then content_tag(:span, "Not Commenced",      class: "status-badge label")
+      when :in_progress   then content_tag(:span, "In Progress",        class: "status-badge label")
+      else content_tag(:span, "Unknown Progress", class: "status-badge label")
     end
   end
 
@@ -20,6 +20,14 @@ module DashboardHelper
       else content_tag(:span, "Unknown Progress", class: "status-badge label")
     end
   end
+
+  def completed_badge
+    raw('Completed <i class="icon-ok"></i>')
+  end
+
+  def not_completed_badge
+    raw('Not Completed <i class="icon-remove"></i>')
+  end  
 
   def will_complete_based_on_velocity(project)
     if project.in_progress?
