@@ -18,17 +18,17 @@ function constructBurndownChart(burndownChartContainer) {
           .tickFormat(d3.format('d'));
 
       projectProgressChart.yAxis
-          .axisLabel('Task Units Completed (t)')
+          .axisLabel('Task Units Remaining (t)')
           .tickFormat(d3.format(',.2f'));
 
       projectProgressChart.tooltipContent(function(key, x, y, e, graph){
         var displayString = "<h3>" + key + "</h3>";
 
         if (key === "Target Completion") {
-          displayString += "<p>" + y + " by Week " + x + "</p>";
+          displayString += "<p>" + y + " remaining by Week " + x + "</p>";
         }
         else {
-          displayString += "<p>" + y + " at Week " + x + "</p>";
+          displayString += "<p>" + y + " remaining at Week " + x + "</p>";
         }
 
         return displayString;
