@@ -2,17 +2,10 @@ class ConvenorProjectsController < ApplicationController
 	def show
 		@project_template = ProjectTemplate.includes(:task_templates).find(params[:id])
     
-    @projects = Project.includes(team_membership:
-                  [
-                    {
-                      project: [
-                      { 
-                        tasks: :task_template
-                      }
-                    ]},
-                    :team,
-                    :user
-                  ]
+    @projects = Project.includes({
+                  team_membership: [:user, :team],
+                  tasks: [:task_template]
+                  }, :project_template
                 )
                 .where(project_template_id: params[:id])
 
