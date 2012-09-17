@@ -72,7 +72,7 @@ class Project < ActiveRecord::Base
   end
 
   def progress_in_days
-    current_progress = completed_tasks_weight
+    current_progress = completed_tasks_weight + partially_completed_tasks_weight
 
     current_week  = weeks_elapsed
     date_progress = project_template.start_date
@@ -167,6 +167,12 @@ class Project < ActiveRecord::Base
     assigned_tasks.select{|task| task.complete? }
   end
 
+  def partially_completed_tasks
+    # TODO: Should probably have a better definition
+    # of partially complete than just 'needs fixing' tasks
+    assigned_tasks.select{|task| task.needs_fixing? }
+  end
+
   def completed?
     # TODO: Have a status flag on the project instead
     assigned_tasks.all?{|task| task.complete? }
@@ -186,6 +192,12 @@ class Project < ActiveRecord::Base
 
   def completed_tasks_weight
     completed_tasks.empty? ? 0.0 : completed_tasks.map{|task| task.task_template.weighting }.inject(:+)
+  end
+
+  def partially_completed_tasks_weight
+    # Award half points for 
+    partially_complete = partially_completed_tasks
+    partially_complete.empty? ? 0.0 : partially_complete.map{|task| task.task_template.weighting / 2.to_f }.inject(:+)
   end
 
   def total_task_weight
