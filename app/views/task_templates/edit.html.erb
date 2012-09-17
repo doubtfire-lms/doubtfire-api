@@ -1,6 +1,42 @@
 <%- model_class = @task_template.class -%>
-<div class="page-header">
-  <h1><%=t '.title', :default => t('helpers.titles.edit', :model => model_class.model_name.human,
-                                   :default => "Edit #{model_class.model_name.human}") %></h1>
+
+
+<% content_for :sidebar do %>
+    <% if current_user.superuser? %>
+        <%= render :partial => 'layouts/superuser_menu' %>
+    <% else %>
+        <%= render :partial => 'layouts/admin_menu' %>
+    <% end %>
+<% end %>
+
+<div class="span9">
+
+  <ul class="breadcrumb">
+    <li>
+        <%= link_to "Home", root_url %>
+        <span class="divider">/</span>
+    </li>
+    <li>
+        <%= link_to "Project Templates", project_templates_url %>
+        <span class="divider">/</span>
+    </li>
+    <li>
+        <%= link_to @project_template.name, project_template_url(@project_template) %>
+        <span class="divider">/</span>
+    </li>
+    <li>
+        <%= link_to @task_template.name, task_template_url(@task_template) %>
+        <span class="divider">/</span>
+    </li>
+    <li class="active">
+        Modify
+    </li>
+  </ul>
+
+    <div class="widget">
+        <h2><i class="icon-book"></i><%= @task_template.name %></h2>
+        <div class="widget-content">
+            <%= render :partial => 'form' %>
+        </div>
+    </div>
 </div>
-<%= render :partial => 'form' %>

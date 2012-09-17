@@ -14,6 +14,7 @@ class TaskTemplatesController < ApplicationController
   # GET /task_templates/1.json
   def show
     @task_template = TaskTemplate.find(params[:id])
+    @project_template = @task_template.project_template
 
     respond_to do |format|
       format.html # show.html.erb
@@ -46,7 +47,8 @@ class TaskTemplatesController < ApplicationController
 
   # GET /task_templates/1/edit
   def edit
-    @task_template = TaskTemplate.find(params[:id])
+    @task_template = TaskTemplate.includes(:project_template).find(params[:id])
+    @project_template = @task_template.project_template
 
     respond_to do |format|
       format.html
