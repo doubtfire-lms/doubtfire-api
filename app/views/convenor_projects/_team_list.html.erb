@@ -1,11 +1,8 @@
-<h2><i class="icon-group"></i>Teams</h2>
-<div class="widget-content">
-	<% teams.each do |team| %>
-	<h3>
-		<%= link_to team.name, convenor_project_team_path(team.project_template, team) %>
-		&mdash;
-		<%= team.user.name %>
-	</h3>
-	<p><strong><%= team.team_memberships.count %> users</strong> are assigned to this team.</p>
-	<% end %>
-</div>
+<% teams.each do |team| %>
+<h3>
+	<%= link_to team.name, convenor_project_team_path(team.project_template, team) %>
+	&mdash;
+	<%= team.user.name %>
+</h3>
+<p><strong><%= team.team_memberships.count %> users</strong> are assigned to this team.</p>
+<% end %>

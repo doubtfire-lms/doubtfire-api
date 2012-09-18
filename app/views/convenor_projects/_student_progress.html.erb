@@ -1,9 +1,3 @@
-<%= stylesheets 'tasks.css', 'tutor_projects.css' %>
-
-<%= javascript 'tutor_projects.js' %>
-<%= javascript 'tasks.js' %>
-<%= javascript "task_popover.js" %>
-
 <%= render :partial => "tutor_projects/task_indicator_controls", locals: {mode: :progress} %>
 
 <% teams.each do |team| %>

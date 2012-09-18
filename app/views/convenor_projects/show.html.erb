@@ -37,7 +37,12 @@
 				</div>
 
 				<div class="tab-pane widget" id="teams">
-					<%= render partial: "team_list", :locals => {teams: @project_teams} %>
+					<h2><i class="icon-group"></i>Teams</h2>
+					<div class="widget-content">
+						<h3><%= link_to "Show All Teams", convenor_project_teams_path(@project_template) %></h3>
+						<hr />
+						<%= render partial: "team_list", :locals => {teams: @project_teams} %>
+					</div>
 				</div>
 			</div>
 		</div>
