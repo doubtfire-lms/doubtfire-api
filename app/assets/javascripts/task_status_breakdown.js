@@ -29,6 +29,18 @@ function constructTaskDistributionChart(taskDistributionContainer) {
 				+ "<p>" + y + " '" + key + "'</p>";
 			});
 
+			// Get the tab panes under which the chart lives 
+			var tab = $(taskDistributionContainer).parents(".tab-pane");
+
+			// If it does in fact live under tab panes
+		    if(tab.length) {
+		    	// Force the chart to be redrawn when any of the tabs is selected
+				tab.each(function(i,e) {
+					t = $("a[href='#"+$(e).attr("id")+"'][data-toggle]");
+					t.on("shown", function(){ chart.update(); });
+				});
+		    }
+
 			d3.select($(taskDistributionContainer).children("svg")[0])
 			 .datum(taskDistributionData)
 			.transition().duration(500).call(chart);
