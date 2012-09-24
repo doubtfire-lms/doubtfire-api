@@ -1,7 +1,7 @@
 class Project < ActiveRecord::Base
   include ApplicationHelper
 
-  attr_accessible :project_role, :started, :progress
+  attr_accessible :project_template, :team_membership, :project_role, :project_status_id, :started, :progress
 
   # Model associations
   belongs_to :team              # Foreign key
@@ -10,6 +10,8 @@ class Project < ActiveRecord::Base
   belongs_to :team_membership, :dependent => :destroy   # Foreign key
 
   has_many :tasks, :dependent => :destroy   # Destroying a project will also nuke all of its tasks
+
+  before_create :calculate_temporal_attributes
 
   def assigned_tasks
     required_tasks
@@ -49,6 +51,11 @@ class Project < ActiveRecord::Base
 
   def progress=(value)
     write_attribute(:progress, value.to_s)
+  end
+
+  def calculate_temporal_attributes
+    progress  = calculate_progress
+    status    = calculate_status
   end
 
   def status
