@@ -18,17 +18,22 @@ class ProjectTemplate < ActiveRecord::Base
   # Adds a user to this project.
   def add_user(user_id, team_id, project_role)
     # Put the user in the appropriate team (ie. create a new team_membership)
-    project = Project.create!(
-      project_status_id: 1,
-      project_template: self,
-      project_role: project_role,
+    team_membership = TeamMembership.new(
+      user_id: user_id,
+      team_id: team_id
     )
 
-    team_membership = TeamMembership.find_or_create_by_user_id_and_team_id(user_id, team_id){|membership|
-      membership.project = project
-    }
+    project = team_membership.build_project(
+      project_status_id: 1,
+      started: false,
+      project_template: self,
+      project_role: project_role
+    )
+    project.save
 
-    team_membership.save!
+    # Associate the team membership with the project that was created
+    team_membership.project_id = project.id
+    team_membership.save
 
     # Create task instances for the project
     task_templates_for_project = TaskTemplate.where(:project_template_id => self.id)
@@ -119,7 +124,8 @@ class ProjectTemplate < ActiveRecord::Base
     CSV.foreach(file) do |row|
       next if row[0] =~ /Task Name/ # Skip header
 
-      name, description, weighting, required, target_date = row[0..4]
+      name, description, weighting, required, target_date, abbreviation = row[0..5]
+      description = "(No description given)" if description == "NULL"
 
       if target_date !~ /20\d\d\-\d{1,2}\-\d{1,2}$/ # Matches YYYY-mm-dd by default
         if target_date =~ /\d{1,2}\-\d{1,2}\-20\d\d/ # Matches dd-mm-YYYY
