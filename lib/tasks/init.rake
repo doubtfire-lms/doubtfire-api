@@ -30,7 +30,7 @@ namespace :db do
 				superuser.username 			 = username.to_s
 				superuser.nickname 			 = info[:nickname]
 				superuser.email 			 = "#{username.to_s}@swin.edu.au"
-				superuser.encrypted_password = BCrypt::Password.create("d872$dh")
+				superuser.encrypted_password = BCrypt::Password.create("password")
 				superuser.first_name 		 = info[:first]
 				superuser.last_name 		 = info[:last]
 				superuser.sign_in_count 	 = 0
