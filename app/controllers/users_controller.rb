@@ -124,7 +124,7 @@ class UsersController < ApplicationController
     @user = User.find(params[:id])
 
     respond_to do |format|
-        format.js  # finish_update.js.erb
+      format.js  # finish_update.js.erb
     end
   end
 
@@ -138,6 +138,7 @@ class UsersController < ApplicationController
     FileUtils.rm csv_file
 
     respond_to do |format|
+      format.html { redirect_to users_url, notice: 'Successfully imported users.' }
       format.js
     end
   end

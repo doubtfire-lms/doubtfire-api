@@ -161,7 +161,6 @@ class ProjectTemplatesController < ApplicationController
   end
 
   def import_users
-    
     tmp = params[:csv_file][:file].tempfile
     csv_file = File.join("public", params[:csv_file][:file].original_filename)
     FileUtils.cp tmp.path, csv_file
@@ -172,9 +171,9 @@ class ProjectTemplatesController < ApplicationController
     FileUtils.rm csv_file
 
     respond_to do |format|
+      format.html { redirect_to project_template_path(@project_template), notice: "Successfully imported project participants."}
       format.js
     end
-
   end
 
   def import_teams
@@ -188,6 +187,7 @@ class ProjectTemplatesController < ApplicationController
     FileUtils.rm csv_file
 
     respond_to do |format|
+      format.html { redirect_to project_template_path(@project_template), notice: "Successfully imported teams."}
       format.js
     end
   end
@@ -208,6 +208,7 @@ class ProjectTemplatesController < ApplicationController
     FileUtils.rm csv_file
 
     respond_to do |format|
+      format.html { redirect_to project_template_path(@project_template), notice: "Successfully imported tasks."}
       format.js
     end
   end
