@@ -1,6 +1,8 @@
 <% title "#{@student_project.project_template.name} - #{@student.name} (#{@student.username})" %>
 
-<%= stylesheets 'tasks.css' %>
+<% stylesheets 'tasks.css' %>
+<% stylesheets 'burndown.css' %>
+<% javascript 'burndown.js' %>
 
 <% content_for :sidebar do %>
 	<ul class="nav nav-list">
@@ -34,6 +36,9 @@
 			<%= tab_li_tag("tasks-tab", true) do %>
                 <a href="#tasks-tab" data-toggle="tab">Tasks</a>
             <% end %>
+            <%= tab_li_tag("progress-tab") do %>
+                <a href="#progress-tab" data-toggle="tab">Progress</a>
+            <% end %>
 		</ul>
 		<div class="tab-content">
 			<%= tab_div_tag("tasks-tab", true) do %>
@@ -41,6 +46,17 @@
 					<h2><i class="icon-tasks"></i><%= @student.name %></h2>
 					<div class="widget-content">
 					<%= render :partial => 'tutor_projects/tutor_task_backlog', :locals => { :actionable_tasks => @student_project.assigned_tasks} %>
+					</div>
+				</div>
+			<% end %>
+
+			<%= tab_div_tag("progress-tab", true) do %>
+				<div class="span12 widget project-overview">
+					<h2><i class="icon-book"></i><%= @student_project.project_template.name %></h2>
+					<div class="widget-content">
+						<%= content_tag "div", class: "burndownchart", data: {url: project_url(@student_project)} do %>
+							<svg style="height: 300px"></svg>
+						<% end %>
 					</div>
 				</div>
 			<% end %>
