@@ -5,46 +5,67 @@
 <% title @project_template.name %>
 
 <% content_for :sidebar do %>
-	<%= render :partial => 'layouts/admin_menu' %>
+  <%= render :partial => 'layouts/admin_menu' %>
 <% end %>
 
 <div class="span9">
-	<div class="row-fluid">
-		<ul class="breadcrumb">
-			<li>
-				<%= link_to "Home", root_url %>
-				<span class="divider">/</span>
-			</li>
-			<li class="active"><%= @project_template.name %></li>
-		</ul>
 
-		<div class="tabbable"> 
-			<ul class="nav nav-pills">
-				<li class="active"><a href="#students" data-toggle="tab">Students</a></li>
-				<li><a href="#tasks" data-toggle="tab">Tasks</a></li>
-				<li><a href="#teams" data-toggle="tab">Teams</a></li>
-			</ul>
-			<div class="tab-content">
-				<div class="tab-pane active widget" id="students">
-					<h2><i class="icon-user"></i>Students</h2>
-					<div class="widget-content" id="users-table">
-						<%= render :partial => "student_list" %>
-					</div>
-				</div>
+    <div class="row-fluid">
+        <ul class="breadcrumb">
+          <li>
+            <%= link_to "Home", root_url %>
+            <span class="divider">/</span>
+          </li>
+          <li class="active"><%= @project_template.name %></li>
+        </ul>
 
-				<div class="tab-pane widget" id="tasks">
-					<%= render partial: "task_status_breakdown", locals: {project_template: @project_template} %>
-				</div>
+        <div class="tabbable"> 
+            <ul class="nav nav-pills">
+                <%= tab_li_tag("students-tab", true) do %>
+                    <a href="#students-tab" data-toggle="tab">Summary</a>
+                <% end %>
+                <%= tab_li_tag("teams-tab") do %>
+                    <a href="#teams-tab" data-toggle="tab">Teams</a>
+                <% end %>
+                <%= tab_li_tag("tasks-tab") do %>
+                    <a href="#tasks-tab" data-toggle="tab">Tasks</a>
+                <% end %>
+            </ul>
+            <div class="tab-content">
 
-				<div class="tab-pane widget" id="teams">
-					<h2><i class="icon-group"></i>Teams</h2>
-					<div class="widget-content">
-						<h3><%= link_to "Show All Teams", convenor_project_teams_path(@project_template) %></h3>
-						<hr />
-						<%= render partial: "team_list", :locals => {teams: @project_teams} %>
-					</div>
-				</div>
-			</div>
-		</div>
+                <%= tab_div_tag("students-tab", true) do %>
+                    <div class="widget">
+                        <h2><i class="icon-user"></i>Students</h2>
+                        <div class="widget-content" id="users-table">
+                            <%= render :partial => "student_list" %>
+                        </div>
+                    </div>
+                <% end %>
+
+                <%= tab_div_tag("teams-tab") do %>
+                    <div class="widget">
+                    <h2><i class="icon-group"></i>Teams</h2>
+                    
+                        <div class="widget-content">
+                            <h3>
+                                <%= link_to "Show All Teams", convenor_project_teams_path(@project_template) %>
+                            </h3>
+                            <hr />
+                            <%= render partial: "team_list", :locals => { teams: @project_teams} %>
+                        </div>
+                    </div>
+                <% end %>
+
+                <%= tab_div_tag("tasks-tab") do %>
+                    <div class="widget">
+                        <%= 
+                            render partial: "task_status_breakdown",
+                            locals: { project_template: @project_template } 
+                        %>
+                    </div>
+                <% end %>
+
+            </div>
+        </div>
     </div>
 </div>

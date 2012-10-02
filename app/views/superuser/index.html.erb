@@ -22,16 +22,23 @@
 	<div class="row-fluid">
 		<div class="tabbable"> 
 			<ul class="nav nav-pills">
-				<li class="active"><a href="#project-admin" data-toggle="tab">Project Administration</a></li>
-				<li><a href="#user-admin" data-toggle="tab">User Administration</a></li>
+        <%= tab_li_tag("project-admin-tab", true) do %>
+            <a href="#project-admin-tab" data-toggle="tab">Project Administration</a>
+        <% end %>
+        <%= tab_li_tag("user-admin-tab") do %>
+            <a href="#user-admin-tab" data-toggle="tab">User Administration</a>
+        <% end %>
 			</ul>
 			<div class="tab-content">
-				<div class="tab-pane active" id="project-admin">
+				
+        <%= tab_div_tag("project-admin-tab", true) do %>
 					<%= render "project_admin" %>
-				</div>
-				<div class="tab-pane" id="user-admin">
-					<%= render "user_admin" %>
-				</div>
+				<% end %>
+
+        <%= tab_div_tag("user-admin-tab") do %>
+          <%= render "user_admin" %>
+        <% end %>
+
 			</div>
 		</div>
     </div>

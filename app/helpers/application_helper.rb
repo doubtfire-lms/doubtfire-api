@@ -22,4 +22,46 @@ module ApplicationHelper
   def stylesheets(*files)
     content_for(:css) { stylesheet_link_tag(*files) }
   end
+
+  # Generates a tab content tag (<div class="tab-pane active"> or <div class="tab-pane">) depending on whether the "tab" page param matches a given identifier.
+  # Useful for redirecting to a specific tab within a view.
+  # @param id      - the id of the tab pane
+  # @param default - whether this tab is the 'default' - if no tab param is passed in the page url, the default tab will be activated.
+  # @param &block  - whatever html/erb code falls between <%= tab_li_tag("tab-identifier") %> and <% end %>.
+  def tab_div_tag(id, default = false, &block)
+    content = capture(&block)
+    content_tag(:div, content, :id => id, :class => "#{ 
+      if params[:tab] == id or (default and !params[:tab]) then
+        'tab-pane active'
+      else
+        'tab-pane'
+      end
+    }")
+  end
+
+  # Generates a tab header tag (<li> or <li class="active">) depending on whether the "tab" page param matches a given identifier.
+  # Useful for redirecting to a specific tab within a view.
+  # @param id      - the id of the tab pane
+  # @param default - whether this tab is the 'default' - if no tab param is passed in the page url, the default tab will be activated.
+  # @param &block  - whatever html/erb code falls between <%= tab_li_tag("tab-identifier") %> and <% end %>.
+  def tab_li_tag(id, default = false, &block)
+    content = capture(&block)
+    content_tag(:li, content, :class => "#{'active' if params[:tab] == id or (default and !params[:tab])}")
+  end
+
+  # Generates a tab dropdown tag (<li class="dropdown active"> or <div class="dropdown">) depending on whether the "tab" page param matches a given identifier.
+  # Useful for redirecting to a specific tab within a view.
+  # @param ids     - collection of tab ids that are children of the dropdown
+  # @param default - whether this tab is the 'default' - if no tab param is passed in the page url, the default tab will be activated.
+  # @param &block  - whatever html/erb code falls between <%= tab_li_tag("tab-identifier") %> and <% end %>.
+  def tab_dropdown_tag(ids, default = false, &block)
+    content = capture(&block)
+    content_tag(:li, content, :class => "#{ 
+      if ids.include?(params[:tab]) or (default and !params[:tab]) then
+        'dropdown active'
+      else
+        'dropdown'
+      end
+    }")
+  end
 end

@@ -12,43 +12,78 @@
 <div class="span9">
     <ul class="breadcrumb">
         <li>
-            <%= link_to "Home", root_url %>
-            <span class="divider">/</span>
+          <%= link_to "Home", root_url %>
+          <span class="divider">/</span>
         </li>
         <li>
-            <%= link_to "Project Templates", project_templates_url %>
-            <span class="divider">/</span>
+          <%= link_to "Project Templates", project_templates_url %>
+          <span class="divider">/</span>
         </li>
         <li class="active"><%= @project_template.name %> (Adminstration)</li>
     </ul>
 
     <div class="tabbable"> 
         <ul class="nav nav-pills">
-            <li><a href="#summary" data-toggle="tab">Summary</a></li>
-            <li class="active"><a href="#tasks" data-toggle="tab">Tasks</a></li>
-            <li><a href="#teams" data-toggle="tab">Teams</a></li>
-            <li><a href="#participants" data-toggle="tab">Participants</a></li>
+            <%= tab_li_tag("summary-tab", true) do %>
+                <a href="#summary-tab" data-toggle="tab">Summary</a>
+            <% end %>
+            <%= tab_li_tag("teams-tab") do %>
+                <a href="#teams-tab" data-toggle="tab">Teams</a>
+            <% end %>
+            <%= tab_li_tag("tasks-tab") do %>
+                <a href="#tasks-tab" data-toggle="tab">Tasks</a>
+            <% end %>
+            <%= tab_li_tag("participants-tab") do %>
+                <a href="#participants-tab" data-toggle="tab">Participants</a>
+            <% end %>
         </ul>
         <div class="tab-content">
             <!-- Information about the current project -->
-            <div class="tab-pane widget" id="summary">
-                <%= render :partial => 'summary_information', locals: {project_template: @project_template} %>
-            </div>
+            <%= tab_div_tag("summary-tab", true) do %>
+                <div class="widget">
+                    <%= 
+                        render partial: 'summary_information',
+                        locals: { project_template: @project_template }
+                    %>
+                </div>
+            <% end %>
             
             <!-- Table of tasks for the current project -->
-            <div class="tab-pane active widget" id="tasks">
-                <%= render :partial => 'tasks', locals: {project_template: @project_template, task_templates: @project_tasks} %>
-            </div>
+            <%= tab_div_tag("tasks-tab") do %>
+                <div class="widget">
+                    <%= render partial: 'tasks',
+                        locals: {
+                            project_template: @project_template, task_templates: @project_tasks
+                        }
+                    %>
+                </div>
+            <% end %>
 
             <!-- Table of teams for the current project -->
-            <div class="tab-pane widget" id="teams">
-                <%= render :partial => 'teams', locals: {project_template: @project_template, project_teams: @project_teams} %>
-            </div>
+            <%= tab_div_tag("teams-tab") do %>
+                <div class="widget">
+                    <%=
+                        render partial: 'teams',
+                        locals: {
+                            project_template: @project_template,
+                            project_teams: @project_teams
+                        }
+                    %>
+                </div>
+            <% end %>
 
             <!-- Table of users for the current project -->
-            <div class="tab-pane widget" id="participants">
-                <%= render :partial => 'participants', locals: {project_template: @project_template, participants: @project_users} %>
-            </div>
+            <%= tab_div_tag("participants-tab") do %>
+                <div class="widget">
+                    <%=
+                        render partial: 'participants',
+                        locals: {
+                            project_template: @project_template,
+                            participants: @project_users
+                        }
+                    %>
+                </div>
+            <% end %>
         </div>
     </div>
 </div>
