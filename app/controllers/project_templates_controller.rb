@@ -171,7 +171,7 @@ class ProjectTemplatesController < ApplicationController
     FileUtils.rm csv_file
 
     respond_to do |format|
-      format.html { redirect_to project_template_path(@project_template), notice: "Successfully imported project participants."}
+      format.html { redirect_to project_template_path(@project_template, tab: "participants-tab"), notice: "Successfully imported project participants."}
       format.js
     end
   end
@@ -187,7 +187,7 @@ class ProjectTemplatesController < ApplicationController
     FileUtils.rm csv_file
 
     respond_to do |format|
-      format.html { redirect_to project_template_path(@project_template), notice: "Successfully imported teams."}
+      format.html { redirect_to project_template_path(@project_template, tab: "teams-tab"), notice: "Successfully imported teams."}
       format.js
     end
   end
@@ -208,7 +208,7 @@ class ProjectTemplatesController < ApplicationController
     FileUtils.rm csv_file
 
     respond_to do |format|
-      format.html { redirect_to project_template_path(@project_template), notice: "Successfully imported tasks."}
+      format.html { redirect_to project_template_path(@project_template, tab: "tasks-tab"), notice: "Successfully imported tasks."}
       format.js
     end
   end
