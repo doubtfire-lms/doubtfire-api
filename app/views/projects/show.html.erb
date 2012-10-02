@@ -7,7 +7,13 @@
 		<li class="nav-header">Dashboard</li>
 		<li><%= link_to 'Home', root_url %></li>
 		<% unless @student_projects.empty? %>
-			<%= render 'dashboard/student_projects_links', :student_projects => @student_projects, :selected_student_project => @project %>
+			<%=
+				render partial: 'dashboard/student_projects_links',
+				locals: {
+					student_projects: @student_projects,
+					selected_student_project: @project
+				}
+			%>
 		<% end %>
 	</ul>
 <% end %>
@@ -18,7 +24,12 @@
 			<%= link_to "Home", root_url %>
 			<span class="divider">/</span>
 		</li>
-		<li class="active"><%= @project.project_template.name %></li>
+		<li class="active">
+			<%= @project.project_template.name %>
+			<% if @project.user != current_user %>
+			(<%= @project.user.name %> &mdash; <%= @project.user.username %>)
+			<% end %>
+		</li>
 	</ul>
 	
 	<ul class="nav nav-pills">
@@ -36,29 +47,64 @@
 	<div class="tab-content">
 		<%= tab_div_tag("summary-tab", true) do %>
 			<div class="span7 widget">
-				<h2><i class="icon-bar-chart"></i>Progress</h2>
+				<h2>
+					<i class="icon-bar-chart"></i>Progress
+					<% if @project.user != current_user %>
+					(<%= @project.user.name %> &mdash; <%= @project.user.username %>)
+					<% end %>
+				</h2>
 				<div class="widget-content" id="progress-widget">
-					<%= render 'dashboard/project_progress', :project => @project %>
+					<%= render partial: 'dashboard/project_progress', locals: { project: @project } %>
 				</div>
 			</div>
 
 			<div class="span5 widget" id="task-highlights-widget">
-				<%= render 'dashboard/task_highlights', :project => @project %>
+				<%= render partial: 'dashboard/task_highlights', locals: { project: @project } %>
 			</div>
 		<% end %>
 
 		<%= tab_div_tag("tasks-tab") do %>
 			<div class="span9 widget">
-				<%= render 'dashboard/task_list', :tasks => @project.assigned_tasks %>
+				<h2>
+					<i class="icon-tasks"></i>Tasks
+					<% if @project.user != current_user %>
+					(<%= @project.user.name %> &mdash; <%= @project.user.username %>)
+					<% end %>
+				</h2>
+				<div class="widget-content">
+					<%= 
+						render partial: 'dashboard/task_list',
+						locals: { tasks: @project.assigned_tasks }
+					%>
+				</div>
 			</div>
 		<% end %>
 
 		<%= tab_div_tag("team-tab") do %>
 			<div class="span7 widget">
-				<%= render 'dashboard/team_allocation', :project => @project, :team_membership => @project.team_membership %>
+				<h2>
+					<i class="icon-group"></i>Your Tutorial Allocation
+					<% if @project.user != current_user %>
+					(<%= @project.user.name %> &mdash; <%= @project.user.username %>)
+					<% end %>
+				</h2>
+				<div class="widget-content">
+					<%= 
+						render partial: 'dashboard/team_allocation',
+						locals: {
+							project: @project,
+							team_membership: @project.team_membership
+						}
+					%>
+				</div>
 			</div>
 			<div class="span5 widget">
-				<%= render 'dashboard/project_team_list', :project_teams => @project.project_template.teams %>
+				<h2><i class="icon-group"></i>Available Tutorials</h2>
+				<div class="widget-content">
+					<%= render partial: 'dashboard/project_team_list',
+						locals: { project_teams: @project.project_template.teams }
+					%>
+				</div>
 			</div>
 		<% end %>
 	</div>

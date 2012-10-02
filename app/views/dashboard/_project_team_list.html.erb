@@ -1,11 +1,7 @@
-<h2><i class="icon-group"></i>Available Tutorials</h2>
-
-<div class="widget-content">
-	<h3>Tutorials</h3>
-	<p>The following tutorials are associated with this project.</p>
-	<ul>
-	<% project_teams.each do |team| %>
-		<li><%= team.meeting_day %> <%= team.meeting_time %> (<%= team.meeting_location %> &mdash; <%= link_to team.user.name, user_path(team.user) %>)</li>
-	<% end %>
-	</ul>
-</div>
+<h3>Tutorials</h3>
+<p>The following tutorials are associated with this project.</p>
+<ul>
+<% project_teams.each do |team| %>
+	<li><%= team.meeting_day %> <%= team.meeting_time %> (<%= team.meeting_location %> &mdash; <%= link_to team.user.name, user_path(team.user) %>)</li>
+<% end %>
+</ul>

@@ -1,24 +1,24 @@
-<div class="span<%= "#{grid_size}" %> widget">
-	<h2><i class="icon-book"></i><%= project_template.name %></h2>
+<% if status_distribution[:total] > 0 %>
+<div class="row-fluid">
+	<%= 
+		render partial: 'convenor_projects/status_distribution_chart',
+		locals: { project_template: project_template }
+	%>
+	<%=
+		render partial: 'convenor_projects/progress_bands',
+		locals: { status_distribution: status_distribution }
+	%>
+</div>	
+<% else %>
+	<p>This project does not have any members.</p>
+	<p><%= link_to "Set up Project", project_template_path(project_template), :class => "btn" %></p>
+<% end %>
 
-	<div class="widget-content">
-	<% if status_distribution[:total] > 0 %>
-		<div class="row-fluid">
-			<%= render :partial => "convenor_projects/status_distribution_chart", :locals => {project_template: project_template} %>
-			<%= render :partial => "convenor_projects/progress_bands", :locals => {status_distribution: status_distribution} %>
-		</div>	
-	<% else %>
-		<p>This project does not have any members.</p>
-		<p><%= link_to "Set up Project", project_template_path(project_template), :class => "btn" %></p>
+<div class="row-fluid">
+	<%= link_to "Go to Project", convenor_project_path(project_template), :class => "btn" %>
+	<div class="project-admin-controls pull-right" style="font-size: 24px;">
+	<%= content_tag "a", href: project_template_url(project_template), :class => "link-icon" do %>
+		<i class="icon-cog"></i>
 	<% end %>
-
-		<div class="row-fluid">
-			<%= link_to "Go to Project", convenor_project_path(project_template), :class => "btn" %>
-			<div class="project-admin-controls pull-right" style="font-size: 24px;">
-			<%= content_tag "a", href: project_template_url(project_template), :class => "link-icon" do %>
-				<i class="icon-cog"></i>
-			<% end %>
-			</div>
-		</div>
 	</div>
 </div>

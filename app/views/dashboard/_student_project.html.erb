@@ -1,29 +1,24 @@
-<div class="span<%= "#{grid_size}" %> widget project-overview">
-	<h2><i class="icon-book"></i><%= project.project_template.name %></h2>
-	<div class="widget-content">
-		<%= project.in_progress? and !project.completed? ? progress_badge(project.progress) : status_badge(project.status) %>
+<%= project.in_progress? and !project.completed? ? progress_badge(project.progress) : status_badge(project.status) %>
 
-		<% if project.commenced? %>
-			<% unless project.concluded? %>
-				<div class="tasks-completed-label">
-					<%= link_to "#{project.completed_tasks.size}/#{project.assigned_tasks.size}", project_path(project), :class => "highlight-figure" %>
-					<p class="highlight-figure-subtext">Tasks Completed</p>
-				</div>
-			<% end %>
-			<h3>Project Status</h3>
-			<%= project_status_summary(project) %>
-			<%= project_progress_bar(project) %>
-			<h3>Remaining Work</h3>
-			<%= task_completion(project) %>
-			<% unless project.concluded? %>
-				<h3>Projected Completion</h3>
-				<%= rate_of_completion(project) %>
-			<% end %>
-		<% end %>				
+<% if project.commenced? %>
+	<% unless project.concluded? %>
+		<div class="tasks-completed-label">
+			<%= link_to "#{project.completed_tasks.size}/#{project.assigned_tasks.size}", project_path(project), :class => "highlight-figure" %>
+			<p class="highlight-figure-subtext">Tasks Completed</p>
+		</div>
+	<% end %>
+	<h3>Project Status</h3>
+	<%= project_status_summary(project) %>
+	<%= project_progress_bar(project) %>
+	<h3>Remaining Work</h3>
+	<%= task_completion(project) %>
+	<% unless project.concluded? %>
+		<h3>Projected Completion</h3>
+		<%= rate_of_completion(project) %>
+	<% end %>
+<% end %>				
 
-		<% if project.started? %>
-			<%= projected_date_of_completion_vs_deadline(project) %>
-		<% end %>
-		<p class="project-link"><%= link_to "Go to Project", project_path(project), class: "btn" %></p>
-	</div>
-</div>
+<% if project.started? %>
+	<%= projected_date_of_completion_vs_deadline(project) %>
+<% end %>
+<p class="project-link"><%= link_to "Go to Project", project_path(project), class: "btn" %></p>

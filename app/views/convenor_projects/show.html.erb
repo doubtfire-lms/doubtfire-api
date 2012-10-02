@@ -58,10 +58,13 @@
 
                 <%= tab_div_tag("tasks-tab") do %>
                     <div class="widget">
-                        <%= 
-                            render partial: "task_status_breakdown",
-                            locals: { project_template: @project_template } 
-                        %>
+                        <h2><i class="icon-tasks"></i>Tasks</h2>
+                        <div class="widget-content">
+                            <%= 
+                                render partial: "task_status_breakdown",
+                                locals: { project_template: @project_template } 
+                            %>
+                        </div>
                     </div>
                 <% end %>
 

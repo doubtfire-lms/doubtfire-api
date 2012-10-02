@@ -2,7 +2,9 @@
 <% stylesheets 'burndown.css' %>
 
 <div class="subject-summary">
-	<h3><%= project.project_template.name %></h3>
+	<h3>
+		<%= project.project_template.name %>
+	</h3>
 	
 	<%= project.in_progress? and !project.completed? ? progress_badge(project.progress) : status_badge(project.status) %>
 

@@ -11,7 +11,17 @@
 	<% if @project_templates.size < 3 %>
 		<% @project_templates.each_with_index do |project_template, i| %>
 		<div class="row-fluid">
-			<%= render 'convenor_projects/convenor_project', :project_template => project_template, :status_distribution => project_template.status_distribution, :grid_size => 12 %>
+			<div class="span12 widget">
+				<h2><i class="icon-book"></i><%= project_template.name %></h2>
+				<div class="widget-content">
+					<%= render partial: 'convenor_projects/convenor_project',
+						locals: {
+							project_template: project_template,
+							status_distribution: project_template.status_distribution
+						}
+					%>
+				</div>
+			</div>
 		</div>
 		<% end %>
 	<% else %>
@@ -19,7 +29,17 @@
 			<% if i % 2 == 0 %>
 			<div class="row-fluid">
 			<% end %>
-				<%= render 'convenor_projects/convenor_project', :project_template => project_template, :status_distribution => project_template.status_distribution, :grid_size => 6 %>
+				<div class="span6 widget">
+					<h2><i class="icon-book"></i><%= project_template.name %></h2>
+					<div class="widget-content">
+						<%= render partial: 'convenor_projects/convenor_project',
+							locals: {
+								project_template: project_template,
+								status_distribution: project_template.status_distribution
+							}
+						%>
+					</div>
+				</div>
 			<% if i % 2 == 1 %>
 			</div>
 			<% end %>

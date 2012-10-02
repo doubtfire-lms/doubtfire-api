@@ -9,6 +9,7 @@ class Project < ActiveRecord::Base
   belongs_to :project_template  # Foreign key
   belongs_to :team_membership, :dependent => :destroy   # Foreign key
 
+  has_one :user, through: :team_membership
   has_many :tasks, :dependent => :destroy   # Destroying a project will also nuke all of its tasks
 
   before_create :calculate_temporal_attributes

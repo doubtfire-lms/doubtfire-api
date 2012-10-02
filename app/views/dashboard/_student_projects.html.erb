@@ -1,7 +1,15 @@
 <% if student_projects.size < 3 %>
 	<% student_projects.each_with_index do |project, i| %>
 		<div class="row-fluid">
-			<%= render 'student_project', :project => project, :grid_size => 12 %>
+			<div class="span12 widget project-overview">
+				<h2><i class="icon-book"></i><%= project.project_template.name %></h2>
+				<div class="widget-content">
+					<%=
+						render partial: 'student_project',
+						locals: { project: project }
+					%>
+				</div>
+			</div>
 		</div>
 	<% end %>
 <% else %>
@@ -9,7 +17,15 @@
 		<% if i % 2 == 0 %>
 		<div class="row-fluid">
 		<% end %>
-			<%= render 'student_project', :project => project, :grid_size => 6 %>
+			<div class="span6 widget project-overview">
+				<h2><i class="icon-book"></i><%= project.project_template.name %></h2>
+				<div class="widget-content">
+					<%=
+						render partial: 'student_project',
+						locals: { project: project }
+					%>
+				</div>
+			</div>
 		<% if i % 2 == 1 %>
 		</div>
 		<% end %>
