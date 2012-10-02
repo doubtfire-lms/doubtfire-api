@@ -31,12 +31,12 @@
 		</ul>
 
 		<ul class="nav nav-pills">
-			<%= tab_li_tag("tasks-tab") do %>
+			<%= tab_li_tag("tasks-tab", true) do %>
                 <a href="#tasks-tab" data-toggle="tab">Tasks</a>
             <% end %>
 		</ul>
 		<div class="tab-content">
-			<%= tab_div_tag("tasks-tab") do %>
+			<%= tab_div_tag("tasks-tab", true) do %>
 				<div class="span10 widget">
 					<h2><i class="icon-tasks"></i><%= @student.name %></h2>
 					<div class="widget-content">
@@ -45,5 +45,6 @@
 				</div>
 			<% end %>
 		</div>
+		
 	</div>
 </div>
