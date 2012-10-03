@@ -24,7 +24,6 @@ class ProjectTemplate < ActiveRecord::Base
     )
 
     project = team_membership.build_project(
-      project_status_id: 1,
       started: false,
       project_template: self,
       project_role: project_role

@@ -14,7 +14,6 @@ Doubtfire::Application.routes.draw do
   resources :projects
   resources :project_templates
   resources :task_templates
-  resources :project_statuses
   resources :teams
 
   # Routes for when the user has no projects

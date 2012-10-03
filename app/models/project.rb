@@ -1,11 +1,10 @@
 class Project < ActiveRecord::Base
   include ApplicationHelper
 
-  attr_accessible :project_template, :team_membership, :project_role, :project_status_id, :started, :progress
+  attr_accessible :project_template, :team_membership, :project_role, :started, :progress
 
   # Model associations
   belongs_to :team              # Foreign key
-  belongs_to :project_status    # Foreign key
   belongs_to :project_template  # Foreign key
   belongs_to :team_membership, :dependent => :destroy   # Foreign key
 
@@ -24,26 +23,6 @@ class Project < ActiveRecord::Base
 
   def optional_tasks
     tasks.select{|task| !task.task_template.required? }
-  end
-
-  def health
-    completed_tasks_weight        = completed_tasks.empty? ? 0.0 : completed_tasks.map{|task| task.task_template.weighting }.inject(:+)
-    recommended_remaining_weight  = recommended_completed_tasks.empty? ? 0.0 : recommended_completed_tasks.map{|task| task.task_template.weighting }.inject(:+)
-
-    # Project health is at 100% when the project is yet to start
-    return 1.0 unless commenced?
-
-    relative_health = (completed_tasks_weight / recommended_remaining_weight)
-
-    # If relative health is NaN (i.e. either completed or recommended is 0)
-    # then return 0 if it's completed tasks (i.e. no tasks have been completed),
-    # otherwise 1.0, because tasks have been completed, but none are expected
-    # to have been completed
-    if relative_health.nan?
-      completed_tasks_weight == 0.0 ? 0.0 : 1.0
-    else
-      [relative_health * weight, 1.0].min
-    end
   end
 
   def progress
