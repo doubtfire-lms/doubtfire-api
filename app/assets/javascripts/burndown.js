@@ -34,6 +34,18 @@ function constructBurndownChart(burndownChartContainer) {
         return displayString;
       });
 
+      // Get the tab panes under which the chart lives 
+      var tab = $(burndownChartContainer).parents(".tab-pane");
+
+      // If it does in fact live under tab panes
+      if(tab.length) {
+        // Force the chart to be redrawn when any of the tabs is selected
+        tab.each(function(i,e) {
+          t = $("a[href='#"+$(e).attr("id")+"'][data-toggle]");
+          t.on("shown", function(){ projectProgressChart.update(); });
+        });
+      }
+
       d3.select($(burndownChartContainer).children("svg")[0])
           .datum(projectChartData)
         .transition().duration(500)
