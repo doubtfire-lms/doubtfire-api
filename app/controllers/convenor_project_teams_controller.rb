@@ -18,6 +18,8 @@ class ConvenorProjectTeamsController < ApplicationController
 
   def show
     @project_template = ProjectTemplate.find(params[:project_template_id])
+    authorize! :read, @project_template, :message => "You are not authorised to view Project Template ##{@project_template.id}"
+    
     @team             = Team.find(params[:team_id])
   end
 end

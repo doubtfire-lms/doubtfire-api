@@ -1,7 +1,8 @@
 class ConvenorProjectsController < ApplicationController
 	def show
 		@project_template = ProjectTemplate.includes(:task_templates).find(params[:id])
-    
+    authorize! :read, @project_template, :message => "You are not authorised to view Project Template ##{@project_template.id}"
+
     @projects = Project.includes({
                   team_membership: [:user, :team],
                   tasks: [:task_template]

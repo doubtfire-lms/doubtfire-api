@@ -13,6 +13,8 @@ class TutorProjectsController < ApplicationController
 
     @project_template         = ProjectTemplate.find(params[:id])
 
+    authorize! :read, @project_template, :message => "You are not authorised to view Project Template ##{@project_template.id}"
+
     @user_unmarked_tasks        = user_unmarked_tasks(@tutor_team_projects)
     @user_needing_help_tasks    = user_needing_help_tasks(@tutor_team_projects)
     @user_working_on_it_tasks   = user_working_on_it_tasks(@tutor_team_projects)

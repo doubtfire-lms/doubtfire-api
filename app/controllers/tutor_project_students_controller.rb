@@ -6,8 +6,10 @@ class TutorProjectStudentsController < ApplicationController
     @student_projects         = @user.team_memberships.map{|tm| tm.project }
     @tutor_project_templates  = Team.where(:user_id => @user.id).map{|team| team.project_template }.uniq
 
-    @student_project  = Project.find(params[:project_id]) 
-    @student          = User.find(params[:student_id])
+    @student_project  = Project.find(params[:project_id])
+    @student          = @student_project.user
+
+    authorize! :read, @student_project, :message => "You are not authorised to view Project ##{@student_project.id}"
   end
 
   def index
