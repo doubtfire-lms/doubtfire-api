@@ -44,11 +44,11 @@ class ConvenorProjectsController < ApplicationController
     when "name"
       projects.sort{|a,b| a.user.name <=> b.user.name }
     when "progress"
-      projects.sort{|a,b| Progress.new(a.progress) <=> Progress.new(b.progress) }
+      projects.sort{|a,b| -(Progress.new(a.progress) <=> Progress.new(b.progress)) }
     when "tasks_completed"
-      projects.sort{|a,b| a.completed_tasks.size <=> b.completed_tasks.size }
+      projects.sort{|a,b| -(a.completed_tasks.size <=> b.completed_tasks.size) }
     when "units_completed"
-      projects.sort{|a,b| a.completed_tasks_weight <=> b.completed_tasks_weight }
+      projects.sort{|a,b| -(a.completed_tasks_weight <=> b.completed_tasks_weight) }
     else
       projects.sort{|a,b| a.user.name <=> b.user.name }
     end
