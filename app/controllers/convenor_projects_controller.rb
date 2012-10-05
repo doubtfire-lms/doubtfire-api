@@ -46,7 +46,7 @@ class ConvenorProjectsController < ApplicationController
     when "progress"
       projects.sort{|a,b| Progress.new(a.progress) <=> Progress.new(b.progress) }
     when "tasks_completed"
-      projects.sort{|a,b| a.completed_tasks <=> b.completed_tasks }
+      projects.sort{|a,b| a.completed_tasks.size <=> b.completed_tasks.size }
     else
       projects.sort{|a,b| a.user.name <=> b.user.name }
     end
