@@ -64,4 +64,22 @@ module ApplicationHelper
       end
     }")
   end
+
+  def sortable(column, title = nil)
+    title ||= column.titleize
+
+    link = if column == sort_column
+      sort_icon = sort_direction == "asc" ? '<i class="icon-sort-down"></i>' : '<i class="icon-sort-up"></i>'
+      raw("#{title} #{sort_icon}")
+    else
+      title
+    end
+
+    css_class = column == sort_column ? "current #{sort_direction}" : nil
+    direction = column == sort_column && sort_direction == "asc" ? "desc" : "asc"
+
+    link_to link, 
+      params.merge(:sort => column, :direction => direction, :page => nil),
+      {:class => css_class}
+  end
 end
