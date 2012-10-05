@@ -12,7 +12,11 @@ class Project < ActiveRecord::Base
   has_many :tasks, :dependent => :destroy   # Destroying a project will also nuke all of its tasks
 
   before_create :calculate_temporal_attributes
-  
+
+  scope :with_progress, lambda {|progress_types|
+    where(progress: progress_types) unless progress_types.blank?
+  }
+
   def assigned_tasks
     required_tasks
   end

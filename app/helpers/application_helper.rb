@@ -79,7 +79,10 @@ module ApplicationHelper
     direction = column == sort_column && sort_direction == "asc" ? "desc" : "asc"
 
     link_to link, 
-      params.merge(:sort => column, :direction => direction, :page => nil),
+      params.merge(
+        sort: column,
+        direction: direction
+      ),
       {:class => css_class}
   end
 end

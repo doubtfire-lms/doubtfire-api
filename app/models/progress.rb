@@ -1,6 +1,14 @@
 class Progress
   include Comparable
 
+  PROGRESS_TYPES = [
+    :ahead,
+    :on_track,
+    :behind,
+    :danger,
+    :doomed
+  ]
+
   attr :progress, :weight
 
   def <=>(other)
@@ -23,5 +31,9 @@ class Progress
     else
       @weight = -1
     end
+  end
+
+  def self.types
+    PROGRESS_TYPES
   end
 end

@@ -16,7 +16,9 @@ class ConvenorProjectsController < ApplicationController
                     tasks: [:task_template]
                     }, :project_template
                   )
-                  .where(project_template_id: params[:id]),
+                  .where(
+                    project_template_id: params[:id]
+                  ).with_progress(gather_included_progress_types),
                   sort_options
                 )
 
@@ -27,12 +29,30 @@ class ConvenorProjectsController < ApplicationController
 
   private
 
+  def gather_included_progress_types
+    if params[:progress_excludes] && params[:progress_excludes].is_a?(Array)
+      # Get the valid progress exclusions by ensuring they exist (as a symbol) in
+      # the list of progress types
+      progress_excludes = params[:progress_excludes]
+                          .map{|progress| progress.to_sym }
+                          .select{|progress| Progress.types.include? progress }
+
+      Progress.types - progress_excludes
+    else
+      Progress.types
+    end
+  end
+
   def sort_column
     %w[username name progress tasks_completed units_completed].include?(params[:sort]) ? params[:sort] : "name"
   end
 
   def sort_direction
     %w[asc desc].include?(params[:direction]) ? params[:direction] : "asc"
+  end
+
+  def exclusion_filters
+
   end
 
   def sort_projects(projects, options=nil)
