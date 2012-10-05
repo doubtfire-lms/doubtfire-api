@@ -28,7 +28,7 @@ class ConvenorProjectsController < ApplicationController
   private
 
   def sort_column
-    %w[username name progress tasks_completed].include?(params[:sort]) ? params[:sort] : "name"
+    %w[username name progress tasks_completed units_completed].include?(params[:sort]) ? params[:sort] : "name"
   end
 
   def sort_direction
@@ -47,6 +47,8 @@ class ConvenorProjectsController < ApplicationController
       projects.sort{|a,b| Progress.new(a.progress) <=> Progress.new(b.progress) }
     when "tasks_completed"
       projects.sort{|a,b| a.completed_tasks.size <=> b.completed_tasks.size }
+    when "units_completed"
+      projects.sort{|a,b| a.completed_tasks_weight <=> b.completed_tasks_weight }
     else
       projects.sort{|a,b| a.user.name <=> b.user.name }
     end

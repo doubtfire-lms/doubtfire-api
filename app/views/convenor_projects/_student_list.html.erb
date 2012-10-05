@@ -5,6 +5,7 @@
 			<th><%= sortable "name" %></th>
 			<th><%= sortable "progress" %></th>
 			<th><%= sortable "tasks_completed" %></th>
+			<th><%= sortable "units_completed", "Completed Units" %></th>
 			<th>Team</th>
 		</tr>
 	</thead>
@@ -16,6 +17,9 @@
 				<td><%= project.in_progress? and !project.completed? ? progress_badge(project.progress) : status_badge(project.status) %></td>
 				<td>
 					<%= link_to "#{project.completed_tasks.size} / #{project.assigned_tasks.size}", project_path(project) %>
+				</td>
+				<td>
+					<%= link_to "#{"%3.1f" % project.completed_tasks_weight}" %>
 				</td>
 				<td>
 					<%= link_to [
