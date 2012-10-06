@@ -1,4 +1,4 @@
-jQuery ->
+$ ->
   $(".status-distribution-chart").each (i, chartContainer) ->
     constructStatusDistributionChart chartContainer
 
