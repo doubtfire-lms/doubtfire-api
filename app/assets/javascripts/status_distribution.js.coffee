@@ -6,7 +6,7 @@ constructStatusDistributionChart = (chartContainer) ->
   projectURL = $(chartContainer).attr("data-url")
 
   d3.json projectURL, (project) ->
-    return if project.status_distribution.total == 0
+    return if project.status_distribution.total is 0
 
     distributionData = projectDistributionData(project)
 
@@ -34,8 +34,7 @@ constructStatusDistributionChart = (chartContainer) ->
 
       chart.tooltipContent (progress, y, e, graph) ->
         "<h3>Status Distribution</h3>
-        <p>#{parseFloat(y).toFixed()} project(s) '#{progress}'</p>
-        "
+        <p>#{parseFloat(y).toFixed()} project(s) '#{progress}'</p>"
 
 progressColour = (progress) ->
   switch progress
