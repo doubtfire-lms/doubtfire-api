@@ -17,7 +17,7 @@ class ProjectsController < ApplicationController
         render json: @project.to_json(
           :include => [
             {
-              :tasks => {:include => {:task_template => {:except=>[:updated_at, :created_at]}}, :except => [:updated_at, :created_at], :methods => :weight }
+              :tasks => {:include => {:task_template => {:except=>[:updated_at, :created_at]}}, :except => [:updated_at, :created_at], :methods => [:weight, :status] }
             },
             :project_template => {:except => [:updated_at, :created_at]}
           ],
