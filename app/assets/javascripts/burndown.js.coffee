@@ -13,11 +13,11 @@ constructBurndownChart = (chartContainer) ->
 
       chart.xAxis
         .axisLabel('Week (w)')
-        .tickFormat(d3.format('d'));
+        .tickFormat(d3.format('d'))
 
       chart.yAxis
         .axisLabel('Task Units Remaining (t)')
-        .tickFormat(d3.format(',.2f'));
+        .tickFormat(d3.format(',.2f'))
 
       chart.tooltipContent (key, x, y, e, graph) ->
         byOrAt = if key is "Target Completion" then "by" else "at"
@@ -27,9 +27,9 @@ constructBurndownChart = (chartContainer) ->
       d3.select($(chartContainer).children("svg")[0])
         .datum(chartData)
         .transition().duration(500)
-        .call(chart);
+        .call(chart)
 
-      nv.utils.windowResize(chart.update);
+      nv.utils.windowResize(chart.update)
 
 projectBurndownData = (project) ->
   targetSeries = 
@@ -139,16 +139,16 @@ countdownRemainingWeight = (weekTaskWeightCompleted, totalWeight) ->
   completionVsWeek
 
 byTargetDate = (taskA, taskB) ->
-  taskADate = moment(taskA.task_template.target_date);
-  taskBDate = moment(taskB.task_template.target_date);
+  taskADate = moment(taskA.task_template.target_date)
+  taskBDate = moment(taskB.task_template.target_date)
   if taskADate is taskBDate
     0
   else
     if taskADate > taskBDate then 1 else -1
 
 byCompletionDate = (taskA, taskB) ->
-  taskADate = moment(taskA.completion_date);
-  taskBDate = moment(taskB.completion_date);
+  taskADate = moment(taskA.completion_date)
+  taskBDate = moment(taskB.completion_date)
   if taskADate is taskBDate
     0
   else
