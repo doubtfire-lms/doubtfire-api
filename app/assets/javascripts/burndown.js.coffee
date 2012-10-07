@@ -147,8 +147,8 @@ byTargetDate = (taskA, taskB) ->
     if taskADate > taskBDate then 1 else -1
 
 byCompletionDate = (taskA, taskB) ->
-  taskADate = moment(taskA.task_template.completion_date);
-  taskBDate = moment(taskB.task_template.completion_date);
+  taskADate = moment(taskA.completion_date);
+  taskBDate = moment(taskB.completion_date);
   if taskADate is taskBDate
     0
   else
