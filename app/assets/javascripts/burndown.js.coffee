@@ -24,6 +24,15 @@ constructBurndownChart = (chartContainer) ->
         "<h3>#{key}</h3>
         <p>#{y} remaining #{byOrAt} Week #{x}</p>"
 
+      ###
+      If under a tab, make sure tab changes re-render chart
+      ###
+      tab = $(chartContainer).parents ".tab-pane"
+      if tab.length 
+        tab.each (i,e) ->
+          t = $("a[href='##{$(e).attr("id")}'][data-toggle]")
+          t.on "shown", -> chart.update()
+
       d3.select($(chartContainer).children("svg")[0])
         .datum(chartData)
         .transition().duration(500)
@@ -122,8 +131,8 @@ weekTaskUnitsCompleted = (tasks, startDate, cutOffWeek, taskDate) ->
   weekTaskWeightCompleted[i] = 0 for i in [0..cutOffWeek]
 
   tasks.forEach (task) ->
-    dueDate = task.task_template[taskDate]
-    dueWeek = moment(dueDate).diff startDate, 'weeks'
+    completionDate = if taskDate is 'target_date' then task.task_template.target_date else task.completion_date
+    dueWeek = moment(completionDate).diff startDate, 'weeks'
     weekTaskWeightCompleted[dueWeek] += task.weight
 
   weekTaskWeightCompleted
