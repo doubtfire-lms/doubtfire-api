@@ -19,7 +19,7 @@
 					<%= link_to "#{project.completed_tasks.size} / #{project.assigned_tasks.size}", project_path(project) %>
 				</td>
 				<td>
-					<%= link_to "#{"%3.1f" % project.completed_tasks_weight}" %>
+					<%= link_to "#{"%3.1f" % project.task_units_completed}" %>
 				</td>
 				<td>
 					<%= link_to [

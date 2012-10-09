@@ -37,11 +37,6 @@ class Project < ActiveRecord::Base
     write_attribute(:progress, value.to_s)
   end
 
-  def calculate_temporal_attributes
-    progress  = calculate_progress
-    status    = calculate_status
-  end
-
   def status
     read_attribute(:status).to_sym
   end
@@ -50,50 +45,9 @@ class Project < ActiveRecord::Base
     write_attribute(:status, value.to_s)
   end
 
-  def progress_points
-    date_accumulated_weight_map = {}
-
-    assigned_tasks.sort{|a, b| a.task_template.target_date <=>  b.task_template.target_date}.each do |project_task|
-      date_accumulated_weight_map[project_task.task_template.target_date] = assigned_tasks.select{|task| 
-        task.task_template.target_date <= project_task.task_template.target_date
-      }.map{|task| task.task_template.weighting.to_f}.inject(:+)
-    end
-
-    date_accumulated_weight_map
-  end
-
-  def progress_in_days
-    current_progress = completed_tasks_weight + partially_completed_tasks_weight
-
-    current_week  = weeks_elapsed
-    date_progress = project_template.start_date
-
-    progress_points.each do |date, weight|
-      break if weight > current_progress
-      date_progress = date
-    end
-    
-    (date_progress - reference_date).to_i / 1.day
-  end
-
-  def progress_in_weeks
-    progress_in_days / 7
-  end
-
-  def calculate_status
-    if !commenced?
-      :not_commenced
-    elsif concluded?
-      completed? ? :completed : :not_completed
-    else
-      if completed?
-        :completed
-      elsif started?
-        :in_progress
-      else
-        :not_started
-      end
-    end
+  def calculate_temporal_attributes
+    progress  = calculate_progress
+    status    = calculate_status
   end
 
   def calculate_progress
@@ -116,18 +70,64 @@ class Project < ActiveRecord::Base
     end
   end
 
+  def calculate_status
+    if !commenced?
+      :not_commenced
+    elsif concluded?
+      completed? ? :completed : :not_completed
+    else
+      if completed?
+        :completed
+      elsif started?
+        :in_progress
+      else
+        :not_started
+      end
+    end
+  end
+
+  def progress_in_weeks
+    progress_in_days / 7
+  end
+
+  def progress_in_days
+    units_completed = task_units_completed
+
+    current_week  = weeks_elapsed
+    date_progress = project_template.start_date
+
+    progress_points.each do |date, weight|
+      break if weight > units_completed
+      date_progress = date
+    end
+    
+    (date_progress - reference_date).to_i / 1.day
+  end
+
+  def progress_points
+    date_accumulated_weight_map = {}
+
+    assigned_tasks.sort{|a, b| a.task_template.target_date <=>  b.task_template.target_date}.each do |project_task|
+      date_accumulated_weight_map[project_task.task_template.target_date] = assigned_tasks.select{|task| 
+        task.task_template.target_date <= project_task.task_template.target_date
+      }.map{|task| task.task_template.weighting.to_f}.inject(:+)
+    end
+
+    date_accumulated_weight_map
+  end
+
   def projected_end_date
     return project_template.end_date if rate_of_completion == 0.0
     (remaining_tasks_weight / rate_of_completion).ceil.days.since reference_date
   end
 
+  def weeks_elapsed
+    days_elapsed / 7
+  end
+
   def days_elapsed(date=nil)
     date ||= reference_date
     (date - project_template.start_date).to_i / 1.day
-  end
-
-  def weeks_elapsed
-    days_elapsed / 7
   end
 
   def rate_of_completion(date=nil)
@@ -186,9 +186,14 @@ class Project < ActiveRecord::Base
   end
 
   def partially_completed_tasks_weight
-    # Award half points for 
+    # Award half for partially completed tasks
+    # TODO: Should probably make this a project-by-project option
     partially_complete = partially_completed_tasks
     partially_complete.empty? ? 0.0 : partially_complete.map{|task| task.task_template.weighting / 2.to_f }.inject(:+)
+  end
+
+  def task_units_completed
+    completed_tasks_weight + partially_completed_tasks_weight
   end
 
   def total_task_weight
