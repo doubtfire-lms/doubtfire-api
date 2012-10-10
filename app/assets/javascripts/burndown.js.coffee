@@ -91,7 +91,7 @@ actualCompletionData = (project) ->
 
   totalWeight = project.total_task_weight
 
-  tasks = project.tasks.filter((task) -> task.status is "complete")
+  tasks = project.tasks.filter((task) -> task.task_template.required and task.status is "complete")
           .sort byCompletionDate
 
   weekVsTaskUnitsCompleted  = weekTaskUnitsCompleted(tasks, startDate, cutOffWeek, 'completion_date')
