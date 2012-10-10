@@ -59,7 +59,7 @@ projectBurndownData = (project) ->
   seriesToPlot = [targetSeries]
 
   if projectCommenced(project)
-    seriesToPlot.push(series) for series in [completedSeries, projectedSeries]
+    seriesToPlot.push(series) for series in [projectedSeries, completedSeries]
 
   seriesToPlot
 
