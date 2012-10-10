@@ -7,12 +7,14 @@
 <% content_for :sidebar do %>
 	<ul class="nav nav-list">
 		<li class="nav-header">Dashboard</li>
-		<li class="active"><%= link_to 'Home', root_url %></li>
+		<li><%= link_to 'Home', root_url %></li>
 		<% unless @student_projects.empty? %>
 			<%= render 'dashboard/student_projects_links', :student_projects => @student_projects, :selected_student_project => nil %>
 		<% end %>
-		<% unless @tutor_project_templates.empty? %>
-			<%= render 'dashboard/tutor_projects_links', :tutor_projects => @tutor_project_templates, :selected_tutor_project => nil %>
+		<% unless @tutor_projects.empty? %>
+			<%= render partial: 'dashboard/tutor_projects_links',
+				locals: { projects: @tutor_projects, selected_project: @project_template }
+			%>
 		<% end %>
 	</ul>
 <% end %>
@@ -51,7 +53,7 @@
 			<% end %>
 
 			<%= tab_div_tag("progress-tab") do %>
-				<div class="span12 widget project-overview">
+				<div class="span10 widget project-overview">
 					<h2><i class="icon-book"></i><%= @student_project.project_template.name %></h2>
 					<div class="widget-content">
 						<%= content_tag "div", class: "burndownchart", data: {url: project_url(@student_project)} do %>

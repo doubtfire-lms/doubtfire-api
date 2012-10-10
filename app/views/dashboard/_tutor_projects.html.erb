@@ -1,8 +1,8 @@
 <% stylesheets 'convenor.css' %>
 
-<% if tutor_project_templates.size < 3 %>
+<% if tutor_projects.size < 3 %>
 	
-	<% tutor_project_templates.each_with_index do |tutor_project_template, i| %>
+	<% tutor_projects.each_with_index do |tutor_project_template, i| %>
 		<div class="row-fluid">
 			<div class="span12 widget">
 				<h2><i class="icon-book"></i><%= tutor_project_template.name %></h2>
@@ -17,7 +17,7 @@
 	<% end %>
 
 <% else %>
-	<% tutor_project_templates.each_with_index do |tutor_project_template, i| %>
+	<% tutor_projects.each_with_index do |tutor_project_template, i| %>
 		<% if i % 2 == 0 %>
 		<div class="row-fluid">
 		<% end %>

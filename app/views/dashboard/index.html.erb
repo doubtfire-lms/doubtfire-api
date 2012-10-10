@@ -9,8 +9,10 @@
 		<% unless @student_projects.empty? %>
 			<%= render 'dashboard/student_projects_links', :student_projects => @student_projects, :selected_student_project => nil %>
 		<% end %>
-		<% unless @tutor_project_templates.empty? %>
-			<%= render 'dashboard/tutor_projects_links', :tutor_projects => @tutor_project_templates, :selected_tutor_project => nil %>
+		<% unless @tutor_projects.empty? %>
+			<%= render partial: 'dashboard/tutor_projects_links',
+				locals: { projects: @tutor_projects, selected_project: nil }
+			%>
 		<% end %>
 	</ul>
 <% end %>
@@ -28,8 +30,8 @@
 		<% unless @student_projects.empty? %>
 			<%= render 'dashboard/student_projects', :student_projects => @student_projects %>
 		<% end %>
-		<% unless @tutor_project_templates.empty? %>
-			<%= render 'dashboard/tutor_projects', :tutor_project_templates => @tutor_project_templates %>
+		<% unless @tutor_projects.empty? %>
+			<%= render 'dashboard/tutor_projects', :tutor_projects => @tutor_projects %>
 		<% end %>
 
 	</div>

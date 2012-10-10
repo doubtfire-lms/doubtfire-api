@@ -3,21 +3,30 @@
 
 <% title "Convenor Dashboard" %>
 
+
 <% content_for :sidebar do %>
-	<%= render :partial => 'layouts/admin_menu' %>
+    <ul class="nav nav-list">
+        <li class="nav-header">Dashboard</li>
+        <li class="active"><%= link_to 'Home', root_url %></li>
+        <% unless @convenor_projects.empty? %>
+		    <%= render partial: 'dashboard/convenor_projects_links',
+		        locals: { projects: @convenor_projects }
+		    %>
+		<% end %>
+    </ul>
 <% end %>
 
 <div class="span9">
-	<% if @project_templates.size < 3 %>
-		<% @project_templates.each_with_index do |project_template, i| %>
+	<% if @convenor_projects.size < 3 %>
+		<% @convenor_projects.each_with_index do |project, i| %>
 		<div class="row-fluid">
 			<div class="span12 widget">
-				<h2><i class="icon-book"></i><%= project_template.name %></h2>
+				<h2><i class="icon-book"></i><%= project.name %></h2>
 				<div class="widget-content">
 					<%= render partial: 'convenor_projects/convenor_project',
 						locals: {
-							project_template: project_template,
-							status_distribution: project_template.status_distribution
+							project: project,
+							status_distribution: project.status_distribution
 						}
 					%>
 				</div>
@@ -25,17 +34,17 @@
 		</div>
 		<% end %>
 	<% else %>
-		<% @project_templates.each_with_index do |project_template, i| %>
+		<% @convenor_projects.each_with_index do |project, i| %>
 			<% if i % 2 == 0 %>
 			<div class="row-fluid">
 			<% end %>
 				<div class="span6 widget">
-					<h2><i class="icon-book"></i><%= project_template.name %></h2>
+					<h2><i class="icon-book"></i><%= project.name %></h2>
 					<div class="widget-content">
 						<%= render partial: 'convenor_projects/convenor_project',
 							locals: {
-								project_template: project_template,
-								status_distribution: project_template.status_distribution
+								project: project,
+								status_distribution: project.status_distribution
 							}
 						%>
 					</div>

@@ -10,11 +10,11 @@ class DashboardController < ApplicationController
       redirect_to convenor_index_path and return
     end
     
-    @student_projects         = Project.includes(:tasks).find(@user.team_memberships.map{|membership| membership.project_id })
-    @tutor_project_templates  = ProjectTemplate.find(Team.where(:user_id => @user.id).map{|team| team.project_template_id }).uniq
+    @student_projects = Project.includes(:tasks).find(@user.team_memberships.map{|membership| membership.project_id })
+    @tutor_projects   = ProjectTemplate.find(Team.where(:user_id => @user.id).map{|team| team.project_template_id }).uniq
 
     # If user has no projects, redirect
-    if @student_projects.empty? and @tutor_project_templates.empty?
+    if @student_projects.empty? and @tutor_projects.empty?
       redirect_to no_projects_path
     end
   end

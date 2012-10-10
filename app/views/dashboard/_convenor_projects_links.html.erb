@@ -1,0 +1,8 @@
+<li class="nav-header">Subjects You Convene</li>
+<% projects.each do |project| %>
+    <% if !local_assigns[:selected_project].nil? && project.id == selected_project.id %>
+        <li class="active"><a href="<%= convenor_project_path(project) %>"><%= project.name %></a></li>
+    <% else %>  
+        <li><a href="<%= convenor_project_path(project) %>"><%= project.name %></a></li>
+    <% end %>
+<% end %>

@@ -6,7 +6,15 @@
 <% title @project_template.name %>
 
 <% content_for :sidebar do %>
-  <%= render :partial => 'layouts/admin_menu' %>
+    <ul class="nav nav-list">
+        <li class="nav-header">Dashboard</li>
+        <li><%= link_to 'Home', root_url %></li>
+        <% unless @convenor_projects.empty? %>
+            <%= render partial: 'dashboard/convenor_projects_links',
+                locals: { projects: @convenor_projects, selected_project: @project_template }
+            %>
+        <% end %>
+    </ul>
 <% end %>
 
 <div class="span9">
