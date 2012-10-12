@@ -1,6 +1,4 @@
 Doubtfire::Application.routes.draw do
-  get "resources/download_task_import_template"
-
   devise_for :users, :skip => [:registrations, :sessions]
 
   as :user do
