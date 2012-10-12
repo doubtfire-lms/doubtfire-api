@@ -5,10 +5,10 @@
 	<%= task_status_active_button(task) %>
 	<ul class="dropdown-menu">
 		<li>
-			<a href="<%= awaiting_signoff_path(task, "true") %>" data-method="put" class="ready-to-mark-button" data-remote="true">Ready to Mark <i class="icon-thumbs-up button-icon"></i></a>
+			<a href="<%= submit_task_path(task, "ready_to_mark") %>" data-method="put" class="ready-to-mark-button" data-remote="true">Ready to Mark <i class="icon-thumbs-up button-icon"></i></a>
 		</li>
 		<li style="width: 180px">
-			<a href="<%= awaiting_signoff_path(task, "false") %>" data-method="put" class="ready-to-mark-button" data-remote="true">Not Ready to Mark <i class="icon-remove button-icon"></i></a>
+			<a href="<%= submit_task_path(task, "not_ready_to_mark") %>" data-method="put" class="ready-to-mark-button" data-remote="true">Not Ready to Mark <i class="icon-remove button-icon"></i></a>
 		</li>
 
 		<li class="divider"></li>

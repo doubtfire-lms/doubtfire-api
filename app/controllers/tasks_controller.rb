@@ -42,6 +42,7 @@ class TasksController < ApplicationController
     @task                   = Task.find(params[:task_id])
     @project                = @task.project
     @student                = @project.team_membership.user
+
     task_status             = status_for_shortname(params[:status])
     
     @task.task_status       = task_status
@@ -55,15 +56,17 @@ class TasksController < ApplicationController
       @task.project.update_attribute(:started, true)
 
       if @task.needs_redoing? || @task.needs_fixing? || @task.complete?
+        # Grab the submission for the task if the user made one
         submission = TaskSubmission.where(task_id: @task.id).order(:submission_time).reverse_order.first
+        # Prepare the attributes of the submission
+        submission_attributes = {task: @task, assessment_time: Time.zone.now, assessor: @user, outcome: task_status.name}
 
+        # Create or update the submission depending on whether one was made
         if submission.nil?
-          TaskSubmission.create!(task: @task, assessment_time: Time.zone.now, assessor: @user, outcome: task_status.name)
+          TaskSubmission.create! submission_attributes
         else
-          submission.assessment_time  = Time.zone.now
-          submission.assessor         = @user
-          submission.outcome          = task_status.name
-          submission.save!
+          submission.update_attributes submission_attributes
+          submission.save
         end
       end
 
@@ -74,12 +77,13 @@ class TasksController < ApplicationController
     end
   end
 
-  def awaiting_signoff
+  def submit
     @task                   = Task.find(params[:task_id])
-    @task.awaiting_signoff  = params[:awaiting_signoff] != "false"
+    @project                = @task.project
+    @task.awaiting_signoff  = params[:submission_status] == "ready_to_mark"
 
     if @task.save
-      @task.project.update_attribute(:started, true)
+      @project.update_attribute(:started, true)
       submission = TaskSubmission.where(task_id: @task.id).order(:submission_time).reverse_order.first
 
       if submission.nil?
@@ -104,18 +108,12 @@ class TasksController < ApplicationController
 
   def status_for_shortname(status_shortname)
     status_name = case status_shortname
-    when "complete"
-      "Complete"
-    when "fix"
-      "Needs Fixing"
-    when "redo"
-      "Needs Redoing"
-    when "not_submitted"
-      "Not Submitted"
-    when "need_help"
-      "Need Help"
-    when "working_on_it"
-      "Working On It"
+    when "complete"       then "Complete"
+    when "fix"            then "Needs Fixing"
+    when "redo"           then "Needs Redoing"
+    when "not_submitted"  then "Not Submitted"
+    when "need_help"      then "Need Help"
+    when "working_on_it"  then "Working On It"
     end
 
     TaskStatus.where(:name => status_name).first
