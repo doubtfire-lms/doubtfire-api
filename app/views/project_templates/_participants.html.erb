@@ -7,7 +7,7 @@
     } %>
     <hr />
     <div class="well">
-        <%= form_tag "#{project_template.id}/import_users", :multipart => true, :remote => true do %>
+        <%= form_tag project_template_import_users_path(project_template), :multipart => true, :remote => true do %>
         <%= file_field(:csv_file, :file) %>
         <%= submit_tag "Import Users from CSV", :class => "btn" %>
         <% end %>

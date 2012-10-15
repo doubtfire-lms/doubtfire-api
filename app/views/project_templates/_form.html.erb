@@ -1,4 +1,4 @@
-<%= simple_form_for @project_template, html: { class: 'well form-horizontal' } do |f| %>
+<%= simple_form_for @project_template, html: { class: 'well form-horizontal', method: 'put' } do |f| %>
 	<%= f.input :name, :as => :text %>
 	<%= f.input :description, :as => :text %>
       
@@ -7,5 +7,5 @@
 	<%= f.input :end_date, :as => :string, :input_html => {:class => "datepicker", "data-behaviour" => "datepicker", :value => "#{@project_template.end_date.strftime('%Y-%m-%d')}"} %>
 	<%= @project_template.created_at.strftime("%d %b %Y at %I:%M%p") %>
 	<%= f.button :submit, "Save", :class => "btn btn-mini btn-success" %>
-		<a href="<%= cancel_update_project_template_path(@project_template.id) %>" data-remote="true" data-method="get" class="btn btn-mini btn-danger">Cancel</a>
+		<a href="<%= project_template_cancel_update_path(@project_template) %>" data-remote="true" data-method="get" class="btn btn-mini btn-danger">Cancel</a>
 <% end %>

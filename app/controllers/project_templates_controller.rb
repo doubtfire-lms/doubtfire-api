@@ -134,7 +134,7 @@ class ProjectTemplatesController < ApplicationController
 
   # Restores the row in the project templates table to its original state after saving or cancelling from editing mode.
   def finish_update
-    @project_template = ProjectTemplate.find(params[:id])
+    @project_template = ProjectTemplate.find(params[:project_template_id])
 
     respond_to do |format|
         format.js  # finish_update.js.erb

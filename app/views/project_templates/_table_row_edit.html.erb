@@ -1,5 +1,5 @@
 <tr id="project-<%= project_template.id %>-row" class="editable" name="<%= project_template.id %>">
-	<%= simple_form_for project_template, :url => update_project_template_path(project_template), :remote => true do |f| %>
+	<%= simple_form_for project_template, :url => project_template_update_path(project_template), :remote => true do |f| %>
   		<td><%= f.input :name, :as => :text, :label => false %></td>
   		<td><%= f.input :description, :as => :text, :label => false %></td>
       <td>
@@ -10,7 +10,7 @@
   		<td><%= project_template.created_at.strftime("%d %b %Y at %I:%M%p") %></td>
   		<td>
   			<%= f.button :submit, "Save", :class => "btn btn-mini btn-success" %>
-  			<a href="<%= cancel_update_project_template_path(project_template.id) %>" data-remote="true" data-method="get" class="btn btn-mini btn-danger">Cancel</a>
+  			<a href="<%= project_template_cancel_update_path(project_template) %>" data-remote="true" data-method="get" class="btn btn-mini btn-danger">Cancel</a>
   		</td>
   	<% end %>
 </tr>

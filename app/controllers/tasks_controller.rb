@@ -39,7 +39,7 @@ class TasksController < ApplicationController
   end
 
   def assess_task
-    @task                   = Task.find(params[:task_id])
+    @task                   = Task.find(params[:id])
     @project                = @task.project
     @student                = @project.team_membership.user
 

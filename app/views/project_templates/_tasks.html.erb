@@ -8,16 +8,16 @@
     <hr />
     
     <span id="task-buttons">
-        <%= link_to "Create new task", new_project_task_path(project_template), :onclick => "$('#destroy-tasks-button').show()", :class => 'btn', "data-remote" => true %>
+        <%= link_to "Create new task", project_template_new_task_path(project_template), :onclick => "$('#destroy-tasks-button').show()", :class => 'btn', "data-remote" => true %>
 
         <% if task_templates.empty? %>
-        <%= link_to "Destroy all tasks", destroy_all_project_tasks_path(project_template), 
+        <%= link_to "Destroy all tasks", project_template_destroy_all_tasks_path(project_template), 
                     :class => 'btn btn-danger', 
                     :id => 'destroy-tasks-button',
                     "data-remote" => true,
                     :data => { :confirm => t('.confirm', :default => t("helpers.links.confirm", :default => 'All tasks (including instances assigned to users) will be destroyed. Are you sure?'))}, :style => "display: none;" %>
         <% else %>
-        <%= link_to "Destroy all tasks", destroy_all_project_tasks_path(project_template), 
+        <%= link_to "Destroy all tasks", project_template_destroy_all_tasks_path(project_template), 
                     :class => 'btn btn-danger', 
                     :id => 'destroy-tasks-button',
                     "data-remote" => true,
