@@ -23,9 +23,10 @@ class TasksController < ApplicationController
   end
 
   def engage_with_task
-    @task                   = Task.find(params[:task_id])
+    @task                   = Task.find(params[:id])
     task_status             = status_for_shortname(params[:status])
     @task.task_status       = task_status
+    @task.awaiting_signoff  = false
     
     if @task.save
       @task.project.update_attribute(:started, true)
@@ -78,7 +79,7 @@ class TasksController < ApplicationController
   end
 
   def submit
-    @task                   = Task.find(params[:task_id])
+    @task                   = Task.find(params[:id])
     @project                = @task.project
     @task.awaiting_signoff  = params[:submission_status] == "ready_to_mark"
 
