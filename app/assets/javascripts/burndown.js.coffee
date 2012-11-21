@@ -87,7 +87,8 @@ targetCompletionData = (project) ->
 actualCompletionData = (project) ->
   startDate   = moment(project.project_template.start_date)
   endDate     = moment(project.project_template.end_date)
-  cutOffWeek  = moment().diff startDate, 'weeks'
+  cutOffDate  = if moment() > endDate then endDate else moment()
+  cutOffWeek  = cutOffDate.diff startDate, 'weeks'
 
   totalWeight = project.total_task_weight
 
