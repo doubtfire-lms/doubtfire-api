@@ -20,10 +20,10 @@ class Project < ActiveRecord::Base
   default_scope :include => :project_template
 
   def reference_date
-    if Time.zone.now > project_template.end_date
+    if application_reference_date > project_template.end_date
       project_template.end_date
     else
-      Time.zone.now
+      application_reference_date
     end
   end
 
@@ -227,11 +227,11 @@ class Project < ActiveRecord::Base
   end
 
   def commenced?
-    reference_date >= project_template.start_date
+    application_reference_date >= project_template.start_date
   end
 
   def concluded?
-    reference_date > project_template.end_date
+    application_reference_date > project_template.end_date
   end
 
   def has_optional_tasks?
