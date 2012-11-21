@@ -17,6 +17,16 @@ class Project < ActiveRecord::Base
     where(progress: progress_types) unless progress_types.blank?
   }
 
+  default_scope :include => :project_template
+
+  def reference_date
+    if Time.zone.now > project_template.end_date
+      project_template.end_date
+    else
+      Time.zone.now
+    end
+  end
+
   def assigned_tasks
     required_tasks
   end

@@ -10,6 +10,8 @@ class Task < ActiveRecord::Base
 
   after_save :update_project
 
+  default_scope :include => :task_template
+
   def update_project
     project.update_attribute(:progress, project.calculate_progress)
     project.update_attribute(:status, project.calculate_status)
@@ -22,7 +24,7 @@ class Task < ActiveRecord::Base
     # Compare the recommended date with the date given to determine
     # if the task is overdue
     recommended_date = task_template.target_date
-    reference_date > recommended_date and weeks_overdue >= 1
+    project.reference_date > recommended_date and weeks_overdue >= 1
   end
 
   def long_overdue?
@@ -32,7 +34,7 @@ class Task < ActiveRecord::Base
     # Compare the recommended date with the date given to determine
     # if the task is overdue
     recommended_date = task_template.target_date
-    reference_date > recommended_date and weeks_overdue > 2
+    project.reference_date > recommended_date and weeks_overdue > 2
   end
 
   def currently_due?
@@ -46,7 +48,7 @@ class Task < ActiveRecord::Base
   end
 
   def days_until_due
-    (task_template.target_date - reference_date).to_i / 1.day
+    (task_template.target_date - project.reference_date).to_i / 1.day
   end
 
   def weeks_overdue
@@ -54,7 +56,7 @@ class Task < ActiveRecord::Base
   end
 
   def days_since_completion
-    (reference_date - completion_date.to_datetime).to_i / 1.day
+    (project.reference_date - completion_date.to_datetime).to_i / 1.day
   end
   
   def weeks_since_completion
@@ -62,7 +64,7 @@ class Task < ActiveRecord::Base
   end
 
   def days_overdue
-    (reference_date - task_template.target_date).to_i / 1.day
+    (project.reference_date - task_template.target_date).to_i / 1.day
   end
 
   def complete?
