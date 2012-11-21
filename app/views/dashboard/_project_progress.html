@@ -7,9 +7,9 @@
 	</h3>
 	
 	<% if project.in_progress? and !project.completed? %> 
-	progress_badge(project.progress)
+	<%= progress_badge(project.progress) %>
 	<% else %>
-	status_badge(project.status)
+	<%= status_badge(project.status) %>
 	<% end %>
 
 	<%= project_status_summary(project) %>
