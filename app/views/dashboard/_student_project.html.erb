@@ -1,4 +1,8 @@
-<%= project.in_progress? and !project.completed? ? progress_badge(project.progress) : status_badge(project.status) %>
+<% if project.in_progress? and !project.completed? %> 
+<%= progress_badge(project.progress) %>
+<% else %>
+<%= status_badge(project.status) %>
+<% end %>
 
 <% if project.commenced? %>
 	<% unless project.concluded? %>
