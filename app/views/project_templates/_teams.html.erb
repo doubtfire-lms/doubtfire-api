@@ -5,7 +5,7 @@
         empty_table_string: "This project has no teams."
     } %>
     <hr />
-    <%= link_to "Create new team", project_template_new_project_team_path(project_template), :class => 'btn', "data-remote" => true %>
+    <%= link_to "Create new team", project_template_new_team_path(project_template), :class => 'btn', "data-remote" => true %>
     <hr />
     <div class="well">
     <%= form_tag "#{project_template.id}/import_teams", :multipart => true, :remote => true do %>

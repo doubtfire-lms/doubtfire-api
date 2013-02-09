@@ -31,7 +31,7 @@ Doubtfire::Application.routes.draw do
   put 'tasks/:id/engage_with_task/:status'  => 'tasks#engage_with_task',  as: 'engage_with_task'
   put 'tasks/:id/assess_task/:status'       => 'tasks#assess_task',       as: 'assess_task'
 
-  post 'project_templates/:id/update'       => 'project_templates#update',       as: 'update'
+  post 'project_templates/:id/update'       => 'project_templates#update',       as: 'update_project_template'
 
   resources :project_templates do
     # Data imports
