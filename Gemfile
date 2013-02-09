@@ -3,9 +3,6 @@ source 'https://rubygems.org'
 # The venerable, almighty Rails
 gem 'rails', '3.2.6'
 
-# Databases? ALL THE DATABASES
-gem 'mysql'
-
 # This is how we get creative
 gem 'populator'
 gem 'faker'
