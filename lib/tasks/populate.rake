@@ -20,20 +20,7 @@ namespace :db do
     # FIXME: Not enough hilarious names
     joosts_long_ass_name = %w[
       Cornelius
-      Copernicus
-      Indiana
       Pocohontas
-      Albus
-      Severus
-      Archimedes
-      Gandalf
-      Bilbo
-      Samantha
-      Evelyn
-      Goldmember
-      Ernie
-      Bert
-      Grover
       Funke
       Kupper
     ].join(" ")
@@ -57,8 +44,8 @@ namespace :db do
     days = %w[Monday Tuesday Wednesday Thursday Friday]
 
     # Clear the database
-    [ProjectTemplate, Project, ProjectStatus, TaskTemplate, Task, TaskStatus, Team, TeamMembership, User, ProjectConvenor].each(&:delete_all)
-    
+    [User, ProjectTemplate, Team, Project, TaskTemplate, Task, TaskStatus, TeamMembership, User, ProjectConvenor, Login, TaskSubmission, TaskEngagement].each(&:delete_all)
+
     TaskStatus.create(:name => "Not Submitted", :description => "This task has not been submitted to marked by your tutor.")
     TaskStatus.create(:name => "Needs Fixing", :description => "This task must be resubmitted after fixing some issues.")
     TaskStatus.create(:name => "Complete", :description => "This task has been signed off by your tutor.")
@@ -108,26 +95,13 @@ namespace :db do
       ids["convenor"]           = convenor.id
     end
 
-    # Create 1 superuser
-    User.populate(1) do |su|
-      su.username = "superuser"
-      su.nickname = "God"
-      su.email = "superuser@doubtfire.com"
-      su.encrypted_password = BCrypt::Password.create("password")
-      su.first_name = "Super"
-      su.last_name = "User"
-      su.sign_in_count = 0
-      su.system_role = "superuser"
-      ids["superuser"] = su.id
-    end
-
     # Create 4 projects (subjects)
     subjects.each do |subject_code, subject_name|
       ProjectTemplate.populate(1) do |project_template|
         project_template.official_name  = subject_code
         project_template.name           = subject_name
         project_template.description    = Populator.words(10..15)
-        project_template.start_date     = Date.new(2012, 8, 6)
+        project_template.start_date     = Date.current
         project_template.end_date       = 13.weeks.since project_template.start_date
 
         # Assign a convenor to each project
