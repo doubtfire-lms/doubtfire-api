@@ -9,11 +9,12 @@ namespace :db do
     [ProjectTemplate, Project, TaskTemplate, Task, TaskStatus, Team, TeamMembership, User, ProjectConvenor].each(&:delete_all)
 
     TaskStatus.create(:name => "Not Submitted", :description => "This task has not been submitted to marked by your tutor.")
-    TaskStatus.create(:name => "Needs Fixing", :description => "This task must be resubmitted after fixing some issues.")
     TaskStatus.create(:name => "Complete", :description => "This task has been signed off by your tutor.")
     TaskStatus.create(:name => "Need Help", :description => "Some help is required in order to complete this task.")
     TaskStatus.create(:name => "Working On It", :description => "This task is currently being worked on.")
-    TaskStatus.create(:name => "Needs Redoing", :description => "This task need to be redone.")
+    TaskStatus.create(:name => "Fix and Resubmit", :description => "This task must be resubmitted after fixing some issues.")
+    TaskStatus.create(:name => "Fix and Include", :description => "This task must be fixed and included in your portfolio, but should not be resubmitted.")
+    TaskStatus.create(:name => "Redo", :description => "This task needs to be redone.")
 
     admins = {
       admin:         {first: "Admin",   last: "Admin",   nickname: "Superuser"}

@@ -56,7 +56,7 @@ class TasksController < ApplicationController
     if @task.save
       @task.project.update_attribute(:started, true)
 
-      if @task.needs_redoing? || @task.needs_fixing? || @task.complete?
+      if @task.redo? || @task.fix_and_resubmit? || @task.fix_and_include? || @task.complete?
         # Grab the submission for the task if the user made one
         submission = TaskSubmission.where(task_id: @task.id).order(:submission_time).reverse_order.first
         # Prepare the attributes of the submission
@@ -109,12 +109,13 @@ class TasksController < ApplicationController
 
   def status_for_shortname(status_shortname)
     status_name = case status_shortname
-    when "complete"       then "Complete"
-    when "fix"            then "Needs Fixing"
-    when "redo"           then "Needs Redoing"
-    when "not_submitted"  then "Not Submitted"
-    when "need_help"      then "Need Help"
-    when "working_on_it"  then "Working On It"
+    when "complete"           then "Complete"
+    when "fix_and_resubmit"   then "Fix and Resubmit"
+    when "fix_and_include"    then "Fix and Include"
+    when "redo"               then "Redo"
+    when "not_submitted"      then "Not Submitted"
+    when "need_help"          then "Need Help"
+    when "working_on_it"      then "Working On It"
     end
 
     TaskStatus.where(:name => status_name).first

@@ -52,10 +52,12 @@ module TutorProjectsHelper
         "action-complete"
       elsif task.awaiting_signoff?
         "action-awaiting-signoff"
-      elsif task.needs_fixing?
-        "action-needs-fixing"
-      elsif task.needs_redoing?
-        "action-needs-redoing"
+      elsif task.fix_and_resubmit?
+        "action-fix-and-resubmit"
+      elsif task.fix_and_include?
+        "action-fix-and-include"
+      elsif task.redo?
+        "action-redo"
       elsif task.need_help?
         "action-need-help"
       elsif task.working_on_it?

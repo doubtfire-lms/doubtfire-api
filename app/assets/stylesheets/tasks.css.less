@@ -84,47 +84,76 @@
 	display: block; float: right;
 }
 
-@btnWorkingOnItBackground: #FCEC21;
-@btnWorkingOnItBackgroundHighlight: #E3E10E;
-
-.btn-working-on-it
-{
-	.buttonBackground(@btnWorkingOnItBackground, @btnWorkingOnItBackgroundHighlight);
-}
-
-.btn-group.open .btn.btn-working-on-it.dropdown-toggle
-{
-	background-color: darken(@btnWorkingOnItBackground, 15%);
-}
-
-@btnNeedHelpBackground: #F6A895;
-@btnNeedHelpBackgroundHighlight: #F38266;
-
-.btn-need-help
-{
-	.buttonBackground(@btnNeedHelpBackground, @btnNeedHelpBackgroundHighlight);
-}
-
 .btn-working-on-it,
 .btn-working-on-it:hover,
 .btn-need-help,
 .btn-need-help:hover,
-.btn-needs-redoing,
-.btn-needs-redoing:hover
+.btn-fix-and-include,
+.btn-fix-and-include:hover,
+.btn-redo,
+.btn-redo:hover
 {
 	color: @white;
   	text-shadow: 0 -1px 0 rgba(0,0,0,.25);
 }
 
-@btnNeedsRedoingBackground: #88533C;
-@btnNeedsRedoingBackgroundHighlight: #B06C4E; 
+@btn-working-on-it-background: #FCEC21;
+@btn-working-on-it-background-highlight: #E3E10E;
+@btn-need-help-background: #F6A895;
+@btn-need-help-background-highlight: #F38266;
+@btn-fix-and-include-background: #FFD119;
+@btn-fix-and-include-background-highlight: #E6BC16;
+@btn-redo-background: #88533C;
+@btn-redo-background-highlight: #B06C4E;
 
-.btn-needs-redoing
+.btn-working-on-it
 {
-	.buttonBackground(@btnNeedsRedoingBackground, @btnNeedsRedoingBackgroundHighlight);
+	.buttonBackground(
+		@btn-working-on-it-background,
+		@btn-working-on-it-background-highlight
+	);
+}
+
+.btn-need-help
+{
+	.buttonBackground(
+		@btn-need-help-background,
+		@btn-need-help-background-highlight
+	);
+}
+
+.btn-fix-and-include
+{
+	.buttonBackground(
+		@btn-fix-and-include-background,
+		@btn-fix-and-include-background-highlight
+	);
+}
+
+.btn-redo
+{
+	.buttonBackground(
+		@btn-redo-background,
+		@btn-redo-background-highlight
+	);
+}
+
+.btn-group.open .btn.btn-working-on-it.dropdown-toggle
+{
+	background-color: darken(@btn-working-on-it-background, 15%);
 }
 
 .btn-group.open .btn.btn-need-help.dropdown-toggle
 {
-	background-color: darken(@btnNeedHelpBackground, 15%);
+	background-color: darken(@btn-need-help-background, 15%);
+}
+
+.btn-group.open .btn.btn-fix-and-include.dropdown-toggle
+{
+	background-color: darken(@btn-fix-and-include-background, 15%);
+}
+
+.btn-group.open .btn.btn-redo.dropdown-toggle
+{
+	background-color: darken(@btn-redo-background, 15%);
 }

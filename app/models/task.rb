@@ -71,12 +71,16 @@ class Task < ActiveRecord::Base
     status == :complete
   end
 
-  def needs_fixing?
-    status == :needs_fixing
+  def fix_and_resubmit?
+    status == :fix_and_resubmit
   end
 
-  def needs_redoing?
-    status == :needs_redoing
+  def fix_and_include?
+    status == :fix_and_include
+  end
+
+  def redo?
+    status == :redo
   end
 
   def need_help?
@@ -93,10 +97,12 @@ class Task < ActiveRecord::Base
       :complete
     when "Not Submitted"
       :not_submitted
-    when "Needs Fixing"
-      :needs_fixing
-    when "Needs Redoing"
-      :needs_redoing
+    when "Fix and Resubmit"
+      :fix_and_resubmit
+    when "Fix and Include"
+      :fix_and_include
+    when "Redo"
+      :redo
     when "Need Help"
       :need_help
     when "Working On It"

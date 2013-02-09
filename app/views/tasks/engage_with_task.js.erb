@@ -10,14 +10,18 @@ function updateStatusDisplayButton(taskContainer, taskStatus) {
 		taskContainer.find(".status-display-button").html("Complete <i class=\"icon-ok button-icon\"></i>");
 		taskContainer.find(".status-display-button").attr("class", "btn btn-success status-display-button");
 		taskContainer.find(".dropdown-toggle").attr("class", "btn btn-success dropdown-toggle");
-	} else if (taskStatus === "Needs Fixing") {
-		taskContainer.find(".status-display-button").html("Fix <i class=\"icon-wrench button-icon\"></i>");
+	} else if (taskStatus === "Fix and Resubmit") {
+		taskContainer.find(".status-display-button").html("Fix and Resubmit <i class=\"icon-wrench button-icon\"></i>");
 		taskContainer.find(".status-display-button").attr("class", "btn btn-warning status-display-button");
 		taskContainer.find(".dropdown-toggle").attr("class", "btn btn-warning dropdown-toggle");
-	} else if (taskStatus === "Needs Redoing") {
-		taskContainer.find(".status-display-button").html("Fix <i class=\"icon-refresh button-icon\"></i>");
-		taskContainer.find(".status-display-button").attr("class", "btn btn-needs-redoing status-display-button");
-		taskContainer.find(".dropdown-toggle").attr("class", "btn btn-needs-redoing dropdown-toggle");
+	} else if (taskStatus === "Fix and Include") {
+		taskContainer.find(".status-display-button").html("Fix and Include <i class=\"icon-wrench button-icon\"></i>");
+		taskContainer.find(".status-display-button").attr("class", "btn btn-warning status-display-button");
+		taskContainer.find(".dropdown-toggle").attr("class", "btn btn-warning dropdown-toggle");
+	} else if (taskStatus === "Redo") {
+		taskContainer.find(".status-display-button").html("Redo <i class=\"icon-refresh button-icon\"></i>");
+		taskContainer.find(".status-display-button").attr("class", "btn btn-redo status-display-button");
+		taskContainer.find(".dropdown-toggle").attr("class", "btn btn-redo dropdown-toggle");
 	} else if (taskStatus === "Not Submitted") {
 		taskContainer.find(".status-display-button").html("Not Submitted <i class=\"icon-minus-sign button-icon\"></i>");
 		taskContainer.find(".status-display-button").attr("class", "btn status-display-button");

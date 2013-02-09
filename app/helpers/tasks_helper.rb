@@ -14,9 +14,11 @@ module TasksHelper
       else
         "label" # Just return standard if there is nothing exceptional about the task's status
       end
-    when :needs_fixing
+    when :fix_and_resubmit
       "label label-info" # Info for needs fixing
-    when :needs_redoing
+    when :fix_and_include
+      "label label-info" # Info for needs fixing
+    when :redo
       "label label-info" # Info for needs fixing
     when :complete
       "label label-success" # Success if the task is complete
@@ -83,7 +85,7 @@ module TasksHelper
     raw "<span class=\"task-awaiting-signoff-label label label-info\">Awaiting Sign-off</span>"
   end
 
-  def task_status_active_button(task)
+  def task_status_active_button(task, include_toggle=true)
     button_class  = nil
     button_text   = ""
     button_icon   = nil
@@ -93,12 +95,16 @@ module TasksHelper
       button_text   = 'Ready to Mark'
       button_icon   = 'icon-thumbs-up'
     else
-      if task.needs_fixing?
+      if task.fix_and_resubmit?
         button_class  = 'btn-warning'
-        button_text   = 'Needs Fixing'
+        button_text   = 'Fix and Resubmit'
         button_icon   = 'icon-wrench'
-      elsif task.needs_redoing?
-        button_class  = 'btn-needs-redoing'
+      elsif task.fix_and_include?
+        button_class  = 'btn-fix-and-include'
+        button_text   = 'Fix and Include'
+        button_icon   = 'icon-wrench'
+      elsif task.redo?
+        button_class  = 'btn-redo'
         button_text   = 'Redo'
         button_icon   = 'icon-refresh'
       elsif task.need_help?
@@ -118,12 +124,19 @@ module TasksHelper
       end
     end
 
-    raw ["<button class=\"btn #{button_class} status-display-button\">",
+    button = [
+      "<button class=\"btn #{button_class} status-display-button\">",
             "#{button_text}",
             (button_icon ? "<i class=\"#{button_icon} button-icon\"></i>" : ""),
-        '</button>',
+        '</button>'
+    ]
+
+    button += [
         "<button class=\"btn #{button_class} dropdown-toggle\" data-toggle=\"dropdown\">",
           '<span class="caret"></span>',
-        '</button>'].join("\n")
+        '</button>'
+    ] if include_toggle
+
+    raw button.join("\n")
   end
 end

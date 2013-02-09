@@ -170,8 +170,8 @@ class Project < ActiveRecord::Base
 
   def partially_completed_tasks
     # TODO: Should probably have a better definition
-    # of partially complete than just 'needs fixing' tasks
-    assigned_tasks.select{|task| task.needs_fixing? }
+    # of partially complete than just 'fix' tasks
+    assigned_tasks.select{|task| task.fix_and_resubmit? || task.fix_and_include? }
   end
 
   def completed?

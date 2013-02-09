@@ -1,5 +1,5 @@
-<% if task.complete? %>
-	<button class="btn btn-success status-display-button">Complete <i class="icon-ok button-icon"></i></button>
+<% if task.complete? or task.fix_and_include? %>
+	<%= task_status_active_button(task, false) %>
 <% else %>
 <div class="btn-group">
 	<%= task_status_active_button(task) %>

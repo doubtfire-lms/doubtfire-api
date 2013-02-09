@@ -6,7 +6,10 @@
 		</li>
 		<li class="divider"></li>
 		<li>
-			<a href="<%= assess_task_path(task, "fix") %>" data-method="put" data-remote="true">Fix <i class="icon-wrench button-icon"></i></a>
+			<a href="<%= assess_task_path(task, "fix_and_resubmit") %>" data-method="put" data-remote="true">Fix and Resubmit <i class="icon-wrench button-icon"></i></a>
+		</li>
+		<li>
+			<a href="<%= assess_task_path(task, "fix_and_include") %>" data-method="put" data-remote="true">Fix and Include <i class="icon-book button-icon"></i></a>
 		</li>
 		<li>
 			<a href="<%= assess_task_path(task, "redo") %>" data-method="put" data-remote="true">Redo <i class="icon-refresh button-icon"></i></a>

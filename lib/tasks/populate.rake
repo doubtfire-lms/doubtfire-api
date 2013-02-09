@@ -47,11 +47,12 @@ namespace :db do
     [User, ProjectTemplate, Team, Project, TaskTemplate, Task, TaskStatus, TeamMembership, User, ProjectConvenor, Login, TaskSubmission, TaskEngagement].each(&:delete_all)
 
     TaskStatus.create(:name => "Not Submitted", :description => "This task has not been submitted to marked by your tutor.")
-    TaskStatus.create(:name => "Needs Fixing", :description => "This task must be resubmitted after fixing some issues.")
     TaskStatus.create(:name => "Complete", :description => "This task has been signed off by your tutor.")
     TaskStatus.create(:name => "Need Help", :description => "Some help is required in order to complete this task.")
     TaskStatus.create(:name => "Working On It", :description => "This task is currently being worked on.")
-    TaskStatus.create(:name => "Needs Redoing", :description => "This task needs to be redone.")
+    TaskStatus.create(:name => "Fix and Resubmit", :description => "This task must be resubmitted after fixing some issues.")
+    TaskStatus.create(:name => "Fix and Include", :description => "This task must be fixed and included in your portfolio, but should not be resubmitted.")
+    TaskStatus.create(:name => "Redo", :description => "This task needs to be redone.")
 
     # Create 4 students
     randies.each do |username, profile|
@@ -157,7 +158,7 @@ namespace :db do
         project = team_membership.project
 
         project.tasks.each do |task|
-          task.awaiting_signoff = true
+          task.awaiting_signoff = false
           task.save
         end
       end
@@ -173,5 +174,6 @@ namespace :db do
         end
       end
     end
+
   end
 end

@@ -41,8 +41,9 @@ taskDistributionData = (tasks) ->
     { key: "Not Submitted",     values: [], color: "#999999"}
     { key: "Need Help",         values: [], color: "#F6A895"}
     { key: "Working On It",     values: [], color: "#FCEC21"}
-    { key: "Needs Fixing",      values: [], color: "#FBB450"}
-    { key: "Needs Redoing",     values: [], color: "#B06C4E"}
+    { key: "Fix and Resubmit",  values: [], color: "#FBB450"}
+    { key: "Fix and Include",  values: [], color: "#FBB450"}
+    { key: "Redo",     values: [], color: "#B06C4E"}
     { key: "Awaiting Signoff",  values: [], color: "#0074CC"}
     { key: "Complete",          values: [], color: "#62C462"}
   ]
@@ -51,8 +52,9 @@ taskDistributionData = (tasks) ->
     "not_submitted"
     "need_help"
     "working_on_it"
-    "needs_fixing"
-    "needs_redoing"
+    "fix_and_resubmit"
+    "fix_and_include"
+    "redo"
     "awaiting_signoff"
     "complete"
   ]

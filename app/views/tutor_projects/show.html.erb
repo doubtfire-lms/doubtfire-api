@@ -74,9 +74,11 @@
 								<%= tab_li_tag("your-teams-tab", true) do %>
 					                <a href="#your-teams-tab" data-toggle="tab">Your Teams</a>
 					            <% end %>
-								<%= tab_li_tag("other-teams-tab") do %>
-					                <a href="#other-teams-tab" data-toggle="tab">Other Teams</a>
-					            <% end %>
+					            <% if !@other_teams.empty? %>
+									<%= tab_li_tag("other-teams-tab") do %>
+						                <a href="#other-teams-tab" data-toggle="tab">Other Teams</a>
+						            <% end %>
+						        <% end %>
 							</ul>
 
 							<div class="tab-content">
@@ -102,22 +104,23 @@
 									<% end %>
 								<% end %>
 
-								<%= tab_div_tag("other-teams-tab") do %>
-									<%= render :partial => "tutor_projects/task_indicator_controls" %>
+								<% if !@other_teams.empty? %>
+									<%= tab_div_tag("other-teams-tab") do %>
+										<%= render :partial => "tutor_projects/task_indicator_controls" %>
 
-									<h3>Other Teams</h3>
-									<%= render :partial => "tutor_projects/other_team_dropdown", :locals => { :initial_other_team => @initial_other_team, :other_teams => @other_teams, :project_template => @project_template } %>
+										<h3>Other Teams</h3>
+										<%= render :partial => "tutor_projects/other_team_dropdown", :locals => { :initial_other_team => @initial_other_team, :other_teams => @other_teams, :project_template => @project_template } %>
 
-									<div id="other-teams-entries">
-										<div class="team-entry" id="team-<%= @initial_other_team.id %>-students">
-											<h3 id="other-team-header"><%= @initial_other_team.meeting_day %> <%= @initial_other_team.meeting_time %> (<%= @initial_other_team.user.name %>)</h3>
-											<div class="team-members">
-												<%= render :partial => "tutor_projects/team_project_list", :locals => { :team => @initial_other_team } %>
+										<div id="other-teams-entries">
+											<div class="team-entry" id="team-<%= @initial_other_team.id %>-students">
+												<h3 id="other-team-header"><%= @initial_other_team.meeting_day %> <%= @initial_other_team.meeting_time %> (<%= @initial_other_team.user.name %>)</h3>
+												<div class="team-members">
+													<%= render :partial => "tutor_projects/team_project_list", :locals => { :team => @initial_other_team } %>
+												</div>
 											</div>
 										</div>
-									</div>
+									<% end %>
 								<% end %>
-
 							</div>
 						</div>
 
