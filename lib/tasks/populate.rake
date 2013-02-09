@@ -170,6 +170,7 @@ namespace :db do
 
         project.tasks.each do |task|
           task.task_status = complete_status
+          task.completion_date = Time.zone.now
           task.save
         end
       end
