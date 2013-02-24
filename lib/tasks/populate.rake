@@ -89,11 +89,24 @@ namespace :db do
       convenor.nickname            = "Strict"
       convenor.email               = "convenor@doubtfire.com"
       convenor.encrypted_password  = BCrypt::Password.create("password")
-      convenor.first_name          = "Somedude"
-      convenor.last_name           = "Withlotsapower"
+      convenor.first_name          = "Convenor"
+      convenor.last_name           = "OfSubjects"
       convenor.sign_in_count       = 0
       convenor.system_role         = "convenor"
       ids["convenor"]           = convenor.id
+    end
+
+     # Create 1 superuser
+    User.populate(1) do |superuser|
+      superuser.username            = "superuser"
+      superuser.nickname            = "Strict"
+      superuser.email               = "superuser@doubtfire.com"
+      superuser.encrypted_password  = BCrypt::Password.create("password")
+      superuser.first_name          = "Somedude"
+      superuser.last_name           = "Withlotsapower"
+      superuser.sign_in_count       = 0
+      superuser.system_role         = "superuser"
+      ids["superuser"]              = superuser.id
     end
 
     # Create 4 projects (subjects)
@@ -117,6 +130,7 @@ namespace :db do
         TaskTemplate.populate(num_tasks) do |task_template|
           assignment_num += 1
           task_template.name = "Assignment #{assignment_num}"
+          task_template.abbreviation = "A#{assignment_num}"
           task_template.project_template_id = project_template.id
           task_template.description = Populator.words(5..10)
           task_template.weighting = BigDecimal.new("2")
@@ -161,6 +175,9 @@ namespace :db do
           task.awaiting_signoff = false
           task.save
         end
+
+        project.calculate_temporal_attributes
+        project.save
       end
     end
 
@@ -173,6 +190,9 @@ namespace :db do
           task.completion_date = Time.zone.now
           task.save
         end
+
+        project.calculate_temporal_attributes
+        project.save
       end
     end
 

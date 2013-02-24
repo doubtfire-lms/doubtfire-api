@@ -7,16 +7,22 @@ constructTaskDistributionChart = (chartContainer) ->
   
   d3.json projectURL, (project) ->
     requiredTasks     = project.task_templates.filter (task) -> task.required
+    requiredTasksMap  = {}
+    requiredTasks.forEach (task, i) ->
+      taskAbbreviation = task.abbreviation || (i + 1).toString()
+      requiredTasksMap[taskAbbreviation] = task
+
     distributionData  = taskDistributionData(requiredTasks)
     
     nv.addGraph () ->
       chart = nv.models.multiBarChart()
-      chart.xAxis.tickFormat (d, i) -> d
+      chart.xAxis.
+        tickFormat (d, i) -> requiredTasks[d].abbreviation || (i + 1).toString()
       chart.yAxis.tickFormat(d3.format(',f'))
       chart.stacked true
 
       chart.tooltipContent (key, x, y, e, graph) ->
-        "<h3>#{requiredTasks[x].name}</h3>
+        "<h3>#{requiredTasksMap[x].name}</h3>
         <p>#{y} '#{key}'</p>"
 
       ###
@@ -30,7 +36,7 @@ constructTaskDistributionChart = (chartContainer) ->
 
       d3.select($(chartContainer).children("svg")[0])
         .datum(distributionData)
-        .transition().duration(500).call(chart)
+        .transition().duration(200).call(chart)
 
       nv.utils.windowResize chart.update
 
