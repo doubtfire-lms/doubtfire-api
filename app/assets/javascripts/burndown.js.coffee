@@ -104,7 +104,8 @@ actualCompletionData = (project) ->
 projectedCompletionData = (project) ->
   startDate   = moment(project.project_template.start_date)
   endDate     = moment(project.project_template.end_date)
-  currentWeek = moment().diff(startDate, 'weeks')
+  currentDate = if moment() > endDate then endDate else moment()
+  currentWeek = currentDate.diff(startDate, 'weeks')
   cutOffDate  = if moment() > endDate then endDate else moment()
   endWeek     = cutOffDate.diff startDate, 'weeks'
 
