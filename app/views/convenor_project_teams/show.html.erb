@@ -12,7 +12,11 @@
         <li><%= link_to 'Home', root_url %></li>
         <% unless @convenor_projects.empty? %>
             <%= render partial: 'dashboard/convenor_projects_links',
-                locals: { projects: @convenor_projects, selected_project: @project_template }
+                locals: {
+                    active_projects: @convenor_projects,
+                    inactive_projects: [],
+                    selected_project: @project_template
+                }
             %>
         <% end %>
     </ul>

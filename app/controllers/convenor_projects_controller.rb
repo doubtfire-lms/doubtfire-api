@@ -1,9 +1,20 @@
 class ConvenorProjectsController < ApplicationController
   helper_method :sort_column, :sort_direction
 
+  def index
+    @convenor_projects = ProjectTemplate.joins(:project_convenors)
+                                        .convened_by(current_user)
+                                        
+    @active_convenor_projects   = @convenor_projects.current
+    @inactive_convenor_projects = @convenor_projects.inactive
+  end
+
 	def show
     @convenor_projects = ProjectTemplate.joins(:project_convenors)
-                                        .where(project_convenors: {user_id: current_user.id})
+                                        .convened_by(current_user)
+                                        
+    @active_convenor_projects   = @convenor_projects.current
+    @inactive_convenor_projects = @convenor_projects.inactive
     
 		@project_template = ProjectTemplate.includes(:task_templates).find(params[:id])
     authorize! :read, @project_template, :message => "You are not authorised to view Project Template ##{@project_template.id}"

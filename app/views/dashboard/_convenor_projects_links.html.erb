@@ -1,8 +1,22 @@
-<li class="nav-header">Subjects You Convene</li>
-<% projects.each do |project| %>
+<li class="nav-header">Current Subjects You Convene</li>
+<% active_projects.each do |project| %>
     <% if !local_assigns[:selected_project].nil? && project.id == selected_project.id %>
-        <li class="active"><a href="<%= convenor_project_path(project) %>"><i class="icon-book"></i><%= project.name %></a></li>
+        <li class="active"><a href="<%= convenor_project_path(project) %>"><%= project.name %></a></li>
     <% else %>  
-        <li><a href="<%= convenor_project_path(project) %>"><i class="icon-book"></i><%= project.name %></a></li>
+        <li><a href="<%= convenor_project_path(project) %>"><%= project.name %></a></li>
     <% end %>
+<% end %>
+
+<% unless inactive_projects.empty? %>
+    <li class="divider"></li>
+    <li class="nav-header">Older Subjects You Convened</li>
+
+    <% inactive_projects.each do |project| %>
+        <% if !local_assigns[:selected_project].nil? && project.id == selected_project.id %>
+            <li class="active"><a href="<%= convenor_project_path(project) %>"><%= project.name %></a></li>
+        <% else %>  
+            <li><a href="<%= convenor_project_path(project) %>"><%= project.name %></a></li>
+        <% end %>
+    <% end %>
+
 <% end %>

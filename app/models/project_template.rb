@@ -2,6 +2,8 @@ require 'csv'
 require 'bcrypt'
 
 class ProjectTemplate < ActiveRecord::Base
+  include ApplicationHelper
+
   attr_accessible :official_name, :description, :end_date, :name, :start_date
   validates_presence_of :name, :description, :start_date, :end_date
 
@@ -14,6 +16,26 @@ class ProjectTemplate < ActiveRecord::Base
   has_many :projects, :dependent => :destroy					 
   has_many :teams, :dependent => :destroy
   has_many :project_convenors, :dependent => :destroy
+
+  scope :convened_by, lambda {|convenor_user|
+    where(project_convenors: {user_id: convenor_user.id})
+  }
+
+  scope :current, lambda {
+    current_for_date(Time.zone.now)
+  }
+
+  scope :current_for_date, lambda {|date|
+    where("start_date <= ? AND end_date >= ?", date, date)
+  }
+
+  scope :inactive, lambda {
+    inactive_for_date(Time.zone.now)
+  }
+
+  scope :inactive_for_date, lambda {|date|
+    where("start_date > ? OR end_date < ?", date, date)
+  }
   
   # Adds a user to this project.
   def add_user(user_id, team_id, project_role)
