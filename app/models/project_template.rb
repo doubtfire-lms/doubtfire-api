@@ -4,7 +4,7 @@ require 'bcrypt'
 class ProjectTemplate < ActiveRecord::Base
   include ApplicationHelper
 
-  attr_accessible :official_name, :description, :end_date, :name, :start_date
+  attr_accessible :official_name, :description, :end_date, :name, :start_date, :active
   validates_presence_of :name, :description, :start_date, :end_date
 
   # Accessor to allow setting of convenors via the new/edit form
@@ -29,11 +29,11 @@ class ProjectTemplate < ActiveRecord::Base
     where("start_date <= ? AND end_date >= ?", date, date)
   }
 
-  scope :inactive, lambda {
-    inactive_for_date(Time.zone.now)
+  scope :not_current, lambda {
+    not_current_for_date(Time.zone.now)
   }
 
-  scope :inactive_for_date, lambda {|date|
+  scope :not_current_for_date, lambda {|date|
     where("start_date > ? OR end_date < ?", date, date)
   }
   

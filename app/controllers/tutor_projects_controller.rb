@@ -6,6 +6,11 @@ class TutorProjectsController < ApplicationController
 
   def show
     @student_projects         = Project.find(@user.team_memberships.map{|membership| membership.project_id })
+    @tutor_projects           = Team.includes(:project_template)
+                                    .where(user_id: @user.id).map{|team| team.project_template }
+                                    .select{|project_template| project_template.active }.uniq
+
+    @student_projects         = @user.projects.select{|project| project.active? }
     @tutor_projects           = Team.where(:user_id => @user.id).map{|team| team.project_template }.uniq
 
     @tutor_teams              = Team.includes(:team_memberships => [{:project => [{:tasks => [:task_template]}]}]).where(:user_id => @user.id, :project_template_id => params[:id])

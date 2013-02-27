@@ -6,7 +6,7 @@ class ConvenorProjectsController < ApplicationController
                                         .convened_by(current_user)
                                         
     @active_convenor_projects   = @convenor_projects.current
-    @inactive_convenor_projects = @convenor_projects.inactive
+    @inactive_convenor_projects = @convenor_projects.not_current
   end
 
 	def show
@@ -14,7 +14,7 @@ class ConvenorProjectsController < ApplicationController
                                         .convened_by(current_user)
                                         
     @active_convenor_projects   = @convenor_projects.current
-    @inactive_convenor_projects = @convenor_projects.inactive
+    @inactive_convenor_projects = @convenor_projects.not_current
     
 		@project_template = ProjectTemplate.includes(:task_templates).find(params[:id])
     authorize! :read, @project_template, :message => "You are not authorised to view Project Template ##{@project_template.id}"

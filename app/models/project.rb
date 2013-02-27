@@ -3,13 +3,12 @@ class Project < ActiveRecord::Base
 
   attr_accessible :project_template, :team_membership, :project_role, :started, :progress
 
-  # Model associations
-  belongs_to :team              # Foreign key
-  belongs_to :project_template  # Foreign key
-  belongs_to :team_membership, :dependent => :destroy   # Foreign key
+  belongs_to :team
+  belongs_to :project_template
+  belongs_to :team_membership, dependent: :destroy
 
   has_one :user, through: :team_membership
-  has_many :tasks, :dependent => :destroy   # Destroying a project will also nuke all of its tasks
+  has_many :tasks, dependent: :destroy   # Destroying a project will also nuke all of its tasks
 
   before_create :calculate_temporal_attributes
 
@@ -18,6 +17,10 @@ class Project < ActiveRecord::Base
   }
 
   default_scope :include => :project_template
+
+  def active?
+    project_template.active
+  end
 
   def reference_date
     if application_reference_date > project_template.end_date

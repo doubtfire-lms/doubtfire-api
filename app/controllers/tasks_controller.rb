@@ -15,7 +15,7 @@ class TasksController < ApplicationController
   end
 
   def show
-    @student_projects = Project.find(@user.team_memberships.map{|membership| membership.project_id})
+    @student_projects = @user.projects.select{|project| project.active? }
     @project          = Project.find(params[:project_id])
     @task             = Task.includes(:task_template).find(params[:id])
 

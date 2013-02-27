@@ -8,7 +8,7 @@ class ConvenorController < ApplicationController
                                         .convened_by(current_user)
                                                                                 
     @active_convenor_projects   = @convenor_projects.current
-    @inactive_convenor_projects = @convenor_projects.inactive
+    @inactive_convenor_projects = @convenor_projects.not_current
   end
 
   def load_current_user

@@ -29,7 +29,7 @@ class ProjectsController < ApplicationController
   end
 
   def load_student_projects
-    @student_projects = Project.find(@user.team_memberships.map{|membership| membership.project_id})
+    @student_projects = @user.projects.select{|project| project.active? }
   end
 
   def load_current_user
