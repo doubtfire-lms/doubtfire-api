@@ -145,7 +145,7 @@ class ProjectTemplate < ActiveRecord::Base
     CSV.foreach(file) do |row|
       next if row[0] =~ /^(Task Name)|(name)/ # Skip header
 
-      name, abbreviation, description, weighting, required, target_date, abbreviation = row[0..5]
+      name, abbreviation, description, weighting, required, target_date = row[0..6]
       description = "(No description given)" if description == "NULL"
 
       if target_date !~ /20\d\d\-\d{1,2}\-\d{1,2}$/ # Matches YYYY-mm-dd by default
