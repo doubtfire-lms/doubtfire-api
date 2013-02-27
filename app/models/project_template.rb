@@ -145,7 +145,7 @@ class ProjectTemplate < ActiveRecord::Base
     CSV.foreach(file) do |row|
       next if row[0] =~ /Task Name/ # Skip header
 
-      name, description, weighting, required, target_date, abbreviation = row[0..5]
+      name, description, abbreviation, weighting, required, target_date, abbreviation = row[0..5]
       description = "(No description given)" if description == "NULL"
 
       if target_date !~ /20\d\d\-\d{1,2}\-\d{1,2}$/ # Matches YYYY-mm-dd by default
@@ -168,6 +168,7 @@ class ProjectTemplate < ActiveRecord::Base
       task_template = TaskTemplate.find_or_create_by_project_template_id_and_name(id, name) do |task_template|
         task_template.name                        = name
         task_template.project_template_id         = id
+        task_template.abbreviation                = abbreviation
         task_template.description                 = description
         task_template.weighting                   = BigDecimal.new(weighting)
         task_template.required                    = ["Yes", "y", "Y", "yes", "true", "1"].include? required

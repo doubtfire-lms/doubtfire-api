@@ -1,2 +1,2 @@
-Task Name,Description,Weight (e.g. 2.0),Required (Yes/yes/Y/y/true; otherwise false),Target Date (dd-mm-YYYY) or (dd/mm/YYYY)
-Example Task,"This task description has a comma in it, because it is special.",2.0,yes,13-08-2012
+Task Name,Abbreviation,Description,Weight (e.g. 2.0),Required (Yes/yes/Y/y/true; otherwise false),Target Date (dd-mm-YYYY) or (dd/mm/YYYY)
+Example Task,T1,"This task description has a comma in it, because it is special.",2.0,yes,13-08-2012
