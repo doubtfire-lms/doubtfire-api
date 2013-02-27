@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20120917032431) do
+ActiveRecord::Schema.define(:version => 20130227035353) do
 
   create_table "logins", :force => true do |t|
     t.datetime "timestamp"
@@ -34,9 +34,10 @@ ActiveRecord::Schema.define(:version => 20120917032431) do
     t.string   "description"
     t.datetime "start_date"
     t.datetime "end_date"
-    t.datetime "created_at",    :null => false
-    t.datetime "updated_at",    :null => false
+    t.datetime "created_at",                      :null => false
+    t.datetime "updated_at",                      :null => false
     t.string   "official_name"
+    t.boolean  "active",        :default => true
   end
 
   create_table "projects", :force => true do |t|
