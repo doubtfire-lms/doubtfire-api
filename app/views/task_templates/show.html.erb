@@ -1,3 +1,4 @@
+<% title "#{@project_template.name} - #{@task_template.name}" %>
 <%- model_class = @task_template.class -%>
 
 <% content_for :sidebar do %>
@@ -31,7 +32,7 @@
     <div class="widget-content">
       <dl class="dl-horizontal">
         <dt><strong><%= model_class.human_attribute_name(:project_template_id) %>:</strong></dt>
-        <dd><%= @task_template.project_template_id %></dd>
+        <dd><%= @project_template.name %></dd>
         <dt><strong><%= model_class.human_attribute_name(:name) %>:</strong></dt>
         <dd><%= @task_template.name %></dd>
         <dt><strong><%= model_class.human_attribute_name(:description) %>:</strong></dt>
