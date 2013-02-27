@@ -19,7 +19,8 @@ class User < ActiveRecord::Base
 
   # Model associations
   has_many :team_memberships, :dependent => :destroy
-  has_many :project_convenors, :dependent => :destroy   # Sounds weird - it means "may be a convenor for many projects"
+  has_many :projects, through: :team_memberships
+  has_many :project_convenors, dependent: :destroy   # Sounds weird - it means "may be a convenor for many projects"
   
   # Model validations/constraints
   validates_uniqueness_of :username, :email
