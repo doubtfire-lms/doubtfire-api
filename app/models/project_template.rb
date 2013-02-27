@@ -36,6 +36,14 @@ class ProjectTemplate < ActiveRecord::Base
   scope :not_current_for_date, lambda {|date|
     where("start_date > ? OR end_date < ?", date, date)
   }
+
+  scope :set_active, lambda {
+    where("active = ?", true)
+  }
+
+  scope :set_inactive, lambda {
+    where("active = ?", false)
+  }
   
   # Adds a user to this project.
   def add_user(user_id, team_id, project_role)

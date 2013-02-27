@@ -7,8 +7,8 @@ class ConvenorController < ApplicationController
     @convenor_projects = ProjectTemplate.joins(:project_convenors)
                                         .convened_by(current_user)
                                                                                 
-    @active_convenor_projects   = @convenor_projects.current
-    @inactive_convenor_projects = @convenor_projects.not_current
+    @active_convenor_projects   = @convenor_projects.set_active
+    @inactive_convenor_projects = @convenor_projects.set_inactive
   end
 
   def load_current_user
