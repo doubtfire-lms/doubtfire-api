@@ -143,7 +143,7 @@ class ProjectTemplate < ActiveRecord::Base
     project_cache = nil
 
     CSV.foreach(file) do |row|
-      next if row[0] =~ /Task Name/ # Skip header
+      next if row[0] =~ /^(Task Name)|(name)/ # Skip header
 
       name, abbreviation, description, weighting, required, target_date, abbreviation = row[0..5]
       description = "(No description given)" if description == "NULL"
@@ -189,6 +189,10 @@ class ProjectTemplate < ActiveRecord::Base
         )
       end
     end
+  end
+
+  def task_templates_csv
+    TaskTemplate.to_csv(task_templates)
   end
 
   def status_distribution

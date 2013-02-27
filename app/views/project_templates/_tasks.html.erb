@@ -24,12 +24,22 @@
                     :data => { :confirm => t('.confirm', :default => t("helpers.links.confirm", :default => 'All tasks (including instances assigned to users) will be destroyed. Are you sure?'))} %>
         <% end %>
     </span>
+
     <hr />
-    <div class="well">
-    <%= form_tag "#{project_template.id}/import_tasks", :multipart => true, :remote => true do %>
-        <%= file_field(:csv_file, :file) %>
-        <%= submit_tag "Import Tasks from CSV", :class => "btn" %>
-    <% end %>
-    <%= link_to "Download Import Template", task_import_template_path %>
+
+    <span id="export-buttons">
+        <%= link_to "Export to CSV", project_template_export_tasks_path(project_template, format: "csv"),
+                    :class => 'btn',
+                    :id => 'export-tasks-to-csv-button'
+        %>
+    </span>
+
+    <hr />
+        <div class="well">
+        <%= form_tag "#{project_template.id}/import_tasks", multipart: true, remote: true do %>
+            <%= file_field(:csv_file, :file) %>
+            <%= submit_tag "Import Tasks from CSV", class: "btn" %>
+        <% end %>
+        <%= link_to "Download Import Template", task_import_template_path %>
     </div>
 </div>

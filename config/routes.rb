@@ -39,6 +39,8 @@ Doubtfire::Application.routes.draw do
     post 'import_teams' => 'project_templates#import_teams'
     post 'import_tasks' => 'project_templates#import_tasks'
 
+    get 'export_tasks' => 'project_templates#export_tasks'
+
     # Intermediate state management (via AJAX)
     get 'cancel_update' => 'project_templates#finish_update', as: 'cancel_update'
 

@@ -212,4 +212,17 @@ class ProjectTemplatesController < ApplicationController
       format.js
     end
   end
+
+  def export_tasks
+    @project_template = ProjectTemplate.find(params[:project_template_id])
+
+    respond_to do |format|
+      format.html { redirect_to project_template_path(@project_template, tab: "tasks-tab"), notice: "Successfully imported tasks."}
+      format.csv {
+        send_data @project_template.task_templates_csv,
+        filename: "#{@project_template.name.parameterize}-task-templates.csv"
+      }
+    end
+  end
+
 end

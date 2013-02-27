@@ -25,4 +25,21 @@ class TaskTemplate < ActiveRecord::Base
       complete:         task_instances.select{|task| task.task_status_id == 2 }.size
     }
   end
+
+  def self.to_csv(task_templates, options = {})
+    CSV.generate(options) do |csv|
+      csv << csv_columns
+      task_templates.each do |task_template|
+        csv << task_template.to_csv_row
+      end
+    end
+  end
+
+  def to_csv_row
+    TaskTemplate.csv_columns.reject{|col| col == :target_date }.map{|column| attributes[column.to_s] } + [target_date.strftime('%d-%m-%Y')]
+  end
+
+  def self.csv_columns
+    [:name, :abbreviation, :description, :weighting, :required, :target_date]
+  end
 end
