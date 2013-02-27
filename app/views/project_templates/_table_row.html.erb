@@ -4,7 +4,7 @@
   <td><%= get_convenors_string(project_template.id) %></td>
   <td><%= project_template.start_date.strftime("%d %B %Y") %></td>
   <td><%= project_template.end_date.strftime("%d %B %Y") %></td>
-  <td><%= project_template.created_at.strftime("%d %b %Y at %I:%M%p") %></td>
+  <td><%= project_template.active ? "Yes" : "No" %></td>
   <td>
     <%= link_to t('.edit', :default => t("helpers.links.edit")),
                 edit_project_template_path(project_template), 
