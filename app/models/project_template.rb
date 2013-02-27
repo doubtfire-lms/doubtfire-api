@@ -171,7 +171,7 @@ class ProjectTemplate < ActiveRecord::Base
         task_template.abbreviation                = abbreviation
         task_template.description                 = description
         task_template.weighting                   = BigDecimal.new(weighting)
-        task_template.required                    = ["Yes", "y", "Y", "yes", "true", "1"].include? required
+        task_template.required                    = ["Yes", "y", "Y", "yes", "true", "TRUE", "1"].include? required
         task_template.target_date                 = Time.zone.parse(target_date)
       end
 
