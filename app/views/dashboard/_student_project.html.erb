@@ -20,6 +20,8 @@
 		<h3>Projected Completion</h3>
 		<%= rate_of_completion(project) %>
 	<% end %>
+<% else %>
+	<%= pre_commencement_message(project) %>
 <% end %>				
 
 <% if project.started? %>

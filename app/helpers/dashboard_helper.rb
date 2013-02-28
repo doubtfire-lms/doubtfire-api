@@ -152,6 +152,14 @@ module DashboardHelper
     end
   end
 
+  def date_string(date)
+    if date.year == Time.zone.now.year
+      date.strftime("#{date.day.ordinalize} of %B")
+    else
+      date.strftime("#{date.day.ordinalize} of %B, %Y")
+    end
+  end
+
   def projected_date_of_completion_vs_deadline(project)
     start_date  = project.project_template.start_date
     deadline    = project.project_template.end_date
@@ -255,6 +263,22 @@ module DashboardHelper
     raw ["<div class=\"progress progress-#{class_for_project_status(project)}\">",
           "\t<div class=\"bar\" style=\"width: #{project.percentage_complete}%;\"></div>",
         '</div>'].join("\n")
+  end
+
+  def pre_commencement_message(project)
+    raw [
+      "<p>",
+        "This project is due to commence on the <strong>#{date_string(project.project_template.start_date)}</strong><br />",
+      "</p>",
+      "<p>",
+        "Once the project has started, you will see here an indicator of your progress throughout its ",
+        "duration. To stay on track, make sure to remain active in attending classes and getting your ",
+        "tasks marked off on time.",
+      "</p>",
+      "<p>",
+        "Good luck!",
+      "</p>"
+    ].join("\n")
   end
 
   def not_started_text
