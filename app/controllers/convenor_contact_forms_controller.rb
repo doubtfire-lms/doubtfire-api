@@ -2,6 +2,7 @@ class ConvenorContactFormsController < ApplicationController
   before_filter :authenticate_user!
   
   def new
+    @active_projects = ProjectTemplate.set_active
     @convenor_contact_form = ConvenorContactForm.new
   end
 
