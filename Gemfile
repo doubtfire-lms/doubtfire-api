@@ -37,9 +37,7 @@ group :development, :demo do
   gem 'thin'
 end
 
-group :production do
-  gem 'mysql'
-end
+gem 'mysql2'
 
 # Gems used only for assets and not required
 # in production environments by default.
