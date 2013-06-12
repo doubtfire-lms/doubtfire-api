@@ -65,96 +65,30 @@
 		<div class="tab-content">
 
 			<%= tab_div_tag("teams-tab", true) do %>
-				<div class="span12 widget">
-					<h2><i class="icon-group"></i>Teams</h2>
-					<div class="widget-content">
-						
-						<div class="tabbable">
-							<ul class="nav nav-tabs">
-								<%= tab_li_tag("your-teams-tab", true) do %>
-					                <a href="#your-teams-tab" data-toggle="tab">Your Teams</a>
-					            <% end %>
-					            <% if !@other_teams.empty? %>
-									<%= tab_li_tag("other-teams-tab") do %>
-						                <a href="#other-teams-tab" data-toggle="tab">Other Teams</a>
-						            <% end %>
-						        <% end %>
-							</ul>
-
-							<div class="tab-content">
-								<%= tab_div_tag("your-teams-tab", true) do %>
-									<%= render 	partial: 	"tutor_projects/team_task_controls",
-												locals: 	{ :teams => @tutor_teams } 
-									%>
-								<% end %>
-
-								<% if !@other_teams.empty? %>
-									<%= tab_div_tag("other-teams-tab") do %>
-										<%= render 	partial: 	"tutor_projects/other_team_task_controls",
-													locals:
-													{
-														initial_other_team: @initial_other_team,
-														other_teams: @other_teams,
-														project_template: @project_template
-													} 
-										%>
-									<% end %>
-								<% end %>
-
-							</div>
-
-						</div>
-
-					</div>
-				</div>
+				<%= render 	partial: 	'tutor_projects/teams',
+					locals: 
+					{
+						tutor_teams: @tutor_teams,
+						other_teams: @other_teams,
+						initial_other_team: @initial_other_team,
+						project_template: @project_template
+					} 
+				%>
 			<% end %>
 
 			<%= tab_div_tag("awaiting-signoff-tab") do %>
-				<div class="span9 widget">
-					<h2><i class="icon-thumbs-up"></i>Awaiting Signoff</h2>
-					<div class="widget-content">
-					<% if @user_unmarked_tasks.empty? %>
-						<p>Your marking backlog is currently empty. Great success!</p>
-					<% else %>
-						<% @user_unmarked_tasks.each do |user, unmarked_tasks| %>
-							<h3><%= user.name %> (<%= user.username %>)</h3>
-							<%= render 'tutor_projects/tutor_task_backlog', :actionable_tasks => unmarked_tasks %>
-						<% end %>
-					<% end %>
-					</div>
-				</div>
+				<%= render 	partial: 	'tutor_projects/backlogs/awaiting_signoff',
+					locals: { user_unmarked_tasks: @user_unmarked_tasks } %>
 			<% end %>
 
 			<%= tab_div_tag("needing-help-tab") do %>
-				<div class="span9 widget">
-					<h2><i class="icon-exclamation-sign"></i>Needing Help</h2>
-					<div class="widget-content">
-					<% if @user_needing_help_tasks.empty? %>
-						<p>There is no one currently in need of help with any tasks. Feet up and scotch rocks!</p>
-					<% else %>
-						<% @user_needing_help_tasks.each do |user, needing_help_tasks| %>
-							<h3><%= user.name %> (<%= user.username %>)</h3>
-							<%= render :partial => 'tutor_projects/tutor_task_backlog', :locals => {:actionable_tasks => needing_help_tasks} %>
-						<% end %>
-					<% end %>
-					</div>
-				</div>
+				<%= render 	partial: 	'tutor_projects/backlogs/needing_help',
+					locals: { user_needing_help_tasks: @user_needing_help_tasks } %>
 			<% end %>
 
 			<%= tab_div_tag("working-on-it-tab") do %>
-				<div class="span9 widget">
-					<h2><i class="icon-bolt"></i>Working On It</h2>
-					<div class="widget-content">
-					<% if @user_working_on_it_tasks.empty? %>
-						<p>There is no one currently no one working on tasks. Son, I am disappoint.</p>
-					<% else %>
-						<% @user_working_on_it_tasks.each do |user, working_on_it_tasks| %>
-							<h3><%= user.name %> (<%= user.username %>)</h3>
-							<%= render :partial => 'tutor_projects/tutor_task_backlog', :locals => { :actionable_tasks => working_on_it_tasks} %>
-						<% end %>
-					<% end %>
-					</div>
-				</div>
+				<%= render 	partial: 	'tutor_projects/backlogs/working_on_it',
+					locals: { user_working_on_it_tasks: @user_working_on_it_tasks } %>
 			<% end %>
 
 		</div>

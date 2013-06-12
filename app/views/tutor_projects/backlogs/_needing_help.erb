@@ -1,0 +1,13 @@
+<div class="span9 widget">
+	<h2><i class="icon-exclamation-sign"></i>Needing Help</h2>
+	<div class="widget-content">
+	<% if user_needing_help_tasks.empty? %>
+		<p>There is no one currently in need of help with any tasks. Feet up and scotch rocks!</p>
+	<% else %>
+		<% user_needing_help_tasks.each do |user, needing_help_tasks| %>
+			<h3><%= user.name %> (<%= user.username %>)</h3>
+			<%= render :partial => 'tutor_projects/tutor_task_backlog', :locals => {:actionable_tasks => needing_help_tasks} %>
+		<% end %>
+	<% end %>
+	</div>
+</div>
