@@ -1,12 +1,12 @@
 <div class="span9 widget">
 	<h2><i class="icon-thumbs-up"></i>Awaiting Signoff</h2>
 	<div class="widget-content">
-	<% if user_unmarked_tasks.empty? %>
+	<% if unmarked_tasks.empty? %>
 		<p>Your marking backlog is currently empty. Great success!</p>
 	<% else %>
-		<% user_unmarked_tasks.each do |user, unmarked_tasks| %>
+		<% unmarked_tasks.each do |user, tasks| %>
 			<h3><%= user.name %> (<%= user.username %>)</h3>
-			<%= render 'tutor_projects/tutor_task_backlog', :actionable_tasks => unmarked_tasks %>
+			<%= render partial: 'shared/assessment/backlog/backlog', locals: { actionable_tasks: tasks } %>
 		<% end %>
 	<% end %>
 	</div>
