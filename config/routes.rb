@@ -32,6 +32,7 @@ Doubtfire::Application.routes.draw do
   put 'tasks/:id/assess_task/:status'       => 'tasks#assess_task',       as: 'assess_task'
 
   post 'project_templates/:id/update'       => 'project_templates#update',       as: 'update_project_template'
+  get 'project_templates/:id/status_distribution' => 'project_templates#status_distribution', as: 'status_distribution'
 
   resources :project_templates do
     # Data imports

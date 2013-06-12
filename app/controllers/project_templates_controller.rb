@@ -26,15 +26,23 @@ class ProjectTemplatesController < ApplicationController
     
     respond_to do |format|
       format.html # show.html.erb
+      format.json { render json: @project_template }
+    end
+  end
+
+  def status_distribution
+    @project_template = ProjectTemplate.find(params[:id])
+    
+    respond_to do |format|
       format.json {
         render json:
           @project_template.to_json(
-          :methods => [:status_distribution],
-          :include => [
+          methods: [:status_distribution],
+          include: [
             {
-              :task_templates => {
-                :except => [:updated_at, :created_at],
-                :methods => [:status_distribution]
+              task_templates: {
+                except: [:updated_at, :created_at],
+                methods: [:status_distribution]
               }
             }
           ]

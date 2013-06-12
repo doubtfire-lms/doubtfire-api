@@ -5,11 +5,6 @@ class TutorProjectsController < ApplicationController
   before_filter :load_current_user
 
   def show
-    @student_projects         = Project.find(@user.team_memberships.map{|membership| membership.project_id })
-    @tutor_projects           = Team.includes(:project_template)
-                                    .where(user_id: @user.id).map{|team| team.project_template }
-                                    .select{|project_template| project_template.active }.uniq
-
     @student_projects         = @user.projects.select{|project| project.active? }
     @tutor_projects           = Team.where(:user_id => @user.id).map{|team| team.project_template }.uniq
 
