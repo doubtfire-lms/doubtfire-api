@@ -1,5 +1,5 @@
-class RenameUnitToUnit < ActiveRecord::Migration
+class RenameProjectTemplateToUnit < ActiveRecord::Migration
   def change
-    rename_table :units, :units
+    rename_table :project_templates, :units
   end
 end
