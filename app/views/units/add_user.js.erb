@@ -4,8 +4,8 @@ var partial = "<%=j render :partial => 'users/table_row_existing_user' %>"
 $("#users-table").append(partial);	
 
 // Make sure the table is visible and the "no units" message is hidden.
-if($("#project-templates-table").find("tbody").children().length > 0)
+if($("#units-table").find("tbody").children().length > 0)
 {
-	$("#no-project-templates-message").hide();
-	$("#project-templates-table").show();
+	$("#no-units-message").hide();
+	$("#units-table").show();
 }

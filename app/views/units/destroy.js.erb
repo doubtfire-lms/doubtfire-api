@@ -5,8 +5,8 @@ var unitRowId = "project-" + "<%= @unit.id %>" +  "-row";
 $("#" + unitRowId).remove();
 
 // Replace the table with a message if there are no more rows
-if($("#project-templates-table").find("tbody").children().length == 0)
+if($("#units-table").find("tbody").children().length == 0)
 {
-	$("#project-templates-table").hide();
-	$("#no-project-templates-message").show();
+	$("#units-table").hide();
+	$("#no-units-message").show();
 }

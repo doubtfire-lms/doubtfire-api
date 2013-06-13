@@ -1,5 +1,5 @@
-<p id="no-project-templates-message" <%= "hidden='hidden'" if not units.empty? %> ><%= empty_table_string %></p>
-<table id="project-templates-table" class="table table-striped" <%= "hidden='hidden'" if units.empty? %> <%= empty_table_string %>>
+<p id="no-units-message" <%= "hidden='hidden'" if not units.empty? %> ><%= empty_table_string %></p>
+<table id="units-table" class="table table-striped" <%= "hidden='hidden'" if units.empty? %> <%= empty_table_string %>>
   <thead>
     <tr>
       <th><%= Unit.human_attribute_name(:name) %></th>

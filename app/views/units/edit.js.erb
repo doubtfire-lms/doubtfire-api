@@ -6,11 +6,11 @@ var partial = "<%=j render :partial => 'units/table_row_edit', :locals => { :uni
 if(document.getElementById(unitRowId) != null)
 	$("#" + unitRowId).replaceWith(partial);		// Row already exists - replace it with the form
 else
-	$("#project-templates-table").append(partial);			// No row exists yet - append one
+	$("#units-table").append(partial);			// No row exists yet - append one
 
 // Make sure the table is visible and the "no units" message is hidden.
-if($("#project-templates-table").find("tbody").children().length > 0)
+if($("#units-table").find("tbody").children().length > 0)
 {
-	$("#no-project-templates-message").hide();
-	$("#project-templates-table").show();
+	$("#no-units-message").hide();
+	$("#units-table").show();
 }
