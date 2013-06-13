@@ -11,8 +11,8 @@ class Unit < ActiveRecord::Base
   attr_accessor :convenors  
 
   # Model associations. 
-  # When a Unit is destroyed, any TaskTemplates, Teams, and ProjectConvenor instances will also be destroyed.
-  has_many :task_templates, :dependent => :destroy	  			
+  # When a Unit is destroyed, any TaskDefinitions, Teams, and ProjectConvenor instances will also be destroyed.
+  has_many :task_definitions, :dependent => :destroy	  			
   has_many :projects, :dependent => :destroy					 
   has_many :teams, :dependent => :destroy
   has_many :project_convenors, :dependent => :destroy
@@ -65,11 +65,11 @@ class Unit < ActiveRecord::Base
     team_membership.save
 
     # Create task instances for the project
-    task_templates_for_project = TaskTemplate.where(:unit_id => self.id)
+    task_definitions_for_project = TaskDefinition.where(:unit_id => self.id)
 
-    task_templates_for_project.each do |task_template|
+    task_definitions_for_project.each do |task_definition|
       Task.create(
-        task_template_id: task_template.id,
+        task_definition_id: task_definition.id,
         project_id: project.id,
         task_status_id: 1,
         awaiting_signoff: false
@@ -173,23 +173,23 @@ class Unit < ActiveRecord::Base
       end
 
       # TODO: Should background/task queue this work
-      task_template = TaskTemplate.find_or_create_by_unit_id_and_name(id, name) do |task_template|
-        task_template.name                        = name
-        task_template.unit_id         = id
-        task_template.abbreviation                = abbreviation
-        task_template.description                 = description
-        task_template.weighting                   = BigDecimal.new(weighting)
-        task_template.required                    = ["Yes", "y", "Y", "yes", "true", "TRUE", "1"].include? required
-        task_template.target_date                 = Time.zone.parse(target_date)
+      task_definition = TaskDefinition.find_or_create_by_unit_id_and_name(id, name) do |task_definition|
+        task_definition.name                        = name
+        task_definition.unit_id         = id
+        task_definition.abbreviation                = abbreviation
+        task_definition.description                 = description
+        task_definition.weighting                   = BigDecimal.new(weighting)
+        task_definition.required                    = ["Yes", "y", "Y", "yes", "true", "TRUE", "1"].include? required
+        task_definition.target_date                 = Time.zone.parse(target_date)
       end
 
-      task_template.save! unless task_template.persisted?
+      task_definition.save! unless task_definition.persisted?
 
       project_cache ||= Project.where(:unit_id => id)
 
       project_cache.each do |project|
         Task.create(
-          task_template_id: task_template.id,
+          task_definition_id: task_definition.id,
           project_id:       project.id,
           task_status_id:   1,
           awaiting_signoff: false,
@@ -199,8 +199,8 @@ class Unit < ActiveRecord::Base
     end
   end
 
-  def task_templates_csv
-    TaskTemplate.to_csv(task_templates)
+  def task_definitions_csv
+    TaskDefinition.to_csv(task_definitions)
   end
 
   def status_distribution

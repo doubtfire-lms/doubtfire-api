@@ -1,12 +1,12 @@
-class TaskTemplate < ActiveRecord::Base
+class TaskDefinition < ActiveRecord::Base
 	attr_accessible :unit_id, :name, :abbreviation, :description, :target_date, :required, :weighting
 	
 	# Model associations
 	belongs_to :unit			   # Foreign key
-	has_many :tasks, :dependent => :destroy    # Destroying a task template will also nuke any instances
+	has_many :tasks, :dependent => :destroy    # Destroying a task definition will also nuke any instances
 
 	# Model validations/constraints
-	validates_uniqueness_of :name, :scope => :unit_id		# Task template names within a unit must be unique
+	validates_uniqueness_of :name, :scope => :unit_id		# task definition names within a unit must be unique
 
   def status_distribution    
     task_instances = tasks
@@ -26,17 +26,17 @@ class TaskTemplate < ActiveRecord::Base
     }
   end
 
-  def self.to_csv(task_templates, options = {})
+  def self.to_csv(task_definitions, options = {})
     CSV.generate(options) do |csv|
       csv << csv_columns
-      task_templates.each do |task_template|
-        csv << task_template.to_csv_row
+      task_definitions.each do |task_definition|
+        csv << task_definition.to_csv_row
       end
     end
   end
 
   def to_csv_row
-    TaskTemplate.csv_columns.reject{|col| col == :target_date }.map{|column| attributes[column.to_s] } + [target_date.strftime('%d-%m-%Y')]
+    TaskDefinition.csv_columns.reject{|col| col == :target_date }.map{|column| attributes[column.to_s] } + [target_date.strftime('%d-%m-%Y')]
   end
 
   def self.csv_columns

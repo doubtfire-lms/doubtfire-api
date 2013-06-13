@@ -6,7 +6,7 @@ constructTaskDistributionChart = (chartContainer) ->
   projectURL = $(chartContainer).attr "data-url"
   
   d3.json projectURL, (project) ->
-    requiredTasks     = project.task_templates.filter (task) -> task.required
+    requiredTasks     = project.task_definitions.filter (task) -> task.required
     requiredTasksMap  = {}
     requiredTasks.forEach (task, i) ->
       taskAbbreviation = task.abbreviation || (i + 1).toString()

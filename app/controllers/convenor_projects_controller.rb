@@ -16,7 +16,7 @@ class ConvenorProjectsController < ApplicationController
     @active_convenor_projects   = @convenor_projects.set_active
     @inactive_convenor_projects = @convenor_projects.set_inactive
     
-		@unit = Unit.includes(:task_templates).find(params[:id])
+		@unit = Unit.includes(:task_definitions).find(params[:id])
     authorize! :read, @unit, :message => "You are not authorised to view Unit ##{@unit.id}"
 
     sort_options = {
@@ -27,7 +27,7 @@ class ConvenorProjectsController < ApplicationController
     @projects = sort_projects(
                   Project.includes({
                     team_membership: [:user, :team],
-                    tasks: [:task_template]
+                    tasks: [:task_definition]
                     }, :unit
                   )
                   .where(

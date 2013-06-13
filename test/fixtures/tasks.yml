@@ -1,13 +1,13 @@
 # Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/Fixtures.html
 
 one:
-  task_template: 
+  task_definition: 
   unit: 
   task_status: 
   awaiting_signoff: false
 
 two:
-  task_template:
+  task_definition:
   unit: 
   task_status: 
   awaiting_signoff: false

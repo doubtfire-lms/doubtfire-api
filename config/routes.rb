@@ -10,7 +10,7 @@ Doubtfire::Application.routes.draw do
   resources :users # custom :path separates CRUD interface from Devise
   resources :home, :only => :index
   resources :projects
-  resources :task_templates
+  resources :task_definitions
   resources :teams
 
   # Routes for when the user has no projects
@@ -46,9 +46,9 @@ Doubtfire::Application.routes.draw do
     get 'cancel_update' => 'units#finish_update', as: 'cancel_update'
 
     # Project tasks
-    get   'new_task' =>                             'task_templates#new',                   as: 'new_task'
-    post  'update_task/:task_template_id' =>        'task_templates#update',                as: 'update_task'
-    get   'cancel_update_task/:task_template_id' => 'task_templates#finish_update',         as: 'cancel_update_task'
+    get   'new_task' =>                             'task_definitions#new',                   as: 'new_task'
+    post  'update_task/:task_definition_id' =>        'task_definitions#update',                as: 'update_task'
+    get   'cancel_update_task/:task_definition_id' => 'task_definitions#finish_update',         as: 'cancel_update_task'
     get   'destroy_all_tasks' =>                    'units#destroy_all_tasks',  as: 'destroy_all_tasks'
 
     # Project teams

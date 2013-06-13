@@ -3,11 +3,11 @@ class ConvenorProjectTeamsController < ApplicationController
     @convenor_projects = Unit.joins(:project_convenors)
                                         .where(project_convenors: {user_id: current_user.id})
 
-    @unit = Unit.includes(:task_templates).find(params[:id])
+    @unit = Unit.includes(:task_definitions).find(params[:id])
     
     @projects = Project.includes({
                   team_membership: [:user, :team],
-                  tasks: [:task_template]
+                  tasks: [:task_definition]
                   }, :unit
                 )
                 .where(unit_id: params[:id])

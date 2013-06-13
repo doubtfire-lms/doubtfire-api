@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20130613070051) do
+ActiveRecord::Schema.define(:version => 20130613123739) do
 
   create_table "logins", :force => true do |t|
     t.datetime "timestamp"
@@ -43,6 +43,20 @@ ActiveRecord::Schema.define(:version => 20130613070051) do
   add_index "projects", ["team_membership_id"], :name => "index_projects_on_team_membership_id"
   add_index "projects", ["unit_id"], :name => "index_projects_on_unit_id"
 
+  create_table "task_definitions", :force => true do |t|
+    t.integer  "unit_id"
+    t.string   "name"
+    t.string   "description"
+    t.decimal  "weighting",    :precision => 10, :scale => 0
+    t.boolean  "required"
+    t.datetime "target_date"
+    t.datetime "created_at",                                  :null => false
+    t.datetime "updated_at",                                  :null => false
+    t.string   "abbreviation"
+  end
+
+  add_index "task_definitions", ["unit_id"], :name => "index_task_definitions_on_unit_id"
+
   create_table "task_engagements", :force => true do |t|
     t.datetime "engagement_time"
     t.string   "engagement"
@@ -72,33 +86,19 @@ ActiveRecord::Schema.define(:version => 20130613070051) do
 
   add_index "task_submissions", ["task_id"], :name => "index_task_submissions_on_task_id"
 
-  create_table "task_templates", :force => true do |t|
-    t.integer  "unit_id"
-    t.string   "name"
-    t.string   "description"
-    t.decimal  "weighting",    :precision => 10, :scale => 0
-    t.boolean  "required"
-    t.datetime "target_date"
-    t.datetime "created_at",                                  :null => false
-    t.datetime "updated_at",                                  :null => false
-    t.string   "abbreviation"
-  end
-
-  add_index "task_templates", ["unit_id"], :name => "index_task_templates_on_unit_id"
-
   create_table "tasks", :force => true do |t|
-    t.integer  "task_template_id"
+    t.integer  "task_definition_id"
     t.integer  "project_id"
     t.integer  "task_status_id"
     t.boolean  "awaiting_signoff"
-    t.datetime "created_at",       :null => false
-    t.datetime "updated_at",       :null => false
+    t.datetime "created_at",         :null => false
+    t.datetime "updated_at",         :null => false
     t.date     "completion_date"
   end
 
   add_index "tasks", ["project_id"], :name => "index_tasks_on_project_id"
+  add_index "tasks", ["task_definition_id"], :name => "index_tasks_on_task_definition_id"
   add_index "tasks", ["task_status_id"], :name => "index_tasks_on_task_status_id"
-  add_index "tasks", ["task_template_id"], :name => "index_tasks_on_task_template_id"
 
   create_table "team_memberships", :force => true do |t|
     t.integer  "user_id"

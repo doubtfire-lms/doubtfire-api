@@ -1,16 +1,16 @@
 class Task < ActiveRecord::Base
   include ApplicationHelper
 
-  attr_accessible :task_template_id, :project_id, :awaiting_signoff, :completion_date, :task_status_id
+  attr_accessible :task_definition_id, :project_id, :awaiting_signoff, :completion_date, :task_status_id
 
   # Model associations
-  belongs_to :task_template         # Foreign key
+  belongs_to :task_definition         # Foreign key
   belongs_to :project               # Foreign key
   belongs_to :task_status           # Foreign key
 
   after_save :update_project
 
-  default_scope :include => :task_template
+  default_scope :include => :task_definition
 
   def update_project
     project.update_attribute(:progress, project.calculate_progress)
@@ -23,7 +23,7 @@ class Task < ActiveRecord::Base
 
     # Compare the recommended date with the date given to determine
     # if the task is overdue
-    recommended_date = task_template.target_date
+    recommended_date = task_definition.target_date
     project.reference_date > recommended_date and weeks_overdue >= 1
   end
 
@@ -33,7 +33,7 @@ class Task < ActiveRecord::Base
 
     # Compare the recommended date with the date given to determine
     # if the task is overdue
-    recommended_date = task_template.target_date
+    recommended_date = task_definition.target_date
     project.reference_date > recommended_date and weeks_overdue > 2
   end
 
@@ -48,7 +48,7 @@ class Task < ActiveRecord::Base
   end
 
   def days_until_due
-    (task_template.target_date - project.reference_date).to_i / 1.day
+    (task_definition.target_date - project.reference_date).to_i / 1.day
   end
 
   def weeks_overdue
@@ -64,7 +64,7 @@ class Task < ActiveRecord::Base
   end
 
   def days_overdue
-    (project.reference_date - task_template.target_date).to_i / 1.day
+    (project.reference_date - task_definition.target_date).to_i / 1.day
   end
 
   def complete?
@@ -111,6 +111,6 @@ class Task < ActiveRecord::Base
   end
 
   def weight
-    task_template.weighting.to_f
+    task_definition.weighting.to_f
   end
 end

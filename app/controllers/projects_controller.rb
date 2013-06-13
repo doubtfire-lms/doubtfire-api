@@ -8,7 +8,7 @@ class ProjectsController < ApplicationController
   end
 
   def show
-    @project = Project.includes(:tasks => [:task_template]).find(params[:id])
+    @project = Project.includes(:tasks => [:task_definition]).find(params[:id])
     authorize! :read, @project, :message => "You are not authorised to view Project ##{@project.id}"
 
     respond_to do |format|
@@ -17,7 +17,7 @@ class ProjectsController < ApplicationController
         render json: @project.to_json(
           :include => [
             {
-              :tasks => {:include => {:task_template => {:except=>[:updated_at, :created_at]}}, :except => [:updated_at, :created_at], :methods => [:weight, :status] }
+              :tasks => {:include => {:task_definition => {:except=>[:updated_at, :created_at]}}, :except => [:updated_at, :created_at], :methods => [:weight, :status] }
             },
             :unit => {:except => [:updated_at, :created_at]}
           ],

@@ -1,7 +1,7 @@
 <h2><i class="icon-pencil"></i>Tasks</h2>
 <div class="widget-content">
-    <%= render :partial => 'task_templates/table', locals: {
-        :task_list => task_templates,
+    <%= render :partial => 'task_definitions/table', locals: {
+        :task_list => task_definitions,
         :empty_table_string => "This project has no tasks."
     } %>
 
@@ -10,7 +10,7 @@
     <span id="task-buttons">
         <%= link_to "Create new task", unit_new_task_path(unit), :onclick => "$('#destroy-tasks-button').show()", :class => 'btn', "data-remote" => true %>
 
-        <% if task_templates.empty? %>
+        <% if task_definitions.empty? %>
         <%= link_to "Destroy all tasks", unit_destroy_all_tasks_path(unit), 
                     :class => 'btn btn-danger', 
                     :id => 'destroy-tasks-button',

@@ -1,4 +1,4 @@
-<%- model_class = @task_template.class -%>
+<%- model_class = @task_definition.class -%>
 
 
 <% content_for :sidebar do %>
@@ -25,7 +25,7 @@
         <span class="divider">/</span>
     </li>
     <li>
-        <%= link_to @task_template.name, task_template_url(@task_template) %>
+        <%= link_to @task_definition.name, task_definition_url(@task_definition) %>
         <span class="divider">/</span>
     </li>
     <li class="active">
@@ -34,7 +34,7 @@
   </ul>
 
     <div class="widget">
-        <h2><i class="icon-book"></i><%= @task_template.name %></h2>
+        <h2><i class="icon-book"></i><%= @task_definition.name %></h2>
         <div class="widget-content">
             <%= render :partial => 'form' %>
         </div>

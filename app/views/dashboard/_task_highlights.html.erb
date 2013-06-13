@@ -12,10 +12,10 @@
 						<% @project.overdue_tasks.each do |overdue_task| %>
 							<li>
 							<% if overdue_task.days_overdue < 7 %>
-							<%= link_to overdue_task.task_template.name, project_task_path(@project, overdue_task) %>
+							<%= link_to overdue_task.task_definition.name, project_task_path(@project, overdue_task) %>
 							(<%= pluralize(overdue_task.days_overdue, 'days') %> overdue)
 							<% else %>
-							<%= link_to overdue_task.task_template.name, project_task_path(@project, overdue_task) %>
+							<%= link_to overdue_task.task_definition.name, project_task_path(@project, overdue_task) %>
 							(<%= pluralize(overdue_task.weeks_overdue, 'week') %> overdue)
 							<% end %>
 							</li>
@@ -27,7 +27,7 @@
 					<h4>This Week</h4>
 					<ol>
 						<% @project.currently_due_tasks.each do |currently_due_task| %>
-							<li><%= link_to currently_due_task.task_template.name, project_task_path(@project, currently_due_task) %></li>
+							<li><%= link_to currently_due_task.task_definition.name, project_task_path(@project, currently_due_task) %></li>
 						<% end %>
 					</ol>
 				<% end %>

@@ -75,7 +75,7 @@ targetCompletionData = (project) ->
   
   totalWeight = project.total_task_weight
 
-  tasks = project.tasks.filter((task) -> task.task_template.required)
+  tasks = project.tasks.filter((task) -> task.task_definition.required)
           .sort byTargetDate
 
   weekVsTaskUnitsCompleted  = weekTaskUnitsCompleted(tasks, startDate, cutOffWeek, 'target_date')
@@ -92,7 +92,7 @@ actualCompletionData = (project) ->
 
   totalWeight = project.total_task_weight
 
-  tasks = project.tasks.filter((task) -> task.task_template.required and task.status is "complete")
+  tasks = project.tasks.filter((task) -> task.task_definition.required and task.status is "complete")
           .sort byCompletionDate
 
   weekVsTaskUnitsCompleted  = weekTaskUnitsCompleted(tasks, startDate, cutOffWeek, 'completion_date')
@@ -134,7 +134,7 @@ weekTaskUnitsCompleted = (tasks, startDate, cutOffWeek, taskDate) ->
   weekTaskWeightCompleted[i] = 0 for i in [0..cutOffWeek]
 
   tasks.forEach (task) ->
-    completionDate = if taskDate is 'target_date' then task.task_template.target_date else task.completion_date
+    completionDate = if taskDate is 'target_date' then task.task_definition.target_date else task.completion_date
     dueWeek = moment(completionDate).diff startDate, 'weeks'
     weekTaskWeightCompleted[dueWeek] += task.weight
 
@@ -151,8 +151,8 @@ countdownRemainingWeight = (weekTaskWeightCompleted, totalWeight) ->
   completionVsWeek
 
 byTargetDate = (taskA, taskB) ->
-  taskADate = moment(taskA.task_template.target_date)
-  taskBDate = moment(taskB.task_template.target_date)
+  taskADate = moment(taskA.task_definition.target_date)
+  taskBDate = moment(taskB.task_definition.target_date)
   if taskADate is taskBDate
     0
   else

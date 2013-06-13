@@ -14,7 +14,7 @@ namespace :db do
 	    days = %w[Monday Tuesday Wednesday Thursday Friday]
 
 	    # Clear the database
-	    [Unit, Project, TaskTemplate, Task, TaskStatus, Team, TeamMembership, User, ProjectConvenor].each(&:delete_all)
+	    [Unit, Project, TaskDefinition, Task, TaskStatus, Team, TeamMembership, User, ProjectConvenor].each(&:delete_all)
 
 	    TaskStatus.create(:name => "Not Submitted", :description => "This task has not been submitted to marked by your tutor.")
 	    TaskStatus.create(:name => "Needs Fixing", :description => "This task must be resubmitted after fixing some issues.")
@@ -61,14 +61,14 @@ namespace :db do
 		        # Create 6-12 tasks per project
 		        num_tasks = 6 + rand(6)
 		        assignment_num = 0
-		        TaskTemplate.populate(num_tasks) do |task_template|
+		        TaskDefinition.populate(num_tasks) do |task_definition|
 		          assignment_num += 1
-		          task_template.name = "Assignment #{assignment_num}"
-		          task_template.unit_id = unit.id
-		          task_template.description = Populator.words(5..10)
-		          task_template.weighting = BigDecimal.new("2")
-		          task_template.required = rand < 0.9   # 10% chance of being false
-		          task_template.recommended_completion_date = assignment_num.weeks.from_now # Assignment 6 due week 6, etc.
+		          task_definition.name = "Assignment #{assignment_num}"
+		          task_definition.unit_id = unit.id
+		          task_definition.description = Populator.words(5..10)
+		          task_definition.weighting = BigDecimal.new("2")
+		          task_definition.required = rand < 0.9   # 10% chance of being false
+		          task_definition.recommended_completion_date = assignment_num.weeks.from_now # Assignment 6 due week 6, etc.
 		        end
 
 		        # Create 2 teams per project

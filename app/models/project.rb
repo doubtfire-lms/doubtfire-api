@@ -35,11 +35,11 @@ class Project < ActiveRecord::Base
   end
 
   def required_tasks
-    tasks.select{|task| task.task_template.required? }
+    tasks.select{|task| task.task_definition.required? }
   end
 
   def optional_tasks
-    tasks.select{|task| !task.task_template.required? }
+    tasks.select{|task| !task.task_definition.required? }
   end
 
   def progress
@@ -120,10 +120,10 @@ class Project < ActiveRecord::Base
   def progress_points
     date_accumulated_weight_map = {}
 
-    assigned_tasks.sort{|a, b| a.task_template.target_date <=>  b.task_template.target_date}.each do |project_task|
-      date_accumulated_weight_map[project_task.task_template.target_date] = assigned_tasks.select{|task| 
-        task.task_template.target_date <= project_task.task_template.target_date
-      }.map{|task| task.task_template.weighting.to_f}.inject(:+)
+    assigned_tasks.sort{|a, b| a.task_definition.target_date <=>  b.task_definition.target_date}.each do |project_task|
+      date_accumulated_weight_map[project_task.task_definition.target_date] = assigned_tasks.select{|task| 
+        task.task_definition.target_date <= project_task.task_definition.target_date
+      }.map{|task| task.task_definition.weighting.to_f}.inject(:+)
     end
 
     date_accumulated_weight_map
@@ -164,7 +164,7 @@ class Project < ActiveRecord::Base
   end
 
   def recommended_completed_tasks
-    assigned_tasks.select{|task| task.task_template.target_date < reference_date }
+    assigned_tasks.select{|task| task.task_definition.target_date < reference_date }
   end
 
   def completed_tasks
@@ -191,18 +191,18 @@ class Project < ActiveRecord::Base
   end
 
   def remaining_tasks_weight
-    incomplete_tasks.empty? ? 0.0 : incomplete_tasks.map{|task| task.task_template.weighting }.inject(:+)
+    incomplete_tasks.empty? ? 0.0 : incomplete_tasks.map{|task| task.task_definition.weighting }.inject(:+)
   end
 
   def completed_tasks_weight
-    completed_tasks.empty? ? 0.0 : completed_tasks.map{|task| task.task_template.weighting }.inject(:+)
+    completed_tasks.empty? ? 0.0 : completed_tasks.map{|task| task.task_definition.weighting }.inject(:+)
   end
 
   def partially_completed_tasks_weight
     # Award half for partially completed tasks
     # TODO: Should probably make this a project-by-project option
     partially_complete = partially_completed_tasks
-    partially_complete.empty? ? 0.0 : partially_complete.map{|task| task.task_template.weighting / 2.to_f }.inject(:+)
+    partially_complete.empty? ? 0.0 : partially_complete.map{|task| task.task_definition.weighting / 2.to_f }.inject(:+)
   end
 
   def task_units_completed
@@ -210,7 +210,7 @@ class Project < ActiveRecord::Base
   end
 
   def total_task_weight
-    assigned_tasks.map{|task| task.task_template.weighting }.inject(:+)
+    assigned_tasks.map{|task| task.task_definition.weighting }.inject(:+)
   end
 
   def currently_due_tasks
@@ -238,7 +238,7 @@ class Project < ActiveRecord::Base
   end
 
   def has_optional_tasks?
-    tasks.any?{|task| !task.task_template.required }
+    tasks.any?{|task| !task.task_definition.required }
   end
 
   def last_task_completed

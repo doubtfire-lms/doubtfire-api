@@ -26,7 +26,7 @@ class TeamsController < ApplicationController
   def new
     @team = Team.new
     
-    # Create a new task template, populate it with sample data, and save it immediately.
+    # Create a new task definition, populate it with sample data, and save it immediately.
     @team.unit_id = params[:unit_id]
     @team.user_id = current_user.id
     @team.meeting_day = "Enter a regular meeting day."

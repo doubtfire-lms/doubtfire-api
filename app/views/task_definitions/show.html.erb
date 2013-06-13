@@ -1,5 +1,5 @@
-<% title "#{@unit.name} - #{@task_template.name}" %>
-<%- model_class = @task_template.class -%>
+<% title "#{@unit.name} - #{@task_definition.name}" %>
+<%- model_class = @task_definition.class -%>
 
 <% content_for :sidebar do %>
     <% if current_user.superuser? %>
@@ -24,32 +24,32 @@
         <%= link_to @unit.name, unit_url(@unit) %>
         <span class="divider">/</span>
     </li>
-    <li class="active"><%= @task_template.name %></li>
+    <li class="active"><%= @task_definition.name %></li>
   </ul>
 
   <div class="widget">
-    <h2><i class="icon-book"></i><%= @task_template.name %></h2>
+    <h2><i class="icon-book"></i><%= @task_definition.name %></h2>
     <div class="widget-content">
       <dl class="dl-horizontal">
         <dt><strong><%= model_class.human_attribute_name(:unit_id) %>:</strong></dt>
         <dd><%= @unit.name %></dd>
         <dt><strong><%= model_class.human_attribute_name(:name) %>:</strong></dt>
-        <dd><%= @task_template.name %></dd>
+        <dd><%= @task_definition.name %></dd>
         <dt><strong><%= model_class.human_attribute_name(:description) %>:</strong></dt>
-        <dd><%= @task_template.description %></dd>
+        <dd><%= @task_definition.description %></dd>
         <dt><strong><%= model_class.human_attribute_name(:weighting) %>:</strong></dt>
-        <dd><%= @task_template.weighting %></dd>
+        <dd><%= @task_definition.weighting %></dd>
         <dt><strong><%= model_class.human_attribute_name(:required) %>:</strong></dt>
-        <dd><%= @task_template.required %></dd>
+        <dd><%= @task_definition.required %></dd>
         <dt><strong><%= model_class.human_attribute_name(:target_date) %>:</strong></dt>
-        <dd><%= @task_template.target_date %></dd>
+        <dd><%= @task_definition.target_date %></dd>
       </dl>
 
       <div class="form-actions">
         <%= link_to t('.edit', :default => t("helpers.links.edit")),
-                    edit_task_template_path(@task_template), :class => 'btn' %>
+                    edit_task_definition_path(@task_definition), :class => 'btn' %>
         <%= link_to t('.delete', :default => t("helpers.links.delete")),
-                    task_template_path(@task_template),
+                    task_definition_path(@task_definition),
                     :method => 'delete',
                     :data => { :confirm => t('.confirm', :default => t("helpers.links.confirm", :default => 'Are you sure?'))},
                     :class => 'btn btn-danger' %>

@@ -8,7 +8,7 @@ class TutorProjectsController < ApplicationController
     @student_projects         = @user.projects.select{|project| project.active? }
     @tutor_projects           = Team.where(:user_id => @user.id).map{|team| team.unit }.uniq
 
-    @tutor_teams              = Team.includes(:team_memberships => [{:project => [{:tasks => [:task_template]}]}]).where(:user_id => @user.id, :unit_id => params[:id])
+    @tutor_teams              = Team.includes(:team_memberships => [{:project => [{:tasks => [:task_definition]}]}]).where(:user_id => @user.id, :unit_id => params[:id])
     @tutor_team_projects      = @tutor_teams.map{|team| team.team_memberships }.flatten.map{|team_membership| team_membership.project }
 
     @unit         = Unit.find(params[:id])
@@ -21,7 +21,7 @@ class TutorProjectsController < ApplicationController
       working_on_it:    user_working_on_it_tasks(@tutor_team_projects)
     }
 
-    @other_teams        = Team.includes(:team_memberships => [{:project => [{:tasks => [:task_template]}]}])
+    @other_teams        = Team.includes(:team_memberships => [{:project => [{:tasks => [:task_definition]}]}])
                               .where("user_id != ? AND unit_id = ?", @user.id, @unit.id)
                               .order(:official_name)
 
@@ -33,7 +33,7 @@ class TutorProjectsController < ApplicationController
   end
 
   def display_other_team
-    @other_team = Team.includes(:team_memberships => [{:project => [{:tasks => [:task_template]}]}]).find(params[:team_id])
+    @other_team = Team.includes(:team_memberships => [{:project => [{:tasks => [:task_definition]}]}]).find(params[:team_id])
     
     respond_to do |format|
       format.js

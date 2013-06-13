@@ -18,7 +18,7 @@ class UnitsController < ApplicationController
   # GET /units/1.json
   def show
     @unit = Unit.find(params[:id])
-    @project_tasks = TaskTemplate.where(:unit_id => params[:id]).order(:by => [:target_date, :id])
+    @project_tasks = TaskDefinition.where(:unit_id => params[:id]).order(:by => [:target_date, :id])
     @project_users = User.joins(:team_memberships => :project).where(:projects => {:unit_id => params[:id]})
     @project_teams = Team.where(:unit_id => params[:id])
     
@@ -40,7 +40,7 @@ class UnitsController < ApplicationController
           methods: [:status_distribution],
           include: [
             {
-              task_templates: {
+              task_definitions: {
                 except: [:updated_at, :created_at],
                 methods: [:status_distribution]
               }
@@ -202,7 +202,7 @@ class UnitsController < ApplicationController
   
   def destroy_all_tasks
     @unit = Unit.find(params[:unit_id])
-    TaskTemplate.destroy_all(:unit_id => @unit.id)
+    TaskDefinition.destroy_all(:unit_id => @unit.id)
   end
 
   def import_tasks
@@ -227,8 +227,8 @@ class UnitsController < ApplicationController
     respond_to do |format|
       format.html { redirect_to unit_path(@unit, tab: "tasks-tab"), notice: "Successfully imported tasks."}
       format.csv {
-        send_data @unit.task_templates_csv,
-        filename: "#{@unit.name.parameterize}-task-templates.csv"
+        send_data @unit.task_definitions_csv,
+        filename: "#{@unit.name.parameterize}-task-defintions.csv"
       }
     end
   end

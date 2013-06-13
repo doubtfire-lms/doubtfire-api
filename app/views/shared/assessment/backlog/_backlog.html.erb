@@ -1,18 +1,18 @@
 <%= stylesheets 'tasks.css' %>
 
-<% actionable_tasks.sort{|a, b| a.task_template.target_date <=> b.task_template.target_date}.each do |task| %>
+<% actionable_tasks.sort{|a, b| a.task_definition.target_date <=> b.task_definition.target_date}.each do |task| %>
 <div class="task-list-entry row-fluid" id="task-<%= task.id %>-entry">
 	<h4>
-		<%= link_to truncate(task.task_template.name, length: 30), project_task_path(task.project, task) %>
+		<%= link_to truncate(task.task_definition.name, length: 30), project_task_path(task.project, task) %>
 	</h4>
-	<p class="task-weighting-points">(<%= task.task_template.weighting %> points)</p>
+	<p class="task-weighting-points">(<%= task.task_definition.weighting %> points)</p>
 	<p class="toggle-task-description-container"><a href="#" class="toggle-task-description btn"><i class="icon-chevron-down"></i></a></p>
 	<p class="task-submission-vs-time"><%= task_submission_vs_time_text(task) %></p>
 	<div class="task-status-controls" style="display: inline-block;">
 		<%= render partial: 'tutor_projects/assessor_task_status_control', locals: { task: task } %>
 	</div>
 	<div class="task-description">
-		<p><%= task.task_template.description != "NULL" ? task.task_template.description : "(No description provided)" %></p>
+		<p><%= task.task_definition.description != "NULL" ? task.task_definition.description : "(No description provided)" %></p>
 	</div>
 </div>
 <% end %>

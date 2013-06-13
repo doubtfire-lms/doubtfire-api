@@ -17,7 +17,7 @@ class TasksController < ApplicationController
   def show
     @student_projects = @user.projects.select{|project| project.active? }
     @project          = Project.find(params[:project_id])
-    @task             = Task.includes(:task_template).find(params[:id])
+    @task             = Task.includes(:task_definition).find(params[:id])
 
     authorize! :read, @task, :message => "You are not authorised to view Task ##{@task.id}"
   end
