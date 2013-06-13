@@ -20,7 +20,7 @@ test:
   timeout: 5000
 
 production:
-  adapter: mysql
+  adapter: mysql2
   host: mysql.ict.swin.edu.au
   database: www_gamification_db1
   username: www_gamification
