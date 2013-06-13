@@ -1,4 +1,4 @@
-<% title "Project Template - #{@unit.name}" %>
+<% title "Unit - #{@unit.name}" %>
 
 <!-- Sidebar -->
 <% content_for :sidebar do %>
@@ -16,7 +16,7 @@
           <span class="divider">/</span>
         </li>
         <li>
-          <%= link_to "Project Templates", units_url %>
+          <%= link_to "Units", units_url %>
           <span class="divider">/</span>
         </li>
         <li class="active"><%= @unit.name %> (Adminstration)</li>

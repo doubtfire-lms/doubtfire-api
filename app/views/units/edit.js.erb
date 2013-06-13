@@ -1,4 +1,4 @@
-// Build the row id string from the project template id
+// Build the row id string from the unit id
 var unitRowId = "project-" + "<%= @unit.id %>" +  "-row";
 var partial = "<%=j render :partial => 'units/table_row_edit', :locals => { :unit => @unit } %>"
 
@@ -8,7 +8,7 @@ if(document.getElementById(unitRowId) != null)
 else
 	$("#project-templates-table").append(partial);			// No row exists yet - append one
 
-// Make sure the table is visible and the "no project templates" message is hidden.
+// Make sure the table is visible and the "no units" message is hidden.
 if($("#project-templates-table").find("tbody").children().length > 0)
 {
 	$("#no-project-templates-message").hide();

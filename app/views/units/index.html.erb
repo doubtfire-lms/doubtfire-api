@@ -1,4 +1,4 @@
-<% title "Project Templates" %>
+<% title "Units" %>
 
 <% content_for :sidebar do %>
   <ul class="nav nav-list">
@@ -26,13 +26,13 @@
       <%= link_to "Home", root_url %>
       <span class="divider">/</span>
     </li>
-    <li class="active">Project Templates</li>
+    <li class="active">Units</li>
   </ul>
 
   <div class="widget">
     <h2>
       <i class="icon-book"></i>
-      Project Templates
+      Units
     </h2>
     <div class="widget-content">
       <%= render :partial => 'units/table', :locals => { :units => @units,

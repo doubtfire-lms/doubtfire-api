@@ -6,7 +6,7 @@ class TaskTemplate < ActiveRecord::Base
 	has_many :tasks, :dependent => :destroy    # Destroying a task template will also nuke any instances
 
 	# Model validations/constraints
-	validates_uniqueness_of :name, :scope => :unit_id		# Task template names within a project template must be unique
+	validates_uniqueness_of :name, :scope => :unit_id		# Task template names within a unit must be unique
 
   def status_distribution    
     task_instances = tasks

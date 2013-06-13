@@ -22,7 +22,7 @@ class UnitsController < ApplicationController
     @project_users = User.joins(:team_memberships => :project).where(:projects => {:unit_id => params[:id]})
     @project_teams = Team.where(:unit_id => params[:id])
     
-    authorize! :manage, @unit, :message => "You are not authorised to manage Project Template ##{@unit.id}"
+    authorize! :manage, @unit, :message => "You are not authorised to manage Unit ##{@unit.id}"
     
     respond_to do |format|
       format.html # show.html.erb
@@ -58,7 +58,7 @@ class UnitsController < ApplicationController
     @all_convenors = User.where(:system_role => "convenor")
     @project_convenors = User.where(:id => current_user.id);
 
-    # Create a new project template, populate it with sample data, and save it immediately.
+    # Create a new unit, populate it with sample data, and save it immediately.
     @unit.name = "New Project"
     @unit.description = "Enter a description for this project."
     @unit.start_date = Date.today
@@ -140,7 +140,7 @@ class UnitsController < ApplicationController
     end
   end
 
-  # Restores the row in the project templates table to its original state after saving or cancelling from editing mode.
+  # Restores the row in the units table to its original state after saving or cancelling from editing mode.
   def finish_update
     @unit = Unit.find(params[:unit_id])
 

@@ -13,7 +13,7 @@ class TutorProjectsController < ApplicationController
 
     @unit         = Unit.find(params[:id])
 
-    authorize! :read, @unit, :message => "You are not authorised to view Project Template ##{@unit.id}"
+    authorize! :read, @unit, :message => "You are not authorised to view Unit ##{@unit.id}"
 
     @actionable_tasks = {
       awaiting_signoff: user_unmarked_tasks(@tutor_team_projects),

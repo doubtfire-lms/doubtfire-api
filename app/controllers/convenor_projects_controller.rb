@@ -17,7 +17,7 @@ class ConvenorProjectsController < ApplicationController
     @inactive_convenor_projects = @convenor_projects.set_inactive
     
 		@unit = Unit.includes(:task_templates).find(params[:id])
-    authorize! :read, @unit, :message => "You are not authorised to view Project Template ##{@unit.id}"
+    authorize! :read, @unit, :message => "You are not authorised to view Unit ##{@unit.id}"
 
     sort_options = {
       column: sort_column,
