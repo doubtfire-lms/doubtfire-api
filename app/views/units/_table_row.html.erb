@@ -1,0 +1,20 @@
+<tr id="project-<%= unit.id %>-row">
+  <td><%= link_to unit.name, unit_path(unit) %></td>
+  <td><%= unit.description %></td>
+  <td><%= get_convenors_string(unit.id) %></td>
+  <td><%= unit.start_date.strftime("%d %B %Y") %></td>
+  <td><%= unit.end_date.strftime("%d %B %Y") %></td>
+  <td><%= unit.active ? "Yes" : "No" %></td>
+  <td>
+    <%= link_to t('.edit', :default => t("helpers.links.edit")),
+                edit_unit_path(unit), 
+                "data-remote" => true,
+                :class => 'btn btn-mini' %>
+    <%= link_to t('.destroy', :default => t("helpers.links.destroy")),
+                unit_path(unit),
+                "data-remote" => true,
+                :method => :delete,
+                :data => { :confirm => t('.confirm', :default => t("helpers.links.confirm", :default => 'Are you sure?'))},
+                :class => 'btn btn-mini btn-danger' %>
+  </td>
+</tr>

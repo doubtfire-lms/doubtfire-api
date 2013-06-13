@@ -12,7 +12,7 @@
       Administration
     </li>
     <li class="active">
-      <%= link_to "Projects", project_templates_path %>
+      <%= link_to "Projects", units_path %>
     </li>
     <li>
       <%= link_to "Users", users_path %>
@@ -35,10 +35,10 @@
       Project Templates
     </h2>
     <div class="widget-content">
-      <%= render :partial => 'project_templates/table', :locals => { :project_templates => @project_templates,
+      <%= render :partial => 'units/table', :locals => { :units => @units,
                                                                      :empty_table_string => "You do not have any current projects." } %>
       <hr />
-      <%= link_to "New project", new_project_template_path, :class => 'btn btn-primary', "data-remote" => true %>
+      <%= link_to "New project", new_unit_path, :class => 'btn btn-primary', "data-remote" => true %>
     </div>
   </div>
 </div>

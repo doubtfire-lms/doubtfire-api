@@ -2,8 +2,8 @@
 	<div class="widget">
     	<h2><i class="icon-book"></i>Projects</h2>
     	<div class="widget-content">
-			<%= render :partial => 'project_templates/table', :locals => {:project_templates => @project_templates, :empty_table_string => "There are no projects in the system yet."} %>
-			<%= link_to "New project", new_project_template_path, :class => 'btn btn-primary', "data-remote" => true %>
+			<%= render :partial => 'units/table', :locals => {:units => @units, :empty_table_string => "There are no projects in the system yet."} %>
+			<%= link_to "New project", new_unit_path, :class => 'btn btn-primary', "data-remote" => true %>
 		</div>
 	</div>
 </div>

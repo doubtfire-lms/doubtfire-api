@@ -27,7 +27,7 @@ class TeamsController < ApplicationController
     @team = Team.new
     
     # Create a new task template, populate it with sample data, and save it immediately.
-    @team.project_template_id = params[:project_template_id]
+    @team.unit_id = params[:unit_id]
     @team.user_id = current_user.id
     @team.meeting_day = "Enter a regular meeting day."
     @team.meeting_time = "Enter a regular meeting time."
@@ -58,7 +58,7 @@ class TeamsController < ApplicationController
 
     respond_to do |format|
       if @team.save
-        format.html { redirect_to project_template_path(@team.project_template_id), notice: "Team was successfully updated."}
+        format.html { redirect_to unit_path(@team.unit_id), notice: "Team was successfully updated."}
         format.json { render json: @team, status: :created, location: @team }
       else
         format.html { render action: "new" }
@@ -74,7 +74,7 @@ class TeamsController < ApplicationController
 
     respond_to do |format|
       if @team.update_attributes(params[:team])
-        format.html { redirect_to project_template_path(@team.project_template_id), notice: "Team was successfully updated."}
+        format.html { redirect_to unit_path(@team.unit_id), notice: "Team was successfully updated."}
         format.json { head :no_content }
         format.js { render action: "finish_update" }
       else

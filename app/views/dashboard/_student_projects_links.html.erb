@@ -1,8 +1,8 @@
 <li class="nav-header">Subjects You Take</li>
 <% student_projects.each do |project| %>
 	<% if !selected_student_project.nil? && project.id == selected_student_project.id %>
-		<li class="active"><a href="<%= project_path(project) %>"><%= project.project_template.name %></a></li>
+		<li class="active"><a href="<%= project_path(project) %>"><%= project.unit.name %></a></li>
 	<% else %>	
-		<li><a href="<%= project_path(project) %>"><%= project.project_template.name %></a></li>
+		<li><a href="<%= project_path(project) %>"><%= project.unit.name %></a></li>
 	<% end %>
 <% end %>

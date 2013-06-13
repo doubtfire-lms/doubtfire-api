@@ -2,7 +2,7 @@ class ConvenorProjectsController < ApplicationController
   helper_method :sort_column, :sort_direction
 
   def index
-    @convenor_projects = ProjectTemplate.joins(:project_convenors)
+    @convenor_projects = Unit.joins(:project_convenors)
                                         .convened_by(current_user)
                                         
     @active_convenor_projects   = @convenor_projects.set_active
@@ -10,14 +10,14 @@ class ConvenorProjectsController < ApplicationController
   end
 
 	def show
-    @convenor_projects = ProjectTemplate.joins(:project_convenors)
+    @convenor_projects = Unit.joins(:project_convenors)
                                         .convened_by(current_user)
                                         
     @active_convenor_projects   = @convenor_projects.set_active
     @inactive_convenor_projects = @convenor_projects.set_inactive
     
-		@project_template = ProjectTemplate.includes(:task_templates).find(params[:id])
-    authorize! :read, @project_template, :message => "You are not authorised to view Project Template ##{@project_template.id}"
+		@unit = Unit.includes(:task_templates).find(params[:id])
+    authorize! :read, @unit, :message => "You are not authorised to view Project Template ##{@unit.id}"
 
     sort_options = {
       column: sort_column,
@@ -28,10 +28,10 @@ class ConvenorProjectsController < ApplicationController
                   Project.includes({
                     team_membership: [:user, :team],
                     tasks: [:task_template]
-                    }, :project_template
+                    }, :unit
                   )
                   .where(
-                    project_template_id: params[:id]
+                    unit_id: params[:id]
                   ).with_progress(gather_included_progress_types),
                   sort_options
                 )

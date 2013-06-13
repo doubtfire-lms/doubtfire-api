@@ -3,7 +3,7 @@
 
 <% stylesheets 'convenor.css' %>
 
-<% title @project_template.name %>
+<% title @unit.name %>
 
 <% content_for :sidebar do %>
     <ul class="nav nav-list">
@@ -14,7 +14,7 @@
                 locals: {
                     active_projects: @active_convenor_projects,
                     inactive_projects: @inactive_convenor_projects,
-                    selected_project: @project_template
+                    selected_project: @unit
                 }
             %>
         <% end %>
@@ -29,7 +29,7 @@
             <%= link_to "Home", root_url %>
             <span class="divider">/</span>
           </li>
-          <li class="active"><%= @project_template.name %></li>
+          <li class="active"><%= @unit.name %></li>
         </ul>
 
         <div class="tabbable"> 
@@ -61,7 +61,7 @@
                     
                         <div class="widget-content">
                             <h3>
-                                <%= link_to "Show All Teams", convenor_project_teams_path(@project_template) %>
+                                <%= link_to "Show All Teams", convenor_project_teams_path(@unit) %>
                             </h3>
                             <hr />
                             <%= render partial: "team_list", :locals => { teams: @project_teams} %>
@@ -75,7 +75,7 @@
                         <div class="widget-content">
                             <%= 
                                 render partial: "task_status_breakdown",
-                                locals: { project_template: @project_template } 
+                                locals: { unit: @unit } 
                             %>
                         </div>
                     </div>

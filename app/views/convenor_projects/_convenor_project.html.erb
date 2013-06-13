@@ -2,7 +2,7 @@
 <div class="row-fluid">
 	<%= 
 		render partial: 'convenor_projects/status_distribution_chart',
-		locals: { project_template: project }
+		locals: { unit: project }
 	%>
 	<%=
 		render partial: 'convenor_projects/progress_bands',
@@ -11,13 +11,13 @@
 </div>	
 <% else %>
 	<p>This project does not have any members.</p>
-	<p><%= link_to "Set up Project", project_template_path(project), :class => "btn" %></p>
+	<p><%= link_to "Set up Project", unit_path(project), :class => "btn" %></p>
 <% end %>
 
 <div class="row-fluid">
 	<%= link_to "Go to Project", convenor_project_path(project), :class => "btn" %>
 	<div class="project-admin-controls pull-right" style="font-size: 24px;">
-	<%= content_tag "a", href: project_template_url(project), :class => "link-icon" do %>
+	<%= content_tag "a", href: unit_url(project), :class => "link-icon" do %>
 		<i class="icon-cog"></i>
 	<% end %>
 	</div>

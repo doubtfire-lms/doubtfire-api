@@ -4,8 +4,8 @@ class Ability
 	def initialize(user)
     if user
       if user.regular_user?
-        can :read, ProjectTemplate do |project_template|
-          project_template.teams.map{|team| team.user }.include? user
+        can :read, Unit do |unit|
+          unit.teams.map{|team| team.user }.include? user
         end
 
         can :read, Project do |project|
@@ -20,12 +20,12 @@ class Ability
       end
 
       if user.convenor?
-        can :manage, ProjectTemplate do |project_template|
-          project_template.project_convenors.map{|convenor| convenor.user }.include? user
+        can :manage, Unit do |unit|
+          unit.project_convenors.map{|convenor| convenor.user }.include? user
         end
 
         can :manage, Project do |project|
-          project.project_template.project_convenors.map{|convenor| convenor.user }.include? user
+          project.unit.project_convenors.map{|convenor| convenor.user }.include? user
         end
 
         can :manage, User

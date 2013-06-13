@@ -2,12 +2,12 @@
 
 one:
   task_template: 
-  project_template: 
+  unit: 
   task_status: 
   awaiting_signoff: false
 
 two:
   task_template:
-  project_template: 
+  unit: 
   task_status: 
   awaiting_signoff: false

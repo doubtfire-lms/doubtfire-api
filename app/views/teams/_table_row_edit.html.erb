@@ -1,12 +1,12 @@
 <tr id="team-<%= team.id %>-row" class="editable" name="<%= team.id %>">
-  <%= simple_form_for team, :url => project_template_update_team_path(team.project_template_id, team), :remote => true do |f| %>
+  <%= simple_form_for team, :url => unit_update_team_path(team.unit_id, team), :remote => true do |f| %>
     <td><%= f.input :user_id, :as => :select, :collection => User.where("system_role != 'superuser'"), :label_method => :name, :value_method => :id, :label => false %></td>
     <td><%= f.input :meeting_day, :label => false %></td>
     <td><%= f.input :meeting_time, :label => false %></td>
     <td><%= f.input :meeting_location, :label => false %></td>
     <td>
       <%= f.button :submit, "Save", :class => "btn btn-mini btn-success" %>
-      <a href="<%= project_template_cancel_update_team_path(team.project_template_id, team.id) %>" data-remote="true" data-method="get" class="btn btn-mini btn-danger">Cancel</a>
+      <a href="<%= unit_cancel_update_team_path(team.unit_id, team.id) %>" data-remote="true" data-method="get" class="btn btn-mini btn-danger">Cancel</a>
     </td>
   <% end %>
 </tr>

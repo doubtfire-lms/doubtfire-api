@@ -5,10 +5,10 @@
         empty_table_string: "This project has no teams."
     } %>
     <hr />
-    <%= link_to "Create new team", project_template_new_team_path(project_template), :class => 'btn', "data-remote" => true %>
+    <%= link_to "Create new team", unit_new_team_path(unit), :class => 'btn', "data-remote" => true %>
     <hr />
     <div class="well">
-    <%= form_tag "#{project_template.id}/import_teams", :multipart => true, :remote => true do %>
+    <%= form_tag "#{unit.id}/import_teams", :multipart => true, :remote => true do %>
         <%= file_field(:csv_file, :file) %>
         <%= submit_tag "Import Teams from CSV", :class => "btn" %>
     <% end %>

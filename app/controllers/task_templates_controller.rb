@@ -14,7 +14,7 @@ class TaskTemplatesController < ApplicationController
   # GET /task_templates/1.json
   def show
     @task_template = TaskTemplate.find(params[:id])
-    @project_template = @task_template.project_template
+    @unit = @task_template.unit
 
     respond_to do |format|
       format.html # show.html.erb
@@ -32,7 +32,7 @@ class TaskTemplatesController < ApplicationController
       format.json { render json: @task_template }
       format.js { 
         # Create a new task template and populate it with sample data
-        @task_template.project_template_id = params[:project_template_id]
+        @task_template.unit_id = params[:unit_id]
         @task_template.name = "New Task"
         @task_template.description = "Enter a description for this task."
         @task_template.weighting = 0.0
@@ -47,8 +47,8 @@ class TaskTemplatesController < ApplicationController
 
   # GET /task_templates/1/edit
   def edit
-    @task_template = TaskTemplate.includes(:project_template).find(params[:id])
-    @project_template = @task_template.project_template
+    @task_template = TaskTemplate.includes(:unit).find(params[:id])
+    @unit = @task_template.unit
 
     respond_to do |format|
       format.html
@@ -61,7 +61,7 @@ class TaskTemplatesController < ApplicationController
   def create
     # Initialise @task_template from the params unless we are coming from 'new', in which case @task_template already exists.
     @task_template = TaskTemplate.new(params[:task_template]) unless params[:task_template].nil?
-    @user_projects = @task_template.project_template.projects
+    @user_projects = @task_template.unit.projects
 
     respond_to do |format|
       if @task_template.save
@@ -75,7 +75,7 @@ class TaskTemplatesController < ApplicationController
           task.save!  
         end
 
-        format.html { redirect_to project_template_path(@task_template.project_template_id), notice: "TaskTemplate was successfully updated."}
+        format.html { redirect_to unit_path(@task_template.unit_id), notice: "TaskTemplate was successfully updated."}
         format.js { render action: "edit" }
         format.json { render json: @task_template, status: :created, location: @task_template }
       else
@@ -93,7 +93,7 @@ class TaskTemplatesController < ApplicationController
     
     respond_to do |format|
       if @task_template.update_attributes(params[:task_template])
-        format.html { redirect_to project_template_path(@task_template.project_template_id), notice: "TaskTemplate was successfully updated."}
+        format.html { redirect_to unit_path(@task_template.unit_id), notice: "TaskTemplate was successfully updated."}
         format.json { head :no_content }
         format.js { render action: "finish_update" }
       else
@@ -108,11 +108,11 @@ class TaskTemplatesController < ApplicationController
   # DELETE /task_templates/1.json
   def destroy
     @task_template = TaskTemplate.find(params[:id])
-    @project_template = ProjectTemplate.find(@task_template.project_template_id)
+    @unit = Unit.find(@task_template.unit_id)
     @task_template.destroy
 
     respond_to do |format|
-      format.html { redirect_to project_template_path(@project_template.id), notice: "TaskTemplate was successfully deleted."}
+      format.html { redirect_to unit_path(@unit.id), notice: "TaskTemplate was successfully deleted."}
       format.js
       format.json { head :no_content }
     end

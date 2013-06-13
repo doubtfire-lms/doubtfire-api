@@ -2,14 +2,14 @@
 
 <% if tutor_projects.size < 3 %>
 	
-	<% tutor_projects.each_with_index do |tutor_project_template, i| %>
+	<% tutor_projects.each_with_index do |tutor_unit, i| %>
 		<div class="row-fluid">
 			<div class="span12 widget">
-				<h2><i class="icon-book"></i><%= tutor_project_template.name %></h2>
+				<h2><i class="icon-book"></i><%= tutor_unit.name %></h2>
 				<div class="widget-content">
 					<%=
 						render partial: 'tutor_project',
-						locals: { tutor_project_template: tutor_project_template }
+						locals: { tutor_unit: tutor_unit }
 					%>
 				</div>
 			</div>
@@ -17,16 +17,16 @@
 	<% end %>
 
 <% else %>
-	<% tutor_projects.each_with_index do |tutor_project_template, i| %>
+	<% tutor_projects.each_with_index do |tutor_unit, i| %>
 		<% if i % 2 == 0 %>
 		<div class="row-fluid">
 		<% end %>
 			<div class="span6 widget">
-				<h2><i class="icon-book"></i><%= tutor_project_template.name %></h2>
+				<h2><i class="icon-book"></i><%= tutor_unit.name %></h2>
 				<div class="widget-content">
 					<%=
 						render partial: 'tutor_project',
-						locals: { tutor_project_template: tutor_project_template }
+						locals: { tutor_unit: tutor_unit }
 					%>
 				</div>
 			</div>

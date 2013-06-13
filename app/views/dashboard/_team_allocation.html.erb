@@ -16,7 +16,7 @@
 		<span class="caret"></span>
 	</button>
 	<ul class="dropdown-menu">
-	<% project.project_template.teams.each do |available_team| %>
+	<% project.unit.teams.each do |available_team| %>
 		<li>
 			<a href="<%= change_team_allocation_path(team_membership, available_team)%>" data-method="put" class="change-team-allocation-button" data-remote="true" data-method="put">
 				<%= available_team.name %>

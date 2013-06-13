@@ -1,8 +1,8 @@
 // Build the row id string from the project template id
-var projectTemplateRowId = "project-" + "<%= @project_template.id %>" +  "-row";
+var unitRowId = "project-" + "<%= @unit.id %>" +  "-row";
 
 // Delete the corresponding row in the table
-$("#" + projectTemplateRowId).remove();
+$("#" + unitRowId).remove();
 
 // Replace the table with a message if there are no more rows
 if($("#project-templates-table").find("tbody").children().length == 0)

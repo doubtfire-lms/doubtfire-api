@@ -4,11 +4,11 @@ class TutorProjectStudentsController < ApplicationController
 
   def show
     @student_projects = @user.projects.select{|project| project.active? }
-    @tutor_projects   = Team.where(:user_id => @user.id).map{|team| team.project_template }.uniq
+    @tutor_projects   = Team.where(:user_id => @user.id).map{|team| team.unit }.uniq
 
-    @student_project  = Project.includes(:project_template).find(params[:project_id])
+    @student_project  = Project.includes(:unit).find(params[:project_id])
     @student          = @student_project.user
-    @project_template = @student_project.project_template
+    @unit = @student_project.unit
 
     authorize! :read, @student_project, :message => "You are not authorised to view Project ##{@student_project.id}"
   end

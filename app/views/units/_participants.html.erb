@@ -3,11 +3,11 @@
     <%= render :partial => 'users/table', :locals => {
         :user_list => participants,
         :empty_table_string => "This project has no users.",
-        :project_template => project_template
+        :unit => unit
     } %>
     <hr />
     <div class="well">
-        <%= form_tag project_template_import_users_path(project_template), :multipart => true, :remote => true do %>
+        <%= form_tag unit_import_users_path(unit), :multipart => true, :remote => true do %>
         <%= file_field(:csv_file, :file) %>
         <%= submit_tag "Import Users from CSV", :class => "btn" %>
         <% end %>

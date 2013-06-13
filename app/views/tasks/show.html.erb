@@ -1,4 +1,4 @@
-<% title "#{@project.project_template.name} - #{@task.task_template.name}" %>
+<% title "#{@project.unit.name} - #{@task.task_template.name}" %>
 
 <% stylesheets 'tasks.css' %>
 
@@ -19,7 +19,7 @@
 			<span class="divider">/</span>
 		</li>
 		<li>
-			<%= link_to @project.project_template.name, @project %>
+			<%= link_to @project.unit.name, @project %>
 			<span class="divider">/</span>
 		</li>
 		<li class="active"><%= @task.task_template.name %></li>

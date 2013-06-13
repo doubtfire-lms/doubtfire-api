@@ -31,7 +31,7 @@
 						"#{project.team_membership.team.meeting_day}",
 						"#{project.team_membership.team.meeting_time}",
 						"(#{project.team_membership.team.user.name})"
-					].join(" "), convenor_project_team_path(project.project_template, project.team_membership.team) %>
+					].join(" "), convenor_project_team_path(project.unit, project.team_membership.team) %>
 				</td>
 			</tr>
 		<% end %>

@@ -9,4 +9,4 @@ class TeamMembership < ActiveRecord::Base
 
   # Model validations/constraints
   validates_uniqueness_of :user_id, :scope => :team_id		# A user can only be added to a project once
-end
+end 

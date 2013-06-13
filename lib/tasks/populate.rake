@@ -44,7 +44,7 @@ namespace :db do
     days = %w[Monday Tuesday Wednesday Thursday Friday]
 
     # Clear the database
-    [User, ProjectTemplate, Team, Project, TaskTemplate, Task, TaskStatus, TeamMembership, User, ProjectConvenor, Login, TaskSubmission, TaskEngagement].each(&:delete_all)
+    [User, Unit, Team, Project, TaskTemplate, Task, TaskStatus, TeamMembership, User, ProjectConvenor, Login, TaskSubmission, TaskEngagement].each(&:delete_all)
 
     TaskStatus.create(:name => "Not Submitted", :description => "This task has not been submitted to marked by your tutor.")
     TaskStatus.create(:name => "Complete", :description => "This task has been signed off by your tutor.")
@@ -111,17 +111,17 @@ namespace :db do
 
     # Create 4 projects (subjects)
     subjects.each do |subject_code, subject_name|
-      ProjectTemplate.populate(1) do |project_template|
-        project_template.official_name  = subject_code
-        project_template.name           = subject_name
-        project_template.description    = Populator.words(10..15)
-        project_template.start_date     = Date.current
-        project_template.end_date       = 13.weeks.since project_template.start_date
+      Unit.populate(1) do |unit|
+        unit.official_name  = subject_code
+        unit.name           = subject_name
+        unit.description    = Populator.words(10..15)
+        unit.start_date     = Date.current
+        unit.end_date       = 13.weeks.since unit.start_date
 
         # Assign a convenor to each project
         ProjectConvenor.populate(1) do |pa|
           pa.user_id = ids["convenor"]   # Convenor 1
-          pa.project_template_id = project_template.id
+          pa.unit_id = unit.id
         end
 
         # Create 6-12 tasks per project
@@ -131,7 +131,7 @@ namespace :db do
           assignment_num += 1
           task_template.name = "Assignment #{assignment_num}"
           task_template.abbreviation = "A#{assignment_num}"
-          task_template.project_template_id = project_template.id
+          task_template.unit_id = unit.id
           task_template.description = Populator.words(5..10)
           task_template.weighting = BigDecimal.new("2")
           task_template.required = rand < 0.9   # 10% chance of being false
@@ -141,7 +141,7 @@ namespace :db do
         # Create 2 teams per project
         team_num = 1
         Team.populate(2) do |team|
-          team.project_template_id = project_template.id
+          team.unit_id = unit.id
           team.meeting_time = "#{8 + rand(12)}:#{['00', '30'].sample}"    # Mon-Fri 8am-7:30pm
           team.meeting_day  = "#{days.sample}"
           team.meeting_location = "#{['EN', 'BA'].sample}#{rand(7)}#{rand(1)}#{rand(9)}" # EN###/BA###
@@ -159,9 +159,9 @@ namespace :db do
 
     # Put each user in each project, in one team or the other
     User.all[0..3].each do |user|
-      ProjectTemplate.all.each do |project_template|
-        random_project_team = Team.where(:project_template_id => project_template.id).sample
-        project_template.add_user(user.id, random_project_team.id, "student")
+      Unit.all.each do |unit|
+        random_project_team = Team.where(:unit_id => unit.id).sample
+        unit.add_user(user.id, random_project_team.id, "student")
       end
     end
  

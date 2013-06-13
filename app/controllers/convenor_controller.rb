@@ -4,7 +4,7 @@ class ConvenorController < ApplicationController
   before_filter :load_current_user
 
   def index
-    @convenor_projects = ProjectTemplate.joins(:project_convenors)
+    @convenor_projects = Unit.joins(:project_convenors)
                                         .convened_by(current_user)
                                                                                 
     @active_convenor_projects   = @convenor_projects.set_active

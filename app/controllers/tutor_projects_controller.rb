@@ -6,14 +6,14 @@ class TutorProjectsController < ApplicationController
 
   def show
     @student_projects         = @user.projects.select{|project| project.active? }
-    @tutor_projects           = Team.where(:user_id => @user.id).map{|team| team.project_template }.uniq
+    @tutor_projects           = Team.where(:user_id => @user.id).map{|team| team.unit }.uniq
 
-    @tutor_teams              = Team.includes(:team_memberships => [{:project => [{:tasks => [:task_template]}]}]).where(:user_id => @user.id, :project_template_id => params[:id])
+    @tutor_teams              = Team.includes(:team_memberships => [{:project => [{:tasks => [:task_template]}]}]).where(:user_id => @user.id, :unit_id => params[:id])
     @tutor_team_projects      = @tutor_teams.map{|team| team.team_memberships }.flatten.map{|team_membership| team_membership.project }
 
-    @project_template         = ProjectTemplate.find(params[:id])
+    @unit         = Unit.find(params[:id])
 
-    authorize! :read, @project_template, :message => "You are not authorised to view Project Template ##{@project_template.id}"
+    authorize! :read, @unit, :message => "You are not authorised to view Project Template ##{@unit.id}"
 
     @actionable_tasks = {
       awaiting_signoff: user_unmarked_tasks(@tutor_team_projects),
@@ -22,7 +22,7 @@ class TutorProjectsController < ApplicationController
     }
 
     @other_teams        = Team.includes(:team_memberships => [{:project => [{:tasks => [:task_template]}]}])
-                              .where("user_id != ? AND project_template_id = ?", @user.id, @project_template.id)
+                              .where("user_id != ? AND unit_id = ?", @user.id, @unit.id)
                               .order(:official_name)
 
     @initial_other_team = @other_teams.first

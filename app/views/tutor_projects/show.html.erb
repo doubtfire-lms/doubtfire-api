@@ -3,7 +3,7 @@
 <%= javascript 'tasks.js' %>
 <%= javascript "task_popover.js" %>
 
-<% title @project_template.name %>
+<% title @unit.name %>
 
 <% content_for :sidebar do %>
 	<ul class="nav nav-list">
@@ -17,7 +17,7 @@
 		<% end %>
 		<% unless @tutor_projects.empty? %>
 			<%= render partial: 'dashboard/tutor_projects_links',
-				locals: { projects: @tutor_projects, selected_project: @project_template }
+				locals: { projects: @tutor_projects, selected_project: @unit }
 			%>
 		<% end %>
 	</ul>
@@ -30,7 +30,7 @@
 			<%= link_to "Home", root_url %>
 			<span class="divider">/</span>
 		</li>
-		<li class="active"><%= @project_template.name %></li>
+		<li class="active"><%= @unit.name %></li>
 	</ul>
 
 	<div class="row-fluid tabbable">
@@ -71,7 +71,7 @@
 						tutor_teams: @tutor_teams,
 						other_teams: @other_teams,
 						initial_other_team: @initial_other_team,
-						project_template: @project_template
+						unit: @unit
 					} 
 				%>
 			<% end %>

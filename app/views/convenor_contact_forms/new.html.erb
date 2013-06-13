@@ -8,7 +8,7 @@
 		<p>If this is incorrect, use the form below to contact a convenor.</p>
 		<div id="contact-form" class="row-fluid">
 			<%= simple_form_for @convenor_contact_form, :html => {:class => "span6 well"} do |f| %>
-				<%= f.input :project_template, :collection => @active_projects, :prompt => "Select a project...", :label => "Project" %>
+				<%= f.input :unit, :collection => @active_projects, :prompt => "Select a project...", :label => "Project" %>
 				<%= f.input :first_name %>
 				<%= f.input :last_name, :html => {:class => "pull-right"} %>
 				<%= f.submit "Please add me!", :class => "btn btn-primary" %>

@@ -35,7 +35,7 @@ module DashboardHelper
       if project.completed?
         completion_date = project.last_task_completed.completion_date.to_time
 
-        days_left_before_deadline  = ((project.project_template.end_date - completion_date).to_i / 1.day)
+        days_left_before_deadline  = ((project.unit.end_date - completion_date).to_i / 1.day)
         
         if days_left_before_deadline < 7
           if days_left_before_deadline == 0
@@ -55,7 +55,7 @@ module DashboardHelper
           end
         end
       else
-        days_left_before_deadline  = ((project.projected_end_date - project.project_template.end_date).to_i / 1.day)
+        days_left_before_deadline  = ((project.projected_end_date - project.unit.end_date).to_i / 1.day)
         weeks_left_before_deadline = -(days_left_before_deadline / 7.to_f).ceil
 
         if weeks_left_before_deadline > 0
@@ -161,8 +161,8 @@ module DashboardHelper
   end
 
   def projected_date_of_completion_vs_deadline(project)
-    start_date  = project.project_template.start_date
-    deadline    = project.project_template.end_date
+    start_date  = project.unit.start_date
+    deadline    = project.unit.end_date
 
     if !project.commenced?
       start_date_string = start_date.strftime("#{start_date.day.ordinalize} of %B")
@@ -268,7 +268,7 @@ module DashboardHelper
   def pre_commencement_message(project)
     raw [
       "<p>",
-        "This project is due to commence on the <strong>#{date_string(project.project_template.start_date)}</strong><br />",
+        "This project is due to commence on the <strong>#{date_string(project.unit.start_date)}</strong><br />",
       "</p>",
       "<p>",
         "Once the project has started, you will see here an indicator of your progress throughout its ",

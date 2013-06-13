@@ -18,7 +18,7 @@
     <% @task_templates.each do |task_template| %>
       <tr>
         <td><%= link_to task_template.name, task_template_path(task_template) %></td>
-        <td><%= ProjectTemplate.find(task_template.project_template_id).name %></td>
+        <td><%= Unit.find(task_template.unit_id).name %></td>
         <td><%= task_template.description %></td>
         <td><%= task_template.weighting %></td>
         <td><%= "Required" if task_template.required %><%= "Optional" if not task_template.required %></td>

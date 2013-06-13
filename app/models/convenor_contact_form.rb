@@ -5,9 +5,9 @@ class ConvenorContactForm
   include ActiveModel::Conversion
   extend ActiveModel::Naming
 
-  attr_accessor :project_template, :first_name, :last_name
+  attr_accessor :unit, :first_name, :last_name
 
-  validates_presence_of :project_template, :first_name, :last_name
+  validates_presence_of :unit, :first_name, :last_name
 
   def initialize(attributes = {})
     attributes.each do |name, value|

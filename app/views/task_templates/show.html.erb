@@ -1,4 +1,4 @@
-<% title "#{@project_template.name} - #{@task_template.name}" %>
+<% title "#{@unit.name} - #{@task_template.name}" %>
 <%- model_class = @task_template.class -%>
 
 <% content_for :sidebar do %>
@@ -17,11 +17,11 @@
         <span class="divider">/</span>
     </li>
     <li>
-        <%= link_to "Project Templates", project_templates_url %>
+        <%= link_to "Project Templates", units_url %>
         <span class="divider">/</span>
     </li>
     <li>
-        <%= link_to @project_template.name, project_template_url(@project_template) %>
+        <%= link_to @unit.name, unit_url(@unit) %>
         <span class="divider">/</span>
     </li>
     <li class="active"><%= @task_template.name %></li>
@@ -31,8 +31,8 @@
     <h2><i class="icon-book"></i><%= @task_template.name %></h2>
     <div class="widget-content">
       <dl class="dl-horizontal">
-        <dt><strong><%= model_class.human_attribute_name(:project_template_id) %>:</strong></dt>
-        <dd><%= @project_template.name %></dd>
+        <dt><strong><%= model_class.human_attribute_name(:unit_id) %>:</strong></dt>
+        <dd><%= @unit.name %></dd>
         <dt><strong><%= model_class.human_attribute_name(:name) %>:</strong></dt>
         <dd><%= @task_template.name %></dd>
         <dt><strong><%= model_class.human_attribute_name(:description) %>:</strong></dt>

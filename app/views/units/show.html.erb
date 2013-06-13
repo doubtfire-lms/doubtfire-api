@@ -1,4 +1,4 @@
-<% title "Project Template - #{@project_template.name}" %>
+<% title "Project Template - #{@unit.name}" %>
 
 <!-- Sidebar -->
 <% content_for :sidebar do %>
@@ -16,10 +16,10 @@
           <span class="divider">/</span>
         </li>
         <li>
-          <%= link_to "Project Templates", project_templates_url %>
+          <%= link_to "Project Templates", units_url %>
           <span class="divider">/</span>
         </li>
-        <li class="active"><%= @project_template.name %> (Adminstration)</li>
+        <li class="active"><%= @unit.name %> (Adminstration)</li>
     </ul>
 
     <div class="tabbable"> 
@@ -43,7 +43,7 @@
                 <div class="widget">
                     <%= 
                         render partial: 'summary_information',
-                        locals: { project_template: @project_template }
+                        locals: { unit: @unit }
                     %>
                 </div>
             <% end %>
@@ -53,7 +53,7 @@
                 <div class="widget">
                     <%= render partial: 'tasks',
                         locals: {
-                            project_template: @project_template, task_templates: @project_tasks
+                            unit: @unit, task_templates: @project_tasks
                         }
                     %>
                 </div>
@@ -65,7 +65,7 @@
                     <%=
                         render partial: 'teams',
                         locals: {
-                            project_template: @project_template,
+                            unit: @unit,
                             project_teams: @project_teams
                         }
                     %>
@@ -78,7 +78,7 @@
                     <%=
                         render partial: 'participants',
                         locals: {
-                            project_template: @project_template,
+                            unit: @unit,
                             participants: @project_users
                         }
                     %>

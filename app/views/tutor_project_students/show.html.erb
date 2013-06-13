@@ -1,4 +1,4 @@
-<% title "#{@student_project.project_template.name} - #{@student.name} (#{@student.username})" %>
+<% title "#{@student_project.unit.name} - #{@student.name} (#{@student.username})" %>
 
 <% stylesheets 'tasks.css' %>
 <% stylesheets 'burndown.css' %>
@@ -13,7 +13,7 @@
 		<% end %>
 		<% unless @tutor_projects.empty? %>
 			<%= render partial: 'dashboard/tutor_projects_links',
-				locals: { projects: @tutor_projects, selected_project: @project_template }
+				locals: { projects: @tutor_projects, selected_project: @unit }
 			%>
 		<% end %>
 	</ul>
@@ -28,7 +28,7 @@
 				<span class="divider">/</span>
 			</li>
 			<li>
-				<%= link_to @student_project.project_template.name, tutor_project_path(@student_project.project_template) %>
+				<%= link_to @student_project.unit.name, tutor_project_path(@student_project.unit) %>
 				<span class="divider">/</span>
 			</li>
 			<li class="active"><%= @student.name %> (<%= @student.username %>)</li>
@@ -54,7 +54,7 @@
 
 			<%= tab_div_tag("progress-tab") do %>
 				<div class="span10 widget project-overview">
-					<h2><i class="icon-book"></i><%= @student_project.project_template.name %></h2>
+					<h2><i class="icon-book"></i><%= @student_project.unit.name %></h2>
 					<div class="widget-content">
 						<%= content_tag "div", class: "burndownchart", data: {url: project_url(@student_project)} do %>
 							<svg style="height: 300px"></svg>

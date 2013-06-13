@@ -64,13 +64,13 @@ projectBurndownData = (project) ->
   seriesToPlot
 
 projectCommenced = (project) ->
-  afterStartDate = moment(new Date()) >= moment(project.project_template.start_date)
+  afterStartDate = moment(new Date()) >= moment(project.unit.start_date)
   tasksCompleted = project.completed_tasks_weight > 0
   afterStartDate and tasksCompleted
 
 targetCompletionData = (project) ->
-  startDate   = moment(project.project_template.start_date)
-  endDate     = moment(project.project_template.end_date)
+  startDate   = moment(project.unit.start_date)
+  endDate     = moment(project.unit.end_date)
   cutOffWeek  = moment(endDate).diff startDate, 'weeks'
   
   totalWeight = project.total_task_weight
@@ -85,8 +85,8 @@ targetCompletionData = (project) ->
   taskCompletionVsWeek
 
 actualCompletionData = (project) ->
-  startDate   = moment(project.project_template.start_date)
-  endDate     = moment(project.project_template.end_date)
+  startDate   = moment(project.unit.start_date)
+  endDate     = moment(project.unit.end_date)
   cutOffDate  = if moment() > endDate then endDate else moment()
   cutOffWeek  = cutOffDate.diff startDate, 'weeks'
 
@@ -102,8 +102,8 @@ actualCompletionData = (project) ->
   taskCompletionVsWeek
 
 projectedCompletionData = (project) ->
-  startDate   = moment(project.project_template.start_date)
-  endDate     = moment(project.project_template.end_date)
+  startDate   = moment(project.unit.start_date)
+  endDate     = moment(project.unit.end_date)
   currentDate = if moment() > endDate then endDate else moment()
   currentWeek = currentDate.diff(startDate, 'weeks')
   cutOffDate  = if moment() > endDate then endDate else moment()

@@ -4,8 +4,8 @@
 </div>
 
 <dl class="dl-horizontal">
-  <dt><strong><%= model_class.human_attribute_name(:project_template_id) %>:</strong></dt>
-  <dd><%= ProjectTemplate.find(@team.project_template_id).name %></dd>
+  <dt><strong><%= model_class.human_attribute_name(:unit_id) %>:</strong></dt>
+  <dd><%= Unit.find(@team.unit_id).name %></dd>
   <dt><strong>Tutor:</strong></dt>
   <dd><%= User.find(@team.user_id).first_name %> <%= User.find(@team.user_id).last_name %></dd>
   <dt><strong><%= model_class.human_attribute_name(:meeting_time) %>:</strong></dt>

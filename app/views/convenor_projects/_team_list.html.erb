@@ -1,6 +1,6 @@
 <% teams.each do |team| %>
 <h3>
-	<%= link_to team.name, convenor_project_team_path(team.project_template, team) %>
+	<%= link_to team.name, convenor_project_team_path(team.unit, team) %>
 	&mdash;
 	<%= team.user.name %>
 </h3>

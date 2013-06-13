@@ -1,11 +1,11 @@
-module ProjectTemplatesHelper
+module UnitsHelper
 
 	# Gets a list of the convenors involved in a project as a string of form "Convenor 1, Convenor 2, ..."
-	def get_convenors_string(project_template_id)
+	def get_convenors_string(unit_id)
 
 		# Get all users who are convenors for the specified project
-		convenors = User.joins(:project_convenors => :project_template)
-		    			.where(:project_convenors => {:project_template_id => project_template_id})
+		convenors = User.joins(:project_convenors => :unit)
+		    			.where(:project_convenors => {:unit_id => unit_id})
 		
 		# Concatenate their names into a string
 		convenors_string = ""

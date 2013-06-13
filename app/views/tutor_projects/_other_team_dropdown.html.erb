@@ -8,7 +8,7 @@
   	<ul class="dropdown-menu">
   		<% other_teams.each do |team| %>
 	    <li>
-	    	<a href="<%= display_other_team_path(project_template, team) %>"
+	    	<a href="<%= display_other_team_path(unit, team) %>"
 	    		id="display-team-<%= team.id %>-students"
 	    		class="other-team-selection-item"
 	    		data-remote="true"

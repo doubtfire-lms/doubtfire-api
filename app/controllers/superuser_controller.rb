@@ -4,7 +4,7 @@ class SuperuserController < ApplicationController
 	before_filter :load_current_user
 
 	def index
-		@project_templates = ProjectTemplate.all
+		@units = Unit.all
 		@users = User.where("system_role != 'superuser'")
 	end
 

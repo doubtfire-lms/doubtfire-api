@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20130227035353) do
+ActiveRecord::Schema.define(:version => 20130613070051) do
 
   create_table "logins", :force => true do |t|
     t.datetime "timestamp"
@@ -23,36 +23,25 @@ ActiveRecord::Schema.define(:version => 20130227035353) do
   add_index "logins", ["user_id"], :name => "index_logins_on_user_id"
 
   create_table "project_convenors", :force => true do |t|
-    t.integer  "project_template_id"
+    t.integer  "unit_id"
     t.integer  "user_id"
-    t.datetime "created_at",          :null => false
-    t.datetime "updated_at",          :null => false
-  end
-
-  create_table "project_templates", :force => true do |t|
-    t.string   "name"
-    t.string   "description"
-    t.datetime "start_date"
-    t.datetime "end_date"
-    t.datetime "created_at",                      :null => false
-    t.datetime "updated_at",                      :null => false
-    t.string   "official_name"
-    t.boolean  "active",        :default => true
+    t.datetime "created_at", :null => false
+    t.datetime "updated_at", :null => false
   end
 
   create_table "projects", :force => true do |t|
-    t.integer  "project_template_id"
+    t.integer  "unit_id"
     t.integer  "team_membership_id"
     t.string   "project_role"
-    t.datetime "created_at",          :null => false
-    t.datetime "updated_at",          :null => false
+    t.datetime "created_at",         :null => false
+    t.datetime "updated_at",         :null => false
     t.boolean  "started"
     t.string   "progress"
     t.string   "status"
   end
 
-  add_index "projects", ["project_template_id"], :name => "index_projects_on_project_template_id"
   add_index "projects", ["team_membership_id"], :name => "index_projects_on_team_membership_id"
+  add_index "projects", ["unit_id"], :name => "index_projects_on_unit_id"
 
   create_table "task_engagements", :force => true do |t|
     t.datetime "engagement_time"
@@ -84,18 +73,18 @@ ActiveRecord::Schema.define(:version => 20130227035353) do
   add_index "task_submissions", ["task_id"], :name => "index_task_submissions_on_task_id"
 
   create_table "task_templates", :force => true do |t|
-    t.integer  "project_template_id"
+    t.integer  "unit_id"
     t.string   "name"
     t.string   "description"
-    t.decimal  "weighting"
+    t.decimal  "weighting",    :precision => 10, :scale => 0
     t.boolean  "required"
     t.datetime "target_date"
-    t.datetime "created_at",          :null => false
-    t.datetime "updated_at",          :null => false
+    t.datetime "created_at",                                  :null => false
+    t.datetime "updated_at",                                  :null => false
     t.string   "abbreviation"
   end
 
-  add_index "task_templates", ["project_template_id"], :name => "index_task_templates_on_project_template_id"
+  add_index "task_templates", ["unit_id"], :name => "index_task_templates_on_unit_id"
 
   create_table "tasks", :force => true do |t|
     t.integer  "task_template_id"
@@ -124,18 +113,29 @@ ActiveRecord::Schema.define(:version => 20130227035353) do
   add_index "team_memberships", ["user_id"], :name => "index_team_memberships_on_user_id"
 
   create_table "teams", :force => true do |t|
-    t.integer  "project_template_id"
+    t.integer  "unit_id"
     t.integer  "user_id"
     t.string   "meeting_day"
     t.string   "meeting_time"
     t.string   "meeting_location"
-    t.datetime "created_at",          :null => false
-    t.datetime "updated_at",          :null => false
+    t.datetime "created_at",       :null => false
+    t.datetime "updated_at",       :null => false
     t.string   "official_name"
   end
 
-  add_index "teams", ["project_template_id"], :name => "index_teams_on_project_template_id"
+  add_index "teams", ["unit_id"], :name => "index_teams_on_unit_id"
   add_index "teams", ["user_id"], :name => "index_teams_on_user_id"
+
+  create_table "units", :force => true do |t|
+    t.string   "name"
+    t.string   "description"
+    t.datetime "start_date"
+    t.datetime "end_date"
+    t.datetime "created_at",                      :null => false
+    t.datetime "updated_at",                      :null => false
+    t.string   "official_name"
+    t.boolean  "active",        :default => true
+  end
 
   create_table "users", :force => true do |t|
     t.string   "email",                  :default => "", :null => false

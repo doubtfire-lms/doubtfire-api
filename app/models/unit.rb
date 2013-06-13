@@ -1,7 +1,7 @@
 require 'csv'
 require 'bcrypt'
 
-class ProjectTemplate < ActiveRecord::Base
+class Unit < ActiveRecord::Base
   include ApplicationHelper
 
   attr_accessible :official_name, :description, :end_date, :name, :start_date, :active
@@ -11,7 +11,7 @@ class ProjectTemplate < ActiveRecord::Base
   attr_accessor :convenors  
 
   # Model associations. 
-  # When a ProjectTemplate is destroyed, any TaskTemplates, Teams, and ProjectConvenor instances will also be destroyed.
+  # When a Unit is destroyed, any TaskTemplates, Teams, and ProjectConvenor instances will also be destroyed.
   has_many :task_templates, :dependent => :destroy	  			
   has_many :projects, :dependent => :destroy					 
   has_many :teams, :dependent => :destroy
@@ -55,7 +55,7 @@ class ProjectTemplate < ActiveRecord::Base
 
     project = team_membership.build_project(
       started: false,
-      project_template: self,
+      unit: self,
       project_role: project_role
     )
     project.save
@@ -65,7 +65,7 @@ class ProjectTemplate < ActiveRecord::Base
     team_membership.save
 
     # Create task instances for the project
-    task_templates_for_project = TaskTemplate.where(:project_template_id => self.id)
+    task_templates_for_project = TaskTemplate.where(:unit_id => self.id)
 
     task_templates_for_project.each do |task_template|
       Task.create(
@@ -80,7 +80,7 @@ class ProjectTemplate < ActiveRecord::Base
 
   # Removes a user (and their tasks etc.) from this project
   def remove_user(user_id)
-    team_memberships = TeamMembership.joins(:project => :project_template).where(:user_id => user_id, :projects => {:project_template_id => self.id})
+    team_memberships = TeamMembership.joins(:project => :unit).where(:user_id => user_id, :projects => {:unit_id => self.id})
 
     team_memberships.each do |team_membership|
       team_membership.destroy
@@ -114,12 +114,12 @@ class ProjectTemplate < ActiveRecord::Base
 
       project_participant.save!(:validate => false) unless project_participant.persisted?
 
-      user_not_in_project = TeamMembership.joins(:project => :project_template).where(
+      user_not_in_project = TeamMembership.joins(:project => :unit).where(
         :user_id => project_participant.id,
-        :projects => {:project_template_id => id}
+        :projects => {:unit_id => id}
       ).count == 0
 
-      team = team_cache[class_id] || Team.where(:official_name => class_id, :project_template_id => id).first
+      team = team_cache[class_id] || Team.where(:official_name => class_id, :unit_id => id).first
       team_cache[class_id] ||= team
       
       # Add the user to the project (if not already in there)
@@ -136,7 +136,7 @@ class ProjectTemplate < ActiveRecord::Base
       class_type, class_id, day, time, location, tutor_username = row[2..-1]
       next if class_type !~ /Lab/
 
-      Team.find_or_create_by_project_template_id_and_official_name(id, class_id) do |team|
+      Team.find_or_create_by_unit_id_and_official_name(id, class_id) do |team|
         team.meeting_day      = day
         team.meeting_time     = time
         team.meeting_location = location
@@ -173,9 +173,9 @@ class ProjectTemplate < ActiveRecord::Base
       end
 
       # TODO: Should background/task queue this work
-      task_template = TaskTemplate.find_or_create_by_project_template_id_and_name(id, name) do |task_template|
+      task_template = TaskTemplate.find_or_create_by_unit_id_and_name(id, name) do |task_template|
         task_template.name                        = name
-        task_template.project_template_id         = id
+        task_template.unit_id         = id
         task_template.abbreviation                = abbreviation
         task_template.description                 = description
         task_template.weighting                   = BigDecimal.new(weighting)
@@ -185,7 +185,7 @@ class ProjectTemplate < ActiveRecord::Base
 
       task_template.save! unless task_template.persisted?
 
-      project_cache ||= Project.where(:project_template_id => id)
+      project_cache ||= Project.where(:unit_id => id)
 
       project_cache.each do |project|
         Task.create(
@@ -204,7 +204,7 @@ class ProjectTemplate < ActiveRecord::Base
   end
 
   def status_distribution
-    projects = Project.where(:project_template_id => id)
+    projects = Project.where(:unit_id => id)
     project_count = projects.length
     
     status_totals = {

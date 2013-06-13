@@ -4,7 +4,7 @@
 <%= javascript 'tasks.js' %>
 <%= javascript "task_popover.js" %>
 
-<% title "#{@project_template.name}" %>
+<% title "#{@unit.name}" %>
 
 <% content_for :sidebar do %>
     <%= render :partial => 'layouts/admin_menu' %>
@@ -18,7 +18,7 @@
             <span class="divider">/</span>
         </li>
         <li>
-            <%= link_to @project_template.name, convenor_project_path(@project_template) %>
+            <%= link_to @unit.name, convenor_project_path(@unit) %>
             <span class="divider">/</span>
         </li>
         <li class="active">

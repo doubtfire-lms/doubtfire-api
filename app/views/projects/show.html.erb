@@ -1,4 +1,4 @@
-<% title "#{@project.project_template.name}" %>
+<% title "#{@project.unit.name}" %>
 
 <% stylesheets 'tasks.css' %>
 
@@ -25,7 +25,7 @@
 			<span class="divider">/</span>
 		</li>
 		<li class="active">
-			<%= @project.project_template.name %>
+			<%= @project.unit.name %>
 			<% if @project.user != current_user %>
 			(<%= @project.user.name %> &mdash; <%= @project.user.username %>)
 			<% end %>
@@ -102,7 +102,7 @@
 				<h2><i class="icon-group"></i>Available Tutorials</h2>
 				<div class="widget-content">
 					<%= render partial: 'dashboard/project_team_list',
-						locals: { project_teams: @project.project_template.teams }
+						locals: { project_teams: @project.unit.teams }
 					%>
 				</div>
 			</div>

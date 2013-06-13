@@ -4,7 +4,7 @@
 <%= javascript 'tasks.js' %>
 <%= javascript "task_popover.js" %>
 
-<% title "#{@project_template.name} - #{@team.name}" %>
+<% title "#{@unit.name} - #{@team.name}" %>
 
 <% content_for :sidebar do %>
     <ul class="nav nav-list">
@@ -15,7 +15,7 @@
                 locals: {
                     active_projects: @convenor_projects,
                     inactive_projects: [],
-                    selected_project: @project_template
+                    selected_project: @unit
                 }
             %>
         <% end %>
@@ -30,7 +30,7 @@
 			<span class="divider">/</span>
 		</li>
 		<li>
-			<%= link_to @project_template.name, convenor_project_path(@project_template) %>
+			<%= link_to @unit.name, convenor_project_path(@unit) %>
 			<span class="divider">/</span>
 		</li>
 		<li class="active"><%= @team.name %></li>

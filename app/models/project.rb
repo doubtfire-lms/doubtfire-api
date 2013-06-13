@@ -1,10 +1,10 @@
 class Project < ActiveRecord::Base
   include ApplicationHelper
 
-  attr_accessible :project_template, :team_membership, :project_role, :started, :progress
+  attr_accessible :unit, :team_membership, :project_role, :started, :progress
 
   belongs_to :team
-  belongs_to :project_template
+  belongs_to :unit
   belongs_to :team_membership, dependent: :destroy
 
   has_one :user, through: :team_membership
@@ -16,15 +16,15 @@ class Project < ActiveRecord::Base
     where(progress: progress_types) unless progress_types.blank?
   }
 
-  default_scope :include => :project_template
+  default_scope :include => :unit
 
   def active?
-    project_template.active
+    unit.active
   end
 
   def reference_date
-    if application_reference_date > project_template.end_date
-      project_template.end_date
+    if application_reference_date > unit.end_date
+      unit.end_date
     else
       application_reference_date
     end
@@ -107,7 +107,7 @@ class Project < ActiveRecord::Base
     units_completed = task_units_completed
 
     current_week  = weeks_elapsed
-    date_progress = project_template.start_date
+    date_progress = unit.start_date
 
     progress_points.each do |date, weight|
       break if weight > units_completed
@@ -130,7 +130,7 @@ class Project < ActiveRecord::Base
   end
 
   def projected_end_date
-    return project_template.end_date if rate_of_completion == 0.0
+    return unit.end_date if rate_of_completion == 0.0
     (remaining_tasks_weight / rate_of_completion).ceil.days.since reference_date
   end
 
@@ -140,7 +140,7 @@ class Project < ActiveRecord::Base
 
   def days_elapsed(date=nil)
     date ||= reference_date
-    (date - project_template.start_date).to_i / 1.day
+    (date - unit.start_date).to_i / 1.day
   end
 
   def rate_of_completion(date=nil)
@@ -222,7 +222,7 @@ class Project < ActiveRecord::Base
   end
 
   def remaining_days
-    (project_template.end_date - reference_date).to_i / 1.day
+    (unit.end_date - reference_date).to_i / 1.day
   end
 
   def in_progress?
@@ -230,11 +230,11 @@ class Project < ActiveRecord::Base
   end
 
   def commenced?
-    application_reference_date >= project_template.start_date
+    application_reference_date >= unit.start_date
   end
 
   def concluded?
-    application_reference_date > project_template.end_date
+    application_reference_date > unit.end_date
   end
 
   def has_optional_tasks?

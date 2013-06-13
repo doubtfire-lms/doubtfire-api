@@ -1,10 +1,10 @@
 // Build the row id string from the project template id
-var projectTemplateRowId = "project-" + "<%= @project_template.id %>" +  "-row";
-var partial = "<%=j render :partial => 'project_templates/table_row_edit', :locals => { :project_template => @project_template } %>"
+var unitRowId = "project-" + "<%= @unit.id %>" +  "-row";
+var partial = "<%=j render :partial => 'units/table_row_edit', :locals => { :unit => @unit } %>"
 
 // Render the table_row_edit partial. If we just created a new team via the 'Create' button, it won't have a row in the table yet. 
-if(document.getElementById(projectTemplateRowId) != null)
-	$("#" + projectTemplateRowId).replaceWith(partial);		// Row already exists - replace it with the form
+if(document.getElementById(unitRowId) != null)
+	$("#" + unitRowId).replaceWith(partial);		// Row already exists - replace it with the form
 else
 	$("#project-templates-table").append(partial);			// No row exists yet - append one
 

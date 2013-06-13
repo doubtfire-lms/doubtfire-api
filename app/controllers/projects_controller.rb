@@ -19,7 +19,7 @@ class ProjectsController < ApplicationController
             {
               :tasks => {:include => {:task_template => {:except=>[:updated_at, :created_at]}}, :except => [:updated_at, :created_at], :methods => [:weight, :status] }
             },
-            :project_template => {:except => [:updated_at, :created_at]}
+            :unit => {:except => [:updated_at, :created_at]}
           ],
           :methods => [:progress, :completed_tasks_weight, :total_task_weight, :assigned_tasks],
           :except => [:updated_at, :created_at]

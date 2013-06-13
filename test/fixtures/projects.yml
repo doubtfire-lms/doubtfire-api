@@ -2,10 +2,10 @@
 
 one:
   team:
-  project_template: 
+  unit: 
   project_role: MyString
 
 two:
   team: 
-  project_template: 
+  unit: 
   project_role: MyString
