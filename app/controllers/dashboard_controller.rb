@@ -11,8 +11,8 @@ class DashboardController < ApplicationController
     end
     
     @student_projects = @user.projects.select{|project| project.active? }
-    @tutor_projects   = Team.includes(:unit)
-                            .where(user_id: @user.id).map{|team| team.unit }
+    @tutor_projects   = Tutorial.includes(:unit)
+                            .where(user_id: @user.id).map{|tutorial| tutorial.unit }
                             .select{|unit| unit.active }.uniq
 
     # If user has no projects, redirect

@@ -20,7 +20,7 @@ class UnitsController < ApplicationController
     @unit = Unit.find(params[:id])
     @project_tasks = TaskDefinition.where(:unit_id => params[:id]).order(:by => [:target_date, :id])
     @project_users = User.joins(:unit_roles => :project).where(:projects => {:unit_id => params[:id]})
-    @project_teams = Team.where(:unit_id => params[:id])
+    @project_tutorials = Tutorial.where(:unit_id => params[:id])
     
     authorize! :manage, @unit, :message => "You are not authorised to manage Unit ##{@unit.id}"
     
@@ -184,18 +184,18 @@ class UnitsController < ApplicationController
     end
   end
 
-  def import_teams
+  def import_tutorials
     tmp = params[:csv_file][:file].tempfile
     csv_file = File.join("public", params[:csv_file][:file].original_filename)
     FileUtils.cp tmp.path, csv_file
 
     @unit = Unit.find(params[:unit_id])
-    @unit.import_teams_from_csv(csv_file)
+    @unit.import_tutorials_from_csv(csv_file)
 
     FileUtils.rm csv_file
 
     respond_to do |format|
-      format.html { redirect_to unit_path(@unit, tab: "teams-tab"), notice: "Successfully imported teams."}
+      format.html { redirect_to unit_path(@unit, tab: "tutorials-tab"), notice: "Successfully imported tutorials."}
       format.js
     end
   end

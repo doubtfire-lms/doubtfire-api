@@ -6,7 +6,7 @@
 			<th><%= sortable "progress" %></th>
 			<th><%= sortable "tasks_completed" %></th>
 			<th><%= sortable "units_completed", "Completed Units" %></th>
-			<th>Team</th>
+			<th>Tutorial</th>
 		</tr>
 	</thead>
 	<tbody>
@@ -28,10 +28,10 @@
 				</td>
 				<td>
 					<%= link_to [
-						"#{project.unit_role.team.meeting_day}",
-						"#{project.unit_role.team.meeting_time}",
-						"(#{project.unit_role.team.user.name})"
-					].join(" "), convenor_project_team_path(project.unit, project.unit_role.team) %>
+						"#{project.unit_role.tutorial.meeting_day}",
+						"#{project.unit_role.tutorial.meeting_time}",
+						"(#{project.unit_role.tutorial.user.name})"
+					].join(" "), convenor_project_tutorial_path(project.unit, project.unit_role.tutorial) %>
 				</td>
 			</tr>
 		<% end %>

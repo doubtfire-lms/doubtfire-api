@@ -26,7 +26,7 @@ class ConvenorProjectsController < ApplicationController
 
     @projects = sort_projects(
                   Project.includes({
-                    unit_role: [:user, :team],
+                    unit_role: [:user, :tutorial],
                     tasks: [:task_definition]
                     }, :unit
                   )
@@ -36,8 +36,8 @@ class ConvenorProjectsController < ApplicationController
                   sort_options
                 )
 
-    @project_teams = @projects.map {|project|
-      project.unit_role.team
+    @project_tutorials = @projects.map {|project|
+      project.unit_role.tutorial
     }.uniq
 	end
 

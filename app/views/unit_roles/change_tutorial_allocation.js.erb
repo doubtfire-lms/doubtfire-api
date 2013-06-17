@@ -1,0 +1,2 @@
+$(".tutorial-allocation-button").text("<%= @new_tutorial.name %>");
+$("#unit-role-details").replaceWith("<%= j render :partial => 'unit_roles/tutorial_allocation_details', :locals => { :unit_role => @unit_role } %>");

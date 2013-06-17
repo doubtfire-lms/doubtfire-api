@@ -1,11 +1,11 @@
 # Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/Fixtures.html
 
 one:
-  team:
+  tutorial:
   unit: 
   project_role: MyString
 
 two:
-  team: 
+  tutorial: 
   unit: 
   project_role: MyString

@@ -4,7 +4,7 @@ class TutorProjectStudentsController < ApplicationController
 
   def show
     @student_projects = @user.projects.select{|project| project.active? }
-    @tutor_projects   = Team.where(:user_id => @user.id).map{|team| team.unit }.uniq
+    @tutor_projects   = Tutorial.where(:user_id => @user.id).map{|tutorial| tutorial.unit }.uniq
 
     @student_project  = Project.includes(:unit).find(params[:project_id])
     @student          = @student_project.user

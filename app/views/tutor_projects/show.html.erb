@@ -35,7 +35,7 @@
 
 	<div class="row-fluid tabbable">
 		<ul class="nav nav-pills">
-			<li class="active"><a href="#teams-tab" data-toggle="tab">Teams</a></li>
+			<li class="active"><a href="#tutorials-tab" data-toggle="tab">Tutorials</a></li>
 			<li>
 				<a href="#awaiting-signoff-tab" data-toggle="tab">
 				Awaiting Signoff
@@ -64,13 +64,13 @@
 
 		<div class="tab-content">
 
-			<%= tab_div_tag("teams-tab", true) do %>
-				<%= render 	partial: 	'tutor_projects/teams',
+			<%= tab_div_tag("tutorials-tab", true) do %>
+				<%= render 	partial: 	'tutor_projects/tutorials',
 					locals: 
 					{
-						tutor_teams: @tutor_teams,
-						other_teams: @other_teams,
-						initial_other_team: @initial_other_team,
+						tutor_tutorials: @tutor_tutorials,
+						other_tutorials: @other_tutorials,
+						initial_other_tutorial: @initial_other_tutorial,
 						unit: @unit
 					} 
 				%>

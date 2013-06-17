@@ -37,8 +37,8 @@
                 <%= tab_li_tag("students-tab", true) do %>
                     <a href="#students-tab" data-toggle="tab">Summary</a>
                 <% end %>
-                <%= tab_li_tag("teams-tab") do %>
-                    <a href="#teams-tab" data-toggle="tab">Teams</a>
+                <%= tab_li_tag("tutorials-tab") do %>
+                    <a href="#tutorials-tab" data-toggle="tab">Tutorials</a>
                 <% end %>
                 <%= tab_li_tag("tasks-tab") do %>
                     <a href="#tasks-tab" data-toggle="tab">Tasks</a>
@@ -55,16 +55,16 @@
                     </div>
                 <% end %>
 
-                <%= tab_div_tag("teams-tab") do %>
+                <%= tab_div_tag("tutorials-tab") do %>
                     <div class="widget">
-                    <h2><i class="icon-group"></i>Teams</h2>
+                    <h2><i class="icon-group"></i>Tutorials</h2>
                     
                         <div class="widget-content">
                             <h3>
-                                <%= link_to "Show All Teams", convenor_project_teams_path(@unit) %>
+                                <%= link_to "Show All Tutorials", convenor_project_tutorials_path(@unit) %>
                             </h3>
                             <hr />
-                            <%= render partial: "team_list", :locals => { teams: @project_teams} %>
+                            <%= render partial: "tutorial_list", :locals => { tutorials: @project_tutorials} %>
                         </div>
                     </div>
                 <% end %>

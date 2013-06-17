@@ -1,0 +1,22 @@
+var otherTutorialName 		= "<%= "#{@other_tutorial.meeting_day} #{@other_tutorial.meeting_time} (#{@other_tutorial.user.name})" %>";
+var tutorialNameText = otherTutorialName + '<span class="caret"></span>';
+
+$("#other-tutorial-header").text(otherTutorialName);
+$("#display-other-tutorial-dropdown").html(tutorialNameText);
+$(".other-tutorial-selection-item").css("font-weight", "");
+$("#display-tutorial-<%= @other_tutorial.id %>-students").css("font-weight", "bold");
+
+var partial = "<%=j render :partial => 'tutor_projects/tutorial_project_list', :locals => { :tutorial => @other_tutorial } %>";
+$("#other-tutorials-entries .tutorial-members").html(partial);
+
+$(".task-progress-item").popover({
+	trigger: 'manual',
+	placement: 'top',
+	html: true,
+	template: '<div class="popover" onmouseover="$(this).mouseleave(function() {$(this).hide(); });"><div class="arrow"></div><div class="popover-inner"><h3 class="popover-title"></h3><div class="popover-content"><p></p></div></div></div>'
+})
+.click(function(e) {
+	e.preventDefault();
+	$(".popover").hide();
+	$(this).popover('show');
+});

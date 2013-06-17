@@ -39,8 +39,8 @@
         <%= tab_li_tag("tasks-tab") do %>
             <a href="#tasks-tab" data-toggle="tab">Tasks</a>
         <% end %>
-        <%= tab_li_tag("team-tab") do %>
-            <a href="#team-tab" data-toggle="tab">Tutorials</a>
+        <%= tab_li_tag("tutorial-tab") do %>
+            <a href="#tutorial-tab" data-toggle="tab">Tutorials</a>
         <% end %>
 	</ul>
 
@@ -80,7 +80,7 @@
 			</div>
 		<% end %>
 
-		<%= tab_div_tag("team-tab") do %>
+		<%= tab_div_tag("tutorial-tab") do %>
 			<div class="span7 widget">
 				<h2>
 					<i class="icon-group"></i>Your Tutorial Allocation
@@ -90,7 +90,7 @@
 				</h2>
 				<div class="widget-content">
 					<%= 
-						render partial: 'dashboard/team_allocation',
+						render partial: 'dashboard/tutorial_allocation',
 						locals: {
 							project: @project,
 							unit_role: @project.unit_role
@@ -101,8 +101,8 @@
 			<div class="span5 widget">
 				<h2><i class="icon-group"></i>Available Tutorials</h2>
 				<div class="widget-content">
-					<%= render partial: 'dashboard/project_team_list',
-						locals: { project_teams: @project.unit.teams }
+					<%= render partial: 'dashboard/project_tutorial_list',
+						locals: { project_tutorials: @project.unit.tutorials }
 					%>
 				</div>
 			</div>

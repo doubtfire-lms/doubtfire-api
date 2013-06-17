@@ -11,7 +11,7 @@ Doubtfire::Application.routes.draw do
   resources :home, :only => :index
   resources :projects
   resources :task_definitions
-  resources :teams
+  resources :tutorials
 
   # Routes for when the user has no projects
   get 'no_projects' => 'convenor_contact_forms#new', :as => 'no_projects'
@@ -37,7 +37,7 @@ Doubtfire::Application.routes.draw do
   resources :units do
     # Data imports
     post 'import_users' => 'units#import_users'
-    post 'import_teams' => 'units#import_teams'
+    post 'import_tutorials' => 'units#import_tutorials'
     post 'import_tasks' => 'units#import_tasks'
 
     get 'export_tasks' => 'units#export_tasks'
@@ -51,10 +51,10 @@ Doubtfire::Application.routes.draw do
     get   'cancel_update_task/:task_definition_id' => 'task_definitions#finish_update',         as: 'cancel_update_task'
     get   'destroy_all_tasks' =>                    'units#destroy_all_tasks',  as: 'destroy_all_tasks'
 
-    # Project teams
-    get   'new_team' => 'teams#new',                              as: 'new_team'
-    post  'update_team/:team_id' => 'teams#update',               as: 'update_team'
-    get   'cancel_update_team/:team_id' => 'teams#finish_update', as: 'cancel_update_team'
+    # Project tutorials
+    get   'new_tutorial' => 'tutorials#new',                              as: 'new_tutorial'
+    post  'update_tutorial/:tutorial_id' => 'tutorials#update',               as: 'update_tutorial'
+    get   'cancel_update_tutorial/:tutorial_id' => 'tutorials#finish_update', as: 'cancel_update_tutorial'
 
     # Project users
     get 'add_user' => 'units#add_user',                 as: 'add_user'
@@ -67,8 +67,8 @@ Doubtfire::Application.routes.draw do
   scope '/convenor' do
     get 'projects'                                      => "convenor_projects#index",       as: 'convenor_projects'
     get 'projects/:id'                                  => "convenor_projects#show",        as: 'convenor_project'
-    get 'projects/:id/teams'                            => "convenor_project_teams#index",  as: 'convenor_project_teams'
-    get 'projects/:unit_id/teams/:team_id'  => "convenor_project_teams#show",   as: 'convenor_project_team'
+    get 'projects/:id/tutorials'                            => "convenor_project_tutorials#index",  as: 'convenor_project_tutorials'
+    get 'projects/:unit_id/tutorials/:tutorial_id'  => "convenor_project_tutorials#show",   as: 'convenor_project_tutorial'
   end
 
   resources :convenor_contact_forms, :path_names => { :new => 'welcome' }
@@ -77,11 +77,11 @@ Doubtfire::Application.routes.draw do
   # Tutor context routes
   scope '/tutor' do
     get 'projects/:id'                                        => 'tutor_projects#show',               as: 'tutor_project'
-    get 'projects/:project_id/display_other_team/:team_id'    => 'tutor_projects#display_other_team', as: 'display_other_team'
+    get 'projects/:project_id/display_other_tutorial/:tutorial_id'    => 'tutor_projects#display_other_tutorial', as: 'display_other_tutorial'
     get 'projects/:project_id/students/:student_id'           => 'tutor_project_students#show',       as: 'tutor_project_student'
   end
 
-  put "unit_roles/:unit_role_id/change_team_allocation/:new_team_id" => "unit_roles#change_team_allocation", :as => 'change_team_allocation'
+  put "unit_roles/:unit_role_id/change_tutorial_allocation/:new_tutorial_id" => "unit_roles#change_tutorial_allocation", :as => 'change_tutorial_allocation'
 
   # Superuser context routes
   get '/administration' => 'superuser#index', :as => 'superuser_index'

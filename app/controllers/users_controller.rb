@@ -119,7 +119,7 @@ class UsersController < ApplicationController
     end
   end
 
-  # Restores the row in the Teams table to its original state after saving or cancelling from editing mode.
+  # Restores the row in the Tutorials table to its original state after saving or cancelling from editing mode.
   def finish_update
     @user = User.find(params[:id])
 

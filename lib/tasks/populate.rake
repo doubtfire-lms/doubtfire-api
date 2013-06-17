@@ -44,7 +44,7 @@ namespace :db do
     days = %w[Monday Tuesday Wednesday Thursday Friday]
 
     # Clear the database
-    [User, Unit, Team, Project, TaskDefinition, Task, TaskStatus, UnitRole, User, ProjectConvenor, Login, TaskSubmission, TaskEngagement].each(&:delete_all)
+    [User, Unit, Tutorial, Project, TaskDefinition, Task, TaskStatus, UnitRole, User, ProjectConvenor, Login, TaskSubmission, TaskEngagement].each(&:delete_all)
 
     TaskStatus.create(:name => "Not Submitted", :description => "This task has not been submitted to marked by your tutor.")
     TaskStatus.create(:name => "Complete", :description => "This task has been signed off by your tutor.")
@@ -138,30 +138,30 @@ namespace :db do
           task_definition.target_date = assignment_num.weeks.from_now # Assignment 6 due week 6, etc.
         end
 
-        # Create 2 teams per project
-        team_num = 1
-        Team.populate(2) do |team|
-          team.unit_id = unit.id
-          team.meeting_time = "#{8 + rand(12)}:#{['00', '30'].sample}"    # Mon-Fri 8am-7:30pm
-          team.meeting_day  = "#{days.sample}"
-          team.meeting_location = "#{['EN', 'BA'].sample}#{rand(7)}#{rand(1)}#{rand(9)}" # EN###/BA###
+        # Create 2 tutorials per project
+        tutorial_num = 1
+        Tutorial.populate(2) do |tutorial|
+          tutorial.unit_id = unit.id
+          tutorial.meeting_time = "#{8 + rand(12)}:#{['00', '30'].sample}"    # Mon-Fri 8am-7:30pm
+          tutorial.meeting_day  = "#{days.sample}"
+          tutorial.meeting_location = "#{['EN', 'BA'].sample}#{rand(7)}#{rand(1)}#{rand(9)}" # EN###/BA###
           
           if ["Introduction To Programming", "Object-Oriented Programming"].include? subject_name
-            team.user_id = tutors[:acain][:id]  # Tutor 1
+            tutorial.user_id = tutors[:acain][:id]  # Tutor 1
           else
-            team.user_id = tutors[:cwoodward][:id]  # Tutor 2
+            tutorial.user_id = tutors[:cwoodward][:id]  # Tutor 2
           end
           
-          team_num += 1
+          tutorial_num += 1
         end
       end
     end
 
-    # Put each user in each project, in one team or the other
+    # Put each user in each project, in one tutorial or the other
     User.all[0..3].each do |user|
       Unit.all.each do |unit|
-        random_project_team = Team.where(:unit_id => unit.id).sample
-        unit.add_user(user.id, random_project_team.id, "student")
+        random_project_tutorial = Tutorial.where(:unit_id => unit.id).sample
+        unit.add_user(user.id, random_project_tutorial.id, "student")
       end
     end
  

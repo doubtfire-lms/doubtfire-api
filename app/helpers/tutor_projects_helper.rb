@@ -1,8 +1,8 @@
 module TutorProjectsHelper
   def unmarked_project_tasks(tutor_unit, tutor)
-    tutors_teams    = Team.where(:unit_id => tutor_unit.id, :user_id => tutor.id)
+    tutors_tutorials    = Tutorial.where(:unit_id => tutor_unit.id, :user_id => tutor.id)
     tutors_projects = Project.includes(:tasks).find(
-      UnitRole.where(:team_id => [tutors_teams.map{|team| team.id}])
+      UnitRole.where(:tutorial_id => [tutors_tutorials.map{|tutorial| tutorial.id}])
       .map{|membership| membership.project_id }
     )
 

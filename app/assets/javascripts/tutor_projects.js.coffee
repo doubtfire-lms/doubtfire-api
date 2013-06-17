@@ -1,7 +1,7 @@
 $ ->
-  $("#team-list-options button").click (e) ->
-    teamToToggle = $(this).attr("id").split("-")[1];
-    $("#team-#{teamToToggle}-students").toggle('fast')
+  $("#tutorial-list-options button").click (e) ->
+    tutorialToToggle = $(this).attr("id").split("-")[1];
+    $("#tutorial-#{tutorialToToggle}-students").toggle('fast')
     event.preventDefault()
 
   $(".task-indicator-button").click (e) ->

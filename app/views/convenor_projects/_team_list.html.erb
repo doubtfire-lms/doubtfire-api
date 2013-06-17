@@ -1,8 +1,0 @@
-<% teams.each do |team| %>
-<h3>
-	<%= link_to team.name, convenor_project_team_path(team.unit, team) %>
-	&mdash;
-	<%= team.user.name %>
-</h3>
-<p><strong><%= team.unit_roles.count %> users</strong> are assigned to this team.</p>
-<% end %>

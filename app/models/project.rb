@@ -3,7 +3,7 @@ class Project < ActiveRecord::Base
 
   attr_accessible :unit, :unit_role, :project_role, :started, :progress
 
-  belongs_to :team
+  belongs_to :tutorial
   belongs_to :unit
   belongs_to :unit_role, dependent: :destroy
 

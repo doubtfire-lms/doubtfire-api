@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20130614110143) do
+ActiveRecord::Schema.define(:version => 20130617115645) do
 
   create_table "logins", :force => true do |t|
     t.datetime "timestamp"
@@ -100,7 +100,7 @@ ActiveRecord::Schema.define(:version => 20130614110143) do
   add_index "tasks", ["task_definition_id"], :name => "index_tasks_on_task_definition_id"
   add_index "tasks", ["task_status_id"], :name => "index_tasks_on_task_status_id"
 
-  create_table "teams", :force => true do |t|
+  create_table "tutorials", :force => true do |t|
     t.integer  "unit_id"
     t.integer  "user_id"
     t.string   "meeting_day"
@@ -111,19 +111,19 @@ ActiveRecord::Schema.define(:version => 20130614110143) do
     t.string   "official_name"
   end
 
-  add_index "teams", ["unit_id"], :name => "index_teams_on_unit_id"
-  add_index "teams", ["user_id"], :name => "index_teams_on_user_id"
+  add_index "tutorials", ["unit_id"], :name => "index_tutorials_on_unit_id"
+  add_index "tutorials", ["user_id"], :name => "index_tutorials_on_user_id"
 
   create_table "unit_roles", :force => true do |t|
     t.integer  "user_id"
-    t.integer  "team_id"
+    t.integer  "tutorial_id"
     t.integer  "project_id"
-    t.datetime "created_at", :null => false
-    t.datetime "updated_at", :null => false
+    t.datetime "created_at",  :null => false
+    t.datetime "updated_at",  :null => false
   end
 
   add_index "unit_roles", ["project_id"], :name => "index_unit_roles_on_project_id"
-  add_index "unit_roles", ["team_id"], :name => "index_unit_roles_on_team_id"
+  add_index "unit_roles", ["tutorial_id"], :name => "index_unit_roles_on_tutorial_id"
   add_index "unit_roles", ["user_id"], :name => "index_unit_roles_on_user_id"
 
   create_table "units", :force => true do |t|

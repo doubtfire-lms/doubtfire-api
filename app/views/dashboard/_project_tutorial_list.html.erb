@@ -1,0 +1,7 @@
+<h3>Tutorials</h3>
+<p>The following tutorials are associated with this project.</p>
+<ul>
+<% project_tutorials.each do |tutorial| %>
+	<li><%= tutorial.meeting_day %> <%= tutorial.meeting_time %> (<%= tutorial.meeting_location %> &mdash; <%= link_to tutorial.user.name, user_path(tutorial.user) %>)</li>
+<% end %>
+</ul>

@@ -14,7 +14,7 @@ namespace :db do
 	    days = %w[Monday Tuesday Wednesday Thursday Friday]
 
 	    # Clear the database
-	    [Unit, Project, TaskDefinition, Task, TaskStatus, Team, UnitRole, User, ProjectConvenor].each(&:delete_all)
+	    [Unit, Project, TaskDefinition, Task, TaskStatus, Tutorial, UnitRole, User, ProjectConvenor].each(&:delete_all)
 
 	    TaskStatus.create(:name => "Not Submitted", :description => "This task has not been submitted to marked by your tutor.")
 	    TaskStatus.create(:name => "Needs Fixing", :description => "This task must be resubmitted after fixing some issues.")
@@ -71,13 +71,13 @@ namespace :db do
 		          task_definition.recommended_completion_date = assignment_num.weeks.from_now # Assignment 6 due week 6, etc.
 		        end
 
-		        # Create 2 teams per project
-		        Team.populate(2) do |team|
-		          team.unit_id = unit.id
-		          team.meeting_day = days.sample
-		          team.meeting_time = "#{8 + rand(12)}:#{['00', '30'].sample}"    # Mon-Fri 8am-7:30pm
-		          team.meeting_location = "#{['EN', 'BA'].sample}#{rand(7)}#{rand(1)}#{rand(9)}" # EN###/BA###
-		          team.user_id = 2
+		        # Create 2 tutorials per project
+		        Tutorial.populate(2) do |tutorial|
+		          tutorial.unit_id = unit.id
+		          tutorial.meeting_day = days.sample
+		          tutorial.meeting_time = "#{8 + rand(12)}:#{['00', '30'].sample}"    # Mon-Fri 8am-7:30pm
+		          tutorial.meeting_location = "#{['EN', 'BA'].sample}#{rand(7)}#{rand(1)}#{rand(9)}" # EN###/BA###
+		          tutorial.user_id = 2
 		        end
 		    end
       	end

@@ -11,10 +11,10 @@ class Unit < ActiveRecord::Base
   attr_accessor :convenors  
 
   # Model associations. 
-  # When a Unit is destroyed, any TaskDefinitions, Teams, and ProjectConvenor instances will also be destroyed.
+  # When a Unit is destroyed, any TaskDefinitions, Tutorials, and ProjectConvenor instances will also be destroyed.
   has_many :task_definitions, :dependent => :destroy	  			
   has_many :projects, :dependent => :destroy					 
-  has_many :teams, :dependent => :destroy
+  has_many :tutorials, :dependent => :destroy
   has_many :project_convenors, :dependent => :destroy
 
   scope :convened_by, lambda {|convenor_user|
@@ -46,11 +46,11 @@ class Unit < ActiveRecord::Base
   }
   
   # Adds a user to this project.
-  def add_user(user_id, team_id, project_role)
-    # Put the user in the appropriate team (ie. create a new unit_role)
+  def add_user(user_id, tutorial_id, project_role)
+    # Put the user in the appropriate tutorial (ie. create a new unit_role)
     unit_role = UnitRole.new(
       user_id: user_id,
-      team_id: team_id
+      tutorial_id: tutorial_id
     )
 
     project = unit_role.build_project(
@@ -60,7 +60,7 @@ class Unit < ActiveRecord::Base
     )
     project.save
 
-    # Associate the team membership with the project that was created
+    # Associate the tutorial membership with the project that was created
     unit_role.project_id = project.id
     unit_role.save
 
@@ -91,7 +91,7 @@ class Unit < ActiveRecord::Base
   # Format: Student ID,Course ID,First Name,Initials,Surname,Mark,Assessment,Status
   # Only Student ID, First Name, and Surname are used.
   def import_users_from_csv(file)
-    team_cache = {}
+    tutorial_cache = {}
 
     CSV.foreach(file) do |row|
       # Make sure we're not looking at the header or an empty line
@@ -119,30 +119,30 @@ class Unit < ActiveRecord::Base
         :projects => {:unit_id => id}
       ).count == 0
 
-      team = team_cache[class_id] || Team.where(:official_name => class_id, :unit_id => id).first
-      team_cache[class_id] ||= team
+      tutorial = tutorial_cache[class_id] || Tutorial.where(:official_name => class_id, :unit_id => id).first
+      tutorial_cache[class_id] ||= tutorial
       
       # Add the user to the project (if not already in there)
       if user_not_in_project
-        add_user(project_participant.id, team.id, "student")
+        add_user(project_participant.id, tutorial.id, "student")
       end
     end
   end
 
-  def import_teams_from_csv(file)
+  def import_tutorials_from_csv(file)
     CSV.foreach(file) do |row|
       next if row[0] =~ /Subject Code/ # Skip header
 
       class_type, class_id, day, time, location, tutor_username = row[2..-1]
       next if class_type !~ /Lab/
 
-      Team.find_or_create_by_unit_id_and_official_name(id, class_id) do |team|
-        team.meeting_day      = day
-        team.meeting_time     = time
-        team.meeting_location = location
+      Tutorial.find_or_create_by_unit_id_and_official_name(id, class_id) do |tutorial|
+        tutorial.meeting_day      = day
+        tutorial.meeting_time     = time
+        tutorial.meeting_location = location
         
         user_for_tutor = User.where(:username => tutor_username).first
-        team.user_id          = user_for_tutor.id
+        tutorial.user_id          = user_for_tutor.id
       end
     end
   end

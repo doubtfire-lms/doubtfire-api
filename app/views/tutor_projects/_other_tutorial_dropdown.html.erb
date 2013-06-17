@@ -1,0 +1,26 @@
+<div class="btn-group">
+	<a class="btn dropdown-toggle" id="display-other-tutorial-dropdown" data-toggle="dropdown" href="#">
+	    <%= "#{initial_other_tutorial.meeting_day}" %>
+		<%= "#{initial_other_tutorial.meeting_time}" %>
+		<%= "(#{initial_other_tutorial.user.name})" %>
+    	<span class="caret"></span>
+  	</a>
+  	<ul class="dropdown-menu">
+  		<% other_tutorials.each do |tutorial| %>
+	    <li>
+	    	<a href="<%= display_other_tutorial_path(unit, tutorial) %>"
+	    		id="display-tutorial-<%= tutorial.id %>-students"
+	    		class="other-tutorial-selection-item"
+	    		data-remote="true"
+	    		<% if initial_other_tutorial == tutorial %>
+	    		style="font-weight: bold;"
+	    		<% end %>
+	    	>
+	    		<%= "#{tutorial.meeting_day}" %>
+				<%= "#{tutorial.meeting_time}" %>
+				<%= "(#{tutorial.user.name})" %>
+	    	</a>
+		</li>
+		<% end %>
+  	</ul>
+</div>

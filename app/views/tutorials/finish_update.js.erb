@@ -1,0 +1,5 @@
+// Build the row id string from the tutorial id
+var tutorialRowId = "tutorial-" + "<%= @tutorial.id %>" +  "-row";
+
+// Replace the row with the partial in _table_row.html.erb.
+$("#" + tutorialRowId).replaceWith("<%=j render :partial => 'tutorials/table_row', :locals => { :tutorial => @tutorial } %>");
