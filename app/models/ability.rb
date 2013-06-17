@@ -9,13 +9,13 @@ class Ability
         end
 
         can :read, Project do |project|
-          project.team_membership.user == user || project.team_membership.team.user == user
+          project.unit_role.user == user || project.unit_role.team.user == user
         end
 
         can :read, Task do |task|
           # TODO: Update this once the idea of groups is
           # incorporated
-          task.project.team_membership.user == user
+          task.project.unit_role.user == user
         end
       end
 

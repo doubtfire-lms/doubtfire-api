@@ -4,7 +4,7 @@ class ProjectsController < ApplicationController
   before_filter :load_student_projects
 
   def index
-    @projects = Project.where(:team_membership => @user.team_memberships)
+    @projects = Project.where(:unit_role => @user.unit_roles)
   end
 
   def show

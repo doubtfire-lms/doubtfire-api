@@ -1,15 +1,15 @@
-<% if team.team_memberships.empty? %>
+<% if team.unit_roles.empty? %>
 <p>You do not have anyone in your team.</p>
 <%= image_tag "forever-alone.gif" %>
 <% else %>
 
-<% team.team_memberships.sort{|a,b| a.user.name <=> b.user.name }.each do |team_membership| %>
+<% team.unit_roles.sort{|a,b| a.user.name <=> b.user.name }.each do |unit_role| %>
 <div class="team-member-entry">
     <h4>
-        <%= link_to truncate(team_membership.user.name, :length => 24, :separator => ' '), tutor_project_student_path(team_membership.project, team_membership.user) %>
+        <%= link_to truncate(unit_role.user.name, :length => 24, :separator => ' '), tutor_project_student_path(unit_role.project, unit_role.user) %>
     </h4>
-    <p class="team-member-username">(<%= team_membership.user.username %>)</p>
-    <%= render 'dashboard/tasks_progress_bar', :project => team_membership.project, :student => team_membership.user, :mode => :progress %>
+    <p class="team-member-username">(<%= unit_role.user.username %>)</p>
+    <%= render 'dashboard/tasks_progress_bar', :project => unit_role.project, :student => unit_role.user, :mode => :progress %>
 </div>
 <% end %>
 <% end %>

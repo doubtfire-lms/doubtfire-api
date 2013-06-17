@@ -7,7 +7,7 @@ class Team < ActiveRecord::Base
   belongs_to :unit  # Foreign key
   belongs_to :user              # Foreign key
   has_one    :project  			# Foreign key
-  has_many   :team_memberships
+  has_many   :unit_roles
   
   def name
     # TODO: Will probably need to make this more flexible when

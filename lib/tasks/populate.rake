@@ -44,7 +44,7 @@ namespace :db do
     days = %w[Monday Tuesday Wednesday Thursday Friday]
 
     # Clear the database
-    [User, Unit, Team, Project, TaskDefinition, Task, TaskStatus, TeamMembership, User, ProjectConvenor, Login, TaskSubmission, TaskEngagement].each(&:delete_all)
+    [User, Unit, Team, Project, TaskDefinition, Task, TaskStatus, UnitRole, User, ProjectConvenor, Login, TaskSubmission, TaskEngagement].each(&:delete_all)
 
     TaskStatus.create(:name => "Not Submitted", :description => "This task has not been submitted to marked by your tutor.")
     TaskStatus.create(:name => "Complete", :description => "This task has been signed off by your tutor.")
@@ -168,8 +168,8 @@ namespace :db do
     complete_status = TaskStatus.where(:name=> "Complete").first
 
     User.where(:username => "ajones").each do |allan|
-      allan.team_memberships.each do |team_membership|
-        project = team_membership.project
+      allan.unit_roles.each do |unit_role|
+        project = unit_role.project
 
         project.tasks.each do |task|
           task.awaiting_signoff = false
@@ -182,8 +182,8 @@ namespace :db do
     end
 
     User.where(:username => "rliston").each do |rohan|
-      rohan.team_memberships.each do |team_membership|
-        project = team_membership.project
+      rohan.unit_roles.each do |unit_role|
+        project = unit_role.project
 
         project.tasks.each do |task|
           task.task_status = complete_status

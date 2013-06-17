@@ -47,13 +47,13 @@ class Unit < ActiveRecord::Base
   
   # Adds a user to this project.
   def add_user(user_id, team_id, project_role)
-    # Put the user in the appropriate team (ie. create a new team_membership)
-    team_membership = TeamMembership.new(
+    # Put the user in the appropriate team (ie. create a new unit_role)
+    unit_role = UnitRole.new(
       user_id: user_id,
       team_id: team_id
     )
 
-    project = team_membership.build_project(
+    project = unit_role.build_project(
       started: false,
       unit: self,
       project_role: project_role
@@ -61,8 +61,8 @@ class Unit < ActiveRecord::Base
     project.save
 
     # Associate the team membership with the project that was created
-    team_membership.project_id = project.id
-    team_membership.save
+    unit_role.project_id = project.id
+    unit_role.save
 
     # Create task instances for the project
     task_definitions_for_project = TaskDefinition.where(:unit_id => self.id)
@@ -80,10 +80,10 @@ class Unit < ActiveRecord::Base
 
   # Removes a user (and their tasks etc.) from this project
   def remove_user(user_id)
-    team_memberships = TeamMembership.joins(:project => :unit).where(:user_id => user_id, :projects => {:unit_id => self.id})
+    unit_roles = UnitRole.joins(:project => :unit).where(:user_id => user_id, :projects => {:unit_id => self.id})
 
-    team_memberships.each do |team_membership|
-      team_membership.destroy
+    unit_roles.each do |unit_role|
+      unit_role.destroy
     end
   end
 
@@ -114,7 +114,7 @@ class Unit < ActiveRecord::Base
 
       project_participant.save!(:validate => false) unless project_participant.persisted?
 
-      user_not_in_project = TeamMembership.joins(:project => :unit).where(
+      user_not_in_project = UnitRole.joins(:project => :unit).where(
         :user_id => project_participant.id,
         :projects => {:unit_id => id}
       ).count == 0

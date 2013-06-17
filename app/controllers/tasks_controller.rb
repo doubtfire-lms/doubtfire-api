@@ -3,7 +3,7 @@ class TasksController < ApplicationController
   before_filter :load_current_user
 
   def index
-    @projects = current_user.team_memberships.map{|tm| tm.project }
+    @projects = current_user.unit_roles.map{|tm| tm.project }
     @project  = Project.find(params[:project_id])
     @tasks    = @project.tasks
     authorize! :read, @project, :message => "You are not authorised to view tasks for Project ##{@project.id}"
@@ -42,7 +42,7 @@ class TasksController < ApplicationController
   def assess_task
     @task                   = Task.find(params[:id])
     @project                = @task.project
-    @student                = @project.team_membership.user
+    @student                = @project.unit_role.user
 
     task_status             = status_for_shortname(params[:status])
     

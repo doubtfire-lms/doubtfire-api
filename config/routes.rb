@@ -81,7 +81,7 @@ Doubtfire::Application.routes.draw do
     get 'projects/:project_id/students/:student_id'           => 'tutor_project_students#show',       as: 'tutor_project_student'
   end
 
-  put "team_memberships/:team_membership_id/change_team_allocation/:new_team_id" => "team_memberships#change_team_allocation", :as => 'change_team_allocation'
+  put "unit_roles/:unit_role_id/change_team_allocation/:new_team_id" => "unit_roles#change_team_allocation", :as => 'change_team_allocation'
 
   # Superuser context routes
   get '/administration' => 'superuser#index', :as => 'superuser_index'

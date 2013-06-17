@@ -18,8 +18,8 @@ class User < ActiveRecord::Base
   attr_accessible :first_name, :last_name, :system_role, :username, :encrypted_password, :nickname
 
   # Model associations
-  has_many :team_memberships, :dependent => :destroy
-  has_many :projects, through: :team_memberships
+  has_many :unit_roles, :dependent => :destroy
+  has_many :projects, through: :unit_roles
   has_many :project_convenors, dependent: :destroy   # Sounds weird - it means "may be a convenor for many projects"
   
   # Model validations/constraints

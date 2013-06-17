@@ -2,7 +2,7 @@ module TutorProjectsHelper
   def unmarked_project_tasks(tutor_unit, tutor)
     tutors_teams    = Team.where(:unit_id => tutor_unit.id, :user_id => tutor.id)
     tutors_projects = Project.includes(:tasks).find(
-      TeamMembership.where(:team_id => [tutors_teams.map{|team| team.id}])
+      UnitRole.where(:team_id => [tutors_teams.map{|team| team.id}])
       .map{|membership| membership.project_id }
     )
 
@@ -13,7 +13,7 @@ module TutorProjectsHelper
     user_tasks      = {}
 
     tasks.each do |task|
-      user_for_task = task.project.team_membership.user
+      user_for_task = task.project.unit_role.user
 
       user_tasks[user_for_task] ||= []
       user_tasks[user_for_task] << task

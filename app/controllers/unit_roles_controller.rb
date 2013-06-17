@@ -1,11 +1,11 @@
-class TeamMembershipsController < ApplicationController
+class UnitRolesController < ApplicationController
   def change_team_allocation
-    @team_membership = TeamMembership.find(params[:team_membership_id])
+    @unit_role = UnitRole.find(params[:unit_role_id])
     @new_team        = Team.find(params[:new_team_id])
 
-    @team_membership.team = @new_team
+    @unit_role.team = @new_team
 
-    if @team_membership.save
+    if @unit_role.save
       respond_to do |format|
         format.html { redirect_to @new_team, notice: "Successfully re-allocated into #{@new_team.name}." }
         format.js

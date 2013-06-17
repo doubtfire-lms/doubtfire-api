@@ -14,7 +14,7 @@ namespace :db do
 	    days = %w[Monday Tuesday Wednesday Thursday Friday]
 
 	    # Clear the database
-	    [Unit, Project, TaskDefinition, Task, TaskStatus, Team, TeamMembership, User, ProjectConvenor].each(&:delete_all)
+	    [Unit, Project, TaskDefinition, Task, TaskStatus, Team, UnitRole, User, ProjectConvenor].each(&:delete_all)
 
 	    TaskStatus.create(:name => "Not Submitted", :description => "This task has not been submitted to marked by your tutor.")
 	    TaskStatus.create(:name => "Needs Fixing", :description => "This task must be resubmitted after fixing some issues.")

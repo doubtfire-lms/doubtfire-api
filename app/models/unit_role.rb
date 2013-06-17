@@ -1,4 +1,4 @@
-class TeamMembership < ActiveRecord::Base
+class UnitRole < ActiveRecord::Base
 	
   # Model associations
   belongs_to :user		# Foreign key

@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20130613123739) do
+ActiveRecord::Schema.define(:version => 20130614110143) do
 
   create_table "logins", :force => true do |t|
     t.datetime "timestamp"
@@ -31,17 +31,17 @@ ActiveRecord::Schema.define(:version => 20130613123739) do
 
   create_table "projects", :force => true do |t|
     t.integer  "unit_id"
-    t.integer  "team_membership_id"
+    t.integer  "unit_role_id"
     t.string   "project_role"
-    t.datetime "created_at",         :null => false
-    t.datetime "updated_at",         :null => false
+    t.datetime "created_at",   :null => false
+    t.datetime "updated_at",   :null => false
     t.boolean  "started"
     t.string   "progress"
     t.string   "status"
   end
 
-  add_index "projects", ["team_membership_id"], :name => "index_projects_on_team_membership_id"
   add_index "projects", ["unit_id"], :name => "index_projects_on_unit_id"
+  add_index "projects", ["unit_role_id"], :name => "index_projects_on_unit_role_id"
 
   create_table "task_definitions", :force => true do |t|
     t.integer  "unit_id"
@@ -100,18 +100,6 @@ ActiveRecord::Schema.define(:version => 20130613123739) do
   add_index "tasks", ["task_definition_id"], :name => "index_tasks_on_task_definition_id"
   add_index "tasks", ["task_status_id"], :name => "index_tasks_on_task_status_id"
 
-  create_table "team_memberships", :force => true do |t|
-    t.integer  "user_id"
-    t.integer  "team_id"
-    t.integer  "project_id"
-    t.datetime "created_at", :null => false
-    t.datetime "updated_at", :null => false
-  end
-
-  add_index "team_memberships", ["project_id"], :name => "index_team_memberships_on_project_id"
-  add_index "team_memberships", ["team_id"], :name => "index_team_memberships_on_team_id"
-  add_index "team_memberships", ["user_id"], :name => "index_team_memberships_on_user_id"
-
   create_table "teams", :force => true do |t|
     t.integer  "unit_id"
     t.integer  "user_id"
@@ -125,6 +113,18 @@ ActiveRecord::Schema.define(:version => 20130613123739) do
 
   add_index "teams", ["unit_id"], :name => "index_teams_on_unit_id"
   add_index "teams", ["user_id"], :name => "index_teams_on_user_id"
+
+  create_table "unit_roles", :force => true do |t|
+    t.integer  "user_id"
+    t.integer  "team_id"
+    t.integer  "project_id"
+    t.datetime "created_at", :null => false
+    t.datetime "updated_at", :null => false
+  end
+
+  add_index "unit_roles", ["project_id"], :name => "index_unit_roles_on_project_id"
+  add_index "unit_roles", ["team_id"], :name => "index_unit_roles_on_team_id"
+  add_index "unit_roles", ["user_id"], :name => "index_unit_roles_on_user_id"
 
   create_table "units", :force => true do |t|
     t.string   "name"

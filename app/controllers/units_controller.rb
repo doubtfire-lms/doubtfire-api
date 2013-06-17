@@ -19,7 +19,7 @@ class UnitsController < ApplicationController
   def show
     @unit = Unit.find(params[:id])
     @project_tasks = TaskDefinition.where(:unit_id => params[:id]).order(:by => [:target_date, :id])
-    @project_users = User.joins(:team_memberships => :project).where(:projects => {:unit_id => params[:id]})
+    @project_users = User.joins(:unit_roles => :project).where(:projects => {:unit_id => params[:id]})
     @project_teams = Team.where(:unit_id => params[:id])
     
     authorize! :manage, @unit, :message => "You are not authorised to manage Unit ##{@unit.id}"

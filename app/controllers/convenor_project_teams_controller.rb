@@ -6,16 +6,16 @@ class ConvenorProjectTeamsController < ApplicationController
     @unit = Unit.includes(:task_definitions).find(params[:id])
     
     @projects = Project.includes({
-                  team_membership: [:user, :team],
+                  unit_role: [:user, :team],
                   tasks: [:task_definition]
                   }, :unit
                 )
                 .where(unit_id: params[:id])
 
-    @projects.sort!{|a,b| a.team_membership.user.name <=> b.team_membership.user.name }
+    @projects.sort!{|a,b| a.unit_role.user.name <=> b.unit_role.user.name }
 
     @project_teams = @projects.map {|project|
-      project.team_membership.team
+      project.unit_role.team
     }.uniq
   end
 
