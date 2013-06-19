@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20130617115645) do
+ActiveRecord::Schema.define(:version => 20130619003738) do
 
   create_table "logins", :force => true do |t|
     t.datetime "timestamp"
@@ -42,6 +42,24 @@ ActiveRecord::Schema.define(:version => 20130617115645) do
 
   add_index "projects", ["unit_id"], :name => "index_projects_on_unit_id"
   add_index "projects", ["unit_role_id"], :name => "index_projects_on_unit_role_id"
+
+  create_table "roles", :force => true do |t|
+    t.string   "name"
+    t.string   "description"
+    t.datetime "created_at",  :null => false
+    t.datetime "updated_at",  :null => false
+  end
+
+  create_table "sub_task_definitions", :force => true do |t|
+    t.string   "name"
+    t.text     "description"
+    t.integer  "badges_id"
+    t.integer  "task_definitions_id"
+    t.datetime "created_at",          :null => false
+    t.datetime "updated_at",          :null => false
+  end
+
+  add_index "sub_task_definitions", ["badges_id"], :name => "index_sub_task_definitions_on_badges_id"
 
   create_table "task_definitions", :force => true do |t|
     t.integer  "unit_id"
