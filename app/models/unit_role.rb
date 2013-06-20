@@ -1,12 +1,10 @@
 class UnitRole < ActiveRecord::Base
-  has_one    :project, dependent: :destroy  # Foreign key
-  
   # Model associations
+  belongs_to :unit    # Foreign key
   belongs_to :user		# Foreign key
   belongs_to :tutorial 		# Foreign key
+  has_one :role    # Foreign key
+  has_one :project
 
-  attr_accessible :project_id, :user_id, :tutorial_id
-
-  # Model validations/constraints
-  validates_uniqueness_of :user_id, scope: :tutorial_id		# A user can only be added to a project once
+  attr_accessible :unit_id, :user_id, :tutorial_id, :role_id
 end

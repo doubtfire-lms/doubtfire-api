@@ -130,30 +130,30 @@ ActiveRecord::Schema.define(:version => 20130619093449) do
 
   create_table "tutorials", :force => true do |t|
     t.integer  "unit_id"
-    t.integer  "user_id"
     t.string   "meeting_day"
     t.string   "meeting_time"
     t.string   "meeting_location"
     t.datetime "created_at",       :null => false
     t.datetime "updated_at",       :null => false
     t.string   "official_name"
+    t.integer  "unit_role_id"
   end
 
   add_index "tutorials", ["unit_id"], :name => "index_tutorials_on_unit_id"
-  add_index "tutorials", ["user_id"], :name => "index_tutorials_on_user_id"
+  add_index "tutorials", ["unit_role_id"], :name => "index_tutorials_on_unit_role_id"
 
   create_table "unit_roles", :force => true do |t|
     t.integer  "user_id"
     t.integer  "tutorial_id"
-    t.integer  "project_id"
     t.datetime "created_at",  :null => false
     t.datetime "updated_at",  :null => false
     t.integer  "role_id"
+    t.integer  "unit_id"
   end
 
-  add_index "unit_roles", ["project_id"], :name => "index_unit_roles_on_project_id"
   add_index "unit_roles", ["role_id"], :name => "index_unit_roles_on_role_id"
   add_index "unit_roles", ["tutorial_id"], :name => "index_unit_roles_on_tutorial_id"
+  add_index "unit_roles", ["unit_id"], :name => "index_unit_roles_on_unit_id"
   add_index "unit_roles", ["user_id"], :name => "index_unit_roles_on_user_id"
 
   create_table "units", :force => true do |t|
