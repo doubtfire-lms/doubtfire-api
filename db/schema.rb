@@ -11,7 +11,17 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20130619003738) do
+ActiveRecord::Schema.define(:version => 20130619093449) do
+
+  create_table "badges", :force => true do |t|
+    t.string   "name"
+    t.text     "description"
+    t.string   "large_image_url"
+    t.string   "small_image_url"
+    t.integer  "sub_task_definition_id"
+    t.datetime "created_at",             :null => false
+    t.datetime "updated_at",             :null => false
+  end
 
   create_table "logins", :force => true do |t|
     t.datetime "timestamp"
@@ -138,9 +148,11 @@ ActiveRecord::Schema.define(:version => 20130619003738) do
     t.integer  "project_id"
     t.datetime "created_at",  :null => false
     t.datetime "updated_at",  :null => false
+    t.integer  "role_id"
   end
 
   add_index "unit_roles", ["project_id"], :name => "index_unit_roles_on_project_id"
+  add_index "unit_roles", ["role_id"], :name => "index_unit_roles_on_role_id"
   add_index "unit_roles", ["tutorial_id"], :name => "index_unit_roles_on_tutorial_id"
   add_index "unit_roles", ["user_id"], :name => "index_unit_roles_on_user_id"
 

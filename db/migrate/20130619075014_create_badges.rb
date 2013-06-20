@@ -5,7 +5,7 @@ class CreateBadges < ActiveRecord::Migration
       t.text :description
       t.string :large_image_url
       t.string :small_image_url
-      t.sub_task_definition :references
+      t.references :sub_task_definition
 
       t.timestamps
     end
