@@ -2,19 +2,21 @@ class ConvenorProjectsController < ApplicationController
   helper_method :sort_column, :sort_direction
 
   def index
-    @convenor_projects = Unit.joins(:project_convenors)
-                                        .convened_by(current_user)
-                                        
-    @active_convenor_projects   = @convenor_projects.set_active
-    @inactive_convenor_projects = @convenor_projects.set_inactive
+    @convenor_units = UnitRole.includes(:unit)
+                      .where(user_id: current_user.id, role_id: Role.where(name: 'Convenor').first)
+                      .map{|unit_role| unit_role.unit }
+                                                                                
+    @active_convenor_units   = @convenor_units.select(&:active?)
+    @inactive_convenor_units = @convenor_units - @active_convenor_units
   end
 
 	def show
-    @convenor_projects = Unit.joins(:project_convenors)
-                                        .convened_by(current_user)
-                                        
-    @active_convenor_projects   = @convenor_projects.set_active
-    @inactive_convenor_projects = @convenor_projects.set_inactive
+    @convenor_units = UnitRole.includes(:unit)
+                      .where(user_id: current_user.id, role_id: Role.where(name: 'Convenor').first)
+                      .map{|unit_role| unit_role.unit }
+                                                                                
+    @active_convenor_units   = @convenor_units.select(&:active?)
+    @inactive_convenor_units = @convenor_units - @active_convenor_units
     
 		@unit = Unit.includes(:task_definitions).find(params[:id])
     authorize! :read, @unit, :message => "You are not authorised to view Unit ##{@unit.id}"

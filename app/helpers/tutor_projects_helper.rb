@@ -16,7 +16,7 @@ module TutorProjectsHelper
     user_tasks      = {}
 
     tasks.each do |task|
-      user_for_task = task.project.unit_role.user
+      user_for_task = task.project.student.user
 
       user_tasks[user_for_task] ||= []
       user_tasks[user_for_task] << task

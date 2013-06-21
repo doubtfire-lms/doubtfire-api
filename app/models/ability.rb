@@ -21,11 +21,15 @@ class Ability
 
       if user.convenor?
         can :manage, Unit do |unit|
-          unit.project_convenors.map{|convenor| convenor.user }.include? user
+          UnitRole.includes(:user)
+          .where(unit_id: unit.id, role_id: Role.where(name: 'Convenor'))
+          .map{|convenor| convenor.user }.include? user
         end
 
         can :manage, Project do |project|
-          project.unit.project_convenors.map{|convenor| convenor.user }.include? user
+          UnitRole.includes(:user)
+          .where(unit_id: project.unit.id, role_id: Role.where(name: 'Convenor'))
+          .map{|convenor| convenor.user }.include? user
         end
 
         can :manage, User

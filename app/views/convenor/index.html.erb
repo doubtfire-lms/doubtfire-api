@@ -8,17 +8,17 @@
     <ul class="nav nav-list">
         <li class="nav-header">Dashboard</li>
         <li class="active"><%= link_to 'Home', root_url %></li>
-        <% unless @active_convenor_projects.empty? and @inactive_convenor_projects.empty? %>
+        <% unless @convenor_units.empty? %>
 		    <%= render partial: 'dashboard/convenor_projects_links',
-		        locals: { active_projects: @active_convenor_projects, inactive_projects: @inactive_convenor_projects }
+		        locals: { active_projects: @active_convenor_units, inactive_projects: @inactive_convenor_units }
 		    %>
 		<% end %>
     </ul>
 <% end %>
 
 <div class="span9">
-	<% if @active_convenor_projects.size < 3 %>
-		<% @active_convenor_projects.each_with_index do |project, i| %>
+	<% if @active_convenor_units.size < 3 %>
+		<% @active_convenor_units.each_with_index do |project, i| %>
 		<div class="row-fluid">
 			<div class="span12 widget">
 				<h2><i class="icon-book"></i><%= project.name %></h2>
@@ -34,7 +34,7 @@
 		</div>
 		<% end %>
 	<% else %>
-		<% @active_convenor_projects.each_with_index do |project, i| %>
+		<% @active_convenor_units.each_with_index do |project, i| %>
 			<% if i % 2 == 0 %>
 			<div class="row-fluid">
 			<% end %>

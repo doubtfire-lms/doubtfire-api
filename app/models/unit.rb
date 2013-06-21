@@ -16,10 +16,6 @@ class Unit < ActiveRecord::Base
   has_many :projects, dependent: :destroy					 
   has_many :tutorials, dependent: :destroy
 
-  scope :convened_by, lambda {|convenor_user|
-    where(project_convenors: {user_id: convenor_user.id})
-  }
-
   scope :current, lambda {
     current_for_date(Time.zone.now)
   }

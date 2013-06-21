@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20130621064636) do
+ActiveRecord::Schema.define(:version => 20130621092707) do
 
   create_table "badges", :force => true do |t|
     t.string   "name"
@@ -128,7 +128,7 @@ ActiveRecord::Schema.define(:version => 20130621064636) do
     t.string   "meeting_location"
     t.datetime "created_at",       :null => false
     t.datetime "updated_at",       :null => false
-    t.string   "official_name"
+    t.string   "code"
     t.integer  "unit_role_id"
   end
 

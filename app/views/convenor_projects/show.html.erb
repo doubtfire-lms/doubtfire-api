@@ -9,11 +9,11 @@
     <ul class="nav nav-list">
         <li class="nav-header">Dashboard</li>
         <li><%= link_to 'Home', root_url %></li>
-        <% unless @active_convenor_projects.empty? %>
+        <% unless @active_convenor_units.empty? %>
             <%= render partial: 'dashboard/convenor_projects_links',
                 locals: {
-                    active_projects: @active_convenor_projects,
-                    inactive_projects: @inactive_convenor_projects,
+                    active_projects: @active_convenor_units,
+                    inactive_projects: @inactive_convenor_units,
                     selected_project: @unit
                 }
             %>
