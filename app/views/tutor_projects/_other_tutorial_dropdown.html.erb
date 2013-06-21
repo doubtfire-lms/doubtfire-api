@@ -2,7 +2,7 @@
 	<a class="btn dropdown-toggle" id="display-other-tutorial-dropdown" data-toggle="dropdown" href="#">
 	    <%= "#{initial_other_tutorial.meeting_day}" %>
 		<%= "#{initial_other_tutorial.meeting_time}" %>
-		<%= "(#{initial_other_tutorial.user.name})" %>
+		<%= "(#{initial_other_tutorial.tutor.name})" %>
     	<span class="caret"></span>
   	</a>
   	<ul class="dropdown-menu">
@@ -18,7 +18,7 @@
 	    	>
 	    		<%= "#{tutorial.meeting_day}" %>
 				<%= "#{tutorial.meeting_time}" %>
-				<%= "(#{tutorial.user.name})" %>
+				<%= "(#{tutorial.tutor.name})" %>
 	    	</a>
 		</li>
 		<% end %>

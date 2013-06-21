@@ -1,9 +1,12 @@
 module TutorProjectsHelper
   def unmarked_project_tasks(tutor_unit, tutor)
-    tutors_tutorials    = Tutorial.where(:unit_id => tutor_unit.id, :user_id => tutor.id)
-    tutors_projects = Project.includes(:tasks).find(
-      UnitRole.where(:tutorial_id => [tutors_tutorials.map{|tutorial| tutorial.id}])
-      .map{|membership| membership.project_id }
+    tutor_unit_role = UnitRole.where(unit_id: tutor_unit.id, user_id: tutor.id).first
+    tutors_tutorials    = Tutorial.where(unit_role_id: tutor_unit_role.id)
+
+    tutors_students = UnitRole.where(tutorial_id: [tutors_tutorials.map{|tutorial| tutorial.id}])
+
+    tutors_projects = Project.includes(:tasks).where(
+      unit_role_id: tutors_students.map{|student| student.id }
     )
 
     tutors_projects.map{|project| project.tasks }.flatten.select{|task| task.awaiting_signoff? }

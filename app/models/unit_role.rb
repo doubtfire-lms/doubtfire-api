@@ -7,4 +7,7 @@ class UnitRole < ActiveRecord::Base
   has_one :project
 
   attr_accessible :unit_id, :user_id, :tutorial_id, :role_id
+
+  scope :students, -> { where('unit_role_id = ?', 1) }
+
 end

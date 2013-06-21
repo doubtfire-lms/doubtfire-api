@@ -3,14 +3,16 @@ class TutorProjectStudentsController < ApplicationController
   before_filter :load_current_user
 
   def show
-    @student_projects = @user.projects.select{|project| project.active? }
-    @tutor_projects   = Tutorial.where(:user_id => @user.id).map{|tutorial| tutorial.unit }.uniq
-
     @student_project  = Project.includes(:unit).find(params[:project_id])
+    @unit             = @student_project.unit
     @student          = @student_project.user
-    @unit = @student_project.unit
 
-    authorize! :read, @student_project, :message => "You are not authorised to view Project ##{@student_project.id}"
+    @student_projects = @user.projects.select{|project| project.active? }
+    @tutor_projects   = UnitRole.includes(:unit)
+                        .where(user_id: @user.id, role_id: 2).map{|tutorial| tutorial.unit }
+                        .select{|unit| unit.active }.uniq
+
+    authorize! :read, @student_project, message: "You are not authorised to view Project ##{@student_project.id}"
   end
 
   def index

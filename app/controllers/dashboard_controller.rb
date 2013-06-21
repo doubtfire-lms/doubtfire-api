@@ -9,10 +9,10 @@ class DashboardController < ApplicationController
     elsif @user.convenor?
       redirect_to convenor_index_path and return
     end
-    
+
     @student_projects = @user.projects.select{|project| project.active? }
-    @tutor_projects   = Tutorial.includes(:unit)
-                            .where(user_id: @user.id).map{|tutorial| tutorial.unit }
+    @tutor_projects   = UnitRole.includes(:unit)
+                            .where(user_id: @user.id, role_id: 2).map{|tutorial| tutorial.unit }
                             .select{|unit| unit.active }.uniq
 
     # If user has no projects, redirect

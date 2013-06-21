@@ -5,13 +5,16 @@ class TutorProjectsController < ApplicationController
   before_filter :load_current_user
 
   def show
-    @student_projects         = @user.projects.select{|project| project.active? }
-    @tutor_projects           = Tutorial.where(:user_id => @user.id).map{|tutorial| tutorial.unit }.uniq
+    @unit                         = Unit.find(params[:id])
 
-    @tutor_tutorials              = Tutorial.includes(:unit_roles => [{:project => [{:tasks => [:task_definition]}]}]).where(:user_id => @user.id, :unit_id => params[:id])
+    @student_projects             = @user.projects.select{|project| project.active? }
+    @tutor_projects               = UnitRole.includes(:unit)
+                                    .where(user_id: @user.id, role_id: 2).map{|tutorial| tutorial.unit }
+                                    .select{|unit| unit.active }.uniq
+
+    @tutor_unit_role              = UnitRole.where(user_id: @user.id, unit_id: params[:id]).first
+    @tutor_tutorials              = Tutorial.includes(unit_roles: [{project: [{tasks: [:task_definition]}]}]).where(unit_role_id: @tutor_unit_role.id)
     @tutor_tutorial_projects      = @tutor_tutorials.map{|tutorial| tutorial.unit_roles }.flatten.map{|unit_role| unit_role.project }
-
-    @unit         = Unit.find(params[:id])
 
     authorize! :read, @unit, :message => "You are not authorised to view Unit ##{@unit.id}"
 
@@ -22,7 +25,7 @@ class TutorProjectsController < ApplicationController
     }
 
     @other_tutorials        = Tutorial.includes(:unit_roles => [{:project => [{:tasks => [:task_definition]}]}])
-                              .where("user_id != ? AND unit_id = ?", @user.id, @unit.id)
+                              .where("unit_id = ? AND unit_role_id != ?", @unit.id, @tutor_unit_role.id)
                               .order(:official_name)
 
     @initial_other_tutorial = @other_tutorials.first

@@ -30,7 +30,7 @@
 					<%= link_to [
 						"#{project.unit_role.tutorial.meeting_day}",
 						"#{project.unit_role.tutorial.meeting_time}",
-						"(#{project.unit_role.tutorial.user.name})"
+						"(#{project.unit_role.tutorial.unit_role.user.name})"
 					].join(" "), convenor_project_tutorial_path(project.unit, project.unit_role.tutorial) %>
 				</td>
 			</tr>

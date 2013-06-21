@@ -5,10 +5,11 @@ class Tutorial < ActiveRecord::Base
   
   # Model associations
   belongs_to :unit  # Foreign key
-  belongs_to :user              # Foreign key
+  belongs_to :unit_role              # Foreign key
+  has_one    :tutor, through: :unit_role, source: :user
   has_one    :project  			# Foreign key
   has_many   :unit_roles
-  
+
   def name
     # TODO: Will probably need to make this more flexible when
     # a tutorial is representing something other than a tutorial

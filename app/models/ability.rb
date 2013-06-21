@@ -5,11 +5,11 @@ class Ability
     if user
       if user.regular_user?
         can :read, Unit do |unit|
-          unit.tutorials.map{|tutorial| tutorial.user }.include? user
+          unit.tutorials.map{|tutorial| tutorial.unit_role.user }.include? user
         end
 
         can :read, Project do |project|
-          project.unit_role.user == user || project.unit_role.tutorial.user == user
+          project.unit_role.user == user || project.unit_role.tutorial.tutor == user
         end
 
         can :read, Task do |task|
