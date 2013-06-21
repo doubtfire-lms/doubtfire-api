@@ -1,5 +1,5 @@
  <tr id="tutorial-<%= tutorial.id %>-row">
-  <td><%= tutorial.tutor.name %></td>
+  <td><%= link_to(tutorial.tutor.name, tutorial.tutor) %></td>
   <td><%= tutorial.meeting_day %></td>
   <td><%= tutorial.meeting_time %></td>
   <td><%= tutorial.meeting_location %></td>

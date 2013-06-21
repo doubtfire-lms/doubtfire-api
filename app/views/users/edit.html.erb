@@ -2,8 +2,8 @@
 
 <%- model_class = @user.class -%>
 <div class="span7 widget">
-	<h2><i class="icon-cogs"></i>Your Profile</h2>
+	<h2><i class="icon-cogs"></i><%= current_user == @user ? "Your Profile" : @user.name %></h2>
 	<div class="widget-content">
-		<%= render :partial => 'form' %>
+		<%= render partial: 'form' %>
 	</div>
 </div>
