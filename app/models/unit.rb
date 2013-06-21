@@ -4,7 +4,7 @@ require 'bcrypt'
 class Unit < ActiveRecord::Base
   include ApplicationHelper
 
-  attr_accessible :official_name, :description, :end_date, :name, :start_date, :active
+  attr_accessible :code, :description, :end_date, :name, :start_date, :active
   validates_presence_of :name, :description, :start_date, :end_date
 
   # Accessor to allow setting of convenors via the new/edit form
@@ -12,10 +12,10 @@ class Unit < ActiveRecord::Base
 
   # Model associations. 
   # When a Unit is destroyed, any TaskDefinitions, Tutorials, and ProjectConvenor instances will also be destroyed.
-  has_many :task_definitions, :dependent => :destroy	  			
-  has_many :projects, :dependent => :destroy					 
-  has_many :tutorials, :dependent => :destroy
-  has_many :project_convenors, :dependent => :destroy
+  has_many :task_definitions, dependent: :destroy	  			
+  has_many :projects, dependent: :destroy					 
+  has_many :tutorials, dependent: :destroy
+  has_many :project_convenors, dependent: :destroy
 
   scope :convened_by, lambda {|convenor_user|
     where(project_convenors: {user_id: convenor_user.id})
@@ -65,7 +65,7 @@ class Unit < ActiveRecord::Base
     unit_role.save
 
     # Create task instances for the project
-    task_definitions_for_project = TaskDefinition.where(:unit_id => self.id)
+    task_definitions_for_project = TaskDefinition.where(unit_id: self.id)
 
     task_definitions_for_project.each do |task_definition|
       Task.create(
@@ -80,7 +80,7 @@ class Unit < ActiveRecord::Base
 
   # Removes a user (and their tasks etc.) from this project
   def remove_user(user_id)
-    unit_roles = UnitRole.joins(:project => :unit).where(:user_id => user_id, :projects => {:unit_id => self.id})
+    unit_roles = UnitRole.joins(project: :unit).where(user_id: user_id, projects: {unit_id: self.id})
 
     unit_roles.each do |unit_role|
       unit_role.destroy
@@ -102,7 +102,7 @@ class Unit < ActiveRecord::Base
       first_name, last_name   = [row[2], row[3]].map{|name| name.titleize }
       email, class_id         = row[4..5]
 
-      project_participant = User.find_or_create_by_username(:username => username) {|new_user|
+      project_participant = User.find_or_create_by_username(username: username) {|new_user|
         new_user.username           = username
         new_user.first_name         = first_name
         new_user.last_name          = last_name
@@ -112,14 +112,14 @@ class Unit < ActiveRecord::Base
         new_user.system_role        = "user"
       }
 
-      project_participant.save!(:validate => false) unless project_participant.persisted?
+      project_participant.save!(validate: false) unless project_participant.persisted?
 
-      user_not_in_project = UnitRole.joins(:project => :unit).where(
-        :user_id => project_participant.id,
-        :projects => {:unit_id => id}
+      user_not_in_project = UnitRole.joins(project: :unit).where(
+        user_id: project_participant.id,
+        projects: {unit_id: id}
       ).count == 0
 
-      tutorial = tutorial_cache[class_id] || Tutorial.where(:official_name => class_id, :unit_id => id).first
+      tutorial = tutorial_cache[class_id] || Tutorial.where(code: class_id, unit_id: id).first
       tutorial_cache[class_id] ||= tutorial
       
       # Add the user to the project (if not already in there)
@@ -136,12 +136,12 @@ class Unit < ActiveRecord::Base
       class_type, class_id, day, time, location, tutor_username = row[2..-1]
       next if class_type !~ /Lab/
 
-      Tutorial.find_or_create_by_unit_id_and_official_name(id, class_id) do |tutorial|
+      Tutorial.find_or_create_by_unit_id_and_code(id, class_id) do |tutorial|
         tutorial.meeting_day      = day
         tutorial.meeting_time     = time
         tutorial.meeting_location = location
         
-        user_for_tutor = User.where(:username => tutor_username).first
+        user_for_tutor = User.where(username: tutor_username).first
         tutorial.user_id          = user_for_tutor.id
       end
     end
@@ -185,7 +185,7 @@ class Unit < ActiveRecord::Base
 
       task_definition.save! unless task_definition.persisted?
 
-      project_cache ||= Project.where(:unit_id => id)
+      project_cache ||= Project.where(unit_id: id)
 
       project_cache.each do |project|
         Task.create(
@@ -204,17 +204,17 @@ class Unit < ActiveRecord::Base
   end
 
   def status_distribution
-    projects = Project.where(:unit_id => id)
+    projects = Project.where(unit_id: id)
     project_count = projects.length
     
     status_totals = {
-      :ahead => 0,
-      :on_track => 0,
-      :behind => 0,
-      :danger => 0,
-      :doomed => 0,
-      :not_started => 0,
-      :total => 0
+      ahead: 0,
+      on_track: 0,
+      behind: 0,
+      danger: 0,
+      doomed: 0,
+      not_started: 0,
+      total: 0
     }
 
     projects.each do |project|

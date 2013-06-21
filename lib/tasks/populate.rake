@@ -112,7 +112,7 @@ namespace :db do
     # Create 4 projects (subjects)
     subjects.each do |subject_code, subject_name|
       Unit.populate(1) do |unit|
-        unit.official_name  = subject_code
+        unit.code  = subject_code
         unit.name           = subject_name
         unit.description    = Populator.words(10..15)
         unit.start_date     = Date.current

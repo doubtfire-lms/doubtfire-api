@@ -26,7 +26,7 @@ class TutorProjectsController < ApplicationController
 
     @other_tutorials        = Tutorial.includes(:unit_roles => [{:project => [{:tasks => [:task_definition]}]}])
                               .where("unit_id = ? AND unit_role_id != ?", @unit.id, @tutor_unit_role.id)
-                              .order(:official_name)
+                              .order(:code)
 
     @initial_other_tutorial = @other_tutorials.first
   end

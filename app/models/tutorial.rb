@@ -1,5 +1,5 @@
 class Tutorial < ActiveRecord::Base
-  attr_accessible :unit_id, :user_id, :official_name, :meeting_day, :meeting_location, :meeting_time
+  attr_accessible :unit_id, :user_id, :code, :meeting_day, :meeting_location, :meeting_time
 
   validates_presence_of :user_id
   
