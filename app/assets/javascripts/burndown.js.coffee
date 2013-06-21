@@ -106,7 +106,7 @@ projectedCompletionData = (project) ->
   endDate     = moment(project.unit.end_date)
   currentDate = if moment() > endDate then endDate else moment()
   currentWeek = currentDate.diff(startDate, 'weeks')
-  cutOffDate  = if moment() > endDate then endDate else moment()
+  cutOffDate  = if moment() <= endDate then endDate else moment()
   endWeek     = cutOffDate.diff startDate, 'weeks'
 
   totalWeight     = project.total_task_weight
