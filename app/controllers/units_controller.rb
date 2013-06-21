@@ -55,8 +55,8 @@ class UnitsController < ApplicationController
   # GET /units/new.json
   def new
     @unit = Unit.new
-    @all_convenors = User.where(:system_role => "convenor")
-    @project_convenors = User.where(:id => current_user.id);
+    @convenor_options = UserRole.includes(:user).where(role_id: Role.where(name: 'Convenor').first)
+                        .map{|user_role| user_role.user }
 
     # Create a new unit, populate it with sample data, and save it immediately.
     @unit.name = "New Project"
@@ -68,15 +68,17 @@ class UnitsController < ApplicationController
     respond_to do |format|
       format.html # new.html.erb
       format.json { render json: @unit }
-      format.js { render action: "edit" }
+      format.js { render action: 'edit' }
     end
   end
 
   # GET /units/1/edit
   def edit
     @unit = Unit.find(params[:id])
-    @all_convenors = User.where(:system_role => "convenor")
-    @project_convenors = User.joins(:project_convenors).where(:system_role => "convenor", :project_convenors => {:unit_id => @unit.id})
+    convenor_role = Role.where(name: 'Convenor').first
+    @convenor_options = UserRole.includes(:user).where(role_id: convenor_role.id)
+                        .map{|user_role| user_role.user }
+    @convenors        = UnitRole.where(unit_id: @unit.id, role_id: convenor_role.id)
 
     respond_to do |format|
       format.html # new.html.erb
@@ -107,12 +109,21 @@ class UnitsController < ApplicationController
   
     respond_to do |format|
       if @unit.update_attributes(params[:unit])
+        convenor_role = Role.where(name: 'Convenor').first
+
         # Replace the current list of convenors for this project with the new list selected by the user
         unless params[:convenors].nil?
-          ProjectConvenor.where(:unit_id => @unit.id).delete_all
+          unit_convenors = UnitRole.where(unit_id: @unit.id, role_id: convenor_role.id)
+          removed_convenor_ids = unit_convenors.map(&:user_id) - params[:convenors]
+          removed_convenors = unit_convenors.select{|convenor| removed_convenor_ids.include? convenor.user_id }.map(&:id)
+
+          # Delete any convenors that have been removed
+          UnitRole.where(id: removed_convenors).destroy_all
+
+          # Find or create convenors
           params[:convenors].each do |convenor_id|
-            @project_convenor = ProjectConvenor.find_or_create_by_unit_id_and_user_id(:unit_id => @unit.id, :user_id => convenor_id)
-            @project_convenor.save!
+            @convenor_role = UnitRole.find_or_create_by_unit_id_and_user_id_and_role_id(unit_id: @unit.id, user_id: convenor_id, role_id: convenor_role.id)
+            @convenor_role.save!
           end
         end
 

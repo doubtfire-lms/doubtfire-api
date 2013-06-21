@@ -35,10 +35,15 @@
       Units
     </h2>
     <div class="widget-content">
-      <%= render :partial => 'units/table', :locals => { :units => @units,
-                                                                     :empty_table_string => "You do not have any current projects." } %>
+      <%= render partial: 'units/table',
+          locals:
+          { 
+            units: @units,
+            empty_table_string: "You do not have any current projects."
+          }
+      %>
       <hr />
-      <%= link_to "New project", new_unit_path, :class => 'btn btn-primary', "data-remote" => true %>
+      <%= link_to "New project", new_unit_path, class: 'btn btn-primary', "data-remote" => true %>
     </div>
   </div>
 </div>

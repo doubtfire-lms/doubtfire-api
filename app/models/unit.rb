@@ -15,7 +15,6 @@ class Unit < ActiveRecord::Base
   has_many :task_definitions, dependent: :destroy	  			
   has_many :projects, dependent: :destroy					 
   has_many :tutorials, dependent: :destroy
-  has_many :project_convenors, dependent: :destroy
 
   scope :convened_by, lambda {|convenor_user|
     where(project_convenors: {user_id: convenor_user.id})

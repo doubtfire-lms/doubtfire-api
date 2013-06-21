@@ -4,8 +4,7 @@ module UnitsHelper
 	def get_convenors_string(unit_id)
 
 		# Get all users who are convenors for the specified project
-		convenors = User.joins(:project_convenors => :unit)
-		    			.where(:project_convenors => {:unit_id => unit_id})
+		convenors = UnitRole.includes(:user).where(unit_id: unit_id, role_id: Role.where(name: 'Convenor').first).map{|convenor| convenor.user }
 		
 		# Concatenate their names into a string
 		convenors_string = ""

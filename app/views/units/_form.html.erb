@@ -2,7 +2,7 @@
 	<%= f.input :name, :as => :text %>
 	<%= f.input :description, :as => :text %>
       
-	<%= select_tag :convenors, options_from_collection_for_select(@all_convenors, :id, :name, @project_convenors.collect { |u| u.id} ), :multiple => true %>
+	<%= select_tag :convenors, options_from_collection_for_select(convenor_options, :id, :name, [convenors.map{|convenor| convenor.id}] ), :multiple => true %>
     <%= f.input :start_date, :as => :string, :input_html => {:class => "datepicker", "data-behaviour" => "datepicker", :value => "#{@unit.start_date.strftime('%Y-%m-%d')}"} %>
 	<%= f.input :end_date, :as => :string, :input_html => {:class => "datepicker", "data-behaviour" => "datepicker", :value => "#{@unit.end_date.strftime('%Y-%m-%d')}"} %>
 	<%= @unit.created_at.strftime("%d %b %Y at %I:%M%p") %>

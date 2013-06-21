@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20130621062310) do
+ActiveRecord::Schema.define(:version => 20130621064636) do
 
   create_table "badges", :force => true do |t|
     t.string   "name"
@@ -31,13 +31,6 @@ ActiveRecord::Schema.define(:version => 20130621062310) do
   end
 
   add_index "logins", ["user_id"], :name => "index_logins_on_user_id"
-
-  create_table "project_convenors", :force => true do |t|
-    t.integer  "unit_id"
-    t.integer  "user_id"
-    t.datetime "created_at", :null => false
-    t.datetime "updated_at", :null => false
-  end
 
   create_table "projects", :force => true do |t|
     t.integer  "unit_id"
@@ -135,7 +128,7 @@ ActiveRecord::Schema.define(:version => 20130621062310) do
     t.string   "meeting_location"
     t.datetime "created_at",       :null => false
     t.datetime "updated_at",       :null => false
-    t.string   "code"
+    t.string   "official_name"
     t.integer  "unit_role_id"
   end
 
@@ -166,6 +159,16 @@ ActiveRecord::Schema.define(:version => 20130621062310) do
     t.string   "code"
     t.boolean  "active",      :default => true
   end
+
+  create_table "user_roles", :force => true do |t|
+    t.integer  "user_id"
+    t.integer  "role_id"
+    t.datetime "created_at", :null => false
+    t.datetime "updated_at", :null => false
+  end
+
+  add_index "user_roles", ["role_id"], :name => "index_user_roles_on_role_id"
+  add_index "user_roles", ["user_id"], :name => "index_user_roles_on_user_id"
 
   create_table "users", :force => true do |t|
     t.string   "email",                  :default => "", :null => false

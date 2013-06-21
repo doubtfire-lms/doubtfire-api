@@ -3,7 +3,7 @@
   		<td><%= f.input :name, :as => :text, :label => false %></td>
   		<td><%= f.input :description, :as => :text, :label => false %></td>
       <td>
-        <%= select_tag :convenors, options_from_collection_for_select(@all_convenors, :id, :name, @project_convenors.collect { |u| u.id} ), :multiple => true %>
+        <%= select_tag :convenors, options_from_collection_for_select(convenor_options, :id, :name, [] ), :multiple => true %>
       </td>
   		<td><%= f.input :start_date, as: :string, label: false, input_html: {class: "datepicker", "data-behaviour" => "datepicker", value: "#{unit.start_date.strftime('%Y-%m-%d')}"} %></td>
   		<td><%= f.input :end_date, as: :string, label: false, input_html: {class: "datepicker", "data-behaviour" => "datepicker", value: "#{unit.end_date.strftime('%Y-%m-%d')}"} %></td>
