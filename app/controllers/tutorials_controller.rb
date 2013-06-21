@@ -28,23 +28,39 @@ class TutorialsController < ApplicationController
     
     # Create a new task definition, populate it with sample data, and save it immediately.
     @tutorial.unit_id = params[:unit_id]
-    @tutorial.user_id = current_user.id
+    @tutorial.unit_role_id = -1
     @tutorial.meeting_day = "Enter a regular meeting day."
     @tutorial.meeting_time = "Enter a regular meeting time."
     @tutorial.meeting_location = "Enter a location."
     @tutorial.save
 
+    tutor_capable_roles = Role.where("name = 'Tutor' OR name = 'Convenor'").map{|role| role.id }
+    @tutor_options = UserRole.includes(:user)
+                    .where(role_id: [tutor_capable_roles]).map{|user_role| user_role.user }
+                    .uniq
+                    .sort{|a,b| a.first_name <=> b.first_name }
+
+    @current_tutor = nil
+
     respond_to do |format|
       format.html # new.html.erb
       format.json { render json: @tutorial }
-      format.js { render action: "edit" }
+      format.js { render action: 'edit' }
     end
   end
 
   # GET /tutorials/1/edit
   def edit
     @tutorial = Tutorial.find(params[:id])
-    
+    # TODO: Add tutors commonly associated with a given subject
+    tutor_capable_roles = Role.where("name = 'Tutor' OR name = 'Convenor'").map{|role| role.id }
+    @tutor_options = UserRole.includes(:user)
+                    .where(role_id: [tutor_capable_roles]).map{|user_role| user_role.user }
+                    .uniq
+                    .sort{|a,b| a.first_name <=> b.first_name }
+
+    @current_tutor = @tutorial.tutor.nil? ? nil : @tutorial.tutor.id
+
     respond_to do |format|
       format.html
       format.js
@@ -74,6 +90,18 @@ class TutorialsController < ApplicationController
 
     respond_to do |format|
       if @tutorial.update_attributes(params[:tutorial])
+
+        unless params[:tutor].nil?
+          tutor_unit_role = UnitRole.find_or_create_by_unit_id_and_user_id_and_role_id(
+            unit_id: @tutorial.unit_id,
+            user_id: params[:tutor],
+            role_id: Role.where(name: 'Tutor').first.id
+          )
+          tutor_unit_role.save!
+          @tutorial.unit_role_id = tutor_unit_role.id
+          @tutorial.save!
+        end
+
         format.html { redirect_to unit_path(@tutorial.unit_id), notice: "Tutorial was successfully updated."}
         format.json { head :no_content }
         format.js { render action: "finish_update" }

@@ -1,8 +1,6 @@
 class Tutorial < ActiveRecord::Base
   attr_accessible :unit_id, :user_id, :code, :meeting_day, :meeting_location, :meeting_time
 
-  validates_presence_of :user_id
-  
   # Model associations
   belongs_to :unit  # Foreign key
   belongs_to :unit_role              # Foreign key

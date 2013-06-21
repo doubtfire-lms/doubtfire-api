@@ -1,5 +1,5 @@
  <tr id="tutorial-<%= tutorial.id %>-row">
-  <td><%= link_to(tutorial.tutor.name, tutorial.tutor) %></td>
+  <td><%= link_to(tutorial.tutor.name, tutorial.tutor) if !tutorial.tutor.nil? %></td>
   <td><%= tutorial.meeting_day %></td>
   <td><%= tutorial.meeting_time %></td>
   <td><%= tutorial.meeting_location %></td>

@@ -1,11 +1,13 @@
 <tr id="tutorial-<%= tutorial.id %>-row" class="editable" name="<%= tutorial.id %>">
-  <%= simple_form_for tutorial, :url => unit_update_tutorial_path(tutorial.unit_id, tutorial), :remote => true do |f| %>
-    <td><%= f.input :user_id, :as => :select, :collection => User.where("system_role != 'superuser'"), :label_method => :name, :value_method => :id, :label => false %></td>
-    <td><%= f.input :meeting_day, :label => false %></td>
-    <td><%= f.input :meeting_time, :label => false %></td>
-    <td><%= f.input :meeting_location, :label => false %></td>
+  <%= simple_form_for tutorial, url: unit_update_tutorial_path(tutorial.unit_id, tutorial), remote: true do |f| %>
     <td>
-      <%= f.button :submit, "Save", :class => "btn btn-mini btn-success" %>
+      <%= select_tag :tutor, options_from_collection_for_select(tutor_options, :id, :name, nil), multiple: false %>
+    </td>
+    <td><%= f.input :meeting_day, label: false %></td>
+    <td><%= f.input :meeting_time, label: false %></td>
+    <td><%= f.input :meeting_location, label: false %></td>
+    <td>
+      <%= f.button :submit, "Save", class: "btn btn-mini btn-success" %>
       <a href="<%= unit_cancel_update_tutorial_path(tutorial.unit_id, tutorial.id) %>" data-remote="true" data-method="get" class="btn btn-mini btn-danger">Cancel</a>
     </td>
   <% end %>
