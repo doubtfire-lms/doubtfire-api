@@ -1,13 +1,13 @@
 class Project < ActiveRecord::Base
   include ApplicationHelper
 
-  attr_accessible :unit, :unit_role, :project_role, :started, :progress
+  attr_accessible :unit, :project_role, :started, :progress
 
   belongs_to :tutorial
   belongs_to :unit
-  belongs_to :unit_role, dependent: :destroy
+  belongs_to :student, class_name: 'UnitRole', foreign_key: 'unit_role_id', dependent: :destroy
 
-  has_one :user, through: :unit_role
+  has_one :user, through: :student
   has_many :tasks, dependent: :destroy   # Destroying a project will also nuke all of its tasks
 
   before_create :calculate_temporal_attributes

@@ -2,7 +2,7 @@
 
 <% tutorials.each do |tutorial| %>
 <div class="tutorial-entry" id="tutorial-<%= tutorial.id %>-students">
-    <h3><%= tutorial.meeting_day %> <%= tutorial.meeting_time %> (<%= tutorial.user.name %>)</h3>
+    <h3><%= tutorial.meeting_day %> <%= tutorial.meeting_time %> (<%= tutorial.tutor.name %>)</h3>
     <%= render :partial => "convenor_projects/tutorial_project_list", :locals => { :tutorial => tutorial } %>
 </div>
 <% end %>

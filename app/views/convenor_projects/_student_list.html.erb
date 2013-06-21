@@ -12,8 +12,8 @@
 	<tbody>
 		<% @projects.each do |project| %>
 			<tr>
-				<td><%= link_to project.unit_role.user.username, project_path(project) %></td>
-				<td><%= project.unit_role.user.name %></td>
+				<td><%= link_to project.student.user.username, project_path(project) %></td>
+				<td><%= project.student.user.name %></td>
 				<td>
 					<% if project.in_progress? and !project.completed? %> 
 					<%= progress_badge(project.progress) %>
@@ -28,10 +28,10 @@
 				</td>
 				<td>
 					<%= link_to [
-						"#{project.unit_role.tutorial.meeting_day}",
-						"#{project.unit_role.tutorial.meeting_time}",
-						"(#{project.unit_role.tutorial.unit_role.user.name})"
-					].join(" "), convenor_project_tutorial_path(project.unit, project.unit_role.tutorial) %>
+						"#{project.student.tutorial.meeting_day}",
+						"#{project.student.tutorial.meeting_time}",
+						"(#{project.student.tutorial.tutor.name})"
+					].join(" "), convenor_project_tutorial_path(project.unit, project.student.tutorial) %>
 				</td>
 			</tr>
 		<% end %>

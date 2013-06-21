@@ -3,14 +3,14 @@
 <h3>Your Tutorial</h3>
 <p>The tutorial you're allocated to is:</p>
 
-<%= render :partial => "unit_roles/tutorial_allocation_details", :locals => { :unit_role => unit_role } %>
+<%= render partial: "unit_roles/tutorial_allocation_details", locals: { student: student } %>
 
 <h3>Change Tutorial</h3>
 <p>To change your tutorial allocation, select from one of the following options:</p>
 
 <div class="btn-group">
 	<button class="btn status-display-button tutorial-allocation-button">
-		<%= unit_role.tutorial.name %>
+		<%= student.tutorial.name %>
 	</button>
 	<button class="btn dropdown-toggle" data-toggle="dropdown">
 		<span class="caret"></span>
@@ -18,7 +18,7 @@
 	<ul class="dropdown-menu">
 	<% project.unit.tutorials.each do |available_tutorial| %>
 		<li>
-			<a href="<%= change_tutorial_allocation_path(unit_role, available_tutorial)%>" data-method="put" class="change-tutorial-allocation-button" data-remote="true" data-method="put">
+			<a href="<%= change_tutorial_allocation_path(student, available_tutorial)%>" data-method="put" class="change-tutorial-allocation-button" data-remote="true" data-method="put">
 				<%= available_tutorial.name %>
 			</a>
 		</li>
