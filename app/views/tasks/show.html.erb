@@ -26,8 +26,10 @@
 	</ul>
 
 	<div class="tab-content">
-		<div class="span5 widget">
-			<h2><i class="icon-file"></i><%= @task.task_definition.name %></h2>
+		<div class="widget span5">
+			<div class="widget-header">
+				<h2><i class="icon-file"></i><%= @task.task_definition.name %></h2>
+			</div>
 			<div class="widget-content">
 				<h3>Status</h3>
 				<p>
@@ -57,8 +59,10 @@
 			</div>
 		</div>
 
-		<div class="span4 widget">
-			<h2><i class="icon-tasks"></i>Tasks</h2>
+		<div class="widget span4">
+			<div class="widget-header">
+				<h2><i class="icon-tasks"></i>Tasks</h2>
+			</div>
 			<div class="widget-content">
 			<% if @project.tasks.empty? %>
 				<p>There are currently no tasks for this project. Please check again at a later stage.</p>

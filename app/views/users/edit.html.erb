@@ -1,8 +1,10 @@
 <% title "Edit Profile - #{@user.name} (#{@user.username})" %>
 
 <%- model_class = @user.class -%>
-<div class="span7 widget">
-	<h2><i class="icon-cogs"></i><%= current_user == @user ? "Your Profile" : @user.name %></h2>
+<div class="widget span7">
+    <div class="widget-header">
+	   <h2><i class="icon-cogs"></i><%= current_user == @user ? "Your Profile" : @user.name %></h2>
+    </div>
 	<div class="widget-content">
 		<%= render partial: 'form', locals: {
 			user: @user,

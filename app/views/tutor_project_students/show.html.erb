@@ -45,8 +45,10 @@
 		</ul>
 		<div class="tab-content">
 			<%= tab_div_tag("tasks-tab", true) do %>
-				<div class="span10 widget">
-					<h2><i class="icon-tasks"></i><%= @student.name %></h2>
+				<div class="widget span10">
+					<div class="widget-header">
+						<h2><i class="icon-tasks"></i><%= @student.name %></h2>
+					</div>
 					<div class="widget-content">
 					<%= render partial: 'shared/assessment/backlog/backlog', locals: { actionable_tasks: @student_project.assigned_tasks } %>
 					</div>
@@ -54,8 +56,10 @@
 			<% end %>
 
 			<%= tab_div_tag("progress-tab") do %>
-				<div class="span10 widget project-overview">
-					<h2><i class="icon-book"></i><%= @student_project.unit.name %></h2>
+				<div class="widget project-overview span10">
+					<div class="widget-header">
+						<h2><i class="icon-book"></i><%= @student_project.unit.name %></h2>
+					</div>
 					<div class="widget-content">
 						<%= content_tag "div", class: "burndownchart", data: {url: project_url(@student_project)} do %>
 							<svg style="height: 300px"></svg>

@@ -20,8 +20,10 @@
     <% if @inactive_convenor_units.size < 3 %>
         <% @inactive_convenor_units.each_with_index do |project, i| %>
         <div class="row-fluid">
-            <div class="span12 widget">
-                <h2><i class="icon-book"></i><%= project.name %></h2>
+            <div class="widget span12">
+                <div class="widget-header">
+                    <h2><i class="icon-book"></i><%= project.name %></h2>
+                </div>
                 <div class="widget-content">
                     <%= render partial: 'convenor_projects/convenor_project',
                         locals: {
@@ -38,8 +40,10 @@
             <% if i % 2 == 0 %>
             <div class="row-fluid">
             <% end %>
-                <div class="span6 widget">
-                    <h2><i class="icon-book"></i><%= project.name %></h2>
+                <div class="widget span6">
+                    <div class="widget-header">
+                        <h2><i class="icon-book"></i><%= project.name %></h2>
+                    </div>
                     <div class="widget-content">
                         <%= render partial: 'convenor_projects/convenor_project',
                             locals: {

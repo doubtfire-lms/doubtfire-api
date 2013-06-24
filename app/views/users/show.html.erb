@@ -9,8 +9,9 @@
 
 <div class="span9 widget">
   <%- model_class = @user.class -%>
-
-  <h2><i class="icon-user"></i><%= @user.name %></h2>
+  <div class="widget-header">
+    <h2><i class="icon-user"></i><%= @user.name %></h2>
+  </div>
   <div class="widget-content">
 
   <% if can? :assign_roles, @user %>

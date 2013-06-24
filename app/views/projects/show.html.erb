@@ -46,31 +46,35 @@
 
 	<div class="tab-content">
 		<%= tab_div_tag("summary-tab", true) do %>
-			<div class="span7 widget">
-				<h2>
-					<i class="icon-bar-chart"></i>Progress
-					<% if @project.user != current_user %>
-					(<%= @project.user.name %> &mdash; <%= @project.user.username %>)
-					<% end %>
-				</h2>
+			<div class="widget span7">
+				<div class="widget-header"></div>
+					<h2>
+						<i class="icon-bar-chart"></i>Progress
+						<% if @project.user != current_user %>
+						(<%= @project.user.name %> &mdash; <%= @project.user.username %>)
+						<% end %>
+					</h2>
+				</div>
 				<div class="widget-content" id="progress-widget">
 					<%= render partial: 'dashboard/project_progress', locals: { project: @project } %>
 				</div>
 			</div>
 
-			<div class="span5 widget" id="task-highlights-widget">
+			<div class="widget span5" id="task-highlights-widget">
 				<%= render partial: 'dashboard/task_highlights', locals: { project: @project } %>
 			</div>
 		<% end %>
 
 		<%= tab_div_tag("tasks-tab") do %>
-			<div class="span9 widget">
-				<h2>
-					<i class="icon-tasks"></i>Tasks
-					<% if @project.user != current_user %>
-					(<%= @project.user.name %> &mdash; <%= @project.user.username %>)
-					<% end %>
-				</h2>
+			<div class="widget span9">
+				<div class="widget-header">
+					<h2>
+						<i class="icon-tasks"></i>Tasks
+						<% if @project.user != current_user %>
+						(<%= @project.user.name %> &mdash; <%= @project.user.username %>)
+						<% end %>
+					</h2>
+				</div>
 				<div class="widget-content">
 					<%= 
 						render partial: 'dashboard/task_list',
@@ -81,13 +85,15 @@
 		<% end %>
 
 		<%= tab_div_tag("tutorial-tab") do %>
-			<div class="span7 widget">
-				<h2>
-					<i class="icon-group"></i>Your Tutorial Allocation
-					<% if @project.user != current_user %>
-					(<%= @project.user.name %> &mdash; <%= @project.user.username %>)
-					<% end %>
-				</h2>
+			<div class="widget span7">
+				<div class="widget-header"></div>
+					<h2>
+						<i class="icon-group"></i>Your Tutorial Allocation
+						<% if @project.user != current_user %>
+						(<%= @project.user.name %> &mdash; <%= @project.user.username %>)
+						<% end %>
+					</h2>
+				</div>
 				<div class="widget-content">
 					<%= 
 						render partial: 'dashboard/tutorial_allocation',
@@ -98,8 +104,10 @@
 					%>
 				</div>
 			</div>
-			<div class="span5 widget">
-				<h2><i class="icon-group"></i>Available Tutorials</h2>
+			<div class="widget span5">
+				<div class="widget-header">
+					<h2><i class="icon-group"></i>Available Tutorials</h2>
+				</div>
 				<div class="widget-content">
 					<%= render partial: 'dashboard/project_tutorial_list',
 						locals: { project_tutorials: @project.unit.tutorials }

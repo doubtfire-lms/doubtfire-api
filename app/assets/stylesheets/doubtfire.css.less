@@ -10,17 +10,18 @@ body
 	font: 11px/1.7em 'Open Sans', Helvetica;	
 }
 
-.widget {
+.widget
+{
 	border: 1px solid #CCCCCC;
 	background-color: white;
 	.border-radius(@widgetCornerRadius);
 	margin-bottom: 20px;
 }
 
-.widget h2
+.widget .widget-header
 {
-	font-size: 12pt;
-	font-weight: 800;
+	height: 100%;
+	overflow: hidden;
 	padding: 5px 20px 5px 20px;
 	border-bottom: 1px solid #CCCCCC;
 	color: #555555;
@@ -28,29 +29,41 @@ body
 	.border-radius(@widgetCornerRadius @widgetCornerRadius 0 0);
 }
 
-.widget h2 i
+.widget .widget-header > h2
+{
+	float: left;
+	font-size: 12pt;
+	font-weight: 800;
+}
+
+.widget .widget-header > h2 > i
 {
 	margin-right: 10px;	
 }
 
-.widget-content
+.widget .widget-content
 {
 	padding: 20px;
 	margin-top: -10px;
 	color: #888888;
 }
 
-.widget-content .supplementary-text
+.widget .widget-controls
+{
+	margin-top: 5px;
+}
+
+.widget .widget-content .supplementary-text
 {
 	color: #AAAAAA;
 }
 
-.widget-content p
+.widget .widget-content p
 {
 	font-size: 1.2em;
 }
 
-.widget-content li
+.widget .widget-content li
 {
 	font-size: 1.2em;
 }

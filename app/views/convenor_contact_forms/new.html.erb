@@ -1,10 +1,10 @@
 <%= stylesheets 'convenor_contact_form.css' %>
 
-<div class="span12 widget">
+<div class="widget span12">
 	<div class="widget-content">
-	<h1>Welcome to Doubtfire</h1>
-	<h3>You have not been added to any projects yet.</h3>
-	<% unless @active_projects.blank? %>
+		<h1>Welcome to Doubtfire</h1>
+		<h3>You have not been added to any projects yet.</h3>
+		<% unless @active_projects.blank? %>
 		<p>If this is incorrect, use the form below to contact a convenor.</p>
 		<div id="contact-form" class="row-fluid">
 			<%= simple_form_for @convenor_contact_form, :html => {:class => "span6 well"} do |f| %>
@@ -14,7 +14,7 @@
 				<%= f.submit "Please add me!", :class => "btn btn-primary" %>
 			<% end %>
 		</div>
-	<% end %>	
+		<% end %>	
 	</div>
 </div>
 

@@ -3,40 +3,41 @@
 
 <% content_for :sidebar do %>
     <% if current_user.admin? %>
-        <%= render :partial => 'layouts/superuser_menu' %>
+        <%= render partial: 'layouts/superuser_menu' %>
     <% else %>
-        <%= render :partial => 'layouts/admin_menu' %>
+        <%= render partial: 'layouts/admin_menu' %>
     <% end %>
 <% end %>
 
 <div class="span9">
-
-  <ul class="breadcrumb">
-    <li>
-        <%= link_to "Home", root_url %>
-        <span class="divider">/</span>
-    </li>
-    <li>
-        <%= link_to "Units", units_url %>
-        <span class="divider">/</span>
-    </li>
-    <li>
-        <%= link_to @unit.name, unit_url(@unit) %>
-        <span class="divider">/</span>
-    </li>
-    <li>
-        <%= link_to @task_definition.name, task_definition_url(@task_definition) %>
-        <span class="divider">/</span>
-    </li>
-    <li class="active">
-        Modify
-    </li>
-  </ul>
+    <ul class="breadcrumb">
+        <li>
+            <%= link_to "Home", root_url %>
+            <span class="divider">/</span>
+        </li>
+        <li>
+            <%= link_to "Units", units_url %>
+            <span class="divider">/</span>
+        </li>
+        <li>
+            <%= link_to @unit.name, unit_url(@unit) %>
+            <span class="divider">/</span>
+        </li>
+        <li>
+            <%= link_to @task_definition.name, task_definition_url(@task_definition) %>
+            <span class="divider">/</span>
+        </li>
+        <li class="active">
+            Modify
+        </li>
+    </ul>
 
     <div class="widget">
-        <h2><i class="icon-book"></i><%= @task_definition.name %></h2>
+        <div class="widget-header">
+            <h2><i class="icon-book"></i><%= @task_definition.name %></h2>
+        </div>
         <div class="widget-content">
-            <%= render :partial => 'form' %>
+            <%= render partial: 'form' %>
         </div>
     </div>
 </div>

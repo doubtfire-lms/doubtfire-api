@@ -37,12 +37,14 @@
 	</ul>
 
 	<div class="row-fluid">
-		<div class="span12 widget">
-			<h2><i class="icon-group"></i>
-			 	<%= @tutorial.meeting_day %>
-			 	<%= @tutorial.meeting_time %>
-			 	(<%= @tutorial.tutor.name %>)
-			</h2>
+		<div class="widget span12">
+            <div class="widget-header">
+    			<h2><i class="icon-group"></i>
+    			 	<%= @tutorial.meeting_day %>
+    			 	<%= @tutorial.meeting_time %>
+    			 	(<%= @tutorial.tutor.name %>)
+    			</h2>
+            </div>
 			<div class="widget-content" style="padding-top: 30px;">
 				<%= render :partial => "tutor_projects/tutorial_project_list", :locals => { :tutorial => @tutorial } %>
 			</div>

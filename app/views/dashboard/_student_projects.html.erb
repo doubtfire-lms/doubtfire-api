@@ -1,8 +1,10 @@
 <% if student_projects.size < 3 %>
 	<% student_projects.each_with_index do |project, i| %>
 		<div class="row-fluid">
-			<div class="span12 widget project-overview">
-				<h2><i class="icon-book"></i><%= project.unit.name %></h2>
+			<div class="widget project-overview span12">
+				<div class="widget-header">
+					<h2><i class="icon-book"></i><%= project.unit.name %></h2>
+				</div>
 				<div class="widget-content">
 					<%=
 						render partial: 'student_project',
@@ -17,8 +19,10 @@
 		<% if i % 2 == 0 %>
 		<div class="row-fluid">
 		<% end %>
-			<div class="span6 widget project-overview">
-				<h2><i class="icon-book"></i><%= project.unit.name %></h2>
+			<div class="widget project-overview span6">
+				<div class="widget-header">
+					<h2><i class="icon-book"></i><%= project.unit.name %></h2>
+				</div>
 				<div class="widget-content">
 					<%=
 						render partial: 'student_project',

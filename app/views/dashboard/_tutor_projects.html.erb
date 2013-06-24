@@ -4,8 +4,10 @@
 	
 	<% tutor_projects.each_with_index do |tutor_unit, i| %>
 		<div class="row-fluid">
-			<div class="span12 widget">
-				<h2><i class="icon-book"></i><%= tutor_unit.name %></h2>
+			<div class="widget span12">
+				<div class="widget-header">
+					<h2><i class="icon-book"></i><%= tutor_unit.name %></h2>
+				</div>
 				<div class="widget-content">
 					<%=
 						render partial: 'tutor_project',
@@ -21,8 +23,10 @@
 		<% if i % 2 == 0 %>
 		<div class="row-fluid">
 		<% end %>
-			<div class="span6 widget">
-				<h2><i class="icon-book"></i><%= tutor_unit.name %></h2>
+			<div class="widget span6">
+				<div class="widget-header">
+					<h2><i class="icon-book"></i><%= tutor_unit.name %></h2>
+				</div>
 				<div class="widget-content">
 					<%=
 						render partial: 'tutor_project',

@@ -13,10 +13,10 @@ module DashboardHelper
   def progress_badge(progress)
     case progress
       when :ahead         then content_tag(:span, "Going Well",       class: "status-badge label label-success")
-      when :on_track      then content_tag(:span, "Progressing",      class: "status-badge label label-info")
+      when :on_track      then content_tag(:span, "On Track",         class: "status-badge label label-info")
       when :behind        then content_tag(:span, "Need to Catch Up", class: "status-badge label label-warning")
-      when :danger        then content_tag(:span, "Seek Help",        class: "status-badge label label-important")
-      when :doomed        then content_tag(:span, "Talk to Convenor", class: "status-badge label label-inverse")
+      when :danger        then content_tag(:span, "Falling Behind",   class: "status-badge label label-important")
+      when :doomed        then content_tag(:span, "Seek Help",        class: "status-badge label label-inverse")
       else content_tag(:span, "Unknown Progress", class: "status-badge label")
     end
   end
