@@ -52,7 +52,7 @@
                         <div class="widget-content" id="projects">
                             <%= render partial: "student_list", locals: { projects: @projects } %>
                             <hr />
-                            <%= link_to "Export Tasks", convenor_project_export_tasks_path(@unit, format: 'csv'), class: 'btn' %>
+                            <%= link_to "Export Task Completion", convenor_project_export_tasks_path(@unit, format: 'csv'), class: 'btn' %>
                         </div>
                     </div>
                 <% end %>
