@@ -10,7 +10,7 @@
 		</tr>
 	</thead>
 	<tbody>
-		<% @projects.each do |project| %>
+		<% projects.each do |project| %>
 			<tr>
 				<td><%= link_to project.student.user.username, project_path(project) %></td>
 				<td><%= project.student.user.name %></td>

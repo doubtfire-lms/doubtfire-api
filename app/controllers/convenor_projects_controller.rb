@@ -43,6 +43,18 @@ class ConvenorProjectsController < ApplicationController
     }.uniq
 	end
 
+  def export_tasks
+    @unit = Unit.includes({projects: [{tasks: :task_definition}, :user]}, :tutorials).find(params[:id])
+
+    respond_to do |format|
+      format.html
+      format.csv {
+        send_data @unit.task_completion_csv,
+        filename: "#{@unit.name.parameterize}-task-completion.csv"
+      }
+    end
+  end
+
   private
 
   def gather_included_progress_types

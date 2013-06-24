@@ -244,4 +244,12 @@ class Project < ActiveRecord::Base
   def last_task_completed
     completed_tasks.sort{|a, b| a.completion_date <=> b.completion_date }.last
   end
+
+  def task_completion_csv(options={})
+    [
+      user.username,
+      user.name,
+      student.tutorial.tutor.name
+    ] + tasks.map{|task| task.task_status.name }
+  end
 end

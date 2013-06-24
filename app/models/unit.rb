@@ -199,6 +199,19 @@ class Unit < ActiveRecord::Base
     TaskDefinition.to_csv(task_definitions)
   end
 
+  def task_completion_csv(options={})
+    CSV.generate(options) do |csv|
+      csv << [
+        'Student ID',
+        'Student Name',
+        'Tutor Name',
+      ] + task_definitions.map{|task_definition| task_definition.name }
+      projects.each do |project|
+        csv << project.task_completion_csv
+      end
+    end
+  end
+
   def status_distribution
     projects = Project.where(unit_id: id)
     project_count = projects.length

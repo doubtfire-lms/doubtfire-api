@@ -65,9 +65,10 @@ Doubtfire::Application.routes.draw do
   resources :convenor, :only => :index
 
   scope '/convenor' do
-    get 'projects'                                      => "convenor_projects#index",       as: 'convenor_projects'
-    get 'projects/:id'                                  => "convenor_projects#show",        as: 'convenor_project'
-    get 'projects/:id/tutorials'                            => "convenor_project_tutorials#index",  as: 'convenor_project_tutorials'
+    get 'projects'                                  => "convenor_projects#index",       as: 'convenor_projects'
+    get 'projects/:id'                              => "convenor_projects#show",        as: 'convenor_project'
+    get 'projects/:id/export_tasks'                       => 'convenor_projects#export_tasks',      as: 'convenor_project_export_tasks'
+    get 'projects/:id/tutorials'                    => "convenor_project_tutorials#index",  as: 'convenor_project_tutorials'
     get 'projects/:unit_id/tutorials/:tutorial_id'  => "convenor_project_tutorials#show",   as: 'convenor_project_tutorial'
   end
 
