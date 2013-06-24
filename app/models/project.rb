@@ -43,19 +43,19 @@ class Project < ActiveRecord::Base
   end
 
   def progress
-    read_attribute(:progress).to_sym
+    self[:progress].to_sym
   end
 
   def progress=(value)
-    write_attribute(:progress, value.to_s)
+    self[:progress] = value.to_s
   end
 
   def status
-    read_attribute(:status).to_sym
+    self[:status].to_sym
   end
 
   def status=(value)
-    write_attribute(:status, value.to_s)
+    self[:status] = value.to_s
   end
 
   def calculate_temporal_attributes
