@@ -26,7 +26,6 @@ gem 'bootstrap-datepicker-rails'
 
 group :development do
   gem 'hirb'
-  gem 'sqlite3'
 end
 
 group :demo do
@@ -37,6 +36,7 @@ group :development, :demo do
   gem 'thin'
 end
 
+# Use mysql2 for everything
 gem 'mysql2'
 
 # Gems used only for assets and not required
