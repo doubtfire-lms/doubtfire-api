@@ -1,5 +1,5 @@
 <% javascript 'task_status_breakdown.js' %>
-<% javascript 'convenor_projects.js' %>
+<% javascript 'convenor_units.js' %>
 
 <% stylesheets 'convenor.css' %>
 
@@ -9,13 +9,9 @@
     <ul class="nav nav-list">
         <li class="nav-header">Dashboard</li>
         <li><%= link_to 'Home', root_url %></li>
-        <% unless @active_convenor_units.empty? %>
-            <%= render partial: 'dashboard/convenor_projects_links',
-                locals: {
-                    active_projects: @active_convenor_units,
-                    inactive_projects: @inactive_convenor_units,
-                    selected_project: @unit
-                }
+        <% unless @convenor_units.empty? %>
+            <%= render partial: 'dashboard/convenor_units_links',
+                locals: { active_units: @active_convenor_units, inactive_units: @inactive_convenor_units, selected_unit: @unit }
             %>
         <% end %>
     </ul>
@@ -51,7 +47,7 @@
                         <div class="widget-header">
                             <h2><i class="icon-user"></i>Students</h2>
                             <div class="widget-controls pull-right">
-                                <%= link_to convenor_project_export_tasks_path(@unit, format: 'csv'), class: 'btn' do %>
+                                <%= link_to convenor_unit_export_tasks_path(@unit, format: 'csv'), class: 'btn' do %>
                                 <i class="icon-download-alt"> Task Completion</i>
                                 <% end %>
                             </div>
@@ -59,7 +55,7 @@
                         <div class="widget-content" id="projects">
                             <%= render partial: "student_list", locals: { projects: @projects } %>
                             <hr />
-                            <%= link_to convenor_project_export_tasks_path(@unit, format: 'csv'), class: 'btn' do %>
+                            <%= link_to convenor_unit_export_tasks_path(@unit, format: 'csv'), class: 'btn' do %>
                                 <i class="icon-download-alt"> Task Completion</i>
                             <% end %>
                         </div>
@@ -73,7 +69,7 @@
                         </div>
                         <div class="widget-content">
                             <h3>
-                                <%= link_to "Show All Tutorials", convenor_project_tutorials_path(@unit) %>
+                                <%= link_to "Show All Tutorials", convenor_unit_tutorials_path(@unit) %>
                             </h3>
                             <hr />
                             <%= render partial: "tutorial_list", locals: { tutorials: @project_tutorials} %>

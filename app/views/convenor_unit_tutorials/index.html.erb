@@ -17,7 +17,7 @@
             <span class="divider">/</span>
         </li>
         <li>
-            <%= link_to @unit.name, convenor_project_path(@unit) %>
+            <%= link_to @unit.name, convenor_unit_path(@unit) %>
             <span class="divider">/</span>
         </li>
         <li class="active">
@@ -31,7 +31,7 @@
                 <h2><i class="icon-group"></i>Tutorials</h2>
             </div>
             <div class="widget-content" style="padding-top: 30px;">
-                <%= render partial:  "convenor_projects/student_progress", locals: {tutorials: @project_tutorials, mode: :progress} %>
+                <%= render partial:  "convenor_units/student_progress", locals: {tutorials: @project_tutorials, mode: :progress} %>
             </div>
         </div>
     </div>

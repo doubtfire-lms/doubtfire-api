@@ -65,11 +65,11 @@ Doubtfire::Application.routes.draw do
   resources :convenor, only:  :index
 
   scope '/convenor' do
-    get 'projects'                                  => "convenor_projects#index",       as: 'convenor_projects'
-    get 'projects/:id'                              => "convenor_projects#show",        as: 'convenor_project'
-    get 'projects/:id/export_tasks'                       => 'convenor_projects#export_tasks',      as: 'convenor_project_export_tasks'
-    get 'projects/:id/tutorials'                    => "convenor_project_tutorials#index",  as: 'convenor_project_tutorials'
-    get 'projects/:unit_id/tutorials/:tutorial_id'  => "convenor_project_tutorials#show",   as: 'convenor_project_tutorial'
+    get 'unit'                                  => "convenor_units#index",            as: 'convenor_units'
+    get 'unit/:id'                              => "convenor_units#show",             as: 'convenor_unit'
+    get 'unit/:id/export_tasks'                 => 'convenor_units#export_tasks',     as: 'convenor_unit_export_tasks'
+    get 'unit/:id/tutorials'                    => "convenor_unit_tutorials#index",   as: 'convenor_unit_tutorials'
+    get 'unit/:unit_id/tutorials/:tutorial_id'  => "convenor_unit_tutorials#show",    as: 'convenor_unit_tutorial'
   end
 
   resources :convenor_contact_forms, path_names:  { new:  'welcome' }

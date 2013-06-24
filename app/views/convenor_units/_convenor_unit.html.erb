@@ -1,11 +1,11 @@
 <% if status_distribution[:total] > 0 %>
 <div class="row-fluid">
 	<%= 
-		render partial: 'convenor_projects/status_distribution_chart',
+		render partial: 'convenor_units/status_distribution_chart',
 		locals: { unit: project }
 	%>
 	<%=
-		render partial: 'convenor_projects/progress_bands',
+		render partial: 'convenor_units/progress_bands',
 		locals: { status_distribution: status_distribution }
 	%>
 </div>	
@@ -15,7 +15,7 @@
 <% end %>
 
 <div class="row-fluid">
-	<%= link_to "Go to Project", convenor_project_path(project), class:  "btn" %>
+	<%= link_to "Go to Project", convenor_unit_path(project), class:  "btn" %>
 	<div class="project-admin-controls pull-right" style="font-size: 24px;">
 	<%= content_tag "a", href: unit_url(project), class:  "link-icon" do %>
 		<i class="icon-cog"></i>

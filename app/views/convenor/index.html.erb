@@ -9,8 +9,8 @@
         <li class="nav-header">Dashboard</li>
         <li class="active"><%= link_to 'Home', root_url %></li>
         <% unless @convenor_units.empty? %>
-		    <%= render partial: 'dashboard/convenor_projects_links',
-		        locals: { active_projects: @active_convenor_units, inactive_projects: @inactive_convenor_units }
+		    <%= render partial: 'dashboard/convenor_units_links',
+		        locals: { active_units: @active_convenor_units, inactive_units: @inactive_convenor_units }
 		    %>
 		<% end %>
     </ul>
@@ -25,7 +25,7 @@
 					<h2><i class="icon-book"></i><%= project.name %></h2>
 				</div>
 				<div class="widget-content">
-					<%= render partial: 'convenor_projects/convenor_project',
+					<%= render partial: 'convenor_units/convenor_unit',
 						locals: {
 							project: project,
 							status_distribution: project.status_distribution
@@ -43,7 +43,7 @@
 				<div class="span6 widget">
 					<h2><i class="icon-book"></i><%= project.name %></h2>
 					<div class="widget-content">
-						<%= render partial: 'convenor_projects/convenor_project',
+						<%= render partial: 'convenor_units/convenor_unit',
 							locals: {
 								project: project,
 								status_distribution: project.status_distribution

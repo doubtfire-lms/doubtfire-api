@@ -1,4 +1,4 @@
-class ConvenorProjectsController < ApplicationController
+class ConvenorUnitsController < ApplicationController
   helper_method :sort_column, :sort_direction
 
   def index
