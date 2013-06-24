@@ -15,6 +15,7 @@ class Unit < ActiveRecord::Base
   has_many :task_definitions, dependent: :destroy	  			
   has_many :projects, dependent: :destroy					 
   has_many :tutorials, dependent: :destroy
+  has_many :unit_roles, dependent: :destroy
 
   scope :current, lambda {
     current_for_date(Time.zone.now)
