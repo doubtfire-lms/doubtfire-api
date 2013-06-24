@@ -21,7 +21,7 @@
     <ul class="nav">
         <% if user_signed_in? %>
             <li><%= link_to 'Home', root_path %></li>
-            <% if not current_user.superuser? # Don't show "Edit account" for superuser %>
+            <% if not current_user.admin? # Don't show "Edit account" for superuser %>
             <li><%= link_to 'Settings', edit_profile_path %></li>
             <% end %>
             <li><%= link_to 'Sign out', destroy_user_session_path, :method=>'delete' %></li>

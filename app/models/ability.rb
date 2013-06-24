@@ -36,7 +36,7 @@ class Ability
       end
 
       # Superuser
-      if user.superuser?
+      if user.admin?
         can :assign_roles, User
   		  can :manage, :all
       end

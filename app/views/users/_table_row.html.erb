@@ -7,7 +7,7 @@
   <td><%= user.sign_in_count %></td>
   <td><%= user.system_role %></td>
   <td>
-    <% if current_user.superuser? %>
+    <% if current_user.admin? %>
       <%= link_to t('.edit', :default => t("helpers.links.edit")),
                 edit_user_path(user), 
                 "data-remote" => true,

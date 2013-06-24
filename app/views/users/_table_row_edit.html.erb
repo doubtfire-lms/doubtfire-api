@@ -6,9 +6,9 @@
     <td><%= f.input :first_name, :label => false %></td>
     <td><%= f.input :last_name, :label => false %></td>
     
-    <% if current_user.superuser? %>
+    <% if current_user.admin? %>
       <td><%= user.sign_in_count %></td>
-      <td><%= f.input :system_role, :collection => [["User", "user"], ["Convenor", "convenor"]], :include_blank => false, :label => false %>
+      <td><%= f.input :system_role, :collection => [["User", "user"]]], :include_blank => false, :label => false %>
     <% else %>
       <td><%= user.sign_in_count %></td>
       <td><%= user.system_role %></td>

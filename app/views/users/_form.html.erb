@@ -1,5 +1,5 @@
-<%= simple_form_for(@user, html: {class: 'form-horizontal' }) do |f| %>
-	<% if can? :assign_roles, @user %>
+<%= simple_form_for(user, html: {class: 'form-horizontal' }) do |f| %>
+	<% if can? :assign_roles, user %>
     	<%= f.input :first_name %>
     	<%= f.input :last_name %>
         <%= f.input :email %>
@@ -8,8 +8,20 @@
     	<%= f.input :last_name, input_html: {disabled: true} %>
     <% end %>
     <%= f.input :nickname %>
-   	<% if can? :assign_roles, @user %>
-    	<%= f.input :system_role, collection: [["User", "user"], ["Convenor", "convenor"]], include_blank: false %>
+   	<% if can? :assign_roles, user %>
+
+        <%= f.association :roles, as: :check_boxes,
+            collection: user_role_options,
+            multiple: true,
+            selected: current_user_roles,
+            value_method: :id,
+            label_method: :name
+        %>
+    	<%= f.input :system_role,
+            collection: [["User", "user"], ["Admin", "admin"], ["Super Admin", "superadmin"]],
+            selected: user.system_role,
+            include_blank: false
+        %>
     <% end %>
     <%= f.button :submit %>
 <% end %>

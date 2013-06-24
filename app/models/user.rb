@@ -15,10 +15,12 @@ class User < ActiveRecord::Base
   # Devise fields
   attr_accessible :email, :remember_me
   # Model fields
-  attr_accessible :first_name, :last_name, :system_role, :username, :encrypted_password, :nickname
+  attr_accessible :first_name, :last_name, :system_role, :username, :encrypted_password, :nickname, :role_ids
 
   # Model associations
-  has_many :unit_roles, :dependent => :destroy
+  has_many :unit_roles, dependent: :destroy
+  has_many :user_roles, dependent: :destroy
+  has_many :roles, through: :user_roles
   has_many :projects, through: :unit_roles
   has_many :project_convenors, dependent: :destroy   # Sounds weird - it means "may be a convenor for many projects"
   
@@ -29,8 +31,8 @@ class User < ActiveRecord::Base
     false
   end
 
-  def superuser?
-    system_role == "superuser"
+  def admin?
+    system_role == "admin"
   end
 
   def convenor?
@@ -54,7 +56,7 @@ class User < ActiveRecord::Base
 
       username, first_name, last_name, email, role = row
 
-      user = User.find_or_create_by_username(:username => username) {|user|
+      user = User.find_or_create_by_username(username: username) {|user|
         user.username           = username
         user.first_name         = first_name
         user.last_name          = last_name
@@ -65,7 +67,7 @@ class User < ActiveRecord::Base
       }
 
       unless user.persisted?
-        user.save!(:validate => false)
+        user.save!(validate: false)
       end
     end
 

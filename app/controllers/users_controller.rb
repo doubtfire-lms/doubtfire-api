@@ -52,6 +52,8 @@ class UsersController < ApplicationController
   # GET /users/1/edit
   def edit
     @user = params[:id] ? User.find(params[:id]) : current_user
+    @current_user_roles = UserRole.where(user_id: @user.id)
+    @user_role_options  = Role.all
 
     respond_to do |format|
       format.html
@@ -90,7 +92,7 @@ class UsersController < ApplicationController
       if @user.update_attributes(params[:user])
 
       	# If the user is being updated by the superuser, redirect to the users index instead of the individual user
-      	if(@user.superuser?)
+      	if(@user.admin?)
           format.html { redirect_to users_path, notice: 'User was successfully updated.' }
   	    else
   	    	format.html { redirect_to @user, notice: 'User was successfully updated.' }
