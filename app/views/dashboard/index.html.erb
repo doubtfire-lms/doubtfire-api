@@ -7,7 +7,7 @@
 		<li class="nav-header">Dashboard</li>
 		<li class="active"><%= link_to 'Home', root_url %></li>
 		<% unless @student_projects.empty? %>
-			<%= render 'dashboard/student_projects_links', :student_projects => @student_projects, :selected_student_project => nil %>
+			<%= render 'dashboard/student_projects_links', student_projects:  @student_projects, selected_student_project:  nil %>
 		<% end %>
 		<% unless @tutor_projects.empty? %>
 			<%= render partial: 'dashboard/tutor_projects_links',
@@ -28,10 +28,10 @@
 	</ul>
 	<div class="row-fluid">
 		<% unless @student_projects.empty? %>
-			<%= render 'dashboard/student_projects', :student_projects => @student_projects %>
+			<%= render 'dashboard/student_projects', student_projects:  @student_projects %>
 		<% end %>
 		<% unless @tutor_projects.empty? %>
-			<%= render 'dashboard/tutor_projects', :tutor_projects => @tutor_projects %>
+			<%= render 'dashboard/tutor_projects', tutor_projects:  @tutor_projects %>
 		<% end %>
 
 	</div>

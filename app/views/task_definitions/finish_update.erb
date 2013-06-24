@@ -2,4 +2,4 @@
 var taskRowId = "task-" + "<%= @task_definition.id %>" +  "-row";
 
 // Replace the row with the partial in _table_row.html.erb.
-$("#" + taskRowId).replaceWith("<%=j render :partial => 'task_definitions/table_row', :locals => { :task_definition => @task_definition } %>");
+$("#" + taskRowId).replaceWith("<%=j render partial:  'task_definitions/table_row', locals:  { task_definition:  @task_definition } %>");

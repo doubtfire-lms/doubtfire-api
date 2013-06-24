@@ -10,7 +10,7 @@
 		<li class="nav-header">Dashboard</li>
 		<li><%= link_to 'Home', root_url %></li>
 		<% unless @student_projects.empty? %>
-			<%= render 'dashboard/student_projects_links', :student_projects => @student_projects, :selected_student_project => nil %>
+			<%= render 'dashboard/student_projects_links', student_projects:  @student_projects, selected_student_project:  nil %>
 		<% end %>
 		<% unless @tutor_projects.empty? %>
 			<%= render partial: 'dashboard/tutor_projects_links',

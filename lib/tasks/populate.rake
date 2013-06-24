@@ -1,7 +1,7 @@
 namespace :db do
 
   desc "Clear the database and fill with test data"
-  task :populate => :environment do
+  task populate:  :environment do
     require 'populator'
     require 'faker'
     require 'bcrypt'
@@ -46,13 +46,13 @@ namespace :db do
     # Clear the database
     [User, Unit, Tutorial, Project, TaskDefinition, Task, TaskStatus, UnitRole, User, ProjectConvenor, Login, TaskSubmission, TaskEngagement].each(&:delete_all)
 
-    TaskStatus.create(:name => "Not Submitted", :description => "This task has not been submitted to marked by your tutor.")
-    TaskStatus.create(:name => "Complete", :description => "This task has been signed off by your tutor.")
-    TaskStatus.create(:name => "Need Help", :description => "Some help is required in order to complete this task.")
-    TaskStatus.create(:name => "Working On It", :description => "This task is currently being worked on.")
-    TaskStatus.create(:name => "Fix and Resubmit", :description => "This task must be resubmitted after fixing some issues.")
-    TaskStatus.create(:name => "Fix and Include", :description => "This task must be fixed and included in your portfolio, but should not be resubmitted.")
-    TaskStatus.create(:name => "Redo", :description => "This task needs to be redone.")
+    TaskStatus.create(name:  "Not Submitted", description:  "This task has not been submitted to marked by your tutor.")
+    TaskStatus.create(name:  "Complete", description:  "This task has been signed off by your tutor.")
+    TaskStatus.create(name:  "Need Help", description:  "Some help is required in order to complete this task.")
+    TaskStatus.create(name:  "Working On It", description:  "This task is currently being worked on.")
+    TaskStatus.create(name:  "Fix and Resubmit", description:  "This task must be resubmitted after fixing some issues.")
+    TaskStatus.create(name:  "Fix and Include", description:  "This task must be fixed and included in your portfolio, but should not be resubmitted.")
+    TaskStatus.create(name:  "Redo", description:  "This task needs to be redone.")
 
     # Create 4 students
     randies.each do |username, profile|
@@ -160,14 +160,14 @@ namespace :db do
     # Put each user in each project, in one tutorial or the other
     User.all[0..3].each do |user|
       Unit.all.each do |unit|
-        random_project_tutorial = Tutorial.where(:unit_id => unit.id).sample
+        random_project_tutorial = Tutorial.where(unit_id:  unit.id).sample
         unit.add_user(user.id, random_project_tutorial.id, "student")
       end
     end
  
     complete_status = TaskStatus.where(:name=> "Complete").first
 
-    User.where(:username => "ajones").each do |allan|
+    User.where(username:  "ajones").each do |allan|
       allan.unit_roles.each do |unit_role|
         project = unit_role.project
 
@@ -181,7 +181,7 @@ namespace :db do
       end
     end
 
-    User.where(:username => "rliston").each do |rohan|
+    User.where(username:  "rliston").each do |rohan|
       rohan.unit_roles.each do |unit_role|
         project = unit_role.project
 

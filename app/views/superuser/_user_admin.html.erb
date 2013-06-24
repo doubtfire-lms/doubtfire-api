@@ -4,15 +4,15 @@
   </div>
   <div class="widget-content">
     
-    <%= render :partial => 'users/table', :locals => {:user_list => @users, :unit => nil, :empty_table_string => "There are no users in the system yet."} %>
-    <%= link_to "New user", new_user_path, :class => 'btn btn-primary', "data-remote" => true %>
+    <%= render partial:  'users/table', locals:  {user_list:  @users, unit:  nil, empty_table_string:  "There are no users in the system yet."} %>
+    <%= link_to "New user", new_user_path, class:  'btn btn-primary', "data-remote" => true %>
 
     <hr />
 
     <div class="well">
-      <%= form_tag "users/import", :multipart => true, :remote => true do %>
+      <%= form_tag "users/import", multipart:  true, remote:  true do %>
         <%= file_field(:csv_file, :file) %>
-        <%= submit_tag "Import Users from CSV", :class => "btn" %>
+        <%= submit_tag "Import Users from CSV", class:  "btn" %>
       <% end %>
     </div>
 

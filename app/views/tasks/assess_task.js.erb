@@ -1,5 +1,5 @@
 var taskStatusControlClass = ".task-" + "<%= @task.id %>" + "-status-control";
-var taskStatusControlPartial = "<%= j render :partial => 'tutor_projects/assessor_task_status_control', :locals => { :task => @task } %>";
+var taskStatusControlPartial = "<%= j render partial:  'tutor_projects/assessor_task_status_control', locals:  { task:  @task } %>";
 $(taskStatusControlClass).replaceWith(taskStatusControlPartial);
 
 var taskBarItemClass = "task-<%= @task.id %>-bar-item";

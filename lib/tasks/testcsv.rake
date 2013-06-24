@@ -1,6 +1,6 @@
 namespace :db do
 	desc "Test CSV importing functionality"
-	task :testcsv => :environment do
+	task testcsv:  :environment do
 		require 'populator'
 		require 'faker'
 		require 'bcrypt'
@@ -16,9 +16,9 @@ namespace :db do
 	    # Clear the database
 	    [Unit, Project, TaskDefinition, Task, TaskStatus, Tutorial, UnitRole, User, ProjectConvenor].each(&:delete_all)
 
-	    TaskStatus.create(:name => "Not Submitted", :description => "This task has not been submitted to marked by your tutor.")
-	    TaskStatus.create(:name => "Needs Fixing", :description => "This task must be resubmitted after fixing some issues.")
-	    TaskStatus.create(:name => "Complete", :description => "This task has been signed off by your tutor.")
+	    TaskStatus.create(name:  "Not Submitted", description:  "This task has not been submitted to marked by your tutor.")
+	    TaskStatus.create(name:  "Needs Fixing", description:  "This task must be resubmitted after fixing some issues.")
+	    TaskStatus.create(name:  "Complete", description:  "This task has been signed off by your tutor.")
 
 		# Create superuser
 		User.populate(1) do |superuser|

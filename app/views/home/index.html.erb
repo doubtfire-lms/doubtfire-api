@@ -4,14 +4,14 @@
     <p style="text-align: center">Because we don't trust you to be adults on your own.</p>
   </div>
   <div class="row offset1">
-  <%= form_for("user", :url => user_session_path) do |f| %>
+  <%= form_for("user", url:  user_session_path) do |f| %>
     <%= f.label :email %>
     <div class="controls">
-      <%= f.text_field :email, :class=>"span3", :placeholder => "Email" %>
+      <%= f.text_field :email, :class=>"span3", placeholder:  "Email" %>
     </div>
     <%= f.label :password %>
     <div class="controls">
-      <%= f.password_field :password, :class=>"span3", :placeholder => "Password" %>
+      <%= f.password_field :password, :class=>"span3", placeholder:  "Password" %>
     </div>
     <label class="checkbox">
       <%= f.check_box :remember_me %>Remember me

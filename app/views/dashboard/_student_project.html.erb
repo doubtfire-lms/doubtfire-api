@@ -7,7 +7,7 @@
 <% if project.commenced? %>
 	<% unless project.concluded? %>
 		<div class="tasks-completed-label">
-			<%= link_to "#{project.completed_tasks.size}/#{project.assigned_tasks.size}", project_path(project), :class => "highlight-figure" %>
+			<%= link_to "#{project.completed_tasks.size}/#{project.assigned_tasks.size}", project_path(project), class:  "highlight-figure" %>
 			<p class="highlight-figure-subtext">Tasks Completed</p>
 		</div>
 	<% end %>

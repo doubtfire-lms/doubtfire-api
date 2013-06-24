@@ -24,7 +24,7 @@ class ConvenorProjectTutorialsController < ApplicationController
                                         .where(project_convenors: {user_id: current_user.id})
     
     @unit = Unit.find(params[:unit_id])
-    authorize! :read, @unit, :message => "You are not authorised to view Unit ##{@unit.id}"
+    authorize! :read, @unit, message:  "You are not authorised to view Unit ##{@unit.id}"
     
     @tutorial             = Tutorial.find(params[:tutorial_id])
   end

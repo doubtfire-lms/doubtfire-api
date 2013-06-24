@@ -6,7 +6,7 @@ class TasksController < ApplicationController
     @projects = current_user.unit_roles.map{|tm| tm.project }
     @project  = Project.find(params[:project_id])
     @tasks    = @project.tasks
-    authorize! :read, @project, :message => "You are not authorised to view tasks for Project ##{@project.id}"
+    authorize! :read, @project, message:  "You are not authorised to view tasks for Project ##{@project.id}"
 
     respond_to do |format|
       format.html
@@ -19,7 +19,7 @@ class TasksController < ApplicationController
     @project          = Project.find(params[:project_id])
     @task             = Task.includes(:task_definition).find(params[:id])
 
-    authorize! :read, @task, :message => "You are not authorised to view Task ##{@task.id}"
+    authorize! :read, @task, message:  "You are not authorised to view Task ##{@task.id}"
   end
 
   def engage_with_task
@@ -118,7 +118,7 @@ class TasksController < ApplicationController
     when "working_on_it"      then "Working On It"
     end
 
-    TaskStatus.where(:name => status_name).first
+    TaskStatus.where(name:  status_name).first
   end
 
   def load_current_user

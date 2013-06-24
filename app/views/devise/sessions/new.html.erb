@@ -5,15 +5,15 @@
     <h2>Sign In</h2>
     <p>Sign in using your SIMS account:</p>
     <p>Note: Your username is just your student ID. No 's' is required at start of the ID to log in.</p>
-    <%= form_for(resource, :as => resource_name, :url => session_path(resource_name)) do |f| %>
+    <%= form_for(resource, as:  resource_name, url:  session_path(resource_name)) do |f| %>
       <div>
-      <%= f.text_field :username, "value placeholder" => "Username (e.g. 1111111)", :id => "username-field" %></div>
+      <%= f.text_field :username, "value placeholder" => "Username (e.g. 1111111)", id:  "username-field" %></div>
 
       <div>
-      <%= f.password_field :password, "value placeholder" => "Password", :id => "password-field" %></div>
+      <%= f.password_field :password, "value placeholder" => "Password", id:  "password-field" %></div>
 
       <div class="login-actions">
-        <%= f.submit "Sign in", :class => "btn btn-primary" %>
+        <%= f.submit "Sign in", class:  "btn btn-primary" %>
       </div>
     <% end %>
   </div>

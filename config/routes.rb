@@ -1,29 +1,29 @@
 Doubtfire::Application.routes.draw do
-  devise_for :users, :skip => [:registrations, :sessions]
+  devise_for :users, skip:  [:registrations, :sessions]
 
   as :user do
-    get 'login'     => 'devise/sessions#new', :as => :new_user_session
-    post 'login'    => 'devise/sessions#create', :as => :user_session
-    delete 'logout' => 'devise/sessions#destroy', :as => :destroy_user_session
+    get 'login'     => 'devise/sessions#new', as:  :new_user_session
+    post 'login'    => 'devise/sessions#create', as:  :user_session
+    delete 'logout' => 'devise/sessions#destroy', as:  :destroy_user_session
   end
   
   resources :users # custom :path separates CRUD interface from Devise
-  resources :home, :only => :index
+  resources :home, only:  :index
   resources :projects
   resources :task_definitions
   resources :tutorials
 
   # Routes for when the user has no projects
-  get 'no_projects' => 'convenor_contact_forms#new', :as => 'no_projects'
+  get 'no_projects' => 'convenor_contact_forms#new', as:  'no_projects'
 
-  get 'profile' => 'users#edit', :as => 'edit_profile'
-  post 'users/update/:id' => 'users#update', :via => :post, :as => 'update_user'
-  get 'users/cancel_update_user/:id' => 'users#finish_update', :as => 'cancel_update_user'
-  post 'users/import' => 'users#import', :via => :post
+  get 'profile' => 'users#edit', as:  'edit_profile'
+  post 'users/update/:id' => 'users#update', via:  :post, as:  'update_user'
+  get 'users/cancel_update_user/:id' => 'users#finish_update', as:  'cancel_update_user'
+  post 'users/import' => 'users#import', via:  :post
 
   # Student context routes
   resources :projects do
-    resources :tasks, :only => [:index, :show]
+    resources :tasks, only:  [:index, :show]
   end
 
   # Tasks
@@ -62,7 +62,7 @@ Doubtfire::Application.routes.draw do
   end
 
   # Convenor context routes
-  resources :convenor, :only => :index
+  resources :convenor, only:  :index
 
   scope '/convenor' do
     get 'projects'                                  => "convenor_projects#index",       as: 'convenor_projects'
@@ -72,8 +72,8 @@ Doubtfire::Application.routes.draw do
     get 'projects/:unit_id/tutorials/:tutorial_id'  => "convenor_project_tutorials#show",   as: 'convenor_project_tutorial'
   end
 
-  resources :convenor_contact_forms, :path_names => { :new => 'welcome' }
-  post 'convenor_contact' => 'convenor_contact_forms#create', :as => 'convenor_contact'
+  resources :convenor_contact_forms, path_names:  { new:  'welcome' }
+  post 'convenor_contact' => 'convenor_contact_forms#create', as:  'convenor_contact'
 
   # Tutor context routes
   scope '/tutor' do
@@ -82,10 +82,10 @@ Doubtfire::Application.routes.draw do
     get 'projects/:project_id/students/:student_id'           => 'tutor_project_students#show',       as: 'tutor_project_student'
   end
 
-  put "unit_roles/:unit_role_id/change_tutorial_allocation/:new_tutorial_id" => "unit_roles#change_tutorial_allocation", :as => 'change_tutorial_allocation'
+  put "unit_roles/:unit_role_id/change_tutorial_allocation/:new_tutorial_id" => "unit_roles#change_tutorial_allocation", as:  'change_tutorial_allocation'
 
   # Superuser context routes
-  get '/administration' => 'superuser#index', :as => 'superuser_index'
+  get '/administration' => 'superuser#index', as:  'superuser_index'
 
   # Static resources
   scope '/resources' do
@@ -93,6 +93,6 @@ Doubtfire::Application.routes.draw do
   end
 
   # Go to dashboard home by default
-  root :to => "dashboard#index"
+  root to:  "dashboard#index"
 end
 

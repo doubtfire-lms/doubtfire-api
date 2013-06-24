@@ -16,7 +16,7 @@ class Project < ActiveRecord::Base
     where(progress: progress_types) unless progress_types.blank?
   }
 
-  default_scope :include => :unit
+  default_scope include:  :unit
 
   def active?
     unit.active

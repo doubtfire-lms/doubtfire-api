@@ -1,21 +1,21 @@
 <tr id="user-<%= user.id %>-row" class="editable" name="<%= user.id %>">
-  <%= simple_form_for user, :url => update_user_path(user), :remote => true do |f| %>
-    <td><%= f.input :username, :label => false %></td>
-    <td><%= f.input :nickname, :label => false %></td>
-    <td><%= f.input :email, :label => false %></td>
-    <td><%= f.input :first_name, :label => false %></td>
-    <td><%= f.input :last_name, :label => false %></td>
+  <%= simple_form_for user, url:  update_user_path(user), remote:  true do |f| %>
+    <td><%= f.input :username, label:  false %></td>
+    <td><%= f.input :nickname, label:  false %></td>
+    <td><%= f.input :email, label:  false %></td>
+    <td><%= f.input :first_name, label:  false %></td>
+    <td><%= f.input :last_name, label:  false %></td>
     
     <% if current_user.admin? %>
       <td><%= user.sign_in_count %></td>
-      <td><%= f.input :system_role, :collection => [["User", "user"]]], :include_blank => false, :label => false %>
+      <td><%= f.input :system_role, collection:  [["User", "user"]]], include_blank:  false, label:  false %>
     <% else %>
       <td><%= user.sign_in_count %></td>
       <td><%= user.system_role %></td>
     <% end %>
 
     <td>
-      <%= f.button :submit, "Save", :class => "btn btn-mini btn-success" %>
+      <%= f.button :submit, "Save", class:  "btn btn-mini btn-success" %>
       <a href="<%= cancel_update_user_path(user.id) %>" data-remote="true" data-method="get" class="btn btn-mini btn-danger">Cancel</a> 
     </td>
   <% end %>

@@ -3,10 +3,10 @@ class TaskDefinition < ActiveRecord::Base
 	
 	# Model associations
 	belongs_to :unit			   # Foreign key
-	has_many :tasks, :dependent => :destroy    # Destroying a task definition will also nuke any instances
+	has_many :tasks, dependent:  :destroy    # Destroying a task definition will also nuke any instances
 
 	# Model validations/constraints
-	validates_uniqueness_of :name, :scope => :unit_id		# task definition names within a unit must be unique
+	validates_uniqueness_of :name, scope:  :unit_id		# task definition names within a unit must be unique
 
   def status_distribution    
     task_instances = tasks

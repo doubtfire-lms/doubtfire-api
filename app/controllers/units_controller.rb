@@ -6,7 +6,7 @@ class UnitsController < ApplicationController
   def index
     @user = current_user
     @units = Unit.all
-    @convenors = User.where(:system_role => "convenor")
+    @convenors = User.where(system_role:  "convenor")
 
     respond_to do |format|
       format.html # index.html.erb
@@ -18,11 +18,11 @@ class UnitsController < ApplicationController
   # GET /units/1.json
   def show
     @unit = Unit.find(params[:id])
-    @project_tasks = TaskDefinition.where(:unit_id => params[:id]).order(:by => [:target_date, :id])
-    @project_users = User.joins(:unit_roles => :project).where(:projects => {:unit_id => params[:id]})
-    @project_tutorials = Tutorial.where(:unit_id => params[:id])
+    @project_tasks = TaskDefinition.where(unit_id:  params[:id]).order(by:  [:target_date, :id])
+    @project_users = User.joins(unit_roles:  :project).where(projects:  {unit_id:  params[:id]})
+    @project_tutorials = Tutorial.where(unit_id:  params[:id])
     
-    authorize! :manage, @unit, :message => "You are not authorised to manage Unit ##{@unit.id}"
+    authorize! :manage, @unit, message:  "You are not authorised to manage Unit ##{@unit.id}"
     
     respond_to do |format|
       format.html # show.html.erb
@@ -213,7 +213,7 @@ class UnitsController < ApplicationController
   
   def destroy_all_tasks
     @unit = Unit.find(params[:unit_id])
-    TaskDefinition.destroy_all(:unit_id => @unit.id)
+    TaskDefinition.destroy_all(unit_id:  @unit.id)
   end
 
   def import_tasks

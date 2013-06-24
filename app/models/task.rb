@@ -10,7 +10,7 @@ class Task < ActiveRecord::Base
 
   after_save :update_project
 
-  default_scope :include => :task_definition
+  default_scope include:  :task_definition
 
   def update_project
     project.update_attribute(:progress, project.calculate_progress)

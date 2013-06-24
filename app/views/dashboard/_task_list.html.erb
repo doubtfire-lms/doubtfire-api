@@ -3,15 +3,15 @@
 
 <% if @project.has_optional_tasks? %>
 <h3>Assigned Tasks</h3>
-<%= render 	:partial => "tasks/assigned_task_list",
-			:locals => { :assigned_tasks => tasks }
+<%= render 	partial:  "tasks/assigned_task_list",
+			locals:  { assigned_tasks:  tasks }
 %>
 <h3>Optional Tasks</h3>
-<%= render 	:partial => "tasks/optional_task_list",
-			:locals => { :optional_tasks => @project.optional_tasks }
+<%= render 	partial:  "tasks/optional_task_list",
+			locals:  { optional_tasks:  @project.optional_tasks }
 %>
 <% else %>
-<%= render 	:partial => "tasks/assigned_task_list",
-			:locals => { :assigned_tasks => tasks }
+<%= render 	partial:  "tasks/assigned_task_list",
+			locals:  { assigned_tasks:  tasks }
 %>
 <% end %>

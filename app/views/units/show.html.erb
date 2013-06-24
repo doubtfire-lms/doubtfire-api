@@ -3,9 +3,9 @@
 <!-- Sidebar -->
 <% content_for :sidebar do %>
     <% if current_user.admin? %>
-        <%= render :partial => 'layouts/superuser_menu' %>
+        <%= render partial:  'layouts/superuser_menu' %>
     <% else %>
-        <%= render :partial => 'layouts/admin_menu' %>
+        <%= render partial:  'layouts/admin_menu' %>
     <% end %>
 <% end %>
 

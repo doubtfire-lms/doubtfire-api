@@ -30,7 +30,7 @@ module ApplicationHelper
   # @param &block  - whatever html/erb code falls between <%= tab_li_tag("tab-identifier") %> and <% end %>.
   def tab_div_tag(id, default = false, &block)
     content = capture(&block)
-    content_tag(:div, content, :id => id, :class => "#{ 
+    content_tag(:div, content, id:  id, class:  "#{ 
       if params[:tab] == id or (default and !params[:tab]) then
         'tab-pane active'
       else
@@ -46,7 +46,7 @@ module ApplicationHelper
   # @param &block  - whatever html/erb code falls between <%= tab_li_tag("tab-identifier") %> and <% end %>.
   def tab_li_tag(id, default = false, &block)
     content = capture(&block)
-    content_tag(:li, content, :class => "#{'active' if params[:tab] == id or (default and !params[:tab])}")
+    content_tag(:li, content, class:  "#{'active' if params[:tab] == id or (default and !params[:tab])}")
   end
 
   # Generates a tab dropdown tag (<li class="dropdown active"> or <div class="dropdown">) depending on whether the "tab" page param matches a given identifier.
@@ -56,7 +56,7 @@ module ApplicationHelper
   # @param &block  - whatever html/erb code falls between <%= tab_li_tag("tab-identifier") %> and <% end %>.
   def tab_dropdown_tag(ids, default = false, &block)
     content = capture(&block)
-    content_tag(:li, content, :class => "#{ 
+    content_tag(:li, content, class:  "#{ 
       if ids.include?(params[:tab]) or (default and !params[:tab]) then
         'dropdown active'
       else
@@ -83,6 +83,6 @@ module ApplicationHelper
         sort: column,
         direction: direction
       ),
-      {:class => css_class}
+      {class:  css_class}
   end
 end

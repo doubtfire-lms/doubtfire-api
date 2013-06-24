@@ -6,7 +6,7 @@ class ApplicationController < ActionController::Base
   before_filter :instantiate_controller_and_action_names
  
   rescue_from CanCan::AccessDenied do |exception|
-    redirect_to root_url, :alert => exception.message
+    redirect_to root_url, alert:  exception.message
   end
  
   def instantiate_controller_and_action_names

@@ -1,15 +1,15 @@
 <tr id="project-<%= unit.id %>-row" class="editable" name="<%= unit.id %>">
-	<%= simple_form_for unit, :url => update_unit_path(unit), :remote => true do |f| %>
-  		<td><%= f.input :name, :as => :text, :label => false %></td>
-  		<td><%= f.input :description, :as => :text, :label => false %></td>
+	<%= simple_form_for unit, url:  update_unit_path(unit), remote:  true do |f| %>
+  		<td><%= f.input :name, as:  :text, label:  false %></td>
+  		<td><%= f.input :description, as:  :text, label:  false %></td>
       <td>
-        <%= select_tag :convenors, options_from_collection_for_select(convenor_options, :id, :name, [] ), :multiple => true %>
+        <%= select_tag :convenors, options_from_collection_for_select(convenor_options, :id, :name, [] ), multiple:  true %>
       </td>
   		<td><%= f.input :start_date, as: :string, label: false, input_html: {class: "datepicker", "data-behaviour" => "datepicker", value: "#{unit.start_date.strftime('%Y-%m-%d')}"} %></td>
   		<td><%= f.input :end_date, as: :string, label: false, input_html: {class: "datepicker", "data-behaviour" => "datepicker", value: "#{unit.end_date.strftime('%Y-%m-%d')}"} %></td>
   		<td><%= f.input :active, label: false %></td>
   		<td>
-  			<%= f.button :submit, "Save", :class => "btn btn-mini btn-success" %>
+  			<%= f.button :submit, "Save", class:  "btn btn-mini btn-success" %>
   			<a href="<%= unit_cancel_update_path(unit) %>" data-remote="true" data-method="get" class="btn btn-mini btn-danger">Cancel</a>
   		</td>
   	<% end %>

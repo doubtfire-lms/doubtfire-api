@@ -7,7 +7,7 @@ class UsersController < ApplicationController
     @user = current_user
     @users = User.where("id NOT IN (?)", current_user.id).where("email NOT IN (?)", "superuser@doubtfire.com") 
     
-    authorize! :manage, User, :message => "You are not authorised to access user management"
+    authorize! :manage, User, message:  "You are not authorised to access user management"
 
     respond_to do |format|
       format.html # index.html.erb
@@ -43,7 +43,7 @@ class UsersController < ApplicationController
         @user.nickname           = "Nickname"
         @user.system_role        = "user"
 
-        @user.save!(:validate => false)
+        @user.save!(validate:  false)
         render action: "edit"
       }
     end

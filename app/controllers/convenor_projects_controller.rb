@@ -19,7 +19,7 @@ class ConvenorProjectsController < ApplicationController
     @inactive_convenor_units = @convenor_units - @active_convenor_units
     
 		@unit = Unit.includes(:task_definitions).find(params[:id])
-    authorize! :read, @unit, :message => "You are not authorised to view Unit ##{@unit.id}"
+    authorize! :read, @unit, message:  "You are not authorised to view Unit ##{@unit.id}"
 
     sort_options = {
       column: sort_column,

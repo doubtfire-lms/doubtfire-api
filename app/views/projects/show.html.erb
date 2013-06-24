@@ -47,7 +47,7 @@
 	<div class="tab-content">
 		<%= tab_div_tag("summary-tab", true) do %>
 			<div class="widget span7">
-				<div class="widget-header"></div>
+				<div class="widget-header">
 					<h2>
 						<i class="icon-bar-chart"></i>Progress
 						<% if @project.user != current_user %>
@@ -86,7 +86,7 @@
 
 		<%= tab_div_tag("tutorial-tab") do %>
 			<div class="widget span7">
-				<div class="widget-header"></div>
+				<div class="widget-header">
 					<h2>
 						<i class="icon-group"></i>Your Tutorial Allocation
 						<% if @project.user != current_user %>

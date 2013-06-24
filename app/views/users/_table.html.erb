@@ -9,13 +9,13 @@
       <th><%= User.human_attribute_name(:last_name) %></th>
       <th><%= User.human_attribute_name(:sign_in_count) %></th>
       <th>System role</th>
-      <th><%=t '.actions', :default => t("helpers.actions") %></th>
+      <th><%=t '.actions', default:  t("helpers.actions") %></th>
     </tr>
   </thead>
   <tbody>
     <!-- Rows are rendered as a partial so that they can be re-rendered from JavaScript after editing a row. See "users/edit.js.erb" and "users/edit.js.erb". -->
     <% user_list.each do |user| %>
-      <%= render :partial => 'users/table_row', :locals => { :user => user, :unit => unit } %>
+      <%= render partial:  'users/table_row', locals:  { user:  user, unit:  unit } %>
     <% end %>
   </tbody>
 </table>

@@ -6,10 +6,10 @@
 <% tutorial.unit_roles.sort{|a,b| a.user.name <=> b.user.name }.each do |unit_role| %>
 <div class="tutorial-member-entry">
     <h4>
-        <%= link_to truncate(unit_role.user.name, :length => 24, :separator => ' '), tutor_project_student_path(unit_role.project, unit_role.user) %>
+        <%= link_to truncate(unit_role.user.name, length:  24, separator:  ' '), tutor_project_student_path(unit_role.project, unit_role.user) %>
     </h4>
     <p class="tutorial-member-username">(<%= unit_role.user.username %>)</p>
-    <%= render 'dashboard/tasks_progress_bar', :project => unit_role.project, :student => unit_role.user, :mode => :progress %>
+    <%= render 'dashboard/tasks_progress_bar', project:  unit_role.project, student:  unit_role.user, mode:  :progress %>
 </div>
 <% end %>
 <% end %>
