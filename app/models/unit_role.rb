@@ -8,5 +8,6 @@ class UnitRole < ActiveRecord::Base
 
   attr_accessible :unit_id, :user_id, :tutorial_id, :role_id
 
-  scope :students, -> { where('unit_role_id = ?', 1) }
+  scope :students,  -> { where('role_id = ?', 1) }
+  scope :staff,     -> { where('role_id != ?', 1) }
 end

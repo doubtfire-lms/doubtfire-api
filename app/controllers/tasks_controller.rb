@@ -1,6 +1,5 @@
 class TasksController < ApplicationController
   before_filter :authenticate_user!
-  before_filter :load_current_user
 
   def index
     @projects = current_user.unit_roles.map{|tm| tm.project }
@@ -119,9 +118,5 @@ class TasksController < ApplicationController
     end
 
     TaskStatus.where(name:  status_name).first
-  end
-
-  def load_current_user
-    @user = current_user
   end
 end

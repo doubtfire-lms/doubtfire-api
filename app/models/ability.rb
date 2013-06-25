@@ -34,7 +34,6 @@ class Ability
       # Admin
       if user.admin?
         can :assign_roles, User
-        can :manage, User
   		  can :manage, :all
       end
     end

@@ -1,7 +1,5 @@
 class ProjectsController < ApplicationController
   before_filter :authenticate_user!
-  before_filter :load_current_user
-  before_filter :load_student_projects
 
   def index
     @projects = Project.where(unit_role:  @user.unit_roles)
@@ -26,13 +24,5 @@ class ProjectsController < ApplicationController
         )
       }
     end
-  end
-
-  def load_student_projects
-    @student_projects = @user.projects.select{|project| project.active? }
-  end
-
-  def load_current_user
-    @user = current_user
   end
 end

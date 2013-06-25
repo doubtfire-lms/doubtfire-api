@@ -12,9 +12,9 @@
 		<% unless @student_projects.empty? %>
 			<%= render 'dashboard/student_projects_links', student_projects:  @student_projects, selected_student_project:  nil %>
 		<% end %>
-		<% unless @tutor_projects.empty? %>
+		<% unless @staff_projects.empty? %>
 			<%= render partial: 'dashboard/tutor_projects_links',
-				locals: { projects: @tutor_projects, selected_project: @unit }
+				locals: { projects: @staff_projects, selected_project: @unit }
 			%>
 		<% end %>
 	</ul>

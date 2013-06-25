@@ -3,7 +3,7 @@ require 'bcrypt'
 
 class Unit < ActiveRecord::Base
   include ApplicationHelper
-
+  
   # Accessor to allow setting of convenors via the new/edit form
   attr_accessor :convenors
 

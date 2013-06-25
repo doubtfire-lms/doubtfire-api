@@ -2,15 +2,9 @@ class TutorProjectsController < ApplicationController
   include TutorProjectsHelper
 
   before_filter :authenticate_user!
-  before_filter :load_current_user
 
   def show
     @unit                         = Unit.find(params[:id])
-
-    @student_projects             = @user.projects.select{|project| project.active? }
-    @tutor_projects               = UnitRole.includes(:unit)
-                                    .where(user_id: @user.id, role_id: 2).map{|tutorial| tutorial.unit }
-                                    .select{|unit| unit.active }.uniq
 
     @tutor_unit_role              = UnitRole.where(user_id: @user.id, unit_id: params[:id]).first
     @tutor_tutorials              = Tutorial.includes(unit_roles: [{project: [{tasks: [:task_definition]}]}]).where(unit_role_id: @tutor_unit_role.id)
@@ -29,10 +23,6 @@ class TutorProjectsController < ApplicationController
                               .order(:code)
 
     @initial_other_tutorial = @other_tutorials.first
-  end
-
-  def load_current_user
-    @user = current_user
   end
 
   def display_other_tutorial
