@@ -26,6 +26,7 @@ gem 'bootstrap-datepicker-rails'
 
 group :development do
   gem 'hirb'
+  gem 'better_errors'
 end
 
 group :demo do
