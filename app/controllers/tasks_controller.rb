@@ -26,7 +26,7 @@ class TasksController < ApplicationController
     task_status             = status_for_shortname(params[:status])
     @task.task_status       = task_status
     @task.awaiting_signoff  = false
-    
+
     if @task.save
       @task.project.update_attribute(:started, true)
       TaskEngagement.create!(task: @task, engagement_time: Time.zone.now, engagement: task_status.name)
@@ -41,10 +41,10 @@ class TasksController < ApplicationController
   def assess_task
     @task                   = Task.find(params[:id])
     @project                = @task.project
-    @student                = @project.unit_role.user
+    @student                = @project.student
 
     task_status             = status_for_shortname(params[:status])
-    
+
     @task.task_status       = task_status
     @task.awaiting_signoff  = false # Because only staff should be able to change task status
 
@@ -104,7 +104,7 @@ class TasksController < ApplicationController
     end
   end
 
-  private 
+  private
 
   def status_for_shortname(status_shortname)
     status_name = case status_shortname
