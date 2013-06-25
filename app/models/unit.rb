@@ -4,11 +4,11 @@ require 'bcrypt'
 class Unit < ActiveRecord::Base
   include ApplicationHelper
 
+  # Accessor to allow setting of convenors via the new/edit form
+  attr_accessor :convenors
+
   attr_accessible :code, :description, :end_date, :name, :start_date, :active
   validates_presence_of :name, :description, :start_date, :end_date
-
-  # Accessor to allow setting of convenors via the new/edit form
-  attr_accessor :convenors  
 
   # Model associations. 
   # When a Unit is destroyed, any TaskDefinitions, Tutorials, and ProjectConvenor instances will also be destroyed.
@@ -17,30 +17,13 @@ class Unit < ActiveRecord::Base
   has_many :tutorials, dependent: :destroy
   has_many :unit_roles, dependent: :destroy
 
-  scope :current, lambda {
-    current_for_date(Time.zone.now)
-  }
+  scope :current,               ->{ current_for_date(Time.zone.now) }
+  scope :current_for_date,      ->(date) { where("start_date <= ? AND end_date >= ?", date, date) }
+  scope :not_current,           ->{ not_current_for_date(Time.zone.now) }
+  scope :not_current_for_date,  ->(date) { where("start_date > ? OR end_date < ?", date, date) }
+  scope :set_active,            ->{ where("active = ?", true) }
+  scope :set_inactive,          ->{ where("active = ?", false) }
 
-  scope :current_for_date, lambda {|date|
-    where("start_date <= ? AND end_date >= ?", date, date)
-  }
-
-  scope :not_current, lambda {
-    not_current_for_date(Time.zone.now)
-  }
-
-  scope :not_current_for_date, lambda {|date|
-    where("start_date > ? OR end_date < ?", date, date)
-  }
-
-  scope :set_active, lambda {
-    where("active = ?", true)
-  }
-
-  scope :set_inactive, lambda {
-    where("active = ?", false)
-  }
-  
   # Adds a user to this project.
   def add_user(user_id, tutorial_id, project_role)
     # Put the user in the appropriate tutorial (ie. create a new unit_role)
@@ -71,7 +54,6 @@ class Unit < ActiveRecord::Base
         awaiting_signoff: false
       )
     end
-
   end
 
   # Removes a user (and their tasks etc.) from this project
