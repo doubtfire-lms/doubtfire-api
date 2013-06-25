@@ -1,7 +1,7 @@
 source 'https://rubygems.org'
 
 # The venerable, almighty Rails
-gem 'rails', '3.2.6'
+gem 'rails', '3.2.13'
 
 # This is how we get creative
 gem 'populator'
