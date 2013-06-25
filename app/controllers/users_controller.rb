@@ -3,9 +3,9 @@ class UsersController < ApplicationController
   # GET /users
   # GET /users.json
   def index
-    # don't display the current user or the superuser in the users list
+    # don't display the current user or the admin in the users list
     @user = current_user
-    @users = User.where("id NOT IN (?)", current_user.id).where("email NOT IN (?)", "superuser@doubtfire.com") 
+    @users = User.all
     
     authorize! :manage, User, message:  "You are not authorised to access user management"
 
@@ -41,7 +41,7 @@ class UsersController < ApplicationController
         @user.email              = "XXXXXXX@swin.edu.au"
         @user.encrypted_password = BCrypt::Password.create("password")
         @user.nickname           = "Nickname"
-        @user.system_role        = "user"
+        @user.system_role        = SystemRole::BASIC
 
         @user.save!(validate:  false)
         render action: "edit"
@@ -91,7 +91,7 @@ class UsersController < ApplicationController
     respond_to do |format|
       if @user.update_attributes(params[:user])
 
-      	# If the user is being updated by the superuser, redirect to the users index instead of the individual user
+      	# If the user is being updated by admin, redirect to the users index instead of the individual user
       	if(@user.admin?)
           format.html { redirect_to users_path, notice: 'User was successfully updated.' }
   	    else

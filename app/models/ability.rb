@@ -3,9 +3,15 @@ class Ability
 
 	def initialize(user)
     if user
-      if user.regular_user?
+      if user.basic?
         can :read, Unit do |unit|
           unit.tutorials.map{|tutorial| tutorial.tutor }.include? user
+        end
+
+        can :manage, Unit do |unit|
+          UnitRole.includes(:user)
+          .where(unit_id: unit.id, role_id: Role.where(name: 'Convenor'))
+          .map{|convenor| convenor.user }.include? user
         end
 
         can :read, Project do |project|
@@ -17,27 +23,18 @@ class Ability
           # incorporated
           task.project.student.user == user
         end
-      end
-
-      if user.convenor?
-        can :manage, Unit do |unit|
-          UnitRole.includes(:user)
-          .where(unit_id: unit.id, role_id: Role.where(name: 'Convenor'))
-          .map{|convenor| convenor.user }.include? user
-        end
 
         can :manage, Project do |project|
           UnitRole.includes(:user)
           .where(unit_id: project.unit.id, role_id: Role.where(name: 'Convenor'))
           .map{|convenor| convenor.user }.include? user
         end
-
-        can :manage, User
       end
 
-      # Superuser
+      # Admin
       if user.admin?
         can :assign_roles, User
+        can :manage, User
   		  can :manage, :all
       end
     end

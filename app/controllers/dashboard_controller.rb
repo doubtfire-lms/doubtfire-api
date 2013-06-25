@@ -3,11 +3,9 @@ class DashboardController < ApplicationController
   before_filter :load_current_user
 
   def index
-    # Redirect to the administration page if the user is superuser
+    # Redirect to the administration page if the user is admin
     if @user.admin?
-      redirect_to superuser_index_path and return
-    elsif @user.convenor?
-      redirect_to convenor_index_path and return
+      redirect_to admin_index_path and return
     end
 
     @student_projects = @user.projects.select{|project| project.active? }

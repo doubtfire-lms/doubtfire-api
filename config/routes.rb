@@ -84,8 +84,8 @@ Doubtfire::Application.routes.draw do
 
   put "unit_roles/:unit_role_id/change_tutorial_allocation/:new_tutorial_id" => "unit_roles#change_tutorial_allocation", as:  'change_tutorial_allocation'
 
-  # Superuser context routes
-  get '/administration' => 'superuser#index', as:  'superuser_index'
+  # Admin context routes
+  get '/admin' => 'admin#index', as:  'admin_index'
 
   # Static resources
   scope '/resources' do

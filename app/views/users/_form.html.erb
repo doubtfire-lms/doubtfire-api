@@ -18,7 +18,7 @@
             label_method: :name
         %>
     	<%= f.input :system_role,
-            collection: [["User", "user"], ["Admin", "admin"], ["Super Admin", "superadmin"]],
+            collection: SystemRole::ROLES.map{|role| [role.titleize, role] },
             selected: user.system_role,
             include_blank: false
         %>

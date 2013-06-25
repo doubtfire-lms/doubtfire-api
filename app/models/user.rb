@@ -1,7 +1,5 @@
 class User < ActiveRecord::Base
-  # Include default devise modules. Others available are:
-  # :token_authenticatable, :encryptable, :confirmable, :lockable, :timeoutable and :omniauthable
-
+  # Use LDAP (SIMS) for authentication 
   if Rails.env.production?
     devise :ldap_authenticatable, :registerable,
          :recoverable, :rememberable, :trackable, :validatable
@@ -10,7 +8,9 @@ class User < ActiveRecord::Base
          :recoverable, :rememberable, :trackable, :validatable
   end
 
-  # Setup accessible (or protected) attributes for your model
+  SystemRole::ROLES.each do |meth|
+    define_method("#{meth}?") { system_role == meth }
+  end
 
   # Devise fields
   attr_accessible :email, :remember_me
@@ -31,24 +31,8 @@ class User < ActiveRecord::Base
     false
   end
 
-  def admin?
-    system_role == "admin"
-  end
-
-  def convenor?
-    system_role == "convenor"
-  end
-
-  def regular_user?
-    system_role == "user"
-  end
-  
   def name
     "#{first_name} #{last_name}"
-  end
-
-  def username_plus_name
-    "#{username}-#{name}"
   end
 
   def self.import_from_csv(file)

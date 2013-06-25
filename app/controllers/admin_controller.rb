@@ -1,11 +1,10 @@
-class SuperuserController < ApplicationController
-
+class AdminController < ApplicationController
 	before_filter :authenticate_user!
 	before_filter :load_current_user
 
 	def index
 		@units = Unit.all
-		@users = User.where("system_role != 'superuser'")
+		@users = User.all
 	end
 
 	private
@@ -13,5 +12,4 @@ class SuperuserController < ApplicationController
 	def load_current_user
 		@user = current_user
 	end
-
 end
