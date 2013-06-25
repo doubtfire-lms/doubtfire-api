@@ -19,11 +19,12 @@ class ApplicationController < ActionController::Base
     return if @user.nil?
 
     @student_projects = @user.projects.select{|project| project.active? }
-    @staff_projects   = UnitRole.includes(:unit) # Get the UnitRole and Unit in one
+    @staff_units   = UnitRole.includes(:unit) # Get the UnitRole and Unit in one
                         .where(user_id: @user.id) # Get the user's unit roles
                         .staff # Filter by staff
                         .map{|unit_role| unit_role.unit } # Grab the unit itself
                         .select(&:active?) # Show only active units
+                        .uniq # Remove duplicates brought about by having multiple roles
   end
 
   def instantiate_controller_and_action_names
