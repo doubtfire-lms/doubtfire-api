@@ -22,7 +22,6 @@ class User < ActiveRecord::Base
   has_many :user_roles, dependent: :destroy
   has_many :roles, through: :user_roles
   has_many :projects, through: :unit_roles
-  has_many :project_convenors, dependent: :destroy   # Sounds weird - it means "may be a convenor for many projects"
   
   # Model validations/constraints
   validates_uniqueness_of :username, :email

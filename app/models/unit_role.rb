@@ -4,10 +4,9 @@ class UnitRole < ActiveRecord::Base
   belongs_to :user		# Foreign key
   belongs_to :tutorial 		# Foreign key
   has_one :role    # Foreign key
-  has_one :project
+  has_one :project, dependent: :destroy
 
   attr_accessible :unit_id, :user_id, :tutorial_id, :role_id
 
   scope :students, -> { where('unit_role_id = ?', 1) }
-
 end

@@ -32,5 +32,4 @@ class ConvenorContactFormsController < ApplicationController
   def success
     sign_out_and_redirect(current_user)
   end
-
 end
