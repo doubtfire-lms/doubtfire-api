@@ -44,7 +44,6 @@ gem 'mysql2'
 # in production environments by default.
 group :assets do
   gem 'less-rails'
-  gem 'sass-rails',   '~> 3.2.3'
   gem 'coffee-rails', '~> 3.2.1'
   gem 'twitter-bootstrap-rails'
   gem 'd3_rails'
