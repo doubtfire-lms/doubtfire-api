@@ -25,22 +25,15 @@ class TaskDefinitionsController < ApplicationController
   # GET /task_definitions/new
   # GET /task_definitions/new.json
   def new
-    @task_definition = TaskDefinition.new
+    @task_definition = TaskDefinition.default
+    @task_definition.unit_id = params[:unit_id]
 
     respond_to do |format|
       format.html # new.html.erb
       format.json { render json: @task_definition }
       format.js { 
-        # Create a new task definition and populate it with sample data
-        @task_definition.unit_id = params[:unit_id]
-        @task_definition.name = "New Task"
-        @task_definition.description = "Enter a description for this task."
-        @task_definition.weighting = 0.0
-        @task_definition.required = true
-        @task_definition.target_date = Date.today
-
         # Call the create action, which saves the object and creates task instances for any existing users
-        create()
+        create
       }
     end
   end
@@ -67,12 +60,7 @@ class TaskDefinitionsController < ApplicationController
       if @task_definition.save
         # Create a task instance for all current users of the project
         @user_projects.each do |project|
-          task = Task.new
-          task.task_definition_id = @task_definition.id
-          task.project_id = project.id
-          task.task_status_id = 1
-          task.awaiting_signoff = false 
-          task.save!  
+          project.add_task(@task_definition)
         end
 
         format.html { redirect_to unit_path(@task_definition.unit_id), notice: "TaskDefinition was successfully updated."}

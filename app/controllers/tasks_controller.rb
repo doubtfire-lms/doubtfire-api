@@ -5,6 +5,7 @@ class TasksController < ApplicationController
     @projects = current_user.unit_roles.map{|tm| tm.project }
     @project  = Project.find(params[:project_id])
     @tasks    = @project.tasks
+    
     authorize! :read, @project, message:  "You are not authorised to view tasks for Project ##{@project.id}"
 
     respond_to do |format|

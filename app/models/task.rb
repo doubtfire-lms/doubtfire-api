@@ -1,6 +1,8 @@
 class Task < ActiveRecord::Base
   include ApplicationHelper
 
+  default_scope include:  :task_definition
+
   attr_accessible :task_definition_id, :project_id, :awaiting_signoff, :completion_date, :task_status_id
 
   # Model associations
@@ -10,7 +12,17 @@ class Task < ActiveRecord::Base
 
   after_save :update_project
 
-  default_scope include:  :task_definition
+  def self.default
+    task_definition             = self.new
+    
+    task_definition.name        = "New Task"
+    task_definition.description = "Enter a description for this task."
+    task_definition.weighting   = 0.0
+    task_definition.required    = true
+    task_definition.target_date = Date.today
+
+    task_definition
+  end
 
   def update_project
     project.update_attribute(:progress, project.calculate_progress)

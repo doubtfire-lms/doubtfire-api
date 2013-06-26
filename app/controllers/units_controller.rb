@@ -59,11 +59,8 @@ class UnitsController < ApplicationController
                         .map{|user_role| user_role.user }
 
     # Create a new unit, populate it with sample data, and save it immediately.
-    @unit.name = "New Project"
-    @unit.description = "Enter a description for this project."
-    @unit.start_date = Date.today
-    @unit.end_date = 13.weeks.from_now
-    @unit.save!
+    @unit = Unit.default
+    @unit.save
     
     respond_to do |format|
       format.html # new.html.erb

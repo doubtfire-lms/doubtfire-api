@@ -29,21 +29,13 @@ class UsersController < ApplicationController
   # GET /users/new
   # GET /users/new.json
   def new
-    @user = User.new
+    @user = User.default
 
     respond_to do |format|
       format.html # new.html.erb
       format.json { render json: @user }
       format.js {
-        @user.username           = "username"
-        @user.first_name         = "First"
-        @user.last_name          = "Last"
-        @user.email              = "XXXXXXX@swin.edu.au"
-        @user.encrypted_password = BCrypt::Password.create("password")
-        @user.nickname           = "Nickname"
-        @user.system_role        = SystemRole::BASIC
-
-        @user.save!(validate:  false)
+        @user.save!(validate: false)
         render action: "edit"
       }
     end

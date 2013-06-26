@@ -24,6 +24,17 @@ class Unit < ActiveRecord::Base
   scope :set_active,            ->{ where("active = ?", true) }
   scope :set_inactive,          ->{ where("active = ?", false) }
 
+  def self.default
+    unit = self.new
+
+    unit.name         = "New Unit"
+    unit.description  = "Enter a description for this unit."
+    unit.start_date   = Date.today
+    unit.end_date     = 13.weeks.from_now
+
+    unit
+  end
+
   # Adds a user to this project.
   def add_user(user_id, tutorial_id, project_role)
     # Put the user in the appropriate tutorial (ie. create a new unit_role)

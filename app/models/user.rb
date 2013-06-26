@@ -26,6 +26,20 @@ class User < ActiveRecord::Base
   # Model validations/constraints
   validates_uniqueness_of :username, :email
 
+  def self.default
+    user = self.new
+
+    user.username           = "username"
+    user.first_name         = "First"
+    user.last_name          = "Last"
+    user.email              = "XXXXXXX@swin.edu.au"
+    user.encrypted_password = BCrypt::Password.create("password")
+    user.nickname           = "Nickname"
+    user.system_role        = SystemRole::BASIC
+
+    user
+  end
+
   def email_required?
     false
   end

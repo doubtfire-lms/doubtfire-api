@@ -8,6 +8,17 @@ class Tutorial < ActiveRecord::Base
   has_one    :project  			# Foreign key
   has_many   :unit_roles
 
+  def self.default
+    tutorial = self.new
+
+    tutorial.unit_role_id     = -1
+    tutorial.meeting_day      = "Enter a regular meeting day."
+    tutorial.meeting_time     = "Enter a regular meeting time."
+    tutorial.meeting_location = "Enter a location."
+
+    tutorial
+  end
+
   def name
     # TODO: Will probably need to make this more flexible when
     # a tutorial is representing something other than a tutorial

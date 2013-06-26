@@ -24,14 +24,10 @@ class TutorialsController < ApplicationController
   # GET /tutorials/new
   # GET /tutorials/new.json
   def new
-    @tutorial = Tutorial.new
-    
-    # Create a new task definition, populate it with sample data, and save it immediately.
+    # Create a default tutorial and give it the associated unit
+    @tutorial = Tutorial.default
     @tutorial.unit_id = params[:unit_id]
-    @tutorial.unit_role_id = -1
-    @tutorial.meeting_day = "Enter a regular meeting day."
-    @tutorial.meeting_time = "Enter a regular meeting time."
-    @tutorial.meeting_location = "Enter a location."
+
     @tutorial.save
 
     tutor_capable_roles = Role.where("name = 'Tutor' OR name = 'Convenor'").map{|role| role.id }

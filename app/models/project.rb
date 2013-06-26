@@ -1,6 +1,8 @@
 class Project < ActiveRecord::Base
   include ApplicationHelper
 
+  default_scope include: :unit
+
   attr_accessible :unit, :project_role, :started, :progress
 
   belongs_to :tutorial
@@ -16,7 +18,16 @@ class Project < ActiveRecord::Base
     where(progress: progress_types) unless progress_types.blank?
   }
 
-  default_scope include:  :unit
+  def add_task(task_definition)
+    task = Task.new
+    
+    task.task_definition_id = @task_definition.id
+    task.project_id         = project.id
+    task.task_status_id     = 1
+    task.awaiting_signoff   = false 
+
+    task.save
+  end
 
   def active?
     unit.active
