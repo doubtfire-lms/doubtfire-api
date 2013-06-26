@@ -1,8 +1,10 @@
-<div class="task-<%= task.id %>-status-control">
+<div class="task-<%= task.id.to_s %>-status-control">
+
+  <% modal_id = "task-" << task.id.to_s << "-modal" %>
 
   <% if task.awaiting_signoff %>
     <div class="status-buttons">
-      <%= link_to glyph("ok"), "#taskStatusModal", class: "btn btn-mini btn-success", title: "Complete", rel: "tooltip", "data-toggle" => "modal" %>
+      <%= link_to glyph("ok"), "#" << modal_id, class: "btn btn-mini btn-success", title: "Complete", rel: "tooltip", "data-toggle" => "modal" %>
       <%= link_to glyph("wrench"), assess_task_path(task, :fix_and_resubmit), class: "btn btn-mini btn-warning", title: "Fix and Resubmit", rel: "tooltip", remote: true, method: "put" %>
       <%= link_to glyph("book"), assess_task_path(task, :fix_and_include), class: "btn btn-mini btn-fix-and-include", title: "Fix and Include", rel: "tooltip", remote: true, method: "put" %>
       <%= link_to glyph("refresh"), assess_task_path(task, :redo), class: "btn btn-mini btn-redo", title: "Redo", rel: "tooltip", remote: true, method: "put" %>
@@ -15,16 +17,16 @@
   <% end %>
 
   <!-- Modal -->
-  <div id="taskStatusModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div id="<%= modal_id %>" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="<%= modal_id %>-label" aria-hidden="true">
     <div class="modal-header">
       <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-      <h3 id="myModalLabel">Modal header</h3>
+      <h3 id="<%= modal_id %>-label"><%= truncate(task.task_definition.name, length: 30) %></h3>
     </div>
     <div class="modal-body">
       <p>One fine body…</p>
     </div>
     <div class="modal-footer">
-      <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+      <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
       <button class="btn btn-primary">Save changes</button>
     </div>
   </div>
