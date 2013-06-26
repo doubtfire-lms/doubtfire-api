@@ -2,13 +2,13 @@
 <% assigned_tasks.sort{|a,b| a.task_definition.target_date <=> b.task_definition.target_date}.each do |task| %>
 	<div class="task-list-entry row-fluid" id="task-<%= task.id %>-entry">
 		<h4>
-			<%= link_to truncate(task.task_definition.name, length:  30), project_task_path(@project, task) %>
+			<%= link_to truncate(task.task_definition.name, length:  30), project_task_path(project, task) %>
 		</h4>
 		<p class="task-weighting-points">(<%= task.task_definition.weighting %> points)</p>
 		<p class="toggle-task-description-container"><a href="#" class="toggle-task-description btn"><i class="icon-chevron-down"></i></a></p>
 		<p class="task-submission-vs-time"><%= task_submission_vs_time_text(task) %></p>
 		<div id="task-<%= task.id %>-controls" class="task-status-controls" style="display: inline-block;">
-			<%= render partial:  "tasks/task_status_control", locals:  { task:  task } %>
+			<%= render partial: 'tasks/task_status_control', locals:  { task:  task } %>
 		</div>
 		<div class="task-description">
 			<p><%= (task.task_definition.description.nil? or task.task_definition.description == "NULL") ? "(No description provided)" : task.task_definition.description %></p>

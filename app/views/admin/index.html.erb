@@ -32,11 +32,11 @@
 			<div class="tab-content">
 				
         <%= tab_div_tag("project-admin-tab", true) do %>
-					<%= render "project_admin" %>
+					<%= render partial: 'project_admin', locals: { units: @units } %>
 				<% end %>
 
         <%= tab_div_tag("user-admin-tab") do %>
-          <%= render "user_admin" %>
+          <%= render partial: 'user_admin', locals: { users: @users } %>
         <% end %>
 
 			</div>

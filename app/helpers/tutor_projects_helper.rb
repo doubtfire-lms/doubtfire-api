@@ -87,7 +87,7 @@ module TutorProjectsHelper
     description_text = (task.task_definition.description.nil? or task.task_definition.description == "NULL") ? "(No description provided)" : task.task_definition.description
 
     active_class = mode == :progress ? progress_class : action_class
-    status_control_partial = render(partial:  "tutor_projects/assessor_task_status_control", locals:  { task:  task })
+    status_control_partial = render(partial: 'tutor_projects/assessor_task_status_control', locals: { task:  task })
 
     link_to(
       task.task_definition.abbreviation || relative_number,

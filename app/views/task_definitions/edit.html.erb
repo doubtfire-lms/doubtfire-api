@@ -35,7 +35,7 @@
             <h2><i class="icon-book"></i><%= @task_definition.name %></h2>
         </div>
         <div class="widget-content">
-            <%= render partial: 'form' %>
+            <%= render partial: 'form', locals: { task_definition: @task_definition, unit: @unit } %>
         </div>
     </div>
 </div>

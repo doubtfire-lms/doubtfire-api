@@ -3,7 +3,7 @@
 	   <h2><i class="icon-book"></i>Projects</h2>
     </div>
 	<div class="widget-content">
-		<%= render partial:  'units/table', locals:  {units:  @units, empty_table_string:  "There are no projects in the system yet."} %>
+		<%= render partial: 'units/table', locals:  {units: units, empty_table_string:  "There are no projects in the system yet."} %>
 		<%= link_to "New project", new_unit_path, class:  'btn btn-primary', "data-remote" => true %>
 	</div>
 </div>

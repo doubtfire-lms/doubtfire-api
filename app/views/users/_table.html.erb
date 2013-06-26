@@ -1,5 +1,5 @@
-<p id="no-users-message" <%= "hidden='hidden'" if not user_list.empty? %> ><%= empty_table_string %></p>
-<table id="users-table" class="table table-striped" <%= "hidden='hidden'" if user_list.empty? %>>
+<p id="no-users-message" <%= "hidden='hidden'" if not users.empty? %> ><%= empty_table_string %></p>
+<table id="users-table" class="table table-striped" <%= "hidden='hidden'" if users.empty? %>>
   <thead>
     <tr>
       <th><%= User.human_attribute_name(:username) %></th>
@@ -14,8 +14,8 @@
   </thead>
   <tbody>
     <!-- Rows are rendered as a partial so that they can be re-rendered from JavaScript after editing a row. See "users/edit.js.erb" and "users/edit.js.erb". -->
-    <% user_list.each do |user| %>
-      <%= render partial:  'users/table_row', locals:  { user:  user, unit:  unit } %>
+    <% users.each do |user| %>
+      <%= render partial: 'users/table_row', locals: { user: user, unit: unit } %>
     <% end %>
   </tbody>
 </table>

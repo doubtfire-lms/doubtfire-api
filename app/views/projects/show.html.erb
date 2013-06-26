@@ -78,7 +78,7 @@
 				<div class="widget-content">
 					<%= 
 						render partial: 'dashboard/task_list',
-						locals: { tasks: @project.assigned_tasks }
+						locals: { project: @project, tasks: @project.assigned_tasks, optional_tasks: @project.optional_tasks }
 					%>
 				</div>
 			</div>

@@ -1,11 +1,11 @@
-<%= simple_form_for @unit, html: { class: 'well form-horizontal', method: 'put' } do |f| %>
+<%= simple_form_for unit, html: { class: 'well form-horizontal', method: 'put' } do |f| %>
 	<%= f.input :name, as:  :text %>
 	<%= f.input :description, as:  :text %>
       
 	<%= select_tag :convenors, options_from_collection_for_select(convenor_options, :id, :name, [convenors.map{|convenor| convenor.id}] ), multiple:  true %>
-    <%= f.input :start_date, as:  :string, input_html:  {class:  "datepicker", "data-behaviour" => "datepicker", value:  "#{@unit.start_date.strftime('%Y-%m-%d')}"} %>
-	<%= f.input :end_date, as:  :string, input_html:  {class:  "datepicker", "data-behaviour" => "datepicker", value:  "#{@unit.end_date.strftime('%Y-%m-%d')}"} %>
-	<%= @unit.created_at.strftime("%d %b %Y at %I:%M%p") %>
+    <%= f.input :start_date, as:  :string, input_html:  {class:  "datepicker", "data-behaviour" => "datepicker", value:  "#{unit.start_date.strftime('%Y-%m-%d')}"} %>
+	<%= f.input :end_date, as:  :string, input_html:  {class:  "datepicker", "data-behaviour" => "datepicker", value:  "#{unit.end_date.strftime('%Y-%m-%d')}"} %>
+	<%= unit.created_at.strftime("%d %b %Y at %I:%M%p") %>
 	<%= f.button :submit, "Save", class:  "btn btn-mini btn-success" %>
-		<a href="<%= unit_cancel_update_path(@unit) %>" data-remote="true" data-method="get" class="btn btn-mini btn-danger">Cancel</a>
+		<a href="<%= unit_cancel_update_path(unit) %>" data-remote="true" data-method="get" class="btn btn-mini btn-danger">Cancel</a>
 <% end %>

@@ -53,7 +53,7 @@
                             </div>
                         </div>
                         <div class="widget-content" id="projects">
-                            <%= render partial: "student_list", locals: { projects: @projects } %>
+                            <%= render partial: 'student_list', locals: { projects: @projects } %>
                             <hr />
                             <%= link_to convenor_unit_export_tasks_path(@unit, format: 'csv'), class: 'btn' do %>
                                 <i class="icon-download-alt"> Task Completion</i>
@@ -72,7 +72,7 @@
                                 <%= link_to "Show All Tutorials", convenor_unit_tutorials_path(@unit) %>
                             </h3>
                             <hr />
-                            <%= render partial: "tutorial_list", locals: { tutorials: @project_tutorials} %>
+                            <%= render partial: 'tutorial_list', locals: { tutorials: @project_tutorials} %>
                         </div>
                     </div>
                 <% end %>
@@ -84,7 +84,7 @@
                         </div>
                         <div class="widget-content">
                             <%= 
-                                render partial: "task_status_breakdown",
+                                render partial: 'task_status_breakdown',
                                 locals: { unit: @unit } 
                             %>
                         </div>

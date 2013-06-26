@@ -1,8 +1,8 @@
-<%= simple_form_for @tutorial, html:  { class:  'well form-horizontal' } do |f| %>
-	<% if @unit.nil? %>
+<%= simple_form_for tutorial, html:  { class: 'well form-horizontal' } do |f| %>
+	<% if unit.nil? %>
 		<%= f.association :unit, prompt:  "Select a project..." %>
 	<% end %>
-	<%= f.association :user, label:  "Manager", label_method:  lambda { |user| "#{user.first_name} #{user.last_name}" }, prompt:  "Select a manager..." %>
+	<%= f.association :user, label: "Tutor", label_method: :name, prompt:  "Select a tutor..." %>
 	<%= f.input :meeting_day %>
 	<%= f.input :meeting_time %>
 	<%= f.input :meeting_location %>

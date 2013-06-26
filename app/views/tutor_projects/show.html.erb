@@ -65,7 +65,7 @@
 		<div class="tab-content">
 
 			<%= tab_div_tag("tutorials-tab", true) do %>
-				<%= render 	partial: 	'tutor_projects/tutorials',
+				<%= render partial: 'tutor_projects/tutorials',
 					locals: 
 					{
 						tutor_tutorials: @tutor_tutorials,
@@ -77,17 +77,17 @@
 			<% end %>
 
 			<%= tab_div_tag("awaiting-signoff-tab") do %>
-				<%= render 	partial: 	'shared/assessment/backlog/awaiting_signoff',
+				<%= render partial: 'shared/assessment/backlog/awaiting_signoff',
 					locals: { unmarked_tasks: @actionable_tasks[:awaiting_signoff] } %>
 			<% end %>
 
 			<%= tab_div_tag("needing-help-tab") do %>
-				<%= render 	partial: 	'shared/assessment/backlog/needing_help',
+				<%= render partial: 'shared/assessment/backlog/needing_help',
 					locals: { needing_help_tasks: @actionable_tasks[:needing_help] } %>
 			<% end %>
 
 			<%= tab_div_tag("working-on-it-tab") do %>
-				<%= render 	partial: 	'shared/assessment/backlog/working_on_it',
+				<%= render partial: 'shared/assessment/backlog/working_on_it',
 					locals: { working_on_it_tasks: @actionable_tasks[:working_on_it] } %>
 			<% end %>
 
