@@ -1,22 +1,30 @@
-<div class="btn-group task-<%= task.id %>-status-control">
-	<%= task_status_active_button(task) %>
-	<ul class="dropdown-menu">
-		<li>
-			<a href="<%= assess_task_path(task, "complete") %>" data-method="put" data-remote="true">Complete <i class="icon-ok button-icon"></i></a>
-		</li>
-		<li class="divider"></li>
-		<li>
-			<a href="<%= assess_task_path(task, "fix_and_resubmit") %>" data-method="put" data-remote="true">Fix and Resubmit <i class="icon-wrench button-icon"></i></a>
-		</li>
-		<li>
-			<a href="<%= assess_task_path(task, "fix_and_include") %>" data-method="put" data-remote="true">Fix and Include <i class="icon-book button-icon"></i></a>
-		</li>
-		<li>
-			<a href="<%= assess_task_path(task, "redo") %>" data-method="put" data-remote="true">Redo <i class="icon-refresh button-icon"></i></a>
-		</li>
-		<li class="divider"></li>
-		<li>
-			<a href="<%= assess_task_path(task, "not_submitted") %>" data-method="put" data-remote="true">Not Submitted <i class="icon-minus-sign button-icon"></i></a>
-		</li>
-	</ul>
+<div class="task-<%= task.id %>-status-control">
+
+  <% status_buttons = [
+    { status: :complete,          icon: "ok",         color: "success",         tip: "Complete" },
+    { status: :fix_and_resubmit,  icon: "wrench",     color: "warning",         tip: "Fix and Resubmit" },
+    { status: :fix_and_include,   icon: "book",       color: "fix-and-include", tip: "Fix and Include" },
+    { status: :redo,              icon: "refresh",    color: "redo",            tip: "Redo" },
+    { status: :not_submitted,     icon: "minus-sign", color: "default",         tip: "Not Submitted" },
+  ] %>
+
+  <% if task.awaiting_signoff %>
+    <div class="status-buttons">
+      <% status_buttons.each do |button| %>
+        <%= link_to glyph(button[:icon]),
+          assess_task_path(task, button[:status]),
+          method: "put",
+          remote: true,
+          class: "btn btn-mini btn-" << button[:color],
+          title: button[:tip],
+          rel: "tooltip",
+          "data-placement" => "top" %>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="selected-status">
+      <span class="label label-inverse"><%= task.task_status.name %></span>
+    </div>
+  <% end %>
+
 </div>

@@ -1,6 +1,10 @@
+// slowly fade in and replace the task status control
 var taskStatusControlClass = ".task-" + "<%= @task.id %>" + "-status-control";
-var taskStatusControlPartial = "<%= j render 'tutor_projects/assessor_task_status_control', task: @task %>";
-$(taskStatusControlClass).replaceWith(taskStatusControlPartial);
+$(taskStatusControlClass).fadeOut("slow", function(){
+	var taskStatusControlPartial = $("<%= j render 'tutor_projects/assessor_task_status_control', task: @task %>");
+	$(this).replaceWith(taskStatusControlPartial);
+	$(taskStatusControlClass).hide().fadeIn("slow");
+});
 
 var taskBarItemClass = "task-<%= @task.id %>-bar-item";
 var taskBarItems = $("."+taskBarItemClass);
@@ -11,7 +15,7 @@ if (taskBarItems.length > 0) {
 
 	taskBarItems.attr("data-action-class", actionClassForTask);
 	taskBarItems.attr("data-progress-class", progressClassForTask);
-	
+
 	var indicatorButtonSelectedClass = $(".task-indicator-button.active").attr("class");
 	var indicator = indicatorButtonSelectedClass.split(" ")[2].split("-")[1];
 
@@ -23,7 +27,7 @@ if (taskBarItems.length > 0) {
 
 	$.each(taskBarItems, function(i, taskBarItem) {
 		$.each($(taskBarItem).parent().children(".task-progress-item"), function(j, projectTaskItem) {
-			
+
 			var currentProgressClass = $(projectTaskItem).attr("data-progress-class");
 
 			if (/progress/.test(currentProgressClass) && /progress/.test(progressClassForTask))
