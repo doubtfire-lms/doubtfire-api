@@ -1,0 +1,22 @@
+<div class="btn-group task-<%= task.id %>-status-control">
+	<%= task_status_active_button(task) %>
+	<ul class="dropdown-menu">
+		<li>
+			<a href="<%= assess_task_path(task, "complete") %>" data-method="put" data-remote="true">Complete <i class="icon-ok button-icon"></i></a>
+		</li>
+		<li class="divider"></li>
+		<li>
+			<a href="<%= assess_task_path(task, "fix_and_resubmit") %>" data-method="put" data-remote="true">Fix and Resubmit <i class="icon-wrench button-icon"></i></a>
+		</li>
+		<li>
+			<a href="<%= assess_task_path(task, "fix_and_include") %>" data-method="put" data-remote="true">Fix and Include <i class="icon-book button-icon"></i></a>
+		</li>
+		<li>
+			<a href="<%= assess_task_path(task, "redo") %>" data-method="put" data-remote="true">Redo <i class="icon-refresh button-icon"></i></a>
+		</li>
+		<li class="divider"></li>
+		<li>
+			<a href="<%= assess_task_path(task, "not_submitted") %>" data-method="put" data-remote="true">Not Submitted <i class="icon-minus-sign button-icon"></i></a>
+		</li>
+	</ul>
+</div>

@@ -1,33 +1,21 @@
-require 'fileutils'
-
 class UnitsController < ApplicationController
-  # GET /units
-  # GET /units.json
-  def index
-    @user = current_user
-    @units = Unit.all
-    @convenors = User.where(system_role:  "convenor")
+  include TutorProjectsHelper
 
-    respond_to do |format|
-      format.html # index.html.erb
-      format.json { render json: @units }
-    end
-  end
+  helper_method :sort_column, :sort_direction
 
-  # GET /units/1
-  # GET /units/1.json
   def show
-    @unit = Unit.find(params[:id])
-    @project_tasks = TaskDefinition.where(unit_id:  params[:id]).order(by:  [:target_date, :id])
-    @project_users = User.joins(unit_roles:  :project).where(projects:  {unit_id:  params[:id]})
-    @project_tutorials = Tutorial.where(unit_id:  params[:id])
-    
-    authorize! :manage, @unit, message:  "You are not authorised to manage Unit ##{@unit.id}"
-    
-    respond_to do |format|
-      format.html # show.html.erb
-      format.json { render json: @unit }
-    end
+    @unit = Unit.includes(:task_definitions).find(params[:id])
+    authorize! :read, @unit, message:  "You are not authorised to view Unit ##{@unit.id}"
+
+    @unit_roles = UnitRole.where(unit_id: @unit.id, user_id: @user.id)
+    @roles      = @unit_roles.map{|unit_role| unit_role.role.name }
+
+    @tabs         = gather_tabs(@roles)
+    @selected_tab = params[:selected_tab] || (@tabs[0])
+    @selected_tab = @selected_tab.nil? ? nil : @selected_tab.to_sym
+
+    load_unit_summary_data if @roles.include? 'Convenor'
+    load_actionable_data if @roles.include? 'Tutor'
   end
 
   def status_distribution
@@ -51,194 +39,109 @@ class UnitsController < ApplicationController
     end
   end
 
-  # GET /units/new
-  # GET /units/new.json
-  def new
-    @unit = Unit.new
-    @convenor_options = UserRole.includes(:user).where(role_id: Role.where(name: 'Convenor').first)
-                        .map{|user_role| user_role.user }
+  private
 
-    # Create a new unit, populate it with sample data, and save it immediately.
-    @unit = Unit.default
-    @unit.save
-    
-    respond_to do |format|
-      format.html # new.html.erb
-      format.json { render json: @unit }
-      format.js { render action: 'edit' }
+  def gather_tabs(roles=[])
+    tabs = []
+
+    tabs << :summary              if roles.include? 'Convenor'
+    tabs << :progress             if roles.include? 'Tutor'
+    tabs << :assessment_backlog   if roles.include? 'Tutor'
+    tabs << :tutorials            if roles.include? 'Convenor'
+    tabs << :tasks                if roles.include? 'Convenor'
+
+    tabs
+  end
+
+  def load_unit_summary_data
+    sort_options = {
+      column: sort_column,
+      direction: sort_direction
+    }
+
+    @projects = sort_projects(
+      Project.includes({
+        student: [:user, :tutorial],
+        tasks: [:task_definition]
+        }, :unit
+      )
+      .where(
+        unit_id: params[:id]
+      ).with_progress(gather_included_progress_types),
+      sort_options
+    )
+
+    @project_tutorials = @projects.map{|project|
+      project.student.tutorial
+    }.uniq
+  end
+
+  def load_actionable_data
+    @tutor_unit_role              = @unit_roles.select{|unit_role| unit_role.role.name == 'Tutor' }.first
+    @tutor_tutorials              = Tutorial.includes(unit_roles: [{project: [{tasks: [:task_definition]}]}]).where(unit_role_id: @tutor_unit_role.id)
+    @tutor_tutorial_projects      = @tutor_tutorials.map{|tutorial| tutorial.unit_roles }.flatten.map{|unit_role| unit_role.project }
+
+    authorize! :read, @unit, message:  "You are not authorised to view Unit ##{@unit.id}"
+
+    @actionable_tasks = {
+      awaiting_signoff: user_unmarked_tasks(@tutor_tutorial_projects),
+      needing_help:     user_needing_help_tasks(@tutor_tutorial_projects),
+      working_on_it:    user_working_on_it_tasks(@tutor_tutorial_projects)
+    }
+
+    @other_tutorials        = Tutorial.includes(unit_roles:  [{project:  [{tasks:  [:task_definition]}]}])
+                              .where("unit_id = ? AND unit_role_id != ?", @unit.id, @tutor_unit_role.id)
+                              .order(:code)
+
+    @initial_other_tutorial = @other_tutorials.first
+  end
+
+  def gather_included_progress_types
+    if params[:progress_excludes] && params[:progress_excludes].is_a?(Array)
+      # Get the valid progress exclusions by ensuring they exist (as a symbol) in
+      # the list of progress types
+      progress_excludes = params[:progress_excludes]
+                          .map{|progress| progress.to_sym }
+                          .select{|progress| Progress.types.include? progress }
+
+      Progress.types - progress_excludes
+    else
+      Progress.types
     end
   end
 
-  # GET /units/1/edit
-  def edit
-    @unit = Unit.find(params[:id])
-    convenor_role = Role.where(name: 'Convenor').first
-    @convenor_options = UserRole.includes(:user).where(role_id: convenor_role.id)
-                        .map{|user_role| user_role.user }
-    @convenors        = UnitRole.where(unit_id: @unit.id, role_id: convenor_role.id)
+  def sort_column
+    %w[username name progress tasks_completed units_completed].include?(params[:sort]) ? params[:sort] : "name"
+  end
 
-    respond_to do |format|
-      format.html # new.html.erb
-      format.js   # new.js.erb
+  def sort_direction
+    %w[asc desc].include?(params[:direction]) ? params[:direction] : "asc"
+  end
+
+  def exclusion_filters
+
+  end
+
+  def sort_projects(projects, options=nil)
+    options = {column: "name", direction: "asc"} if options.nil?
+
+    projects = case options[:column]
+    when "username"
+      projects.sort{|a,b| a.user.username <=> b.user.username }
+    when "name"
+      projects.sort{|a,b| a.user.name <=> b.user.name }
+    when "progress"
+      projects.sort{|a,b| -(Progress.new(a.progress) <=> Progress.new(b.progress)) }
+    when "tasks_completed"
+      projects.sort{|a,b| -(a.completed_tasks.size <=> b.completed_tasks.size) }
+    when "units_completed"
+      projects.sort{|a,b| -(a.task_units_completed <=> b.task_units_completed) }
+    else
+      projects.sort{|a,b| a.user.name <=> b.user.name }
     end
+
+    projects.reverse! if options[:direction] == "desc"
+
+    projects
   end
-
-  # POST /units
-  # POST /units.json
-  def create
-    @unit = Unit.new(params[:unit])
-
-    respond_to do |format|
-      if @unit.save
-        format.html { redirect_to @unit, notice: 'Unit was successfully created.' }
-        format.json { render json: @unit, status: :created, location: @unit }
-      else
-        format.html { render action: "new" }
-        format.json { render json: @unit.errors, status: :unprocessable_entity }
-      end
-    end
-  end
-
-  # PUT /units/1
-  # PUT /units/1.json
-  def update
-    @unit = Unit.find(params[:id])
-  
-    respond_to do |format|
-      if @unit.update_attributes(params[:unit])
-        convenor_role = Role.where(name: 'Convenor').first
-
-        # Replace the current list of convenors for this project with the new list selected by the user
-        unless params[:convenors].nil?
-          unit_convenors = UnitRole.where(unit_id: @unit.id, role_id: convenor_role.id)
-          removed_convenor_ids = unit_convenors.map(&:user_id) - params[:convenors]
-          removed_convenors = unit_convenors.select{|convenor| removed_convenor_ids.include? convenor.user_id }.map(&:id)
-
-          # Delete any convenors that have been removed
-          UnitRole.where(id: removed_convenors).destroy_all
-
-          # Find or create convenors
-          params[:convenors].each do |convenor_id|
-            @convenor_role = UnitRole.find_or_create_by_unit_id_and_user_id_and_role_id(unit_id: @unit.id, user_id: convenor_id, role_id: convenor_role.id)
-            @convenor_role.save!
-          end
-        end
-
-        format.html { redirect_to @unit, notice: 'Unit was successfully updated.' }
-        format.json { head :no_content }
-        format.js { render action: "finish_update" }
-      else
-        format.html { render action: "edit" }
-        format.json { render json: @unit.errors, status: :unprocessable_entity }
-        format.js { render action: "edit" }
-      end
-    end
-  end
-
-  # DELETE /units/1
-  # DELETE /units/1.json
-  def destroy
-    @unit = Unit.find(params[:id])
-    @unit.destroy
-
-    respond_to do |format|
-      format.html { redirect_to units_url }
-      format.json { head :no_content }
-      format.js
-    end
-  end
-
-  # Restores the row in the units table to its original state after saving or cancelling from editing mode.
-  def finish_update
-    @unit = Unit.find(params[:unit_id])
-
-    respond_to do |format|
-        format.js  # finish_update.js.erb
-    end
-  end
-
-  def add_user
-    @unit = Unit.find(params[:unit_id])
-
-    respond_to do |format|
-      format.js 
-    end
-  end
-
-  def remove_user
-    @unit = Unit.find(params[:unit_id])
-    @user = User.find(params[:user_id])
-
-    @unit.remove_user(@user.id)
-
-    respond_to do |format|
-      format.js { render "users/destroy.js" }
-    end
-  end
-
-  def import_users
-    tmp = params[:csv_file][:file].tempfile
-    csv_file = File.join("public", params[:csv_file][:file].original_filename)
-    FileUtils.cp tmp.path, csv_file
-
-    @unit = Unit.find(params[:unit_id])
-    @unit.import_users_from_csv(csv_file)
-
-    FileUtils.rm csv_file
-
-    respond_to do |format|
-      format.html { redirect_to unit_path(@unit, tab: "participants-tab"), notice: "Successfully imported project participants."}
-      format.js
-    end
-  end
-
-  def import_tutorials
-    tmp = params[:csv_file][:file].tempfile
-    csv_file = File.join("public", params[:csv_file][:file].original_filename)
-    FileUtils.cp tmp.path, csv_file
-
-    @unit = Unit.find(params[:unit_id])
-    @unit.import_tutorials_from_csv(csv_file)
-
-    FileUtils.rm csv_file
-
-    respond_to do |format|
-      format.html { redirect_to unit_path(@unit, tab: "tutorials-tab"), notice: "Successfully imported tutorials."}
-      format.js
-    end
-  end
-  
-  def destroy_all_tasks
-    @unit = Unit.find(params[:unit_id])
-    TaskDefinition.destroy_all(unit_id:  @unit.id)
-  end
-
-  def import_tasks
-    tmp = params[:csv_file][:file].tempfile
-    csv_file = File.join("public", params[:csv_file][:file].original_filename)
-    FileUtils.cp tmp.path, csv_file
-
-    @unit = Unit.find(params[:unit_id])
-    @unit.import_tasks_from_csv(csv_file)
-
-    FileUtils.rm csv_file
-
-    respond_to do |format|
-      format.html { redirect_to unit_path(@unit, tab: "tasks-tab"), notice: "Successfully imported tasks."}
-      format.js
-    end
-  end
-
-  def export_tasks
-    @unit = Unit.find(params[:unit_id])
-
-    respond_to do |format|
-      format.html { redirect_to unit_path(@unit, tab: "tasks-tab"), notice: "Successfully imported tasks."}
-      format.csv {
-        send_data @unit.task_definitions_csv,
-        filename: "#{@unit.name.parameterize}-task-defintions.csv"
-      }
-    end
-  end
-
 end

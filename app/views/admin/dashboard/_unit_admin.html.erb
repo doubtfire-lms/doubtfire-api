@@ -1,0 +1,9 @@
+<div class="widget span12">
+    <div class="widget-header">
+	   <h2><i class="icon-book"></i>Units</h2>
+    </div>
+	<div class="widget-content">
+		<%= render partial: 'admin/units/table', locals:  {units: units, empty_table_string:  "There are no units in the system yet."} %>
+		<%= link_to "New Unit", new_unit_path, class:  'btn btn-primary', "data-remote" => true %>
+	</div>
+</div>

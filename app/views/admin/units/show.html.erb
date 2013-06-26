@@ -1,0 +1,87 @@
+<% title "Unit - #{@unit.name}" %>
+
+<!-- Sidebar -->
+<% content_for :sidebar do %>
+    <% if current_user.admin? %>
+        <%= render partial: 'layouts/admin_menu' %>
+    <% end %>
+<% end %>
+
+<div class="span9">
+    <ul class="breadcrumb">
+        <li>
+          <%= link_to "Home", root_url %>
+          <span class="divider">/</span>
+        </li>
+        <li>
+          <%= link_to "Units", units_url %>
+          <span class="divider">/</span>
+        </li>
+        <li class="active"><%= @unit.name %> (Adminstration)</li>
+    </ul>
+
+    <div class="tabbable"> 
+        <ul class="nav nav-pills">
+            <%= tab_li_tag("summary-tab", true) do %>
+                <a href="#summary-tab" data-toggle="tab">Summary</a>
+            <% end %>
+            <%= tab_li_tag("tutorials-tab") do %>
+                <a href="#tutorials-tab" data-toggle="tab">Tutorials</a>
+            <% end %>
+            <%= tab_li_tag("tasks-tab") do %>
+                <a href="#tasks-tab" data-toggle="tab">Tasks</a>
+            <% end %>
+            <%= tab_li_tag("participants-tab") do %>
+                <a href="#participants-tab" data-toggle="tab">Participants</a>
+            <% end %>
+        </ul>
+        <div class="tab-content">
+            <!-- Information about the current project -->
+            <%= tab_div_tag("summary-tab", true) do %>
+                <div class="widget">
+                    <%= 
+                        render partial: 'summary_information',
+                        locals: { unit: @unit }
+                    %>
+                </div>
+            <% end %>
+            
+            <!-- Table of tasks for the current project -->
+            <%= tab_div_tag("tasks-tab") do %>
+                <div class="widget">
+                    <%= render partial: 'tasks',
+                        locals: {
+                            unit: @unit, task_definitions: @project_tasks
+                        }
+                    %>
+                </div>
+            <% end %>
+
+            <!-- Table of tutorials for the current project -->
+            <%= tab_div_tag("tutorials-tab") do %>
+                <div class="widget">
+                    <%=
+                        render partial: 'tutorials',
+                        locals: {
+                            unit: @unit,
+                            project_tutorials: @project_tutorials
+                        }
+                    %>
+                </div>
+            <% end %>
+
+            <!-- Table of users for the current project -->
+            <%= tab_div_tag("participants-tab") do %>
+                <div class="widget">
+                    <%=
+                        render partial: 'participants',
+                        locals: {
+                            unit: @unit,
+                            participants: @project_users
+                        }
+                    %>
+                </div>
+            <% end %>
+        </div>
+    </div>
+</div>

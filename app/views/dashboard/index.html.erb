@@ -10,8 +10,8 @@
 			<%= render 'dashboard/student_projects_links', student_projects:  @student_projects, selected_student_project:  nil %>
 		<% end %>
 		<% unless @staff_units.empty? %>
-			<%= render partial: 'dashboard/tutor_projects_links',
-				locals: { projects: @staff_units, selected_project: nil }
+			<%= render partial: 'dashboard/staff_unit_links',
+				locals: { units: @staff_units, selected_unit: nil }
 			%>
 		<% end %>
 	</ul>
@@ -31,7 +31,9 @@
 			<%= render 'dashboard/student_projects', student_projects: @student_projects %>
 		<% end %>
 		<% unless @staff_units.empty? %>
-			<%= render 'dashboard/tutor_projects', tutor_projects: @staff_units, user: @user %>
+			<%= render 'dashboard/staff_units',
+						staff_units: @staff_units,
+						user: @user %>
 		<% end %>
 	</div>
 </div>

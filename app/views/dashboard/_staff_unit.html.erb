@@ -1,0 +1,12 @@
+<% tasks_awaiting_signoff = unmarked_project_tasks(unit, user) %>
+<% if tasks_awaiting_signoff.empty? %>
+	<p>
+		No tasks currently awaiting sign-off
+	</p>
+<% else %>
+	<p>
+		You have <%= link_to "#{tasks_awaiting_signoff.size} tasks", tutor_project_path(unit)%> awaiting sign-off
+	</p>
+<% end %>
+
+<p class="project-link"><%= link_to "Go to Project", unit, class: "btn" %></p>

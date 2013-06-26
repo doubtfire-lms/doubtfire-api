@@ -1,15 +1,8 @@
-<div class="widget span9">
-	<div class="widget-header">
-		<h2><i class="icon-bolt"></i>Working On It</h2>
-	</div>
-	<div class="widget-content">
-	<% if working_on_it_tasks.empty? %>
-		<p>There is no one currently no one working on tasks. Son, I am disappoint.</p>
-	<% else %>
-		<% working_on_it_tasks.each do |user, tasks| %>
-			<h3><%= user.name %> (<%= user.username %>)</h3>
-			<%= render partial: 'shared/assessment/backlog/backlog', locals: { actionable_tasks: tasks} %>
-		<% end %>
+<% if working_on_it_tasks.empty? %>
+	<p>There is no one currently no one working on tasks. Son, I am disappoint.</p>
+<% else %>
+	<% working_on_it_tasks.each do |user, tasks| %>
+		<h3><%= user.name %> (<%= user.username %>)</h3>
+		<%= render partial: 'shared/assessment/backlog/backlog', locals: { actionable_tasks: tasks} %>
 	<% end %>
-	</div>
-</div>
+<% end %>

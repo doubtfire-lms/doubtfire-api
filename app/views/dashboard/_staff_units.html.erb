@@ -1,17 +1,17 @@
 <% stylesheets 'convenor.css' %>
 
-<% if tutor_projects.size < 3 %>
+<% if staff_units.size < 3 %>
 	
-	<% tutor_projects.each_with_index do |tutor_unit, i| %>
+	<% staff_units.each_with_index do |unit, i| %>
 		<div class="row-fluid">
 			<div class="widget span12">
 				<div class="widget-header">
-					<h2><i class="icon-book"></i><%= tutor_unit.name %></h2>
+					<h2><i class="icon-book"></i><%= unit.name %></h2>
 				</div>
 				<div class="widget-content">
 					<%=
-						render partial: 'tutor_project',
-						locals: { tutor_unit: tutor_unit, user: user }
+						render partial: 'staff_unit',
+						locals: { unit: unit, user: user }
 					%>
 				</div>
 			</div>
@@ -19,18 +19,18 @@
 	<% end %>
 
 <% else %>
-	<% tutor_projects.each_with_index do |tutor_unit, i| %>
+	<% staff_units.each_with_index do |unit, i| %>
 		<% if i % 2 == 0 %>
 		<div class="row-fluid">
 		<% end %>
 			<div class="widget span6">
 				<div class="widget-header">
-					<h2><i class="icon-book"></i><%= tutor_unit.name %></h2>
+					<h2><i class="icon-book"></i><%= unit.name %></h2>
 				</div>
 				<div class="widget-content">
 					<%=
-						render partial: 'tutor_project',
-						locals: { tutor_unit: tutor_unit, user: user }
+						render partial: 'staff_unit',
+						locals: { unit: unit, user: user }
 					%>
 				</div>
 			</div>

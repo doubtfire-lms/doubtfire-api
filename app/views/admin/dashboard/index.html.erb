@@ -1,0 +1,43 @@
+<% content_for :sidebar do %>
+  <ul class="nav nav-list">
+    <li class="nav-header">
+      Navigation
+    </li>
+    <li class="active">
+      <%= link_to "Dashboard", root_url %>
+    </li>
+    <li class="nav-header">
+      Administration
+    </li>
+    <li>
+      <%= link_to "Units", admin_units_path %>
+    </li>
+    <li>
+      <%= link_to "Users", users_path %>
+    </li>
+  </ul>
+<% end %>
+
+<div class="span9">
+    <div class="row-fluid">
+        <div class="tabbable"> 
+            <ul class="nav nav-pills">
+        <%= tab_li_tag("unit-admin-tab", true) do %>
+            <a href="#unit-admin-tab" data-toggle="tab">Units Administration</a>
+        <% end %>
+        <%= tab_li_tag("user-admin-tab") do %>
+            <a href="#user-admin-tab" data-toggle="tab">User Administration</a>
+        <% end %>
+            </ul>
+            <div class="tab-content">
+                <%= tab_div_tag("unit-admin-tab", true) do %>
+                    <%= render partial: 'unit_admin', locals: { units: @units } %>
+                <% end %>
+
+                <%= tab_div_tag("user-admin-tab") do %>
+                  <%= render partial: 'user_admin', locals: { users: @users } %>
+                <% end %>
+            </div>
+        </div>
+    </div>
+</div>

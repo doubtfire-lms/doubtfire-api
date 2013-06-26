@@ -1,87 +1,82 @@
-<% title "Unit - #{@unit.name}" %>
+<% javascript 'task_status_breakdown.js' %>
+<% javascript 'convenor_units.js' %>
 
-<!-- Sidebar -->
+<% stylesheets 'convenor.css' %>
+
+<% title @unit.name %>
+
 <% content_for :sidebar do %>
-    <% if current_user.admin? %>
-        <%= render partial: 'layouts/admin_menu' %>
-    <% end %>
+    <ul class="nav nav-list">
+        <li class="nav-header">Dashboard</li>
+        <li><%= link_to 'Home', root_url %></li>
+        <% unless @student_projects.empty? %>
+            <%=
+                render 'dashboard/student_projects_links',
+                student_projects: @student_projects,
+                selected_student_project: @project
+            %>
+        <% end %>
+        <% unless @staff_units.empty? %>
+            <%= render 'dashboard/staff_unit_links',
+                units: @staff_units, selected_unit: @unit
+            %>
+        <% end %>
+    </ul>
 <% end %>
 
 <div class="span9">
-    <ul class="breadcrumb">
-        <li>
-          <%= link_to "Home", root_url %>
-          <span class="divider">/</span>
-        </li>
-        <li>
-          <%= link_to "Units", units_url %>
-          <span class="divider">/</span>
-        </li>
-        <li class="active"><%= @unit.name %> (Adminstration)</li>
-    </ul>
-
-    <div class="tabbable"> 
-        <ul class="nav nav-pills">
-            <%= tab_li_tag("summary-tab", true) do %>
-                <a href="#summary-tab" data-toggle="tab">Summary</a>
-            <% end %>
-            <%= tab_li_tag("tutorials-tab") do %>
-                <a href="#tutorials-tab" data-toggle="tab">Tutorials</a>
-            <% end %>
-            <%= tab_li_tag("tasks-tab") do %>
-                <a href="#tasks-tab" data-toggle="tab">Tasks</a>
-            <% end %>
-            <%= tab_li_tag("participants-tab") do %>
-                <a href="#participants-tab" data-toggle="tab">Participants</a>
-            <% end %>
+    <div class="row-fluid">
+        <ul class="breadcrumb">
+          <li>
+            <%= link_to "Home", root_url %>
+            <span class="divider">/</span>
+          </li>
+          <li class="active"><%= @unit.name %></li>
         </ul>
-        <div class="tab-content">
-            <!-- Information about the current project -->
-            <%= tab_div_tag("summary-tab", true) do %>
-                <div class="widget">
-                    <%= 
-                        render partial: 'summary_information',
-                        locals: { unit: @unit }
-                    %>
-                </div>
-            <% end %>
-            
-            <!-- Table of tasks for the current project -->
-            <%= tab_div_tag("tasks-tab") do %>
-                <div class="widget">
-                    <%= render partial: 'tasks',
-                        locals: {
-                            unit: @unit, task_definitions: @project_tasks
-                        }
-                    %>
-                </div>
-            <% end %>
 
-            <!-- Table of tutorials for the current project -->
-            <%= tab_div_tag("tutorials-tab") do %>
-                <div class="widget">
-                    <%=
-                        render partial: 'tutorials',
-                        locals: {
-                            unit: @unit,
-                            project_tutorials: @project_tutorials
-                        }
-                    %>
-                </div>
+        <div class="tabbable"> 
+            <ul class="nav nav-pills">
+            <% @tabs.each do |tab| %>
+                <%= tab_li_tag("#{tab.to_s.dasherize}-tab", tab == @selected_tab) do %>
+                    <a href="#<%= "#{tab.to_s.dasherize}-tab" %>" data-toggle="tab">
+                        <%= tab.to_s.titleize %>
+                    </a>
+                <% end %>
             <% end %>
+            </ul>
 
-            <!-- Table of users for the current project -->
-            <%= tab_div_tag("participants-tab") do %>
-                <div class="widget">
-                    <%=
-                        render partial: 'participants',
-                        locals: {
-                            unit: @unit,
-                            participants: @project_users
-                        }
+            <div class="tab-content">
+                <% if @tabs.include? :summary %>
+                <%= tab_div_tag("summary-tab") do %>
+                    <%= render 'students_widget', unit: @unit, projects: @projects %>
+                <% end %>
+                <% end %>
+                <% if @tabs.include? :progress %>
+                <%= tab_div_tag("progress-tab", true) do %>
+                    <%= render 'tutorial_progress_widget',
+                        tutor_tutorials: @tutor_tutorials,
+                        initial_other_tutorial: @initial_other_tutorial,
+                        other_tutorials: @other_tutorials,
+                        unit: @unit 
                     %>
-                </div>
-            <% end %>
+                <% end %>
+                <% end %>
+                <% if @tabs.include? :tutorials %>
+                <%= tab_div_tag("tutorials-tab") do %>
+                    <%= render 'tutorials_widget', unit: @unit, tutorials: @project_tutorials %>
+                <% end %>
+                <% end %>
+                <% if @tabs.include? :tasks %>
+                <%= tab_div_tag("tasks-tab") do %>
+                    <%= render 'tasks_widget', unit: @unit %>
+                <% end %>
+                <% end %>
+                <% if @tabs.include? :assessment_backlog %>
+                <%= tab_div_tag("assessment-backlog-tab", true) do %>
+                    <%= render 'assessment_backlog_widget', actionable_tasks: @actionable_tasks %>
+                <% end %>
+                <% end %>
+            </div>
         </div>
     </div>
 </div>

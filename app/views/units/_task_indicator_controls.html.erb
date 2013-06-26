@@ -1,0 +1,14 @@
+<div class="task-indicator-controls">
+	<h3>Task Colours Indicate</h3>
+    <% if local_assigns[:mode] && mode == :progress %>
+	<div class="btn-group" data-toggle="buttons-radio">
+        <button type="button" class="btn task-indicator-button indicate-progress active">Progress</button>
+        <button type="button" class="btn task-indicator-button indicate-action">Actions</button>
+    </div>
+    <% else %>
+    <div class="btn-group" data-toggle="buttons-radio">
+        <button type="button" class="btn task-indicator-button indicate-action active">Actions</button>
+        <button type="button" class="btn task-indicator-button indicate-progress">Progress</button>
+    </div>
+    <% end %>
+</div>

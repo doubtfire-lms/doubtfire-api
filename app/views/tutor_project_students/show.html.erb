@@ -13,8 +13,8 @@
 			<%= render 'dashboard/student_projects_links', student_projects:  @student_projects, selected_student_project:  nil %>
 		<% end %>
 		<% unless @staff_units.empty? %>
-			<%= render partial: 'dashboard/tutor_projects_links',
-				locals: { projects: @staff_units, selected_project: @unit }
+			<%= render partial: 'dashboard/staff_unit_links',
+				locals: { units: @staff_units, selected_unit: @unit }
 			%>
 		<% end %>
 	</ul>
