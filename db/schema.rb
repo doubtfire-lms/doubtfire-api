@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20130621092707) do
+ActiveRecord::Schema.define(:version => 20130626104951) do
 
   create_table "badges", :force => true do |t|
     t.string   "name"
@@ -63,6 +63,14 @@ ActiveRecord::Schema.define(:version => 20130621092707) do
   end
 
   add_index "sub_task_definitions", ["badges_id"], :name => "index_sub_task_definitions_on_badges_id"
+
+  create_table "sub_tasks", :force => true do |t|
+    t.datetime "completion_date"
+    t.integer  "sub_task_definition_id"
+    t.integer  "task_id"
+    t.datetime "created_at",             :null => false
+    t.datetime "updated_at",             :null => false
+  end
 
   create_table "task_definitions", :force => true do |t|
     t.integer  "unit_id"
