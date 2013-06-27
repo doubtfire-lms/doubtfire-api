@@ -12,17 +12,50 @@
 	border-bottom: 1px dotted #CCC;
 }
 
-.task-list-entry h4
+.task-list-entry > h4
 {
 	display: inline-block;
 	width: 240px;
 	float: left;
 }
 
-.task-list-entry p
+.task-list-entry > p
 {
 	display: inline-block;
 	padding: 0px 0;
+}
+
+.sub-task-list
+{
+	+ .sub-task-list
+	{
+		margin-top: 20px;
+	}
+
+	.progress
+	{
+		margin-bottom: 7px;
+		height: 10px;
+	}
+
+	.sub-task-list-entry
+	{
+		padding: 7px 0 7px 0;
+		border-bottom: 1px dotted #CCC;
+
+		.sub-task-checkbox {
+			margin: 0px 10px 0px 0px;
+		}
+
+		.sub-task-name {
+			margin: 0px 10px 0px 0px;
+			text-decoration: none;
+		}
+
+		.sub-task-badge {
+			margin: 0px 2px 0px 0px;
+		}
+	}
 }
 
 .task-status,
@@ -50,7 +83,7 @@
 }
 
 .task-status-controls
-{	
+{
 	margin-top: -5px;
 	margin-right: 10px;
 }
