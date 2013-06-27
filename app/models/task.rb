@@ -9,6 +9,7 @@ class Task < ActiveRecord::Base
   belongs_to :task_definition         # Foreign key
   belongs_to :project               # Foreign key
   belongs_to :task_status           # Foreign key
+  has_many :sub_tasks, dependent: :destroy
 
   after_save :update_project
 

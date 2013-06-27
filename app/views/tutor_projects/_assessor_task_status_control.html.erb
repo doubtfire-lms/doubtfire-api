@@ -23,7 +23,9 @@
       <h3 id="<%= modal_id %>-label"><%= truncate(task.task_definition.name, length: 30) %></h3>
     </div>
     <div class="modal-body">
-      <p>One fine body…</p>
+      <% task.sub_tasks.each do |sub_task| %>
+        <%= sub_task.sub_task_definition.name %>
+      <% end %>
     </div>
     <div class="modal-footer">
       <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
