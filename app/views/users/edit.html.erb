@@ -6,10 +6,9 @@
 	   <h2><i class="icon-cogs"></i><%= current_user == @user ? "Your Profile" : @user.name %></h2>
     </div>
 	<div class="widget-content">
-		<%= render partial: 'form', locals: {
+		<%= render 'form',
 			user: @user,
 			current_user_roles: @current_user_roles,
-			user_role_options: @user_role_options
-		} %>
+			user_role_options: @user_role_options %>
 	</div>
 </div>

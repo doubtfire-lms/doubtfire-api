@@ -2,10 +2,10 @@
     <h2><i class="icon-group"></i>Tutorials</h2>
 </div>
 <div class="widget-content">
-    <%= render partial: 'tutorials/table', locals: {
+    <%= render 'tutorials/table',
         tutorial_list: project_tutorials,
         empty_table_string: "This project has no tutorials."
-    } %>
+    %>
     <hr />
     <%= link_to "Create new tutorial", unit_new_tutorial_path(unit), class:  'btn', "data-remote" => true %>
     <hr />

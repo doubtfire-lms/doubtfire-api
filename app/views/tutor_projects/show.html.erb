@@ -11,13 +11,13 @@
 		<li><%= link_to 'Home', root_url %></li>
 		<% unless @student_projects.empty? %>
 			<%=
-				render partial: 'dashboard/student_projects_links',
-				locals: { student_projects: @student_projects, selected_student_project: @project }
+				render 'dashboard/student_projects_links',
+				student_projects: @student_projects, selected_student_project: @project
 			%>
 		<% end %>
 		<% unless @staff_units.empty? %>
-			<%= render partial: 'dashboard/staff_unit_links',
-				locals: { units: @staff_units, selected_unit: @unit }
+			<%= render 'dashboard/staff_unit_links',
+				units: @staff_units, selected_unit: @unit
 			%>
 		<% end %>
 	</ul>
@@ -64,30 +64,27 @@
 
 		<div class="tab-content">
 			<%= tab_div_tag("tutorials-tab", true) do %>
-				<%= render partial: 'tutor_projects/tutorials',
-					locals: 
-					{
-						tutor_tutorials: @tutor_tutorials,
-						other_tutorials: @other_tutorials,
-						initial_other_tutorial: @initial_other_tutorial,
-						unit: @unit
-					} 
+				<%= render 'tutor_projects/tutorials',
+					tutor_tutorials: @tutor_tutorials,
+					other_tutorials: @other_tutorials,
+					initial_other_tutorial: @initial_other_tutorial,
+					unit: @unit
 				%>
 			<% end %>
 
 			<%= tab_div_tag("awaiting-signoff-tab") do %>
-				<%= render partial: 'shared/assessment/backlog/awaiting_signoff',
-					locals: { unmarked_tasks: @actionable_tasks[:awaiting_signoff] } %>
+				<%= render 'shared/assessment/backlog/awaiting_signoff',
+					unmarked_tasks: @actionable_tasks[:awaiting_signoff] %>
 			<% end %>
 
 			<%= tab_div_tag("needing-help-tab") do %>
-				<%= render partial: 'shared/assessment/backlog/needing_help',
-					locals: { needing_help_tasks: @actionable_tasks[:needing_help] } %>
+				<%= render 'shared/assessment/backlog/needing_help',
+					needing_help_tasks: @actionable_tasks[:needing_help] %>
 			<% end %>
 
 			<%= tab_div_tag("working-on-it-tab") do %>
-				<%= render partial: 'shared/assessment/backlog/working_on_it',
-					locals: { working_on_it_tasks: @actionable_tasks[:working_on_it] } %>
+				<%= render 'shared/assessment/backlog/working_on_it',
+					working_on_it_tasks: @actionable_tasks[:working_on_it] %>
 			<% end %>
 
 		</div>

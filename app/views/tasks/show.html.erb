@@ -7,7 +7,9 @@
 	<li class="nav-header">Dashboard</li>
 	<li><%= link_to 'Home', root_url %></li>
 	<% unless @student_projects.empty? %>
-		<%= render 'dashboard/student_projects_links', student_projects:  @student_projects, selected_student_project:  @project %>
+		<%= render 'dashboard/student_projects_links',
+			student_projects: @student_projects,
+			selected_student_project: @project %>
 	<% end %>
 </ul>
 <% end %>
@@ -45,7 +47,7 @@
 					<% end %>
 				</p>
 				<div id="task-<%= @task.id %>-controls" class="task-status-controls" style="display: inline-block;">
-					<%= render partial: 'tasks/task_status_control', locals:  { task:  @task } %>
+					<%= render 'tasks/task_status_control', task: @task %>
 				</div>
 
 				<h3>Weight</h3>

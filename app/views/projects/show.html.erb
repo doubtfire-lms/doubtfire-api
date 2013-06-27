@@ -8,11 +8,9 @@
 		<li><%= link_to 'Home', root_url %></li>
 		<% unless @student_projects.empty? %>
 			<%=
-				render partial: 'dashboard/student_projects_links',
-				locals: {
-					student_projects: @student_projects,
-					selected_student_project: @project
-				}
+				render 'dashboard/student_projects_links',
+				student_projects: @student_projects,
+				selected_student_project: @project
 			%>
 		<% end %>
 	</ul>
@@ -56,12 +54,12 @@
 					</h2>
 				</div>
 				<div class="widget-content" id="progress-widget">
-					<%= render partial: 'dashboard/project_progress', locals: { project: @project } %>
+					<%= render 'dashboard/project_progress', project: @project %>
 				</div>
 			</div>
 
 			<div class="widget span5" id="task-highlights-widget">
-				<%= render partial: 'dashboard/task_highlights', locals: { project: @project } %>
+				<%= render 'dashboard/task_highlights' project: @project %>
 			</div>
 		<% end %>
 
@@ -77,8 +75,8 @@
 				</div>
 				<div class="widget-content">
 					<%= 
-						render partial: 'dashboard/task_list',
-						locals: { project: @project, tasks: @project.assigned_tasks, optional_tasks: @project.optional_tasks }
+						render 'dashboard/task_list',
+						project: @project, tasks: @project.assigned_tasks, optional_tasks: @project.optional_tasks
 					%>
 				</div>
 			</div>
@@ -96,11 +94,9 @@
 				</div>
 				<div class="widget-content">
 					<%= 
-						render partial: 'dashboard/tutorial_allocation',
-						locals: {
-							project: @project,
-							student: @project.student
-						}
+						render 'dashboard/tutorial_allocation',
+						project: @project,
+						student: @project.student
 					%>
 				</div>
 			</div>
@@ -109,8 +105,8 @@
 					<h2><i class="icon-group"></i>Available Tutorials</h2>
 				</div>
 				<div class="widget-content">
-					<%= render partial: 'dashboard/project_tutorial_list',
-						locals: { project_tutorials: @project.unit.tutorials }
+					<%= render 'dashboard/project_tutorial_list',
+						project_tutorials: @project.unit.tutorials
 					%>
 				</div>
 			</div>

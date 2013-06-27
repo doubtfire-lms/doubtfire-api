@@ -3,6 +3,6 @@
 <% else %>
 	<% unmarked_tasks.each do |user, tasks| %>
 		<h3><%= user.name %> (<%= user.username %>)</h3>
-		<%= render partial: 'shared/assessment/backlog/backlog', locals: { actionable_tasks: tasks } %>
+		<%= render 'shared/assessment/backlog/backlog', actionable_tasks: tasks %>
 	<% end %>
 <% end %>

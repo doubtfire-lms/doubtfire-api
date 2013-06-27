@@ -31,11 +31,11 @@
             </ul>
             <div class="tab-content">
                 <%= tab_div_tag("unit-admin-tab", true) do %>
-                    <%= render partial: 'unit_admin', locals: { units: @units } %>
+                    <%= render 'unit_admin', units: @units %>
                 <% end %>
 
                 <%= tab_div_tag("user-admin-tab") do %>
-                  <%= render partial: 'user_admin', locals: { users: @users } %>
+                  <%= render 'user_admin', users: @users %>
                 <% end %>
             </div>
         </div>

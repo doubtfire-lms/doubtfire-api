@@ -15,7 +15,7 @@
   <tbody>
     <!-- Rows are rendered as a partial so that they can be re-rendered from JavaScript after editing a row. See "users/edit.js.erb" and "users/edit.js.erb". -->
     <% users.each do |user| %>
-      <%= render partial: 'users/table_row', locals: { user: user, unit: unit } %>
+      <%= render 'users/table_row', user: user, unit: unit %>
     <% end %>
   </tbody>
 </table>

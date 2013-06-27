@@ -1,21 +1,17 @@
-<%= render partial: 'tutor_projects/task_indicator_controls' %>
+<%= render 'tutor_projects/task_indicator_controls' %>
 
 <h3>Other Tutorials</h3>
-<%= render partial: 'tutor_projects/other_tutorial_dropdown', locals: {
-		initial_other_tutorial: initial_other_tutorial,
-		other_tutorials: 		other_tutorials,
-		unit: 	unit
-	}
+<%= render 'tutor_projects/other_tutorial_dropdown',
+	initial_other_tutorial: initial_other_tutorial,
+	other_tutorials: other_tutorials,
+	unit: unit
 %>
 
 <div id="other-tutorials-entries">
 	<div class="tutorial-entry" id="tutorial-<%= initial_other_tutorial.id %>-students">
 		<h3 id="other-tutorial-header"><%= initial_other_tutorial.meeting_day %> <%= initial_other_tutorial.meeting_time %> (<%= initial_other_tutorial.tutor.name %>)</h3>
 		<div class="tutorial-members">
-			<%= render partial: 'tutor_projects/tutorial_project_list', locals: {
-					tutorial: initial_other_tutorial
-				}
-			%>
+			<%= render 'tutor_projects/tutorial_project_list', tutorial: initial_other_tutorial %>
 		</div>
 	</div>
 </div>

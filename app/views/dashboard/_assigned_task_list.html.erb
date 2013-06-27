@@ -7,7 +7,7 @@
 		<p class="toggle-task-description-container"><a href="#" class="toggle-task-description btn"><i class="icon-chevron-down"></i></a></p>
 		<p class="task-submission-vs-time"><%= task_submission_vs_time_text(task) %></p>
 		<div id="task-<%= task.id %>-controls" class="task-status-controls" style="display: inline-block;">
-			<%= render partial: 'tasks/task_status_control', locals:  { task:  task } %>
+			<%= render 'tasks/task_status_control', task: task %>
 		</div>
 		<div class="task-description">
 			<p><%= (task.task_definition.description.nil? or task.task_definition.description == "NULL") ? "(No description provided)" : task.task_definition.description %></p>

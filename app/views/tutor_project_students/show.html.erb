@@ -13,8 +13,8 @@
 			<%= render 'dashboard/student_projects_links', student_projects:  @student_projects, selected_student_project:  nil %>
 		<% end %>
 		<% unless @staff_units.empty? %>
-			<%= render partial: 'dashboard/staff_unit_links',
-				locals: { units: @staff_units, selected_unit: @unit }
+			<%= render 'dashboard/staff_unit_links',
+				units: @staff_units, selected_unit: @unit
 			%>
 		<% end %>
 	</ul>
@@ -50,7 +50,7 @@
 						<h2><i class="icon-tasks"></i><%= @student.name %></h2>
 					</div>
 					<div class="widget-content">
-					<%= render partial: 'shared/assessment/backlog/backlog', locals: { actionable_tasks: @student_project.assigned_tasks } %>
+					<%= render 'shared/assessment/backlog/backlog', actionable_tasks: @student_project.assigned_tasks %>
 					</div>
 				</div>
 			<% end %>

@@ -2,11 +2,11 @@
     <h2><i class="icon-user"></i>Participants</h2>
 </div>
 <div class="widget-content">
-    <%= render partial: 'users/table', locals:  {
+    <%= render 'users/table',
         users:  participants,
         empty_table_string:  "This project has no users.",
         unit:  unit
-    } %>
+    %>
     <hr />
     <div class="well">
         <%= form_tag unit_import_users_path(unit), multipart:  true, remote:  true do %>

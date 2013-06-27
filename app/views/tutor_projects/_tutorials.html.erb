@@ -17,20 +17,17 @@
 
 			<div class="tab-content">
 				<%= tab_div_tag("your-tutorials-tab", true) do %>
-					<%= render partial: 'tutor_projects/tutorial_task_controls',
-								locals: 	{ tutorials:  tutor_tutorials } 
+					<%= render 'tutor_projects/tutorial_task_controls',
+						tutorials:  tutor_tutorials
 					%>
 				<% end %>
 
 				<% if !other_tutorials.empty? %>
 					<%= tab_div_tag("other-tutorials-tab") do %>
-						<%= render partial: 'tutor_projects/other_tutorial_task_controls',
-									locals:
-									{
-										initial_other_tutorial: initial_other_tutorial,
-										other_tutorials: other_tutorials,
-										unit: unit
-									} 
+						<%= render 'tutor_projects/other_tutorial_task_controls',
+							initial_other_tutorial: initial_other_tutorial,
+							other_tutorials: other_tutorials,
+							unit: unit
 						%>
 					<% end %>
 				<% end %>

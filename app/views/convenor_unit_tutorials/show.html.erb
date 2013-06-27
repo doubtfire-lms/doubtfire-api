@@ -11,12 +11,10 @@
         <li class="nav-header">Dashboard</li>
         <li><%= link_to 'Home', root_url %></li>
         <% unless @convenor_units.empty? %>
-            <%= render partial: 'dashboard/convenor_units_links',
-                locals: {
-                    active_units: @active_convenor_units,
-                    inactive_units: @inactive_convenor_units,
-                    selected_unit: @unit
-                }
+            <%= render 'dashboard/convenor_units_links',
+                active_units: @active_convenor_units,
+                inactive_units: @inactive_convenor_units,
+                selected_unit: @unit
             %>
         <% end %>
     </ul>
@@ -46,7 +44,7 @@
     			</h2>
             </div>
 			<div class="widget-content" style="padding-top: 30px;">
-				<%= render partial: 'tutor_projects/tutorial_project_list', locals:  { tutorial:  @tutorial } %>
+				<%= render 'tutor_projects/tutorial_project_list', tutorial:  @tutorial %>
 			</div>
 		</div>
 	</div>

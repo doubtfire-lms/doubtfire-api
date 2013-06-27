@@ -7,11 +7,11 @@
 		<li class="nav-header">Dashboard</li>
 		<li class="active"><%= link_to 'Home', root_url %></li>
 		<% unless @student_projects.empty? %>
-			<%= render 'dashboard/student_projects_links', student_projects:  @student_projects, selected_student_project:  nil %>
+			<%= render 'dashboard/student_projects_links', student_projects: @student_projects, selected_student_project: nil %>
 		<% end %>
 		<% unless @staff_units.empty? %>
-			<%= render partial: 'dashboard/staff_unit_links',
-				locals: { units: @staff_units, selected_unit: nil }
+			<%= render 'dashboard/staff_unit_links',
+				units: @staff_units, selected_unit: nil
 			%>
 		<% end %>
 	</ul>

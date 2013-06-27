@@ -9,7 +9,7 @@
 	<p class="toggle-task-description-container"><a href="#" class="toggle-task-description btn"><i class="icon-chevron-down"></i></a></p>
 	<p class="task-submission-vs-time"><%= task_submission_vs_time_text(task) %></p>
 	<div class="task-status-controls" style="display: inline-block;">
-		<%= render partial: 'tutor_projects/assessor_task_status_control', locals: { task: task } %>
+		<%= render 'tutor_projects/assessor_task_status_control', task: task %>
 	</div>
 	<div class="task-description">
 		<p><%= task.task_definition.description != "NULL" ? task.task_definition.description : "(No description provided)" %></p>

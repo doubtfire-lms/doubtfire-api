@@ -15,7 +15,7 @@
       <% unless task_list.blank? %>
         <!-- Rows are rendered as a partial so that they can be re-rendered from JavaScript after editing a row. See "task_definitions/edit.js.erb" and "task_definitions/edit.js.erb". -->
         <% task_list.each do |task_definition| %>
-          <%= render partial: 'task_definitions/table_row', locals:  { task_definition:  task_definition } %>
+          <%= render 'task_definitions/table_row', task_definition:  task_definition %>
         <% end %>
       <% end %>
     </tbody>

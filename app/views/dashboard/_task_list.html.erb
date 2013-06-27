@@ -3,15 +3,14 @@
 
 <% if project.has_optional_tasks? %>
 <h3>Assigned Tasks</h3>
-<%= render partial: 'tasks/assigned_task_list',
-			locals:  { project: project, assigned_tasks: tasks }
+<%= render 'tasks/assigned_task_list',
+            project: project, assigned_tasks: tasks
 %>
 <h3>Optional Tasks</h3>
-<%= render partial: 'tasks/optional_task_list',
-			locals:  { project: project, optional_tasks:  optional_tasks }
+<%= render 'tasks/optional_task_list',
+			project: project, optional_tasks:  optional_tasks
 %>
 <% else %>
-<%= render partial: 'tasks/assigned_task_list',
-			locals:  { project: project, assigned_tasks:  tasks }
+<%= render 'tasks/assigned_task_list', project, assigned_tasks: tasks
 %>
 <% end %>

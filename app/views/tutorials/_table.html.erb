@@ -12,7 +12,7 @@
   <tbody>
     <!-- Rows are rendered as a partial so that they can be re-rendered from JavaScript after editing a row. See "tutorials/edit.js.erb" and "tutorials/edit.js.erb". -->
     <% tutorial_list.each do |tutorial| %>
-      <%= render partial: 'tutorials/table_row', locals:  { tutorial:  tutorial } %>
+      <%= render 'tutorials/table_row', tutorial: tutorial %>
     <% end %>
   </tbody>
 </table>

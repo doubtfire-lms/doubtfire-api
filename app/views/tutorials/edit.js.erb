@@ -1,6 +1,6 @@
 // Build the row id string from the tutorial id
 var tutorialRowId = "tutorial-" + "<%= @tutorial.id %>" +  "-row";
-var partial = "<%=j render partial: 'tutorials/table_row_edit', locals: { tutorial: @tutorial, tutor_options: @tutor_options, current_tutor: @current_tutor } %>"
+var partial = "<%=j render 'tutorials/table_row_edit', tutorial: @tutorial, tutor_options: @tutor_options, current_tutor: @current_tutor %>"
 
 // Render the table_row_edit partial. If we just created a new tutorial via the 'Create' button, it won't have a row in the table yet. 
 if(document.getElementById(tutorialRowId) != null)

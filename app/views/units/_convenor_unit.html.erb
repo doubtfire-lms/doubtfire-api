@@ -1,12 +1,12 @@
 <% if status_distribution[:total] > 0 %>
 <div class="row-fluid">
 	<%= 
-		render partial: 'convenor_units/status_distribution_chart',
-		locals: { unit: project }
+		render 'convenor_units/status_distribution_chart',
+		unit: project
 	%>
 	<%=
-		render partial: 'convenor_units/progress_bands',
-		locals: { status_distribution: status_distribution }
+		render 'convenor_units/progress_bands',
+		status_distribution: status_distribution
 	%>
 </div>	
 <% else %>

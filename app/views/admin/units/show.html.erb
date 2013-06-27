@@ -3,7 +3,7 @@
 <!-- Sidebar -->
 <% content_for :sidebar do %>
     <% if current_user.admin? %>
-        <%= render partial: 'layouts/admin_menu' %>
+        <%= render 'layouts/admin_menu' %>
     <% end %>
 <% end %>
 
@@ -40,8 +40,8 @@
             <%= tab_div_tag("summary-tab", true) do %>
                 <div class="widget">
                     <%= 
-                        render partial: 'summary_information',
-                        locals: { unit: @unit }
+                        render 'summary_information',
+                        unit: @unit
                     %>
                 </div>
             <% end %>
@@ -49,10 +49,8 @@
             <!-- Table of tasks for the current project -->
             <%= tab_div_tag("tasks-tab") do %>
                 <div class="widget">
-                    <%= render partial: 'tasks',
-                        locals: {
-                            unit: @unit, task_definitions: @project_tasks
-                        }
+                    <%= render 'tasks',
+                        unit: @unit, task_definitions: @project_tasks
                     %>
                 </div>
             <% end %>
@@ -61,11 +59,9 @@
             <%= tab_div_tag("tutorials-tab") do %>
                 <div class="widget">
                     <%=
-                        render partial: 'tutorials',
-                        locals: {
-                            unit: @unit,
-                            project_tutorials: @project_tutorials
-                        }
+                        render 'tutorials',
+                        unit: @unit,
+                        project_tutorials: @project_tutorials
                     %>
                 </div>
             <% end %>
@@ -74,11 +70,9 @@
             <%= tab_div_tag("participants-tab") do %>
                 <div class="widget">
                     <%=
-                        render partial: 'participants',
-                        locals: {
-                            unit: @unit,
-                            participants: @project_users
-                        }
+                        render 'participants',
+                        unit: @unit,
+                        participants: @project_users
                     %>
                 </div>
             <% end %>

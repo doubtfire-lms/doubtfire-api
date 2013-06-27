@@ -3,7 +3,7 @@
 
 <% content_for :sidebar do %>
     <% if current_user.admin? %>
-        <%= render partial: 'layouts/admin_menu' %>
+        <%= render 'layouts/admin_menu' %>
     <% end %>
 <% end %>
 
@@ -35,7 +35,7 @@
             <h2><i class="icon-book"></i><%= @task_definition.name %></h2>
         </div>
         <div class="widget-content">
-            <%= render partial: 'form', locals: { task_definition: @task_definition, unit: @unit } %>
+            <%= render 'form', task_definition: @task_definition, unit: @unit %>
         </div>
     </div>
 </div>
