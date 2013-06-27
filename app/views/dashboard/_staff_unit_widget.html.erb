@@ -1,0 +1,11 @@
+<div class="widget <%= size == :large ? 'span12' : 'span6' %>">
+    <div class="widget-header">
+        <h2><i class="icon-book"></i><%= unit.name %></h2>
+    </div>
+    <div class="widget-content">
+        <%=
+            render 'staff_unit',
+            unit: unit, user: user, roles: roles
+        %>
+    </div>
+</div>

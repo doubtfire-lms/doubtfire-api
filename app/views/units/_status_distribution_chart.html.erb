@@ -1,3 +1,5 @@
+<% javascript 'status_distribution.js' %>
+
 <%= content_tag "div", class: "status-distribution-chart pull-left", data: {url: status_distribution_url(unit)} do %>
 	<svg style="height: 300px"></svg>
 <% end %>

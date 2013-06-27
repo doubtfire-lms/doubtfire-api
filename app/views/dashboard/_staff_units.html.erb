@@ -1,39 +1,23 @@
 <% stylesheets 'convenor.css' %>
 
 <% if staff_units.size < 3 %>
-	
 	<% staff_units.each_with_index do |unit, i| %>
 		<div class="row-fluid">
-			<div class="widget span12">
-				<div class="widget-header">
-					<h2><i class="icon-book"></i><%= unit.name %></h2>
-				</div>
-				<div class="widget-content">
-					<%=
-						render 'staff_unit',
-						unit: unit, user: user
-					%>
-				</div>
-			</div>
+			<%= render 'staff_unit_widget',
+				unit: unit, user: user, roles: roles[unit.id],
+				size: :large
+			%>
 		</div>
 	<% end %>
-
 <% else %>
 	<% staff_units.each_with_index do |unit, i| %>
 		<% if i % 2 == 0 %>
 		<div class="row-fluid">
 		<% end %>
-			<div class="widget span6">
-				<div class="widget-header">
-					<h2><i class="icon-book"></i><%= unit.name %></h2>
-				</div>
-				<div class="widget-content">
-					<%=
-						render 'staff_unit',
-						unit: unit, user: user
-					%>
-				</div>
-			</div>
+			<%= render 'staff_unit_widget',
+				unit: unit, user: user, roles: roles[unit.id],
+				size: :small
+			%>
 		<% if i % 2 == 1 %>
 		</div>
 		<% end %>

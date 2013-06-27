@@ -1,12 +1,40 @@
-<% tasks_awaiting_signoff = unmarked_project_tasks(unit, user) %>
-<% if tasks_awaiting_signoff.empty? %>
-	<p>
-		No tasks currently awaiting sign-off
-	</p>
-<% else %>
-	<p>
-		You have <%= link_to "#{tasks_awaiting_signoff.size} tasks", tutor_project_path(unit)%> awaiting sign-off
-	</p>
+<div class="row-fluid">
+<% if roles.include? 'Convenor' %>
+    <div class="<%= roles.include?('Tutor') ? 'span6' : 'span12' %>">
+    <h3>Student Progress</h3>
+    <%= 
+        render 'units/status_distribution_chart',
+        unit: unit
+    %>
+    <%=
+        render 'units/progress_bands',
+        status_distribution: unit.status_distribution
+    %>
+    </div>
 <% end %>
+<% if roles.include? 'Tutor' %>
+    <div class="<%= roles.include?('Tutor') ? 'span6' : 'span12' %>">
+        <div class="row-fluid">
+            <h3>Your Tutorials</h3>
+            <p>Tutorial progress bands to go here</p>
+        </div>
+        <div class="row-fluid">
+            <h3>Assessment Backlog</h3>
+            <% tasks_awaiting_signoff = unmarked_project_tasks(unit, user) %>
+            <% if tasks_awaiting_signoff.empty? %>
+                <p>
+                    No tasks currently awaiting sign-off
+                </p>
+            <% else %>
+                <p>
+                    You have <%= link_to "#{tasks_awaiting_signoff.size} tasks", tutor_project_path(unit)%> awaiting sign-off
+                </p>
+            <% end %>
+        </div>
+    </div>
+<% end %>
+</div>
 
-<p class="project-link"><%= link_to "Go to Project", unit, class: "btn" %></p>
+<div class="row-fluid">
+    <p class="project-link"><%= link_to "Go to Project", unit, class: "btn" %></p>
+</div>

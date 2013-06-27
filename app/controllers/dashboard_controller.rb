@@ -8,8 +8,16 @@ class DashboardController < ApplicationController
       if @user.admin?
         redirect_to admin_root_path and return
       else
-        redirect_to no_projects_path
+        redirect_to no_projects_path and return
       end
+    end
+
+    @unit_roles = UnitRole.where(user_id: @user.id, unit_id: @staff_units.map(&:id))
+
+    @users_unit_roles = @unit_roles.inject({}) do |roles, role|
+      roles[role.unit_id] ||= []
+      roles[role.unit_id] << role.role.name
+      roles
     end
   end
 end

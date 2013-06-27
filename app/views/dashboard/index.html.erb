@@ -33,7 +33,9 @@
 		<% unless @staff_units.empty? %>
 			<%= render 'dashboard/staff_units',
 						staff_units: @staff_units,
-						user: @user %>
+						user: @user,
+						roles: @users_unit_roles
+			%>
 		<% end %>
 	</div>
 </div>
