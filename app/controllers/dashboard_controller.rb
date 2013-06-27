@@ -12,12 +12,24 @@ class DashboardController < ApplicationController
       end
     end
 
-    @unit_roles = UnitRole.where(user_id: @user.id, unit_id: @staff_units.map(&:id))
+    unit_roles = UnitRole.where(user_id: @user.id, unit_id: @staff_units.map(&:id))
+    @users_unit_data  = {}
 
-    @users_unit_roles = @unit_roles.inject({}) do |roles, role|
-      roles[role.unit_id] ||= []
-      roles[role.unit_id] << role.role.name
-      roles
+    unit_roles.each do |role|
+      @users_unit_data[role.unit_id] ||= {}
+      @users_unit_data[role.unit_id][:roles] ||= []
+      @users_unit_data[role.unit_id][:roles] << role.role.name
+    end
+
+    tutor_role = Role.where(name: 'Tutor').first
+
+    users_tutor_unit_roles = unit_roles.select{|unit_role| unit_role.role == tutor_role }
+    users_tutorials = Tutorial.includes(:projects).where(unit_role_id: users_tutor_unit_roles.map(&:id)) 
+
+    users_tutorials.each do |tutorial|
+      @users_unit_data[tutorial.unit_id] ||= {}
+      @users_unit_data[tutorial.unit_id][:tutorials] ||= []
+      @users_unit_data[tutorial.unit_id][:tutorials] << tutorial
     end
   end
 end

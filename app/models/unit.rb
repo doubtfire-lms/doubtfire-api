@@ -206,28 +206,6 @@ class Unit < ActiveRecord::Base
   end
 
   def status_distribution
-    projects = Project.where(unit_id: id)
-    project_count = projects.length
-    
-    status_totals = {
-      ahead: 0,
-      on_track: 0,
-      behind: 0,
-      danger: 0,
-      doomed: 0,
-      not_started: 0,
-      total: 0
-    }
-
-    projects.each do |project|
-      if project.started?
-        status_totals[project.progress] += 1
-      else
-        status_totals[:not_started] += 1
-      end
-    end
-
-    status_totals[:total] = project_count
-    Hash[status_totals.sort_by{ |status, count| count }.reverse]
+    Project.status_distribution(projects)
   end
 end

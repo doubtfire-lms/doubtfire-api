@@ -4,7 +4,7 @@
 	<% staff_units.each_with_index do |unit, i| %>
 		<div class="row-fluid">
 			<%= render 'staff_unit_widget',
-				unit: unit, user: user, roles: roles[unit.id],
+				unit: unit, user: user, unit_data: unit_data[unit.id],
 				size: :large
 			%>
 		</div>
@@ -15,7 +15,7 @@
 		<div class="row-fluid">
 		<% end %>
 			<%= render 'staff_unit_widget',
-				unit: unit, user: user, roles: roles[unit.id],
+				unit: unit, user: user, unit_data: unit_data[unit.id],
 				size: :small
 			%>
 		<% if i % 2 == 1 %>

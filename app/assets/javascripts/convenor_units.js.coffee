@@ -1,4 +1,4 @@
 $ ->
-  $("#projects th a").live "click", ->
+  $("#projects th a").click ->
     $.getScript this.href
     false

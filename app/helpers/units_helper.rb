@@ -1,5 +1,4 @@
 module UnitsHelper
-
 	# Gets a list of the convenors involved in a project as a string of form "Convenor 1, Convenor 2, ..."
 	def get_convenors_string(unit_id)
 
