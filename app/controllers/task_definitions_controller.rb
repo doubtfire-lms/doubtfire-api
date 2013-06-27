@@ -64,12 +64,12 @@ class TaskDefinitionsController < ApplicationController
         end
 
         format.html { redirect_to unit_path(@task_definition.unit_id), notice: "TaskDefinition was successfully updated."}
-        format.js { render action: "edit" }
+        format.js { render 'edit' }
         format.json { render json: @task_definition, status: :created, location: @task_definition }
       else
-        format.html { render action: "new" }
+        format.html { render 'new' }
         format.json { render json: @task_definition.errors, status: :unprocessable_entity }
-        format.js { render action: "new" }
+        format.js { render 'new' }
       end
     end
   end
@@ -83,11 +83,11 @@ class TaskDefinitionsController < ApplicationController
       if @task_definition.update_attributes(params[:task_definition])
         format.html { redirect_to unit_path(@task_definition.unit_id), notice: "TaskDefinition was successfully updated."}
         format.json { head :no_content }
-        format.js { render action: "finish_update" }
+        format.js { render 'finish_update' }
       else
-        format.html { render action: "edit" }
+        format.html { render 'edit' }
         format.json { render json: @task_definition.errors, status: :unprocessable_entity }
-        format.js { render action: "edit" }
+        format.js { render 'edit' }
       end
     end
   end

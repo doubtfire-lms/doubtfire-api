@@ -22,10 +22,10 @@ class ConvenorContactFormsController < ApplicationController
       ).deliver
 
       flash[:notice] = "Message sent!"
-      render action:  'success'
+      render 'success'
     else
       flash[:error] = "Please ensure all fields are filled in."
-      render action:  'new'
+      render 'new'
     end
   end
 

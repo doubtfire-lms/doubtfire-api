@@ -47,7 +47,7 @@ class TaskStatusesController < ApplicationController
         format.html { redirect_to @task_status, notice: 'Task status was successfully created.' }
         format.json { render json: @task_status, status: :created, location: @task_status }
       else
-        format.html { render action: "new" }
+        format.html { render 'new' }
         format.json { render json: @task_status.errors, status: :unprocessable_entity }
       end
     end
@@ -63,7 +63,7 @@ class TaskStatusesController < ApplicationController
         format.html { redirect_to @task_status, notice: 'Task status was successfully updated.' }
         format.json { head :no_content }
       else
-        format.html { render action: "edit" }
+        format.html { render 'edit' }
         format.json { render json: @task_status.errors, status: :unprocessable_entity }
       end
     end

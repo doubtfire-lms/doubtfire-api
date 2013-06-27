@@ -36,7 +36,7 @@ class UsersController < ApplicationController
       format.json { render json: @user }
       format.js {
         @user.save!(validate: false)
-        render action: "edit"
+        render 'edit'
       }
     end
   end
@@ -63,7 +63,7 @@ class UsersController < ApplicationController
         format.html { redirect_to @user, notice: 'User was successfully created.' }
         format.json { render json: @user, status: :created, location: @user }
       else
-        format.html { render action: "new" }
+        format.html { render 'new' }
         format.json { render json: @user.errors, status: :unprocessable_entity }
       end
     end
@@ -90,12 +90,12 @@ class UsersController < ApplicationController
   	    	format.html { redirect_to @user, notice: 'User was successfully updated.' }
   	    end
 
-        format.js { render action: "finish_update" }
+        format.js { render 'finish_update' }
         format.json { head :no_content }
       else
-        format.html { render action: "edit" }
+        format.html { render 'edit' }
         format.json { render json: @user.errors, status: :unprocessable_entity }
-        format.js { render action: "edit" }
+        format.js { render 'edit' }
       end
     end
   end

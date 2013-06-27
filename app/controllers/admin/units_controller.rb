@@ -65,7 +65,7 @@ class Admin::UnitsController < ApplicationController
     respond_to do |format|
       format.html # new.html.erb
       format.json { render json: @unit }
-      format.js { render action: 'edit' }
+      format.js { render 'edit' }
     end
   end
 
@@ -93,7 +93,7 @@ class Admin::UnitsController < ApplicationController
         format.html { redirect_to @unit, notice: 'Unit was successfully created.' }
         format.json { render json: @unit, status: :created, location: @unit }
       else
-        format.html { render action: "new" }
+        format.html { render 'new' }
         format.json { render json: @unit.errors, status: :unprocessable_entity }
       end
     end
@@ -126,11 +126,11 @@ class Admin::UnitsController < ApplicationController
 
         format.html { redirect_to @unit, notice: 'Unit was successfully updated.' }
         format.json { head :no_content }
-        format.js { render action: "finish_update" }
+        format.js   { render 'finish_update' }
       else
-        format.html { render action: "edit" }
+        format.html { render 'edit' }
         format.json { render json: @unit.errors, status: :unprocessable_entity }
-        format.js { render action: "edit" }
+        format.js   { render 'edit' }
       end
     end
   end

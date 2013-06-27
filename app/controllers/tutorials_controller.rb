@@ -41,7 +41,7 @@ class TutorialsController < ApplicationController
     respond_to do |format|
       format.html # new.html.erb
       format.json { render json: @tutorial }
-      format.js { render action: 'edit' }
+      format.js { render 'edit' }
     end
   end
 
@@ -73,7 +73,7 @@ class TutorialsController < ApplicationController
         format.html { redirect_to unit_path(@tutorial.unit_id), notice: "Tutorial was successfully updated."}
         format.json { render json: @tutorial, status: :created, location: @tutorial }
       else
-        format.html { render action: "new" }
+        format.html { render 'new' }
         format.json { render json: @tutorial.errors, status: :unprocessable_entity }
       end
     end
@@ -100,11 +100,11 @@ class TutorialsController < ApplicationController
 
         format.html { redirect_to unit_path(@tutorial.unit_id), notice: "Tutorial was successfully updated."}
         format.json { head :no_content }
-        format.js { render action: "finish_update" }
+        format.js { render 'finish_update' }
       else
-        format.html { render action: "edit" }
+        format.html { render 'edit' }
         format.json { render json: @tutorial.errors, status: :unprocessable_entity }
-        format.js { render action: "edit" }
+        format.js { render 'edit' }
       end
     end
   end
