@@ -11,6 +11,15 @@ class ProjectsController < ApplicationController
 
     respond_to do |format|
       format.html {render 'show'}
+      format.json
+    end
+  end
+
+  def burndown
+    @project = Project.includes(tasks:  [:task_definition]).find(params[:id])
+    authorize! :read, @project, message:  "You are not authorised to view Project ##{@project.id}"
+
+    respond_to do |format|
       format.json {
         render json: @project.to_json(
           include:  [

@@ -41,6 +41,8 @@ Doubtfire::Application.routes.draw do
   put 'tasks/:id/engage_with_task/:status'  => 'tasks#engage_with_task',  as: 'engage_with_task'
   put 'tasks/:id/assess_task/:status'       => 'tasks#assess_task',       as: 'assess_task'
 
+  get 'projects/:id/burndown' => 'projects#burndown', as: 'project_burndown'
+
   post 'units/:id/update'       => 'units#update',       as: 'update_unit'
   get 'units/:id/status_distribution' => 'units#status_distribution', as: 'status_distribution'
 
