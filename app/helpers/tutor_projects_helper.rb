@@ -92,11 +92,10 @@ module TutorProjectsHelper
     link_to(
       task.task_definition.abbreviation || relative_number,
       link,
-      rel:  "popover",
       class:  "task-progress-item task-#{task.id}-bar-item #{active_class}",
+      title: task.task_definition.name,
       "data-progress-class" => progress_class,
       "data-action-class"   => action_class,
-      "data-original-title" => "#{task.task_definition.name}",
       "data-content"        => [
         description_text,
         h(status_control_partial)
