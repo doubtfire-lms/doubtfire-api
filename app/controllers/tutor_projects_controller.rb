@@ -27,7 +27,7 @@ class TutorProjectsController < ApplicationController
 
   def display_other_tutorial
     @other_tutorial = Tutorial.includes(unit_roles:  [{project:  [{tasks:  [:task_definition]}]}]).find(params[:tutorial_id])
-    
+
     respond_to do |format|
       format.js
     end

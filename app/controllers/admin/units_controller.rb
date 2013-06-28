@@ -21,9 +21,9 @@ class Admin::UnitsController < ApplicationController
     @project_tasks = TaskDefinition.where(unit_id:  params[:id]).order(by:  [:target_date, :id])
     @project_users = User.joins(unit_roles:  :project).where(projects:  {unit_id:  params[:id]})
     @project_tutorials = Tutorial.where(unit_id:  params[:id])
-    
+
     authorize! :manage, @unit, message:  "You are not authorised to manage Unit ##{@unit.id}"
-    
+
     respond_to do |format|
       format.html # show.html.erb
       format.json { render json: @unit }
@@ -32,7 +32,7 @@ class Admin::UnitsController < ApplicationController
 
   def status_distribution
     @unit = Unit.find(params[:id])
-    
+
     respond_to do |format|
       format.json {
         render json:
@@ -61,7 +61,7 @@ class Admin::UnitsController < ApplicationController
     # Create a new unit, populate it with sample data, and save it immediately.
     @unit = Unit.default
     @unit.save
-    
+
     respond_to do |format|
       format.html # new.html.erb
       format.json { render json: @unit }
@@ -103,7 +103,7 @@ class Admin::UnitsController < ApplicationController
   # PUT /units/1.json
   def update
     @unit = Unit.find(params[:id])
-  
+
     respond_to do |format|
       if @unit.update_attributes(params[:unit])
         convenor_role = Role.where(name: 'Convenor').first
@@ -161,7 +161,7 @@ class Admin::UnitsController < ApplicationController
     @unit = Unit.find(params[:unit_id])
 
     respond_to do |format|
-      format.js 
+      format.js
     end
   end
 
@@ -207,7 +207,7 @@ class Admin::UnitsController < ApplicationController
       format.js
     end
   end
-  
+
   def destroy_all_tasks
     @unit = Unit.find(params[:unit_id])
     TaskDefinition.destroy_all(unit_id:  @unit.id)

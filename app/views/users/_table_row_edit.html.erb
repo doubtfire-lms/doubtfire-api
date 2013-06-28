@@ -5,7 +5,7 @@
     <td><%= f.input :email, label:  false %></td>
     <td><%= f.input :first_name, label:  false %></td>
     <td><%= f.input :last_name, label:  false %></td>
-    
+
     <% if current_user.admin? %>
       <td><%= user.sign_in_count %></td>
       <td><%= f.input :system_role,
@@ -22,7 +22,7 @@
 
     <td>
       <%= f.button :submit, "Save", class:  "btn btn-mini btn-success" %>
-      <a href="<%= cancel_update_user_path(user.id) %>" data-remote="true" data-method="get" class="btn btn-mini btn-danger">Cancel</a> 
+      <a href="<%= cancel_update_user_path(user.id) %>" data-remote="true" data-method="get" class="btn btn-mini btn-danger">Cancel</a>
     </td>
   <% end %>
 </tr>

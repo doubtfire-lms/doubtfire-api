@@ -20,11 +20,11 @@ class Project < ActiveRecord::Base
 
   def add_task(task_definition)
     task = Task.new
-    
+
     task.task_definition_id = @task_definition.id
     task.project_id         = project.id
     task.task_status_id     = 1
-    task.awaiting_signoff   = false 
+    task.awaiting_signoff   = false
 
     task.save
   end
@@ -124,7 +124,7 @@ class Project < ActiveRecord::Base
       break if weight > units_completed
       date_progress = date
     end
-    
+
     (date_progress - reference_date).to_i / 1.day
   end
 
@@ -132,7 +132,7 @@ class Project < ActiveRecord::Base
     date_accumulated_weight_map = {}
 
     assigned_tasks.sort{|a, b| a.task_definition.target_date <=>  b.task_definition.target_date}.each do |project_task|
-      date_accumulated_weight_map[project_task.task_definition.target_date] = assigned_tasks.select{|task| 
+      date_accumulated_weight_map[project_task.task_definition.target_date] = assigned_tasks.select{|task|
         task.task_definition.target_date <= project_task.task_definition.target_date
       }.map{|task| task.task_definition.weighting.to_f}.inject(:+)
     end
@@ -258,7 +258,7 @@ class Project < ActiveRecord::Base
 
   def self.status_distribution(projects)
     project_count = projects.length
-    
+
     status_totals = {
       ahead: 0,
       on_track: 0,
@@ -278,7 +278,7 @@ class Project < ActiveRecord::Base
     end
 
     status_totals[:total] = project_count
-    
+
     Hash[status_totals.sort_by{|status, count| count }]
   end
 

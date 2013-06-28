@@ -14,7 +14,7 @@ class Task < ActiveRecord::Base
 
   def self.default
     task_definition             = self.new
-    
+
     task_definition.name        = "New Task"
     task_definition.description = "Enter a description for this task."
     task_definition.weighting   = 0.0
@@ -70,7 +70,7 @@ class Task < ActiveRecord::Base
   def days_since_completion
     (project.reference_date - completion_date.to_datetime).to_i / 1.day
   end
-  
+
   def weeks_since_completion
     days_since_completion / 7
   end

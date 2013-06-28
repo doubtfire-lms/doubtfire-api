@@ -8,7 +8,7 @@ Doubtfire::Application.routes.draw do
     post 'login'    => 'devise/sessions#create', as:  :user_session
     delete 'logout' => 'devise/sessions#destroy', as:  :destroy_user_session
   end
-  
+
   ##### Admin #####
 
   namespace :admin do

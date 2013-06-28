@@ -27,7 +27,7 @@ module DashboardHelper
 
   def not_completed_badge
     raw('Not Completed <i class="icon-remove"></i>')
-  end  
+  end
 
   def will_complete_based_on_velocity(project)
     if project.in_progress?
@@ -36,7 +36,7 @@ module DashboardHelper
         completion_date = project.last_task_completed.completion_date.to_time
 
         days_left_before_deadline  = ((project.unit.end_date - completion_date).to_i / 1.day)
-        
+
         if days_left_before_deadline < 7
           if days_left_before_deadline == 0
             complete_based_on_velocity = "You finished right on the target date."
@@ -190,14 +190,14 @@ module DashboardHelper
 
         raw("<p>#{projected_date_of_completion_text} #{deadline_text}</p>")
       end
-    end 
+    end
   end
 
   def project_status_summary(project)
     status_summary = if !project.commenced?
       "This project has not commenced. Best of luck for the upcoming start of the project!"
     elsif project.concluded?
-      if project.completed? 
+      if project.completed?
         "This project has concluded. Congratulations on completing all of the allocated tasks!"
       else
         "This project has concluded. Unfortunately you did not complete all of the set tasks."

@@ -6,7 +6,7 @@ class UsersController < ApplicationController
     # don't display the current user or the admin in the users list
     @user = current_user
     @users = User.all
-    
+
     authorize! :manage, User, message:  "You are not authorised to access user management"
 
     respond_to do |format|

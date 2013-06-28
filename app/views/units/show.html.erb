@@ -34,7 +34,7 @@
           <li class="active"><%= @unit.name %></li>
         </ul>
 
-        <div class="tabbable"> 
+        <div class="tabbable">
             <ul class="nav nav-pills">
             <% @tabs.each do |tab| %>
                 <%= tab_li_tag("#{tab.to_s.dasherize}-tab", tab == @selected_tab) do %>
@@ -57,7 +57,7 @@
                         tutor_tutorials: @tutor_tutorials,
                         initial_other_tutorial: @initial_other_tutorial,
                         other_tutorials: @other_tutorials,
-                        unit: @unit 
+                        unit: @unit
                     %>
                 <% end %>
                 <% end %>

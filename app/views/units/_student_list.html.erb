@@ -15,7 +15,7 @@
 				<td><%= link_to project.student.user.username, project_path(project) %></td>
 				<td><%= project.student.user.name %></td>
 				<td>
-					<% if project.in_progress? and !project.completed? %> 
+					<% if project.in_progress? and !project.completed? %>
 					<%= progress_badge(project.progress) %>
 					<% else %>
 					<%= status_badge(project.status) %>

@@ -145,13 +145,13 @@ namespace :db do
           tutorial.meeting_time = "#{8 + rand(12)}:#{['00', '30'].sample}"    # Mon-Fri 8am-7:30pm
           tutorial.meeting_day  = "#{days.sample}"
           tutorial.meeting_location = "#{['EN', 'BA'].sample}#{rand(7)}#{rand(1)}#{rand(9)}" # EN###/BA###
-          
+
           if ["Introduction To Programming", "Object-Oriented Programming"].include? subject_name
             tutorial.user_id = tutors[:acain][:id]  # Tutor 1
           else
             tutorial.user_id = tutors[:cwoodward][:id]  # Tutor 2
           end
-          
+
           tutorial_num += 1
         end
       end
@@ -164,7 +164,7 @@ namespace :db do
         unit.add_user(user.id, random_project_tutorial.id, "student")
       end
     end
- 
+
     complete_status = TaskStatus.where(:name=> "Complete").first
 
     User.where(username:  "ajones").each do |allan|

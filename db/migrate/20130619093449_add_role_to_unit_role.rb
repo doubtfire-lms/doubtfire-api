@@ -20,7 +20,7 @@ class AddRoleToUnitRole < ActiveRecord::Migration
       unit_role.unit_id = unit_role.project.unit_id
       unit_role.save!
     end
-    
+
     # Add unit_role_id to Tutorial (to supplant user_id)
     add_column :tutorials, :unit_role_id, :integer
     add_index :tutorials, :unit_role_id
@@ -29,7 +29,7 @@ class AddRoleToUnitRole < ActiveRecord::Migration
     tutorial_unit_map = {}
     user_unit_unit_role_map = {}
 
-    # For each tutorial, 
+    # For each tutorial,
     Tutorial.all.each do |tutorial|
       tutor = tutorial.user_id
       unit = tutorial.unit_id
@@ -49,7 +49,7 @@ class AddRoleToUnitRole < ActiveRecord::Migration
       else
         unit_role = UnitRole.new(user_id: user, role_id: tutor_role.id, unit_id: unit)
         unit_role.save!
-        
+
         user_unit_unit_role_map[user] ||= {}
         user_unit_unit_role_map[user][unit] = unit_role.id
       end

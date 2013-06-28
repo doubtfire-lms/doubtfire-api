@@ -29,7 +29,7 @@
 			<% end %>
 		</li>
 	</ul>
-	
+
 	<ul class="nav nav-pills">
 		<%= tab_li_tag("summary-tab", true) do %>
             <a href="#summary-tab" data-toggle="tab">Summary</a>
@@ -74,7 +74,7 @@
 					</h2>
 				</div>
 				<div class="widget-content">
-					<%= 
+					<%=
 						render 'dashboard/task_list',
 						project: @project, tasks: @project.assigned_tasks, optional_tasks: @project.optional_tasks
 					%>
@@ -93,7 +93,7 @@
 					</h2>
 				</div>
 				<div class="widget-content">
-					<%= 
+					<%=
 						render 'dashboard/tutorial_allocation',
 						project: @project,
 						student: @project.student

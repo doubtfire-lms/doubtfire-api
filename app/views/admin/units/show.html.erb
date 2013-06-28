@@ -20,7 +20,7 @@
         <li class="active"><%= @unit.name %> (Adminstration)</li>
     </ul>
 
-    <div class="tabbable"> 
+    <div class="tabbable">
         <ul class="nav nav-pills">
             <%= tab_li_tag("summary-tab", true) do %>
                 <a href="#summary-tab" data-toggle="tab">Summary</a>
@@ -39,13 +39,13 @@
             <!-- Information about the current project -->
             <%= tab_div_tag("summary-tab", true) do %>
                 <div class="widget">
-                    <%= 
+                    <%=
                         render 'summary_information',
                         unit: @unit
                     %>
                 </div>
             <% end %>
-            
+
             <!-- Table of tasks for the current project -->
             <%= tab_div_tag("tasks-tab") do %>
                 <div class="widget">

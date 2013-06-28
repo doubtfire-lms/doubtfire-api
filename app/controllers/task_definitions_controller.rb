@@ -31,7 +31,7 @@ class TaskDefinitionsController < ApplicationController
     respond_to do |format|
       format.html # new.html.erb
       format.json { render json: @task_definition }
-      format.js { 
+      format.js {
         # Call the create action, which saves the object and creates task instances for any existing users
         create
       }
@@ -78,7 +78,7 @@ class TaskDefinitionsController < ApplicationController
   # PUT /task_definitions/1.json
   def update
     @task_definition = TaskDefinition.find(params[:task_definition_id])
-    
+
     respond_to do |format|
       if @task_definition.update_attributes(params[:task_definition])
         format.html { redirect_to unit_path(@task_definition.unit_id), notice: "TaskDefinition was successfully updated."}

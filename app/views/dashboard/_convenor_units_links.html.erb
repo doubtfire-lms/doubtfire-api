@@ -2,7 +2,7 @@
 <% active_units.each do |unit| %>
     <% if !local_assigns[:selected_unit].nil? && unit.id == selected_unit.id %>
         <li class="active"><a href="<%= convenor_unit_path(unit) %>"><%= unit.name %></a></li>
-    <% else %>  
+    <% else %>
         <li><a href="<%= convenor_unit_path(unit) %>"><%= unit.name %></a></li>
     <% end %>
 <% end %>
@@ -14,7 +14,7 @@
     <% inactive_units.each do |unit| %>
         <% if !local_assigns[:selected_unit].nil? && unit.id == selected_unit.id %>
             <li class="active"><a href="<%= convenor_unit_path(unit) %>"><%= unit.name %></a></li>
-        <% else %>  
+        <% else %>
             <li><a href="<%= convenor_unit_path(unit) %>"><%= unit.name %></a></li>
         <% end %>
     <% end %>

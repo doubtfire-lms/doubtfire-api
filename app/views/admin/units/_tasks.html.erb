@@ -8,19 +8,19 @@
     %>
 
     <hr />
-    
+
     <span id="task-buttons">
         <%= link_to "Create new task", unit_new_task_path(unit), onclick:  "$('#destroy-tasks-button').show()", class:  'btn', "data-remote" => true %>
 
         <% if task_definitions.empty? %>
-        <%= link_to "Destroy all tasks", unit_destroy_all_tasks_path(unit), 
-                    class:  'btn btn-danger', 
+        <%= link_to "Destroy all tasks", unit_destroy_all_tasks_path(unit),
+                    class:  'btn btn-danger',
                     id:  'destroy-tasks-button',
                     "data-remote" => true,
                     data:  { confirm:  t('.confirm', default:  t("helpers.links.confirm", default:  'All tasks (including instances assigned to users) will be destroyed. Are you sure?'))}, style:  "display: none;" %>
         <% else %>
-        <%= link_to "Destroy all tasks", unit_destroy_all_tasks_path(unit), 
-                    class:  'btn btn-danger', 
+        <%= link_to "Destroy all tasks", unit_destroy_all_tasks_path(unit),
+                    class:  'btn btn-danger',
                     id:  'destroy-tasks-button',
                     "data-remote" => true,
                     data:  { confirm:  t('.confirm', default:  t("helpers.links.confirm", default:  'All tasks (including instances assigned to users) will be destroyed. Are you sure?'))} %>

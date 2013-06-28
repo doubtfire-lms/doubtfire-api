@@ -33,6 +33,5 @@ namespace :db do
         superuser.system_role         = "superuser"
       end
     end
-    
   end
 end

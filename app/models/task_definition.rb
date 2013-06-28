@@ -1,6 +1,6 @@
 class TaskDefinition < ActiveRecord::Base
 	attr_accessible :unit_id, :name, :abbreviation, :description, :target_date, :required, :weighting
-	
+
 	# Model associations
 	belongs_to :unit			   # Foreign key
 	has_many :tasks, dependent:  :destroy    # Destroying a task definition will also nuke any instances
@@ -8,7 +8,7 @@ class TaskDefinition < ActiveRecord::Base
 	# Model validations/constraints
 	validates_uniqueness_of :name, scope:  :unit_id		# task definition names within a unit must be unique
 
-  def status_distribution    
+  def status_distribution
     task_instances = tasks
 
     awaiting_signoff = task_instances.select{|task| task.awaiting_signoff? }

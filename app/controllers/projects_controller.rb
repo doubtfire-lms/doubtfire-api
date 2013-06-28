@@ -11,7 +11,7 @@ class ProjectsController < ApplicationController
 
     respond_to do |format|
       format.html {render 'show'}
-      format.json { 
+      format.json {
         render json: @project.to_json(
           include:  [
             {

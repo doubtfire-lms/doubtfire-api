@@ -2,7 +2,7 @@
 <% if unit_data[:roles].include? 'Convenor' %>
     <div class="<%= unit_data[:roles].include?('Tutor') ? 'span6' : 'span12' %>">
     <h3>Student Progress</h3>
-    <%= 
+    <%=
         render 'units/status_distribution_chart',
         unit: unit
     %>

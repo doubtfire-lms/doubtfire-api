@@ -2,7 +2,7 @@
 var tutorialRowId = "tutorial-" + "<%= @tutorial.id %>" +  "-row";
 var partial = "<%=j render 'tutorials/table_row_edit', tutorial: @tutorial, tutor_options: @tutor_options, current_tutor: @current_tutor %>"
 
-// Render the table_row_edit partial. If we just created a new tutorial via the 'Create' button, it won't have a row in the table yet. 
+// Render the table_row_edit partial. If we just created a new tutorial via the 'Create' button, it won't have a row in the table yet.
 if(document.getElementById(tutorialRowId) != null)
 	$("#" + tutorialRowId).replaceWith(partial);	// Row already exists - replace it with the form
 else

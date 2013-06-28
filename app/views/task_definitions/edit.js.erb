@@ -2,7 +2,7 @@
 var taskRowId = "task-" + "<%= @task_definition.id %>" +  "-row";
 var partial = "<%=j render 'task_definitions/table_row_edit', task_definition:  @task_definition %>"
 
-// Render the table_row_edit partial. If we just created a new task via the 'Create' button, it won't have a row in the table yet. 
+// Render the table_row_edit partial. If we just created a new task via the 'Create' button, it won't have a row in the table yet.
 if(document.getElementById(taskRowId) != null)
 	$("#" + taskRowId).replaceWith(partial);	// Row already exists - replace it with the form
 else

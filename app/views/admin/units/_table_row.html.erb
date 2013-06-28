@@ -7,7 +7,7 @@
   <td><%= unit.active ? "Yes" : "No" %></td>
   <td>
     <%= link_to t('.edit', default:  t("helpers.links.edit")),
-                edit_admin_unit_path(unit), 
+                edit_admin_unit_path(unit),
                 "data-remote" => true,
                 class:  'btn btn-mini' %>
     <%= link_to t('.destroy', default:  t("helpers.links.destroy")),

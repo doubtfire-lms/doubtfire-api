@@ -3,17 +3,17 @@ require 'bcrypt'
 
 class Unit < ActiveRecord::Base
   include ApplicationHelper
-  
+
   # Accessor to allow setting of convenors via the new/edit form
   attr_accessor :convenors
 
   attr_accessible :code, :description, :end_date, :name, :start_date, :active
   validates_presence_of :name, :description, :start_date, :end_date
 
-  # Model associations. 
+  # Model associations.
   # When a Unit is destroyed, any TaskDefinitions, Tutorials, and ProjectConvenor instances will also be destroyed.
-  has_many :task_definitions, dependent: :destroy	  			
-  has_many :projects, dependent: :destroy					 
+  has_many :task_definitions, dependent: :destroy
+  has_many :projects, dependent: :destroy
   has_many :tutorials, dependent: :destroy
   has_many :unit_roles, dependent: :destroy
 
@@ -76,7 +76,7 @@ class Unit < ActiveRecord::Base
     end
   end
 
-  # Imports users into a project from CSV file. 
+  # Imports users into a project from CSV file.
   # Format: Student ID,Course ID,First Name,Initials,Surname,Mark,Assessment,Status
   # Only Student ID, First Name, and Surname are used.
   def import_users_from_csv(file)
@@ -110,7 +110,7 @@ class Unit < ActiveRecord::Base
 
       tutorial = tutorial_cache[class_id] || Tutorial.where(code: class_id, unit_id: id).first
       tutorial_cache[class_id] ||= tutorial
-      
+
       # Add the user to the project (if not already in there)
       if user_not_in_project
         add_user(project_participant.id, tutorial.id, "student")
@@ -129,7 +129,7 @@ class Unit < ActiveRecord::Base
         tutorial.meeting_day      = day
         tutorial.meeting_time     = time
         tutorial.meeting_location = location
-        
+
         user_for_tutor = User.where(username: tutor_username).first
         tutorial.user_id          = user_for_tutor.id
       end

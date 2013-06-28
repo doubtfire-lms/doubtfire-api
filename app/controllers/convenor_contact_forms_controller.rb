@@ -1,6 +1,6 @@
 class ConvenorContactFormsController < ApplicationController
   before_filter :authenticate_user!
-  
+
   def new
     @active_projects = Unit.set_active
     @convenor_contact_form = ConvenorContactForm.new
@@ -10,13 +10,13 @@ class ConvenorContactFormsController < ApplicationController
     @convenor_contact_form = ConvenorContactForm.new(params[:convenor_contact_form])
 
     if @convenor_contact_form.valid?
-      @unit = Unit.find(params[:convenor_contact_form][:unit])  
-      
+      @unit = Unit.find(params[:convenor_contact_form][:unit])
+
       # Send email message requesting access to the project
       ConvenorContactMailer.request_project_membership(
-        current_user, 
-        @unit.project_convenors.first.user, 
-        @unit, 
+        current_user,
+        @unit.project_convenors.first.user,
+        @unit,
         params[:convenor_contact_form][:first_name],
         params[:convenor_contact_form][:last_name]
       ).deliver

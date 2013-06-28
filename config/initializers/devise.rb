@@ -1,7 +1,7 @@
 # Use this hook to configure devise mailer, warden hooks and so forth. The first
 # four configuration values can also be set straight in your models.
 Devise.setup do |config|
-  # ==> LDAP Configuration 
+  # ==> LDAP Configuration
   # config.ldap_logger = true
   config.ldap_create_user = true
   # config.ldap_update_password = true
@@ -10,7 +10,7 @@ Devise.setup do |config|
   config.ldap_check_attributes = false
   config.ldap_use_admin_to_bind = false
   # config.ldap_ad_group_check = false
-  
+
   # ==> Mailer Configuration
   # Configure the e-mail address which will be shown in Devise::Mailer,
   # note that it will be overwritten if you use your own mailer class with default "from" parameter.

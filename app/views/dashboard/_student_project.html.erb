@@ -1,4 +1,4 @@
-<% if project.in_progress? and !project.completed? %> 
+<% if project.in_progress? and !project.completed? %>
 <%= progress_badge(project.progress) %>
 <% else %>
 <%= status_badge(project.status) %>
@@ -22,7 +22,7 @@
 	<% end %>
 <% else %>
 	<%= pre_commencement_message(project) %>
-<% end %>				
+<% end %>
 
 <% if project.started? %>
 	<%= projected_date_of_completion_vs_deadline(project) %>

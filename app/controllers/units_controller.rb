@@ -20,7 +20,7 @@ class UnitsController < ApplicationController
 
   def status_distribution
     @unit = Unit.find(params[:id])
-    
+
     respond_to do |format|
       format.json {
         render json:

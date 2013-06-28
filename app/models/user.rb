@@ -1,5 +1,5 @@
 class User < ActiveRecord::Base
-  # Use LDAP (SIMS) for authentication 
+  # Use LDAP (SIMS) for authentication
   if Rails.env.production?
     devise :ldap_authenticatable, :registerable,
          :recoverable, :rememberable, :trackable, :validatable
@@ -22,7 +22,7 @@ class User < ActiveRecord::Base
   has_many :user_roles, dependent: :destroy
   has_many :roles, through: :user_roles
   has_many :projects, through: :unit_roles
-  
+
   # Model validations/constraints
   validates_uniqueness_of :username, :email
 

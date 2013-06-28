@@ -3,12 +3,12 @@ class ConvenorUnitTutorialsController < ApplicationController
     @convenor_units = UnitRole.includes(:unit)
                       .where(user_id: current_user.id, role_id: Role.where(name: 'Convenor').first)
                       .map{|unit_role| unit_role.unit }
-                                                                                
+
     @active_convenor_units   = @convenor_units.select(&:active?)
     @inactive_convenor_units = @convenor_units - @active_convenor_units
 
     @unit = Unit.includes(:task_definitions).find(params[:id])
-    
+
     @projects = Project.includes({
                   student: [:user, :tutorial],
                   tasks: [:task_definition]
@@ -27,13 +27,13 @@ class ConvenorUnitTutorialsController < ApplicationController
     @convenor_units = UnitRole.includes(:unit)
                       .where(user_id: current_user.id, role_id: Role.where(name: 'Convenor').first)
                       .map{|unit_role| unit_role.unit }
-                                                                                
+
     @active_convenor_units   = @convenor_units.select(&:active?)
     @inactive_convenor_units = @convenor_units - @active_convenor_units
-    
+
     @unit = Unit.find(params[:unit_id])
     authorize! :read, @unit, message:  "You are not authorised to view Unit ##{@unit.id}"
-    
+
     @tutorial             = Tutorial.find(params[:tutorial_id])
   end
 end

@@ -24,7 +24,7 @@ class DashboardController < ApplicationController
     tutor_role = Role.where(name: 'Tutor').first
 
     users_tutor_unit_roles = unit_roles.select{|unit_role| unit_role.role == tutor_role }
-    users_tutorials = Tutorial.includes(:projects).where(unit_role_id: users_tutor_unit_roles.map(&:id)) 
+    users_tutorials = Tutorial.includes(:projects).where(unit_role_id: users_tutor_unit_roles.map(&:id))
 
     users_tutorials.each do |tutorial|
       @users_unit_data[tutorial.unit_id] ||= {}

@@ -14,7 +14,7 @@ class ConvenorContactForm
       send("#{name}=", value)
     end
   end
-  
+
   def persisted?
     false
   end

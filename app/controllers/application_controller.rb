@@ -4,9 +4,9 @@ class ApplicationController < ActionController::Base
   before_filter :load_navigation_resources
 
   private
-  
+
   before_filter :instantiate_controller_and_action_names
- 
+
   rescue_from CanCan::AccessDenied do |exception|
     redirect_to root_url, alert:  exception.message
   end
@@ -14,7 +14,7 @@ class ApplicationController < ActionController::Base
   def load_current_user
     @user = current_user
   end
- 
+
   def load_navigation_resources
     return if @user.nil?
 
