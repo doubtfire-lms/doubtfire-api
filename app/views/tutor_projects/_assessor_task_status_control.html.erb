@@ -36,7 +36,11 @@
               <input type="checkbox" class="sub-task-checkbox">
               <%= content_tag :span, sub_task.sub_task_definition.name, class: "sub-task-name has-tooltip", title: sub_task.sub_task_definition.description %>
               <% sub_task.sub_task_definition.badges.each do |badge| %>
-                <%= content_tag :span, glyph(:trophy), class: "sub-task-badge badge badge-info has-tooltip", title: badge.name %>
+                <%= content_tag :span,
+                  glyph(:trophy),
+                  class: "sub-task-badge badge badge-info has-tooltip",
+                  title: "<h5>%s</h5><p>%s</p>" % [ badge.name, badge.description ],
+                  "data-html" => true %>
               <% end %>
             </div>
           <% end %>
@@ -55,7 +59,11 @@
               <input type="checkbox" class="sub-task-checkbox">
               <%= content_tag :span, sub_task.sub_task_definition.name, class: "sub-task-name has-tooltip", title: sub_task.sub_task_definition.description %>
               <% sub_task.sub_task_definition.badges.each do |badge| %>
-                <%= content_tag :span, glyph(:trophy), class: "sub-task-badge badge badge-info has-tooltip", title: badge.name %>
+                <%= content_tag :span,
+                  glyph(:trophy),
+                  class: "sub-task-badge badge badge-info has-tooltip",
+                  title: "<h5>%s</h5><p>%s</p>" % [ badge.name, badge.description ],
+                  "data-html" => true %>
               <% end %>
             </div>
           <% end %>
