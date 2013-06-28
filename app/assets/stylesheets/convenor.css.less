@@ -22,12 +22,13 @@
 .progress-band
 {
 	float: left;
-	margin: 0 10px;
+	width: 70px;
+	margin-bottom: 20px;
 	text-align: center;
 }
 
 .progress-band .statistical-figure
-{	
+{
 	font-size: 1.9em;
 	font-weight: bold;
 	display: block;
@@ -37,11 +38,6 @@
 {
 	font-size: 0.9em;
 }
-
-.progress-band
-{
-	margin-bottom: 20px;
-}	
 
 .badge a
 {
@@ -54,47 +50,11 @@
 	text-decoration: none;
 }
 
-.ahead 
-{
-	color: #48842c; // Twitter Bootstrap @green
-}
+.ahead 		{ color: #48842c; } /* Twitter Bootstrap @green */
+.on-track 	{ color: #049cdb; } /* Twitter Bootstrap @blue */
+.behind 	{ color: #f89406; } /* Twitter Bootstrap @orange */
+.danger 	{ color: #9d261d; } /* Twitter Bootstrap @red */
+.doomed 	{ color: #000000; }
 
-.on-track 
-{
-	color: #049cdb; // Twitter Bootstrap @blue
-}
-
-.behind 
-{
-	color: #f89406; // Twitter Bootstrap @orange
-}
-
-.danger 
-{
-	color: #9d261d; // Twitter Bootstrap @red
-}
-
-.doomed 
-{
-	color: #000000;
-}
-
-.progress-band
-{
-	margin-top:25px;	
-}
-
-.progress-band strong
-{
-	color: #888;
-}
-
-.progress-bands
-{
-	display:inline;
-}
-
-.clear-float
-{
-	clear: both;
-}
+.progress-bands 		{ display: block; }
+.progress-band strong 	{ color: #888; }
