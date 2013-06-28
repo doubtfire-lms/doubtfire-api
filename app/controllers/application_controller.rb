@@ -18,13 +18,14 @@ class ApplicationController < ActionController::Base
   def load_navigation_resources
     return if @user.nil?
 
-    @student_projects = @user.projects.select{|project| project.active? }
+    @student_projects = @user.projects.select{|project| project.active? }.sort_by(&:code)
     @staff_units      = UnitRole.includes(:unit) # Get the UnitRole and Unit in one
                         .where(user_id: @user.id) # Get the user's unit roles
                         .staff # Filter by staff
                         .map{|unit_role| unit_role.unit } # Grab the unit itself
                         .select(&:active?) # Show only active units
                         .uniq # Remove duplicates brought about by having multiple roles
+                        .sort_by(&:code)
   end
 
   def instantiate_controller_and_action_names
