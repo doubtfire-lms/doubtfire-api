@@ -16,20 +16,9 @@
     <div class="<%= unit_data[:roles].include?('Tutor') ? 'span6' : 'span12' %>">
         <div class="row-fluid">
             <h3>Your Tutorials</h3>
-            <% unit_data[:tutorials].each do |tutorial| %>
-                <h4><%= tutorial.name %></h4>
-                <div class="progress" style="max-width: 400px;">
-                <% status_distribution = tutorial.status_distribution %>
-                <% (Progress.types + [:not_started]).each do |progress| %>
-                    <% if status_distribution[progress] %>
-                    <%= content_tag :div, '',
-                        class: "bar progress-#{progress.to_s.dasherize}",
-                        style: "width: #{(status_distribution[progress].to_f / status_distribution[:total].to_f) * 100}%"
-                    %>
-                    <% end %>
-                <% end %>
-                </div>
-            <% end %>
+            <%= render 'units/your_tutorials',
+                tutorials: unit_data[:tutorials]
+            %>
         </div>
     </div>
 <% end %>
