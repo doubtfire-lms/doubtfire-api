@@ -18,7 +18,7 @@ class ApplicationController < ActionController::Base
   def load_navigation_resources
     return if @user.nil?
 
-    @student_projects = @user.projects.select{|project| project.active? }.sort_by(&:code)
+    @student_projects = @user.projects.select{|project| project.active? }.sort{|a, b| a.unit.code <=> b.unit.code }
     @staff_units      = UnitRole.includes(:unit) # Get the UnitRole and Unit in one
                         .where(user_id: @user.id) # Get the user's unit roles
                         .staff # Filter by staff
