@@ -18,7 +18,7 @@ Doubtfire::Application.routes.draw do
   end
 
   resources :users # custom :path separates CRUD interface from Devise
-  resources :home, only:  :index
+  resources :home, only: :index
   resources :projects
   resources :task_definitions
   resources :tutorials
@@ -62,9 +62,9 @@ Doubtfire::Application.routes.draw do
     get   'destroy_all_tasks' =>                    'units#destroy_all_tasks',  as: 'destroy_all_tasks'
 
     # Project tutorials
-    get   'new_tutorial' => 'tutorials#new',                              as: 'new_tutorial'
-    post  'update_tutorial/:tutorial_id' => 'tutorials#update',               as: 'update_tutorial'
-    get   'cancel_update_tutorial/:tutorial_id' => 'tutorials#finish_update', as: 'cancel_update_tutorial'
+    resources :tutorials, only: :new
+    post 'tutorials/:tutorial_id' => 'tutorials#update', as: 'tutorial_update'
+    get  'cancel_update_tutorial/:tutorial_id' => 'tutorials#finish_update', as: 'cancel_update_tutorial'
 
     # Project users
     get 'add_user' => 'units#add_user',                 as: 'add_user'
@@ -79,7 +79,7 @@ Doubtfire::Application.routes.draw do
     get 'units/:unit_id/tutorials/:tutorial_id'  => "convenor_unit_tutorials#show",    as: 'convenor_unit_tutorial'
   end
 
-  resources :convenor_contact_forms, path_names:  { new:  'welcome' }
+  resources :convenor_contact_forms, path_names:  { new: 'welcome' }
   post 'convenor_contact' => 'convenor_contact_forms#create', as:  'convenor_contact'
 
   # Tutor context routes

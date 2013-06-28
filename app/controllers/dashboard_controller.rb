@@ -12,6 +12,12 @@ class DashboardController < ApplicationController
       end
     end
 
+    # Stop loading data if the user is a student
+    return if @staff_units.empty?
+
+    # TODO: Cache, obviously
+    tutor_role    = Role.where(name: 'Tutor').first
+
     unit_roles = UnitRole.where(user_id: @user.id, unit_id: @staff_units.map(&:id))
     @users_unit_data  = {}
 
@@ -21,15 +27,16 @@ class DashboardController < ApplicationController
       @users_unit_data[role.unit_id][:roles] << role.role.name
     end
 
-    tutor_role = Role.where(name: 'Tutor').first
-
     users_tutor_unit_roles = unit_roles.select{|unit_role| unit_role.role == tutor_role }
-    users_tutorials = Tutorial.includes(:projects).where(unit_role_id: users_tutor_unit_roles.map(&:id))
 
-    users_tutorials.each do |tutorial|
-      @users_unit_data[tutorial.unit_id] ||= {}
-      @users_unit_data[tutorial.unit_id][:tutorials] ||= []
-      @users_unit_data[tutorial.unit_id][:tutorials] << tutorial
+    unless users_tutor_unit_roles.empty?
+      users_tutorials = Tutorial.includes(:projects).where(unit_role_id: users_tutor_unit_roles.map(&:id))
+
+      users_tutorials.each do |tutorial|
+        @users_unit_data[tutorial.unit_id] ||= {}
+        @users_unit_data[tutorial.unit_id][:tutorials] ||= []
+        @users_unit_data[tutorial.unit_id][:tutorials] << tutorial
+      end
     end
   end
 end
