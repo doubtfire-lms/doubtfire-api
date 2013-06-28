@@ -25,7 +25,7 @@
     <div class="modal-body">
 
       <div class="sub-task-list">
-        <% sub_tasks = task.sub_tasks %>
+        <% sub_tasks = task.sub_tasks.joins(:sub_task_definition).where(:sub_task_definitions => { :required => true }) %>
         <h4>Required Sub Tasks (0 / <%= sub_tasks.count %>)</h4>
         <% if sub_tasks.count > 0 %>
           <div class="progress">
@@ -44,13 +44,22 @@
       </div>
 
       <div class="sub-task-list">
-        <h4>Optional Sub Tasks (0 / 1)</h4>
-        <div class="progress">
-          <div class="bar" style="width: 30%;"></div>
-        </div>
-        <div class="sub-task-list-entry row-fluid">
-          Poop yo pants
-        </div>
+        <% sub_tasks = task.sub_tasks.joins(:sub_task_definition).where(:sub_task_definitions => { :required => false }) %>
+        <h4>Optional Sub Tasks (0 / <%= sub_tasks.count %>)</h4>
+        <% if sub_tasks.count > 0 %>
+          <div class="progress">
+            <div class="bar" style="width: 60%;"></div>
+          </div>
+          <% sub_tasks.each do |sub_task| %>
+            <div class="sub-task-list-entry row-fluid">
+              <input type="checkbox" class="sub-task-checkbox">
+              <%= link_to sub_task.sub_task_definition.name, "#", class: "sub-task-name", title: sub_task.sub_task_definition.description, rel: "tooltip" %>
+              <% sub_task.sub_task_definition.badges.each do |badge| %>
+                <%= link_to glyph(:trophy), "#", class: "sub-task-badge badge badge-info", title: badge.name, rel: "tooltip" %>
+              <% end %>
+            </div>
+          <% end %>
+        <% end %>
       </div>
 
     </div>
