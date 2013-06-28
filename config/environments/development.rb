@@ -44,4 +44,7 @@ Doubtfire::Application.configure do
 
   # Expands the lines which load the assets
   config.assets.debug = true
+
+  # Un-comment the following line as needed to print logs to terminal
+  # ActiveRecord::Base.logger = Logger.new(STDOUT)
 end
