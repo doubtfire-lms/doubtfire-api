@@ -28,4 +28,36 @@ class Tutorial < ActiveRecord::Base
   def status_distribution
     Project.status_distribution(projects)
   end
+
+  def change_tutor(new_tutor)
+    # Get the unit role for current tutor
+    previous_tutor_unit_role = unit_role.id
+    assign_tutor(new_tutor)
+
+    # If we had a tutor previously
+    if !previous_tutor_unit_role.nil?
+      # Get the remaining number of tutorials for the tutor in the given unit
+      remaining_tutorials_for_previous_tutor = Tutorial.where(unit_role_id: previous_tutor_unit_role).count
+
+      # Kill the tutor's tutor role if they no longer have any tutorials
+      if remaining_tutorials_for_previous_tutor == 0
+        UnitRole.destroy(previous_tutor_unit_role)
+      end
+    end
+  end
+
+  def assign_tutor(tutor_user)
+    # Create a role for the user if they're not already a tutor
+    # TODO: Move creation to UnitRole and pass it approriate params
+    tutor_unit_role = UnitRole.find_or_create_by_unit_id_and_user_id_and_role_id(
+      unit_id: unit_id,
+      user_id: tutor_user.id,
+      role_id: Role.where(name: 'Tutor').first.id
+    )
+
+    tutor_unit_role.save
+    self.unit_role = tutor_unit_role
+
+    save
+  end
 end

@@ -86,28 +86,12 @@ class TutorialsController < ApplicationController
 
     respond_to do |format|
       if @tutorial.update_attributes(params[:tutorial])
+
+        # If a tutor was set
         unless params[:tutor].nil?
-          # Get the unit role for current tutor
-          previous_tutor_unit_role = @tutorial.unit_role
-
-          # Create a role for the user if they're not already a tutor
-          tutor_unit_role = UnitRole.find_or_create_by_unit_id_and_user_id_and_role_id(
-            unit_id: @tutorial.unit_id,
-            user_id: params[:tutor],
-            role_id: Role.where(name: 'Tutor').first.id
-          )
-          tutor_unit_role.save!
-
-          @tutorial.unit_role_id = tutor_unit_role.id
-          @tutorial.save!
-
-          if !previous_tutor_unit_role.nil?
-            remaining_tutorials_for_previous_tutor = Tutorial.where(unit_role_id: previous_tutor_unit_role.id).count
-
-            if remaining_tutorials_for_previous_tutor == 0
-              previous_tutor_unit_role.destroy
-            end
-          end
+          # Grab the user and change the tutor to be the given user
+          new_tutor = User.find(params[:tutor])
+          @tutorial.change_tutor(new_tutor)
         end
 
         format.html { redirect_to unit_path(@tutorial.unit_id), notice: "Tutorial was successfully updated."}
