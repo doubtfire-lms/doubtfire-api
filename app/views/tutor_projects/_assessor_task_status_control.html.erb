@@ -34,9 +34,9 @@
           <% sub_tasks.each do |sub_task| %>
             <div class="sub-task-list-entry row-fluid">
               <input type="checkbox" class="sub-task-checkbox">
-              <%= link_to sub_task.sub_task_definition.name, "#", class: "sub-task-name", title: sub_task.sub_task_definition.description, rel: "tooltip" %>
+              <%= content_tag :span, sub_task.sub_task_definition.name, class: "sub-task-name has-tooltip", title: sub_task.sub_task_definition.description %>
               <% sub_task.sub_task_definition.badges.each do |badge| %>
-                <%= link_to glyph(:trophy), "#", class: "sub-task-badge badge badge-info", title: badge.name, rel: "tooltip" %>
+                <%= content_tag :span, glyph(:trophy), class: "sub-task-badge badge badge-info has-tooltip", title: badge.name %>
               <% end %>
             </div>
           <% end %>
@@ -53,9 +53,9 @@
           <% sub_tasks.each do |sub_task| %>
             <div class="sub-task-list-entry row-fluid">
               <input type="checkbox" class="sub-task-checkbox">
-              <%= link_to sub_task.sub_task_definition.name, "#", class: "sub-task-name", title: sub_task.sub_task_definition.description, rel: "tooltip" %>
+              <%= content_tag :span, sub_task.sub_task_definition.name, class: "sub-task-name has-tooltip", title: sub_task.sub_task_definition.description %>
               <% sub_task.sub_task_definition.badges.each do |badge| %>
-                <%= link_to glyph(:trophy), "#", class: "sub-task-badge badge badge-info", title: badge.name, rel: "tooltip" %>
+                <%= content_tag :span, glyph(:trophy), class: "sub-task-badge badge badge-info has-tooltip", title: badge.name %>
               <% end %>
             </div>
           <% end %>
