@@ -160,6 +160,26 @@ class Task < ActiveRecord::Base
     end
   end
 
+  def submit
+    self.awaiting_signoff = false
+
+    if save!
+      project.update_attribute(:started, true)
+      submission = TaskSubmission.where(task_id: self.id).order(:submission_time).reverse_order.first
+
+      if submission.nil?
+        TaskSubmission.create!(task: self, submission_time: Time.zone.now)
+      else
+        if !submission.submission_time.nil? && submission.submission_time < 1.hour.since(Time.zone.now)
+          submission.submission_time = Time.zone.now
+          submission.save!
+        else
+          TaskSubmission.create!(task: self, submission_time: Time.zone.now)
+        end
+      end
+    end
+  end
+
   def assessed?
     redo? ||
     fix_and_resubmit? ||

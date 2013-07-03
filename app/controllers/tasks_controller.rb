@@ -33,7 +33,7 @@ class TasksController < ApplicationController
       TaskEngagement.create!(task: @task, engagement_time: Time.zone.now, engagement: task_status.name)
 
       respond_to do |format|
-        format.html { redirect_to @project, notice: 'Task was successfully completed.' }
+        format.html { redirect_to @project, notice: 'Task was successfully updated.' }
         format.js
       end
     end
@@ -57,27 +57,14 @@ class TasksController < ApplicationController
   def submit
     @task                   = Task.find(params[:id])
     @project                = @task.project
-    @task.awaiting_signoff  = params[:submission_status] == "ready_to_mark"
 
-    if @task.save
-      @project.update_attribute(:started, true)
-      submission = TaskSubmission.where(task_id: @task.id).order(:submission_time).reverse_order.first
+    if params[:submission_status] == "ready_to_mark"
+      @task.submit
+    end
 
-      if submission.nil?
-        TaskSubmission.create!(task: @task, submission_time: Time.zone.now)
-      else
-        if !submission.submission_time.nil? && submission.submission_time < 1.hour.since(Time.zone.now)
-          submission.submission_time = Time.zone.now
-          submission.save!
-        else
-          TaskSubmission.create!(task: @task, submission_time: Time.zone.now)
-        end
-      end
-
-      respond_to do |format|
-        format.html { redirect_to @project, notice: 'Task was successfully completed.' }
-        format.js
-      end
+    respond_to do |format|
+      format.html { redirect_to @project, notice: 'Task was successfully submitted.' }
+      format.js
     end
   end
 
