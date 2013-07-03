@@ -1,6 +1,6 @@
 // Build the row id string from the unit id
 var unitRowId = "project-" + "<%= @unit.id %>" +  "-row";
-var partial = "<%=j render 'units/table_row_edit', unit: @unit, convenor_options: @convenor_options, convenors: @convenors %>"
+var partial = "<%=j render 'admin/units/table_row_edit', unit: @unit, convenor_options: @convenor_options, convenors: @convenors %>"
 
 // Render the table_row_edit partial. If we just created a new tutorial via the 'Create' button, it won't have a row in the table yet.
 if(document.getElementById(unitRowId) != null)

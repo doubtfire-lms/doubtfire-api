@@ -8,9 +8,9 @@
     <ul class="nav nav-list">
         <li class="nav-header">Dashboard</li>
         <li class="active"><%= link_to 'Home', root_url %></li>
-        <% unless @convenor_units.empty? %>
-            <%= render 'dashboard/convenor_units_links',
-                active_units: @active_convenor_units, inactive_units: @inactive_convenor_units
+        <% unless @staff_units.empty? %>
+            <%= render 'dashboard/staff_unit_links',
+                units: @staff_units, selected_unit: nil
             %>
         <% end %>
     </ul>

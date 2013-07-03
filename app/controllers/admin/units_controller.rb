@@ -30,27 +30,6 @@ class Admin::UnitsController < ApplicationController
     end
   end
 
-  def status_distribution
-    @unit = Unit.find(params[:id])
-
-    respond_to do |format|
-      format.json {
-        render json:
-          @unit.to_json(
-          methods: [:status_distribution],
-          include: [
-            {
-              task_definitions: {
-                except: [:updated_at, :created_at],
-                methods: [:status_distribution]
-              }
-            }
-          ]
-        )
-      }
-    end
-  end
-
   # GET /units/new
   # GET /units/new.json
   def new
@@ -67,7 +46,7 @@ class Admin::UnitsController < ApplicationController
       format.json { render json: @unit }
       format.js { render 'edit' }
     end
-  end
+end
 
   # GET /units/1/edit
   def edit
@@ -75,7 +54,7 @@ class Admin::UnitsController < ApplicationController
     convenor_role = Role.where(name: 'Convenor').first
     @convenor_options = UserRole.includes(:user).where(role_id: convenor_role.id)
                         .map{|user_role| user_role.user }
-    @convenors        = UnitRole.where(unit_id: @unit.id, role_id: convenor_role.id)
+    @convenors        = UnitRole.where(unit_id: @unit.id, role_id: convenor_role.id).map{|convenor_role| convenor_role.user.id }
 
     respond_to do |format|
       format.html # new.html.erb
@@ -106,22 +85,8 @@ class Admin::UnitsController < ApplicationController
 
     respond_to do |format|
       if @unit.update_attributes(params[:unit])
-        convenor_role = Role.where(name: 'Convenor').first
-
-        # Replace the current list of convenors for this project with the new list selected by the user
         unless params[:convenors].nil?
-          unit_convenors = UnitRole.where(unit_id: @unit.id, role_id: convenor_role.id)
-          removed_convenor_ids = unit_convenors.map(&:user_id) - params[:convenors]
-          removed_convenors = unit_convenors.select{|convenor| removed_convenor_ids.include? convenor.user_id }.map(&:id)
-
-          # Delete any convenors that have been removed
-          UnitRole.where(id: removed_convenors).destroy_all
-
-          # Find or create convenors
-          params[:convenors].each do |convenor_id|
-            @convenor_role = UnitRole.find_or_create_by_unit_id_and_user_id_and_role_id(unit_id: @unit.id, user_id: convenor_id, role_id: convenor_role.id)
-            @convenor_role.save!
-          end
+          @unit.change_convenors params[:convenors]
         end
 
         format.html { redirect_to @unit, notice: 'Unit was successfully updated.' }
@@ -150,7 +115,7 @@ class Admin::UnitsController < ApplicationController
 
   # Restores the row in the units table to its original state after saving or cancelling from editing mode.
   def finish_update
-    @unit = Unit.find(params[:unit_id])
+    @unit = Unit.find(params[:id])
 
     respond_to do |format|
         format.js  # finish_update.js.erb
@@ -158,7 +123,7 @@ class Admin::UnitsController < ApplicationController
   end
 
   def add_user
-    @unit = Unit.find(params[:unit_id])
+    @unit = Unit.find(params[:id])
 
     respond_to do |format|
       format.js
@@ -166,7 +131,7 @@ class Admin::UnitsController < ApplicationController
   end
 
   def remove_user
-    @unit = Unit.find(params[:unit_id])
+    @unit = Unit.find(params[:id])
     @user = User.find(params[:user_id])
 
     @unit.remove_user(@user.id)

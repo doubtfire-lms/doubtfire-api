@@ -76,6 +76,23 @@ class Unit < ActiveRecord::Base
     end
   end
 
+  def change_convenors(convenor_ids)
+    convenor_role = Role.where(name: 'Convenor').first
+
+    # Replace the current list of convenors for this project with the new list selected by the user
+    unit_convenors        = UnitRole.where(unit_id: self.id, role_id: convenor_role.id)
+    removed_convenor_ids  = unit_convenors.map(&:user).map(&:id) - convenor_ids
+
+    # Delete any convenors that have been removed
+    UnitRole.where(unit_id: self.id, role_id: convenor_role.id, user_id: removed_convenor_ids).destroy_all
+
+    # Find or create convenors
+    convenor_ids.each do |convenor_id|
+      new_convenor = UnitRole.find_or_create_by_unit_id_and_user_id_and_role_id(unit_id: self.id, user_id: convenor_id, role_id: convenor_role.id)
+      new_convenor.save!
+    end
+  end
+
   # Imports users into a project from CSV file.
   # Format: Student ID,Course ID,First Name,Initials,Surname,Mark,Assessment,Status
   # Only Student ID, First Name, and Surname are used.

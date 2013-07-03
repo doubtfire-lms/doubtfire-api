@@ -13,6 +13,8 @@ Doubtfire::Application.routes.draw do
 
   namespace :admin do
     resources :units
+    post 'units/:id' => 'units#update', as: 'unit_update'
+    get 'units/:id/cancel_update' => 'units#finish_update', as: 'unit_cancel_update'
 
     root to: "dashboard#index"
   end
@@ -53,9 +55,6 @@ Doubtfire::Application.routes.draw do
     post 'import_tasks' => 'units#import_tasks'
 
     get 'export_tasks' => 'units#export_tasks'
-
-    # Intermediate state management (via AJAX)
-    get 'cancel_update' => 'units#finish_update', as: 'cancel_update'
 
     # Project tasks
     get   'new_task' =>                             'task_definitions#new',                   as: 'new_task'
