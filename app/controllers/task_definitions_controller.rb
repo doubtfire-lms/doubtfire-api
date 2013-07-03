@@ -56,17 +56,19 @@ class TaskDefinitionsController < ApplicationController
     @task_definition = TaskDefinition.new(params[:task_definition]) unless params[:task_definition].nil?
     @user_projects = @task_definition.unit.projects
 
-    respond_to do |format|
-      if @task_definition.save
-        # Create a task instance for all current users of the project
-        @user_projects.each do |project|
-          project.add_task(@task_definition)
-        end
+    if @task_definition.save
+      # Create a task instance for all current users of the project
+      @user_projects.each do |project|
+        project.add_task(@task_definition)
+      end
 
+      respond_to do |format|
         format.html { redirect_to unit_path(@task_definition.unit_id), notice: "TaskDefinition was successfully updated."}
         format.js { render 'edit' }
         format.json { render json: @task_definition, status: :created, location: @task_definition }
-      else
+      end
+    else
+      respond_to do |format|
         format.html { render 'new' }
         format.json { render json: @task_definition.errors, status: :unprocessable_entity }
         format.js { render 'new' }

@@ -18,7 +18,7 @@
     <% @task_definitions.each do |task_definition| %>
       <tr>
         <td><%= link_to task_definition.name, task_definition_path(task_definition) %></td>
-        <td><%= Unit.find(task_definition.unit_id).name %></td>
+        <td><%= task_definition.unit.name %></td>
         <td><%= task_definition.description %></td>
         <td><%= task_definition.weighting %></td>
         <td><%= "Required" if task_definition.required %><%= "Optional" if not task_definition.required %></td>

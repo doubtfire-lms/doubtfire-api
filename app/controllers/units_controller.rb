@@ -118,10 +118,6 @@ class UnitsController < ApplicationController
     %w[asc desc].include?(params[:direction]) ? params[:direction] : "asc"
   end
 
-  def exclusion_filters
-
-  end
-
   def sort_projects(projects, options=nil)
     options = {column: "name", direction: "asc"} if options.nil?
 
