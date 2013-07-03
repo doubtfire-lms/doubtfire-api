@@ -40,41 +40,17 @@ class TasksController < ApplicationController
   end
 
   def assess_task
-    @task                   = Task.find(params[:id])
-    @project                = @task.project
-    @student                = @project.student
+    # Grab the task and its assessment outcome status
+    @task                       = Task.find(params[:id])
+    @project                    = @task.project
+    @assessment_outcome_status  = status_for_shortname(params[:status])
 
-    task_status             = status_for_shortname(params[:status])
+    # Assess the task with given status and the current user as the assessor
+    @task.assess(@assessment_outcome_status, @user)
 
-    @task.task_status       = task_status
-    @task.awaiting_signoff  = false # Because only staff should be able to change task status
-
-    if @task.complete?
-      @task.completion_date = Time.zone.now
-    end
-
-    if @task.save
-      @task.project.update_attribute(:started, true)
-
-      if @task.redo? || @task.fix_and_resubmit? || @task.fix_and_include? || @task.complete?
-        # Grab the submission for the task if the user made one
-        submission = TaskSubmission.where(task_id: @task.id).order(:submission_time).reverse_order.first
-        # Prepare the attributes of the submission
-        submission_attributes = {task: @task, assessment_time: Time.zone.now, assessor: @user, outcome: task_status.name}
-
-        # Create or update the submission depending on whether one was made
-        if submission.nil?
-          TaskSubmission.create! submission_attributes
-        else
-          submission.update_attributes submission_attributes
-          submission.save
-        end
-      end
-
-      respond_to do |format|
-        format.html { redirect_to @project, notice: 'Task was successfully completed.' }
-        format.js
-      end
+    respond_to do |format|
+      format.html { redirect_to @task.project, notice: 'Task was successfully completed.' }
+      format.js
     end
   end
 

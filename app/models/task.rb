@@ -123,6 +123,50 @@ class Task < ActiveRecord::Base
     end
   end
 
+  def assess(task_status, assessor)
+    # Set the task's status to the assessment outcome status
+    # and flag it as no longer awaiting signoff
+    self.task_status       = task_status
+    self.awaiting_signoff  = false
+
+    # Set the completion date of the task if it's been completed
+    if complete?
+      self.completion_date = Time.zone.now
+    end
+
+    # Save the task
+    if save!
+      puts self.awaiting_signoff
+
+      # If a task has been completed, that means the project
+      # has definitely started
+      project.start
+
+      # If the task was given an assessment outcome
+      if assessed?
+        # Grab the submission for the task if the user made one
+        submission = TaskSubmission.where(task_id: id).order(:submission_time).reverse_order.first
+        # Prepare the attributes of the submission
+        submission_attributes = {task: self, assessment_time: Time.zone.now, assessor: assessor, outcome: task_status.name}
+
+        # Create or update the submission depending on whether one was made
+        if submission.nil?
+          TaskSubmission.create! submission_attributes
+        else
+          submission.update_attributes submission_attributes
+          submission.save
+        end
+      end
+    end
+  end
+
+  def assessed?
+    redo? ||
+    fix_and_resubmit? ||
+    fix_and_include? ||
+    complete?
+  end
+
   def weight
     task_definition.weighting.to_f
   end

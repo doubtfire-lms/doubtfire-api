@@ -18,6 +18,10 @@ class Project < ActiveRecord::Base
     where(progress: progress_types) unless progress_types.blank?
   }
 
+  def start
+    update_attribute(:started, true)
+  end
+
   def add_task(task_definition)
     task = Task.new
 
