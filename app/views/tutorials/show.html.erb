@@ -1,27 +1,57 @@
-<%- model_class = @tutorial.class -%>
-<div class="page-header">
-  <h1><%=t '.title', default:  model_class.model_name.human %></h1>
-</div>
+<%= stylesheets 'tasks.css', 'tutor_projects.css' %>
 
-<dl class="dl-horizontal">
-  <dt><strong><%= model_class.human_attribute_name(:unit_id) %>:</strong></dt>
-  <dd><%= Unit.find(@tutorial.unit_id).name %></dd>
-  <dt><strong>Tutor:</strong></dt>
-  <dd><%= User.find(@tutorial.user_id).first_name %> <%= User.find(@tutorial.user_id).last_name %></dd>
-  <dt><strong><%= model_class.human_attribute_name(:meeting_time) %>:</strong></dt>
-  <dd><%= @tutorial.meeting_time %></dd>
-  <dt><strong><%= model_class.human_attribute_name(:meeting_location) %>:</strong></dt>
-  <dd><%= @tutorial.meeting_location %></dd>
-</dl>
+<%= javascript 'tutor_projects.js' %>
+<%= javascript 'tasks.js' %>
+<%= javascript "task_popover.js" %>
 
-<div class="form-actions">
-  <%= link_to t('.back', default:  t("helpers.links.back")),
-              tutorials_path, class:  'btn'  %>
-  <%= link_to t('.edit', default:  t("helpers.links.edit")),
-              edit_tutorial_path(@tutorial), class:  'btn' %>
-  <%= link_to t('.destroy', default:  t("helpers.links.destroy")),
-              tutorial_path(@tutorial),
-              method:  'delete',
-              data:  { confirm:  t('.confirm', default:  t("helpers.links.confirm", default:  'Are you sure?'))},
-              class:  'btn btn-danger' %>
+<% title "#{@tutorial.unit.name} - #{@tutorial.name}" %>
+
+<% content_for :sidebar do %>
+    <ul class="nav nav-list">
+        <li class="nav-header">Dashboard</li>
+        <li><%= link_to 'Home', root_url %></li>
+        <% unless @staff_units.empty? %>
+            <%= render 'dashboard/staff_unit_links',
+                units: @staff_units,
+                selected_unit: @tutorial.unit
+            %>
+        <% end %>
+    </ul>
+<% end %>
+
+<div class="span9">
+  <div class="row-fluid">
+    <ul class="breadcrumb">
+      <li>
+        <%= link_to "Home", root_url %>
+        <span class="divider">/</span>
+      </li>
+      <li>
+        <%= link_to @tutorial.unit.name, unit_path(@tutorial.unit) %>
+        <span class="divider">/</span>
+      </li>
+      <li class="active"><%= @tutorial.name %></li>
+    </ul>
+
+    <div class="tabbable">
+        <ul class="nav nav-pills">
+            <%= tab_li_tag("progress-tab", true) do %>
+                <a href="#progress-tab" data-toggle="tab">Progress</a>
+            <% end %>
+            <%= tab_li_tag("assessment-backlog-tab") do %>
+                <a href="#assessment-backlog-tab" data-toggle="tab">Assessment Backlog</a>
+            <% end %>
+        </ul>
+
+        <div class="tab-content">
+            <%= tab_div_tag("progress-tab", true) do %>
+                <%= render 'tutorial_widget', tutorial: @tutorial %>
+            <% end %>
+
+            <%= tab_div_tag("assessment-backlog-tab") do %>
+                <%= render 'units/assessment_backlog_widget', actionable_tasks: @actionable_tasks %>
+            <% end %>
+        </div>
+    </div>
+  </div>
 </div>

@@ -1,4 +1,6 @@
 class TutorialsController < ApplicationController
+  include TutorProjectsHelper
+
   # GET /tutorials
   # GET /tutorials.json
   def index
@@ -14,6 +16,13 @@ class TutorialsController < ApplicationController
   # GET /tutorials/1.json
   def show
     @tutorial = Tutorial.find(params[:id])
+    @selected_unit = @tutorial.unit
+
+    @actionable_tasks = {
+      awaiting_signoff: user_task_map(unmarked_tasks(@tutorial.projects)),
+      needing_help:     user_task_map(needing_help_tasks(@tutorial.projects)),
+      working_on_it:    user_task_map(working_on_it_tasks(@tutorial.projects))
+    }
 
     respond_to do |format|
       format.html # show.html.erb

@@ -1,5 +1,5 @@
 <% tutorials.each do |tutorial| %>
-    <h4><%= tutorial.name %></h4>
+    <h4><%= link_to tutorial.name, tutorial %></h4>
     <div class="progress" style="max-width: 400px;">
     <% status_distribution = tutorial.status_distribution %>
     <% (Progress.types + [:not_started]).each do |progress| %>

@@ -1,6 +1,6 @@
 <li class="nav-header">Units You Teach</li>
 <% units.each do |unit| %>
-	<li<%= ' class="active"' if !selected_unit.nil? && unit == selected_unit %>>
+	<li<%= ' class=active' if !selected_unit.nil? && unit == selected_unit %>>
 		<%= link_to unit.name, unit %>
 	</li>
 <% end %>

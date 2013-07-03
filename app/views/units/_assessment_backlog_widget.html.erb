@@ -11,7 +11,7 @@
 					<a href="#awaiting-signoff-tab" data-toggle="tab">
 						<i class="icon-thumbs-up"></i>
 						Awaiting Signoff
-						<% unless actionable_tasks[:awaiting_signoff].empty? %>
+						<% if actionable_tasks[:awaiting_signoff] && !actionable_tasks[:awaiting_signoff].empty? %>
 							<%= " (#{actionable_tasks[:awaiting_signoff].values.flatten.size})" %>
 						<% end %>
 					</a>
@@ -20,7 +20,7 @@
 					<a href="#needing-help-tab" data-toggle="tab">
 						<i class="icon-exclamation-sign"></i>
 						Needing Help
-						<% unless actionable_tasks[:needing_help].empty? %>
+						<% if actionable_tasks[:needing_help] && !actionable_tasks[:needing_help].empty? %>
 							<%= " (#{actionable_tasks[:needing_help].values.flatten.size})" %>
 						<% end %>
 					</a>
@@ -29,7 +29,7 @@
 					<a href="#working-on-it-tab" data-toggle="tab">
 						<i class="icon-bolt"></i>
 						Working On It
-						<% unless actionable_tasks[:working_on_it].empty? %>
+						<% if actionable_tasks[:working_on_it] && !actionable_tasks[:working_on_it].empty? %>
 							<%= " (#{actionable_tasks[:working_on_it].values.flatten.size})" %>
 						<% end %>
 					</a>
@@ -39,17 +39,17 @@
 			<div class="tab-content">
 				<%= tab_div_tag("awaiting-signoff-tab", true) do %>
 					<%= render 'shared/assessment/backlog/awaiting_signoff',
-						unmarked_tasks: actionable_tasks[:awaiting_signoff] %>
+						unmarked_tasks: actionable_tasks[:awaiting_signoff] || [] %>
 				<% end %>
 
 				<%= tab_div_tag("needing-help-tab") do %>
 					<%= render 'shared/assessment/backlog/needing_help',
-						needing_help_tasks: actionable_tasks[:needing_help] %>
+						needing_help_tasks: actionable_tasks[:needing_help] || [] %>
 				<% end %>
 
 				<%= tab_div_tag("working-on-it-tab") do %>
 					<%= render 'shared/assessment/backlog/working_on_it',
-						working_on_it_tasks: actionable_tasks[:working_on_it] %>
+						working_on_it_tasks: actionable_tasks[:working_on_it] || [] %>
 				<% end %>
 			</div>
 		</div>

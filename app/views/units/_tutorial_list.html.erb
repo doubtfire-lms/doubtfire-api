@@ -1,6 +1,6 @@
 <% tutorials.each do |tutorial| %>
 <h3>
-	<%= link_to tutorial.name, convenor_unit_tutorial_path(tutorial.unit, tutorial) %>
+	<%= link_to tutorial.name, tutorial %>
 	&mdash;
 	<%= tutorial.unit_role.user.name %>
 </h3>

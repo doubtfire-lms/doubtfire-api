@@ -72,14 +72,6 @@ Doubtfire::Application.routes.draw do
     get 'remove_user/:user_id' => 'units#remove_user',  as: 'remove_user'
   end
 
-  scope '/convenor' do
-    get 'units'                                  => "convenor_units#index",            as: 'convenor_units'
-    get 'units/:id'                              => "convenor_units#show",             as: 'convenor_unit'
-    get 'units/:id/export_tasks'                 => 'convenor_units#export_tasks',     as: 'convenor_unit_export_tasks'
-    get 'units/:id/tutorials'                    => "convenor_unit_tutorials#index",   as: 'convenor_unit_tutorials'
-    get 'units/:unit_id/tutorials/:tutorial_id'  => "convenor_unit_tutorials#show",    as: 'convenor_unit_tutorial'
-  end
-
   resources :convenor_contact_forms, path_names:  { new: 'welcome' }
   post 'convenor_contact' => 'convenor_contact_forms#create', as:  'convenor_contact'
 

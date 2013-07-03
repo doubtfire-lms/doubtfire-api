@@ -2,7 +2,7 @@
     <div class="widget-header">
         <h2><i class="icon-user"></i>Students</h2>
         <div class="widget-controls pull-right">
-            <%= link_to convenor_unit_export_tasks_path(unit, format: 'csv'), class: 'btn' do %>
+            <%= link_to unit_export_tasks_path(unit, format: 'csv'), class: 'btn' do %>
             <i class="icon-download-alt"> Task Completion</i>
             <% end %>
         </div>
@@ -10,7 +10,7 @@
     <div class="widget-content" id="projects">
         <%= render 'student_list', projects: projects %>
         <hr />
-        <%= link_to convenor_unit_export_tasks_path(unit, format: 'csv'), class: 'btn' do %>
+        <%= link_to unit_export_tasks_path(unit, format: 'csv'), class: 'btn' do %>
             <i class="icon-download-alt"> Task Completion</i>
         <% end %>
     </div>

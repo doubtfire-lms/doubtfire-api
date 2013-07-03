@@ -84,9 +84,9 @@ class UnitsController < ApplicationController
     authorize! :read, @unit, message:  "You are not authorised to view Unit ##{@unit.id}"
 
     @actionable_tasks = {
-      awaiting_signoff: user_unmarked_tasks(@tutor_tutorial_projects),
-      needing_help:     user_needing_help_tasks(@tutor_tutorial_projects),
-      working_on_it:    user_working_on_it_tasks(@tutor_tutorial_projects)
+      awaiting_signoff: user_task_map(unmarked_tasks(@tutor_tutorial_projects)),
+      needing_help:     user_task_map(needing_help_tasks(@tutor_tutorial_projects)),
+      working_on_it:    user_task_map(working_on_it_tasks(@tutor_tutorial_projects))
     }
 
     @other_tutorials        = Tutorial.includes(unit_roles:  [{project:  [{tasks:  [:task_definition]}]}])

@@ -1,17 +1,4 @@
 module TutorProjectsHelper
-  def unmarked_project_tasks(tutor_unit, tutor)
-    tutor_unit_role = UnitRole.where(unit_id: tutor_unit.id, user_id: tutor.id).first
-    tutors_tutorials    = Tutorial.where(unit_role_id: tutor_unit_role.id)
-
-    tutors_students = UnitRole.where(tutorial_id: [tutors_tutorials.map{|tutorial| tutorial.id}])
-
-    tutors_projects = Project.includes(:tasks).where(
-      unit_role_id: tutors_students.map{|student| student.id }
-    )
-
-    tutors_projects.map{|project| project.tasks }.flatten.select{|task| task.awaiting_signoff? }
-  end
-
   def user_task_map(tasks)
     user_tasks      = {}
 
@@ -25,28 +12,20 @@ module TutorProjectsHelper
     user_tasks
   end
 
-  def unmarked_tasks(projects)
-    projects.map{|project| project.tasks }.flatten.select{|task| task.awaiting_signoff? }
+  def gather_tasks(projects, task_selector)
+    projects.map{|project| project.tasks }.flatten.select(&task_selector)
   end
 
-  def user_unmarked_tasks(projects)
-    user_task_map(unmarked_tasks(projects))
+  def unmarked_tasks(projects)
+    gather_tasks projects, lambda {|task| task.awaiting_signoff? }
   end
 
   def needing_help_tasks(projects)
-    projects.map{|project| project.tasks }.flatten.select{|task| task.need_help? && !task.awaiting_signoff }
-  end
-
-  def user_needing_help_tasks(projects)
-    user_task_map(needing_help_tasks(projects))
+    gather_tasks projects, lambda {|task| task.need_help? && !task.awaiting_signoff }
   end
 
   def working_on_it_tasks(projects)
-    projects.map{|project| project.tasks }.flatten.select{|task| task.working_on_it? && !task.awaiting_signoff }
-  end
-
-  def user_working_on_it_tasks(projects)
-    user_task_map(working_on_it_tasks(projects))
+    gather_tasks projects, lambda {|task| task.working_on_it? && !task.awaiting_signoff }
   end
 
   def task_bar_item_class_for_mode(task, progress, mode)

@@ -18,8 +18,8 @@
     <% @tutorials.each do |tutorial| %>
       <tr>
         <td><%= link_to tutorial.id, tutorial_path(tutorial) %></td>
-        <td><%= Unit.find(tutorial.unit_id).name %></td>
-        <td><%= User.find(tutorial.user_id).first_name %> <%= User.find(tutorial.user_id).last_name %></td>
+        <td><%= tutorial.unit.name %></td>
+        <td><%= tutorial.tutor.name %></td>
         <td><%= tutorial.meeting_day %></td>
         <td><%= tutorial.meeting_time %></td>
         <td><%= tutorial.meeting_location %></td>
