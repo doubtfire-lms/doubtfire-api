@@ -23,19 +23,16 @@ class TasksController < ApplicationController
   end
 
   def engage_with_task
-    @task                   = Task.find(params[:id])
-    task_status             = status_for_shortname(params[:status])
-    @task.task_status       = task_status
-    @task.awaiting_signoff  = false
+    # Grab the task and its engagement status
+    @task             = Task.find(params[:id])
+    engagement_status = status_for_shortname(params[:status])
 
-    if @task.save
-      @task.project.update_attribute(:started, true)
-      TaskEngagement.create!(task: @task, engagement_time: Time.zone.now, engagement: task_status.name)
+    # Engage with the task
+    @task.engage engagement_status
 
-      respond_to do |format|
-        format.html { redirect_to @project, notice: 'Task was successfully updated.' }
-        format.js
-      end
+    respond_to do |format|
+      format.html { redirect_to @project, notice: 'Task was successfully updated.' }
+      format.js
     end
   end
 
@@ -43,10 +40,10 @@ class TasksController < ApplicationController
     # Grab the task and its assessment outcome status
     @task                       = Task.find(params[:id])
     @project                    = @task.project
-    @assessment_outcome_status  = status_for_shortname(params[:status])
+    assessment_outcome_status  = status_for_shortname(params[:status])
 
     # Assess the task with given status and the current user as the assessor
-    @task.assess(@assessment_outcome_status, @user)
+    @task.assess(assessment_outcome_status, @user)
 
     respond_to do |format|
       format.html { redirect_to @task.project, notice: 'Task was successfully completed.' }
@@ -58,6 +55,7 @@ class TasksController < ApplicationController
     @task                   = Task.find(params[:id])
     @project                = @task.project
 
+    # Task has been submitted only if it's submission status is ready_to_mark
     if params[:submission_status] == "ready_to_mark"
       @task.submit
     end

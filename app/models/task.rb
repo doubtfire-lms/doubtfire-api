@@ -136,8 +136,6 @@ class Task < ActiveRecord::Base
 
     # Save the task
     if save!
-      puts self.awaiting_signoff
-
       # If a task has been completed, that means the project
       # has definitely started
       project.start
@@ -160,11 +158,21 @@ class Task < ActiveRecord::Base
     end
   end
 
-  def submit
-    self.awaiting_signoff = false
+  def engage(engagement_status)
+    self.task_status       = engagement_status
+    self.awaiting_signoff  = false
 
     if save!
-      project.update_attribute(:started, true)
+      project.start
+      TaskEngagement.create!(task: self, engagement_time: Time.zone.now, engagement: task_status.name)
+    end
+  end
+
+  def submit
+    self.awaiting_signoff = true
+
+    if save!
+      project.start
       submission = TaskSubmission.where(task_id: self.id).order(:submission_time).reverse_order.first
 
       if submission.nil?
