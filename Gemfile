@@ -24,27 +24,20 @@ gem 'jquery-rails'
 gem 'simple_form'
 gem 'bootstrap-datepicker-rails'
 
+gem 'mysql2'
+
 group :development do
   gem 'hirb'
   gem 'better_errors'
   gem 'rails_best_practices'
-end
-
-group :development, :production do
-  gem 'mysql2'
+  gem 'thin'
 end
 
 group :test do
-  gem 'sqlite3'
+  gem 'faker'
   gem 'simplecov'
-end
-
-group :demo do
-  gem 'pg'
-end
-
-group :development, :demo do
-  gem 'thin'
+  gem 'capybara'
+  gem 'launchy'
 end
 
 # Gems used only for assets and not required
@@ -57,8 +50,10 @@ group :assets do
 
   # See https://github.com/sstephenson/execjs#readme for more supported runtimes
   gem 'therubyracer', platforms: :ruby
-
   gem 'uglifier', '>= 1.0.3'
 end
 
-gem 'whenever', require: false
+group :development, :test do
+  gem 'rspec-rails'
+  gem 'factory_girl_rails'
+end
