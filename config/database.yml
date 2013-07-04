@@ -16,8 +16,8 @@ development:
 test:
   adapter: mysql2
   host: localhost
-  database: doubtfire_dev
-  username: itig
+  database: doubtfire_test
+  username: root
   password: d872$dh
 
 production:
