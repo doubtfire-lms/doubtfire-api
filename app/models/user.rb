@@ -15,7 +15,7 @@ class User < ActiveRecord::Base
   # Devise fields
   attr_accessible :email, :remember_me
   # Model fields
-  attr_accessible :first_name, :last_name, :system_role, :username, :encrypted_password, :nickname, :role_ids
+  attr_accessible :first_name, :last_name, :system_role, :username, :password, :password_confirmation, :nickname, :role_ids
 
   # Model associations
   has_many :unit_roles, dependent: :destroy
@@ -24,7 +24,12 @@ class User < ActiveRecord::Base
   has_many :projects, through: :unit_roles
 
   # Model validations/constraints
-  validates_uniqueness_of :username, :email
+  validates :first_name, presence: true
+  validates :last_name, presence: true
+  validates :username, presence: true, uniqueness: true
+  validates :email, presence: true, uniqueness: true
+
+  before_validation :generate_password, on: :create
 
   def self.default
     user = self.new
@@ -48,6 +53,10 @@ class User < ActiveRecord::Base
     "#{first_name} #{last_name}"
   end
 
+  def generate_password
+    self.password = self.password_confirmation = Devise.friendly_token.first(8)
+  end
+
   def self.import_from_csv(file)
     CSV.foreach(file) do |row|
 
@@ -67,6 +76,5 @@ class User < ActiveRecord::Base
         user.save!(validate: false)
       end
     end
-
   end
 end
