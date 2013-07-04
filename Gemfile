@@ -38,6 +38,7 @@ group :test do
   gem 'simplecov'
   gem 'capybara'
   gem 'launchy'
+  gem 'ci_reporter'
 end
 
 # Gems used only for assets and not required

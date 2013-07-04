@@ -48,6 +48,8 @@ GEM
       xpath (~> 1.0.0)
     childprocess (0.3.8)
       ffi (~> 1.0, >= 1.0.11)
+    ci_reporter (1.9.0)
+      builder (>= 2.1.2)
     code_analyzer (0.3.2)
       sexp_processor
     coderay (1.0.9)
@@ -218,6 +220,7 @@ DEPENDENCIES
   bootstrap-datepicker-rails
   cancan
   capybara
+  ci_reporter
   coffee-rails (~> 3.2.1)
   d3_rails
   devise
