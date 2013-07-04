@@ -25,7 +25,7 @@ Doubtfire::Application.configure do
     dashboard.css
     home.css
     tasks.css
-    tutor_projects.css
+    tutorials.css
     units.css
     users.css
   ]
@@ -42,7 +42,7 @@ Doubtfire::Application.configure do
     task_popover.js
     tasks.js
     task_status_breakdown.js
-    tutor_projects.js
+    tutorials.js
     units.js
     users.js
   ]

@@ -75,13 +75,6 @@ Doubtfire::Application.routes.draw do
   resources :convenor_contact_forms, path_names:  { new: 'welcome' }
   post 'convenor_contact' => 'convenor_contact_forms#create', as:  'convenor_contact'
 
-  # Tutor context routes
-  scope '/tutor' do
-    get 'projects/:id'                                        => 'tutor_projects#show',               as: 'tutor_project'
-    get 'projects/:project_id/display_other_tutorial/:tutorial_id'    => 'tutor_projects#display_other_tutorial', as: 'display_other_tutorial'
-    get 'projects/:project_id/students/:student_id'           => 'tutor_project_students#show',       as: 'tutor_project_student'
-  end
-
   put "unit_roles/:unit_role_id/change_tutorial_allocation/:new_tutorial_id" => "unit_roles#change_tutorial_allocation", as:  'change_tutorial_allocation'
 
   # Admin context routes

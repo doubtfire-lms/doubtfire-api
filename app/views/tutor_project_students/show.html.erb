@@ -10,7 +10,7 @@
 		<li class="nav-header">Dashboard</li>
 		<li><%= link_to 'Home', root_url %></li>
 		<% unless @student_projects.empty? %>
-			<%= render 'dashboard/student_projects_links', student_projects:  @student_projects, selected_student_project:  nil %>
+			<%= render 'dashboard/student_projects_links', student_projects: @student_projects, selected_student_project:  nil %>
 		<% end %>
 		<% unless @staff_units.empty? %>
 			<%= render 'dashboard/staff_unit_links',
@@ -28,7 +28,7 @@
 				<span class="divider">/</span>
 			</li>
 			<li>
-				<%= link_to @student_project.unit.name, tutor_project_path(@student_project.unit) %>
+				<%= link_to @student_project.unit.name, @student_project.unit %>
 				<span class="divider">/</span>
 			</li>
 			<li class="active"><%= @student.name %> (<%= @student.username %>)</li>

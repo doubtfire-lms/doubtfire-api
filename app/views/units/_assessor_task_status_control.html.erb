@@ -1,22 +1,80 @@
-<div class="btn-group task-<%= task.id %>-status-control">
-	<%= task_status_active_button(task) %>
-	<ul class="dropdown-menu">
-		<li>
-			<a href="<%= assess_task_path(task, "complete") %>" data-method="put" data-remote="true">Complete <i class="icon-ok button-icon"></i></a>
-		</li>
-		<li class="divider"></li>
-		<li>
-			<a href="<%= assess_task_path(task, "fix_and_resubmit") %>" data-method="put" data-remote="true">Fix and Resubmit <i class="icon-wrench button-icon"></i></a>
-		</li>
-		<li>
-			<a href="<%= assess_task_path(task, "fix_and_include") %>" data-method="put" data-remote="true">Fix and Include <i class="icon-book button-icon"></i></a>
-		</li>
-		<li>
-			<a href="<%= assess_task_path(task, "redo") %>" data-method="put" data-remote="true">Redo <i class="icon-refresh button-icon"></i></a>
-		</li>
-		<li class="divider"></li>
-		<li>
-			<a href="<%= assess_task_path(task, "not_submitted") %>" data-method="put" data-remote="true">Not Submitted <i class="icon-minus-sign button-icon"></i></a>
-		</li>
-	</ul>
+<div class="task-<%= task.id.to_s %>-status-control">
+
+  <% modal_id = "task-" << task.id.to_s << "-modal" %>
+
+  <% if task.awaiting_signoff %>
+    <div class="status-buttons">
+      <%= link_to glyph(:ok), "#" << modal_id, class: "btn btn-mini btn-success", title: "Complete", rel: "tooltip", "data-toggle" => "modal" %>
+      <%= link_to glyph(:wrench), assess_task_path(task, :fix_and_resubmit), class: "btn btn-mini btn-warning", title: "Fix and Resubmit", rel: "tooltip", remote: true, method: "put" %>
+      <%= link_to glyph(:book), assess_task_path(task, :fix_and_include), class: "btn btn-mini btn-fix-and-include", title: "Fix and Include", rel: "tooltip", remote: true, method: "put" %>
+      <%= link_to glyph(:refresh), assess_task_path(task, :redo), class: "btn btn-mini btn-redo", title: "Redo", rel: "tooltip", remote: true, method: "put" %>
+      <%= link_to glyph(:minus_sign), assess_task_path(task, :not_submitted), class: "btn btn-mini", title: "Not Submitted", rel: "tooltip", remote: true, method: "put" %>
+    </div>
+  <% else %>
+    <div class="selected-status">
+      <span class="label label-inverse"><%= task.task_status.name %></span>
+    </div>
+  <% end %>
+
+  <!-- Modal -->
+  <div id="<%= modal_id %>" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="<%= modal_id %>-label" aria-hidden="true">
+    <div class="modal-header">
+      <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+      <h3 id="<%= modal_id %>-label"><%= truncate(task.task_definition.name, length: 30) %></h3>
+    </div>
+    <div class="modal-body">
+
+      <div class="sub-task-list">
+        <% sub_tasks = task.sub_tasks.joins(:sub_task_definition).where(:sub_task_definitions => { :required => true }) %>
+        <h4>Required Sub Tasks (0 / <%= sub_tasks.count %>)</h4>
+        <% if sub_tasks.count > 0 %>
+          <div class="progress">
+            <div class="bar" style="width: 60%;"></div>
+          </div>
+          <% sub_tasks.each do |sub_task| %>
+            <div class="sub-task-list-entry row-fluid">
+              <input type="checkbox" class="sub-task-checkbox">
+              <%= content_tag :span, sub_task.sub_task_definition.name, class: "sub-task-name has-tooltip", title: sub_task.sub_task_definition.description %>
+              <% sub_task.sub_task_definition.badges.each do |badge| %>
+                <%= content_tag :span,
+                  glyph(:trophy),
+                  class: "sub-task-badge badge badge-info has-tooltip",
+                  title: "<h5>%s</h5><p>%s</p>" % [ badge.name, badge.description ],
+                  "data-html" => true %>
+              <% end %>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
+
+      <div class="sub-task-list">
+        <% sub_tasks = task.sub_tasks.joins(:sub_task_definition).where(:sub_task_definitions => { :required => false }) %>
+        <h4>Optional Sub Tasks (0 / <%= sub_tasks.count %>)</h4>
+        <% if sub_tasks.count > 0 %>
+          <div class="progress">
+            <div class="bar" style="width: 30%;"></div>
+          </div>
+          <% sub_tasks.each do |sub_task| %>
+            <div class="sub-task-list-entry row-fluid">
+              <input type="checkbox" class="sub-task-checkbox">
+              <%= content_tag :span, sub_task.sub_task_definition.name, class: "sub-task-name has-tooltip", title: sub_task.sub_task_definition.description %>
+              <% sub_task.sub_task_definition.badges.each do |badge| %>
+                <%= content_tag :span,
+                  glyph(:trophy),
+                  class: "sub-task-badge badge badge-info has-tooltip",
+                  title: "<h5>%s</h5><p>%s</p>" % [ badge.name, badge.description ],
+                  "data-html" => true %>
+              <% end %>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
+      <button class="btn btn-primary">Save changes</button>
+    </div>
+  </div>
+
 </div>

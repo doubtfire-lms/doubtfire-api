@@ -1,7 +1,7 @@
 // slowly fade in and replace the task status control
 var taskStatusControlClass = ".task-" + "<%= @task.id %>" + "-status-control";
 $(taskStatusControlClass).fadeOut("slow", function(){
-	var taskStatusControlPartial = $("<%= j render 'tutor_projects/assessor_task_status_control', task: @task %>");
+	var taskStatusControlPartial = $("<%= j render 'units/assessor_task_status_control', task: @task %>");
 	$(this).replaceWith(taskStatusControlPartial);
 	$(taskStatusControlClass).hide().fadeIn("slow");
 });

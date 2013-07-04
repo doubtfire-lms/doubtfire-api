@@ -1,5 +1,5 @@
-<%= stylesheets 'tasks.css', 'tutor_projects.css' %>
-<%= javascript 'tutor_projects.js' %>
+<%= stylesheets 'tasks.css', 'units.css' %>
+<%= javascript 'units.js' %>
 <%= javascript 'tasks.js' %>
 <%= javascript "task_popover.js" %>
 
@@ -22,14 +22,14 @@
 
 			<div class="tab-content">
 				<%= tab_div_tag("your-tutorials-tab", true) do %>
-					<%= render 'tutor_projects/tutorial_task_controls',
+					<%= render 'units/tutorial_task_controls',
 						tutorials:  tutor_tutorials
 					%>
 				<% end %>
 
 				<% if !other_tutorials.empty? %>
 					<%= tab_div_tag("other-tutorials-tab") do %>
-						<%= render 'tutor_projects/other_tutorial_task_controls',
+						<%= render 'units/other_tutorial_task_controls',
 							initial_other_tutorial: initial_other_tutorial,
 							other_tutorials: other_tutorials,
 							unit: unit

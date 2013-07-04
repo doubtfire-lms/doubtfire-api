@@ -1,7 +1,7 @@
-<%= render 'tutor_projects/task_indicator_controls' %>
+<%= render 'units/task_indicator_controls' %>
 
 <h3>Other Tutorials</h3>
-<%= render 'tutor_projects/other_tutorial_dropdown',
+<%= render 'units/other_tutorial_dropdown',
 	initial_other_tutorial: initial_other_tutorial,
 	other_tutorials: other_tutorials,
 	unit: unit
@@ -11,7 +11,7 @@
 	<div class="tutorial-entry" id="tutorial-<%= initial_other_tutorial.id %>-students">
 		<h3 id="other-tutorial-header"><%= initial_other_tutorial.meeting_day %> <%= initial_other_tutorial.meeting_time %> (<%= initial_other_tutorial.tutor.name %>)</h3>
 		<div class="tutorial-members">
-			<%= render 'tutor_projects/tutorial_project_list',
+			<%= render 'units/tutorial_project_list',
 				tutorial: initial_other_tutorial
 			%>
 		</div>
