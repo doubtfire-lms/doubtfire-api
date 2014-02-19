@@ -1,7 +1,13 @@
 class ProjectsController < ApplicationController
-  
+  before_filter :authenticate_user!
+  respond_to :json
+
   def index
-    @projects = Project.where(unit_role:  @user.unit_roles)
+    @projects = Project.where(unit_role: current_user.unit_roles)
+
+    respond_to do |format|
+      format.json { render json: @requests, status: :ok }
+    end
   end
 
   def show
