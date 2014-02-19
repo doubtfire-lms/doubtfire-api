@@ -24,10 +24,7 @@ Doubtfire::Application.routes.draw do
   resources :projects
   resources :task_definitions
   resources :tutorials
-
-  # Routes for when the user has no projects
-  get 'no_projects' => 'convenor_contact_forms#new', as:  'no_projects'
-
+  
   get 'profile' => 'users#edit', as:  'edit_profile'
   post 'users/update/:id' => 'users#update', via:  :post, as:  'update_user'
   get 'users/cancel_update_user/:id' => 'users#finish_update', as:  'cancel_update_user'
@@ -71,9 +68,6 @@ Doubtfire::Application.routes.draw do
     get 'add_user' => 'units#add_user',                 as: 'add_user'
     get 'remove_user/:user_id' => 'units#remove_user',  as: 'remove_user'
   end
-
-  resources :convenor_contact_forms, path_names:  { new: 'welcome' }
-  post 'convenor_contact' => 'convenor_contact_forms#create', as:  'convenor_contact'
 
   put "unit_roles/:unit_role_id/change_tutorial_allocation/:new_tutorial_id" => "unit_roles#change_tutorial_allocation", as:  'change_tutorial_allocation'
 
