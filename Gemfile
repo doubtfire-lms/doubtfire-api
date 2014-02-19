@@ -24,7 +24,7 @@ gem 'jquery-rails'
 gem 'simple_form'
 gem 'bootstrap-datepicker-rails'
 
-gem 'mysql2'
+gem 'pg'
 
 group :development do
   gem 'hirb'

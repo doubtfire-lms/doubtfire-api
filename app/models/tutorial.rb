@@ -1,5 +1,5 @@
 class Tutorial < ActiveRecord::Base
-  attr_accessible :unit_id, :user_id, :code, :meeting_day, :meeting_location, :meeting_time
+  attr_accessible :unit_id, :unit_role_id, :code, :meeting_day, :meeting_location, :meeting_time
 
   # Model associations
   belongs_to :unit  # Foreign key

@@ -1,6 +1,5 @@
 class TutorProjectStudentsController < ApplicationController
-  before_filter :authenticate_user!
-
+  
   def show
     @student_project  = Project.includes(:unit).find(params[:project_id])
     @unit             = @student_project.unit

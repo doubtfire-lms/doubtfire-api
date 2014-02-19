@@ -29,8 +29,6 @@ class User < ActiveRecord::Base
   validates :username, presence: true, uniqueness: true
   validates :email, presence: true, uniqueness: true
 
-  before_validation :generate_password, on: :create
-
   def self.default
     user = self.new
 
@@ -38,7 +36,6 @@ class User < ActiveRecord::Base
     user.first_name         = "First"
     user.last_name          = "Last"
     user.email              = "XXXXXXX@swin.edu.au"
-    user.encrypted_password = BCrypt::Password.create("password")
     user.nickname           = "Nickname"
     user.system_role        = SystemRole::BASIC
 
@@ -51,10 +48,6 @@ class User < ActiveRecord::Base
 
   def name
     "#{first_name} #{last_name}"
-  end
-
-  def generate_password
-    self.password = self.password_confirmation = Devise.friendly_token.first(8)
   end
 
   def self.import_from_csv(file)

@@ -1,6 +1,5 @@
 class ProjectsController < ApplicationController
-  before_filter :authenticate_user!
-
+  
   def index
     @projects = Project.where(unit_role:  @user.unit_roles)
   end

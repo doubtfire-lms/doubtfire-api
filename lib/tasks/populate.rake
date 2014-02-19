@@ -1,16 +1,17 @@
 namespace :db do
 
   desc "Clear the database and fill with test data"
-  task populate:  :environment do
+  task populate: [:setup, :migrate] do
     require 'populator'
     require 'faker'
     require 'bcrypt'
 
-    # Collection of tutor/convenor/superuser ids to avoid hard-coding
-    ids = {
-      "convenor" => -1,
-      "superuser" => -1
-    }
+    roles = [
+      :student,
+      :tutor,
+      :convenor,
+      :moderator
+    ]
 
     tutors = {
       acain:      {first: "Andrew",   last: "Cain", id: -1},
@@ -43,9 +44,6 @@ namespace :db do
     # Collection of weekdays
     days = %w[Monday Tuesday Wednesday Thursday Friday]
 
-    # Clear the database
-    [User, Unit, Tutorial, Project, TaskDefinition, Task, TaskStatus, UnitRole, User, ProjectConvenor, Login, TaskSubmission, TaskEngagement].each(&:delete_all)
-
     TaskStatus.create(name:  "Not Submitted", description:  "This task has not been submitted to marked by your tutor.")
     TaskStatus.create(name:  "Complete", description:  "This task has been signed off by your tutor.")
     TaskStatus.create(name:  "Need Help", description:  "Some help is required in order to complete this task.")
@@ -54,106 +52,115 @@ namespace :db do
     TaskStatus.create(name:  "Fix and Include", description:  "This task must be fixed and included in your portfolio, but should not be resubmitted.")
     TaskStatus.create(name:  "Redo", description:  "This task needs to be redone.")
 
+    role_cache = {}
+
+    roles.each do |role|
+      role_cache[role] = Role.create(name: role.to_s.titleize)
+    end
+
     # Create 4 students
     randies.each do |username, profile|
-      User.populate(1) do |user|
-        user.username           = username.to_s
-        user.nickname           = profile[:nickname]
-        user.email              = "#{username}@doubtfire.com"
-        user.encrypted_password = BCrypt::Password.create("password")
-        user.first_name         = profile[:first]
-        user.last_name          = profile[:last]
-        user.sign_in_count      = 0
-        user.system_role        = "user"
-      end
+      user = User.create(
+        username: username.to_s,
+        nickname: profile[:nickname],
+        email: "#{username}@doubtfire.com",
+        password: 'password',
+        password_confirmation: 'password',
+        first_name: profile[:first],
+        last_name: profile[:last],
+        system_role: "basic"
+      )
+
+      UserRole.create(user_id: user.id, role_id: role_cache[:student])
     end
+
+    tutor_cache = {}
 
     # Create 2 tutors
     tutors.each do |username, info|
-      User.populate(1) do |tutor|
-        tutor.username             = username.to_s
-        tutor.nickname             = info[:nickname]
-        tutor.email = "#{username.to_s}@doubtfire.com"
-        tutor.encrypted_password  = BCrypt::Password.create("password")
-        tutor.first_name          = info[:first]
-        tutor.last_name           = info[:last]
-        tutor.sign_in_count       = 0
-        tutor.system_role         = "user"
-        tutors[username][:id]     = tutor.id
-      end
+      tutor_cache[username] = User.create(
+        username: username.to_s,
+        nickname: info[:nickname],
+        email: "#{username.to_s}@doubtfire.com",
+        password: 'password',
+        password_confirmation: 'password',
+        first_name: info[:first],
+        last_name: info[:last],
+        system_role: "basic"
+      )
     end
 
     # Create 1 convenor
-    User.populate(1) do |convenor|
-      convenor.username            = "convenor"
-      convenor.nickname            = "Strict"
-      convenor.email               = "convenor@doubtfire.com"
-      convenor.encrypted_password  = BCrypt::Password.create("password")
-      convenor.first_name          = "Convenor"
-      convenor.last_name           = "OfSubjects"
-      convenor.sign_in_count       = 0
-      convenor.system_role         = "convenor"
-      ids["convenor"]           = convenor.id
-    end
+    convenor = User.create(
+      username: "convenor",
+      nickname: "Strict",
+      email: "convenor@doubtfire.com",
+      password: 'password',
+      password_confirmation: 'password',
+      first_name: "Convenor",
+      last_name: "OfSubjects",
+      system_role: "admin"
+    )
 
      # Create 1 superuser
-    User.populate(1) do |superuser|
-      superuser.username            = "superuser"
-      superuser.nickname            = "Strict"
-      superuser.email               = "superuser@doubtfire.com"
-      superuser.encrypted_password  = BCrypt::Password.create("password")
-      superuser.first_name          = "Somedude"
-      superuser.last_name           = "Withlotsapower"
-      superuser.sign_in_count       = 0
-      superuser.system_role         = "superuser"
-      ids["superuser"]              = superuser.id
-    end
+    User.create(
+      username: "superuser",
+      nickname: "Strict",
+      email: "superuser@doubtfire.com",
+      password: 'password',
+      password_confirmation: 'password',
+      first_name: "Somedude",
+      last_name: "Withlotsapower",
+      system_role: "admin"
+    )
+
+    unit_role_cache = {}
 
     # Create 4 projects (subjects)
     subjects.each do |subject_code, subject_name|
-      Unit.populate(1) do |unit|
-        unit.code  = subject_code
-        unit.name           = subject_name
-        unit.description    = Populator.words(10..15)
-        unit.start_date     = Date.current
-        unit.end_date       = 13.weeks.since unit.start_date
+      unit = Unit.create(
+        code: subject_code,
+        name: subject_name,
+        description: Populator.words(10..15),
+        start_date: Date.current,
+        end_date: 13.weeks.since(Date.current)
+      )
 
-        # Assign a convenor to each project
-        ProjectConvenor.populate(1) do |pa|
-          pa.user_id = ids["convenor"]   # Convenor 1
-          pa.unit_id = unit.id
-        end
+      unit_role_cache[subject_code] ||= {}
+      unit_role_cache[subject_code][:convenor] = UnitRole.create(role_id: role_cache[:convenor], user_id: convenor.id)
 
-        # Create 6-12 tasks per project
-        num_tasks = 6 + rand(6)
-        assignment_num = 0
-        TaskDefinition.populate(num_tasks) do |task_definition|
-          assignment_num += 1
-          task_definition.name = "Assignment #{assignment_num}"
-          task_definition.abbreviation = "A#{assignment_num}"
-          task_definition.unit_id = unit.id
-          task_definition.description = Populator.words(5..10)
-          task_definition.weighting = BigDecimal.new("2")
-          task_definition.required = rand < 0.9   # 10% chance of being false
-          task_definition.target_date = assignment_num.weeks.from_now # Assignment 6 due week 6, etc.
-        end
+      # Create 6-12 tasks per project
+      task_count = 6 + rand(6)
 
-        # Create 2 tutorials per project
-        tutorial_num = 1
-        Tutorial.populate(2) do |tutorial|
-          tutorial.unit_id = unit.id
-          tutorial.meeting_time = "#{8 + rand(12)}:#{['00', '30'].sample}"    # Mon-Fri 8am-7:30pm
-          tutorial.meeting_day  = "#{days.sample}"
-          tutorial.meeting_location = "#{['EN', 'BA'].sample}#{rand(7)}#{rand(1)}#{rand(9)}" # EN###/BA###
+      task_count.times do |count|
+        TaskDefinition.create(
+          name: "Assignment #{count + 1}",
+          abbreviation: "A#{count + 1}",
+          unit_id: unit.id,
+          description: Populator.words(5..10),
+          weighting: BigDecimal.new("2"),
+          required: rand < 0.9,   # 10% chance of being false
+          target_date: (count + 1).weeks.from_now # Assignment 6 due week 6, etc.
+        )
+      end
 
-          if ["Introduction To Programming", "Object-Oriented Programming"].include? subject_name
-            tutorial.user_id = tutors[:acain][:id]  # Tutor 1
-          else
-            tutorial.user_id = tutors[:cwoodward][:id]  # Tutor 2
-          end
+      # Create 2 tutorials per project
+      tutorial_num = 1
 
-          tutorial_num += 1
-        end
+      tutor_unit_role = if ["Introduction To Programming", "Object-Oriented Programming"].include? subject_name
+        unit_role_cache[subject_code][:acain] ||= UnitRole.create!(role_id: role_cache[:tutor].id, user_id: tutor_cache[:acain].id, unit_id: unit.id)
+      else
+        unit_role_cache[subject_code][:cwoodward] ||= UnitRole.create!(role_id: role_cache[:tutor].id, user_id: tutor_cache[:cwoodward].id, unit_id: unit.id)
+      end
+
+      2.times do |count|
+        Tutorial.create(
+          unit_id: unit.id,
+          unit_role_id: tutor_unit_role.id,
+          meeting_time: "#{8 + rand(12)}:#{['00', '30'].sample}",    # Mon-Fri 8am-7:30pm
+          meeting_day: "#{days.sample}",
+          meeting_location: "#{['EN', 'BA'].sample}#{rand(7)}#{rand(1)}#{rand(9)}" # EN###/BA###
+        )
       end
     end
 
@@ -195,6 +202,5 @@ namespace :db do
         project.save
       end
     end
-
   end
 end

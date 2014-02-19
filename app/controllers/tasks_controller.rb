@@ -1,6 +1,5 @@
 class TasksController < ApplicationController
-  before_filter :authenticate_user!
-
+  
   def index
     @projects = current_user.unit_roles.map{|tm| tm.project }
     @project  = Project.find(params[:project_id])

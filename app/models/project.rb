@@ -3,9 +3,8 @@ class Project < ActiveRecord::Base
 
   default_scope include: :unit
 
-  attr_accessible :unit, :project_role, :started, :progress
+  attr_accessible :unit_role_id, :unit_id, :started, :progress
 
-  belongs_to :tutorial
   belongs_to :unit
   belongs_to :student, class_name: 'UnitRole', foreign_key: 'unit_role_id', dependent: :destroy
 

@@ -38,21 +38,19 @@ class Unit < ActiveRecord::Base
   # Adds a user to this project.
   def add_user(user_id, tutorial_id, project_role)
     # Put the user in the appropriate tutorial (ie. create a new unit_role)
-    unit_role = UnitRole.new(
+    unit_role = UnitRole.create!(
       user_id: user_id,
-      tutorial_id: tutorial_id
+      tutorial_id: tutorial_id,
+      unit_id: self.id,
+      role_id: Role.where(name: 'Student').first.id
     )
 
-    project = unit_role.build_project(
-      started: false,
-      unit: self,
-      project_role: project_role
+    project = Project.create!(
+      unit_role_id: unit_role.id,
+      unit_id: self.id
     )
-    project.save
 
-    # Associate the tutorial membership with the project that was created
-    unit_role.project_id = project.id
-    unit_role.save
+    puts "#{user_id} - #{tutorial_id} - #{project_role}"
 
     # Create task instances for the project
     task_definitions_for_project = TaskDefinition.where(unit_id: self.id)

@@ -1,6 +1,5 @@
 class ConvenorContactFormsController < ApplicationController
-  before_filter :authenticate_user!
-
+  
   def new
     @active_projects = Unit.set_active
     @convenor_contact_form = ConvenorContactForm.new

@@ -1,8 +1,7 @@
 class TutorProjectsController < ApplicationController
   include TutorProjectsHelper
 
-  before_filter :authenticate_user!
-
+  
   def show
     @unit                         = Unit.find(params[:id])
 
