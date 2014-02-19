@@ -12,11 +12,6 @@ class User < ActiveRecord::Base
     define_method("#{meth}?") { system_role == meth }
   end
 
-  # Devise fields
-  attr_accessible :email, :remember_me
-  # Model fields
-  attr_accessible :first_name, :last_name, :system_role, :username, :nickname, :role_ids
-
   # Model associations
   has_many :unit_roles, dependent: :destroy
   has_many :user_roles, dependent: :destroy

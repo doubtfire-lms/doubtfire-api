@@ -1,6 +1,4 @@
 class TaskDefinition < ActiveRecord::Base
-	attr_accessible :unit_id, :name, :abbreviation, :description, :target_date, :required, :weighting
-
 	# Model associations
 	belongs_to :unit			   # Foreign key
 	has_many :tasks, dependent:  :destroy    # Destroying a task definition will also nuke any instances

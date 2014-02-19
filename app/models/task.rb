@@ -3,8 +3,6 @@ class Task < ActiveRecord::Base
 
   default_scope include:  :task_definition
 
-  attr_accessible :task_definition_id, :project_id, :awaiting_signoff, :completion_date, :task_status_id
-
   # Model associations
   belongs_to :task_definition         # Foreign key
   belongs_to :project               # Foreign key

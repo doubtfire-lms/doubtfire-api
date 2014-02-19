@@ -8,8 +8,6 @@ class UnitRole < ActiveRecord::Base
   belongs_to :role    # Foreign key
   has_one :project, dependent: :destroy
 
-  attr_accessible :unit_id, :user_id, :tutorial_id, :role_id
-
   validates :unit_id, presence: true
   validates :user_id, presence: true
   validates :role_id, presence: true

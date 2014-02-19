@@ -7,7 +7,6 @@ class Unit < ActiveRecord::Base
   # Accessor to allow setting of convenors via the new/edit form
   attr_accessor :convenors
 
-  attr_accessible :code, :description, :end_date, :name, :start_date, :active
   validates_presence_of :name, :description, :start_date, :end_date
 
   # Model associations.
