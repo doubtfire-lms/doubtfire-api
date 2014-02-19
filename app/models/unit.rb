@@ -23,6 +23,11 @@ class Unit < ActiveRecord::Base
   scope :set_active,            ->{ where("active = ?", true) }
   scope :set_inactive,          ->{ where("active = ?", false) }
 
+  def self.for_user(user)
+    # TODO: Revise this
+    Unit.scoped.joins(:unit_roles).where('unit_roles.user_id = :user_id', user_id: user.id)
+  end
+
   def self.default
     unit = self.new
 

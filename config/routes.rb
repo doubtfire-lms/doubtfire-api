@@ -1,4 +1,6 @@
 Doubtfire::Application.routes.draw do
+  mount Api::Root => '/'
+  
   namespace :api do
     resources :auth, :only => [:create, :destroy]
   end

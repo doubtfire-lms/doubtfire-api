@@ -60,6 +60,9 @@ module Doubtfire
 
     config.assets.initialize_on_precompile = false
 
+    config.paths.add "app/api", glob: "**/*.rb"             #For Grape
+    config.autoload_paths += Dir["#{Rails.root}/app"]       # For Grape
+
     config.generators do |g|
       g.test_framework :rspec,
         fixtures: true,

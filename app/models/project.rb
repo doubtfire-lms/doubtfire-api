@@ -4,7 +4,7 @@ class Project < ActiveRecord::Base
   default_scope include: :unit
 
   belongs_to :unit
-  belongs_to :student, class_name: 'UnitRole', foreign_key: 'unit_role_id', dependent: :destroy
+  belongs_to :unit_role, class_name: 'UnitRole', foreign_key: 'unit_role_id', dependent: :destroy
 
   has_one :user, through: :student
   has_many :tasks, dependent: :destroy   # Destroying a project will also nuke all of its tasks
@@ -14,6 +14,10 @@ class Project < ActiveRecord::Base
   scope :with_progress, lambda {|progress_types|
     where(progress: progress_types) unless progress_types.blank?
   }
+
+  def self.for_user(user)
+    joins(:unit_role).where('unit_roles.user_id = 1')
+  end
 
   def start
     update_attribute(:started, true)

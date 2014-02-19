@@ -15,6 +15,9 @@ gem 'cancan'
 
 gem 'pg'
 
+gem 'grape'
+gem 'grape-active_model_serializers'
+
 group :development do
   gem 'hirb'
   gem 'better_errors'
