@@ -1,5 +1,15 @@
 Doubtfire::Application.routes.draw do
-  devise_for :users, skip:  [:registrations, :sessions]
+  devise_for :users
+
+  # namespace :api, defaults: {format: :json} do
+  #   devise_scope :user do
+  #     post '/auth', to: "sessions#create"
+  #   end
+  # end
+
+  namespace :api do
+    resources :auth, :only => [:create, :destroy]
+  end
 
   ##### Devise #####
 
@@ -24,7 +34,7 @@ Doubtfire::Application.routes.draw do
   resources :projects
   resources :task_definitions
   resources :tutorials
-  
+
   get 'profile' => 'users#edit', as:  'edit_profile'
   post 'users/update/:id' => 'users#update', via:  :post, as:  'update_user'
   get 'users/cancel_update_user/:id' => 'users#finish_update', as:  'cancel_update_user'

@@ -4,7 +4,7 @@ class User < ActiveRecord::Base
     devise :ldap_authenticatable, :registerable,
          :recoverable, :rememberable, :trackable, :validatable
   else
-    devise :database_authenticatable, :registerable,
+    devise :database_authenticatable, :token_authenticatable, :registerable,
          :recoverable, :rememberable, :trackable, :validatable
   end
 
@@ -15,7 +15,7 @@ class User < ActiveRecord::Base
   # Devise fields
   attr_accessible :email, :remember_me
   # Model fields
-  attr_accessible :first_name, :last_name, :system_role, :username, :password, :password_confirmation, :nickname, :role_ids
+  attr_accessible :first_name, :last_name, :system_role, :username, :nickname, :role_ids
 
   # Model associations
   has_many :unit_roles, dependent: :destroy

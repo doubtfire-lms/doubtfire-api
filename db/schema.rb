@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20140216084714) do
+ActiveRecord::Schema.define(:version => 20140219093336) do
 
   create_table "badges", :force => true do |t|
     t.string   "name"
@@ -197,6 +197,13 @@ ActiveRecord::Schema.define(:version => 20140216084714) do
     t.string   "system_role"
     t.string   "username"
     t.string   "nickname"
+    t.string   "authentication_token"
+    t.integer  "failed_attempts",        :default => 0,  :null => false
+    t.string   "unlock_token"
+    t.datetime "locked_at"
+    t.datetime "auth_token_expiry"
   end
+
+  add_index "users", ["authentication_token"], :name => "index_users_on_authentication_token", :unique => true
 
 end

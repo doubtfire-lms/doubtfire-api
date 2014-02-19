@@ -8,7 +8,7 @@ gem 'populator'
 gem 'faker'
 
 # Auth
-gem 'devise'
+gem 'devise', '~> 3.1.2'
 gem 'devise_ldap_authenticatable'
 gem 'cancan'
 
