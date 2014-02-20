@@ -25,7 +25,7 @@ class Unit < ActiveRecord::Base
 
   def self.for_user(user)
     # TODO: Revise this
-    Unit.scoped.joins(:unit_roles).where('unit_roles.user_id = :user_id', user_id: user.id)
+    Unit.joins(:unit_roles).where('unit_roles.user_id = :user_id', user_id: user.id)
   end
 
   def self.default
