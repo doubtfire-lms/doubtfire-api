@@ -1,8 +1,6 @@
 class Task < ActiveRecord::Base
   include ApplicationHelper
 
-  default_scope include:  :task_definition
-
   # Model associations
   belongs_to :task_definition         # Foreign key
   belongs_to :project               # Foreign key

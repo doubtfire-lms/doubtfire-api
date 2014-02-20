@@ -1,8 +1,6 @@
 class Project < ActiveRecord::Base
   include ApplicationHelper
 
-  default_scope include: :unit
-
   belongs_to :unit
   belongs_to :unit_role, class_name: 'UnitRole', foreign_key: 'unit_role_id', dependent: :destroy
 

@@ -1,5 +1,4 @@
 class UnitRole < ActiveRecord::Base
-  default_scope include: :role
 
   # Model associations
   belongs_to :unit    # Foreign key
