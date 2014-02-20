@@ -30,5 +30,6 @@ module Api
 
     mount Api::Units
     mount Api::Projects
+    mount Api::Tasks
   end
 end

@@ -9,6 +9,13 @@ class Task < ActiveRecord::Base
 
   after_save :update_project
 
+  def self.for_user(user)
+    # TODO: This would probably be cleaner with a task query
+    Project.includes(tasks: :task_definition)
+            .for_user(user)
+            .map{|project| project.tasks }.flatten
+  end
+
   def self.default
     task_definition             = self.new
 
