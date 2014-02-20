@@ -1,5 +1,5 @@
 source 'https://rubygems.org'
-ruby '2.0.0'
+ruby '2.1.0'
 
 # The venerable, almighty Rails
 gem 'rails', '4.0.3'
@@ -26,7 +26,6 @@ group :development do
 end
 
 group :test do
-  gem 'faker'
   gem 'simplecov'
   gem 'capybara'
   gem 'launchy'
