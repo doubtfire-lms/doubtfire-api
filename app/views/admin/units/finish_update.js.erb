@@ -1,5 +1,0 @@
-// Build the row id string from the unit id
-var unitRowId = "project-" + "<%= @unit.id %>" +  "-row";
-
-// Replace the row with the partial in _table_row.html.erb.
-$("#" + unitRowId).replaceWith("<%=j render 'admin/units/table_row', unit:  @unit %>");

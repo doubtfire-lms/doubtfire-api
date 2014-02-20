@@ -1,8 +1,0 @@
-<% tutorials.each do |tutorial| %>
-<h3>
-	<%= link_to tutorial.name, tutorial %>
-	&mdash;
-	<%= tutorial.unit_role.user.name %>
-</h3>
-<p><strong><%= tutorial.unit_roles.count %> users</strong> are assigned to this tutorial.</p>
-<% end %>

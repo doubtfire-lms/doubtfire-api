@@ -1,5 +1,0 @@
-// Build the row id string from the tutorial id
-var userRowId = "user-" + "<%= @user.id %>" +  "-row";
-
-// Replace the row with the partial in _table_row.html.erb.
-$("#" + userRowId).replaceWith("<%=j render 'users/table_row', user:  @user %>");

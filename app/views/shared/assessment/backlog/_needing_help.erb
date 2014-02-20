@@ -1,8 +1,0 @@
-<% if needing_help_tasks.empty? %>
-	<p>There is no one currently in need of help with any tasks. Feet up and scotch rocks!</p>
-<% else %>
-	<% needing_help_tasks.each do |user, tasks| %>
-		<h3><%= user.name %> (<%= user.username %>)</h3>
-		<%= render 'shared/assessment/backlog/backlog', actionable_tasks: tasks %>
-	<% end %>
-<% end %>
