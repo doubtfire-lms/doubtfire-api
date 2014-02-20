@@ -9,7 +9,7 @@ module Api
     end
 
     desc "Get projects"
-    get :projects do
+    get '/projects' do
       @projects = Project.for_user current_user
     end
 

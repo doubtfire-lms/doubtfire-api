@@ -9,7 +9,7 @@ module Api
     end
 
     desc "Get units"
-    get :units do
+    get '/units' do
       @units = Unit.for_user current_user
     end
 
