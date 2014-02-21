@@ -11,6 +11,12 @@ module Api
     desc "Get projects"
     get '/projects' do
       @projects = Project.for_user current_user
+
+      if params[:unit_role_id]
+        @projects = @projects.where(unit_role_id: params[:unit_role_id])
+      end
+
+      @projects
     end
 
     desc "Get project"
