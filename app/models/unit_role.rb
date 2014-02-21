@@ -13,4 +13,8 @@ class UnitRole < ActiveRecord::Base
 
   scope :students,  -> { where('role_id = ?', 1) }
   scope :staff,     -> { where('role_id != ?', 1) }
+
+  def self.for_user(user)
+    UnitRole.where(user_id: user.id)
+  end
 end
