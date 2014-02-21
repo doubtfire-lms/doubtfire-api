@@ -12,7 +12,7 @@ class Api::AuthController < ApplicationController
      return
     end
 
-    @user=User.find_by_email(email.downcase)
+    @user = User.find_by_email(email.downcase)
 
     if @user.nil?
       logger.info("User #{email} failed signin, user cannot be found.")
@@ -29,7 +29,7 @@ class Api::AuthController < ApplicationController
       render :status=>401, :json=>{:message=>"Invalid email or password."}
     else
       if @user.failed_attempts < 5
-        render status: 200, json: {auth_token: @user.authentication_token}
+        render status: 200, json: { user: @user, auth_token: @user.authentication_token}
         @user.auth_token_expiry = DateTime.now + 30
         @user.save
       else
