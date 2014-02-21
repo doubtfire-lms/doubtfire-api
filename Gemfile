@@ -18,6 +18,8 @@ gem 'pg'
 gem 'grape'
 gem 'grape-active_model_serializers'
 
+gem 'rack-cors', require: 'rack/cors'
+
 group :development do
   gem 'hirb'
   gem 'better_errors'
