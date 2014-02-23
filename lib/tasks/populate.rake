@@ -13,11 +13,6 @@ namespace :db do
       :moderator
     ]
 
-    tutors = {
-      acain:      {first: "Andrew",   last: "Cain", id: -1},
-      cwoodward:  {first: "Clinton",  last: "Woodward", id: -1 },
-    }
-
     # FIXME: Not enough hilarious names
     joosts_long_ass_name = %w[
       Cornelius
@@ -26,11 +21,21 @@ namespace :db do
       Kupper
     ].join(" ")
 
-    randies = {
-      ajones:             {first: "Allan",    last: "Jones",                nickname: "P-Jiddy"},
-      rliston:            {first: "Rohan",    last: "Liston",               nickname: "Gunner"},
-      akihironoguchi:     {first: "Akihiro",  last: "Noguchi",              nickname: "Unneccesary Animations"},
-      joostfunkekupper:   {first: "Joost",    last: joosts_long_ass_name,   nickname: "Joe"}
+    users = {
+      acain:              {first_name: "Andrew",         last_name: "Cain",                 nickname: "Macite", system_role: 'admin' },
+      cwoodward:          {first_name: "Clinton",        last_name: "Woodward",             nickname: "The Giant", system_role: 'admin' },
+      ajones:             {first_name: "Allan",          last_name: "Jones",                nickname: "P-Jiddy"},
+      rliston:            {first_name: "Rohan",          last_name: "Liston",               nickname: "Gunner"},
+      akihironoguchi:     {first_name: "Akihiro",        last_name: "Noguchi",              nickname: "Unneccesary Animations"},
+      joostfunkekupper:   {first_name: "Joost",          last_name: joosts_long_ass_name,   nickname: "Joe"},
+      convenor:           {first_name: "Convenor",       last_name: "OfSubjects",           nickname: "Strict", system_role: 'admin' },
+      superuser:          {first_name: "Somedude",       last_name: "Withlotsapower",       nickname: "Strict", system_role: "admin" }
+    }
+
+    user_roles = {
+      student:   [:ajones, :rliston, :akihironoguchi, :joostfunkekupper],
+      tutor:     [:acain, :cwoodward],
+      convenor:  [:acain, :cwoodward],
     }
 
     # List of subject names to use
@@ -55,64 +60,28 @@ namespace :db do
     role_cache = {}
 
     roles.each do |role|
-      role_cache[role] = Role.create(name: role.to_s.titleize)
+      role_cache[role] = Role.create!(name: role.to_s.titleize)
     end
+
+    user_cache = {}
 
     # Create 4 students
-    randies.each do |username, profile|
-      user = User.create(
-        username: username.to_s,
-        nickname: profile[:nickname],
-        email: "#{username}@doubtfire.com",
-        password: 'password',
-        password_confirmation: 'password',
-        first_name: profile[:first],
-        last_name: profile[:last],
-        system_role: "basic"
-      )
+    users.each do |user_key, profile|
+      username = user_key.to_s
 
-      UserRole.create(user_id: user.id, role_id: role_cache[:student])
+      profile[:system_role] ||= 'basic'
+      profile[:email]       ||= "#{username}@doubtfire.com"
+      profile[:username]    ||= username
+
+      user = User.create!(profile.merge({password: 'password', password_confirmation: 'password'}))
+      user_cache[user_key] = user
     end
 
-    tutor_cache = {}
-
-    # Create 2 tutors
-    tutors.each do |username, info|
-      tutor_cache[username] = User.create(
-        username: username.to_s,
-        nickname: info[:nickname],
-        email: "#{username.to_s}@doubtfire.com",
-        password: 'password',
-        password_confirmation: 'password',
-        first_name: info[:first],
-        last_name: info[:last],
-        system_role: "basic"
-      )
+    user_roles.each do |role, bucket|
+      bucket.each do |user_key|
+        UserRole.create(role_id: role_cache[role].id, user_id: user_cache[user_key].id)
+      end
     end
-
-    # Create 1 convenor
-    convenor = User.create(
-      username: "convenor",
-      nickname: "Strict",
-      email: "convenor@doubtfire.com",
-      password: 'password',
-      password_confirmation: 'password',
-      first_name: "Convenor",
-      last_name: "OfSubjects",
-      system_role: "admin"
-    )
-
-     # Create 1 superuser
-    User.create(
-      username: "superuser",
-      nickname: "Strict",
-      email: "superuser@doubtfire.com",
-      password: 'password',
-      password_confirmation: 'password',
-      first_name: "Somedude",
-      last_name: "Withlotsapower",
-      system_role: "admin"
-    )
 
     unit_role_cache = {}
 
@@ -127,7 +96,7 @@ namespace :db do
       )
 
       unit_role_cache[subject_code] ||= {}
-      unit_role_cache[subject_code][:convenor] = UnitRole.create(role_id: role_cache[:convenor], user_id: convenor.id)
+      unit_role_cache[subject_code][:convenor] = UnitRole.create(role_id: role_cache[:convenor], user_id: user_cache[:convenor].id)
 
       # Create 6-12 tasks per project
       task_count = 6 + rand(6)
@@ -148,9 +117,9 @@ namespace :db do
       tutorial_num = 1
 
       tutor_unit_role = if ["Introduction To Programming", "Object-Oriented Programming"].include? subject_name
-        unit_role_cache[subject_code][:acain] ||= UnitRole.create!(role_id: role_cache[:tutor].id, user_id: tutor_cache[:acain].id, unit_id: unit.id)
+        unit_role_cache[subject_code][:acain] ||= UnitRole.create!(role_id: role_cache[:tutor].id, user_id: user_cache[:acain].id, unit_id: unit.id)
       else
-        unit_role_cache[subject_code][:cwoodward] ||= UnitRole.create!(role_id: role_cache[:tutor].id, user_id: tutor_cache[:cwoodward].id, unit_id: unit.id)
+        unit_role_cache[subject_code][:cwoodward] ||= UnitRole.create!(role_id: role_cache[:tutor].id, user_id: user_cache[:cwoodward].id, unit_id: unit.id)
       end
 
       2.times do |count|
