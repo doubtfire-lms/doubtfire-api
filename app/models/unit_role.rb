@@ -11,7 +11,9 @@ class UnitRole < ActiveRecord::Base
   validates :user_id, presence: true
   validates :role_id, presence: true
 
-  scope :students,  -> { where('role_id = ?', 1) }
+  scope :students,  -> { joins(:role).where('roles.name = :role', role: 'Student') }
+  scope :tutors,    -> { joins(:role).where('roles.name = :role', role: 'Tutor') }
+  scope :convenors, -> { joins(:role).where('roles.name = :role', role: 'Convenor') }
   scope :staff,     -> { where('role_id != ?', 1) }
 
   def self.for_user(user)
