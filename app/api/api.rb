@@ -33,5 +33,6 @@ module Api
     mount Api::Tasks
     mount Api::Users
     mount Api::UnitRoles
+    mount Api::UserRoles
   end
 end
