@@ -25,7 +25,11 @@ class Unit < ActiveRecord::Base
 
   def self.for_user(user)
     # TODO: Revise this
-    Unit.joins(:unit_roles).where('unit_roles.user_id = :user_id', user_id: user.id)
+    if user.admin?
+      Unit.all
+    else
+      Unit.joins(:unit_roles).where('unit_roles.user_id = :user_id', user_id: user.id)
+    end
   end
 
   def self.default
@@ -53,8 +57,6 @@ class Unit < ActiveRecord::Base
       unit_role_id: unit_role.id,
       unit_id: self.id
     )
-
-    puts "#{user_id} - #{tutorial_id} - #{project_role}"
 
     # Create task instances for the project
     task_definitions_for_project = TaskDefinition.where(unit_id: self.id)
