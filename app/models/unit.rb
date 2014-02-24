@@ -4,9 +4,6 @@ require 'bcrypt'
 class Unit < ActiveRecord::Base
   include ApplicationHelper
 
-  # Accessor to allow setting of convenors via the new/edit form
-  attr_accessor :convenors
-
   validates_presence_of :name, :description, :start_date, :end_date
 
   # Model associations.
@@ -15,6 +12,7 @@ class Unit < ActiveRecord::Base
   has_many :projects, dependent: :destroy
   has_many :tutorials, dependent: :destroy
   has_many :unit_roles, dependent: :destroy
+  has_many :convenors, -> { joins(:role).where("roles.name = :role", role: 'Convenor') }, class_name: 'UnitRole'
 
   scope :current,               ->{ current_for_date(Time.zone.now) }
   scope :current_for_date,      ->(date) { where("start_date <= ? AND end_date >= ?", date, date) }

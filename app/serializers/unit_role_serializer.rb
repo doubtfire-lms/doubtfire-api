@@ -1,5 +1,5 @@
 class UnitRoleSerializer < ActiveModel::Serializer
-  attributes :id
+  attributes :id, :role_id, :user_id
 
   has_one :user
   has_one :unit, serializer: ShallowUnitSerializer
