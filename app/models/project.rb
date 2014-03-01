@@ -14,7 +14,7 @@ class Project < ActiveRecord::Base
   }
 
   def self.for_user(user)
-    joins(:unit_role).where('unit_roles.user_id = 1')
+    joins(:unit_role).where('unit_roles.user_id = :user_id', user_id: user.id)
   end
 
   def start
