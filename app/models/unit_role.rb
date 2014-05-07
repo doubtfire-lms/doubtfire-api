@@ -16,7 +16,14 @@ class UnitRole < ActiveRecord::Base
   scope :convenors, -> { joins(:role).where('roles.name = :role', role: 'Convenor') }
   scope :staff,     -> { where('role_id != ?', 1) }
 
+  scope :other_roles, -> (other) { where("user_id = ? and unit_id = ? and id != ?", other.user_id, other.unit_id, other.id)}
+
   def self.for_user(user)
     UnitRole.where(user_id: user.id)
   end
+
+  def other_roles
+    UnitRole.other_roles( self )  
+  end
+
 end
