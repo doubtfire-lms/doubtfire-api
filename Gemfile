@@ -17,6 +17,7 @@ gem 'pg'
 
 gem 'grape'
 gem 'grape-active_model_serializers'
+gem 'grape-swagger'
 
 gem 'rack-cors', require: 'rack/cors'
 

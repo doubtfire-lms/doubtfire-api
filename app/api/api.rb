@@ -1,4 +1,5 @@
 require 'grape'
+require 'grape-swagger'
 
 module AuthHelpers
   def warden

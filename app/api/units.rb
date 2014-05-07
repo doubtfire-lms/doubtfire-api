@@ -18,18 +18,30 @@ module Api
       end
     end
 
-    desc "Get units"
+    desc "Get units related to the current user"
     get '/units' do
-      @units = Unit.for_user current_user
+      units = Unit.for_user current_user
     end
 
-    desc "Get unit"
+    desc "Get a unit's details"
     get '/units/:id' do
-      @unit = Unit.find(params[:id])
+      #TODO: authorise!
+      unit = Unit.find(params[:id])
     end
 
     desc "Create unit"
+    params do
+      group :unit do
+        requires :name
+        requires :code
+        requires :description
+        requires :start_date
+        requires :end_date
+        optional :convenors, type:JSON
+      end
+    end
     post '/units' do
+      #TODO: authorise!
       unit_parameters = ActionController::Parameters.new(params)
                                           .require(:unit)
                                           .permit(
@@ -39,7 +51,7 @@ module Api
                                             :start_date,
                                             :end_date
                                           )
-      @unit = Unit.create!(unit_parameters)
+      unit = Unit.create!(unit_parameters)
 
       if params[:unit][:convenors]
         params[:unit][:convenors].each do |convenor|
