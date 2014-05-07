@@ -20,6 +20,18 @@ module AuthHelpers
   def current_user
     warden.user ||  User.find_by_authentication_token(params[:auth_token])
   end
+
+  # Add the required auth_token to each of the routes for the provided
+  # Grape::API.
+  #
+  def self.add_auth_to(service)
+    service.routes.each do |route|
+      options = route.instance_variable_get("@options")
+      unless options[:params]["auth_token"]
+        options[:params]["auth_token"] = {:required=>true, :type=>"String", :desc=>"Authentication token"}
+      end
+    end
+  end
 end
 
 module Api
@@ -27,6 +39,7 @@ module Api
     prefix 'api'
     format :json
     formatter :json, Grape::Formatter::ActiveModelSerializers
+    rescue_from :all
 
     mount Api::Units
     mount Api::Projects
@@ -34,5 +47,17 @@ module Api
     mount Api::Users
     mount Api::UnitRoles
     mount Api::UserRoles
+    mount Api::Auth
+
+    AuthHelpers.add_auth_to Api::Units
+    AuthHelpers.add_auth_to Api::Projects
+    AuthHelpers.add_auth_to Api::Tasks
+    AuthHelpers.add_auth_to Api::Users
+    AuthHelpers.add_auth_to Api::UnitRoles
+    AuthHelpers.add_auth_to Api::UserRoles
+
+    add_swagger_documentation base_path: "",
+                            # api_version: 'api',
+                            hide_documentation_path: true
   end
 end
