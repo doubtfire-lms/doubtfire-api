@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20140219093336) do
+ActiveRecord::Schema.define(version: 20140604111219) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -44,6 +44,7 @@ ActiveRecord::Schema.define(version: 20140219093336) do
     t.boolean  "started"
     t.string   "progress"
     t.string   "status"
+    t.string   "task_stats"
   end
 
   add_index "projects", ["unit_id"], name: "index_projects_on_unit_id", using: :btree

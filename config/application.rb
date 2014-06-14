@@ -12,6 +12,9 @@ end
 
 module Doubtfire
   class Application < Rails::Application
+    
+    config.i18n.enforce_available_locales = true
+
     config.paths.add "app/api", glob: "**/*.rb"             #For Grape
     config.autoload_paths += Dir["#{Rails.root}/app"]       # For Grape
 

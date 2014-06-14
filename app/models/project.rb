@@ -1,10 +1,28 @@
+class Float
+  def signif(signs)
+    Float("%.#{signs}f" % self)
+  end
+end
+
 class Project < ActiveRecord::Base
   include ApplicationHelper
+
+  def self.permissions
+    { 
+      student: [ :get ],
+      tutor: [ :get ],
+      nil => []
+    }
+  end
+
+  def role_for(user)
+    return user_role(user)
+  end  
 
   belongs_to :unit
   belongs_to :unit_role, class_name: 'UnitRole', foreign_key: 'unit_role_id', dependent: :destroy
 
-  has_one :user, through: :student
+  # has_one :user, through: :student
   has_many :tasks, dependent: :destroy   # Destroying a project will also nuke all of its tasks
 
   before_create :calculate_temporal_attributes
@@ -15,6 +33,16 @@ class Project < ActiveRecord::Base
 
   def self.for_user(user)
     joins(:unit_role).where('unit_roles.user_id = :user_id', user_id: user.id)
+  end
+
+  def self.for_unit_role(unit_role)
+    if unit_role.is_student?
+      Project.where(unit_role_id: unit_role.id)
+    elsif unit_role.is_teacher?
+      Project.where(unit_id: unit_role.unit_id)
+    else
+      nil
+    end
   end
 
   def start
@@ -30,6 +58,22 @@ class Project < ActiveRecord::Base
     task.awaiting_signoff   = false
 
     task.save
+  end
+
+  def student
+    unit_role.user
+  end
+
+  def main_tutor
+    unit_role.tutorial.tutor
+  end
+
+  def user_role(user)
+    if user == student then :student
+    elsif user == main_tutor then :tutor
+    elsif self.unit.tutors.where(id: user.id).count != 0 then :tutor
+    else nil
+    end
   end
 
   def active?
@@ -221,6 +265,41 @@ class Project < ActiveRecord::Base
 
   def task_units_completed
     completed_tasks_weight + partially_completed_tasks_weight
+  end
+
+  def calc_task_stats
+    result = {
+      not_submitted: 0.0,
+      fix_and_include: 0.0,
+      redo: 0.0,
+      need_help: 0.0,
+      working_on_it: 0.0,
+      fix_and_resubmit: 0.0,
+      ready_to_mark: 0.0,
+      discuss: 0.0,
+      complete: 0.0
+    }
+
+    total = total_task_weight
+    assigned_tasks.each { |task| result[task.status] += task.task_definition.weighting }
+    result.each { |key, value| if result[key] < 0.01 then result[key] = 0.0 else result[key] = (value / total).signif(2) end }
+    
+    total = 0.0
+    result.each { |key, value| total += value }
+
+    if total != 1.0
+      dif = 1.0 - total
+      result.each { |key, value| 
+        if value > 0.0
+          result[key] = (result[key] + dif).signif(2) 
+          break
+        end 
+      }
+    end
+
+    self.task_stats = "#{result[:not_submitted]}|#{result[:fix_and_include]}|#{result[:redo]}|#{result[:need_help]}|#{result[:working_on_it]}|#{result[:fix_and_resubmit]}|#{result[:ready_to_mark]}|#{result[:discuss]}|#{result[:complete]}"
+    save
+    self.task_stats
   end
 
   def total_task_weight

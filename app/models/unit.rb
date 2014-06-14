@@ -4,6 +4,24 @@ require 'bcrypt'
 class Unit < ActiveRecord::Base
   include ApplicationHelper
 
+  def self.permissions
+    { 
+      student: [],
+      tutor: [ :get_students ],
+      nil => []
+    }
+  end
+
+  def role_for(user)
+    if tutors.where('users.id=:id', id: user.id).count >= 1
+      :tutor
+    elsif students.where('unit_roles.user_id=:id', id: user.id).count == 1
+      :student
+    else
+      nil
+    end
+  end
+
   validates_presence_of :name, :description, :start_date, :end_date
 
   # Model associations.
@@ -41,6 +59,17 @@ class Unit < ActiveRecord::Base
     unit
   end
 
+  #
+  # Returns the tutors associated with this Unit
+  # - includes convenor
+  def tutors
+    User.teaching(self)
+  end
+
+  def students
+    Project.joins(:unit_role).where('unit_roles.role_id = 1 and projects.unit_id=:unit_id', unit_id: id)
+  end
+
   # Adds a user to this project.
   def add_user(user_id, tutorial_id, project_role)
     # Put the user in the appropriate tutorial (ie. create a new unit_role)
@@ -53,7 +82,8 @@ class Unit < ActiveRecord::Base
 
     project = Project.create!(
       unit_role_id: unit_role.id,
-      unit_id: self.id
+      unit_id: self.id,
+      task_stats: "1.0|0.0|0.0|0.0|0.0|0.0|0.0|0.0|0.0"
     )
 
     # Create task instances for the project
@@ -67,6 +97,8 @@ class Unit < ActiveRecord::Base
         awaiting_signoff: false
       )
     end
+
+    project
   end
 
   # Removes a user (and their tasks etc.) from this project

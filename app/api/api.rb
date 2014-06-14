@@ -1,5 +1,6 @@
 require 'grape'
 require 'grape-swagger'
+require 'authorisation'
 
 module AuthHelpers
   def warden
@@ -42,16 +43,18 @@ module Api
     formatter :json, Grape::Formatter::ActiveModelSerializers
     rescue_from :all
 
+    mount Api::Auth
     mount Api::Units
     mount Api::Projects
+    mount Api::Students
     mount Api::Tasks
     mount Api::Users
     mount Api::UnitRoles
     mount Api::UserRoles
-    mount Api::Auth
 
     AuthHelpers.add_auth_to Api::Units
     AuthHelpers.add_auth_to Api::Projects
+    AuthHelpers.add_auth_to Api::Students
     AuthHelpers.add_auth_to Api::Tasks
     AuthHelpers.add_auth_to Api::Users
     AuthHelpers.add_auth_to Api::UnitRoles

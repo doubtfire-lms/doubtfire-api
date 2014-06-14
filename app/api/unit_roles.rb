@@ -3,6 +3,7 @@ require 'grape'
 module Api
   class UnitRoles < Grape::API
     helpers AuthHelpers
+    helpers AuthorisationHelpers
 
     before do
       authenticated?
@@ -26,11 +27,11 @@ module Api
     get '/unit_roles/:id' do
       unit_role = UnitRole.find(params[:id])
 
-      if unit_role.user != current_user
+      if authorise? current_user, unit_role, :get
+        unit_role
+      else
         error!({"error" => "Couldn't find UnitRole with id=#{params[:id]}" }, 403)
       end
-      # present unit_role, with: Api::Entities::UnitRole
-      unit_role
     end
   end
 end

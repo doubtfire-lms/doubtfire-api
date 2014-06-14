@@ -1,8 +1,20 @@
 class Task < ActiveRecord::Base
   include ApplicationHelper
 
+  def self.permissions
+    { 
+      student: [ :get, :put ],
+      tutor: [ :get, :put ],
+      nil => []
+    }
+  end
+
+  def role_for(user)
+    return project.user_role(user)
+  end
+
   # Model associations
-  belongs_to :task_definition         # Foreign key
+  belongs_to :task_definition       # Foreign key
   belongs_to :project               # Foreign key
   belongs_to :task_status           # Foreign key
   has_many :sub_tasks, dependent: :destroy
@@ -11,9 +23,11 @@ class Task < ActiveRecord::Base
 
   def self.for_user(user)
     # TODO: This would probably be cleaner with a task query
-    Project.includes(tasks: :task_definition)
-            .for_user(user)
-            .map{|project| project.tasks }.flatten
+    # Project.includes(tasks: :task_definition)
+    #         .for_user(user)
+    #         .map{|project| project.tasks }.flatten
+
+    Task.joins(project: :unit_role).where("unit_roles.user_id = ?", user.id)
   end
 
   def self.default
@@ -108,22 +122,57 @@ class Task < ActiveRecord::Base
   end
 
   def status
-    case task_status.name
-    when "Complete"
-      :complete
-    when "Not Submitted"
-      :not_submitted
-    when "Fix and Resubmit"
-      :fix_and_resubmit
-    when "Fix and Include"
-      :fix_and_include
-    when "Redo"
-      :redo
-    when "Need Help"
-      :need_help
-    when "Working On It"
-      :working_on_it
+    task_status.status_key
+  end
+
+
+
+  def trigger_transition(trigger, by_user)
+    #
+    # Ensure that assessor is allowed to update the task in the indicated way
+    #
+    role = project.user_role(by_user)
+    return role if role.nil?
+    
+    #
+    # State transitions based upon the trigger
+    #
+
+    #
+    # Tutor and student can trigger these actions...
+    #
+    case trigger
+      when "ready_to_mark"
+        submit
+      when "not_submitted"
+        engage TaskStatus.not_submitted
+      when "not_ready_to_mark"
+        engage TaskStatus.not_submitted
+      when "need_help"
+        engage TaskStatus.need_help
+      when "working_on_it"
+        engage TaskStatus.working_on_it
+      else
+        #
+        # Only tutors can perform these actions
+        #
+        if role == :tutor
+          case trigger
+            when "redo"
+              assess TaskStatus.redo, by_user
+            when "complete"
+              assess TaskStatus.complete, by_user
+            when "fix_and_resubmit"
+              assess TaskStatus.fix_and_resubmit, by_user
+            when "fix_and_include"
+              assess TaskStatus.fix_and_include, by_user
+            when "discuss"
+              assess TaskStatus.discuss, by_user
+          end
+        end
     end
+
+    project.calc_task_stats
   end
 
   def assess(task_status, assessor)
@@ -162,6 +211,8 @@ class Task < ActiveRecord::Base
   end
 
   def engage(engagement_status)
+    # return if [ :complete ].include? task_status.status_key
+
     self.task_status       = engagement_status
     self.awaiting_signoff  = false
 
@@ -172,7 +223,10 @@ class Task < ActiveRecord::Base
   end
 
   def submit
+    return if [ :complete, :ready_to_mark ].include? task_status.status_key
+
     self.awaiting_signoff = true
+    self.task_status = TaskStatus.ready_to_mark
 
     if save!
       project.start
