@@ -65,7 +65,7 @@ class Project < ActiveRecord::Base
   end
 
   def main_tutor
-    unit_role.tutorial.tutor
+    unit_role.tutorial.tutor unless unit_role.tutorial.nil?
   end
 
   def user_role(user)

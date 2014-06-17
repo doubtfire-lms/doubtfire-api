@@ -73,11 +73,11 @@ namespace :db do
       oop: { 
         code: "COS20007", 
         name: "Object Oriented Programming", 
-        convenors: [ :acain, :cwoodward ], 
+        convenors: [ :acain, :cwoodward, :ajones ], 
         tutors: [ 
-          { user: :acain, num: 4}, 
-          { user: :cwoodward, num: 4 }, 
-          { user: :ajones, num: 4 }, 
+          { user: :tutor_1, num: 4}, 
+          { user: :tutor_2, num: 4 }, 
+          { user: :tutor_3, num: 4 }, 
           { user: :rliston, num: 4}, 
           { user: :akihironoguchi, num: 4}, 
           { user: :joostfunkekupper, num: 4},

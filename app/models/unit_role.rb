@@ -19,7 +19,7 @@ class UnitRole < ActiveRecord::Base
   scope :other_roles, -> (other) { where("user_id = ? and unit_id = ? and id != ?", other.user_id, other.unit_id, other.id)}
 
   def self.for_user(user)
-    UnitRole.where(user_id: user.id)
+    UnitRole.joins(:role).where("user_id = :user_id and roles.name <> 'Student'", user_id: user.id)
   end
 
   def other_roles
@@ -28,8 +28,8 @@ class UnitRole < ActiveRecord::Base
 
   def self.permissions
     { 
-      student: [ :get ],
-      tutor: [ :get ],
+      student: [ :get, :getProjects ],
+      tutor: [ :get, :getProjects ],
       nil => []
     }
   end

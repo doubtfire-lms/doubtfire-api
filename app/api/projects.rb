@@ -1,4 +1,5 @@
 require 'grape'
+require 'project_serializer'
 
 module Api
   class Projects < Grape::API
@@ -17,11 +18,20 @@ module Api
       
       if params[:unit_role_id]
         unit_role = UnitRole.find(params[:unit_role_id])
-        projects = Project.for_unit_role(unit_role)
-        # projects.where(unit_role_id: params[:unit_role_id])
+
+        #
+        # Only allow this if the current user + unit_role has permission to get projects
+        #
+        if authorise? current_user, unit_role, :getProjects
+          projects = Project.for_unit_role(unit_role)
+        else
+          error!({"error" => "Couldn't find Projects with unit_role_id=#{params[:unit_role_id]}" }, 403)
+        end
       else
         projects = Project.for_user current_user
       end
+
+      ActiveModel::ArraySerializer.new(projects, each_serializer: ShallowProjectSerializer)
     end
 
     desc "Get project"
