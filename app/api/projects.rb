@@ -44,5 +44,22 @@ module Api
         error!({"error" => "Couldn't find Project with id=#{params[:id]}" }, 403)
       end
     end
+
+    desc "Update a project"
+    params do
+      requires :id, type: Integer, desc: 'The project id of the project to'
+      requires :trigger, type: String, desc: 'The update trigger'
+    end
+    put '/projects/:id' do
+      project = Project.find(params[:id])
+
+      if params[:trigger] = "trigger_week_end" and authorise? current_user, project, :trigger_week_end
+        project.trigger_week_end( current_user )
+        project
+      else
+        error!({"error" => "Couldn't find Project with id=#{params[:id]}" }, 403)
+      end 
+    end
+
   end
 end
