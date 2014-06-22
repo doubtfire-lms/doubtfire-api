@@ -49,7 +49,7 @@ class Project < ActiveRecord::Base
   # All "discuss" become complete
   #
   def trigger_week_end( by_user )
-    discuss_tasks.each{|task| task.trigger_transition("complete", by_user) }
+    discuss_tasks.each{|task| task.trigger_transition("complete", by_user, true) }
     calc_task_stats
   end
 

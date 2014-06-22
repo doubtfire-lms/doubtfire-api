@@ -135,7 +135,7 @@ class Task < ActiveRecord::Base
 
 
 
-  def trigger_transition(trigger, by_user)
+  def trigger_transition(trigger, by_user, bulk=false)
     #
     # Ensure that assessor is allowed to update the task in the indicated way
     #
@@ -180,7 +180,7 @@ class Task < ActiveRecord::Base
         end
     end
 
-    project.calc_task_stats
+    if not bulk then project.calc_task_stats end
   end
 
   def assess(task_status, assessor)
