@@ -49,7 +49,7 @@ class StudentProjectSerializer < ActiveModel::Serializer
 end
 
 class ProjectSerializer < ActiveModel::Serializer
-  attributes :unit_id, :project_id, :started, :stats, :student_name, :tutor_name, :tutor_id, :tute
+  attributes :unit_id, :project_id, :started, :stats, :student_name, :tutor_name, :tutor_id, :tute, :burndown_chart_data
 
   def project_id
     object.id

@@ -101,6 +101,10 @@ class Task < ActiveRecord::Base
     status == :complete
   end
 
+  def ready_or_complete?
+    status == :complete or status == :discuss or status == :ready_to_mark
+  end
+
   def fix_and_resubmit?
     status == :fix_and_resubmit
   end
@@ -182,8 +186,12 @@ class Task < ActiveRecord::Base
     self.awaiting_signoff  = false
 
     # Set the completion date of the task if it's been completed
-    if complete?
-      self.completion_date = Time.zone.now
+    if ready_or_complete?
+      if completion_date.nil?
+        self.completion_date = Time.zone.now
+      end
+    else
+      self.completion_date = nil
     end
 
     # Save the task
@@ -215,6 +223,7 @@ class Task < ActiveRecord::Base
 
     self.task_status       = engagement_status
     self.awaiting_signoff  = false
+    self.completion_date   = nil
 
     if save!
       project.start
@@ -227,6 +236,7 @@ class Task < ActiveRecord::Base
 
     self.awaiting_signoff = true
     self.task_status = TaskStatus.ready_to_mark
+    self.completion_date = Time.zone.now
 
     if save!
       project.start

@@ -187,13 +187,113 @@ class Project < ActiveRecord::Base
     date_accumulated_weight_map
   end
 
+  #
+  # Calculate and return the burndown chart data
+  # returns four lines:
+  # - projected based on previous work marked as at least "ready to assessess"
+  # - target based on task definitions
+  # - done based on work marked as at least "ready to assess"
+  # - complete based on work signed off as complete
+  def burndown_chart_data
+    # Create buckets by week
+    result = [ ]
+
+    # Get the weeks between start and end date as an array
+    dates = unit.start_date.to_date.step(unit.end_date.to_date + 1.week, step=7).to_a
+
+    # Setup the dictionaries to contain the keys and values
+    # key = series name
+    # values = array of [ x, y ] values
+    projected_results = { key: "Projected", values: [] }
+    target_task_results = { key: "Target", values: [] }
+    done_task_results = { key: "Complete", values: [] }
+    complete_task_results = { key: "Signed Off", values: [] }
+
+    # get total value of all tasks assigned to this project
+    total = assigned_tasks.map{|task| task.task_definition.weighting.to_f}.inject(:+)
+
+    #last done task date
+    if ready_or_complete_tasks.empty?
+      last_target_date = unit.start_date
+    else
+      last_target_date = ready_or_complete_tasks.sort{|a,b| a.task_definition.target_date <=>  b.task_definition.target_date }.last.task_definition.target_date
+    end
+
+    # Get the target task from the unit's task definitions
+    target_tasks = unit.task_definitions.select{|task_def| task_def.required}
+
+    # today is used to determine when to stop adding done tasks
+    today = reference_date
+
+    # Get the tasks currently marked as done (or ready to mark)
+    done_tasks = ready_or_complete_tasks
+
+    # use weekly completion rate to determine projected progress
+    completion_rate = weekly_completion_rate
+    projected_remaining = total
+
+    # Track which values to add
+    add_projected = true
+    add_done = true
+
+    # Iterate over the dates
+    dates.each { |date|
+      # get the target values - those from the task definitions
+      target_val = [ date.to_datetime.to_i, 
+          target_tasks.select{|task_def| task_def.target_date > date}.map{|task_def| task_def.weighting.to_f}.inject(:+)
+        ]
+      # get the done values - those done up to today, or the end of the unit
+      done_val = [ date.to_datetime.to_i, 
+          done_tasks.select{|task| (not task.completion_date.nil?) and task.completion_date <= date}.map{|task| task.task_definition.weighting.to_f}.inject(:+) 
+        ]
+      # get the completed values - those signed off
+      complete_val = [ date.to_datetime.to_i, 
+          completed_tasks.select{|task| task.completion_date <= date}.map{|task| task.task_definition.weighting.to_f}.inject(:+) 
+        ]
+      # projected value is based on amount done
+      projected_val = [ date.to_datetime.to_i, projected_remaining / total ]
+
+      # add one week's worth of completion data
+      projected_remaining -= completion_rate
+
+      # if no target value then value is 0 and so will all future weeks be... otherwise its the %remaining
+      if target_val[1].nil? then  target_val[1] = 0 else target_val[1] /= total end
+      # if no done value then value is 100%, otherwise remaining is the total - %done
+      if done_val[1].nil?       then  done_val[1] = 1       else done_val[1] = (total - done_val[1]) / total end
+      if complete_val[1].nil?   then  complete_val[1] = 1   else complete_val[1] = (total - complete_val[1]) / total end
+      # ensure projected remaining is never negative
+      if projected_val[1] < 0 then projected_val[1] = 0 end
+
+      # always add target values - ensures whole range shown
+      target_task_results[:values].push target_val
+      # add done and projected if appropriate
+      if add_done
+        done_task_results[:values].push done_val 
+        complete_task_results[:values].push complete_val 
+      end
+      if add_projected then projected_results[:values].push projected_val end
+
+      # stop adding the done tasks once past date - (add once for tasks done this week, hence after adding)
+      if add_done and date > today then add_done = false end
+      # stop adding projected values once projected is complete
+      if add_projected and projected_val[1] <= 0 then add_projected = false end
+    }    
+
+    result.push(projected_results)
+    result.push(target_task_results)
+    result.push(done_task_results)
+    result.push(complete_task_results)
+
+    result
+  end
+
   def projected_end_date
     return unit.end_date if rate_of_completion == 0.0
     (remaining_tasks_weight / rate_of_completion).ceil.days.since reference_date
   end
 
-  def weeks_elapsed
-    days_elapsed / 7
+  def weeks_elapsed(date=nil)
+    (days_elapsed(date) / 7.0).ceil
   end
 
   def days_elapsed(date=nil)
@@ -217,6 +317,18 @@ class Project < ActiveRecord::Base
     completed_tasks_weight / days.to_f
   end
 
+  def weekly_completion_rate(date=nil)
+    # Return a completion rate of 0.0 if the project is yet to have commenced
+    return 0.0 if ready_or_complete_tasks.empty?
+    date ||= reference_date
+
+    weeks = weeks_elapsed(date)
+    # Ensure at least one week
+    weeks = 1 if weeks < 1
+
+    completed_tasks_weight / weeks.to_f
+  end
+
   def required_task_completion_rate
     remaining_tasks_weight / remaining_days
   end
@@ -227,6 +339,10 @@ class Project < ActiveRecord::Base
 
   def completed_tasks
     assigned_tasks.select{|task| task.complete? }
+  end
+
+  def ready_or_complete_tasks
+    assigned_tasks.select{|task| task.ready_or_complete? }
   end
 
   def partially_completed_tasks
@@ -252,8 +368,11 @@ class Project < ActiveRecord::Base
     incomplete_tasks.empty? ? 0.0 : incomplete_tasks.map{|task| task.task_definition.weighting }.inject(:+)
   end
 
+  #
+  # get the weight of all tasks completed or marked as ready to assess
+  #
   def completed_tasks_weight
-    completed_tasks.empty? ? 0.0 : completed_tasks.map{|task| task.task_definition.weighting }.inject(:+)
+    ready_or_complete_tasks.empty? ? 0.0 : ready_or_complete_tasks.map{|task| task.task_definition.weighting }.inject(:+)
   end
 
   def partially_completed_tasks_weight
