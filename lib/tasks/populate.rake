@@ -6,7 +6,32 @@ namespace :db do
     require 'faker'
     require 'bcrypt'
 
-    puts "--> Starting populate"
+    scale = ENV["SCALE"] || 'small'
+
+    # if it is small scale less students and tutorials
+    if scale == 'small'
+      min_students = 5
+      delta_students = 2
+      few_tasks = 5
+      some_tasks = 10
+      many_task = 20
+      few_tutorials = 1
+      some_tutorials = 1
+      many_tutorials = 1
+      max_tutorials = 4
+    else
+      min_students = 15
+      delta_students = 7
+      few_tasks = 10
+      some_tasks = 30
+      many_task = 50
+      few_tutorials = 1
+      some_tutorials = 2
+      many_tutorials = 4
+      max_tutorials = 20
+    end
+
+    puts "--> Starting populate (#{scale} scale)"
 
     roles = [
       :student,
@@ -50,24 +75,24 @@ namespace :db do
         name: "Introduction to Programming", 
         convenors: [ :acain, :cwoodward ], 
         tutors: [ 
-          { user: :acain, num: 4}, 
-          { user: :cwoodward, num: 4 }, 
-          { user: :ajones, num: 4 }, 
-          { user: :rliston, num: 4}, 
-          { user: :akihironoguchi, num: 4}, 
-          { user: :joostfunkekupper, num: 4},
-          { user: "tutor_1", num: 4},
-          { user: "tutor_2", num: 4},
-          { user: "tutor_3", num: 4},
-          { user: "tutor_4", num: 4},
-          { user: "tutor_5", num: 4},
+          { user: :acain, num: many_tutorials}, 
+          { user: :cwoodward, num: many_tutorials}, 
+          { user: :ajones, num: many_tutorials}, 
+          { user: :rliston, num: many_tutorials}, 
+          { user: :akihironoguchi, num: many_tutorials}, 
+          { user: :joostfunkekupper, num: many_tutorials},
+          { user: "tutor_1", num: some_tutorials},
+          { user: "tutor_2", num: some_tutorials},
+          { user: "tutor_3", num: some_tutorials},
+          { user: "tutor_4", num: some_tutorials},
+          { user: "tutor_5", num: some_tutorials},
           # { user: "tutor_6", num: 4},
           # { user: "tutor_7", num: 4},
           # { user: "tutor_8", num: 4},
           # { user: "tutor_9", num: 4},
           # { user: "tutor_10", num: 4},
         ], 
-        num_tasks: 30,
+        num_tasks: some_tasks,
         students: [ ]
       },
       oop: { 
@@ -75,14 +100,14 @@ namespace :db do
         name: "Object Oriented Programming", 
         convenors: [ :acain, :cwoodward, :ajones ], 
         tutors: [ 
-          { user: :tutor_1, num: 4}, 
-          { user: :tutor_2, num: 4 }, 
-          { user: :tutor_3, num: 4 }, 
-          { user: :rliston, num: 4}, 
-          { user: :akihironoguchi, num: 4}, 
-          { user: :joostfunkekupper, num: 4},
+          { user: "tutor_1", num: few_tutorials }, 
+          { user: "tutor_2", num: few_tutorials }, 
+          { user: "tutor_3", num: few_tutorials }, 
+          { user: :rliston, num: few_tutorials }, 
+          { user: :akihironoguchi, num: few_tutorials }, 
+          { user: :joostfunkekupper, num: few_tutorials },
         ], 
-        num_tasks: 50,
+        num_tasks: many_task,
         students: [ ]
       },
       ai4g: { 
@@ -90,9 +115,9 @@ namespace :db do
         name: "Artificial Intelligence for Games", 
         convenors: [ :cwoodward ], 
         tutors: [ 
-          { user: :cwoodward, num: 4 }, 
+          { user: :cwoodward, num: few_tutorials }, 
         ], 
-        num_tasks: 10,
+        num_tasks: few_tasks,
         students: [ :acain, :ajones ]
       },
       ai4g: { 
@@ -100,9 +125,9 @@ namespace :db do
         name: "Game Programming", 
         convenors: [ :cwoodward ], 
         tutors: [ 
-          { user: :cwoodward, num: 2 }, 
+          { user: :cwoodward, num: few_tutorials }, 
         ], 
-        num_tasks: 50,
+        num_tasks: few_tasks,
         students: [ :acain, :ajones ]
       },
     }
@@ -143,29 +168,51 @@ namespace :db do
       user_cache[user_key] = user
     end
 
-    print "----> Adding Students "
-    1000.times do | count |
-      username = "student_#{count}"
+    # Function to find or create students
+    find_or_create_student = lambda { |username|
+      if user_cache.has_key?(username)
+        return user_cache[username]
+      else
+        profile = { 
+          first_name:   Faker::Name.first_name, 
+          last_name:    Faker::Name.last_name, 
+          nickname:     username,
+          system_role:  'basic',
+          email:        "#{username}@doubtfire.com",
+          username:     username,
+          password:     'password', 
+          password_confirmation: 'password',
+        }
 
-      if count % 100 == 0
-        print '.'
+        user = User.create!(profile)
+        user_cache[username] = user
+        return user       
       end
+    }
 
-      profile = { 
-        first_name:   Faker::Name.first_name, 
-        last_name:    Faker::Name.last_name, 
-        nickname:     "stud_#{count}",
-        system_role:  'basic',
-        email:        "#{username}@doubtfire.com",
-        username:     username,
-        password:     'password', 
-        password_confirmation: 'password',
-      }
+    # print "----> Adding Students "
+    # 1000.times do | count |
+    #   username = "student_#{count}"
 
-      user = User.create!(profile)
-      user_cache[username] = user
-    end
-    puts '!'
+    #   if count % 100 == 0
+    #     print '.'
+    #   end
+
+    #   profile = { 
+    #     first_name:   Faker::Name.first_name, 
+    #     last_name:    Faker::Name.last_name, 
+    #     nickname:     "stud_#{count}",
+    #     system_role:  'basic',
+    #     email:        "#{username}@doubtfire.com",
+    #     username:     username,
+    #     password:     'password', 
+    #     password_confirmation: 'password',
+    #   }
+
+    #   user = User.create!(profile)
+    #   user_cache[username] = user
+    # end
+    # puts '!'
 
 
     puts "----> Adding Units"
@@ -200,9 +247,14 @@ namespace :db do
       end
 
       student_count = 0
+      tutorial_count = 0
 
       # Create tutorials and enrol students
       unit_details[:tutors].each do | user_details |
+        #only up to 4 tutorials for small scale
+        if tutorial_count > max_tutorials then break end
+        tutorial_count += 1
+
         tutor = user_cache[user_details[:user]]
         puts "--------> Tutor #{tutor.name}"
         tutor_unit_role = UnitRole.create!(role_id: role_cache[:tutor].id, user_id: tutor.id, unit_id: unit.id)
@@ -218,8 +270,8 @@ namespace :db do
           )
 
           # Add a random number of students to the tutorial
-          (15 + rand(7)).times do
-            unit.add_user(user_cache["student_#{student_count}"].id, tutorial.id, "student")
+          (min_students + rand(delta_students)).times do
+            unit.add_user(find_or_create_student.call("student_#{student_count}").id, tutorial.id, "student")
             student_count += 1
           end
 
