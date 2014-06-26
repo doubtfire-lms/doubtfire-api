@@ -223,7 +223,7 @@ class Task < ActiveRecord::Base
   end
 
   def engage(engagement_status)
-    # return if [ :complete ].include? task_status.status_key
+    return if [ :complete ].include? task_status.status_key
 
     self.task_status       = engagement_status
     self.awaiting_signoff  = false
