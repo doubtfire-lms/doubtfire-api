@@ -21,7 +21,7 @@ class ShallowProjectSerializer < ActiveModel::Serializer
 end
 
 class StudentProjectSerializer < ActiveModel::Serializer
-  attributes :project_id, :progress, :name, :student_id, :tute, :stats
+  attributes :project_id, :name, :student_id, :tute, :stats
 
   def project_id
     object.id
