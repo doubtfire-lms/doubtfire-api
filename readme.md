@@ -1,4 +1,4 @@
-# Getting Started #
+# Getting Started On Linux/Mac#
 
 Setting up a dev environment:
 
@@ -17,6 +17,27 @@ Setting up a dev environment:
 5. Install rails
     1. `gem install bundler`
     2. `bundle install` (in project root)
+6. Create Database
+    1. `rake db:create`
+    2. `rake db:populate`
+7. View grape swagger
+    1. Launch server: `rails s`
+    2. Navigate browser to http://localhost:3000/api/docs/
+
+# Getting Started On Windows#
+
+Setting up a dev environment:
+
+1. Install RailsInstaller Alpha (http://railsinstaller.org/en)
+2. Install postgres for Windows (http://www.postgresql.org/download/windows/)
+    1. Setup itig user with: `CREATE ROLE itig WITH CREATEDB PASSWORD 'd872$dh' LOGIN;`
+4. Checkout project
+    1. cd to working source location (dev folder on your machine)
+    2. `git clone https://macite@bitbucket.org/itig/doubtfire-api.git`
+5. Open Command Prompt with Ruby and Rails prompt
+    1. cd to working source location
+6. Run Bundler
+    1. `bundle install` (in project root)
 6. Create Database
     1. `rake db:create`
     2. `rake db:populate`
