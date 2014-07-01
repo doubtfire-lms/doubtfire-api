@@ -265,12 +265,11 @@ class Project < ActiveRecord::Base
       projected_remaining -= completion_rate
 
       # if no target value then value is 0 and so will all future weeks be... otherwise its the %remaining
+      # allows for negative projected amount remaining
       if target_val[1].nil? then  target_val[1] = 0 else target_val[1] /= total end
       # if no done value then value is 100%, otherwise remaining is the total - %done
       if done_val[1].nil?       then  done_val[1] = 1       else done_val[1] = (total - done_val[1]) / total end
       if complete_val[1].nil?   then  complete_val[1] = 1   else complete_val[1] = (total - complete_val[1]) / total end
-      # ensure projected remaining is never negative
-      if projected_val[1] < 0 then projected_val[1] = 0 end
 
       # always add target values - ensures whole range shown
       target_task_results[:values].push target_val
