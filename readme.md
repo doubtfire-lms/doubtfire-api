@@ -11,9 +11,12 @@ Setting up a dev environment:
     2. eg: export PATH=/Applications/Postgres.app/Contents/Versions/9.3/bin:$PATH
     3. Login using psql
     4. Setup itig user with: CREATE ROLE itig WITH CREATEDB PASSWORD 'd872$dh' LOGIN;
-4. Install rails
+4. Checkout project
+    1. cd to working source location (dev folder on your machine)
+    2. git clone https://macite@bitbucket.org/itig/doubtfire-api.git
+5. Install rails
     1. gem install bundler
     2. bundle install (in project root)
-5. Create Database
+6. Create Database
     1. rake db:create
     2. rake db:populate
