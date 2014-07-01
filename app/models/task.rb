@@ -101,6 +101,10 @@ class Task < ActiveRecord::Base
     status == :complete
   end
 
+  def discuss?
+    status == :discuss
+  end
+
   def ready_or_complete?
     status == :complete or status == :discuss or status == :ready_to_mark
   end
@@ -131,7 +135,7 @@ class Task < ActiveRecord::Base
 
 
 
-  def trigger_transition(trigger, by_user)
+  def trigger_transition(trigger, by_user, bulk=false)
     #
     # Ensure that assessor is allowed to update the task in the indicated way
     #
@@ -176,7 +180,7 @@ class Task < ActiveRecord::Base
         end
     end
 
-    project.calc_task_stats
+    if not bulk then project.calc_task_stats end
   end
 
   def assess(task_status, assessor)
@@ -219,7 +223,7 @@ class Task < ActiveRecord::Base
   end
 
   def engage(engagement_status)
-    # return if [ :complete ].include? task_status.status_key
+    return if [ :complete ].include? task_status.status_key
 
     self.task_status       = engagement_status
     self.awaiting_signoff  = false

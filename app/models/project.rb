@@ -10,7 +10,7 @@ class Project < ActiveRecord::Base
   def self.permissions
     { 
       student: [ :get ],
-      tutor: [ :get ],
+      tutor: [ :get, :trigger_week_end ],
       nil => []
     }
   end
@@ -43,6 +43,14 @@ class Project < ActiveRecord::Base
     else
       nil
     end
+  end
+
+  #
+  # All "discuss" become complete
+  #
+  def trigger_week_end( by_user )
+    discuss_tasks.each{|task| task.trigger_transition("complete", by_user, true) }
+    calc_task_stats
   end
 
   def start
@@ -343,6 +351,10 @@ class Project < ActiveRecord::Base
 
   def ready_or_complete_tasks
     assigned_tasks.select{|task| task.ready_or_complete? }
+  end
+
+  def discuss_tasks
+    assigned_tasks.select{|task| task.discuss? }
   end
 
   def partially_completed_tasks
