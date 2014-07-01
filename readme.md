@@ -20,3 +20,6 @@ Setting up a dev environment:
 6. Create Database
     1. rake db:create
     2. rake db:populate
+7. View grape swagger
+    1. Launch server: rails s
+    2. Navigate browser to http://localhost:3000/api/docs/
