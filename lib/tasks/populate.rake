@@ -46,6 +46,7 @@ namespace :db do
       ajones:             {first_name: "Allan",          last_name: "Jones",                nickname: "P-Jiddy"},
       rliston:            {first_name: "Rohan",          last_name: "Liston",               nickname: "Gunner"},
       akihironoguchi:     {first_name: "Akihiro",        last_name: "Noguchi",              nickname: "Unneccesary Animations"},
+      cliff:              {first_name: "Cliff",           last_name: "Warren",              nickname: "AvDongle"},  
       joostfunkekupper:   {first_name: "Joost",          last_name: "Funke Kupper",         nickname: "Joe"},
     }
 
@@ -85,7 +86,7 @@ namespace :db do
           { user: "tutor_2", num: some_tutorials},
           { user: "tutor_3", num: some_tutorials},
           { user: "tutor_4", num: some_tutorials},
-          { user: "tutor_5", num: some_tutorials},
+          { user: :cliff, num: some_tutorials},
           # { user: "tutor_6", num: 4},
           # { user: "tutor_7", num: 4},
           # { user: "tutor_8", num: 4},
@@ -108,7 +109,7 @@ namespace :db do
           { user: :joostfunkekupper, num: few_tutorials },
         ], 
         num_tasks: many_task,
-        students: [ ]
+        students: [ :cliff ]
       },
       ai4g: { 
         code: "COS03046", 
@@ -116,11 +117,12 @@ namespace :db do
         convenors: [ :cwoodward ], 
         tutors: [ 
           { user: :cwoodward, num: few_tutorials }, 
+          { user: :cliff, num: few_tutorials },
         ], 
         num_tasks: few_tasks,
         students: [ :acain, :ajones ]
       },
-      ai4g: { 
+      gameprog: { 
         code: "COS03243", 
         name: "Game Programming", 
         convenors: [ :cwoodward ], 
