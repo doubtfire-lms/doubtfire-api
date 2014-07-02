@@ -3,6 +3,8 @@
 Setting up a dev environment:
 
 1. Install rbenv
+    1. `apt-get install ruby-build`
+    2. `apt-get install rbenv`
 2. Install ruby (version 2.1.0)
     1. `rbenv install 2.1.0`
     2. `rbenv global 2.1.0`
