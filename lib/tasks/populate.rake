@@ -47,6 +47,7 @@ namespace :db do
       rliston:            {first_name: "Rohan",          last_name: "Liston",               nickname: "Gunner"},
       akihironoguchi:     {first_name: "Akihiro",        last_name: "Noguchi",              nickname: "Unneccesary Animations"},
       joostfunkekupper:   {first_name: "Joost",          last_name: "Funke Kupper",         nickname: "Joe"},
+      angusmorton:        {first_name: "Angus",          last_name: "Morton",               nickname: "Angus"},
     }
 
     10.times do |count|
@@ -81,7 +82,7 @@ namespace :db do
           { user: :rliston, num: many_tutorials}, 
           { user: :akihironoguchi, num: many_tutorials}, 
           { user: :joostfunkekupper, num: many_tutorials},
-          { user: "tutor_1", num: some_tutorials},
+          { user: :angusmorton, num: some_tutorials},
           { user: "tutor_2", num: some_tutorials},
           { user: "tutor_3", num: some_tutorials},
           { user: "tutor_4", num: some_tutorials},
@@ -102,7 +103,7 @@ namespace :db do
         tutors: [ 
           { user: "tutor_1", num: few_tutorials }, 
           { user: "tutor_2", num: few_tutorials }, 
-          { user: "tutor_3", num: few_tutorials }, 
+          { user: :angusmorton, num: few_tutorials }, 
           { user: :rliston, num: few_tutorials }, 
           { user: :akihironoguchi, num: few_tutorials }, 
           { user: :joostfunkekupper, num: few_tutorials },
@@ -253,7 +254,6 @@ namespace :db do
       unit_details[:tutors].each do | user_details |
         #only up to 4 tutorials for small scale
         if tutorial_count > max_tutorials then break end
-        tutorial_count += 1
 
         tutor = user_cache[user_details[:user]]
         puts "--------> Tutor #{tutor.name}"
@@ -261,12 +261,14 @@ namespace :db do
 
         print "---------> #{user_details[:num]} tutorials"
         user_details[:num].times do | count |
+          tutorial_count += 1
           tutorial = Tutorial.create(
             unit_id: unit.id,
             unit_role_id: tutor_unit_role.id,
             meeting_time: "#{8 + rand(12)}:#{['00', '30'].sample}",    # Mon-Fri 8am-7:30pm
             meeting_day: "#{days.sample}",
-            meeting_location: "#{['EN', 'BA'].sample}#{rand(7)}#{rand(1)}#{rand(9)}" # EN###/BA###
+            meeting_location: "#{['EN', 'BA'].sample}#{rand(7)}#{rand(1)}#{rand(9)}", # EN###/BA###
+            abbreviation: "LA1-#{tutorial_count.to_s.rjust(2, '0')}"
           )
 
           # Add a random number of students to the tutorial
