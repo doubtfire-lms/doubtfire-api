@@ -286,12 +286,15 @@ class Project < ActiveRecord::Base
       # stop adding projected values once projected is complete
       if add_projected and projected_val[1] <= 0 then add_projected = false end
     }    
-
-    result.push(projected_results)
+    
     result.push(target_task_results)
+    result.push(projected_results)
     result.push(done_task_results)
     result.push(complete_task_results)
 
+    # sort results by largest length of :values
+    result.sort!{ |a,b| b[:values].length <=> a[:values].length }
+    
     result
   end
 
