@@ -41,19 +41,19 @@ namespace :db do
     ]
 
     users = {
-      acain:              {first_name: "Andrew",         last_name: "Cain",                 nickname: "Macite", system_role: 'admin' },
-      cwoodward:          {first_name: "Clinton",        last_name: "Woodward",             nickname: "The Giant", system_role: 'admin' },
-      ajones:             {first_name: "Allan",          last_name: "Jones",                nickname: "P-Jiddy"},
-      rliston:            {first_name: "Rohan",          last_name: "Liston",               nickname: "Gunner"},
-      akihironoguchi:     {first_name: "Akihiro",        last_name: "Noguchi",              nickname: "Unneccesary Animations"},
-      cliff:              {first_name: "Cliff",           last_name: "Warren",              nickname: "AvDongle"},  
-      joostfunkekupper:   {first_name: "Joost",          last_name: "Funke Kupper",         nickname: "Joe"},
-      angusmorton:        {first_name: "Angus",          last_name: "Morton",               nickname: "Angus"},
+      acain:              {first_name: "Andrew",         last_name: "Cain",                 nickname: "Macite",     system_role:      SystemRole::ADMIN},
+      cwoodward:          {first_name: "Clinton",        last_name: "Woodward",             nickname: "The Giant",  system_role: SystemRole::ADMIN},
+      ajones:             {first_name: "Allan",          last_name: "Jones",                nickname: "P-Jiddy",    system_role: SystemRole::CONVENOR},
+      rliston:            {first_name: "Rohan",          last_name: "Liston",               nickname: "Gunner",     system_role: SystemRole::CONVENOR},
+      akihironoguchi:     {first_name: "Akihiro",        last_name: "Noguchi",              nickname: "Animations", system_role: SystemRole::TUTOR},
+      cliff:              {first_name: "Cliff",           last_name: "Warren",              nickname: "AvDongle",   system_role: SystemRole::TUTOR},  
+      joostfunkekupper:   {first_name: "Joost",          last_name: "Funke Kupper",         nickname: "Joe",        system_role: SystemRole::TUTOR},
+      angusmorton:        {first_name: "Angus",          last_name: "Morton",               nickname: "Angus",      system_role: SystemRole::TUTOR},
     }
 
     10.times do |count|
       tutor_name = "tutor_#{count}";
-      users[tutor_name] = { first_name: Faker::Name.first_name, last_name: Faker::Name.last_name, nickname: tutor_name}
+      users[tutor_name] = { first_name: Faker::Name.first_name, last_name: Faker::Name.last_name, nickname: tutor_name, system_role: SystemRole::TUTOR}
     end
 
     # user_roles = {
@@ -163,7 +163,7 @@ namespace :db do
     users.each do |user_key, profile|
       username = user_key.to_s
 
-      profile[:system_role] ||= 'basic'
+      profile[:system_role] ||= SystemRole::STUDENT
       profile[:email]       ||= "#{username}@doubtfire.com"
       profile[:username]    ||= username
 
@@ -180,11 +180,11 @@ namespace :db do
           first_name:   Faker::Name.first_name, 
           last_name:    Faker::Name.last_name, 
           nickname:     username,
-          system_role:  'basic',
+          system_role:  SystemRole::STUDENT,
           email:        "#{username}@doubtfire.com",
           username:     username,
           password:     'password', 
-          password_confirmation: 'password',
+          password_confirmation: 'password'
         }
 
         user = User.create!(profile)
