@@ -1,6 +1,8 @@
 class SystemRole
-  BASIC = 'basic'
   ADMIN = 'admin'
+  CONVENOR = 'convenor'
+  TUTOR = 'tutor'
+  STUDENT = 'student'
 
-  ROLES = [BASIC, ADMIN]
+  ROLES = [ADMIN, CONVENOR, TUTOR, STUDENT]
 end
