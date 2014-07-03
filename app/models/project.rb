@@ -241,6 +241,7 @@ class Project < ActiveRecord::Base
     projected_remaining = total
 
     # Track which values to add
+    add_target = true
     add_projected = true
     add_done = true
 
@@ -263,34 +264,37 @@ class Project < ActiveRecord::Base
 
       # add one week's worth of completion data
       projected_remaining -= completion_rate
-
-      # if no target value then value is 0 and so will all future weeks be... otherwise its the %remaining
-      # allows for negative projected amount remaining
-      if target_val[1].nil? then  target_val[1] = 0 else target_val[1] /= total end
+      
+      # if target value then its the %remaining only
+      if target_val[1].nil?     then  target_val[1] = 0     else target_val[1] /= total end
       # if no done value then value is 100%, otherwise remaining is the total - %done
       if done_val[1].nil?       then  done_val[1] = 1       else done_val[1] = (total - done_val[1]) / total end
       if complete_val[1].nil?   then  complete_val[1] = 1   else complete_val[1] = (total - complete_val[1]) / total end
-
-      # always add target values - ensures whole range shown
-      target_task_results[:values].push target_val
-      # add done and projected if appropriate
+      
+      # add target, done and projected if appropriate
+      if add_target then target_task_results[:values].push target_val end
       if add_done
         done_task_results[:values].push done_val 
         complete_task_results[:values].push complete_val 
       end
       if add_projected then projected_results[:values].push projected_val end
 
+      # stop adding the target values once zero target value is reached
+      if add_target and target_val[1] == 0 then add_target = false end
       # stop adding the done tasks once past date - (add once for tasks done this week, hence after adding)
       if add_done and date > today then add_done = false end
       # stop adding projected values once projected is complete
       if add_projected and projected_val[1] <= 0 then add_projected = false end
     }    
-
-    result.push(projected_results)
+    
     result.push(target_task_results)
+    result.push(projected_results)
     result.push(done_task_results)
     result.push(complete_task_results)
 
+    # sort results by largest length of :values
+    result.sort!{ |a,b| b[:values].length <=> a[:values].length }
+    
     result
   end
 

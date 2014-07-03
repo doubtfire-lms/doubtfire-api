@@ -18,6 +18,7 @@ class ShallowProjectSerializer < ActiveModel::Serializer
   def tutor_name
     object.main_tutor.first_name unless object.main_tutor.nil?
   end
+
 end
 
 class StudentProjectSerializer < ActiveModel::Serializer
@@ -49,7 +50,7 @@ class StudentProjectSerializer < ActiveModel::Serializer
 end
 
 class ProjectSerializer < ActiveModel::Serializer
-  attributes :unit_id, :project_id, :started, :stats, :student_name, :tutor_name, :tutor_id, :tute, :burndown_chart_data
+  attributes :unit_id, :project_id, :started, :stats, :student_name, :tutor_name, :tutor_id, :burndown_chart_data
 
   def project_id
     object.id
