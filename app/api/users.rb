@@ -19,5 +19,15 @@ module Api
       #TODO: authorise!
       @user = User.find(params[:id])
     end
+
+    desc "Get convenors"
+    get '/convenors' do
+      @user_roles = User.convenors
+    end
+
+    desc "Get tutors"
+    get '/tutors' do
+      @user_roles = User.tutors
+    end
   end
 end
