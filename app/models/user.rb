@@ -8,24 +8,22 @@ class User < ActiveRecord::Base
          :recoverable, :rememberable, :trackable, :validatable
   end
 
-  SystemRole::ROLES.each do |meth|
-    define_method("#{meth}?") { system_role == meth }
-  end
-
   # Model associations
-  has_many :unit_roles, dependent: :destroy
-  has_many :user_roles, dependent: :destroy
-  has_many :roles, through: :user_roles
-  has_many :projects, through: :unit_roles
+  belongs_to  :role   # Foreign Key
+  has_many    :unit_roles, dependent: :destroy
+  has_many    :projects, through: :unit_roles
 
   # Model validations/constraints
   validates :first_name, presence: true
   validates :last_name, presence: true
+  validates :role_id, presence: true
   validates :username, presence: true, uniqueness: true
   validates :email, presence: true, uniqueness: true
 
   # Queries
   scope :teaching, -> (unit) { User.joins(:unit_roles).where("unit_roles.unit_id = :unit_id and ( unit_roles.role_id = :tutor_role_id or unit_roles.role_id = :convenor_role_id) ", unit_id: unit.id, tutor_role_id: Role.tutor_id, convenor_role_id: Role.convenor_id) }
+  scope :tutors,    -> { joins(:role).where('roles.id = :role', role: Role.tutor_id) }
+  scope :convenors, -> { joins(:role).where('roles.id = :role', role: Role.convenor_id) }
 
   def self.default
     user = self.new
@@ -35,7 +33,7 @@ class User < ActiveRecord::Base
     user.last_name          = "Last"
     user.email              = "XXXXXXX@swin.edu.au"
     user.nickname           = "Nickname"
-    user.system_role        = SystemRole::BASIC
+    user.role_id            = Role.student_id
 
     user
   end
@@ -60,7 +58,7 @@ class User < ActiveRecord::Base
         user.email              = email
         user.encrypted_password = BCrypt::Password.create("password")
         user.nickname           = first_name
-        user.system_role        = role
+        user.role_id            = role
       }
 
       unless user.persisted?

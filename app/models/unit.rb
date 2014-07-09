@@ -149,7 +149,7 @@ class Unit < ActiveRecord::Base
         new_user.email              = email
         new_user.nickname           = first_name
         new_user.encrypted_password = BCrypt::Password.create("password")
-        new_user.system_role        = "user"
+        new_user.role_id            = Role.student_id
       }
 
       project_participant.save!(validate: false) unless project_participant.persisted?

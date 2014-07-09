@@ -37,23 +37,29 @@ namespace :db do
       :student,
       :tutor,
       :convenor,
-      :moderator
+      :admin
     ]
 
+    puts "----> Adding Roles"
+    role_cache = {}
+    roles.each do |role|
+      role_cache[role] = Role.create!(name: role.to_s.titleize)
+    end
+
     users = {
-      acain:              {first_name: "Andrew",         last_name: "Cain",                 nickname: "Macite",     system_role: Role::ADMIN},
-      cwoodward:          {first_name: "Clinton",        last_name: "Woodward",             nickname: "The Giant",  system_role: Role::ADMIN},
-      ajones:             {first_name: "Allan",          last_name: "Jones",                nickname: "P-Jiddy",    system_role: Role::CONVENOR},
-      rliston:            {first_name: "Rohan",          last_name: "Liston",               nickname: "Gunner",     system_role: Role::CONVENOR},
-      akihironoguchi:     {first_name: "Akihiro",        last_name: "Noguchi",              nickname: "Animations", system_role: Role::BASIC},
-      cliff:              {first_name: "Cliff",           last_name: "Warren",              nickname: "AvDongle",   system_role: Role::BASIC},  
-      joostfunkekupper:   {first_name: "Joost",          last_name: "Funke Kupper",         nickname: "Joe",        system_role: Role::BASIC},
-      angusmorton:        {first_name: "Angus",          last_name: "Morton",               nickname: "Angus",      system_role: Role::BASIC},
+      acain:              {first_name: "Andrew",         last_name: "Cain",                 nickname: "Macite",     role_id: Role.admin_id},
+      cwoodward:          {first_name: "Clinton",        last_name: "Woodward",             nickname: "The Giant",  role_id: Role.admin_id},
+      ajones:             {first_name: "Allan",          last_name: "Jones",                nickname: "P-Jiddy",    role_id: Role.convenor_id},
+      rliston:            {first_name: "Rohan",          last_name: "Liston",               nickname: "Gunner",     role_id: Role.convenor_id},
+      akihironoguchi:     {first_name: "Akihiro",        last_name: "Noguchi",              nickname: "Animations", role_id: Role.tutor_id},
+      cliff:              {first_name: "Cliff",           last_name: "Warren",              nickname: "AvDongle",   role_id: Role.tutor_id},  
+      joostfunkekupper:   {first_name: "Joost",          last_name: "Funke Kupper",         nickname: "Joe",        role_id: Role.tutor_id},
+      angusmorton:        {first_name: "Angus",          last_name: "Morton",               nickname: "Angus",      role_id: Role.tutor_id},
     }
 
     10.times do |count|
       tutor_name = "tutor_#{count}";
-      users[tutor_name] = { first_name: Faker::Name.first_name, last_name: Faker::Name.last_name, nickname: tutor_name, system_role: Role::BASIC}
+      users[tutor_name] = { first_name: Faker::Name.first_name, last_name: Faker::Name.last_name, nickname: tutor_name, role_id: Role.tutor_id}
     end
 
     # user_roles = {
@@ -150,11 +156,6 @@ namespace :db do
     TaskStatus.create(name:  "Ready to Mark",     description:  "This task is ready for the tutor to assess to provide feedback.")
 
 
-    puts "----> Adding Roles"
-    role_cache = {}
-    roles.each do |role|
-      role_cache[role] = Role.create!(name: role.to_s.titleize)
-    end
 
     user_cache = {}
 
@@ -163,7 +164,7 @@ namespace :db do
     users.each do |user_key, profile|
       username = user_key.to_s
 
-      profile[:system_role] ||= Role::BASIC
+      profile[:role_id] ||= Role.student_id
       profile[:email]       ||= "#{username}@doubtfire.com"
       profile[:username]    ||= username
 
@@ -180,7 +181,7 @@ namespace :db do
           first_name:   Faker::Name.first_name, 
           last_name:    Faker::Name.last_name, 
           nickname:     username,
-          system_role:  Role::BASIC,
+          role_id:  Role.student_id,
           email:        "#{username}@doubtfire.com",
           username:     username,
           password:     'password', 
