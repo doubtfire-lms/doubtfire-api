@@ -50,7 +50,6 @@ module Api
     mount Api::Tasks
     mount Api::Users
     mount Api::UnitRoles
-    mount Api::UserRoles
 
     AuthHelpers.add_auth_to Api::Units
     AuthHelpers.add_auth_to Api::Projects
@@ -58,7 +57,6 @@ module Api
     AuthHelpers.add_auth_to Api::Tasks
     AuthHelpers.add_auth_to Api::Users
     AuthHelpers.add_auth_to Api::UnitRoles
-    AuthHelpers.add_auth_to Api::UserRoles
 
     add_swagger_documentation base_path: "",
                             # api_version: 'api',
