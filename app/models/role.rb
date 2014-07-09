@@ -1,21 +1,29 @@
 class Role < ActiveRecord::Base
-	ADMIN = 'admin'
-	CONVENOR = 'convenor'
-	TUTOR = 'tutor'
-	STUDENT = 'student'
+	
+	def self.student
+		Role.find(student_id)
+	end
 
-	ROLES = [ADMIN, CONVENOR, TUTOR, STUDENT]
+	def self.tutor
+		Role.find(tutor_id)
+	end
 
+	def self.convenor
+		Role.find(convenor_id)
+	end
 
-	scope :student, 	-> { Role.find(1) }
-	scope :tutor, 		-> { Role.find(2) }
-	scope :convenor,	-> { Role.find(3) }
-	scope :moderator, 	-> { Role.find(4) }
+	def self.admin
+		Role.find(admin_id)
+	end
 
 	#
 	# Helpers to get the role id's:
 	# - These could be made into DB queries, but these values should not change
 	#
+	def self.student_id
+		1
+	end
+
 	def self.tutor_id
 		2
 	end
@@ -24,11 +32,7 @@ class Role < ActiveRecord::Base
 		3
 	end
 
-	def self.student_id
-		1
-	end
-
-	def self.moderator_id
+	def self.admin_id
 		4
 	end
 end
