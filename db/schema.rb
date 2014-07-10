@@ -174,6 +174,16 @@ ActiveRecord::Schema.define(version: 20140710042612) do
     t.boolean  "active",      default: true
   end
 
+  create_table "user_roles", force: true do |t|
+    t.integer  "user_id"
+    t.integer  "role_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  add_index "user_roles", ["role_id"], name: "index_user_roles_on_role_id", using: :btree
+  add_index "user_roles", ["user_id"], name: "index_user_roles_on_user_id", using: :btree
+
   create_table "users", force: true do |t|
     t.string   "email",                  default: "", null: false
     t.string   "encrypted_password",     default: "", null: false
@@ -192,9 +202,7 @@ ActiveRecord::Schema.define(version: 20140710042612) do
     t.string   "username"
     t.string   "nickname"
     t.string   "authentication_token"
-    t.integer  "failed_attempts",        default: 0,  null: false
     t.string   "unlock_token"
-    t.datetime "locked_at"
     t.datetime "auth_token_expiry"
     t.integer  "role_id",                default: 0
   end
