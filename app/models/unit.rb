@@ -30,7 +30,7 @@ class Unit < ActiveRecord::Base
   has_many :projects, dependent: :destroy
   has_many :tutorials, dependent: :destroy
   has_many :unit_roles, dependent: :destroy
-  has_many :convenors, -> { joins(:role).where("roles.name = :role", role: 'Convenor') }, class_name: 'UnitRole'
+  has_many :convenors, -> { joins(:role).where("roles.id = :role", role: Role.convenor_id) }, class_name: 'UnitRole'
 
   scope :current,               ->{ current_for_date(Time.zone.now) }
   scope :current_for_date,      ->(date) { where("start_date <= ? AND end_date >= ?", date, date) }
@@ -41,7 +41,7 @@ class Unit < ActiveRecord::Base
 
   def self.for_user(user)
     # TODO: Revise this
-    if user.admin?
+    if user.has_admin_capability?
       Unit.all
     else
       Unit.joins(:unit_roles).where('unit_roles.user_id = :user_id', user_id: user.id)
@@ -149,7 +149,7 @@ class Unit < ActiveRecord::Base
         new_user.email              = email
         new_user.nickname           = first_name
         new_user.encrypted_password = BCrypt::Password.create("password")
-        new_user.role_id            = Role.student_id
+        new_user.role_id            = Role.student_id # TODO: Do we assume they're students>
       }
 
       project_participant.save!(validate: false) unless project_participant.persisted?

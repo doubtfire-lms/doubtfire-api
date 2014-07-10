@@ -25,6 +25,22 @@ class User < ActiveRecord::Base
   scope :tutors,    -> { joins(:role).where('roles.id = :role', role: Role.tutor_id) }
   scope :convenors, -> { joins(:role).where('roles.id = :role', role: Role.convenor_id) }
 
+  def has_student_capability?
+    true
+  end
+
+  def has_tutor_capability?
+    role_id == Role.tutor_id || has_convenor_capability?
+  end
+
+  def has_convenor_capability?
+    role_id == Role.convenor_id || has_admin_capability?
+  end
+
+  def has_admin_capability?
+    role_id == Role.admin_id
+  end
+
   def self.default
     user = self.new
 

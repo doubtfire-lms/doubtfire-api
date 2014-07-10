@@ -1,4 +1,5 @@
 require 'grape'
+require 'user_serializer'
 
 module Api
 
@@ -40,7 +41,7 @@ module Api
           user.auth_token_expiry = DateTime.now + 30
           user.save
 
-          { user: user, auth_token: user.authentication_token }
+          { user: UserSerializer.new(user), auth_token: user.authentication_token }
       end
     end
 
