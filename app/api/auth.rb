@@ -11,23 +11,23 @@ module Api
     
     desc "Sign in" 
     params do
-      requires :email, type: String, desc: 'User email address'
+      requires :username, type: String, desc: 'User username'
       requires :password, type: String, desc: 'User''s password'
     end
     post '/auth' do
-      email = params[:email]
+      username = params[:username]
       password = params[:password]
 
-      if email.nil? or password.nil?
-        error!({"error" => "The request must contain the user email and password."}, 400)
+      if username.nil? or password.nil?
+        error!({"error" => "The request must contain the user username and password."}, 400)
         return
       end
-
-      user = User.find_by_email(email.downcase)
+      #TODO - usernames case sensitive
+      user = User.find_by_username(username)
 
       if user.nil?
         # logger.info("User #{email} failed signin, user cannot be found.")
-        error!({"error" => "Invalid email or password."}, 401)
+        error!({"error" => "Invalid username or password."}, 401)
         return
       end
 
