@@ -34,19 +34,13 @@ module Api
       user.ensure_authentication_token!
 
       if not user.valid_password?(password)
-        # logger.info("User #{email} failed signin, password \"#{password}\" is invalid")
-        user.failed_attempts = user.failed_attempts + 1
-        user.save
+             
         error!({"error" => "Invalid email or password."}, 401)
       else
-        if user.failed_attempts < 5
           user.auth_token_expiry = DateTime.now + 30
           user.save
 
           { user: user, auth_token: user.authentication_token }
-        else
-          error!({"error" => "Account is locked."}, 401)
-        end
       end
     end
 
