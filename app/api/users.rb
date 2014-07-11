@@ -34,12 +34,12 @@ module Api
     params do
       requires :id, type: Integer, desc: 'The user id to update'
       group :user do
-        optional :first_name , type: String,  desc: 'New first name for user'
-        optional :last_name  , type: String,  desc: 'New last name for user'
-        optional :email      , type: String,  desc: 'New email address for user'
-        optional :username   , type: String,  desc: 'New username for user'
-        optional :nickname   , type: String,  desc: 'New nickname for user'
-        optional :system_role, type: String,  desc: 'New system role for user [Admin, Convenor, Tutor, Student]'
+        optional :first_name    , type: String,   desc: 'New first name for user'
+        optional :last_name     , type: String,   desc: 'New last name for user'
+        optional :email         , type: String,   desc: 'New email address for user'
+        optional :username      , type: String,   desc: 'New username for user'
+        optional :nickname      , type: String,   desc: 'New nickname for user'
+        optional :system_role_id, type: Integer,  desc: 'New system role for user [4 = Admin, 3 = Convenor, 2 = Tutor, 1 = Student]'
       end
     end
     put '/user/:id' do
@@ -50,16 +50,19 @@ module Api
       #
       permissions = {
       # - admins can modify anyone (super user)
-        :admin    => [:promote_admin, :demote_admin, :promote_convenor, :demote_convenor, :promote_tutor, :demote_tutor],
+        Role.admin    => { :promote => [ Role.admin.id, Role.convenor.id, Role.tutor.id, Role.student.id ],
+                           :demote  => [ Role.admin.id, Role.convenor.id, Role.tutor.id, Role.student.id ]  },
+
       # - convenors can promote students to tutors
       # - convenors can promote tutors to convenors
       # - convenors cannot demote convenors
       # - convenors can demote tutors
-        :convenor => [:promote_convenor, :promote_tutor, :demote_tutor],
+        Role.convenor => { :promote => [ Role.convenor.id, Role.tutor.id ],
+                           :demote  => [ Role.tutor.id ] },
       # - tutors have no permissions
       # - students have no permissions
-        :tutor    => [],
-        :student  => []
+        Role.tutor    => { :promote => [], :demote => [] },
+        Role.student  => { :promote => [], :demote => [] }
       }
       
       # if not an admin, then can only modify if current_user.id is same as :id provided...
@@ -68,14 +71,31 @@ module Api
         user = User.find(params[:id])
         
         params[:user].each do | key, val |
+          puts key
           # update standard key value pairs
-          if key != :system_role && key != :id && user[key]
+          if key != 'system_role' && key != 'id' && user[key]
             user[key] = val
           # update permission changes
+          elsif key == 'system_role'
+            # work out if promoting or demoting
+            isPromoting = val > user.role.id
+            # do the permissions allow the current user's role to promote or demote the user to the given role?
+            if permissions[current_user.role][isPromoting ? :promote : :demote].include?(val)
+              case 1
+                when 1
+                  new_role = Role.student
+                when 2
+                  new_role = Role.tutor
+                when 3
+                  new_role = Role.convenor
+                when 4
+                  new_role = Role.admin
+              end
+              user[role] = new_role
+            else
+              error!({"error" => "Not authorised to #{isPromoting ? "promote" : "demote"} user with id=#{params[:user][:id]} to level #{val}" }, 403)
+            end
           end
-          #if key == :system_role
-          #  switch params[:user][:system_role]
-          #end
         end
         
         # Update changes made to user
@@ -84,15 +104,7 @@ module Api
       
       else
         error!({"error" => "Cannot modify user with id=#{ params[:id]} - not authorised" }, 403)
-      end
-      
-      #
-      # If admin, cannot demote your self..
-#       current_user_role = current_user.role.name # Admin | Convenor | Tutor | Student
-#       :first_name? && user.first_name 
-      
-      
-      
+      end  
     end
   end
 end
