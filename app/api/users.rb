@@ -73,27 +73,17 @@ module Api
         params[:user].each do | key, val |
           puts key
           # update standard key value pairs
-          if key != 'system_role' && key != 'id' && user[key]
+          if key != 'system_role_id' && key != 'id' && user[key]
             user[key] = val
           # update permission changes
-          elsif key == 'system_role'
+          elsif key == 'system_role_id'
             # work out if promoting or demoting
             isPromoting = val > user.role.id
             # do the permissions allow the current user's role to promote or demote the user to the given role?
             if permissions[current_user.role][isPromoting ? :promote : :demote].include?(val)
-              case 1
-                when 1
-                  new_role = Role.student
-                when 2
-                  new_role = Role.tutor
-                when 3
-                  new_role = Role.convenor
-                when 4
-                  new_role = Role.admin
-              end
-              user[role] = new_role
+              user.role = Role.find(val)
             else
-              error!({"error" => "Not authorised to #{isPromoting ? "promote" : "demote"} user with id=#{params[:user][:id]} to level #{val}" }, 403)
+              error!({"error" => "Not authorised to #{isPromoting ? "promote" : "demote"} user with id=#{params[:id]} to level #{val}" }, 403)
             end
           end
         end
@@ -106,5 +96,47 @@ module Api
         error!({"error" => "Cannot modify user with id=#{ params[:id]} - not authorised" }, 403)
       end  
     end
+    
+    desc "Create user"
+    params do
+      group :user do
+        requires :first_name    , type: String,   desc: 'New first name for user'
+        requires :last_name     , type: String,   desc: 'New last name for user'
+        requires :email         , type: String,   desc: 'New email address for user'
+        requires :username      , type: String,   desc: 'New username for user'
+        requires :nickname      , type: String,   desc: 'New nickname for user'
+        requires :system_role_id, type: Integer,  desc: 'New system role for user [4 = Admin, 3 = Convenor, 2 = Tutor, 1 = Student'
+      end
+    end
+    post '/user' do
+      #
+      # Only admins can create users
+      #
+      if current_user.role != Role.admin
+        error!({"error" => "Not authorised to create new users"}, 403)
+      end
+      
+      #TODO: fix default password!
+      params[:user][:password] = "password"
+      user_parameters = ActionController::Parameters.new(params)
+                                          .require(:user)
+                                          .permit(
+                                            :first_name,
+                                            :last_name,
+                                            :email,
+                                            :username,
+                                            :nickname,
+                                            :password
+                                          )
+      user = User.create!(user_parameters)
+      
+      #
+      # Give new user their new role
+      #
+      user.role = Role.find(params[:user][:system_role_id])
+              
+      user
+    end
+
   end
 end

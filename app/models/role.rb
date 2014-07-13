@@ -35,4 +35,5 @@ class Role < ActiveRecord::Base
 	def self.admin_id
 		4
 	end
+
 end
