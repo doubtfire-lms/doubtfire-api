@@ -15,7 +15,7 @@ module Api
     end
 
     desc "Get user"
-    get '/user/:id' do
+    get '/users/:id' do
       #TODO: authorise!
       @user = User.find(params[:id])
     end
@@ -42,7 +42,7 @@ module Api
         optional :system_role_id, type: Integer,  desc: 'New system role for user [4 = Admin, 3 = Convenor, 2 = Tutor, 1 = Student]'
       end
     end
-    put '/user/:id' do
+    put '/users/:id' do
       #TODO: authorise!
       
       #
@@ -71,7 +71,6 @@ module Api
         user = User.find(params[:id])
         
         params[:user].each do | key, val |
-          puts key
           # update standard key value pairs
           if key != 'system_role_id' && key != 'id' && user[key]
             user[key] = val
@@ -108,7 +107,7 @@ module Api
         requires :system_role_id, type: Integer,  desc: 'New system role for user [4 = Admin, 3 = Convenor, 2 = Tutor, 1 = Student'
       end
     end
-    post '/user' do
+    post '/users' do
       #
       # Only admins can create users
       #
