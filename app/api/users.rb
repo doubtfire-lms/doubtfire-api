@@ -57,25 +57,28 @@ module Api
                                               :last_name,
                                               :email,
                                               :username,
-                                              :nickname,
-                                              :system_role
+                                              :nickname
                                             )
+                                            
+        # have to translate the system_role -> role
+        user_parameters[:role] = params[:user][:system_role]
+        
         #
         # Only allow change of role if current user has permissions to demote/promote the user to the new role
         #
-        if user_parameters[:system_role]
+        if user_parameters[:role]
           # work out if promoting or demoting
-          new_role = Role.with_name(user_parameters[:system_role])
+          new_role = Role.with_name(user_parameters[:role])
           if new_role.nil?
-            error!({"error" => "No such role name #{user_parameters[:system_role]}"}, 403)
+            error!({"error" => "No such role name #{user_parameters[:role]}"}, 403)
           end
           action = new_role.id > user.role.id ? :promote : :demote
           # current user not authorised to peform action with new role?
           if not authorise? current_user, current_user, action, new_role
             error!({"error" => "Not authorised to #{action} user with id=#{params[:id]} to #{new_role.name}" }, 403)
           end
-          # update :system_role to actual Role object rather than String type
-          user_parameters[:system_role] = new_role
+          # update :role to actual Role object rather than String type
+          user_parameters[:role] = new_role
         end
         
         # Update changes made to user
@@ -117,18 +120,20 @@ module Api
                                             :username,
                                             :nickname,
                                             :password,
-                                            :system_role
                                           )
-
+    
+      # have to translate the system_role -> role
+      user_parameters[:role] = params[:user][:system_role]
+        
       #
       # Give new user their new role
       #
-      new_role = Role.with_name(user_parameters[:system_role])
+      new_role = Role.with_name(user_parameters[:role])
       if new_role.nil?
         error!({"error" => "No such role name #{val}"}, 403)
       end
-      # update :system_role to actual Role object rather than String type
-      user_parameters[:system_role] = new_role
+      # update :role to actual Role object rather than String type
+      user_parameters[:role] = new_role
       
       user = User.create!(user_parameters)
       user
