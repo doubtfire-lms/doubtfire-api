@@ -22,8 +22,8 @@ class User < ActiveRecord::Base
 
   # Queries
   scope :teaching, -> (unit) { User.joins(:unit_roles).where("unit_roles.unit_id = :unit_id and ( unit_roles.role_id = :tutor_role_id or unit_roles.role_id = :convenor_role_id) ", unit_id: unit.id, tutor_role_id: Role.tutor_id, convenor_role_id: Role.convenor_id) }
-  scope :tutors,    -> { joins(:role).where('roles.id = :role', role: Role.tutor_id) }
-  scope :convenors, -> { joins(:role).where('roles.id = :role', role: Role.convenor_id) }
+  scope :tutors,    -> { joins(:role).where('roles.id = :tutor_role or roles.id = :convenor_role or roles.id = :admin_role', tutor_role: Role.tutor_id, convenor_role: Role.convenor_id, admin_role: Role.admin_id) }
+  scope :convenors, -> { joins(:role).where('roles.id = :convenor_role or roles.id = :admin_role', convenor_role: Role.convenor_id, admin_role: Role.admin_id) }
 
   def has_student_capability?
     true
