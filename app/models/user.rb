@@ -40,6 +40,24 @@ class User < ActiveRecord::Base
   def has_admin_capability?
     role_id == Role.admin_id
   end
+  
+  def self.permissions
+    {
+      # - admins can modify anyone (super user)
+      Role.admin    => { :promote => [ Role.admin, Role.convenor, Role.tutor, Role.student ],
+                         :demote  => [ Role.admin, Role.convenor, Role.tutor, Role.student ]  },
+      # - convenors can promote students to tutors
+      # - convenors can promote tutors to convenors
+      # - convenors cannot demote convenors
+      # - convenors can demote tutors
+      Role.convenor => { :promote => [ Role.convenor, Role.tutor ],
+                         :demote  => [ Role.tutor ] },
+      # - tutors have no permissions
+      # - students have no permissions
+      Role.tutor    => { :promote => [], :demote => [] },
+      Role.student  => { :promote => [], :demote => [] }
+    }
+  end
 
   def self.default
     user = self.new
@@ -52,6 +70,10 @@ class User < ActiveRecord::Base
     user.role_id            = Role.student_id
 
     user
+  end
+  
+  def role_for(user)
+    return role
   end
 
   def email_required?
