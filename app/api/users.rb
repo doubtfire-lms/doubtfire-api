@@ -63,7 +63,7 @@ module Api
         # have to translate the system_role -> role
         # note we only let user_parameters role if we're actually *changing* the role
         # (i.e., not passing in the *same* role)
-        if params[:user][:system_role] && current_user.role.id != Role.with_name(params[:user][:system_role]).id
+        if params[:user][:system_role] && user.role.id != Role.with_name(params[:user][:system_role]).id
           user_parameters[:role] = params[:user][:system_role]
         end
         
