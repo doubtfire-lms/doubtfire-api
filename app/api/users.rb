@@ -71,12 +71,11 @@ module Api
           end
           action = new_role.id > user.role.id ? :promote : :demote
           # current user not authorised to peform action with new role?
-          if authorise? current_user, current_user, action, new_role
-            # update :role to actual Role object rather than String type
-            user_parameters[:role] = new_role
-          elsif
+          if not authorise? current_user, current_user, action, new_role
             error!({"error" => "Not authorised to #{action} user with id=#{params[:id]} to #{new_role.name}" }, 403)
           end
+          # update :role to actual Role object rather than String type
+          user_parameters[:role] = new_role
         end
         
         # Update changes made to user
@@ -97,7 +96,7 @@ module Api
         requires :email         , type: String,   desc: 'New email address for user'
         requires :username      , type: String,   desc: 'New username for user'
         requires :nickname      , type: String,   desc: 'New nickname for user'
-        requires :system_role   , type: String,   desc: 'New system role for user [Admin, Convenor, Tutor, Student]'
+        requires :role          , type: String,   desc: 'New system role for user [Admin, Convenor, Tutor, Student]'
       end
     end
     post '/users' do
@@ -118,17 +117,22 @@ module Api
                                             :username,
                                             :nickname,
                                             :password,
+                                            :role
                                           )
-      user = User.create!(user_parameters)
 
       #
       # Give new user their new role
       #
-      new_role = Role.with_name(params[:user][:system_role])
-      if new_role.nil?
-        error!({"error" => "No such role name #{val}"}, 403)
+      if user_parameters[:role]      
+        new_role = Role.with_name(user_parameters[:role])
+        if new_role.nil?
+          error!({"error" => "No such role name #{val}"}, 403)
+        end
+        # update :role to actual Role object rather than String type
+        user_parameters[:role] = new_role
       end
-      user.role = new_role 
+      
+      user = User.create!(user_parameters)
       user
       
     end
