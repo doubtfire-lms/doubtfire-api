@@ -19,6 +19,10 @@ module Api
       username = params[:username]
       password = params[:password]
 
+      if (username =~ /[Ss]\d{6}[\dXx]/)
+        username[0] = ""
+      end
+
       if username.nil? or password.nil?
         error!({"error" => "The request must contain the user username and password."}, 400)
         return

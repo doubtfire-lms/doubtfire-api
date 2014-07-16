@@ -55,6 +55,7 @@ namespace :db do
       cliff:              {first_name: "Cliff",           last_name: "Warren",              nickname: "AvDongle",   role_id: Role.tutor_id},  
       joostfunkekupper:   {first_name: "Joost",          last_name: "Funke Kupper",         nickname: "Joe",        role_id: Role.tutor_id},
       angusmorton:        {first_name: "Angus",          last_name: "Morton",               nickname: "Angus",      role_id: Role.tutor_id},
+      "123456X"=>            {first_name: "Jorge",          last_name: "Jensen",               nickname: "Bazza",      role_id: Role.student_id},    
     }
 
     10.times do |count|
@@ -116,7 +117,7 @@ namespace :db do
           { user: :joostfunkekupper, num: few_tutorials },
         ], 
         num_tasks: many_task,
-        students: [ :cliff ]
+        students: [ :cliff, "123456X" ]
       },
       ai4g: { 
         code: "COS03046", 
