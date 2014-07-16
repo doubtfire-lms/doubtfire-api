@@ -6,7 +6,7 @@ module AuthorisationHelpers
 		  obj_class = object
 		else
   		obj_class = object.class
-  		
+    end
 
 		perms = obj_class.permissions
 
