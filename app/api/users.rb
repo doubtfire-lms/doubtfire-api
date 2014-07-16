@@ -45,8 +45,9 @@ module Api
     end
     put '/users/:id' do
       
-      # if not an admin, then can only modify if current_user.id is same as :id provided...
-      if params[:id] == current_user.id || current_user.has_admin_capability?
+      # can only modify if current_user.id is same as :id provided
+      # (i.e., user wants to update their own data) or if updateUser token
+      if (params[:id] == current_user.id) || (authorise? current_user, User, :updateUser)
         
         user = User.find(params[:id])
 
@@ -76,7 +77,7 @@ module Api
           if new_role.nil?
             error!({"error" => "No such role name #{user_parameters[:role]}"}, 403)
           end
-          action = new_role.id > user.role.id ? :promote : :demote
+          action = new_role.id > user.role.id ? :promoteUser : :demoteUser
           # current user not authorised to peform action with new role?
           if not authorise? current_user, User, action, new_role
             error!({"error" => "Not authorised to #{action} user with id=#{params[:id]} to #{new_role.name}" }, 403)
@@ -147,47 +148,32 @@ module Api
     params do
       requires :file, type: Rack::Multipart::UploadedFile, :desc => "CSV upload file."
     end
-    post '/users/csv' do
-      #
-      # Only admins can upload users
-      #
+    post '/csv/users' do
       if not authorise? current_user, User, :uploadCSV
         error!({"error" => "Not authorised to upload CSV of users"}, 403)
       end
-      #
-      # Todo: Validate a CSV was uploaded
-      #
-      #validates_attachment :file, { :presense => true, :content_type => { :content_type => "text/csv" } }
-      #if not validates_attachement
-      #  error!({"error" => "CSV file was not uploaded"}, 403)
-      #end
       
       csv_file = ActionDispatch::Http::UploadedFile.new(params[:file])
       csv_contents = csv_file.open().read()
       
       # once read, we can remove the temp file
       csv_file.close()
-
-      #CSV.foreach(csv_file) do |row|
-      #  puts row
-      #end
       
       # Actually import...
-      # User.import_from_csv(csv_contents)
+      User.import_from_csv(csv_contents)
     end
     
     desc "Download CSV of all users"
-    get '/users' do
-      
+    get '/csv/users' do
       if not authorise? current_user, User, :downloadCSV
         error!({"error" => "Not authorised to upload CSV of users"}, 403)
       end
-      # CSV.generate do |csv|
-#         csv << User.attribute_names
-#         User.all.each do |user|
-#           csv << user.attributes.values
-#         end
-#       end
+      
+      content_type "application/octet-stream"
+      header['Content-Disposition'] = "attachment; filename=doubtfire_users.csv "
+      env['api.format'] = :binary
+      User.export_to_csv
+      
     end
 
   end

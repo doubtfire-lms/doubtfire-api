@@ -43,24 +43,19 @@ class User < ActiveRecord::Base
   
   def self.permissions
     {
-      # - admins can modify anyone (super user)
-      Role.admin    => { :promoteUser => [ Role.admin, Role.convenor, Role.tutor, Role.student ],
+      # need nil for non-context permissions (can't have mixed array)
+      Role.admin =>    { :promoteUser => [ Role.admin, Role.convenor, Role.tutor, Role.student ],
                          :demoteUser  => [ Role.admin, Role.convenor, Role.tutor, Role.student ],
-                         :createUser,
-                         :uploadCSV,
-                         :downloadCSV  },
-      # - convenors can promote students to tutors
-      # - convenors can promote tutors to convenors
-      # - convenors cannot demote convenors
-      # - convenors can demote tutors
+                         :createUser  => nil,
+                         :uploadCSV   => nil,
+                         :downloadCSV => nil,
+                         :updateUser  => nil},
       Role.convenor => { :promoteUser => [ Role.convenor, Role.tutor ],
                          :demoteUser  => [ Role.tutor ] },
-      # - tutors have no permissions
-      # - students have no permissions
-      Role.tutor    => { :promoteUser => [], 
-                         :demoteUser  => [] },
-      Role.student  => { :promoteUser => [], 
-                         :demoteUser => [] }
+      Role.tutor =>    { :promoteUser => [ ],
+                         :demoteUser  => [ ] },
+      Role.student =>  { :promoteUser => [ ],
+                         :demoteUser  => [ ] }
     }
   end
 
@@ -90,9 +85,33 @@ class User < ActiveRecord::Base
     "#{first_name} #{last_name}"
   end
 
+  def self.export_to_csv
+    exportables = ["id", "username", "first_name", "last_name", "email", "encrypted_password", "nickname", "role_id"]
+    CSV.generate do |row|
+      row << User.attribute_names.select { | attribute | exportables.include? attribute }.map { | attribute | 
+        if attribute == "encrypted_password"
+          "password"
+        elsif attribute == "role_id"
+          "role"
+        else
+          attribute
+        end
+      }
+      User.find(:all, :order => "id").each do |user|
+        row << user.attributes.select { | attribute | exportables.include? attribute }.map { | key, value |
+          if key == "encrypted_password" 
+            "" 
+          elsif key == "role_id"
+            Role.find(value).name
+          else value end 
+        }
+      end
+    end
+  end
+
   def self.import_from_csv(file)
     CSV.foreach(file) do |row|
-
+    
       username, first_name, last_name, email, role = row
 
       user = User.find_or_create_by_username(username: username) {|user|
