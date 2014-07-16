@@ -15,18 +15,18 @@ module Api
     end
 
     desc "Get user"
-    get '/user/:id' do
+    get '/users/:id' do
       #TODO: authorise!
       @user = User.find(params[:id])
     end
 
     desc "Get convenors"
-    get '/convenors' do
+    get '/users/convenors' do
       @user_roles = User.convenors
     end
 
     desc "Get tutors"
-    get '/tutors' do
+    get '/users/tutors' do
       @user_roles = User.tutors
     end
   end
