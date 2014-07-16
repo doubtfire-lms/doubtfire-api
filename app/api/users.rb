@@ -78,7 +78,7 @@ module Api
           end
           action = new_role.id > user.role.id ? :promote : :demote
           # current user not authorised to peform action with new role?
-          if not authorise? current_user, current_user, action, new_role
+          if not authorise? current_user, User, action, new_role
             error!({"error" => "Not authorised to #{action} user with id=#{params[:id]} to #{new_role.name}" }, 403)
           end
           # update :role to actual Role object rather than String type
@@ -110,38 +110,81 @@ module Api
       #
       # Only admins can create users
       #
-      if current_user.role != Role.admin
+      if not authorise? current_user, User, :create
         error!({"error" => "Not authorised to create new users"}, 403)
-      end
+      else
+        params[:user][:password] = "password"
+        user_parameters = ActionController::Parameters.new(params)
+                                            .require(:user)
+                                            .permit(
+                                              :first_name,
+                                              :last_name,
+                                              :email,
+                                              :username,
+                                              :nickname,
+                                              :password,
+                                            )
       
-      params[:user][:password] = "password"
-      user_parameters = ActionController::Parameters.new(params)
-                                          .require(:user)
-                                          .permit(
-                                            :first_name,
-                                            :last_name,
-                                            :email,
-                                            :username,
-                                            :nickname,
-                                            :password,
-                                          )
-    
-      # have to translate the system_role -> role
-      user_parameters[:role] = params[:user][:system_role]
+        # have to translate the system_role -> role
+        user_parameters[:role] = params[:user][:system_role]
+          
+        #
+        # Give new user their new role
+        #
+        new_role = Role.with_name(user_parameters[:role])
+        if new_role.nil?
+          error!({"error" => "No such role name #{val}"}, 403)
+        end
+        # update :role to actual Role object rather than String type
+        user_parameters[:role] = new_role
         
-      #
-      # Give new user their new role
-      #
-      new_role = Role.with_name(user_parameters[:role])
-      if new_role.nil?
-        error!({"error" => "No such role name #{val}"}, 403)
+        user = User.create!(user_parameters)
+        user
       end
-      # update :role to actual Role object rather than String type
-      user_parameters[:role] = new_role
+    end
+    
+    desc "Upload CSV of users"
+    params do
+      requires :file, type: Rack::Multipart::UploadedFile, :desc => "CSV upload file."
+    end
+    post '/users/csv' do
+      #
+      # Only admins can upload users
+      #
+      if current_user.role != Role.admin
+        error!({"error" => "Not authorised to upload CSV of users"}, 403)
+      end
+      #
+      # Todo: Validate a CSV was uploaded
+      #
+      #validates_attachment :file, { :presense => true, :content_type => { :content_type => "text/csv" } }
+      #if not validates_attachement
+      #  error!({"error" => "CSV file was not uploaded"}, 403)
+      #end
       
-      user = User.create!(user_parameters)
-      user
+      csv_file = ActionDispatch::Http::UploadedFile.new(params[:file])
+      csv_contents = csv_file.open().read()
       
+      # once read, we can remove the temp file
+      csv_file.close()
+
+      #CSV.foreach(csv_file) do |row|
+      #  puts row
+      #end
+      
+      # Actually import...
+      # User.import_from_csv(csv_contents)
+    end
+    
+    desc "Download CSV of all users"
+    get '/users' do
+    
+      # CSV.generate do |csv|
+#         csv << User.attribute_names
+#         User.all.each do |user|
+#           csv << user.attributes.values
+#         end
+#       end
     end
 
   end

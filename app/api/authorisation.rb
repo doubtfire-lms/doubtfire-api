@@ -1,7 +1,12 @@
 module AuthorisationHelpers
 
 	def authorise? (user, object, action, context = nil)
-		obj_class = object.class
+		# can pass in object or class
+		if object.class == Class
+		  obj_class = object
+		else
+  		obj_class = object.class
+  		
 
 		perms = obj_class.permissions
 

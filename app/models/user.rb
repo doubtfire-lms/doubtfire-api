@@ -45,7 +45,8 @@ class User < ActiveRecord::Base
     {
       # - admins can modify anyone (super user)
       Role.admin    => { :promote => [ Role.admin, Role.convenor, Role.tutor, Role.student ],
-                         :demote  => [ Role.admin, Role.convenor, Role.tutor, Role.student ]  },
+                         :demote  => [ Role.admin, Role.convenor, Role.tutor, Role.student ],
+                         :createUser },
       # - convenors can promote students to tutors
       # - convenors can promote tutors to convenors
       # - convenors cannot demote convenors
@@ -71,9 +72,10 @@ class User < ActiveRecord::Base
 
     user
   end
-  
-  def role_for(user)
-    return role
+
+
+  def self.role_for(user)
+    return user.role
   end
 
   def email_required?
