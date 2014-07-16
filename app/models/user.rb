@@ -25,6 +25,10 @@ class User < ActiveRecord::Base
   scope :tutors,    -> { joins(:role).where('roles.id = :tutor_role or roles.id = :convenor_role or roles.id = :admin_role', tutor_role: Role.tutor_id, convenor_role: Role.convenor_id, admin_role: Role.admin_id) }
   scope :convenors, -> { joins(:role).where('roles.id = :convenor_role or roles.id = :admin_role', convenor_role: Role.convenor_id, admin_role: Role.admin_id) }
 
+  def username=(name)
+    self[:username] = name.downcase
+  end
+
   def has_student_capability?
     true
   end

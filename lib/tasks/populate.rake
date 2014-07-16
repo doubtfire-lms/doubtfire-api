@@ -52,10 +52,10 @@ namespace :db do
       ajones:             {first_name: "Allan",          last_name: "Jones",                nickname: "P-Jiddy",    role_id: Role.convenor_id},
       rliston:            {first_name: "Rohan",          last_name: "Liston",               nickname: "Gunner",     role_id: Role.convenor_id},
       akihironoguchi:     {first_name: "Akihiro",        last_name: "Noguchi",              nickname: "Animations", role_id: Role.tutor_id},
-      cliff:              {first_name: "Cliff",           last_name: "Warren",              nickname: "AvDongle",   role_id: Role.tutor_id},  
+      cliff:              {first_name: "Cliff",          last_name: "Warren",               nickname: "AvDongle",   role_id: Role.tutor_id},  
       joostfunkekupper:   {first_name: "Joost",          last_name: "Funke Kupper",         nickname: "Joe",        role_id: Role.tutor_id},
       angusmorton:        {first_name: "Angus",          last_name: "Morton",               nickname: "Angus",      role_id: Role.tutor_id},
-      "123456X"=>            {first_name: "Jorge",          last_name: "Jensen",               nickname: "Bazza",      role_id: Role.student_id},    
+      "123456X"=>         {first_name: "Jorge",          last_name: "Jensen",               nickname: "Bazza",      role_id: Role.student_id},    
     }
 
     10.times do |count|

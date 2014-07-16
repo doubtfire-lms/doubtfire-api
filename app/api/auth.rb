@@ -28,7 +28,7 @@ module Api
         return
       end
       #TODO - usernames case sensitive
-      user = User.find_by_username(username)
+      user = User.find_by_username(username.downcase)
 
       if user.nil?
         # logger.info("User #{email} failed signin, user cannot be found.")
