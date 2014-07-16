@@ -110,7 +110,7 @@ module Api
       #
       # Only admins can create users
       #
-      if not authorise? current_user, User, :create
+      if not authorise? current_user, User, :createUser
         error!({"error" => "Not authorised to create new users"}, 403)
       else
         params[:user][:password] = "password"
@@ -151,7 +151,7 @@ module Api
       #
       # Only admins can upload users
       #
-      if current_user.role != Role.admin
+      if not authorise? current_user, User, :uploadCSV
         error!({"error" => "Not authorised to upload CSV of users"}, 403)
       end
       #
@@ -178,7 +178,10 @@ module Api
     
     desc "Download CSV of all users"
     get '/users' do
-    
+      
+      if not authorise? current_user, User, :downloadCSV
+        error!({"error" => "Not authorised to upload CSV of users"}, 403)
+      end
       # CSV.generate do |csv|
 #         csv << User.attribute_names
 #         User.all.each do |user|

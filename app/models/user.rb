@@ -44,19 +44,23 @@ class User < ActiveRecord::Base
   def self.permissions
     {
       # - admins can modify anyone (super user)
-      Role.admin    => { :promote => [ Role.admin, Role.convenor, Role.tutor, Role.student ],
-                         :demote  => [ Role.admin, Role.convenor, Role.tutor, Role.student ],
-                         :createUser },
+      Role.admin    => { :promoteUser => [ Role.admin, Role.convenor, Role.tutor, Role.student ],
+                         :demoteUser  => [ Role.admin, Role.convenor, Role.tutor, Role.student ],
+                         :createUser,
+                         :uploadCSV,
+                         :downloadCSV  },
       # - convenors can promote students to tutors
       # - convenors can promote tutors to convenors
       # - convenors cannot demote convenors
       # - convenors can demote tutors
-      Role.convenor => { :promote => [ Role.convenor, Role.tutor ],
-                         :demote  => [ Role.tutor ] },
+      Role.convenor => { :promoteUser => [ Role.convenor, Role.tutor ],
+                         :demoteUser  => [ Role.tutor ] },
       # - tutors have no permissions
       # - students have no permissions
-      Role.tutor    => { :promote => [], :demote => [] },
-      Role.student  => { :promote => [], :demote => [] }
+      Role.tutor    => { :promoteUser => [], 
+                         :demoteUser  => [] },
+      Role.student  => { :promoteUser => [], 
+                         :demoteUser => [] }
     }
   end
 
