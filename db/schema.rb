@@ -26,6 +26,17 @@ ActiveRecord::Schema.define(version: 20140702050107) do
     t.datetime "updated_at",             null: false
   end
 
+  create_table "helpdesk_schedules", force: true do |t|
+    t.datetime "start_time"
+    t.integer  "duration"
+    t.integer  "day"
+    t.integer  "user_id"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  add_index "helpdesk_schedules", ["user_id"], name: "index_helpdesk_schedules_on_user_id", using: :btree
+
   create_table "logins", force: true do |t|
     t.datetime "timestamp"
     t.integer  "user_id"

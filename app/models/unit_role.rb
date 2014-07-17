@@ -29,6 +29,7 @@ class UnitRole < ActiveRecord::Base
   def self.permissions
     { 
       student: [ :get, :getProjects ],
+      convenor: [ :get, :getProjects, :delete ],
       tutor: [ :get, :getProjects ],
       nil => []
     }

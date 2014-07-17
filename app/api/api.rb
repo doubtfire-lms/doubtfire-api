@@ -38,6 +38,11 @@ end
 
 module Api
   class Root < Grape::API
+    helpers do
+      def logger
+        API.logger
+      end
+    end
     prefix 'api'
     format :json
     formatter :json, Grape::Formatter::ActiveModelSerializers

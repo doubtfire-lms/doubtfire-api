@@ -10,17 +10,17 @@ module Api
 
     desc "Get user roles"
     get '/user_roles' do
-      @user_roles = UserRole.all
+      @user_roles = UnitRole.all
     end
 
-    desc "Get convenors"
+    desc "Get convenor users"
     get '/convenors' do
-      @user_roles = UserRole.convenors
+      @user_roles = User.where("system_role = 'convenor' OR system_role = 'admin'")
     end
 
     desc "Get tutors"
     get '/tutors' do
-      @user_roles = UserRole.tutors
+      @user_roles = UnitRole.tutors
     end
   end
 end
