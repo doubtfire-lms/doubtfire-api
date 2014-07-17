@@ -13,7 +13,9 @@ class Unit < ActiveRecord::Base
   end
 
   def role_for(user)
-    if tutors.where('users.id=:id', id: user.id).count >= 1
+    if convenors.where('users.id=:id', id: user.id).count >= 1
+      :convenor
+    elsif tutors.where('users.id=:id', id: user.id).count >= 1
       :tutor
     elsif students.where('unit_roles.user_id=:id', id: user.id).count == 1
       :student

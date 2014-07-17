@@ -29,6 +29,47 @@ module Api
       unit = Unit.find(params[:id])
     end
 
+
+    desc "Update unit"
+    params do
+      requires :id, type: Integer, desc: 'The unit id to update'
+      optional :convenors, type: JSON, desc: 'The convenor users' 
+      group :unit do
+        optional :name
+        optional :code
+        optional :description
+        optional :start_date
+        optional :end_date
+      end
+    end
+    put '/units/:id' do 
+      #todo auth
+      unit_parameters = ActionController::Parameters.new(params)
+      .require(:unit)
+      .permit(:unit_id,
+              :name,
+              :code,
+              :description,
+              :start_date, 
+              :end_date
+             )
+      unit= Unit.find_by_id(params[:id])
+      unit.update!(unit_parameters)
+      unit_parameters
+
+      convenors = params[:convenors]
+
+      if convenors 
+        unit.convenors.delete! 
+        convenors.each do | u | 
+          userRole = UnitRole.for_user(u)
+          unit.convenors << userRole
+        end 
+      end 
+
+    end 
+
+
     desc "Create unit"
     params do
       group :unit do
