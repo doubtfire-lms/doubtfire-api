@@ -153,14 +153,8 @@ module Api
         error!({"error" => "Not authorised to upload CSV of users"}, 403)
       end
       
-      csv_file = ActionDispatch::Http::UploadedFile.new(params[:file])
-      csv_contents = csv_file.open().read()
-      
-      # once read, we can remove the temp file
-      csv_file.close()
-      
       # Actually import...
-      User.import_from_csv(csv_contents)
+      User.import_from_csv(params[:file][:tempfile])
     end
     
     desc "Download CSV of all users"
