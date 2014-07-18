@@ -44,6 +44,24 @@ class User < ActiveRecord::Base
   def has_admin_capability?
     role_id == Role.admin_id
   end
+  
+  def self.permissions
+    {
+      # need nil for non-context permissions (can't have mixed array)
+      Role.admin =>    { :promoteUser => [ Role.admin, Role.convenor, Role.tutor, Role.student ],
+                         :demoteUser  => [ Role.admin, Role.convenor, Role.tutor, Role.student ],
+                         :createUser  => nil,
+                         :uploadCSV   => nil,
+                         :downloadCSV => nil,
+                         :updateUser  => nil},
+      Role.convenor => { :promoteUser => [ Role.convenor, Role.tutor ],
+                         :demoteUser  => [ Role.tutor ] },
+      Role.tutor =>    { :promoteUser => [ ],
+                         :demoteUser  => [ ] },
+      Role.student =>  { :promoteUser => [ ],
+                         :demoteUser  => [ ] }
+    }
+  end
 
   def self.default
     user = self.new
@@ -58,6 +76,11 @@ class User < ActiveRecord::Base
     user
   end
 
+
+  def self.role_for(user)
+    return user.role
+  end
+
   def email_required?
     false
   end
@@ -66,10 +89,40 @@ class User < ActiveRecord::Base
     "#{first_name} #{last_name}"
   end
 
-  def self.import_from_csv(file)
-    CSV.foreach(file) do |row|
+  def self.export_to_csv
+    exportables = ["id", "username", "first_name", "last_name", "email", "encrypted_password", "nickname", "role_id"]
+    CSV.generate do |row|
+      row << User.attribute_names.select { | attribute | exportables.include? attribute }.map { | attribute | 
+        # rename encrypted_password key to just password and role_id key to just role
+        if attribute == "encrypted_password"
+          "password"
+        elsif attribute == "role_id"
+          "role"
+        else
+          attribute
+        end
+      }
+      User.find(:all, :order => "id").each do |user|
+        row << user.attributes.select { | attribute | exportables.include? attribute }.map { | key, value |
+          # pass in a blank encrypted_password and the role name instead of just role_id
+          if key == "encrypted_password" 
+            "" 
+          elsif key == "role_id"
+            Role.find(value).name
+          else value end 
+        }
+      end
+    end
+  end
 
-      username, first_name, last_name, email, role = row
+  def self.import_from_csv(file)
+    addedUsers = []
+    
+    csv = CSV.read(file)
+    # shift to skip header row
+    csv.shift
+    csv.each do |row|
+      email, password, first_name, last_name, username, nickname, role = row
 
       user = User.find_or_create_by_username(username: username) {|user|
         user.username           = username
@@ -78,12 +131,15 @@ class User < ActiveRecord::Base
         user.email              = email
         user.encrypted_password = BCrypt::Password.create("password")
         user.nickname           = first_name
-        user.role_id            = role
+        user.role_id            = Role.with_name(role).id
       }
-
+      
       unless user.persisted?
         user.save!(validate: false)
+        addedUsers.push(user)
       end
     end
+    
+    addedUsers
   end
 end

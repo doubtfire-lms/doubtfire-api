@@ -35,4 +35,18 @@ class Role < ActiveRecord::Base
 	def self.admin_id
 		4
 	end
+
+  def self.with_name(name)
+    case name
+      when /[Aa]dmin/
+        self.admin
+      when /[Cc]onvenor/
+        self.convenor
+      when /[Tt]utor/
+        self.tutor
+      when /[Ss]tudent/
+        self.student
+    end
+  end
+
 end

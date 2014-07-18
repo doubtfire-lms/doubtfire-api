@@ -55,7 +55,7 @@ namespace :db do
       cliff:              {first_name: "Cliff",          last_name: "Warren",               nickname: "AvDongle",   role_id: Role.tutor_id},  
       joostfunkekupper:   {first_name: "Joost",          last_name: "Funke Kupper",         nickname: "Joe",        role_id: Role.tutor_id},
       angusmorton:        {first_name: "Angus",          last_name: "Morton",               nickname: "Angus",      role_id: Role.tutor_id},
-      "123456X"=>         {first_name: "Jorge",          last_name: "Jensen",               nickname: "Bazza",      role_id: Role.student_id},    
+      alexcu:             {first_name: "Alex",          last_name: "Cummaudo",              nickname: "Angus",      role_id: Role.convenor_id},
     }
 
     10.times do |count|
@@ -91,7 +91,7 @@ namespace :db do
           { user: :akihironoguchi, num: many_tutorials}, 
           { user: :joostfunkekupper, num: many_tutorials},
           { user: :angusmorton, num: some_tutorials},
-          { user: "tutor_2", num: some_tutorials},
+          { user: :alexcu, num: some_tutorials},
           { user: "tutor_3", num: some_tutorials},
           { user: "tutor_4", num: some_tutorials},
           { user: :cliff, num: some_tutorials},
@@ -110,7 +110,7 @@ namespace :db do
         convenors: [ :acain, :cwoodward, :ajones ], 
         tutors: [ 
           { user: "tutor_1", num: few_tutorials }, 
-          { user: "tutor_2", num: few_tutorials }, 
+          { user: :alexcu, num: few_tutorials }, 
           { user: :angusmorton, num: few_tutorials }, 
           { user: :rliston, num: few_tutorials }, 
           { user: :akihironoguchi, num: few_tutorials }, 
@@ -128,12 +128,12 @@ namespace :db do
           { user: :cliff, num: few_tutorials },
         ], 
         num_tasks: few_tasks,
-        students: [ :acain, :ajones ]
+        students: [ :acain, :ajones, :alexcu ]
       },
       gameprog: { 
         code: "COS03243", 
         name: "Game Programming", 
-        convenors: [ :cwoodward ], 
+        convenors: [ :cwoodward, :alexcu ], 
         tutors: [ 
           { user: :cwoodward, num: few_tutorials }, 
         ], 
