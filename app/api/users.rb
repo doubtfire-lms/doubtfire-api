@@ -153,6 +153,11 @@ module Api
         error!({"error" => "Not authorised to upload CSV of users"}, 403)
       end
       
+      # check mime is correct before uploading
+      if not params[:file][:type] == "text/csv"
+        error!({"error" => "File given is not a CSV file"}, 403)
+      end
+      
       # Actually import...
       User.import_from_csv(params[:file][:tempfile])
     end
