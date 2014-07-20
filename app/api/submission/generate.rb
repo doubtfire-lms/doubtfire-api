@@ -54,47 +54,51 @@ module Api
         # Need to store the final_pdf on the file server somewhere?
         #
         pdf_paths = []
-        final_pdf = Tempfile.new("output")
+        final_pdf = Tempfile.new(["output", ".pdf"])
+        
+
+        #
+        # Confirm subtype categories using filemagic (exception handling
+        # must be done outside multithreaded environment below...)
+        #
+        files.map{ | k, v | v }.each { | file |
+          fm = FileMagic.new(FileMagic::MAGIC_MIME)
+          mime = fm.file file.tempfile.path
+  
+          case file.type
+          when 'image'
+            accept = ["image/png", "image/gif", "image/bmp", "image/tiff", "image/jpeg"]
+          when 'code'
+            accept = ["text/x-pascal", "text/x-c", "text/x-c++", "text/plain"]
+          when 'document'
+            accept = ["application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                      "application/msword", "application/pdf"]
+          else
+            error!({"error" => "Unknown type '#{file.type}' provided for '#{file.name}'"}, 403)
+          end
+          
+          if not mime.start_with?(*accept)
+            error!({"error" => "'#{file.name}' was not an #{file.type} file type"}, 403)
+          end
+        }
         
         #
-        # Do it concurrently... Ruby arrays are NOT thread safe, so we
+        # Convert each file concurrently... Ruby arrays are NOT thread safe, so we
         # must push output files to the pdf_paths array atomically
         #
         pdf_paths_mutex = Mutex.new
-        files.map{ | k, v | v }.each.map { | file |
-          Thread.new {
+        files.map{ | k, v | v }.each_with_index.map { | file, idx |
+          Thread.new {            
             #
-            # Firstly, confirm subtype categories using filemagic
+            # Create dual output documents (coverpage and document itself)
             #
-            fm = FileMagic.new(FileMagic::MAGIC_MIME)
-            mime = fm.file file.tempfile.path
-  
-            case file.type
-            when 'image'
-              accept = ["image/png", "image/gif", "image/bmp", "image/tiff", "image/jpeg"]
-            when 'code'
-              accept = ["text/x-pascal", "text/x-c", "text/x-c++", "text/plain"]
-            when 'document'
-              accept = ["application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                        "application/msword", "application/pdf"]
-            else
-              error!({"error" => "Unknown type '#{file.type}' provided for '#{file.name}'"}, 403)
-            end
-            
-            if not mime.start_with?(*accept)
-              error!({"error" => "'#{file.name}' was not an #{file.type} file type"}, 403)
-            end
-            
-            #
-            # Once confirmed, compile a PDF using any means
-            #
-            coverp_file = Tempfile.new("#{file.id}.cover")
-            output_file = Tempfile.new("#{file.id}.data")
+            coverp_file = Tempfile.new(["#{file.id}.cover", ".pdf"])
+            output_file = Tempfile.new(["#{file.id}.data", ".pdf"])
                       
             #
             # Make file coverpage
             #
-            coverpage_data = { "Filename" => "<pre>#{file.filename}</pre>", "Document Type" => file.type.capitalize, "Upload Timestamp" => DateTime.now.strftime("%F %T") }
+            coverpage_data = { "Filename" => "<pre>#{file.filename}</pre>", "Document Type" => file.type.capitalize, "Upload Timestamp" => DateTime.now.strftime("%F %T"), "File Number" => "#{idx+1} of #{files.length}"  }
             coverpage_body = "<h1>#{file.name}</h1>\n<dl>"
             coverpage_data.each do | key, value |
               coverpage_body << "<dt>#{key}</dt><dd>#{value}</dd>\n"
@@ -104,7 +108,7 @@ module Api
             kit = PDFKit.new(coverpage_body, :page_size => 'A4', :margin_top => "30mm", :margin_right => "30mm", :margin_bottom => "30mm", :margin_left => "30mm")
             kit.stylesheets << "vendor/assets/stylesheets/doubtfire-coverpage.css"
             kit.to_file coverp_file.path
-  
+
             #
             # File -> PDF
             #  
@@ -141,7 +145,7 @@ module Api
               
               # code -> HTML
               html_body = CodeRay.scan_file(file.tempfile, lang).html(:wrap => :div, :tab_width => 2, :css => :class, :line_numbers => :table, :line_number_anchors => false)
-  
+
               # HTML -> PDF
               kit = PDFKit.new(html_body, :page_size => 'A4', :header_left => file.filename, :header_right => "[page]/[toPage]", :margin_top => "10mm", :margin_right => "5mm", :margin_bottom => "5mm", :margin_left => "5mm")
               kit.stylesheets << "vendor/assets/stylesheets/coderay.css"
@@ -161,10 +165,9 @@ module Api
               end
             end
             
-            # Push the converted PDF and its coverpage to pdf_paths array (lock first!)...
-            pdf_paths_mutex.synchronize { 
-              pdf_paths.push coverp_file.path 
-              pdf_paths.push output_file.path 
+            # Insert (at appropriate index) the converted PDF and its coverpage to pdf_paths array (lock first!)...
+            pdf_paths_mutex.synchronize {
+              pdf_paths[idx] = [coverp_file.path, output_file.path]
             }
             
             # I can now delete this uploaded file
@@ -175,14 +178,15 @@ module Api
         #
         # Aggregate each of the output PDFs
         #
+        puts pdf_paths
         didCompile = system "pdftk #{pdf_paths.join ' '} cat output #{final_pdf.path}"
         if !didCompile 
-          error!({"error" => "PDF failed to compile."}, 403)
+          error!({"error" => "PDF failed to compile. Please try again."}, 403)
         end
         
         # We don't need any of those pdf_paths files anymore after compiling the final_pdf!
         pdf_paths.each { | path | 
-          FileUtils.rm path 
+          #FileUtils.rm path
         } 
         
         # We need to do something with this...
