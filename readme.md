@@ -6,9 +6,9 @@ Setting up a dev environment:
     1. `apt-get install ruby-build`
     2. `apt-get install rbenv`
     3. Add `eval "$(rbenv init -)"` to .bashrc
-2. Install ruby (version 2.1.0)
-    1. `rbenv install 2.1.0`
-    2. `rbenv global 2.1.0`
+2. Install ruby (version 2.1.2)
+    1. `rbenv install 2.1.2`
+    2. `rbenv global 2.1.2`
 3. Install postgres
     1. Ensure pg_config is on the path
     2. eg: `export PATH=/Applications/Postgres.app/Contents/Versions/9.3/bin:$PATH`
