@@ -5,6 +5,7 @@ namespace :db do
     require 'populator'
     require 'faker'
     require 'bcrypt'
+    require 'json'
 
     scale = ENV["SCALE"] || 'small'
 
@@ -56,6 +57,7 @@ namespace :db do
       joostfunkekupper:   {first_name: "Joost",          last_name: "Funke Kupper",         nickname: "Joe",        role_id: Role.tutor_id},
       angusmorton:        {first_name: "Angus",          last_name: "Morton",               nickname: "Angus",      role_id: Role.tutor_id},
       alexcu:             {first_name: "Alex",          last_name: "Cummaudo",              nickname: "Angus",      role_id: Role.convenor_id},
+      "123456X" =>        {first_name: "Fred",          last_name: "Jones",                 nickname: "Foo",        role_id: Role.student_id}
     }
 
     10.times do |count|
@@ -235,6 +237,11 @@ namespace :db do
       puts "--------> #{unit_details[:num_tasks]} tasks"
       # Create tasks for unit
       unit_details[:num_tasks].times do |count|
+        up_reqs = []
+        rand(1..4).times.each_with_index do | file, idx |
+          up_reqs[idx] = { :key => "file#{idx}", :name => Populator.words(1..3).capitalize, :type => ["code", "document", "image"].sample }
+        end
+        puts "----------> task #{count} has #{up_reqs.length} files to upload"
         TaskDefinition.create(
           name: "Assignment #{count + 1}",
           abbreviation: "A#{count + 1}",
@@ -242,7 +249,8 @@ namespace :db do
           description: Populator.words(5..10),
           weighting: BigDecimal.new("2"),
           required: rand < 0.9,   # 10% chance of being false
-          target_date: ((count + 1) % 12).weeks.from_now # Assignment 6 due week 6, etc.
+          target_date: ((count + 1) % 12).weeks.from_now, # Assignment 6 due week 6, etc.
+          upload_requirements: up_reqs.to_json
         )
       end
 

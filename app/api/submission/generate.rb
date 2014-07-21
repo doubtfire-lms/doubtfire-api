@@ -1,11 +1,10 @@
 require 'grape'
+require 'project_serializer'
 
 # Temporarily...
 require 'json'
 
-require 'project_serializer'
-
-# getting file info
+# getting file MIME types
 require 'filemagic'
 
 # image to pdf
@@ -27,15 +26,15 @@ module Api
   
       desc "Upload and generate submission document"
       params do
-        #requires :file_details, type: JSON, :desc => "File details, eg: [ { key: 'file1', name: 'Shape Class', type: '[image/code/document]' }, ... ]"
-        requires :file1, type: Rack::Multipart::UploadedFile, :desc => "file 1."
-        requires :file2, type: Rack::Multipart::UploadedFile, :desc => "file 2."
-        requires :file3, type: Rack::Multipart::UploadedFile, :desc => "file 3."
+        #requires :upload_requirements, type: JSON, :desc => "File details, eg: [ { key: 'file1', name: 'Shape Class', type: '[image/code/document]' }, ... ]"
+        requires :file0, type: Rack::Multipart::UploadedFile, :desc => "file 1."
+        requires :file1, type: Rack::Multipart::UploadedFile, :desc => "file 2."
+        requires :file2, type: Rack::Multipart::UploadedFile, :desc => "file 3."
       end
       post '/submission/generate/' do
 
         # DEBUG... using file_details hard-coded for now...
-        params[:file_details] = JSON.parse '[ { "key": "file1", "name": "Shape Image", "type": "image" }, { "key": "file2", "name": "Shape Class", "type": "code" }, { "key":"file3", "name":"Shape Document", "type":"document" } ]'
+        params[:file_details] = JSON.parse '[ { "key": "file0", "name": "Shape Image", "type": "image" }, { "key": "file1", "name": "Shape Class", "type": "code" }, { "key":"file2", "name":"Shape Document", "type":"document" } ]'
         
         # scoop out the files into an easier to work with array
         files = params.reject { | key | not key =~ /file\d+/ }
@@ -178,7 +177,6 @@ module Api
         #
         # Aggregate each of the output PDFs
         #
-        puts pdf_paths
         didCompile = system "pdftk #{pdf_paths.join ' '} cat output #{final_pdf.path}"
         if !didCompile 
           error!({"error" => "PDF failed to compile. Please try again."}, 403)
@@ -186,7 +184,7 @@ module Api
         
         # We don't need any of those pdf_paths files anymore after compiling the final_pdf!
         pdf_paths.each { | path | 
-          #FileUtils.rm path
+          FileUtils.rm path
         } 
         
         # We need to do something with this...

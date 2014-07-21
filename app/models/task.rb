@@ -42,6 +42,10 @@ class Task < ActiveRecord::Base
     task_definition
   end
 
+  def upload_requirements
+    task_definition.upload_requirements
+  end
+
   def update_project
     project.update_attribute(:progress, project.calculate_progress)
     project.update_attribute(:status, project.calculate_status)

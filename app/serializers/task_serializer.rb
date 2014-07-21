@@ -11,7 +11,7 @@ class TaskUpdateSerializer < ActiveModel::Serializer
 end
 
 class TaskSerializer < ActiveModel::Serializer
-  attributes :id, :status, :completion_date, :task_name, :task_desc, :task_weight, :task_abbr
+  attributes :id, :status, :completion_date, :task_name, :task_desc, :task_weight, :task_abbr, :task_upload_requirements
   
 
   def task_name
@@ -29,4 +29,9 @@ class TaskSerializer < ActiveModel::Serializer
   def task_abbr
   	object.task_definition.abbreviation
   end
+  
+  def task_upload_requirements
+    object.task_definition.upload_requirements
+  end
+  
 end

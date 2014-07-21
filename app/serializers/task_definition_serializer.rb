@@ -1,5 +1,5 @@
 class TaskDefinitionSerializer < ActiveModel::Serializer
-  attributes :id, :name, :desc, :weight, :required, :target_date, :abbr
+  attributes :id, :name, :desc, :weight, :required, :target_date, :abbr, :upload_requirements
 
   def abbr
   	object.abbreviation
