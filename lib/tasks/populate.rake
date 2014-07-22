@@ -117,7 +117,7 @@ namespace :db do
           { user: :joostfunkekupper, num: few_tutorials },
         ], 
         num_tasks: many_task,
-        students: [ :cliff, "123456X" ]
+        students: [ :cliff ]
       },
       ai4g: { 
         code: "COS03046", 
