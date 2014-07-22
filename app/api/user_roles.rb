@@ -19,8 +19,15 @@ module Api
     end
 
     desc "Get tutors"
+    params do 
+      optional :unit_id, type: Integer
+    end 
     get '/tutors' do
-      @user_roles = UnitRole.tutors
+      if (params[:unit_id])
+        @user_roles = UnitRole.tutors.where('unit_id = :unit_id',unit_id: params[:unit_id])
+      else
+        @user_roles = UnitRole.tutors
+      end 
     end
   end
 end
