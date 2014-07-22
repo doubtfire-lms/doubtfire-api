@@ -76,6 +76,10 @@ class Project < ActiveRecord::Base
     unit_role.tutorial.tutor unless unit_role.tutorial.nil?
   end
 
+  def tutorial
+    unit_role.tutorial
+  end
+
   def user_role(user)
     if user == student then :student
     elsif user == main_tutor then :tutor

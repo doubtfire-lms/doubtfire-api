@@ -64,5 +64,32 @@ module Api
       end 
     end
 
+    desc "Create a project"
+    params do
+        requires :unit_id         , type: Integer,   desc: 'Unit Id'
+        requires :student_num      , type: String,   desc: 'Student Number 7 digit code'
+        optional :tutorial_id     , type: Integer,  desc: 'Tutorial Id'
+    end
+    post '/projects' do
+      unit = Unit.find(params[:unit_id])
+      student = User.find_by_username(params[:student_num])
+
+      if student.nil?
+        error!({"error" => "Couldn't find Student with username=#{params[:student_num]}" }, 403)
+      end
+
+      if authorise? current_user, unit, :enrol_student
+        proj = unit.add_user(student.id, params[:tutorial_id])
+        if proj.nil? 
+          error!({"error" => "Error adding student to unit" }, 403)
+        else 
+          StudentProjectSerializer.new proj
+        end
+      else
+        error!({"error" => "Couldn't find Unit with id=#{params[:unit_id]}" }, 403)
+      end
+
+
+    end
   end
 end
