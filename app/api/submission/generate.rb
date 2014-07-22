@@ -21,10 +21,10 @@ module Api
   
       desc "Generate doubtfire-task-inspecific submission document"
       params do
-        #requires :upload_requirements, type: JSON, :desc => "File details, eg: [ { key: 'file1', name: 'Shape Class', type: '[image/code/document]' }, ... ]"
-#         requires :file0, type: Rack::Multipart::UploadedFile, :desc => "file 1."
-#         requires :file1, type: Rack::Multipart::UploadedFile, :desc => "file 2."
-#         requires :file2, type: Rack::Multipart::UploadedFile, :desc => "file 3."
+        requires :upload_requirements, type: JSON, :desc => "File details, eg: [ { key: 'file1', name: 'Shape Class', type: '[image/code/document]' }, ... ]"
+        requires :file0, type: Rack::Multipart::UploadedFile, :desc => "file 1."
+        requires :file1, type: Rack::Multipart::UploadedFile, :desc => "file 2."
+        requires :file2, type: Rack::Multipart::UploadedFile, :desc => "file 3."
       end
       post '/submission/generate/' do
 
@@ -33,7 +33,7 @@ module Api
         header['Content-Disposition'] = "attachment; filename=output.pdf"
         env['api.format'] = :binary
         
-        file = combine_to_pdf(scoop_files(params, $mock_data))#params[:upload_requirements]))
+        file = combine_to_pdf(scoop_files(params, params[:upload_requirements]))
         file.path
         response = file.open.read
         
