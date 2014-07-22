@@ -44,7 +44,7 @@ module Api
     end
 
 
-    desc "Create a convenor role " 
+    desc "Create a role " 
     params do 
       requires :unit_id, type: Integer, desc: 'Unit id'
       requires :user_id, type: Integer, desc: 'User id'
