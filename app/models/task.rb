@@ -108,6 +108,10 @@ class Task < ActiveRecord::Base
   def discuss?
     status == :discuss
   end
+  
+  def ok_to_submit?
+    status != :complete and status != :discuss
+  end
 
   def ready_or_complete?
     status == :complete or status == :discuss or status == :ready_to_mark

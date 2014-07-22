@@ -30,4 +30,7 @@ Doubtfire::Application.configure do
 
   # Print deprecation notices to the stderr
   config.active_support.deprecation = :stderr
+  
+  # File server location for storing student's work
+  config.file_server_location = ""
 end

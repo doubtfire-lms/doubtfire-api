@@ -39,4 +39,7 @@ Doubtfire::Application.configure do
 
   # Un-comment the following line as needed to print ActiveRecord queries to terminal
   # ActiveRecord::Base.logger = Logger.new(STDOUT)
+
+  # File server location for storing student's work
+  config.file_server_location = "./student_work"
 end
