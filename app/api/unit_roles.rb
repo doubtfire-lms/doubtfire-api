@@ -59,6 +59,27 @@ module Api
       role
     end 
 
+    desc "Update a role " 
+    params do 
+      group :unit_role do 
+        requires :unit_id, type: Integer, desc: 'Unit id'
+        requires :user_id, type: Integer, desc: 'User id'
+        requires :role_id, type: Integer, desc: 'The role to create with'
+      end 
+    end 
+    put '/unit_roles/:id' do 
+      unit_role_parameters = ActionController::Parameters.new(params)
+        .require(:unit_role)
+        .permit(
+          :unit_id,
+          :user_id,
+          :role_id, 
+          :tutorial_id
+        )
+      role = UnitRole.find_by_id(params[:id])
+      role.update!(unit_role_parameters)
+      role
+    end 
 
 
   end
