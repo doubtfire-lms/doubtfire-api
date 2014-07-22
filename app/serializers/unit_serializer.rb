@@ -19,4 +19,5 @@ class UnitSerializer < ActiveModel::Serializer
   has_many :tutorials
   has_many :task_definitions
   has_many :convenors, serializer: UserUnitRoleSerializer
+  has_many :staff, serializer: UserUnitRoleSerializer
 end
