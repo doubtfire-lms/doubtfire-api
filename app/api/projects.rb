@@ -47,22 +47,40 @@ module Api
 
     desc "Update a project"
     params do
-      requires :trigger, type: String, desc: 'The update trigger'
+      optional :trigger, type: String, desc: 'The update trigger'
+      optional :tutorial_id, type:Integer, desc: 'Switch tutorial'
     end
     put '/projects/:id' do
       project = Project.find(params[:id])
 
-      if params[:trigger] == "trigger_week_end"
-        if authorise? current_user, project, :trigger_week_end
-          project.trigger_week_end( current_user )
+      if params[:trigger].nil? == false
+        if params[:trigger] == "trigger_week_end"
+          if authorise? current_user, project, :trigger_week_end
+            project.trigger_week_end( current_user )
+          else
+            error!({"error" => "Couldn't find Project with id=#{params[:id]}" }, 403)
+          end
         else
+          error!({"error" => "Invalid trigger - #{params[:trigger]} unknown" }, 403)
+        end
+      elsif not params[:tutorial_id].nil?
+        if not authorise? current_user, project, :change_tutorial
           error!({"error" => "Couldn't find Project with id=#{params[:id]}" }, 403)
         end
-        project
-      else
-        error!({"error" => "Invalid trigger - #{params[:trigger]} unknown" }, 403)
-      end 
-    end
 
+        tutorial_id = params[:tutorial_id]
+        if project.unit.tutorials.where('tutorials.id = :tutorial_id', tutorial_id: tutorial_id).count == 1
+          project.unit_role.tutorial_id = tutorial_id
+          project.unit_role.save!
+        elsif tutorial_id == -1
+          project.unit_role.tutorial = nil
+          project.unit_role.save!
+        else
+          error!({"error" => "Couldn't find Tutorial with id=#{params[:tutorial_id]}" }, 403)
+        end
+      end
+
+      project
+    end #put
   end
 end

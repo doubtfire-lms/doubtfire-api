@@ -9,8 +9,8 @@ class Project < ActiveRecord::Base
 
   def self.permissions
     { 
-      student: [ :get ],
-      tutor: [ :get, :trigger_week_end ],
+      student: [ :get, :change_tutorial ],
+      tutor: [ :get, :trigger_week_end, :change_tutorial],
       nil => []
     }
   end
