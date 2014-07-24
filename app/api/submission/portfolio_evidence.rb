@@ -1,9 +1,9 @@
 require 'grape'
 require 'project_serializer'
 
-# Temporarily...
-require 'json'
-$mock_data = JSON.parse '[ { "key": "file0", "name": "Shape Image", "type": "image" }, { "key": "file1", "name": "Shape Class", "type": "code" }, { "key":"file2", "name":"Shape Document", "type":"document" } ]'
+# +=== TEMPORARY ONLY! +===
+require 'base64'
+# +=== TEMPORARY ONLY! +===
 
 # getting file MIME types
 require 'filemagic'
@@ -27,15 +27,15 @@ module Api
       
       desc "Upload and generate doubtfire-task-specific submission document"
       params do
-        requires :file0, type: Rack::Multipart::UploadedFile, :desc => "file 1."
+        requires :file0, type: Rack::Multipart::UploadedFile, :desc => "file 0."
+        optional :file1, type: Rack::Multipart::UploadedFile, :desc => "file 0."
       end
       post '/submission/task/:id' do
-
         task = Task.find(params[:id])
-        
+        error!({"error" => "#{task.task_definition.name} foo."}, 401)
         if task.discuss? or task.complete? or task.fix_and_include?
-          msg = { :complete => "is already complete", :discuss => "is ready to discuss with your tutor", :fix_and_include => "has been marked as fix and include. You may no longer submit this task." }
-          error!({"error" => "#{task.task_definition.name} #{msg[task.status]} "}, 401)
+          msg = { :complete => "is already complete", :discuss => "is ready to discuss with your tutor", :fix_and_include => "has been marked as fix and include. You may no longer submit this task" }
+          error!({"error" => "#{task.task_definition.name} #{msg[task.status]}."}, 401)
         end
         
         upload_reqs = task.upload_requirements
@@ -62,7 +62,7 @@ module Api
         file.unlink
         content_type "application/octet-stream"
         env['api.format'] = :binary
-        resp
+        Base64.encode64(resp)
         # +===== RELEASE   =====+
         #file.unlink
         #TaskSubmitSerializer.new(task)

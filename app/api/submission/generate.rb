@@ -23,8 +23,6 @@ module Api
       params do
         requires :upload_requirements, type: JSON, :desc => "File details, eg: [ { key: 'file1', name: 'Shape Class', type: '[image/code/document]' }, ... ]"
         requires :file0, type: Rack::Multipart::UploadedFile, :desc => "file 1."
-        optional :file1, type: Rack::Multipart::UploadedFile, :desc => "file 2."
-        optional :file2, type: Rack::Multipart::UploadedFile, :desc => "file 3."
       end
       post '/submission/generate/' do
 
@@ -41,7 +39,6 @@ module Api
         file.unlink
         
         response
-        
       end
     end
   end

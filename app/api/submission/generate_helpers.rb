@@ -5,6 +5,7 @@ module Api::Submission::GenerateHelpers
   #
   def scoop_files(params, upload_reqs)
     files = params.reject { | key | not key =~ /^file\d+$/ }
+
     error!({"error" => "Upload requirements mismatch with files provided"}, 403) if files.length != upload_reqs.length 
     #
     # Pair the name and type from upload_requirements to each file
@@ -90,7 +91,7 @@ module Api::Submission::GenerateHelpers
         #
         # Make file coverpage
         #
-        coverpage_data = { "Filename" => "<pre>#{file.filename}</pre>", "Document Type" => file.type.capitalize, "Upload Timestamp" => DateTime.now.strftime("%F %T"), "File Number" => "#{idx+1} of #{files.length}"  }
+        coverpage_data = { "Filename" => "<pre>#{file.filename}</pre>", "Document Type" => file.type.capitalize, "Upload Timestamp" => DateTime.now.strftime("%F %T"), "File Number" => "#{idx+1} of #{files.length}", "Size" => file.tempfile.size  }
         coverpage_body = "<h1>#{file.name}</h1>\n<dl>"
         coverpage_data.each do | key, value |
           coverpage_body << "<dt>#{key}</dt><dd>#{value}</dd>\n"
