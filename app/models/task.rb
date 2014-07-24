@@ -3,8 +3,9 @@ class Task < ActiveRecord::Base
 
   def self.permissions
     { 
-      student: [ :get, :put ],
-      tutor: [ :get, :put ],
+      student: [ :get, :put, :get_submission ],
+      tutor: [ :get, :put, :get_submission, :get_ready_to_mark_submissions ],
+      convenor: [ :get_submission, :get_ready_to_mark_submissions ],
       nil => []
     }
   end
@@ -40,6 +41,10 @@ class Task < ActiveRecord::Base
     task_definition.target_date = Date.today
 
     task_definition
+  end
+
+  def upload_requirements
+    task_definition.upload_requirements
   end
 
   def update_project
@@ -103,6 +108,14 @@ class Task < ActiveRecord::Base
 
   def discuss?
     status == :discuss
+  end
+  
+  def ok_to_submit?
+    status != :complete and status != :discuss
+  end
+
+  def ready_to_mark?
+    status == :ready_to_mark
   end
 
   def ready_or_complete?

@@ -352,6 +352,10 @@ class Project < ActiveRecord::Base
     assigned_tasks.select{|task| task.complete? }
   end
 
+  def ready_to_mark_tasks
+    assigned_tasks.select{|task| task.ready_to_mark? }
+  end
+
   def ready_or_complete_tasks
     assigned_tasks.select{|task| task.ready_or_complete? }
   end

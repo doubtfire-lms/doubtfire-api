@@ -40,5 +40,10 @@ group :development, :test do
   gem 'factory_girl_rails'
 end
 
-# Paperclip for file upload
-#gem 'paperclip'
+# Student submission
+gem 'coderay'
+gem 'ruby-filemagic'
+gem 'rmagick'
+gem 'pdfkit'
+gem 'wkhtmltopdf-binary-11'
+gem 'pdftk'

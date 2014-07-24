@@ -92,4 +92,7 @@ Doubtfire::Application.configure do
 
   # Send deprecation notices to registered listeners
   config.active_support.deprecation = :notify
+  
+  # File server location for storing student's work
+  config.file_server_location = ""
 end

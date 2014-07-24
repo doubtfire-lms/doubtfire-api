@@ -16,7 +16,11 @@ class Tutorial < ActiveRecord::Base
 
     tutorial
   end
-
+  
+  def self.find_by_user(user)
+    Tutorial.joins(:tutor).where('user_id = :user_id', user_id: user.id)
+  end
+  
   def name
     # TODO: Will probably need to make this more flexible when
     # a tutorial is representing something other than a tutorial

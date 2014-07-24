@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20140710042612) do
+ActiveRecord::Schema.define(version: 20140721013831) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -92,12 +92,13 @@ ActiveRecord::Schema.define(version: 20140710042612) do
     t.integer  "unit_id"
     t.string   "name"
     t.string   "description"
-    t.decimal  "weighting",    precision: 10, scale: 0
+    t.decimal  "weighting",           precision: 10, scale: 0
     t.boolean  "required"
     t.datetime "target_date"
-    t.datetime "created_at",                            null: false
-    t.datetime "updated_at",                            null: false
+    t.datetime "created_at",                                   null: false
+    t.datetime "updated_at",                                   null: false
     t.string   "abbreviation"
+    t.json     "upload_requirements"
   end
 
   add_index "task_definitions", ["unit_id"], name: "index_task_definitions_on_unit_id", using: :btree
@@ -139,6 +140,7 @@ ActiveRecord::Schema.define(version: 20140710042612) do
     t.datetime "created_at",         null: false
     t.datetime "updated_at",         null: false
     t.date     "completion_date"
+    t.string   "portfolio_evidence"
   end
 
   add_index "tasks", ["project_id"], name: "index_tasks_on_project_id", using: :btree

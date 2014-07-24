@@ -2,6 +2,14 @@ class ShallowTaskSerializer < ActiveModel::Serializer
   attributes :id, :status, :task_definition_id
 end
 
+class TaskSubmitSerializer < ActiveModel::Serializer
+  attributes :id, :status, :project_id, :new_stats, :portfolio_evidence
+
+  def new_stats
+    object.project.task_stats
+  end
+end
+
 class TaskUpdateSerializer < ActiveModel::Serializer
   attributes :id, :status, :project_id, :new_stats
 
@@ -11,7 +19,7 @@ class TaskUpdateSerializer < ActiveModel::Serializer
 end
 
 class TaskSerializer < ActiveModel::Serializer
-  attributes :id, :status, :completion_date, :task_name, :task_desc, :task_weight, :task_abbr
+  attributes :id, :status, :completion_date, :task_name, :task_desc, :task_weight, :task_abbr, :task_upload_requirements
   
 
   def task_name
@@ -29,4 +37,9 @@ class TaskSerializer < ActiveModel::Serializer
   def task_abbr
   	object.task_definition.abbreviation
   end
+  
+  def task_upload_requirements
+    object.task_definition.upload_requirements
+  end
+  
 end

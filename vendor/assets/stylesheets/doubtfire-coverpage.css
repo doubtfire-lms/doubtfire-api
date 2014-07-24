@@ -1,0 +1,45 @@
+body { font-family: "Helvetica Neue", Helvetica, Arial,sans-serif; color: #333; line-height:1.42857143; font-size: 14px; width: 500px; margin: 0 auto; }
+h1 { padding-bottom: 9px; border-bottom: 1px solid #eee; font-size:26px; }
+h2 { font-weight: 300; font-size: 20px; }
+
+dt { 
+  font-weight:700;
+  float: left;
+  width: 160px;
+  overflow: hidden;
+  clear: left;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+dd {
+  margin-left:180px;
+  width: 300px;
+  overflow: hidden;
+}
+dl {
+  position: relative;
+  padding: 45px 15px 15px;
+  margin: 0 -15px 15px;
+  background-color: #fff;
+  border-color: #ddd;
+  border-width: 1px;
+  border-radius: 4px 4px 0 0;
+  border-style: solid;
+  
+}
+dl::after {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  font-size: 12px;
+  font-weight: 700;
+  width: 475px;
+  color: #959595;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-align: center;
+  content: "Upload Details";
+}
+pre { font-family: Menlo, Monaco, Consolas, "Courier New", monospace; display: inline; font-size: 14px; }
+footer { margin-top: 600px; padding-top: 5px; font-size: 10px; color: #888; text-align: right; border-top: 1px solid #eee; }
