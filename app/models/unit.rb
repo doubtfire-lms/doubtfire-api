@@ -1,5 +1,6 @@
 require 'csv'
 require 'bcrypt'
+require 'json'
 
 class Unit < ActiveRecord::Base
   include ApplicationHelper
@@ -8,14 +9,15 @@ class Unit < ActiveRecord::Base
     { 
       student: [],
       tutor: [ :get_students ],
+      convenor: [ :downloadCSV, :uploadCSV, :update ],
       nil => []
     }
   end
 
   def role_for(user)
-    if convenors.where('users.id=:id', id: user.id).count >= 1
+    if convenors.where('unit_roles.user_id=:id', id: user.id).count >= 1
       :convenor
-    elsif tutors.where('users.id=:id', id: user.id).count >= 1
+    elsif tutors.where('unit_roles.user_id=:id', id: user.id).count >= 1
       :tutor
     elsif students.where('unit_roles.user_id=:id', id: user.id).count == 1
       :student
@@ -191,14 +193,16 @@ class Unit < ActiveRecord::Base
   end
 
   def import_tasks_from_csv(file)
+    added_tasks = []
     project_cache = nil
 
     CSV.foreach(file) do |row|
       next if row[0] =~ /^(Task Name)|(name)/ # Skip header
 
-      name, abbreviation, description, weighting, required, target_date = row[0..6]
+      name, abbreviation, description, weighting, required, upload_requirements, target_date = row[0..7]
       description = "(No description given)" if description == "NULL"
-
+      target_date = target_date.strip
+      
       if target_date !~ /20\d\d\-\d{1,2}\-\d{1,2}$/ # Matches YYYY-mm-dd by default
         if target_date =~ /\d{1,2}\-\d{1,2}\-20\d\d/ # Matches dd-mm-YYYY
           target_date = target_date.split("-").reverse.join("-")
@@ -218,16 +222,16 @@ class Unit < ActiveRecord::Base
       # TODO: Should background/task queue this work
       task_definition = TaskDefinition.find_or_create_by_unit_id_and_name(id, name) do |task_definition|
         task_definition.name                        = name
-        task_definition.unit_id         = id
+        task_definition.unit_id                     = id
         task_definition.abbreviation                = abbreviation
         task_definition.description                 = description
         task_definition.weighting                   = BigDecimal.new(weighting)
         task_definition.required                    = ["Yes", "y", "Y", "yes", "true", "TRUE", "1"].include? required
         task_definition.target_date                 = Time.zone.parse(target_date)
+        task_definition.upload_requirements         = JSON.parse(upload_requirements)
       end
-
-      task_definition.save! unless task_definition.persisted?
-
+      
+      added_tasks.push(task_definition)
       project_cache ||= Project.where(unit_id: id)
 
       project_cache.each do |project|
@@ -238,8 +242,11 @@ class Unit < ActiveRecord::Base
           awaiting_signoff: false,
           completion_date:  nil
         )
+        
+        
       end
     end
+    added_tasks
   end
 
   def task_definitions_csv

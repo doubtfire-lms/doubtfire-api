@@ -3,7 +3,8 @@ require 'grape'
 module Api
   class Units < Grape::API
     helpers AuthHelpers
-
+    helpers AuthorisationHelpers
+    
     before do
       authenticated?
 
@@ -43,7 +44,12 @@ module Api
       end
     end
     put '/units/:id' do 
-      #todo auth
+      unit= Unit.find(params[:id])
+      
+      if not authorise? current_user, unit, :update
+        error!({"error" => "Not authorised to update a unit" }, 403)
+      end
+      
       unit_parameters = ActionController::Parameters.new(params)
       .require(:unit)
       .permit(:unit_id,
@@ -53,7 +59,7 @@ module Api
               :start_date, 
               :end_date
              )
-      unit= Unit.find_by_id(params[:id])
+
       unit.update!(unit_parameters)
       unit_parameters
 
@@ -82,7 +88,10 @@ module Api
       end
     end
     post '/units' do
-      #TODO: authorise!
+      if not authorise? current_user, User, :createUnit
+        error!({"error" => "Not authorised to update a unit" }, 403)
+      end
+      
       unit_parameters = ActionController::Parameters.new(params)
                                           .require(:unit)
                                           .permit(

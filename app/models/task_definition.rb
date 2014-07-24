@@ -34,10 +34,10 @@ class TaskDefinition < ActiveRecord::Base
   end
 
   def to_csv_row
-    TaskDefinition.csv_columns.reject{|col| col == :target_date }.map{|column| attributes[column.to_s] } + [target_date.strftime('%d-%m-%Y')]
+    TaskDefinition.csv_columns.reject{|col| col == :target_date || col == :upload_requirements }.map{|column| attributes[column.to_s] } + [upload_requirements.to_json] + [target_date.strftime('%d-%m-%Y')]
   end
 
   def self.csv_columns
-    [:name, :abbreviation, :description, :weighting, :required, :target_date]
+    [:name, :abbreviation, :description, :weighting, :required, :upload_requirements, :target_date]
   end
 end
