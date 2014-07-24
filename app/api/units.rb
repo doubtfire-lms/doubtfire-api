@@ -3,6 +3,7 @@ require 'grape'
 module Api
   class Units < Grape::API
     helpers AuthHelpers
+    helpers AuthorisationHelpers
 
     before do
       authenticated?
@@ -106,8 +107,39 @@ module Api
           )
         end
       end
-
       @unit
+    end
+
+    desc "Upload CSV of all the students in a unit"
+    params do
+      requires :file, type: Rack::Multipart::UploadedFile, :desc => "CSV upload file."
+    end
+    post '/csv/units/:id' do
+      unit= Unit.find(params[:id])
+      if not authorise? current_user, unit, :uploadCSV
+        error!({"error" => "Not authorised to upload CSV of users"}, 403)
+      end
+      
+      # check mime is correct before uploading
+      if not params[:file][:type] == "text/csv"
+        error!({"error" => "File given is not a CSV file"}, 403)
+      end
+      
+      # Actually import...
+      unit.import_users_from_csv(params[:file][:tempfile])
+    end
+    
+    desc "Download CSV of all users"
+    get '/csv/units/:id' do
+      unit = Unit.find(params[:id])
+      if not authorise? current_user, unit, :downloadCSV
+        error!({"error" => "Not authorised to download CSV of users"}, 403)
+      end
+      
+      content_type "application/octet-stream"
+      header['Content-Disposition'] = "attachment; filename=doubtfire_users.csv "
+      env['api.format'] = :binary
+      unit.export_users_to_csv
     end
   end
 end
