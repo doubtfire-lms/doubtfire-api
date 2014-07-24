@@ -7,13 +7,16 @@ class Unit < ActiveRecord::Base
   def self.permissions
     { 
       student: [],
-      tutor: [ :get_students ],
+      convenor: [ :get_students, :enrol_student ],
+      tutor: [ :get_students, :enrol_student ],
       nil => []
     }
   end
 
   def role_for(user)
-    if tutors.where('users.id=:id', id: user.id).count >= 1
+    if convenors.where('unit_roles.user_id=:id', id: user.id).count >= 1
+      :convenor
+    elsif tutors.where('unit_roles.user_id=:id', id: user.id).count >= 1
       :tutor
     elsif students.where('unit_roles.user_id=:id', id: user.id).count == 1
       :student
@@ -30,7 +33,8 @@ class Unit < ActiveRecord::Base
   has_many :projects, dependent: :destroy
   has_many :tutorials, dependent: :destroy
   has_many :unit_roles, dependent: :destroy
-  has_many :convenors, -> { joins(:role).where("roles.id = :role", role: Role.convenor_id) }, class_name: 'UnitRole'
+  has_many :convenors, -> { joins(:role).where("roles.name = :role", role: 'Convenor') }, class_name: 'UnitRole'
+  has_many :staff, -> { joins(:role).where("roles.name = :role_convenor or roles.name = :role_tutor", role_convenor: 'Convenor', role_tutor: 'Tutor') }, class_name: 'UnitRole' 
 
   scope :current,               ->{ current_for_date(Time.zone.now) }
   scope :current_for_date,      ->(date) { where("start_date <= ? AND end_date >= ?", date, date) }
@@ -71,14 +75,28 @@ class Unit < ActiveRecord::Base
   end
 
   # Adds a user to this project.
-  def add_user(user_id, tutorial_id, project_role)
+  def add_user(user_id, tutorial_id=nil)
+    # Validates that a student is not already assigned to the unit
+    if students.where("user_id=:user_id", user_id: user_id).count > 0
+      return students.where("user_id=:user_id", user_id: user_id).first
+    end
+
+    # Validates that the tutorial exists for the unit
+    if (not tutorial_id.nil?) and tutorials.where("id=:id", id: tutorial_id).count == 0
+      return nil
+    end
+
     # Put the user in the appropriate tutorial (ie. create a new unit_role)
     unit_role = UnitRole.create!(
       user_id: user_id,
-      tutorial_id: tutorial_id,
+      #tutorial_id: tutorial_id,
       unit_id: self.id,
       role_id: Role.where(name: 'Student').first.id
     )
+
+    unit_role.tutorial_id = tutorial_id unless tutorial_id.nil?
+
+    unit_role.save!
 
     project = Project.create!(
       unit_role_id: unit_role.id,

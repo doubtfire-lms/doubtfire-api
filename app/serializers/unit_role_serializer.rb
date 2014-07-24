@@ -1,5 +1,4 @@
 require 'user_serializer'
-require 'unit_serializer'
 
 class ShallowUnitRoleSerializer < ActiveModel::Serializer
 	attributes :id, :role
@@ -36,5 +35,18 @@ class UnitRoleSerializer < ActiveModel::Serializer
 
   def project_id
     object.project.id unless object.project.nil?
+  end
+end
+
+
+class UserUnitRoleSerializer < ActiveModel::Serializer
+	attributes :id, :user_id, :user_name, :role
+
+	def role
+		object.role.name
+	end
+
+  def user_name
+    object.user.name
   end
 end

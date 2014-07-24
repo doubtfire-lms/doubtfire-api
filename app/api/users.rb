@@ -16,7 +16,7 @@ module Api
     end
 
     desc "Get user"
-    get '/users/:id' do
+    get '/users/:id', requirements: { id: /[0-9]*/ }  do
       #TODO: authorise!
       @user = User.find(params[:id])
     end

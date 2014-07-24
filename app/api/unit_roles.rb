@@ -23,6 +23,15 @@ module Api
       unit_roles
     end
 
+    desc "Delete a unit role"
+    delete '/unit_roles/:id' do 
+      unit_role = UnitRole.find(params[:id])
+      #if authorise? current_user, unit_role, :delete
+      unit_role.destroy
+      #end 
+    end
+
+
     desc "Get a unit_role's details"
     get '/unit_roles/:id' do
       unit_role = UnitRole.find(params[:id])
@@ -33,5 +42,24 @@ module Api
         error!({"error" => "Couldn't find UnitRole with id=#{params[:id]}" }, 403)
       end
     end
+
+
+    desc "Create a role " 
+    params do 
+      requires :unit_id, type: Integer, desc: 'Unit id'
+      requires :user_id, type: Integer, desc: 'User id'
+      requires :role, type: String, desc: 'The role to create with'
+    end 
+    post '/unit_roles' do 
+      role = UnitRole.new
+      role.user_id = params[:user_id]
+      role.unit_id = params[:unit_id]
+      role.role_id = Role.where("name = :role",role: params[:role]).first.id
+      role.save
+      role
+    end 
+
+
+
   end
 end
