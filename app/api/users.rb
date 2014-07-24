@@ -30,7 +30,7 @@ module Api
     get '/users/tutors' do
       @user_roles = User.tutors
     end
-    
+
     desc "Update a user"
     params do
       requires :id, type: Integer, desc: 'The user id to update'
