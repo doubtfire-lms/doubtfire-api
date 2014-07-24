@@ -7,10 +7,10 @@ class Unit < ActiveRecord::Base
 
   def self.permissions
     { 
-      student: [],
-      tutor: [ :get_students ],
-      convenor: [ :downloadCSV, :uploadCSV, :update ],
-      nil => []
+      student:  [],
+      tutor:    [ :get_students, :enrol_student ],
+      convenor: [ :get_students, :enrol_student, :uploadCSV, :downloadCSV, :update ],
+      nil =>    []
     }
   end
 
@@ -76,14 +76,28 @@ class Unit < ActiveRecord::Base
   end
 
   # Adds a user to this project.
-  def add_user(user_id, tutorial_id, project_role)
+  def add_user(user_id, tutorial_id=nil)
+    # Validates that a student is not already assigned to the unit
+    if students.where("user_id=:user_id", user_id: user_id).count > 0
+      return students.where("user_id=:user_id", user_id: user_id).first
+    end
+
+    # Validates that the tutorial exists for the unit
+    if (not tutorial_id.nil?) and tutorials.where("id=:id", id: tutorial_id).count == 0
+      return nil
+    end
+
     # Put the user in the appropriate tutorial (ie. create a new unit_role)
     unit_role = UnitRole.create!(
       user_id: user_id,
-      tutorial_id: tutorial_id,
+      #tutorial_id: tutorial_id,
       unit_id: self.id,
       role_id: Role.where(name: 'Student').first.id
     )
+
+    unit_role.tutorial_id = tutorial_id unless tutorial_id.nil?
+
+    unit_role.save!
 
     project = Project.create!(
       unit_role_id: unit_role.id,
@@ -140,12 +154,12 @@ class Unit < ActiveRecord::Base
 
     CSV.foreach(file) do |row|
       # Make sure we're not looking at the header or an empty line
-      next if row[0] =~ /Subject Code/
-      next if row[5] !~ /^LA\d/
+      next if row[0] =~ /subject_code/
+      # next if row[5] !~ /^LA\d/
 
       subject_code, username  = row[0..1]
       first_name, last_name   = [row[2], row[3]].map{|name| name.titleize }
-      email, class_id         = row[4..5]
+      email, tutorial_code         = row[4..5]
 
       project_participant = User.find_or_create_by_username(username: username) {|new_user|
         new_user.username           = username
@@ -154,7 +168,7 @@ class Unit < ActiveRecord::Base
         new_user.email              = email
         new_user.nickname           = first_name
         new_user.encrypted_password = BCrypt::Password.create("password")
-        new_user.role_id            = Role.student_id # TODO: Do we assume they're students>
+        new_user.role_id            = Role.student_id
       }
 
       project_participant.save!(validate: false) unless project_participant.persisted?
@@ -164,12 +178,25 @@ class Unit < ActiveRecord::Base
         projects: {unit_id: id}
       ).count == 0
 
-      tutorial = tutorial_cache[class_id] || Tutorial.where(code: class_id, unit_id: id).first
-      tutorial_cache[class_id] ||= tutorial
+      tutorial = tutorial_cache[tutorial_code] || Tutorial.where(abbreviation: tutorial_code, unit_id: id).first
+      tutorial_cache[tutorial_code] ||= tutorial
 
       # Add the user to the project (if not already in there)
       if user_not_in_project
-        add_user(project_participant.id, tutorial.id, "student")
+        if not tutorial.nil?
+          add_user(project_participant.id, tutorial.id)
+        else
+          add_user(project_participant.id)
+        end
+      end
+    end
+  end
+
+  def export_users_to_csv
+    CSV.generate do |row|
+      row << ["subject_code", "username", "first_name", "last_name", "email", "tutorial"]
+      students.each do |project|
+        row << [project.unit.code, project.student.username,  project.student.first_name, project.student.last_name, project.student.email, project.tutorial_abbr]
       end
     end
   end

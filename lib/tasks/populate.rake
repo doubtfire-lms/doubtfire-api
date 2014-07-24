@@ -285,7 +285,7 @@ namespace :db do
 
           # Add a random number of students to the tutorial
           (min_students + rand(delta_students)).times do
-            unit.add_user(find_or_create_student.call("student_#{student_count}").id, tutorial.id, "student")
+            unit.add_user(find_or_create_student.call("student_#{student_count}").id, tutorial.id)
             student_count += 1
           end
 
@@ -294,7 +294,7 @@ namespace :db do
           # Add fixed students to first tutorial
           if count == 0
             unit_details[:students].each do | student_key |
-              unit.add_user(user_cache[student_key].id, tutorial.id, "student")
+              unit.add_user(user_cache[student_key].id, tutorial.id)
             end
           end
         end
