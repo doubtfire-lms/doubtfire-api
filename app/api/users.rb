@@ -149,7 +149,7 @@ module Api
       requires :file, type: Rack::Multipart::UploadedFile, :desc => "CSV upload file."
     end
     post '/csv/users' do
-      if not authorise? current_user, User, :uploadCSV
+      if not authorise? current_user, User, :uploadCSV, :users
         error!({"error" => "Not authorised to upload CSV of users"}, 403)
       end
       
@@ -164,7 +164,7 @@ module Api
     
     desc "Download CSV of all users"
     get '/csv/users' do
-      if not authorise? current_user, User, :downloadCSV
+      if not authorise? current_user, User, :downloadCSV, :users
         error!({"error" => "Not authorised to upload CSV of users"}, 403)
       end
       

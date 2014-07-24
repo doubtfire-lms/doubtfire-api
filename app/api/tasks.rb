@@ -42,6 +42,42 @@ module Api
         error!({"error" => "Couldn't find Task with id=#{params[:id]}" }, 403)
       end 
     end
+    
+    desc "Upload CSV of tasks to the provided unit"
+    params do
+      requires :file, type: Rack::Multipart::UploadedFile, :desc => "CSV upload file."
+      requires :unit_id, type: Integer, :desc => "The unit to upload tasks to"
+    end
+    post '/csv/tasks' do
+      if not authorise? current_user, User, :uploadCSV, :tasks
+        error!({"error" => "Not authorised to upload CSV of users"}, 403)
+      end
+      
+      # check mime is correct before uploading
+      if not params[:file][:type] == "text/csv"
+        error!({"error" => "File given is not a CSV file"}, 403)
+      end
+      
+      # Actually import...
+      User.import_from_csv(params[:file][:tempfile])
+    end
+    
+    desc "Download CSV of all tasks for the given unit"
+    params do
+      requires :unit_id, type: Integer, :desc => "The unit to download tasks from"
+    end
+    get '/csv/users' do
+      if not authorise? current_user, User, :downloadCSV, :tasks
+        error!({"error" => "Not authorised to upload CSV of users"}, 403)
+      end
+      
+      content_type "application/octet-stream"
+      header['Content-Disposition'] = "attachment; filename=doubtfire_users.csv "
+      env['api.format'] = :binary
+      User.export_to_csv
+      
+    end
+    
   end
 end
 
