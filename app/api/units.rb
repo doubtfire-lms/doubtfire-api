@@ -20,13 +20,17 @@ module Api
       end
     end
 
-    desc "Get units related to the current user"
+    desc "Get units related to the current user for admin purposes"
     params do
       optional :include_in_active, type: Boolean, desc: 'Include units that are not active'
     end
     get '/units' do
+      if not authorise? current_user, User, :convene_units
+        error!({"error" => "Unable to list units" }, 403)
+      end
+
       # gets only the units the current user can "see"
-      units = Unit.for_user current_user
+      units = Unit.for_user_admin current_user
 
       if not params[:include_in_active]
         units = units.where("active = true")
@@ -55,6 +59,7 @@ module Api
         optional :description
         optional :start_date
         optional :end_date
+        optional :active
       end
     end
     put '/units/:id' do 
@@ -70,7 +75,8 @@ module Api
               :code,
               :description,
               :start_date, 
-              :end_date
+              :end_date,
+              :active
              )
 
       unit.update!(unit_parameters)
@@ -106,7 +112,7 @@ module Api
 
       # Employ current user as convenor
       unit.employ_staff(current_user, Role.convenor)
-      unit
+      ShallowUnitSerializer.new(unit)
     end
 
     desc "Upload CSV of all the students in a unit"
