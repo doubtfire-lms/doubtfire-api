@@ -166,7 +166,8 @@ class Unit < ActiveRecord::Base
   # Only Student ID, First Name, and Surname are used.
   def import_users_from_csv(file)
     tutorial_cache = {}
-
+    added_users = []
+    
     CSV.foreach(file) do |row|
       # Make sure we're not looking at the header or an empty line
       next if row[0] =~ /subject_code/
@@ -198,6 +199,7 @@ class Unit < ActiveRecord::Base
 
       # Add the user to the project (if not already in there)
       if user_not_in_project
+        added_users << project_participant
         if not tutorial.nil?
           enrol_student(project_participant.id, tutorial.id)
         else
@@ -205,6 +207,7 @@ class Unit < ActiveRecord::Base
         end
       end
     end
+    added_users
   end
 
   def export_users_to_csv

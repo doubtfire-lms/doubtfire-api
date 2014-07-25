@@ -114,9 +114,9 @@ module Api
       requires :file, type: Rack::Multipart::UploadedFile, :desc => "CSV upload file."
     end
     post '/csv/units/:id' do
-      unit= Unit.find(params[:id])
+      unit = Unit.find(params[:id])
       if not authorise? current_user, unit, :uploadCSV
-        error!({"error" => "Not authorised to upload CSV of users"}, 403)
+        error!({"error" => "Not authorised to upload CSV of students to #{unit.code}"}, 403)
       end
       
       # check mime is correct before uploading
@@ -128,15 +128,15 @@ module Api
       unit.import_users_from_csv(params[:file][:tempfile])
     end
     
-    desc "Download CSV of all users"
+    desc "Download CSV of all students in this unit"
     get '/csv/units/:id' do
       unit = Unit.find(params[:id])
       if not authorise? current_user, unit, :downloadCSV
-        error!({"error" => "Not authorised to download CSV of users"}, 403)
+        error!({"error" => "Not authorised to download CSV of students enrolled in #{unit.code}"}, 403)
       end
       
       content_type "application/octet-stream"
-      header['Content-Disposition'] = "attachment; filename=doubtfire_users.csv "
+      header['Content-Disposition'] = "attachment; filename=#{unit.code}-Students.csv "
       env['api.format'] = :binary
       unit.export_users_to_csv
     end
