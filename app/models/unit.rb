@@ -9,7 +9,7 @@ class Unit < ActiveRecord::Base
     { 
       student:  [],
       tutor:    [ :get_students, :enrol_student ],
-      convenor: [ :get_students, :enrol_student, :uploadCSV, :downloadCSV, :update ],
+      convenor: [ :get_students, :enrol_student, :uploadCSV, :downloadCSV, :update, :employ_staff ],
       nil =>    []
     }
   end
@@ -75,11 +75,32 @@ class Unit < ActiveRecord::Base
     Project.joins(:unit_role).where('unit_roles.role_id = 1 and projects.unit_id=:unit_id', unit_id: id)
   end
 
+  # Adds a staff member for a role in a unit
+  def employ_staff(user_id, role_name)
+    if unit_roles.where("user_id=:user_id", user_id: user_id).count > 0
+      return unit_roles.where("user_id=:user_id", user_id: user_id).first
+    end
+
+    new_staff = UnitRole.new
+    new_staff.user_id = user_id
+    new_staff.unit_id = id
+
+    role = Role.where("name = :role",role: role_name).first
+    role = Role.tutor if role.nil?
+
+    # puts "#{user_id}, #{role_name}, #{role.id}, #{role.name}"
+
+    new_staff.role_id = role.id
+    new_staff.save!
+
+    new_staff
+  end
+
   # Adds a user to this project.
-  def add_user(user_id, tutorial_id=nil)
+  def enrol_student(user_id, tutorial_id=nil)
     # Validates that a student is not already assigned to the unit
-    if students.where("user_id=:user_id", user_id: user_id).count > 0
-      return students.where("user_id=:user_id", user_id: user_id).first
+    if unit_roles.where("user_id=:user_id", user_id: user_id).count > 0
+      return unit_roles.where("user_id=:user_id", user_id: user_id).first
     end
 
     # Validates that the tutorial exists for the unit
@@ -184,9 +205,9 @@ class Unit < ActiveRecord::Base
       # Add the user to the project (if not already in there)
       if user_not_in_project
         if not tutorial.nil?
-          add_user(project_participant.id, tutorial.id)
+          enrol_student(project_participant.id, tutorial.id)
         else
-          add_user(project_participant.id)
+          enrol_student(project_participant.id)
         end
       end
     end
