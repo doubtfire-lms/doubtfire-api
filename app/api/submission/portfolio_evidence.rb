@@ -24,7 +24,7 @@ module Api
       desc "Upload and generate doubtfire-task-specific submission document"
       params do
         requires :file0, type: Rack::Multipart::UploadedFile, :desc => "file 0."
-        optional :file1, type: Rack::Multipart::UploadedFile, :desc => "file 0."
+        optional :file1, type: Rack::Multipart::UploadedFile, :desc => "file 1."
       end
       post '/submission/task/:id' do
         task = Task.find(params[:id])
