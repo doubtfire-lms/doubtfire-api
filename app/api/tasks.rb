@@ -81,7 +81,7 @@ module Api
       end
 
       content_type "application/octet-stream"
-      header['Content-Disposition'] = "attachment; filename=doubtfire_users.csv "
+      header['Content-Disposition'] = "attachment; filename=#{unit.code}-Tasks.csv "
       env['api.format'] = :binary
       unit.task_definitions_csv
     end
