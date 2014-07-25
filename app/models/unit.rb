@@ -44,12 +44,11 @@ class Unit < ActiveRecord::Base
   scope :set_active,            ->{ where("active = ?", true) }
   scope :set_inactive,          ->{ where("active = ?", false) }
 
-  def self.for_user(user)
-    # TODO: Revise this
+  def self.for_user_admin(user)
     if user.has_admin_capability?
       Unit.all
     else
-      Unit.joins(:unit_roles).where('unit_roles.user_id = :user_id', user_id: user.id)
+      Unit.joins(:unit_roles).where('unit_roles.user_id = :user_id and unit_roles.role_id = :convenor_role', user_id: user.id, convenor_role: Role.convenor.id)
     end
   end
 
