@@ -1,4 +1,5 @@
 require 'grape'
+require 'unit_serializer'
 
 module Api
   class Units < Grape::API
@@ -20,21 +21,34 @@ module Api
     end
 
     desc "Get units related to the current user"
+    params do
+      optional :include_in_active, type: Boolean, desc: 'Include units that are not active'
+    end
     get '/units' do
+      # gets only the units the current user can "see"
       units = Unit.for_user current_user
+
+      if not params[:include_in_active]
+        units = units.where("active = true")
+      end
+
+      ActiveModel::ArraySerializer.new(units, each_serializer: ShallowUnitSerializer)
     end
 
     desc "Get a unit's details"
     get '/units/:id' do
-      #TODO: authorise!
       unit = Unit.find(params[:id])
+      if not ((authorise? current_user, unit, :get_unit) or (authorise? current_user, User, :admin_units))
+        error!({"error" => "Couldn't find Unit with id=#{params[:id]}" }, 403)
+      end
+
+      unit
     end
 
 
     desc "Update unit"
     params do
       requires :id, type: Integer, desc: 'The unit id to update'
-      optional :convenors, type: JSON, desc: 'The convenor users' 
       group :unit do
         optional :name
         optional :code
@@ -52,8 +66,7 @@ module Api
       
       unit_parameters = ActionController::Parameters.new(params)
       .require(:unit)
-      .permit(:unit_id,
-              :name,
+      .permit(:name,
               :code,
               :description,
               :start_date, 
@@ -62,17 +75,6 @@ module Api
 
       unit.update!(unit_parameters)
       unit_parameters
-
-      convenors = params[:convenors]
-
-      if convenors 
-        unit.convenors.delete! 
-        convenors.each do | u | 
-          userRole = UnitRole.for_user(u)
-          unit.convenors << userRole
-        end 
-      end 
-
     end 
 
 
@@ -84,12 +86,11 @@ module Api
         requires :description
         requires :start_date
         requires :end_date
-        optional :convenors, type:JSON
       end
     end
     post '/units' do
-      if not authorise? current_user, User, :createUnit
-        error!({"error" => "Not authorised to update a unit" }, 403)
+      if not authorise? current_user, User, :create_unit
+        error!({"error" => "Not authorised to create a unit" }, 403)
       end
       
       unit_parameters = ActionController::Parameters.new(params)
@@ -103,19 +104,9 @@ module Api
                                           )
       unit = Unit.create!(unit_parameters)
 
-      if params[:unit][:convenors]
-        params[:unit][:convenors].each do |convenor|
-          convenor_params = ActionController::Parameters.new(convenor)
-                                          .permit(
-                                            :user_id,
-                                            :role_id
-                                          )
-          UnitRole.create!(
-            { unit_id: @unit.id }.merge(convenor_params)
-          )
-        end
-      end
-      @unit
+      # Employ current user as convenor
+      unit.employ_staff(current_user, Role.convenor)
+      unit
     end
 
     desc "Upload CSV of all the students in a unit"

@@ -65,21 +65,6 @@ namespace :db do
       users[tutor_name] = { first_name: Faker::Name.first_name, last_name: Faker::Name.last_name, nickname: tutor_name, role_id: Role.tutor_id}
     end
 
-    # user_roles = {
-    #   student:   [:ajones, :rliston, :akihironoguchi, :joostfunkekupper],
-    #   tutor:     [:acain, :cwoodward],
-    #   convenor:  [:acain, :cwoodward],
-    # }
-
-
-    # List of subject names to use
-    # subjects = {
-    #   "COS10001" => "Introduction To Programming",
-    #   "COS20007" => "Object-Oriented Programming",
-    #   "COS03243" => "Games Programming",
-    #   "COS03046" => "Artificial Intelligence for Games"
-    # }
-
     unit_data = {
       intro_prog: { 
         code: "COS10001", 
@@ -256,7 +241,7 @@ namespace :db do
 
       # Create convenor roles
       unit_details[:convenors].each do | user_key |
-        UnitRole.create!(role_id: role_cache[:convenor].id, user_id: user_cache[user_key].id, unit_id: unit.id)
+        unit.employ_staff(user_cache[user_key], Role.convenor)
       end
 
       student_count = 0
@@ -269,7 +254,7 @@ namespace :db do
 
         tutor = user_cache[user_details[:user]]
         puts "--------> Tutor #{tutor.name}"
-        tutor_unit_role = UnitRole.create!(role_id: role_cache[:tutor].id, user_id: tutor.id, unit_id: unit.id)
+        tutor_unit_role = unit.employ_staff(tutor, Role.tutor)
 
         print "---------> #{user_details[:num]} tutorials"
         user_details[:num].times do | count |
@@ -285,7 +270,7 @@ namespace :db do
 
           # Add a random number of students to the tutorial
           (min_students + rand(delta_students)).times do
-            unit.add_user(find_or_create_student.call("student_#{student_count}").id, tutorial.id)
+            unit.enrol_student(find_or_create_student.call("student_#{student_count}").id, tutorial.id)
             student_count += 1
           end
 
@@ -294,7 +279,7 @@ namespace :db do
           # Add fixed students to first tutorial
           if count == 0
             unit_details[:students].each do | student_key |
-              unit.add_user(user_cache[student_key].id, tutorial.id)
+              unit.enrol_student(user_cache[student_key].id, tutorial.id)
             end
           end
         end

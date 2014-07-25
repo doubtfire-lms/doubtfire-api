@@ -14,6 +14,10 @@ module Api
       optional :unit_id, type: Integer, desc: 'Get user roles in indicated unit'
     end
     get '/unit_roles' do
+      if not authorise? current_user, User, :act_tutor
+        return []
+      end
+
       unit_roles = UnitRole.for_user current_user
 
       if params[:unit_id]
@@ -26,9 +30,10 @@ module Api
     desc "Delete a unit role"
     delete '/unit_roles/:id' do 
       unit_role = UnitRole.find(params[:id])
-      #if authorise? current_user, unit_role, :delete
-      unit_role.destroy
-      #end 
+
+      if not ((authorise? current_user, unit_role.unit, :employ_staff) or (authorise? current_user, User, :admin_units))
+        unit_role.destroy
+      end 
     end
 
 
@@ -44,41 +49,53 @@ module Api
     end
 
 
-    desc "Create a role " 
+    desc "Employ a user as a teaching role in a unit" 
     params do 
-      requires :unit_id, type: Integer, desc: 'Unit id'
-      requires :user_id, type: Integer, desc: 'User id'
-      requires :role, type: String, desc: 'The role to create with'
+      requires :unit_id, type: Integer, desc: 'The id of the unit to employ the staff for'
+      requires :user_id, type: Integer, desc: 'The id of the tutor'
+      requires :role, type: String, desc: 'The role for the staff member'
     end 
     post '/unit_roles' do 
-      role = UnitRole.new
-      role.user_id = params[:user_id]
-      role.unit_id = params[:unit_id]
-      role.role_id = Role.where("name = :role",role: params[:role]).first.id
-      role.save
-      role
+      unit = Unit.find(params[:unit_id])
+
+      if not ((authorise? current_user, unit_role.unit, :employ_staff) or (authorise? current_user, User, :admin_units))
+        error!({"error" => "Couldn't find Unit with id=#{params[:id]}" }, 403)
+      end
+      user = User.find(params[:user_id])
+      role = Role.for_name(params[:role])
+
+      if role.nil?
+        error!({"error" => "Couldn't find Role with name=#{params[:role]}" }, 403)
+      end
+
+      if role == Role.student
+        error!({"error" => "Enrol students as projects not unit roles" }, 403)
+      end
+
+      unit.employ_staff(user, role)
     end 
 
     desc "Update a role " 
     params do 
       group :unit_role do 
-        requires :unit_id, type: Integer, desc: 'Unit id'
-        requires :user_id, type: Integer, desc: 'User id'
         requires :role_id, type: Integer, desc: 'The role to create with'
       end 
     end 
     put '/unit_roles/:id' do 
+      unit_role = UnitRole.find_by_id(params[:id])
+
+      if not ((authorise? current_user, unit_role.unit, :employ_staff) or (authorise? current_user, User, :admin_units))
+        error!({"error" => "Couldn't find Unit with id=#{params[:id]}" }, 403)
+      end
+
       unit_role_parameters = ActionController::Parameters.new(params)
         .require(:unit_role)
         .permit(
-          :unit_id,
-          :user_id,
-          :role_id, 
-          :tutorial_id
+          :role_id
         )
-      role = UnitRole.find_by_id(params[:id])
-      role.update!(unit_role_parameters)
-      role
+      
+      unit_role.update!(unit_role_parameters)
+      unit_role
     end 
 
 
