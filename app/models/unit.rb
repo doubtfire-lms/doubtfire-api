@@ -9,7 +9,7 @@ class Unit < ActiveRecord::Base
     { 
       student:  [ :get_unit ],
       tutor:    [ :get_unit, :get_students, :enrol_student ],
-      convenor: [ :get_unit, :get_students, :enrol_student, :uploadCSV, :downloadCSV, :update, :employ_staff ],
+      convenor: [ :get_unit, :get_students, :enrol_student, :uploadCSV, :downloadCSV, :update, :employ_staff, :add_tutorial ],
       nil =>    []
     }
   end
@@ -229,13 +229,18 @@ class Unit < ActiveRecord::Base
     end
   end
   
-  def add_tutorial(day, time, location, tutor_username, abbrev)
+  def add_tutorial(day, time, location, tutor, abbrev)
+    tutor_role = tutors.where('user_id = :user_id', user_id: tutor.id).first
+    if tutor_role.nil?
+      return nil
+    end
+    
     Tutorial.find_or_create_by_unit_id_and_abbreviation(id, abbrev) do |tutorial|
       tutorial.meeting_day      = day
       tutorial.meeting_time     = time
       tutorial.meeting_location = location
-      user_for_tutor            = User.where(username: tutor_username).first
-      tutorial.unit_role_id     = Unit.first.unit_roles.where('user_id = :user_id', user_id: user_for_tutor)
+      tutorial.unit_role_id     = tutor_role.id
+      puts unit_roles.where('user_id = :user_id', user_id: tutor.id)
     end
   end
 

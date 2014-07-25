@@ -114,6 +114,37 @@ module Api
       unit.employ_staff(current_user, Role.convenor)
       ShallowUnitSerializer.new(unit)
     end
+    
+    desc "Add a tutorial with the provided details to this unit"
+    params do
+      #day, time, location, tutor_username, abbrev
+      group :tutorial do
+        requires :day
+        requires :time
+        requires :location
+        requires :tutor_username
+        requires :abbrev
+      end
+    end
+    post '/units/:id/tutorials' do
+      unit = Unit.find(params[:id])
+      if not authorise? current_user, unit, :add_tutorial
+        error!({"error" => "Not authorised to create a tutorial" }, 403)
+      end
+      
+      new_tutorial = params[:tutorial]
+      tutor = User.find_by_username(new_tutorial[:tutor_username])
+      if tutor.nil?
+        error!({"error" => "Couldn't find User with username=#{new_tutorial[:tutor_username]}" }, 403)
+      end
+      
+      result = unit.add_tutorial(new_tutorial[:day], new_tutorial[:time], new_tutorial[:location], tutor, new_tutorial[:abbrev])
+      if result.nil?
+        error!({"error" => "Tutor username invalid (not a tutor for this unit)" }, 403)
+      end
+      
+      result
+    end
 
     desc "Upload CSV of all the students in a unit"
     params do
