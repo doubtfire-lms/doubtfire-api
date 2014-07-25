@@ -222,17 +222,20 @@ class Unit < ActiveRecord::Base
     CSV.foreach(file) do |row|
       next if row[0] =~ /Subject Code/ # Skip header
 
-      class_type, class_id, day, time, location, tutor_username = row[2..-1]
+      class_type, abbrev, day, time, location, tutor_username = row[2..-1]
       next if class_type !~ /Lab/
 
-      Tutorial.find_or_create_by_unit_id_and_code(id, class_id) do |tutorial|
-        tutorial.meeting_day      = day
-        tutorial.meeting_time     = time
-        tutorial.meeting_location = location
-
-        user_for_tutor = User.where(username: tutor_username).first
-        tutorial.user_id          = user_for_tutor.id
-      end
+      add_tutorial(day, time, location, tutor_username, abbrev)
+    end
+  end
+  
+  def add_tutorial(day, time, location, tutor_username, abbrev)
+    Tutorial.find_or_create_by_unit_id_and_abbreviation(id, abbrev) do |tutorial|
+      tutorial.meeting_day      = day
+      tutorial.meeting_time     = time
+      tutorial.meeting_location = location
+      user_for_tutor            = User.where(username: tutor_username).first
+      tutorial.unit_role_id     = Unit.first.unit_roles.where('user_id = :user_id', user_id: user_for_tutor)
     end
   end
 

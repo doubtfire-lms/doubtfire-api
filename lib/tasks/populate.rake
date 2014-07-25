@@ -259,13 +259,13 @@ namespace :db do
         print "---------> #{user_details[:num]} tutorials"
         user_details[:num].times do | count |
           tutorial_count += 1
-          tutorial = Tutorial.create(
-            unit_id: unit.id,
-            unit_role_id: tutor_unit_role.id,
-            meeting_time: "#{8 + rand(12)}:#{['00', '30'].sample}",    # Mon-Fri 8am-7:30pm
-            meeting_day: "#{days.sample}",
-            meeting_location: "#{['EN', 'BA'].sample}#{rand(7)}#{rand(1)}#{rand(9)}", # EN###/BA###
-            abbreviation: "LA1-#{tutorial_count.to_s.rjust(2, '0')}"
+          #day, time, location, tutor_username, abbrev
+          tutorial = unit.add_tutorial(
+            "#{days.sample}",
+            "#{8 + rand(12)}:#{['00', '30'].sample}",    # Mon-Fri 8am-7:30pm
+            "#{['EN', 'BA'].sample}#{rand(7)}#{rand(1)}#{rand(9)}", # EN###/BA###
+            tutor.username,
+            "LA1-#{tutorial_count.to_s.rjust(2, '0')}"
           )
 
           # Add a random number of students to the tutorial
