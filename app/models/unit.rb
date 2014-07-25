@@ -176,7 +176,7 @@ class Unit < ActiveRecord::Base
       first_name, last_name   = [row[2], row[3]].map{|name| name.titleize }
       email, tutorial_code         = row[4..5]
 
-      project_participant = User.find_or_create_by_username(username: username) {|new_user|
+      project_participant = User.find_or_create_by(username: username.downcase) {|new_user|
         new_user.username           = username
         new_user.first_name         = first_name
         new_user.last_name          = last_name
