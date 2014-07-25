@@ -7,9 +7,9 @@ class Unit < ActiveRecord::Base
 
   def self.permissions
     { 
-      student:  [],
-      tutor:    [ :get_students, :enrol_student ],
-      convenor: [ :get_students, :enrol_student, :uploadCSV, :downloadCSV, :update, :employ_staff ],
+      student:  [ :get_unit ],
+      tutor:    [ :get_unit, :get_students, :enrol_student ],
+      convenor: [ :get_unit, :get_students, :enrol_student, :uploadCSV, :downloadCSV, :update, :employ_staff ],
       nil =>    []
     }
   end
@@ -76,24 +76,18 @@ class Unit < ActiveRecord::Base
   end
 
   # Adds a staff member for a role in a unit
-  def employ_staff(user_id, role_name)
-    if unit_roles.where("user_id=:user_id", user_id: user_id).count > 0
-      return unit_roles.where("user_id=:user_id", user_id: user_id).first
+  def employ_staff(user, role)
+    old_role = unit_roles.where("user_id=:user_id", user_id: user.id).first
+    return old_role if not old_role.nil?
+
+    if role != Role.student
+      new_staff = UnitRole.new
+      new_staff.user_id = user.id
+      new_staff.unit_id = id
+      new_staff.role_id = role.id
+      new_staff.save!
+      new_staff
     end
-
-    new_staff = UnitRole.new
-    new_staff.user_id = user_id
-    new_staff.unit_id = id
-
-    role = Role.where("name = :role",role: role_name).first
-    role = Role.tutor if role.nil?
-
-    # puts "#{user_id}, #{role_name}, #{role.id}, #{role.name}"
-
-    new_staff.role_id = role.id
-    new_staff.save!
-
-    new_staff
   end
 
   # Adds a user to this project.

@@ -61,7 +61,18 @@ module Api
       if not ((authorise? current_user, unit_role.unit, :employ_staff) or (authorise? current_user, User, :admin_units))
         error!({"error" => "Couldn't find Unit with id=#{params[:id]}" }, 403)
       end
-      unit.employ_staff(params[:user_id], params[:role]);
+      user = User.find(params[:user_id])
+      role = Role.for_name(params[:role])
+
+      if role.nil?
+        error!({"error" => "Couldn't find Role with name=#{params[:role]}" }, 403)
+      end
+
+      if role == Role.student
+        error!({"error" => "Enrol students as projects not unit roles" }, 403)
+      end
+
+      unit.employ_staff(user, role)
     end 
 
     desc "Update a role " 

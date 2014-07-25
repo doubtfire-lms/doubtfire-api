@@ -2,7 +2,6 @@ require 'unit_role_serializer'
 
 class ShallowUnitSerializer < ActiveModel::Serializer
   attributes :code, :id, :name, :start_date, :end_date, :active
-
 end
 
 class UnitSerializer < ActiveModel::Serializer
