@@ -1,10 +1,6 @@
 require 'grape'
 require 'project_serializer'
 
-# +=== TEMPORARY ONLY! +===
-require 'base64'
-# +=== TEMPORARY ONLY! +===
-
 # getting file MIME types
 require 'filemagic'
 # image to pdf
@@ -32,7 +28,7 @@ module Api
       end
       post '/submission/task/:id' do
         task = Task.find(params[:id])
-        error!({"error" => "#{task.task_definition.name} foo."}, 401)
+
         if task.discuss? or task.complete? or task.fix_and_include?
           msg = { :complete => "is already complete", :discuss => "is ready to discuss with your tutor", :fix_and_include => "has been marked as fix and include. You may no longer submit this task" }
           error!({"error" => "#{task.task_definition.name} #{msg[task.status]}."}, 401)
@@ -55,17 +51,14 @@ module Api
         
         # This task is now ready to submit
         task.trigger_transition 'ready_to_mark', current_user
-        task = Task.update(task.id, :portfolio_evidence => dst)
         
         # +===== TEMPORARY =====+
-        resp = file.read
-        file.unlink
-        content_type "application/octet-stream"
-        env['api.format'] = :binary
-        Base64.encode64(resp)
+        task = Task.update(task.id, :portfolio_evidence => file.path)
         # +===== RELEASE   =====+
         #file.unlink
-        #TaskSubmitSerializer.new(task)
+        #task = Task.update(task.id, :portfolio_evidence => dst)
+
+        TaskSubmitSerializer.new(task)
         
       end #post
       
