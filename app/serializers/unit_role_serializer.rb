@@ -40,11 +40,15 @@ end
 
 
 class UserUnitRoleSerializer < ActiveModel::Serializer
-	attributes :id, :user_id, :user_name, :role
+	attributes :id, :user_id, :name, :role #:user_name?
 
 	def role
 		object.role.name
 	end
+
+  def name
+    object.user.name
+  end
 
   def user_name
     object.user.name

@@ -14,9 +14,10 @@ module Api
       requires :id, type: Integer, desc: 'The user id to update'
       group :tutorial do
         optional :abbreviation  , type: String,   desc: 'The tutorials code'
-        optional :location      , type: String,   desc: 'The tutorials location'
-        optional :day           , type: String,   desc: 'Day of the tutorial'
-        optional :tutor_id      , type: Integer,  desc: 'Id of the tutor'
+        optional :meeting_location      , type: String,   desc: 'The tutorials location'
+        optional :meeting_day           , type: String,   desc: 'Day of the tutorial'
+        optional :tutor_id              , type: Integer,  desc: 'Id of the tutor'
+        optional :meeting_time          , type: String,   desc: 'Time of the tutorial'
       end
     end
     put '/tutorials/:id' do
@@ -32,8 +33,9 @@ module Api
                                           .require(:tutorial)
                                           .permit(
                                             :abbreviation,
-                                            :location,
-                                            :day
+                                            :meeting_location,
+                                            :meeting_day,
+                                            :meeting_time
                                           )
 
       if tut_params[:tutor_id]
@@ -48,11 +50,12 @@ module Api
     desc "Create tutorial"
     params do
       group :tutorial do
-        requires :unit_id       , type: Integer,  desc: 'Id of the unit'
-        requires :tutor_id      , type: Integer,  desc: 'Id of the tutor'
-        requires :abbreviation  , type: String,   desc: 'The tutorials code'
-        requires :location      , type: String,   desc: 'The tutorials location'
-        requires :day           , type: String,   desc: 'Day of the tutorial'
+        requires :unit_id               , type: Integer,  desc: 'Id of the unit'
+        requires :tutor_id              , type: Integer,  desc: 'Id of the tutor'
+        requires :abbreviation          , type: String,   desc: 'The tutorials code'
+        requires :meeting_location      , type: String,   desc: 'The tutorials location'
+        requires :meeting_day           , type: String,   desc: 'Day of the tutorial'
+        requires :meeting_time          , type: String,   desc: 'Time of the tutorial'
       end
     end
     post '/tutorials' do
@@ -65,7 +68,7 @@ module Api
 
       tutor = User.find(tut_params[:tutor_id])
 
-      tutorial = unit.add_tutorial( tut_params[:day], tut_params[:time], tut_params[:location], tutor, tut_params[:abbreviation] )
+      tutorial = unit.add_tutorial( tut_params[:meeting_day], tut_params[:meeting_time], tut_params[:meeting_location], tutor, tut_params[:abbreviation] )
       tutorial
     end
   end
