@@ -190,6 +190,7 @@ class Unit < ActiveRecord::Base
       }
 
       if not project_participant.persisted?
+        project_participant.password = "password"
         project_participant.save
       end
 
