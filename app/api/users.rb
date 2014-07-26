@@ -69,13 +69,16 @@ module Api
                                               :nickname
                                             )
 
+        user.role = Role.student if user.role.nil?
+        old_role = user.role
+
         # have to translate the system_role -> role
         # note we only let user_parameters role if we're actually *changing* the role
         # (i.e., not passing in the *same* role)
         #
         # You cannot change your own permissions
         #
-        if (not change_self) && params[:user][:system_role] && user.role.id != Role.with_name(params[:user][:system_role]).id
+        if (not change_self) && params[:user][:system_role] && old_role.id != Role.with_name(params[:user][:system_role]).id
           user_parameters[:role] = params[:user][:system_role]
         end
 
@@ -85,19 +88,20 @@ module Api
         if user_parameters[:role]
           # work out if promoting or demoting
           new_role = Role.with_name(user_parameters[:role])
+
           if new_role.nil?
             error!({"error" => "No such role name #{user_parameters[:role]}"}, 403)
           end
-          action = new_role.id > user.role.id ? :promoteUser : :demoteUser
+          action = new_role.id > old_role.id ? :promoteUser : :demoteUser
           
           # current user not authorised to peform action with new role?
-          if not authorise? current_user, User, action, User.get_change_role_perm_fn(), [ user.role.name.to_sym, new_role.to_sym ]
+          if not authorise? current_user, User, action, User.get_change_role_perm_fn(), [ old_role.to_sym, new_role.to_sym ]
             error!({"error" => "Not authorised to #{action} user with id=#{params[:id]} to #{new_role.name}" }, 403)
           end
           # update :role to actual Role object rather than String type
           user_parameters[:role] = new_role
         end
-        
+
         # Update changes made to user
         user.update!(user_parameters)
         user
