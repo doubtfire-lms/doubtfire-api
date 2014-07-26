@@ -250,7 +250,7 @@ class Unit < ActiveRecord::Base
       tutorial.meeting_time     = time
       tutorial.meeting_location = location
       tutorial.unit_role_id     = tutor_role.id
-      puts unit_roles.where('user_id = :user_id', user_id: tutor.id)
+      # puts unit_roles.where('user_id = :user_id', user_id: tutor.id)
     end
   end
 

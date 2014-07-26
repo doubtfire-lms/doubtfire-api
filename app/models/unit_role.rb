@@ -36,7 +36,7 @@ class UnitRole < ActiveRecord::Base
       :Student => [ :get ],
       :Convenor => [ :get, :getProjects, :delete ],
       :Tutor => [ :get, :getProjects ],
-      :nil => []
+      :nil => [ ]
     }
   end
 
@@ -58,7 +58,7 @@ class UnitRole < ActiveRecord::Base
 
   def role_for(user)
     unit_role = unit.role_for(user)
-    if unit_role == :student && self.user != user
+    if unit_role == Role.student && self.user != user
       unit_role = nil
     end
     unit_role

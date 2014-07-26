@@ -264,7 +264,7 @@ namespace :db do
             "#{days.sample}",
             "#{8 + rand(12)}:#{['00', '30'].sample}",    # Mon-Fri 8am-7:30pm
             "#{['EN', 'BA'].sample}#{rand(7)}#{rand(1)}#{rand(9)}", # EN###/BA###
-            tutor.username,
+            tutor,
             "LA1-#{tutorial_count.to_s.rjust(2, '0')}"
           )
 

@@ -137,13 +137,7 @@ class User < ActiveRecord::Base
   end
 
   def role_id=(new_role_id)
-    role = Role.find(new_role_id)
-  end
-
-  #
-  # Change the user's role - but ensure that it remains valid based on their roles in units
-  #
-  def role=(new_role)
+    new_role = Role.find(new_role_id)
     new_role = Role.student if new_role.nil?
 
     fail_if_in_unit_role = [ Role.tutor, Role.convenor ] if new_role == Role.student
@@ -157,6 +151,13 @@ class User < ActiveRecord::Base
     end
 
     self[:role_id] = new_role.id
+  end
+
+  #
+  # Change the user's role - but ensure that it remains valid based on their roles in units
+  #
+  def role=(new_role)
+    self.role_id = new_role.id
   end
 
   def email_required?
