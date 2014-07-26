@@ -7,20 +7,20 @@ class Unit < ActiveRecord::Base
 
   def self.permissions
     { 
-      student:  [ :get_unit ],
-      tutor:    [ :get_unit, :get_students, :enrol_student ],
-      convenor: [ :get_unit, :get_students, :enrol_student, :uploadCSV, :downloadCSV, :update, :employ_staff, :add_tutorial ],
-      nil =>    []
+      :Student  => [ :get_unit ],
+      :Tutor    => [ :get_unit, :get_students, :enrol_student ],
+      :Convenor => [ :get_unit, :get_students, :enrol_student, :uploadCSV, :downloadCSV, :update, :employ_staff, :add_tutorial ],
+      :nil      => []
     }
   end
 
   def role_for(user)
-    if convenors.where('unit_roles.user_id=:id', id: user.id).count >= 1
-      :convenor
-    elsif tutors.where('unit_roles.user_id=:id', id: user.id).count >= 1
-      :tutor
+    if convenors.where('unit_roles.user_id=:id', id: user.id).count == 1
+      Role.convenor
+    elsif tutors.where('unit_roles.user_id=:id', id: user.id).count == 1
+      Role.tutor
     elsif students.where('unit_roles.user_id=:id', id: user.id).count == 1
-      :student
+      Role.student
     else
       nil
     end
@@ -34,8 +34,9 @@ class Unit < ActiveRecord::Base
   has_many :projects, dependent: :destroy
   has_many :tutorials, dependent: :destroy
   has_many :unit_roles, dependent: :destroy
+  
   has_many :convenors, -> { joins(:role).where("roles.name = :role", role: 'Convenor') }, class_name: 'UnitRole'
-  has_many :staff, -> { joins(:role).where("roles.name = :role_convenor or roles.name = :role_tutor", role_convenor: 'Convenor', role_tutor: 'Tutor') }, class_name: 'UnitRole' 
+  has_many :staff, ->     { joins(:role).where("roles.name = :role_convenor or roles.name = :role_tutor", role_convenor: 'Convenor', role_tutor: 'Tutor') }, class_name: 'UnitRole' 
 
   scope :current,               ->{ current_for_date(Time.zone.now) }
   scope :current_for_date,      ->(date) { where("start_date <= ? AND end_date >= ?", date, date) }
@@ -92,8 +93,9 @@ class Unit < ActiveRecord::Base
   # Adds a user to this project.
   def enrol_student(user_id, tutorial_id=nil)
     # Validates that a student is not already assigned to the unit
-    if unit_roles.where("user_id=:user_id", user_id: user_id).count > 0
-      return unit_roles.where("user_id=:user_id", user_id: user_id).first
+    existing_role = unit_roles.where("user_id=:user_id", user_id: user_id).first
+    if not existing_role.nil?
+      return existing_role.project
     end
 
     # Validates that the tutorial exists for the unit
@@ -144,7 +146,7 @@ class Unit < ActiveRecord::Base
   end
 
   def change_convenors(convenor_ids)
-    convenor_role = Role.where(name: 'Convenor').first
+    convenor_role = Role.convenor
 
     # Replace the current list of convenors for this project with the new list selected by the user
     unit_convenors        = UnitRole.where(unit_id: self.id, role_id: convenor_role.id)

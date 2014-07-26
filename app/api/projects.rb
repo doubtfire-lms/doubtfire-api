@@ -10,7 +10,7 @@ module Api
       authenticated?
     end
 
-    desc "Get projects"
+    desc "Fetches all of the current user's projects - or those for a given role for tutors"
     params do
       optional :unit_role_id, type: Integer, desc: "Get current user's project related to the indicated unit role"
     end
@@ -35,6 +35,9 @@ module Api
     end
 
     desc "Get project"
+    params do
+      requires :id, type: Integer, desc: "The id of the project to get"
+    end
     get '/projects/:id' do
       project = Project.find(params[:id])
 
@@ -58,7 +61,7 @@ module Api
           if authorise? current_user, project, :trigger_week_end
             project.trigger_week_end( current_user )
           else
-            error!({"error" => "Couldn't find Project with id=#{params[:id]}" }, 403)
+            error!({"error" => "You are not authorised to perform this action for Project with id=#{params[:id]}" }, 403)
           end
         else
           error!({"error" => "Invalid trigger - #{params[:trigger]} unknown" }, 403)
@@ -83,7 +86,7 @@ module Api
       project
     end #put
 
-    desc "Create a project"
+    desc "Enrol a student in a unit, creating them a project"
     params do
         requires :unit_id         , type: Integer,   desc: 'Unit Id'
         requires :student_num      , type: String,   desc: 'Student Number 7 digit code'
@@ -96,7 +99,7 @@ module Api
       if student.nil?
         error!({"error" => "Couldn't find Student with username=#{params[:student_num]}" }, 403)
       end
-
+      
       if authorise? current_user, unit, :enrol_student
         proj = unit.enrol_student(student.id, params[:tutorial_id])
         if proj.nil? 

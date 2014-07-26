@@ -3,8 +3,9 @@ class Tutorial < ActiveRecord::Base
   belongs_to :unit  # Foreign key
   belongs_to :unit_role              # Foreign key
   has_one    :tutor, through: :unit_role, source: :user
-  has_many   :unit_roles
-  has_many   :projects, through: :unit_roles
+
+  has_many   :unit_roles, dependent: :nullify # Students
+  has_many   :projects, through: :unit_roles, dependent: :nullify
 
   def self.default
     tutorial = self.new
@@ -19,6 +20,11 @@ class Tutorial < ActiveRecord::Base
   
   def self.find_by_user(user)
     Tutorial.joins(:tutor).where('user_id = :user_id', user_id: user.id)
+  end
+
+  def tutor
+    result = UnitRole.find_by_id(unit_role_id)
+    result.user unless result.nil?
   end
   
   def name
@@ -36,16 +42,16 @@ class Tutorial < ActiveRecord::Base
     previous_tutor_unit_role = unit_role.id
     assign_tutor(new_tutor)
 
-    # If we had a tutor previously
-    if !previous_tutor_unit_role.nil?
-      # Get the remaining number of tutorials for the tutor in the given unit
-      remaining_tutorials_for_previous_tutor = Tutorial.where(unit_role_id: previous_tutor_unit_role).count
+    # # If we had a tutor previously
+    # if !previous_tutor_unit_role.nil?
+    #   # Get the remaining number of tutorials for the tutor in the given unit
+    #   remaining_tutorials_for_previous_tutor = Tutorial.where(unit_role_id: previous_tutor_unit_role).count
 
-      # Kill the tutor's tutor role if they no longer have any tutorials
-      if remaining_tutorials_for_previous_tutor == 0
-        UnitRole.destroy(previous_tutor_unit_role)
-      end
-    end
+    #   # Kill the tutor's tutor role if they no longer have any tutorials
+    #   if remaining_tutorials_for_previous_tutor == 0
+    #     UnitRole.destroy(previous_tutor_unit_role)
+    #   end
+    # end
   end
 
   def assign_tutor(tutor_user)

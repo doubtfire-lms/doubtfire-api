@@ -43,13 +43,12 @@ module Api
     get '/unit_roles/:id' do
       unit_role = UnitRole.find(params[:id])
 
-      if authorise? current_user, unit_role, :get
-        unit_role
-      else
+      if not authorise? current_user, unit_role, :get
         error!({"error" => "Couldn't find UnitRole with id=#{params[:id]}" }, 403)
       end
+      
+      unit_role
     end
-
 
     desc "Employ a user as a teaching role in a unit" 
     params do 
@@ -99,7 +98,5 @@ module Api
       unit_role.update!(unit_role_parameters)
       unit_role
     end 
-
-
   end
 end

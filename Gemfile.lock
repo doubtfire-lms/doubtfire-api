@@ -224,7 +224,7 @@ DEPENDENCIES
   factory_girl_rails
   faker
   grape (= 0.6.1)
-  grape-active_model_serializers
+  grape-active_model_serializers (~> 1.0.0)
   grape-swagger
   hirb
   launchy

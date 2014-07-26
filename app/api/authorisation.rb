@@ -12,7 +12,7 @@ module AuthorisationHelpers
       obj_class = object.class
     end
 
-    role = object.role_for(user).name.to_sym()
+    role_obj = object.role_for(user) and role = role_obj.to_sym()
     perm_hash = obj_class.permissions
     perms = perm_get_fn.call(role, perm_hash, other)
 

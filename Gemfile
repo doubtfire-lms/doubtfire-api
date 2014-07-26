@@ -16,7 +16,7 @@ gem 'cancan'
 gem 'pg'
 
 gem 'grape', '0.6.1'
-gem 'grape-active_model_serializers'
+gem 'grape-active_model_serializers', '~> 1.0.0'
 gem 'grape-swagger'
 
 gem 'rack-cors', require: 'rack/cors'

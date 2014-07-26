@@ -10,12 +10,11 @@ module Api
       authenticated?
 
       if params[:unit]
-        if params[:unit][:start_date].present? && params[:unit][:end_date].present?
-          start_date  = DateTime.parse(params[:unit][:start_date])
-          end_date    = DateTime.parse(params[:unit][:end_date])
-
-          params[:unit][:start_date]  = start_date
-          params[:unit][:end_date]    = end_date
+        for key in [ :start_date, :end_date ] do
+          if params[:unit][key].present?
+            date_val  = DateTime.parse(params[:unit][key])
+            params[:unit][key]  = date_val
+          end
         end
       end
     end
@@ -42,10 +41,15 @@ module Api
     desc "Get a unit's details"
     get '/units/:id' do
       unit = Unit.find(params[:id])
+
       if not ((authorise? current_user, unit, :get_unit) or (authorise? current_user, User, :admin_units))
         error!({"error" => "Couldn't find Unit with id=#{params[:id]}" }, 403)
       end
-
+      
+      #
+      # Unit uses user from thread to limit exposure
+      #
+      Thread.current[:user] = current_user
       unit
     end
 

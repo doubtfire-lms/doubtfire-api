@@ -20,7 +20,7 @@ module AuthHelpers
   end
   
   def current_user
-    warden.user ||  User.find_by_authentication_token(params[:auth_token])
+    warden.user || User.find_by_authentication_token(params[:auth_token])
   end
 
   # Add the required auth_token to each of the routes for the provided
@@ -49,12 +49,12 @@ module Api
     rescue_from :all
 
     mount Api::Auth
-    mount Api::Units
     mount Api::Projects
     mount Api::Students
     mount Api::Tasks
-    mount Api::Users
     mount Api::UnitRoles
+    mount Api::Units
+    mount Api::Users
     mount Api::Submission::Generate
     mount Api::Submission::PortfolioEvidence
 

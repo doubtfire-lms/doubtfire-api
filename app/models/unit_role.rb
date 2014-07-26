@@ -2,10 +2,15 @@ class UnitRole < ActiveRecord::Base
 
   # Model associations
   belongs_to :unit    # Foreign key
-  belongs_to :user		# Foreign key
-  belongs_to :tutorial 		# Foreign key
+  belongs_to :user    # Foreign key
+  
   belongs_to :role    # Foreign key
-  has_one :project, dependent: :destroy
+
+  belongs_to :tutorial  # for students only! TODO: fix
+  has_one  :project,    dependent: :destroy # for students only! TODO: fix
+
+  
+  has_many :taught_tutorials, class_name: "Tutorial", dependent: :nullify
 
   validates :unit_id, presence: true
   validates :user_id, presence: true
@@ -28,10 +33,10 @@ class UnitRole < ActiveRecord::Base
 
   def self.permissions
     { 
-      student: [ :get, :getProjects ],
-      convenor: [ :get, :getProjects, :delete ],
-      tutor: [ :get, :getProjects ],
-      nil => []
+      :Student => [ :get ],
+      :Convenor => [ :get, :getProjects, :delete ],
+      :Tutor => [ :get, :getProjects ],
+      :nil => []
     }
   end
 
