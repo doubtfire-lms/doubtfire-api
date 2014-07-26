@@ -67,7 +67,6 @@ module Api
       
       # Actually import...
       unit.import_tasks_from_csv(params[:file][:tempfile])
-      unit.task_definitions
     end
     
     desc "Download CSV of all tasks for the given unit"

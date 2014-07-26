@@ -258,6 +258,7 @@ class Unit < ActiveRecord::Base
   def import_tasks_from_csv(file)
     added_tasks = []
     project_cache = nil
+    project_cache ||= Project.where(unit_id: id)
 
     CSV.foreach(file) do |row|
       next if row[0] =~ /^(Task Name)|(name)/ # Skip header
@@ -282,31 +283,34 @@ class Unit < ActiveRecord::Base
         end
       end
 
-      # TODO: Should background/task queue this work
-      task_definition = TaskDefinition.find_or_create_by_unit_id_and_name(id, name) do |task_definition|
-        task_definition.name                        = name
-        task_definition.unit_id                     = id
-        task_definition.abbreviation                = abbreviation
-        task_definition.description                 = description
-        task_definition.weighting                   = BigDecimal.new(weighting)
-        task_definition.required                    = ["Yes", "y", "Y", "yes", "true", "TRUE", "1"].include? required
-        task_definition.target_date                 = Time.zone.parse(target_date)
-        task_definition.upload_requirements         = JSON.parse(upload_requirements)
-      end
-      
-      added_tasks.push(task_definition)
-      project_cache ||= Project.where(unit_id: id)
+      new_task = TaskDefinition.find_by(unit_id: id, abbreviation: abbreviation).nil? && TaskDefinition.find_by(unit_id: id, name: name).nil?
 
-      project_cache.each do |project|
-        Task.create(
-          task_definition_id: task_definition.id,
-          project_id:       project.id,
-          task_status_id:   1,
-          awaiting_signoff: false,
-          completion_date:  nil
-        )
+      if new_task
+        # TODO: Should background/task queue this work
+        task_definition = TaskDefinition.find_or_create_by(unit_id: id, name: name, abbreviation: abbreviation) do |task_definition|
+          task_definition.name                        = name
+          task_definition.unit_id                     = id
+          task_definition.abbreviation                = abbreviation
+          task_definition.description                 = description
+          task_definition.weighting                   = BigDecimal.new(weighting)
+          task_definition.required                    = ["Yes", "y", "Y", "yes", "true", "TRUE", "1"].include? required
+          task_definition.target_date                 = Time.zone.parse(target_date)
+          task_definition.upload_requirements         = JSON.parse(upload_requirements)
+        end
         
-        
+        if task_definition.persisted?
+          added_tasks.push(task_definition)
+
+          project_cache.each do |project|
+            Task.create(
+              task_definition_id: task_definition.id,
+              project_id:         project.id,
+              task_status_id:     1,
+              awaiting_signoff:   false,
+              completion_date:    nil
+            )
+          end
+        end
       end
     end
     added_tasks

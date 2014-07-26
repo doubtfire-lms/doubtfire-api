@@ -5,6 +5,7 @@ class TaskDefinition < ActiveRecord::Base
 
 	# Model validations/constraints
 	validates_uniqueness_of :name, scope:  :unit_id		# task definition names within a unit must be unique
+  validates_uniqueness_of :abbreviation, scope:  :unit_id   # task definition names within a unit must be unique
 
   def status_distribution
     task_instances = tasks
