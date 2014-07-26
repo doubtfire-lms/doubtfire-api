@@ -109,6 +109,7 @@ class User < ActiveRecord::Base
       :Convenor => [ :promoteUser ,
                      :listUsers   ,
                      :createUser  ,
+                     :updateUser  ,
                      :demoteUser  ,
                      :uploadCSV   ,
                      :downloadCSV ,
