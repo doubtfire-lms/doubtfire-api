@@ -174,35 +174,43 @@ class Unit < ActiveRecord::Base
 
       subject_code, username  = row[0..1]
       first_name, last_name   = [row[2], row[3]].map{|name| name.titleize }
-      email, tutorial_code         = row[4..5]
+      email, tutorial_code    = row[4..5]
 
-      project_participant = User.find_or_create_by(username: username.downcase) {|new_user|
-        new_user.username           = username
+      username = username.downcase
+
+      project_participant = User.find_or_create_by(username: username) {|new_user|
         new_user.first_name         = first_name
         new_user.last_name          = last_name
-        new_user.email              = email
         new_user.nickname           = first_name
-        new_user.encrypted_password = BCrypt::Password.create("password")
         new_user.role_id            = Role.student_id
+        new_user.email              = email
+        new_user.encrypted_password = BCrypt::Password.create("password")
       }
 
-      project_participant.save!(validate: false) unless project_participant.persisted?
+      if not project_participant.persisted?
+        project_participant.save
+      end
 
-      user_not_in_project = UnitRole.joins(project: :unit).where(
-        user_id: project_participant.id,
-        projects: {unit_id: id}
-      ).count == 0
+      #
+      # Only import if a valid user - or if save worked
+      #
+      if project_participant.persisted?
+        user_not_in_project = UnitRole.joins(project: :unit).where(
+          user_id: project_participant.id,
+          projects: {unit_id: id}
+        ).count == 0
 
-      tutorial = tutorial_cache[tutorial_code] || Tutorial.where(abbreviation: tutorial_code, unit_id: id).first
-      tutorial_cache[tutorial_code] ||= tutorial
+        tutorial = tutorial_cache[tutorial_code] || Tutorial.where(abbreviation: tutorial_code, unit_id: id).first
+        tutorial_cache[tutorial_code] ||= tutorial
 
-      # Add the user to the project (if not already in there)
-      if user_not_in_project
-        added_users << project_participant
-        if not tutorial.nil?
-          enrol_student(project_participant.id, tutorial.id)
-        else
-          enrol_student(project_participant.id)
+        # Add the user to the project (if not already in there)
+        if user_not_in_project
+          added_users << project_participant
+          if not tutorial.nil?
+            enrol_student(project_participant.id, tutorial.id)
+          else
+            enrol_student(project_participant.id)
+          end
         end
       end
     end

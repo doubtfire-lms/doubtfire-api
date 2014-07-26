@@ -16,6 +16,10 @@ class Role < ActiveRecord::Base
 		Role.find(admin_id)
 	end
 
+	def to_sym
+		name.to_sym
+	end
+
 	#
 	# Helpers to get the role id's:
 	# - These could be made into DB queries, but these values should not change

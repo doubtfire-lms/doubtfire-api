@@ -14,11 +14,11 @@ class User < ActiveRecord::Base
   has_many    :projects, through: :unit_roles
 
   # Model validations/constraints
-  validates :first_name, presence: true
-  validates :last_name, presence: true
-  validates :role_id, presence: true
-  validates :username, presence: true, uniqueness: true
-  validates :email, presence: true, uniqueness: true
+  validates :first_name,  presence: true
+  validates :last_name,   presence: true
+  validates :role_id,     presence: true
+  validates :username,    presence: true, :uniqueness => {:case_sensitive => false}
+  validates :email,       presence: true, :uniqueness => {:case_sensitive => false}
 
   # Queries
   scope :teaching, -> (unit) { User.joins(:unit_roles).where("unit_roles.unit_id = :unit_id and ( unit_roles.role_id = :tutor_role_id or unit_roles.role_id = :convenor_role_id) ", unit_id: unit.id, tutor_role_id: Role.tutor_id, convenor_role_id: Role.convenor_id) }
@@ -26,6 +26,11 @@ class User < ActiveRecord::Base
   scope :convenors, -> { joins(:role).where('roles.id = :convenor_role or roles.id = :admin_role', convenor_role: Role.convenor_id, admin_role: Role.admin_id) }
 
   def username=(name)
+    # strip S or s from start of ids in the form S1234567 or S123456X
+    if (name =~ /[Ss]\d{6}[\dXx]/)
+      name[0] = ""
+    end
+
     self[:username] = name.downcase
   end
 
@@ -85,28 +90,30 @@ class User < ActiveRecord::Base
           #from role  - to role
           :Tutor =>   {   :Student  => [ :demoteUser   ]},
           :Student => {   :Tutor    => [ :promoteUser  ]},
-          :nil => {        :Student  => [ :createUser  ],
+          :nil => {       :Student  => [ :createUser  ],
                           :Tutor    => [ :createUser  ]}
           }
       },
 
       # need nil for non-context permissions (can't have mixed array)
       :Admin =>    [ :createUser  ,
-                         :uploadCSV   ,
-                         :downloadCSV ,
-                         :updateUser  ,
-                         :create_unit ,
-                         :act_tutor   ,
-                         :admin_units ,
-                         :convene_units ],
+                     :uploadCSV   ,
+                     :listUsers   ,
+                     :downloadCSV ,
+                     :updateUser  ,
+                     :create_unit ,
+                     :act_tutor   ,
+                     :admin_units ,
+                     :convene_units ],
       :Convenor => [ :promoteUser ,
-                         :demoteUser  ,
-                         :uploadCSV   ,
-                         :downloadCSV ,
-                         :updateUser  ,
-                         :create_unit ,
-                         :act_tutor   ,
-                         :convene_units ],
+                     :listUsers   ,
+                     :createUser  ,
+                     :demoteUser  ,
+                     :uploadCSV   ,
+                     :downloadCSV ,
+                     :create_unit ,
+                     :act_tutor   ,
+                     :convene_units ],
       :Tutor =>    [ :act_tutor ],
       :Student =>  [  ]
     }
@@ -125,9 +132,31 @@ class User < ActiveRecord::Base
     user
   end
 
-
   def self.role_for(user)
     return user.role
+  end
+
+  def role_id=(new_role_id)
+    role = Role.find(new_role_id)
+  end
+
+  #
+  # Change the user's role - but ensure that it remains valid based on their roles in units
+  #
+  def role=(new_role)
+    new_role = Role.student if new_role.nil?
+
+    fail_if_in_unit_role = [ Role.tutor, Role.convenor ] if new_role == Role.student
+    fail_if_in_unit_role = [ Role.convenor ] if new_role == Role.tutor
+    fail_if_in_unit_role = [] if new_role == Role.admin || new_role == Role.convenor
+
+    for check_role in fail_if_in_unit_role do
+      if unit_roles.where("role_id = :role_id", role_id: check_role.id).count > 0
+        return role
+      end
+    end
+
+    self[:role_id] = new_role.id
   end
 
   def email_required?
@@ -174,15 +203,18 @@ class User < ActiveRecord::Base
       email, password, first_name, last_name, username, nickname, role = row
       
       new_role = Role.with_name(role)
-      
+      username = username.downcase    # ensure that find by username uses lowercase
+
       #
       # If the current user is allowed to create a user in this role
       #
       if authorise? current_user, User, :createUser, User.get_change_role_perm_fn(), [ :nil, new_role.name.to_sym ]
+        #
+        # Find and update or create
+        #
         user = User.find_or_create_by_username(username: username) {|user|
-          user.username           = username
-          user.first_name         = first_name
-          user.last_name          = last_name
+          user.first_name         = first_name.titleize
+          user.last_name          = last_name.titleize
           user.email              = email
           user.encrypted_password = BCrypt::Password.create("password")
           user.nickname           = nickname.nil? || nickname.empty? ? first_name : nickname
@@ -191,8 +223,8 @@ class User < ActiveRecord::Base
         
         # will not be persisted initially as password cannot be blank - so can check
         # which were created using this - will persist changes imported
-        unless user.persisted?
-          user.save!(validate: false)
+        if not user.persisted?
+          user.save
           addedUsers.push(user) if user.persisted?
         end
       end

@@ -11,7 +11,7 @@ module Api
 
     desc "Get the list of users"
     get '/users' do
-      if not authorise? current_user, User, :admin_units
+      if not authorise? current_user, User, :listUsers
         error!({"error" => "Cannot list users - not authorised" }, 403)
       end
 
@@ -47,7 +47,6 @@ module Api
         optional :first_name    , type: String,   desc: 'New first name for user'
         optional :last_name     , type: String,   desc: 'New last name for user'
         optional :email         , type: String,   desc: 'New email address for user'
-        optional :username      , type: String,   desc: 'New username for user'
         optional :nickname      , type: String,   desc: 'New nickname for user'
         optional :system_role   , type: String,   desc: 'New role for user [Admin, Convenor, Tutor, Student]'
       end
@@ -67,7 +66,6 @@ module Api
                                               :first_name,
                                               :last_name,
                                               :email,
-                                              :username,
                                               :nickname
                                             )
 
@@ -150,7 +148,7 @@ module Api
       #
       new_role = Role.with_name(user_parameters[:role])
       if new_role.nil?
-        error!({"error" => "No such role name #{val}"}, 403)
+        error!({"error" => "No such role name #{user_parameters[:role]}"}, 403)
       end
 
       #
@@ -195,7 +193,6 @@ module Api
       header['Content-Disposition'] = "attachment; filename=doubtfire_users.csv "
       env['api.format'] = :binary
       User.export_to_csv
-      
     end
 
   end
