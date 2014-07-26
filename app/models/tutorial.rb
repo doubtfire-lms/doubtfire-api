@@ -39,7 +39,7 @@ class Tutorial < ActiveRecord::Base
 
   def change_tutor(new_tutor)
     # Get the unit role for current tutor
-    previous_tutor_unit_role = unit_role.id
+    # previous_tutor_unit_role = unit_role.id
     assign_tutor(new_tutor)
 
     # # If we had a tutor previously
@@ -57,15 +57,15 @@ class Tutorial < ActiveRecord::Base
   def assign_tutor(tutor_user)
     # Create a role for the user if they're not already a tutor
     # TODO: Move creation to UnitRole and pass it approriate params
-    tutor_unit_role = UnitRole.find_or_create_by_unit_id_and_user_id_and_role_id(
+    tutor_unit_role = UnitRole.find_by(
       unit_id: unit_id,
       user_id: tutor_user.id,
-      role_id: Role.where(name: 'Tutor').first.id
     )
 
-    tutor_unit_role.save
-    self.unit_role = tutor_unit_role
-
-    save
+    if tutor_unit_role and (tutor_unit_role.role == Role.tutor || tutor_unit_role.role == Role.convenor)
+      self.unit_role = tutor_unit_role
+      save
+    end
+    self
   end
 end

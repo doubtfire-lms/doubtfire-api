@@ -245,7 +245,7 @@ class Unit < ActiveRecord::Base
       return nil
     end
     
-    Tutorial.find_or_create_by_unit_id_and_abbreviation(id, abbrev) do |tutorial|
+    Tutorial.find_or_create_by( { unit_id: id, abbreviation: abbrev } ) do |tutorial|
       tutorial.meeting_day      = day
       tutorial.meeting_time     = time
       tutorial.meeting_location = location
