@@ -142,7 +142,7 @@ class Project < ActiveRecord::Base
 
       if weeks_behind <= 3
         :behind
-      elsif weeks_behind > 3 and weeks_behind <= 5
+      elsif weeks_behind > 3 && weeks_behind <= 5
         :danger
       else
         :doomed
@@ -254,7 +254,7 @@ class Project < ActiveRecord::Base
         ]
       # get the done values - those done up to today, or the end of the unit
       done_val = [ date.to_datetime.to_i, 
-          done_tasks.select{|task| (not task.completion_date.nil?) and task.completion_date <= date}.map{|task| task.task_definition.weighting.to_f}.inject(:+) 
+          done_tasks.select{|task| (not task.completion_date.nil?) && task.completion_date <= date}.map{|task| task.task_definition.weighting.to_f}.inject(:+) 
         ]
       # get the completed values - those signed off
       complete_val = [ date.to_datetime.to_i, 
@@ -281,11 +281,11 @@ class Project < ActiveRecord::Base
       if add_projected then projected_results[:values].push projected_val end
 
       # stop adding the target values once zero target value is reached
-      if add_target and target_val[1] == 0 then add_target = false end
+      if add_target && target_val[1] == 0 then add_target = false end
       # stop adding the done tasks once past date - (add once for tasks done this week, hence after adding)
-      if add_done and date > today then add_done = false end
+      if add_done && date > today then add_done = false end
       # stop adding projected values once projected is complete
-      if add_projected and projected_val[1] <= 0 then add_projected = false end
+      if add_projected && projected_val[1] <= 0 then add_projected = false end
     }    
     
     result.push(target_task_results)

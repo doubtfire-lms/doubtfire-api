@@ -45,31 +45,70 @@ class User < ActiveRecord::Base
     role_id == Role.admin_id
   end
   
+  def self.get_change_role_perm_fn()
+    lambda { |role, perm_hash, other| 
+      from_role = other[0]
+      to_role = other[1]
+
+      chg_roles = perm_hash[:change_role] and 
+        role_hash = chg_roles[role] and 
+        from_role_hash = role_hash[from_role] and 
+        from_role_hash[to_role]
+    }
+  end
+
   def self.permissions
     {
+      # change role is a complex check
+      change_role: { 
+        #user role
+        :Admin => {
+          #from role  - to role
+          :Admin => {     :Student  => [ :demoteUser  ],
+                          :Tutor    => [ :demoteUser  ],
+                          :Convenor => [ :demoteUser  ]},
+          :Convenor => {  :Student  => [ :demoteUser  ],
+                          :Tutor    => [ :demoteUser  ],
+                          :Admin    => [ :promoteUser ]},
+          :Tutor => {     :Student  => [ :demoteUser  ],
+                          :Convenor => [ :promoteUser ],
+                          :Admin    => [ :promoteUser ]},
+          :Student => {   :Tutor    => [ :promoteUser ],
+                          :Convenor => [ :promoteUser ],
+                          :Admin    => [ :promoteUser ]},
+          :nil => {        :Student  => [ :createUser  ],
+                          :Tutor    => [ :createUser  ],
+                          :Convenor => [ :createUser  ],
+                          :Admin    => [ :createUser  ]}
+          },
+        :Convenor =>     {
+          #from role  - to role
+          :Tutor =>   {   :Student  => [ :demoteUser   ]},
+          :Student => {   :Tutor    => [ :promoteUser  ]},
+          :nil => {        :Student  => [ :createUser  ],
+                          :Tutor    => [ :createUser  ]}
+          }
+      },
+
       # need nil for non-context permissions (can't have mixed array)
-      Role.admin =>    { :promoteUser => [ Role.admin, Role.convenor, Role.tutor, Role.student ],
-                         :demoteUser  => [ Role.admin, Role.convenor, Role.tutor, Role.student ],
-                         :createUser  => nil,
-                         :uploadCSV   => nil,
-                         :downloadCSV => nil,
-                         :updateUser  => nil,
-                         :create_unit  => nil,
-                         :act_tutor   => nil,
-                         :admin_units => nil,
-                         :convene_units => nil },
-      Role.convenor => { :promoteUser => [ Role.convenor, Role.tutor ],
-                         :demoteUser  => [ Role.tutor ],
-                         :uploadCSV   => nil,
-                         :downloadCSV => nil,
-                         :create_unit  => nil,
-                         :act_tutor   => nil,
-                         :convene_units => nil },
-      Role.tutor =>    { :promoteUser => [ ],
-                         :demoteUser  => [ ],
-                         :act_tutor   => nil },
-      Role.student =>  { :promoteUser => [ ],
-                         :demoteUser  => [ ] }
+      :Admin =>    [ :createUser  ,
+                         :uploadCSV   ,
+                         :downloadCSV ,
+                         :updateUser  ,
+                         :create_unit ,
+                         :act_tutor   ,
+                         :admin_units ,
+                         :convene_units ],
+      :Convenor => [ :promoteUser ,
+                         :demoteUser  ,
+                         :uploadCSV   ,
+                         :downloadCSV ,
+                         :updateUser  ,
+                         :create_unit ,
+                         :act_tutor   ,
+                         :convene_units ],
+      :Tutor =>    [ :act_tutor ],
+      :Student =>  [  ]
     }
   end
 
@@ -125,7 +164,7 @@ class User < ActiveRecord::Base
     end
   end
 
-  def self.import_from_csv(file)
+  def self.import_from_csv(current_user, file)
     addedUsers = []
     
     csv = CSV.read(file)
@@ -133,20 +172,29 @@ class User < ActiveRecord::Base
     csv.shift
     csv.each do |row|
       email, password, first_name, last_name, username, nickname, role = row
-
-      user = User.find_or_create_by_username(username: username) {|user|
-        user.username           = username
-        user.first_name         = first_name
-        user.last_name          = last_name
-        user.email              = email
-        user.encrypted_password = BCrypt::Password.create("password")
-        user.nickname           = first_name
-        user.role_id            = Role.with_name(role).id
-      }
       
-      unless user.persisted?
-        user.save!(validate: false)
-        addedUsers.push(user)
+      new_role = Role.with_name(role)
+      
+      #
+      # If the current user is allowed to create a user in this role
+      #
+      if authorise? current_user, User, :createUser, User.get_change_role_perm_fn(), [ :nil, new_role.name.to_sym ]
+        user = User.find_or_create_by_username(username: username) {|user|
+          user.username           = username
+          user.first_name         = first_name
+          user.last_name          = last_name
+          user.email              = email
+          user.encrypted_password = BCrypt::Password.create("password")
+          user.nickname           = nickname.nil? || nickname.empty? ? first_name : nickname
+          user.role_id            = new_role.id
+        }
+        
+        # will not be persisted initially as password cannot be blank - so can check
+        # which were created using this - will persist changes imported
+        unless user.persisted?
+          user.save!(validate: false)
+          addedUsers.push(user) if user.persisted?
+        end
       end
     end
     

@@ -59,7 +59,7 @@ class Task < ActiveRecord::Base
     # Compare the recommended date with the date given to determine
     # if the task is overdue
     recommended_date = task_definition.target_date
-    project.reference_date > recommended_date and weeks_overdue >= 1
+    project.reference_date > recommended_date && weeks_overdue >= 1
   end
 
   def long_overdue?
@@ -69,13 +69,13 @@ class Task < ActiveRecord::Base
     # Compare the recommended date with the date given to determine
     # if the task is overdue
     recommended_date = task_definition.target_date
-    project.reference_date > recommended_date and weeks_overdue > 2
+    project.reference_date > recommended_date && weeks_overdue > 2
   end
 
   def currently_due?
     # A task is currently due if it is not complete and over/under the due date by less than
     # 7 days
-    !complete? and days_overdue.between?(-7, 7)
+    !complete? && days_overdue.between?(-7, 7)
   end
 
   def weeks_until_due
@@ -111,7 +111,7 @@ class Task < ActiveRecord::Base
   end
   
   def ok_to_submit?
-    status != :complete and status != :discuss
+    status != :complete && status != :discuss
   end
 
   def ready_to_mark?
@@ -119,7 +119,7 @@ class Task < ActiveRecord::Base
   end
 
   def ready_or_complete?
-    status == :complete or status == :discuss or status == :ready_to_mark
+    status == :complete || status == :discuss || status == :ready_to_mark
   end
 
   def fix_and_resubmit?

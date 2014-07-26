@@ -9,25 +9,34 @@ module Api
       authenticated?
     end
 
-    desc "Get users"
+    desc "Get the list of users"
     get '/users' do
-      #TODO: authorise!
+      if not authorise? current_user, User, :admin_units
+        error!({"error" => "Cannot list users - not authorised" }, 403)
+      end
+
       @users = User.all
     end
 
-    desc "Get user"
-    get '/users/:id', requirements: { id: /[0-9]*/ }  do
-      #TODO: authorise!
-      @user = User.find(params[:id])
-    end
+    # desc "Get user"
+    # get '/users/:id', requirements: { id: /[0-9]*/ }  do
+    #   #TODO: authorise!
+    #   @user = User.find(params[:id])
+    # end
 
     desc "Get convenors"
     get '/users/convenors' do
+      if not authorise? current_user, User, :convene_units
+        error!({"error" => "Cannot list convenors - not authorised" }, 403)
+      end
       @user_roles = User.convenors
     end
 
     desc "Get tutors"
     get '/users/tutors' do
+      if not authorise? current_user, User, :convene_units
+        error!({"error" => "Cannot list tutors - not authorised" }, 403)
+      end
       @user_roles = User.tutors
     end
 
@@ -44,10 +53,11 @@ module Api
       end
     end
     put '/users/:id' do
-      
+      change_self = (params[:id] == current_user.id)
+
       # can only modify if current_user.id is same as :id provided
       # (i.e., user wants to update their own data) or if updateUser token
-      if (params[:id] == current_user.id) || (authorise? current_user, User, :updateUser)
+      if change_self || (authorise? current_user, User, :updateUser)
         
         user = User.find(params[:id])
 
@@ -64,10 +74,13 @@ module Api
         # have to translate the system_role -> role
         # note we only let user_parameters role if we're actually *changing* the role
         # (i.e., not passing in the *same* role)
-        if params[:user][:system_role] && user.role.id != Role.with_name(params[:user][:system_role]).id
+        #
+        # You cannot change your own permissions
+        #
+        if (not change_self) && params[:user][:system_role] && user.role.id != Role.with_name(params[:user][:system_role]).id
           user_parameters[:role] = params[:user][:system_role]
         end
-        
+
         #
         # Only allow change of role if current user has permissions to demote/promote the user to the new role
         #
@@ -78,8 +91,9 @@ module Api
             error!({"error" => "No such role name #{user_parameters[:role]}"}, 403)
           end
           action = new_role.id > user.role.id ? :promoteUser : :demoteUser
+          
           # current user not authorised to peform action with new role?
-          if not authorise? current_user, User, action, new_role
+          if not authorise? current_user, User, action, User.get_change_role_perm_fn(), [ user.role.name.to_sym, new_role.to_sym ]
             error!({"error" => "Not authorised to #{action} user with id=#{params[:id]} to #{new_role.name}" }, 403)
           end
           # update :role to actual Role object rather than String type
@@ -109,39 +123,48 @@ module Api
     end
     post '/users' do
       #
-      # Only admins can create users
+      # Only admins and convenors can create users
       #
-      if not authorise? current_user, User, :createUser
+      if not (authorise? current_user, User, :createUser)
         error!({"error" => "Not authorised to create new users"}, 403)
-      else
-        params[:user][:password] = "password"
-        user_parameters = ActionController::Parameters.new(params)
-                                            .require(:user)
-                                            .permit(
-                                              :first_name,
-                                              :last_name,
-                                              :email,
-                                              :username,
-                                              :nickname,
-                                              :password,
-                                            )
-      
-        # have to translate the system_role -> role
-        user_parameters[:role] = params[:user][:system_role]
-          
-        #
-        # Give new user their new role
-        #
-        new_role = Role.with_name(user_parameters[:role])
-        if new_role.nil?
-          error!({"error" => "No such role name #{val}"}, 403)
-        end
-        # update :role to actual Role object rather than String type
-        user_parameters[:role] = new_role
-        
-        user = User.create!(user_parameters)
-        user
       end
+
+      params[:user][:password] = "password"
+      user_parameters = ActionController::Parameters.new(params)
+                                          .require(:user)
+                                          .permit(
+                                            :first_name,
+                                            :last_name,
+                                            :email,
+                                            :username,
+                                            :nickname,
+                                            :password,
+                                          )
+    
+      # have to translate the system_role -> role
+      user_parameters[:role] = params[:user][:system_role]
+      user_parameters[:role] = params[:user][:system_role]
+        
+      #
+      # Give new user their new role
+      #
+      new_role = Role.with_name(user_parameters[:role])
+      if new_role.nil?
+        error!({"error" => "No such role name #{val}"}, 403)
+      end
+
+      #
+      # Check permission to create user with this role
+      #
+      if not authorise? current_user, User, :createUser, User.get_change_role_perm_fn(), [ :nil, new_role.name.to_sym ]
+        error!({"error" => "Not authorised to create new users with role #{new_role.name}"}, 403)
+      end
+
+      # update :role to actual Role object rather than String type
+      user_parameters[:role] = new_role
+      
+      user = User.create!(user_parameters)
+      user
     end
     
     desc "Upload CSV of users"
@@ -159,7 +182,7 @@ module Api
       end
       
       # Actually import...
-      User.import_from_csv(params[:file][:tempfile])
+      User.import_from_csv(current_user, params[:file][:tempfile])
     end
     
     desc "Download CSV of all users"

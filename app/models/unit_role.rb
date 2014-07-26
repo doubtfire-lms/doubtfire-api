@@ -53,7 +53,7 @@ class UnitRole < ActiveRecord::Base
 
   def role_for(user)
     unit_role = unit.role_for(user)
-    if unit_role == :student and self.user != user
+    if unit_role == :student && self.user != user
       unit_role = nil
     end
     unit_role

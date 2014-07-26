@@ -97,7 +97,7 @@ class Unit < ActiveRecord::Base
     end
 
     # Validates that the tutorial exists for the unit
-    if (not tutorial_id.nil?) and tutorials.where("id=:id", id: tutorial_id).count == 0
+    if (not tutorial_id.nil?) && tutorials.where("id=:id", id: tutorial_id).count == 0
       return nil
     end
 
