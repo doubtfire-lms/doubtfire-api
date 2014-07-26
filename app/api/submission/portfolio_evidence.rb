@@ -29,7 +29,7 @@ module Api
       post '/submission/task/:id' do
         task = Task.find(params[:id])
 
-        if task.discuss? or task.complete? or task.fix_and_include?
+        if task.discuss? || task.complete? || task.fix_and_include?
           msg = { :complete => "is already complete", :discuss => "is ready to discuss with your tutor", :fix_and_include => "has been marked as fix and include. You may no longer submit this task" }
           error!({"error" => "#{task.task_definition.name} #{msg[task.status]}."}, 401)
         end

@@ -42,7 +42,7 @@ module Api
     get '/units/:id' do
       unit = Unit.find(params[:id])
 
-      if not ((authorise? current_user, unit, :get_unit) or (authorise? current_user, User, :admin_units))
+      if not ((authorise? current_user, unit, :get_unit) || (authorise? current_user, User, :admin_units))
         error!({"error" => "Couldn't find Unit with id=#{params[:id]}" }, 403)
       end
       

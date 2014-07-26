@@ -315,7 +315,7 @@ class Project < ActiveRecord::Base
 
   def rate_of_completion(date=nil)
     # Return a completion rate of 0.0 if the project is yet to have commenced
-    return 0.0 if !commenced? or completed_tasks.empty?
+    return 0.0 if !commenced? || completed_tasks.empty?
     date ||= reference_date
 
     # TODO: Might make sense to take in the resolution (i.e. days, weeks), rather

@@ -18,11 +18,14 @@ module Api
       @users = User.all
     end
 
-    # desc "Get user"
-    # get '/users/:id', requirements: { id: /[0-9]*/ }  do
-    #   #TODO: authorise!
-    #   @user = User.find(params[:id])
-    # end
+    desc "Get user"
+    get '/users/:id', requirements: { id: /[0-9]*/ }  do
+      user = User.find(params[:id])
+      if not ((user.id == current_user.id) || (authorise? current_user, User, :admin_users))
+        error!({"error" => "Cannot find User with id #{params[:id]}" }, 403)
+      end
+      user
+    end
 
     desc "Get convenors"
     get '/users/convenors' do

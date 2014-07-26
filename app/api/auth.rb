@@ -23,7 +23,7 @@ module Api
         username[0] = ""
       end
 
-      if username.nil? or password.nil?
+      if username.nil? || password.nil?
         error!({"error" => "The request must contain the user username and password."}, 400)
         return
       end

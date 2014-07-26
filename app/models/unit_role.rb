@@ -77,7 +77,7 @@ class UnitRole < ActiveRecord::Base
   end
 
   def is_teacher?
-    is_tutor? or is_convenor?
+    is_tutor? || is_convenor?
   end
 
 

@@ -31,7 +31,7 @@ module Api
     delete '/unit_roles/:id' do 
       unit_role = UnitRole.find(params[:id])
 
-      if not ((authorise? current_user, unit_role.unit, :employ_staff) or (authorise? current_user, User, :admin_units))
+      if not ((authorise? current_user, unit_role.unit, :employ_staff) || (authorise? current_user, User, :admin_units))
         error!({"error" => "Couldn't find UnitRole with id=#{params[:id]}" }, 403)
       end
       
@@ -59,7 +59,7 @@ module Api
     post '/unit_roles' do 
       unit = Unit.find(params[:unit_id])
 
-      if not ((authorise? current_user, unit, :employ_staff) or (authorise? current_user, User, :admin_units))
+      if not ((authorise? current_user, unit, :employ_staff) || (authorise? current_user, User, :admin_units))
         error!({"error" => "Couldn't find Unit with id=#{params[:id]}" }, 403)
       end
       user = User.find(params[:user_id])
@@ -85,7 +85,7 @@ module Api
     put '/unit_roles/:id' do 
       unit_role = UnitRole.find_by_id(params[:id])
 
-      if not ((authorise? current_user, unit_role.unit, :employ_staff) or (authorise? current_user, User, :admin_units))
+      if not ((authorise? current_user, unit_role.unit, :employ_staff) || (authorise? current_user, User, :admin_units))
         error!({"error" => "Couldn't find Unit with id=#{params[:id]}" }, 403)
       end
 

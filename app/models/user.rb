@@ -104,6 +104,7 @@ class User < ActiveRecord::Base
                      :create_unit ,
                      :act_tutor   ,
                      :admin_units ,
+                     :admin_users ,
                      :convene_units ],
       :Convenor => [ :promoteUser ,
                      :listUsers   ,

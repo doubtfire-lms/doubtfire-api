@@ -45,7 +45,7 @@ class StudentProjectSerializer < ActiveModel::Serializer
   end  
 
   def stats
-    if object.task_stats.nil? or object.task_stats.empty?
+    if object.task_stats.nil? || object.task_stats.empty?
       object.update_task_stats
     else
       object.task_stats
@@ -54,7 +54,7 @@ class StudentProjectSerializer < ActiveModel::Serializer
 end
 
 class ProjectSerializer < ActiveModel::Serializer
-  attributes :unit_id, :project_id, :started, :stats, :student_name, :tutor_name, :tutor_id, :burndown_chart_data
+  attributes :unit_id, :project_id, :started, :stats, :student_name, :tutor_name, :tute, :burndown_chart_data
 
   def project_id
     object.id
@@ -62,10 +62,6 @@ class ProjectSerializer < ActiveModel::Serializer
 
   def student_name
   	object.student.name
-  end
-
-  def tutor_id
-    object.main_tutor.id unless object.main_tutor.nil?
   end
 
   def tutor_name
@@ -77,7 +73,7 @@ class ProjectSerializer < ActiveModel::Serializer
   end
 
   def stats
-    if object.task_stats.nil? or object.task_stats.empty?
+    if object.task_stats.nil? || object.task_stats.empty?
       object.update_task_stats
     else
       object.task_stats
