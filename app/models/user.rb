@@ -1,4 +1,7 @@
+require 'authorisation'
+
 class User < ActiveRecord::Base
+
   # Use LDAP (SIMS) for authentication
   if Rails.env.production?
     devise :ldap_authenticatable, :registerable,
@@ -81,7 +84,7 @@ class User < ActiveRecord::Base
           :Student => {   :Tutor    => [ :promoteUser ],
                           :Convenor => [ :promoteUser ],
                           :Admin    => [ :promoteUser ]},
-          :nil => {        :Student  => [ :createUser  ],
+          :nil => {       :Student  => [ :createUser  ],
                           :Tutor    => [ :createUser  ],
                           :Convenor => [ :createUser  ],
                           :Admin    => [ :createUser  ]}
@@ -171,7 +174,7 @@ class User < ActiveRecord::Base
   end
 
   def self.export_to_csv
-    exportables = ["id", "username", "first_name", "last_name", "email", "encrypted_password", "nickname", "role_id"]
+    exportables = ["username", "first_name", "last_name", "email", "nickname", "role_id"]
     CSV.generate do |row|
       row << User.attribute_names.select { | attribute | exportables.include? attribute }.map { | attribute | 
         # rename encrypted_password key to just password and role_id key to just role
@@ -203,7 +206,8 @@ class User < ActiveRecord::Base
     # shift to skip header row
     csv.shift
     csv.each do |row|
-      email, password, first_name, last_name, username, nickname, role = row
+      email, first_name, last_name, username, nickname, role = row
+      # email, password, first_name, last_name, username, nickname, role = row
       
       new_role = Role.with_name(role)
       username = username.downcase    # ensure that find by username uses lowercase
@@ -211,11 +215,11 @@ class User < ActiveRecord::Base
       #
       # If the current user is allowed to create a user in this role
       #
-      if authorise? current_user, User, :createUser, User.get_change_role_perm_fn(), [ :nil, new_role.name.to_sym ]
+      if (not new_role.nil?) && AuthorisationHelpers::authorise?(current_user, User, :createUser, User.get_change_role_perm_fn(), [ :nil, new_role.to_sym ])
         #
         # Find and update or create
         #
-        user = User.find_or_create_by_username(username: username) {|user|
+        user = User.find_or_create_by(username: username) {|user|
           user.first_name         = first_name.titleize
           user.last_name          = last_name.titleize
           user.email              = email
@@ -224,9 +228,13 @@ class User < ActiveRecord::Base
           user.role_id            = new_role.id
         }
         
+        puts "New record: #{user.new_record?}"
+        puts "Persisted: #{user.persisted?}"
+
         # will not be persisted initially as password cannot be blank - so can check
         # which were created using this - will persist changes imported
-        if not user.persisted?
+        if user.new_record?
+          user.password           = "password"
           user.save
           addedUsers.push(user) if user.persisted?
         end
