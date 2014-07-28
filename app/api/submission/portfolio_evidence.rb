@@ -39,11 +39,7 @@ module Api
         unit = task.project.unit
         
         # The filepath where to store this upload...
-        file_server = Doubtfire::Application.config.file_server_location
-        dst = "#{file_server}/#{unit.code}-#{unit.id}/#{student.username}/#{task.task_definition.abbreviation}.pdf"
-        
-        # Make that directory should it not exist
-        FileUtils.mkdir_p(File.dirname(dst))
+        dst = student_work_dir(unit, student, task)
         
         # Remember to delete the file as we don't want to save it with this kind of inspecific request
         file = combine_to_pdf(scoop_files(params, upload_reqs))
@@ -52,14 +48,11 @@ module Api
         # This task is now ready to submit
         task.trigger_transition 'ready_to_mark', current_user
         
-        # +===== TEMPORARY =====+
-        task = Task.update(task.id, :portfolio_evidence => file.path)
-        # +===== RELEASE   =====+
-        #file.unlink
-        #task = Task.update(task.id, :portfolio_evidence => dst)
+        # Remove the tempfile and set portfolio_evidence to the stored file directory
+        file.unlink
+        task = Task.update(task.id, :portfolio_evidence => dst)
 
         TaskSubmitSerializer.new(task)
-        
       end #post
       
       desc "Retrieve submission document included for the task id"

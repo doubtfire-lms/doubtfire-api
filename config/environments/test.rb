@@ -32,5 +32,5 @@ Doubtfire::Application.configure do
   config.active_support.deprecation = :stderr
   
   # File server location for storing student's work
-  config.file_server_location = ""
+  config.student_work_dir = ""
 end

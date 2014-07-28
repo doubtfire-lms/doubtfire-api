@@ -41,5 +41,5 @@ Doubtfire::Application.configure do
   # ActiveRecord::Base.logger = Logger.new(STDOUT)
 
   # File server location for storing student's work
-  config.file_server_location = "#{Rails.root}/student_work"
+  config.student_work_dir = "#{Rails.root}/student_work"
 end
