@@ -9,7 +9,7 @@ class Unit < ActiveRecord::Base
     { 
       :Student  => [ :get_unit ],
       :Tutor    => [ :get_unit, :get_students, :enrol_student ],
-      :Convenor => [ :get_unit, :get_students, :enrol_student, :uploadCSV, :downloadCSV, :update, :employ_staff, :add_tutorial ],
+      :Convenor => [ :get_unit, :get_students, :enrol_student, :uploadCSV, :downloadCSV, :update, :employ_staff, :add_tutorial, :add_task_def ],
       :nil      => []
     }
   end
