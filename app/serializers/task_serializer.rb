@@ -2,14 +2,6 @@ class ShallowTaskSerializer < ActiveModel::Serializer
   attributes :id, :status, :task_definition_id
 end
 
-class TaskSubmitSerializer < ActiveModel::Serializer
-  attributes :id, :status, :project_id, :new_stats, :portfolio_evidence
-
-  def new_stats
-    object.project.task_stats
-  end
-end
-
 class TaskUpdateSerializer < ActiveModel::Serializer
   attributes :id, :status, :project_id, :new_stats
 

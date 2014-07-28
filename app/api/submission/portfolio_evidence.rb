@@ -40,7 +40,7 @@ module Api
         
         # The filepath where to store this upload...
         dst = student_work_dir(unit, student, task)
-        
+
         # Remember to delete the file as we don't want to save it with this kind of inspecific request
         file = combine_to_pdf(scoop_files(params, upload_reqs))
         FileUtils.cp file.path, dst
@@ -52,7 +52,7 @@ module Api
         file.unlink
         task = Task.update(task.id, :portfolio_evidence => dst)
 
-        TaskSubmitSerializer.new(task)
+        TaskUpdateSerializer.new(task)
       end #post
       
       desc "Retrieve submission document included for the task id"

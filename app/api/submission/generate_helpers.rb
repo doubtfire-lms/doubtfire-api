@@ -192,9 +192,11 @@ module Api::Submission::GenerateHelpers
     dst = "#{file_server}/#{unit.code}-#{unit.id}/#{student.username}/#{task.task_definition.abbreviation}.pdf"
     # Make that directory should it not exist
     FileUtils.mkdir_p(File.dirname(dst))
+    dst
   end
   
   module_function :combine_to_pdf
+  module_function :student_work_dir
   module_function :scoop_files
   
 end
