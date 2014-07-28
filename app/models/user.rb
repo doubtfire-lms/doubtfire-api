@@ -1,14 +1,49 @@
 require 'authorisation'
 
 class User < ActiveRecord::Base
+  # attr_encrypted :email, :key => Doubtfire::Application.config.secret_attr_key, :encode => true
+  attr_encrypted :auth_token, :key => Doubtfire::Application.config.secret_attr_key, :encode => true, :attribute => 'authentication_token'  
 
   # Use LDAP (SIMS) for authentication
   if Rails.env.production?
     devise :ldap_authenticatable, :registerable,
          :recoverable, :rememberable, :trackable, :validatable
   else
-    devise :database_authenticatable, :token_authenticatable, :registerable,
+    devise :database_authenticatable, :registerable,
          :recoverable, :rememberable, :trackable, :validatable
+  end
+
+  def authenticate? (password)
+    if Rails.env.production?
+      self.valid_ldap_authentication?(password)
+    else
+      self.valid_password?(password)
+    end
+  end
+
+  def generate_authentication_token!
+    token = nil
+
+    token = loop do
+      token = Devise.friendly_token
+      break token unless User.find_by_auth_token(token)
+    end
+    self.auth_token = token
+
+    if role == Role.student
+      self.auth_token_expiry = DateTime.now + 30.days
+    else
+      self.auth_token_expiry = DateTime.now + 2.hours
+    end
+
+    self.save
+    token
+  end
+
+  def reset_authentication_token!
+    self.auth_token = nil
+    self.auth_token_expiry = DateTime.now
+    self.save
   end
 
   # Model associations

@@ -1,3 +1,4 @@
 Doubtfire::Application.routes.draw do
-  mount Api::Root => '/'
+	devise_for :users
+  	mount Api::Root => '/'
 end

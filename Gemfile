@@ -11,7 +11,8 @@ gem 'faker'
 # Auth
 gem 'devise', '~> 3.1.2'
 gem 'devise_ldap_authenticatable'
-gem 'cancan'
+# gem 'cancan'
+gem 'attr_encrypted', '~> 1.3.2'
 
 gem 'pg'
 

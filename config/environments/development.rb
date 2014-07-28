@@ -42,4 +42,6 @@ Doubtfire::Application.configure do
 
   # File server location for storing student's work
   config.file_server_location = "#{Rails.root}/student_work"
+
+  config.secret_attr_key = '72C287BB-0A34-48AC-8D43-2FB6087E5AA7'
 end

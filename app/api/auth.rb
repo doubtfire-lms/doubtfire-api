@@ -28,30 +28,35 @@ module Api
         return
       end
       #TODO - usernames case sensitive
-      user = User.find_by_username(username.downcase)
+      # user = User.find_by_username(username.downcase)
+      username = username.downcase
 
-      if user.nil?
-        # logger.info("User #{email} failed signin, user cannot be found.")
-        error!({"error" => "Invalid username or password."}, 401)
-        return
-      end
+      user = User.find_or_create_by(username: username) {|user|
+          user.first_name         = "First Name"
+          user.last_name          = "Surname"
+          user.email              = username + "@swin.edu.au"
+          user.nickname           = username
+          user.role_id            = Role.student.id
+        }
 
-      user.ensure_authentication_token!
-
-      if not user.valid_password?(password)
-             
+      if not user.authenticate?(password)
         error!({"error" => "Invalid email or password."}, 401)
       else
-          user.auth_token_expiry = DateTime.now + 30
-          user.save
+        user.generate_authentication_token!
 
-          { user: UserSerializer.new(user), auth_token: user.authentication_token }
+        if user.new_record?
+          user.password = "password"
+          user.encrypted_password = BCrypt::Password.create("password")
+          user.save
+        end
+
+        { user: UserSerializer.new(user), auth_token: user.auth_token }
       end
     end
 
     desc "Sign out"
     delete '/auth/:auth_token' do
-      user=User.find_by_authentication_token(params[:auth_token])
+      user=User.find_by_auth_token(params[:auth_token])
       if user.nil?
         # logger.info("Token not found.")
         error!({"error" => "Invalid token."}, 404)

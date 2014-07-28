@@ -8,19 +8,24 @@ module AuthHelpers
   end
 
   def authenticated?
+    if params[:auth_token]
+      user_by_token = User.find_by_auth_token(params[:auth_token])
+    else
+      user_by_token = nil
+    end
+
     if warden.authenticated?
       return true
-    elsif params[:auth_token] and
-      User.find_by_authentication_token(params[:auth_token]) and
-      User.find_by_authentication_token(params[:auth_token]).auth_token_expiry > DateTime.now
+    elsif params[:auth_token] && user_by_token && user_by_token.auth_token_expiry && user_by_token.auth_token_expiry > DateTime.now
       return true
     else
-      error!({"error" => "Unauth 401. Token invalid or expired"}, 401)
+      sleep((200 + rand(200)) / 1000.0)
+      error!({"error" => "Could not authenticate with token. Token invalid or has expired"}, 401)
     end
   end
   
   def current_user
-    warden.user || User.find_by_authentication_token(params[:auth_token])
+    warden.user || User.find_by_auth_token(params[:auth_token])
   end
 
   # Add the required auth_token to each of the routes for the provided
