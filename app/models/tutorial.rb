@@ -62,7 +62,7 @@ class Tutorial < ActiveRecord::Base
       user_id: tutor_user.id,
     )
 
-    if tutor_unit_role and (tutor_unit_role.role == Role.tutor || tutor_unit_role.role == Role.convenor)
+    if tutor_unit_role && tutor_user.has_tutor_capability? && (tutor_unit_role.role == Role.tutor || tutor_unit_role.role == Role.convenor)
       self.unit_role = tutor_unit_role
       save
     end

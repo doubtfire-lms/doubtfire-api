@@ -80,7 +80,7 @@ class Unit < ActiveRecord::Base
     old_role = unit_roles.where("user_id=:user_id", user_id: user.id).first
     return old_role if not old_role.nil?
 
-    if role != Role.student
+    if (role != Role.student) && user.has_tutor_capability?
       new_staff = UnitRole.new
       new_staff.user_id = user.id
       new_staff.unit_id = id
