@@ -9,7 +9,7 @@ class ShallowUnitRoleSerializer < ActiveModel::Serializer
 end
 
 class UnitRoleSerializer < ActiveModel::Serializer
-  attributes :id, :role, :user_id, :unit_id, :unit_name, :user_name, :project_id
+  attributes :id, :role, :user_id, :unit_id, :unit_name, :name, :project_id
 
   # has_one :user, serializer: ShallowUserSerializer
   # has_one :unit, serializer: ShallowUnitSerializer
@@ -29,7 +29,7 @@ class UnitRoleSerializer < ActiveModel::Serializer
     object.unit.name
   end
 
-  def user_name
+  def name
     object.user.name
   end
 

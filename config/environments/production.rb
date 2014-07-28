@@ -1,5 +1,6 @@
 Doubtfire::Application.configure do
   # Settings specified here will take precedence over those in config/application.rb
+  config.secret_key_base = 
 
   # Code is not reloaded between requests
   config.cache_classes = true
@@ -60,7 +61,7 @@ Doubtfire::Application.configure do
   # config.action_dispatch.x_sendfile_header = 'X-Accel-Redirect' # for nginx
 
   # Force all access to the app over SSL, use Strict-Transport-Security, and use secure cookies.
-  # config.force_ssl = true
+  config.force_ssl = true
 
   # See everything in the log (default is :info)
   # config.log_level = :debug
@@ -94,5 +95,5 @@ Doubtfire::Application.configure do
   config.active_support.deprecation = :notify
   
   # File server location for storing student's work
-  config.file_server_location = ""
+  config.file_server_location = 
 end
