@@ -1,13 +1,12 @@
 namespace :db do
-	
-	desc "Initialise the app with an empty database and only minimal users (the superuser)"
-	task init:  :environment do
-		require 'populator'
-		require 'faker'
-		require 'bcrypt'
+  desc "Initialise the app with an empty database and only minimal users (the superuser)"
+  task init:  :environment do
+    require 'populator'
+    require 'faker'
+    require 'bcrypt'
 
-		# Clear the database
-		[Unit, Project, TaskDefinition, Task, TaskStatus, Tutorial, UnitRole, User, Role, TaskEngagement, TaskSubmission].each(&:delete_all)
+    # Clear the database
+    [Unit, Project, TaskDefinition, Task, TaskStatus, Tutorial, UnitRole, User, Role, TaskEngagement, TaskSubmission].each(&:delete_all)
 
     TaskStatus.create(name:  "Not Submitted", description:  "This task has not been submitted to marked by your tutor.")
     TaskStatus.create(name:  "Complete", description:  "This task has been signed off by your tutor.")
@@ -29,27 +28,27 @@ namespace :db do
     puts "----> Adding Roles"
     role_cache = {}
     roles.each do |role|
-    	Role.create!(name: role[:name], description: role[:description])
+        Role.create!(name: role[:name], description: role[:description])
     end
 
-		admins = {
-	     	ajones: {first: "Allan",  last: "Jones",   nickname: "P-Jiddy"},
-	    	acain: 	{first: "Andrew", last: "Cain", nickname: "Macite"}
-	  	}
+    admins = {
+        acain:  {first: "Andrew", last: "Cain", nickname: "Macite"}
+        ajones: {first: "Allan",  last: "Jones",   nickname: "P-Jiddy"},
+    }
 
-	  puts "--> Adding Admins"
+    puts "--> Adding Admins"
     admins.each do |username, info|
-    	# Create superuser
-			User.populate(1) do |superuser|
-				superuser.username 			 			= username.to_s
-				superuser.nickname 			 			= info[:nickname]
-				superuser.email 			 				= "#{username.to_s}@swin.edu.au"
-				superuser.encrypted_password 	= BCrypt::Password.create("password")
-				superuser.first_name 		 			= info[:first]
-				superuser.last_name 		 			= info[:last]
-				superuser.sign_in_count 	 		= 0
-				superuser.role_id			 		 		= Role.admin.id
-			end
+      # Create superuser
+      User.populate(1) do |superuser|
+          superuser.username              = username.to_s
+          superuser.nickname              = info[:nickname]
+          superuser.email                 = "#{username.to_s}@swin.edu.au"
+          superuser.encrypted_password    = BCrypt::Password.create("password")
+          superuser.first_name            = info[:first]
+          superuser.last_name             = info[:last]
+          superuser.sign_in_count         = 0
+          superuser.role_id               = Role.admin.id
+      end
     end
-	end
+  end
 end
