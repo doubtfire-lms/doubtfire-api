@@ -1,1 +1,0 @@
-angular.module('doubtfire.tasks.partials', ['doubtfire.tasks.partials.modals']);
