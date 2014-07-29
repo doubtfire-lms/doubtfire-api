@@ -1,6 +1,10 @@
 Doubtfire::Application.configure do
+  # File server location for storing student's work
+  config.file_server_location = 
+
   # Settings specified here will take precedence over those in config/application.rb
   config.secret_key_base = 
+  config.secret_attr_key = 
 
   # Code is not reloaded between requests
   config.cache_classes = true
@@ -19,34 +23,20 @@ Doubtfire::Application.configure do
   config.assets.compile = false
 
   # Pre-compiled CSS
-  config.assets.precompile += %w[
-    burndown.css
-    convenor.css
-    convenor_contact_form.css
-    dashboard.css
-    home.css
-    tasks.css
-    tutorials.css
-    units.css
-    users.css
-  ]
+  # config.assets.precompile += %w[
+  #   burndown.css
+  #   convenor.css
+  #   convenor_contact_form.css
+  #   dashboard.css
+  #   home.css
+  #   tasks.css
+  #   tutorials.css
+  #   units.css
+  #   users.css
+  # ]
 
   # Pre-compiled JS
-  config.assets.precompile += %w[
-    administration.js
-    bootstrap.js
-    burndown.js
-    convenor.js
-    home.js
-    projects.js
-    status_distribution.js
-    task_popover.js
-    tasks.js
-    task_status_breakdown.js
-    tutorials.js
-    units.js
-    users.js
-  ]
+  # config.assets.precompile += %w[ ]
 
   # Generate digests for assets URLs
   config.assets.digest = true
@@ -92,8 +82,5 @@ Doubtfire::Application.configure do
   config.i18n.fallbacks = true
 
   # Send deprecation notices to registered listeners
-  config.active_support.deprecation = :notify
-  
-  # File server location for storing student's work
-  config.file_server_location = 
+  config.active_support.deprecation = :notify  
 end

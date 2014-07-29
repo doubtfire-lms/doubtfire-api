@@ -29,14 +29,13 @@ group :development do
 end
 
 group :test do
-  gem 'mysql2'
   gem 'simplecov'
   gem 'capybara'
   gem 'launchy'
   gem 'ci_reporter'
 end
 
-group :production do
+group :production, :test do
   gem 'mysql2'
 end
 
