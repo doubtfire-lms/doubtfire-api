@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html ng-app="doubtfire" ng-controller="AppCtrl">
+    <head>
+        <title>Doubtfire</title>
+        <link rel="shortcut icon" href="assets/images/favicon.ico" type="image/x-icon" />
+
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+        <!-- font awesome from BootstrapCDN -->
+        <link href="//netdna.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet">
+
+        <link href='http://fonts.googleapis.com/css?family=Roboto:400,500,700,300,300italic,400italic,700italic,500italic' rel='stylesheet' type='text/css'>
+
+        <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+        <!--[if lt IE 9]>
+          <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+          <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+        <![endif]-->
+        <style type="text/css"></style><style id="holderjs-style" type="text/css"></style></head>
+
+        <!-- compiled CSS -->
+        <link rel="stylesheet" type="text/css" href="assets/doubtfire.css" />
+
+        <!-- compiled JS -->
+        <script type="text/javascript" src="vendor/angular/angular.js"></script>
+        <script type="text/javascript" src="vendor/angular-cookies/angular-cookies.js"></script>
+        <script type="text/javascript" src="vendor/angular-resource/angular-resource.js"></script>
+        <script type="text/javascript" src="vendor/angular-bootstrap/ui-bootstrap-tpls.js"></script>
+        <script type="text/javascript" src="vendor/angular-ui-router/release/angular-ui-router.js"></script>
+        <script type="text/javascript" src="vendor/d3/d3.js"></script>
+        <script type="text/javascript" src="vendor/lodash/dist/lodash.js"></script>
+        <script type="text/javascript" src="vendor/underscore.string/dist/underscore.string.min.js"></script>
+        <script type="text/javascript" src="vendor/momentjs/moment.js"></script>
+        <script type="text/javascript" src="vendor/nvd3/nv.d3.js"></script>
+        <script type="text/javascript" src="vendor/angularjs-nvd3-directives/dist/angularjs-nvd3-directives.js"></script>
+        <script type="text/javascript" src="vendor/angular-file-upload/angular-file-upload.js"></script>
+        <script type="text/javascript" src="vendor/es5-shim/es5-shim.js"></script>
+        <script type="text/javascript" src="src/app/api/api.js"></script>
+        <script type="text/javascript" src="src/app/app.js"></script>
+        <script type="text/javascript" src="src/app/common/header.js"></script>
+        <script type="text/javascript" src="src/app/errors/errors.js"></script>
+        <script type="text/javascript" src="src/app/home/home.js"></script>
+        <script type="text/javascript" src="src/app/projects/partials/directives/project-contexts.js"></script>
+        <script type="text/javascript" src="src/app/projects/partials/directives/project-modals.js"></script>
+        <script type="text/javascript" src="src/app/projects/partials/directives/project-partials.js"></script>
+        <script type="text/javascript" src="src/app/projects/projects.js"></script>
+        <script type="text/javascript" src="src/app/sessions/partials/directives/session-modals.js"></script>
+        <script type="text/javascript" src="src/app/sessions/partials/directives/session-partials.js"></script>
+        <script type="text/javascript" src="src/app/sessions/sessions.js"></script>
+        <script type="text/javascript" src="src/app/tasks/partials/directives/task-modals.js"></script>
+        <script type="text/javascript" src="src/app/tasks/partials/directives/task-partials.js"></script>
+        <script type="text/javascript" src="src/app/tasks/tasks.js"></script>
+        <script type="text/javascript" src="src/app/units/partials/directives/unit-contexts.js"></script>
+        <script type="text/javascript" src="src/app/units/partials/directives/unit-modals.js"></script>
+        <script type="text/javascript" src="src/app/units/partials/directives/unit-partials.js"></script>
+        <script type="text/javascript" src="src/app/units/units.js"></script>
+        <script type="text/javascript" src="src/app/users/partials/directives/user-contexts.js"></script>
+        <script type="text/javascript" src="src/app/users/partials/directives/user-modals.js"></script>
+        <script type="text/javascript" src="src/app/users/partials/directives/user-partials.js"></script>
+        <script type="text/javascript" src="src/app/users/users.js"></script>
+        <script type="text/javascript" src="src/common/i18n/localize.js"></script>
+        <script type="text/javascript" src="src/common/utilService/utilService.js"></script>
+        <script type="text/javascript" src="src/i18n/resources-locale_default.js"></script>
+        <script type="text/javascript" src="src/i18n/resources-locale_en-AU.js"></script>
+        <script type="text/javascript" src="src/i18n/resources-locale_en-GB.js"></script>
+        <script type="text/javascript" src="src/i18n/resources-locale_en-US.js"></script>
+        <script type="text/javascript" src="templates-common.js"></script>
+        <script type="text/javascript" src="templates-app.js"></script>
+    </head>
+    <body>
+        <div ui-view="header"></div>
+        <div class="container-fluid">
+            <div class="row">
+                <div ui-view="main"></div>
+                <div class="alert-top">
+	<alert ng-repeat="alert in alerts" type="{{alert.type}}" close="alert.close()"><span ng-bind-html="alert.msg"></span></alert>
+</div>
+            </div>
+        </div>
+    </body>
+</html>
