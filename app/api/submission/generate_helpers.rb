@@ -163,11 +163,10 @@ module Api::Submission::GenerateHelpers
         pdf_paths_mutex.synchronize do
           pdf_paths[idx] = [coverp_file.path, output_file.path]
         end
-        
-        # I can now delete this uploaded file
-        file.tempfile.unlink
       end
     end.each { | thread | thread.join }
+    
+    pdf_paths = pdf_paths.flatten
     
     #
     # Aggregate each of the output PDFs
@@ -178,8 +177,8 @@ module Api::Submission::GenerateHelpers
     end
     
     # We don't need any of those pdf_paths files anymore after compiling the final_pdf!
-    pdf_paths.each { | path | FileUtils.rm path } 
-    
+    pdf_paths.each { | path | if File::exist?(path) then FileUtils::rm path end } 
+    files.each { | file | if File::exist?(file.tempfile.path) then file.tempfile.unlink end }
     # We need to do something with this... so we'll let the caller handle that.
     final_pdf
   end
