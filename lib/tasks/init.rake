@@ -32,8 +32,8 @@ namespace :db do
     end
 
     admins = {
-        acain:  {first: "Andrew", last: "Cain", nickname: "Macite"}
-        ajones: {first: "Allan",  last: "Jones",   nickname: "P-Jiddy"},
+        acain:  {first: "Andrew", last: "Cain", nickname: "Macite"},
+        ajones: {first: "Allan",  last: "Jones",   nickname: "P-Jiddy"}
     }
 
     puts "--> Adding Admins"
