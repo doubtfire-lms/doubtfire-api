@@ -1,6 +1,6 @@
 Doubtfire::Application.configure do
   # File server location for storing student's work
-  config.file_server_location = 
+  config.student_work_dir = ""
 
   # Settings specified here will take precedence over those in config/application.rb
   config.secret_key_base = 

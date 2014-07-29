@@ -57,6 +57,7 @@ module Api
     mount Api::Projects
     mount Api::Students
     mount Api::Tasks
+    mount Api::TaskDefinitions
     mount Api::Tutorials
     mount Api::UnitRoles
     mount Api::Units
@@ -68,6 +69,7 @@ module Api
     AuthHelpers.add_auth_to Api::Projects
     AuthHelpers.add_auth_to Api::Students
     AuthHelpers.add_auth_to Api::Tasks
+    AuthHelpers.add_auth_to Api::TaskDefinitions
     AuthHelpers.add_auth_to Api::Tutorials
     AuthHelpers.add_auth_to Api::Users
     AuthHelpers.add_auth_to Api::UnitRoles

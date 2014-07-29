@@ -1,4 +1,10 @@
 Doubtfire::Application.configure do
+
+  # File server location for storing student's work
+  config.student_work_dir = "#{Rails.root}/student_work"
+
+  config.secret_attr_key = '536d7e62379a0871ec67434ed38682662c5b8d0f0da801c654a9b3ca0585e615a3447a89f8e4e8a6c576fcdc8ef91b0beb3ba76d3b60f88d4c7f540f03996bc7'
+
   # Settings specified here will take precedence over those in config/application.rb
 
   # The test environment is used exclusively to run your application's
@@ -29,10 +35,5 @@ Doubtfire::Application.configure do
   config.action_mailer.delivery_method = :test
 
   # Print deprecation notices to the stderr
-  config.active_support.deprecation = :stderr
-  
-  # File server location for storing student's work
-  config.file_server_location = "#{Rails.root}/student_work"
-
-  config.secret_attr_key = '536d7e62379a0871ec67434ed38682662c5b8d0f0da801c654a9b3ca0585e615a3447a89f8e4e8a6c576fcdc8ef91b0beb3ba76d3b60f88d4c7f540f03996bc7'
+  config.active_support.deprecation = :stderr  
 end
