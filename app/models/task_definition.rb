@@ -1,3 +1,5 @@
+require 'json'
+
 class TaskDefinition < ActiveRecord::Base
 	# Model associations
 	belongs_to :unit			   # Foreign key
@@ -23,6 +25,14 @@ class TaskDefinition < ActiveRecord::Base
       fix_and_include:  task_instances.select{|task| task.task_status_id == 6 }.size,
       complete:         task_instances.select{|task| task.task_status_id == 2 }.size
     }
+  end
+
+  def upload_requirements
+    JSON.parse(self['upload_requirements'])
+  end
+
+  def upload_requirements=(req)
+    self['upload_requirements'] = req.to_s
   end
 
   def self.to_csv(task_definitions, options = {})

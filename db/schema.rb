@@ -11,10 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20140721013831) do
-
-  # These are extensions that must be enabled in order to support this database
-  enable_extension "plpgsql"
+ActiveRecord::Schema.define(version: 20140729035754) do
 
   create_table "badges", force: true do |t|
     t.string   "name"
@@ -98,7 +95,7 @@ ActiveRecord::Schema.define(version: 20140721013831) do
     t.datetime "created_at",                                   null: false
     t.datetime "updated_at",                                   null: false
     t.string   "abbreviation"
-    t.json     "upload_requirements"
+    t.string   "upload_requirements"
   end
 
   add_index "task_definitions", ["unit_id"], name: "index_task_definitions_on_unit_id", using: :btree

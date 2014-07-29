@@ -362,7 +362,7 @@ class Project < ActiveRecord::Base
   end
 
   def discuss_tasks
-    assigned_tasks.select{|task| task.discuss? }
+    tasks.select{|task| task.discuss? }
   end
 
   def partially_completed_tasks

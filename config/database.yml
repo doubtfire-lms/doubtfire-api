@@ -7,8 +7,8 @@ development:
   min_messages: warning
 
 test:
-  adapter: postgresql
-  database: doubtfire_test
-  username: itig
-  password: d872$dh
+  adapter: mysql2
   host: localhost
+  database: www_gamification_db1
+  username: www_gamification
+  password: d872$dh
