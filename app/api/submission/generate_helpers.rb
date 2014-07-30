@@ -188,7 +188,7 @@ module Api::Submission::GenerateHelpers
   #
   def student_work_dir(unit, student, task)
     file_server = Doubtfire::Application.config.student_work_dir
-    dst = "#{file_server}/#{unit.code}-#{unit.id}/#{student.username}/#{task.task_definition.abbreviation}.pdf"
+    dst = "#{unit.code}-#{unit.id}/#{student.username}/#{task.task_definition.abbreviation}.pdf"
     # Make that directory should it not exist
     FileUtils.mkdir_p(File.dirname(dst))
     dst

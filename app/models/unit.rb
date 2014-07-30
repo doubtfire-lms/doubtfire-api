@@ -8,8 +8,8 @@ class Unit < ActiveRecord::Base
   def self.permissions
     { 
       :Student  => [ :get_unit ],
-      :Tutor    => [ :get_unit, :get_students, :enrol_student ],
-      :Convenor => [ :get_unit, :get_students, :enrol_student, :uploadCSV, :downloadCSV, :update, :employ_staff, :add_tutorial, :add_task_def ],
+      :Tutor    => [ :get_unit, :get_students, :enrol_student, :get_ready_to_mark_submissions],
+      :Convenor => [ :get_unit, :get_students, :enrol_student, :uploadCSV, :downloadCSV, :update, :employ_staff, :add_tutorial, :add_task_def, :get_ready_to_mark_submissions ],
       :nil      => []
     }
   end
