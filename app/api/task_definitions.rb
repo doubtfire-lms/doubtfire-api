@@ -43,8 +43,9 @@ module Api
                                                   :abbreviation,
                                                   :upload_requirements
                                                 )
-      TaskDefinition.create!(task_params)
-      TaskDefinition.last
+      task_def = TaskDefinition.create!(task_params)
+      unit.add_new_task_def(task_def)
+      task_def
     end
     
     desc "Edits the given task definition"

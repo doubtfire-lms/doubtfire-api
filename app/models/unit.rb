@@ -255,10 +255,22 @@ class Unit < ActiveRecord::Base
     end
   end
 
+  def add_new_task_def(task_def, project_cache=nil)
+    project_cache = Project.where(unit_id: id) if project_cache.nil?
+    project_cache.each do |project|
+      Task.create(
+        task_definition_id: task_definition.id,
+        project_id:         project.id,
+        task_status_id:     1,
+        awaiting_signoff:   false,
+        completion_date:    nil
+      )
+    end
+  end
+
   def import_tasks_from_csv(file)
     added_tasks = []
-    project_cache = nil
-    project_cache ||= Project.where(unit_id: id)
+    project_cache = Project.where(unit_id: id)
 
     CSV.foreach(file) do |row|
       next if row[0] =~ /^(Task Name)|(name)/ # Skip header
@@ -301,15 +313,7 @@ class Unit < ActiveRecord::Base
         if task_definition.persisted?
           added_tasks.push(task_definition)
 
-          project_cache.each do |project|
-            Task.create(
-              task_definition_id: task_definition.id,
-              project_id:         project.id,
-              task_status_id:     1,
-              awaiting_signoff:   false,
-              completion_date:    nil
-            )
-          end
+          add_new_task_def task_definition, project_cache
         end
       end
     end

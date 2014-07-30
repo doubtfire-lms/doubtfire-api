@@ -57,6 +57,7 @@ GEM
       backports (~> 3.0, >= 3.1.0)
       descendants_tracker (~> 0.0.1)
     colored (1.2)
+    daemon_controller (1.2.0)
     daemons (1.1.9)
     descendants_tracker (0.0.3)
     devise (3.1.2)
@@ -122,6 +123,10 @@ GEM
     nokogiri (1.6.1)
       mini_portile (~> 0.5.0)
     orm_adapter (0.5.0)
+    passenger (4.0.48)
+      daemon_controller (>= 1.2.0)
+      rack
+      rake (>= 0.8.1)
     pdfkit (0.6.2)
     pdftk (0.0.4)
       rails
@@ -232,6 +237,7 @@ DEPENDENCIES
   hirb
   launchy
   mysql2
+  passenger (~> 4.0.48)
   pdfkit
   pdftk
   pg
