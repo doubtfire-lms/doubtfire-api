@@ -1,15 +1,5 @@
 require 'grape'
 require 'project_serializer'
-require 'zip'
-
-# getting file MIME types
-require 'filemagic'
-# image to pdf
-require 'RMagick'
-# code to html
-require 'coderay'
-# html to pdf
-require 'pdfkit'
 
 module Api
   module Submission
@@ -43,7 +33,7 @@ module Api
         dst = student_work_dir(unit, student, task)
 
         # Remember to delete the file as we don't want to save it with this kind of inspecific request
-        file = combine_to_pdf(scoop_files(params, upload_reqs))
+        file = combine_to_pdf(scoop_files(params, upload_reqs), student)
         FileUtils.cp file.path, dst
         
         # This task is now ready to submit
@@ -76,51 +66,7 @@ module Api
         env['api.format'] = :binary
 
         File.read(evidence_loc)
-      end
-      
-      desc "Retrieve all submission documents ready to mark for the provided user's tutorials for the given unit id"
-      params do
-        requires :unit_id, type: Integer, :desc => "Unit ID to retrieve submissions for."
-        optional :user_id, type: Integer, :desc => "User ID to retrieve submissions for (optional; will use current_user otherwise)."
-      end
-      get '/submission/assess/' do
-        user = params[:user_id].nil? ? current_user : User.find(params[:user_id])
-        unit = Unit.find(params[:unit_id])
-        
-        if not authorise? user, unit, :get_ready_to_mark_submissions
-          error!({"error" => "Not authorised to batch download ready to mark submissions"}, 401)        
-        end
-        
-        # Array of tasks that need marking for the given unit id
-        tasks_ready_to_mark = UnitRole.tasks_ready_to_mark(current_user).reject{| task | task.project.unit.id != unit.id }
-        download_id = "#{Time.new.strftime("%Y-%m-%d")}-#{unit.code}-#{current_user.username}"
-        output_zip = Tempfile.new(["batch_ready_to_mark_#{current_user.username}", ".zip"])
-        
-        # Create a new zip
-        Zip::File.open(output_zip.path, Zip::File::CREATE) do | zip |
-          csv_str = ""
-          tasks_ready_to_mark.each do | task |
-            # Add to the template entry string
-            csv_str << "#{task.project.student.username},ready_to_mark|discuss|fix_and_resubmit|fix_and_include|redo\n"
-            src_path = task.portfolio_evidence
-            # make dst path of "<student id>/<task abbrev>.pdf"
-            dst_path = "#{task.project.student.username}/#{task.task_definition.abbreviation}.pdf"
-            # now copy it over
-            zip.add(dst_path, src_path)
-          end
-          # Add marking file
-          zip.get_output_stream("marks.csv") { |f| f.puts csv_str }
-        end
-        
-        # Set download headers...
-        content_type "application/octet-stream"
-        header['Content-Disposition'] = "attachment; filename=#{download_id}.zip"
-        env['api.format'] = :binary
-
-        out = File.read(output_zip.path)
-        output_zip.unlink
-        out
-      end #get
+      end # get
     end
   end
 end

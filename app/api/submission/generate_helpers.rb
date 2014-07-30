@@ -1,3 +1,14 @@
+# getting file MIME types
+require 'filemagic'
+# image to pdf
+require 'RMagick'
+# code to html
+require 'coderay'
+# html to pdf
+require 'pdfkit'
+# zipping files
+require 'zip'
+
 module Api::Submission::GenerateHelpers
   
   #
@@ -34,7 +45,7 @@ module Api::Submission::GenerateHelpers
   # It is the caller's responsibility to delete this tempfile
   # once the method is finished.
   #
-  def combine_to_pdf(files)
+  def combine_to_pdf(files, student = nil)
     #
     # Ensure that each file in files has the following attributes:
     # id, name, filename, type, tempfile  
@@ -91,7 +102,12 @@ module Api::Submission::GenerateHelpers
         #
         # Make file coverpage
         #
-        coverpage_data = { "Filename" => "<pre>#{file.filename}</pre>", "Document Type" => file.type.capitalize, "Upload Timestamp" => DateTime.now.strftime("%F %T"), "File Number" => "#{idx+1} of #{files.length}" }
+        coverpage_data = { "Filename" => "<pre>#{file.filename}</pre>", "Document Type" => file.type.capitalize, "Upload Timestamp" => DateTime.now.strftime("%F %T"), "File Number" => "#{idx+1} of #{files.length}"}
+        # Add student details if exists
+        if not student.nil?
+          coverpage_data["Student Name"] = student.name
+          coverpage_data["Student ID"] = student.username
+        end
         coverpage_body = "<h1>#{file.name}</h1>\n<dl>"
         coverpage_data.each do | key, value |
           coverpage_body << "<dt>#{key}</dt><dd>#{value}</dd>\n"
@@ -188,14 +204,101 @@ module Api::Submission::GenerateHelpers
   #
   def student_work_dir(unit, student, task)
     file_server = Doubtfire::Application.config.student_work_dir
-    dst = "#{unit.code}-#{unit.id}/#{student.username}/#{task.task_definition.abbreviation}.pdf"
+    dst = "#{file_server}/#{unit.code}-#{unit.id}/#{student.username}/#{task.task_definition.abbreviation}.pdf"
     # Make that directory should it not exist
     FileUtils.mkdir_p(File.dirname(dst))
     dst
   end
   
+  #
+  # Defines the csv headers for batch download
+  #
+  def mark_csv_headers
+    "Username,Name,Task,ID,ready_to_mark (rtm)|discuss (d)|fix_and_resubmit (fix)|fix_and_include (fixinc)|redo"
+  end
+  
+  
+  #
+  # Generates a download package of the given tasks
+  #
+  def generate_batch_task_zip(tasks, unit)
+    download_id = "#{Time.new.strftime("%Y-%m-%d")}-#{unit.code}-#{current_user.username}"
+    output_zip = Tempfile.new(["batch_ready_to_mark_#{current_user.username}", ".zip"])
+    # Create a new zip
+    Zip::File.open(output_zip.path, Zip::File::CREATE) do | zip |
+      csv_str = mark_csv_headers
+      tasks.each  do | task |
+        # Add to the template entry string
+        student = task.project.student
+        csv_str << "\n#{student.username},#{student.name},#{task.task_definition.abbreviation},#{task.id},rtm"
+        src_path = task.portfolio_evidence
+        # make dst path of "<student id>/<task abbrev>.pdf"
+        dst_path = "#{task.project.student.username}/#{task.task_definition.abbreviation}-#{task.id}.pdf"
+        # now copy it over
+        zip.add(dst_path, src_path)
+      end
+      # Add marking file
+      zip.get_output_stream("marks.csv") { | f | f.puts csv_str }
+    end
+    output_zip
+  end  
+
+  #
+  # Uploads a batch package back into doubtfire
+  #
+  def upload_batch_task_zip(file)
+    updated_tasks = []
+    # check mime is correct before uploading
+    if not file.type == "application/zip"
+      error!({"error" => "File given is not a zip file"}, 403)
+    end
+    Zip::File.open(file.tempfile.path) do |zip|
+      # Process the marking file
+      marking_file = zip.glob("marks.csv").first
+      csv_str = marking_file.get_input_stream.read
+      keys = mark_csv_headers.split(',').map { | s | s.downcase }
+      keys[keys.length-1] = "mark" #rename the big string to just mark
+      entry_data = CSV.parse(csv_str).map { | a | Hash[ keys.zip(a) ] }
+      entry_data.shift #remove header rows
+      # Copy over the updated/marked files to the file system
+      zip.each do |file|
+        # Skip processing marking file
+        next if file.name == "marks.csv"
+        # Extract the id from the filename
+        task_id_from_filename = File.basename(file.name, ".pdf").split('-').last
+        task = Task.find_by_id(task_id_from_filename)
+        next if task.nil?
+        # Ensure that this task's id is inside entry_data
+        task_entry = entry_data.select{ | t | t['id'] == task.id.to_s }.first
+        if task_entry.nil?
+          error!({"error" => "File #{file.name} has a mismatch of task id ##{task.id} (this task id does not exist in marks.csv)"}, 403)
+        end
+        # Ensure that this task's student matches that in entry_data
+        if task_entry['username'] != task.project.student.username
+          error!({"error" => "File #{file.name} has a mismatch of student id (task with id #{task.id} matches student #{task.project.student.username}, not that in marks.csv of #{t['id']}"}, 403)
+        end
+        
+        # Update the task to whatever its associative mark was 
+        valid_marks = %w(ready_to_mark rtm redo fix_and_resubmit fix fix_and_include fixinc discuss d)
+        if task_entry['mark'].nil? or not valid_marks.include? task_entry['mark'].strip
+          msg = task_entry['mark'].nil? ? "it is missing a mark value in marks.csv" : "acceptable mark codes: #{valid_marks.join ' '}"
+          error!({"error" => "Task id #{task.id} has an invalid mark (#{msg})"}, 403)
+        end
+        
+        # Read into the task's portfolio_evidence path the new file
+        file.extract(task.portfolio_evidence){ true }
+        
+        task.trigger_transition(task_entry['mark'], current_user)
+        updated_tasks << task
+      end
+    end
+    updated_tasks
+  end
+  
   module_function :combine_to_pdf
   module_function :student_work_dir
   module_function :scoop_files
+  module_function :upload_batch_task_zip
+  module_function :generate_batch_task_zip
   
 end

@@ -41,11 +41,9 @@ module Api
     desc "Get a unit's details"
     get '/units/:id' do
       unit = Unit.find(params[:id])
-
       if not ((authorise? current_user, unit, :get_unit) || (authorise? current_user, User, :admin_units))
         error!({"error" => "Couldn't find Unit with id=#{params[:id]}" }, 403)
       end
-      
       #
       # Unit uses user from thread to limit exposure
       #
@@ -68,11 +66,9 @@ module Api
     end
     put '/units/:id' do 
       unit= Unit.find(params[:id])
-      
       if not authorise? current_user, unit, :update
         error!({"error" => "Not authorised to update a unit" }, 403)
       end
-      
       unit_parameters = ActionController::Parameters.new(params)
       .require(:unit)
       .permit(:name,
