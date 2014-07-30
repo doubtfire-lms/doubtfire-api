@@ -35,6 +35,10 @@ group :test do
   gem 'ci_reporter'
 end
 
+group :production
+  gem 'passenger', '~> 4.0.48'
+end
+
 group :production, :test do
   gem 'mysql2'
 end
