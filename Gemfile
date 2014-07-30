@@ -35,7 +35,7 @@ group :test do
   gem 'ci_reporter'
 end
 
-group :production
+group :production do
   gem 'passenger', '~> 4.0.48'
 end
 
