@@ -68117,7 +68117,13 @@ angular.module('doubtfire.units', ['doubtfire.units.partials']).config([
       };
       return Students.query({ unit_id: $scope.unit.id }, function (students) {
         return $scope.unit.students = students.map(function (student) {
-          student.tutorial = $scope.tutorialFromId(student.tute)[0].abbreviation;
+          var tute;
+          tute = $scope.tutorialFromId(student.tute);
+          if (tute[0]) {
+            student.tutorial = tute[0].abbreviation;
+          } else {
+            student.tutorial = '';
+          }
           student.first_name = student.name.split(' ')[0];
           student.last_name = student.name.split(' ').pop();
           student.email = student.student_email;

@@ -18,7 +18,7 @@ module Api
       #TODO: authorise!
       unit = Unit.find(params[:unit_id])
 
-      if authorise? current_user, unit, :get_students
+      if (authorise? current_user, unit, :get_students) || (authorise? current_user, User, :admin_units)
         result = unit.students #, each_serializer: ShallowProjectSerializer
         ActiveModel::ArraySerializer.new(result, each_serializer: StudentProjectSerializer)
       else
