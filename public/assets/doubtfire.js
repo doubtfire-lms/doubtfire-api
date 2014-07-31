@@ -69567,27 +69567,28 @@ angular.module("units/partials/templates/unit-create-modal.tpl.html", []).run(["
 
 angular.module("units/show.tpl.html", []).run(["$templateCache", function($templateCache) {
   $templateCache.put("units/show.tpl.html",
-    "<div ng-if=\"unitLoaded\" ng-switch on=\"unitRole.role\">\n" +
-    "	<ul class=\"breadcrumb\">\n" +
-    "    	<li><a href=\"#/home\">Units</a></li>\n" +
-    "    	<li class=\"active\">{{unitRole.unit_name}} {{unitRole.role.name}}</li>\n" +
-    "	</ul>\n" +
-    "	<div class=\"col-md-offset-2 col-md-8\" ng-switch on=\"unitRole.role\">\n" +
-    "    <h2>{{unit.name}} <small>{{unit.code}}</small><p class=\"lead\"> Teacher View </p></h2>\n" +
-    "    <tabset>\n" +
-    "      <tab heading=\"Assess\">\n" +
-    "    		<tutor-unit-context ng-switch-when=\"Tutor\"></tutor-unit-context>\n" +
-    "    		<tutor-unit-context ng-switch-when=\"Convenor\"></tutor-unit-context>\n" +
-    "      </tab>\n" +
-    "      <tab heading=\"Marking\">\n" +
-    "        <tutor-marking-context ng-if=\"unitLoaded\"  ng-switch-when=\"Tutor\"></tutor-marking-context>\n" +
-    "        <tutor-marking-context ng-if=\"unitLoaded\"  ng-switch-when=\"Convenor\"></tutor-marking-context>\n" +
-    "      </tab>\n" +
-    "    </tabset>\n" +
-    "		<!-- <student-unit-context student-project-id=\"unitRole.project_id\" task-def=\"taskDef\" unit=\"unit\" ng-switch-when=\"Student\"></student-unit-context> -->\n" +
-    "	</div>\n" +
-    "</div>\n" +
-    "");
+    "<div ng-if=\"unitLoaded\">\n" +
+    "  <div ng-switch on=\"unitRole.role\">\n" +
+    "  	<ul class=\"breadcrumb\">\n" +
+    "      	<li><a href=\"#/home\">Units</a></li>\n" +
+    "      	<li class=\"active\">{{unitRole.unit_name}} {{unitRole.role.name}}</li>\n" +
+    "  	</ul>\n" +
+    "  	<div class=\"col-md-offset-2 col-md-8\" ng-switch on=\"unitRole.role\">\n" +
+    "      <h2>{{unit.name}} <small>{{unit.code}}</small><p class=\"lead\"> Teacher View </p></h2>\n" +
+    "      <tabset>\n" +
+    "        <tab heading=\"Assess\">\n" +
+    "      		<tutor-unit-context ng-switch-when=\"Tutor\"></tutor-unit-context>\n" +
+    "      		<tutor-unit-context ng-switch-when=\"Convenor\"></tutor-unit-context>\n" +
+    "        </tab>\n" +
+    "        <tab heading=\"Marking\">\n" +
+    "          <tutor-marking-context ng-if=\"unitLoaded\"  ng-switch-when=\"Tutor\"></tutor-marking-context>\n" +
+    "          <tutor-marking-context ng-if=\"unitLoaded\"  ng-switch-when=\"Convenor\"></tutor-marking-context>\n" +
+    "        </tab>\n" +
+    "      </tabset>\n" +
+    "  		<!-- <student-unit-context student-project-id=\"unitRole.project_id\" task-def=\"taskDef\" unit=\"unit\" ng-switch-when=\"Student\"></student-unit-context> -->\n" +
+    "  	</div>\n" +
+    "  </div>\n" +
+    "</div>");
 }]);
 
 angular.module("units/unit.tpl.html", []).run(["$templateCache", function($templateCache) {
