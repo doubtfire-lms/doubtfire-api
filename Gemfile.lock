@@ -123,7 +123,7 @@ GEM
     nokogiri (1.6.1)
       mini_portile (~> 0.5.0)
     orm_adapter (0.5.0)
-    passenger (4.0.48)
+    passenger (4.0.42)
       daemon_controller (>= 1.2.0)
       rack
       rake (>= 0.8.1)
@@ -237,7 +237,7 @@ DEPENDENCIES
   hirb
   launchy
   mysql2
-  passenger (~> 4.0.48)
+  passenger (= 4.0.42)
   pdfkit
   pdftk
   pg

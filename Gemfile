@@ -36,7 +36,7 @@ group :test do
 end
 
 group :production do
-  gem 'passenger', '~> 4.0.48'
+  gem 'passenger', '= 4.0.42'
 end
 
 group :production, :test do
