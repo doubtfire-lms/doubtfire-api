@@ -12,7 +12,8 @@ require 'zip'
 module Api::Submission::GenerateHelpers
   
   def logger
-    Grape::API.logger
+    # Grape::API.logger
+    Rails.logger
   end
 
   #
@@ -127,7 +128,7 @@ module Api::Submission::GenerateHelpers
         logger.debug "pre kit.to_file #{coverp_file.path}"
         kit.to_file coverp_file.path
         logger.debug "post PDFKit call"
-        
+
         #
         # File -> PDF
         #  
