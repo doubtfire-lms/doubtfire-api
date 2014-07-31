@@ -6082,9 +6082,6 @@ a {
   margin-top: 100px;
   font-size: 100px;
 }
-.ng-invalid-required {
-  border-color: red;
-}
 .breadcrumb {
   margin-top: -20px;
   padding-top: 1px;
@@ -6125,16 +6122,14 @@ a {
   border-top-right-radius: 0;
   border-top-left-radius: 0;
 }
-.form-signin ::-webkit-input-placeholder {
+.form-signin .remember-me {
   text-align: center;
 }
-.form-signin :-moz-placeholder {
-  text-align: center;
+.form-signin .remember-me label {
+  padding-top: 3px;
+  font-size: 10px;
 }
-.form-signin ::-moz-placeholder {
-  text-align: center;
-}
-.form-signin :-ms-input-placeholder {
+.form-signin input {
   text-align: center;
 }
 .project-task-bar li {
@@ -6335,7 +6330,10 @@ a.task-status.btn {
   color: white;
 }
 .well-sm.task-status {
-  margin-right: 13px;
+  height: 40px;
+  width: 40px;
+  text-align: center;
+  display: inline-block;
 }
 .well-sm.task-status.ready-to-mark {
   background-color: #0079D8;
@@ -6373,6 +6371,16 @@ a.task-status.btn {
   background-color: #5BB75B;
   background-image: linear-gradient(#62c462, #51a351);
   color: white;
+}
+.panel-heading.task-status h3 {
+  display: inline-block;
+  padding: 15px 0 15px 0;
+}
+.panel-heading.task-status div {
+  margin-top: 2px;
+}
+.panel-heading.task-status .pdf-nav.btn-group {
+  margin: -10px 15px 0 0;
 }
 #sidebar {
   font-size: 10px;

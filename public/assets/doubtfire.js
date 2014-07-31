@@ -66691,20 +66691,37 @@ angular.module('doubtfire.projects.partials.contexts', []).directive('progressIn
       '$modal',
       'TaskFeedback',
       function ($scope, $modal, TaskFeedback) {
-        var loadPdf, renderPdf;
-        $scope.pdfLoaded = false;
+        var loadPdf, pdfLoaded, renderPdf;
+        $scope.pdf = { numPages: 0 };
+        $scope.pageNo = 0;
+        pdfLoaded = false;
         loadPdf = function (task) {
+          $scope.pageNo = 0;
           return PDFJS.getDocument(TaskFeedback.getTaskUrl(task)).then(function (pdf) {
             $scope.pdf = pdf;
             $scope.pageNo = 1;
             return renderPdf();
           });
         };
+        window.onresize = function () {
+          if ($scope.pdf && pdfLoaded) {
+            return renderPdf();
+          }
+        };
         renderPdf = function () {
-          $scope.pdfLoaded = false;
+          pdfLoaded = false;
+          if ($scope.pdf.numPages === 0) {
+            $scope.pageNo = 0;
+            return;
+          }
           return $scope.pdf.getPage($scope.pageNo).then(function (page) {
-            var canvas, context, renderContext, viewport;
+            var canvas, context, maxWidth, renderContext, scale, viewport;
+            maxWidth = document.getElementById('panel').offsetWidth - 30;
             viewport = page.getViewport(1);
+            if (viewport.width > maxWidth) {
+              scale = maxWidth / viewport.width;
+              viewport = page.getViewport(scale);
+            }
             canvas = document.getElementById('pdf');
             context = canvas.getContext('2d');
             canvas.height = viewport.height;
@@ -66714,21 +66731,30 @@ angular.module('doubtfire.projects.partials.contexts', []).directive('progressIn
               viewport: viewport
             };
             return page.render(renderContext).then(function () {
-              return $scope.pdfLoaded = true;
+              return pdfLoaded = true;
             });
-          });
+          }, $scope.$apply());
         };
         $scope.nextPage = function () {
-          if ($scope.pageNo < $scope.pdf.numPages && $scope.pdfLoaded) {
+          if ($scope.pageNo < $scope.pdf.numPages && pdfLoaded) {
             $scope.pageNo++;
             return renderPdf();
           }
         };
         $scope.prevPage = function () {
-          if ($scope.pageNo > 0 && $scope.pdfLoaded) {
+          if ($scope.pageNo > 0 && pdfLoaded) {
             $scope.pageNo--;
             return renderPdf();
           }
+        };
+        $scope.shouldDisableLeftNav = function () {
+          return $scope.pageNo === 1;
+        };
+        $scope.shouldDisableRightNav = function () {
+          return $scope.pageNo === $scope.pdf.numPages;
+        };
+        $scope.shouldHideNav = $scope.corruptPdf = function () {
+          return $scope.pageNo === 0;
         };
         $scope.setActiveTask = function (task) {
           if (task === $scope.activeTask) {
@@ -66741,7 +66767,9 @@ angular.module('doubtfire.projects.partials.contexts', []).directive('progressIn
           return TaskFeedback.getTaskUrl($scope.activeTask);
         };
         $scope.activeTask = $scope.submittedTasks[0];
-        loadPdf($scope.activeTask);
+        if ($scope.activeTask) {
+          loadPdf($scope.activeTask);
+        }
         $scope.statusData = function (task) {
           return {
             icon: statusIcons[task.status],
@@ -68625,7 +68653,7 @@ angular.module("home/index.tpl.html", []).run(["$templateCache", function($templ
     "	  </div>\n" +
     "	</div>\n" +
     "\n" +
-    "	<div class=\"panel panel-default\">\n" +
+    "	<div class=\"panel panel-default\" ng-hide=\"projects.length == 0\">\n" +
     "	  <div class=\"panel-heading\">\n" +
     "	    <h4 class=\"panel-title\">Units You Study</h4>\n" +
     "	  </div>\n" +
@@ -68641,11 +68669,17 @@ angular.module("home/index.tpl.html", []).run(["$templateCache", function($templ
     "	    <h4 class=\"panel-title\">Administration</h4>\n" +
     "	  </div>\n" +
     "	  <div class=\"panel-body\">\n" +
-    "		<div><a href=\"#/admin/units\" if-role=\"Admin\">Manage Units</a></div>\n" +
-    "		<div><a href=\"#/admin/users\" if-role=\"Admin\">Manage Users</a></div>\n" +
+    "  		<div><a href=\"#/admin/units\" if-role=\"Admin\">Manage Units</a></div>\n" +
+    "  		<div><a href=\"#/admin/users\" if-role=\"Admin\">Manage Users</a></div>\n" +
     "	  </div>\n" +
     "	</div>\n" +
     "\n" +
+    "	<div ng-show=\"projects.length == 0 && unitRoles.length == 0\" class=\"text-center col-sm-offset-3 col-sm-6\" ng-class=\"{'hidden' : projects.length == 0 && unitRoles.length == 0}\">\n" +
+    "	  <i class=\"fa fa-fire fa-5x\"></i>\n" +
+    "	  <h1>Welcome To Doubtfire</h1>\n" +
+    "	  <p class=\"lead\">You do not study or teach in any units that use Doubtfire.</p>\n" +
+    "	</div>\n" +
+    "  \n" +
     "	<div class=\"panel panel-default\" if-role=\"Convenor\">\n" +
     "	  <div class=\"panel-heading\">\n" +
     "	    <h4 class=\"panel-title\">Administration</h4>\n" +
@@ -68654,6 +68688,7 @@ angular.module("home/index.tpl.html", []).run(["$templateCache", function($templ
     "			<div><a href=\"#/admin/units\" if-role=\"Admin\">Manage Units</a></div>\n" +
     "	  </div>\n" +
     "	</div>\n" +
+    "	\n" +
     "</div>");
 }]);
 
@@ -68810,51 +68845,53 @@ angular.module("projects/partials/templates/project-modal.tpl.html", []).run(["$
 
 angular.module("projects/partials/templates/task-feedback.tpl.html", []).run(["$templateCache", function($templateCache) {
   $templateCache.put("projects/partials/templates/task-feedback.tpl.html",
-    "<div>\n" +
+    "<div ng-if=\"activeTask\">\n" +
     "  <div class=\"pull-left list-group col-md-2\">\n" +
     "    <a ng-repeat=\"task in submittedTasks\" ng-class=\"{'active' : task == activeTask }\" class=\"list-group-item text-center\" ng-click=\"setActiveTask(task)\">{{task.task_abbr}}</a>\n" +
     "  </div>\n" +
-    "  <div class=\"pull-right col-md-10 well\">\n" +
-    "    <div class=\"col-md-7\">\n" +
-    "      <h3 class=\"lead\">{{activeTask.task_name}}</h3>\n" +
-    "    </div><!--/task-details-->\n" +
-    "    \n" +
-    "    <div class=\"pull-right text-center col-md-1 well-sm task-status {{statusClass(activeTask.status)}}\" tooltip-placement=\"right\" tooltip=\"{{activeStatusData().label}}\">\n" +
-    "      <i class=\"{{activeStatusData().icon}} fa-3x\"></i>\n" +
-    "    </div><!--/task-status-->\n" +
     "\n" +
-    "    <div class=\"col-md-12\">\n" +
-    "      <div class=\"panel panel-default\">\n" +
-    "        <div class=\"panel-heading\" style=\"height: 60px\">\n" +
-    "          <h4 class=\"pull-left\">{{pageNo}} of {{pdf.numPages}}</h4>\n" +
-    "          <div class=\"pull-right btn-group\">\n" +
-    "            <button type=\"button\" class=\"btn btn-default\" ng-disabled=\"pageNo == 1\" ng-click=\"prevPage()\">\n" +
-    "              <span class=\"glyphicon glyphicon-chevron-left\"></span>\n" +
-    "            </button>\n" +
-    "            <button type=\"button\" class=\"btn btn-default\" ng-disabled=\"pageNo == pdf.numPages\" ng-click=\"nextPage()\">\n" +
-    "              <span class=\"glyphicon glyphicon-chevron-right\"></span>\n" +
-    "            </button>\n" +
+    "  <div class=\"col-md-10 pull-right\">\n" +
+    "    <div id=\"panel\" class=\"panel panel-default\">\n" +
+    "      <div class=\"panel-heading task-status row-fluid\">\n" +
+    "          <h3 class=\"panel-title\">{{activeTask.task_name}}</h3><!--/title-->\n" +
+    "          <div class=\"pull-right\">\n" +
+    "            <div class=\"btn-group pdf-nav\" ng-hide=\"shouldHideNav()\">\n" +
+    "              <button type=\"button\" class=\"btn btn-default\" ng-disabled=\"shouldDisableLeftNav()\" ng-click=\"prevPage()\">\n" +
+    "                <span class=\"glyphicon glyphicon-chevron-left\"></span>\n" +
+    "              </button>\n" +
+    "              <button type=\"button\" class=\"btn btn-default\" ng-disabled=\"shouldDisableRightNav()\" ng-click=\"nextPage()\">\n" +
+    "                <span class=\"glyphicon glyphicon-chevron-right\"></span>\n" +
+    "              </button>\n" +
+    "            </div><!--/page-nav-->\n" +
+    "            \n" +
+    "            <div class=\"well-sm task-status {{statusClass(activeTask.status)}}\" tooltip-placement=\"right\" tooltip=\"{{activeStatusData().label}}\">\n" +
+    "              <i class=\"{{activeStatusData().icon}} fa-2x\"></i>\n" +
+    "            </div><!--/status-->\n" +
     "          </div>\n" +
+    "      </div>\n" +
+    "      <div class=\"panel-body\">\n" +
+    "        <p class=\"lead text-center text-danger\" ng-if=\"corruptPdf()\">\n" +
+    "          <br/>\n" +
+    "          <i class=\"fa fa-exclamation-triangle fa-2x\"></i>\n" +
+    "          <br/>\n" +
+    "          PDF preview cannot be rendered\n" +
+    "        </p>\n" +
+    "        <a href=\"{{activeTaskUrl()}}\" ng-if=\"!corruptPdf()\">\n" +
+    "          <canvas width=\"0\" height=\"0\" id=\"pdf\"></canvas>\n" +
+    "        </a>\n" +
+    "      </div>\n" +
+    "      <div class=\"panel-footer\" style=\"height: 60px\">\n" +
+    "        <div class=\"pull-left text-muted\">\n" +
+    "          <strong>Note:</strong> {{activeTask.status != 'ready_to_mark' ? \"Comments are viewable once PDF is downloaded\" : \"Comments will be available once your tutor has assessed your submission\"}}\n" +
     "        </div>\n" +
-    "        <div class=\"panel-body\">\n" +
-    "          <a href=\"{{activeTaskUrl()}}\">\n" +
-    "            <canvas id=\"pdf\"></canvas>\n" +
+    "        <div class=\"pull-right btn-group\">\n" +
+    "          <a href=\"{{activeTaskUrl()}}\" class=\"btn btn-success\">\n" +
+    "            <span class=\"glyphicon glyphicon-cloud-download\"></span>\n" +
     "          </a>\n" +
     "        </div>\n" +
-    "        <div class=\"panel-footer\" style=\"height: 60px\" ng-hide=\"activeTask.status == 'ready_to_mark'\">\n" +
-    "          <div class=\"pull-left text-muted\">\n" +
-    "            <strong>Note:</strong> Comments are viewable once PDF is downloaded {{activeTask.status}}\n" +
-    "          </div>\n" +
-    "          <div class=\"pull-right btn-group\">\n" +
-    "            <a href=\"{{activeTaskUrl()}}\" class=\"btn btn-success\">\n" +
-    "              <span class=\"glyphicon glyphicon-cloud-download\"></span>\n" +
-    "            </a>\n" +
-    "          </div>\n" +
-    "        </div>\n" +
     "      </div>\n" +
-    "    </div><!--/pdf-->\n" +
-    "\n" +
-    "  </div>\n" +
+    "    </div>\n" +
+    "  </div><!--/pdf-->\n" +
     "\n" +
     "</div>");
 }]);
@@ -68900,9 +68937,9 @@ angular.module("sessions/sign_in.tpl.html", []).run(["$templateCache", function(
     "	<form class=\"form-signin well\" name=\"form\" ng-submit=\"signIn()\">\n" +
     "		<input class=\"form-control\" name=\"username\" type=\"username\" placeholder=\"Username\" ng-model=\"session.username\" auto-fill-sync required />\n" +
     "		<input class=\"form-control\" name=\"password\" type=\"password\" placeholder=\"Password\" ng-model=\"session.password\" password-validate auto-fill-sync required />\n" +
-    "    <div class=\"checkbox\">\n" +
+    "    <div class=\"checkbox remember-me\">\n" +
     "  		<label>\n" +
-    "  			<input type=\"checkbox\" value=\"remember-me\"> Remember me\n" +
+    "  			<input type=\"checkbox\" value=\"remember-me\">Remember me\n" +
     "  		</label>\n" +
     "    </div>\n" +
     "		<input class=\"btn btn-lg btn-primary btn-block\" type=\"submit\" value=\"Sign In\" />\n" +

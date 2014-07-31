@@ -180,6 +180,7 @@ GEM
       rspec-mocks (~> 2.14.0)
     ruby-filemagic (0.6.0)
     ruby-progressbar (1.4.1)
+    rubyzip (1.1.6)
     sexp_processor (4.4.1)
     simplecov (0.8.2)
       docile (~> 1.1.0)
@@ -248,6 +249,7 @@ DEPENDENCIES
   rmagick
   rspec-rails
   ruby-filemagic
+  rubyzip
   simplecov
   thin
   wkhtmltopdf-binary-11
