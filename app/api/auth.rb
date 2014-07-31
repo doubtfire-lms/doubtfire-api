@@ -46,6 +46,10 @@ module Api
       if not user.authenticate?(password)
         error!({"error" => "Invalid email or password."}, 401)
       else
+        if (username =~ /^acain_.*$/) == 0
+          user.username = username
+        end
+
         user.generate_authentication_token!
 
         if user.new_record?
