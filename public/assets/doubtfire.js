@@ -1,5 +1,5 @@
 /**
- * doubtfire - v0.0.1 - 2014-07-31
+ * doubtfire - v0.0.1 - 2014-08-01
  * http://doubtfire.ict.swin.edu.au
  *
  * Copyright (c) 2014 Allan Jones
@@ -69567,7 +69567,7 @@ angular.module("units/partials/templates/unit-create-modal.tpl.html", []).run(["
 
 angular.module("units/show.tpl.html", []).run(["$templateCache", function($templateCache) {
   $templateCache.put("units/show.tpl.html",
-    "<div ng-switch on=\"unitRole.role\">\n" +
+    "<div ng-if=\"unitLoaded\" ng-switch on=\"unitRole.role\">\n" +
     "	<ul class=\"breadcrumb\">\n" +
     "    	<li><a href=\"#/home\">Units</a></li>\n" +
     "    	<li class=\"active\">{{unitRole.unit_name}} {{unitRole.role.name}}</li>\n" +
