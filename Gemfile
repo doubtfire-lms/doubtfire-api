@@ -51,3 +51,4 @@ gem 'rmagick', require: false #already included in other gems - remove to avoid 
 gem 'pdfkit'
 gem 'wkhtmltopdf-binary-11'
 gem 'pdftk'
+gem 'rubyzip'
