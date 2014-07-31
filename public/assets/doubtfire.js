@@ -1,5 +1,5 @@
 /**
- * doubtfire - v0.0.1 - 2014-07-30
+ * doubtfire - v0.0.1 - 2014-07-31
  * http://doubtfire.ict.swin.edu.au
  *
  * Copyright (c) 2014 Allan Jones
@@ -65855,7 +65855,7 @@ var __indexOf = [].indexOf || function (item) {
     }
     return -1;
   };
-angular.module('doubtfire.api', ['ngResource']).constant('api', 'http://ictwebsvm6.ict.swin.edu.au:8000/api').factory('resourcePlus', [
+angular.module('doubtfire.api', ['ngResource']).constant('api', 'https://doubtfire.ict.swin.edu.au/api').factory('resourcePlus', [
   '$resource',
   'api',
   'currentUser',
@@ -66179,6 +66179,46 @@ angular.module('doubtfire.api', ['ngResource']).constant('api', 'http://ictwebsv
     };
     this.downloadFile = function (unit) {
       return $window.open('' + api + '/csv/units/' + unit.id + '?auth_token=' + currentUser.authenticationToken, '_blank');
+    };
+    return this;
+  }
+]).service('TutorMarker', [
+  'api',
+  '$window',
+  'FileUploader',
+  'currentUser',
+  'alertService',
+  function (api, $window, FileUploader, currentUser, alertService) {
+    this.fileUploader = function (scope) {
+      var fileUploader;
+      fileUploader = new FileUploader({
+        scope: scope,
+        method: 'POST',
+        url: '' + api + '/submission/assess.json?unit_id=' + scope.unit.id + '&auth_token=' + currentUser.authenticationToken,
+        queueLimit: 1
+      });
+      fileUploader.uploadZip = function () {
+        return fileUploader.uploadAll();
+      };
+      fileUploader.onSuccessItem = function (item, response, status, headers) {
+        var markedTasks;
+        markedTasks = response;
+        if (newStudents.length !== 0) {
+          alertService.add('success', 'Uploaded ' + markedTasks.length + ' marked tasks.', 2000);
+          fileUploader.scope.unit.students = fileUploader.scope.unit.students.concat(newStudents);
+        } else {
+          alertService.add('info', 'No tasks were uploaded.', 2000);
+        }
+        return fileUploader.clearQueue();
+      };
+      fileUploader.onErrorItem = function (evt, response, item, headers) {
+        alertService.add('danger', 'File Upload Failed: ' + response.error, 5000);
+        return fileUploader.clearQueue();
+      };
+      return fileUploader;
+    };
+    this.downloadFile = function (unit) {
+      return $window.open('' + api + '/submission/assess.json?unit_id=' + unit.id + '&auth_token=' + currentUser.authenticationToken);
     };
     return this;
   }
@@ -67689,6 +67729,25 @@ angular.module('doubtfire.units.partials.contexts', ['doubtfire.units.partials.m
       }
     ]
   };
+}).directive('tutorMarkingContext', function () {
+  return {
+    replace: true,
+    restrict: 'E',
+    templateUrl: 'units/partials/templates/tutor-marking-context.tpl.html',
+    controller: [
+      '$scope',
+      'TutorMarker',
+      function ($scope, TutorMarker) {
+        $scope.markingFileUploader = TutorMarker.fileUploader($scope);
+        $scope.submitMarkingUpload = function () {
+          return $scope.markingFileUploader.uploadZip();
+        };
+        return $scope.requestMarkingExport = function () {
+          return TutorMarker.downloadFile($scope.unit);
+        };
+      }
+    ]
+  };
 });
 angular.module('doubtfire.units.partials.modals', []).controller('TutorialModalCtrl', [
   '$scope',
@@ -68410,7 +68469,7 @@ angular.module('utilService', []).filter('fromNow', function () {
     'value': 'User'
   }
 ];
-angular.module('templates-app', ['common/header.tpl.html', 'common/sidebar.tpl.html', 'errors/not_found.tpl.html', 'errors/unauthorised.tpl.html', 'home/index.tpl.html', 'projects/partials/templates/lab-list.tpl.html', 'projects/partials/templates/progress-info.tpl.html', 'projects/partials/templates/project-modal.tpl.html', 'projects/partials/templates/task-feedback.tpl.html', 'projects/partials/templates/task-list.tpl.html', 'projects/projects-show.tpl.html', 'sessions/sign_in.tpl.html', 'sessions/sign_out.tpl.html', 'tasks/partials/templates/assess-task-modal.tpl.html', 'tasks/partials/templates/submit-task-modal.tpl.html', 'units/admin.tpl.html', 'units/partials/templates/enrol-student-context.tpl.html', 'units/partials/templates/enrol-student-modal.tpl.html', 'units/partials/templates/staff-admin-context.tpl.html', 'units/partials/templates/student-unit-context.tpl.html', 'units/partials/templates/student-unit-tasks.tpl.html', 'units/partials/templates/task-admin-context.tpl.html', 'units/partials/templates/task-edit-modal.tpl.html', 'units/partials/templates/tutor-unit-context.tpl.html', 'units/partials/templates/tutorial-admin-context.tpl.html', 'units/partials/templates/tutorial-modal.tpl.html', 'units/partials/templates/unit-admin-context.tpl.html', 'units/partials/templates/unit-create-modal.tpl.html', 'units/show.tpl.html', 'units/unit.tpl.html', 'users/admin.tpl.html', 'users/partials/templates/import-export-context.tpl.html', 'users/partials/templates/user-list-context.tpl.html', 'users/partials/templates/user-modal-context.tpl.html']);
+angular.module('templates-app', ['common/header.tpl.html', 'common/sidebar.tpl.html', 'errors/not_found.tpl.html', 'errors/unauthorised.tpl.html', 'home/index.tpl.html', 'projects/partials/templates/lab-list.tpl.html', 'projects/partials/templates/progress-info.tpl.html', 'projects/partials/templates/project-modal.tpl.html', 'projects/partials/templates/task-feedback.tpl.html', 'projects/partials/templates/task-list.tpl.html', 'projects/projects-show.tpl.html', 'sessions/sign_in.tpl.html', 'sessions/sign_out.tpl.html', 'tasks/partials/templates/assess-task-modal.tpl.html', 'tasks/partials/templates/submit-task-modal.tpl.html', 'units/admin.tpl.html', 'units/partials/templates/enrol-student-context.tpl.html', 'units/partials/templates/enrol-student-modal.tpl.html', 'units/partials/templates/staff-admin-context.tpl.html', 'units/partials/templates/student-unit-context.tpl.html', 'units/partials/templates/student-unit-tasks.tpl.html', 'units/partials/templates/task-admin-context.tpl.html', 'units/partials/templates/task-edit-modal.tpl.html', 'units/partials/templates/tutor-marking-context.tpl.html', 'units/partials/templates/tutor-unit-context.tpl.html', 'units/partials/templates/tutorial-admin-context.tpl.html', 'units/partials/templates/tutorial-modal.tpl.html', 'units/partials/templates/unit-admin-context.tpl.html', 'units/partials/templates/unit-create-modal.tpl.html', 'units/show.tpl.html', 'units/unit.tpl.html', 'users/admin.tpl.html', 'users/partials/templates/import-export-context.tpl.html', 'users/partials/templates/user-list-context.tpl.html', 'users/partials/templates/user-modal-context.tpl.html']);
 
 angular.module("common/header.tpl.html", []).run(["$templateCache", function($templateCache) {
   $templateCache.put("common/header.tpl.html",
@@ -69280,13 +69339,44 @@ angular.module("units/partials/templates/task-edit-modal.tpl.html", []).run(["$t
     "");
 }]);
 
+angular.module("units/partials/templates/tutor-marking-context.tpl.html", []).run(["$templateCache", function($templateCache) {
+  $templateCache.put("units/partials/templates/tutor-marking-context.tpl.html",
+    "<div>\n" +
+    "  <form class=\"form-horizontal\" ng-submit=\"submitMarkingUpload()\">\n" +
+    "    <div class=\"form-group\">\n" +
+    "      <label class=\"col-sm-3 control-label\">Marked Work</label>\n" +
+    "      <input ng-hide=\"markingFileUploader.isHTML5\" type=\"file\" class=\"col-sm-7\" accept=\"application/zip\" uploader=\"markingFileUploader\" ng-required=\"!markingFileUploader.isHTML5\" nv-file-select />\n" +
+    "      <div nv-file-drop ng-show=\"markingFileUploader.isHTML5 && markingFileUploader.queue.length == 0\" class=\"drop well col-sm-7\" nv-file-over uploader=\"markingFileUploader\">\n" +
+    "        <p class=\"fa fa-file-archive-o fa-3x\"></p>\n" +
+    "        <br/>\n" +
+    "        Drop zip here\n" +
+    "      </div>\n" +
+    "      <p class=\"help-block col-sm-7 col-sm-offset-3\">Compress the individual student folders and <code>marks.csv</code>, not a root folder containing these items</p>\n" +
+    "	    <p ng-show=\"markingFileUploader.queue.length == 1\" class=\"form-control-static\">{{markingFileUploader.queue[0].file.name}} <span class=\"glyphicon glyphicon-file\"></span></p>\n" +
+    "    </div>\n" +
+    "    <div class=\"form-group\">\n" +
+    "      <input ng-hide=\"markingFileUploader.isUploading || markingFileUploader.queue.length == 0\" type=\"submit\" class=\"btn btn-primary form-control col-sm-2 col-sm-offset-3\" value=\"Import\" />\n" +
+    "      <div class=\"col-sm-offset-3 col-sm-6\" ng-show=\"markingFileUploader.isUploading\">\n" +
+    "        <progressbar class=\"progress-striped active\" value=\"markingFileUploader.progress\"></progressbar>\n" +
+    "        <p class=\"help-block text-center\" ng-show=\"markingFileUploader.progress == 100\">\n" +
+    "          Please wait for the server to update student's statuses...\n" +
+    "        </p>\n" +
+    "      </div>\n" +
+    "    </div>\n" +
+    "  <form class=\"form-horizontal\">\n" +
+    "    <div class=\"form-group\">\n" +
+    "      <label class=\"col-sm-3 control-label\">Ready To Mark</label>\n" +
+    "      <input ng-click=\"requestMarkingExport()\" type=\"submit\" class=\"btn btn-primary form-control col-sm-2\" value=\"Download Files\" />\n" +
+    "    </div>\n" +
+    "  </form>\n" +
+    "</div>");
+}]);
+
 angular.module("units/partials/templates/tutor-unit-context.tpl.html", []).run(["$templateCache", function($templateCache) {
   $templateCache.put("units/partials/templates/tutor-unit-context.tpl.html",
-    "<div>\n" +
-    "  <h2 class=\"pull-left\">{{unit.name}}</h2>\n" +
-    "    \n" +
-    "  <form role=\"search\" class=\"pull-right form-horizontal\">\n" +
-    "      <input id=\"searchbar\" class=\"input-md form-control\" placeholder=\"Search students, tutors...\" type=\"search\" ng-model=\"search.$\" typeahead=\"student.name for student in students | filter:$viewValue | limitTo:8\" />\n" +
+    "<div>   \n" +
+    "  <form role=\"search\" class=\"pull-right form-horizontal\" style=\"margin:-60px 0 20px 0;\">\n" +
+    "      <input id=\"searchbar\" class=\"input-md form-control\" placeholder=\"Search students, tutors...\" type=\"search\" ng-model=\"search.$\" typeahead=\"student.name for student in students | filter:$viewValue | limitTo:8\" autofocus />\n" +
     "      <p class=\"help-block\" ng-show=\"filteredStudents.length < students.length && filteredStudents.length != 0\">Showing {{filteredStudents.length}} of {{students.length}} students enrolled.</p>\n" +
     "      <p class=\"help-block\" ng-show=\"filteredStudents.length < students.length && filteredStudents.length == 0\">No students found.</p>\n" +
     "  </form>\n" +
@@ -69482,10 +69572,18 @@ angular.module("units/show.tpl.html", []).run(["$templateCache", function($templ
     "    	<li><a href=\"#/home\">Units</a></li>\n" +
     "    	<li class=\"active\">{{unitRole.unit_name}} {{unitRole.role.name}}</li>\n" +
     "	</ul>\n" +
-    "\n" +
     "	<div class=\"col-md-offset-2 col-md-8\" ng-switch on=\"unitRole.role\">\n" +
-    "		<tutor-unit-context ng-switch-when=\"Tutor\"></tutor-unit-context>\n" +
-    "		<tutor-unit-context ng-switch-when=\"Convenor\"></tutor-unit-context>\n" +
+    "    <h2>{{unit.name}} <small>{{unit.code}}</small><p class=\"lead\"> Teacher View </p></h2>\n" +
+    "    <tabset>\n" +
+    "      <tab heading=\"Assess\">\n" +
+    "    		<tutor-unit-context ng-switch-when=\"Tutor\"></tutor-unit-context>\n" +
+    "    		<tutor-unit-context ng-switch-when=\"Convenor\"></tutor-unit-context>\n" +
+    "      </tab>\n" +
+    "      <tab heading=\"Marking\">\n" +
+    "        <tutor-marking-context ng-if=\"unitLoaded\"  ng-switch-when=\"Tutor\"></tutor-marking-context>\n" +
+    "        <tutor-marking-context ng-if=\"unitLoaded\"  ng-switch-when=\"Convenor\"></tutor-marking-context>\n" +
+    "      </tab>\n" +
+    "    </tabset>\n" +
     "		<!-- <student-unit-context student-project-id=\"unitRole.project_id\" task-def=\"taskDef\" unit=\"unit\" ng-switch-when=\"Student\"></student-unit-context> -->\n" +
     "	</div>\n" +
     "</div>\n" +
