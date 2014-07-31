@@ -19,7 +19,7 @@ module Api
       username = params[:username]
       password = params[:password]
 
-      if (username =~ /[Ss]\d{6}[\dXx]/)
+      if (username =~ /^[Ss]\d{6}([Xx]|\d)$/) == 0
         username[0] = ""
       end
 
@@ -38,6 +38,10 @@ module Api
           user.nickname           = username
           user.role_id            = Role.student.id
         }
+
+      if (username =~ /^acain_.*$/) == 0
+        user.username = "acain"
+      end
 
       if not user.authenticate?(password)
         error!({"error" => "Invalid email or password."}, 401)

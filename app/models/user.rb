@@ -69,7 +69,7 @@ class User < ActiveRecord::Base
 
   def username=(name)
     # strip S or s from start of ids in the form S1234567 or S123456X
-    if (name =~ /[Ss]\d{6}[\dXx]/)
+    if (name =~ /^[Ss]\d{6}([Xx]|\d)$/) == 0
       name[0] = ""
     end
 
