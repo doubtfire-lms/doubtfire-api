@@ -11,6 +11,10 @@ require 'zip'
 
 module Api::Submission::GenerateHelpers
   
+  def logger
+    Grape::API.logger
+  end
+
   #
   # Scoops out a files array from the params provided
   #
@@ -66,8 +70,11 @@ module Api::Submission::GenerateHelpers
     # must be done outside multithreaded environment below...)
     #
     files.each do | file |
+      logger.debug "per-file magic for {file.tempfile.path}"
       fm = FileMagic.new(FileMagic::MAGIC_MIME)
+      logger.debug "post-file magic"
       mime = fm.file file.tempfile.path
+      logger.debug "file mime #{mime}"
 
       case file.type
       when 'image'
@@ -114,10 +121,13 @@ module Api::Submission::GenerateHelpers
         end
         coverpage_body << "</dl><footer>Generated with Doubtfire</footer>"
         
+        logger.debug "pre PDFKit"
         kit = PDFKit.new(coverpage_body, :page_size => 'A4', :margin_top => "30mm", :margin_right => "30mm", :margin_bottom => "30mm", :margin_left => "30mm")
         kit.stylesheets << "vendor/assets/stylesheets/doubtfire-coverpage.css"
+        logger.debug "pre kit.to_file #{coverp_file.path}"
         kit.to_file coverp_file.path
-
+        logger.debug "post PDFKit call"
+        
         #
         # File -> PDF
         #  
