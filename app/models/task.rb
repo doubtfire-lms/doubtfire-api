@@ -4,8 +4,8 @@ class Task < ActiveRecord::Base
   def self.permissions
     { 
       student: [ :get, :put, :get_submission ],
-      tutor: [ :get, :put, :get_submission, :get_ready_to_mark_submissions ],
-      convenor: [ :get_submission, :get_ready_to_mark_submissions ],
+      tutor: [ :get, :put, :get_submission ],
+      convenor: [ :get_submission ],
       nil => []
     }
   end
@@ -163,7 +163,7 @@ class Task < ActiveRecord::Base
     # Tutor and student can trigger these actions...
     #
     case trigger
-      when "ready_to_mark"
+      when "ready_to_mark", "rtm"
         submit
       when "not_submitted"
         engage TaskStatus.not_submitted
@@ -183,11 +183,11 @@ class Task < ActiveRecord::Base
               assess TaskStatus.redo, by_user
             when "complete"
               assess TaskStatus.complete, by_user
-            when "fix_and_resubmit"
+            when "fix_and_resubmit", "fix"
               assess TaskStatus.fix_and_resubmit, by_user
-            when "fix_and_include"
+            when "fix_and_include", "fixinc"
               assess TaskStatus.fix_and_include, by_user
-            when "discuss"
+            when "discuss", "d"
               assess TaskStatus.discuss, by_user
           end
         end

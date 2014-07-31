@@ -1,15 +1,6 @@
 require 'grape'
 require 'project_serializer'
 
-# getting file MIME types
-require 'filemagic'
-# image to pdf
-require 'RMagick'
-# code to html
-require 'coderay'
-# html to pdf
-require 'pdfkit'
-
 module Api
   module Submission
     class PortfolioEvidence < Grape::API
@@ -42,7 +33,7 @@ module Api
         dst = student_work_dir(unit, student, task)
 
         # Remember to delete the file as we don't want to save it with this kind of inspecific request
-        file = combine_to_pdf(scoop_files(params, upload_reqs))
+        file = combine_to_pdf(scoop_files(params, upload_reqs), student)
         FileUtils.cp file.path, dst
         
         # This task is now ready to submit
@@ -75,33 +66,7 @@ module Api
         env['api.format'] = :binary
 
         File.read(evidence_loc)
-      end
-      
-      desc "Retrieve all submission documents ready to mark for the provided user's tutorials"
-      params do
-        requires :user_id, type: Integer, :desc => "User id to fetch ready to mark work to."
-      end
-      get '/submission/assess/' do
-        if not authorise? current_user, Task, :get_ready_to_mark_submissions
-          error!({"error" => "Not authorised to batch download ready to mark submissions"}, 401)
-        end
-        
-        ready_to_mark = UnitRole.tasks_ready_to_mark(current_user)
-        
-        if evidence_loc.nil?
-          error!({"error" => "No submission under task '#{task.task_definition.name}' for user #{student.username}"}, 401)
-        end
-        if not authorise? current_user, task, :get_submission
-          error!({"error" => "Not authorised to get task '#{task.task_definition.name}' for user #{student.username}"}, 401)
-        end
-        
-        # Set download headers...
-        content_type "application/octet-stream"
-        header['Content-Disposition'] = "attachment; filename=#{task.task_definition.abbreviation}.pdf"
-        env['api.format'] = :binary
-
-        File.read(evidence_loc)
-      end #get
+      end # get
     end
   end
 end

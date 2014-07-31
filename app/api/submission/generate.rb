@@ -1,19 +1,6 @@
 require 'grape'
 require 'project_serializer'
 
-# Temporarily...
-require 'json'
-$mock_data = JSON.parse '[ { "key": "file0", "name": "Shape Image", "type": "image" }, { "key": "file1", "name": "Shape Class", "type": "code" }, { "key":"file2", "name":"Shape Document", "type":"document" } ]'
-
-# getting file MIME types
-require 'filemagic'
-# image to pdf
-require 'RMagick'
-# code to html
-require 'coderay'
-# html to pdf
-require 'pdfkit'
-
 module Api
   module Submission
     class Generate < Grape::API

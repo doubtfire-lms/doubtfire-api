@@ -64,6 +64,7 @@ module Api
     mount Api::Users
     mount Api::Submission::Generate
     mount Api::Submission::PortfolioEvidence
+    mount Api::Submission::BatchTask
 
     AuthHelpers.add_auth_to Api::Units
     AuthHelpers.add_auth_to Api::Projects
@@ -74,6 +75,7 @@ module Api
     AuthHelpers.add_auth_to Api::Users
     AuthHelpers.add_auth_to Api::UnitRoles
     AuthHelpers.add_auth_to Api::Submission::PortfolioEvidence
+    AuthHelpers.add_auth_to Api::Submission::BatchTask
 
     add_swagger_documentation base_path: "",
                             # api_version: 'api',
