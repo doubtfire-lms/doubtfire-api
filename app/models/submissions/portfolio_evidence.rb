@@ -1,6 +1,6 @@
 require 'tempfile'
 
-module Submission
+# module Submission
 
   class PortfolioEvidence
 
@@ -74,20 +74,19 @@ module Submission
       # Create student submission folder
       #
 
-      # out dir is in tmp to start with
-      out_dir = File.join( Dir.tmpdir,  task.id )
-      Dir.mkdir(out_dir)
+      tmp_dir = File.join( Dir.tmpdir, 'doubtfire',  task.id )
+      new_dir = student_work_dir(task, "new")
+
+      logger.debug('creating output at #{tmp_dir}, #{new_dir}')
+
+      # ensure the dirs exist
+      Dir.mkdir_p(tmp_dir)
+      Dir.mkdir_p(new_dir)
 
       #
       # Create cover pages for submission
       #
-      files.each_with_index.map do | file, idx |
-          #
-          # Create dual output documents (coverpage and document itself)
-          #
-          coverp_file = Tempfile.new(["#{idx}.cover", ".pdf"])
-          output_file = Tempfile.new(["#{idx}.data", ".pdf"])
-                    
+      files.each_with_index.map do | file, idx |        
           #
           # Make file coverpage
           #
@@ -103,92 +102,21 @@ module Submission
           end
           coverpage_body << "</dl><footer>Generated with Doubtfire</footer>"
           
-          logger.debug "pre PDFKit"
-          kit = PDFKit.new(coverpage_body, :page_size => 'A4', :margin_top => "30mm", :margin_right => "30mm", :margin_bottom => "30mm", :margin_left => "30mm")
-          kit.stylesheets << "vendor/assets/stylesheets/doubtfire-coverpage.css"
-          logger.debug "pre kit.to_file #{coverp_file.path}"
-          kit.to_file coverp_file.path
-          logger.debug "post PDFKit call"
-
-          #
-          # File -> PDF
-          #  
-          case file.type
-          #
-          # img -> pdf
-          #
-          when 'image'
-            img = Magick::Image.read(file.tempfile.path).first
-            # resize the image if its too big (e.g., taken with a digital camera)
-            if img.columns > 1000 || img.rows > 500
-              # resize such that it's 600px in width
-              scale = 1000.0 / img.columns
-              img = img.resize(scale)
-            end
-            img.write("pdf:#{output_file.path}") { self.quality = 75 }
-          #
-          # code -> html -> pdf
-          #
-          when 'code'
-            # decide language syntax highlighting
-            case File.extname(file.filename)
-            when '.cpp', '.cs'
-              lang = :cplusplus
-            when '.c', '.h'
-              lang = :c
-            when '.java'
-              lang = :java
-            when '.pas'
-              lang = :delphi
-            else
-              # should follow basic C syntax (if, else etc...)
-              lang = :c
-            end
-            
-            # code -> HTML
-            html_body = CodeRay.scan_file(file.tempfile, lang).html(:wrap => :div, :tab_width => 2, :css => :class, :line_numbers => :table, :line_number_anchors => false)
-
-            # HTML -> PDF
-            kit = PDFKit.new(html_body, :page_size => 'A4', :header_left => file.filename, :header_right => "[page]/[toPage]", :margin_top => "10mm", :margin_right => "5mm", :margin_bottom => "5mm", :margin_left => "5mm")
-            kit.stylesheets << "vendor/assets/stylesheets/coderay.css"
-            kit.to_file output_file.path
-          #
-          # document -> pdf
-          #
-          when 'document'
-            # if uploaded a PDF, then directly pass in
-            if File.extname(file.filename) == '.pdf'
-              # copy the file over (note we need to copy it into
-              # output_file as file will be removed at the end of this block)
-              FileUtils.cp file.tempfile.path, output_file.path
-            else
-            # TODO: convert word -> pdf
-              error!({"error" => "Currently, word documents are not supported. Convert the document to PDF first."}, 403)
-            end
-          end
+          logger.debug "generating cover page #{file.key}.cover.html"
           
-          # Insert (at appropriate index) the converted PDF and its coverpage to pdf_paths array (lock first!)...
-          pdf_paths_mutex.synchronize do
-            pdf_paths[idx] = [coverp_file.path, output_file.path]
-          end
-        end
-      end.each { | thread | thread.join }
-      
-      pdf_paths = pdf_paths.flatten
-      
-      #
-      # Aggregate each of the output PDFs
-      #
-      didCompile = system "pdftk #{pdf_paths.join ' '} cat output #{final_pdf.path}"
-      if !didCompile 
-        error!({"error" => "PDF failed to compile. Please try again."}, 403)
-      end
-      
-      # We don't need any of those pdf_paths files anymore after compiling the final_pdf!
-      pdf_paths.each { | path | if File::exist?(path) then FileUtils::rm path end } 
-      files.each { | file | if File::exist?(file.tempfile.path) then file.tempfile.unlink end }
-      # We need to do something with this... so we'll let the caller handle that.
-      final_pdf
+          #
+          # Create cover page
+          #
+          coverp_file = File.new([tmp_dir, "#{file.key}.cover", ".html"], model="w")
+          coverp_file.write(coverpage_body)
+          coverp_file.close
+
+          #
+          # Now copy the data
+          #
+          output_filename = File.join(tmp_dir, "#{file.key}", File.extname(file.tempfile.path))
+          FileUtils.cp file.tempfile.path, output_filename
+      end      
     end
     
     
@@ -210,4 +138,4 @@ module Submission
     
     
   end
-end
+# end
