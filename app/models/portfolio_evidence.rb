@@ -1,6 +1,6 @@
 class PortfolioEvidence
 
-  def logger
+  def self.logger
     Rails.logger
   end
 
@@ -29,7 +29,7 @@ class PortfolioEvidence
   # It is the caller's responsibility to delete this tempfile
   # once the method is finished.
   #
-  def produce_student_work(files, student, task)
+  def self.produce_student_work(files, student, task)
     #
     # Ensure that each file in files has the following attributes:
     # id, name, filename, type, tempfile  
@@ -49,6 +49,7 @@ class PortfolioEvidence
     #
     files.each do | file |
       logger.debug "checking file type for #{file.tempfile.path}"
+
       fm = FileMagic.new(FileMagic::MAGIC_MIME)
       mime = fm.file file.tempfile.path
       logger.debug "#{file.tempfile.path} is mime type: #{mime}"
@@ -74,10 +75,11 @@ class PortfolioEvidence
     #
     # Create student submission folder (<tmpdir>/doubtfire/new/<id>)
     #
-    tmp_dir = File.join( Dir.tmpdir, 'doubtfire', 'new', task.id )
-    logger.debug('creating output at #{tmp_dir}, #{new_dir}')
+    tmp_dir = File.join( Dir.tmpdir, 'doubtfire', 'new', "#{task.id}" )
+    logger.debug("creating tmp dir at #{tmp_dir}")
+    
     # ensure the dir exists
-    Dir.mkdir_p(tmp_dir)
+    my_tmp_dir = FileUtils.mkdir_p(tmp_dir)
 
     #
     # Create cover pages for submission
@@ -98,30 +100,47 @@ class PortfolioEvidence
       end
       coverpage_body << "</dl><footer>Generated with Doubtfire</footer>"
       
-      logger.debug "generating cover page #{file.key}.cover.html"
+      cover_filename = File.join(tmp_dir, "#{idx}.#{file.id}.cover.html")
+
+      logger.debug("generating cover page #{cover_filename}")
       
       #
       # Create cover page for the submitted file (<taskid>/file0.cover.html etc.)
       #
-      coverp_file = File.new([tmp_dir, "#{file.key}.cover", ".html"], model="w")
+      # puts "generating cover page #{cover_filename}"
+
+      coverp_file = File.new(cover_filename, mode="w")
+      # puts 1
       coverp_file.write(coverpage_body)
+      # puts 2
       coverp_file.close
+      # puts 3
 
       #
       # Now copy the actual data for the submitted file (<taskid>/file0.image.png etc.)
       #
-      output_filename = File.join(tmp_dir, "#{file.key}.#{file.type}", File.extname(file.tempfile.path))
+      output_filename = File.join(tmp_dir, "#{idx}.#{file.id}.#{file.type}#{File.extname(file.filename)}")
+      # puts file.tempfile.path
+      # puts output_filename
       FileUtils.cp file.tempfile.path, output_filename
     end
     
     #
     # Now copy over the temp directory over to the enqueued directory
     #
-    enqueued_dir = student_work_dir(:new, task.id)
-    FileUtils.cp tmp_dir, enqueued_dir
-    
+    enqueued_dir = student_work_dir(:new, task)[0..-2]
+    # puts "move ", "#{tmp_dir}", enqueued_dir
+    # FileUtils.cp_r "#{tmp_dir}", enqueued_dir
+
+    Dir.chdir(tmp_dir)
+    FileUtils.cp_r Dir.glob("*"), enqueued_dir
+    # puts "here"
     # Cleanup
-    FileUtils.rmdir tmp_dir
+    # FileUtils.rmdir tmp_dir
+    # puts tmp_dir
+    FileUtils.rm_r tmp_dir
+
+    # puts "done"
   end  
 
   #

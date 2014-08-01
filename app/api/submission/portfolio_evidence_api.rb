@@ -3,7 +3,7 @@ require 'project_serializer'
 
 module Api
   module Submission
-    class PortfolioEvidence < Grape::API
+    class PortfolioEvidenceApi < Grape::API
       helpers GenerateHelpers
       helpers AuthHelpers
       helpers AuthorisationHelpers
@@ -29,19 +29,16 @@ module Api
         student = task.project.student
         unit = task.project.unit
         
-        # The filepath where to store this upload...
-        dst = student_work_dir(unit, student, task)
-
-        # Remember to delete the file as we don't want to save it with this kind of inspecific request
-        file = combine_to_pdf(scoop_files(params, upload_reqs), student, task)
-        FileUtils.cp file.path, dst
+        # Copy files to be PDFed
+        PortfolioEvidence.produce_student_work(scoop_files(params, upload_reqs), student, task)
         
         # This task is now ready to submit
         task.trigger_transition 'ready_to_mark', current_user
         
         # Remove the tempfile and set portfolio_evidence to the stored file directory
-        file.unlink
-        task = Task.update(task.id, :portfolio_evidence => dst)
+        # TODO: task = Task.update(task.id, :portfolio_evidence => dst)
+
+        #TODO: delete temp files?
 
         TaskUpdateSerializer.new(task)
       end #post
