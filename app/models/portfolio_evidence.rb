@@ -129,8 +129,8 @@ class PortfolioEvidence
   # into PDF files
   #
   def self.process_new_to_pdf
-    # For each folder in new (i.e., queued folders to process)
-    new_root_dir = Dir.entries(student_work_dir(:new)).reject { | f | f == "." || f == ".." }
+    # For each folder in new (i.e., queued folders to process) that matches appropriate name
+    new_root_dir = Dir.entries(student_work_dir(:new)).select { | f | (f =~ /^\d+$/) == 0 }
     new_root_dir.each do | folder_id |
       process_task_to_pdf(folder_id)
     end
@@ -141,7 +141,7 @@ class PortfolioEvidence
     # Get access to the task
     #
     task = Task.find(id)
-    
+
     #
     # Move folder over from new -> in_provess
     #
@@ -150,10 +150,10 @@ class PortfolioEvidence
     FileUtils.mv new_task_dir, in_process_root_dir
     
     #
-    # Get access to all files to process
+    # Get access to all files to process (ensure we only work with file<no>.[cover|document|code|image] etc...)
     #
     in_process_dir = student_work_dir(:in_process, task)
-    in_process_files = Dir.entries(in_process_dir).reject { | f | f == "." || f == ".." }
+    in_process_files = Dir.entries(in_process_dir).select { | f | (f =~ /^file\d+\.(cover|document|code|image)/) == 0 }
 
     #
     # Map each process file to have extra info i.e.:
@@ -185,25 +185,24 @@ class PortfolioEvidence
     
     #
     # Begin processing... 
-    #   @andrew, need to sort it so that cover files will come first... any ideas? ran out of time :(
-    # 
+    #   @andrew   need to sort it so that cover files will come first... any ideas? ran out of time :(
+    #             multithreading isn't working...
+    #
     pdf_paths = []
     pdf_paths_mutex = Mutex.new
     files.each_with_index do | file, idx |
-      Thread.new do
-        outdir = "#{tmp_dir}/#{file.key}.#{file.type}.pdf"
+      #Thread.new do
+        outdir = "#{tmp_dir}/#{file[:key]}.#{file[:type]}.pdf"
         
         convert_to_pdf(file, outdir)
         
         pdf_paths_mutex.synchronize do
           pdf_paths[idx] = outdir
         end
-      end
-    end.each { | thread | thread.join }
+      #end
+    end#.each { | thread | thread.join }
     
-    pdf_paths = pdf_paths.flatten
-    
-    final_pdf_path = "#{student_work_dir(:pdf, task)}#{task.abbrev}-#{task.id}.pdf"
+    final_pdf_path = "#{student_work_dir(:pdf, task)}#{task.task_definition.abbreviation}-#{task.id}.pdf"
     
     #
     # Aggregate each of the output PDFs
@@ -223,13 +222,15 @@ class PortfolioEvidence
   # Converts the given file to a pdf
   #  
   def self.convert_to_pdf(file, outdir)
-    case file.type
+    case file[:type]
     when 'image'
       img_to_pdf(file, outdir)
     when 'code'
       code_to_pdf(file, outdir)
-    when 'document', 'cover'
+    when 'document'
       doc_to_pdf(file, outdir)
+    when 'cover'
+      cover_to_pdf(file, outdir)
     end
   end
   
@@ -238,7 +239,7 @@ class PortfolioEvidence
   #
   def self.code_to_pdf(file, outdir)
     # decide language syntax highlighting
-    case file.ext
+    case file[:ext]
     when '.cpp', '.cs'
       lang = :cplusplus
     when '.c', '.h'
@@ -252,7 +253,7 @@ class PortfolioEvidence
       lang = :c
     end
     # code -> HTML
-    html_body = CodeRay.scan_file(file.actualfile, lang).html(:wrap => :div, :tab_width => 2, :css => :class, :line_numbers => :table, :line_number_anchors => false)
+    html_body = CodeRay.scan_file(file[:actualfile], lang).html(:wrap => :div, :tab_width => 2, :css => :class, :line_numbers => :table, :line_number_anchors => false)
 
     # HTML -> PDF
     kit = PDFKit.new(html_body, :page_size => 'A4', :header_right => "[page]/[toPage]", :margin_top => "10mm", :margin_right => "5mm", :margin_bottom => "5mm", :margin_left => "5mm")
@@ -264,7 +265,7 @@ class PortfolioEvidence
   # Converts the image provided to a pdf
   #
   def self.img_to_pdf(file, outdir)
-    img = Magick::Image.read(file.path).first
+    img = Magick::Image.read(file[:path]).first
     # resize the image if its too big (e.g., taken with a digital camera)
     if img.columns > 1000 || img.rows > 500
       # resize such that it's 600px in width
@@ -279,11 +280,20 @@ class PortfolioEvidence
   #
   def self.doc_to_pdf(file, outdir)
     # if uploaded a PDF, then directly pass in
-    if file.ext == '.pdf'
+    if file[:ext] == '.pdf'
       # copy the file over (note we need to copy it into
       # output_file as file will be removed at the end of this block)
-      FileUtils.cp file.path, outdir
+      FileUtils.cp file[:path], outdir
     end
     # TODO msword doc...
+  end
+  
+  #
+  # Converts the cover page provided to a pdf
+  #
+  def self.cover_to_pdf(file, outdir)
+    kit = PDFKit.new(file[:actualfile]r.read, :page_size => 'A4', :margin_top => "30mm", :margin_right => "30mm", :margin_bottom => "30mm", :margin_left => "30mm")
+    kit.stylesheets << "vendor/assets/stylesheets/doubtfire-coverpage.css"
+    kit.to_file outdir
   end
 end
