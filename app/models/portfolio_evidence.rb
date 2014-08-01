@@ -311,7 +311,7 @@ class PortfolioEvidence
   # Converts the cover page provided to a pdf
   #
   def self.cover_to_pdf(file, outdir)
-    kit = PDFKit.new(file[:actualfile]r.read, :page_size => 'A4', :margin_top => "30mm", :margin_right => "30mm", :margin_bottom => "30mm", :margin_left => "30mm")
+    # kit = PDFKit.new(file[:actualfile]r.read, :page_size => 'A4', :margin_top => "30mm", :margin_right => "30mm", :margin_bottom => "30mm", :margin_left => "30mm")
     kit.stylesheets << "vendor/assets/stylesheets/doubtfire-coverpage.css"
     kit.to_file outdir
   end
