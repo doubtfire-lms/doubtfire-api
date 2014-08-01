@@ -7,6 +7,18 @@ module Submission
     end
 
     #
+    # Generates a path for storing student work
+    # type = [:new, :in_process, :pdfs]
+    #
+    def student_work_dir(task, type)
+      file_server = Doubtfire::Application.config.student_work_dir
+      dst = "#{file_server}/#{type}/#{task.id}/"
+      # Make that directory should it not exist
+      FileUtils.mkdir_p(File.dirname(dst))
+      dst
+    end
+
+    #
     # Combines image, code or documents files given to pdf.
     # Returns the tempfile that was generated. 
     #
@@ -168,5 +180,24 @@ module Submission
       # We need to do something with this... so we'll let the caller handle that.
       final_pdf
     end
+    
+    
+    
+    
+    
+    
+    
+    
+    # 
+    # Alex
+    #
+    
+    
+    
+    
+    
+    
+    
+    
   end
 end
