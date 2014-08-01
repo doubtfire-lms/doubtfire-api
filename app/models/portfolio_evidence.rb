@@ -81,6 +81,7 @@ class PortfolioEvidence
     # ensure the dir exists
     FileUtils.mkdir_p(tmp_dir)
 
+    file_idx = 0
     #
     # Create cover pages for submission
     #
@@ -88,19 +89,26 @@ class PortfolioEvidence
       #
       # Make file coverpage
       #
-      coverpage_data = { "Filename" => "<pre>#{file.filename}</pre>", "Document Type" => file.type.capitalize, "Upload Timestamp" => DateTime.now.strftime("%F %T"), "File Number" => "#{idx+1} of #{files.length}"}
+      coverpage_data = { 
+        "Filename" => "<pre>#{file.filename}</pre>", 
+        "Document Type" => file.type.capitalize, 
+        "Upload Timestamp" => DateTime.now.strftime("%F %T"), 
+        "File Number" => "#{idx+1} of #{files.length}"
+      }
       # Add student details if exists
       if not student.nil?
         coverpage_data["Student Name"] = student.name
         coverpage_data["Student ID"] = student.username
       end
+
       coverpage_body = "<h1>#{file.name}</h1>\n<dl>"
       coverpage_data.each do | key, value |
         coverpage_body << "<dt>#{key}</dt><dd>#{value}</dd>\n"
       end
       coverpage_body << "</dl><footer>Generated with Doubtfire</footer>"
       
-      cover_filename = File.join(tmp_dir, "#{idx}.#{file.id}.cover.html")
+      cover_filename = File.join(tmp_dir, "#{file_idx.to_s.rjust(3, '0')}.cover.html")
+      file_idx += 1
 
       logger.debug("generating cover page #{cover_filename}")
       
@@ -119,7 +127,9 @@ class PortfolioEvidence
       #
       # Now copy the actual data for the submitted file (<taskid>/file0.image.png etc.)
       #
-      output_filename = File.join(tmp_dir, "#{idx}.#{file.id}.#{file.type}#{File.extname(file.filename)}")
+      output_filename = File.join(tmp_dir, "#{file_idx.to_s.rjust(3, '0')}.#{file.type}#{File.extname(file.filename)}")
+      file_idx += 1
+
       # puts file.tempfile.path
       # puts output_filename
       FileUtils.cp file.tempfile.path, output_filename
@@ -151,7 +161,11 @@ class PortfolioEvidence
     # For each folder in new (i.e., queued folders to process) that matches appropriate name
     new_root_dir = Dir.entries(student_work_dir(:new)).select { | f | (f =~ /^\d+$/) == 0 }
     new_root_dir.each do | folder_id |
-      process_task_to_pdf(folder_id)
+      # begin
+        process_task_to_pdf(folder_id)
+      # rescue
+      #   logger.error "Failed to process folder_id = #{folder_id}"
+      # end
     end
   end
 
@@ -166,32 +180,48 @@ class PortfolioEvidence
     #
     new_task_dir = student_work_dir(:new, task)
     in_process_root_dir = student_work_dir(:in_process)
-    FileUtils.mv new_task_dir, in_process_root_dir
-    
-    #
-    # Get access to all files to process (ensure we only work with file<no>.[cover|document|code|image] etc...)
-    #
     in_process_dir = student_work_dir(:in_process, task)
-    in_process_files = Dir.entries(in_process_dir).select { | f | (f =~ /^file\d+\.(cover|document|code|image)/) == 0 }
+    if Dir.exists? in_process_dir
+      Dir.chdir(in_process_dir)
+      # move all files to the enq dir
+      FileUtils.rm Dir.glob("*")
+    end
 
+    # move into the new dir - and mv 
+    Dir.chdir(new_task_dir)
+    FileUtils.mv Dir.glob("*"), in_process_dir, :force => true
+    begin
+      FileUtils.rm_r(new_task_dir)
+    rescue
+      logger.warn "failed to rm #{new_task_dir}"
+    end
+
+
+    #
+    # Get access to all files to process (ensure we only work with <no>.[cover|document|code|image] etc...)
+    #
+    in_process_files = Dir.entries(in_process_dir).select { | f | (f =~ /^\d{3}\.(cover|document|code|image)/) == 0 }
+    if in_process_files.length < 1
+      return
+    end
     #
     # Map each process file to have extra info i.e.:
     #
-    # file.key            = "file0"
+    # file.idx            = 0..n
     # file.path           = actual file dir sitting in in_process directory
     # file.ext            = file extension
-    # file.type           = image/code/document
+    # file.type           = cover/image/code/document
     # file.actualfile     = actual file variable that can be used - File.open(path)
     #
     files = []
     in_process_files.each do | file |
       # file0.code.png
-      key = file.split('.').first
+      idx = file.split('.').first.to_i
       type = file.split('.').second
       path = "#{in_process_dir}#{file}"
       ext = File.extname(path)
       actualfile = File.open(path)
-      files << { :key => key, :type => type, :path => path, :ext => ext, :actualfile => actualfile }
+      files << { :idx => idx, :type => type, :path => path, :ext => ext, :actualfile => actualfile }
     end
     
     #
@@ -209,17 +239,13 @@ class PortfolioEvidence
     #
     pdf_paths = []
     pdf_paths_mutex = Mutex.new
-    files.each_with_index do | file, idx |
-      #Thread.new do
-        outdir = "#{tmp_dir}/#{file[:key]}.#{file[:type]}.pdf"
-        
-        convert_to_pdf(file, outdir)
-        
-        pdf_paths_mutex.synchronize do
-          pdf_paths[idx] = outdir
-        end
-      #end
-    end#.each { | thread | thread.join }
+    files.each do | file |
+      outpath = "#{tmp_dir}/#{file[:idx]}.#{file[:type]}.pdf"
+      
+      convert_to_pdf(file, outpath)
+      # puts file
+      pdf_paths[file[:idx]] = outpath
+    end
     
     final_pdf_path = "#{student_work_dir(:pdf, task)}#{task.task_definition.abbreviation}-#{task.id}.pdf"
     
@@ -227,14 +253,20 @@ class PortfolioEvidence
     # Aggregate each of the output PDFs
     #
     didCompile = system "pdftk #{pdf_paths.join ' '} cat output #{final_pdf_path}"
-    if !didCompile 
-      #
-      # @andrew What should happen on an error?
-      #
+    if !didCompile
+      logger.error "failed to create #{final_pdf_path}\n -> pdftk #{pdf_paths.join ' '} cat output #{final_pdf_path}"
+    else
+      task.portfolio_evidence = final_pdf_path
+      task.save
     end
     
     # Cleanup
-    pdf_paths.each { | path | if File::exist?(path) then FileUtils::rm path end } 
+    begin
+      pdf_paths.each { | path | if File::exist?(path) then FileUtils::rm path end } 
+      Dir.rmdir(tmp_dir)
+    rescue
+      logger.warn "failed to cleanup dirs"
+    end
   end
 
   #
@@ -276,7 +308,7 @@ class PortfolioEvidence
 
     # HTML -> PDF
     kit = PDFKit.new(html_body, :page_size => 'A4', :header_right => "[page]/[toPage]", :margin_top => "10mm", :margin_right => "5mm", :margin_bottom => "5mm", :margin_left => "5mm")
-    kit.stylesheets << "vendor/assets/stylesheets/coderay.css"
+    kit.stylesheets << Rails.root.join("vendor/assets/stylesheets/coderay.css")
     kit.to_file(outdir)
   end
   
@@ -308,11 +340,32 @@ class PortfolioEvidence
   end
   
   #
+  # Read the file and return its contents as a string
+  #
+  def self.read_file_to_str(filename)
+    result = ''
+    f = File.open(filename, "r") 
+    begin
+      f.each_line do |line|
+        result += line
+      end
+    ensure
+      f.close unless f.nil?
+    end
+    result
+  end
+
+  #
   # Converts the cover page provided to a pdf
   #
   def self.cover_to_pdf(file, outdir)
-    # kit = PDFKit.new(file[:actualfile]r.read, :page_size => 'A4', :margin_top => "30mm", :margin_right => "30mm", :margin_bottom => "30mm", :margin_left => "30mm")
-    kit.stylesheets << "vendor/assets/stylesheets/doubtfire-coverpage.css"
+    # puts file
+    kit = PDFKit.new(
+      read_file_to_str(file[:path]), 
+      :page_size => 'A4', 
+      :margin_top => "30mm", :margin_right => "30mm", :margin_bottom => "30mm", :margin_left => "30mm"
+      )
+    kit.stylesheets << Rails.root.join("vendor/assets/stylesheets/doubtfire-coverpage.css")
     kit.to_file outdir
   end
 end
