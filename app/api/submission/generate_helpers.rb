@@ -210,16 +210,16 @@ module Api::Submission::GenerateHelpers
   #   final_pdf
   # end
   
-  #
-  # Generates a path for storing student work
-  #
-  def student_work_dir(unit, student, task)
-    file_server = Doubtfire::Application.config.student_work_dir
-    dst = "#{file_server}/#{unit.code}-#{unit.id}/#{student.username}/#{task.task_definition.abbreviation}.pdf"
-    # Make that directory should it not exist
-    FileUtils.mkdir_p(File.dirname(dst))
-    dst
-  end
+  # #
+  # # Generates a path for storing student work
+  # #
+  # def student_work_dir(unit, student, task)
+  #   file_server = Doubtfire::Application.config.student_work_dir
+  #   dst = "#{file_server}/#{unit.code}-#{unit.id}/#{student.username}/#{task.task_definition.abbreviation}.pdf"
+  #   # Make that directory should it not exist
+  #   FileUtils.mkdir_p(File.dirname(dst))
+  #   dst
+  # end
   
   #
   # Defines the csv headers for batch download
@@ -307,7 +307,6 @@ module Api::Submission::GenerateHelpers
   end
   
   # module_function :combine_to_pdf
-  module_function :student_work_dir
   module_function :scoop_files
   module_function :upload_batch_task_zip
   module_function :generate_batch_task_zip

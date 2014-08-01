@@ -11,14 +11,14 @@ class PortfolioEvidence
   def self.student_work_dir(type, task = nil)
     file_server = Doubtfire::Application.config.student_work_dir
     dst = "#{file_server}/#{type}/"
-    # Create current dst directory should it not exist
-    FileUtils.mkdir_p(dst)
+    
     # Add task id to dst if we want task
     if task != nil 
       dst << "#{task.id}/"
-      # Create the task id directory should it not exist
-      FileUtils.mkdir_p(dst)
     end
+
+    # Create current dst directory should it not exist
+    FileUtils.mkdir_p(dst)
     dst
   end
 
@@ -79,7 +79,7 @@ class PortfolioEvidence
     logger.debug("creating tmp dir at #{tmp_dir}")
     
     # ensure the dir exists
-    my_tmp_dir = FileUtils.mkdir_p(tmp_dir)
+    FileUtils.mkdir_p(tmp_dir)
 
     #
     # Create cover pages for submission
@@ -132,14 +132,14 @@ class PortfolioEvidence
     # puts "move ", "#{tmp_dir}", enqueued_dir
     # FileUtils.cp_r "#{tmp_dir}", enqueued_dir
 
+    # move to tmp dir
     Dir.chdir(tmp_dir)
-    FileUtils.cp_r Dir.glob("*"), enqueued_dir
-    # puts "here"
-    # Cleanup
-    # FileUtils.rmdir tmp_dir
-    # puts tmp_dir
-    FileUtils.rm_r tmp_dir
-
+    # move all files to the enq dir
+    FileUtils.mv Dir.glob("*"), enqueued_dir
+    # FileUtils.rm Dir.glob("*")
+    # remove the directory
+    Dir.chdir(student_work_dir(:new))
+    Dir.rmdir(tmp_dir)
     # puts "done"
   end  
 
@@ -162,7 +162,7 @@ class PortfolioEvidence
     task = Task.find(id)
 
     #
-    # Move folder over from new -> in_provess
+    # Move folder over from new -> in_process
     #
     new_task_dir = student_work_dir(:new, task)
     in_process_root_dir = student_work_dir(:in_process)
