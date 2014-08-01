@@ -1,3 +1,5 @@
+require 'tempfile'
+
 module Submission
 
   class PortfolioEvidence
@@ -25,7 +27,7 @@ module Submission
     # It is the caller's responsibility to delete this tempfile
     # once the method is finished.
     #
-    def produce_student_work(files, student)
+    def produce_student_work(files, student, task)
       
       #
       # Ensure that each file in files has the following attributes:
@@ -34,7 +36,12 @@ module Submission
       files.each do | file |
         error!({"error" => "Missing file data for '#{file.name}'"}, 403) if file.id.nil? || file.name.nil? || file.filename.nil? || file.type.nil? || file.tempfile.nil?
       end
-      
+     
+      # file.key      = "file0"
+      # file.name     = front end name for file
+      # file.tempfile.path = actual file
+      # file.filename = their name for the file
+
       #
       # Confirm subtype categories using filemagic (exception handling
       # must be done outside multithreaded environment below...)
@@ -66,7 +73,10 @@ module Submission
       #
       # Create student submission folder
       #
-      Dir.mkdir(File.join( Dir.tmpdir,   ".foo")
+
+      # out dir is in tmp to start with
+      out_dir = File.join( Dir.tmpdir,  task.id )
+      Dir.mkdir(out_dir)
 
       #
       # Create cover pages for submission
