@@ -24,11 +24,20 @@ module Api
         if not authorise? user, unit, :get_ready_to_mark_submissions
           error!({"error" => "Not authorised to batch download ready to mark submissions"}, 401)        
         end
+
+        if not authorise? current_user, unit, :get_ready_to_mark_submissions
+          error!({"error" => "Not authorised to batch download ready to mark submissions"}, 401)        
+        end
         
         # Array of tasks that need marking for the given unit id
-        tasks_ready_to_mark = UnitRole.tasks_ready_to_mark(current_user).reject{| task | task.project.unit.id != unit.id }
+        tasks_ready_to_mark = UnitRole.tasks_ready_to_mark(user).reject{| task | task.project.unit.id != unit.id }
+        puts tasks_ready_to_mark
         
         output_zip = generate_batch_task_zip(tasks_ready_to_mark, unit)
+        
+        if output_zip.nil?
+          error!({"error" => "No files to download"}, 401)        
+        end
         
         # Set download headers...
         content_type "application/octet-stream"

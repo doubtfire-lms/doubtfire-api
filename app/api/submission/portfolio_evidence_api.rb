@@ -34,11 +34,6 @@ module Api
         
         # This task is now ready to submit
         task.trigger_transition 'ready_to_mark', current_user
-        
-        # Remove the tempfile and set portfolio_evidence to the stored file directory
-        # TODO: task = Task.update(task.id, :portfolio_evidence => dst)
-
-        #TODO: delete temp files?
 
         TaskUpdateSerializer.new(task)
       end #post
@@ -50,7 +45,7 @@ module Api
         student = task.project.student
         unit = task.project.unit
         
-        if evidence_loc.nil?
+        if evidence_loc.nil? || task.processing_pdf
           error!({"error" => "No submission under task '#{task.task_definition.name}' for user #{student.username}"}, 401)
         end
         if not authorise? current_user, task, :get_submission

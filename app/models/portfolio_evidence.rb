@@ -130,6 +130,11 @@ class PortfolioEvidence
       output_filename = File.join(tmp_dir, "#{file_idx.to_s.rjust(3, '0')}.#{file.type}#{File.extname(file.filename)}")
       file_idx += 1
 
+      #
+      # Set portfolio_evidence to nil while it gets processed
+      #
+      task.update_attribute(:portfolio_evidence, nil)
+      
       # puts file.tempfile.path
       # puts output_filename
       FileUtils.cp file.tempfile.path, output_filename
