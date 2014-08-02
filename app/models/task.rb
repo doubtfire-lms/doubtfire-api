@@ -48,7 +48,7 @@ class Task < ActiveRecord::Base
   end
   
   def processing_pdf
-    portfolio_evidence == nil && ok_to_submit?
+    portfolio_evidence == nil && ready_to_mark?
   end
 
   def update_project

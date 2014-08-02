@@ -30,6 +30,10 @@ module Api
         
         output_zip = generate_batch_task_zip(tasks_ready_to_mark, unit)
         
+        if output_zip.nil?
+          error!({"error" => "No files to download"}, 401)        
+        end
+        
         # Set download headers...
         content_type "application/octet-stream"
         download_id = "#{Time.new.strftime("%Y-%m-%d")}-#{unit.code}-#{current_user.username}"
