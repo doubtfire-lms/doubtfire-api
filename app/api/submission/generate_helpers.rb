@@ -240,7 +240,7 @@ module Api::Submission::GenerateHelpers
       csv_str = mark_csv_headers
       tasks.each  do | task |
         # Skip tasks that do not yet have a PDF generated
-        return if task.processing_pdf
+        next if task.processing_pdf
         # Add to the template entry string
         student = task.project.student
         csv_str << "\n#{student.username},#{student.name},#{task.task_definition.abbreviation},#{task.id},rtm"
