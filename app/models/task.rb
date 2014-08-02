@@ -46,6 +46,10 @@ class Task < ActiveRecord::Base
   def upload_requirements
     task_definition.upload_requirements
   end
+  
+  def processing_pdf
+    portfolio_evidence == nil && ok_to_submit?
+  end
 
   def update_project
     project.update_attribute(:progress, project.calculate_progress)
