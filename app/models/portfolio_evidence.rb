@@ -11,10 +11,14 @@ class PortfolioEvidence
   def self.student_work_dir(type, task = nil)
     file_server = Doubtfire::Application.config.student_work_dir
     dst = "#{file_server}/#{type}/"
-    
-    # Add task id to dst if we want task
+
     if task != nil 
-      dst << "#{task.id}/"
+      if type == :pdf
+        dst << "#{task.project.unit.code}-#{task.project.unit.id}/#{task.project.student.username}/"
+      elsif 
+        # Add task id to dst if we want task
+        dst << "#{task.id}/"
+      end
     end
 
     # Create current dst directory should it not exist

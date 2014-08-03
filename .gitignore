@@ -17,3 +17,6 @@
 # Test and Code Quality output
 rails_best_practices_output.html
 spec/reports
+
+config/initializers/pdfkit.rb
+student_work/
