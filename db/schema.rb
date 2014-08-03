@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20140729035754) do
+ActiveRecord::Schema.define(version: 20140803232423) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -92,13 +92,13 @@ ActiveRecord::Schema.define(version: 20140729035754) do
     t.integer  "unit_id"
     t.string   "name"
     t.string   "description"
-    t.decimal  "weighting",           precision: 10, scale: 0
+    t.decimal  "weighting",                        precision: 10, scale: 0
     t.boolean  "required"
     t.datetime "target_date"
-    t.datetime "created_at",                                   null: false
-    t.datetime "updated_at",                                   null: false
+    t.datetime "created_at",                                                null: false
+    t.datetime "updated_at",                                                null: false
     t.string   "abbreviation"
-    t.string   "upload_requirements"
+    t.string   "upload_requirements", limit: 2048
   end
 
   add_index "task_definitions", ["unit_id"], name: "index_task_definitions_on_unit_id", using: :btree
