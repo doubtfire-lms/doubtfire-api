@@ -229,20 +229,20 @@ class Unit < ActiveRecord::Base
     end
   end
 
-  def import_tutorials_from_csv(file)
-    CSV.foreach(file) do |row|
-      next if row[0] =~ /Subject Code/ # Skip header
+  # def import_tutorials_from_csv(file)
+  #   CSV.foreach(file) do |row|
+  #     next if row[0] =~ /Subject Code/ # Skip header
 
-      class_type, abbrev, day, time, location, tutor_username = row[2..-1]
-      next if class_type !~ /Lab/
+  #     class_type, abbrev, day, time, location, tutor_username = row[2..-1]
+  #     next if class_type !~ /Lab/
 
-      add_tutorial(day, time, location, tutor_username, abbrev)
-    end
-  end
+  #     add_tutorial(day, time, location, tutor_username, abbrev)
+  #   end
+  # end
   
   def add_tutorial(day, time, location, tutor, abbrev)
-    tutor_role = tutors.where('user_id = :user_id', user_id: tutor.id).first
-    if tutor_role.nil?
+    tutor_role = unit_roles.where("user_id=:user_id", user_id: tutor.id).first
+    if tutor_role.nil? || tutor_role.role == Role.student
       return nil
     end
     
@@ -251,7 +251,6 @@ class Unit < ActiveRecord::Base
       tutorial.meeting_time     = time
       tutorial.meeting_location = location
       tutorial.unit_role_id     = tutor_role.id
-      # puts unit_roles.where('user_id = :user_id', user_id: tutor.id)
     end
   end
 
