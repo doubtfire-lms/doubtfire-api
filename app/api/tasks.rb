@@ -18,7 +18,6 @@ module Api
     # desc "Get task"
     # get '/tasks/:id' do
     #   task = Task.find(params[:id])
-    #   #TODO: auth!
 
     #   if authorise? current_user, task, :get
     #     task

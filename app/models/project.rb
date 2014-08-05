@@ -406,7 +406,7 @@ class Project < ActiveRecord::Base
     completed_tasks_weight + partially_completed_tasks_weight
   end
 
-  def calc_task_stats
+  def calc_task_stats ( reload_task = nil )
     result = {
       not_submitted: 0.0,
       fix_and_include: 0.0,
@@ -418,6 +418,15 @@ class Project < ActiveRecord::Base
       discuss: 0.0,
       complete: 0.0
     }
+
+    if reload_task
+      assigned_tasks.each { |task| 
+        if reload_task.id == task.id
+          task.reload
+        end
+        # puts "** #{task.id}, #{task.task_status.status_key}  #{self.persisted?}" 
+      }
+    end
 
     total = total_task_weight
     assigned_tasks.each { |task| result[task.status] += task.task_definition.weighting }
@@ -437,6 +446,7 @@ class Project < ActiveRecord::Base
     end
 
     self.task_stats = "#{result[:not_submitted]}|#{result[:fix_and_include]}|#{result[:redo]}|#{result[:need_help]}|#{result[:working_on_it]}|#{result[:fix_and_resubmit]}|#{result[:ready_to_mark]}|#{result[:discuss]}|#{result[:complete]}"
+    # puts self.task_stats
     save
     self.task_stats
   end

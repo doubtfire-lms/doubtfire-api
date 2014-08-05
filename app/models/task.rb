@@ -157,7 +157,7 @@ class Task < ActiveRecord::Base
     # Ensure that assessor is allowed to update the task in the indicated way
     #
     role = project.user_role(by_user)
-    return role if role.nil?
+    return nil if role.nil?
     
     #
     # State transitions based upon the trigger
@@ -197,7 +197,7 @@ class Task < ActiveRecord::Base
         end
     end
 
-    if not bulk then project.calc_task_stats end
+    if not bulk then project.calc_task_stats(self) end
   end
 
   def assess(task_status, assessor)
@@ -253,11 +253,11 @@ class Task < ActiveRecord::Base
   end
 
   def submit
-    return if [ :complete, :ready_to_mark ].include? task_status.status_key
+    return if [ :complete ].include? task_status.status_key
 
+    self.task_status      = TaskStatus.ready_to_mark
     self.awaiting_signoff = true
-    self.task_status = TaskStatus.ready_to_mark
-    self.completion_date = Time.zone.now
+    self.completion_date  = Time.zone.now
 
     if save!
       project.start

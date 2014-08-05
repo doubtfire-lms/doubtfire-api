@@ -29,7 +29,7 @@ class TaskStatus < ActiveRecord::Base
       when "working on it"    then TaskStatus.working_on_it
       when "discuss"          then TaskStatus.discuss
       when "ready to mark"    then TaskStatus.ready_to_mark
-      when "readu_to_mark"    then TaskStatus.ready_to_mark
+      when "ready_to_mark"    then TaskStatus.ready_to_mark
       else                    TaskStatus.not_submitted
     end
   end
