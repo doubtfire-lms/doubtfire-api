@@ -33,7 +33,7 @@ class User < ActiveRecord::Base
     if role == Role.student
       self.auth_token_expiry = DateTime.now + 30.days
     else
-      self.auth_token_expiry = DateTime.now + 99.years
+      self.auth_token_expiry = DateTime.now + 2.hours
     end
 
     self.save
