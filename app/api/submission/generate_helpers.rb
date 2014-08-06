@@ -262,12 +262,15 @@ module Api::Submission::GenerateHelpers
   def upload_batch_task_zip(file)
     updated_tasks = []
     # check mime is correct before uploading
-    if not file.type == "application/zip"
+    if not %w(application/zip multipart/x-gzip multipart/x-zip application/x-gzip application/octet-stream).include? file.type
       error!({"error" => "File given is not a zip file"}, 403)
     end
     Zip::File.open(file.tempfile.path) do |zip|
       # Process the marking file
       marking_file = zip.glob("marks.csv").first
+      if marking_file.nil?
+        error!({"error" => "No marks.csv contained in zip"}, 403)
+      end
       csv_str = marking_file.get_input_stream.read
       keys = mark_csv_headers.split(',').map { | s | s.downcase }
       keys[keys.length-1] = "mark" #rename the big string to just mark
