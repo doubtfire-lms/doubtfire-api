@@ -6148,6 +6148,13 @@ a {
 .task-progress-bar {
   width: 384px;
 }
+.task-progress-bar .progress-bar[aria-valuenow="1"],
+.task-progress-bar .progress-bar[aria-valuenow="2"] {
+  min-width: 0px;
+}
+.task-progress-bar .progress-bar[aria-valuenow="0"] {
+  min-width: 0px;
+}
 .task-progress-accordion .panel-heading {
   padding-top: 5px;
   padding-bottom: 5px;
