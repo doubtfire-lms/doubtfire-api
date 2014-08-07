@@ -6,8 +6,7 @@ namespace :submission do
   end
 
   task generate_pdfs:  :environment do
-  	logger.info 'Starting generate pdf'
-	Dir.chdir(Rails.root)
+    logger.info 'Starting generate pdf'
 	  	
   	PortfolioEvidence.process_new_to_pdf
   end
