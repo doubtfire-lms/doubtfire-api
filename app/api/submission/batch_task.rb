@@ -60,7 +60,7 @@ module Api
         unit = Unit.find(params[:unit_id])
         
         if not authorise? user, unit, :get_ready_to_mark_submissions
-          error!({"error" => "Not authorised to batch download ready to mark submissions"}, 401)        
+          error!({"error" => "Not authorised to batch upload marks"}, 401)        
         end
         
         upload_batch_task_zip(params[:file])

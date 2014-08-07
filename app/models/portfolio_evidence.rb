@@ -5,16 +5,46 @@ class PortfolioEvidence
   end
 
   #
+  # Sanitize the passed in paths, and ensure each part is valid
+  # Will kill things like ../ etc or spaces in paths
+  #
+  def self.sanitized_path(*paths)
+    safe_paths = paths.map do | path_name |
+      path_name.strip.tap do |name|
+        # Finally, replace all non alphanumeric, underscore
+        # or periods with underscore
+        name.gsub! /[^\w\-]/, '_'
+      end
+    end
+
+    File.join(safe_paths)
+  end
+
+  #
+  # Sanitize the passed in filename -- should not include any path details
+  #
+  def self.sanitized_filename(filename)
+    filename.strip.tap do |name|
+      # NOTE: File.basename doesn't work right with Windows paths on Unix
+      # get only the filename, not the whole path
+      name.sub! /\A.*(\\|\/)/, ''
+      # Finally, replace all non alphanumeric, underscore
+      # or periods with underscore
+      name.gsub! /[^\w\.\-]/, '_'
+    end
+  end
+
+  #
   # Generates a path for storing student work
   # type = [:new, :in_process, :pdfs]
   #
   def self.student_work_dir(type, task = nil)
     file_server = Doubtfire::Application.config.student_work_dir
-    dst = "#{file_server}/#{type}/"
+    dst = "#{file_server}/#{type}/" # trust the server config and passed in type for paths
 
     if task != nil 
-      if type == :pdf
-        dst << "#{task.project.unit.code}-#{task.project.unit.id}/#{task.project.student.username}/"
+      if type == :pdf || type == :in_process
+        dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}","#{task.project.student.username}") << "/"
       elsif 
         # Add task id to dst if we want task
         dst << "#{task.id}/"
@@ -199,20 +229,23 @@ class PortfolioEvidence
     # move into the new dir - and mv 
     Dir.chdir(new_task_dir)
     FileUtils.mv Dir.glob("*"), in_process_dir, :force => true
+    Dir.chdir(in_process_root_dir)
     begin
       FileUtils.rm_r(new_task_dir)
     rescue
       logger.warn "failed to rm #{new_task_dir}"
     end
 
-
     #
     # Get access to all files to process (ensure we only work with <no>.[cover|document|code|image] etc...)
     #
     in_process_files = Dir.entries(in_process_dir).select { | f | (f =~ /^\d{3}\.(cover|document|code|image)/) == 0 }
     if in_process_files.length < 1
+      logger.error "No files found in #{in_process_dir} for Task #{id}"
+      puts "Error - No files found in #{in_process_dir} for Task #{id}"
       return
     end
+
     #
     # Map each process file to have extra info i.e.:
     #
@@ -247,23 +280,34 @@ class PortfolioEvidence
     #             multithreading isn't working...
     #
     pdf_paths = []
-    pdf_paths_mutex = Mutex.new
     files.each do | file |
       outpath = "#{tmp_dir}/#{file[:idx]}.#{file[:type]}.pdf"
       
       convert_to_pdf(file, outpath)
       # puts file
       pdf_paths[file[:idx]] = outpath
+      begin
+        file[:actualfile].close
+      rescue
+      end
     end
     
-    final_pdf_path = "#{student_work_dir(:pdf, task)}#{task.task_definition.abbreviation}-#{task.id}.pdf"
+    final_pdf_path = File.join(student_work_dir(:pdf, task), sanitized_filename( sanitized_path("#{task.task_definition.abbreviation}-#{task.id}") + ".pdf"))
     
+    begin
+      if File.exists(final_pdf_path)
+        File.rm(final_pdf_path)
+      end
+    rescue
+    end
+
     #
     # Aggregate each of the output PDFs
     #
-    didCompile = system "pdftk #{pdf_paths.join ' '} cat output #{final_pdf_path}"
+    didCompile = system "pdftk #{pdf_paths.join ' '} cat output '#{final_pdf_path}'"
     if !didCompile
       logger.error "failed to create #{final_pdf_path}\n -> pdftk #{pdf_paths.join ' '} cat output #{final_pdf_path}"
+      puts "failed to create #{final_pdf_path}\n -> pdftk #{pdf_paths.join ' '} cat output #{final_pdf_path}"
     else
       task.portfolio_evidence = final_pdf_path
       task.save
