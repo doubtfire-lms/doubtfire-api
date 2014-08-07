@@ -208,6 +208,10 @@ class PortfolioEvidence
     end
   end
 
+  def self.final_pdf_path_for(task)
+    File.join(student_work_dir(:pdf, task), sanitized_filename( sanitized_path("#{task.task_definition.abbreviation}-#{task.id}") + ".pdf"))
+  end
+
   def self.process_task_to_pdf(id)
     #
     # Get access to the task
@@ -292,7 +296,7 @@ class PortfolioEvidence
       end
     end
     
-    final_pdf_path = File.join(student_work_dir(:pdf, task), sanitized_filename( sanitized_path("#{task.task_definition.abbreviation}-#{task.id}") + ".pdf"))
+    final_pdf_path = final_pdf_path_for(task)
     
     begin
       if File.exists(final_pdf_path)

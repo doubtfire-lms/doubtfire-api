@@ -10,7 +10,7 @@ require 'pdfkit'
 require 'zip'
 
 module Api::Submission::GenerateHelpers
-  
+
   def logger
     # Grape::API.logger
     Rails.logger
@@ -64,10 +64,10 @@ module Api::Submission::GenerateHelpers
         next if task.processing_pdf
         # Add to the template entry string
         student = task.project.student
-        csv_str << "\n#{student.username},#{student.name},#{task.task_definition.abbreviation},#{task.id},rtm"
+        csv_str << "\n#{student.username.sub(/,/, '_')},#{student.name.sub(/,/, '_')},#{task.task_definition.abbreviation.sub(/,/, '_')},#{task.id},rtm"
         src_path = task.portfolio_evidence
         # make dst path of "<student id>/<task abbrev>.pdf"
-        dst_path = "#{task.project.student.username}/#{task.task_definition.abbreviation}-#{task.id}.pdf"
+        dst_path = PortfolioEvidence.sanitized_path("#{task.project.student.username}", "#{task.task_definition.abbreviation}-#{task.id}") + ".pdf"
         # now copy it over
         zip.add(dst_path, src_path)
       end
@@ -96,7 +96,7 @@ module Api::Submission::GenerateHelpers
     begin
       Zip::File.open(file.tempfile.path) do |zip|
         # Process the marking file
-        marking_file = zip.glob("marks.csv").first
+        marking_file = zip.glob("*/marks.csv").first
         if marking_file.nil?
           error!({"error" => "No marks.csv contained in zip"}, 403)
         end
@@ -131,6 +131,7 @@ module Api::Submission::GenerateHelpers
           end
           
           # Read into the task's portfolio_evidence path the new file
+          task.portfolio_evidence = PortfolioEvidence.final_pdf_path_for(task)
           file.extract(task.portfolio_evidence){ true }
           
           task.trigger_transition(task_entry['mark'], current_user)
