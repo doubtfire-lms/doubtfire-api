@@ -95,8 +95,9 @@ module Api::Submission::GenerateHelpers
 
     begin
       Zip::File.open(file.tempfile.path) do |zip|
-        # Process the marking file
-        marking_file = zip.glob("*/marks.csv").first
+        # Find the marking file within the directory tree
+        marking_file = zip.glob("**/marks.csv").first
+        # No marking file found
         if marking_file.nil?
           error!({"error" => "No marks.csv contained in zip"}, 403)
         end
