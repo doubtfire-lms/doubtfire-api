@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20140803232423) do
+ActiveRecord::Schema.define(version: 20140811032520) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -50,14 +50,16 @@ ActiveRecord::Schema.define(version: 20140803232423) do
     t.integer  "unit_id"
     t.integer  "unit_role_id"
     t.string   "project_role"
-    t.datetime "created_at",   null: false
-    t.datetime "updated_at",   null: false
+    t.datetime "created_at",                  null: false
+    t.datetime "updated_at",                  null: false
     t.boolean  "started"
     t.string   "progress"
     t.string   "status"
     t.string   "task_stats"
+    t.boolean  "enrolled",     default: true
   end
 
+  add_index "projects", ["enrolled"], name: "index_projects_on_enrolled", using: :btree
   add_index "projects", ["unit_id"], name: "index_projects_on_unit_id", using: :btree
   add_index "projects", ["unit_role_id"], name: "index_projects_on_unit_role_id", using: :btree
 

@@ -30,14 +30,18 @@ class Project < ActiveRecord::Base
   }
 
   def self.for_user(user)
-    joins(:unit_role).where('unit_roles.user_id = :user_id', user_id: user.id)
+    active_projects.joins(:unit_role).where('unit_roles.user_id = :user_id', user_id: user.id)
+  end
+
+  def self.active_projects
+    where(enrolled: true)
   end
 
   def self.for_unit_role(unit_role)
     if unit_role.is_student?
-      Project.where(unit_role_id: unit_role.id)
+      active_projects.where(unit_role_id: unit_role.id)
     elsif unit_role.is_teacher?
-      Project.where(unit_id: unit_role.unit_id)
+      active_projects.where(unit_id: unit_role.unit_id)
     else
       nil
     end

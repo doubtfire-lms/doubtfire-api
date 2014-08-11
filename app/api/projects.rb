@@ -52,6 +52,7 @@ module Api
     params do
       optional :trigger, type: String, desc: 'The update trigger'
       optional :tutorial_id, type:Integer, desc: 'Switch tutorial'
+      optional :enrolled, type:Boolean, desc: 'Enrol or withdraw this project'
     end
     put '/projects/:id' do
       project = Project.find(params[:id])
@@ -81,6 +82,12 @@ module Api
         else
           error!({"error" => "Couldn't find Tutorial with id=#{params[:tutorial_id]}" }, 403)
         end
+      elsif not params[:enrolled].nil?
+        if not authorise? current_user, project.unit, :change_project_enrolment
+          error!({"error" => "You cannot change the enrolment for project #{params[:id]}" }, 403)
+        end
+        project.enrolled = params[:enrolled]
+        project.save
       end
 
       project
