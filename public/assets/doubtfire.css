@@ -6148,6 +6148,9 @@ a {
 .task-progress-bar {
   width: 384px;
 }
+.task-progress-bar .panel-group {
+  margin-bottom: 0px;
+}
 .task-progress-bar .progress-bar[aria-valuenow="1"],
 .task-progress-bar .progress-bar[aria-valuenow="2"] {
   min-width: 0px;
@@ -6155,7 +6158,8 @@ a {
 .task-progress-bar .progress-bar[aria-valuenow="0"] {
   min-width: 0px;
 }
-.task-progress-accordion .panel-heading {
+.task-progress-accordion .panel-heading,
+.progress-progress-bar .panel-heading {
   padding-top: 5px;
   padding-bottom: 5px;
   padding-left: 10px;
@@ -6194,6 +6198,27 @@ a {
   color: white;
 }
 .progress-bar-complete {
+  background-color: #5BB75B;
+  background-image: linear-gradient(#62c462, #51a351);
+  color: white;
+}
+.progress-progress-bar {
+  height: 30px;
+  margin-bottom: 0px;
+}
+.progress-bar-not-started {
+  background-color: #CCCCCC;
+  color: white;
+}
+.progress-bar-one-week-late {
+  background-color: #CCCCCC;
+  color: white;
+}
+.progress-bar-two-weeks-late {
+  background-color: #CCCCCC;
+  color: white;
+}
+.progress-bar-on-time {
   background-color: #5BB75B;
   background-image: linear-gradient(#62c462, #51a351);
   color: white;
