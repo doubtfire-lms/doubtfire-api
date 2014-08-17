@@ -106,6 +106,10 @@ class Task < ActiveRecord::Base
     (project.reference_date - task_definition.target_date).to_i / 1.day
   end
 
+  def due_date
+    task_definition.target_date
+  end
+
   def complete?
     status == :complete
   end

@@ -410,6 +410,57 @@ class Project < ActiveRecord::Base
     completed_tasks_weight + partially_completed_tasks_weight
   end
 
+  def convert_hash_to_pct(hash, total)
+    hash.each { |key, value| if hash[key] < 0.01 then hash[key] = 0.0 else hash[key] = (value / total).signif(2) end }
+    
+    total = 0.0
+    hash.each { |key, value| total += value }
+
+    if total != 1.0
+      dif = 1.0 - total
+      hash.each { |key, value| 
+        if value > 0.0
+          hash[key] = (hash[key] + dif).signif(2) 
+          break
+        end 
+      }
+    end
+  end
+
+  #
+  # Return stats on task progress:
+  # - % On Time 
+  # - % 1 week late
+  # - % 2+ weeks late
+  # - % late and not started
+  def progress_stats
+    result = {
+      on_time: 0.0,
+      one_week_late: 0.0,
+      two_weeks_late: 0.0,
+      not_started: 0.0
+    }
+
+    total = 0.0
+
+    due_tasks.each { |task|
+      total += task.weight
+      if [ :complete, :fix_and_resubmit, :fix_and_include, :ready_to_mark, :discuss ].include? task.status
+        result[:on_time] += task.weight
+      elsif [ :not_submitted ].include? task.status
+        result[:not_started] += task.weight
+      elsif task.days_overdue <= 7
+         result[:one_week_late] += task.weight 
+      else
+        result[:two_weeks_late] += task.weight
+      end
+    }
+
+    convert_hash_to_pct(result, total)
+    
+    result
+  end
+
   def calc_task_stats ( reload_task = nil )
     result = {
       not_submitted: 0.0,
@@ -434,22 +485,11 @@ class Project < ActiveRecord::Base
 
     total = total_task_weight
     assigned_tasks.each { |task| result[task.status] += task.task_definition.weighting }
-    result.each { |key, value| if result[key] < 0.01 then result[key] = 0.0 else result[key] = (value / total).signif(2) end }
-    
-    total = 0.0
-    result.each { |key, value| total += value }
+    convert_hash_to_pct(result, total)
 
-    if total != 1.0
-      dif = 1.0 - total
-      result.each { |key, value| 
-        if value > 0.0
-          result[key] = (result[key] + dif).signif(2) 
-          break
-        end 
-      }
-    end
+    p_stats = progress_stats
 
-    self.task_stats = "#{result[:not_submitted]}|#{result[:fix_and_include]}|#{result[:redo]}|#{result[:need_help]}|#{result[:working_on_it]}|#{result[:fix_and_resubmit]}|#{result[:ready_to_mark]}|#{result[:discuss]}|#{result[:complete]}"
+    self.task_stats = "#{result[:not_submitted]}|#{result[:fix_and_include]}|#{result[:redo]}|#{result[:need_help]}|#{result[:working_on_it]}|#{result[:fix_and_resubmit]}|#{result[:ready_to_mark]}|#{result[:discuss]}|#{result[:complete]}|#{p_stats[:on_time]}|#{p_stats[:one_week_late]}|#{p_stats[:two_weeks_late]}|#{p_stats[:not_started]}"
     # puts self.task_stats
     save
     self.task_stats
@@ -459,8 +499,18 @@ class Project < ActiveRecord::Base
     assigned_tasks.map{|task| task.task_definition.weighting }.inject(:+)
   end
 
+  #
+  # Tasks currently due - but not complete
+  #
   def currently_due_tasks
     assigned_tasks.select{|task| task.currently_due? }
+  end
+
+  #
+  # All tasks currently due
+  #
+  def due_tasks
+    assigned_tasks.select { |task| task.due_date < reference_date }
   end
 
   def overdue_tasks
