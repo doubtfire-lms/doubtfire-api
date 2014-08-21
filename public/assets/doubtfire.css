@@ -6133,20 +6133,26 @@ a {
 .form-signin input {
   text-align: center;
 }
+.project-task-bar {
+  white-space: normal;
+  padding: 5px;
+}
 .project-task-bar li {
   display: inline;
+  padding: 2px;
 }
 .task-progress {
   margin-bottom: 0px;
 }
-.task-progress td {
+.task-progress tr {
   vertical-align: middle;
 }
 .progress-bar span {
   font: 12px/1.7em 'Open Sans', Helvetica;
 }
 .task-progress-bar {
-  width: 384px;
+  min-width: 128px;
+  width: 360px;
 }
 .task-progress-bar .panel-group {
   margin-bottom: 0px;
@@ -6318,9 +6324,9 @@ a.task-status.complete {
 }
 a.task-status.btn {
   padding: 5px;
-  width: 4em;
   margin-bottom: 2px;
-  font-size: 12px;
+  margin-right: 2px;
+  font-size: 10px;
 }
 .task-status {
   background-color: #F8F8F8;
