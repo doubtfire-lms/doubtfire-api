@@ -10,10 +10,19 @@ module Api
       authenticated?
     end
 
-    # desc "Get all the current user's tasks"
-    # get '/tasks' do
-    #   tasks = Task.for_user current_user
-    # end
+    desc "Get all the current user's tasks"
+    params do
+      requires :unit_id, type: Integer, desc: 'Unit to fetch the task details for'
+    end
+    get '/tasks' do
+      unit = Unit.find(params[:unit_id])
+
+      if not authorise? current_user, unit, :get_students
+        error!({"error" => "You do not have permission to read these task details"}, 403)
+      end
+
+      ActiveModel::ArraySerializer.new(Task.for_unit(unit.id), each_serializer: TaskStatSerializer)
+    end
 
     # desc "Get task"
     # get '/tasks/:id' do

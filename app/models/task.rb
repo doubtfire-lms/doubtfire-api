@@ -22,12 +22,11 @@ class Task < ActiveRecord::Base
 
   after_save :update_project
 
-  def self.for_user(user)
-    # TODO: This would probably be cleaner with a task query
-    # Project.includes(tasks: :task_definition)
-    #         .for_user(user)
-    #         .map{|project| project.tasks }.flatten
+  def self.for_unit(unit_id)
+    Task.joins(:project).where("projects.unit_id = :unit_id", unit_id: unit_id)
+  end
 
+  def self.for_user(user)
     Task.joins(project: :unit_role).where("unit_roles.user_id = ?", user.id)
   end
 

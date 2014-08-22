@@ -8,7 +8,22 @@ class TaskUpdateSerializer < ActiveModel::Serializer
   def new_stats
     object.project.task_stats
   end
+end
 
+class TaskStatSerializer < ActiveModel::Serializer
+  attributes :id, :task_abbr, :status, :tutor_name 
+
+  def task_abbr
+    object.task_definition.abbreviation
+  end
+
+  def task_abbr
+    object.task_definition.abbreviation
+  end
+
+  def tutor_name
+    object.project.main_tutor.name unless object.project.main_tutor.nil?
+  end
 end
 
 class TaskSerializer < ActiveModel::Serializer
