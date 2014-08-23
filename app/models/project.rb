@@ -108,7 +108,7 @@ class Project < ActiveRecord::Base
   end
 
   def assigned_tasks
-    required_tasks
+    tasks.select{|task| task.task_definition.target_grade <= target_grade }
   end
 
   def required_tasks

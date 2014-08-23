@@ -17,10 +17,10 @@ module Api
         requires :name,                 type: String,   :desc => "The name of this task def"
         requires :description,          type: String,   :desc => "The description of this task def"
         requires :weighting,            type: Integer,  :desc => "The weighting of this task"
-        requires :required,             type: Boolean,  :desc => "Whether or not this task is required for the unit"
+        requires :target_grade,         type: Integer,  :desc => "Minimum grade for task"
         requires :target_date,          type: Date,     :desc => "The date when the task is due"
         requires :abbreviation,         type: String,   :desc => "The abbreviation of the task"
-        optional :upload_requirements,  type: String,     :desc => "Task file upload requirements"
+        optional :upload_requirements,  type: String,   :desc => "Task file upload requirements"
       end
     end
     post '/task_definitions/' do      
@@ -38,7 +38,7 @@ module Api
                                                   :name,               
                                                   :description,        
                                                   :weighting,          
-                                                  :required,           
+                                                  :target_grade,           
                                                   :target_date,        
                                                   :abbreviation,
                                                   :upload_requirements
@@ -56,7 +56,7 @@ module Api
         optional :name,                 type: String,   :desc => "The name of this task def"
         optional :description,          type: String,   :desc => "The description of this task def"
         optional :weighting,            type: Integer,  :desc => "The weighting of this task"
-        optional :required,             type: Boolean,  :desc => "Whether or not this task is required for the unit"
+        optional :target_grade,         type: Integer,  :desc => "Target grade for task"
         optional :target_date,          type: Date,     :desc => "The date when the task is due"
         optional :abbreviation,         type: String,   :desc => "The abbreviation of the task"
         optional :upload_requirements,  type: String,   :desc => "Task file upload requirements"
@@ -76,7 +76,7 @@ module Api
                                                   :name,               
                                                   :description,        
                                                   :weighting,          
-                                                  :required,           
+                                                  :target_grade,           
                                                   :target_date,        
                                                   :abbreviation,
                                                   :upload_requirements
