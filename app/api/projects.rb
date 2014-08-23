@@ -100,7 +100,7 @@ module Api
     desc "Enrol a student in a unit, creating them a project"
     params do
         requires :unit_id         , type: Integer,   desc: 'Unit Id'
-        requires :student_num      , type: String,   desc: 'Student Number 7 digit code'
+        requires :student_num     , type: String,   desc: 'Student Number 7 digit code'
         optional :tutorial_id     , type: Integer,  desc: 'Tutorial Id'
     end
     post '/projects' do

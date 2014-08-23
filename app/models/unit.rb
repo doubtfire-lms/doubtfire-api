@@ -118,7 +118,7 @@ class Unit < ActiveRecord::Base
     project = Project.create!(
       unit_role_id: unit_role.id,
       unit_id: self.id,
-      task_stats: "1.0|0.0|0.0|0.0|0.0|0.0|0.0|0.0|0.0"
+      task_stats: "1.0|0.0|0.0|0.0|0.0|0.0|0.0|0.0|0.0|0.0|0.0|0.0|1.0"
     )
 
     # Create task instances for the project

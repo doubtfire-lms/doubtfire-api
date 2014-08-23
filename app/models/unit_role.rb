@@ -7,9 +7,8 @@ class UnitRole < ActiveRecord::Base
   belongs_to :role    # Foreign key
 
   belongs_to :tutorial  # for students only! TODO: fix
-  has_one  :project,    dependent: :destroy # for students only! TODO: fix
+  has_one  :project, dependent: :destroy, inverse_of: :unit_role # for students only! TODO: fix
 
-  
   has_many :taught_tutorials, class_name: "Tutorial", dependent: :nullify
 
   validates :unit_id, presence: true
@@ -79,7 +78,4 @@ class UnitRole < ActiveRecord::Base
   def is_teacher?
     is_tutor? || is_convenor?
   end
-
-
-
 end

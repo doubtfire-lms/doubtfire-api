@@ -8,11 +8,19 @@ class Project < ActiveRecord::Base
   include ApplicationHelper
 
   belongs_to :unit
-  belongs_to :unit_role, class_name: 'UnitRole', foreign_key: 'unit_role_id'
+  belongs_to :unit_role, class_name: 'UnitRole', foreign_key: 'unit_role_id', inverse_of: :project
   has_one :tutorial, through: :unit_role
 
   # has_one :user, through: :student
   has_many :tasks, dependent: :destroy   # Destroying a project will also nuke all of its tasks
+
+  after_destroy :destroy_unit_role
+
+  def destroy_unit_role
+    return unless unit_role
+    unit_role.project = nil
+    unit_role.destroy unless unit_role.destroyed?
+  end
 
   def self.permissions
     { 
