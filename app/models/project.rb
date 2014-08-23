@@ -234,7 +234,7 @@ class Project < ActiveRecord::Base
     end
 
     # Get the target task from the unit's task definitions
-    target_tasks = unit.task_definitions.select{|task_def| task_def.required}
+    target_tasks = unit.task_definitions.select{|task_def| task_def.target_grade <= target_grade}
 
     # today is used to determine when to stop adding done tasks
     today = reference_date

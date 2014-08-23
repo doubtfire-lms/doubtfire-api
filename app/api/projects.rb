@@ -50,9 +50,10 @@ module Api
 
     desc "Update a project"
     params do
-      optional :trigger, type: String, desc: 'The update trigger'
-      optional :tutorial_id, type:Integer, desc: 'Switch tutorial'
-      optional :enrolled, type:Boolean, desc: 'Enrol or withdraw this project'
+      optional :trigger,      type: String,  desc: 'The update trigger'
+      optional :tutorial_id,  type: Integer, desc: 'Switch tutorial'
+      optional :enrolled,     type: Boolean, desc: 'Enrol or withdraw this project'
+      optional :target_grade, type: Integer, desc: 'New target grade'
     end
     put '/projects/:id' do
       project = Project.find(params[:id])
@@ -87,6 +88,9 @@ module Api
           error!({"error" => "You cannot change the enrolment for project #{params[:id]}" }, 403)
         end
         project.enrolled = params[:enrolled]
+        project.save
+      elsif not params[:target_grade].nil?
+        project.target_grade = params[:target_grade]
         project.save
       end
 
