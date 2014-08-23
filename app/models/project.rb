@@ -9,6 +9,7 @@ class Project < ActiveRecord::Base
 
   belongs_to :unit
   belongs_to :unit_role, class_name: 'UnitRole', foreign_key: 'unit_role_id'
+  has_one :tutorial, through: :unit_role
 
   # has_one :user, through: :student
   has_many :tasks, dependent: :destroy   # Destroying a project will also nuke all of its tasks

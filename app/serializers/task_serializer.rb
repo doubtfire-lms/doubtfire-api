@@ -11,7 +11,7 @@ class TaskUpdateSerializer < ActiveModel::Serializer
 end
 
 class TaskStatSerializer < ActiveModel::Serializer
-  attributes :id, :task_abbr, :status, :tutor_name 
+  attributes :id, :task_abbr, :status, :tutorial_id 
 
   def task_abbr
     object.task_definition.abbreviation
@@ -21,9 +21,9 @@ class TaskStatSerializer < ActiveModel::Serializer
     object.task_definition.abbreviation
   end
 
-  def tutor_name
-    object.project.main_tutor.name unless object.project.main_tutor.nil?
-  end
+  # def tutorial_id
+  #   object.project.tutorial.id unless object.project.tutorial.nil?
+  # end
 end
 
 class TaskSerializer < ActiveModel::Serializer
