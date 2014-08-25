@@ -21,7 +21,7 @@ module Api
         error!({"error" => "You do not have permission to read these task details"}, 403)
       end
 
-      ActiveModel::ArraySerializer.new(Task.for_unit(unit.id).joins(project: :unit_role).select('tasks.*, unit_roles.tutorial_id as tutorial_id').where("projects.enrolled = true and tasks.task_status_id > 1"), each_serializer: TaskStatSerializer)
+      ActiveModel::ArraySerializer.new(Task.for_unit(unit.id).joins(project: :unit_role).select('tasks.*, unit_roles.tutorial_id as tutorial_id').where("projects.enrolled = true and tasks.task_status_id > 1 and unit_roles.tutorial_id is not null"), each_serializer: TaskStatSerializer)
     end
 
     # desc "Get task"
