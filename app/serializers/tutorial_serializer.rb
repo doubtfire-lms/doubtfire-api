@@ -1,7 +1,7 @@
 require 'user_serializer'
 
 class TutorialSerializer < ActiveModel::Serializer
-  attributes :id, :meeting_day, :meeting_time, :meeting_location, :abbreviation, :tutor_name
+  attributes :id, :meeting_day, :meeting_time, :meeting_location, :abbreviation, :tutor_name, :num_students
 
   def meeting_time 
     object.meeting_time.to_time
@@ -18,6 +18,13 @@ class TutorialSerializer < ActiveModel::Serializer
   	if Thread.current[:user]
       my_role = object.unit.role_for(Thread.current[:user])
       [ Role.convenor, Role.admin ].include? my_role
+    end
+  end
+
+  def include_num_students?
+    if Thread.current[:user]
+      my_role = object.unit.role_for(Thread.current[:user])
+      [ Role.convenor, Role.tutor, Role.admin ].include? my_role
     end
   end
 end

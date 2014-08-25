@@ -68,4 +68,8 @@ class Tutorial < ActiveRecord::Base
     end
     self
   end
+
+  def num_students
+    projects.where('enrolled = true').count
+  end
 end
