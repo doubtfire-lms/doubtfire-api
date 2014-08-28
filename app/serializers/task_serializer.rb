@@ -1,5 +1,9 @@
 class ShallowTaskSerializer < ActiveModel::Serializer
-  attributes :id, :status, :task_definition_id, :processing_pdf
+  attributes :id, :status, :task_definition_id, :processing_pdf, :has_pdf
+
+  def has_pdf
+    File.exists?(PortfolioEvidence.final_pdf_path_for(object))
+  end
 end
 
 class TaskUpdateSerializer < ActiveModel::Serializer
