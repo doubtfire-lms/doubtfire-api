@@ -30,7 +30,7 @@ module Api
         unit = task.project.unit
         
         # Copy files to be PDFed
-        PortfolioEvidence.produce_student_work(scoop_files(params, upload_reqs), student, task)
+        PortfolioEvidence.produce_student_work(scoop_files(params, upload_reqs), student, task, self)
         
         # This task is now ready to submit
         task.trigger_transition 'ready_to_mark', current_user

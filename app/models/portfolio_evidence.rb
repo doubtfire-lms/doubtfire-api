@@ -63,13 +63,13 @@ class PortfolioEvidence
   # It is the caller's responsibility to delete this tempfile
   # once the method is finished.
   #
-  def self.produce_student_work(files, student, task)
+  def self.produce_student_work(files, student, task, ui)
     #
     # Ensure that each file in files has the following attributes:
     # id, name, filename, type, tempfile  
     #
     files.each do | file |
-      error!({"error" => "Missing file data for '#{file.name}'"}, 403) if file.id.nil? || file.name.nil? || file.filename.nil? || file.type.nil? || file.tempfile.nil?
+      ui.error!({"error" => "Missing file data for '#{file.name}'"}, 403) if file.id.nil? || file.name.nil? || file.filename.nil? || file.type.nil? || file.tempfile.nil?
     end
    
     # file.key            = "file0"
@@ -98,11 +98,11 @@ class PortfolioEvidence
                    # --"application/msword", 
                    "application/pdf" ]
       else
-        error!({"error" => "Unknown type '#{file.type}' provided for '#{file.name}'"}, 403)
+        ui.error!({"error" => "Unknown type '#{file.type}' provided for '#{file.name}'"}, 403)
       end
       
       if not mime.start_with?(*accept)
-        error!({"error" => "'#{file.name}' was not an #{file.type} file type"}, 403)
+        ui.error!({"error" => "'#{file.name}' was not an #{file.type} file type"}, 403)
       end
     end
     
