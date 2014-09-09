@@ -581,6 +581,7 @@ class Project < ActiveRecord::Base
     [
       student.username,
       student.name,
+      target_grade,
       student.email,
       if tutorial then tutorial.abbreviation else '' end
     ] + ordered_tasks.map{|task| task.task_status.name }

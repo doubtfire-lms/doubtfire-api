@@ -330,6 +330,7 @@ class Unit < ActiveRecord::Base
       csv << [
         'Student ID',
         'Student Name',
+        'Target Grade',
         'Email',
         'Tutorial',
       ] + task_definitions.map{|task_definition| task_definition.abbreviation }
