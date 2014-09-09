@@ -177,5 +177,18 @@ module Api
       env['api.format'] = :binary
       unit.export_users_to_csv
     end
+
+    desc "Download CSV of all student tasks in this unit"
+    get '/csv/units/:id/task_completion' do
+      unit = Unit.find(params[:id])
+      if not authorise? current_user, unit, :downloadCSV
+        error!({"error" => "Not authorised to download CSV of student tasks in #{unit.code}"}, 403)
+      end
+      
+      content_type "application/octet-stream"
+      header['Content-Disposition'] = "attachment; filename=#{unit.code}-TaskCompletion.csv "
+      env['api.format'] = :binary
+      unit.task_completion_csv
+    end
   end
 end
