@@ -28,14 +28,38 @@ class TaskDefinition < ActiveRecord::Base
   end
 
   def upload_requirements
+    # Read the JSON string in upload_requirements and convert into ruby objects
     JSON.parse(self['upload_requirements'])
   end
 
   def upload_requirements=(req)
-    self['upload_requirements'] = req.to_s
+    if req.class == String
+      # get the ruby objects from the json data
+      jsonData = JSON.parse(req)
+    else
+      # use the passed in objects
+      jsonData = req
+    end
+
+    # ensure we have a structure that is : [ { "key": "...", "name": "...", "type": "..."}, { ... } ]
+    if not jsonData.class == Array
+      errors.add(:upload_requirements, "is not in a valid format! Should be [ { \"key\": \"...\", \"name\": \"...\", \"type\": \"...\"}, { ... } ]. Did not contain array.")
+      return
+    end
+
+    for req in jsonData do
+      if not req.class == Hash
+        errors.add(:upload_requirements, "is not in a valid format! Should be [ { \"key\": \"...\", \"name\": \"...\", \"type\": \"...\"}, { ... } ]. Array did not contain hashes.")
+        return
+      end
+
+      req.delete_if {|key, value| not ["key", "name", "type"].include? key }
+    end
+
+    self['upload_requirements'] = JSON.unparse(jsonData)
   end
 
-  def self.to_csv(task_definitions, options = {})
+  def self.to_csv(task_definitions, options = {}) #unconverted_fields: :upload_requirements
     CSV.generate(options) do |csv|
       csv << csv_columns
       task_definitions.each do |task_definition|
