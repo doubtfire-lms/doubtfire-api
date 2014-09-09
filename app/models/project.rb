@@ -577,11 +577,12 @@ class Project < ActiveRecord::Base
   end
 
   def task_completion_csv(options={})
+    ordered_tasks = tasks.joins(:task_definition).order("task_definitions.target_date, task_definitions.abbreviation")
     [
       student.username,
       student.name,
       student.email,
       if tutorial then tutorial.abbreviation else '' end
-    ] + tasks.map{|task| task.task_status.name }
+    ] + ordered_tasks.map{|task| task.task_status.name }
   end
 end
