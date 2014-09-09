@@ -578,9 +578,10 @@ class Project < ActiveRecord::Base
 
   def task_completion_csv(options={})
     [
-      user.username,
-      user.name,
-      student.tutorial.tutor.name
+      student.username,
+      student.name,
+      student.email,
+      if tutorial then tutorial.abbreviation else '' end
     ] + tasks.map{|task| task.task_status.name }
   end
 end

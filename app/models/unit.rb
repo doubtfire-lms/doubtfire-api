@@ -330,7 +330,8 @@ class Unit < ActiveRecord::Base
       csv << [
         'Student ID',
         'Student Name',
-        'Tutor Name',
+        'Tutorial',
+        'Email',
       ] + task_definitions.map{|task_definition| task_definition.name }
       projects.each do |project|
         csv << project.task_completion_csv
