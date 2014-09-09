@@ -6150,19 +6150,19 @@ a {
 .progress-bar span {
   font: 12px/1.7em 'Open Sans', Helvetica;
 }
+.progress-bar[aria-valuenow="1"],
+.progress-bar[aria-valuenow="2"] {
+  min-width: 0px;
+}
+.progress-bar[aria-valuenow="0"] {
+  min-width: 0px;
+}
 .task-progress-bar {
   min-width: 128px;
   width: 360px;
 }
 .task-progress-bar .panel-group {
   margin-bottom: 0px;
-}
-.task-progress-bar .progress-bar[aria-valuenow="1"],
-.task-progress-bar .progress-bar[aria-valuenow="2"] {
-  min-width: 0px;
-}
-.task-progress-bar .progress-bar[aria-valuenow="0"] {
-  min-width: 0px;
 }
 .task-progress-accordion .panel-heading,
 .progress-progress-bar .panel-heading {
@@ -6322,7 +6322,31 @@ button.task-status.complete {
   background-image: linear-gradient(#62c462, #51a351);
   color: white;
 }
-.task-status {
+.task-status .ready-to-mark {
+  background-color: #F8F8F8;
+}
+.task-status .not-submitted {
+  background-color: #F8F8F8;
+}
+.task-status .working-on-it {
+  background-color: #F8F8F8;
+}
+.task-status .need-help {
+  background-color: #F8F8F8;
+}
+.task-status .fix-and-resubmit {
+  background-color: #F8F8F8;
+}
+.task-status .fix-and-include {
+  background-color: #F8F8F8;
+}
+.task-status .redo {
+  background-color: #F8F8F8;
+}
+.task-status .discuss {
+  background-color: #F8F8F8;
+}
+.task-status .complete {
   background-color: #F8F8F8;
 }
 .task-status .ready-to-mark.active {
@@ -6361,6 +6385,83 @@ button.task-status.complete {
   background-color: #5BB75B;
   background-image: linear-gradient(#62c462, #51a351);
   color: white;
+}
+.task-status-colored .ready-to-mark {
+  background-color: rgba(0, 125, 124, 0.2);
+  color: #CCCCCC;
+}
+.task-status-colored .not-submitted {
+  background-color: #F8F8F8;
+  color: #CCCCCC;
+}
+.task-status-colored .working-on-it {
+  background-color: rgba(234, 141, 30, 0.2);
+  color: #CCCCCC;
+}
+.task-status-colored .need-help {
+  background-color: rgba(175, 158, 214, 0.2);
+  color: #CCCCCC;
+}
+.task-status-colored .fix-and-resubmit {
+  background-color: rgba(242, 214, 99, 0.2);
+  color: #CCCCCC;
+}
+.task-status-colored .fix-and-include {
+  background-color: rgba(216, 53, 26, 0.2);
+  color: #CCCCCC;
+}
+.task-status-colored .redo {
+  background-color: rgba(127, 63, 8, 0.2);
+  color: #CCCCCC;
+}
+.task-status-colored .discuss {
+  background-color: rgba(52, 173, 207, 0.2);
+  color: #CCCCCC;
+}
+.task-status-colored .complete {
+  background-color: rgba(148, 204, 148, 0.2);
+  background-image: linear-gradient(rgba(98, 196, 98, 0.2), #51a351);
+  color: #CCCCCC;
+}
+.task-status-colored .ready-to-mark.active {
+  background-color: #0079D8;
+  color: white;
+}
+.task-status-colored .not-submitted.active {
+  background-color: #CCCCCC;
+  color: white;
+}
+.task-status-colored .working-on-it.active {
+  background-color: #EB8F06;
+  color: white;
+}
+.task-status-colored .need-help.active {
+  background-color: #b09cd7;
+  color: white;
+}
+.task-status-colored .fix-and-resubmit.active {
+  background-color: #f2d85c;
+  color: white;
+}
+.task-status-colored .fix-and-include.active {
+  background-color: #d93713;
+  color: white;
+}
+.task-status-colored .redo.active {
+  background-color: #804000;
+  color: white;
+}
+.task-status-colored .discuss.active {
+  background-color: #31b0d5;
+  color: white;
+}
+.task-status-colored .complete.active {
+  background-color: #5BB75B;
+  background-image: linear-gradient(#62c462, #51a351);
+  color: white;
+}
+.task-icon {
+  padding-left: 4px;
 }
 .well-sm.task-status {
   height: 40px;
