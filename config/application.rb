@@ -14,6 +14,9 @@ end
 module Doubtfire
   class Application < Rails::Application
     
+    # Ensure that auth tokens do not appear in log files
+    config.filter_parameters += [:auth_token, :password, :password_confirmation, :credit_card]
+
     config.i18n.enforce_available_locales = true
 
     config.paths.add "app/api", glob: "**/*.rb"             #For Grape
