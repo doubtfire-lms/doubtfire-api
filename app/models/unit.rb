@@ -75,6 +75,10 @@ class Unit < ActiveRecord::Base
     Project.joins(:unit_role).where('unit_roles.role_id = 1 and projects.unit_id=:unit_id', unit_id: id)
   end
 
+  def active_projects
+    projects.where('enrolled = true') 
+  end
+
   # Adds a staff member for a role in a unit
   def employ_staff(user, role)
     old_role = unit_roles.where("user_id=:user_id", user_id: user.id).first
@@ -334,7 +338,7 @@ class Unit < ActiveRecord::Base
         'Email',
         'Tutorial',
       ] + task_definitions.map{|task_definition| task_definition.abbreviation }
-      projects.each do |project|
+      active_projects.each do |project|
         csv << project.task_completion_csv
       end
     end
