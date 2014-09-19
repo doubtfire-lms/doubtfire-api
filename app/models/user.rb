@@ -21,7 +21,7 @@ class User < ActiveRecord::Base
     end
   end
 
-  def generate_authentication_token!
+  def generate_authentication_token! (remember)
     token = nil
 
     token = loop do
@@ -30,8 +30,14 @@ class User < ActiveRecord::Base
     end
     self.auth_token = token
 
-    if role == Role.student
-      self.auth_token_expiry = DateTime.now + 30.days
+    if remember
+      if role == Role.student
+        self.auth_token_expiry = DateTime.now + 30.days
+      elsif role == Role.tutor
+        self.auth_token_expiry = DateTime.now + 1.week
+      else
+        self.auth_token_expiry = DateTime.now + 2.hours
+      end
     else
       self.auth_token_expiry = DateTime.now + 2.hours
     end

@@ -16,11 +16,15 @@ module AuthHelpers
 
     if warden.authenticated?
       return true
-    elsif params[:auth_token] && user_by_token && user_by_token.auth_token_expiry && user_by_token.auth_token_expiry > DateTime.now
-      return true
+    elsif params[:auth_token] && user_by_token && user_by_token.auth_token_expiry
+      if user_by_token.auth_token_expiry > DateTime.now
+        return true
+      else
+        error!({"error" => "Authentication token expired."}, 419)
+      end
     else
       sleep((200 + rand(200)) / 1000.0)
-      error!({"error" => "Could not authenticate with token. Token invalid or has expired"}, 401)
+      error!({"error" => "Could not authenticate with token. Token invalid or expired"}, 401)
     end
   end
   
