@@ -36,7 +36,7 @@ class PortfolioEvidence
 
   #
   # Generates a path for storing student work
-  # type = [:new, :in_process, :pdfs]
+  # type = [:new, :in_process, :pdf]
   #
   def self.student_work_dir(type, task = nil)
     file_server = Doubtfire::Application.config.student_work_dir
