@@ -306,9 +306,6 @@ class Project < ActiveRecord::Base
     result.push(done_task_results)
     result.push(complete_task_results)
 
-    # sort results by largest length of :values
-    result.sort!{ |a,b| b[:values].length <=> a[:values].length }
-    
     result
   end
 
