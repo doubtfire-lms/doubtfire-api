@@ -3,9 +3,9 @@ class Task < ActiveRecord::Base
 
   def self.permissions
     { 
-      student: [ :get, :put, :get_submission ],
-      tutor: [ :get, :put, :get_submission ],
-      convenor: [ :get_submission ],
+      student: [ :get, :put, :get_submission, :make_submission ],
+      tutor: [ :get, :put, :get_submission, :make_submission ],
+      convenor: [ :get_submission, :make_submission ],
       nil => []
     }
   end
