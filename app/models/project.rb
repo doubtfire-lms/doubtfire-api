@@ -668,7 +668,14 @@ class Project < ActiveRecord::Base
     end
   end
 
+  # Create the student's portfolio
+  def compile_portfolio()
+    # remove from schedule
+    compile_portfolio = false
+    save
 
+    # create PDFs of uploaded files
+    
 
-
+  end
 end

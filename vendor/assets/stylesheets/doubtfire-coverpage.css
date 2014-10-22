@@ -42,4 +42,4 @@ dl::after {
   content: "Upload Details";
 }
 pre { font-family: Menlo, Monaco, Consolas, "Courier New", monospace; display: inline; font-size: 14px; }
-footer { margin-top: 600px; padding-top: 5px; font-size: 10px; color: #888; text-align: right; border-top: 1px solid #eee; }
+footer { margin-top: 550px; padding-top: 5px; font-size: 10px; color: #888; text-align: right; border-top: 1px solid #eee; }

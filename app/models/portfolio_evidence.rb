@@ -68,7 +68,8 @@ class PortfolioEvidence
       #
       # Make file coverpage
       #
-      coverpage_data = { 
+      coverpage_data = {
+        "Submission" => "#{file.name}",
         "Filename" => "<pre>#{file.filename}</pre>", 
         "Document Type" => file.type.capitalize, 
         "Upload Timestamp" => DateTime.now.strftime("%F %T"), 
@@ -80,7 +81,7 @@ class PortfolioEvidence
         coverpage_data["Student ID"] = student.username
       end
 
-      coverpage_body = "<h1>#{task.task_definition.name} - #{file.name}</h1>\n<dl>"
+      coverpage_body = "<h1>#{task.task_definition.name}</h1>\n<dl>"
       coverpage_data.each do | key, value |
         coverpage_body << "<dt>#{key}</dt><dd>#{value}</dd>\n"
       end
@@ -177,68 +178,20 @@ class PortfolioEvidence
       FileUtils.rm Dir.glob("*")
     end
 
-    # move into the new dir - and mv 
-    Dir.chdir(new_task_dir)
-    FileUtils.mv Dir.glob("*"), in_process_dir, :force => true
-    Dir.chdir(in_process_root_dir)
-    begin
-      FileUtils.rm_r(new_task_dir)
-    rescue
-      logger.warn "failed to rm #{new_task_dir}"
-    end
+    # Move files from new to in process
+    FileHelper.move_files(new_task_dir, in_process_dir)
 
-    #
-    # Get access to all files to process (ensure we only work with <no>.[cover|document|code|image] etc...)
-    #
-    in_process_files = Dir.entries(in_process_dir).select { | f | (f =~ /^\d{3}\.(cover|document|code|image)/) == 0 }
-    if in_process_files.length < 1
-      logger.error "No files found in #{in_process_dir} for Task #{id}"
-      puts "Error - No files found in #{in_process_dir} for Task #{id}"
-      return
-    end
-
-    #
-    # Map each process file to have extra info i.e.:
-    #
-    # file.idx            = 0..n
-    # file.path           = actual file dir sitting in in_process directory
-    # file.ext            = file extension
-    # file.type           = cover/image/code/document
-    # file.actualfile     = actual file variable that can be used - File.open(path)
-    #
-    files = []
-    in_process_files.each do | file |
-      # file0.code.png
-      idx = file.split('.').first.to_i
-      type = file.split('.').second
-      path = "#{in_process_dir}#{file}"
-      ext = File.extname(path)
-      actualfile = File.open(path)
-      files << { :idx => idx, :type => type, :path => path, :ext => ext, :actualfile => actualfile }
-    end
-    
     #
     # Create student submission folder (<tmpdir>/doubtfire/pdf/<id>)
     # This is the output directory of all pdfs once compiled from src->pdf
     #
     tmp_dir = File.join( Dir.tmpdir, 'doubtfire', 'pdf', task.id.to_s )
-    # ensure the dir exists
-    FileUtils.mkdir_p(tmp_dir)
-    
-    #
-    # Begin processing... 
-    #
-    pdf_paths = []
-    files.each do | file |
-      outpath = "#{tmp_dir}/#{file[:idx]}.#{file[:type]}.pdf"
-      
-      FileHelper.convert_to_pdf(file, outpath)
-      # puts file
-      pdf_paths[file[:idx]] = outpath
-      begin
-        file[:actualfile].close
-      rescue
-      end
+
+    pdf_paths = FileHelper.convert_files_to_pdf(in_process_dir, tmp_dir)
+    if pdf_paths.nil?
+      logger.error("Files missing for task #{id}")
+      puts "Files missing for task #{id}"
+      return
     end
     
     # Get final pdf path -- where the file will be stored
@@ -267,35 +220,8 @@ class PortfolioEvidence
     rescue
       logger.warn "failed to cleanup dirs"
     end
-  end
-  
-  #
-  # Read the file and return its contents as a string
-  #
-  def self.read_file_to_str(filename)
-    result = ''
-    f = File.open(filename, "r") 
-    begin
-      f.each_line do |line|
-        result += line
-      end
-    ensure
-      f.close unless f.nil?
-    end
-    result
-  end
 
-  #
-  # Converts the cover page provided to a pdf
-  #
-  def self.cover_to_pdf(file, outdir)
-    # puts file
-    kit = PDFKit.new(
-      read_file_to_str(file[:path]), 
-      :page_size => 'A4', 
-      :margin_top => "30mm", :margin_right => "30mm", :margin_bottom => "30mm", :margin_left => "30mm"
-      )
-    kit.stylesheets << Rails.root.join("vendor/assets/stylesheets/doubtfire-coverpage.css")
-    kit.to_file outdir
-  end
+    # Move source files from in process to to done folder
+    FileHelper.move_files(in_process_dir, student_work_dir(:done, task))
+  end  
 end

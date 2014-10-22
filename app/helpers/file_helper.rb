@@ -67,16 +67,18 @@ module FileHelper
 
   #
   # Generates a path for storing student work
-  # type = [:new, :in_process, :pdf]
+  # type = [:new, :in_process, :done, :pdf]
   #
   def self.student_work_dir(type, task = nil)
     file_server = Doubtfire::Application.config.student_work_dir
     dst = "#{file_server}/#{type}/" # trust the server config and passed in type for paths
 
     if task != nil 
-      if type == :pdf || type == :in_process
+      if type == :pdf
         dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}","#{task.project.student.username}") << "/"
-      elsif 
+      elsif type == :done
+        dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}","#{task.project.student.username}", "#{task.id}") << "/"
+      elsif  # new and in_process -- just have task id
         # Add task id to dst if we want task
         dst << "#{task.id}/"
       end
@@ -103,6 +105,80 @@ module FileHelper
     dst
   end
 
+  #
+  # Move files between stages - new -> in process -> done
+  #
+  def self.move_files(from_path, to_path)
+    # move into the new dir - and mv files to the in_process_dir
+    Dir.chdir(from_path)
+    FileUtils.mv Dir.glob("*"), to_path, :force => true
+    Dir.chdir(to_path)
+    begin
+      #remove from_path as files are now "in process"
+      FileUtils.rm_r(from_path)
+    rescue
+      logger.warn "failed to rm #{from_path}"
+    end
+  end
+
+  #
+  # Convert the files in the indicated folder into PDFs and move to 
+  # a dest_path
+  #
+  def self.convert_files_to_pdf(from_path, dest_path)
+    #
+    # Get access to all files to process (ensure we only work with <no>.[cover|document|code|image] etc...)
+    #
+    in_process_files = Dir.entries(from_path).select { | f | (f =~ /^\d{3}\.(cover|document|code|image)/) == 0 }
+    if in_process_files.length < 1
+      logger.error "No files found in #{from_path}"
+      puts "Error - No files found in #{from_path}"
+      return nil
+    end
+
+    #
+    # Map each process file to have extra info i.e.:
+    #
+    # file.idx            = 0..n
+    # file.path           = actual file dir sitting in in_process directory
+    # file.ext            = file extension
+    # file.type           = cover/image/code/document
+    # file.actualfile     = actual file variable that can be used - File.open(path)
+    #
+    files = []
+    in_process_files.each do | file |
+      # file0.code.png
+      idx = file.split('.').first.to_i
+      type = file.split('.').second
+      path = "#{from_path}#{file}"
+      ext = File.extname(path)
+      actualfile = File.open(path)
+      files << { :idx => idx, :type => type, :path => path, :ext => ext, :actualfile => actualfile }
+    end
+    
+    # ensure the dest_path exists
+    if not Dir.exists? dest_path
+      FileUtils.mkdir_p(dest_path)
+    end
+    
+    #
+    # Begin processing... 
+    #
+    pdf_paths = []
+    files.each do | file |
+      outpath = "#{dest_path}/#{file[:idx]}.#{file[:type]}.pdf"
+      
+      convert_to_pdf(file, outpath)
+      # puts file
+      pdf_paths[file[:idx]] = outpath
+      begin
+        file[:actualfile].close
+      rescue
+      end
+    end
+
+    pdf_paths
+  end
 
   #
   # Converts the given file to a pdf
@@ -172,6 +248,36 @@ module FileHelper
       FileUtils.cp file[:path], outdir
     end
     # TODO msword doc...
+  end
+
+  #
+  # Converts the cover page provided to a pdf
+  #
+  def self.cover_to_pdf(file, outdir)
+    # puts file
+    kit = PDFKit.new(
+      read_file_to_str(file[:path]), 
+      :page_size => 'A4', 
+      :margin_top => "30mm", :margin_right => "30mm", :margin_bottom => "30mm", :margin_left => "30mm"
+      )
+    kit.stylesheets << Rails.root.join("vendor/assets/stylesheets/doubtfire-coverpage.css")
+    kit.to_file outdir
+  end
+
+  #
+  # Read the file and return its contents as a string
+  #
+  def self.read_file_to_str(filename)
+    result = ''
+    f = File.open(filename, "r") 
+    begin
+      f.each_line do |line|
+        result += line
+      end
+    ensure
+      f.close unless f.nil?
+    end
+    result
   end
 
   #
