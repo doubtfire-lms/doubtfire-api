@@ -24,8 +24,8 @@ class Project < ActiveRecord::Base
 
   def self.permissions
     { 
-      student: [ :get, :change_tutorial, :make_submission ],
-      tutor: [ :get, :trigger_week_end, :change_tutorial, :make_submission],
+      student: [ :get, :change_tutorial, :make_submission, :get_submission ],
+      tutor: [ :get, :trigger_week_end, :change_tutorial, :make_submission, :get_submission],
       nil => []
     }
   end
@@ -734,6 +734,10 @@ class Project < ActiveRecord::Base
     cover_filename
   end
 
+  def portfolio_path()
+    File.join(FileHelper.student_portfolio_dir(self, false), FileHelper.sanitized_filename("#{student.username}-portfolio.pdf"))
+  end
+
   # Create the student's portfolio
   def create_portfolio()
     return unless compile_portfolio
@@ -771,9 +775,9 @@ class Project < ActiveRecord::Base
 
     # puts pdf_paths
 
-    final_pdf_path = File.join(portfolio_dir, FileHelper.sanitized_filename("#{student.username}-portfolio.pdf"))
+    final_pdf_path = portfolio_path
     if FileHelper.aggregate(pdf_paths, final_pdf_path)
-      puts "success"
+      logger.info "Created portfolio - #{final_pdf_path}"
     end
 
     # Cleanup

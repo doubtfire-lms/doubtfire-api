@@ -151,7 +151,7 @@ module FileHelper
       idx = file.split('.').first.to_i
       type = file.split('.').second
       path = File.join("#{from_path}", "#{file}")
-      ext = File.extname(path)
+      ext = File.extname(path).downcase
       actualfile = File.open(path)
       files << { :idx => idx, :type => type, :path => path, :ext => ext, :actualfile => actualfile }
     end
@@ -241,6 +241,7 @@ module FileHelper
   # Converts the document provided to a pdf
   #
   def self.doc_to_pdf(file, outdir)
+    # puts file
     # if uploaded a PDF, then directly pass in
     if file[:ext] == '.pdf'
       # copy the file over (note we need to copy it into

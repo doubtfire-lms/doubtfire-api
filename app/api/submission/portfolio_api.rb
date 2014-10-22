@@ -61,7 +61,7 @@ module Api
       end
 
       
-      desc "Retrieve submission document included for the task id"
+      desc "Retrieve portfolio for project with the given id"
       get '/submission/project/:id/portfolio' do
         project = Project.find(params[:id])
 
@@ -69,17 +69,15 @@ module Api
           error!({"error" => "Not authorised to download portfolio for project '#{params[:id]}'"}, 401)
         end
 
-        evidence_loc = task.portfolio_evidence
-        student = task.project.student
-        unit = task.project.unit
+        evidence_loc = project.portfolio_path
         
-        if evidence_loc.nil? || task.processing_pdf
-          error!({"error" => "No submission under task '#{task.task_definition.name}' for user #{student.username}"}, 401)
+        if evidence_loc.nil? || File.exists?(evidence_loc) == false
+          error!({"error" => "No portfolio for project '#{project.id}'"}, 401)
         end
         
         # Set download headers...
         content_type "application/octet-stream"
-        header['Content-Disposition'] = "attachment; filename=#{task.task_definition.abbreviation}.pdf"
+        header['Content-Disposition'] = "attachment; filename=portfolio.pdf"
         env['api.format'] = :binary
 
         File.read(evidence_loc)
