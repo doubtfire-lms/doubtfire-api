@@ -53,6 +53,6 @@ gem 'coderay'
 gem 'ruby-filemagic'
 gem 'rmagick', require: false #already included in other gems - remove to avoid duplicate errors
 gem 'pdfkit'
-gem 'wkhtmltopdf-binary-11'
+gem 'wkhtmltopdf-binary-11' #too old!
 gem 'pdftk'
 gem 'rubyzip'
