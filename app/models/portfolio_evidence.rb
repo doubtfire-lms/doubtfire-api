@@ -46,26 +46,8 @@ class PortfolioEvidence
     #
     files.each do | file |
       logger.debug "checking file type for #{file.tempfile.path}"
-
-      fm = FileMagic.new(FileMagic::MAGIC_MIME)
-      mime = fm.file file.tempfile.path
-      logger.debug "#{file.tempfile.path} is mime type: #{mime}"
-
-      case file.type
-      when 'image'
-        accept = ["image/png", "image/gif", "image/bmp", "image/tiff", "image/jpeg"]
-      when 'code'
-        accept = ["text/x-pascal", "text/x-c", "text/x-c++", "text/plain"]
-      when 'document'
-        accept = [ # -- one day"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                   # --"application/msword", 
-                   "application/pdf" ]
-      else
-        ui.error!({"error" => "Unknown type '#{file.type}' provided for '#{file.name}'"}, 403)
-      end
-      
-      if not mime.start_with?(*accept)
-        ui.error!({"error" => "'#{file.name}' was not an #{file.type} file type"}, 403)
+      if not FileHelper.accept_file(file, file.name, file.type)
+        ui.error!({"error" => "'#{file.name}' is not a valid #{file.type} file"}, 403)
       end
     end
     
@@ -245,14 +227,12 @@ class PortfolioEvidence
     
     #
     # Begin processing... 
-    #   @andrew   need to sort it so that cover files will come first... any ideas? ran out of time :(
-    #             multithreading isn't working...
     #
     pdf_paths = []
     files.each do | file |
       outpath = "#{tmp_dir}/#{file[:idx]}.#{file[:type]}.pdf"
       
-      convert_to_pdf(file, outpath)
+      FileHelper.convert_to_pdf(file, outpath)
       # puts file
       pdf_paths[file[:idx]] = outpath
       begin
@@ -261,8 +241,10 @@ class PortfolioEvidence
       end
     end
     
+    # Get final pdf path -- where the file will be stored
     final_pdf_path = final_pdf_path_for(task)
     
+    # Remove old pdf if it exists
     begin
       if File.exists(final_pdf_path)
         File.rm(final_pdf_path)
@@ -273,11 +255,7 @@ class PortfolioEvidence
     #
     # Aggregate each of the output PDFs
     #
-    didCompile = system "pdftk #{pdf_paths.join ' '} cat output '#{final_pdf_path}'"
-    if !didCompile
-      logger.error "failed to create #{final_pdf_path}\n -> pdftk #{pdf_paths.join ' '} cat output #{final_pdf_path}"
-      puts "failed to create #{final_pdf_path}\n -> pdftk #{pdf_paths.join ' '} cat output #{final_pdf_path}"
-    else
+    if FileHelper.aggregate(pdf_paths, final_pdf_path)
       task.portfolio_evidence = final_pdf_path
       task.save
     end
@@ -289,76 +267,6 @@ class PortfolioEvidence
     rescue
       logger.warn "failed to cleanup dirs"
     end
-  end
-
-  #
-  # Converts the given file to a pdf
-  #  
-  def self.convert_to_pdf(file, outdir)
-    case file[:type]
-    when 'image'
-      img_to_pdf(file, outdir)
-    when 'code'
-      code_to_pdf(file, outdir)
-    when 'document'
-      doc_to_pdf(file, outdir)
-    when 'cover'
-      cover_to_pdf(file, outdir)
-    end
-  end
-  
-  #
-  # Converts the code provided to a pdf
-  #
-  def self.code_to_pdf(file, outdir)
-    # decide language syntax highlighting
-    case file[:ext]
-    when '.cpp', '.cs'
-      lang = :cplusplus
-    when '.c', '.h'
-      lang = :c
-    when '.java'
-      lang = :java
-    when '.pas'
-      lang = :delphi
-    else
-      # should follow basic C syntax (if, else etc...)
-      lang = :c
-    end
-    # code -> HTML
-    html_body = CodeRay.scan_file(file[:actualfile], lang).html(:wrap => :div, :tab_width => 2, :css => :class, :line_numbers => :table, :line_number_anchors => false)
-
-    # HTML -> PDF
-    kit = PDFKit.new(html_body, :page_size => 'A4', :header_right => "[page]/[toPage]", :margin_top => "10mm", :margin_right => "5mm", :margin_bottom => "5mm", :margin_left => "5mm")
-    kit.stylesheets << Rails.root.join("vendor/assets/stylesheets/coderay.css")
-    kit.to_file(outdir)
-  end
-  
-  #
-  # Converts the image provided to a pdf
-  #
-  def self.img_to_pdf(file, outdir)
-    img = Magick::Image.read(file[:path]).first
-    # resize the image if its too big (e.g., taken with a digital camera)
-    if img.columns > 1000 || img.rows > 500
-      # resize such that it's 600px in width
-      scale = 1000.0 / img.columns
-      img = img.resize(scale)
-    end
-    img.write("pdf:#{outdir}") { self.quality = 75 }
-  end
-
-  #
-  # Converts the document provided to a pdf
-  #
-  def self.doc_to_pdf(file, outdir)
-    # if uploaded a PDF, then directly pass in
-    if file[:ext] == '.pdf'
-      # copy the file over (note we need to copy it into
-      # output_file as file will be removed at the end of this block)
-      FileUtils.cp file[:path], outdir
-    end
-    # TODO msword doc...
   end
   
   #

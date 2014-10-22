@@ -38,18 +38,29 @@ module Api
     desc "Update a task"
     params do
       requires :id, type: Integer, desc: 'The task id to update'
-      requires :trigger, type: String, desc: 'New status'
+      optional :trigger, type: String, desc: 'New status'
+      optional :include_in_portfolio, type: Boolean, desc: 'Include or exclude from portfolio'
     end
     put '/tasks/:id' do
       task = Task.find(params[:id])
       needsUploadDocs = task.upload_requirements.length > 0
       
+      # check the user can put this task
       if authorise? current_user, task, :put
-        # Check if they should be using portfolio_evidence api
-        if needsUploadDocs && params[:trigger] == 'ready_to_mark'
-          error!({"error" => "Cannot set this task status to ready to mark without uploading documents." }, 403)
+        # if trigger supplied...
+        unless params[:trigger].nil?
+          # Check if they should be using portfolio_evidence api
+          if needsUploadDocs && params[:trigger] == 'ready_to_mark'
+            error!({"error" => "Cannot set this task status to ready to mark without uploading documents." }, 403)
+          end
+          task.trigger_transition( params[:trigger], current_user )
         end
-        task.trigger_transition( params[:trigger], current_user )
+        # if include in portfolio supplied
+        unless params[:include_in_portfolio].nil?
+          task.include_in_portfolio = params[:include_in_portfolio]
+          task.save
+        end
+
         TaskUpdateSerializer.new(task)
       else
         error!({"error" => "Couldn't find Task with id=#{params[:id]}" }, 403)

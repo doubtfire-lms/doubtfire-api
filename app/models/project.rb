@@ -24,8 +24,8 @@ class Project < ActiveRecord::Base
 
   def self.permissions
     { 
-      student: [ :get, :change_tutorial ],
-      tutor: [ :get, :trigger_week_end, :change_tutorial],
+      student: [ :get, :change_tutorial, :make_submission ],
+      tutor: [ :get, :trigger_week_end, :change_tutorial, :make_submission],
       nil => []
     }
   end
@@ -583,4 +583,92 @@ class Project < ActiveRecord::Base
       if tutorial then tutorial.abbreviation else '' end
     ] + ordered_tasks.map{|task| task.task_status.name }
   end
+
+  #
+  # Portfolio production code
+  #
+
+  def move_to_portfolio(file, name, kind)
+    # get path to portfolio dir
+    portfolio_dir = FileHelper.student_portfolio_dir(self)
+    
+    # get path to tmp folder where file parts will be stored
+    portfolio_tmp_dir = File.join(portfolio_dir, "tmp")
+    FileUtils.mkdir_p(portfolio_tmp_dir)
+    result = {
+      kind: kind,
+      name: file.filename
+    }
+
+    # copy up the learning summary report as first -- otherwise use files to determine idx
+    if name == "LearningSummaryReport" && kind == "document"
+      result[:idx] = 0
+      result[:name] = "LearningSummaryReport.pdf"
+    else
+      Dir.chdir(portfolio_tmp_dir)
+      files = Dir.glob("*")
+      idx = files.map { |file| file.split("-").first.to_i }.max
+      if idx.nil? || idx < 1
+        idx = 1 
+      else
+        idx += 1
+      end
+      result[:idx] = idx
+    end
+
+    dest_file = FileHelper.sanitized_filename("#{result[:idx].to_s.rjust(3, '0')}.#{kind}.#{result[:name]}")
+    FileUtils.cp file.tempfile.path, File.join(portfolio_tmp_dir, dest_file)
+    result
+  end
+
+  def portfolio_files()
+    # get path to portfolio dir
+    portfolio_dir = FileHelper.student_portfolio_dir(self, false)
+    
+    # get path to tmp folder where file parts will be stored
+    portfolio_tmp_dir = File.join(portfolio_dir, "tmp")
+    return [] unless Dir.exists? portfolio_tmp_dir
+
+    result = []
+    
+    Dir.chdir(portfolio_tmp_dir)
+    files = Dir.glob("*")
+    files.each { | file | 
+      parts = file.split(".");
+      idx = parts[0].to_i
+      kind = parts[1]
+      name = parts.drop(2).join(".")
+      result << { kind: kind, name: name, idx: idx }  
+    }
+
+    result
+  end
+
+  # Remove a file from the portfolio tmp folder
+  def remove_portfolio_file(idx, kind, name)
+    # get path to portfolio dir
+    portfolio_dir = FileHelper.student_portfolio_dir(self, false)
+    
+    # get path to tmp folder where file parts will be stored
+    portfolio_tmp_dir = File.join(portfolio_dir, "tmp")
+    return unless Dir.exists? portfolio_tmp_dir
+
+    # the file is in the students portfolio tmp dir
+    rm_file = File.join(
+        portfolio_tmp_dir, 
+        FileHelper.sanitized_filename("#{idx.to_s.rjust(3, '0')}.#{kind}.#{name}")
+      )
+
+    # try to remove the file
+    begin
+      if File.exists? rm_file
+        FileUtils.rm rm_file
+      end
+    rescue
+    end
+  end
+
+
+
+
 end

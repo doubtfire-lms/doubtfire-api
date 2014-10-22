@@ -52,7 +52,11 @@ module Api
           user.username = username
         end
 
-        user.generate_authentication_token! remember
+        if user.auth_token_expiry.nil? || user.auth_token_expiry <= DateTime.now
+          user.generate_authentication_token! remember
+        else 
+          user.extend_authentication_token
+        end
 
         if user.new_record?
           user.password = "password"

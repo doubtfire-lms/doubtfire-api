@@ -50,10 +50,11 @@ module Api
 
     desc "Update a project"
     params do
-      optional :trigger,      type: String,  desc: 'The update trigger'
-      optional :tutorial_id,  type: Integer, desc: 'Switch tutorial'
-      optional :enrolled,     type: Boolean, desc: 'Enrol or withdraw this project'
-      optional :target_grade, type: Integer, desc: 'New target grade'
+      optional :trigger,            type: String,  desc: 'The update trigger'
+      optional :tutorial_id,        type: Integer, desc: 'Switch tutorial'
+      optional :enrolled,           type: Boolean, desc: 'Enrol or withdraw this project'
+      optional :target_grade,       type: Integer, desc: 'New target grade'
+      optional :compile_portfolio,  type: Boolean, desc: 'Schedule a construction of the portfolio'
     end
     put '/projects/:id' do
       project = Project.find(params[:id])
@@ -91,6 +92,9 @@ module Api
         project.save
       elsif not params[:target_grade].nil?
         project.target_grade = params[:target_grade]
+        project.save
+      elsif not params[:compile_portfolio].nil?
+        project.compile_portfolio = params[:compile_portfolio]
         project.save
       end
 

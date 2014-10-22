@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20140823032141) do
+ActiveRecord::Schema.define(version: 20141022042317) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -50,14 +50,15 @@ ActiveRecord::Schema.define(version: 20140823032141) do
     t.integer  "unit_id"
     t.integer  "unit_role_id"
     t.string   "project_role"
-    t.datetime "created_at",                  null: false
-    t.datetime "updated_at",                  null: false
+    t.datetime "created_at",                        null: false
+    t.datetime "updated_at",                        null: false
     t.boolean  "started"
     t.string   "progress"
     t.string   "status"
     t.string   "task_stats"
-    t.boolean  "enrolled",     default: true
-    t.integer  "target_grade", default: 0
+    t.boolean  "enrolled",          default: true
+    t.integer  "target_grade",      default: 0
+    t.boolean  "compile_portfolio", default: false
   end
 
   add_index "projects", ["enrolled"], name: "index_projects_on_enrolled", using: :btree
@@ -141,10 +142,11 @@ ActiveRecord::Schema.define(version: 20140823032141) do
     t.integer  "project_id"
     t.integer  "task_status_id"
     t.boolean  "awaiting_signoff"
-    t.datetime "created_at",         null: false
-    t.datetime "updated_at",         null: false
+    t.datetime "created_at",                          null: false
+    t.datetime "updated_at",                          null: false
     t.date     "completion_date"
     t.string   "portfolio_evidence"
+    t.boolean  "include_in_portfolio", default: true
   end
 
   add_index "tasks", ["project_id"], name: "index_tasks_on_project_id", using: :btree
