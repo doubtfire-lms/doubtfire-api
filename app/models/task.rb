@@ -153,7 +153,9 @@ class Task < ActiveRecord::Base
     task_status.status_key
   end
 
-
+  def has_pdf
+    (not portfolio_evidence.nil?) and File.exists?(portfolio_evidence)
+  end
 
   def trigger_transition(trigger, by_user, bulk=false)
     #

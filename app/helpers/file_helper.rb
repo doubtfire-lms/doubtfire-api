@@ -150,7 +150,7 @@ module FileHelper
       # file0.code.png
       idx = file.split('.').first.to_i
       type = file.split('.').second
-      path = "#{from_path}#{file}"
+      path = File.join("#{from_path}", "#{file}")
       ext = File.extname(path)
       actualfile = File.open(path)
       files << { :idx => idx, :type => type, :path => path, :ext => ext, :actualfile => actualfile }

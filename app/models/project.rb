@@ -119,6 +119,10 @@ class Project < ActiveRecord::Base
     tasks.select{|task| task.task_definition.target_grade <= target_grade }
   end
 
+  def portfolio_tasks
+    tasks.select{|task| task.include_in_portfolio && task.has_pdf }
+  end
+
   def required_tasks
     tasks.select{|task| task.task_definition.required? }
   end
@@ -632,7 +636,7 @@ class Project < ActiveRecord::Base
     result = []
     
     Dir.chdir(portfolio_tmp_dir)
-    files = Dir.glob("*")
+    files = Dir.glob("*").select { | f | (f =~ /^\d{3}\.(cover|document|code|image)/) == 0 }
     files.each { | file | 
       parts = file.split(".");
       idx = parts[0].to_i
@@ -668,14 +672,115 @@ class Project < ActiveRecord::Base
     end
   end
 
+  #
+  # Make file coverpage
+  #
+  def create_task_cover_page(dest_dir)
+
+    #
+    # check later -- not working at the moment fa not rendering in pdfkit
+    #
+    # status_icons = {
+    #   ready_to_mark: 'fa fa-thumbs-o-up',
+    #   not_submitted: 'fa fa-times',
+    #   working_on_it: 'fa fa-bolt',
+    #   need_help: 'fa fa-question-circle',
+    #   redo: 'fa fa-refresh',
+    #   fix_and_include: 'fa fa-stop',
+    #   fix_and_resubmit: 'fa fa-wrench',
+    #   discuss: 'fa fa-check',
+    #   complete: 'fa fa-check-circle-o'
+    # }
+
+    coverpage_body = "<html><head>
+  <link rel='stylesheet' type='text/css' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css'>\n
+  <head>
+  <body>
+    <h1>Tasks for #{student.name}</h1>
+
+    <table class='table table-striped'>
+    <thead><th>Task</th><th>Status</th><th></th><th>Included</th></thead>
+    <tbody>\n"
+    
+    ordered_tasks = tasks.joins(:task_definition).order("task_definitions.target_date, task_definitions.abbreviation").select{|task| task.task_definition.target_grade <= target_grade }
+
+    ordered_tasks.each do | task |
+      coverpage_body << "<tr>
+      <td>#{task.task_definition.name}</td>
+      <td>#{task.task_status.name}</td>
+      <td><button type='button' class='col-xs-12 btn btn-default task-status #{task.status.to_s.dasherize}'>#{task.task_definition.abbreviation}</button></td>
+      <td>#{ (task.include_in_portfolio && task.has_pdf ? 'YES' : '')}</td></tr>\n"
+    end
+
+    coverpage_body << "</tbody></table>"
+    coverpage_body << "</body></html>"
+    
+    cover_filename = File.join(dest_dir, "task.cover.html")
+
+    logger.debug("generating cover page #{cover_filename}")
+    
+    #
+    # Create cover page for the submitted file (<taskid>/file0.cover.html etc.)
+    #
+    # puts "generating cover page #{cover_filename}"
+
+    coverp_file = File.new(cover_filename, mode="w")
+    # puts 1
+    coverp_file.write(coverpage_body)
+    # puts 2
+    coverp_file.close
+    # puts 3
+
+    cover_filename
+  end
+
   # Create the student's portfolio
-  def compile_portfolio()
+  def create_portfolio()
+    return unless compile_portfolio
+
     # remove from schedule
-    compile_portfolio = false
-    save
+    self.compile_portfolio = false
+    save!
+
+    # get path to portfolio dirs
+    portfolio_dir = FileHelper.student_portfolio_dir(self, false)
+    portfolio_tmp_dir = File.join(portfolio_dir, "tmp")
+    return unless Dir.exists? portfolio_tmp_dir
+
+    tmp_dir = File.join( Dir.tmpdir, 'doubtfire', 'portfolio', id.to_s )
 
     # create PDFs of uploaded files
-    
+    pdf_paths = FileHelper.convert_files_to_pdf(portfolio_tmp_dir, tmp_dir)
+    if pdf_paths.nil?
+      logger.error("Files missing for task #{id}")
+      puts "Files missing for task #{id}"
+      return
+    end
+    task_pdfs = []
+    # add in tasks
+    portfolio_tasks.each { | task | 
+        task_pdfs << task.portfolio_evidence
+      }
+    pdf_paths.insert(1, *task_pdfs)
 
+    task_cover = create_task_cover_page(portfolio_tmp_dir)
+    cover_file = File.join(tmp_dir, "task_cover.pdf")
+    FileHelper.cover_to_pdf( { path: task_cover }, cover_file )
+
+    pdf_paths.insert(1, cover_file)
+
+    # puts pdf_paths
+
+    final_pdf_path = File.join(portfolio_dir, FileHelper.sanitized_filename("#{student.username}-portfolio.pdf"))
+    if FileHelper.aggregate(pdf_paths, final_pdf_path)
+      puts "success"
+    end
+
+    # Cleanup
+    begin
+      FileUtils.rm_r(tmp_dir)
+    rescue
+      logger.warn "failed to cleanup dirs from portfolio production"
+    end
   end
 end
