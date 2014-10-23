@@ -67,7 +67,7 @@ module Api::Submission::GenerateHelpers
         csv_str << "\n#{student.username.sub(/,/, '_')},#{student.name.sub(/,/, '_')},#{task.task_definition.abbreviation.sub(/,/, '_')},#{task.id},rtm"
         src_path = task.portfolio_evidence
         # make dst path of "<student id>/<task abbrev>.pdf"
-        dst_path = PortfolioEvidence.sanitized_path("#{task.project.student.username}", "#{task.task_definition.abbreviation}-#{task.id}") + ".pdf"
+        dst_path = FileHelper.sanitized_path("#{task.project.student.username}", "#{task.task_definition.abbreviation}-#{task.id}") + ".pdf"
         # now copy it over
         zip.add(dst_path, src_path)
       end

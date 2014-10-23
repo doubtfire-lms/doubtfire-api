@@ -120,7 +120,7 @@ class Project < ActiveRecord::Base
   end
 
   def portfolio_tasks
-    tasks.select{|task| task.include_in_portfolio && task.has_pdf }
+    tasks.joins(:task_definition).order("task_definitions.target_date, task_definitions.abbreviation").select{|task| task.include_in_portfolio && task.has_pdf }
   end
 
   def required_tasks

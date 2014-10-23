@@ -1,8 +1,8 @@
 class PortfolioEvidence
   include FileHelper
 
-  def self.sanitized_path(paths)
-    FileHelper.sanitized_path paths
+  def self.sanitized_path(*paths)
+    FileHelper.sanitized_path *paths
   end
 
   def self.sanitized_filename(filename)
