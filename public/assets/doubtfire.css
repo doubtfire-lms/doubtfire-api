@@ -6516,6 +6516,16 @@ button.task-status.complete {
 .panel-heading.task-status .pdf-nav.btn-group {
   margin: -10px 15px 0 0;
 }
+.panel-heading.portfolio-preview h3 {
+  display: inline-block;
+  padding: 15px 0 15px 0;
+}
+.panel-heading.portfolio-preview div {
+  margin-top: 2px;
+}
+.panel-heading.portfolio-preview .pdf-nav.btn-group {
+  margin: 0px 15px 0 0;
+}
 #sidebar {
   font-size: 10px;
 }
@@ -6544,4 +6554,119 @@ button.task-status.complete {
 .error-container i {
   margin-top: 30px;
   font-size: 100px;
+}
+.callout-primary {
+  display: block;
+  margin: 20px 0;
+  padding: 15px 30px 15px 15px;
+  border-left: 5px solid #428bca;
+  background-color: #f5f9fc;
+}
+.callout-primary h1,
+.callout-primary h2,
+.callout-primary h3,
+.callout-primary h4,
+.callout-primary h5,
+.callout-primary h6 {
+  margin-top: 0;
+  color: #428bca;
+}
+.callout-primary p:last-child {
+  margin-bottom: 0;
+}
+.callout-primary code,
+.callout-primary .highlight {
+  background-color: #fff;
+}
+.callout-danger {
+  display: block;
+  margin: 20px 0;
+  padding: 15px 30px 15px 15px;
+  border-left: 5px solid #d9534f;
+  background-color: #f4cecd;
+}
+.callout-danger h1,
+.callout-danger h2,
+.callout-danger h3,
+.callout-danger h4,
+.callout-danger h5,
+.callout-danger h6 {
+  margin-top: 0;
+  color: #d9534f;
+}
+.callout-danger p:last-child {
+  margin-bottom: 0;
+}
+.callout-danger code,
+.callout-danger .highlight {
+  background-color: #fff;
+}
+.callout-warning {
+  display: block;
+  margin: 20px 0;
+  padding: 15px 30px 15px 15px;
+  border-left: 5px solid #f0ad4e;
+  background-color: #fceedb;
+}
+.callout-warning h1,
+.callout-warning h2,
+.callout-warning h3,
+.callout-warning h4,
+.callout-warning h5,
+.callout-warning h6 {
+  margin-top: 0;
+  color: #f0ad4e;
+}
+.callout-warning p:last-child {
+  margin-bottom: 0;
+}
+.callout-warning code,
+.callout-warning .highlight {
+  background-color: #fff;
+}
+.callout-info {
+  display: block;
+  margin: 20px 0;
+  padding: 15px 30px 15px 15px;
+  border-left: 5px solid #5bc0de;
+  background-color: #daf1f8;
+}
+.callout-info h1,
+.callout-info h2,
+.callout-info h3,
+.callout-info h4,
+.callout-info h5,
+.callout-info h6 {
+  margin-top: 0;
+  color: #5bc0de;
+}
+.callout-info p:last-child {
+  margin-bottom: 0;
+}
+.callout-info code,
+.callout-info .highlight {
+  background-color: #fff;
+}
+.callout-success {
+  display: block;
+  margin: 20px 0;
+  padding: 15px 30px 15px 15px;
+  border-left: 5px solid #5cb85c;
+  background-color: #c7e6c7;
+}
+.callout-success h1,
+.callout-success h2,
+.callout-success h3,
+.callout-success h4,
+.callout-success h5,
+.callout-success h6 {
+  margin-top: 0;
+  color: #5cb85c;
+}
+.callout-success p:last-child {
+  margin-bottom: 0;
+}
+.callout-success code,
+.callout-success .highlight {
+  background-color: #fff;
 }
