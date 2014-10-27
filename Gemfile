@@ -20,6 +20,8 @@ gem 'grape-swagger'
 
 gem 'rack-cors', require: 'rack/cors'
 
+gem 'ci_reporter'
+
 group :development do
   gem 'pg'
   gem 'hirb'
@@ -32,7 +34,6 @@ group :test do
   gem 'simplecov'
   gem 'capybara'
   gem 'launchy'
-  gem 'ci_reporter'
 end
 
 group :production do

@@ -105,6 +105,27 @@ module FileHelper
     dst
   end
 
+  def self.compress_pdf(path)
+    #trusting path... as it needs to be replaced
+    begin
+      tmp_file = File.join( Dir.tmpdir, 'doubtfire', 'compress', "file.pdf" )
+      FileUtils.mkdir_p(File.join( Dir.tmpdir, 'doubtfire', 'compress' ))
+
+      exec = "gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/screen -dNOPAUSE -dBATCH  -dQUIET -sOutputFile=\"#{tmp_file}\" \"#{path}\""
+
+      didCompress = system exec
+
+      if !didCompress
+        logger.error "Failed to compress pdf: #{path}\n#{exec}"
+        puts "Failed to compress pdf: #{path}\n#{exec}"
+      else
+        FileUtils.mv tmp_file, path
+      end
+    rescue 
+      logger.error("Failed to compress pdf: #{path}")
+    end
+  end
+
   #
   # Move files between stages - new -> in process -> done
   #
@@ -246,6 +267,21 @@ module FileHelper
     if file[:ext] == '.pdf'
       # copy the file over (note we need to copy it into
       # output_file as file will be removed at the end of this block)
+      
+      if file[:actualfile].size > 1000000
+        begin
+          file[:actualfile].close()
+        rescue
+        end
+
+        compress_pdf(file[:path])
+
+        begin
+          file[:actualfile] = File.open(file[:path])
+        rescue
+        end
+      end
+
       FileUtils.cp file[:path], outdir
     end
     # TODO msword doc...
