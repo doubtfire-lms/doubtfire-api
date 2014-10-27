@@ -47,7 +47,6 @@ Setting up a dev environment:
 4. Install native tools
     1. `brew install imagemagick`
     1. `brew install libmagic`
-    1. `
 4. Checkout project
     1. cd to working source location (dev folder on your machine)
     2. `git clone https://macite@bitbucket.org/itig/doubtfire-api.git`
