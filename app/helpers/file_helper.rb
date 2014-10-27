@@ -113,14 +113,24 @@ module FileHelper
 
       exec = "gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/screen -dNOPAUSE -dBATCH  -dQUIET -sOutputFile=\"#{tmp_file}\" \"#{path}\""
 
+      # try with ghostscript
       didCompress = system exec
-
       if !didCompress
-        logger.error "Failed to compress pdf: #{path}\n#{exec}"
-        puts "Failed to compress pdf: #{path}\n#{exec}"
-      else
+        exec = "convert \"#{path}\" -compress Zip \"#{tmp_file}\""
+        logger.info "Failed to compress pdf: #{path} using GS"
+
+        # try with convert
+        didCompress = system exec
+        if !didCompress
+          logger.error "Failed to compress pdf: #{path}\n#{exec}"
+          puts "Failed to compress pdf: #{path}\n#{exec}"
+        end
+      end
+
+      if didCompress
         FileUtils.mv tmp_file, path
       end
+
     rescue 
       logger.error("Failed to compress pdf: #{path}")
     end
