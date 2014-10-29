@@ -23,11 +23,6 @@ module Api
         if not authorise? current_user, task, :make_submission
           error!({"error" => "Not authorised to submit task '#{task.task_definition.name}'"}, 401)
         end
-
-        if task.discuss? || task.complete? || task.fix_and_include?
-          msg = { :complete => "is already complete", :discuss => "is ready to discuss with your tutor", :fix_and_include => "has been marked as fix and include. You may no longer submit this task" }
-          error!({"error" => "#{task.task_definition.name} #{msg[task.status]}."}, 401)
-        end
         
         upload_reqs = task.upload_requirements
         student = task.project.student
@@ -37,7 +32,10 @@ module Api
         PortfolioEvidence.produce_student_work(scoop_files(params, upload_reqs), student, task, self)
         
         # This task is now ready to submit
-        task.trigger_transition 'ready_to_mark', current_user
+
+        if not (task.discuss? || task.complete? || task.fix_and_include?)
+          task.trigger_transition 'ready_to_mark', current_user
+        end
 
         TaskUpdateSerializer.new(task)
       end #post
