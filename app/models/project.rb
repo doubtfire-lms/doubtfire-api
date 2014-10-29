@@ -787,4 +787,11 @@ class Project < ActiveRecord::Base
       logger.warn "failed to cleanup dirs from portfolio production"
     end
   end
+
+  def remove_portfolio()
+    portfolio = portfolio_path()
+    if File.exists?(portfolio)
+      FileUtils.mv portfolio, "#{portfolio}.old"
+    end
+  end
 end

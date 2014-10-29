@@ -40,9 +40,9 @@ module Api
 
       desc "Remove a file from the portfolio files for a unit"
       params do
-        requires :idx,   type: Integer,:desc => "The index of the file"
-        requires :kind,  type: String, :desc => "The kind of file being removed: document, code, or image"
-        requires :name,  type: String, :desc => "Name of file to remove"
+        optional :idx,   type: Integer,:desc => "The index of the file"
+        optional :kind,  type: String, :desc => "The kind of file being removed: document, code, or image"
+        optional :name,  type: String, :desc => "Name of file to remove"
       end
       delete '/submission/project/:id/portfolio' do
         project = Project.find(params[:id])
@@ -51,16 +51,19 @@ module Api
           error!({"error" => "Not authorised to alter portfolio for project '#{params[:id]}'"}, 401)
         end
 
-        idx = params[:idx]
-        name = params[:name]
-        kind = params[:kind]
-
-        # Remove file
-        project.remove_portfolio_file(idx, kind, name) #returns details of file
+        # Remove file or portfolio?
+        if params[:idx].nil? && params[:name].nil? && params[:kind].nil?
+          project.remove_portfolio() #returns details of file
+        elsif not (params[:idx].nil? || params[:name].nil? || params[:kind].nil?)
+          idx = params[:idx]
+          name = params[:name]
+          kind = params[:kind]
+          
+          project.remove_portfolio_file(idx, kind, name) #returns details of file
+        end
         nil
       end
 
-      
       desc "Retrieve portfolio for project with the given id"
       get '/submission/project/:id/portfolio' do
         project = Project.find(params[:id])
