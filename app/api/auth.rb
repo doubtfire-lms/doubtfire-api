@@ -55,7 +55,7 @@ module Api
         if user.auth_token_expiry.nil? || user.auth_token_expiry <= DateTime.now
           user.generate_authentication_token! remember
         else 
-          user.extend_authentication_token
+          user.extend_authentication_token remember
         end
 
         if user.new_record?
@@ -74,26 +74,29 @@ module Api
       optional :remember, type: Boolean, desc: 'User has requested to remember login', default: false
     end
     put '/auth/:auth_token' do
-      user=User.find_by_auth_token(params[:auth_token])
+      if params[:auth_token].nil?
+        error!({"error" => "Invalid token."}, 404)
+      end
+      
+      user = User.find_by_auth_token(params[:auth_token])
       remember = params[:remember]
       
       if user.nil? || user.username != params[:username]
         # logger.info("Token not found.")
         error!({"error" => "Invalid token."}, 404)
       else
-        user.reset_authentication_token!
-        user.generate_authentication_token! remember
+        if user.auth_token_expiry > DateTime.now && user.auth_token_expiry < DateTime.now + 1.hour
+          user.reset_authentication_token!
+          user.generate_authentication_token! remember
+        end
         { auth_token: user.auth_token }
       end
     end
 
     desc "Sign out"
     delete '/auth/:auth_token' do
-      user=User.find_by_auth_token(params[:auth_token])
-      if user.nil?
-        # logger.info("Token not found.")
-        error!({"error" => "Invalid token."}, 404)
-      else
+      user = User.find_by_auth_token(params[:auth_token])
+      if user
         user.reset_authentication_token!
         nil
       end

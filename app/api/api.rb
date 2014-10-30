@@ -24,7 +24,7 @@ module AuthHelpers
       end
     else
       sleep((200 + rand(200)) / 1000.0)
-      error!({"error" => "Could not authenticate with token. Token invalid or expired"}, 401)
+      error!({"error" => "Could not authenticate with token. Token invalid."}, 419)
     end
   end
   

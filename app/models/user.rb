@@ -21,20 +21,24 @@ class User < ActiveRecord::Base
     end
   end
 
-  def extend_authentication_token
+  def extend_authentication_token (remember)
     if auth_token.nil?
       generate_authentication_token false
       return
     end
 
-    if role == Role.student
-      self.auth_token_expiry = DateTime.now + 2.weeks
-    elsif role == Role.tutor
-      self.auth_token_expiry = DateTime.now + 1.week
+    if remember
+      if role == Role.student
+        self.auth_token_expiry = DateTime.now + 2.weeks
+      elsif role == Role.tutor
+        self.auth_token_expiry = DateTime.now + 1.week
+      else
+        self.auth_token_expiry = DateTime.now + 2.hours
+      end
     else
       self.auth_token_expiry = DateTime.now + 2.hours
     end
-    
+
     self.save
   end
 
@@ -47,11 +51,7 @@ class User < ActiveRecord::Base
     end
     self.auth_token = token
 
-    if remember
-      extend_authentication_token
-    else
-      self.auth_token_expiry = DateTime.now + 2.hours
-    end
+    extend_authentication_token remember
 
     self.save
     token
@@ -59,7 +59,7 @@ class User < ActiveRecord::Base
 
   def reset_authentication_token!
     self.auth_token = nil
-    self.auth_token_expiry = DateTime.now
+    self.auth_token_expiry = DateTime.now - 1.week
     self.save
   end
 
