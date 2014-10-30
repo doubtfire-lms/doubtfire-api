@@ -84,10 +84,6 @@ class ProjectSerializer < ActiveModel::Serializer
     end
   end
 
-  def portfolio_available
-    File.exists? object.portfolio_path
-  end
-
   # has_one :unit, :unit_role
   has_many :tasks, serializer: ShallowTaskSerializer
 end

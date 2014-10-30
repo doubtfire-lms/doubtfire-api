@@ -347,4 +347,32 @@ class Unit < ActiveRecord::Base
   def status_distribution
     Project.status_distribution(projects)
   end
+
+  #
+  # Create a temp zip file with all student portfolios
+  #
+  def get_portfolio_zip(current_user)
+    # Get a temp file path
+    filename = FileHelper.sanitized_filename("portfolios-#{self.code}-#{current_user.username}.zip")
+    result = Tempfile.new(filename)
+    # Create a new zip
+    Zip::File.open(result.path, Zip::File::CREATE) do | zip |
+      active_projects.each do | project |
+        # Skip if no portfolio at this time...
+        next if not project.portfolio_available
+        
+        # Add file to zip in grade folder
+        src_path = project.portfolio_path
+        if project.main_tutor
+          dst_path = FileHelper.sanitized_path( "#{project.target_grade_desc}", "#{project.student.username}-portfolio (#{project.main_tutor.name}).pdf")
+        else
+          dst_path = FileHelper.sanitized_path( "#{project.target_grade_desc}", "#{project.student.username}-portfolio (no tutor).pdf")
+        end
+
+        #copy into zip
+        zip.add(dst_path, src_path)
+      end #active_projects
+    end #zip
+    result
+  end
 end

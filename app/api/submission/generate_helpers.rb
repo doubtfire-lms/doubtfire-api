@@ -55,7 +55,8 @@ module Api::Submission::GenerateHelpers
   #
   def generate_batch_task_zip(tasks, unit)
     download_id = "#{Time.new.strftime("%Y-%m-%d")}-#{unit.code}-#{current_user.username}"
-    output_zip = Tempfile.new(["batch_ready_to_mark_#{current_user.username}", ".zip"])
+    filename = FileHelper.sanitized_filename("batch_ready_to_mark_#{current_user.username}.zip")
+    output_zip = Tempfile.new(filename)
     # Create a new zip
     Zip::File.open(output_zip.path, Zip::File::CREATE) do | zip |
       csv_str = mark_csv_headers

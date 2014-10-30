@@ -107,6 +107,24 @@ class Project < ActiveRecord::Base
     unit.active
   end
 
+  #
+  # Get a string representation of the Target Grade
+  #
+  def target_grade_desc
+    case target_grade
+    when 1
+      'Credit'
+    when 2
+      'Distinction'
+    when 3
+      'High Distinction'
+    else
+      'Pass'
+    end
+  end
+
+
+
   def reference_date
     if application_reference_date > unit.end_date
       unit.end_date
@@ -736,6 +754,10 @@ class Project < ActiveRecord::Base
 
   def portfolio_path()
     File.join(FileHelper.student_portfolio_dir(self, false), FileHelper.sanitized_filename("#{student.username}-portfolio.pdf"))
+  end
+
+  def portfolio_available()
+    (File.exists? portfolio_path) && ! self.compile_portfolio
   end
 
   # Create the student's portfolio
