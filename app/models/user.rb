@@ -22,6 +22,11 @@ class User < ActiveRecord::Base
   end
 
   def extend_authentication_token
+    if auth_token.nil?
+      generate_authentication_token false
+      return
+    end
+
     if role == Role.student
       self.auth_token_expiry = DateTime.now + 2.weeks
     elsif role == Role.tutor
