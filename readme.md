@@ -39,6 +39,7 @@ Setting up a dev environment:
 2. Install ruby (version 2.0.0)
     1. `rbenv install 2.0.0-p353`
     2. `rbenv global 2.0.0-p353`
+    3. Restart the terminal
 3. Install postgres
     1. Ensure pg_config is on the path
     2. eg: `export PATH=/Applications/Postgres.app/Contents/Versions/9.3/bin:$PATH`
