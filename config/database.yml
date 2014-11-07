@@ -6,9 +6,9 @@ development:
   host: localhost
   min_messages: warning
 
-test:
-  adapter: mysql2
-  host: localhost
-  database: www_gamification_db1
-  username: www_gamification
-  password: d872$dh
+# test:
+#   adapter: mysql2
+#   host: localhost
+#   database: www_gamification_db1
+#   username: www_gamification
+#   password: d872$dh

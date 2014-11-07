@@ -41,6 +41,8 @@ namespace :db do
       :admin
     ]
 
+    # puts "----> ILO's"
+
     puts "----> Adding Roles"
     role_cache = {}
     roles.each do |role|
@@ -51,7 +53,7 @@ namespace :db do
       acain:              {first_name: "Andrew",         last_name: "Cain",                 nickname: "Macite",     role_id: Role.admin_id},
       cwoodward:          {first_name: "Clinton",        last_name: "Woodward",             nickname: "The Giant",  role_id: Role.admin_id},
       ajones:             {first_name: "Allan",          last_name: "Jones",                nickname: "P-Jiddy",    role_id: Role.convenor_id},
-      rliston:            {first_name: "Rohan",          last_name: "Liston",               nickname: "Gunner",     role_id: Role.convenor_id},
+      rwilson:            {first_name: "Reuben",          last_name: "Wilson",               nickname: "Reubs",     role_id: Role.convenor_id},
       akihironoguchi:     {first_name: "Akihiro",        last_name: "Noguchi",              nickname: "Animations", role_id: Role.tutor_id},
       cliff:              {first_name: "Cliff",          last_name: "Warren",               nickname: "AvDongle",   role_id: Role.tutor_id},  
       joostfunkekupper:   {first_name: "Joost",          last_name: "Funke Kupper",         nickname: "Joe",        role_id: Role.tutor_id},
@@ -74,7 +76,7 @@ namespace :db do
           { user: :acain, num: many_tutorials}, 
           { user: :cwoodward, num: many_tutorials}, 
           { user: :ajones, num: many_tutorials}, 
-          { user: :rliston, num: many_tutorials}, 
+          { user: :rwilson, num: many_tutorials}, 
           { user: :akihironoguchi, num: many_tutorials}, 
           { user: :joostfunkekupper, num: many_tutorials},
           { user: :angusmorton, num: some_tutorials},

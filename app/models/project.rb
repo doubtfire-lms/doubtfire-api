@@ -802,6 +802,11 @@ class Project < ActiveRecord::Base
       logger.info "Created portfolio - #{final_pdf_path}"
     end
 
+    # Reuben 07.11.14 Set portfolio production date to now upon submission
+
+    self.portfolio_production_date = DateTime.now
+    self.save
+
     # Cleanup
     begin
       FileUtils.rm_r(tmp_dir)

@@ -19,4 +19,12 @@ namespace :submission do
   	 	end
   	end
   end
+
+  # Reuben 07.11.14: Rake script for setting all exisiting portfolio production dates
+
+  task set_portfolio_production_date:  :environment do
+    logger.info 'Setting portfolio production dates'
+      
+    Project.where("portfolio_production_date is null").select{|p| p.portfolio_available}.each{|p| p.portfolio_production_date = DateTime.now;p.save}
+  end
 end
