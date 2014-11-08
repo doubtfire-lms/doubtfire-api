@@ -1,7 +1,7 @@
 require 'task_serializer'
 
 class ShallowProjectSerializer < ActiveModel::Serializer
-  attributes :unit_id, :project_id, :started, :progress, :status, :student_name, :tutor_name, :unit_name, :target_grade
+  attributes :unit_id, :project_id, :started, :progress, :status, :student_name, :tutor_name, :unit_name, :target_grade, :has_portfolio
 
   def project_id
     object.id
@@ -22,7 +22,7 @@ class ShallowProjectSerializer < ActiveModel::Serializer
 end
 
 class StudentProjectSerializer < ActiveModel::Serializer
-  attributes :project_id, :first_name, :last_name, :student_id, :student_email, :tute, :stats, :enrolled, :target_grade
+  attributes :project_id, :first_name, :last_name, :student_id, :student_email, :tute, :stats, :enrolled, :target_grade, :has_portfolio, :compile_portfolio
 
   def student_email
     object.student.email

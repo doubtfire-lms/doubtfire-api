@@ -23,7 +23,7 @@ class User < ActiveRecord::Base
 
   def extend_authentication_token (remember)
     if auth_token.nil?
-      generate_authentication_token false
+      generate_authentication_token! false
       return
     end
 

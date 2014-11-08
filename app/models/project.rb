@@ -756,6 +756,10 @@ class Project < ActiveRecord::Base
     File.join(FileHelper.student_portfolio_dir(self, false), FileHelper.sanitized_filename("#{student.username}-portfolio.pdf"))
   end
 
+  def has_portfolio()
+    not self.portfolio_production_date.nil?
+  end
+
   def portfolio_available()
     (File.exists? portfolio_path) && ! self.compile_portfolio
   end
