@@ -336,6 +336,7 @@ class Unit < ActiveRecord::Base
         'Student Name',
         'Target Grade',
         'Email',
+        'Portfolio',
         'Tutorial',
       ] + task_definitions.map{|task_definition| task_definition.abbreviation }
       active_projects.each do |project|

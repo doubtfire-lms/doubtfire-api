@@ -602,6 +602,7 @@ class Project < ActiveRecord::Base
       student.name,
       target_grade,
       student.email,
+      student.portfolio_status
       if tutorial then tutorial.abbreviation else '' end
     ] + ordered_tasks.map{|task| task.task_status.name }
   end
@@ -758,6 +759,16 @@ class Project < ActiveRecord::Base
 
   def has_portfolio()
     not self.portfolio_production_date.nil?
+  end
+
+  def portfolio_status()
+    if self.has_portfolio
+      'yes'
+    elsif self.compile_portfolio
+      'in process'
+    else
+      'no'
+    end
   end
 
   def portfolio_available()
