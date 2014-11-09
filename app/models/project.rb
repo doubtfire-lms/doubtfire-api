@@ -793,8 +793,8 @@ class Project < ActiveRecord::Base
     # create PDFs of uploaded files
     pdf_paths = FileHelper.convert_files_to_pdf(portfolio_tmp_dir, tmp_dir)
     if pdf_paths.nil?
-      logger.error("Files missing for task #{id}")
-      puts "Files missing for task #{id}"
+      logger.error("Files missing for portfolio in project #{id}")
+      puts "Files missing for portfolio of project #{id}"
       return
     end
     task_pdfs = []
@@ -815,12 +815,16 @@ class Project < ActiveRecord::Base
     final_pdf_path = portfolio_path
     if FileHelper.aggregate(pdf_paths, final_pdf_path)
       logger.info "Created portfolio - #{final_pdf_path}"
+      # Reuben 07.11.14 Set portfolio production date to now upon submission
+
+      self.portfolio_production_date = DateTime.now
+      self.save
+    else
+      logger.error "Failed to create portfolio - #{final_pdf_path}"
+      # failed to combine PDFs
+      self.portfolio_production_date = nil
+      self.save
     end
-
-    # Reuben 07.11.14 Set portfolio production date to now upon submission
-
-    self.portfolio_production_date = DateTime.now
-    self.save
 
     # Cleanup
     begin
