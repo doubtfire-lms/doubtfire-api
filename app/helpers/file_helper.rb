@@ -117,14 +117,14 @@ module FileHelper
       tmp_file = File.join( Dir.tmpdir, 'doubtfire', 'compress', "file.pdf" )
       FileUtils.mkdir_p(File.join( Dir.tmpdir, 'doubtfire', 'compress' ))
 
-      exec = "gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/screen -dNOPAUSE -dBATCH  -dQUIET -sOutputFile=\"#{tmp_file}\" \"#{path}\" 2>>/dev/null"
+      exec = "gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/screen -dNOPAUSE -dBATCH  -dQUIET -sOutputFile=\"#{tmp_file}\" \"#{path}\" >>/dev/null 2>>/dev/null"
 
       # try with ghostscript
       didCompress = system exec
       if !didCompress
         logger.info "Failed to compress pdf: #{path} using GS"
 
-        exec = "convert \"#{path}\" -compress Zip \"#{tmp_file}\" 2>>/dev/null"
+        exec = "convert \"#{path}\" -compress Zip \"#{tmp_file}\" >>/dev/null 2>>/dev/null"
 
         # try with convert
         didCompress = system exec
@@ -222,7 +222,7 @@ module FileHelper
   # Tests if a PDF is valid / corrupt
   #
   def self.pdf_valid?(file)
-    didSucceed = system "pdftk #{file} cat output /dev/null 2>> /dev/null"
+    didSucceed = system "pdftk #{file} cat output /dev/null >>/dev/null 2>> /dev/null"
   end
 
   #
