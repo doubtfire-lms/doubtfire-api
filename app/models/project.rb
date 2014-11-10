@@ -602,7 +602,7 @@ class Project < ActiveRecord::Base
       student.name,
       target_grade,
       student.email,
-      student.portfolio_status,
+      portfolio_status,
       if tutorial then tutorial.abbreviation else '' end
     ] + ordered_tasks.map{|task| task.task_status.name }
   end
