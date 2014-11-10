@@ -7,31 +7,37 @@ module FileHelper
 
   #
   # Test if a file should be accepted based on an expected kind
-  # - file is passed the file uploaded to Doubtfire
+  # - file is passed the file uploaded to Doubtfire (a hash with all relevant data about the file)
   #
   def self.accept_file(file, name, kind)
     logger.debug "FileHelper accept_file #{file}, #{name}, #{kind}"
+    # puts "FileHelper accept_file #{file}, #{name}, #{kind}"
 
     fm = FileMagic.new(FileMagic::MAGIC_MIME)
     mime = fm.file file.tempfile.path
     logger.debug " -- #{name} is mime type: #{mime}"
+    # puts " -- #{name} is mime type: #{mime}"
+
+    valid = true
 
     case kind
     when 'image'
       accept = ["image/png", "image/gif", "image/bmp", "image/tiff", "image/jpeg"]
     when 'code'
-      accept = ["text/x-pascal", "text/x-c", "text/x-c++", "text/plain"]
+      accept = ["text/x-pascal", "text/x-c", "text/x-c++", "text/plain", "text/"]
     when 'document'
       accept = [ # -- one day"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                  # --"application/msword", 
                  "application/pdf" ]
+      valid = pdf_valid? file.tempfile.path
     else
       logger.error "Unknown type '#{kind}' provided for '#{name}'"
+      puts "Unknown type '#{kind}' provided for '#{name}'"
       return false
     end
     
     # result is true when...
-    mime.start_with?(*accept)
+    mime.start_with?(*accept) && valid
   end
 
 
@@ -111,13 +117,14 @@ module FileHelper
       tmp_file = File.join( Dir.tmpdir, 'doubtfire', 'compress', "file.pdf" )
       FileUtils.mkdir_p(File.join( Dir.tmpdir, 'doubtfire', 'compress' ))
 
-      exec = "gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/screen -dNOPAUSE -dBATCH  -dQUIET -sOutputFile=\"#{tmp_file}\" \"#{path}\""
+      exec = "gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/screen -dNOPAUSE -dBATCH  -dQUIET -sOutputFile=\"#{tmp_file}\" \"#{path}\" 2>>/dev/null"
 
       # try with ghostscript
       didCompress = system exec
       if !didCompress
-        exec = "convert \"#{path}\" -compress Zip \"#{tmp_file}\""
         logger.info "Failed to compress pdf: #{path} using GS"
+
+        exec = "convert \"#{path}\" -compress Zip \"#{tmp_file}\" 2>>/dev/null"
 
         # try with convert
         didCompress = system exec
@@ -219,6 +226,19 @@ module FileHelper
   end
 
   #
+  # Copy a PDF into place
+  #
+  def self.copy_pdf(file, dest_path)
+    if pdf_valid? file
+      compress_pdf(file)
+      FileUtils.cp file, dest_path
+      true
+    else
+      false
+    end
+  end
+
+  #
   # Converts the given file to a pdf
   #  
   def self.convert_to_pdf(file, outdir)
@@ -281,26 +301,22 @@ module FileHelper
   def self.doc_to_pdf(file, outdir)
     # puts file
     # if uploaded a PDF, then directly pass in
-    if file[:ext] == '.pdf'
+    # if file[:ext] == '.pdf'
       # copy the file over (note we need to copy it into
       # output_file as file will be removed at the end of this block)
       
-      if file[:actualfile].size > 1000000
-        begin
-          file[:actualfile].close()
-        rescue
-        end
-
-        compress_pdf(file[:path])
-
-        begin
-          file[:actualfile] = File.open(file[:path])
-        rescue
-        end
+      begin
+        file[:actualfile].close()
+      rescue
       end
 
-      FileUtils.cp file[:path], outdir
-    end
+      copy_pdf(file[:path], outdir)
+
+      begin
+        file[:actualfile] = File.open(file[:path])
+      rescue
+      end
+    # end
     # TODO msword doc...
   end
 

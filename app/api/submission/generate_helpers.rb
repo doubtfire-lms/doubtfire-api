@@ -76,7 +76,7 @@ module Api::Submission::GenerateHelpers
       zip.get_output_stream("marks.csv") { | f | f.puts csv_str }
     end
     output_zip
-  end  
+  end
 
   #
   # Uploads a batch package back into doubtfire
@@ -85,6 +85,8 @@ module Api::Submission::GenerateHelpers
     fm = FileMagic.new(FileMagic::MAGIC_MIME)
 
     updated_tasks = []
+    ignore_files = []
+    error_tasks = []
 
     mime_type = fm.file(file.tempfile.path)
 
@@ -93,6 +95,10 @@ module Api::Submission::GenerateHelpers
     if not mime_type.start_with?(*accept)
       error!({"error" => "File given is not a zip file - detected #{mime_type}"}, 403)
     end
+
+    # files are extracted to a temp dir first
+    tmp_dir = File.join( Dir.tmpdir, 'doubtfire', 'batch' )
+    FileUtils.mkdir_p(tmp_dir)
 
     begin
       Zip::File.open(file.tempfile.path) do |zip|
@@ -110,41 +116,78 @@ module Api::Submission::GenerateHelpers
         # Copy over the updated/marked files to the file system
         zip.each do |file|
           # Skip processing marking file
-          next if file.name == "marks.csv"
+          next if File.basename(file.name) == "marks.csv"
+
+          # Test filename pattern
+          if (/.*-\d+.pdf/ =~ File.basename(file.name)) != 0
+            if file.name[-1] != '/'
+              ignore_files << file.name
+            end
+            next
+          end
+
           # Extract the id from the filename
           task_id_from_filename = File.basename(file.name, ".pdf").split('-').last
           task = Task.find_by_id(task_id_from_filename)
-          next if task.nil?
+          if task.nil?
+            ignore_files << file.name
+            next
+          end
+
           # Ensure that this task's id is inside entry_data
           task_entry = entry_data.select{ | t | t['id'] == task.id.to_s }.first
           if task_entry.nil?
-            error!({"error" => "File #{file.name} has a mismatch of task id ##{task.id} (this task id does not exist in marks.csv)"}, 403)
+            # error!({"error" => "File #{file.name} has a mismatch of task id ##{task.id} (this task id does not exist in marks.csv)"}, 403)
+            error_tasks << { file: file.name, error: "Task id #{task.id} not in marks.csv"}
+            next
           end
           # Ensure that this task's student matches that in entry_data
           if task_entry['username'] != task.project.student.username
-            error!({"error" => "File #{file.name} has a mismatch of student id (task with id #{task.id} matches student #{task.project.student.username}, not that in marks.csv of #{t['id']}"}, 403)
+            # error!({"error" => "File #{file.name} has a mismatch of student id (task with id #{task.id} matches student #{task.project.student.username}, not that in marks.csv of #{t['id']}"}, 403)
+            error_tasks << { file: file.name, error: "Student mismatch (expected task #{task.id} to matche #{task.project.student.username}, was #{task_entry['username']} in marks.csv"}
+            next
           end
           
           # Update the task to whatever its associative mark was 
           valid_marks = %w(ready_to_mark rtm redo fix_and_resubmit fix fix_and_include fixinc discuss d)
           if task_entry['mark'].nil? or not valid_marks.include? task_entry['mark'].strip
             msg = task_entry['mark'].nil? ? "it is missing a mark value in marks.csv" : "acceptable mark codes: #{valid_marks.join ' '}"
-            error!({"error" => "Task id #{task.id} has an invalid mark (#{msg})"}, 403)
+            # error!({"error" => "Task id #{task.id} has an invalid mark (#{msg})"}, 403)
+            error_tasks << { file: file.name, error: "Task id #{task.id} has an invalid mark (#{msg})"}
+            next
           end
           
+          # Can the user assess this task?
+          if not authorise? current_user, task, :put
+            error_tasks << { file: file.name, error: "You do not have permission to assess task with id #{task.id}"}
+            next
+          end
+
           # Read into the task's portfolio_evidence path the new file
+          tmp_file = File.join(tmp_dir, File.basename(file.name))
           task.portfolio_evidence = PortfolioEvidence.final_pdf_path_for(task)
-          file.extract(task.portfolio_evidence){ true }
-          
-          task.trigger_transition(task_entry['mark'], current_user)
-          updated_tasks << task
+          # get file out of zip... to tmp_file
+          file.extract(tmp_file){ true }
+
+          # copy tmp_file to dest
+          if FileHelper.copy_pdf(tmp_file, task.portfolio_evidence)
+            task.trigger_transition(task_entry['mark'], current_user) # saves task
+            updated_tasks << file.name
+          else
+            error_tasks << { file: file.name, error: 'Invalid pdf' }
+          end
         end
       end
     rescue
       # FileUtils.cp(file.tempfile.path, Doubtfire::Application.config.student_work_dir)
       raise
     end
-    updated_tasks
+    
+    {
+      succeeded:  updated_tasks,
+      ignored:    ignore_files,
+      failed:     error_tasks
+    }
   end
   
   # module_function :combine_to_pdf
