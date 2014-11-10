@@ -366,9 +366,9 @@ class Unit < ActiveRecord::Base
         # Add file to zip in grade folder
         src_path = project.portfolio_path
         if project.main_tutor
-          dst_path = FileHelper.sanitized_path( "#{project.target_grade_desc}", "#{project.student.username}-portfolio (#{project.main_tutor.name}).pdf")
+          dst_path = FileHelper.sanitized_path( "#{project.target_grade_desc}", "#{project.student.username}-portfolio (#{project.main_tutor.name})") + ".pdf"
         else
-          dst_path = FileHelper.sanitized_path( "#{project.target_grade_desc}", "#{project.student.username}-portfolio (no tutor).pdf")
+          dst_path = FileHelper.sanitized_path( "#{project.target_grade_desc}", "#{project.student.username}-portfolio (no tutor)") + ".pdf"
         end
 
         #copy into zip
