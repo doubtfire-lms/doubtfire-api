@@ -121,7 +121,7 @@ module Api::Submission::GenerateHelpers
           # Test filename pattern
           if (/.*-\d+.pdf/ =~ File.basename(file.name)) != 0
             if file.name[-1] != '/'
-              ignore_files << file.name
+              ignore_files << { file: file.name }
             end
             next
           end
@@ -130,7 +130,7 @@ module Api::Submission::GenerateHelpers
           task_id_from_filename = File.basename(file.name, ".pdf").split('-').last
           task = Task.find_by_id(task_id_from_filename)
           if task.nil?
-            ignore_files << file.name
+            ignore_files << { file: file.name }
             next
           end
 
@@ -172,7 +172,7 @@ module Api::Submission::GenerateHelpers
           # copy tmp_file to dest
           if FileHelper.copy_pdf(tmp_file, task.portfolio_evidence)
             task.trigger_transition(task_entry['mark'], current_user) # saves task
-            updated_tasks << file.name
+            updated_tasks << { file: file.name }
           else
             error_tasks << { file: file.name, error: 'Invalid pdf' }
           end
