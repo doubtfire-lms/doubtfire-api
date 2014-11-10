@@ -27,4 +27,16 @@ namespace :submission do
       
     Project.where("portfolio_production_date is null").select{|p| p.portfolio_available}.each{|p| p.portfolio_production_date = DateTime.now;p.save}
   end
+
+  task check_task_pdfs: :environment do
+    logger.info 'Starting check of PDF tasks'
+
+    Unit.where('active').each do |u|
+      u.tasks.where('portfolio_evidence is not NULL').each do |t|
+        if not FileHelper.pdf_valid?(t.portfolio_evidence)
+          puts t.portfolio_evidence
+        end
+      end
+    end
+  end
 end

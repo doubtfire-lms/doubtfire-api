@@ -212,6 +212,13 @@ module FileHelper
   end
 
   #
+  # Tests if a PDF is valid / corrupt
+  #
+  def self.pdf_valid?(file)
+    didSucceed = system "pdftk #{file} cat output /dev/null 2>> /dev/null"
+  end
+
+  #
   # Converts the given file to a pdf
   #  
   def self.convert_to_pdf(file, outdir)
