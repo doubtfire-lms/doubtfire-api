@@ -18,6 +18,7 @@ module Api
         requires :description,          type: String,   :desc => "The description of this task def"
         requires :weighting,            type: Integer,  :desc => "The weighting of this task"
         requires :target_grade,         type: Integer,  :desc => "Minimum grade for task"
+        optional :required,             type: Boolean,  :desc => "Is the task required"
         requires :target_date,          type: Date,     :desc => "The date when the task is due"
         requires :abbreviation,         type: String,   :desc => "The abbreviation of the task"
         optional :upload_requirements,  type: String,   :desc => "Task file upload requirements"
@@ -38,7 +39,8 @@ module Api
                                                   :name,               
                                                   :description,        
                                                   :weighting,          
-                                                  :target_grade,           
+                                                  :target_grade,
+                                                  :required,           
                                                   :target_date,        
                                                   :abbreviation,
                                                   :upload_requirements
@@ -57,6 +59,7 @@ module Api
         optional :description,          type: String,   :desc => "The description of this task def"
         optional :weighting,            type: Integer,  :desc => "The weighting of this task"
         optional :target_grade,         type: Integer,  :desc => "Target grade for task"
+        optional :required,             type: Boolean,  :desc => "Is the task required"
         optional :target_date,          type: Date,     :desc => "The date when the task is due"
         optional :abbreviation,         type: String,   :desc => "The abbreviation of the task"
         optional :upload_requirements,  type: String,   :desc => "Task file upload requirements"
@@ -76,7 +79,8 @@ module Api
                                                   :name,               
                                                   :description,        
                                                   :weighting,          
-                                                  :target_grade,           
+                                                  :target_grade,
+                                                  :required,
                                                   :target_date,        
                                                   :abbreviation,
                                                   :upload_requirements

@@ -73,6 +73,6 @@ class TaskDefinition < ActiveRecord::Base
   end
 
   def self.csv_columns
-    [:name, :abbreviation, :description, :weighting, :required, :upload_requirements, :target_date]
+    [:name, :abbreviation, :description, :weighting, :required, :target_grade, :upload_requirements, :target_date]
   end
 end

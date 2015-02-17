@@ -279,7 +279,7 @@ class Unit < ActiveRecord::Base
     CSV.foreach(file) do |row|
       next if row[0] =~ /^(Task Name)|(name)/ # Skip header
 
-      name, abbreviation, description, weighting, required, upload_requirements, target_date = row[0..7]
+      name, abbreviation, description, weighting, required, target_grade, upload_requirements, target_date = row[0..7]
       next if name.nil? || abbreviation.nil?
 
       description = "(No description given)" if description == "NULL"
@@ -312,6 +312,7 @@ class Unit < ActiveRecord::Base
           task_definition.description                 = description
           task_definition.weighting                   = BigDecimal.new(weighting)
           task_definition.required                    = ["Yes", "y", "Y", "yes", "true", "TRUE", "1"].include? required
+          task_definition.target_grade                = target_grade
           task_definition.target_date                 = Time.zone.parse(target_date)
           task_definition.upload_requirements         = upload_requirements
         end
