@@ -21,7 +21,7 @@ class UnitRole < ActiveRecord::Base
   # scope :staff,     -> { where('role_id != ?', 1) }
 
   def self.for_user(user)
-    UnitRole.joins(:role).where("user_id = :user_id and roles.name <> 'Student'", user_id: user.id)
+    UnitRole.joins(:role, :unit).where("user_id = :user_id and roles.name <> 'Student'", user_id: user.id)
   end
 
   # unit roles are now unique for users in units
