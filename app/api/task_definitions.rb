@@ -126,7 +126,18 @@ module Api
       env['api.format'] = :binary
       unit.task_definitions_csv
     end
-    
+
+    desc "Delete a task definition"
+    delete '/task_definitions/:id' do
+      task_def = TaskDefinition.find(params[:id])
+      
+      if not authorise? current_user, task_def.unit, :add_task_def
+        error!({"error" => "Not authorised to delete a task definition of this unit"}, 403)
+      end
+
+      task_def.destroy()
+    end
+
   end
 end
 
