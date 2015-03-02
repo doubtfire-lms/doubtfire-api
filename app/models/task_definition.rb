@@ -29,7 +29,11 @@ class TaskDefinition < ActiveRecord::Base
 
   def upload_requirements
     # Read the JSON string in upload_requirements and convert into ruby objects
-    JSON.parse(self['upload_requirements'])
+    if self['upload_requirements']
+      JSON.parse(self['upload_requirements'])  
+    else 
+      JSON.parse('[]')
+    end
   end
 
   def upload_requirements=(req)
@@ -57,6 +61,9 @@ class TaskDefinition < ActiveRecord::Base
     end
 
     self['upload_requirements'] = JSON.unparse(jsonData)
+    if self['upload_requirements'].nil?
+      self['upload_requirements'] = '[]'
+    end
   end
 
   def self.to_csv(task_definitions, options = {}) #unconverted_fields: :upload_requirements

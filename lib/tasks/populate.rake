@@ -101,7 +101,6 @@ namespace :db do
           { user: "tutor_1", num: few_tutorials }, 
           { user: :alexcu, num: few_tutorials }, 
           { user: :angusmorton, num: few_tutorials }, 
-          { user: :rliston, num: few_tutorials }, 
           { user: :akihironoguchi, num: few_tutorials }, 
           { user: :joostfunkekupper, num: few_tutorials },
         ], 
