@@ -219,6 +219,19 @@ class Unit < ActiveRecord::Base
           else
             enrol_student(project_participant.id)
           end
+        else
+          # update tutorial
+          unit_role = UnitRole.joins(project: :unit).where(
+            user_id: project_participant.id,
+            projects: {unit_id: id}
+          ).first
+
+          if unit_role.tutorial_id != tutorial.id
+            unit_role = UnitRole.find(unit_role.id)
+            unit_role.tutorial = tutorial
+            unit_role.save
+            added_users << project_participant #TODO: would be good to separate into added/updated
+          end
         end
       end
     end
