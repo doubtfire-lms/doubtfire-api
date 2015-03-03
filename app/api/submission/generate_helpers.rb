@@ -47,7 +47,7 @@ module Api::Submission::GenerateHelpers
   # Defines the csv headers for batch download
   #
   def mark_csv_headers
-    "Username,Name,Task,ID,ready_to_mark (rtm)|discuss (d)|fix_and_resubmit (fix)|fix_and_include (fixinc)|redo"
+    "Username,Name,Tutorial,Task,ID,ready_to_mark (rtm)|discuss (d)|fix_and_resubmit (fix)|fix_and_include (fixinc)|redo"
   end
   
   #
@@ -65,7 +65,7 @@ module Api::Submission::GenerateHelpers
         next if task.processing_pdf
         # Add to the template entry string
         student = task.project.student
-        csv_str << "\n#{student.username.sub(/,/, '_')},#{student.name.sub(/,/, '_')},#{task.task_definition.abbreviation.sub(/,/, '_')},#{task.id},rtm"
+        csv_str << "\n#{student.username.sub(/,/, '_')},#{student.name.sub(/,/, '_')},#{task.project.unit_role.tutorial.abbreviation},#{task.task_definition.abbreviation.sub(/,/, '_')},#{task.id},rtm"
         src_path = task.portfolio_evidence
         # make dst path of "<student id>/<task abbrev>.pdf"
         dst_path = FileHelper.sanitized_path("#{task.project.student.username}", "#{task.task_definition.abbreviation}-#{task.id}") + ".pdf"
