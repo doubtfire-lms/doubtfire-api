@@ -22,7 +22,7 @@ module FileHelper
 
     case kind
     when 'image'
-      accept = ["image/png", "image/gif", "image/bmp", "image/tiff", "image/jpeg"]
+      accept = ["image/png", "image/gif", "image/bmp", "image/tiff", "image/jpeg", "image/x-ms-bmp"]
     when 'code'
       accept = ["text/x-pascal", "text/x-c", "text/x-c++", "text/plain", "text/"]
     when 'document'
