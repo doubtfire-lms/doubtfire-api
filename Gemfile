@@ -22,6 +22,8 @@ gem 'rack-cors', require: 'rack/cors'
 
 gem 'ci_reporter'
 
+gem 'terminator'
+
 group :development do
   gem 'pg'
   gem 'hirb'

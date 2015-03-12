@@ -1,3 +1,5 @@
+require 'terminator'
+
 module FileHelper
 
   # Provide access to the Rails logger
@@ -121,14 +123,21 @@ module FileHelper
       exec = "gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.3 -dDetectDuplicateImages=true -dPDFSETTINGS=/screen -dNOPAUSE -dBATCH  -dQUIET -sOutputFile=\"#{tmp_file}\" \"#{path}\" >>/dev/null 2>>/dev/null"
 
       # try with ghostscript
-      didCompress = system exec
+      didCompress = false
+      Terminator.terminate 120 do
+        didCompress = system exec
+      end
+      
       if !didCompress
         logger.info "Failed to compress pdf: #{path} using GS"
 
         exec = "convert \"#{path}\" -compress Zip \"#{tmp_file}\" >>/dev/null 2>>/dev/null"
 
         # try with convert
-        didCompress = system exec
+        Terminator.terminate 120 do
+          didCompress = system exec
+        end
+
         if !didCompress
           logger.error "Failed to compress pdf: #{path}\n#{exec}"
           puts "Failed to compress pdf: #{path}\n#{exec}"
@@ -223,7 +232,15 @@ module FileHelper
   # Tests if a PDF is valid / corrupt
   #
   def self.pdf_valid?(file)
-    didSucceed = system "pdftk #{file} cat output /dev/null >>/dev/null 2>> /dev/null"
+    # puts "pdftk #{file} output dont_ask /dev/null"
+
+    didSucceed = false
+
+    Terminator.terminate 30 do
+      didSucceed = system "pdftk #{file} output /dev/null dont_ask"
+    end    
+
+    didSucceed
   end
 
   #
@@ -361,7 +378,11 @@ module FileHelper
   # - returns boolean indicating success
   #
   def self.aggregate(pdf_paths, final_pdf_path)
-    didCompile = system "pdftk #{pdf_paths.join ' '} cat output '#{final_pdf_path}'"
+    didCompile = false
+    Terminator.terminate 180 do
+      didCompile = system "pdftk #{pdf_paths.join ' '} cat output '#{final_pdf_path}' dont_ask compress"
+    end
+
     if !didCompile
       logger.error "failed to create #{final_pdf_path}\n -> pdftk #{pdf_paths.join ' '} cat output #{final_pdf_path}"
       puts "failed to create #{final_pdf_path}\n -> pdftk #{pdf_paths.join ' '} cat output #{final_pdf_path}"
