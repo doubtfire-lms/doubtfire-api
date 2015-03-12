@@ -2,7 +2,7 @@ namespace :submission do
   desc "Generate PDF files for submissions"
 
   def logger
-  	Rails.logger
+    Rails.logger
   end
 
   #
@@ -31,19 +31,22 @@ namespace :submission do
       logger.info 'Skip generate pdf'
     else
       start_executing
-      logger.info 'Starting generate pdf'
-      
-    	PortfolioEvidence.process_new_to_pdf
+      begin
+        logger.info 'Starting generate pdf'
+        
+        PortfolioEvidence.process_new_to_pdf
 
-    	projects_to_compile = Project.where(compile_portfolio: true)
-    	projects_to_compile.each do | project |
-    		begin
-    	 		project.create_portfolio()
-    	 	rescue Exception => e
-    	 		logger.error "Failed creating portfolio for project #{project.id}!\n#{e.message}"
-    	 	end
-    	end
-      end_executing
+        projects_to_compile = Project.where(compile_portfolio: true)
+        projects_to_compile.each do | project |
+          begin
+            project.create_portfolio()
+          rescue Exception => e
+            logger.error "Failed creating portfolio for project #{project.id}!\n#{e.message}"
+          end
+        end
+      ensure
+        end_executing
+      end
     end
   end
 

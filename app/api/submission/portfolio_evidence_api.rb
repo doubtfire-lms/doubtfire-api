@@ -63,6 +63,21 @@ module Api
 
         File.read(evidence_loc)
       end # get
+
+      desc "Request for a task's documents to be re-processed tp recreate the task's PDF"
+      put '/submission/task/:id' do
+        task = Task.find(params[:id])        
+
+        if not authorise? current_user, task, :get_submission
+          error!({"error" => "Not authorised to get task '#{task.task_definition.name}'"}, 401)
+        end
+
+        if task and PortfolioEvidence.recreate_task_pdf(task)
+          { result: "done" }
+        else
+          { result: "false" }
+        end
+      end # put
     end
   end
 end

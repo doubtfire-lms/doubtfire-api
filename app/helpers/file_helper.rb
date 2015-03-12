@@ -75,7 +75,7 @@ module FileHelper
   # Generates a path for storing student work
   # type = [:new, :in_process, :done, :pdf]
   #
-  def self.student_work_dir(type, task = nil)
+  def self.student_work_dir(type, task = nil, create = true)
     file_server = Doubtfire::Application.config.student_work_dir
     dst = "#{file_server}/#{type}/" # trust the server config and passed in type for paths
 
@@ -91,7 +91,9 @@ module FileHelper
     end
 
     # Create current dst directory should it not exist
-    FileUtils.mkdir_p(dst)
+    if create
+      FileUtils.mkdir_p(dst)
+    end
     dst
   end
 
