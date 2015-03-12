@@ -5,19 +5,46 @@ namespace :submission do
   	Rails.logger
   end
 
-  task generate_pdfs:  :environment do
-    logger.info 'Starting generate pdf'
-	  	
-  	PortfolioEvidence.process_new_to_pdf
+  #
+  # Returns the file that indicates if this rake process is already executing...
+  #
+  def rake_executing_marker_file
+    File.join(Doubtfire::Application.config.student_work_dir, 'rake.running')
+  end
 
-  	projects_to_compile = Project.where(compile_portfolio: true)
-  	projects_to_compile.each do | project |
-  		begin
-  	 		project.create_portfolio()
-  	 	rescue Exception => e
-  	 		logger.error "Failed creating portfolio for project #{project.id}!\n#{e.message}"
-  	 	end
-  	end
+  def is_executing?
+    tmp_file = rake_executing_marker_file
+    File.exist?(tmp_file)
+  end
+
+  def start_executing
+    FileUtils.touch(rake_executing_marker_file)
+  end
+
+  def end_executing
+    FileUtils.rm(rake_executing_marker_file)
+  end
+
+  task generate_pdfs:  :environment do
+    if is_executing?
+      puts 'Skip generate pdf -- already executing'
+      logger.info 'Skip generate pdf'
+    else
+      start_executing
+      logger.info 'Starting generate pdf'
+      
+    	PortfolioEvidence.process_new_to_pdf
+
+    	projects_to_compile = Project.where(compile_portfolio: true)
+    	projects_to_compile.each do | project |
+    		begin
+    	 		project.create_portfolio()
+    	 	rescue Exception => e
+    	 		logger.error "Failed creating portfolio for project #{project.id}!\n#{e.message}"
+    	 	end
+    	end
+      end_executing
+    end
   end
 
   # Reuben 07.11.14: Rake script for setting all exisiting portfolio production dates
