@@ -226,7 +226,19 @@ class User < ActiveRecord::Base
   end
 
   def name
-    "#{first_name} #{last_name}"
+    fn = first_name.split(' ').first
+    # fn = nickname
+    sn = last_name
+
+    if fn.length > 15
+      fn = "#{fn[0..11]}..."
+    end
+
+    if sn.length > 15
+      sn = "#{sn[0..11]}..."
+    end
+
+    "#{fn} #{sn}"
   end
 
   def self.export_to_csv

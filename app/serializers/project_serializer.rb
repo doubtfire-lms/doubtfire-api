@@ -33,7 +33,11 @@ class StudentProjectSerializer < ActiveModel::Serializer
   end
   
   def first_name
-    object.student.first_name
+    if object.student.nickname
+      object.student.nickname
+    else
+      object.student.first_name
+    end
   end
 
   def last_name
@@ -65,7 +69,7 @@ class ProjectSerializer < ActiveModel::Serializer
   end
 
   def student_name
-  	object.student.name
+  	"#{object.student.first_name} #{object.student.last_name} (#{object.student.nickname})"
   end
 
   def tutor_name
