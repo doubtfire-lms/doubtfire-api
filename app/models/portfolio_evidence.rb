@@ -20,11 +20,7 @@ class PortfolioEvidence
   end
 
   #
-  # Combines image, code or documents files given to pdf.
-  # Returns the tempfile that was generated. 
-  #
-  # It is the caller's responsibility to delete this tempfile
-  # once the method is finished.
+  # Creates cover pages for files, and moves them into place.
   #
   def self.produce_student_work(files, student, task, ui)
     #

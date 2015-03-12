@@ -113,11 +113,12 @@ module FileHelper
 
   def self.compress_pdf(path)
     #trusting path... as it needs to be replaced
+    #puts "compressing #{path}"
     begin
-      tmp_file = File.join( Dir.tmpdir, 'doubtfire', 'compress', "file.pdf" )
+      tmp_file = File.join( Dir.tmpdir, 'doubtfire', 'compress', "#{File.dirname(path).split(File::Separator).last}-file.pdf" )
       FileUtils.mkdir_p(File.join( Dir.tmpdir, 'doubtfire', 'compress' ))
 
-      exec = "gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/screen -dNOPAUSE -dBATCH  -dQUIET -sOutputFile=\"#{tmp_file}\" \"#{path}\" >>/dev/null 2>>/dev/null"
+      exec = "gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.3 -dDetectDuplicateImages=true -dPDFSETTINGS=/screen -dNOPAUSE -dBATCH  -dQUIET -sOutputFile=\"#{tmp_file}\" \"#{path}\" >>/dev/null 2>>/dev/null"
 
       # try with ghostscript
       didCompress = system exec
@@ -287,9 +288,14 @@ module FileHelper
   def self.img_to_pdf(file, outdir)
     img = Magick::Image.read(file[:path]).first
     # resize the image if its too big (e.g., taken with a digital camera)
-    if img.columns > 1000 || img.rows > 500
-      # resize such that it's 600px in width
-      scale = 1000.0 / img.columns
+    if img.columns > 1000 || img.rows > 1000
+      # resize such that it's 1000px in width
+      scale = 1
+      if img.columns > img.rows
+        scale = 1000.0 / img.columns
+      else
+        scale = 1000.0 / img.rows
+      end
       img = img.resize(scale)
     end
     img.write("pdf:#{outdir}") { self.quality = 75 }
