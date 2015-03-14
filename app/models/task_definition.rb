@@ -51,13 +51,23 @@ class TaskDefinition < ActiveRecord::Base
       return
     end
 
+    i = 0
     for req in jsonData do
       if not req.class == Hash
-        errors.add(:upload_requirements, "is not in a valid format! Should be [ { \"key\": \"...\", \"name\": \"...\", \"type\": \"...\"}, { ... } ]. Array did not contain hashes.")
+        errors.add(:upload_requirements, "is not in a valid format! Should be [ { \"key\": \"...\", \"name\": \"...\", \"type\": \"...\"}, { ... } ]. Array did not contain hashes for item #{i + 1}..")
         return
       end
 
       req.delete_if {|key, value| not ["key", "name", "type"].include? key }
+
+      req["key"] = "file#{i}"
+
+      if (not req.has_key? "key") or (not req.has_key? "name") or (not req.has_key? "type") then
+        errors.add(:upload_requirements, "is not in a valid format! Should be [ { \"key\": \"...\", \"name\": \"...\", \"type\": \"...\"}, { ... } ]. Missing a key for item #{i + 1}.")
+        return
+      end
+
+      i += 1
     end
 
     self['upload_requirements'] = JSON.unparse(jsonData)
