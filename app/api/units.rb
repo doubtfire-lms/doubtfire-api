@@ -164,6 +164,25 @@ module Api
       # Actually import...
       unit.import_users_from_csv(params[:file][:tempfile])
     end
+
+    desc "Upload CSV with the students to un-enrol from the unit"
+    params do
+      requires :file, type: Rack::Multipart::UploadedFile, :desc => "CSV upload file."
+    end
+    post '/csv/units/:id/withdraw' do
+      unit = Unit.find(params[:id])
+      if not authorise? current_user, unit, :uploadCSV
+        error!({"error" => "Not authorised to upload CSV of students to #{unit.code}"}, 403)
+      end
+      
+      # check mime is correct before uploading
+      if not params[:file][:type] == "text/csv"
+        error!({"error" => "File given is not a CSV file"}, 403)
+      end
+      
+      # Actually withdraw...
+      unit.unenrol_users_from_csv(params[:file][:tempfile])
+    end
     
     desc "Download CSV of all students in this unit"
     get '/csv/units/:id' do

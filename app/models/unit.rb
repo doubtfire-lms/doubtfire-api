@@ -238,6 +238,46 @@ class Unit < ActiveRecord::Base
     added_users
   end
 
+  # Use the values in the CSV to set the enrolment of these
+  # students to false for this unit.
+  # CSV should contain just the usernames to withdraw
+  def unenrol_users_from_csv(file)
+    # puts 'starting withdraw'
+    changed_projects = []
+    
+    CSV.foreach(file) do |row|
+      # Make sure we're not looking at the header or an empty line
+      next if row[0] =~ /username/
+      # next if row[5] !~ /^LA\d/
+
+      username  = row[0].downcase
+
+      # puts username
+
+      project_participant = User.where(username: username)
+
+      next if not project_participant
+      next if not project_participant.count == 1
+      project_participant = project_participant.first
+
+      user_project = UnitRole.joins(project: :unit).where(
+          user_id: project_participant.id,
+          projects: {unit_id: id}
+        )
+
+      next if not user_project
+      next if not user_project.count == 1
+
+      user_project = user_project.first.project
+
+      user_project.enrolled = false
+      user_project.save
+      changed_projects << username
+    end
+
+    changed_projects # return the changed projects
+  end 
+
   def export_users_to_csv
     CSV.generate do |row|
       row << ["subject_code", "username", "first_name", "last_name", "email", "tutorial"]
