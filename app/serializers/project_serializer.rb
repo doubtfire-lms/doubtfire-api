@@ -1,7 +1,7 @@
 require 'task_serializer'
 
 class ShallowProjectSerializer < ActiveModel::Serializer
-  attributes :unit_id, :project_id, :started, :progress, :status, :student_name, :tutor_name, :unit_name, :target_grade, :has_portfolio
+  attributes :unit_id, :project_id, :started, :student_name, :tutor_name, :unit_name, :target_grade, :has_portfolio
 
   def project_id
     object.id
