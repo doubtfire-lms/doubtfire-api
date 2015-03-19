@@ -144,6 +144,10 @@ module FileHelper
     rescue 
       logger.error("Failed to compress pdf: #{path}")
     end
+
+    if File.exists? tmp_file
+      FileUtils.rm tmp_file
+    end
   end
 
   #

@@ -97,7 +97,16 @@ module Api::Submission::GenerateHelpers
     end
 
     # files are extracted to a temp dir first
-    tmp_dir = File.join( Dir.tmpdir, 'doubtfire', 'batch' )
+    i = 0
+    tmp_dir = File.join( Dir.tmpdir, 'doubtfire', 'batch', "#{i}" )
+
+    while Dir.exists? tmp_dir do
+      i += 1
+      tmp_dir = File.join( Dir.tmpdir, 'doubtfire', 'batch', "#{i}" )
+    end
+
+    #puts tmp_dir
+
     FileUtils.mkdir_p(tmp_dir)
 
     begin
@@ -173,6 +182,7 @@ module Api::Submission::GenerateHelpers
           if FileHelper.copy_pdf(tmp_file, task.portfolio_evidence)
             task.trigger_transition(task_entry['mark'], current_user) # saves task
             updated_tasks << { file: file.name }
+            FileUtils.rm tmp_file
           else
             error_tasks << { file: file.name, error: 'Invalid pdf' }
           end
@@ -182,6 +192,9 @@ module Api::Submission::GenerateHelpers
       # FileUtils.cp(file.tempfile.path, Doubtfire::Application.config.student_work_dir)
       raise
     end
+
+    # Remove the extract dir
+    FileUtils.rm_rf tmp_dir
     
     {
       succeeded:  updated_tasks,
