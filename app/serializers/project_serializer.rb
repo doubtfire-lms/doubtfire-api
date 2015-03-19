@@ -62,7 +62,7 @@ class StudentProjectSerializer < ActiveModel::Serializer
 end
 
 class ProjectSerializer < ActiveModel::Serializer
-  attributes :unit_id, :project_id, :started, :stats, :student_name, :tutor_name, :tute, :burndown_chart_data, :enrolled, :target_grade, :portfolio_files, :compile_portfolio, :portfolio_available
+  attributes :unit_id, :project_id, :student_id, :started, :stats, :student_name, :tutor_name, :tute, :burndown_chart_data, :enrolled, :target_grade, :portfolio_files, :compile_portfolio, :portfolio_available
 
   def project_id
     object.id
@@ -70,6 +70,10 @@ class ProjectSerializer < ActiveModel::Serializer
 
   def student_name
   	"#{object.student.first_name} #{object.student.last_name} (#{object.student.nickname})"
+  end
+
+  def student_id
+    object.student.username
   end
 
   def tutor_name
