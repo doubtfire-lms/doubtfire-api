@@ -43,17 +43,21 @@ module Api::Submission::GenerateHelpers
     files.map{ | k, v | v }
   end
 
+  def mark_col
+    "ready_to_mark (rtm)|discuss (d)|fix_and_resubmit (fix)|fix_and_include (fixinc)|redo"
+  end
+
   #
   # Defines the csv headers for batch download
   #
   def mark_csv_headers
-    "Username,Name,Tutorial,Task,ID,ready_to_mark (rtm)|discuss (d)|fix_and_resubmit (fix)|fix_and_include (fixinc)|redo"
+    "Username,Name,Tutorial,Task,ID,student comment,my comment,#{mark_col},comment"
   end
   
   #
   # Generates a download package of the given tasks
   #
-  def generate_batch_task_zip(tasks, unit)
+  def generate_batch_task_zip(user, tasks, unit)
     download_id = "#{Time.new.strftime("%Y-%m-%d")}-#{unit.code}-#{current_user.username}"
     filename = FileHelper.sanitized_filename("batch_ready_to_mark_#{current_user.username}.zip")
     output_zip = Tempfile.new(filename)
@@ -65,7 +69,8 @@ module Api::Submission::GenerateHelpers
         next if task.processing_pdf
         # Add to the template entry string
         student = task.project.student
-        csv_str << "\n#{student.username.sub(/,/, '_')},#{student.name.sub(/,/, '_')},#{task.project.unit_role.tutorial.abbreviation},#{task.task_definition.abbreviation.sub(/,/, '_')},#{task.id},rtm"
+        csv_str << "\n#{student.username.sub(/,/, '_')},#{student.name.sub(/,/, '_')},#{task.project.unit_role.tutorial.abbreviation},#{task.task_definition.abbreviation.sub(/,/, '_')},#{task.id},\"#{task.last_comment_by(task.project.student)}\",\"#{task.last_comment_by(user)}\",rtm,"
+        
         src_path = task.portfolio_evidence
         # make dst path of "<student id>/<task abbrev>.pdf"
         dst_path = FileHelper.sanitized_path("#{task.project.student.username}", "#{task.task_definition.abbreviation}-#{task.id}") + ".pdf"
@@ -118,10 +123,10 @@ module Api::Submission::GenerateHelpers
           error!({"error" => "No marks.csv contained in zip"}, 403)
         end
         csv_str = marking_file.get_input_stream.read
-        keys = mark_csv_headers.split(',').map { | s | s.downcase }
-        keys[keys.length-1] = "mark" #rename the big string to just mark
-        entry_data = CSV.parse(csv_str).map { | a | Hash[ keys.zip(a) ] }
-        entry_data.shift #remove header rows
+
+        # read keys from CSV
+        entry_data = CSV.parse(csv_str, {:headers => true, :header_converters => [:downcase]})
+
         # Copy over the updated/marked files to the file system
         zip.each do |file|
           # Skip processing marking file
@@ -159,8 +164,8 @@ module Api::Submission::GenerateHelpers
           
           # Update the task to whatever its associative mark was 
           valid_marks = %w(ready_to_mark rtm redo fix_and_resubmit fix fix_and_include fixinc discuss d)
-          if task_entry['mark'].nil? or not valid_marks.include? task_entry['mark'].strip
-            msg = task_entry['mark'].nil? ? "it is missing a mark value in marks.csv" : "acceptable mark codes: #{valid_marks.join ' '}"
+          if task_entry[mark_col].nil? or not valid_marks.include? task_entry[mark_col].strip
+            msg = task_entry[mark_col].nil? ? "it is missing a mark value in marks.csv" : "acceptable mark codes: #{valid_marks.join ' '}"
             # error!({"error" => "Task id #{task.id} has an invalid mark (#{msg})"}, 403)
             error_tasks << { file: file.name, error: "Task id #{task.id} has an invalid mark (#{msg})"}
             next
@@ -180,8 +185,11 @@ module Api::Submission::GenerateHelpers
 
           # copy tmp_file to dest
           if FileHelper.copy_pdf(tmp_file, task.portfolio_evidence)
-            task.trigger_transition(task_entry['mark'], current_user) # saves task
+            task.trigger_transition(task_entry[mark_col], current_user) # saves task
             updated_tasks << { file: file.name }
+            if not (task_entry['comment'].nil? || task_entry['comment'].empty?)
+              task.add_comment current_user, task_entry['comment']
+            end
             FileUtils.rm tmp_file
           else
             error_tasks << { file: file.name, error: 'Invalid pdf' }
