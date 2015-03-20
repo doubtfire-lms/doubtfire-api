@@ -11,7 +11,7 @@ Setting up a dev environment:
     2. `rbenv global 2.0.0-p353`
 3. Install postgres
     1. Ensure pg_config is on the path
-    2. eg: `export PATH=/Applications/Postgres.app/Contents/Versions/9.3/bin:$PATH`
+    2. eg: `export PATH=/Applications/Postgres.app/Contents/Versions/9.4/bin:$PATH`
     3. Login using `psql`
     4. Setup itig user with: `CREATE ROLE itig WITH CREATEDB PASSWORD 'd872$dh' LOGIN;`
 4. Install imagemagick
@@ -42,13 +42,13 @@ Setting up a dev environment:
     3. Restart the terminal
 3. Install postgres
     1. Ensure pg_config is on the path
-    2. eg: `export PATH=/Applications/Postgres.app/Contents/Versions/9.3/bin:$PATH`
+    2. eg: `export PATH=/Applications/Postgres.app/Contents/Versions/9.4/bin:$PATH`
     3. Login using `psql`
     4. Setup itig user with: `CREATE ROLE itig WITH CREATEDB PASSWORD 'd872$dh' LOGIN;`
 4. Install native tools
     1. `brew install imagemagick`
     1. `brew install libmagic`
-    1. `brew cask install pdftk`
+    1. `brew cask install pdftk` (note if the cask is not found, try `brew install https://raw.github.com/quantiverge/homebrew-binary/pdftk/pdftk.rb`)
 4. Checkout project
     1. cd to working source location (dev folder on your machine)
     2. `git clone https://macite@bitbucket.org/itig/doubtfire-api.git`
