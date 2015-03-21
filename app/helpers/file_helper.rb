@@ -116,6 +116,10 @@ module FileHelper
   def self.compress_pdf(path)
     #trusting path... as it needs to be replaced
     #puts "compressing #{path}"
+
+    # only compress things over 1.2Mb
+    return if File.size?(path) < 1200000
+
     begin
       tmp_file = File.join( Dir.tmpdir, 'doubtfire', 'compress', "#{File.dirname(path).split(File::Separator).last}-file.pdf" )
       FileUtils.mkdir_p(File.join( Dir.tmpdir, 'doubtfire', 'compress' ))
@@ -283,7 +287,7 @@ module FileHelper
     html_body = CodeRay.scan_file(file[:actualfile], lang).html(:wrap => :div, :tab_width => 2, :css => :class, :line_numbers => :table, :line_number_anchors => false)
 
     # HTML -> PDF
-    kit = PDFKit.new(html_body, :page_size => 'A4', :header_right => "[page]/[toPage]", :margin_top => "10mm", :margin_right => "5mm", :margin_bottom => "5mm", :margin_left => "5mm")
+    kit = PDFKit.new(html_body, :page_size => 'A4', :header_right => "[page]/[toPage]", :margin_top => "10mm", :margin_right => "5mm", :margin_bottom => "5mm", :margin_left => "5mm", :lowquality => true, :minimum_font_size => 8)
     kit.stylesheets << Rails.root.join("vendor/assets/stylesheets/coderay.css")
     kit.to_file(outdir)
   end
