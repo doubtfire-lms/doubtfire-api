@@ -29,7 +29,11 @@ class TaskDefinition < ActiveRecord::Base
 
   def upload_requirements
     # Read the JSON string in upload_requirements and convert into ruby objects
-    JSON.parse(self['upload_requirements'])
+    if self['upload_requirements']
+      JSON.parse(self['upload_requirements'])  
+    else 
+      JSON.parse('[]')
+    end
   end
 
   def upload_requirements=(req)
@@ -47,16 +51,29 @@ class TaskDefinition < ActiveRecord::Base
       return
     end
 
+    i = 0
     for req in jsonData do
       if not req.class == Hash
-        errors.add(:upload_requirements, "is not in a valid format! Should be [ { \"key\": \"...\", \"name\": \"...\", \"type\": \"...\"}, { ... } ]. Array did not contain hashes.")
+        errors.add(:upload_requirements, "is not in a valid format! Should be [ { \"key\": \"...\", \"name\": \"...\", \"type\": \"...\"}, { ... } ]. Array did not contain hashes for item #{i + 1}..")
         return
       end
 
       req.delete_if {|key, value| not ["key", "name", "type"].include? key }
+
+      req["key"] = "file#{i}"
+
+      if (not req.has_key? "key") or (not req.has_key? "name") or (not req.has_key? "type") then
+        errors.add(:upload_requirements, "is not in a valid format! Should be [ { \"key\": \"...\", \"name\": \"...\", \"type\": \"...\"}, { ... } ]. Missing a key for item #{i + 1}.")
+        return
+      end
+
+      i += 1
     end
 
     self['upload_requirements'] = JSON.unparse(jsonData)
+    if self['upload_requirements'].nil?
+      self['upload_requirements'] = '[]'
+    end
   end
 
   def self.to_csv(task_definitions, options = {}) #unconverted_fields: :upload_requirements
@@ -73,6 +90,6 @@ class TaskDefinition < ActiveRecord::Base
   end
 
   def self.csv_columns
-    [:name, :abbreviation, :description, :weighting, :required, :upload_requirements, :target_date]
+    [:name, :abbreviation, :description, :weighting, :required, :target_grade, :upload_requirements, :target_date]
   end
 end

@@ -219,11 +219,64 @@ class Unit < ActiveRecord::Base
           else
             enrol_student(project_participant.id)
           end
+        else
+          # update tutorial
+          unit_role = UnitRole.joins(project: :unit).where(
+            user_id: project_participant.id,
+            projects: {unit_id: id}
+          ).first
+
+          if unit_role.tutorial_id != tutorial.id
+            unit_role = UnitRole.find(unit_role.id)
+            unit_role.tutorial = tutorial
+            unit_role.save
+            added_users << project_participant #TODO: would be good to separate into added/updated
+          end
         end
       end
     end
     added_users
   end
+
+  # Use the values in the CSV to set the enrolment of these
+  # students to false for this unit.
+  # CSV should contain just the usernames to withdraw
+  def unenrol_users_from_csv(file)
+    # puts 'starting withdraw'
+    changed_projects = []
+    
+    CSV.foreach(file) do |row|
+      # Make sure we're not looking at the header or an empty line
+      next if row[0] =~ /username/
+      # next if row[5] !~ /^LA\d/
+
+      username  = row[0].downcase
+
+      # puts username
+
+      project_participant = User.where(username: username)
+
+      next if not project_participant
+      next if not project_participant.count == 1
+      project_participant = project_participant.first
+
+      user_project = UnitRole.joins(project: :unit).where(
+          user_id: project_participant.id,
+          projects: {unit_id: id}
+        )
+
+      next if not user_project
+      next if not user_project.count == 1
+
+      user_project = user_project.first.project
+
+      user_project.enrolled = false
+      user_project.save
+      changed_projects << username
+    end
+
+    changed_projects # return the changed projects
+  end 
 
   def export_users_to_csv
     CSV.generate do |row|
@@ -279,7 +332,7 @@ class Unit < ActiveRecord::Base
     CSV.foreach(file) do |row|
       next if row[0] =~ /^(Task Name)|(name)/ # Skip header
 
-      name, abbreviation, description, weighting, required, upload_requirements, target_date = row[0..7]
+      name, abbreviation, description, weighting, required, target_grade, upload_requirements, target_date = row[0..7]
       next if name.nil? || abbreviation.nil?
 
       description = "(No description given)" if description == "NULL"
@@ -312,6 +365,7 @@ class Unit < ActiveRecord::Base
           task_definition.description                 = description
           task_definition.weighting                   = BigDecimal.new(weighting)
           task_definition.required                    = ["Yes", "y", "Y", "yes", "true", "TRUE", "1"].include? required
+          task_definition.target_grade                = target_grade
           task_definition.target_date                 = Time.zone.parse(target_date)
           task_definition.upload_requirements         = upload_requirements
         end
@@ -366,9 +420,9 @@ class Unit < ActiveRecord::Base
         # Add file to zip in grade folder
         src_path = project.portfolio_path
         if project.main_tutor
-          dst_path = FileHelper.sanitized_path( "#{project.target_grade_desc}", "#{project.student.username}-portfolio (#{project.main_tutor.name}).pdf")
+          dst_path = FileHelper.sanitized_path( "#{project.target_grade_desc}", "#{project.student.username}-portfolio (#{project.main_tutor.name})") + ".pdf"
         else
-          dst_path = FileHelper.sanitized_path( "#{project.target_grade_desc}", "#{project.student.username}-portfolio (no tutor).pdf")
+          dst_path = FileHelper.sanitized_path( "#{project.target_grade_desc}", "#{project.student.username}-portfolio (no tutor)") + ".pdf"
         end
 
         #copy into zip

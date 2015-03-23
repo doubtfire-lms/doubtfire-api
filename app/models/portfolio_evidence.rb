@@ -9,8 +9,8 @@ class PortfolioEvidence
     FileHelper.sanitized_filename(filename)
   end
 
-  def self.student_work_dir(type, task = nil)
-    FileHelper.student_work_dir(type, task)
+  def self.student_work_dir(type, task = nil, create = true)
+    FileHelper.student_work_dir(type, task, create)
   end
 
 
@@ -156,11 +156,25 @@ class PortfolioEvidence
     File.join(student_work_dir(:pdf, task), sanitized_filename( sanitized_path("#{task.task_definition.abbreviation}-#{task.id}") + ".pdf"))
   end
 
+  def self.recreate_task_pdf(task)
+    #
+    # Move folder over from done -> new
+    #
+    done = FileHelper.student_work_dir(:done, task, false)
+    new_task_dir = FileHelper.student_work_dir(:new, task)
+
+    if Dir.exists? done
+      FileUtils.mkdir_p(new_task_dir)
+      FileHelper.move_files(done, new_task_dir)
+      true
+    else
+      false
+    end
+  end
+
   def self.process_task_to_pdf(id)
-    #
-    # Get access to the task
-    #
     task = Task.find(id)
+    return if task.nil?
 
     #
     # Move folder over from new -> in_process

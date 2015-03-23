@@ -3,9 +3,9 @@ class Task < ActiveRecord::Base
 
   def self.permissions
     { 
-      student: [ :get, :put, :get_submission, :make_submission ],
-      tutor: [ :get, :put, :get_submission, :make_submission ],
-      convenor: [ :get_submission, :make_submission ],
+      student: [ :get, :put, :get_submission, :make_submission, :delete_own_comment ],
+      tutor: [ :get, :put, :get_submission, :make_submission, :delete_other_comment, :delete_own_comment ],
+      convenor: [ :get, :get_submission, :make_submission, :delete_other_comment, :delete_own_comment ],
       nil => []
     }
   end
@@ -18,7 +18,8 @@ class Task < ActiveRecord::Base
   belongs_to :task_definition       # Foreign key
   belongs_to :project               # Foreign key
   belongs_to :task_status           # Foreign key
-  has_many :sub_tasks, dependent: :destroy
+  has_many :sub_tasks,      dependent: :destroy
+  has_many :comments, class_name: "TaskComment", dependent: :destroy, inverse_of: :task
 
   after_save :update_project
 
@@ -291,4 +292,25 @@ class Task < ActiveRecord::Base
   def weight
     task_definition.weighting.to_f
   end
+
+  def add_comment(user, text)
+    text.strip!
+    return nil if user.nil? || text.nil? || text.empty?
+
+    comment = TaskComment.create()
+    comment.task = self
+    comment.user = user
+    comment.comment = text
+    comment.save!
+    comment
+  end
+
+  def last_comment_by(user)
+    result = comments.where(user: user).last
+    
+    return '' if result.nil?
+    result.comment
+  end
 end
+
+

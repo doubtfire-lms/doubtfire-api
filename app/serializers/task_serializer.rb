@@ -27,8 +27,7 @@ class TaskStatSerializer < ActiveModel::Serializer
 end
 
 class TaskSerializer < ActiveModel::Serializer
-  attributes :id, :status, :completion_date, :task_name, :task_desc, :task_weight, :task_abbr, :task_upload_requirements, :processing_pdf
-  
+  attributes :id, :status, :completion_date, :task_name, :task_desc, :task_weight, :task_abbr, :task_upload_requirements, :processing_pdf 
 
   def task_name
   	object.task_definition.name

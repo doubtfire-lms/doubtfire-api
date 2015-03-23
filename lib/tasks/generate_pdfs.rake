@@ -2,7 +2,27 @@ namespace :submission do
   desc "Generate PDF files for submissions"
 
   def logger
-  	Rails.logger
+    Rails.logger
+  end
+
+  #
+  # Returns the file that indicates if this rake process is already executing...
+  #
+  def rake_executing_marker_file
+    File.join(Doubtfire::Application.config.student_work_dir, 'rake.running')
+  end
+
+  def is_executing?
+    tmp_file = rake_executing_marker_file
+    File.exist?(tmp_file)
+  end
+
+  def start_executing
+    FileUtils.touch(rake_executing_marker_file)
+  end
+
+  def end_executing
+    FileUtils.rm(rake_executing_marker_file)
   end
 
   #
@@ -31,6 +51,7 @@ namespace :submission do
       logger.info 'Skip generate pdf'
     else
       start_executing
+
       logger.info 'Starting generate pdf'
       
     	PortfolioEvidence.process_new_to_pdf

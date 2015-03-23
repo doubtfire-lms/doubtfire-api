@@ -21,7 +21,7 @@ module Api
       password = params[:password]
       remember = params[:remember]
 
-      if (username =~ /^[Ss]\d{6,8}([Xx]|\d)$/) == 0
+      if (username =~ /^[Ss]\d{6,10}([Xx]|\d)$/) == 0
         username[0] = ""
       end
 
@@ -37,7 +37,7 @@ module Api
           user.first_name         = "First Name"
           user.last_name          = "Surname"
           user.email              = username + "@swin.edu.au"
-          user.nickname           = username
+          user.nickname           = "Nickname"
           user.role_id            = Role.student.id
         }
 
