@@ -139,7 +139,7 @@ module Api::Submission::GenerateHelpers
             end
             next
           end
-          if (/\._.*/ =~ File.basename(file.name)) != 0
+          if (/\._.*/ =~ File.basename(file.name)) == 0
             ignore_files << { file: file.name }
             next
           end
