@@ -297,6 +297,9 @@ class Task < ActiveRecord::Base
     text.strip!
     return nil if user.nil? || text.nil? || text.empty?
 
+    lc = comments.last
+    return if lc.user == user && lc.comment == text then 
+
     comment = TaskComment.create()
     comment.task = self
     comment.user = user

@@ -139,6 +139,10 @@ module Api::Submission::GenerateHelpers
             end
             next
           end
+          if (/\._.*/ =~ File.basename(file.name)) != 0
+            ignore_files << { file: file.name }
+            next
+          end
 
           # Extract the id from the filename
           task_id_from_filename = File.basename(file.name, ".pdf").split('-').last

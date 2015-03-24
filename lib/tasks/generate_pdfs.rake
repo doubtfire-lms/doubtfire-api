@@ -25,26 +25,6 @@ namespace :submission do
     FileUtils.rm(rake_executing_marker_file)
   end
 
-  #
-  # Returns the file that indicates if this rake process is already executing...
-  #
-  def rake_executing_marker_file
-    File.join(Doubtfire::Application.config.student_work_dir, 'rake.running')
-  end
-
-  def is_executing?
-    tmp_file = rake_executing_marker_file
-    File.exist?(tmp_file)
-  end
-
-  def start_executing
-    FileUtils.touch(rake_executing_marker_file)
-  end
-
-  def end_executing
-    FileUtils.rm(rake_executing_marker_file)
-  end
-
   task generate_pdfs:  :environment do
     if is_executing?
       puts 'Skip generate pdf -- already executing'
