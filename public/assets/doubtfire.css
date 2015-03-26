@@ -6100,9 +6100,13 @@ a {
 .landing-page h1 {
   font-weight: lighter;
   letter-spacing: -1px;
-  text-align: center;
   font-size: 4em;
   padding-bottom: 10px;
+  padding-left: 70px;
+  background-image: url('/assets/images/logo.png');
+  background-repeat: no-repeat;
+  background-size: 50px 50px;
+  margin-left: 25px;
 }
 .form-signin .form-control {
   position: relative;
@@ -6532,6 +6536,15 @@ button.task-status.complete {
 #sidebar h4 {
   font-size: 12px;
 }
+.navbar-brand {
+  background-image: url('/assets/images/logo.png');
+  background-repeat: no-repeat;
+  background-size: 30px 30px;
+  background-position: left center;
+  font-weight: lighter;
+  margin-left: 15px;
+  padding-left: 40px;
+}
 .alert-top {
   position: fixed;
   top: 20px;
@@ -6669,4 +6682,34 @@ button.task-status.complete {
 .callout-success code,
 .callout-success .highlight {
   background-color: #fff;
+}
+.comment .comment-details {
+  padding-top: 8px;
+}
+.comment .comment-details .comment-by,
+.comment .comment-details .comment-date {
+  display: block;
+}
+.comment .comment-details .comment-by {
+  font-weight: bolder;
+}
+.comment .comment-details .comment-date {
+  margin-top: -5px;
+  font-size: 0.8em;
+}
+.comment .comment-text {
+  padding: 15px;
+  background-color: #efefef;
+  border-left: 5px solid #ddd;
+  font-style: oblique;
+  margin-bottom: 20px;
+}
+.comment .delete-comment {
+  font-style: normal;
+  color: #bbb;
+  font-size: 1.6em;
+}
+.comment .delete-comment:hover {
+  color: red;
+  cursor: pointer;
 }
