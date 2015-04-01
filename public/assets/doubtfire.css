@@ -6530,6 +6530,18 @@ button.task-status.complete {
 .panel-heading.portfolio-preview .pdf-nav.btn-group {
   margin: 0px 15px 0 0;
 }
+.task-engagement-icon {
+  display: block;
+  margin-bottom: 7px;
+}
+.task-status.task-status-change-trigger label {
+  padding: 15px 10px;
+}
+.task-status.task-status-change-trigger small,
+.task-status.task-status-change-trigger strong {
+  display: block;
+  white-space: normal;
+}
 #sidebar {
   font-size: 10px;
 }
