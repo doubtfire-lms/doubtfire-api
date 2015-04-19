@@ -125,7 +125,7 @@ module Api::Submission::GenerateHelpers
       end
 
       task.trigger_transition(task_entry[mark_col], current_user) # saves task
-      updated_tasks << { file: "marks.csv", task:"#{task.student.username} #{task.task_definition.abbreviation}" }
+      updated_tasks << { file: "marks.csv", task:"#{task.student.name} #{task.task_definition.abbreviation}" }
       if not (task_entry['comment'].nil? || task_entry['comment'].empty?)
         task.add_comment current_user, task_entry['comment']
       end
