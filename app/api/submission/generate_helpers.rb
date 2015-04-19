@@ -252,7 +252,7 @@ module Api::Submission::GenerateHelpers
 
             # copy tmp_file to dest
             if FileHelper.copy_pdf(tmp_file, task.portfolio_evidence)
-              updated_tasks << { file: file.name, task:"#{task.student.username} #{task.task_definition.abbreviation}" }
+              updated_tasks << { file: file.name, task:"#{task.student.name} #{task.task_definition.abbreviation}" }
               FileUtils.rm tmp_file
             else
               error_tasks << { file: file.name, error: 'Invalid pdf' }
