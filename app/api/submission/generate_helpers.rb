@@ -91,6 +91,7 @@ module Api::Submission::GenerateHelpers
   #
   def update_task_status_from_csv(csv_str, updated_tasks, ignore_files, error_tasks)
     done = {}
+    csv_str.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '')
 
     # read data from CSV
     CSV.parse(csv_str, {:headers => true, :header_converters => [:downcase]}).each do |task_entry|
@@ -163,12 +164,12 @@ module Api::Submission::GenerateHelpers
     mime_type = fm.file(file.tempfile.path)
 
     # check mime is correct before uploading
-    accept = ['text/plain', 'application/zip', 'multipart/x-gzip', 'multipart/x-zip', 'application/x-gzip', 'application/octet-stream']
+    accept = ['text/plain', 'text/csv', 'application/zip', 'multipart/x-gzip', 'multipart/x-zip', 'application/x-gzip', 'application/octet-stream']
     if not mime_type.start_with?(*accept)
       error!({"error" => "File given is not a zip or csv file - detected #{mime_type}"}, 403)
     end
 
-    if mime_type.start_with?('text/plain')
+    if mime_type.start_with?('text/plain', 'text/csv')
       update_task_status_from_csv(File.open(file.tempfile.path).read, updated_tasks, ignore_files, error_tasks)
     else
       # files are extracted to a temp dir first
@@ -196,6 +197,7 @@ module Api::Submission::GenerateHelpers
           
           # Read the csv
           csv_str = marking_file.get_input_stream.read
+          csv_str.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '')
 
           # Update tasks and email students
           update_task_status_from_csv(csv_str, updated_tasks, ignore_files, error_tasks)
