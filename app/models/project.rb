@@ -57,6 +57,18 @@ class Project < ActiveRecord::Base
   end
 
   #
+  # Returns the email of the tutor, or the convenor if there is no tutor
+  #
+  def tutor_email
+    tutor = main_tutor
+    if tutor
+      tutor.email
+    else
+      unit.convenor_email
+    end
+  end
+
+  #
   # All "discuss" become complete
   #
   def trigger_week_end( by_user )

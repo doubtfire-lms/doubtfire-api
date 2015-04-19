@@ -31,16 +31,12 @@ class Task < ActiveRecord::Base
     Task.joins(project: :unit_role).where("unit_roles.user_id = ?", user.id)
   end
 
-  def self.default
-    task_definition             = self.new
+  def unit
+    project.unit
+  end
 
-    task_definition.name        = "New Task"
-    task_definition.description = "Enter a description for this task."
-    task_definition.weighting   = 0.0
-    task_definition.required    = true
-    task_definition.target_date = Date.today
-
-    task_definition
+  def student
+    project.student
   end
 
   def upload_requirements
@@ -48,7 +44,8 @@ class Task < ActiveRecord::Base
   end
   
   def processing_pdf
-    portfolio_evidence == nil && ready_to_mark?
+    File.exists? File.join(FileHelper.student_work_dir(:new), "#{id}")
+    #portfolio_evidence == nil && ready_to_mark?
   end
 
   def update_project

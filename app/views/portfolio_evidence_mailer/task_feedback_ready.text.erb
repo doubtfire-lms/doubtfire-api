@@ -1,0 +1,11 @@
+Hi <%= @student.first_name %>,
+
+I have checked your tasks and provided some feedback. Login and check the comments and status of the following tasks:
+<% @tasks.each do |task| %>
+  * <%= task.task_definition.abbreviation %>: <%=task.task_definition.name%>
+<% end %>
+
+cheers,
+    <%= @tutor.name %>
+
+Visit <%= @unsubscribe_url%> to unsubscribe from these notifications.

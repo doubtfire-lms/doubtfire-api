@@ -52,6 +52,9 @@ module Api
         optional :email         , type: String,   desc: 'New email address for user'
         optional :nickname      , type: String,   desc: 'New nickname for user'
         optional :system_role   , type: String,   desc: 'New role for user [Admin, Convenor, Tutor, Student]'
+        optional :receive_task_notifications, type: Boolean, desc: 'Allow user to be sent task notifications'
+        optional :receive_portfolio_notifications, type: Boolean, desc: 'Allow user to be sent portfolio notifications'
+        optional :receive_feedback_notifications, type: Boolean, desc: 'Allow user to be sent feedback notifications'
       end
     end
     put '/users/:id' do
@@ -69,7 +72,10 @@ module Api
                                               :first_name,
                                               :last_name,
                                               :email,
-                                              :nickname
+                                              :nickname,
+                                              :receive_task_notifications,
+                                              :receive_portfolio_notifications,
+                                              :receive_feedback_notifications
                                             )
 
         user.role = Role.student if user.role.nil?

@@ -139,14 +139,32 @@ class PortfolioEvidence
   # into PDF files
   #
   def self.process_new_to_pdf
+    done = { }
+
     # For each folder in new (i.e., queued folders to process) that matches appropriate name
     new_root_dir = Dir.entries(student_work_dir(:new)).select { | f | (f =~ /^\d+$/) == 0 }
     new_root_dir.each do | folder_id |
-      # begin
-        process_task_to_pdf(folder_id)
-      # rescue
-      #   logger.error "Failed to process folder_id = #{folder_id}"
-      # end
+      begin
+        task = Task.find(folder_id)
+        logger.info "creating pdf for task #{task.id}"
+        process_task_to_pdf(task)
+
+        if done[task.project].nil?
+          done[task.project] = []
+        end
+        done[task.project] << task
+      rescue
+        puts "Failed to process folder_id = #{folder_id}"
+        logger.error "Failed to process folder_id = #{folder_id}"
+      end
+    end
+
+    done.each do |project, tasks|
+      logger.info "checking email for project #{project.id}"
+      if project.student.receive_task_notifications
+        logger.info "emailing task notification to #{project.student.name}"
+        PortfolioEvidenceMailer.task_pdf_ready_message(project, tasks).deliver
+      end
     end
   end
 
@@ -172,8 +190,7 @@ class PortfolioEvidence
     end
   end
 
-  def self.process_task_to_pdf(id)
-    task = Task.find(id)
+  def self.process_task_to_pdf(task)
     return if task.nil?
 
     #

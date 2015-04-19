@@ -72,6 +72,9 @@ module Api::Submission::GenerateHelpers
         csv_str << "\n#{student.username.sub(/,/, '_')},#{student.name.sub(/,/, '_')},#{task.project.unit_role.tutorial.abbreviation},#{task.task_definition.abbreviation.sub(/,/, '_')},#{task.id},\"#{task.last_comment_by(task.project.student)}\",\"#{task.last_comment_by(user)}\",rtm,"
         
         src_path = task.portfolio_evidence
+
+        next unless File.exists? src_path
+
         # make dst path of "<student id>/<task abbrev>.pdf"
         dst_path = FileHelper.sanitized_path("#{task.project.student.username}", "#{task.task_definition.abbreviation}-#{task.id}") + ".pdf"
         # now copy it over
@@ -92,6 +95,8 @@ module Api::Submission::GenerateHelpers
     updated_tasks = []
     ignore_files = []
     error_tasks = []
+
+    done = {}
 
     mime_type = fm.file(file.tempfile.path)
 
@@ -197,13 +202,34 @@ module Api::Submission::GenerateHelpers
             FileUtils.rm tmp_file
           else
             error_tasks << { file: file.name, error: 'Invalid pdf' }
+            next
           end
+
+          # add to done projects for emailing
+          if done[task.project].nil?
+            done[task.project] = []
+          end
+          done[task.project] << task
         end
       end
     rescue
       # FileUtils.cp(file.tempfile.path, Doubtfire::Application.config.student_work_dir)
       raise
     end
+
+    # send emails...
+    begin
+      done.each do |project, tasks|
+        logger.info "checking feedback email for project #{project.id}"
+        if project.student.receive_feedback_notifications
+          logger.info "emailing feedback notification to #{project.student.name}"
+          PortfolioEvidenceMailer.task_feedback_ready(project, tasks).deliver
+        end
+      end
+    rescue => e
+      logger.error "failed to send emails from feedback submission: #{e.message}"
+    end
+
 
     # Remove the extract dir
     FileUtils.rm_rf tmp_dir

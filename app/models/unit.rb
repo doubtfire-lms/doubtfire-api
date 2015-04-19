@@ -76,6 +76,18 @@ class Unit < ActiveRecord::Base
     Project.joins(:unit_role).where('unit_roles.role_id = 1 and projects.unit_id=:unit_id', unit_id: id)
   end
 
+  #
+  # Returns the email of the first convenor or "acain@swin.edu.au" if there are no convenors
+  #
+  def convenor_email
+    convenor = convenors.first
+    if convenor
+      convenor.user.email
+    else
+      "acain@swin.edu.au"
+    end
+  end
+
   def active_projects
     projects.where('enrolled = true') 
   end
