@@ -164,12 +164,12 @@ module Api::Submission::GenerateHelpers
     mime_type = fm.file(file.tempfile.path)
 
     # check mime is correct before uploading
-    accept = ['text/plain', 'text/csv', 'application/zip', 'multipart/x-gzip', 'multipart/x-zip', 'application/x-gzip', 'application/octet-stream']
+    accept = ['text/', 'text/plain', 'text/csv', 'application/zip', 'multipart/x-gzip', 'multipart/x-zip', 'application/x-gzip', 'application/octet-stream']
     if not mime_type.start_with?(*accept)
       error!({"error" => "File given is not a zip or csv file - detected #{mime_type}"}, 403)
     end
 
-    if mime_type.start_with?('text/plain', 'text/csv')
+    if mime_type.start_with?('text/', 'text/plain', 'text/csv')
       update_task_status_from_csv(File.open(file.tempfile.path).read, updated_tasks, ignore_files, error_tasks)
     else
       # files are extracted to a temp dir first
