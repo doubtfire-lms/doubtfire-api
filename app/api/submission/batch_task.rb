@@ -63,7 +63,7 @@ module Api
           error!({"error" => "Not authorised to batch upload marks"}, 401)        
         end
         
-        upload_batch_task_zip(params[:file])
+        upload_batch_task_zip_or_csv(params[:file])
         
       end #post
     end

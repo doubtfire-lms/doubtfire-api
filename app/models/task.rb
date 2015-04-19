@@ -190,7 +190,7 @@ class Task < ActiveRecord::Base
               assess TaskStatus.redo, by_user
             when "complete"
               assess TaskStatus.complete, by_user
-            when "fix_and_resubmit", "fix"
+            when "fix_and_resubmit", "fix", "f"
               assess TaskStatus.fix_and_resubmit, by_user
             when "fix_and_include", "fixinc"
               assess TaskStatus.fix_and_include, by_user
