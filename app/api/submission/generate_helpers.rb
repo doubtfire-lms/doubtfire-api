@@ -73,6 +73,7 @@ module Api::Submission::GenerateHelpers
         
         src_path = task.portfolio_evidence
 
+        next if src_path.nil? || src_path.empty?
         next unless File.exists? src_path
 
         # make dst path of "<student id>/<task abbrev>.pdf"
