@@ -69,7 +69,7 @@ module Api::Submission::GenerateHelpers
         next if task.processing_pdf
         # Add to the template entry string
         student = task.project.student
-        csv_str << "\n#{student.username.sub(/,/, '_')},#{student.name.sub(/,/, '_')},#{task.project.unit_role.tutorial.abbreviation},#{task.task_definition.abbreviation.sub(/,/, '_')},#{task.id},\"#{task.last_comment_by(task.project.student)}\",\"#{task.last_comment_by(user)}\",rtm,"
+        csv_str << "\n#{student.username.gsub(/,/, '_')},#{student.name.gsub(/,/, '_')},#{task.project.unit_role.tutorial.abbreviation},#{task.task_definition.abbreviation.gsub(/,/, '_')},#{task.id},\"#{task.last_comment_by(task.project.student).gsub(/"/, "\"\"")}\",\"#{task.last_comment_by(user).gsub(/"/, "\"\"")}\",rtm,"
         
         src_path = task.portfolio_evidence
 
