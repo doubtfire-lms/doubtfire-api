@@ -27,8 +27,7 @@ class PortfolioEvidenceMailer < ActionMailer::Base
     @project = project
     @tasks = tasks.sort_by { |t| t.task_definition.abbreviation }
     @tutor = project.main_tutor
-    @hasComments = @tasks.find { |t| t.last_comment_by(@tutor).length > 0 }.length > 0
-
+    @hasComments = @tasks.select { |t| not t.last_comment_by(@tutor).nil? }.length > 0
     return nil if @tutor.nil? || @student.nil?
 
     #@tasks = @tasks.sort_by { |t| t.due_date }
