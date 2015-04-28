@@ -6,7 +6,7 @@ class PortfolioEvidenceMailer < ActionMailer::Base
     @student = project.student
     @project = project
     @tasks = tasks.sort_by { |t| t.task_definition.abbreviation }
-    #@tasks = @tasks.sort_by { |t| t.due_date }
+    @tutor = project.main_tutor
     @unsubscribe_url = "#{Doubtfire::Application.config.mail_base_url}home?notifications"
 
     email_with_name = %("#{@student.name}" <#{@student.email}>)
