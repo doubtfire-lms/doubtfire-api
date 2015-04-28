@@ -8,9 +8,10 @@ class PortfolioEvidenceMailer < ActionMailer::Base
     @tasks = tasks.sort_by { |t| t.task_definition.abbreviation }
     @tutor = project.main_tutor
     @unsubscribe_url = "#{Doubtfire::Application.config.mail_base_url}home?notifications"
+    @convenor = project.unit.convenors.first.user
 
     email_with_name = %("#{@student.name}" <#{@student.email}>)
-    convenor_email = project.unit.convenor_email
+    convenor_email = %("#{@convenor.name}" <#{@convenor.email}>)
     subject = "#{project.unit.name}: Task PDFs ready to view"
 
     mail(
@@ -34,7 +35,7 @@ class PortfolioEvidenceMailer < ActionMailer::Base
     @unsubscribe_url = "#{Doubtfire::Application.config.mail_base_url}home?notifications"
 
     email_with_name = %("#{@student.name}" <#{@student.email}>)
-    tutor_email = @tutor.email
+    tutor_email = %("#{@tutor.name}" <#{@tutor.email}>)
     subject = "#{project.unit.name}: Feedback ready to review"
 
     mail(
@@ -49,9 +50,10 @@ class PortfolioEvidenceMailer < ActionMailer::Base
     @student = project.student
     @project = project
     @unsubscribe_url = "#{Doubtfire::Application.config.mail_base_url}home?notifications"
+    @convenor = project.unit.convenors.first.user
 
     email_with_name = %("#{@student.name}" <#{@student.email}>)
-    convenor_email = project.unit.convenor_email
+    convenor_email = %("#{@convenor.name}" <#{@convenor.email}>)
     subject = "#{project.unit.name}: Portfolio ready to review"
 
     mail(
