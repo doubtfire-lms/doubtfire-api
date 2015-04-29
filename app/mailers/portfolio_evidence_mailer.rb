@@ -7,8 +7,8 @@ class PortfolioEvidenceMailer < ActionMailer::Base
     @project = project
     @tasks = tasks.sort_by { |t| t.task_definition.abbreviation }
     @tutor = project.main_tutor
+    @convenor = project.main_convenor
     @unsubscribe_url = "#{Doubtfire::Application.config.mail_base_url}home?notifications"
-    @convenor = project.unit.convenors.first.user
 
     email_with_name = %("#{@student.name}" <#{@student.email}>)
     convenor_email = %("#{@convenor.name}" <#{@convenor.email}>)

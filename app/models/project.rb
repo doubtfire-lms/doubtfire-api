@@ -96,7 +96,15 @@ class Project < ActiveRecord::Base
   end
 
   def main_tutor
-    unit_role.tutorial.tutor unless unit_role.tutorial.nil?
+    if unit_role.tutorial
+      unit_role.tutorial.tutor 
+    else
+      main_convenor
+    end
+  end
+
+  def main_convenor
+    unit.convenors.first.user
   end
 
   def tutorial
