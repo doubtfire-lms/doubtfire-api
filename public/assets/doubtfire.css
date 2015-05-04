@@ -6725,3 +6725,21 @@ button.task-status.complete {
   color: red;
   cursor: pointer;
 }
+.feedbackFloatToolbar {
+  position: fixed;
+  top: 200px;
+  right: 8%;
+  z-index: 2;
+}
+.feedbackFloatToolbar label {
+  text-transform: uppercase;
+  display: block;
+  width: 100%;
+  text-align: center;
+}
+.feedbackFloatToolbar button,
+.feedbackFloatToolbar a {
+  display: block;
+  width: 100%;
+  margin: 10px auto;
+}
