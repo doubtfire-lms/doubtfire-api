@@ -21,6 +21,7 @@ module Api
         optional :required,             type: Boolean,  :desc => "Is the task required"
         requires :target_date,          type: Date,     :desc => "The date when the task is due"
         requires :abbreviation,         type: String,   :desc => "The abbreviation of the task"
+        requires :restrict_status_updates, type: Boolean,  :desc => "Restrict updating of the status to staff"
         optional :upload_requirements,  type: String,   :desc => "Task file upload requirements"
       end
     end
@@ -43,8 +44,10 @@ module Api
                                                   :required,           
                                                   :target_date,        
                                                   :abbreviation,
+                                                  :restrict_status_updates,
                                                   :upload_requirements
                                                 )
+
       task_def = TaskDefinition.create!(task_params)
       unit.add_new_task_def(task_def)
       task_def
@@ -62,6 +65,7 @@ module Api
         optional :required,             type: Boolean,  :desc => "Is the task required"
         optional :target_date,          type: Date,     :desc => "The date when the task is due"
         optional :abbreviation,         type: String,   :desc => "The abbreviation of the task"
+        optional :restrict_status_updates,    type: Boolean,  :desc => "Restrict updating of the status to staff"
         optional :upload_requirements,  type: String,   :desc => "Task file upload requirements"
       end
     end
@@ -83,8 +87,10 @@ module Api
                                                   :required,
                                                   :target_date,        
                                                   :abbreviation,
+                                                  :restrict_status_updates,
                                                   :upload_requirements
                                                 )
+      
       task_def.update!(task_params)
       task_def
     end

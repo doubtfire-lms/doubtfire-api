@@ -76,7 +76,7 @@ class TaskDefinition < ActiveRecord::Base
     end
   end
 
-  def self.to_csv(task_definitions, options = {}) #unconverted_fields: :upload_requirements
+  def self.to_csv(task_definitions, options = {})
     CSV.generate(options) do |csv|
       csv << csv_columns
       task_definitions.each do |task_definition|
@@ -90,6 +90,6 @@ class TaskDefinition < ActiveRecord::Base
   end
 
   def self.csv_columns
-    [:name, :abbreviation, :description, :weighting, :required, :target_grade, :upload_requirements, :target_date]
+    [:name, :abbreviation, :description, :weighting, :required, :target_grade, :restrict_status_updates, :upload_requirements, :target_date]
   end
 end

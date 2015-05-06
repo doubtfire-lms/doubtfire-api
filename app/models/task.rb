@@ -161,6 +161,15 @@ class Task < ActiveRecord::Base
     #
     role = project.user_role(by_user)
     return nil if role.nil?
+
+    #
+    # Ensure that only staff can change from staff assigned status if
+    # this is a restricted task
+    #
+    return nil if role == :student && 
+                  task_definition.restrict_status_updates && 
+                  self.task_status.in?([ TaskStatus.redo, TaskStatus.complete, TaskStatus.fix_and_resubmit, 
+                    TaskStatus.fix_and_include, TaskStatus.discuss ])
     
     #
     # State transitions based upon the trigger
