@@ -117,6 +117,7 @@ GEM
     mime-types (1.25.1)
     mini_portile (0.5.2)
     minitest (4.7.5)
+    moss_ruby (1.0.0)
     multi_json (1.8.4)
     multi_xml (0.5.5)
     mysql2 (0.3.16)
@@ -240,6 +241,7 @@ DEPENDENCIES
   grape-swagger
   hirb
   launchy
+  moss_ruby
   mysql2
   passenger (= 4.0.42)
   pdfkit

@@ -59,3 +59,6 @@ gem 'pdfkit'
 gem 'wkhtmltopdf-binary-11' #too old!
 gem 'pdftk'
 gem 'rubyzip'
+
+# Plagarism detection
+gem 'moss_ruby'
