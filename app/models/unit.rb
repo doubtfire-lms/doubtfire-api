@@ -1,9 +1,11 @@
 require 'csv'
 require 'bcrypt'
 require 'json'
+require 'moss_ruby'
 
 class Unit < ActiveRecord::Base
   include ApplicationHelper
+  include FileHelper
 
   def self.permissions
     { 
@@ -74,6 +76,17 @@ class Unit < ActiveRecord::Base
 
   def students
     Project.joins(:unit_role).where('unit_roles.role_id = 1 and projects.unit_id=:unit_id', unit_id: id)
+  end
+
+  #
+  # Last date/time of scan
+  #
+  def last_plagarism_scan
+    if self[:last_plagarism_scan].nil? 
+      DateTime.new(2000,1,1)
+    else
+      self[:last_plagarism_scan]
+    end
   end
 
   #
@@ -464,5 +477,70 @@ class Unit < ActiveRecord::Base
       end #active_projects
     end #zip
     result
+  end
+
+  #
+  # Get all of the related tasks
+  #
+  def tasks_for_definition(task_def)
+    tasks.where(task_definition_id: task_def.id)
+  end
+
+  #
+  # Pass tasks on to plagarism detection software and setup links between students
+  #
+  def check_plagarism()
+    # Get each task...
+    task_definitions.each do |td|
+      # Is there anything to check?
+      tasks = tasks_for_definition(td)
+      tasks_with_files = tasks.select { |t| t.has_pdf }
+      if tasks.where("tasks.updated_at > ?", last_plagarism_scan ).select { |t| t.has_pdf }.count > 0 and tasks_with_files.count > 1        
+        # There are new tasks, check these
+
+        # Create the MossRuby object
+        moss = MossRuby.new(924185900) #replace 000000000 with your user id
+
+        # Set options  -- the options will already have these default values
+        moss.options[:max_matches] = 10
+        moss.options[:directory_submission] =  true
+        moss.options[:show_num_matches] = 250
+        moss.options[:experimental_server] =    false
+        moss.options[:comment] = ""
+        moss.options[:language] = "pascal"
+
+        # Create a file hash, with the files to be processed
+        to_check = MossRuby.empty_file_hash
+
+        puts "need to check #{td.abbreviation}"
+
+        tasks_with_files.each do |t|
+          done_path = File.join(FileHelper.student_work_dir(:done, t, false), "*.code.*")
+
+          #puts done_path
+
+          MossRuby.add_file(to_check, done_path)
+        end
+
+        # Get server to process files
+        url = moss.check to_check
+
+        # Get results
+        results = moss.extract_results url
+
+        # Use results
+        puts "Got results from #{url}"
+        results.each { |match|
+            puts "----"
+            match.each { |file|
+                puts "#{file[:filename]} #{file[:pct]}" #{file[:html]}"
+            }
+        }
+
+        puts to_check
+        puts "Got results from #{url}"
+      end
+    end
+    nil
   end
 end
