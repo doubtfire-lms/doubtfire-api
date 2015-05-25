@@ -339,12 +339,14 @@ class Unit < ActiveRecord::Base
 
   def import_tasks_from_csv(file)
     added_tasks = []
+    updated_tasks = []
+    failed_tasks = []
     project_cache = Project.where(unit_id: id)
 
     CSV.foreach(file) do |row|
       next if row[0] =~ /^(Task Name)|(name)/ # Skip header
 
-      name, abbreviation, description, weighting, required, target_grade, upload_requirements, target_date = row[0..7]
+      name, abbreviation, description, weighting, required, target_grade, restrict_status_updates, upload_requirements, target_date = row[0..8]
       next if name.nil? || abbreviation.nil?
 
       description = "(No description given)" if description == "NULL"
@@ -356,40 +358,60 @@ class Unit < ActiveRecord::Base
         elsif target_date =~ /\d{1,2}\/\d{1,2}\/20\d\d$/ # Matches dd/mm/YYYY
           target_date = target_date.split("/").reverse.join("-")
         elsif target_date =~ /\d{1,2}\/\d{1,2}\/\d\d$/ # Matches dd/mm/YY
-          target_date = target_date.split("/").reverse.join("-")
+          target_date = "20#{target_date.split("/").reverse.join("-")}"
         elsif target_date =~ /\d{1,2}\-\d{1,2}\-\d\d$/ # Matches dd-mm-YY
-          target_date = target_date.split("-").reverse.join("-")
-        elsif target_date =~ /\d{1,2}\-\d{1,2}\-\d\d \d\d:\d\d:\d\d$/ # Matches dd-mm-YY
+          target_date = "20#{target_date.split("-").reverse.join("-")}"
+        elsif target_date =~ /\d{1,2}\-\d{1,2}\-\d\d \d\d:\d\d:\d\d$/ # Matches dd-mm-YY hh:mm:ss
           target_date = target_date.split(" ").first
+          target_date = "20#{target_date.split("-").reverse.join("-")}"
         elsif target_date =~ /\d{1,2}\/\d{1,2}\/\d\d [\d:]+$/ # Matches dd/mm/YY 00:00:00
-          target_date = target_date.split(" ").first.split("/").reverse.join("-")
+          target_date = target_date.split(" ").first
+          target_date = "20#{target_date.split("/").reverse.join("-")}"
         end
       end
 
-      new_task = TaskDefinition.find_by(unit_id: id, abbreviation: abbreviation).nil? && TaskDefinition.find_by(unit_id: id, name: name).nil?
+      new_task = false
+      task_definition = TaskDefinition.find_by(unit_id: id, abbreviation: abbreviation)
 
-      if new_task
-        # TODO: Should background/task queue this work
-        task_definition = TaskDefinition.find_or_create_by(unit_id: id, name: name, abbreviation: abbreviation) do |task_definition|
-          task_definition.name                        = name
-          task_definition.unit_id                     = id
-          task_definition.abbreviation                = abbreviation
-          task_definition.description                 = description
-          task_definition.weighting                   = BigDecimal.new(weighting)
-          task_definition.required                    = ["Yes", "y", "Y", "yes", "true", "TRUE", "1"].include? required
-          task_definition.target_grade                = target_grade
-          task_definition.target_date                 = Time.zone.parse(target_date)
-          task_definition.upload_requirements         = upload_requirements
-        end
-        
-        if task_definition.persisted?
-          added_tasks.push(task_definition)
+      if task_definition.nil?
+        task_definition = TaskDefinition.find_by(unit_id: id, name: name)
+      end
 
+      if task_definition.nil?
+        task_definition = TaskDefinition.find_or_create_by(unit_id: id, name: name, abbreviation: abbreviation)
+        new_task = true
+      end
+
+      task_definition.name                        = name
+      task_definition.unit_id                     = id
+      task_definition.abbreviation                = abbreviation
+      task_definition.description                 = description
+      task_definition.weighting                   = BigDecimal.new(weighting)
+      task_definition.required                    = ["Yes", "y", "Y", "yes", "true", "TRUE", "1"].include? required
+      task_definition.target_grade                = target_grade
+      task_definition.restrict_status_updates     = ["Yes", "y", "Y", "yes", "true", "TRUE", "1"].include? restrict_status_updates
+      task_definition.target_date                 = Time.zone.parse(target_date)
+      task_definition.upload_requirements         = upload_requirements
+      
+      task_definition.save
+
+      if task_definition.persisted?
+        if new_task
           add_new_task_def task_definition, project_cache
+          added_tasks.push(task_definition)
+        else
+          updated_tasks.push(task_definition)
         end
+      else
+        failed_tasks.push(task_definition)
       end
     end
-    added_tasks
+
+    {
+      added:    added_tasks,
+      updated:  updated_tasks,
+      failed:   failed_tasks
+    }
   end
 
   def task_definitions_csv
