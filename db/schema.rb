@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20150521052522) do
+ActiveRecord::Schema.define(version: 20150528082420) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -115,6 +115,7 @@ ActiveRecord::Schema.define(version: 20150521052522) do
     t.string   "upload_requirements",     limit: 2048
     t.integer  "target_grade",                                                  default: 0
     t.boolean  "restrict_status_updates",                                       default: false
+    t.string   "plagiarism_checks",       limit: 2048
   end
 
   add_index "task_definitions", ["unit_id"], name: "index_task_definitions_on_unit_id", using: :btree

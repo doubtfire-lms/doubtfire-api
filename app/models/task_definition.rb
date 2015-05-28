@@ -27,6 +27,55 @@ class TaskDefinition < ActiveRecord::Base
     }
   end
 
+  def plagiarism_checks
+    # Read the JSON string in upload_requirements and convert into ruby objects
+    if self['plagiarism_checks']
+      JSON.parse(self['plagiarism_checks'])  
+    else 
+      JSON.parse('[]')
+    end
+  end
+
+  def plagiarism_checks=(req)
+    if req.class == String
+      # get the ruby objects from the json data
+      jsonData = JSON.parse(req)
+    else
+      # use the passed in objects
+      jsonData = req
+    end
+
+    # ensure we have a structure that is : [ { "key": "...", "type": "...", "pattern": "..."}, { ... } ]
+    if not jsonData.class == Array
+      errors.add(:plagiarism_checks, "is not in a valid format! Should be [ { \"key\": \"...\", \"type\": \"...\", \"pattern\": \"...\"}, { ... } ]. Did not contain array.")
+      return
+    end
+
+    i = 0
+    for req in jsonData do
+      if not req.class == Hash
+        errors.add(:plagiarism_checks, "is not in a valid format! Should be [ { \"key\": \"...\", \"type\": \"...\", \"pattern\": \"...\"}, { ... } ]. Array did not contain hashes for item #{i + 1}..")
+        return
+      end
+
+      req.delete_if {|key, value| not ["key", "type", "pattern"].include? key }
+
+      req["key"] = "check#{i}"
+
+      if (not req.has_key? "key") or (not req.has_key? "type") or (not req.has_key? "pattern") then
+        errors.add(:plagiarism_checks, "is not in a valid format! Should be [ { \"key\": \"...\", \"type\": \"...\", \"pattern\": \"...\"}, { ... } ]. Missing a key for item #{i + 1}.")
+        return
+      end
+
+      i += 1
+    end
+
+    self['plagiarism_checks'] = JSON.unparse(jsonData)
+    if self['plagiarism_checks'].nil?
+      self['plagiarism_checks'] = '[]'
+    end
+  end
+
   def upload_requirements
     # Read the JSON string in upload_requirements and convert into ruby objects
     if self['upload_requirements']
