@@ -491,54 +491,79 @@ class Unit < ActiveRecord::Base
   #
   def check_plagarism()
     # Get each task...
-    task_definitions.each do |td|
-      # Is there anything to check?
-      tasks = tasks_for_definition(td)
-      tasks_with_files = tasks.select { |t| t.has_pdf }
-      if tasks.where("tasks.updated_at > ?", last_plagarism_scan ).select { |t| t.has_pdf }.count > 0 and tasks_with_files.count > 1        
-        # There are new tasks, check these
+    return if not active
 
-        # Create the MossRuby object
-        moss = MossRuby.new(924185900) #replace 000000000 with your user id
+    pwd = FileUtils.pwd
 
-        # Set options  -- the options will already have these default values
-        moss.options[:max_matches] = 10
-        moss.options[:directory_submission] =  true
-        moss.options[:show_num_matches] = 250
-        moss.options[:experimental_server] =    false
-        moss.options[:comment] = ""
-        moss.options[:language] = "pascal"
+    begin
+      puts "\nChecking #{name}"
+      task_definitions.each do |td|
+        next if td.plagiarism_checks.length == 0
+        # Is there anything to check?
 
-        # Create a file hash, with the files to be processed
-        to_check = MossRuby.empty_file_hash
+        puts "\ - Checking plagiarism for #{td.name}"
+        tasks = tasks_for_definition(td)
+        tasks_with_files = tasks.select { |t| t.has_pdf }
+        if tasks.where("tasks.updated_at > ?", last_plagarism_scan ).select { |t| t.has_pdf }.count > 0 and tasks_with_files.count > 1
+          # There are new tasks, check these
 
-        puts "need to check #{td.abbreviation}"
+          td.plagiarism_checks.each do |check|
+            next if check["type"].nil?
 
-        tasks_with_files.each do |t|
-          done_path = File.join(FileHelper.student_work_dir(:done, t, false), "*.code.*")
+            type_data = check["type"].split(" ")
+            next if type_data.nil? or type_data.length != 2 or type_data[0] != "moss"
 
-          #puts done_path
+            # Create the MossRuby object
+            moss = MossRuby.new(924185900)
 
-          MossRuby.add_file(to_check, done_path)
-        end
+            # Set options  -- the options will already have these default values
+            moss.options[:max_matches] = 10
+            moss.options[:directory_submission] = true
+            moss.options[:show_num_matches] = 250
+            moss.options[:experimental_server] = false
+            moss.options[:comment] = ""
+            moss.options[:language] = type_data[1]
 
-        # Get server to process files
-        url = moss.check to_check
+            # Create a file hash, with the files to be processed
+            to_check = MossRuby.empty_file_hash
 
-        # Get results
-        results = moss.extract_results url
+            check["pattern"].split("|").each do |pattern|
+              puts "\tadding #{pattern}"
+              FileUtils.chdir(Doubtfire::Application.config.student_work_dir)
+              tasks_with_files.each do |t|
+                done_path = File.join(FileHelper.student_work_dir(:done, t, false), pattern)
 
-        # Use results
-        puts "Got results from #{url}"
-        results.each { |match|
-            puts "----"
-            match.each { |file|
-                puts "#{file[:filename]} #{file[:pct]}" #{file[:html]}"
+                done_path = ".#{done_path.slice(Doubtfire::Application.config.student_work_dir.length, done_path.length)}"
+                puts done_path
+
+                MossRuby.add_file(to_check, done_path)
+              end
+            end
+
+            # Get server to process files
+            url = moss.check to_check
+
+            # Get results
+            results = moss.extract_results url
+
+            # Use results
+            puts "\tGot results from #{url}"
+            results.each { |match|
+                puts "\t----"
+                match.each { |file|
+                    puts "\t\t#{file[:filename]} #{file[:pct]}" #{file[:html]}"
+                }
+                puts "\t----"
             }
-        }
 
-        puts to_check
-        puts "Got results from #{url}"
+            # puts to_check
+            # puts "Got results from #{url}"
+          end
+        end
+      end
+    ensure
+      if FileUtils.pwd() != pwd
+        FileUtils.chdir(pwd)
       end
     end
     nil
