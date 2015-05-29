@@ -860,4 +860,8 @@ class Project < ActiveRecord::Base
       FileUtils.mv portfolio, "#{portfolio}.old"
     end
   end
+
+  def max_pct_copy
+    tasks.sort { |t1, t2|  t1.pct_similar <=> t2.pct_similar }.last.pct_similar
+  end
 end

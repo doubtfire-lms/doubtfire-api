@@ -517,7 +517,7 @@ class Unit < ActiveRecord::Base
             moss = MossRuby.new(924185900)
 
             # Set options  -- the options will already have these default values
-            moss.options[:max_matches] = 10
+            moss.options[:max_matches] = 5
             moss.options[:directory_submission] = true
             moss.options[:show_num_matches] = 250
             moss.options[:experimental_server] = false
@@ -548,8 +548,43 @@ class Unit < ActiveRecord::Base
 
             # Use results
             puts "\tGot results from #{url}"
+            puts "\t----"
+
             results.each { |match|
-                puts "\t----"
+                task_id_1 = /.*\/(\d+)\/$/.match(match[0][:filename])[1]
+                task_id_2 = /.*\/(\d+)\/$/.match(match[1][:filename])[1]
+
+                t1 = Task.find(task_id_1)
+                t2 = Task.find(task_id_2)
+
+                if t1.nil? || t2.nil?
+                  puts "Could not find tasks #{task_id_1} or #{task_id_2}"
+                  next
+                end
+
+                plk1 = PlagiarismMatchLink.where(task_id: task_id_1, other_task_id: task_id_2).first
+                plk2 = PlagiarismMatchLink.where(task_id: task_id_2, other_task_id: task_id_1).first
+
+                plk1.destroy unless plk1.nil?
+                plk2.destroy unless plk2.nil?
+
+                plk1 = PlagiarismMatchLink.create do | pml |
+                  pml.task = t1
+                  pml.other_task = t2
+
+                  pml.pct = match[0][:pct]
+                end
+
+                plk2 = PlagiarismMatchLink.create do | pml |
+                  pml.task = t2
+                  pml.other_task = t1
+
+                  pml.pct = match[1][:pct]
+                end
+
+                FileHelper.save_plagiarism_html(plk1, match[0][:html])
+                FileHelper.save_plagiarism_html(plk2, match[1][:html])
+
                 match.each { |file|
                     puts "\t\t#{file[:filename]} #{file[:pct]}" #{file[:html]}"
                 }

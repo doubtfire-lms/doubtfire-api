@@ -12,12 +12,4 @@ class TaskDefinitionSerializer < ActiveModel::Serializer
   def weight
   	object.weighting
   end
-
-  def plagiarism_checks
-    if object.plagiarism_checks
-      object.plagiarism_checks
-    else
-      []
-    end
-  end
 end

@@ -22,7 +22,7 @@ class ShallowProjectSerializer < ActiveModel::Serializer
 end
 
 class StudentProjectSerializer < ActiveModel::Serializer
-  attributes :project_id, :first_name, :last_name, :student_id, :student_email, :tute, :stats, :enrolled, :target_grade, :has_portfolio, :compile_portfolio
+  attributes :project_id, :first_name, :last_name, :student_id, :student_email, :tute, :stats, :enrolled, :target_grade, :has_portfolio, :compile_portfolio, :max_pct_copy
 
   def student_email
     object.student.email

@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20150528082420) do
+ActiveRecord::Schema.define(version: 20150529011018) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -45,6 +45,17 @@ ActiveRecord::Schema.define(version: 20150528082420) do
   end
 
   add_index "logins", ["user_id"], name: "index_logins_on_user_id", using: :btree
+
+  create_table "plagiarism_match_links", force: true do |t|
+    t.integer  "task_id"
+    t.integer  "other_task_id"
+    t.integer  "pct"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  add_index "plagiarism_match_links", ["other_task_id"], name: "index_plagiarism_match_links_on_other_task_id", using: :btree
+  add_index "plagiarism_match_links", ["task_id"], name: "index_plagiarism_match_links_on_task_id", using: :btree
 
   create_table "projects", force: true do |t|
     t.integer  "unit_id"

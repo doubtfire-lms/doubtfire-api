@@ -1,5 +1,5 @@
 class ShallowTaskSerializer < ActiveModel::Serializer
-  attributes :id, :status, :task_definition_id, :processing_pdf, :has_pdf, :include_in_portfolio
+  attributes :id, :status, :task_definition_id, :processing_pdf, :has_pdf, :include_in_portfolio, :pct_similar, :similar_to_count
 end
 
 class TaskUpdateSerializer < ActiveModel::Serializer
@@ -27,7 +27,7 @@ class TaskStatSerializer < ActiveModel::Serializer
 end
 
 class TaskSerializer < ActiveModel::Serializer
-  attributes :id, :status, :completion_date, :task_name, :task_desc, :task_weight, :task_abbr, :upload_requirements, :plagiarism_checks, :processing_pdf 
+  attributes :id, :status, :completion_date, :task_name, :task_desc, :task_weight, :task_abbr, :upload_requirements, :processing_pdf, :pct_similar, :similar_to_count
 
   def task_name
   	object.task_definition.name
@@ -47,9 +47,5 @@ class TaskSerializer < ActiveModel::Serializer
   
   def upload_requirements
     object.task_definition.upload_requirements
-  end
-
-  def plagiarism_checks
-    object.task_definition.plagiarism_checks
   end
 end

@@ -35,6 +35,7 @@ module Api
 
         if not (task.discuss? || task.complete? || task.fix_and_include?)
           task.trigger_transition 'ready_to_mark', current_user
+          task.accept_new_submission
         end
 
         TaskUpdateSerializer.new(task)

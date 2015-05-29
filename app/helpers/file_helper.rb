@@ -75,7 +75,7 @@ module FileHelper
 
   #
   # Generates a path for storing student work
-  # type = [:new, :in_process, :done, :pdf]
+  # type = [:new, :in_process, :done, :pdf, :plagarism]
   #
   def self.student_work_dir(type, task = nil, create = true)
     file_server = Doubtfire::Application.config.student_work_dir
@@ -86,6 +86,8 @@ module FileHelper
         dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}","#{task.project.student.username}") << "/"
       elsif type == :done
         dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}","#{task.project.student.username}", "#{task.id}") << "/"
+      elsif type == :plagarism
+        dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}","#{task.project.student.username}", "plagarism_#{task.id}") << "/"
       elsif  # new and in_process -- just have task id
         # Add task id to dst if we want task
         dst << "#{task.id}/"
@@ -398,4 +400,35 @@ module FileHelper
     end
     didCompile
   end
+
+  def self.path_to_plagarism_html(match_link)
+    to_dir = student_work_dir(:plagarism, match_link.task)
+
+    File.join(to_dir, "link_#{match_link.other_task.id}.html")
+  end
+
+  #
+  # Save the passed in html to a file.
+  #
+  def self.save_plagiarism_html(match_link, html)
+    File.open(path_to_plagarism_html(match_link), 'w') do |out_file|  
+      out_file.puts html
+    end  
+  end
+
+  #
+  # Delete the html for a plagarism link
+  #
+  def self.delete_plagarism_html(match_link)
+    rm_file = path_to_plagarism_html(match_link)
+    if File.exists? rm_file
+      FileUtils.rm(rm_file)
+      to_dir = student_work_dir(:plagarism, match_link.task)
+
+      if Dir[File.join(to_dir, '*.html')].count == 0
+        FileUtils.rm_rf(to_dir)
+      end
+    end
+  end
+
 end

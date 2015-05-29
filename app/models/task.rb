@@ -20,6 +20,8 @@ class Task < ActiveRecord::Base
   belongs_to :task_status           # Foreign key
   has_many :sub_tasks,      dependent: :destroy
   has_many :comments, class_name: "TaskComment", dependent: :destroy, inverse_of: :task
+  has_many :plagarism_match_links, class_name: "PlagiarismMatchLink", dependent: :destroy, inverse_of: :task
+  has_many :reverse_plagiarism_match_links, class_name: "PlagiarismMatchLink", dependent: :destroy, inverse_of: :other_task, foreign_key: "other_task_id"
 
   after_save :update_project
 
@@ -319,6 +321,32 @@ class Task < ActiveRecord::Base
     
     return '' if result.nil?
     result.comment
+  end
+
+  # Indicates what is the largest % similarity is for this task
+  def pct_similar
+    if plagarism_match_links.order(pct: :desc).first.nil?
+      0
+    else
+      plagarism_match_links.order(pct: :desc).first.pct
+    end
+  end
+
+  def similar_to_count
+    plagarism_match_links.count
+  end
+
+  #
+  # The student has uploaded new work...
+  #
+  def accept_new_submission
+    plagarism_match_links.each do | link |
+      link.destroy
+    end
+
+    reverse_plagiarism_match_links do | link |
+      link.destroy
+    end
   end
 end
 
