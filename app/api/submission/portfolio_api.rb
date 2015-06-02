@@ -108,9 +108,11 @@ module Api
         header['Content-Disposition'] = "attachment; filename=#{download_id}.zip"
         env['api.format'] = :binary
 
-        out = File.read(output_zip.path)
-        output_zip.unlink
-        out
+        # puts "Downloading portfolios from #{output_zip.path}"
+
+        out = File.open(output_zip.path).read
+        #output_zip.unlink
+        body(out)
       end # get
     end
   end
