@@ -110,7 +110,7 @@ module Api
 
         # puts "Downloading portfolios from #{output_zip.path}"
 
-        out = File.open(output_zip.path).read
+        out = File.open(output_zip.path)
         #output_zip.unlink
         body(out)
       end # get
