@@ -43,6 +43,9 @@ module AuthHelpers
       end
     end
   end
+
+  module_function :authenticated?
+  module_function :current_user
 end
 
 module Api
