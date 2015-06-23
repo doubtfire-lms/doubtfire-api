@@ -489,7 +489,7 @@ class Unit < ActiveRecord::Base
   #
   # Pass tasks on to plagarism detection software and setup links between students
   #
-  def check_plagiarism()
+  def check_plagiarism(force = false)
     # Get each task...
     return if not active
 
@@ -504,7 +504,7 @@ class Unit < ActiveRecord::Base
         puts "\ - Checking plagiarism for #{td.name}"
         tasks = tasks_for_definition(td)
         tasks_with_files = tasks.select { |t| t.has_pdf }
-        if tasks.where("tasks.file_uploaded_at > ?", last_plagarism_scan ).select { |t| t.has_pdf }.count > 0 and tasks_with_files.count > 1
+        if tasks_with_files.count > 1 && (tasks.where("tasks.file_uploaded_at > ?", last_plagarism_scan ).select { |t| t.has_pdf }.count > 0 || force )
           # There are new tasks, check these
 
           #delete old plagiarism links
