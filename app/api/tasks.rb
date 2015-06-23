@@ -24,6 +24,34 @@ module Api
       ActiveModel::ArraySerializer.new(Task.for_unit(unit.id).joins(project: :unit_role).select('tasks.*, unit_roles.tutorial_id as tutorial_id').where("projects.enrolled = true and tasks.task_status_id > 1 and unit_roles.tutorial_id is not null"), each_serializer: TaskStatSerializer)
     end
 
+    desc "Get a similarity match for a given task"
+    get '/tasks/:id/similarity/:count' do
+      if not authenticated?
+        error!({"error" => "Not authorised to download details for task '#{params[:id]}'"}, 401)
+      end
+
+        task = Task.find(params[:id])
+
+        if not authorise? current_user, task, :get_submission
+          error!({"error" => "Not authorised to download details for task '#{params[:id]}'"}, 401)
+        end
+
+        match = params[:count].to_i % task.similar_to_count
+        if match < 0
+          error!({"error" => "Invalid match sequence, must be 0 or larger"}, 403)
+        end
+
+        output = FileHelper.path_to_plagarism_html(task.plagarism_match_links.order("created_at DESC").offset(match).first)
+
+        if output.nil?
+          error!({"error" => "No files to download"}, 403)
+        end
+        
+        content_type "text/html"
+        env['api.format'] = :binary
+        File.read output
+    end
+
     # desc "Get task"
     # get '/tasks/:id' do
     #   task = Task.find(params[:id])

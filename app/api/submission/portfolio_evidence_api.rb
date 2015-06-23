@@ -31,12 +31,15 @@ module Api
         # Copy files to be PDFed
         PortfolioEvidence.produce_student_work(scoop_files(params, upload_reqs), student, task, self)
         
+        task.file_uploaded_at = DateTime.now
+        task.save
+        
         # This task is now ready to submit
-
         if not (task.discuss? || task.complete? || task.fix_and_include?)
           task.trigger_transition 'ready_to_mark', current_user
           task.accept_new_submission
         end
+
 
         TaskUpdateSerializer.new(task)
       end #post

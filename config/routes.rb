@@ -3,5 +3,4 @@ Doubtfire::Application.routes.draw do
   	mount Api::Root => '/'
 
   	get 'api/submission/unit/:id/portfolio', to: 'portfolio_downloads#index'
-
 end

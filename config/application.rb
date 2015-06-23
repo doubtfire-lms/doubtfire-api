@@ -21,6 +21,7 @@ module Doubtfire
 
     config.paths.add "app/api", glob: "**/*.rb"             #For Grape
     config.autoload_paths += Dir["#{Rails.root}/app"]       # For Grape
+    config.autoload_paths += Dir["#{Rails.root}/app/serializers"]
 
     config.middleware.insert_before Warden::Manager, Rack::Cors do
       allow do

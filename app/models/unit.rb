@@ -489,7 +489,7 @@ class Unit < ActiveRecord::Base
   #
   # Pass tasks on to plagarism detection software and setup links between students
   #
-  def check_plagarism()
+  def check_plagiarism()
     # Get each task...
     return if not active
 
@@ -504,9 +504,16 @@ class Unit < ActiveRecord::Base
         puts "\ - Checking plagiarism for #{td.name}"
         tasks = tasks_for_definition(td)
         tasks_with_files = tasks.select { |t| t.has_pdf }
-        if tasks.where("tasks.updated_at > ?", last_plagarism_scan ).select { |t| t.has_pdf }.count > 0 and tasks_with_files.count > 1
+        if tasks.where("tasks.file_uploaded_at > ?", last_plagarism_scan ).select { |t| t.has_pdf }.count > 0 and tasks_with_files.count > 1
           # There are new tasks, check these
 
+          #delete old plagiarism links
+          puts "Deleting old links"
+          PlagiarismMatchLink.joins(:task).where("tasks.task_definition_id" => td.id) do | plnk |
+            PlagiarismMatchLink.find(plnk.id).destroy!
+          end
+
+          puts "Contacting moss for new checks"
           td.plagiarism_checks.each do |check|
             next if check["type"].nil?
 
@@ -514,12 +521,12 @@ class Unit < ActiveRecord::Base
             next if type_data.nil? or type_data.length != 2 or type_data[0] != "moss"
 
             # Create the MossRuby object
-            moss = MossRuby.new(924185900)
+            moss = MossRuby.new(Doubtfire::Application.config.moss_key)
 
             # Set options  -- the options will already have these default values
             moss.options[:max_matches] = 5
             moss.options[:directory_submission] = true
-            moss.options[:show_num_matches] = 250
+            moss.options[:show_num_matches] = students.count * 3 # up to 3 matches per student
             moss.options[:experimental_server] = false
             moss.options[:comment] = ""
             moss.options[:language] = type_data[1]
@@ -565,6 +572,7 @@ class Unit < ActiveRecord::Base
                 plk1 = PlagiarismMatchLink.where(task_id: task_id_1, other_task_id: task_id_2).first
                 plk2 = PlagiarismMatchLink.where(task_id: task_id_2, other_task_id: task_id_1).first
 
+                # Delete old links between tasks
                 plk1.destroy unless plk1.nil?
                 plk2.destroy unless plk2.nil?
 
@@ -596,6 +604,8 @@ class Unit < ActiveRecord::Base
           end
         end
       end
+      self.last_plagarism_scan = DateTime.now
+      self.save!
     ensure
       if FileUtils.pwd() != pwd
         FileUtils.chdir(pwd)
