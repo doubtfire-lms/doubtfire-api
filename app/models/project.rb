@@ -862,6 +862,7 @@ class Project < ActiveRecord::Base
   end
 
   def max_pct_copy
-    tasks.sort { |t1, t2|  t1.pct_similar <=> t2.pct_similar }.last.pct_similar
+    # tasks.sort { |t1, t2|  t1.pct_similar <=> t2.pct_similar }.last.pct_similar
+    max_pct_similar
   end
 end

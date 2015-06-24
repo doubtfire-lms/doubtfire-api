@@ -487,6 +487,16 @@ class Unit < ActiveRecord::Base
   end
 
   #
+  # Update the student's max_pct_similar for all of their tasks
+  #
+  def update_student_max_pct_similar()
+    projects.each do | p |
+      p.max_pct_similar = p.tasks.maximum(:max_pct_similar)
+      p.save
+    end
+  end
+
+  #
   # Pass tasks on to plagarism detection software and setup links between students
   #
   def check_plagiarism(force = false)
@@ -604,6 +614,7 @@ class Unit < ActiveRecord::Base
           end
         end
       end
+      update_student_max_pct_similar()
       self.last_plagarism_scan = DateTime.now
       self.save!
     ensure
