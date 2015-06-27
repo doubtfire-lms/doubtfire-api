@@ -103,7 +103,7 @@ class PortfolioEvidence
       #
       # Now copy the actual data for the submitted file (<taskid>/file0.image.png etc.)
       #
-      output_filename = File.join(tmp_dir, "#{file_idx.to_s.rjust(3, '0')}.#{file.type}#{File.extname(file.filename)}")
+      output_filename = File.join(tmp_dir, "#{file_idx.to_s.rjust(3, '0')}.#{file.type}#{File.extname(file.filename).downcase}")
       file_idx += 1
 
       #

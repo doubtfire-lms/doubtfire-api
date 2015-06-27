@@ -24,7 +24,7 @@ gem 'ci_reporter'
 
 gem 'terminator'
 
-group :development do
+group :development, :replica do
   gem 'pg'
   gem 'hirb'
   gem 'better_errors'
@@ -42,11 +42,11 @@ group :production do
   gem 'passenger', '= 4.0.42'
 end
 
-group :production, :test do
+group :production, :test, :replica do
   gem 'mysql2'
 end
 
-group :development, :test do
+group :development, :test, :replica do
   gem 'rspec-rails'
   gem 'factory_girl_rails'
 end
@@ -61,4 +61,4 @@ gem 'pdftk'
 gem 'rubyzip'
 
 # Plagarism detection
-gem 'moss_ruby'
+gem 'moss_ruby', '= 1.1.0'

@@ -518,9 +518,16 @@ class Unit < ActiveRecord::Base
           # There are new tasks, check these
 
           #delete old plagiarism links
-          puts "Deleting old links"
-          PlagiarismMatchLink.joins(:task).where("tasks.task_definition_id" => td.id) do | plnk |
+          puts "Deleting old links for task definition #{td.id}"
+          PlagiarismMatchLink.joins(:task).where("tasks.task_definition_id" => td.id).each do | plnk |
             PlagiarismMatchLink.find(plnk.id).destroy!
+          end
+
+          # Reset the tasks % similar
+          puts "Clearing old task percent similar"
+          tasks.where("tasks.max_pct_similar > 0").each do |t|
+            t.max_pct_similar = 0
+            t.save
           end
 
           puts "Contacting moss for new checks"
@@ -536,7 +543,7 @@ class Unit < ActiveRecord::Base
             # Set options  -- the options will already have these default values
             moss.options[:max_matches] = 5
             moss.options[:directory_submission] = true
-            moss.options[:show_num_matches] = students.count * 3 # up to 3 matches per student
+            moss.options[:show_num_matches] = 500
             moss.options[:experimental_server] = false
             moss.options[:comment] = ""
             moss.options[:language] = type_data[1]
@@ -552,22 +559,27 @@ class Unit < ActiveRecord::Base
 
                 done_path = ".#{done_path.slice(Doubtfire::Application.config.student_work_dir.length, done_path.length)}"
                 puts done_path
-
-                MossRuby.add_file(to_check, done_path)
+                if Dir.glob(done_path, File::FNM_CASEFOLD).length > 0
+                  MossRuby.add_file(to_check, done_path)
+                end
               end
             end
 
             # Get server to process files
-            url = moss.check to_check
+            puts "Sending to MOSS..."
+            url = moss.check(to_check, lambda { |line| puts line })
 
             # Get results
-            results = moss.extract_results url
+            puts "Processing MOSS results #{url}"
+            results = moss.extract_results( url, 30, lambda { |line| puts line } )
 
             # Use results
             puts "\tGot results from #{url}"
             puts "\t----"
 
             results.each { |match|
+                next if match[0][:pct] < 30 && match[1][:pct] < 30
+
                 task_id_1 = /.*\/(\d+)\/$/.match(match[0][:filename])[1]
                 task_id_2 = /.*\/(\d+)\/$/.match(match[1][:filename])[1]
 
