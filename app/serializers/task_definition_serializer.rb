@@ -1,13 +1,9 @@
 class TaskDefinitionSerializer < ActiveModel::Serializer
-  attributes :id, :name, :description, :weight, :required, :target_date, :abbreviation, :upload_requirements, :plagiarism_checks, :target_grade, :restrict_status_updates
-
-  def abbr
-  	object.abbreviation
-  end
-
-  def desc
-  	object.description
-  end
+  attributes :id, :abbreviation, :name, :description, 
+    :weight, :required, :target_grade, :target_date, 
+    :upload_requirements, 
+    :plagiarism_checks, :plagiarism_report_url, :plagiarism_warn_pct,
+    :restrict_status_updates
 
   def weight
   	object.weighting

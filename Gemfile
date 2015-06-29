@@ -61,4 +61,4 @@ gem 'pdftk'
 gem 'rubyzip'
 
 # Plagarism detection
-gem 'moss_ruby', '= 1.1.0'
+gem 'moss_ruby', '= 1.1.1'

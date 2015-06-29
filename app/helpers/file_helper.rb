@@ -413,7 +413,7 @@ module FileHelper
   def self.save_plagiarism_html(match_link, html)
     File.open(path_to_plagarism_html(match_link), 'w') do |out_file|  
       out_file.puts html
-    end  
+    end
   end
 
   #

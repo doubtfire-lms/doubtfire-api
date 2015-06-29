@@ -24,6 +24,7 @@ module Api
         requires :restrict_status_updates, type: Boolean,  :desc => "Restrict updating of the status to staff"
         optional :upload_requirements,  type: String,   :desc => "Task file upload requirements"
         optional :plagiarism_checks,    type: String,   :desc => "The list of checks to perform"
+        requires :plagiarism_warn_pct,  type: Integer,  :desc => "The percent at which to record and warn about plagiarism"
       end
     end
     post '/task_definitions/' do      
@@ -47,7 +48,8 @@ module Api
                                                   :abbreviation,
                                                   :restrict_status_updates,
                                                   :upload_requirements,
-                                                  :plagiarism_checks
+                                                  :plagiarism_checks,
+                                                  :plagiarism_warn_pct
                                                 )
 
       task_def = TaskDefinition.create!(task_params)
@@ -70,6 +72,7 @@ module Api
         optional :restrict_status_updates,    type: Boolean,  :desc => "Restrict updating of the status to staff"
         optional :upload_requirements,  type: String,   :desc => "Task file upload requirements"
         optional :plagiarism_checks,    type: String,   :desc => "The list of checks to perform"
+        requires :plagiarism_warn_pct,  type: Integer,  :desc => "The percent at which to record and warn about plagiarism"
       end
     end
     put '/task_definitions/:id' do      
@@ -92,7 +95,8 @@ module Api
                                                   :abbreviation,
                                                   :restrict_status_updates,
                                                   :upload_requirements,
-                                                  :plagiarism_checks
+                                                  :plagiarism_checks,
+                                                  :plagiarism_warn_pct
                                                 )
       
       task_def.update!(task_params)

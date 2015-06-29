@@ -496,6 +496,80 @@ class Unit < ActiveRecord::Base
     end
   end
 
+  def update_plagiarism_stats()
+    moss = MossRuby.new(Doubtfire::Application.config.moss_key)
+
+    task_definitions.where(plagiarism_updated: true).each do |td|
+      td.plagiarism_updated = false
+      td.save
+
+      #delete old plagiarism links
+      puts "Deleting old links for task definition #{td.id}"
+      PlagiarismMatchLink.joins(:task).where("tasks.task_definition_id" => td.id).each do | plnk |
+        PlagiarismMatchLink.find(plnk.id).destroy!
+      end
+
+      # Reset the tasks % similar
+      puts "Clearing old task percent similar"
+      tasks_for_definition(td).where("tasks.max_pct_similar > 0").each do |t|
+        t.max_pct_similar = 0
+        t.save
+      end
+
+      # Get results
+      url = td.plagiarism_report_url
+      puts "Processing MOSS results #{url}"
+      
+      warn_pct = td.plagiarism_warn_pct
+      warn_pct = 50 if warn_pct.nil?
+
+      results = moss.extract_results( url, warn_pct, lambda { |line| puts line } )
+
+      # Use results
+      results.each do |match|
+        next if match[0][:pct] < warn_pct && match[1][:pct] < warn_pct
+
+        task_id_1 = /.*\/(\d+)\/$/.match(match[0][:filename])[1]
+        task_id_2 = /.*\/(\d+)\/$/.match(match[1][:filename])[1]
+
+        t1 = Task.find(task_id_1)
+        t2 = Task.find(task_id_2)
+
+        if t1.nil? || t2.nil?
+          puts "Could not find tasks #{task_id_1} or #{task_id_2}"
+          next
+        end
+
+        plk1 = PlagiarismMatchLink.where(task_id: task_id_1, other_task_id: task_id_2).first
+        plk2 = PlagiarismMatchLink.where(task_id: task_id_2, other_task_id: task_id_1).first
+
+        # Delete old links between tasks
+        plk1.destroy unless plk1.nil?
+        plk2.destroy unless plk2.nil?
+
+        plk1 = PlagiarismMatchLink.create do | pml |
+          pml.task = t1
+          pml.other_task = t2
+          pml.plagiarism_report_url = match[0][:url]
+
+          pml.pct = match[0][:pct]
+        end
+
+        plk2 = PlagiarismMatchLink.create do | pml |
+          pml.task = t2
+          pml.other_task = t1
+          pml.plagiarism_report_url = match[1][:url]
+
+          pml.pct = match[1][:pct]
+        end
+
+        FileHelper.save_plagiarism_html(plk1, match[0][:html])
+        FileHelper.save_plagiarism_html(plk2, match[1][:html])
+      end # end of each result
+    end # for each task definition where it needs to be updated
+    update_student_max_pct_similar()
+  end
+
   #
   # Pass tasks on to plagarism detection software and setup links between students
   #
@@ -503,6 +577,7 @@ class Unit < ActiveRecord::Base
     # Get each task...
     return if not active
 
+    # need pwd to restore after cding into submission folder (so the files do not have full path)
     pwd = FileUtils.pwd
 
     begin
@@ -516,19 +591,6 @@ class Unit < ActiveRecord::Base
         tasks_with_files = tasks.select { |t| t.has_pdf }
         if tasks_with_files.count > 1 && (tasks.where("tasks.file_uploaded_at > ?", last_plagarism_scan ).select { |t| t.has_pdf }.count > 0 || force )
           # There are new tasks, check these
-
-          #delete old plagiarism links
-          puts "Deleting old links for task definition #{td.id}"
-          PlagiarismMatchLink.joins(:task).where("tasks.task_definition_id" => td.id).each do | plnk |
-            PlagiarismMatchLink.find(plnk.id).destroy!
-          end
-
-          # Reset the tasks % similar
-          puts "Clearing old task percent similar"
-          tasks.where("tasks.max_pct_similar > 0").each do |t|
-            t.max_pct_similar = 0
-            t.save
-          end
 
           puts "Contacting moss for new checks"
           td.plagiarism_checks.each do |check|
@@ -552,13 +614,12 @@ class Unit < ActiveRecord::Base
             to_check = MossRuby.empty_file_hash
 
             check["pattern"].split("|").each do |pattern|
-              puts "\tadding #{pattern}"
+              # puts "\tadding #{pattern}"
               FileUtils.chdir(Doubtfire::Application.config.student_work_dir)
               tasks_with_files.each do |t|
                 done_path = File.join(FileHelper.student_work_dir(:done, t, false), pattern)
-
                 done_path = ".#{done_path.slice(Doubtfire::Application.config.student_work_dir.length, done_path.length)}"
-                puts done_path
+                # puts done_path
                 if Dir.glob(done_path, File::FNM_CASEFOLD).length > 0
                   MossRuby.add_file(to_check, done_path)
                 end
@@ -569,60 +630,9 @@ class Unit < ActiveRecord::Base
             puts "Sending to MOSS..."
             url = moss.check(to_check, lambda { |line| puts line })
 
-            # Get results
-            puts "Processing MOSS results #{url}"
-            results = moss.extract_results( url, 30, lambda { |line| puts line } )
-
-            # Use results
-            puts "\tGot results from #{url}"
-            puts "\t----"
-
-            results.each { |match|
-                next if match[0][:pct] < 30 && match[1][:pct] < 30
-
-                task_id_1 = /.*\/(\d+)\/$/.match(match[0][:filename])[1]
-                task_id_2 = /.*\/(\d+)\/$/.match(match[1][:filename])[1]
-
-                t1 = Task.find(task_id_1)
-                t2 = Task.find(task_id_2)
-
-                if t1.nil? || t2.nil?
-                  puts "Could not find tasks #{task_id_1} or #{task_id_2}"
-                  next
-                end
-
-                plk1 = PlagiarismMatchLink.where(task_id: task_id_1, other_task_id: task_id_2).first
-                plk2 = PlagiarismMatchLink.where(task_id: task_id_2, other_task_id: task_id_1).first
-
-                # Delete old links between tasks
-                plk1.destroy unless plk1.nil?
-                plk2.destroy unless plk2.nil?
-
-                plk1 = PlagiarismMatchLink.create do | pml |
-                  pml.task = t1
-                  pml.other_task = t2
-
-                  pml.pct = match[0][:pct]
-                end
-
-                plk2 = PlagiarismMatchLink.create do | pml |
-                  pml.task = t2
-                  pml.other_task = t1
-
-                  pml.pct = match[1][:pct]
-                end
-
-                FileHelper.save_plagiarism_html(plk1, match[0][:html])
-                FileHelper.save_plagiarism_html(plk2, match[1][:html])
-
-                match.each { |file|
-                    puts "\t\t#{file[:filename]} #{file[:pct]}" #{file[:html]}"
-                }
-                puts "\t----"
-            }
-
-            # puts to_check
-            # puts "Got results from #{url}"
+            td.plagiarism_report_url = url
+            td.plagiarism_updated = true
+            td.save
           end
         end
       end

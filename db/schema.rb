@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20150624063251) do
+ActiveRecord::Schema.define(version: 20150629001715) do
 
   create_table "badges", force: true do |t|
     t.string   "name"
@@ -49,6 +49,7 @@ ActiveRecord::Schema.define(version: 20150624063251) do
     t.integer  "pct"
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.string   "plagiarism_report_url"
   end
 
   add_index "plagiarism_match_links", ["other_task_id"], name: "index_plagiarism_match_links_on_other_task_id", using: :btree
@@ -125,6 +126,9 @@ ActiveRecord::Schema.define(version: 20150624063251) do
     t.integer  "target_grade",                                                  default: 0
     t.boolean  "restrict_status_updates",                                       default: false
     t.string   "plagiarism_checks",       limit: 2048
+    t.string   "plagiarism_report_url"
+    t.boolean  "plagiarism_updated",                                            default: false
+    t.integer  "plagiarism_warn_pct",                                           default: 50
   end
 
   add_index "task_definitions", ["unit_id"], name: "index_task_definitions_on_unit_id", using: :btree
