@@ -22,4 +22,41 @@ class PlagiarismMatchLink < ActiveRecord::Base
       task.save
     end
   end
+
+  def other_party
+    PlagiarismMatchLink.where(task_id: other_task.id, other_task_id: task.id).first
+  end
+
+  def other_student
+    other_task.student
+  end
+
+  def other_tutor
+    other_task.project.main_tutor
+  end
+
+  def student
+    task.student
+  end
+
+  def tutor
+    task.project.main_tutor
+  end
+
+  def tutorial
+    if task.project.tutorial.nil?
+      "None"
+    else
+      task.project.tutorial.abbreviation
+    end
+  end
+
+  def other_tutorial
+    if other_task.project.tutorial.nil?
+      "None"
+    else
+      other_task.project.tutorial.abbreviation
+    end
+  end
+
 end
