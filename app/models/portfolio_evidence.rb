@@ -153,9 +153,9 @@ class PortfolioEvidence
           done[task.project] = []
         end
         done[task.project] << task
-      rescue
-        puts "Failed to process folder_id = #{folder_id}"
-        logger.error "Failed to process folder_id = #{folder_id}"
+      rescue Exception => e
+        puts "Failed to process folder_id = #{folder_id} #{e.message}"
+        logger.error "Failed to process folder_id = #{folder_id} #{e.message}"
       end
     end
 
@@ -178,12 +178,14 @@ class PortfolioEvidence
     #
     # Move folder over from done -> new
     #
-    done = FileHelper.student_work_dir(:done, task, false)
-    new_task_dir = FileHelper.student_work_dir(:new, task)
+    done = FileHelper.student_work_dir(:done, task, create:false)
 
     if Dir.exists? done
+      new_task_dir = FileHelper.student_work_dir(:new, task, create:false)
       FileUtils.mkdir_p(new_task_dir)
       FileHelper.move_files(done, new_task_dir)
+      true
+    elsif FileHelper.move_compressed_task_to_new(task)
       true
     else
       false
@@ -250,5 +252,6 @@ class PortfolioEvidence
 
     # Move source files from in process to to done folder
     FileHelper.move_files(in_process_dir, student_work_dir(:done, task))
+    FileHelper.compress_done_files(task)
   end  
 end

@@ -1,4 +1,5 @@
 require 'terminator'
+require 'zip'
 
 module FileHelper
 
@@ -176,14 +177,25 @@ module FileHelper
   #
   def self.move_files(from_path, to_path)
     # move into the new dir - and mv files to the in_process_dir
-    Dir.chdir(from_path)
-    FileUtils.mv Dir.glob("*"), to_path, :force => true
-    Dir.chdir(to_path)
+    pwd = FileUtils.pwd
     begin
-      #remove from_path as files are now "in process"
-      FileUtils.rm_r(from_path)
-    rescue
-      logger.warn "failed to rm #{from_path}"
+      Dir.chdir(from_path)
+      FileUtils.mv Dir.glob("*"), to_path, :force => true
+      Dir.chdir(to_path)
+      begin
+        #remove from_path as files are now "in process"
+        FileUtils.rm_r(from_path)
+      rescue
+        logger.warn "failed to rm #{from_path}"
+      end
+    ensure
+      if FileUtils.pwd() != pwd
+        if Dir.exists? pwd
+          FileUtils.chdir(pwd)
+        else
+          FileUtils.chdir( student_work_dir() )
+        end
+      end
     end
   end
 
@@ -438,4 +450,47 @@ module FileHelper
     end
   end
 
+  def self.zip_file_path_for_done_task(task)
+    zip_file = "#{student_work_dir(:done, task, create: false)[0..-2]}.zip"
+  end
+
+  #
+  # Compress the done files for a student - includes cover page and work uploaded
+  #
+  def self.compress_done_files(task)
+    task_dir = student_work_dir(:done, task, create: false)
+    zip_file = zip_file_path_for_done_task(task)
+    return if not Dir.exists? task_dir
+
+    FileUtils.rm(zip_file) if File.exists? zip_file
+
+    input_files = Dir.entries(task_dir).select { | f | (f =~ /^\d{3}\.(cover|document|code|image)/) == 0 }
+
+    Zip::File.open(zip_file, Zip::File::CREATE) do | zip |
+      input_files.each do |in_file|
+        zip.add "#{task.id}/#{in_file}", "#{task_dir}#{in_file}"
+      end
+    end
+
+    FileUtils.rm_rf(task_dir)
+  end
+
+  #
+  # Extract the files from the zip file for this tasks, and replace in new so that it is created
+  #
+  def self.move_compressed_task_to_new(task)
+    zip_file = zip_file_path_for_done_task(task)
+    dest_path = student_work_dir(:new)
+
+    return false if not File.exists? zip_file
+
+    Zip::File.open(zip_file) do |zip|
+      # Handle entries one by one
+      zip.each do |entry|
+        # Extract to file/directory/symlink
+        # puts "Extracting #{entry.name}"
+        entry.extract("#{dest_path}#{entry.name}")
+      end
+    end
+  end
 end
