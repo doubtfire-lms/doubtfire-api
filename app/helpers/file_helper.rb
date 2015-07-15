@@ -77,20 +77,27 @@ module FileHelper
   # Generates a path for storing student work
   # type = [:new, :in_process, :done, :pdf, :plagarism]
   #
-  def self.student_work_dir(type, task = nil, create = true)
+  def self.student_work_dir(type = nil, task = nil, create = true)
     file_server = Doubtfire::Application.config.student_work_dir
-    dst = "#{file_server}/#{type}/" # trust the server config and passed in type for paths
+    dst = "#{file_server}/" # trust the server config and passed in type for paths
 
-    if task != nil 
+    if not (type.nil? || task.nil?)
       if type == :pdf
-        dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}","#{task.project.student.username}") << "/"
+        dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}","#{task.project.student.username}", "#{type}") << "/"
       elsif type == :done
-        dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}","#{task.project.student.username}", "#{task.id}") << "/"
+        dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}","#{task.project.student.username}", "#{type}", "#{task.id}") << "/"
       elsif type == :plagarism
-        dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}","#{task.project.student.username}", "plagarism_#{task.id}") << "/"
+        dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}","#{task.project.student.username}", "#{type}", "#{task.id}") << "/"
       elsif  # new and in_process -- just have task id
         # Add task id to dst if we want task
-        dst << "#{task.id}/"
+        dst << "#{type}/#{task.id}/"
+      end
+    elsif (not type.nil?)
+      if [:in_process, :new].include? type
+        # Add task id to dst if we want task
+        dst << "#{type}/"
+      else
+        raise "Error in request to student work directory"
       end
     end
 

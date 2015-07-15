@@ -9,7 +9,7 @@ class PortfolioEvidence
     FileHelper.sanitized_filename(filename)
   end
 
-  def self.student_work_dir(type, task = nil, create = true)
+  def self.student_work_dir(type = nil, task = nil, create = true)
     FileHelper.student_work_dir(type, task, create)
   end
 
@@ -129,7 +129,7 @@ class PortfolioEvidence
     FileUtils.mv Dir.glob("*"), enqueued_dir
     # FileUtils.rm Dir.glob("*")
     # remove the directory
-    Dir.chdir(student_work_dir(:new))
+    Dir.chdir(student_work_dir())
     Dir.rmdir(tmp_dir)
     # puts "done"
   end  
