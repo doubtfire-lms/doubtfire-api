@@ -568,6 +568,39 @@ class Unit < ActiveRecord::Base
       end # end of each result
     end # for each task definition where it needs to be updated
     update_student_max_pct_similar()
+
+    self
+  end
+
+  #
+  # Extract all done files related to a task definition matching a pattern into a given directory.
+  # Returns an array of files
+  #
+  def add_done_files_for_plagiarism_check_of(td, tmp_path, force, to_check)
+    tasks = tasks_for_definition(td)
+    tasks_with_files = tasks.select { |t| t.has_pdf }
+    
+    # check number of files, and they are new
+    if tasks_with_files.count > 1 && (tasks.where("tasks.file_uploaded_at > ?", last_plagarism_scan ).select { |t| t.has_pdf }.count > 0 || force )
+      td.plagiarism_checks.each do |check|
+        next if check["type"].nil?
+
+        type_data = check["type"].split(" ")
+        next if type_data.nil? or type_data.length != 2 or type_data[0] != "moss"
+
+        # extract files matching each pattern
+        # -- each pattern
+        check["pattern"].split("|").each do |pattern|
+          # puts "\tadding #{pattern}"
+          tasks_with_files.each do |t|
+            FileHelper.extract_file_from_done(t, tmp_path, pattern, lambda { | task, to_path, name |  File.join("#{to_path}", "#{t.student.username}", "#{name}") } )
+          end
+          MossRuby.add_file(to_check, "**/#{pattern}")
+        end
+      end
+    end
+    
+    self
   end
 
   #
@@ -610,25 +643,20 @@ class Unit < ActiveRecord::Base
             moss.options[:comment] = ""
             moss.options[:language] = type_data[1]
 
+            tmp_path = File.join( Dir.tmpdir, 'doubtfire', "check-#{id}-#{td.id}" )
+
             # Create a file hash, with the files to be processed
             to_check = MossRuby.empty_file_hash
+            add_done_files_for_plagiarism_check_of(td, tmp_path, force, to_check)
 
-            check["pattern"].split("|").each do |pattern|
-              # puts "\tadding #{pattern}"
-              FileUtils.chdir(Doubtfire::Application.config.student_work_dir)
-              tasks_with_files.each do |t|
-                done_path = File.join(FileHelper.student_work_dir(:done, t, false), pattern)
-                done_path = ".#{done_path.slice(Doubtfire::Application.config.student_work_dir.length, done_path.length)}"
-                # puts done_path
-                if Dir.glob(done_path, File::FNM_CASEFOLD).length > 0
-                  MossRuby.add_file(to_check, done_path)
-                end
-              end
-            end
+            FileUtils.chdir(tmp_path)
 
             # Get server to process files
             puts "Sending to MOSS..."
             url = moss.check(to_check, lambda { |line| puts line })
+
+            FileUtils.chdir(pwd)
+            FileUtils.rm_rf tmp_path
 
             td.plagiarism_report_url = url
             td.plagiarism_updated = true
@@ -644,6 +672,7 @@ class Unit < ActiveRecord::Base
         FileUtils.chdir(pwd)
       end
     end
-    nil
+
+    self
   end
 end

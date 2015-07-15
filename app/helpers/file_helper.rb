@@ -451,14 +451,14 @@ module FileHelper
   end
 
   def self.zip_file_path_for_done_task(task)
-    zip_file = "#{student_work_dir(:done, task, create: false)[0..-2]}.zip"
+    zip_file = "#{student_work_dir(:done, task, false)[0..-2]}.zip"
   end
 
   #
   # Compress the done files for a student - includes cover page and work uploaded
   #
   def self.compress_done_files(task)
-    task_dir = student_work_dir(:done, task, create: false)
+    task_dir = student_work_dir(:done, task, false)
     zip_file = zip_file_path_for_done_task(task)
     return if not Dir.exists? task_dir
 
@@ -467,6 +467,7 @@ module FileHelper
     input_files = Dir.entries(task_dir).select { | f | (f =~ /^\d{3}\.(cover|document|code|image)/) == 0 }
 
     Zip::File.open(zip_file, Zip::File::CREATE) do | zip |
+      zip.mkdir "#{task.id}"
       input_files.each do |in_file|
         zip.add "#{task.id}/#{in_file}", "#{task_dir}#{in_file}"
       end
@@ -479,17 +480,29 @@ module FileHelper
   # Extract the files from the zip file for this tasks, and replace in new so that it is created
   #
   def self.move_compressed_task_to_new(task)
-    zip_file = zip_file_path_for_done_task(task)
-    dest_path = student_work_dir(:new)
+    # student_work_dir(:new, task) # create task dir
+    extract_file_from_done task, student_work_dir(:new), "*", lambda { | task, to_path, name |  "#{to_path}#{name}" }
+  end
 
+  #
+  # Extract files matching a pattern from the 
+  #
+  def self.extract_file_from_done(task, to_path, pattern, name_fn)
+    zip_file = zip_file_path_for_done_task(task)
     return false if not File.exists? zip_file
 
     Zip::File.open(zip_file) do |zip|
-      # Handle entries one by one
+      # Extract folders
       zip.each do |entry|
         # Extract to file/directory/symlink
         # puts "Extracting #{entry.name}"
-        entry.extract("#{dest_path}#{entry.name}")
+        if entry.name_is_directory? 
+          entry.extract( name_fn.call(task, to_path, entry.name) )  { true }
+        end
+      end
+      zip.glob("**/#{pattern}").each do |entry|
+        puts "Here Extracting #{entry.name}"
+        entry.extract( name_fn.call(task, to_path, entry.name) ) { true }
       end
     end
   end

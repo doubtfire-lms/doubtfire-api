@@ -178,10 +178,10 @@ class PortfolioEvidence
     #
     # Move folder over from done -> new
     #
-    done = FileHelper.student_work_dir(:done, task, create:false)
+    done = FileHelper.student_work_dir(:done, task, false)
 
     if Dir.exists? done
-      new_task_dir = FileHelper.student_work_dir(:new, task, create:false)
+      new_task_dir = FileHelper.student_work_dir(:new, task, false)
       FileUtils.mkdir_p(new_task_dir)
       FileHelper.move_files(done, new_task_dir)
       true
