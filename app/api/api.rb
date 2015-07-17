@@ -61,6 +61,7 @@ module Api
     rescue_from :all
 
     mount Api::Auth
+    mount Api::GroupSets
     mount Api::Projects
     mount Api::Students
     mount Api::Tasks
@@ -75,6 +76,7 @@ module Api
     mount Api::Submission::PortfolioEvidenceApi
     mount Api::Submission::BatchTask
 
+    AuthHelpers.add_auth_to Api::GroupSets
     AuthHelpers.add_auth_to Api::Units
     AuthHelpers.add_auth_to Api::Projects
     AuthHelpers.add_auth_to Api::Students

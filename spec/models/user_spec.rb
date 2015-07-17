@@ -1,15 +1,15 @@
 require 'spec_helper'
 
-describe User do
+RSpec.describe User do
   it "has a valid factory" do
-    FactoryGirl.create(:user).should be_valid
+    expect(FactoryGirl.create(:user)).to be_valid
   end
 
   it "is invalid without a first name" do
-    FactoryGirl.build(:user, first_name: nil).should_not be_valid
+    expect(FactoryGirl.build(:user, first_name: nil)).not_to be_valid
   end
 
   it "is invalid without a last name" do
-    FactoryGirl.build(:user, last_name: nil).should_not be_valid
+    expect(FactoryGirl.build(:user, last_name: nil)).not_to be_valid
   end
 end

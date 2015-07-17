@@ -37,6 +37,7 @@ class Unit < ActiveRecord::Base
   has_many :tutorials, dependent: :destroy
   has_many :unit_roles, dependent: :destroy
   has_many :tasks, through: :projects
+  has_many :group_sets, dependent: :destroy
   
   has_many :convenors, -> { joins(:role).where("roles.name = :role", role: 'Convenor') }, class_name: 'UnitRole'
   has_many :staff, ->     { joins(:role).where("roles.name = :role_convenor or roles.name = :role_tutor", role_convenor: 'Convenor', role_tutor: 'Tutor') }, class_name: 'UnitRole' 
@@ -599,7 +600,7 @@ class Unit < ActiveRecord::Base
         end
       end
     end
-    
+
     self
   end
 

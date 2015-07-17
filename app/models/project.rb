@@ -228,7 +228,7 @@ class Project < ActiveRecord::Base
   def progress_in_days
     units_completed = task_units_completed
 
-    current_week  = weeks_elapsed
+    # current_week  = weeks_elapsed
     date_progress = unit.start_date
 
     progress_points.each do |date, weight|
@@ -263,7 +263,8 @@ class Project < ActiveRecord::Base
     result = [ ]
 
     # Get the weeks between start and end date as an array
-    dates = unit.start_date.to_date.step(unit.end_date.to_date + 1.week, step=7).to_a
+    # dates = unit.start_date.to_date.step(unit.end_date.to_date + 1.week, step=7).to_a
+    dates = unit.start_date.to_date.step(unit.end_date.to_date + 1.week, 7).to_a
 
     # Setup the dictionaries to contain the keys and values
     # key = series name
@@ -650,7 +651,7 @@ class Project < ActiveRecord::Base
     else
       Dir.chdir(portfolio_tmp_dir)
       files = Dir.glob("*")
-      idx = files.map { |file| file.split("-").first.to_i }.max
+      idx = files.map { |a_file| a_file.split("-").first.to_i }.max
       if idx.nil? || idx < 1
         idx = 1 
       else
@@ -763,7 +764,7 @@ class Project < ActiveRecord::Base
     #
     # puts "generating cover page #{cover_filename}"
 
-    coverp_file = File.new(cover_filename, mode="w")
+    coverp_file = File.new(cover_filename, "w")
     # puts 1
     coverp_file.write(coverpage_body)
     # puts 2

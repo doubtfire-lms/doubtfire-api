@@ -6,6 +6,7 @@ class Tutorial < ActiveRecord::Base
 
   has_many   :unit_roles, dependent: :nullify # Students
   has_many   :projects, through: :unit_roles, dependent: :nullify
+  has_many   :groups, dependent: :nullify
 
   def self.default
     tutorial = self.new

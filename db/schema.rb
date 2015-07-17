@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20150629001715) do
+ActiveRecord::Schema.define(version: 20150717061119) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -24,6 +24,42 @@ ActiveRecord::Schema.define(version: 20150629001715) do
     t.integer  "sub_task_definition_id"
     t.datetime "created_at",             null: false
     t.datetime "updated_at",             null: false
+  end
+
+  create_table "group_memberships", force: true do |t|
+    t.integer  "group_id"
+    t.integer  "project_id"
+    t.boolean  "active",     default: true
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  create_table "group_sets", force: true do |t|
+    t.integer  "unit_id"
+    t.string   "name"
+    t.boolean  "allow_students_to_create_groups", default: true
+    t.boolean  "allow_students_to_manage_groups", default: true
+    t.boolean  "keep_groups_in_same_class",       default: false
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  add_index "group_sets", ["unit_id"], name: "index_group_sets_on_unit_id", using: :btree
+
+  create_table "group_submissions", force: true do |t|
+    t.integer  "group_id"
+    t.string   "notes"
+    t.integer  "submitted_by_project_id"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  create_table "groups", force: true do |t|
+    t.integer  "group_set_id"
+    t.integer  "tutorial_id"
+    t.string   "name"
+    t.datetime "created_at"
+    t.datetime "updated_at"
   end
 
   create_table "helpdesk_schedules", force: true do |t|
@@ -132,6 +168,7 @@ ActiveRecord::Schema.define(version: 20150629001715) do
     t.string   "plagiarism_report_url"
     t.boolean  "plagiarism_updated",                                            default: false
     t.integer  "plagiarism_warn_pct",                                           default: 50
+    t.integer  "group_set_id"
   end
 
   add_index "task_definitions", ["unit_id"], name: "index_task_definitions_on_unit_id", using: :btree
@@ -177,8 +214,11 @@ ActiveRecord::Schema.define(version: 20150629001715) do
     t.boolean  "include_in_portfolio", default: true
     t.datetime "file_uploaded_at"
     t.integer  "max_pct_similar",      default: 0
+    t.integer  "group_submission_id"
+    t.integer  "contribution_pct",     default: 100
   end
 
+  add_index "tasks", ["group_submission_id"], name: "index_tasks_on_group_submission_id", using: :btree
   add_index "tasks", ["project_id"], name: "index_tasks_on_project_id", using: :btree
   add_index "tasks", ["task_definition_id"], name: "index_tasks_on_task_definition_id", using: :btree
   add_index "tasks", ["task_status_id"], name: "index_tasks_on_task_status_id", using: :btree
