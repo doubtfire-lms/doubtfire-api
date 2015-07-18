@@ -370,7 +370,7 @@ it "should know its members" do
   end
 
   it "should allow comments to be viewed across all related tasks" do
-    unit = FactoryGirl.create(:unit, group_sets: 1, task_count: 1, 
+    unit = FactoryGirl.create(:unit, group_sets: 1, task_count: 2, 
       student_count: 3, 
       :groups => [ { gs: 0, students: 2}, {gs: 0, students: 1} ], 
       :group_tasks => [ { gs: 0, idx: 0 } ]
@@ -378,11 +378,20 @@ it "should know its members" do
 
     grp0 = unit.group_sets[0].groups[0]
 
-    t0 = grp0.projects[0].tasks[0]
+    t0 = grp0.projects[0].task_for_task_definition(unit.task_definitions[0])
+    t1 = grp0.projects[0].task_for_task_definition(unit.task_definitions[1])
 
     comment = t0.add_comment t0.student, "Comment 1"
+    comment1 = t1.add_comment t1.student, "Comment 2"
 
-    expect(grp0.projects[1].tasks[0].all_comments).to include(comment)
+    t0.reload
+    t1.reload
+
+    expect(t0.all_comments).to include(comment)
+    expect(t1.all_comments).to include(comment1)
+
+    expect(grp0.projects[1].matching_task(t0).all_comments).to include(comment)
+    expect(grp0.projects[1].matching_task(t1).all_comments).not_to include(comment1)
   end
 
 end

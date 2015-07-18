@@ -872,6 +872,10 @@ class Project < ActiveRecord::Base
   end
 
   def matching_task(other_task)
-    tasks.where(task_definition: other_task.task_definition).first
+    task_for_task_definition(other_task.task_definition)
+  end
+
+  def task_for_task_definition(td)
+    tasks.where(task_definition: td).first
   end
 end
