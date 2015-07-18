@@ -227,7 +227,9 @@ class Task < ActiveRecord::Base
 
     if (not group_transition) && (not group_submission.nil?)
       # puts "#{group_transition} #{group_submission} #{trigger} #{id}"
-      group_submission.propagate_transition self, trigger, by_user
+      if not [ TaskStatus.working_on_it, TaskStatus.need_help  ].include? task_status
+        group_submission.propagate_transition self, trigger, by_user
+      end
     end
 
     if not bulk then project.calc_task_stats(self) end
