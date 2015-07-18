@@ -323,4 +323,15 @@ it "should know its members" do
     expect(sub1).to eq(sub2)
   end
 
+  it "should ensure that group submissions have all group members" do
+    unit = FactoryGirl.create(:unit, group_sets: 1, task_count: 1, student_count: 4, :groups => [ { gs: 0, students: 2}, { gs: 0, students: 2} ], :group_tasks => [ { gs: 0, idx: 0 } ])
+
+    grp = unit.group_sets[0].groups.first
+
+    p1 = grp.projects.first
+    p1_t1 = p1.tasks.first
+
+    expect { grp.create_submission p1_t1, "Group has submitted its awesome work", [ { project: p1, pct: 100} ] }.to raise_error "Contributions missing for some group members"
+  end
+
 end

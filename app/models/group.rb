@@ -61,6 +61,9 @@ class Group < ActiveRecord::Base
       raise "Not all contributions were from team members." unless projects.include? project 
     end
 
+    # check for all group members
+    raise 'Contributions missing for some group members' unless projects.count == contributors.count
+
     # check pct
     raise 'Contribution percentages are insufficient.' unless total >= 90
     raise 'Contribution percentages are excessive.' unless total <= 110
