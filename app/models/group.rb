@@ -58,8 +58,13 @@ class Group < ActiveRecord::Base
       raise "Not all contributions were from team members." unless projects.include? project 
     end
 
+    # check pct
     raise 'Contribution percentages are insufficient.' unless total >= 90
     raise 'Contribution percentages are excessive.' unless total <= 110
+
+    # check group task
+    raise "Group submission only allowed for group tasks." unless submitter_task.task_definition.group_set
+    raise "Group submission for wrong group for unit." unless submitter_task.task_definition.group_set == group_set
 
     contributors.each do |contrib|
       project = contrib[:project]

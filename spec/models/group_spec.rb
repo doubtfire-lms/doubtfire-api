@@ -136,6 +136,62 @@ it "should know its members" do
     expect(p1_t1.group_submission).to eq(nil)
   end
 
+  it "should fail on submission if this is not a group task" do
+    unit = FactoryGirl.create(:unit, group_sets: 1, task_count: 2, student_count: 4, :groups => [ { gs: 0, students: 2}, { gs: 0, students: 2} ], :group_tasks => [ { gs: 0, idx: 0 } ])
+
+    grp = unit.group_sets[0].groups[0]
+
+    p1 = grp.projects.first
+    p2 = grp.projects.last
+
+    p1_t1 = p1.tasks[1]
+    if p1_t1.task_definition.group_set
+      p1_t1 = p1.tasks[0]
+    end
+
+    expect(p1_t1.task_definition.group_set).to eq(nil)
+
+    expect {
+      grp.create_submission p1_t1, "Group has submitted its awesome work", [ { project: p1, pct: 50}, { project: p2, pct: 50} ]
+    }.to raise_error("Group submission only allowed for group tasks.")
+
+    p1_t1 = p1.tasks.first
+
+    expect(p1_t1.contribution_pct).to eq(100)
+    expect(p1_t1.group_submission).to eq(nil)
+  end
+
+  it "should fail on submission if submitted to wrong group" do
+    unit = FactoryGirl.create(:unit, group_sets: 2, task_count: 2, student_count: 4, 
+        :groups => [ { gs: 0, students: 2}, { gs: 0, students: 2}, {gs: 1, students: 2}, {gs: 1, students: 2} ], 
+        :group_tasks => [ { gs: 0, idx: 0 }, { gs: 1, idx: 1} ])
+
+    grp0 = unit.group_sets[0].groups[0]
+    grp1 = unit.group_sets[1].groups[0]
+
+    p0 = grp0.projects[0]
+    p1 = grp0.projects[1]
+
+    p0_t0 = p1.tasks[0] # task for group 1
+
+    if p0_t0.task_definition.group_set == grp1.group_set
+      test_grp = grp0
+    else
+      test_grp = grp1
+    end
+
+    expect(p0_t0.task_definition.group_set).not_to eq(test_grp.group_set)
+
+    expect {
+      test_grp.create_submission p0_t0, "Group has submitted its awesome work", [ { project: p0, pct: 50}, { project: p1, pct: 50} ]
+    }.to raise_error("Group submission for wrong group for unit.")
+
+    p1_t1 = p1.tasks.first
+
+    expect(p1_t1.contribution_pct).to eq(100)
+    expect(p1_t1.group_submission).to eq(nil)
+  end
+
   it "should fail if total pct is out of range 100 +/- 10" do
     unit = FactoryGirl.create(:unit, group_sets: 1, task_count: 1, student_count: 4, :groups => [ { gs: 0, students: 2}, { gs: 0, students: 2} ], :group_tasks => [ { gs: 0, idx: 0 } ])
 

@@ -51,7 +51,7 @@ FactoryGirl.define do
         gs = unit.group_sets[group_details[:gs]]
         grp = FactoryGirl.create(:group, group_set: gs)
         group_details[:students].times do
-          grp.add_member unit.projects[stud]
+          grp.add_member unit.projects[stud % eval.student_count]
           stud += 1
         end
       end
