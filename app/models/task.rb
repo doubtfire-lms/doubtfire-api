@@ -17,7 +17,7 @@ class Task < ActiveRecord::Base
     # check for group member
     if group_task?
       # puts "checking group"
-      if group.has_user user
+      if group && group.has_user(user)
         return :group_member
       else
         return nil

@@ -54,14 +54,16 @@ class Group < ActiveRecord::Base
   #   - contributors contains [ {project: ..., pct: ... } ]
   #
   def create_submission(submitter_task, notes, contributors)
-    gs = submitter_task.group_submission
+    old_gs = submitter_task.group_submission
+    gs = old_gs
     if gs.nil? || __different_project_composition__(contributors, gs)
-      gs = GroupSubmission.create { |gs| 
-        gs.group = self
-        gs.notes = notes
-        gs.submitted_by_project = submitter_task.project
-      }
+      gs = GroupSubmission.create()
     end
+
+    gs.group = self
+    gs.notes = notes
+    gs.submitted_by_project = submitter_task.project
+    gs.save!
     
     total = 0
     #check all members are in the same group
@@ -91,6 +93,10 @@ class Group < ActiveRecord::Base
       # puts "id is #{task.group_submission_id}"
       task.save
     end
+
+    # if old_gs
+    #   puts "here"
+    # end
     gs
   end
 

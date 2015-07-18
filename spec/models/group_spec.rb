@@ -240,7 +240,10 @@ it "should know its members" do
   end
 
   it "should allow students to trigger submission state across tasks in the group" do
-    unit = FactoryGirl.create(:unit, group_sets: 1, task_count: 1, student_count: 4, :groups => [ { gs: 0, students: 2}, { gs: 0, students: 2} ], :group_tasks => [ { gs: 0, idx: 0 } ])
+    unit = FactoryGirl.create(:unit, group_sets: 1, task_count: 1, 
+      student_count: 2, 
+      :groups => [ { gs: 0, students: 2} ], 
+      :group_tasks => [ { gs: 0, idx: 0 } ] )
 
     grp = unit.group_sets[0].groups.first
 
