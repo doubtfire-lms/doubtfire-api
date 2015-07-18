@@ -5,11 +5,14 @@ class Group < ActiveRecord::Base
   has_many :group_memberships
   has_many :projects, -> { where("group_memberships.active = :value", value: true) }, through: :group_memberships
   has_many :past_projects, -> { where("group_memberships.active = :value", value: false) },  through: :group_memberships, source: 'project'
-  has_one :unit, through: :group_sets
+  has_one :unit, through: :group_set
 
   validates :group_set, presence: true, allow_nil: false
   validates :tutorial, presence: true, allow_nil: false
 
+  def has_user(user)
+    projects.joins(:unit_role).where("unit_roles.user_id = :user_id", user_id: user.id).count == 1
+  end
 
   def add_member(project)
     gm = group_memberships.where(project: project).first

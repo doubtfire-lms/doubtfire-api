@@ -80,8 +80,21 @@ RSpec.describe Group do
     expect(unit.group_sets[0].groups[1].projects).to include(unit.projects[3])
   end
 
-  it "should accept group submissions" do
+it "should know its members" do
     unit = FactoryGirl.create(:unit, group_sets: 1, student_count: 2, :groups => [ { gs: 0, students: 2} ])
+
+    grp = unit.group_sets[0].groups.first
+
+    p1 = grp.projects.first
+    p2 = grp.projects.last
+
+    expect(grp.has_user p1.student).to be true
+    expect(grp.has_user p2.student).to be true
+    expect(grp.has_user unit.convenors.first).to be false
+  end
+
+  it "should accept group submissions" do
+    unit = FactoryGirl.create(:unit, group_sets: 1, task_count: 1, student_count: 4, :groups => [ { gs: 0, students: 2}, { gs: 0, students: 2} ], :group_tasks => [ { gs: 0, idx: 0 } ])
 
     grp = unit.group_sets[0].groups.first
 
@@ -104,7 +117,7 @@ RSpec.describe Group do
   end
 
   it "should fail if not all projects are in the group" do
-    unit = FactoryGirl.create(:unit, group_sets: 1, student_count: 4, :groups => [ { gs: 0, students: 2}, { gs: 0, students: 2} ])
+    unit = FactoryGirl.create(:unit, group_sets: 1, task_count: 1, student_count: 4, :groups => [ { gs: 0, students: 2}, { gs: 0, students: 2} ], :group_tasks => [ { gs: 0, idx: 0 } ])
 
     grp = unit.group_sets[0].groups.first
 
@@ -124,7 +137,7 @@ RSpec.describe Group do
   end
 
   it "should fail if total pct is out of range 100 +/- 10" do
-    unit = FactoryGirl.create(:unit, group_sets: 1, student_count: 4, :groups => [ { gs: 0, students: 2}, { gs: 0, students: 2} ])
+    unit = FactoryGirl.create(:unit, group_sets: 1, task_count: 1, student_count: 4, :groups => [ { gs: 0, students: 2}, { gs: 0, students: 2} ], :group_tasks => [ { gs: 0, idx: 0 } ])
 
     grp = unit.group_sets[0].groups.first
 
@@ -145,5 +158,51 @@ RSpec.describe Group do
 
     expect(p1_t1.contribution_pct).to eq(100)
     expect(p1_t1.group_submission).to eq(nil)
+  end
+
+  it "should trigger submission state across tasks in the group" do
+    unit = FactoryGirl.create(:unit, group_sets: 1, task_count: 1, student_count: 4, :groups => [ { gs: 0, students: 2}, { gs: 0, students: 2} ], :group_tasks => [ { gs: 0, idx: 0 } ])
+
+    grp = unit.group_sets[0].groups.first
+
+    p1 = grp.projects.first
+    p2 = grp.projects.last
+
+    p1_t1 = p1.tasks.first
+
+    submission = grp.create_submission p1_t1, "Group has submitted its awesome work", [ { project: p1, pct: 50}, { project: p2, pct: 50} ]
+
+    p1_t1 = p1.tasks.first
+
+    p1_t1.trigger_transition( "rtm", unit.convenors.first.user)
+
+    p1_t1 = p1.tasks.first
+    p2_t1 = p2.tasks.first
+
+    expect(p1_t1.task_status).to eq(TaskStatus.ready_to_mark)
+    expect(p2_t1.task_status).to eq(TaskStatus.ready_to_mark)
+  end
+
+  it "should allow students to trigger submission state across tasks in the group" do
+    unit = FactoryGirl.create(:unit, group_sets: 1, task_count: 1, student_count: 4, :groups => [ { gs: 0, students: 2}, { gs: 0, students: 2} ], :group_tasks => [ { gs: 0, idx: 0 } ])
+
+    grp = unit.group_sets[0].groups.first
+
+    p1 = grp.projects.first
+    p2 = grp.projects.last
+
+    p1_t1 = p1.tasks.first
+
+    submission = grp.create_submission p1_t1, "Group has submitted its awesome work", [ { project: p1, pct: 50}, { project: p2, pct: 50} ]
+
+    p1_t1 = p1.tasks.first
+
+    p1_t1.trigger_transition( "rtm", p1.student )
+
+    p1_t1 = p1.tasks.first
+    p2_t1 = p2.tasks.first
+
+    expect(p1_t1.task_status).to eq(TaskStatus.ready_to_mark)
+    expect(p2_t1.task_status).to eq(TaskStatus.ready_to_mark)
   end
 end

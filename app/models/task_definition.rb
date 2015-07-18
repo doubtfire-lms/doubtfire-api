@@ -3,6 +3,7 @@ require 'json'
 class TaskDefinition < ActiveRecord::Base
 	# Model associations
 	belongs_to :unit			   # Foreign key
+  belongs_to :group_set
 	has_many :tasks, dependent:  :destroy    # Destroying a task definition will also nuke any instances
 
 	# Model validations/constraints

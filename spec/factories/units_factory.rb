@@ -26,6 +26,7 @@ FactoryGirl.define do
       tutorials 1
       group_sets 0
       groups [ ] #[ { gs: 0, students:0 } ]
+      group_tasks [ ]
     end
 
     name          "A"
@@ -40,7 +41,7 @@ FactoryGirl.define do
       create_list(:task_definition, eval.task_count, unit: unit)
       create_list(:group_set, eval.group_sets, unit: unit)
 
-      # unit.employ_staff( FactoryGirl.create(:user, :convenor), Role.convenor)
+      unit.employ_staff( FactoryGirl.create(:user, :convenor), Role.convenor)
       eval.student_count.times do |i|
        unit.enrol_student( FactoryGirl.create(:user, :student), unit.tutorials[i % unit.tutorials.count])
       end
@@ -53,6 +54,13 @@ FactoryGirl.define do
           grp.add_member unit.projects[stud]
           stud += 1
         end
+      end
+
+      eval.group_tasks.each do |task_details|
+        td = unit.task_definitions[task_details[:idx]]
+        td.group_set = unit.group_sets[task_details[:gs]]
+        # puts "Group task #{td.abbreviation} #{td.group_set}"
+        td.save
       end
     end
   end

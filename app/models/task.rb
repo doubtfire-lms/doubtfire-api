@@ -11,7 +11,19 @@ class Task < ActiveRecord::Base
   end
 
   def role_for(user)
-    return project.user_role(user)
+    project_role = project.user_role(user)
+    return project_role unless project_role.nil?
+    # puts "getting role... #{task_definition.abbreviation} #{task_definition.group_set}"
+    # check for group member
+    if not task_definition.group_set.nil?
+      # puts "checking group"
+      grp = project.groups.where(group_set_id: task_definition.group_set_id).first
+      if grp.has_user user
+        return :group_member
+      else
+        return nil
+      end
+    end
   end
 
   # Model associations
@@ -158,18 +170,19 @@ class Task < ActiveRecord::Base
     (not portfolio_evidence.nil?) and File.exists?(portfolio_evidence)
   end
 
-  def trigger_transition(trigger, by_user, bulk=false)
+  def trigger_transition(trigger="", by_user=nil, bulk=false, group_transition=false)
     #
     # Ensure that assessor is allowed to update the task in the indicated way
     #
-    role = project.user_role(by_user)
+    role = role_for(by_user)
+    # puts "#{role} #{group_transition}"
     return nil if role.nil?
 
     #
     # Ensure that only staff can change from staff assigned status if
     # this is a restricted task
     #
-    return nil if role == :student && 
+    return nil if [ :student, :group_member ].include?(role) && 
                   task_definition.restrict_status_updates && 
                   self.task_status.in?([ TaskStatus.redo, TaskStatus.complete, TaskStatus.fix_and_resubmit, 
                     TaskStatus.fix_and_include, TaskStatus.discuss ])
@@ -210,6 +223,11 @@ class Task < ActiveRecord::Base
               assess TaskStatus.discuss, by_user
           end
         end
+    end
+
+    if (not group_transition) && (not group_submission.nil?)
+      # puts "#{group_transition} #{group_submission} #{trigger} #{id}"
+      group_submission.propagate_transition self, trigger, by_user
     end
 
     if not bulk then project.calc_task_stats(self) end
