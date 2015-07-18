@@ -47,11 +47,16 @@ class Group < ActiveRecord::Base
         gs.submitted_by_project = submitter_task.project
       }
     
+    total = 0
     #check all members are in the same group
     contributors.each do |contrib|
       project = contrib[:project]
+      total += contrib[:pct].to_i
       raise "Not all contributions were from team members." unless projects.include? project 
     end
+
+    raise 'Contribution percentages are insufficient.' unless total >= 90
+    raise 'Contribution percentages are excessive.' unless total <= 110
 
     contributors.each do |contrib|
       project = contrib[:project]

@@ -114,8 +114,32 @@ RSpec.describe Group do
     p1_t1 = p1.tasks.first
 
     expect {
-        grp.create_submission p1_t1, "Group has submitted its awesome work", [ { project: p1, pct: 50}, { project: p_other, pct: 50} ]
-      }.to raise_error("Not all contributions were from team members.")
+      grp.create_submission p1_t1, "Group has submitted its awesome work", [ { project: p1, pct: 50}, { project: p_other, pct: 50} ]
+    }.to raise_error("Not all contributions were from team members.")
+
+    p1_t1 = p1.tasks.first
+
+    expect(p1_t1.contribution_pct).to eq(100)
+    expect(p1_t1.group_submission).to eq(nil)
+  end
+
+  it "should fail if total pct is out of range 100 +/- 10" do
+    unit = FactoryGirl.create(:unit, group_sets: 1, student_count: 4, :groups => [ { gs: 0, students: 2}, { gs: 0, students: 2} ])
+
+    grp = unit.group_sets[0].groups.first
+
+    p1 = grp.projects.first
+    p2 = grp.projects.last
+
+    p1_t1 = p1.tasks.first
+
+    expect {
+      submission = grp.create_submission p1_t1, "Group has submitted its awesome work", [ { project: p1, pct: 50}, { project: p2, pct: 150} ]
+    }.to raise_error("Contribution percentages are excessive.")
+
+    expect {
+      submission = grp.create_submission p1_t1, "Group has submitted its awesome work", [ { project: p1, pct: 50}, { project: p2, pct: 10} ]
+    }.to raise_error("Contribution percentages are insufficient.")
 
     p1_t1 = p1.tasks.first
 
