@@ -47,13 +47,19 @@ class Group < ActiveRecord::Base
         gs.submitted_by_project = submitter_task.project
       }
     
+    #check all members are in the same group
+    contributors.each do |contrib|
+      project = contrib[:project]
+      raise "Not all contributions were from team members." unless projects.include? project 
+    end
+
     contributors.each do |contrib|
       project = contrib[:project]
       task = project.matching_task submitter_task
 
       task.group_submission = gs
       task.contribution_pct = contrib[:pct]
-      puts "id is #{task.group_submission_id}"
+      # puts "id is #{task.group_submission_id}"
       task.save
     end
     gs

@@ -61,6 +61,25 @@ RSpec.describe Group do
     expect(unit.group_sets[0].groups[0].projects.count).to eq(2)
   end
 
+  it "should allow multiple group creations in factory" do
+    unit = FactoryGirl.create(:unit, group_sets: 1, student_count: 4, :groups => [ { gs: 0, students: 2}, { gs: 0, students: 2} ])
+
+    expect(unit).to be_valid
+    expect(unit.group_sets[0].groups.count).to eq(2)
+    expect(unit.group_sets[0].groups[0].projects.count).to eq(2)
+    expect(unit.group_sets[0].groups[1].projects.count).to eq(2)
+
+    expect(unit.group_sets[0].groups[0].projects).to include(unit.projects[0])
+    expect(unit.group_sets[0].groups[0].projects).to include(unit.projects[1])
+    expect(unit.group_sets[0].groups[0].projects).not_to include(unit.projects[2])
+    expect(unit.group_sets[0].groups[0].projects).not_to include(unit.projects[3])
+
+    expect(unit.group_sets[0].groups[1].projects).not_to include(unit.projects[0])
+    expect(unit.group_sets[0].groups[1].projects).not_to include(unit.projects[1])
+    expect(unit.group_sets[0].groups[1].projects).to include(unit.projects[2])
+    expect(unit.group_sets[0].groups[1].projects).to include(unit.projects[3])
+  end
+
   it "should accept group submissions" do
     unit = FactoryGirl.create(:unit, group_sets: 1, student_count: 2, :groups => [ { gs: 0, students: 2} ])
 
@@ -82,5 +101,25 @@ RSpec.describe Group do
 
     expect(p2_t1.contribution_pct).to eq(50)
     expect(p2_t1.group_submission).to eq(submission)
+  end
+
+  it "should fail if not all projects are in the group" do
+    unit = FactoryGirl.create(:unit, group_sets: 1, student_count: 4, :groups => [ { gs: 0, students: 2}, { gs: 0, students: 2} ])
+
+    grp = unit.group_sets[0].groups.first
+
+    p1 = grp.projects.first
+    p_other = unit.projects.last
+
+    p1_t1 = p1.tasks.first
+
+    expect {
+        grp.create_submission p1_t1, "Group has submitted its awesome work", [ { project: p1, pct: 50}, { project: p_other, pct: 50} ]
+      }.to raise_error("Not all contributions were from team members.")
+
+    p1_t1 = p1.tasks.first
+
+    expect(p1_t1.contribution_pct).to eq(100)
+    expect(p1_t1.group_submission).to eq(nil)
   end
 end
