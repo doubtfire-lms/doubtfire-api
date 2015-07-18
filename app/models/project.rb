@@ -14,6 +14,10 @@ class Project < ActiveRecord::Base
   # has_one :user, through: :student
   has_many :tasks, dependent: :destroy   # Destroying a project will also nuke all of its tasks
 
+  has_many :group_memberships, dependent: :destroy
+  has_many :groups, -> { where("group_memberships.active = :value", value: true) },  through: :group_memberships
+  has_many :past_groups, -> { where("group_memberships.active = :value", value: false) },  through: :group_memberships, source: 'group'
+
   after_destroy :destroy_unit_role
 
   def destroy_unit_role
