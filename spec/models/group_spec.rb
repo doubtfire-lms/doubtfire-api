@@ -285,4 +285,23 @@ it "should know its members" do
     expect(p2_t1.task_status).to eq(TaskStatus.not_submitted)
   end
 
+  it "should trigger events even without a group submission" do
+    unit = FactoryGirl.create(:unit, group_sets: 1, task_count: 1, student_count: 2, :groups => [ { gs: 0, students: 2} ], :group_tasks => [ { gs: 0, idx: 0 } ])
+
+    grp = unit.group_sets[0].groups.first
+
+    p1 = grp.projects.first
+    p2 = grp.projects.last
+
+    p1_t1 = p1.tasks.first
+
+    p1_t1.trigger_transition( "rtm", p1.student )
+
+    p1_t1 = p1.tasks.first
+    p2_t1 = p2.tasks.first
+
+    expect(p1_t1.task_status).to eq(TaskStatus.ready_to_mark)
+    expect(p2_t1.task_status).to eq(TaskStatus.ready_to_mark)
+  end
+
 end

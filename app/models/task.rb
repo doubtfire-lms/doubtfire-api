@@ -15,10 +15,9 @@ class Task < ActiveRecord::Base
     return project_role unless project_role.nil?
     # puts "getting role... #{task_definition.abbreviation} #{task_definition.group_set}"
     # check for group member
-    if not task_definition.group_set.nil?
+    if group_task?
       # puts "checking group"
-      grp = project.groups.where(group_set_id: task_definition.group_set_id).first
-      if grp.has_user user
+      if group.has_user user
         return :group_member
       else
         return nil
@@ -170,6 +169,24 @@ class Task < ActiveRecord::Base
     (not portfolio_evidence.nil?) and File.exists?(portfolio_evidence)
   end
 
+  def group_task?
+    group_submission || task_definition.group_set
+  end
+
+  def group
+    return nil unless group_task?
+    return group_submission.group unless group_submission.nil?
+    # need to locate group via unit's groups
+    project.groups.where(group_set_id: task_definition.group_set_id).first
+  end
+
+  def ensured_group_submission
+    return nil unless group_task?
+    return group_submission unless group_submission.nil?
+
+    group.create_submission self, "", group.projects.map { |proj| { project: proj, pct: 100 / group.projects.count }  }
+  end
+
   def trigger_transition(trigger="", by_user=nil, bulk=false, group_transition=false)
     #
     # Ensure that assessor is allowed to update the task in the indicated way
@@ -225,10 +242,10 @@ class Task < ActiveRecord::Base
         end
     end
 
-    if (not group_transition) && (not group_submission.nil?)
+    if (not group_transition) && group_task?
       # puts "#{group_transition} #{group_submission} #{trigger} #{id}"
       if not [ TaskStatus.working_on_it, TaskStatus.need_help  ].include? task_status
-        group_submission.propagate_transition self, trigger, by_user
+        ensured_group_submission.propagate_transition self, trigger, by_user
       end
     end
 
