@@ -37,6 +37,16 @@ class Group < ActiveRecord::Base
   end
 
   #
+  # check if the project is the same as the current submission
+  #
+  def __different_project_composition__ (contributors, gs)
+    contributors.each do |contrib|
+      return true unless gs.projects.include? contrib[:project]
+    end
+    return contributors.count != gs.projects.count
+  end
+
+  #
   # The submitter task is the user who submitted this group task.
   #
   # Creates a Group Submission
@@ -45,7 +55,7 @@ class Group < ActiveRecord::Base
   #
   def create_submission(submitter_task, notes, contributors)
     gs = submitter_task.group_submission
-    if gs.nil?
+    if gs.nil? || __different_project_composition__(contributors, gs)
       gs = GroupSubmission.create { |gs| 
         gs.group = self
         gs.notes = notes
