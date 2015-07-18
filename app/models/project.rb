@@ -870,4 +870,8 @@ class Project < ActiveRecord::Base
     # tasks.sort { |t1, t2|  t1.pct_similar <=> t2.pct_similar }.last.pct_similar
     max_pct_similar
   end
+
+  def matching_task(other_task)
+    tasks.where(task_definition: other_task.task_definition).first
+  end
 end

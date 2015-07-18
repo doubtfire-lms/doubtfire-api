@@ -1,4 +1,4 @@
-require 'spec_helper'
+require "rails_helper"
 
 RSpec.describe Group do
 
@@ -52,5 +52,9 @@ RSpec.describe Group do
     expect(g1.projects).to include(p2)
     expect(g1.past_projects).not_to include(p2)
     expect(g1.group_memberships.count).to eq(2)
+  end
+
+  it "can accept group submissions" do
+    
   end
 end

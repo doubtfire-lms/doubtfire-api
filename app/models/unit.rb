@@ -122,12 +122,10 @@ class Unit < ActiveRecord::Base
   end
 
   # Adds a user to this project.
-  def enrol_student(user_id, tutorial_id=nil)
+  def enrol_student(user, tutorial_id=nil)
     # Validates that a student is not already assigned to the unit
-    existing_role = unit_roles.where("user_id=:user_id", user_id: user_id).first
-    if not existing_role.nil?
-      return existing_role.project
-    end
+    existing_role = unit_roles.where("user_id=:user_id", user_id: user.id).first
+    return existing_role.project unless existing_role.nil?
 
     # Validates that the tutorial exists for the unit
     if (not tutorial_id.nil?) && tutorials.where("id=:id", id: tutorial_id).count == 0
@@ -136,7 +134,7 @@ class Unit < ActiveRecord::Base
 
     # Put the user in the appropriate tutorial (ie. create a new unit_role)
     unit_role = UnitRole.create!(
-      user_id: user_id,
+      user_id: user.id,
       #tutorial_id: tutorial_id,
       unit_id: self.id,
       role_id: Role.where(name: 'Student').first.id
@@ -208,6 +206,8 @@ class Unit < ActiveRecord::Base
       subject_code, username  = row[0..1]
       first_name, last_name   = [row[2], row[3]].map{|name| name.titleize }
       email, tutorial_code    = row[4..5]
+
+      next if subject_code != code
 
       username = username.downcase
 

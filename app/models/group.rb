@@ -33,5 +33,29 @@ class Group < ActiveRecord::Base
     self
   end
 
+  #
+  # The submitter task is the user who submitted this group task.
+  #
+  # Creates a Group Submission
+  # Locates other group members, and link to this submission.
+  #   - contributors contains [ {project_id: ..., pct: ... } ]
+  #
+  def create_submission(submitter_task, notes, contributors)
+    gs = GroupSubmission.create { |gs| 
+        gs.group = self
+        gs.notes = notes
+        gs.submitted_by_project = submitter_task.project
+      }
+    
+    contributors.each do |contrib|
+      project = projects.find(contrib[:project_id])
+      task = project.matching_task submitter_task
+
+      task.group_submission = gs
+      task.contribution_pct = contrib[:pct]
+      task.save
+    end
+
+  end
 
 end

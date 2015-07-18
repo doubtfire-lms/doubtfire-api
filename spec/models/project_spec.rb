@@ -1,3 +1,5 @@
+require "rails_helper"
+
 RSpec.describe Project do
 
   it "should know its groups" do
@@ -32,6 +34,20 @@ RSpec.describe Project do
 
     expect(p.past_groups).to include(g1)
     expect(p.past_groups).not_to include(g2)
+  end
+
+  it "can locate a matching task from another project" do
+    unit = FactoryGirl.create(:unit)
+    u1 = unit.students[0]
+    u2 = unit.students[1]
+
+    p1 = unit.enrol_student u1
+    p2 = unit.enrol_student u2
+
+    t2 = p2.tasks.first
+    t1 = p1.matching_task t2
+
+    expect(t1.task_definition).to eq(t2.task_definition)
   end
 
 end
