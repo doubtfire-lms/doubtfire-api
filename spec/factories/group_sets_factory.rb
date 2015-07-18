@@ -2,7 +2,7 @@
 
 FactoryGirl.define do
   factory :group_set do
-  	name "A"
+  	sequence(:name) {|id| "Group Set #{id}" }
   	unit
   end
 end

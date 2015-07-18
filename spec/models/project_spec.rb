@@ -37,7 +37,7 @@ RSpec.describe Project do
   end
 
   it "can locate a matching task from another project" do
-    unit = FactoryGirl.create(:unit)
+    unit = FactoryGirl.create(:unit, student_count:2)
     u1 = unit.students[0]
     u2 = unit.students[1]
 

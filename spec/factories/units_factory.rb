@@ -21,7 +21,11 @@ FactoryGirl.define do
 
   factory :unit do
     ignore do
-      student_count 5
+      student_count 0
+      task_count 2
+      tutorials 1
+      group_sets 0
+      groups [ ] #[ { gs: 0, students:0 } ]
     end
 
     name          "A"
@@ -32,12 +36,23 @@ FactoryGirl.define do
     active        true
 
     after(:create) do | unit, eval |
-      create_list(:tutorial, 2, unit: unit)
-      create_list(:task_definition, 2, unit: unit)
+      create_list(:tutorial, eval.tutorials, unit: unit)
+      create_list(:task_definition, eval.task_count, unit: unit)
+      create_list(:group_set, eval.group_sets, unit: unit)
 
       # unit.employ_staff( FactoryGirl.create(:user, :convenor), Role.convenor)
       eval.student_count.times do |i|
        unit.enrol_student( FactoryGirl.create(:user, :student), unit.tutorials[i % unit.tutorials.count])
+      end
+
+      stud = 0
+      eval.groups.each do |group_details|
+        gs = unit.group_sets[group_details[:gs]]
+        grp = FactoryGirl.create(:group, group_set: gs)
+        group_details[:students].times do
+          grp.add_member unit.projects[stud]
+          stud += 1
+        end
       end
     end
   end

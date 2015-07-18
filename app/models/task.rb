@@ -22,6 +22,7 @@ class Task < ActiveRecord::Base
   has_many :comments, class_name: "TaskComment", dependent: :destroy, inverse_of: :task
   has_many :plagarism_match_links, class_name: "PlagiarismMatchLink", dependent: :destroy, inverse_of: :task
   has_many :reverse_plagiarism_match_links, class_name: "PlagiarismMatchLink", dependent: :destroy, inverse_of: :other_task, foreign_key: "other_task_id"
+  belongs_to :group_submission
 
   after_save :update_project
 

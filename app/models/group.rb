@@ -38,7 +38,7 @@ class Group < ActiveRecord::Base
   #
   # Creates a Group Submission
   # Locates other group members, and link to this submission.
-  #   - contributors contains [ {project_id: ..., pct: ... } ]
+  #   - contributors contains [ {project: ..., pct: ... } ]
   #
   def create_submission(submitter_task, notes, contributors)
     gs = GroupSubmission.create { |gs| 
@@ -48,14 +48,15 @@ class Group < ActiveRecord::Base
       }
     
     contributors.each do |contrib|
-      project = projects.find(contrib[:project_id])
+      project = contrib[:project]
       task = project.matching_task submitter_task
 
       task.group_submission = gs
       task.contribution_pct = contrib[:pct]
+      puts "id is #{task.group_submission_id}"
       task.save
     end
-
+    gs
   end
 
 end
