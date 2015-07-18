@@ -369,4 +369,20 @@ it "should know its members" do
     expect( GroupSubmission.where(id: orig_id).first ).to be nil
   end
 
+  it "should allow comments to be viewed across all related tasks" do
+    unit = FactoryGirl.create(:unit, group_sets: 1, task_count: 1, 
+      student_count: 3, 
+      :groups => [ { gs: 0, students: 2}, {gs: 0, students: 1} ], 
+      :group_tasks => [ { gs: 0, idx: 0 } ]
+    )
+
+    grp0 = unit.group_sets[0].groups[0]
+
+    t0 = grp0.projects[0].tasks[0]
+
+    comment = t0.add_comment t0.student, "Comment 1"
+
+    expect(grp0.projects[1].tasks[0].all_comments).to include(comment)
+  end
+
 end

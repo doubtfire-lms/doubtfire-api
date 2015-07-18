@@ -37,6 +37,14 @@ class Task < ActiveRecord::Base
 
   after_save :update_project
 
+  def all_comments
+    if group_submission.nil?
+      comments 
+    else
+      TaskComment.joins(:task).where("tasks.group_submission_id = :id", id: group_submission.id)
+    end
+  end
+
   def self.for_unit(unit_id)
     Task.joins(:project).where("projects.unit_id = :unit_id", unit_id: unit_id)
   end
@@ -345,6 +353,8 @@ class Task < ActiveRecord::Base
 
     lc = comments.last
     return if lc && lc.user == user && lc.comment == text
+
+    ensured_group_submission if group_task? 
 
     comment = TaskComment.create()
     comment.task = self
