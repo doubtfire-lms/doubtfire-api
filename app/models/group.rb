@@ -54,17 +54,6 @@ class Group < ActiveRecord::Base
   #   - contributors contains [ {project: ..., pct: ... } ]
   #
   def create_submission(submitter_task, notes, contributors)
-    old_gs = submitter_task.group_submission
-    gs = old_gs
-    if gs.nil? || __different_project_composition__(contributors, gs)
-      gs = GroupSubmission.create()
-    end
-
-    gs.group = self
-    gs.notes = notes
-    gs.submitted_by_project = submitter_task.project
-    gs.save!
-    
     total = 0
     #check all members are in the same group
     contributors.each do |contrib|
@@ -84,6 +73,17 @@ class Group < ActiveRecord::Base
     raise "Group submission only allowed for group tasks." unless submitter_task.task_definition.group_set
     raise "Group submission for wrong group for unit." unless submitter_task.task_definition.group_set == group_set
 
+    old_gs = submitter_task.group_submission
+    gs = old_gs
+    if gs.nil? || __different_project_composition__(contributors, gs)
+      gs = GroupSubmission.create()
+    end
+
+    gs.group = self
+    gs.notes = notes
+    gs.submitted_by_project = submitter_task.project
+    gs.save!
+
     contributors.each do |contrib|
       project = contrib[:project]
       task = project.matching_task submitter_task
@@ -94,9 +94,16 @@ class Group < ActiveRecord::Base
       task.save
     end
 
-    # if old_gs
-    #   puts "here"
-    # end
+    if old_gs
+      old_gs.reload
+      # puts "here #{old_gs.projects.count}"
+      if old_gs.projects.count == 0
+        old_gs.destroy!
+      end
+    end
+
+    #ensure that original task is reloaded... update will have effected a different object
+    submitter_task.reload
     gs
   end
 

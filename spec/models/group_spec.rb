@@ -102,11 +102,9 @@ it "should know its members" do
     p2 = grp.projects.last
 
     p1_t1 = p1.tasks.first
-    p2_t1 = p2.tasks.first
 
     submission = grp.create_submission p1_t1, "Group has submitted its awesome work", [ { project: p1, pct: 50}, { project: p2, pct: 50} ]
 
-    p1_t1 = p1.tasks.first
     p2_t1 = p2.tasks.first
 
     expect(p1_t1.contribution_pct).to eq(50)
@@ -130,8 +128,6 @@ it "should know its members" do
       grp.create_submission p1_t1, "Group has submitted its awesome work", [ { project: p1, pct: 50}, { project: p_other, pct: 50} ]
     }.to raise_error("Not all contributions were from team members.")
 
-    p1_t1 = p1.tasks.first
-
     expect(p1_t1.contribution_pct).to eq(100)
     expect(p1_t1.group_submission).to eq(nil)
   end
@@ -154,8 +150,6 @@ it "should know its members" do
     expect {
       grp.create_submission p1_t1, "Group has submitted its awesome work", [ { project: p1, pct: 50}, { project: p2, pct: 50} ]
     }.to raise_error("Group submission only allowed for group tasks.")
-
-    p1_t1 = p1.tasks.first
 
     expect(p1_t1.contribution_pct).to eq(100)
     expect(p1_t1.group_submission).to eq(nil)
@@ -186,10 +180,8 @@ it "should know its members" do
       test_grp.create_submission p0_t0, "Group has submitted its awesome work", [ { project: p0, pct: 50}, { project: p1, pct: 50} ]
     }.to raise_error("Group submission for wrong group for unit.")
 
-    p1_t1 = p1.tasks.first
-
-    expect(p1_t1.contribution_pct).to eq(100)
-    expect(p1_t1.group_submission).to eq(nil)
+    expect(p0_t0.contribution_pct).to eq(100)
+    expect(p0_t0.group_submission).to eq(nil)
   end
 
   it "should fail if total pct is out of range 100 +/- 10" do
@@ -210,8 +202,6 @@ it "should know its members" do
       submission = grp.create_submission p1_t1, "Group has submitted its awesome work", [ { project: p1, pct: 50}, { project: p2, pct: 10} ]
     }.to raise_error("Contribution percentages are insufficient.")
 
-    p1_t1 = p1.tasks.first
-
     expect(p1_t1.contribution_pct).to eq(100)
     expect(p1_t1.group_submission).to eq(nil)
   end
@@ -228,11 +218,8 @@ it "should know its members" do
 
     submission = grp.create_submission p1_t1, "Group has submitted its awesome work", [ { project: p1, pct: 50}, { project: p2, pct: 50} ]
 
-    p1_t1 = p1.tasks.first
-
     p1_t1.trigger_transition( "rtm", unit.convenors.first.user)
 
-    p1_t1 = p1.tasks.first
     p2_t1 = p2.tasks.first
 
     expect(p1_t1.task_status).to eq(TaskStatus.ready_to_mark)
@@ -254,11 +241,8 @@ it "should know its members" do
 
     submission = grp.create_submission p1_t1, "Group has submitted its awesome work", [ { project: p1, pct: 50}, { project: p2, pct: 50} ]
 
-    p1_t1 = p1.tasks.first
-
     p1_t1.trigger_transition( "rtm", p1.student )
 
-    p1_t1 = p1.tasks.first
     p2_t1 = p2.tasks.first
 
     expect(p1_t1.task_status).to eq(TaskStatus.ready_to_mark)
@@ -277,11 +261,8 @@ it "should know its members" do
 
     submission = grp.create_submission p1_t1, "Group has submitted its awesome work", [ { project: p1, pct: 50}, { project: p2, pct: 50} ]
 
-    p1_t1 = p1.tasks.first
-
     p1_t1.trigger_transition( "working_on_it", p1.student )
 
-    p1_t1 = p1.tasks.first
     p2_t1 = p2.tasks.first
 
     expect(p1_t1.task_status).to eq(TaskStatus.working_on_it)
@@ -300,7 +281,6 @@ it "should know its members" do
 
     p1_t1.trigger_transition( "rtm", p1.student )
 
-    p1_t1 = p1.tasks.first
     p2_t1 = p2.tasks.first
 
     expect(p1_t1.task_status).to eq(TaskStatus.ready_to_mark)
@@ -320,7 +300,6 @@ it "should know its members" do
     sub1 = grp.create_submission p1_t1, "Group has submitted its awesome work", [ { project: p1, pct: 50}, { project: p2, pct: 50} ]
 
     # ensure it is reloaded
-    p1_t1 = p1.tasks.first
     sub2 = grp.create_submission p1_t1, "Group has submitted its awesome work", [ { project: p1, pct: 25}, { project: p2, pct: 75} ]
 
     expect(sub1).to eq(sub2)
@@ -341,7 +320,6 @@ it "should know its members" do
     grp.remove_member p2
 
     # ensure it is reloaded
-    p1_t1 = p1.tasks.first
     sub2 = grp.create_submission p1_t1, "New group submission", [ { project: p1, pct: 100 } ]
 
     expect(sub1).not_to eq(sub2)
@@ -356,6 +334,39 @@ it "should know its members" do
     p1_t1 = p1.tasks.first
 
     expect { grp.create_submission p1_t1, "Group has submitted its awesome work", [ { project: p1, pct: 100} ] }.to raise_error "Contributions missing for some group members"
+  end
+
+  it "should delete old group submissions, when new group submits work" do
+    unit = FactoryGirl.create(:unit, group_sets: 1, task_count: 1, 
+      student_count: 3, 
+      :groups => [ { gs: 0, students: 2}, {gs: 0, students: 1} ], 
+      :group_tasks => [ { gs: 0, idx: 0 } ]
+    )
+
+    grp0 = unit.group_sets[0].groups[0]
+    grp1 = unit.group_sets[0].groups[1]
+
+    p1 = grp0.projects[0]
+    p2 = grp0.projects[1]
+    p3 = grp1.projects[0]
+
+    p1_t1 = p1.tasks.first
+
+    sub1 = grp0.create_submission p1_t1, "Group has submitted its awesome work", [ { project: p1, pct: 50}, { project: p2, pct: 50} ]
+
+    orig_id = sub1.id
+
+    grp0.remove_member p2
+    grp1.add_member p2
+
+    # ensure it is reloaded
+    sub2 = grp0.create_submission p1_t1, "New group submission", [ { project: p1, pct: 100 } ]
+
+    grp1.reload
+    # puts "group 1 = #{grp1.projects.include? p2} #{grp1.projects.include? p3} #{grp1.projects.include? p1}"
+    sub3 = grp1.create_submission p2.tasks.first, "Next group submission", [ { project: p2, pct: 50 }, { project: p3, pct: 50} ]
+
+    expect( GroupSubmission.where(id: orig_id).first ).to be nil
   end
 
 end
