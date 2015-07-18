@@ -44,11 +44,14 @@ class Group < ActiveRecord::Base
   #   - contributors contains [ {project: ..., pct: ... } ]
   #
   def create_submission(submitter_task, notes, contributors)
-    gs = GroupSubmission.create { |gs| 
+    gs = submitter_task.group_submission
+    if gs.nil?
+      gs = GroupSubmission.create { |gs| 
         gs.group = self
         gs.notes = notes
         gs.submitted_by_project = submitter_task.project
       }
+    end
     
     total = 0
     #check all members are in the same group

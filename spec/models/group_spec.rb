@@ -304,4 +304,23 @@ it "should know its members" do
     expect(p2_t1.task_status).to eq(TaskStatus.ready_to_mark)
   end
 
+  it "should ensure that group submissions are not duplicated" do
+    unit = FactoryGirl.create(:unit, group_sets: 1, task_count: 1, student_count: 4, :groups => [ { gs: 0, students: 2}, { gs: 0, students: 2} ], :group_tasks => [ { gs: 0, idx: 0 } ])
+
+    grp = unit.group_sets[0].groups.first
+
+    p1 = grp.projects.first
+    p2 = grp.projects.last
+
+    p1_t1 = p1.tasks.first
+
+    sub1 = grp.create_submission p1_t1, "Group has submitted its awesome work", [ { project: p1, pct: 50}, { project: p2, pct: 50} ]
+
+    # ensure it is reloaded
+    p1_t1 = p1.tasks.first
+    sub2 = grp.create_submission p1_t1, "Group has submitted its awesome work", [ { project: p1, pct: 25}, { project: p2, pct: 75} ]
+
+    expect(sub1).to eq(sub2)
+  end
+
 end
