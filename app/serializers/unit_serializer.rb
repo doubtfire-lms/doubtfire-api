@@ -5,7 +5,7 @@ class ShallowUnitSerializer < ActiveModel::Serializer
 end
 
 class UnitSerializer < ActiveModel::Serializer
-  attributes :code, :id, :name, :my_role, :description, :start_date, :end_date, :active, :convenors
+  attributes :code, :id, :name, :my_role, :description, :start_date, :end_date, :active, :convenors, :group_sets
 
   def start_date
     object.start_date.to_date

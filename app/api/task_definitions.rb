@@ -19,6 +19,7 @@ module Api
         requires :weighting,            type: Integer,  :desc => "The weighting of this task"
         requires :target_grade,         type: Integer,  :desc => "Minimum grade for task"
         optional :required,             type: Boolean,  :desc => "Is the task required"
+        optional :group_set_id,         type: Integer,  :desc => "Related group set"
         requires :target_date,          type: Date,     :desc => "The date when the task is due"
         requires :abbreviation,         type: String,   :desc => "The abbreviation of the task"
         requires :restrict_status_updates, type: Boolean,  :desc => "Restrict updating of the status to staff"
@@ -52,7 +53,20 @@ module Api
                                                   :plagiarism_warn_pct
                                                 )
 
-      task_def = TaskDefinition.create!(task_params)
+      task_def = TaskDefinition.new(task_params)
+
+      #
+      # Link in group set if specified
+      #
+      if params[:task_def][:group_set_id] && params[:task_def][:group_set_id] >= 0
+        gs = GroupSet.find(params[:task_def][:group_set_id])
+        if gs.unit == unit
+          task_def.group_set = gs
+        end
+      end
+
+      task_def.save
+
       unit.add_new_task_def(task_def)
       task_def
     end
@@ -67,6 +81,7 @@ module Api
         optional :weighting,            type: Integer,  :desc => "The weighting of this task"
         optional :target_grade,         type: Integer,  :desc => "Target grade for task"
         optional :required,             type: Boolean,  :desc => "Is the task required"
+        optional :group_set_id,         type: Integer,  :desc => "Related group set"
         optional :target_date,          type: Date,     :desc => "The date when the task is due"
         optional :abbreviation,         type: String,   :desc => "The abbreviation of the task"
         optional :restrict_status_updates,    type: Boolean,  :desc => "Restrict updating of the status to staff"
@@ -100,6 +115,22 @@ module Api
                                                 )
       
       task_def.update!(task_params)
+      #
+      # Link in group set if specified
+      #
+      if params[:task_def][:group_set_id]
+        if params[:task_def][:group_set_id] >= 0
+          gs = GroupSet.find(params[:task_def][:group_set_id])
+          if gs.unit == task_def.unit
+            task_def.group_set = gs
+            task_def.save
+          end
+        else
+          task_def.group_set = nil
+          task_def.save
+        end
+      end
+
       task_def
     end
     

@@ -83,15 +83,28 @@ module FileHelper
     dst = "#{file_server}/" # trust the server config and passed in type for paths
 
     if not (type.nil? || task.nil?)
-      if type == :pdf
-        dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}","#{task.project.student.username}", "#{type}") << "/"
-      elsif type == :done
-        dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}","#{task.project.student.username}", "#{type}", "#{task.id}") << "/"
-      elsif type == :plagarism
-        dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}","#{task.project.student.username}", "#{type}", "#{task.id}") << "/"
-      elsif  # new and in_process -- just have task id
-        # Add task id to dst if we want task
-        dst << "#{type}/#{task.id}/"
+      if task.group_task?
+        if type == :pdf
+          dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}","Group-#{task.group.id}-#{task.group.name}", "#{type}") << "/"
+        elsif type == :done
+          dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}","Group-#{task.group.id}-#{task.group.name}", "#{type}", "#{task.group_submission.id}") << "/"
+        elsif type == :plagarism
+          dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}","Group-#{task.group.id}-#{task.group.name}", "#{type}", "#{task.group_submission.id}") << "/"
+        elsif  # new and in_process -- just have task id -- will link to group when done etc.
+          # Add task id to dst if we want task
+          dst << "#{type}/#{task.id}/"
+        end
+      else
+        if type == :pdf
+          dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}","#{task.project.student.username}", "#{type}") << "/"
+        elsif type == :done
+          dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}","#{task.project.student.username}", "#{type}", "#{task.id}") << "/"
+        elsif type == :plagarism
+          dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}","#{task.project.student.username}", "#{type}", "#{task.id}") << "/"
+        elsif  # new and in_process -- just have task id
+          # Add task id to dst if we want task
+          dst << "#{type}/#{task.id}/"
+        end
       end
     elsif (not type.nil?)
       if [:in_process, :new].include? type

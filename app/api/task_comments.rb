@@ -44,7 +44,7 @@ module Api
         error!({"error" => "Task not found"}, 404)
       end      
 
-      task.comments.order("created_at DESC")
+      task.all_comments.order("created_at DESC")
     end
 
     desc "Delete a comment"

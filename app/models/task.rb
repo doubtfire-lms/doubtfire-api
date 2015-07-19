@@ -177,6 +177,20 @@ class Task < ActiveRecord::Base
     (not portfolio_evidence.nil?) and File.exists?(portfolio_evidence)
   end
 
+  def assign_evidence_path(final_pdf_path, propagate=true)
+    if group_task? and propagate
+      group_submission.tasks.each do |task|
+        task.assign_evidence_path(final_pdf_path, false)
+      end
+      reload
+    else
+      puts "Assigning #{id} = #{final_pdf_path}"
+      self.portfolio_evidence = final_pdf_path
+      puts "Path is now #{id} = #{self.portfolio_evidence}"
+      self.save
+    end
+  end
+
   def group_task?
     group_submission || task_definition.group_set
   end
@@ -387,13 +401,25 @@ class Task < ActiveRecord::Base
   #
   # The student has uploaded new work...
   #
-  def accept_new_submission
-    plagarism_match_links.each do | link |
-      link.destroy
-    end
+  def accept_new_submission (user, propagate = true)
+    if group_task? && propagate
+      group_submission.tasks.each { |t| t.accept_new_submission(user, propagate=false) }
+      reload
+    else
+      self.file_uploaded_at = DateTime.now
 
-    reverse_plagiarism_match_links do | link |
-      link.destroy
+      # This task is now ready to submit
+      if not (discuss? || complete? || fix_and_include?)
+        self.trigger_transition 'ready_to_mark', user, false, false # dont propagate -- already done
+        
+        plagarism_match_links.each do | link |
+          link.destroy
+        end
+        reverse_plagiarism_match_links do | link |
+          link.destroy
+        end
+      end
+      save
     end
   end
 end

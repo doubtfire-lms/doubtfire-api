@@ -30,6 +30,11 @@ class PortfolioEvidence
     files.each do | file |
       ui.error!({"error" => "Missing file data for '#{file.name}'"}, 403) if file.id.nil? || file.name.nil? || file.filename.nil? || file.type.nil? || file.tempfile.nil?
     end
+
+    # Ensure group if group task
+    if task.group_task? && task.group.nil?
+      ui.error!({"error" => "You must be in a group to submit this task."}, 403)
+    end
    
     # file.key            = "file0"
     # file.name           = front end name for file
@@ -171,7 +176,11 @@ class PortfolioEvidence
 
 
   def self.final_pdf_path_for(task)
-    File.join(student_work_dir(:pdf, task), sanitized_filename( sanitized_path("#{task.task_definition.abbreviation}-#{task.id}") + ".pdf"))
+    if task.group_task?
+      File.join(student_work_dir(:pdf, task), sanitized_filename( sanitized_path("#{task.task_definition.abbreviation}-#{task.group_submission.id}") + ".pdf"))
+    else
+      File.join(student_work_dir(:pdf, task), sanitized_filename( sanitized_path("#{task.task_definition.abbreviation}-#{task.id}") + ".pdf"))
+    end
   end
 
   def self.recreate_task_pdf(task)
@@ -238,8 +247,7 @@ class PortfolioEvidence
     # Aggregate each of the output PDFs
     #
     if FileHelper.aggregate(pdf_paths, final_pdf_path)
-      task.portfolio_evidence = final_pdf_path
-      task.save
+      task.assign_evidence_path final_pdf_path
     end
     
     # Cleanup
