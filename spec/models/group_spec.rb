@@ -394,4 +394,13 @@ it "should know its members" do
     expect(grp0.projects[1].matching_task(t1).all_comments).not_to include(comment1)
   end
 
+  it "should ensure that names are unique within a groupset" do
+    gs = FactoryGirl.create(:group_set)
+    g = FactoryGirl.create(:group, group_set: gs, name: "G1")
+    expect {g2 = FactoryGirl.create(:group, group_set: gs, name: "G1")}.to raise_exception ActiveRecord::RecordInvalid
+    g2 = FactoryGirl.create(:group, group_set: gs, name: "G2")
+    g2.name = "G1"
+    expect {g2.save!}.to raise_exception ActiveRecord::RecordInvalid
+  end
+
 end

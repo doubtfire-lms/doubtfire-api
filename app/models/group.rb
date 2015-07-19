@@ -9,6 +9,8 @@ class Group < ActiveRecord::Base
 
   validates :group_set, presence: true, allow_nil: false
   validates :tutorial, presence: true, allow_nil: false
+  validates :name, uniqueness: { scope: :group_set,
+    message: "must be unique within the set of groups" }
 
   def has_user(user)
     projects.joins(:unit_role).where("unit_roles.user_id = :user_id", user_id: user.id).count == 1

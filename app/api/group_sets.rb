@@ -90,6 +90,18 @@ module Api
 
       group_set.destroy()
     end
+
+    desc "Get the groups in a group set"
+    get '/units/:unit_id/group_sets/:id/groups' do
+      group_set = GroupSet.find(params[:id])
+      unit = Unit.find(params[:unit_id]) 
+
+      if not authorise? current_user, unit, :get_unit
+        error!({"error" => "Not authorised to get groups for this unit"}, 403)
+      end
+
+      group_set.groups
+    end
   end
 end
 
