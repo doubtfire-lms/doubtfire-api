@@ -12,6 +12,34 @@ class Group < ActiveRecord::Base
   validates :name, uniqueness: { scope: :group_set,
     message: "must be unique within the set of groups" }
 
+  def self.permissions
+    result = { 
+      :Student  => [ :get_members ],
+      :Tutor    => [ :get_members, :manage_group ],
+      :Convenor => [ :get_members, :manage_group ],
+      :nil      => [ ]
+    }
+  end
+
+  def specific_permission_hash(role, perm_hash, other)
+    result = perm_hash[role] unless perm_hash.nil?
+    if result && role == Role.student
+      if group_set.allow_students_to_manage_groups
+        result << :manage_group
+      end
+    end
+    result
+  end
+
+  def role_for(user)
+    result = unit.role_for(user)
+    if result == Role.student
+      result = nil unless has_user user
+    end
+
+    result
+  end
+
   def has_user(user)
     projects.joins(:unit_role).where("unit_roles.user_id = :user_id", user_id: user.id).count == 1
   end

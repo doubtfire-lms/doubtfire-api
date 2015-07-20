@@ -18,7 +18,6 @@ class ShallowProjectSerializer < ActiveModel::Serializer
   def tutor_name
     object.main_tutor.first_name unless object.main_tutor.nil?
   end
-
 end
 
 class StudentProjectSerializer < ActiveModel::Serializer
@@ -33,11 +32,7 @@ class StudentProjectSerializer < ActiveModel::Serializer
   end
   
   def first_name
-    if object.student.nickname
-      object.student.nickname
-    else
-      object.student.first_name
-    end
+    object.student.first_name
   end
 
   def last_name
@@ -73,7 +68,7 @@ class ProjectSerializer < ActiveModel::Serializer
   end
 
   def student_name
-  	"#{object.student.first_name} #{object.student.last_name} (#{object.student.nickname})"
+  	"#{object.student.name} (#{object.student.nickname})"
   end
 
   def student_id
@@ -98,4 +93,31 @@ class ProjectSerializer < ActiveModel::Serializer
 
   # has_one :unit, :unit_role
   has_many :tasks, serializer: ShallowTaskSerializer
+end
+
+class GroupMemberProjectSerializer < ActiveModel::Serializer
+  attributes :student_id, :project_id, :student_name, :target_grade
+
+  def project_id
+    object.id
+  end
+
+  def student_id
+    object.student.username
+  end
+
+  def student_name
+    "#{object.student.name} (#{object.student.nickname})"
+  end
+
+  def my_role_obj
+    if Thread.current[:user]
+      object.role_for(Thread.current[:user])
+    end
+  end
+
+  def include_student_id?
+    ([ Role.convenor, Role.tutor ].include? my_role_obj)
+  end
+
 end

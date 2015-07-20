@@ -403,6 +403,7 @@ class Task < ActiveRecord::Base
   #
   def accept_new_submission (user, propagate = true)
     if group_task? && propagate
+      group_submission = group.create_submission self, "#{user.name} has submitted work", group.projects.map { |proj| { project: proj, pct: 100 / group.projects.count }  }
       group_submission.tasks.each { |t| t.accept_new_submission(user, propagate=false) }
       reload
     else
