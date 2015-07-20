@@ -117,7 +117,7 @@ class GroupMemberProjectSerializer < ActiveModel::Serializer
   end
 
   def include_student_id?
-    ([ Role.convenor, Role.tutor ].include? my_role_obj)
+    ([ Role.convenor, Role.tutor, :tutor, :convenor ].include? my_role_obj )
   end
 
 end
