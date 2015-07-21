@@ -9,8 +9,10 @@ class Group < ActiveRecord::Base
 
   validates :group_set, presence: true, allow_nil: false
   validates :tutorial, presence: true, allow_nil: false
+  validates_associated :group_memberships
   validates :name, uniqueness: { scope: :group_set,
     message: "must be unique within the set of groups" }
+  validate :must_be_in_same_tutorial, if: :limit_members_to_tutorial?
 
   def self.permissions
     result = { 
@@ -48,13 +50,11 @@ class Group < ActiveRecord::Base
     gm = group_memberships.where(project: project).first
 
     if gm.nil?
-      gm = GroupMembership.create
-      gm.group = self
-      gm.project = project
+      gm = GroupMembership.create(group: self, project:project)
     end
 
     gm.active = true
-    gm.save
+    gm.save!
 
     gm  
   end
@@ -135,6 +135,28 @@ class Group < ActiveRecord::Base
     #ensure that original task is reloaded... update will have effected a different object
     submitter_task.reload
     gs
+  end
+
+  def limit_members_to_tutorial?
+    group_set.keep_groups_in_same_class
+  end
+
+  def must_be_in_same_tutorial
+    if limit_members_to_tutorial?
+      if ! all_members_in_tutorial?
+        errors.add(:members, "must all be in the group's tutorial (#{tutorial.abbreviation})")
+      end
+    end
+  end
+
+  #
+  # Check if all members are in this groups tutorial
+  #
+  def all_members_in_tutorial?
+    group_memberships.each do |member|
+      return false unless member.in_group_tutorial?
+    end
+    return true
   end
 
 end

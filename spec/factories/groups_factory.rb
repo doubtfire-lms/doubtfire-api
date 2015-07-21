@@ -7,7 +7,9 @@ FactoryGirl.define do
     sequence(:name)   { |n| "Group #{n}" }
 
     after(:build) do |group, eval|
-      group.tutorial = group.group_set.unit.tutorials.first
+      if group.tutorial.nil?
+        group.tutorial = group.group_set.unit.tutorials.first
+      end
     end
   end
 end

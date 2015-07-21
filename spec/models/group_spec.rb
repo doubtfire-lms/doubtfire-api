@@ -403,4 +403,31 @@ it "should know its members" do
     expect {g2.save!}.to raise_exception ActiveRecord::RecordInvalid
   end
 
+  it "should ensure that projects are restricted to the same tutorial as the group -- if required" do
+    unit = FactoryGirl.create(:unit, tutorials:2, student_count:4)
+    gs = FactoryGirl.create(:group_set, unit: unit)
+    t0_g1 = FactoryGirl.create(:group, group_set: gs, name: "G1 T0", tutorial:unit.tutorials[0])
+    t1_g1 = FactoryGirl.create(:group, group_set: gs, name: "G1 T1", tutorial:unit.tutorials[1])
+
+    t0_p0 = unit.tutorials[0].projects[0]
+    t0_p1 = unit.tutorials[0].projects[1]
+
+    t1_p0 = unit.tutorials[1].projects[0]
+    t1_p1 = unit.tutorials[1].projects[1]
+
+    gs.keep_groups_in_same_class = true
+    gs.save
+
+    t0_g1.add_member(t0_p0)
+    expect { t0_g1.add_member(t1_p0) }.to raise_exception ActiveRecord::RecordInvalid
+
+    gs.keep_groups_in_same_class = false
+    gs.save
+    t0_g1.add_member(t1_p0)
+
+    gs.reload
+    gs.keep_groups_in_same_class = true
+    expect { gs.save! }.to raise_exception ActiveRecord::RecordInvalid 
+  end
+
 end

@@ -122,7 +122,13 @@ class Unit < ActiveRecord::Base
   end
 
   # Adds a user to this project.
-  def enrol_student(user, tutorial_id=nil)
+  def enrol_student(user, tutorial=nil)
+    if tutorial.is_a?(Tutorial)
+      tutorial_id = tutorial.id
+    else
+      tutorial_id = tutorial
+    end
+
     # Validates that a student is not already assigned to the unit
     existing_role = unit_roles.where("user_id=:user_id", user_id: user.id).first
     return existing_role.project unless existing_role.nil?
