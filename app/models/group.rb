@@ -144,7 +144,7 @@ class Group < ActiveRecord::Base
   def must_be_in_same_tutorial
     if limit_members_to_tutorial?
       if ! all_members_in_tutorial?
-        errors.add(:members, "must all be in the group's tutorial (#{tutorial.abbreviation})")
+        errors.add(:members, "must all be in the group's tutorial")
       end
     end
   end
