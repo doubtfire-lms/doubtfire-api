@@ -168,7 +168,7 @@ module Api
       requires :group_set_id,                       type: Integer,  :desc => "The id of the group set"
       requires :group_id,                           type: Integer,  :desc => "The id of the group"
     end
-    delete '/units/:unit_id/group_sets/:group_id' do
+    delete '/units/:unit_id/group_sets/:group_set_id/groups/:group_id' do
       unit = Unit.find(params[:unit_id])
       gs = unit.group_sets.find(params[:group_set_id])
       grp = gs.groups.find(params[:group_id])
@@ -177,7 +177,8 @@ module Api
         error!({"error" => "Not authorised to delete group set for this unit"}, 403)
       end
 
-      group_set.destroy()
+      grp.destroy()
+      nil
     end
 
     desc "Get the members of a group"
