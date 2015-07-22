@@ -106,31 +106,28 @@ module Api
     desc "Add a new group to the given unit's group_set"
     params do
       requires :unit_id,                            type: Integer,  :desc => "The unit for the new group"
-      requires :id,                                 type: Integer,  :desc => "The id of the group set"
+      requires :group_set_id,                       type: Integer,  :desc => "The id of the group set"
       group :group do
         requires :name,                             type: String,   :desc => "The name of this group"
         requires :tutorial_id,                      type: Integer,  :desc => "The id of the tutorial for the group"
       end
     end
-    post '/units/:unit_id/group_sets/:id/groups' do
+    post '/units/:unit_id/group_sets/:group_set_id/groups' do
       unit = Unit.find(params[:unit_id])
-      group_set = unit.group_sets.find(params[:id])
+      group_set = unit.group_sets.find(params[:group_set_id])
       tutorial = unit.tutorials.find(params[:group][:tutorial_id])
 
       if not authorise? current_user, group_set, :create_group, lambda { |role, perm_hash, other| group_set.specific_permission_hash(role, perm_hash, other) }
         error!({"error" => "Not authorised to create a group set for this unit"}, 403)
       end
-      
+
       group_params = ActionController::Parameters.new(params)
         .require(:group)
         .permit(
           :name
         )
 
-      grp = Group.create(group_params)
-      grp.group_set = group_set
-      grp.unit = unit
-      grp.tutorial = tutorial
+      grp = Group.create(name: group_params[:name], group_set: group_set, tutorial: tutorial)
       grp.save!
       grp
     end
