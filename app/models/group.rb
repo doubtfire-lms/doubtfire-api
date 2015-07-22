@@ -154,7 +154,7 @@ class Group < ActiveRecord::Base
   #
   def all_members_in_tutorial?
     group_memberships.each do |member|
-      return false unless member.in_group_tutorial?
+      return false unless (not member.active) || member.in_group_tutorial?
     end
     return true
   end

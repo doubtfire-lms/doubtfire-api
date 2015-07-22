@@ -58,6 +58,8 @@ class StudentProjectSerializer < ActiveModel::Serializer
       object.task_stats
     end
   end
+
+  has_many :groups, serializer: GroupSerializer
 end
 
 class ProjectSerializer < ActiveModel::Serializer
@@ -93,6 +95,7 @@ class ProjectSerializer < ActiveModel::Serializer
 
   # has_one :unit, :unit_role
   has_many :tasks, serializer: ShallowTaskSerializer
+  has_many :groups, serializer: GroupSerializer
 end
 
 class GroupMemberProjectSerializer < ActiveModel::Serializer
