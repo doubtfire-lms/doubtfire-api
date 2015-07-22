@@ -17,7 +17,6 @@ class GroupSet < ActiveRecord::Base
   def specific_permission_hash(role, perm_hash, other)
     result = perm_hash[role] unless perm_hash.nil?
     if result && role == :Student
-      puts "here"
       if allow_students_to_create_groups
         result << :create_group
       end
