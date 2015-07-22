@@ -25,7 +25,7 @@ class Group < ActiveRecord::Base
 
   def specific_permission_hash(role, perm_hash, other)
     result = perm_hash[role] unless perm_hash.nil?
-    if result && role == Role.student
+    if result && role == :Student
       if group_set.allow_students_to_manage_groups
         result << :manage_group
       end
@@ -35,7 +35,7 @@ class Group < ActiveRecord::Base
 
   def role_for(user)
     result = unit.role_for(user)
-    if result == Role.student
+    if result == :Student
       result = nil unless has_user user
     end
 

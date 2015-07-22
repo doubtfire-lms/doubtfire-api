@@ -28,9 +28,9 @@ class User < ActiveRecord::Base
     end
 
     if remember
-      if role == Role.student
+      if role == Role.student || role == :Student
         self.auth_token_expiry = DateTime.now + 2.weeks
-      elsif role == Role.tutor
+      elsif role == Role.tutor || role == :Tutor
         self.auth_token_expiry = DateTime.now + 1.week
       else
         self.auth_token_expiry = DateTime.now + 2.hours

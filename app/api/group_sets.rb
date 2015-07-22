@@ -209,7 +209,7 @@ module Api
       
       prj = unit.projects.find(params[:project_id])
 
-      if not authorise? current_user, grp, :manage_group, lambda { |role, perm_hash, other| grp.specific_permission_hash(role, perm_hash, other) }
+      if not authorise? current_user, gs, :join_group, lambda { |role, perm_hash, other| gs.specific_permission_hash(role, perm_hash, other) }
         error!({"error" => "Not authorised to manage this group"}, 403)
       end
 
