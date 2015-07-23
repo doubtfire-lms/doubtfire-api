@@ -379,7 +379,14 @@ class Task < ActiveRecord::Base
   end
 
   def last_comment_by(user)
-    result = comments.where(user: user).last
+    result = all_comments.where(user: user).last
+    
+    return '' if result.nil?
+    result.comment
+  end
+
+  def last_comment_not_by(user)
+    result = all_comments.where("user_id != :id", id: user.id).last
     
     return '' if result.nil?
     result.comment

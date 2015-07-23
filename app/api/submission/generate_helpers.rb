@@ -64,7 +64,8 @@ module Api::Submission::GenerateHelpers
     # Create a new zip
     Zip::File.open(output_zip.path, Zip::File::CREATE) do | zip |
       csv_str = mark_csv_headers
-      tasks.each  do | task |
+      # Add individual tasks...
+      tasks.select { |t| t.group_submission.nil? }.each  do | task |
         # Skip tasks that do not yet have a PDF generated
         next if task.processing_pdf
         # Add to the template entry string
@@ -81,6 +82,27 @@ module Api::Submission::GenerateHelpers
         # now copy it over
         zip.add(dst_path, src_path)
       end
+      # Add group tasks...
+      tasks.select { |t| t.group_submission }.group_by { |t| t.group_submission } .each do | subm, tasks |
+        task = tasks.first
+        # Skip tasks that do not yet have a PDF generated
+        next if task.processing_pdf
+
+        # Add to the template entry string
+        grp = task.group
+        csv_str << "\nGRP_#{grp.id}_#{subm.id},#{grp.name.gsub(/,/, '_')},#{grp.tutorial.abbreviation},#{task.task_definition.abbreviation.gsub(/,/, '_')},#{task.id},\"#{task.last_comment_not_by(user).gsub(/"/, "\"\"")}\",\"#{task.last_comment_by(user).gsub(/"/, "\"\"")}\",rtm,"
+        
+        src_path = task.portfolio_evidence
+
+        next if src_path.nil? || src_path.empty?
+        next unless File.exists? src_path
+
+        # make dst path of "<student id>/<task abbrev>.pdf"
+        dst_path = FileHelper.sanitized_path("#{grp.name}", "#{task.task_definition.abbreviation}-#{task.id}") + ".pdf"
+        # now copy it over
+        zip.add(dst_path, src_path)
+      end
+
       # Add marking file
       zip.get_output_stream("marks.csv") { | f | f.puts csv_str }
     end
@@ -96,6 +118,10 @@ module Api::Submission::GenerateHelpers
 
     # read data from CSV
     CSV.parse(csv_str, {:headers => true, :header_converters => [:downcase]}).each do |task_entry|
+      group = nil
+
+      # puts "#{task_entry}"
+
       # get the task...
       task = Task.find(task_entry['id'])
       if task.nil?
@@ -104,38 +130,65 @@ module Api::Submission::GenerateHelpers
       end
 
       # Ensure that this task's student matches that in entry_data
-      if task_entry['username'] != task.project.student.username
-        # error!({"error" => "File #{file.name} has a mismatch of student id (task with id #{task.id} matches student #{task.project.student.username}, not that in marks.csv of #{t['id']}"}, 403)
-        error_tasks << { file: 'marks.csv', error: "Student mismatch (expected task #{task.id} to matche #{task.project.student.username}, was #{task_entry['username']} in marks.csv"}
-        next
-      end
-      
-      # Update the task to whatever its associative mark was 
-      valid_marks = %w(ready_to_mark rtm redo fix_and_resubmit f fix fix_and_include fixinc discuss d)
-      if task_entry[mark_col].nil? or not valid_marks.include? task_entry[mark_col].strip
-        msg = task_entry[mark_col].nil? ? "it is missing a mark value in marks.csv" : "acceptable mark codes: #{valid_marks.join ' '}"
-        # error!({"error" => "Task id #{task.id} has an invalid mark (#{msg})"}, 403)
-        error_tasks << { file: 'marks.csv', error: "Task id #{task.id} has an invalid mark (#{msg})"}
-        next
-      end
-      
-      # Can the user assess this task?
-      if not authorise? current_user, task, :put
-        error_tasks << { file: 'marks.csv', error: "You do not have permission to assess task with id #{task.id}"}
-        next
-      end
+      if task_entry['username'] =~ /GRP_\d+_\d+/
+        group_details = /GRP_(\d+)_(\d+)/.match(task_entry['username'])
+        
+        # look for group submission
+        subm = GroupSubmission.find( group_details[2].to_i )
+        submitter_task = subm.submitter_task
+        next if submitter_task.nil?
 
-      task.trigger_transition(task_entry[mark_col], current_user) # saves task
-      updated_tasks << { file: "marks.csv", task:"#{task.student.name} #{task.task_definition.abbreviation}" }
-      if not (task_entry['comment'].nil? || task_entry['comment'].empty?)
-        task.add_comment current_user, task_entry['comment']
-      end
+        group = Group.find( group_details[1].to_i )
+        if group.id != task.group.id
+          error_tasks << { file: 'marks.csv', error: "Group mismatch (expected task #{task.id} to match #{task.group.name})"}
+          next
+        end
 
-      # add to done projects for emailing
-      if done[task.project].nil?
-        done[task.project] = []
+        if not authorise? current_user, submitter_task, :put
+          error_tasks << { file: 'marks.csv', error: "You do not have permission to assess group task with id #{task.id}"}
+          ok_to_update = false
+          break
+        end
+
+        submitter_task.trigger_transition(task_entry[mark_col], current_user) # saves task
+        updated_tasks << { file: "marks.csv", task:"#{group.name} #{submitter_task.task_definition.abbreviation}" }
+        if not (task_entry['comment'].nil? || task_entry['comment'].empty?)
+          submitter_task.add_comment current_user, task_entry['comment']
+        end
+
+        subm.tasks.each do | task |
+          # add to done projects for emailing
+          # puts "#{task} = #{task.project}"
+          if done[task.project].nil?
+            done[task.project] = []
+          end
+          done[task.project] << task
+        end
+      else
+        if task_entry['username'] != task.project.student.username
+          # error!({"error" => "File #{file.name} has a mismatch of student id (task with id #{task.id} matches student #{task.project.student.username}, not that in marks.csv of #{t['id']}"}, 403)
+          error_tasks << { file: 'marks.csv', error: "Student mismatch (expected task #{task.id} to match #{task.project.student.username}, was #{task_entry['username']} in marks.csv)"}
+          next
+        end
+
+        # Can the user assess this task?
+        if not authorise? current_user, task, :put
+          error_tasks << { file: 'marks.csv', error: "You do not have permission to assess task with id #{task.id}"}
+          next
+        end
+
+        task.trigger_transition(task_entry[mark_col], current_user) # saves task
+        updated_tasks << { file: "marks.csv", task:"#{task.student.name} #{task.task_definition.abbreviation}" }
+        if not (task_entry['comment'].nil? || task_entry['comment'].empty?)
+          task.add_comment current_user, task_entry['comment']
+        end
+
+        # add to done projects for emailing
+        if done[task.project].nil?
+          done[task.project] = []
+        end
+        done[task.project] << task
       end
-      done[task.project] << task
     end
 
     # send emails...
@@ -253,7 +306,11 @@ module Api::Submission::GenerateHelpers
 
             # copy tmp_file to dest
             if FileHelper.copy_pdf(tmp_file, task.portfolio_evidence)
-              updated_tasks << { file: file.name, task:"#{task.student.name} #{task.task_definition.abbreviation}" }
+              if task.group.nil?
+                updated_tasks << { file: file.name, task:"#{task.student.name} #{task.task_definition.abbreviation}" }
+              else
+                updated_tasks << { file: file.name, task:"#{task.group.name} #{task.task_definition.abbreviation}" }
+              end
               FileUtils.rm tmp_file
             else
               error_tasks << { file: file.name, error: 'Invalid pdf' }

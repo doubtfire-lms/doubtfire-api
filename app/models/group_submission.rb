@@ -15,4 +15,11 @@ class GroupSubmission < ActiveRecord::Base
       end
     end
   end
+
+  def submitter_task
+    result = tasks.where(project: submitted_by_project).first
+    return result unless result.nil?
+    
+    tasks.first
+  end
 end
