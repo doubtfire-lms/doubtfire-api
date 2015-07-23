@@ -217,7 +217,7 @@ module Api
         error!({"error" => "Not authorised to manage this student"}, 403)
       end
 
-      grp.add_member(prj)
+      gm = grp.add_member(prj)
       Thread.current[:user] = current_user
       GroupMemberProjectSerializer.new(prj)
     end

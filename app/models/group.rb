@@ -47,16 +47,19 @@ class Group < ActiveRecord::Base
   end
 
   def add_member(project)
-    gm = group_memberships.where(project: project).first
+    gm = project.group_membership_for_groupset(group_set)
 
     if gm.nil?
       gm = GroupMembership.create(group: self, project:project)
+    else
+      gm = GroupMembership.find(gm.id)
+      gm.group = self
     end
 
     gm.active = true
     gm.save!
 
-    gm  
+    gm
   end
 
   def remove_member(project)

@@ -878,4 +878,12 @@ class Project < ActiveRecord::Base
   def task_for_task_definition(td)
     tasks.where(task_definition: td).first
   end
+
+  def group_for_groupset(gs)
+    groups.where(group_set: gs).first
+  end
+
+  def group_membership_for_groupset(gs)
+    group_memberships.joins(:group).where("groups.group_set_id = :id", id: gs).first
+  end
 end
