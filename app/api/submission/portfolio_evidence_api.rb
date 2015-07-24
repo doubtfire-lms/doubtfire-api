@@ -25,6 +25,10 @@ module Api
           error!({"error" => "Not authorised to submit task '#{task.task_definition.name}'"}, 401)
         end
 
+        if task.group_task? and not task.group
+          error!({"error" => "This task requires a group submission. Ensure you are in a group for the unit's #{task.task_definition.group_set.name}"}, 401)
+        end
+
         if params[:contributions]
           params[:contributions] = JSON.parse(params[:contributions])
           params[:contributions].each { |data| puts " Contrib: #{data[:project_id]} #{data[:pct]}" }
