@@ -296,8 +296,8 @@ class User < ActiveRecord::Base
           user.role_id            = new_role.id
         }
         
-        puts "New record: #{user.new_record?}"
-        puts "Persisted: #{user.persisted?}"
+        # puts "New record: #{user.new_record?}"
+        # puts "Persisted: #{user.persisted?}"
 
         # will not be persisted initially as password cannot be blank - so can check
         # which were created using this - will persist changes imported

@@ -552,7 +552,7 @@ module FileHelper
         end
       end
       zip.glob("**/#{pattern}").each do |entry|
-        puts "Here Extracting #{entry.name}"
+        # puts "Here Extracting #{entry.name}"
         entry.extract( name_fn.call(task, to_path, entry.name) ) { true }
       end
     end

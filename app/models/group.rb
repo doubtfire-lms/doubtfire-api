@@ -73,13 +73,13 @@ class Group < ActiveRecord::Base
   # check if the project is the same as the current submission
   #
   def __different_project_composition__ (contributors, gs)
-    puts "Starting checks"
+    # puts "Starting checks"
     contributors.each do |contrib|
-      puts "-- Checking #{contrib}"
+      # puts "-- Checking #{contrib}"
       return true unless gs.projects.include? contrib[:project]
       return true unless contrib[:pct].to_i > 0
     end
-    puts "Checking #{contributors.count} == #{gs.projects.count}"
+    # puts "Checking #{contributors.count} == #{gs.projects.count}"
     return contributors.count != gs.projects.count
   end
 

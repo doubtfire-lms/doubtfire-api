@@ -408,7 +408,7 @@ class Task < ActiveRecord::Base
   #
   # The student has uploaded new work...
   #
-  def accept_new_submission (user, propagate = true, contributions = nil)
+  def accept_new_submission (user, propagate = true, contributions = nil, trigger = 'ready_to_mark')
     if group_task? && propagate
       if contributions.nil? # even distribution
         contribs = group.projects.map { |proj| { project: proj, pct: 100 / group.projects.count }  }
@@ -424,7 +424,7 @@ class Task < ActiveRecord::Base
 
       # This task is now ready to submit
       if not (discuss? || complete? || fix_and_include?)
-        self.trigger_transition 'ready_to_mark', user, false, false # dont propagate -- already done
+        self.trigger_transition trigger, user, false, false # dont propagate -- already done
         
         plagarism_match_links.each do | link |
           link.destroy

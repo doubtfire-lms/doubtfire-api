@@ -30,9 +30,9 @@ module Api
         end
         
         # Array of tasks that need marking for the given unit id
-        tasks_ready_to_mark = UnitRole.tasks_ready_to_mark(user).reject{| task | task.project.unit.id != unit.id }
+        tasks_to_download = UnitRole.tasks_to_review(user).reject{| task | task.project.unit.id != unit.id }
 
-        output_zip = generate_batch_task_zip(current_user, tasks_ready_to_mark, unit)
+        output_zip = generate_batch_task_zip(current_user, tasks_to_download, unit)
 
         if output_zip.nil?
           error!({"error" => "No files to download"}, 401)        

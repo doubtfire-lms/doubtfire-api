@@ -44,7 +44,7 @@ module Api::Submission::GenerateHelpers
   end
 
   def mark_col
-    "ready_to_mark (rtm)|discuss (d)|fix_and_resubmit (fix)|fix_and_include (fixinc)|redo"
+    "need_help|ready_to_mark (rtm)|discuss (d)|fix_and_resubmit (fix)|fix_and_include (fixinc)|redo"
   end
 
   #
@@ -70,7 +70,12 @@ module Api::Submission::GenerateHelpers
         next if task.processing_pdf
         # Add to the template entry string
         student = task.project.student
-        csv_str << "\n#{student.username.gsub(/,/, '_')},#{student.name.gsub(/,/, '_')},#{task.project.unit_role.tutorial.abbreviation},#{task.task_definition.abbreviation.gsub(/,/, '_')},#{task.id},\"#{task.last_comment_by(task.project.student).gsub(/"/, "\"\"")}\",\"#{task.last_comment_by(user).gsub(/"/, "\"\"")}\",rtm,"
+        if task.status == :need_help
+          mark_col = 'need_help'
+        else
+          mark_col = 'rtm'
+        end
+        csv_str << "\n#{student.username.gsub(/,/, '_')},#{student.name.gsub(/,/, '_')},#{task.project.unit_role.tutorial.abbreviation},#{task.task_definition.abbreviation.gsub(/,/, '_')},#{task.id},\"#{task.last_comment_by(task.project.student).gsub(/"/, "\"\"")}\",\"#{task.last_comment_by(user).gsub(/"/, "\"\"")}\",#{mark_col},"
         
         src_path = task.portfolio_evidence
 

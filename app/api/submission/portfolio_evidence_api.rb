@@ -17,6 +17,7 @@ module Api
         requires :file0, type: Rack::Multipart::UploadedFile, :desc => "file 0."
         optional :file1, type: Rack::Multipart::UploadedFile, :desc => "file 1."
         optional :contributions, type: String, :desc => "Contribution details stringified json, eg: [ { project_id: 1, pct:'0.44' }, ... ]"
+        optional :trigger, type: String, :desc => "Can be need_help to indicate upload is not a ready to mark submission"
       end
       post '/submission/task/:id' do
         task = Task.find(params[:id])
@@ -32,12 +33,18 @@ module Api
         if params[:contributions]
           params[:contributions] = JSON.parse(params[:contributions])
         end
+
+        if params[:trigger].tr('"\'', '') == 'need_help'
+          trigger = 'need_help'
+        else
+          trigger = 'ready_to_mark'
+        end
         
         upload_reqs = task.upload_requirements
         student = task.project.student
         unit = task.project.unit
         
-        task.accept_new_submission(current_user, propagate=true, params[:contributions])
+        task.accept_new_submission(current_user, propagate=true, params[:contributions], trigger)
 
         # Copy files to be PDFed
         PortfolioEvidence.produce_student_work(scoop_files(params, upload_reqs), student, task, self)
