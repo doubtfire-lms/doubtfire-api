@@ -73,9 +73,13 @@ class Group < ActiveRecord::Base
   # check if the project is the same as the current submission
   #
   def __different_project_composition__ (contributors, gs)
+    puts "Starting checks"
     contributors.each do |contrib|
+      puts "-- Checking #{contrib}"
       return true unless gs.projects.include? contrib[:project]
+      return true unless contrib[:pct].to_i > 0
     end
+    puts "Checking #{contributors.count} == #{gs.projects.count}"
     return contributors.count != gs.projects.count
   end
 
@@ -91,7 +95,12 @@ class Group < ActiveRecord::Base
     #check all members are in the same group
     contributors.each do |contrib|
       project = contrib[:project]
-      total += contrib[:pct].to_i
+      pct = contrib[:pct].to_i
+      if pct < 0
+        contrib[:pct] = 0
+      else
+        total += pct
+      end
       raise "Not all contributions were from team members." unless projects.include? project 
     end
 
@@ -110,6 +119,7 @@ class Group < ActiveRecord::Base
     gs = old_gs
     if gs.nil? || __different_project_composition__(contributors, gs)
       gs = GroupSubmission.create()
+      gs.task_definition = submitter_task.task_definition
     end
 
     gs.group = self
@@ -121,8 +131,10 @@ class Group < ActiveRecord::Base
       project = contrib[:project]
       task = project.matching_task submitter_task
 
-      task.group_submission = gs
-      task.contribution_pct = contrib[:pct]
+      if contrib[:pct].to_i > 0
+        task.group_submission = gs
+        task.contribution_pct = contrib[:pct]
+      end
       # puts "id is #{task.group_submission_id}"
       task.save
     end

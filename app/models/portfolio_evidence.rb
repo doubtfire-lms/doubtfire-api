@@ -76,8 +76,21 @@ class PortfolioEvidence
         "Upload Timestamp" => DateTime.now.strftime("%F %T"), 
         "File Number" => "#{idx+1} of #{files.length}"
       }
+
       # Add student details if exists
-      if not student.nil?
+      if task.group_task?
+        i = 0
+        total = task.group_submission.tasks.count * 10
+        task.group_submission.tasks.each { |gt|
+          i += 1
+          # puts "#{gt.id} #{gt.contribution_pct}"
+          weight = total * gt.contribution_pct / 100
+          weight = 30 if weight > 30
+          # puts "#{weight} = #{total} * #{gt.contribution_pct} / 100"
+          coverpage_data["Member #{i}"] = "#{gt.student.username} #{gt.student.name}" 
+          coverpage_data["#{gt.student.username} Contribution"] = "#{ '-' * weight }>" 
+        }
+      elsif not student.nil?
         coverpage_data["Student Name"] = student.name
         coverpage_data["Student ID"] = student.username
       end
@@ -173,11 +186,16 @@ class PortfolioEvidence
     end
   end
 
-
+  def self.final_pdf_path_for_group_submission(group_submission)
+    File.join(
+      FileHelper.student_group_work_dir(:pdf, group_submission, task=nil, create=true), 
+      sanitized_filename( 
+        sanitized_path("#{group_submission.task_definition.abbreviation}-#{group_submission.id}") + ".pdf"))
+  end
 
   def self.final_pdf_path_for(task)
     if task.group_task?
-      File.join(student_work_dir(:pdf, task), sanitized_filename( sanitized_path("#{task.task_definition.abbreviation}-#{task.group_submission.id}") + ".pdf"))
+      final_pdf_path_for_group_submission task.group_submission
     else
       File.join(student_work_dir(:pdf, task), sanitized_filename( sanitized_path("#{task.task_definition.abbreviation}-#{task.id}") + ".pdf"))
     end

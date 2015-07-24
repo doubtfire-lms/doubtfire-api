@@ -3,9 +3,22 @@
 #
 class GroupSubmission < ActiveRecord::Base
   belongs_to :group
+  belongs_to :task_definition
   has_many :tasks, dependent: :nullify
   has_many :projects, through: :tasks
   belongs_to :submitted_by_project, class_name: "Project", foreign_key: 'submitted_by_project_id'
+
+  #
+  # Ensure file is also deleted
+  #
+  before_destroy do | group_submission |
+    # puts "Delete group submission!"
+    begin
+      FileHelper.delete_group_submission(group_submission)
+    rescue
+      puts "Failed to delete group submission #{group_submission.id}!"
+    end
+  end
 
 
   def propagate_transition initial_task, trigger, by_user

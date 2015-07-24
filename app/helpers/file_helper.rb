@@ -74,44 +74,61 @@ module FileHelper
     end
   end
 
+  def self.student_group_work_dir(type, group_submission, task=nil, create=false)
+    file_server = Doubtfire::Application.config.student_work_dir
+    dst = "#{file_server}/" # trust the server config and passed in type for paths
+
+    group = group_submission.group
+    unit = group.unit
+    if type == :pdf
+      dst << sanitized_path("#{unit.code}-#{unit.id}","Group-#{group.id}", "#{type}") << "/"
+    elsif type == :done
+      dst << sanitized_path("#{unit.code}-#{unit.id}","Group-#{group.id}", "#{type}", "#{group_submission.id}") << "/"
+    elsif type == :plagarism
+      dst << sanitized_path("#{unit.code}-#{unit.id}","Group-#{group.id}", "#{type}", "#{group_submission.id}") << "/"
+    else  # new and in_process -- just have task id -- will link to group when done etc.
+      # Add task id to dst if we want task
+      if task.nil?
+        raise 'Unable to locate file!'
+      end
+      dst << "#{type}/#{task.id}/"
+    end
+
+    if create
+      FileUtils.mkdir_p(dst)
+    end
+    dst
+  end
+
   #
   # Generates a path for storing student work
   # type = [:new, :in_process, :done, :pdf, :plagarism]
   #
   def self.student_work_dir(type = nil, task = nil, create = true)
-    file_server = Doubtfire::Application.config.student_work_dir
-    dst = "#{file_server}/" # trust the server config and passed in type for paths
+    if task && task.group_task?
+      dst = student_group_work_dir type, task.group_submission, task
+    else
+      file_server = Doubtfire::Application.config.student_work_dir
+      dst = "#{file_server}/" # trust the server config and passed in type for paths
 
-    if not (type.nil? || task.nil?)
-      if task.group_task?
-        if type == :pdf
-          dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}","Group-#{task.group.id}-#{task.group.name}", "#{type}") << "/"
-        elsif type == :done
-          dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}","Group-#{task.group.id}-#{task.group.name}", "#{type}", "#{task.group_submission.id}") << "/"
-        elsif type == :plagarism
-          dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}","Group-#{task.group.id}-#{task.group.name}", "#{type}", "#{task.group_submission.id}") << "/"
-        elsif  # new and in_process -- just have task id -- will link to group when done etc.
-          # Add task id to dst if we want task
-          dst << "#{type}/#{task.id}/"
-        end
-      else
+      if not (type.nil? || task.nil?)
         if type == :pdf
           dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}","#{task.project.student.username}", "#{type}") << "/"
         elsif type == :done
           dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}","#{task.project.student.username}", "#{type}", "#{task.id}") << "/"
         elsif type == :plagarism
           dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}","#{task.project.student.username}", "#{type}", "#{task.id}") << "/"
-        elsif  # new and in_process -- just have task id
+        else  # new and in_process -- just have task id
           # Add task id to dst if we want task
           dst << "#{type}/#{task.id}/"
         end
-      end
-    elsif (not type.nil?)
-      if [:in_process, :new].include? type
-        # Add task id to dst if we want task
-        dst << "#{type}/"
-      else
-        raise "Error in request to student work directory"
+      elsif (not type.nil?)
+        if [:in_process, :new].include? type
+          # Add task id to dst if we want task
+          dst << "#{type}/"
+        else
+          raise "Error in request to student work directory"
+        end
       end
     end
 
@@ -461,6 +478,27 @@ module FileHelper
         FileUtils.rm_rf(to_dir)
       end
     end
+
+    self
+  end
+
+  def self.delete_group_submission(group_submission)
+    pdf_file = PortfolioEvidence.final_pdf_path_for_group_submission(group_submission)
+    # puts "Delete #{pdf_file}"
+    if File.exists? pdf_file
+      FileUtils.rm pdf_file
+    end
+
+    done_file = zip_file_path_for_group_done_task(group_submission)
+    # puts "Delete #{done_file}"
+    if File.exists? done_file
+      FileUtils.rm done_file
+    end
+    self
+  end
+
+  def self.zip_file_path_for_group_done_task(group_submission)
+    zip_file = "#{student_group_work_dir(:done, group_submission)[0..-2]}.zip"
   end
 
   def self.zip_file_path_for_done_task(task)

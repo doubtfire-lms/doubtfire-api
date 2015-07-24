@@ -16,6 +16,7 @@ module Api
       params do
         requires :file0, type: Rack::Multipart::UploadedFile, :desc => "file 0."
         optional :file1, type: Rack::Multipart::UploadedFile, :desc => "file 1."
+        optional :contributions, type: String, :desc => "Contribution details stringified json, eg: [ { project_id: 1, pct:'0.44' }, ... ]"
       end
       post '/submission/task/:id' do
         task = Task.find(params[:id])
@@ -23,15 +24,20 @@ module Api
         if not authorise? current_user, task, :make_submission
           error!({"error" => "Not authorised to submit task '#{task.task_definition.name}'"}, 401)
         end
+
+        if params[:contributions]
+          params[:contributions] = JSON.parse(params[:contributions])
+          params[:contributions].each { |data| puts " Contrib: #{data[:project_id]} #{data[:pct]}" }
+        end
         
         upload_reqs = task.upload_requirements
         student = task.project.student
         unit = task.project.unit
         
+        task.accept_new_submission(current_user, propagate=true, params[:contributions])
+
         # Copy files to be PDFed
         PortfolioEvidence.produce_student_work(scoop_files(params, upload_reqs), student, task, self)
-        
-        task.accept_new_submission(current_user, propagate=true)
 
         TaskUpdateSerializer.new(task)
       end #post

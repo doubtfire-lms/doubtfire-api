@@ -184,15 +184,15 @@ class Task < ActiveRecord::Base
       end
       reload
     else
-      puts "Assigning #{id} = #{final_pdf_path}"
+      # puts "Assigning #{id} = #{final_pdf_path}"
       self.portfolio_evidence = final_pdf_path
-      puts "Path is now #{id} = #{self.portfolio_evidence}"
+      # puts "Path is now #{id} = #{self.portfolio_evidence}"
       self.save
     end
   end
 
   def group_task?
-    group_submission || task_definition.group_set
+    (not group_submission.nil?) || (not task_definition.group_set.nil?)
   end
 
   def group
@@ -408,9 +408,15 @@ class Task < ActiveRecord::Base
   #
   # The student has uploaded new work...
   #
-  def accept_new_submission (user, propagate = true)
+  def accept_new_submission (user, propagate = true, contributions = nil)
     if group_task? && propagate
-      group_submission = group.create_submission self, "#{user.name} has submitted work", group.projects.map { |proj| { project: proj, pct: 100 / group.projects.count }  }
+      if contributions.nil? # even distribution
+        contribs = group.projects.map { |proj| { project: proj, pct: 100 / group.projects.count }  }
+      else
+        contribs = contributions.map { |data| { project: Project.find(data[:project_id]), pct: data[:pct].to_i }  }
+        # puts contribs
+      end
+      group_submission = group.create_submission self, "#{user.name} has submitted work", contribs
       group_submission.tasks.each { |t| t.accept_new_submission(user, propagate=false) }
       reload
     else
