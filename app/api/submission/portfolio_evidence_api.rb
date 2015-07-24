@@ -34,7 +34,7 @@ module Api
           params[:contributions] = JSON.parse(params[:contributions])
         end
 
-        if params[:trigger].tr('"\'', '') == 'need_help'
+        if params[:trigger] && params[:trigger].tr('"\'', '') == 'need_help'
           trigger = 'need_help'
         else
           trigger = 'ready_to_mark'
