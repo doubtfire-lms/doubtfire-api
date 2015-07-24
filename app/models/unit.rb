@@ -247,9 +247,9 @@ class Unit < ActiveRecord::Base
         if user_not_in_project
           added_users << project_participant
           if not tutorial.nil?
-            enrol_student(project_participant.id, tutorial.id)
+            enrol_student(project_participant, tutorial.id)
           else
-            enrol_student(project_participant.id)
+            enrol_student(project_participant)
           end
         else
           # update tutorial
