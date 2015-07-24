@@ -31,7 +31,6 @@ module Api
 
         if params[:contributions]
           params[:contributions] = JSON.parse(params[:contributions])
-          params[:contributions].each { |data| puts " Contrib: #{data[:project_id]} #{data[:pct]}" }
         end
         
         upload_reqs = task.upload_requirements
