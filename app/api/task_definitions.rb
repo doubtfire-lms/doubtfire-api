@@ -203,6 +203,44 @@ module Api
       # Actually import...
       unit.import_task_files_from_zip file
     end
+
+    desc "Download the task pdf"
+    params do
+      requires :unit_id, type: Integer, :desc => "The unit to upload tasks for"
+      requires :task_def_id, type: Integer, :desc => "The task definition to get the pdf of"
+    end
+    get '/units/:unit_id/task_definitions/:task_def_id/task_pdf' do
+      unit = Unit.find(params[:unit_id])
+      task_def = unit.task_definitions.find(params[:task_def_id])
+
+      if not authorise? current_user, unit, :get_unit
+        error!({"error" => "Not authorised to download task details of unit"}, 403)
+      end
+
+      content_type "application/pdf"
+      header['Content-Disposition'] = "attachment; filename=#{task_def.abbreviation}.pdf"
+      env['api.format'] = :binary
+      File.read(unit.path_to_task_pdf(task_def))
+    end
+
+    desc "Download the task resources"
+    params do
+      requires :unit_id, type: Integer, :desc => "The unit to upload tasks for"
+      requires :task_def_id, type: Integer, :desc => "The task definition to get the pdf of"
+    end
+    get '/units/:unit_id/task_definitions/:task_def_id/task_resources' do
+      unit = Unit.find(params[:unit_id])
+      task_def = unit.task_definitions.find(params[:task_def_id])
+
+      if not authorise? current_user, unit, :get_unit
+        error!({"error" => "Not authorised to download task details of unit"}, 403)
+      end
+
+      content_type "application/octet-stream"
+      header['Content-Disposition'] = "attachment; filename=#{task_def.abbreviation}-resources.zip"
+      env['api.format'] = :binary
+      File.read(unit.path_to_task_resources(task_def))
+    end
   end
 end
 

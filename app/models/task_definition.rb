@@ -142,4 +142,12 @@ class TaskDefinition < ActiveRecord::Base
   def self.csv_columns
     [:name, :abbreviation, :description, :weighting, :required, :target_grade, :restrict_status_updates, :upload_requirements, :target_date]
   end
+
+  def has_task_resources?
+    File.exists? unit.path_to_task_resources(self)
+  end
+
+  def has_task_pdf?
+    File.exists? unit.path_to_task_pdf(self)
+  end
 end

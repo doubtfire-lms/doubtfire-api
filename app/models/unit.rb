@@ -695,19 +695,29 @@ class Unit < ActiveRecord::Base
       zip.each do |file|
         file_name = File.basename(file.name)
         if not task_definitions.where(abbreviation: File.basename(file_name, ".*"))
-          result[:ignored_files] << file.name
+          result[:ignored_files] << { name: file.name }
         elsif File.extname(file.name) == ".pdf"
           file.extract ("#{task_path}#{FileHelper.sanitized_filename(file_name)}") {true}
-          result[:added_files] << file.name
+          result[:added_files] << { name: file.name }
         elsif File.extname(file.name) == ".zip"
           file.extract ("#{task_path}#{FileHelper.sanitized_filename(file_name)}") {true}
-          result[:added_files] << file.name
+          result[:added_files] << { name: file.name }
         else
-          result[:ignored_files] << file.name
+          result[:ignored_files] << { name: file.name }
         end
       end
     end
 
     result
+  end
+
+  def path_to_task_resources(task_def)
+    task_path = FileHelper.task_file_dir_for_unit self, create=false
+    "#{task_path}#{FileHelper.sanitized_filename(task_def.abbreviation)}.zip"
+  end
+
+  def path_to_task_pdf(task_def)
+    task_path = FileHelper.task_file_dir_for_unit self, create=false
+    "#{task_path}#{FileHelper.sanitized_filename(task_def.abbreviation)}.pdf"
   end
 end
