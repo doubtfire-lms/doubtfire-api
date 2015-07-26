@@ -8,6 +8,17 @@ module FileHelper
     Rails.logger
   end
 
+  def check_mime_against_list! (file, expect, type_list)
+    fm = FileMagic.new(FileMagic::MAGIC_MIME)
+
+    mime_type = fm.file(file)
+
+    # check mime is correct before uploading
+    if not mime_type.start_with?(*type_list)
+      error!({"error" => "File given is not a #{expect} file - detected #{mime_type}"}, 403)
+    end
+  end
+
   #
   # Test if a file should be accepted based on an expected kind
   # - file is passed the file uploaded to Doubtfire (a hash with all relevant data about the file)

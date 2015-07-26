@@ -5,6 +5,7 @@ module Api
   class TaskDefinitions < Grape::API
     helpers AuthHelpers
     helpers AuthorisationHelpers
+    helpers FileHelper
 
     before do
       authenticated?
@@ -183,6 +184,29 @@ module Api
       task_def.destroy()
     end
 
+    desc "Upload a zip file containing the task pdfs for a given task"
+    params do
+      requires :unit_id, type: Integer, :desc => "The unit to upload tasks for"
+      requires :file, type: Rack::Multipart::UploadedFile, :desc => "batch file upload"
+    end
+    post '/units/:unit_id/task_definitions/task_pdfs' do
+      unit = Unit.find(params[:unit_id])
+      
+      if not authorise? current_user, unit, :add_task_def
+        error!({"error" => "Not authorised to upload tasks of unit"}, 403)
+      end
+
+      file = params[:file][:tempfile].path
+
+      check_mime_against_list! file, 'zip', ['application/zip', 'multipart/x-gzip', 'multipart/x-zip', 'application/x-gzip', 'application/octet-stream']
+      
+      # check mime is correct before uploading
+      if not params[:file][:type] == "text/csv"
+        error!({"error" => "File given is not a CSV file"}, 403)
+      end
+      
+      # Actually import...
+    end
   end
 end
 
