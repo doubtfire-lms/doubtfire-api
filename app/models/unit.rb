@@ -682,4 +682,32 @@ class Unit < ActiveRecord::Base
 
     self
   end
+
+  def import_task_files_from_zip zip_file
+    task_path = FileHelper.task_file_dir_for_unit self, create=true
+
+    result = {
+      :added_files => [],
+      :ignored_files => []
+    }
+
+    Zip::File.open(zip_file) do |zip|
+      zip.each do |file|
+        file_name = File.basename(file.name)
+        if not task_definitions.where(abbreviation: File.basename(file_name, ".*"))
+          result[:ignored_files] << file.name
+        elsif File.extname(file.name) == ".pdf"
+          file.extract ("#{task_path}#{FileHelper.sanitized_filename(file_name)}") {true}
+          result[:added_files] << file.name
+        elsif File.extname(file.name) == ".zip"
+          file.extract ("#{task_path}#{FileHelper.sanitized_filename(file_name)}") {true}
+          result[:added_files] << file.name
+        else
+          result[:ignored_files] << file.name
+        end
+      end
+    end
+
+    result
+  end
 end

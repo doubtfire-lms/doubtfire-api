@@ -108,7 +108,7 @@ module Api
       requires :unit_id,                            type: Integer,  :desc => "The unit for the new group"
       requires :group_set_id,                       type: Integer,  :desc => "The id of the group set"
       group :group do
-        requires :name,                             type: String,   :desc => "The name of this group"
+        optional :name,                             type: String,   :desc => "The name of this group"
         requires :tutorial_id,                      type: Integer,  :desc => "The id of the tutorial for the group"
       end
     end
@@ -127,6 +127,14 @@ module Api
           :name
         )
 
+      if group_params[:name].nil? || group_params[:name].empty?
+        id = group_set.groups.count
+        group_params[:name] = "Group #{id}"
+        while group_set.groups.where(name:  group_params[:name]).count > 0
+          id += 1
+          group_params[:name] = "Group #{id}"
+        end
+      end
       grp = Group.create(name: group_params[:name], group_set: group_set, tutorial: tutorial)
       grp.save!
       grp

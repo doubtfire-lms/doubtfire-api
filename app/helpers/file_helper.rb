@@ -85,6 +85,18 @@ module FileHelper
     end
   end
 
+  def self.task_file_dir_for_unit(unit, create = true)
+    file_server = Doubtfire::Application.config.student_work_dir
+    dst = "#{file_server}/" # trust the server config and passed in type for paths
+    dst << sanitized_path("#{unit.code}-#{unit.id}","TaskFiles") << "/" 
+
+    if create and not Dir.exists? dst
+      FileUtils.mkdir_p dst
+    end
+
+    dst
+  end
+
   def self.student_group_work_dir(type, group_submission, task=nil, create=false)
     file_server = Doubtfire::Application.config.student_work_dir
     dst = "#{file_server}/" # trust the server config and passed in type for paths

@@ -200,12 +200,8 @@ module Api
 
       check_mime_against_list! file, 'zip', ['application/zip', 'multipart/x-gzip', 'multipart/x-zip', 'application/x-gzip', 'application/octet-stream']
       
-      # check mime is correct before uploading
-      if not params[:file][:type] == "text/csv"
-        error!({"error" => "File given is not a CSV file"}, 403)
-      end
-      
       # Actually import...
+      unit.import_task_files_from_zip file
     end
   end
 end
