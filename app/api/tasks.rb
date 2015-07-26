@@ -48,7 +48,7 @@ module Api
 
         output = FileHelper.path_to_plagarism_html(match_link)
 
-        if output.nil?
+        if output.nil? || not File.exists?(output)
           error!({"error" => "No files to download"}, 403)
         end
 
