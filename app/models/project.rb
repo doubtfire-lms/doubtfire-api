@@ -275,8 +275,8 @@ class Project < ActiveRecord::Base
     # values = array of [ x, y ] values
     projected_results = { key: "Projected", values: [] }
     target_task_results = { key: "Target", values: [] }
-    done_task_results = { key: "Complete", values: [] }
-    complete_task_results = { key: "Signed Off", values: [] }
+    done_task_results = { key: "Submitted", values: [] }
+    complete_task_results = { key: "Complete", values: [] }
 
     # get total value of all tasks assigned to this project
     total = assigned_tasks.map{|task| task.task_definition.weighting.to_f}.inject(:+)
