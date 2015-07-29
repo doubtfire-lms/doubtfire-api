@@ -6240,6 +6240,9 @@ a {
   margin-top: 100px;
   font-size: 100px;
 }
+table td {
+  vertical-align: middle !important;
+}
 .breadcrumb {
   margin-top: -20px;
   padding-top: 1px;
@@ -6336,9 +6339,25 @@ footer.about-doubtfire a {
   white-space: normal;
   padding: 5px;
 }
+.project-task-bar ul {
+  display: block;
+  width: 100%;
+  text-align: center;
+  padding-left: 0px;
+  -webkit-padding-start: 0px;
+}
+.project-task-bar .groupset-name {
+  color: #777;
+  text-align: center;
+  font-weight: medium;
+  font-size: 0.9em;
+}
 .project-task-bar li {
   display: inline;
   padding: 2px;
+}
+.dropdown-menu.project-task-bar {
+  padding-bottom: 15px;
 }
 .task-progress {
   margin-bottom: 0px;
@@ -7197,6 +7216,27 @@ i.logo + h1.logo {
 a:hover > i.logo {
   background-color: #e27657;
 }
+/**
+ * TODO: REMOVE DEPRECATED FILE UPLOADER CSS
+ * Remove this CSS when we replace all file uploaders with the
+ * new custom-made directive file-uploader
+ */
+.well.drop {
+  border: 3px #bbb dotted;
+  font-size: larger;
+  font-weight: bold;
+  color: #aaa;
+  text-align: center;
+}
+.well.drop.file-over-hover {
+  border-color: #3276b1;
+  color: #3276b1;
+}
+.well.drop.file-over-reject {
+  border-color: #C82506;
+  color: #C82506;
+}
+/* END TODO */
 .file-upload-area .well.drop {
   border: 3px #bbb dotted;
   font-size: larger;
@@ -7318,4 +7358,78 @@ pdf-panel-viewer iframe {
 }
 pdf-panel-viewer .panel-footer {
   height: 60px;
+}
+.groupset-manage-view > .info-area {
+  margin-bottom: 3em;
+}
+.groupset-manage-view .multi-group-actions form {
+  margin-bottom: 1em;
+}
+.unit-admin-groupset-tab .groupset-selector {
+  margin-bottom: 3em;
+}
+.unit-admin-groupset-tab .groupset-selector + groupset-manage {
+  padding-top: 3em;
+  border-top: 1px dashed gray;
+}
+.unit-admin-groupset-tab .groupset-area > .info-area {
+  display: -webkit-flex;
+  display: flex;
+  -webkit-align-items: center;
+  align-items: center;
+  -webkit-justify-content: space-between;
+  justify-content: space-between;
+  margin-bottom: 3em;
+}
+.unit-admin-groupset-tab .groupset-area > .info-area button.add-group-set i {
+  margin-bottom: 0.25em;
+}
+.unit-admin-groupset-tab .groupset-area > .info-area button.add-group-set p {
+  margin: 0;
+}
+.unit-admin-groupset-tab table tr,
+.groupset-selector table tr,
+.group-selector table tr {
+  cursor: pointer;
+}
+.group-selector table td.group-name {
+  width: 40%;
+}
+.group-selector table td.tutorial-id {
+  width: 25%;
+}
+.group-selector table td.actions {
+  width: 35%;
+}
+.group-member-list table td.student-id {
+  width: 25%;
+}
+.group-member-list table td.actions {
+  width: 25%;
+}
+.group-member-list table td.student-name {
+  width: 50%;
+}
+.group-member-list table td.student-grade {
+  width: 50%;
+}
+.group-member-list table td.student-id + td.student-name {
+  width: 30%;
+}
+.group-member-list table td.student-id + td.student-name + td.student-grade {
+  width: 20%;
+}
+.group-selector form,
+.group-memberships form {
+  margin-bottom: 3em;
+}
+.groupset-selector .dropdown {
+  cursor: pointer;
+}
+.group-member-contribution-rating:focus {
+  outline: none;
+}
+.group-member-contribution-rating i {
+  font-size: 2em;
+  cursor: pointer;
 }
