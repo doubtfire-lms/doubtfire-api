@@ -185,6 +185,12 @@ module Api
         error!({"error" => "Not authorised to delete group set for this unit"}, 403)
       end
 
+      if not unit.tutors.include? current_user
+        # check that they are the only member of the group, or the group is empty
+        error!({"error" => "You cannot delete a group with members"}, 403) unless grp.projects.count <= 1
+        error!({"error" => "You cannot delete this group"}, 403) unless grp.projects.count == 0 || grp.projects.first.student == current_user
+      end
+
       grp.destroy()
       nil
     end
