@@ -197,6 +197,10 @@ class Unit < ActiveRecord::Base
     end
   end
 
+  def tutorial_with_abbr(abbr)
+    tutorials.where(abbreviation: abbr).first
+  end
+
   # Imports users into a project from CSV file.
   # Format: Student ID,Course ID,First Name,Initials,Surname,Mark,Assessment,Status
   # Only Student ID, First Name, and Surname are used.
@@ -240,7 +244,7 @@ class Unit < ActiveRecord::Base
           projects: {unit_id: id}
         ).count == 0
 
-        tutorial = tutorial_cache[tutorial_code] || Tutorial.where(abbreviation: tutorial_code, unit_id: id).first
+        tutorial = tutorial_cache[tutorial_code] || tutorial_with_abbr(tutorial_code)
         tutorial_cache[tutorial_code] ||= tutorial
 
         # Add the user to the project (if not already in there)
@@ -315,6 +319,60 @@ class Unit < ActiveRecord::Base
       row << ["subject_code", "username", "first_name", "last_name", "email", "tutorial"]
       students.each do |project|
         row << [project.unit.code, project.student.username,  project.student.first_name, project.student.last_name, project.student.email, project.tutorial_abbr]
+      end
+    end
+  end
+
+  def import_groups_from_csv(group_set, file)
+    added = []
+    errors = []
+
+    CSV.parse(file, {:headers => true, :header_converters => [:downcase]}).each do |row|
+      next if row[0] =~ /^(group_name)|(name)/ # Skip header
+
+      grp = group_set.groups.find_or_create_by(name: row['group_name'])
+
+      user = User.where(username: row['username']).first
+      project = students.where('unit_roles.user_id = :id', id: user.id).first
+
+      if project.nil?
+        errors << { group: "#{row['group_name']}", user: "#{row['username']}", reason: "Student not found" }
+        next
+      end
+
+      if grp.new_record?
+        tutorial = tutorial_with_abbr(row['tutorial'])
+        if tutorial.nil?
+          errors << { group: "#{row['group_name']}", user: "#{row['username']}", reason: "Tutorial not found" }
+          next
+        end
+
+        grp.tutorial = tutorial
+        grp.save
+      end
+
+      begin
+        grp.add_member(project)
+      rescue Exception => e
+        errors << { group: "#{row['group_name']}", user: "#{row['username']}", reason: e.message }
+        next
+      end
+      added << { group: "#{row['group_name']}", user: "#{row['username']}" }
+    end
+
+    {
+      errors: errors,
+      added: added
+    }
+  end
+
+  def export_groups_to_csv(group_set)
+    CSV.generate do |row|
+      row << ["group_name", "username", "tutorial"]
+      group_set.groups.each do |grp|
+        grp.projects.each do |project|
+          row << [grp.name, project.student.username,  grp.tutorial.abbreviation]
+        end
       end
     end
   end

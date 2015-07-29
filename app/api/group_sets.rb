@@ -103,10 +103,44 @@ module Api
       group_set.groups
     end
 
+    desc "Upload a CSV for groups in a group set"
+    params do
+      # requires :unit_id,                            type: Integer,  :desc => "The unit for the new group"
+      # requires :group_set_id,                       type: Integer,  :desc => "The id of the group set"
+      requires :file, type: Rack::Multipart::UploadedFile, :desc => "CSV upload file."
+    end
+    post '/units/:unit_id/group_sets/:group_set_id/groups/csv' do
+      # check mime is correct before uploading
+      if not params[:file][:type] == "text/csv"
+        error!({"error" => "File given is not a CSV file"}, 403)
+      end
+
+      unit = Unit.find(params[:unit_id])
+      group_set = unit.group_sets.find(params[:group_set_id])
+
+      if not authorise? current_user, unit, :update
+        error!({"error" => "Not authorised to upload csv of groups for this unit"}, 403)
+      end
+
+      unit.import_groups_from_csv(group_set, params[:file][:tempfile])
+    end
+
+    desc "Download a CSV of groups in a group set"
+    get '/units/:unit_id/group_sets/:group_set_id/groups/csv' do
+      unit = Unit.find(params[:unit_id])
+      group_set = unit.group_sets.find(params[:group_set_id])
+
+      if not authorise? current_user, unit, :update
+        error!({"error" => "Not authorised to download csv of groups for this unit"}, 403)
+      end
+
+      unit.export_groups_to_csv(group_set)
+    end
+
     desc "Add a new group to the given unit's group_set"
     params do
-      requires :unit_id,                            type: Integer,  :desc => "The unit for the new group"
-      requires :group_set_id,                       type: Integer,  :desc => "The id of the group set"
+      # requires :unit_id,                            type: Integer,  :desc => "The unit for the new group"
+      # requires :group_set_id,                       type: Integer,  :desc => "The id of the group set"
       group :group do
         optional :name,                             type: String,   :desc => "The name of this group"
         requires :tutorial_id,                      type: Integer,  :desc => "The id of the tutorial for the group"
