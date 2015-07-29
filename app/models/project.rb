@@ -165,14 +165,6 @@ class Project < ActiveRecord::Base
     tasks.joins(:task_definition).order("task_definitions.target_date, task_definitions.abbreviation").select{|task| task.include_in_portfolio && task.has_pdf }
   end
 
-  def required_tasks
-    tasks.select{|task| task.task_definition.required? }
-  end
-
-  def optional_tasks
-    tasks.select{|task| !task.task_definition.required? }
-  end
-
   def progress
     self[:progress].to_sym
   end
@@ -584,10 +576,6 @@ class Project < ActiveRecord::Base
 
   def concluded?
     application_reference_date > unit.end_date
-  end
-
-  def has_optional_tasks?
-    tasks.any?{|task| !task.task_definition.required }
   end
 
   def last_task_completed
