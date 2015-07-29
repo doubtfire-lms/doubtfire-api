@@ -134,6 +134,10 @@ module Api
         error!({"error" => "Not authorised to download csv of groups for this unit"}, 403)
       end
 
+
+      content_type "application/octet-stream"
+      header['Content-Disposition'] = "attachment; filename=#{unit.code}-groups.csv "
+      env['api.format'] = :binary
       unit.export_groups_to_csv(group_set)
     end
 
