@@ -1,4 +1,4 @@
-module CSVHelper
+module CsvHelper
   def csv_date_to_date (date)
    date = date.strip
     
