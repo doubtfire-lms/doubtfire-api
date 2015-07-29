@@ -64,7 +64,7 @@ module Api
         end
       end
 
-      task_def.save
+      task_def.save!
 
       unit.add_new_task_def(task_def)
       task_def
