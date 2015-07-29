@@ -144,31 +144,29 @@ class TaskDefinition < ActiveRecord::Base
   end
 
   def self.task_def_for_csv_row(unit, row)
-    params[:target_date] = DateTime.parse(params[:target_date].strip)
-
-    return [nil, false] if params[:abbreviation].nil? or params[:name].nil?
+    return [nil, false] if row['abbreviation'].nil? or row['name'].nil?
 
     new_task = false
-    result = TaskDefinition.find_by(unit_id: unit.id, abbreviation: params[:abbreviation])
+    result = TaskDefinition.find_by(unit_id: unit.id, abbreviation: row['abbreviation'])
 
     if result.nil?
-      result = TaskDefinition.find_by(unit_id: unit.id, name: params[:name])
+      result = TaskDefinition.find_by(unit_id: unit.id, name: row['name'])
     end
 
     if result.nil?
-      result = TaskDefinition.find_or_create_by(unit_id: id, name: params[:name], abbreviation: params[:abbreviation])
+      result = TaskDefinition.find_or_create_by(unit_id: unit.id, name: row['name'], abbreviation: row['abbreviation'])
       new_task = true
     end
 
-    result.name                        = params[:name]
+    result.name                        = row['name']
     result.unit_id                     = unit.id
-    result.abbreviation                = params[:abbreviation]
-    result.description                 = params[:description]
-    result.weighting                   = BigDecimal.new(params[:weighting])
-    result.target_grade                = target_grade
-    result.restrict_status_updates     = ["Yes", "y", "Y", "yes", "true", "TRUE", "1"].include? params[:restrict_status_updates]
-    result.target_date                 = params[:target_date]
-    result.upload_requirements         = params[:upload_requirements]
+    result.abbreviation                = row['abbreviation']
+    result.description                 = row['description']
+    result.weighting                   = row['weighting'].to_i
+    result.target_grade                = row['target_grade'].to_i
+    result.restrict_status_updates     = ["Yes", "y", "Y", "yes", "true", "TRUE", "1"].include? row['restrict_status_updates']
+    result.target_date                 = CSVHelper.csv_date_to_date(row['target_date'])
+    result.upload_requirements         = row['upload_requirements']
     
     result.save
     [result, new_task]

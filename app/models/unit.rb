@@ -363,7 +363,7 @@ class Unit < ActiveRecord::Base
     failed_tasks = []
     project_cache = Project.where(unit_id: id)
 
-    CSV.foreach(file, {:headers => true, :header_converters => [:downcase]}) do |row|
+    CSV.parse(file, {:headers => true, :header_converters => [:downcase]}).each do |row|
       next if row[0] =~ /^(Task Name)|(name)/ # Skip header
 
       task_definition, new_task = TaskDefinition.task_def_for_csv_row(self, row)

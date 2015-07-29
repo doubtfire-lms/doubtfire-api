@@ -160,7 +160,7 @@ module Api
       unit = Unit.find(params[:unit_id])
 
       if not authorise? current_user, unit, :downloadCSV
-        error!({"error" => "Not authorised to upload CSV of users"}, 403)
+        error!({"error" => "Not authorised to upload CSV of tasks"}, 403)
       end
 
       content_type "application/octet-stream"
