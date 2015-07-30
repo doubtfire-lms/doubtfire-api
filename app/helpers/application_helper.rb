@@ -6,4 +6,8 @@ module ApplicationHelper
       Time.zone.now
     end
   end
+
+  def lesc(text)
+    LatexToPdf.escape_latex(text)
+  end
 end
