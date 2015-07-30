@@ -1,0 +1,7 @@
+\documentclass[11pt,a4paper]{article} 
+\usepackage{minted}
+\begin{document} 
+
+<%= yield %>
+
+\end{document}

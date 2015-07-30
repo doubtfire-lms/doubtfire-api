@@ -62,3 +62,6 @@ gem 'rubyzip'
 
 # Plagarism detection
 gem 'moss_ruby', '= 1.1.1'
+
+# Latex
+gem 'rails-latex', '=1.0.13'

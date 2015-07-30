@@ -436,6 +436,33 @@ class Task < ActiveRecord::Base
       save
     end
   end
+
+  def name
+    task_definition.name
+  end
+
+  class TaskAppController < ApplicationController
+    attr_accessor :task
+
+    def init(task)
+      @task = task
+    end
+
+    def make_pdf()
+      render_to_string(:template => "/task/task_pdf.pdf.erb", :layout => true)
+    end
+  end
+
+  def convert_submission_to_pdf
+    tac = TaskAppController.new
+    tac.init(self)
+    puts tac.task.name
+    pdf_text = tac.make_pdf
+
+    File.open('test.pdf', 'w') do |fout| 
+      fout.puts pdf_text
+    end  
+  end
 end
 
 
