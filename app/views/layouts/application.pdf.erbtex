@@ -1,6 +1,10 @@
 \documentclass[11pt,a4paper]{article} 
-\usepackage{minted}
+% \usepackage{minted}
+\usepackage{graphicx}
+\usepackage[margin=0.5in]{geometry}
 \begin{document} 
+
+\graphicspath{ {<%= @base_path %>} }
 
 <%= yield %>
 
