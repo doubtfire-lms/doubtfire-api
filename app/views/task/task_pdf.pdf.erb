@@ -3,5 +3,13 @@
  
 This is your submission for <%= lesc @task.name %>
 
+<% for file in @files %>
+	<%= lesc file[:path] %> <%= lesc file[:type] %>
+
+	<% if file[:type] == 'image' %>
+		\includegraphics[width=\textwidth]{{<%= File.basename(file[:path], File.extname(file[:path])) %>}<%= File.extname(file[:path]) %>}
+	<% end %>
+<% end %>
+
  % section hello_world (end) Hello World
 

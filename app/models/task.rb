@@ -441,11 +441,109 @@ class Task < ActiveRecord::Base
     task_definition.name
   end
 
+  def student_work_dir(type, create = true)
+    FileHelper.student_work_dir(type, self, create)
+  end
+
+  def zip_file_path_for_done_task()
+    "#{student_work_dir(:done, false)[0..-2]}.zip"
+  end
+
+  def extract_file_from_done(to_path, pattern, name_fn)
+    zip_file = zip_file_path_for_done_task()
+    return false if not File.exists? zip_file
+
+    Zip::File.open(zip_file) do |zip|
+      # Extract folders
+      zip.each do |entry|
+        # Extract to file/directory/symlink
+        # puts "Extracting #{entry.name}"
+        if entry.name_is_directory? 
+          entry.extract( name_fn.call(self, to_path, entry.name) )  { true }
+        end
+      end
+      zip.glob("**/#{pattern}").each do |entry|
+        # puts "Here Extracting #{entry.name}"
+        entry.extract( name_fn.call(self, to_path, entry.name) ) { true }
+      end
+    end
+  end
+
+  #
+  # Move folder over from new or done -> in_process returns true on success
+  #
+  def move_files_to_in_process
+    # find and clear out old dir
+    in_process_dir = student_work_dir(:in_process)
+
+    if Dir.exists? in_process_dir
+      pwd = FileUtils.pwd
+      Dir.chdir(in_process_dir)
+      # move all files to the enq dir
+      FileUtils.rm Dir.glob("*")
+      Dir.chdir(pwd)
+    end
+
+    from_dir = student_work_dir(:new, false)
+    if not Dir.exists?(from_dir)
+      if File.exists?(zip_file_path_for_done_task())
+        extract_file_from_done FileHelper.student_work_dir(:new), "*", lambda { | task, to_path, name |  "#{to_path}#{name}" }
+        return false if not Dir.exists?(from_dir)
+      else
+        return false
+      end
+    end
+
+    # Move files from new to in process
+    FileHelper.move_files(from_dir, in_process_dir)
+    return true
+  end
+
+  def __output_filename__(in_dir, idx, type)
+    pwd = FileUtils.pwd
+    Dir.chdir(in_dir)
+    # puts "#{idx.to_s.rjust(3, '0')}.#{type}.*"
+    result = Dir.glob("#{idx.to_s.rjust(3, '0')}.#{type}.*").first
+    Dir.chdir(pwd)
+    return File.join(in_dir, result) unless result.nil?
+    nil
+  end
+
+  def in_process_files_for_task
+    in_process_dir = student_work_dir(:in_process, false)
+    return [] if not Dir.exists? in_process_dir
+
+    result = []
+
+    idx = 0
+    upload_requirements.each do |file_req|
+      # puts file_req
+      output_filename = __output_filename__(in_process_dir, idx, file_req['type'])
+      puts output_filename
+      if output_filename.nil?
+        idx += 1 # skip headers if present
+        output_filename = __output_filename__(in_process_dir, idx, file_req['type'])
+      end
+
+      if output_filename.nil?
+        puts "error processing Task #{id}"
+      else
+        result << { path: output_filename, type: file_req['type'] }
+      end
+    end
+
+    result
+  end
+
   class TaskAppController < ApplicationController
     attr_accessor :task
+    attr_accessor :files
+    attr_accessor :base_path
 
     def init(task)
       @task = task
+      @files = task.in_process_files_for_task
+      @base_path = task.student_work_dir(:in_process, false)
     end
 
     def make_pdf()
@@ -454,6 +552,8 @@ class Task < ActiveRecord::Base
   end
 
   def convert_submission_to_pdf
+    return false unless move_files_to_in_process()
+
     tac = TaskAppController.new
     tac.init(self)
     puts tac.task.name
