@@ -609,7 +609,15 @@ class Task < ActiveRecord::Base
       # puts tac.task.name
       pdf_text = tac.make_pdf
 
-      self.portfolio_evidence = final_pdf_path
+      if group_task?
+        group_submission.tasks.each do |t|
+          t.portfolio_evidence = final_pdf_path
+          t.save
+        end
+        reload
+      else
+        self.portfolio_evidence = final_pdf_path
+      end
 
       File.open(self.portfolio_evidence, 'w') do |fout| 
         fout.puts pdf_text
