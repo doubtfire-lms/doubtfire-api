@@ -232,6 +232,7 @@ module FileHelper
     # move into the new dir - and mv files to the in_process_dir
     pwd = FileUtils.pwd
     begin
+      FileUtils.mkdir_p(to_path) if not Dir.exists? to_path
       Dir.chdir(from_path)
       FileUtils.mv Dir.glob("*"), to_path, :force => true
       Dir.chdir(to_path)

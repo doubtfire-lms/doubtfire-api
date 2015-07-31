@@ -478,11 +478,33 @@ class Task < ActiveRecord::Base
   end
 
   #
+  # Compress the done files for a student - includes cover page and work uploaded
+  #
+  def compress_new_to_done()
+    task_dir = student_work_dir(:new, false)
+    zip_file = zip_file_path_for_done_task()
+    return if not Dir.exists? task_dir
+
+    FileUtils.rm(zip_file) if File.exists? zip_file
+
+    input_files = Dir.entries(task_dir).select { | f | (f =~ /^\d{3}\.(cover|document|code|image)/) == 0 }
+
+    Zip::File.open(zip_file, Zip::File::CREATE) do | zip |
+      zip.mkdir "#{id}"
+      input_files.each do |in_file|
+        zip.add "#{id}/#{in_file}", "#{task_dir}#{in_file}"
+      end
+    end
+
+    FileUtils.rm_rf(task_dir)
+  end
+
+  #
   # Move folder over from new or done -> in_process returns true on success
   #
   def move_files_to_in_process
     # find and clear out old dir
-    in_process_dir = student_work_dir(:in_process)
+    in_process_dir = student_work_dir(:in_process, false)
 
     if Dir.exists? in_process_dir
       pwd = FileUtils.pwd
@@ -493,13 +515,16 @@ class Task < ActiveRecord::Base
     end
 
     from_dir = student_work_dir(:new, false)
-    if not Dir.exists?(from_dir)
-      if File.exists?(zip_file_path_for_done_task())
-        extract_file_from_done FileHelper.student_work_dir(:new), "*", lambda { | task, to_path, name |  "#{to_path}#{name}" }
-        return false if not Dir.exists?(from_dir)
-      else
-        return false
-      end
+    if Dir.exists?(from_dir)
+      #save new files in done folder
+      compress_new_to_done
+    end
+
+    if File.exists?(zip_file_path_for_done_task())
+      extract_file_from_done FileHelper.student_work_dir(:new), "*", lambda { | task, to_path, name |  "#{to_path}#{name}" }
+      return false if not Dir.exists?(from_dir)
+    else
+      return false
     end
 
     # Move files from new to in process
@@ -580,6 +605,16 @@ class Task < ActiveRecord::Base
     end
   end
 
+  def final_pdf_path()
+    if group_task?
+      File.join(
+        FileHelper.student_group_work_dir(:pdf, group_submission, task=nil, create=true), 
+        FileHelper.sanitized_filename(FileHelper.sanitized_path("#{group_submission.task_definition.abbreviation}-#{group_submission.id}") + ".pdf"))
+    else
+      File.join(student_work_dir(:pdf), FileHelper.sanitized_filename( FileHelper.sanitized_path("#{task_definition.abbreviation}-#{id}") + ".pdf"))
+    end
+  end
+
   def convert_submission_to_pdf
     return false unless move_files_to_in_process()
 
@@ -588,7 +623,7 @@ class Task < ActiveRecord::Base
     puts tac.task.name
     pdf_text = tac.make_pdf
 
-    File.open('test.pdf', 'w') do |fout| 
+    File.open(final_pdf_path, 'w') do |fout| 
       fout.puts pdf_text
     end  
   end
