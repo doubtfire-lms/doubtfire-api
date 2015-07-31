@@ -1,10 +1,43 @@
 \documentclass[11pt,a4paper]{article} 
-% \usepackage{minted}
+\usepackage{minted}
 \usepackage{graphicx}
-\usepackage[margin=0.5in]{geometry}
-\begin{document} 
+\usepackage[margin=2.0cm]{geometry}
+\usepackage{fancyhdr}
+\usepackage{pdfpages}
 
-\graphicspath{ {<%= @base_path %>} }
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}} % Defines a new command for the horizontal lines, change thickness here
+
+\graphicspath{ {<%= @image_path %>/} }
+
+
+\fancypagestyle{title}{%
+    \renewcommand{\headrulewidth}{0pt}
+    \fancyhead[L]{}
+	\fancyhead[R]{}
+	\fancyfoot[C]
+    {
+    	\footnotesize Produced by Doubtfire$^{3}$
+    }
+    \fancyfoot[R]{}
+    \fancyfoot[L]{}
+}
+
+\fancypagestyle{body}{%
+    \renewcommand{\headrulewidth}{0.4pt}
+	\renewcommand{\footrulewidth}{0.4pt}
+    \fancyhead{}
+    \fancyfoot[C]
+    {
+    	\footnotesize Produced by Doubtfire$^{3}$
+    }
+    \fancyfoot[R]
+    {
+    	\date{\today}
+    }
+}
+
+
+\begin{document} 
 
 <%= yield %>
 

@@ -85,7 +85,7 @@ class PortfolioEvidence
           i += 1
           # puts "#{gt.id} #{gt.contribution_pct}"
           weight = total * gt.contribution_pct / 100
-          weight = 30 if weight > 30
+          weight = 20 if weight > 20
           # puts "#{weight} = #{total} * #{gt.contribution_pct} / 100"
           coverpage_data["Member #{i}"] = "#{gt.student.username} #{gt.student.name}" 
           coverpage_data["#{gt.student.username} Contribution"] = "#{ '-' * weight }>" 

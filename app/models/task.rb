@@ -442,11 +442,19 @@ class Task < ActiveRecord::Base
   end
 
   def student_work_dir(type, create = true)
-    FileHelper.student_work_dir(type, self, create)
+    if group_task?
+      FileHelper.student_group_work_dir(type, group_submission, self, create)
+    else
+      FileHelper.student_work_dir(type, self, create)
+    end
   end
 
   def zip_file_path_for_done_task()
-    "#{student_work_dir(:done, false)[0..-2]}.zip"
+    if group_task?
+      "#{FileHelper.student_group_work_dir(:done, group_submission)[0..-2]}.zip"
+    else
+      "#{student_work_dir(:done, false)[0..-2]}.zip"
+    end
   end
 
   def extract_file_from_done(to_path, pattern, name_fn)
@@ -504,6 +512,11 @@ class Task < ActiveRecord::Base
     Dir.chdir(in_dir)
     # puts "#{idx.to_s.rjust(3, '0')}.#{type}.*"
     result = Dir.glob("#{idx.to_s.rjust(3, '0')}.#{type}.*").first
+    if (not result.nil?) && File.exists?(result)
+      FileUtils.mv result, "#{idx.to_s.rjust(3, '0')}-#{type}#{File.extname(result)}"
+    end
+
+    result = Dir.glob("#{idx.to_s.rjust(3, '0')}-#{type}.*").first
     Dir.chdir(pwd)
     return File.join(in_dir, result) unless result.nil?
     nil
@@ -530,6 +543,8 @@ class Task < ActiveRecord::Base
       else
         result << { path: output_filename, type: file_req['type'] }
       end
+
+      idx += 1 # next file index
     end
 
     result
@@ -539,15 +554,29 @@ class Task < ActiveRecord::Base
     attr_accessor :task
     attr_accessor :files
     attr_accessor :base_path
+    attr_accessor :image_path
 
     def init(task)
       @task = task
       @files = task.in_process_files_for_task
       @base_path = task.student_work_dir(:in_process, false)
+      @image_path = Rails.root.join("public", "assets", "images")
     end
 
     def make_pdf()
       render_to_string(:template => "/task/task_pdf.pdf.erb", :layout => true)
+    end
+  end
+
+  def pygments_lang(extn)
+    extn = extn.downcase
+    case
+      when ['pas', 'pp'].include?(extn) then 'pas'
+      when ['cs'].include?(extn) then 'csharp'
+      when ['c', 'h', 'idc'].include?(extn) then 'c'
+      when ['cpp', 'hpp', 'c++', 'h++', 'cc', 'cxx', 'cp'].include?(extn) then 'cpp'
+      when ['java'].include?(extn) then 'java'
+      else 'c'
     end
   end
 
