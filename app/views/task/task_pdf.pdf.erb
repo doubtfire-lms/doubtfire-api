@@ -1,14 +1,98 @@
-\section{Hello World} % (fold)
- \label{sec:hello_world}
- 
-This is your submission for <%= lesc @task.name %>
+\begin{titlepage}
+  \thispagestyle{title}
+  \center
 
-<% for file in @files %>
-	<%= lesc file[:path] %> <%= lesc file[:type] %>
+%----------------------------------------------------------------------------------------
+%   HEADING SECTIONS
+%----------------------------------------------------------------------------------------
 
-	<% if file[:type] == 'image' %>
-		\includegraphics[width=\textwidth]{{<%= File.basename(file[:path], File.extname(file[:path])) %>}<%= File.extname(file[:path]) %>}
-	<% end %>
+  \textsc{\LARGE Swinburne University of Technology}\\[1.5cm] % Name of your university/college
+  \textsc{\Large <%= lesc @task.unit.name %>}\\[0.5cm] % Major heading such as course name
+  \textsc{\large Doubtfire Submission}\\[0.5cm] % Minor heading such as course title
+
+%----------------------------------------------------------------------------------------
+%   TITLE SECTION
+%----------------------------------------------------------------------------------------
+
+  \HRule \\[0.4cm]
+  { \huge \bfseries <%= lesc @task.name %>}\\[0.4cm] % Title of your document
+  \HRule \\[1.5cm]
+
+%----------------------------------------------------------------------------------------
+%   AUTHOR SECTION
+%----------------------------------------------------------------------------------------
+
+\begin{minipage}{0.4\textwidth}
+\begin{flushleft} \large
+\emph{Submitted By:} \\
+<%  if @task.group_task? %>
+<%=   lesc @task.group_submission.submitted_by_project.student.first_name %> \textsc{<%= lesc @task.group_submission.submitted_by_project.student.last_name %>}
+\\[1cm]
+\emph{Group Members:} \\
+<%    total = @task.group_submission.tasks.count * 10 %>
+<%    for grp_task in @task.group_submission.tasks %>
+<%      next if grp_task.nil? %>
+<%      weight = total * grp_task.contribution_pct / 100 %>
+<%      weight = 30 if weight > 30 %>
+<%=     lesc grp_task.student.first_name %> \textsc{<%= lesc grp_task.student.last_name %>} {\footnotesize \ttfamily <%= lesc '-' * weight %>>}\\
+<%    end %>
+<%  else %>
+<%=   lesc @task.student.first_name %> \textsc{<%= lesc @task.student.last_name %>}
+<%  end %>
+\end{flushleft}
+\end{minipage}
+~
+\begin{minipage}{0.4\textwidth}
+\begin{flushright} \large
+\emph{Tutor:} \\
+<%  if @task.group_task? and not @task.group.tutor.nil? %>
+<%=   lesc @task.group.tutor.first_name %> \textsc{<%= lesc @task.group.tutor.last_name %>} % Supervisor's Name
+<%  elsif not @task.project.main_tutor.nil? %>
+<%=   lesc @task.project.main_tutor.first_name %> \textsc{<%= lesc @task.project.main_tutor.last_name %>} % Supervisor's Name
+<%  else %>
+No Tutor % Supervisor's Name
+<%  end %>
+\end{flushright}
+\end{minipage}\\[4cm]
+
+%----------------------------------------------------------------------------------------
+% DATE SECTION
+%----------------------------------------------------------------------------------------
+
+{\large \today}\\[3cm] % Date, change the \today to a set date if you want to be precise
+
+%----------------------------------------------------------------------------------------
+% LOGO SECTION
+%----------------------------------------------------------------------------------------
+
+\includegraphics[width=1cm]{apple-touch-icon-180x180.png}
+
+\vfill
+
+\end{titlepage}
+
+\pagestyle{body}
+
+<% @files.each_with_index do |file, idx| %>
+  <%  if file != @files.first %>
+  \clearpage
+  <%  end %>
+
+  \fancyhead[L]{ File <%= idx + 1 %> of <%= @files.count %>  }
+
+  <% if file[:type] == 'image' %>
+    \fancyhead[R]{ <%= @task.upload_requirements[idx]['name'] %>  }
+    \graphicspath{ {<%= @base_path %>} }
+    \includegraphics[width=\textwidth]{{<%= File.basename(file[:path], File.extname(file[:path])) %>}<%= File.extname(file[:path]) %>}
+  <% end %>
+
+  <% if file[:type] == 'code' %>
+    \inputminted[breaklines,linenos]{<%= @task.pygments_lang(File.extname(file[:path])[1..-1]) %>}{<%= file[:path] %>}
+  <% end %>
+
+  <% if file[:type] == 'document' %>
+    \includepdf[pages={1-}]{<%= file[:path] %>}
+  <% end %>
 <% end %>
 
  % section hello_world (end) Hello World

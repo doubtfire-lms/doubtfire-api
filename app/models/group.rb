@@ -6,6 +6,7 @@ class Group < ActiveRecord::Base
   has_many :projects, -> { where("group_memberships.active = :value", value: true) }, through: :group_memberships
   has_many :past_projects, -> { where("group_memberships.active = :value", value: false) },  through: :group_memberships, source: 'project'
   has_one :unit, through: :group_set
+  has_one :tutor, through: :tutorial
 
   validates :group_set, presence: true, allow_nil: false
   validates :tutorial, presence: true, allow_nil: false
@@ -173,5 +174,4 @@ class Group < ActiveRecord::Base
     end
     return true
   end
-
 end
