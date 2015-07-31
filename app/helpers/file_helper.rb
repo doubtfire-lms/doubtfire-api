@@ -98,6 +98,8 @@ module FileHelper
   end
 
   def self.student_group_work_dir(type, group_submission, task=nil, create=false)
+    return nil unless group_submission
+    
     file_server = Doubtfire::Application.config.student_work_dir
     dst = "#{file_server}/" # trust the server config and passed in type for paths
 
