@@ -1,3 +1,4 @@
+@import url('https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css');
 /**
  * This is the main application stylesheet. It should include or import all
  * stylesheets used throughout the application as this is the only stylesheet in
@@ -6224,6 +6225,37 @@ a.editable-empty:focus {
 body {
   font: 11px/1.7em 'Open Sans', Helvetica;
 }
+.root-view {
+  float: left;
+  width: 100%;
+  position: relative;
+  min-height: 1px;
+  padding-left: 15px;
+  padding-right: 15px;
+}
+@media (min-width: 768px) {
+  .root-view {
+    float: left;
+    width: 100%;
+  }
+}
+@media (min-width: 992px) {
+  .root-view {
+    float: left;
+    width: 100%;
+  }
+}
+@media (min-width: 1200px) {
+  .root-view {
+    float: left;
+    width: 75%;
+  }
+}
+@media (min-width: 1200px) {
+  .root-view {
+    margin-left: 12.5%;
+  }
+}
 ul.nav.nav-tabs {
   margin-bottom: 20px;
 }
@@ -6239,6 +6271,13 @@ a {
 .sign-out-container i {
   margin-top: 100px;
   font-size: 100px;
+}
+.panel-body + .panel-heading {
+  border-top: 1px solid #ddd !important;
+  border-radius: 0 !important;
+}
+table.table-pointer tr {
+  cursor: pointer;
 }
 table td {
   vertical-align: middle !important;
@@ -7359,33 +7398,8 @@ pdf-panel-viewer iframe {
 pdf-panel-viewer .panel-footer {
   height: 60px;
 }
-.groupset-manage-view > .info-area {
-  margin-bottom: 3em;
-}
 .groupset-manage-view .multi-group-actions form {
   margin-bottom: 1em;
-}
-.unit-admin-groupset-tab .groupset-selector {
-  margin-bottom: 3em;
-}
-.unit-admin-groupset-tab .groupset-selector + groupset-manage {
-  padding-top: 3em;
-  border-top: 1px dashed gray;
-}
-.unit-admin-groupset-tab .groupset-area > .info-area {
-  display: -webkit-flex;
-  display: flex;
-  -webkit-align-items: center;
-  align-items: center;
-  -webkit-justify-content: space-between;
-  justify-content: space-between;
-  margin-bottom: 3em;
-}
-.unit-admin-groupset-tab .groupset-area > .info-area button.add-group-set i {
-  margin-bottom: 0.25em;
-}
-.unit-admin-groupset-tab .groupset-area > .info-area button.add-group-set p {
-  margin: 0;
 }
 .unit-admin-groupset-tab table tr,
 .groupset-selector table tr,
