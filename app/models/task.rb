@@ -609,9 +609,13 @@ class Task < ActiveRecord::Base
       # puts tac.task.name
       pdf_text = tac.make_pdf
 
-      File.open(final_pdf_path, 'w') do |fout| 
+      self.portfolio_evidence = final_pdf_path
+
+      File.open(self.portfolio_evidence, 'w') do |fout| 
         fout.puts pdf_text
       end
+
+      self.save
 
       clear_in_process()
     rescue => e
