@@ -405,38 +405,6 @@ class Task < ActiveRecord::Base
     plagarism_match_links.count
   end
 
-  #
-  # The student has uploaded new work...
-  #
-  def accept_new_submission (user, propagate = true, contributions = nil, trigger = 'ready_to_mark')
-    if group_task? && propagate
-      if contributions.nil? # even distribution
-        contribs = group.projects.map { |proj| { project: proj, pct: 100 / group.projects.count }  }
-      else
-        contribs = contributions.map { |data| { project: Project.find(data[:project_id]), pct: data[:pct].to_i }  }
-        # puts contribs
-      end
-      group_submission = group.create_submission self, "#{user.name} has submitted work", contribs
-      group_submission.tasks.each { |t| t.accept_new_submission(user, propagate=false) }
-      reload
-    else
-      self.file_uploaded_at = DateTime.now
-
-      # This task is now ready to submit
-      if not (discuss? || complete? || fix_and_include?)
-        self.trigger_transition trigger, user, false, false # dont propagate -- already done
-        
-        plagarism_match_links.each do | link |
-          link.destroy
-        end
-        reverse_plagiarism_match_links do | link |
-          link.destroy
-        end
-      end
-      save
-    end
-  end
-
   def name
     task_definition.name
   end
@@ -618,14 +586,129 @@ class Task < ActiveRecord::Base
   def convert_submission_to_pdf
     return false unless move_files_to_in_process()
 
-    tac = TaskAppController.new
-    tac.init(self)
-    puts tac.task.name
-    pdf_text = tac.make_pdf
+    begin
+      tac = TaskAppController.new
+      tac.init(self)
+      puts tac.task.name
+      pdf_text = tac.make_pdf
 
-    File.open(final_pdf_path, 'w') do |fout| 
-      fout.puts pdf_text
-    end  
+      File.open(final_pdf_path, 'w') do |fout| 
+        fout.puts pdf_text
+      end
+    rescue => e
+      puts "Failed to convert submission to pdf for #{id} #{e.message}"
+    end
+  end
+
+  #
+  # The student has uploaded new work...
+  #
+  def create_submission_and_trigger_state_change (user, propagate = true, contributions = nil, trigger = 'ready_to_mark')
+    if group_task? && propagate
+      if contributions.nil? # even distribution
+        contribs = group.projects.map { |proj| { project: proj, pct: 100 / group.projects.count }  }
+      else
+        contribs = contributions.map { |data| { project: Project.find(data[:project_id]), pct: data[:pct].to_i }  }
+        # puts contribs
+      end
+      group_submission = group.create_submission self, "#{user.name} has submitted work", contribs
+      group_submission.tasks.each { |t| t.create_submission_and_trigger_state_change(user, propagate=false) }
+      reload
+    else
+      self.file_uploaded_at = DateTime.now
+
+      # This task is now ready to submit
+      if not (discuss? || complete? || fix_and_include?)
+        self.trigger_transition trigger, user, false, false # dont propagate -- already done
+        
+        plagarism_match_links.each do | link |
+          link.destroy
+        end
+        reverse_plagiarism_match_links do | link |
+          link.destroy
+        end
+      end
+      save
+    end
+  end
+
+  #
+  # Moves submission into place
+  #
+  def accept_submission(current_user, files, student, ui, contributions, trigger)
+    #
+    # Ensure that each file in files has the following attributes:
+    # id, name, filename, type, tempfile  
+    #
+    files.each do | file |
+      ui.error!({"error" => "Missing file data for '#{file.name}'"}, 403) if file.id.nil? || file.name.nil? || file.filename.nil? || file.type.nil? || file.tempfile.nil?
+    end
+
+    # Ensure group if group task
+    if group_task? && group.nil?
+      ui.error!({"error" => "You must be in a group to submit this task."}, 403)
+    end
+   
+    # file.key            = "file0"
+    # file.name           = front end name for file
+    # file.tempfile.path  = actual file dir
+    # file.filename       = their name for the file
+
+    #
+    # Confirm subtype categories using filemagic
+    #
+    files.each do | file |
+      logger.debug "checking file type for #{file.tempfile.path}"
+      if not FileHelper.accept_file(file, file.name, file.type)
+        ui.error!({"error" => "'#{file.name}' is not a valid #{file.type} file"}, 403)
+      end
+    end
+    
+    create_submission_and_trigger_state_change(current_user, propagate = true, contributions = contributions, trigger = trigger)
+
+    #
+    # Create student submission folder (<tmpdir>/doubtfire/new/<id>)
+    #
+    tmp_dir = File.join( Dir.tmpdir, 'doubtfire', 'new', "#{id}" )
+    logger.debug("creating tmp dir at #{tmp_dir}")
+    
+    # ensure the dir exists
+    FileUtils.mkdir_p(tmp_dir)
+
+    #
+    # Set portfolio_evidence to nil while it gets processed
+    #
+    portfolio_evidence = nil
+
+    #
+    # Create cover pages for submission
+    #
+    files.each_with_index.map do | file, idx |        
+      
+      output_filename = File.join(tmp_dir, "#{idx.to_s.rjust(3, '0')}.#{file.type}#{File.extname(file.filename).downcase}")
+      
+      # puts file.tempfile.path
+      # puts output_filename
+      FileUtils.cp file.tempfile.path, output_filename
+    end
+    
+    #
+    # Now copy over the temp directory over to the enqueued directory
+    #
+    enqueued_dir = student_work_dir(:new, self)[0..-2]
+    # puts "move ", "#{tmp_dir}", enqueued_dir
+    # FileUtils.cp_r "#{tmp_dir}", enqueued_dir
+
+    pwd = FileUtils.pwd
+    # move to tmp dir
+    Dir.chdir(tmp_dir)
+    # move all files to the enq dir
+    FileUtils.mv Dir.glob("*"), enqueued_dir
+    # FileUtils.rm Dir.glob("*")
+    # remove the directory
+    Dir.chdir(pwd)
+    Dir.rmdir(tmp_dir)
+    # puts "done"
   end
 end
 

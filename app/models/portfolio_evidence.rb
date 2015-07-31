@@ -13,8 +13,6 @@ class PortfolioEvidence
     FileHelper.student_work_dir(type, task, create)
   end
 
-
-
   def self.logger
     Rails.logger
   end
@@ -165,7 +163,7 @@ class PortfolioEvidence
       begin
         task = Task.find(folder_id)
         logger.info "creating pdf for task #{task.id}"
-        process_task_to_pdf(task)
+        task.convert_submission_to_pdf
 
         if done[task.project].nil?
           done[task.project] = []
