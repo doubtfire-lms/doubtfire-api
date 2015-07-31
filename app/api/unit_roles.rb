@@ -98,6 +98,10 @@ module Api
           :role_id
         )
       
+      if unit_role_parameters[:role_id] == Role.tutor.id && unit_role.role == Role.convenor && unit_role.unit.convenors.count == 1
+        error!({"error" => "There must be at least one convenor for the unit"}, 403)
+      end
+
       unit_role.update!(unit_role_parameters)
       unit_role
     end 

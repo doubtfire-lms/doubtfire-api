@@ -89,9 +89,9 @@ module Api
       group :unit do
         requires :name
         requires :code
-        requires :description
-        requires :start_date
-        requires :end_date
+        optional :description
+        optional :start_date
+        optional :end_date
       end
     end
     post '/units' do
@@ -108,6 +108,19 @@ module Api
                                             :start_date,
                                             :end_date
                                           )
+
+      if unit_parameters[:description].nil?
+        unit_parameters[:description] = unit_parameters[:name]
+      end
+      if unit_parameters[:start_date].nil?
+        start_date = Date.parse('Monday')
+        delta = start_date > Date.today ? 0 : 7 
+        unit_parameters[:start_date] = start_date + delta
+      end
+      if unit_parameters[:end_date].nil?
+        unit_parameters[:end_date] = unit_parameters[:start_date] + 16.weeks
+      end
+
       unit = Unit.create!(unit_parameters)
 
       # Employ current user as convenor

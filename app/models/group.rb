@@ -36,7 +36,7 @@ class Group < ActiveRecord::Base
 
   def role_for(user)
     result = unit.role_for(user)
-    if result == :Student
+    if result == Role.student
       result = nil unless has_user user
     end
 

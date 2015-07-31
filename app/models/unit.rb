@@ -197,6 +197,10 @@ class Unit < ActiveRecord::Base
     end
   end
 
+  def tutorial_with_abbr(abbr)
+    tutorials.where(abbreviation: abbr).first
+  end
+
   # Imports users into a project from CSV file.
   # Format: Student ID,Course ID,First Name,Initials,Surname,Mark,Assessment,Status
   # Only Student ID, First Name, and Surname are used.
@@ -240,7 +244,7 @@ class Unit < ActiveRecord::Base
           projects: {unit_id: id}
         ).count == 0
 
-        tutorial = tutorial_cache[tutorial_code] || Tutorial.where(abbreviation: tutorial_code, unit_id: id).first
+        tutorial = tutorial_cache[tutorial_code] || tutorial_with_abbr(tutorial_code)
         tutorial_cache[tutorial_code] ||= tutorial
 
         # Add the user to the project (if not already in there)
@@ -319,6 +323,60 @@ class Unit < ActiveRecord::Base
     end
   end
 
+  def import_groups_from_csv(group_set, file)
+    added = []
+    errors = []
+
+    CSV.parse(file, {:headers => true, :header_converters => [:downcase]}).each do |row|
+      next if row[0] =~ /^(group_name)|(name)/ # Skip header
+
+      grp = group_set.groups.find_or_create_by(name: row['group_name'])
+
+      user = User.where(username: row['username']).first
+      project = students.where('unit_roles.user_id = :id', id: user.id).first
+
+      if project.nil?
+        errors << { group: "#{row['group_name']}", user: "#{row['username']}", reason: "Student not found" }
+        next
+      end
+
+      if grp.new_record?
+        tutorial = tutorial_with_abbr(row['tutorial'])
+        if tutorial.nil?
+          errors << { group: "#{row['group_name']}", user: "#{row['username']}", reason: "Tutorial not found" }
+          next
+        end
+
+        grp.tutorial = tutorial
+        grp.save
+      end
+
+      begin
+        grp.add_member(project)
+      rescue Exception => e
+        errors << { group: "#{row['group_name']}", user: "#{row['username']}", reason: e.message }
+        next
+      end
+      added << { group: "#{row['group_name']}", user: "#{row['username']}" }
+    end
+
+    {
+      errors: errors,
+      added: added
+    }
+  end
+
+  def export_groups_to_csv(group_set)
+    CSV.generate do |row|
+      row << ["group_name", "username", "tutorial"]
+      group_set.groups.each do |grp|
+        grp.projects.each do |project|
+          row << [grp.name, project.student.username,  grp.tutorial.abbreviation]
+        end
+      end
+    end
+  end
+
   # def import_tutorials_from_csv(file)
   #   CSV.foreach(file) do |row|
   #     next if row[0] =~ /Subject Code/ # Skip header
@@ -363,57 +421,12 @@ class Unit < ActiveRecord::Base
     failed_tasks = []
     project_cache = Project.where(unit_id: id)
 
-    CSV.foreach(file) do |row|
+    CSV.parse(file, {:headers => true, :header_converters => [:downcase]}).each do |row|
       next if row[0] =~ /^(Task Name)|(name)/ # Skip header
 
-      name, abbreviation, description, weighting, required, target_grade, restrict_status_updates, upload_requirements, target_date = row[0..8]
-      next if name.nil? || abbreviation.nil?
+      task_definition, new_task = TaskDefinition.task_def_for_csv_row(self, row)
 
-      description = "(No description given)" if description == "NULL"
-      target_date = target_date.strip
-      
-      if target_date !~ /20\d\d\-\d{1,2}\-\d{1,2}$/ # Matches YYYY-mm-dd by default
-        if target_date =~ /\d{1,2}\-\d{1,2}\-20\d\d/ # Matches dd-mm-YYYY
-          target_date = target_date.split("-").reverse.join("-")
-        elsif target_date =~ /\d{1,2}\/\d{1,2}\/20\d\d$/ # Matches dd/mm/YYYY
-          target_date = target_date.split("/").reverse.join("-")
-        elsif target_date =~ /\d{1,2}\/\d{1,2}\/\d\d$/ # Matches dd/mm/YY
-          target_date = "20#{target_date.split("/").reverse.join("-")}"
-        elsif target_date =~ /\d{1,2}\-\d{1,2}\-\d\d$/ # Matches dd-mm-YY
-          target_date = "20#{target_date.split("-").reverse.join("-")}"
-        elsif target_date =~ /\d{1,2}\-\d{1,2}\-\d\d \d\d:\d\d:\d\d$/ # Matches dd-mm-YY hh:mm:ss
-          target_date = target_date.split(" ").first
-          target_date = "20#{target_date.split("-").reverse.join("-")}"
-        elsif target_date =~ /\d{1,2}\/\d{1,2}\/\d\d [\d:]+$/ # Matches dd/mm/YY 00:00:00
-          target_date = target_date.split(" ").first
-          target_date = "20#{target_date.split("/").reverse.join("-")}"
-        end
-      end
-
-      new_task = false
-      task_definition = TaskDefinition.find_by(unit_id: id, abbreviation: abbreviation)
-
-      if task_definition.nil?
-        task_definition = TaskDefinition.find_by(unit_id: id, name: name)
-      end
-
-      if task_definition.nil?
-        task_definition = TaskDefinition.find_or_create_by(unit_id: id, name: name, abbreviation: abbreviation)
-        new_task = true
-      end
-
-      task_definition.name                        = name
-      task_definition.unit_id                     = id
-      task_definition.abbreviation                = abbreviation
-      task_definition.description                 = description
-      task_definition.weighting                   = BigDecimal.new(weighting)
-      task_definition.required                    = ["Yes", "y", "Y", "yes", "true", "TRUE", "1"].include? required
-      task_definition.target_grade                = target_grade
-      task_definition.restrict_status_updates     = ["Yes", "y", "Y", "yes", "true", "TRUE", "1"].include? restrict_status_updates
-      task_definition.target_date                 = Time.zone.parse(target_date)
-      task_definition.upload_requirements         = upload_requirements
-      
-      task_definition.save
+      next if task_definition.nil?
 
       if task_definition.persisted?
         if new_task
