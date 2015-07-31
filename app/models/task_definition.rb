@@ -165,7 +165,7 @@ class TaskDefinition < ActiveRecord::Base
     result.weighting                   = row['weighting'].to_i
     result.target_grade                = row['target_grade'].to_i
     result.restrict_status_updates     = ["Yes", "y", "Y", "yes", "true", "TRUE", "1"].include? row['restrict_status_updates']
-    result.target_date                 = CSVHelper.csv_date_to_date(row['target_date'])
+    result.target_date                 = CsvHelper.csv_date_to_date(row['target_date'])
     result.upload_requirements         = row['upload_requirements']
     
     result.save
