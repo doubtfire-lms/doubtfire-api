@@ -455,7 +455,12 @@ class Task < ActiveRecord::Base
 
     FileUtils.rm(zip_file) if File.exists? zip_file
 
-    input_files = Dir.entries(task_dir).select { | f | (f =~ /^\d{3}\.(cover|document|code|image)/) == 0 }
+    input_files = Dir.entries(task_dir).select { | f | (f =~ /^\d{3}.(cover|document|code|image)/) == 0 }
+
+    zip_dir = File.dirname(zip_file)
+    if not Dir.exists? zip_dir
+      FileUtils.mkdir_p zip_dir
+    end
 
     Zip::File.open(zip_file, Zip::File::CREATE) do | zip |
       zip.mkdir "#{id}"
@@ -467,12 +472,24 @@ class Task < ActiveRecord::Base
     FileUtils.rm_rf(task_dir)
   end
 
+  def clear_in_process
+    in_process_dir = student_work_dir(:in_process, false)
+    if Dir.exists? in_process_dir
+      if FileUtils.pwd == in_process_dir
+        Dir.chdir(FileUtils.student_work_dir())
+      end
+      FileUtils.rm_rf in_process_dir
+    end
+  end
+
   #
   # Move folder over from new or done -> in_process returns true on success
   #
   def move_files_to_in_process
     # find and clear out old dir
     in_process_dir = student_work_dir(:in_process, false)
+
+    return false if in_process_dir.nil?
 
     if Dir.exists? in_process_dir
       pwd = FileUtils.pwd
@@ -525,7 +542,7 @@ class Task < ActiveRecord::Base
     upload_requirements.each do |file_req|
       # puts file_req
       output_filename = __output_filename__(in_process_dir, idx, file_req['type'])
-      puts output_filename
+      # puts output_filename
       if output_filename.nil?
         idx += 1 # skip headers if present
         output_filename = __output_filename__(in_process_dir, idx, file_req['type'])
@@ -589,12 +606,14 @@ class Task < ActiveRecord::Base
     begin
       tac = TaskAppController.new
       tac.init(self)
-      puts tac.task.name
+      # puts tac.task.name
       pdf_text = tac.make_pdf
 
       File.open(final_pdf_path, 'w') do |fout| 
         fout.puts pdf_text
       end
+
+      clear_in_process()
     rescue => e
       puts "Failed to convert submission to pdf for #{id} #{e.message}"
     end
@@ -680,12 +699,9 @@ class Task < ActiveRecord::Base
     #
     portfolio_evidence = nil
 
-    #
-    # Create cover pages for submission
-    #
     files.each_with_index.map do | file, idx |        
       
-      output_filename = File.join(tmp_dir, "#{idx.to_s.rjust(3, '0')}.#{file.type}#{File.extname(file.filename).downcase}")
+      output_filename = File.join(tmp_dir, "#{idx.to_s.rjust(3, '0')}-#{file.type}#{File.extname(file.filename).downcase}")
       
       # puts file.tempfile.path
       # puts output_filename

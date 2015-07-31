@@ -305,7 +305,8 @@ module Api::Submission::GenerateHelpers
 
             # Read into the task's portfolio_evidence path the new file
             tmp_file = File.join(tmp_dir, File.basename(file.name))
-            task.portfolio_evidence = PortfolioEvidence.final_pdf_path_for(task)
+            task.portfolio_evidence = task.final_pdf_path()
+            
             # get file out of zip... to tmp_file
             file.extract(tmp_file){ true }
 
