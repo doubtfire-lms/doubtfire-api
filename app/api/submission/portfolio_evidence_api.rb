@@ -43,11 +43,10 @@ module Api
         upload_reqs = task.upload_requirements
         student = task.project.student
         unit = task.project.unit
-        
-        task.accept_new_submission(current_user, propagate=true, params[:contributions], trigger)
 
         # Copy files to be PDFed
-        PortfolioEvidence.produce_student_work(scoop_files(params, upload_reqs), student, task, self)
+        # PortfolioEvidence.produce_student_work(scoop_files(params, upload_reqs), student, task, self)
+        task.accept_submission(current_user, scoop_files(params, upload_reqs), student, self, params[:contributions], trigger)
 
         TaskUpdateSerializer.new(task)
       end #post
