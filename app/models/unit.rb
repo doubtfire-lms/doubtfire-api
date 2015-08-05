@@ -516,6 +516,34 @@ class Unit < ActiveRecord::Base
     end
   end
 
+  def create_plagiarism_link(t1, t2, match)
+    plk1 = PlagiarismMatchLink.where(task_id: t1.id, other_task_id: t2.id).first
+    plk2 = PlagiarismMatchLink.where(task_id: t2.id, other_task_id: t1.id).first
+
+    # Delete old links between tasks
+    plk1.destroy unless plk1.nil? ## will delete its pair
+    plk2.destroy unless plk2.nil?
+
+    plk1 = PlagiarismMatchLink.create do | pml |
+      pml.task = t1
+      pml.other_task = t2
+      pml.plagiarism_report_url = match[0][:url]
+
+      pml.pct = match[0][:pct]
+    end
+
+    plk2 = PlagiarismMatchLink.create do | pml |
+      pml.task = t2
+      pml.other_task = t1
+      pml.plagiarism_report_url = match[1][:url]
+
+      pml.pct = match[1][:pct]
+    end
+
+    FileHelper.save_plagiarism_html(plk1, match[0][:html])
+    FileHelper.save_plagiarism_html(plk2, match[1][:html])
+  end
+
   def update_plagiarism_stats()
     moss = MossRuby.new(Doubtfire::Application.config.moss_key)
 
@@ -526,7 +554,10 @@ class Unit < ActiveRecord::Base
       #delete old plagiarism links
       puts "Deleting old links for task definition #{td.id}"
       PlagiarismMatchLink.joins(:task).where("tasks.task_definition_id" => td.id).each do | plnk |
-        PlagiarismMatchLink.find(plnk.id).destroy!
+        begin
+          PlagiarismMatchLink.find(plnk.id).destroy!
+        rescue
+        end
       end
 
       # Reset the tasks % similar
@@ -560,31 +591,19 @@ class Unit < ActiveRecord::Base
           next
         end
 
-        plk1 = PlagiarismMatchLink.where(task_id: task_id_1, other_task_id: task_id_2).first
-        plk2 = PlagiarismMatchLink.where(task_id: task_id_2, other_task_id: task_id_1).first
+        if td.group_set # its a group task
+          g1_tasks = t1.group_submission.tasks
+          g2_tasks = t2.group_submission.tasks
 
-        # Delete old links between tasks
-        plk1.destroy unless plk1.nil?
-        plk2.destroy unless plk2.nil?
+          g1_tasks.each do | gt1 |
+            g2_tasks.each do | gt2 |
+              create_plagiarism_link(gt1, gt2, match)
+            end
+          end
 
-        plk1 = PlagiarismMatchLink.create do | pml |
-          pml.task = t1
-          pml.other_task = t2
-          pml.plagiarism_report_url = match[0][:url]
-
-          pml.pct = match[0][:pct]
+        else # just link the individuals...
+          create_plagiarism_link(t1, t2, match)
         end
-
-        plk2 = PlagiarismMatchLink.create do | pml |
-          pml.task = t2
-          pml.other_task = t1
-          pml.plagiarism_report_url = match[1][:url]
-
-          pml.pct = match[1][:pct]
-        end
-
-        FileHelper.save_plagiarism_html(plk1, match[0][:html])
-        FileHelper.save_plagiarism_html(plk2, match[1][:html])
       end # end of each result
     end # for each task definition where it needs to be updated
     update_student_max_pct_similar()
@@ -600,6 +619,23 @@ class Unit < ActiveRecord::Base
     tasks = tasks_for_definition(td)
     tasks_with_files = tasks.select { |t| t.has_pdf }
     
+    if td.group_set
+      # group task so only select one member of each group
+      seen_groups = []
+
+      tasks_with_files = tasks_with_files.select do |t| 
+        if t.group.nil?
+          result = false
+        else
+          result = ! seen_groups.include?(t.group)
+          if result
+            seen_groups << t.group
+          end
+        end
+        result
+      end
+    end
+
     # check number of files, and they are new
     if tasks_with_files.count > 1 && (tasks.where("tasks.file_uploaded_at > ?", last_plagarism_scan ).select { |t| t.has_pdf }.count > 0 || force )
       td.plagiarism_checks.each do |check|
@@ -639,7 +675,7 @@ class Unit < ActiveRecord::Base
         next if td.plagiarism_checks.length == 0
         # Is there anything to check?
 
-        puts "\ - Checking plagiarism for #{td.name}"
+        puts "- Checking plagiarism for #{td.name}"
         tasks = tasks_for_definition(td)
         tasks_with_files = tasks.select { |t| t.has_pdf }
         if tasks_with_files.count > 1 && (tasks.where("tasks.file_uploaded_at > ?", last_plagarism_scan ).select { |t| t.has_pdf }.count > 0 || force )
@@ -656,7 +692,7 @@ class Unit < ActiveRecord::Base
             moss = MossRuby.new(Doubtfire::Application.config.moss_key)
 
             # Set options  -- the options will already have these default values
-            moss.options[:max_matches] = 5
+            moss.options[:max_matches] = 7
             moss.options[:directory_submission] = true
             moss.options[:show_num_matches] = 500
             moss.options[:experimental_server] = false

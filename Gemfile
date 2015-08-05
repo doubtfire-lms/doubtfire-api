@@ -61,7 +61,7 @@ gem 'pdftk'
 gem 'rubyzip'
 
 # Plagarism detection
-gem 'moss_ruby', '= 1.1.1'
+gem 'moss_ruby', '= 1.1.2'
 
 # Latex
 gem 'rails-latex', '=1.0.13'

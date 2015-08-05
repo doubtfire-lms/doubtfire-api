@@ -31,7 +31,7 @@ class Task < ActiveRecord::Base
   belongs_to :task_status           # Foreign key
   has_many :sub_tasks,      dependent: :destroy
   has_many :comments, class_name: "TaskComment", dependent: :destroy, inverse_of: :task
-  has_many :plagarism_match_links, class_name: "PlagiarismMatchLink", dependent: :destroy, inverse_of: :task
+  has_many :plagiarism_match_links, class_name: "PlagiarismMatchLink", dependent: :destroy, inverse_of: :task
   has_many :reverse_plagiarism_match_links, class_name: "PlagiarismMatchLink", dependent: :destroy, inverse_of: :other_task, foreign_key: "other_task_id"
   belongs_to :group_submission
 
@@ -394,15 +394,22 @@ class Task < ActiveRecord::Base
 
   # Indicates what is the largest % similarity is for this task
   def pct_similar
-    if plagarism_match_links.order(pct: :desc).first.nil?
+    if plagiarism_match_links.order(pct: :desc).first.nil?
       0
     else
-      plagarism_match_links.order(pct: :desc).first.pct
+      plagiarism_match_links.order(pct: :desc).first.pct
     end
   end
 
   def similar_to_count
-    plagarism_match_links.count
+    plagiarism_match_links.count
+  end
+
+  def recalculate_max_similar_pct
+    self.max_pct_similar = pct_similar()
+    self.save
+
+    project.recalculate_max_similar_pct()
   end
 
   def name
@@ -652,7 +659,7 @@ class Task < ActiveRecord::Base
       if not (discuss? || complete? || fix_and_include?)
         self.trigger_transition trigger, user, false, false # dont propagate -- already done
         
-        plagarism_match_links.each do | link |
+        plagiarism_match_links.each do | link |
           link.destroy
         end
         reverse_plagiarism_match_links do | link |
