@@ -201,77 +201,115 @@ class Unit < ActiveRecord::Base
     tutorials.where(abbreviation: abbr).first
   end
 
+  #
   # Imports users into a project from CSV file.
-  # Format: Student ID,Course ID,First Name,Initials,Surname,Mark,Assessment,Status
-  # Only Student ID, First Name, and Surname are used.
+  # Format: unit_code, Student ID,First Name,Surname,email,tutorial
+  #
   def import_users_from_csv(file)
     tutorial_cache = {}
-    added_users = []
+    success = []
+    errors = []
+    ignored = []
     
     CSV.foreach(file) do |row|
       # Make sure we're not looking at the header or an empty line
-      next if row[0] =~ /subject_code/
+      next if row[0] =~ /(subject|unit)_code/
       # next if row[5] !~ /^LA\d/
 
-      subject_code, username  = row[0..1]
-      first_name, last_name   = [row[2], row[3]].map{|name| name.titleize }
-      email, tutorial_code    = row[4..5]
+      begin
+        unit_code, username  = row[0..1]
+        first_name, last_name   = [row[2], row[3]].map{|name| name.titleize unless name.nil? }
+        email, tutorial_code    = row[4..5]
 
-      next if subject_code != code
+        if unit_code != code
+          ignored << { row: row, message: "Invalid unit code. #{unit_code} does not match #{code}" }
+          next
+        end
 
-      username = username.downcase
+        if ! email =~ /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\z/i
+          ignored << { row: row, message: "Invalid email address (#{email})" }
+          next
+        end
 
-      project_participant = User.find_or_create_by(username: username) {|new_user|
-        new_user.first_name         = first_name
-        new_user.last_name          = last_name
-        new_user.nickname           = first_name
-        new_user.role_id            = Role.student_id
-        new_user.email              = email
-        new_user.encrypted_password = BCrypt::Password.create("password")
-      }
+        username = username.downcase
 
-      if not project_participant.persisted?
-        project_participant.password = "password"
-        project_participant.save
-      end
+        project_participant = User.find_or_create_by(username: username) {|new_user|
+          new_user.first_name         = first_name
+          new_user.last_name          = last_name
+          new_user.nickname           = first_name
+          new_user.role_id            = Role.student_id
+          new_user.email              = email
+          new_user.encrypted_password = BCrypt::Password.create("password")
+        }
 
-      #
-      # Only import if a valid user - or if save worked
-      #
-      if project_participant.persisted?
-        user_not_in_project = UnitRole.joins(project: :unit).where(
-          user_id: project_participant.id,
-          projects: {unit_id: id}
-        ).count == 0
+        if not project_participant.persisted?
+          project_participant.password = "password"
+          project_participant.save
+        end
 
-        tutorial = tutorial_cache[tutorial_code] || tutorial_with_abbr(tutorial_code)
-        tutorial_cache[tutorial_code] ||= tutorial
-
-        # Add the user to the project (if not already in there)
-        if user_not_in_project
-          added_users << project_participant
-          if not tutorial.nil?
-            enrol_student(project_participant, tutorial.id)
-          else
-            enrol_student(project_participant)
-          end
-        else
-          # update tutorial
-          unit_role = UnitRole.joins(project: :unit).where(
+        #
+        # Only import if a valid user - or if save worked
+        #
+        if project_participant.persisted?
+          user_not_in_project = UnitRole.joins(project: :unit).where(
             user_id: project_participant.id,
             projects: {unit_id: id}
-          ).first
+          ).count == 0
 
-          if unit_role.tutorial_id != tutorial.id
+          tutorial = tutorial_cache[tutorial_code] || tutorial_with_abbr(tutorial_code)
+          tutorial_cache[tutorial_code] ||= tutorial
+
+          # Add the user to the project (if not already in there)
+          if user_not_in_project
+            if not tutorial.nil?
+              enrol_student(project_participant, tutorial)
+              success << { row: row, message: "Enrolled student with tutorial." }
+            else
+              enrol_student(project_participant)
+              success << { row: row, message: "Enrolled student without tutorial." }
+            end
+          else
+            # update tutorial
+            unit_role = UnitRole.joins(project: :unit).where(
+              user_id: project_participant.id,
+              projects: {unit_id: id}
+            ).first
             unit_role = UnitRole.find(unit_role.id)
-            unit_role.tutorial = tutorial
-            unit_role.save
-            added_users << project_participant #TODO: would be good to separate into added/updated
+
+            changes = ""          
+
+            if unit_role.tutorial != tutorial
+              unit_role.tutorial = tutorial
+              unit_role.save
+              changes << "Changed tutorial. "
+            end
+
+            if not unit_role.project.enrolled
+              user_project = unit_role.project
+              user_project.enrolled = true
+              user_project.save
+              changes << "Changed enrolment."
+            end
+
+            if changes.length == 0
+              ignored << { row: row, message: "No change." }
+            else
+              success << { row: row, message: changes }
+            end
           end
+        else
+          errors << { row: row, message: "Student record is invalid." }
         end
+      rescue Exception => e
+        errors << { row: row, message: "Unexpected error: #{e.message}" }
       end
     end
-    added_users
+    
+    {
+      success: success,
+      ignored: ignored,
+      errors:  errors
+    }
   end
 
   # Use the values in the CSV to set the enrolment of these
@@ -279,44 +317,78 @@ class Unit < ActiveRecord::Base
   # CSV should contain just the usernames to withdraw
   def unenrol_users_from_csv(file)
     # puts 'starting withdraw'
-    changed_projects = []
+    success = []
+    errors = []
+    ignored = []
     
-    CSV.foreach(file) do |row|
+    CSV.parse(file, {:headers => true, :header_converters => [:downcase]}).each do |row|
       # Make sure we're not looking at the header or an empty line
-      next if row[0] =~ /username/
+      next if row[0] =~ /(username)|(((unit)|(subject))_code)/
       # next if row[5] !~ /^LA\d/
 
-      username  = row[0].downcase
+      begin
+        unit_code = row['unit_code']
+        username  = row['username'].downcase unless row['username'].nil?
 
-      # puts username
+        if unit_code != code
+          ignored << { row: row, message: "Invalid unit code. #{unit_code} does not match #{code}" }
+          next
+        end
 
-      project_participant = User.where(username: username)
+        # puts username
 
-      next if not project_participant
-      next if not project_participant.count == 1
-      project_participant = project_participant.first
+        project_participant = User.where(username: username)
 
-      user_project = UnitRole.joins(project: :unit).where(
-          user_id: project_participant.id,
-          projects: {unit_id: id}
-        )
+        if not project_participant
+          errors << { row:row, message: "User #{username} not found" }
+          next
+        end
+        if not project_participant.count == 1
+          errors << { row:row, message: "User #{username} not found" }
+          next
+        end
 
-      next if not user_project
-      next if not user_project.count == 1
+        project_participant = project_participant.first
 
-      user_project = user_project.first.project
+        user_project = UnitRole.joins(project: :unit).where(
+            user_id: project_participant.id,
+            projects: {unit_id: id}
+          )
 
-      user_project.enrolled = false
-      user_project.save
-      changed_projects << username
+        if not user_project
+          ignored << { row:row, message: "User #{username} not enrolled in unit" }
+          next
+        end
+
+        if not user_project.count == 1
+          ignored << { row:row, message: "User #{username} not enrolled in unit" }
+          next
+        end
+
+        user_project = user_project.first.project
+
+        if user_project.enrolled
+          user_project.enrolled = false
+          user_project.save
+          success << { row:row, message: "User #{username} withdrawn from unit" }
+        else
+          ignored << { row:row, message: "User #{username} not enrolled in unit" }
+        end
+      rescue Exception => e
+        errors << { row: row, message: "Unexpected error: #{e.message}" }
+      end
     end
 
-    changed_projects # return the changed projects
+    {
+      success: success,
+      ignored: ignored,
+      errors:  errors
+    }
   end 
 
   def export_users_to_csv
     CSV.generate do |row|
-      row << ["subject_code", "username", "first_name", "last_name", "email", "tutorial"]
+      row << ["unit_code", "username", "first_name", "last_name", "email", "tutorial"]
       students.each do |project|
         row << [project.unit.code, project.student.username,  project.student.first_name, project.student.last_name, project.student.email, project.tutorial_abbr]
       end
