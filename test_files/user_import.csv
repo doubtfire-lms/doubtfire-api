@@ -1,0 +1,12 @@
+email,first_name,last_name,username,nickname,role
+blah2@doubtfire.com,Blah,Surname,blah2,Blah,Student
+blah@doubtfire.com,Blah,Surname,blah,Blah,1
+,,,,,,,,,
+
+
+test1@doubtfire.com,Test 1,Surname1,test1,Blah,Tutor
+test2@doubtfire.com
+test3@doubtfire.com,Test 3,Surname3,test3,Blah,Sudo
+test4@doubtfire.com,Dup Test 3,Surname3,test3,Blah,Student
+test5@doubtfire.com,Dup Test 3,Surname3,test3,Blah,Student
+test4@doubtfire.com,Dup Test 3,Surname3,test5,Blah,Student
