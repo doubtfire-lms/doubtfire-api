@@ -227,7 +227,7 @@ class Unit < ActiveRecord::Base
         end
 
         if ! email =~ /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\z/i
-          ignored << { row: row, message: "Invalid email address (#{email})" }
+          errors << { row: row, message: "Invalid email address (#{email})" }
           next
         end
 
@@ -301,7 +301,7 @@ class Unit < ActiveRecord::Base
           errors << { row: row, message: "Student record is invalid." }
         end
       rescue Exception => e
-        errors << { row: row, message: "Unexpected error: #{e.message}" }
+        errors << { row: row, message: e.message }
       end
     end
     
