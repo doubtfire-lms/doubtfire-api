@@ -395,46 +395,75 @@ class Unit < ActiveRecord::Base
     end
   end
 
+  def missing_headers(row, headers)
+    headers - row.to_hash().keys
+  end
+
   def import_groups_from_csv(group_set, file)
-    added = []
+    success = []
     errors = []
+    ignored = []
 
-    CSV.parse(file, {:headers => true, :header_converters => [:downcase]}).each do |row|
+    CSV.parse(file, {:headers => true, :header_converters => [:downcase, lambda { |hdr| hdr.strip } ]}).each do |row|
       next if row[0] =~ /^(group_name)|(name)/ # Skip header
-
-      grp = group_set.groups.find_or_create_by(name: row['group_name'])
-
-      user = User.where(username: row['username']).first
-      project = students.where('unit_roles.user_id = :id', id: user.id).first
-
-      if project.nil?
-        errors << { group: "#{row['group_name']}", user: "#{row['username']}", reason: "Student not found" }
-        next
-      end
-
-      if grp.new_record?
-        tutorial = tutorial_with_abbr(row['tutorial'])
-        if tutorial.nil?
-          errors << { group: "#{row['group_name']}", user: "#{row['username']}", reason: "Tutorial not found" }
+      
+      begin
+        missing = missing_headers(row, ['group_name', 'username', 'tutorial'])
+        if missing.count > 0
+          errors << { row: row, message: "Missing headers: #{missing.join(', ')}" }
           next
         end
 
-        grp.tutorial = tutorial
-        grp.save
-      end
+        username = row['username'].downcase.strip unless row['username'].nil?
+        group_name = row['group_name'].strip unless row['group_name'].nil?
+        tutorial = row['tutorial'].strip unless row['tutorial'].nil?
 
-      begin
-        grp.add_member(project)
+        user = User.where(username: username).first
+
+        if user.nil?
+          errors << { row: row, message: "Unable to find user #{username}" }
+          next
+        end
+
+        project = students.where('unit_roles.user_id = :id', id: user.id).first
+
+        if project.nil?
+          errors << { row: row,  message: "Student #{username} not found in unit" }
+          next
+        end
+
+        grp = group_set.groups.find_or_create_by(name: group_name)
+
+        change = ""
+
+        if grp.new_record?
+          tutorial = tutorial_with_abbr(tutorial)
+          if tutorial.nil?
+            errors << { row: row, message: "Tutorial #{tutorial} not found" }
+            next
+          end
+
+          change = "Created new group. "
+          grp.tutorial = tutorial
+          grp.save!
+        end
+
+        begin
+          grp.add_member(project)
+        rescue Exception => e
+          errors << { row: row, message: e.message }
+          next
+        end
+        success << { row: row, message: "#{change}Added #{username} to #{grp.name}." }
       rescue Exception => e
-        errors << { group: "#{row['group_name']}", user: "#{row['username']}", reason: e.message }
-        next
+        errors << { row: row, message: e.message}
       end
-      added << { group: "#{row['group_name']}", user: "#{row['username']}" }
     end
 
     {
-      errors: errors,
-      added: added
+      success: success,
+      ignored: ignored,
+      errors:  errors
     }
   end
 

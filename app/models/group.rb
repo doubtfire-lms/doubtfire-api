@@ -8,6 +8,7 @@ class Group < ActiveRecord::Base
   has_one :unit, through: :group_set
   has_one :tutor, through: :tutorial
 
+  validates :name, presence: true, allow_nil: false
   validates :group_set, presence: true, allow_nil: false
   validates :tutorial, presence: true, allow_nil: false
   validates_associated :group_memberships
