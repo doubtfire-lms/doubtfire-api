@@ -270,6 +270,8 @@ class User < ActiveRecord::Base
   def self.import_from_csv(current_user, file)
     addedUsers = []
     
+    # CSV.parse(file, {:headers => true, :header_converters => [:downcase, lambda { |hdr| hdr.strip } ]}]}).each do |row|
+      
     csv = CSV.read(file)
     # shift to skip header row
     csv.shift

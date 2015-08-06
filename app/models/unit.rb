@@ -321,7 +321,7 @@ class Unit < ActiveRecord::Base
     errors = []
     ignored = []
     
-    CSV.parse(file, {:headers => true, :header_converters => [:downcase]}).each do |row|
+    CSV.parse(file, {:headers => true, :header_converters => [:downcase, lambda { |hdr| hdr.strip unless hdr.nil? } ]}).each do |row|
       # Make sure we're not looking at the header or an empty line
       next if row[0] =~ /(username)|(((unit)|(subject))_code)/
       # next if row[5] !~ /^LA\d/
@@ -404,7 +404,7 @@ class Unit < ActiveRecord::Base
     errors = []
     ignored = []
 
-    CSV.parse(file, {:headers => true, :header_converters => [:downcase, lambda { |hdr| hdr.strip } ]}).each do |row|
+    CSV.parse(file, {:headers => true, :header_converters => [:downcase, lambda { |hdr| hdr.strip unless hdr.nil? } ]}).each do |row|
       next if row[0] =~ /^(group_name)|(name)/ # Skip header
       
       begin
@@ -517,34 +517,51 @@ class Unit < ActiveRecord::Base
   end
 
   def import_tasks_from_csv(file)
-    added_tasks = []
-    updated_tasks = []
-    failed_tasks = []
+    success = []
+    errors = []
+    ignored = []
+
     project_cache = Project.where(unit_id: id)
 
-    CSV.parse(file, {:headers => true, :header_converters => [:downcase]}).each do |row|
+    CSV.parse(file, {:headers => true, :header_converters => [:downcase, lambda { |hdr| hdr.strip.gsub(" ", "_").to_sym unless hdr.nil? }]}).each do |row|
       next if row[0] =~ /^(Task Name)|(name)/ # Skip header
 
-      task_definition, new_task = TaskDefinition.task_def_for_csv_row(self, row)
-
-      next if task_definition.nil?
-
-      if task_definition.persisted?
-        if new_task
-          add_new_task_def task_definition, project_cache
-          added_tasks.push(task_definition)
-        else
-          updated_tasks.push(task_definition)
+      begin
+        missing = missing_headers(row, TaskDefinition.csv_columns)
+        if missing.count > 0
+          errors << { row: row, message: "Missing headers: #{missing.join(', ')}" }
+          next
         end
-      else
-        failed_tasks.push(task_definition)
+
+        task_definition, new_task, message = TaskDefinition.task_def_for_csv_row(self, row)
+
+        if task_definition.nil?
+          errors << { row: row, message: message }
+          next
+        end
+
+        if task_definition.persisted?
+          if new_task
+            begin
+              add_new_task_def task_definition, project_cache
+            rescue Exception => e
+              task_definition.destroy
+              errors << {row: row, message: "Error occurred added tasks for students. #{e.message}"}
+              next
+            end
+          end
+        end
+
+        success << { row: row, message: message }
+      rescue Exception => e
+        errors << { row: row, message: e.message }
       end
     end
 
     {
-      added:    added_tasks,
-      updated:  updated_tasks,
-      failed:   failed_tasks
+      success: success,
+      ignored: ignored,
+      errors:  errors
     }
   end
 
