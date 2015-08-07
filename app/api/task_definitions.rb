@@ -1,11 +1,13 @@
 require 'grape'
 require 'task_serializer'
+require 'mime-check-helpers'
 
 module Api
   class TaskDefinitions < Grape::API
     helpers AuthHelpers
     helpers AuthorisationHelpers
     helpers FileHelper
+    helpers MimeCheckHelpers
 
     before do
       authenticated?
@@ -137,15 +139,13 @@ module Api
       requires :unit_id, type: Integer, :desc => "The unit to upload tasks to"
     end
     post '/csv/task_definitions' do
+      # check mime is correct before uploading
+      ensure_csv!(params[:file][:tempfile])
+      
       unit = Unit.find(params[:unit_id])
       
       if not authorise? current_user, unit, :uploadCSV
         error!({"error" => "Not authorised to upload CSV of users"}, 403)
-      end
-      
-      # check mime is correct before uploading
-      if not params[:file][:type] == "text/csv"
-        error!({"error" => "File given is not a CSV file"}, 403)
       end
       
       # Actually import...
