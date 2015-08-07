@@ -64,4 +64,4 @@ gem 'rubyzip'
 gem 'moss_ruby', '= 1.1.2'
 
 # Latex
-gem 'rails-latex', '=1.0.13'
+gem 'rails-latex', '=1.0.14', :path => '.'
