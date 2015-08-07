@@ -20,3 +20,5 @@ spec/reports
 
 config/initializers/pdfkit.rb
 student_work/
+
+.DS_Store

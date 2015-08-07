@@ -1,9 +1,11 @@
 require 'grape'
+require 'mime-check-helpers'
 
 module Api
   class GroupSets < Grape::API
     helpers AuthHelpers
     helpers AuthorisationHelpers
+    helpers MimeCheckHelpers
 
     before do
       authenticated?
@@ -111,9 +113,7 @@ module Api
     end
     post '/units/:unit_id/group_sets/:group_set_id/groups/csv' do
       # check mime is correct before uploading
-      if not params[:file][:type] == "text/csv"
-        error!({"error" => "File given is not a CSV file"}, 403)
-      end
+      ensure_csv!(params[:file][:tempfile])
 
       unit = Unit.find(params[:unit_id])
       group_set = unit.group_sets.find(params[:group_set_id])

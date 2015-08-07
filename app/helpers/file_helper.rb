@@ -182,9 +182,10 @@ module FileHelper
 
   def self.compress_pdf(path)
     #trusting path... as it needs to be replaced
-    #puts "compressing #{path}"
-    # only compress things over 1.2Mb
-    return if File.size?(path) < 1200000
+    # puts "compressing #{path} #{File.size?(path)}"
+    # only compress things over 2.2Mb
+    return if File.size?(path) < 22000000
+    # puts "compressing..."
     
     begin
       tmp_file = File.join( Dir.tmpdir, 'doubtfire', 'compress', "#{File.dirname(path).split(File::Separator).last}-file.pdf" )

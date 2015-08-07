@@ -95,6 +95,7 @@ module Api::Submission::GenerateHelpers
 
         # Add to the template entry string
         grp = task.group
+        next if grp.nil?
         csv_str << "\nGRP_#{grp.id}_#{subm.id},#{grp.name.gsub(/,/, '_')},#{grp.tutorial.abbreviation},#{task.task_definition.abbreviation.gsub(/,/, '_')},#{task.id},\"#{task.last_comment_not_by(user).gsub(/"/, "\"\"")}\",\"#{task.last_comment_by(user).gsub(/"/, "\"\"")}\",rtm,"
         
         src_path = task.portfolio_evidence
@@ -117,7 +118,7 @@ module Api::Submission::GenerateHelpers
   #
   # Update the tasks status from the csv and email students 
   #
-  def update_task_status_from_csv(csv_str, updated_tasks, ignore_files, error_tasks)
+  def update_task_status_from_csv(csv_str, success, ignored, errors)
     done = {}
     csv_str.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '')
 
@@ -130,7 +131,7 @@ module Api::Submission::GenerateHelpers
       # get the task...
       task = Task.find(task_entry['id'])
       if task.nil?
-        error_tasks << { file: 'marks.csv', error: "Task id #{task_entry['id']} not found" }
+        errors << { row: task_entry, message: "Task id #{task_entry['id']} not found" }
         next
       end
 
@@ -141,22 +142,24 @@ module Api::Submission::GenerateHelpers
         # look for group submission
         subm = GroupSubmission.find( group_details[2].to_i )
         submitter_task = subm.submitter_task
-        next if submitter_task.nil?
+        if submitter_task.nil?
+          errors << {row: task_entry, message: "Unable to find original submission for group task."}
+          next
+        end
 
         group = Group.find( group_details[1].to_i )
         if group.id != task.group.id
-          error_tasks << { file: 'marks.csv', error: "Group mismatch (expected task #{task.id} to match #{task.group.name})"}
+          errors << { row: task_entry, error: "Group mismatch (expected task #{task.id} to match #{task.group.name})"}
           next
         end
 
         if not authorise? current_user, submitter_task, :put
-          error_tasks << { file: 'marks.csv', error: "You do not have permission to assess group task with id #{task.id}"}
-          ok_to_update = false
+          errors << { row: task_entry, error: "You do not have permission to assess group task with id #{task.id}"}
           break
         end
 
         submitter_task.trigger_transition(task_entry[mark_col], current_user) # saves task
-        updated_tasks << { file: "marks.csv", task:"#{group.name} #{submitter_task.task_definition.abbreviation}" }
+        success << { row: task_entry, message:"Updated group task #{submitter_task.task_definition.abbreviation} for #{group.name}" }
         if not (task_entry['comment'].nil? || task_entry['comment'].empty?)
           submitter_task.add_comment current_user, task_entry['comment']
         end
@@ -172,18 +175,18 @@ module Api::Submission::GenerateHelpers
       else
         if task_entry['username'] != task.project.student.username
           # error!({"error" => "File #{file.name} has a mismatch of student id (task with id #{task.id} matches student #{task.project.student.username}, not that in marks.csv of #{t['id']}"}, 403)
-          error_tasks << { file: 'marks.csv', error: "Student mismatch (expected task #{task.id} to match #{task.project.student.username}, was #{task_entry['username']} in marks.csv)"}
+          errors << { row: task_entry, message: "Student mismatch (expected task #{task.id} to match #{task.project.student.username}, was #{task_entry['username']} in marks.csv)"}
           next
         end
 
         # Can the user assess this task?
         if not authorise? current_user, task, :put
-          error_tasks << { file: 'marks.csv', error: "You do not have permission to assess task with id #{task.id}"}
+          errors << { row: task_entry, message: "You do not have permission to assess task with id #{task.id}"}
           next
         end
 
         task.trigger_transition(task_entry[mark_col], current_user) # saves task
-        updated_tasks << { file: "marks.csv", task:"#{task.student.name} #{task.task_definition.abbreviation}" }
+        success << { row: task_entry, message:"Updated task #{task.task_definition.abbreviation} for #{task.student.name}" }
         if not (task_entry['comment'].nil? || task_entry['comment'].empty?)
           task.add_comment current_user, task_entry['comment']
         end
@@ -216,9 +219,9 @@ module Api::Submission::GenerateHelpers
   def upload_batch_task_zip_or_csv(file)
     fm = FileMagic.new(FileMagic::MAGIC_MIME)
 
-    updated_tasks = []
-    ignore_files = []
-    error_tasks = []
+    success = []
+    errors = []
+    ignored = []
 
     mime_type = fm.file(file.tempfile.path)
 
@@ -229,7 +232,7 @@ module Api::Submission::GenerateHelpers
     end
 
     if mime_type.start_with?('text/', 'text/plain', 'text/csv')
-      update_task_status_from_csv(File.open(file.tempfile.path).read, updated_tasks, ignore_files, error_tasks)
+      update_task_status_from_csv(File.open(file.tempfile.path).read, success, ignored, errors)
     else
       # files are extracted to a temp dir first
       i = 0
@@ -259,7 +262,7 @@ module Api::Submission::GenerateHelpers
           csv_str.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '')
 
           # Update tasks and email students
-          update_task_status_from_csv(csv_str, updated_tasks, ignore_files, error_tasks)
+          update_task_status_from_csv(csv_str, success, ignored, errors)
 
           # read keys from CSV - to check that files exist in csv
           entry_data = CSV.parse(csv_str, {:headers => true, :header_converters => [:downcase]})
@@ -270,14 +273,14 @@ module Api::Submission::GenerateHelpers
             next if File.basename(file.name) == "marks.csv"
 
             # Test filename pattern
-            if (/.*-\d+.pdf/ =~ File.basename(file.name)) != 0
+            if (/.*-\d+.pdf/i =~ File.basename(file.name)) != 0
               if file.name[-1] != '/'
-                ignore_files << { file: file.name }
+                ignored << { row: "File #{file.name}", message: "Does not appear to be a task PDF." }
               end
               next
             end
             if (/\._.*/ =~ File.basename(file.name)) == 0
-              ignore_files << { file: file.name }
+              ignored << { row: "File #{file.name}", message: "Does not appear to be a task PDF." }
               next
             end
 
@@ -285,7 +288,7 @@ module Api::Submission::GenerateHelpers
             task_id_from_filename = File.basename(file.name, ".pdf").split('-').last
             task = Task.find_by_id(task_id_from_filename)
             if task.nil?
-              ignore_files << { file: file.name }
+              ignored << { row: "File #{file.name}", message: "Unable to find associated task." }
               next
             end
 
@@ -293,13 +296,13 @@ module Api::Submission::GenerateHelpers
             task_entry = entry_data.select{ | t | t['id'] == task.id.to_s }.first
             if task_entry.nil?
               # error!({"error" => "File #{file.name} has a mismatch of task id ##{task.id} (this task id does not exist in marks.csv)"}, 403)
-              error_tasks << { file: file.name, error: "Task id #{task.id} not in marks.csv"}
+              errors << { row: "File #{file.name}", message: "Task id #{task.id} not in marks.csv"}
               next
             end
             
             # Can the user assess this task?
             if not authorise? current_user, task, :put
-              error_tasks << { file: file.name, error: "You do not have permission to assess task with id #{task.id}"}
+              errors << { row: "File #{file.name}", error: "You do not have permission to assess task with id #{task.id}"}
               next
             end
 
@@ -313,13 +316,13 @@ module Api::Submission::GenerateHelpers
             # copy tmp_file to dest
             if FileHelper.copy_pdf(tmp_file, task.portfolio_evidence)
               if task.group.nil?
-                updated_tasks << { file: file.name, task:"#{task.student.name} #{task.task_definition.abbreviation}" }
+                success << { row: "File #{file.name}", message:"Replace PDF of task #{task.task_definition.abbreviation} for #{task.student.name}" }
               else
-                updated_tasks << { file: file.name, task:"#{task.group.name} #{task.task_definition.abbreviation}" }
+                success << { row: "File #{file.name}", message:"Replace PDF of group task #{task.task_definition.abbreviation} for #{task.group.name}" }
               end
               FileUtils.rm tmp_file
             else
-              error_tasks << { file: file.name, error: 'Invalid pdf' }
+              errors << { row: "File #{file.name}", message: 'The file does not appear to be a valid PDF.' }
               next
             end
           end
@@ -334,9 +337,9 @@ module Api::Submission::GenerateHelpers
     end
 
     {
-      succeeded:  updated_tasks,
-      ignored:    ignore_files,
-      failed:     error_tasks
+      success:  success,
+      ignored:  ignored,
+      errors:   errors
     }
   end
   

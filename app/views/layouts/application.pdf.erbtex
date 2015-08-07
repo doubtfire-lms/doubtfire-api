@@ -4,6 +4,13 @@
 \usepackage[margin=2.0cm]{geometry}
 \usepackage{fancyhdr}
 \usepackage{pdfpages}
+\usepackage{epstopdf}
+\epstopdfDeclareGraphicsRule{.tif}{png}{.png}{convert #1 \OutputFile}
+\AppendGraphicsExtensions{.tif}
+\epstopdfDeclareGraphicsRule{.tiff}{png}{.png}{convert #1 \OutputFile}
+\AppendGraphicsExtensions{.tiff}
+\epstopdfDeclareGraphicsRule{.gif}{png}{.png}{convert #1 \OutputFile}
+\AppendGraphicsExtensions{.gif}
 
 \newcommand{\HRule}{\rule{\linewidth}{0.5mm}} % Defines a new command for the horizontal lines, change thickness here
 
