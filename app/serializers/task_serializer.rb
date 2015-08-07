@@ -3,11 +3,21 @@ class ShallowTaskSerializer < ActiveModel::Serializer
 end
 
 class TaskUpdateSerializer < ActiveModel::Serializer
-  attributes :id, :status, :project_id, :new_stats, :processing_pdf, :include_in_portfolio
+  attributes :id, :status, :project_id, :new_stats, :processing_pdf, :include_in_portfolio, :other_projects
 
   def new_stats
     object.project.task_stats
   end
+
+  def other_projects
+    grp = object.group
+    others = grp.projects.select { |p| p.id != object.project_id }.map{|p| {id: p.id, new_stats: p.task_stats}}
+  end
+
+  def include_other_projects?
+    object.group_task? && ! object.group.nil?
+  end
+
 end
 
 class TaskStatSerializer < ActiveModel::Serializer
