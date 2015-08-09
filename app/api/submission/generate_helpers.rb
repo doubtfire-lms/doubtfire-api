@@ -1,7 +1,7 @@
 # getting file MIME types
 require 'filemagic'
 # image to pdf
-require 'RMagick'
+require 'rmagick'
 # code to html
 require 'coderay'
 # html to pdf
