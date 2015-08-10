@@ -123,13 +123,17 @@ module Api::Submission::GenerateHelpers
     csv_str.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '')
 
     # read data from CSV
-    CSV.parse(csv_str, {:headers => true, :header_converters => [:downcase]}).each do |task_entry|
+    CSV.parse(csv_str, {
+        :headers => true, 
+        :header_converters => [:downcase],
+        :converters => [lambda{ |body| body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]
+    }).each do |task_entry|
       group = nil
 
       # puts "#{task_entry}"
 
       # get the task...
-      task = Task.find(task_entry['id'])
+      task = Task.find_by_id(task_entry['id'])
       if task.nil?
         errors << { row: task_entry, message: "Task id #{task_entry['id']} not found" }
         next
@@ -140,7 +144,11 @@ module Api::Submission::GenerateHelpers
         group_details = /GRP_(\d+)_(\d+)/.match(task_entry['username'])
         
         # look for group submission
-        subm = GroupSubmission.find( group_details[2].to_i )
+        subm = GroupSubmission.find_by_id( group_details[2].to_i )
+        if subm.nil?
+          errors << {row: task_entry, message: "Unable to find original submission for group task."}
+          next
+        end
         submitter_task = subm.submitter_task
         if submitter_task.nil?
           errors << {row: task_entry, message: "Unable to find original submission for group task."}
@@ -265,7 +273,11 @@ module Api::Submission::GenerateHelpers
           update_task_status_from_csv(csv_str, success, ignored, errors)
 
           # read keys from CSV - to check that files exist in csv
-          entry_data = CSV.parse(csv_str, {:headers => true, :header_converters => [:downcase]})
+          entry_data = CSV.parse(csv_str, {
+              :headers => true,
+              :header_converters => [:downcase],
+              :converters => [lambda{ |body| body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]
+            })
 
           # Copy over the updated/marked files to the file system
           zip.each do |file|

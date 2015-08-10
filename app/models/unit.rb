@@ -321,7 +321,11 @@ class Unit < ActiveRecord::Base
     errors = []
     ignored = []
     
-    CSV.parse(file, {:headers => true, :header_converters => [:downcase, lambda { |hdr| hdr.strip unless hdr.nil? } ]}).each do |row|
+    CSV.parse(file, {
+        :headers => true,
+        :header_converters => [:downcase, lambda { |hdr| hdr.strip unless hdr.nil?}],
+        :converters => [lambda{ |body| body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]
+    }).each do |row|
       # Make sure we're not looking at the header or an empty line
       next if row[0] =~ /(username)|(((unit)|(subject))_code)/
       # next if row[5] !~ /^LA\d/
@@ -404,7 +408,11 @@ class Unit < ActiveRecord::Base
     errors = []
     ignored = []
 
-    CSV.parse(file, {:headers => true, :header_converters => [:downcase, lambda { |hdr| hdr.strip unless hdr.nil? } ]}).each do |row|
+    CSV.parse(file, {
+        :headers => true,
+        :header_converters => [:downcase, lambda { |hdr| hdr.strip unless hdr.nil?}],
+        :converters => [lambda{ |body| body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]
+    }).each do |row|
       next if row[0] =~ /^(group_name)|(name)/ # Skip header
       
       begin
@@ -523,7 +531,11 @@ class Unit < ActiveRecord::Base
 
     project_cache = Project.where(unit_id: id)
 
-    CSV.parse(file, {:headers => true, :header_converters => [:downcase, lambda { |hdr| hdr.strip.gsub(" ", "_").to_sym unless hdr.nil? }]}).each do |row|
+    CSV.parse(file, {
+        :headers => true, 
+        :header_converters => [:downcase, lambda { |hdr| hdr.strip.gsub(" ", "_").to_sym unless hdr.nil? }],
+        :converters => [lambda{ |body| body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]
+    }).each do |row|
       next if row[0] =~ /^(Task Name)|(name)/ # Skip header
 
       begin

@@ -171,7 +171,16 @@ class TaskDefinition < ActiveRecord::Base
     result.target_date                 = CsvHelper.csv_date_to_date(row[:target_date])
     result.upload_requirements         = row[:upload_requirements]
     
-    result.save!
+    if result.valid?
+      begin
+        result.save
+      rescue
+        result.destroy
+        return [nil, false, "Failed to save definition due to data error."]
+      end
+    else
+      return [nil, false, result.errors.join(". ")]
+    end
     [result, new_task, new_task ? "Added new task definition #{result.abbreviation}." : "Updated existing task #{result.abbreviation}" ]
   end
 

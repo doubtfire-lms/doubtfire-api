@@ -280,7 +280,11 @@ class User < ActiveRecord::Base
     errors = []
     ignored = []
     
-    CSV.parse(file, {:headers => true, :header_converters => [:downcase, lambda { |hdr| hdr.strip.gsub(" ", "_") unless hdr.nil? } ]}).each do |row|
+    CSV.parse(file, {
+        :headers => true,
+        :header_converters => [:downcase, lambda { |hdr| hdr.strip.gsub(" ", "_") unless hdr.nil? } ],
+        :converters => [lambda{ |body| body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]
+    }).each do |row|
       next if row[0] =~ /(email)|(username)/
 
       begin
