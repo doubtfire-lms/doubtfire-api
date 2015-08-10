@@ -1,11 +1,13 @@
 require 'grape'
 require 'task_serializer'
+require 'mime-check-helpers'
 
 module Api
   class TaskDefinitions < Grape::API
     helpers AuthHelpers
     helpers AuthorisationHelpers
     helpers FileHelper
+    helpers MimeCheckHelpers
 
     before do
       authenticated?
@@ -137,15 +139,13 @@ module Api
       requires :unit_id, type: Integer, :desc => "The unit to upload tasks to"
     end
     post '/csv/task_definitions' do
+      # check mime is correct before uploading
+      ensure_csv!(params[:file][:tempfile])
+      
       unit = Unit.find(params[:unit_id])
       
       if not authorise? current_user, unit, :uploadCSV
         error!({"error" => "Not authorised to upload CSV of users"}, 403)
-      end
-      
-      # check mime is correct before uploading
-      if not params[:file][:type] == "text/csv"
-        error!({"error" => "File given is not a CSV file"}, 403)
       end
       
       # Actually import...
@@ -213,10 +213,17 @@ module Api
         error!({"error" => "Not authorised to download task details of unit"}, 403)
       end
 
+      if task_def.has_task_pdf?
+        header['Content-Disposition'] = "attachment; filename=#{task_def.abbreviation}.pdf"
+        path = unit.path_to_task_pdf(task_def)
+      else
+        path = Rails.root.join("public", "resources", "FileNotFound.pdf")
+        header['Content-Disposition'] = "attachment; filename=FileNotFound.pdf"
+      end
+      
       content_type "application/pdf"
-      header['Content-Disposition'] = "attachment; filename=#{task_def.abbreviation}.pdf"
       env['api.format'] = :binary
-      File.read(unit.path_to_task_pdf(task_def))
+      File.read(path)
     end
 
     desc "Download the task resources"
@@ -232,10 +239,18 @@ module Api
         error!({"error" => "Not authorised to download task details of unit"}, 403)
       end
 
-      content_type "application/octet-stream"
-      header['Content-Disposition'] = "attachment; filename=#{task_def.abbreviation}-resources.zip"
+      if task_def.has_task_resources?
+        path = unit.path_to_task_resources(task_def)
+        content_type "application/octet-stream"
+        header['Content-Disposition'] = "attachment; filename=#{task_def.abbreviation}-resources.zip"
+      else
+        path = Rails.root.join("public", "resources", "FileNotFound.pdf")
+        content_type "application/pdf"
+        header['Content-Disposition'] = "attachment; filename=FileNotFound.pdf"
+      end
+
       env['api.format'] = :binary
-      File.read(unit.path_to_task_resources(task_def))
+      File.read(path)
     end
   end
 end

@@ -29,75 +29,78 @@ module Api
       if not authenticated?
         error!({"error" => "Not authorised to download details for task '#{params[:id]}'"}, 401)
       end
+      task = Task.find(params[:id])
 
-        task = Task.find(params[:id])
+      if not authorise? current_user, task, :get_submission
+        error!({"error" => "Not authorised to download details for task '#{params[:id]}'"}, 401)
+      end
 
-        if not authorise? current_user, task, :get_submission
-          error!({"error" => "Not authorised to download details for task '#{params[:id]}'"}, 401)
-        end
+      match = params[:count].to_i % task.similar_to_count
+      if match < 0
+        error!({"error" => "Invalid match sequence, must be 0 or larger"}, 403)
+      end
 
-        match = params[:count].to_i % task.similar_to_count
-        if match < 0
-          error!({"error" => "Invalid match sequence, must be 0 or larger"}, 403)
-        end
+      match_link = task.plagiarism_match_links.order("created_at DESC")[match]
+      return if match_link.nil?
 
-        match_link = task.plagarism_match_links.order("created_at DESC")[match]
-        return if match_link.nil?
-        
-        other_match_link = match_link.other_party
+      # puts "here 1: #{match_link}"
+      
+      other_match_link = match_link.other_party
 
-        output = FileHelper.path_to_plagarism_html(match_link)
+      # puts "here 2: #{other_match_link}"
 
-        if output.nil? || ! File.exists?(output)
-          error!({"error" => "No files to download"}, 403)
-        end
+      output = FileHelper.path_to_plagarism_html(match_link)
 
-        # check if returning both parties
-        if not authorise? current_user, other_match_link.task, :get_submission
-          {
-            student: {
-              username: match_link.student.username,
-              name: match_link.student.name,
-              tutor: match_link.tutor.name,
-              tutorial: match_link.tutorial,
-              html: File.read(output),
-              lnk: (match_link.plagiarism_report_url if authorise? current_user, match_link.task, :view_plagiarism ),
-              pct: match_link.pct
-            },
-            other_student: {
-              username: "???",
-              name: "???",
-              tutor: match_link.other_tutor.name,
-              tutorial: match_link.other_tutorial,
-              html: "<pre>???</pre>",
-              lnk: "",
-              pct: other_match_link.pct
-            }
+      if output.nil? || ! File.exists?(output)
+        error!({"error" => "No files to download"}, 403)
+      end
+
+      # check if returning both parties
+      if not authorise? current_user, other_match_link.task, :get_submission
+        {
+          student: {
+            username: match_link.student.username,
+            name: match_link.student.name,
+            tutor: match_link.tutor.name,
+            tutorial: match_link.tutorial,
+            html: File.read(output),
+            lnk: (match_link.plagiarism_report_url if authorise? current_user, match_link.task, :view_plagiarism ),
+            pct: match_link.pct
+          },
+          other_student: {
+            username: "???",
+            name: "???",
+            tutor: match_link.other_tutor.name,
+            tutorial: match_link.other_tutorial,
+            html: "<pre>???</pre>",
+            lnk: "",
+            pct: other_match_link.pct
           }
-        else
-          otherOutput = FileHelper.path_to_plagarism_html(other_match_link)
+        }
+      else
+        otherOutput = FileHelper.path_to_plagarism_html(other_match_link)
 
-          {
-            student: {
-              username: match_link.student.username,
-              name: match_link.student.name,
-              tutor: match_link.tutor.name,
-              tutorial: match_link.tutorial,
-              html: File.read(output),
-              lnk: (match_link.plagiarism_report_url if authorise? current_user, match_link.task, :view_plagiarism ),
-              pct: match_link.pct
-            },
-            other_student: {
-              username: match_link.other_student.username,
-              name: match_link.other_student.name,
-              tutor: match_link.other_tutor.name,
-              tutorial: match_link.other_tutorial,
-              html: File.read(otherOutput),
-              lnk: (other_match_link.plagiarism_report_url if authorise? current_user, other_match_link.task, :view_plagiarism),
-              pct: other_match_link.pct
-            }
+        {
+          student: {
+            username: match_link.student.username,
+            name: match_link.student.name,
+            tutor: match_link.tutor.name,
+            tutorial: match_link.tutorial,
+            html: File.read(output),
+            lnk: (match_link.plagiarism_report_url if authorise? current_user, match_link.task, :view_plagiarism ),
+            pct: match_link.pct
+          },
+          other_student: {
+            username: match_link.other_student.username,
+            name: match_link.other_student.name,
+            tutor: match_link.other_tutor.name,
+            tutorial: match_link.other_tutorial,
+            html: File.read(otherOutput),
+            lnk: (other_match_link.plagiarism_report_url if authorise? current_user, other_match_link.task, :view_plagiarism),
+            pct: other_match_link.pct
           }
-        end
+        }
+      end
     end
 
     # desc "Get task"

@@ -859,6 +859,11 @@ class Project < ActiveRecord::Base
     max_pct_similar
   end
 
+  def recalculate_max_similar_pct
+    self.max_pct_similar = tasks.sort { |t1, t2|  t1.max_pct_similar <=> t2.max_pct_similar }.last.max_pct_similar
+    self.save
+  end
+
   def matching_task(other_task)
     task_for_task_definition(other_task.task_definition)
   end

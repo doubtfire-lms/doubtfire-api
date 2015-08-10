@@ -54,14 +54,14 @@ end
 # Student submission
 gem 'coderay'
 gem 'ruby-filemagic'
-gem 'rmagick', require: false #already included in other gems - remove to avoid duplicate errors
+gem 'rmagick', '~> 2.15' #require: false #already included in other gems - remove to avoid duplicate errors
 gem 'pdfkit'
 gem 'wkhtmltopdf-binary-11' #too old!
 gem 'pdftk'
 gem 'rubyzip'
 
 # Plagarism detection
-gem 'moss_ruby', '= 1.1.1'
+gem 'moss_ruby', '= 1.1.2'
 
 # Latex
 gem 'rails-latex', '=1.0.13'

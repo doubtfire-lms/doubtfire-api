@@ -54,7 +54,7 @@ Setting up a dev environment:
     2. `git clone https://macite@bitbucket.org/itig/doubtfire-api.git`
 5. Install rails
     1. `gem install bundler`
-    2. `bundle install --without production test` (in project root)
+    2. `bundle install --without production test replica` (in project root)
 6. Create Database
     1. `rake db:create`
     2. `rake db:populate`

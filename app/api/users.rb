@@ -1,9 +1,11 @@
 require 'grape'
+require 'mime-check-helpers'
 
 module Api
   class Users < Grape::API
     helpers AuthHelpers
     helpers AuthorisationHelpers
+    helpers MimeCheckHelpers
     
     before do
       authenticated?
@@ -183,13 +185,11 @@ module Api
       requires :file, type: Rack::Multipart::UploadedFile, :desc => "CSV upload file."
     end
     post '/csv/users' do
+      # check mime is correct before uploading
+      ensure_csv!(params[:file][:tempfile])
+
       if not authorise? current_user, User, :uploadCSV
         error!({"error" => "Not authorised to upload CSV of users"}, 403)
-      end
-      
-      # check mime is correct before uploading
-      if not params[:file][:type] == "text/csv"
-        error!({"error" => "File given is not a CSV file"}, 403)
       end
       
       # Actually import...

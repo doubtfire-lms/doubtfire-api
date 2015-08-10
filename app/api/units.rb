@@ -1,10 +1,12 @@
 require 'grape'
 require 'unit_serializer'
+require 'mime-check-helpers'
 
 module Api
   class Units < Grape::API
     helpers AuthHelpers
     helpers AuthorisationHelpers
+    helpers MimeCheckHelpers
 
     before do
       authenticated?
@@ -169,10 +171,7 @@ module Api
         error!({"error" => "Not authorised to upload CSV of students to #{unit.code}"}, 403)
       end
       
-      # check mime is correct before uploading
-      if not params[:file][:type] == "text/csv"
-        error!({"error" => "File given is not a CSV file"}, 403)
-      end
+      ensure_csv!(params[:file][:tempfile])
       
       # Actually import...
       unit.import_users_from_csv(params[:file][:tempfile])
@@ -183,14 +182,12 @@ module Api
       requires :file, type: Rack::Multipart::UploadedFile, :desc => "CSV upload file."
     end
     post '/csv/units/:id/withdraw' do
+      # check mime is correct before uploading
+      ensure_csv!(params[:file][:tempfile])
+      
       unit = Unit.find(params[:id])
       if not authorise? current_user, unit, :uploadCSV
         error!({"error" => "Not authorised to upload CSV of students to #{unit.code}"}, 403)
-      end
-      
-      # check mime is correct before uploading
-      if not params[:file][:type] == "text/csv"
-        error!({"error" => "File given is not a CSV file"}, 403)
       end
       
       # Actually withdraw...

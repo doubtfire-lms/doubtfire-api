@@ -11,12 +11,12 @@ class PortfolioEvidenceMailer < ActionMailer::Base
     @unsubscribe_url = "#{Doubtfire::Application.config.mail_base_url}home?notifications"
 
     email_with_name = %("#{@student.name}" <#{@student.email}>)
-    convenor_email = %("#{@convenor.name}" <#{@convenor.email}>)
+    tutor_email = %("#{@tutor.name}" <#{@tutor.email}>)
     subject = "#{project.unit.name}: Task PDFs ready to view"
 
     mail(
       to:       email_with_name,
-      from:     convenor_email,
+      from:     tutor_email,
       subject:  subject)
   end
 

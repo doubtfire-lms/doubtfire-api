@@ -63,12 +63,14 @@ module Api
         unit = task.project.unit
         
         if evidence_loc.nil? || task.processing_pdf
-          error!({"error" => "No submission under task '#{task.task_definition.name}' for user #{student.username}"}, 401)
+          evidence_loc = Rails.root.join("public", "resources", "FileNotFound.pdf")
+          header['Content-Disposition'] = "attachment; filename=FileNotFound.pdf"
+        else
+          header['Content-Disposition'] = "attachment; filename=#{task.task_definition.abbreviation}.pdf"
         end
         
         # Set download headers...
         content_type "application/octet-stream"
-        header['Content-Disposition'] = "attachment; filename=#{task.task_definition.abbreviation}.pdf"
         env['api.format'] = :binary
 
         File.read(evidence_loc)

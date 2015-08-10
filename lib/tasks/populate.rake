@@ -55,7 +55,7 @@ namespace :db do
       ajones:             {first_name: "Allan",          last_name: "Jones",                nickname: "P-Jiddy",    role_id: Role.convenor_id},
       rwilson:            {first_name: "Reuben",          last_name: "Wilson",               nickname: "Reubs",     role_id: Role.convenor_id},
       akihironoguchi:     {first_name: "Akihiro",        last_name: "Noguchi",              nickname: "Animations", role_id: Role.tutor_id},
-      cliff:              {first_name: "Cliff",          last_name: "Warren",               nickname: "AvDongle",   role_id: Role.tutor_id},  
+      cliff:              {first_name: "Cliff",          last_name: "Warren",               nickname: "AvDongle",   role_id: Role.tutor_id},
       joostfunkekupper:   {first_name: "Joost",          last_name: "Funke Kupper",         nickname: "Joe",        role_id: Role.tutor_id},
       angusmorton:        {first_name: "Angus",          last_name: "Morton",               nickname: "Angus",      role_id: Role.tutor_id},
       alexcu:             {first_name: "Alex",          last_name: "Cummaudo",              nickname: "Angus",      role_id: Role.convenor_id},
@@ -68,16 +68,16 @@ namespace :db do
     end
 
     unit_data = {
-      intro_prog: { 
-        code: "COS10001", 
-        name: "Introduction to Programming", 
-        convenors: [ :acain, :cwoodward ], 
-        tutors: [ 
-          { user: :acain, num: many_tutorials}, 
-          { user: :cwoodward, num: many_tutorials}, 
-          { user: :ajones, num: many_tutorials}, 
-          { user: :rwilson, num: many_tutorials}, 
-          { user: :akihironoguchi, num: many_tutorials}, 
+      intro_prog: {
+        code: "COS10001",
+        name: "Introduction to Programming",
+        convenors: [ :acain, :cwoodward ],
+        tutors: [
+          { user: :acain, num: many_tutorials},
+          { user: :cwoodward, num: many_tutorials},
+          { user: :ajones, num: many_tutorials},
+          { user: :rwilson, num: many_tutorials},
+          { user: :akihironoguchi, num: many_tutorials},
           { user: :joostfunkekupper, num: many_tutorials},
           { user: :angusmorton, num: some_tutorials},
           { user: :alexcu, num: some_tutorials},
@@ -89,42 +89,42 @@ namespace :db do
           # { user: "tutor_8", num: 4},
           # { user: "tutor_9", num: 4},
           # { user: "tutor_10", num: 4},
-        ], 
+        ],
         num_tasks: some_tasks,
         students: [ ]
       },
-      oop: { 
-        code: "COS20007", 
-        name: "Object Oriented Programming", 
-        convenors: [ :acain, :cwoodward, :ajones ], 
-        tutors: [ 
-          { user: "tutor_1", num: few_tutorials }, 
-          { user: :alexcu, num: few_tutorials }, 
-          { user: :angusmorton, num: few_tutorials }, 
-          { user: :akihironoguchi, num: few_tutorials }, 
+      oop: {
+        code: "COS20007",
+        name: "Object Oriented Programming",
+        convenors: [ :acain, :cwoodward, :ajones ],
+        tutors: [
+          { user: "tutor_1", num: few_tutorials },
+          { user: :alexcu, num: few_tutorials },
+          { user: :angusmorton, num: few_tutorials },
+          { user: :akihironoguchi, num: few_tutorials },
           { user: :joostfunkekupper, num: few_tutorials },
-        ], 
+        ],
         num_tasks: many_task,
         students: [ :cliff ]
       },
-      ai4g: { 
-        code: "COS03046", 
-        name: "Artificial Intelligence for Games", 
-        convenors: [ :cwoodward ], 
-        tutors: [ 
-          { user: :cwoodward, num: few_tutorials }, 
+      ai4g: {
+        code: "COS03046",
+        name: "Artificial Intelligence for Games",
+        convenors: [ :cwoodward ],
+        tutors: [
+          { user: :cwoodward, num: few_tutorials },
           { user: :cliff, num: few_tutorials },
-        ], 
+        ],
         num_tasks: few_tasks,
         students: [ :acain, :ajones, :alexcu ]
       },
-      gameprog: { 
-        code: "COS03243", 
-        name: "Game Programming", 
-        convenors: [ :cwoodward, :alexcu ], 
-        tutors: [ 
-          { user: :cwoodward, num: few_tutorials }, 
-        ], 
+      gameprog: {
+        code: "COS03243",
+        name: "Game Programming",
+        convenors: [ :cwoodward, :alexcu ],
+        tutors: [
+          { user: :cwoodward, num: few_tutorials },
+        ],
         num_tasks: few_tasks,
         students: [ :acain, :ajones ]
       },
@@ -166,20 +166,20 @@ namespace :db do
       if user_cache.has_key?(username)
         return user_cache[username]
       else
-        profile = { 
-          first_name:   Faker::Name.first_name, 
-          last_name:    Faker::Name.last_name, 
+        profile = {
+          first_name:   Faker::Name.first_name,
+          last_name:    Faker::Name.last_name,
           nickname:     username,
           role_id:  Role.student_id,
           email:        "#{username}@doubtfire.com",
           username:     username,
-          password:     'password', 
+          password:     'password',
           password_confirmation: 'password'
         }
 
         user = User.create!(profile)
         user_cache[username] = user
-        return user       
+        return user
       end
     }
 
@@ -191,14 +191,14 @@ namespace :db do
     #     print '.'
     #   end
 
-    #   profile = { 
-    #     first_name:   Faker::Name.first_name, 
-    #     last_name:    Faker::Name.last_name, 
+    #   profile = {
+    #     first_name:   Faker::Name.first_name,
+    #     last_name:    Faker::Name.last_name,
     #     nickname:     "stud_#{count}",
     #     system_role:  'basic',
     #     email:        "#{username}@doubtfire.com",
     #     username:     username,
-    #     password:     'password', 
+    #     password:     'password',
     #     password_confirmation: 'password',
     #   }
 
@@ -234,7 +234,6 @@ namespace :db do
           unit_id: unit.id,
           description: Populator.words(5..10),
           weighting: BigDecimal.new("2"),
-          required: rand < 0.9,   # 10% chance of being false
           target_date: ((count + 1) % 12).weeks.from_now, # Assignment 6 due week 6, etc.
           upload_requirements: up_reqs.to_json
         )
@@ -271,7 +270,7 @@ namespace :db do
 
           # Add a random number of students to the tutorial
           (min_students + rand(delta_students)).times do
-            unit.enrol_student(find_or_create_student.call("student_#{student_count}").id, tutorial.id)
+            unit.enrol_student(find_or_create_student.call("student_#{student_count}"), tutorial.id)
             student_count += 1
           end
 
@@ -280,7 +279,7 @@ namespace :db do
           # Add fixed students to first tutorial
           if count == 0
             unit_details[:students].each do | student_key |
-              unit.enrol_student(user_cache[student_key].id, tutorial.id)
+              unit.enrol_student(user_cache[student_key], tutorial.id)
             end
           end
         end

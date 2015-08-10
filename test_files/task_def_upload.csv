@@ -1,0 +1,7 @@
+name, abbreviation, description, weighting, target_grade, restrict_status_updates, upload_requirements, target_date
+Imported Task 1, IT1, An imported task!, 0, 1, false, [], 2015-01-01
+Imported Task 2, IT2, Another imported task!, 0, 2, true, [], 2015-01-01
+,,,,,,
+,,,
+
+

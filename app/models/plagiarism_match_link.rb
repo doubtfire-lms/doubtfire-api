@@ -7,9 +7,24 @@ class PlagiarismMatchLink < ActiveRecord::Base
   #
   before_destroy do | match_link |
     begin
-      FileHelper.delete_plagarism_html(match_link)
-    rescue
+      if match_link.task.group_task?
+        other_tasks = match_link.task.group_submission.tasks.select{|t| t.id != match_link.task.id }
+
+        other_tasks_using_file = other_tasks.select{|t| t.plagiarism_match_links.where(other_task_id: match_link.other_task_id).count > 0 }
+        FileHelper.delete_plagarism_html(match_link) unless other_tasks_using_file.count > 0
+      else # individual... so can delete file
+        FileHelper.delete_plagarism_html(match_link)
+      end
+    rescue => e
+      puts "error deleting match link for task #{match_link.task.id} = #{e.message}"
     end
+  end
+
+  after_destroy do | match_link |
+    if match_link.other_party
+      match_link.other_party.destroy
+    end
+    match_link.task.recalculate_max_similar_pct
   end
 
   #
