@@ -1,4 +1,3 @@
-@import url('https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css');
 /**
  * This is the main application stylesheet. It should include or import all
  * stylesheets used throughout the application as this is the only stylesheet in
@@ -8469,37 +8468,6 @@ body {
     margin-left: 16.66666667%;
   }
 }
-.root-view {
-  float: left;
-  width: 100%;
-  position: relative;
-  min-height: 1px;
-  padding-left: 15px;
-  padding-right: 15px;
-}
-@media (min-width: 768px) {
-  .root-view {
-    float: left;
-    width: 100%;
-  }
-}
-@media (min-width: 992px) {
-  .root-view {
-    float: left;
-    width: 100%;
-  }
-}
-@media (min-width: 1200px) {
-  .root-view {
-    float: left;
-    width: 75%;
-  }
-}
-@media (min-width: 1200px) {
-  .root-view {
-    margin-left: 12.5%;
-  }
-}
 ul.nav.nav-tabs {
   margin-bottom: 20px;
 }
@@ -8530,6 +8498,12 @@ a {
 }
 .btn-download i {
   margin-right: 0.8ex;
+}
+.badge {
+  border-radius: 1em;
+  padding: 0 1ex;
+  text-align: center;
+  display: inline-block;
 }
 .breadcrumb {
   margin-top: -20px;
@@ -9523,6 +9497,10 @@ a:hover > i.logo {
   color: #C82506;
 }
 /* END TODO */
+file-uploader {
+  display: block;
+  margin: 2.5em 0;
+}
 .file-upload-area .well.drop {
   border: 3px #bbb dotted;
   font-size: larger;
@@ -9681,7 +9659,8 @@ pdf-panel-viewer .panel-footer {
   font-size: 2em;
   cursor: pointer;
 }
-.panel-footer .pagination {
+.panel-footer .pagination,
+.modal-footer .pagination {
   margin: 0;
 }
 .panel-body + .panel-heading {
@@ -9746,6 +9725,9 @@ grade-icon span {
   font-size: 1em;
   cursor: pointer;
 }
+/* Widths of Table */
+/* Flag Icon stuff */
+/* !!! Use this for the number of flags you have !!! */
 .tutor-student-list table thead th {
   vertical-align: middle;
 }
@@ -9765,15 +9747,24 @@ grade-icon span {
   -webkit-justify-content: space-between;
   justify-content: space-between;
 }
-.tutor-student-list a.sort-by-flag-anchor + .flag-sort-options i:hover {
+.tutor-student-list a.sort-by-flag-anchor + .flag-sort-options .flag-sort i,
+.tutor-student-list a.sort-by-flag-anchor + .flag-sort-options .flag-sort grade-icon {
+  display: inline-block;
+}
+.tutor-student-list a.sort-by-flag-anchor + .flag-sort-options .flag-sort > i:hover {
   color: #2a6496;
 }
-.tutor-student-list a.sort-by-flag-anchor + .flag-sort-options grade-icon:hover span {
+.tutor-student-list a.sort-by-flag-anchor + .flag-sort-options .flag-sort > grade-icon:hover span {
   background-color: #2a6496;
 }
-.tutor-student-list table td.flags-data i,
-.tutor-student-list table grade-icon span {
-  margin-right: 1ex;
+.tutor-student-list table td.flags-data .flags {
+  max-width: 105px;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-align-items: center;
+  align-items: center;
+  -webkit-justify-content: space-between;
+  justify-content: space-between;
 }
 .tutor-student-list table td.task-progress-bar {
   padding-right: 3ex;
@@ -9852,4 +9843,22 @@ grade-icon span {
 }
 .tutor-student-list:not(.fullscreen) .panel-body {
   height: auto !important;
+}
+.csv-result-modal .modal-header small {
+  display: block;
+}
+.csv-result-modal table {
+  table-layout: fixed;
+}
+.csv-result-modal table th.message {
+  width: 20%;
+}
+.csv-result-modal table th.data {
+  width: 80%;
+}
+.csv-result-modal td.csv-row {
+  display: block;
+  overflow-x: scroll;
+  font-family: monospace;
+  white-space: nowrap;
 }
