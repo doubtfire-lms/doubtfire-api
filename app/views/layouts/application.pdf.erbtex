@@ -13,6 +13,8 @@
 \AppendGraphicsExtensions{.tiff}
 \epstopdfDeclareGraphicsRule{.gif}{png}{.png}{convert #1 \OutputFile}
 \AppendGraphicsExtensions{.gif}
+\epstopdfDeclareGraphicsRule{.bmp}{png}{.png}{convert #1 \OutputFile}
+\AppendGraphicsExtensions{.bmp}
 
 \newcommand{\HRule}{\rule{\linewidth}{0.5mm}} % Defines a new command for the horizontal lines, change thickness here
 
