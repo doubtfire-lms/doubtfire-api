@@ -325,6 +325,49 @@ it "should know its members" do
     expect(sub1).not_to eq(sub2)
   end
 
+  it "should allow new submissions for members who change groups" do
+    unit = FactoryGirl.create(:unit, group_sets: 1, task_count: 1, student_count: 4, :groups => [ { gs: 0, students: 2}, {gs: 0, students: 2} ], :group_tasks => [ { gs: 0, idx: 0 } ])
+
+    grp = unit.group_sets[0].groups[0]
+    other_grp = unit.group_sets[0].groups[1]
+
+    p1 = grp.projects.first
+    p2 = grp.projects.last
+
+    p1_t1 = p1.tasks.first
+
+    sub1 = grp.create_submission p1_t1, "Group has submitted its awesome work", [ { project: p1, pct: 50}, { project: p2, pct: 50} ]
+
+    other_grp.add_member p1
+
+    # ensure it is reloaded
+    sub2 = other_grp.create_submission p1_t1, "New group submission", [ { project: p1, pct: 30 }, { project: other_grp.projects.first, pct: 40 }, { project: other_grp.projects.last, pct: 30} ]
+
+    expect(sub1).not_to eq(sub2)
+  end
+
+  it "should change group even when there is an existing submission" do
+    unit = FactoryGirl.create(:unit, group_sets: 1, task_count: 1, student_count: 4, :groups => [ { gs: 0, students: 2}, {gs: 0, students: 2} ], :group_tasks => [ { gs: 0, idx: 0 } ])
+
+    grp = unit.group_sets[0].groups[0]
+    other_grp = unit.group_sets[0].groups[1]
+
+    p1 = grp.projects.first
+    p2 = grp.projects.last
+
+    p1_t1 = p1.tasks.first
+
+    sub1 = grp.create_submission p1_t1, "Group has submitted its awesome work", [ { project: p1, pct: 50}, { project: p2, pct: 50} ]
+
+    other_grp.add_member p1
+
+    p1_t1.reload
+
+    expect(p1_t1.group).not_to eq(grp)
+    expect(p1_t1.group).to eq(other_grp)
+  end
+
+
   it "should ensure that group submissions have all group members" do
     unit = FactoryGirl.create(:unit, group_sets: 1, task_count: 1, student_count: 4, :groups => [ { gs: 0, students: 2}, { gs: 0, students: 2} ], :group_tasks => [ { gs: 0, idx: 0 } ])
 

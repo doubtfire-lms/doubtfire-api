@@ -197,7 +197,7 @@ class Task < ActiveRecord::Base
 
   def group
     return nil unless group_task?
-    return group_submission.group unless group_submission.nil?
+    # Cannot use group submission as group may change after submission
     # need to locate group via unit's groups
     project.groups.where(group_set_id: task_definition.group_set_id).first
   end
