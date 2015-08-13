@@ -194,9 +194,13 @@ module Api::Submission::GenerateHelpers
         end
 
         task.trigger_transition(task_entry[mark_col], current_user) # saves task
-        success << { row: task_entry, message:"Updated task #{task.task_definition.abbreviation} for #{task.student.name}" }
+
         if not (task_entry['comment'].nil? || task_entry['comment'].empty?)
           task.add_comment current_user, task_entry['comment']
+          success << { row: task_entry, message:"Updated task #{task.task_definition.abbreviation} for #{task.student.name}" }
+          success << { row: task_entry, message:"Added comment to #{task.task_definition.abbreviation} for #{task.student.name}" }
+        else
+          success << { row: task_entry, message:"Updated task #{task.task_definition.abbreviation} for #{task.student.name} (no new comment)" }
         end
 
         # add to done projects for emailing
