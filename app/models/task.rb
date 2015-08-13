@@ -562,7 +562,7 @@ class Task < ActiveRecord::Base
         result << { path: output_filename, type: file_req['type'] }
       end
 
-      if file_req['type'] == 'code' && magic.file(output_filename).start_with?('text/plain; charset=utf-16', 'application/octet')
+      if file_req['type'] == 'code' && magic.file(output_filename).include?('utf-16')
         #convert utf-16 to utf-8
         #TODO: avoid system call... if we can work out how to get ruby to save as UTF8
         `iconv -f UTF-16 -t UTF-8 "#{output_filename}" > new`
