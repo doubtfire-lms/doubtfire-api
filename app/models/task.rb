@@ -540,6 +540,7 @@ class Task < ActiveRecord::Base
   end
 
   def in_process_files_for_task
+    magic = FileMagic.new(FileMagic::MAGIC_MIME)
     in_process_dir = student_work_dir(:in_process, false)
     return [] if not Dir.exists? in_process_dir
 
@@ -559,6 +560,13 @@ class Task < ActiveRecord::Base
         puts "error processing Task #{id}"
       else
         result << { path: output_filename, type: file_req['type'] }
+      end
+
+      if file_req['type'] == 'code' && magic.file(output_filename).start_with?('text/plain; charset=utf-16', 'application/octet')
+        #convert utf-16 to utf-8
+        #TODO: avoid system call... if we can work out how to get ruby to save as UTF8
+        `iconv -f UTF-16 -t UTF-8 "#{output_filename}" > new`
+        FileUtils.mv('new', output_filename)
       end
 
       idx += 1 # next file index

@@ -1,4 +1,6 @@
 \documentclass[11pt,a4paper]{article} 
+\usepackage[warnunknown]{ucs}
+\usepackage[utf8x]{inputenc}
 \usepackage{minted}
 \usepackage{graphicx}
 \usepackage[margin=2.0cm]{geometry}
