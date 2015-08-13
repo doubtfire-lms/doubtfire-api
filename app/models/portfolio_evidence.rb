@@ -23,6 +23,7 @@ class PortfolioEvidence
   #
   def self.process_new_to_pdf
     done = { }
+    errors = { }
 
     # For each folder in new (i.e., queued folders to process) that matches appropriate name
     new_root_dir = Dir.entries(student_work_dir(:new)).select { | f | (f =~ /^\d+$/) == 0 }
@@ -39,6 +40,11 @@ class PortfolioEvidence
       rescue Exception => e
         puts "Failed to process folder_id = #{folder_id} #{e.message}"
         logger.error "Failed to process folder_id = #{folder_id} #{e.message}"
+
+        if errors[task.project].nil?
+          errors[task.project] = []
+        end
+        errors[task.project] << task
       end
     end
 
@@ -47,6 +53,14 @@ class PortfolioEvidence
       if project.student.receive_task_notifications
         logger.info "emailing task notification to #{project.student.name}"
         PortfolioEvidenceMailer.task_pdf_ready_message(project, tasks).deliver
+      end
+    end
+
+    errors.each do |project, tasks|
+      logger.info "checking email for project #{project.id}"
+      if project.student.receive_task_notifications
+        logger.info "emailing task notification to #{project.student.name}"
+        PortfolioEvidenceMailer.task_pdf_failed(project, tasks).deliver
       end
     end
   end
