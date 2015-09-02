@@ -48,7 +48,7 @@
     <h1> Doubtfire Notification </h1>
     <p>Hi <%= @student.first_name %>,<p/>
     <p>
-        I have checked your tasks and provided some feedback<%= @hasComments ? ' with comments' : '' %>. Login and check the status <%= @hasComments ? 'and comments' : ''%> of the following tasks:
+        I have checked your tasks and provided some feedback. Login and check the status <%= @hasComments ? 'and comments' : ''%> of the following tasks:
         <ul>
             <% @tasks.each do |task| %>
             <li>
@@ -56,6 +56,7 @@
                 <a href="<%=Doubtfire::Application.config.mail_base_url%>projects/<%=@project.id%>/feedback/<%=task.id%>">
                     <%=task.task_definition.name%>
                 </a>
+                <%= task.is_last_comment_by?(@tutor) ? ' with comments' : ''%>
             </li>
             <% end %>
         </ul>
