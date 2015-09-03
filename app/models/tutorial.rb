@@ -5,7 +5,7 @@ class Tutorial < ActiveRecord::Base
   has_one    :tutor, through: :unit_role, source: :user
 
   has_many   :unit_roles, dependent: :nullify # Students
-  has_many   :projects, through: :unit_roles, dependent: :nullify
+  has_many   :projects, through: :unit_roles
   has_many   :groups, dependent: :nullify
 
   def self.default
@@ -40,19 +40,7 @@ class Tutorial < ActiveRecord::Base
 
   def change_tutor(new_tutor)
     # Get the unit role for current tutor
-    # previous_tutor_unit_role = unit_role.id
     assign_tutor(new_tutor)
-
-    # # If we had a tutor previously
-    # if !previous_tutor_unit_role.nil?
-    #   # Get the remaining number of tutorials for the tutor in the given unit
-    #   remaining_tutorials_for_previous_tutor = Tutorial.where(unit_role_id: previous_tutor_unit_role).count
-
-    #   # Kill the tutor's tutor role if they no longer have any tutorials
-    #   if remaining_tutorials_for_previous_tutor == 0
-    #     UnitRole.destroy(previous_tutor_unit_role)
-    #   end
-    # end
   end
 
   def assign_tutor(tutor_user)

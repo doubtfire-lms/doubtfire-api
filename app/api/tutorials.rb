@@ -71,5 +71,20 @@ module Api
       tutorial = unit.add_tutorial( tut_params[:meeting_day], tut_params[:meeting_time], tut_params[:meeting_location], tutor, tut_params[:abbreviation] )
       tutorial
     end
+
+    desc "Delete a tutorial"
+    params do
+      requires :id, type: Integer, desc: 'The tutorial id to delete'
+    end
+    delete '/tutorials/:id' do
+      tutorial = Tutorial.find(params[:id])
+      
+      if not authorise? current_user, tutorial.unit, :add_tutorial
+        error!({"error" => "Cannot delete tutorial - not authorised" }, 403)
+      end
+
+      tutorial.destroy!
+      tutorial
+    end
   end
 end
