@@ -51,7 +51,11 @@ module Api::Submission::GenerateHelpers
   # Defines the csv headers for batch download
   #
   def mark_csv_headers
-    "Username,Name,Tutorial,Task,ID,student comment,my comment,#{mark_col},comment"
+    "Username,Name,Tutorial,Task,ID,student comment,previous comment,#{mark_col},comment"
+  end
+
+  def check_mark_csv_headers
+    "Username,Name,Tutorial,Task,ID,#{mark_col},comment"
   end
   
   #
@@ -120,17 +124,33 @@ module Api::Submission::GenerateHelpers
   #
   def update_task_status_from_csv(csv_str, success, ignored, errors)
     done = {}
-    csv_str.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '')
+    # Remove \r -- causes issues with CSV parsing (assume windows \r\n format if present)
+    csv_str.gsub!("\r", '')
+
+    valid_header = true
 
     # read data from CSV
     CSV.parse(csv_str, {
-        :headers => true, 
-        :header_converters => [:downcase],
+        :headers => true, :return_headers => true,
+        :header_converters => [lambda{ |body| body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '').downcase unless body.nil? }],
         :converters => [lambda{ |body| body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]
     }).each do |task_entry|
       group = nil
 
-      # puts "#{task_entry}"
+      # check the header row
+      if task_entry.header_row?
+        # find these headers...
+        check_mark_csv_headers().split(',').each do |expect_header|
+          expect_header.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '').downcase!
+          if not task_entry.to_hash.keys.include? expect_header
+            errors << { row: task_entry, message: "Missing header #{expect_header}, ensure first row has header information." }
+            valid_header = false
+            return
+          end
+        end
+        # go to the next row if the headers are ok
+        next
+      end
 
       # get the task...
       task = Task.find_by_id(task_entry['id'])
@@ -271,7 +291,7 @@ module Api::Submission::GenerateHelpers
           
           # Read the csv
           csv_str = marking_file.get_input_stream.read
-          csv_str.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '')
+          csv_str.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless csv_str.nil?
 
           # Update tasks and email students
           update_task_status_from_csv(csv_str, success, ignored, errors)
