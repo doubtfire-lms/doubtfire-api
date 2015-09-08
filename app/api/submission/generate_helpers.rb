@@ -143,9 +143,8 @@ module Api::Submission::GenerateHelpers
         check_mark_csv_headers().split(',').each do |expect_header|
           expect_header.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '').downcase!
           if not task_entry.to_hash.keys.include? expect_header
-            errors << { row: task_entry, message: "Missing header #{expect_header}, ensure first row has header information." }
-            valid_header = false
-            return
+            errors << { row: task_entry, message: "Missing header '#{expect_header}', ensure first row has header information." }
+            return false
           end
         end
         # go to the next row if the headers are ok
@@ -243,6 +242,8 @@ module Api::Submission::GenerateHelpers
     rescue => e
       logger.error "failed to send emails from feedback submission: #{e.message}"
     end
+
+    return true
   end
 
   #
@@ -294,7 +295,14 @@ module Api::Submission::GenerateHelpers
           csv_str.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless csv_str.nil?
 
           # Update tasks and email students
-          update_task_status_from_csv(csv_str, success, ignored, errors)
+          if not update_task_status_from_csv(csv_str, success, ignored, errors)
+            errors << { row: {}, message: "Aborting import as mark.csv was not processed successfully." }
+            return {
+              success:  success,
+              ignored:  ignored,
+              errors:   errors
+            }
+          end
 
           # read keys from CSV - to check that files exist in csv
           entry_data = CSV.parse(csv_str, {
