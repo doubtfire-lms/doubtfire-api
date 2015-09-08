@@ -125,7 +125,7 @@ module Api::Submission::GenerateHelpers
   def update_task_status_from_csv(csv_str, success, ignored, errors)
     done = {}
     # Remove \r -- causes issues with CSV parsing (assume windows \r\n format if present)
-    csv_str.gsub!("\r", '')
+    csv_str.gsub!("\r", "\n")
 
     valid_header = true
 
@@ -215,9 +215,13 @@ module Api::Submission::GenerateHelpers
         task.trigger_transition(task_entry[mark_col], current_user) # saves task
 
         if not (task_entry['comment'].nil? || task_entry['comment'].empty?)
-          task.add_comment current_user, task_entry['comment']
           success << { row: task_entry, message:"Updated task #{task.task_definition.abbreviation} for #{task.student.name}" }
-          success << { row: task_entry, message:"Added comment to #{task.task_definition.abbreviation} for #{task.student.name}" }
+          if not task.last_comment.comment == task_entry['comment'] 
+            task.add_comment current_user, task_entry['comment']
+            success << { row: task_entry, message:"Added comment to #{task.task_definition.abbreviation} for #{task.student.name}" }
+          else
+            ignored << { row: task_entry, message:"Skipped comment to #{task.task_definition.abbreviation} for #{task.student.name} -- duplicates last comment." }
+          end
         else
           success << { row: task_entry, message:"Updated task #{task.task_definition.abbreviation} for #{task.student.name} (no new comment)" }
         end

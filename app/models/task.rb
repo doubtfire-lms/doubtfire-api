@@ -378,6 +378,10 @@ class Task < ActiveRecord::Base
     comment
   end
 
+  def last_comment()
+    all_comments.last
+  end
+
   def last_comment_by(user)
     result = all_comments.where(user: user).last
     
