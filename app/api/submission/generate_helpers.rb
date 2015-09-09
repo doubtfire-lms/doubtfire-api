@@ -126,6 +126,7 @@ module Api::Submission::GenerateHelpers
     done = {}
     # Remove \r -- causes issues with CSV parsing (assume windows \r\n format if present)
     csv_str.gsub!("\r", "\n")
+    csv_str.gsub!("\n\n", "\n")
 
     valid_header = true
 
