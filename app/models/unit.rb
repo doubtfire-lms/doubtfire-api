@@ -831,22 +831,27 @@ class Unit < ActiveRecord::Base
 
             tmp_path = File.join( Dir.tmpdir, 'doubtfire', "check-#{id}-#{td.id}" )
 
-            # Create a file hash, with the files to be processed
-            to_check = MossRuby.empty_file_hash
-            add_done_files_for_plagiarism_check_of(td, tmp_path, force, to_check)
+            begin
+              # Create a file hash, with the files to be processed
+              to_check = MossRuby.empty_file_hash
+              add_done_files_for_plagiarism_check_of(td, tmp_path, force, to_check)
 
-            FileUtils.chdir(tmp_path)
+              FileUtils.chdir(tmp_path)
 
-            # Get server to process files
-            puts "Sending to MOSS..."
-            url = moss.check(to_check, lambda { |line| puts line })
+              # Get server to process files
+              puts "Sending to MOSS..."
+              url = moss.check(to_check, lambda { |line| puts line })
 
-            FileUtils.chdir(pwd)
-            FileUtils.rm_rf tmp_path
-
-            td.plagiarism_report_url = url
-            td.plagiarism_updated = true
-            td.save
+              td.plagiarism_report_url = url
+              td.plagiarism_updated = true
+              td.save
+            rescue => e
+              puts "Error: Failed to check plagiarism for task"
+              puts "#{e.message}"
+            ensure
+              FileUtils.chdir(pwd)
+              FileUtils.rm_rf tmp_path
+            end
           end
         end
       end
