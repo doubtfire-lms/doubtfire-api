@@ -216,7 +216,7 @@ module Api::Submission::GenerateHelpers
 
         if not (task_entry['comment'].nil? || task_entry['comment'].empty?)
           success << { row: task_entry, message:"Updated task #{task.task_definition.abbreviation} for #{task.student.name}" }
-          if not task.last_comment.comment == task_entry['comment'] 
+          if task.last_comment.nil? || not task.last_comment.comment == task_entry['comment'] 
             task.add_comment current_user, task_entry['comment']
             success << { row: task_entry, message:"Added comment to #{task.task_definition.abbreviation} for #{task.student.name}" }
           else
