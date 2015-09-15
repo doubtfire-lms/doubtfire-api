@@ -131,7 +131,14 @@ class Unit < ActiveRecord::Base
 
     # Validates that a student is not already assigned to the unit
     existing_role = unit_roles.where("user_id=:user_id", user_id: user.id).first
-    return existing_role.project unless existing_role.nil?
+    if existing_role
+      if existing_role.project && existing_role.project.enrolled == false
+        existing_role.project.enrolled = true
+        existing_role.project.save
+      end
+
+      return existing_role.project
+    end
 
     # Validates that the tutorial exists for the unit
     if (not tutorial_id.nil?) && tutorials.where("id=:id", id: tutorial_id).count == 0
