@@ -125,6 +125,7 @@ module Api::Submission::GenerateHelpers
   def update_task_status_from_csv(csv_str, success, ignored, errors)
     done = {}
     # Remove \r -- causes issues with CSV parsing (assume windows \r\n format if present)
+    csv_str.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '')
     csv_str.gsub!("\r", "\n")
     csv_str.gsub!("\n\n", "\n")
 
