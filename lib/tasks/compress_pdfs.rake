@@ -11,7 +11,7 @@ namespace :submission do
 
   	Unit.where('active').each do |u|
       u.tasks.where('portfolio_evidence is not NULL').each do |t|
-        if File.exists?(t.portfolio_evidence) && File.size?(t.portfolio_evidence) >= 22000000
+        if File.exists?(t.portfolio_evidence) && File.size?(t.portfolio_evidence) >= 2200000
           puts "Compressing #{t.portfolio_evidence}"
           FileHelper.compress_pdf(t.portfolio_evidence)
         end
