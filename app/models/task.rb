@@ -477,6 +477,13 @@ class Task < ActiveRecord::Base
 
     FileUtils.rm(zip_file) if File.exists? zip_file
 
+    #compress image files
+    image_files = Dir.entries(task_dir).select { | f | (f =~ /^\d{3}.(image)/) == 0 }
+    image_files.each do |img| 
+      FileHelper.compress_image "#{task_dir}#{img}"
+    end
+
+    #copy all files into zip
     input_files = Dir.entries(task_dir).select { | f | (f =~ /^\d{3}.(cover|document|code|image)/) == 0 }
 
     zip_dir = File.dirname(zip_file)
@@ -501,6 +508,25 @@ class Task < ActiveRecord::Base
         Dir.chdir(FileUtils.student_work_dir())
       end
       FileUtils.rm_rf in_process_dir
+    end
+  end
+
+  #
+  # Move folder over from done -> new
+  # Allowing task pdf to be recreated next time pdfs are generated
+  #
+  def move_done_to_new
+    done = student_work_dir(:done, false)
+
+    if Dir.exists? done
+      new_task_dir = student_work_dir(:new, false)
+      FileUtils.mkdir_p(new_task_dir)
+      FileHelper.move_files(done, new_task_dir)
+      true
+    elsif FileHelper.move_compressed_task_to_new(self)
+      true
+    else
+      false
     end
   end
 

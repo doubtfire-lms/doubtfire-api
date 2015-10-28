@@ -73,20 +73,6 @@ class PortfolioEvidence
   end
 
   def self.recreate_task_pdf(task)
-    #
-    # Move folder over from done -> new
-    #
-    done = FileHelper.student_work_dir(:done, task, false)
-
-    if Dir.exists? done
-      new_task_dir = FileHelper.student_work_dir(:new, task, false)
-      FileUtils.mkdir_p(new_task_dir)
-      FileHelper.move_files(done, new_task_dir)
-      true
-    elsif FileHelper.move_compressed_task_to_new(task)
-      true
-    else
-      false
-    end
+    task.move_done_to_new()
   end
 end
