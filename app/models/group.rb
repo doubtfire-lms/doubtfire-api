@@ -3,6 +3,7 @@ class Group < ActiveRecord::Base
   belongs_to :tutorial
 
   has_many :group_memberships
+  has_many :group_submissions
   has_many :projects, -> { where("group_memberships.active = :value and projects.enrolled = true", value: true) }, through: :group_memberships
   has_many :past_projects, -> { where("group_memberships.active = :value", value: false) },  through: :group_memberships, source: 'project'
   has_one :unit, through: :group_set
@@ -16,6 +17,8 @@ class Group < ActiveRecord::Base
     message: "must be unique within the set of groups" }
   validate :must_be_in_same_tutorial, if: :limit_members_to_tutorial?
 
+  before_destroy :ensure_no_submissions
+
   def self.permissions
     result = { 
       :Student  => [ :get_members ],
@@ -23,6 +26,12 @@ class Group < ActiveRecord::Base
       :Convenor => [ :get_members, :manage_group ],
       :nil      => [ ]
     }
+  end
+
+  def ensure_no_submissions()
+    return true if group_submissions.count == 0
+    self.errors[:base] << "Cannot delete group while it has submissions."
+    return false
   end
 
   def specific_permission_hash(role, perm_hash, other)

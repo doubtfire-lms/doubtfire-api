@@ -90,7 +90,10 @@ module Api
         error!({"error" => "Not authorised to delete group set for this unit"}, 403)
       end
 
-      group_set.destroy()
+      if not group_set.destroy
+        error!("error" => group_set.errors[:base].last)
+      end
+      nil
     end
 
     desc "Get the groups in a group set"
@@ -229,7 +232,9 @@ module Api
         error!({"error" => "You cannot delete this group"}, 403) unless grp.projects.count == 0 || grp.projects.first.student == current_user
       end
 
-      grp.destroy()
+      if not grp.destroy
+        error!("error" => grp.errors[:base].last)
+      end
       nil
     end
 

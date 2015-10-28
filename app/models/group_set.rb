@@ -40,5 +40,4 @@ class GroupSet < ActiveRecord::Base
       end
     end
   end
-
 end

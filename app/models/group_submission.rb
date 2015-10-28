@@ -15,11 +15,16 @@ class GroupSubmission < ActiveRecord::Base
     # puts "Delete group submission!"
     begin
       FileHelper.delete_group_submission(group_submission)
+
+      # also remove evidence from group members
+      tasks.each do |t| 
+        t.portfolio_evidence = null 
+        t.save
+      end
     rescue
       puts "Failed to delete group submission #{group_submission.id}!"
     end
   end
-
 
   def propagate_transition initial_task, trigger, by_user
     tasks.each do |task|
