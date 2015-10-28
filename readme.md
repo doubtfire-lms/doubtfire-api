@@ -48,7 +48,8 @@ Setting up a dev environment:
 4. Install native tools
     1. `brew install imagemagick`
     1. `brew install libmagic`
-    1. `brew cask install pdftk` (note if the cask is not found, try `brew install https://raw.github.com/quantiverge/homebrew-binary/pdftk/pdftk.rb`)
+    1. pre 10.11 `brew cask install pdftk` (note if the cask is not found, try `brew install https://raw.github.com/quantiverge/homebrew-binary/pdftk/pdftk.rb`)
+    1. 10.11 Install from https://www.pdflabs.com/tools/pdftk-the-pdf-toolkit/pdftk_server-2.02-mac_osx-10.11-setup.pkg see https://stackoverflow.com/questions/32505951/pdftk-server-on-os-x-10-11
 4. Checkout project
     1. cd to working source location (dev folder on your machine)
     2. `git clone https://macite@bitbucket.org/itig/doubtfire-api.git`

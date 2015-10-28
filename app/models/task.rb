@@ -653,6 +653,8 @@ class Task < ActiveRecord::Base
         fout.puts pdf_text
       end
 
+      FileHelper.compress_pdf(self.portfolio_evidence)
+
       self.save
 
       clear_in_process()

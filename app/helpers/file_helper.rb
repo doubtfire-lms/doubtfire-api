@@ -473,6 +473,8 @@ module FileHelper
     if !didCompile
       logger.error "failed to create #{final_pdf_path}\n -> pdftk #{pdf_paths.join ' '} cat output #{final_pdf_path}"
       puts "failed to create #{final_pdf_path}\n -> pdftk #{pdf_paths.join ' '} cat output #{final_pdf_path}"
+    else
+      compress_pdf(final_pdf_path)
     end
     didCompile
   end
