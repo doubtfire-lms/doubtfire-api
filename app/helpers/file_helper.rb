@@ -184,7 +184,7 @@ module FileHelper
     #trusting path... as it needs to be replaced
     # puts "compressing #{path} #{File.size?(path)}"
     # only compress things over 2.2Mb
-    return if File.size?(path) < 22000000
+    return if File.size?(path) < 2200000
     # puts "compressing..."
     
     begin
