@@ -756,6 +756,10 @@ class Task < ActiveRecord::Base
       if not FileHelper.accept_file(file, file.name, file.type)
         ui.error!({"error" => "'#{file.name}' is not a valid #{file.type} file"}, 403)
       end
+
+      if File.size(file.tempfile.path) > 10000000
+        ui.error!({"error" => "'#{file.name}' exceeds the 10MB file limit. Try compressing or reformat and submit again."}, 403)
+      end
     end
     
     create_submission_and_trigger_state_change(current_user, propagate = true, contributions = contributions, trigger = trigger)
