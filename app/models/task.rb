@@ -441,7 +441,11 @@ class Task < ActiveRecord::Base
 
   def zip_file_path_for_done_task()
     if group_task?
-      "#{FileHelper.student_group_work_dir(:done, group_submission)[0..-2]}.zip"
+      if group_submission.nil?
+        nil
+      else
+        "#{FileHelper.student_group_work_dir(:done, group_submission)[0..-2]}.zip"
+      end
     else
       "#{student_work_dir(:done, false)[0..-2]}.zip"
     end
@@ -449,7 +453,7 @@ class Task < ActiveRecord::Base
 
   def extract_file_from_done(to_path, pattern, name_fn)
     zip_file = zip_file_path_for_done_task()
-    return false if not File.exists? zip_file
+    return false if zip_file.nil? || (not File.exists? zip_file)
 
     Zip::File.open(zip_file) do |zip|
       # Extract folders
@@ -473,7 +477,7 @@ class Task < ActiveRecord::Base
   def compress_new_to_done()
     task_dir = student_work_dir(:new, false)
     zip_file = zip_file_path_for_done_task()
-    return if not Dir.exists? task_dir
+    return if zip_file.nil? || (not Dir.exists? task_dir)
 
     FileUtils.rm(zip_file) if File.exists? zip_file
 
@@ -553,7 +557,8 @@ class Task < ActiveRecord::Base
       compress_new_to_done
     end
 
-    if File.exists?(zip_file_path_for_done_task())
+    zip_file = zip_file_path_for_done_task()
+    if zip_file && File.exists?(zip_file)
       extract_file_from_done FileHelper.student_work_dir(:new), "*", lambda { | task, to_path, name |  "#{to_path}#{name}" }
       return false if not Dir.exists?(from_dir)
     else

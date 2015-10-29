@@ -185,7 +185,7 @@ module FileHelper
     return if File.size?(path) < 1000000
 
     tmp_file = File.join( Dir.tmpdir, 'doubtfire', 'compress', "#{File.dirname(path).split(File::Separator).last}-file#{File.extname(path)}" )
-    puts "Compressing #{path} to \n #{tmp_file}"
+    # puts "Compressing #{path} to \n #{tmp_file}"
 
     exec = "convert \"#{path}\" -resize 1024x1024 \"#{tmp_file}\" >>/dev/null 2>>/dev/null"
 
@@ -204,11 +204,11 @@ module FileHelper
     end
   end
 
-  def self.compress_pdf(path)
+  def self.compress_pdf(path, max_size = 2500000)
     #trusting path... as it needs to be replaced
     # puts "compressing #{path} #{File.size?(path)}"
-    # only compress things over 2.2Mb
-    return if File.size?(path) < 2200000
+    # only compress things over max_size -- defaults to 2.5mb
+    return if File.size?(path) < max_size
     # puts "compressing..."
     
     begin
@@ -498,7 +498,7 @@ module FileHelper
       logger.error "failed to create #{final_pdf_path}\n -> pdftk #{pdf_paths.join ' '} cat output #{final_pdf_path}"
       puts "failed to create #{final_pdf_path}\n -> pdftk #{pdf_paths.join ' '} cat output #{final_pdf_path}"
     else
-      compress_pdf(final_pdf_path)
+      compress_pdf(final_pdf_path, 10000000)
     end
     didCompile
   end
@@ -564,7 +564,7 @@ module FileHelper
   def self.compress_done_files(task)
     task_dir = student_work_dir(:done, task, false)
     zip_file = zip_file_path_for_done_task(task)
-    return if not Dir.exists? task_dir
+    return if (zip_file.nil?) || (not Dir.exists? task_dir)
 
     FileUtils.rm(zip_file) if File.exists? zip_file
 
@@ -593,7 +593,7 @@ module FileHelper
   #
   def self.extract_file_from_done(task, to_path, pattern, name_fn)
     zip_file = zip_file_path_for_done_task(task)
-    return false if not File.exists? zip_file
+    return false if (zip_file.nil?) ||  (not File.exists? zip_file)
 
     Zip::File.open(zip_file) do |zip|
       # Extract folders
