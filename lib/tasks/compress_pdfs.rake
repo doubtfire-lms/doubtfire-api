@@ -27,7 +27,7 @@ namespace :submission do
       u.tasks.where('portfolio_evidence is not NULL').each do |t|
         done_file = t.zip_file_path_for_done_task()
         puts "Checking #{done_file}"
-        if File.exists?(done_file) && File.size?(done_file) >= 2200000
+        if done_file && File.exists?(done_file) && File.size?(done_file) >= 2200000
           puts "Compressing #{t.portfolio_evidence}"
           t.move_done_to_new
           t.compress_new_to_done
