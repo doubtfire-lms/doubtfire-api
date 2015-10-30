@@ -37,19 +37,28 @@ namespace :submission do
   end
 
   task recreate_large_pdfs: :environment do
-    
-    Unit.where('active').each do |u|
-      u.tasks.where('portfolio_evidence is not NULL').each do |t|
-        pdf_file = t.final_pdf_path()
-        if pdf_file && File.exists?(pdf_file) && File.size?(pdf_file) >= 2200000
-          puts "  Recreating #{t.portfolio_evidence} was #{File.size?(pdf_file)}"
-          t.move_done_to_new
-          t.convert_submission_to_pdf
-          puts "  ... now #{File.size?(pdf_file)}"
+    if is_executing?
+      puts 'Skip recreate large pdfs -- already executing'
+      logger.info 'Cant recreate large pdf'
+    else
+      start_executing
+
+      begin
+        Unit.where('active').each do |u|
+          u.tasks.where('portfolio_evidence is not NULL').each do |t|
+            pdf_file = t.final_pdf_path()
+            if pdf_file && File.exists?(pdf_file) && File.size?(pdf_file) >= 2200000
+              puts "  Recreating #{t.portfolio_evidence} was #{File.size?(pdf_file)}"
+              t.move_done_to_new
+              t.convert_submission_to_pdf
+              puts "  ... now #{File.size?(pdf_file)}"
+            end
+          end
         end
+      ensure
+        end_executing
       end
     end
-
   end
 
 end
