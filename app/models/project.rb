@@ -790,7 +790,7 @@ class Project < ActiveRecord::Base
 
   # Create the student's portfolio
   def create_portfolio()
-    return unless compile_portfolio
+    return false unless compile_portfolio
 
     # remove from schedule
     self.compile_portfolio = false
@@ -799,7 +799,7 @@ class Project < ActiveRecord::Base
     # get path to portfolio dirs
     portfolio_dir = FileHelper.student_portfolio_dir(self, false)
     portfolio_tmp_dir = File.join(portfolio_dir, "tmp")
-    return unless Dir.exists? portfolio_tmp_dir
+    return false unless Dir.exists? portfolio_tmp_dir
 
     tmp_dir = File.join( Dir.tmpdir, 'doubtfire', 'portfolio', id.to_s )
 
@@ -808,7 +808,7 @@ class Project < ActiveRecord::Base
     if pdf_paths.nil?
       logger.error("Files missing for portfolio in project #{id}")
       puts "Files missing for portfolio of project #{id}"
-      return
+      return false
     end
     task_pdfs = []
     # add in tasks
@@ -832,11 +832,13 @@ class Project < ActiveRecord::Base
 
       self.portfolio_production_date = DateTime.now
       self.save
+      result = true
     else
       logger.error "Failed to create portfolio - #{final_pdf_path}"
       # failed to combine PDFs
       self.portfolio_production_date = nil
       self.save
+      result = false
     end
 
     # Cleanup
@@ -845,6 +847,8 @@ class Project < ActiveRecord::Base
     rescue
       logger.warn "failed to cleanup dirs from portfolio production"
     end
+
+    return result
   end
 
   def remove_portfolio()

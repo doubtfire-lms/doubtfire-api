@@ -39,16 +39,23 @@ namespace :submission do
 
       	projects_to_compile = Project.where(compile_portfolio: true)
       	projects_to_compile.each do | project |
-      		begin
-      	 		project.create_portfolio()
-            if project.student.receive_portfolio_notifications
-              logger.info "emailing portfolio notification to #{project.student.name}"
+    		  begin
+    	 		  success = project.create_portfolio()
+          rescue Exception => e
+            logger.error "Failed creating portfolio for project #{project.id}!\n#{e.message}"
+            success = false
+          end
+
+          if project.student.receive_portfolio_notifications
+            logger.info "emailing portfolio notification to #{project.student.name}"
+
+            if success
               PortfolioEvidenceMailer.portfolio_ready(project).deliver
+            else
+              PortfolioEvidenceMailer.portfolio_failed(project).deliver
             end
-      	 	rescue Exception => e
-      	 		logger.error "Failed creating portfolio for project #{project.id}!\n#{e.message}"
-      	 	end
-      	end
+          end
+        end
       ensure
         end_executing
       end
