@@ -104,6 +104,7 @@ module FileHelper
     dst = "#{file_server}/" # trust the server config and passed in type for paths
 
     group = group_submission.group
+    return nil unless group
     unit = group.unit
 
     if type == :pdf
