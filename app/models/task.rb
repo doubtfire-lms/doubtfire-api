@@ -653,6 +653,8 @@ class Task < ActiveRecord::Base
 
   def final_pdf_path()
     if group_task?
+      return nil if group_submission.nil? || group_submission.task_definition.nil?
+
       File.join(
         FileHelper.student_group_work_dir(:pdf, group_submission, task=nil, create=true), 
         FileHelper.sanitized_filename(FileHelper.sanitized_path("#{group_submission.task_definition.abbreviation}-#{group_submission.id}") + ".pdf"))

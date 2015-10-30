@@ -5,6 +5,7 @@ class TaskDefinition < ActiveRecord::Base
 	belongs_to :unit			   # Foreign key
   belongs_to :group_set
 	has_many :tasks, dependent:  :destroy    # Destroying a task definition will also nuke any instances
+  has_many :group_submissions, dependent:  :destroy    # Destroying a task definition will also nuke any group submissions
 
 	# Model validations/constraints
 	validates_uniqueness_of :name, scope:  :unit_id		# task definition names within a unit must be unique
