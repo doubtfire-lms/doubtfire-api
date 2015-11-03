@@ -220,9 +220,9 @@ module FileHelper
 
       # try with ghostscript
       didCompress = false
-      Terminator.terminate 120 do
-        didCompress = system exec
-      end
+      # Terminator.terminate 120 do
+      #   didCompress = system exec
+      # end
       
       if !didCompress
         logger.info "Failed to compress pdf: #{path} using GS"
