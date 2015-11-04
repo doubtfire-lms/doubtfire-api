@@ -1,9 +1,11 @@
 require 'csv'
 require 'bcrypt'
 require 'json'
+require 'moss_ruby'
 
 class Unit < ActiveRecord::Base
   include ApplicationHelper
+  include FileHelper
 
   def self.permissions
     { 
@@ -35,6 +37,8 @@ class Unit < ActiveRecord::Base
   has_many :tutorials, dependent: :destroy
   has_many :unit_roles, dependent: :destroy
   has_many :intended_learning_outcomes, dependent: :destroy
+  has_many :tasks, through: :projects
+  has_many :group_sets, dependent: :destroy
   
   has_many :convenors, -> { joins(:role).where("roles.name = :role", role: 'Convenor') }, class_name: 'UnitRole'
   has_many :staff, ->     { joins(:role).where("roles.name = :role_convenor or roles.name = :role_tutor", role_convenor: 'Convenor', role_tutor: 'Tutor') }, class_name: 'UnitRole' 
@@ -80,6 +84,29 @@ class Unit < ActiveRecord::Base
     Project.joins(:unit_role).where('unit_roles.role_id = 1 and projects.unit_id=:unit_id', unit_id: id)
   end
 
+  #
+  # Last date/time of scan
+  #
+  def last_plagarism_scan
+    if self[:last_plagarism_scan].nil? 
+      DateTime.new(2000,1,1)
+    else
+      self[:last_plagarism_scan]
+    end
+  end
+
+  #
+  # Returns the email of the first convenor or "acain@swin.edu.au" if there are no convenors
+  #
+  def convenor_email
+    convenor = convenors.first
+    if convenor
+      convenor.user.email
+    else
+      "acain@swin.edu.au"
+    end
+  end
+
   def active_projects
     projects.where('enrolled = true') 
   end
@@ -100,10 +127,21 @@ class Unit < ActiveRecord::Base
   end
 
   # Adds a user to this project.
-  def enrol_student(user_id, tutorial_id=nil)
+  def enrol_student(user, tutorial=nil)
+    if tutorial.is_a?(Tutorial)
+      tutorial_id = tutorial.id
+    else
+      tutorial_id = tutorial
+    end
+
     # Validates that a student is not already assigned to the unit
-    existing_role = unit_roles.where("user_id=:user_id", user_id: user_id).first
-    if not existing_role.nil?
+    existing_role = unit_roles.where("user_id=:user_id", user_id: user.id).first
+    if existing_role
+      if existing_role.project && existing_role.project.enrolled == false
+        existing_role.project.enrolled = true
+        existing_role.project.save
+      end
+
       return existing_role.project
     end
 
@@ -114,7 +152,7 @@ class Unit < ActiveRecord::Base
 
     # Put the user in the appropriate tutorial (ie. create a new unit_role)
     unit_role = UnitRole.create!(
-      user_id: user_id,
+      user_id: user.id,
       #tutorial_id: tutorial_id,
       unit_id: self.id,
       role_id: Role.where(name: 'Student').first.id
@@ -171,69 +209,291 @@ class Unit < ActiveRecord::Base
     end
   end
 
+  def tutorial_with_abbr(abbr)
+    tutorials.where(abbreviation: abbr).first
+  end
+
+  #
   # Imports users into a project from CSV file.
-  # Format: Student ID,Course ID,First Name,Initials,Surname,Mark,Assessment,Status
-  # Only Student ID, First Name, and Surname are used.
+  # Format: unit_code, Student ID,First Name,Surname,email,tutorial
+  #
   def import_users_from_csv(file)
     tutorial_cache = {}
-    added_users = []
+    success = []
+    errors = []
+    ignored = []
     
     CSV.foreach(file) do |row|
       # Make sure we're not looking at the header or an empty line
-      next if row[0] =~ /subject_code/
+      next if row[0] =~ /(subject|unit)_code/
       # next if row[5] !~ /^LA\d/
 
-      subject_code, username  = row[0..1]
-      first_name, last_name   = [row[2], row[3]].map{|name| name.titleize }
-      email, tutorial_code    = row[4..5]
+      begin
+        unit_code, username  = row[0..1]
+        first_name, last_name   = [row[2], row[3]].map{|name| name.titleize unless name.nil? }
+        email, tutorial_code    = row[4..5]
 
-      username = username.downcase
-
-      project_participant = User.find_or_create_by(username: username) {|new_user|
-        new_user.first_name         = first_name
-        new_user.last_name          = last_name
-        new_user.nickname           = first_name
-        new_user.role_id            = Role.student_id
-        new_user.email              = email
-        new_user.encrypted_password = BCrypt::Password.create("password")
-      }
-
-      if not project_participant.persisted?
-        project_participant.password = "password"
-        project_participant.save
-      end
-
-      #
-      # Only import if a valid user - or if save worked
-      #
-      if project_participant.persisted?
-        user_not_in_project = UnitRole.joins(project: :unit).where(
-          user_id: project_participant.id,
-          projects: {unit_id: id}
-        ).count == 0
-
-        tutorial = tutorial_cache[tutorial_code] || Tutorial.where(abbreviation: tutorial_code, unit_id: id).first
-        tutorial_cache[tutorial_code] ||= tutorial
-
-        # Add the user to the project (if not already in there)
-        if user_not_in_project
-          added_users << project_participant
-          if not tutorial.nil?
-            enrol_student(project_participant.id, tutorial.id)
-          else
-            enrol_student(project_participant.id)
-          end
+        if unit_code != code
+          ignored << { row: row, message: "Invalid unit code. #{unit_code} does not match #{code}" }
+          next
         end
+
+        if ! email =~ /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\z/i
+          errors << { row: row, message: "Invalid email address (#{email})" }
+          next
+        end
+
+        username = username.downcase
+
+        project_participant = User.find_or_create_by(username: username) {|new_user|
+          new_user.first_name         = first_name
+          new_user.last_name          = last_name
+          new_user.nickname           = first_name
+          new_user.role_id            = Role.student_id
+          new_user.email              = email
+          new_user.encrypted_password = BCrypt::Password.create("password")
+        }
+
+        if not project_participant.persisted?
+          project_participant.password = "password"
+          project_participant.save
+        end
+
+        #
+        # Only import if a valid user - or if save worked
+        #
+        if project_participant.persisted?
+          user_not_in_project = UnitRole.joins(project: :unit).where(
+            user_id: project_participant.id,
+            projects: {unit_id: id}
+          ).count == 0
+
+          tutorial = tutorial_cache[tutorial_code] || tutorial_with_abbr(tutorial_code)
+          tutorial_cache[tutorial_code] ||= tutorial
+
+          # Add the user to the project (if not already in there)
+          if user_not_in_project
+            if not tutorial.nil?
+              enrol_student(project_participant, tutorial)
+              success << { row: row, message: "Enrolled student with tutorial." }
+            else
+              enrol_student(project_participant)
+              success << { row: row, message: "Enrolled student without tutorial." }
+            end
+          else
+            # update tutorial
+            unit_role = UnitRole.joins(project: :unit).where(
+              user_id: project_participant.id,
+              projects: {unit_id: id}
+            ).first
+            unit_role = UnitRole.find(unit_role.id)
+
+            changes = ""          
+
+            if unit_role.tutorial != tutorial
+              unit_role.tutorial = tutorial
+              unit_role.save
+              changes << "Changed tutorial. "
+            end
+
+            if not unit_role.project.enrolled
+              user_project = unit_role.project
+              user_project.enrolled = true
+              user_project.save
+              changes << "Changed enrolment."
+            end
+
+            if changes.length == 0
+              ignored << { row: row, message: "No change." }
+            else
+              success << { row: row, message: changes }
+            end
+          end
+        else
+          errors << { row: row, message: "Student record is invalid." }
+        end
+      rescue Exception => e
+        errors << { row: row, message: e.message }
       end
     end
-    added_users
+    
+    {
+      success: success,
+      ignored: ignored,
+      errors:  errors
+    }
   end
+
+  # Use the values in the CSV to set the enrolment of these
+  # students to false for this unit.
+  # CSV should contain just the usernames to withdraw
+  def unenrol_users_from_csv(file)
+    # puts 'starting withdraw'
+    success = []
+    errors = []
+    ignored = []
+    
+    CSV.parse(file, {
+        :headers => true,
+        :header_converters => [:downcase, lambda { |hdr| hdr.strip unless hdr.nil?}],
+        :converters => [lambda{ |body| body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]
+    }).each do |row|
+      # Make sure we're not looking at the header or an empty line
+      next if row[0] =~ /(username)|(((unit)|(subject))_code)/
+      # next if row[5] !~ /^LA\d/
+
+      begin
+        unit_code = row['unit_code']
+        username  = row['username'].downcase unless row['username'].nil?
+
+        if unit_code != code
+          ignored << { row: row, message: "Invalid unit code. #{unit_code} does not match #{code}" }
+          next
+        end
+
+        # puts username
+
+        project_participant = User.where(username: username)
+
+        if not project_participant
+          errors << { row:row, message: "User #{username} not found" }
+          next
+        end
+        if not project_participant.count == 1
+          errors << { row:row, message: "User #{username} not found" }
+          next
+        end
+
+        project_participant = project_participant.first
+
+        user_project = UnitRole.joins(project: :unit).where(
+            user_id: project_participant.id,
+            projects: {unit_id: id}
+          )
+
+        if not user_project
+          ignored << { row:row, message: "User #{username} not enrolled in unit" }
+          next
+        end
+
+        if not user_project.count == 1
+          ignored << { row:row, message: "User #{username} not enrolled in unit" }
+          next
+        end
+
+        user_project = user_project.first.project
+
+        if user_project.enrolled
+          user_project.enrolled = false
+          user_project.save
+          success << { row:row, message: "User #{username} withdrawn from unit" }
+        else
+          ignored << { row:row, message: "User #{username} not enrolled in unit" }
+        end
+      rescue Exception => e
+        errors << { row: row, message: "Unexpected error: #{e.message}" }
+      end
+    end
+
+    {
+      success: success,
+      ignored: ignored,
+      errors:  errors
+    }
+  end 
 
   def export_users_to_csv
     CSV.generate do |row|
-      row << ["subject_code", "username", "first_name", "last_name", "email", "tutorial"]
+      row << ["unit_code", "username", "first_name", "last_name", "email", "tutorial"]
       students.each do |project|
         row << [project.unit.code, project.student.username,  project.student.first_name, project.student.last_name, project.student.email, project.tutorial_abbr]
+      end
+    end
+  end
+
+  def missing_headers(row, headers)
+    headers - row.to_hash().keys
+  end
+
+  def import_groups_from_csv(group_set, file)
+    success = []
+    errors = []
+    ignored = []
+
+    CSV.parse(file, {
+        :headers => true,
+        :header_converters => [:downcase, lambda { |hdr| hdr.strip unless hdr.nil?}],
+        :converters => [lambda{ |body| body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]
+    }).each do |row|
+      next if row[0] =~ /^(group_name)|(name)/ # Skip header
+      
+      begin
+        missing = missing_headers(row, ['group_name', 'username', 'tutorial'])
+        if missing.count > 0
+          errors << { row: row, message: "Missing headers: #{missing.join(', ')}" }
+          next
+        end
+
+        username = row['username'].downcase.strip unless row['username'].nil?
+        group_name = row['group_name'].strip unless row['group_name'].nil?
+        tutorial = row['tutorial'].strip unless row['tutorial'].nil?
+
+        user = User.where(username: username).first
+
+        if user.nil?
+          errors << { row: row, message: "Unable to find user #{username}" }
+          next
+        end
+
+        project = students.where('unit_roles.user_id = :id', id: user.id).first
+
+        if project.nil?
+          errors << { row: row,  message: "Student #{username} not found in unit" }
+          next
+        end
+
+        grp = group_set.groups.find_or_create_by(name: group_name)
+
+        change = ""
+
+        if grp.new_record?
+          tutorial = tutorial_with_abbr(tutorial)
+          if tutorial.nil?
+            errors << { row: row, message: "Tutorial #{tutorial} not found" }
+            next
+          end
+
+          change = "Created new group. "
+          grp.tutorial = tutorial
+          grp.save!
+        end
+
+        begin
+          grp.add_member(project)
+        rescue Exception => e
+          errors << { row: row, message: e.message }
+          next
+        end
+        success << { row: row, message: "#{change}Added #{username} to #{grp.name}." }
+      rescue Exception => e
+        errors << { row: row, message: e.message}
+      end
+    end
+
+    {
+      success: success,
+      ignored: ignored,
+      errors:  errors
+    }
+  end
+
+  def export_groups_to_csv(group_set)
+    CSV.generate do |row|
+      row << ["group_name", "username", "tutorial"]
+      group_set.groups.each do |grp|
+        grp.projects.each do |project|
+          row << [grp.name, project.student.username,  grp.tutorial.abbreviation]
+        end
       end
     end
   end
@@ -277,57 +537,56 @@ class Unit < ActiveRecord::Base
   end
 
   def import_tasks_from_csv(file)
-    added_tasks = []
+    success = []
+    errors = []
+    ignored = []
+
     project_cache = Project.where(unit_id: id)
 
-    CSV.foreach(file) do |row|
+    CSV.parse(file, {
+        :headers => true, 
+        :header_converters => [:downcase, lambda { |hdr| hdr.strip.gsub(" ", "_").to_sym unless hdr.nil? }],
+        :converters => [lambda{ |body| body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]
+    }).each do |row|
       next if row[0] =~ /^(Task Name)|(name)/ # Skip header
 
-      name, abbreviation, description, weighting, required, upload_requirements, target_date = row[0..7]
-      next if name.nil? || abbreviation.nil?
-
-      description = "(No description given)" if description == "NULL"
-      target_date = target_date.strip
-      
-      if target_date !~ /20\d\d\-\d{1,2}\-\d{1,2}$/ # Matches YYYY-mm-dd by default
-        if target_date =~ /\d{1,2}\-\d{1,2}\-20\d\d/ # Matches dd-mm-YYYY
-          target_date = target_date.split("-").reverse.join("-")
-        elsif target_date =~ /\d{1,2}\/\d{1,2}\/20\d\d$/ # Matches dd/mm/YYYY
-          target_date = target_date.split("/").reverse.join("-")
-        elsif target_date =~ /\d{1,2}\/\d{1,2}\/\d\d$/ # Matches dd/mm/YY
-          target_date = target_date.split("/").reverse.join("-")
-        elsif target_date =~ /\d{1,2}\-\d{1,2}\-\d\d$/ # Matches dd-mm-YY
-          target_date = target_date.split("-").reverse.join("-")
-        elsif target_date =~ /\d{1,2}\-\d{1,2}\-\d\d \d\d:\d\d:\d\d$/ # Matches dd-mm-YY
-          target_date = target_date.split(" ").first
-        elsif target_date =~ /\d{1,2}\/\d{1,2}\/\d\d [\d:]+$/ # Matches dd/mm/YY 00:00:00
-          target_date = target_date.split(" ").first.split("/").reverse.join("-")
+      begin
+        missing = missing_headers(row, TaskDefinition.csv_columns)
+        if missing.count > 0
+          errors << { row: row, message: "Missing headers: #{missing.join(', ')}" }
+          next
         end
-      end
 
-      new_task = TaskDefinition.find_by(unit_id: id, abbreviation: abbreviation).nil? && TaskDefinition.find_by(unit_id: id, name: name).nil?
+        task_definition, new_task, message = TaskDefinition.task_def_for_csv_row(self, row)
 
-      if new_task
-        # TODO: Should background/task queue this work
-        task_definition = TaskDefinition.find_or_create_by(unit_id: id, name: name, abbreviation: abbreviation) do |task_definition|
-          task_definition.name                        = name
-          task_definition.unit_id                     = id
-          task_definition.abbreviation                = abbreviation
-          task_definition.description                 = description
-          task_definition.weighting                   = BigDecimal.new(weighting)
-          task_definition.required                    = ["Yes", "y", "Y", "yes", "true", "TRUE", "1"].include? required
-          task_definition.target_date                 = Time.zone.parse(target_date)
-          task_definition.upload_requirements         = upload_requirements
+        if task_definition.nil?
+          errors << { row: row, message: message }
+          next
         end
-        
+
         if task_definition.persisted?
-          added_tasks.push(task_definition)
-
-          add_new_task_def task_definition, project_cache
+          if new_task
+            begin
+              add_new_task_def task_definition, project_cache
+            rescue Exception => e
+              task_definition.destroy
+              errors << {row: row, message: "Error occurred added tasks for students. #{e.message}"}
+              next
+            end
+          end
         end
+
+        success << { row: row, message: message }
+      rescue Exception => e
+        errors << { row: row, message: e.message }
       end
     end
-    added_tasks
+
+    {
+      success: success,
+      ignored: ignored,
+      errors:  errors
+    }
   end
 
   def task_definitions_csv
@@ -341,6 +600,7 @@ class Unit < ActiveRecord::Base
         'Student Name',
         'Target Grade',
         'Email',
+        'Portfolio',
         'Tutorial',
       ] + task_definitions.map{|task_definition| task_definition.abbreviation }
       active_projects.each do |project|
@@ -369,9 +629,9 @@ class Unit < ActiveRecord::Base
         # Add file to zip in grade folder
         src_path = project.portfolio_path
         if project.main_tutor
-          dst_path = FileHelper.sanitized_path( "#{project.target_grade_desc}", "#{project.student.username}-portfolio (#{project.main_tutor.name}).pdf")
+          dst_path = FileHelper.sanitized_path( "#{project.target_grade_desc}", "#{project.student.username}-portfolio (#{project.main_tutor.name})") + ".pdf"
         else
-          dst_path = FileHelper.sanitized_path( "#{project.target_grade_desc}", "#{project.student.username}-portfolio (no tutor).pdf")
+          dst_path = FileHelper.sanitized_path( "#{project.target_grade_desc}", "#{project.student.username}-portfolio (no tutor)") + ".pdf"
         end
 
         #copy into zip
@@ -409,4 +669,278 @@ class Unit < ActiveRecord::Base
     ilo.save
   end
 
+  # Get all of the related tasks
+  #
+  def tasks_for_definition(task_def)
+    tasks.where(task_definition_id: task_def.id)
+  end
+
+  #
+  # Update the student's max_pct_similar for all of their tasks
+  #
+  def update_student_max_pct_similar()
+    projects.each do | p |
+      p.max_pct_similar = p.tasks.maximum(:max_pct_similar)
+      p.save
+    end
+  end
+
+  def create_plagiarism_link(t1, t2, match)
+    plk1 = PlagiarismMatchLink.where(task_id: t1.id, other_task_id: t2.id).first
+    plk2 = PlagiarismMatchLink.where(task_id: t2.id, other_task_id: t1.id).first
+
+    # Delete old links between tasks
+    plk1.destroy unless plk1.nil? ## will delete its pair
+    plk2.destroy unless plk2.nil?
+
+    plk1 = PlagiarismMatchLink.create do | pml |
+      pml.task = t1
+      pml.other_task = t2
+      pml.plagiarism_report_url = match[0][:url]
+
+      pml.pct = match[0][:pct]
+    end
+
+    plk2 = PlagiarismMatchLink.create do | pml |
+      pml.task = t2
+      pml.other_task = t1
+      pml.plagiarism_report_url = match[1][:url]
+
+      pml.pct = match[1][:pct]
+    end
+
+    FileHelper.save_plagiarism_html(plk1, match[0][:html])
+    FileHelper.save_plagiarism_html(plk2, match[1][:html])
+  end
+
+  def update_plagiarism_stats()
+    moss = MossRuby.new(Doubtfire::Application.config.moss_key)
+
+    task_definitions.where(plagiarism_updated: true).each do |td|
+      td.plagiarism_updated = false
+      td.save
+
+      #delete old plagiarism links
+      puts "Deleting old links for task definition #{td.id}"
+      PlagiarismMatchLink.joins(:task).where("tasks.task_definition_id" => td.id).each do | plnk |
+        begin
+          PlagiarismMatchLink.find(plnk.id).destroy!
+        rescue
+        end
+      end
+
+      # Reset the tasks % similar
+      puts "Clearing old task percent similar"
+      tasks_for_definition(td).where("tasks.max_pct_similar > 0").each do |t|
+        t.max_pct_similar = 0
+        t.save
+      end
+
+      # Get results
+      url = td.plagiarism_report_url
+      puts "Processing MOSS results #{url}"
+      
+      warn_pct = td.plagiarism_warn_pct
+      warn_pct = 50 if warn_pct.nil?
+
+      results = moss.extract_results( url, warn_pct, lambda { |line| puts line } )
+
+      # Use results
+      results.each do |match|
+        next if match[0][:pct] < warn_pct && match[1][:pct] < warn_pct
+
+        task_id_1 = /.*\/(\d+)\/$/.match(match[0][:filename])[1]
+        task_id_2 = /.*\/(\d+)\/$/.match(match[1][:filename])[1]
+
+        t1 = Task.find(task_id_1)
+        t2 = Task.find(task_id_2)
+
+        if t1.nil? || t2.nil?
+          puts "Could not find tasks #{task_id_1} or #{task_id_2}"
+          next
+        end
+
+        if td.group_set # its a group task
+          g1_tasks = t1.group_submission.tasks
+          g2_tasks = t2.group_submission.tasks
+
+          g1_tasks.each do | gt1 |
+            g2_tasks.each do | gt2 |
+              create_plagiarism_link(gt1, gt2, match)
+            end
+          end
+
+        else # just link the individuals...
+          create_plagiarism_link(t1, t2, match)
+        end
+      end # end of each result
+    end # for each task definition where it needs to be updated
+    update_student_max_pct_similar()
+
+    self
+  end
+
+  #
+  # Extract all done files related to a task definition matching a pattern into a given directory.
+  # Returns an array of files
+  #
+  def add_done_files_for_plagiarism_check_of(td, tmp_path, force, to_check)
+    tasks = tasks_for_definition(td)
+    tasks_with_files = tasks.select { |t| t.has_pdf }
+    
+    if td.group_set
+      # group task so only select one member of each group
+      seen_groups = []
+
+      tasks_with_files = tasks_with_files.select do |t| 
+        if t.group.nil?
+          result = false
+        else
+          result = ! seen_groups.include?(t.group)
+          if result
+            seen_groups << t.group
+          end
+        end
+        result
+      end
+    end
+
+    # check number of files, and they are new
+    if tasks_with_files.count > 1 && (tasks.where("tasks.file_uploaded_at > ?", last_plagarism_scan ).select { |t| t.has_pdf }.count > 0 || force )
+      td.plagiarism_checks.each do |check|
+        next if check["type"].nil?
+
+        type_data = check["type"].split(" ")
+        next if type_data.nil? or type_data.length != 2 or type_data[0] != "moss"
+
+        # extract files matching each pattern
+        # -- each pattern
+        check["pattern"].split("|").each do |pattern|
+          # puts "\tadding #{pattern}"
+          tasks_with_files.each do |t|
+            FileHelper.extract_file_from_done(t, tmp_path, pattern, lambda { | task, to_path, name |  File.join("#{to_path}", "#{t.student.username}", "#{name}") } )
+          end
+          MossRuby.add_file(to_check, "**/#{pattern}")
+        end
+      end
+    end
+
+    self
+  end
+
+  #
+  # Pass tasks on to plagarism detection software and setup links between students
+  #
+  def check_plagiarism(force = false)
+    # Get each task...
+    return if not active
+
+    # need pwd to restore after cding into submission folder (so the files do not have full path)
+    pwd = FileUtils.pwd
+
+    begin
+      puts "\nChecking #{name}"
+      task_definitions.each do |td|
+        next if td.plagiarism_checks.length == 0
+        # Is there anything to check?
+
+        puts "- Checking plagiarism for #{td.name}"
+        tasks = tasks_for_definition(td)
+        tasks_with_files = tasks.select { |t| t.has_pdf }
+        if tasks_with_files.count > 1 && (tasks.where("tasks.file_uploaded_at > ?", last_plagarism_scan ).select { |t| t.has_pdf }.count > 0 || force )
+          # There are new tasks, check these
+
+          puts "Contacting moss for new checks"
+          td.plagiarism_checks.each do |check|
+            next if check["type"].nil?
+
+            type_data = check["type"].split(" ")
+            next if type_data.nil? or type_data.length != 2 or type_data[0] != "moss"
+
+            # Create the MossRuby object
+            moss = MossRuby.new(Doubtfire::Application.config.moss_key)
+
+            # Set options  -- the options will already have these default values
+            moss.options[:max_matches] = 7
+            moss.options[:directory_submission] = true
+            moss.options[:show_num_matches] = 500
+            moss.options[:experimental_server] = false
+            moss.options[:comment] = ""
+            moss.options[:language] = type_data[1]
+
+            tmp_path = File.join( Dir.tmpdir, 'doubtfire', "check-#{id}-#{td.id}" )
+
+            begin
+              # Create a file hash, with the files to be processed
+              to_check = MossRuby.empty_file_hash
+              add_done_files_for_plagiarism_check_of(td, tmp_path, force, to_check)
+
+              FileUtils.chdir(tmp_path)
+
+              # Get server to process files
+              puts "Sending to MOSS..."
+              url = moss.check(to_check, lambda { |line| puts line })
+
+              td.plagiarism_report_url = url
+              td.plagiarism_updated = true
+              td.save
+            rescue => e
+              puts "Error: Failed to check plagiarism for task"
+              puts "#{e.message}"
+            ensure
+              FileUtils.chdir(pwd)
+              FileUtils.rm_rf tmp_path
+            end
+          end
+        end
+      end
+      update_student_max_pct_similar()
+      self.last_plagarism_scan = DateTime.now
+      self.save!
+    ensure
+      if FileUtils.pwd() != pwd
+        FileUtils.chdir(pwd)
+      end
+    end
+
+    self
+  end
+
+  def import_task_files_from_zip zip_file
+    task_path = FileHelper.task_file_dir_for_unit self, create=true
+
+    result = {
+      :added_files => [],
+      :ignored_files => []
+    }
+
+    Zip::File.open(zip_file) do |zip|
+      zip.each do |file|
+        file_name = File.basename(file.name)
+        if not task_definitions.where(abbreviation: File.basename(file_name, ".*"))
+          result[:ignored_files] << { name: file.name }
+        elsif File.extname(file.name) == ".pdf"
+          file.extract ("#{task_path}#{FileHelper.sanitized_filename(file_name)}") {true}
+          result[:added_files] << { name: file.name }
+        elsif File.extname(file.name) == ".zip"
+          file.extract ("#{task_path}#{FileHelper.sanitized_filename(file_name)}") {true}
+          result[:added_files] << { name: file.name }
+        else
+          result[:ignored_files] << { name: file.name }
+        end
+      end
+    end
+
+    result
+  end
+
+  def path_to_task_resources(task_def)
+    task_path = FileHelper.task_file_dir_for_unit self, create=false
+    "#{task_path}#{FileHelper.sanitized_filename(task_def.abbreviation)}.zip"
+  end
+
+  def path_to_task_pdf(task_def)
+    task_path = FileHelper.task_file_dir_for_unit self, create=false
+    "#{task_path}#{FileHelper.sanitized_filename(task_def.abbreviation)}.pdf"
+  end
 end

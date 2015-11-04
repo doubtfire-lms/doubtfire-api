@@ -45,12 +45,13 @@ class UnitSerializer < ActiveModel::Serializer
   has_many :task_definitions
   has_many :convenors, serializer: UserUnitRoleSerializer
   has_many :staff, serializer: UserUnitRoleSerializer
+  has_many :group_sets, serializer: GroupSetSerializer
 
   def include_convenors?
-    ([ Role.convenor ].include? my_role_obj) || (my_user_role == Role.admin)
+    ([ Role.convenor, :convenor ].include? my_role_obj) || (my_user_role == Role.admin)
   end
 
   def include_staff?
-    ([ Role.convenor ].include? my_role_obj) || (my_user_role == Role.admin)
+    ([ Role.convenor, :convenor ].include? my_role_obj) || (my_user_role == Role.admin)
   end
 end

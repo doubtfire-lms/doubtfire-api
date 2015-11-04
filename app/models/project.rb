@@ -14,6 +14,10 @@ class Project < ActiveRecord::Base
   # has_one :user, through: :student
   has_many :tasks, dependent: :destroy   # Destroying a project will also nuke all of its tasks
 
+  has_many :group_memberships, dependent: :destroy
+  has_many :groups, -> { where("group_memberships.active = :value", value: true) },  through: :group_memberships
+  has_many :past_groups, -> { where("group_memberships.active = :value", value: false) },  through: :group_memberships, source: 'group'
+
   after_destroy :destroy_unit_role
 
   def destroy_unit_role
@@ -57,6 +61,18 @@ class Project < ActiveRecord::Base
   end
 
   #
+  # Returns the email of the tutor, or the convenor if there is no tutor
+  #
+  def tutor_email
+    tutor = main_tutor
+    if tutor
+      tutor.email
+    else
+      unit.convenor_email
+    end
+  end
+
+  #
   # All "discuss" become complete
   #
   def trigger_week_end( by_user )
@@ -84,7 +100,15 @@ class Project < ActiveRecord::Base
   end
 
   def main_tutor
-    unit_role.tutorial.tutor unless unit_role.tutorial.nil?
+    if unit_role.tutorial
+      unit_role.tutorial.tutor 
+    else
+      main_convenor
+    end
+  end
+
+  def main_convenor
+    unit.convenors.first.user
   end
 
   def tutorial
@@ -139,14 +163,6 @@ class Project < ActiveRecord::Base
 
   def portfolio_tasks
     tasks.joins(:task_definition).order("task_definitions.target_date, task_definitions.abbreviation").select{|task| task.include_in_portfolio && task.has_pdf }
-  end
-
-  def required_tasks
-    tasks.select{|task| task.task_definition.required? }
-  end
-
-  def optional_tasks
-    tasks.select{|task| !task.task_definition.required? }
   end
 
   def progress
@@ -208,7 +224,7 @@ class Project < ActiveRecord::Base
   def progress_in_days
     units_completed = task_units_completed
 
-    current_week  = weeks_elapsed
+    # current_week  = weeks_elapsed
     date_progress = unit.start_date
 
     progress_points.each do |date, weight|
@@ -243,15 +259,16 @@ class Project < ActiveRecord::Base
     result = [ ]
 
     # Get the weeks between start and end date as an array
-    dates = unit.start_date.to_date.step(unit.end_date.to_date + 1.week, step=7).to_a
+    # dates = unit.start_date.to_date.step(unit.end_date.to_date + 1.week, step=7).to_a
+    dates = unit.start_date.to_date.step(unit.end_date.to_date + 1.week, 7).to_a
 
     # Setup the dictionaries to contain the keys and values
     # key = series name
     # values = array of [ x, y ] values
     projected_results = { key: "Projected", values: [] }
     target_task_results = { key: "Target", values: [] }
-    done_task_results = { key: "Complete", values: [] }
-    complete_task_results = { key: "Signed Off", values: [] }
+    done_task_results = { key: "Submitted", values: [] }
+    complete_task_results = { key: "Complete", values: [] }
 
     # get total value of all tasks assigned to this project
     total = assigned_tasks.map{|task| task.task_definition.weighting.to_f}.inject(:+)
@@ -561,10 +578,6 @@ class Project < ActiveRecord::Base
     application_reference_date > unit.end_date
   end
 
-  def has_optional_tasks?
-    tasks.any?{|task| !task.task_definition.required }
-  end
-
   def last_task_completed
     completed_tasks.sort{|a, b| a.completion_date <=> b.completion_date }.last
   end
@@ -602,6 +615,7 @@ class Project < ActiveRecord::Base
       student.name,
       target_grade,
       student.email,
+      portfolio_status,
       if tutorial then tutorial.abbreviation else '' end
     ] + ordered_tasks.map{|task| task.task_status.name }
   end
@@ -629,7 +643,7 @@ class Project < ActiveRecord::Base
     else
       Dir.chdir(portfolio_tmp_dir)
       files = Dir.glob("*")
-      idx = files.map { |file| file.split("-").first.to_i }.max
+      idx = files.map { |a_file| a_file.split("-").first.to_i }.max
       if idx.nil? || idx < 1
         idx = 1 
       else
@@ -742,7 +756,7 @@ class Project < ActiveRecord::Base
     #
     # puts "generating cover page #{cover_filename}"
 
-    coverp_file = File.new(cover_filename, mode="w")
+    coverp_file = File.new(cover_filename, "w")
     # puts 1
     coverp_file.write(coverpage_body)
     # puts 2
@@ -756,13 +770,27 @@ class Project < ActiveRecord::Base
     File.join(FileHelper.student_portfolio_dir(self, false), FileHelper.sanitized_filename("#{student.username}-portfolio.pdf"))
   end
 
+  def has_portfolio()
+    not self.portfolio_production_date.nil?
+  end
+
+  def portfolio_status()
+    if self.has_portfolio
+      'YES'
+    elsif self.compile_portfolio
+      'in process'
+    else
+      'no'
+    end
+  end
+
   def portfolio_available()
     (File.exists? portfolio_path) && ! self.compile_portfolio
   end
 
   # Create the student's portfolio
   def create_portfolio()
-    return unless compile_portfolio
+    return false unless compile_portfolio
 
     # remove from schedule
     self.compile_portfolio = false
@@ -771,16 +799,16 @@ class Project < ActiveRecord::Base
     # get path to portfolio dirs
     portfolio_dir = FileHelper.student_portfolio_dir(self, false)
     portfolio_tmp_dir = File.join(portfolio_dir, "tmp")
-    return unless Dir.exists? portfolio_tmp_dir
+    return false unless Dir.exists? portfolio_tmp_dir
 
     tmp_dir = File.join( Dir.tmpdir, 'doubtfire', 'portfolio', id.to_s )
 
     # create PDFs of uploaded files
     pdf_paths = FileHelper.convert_files_to_pdf(portfolio_tmp_dir, tmp_dir)
     if pdf_paths.nil?
-      logger.error("Files missing for task #{id}")
-      puts "Files missing for task #{id}"
-      return
+      logger.error("Files missing for portfolio in project #{id}")
+      puts "Files missing for portfolio of project #{id}"
+      return false
     end
     task_pdfs = []
     # add in tasks
@@ -800,12 +828,18 @@ class Project < ActiveRecord::Base
     final_pdf_path = portfolio_path
     if FileHelper.aggregate(pdf_paths, final_pdf_path)
       logger.info "Created portfolio - #{final_pdf_path}"
+      # Reuben 07.11.14 Set portfolio production date to now upon submission
+
+      self.portfolio_production_date = DateTime.now
+      self.save
+      result = true
+    else
+      logger.error "Failed to create portfolio - #{final_pdf_path}"
+      # failed to combine PDFs
+      self.portfolio_production_date = nil
+      self.save
+      result = false
     end
-
-    # Reuben 07.11.14 Set portfolio production date to now upon submission
-
-    self.portfolio_production_date = DateTime.now
-    self.save
 
     # Cleanup
     begin
@@ -813,6 +847,8 @@ class Project < ActiveRecord::Base
     rescue
       logger.warn "failed to cleanup dirs from portfolio production"
     end
+
+    return result
   end
 
   def remove_portfolio()
@@ -820,5 +856,31 @@ class Project < ActiveRecord::Base
     if File.exists?(portfolio)
       FileUtils.mv portfolio, "#{portfolio}.old"
     end
+  end
+
+  def max_pct_copy
+    # tasks.sort { |t1, t2|  t1.pct_similar <=> t2.pct_similar }.last.pct_similar
+    max_pct_similar
+  end
+
+  def recalculate_max_similar_pct
+    self.max_pct_similar = tasks.sort { |t1, t2|  t1.max_pct_similar <=> t2.max_pct_similar }.last.max_pct_similar
+    self.save
+  end
+
+  def matching_task(other_task)
+    task_for_task_definition(other_task.task_definition)
+  end
+
+  def task_for_task_definition(td)
+    tasks.where(task_definition: td).first
+  end
+
+  def group_for_groupset(gs)
+    groups.where(group_set: gs).first
+  end
+
+  def group_membership_for_groupset(gs)
+    group_memberships.joins(:group).where("groups.group_set_id = :id", id: gs).first
   end
 end

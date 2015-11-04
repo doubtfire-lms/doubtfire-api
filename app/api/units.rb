@@ -1,10 +1,12 @@
 require 'grape'
 require 'unit_serializer'
+require 'mime-check-helpers'
 
 module Api
   class Units < Grape::API
     helpers AuthHelpers
     helpers AuthorisationHelpers
+    helpers MimeCheckHelpers
 
     before do
       authenticated?
@@ -89,9 +91,9 @@ module Api
       group :unit do
         requires :name
         requires :code
-        requires :description
-        requires :start_date
-        requires :end_date
+        optional :description
+        optional :start_date
+        optional :end_date
       end
     end
     post '/units' do
@@ -108,6 +110,19 @@ module Api
                                             :start_date,
                                             :end_date
                                           )
+
+      if unit_parameters[:description].nil?
+        unit_parameters[:description] = unit_parameters[:name]
+      end
+      if unit_parameters[:start_date].nil?
+        start_date = Date.parse('Monday')
+        delta = start_date > Date.today ? 0 : 7 
+        unit_parameters[:start_date] = start_date + delta
+      end
+      if unit_parameters[:end_date].nil?
+        unit_parameters[:end_date] = unit_parameters[:start_date] + 16.weeks
+      end
+
       unit = Unit.create!(unit_parameters)
 
       # Employ current user as convenor
@@ -156,13 +171,27 @@ module Api
         error!({"error" => "Not authorised to upload CSV of students to #{unit.code}"}, 403)
       end
       
-      # check mime is correct before uploading
-      if not params[:file][:type] == "text/csv"
-        error!({"error" => "File given is not a CSV file"}, 403)
-      end
+      ensure_csv!(params[:file][:tempfile])
       
       # Actually import...
       unit.import_users_from_csv(params[:file][:tempfile])
+    end
+
+    desc "Upload CSV with the students to un-enrol from the unit"
+    params do
+      requires :file, type: Rack::Multipart::UploadedFile, :desc => "CSV upload file."
+    end
+    post '/csv/units/:id/withdraw' do
+      # check mime is correct before uploading
+      ensure_csv!(params[:file][:tempfile])
+      
+      unit = Unit.find(params[:id])
+      if not authorise? current_user, unit, :uploadCSV
+        error!({"error" => "Not authorised to upload CSV of students to #{unit.code}"}, 403)
+      end
+      
+      # Actually withdraw...
+      unit.unenrol_users_from_csv(params[:file][:tempfile])
     end
     
     desc "Download CSV of all students in this unit"

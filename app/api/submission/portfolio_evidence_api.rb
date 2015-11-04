@@ -16,6 +16,8 @@ module Api
       params do
         requires :file0, type: Rack::Multipart::UploadedFile, :desc => "file 0."
         optional :file1, type: Rack::Multipart::UploadedFile, :desc => "file 1."
+        optional :contributions, type: String, :desc => "Contribution details stringified json, eg: [ { project_id: 1, pct:'0.44' }, ... ]"
+        optional :trigger, type: String, :desc => "Can be need_help to indicate upload is not a ready to mark submission"
       end
       post '/submission/task/:id' do
         task = Task.find(params[:id])
@@ -23,19 +25,27 @@ module Api
         if not authorise? current_user, task, :make_submission
           error!({"error" => "Not authorised to submit task '#{task.task_definition.name}'"}, 401)
         end
+
+        if task.group_task? and not task.group
+          error!({"error" => "This task requires a group submission. Ensure you are in a group for the unit's #{task.task_definition.group_set.name}"}, 401)
+        end
+
+        if params[:contributions]
+          params[:contributions] = JSON.parse(params[:contributions])
+        end
+
+        if params[:trigger] && params[:trigger].tr('"\'', '') == 'need_help'
+          trigger = 'need_help'
+        else
+          trigger = 'ready_to_mark'
+        end
         
         upload_reqs = task.upload_requirements
         student = task.project.student
         unit = task.project.unit
-        
-        # Copy files to be PDFed
-        PortfolioEvidence.produce_student_work(scoop_files(params, upload_reqs), student, task, self)
-        
-        # This task is now ready to submit
 
-        if not (task.discuss? || task.complete? || task.fix_and_include?)
-          task.trigger_transition 'ready_to_mark', current_user
-        end
+        # Copy files to be PDFed
+        task.accept_submission(current_user, scoop_files(params, upload_reqs), student, self, params[:contributions], trigger)
 
         TaskUpdateSerializer.new(task)
       end #post
@@ -53,16 +63,33 @@ module Api
         unit = task.project.unit
         
         if evidence_loc.nil? || task.processing_pdf
-          error!({"error" => "No submission under task '#{task.task_definition.name}' for user #{student.username}"}, 401)
+          evidence_loc = Rails.root.join("public", "resources", "FileNotFound.pdf")
+          header['Content-Disposition'] = "attachment; filename=FileNotFound.pdf"
+        else
+          header['Content-Disposition'] = "attachment; filename=#{task.task_definition.abbreviation}.pdf"
         end
         
         # Set download headers...
         content_type "application/octet-stream"
-        header['Content-Disposition'] = "attachment; filename=#{task.task_definition.abbreviation}.pdf"
         env['api.format'] = :binary
 
         File.read(evidence_loc)
       end # get
+
+      desc "Request for a task's documents to be re-processed tp recreate the task's PDF"
+      put '/submission/task/:id' do
+        task = Task.find(params[:id])        
+
+        if not authorise? current_user, task, :get_submission
+          error!({"error" => "Not authorised to get task '#{task.task_definition.name}'"}, 401)
+        end
+
+        if task and PortfolioEvidence.recreate_task_pdf(task)
+          { result: "done" }
+        else
+          { result: "false" }
+        end
+      end # put
     end
   end
 end

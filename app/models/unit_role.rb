@@ -14,6 +14,8 @@ class UnitRole < ActiveRecord::Base
   validates :unit_id, presence: true
   validates :user_id, presence: true
   validates :role_id, presence: true
+  validate :must_be_in_group_tutorials
+
 
   scope :students,  -> { joins(:role).where('roles.name = :role', role: 'Student') }
   scope :tutors,    -> { joins(:role).where('roles.name = :role', role: 'Tutor') }
@@ -21,7 +23,7 @@ class UnitRole < ActiveRecord::Base
   # scope :staff,     -> { where('role_id != ?', 1) }
 
   def self.for_user(user)
-    UnitRole.joins(:role).where("user_id = :user_id and roles.name <> 'Student'", user_id: user.id)
+    UnitRole.joins(:role, :unit).where("user_id = :user_id and roles.name <> 'Student'", user_id: user.id)
   end
 
   # unit roles are now unique for users in units
@@ -39,7 +41,27 @@ class UnitRole < ActiveRecord::Base
     }
   end
 
-  def self.tasks_ready_to_mark(user)    
+  #
+  # Check to see if the student has a valid tutorial
+  #
+  def must_be_in_group_tutorials
+    return unless project
+    project.groups.each { |g| 
+      if g.limit_members_to_tutorial?
+        if tutorial != g.tutorial
+          if g.group_set.allow_students_to_manage_groups
+            # leave group
+            g.remove_member(project)
+          else
+            errors.add(:groups, "require you to be in tutorial #{g.tutorial.abbreviation}")
+            break
+          end
+        end
+      end
+    }
+  end
+
+  def self.tasks_to_review(user)    
     ready_to_mark = []
     
     # There has be a better way to do this surely...
@@ -47,7 +69,7 @@ class UnitRole < ActiveRecord::Base
     tutorials.each do | tutorial |
       tutorial.projects.each do | project |
         project.tasks.each do | task | 
-          ready_to_mark << task if task.ready_to_mark?
+          ready_to_mark << task if task.has_pdf && ( task.ready_to_mark? || task.need_help?)
         end
       end
     end

@@ -75,43 +75,20 @@ module Api
         evidence_loc = project.portfolio_path
         
         if evidence_loc.nil? || File.exists?(evidence_loc) == false
-          error!({"error" => "No portfolio for project '#{project.id}'"}, 401)
+          evidence_loc = Rails.root.join("public", "resources", "FileNotFound.pdf")
+          header['Content-Disposition'] = "attachment; filename=FileNotFound.pdf"
+        else
+          header['Content-Disposition'] = "attachment; filename=portfolio.pdf"
         end
         
         # Set download headers...
-        content_type "application/octet-stream"
-        header['Content-Disposition'] = "attachment; filename=portfolio.pdf"
+        content_type "application/pdf"
         env['api.format'] = :binary
 
         File.read(evidence_loc)
       end # get
 
-      desc "Retrieve portfolios for a unit"
-      get '/submission/unit/:id/portfolio' do
-        unit = Unit.find(params[:id])
-
-        if not authorise? current_user, unit, :get_ready_to_mark_submissions
-          error!({"error" => "Not authorised to download portfolios for unit '#{params[:id]}'"}, 401)
-        end
-
-        output_zip = unit.get_portfolio_zip(current_user)
-
-        if output_zip.nil?
-          error!({"error" => "No files to download"}, 403)
-        end
-        
-        # Set download headers...
-        content_type "application/octet-stream"
-        download_id = "#{Time.new.strftime("%Y-%m-%d %H:%m:%S")}-portfolios-#{unit.code}-#{current_user.username}"
-        download_id.gsub! /[\\\/]/, '-'
-        download_id = FileHelper.sanitized_filename(download_id)
-        header['Content-Disposition'] = "attachment; filename=#{download_id}.zip"
-        env['api.format'] = :binary
-
-        out = File.read(output_zip.path)
-        output_zip.unlink
-        out
-      end # get
+      # "Retrieve portfolios for a unit" done using controller
     end
   end
 end

@@ -43,6 +43,9 @@ module AuthHelpers
       end
     end
   end
+
+  module_function :authenticated?
+  module_function :current_user
 end
 
 module Api
@@ -58,9 +61,11 @@ module Api
     rescue_from :all
 
     mount Api::Auth
+    mount Api::GroupSets
     mount Api::Projects
     mount Api::Students
     mount Api::Tasks
+    mount Api::TaskComments
     mount Api::TaskDefinitions
     mount Api::Tutorials
     mount Api::UnitRoles
@@ -72,10 +77,12 @@ module Api
     mount Api::Submission::PortfolioEvidenceApi
     mount Api::Submission::BatchTask
 
+    AuthHelpers.add_auth_to Api::GroupSets
     AuthHelpers.add_auth_to Api::Units
     AuthHelpers.add_auth_to Api::Projects
     AuthHelpers.add_auth_to Api::Students
     AuthHelpers.add_auth_to Api::Tasks
+    AuthHelpers.add_auth_to Api::TaskComments
     AuthHelpers.add_auth_to Api::TaskDefinitions
     AuthHelpers.add_auth_to Api::Tutorials
     AuthHelpers.add_auth_to Api::Users

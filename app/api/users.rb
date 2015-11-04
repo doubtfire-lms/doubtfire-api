@@ -1,9 +1,11 @@
 require 'grape'
+require 'mime-check-helpers'
 
 module Api
   class Users < Grape::API
     helpers AuthHelpers
     helpers AuthorisationHelpers
+    helpers MimeCheckHelpers
     
     before do
       authenticated?
@@ -52,6 +54,9 @@ module Api
         optional :email         , type: String,   desc: 'New email address for user'
         optional :nickname      , type: String,   desc: 'New nickname for user'
         optional :system_role   , type: String,   desc: 'New role for user [Admin, Convenor, Tutor, Student]'
+        optional :receive_task_notifications, type: Boolean, desc: 'Allow user to be sent task notifications'
+        optional :receive_portfolio_notifications, type: Boolean, desc: 'Allow user to be sent portfolio notifications'
+        optional :receive_feedback_notifications, type: Boolean, desc: 'Allow user to be sent feedback notifications'
       end
     end
     put '/users/:id' do
@@ -69,7 +74,10 @@ module Api
                                               :first_name,
                                               :last_name,
                                               :email,
-                                              :nickname
+                                              :nickname,
+                                              :receive_task_notifications,
+                                              :receive_portfolio_notifications,
+                                              :receive_feedback_notifications
                                             )
 
         user.role = Role.student if user.role.nil?
@@ -177,13 +185,11 @@ module Api
       requires :file, type: Rack::Multipart::UploadedFile, :desc => "CSV upload file."
     end
     post '/csv/users' do
+      # check mime is correct before uploading
+      ensure_csv!(params[:file][:tempfile])
+
       if not authorise? current_user, User, :uploadCSV
         error!({"error" => "Not authorised to upload CSV of users"}, 403)
-      end
-      
-      # check mime is correct before uploading
-      if not params[:file][:type] == "text/csv"
-        error!({"error" => "File given is not a CSV file"}, 403)
       end
       
       # Actually import...

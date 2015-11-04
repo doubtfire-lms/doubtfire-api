@@ -1,0 +1,17 @@
+Hi <%= @student.first_name %>,
+
+Something went wrong with the processing of the following tasks. Please check what you have submitted and try uploading them again. Watch out for character encodings, and file formats.
+
+The tasks with issues are:
+<% @tasks.each do |task| %>
+  * <%= task.task_definition.abbreviation %> - <%=task.task_definition.name%>
+<% end %>
+
+Cheers,
+<%= @tutor.name %>
+
+---
+
+Visit <%= @unsubscribe_url%> to unsubscribe from these notifications.
+
+Generated with Doubtfire

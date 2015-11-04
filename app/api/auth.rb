@@ -21,7 +21,7 @@ module Api
       password = params[:password]
       remember = params[:remember]
 
-      if (username =~ /^[Ss]\d{6,8}([Xx]|\d)$/) == 0
+      if (username =~ /^[Ss]\d{6,10}([Xx]|\d)$/) == 0
         username[0] = ""
       end
 
@@ -37,7 +37,7 @@ module Api
           user.first_name         = "First Name"
           user.last_name          = "Surname"
           user.email              = username + "@swin.edu.au"
-          user.nickname           = username
+          user.nickname           = "Nickname"
           user.role_id            = Role.student.id
         }
 
@@ -52,16 +52,19 @@ module Api
           user.username = username
         end
 
+        if user.new_record?
+          user.password = "password"
+          user.encrypted_password = BCrypt::Password.create("password")
+          if not user.valid?
+            error!({"error" => "There was an error creating your account in Doubtfire. Please get in contact with your unit convenor or the Doubtfire administrators."})
+          end 
+          user.save
+        end
+
         if user.auth_token_expiry.nil? || user.auth_token_expiry <= DateTime.now
           user.generate_authentication_token! remember
         else 
           user.extend_authentication_token remember
-        end
-
-        if user.new_record?
-          user.password = "password"
-          user.encrypted_password = BCrypt::Password.create("password")
-          user.save
         end
 
         { user: UserSerializer.new(user), auth_token: user.auth_token }
@@ -98,8 +101,8 @@ module Api
       user = User.find_by_auth_token(params[:auth_token])
       if user
         user.reset_authentication_token!
-        nil
       end
+      nil
     end
   end
 end

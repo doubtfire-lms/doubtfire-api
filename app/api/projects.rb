@@ -116,7 +116,7 @@ module Api
       end
       
       if authorise? current_user, unit, :enrol_student
-        proj = unit.enrol_student(student.id, params[:tutorial_id])
+        proj = unit.enrol_student(student, params[:tutorial_id])
         if proj.nil? 
           error!({"error" => "Error adding student to unit" }, 403)
         else 

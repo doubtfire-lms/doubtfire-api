@@ -12,6 +12,7 @@ module Api
     desc "Get unit roles for authenticated user"
     params do
       optional :unit_id, type: Integer, desc: 'Get user roles in indicated unit'
+      optional :include_in_active, type: Boolean, desc: 'Include units that are not active'
     end
     get '/unit_roles' do
       if not authorise? current_user, User, :act_tutor
@@ -22,6 +23,8 @@ module Api
 
       if params[:unit_id]
         unit_roles = unit_roles.where(unit_id: params[:unit_id])
+      elsif not params[:include_in_active]
+        unit_roles = unit_roles.where("units.active = true")
       end
 
       unit_roles
@@ -95,6 +98,10 @@ module Api
           :role_id
         )
       
+      if unit_role_parameters[:role_id] == Role.tutor.id && unit_role.role == Role.convenor && unit_role.unit.convenors.count == 1
+        error!({"error" => "There must be at least one convenor for the unit"}, 403)
+      end
+
       unit_role.update!(unit_role_parameters)
       unit_role
     end 

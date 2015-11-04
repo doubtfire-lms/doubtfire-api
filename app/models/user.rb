@@ -23,14 +23,14 @@ class User < ActiveRecord::Base
 
   def extend_authentication_token (remember)
     if auth_token.nil?
-      generate_authentication_token false
+      generate_authentication_token! false
       return
     end
 
     if remember
-      if role == Role.student
+      if role == Role.student || role == :Student
         self.auth_token_expiry = DateTime.now + 2.weeks
-      elsif role == Role.tutor
+      elsif role == Role.tutor || role == :Tutor
         self.auth_token_expiry = DateTime.now + 1.week
       else
         self.auth_token_expiry = DateTime.now + 2.hours
@@ -226,11 +226,23 @@ class User < ActiveRecord::Base
   end
 
   def name
-    "#{first_name} #{last_name}"
+    fn = first_name.split(' ').first
+    # fn = nickname
+    sn = last_name
+
+    if fn.length > 15
+      fn = "#{fn[0..11]}..."
+    end
+
+    if sn.length > 15
+      sn = "#{sn[0..11]}..."
+    end
+
+    "#{fn} #{sn}"
   end
 
   def self.export_to_csv
-    exportables = ["username", "first_name", "last_name", "email", "nickname", "role_id"]
+    exportables = csv_columns().map{ |col| col == "role" ? "role_id" : col }
     CSV.generate do |row|
       row << User.attribute_names.select { | attribute | exportables.include? attribute }.map { | attribute | 
         # rename encrypted_password key to just password and role_id key to just role
@@ -255,48 +267,102 @@ class User < ActiveRecord::Base
     end
   end
 
+  def self.missing_headers(row, headers)
+    headers - row.to_hash().keys
+  end
+
+  def self.csv_columns
+    ["username", "first_name", "last_name", "email", "nickname", "role"]
+  end
+
   def self.import_from_csv(current_user, file)
-    addedUsers = []
+    success = []
+    errors = []
+    ignored = []
     
-    csv = CSV.read(file)
-    # shift to skip header row
-    csv.shift
-    csv.each do |row|
-      email, first_name, last_name, username, nickname, role = row
-      # email, password, first_name, last_name, username, nickname, role = row
-      
-      new_role = Role.with_name(role)
-      username = username.downcase    # ensure that find by username uses lowercase
+    CSV.parse(file, {
+        :headers => true,
+        :header_converters => [:downcase, lambda { |hdr| hdr.strip.gsub(" ", "_") unless hdr.nil? } ],
+        :converters => [lambda{ |body| body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]
+    }).each do |row|
+      next if row[0] =~ /(email)|(username)/
 
-      #
-      # If the current user is allowed to create a user in this role
-      #
-      if (not new_role.nil?) && AuthorisationHelpers::authorise?(current_user, User, :createUser, User.get_change_role_perm_fn(), [ :nil, new_role.to_sym ])
-        #
-        # Find and update or create
-        #
-        user = User.find_or_create_by(username: username) {|user|
-          user.first_name         = first_name.titleize
-          user.last_name          = last_name.titleize
-          user.email              = email
-          user.encrypted_password = BCrypt::Password.create("password")
-          user.nickname           = nickname.nil? || nickname.empty? ? first_name : nickname
-          user.role_id            = new_role.id
-        }
-        
-        puts "New record: #{user.new_record?}"
-        puts "Persisted: #{user.persisted?}"
-
-        # will not be persisted initially as password cannot be blank - so can check
-        # which were created using this - will persist changes imported
-        if user.new_record?
-          user.password           = "password"
-          user.save
-          addedUsers.push(user) if user.persisted?
+      begin
+        missing = missing_headers(row, csv_columns)
+        if missing.count > 0
+          errors << { row: row, message: "Missing headers: #{missing.join(', ')}" }
+          next
         end
+
+        email = row['email']
+        first_name = row['first_name']
+        last_name = row['last_name']
+        username = row['username']
+        nickname = row['nickname']
+        role = row['role']
+        
+        pass_checks = true
+        ['username', 'email', 'role', 'first_name'].each do | col |
+          if row[col].nil? || row[col].empty?
+            errors << { row: row, message: "The #{col} cannot be blank or empty" }
+            pass_checks = false
+            break
+          end
+        end
+
+        next unless pass_checks
+
+        if ! email =~ /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\z/i
+          errors << { row: row, message: "Invalid email address (#{email})" }
+          next
+        end
+
+        new_role = Role.with_name(role)
+        username = username.downcase    # ensure that find by username uses lowercase
+
+        if new_role.nil?
+          errors << { row: row, message:"Unable to find role #{new_role}" }
+          next
+        end
+
+        #
+        # If the current user is allowed to create a user in this role
+        #
+        if AuthorisationHelpers::authorise?(current_user, User, :createUser, User.get_change_role_perm_fn(), [ :nil, new_role.to_sym ])
+          #
+          # Find and update or create
+          #
+          user = User.find_or_create_by(username: username) {|user|
+            user.first_name         = first_name.titleize
+            user.last_name          = last_name.titleize
+            user.email              = email
+            user.encrypted_password = BCrypt::Password.create("password")
+            user.nickname           = nickname.nil? || nickname.empty? ? first_name : nickname
+            user.role_id            = new_role.id
+          }
+          
+          # puts "New record: #{user.new_record?}"
+          # puts "Persisted: #{user.persisted?}"
+
+          # will not be persisted initially as password cannot be blank - so can check
+          # which were created using this - will persist changes imported
+          if user.new_record?
+            user.password           = "password"
+            user.save!
+            success << {row: row, message: "Added user #{username} as #{role}."}
+          else
+            ignored << {row: row, message: "User #{username} already existed."}
+          end
+        end
+      rescue Exception => e
+        errors << { row: row, message: e.message }
       end
     end
     
-    addedUsers
+    {
+      success: success,
+      ignored: ignored,
+      errors:  errors
+    }
   end
 end

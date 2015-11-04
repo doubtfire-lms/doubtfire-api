@@ -21,6 +21,7 @@ module Doubtfire
 
     config.paths.add "app/api", glob: "**/*.rb"             #For Grape
     config.autoload_paths += Dir["#{Rails.root}/app"]       # For Grape
+    config.autoload_paths += Dir["#{Rails.root}/app/serializers"]
 
     config.middleware.insert_before Warden::Manager, Rack::Cors do
       allow do
@@ -39,7 +40,7 @@ module Doubtfire
         routing_specs: false,
         controller_specs: true,
         request_specs: true
-      g.fixture_replacement :factory_girl, dir: "spec/factories"
+      g.fixture_replacement :factory_girl, dir: "spec/factories", suffix: 'factory'
     end
   end
 end

@@ -1,3 +1,6 @@
+require 'terminator'
+require 'zip'
+
 module FileHelper
 
   # Provide access to the Rails logger
@@ -5,33 +8,50 @@ module FileHelper
     Rails.logger
   end
 
+  def check_mime_against_list! (file, expect, type_list)
+    fm = FileMagic.new(FileMagic::MAGIC_MIME)
+
+    mime_type = fm.file(file)
+
+    # check mime is correct before uploading
+    if not mime_type.start_with?(*type_list)
+      error!({"error" => "File given is not a #{expect} file - detected #{mime_type}"}, 403)
+    end
+  end
+
   #
   # Test if a file should be accepted based on an expected kind
-  # - file is passed the file uploaded to Doubtfire
+  # - file is passed the file uploaded to Doubtfire (a hash with all relevant data about the file)
   #
   def self.accept_file(file, name, kind)
     logger.debug "FileHelper accept_file #{file}, #{name}, #{kind}"
+    # puts "FileHelper accept_file #{file}, #{name}, #{kind}"
 
     fm = FileMagic.new(FileMagic::MAGIC_MIME)
     mime = fm.file file.tempfile.path
     logger.debug " -- #{name} is mime type: #{mime}"
+    # puts " -- #{name} is mime type: #{mime}"
+
+    valid = true
 
     case kind
     when 'image'
-      accept = ["image/png", "image/gif", "image/bmp", "image/tiff", "image/jpeg"]
+      accept = ["image/png", "image/gif", "image/bmp", "image/tiff", "image/jpeg", "image/x-ms-bmp"]
     when 'code'
-      accept = ["text/x-pascal", "text/x-c", "text/x-c++", "text/plain"]
+      accept = ["text/x-pascal", "text/x-c", "text/x-c++", "text/plain", "text/"]
     when 'document'
       accept = [ # -- one day"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                  # --"application/msword", 
                  "application/pdf" ]
+      valid = pdf_valid? file.tempfile.path
     else
       logger.error "Unknown type '#{kind}' provided for '#{name}'"
+      puts "Unknown type '#{kind}' provided for '#{name}'"
       return false
     end
     
     # result is true when...
-    mime.start_with?(*accept)
+    mime.start_with?(*accept) && valid
   end
 
 
@@ -65,27 +85,84 @@ module FileHelper
     end
   end
 
+  def self.task_file_dir_for_unit(unit, create = true)
+    file_server = Doubtfire::Application.config.student_work_dir
+    dst = "#{file_server}/" # trust the server config and passed in type for paths
+    dst << sanitized_path("#{unit.code}-#{unit.id}","TaskFiles") << "/" 
+
+    if create and not Dir.exists? dst
+      FileUtils.mkdir_p dst
+    end
+
+    dst
+  end
+
+  def self.student_group_work_dir(type, group_submission, task=nil, create=false)
+    return nil unless group_submission
+    
+    file_server = Doubtfire::Application.config.student_work_dir
+    dst = "#{file_server}/" # trust the server config and passed in type for paths
+
+    group = group_submission.group
+    return nil unless group
+    unit = group.unit
+
+    if type == :pdf
+      dst << sanitized_path("#{unit.code}-#{unit.id}","Group-#{group.id}", "#{type}") << "/"
+    elsif type == :done
+      dst << sanitized_path("#{unit.code}-#{unit.id}","Group-#{group.id}", "#{type}", "#{group_submission.id}") << "/"
+    elsif type == :plagarism
+      dst << sanitized_path("#{unit.code}-#{unit.id}","Group-#{group.id}", "#{type}", "#{group_submission.id}") << "/"
+    else  # new and in_process -- just have task id -- will link to group when done etc.
+      # Add task id to dst if we want task
+      if task.nil?
+        raise 'Unable to locate file!'
+      end
+      dst << "#{type}/#{task.id}/"
+    end
+
+    if create
+      FileUtils.mkdir_p(dst)
+    end
+    dst
+  end
+
   #
   # Generates a path for storing student work
-  # type = [:new, :in_process, :done, :pdf]
+  # type = [:new, :in_process, :done, :pdf, :plagarism]
   #
-  def self.student_work_dir(type, task = nil)
-    file_server = Doubtfire::Application.config.student_work_dir
-    dst = "#{file_server}/#{type}/" # trust the server config and passed in type for paths
+  def self.student_work_dir(type = nil, task = nil, create = true)
+    if task && task.group_task?
+      dst = student_group_work_dir type, task.group_submission, task
+    else
+      file_server = Doubtfire::Application.config.student_work_dir
+      dst = "#{file_server}/" # trust the server config and passed in type for paths
 
-    if task != nil 
-      if type == :pdf
-        dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}","#{task.project.student.username}") << "/"
-      elsif type == :done
-        dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}","#{task.project.student.username}", "#{task.id}") << "/"
-      elsif  # new and in_process -- just have task id
-        # Add task id to dst if we want task
-        dst << "#{task.id}/"
+      if not (type.nil? || task.nil?)
+        if type == :pdf
+          dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}","#{task.project.student.username}", "#{type}") << "/"
+        elsif type == :done
+          dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}","#{task.project.student.username}", "#{type}", "#{task.id}") << "/"
+        elsif type == :plagarism
+          dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}","#{task.project.student.username}", "#{type}", "#{task.id}") << "/"
+        else  # new and in_process -- just have task id
+          # Add task id to dst if we want task
+          dst << "#{type}/#{task.id}/"
+        end
+      elsif (not type.nil?)
+        if [:in_process, :new].include? type
+          # Add task id to dst if we want task
+          dst << "#{type}/"
+        else
+          raise "Error in request to student work directory"
+        end
       end
     end
 
     # Create current dst directory should it not exist
-    FileUtils.mkdir_p(dst)
+    if create
+      FileUtils.mkdir_p(dst)
+    end
     dst
   end
 
@@ -105,22 +182,59 @@ module FileHelper
     dst
   end
 
-  def self.compress_pdf(path)
+  def self.compress_image(path)
+    return if File.size?(path) < 1000000
+
+    tmp_file = File.join( Dir.tmpdir, 'doubtfire', 'compress', "#{File.dirname(path).split(File::Separator).last}-file#{File.extname(path)}" )
+    # puts "Compressing #{path} to \n #{tmp_file}"
+
+    exec = "convert \"#{path}\" -resize 1024x1024 \"#{tmp_file}\" >>/dev/null 2>>/dev/null"
+
+    # try with ghostscript
+    didCompress = false
+    Terminator.terminate 120 do
+      didCompress = system exec
+    end
+
+    if didCompress
+      FileUtils.mv tmp_file, path
+    end
+
+    if File.exists? tmp_file
+      FileUtils.rm tmp_file
+    end
+  end
+
+  def self.compress_pdf(path, max_size = 2500000)
     #trusting path... as it needs to be replaced
+    # puts "compressing #{path} #{File.size?(path)}"
+    # only compress things over max_size -- defaults to 2.5mb
+    return if File.size?(path) < max_size
+    # puts "compressing..."
+    
     begin
-      tmp_file = File.join( Dir.tmpdir, 'doubtfire', 'compress', "file.pdf" )
+      tmp_file = File.join( Dir.tmpdir, 'doubtfire', 'compress', "#{File.dirname(path).split(File::Separator).last}-file.pdf" )
       FileUtils.mkdir_p(File.join( Dir.tmpdir, 'doubtfire', 'compress' ))
 
-      exec = "gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/screen -dNOPAUSE -dBATCH  -dQUIET -sOutputFile=\"#{tmp_file}\" \"#{path}\""
+      exec = "#{Rails.root.join('lib', 'shell', 'timeout.sh')} -t 15 nice -n 10 gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.3 -dDetectDuplicateImages=true -dPDFSETTINGS=/screen -dNOPAUSE -dBATCH  -dQUIET -sOutputFile=\"#{tmp_file}\" \"#{path}\" >>/dev/null 2>>/dev/null"
 
       # try with ghostscript
+      didCompress = false
+      # Terminator.terminate 120 do
       didCompress = system exec
+      # end
+      
       if !didCompress
-        exec = "convert \"#{path}\" -compress Zip \"#{tmp_file}\""
+        # puts "compressing with convert"
         logger.info "Failed to compress pdf: #{path} using GS"
 
+        exec = "nice -n 10 convert \"#{path}\" -compress Zip \"#{tmp_file}\" >>/dev/null 2>>/dev/null"
+
         # try with convert
-        didCompress = system exec
+        Terminator.terminate 120 do
+          didCompress = system exec
+        end
+
         if !didCompress
           logger.error "Failed to compress pdf: #{path}\n#{exec}"
           puts "Failed to compress pdf: #{path}\n#{exec}"
@@ -134,6 +248,10 @@ module FileHelper
     rescue 
       logger.error("Failed to compress pdf: #{path}")
     end
+
+    if File.exists? tmp_file
+      FileUtils.rm tmp_file
+    end
   end
 
   #
@@ -141,14 +259,26 @@ module FileHelper
   #
   def self.move_files(from_path, to_path)
     # move into the new dir - and mv files to the in_process_dir
-    Dir.chdir(from_path)
-    FileUtils.mv Dir.glob("*"), to_path, :force => true
-    Dir.chdir(to_path)
+    pwd = FileUtils.pwd
     begin
-      #remove from_path as files are now "in process"
-      FileUtils.rm_r(from_path)
-    rescue
-      logger.warn "failed to rm #{from_path}"
+      FileUtils.mkdir_p(to_path) if not Dir.exists? to_path
+      Dir.chdir(from_path)
+      FileUtils.mv Dir.glob("*"), to_path, :force => true
+      Dir.chdir(to_path)
+      begin
+        #remove from_path as files are now "in process"
+        FileUtils.rm_r(from_path)
+      rescue
+        logger.warn "failed to rm #{from_path}"
+      end
+    ensure
+      if FileUtils.pwd() != pwd
+        if Dir.exists? pwd
+          FileUtils.chdir(pwd)
+        else
+          FileUtils.chdir( student_work_dir() )
+        end
+      end
     end
   end
 
@@ -212,6 +342,34 @@ module FileHelper
   end
 
   #
+  # Tests if a PDF is valid / corrupt
+  #
+  def self.pdf_valid?(file)
+    # puts "pdftk #{file} output dont_ask /dev/null"
+
+    didSucceed = false
+
+    Terminator.terminate 30 do
+      didSucceed = system "pdftk #{file} output /dev/null dont_ask"
+    end    
+
+    didSucceed
+  end
+
+  #
+  # Copy a PDF into place
+  #
+  def self.copy_pdf(file, dest_path)
+    if pdf_valid? file
+      compress_pdf(file)
+      FileUtils.cp file, dest_path
+      true
+    else
+      false
+    end
+  end
+
+  #
   # Converts the given file to a pdf
   #  
   def self.convert_to_pdf(file, outdir)
@@ -249,7 +407,7 @@ module FileHelper
     html_body = CodeRay.scan_file(file[:actualfile], lang).html(:wrap => :div, :tab_width => 2, :css => :class, :line_numbers => :table, :line_number_anchors => false)
 
     # HTML -> PDF
-    kit = PDFKit.new(html_body, :page_size => 'A4', :header_right => "[page]/[toPage]", :margin_top => "10mm", :margin_right => "5mm", :margin_bottom => "5mm", :margin_left => "5mm")
+    kit = PDFKit.new(html_body, :page_size => 'A4', :header_right => "[page]/[toPage]", :margin_top => "10mm", :margin_right => "5mm", :margin_bottom => "5mm", :margin_left => "5mm", :lowquality => true, :minimum_font_size => 8)
     kit.stylesheets << Rails.root.join("vendor/assets/stylesheets/coderay.css")
     kit.to_file(outdir)
   end
@@ -260,9 +418,14 @@ module FileHelper
   def self.img_to_pdf(file, outdir)
     img = Magick::Image.read(file[:path]).first
     # resize the image if its too big (e.g., taken with a digital camera)
-    if img.columns > 1000 || img.rows > 500
-      # resize such that it's 600px in width
-      scale = 1000.0 / img.columns
+    if img.columns > 1000 || img.rows > 1000
+      # resize such that it's 1000px in width
+      scale = 1
+      if img.columns > img.rows
+        scale = 1000.0 / img.columns
+      else
+        scale = 1000.0 / img.rows
+      end
       img = img.resize(scale)
     end
     img.write("pdf:#{outdir}") { self.quality = 75 }
@@ -274,26 +437,22 @@ module FileHelper
   def self.doc_to_pdf(file, outdir)
     # puts file
     # if uploaded a PDF, then directly pass in
-    if file[:ext] == '.pdf'
+    # if file[:ext] == '.pdf'
       # copy the file over (note we need to copy it into
       # output_file as file will be removed at the end of this block)
       
-      if file[:actualfile].size > 1000000
-        begin
-          file[:actualfile].close()
-        rescue
-        end
-
-        compress_pdf(file[:path])
-
-        begin
-          file[:actualfile] = File.open(file[:path])
-        rescue
-        end
+      begin
+        file[:actualfile].close()
+      rescue
       end
 
-      FileUtils.cp file[:path], outdir
-    end
+      copy_pdf(file[:path], outdir)
+
+      begin
+        file[:actualfile] = File.open(file[:path])
+      rescue
+      end
+    # end
     # TODO msword doc...
   end
 
@@ -332,11 +491,123 @@ module FileHelper
   # - returns boolean indicating success
   #
   def self.aggregate(pdf_paths, final_pdf_path)
-    didCompile = system "pdftk #{pdf_paths.join ' '} cat output '#{final_pdf_path}'"
+    didCompile = false
+    Terminator.terminate 180 do
+      didCompile = system "pdftk #{pdf_paths.join ' '} cat output '#{final_pdf_path}' dont_ask compress"
+    end
+
     if !didCompile
       logger.error "failed to create #{final_pdf_path}\n -> pdftk #{pdf_paths.join ' '} cat output #{final_pdf_path}"
       puts "failed to create #{final_pdf_path}\n -> pdftk #{pdf_paths.join ' '} cat output #{final_pdf_path}"
     end
     didCompile
+  end
+
+  def self.path_to_plagarism_html(match_link)
+    to_dir = student_work_dir(:plagarism, match_link.task)
+
+    File.join(to_dir, "link_#{match_link.other_task.id}.html")
+  end
+
+  #
+  # Save the passed in html to a file.
+  #
+  def self.save_plagiarism_html(match_link, html)
+    File.open(path_to_plagarism_html(match_link), 'w') do |out_file|  
+      out_file.puts html
+    end
+  end
+
+  #
+  # Delete the html for a plagarism link
+  #
+  def self.delete_plagarism_html(match_link)
+    rm_file = path_to_plagarism_html(match_link)
+    if File.exists? rm_file
+      FileUtils.rm(rm_file)
+      to_dir = student_work_dir(:plagarism, match_link.task)
+
+      if Dir[File.join(to_dir, '*.html')].count == 0
+        FileUtils.rm_rf(to_dir)
+      end
+    end
+
+    self
+  end
+
+  def self.delete_group_submission(group_submission)
+    pdf_file = PortfolioEvidence.final_pdf_path_for_group_submission(group_submission)
+    # puts "Delete #{pdf_file}"
+    if File.exists? pdf_file
+      FileUtils.rm pdf_file
+    end
+
+    done_file = zip_file_path_for_group_done_task(group_submission)
+    # puts "Delete #{done_file}"
+    if File.exists? done_file
+      FileUtils.rm done_file
+    end
+    self
+  end
+
+  def self.zip_file_path_for_group_done_task(group_submission)
+    zip_file = "#{student_group_work_dir(:done, group_submission)[0..-2]}.zip"
+  end
+
+  def self.zip_file_path_for_done_task(task)
+    zip_file = "#{student_work_dir(:done, task, false)[0..-2]}.zip"
+  end
+
+  #
+  # Compress the done files for a student - includes cover page and work uploaded
+  #
+  def self.compress_done_files(task)
+    task_dir = student_work_dir(:done, task, false)
+    zip_file = zip_file_path_for_done_task(task)
+    return if (zip_file.nil?) || (not Dir.exists? task_dir)
+
+    FileUtils.rm(zip_file) if File.exists? zip_file
+
+    input_files = Dir.entries(task_dir).select { | f | (f =~ /^\d{3}\.(cover|document|code|image)/) == 0 }
+
+    Zip::File.open(zip_file, Zip::File::CREATE) do | zip |
+      zip.mkdir "#{task.id}"
+      input_files.each do |in_file|
+        zip.add "#{task.id}/#{in_file}", "#{task_dir}#{in_file}"
+      end
+    end
+
+    FileUtils.rm_rf(task_dir)
+  end
+
+  #
+  # Extract the files from the zip file for this tasks, and replace in new so that it is created
+  #
+  def self.move_compressed_task_to_new(task)
+    # student_work_dir(:new, task) # create task dir
+    extract_file_from_done task, student_work_dir(:new), "*", lambda { | task, to_path, name |  "#{to_path}#{name}" }
+  end
+
+  #
+  # Extract files matching a pattern from the 
+  #
+  def self.extract_file_from_done(task, to_path, pattern, name_fn)
+    zip_file = zip_file_path_for_done_task(task)
+    return false if (zip_file.nil?) ||  (not File.exists? zip_file)
+
+    Zip::File.open(zip_file) do |zip|
+      # Extract folders
+      zip.each do |entry|
+        # Extract to file/directory/symlink
+        # puts "Extracting #{entry.name}"
+        if entry.name_is_directory? 
+          entry.extract( name_fn.call(task, to_path, entry.name) )  { true }
+        end
+      end
+      zip.glob("**/#{pattern}").each do |entry|
+        # puts "Here Extracting #{entry.name}"
+        entry.extract( name_fn.call(task, to_path, entry.name) ) { true }
+      end
+    end
   end
 end

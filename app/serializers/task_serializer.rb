@@ -1,13 +1,23 @@
 class ShallowTaskSerializer < ActiveModel::Serializer
-  attributes :id, :status, :task_definition_id, :processing_pdf, :has_pdf, :include_in_portfolio
+  attributes :id, :status, :task_definition_id, :processing_pdf, :has_pdf, :include_in_portfolio, :pct_similar, :similar_to_count
 end
 
 class TaskUpdateSerializer < ActiveModel::Serializer
-  attributes :id, :status, :project_id, :new_stats, :processing_pdf, :include_in_portfolio
+  attributes :id, :status, :project_id, :new_stats, :processing_pdf, :include_in_portfolio, :other_projects
 
   def new_stats
     object.project.task_stats
   end
+
+  def other_projects
+    grp = object.group
+    others = grp.projects.select { |p| p.id != object.project_id }.map{|p| {id: p.id, new_stats: p.task_stats}}
+  end
+
+  def include_other_projects?
+    object.group_task? && ! object.group.nil?
+  end
+
 end
 
 class TaskStatSerializer < ActiveModel::Serializer
@@ -27,8 +37,7 @@ class TaskStatSerializer < ActiveModel::Serializer
 end
 
 class TaskSerializer < ActiveModel::Serializer
-  attributes :id, :status, :completion_date, :task_name, :task_desc, :task_weight, :task_abbr, :task_upload_requirements, :processing_pdf
-  
+  attributes :id, :status, :completion_date, :task_name, :task_desc, :task_weight, :task_abbr, :upload_requirements, :processing_pdf, :pct_similar, :similar_to_count
 
   def task_name
   	object.task_definition.name
@@ -46,7 +55,7 @@ class TaskSerializer < ActiveModel::Serializer
   	object.task_definition.abbreviation
   end
   
-  def task_upload_requirements
+  def upload_requirements
     object.task_definition.upload_requirements
   end
 end

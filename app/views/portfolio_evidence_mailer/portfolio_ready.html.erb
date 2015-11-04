@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style type="text/css">
+    body {
+      font-family: "Lucida Grande", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      color: #333;
+      font-size: 14px;
+      width: 500px;
+      margin: 100px auto 0px auto;
+      font-size: 0.9em;
+    }
+    main {
+      background-image: url('http://doubtfire.ict.swin.edu.au/assets/images/logo.png');
+      background-size: 3.5em;
+      background-repeat: no-repeat;
+      background-position: 30px 45px;
+      padding: 30px 40px;
+      padding-left: 100px;
+      border: solid 1px #aaa;
+      border-radius: 7px;
+      line-height: 200%;
+      text-align: justify;
+    }
+    footer {
+      text-align: right;
+      margin-top: 10px;
+      color: #aaa;
+      font-size: 0.7em;
+    }
+    a, a:visited {
+      color: #6a97d2;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    ul {
+      list-style: none;
+    }
+    h1 {
+      font-size: 1.1em;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1> Doubtfire Notification </h1>
+    <p>Hi <%= @student.first_name %>,<p/>
+    <p>
+        Your portfolio has been compiled and can now be viewed and downloaded from <a href="http://doubtfire.ict.swin.edu.au">Doubtfire</a>.
+    </p>
+    <p>
+        Cheers, <br />
+        The Doubtfire Team!
+    </p>
+  </main>
+  <footer>
+    <a href="<%= @unsubscribe_url %>">Unsubscribe</a> | Generated with Doubtfire
+  </footer>
+</body>
+</html>
+
+

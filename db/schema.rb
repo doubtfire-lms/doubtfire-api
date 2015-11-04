@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20141107003540) do
+ActiveRecord::Schema.define(version: 20150729035659) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -24,6 +24,43 @@ ActiveRecord::Schema.define(version: 20141107003540) do
     t.integer  "sub_task_definition_id"
     t.datetime "created_at",             null: false
     t.datetime "updated_at",             null: false
+  end
+
+  create_table "group_memberships", force: true do |t|
+    t.integer  "group_id"
+    t.integer  "project_id"
+    t.boolean  "active",     default: true
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  create_table "group_sets", force: true do |t|
+    t.integer  "unit_id"
+    t.string   "name"
+    t.boolean  "allow_students_to_create_groups", default: true
+    t.boolean  "allow_students_to_manage_groups", default: true
+    t.boolean  "keep_groups_in_same_class",       default: false
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  add_index "group_sets", ["unit_id"], name: "index_group_sets_on_unit_id", using: :btree
+
+  create_table "group_submissions", force: true do |t|
+    t.integer  "group_id"
+    t.string   "notes"
+    t.integer  "submitted_by_project_id"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.integer  "task_definition_id"
+  end
+
+  create_table "groups", force: true do |t|
+    t.integer  "group_set_id"
+    t.integer  "tutorial_id"
+    t.string   "name"
+    t.datetime "created_at"
+    t.datetime "updated_at"
   end
 
   create_table "helpdesk_schedules", force: true do |t|
@@ -55,6 +92,18 @@ ActiveRecord::Schema.define(version: 20141107003540) do
 
   add_index "logins", ["user_id"], name: "index_logins_on_user_id", using: :btree
 
+  create_table "plagiarism_match_links", force: true do |t|
+    t.integer  "task_id"
+    t.integer  "other_task_id"
+    t.integer  "pct"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.string   "plagiarism_report_url"
+  end
+
+  add_index "plagiarism_match_links", ["other_task_id"], name: "index_plagiarism_match_links_on_other_task_id", using: :btree
+  add_index "plagiarism_match_links", ["task_id"], name: "index_plagiarism_match_links_on_task_id", using: :btree
+
   create_table "projects", force: true do |t|
     t.integer  "unit_id"
     t.integer  "unit_role_id"
@@ -69,6 +118,7 @@ ActiveRecord::Schema.define(version: 20141107003540) do
     t.integer  "target_grade",              default: 0
     t.boolean  "compile_portfolio",         default: false
     t.date     "portfolio_production_date"
+    t.integer  "max_pct_similar",           default: 0
   end
 
   add_index "projects", ["enrolled"], name: "index_projects_on_enrolled", using: :btree
@@ -102,18 +152,32 @@ ActiveRecord::Schema.define(version: 20141107003540) do
     t.datetime "updated_at",             null: false
   end
 
+  create_table "task_comments", force: true do |t|
+    t.integer  "task_id",                 null: false
+    t.integer  "user_id",                 null: false
+    t.string   "comment",    limit: 2048
+    t.datetime "created_at",              null: false
+  end
+
+  add_index "task_comments", ["task_id"], name: "index_task_comments_on_task_id", using: :btree
+
   create_table "task_definitions", force: true do |t|
     t.integer  "unit_id"
     t.string   "name"
     t.string   "description"
-    t.decimal  "weighting",                        precision: 10, scale: 0
-    t.boolean  "required"
+    t.decimal  "weighting",                            precision: 10, scale: 0
     t.datetime "target_date"
-    t.datetime "created_at",                                                            null: false
-    t.datetime "updated_at",                                                            null: false
+    t.datetime "created_at",                                                                    null: false
+    t.datetime "updated_at",                                                                    null: false
     t.string   "abbreviation"
-    t.string   "upload_requirements", limit: 2048
-    t.integer  "target_grade",                                              default: 0
+    t.string   "upload_requirements",     limit: 2048
+    t.integer  "target_grade",                                                  default: 0
+    t.boolean  "restrict_status_updates",                                       default: false
+    t.string   "plagiarism_checks",       limit: 2048
+    t.string   "plagiarism_report_url"
+    t.boolean  "plagiarism_updated",                                            default: false
+    t.integer  "plagiarism_warn_pct",                                           default: 50
+    t.integer  "group_set_id"
   end
 
   add_index "task_definitions", ["unit_id"], name: "index_task_definitions_on_unit_id", using: :btree
@@ -157,8 +221,13 @@ ActiveRecord::Schema.define(version: 20141107003540) do
     t.date     "completion_date"
     t.string   "portfolio_evidence"
     t.boolean  "include_in_portfolio", default: true
+    t.datetime "file_uploaded_at"
+    t.integer  "max_pct_similar",      default: 0
+    t.integer  "group_submission_id"
+    t.integer  "contribution_pct",     default: 100
   end
 
+  add_index "tasks", ["group_submission_id"], name: "index_tasks_on_group_submission_id", using: :btree
   add_index "tasks", ["project_id"], name: "index_tasks_on_project_id", using: :btree
   add_index "tasks", ["task_definition_id"], name: "index_tasks_on_task_definition_id", using: :btree
   add_index "tasks", ["task_status_id"], name: "index_tasks_on_task_status_id", using: :btree
@@ -197,10 +266,11 @@ ActiveRecord::Schema.define(version: 20141107003540) do
     t.string   "description"
     t.datetime "start_date"
     t.datetime "end_date"
-    t.datetime "created_at",                 null: false
-    t.datetime "updated_at",                 null: false
+    t.datetime "created_at",                         null: false
+    t.datetime "updated_at",                         null: false
     t.string   "code"
-    t.boolean  "active",      default: true
+    t.boolean  "active",              default: true
+    t.datetime "last_plagarism_scan"
   end
 
   create_table "user_roles", force: true do |t|
@@ -214,18 +284,18 @@ ActiveRecord::Schema.define(version: 20141107003540) do
   add_index "user_roles", ["user_id"], name: "index_user_roles_on_user_id", using: :btree
 
   create_table "users", force: true do |t|
-    t.string   "email",                  default: "", null: false
-    t.string   "encrypted_password",     default: "", null: false
+    t.string   "email",                           default: "",   null: false
+    t.string   "encrypted_password",              default: "",   null: false
     t.string   "reset_password_token"
     t.datetime "reset_password_sent_at"
     t.datetime "remember_created_at"
-    t.integer  "sign_in_count",          default: 0
+    t.integer  "sign_in_count",                   default: 0
     t.datetime "current_sign_in_at"
     t.datetime "last_sign_in_at"
     t.string   "current_sign_in_ip"
     t.string   "last_sign_in_ip"
-    t.datetime "created_at",                          null: false
-    t.datetime "updated_at",                          null: false
+    t.datetime "created_at",                                     null: false
+    t.datetime "updated_at",                                     null: false
     t.string   "first_name"
     t.string   "last_name"
     t.string   "username"
@@ -233,7 +303,10 @@ ActiveRecord::Schema.define(version: 20141107003540) do
     t.string   "authentication_token"
     t.string   "unlock_token"
     t.datetime "auth_token_expiry"
-    t.integer  "role_id",                default: 0
+    t.integer  "role_id",                         default: 0
+    t.boolean  "receive_task_notifications",      default: true
+    t.boolean  "receive_feedback_notifications",  default: true
+    t.boolean  "receive_portfolio_notifications", default: true
   end
 
   add_index "users", ["authentication_token"], name: "index_users_on_authentication_token", unique: true, using: :btree

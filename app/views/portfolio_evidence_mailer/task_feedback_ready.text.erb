@@ -1,0 +1,16 @@
+Hi <%= @student.first_name %>,
+
+I have checked your tasks and provided some feedback. Login and check the status<%= @hasComments ? ' and comments' : ''%> of the following tasks:
+
+<% @tasks.each do |task| %>
+  * <%= task.task_definition.abbreviation %> - <%=task.task_definition.name%> <%= task.is_last_comment_by?(@tutor) ? ' - with comments' : ''%> 
+<% end %>
+
+Cheers,
+<%= @tutor.name %>
+
+---
+
+Visit <%= @unsubscribe_url%> to unsubscribe from these notifications.
+
+Generated with Doubtfire

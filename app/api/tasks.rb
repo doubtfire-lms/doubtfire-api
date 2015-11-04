@@ -24,6 +24,85 @@ module Api
       ActiveModel::ArraySerializer.new(Task.for_unit(unit.id).joins(project: :unit_role).select('tasks.*, unit_roles.tutorial_id as tutorial_id').where("projects.enrolled = true and tasks.task_status_id > 1 and unit_roles.tutorial_id is not null"), each_serializer: TaskStatSerializer)
     end
 
+    desc "Get a similarity match for a given task"
+    get '/tasks/:id/similarity/:count' do
+      if not authenticated?
+        error!({"error" => "Not authorised to download details for task '#{params[:id]}'"}, 401)
+      end
+      task = Task.find(params[:id])
+
+      if not authorise? current_user, task, :get_submission
+        error!({"error" => "Not authorised to download details for task '#{params[:id]}'"}, 401)
+      end
+
+      match = params[:count].to_i % task.similar_to_count
+      if match < 0
+        error!({"error" => "Invalid match sequence, must be 0 or larger"}, 403)
+      end
+
+      match_link = task.plagiarism_match_links.order("created_at DESC")[match]
+      return if match_link.nil?
+
+      # puts "here 1: #{match_link}"
+      
+      other_match_link = match_link.other_party
+
+      # puts "here 2: #{other_match_link}"
+
+      output = FileHelper.path_to_plagarism_html(match_link)
+
+      if output.nil? || ! File.exists?(output)
+        error!({"error" => "No files to download"}, 403)
+      end
+
+      # check if returning both parties
+      if not authorise? current_user, other_match_link.task, :get_submission
+        {
+          student: {
+            username: match_link.student.username,
+            name: match_link.student.name,
+            tutor: match_link.tutor.name,
+            tutorial: match_link.tutorial,
+            html: File.read(output),
+            lnk: (match_link.plagiarism_report_url if authorise? current_user, match_link.task, :view_plagiarism ),
+            pct: match_link.pct
+          },
+          other_student: {
+            username: "???",
+            name: "???",
+            tutor: match_link.other_tutor.name,
+            tutorial: match_link.other_tutorial,
+            html: "<pre>???</pre>",
+            lnk: "",
+            pct: other_match_link.pct
+          }
+        }
+      else
+        otherOutput = FileHelper.path_to_plagarism_html(other_match_link)
+
+        {
+          student: {
+            username: match_link.student.username,
+            name: match_link.student.name,
+            tutor: match_link.tutor.name,
+            tutorial: match_link.tutorial,
+            html: File.read(output),
+            lnk: (match_link.plagiarism_report_url if authorise? current_user, match_link.task, :view_plagiarism ),
+            pct: match_link.pct
+          },
+          other_student: {
+            username: match_link.other_student.username,
+            name: match_link.other_student.name,
+            tutor: match_link.other_tutor.name,
+            tutorial: match_link.other_tutorial,
+            html: File.read(otherOutput),
+            lnk: (other_match_link.plagiarism_report_url if authorise? current_user, other_match_link.task, :view_plagiarism),
+            pct: other_match_link.pct
+          }
+        }
+      end
+    end
+
     # desc "Get task"
     # get '/tasks/:id' do
     #   task = Task.find(params[:id])
@@ -53,7 +132,10 @@ module Api
           if needsUploadDocs && params[:trigger] == 'ready_to_mark'
             error!({"error" => "Cannot set this task status to ready to mark without uploading documents." }, 403)
           end
-          task.trigger_transition( params[:trigger], current_user )
+          result = task.trigger_transition( params[:trigger], current_user )
+          if result.nil? && task.task_definition.restrict_status_updates
+            error!({"error" => "This task can only be updated by your tutor." }, 403)
+          end
         end
         # if include in portfolio supplied
         unless params[:include_in_portfolio].nil?
