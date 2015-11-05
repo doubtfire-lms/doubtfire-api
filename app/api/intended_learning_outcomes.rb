@@ -9,18 +9,18 @@ module Api
       authenticated?
     end
 
-    desc "Create ILO"
+    desc "Add an outcome to a unit"
     params do
       requires :unit_id           , type: Integer,  desc: 'The unit ID for which the ILO belongs to'
-      requires :name              , type: String,  desc: 'The ILO''s name'
-      requires :description          , type: String,   desc: 'The ILO''s description'
+      requires :name              , type: String,   desc: 'The ILO''s name'
+      requires :description       , type: String,   desc: 'The ILO''s description'
     end
-    post '/ilos' do
+    post '/units/:unit_id/outcomes' do
       unit = Unit.find(params[:unit_id])
 
-      # if not (authorise? current_user, unit, :add_ilo)
-      #   error!({"error" => "Not authorised to create new tutorials"}, 403)
-      # end
+      if not (authorise? current_user, unit, :update)
+        error!({"error" => "You are not authorised to create outcomes in this unit."}, 403)
+      end
 
       ilo = unit.add_ilo(params[:name], params[:description])
       ilo
@@ -28,13 +28,21 @@ module Api
 
     desc "Update ILO"
     params do
-      optional :name  , type: String,   desc: 'The ILO''s new name'
-      optional :description  , type: String,   desc: 'The ILO''s new description'
-      optional :ilo_number, type: Integer,   desc: 'The ILO''s new sequence number'
+      requires :unit_id       , type: Integer,  desc: 'The unit ID for which the ILO belongs to'
+      optional :name          , type: String,   desc: 'The ILO''s new name'
+      optional :description   , type: String,   desc: 'The ILO''s new description'
+      optional :ilo_number    , type: Integer,  desc: 'The ILO''s new sequence number'
     end
-    put '/ilos/:id' do
-      ilo = IntendedLearningOutcome.find(params[:id])
-      unit = Unit.find(ilo.unit_id)
+    put '/units/:unit_id/outcomes/:id' do
+      unit = Unit.find(params[:unit_id])
+      error!({"error" => "Unable to locate requested unit."}, 405) if unit.nil?
+
+      if not (authorise? current_user, unit, :update)
+        error!({"error" => "You are not authorised to update outcomes in this unit."}, 403)
+      end
+
+      ilo = unit.intended_learning_outcomes.find(params[:id])
+      error!({"error" => "Unable to locate outcome requested."}, 405) if ilo.nil?
       
       ilo_parameters = ActionController::Parameters.new(params)
                                           .permit(
@@ -52,12 +60,16 @@ module Api
     params do
       requires :ilo_id           , type: Integer,  desc: 'The ILO ID for the ILO you wish to delete'
     end
-    delete '/ilos' do
-      ilo = IntendedLearningOutcome.find(params[:ilo_id])
+    delete '/units/:unit_id/outcomes/:id' do
+      unit = Unit.find(params[:unit_id])
+      error!({"error" => "Unable to locate requested unit."}, 405) if unit.nil?
 
-      # if not (authorise? current_user, unit, :add_ilo)
-      #   error!({"error" => "Not authorised to create new tutorials"}, 403)
-      # end
+      if not (authorise? current_user, unit, :update)
+        error!({"error" => "You are not authorised to delete outcomes in this unit."}, 403)
+      end
+
+      ilo = unit.intended_learning_outcomes.find(params[:id])
+      error!({"error" => "Unable to locate outcome requested."}, 405) if ilo.nil?
 
       ilo.destroy
       nil
