@@ -37,7 +37,7 @@ class UnitSerializer < ActiveModel::Serializer
   end
 
   def ilos
-    object.intended_learning_outcomes
+    object.learning_outcomes
   end
 
 

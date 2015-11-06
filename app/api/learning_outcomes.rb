@@ -1,7 +1,7 @@
 require 'grape'
 
 module Api
-  class IntendedLearningOutcomes < Grape::API
+  class LearningOutcomes < Grape::API
     helpers AuthHelpers
     helpers AuthorisationHelpers
     
@@ -41,7 +41,7 @@ module Api
         error!({"error" => "You are not authorised to update outcomes in this unit."}, 403)
       end
 
-      ilo = unit.intended_learning_outcomes.find(params[:id])
+      ilo = unit.learning_outcomes.find(params[:id])
       error!({"error" => "Unable to locate outcome requested."}, 405) if ilo.nil?
       
       ilo_parameters = ActionController::Parameters.new(params)
@@ -68,7 +68,7 @@ module Api
         error!({"error" => "You are not authorised to delete outcomes in this unit."}, 403)
       end
 
-      ilo = unit.intended_learning_outcomes.find(params[:id])
+      ilo = unit.learning_outcomes.find(params[:id])
       error!({"error" => "Unable to locate outcome requested."}, 405) if ilo.nil?
 
       ilo.destroy

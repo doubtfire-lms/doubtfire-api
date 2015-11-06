@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20150729035659) do
+ActiveRecord::Schema.define(version: 20151105231733) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -74,14 +74,28 @@ ActiveRecord::Schema.define(version: 20150729035659) do
 
   add_index "helpdesk_schedules", ["user_id"], name: "index_helpdesk_schedules_on_user_id", using: :btree
 
-  create_table "intended_learning_outcomes", force: true do |t|
+  create_table "learning_outcome_task_links", force: true do |t|
+    t.text     "description"
+    t.integer  "rating"
+    t.integer  "task_definition_id"
+    t.integer  "task_id"
+    t.integer  "learning_outcome_id"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  add_index "learning_outcome_task_links", ["learning_outcome_id"], name: "learning_outcome_task_links_lo_index", using: :btree
+  add_index "learning_outcome_task_links", ["task_definition_id"], name: "index_learning_outcome_task_links_on_task_definition_id", using: :btree
+  add_index "learning_outcome_task_links", ["task_id"], name: "index_learning_outcome_task_links_on_task_id", using: :btree
+
+  create_table "learning_outcomes", force: true do |t|
     t.integer "unit_id"
     t.integer "ilo_number"
     t.string  "name"
     t.string  "description"
   end
 
-  add_index "intended_learning_outcomes", ["unit_id"], name: "index_intended_learning_outcomes_on_unit_id", using: :btree
+  add_index "learning_outcomes", ["unit_id"], name: "index_learning_outcomes_on_unit_id", using: :btree
 
   create_table "logins", force: true do |t|
     t.datetime "timestamp"

@@ -36,7 +36,7 @@ class Unit < ActiveRecord::Base
   has_many :projects, dependent: :destroy
   has_many :tutorials, dependent: :destroy
   has_many :unit_roles, dependent: :destroy
-  has_many :intended_learning_outcomes, dependent: :destroy
+  has_many :learning_outcomes, dependent: :destroy
   has_many :tasks, through: :projects
   has_many :group_sets, dependent: :destroy
   
@@ -51,7 +51,7 @@ class Unit < ActiveRecord::Base
   scope :set_inactive,          ->{ where("active = ?", false) }
 
   def ordered_ilos()
-    intended_learning_outcomes.order(:ilo_number)
+    learning_outcomes.order(:ilo_number)
   end
 
   def self.for_user_admin(user)
@@ -645,9 +645,9 @@ class Unit < ActiveRecord::Base
   # Create an ILO
   #
   def add_ilo(name, desc)
-    next_num = intended_learning_outcomes.count + 1
+    next_num = learning_outcomes.count + 1
 
-    IntendedLearningOutcome.create!(
+    LearningOutcome.create!(
       unit_id: self.id,
       name: name,
       description: desc,
@@ -661,9 +661,9 @@ class Unit < ActiveRecord::Base
   def move_ilo(ilo, new_num)
     if (ilo.ilo_number < new_num)
       # puts "Moving ILOs Up"
-      intended_learning_outcomes.where("ilo_number > #{ilo.ilo_number} and ilo_number <= #{new_num}").each { |ilo| ilo.ilo_number -= 1; ilo.save}
+      learning_outcomes.where("ilo_number > #{ilo.ilo_number} and ilo_number <= #{new_num}").each { |ilo| ilo.ilo_number -= 1; ilo.save}
     elsif (ilo.ilo_number > new_num)
-      intended_learning_outcomes.where("ilo_number < #{ilo.ilo_number} and ilo_number >= #{new_num}").each { |ilo| ilo.ilo_number += 1; ilo.save}
+      learning_outcomes.where("ilo_number < #{ilo.ilo_number} and ilo_number >= #{new_num}").each { |ilo| ilo.ilo_number += 1; ilo.save}
     end 
     ilo.ilo_number = new_num
     ilo.save

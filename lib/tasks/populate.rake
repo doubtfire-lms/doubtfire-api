@@ -258,7 +258,7 @@ namespace :db do
       puts "--------> Adding ILOs"
       unit_details[:ilos].each do |ilo_params|
         ilo_params['unit_id'] = unit.id
-        IntendedLearningOutcome.create!(ilo_params)
+        LearningOutcome.create!(ilo_params)
       end
 
       # Create convenor roles
