@@ -29,11 +29,14 @@ class Task < ActiveRecord::Base
   belongs_to :task_definition       # Foreign key
   belongs_to :project               # Foreign key
   belongs_to :task_status           # Foreign key
+  belongs_to :group_submission
+
   has_many :sub_tasks,      dependent: :destroy
   has_many :comments, class_name: "TaskComment", dependent: :destroy, inverse_of: :task
   has_many :plagiarism_match_links, class_name: "PlagiarismMatchLink", dependent: :destroy, inverse_of: :task
   has_many :reverse_plagiarism_match_links, class_name: "PlagiarismMatchLink", dependent: :destroy, inverse_of: :other_task, foreign_key: "other_task_id"
-  belongs_to :group_submission
+  has_many :learning_outcome_task_links, dependent: :destroy # links to learning outcomes
+  has_many :learning_outcomes,  through: :learning_outcome_task_links
 
   after_save :update_project
 
