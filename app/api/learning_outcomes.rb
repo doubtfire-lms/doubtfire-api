@@ -56,9 +56,10 @@ module Api
       ilo
     end
 
-    desc "Delete ILO"
+    desc "Delete an outcome from a unit"
     params do
-      requires :id, type: Integer,  desc: 'The ILO ID for the ILO you wish to delete'
+      requires :unit_id      , type: Integer,  desc: 'The id for the unit'
+      requires :id           , type: Integer,  desc: 'The id for the outcome you wish to delete'
     end
     delete '/units/:unit_id/outcomes/:id' do
       unit = Unit.find(params[:unit_id])
