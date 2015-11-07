@@ -72,6 +72,7 @@ module Api
     mount Api::Units
     mount Api::Users
     mount Api::LearningOutcomes
+    mount Api::LearningAlignment
     mount Api::Submission::Generate
     mount Api::Submission::PortfolioApi
     mount Api::Submission::PortfolioEvidenceApi
@@ -88,6 +89,7 @@ module Api
     AuthHelpers.add_auth_to Api::Users
     AuthHelpers.add_auth_to Api::UnitRoles
     AuthHelpers.add_auth_to Api::LearningOutcomes
+    AuthHelpers.add_auth_to Api::LearningAlignment
     AuthHelpers.add_auth_to Api::Submission::PortfolioApi
     AuthHelpers.add_auth_to Api::Submission::PortfolioEvidenceApi
     AuthHelpers.add_auth_to Api::Submission::BatchTask
