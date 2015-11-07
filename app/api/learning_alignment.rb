@@ -9,6 +9,29 @@ module Api
       authenticated?
     end
 
+    desc "Get the task/outcome alignment details for a unit or a project"
+    params do
+      requires :unit_id             , type: Integer,  desc: 'The id of the unit'
+      optional :project_id          , type: Integer,  desc: 'The id of the student project to get the alignment from'
+    end
+    get '/units/:unit_id/learning_alignments' do
+      unit = Unit.find(params[:unit_id])
+
+      if ! authorise?(current_user, unit, :get_unit)
+        error!({"error" => "You are not authorised to access this unit."}, 403)
+      end
+
+      if params[:project_id].nil?
+        return unit.task_outcome_alignments
+      else
+        proj = unit.projects.find(params[:project_id])
+        if ! authorise?(current_user, proj, :get)
+          error!({"error" => "You are not authorised to access this project."}, 403)
+        end
+        return proj.task_outcome_alignments
+      end
+    end
+
     desc "Add an outcome to a unit's task definition"
     params do
       requires :unit_id             , type: Integer,  desc: 'The id of the unit'
