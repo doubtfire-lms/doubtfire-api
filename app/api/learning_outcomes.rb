@@ -4,7 +4,7 @@ module Api
   class LearningOutcomes < Grape::API
     helpers AuthHelpers
     helpers AuthorisationHelpers
-    
+
     before do
       authenticated?
     end
@@ -43,7 +43,7 @@ module Api
 
       ilo = unit.learning_outcomes.find(params[:id])
       error!({"error" => "Unable to locate outcome requested."}, 405) if ilo.nil?
-      
+
       ilo_parameters = ActionController::Parameters.new(params)
                                           .permit(
                                             :name,
@@ -51,14 +51,14 @@ module Api
                                           )
       if params[:ilo_number]
         unit.move_ilo(ilo, params[:ilo_number])
-      end                                  
+      end
       ilo.update!(ilo_parameters)
       ilo
     end
 
     desc "Delete ILO"
     params do
-      requires :ilo_id           , type: Integer,  desc: 'The ILO ID for the ILO you wish to delete'
+      requires :id, type: Integer,  desc: 'The ILO ID for the ILO you wish to delete'
     end
     delete '/units/:unit_id/outcomes/:id' do
       unit = Unit.find(params[:unit_id])
