@@ -35,13 +35,13 @@ module Api
     desc "Add an outcome to a unit's task definition"
     params do
       requires :unit_id             , type: Integer,  desc: 'The id of the unit'
-      requires :task_definition_id  , type: Integer,  desc: 'The id of the task definition'
       requires :learning_outcome_id , type: Integer,  desc: 'The id of the learning outcome'
+      requires :task_definition_id  , type: Integer,  desc: 'The id of the task definition'
       optional :task_id             , type: Integer,  desc: 'The id of the task'
       requires :description         , type: String,   desc: 'The ILO''s description'
       requires :rating              , type: Integer,  desc: 'The rating for this link, indicating the strength of this alignment'
     end
-    post '/units/:unit_id/task_definitions/:task_definition_id/learning_outcome' do
+    post '/units/:unit_id/learning_alignments' do
       unit = Unit.find(params[:unit_id])
 
       if params[:task_id].nil? && ! authorise?(current_user, unit, :update)
