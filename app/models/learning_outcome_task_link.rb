@@ -12,9 +12,9 @@ class LearningOutcomeTaskLink < ActiveRecord::Base
     
     related_links = LearningOutcomeTaskLink.where( "task_definition_id = :task_definition_id AND learning_outcome_id = :learning_outcome_id", {task_definition_id: task_definition.id, learning_outcome_id: learning_outcome.id} )
     if task.nil?
-      errors.add(:task_definition, "already linked to the learning outcome") if related_links.where("task_id is NULL").count > 0
+      errors.add(:task_definition, "already linked to the learning outcome") if related_links.where("task_id is NULL").count > 1
     else
-      errors.add(:task, "already linked to the learning outcome") if related_links.where("task_id = :task_id", {task_id: task.id}).count > 0
+      errors.add(:task, "already linked to the learning outcome") if related_links.where("task_id = :task_id", {task_id: task.id}).count > 1
     end
   end
 end
