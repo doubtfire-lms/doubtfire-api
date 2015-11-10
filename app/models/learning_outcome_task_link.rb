@@ -10,11 +10,16 @@ class LearningOutcomeTaskLink < ActiveRecord::Base
   def ensure_relations_unique
     return if learning_outcome.nil? || task_definition.nil?
     
-    related_links = LearningOutcomeTaskLink.where( "task_definition_id = :task_definition_id AND learning_outcome_id = :learning_outcome_id", {task_definition_id: task_definition.id, learning_outcome_id: learning_outcome.id} )
-    if task.nil?
-      errors.add(:task_definition, "already linked to the learning outcome") if related_links.where("task_id is NULL").count > 1
+    if id.nil?
+      related_links = LearningOutcomeTaskLink.where( "task_definition_id = :task_definition_id AND learning_outcome_id = :learning_outcome_id", {my_id: id, task_definition_id: task_definition.id, learning_outcome_id: learning_outcome.id} )
     else
-      errors.add(:task, "already linked to the learning outcome") if related_links.where("task_id = :task_id", {task_id: task.id}).count > 1
+      related_links = LearningOutcomeTaskLink.where( "id != :my_id AND task_definition_id = :task_definition_id AND learning_outcome_id = :learning_outcome_id", {my_id: id, task_definition_id: task_definition.id, learning_outcome_id: learning_outcome.id} )
+    end
+
+    if task.nil?
+      errors.add(:task_definition, "already linked to this learning outcome") if related_links.where("task_id is NULL").count > 0
+    else
+      errors.add(:task, "already linked to this learning outcome") if related_links.where("task_id = :task_id", {task_id: task.id}).count > 0
     end
   end
 end

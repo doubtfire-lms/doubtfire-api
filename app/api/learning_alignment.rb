@@ -108,6 +108,32 @@ module Api
       align.save!
     end
 
+    desc "Delete the alignment between a task and unit outcome"
+    params do
+      requires :id                  , type: Integer,  desc: 'The id of the task alignment'
+      requires :unit_id             , type: Integer,  desc: 'The id of the unit'
+    end
+    delete '/units/:unit_id/learning_alignments/:id' do
+      unit = Unit.find(params[:unit_id])
+
+      if params[:task_id].nil? && ! authorise?(current_user, unit, :update)
+        error!({"error" => "You are not authorised to update the task alignments in this unit."}, 403)
+      end
+
+      align = unit.learning_outcome_task_links.find(params[:id])
+
+      if ! align.task_id.nil?
+        task = align.task
+
+        if ! authorise?(current_user, task, :make_submission)
+          error!({"error" => "You are not authorised to update outcome alignments for this task."}, 403)
+        end
+      end
+
+      align.destroy!
+      nil
+    end
+
   #   desc "Update the alignment between tasks and outcomes"
   #   params do
   #     requires :unit_id       , type: Integer,  desc: 'The unit ID for which the ILO belongs to'
