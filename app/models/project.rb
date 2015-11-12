@@ -889,4 +889,8 @@ class Project < ActiveRecord::Base
   def group_membership_for_groupset(gs)
     group_memberships.joins(:group).where("groups.group_set_id = :id", id: gs).first
   end
+
+  def export_task_alignment_to_csv
+    LearningOutcomeTaskLink.export_task_alignment_to_csv(unit, self)
+  end
 end

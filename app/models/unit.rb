@@ -417,6 +417,92 @@ class Unit < ActiveRecord::Base
     end
   end
 
+  def export_task_alignment_to_csv
+    LearningOutcomeTaskLink.export_task_alignment_to_csv(self, self)
+  end
+
+  # Use the values in the CSV to setup task alignments
+  def import_task_alignment_from_csv(file, for_project)
+    # puts 'starting withdraw'
+    success = []
+    errors = []
+    ignored = []
+    
+    CSV.parse(file, {
+        :headers => true,
+        :header_converters => [:downcase, lambda { |hdr| hdr.strip unless hdr.nil?}],
+        :converters => [lambda{ |body| body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]
+    }).each do |row|
+      # Make sure we're not looking at the header or an empty line
+      next if row[0] =~ /unit_code/
+
+      begin
+        unit_code = row['unit_code']
+
+        if unit_code != code
+          ignored << { row: row, message: "Invalid unit code. #{unit_code} does not match #{code}" }
+          next
+        end
+
+        outcome_abbr  = row['learning_outcome']
+        outcome = learning_outcomes.where("abbreviation = :abbr", abbr: outcome_abbr).first
+
+        if outcome.nil?
+          errors << { row: row, message: "Unable to locate learning outcome with abbreviation #{outcome_abbr}" }
+          next
+        end
+
+        task_def_abbr = row['task_abbr']
+        task_def = task_definitions.where("abbreviation = :abbr", abbr: task_def_abbr).first
+
+        if task_def.nil?
+          errors << { row: row, message: "Unable to locate task with abbreviation #{task_def_abbr}" }
+          next
+        end
+        
+        rating = row['rating'].to_i
+        description = row['description']
+
+        if description.nil?
+          errors << { row: row, message: "Missing description" }
+          next
+        end
+
+        if for_project.nil?
+          link = LearningOutcomeTaskLink.find_or_create_by(task_definition_id: task_def.id, learning_outcome_id: outcome.id, task_id: nil)
+        else
+          task = for_project.tasks.where("task_definition_id = :tdid", tdid: task_def.id).first
+
+          if task.nil?
+            errors << { row: row, message: "Unable to locate task related to #{task_def_abbr}" }
+            next
+          end
+          link = LearningOutcomeTaskLink.find_or_create_by(task_definition_id: task_def.id, learning_outcome_id: outcome.id, task_id: task.id)
+        end
+
+        link.rating = rating
+        link.description = description
+
+        link.save!
+
+        if link.new_record?
+          success << { row:row, message: "Link between task #{task_def.abbreviation} and outcome #{outcome.abbreviation} created for unit" }
+        else
+          success << { row:row, message: "Link between task #{task_def.abbreviation} and outcome #{outcome.abbreviation} updated for unit" }
+        end
+
+      rescue Exception => e
+        errors << { row: row, message: "#{e.message}" }
+      end
+    end
+
+    {
+      success: success,
+      ignored: ignored,
+      errors:  errors
+    }
+  end
+
   def missing_headers(row, headers)
     headers - row.to_hash().keys
   end
@@ -650,13 +736,14 @@ class Unit < ActiveRecord::Base
   #
   # Create an ILO
   #
-  def add_ilo(name, desc)
+  def add_ilo(name, desc, abbr)
     next_num = learning_outcomes.count + 1
 
     LearningOutcome.create!(
       unit_id: self.id,
       name: name,
       description: desc,
+      abbreviation: abbr,
       ilo_number: next_num
     )
   end

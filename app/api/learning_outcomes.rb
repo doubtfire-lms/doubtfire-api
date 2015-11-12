@@ -14,6 +14,7 @@ module Api
       requires :unit_id           , type: Integer,  desc: 'The unit ID for which the ILO belongs to'
       requires :name              , type: String,   desc: 'The ILO''s name'
       requires :description       , type: String,   desc: 'The ILO''s description'
+      optional :abbreviation  , type: String,   desc: 'The ILO''s new abbreviation'
     end
     post '/units/:unit_id/outcomes' do
       unit = Unit.find(params[:unit_id])
@@ -22,7 +23,7 @@ module Api
         error!({"error" => "You are not authorised to create outcomes in this unit."}, 403)
       end
 
-      ilo = unit.add_ilo(params[:name], params[:description])
+      ilo = unit.add_ilo(params[:name], params[:description], params[:abbreviation])
       ilo
     end
 
@@ -31,6 +32,7 @@ module Api
       requires :unit_id       , type: Integer,  desc: 'The unit ID for which the ILO belongs to'
       optional :name          , type: String,   desc: 'The ILO''s new name'
       optional :description   , type: String,   desc: 'The ILO''s new description'
+      optional :abbreviation  , type: String,   desc: 'The ILO''s new abbreviation'
       optional :ilo_number    , type: Integer,  desc: 'The ILO''s new sequence number'
     end
     put '/units/:unit_id/outcomes/:id' do
@@ -47,7 +49,8 @@ module Api
       ilo_parameters = ActionController::Parameters.new(params)
                                           .permit(
                                             :name,
-                                            :description
+                                            :description,
+                                            :abbreviation
                                           )
       if params[:ilo_number]
         unit.move_ilo(ilo, params[:ilo_number])

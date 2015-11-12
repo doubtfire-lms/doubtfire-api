@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20151105231733) do
+ActiveRecord::Schema.define(version: 20151111234514) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -93,6 +93,7 @@ ActiveRecord::Schema.define(version: 20151105231733) do
     t.integer "ilo_number"
     t.string  "name"
     t.string  "description"
+    t.string  "abbreviation"
   end
 
   add_index "learning_outcomes", ["unit_id"], name: "index_learning_outcomes_on_unit_id", using: :btree

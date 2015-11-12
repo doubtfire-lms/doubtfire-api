@@ -4,6 +4,7 @@ module Api
   class LearningAlignment < Grape::API
     helpers AuthHelpers
     helpers AuthorisationHelpers
+    helpers MimeCheckHelpers
     
     before do
       authenticated?
@@ -31,6 +32,75 @@ module Api
         return proj.task_outcome_alignments
       end
     end
+
+    desc "Download CSV of task alignments in this unit"
+    params do
+      requires :unit_id             , type: Integer,  desc: 'The id of the unit'
+      optional :project_id          , type: Integer,  desc: 'The id of the student project to get the alignment from'
+    end
+    get '/units/:unit_id/learning_alignments/csv' do
+      unit = Unit.find(params[:unit_id])
+
+      if ! authorise?(current_user, unit, :get_unit)
+        error!({"error" => "You are not authorised to access this unit."}, 403)
+      end
+
+      if params[:project_id].nil?
+        if not authorise? current_user, unit, :downloadCSV
+          error!({"error" => "Not authorised to download CSV of task alignment in #{unit.code}"}, 403)
+        end
+        
+        content_type "application/octet-stream"
+        header['Content-Disposition'] = "attachment; filename=#{unit.code}-Alignment.csv "
+        env['api.format'] = :binary
+        unit.export_task_alignment_to_csv
+      else
+        proj = unit.projects.find(params[:project_id])
+        if ! authorise?(current_user, proj, :get)
+          error!({"error" => "You are not authorised to access this project."}, 403)
+        end
+
+        content_type "application/octet-stream"
+        header['Content-Disposition'] = "attachment; filename=#{unit.code}-#{proj.student.name}-Task-Alignment.csv "
+        env['api.format'] = :binary
+
+        proj.export_task_alignment_to_csv
+      end
+    end
+
+
+    desc "Upload CSV of task to outcome alignments"
+    params do
+      requires :file, type: Rack::Multipart::UploadedFile, :desc => "CSV upload file."
+      optional :project_id, type: Integer,  desc: 'The id of the student project to upload the alignment to'
+    end
+    post '/units/:unit_id/learning_alignments/csv' do
+      ensure_csv!(params[:file][:tempfile])
+
+      unit = Unit.find(params[:unit_id])
+      
+      if ! authorise?(current_user, unit, :get_unit)
+        error!({"error" => "You are not authorised to access this unit."}, 403)
+      end
+
+      if params[:project_id].nil?
+        if not authorise? current_user, unit, :uploadCSV
+          error!({"error" => "Not authorised to upload CSV of task alignment to #{unit.code}"}, 403)
+        end
+        
+        # Actually import...
+        unit.import_task_alignment_from_csv(params[:file][:tempfile], nil)
+      else
+        proj = unit.projects.find(params[:project_id])
+        if ! authorise?(current_user, proj, :make_submission)
+          error!({"error" => "You are not authorised to access this project."}, 403)
+        end
+
+        unit.import_task_alignment_from_csv(params[:file][:tempfile], proj)
+      end
+    end
+
+
 
     desc "Add an outcome to a unit's task definition"
     params do

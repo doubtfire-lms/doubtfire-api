@@ -92,8 +92,8 @@ namespace :db do
         ],
         num_tasks: some_tasks,
         ilos: [
-          { ilo_number: 1, name: "Create Programs", description: "1. Use compiler\n1. Create code" },
-          { ilo_number: 2, name: "Test Programs", description: "1. Run program\n1. Check results\n1. Fix code" }
+          { ilo_number: 1, abbreviation: 'ILO-1', name: "Create Programs", description: "1. Use compiler\n1. Create code" },
+          { ilo_number: 2, abbreviation: 'ILO-2', name: "Test Programs", description: "1. Run program\n1. Check results\n1. Fix code" }
         ],
         students: [ ]
       },
@@ -110,8 +110,8 @@ namespace :db do
         ],
         num_tasks: many_task,
         ilos: [
-          { ilo_number: 1, name: "Create Programs", description: "1. Use compiler\n1. Create code" },
-          { ilo_number: 2, name: "Test Programs", description: "1. Run program\n1. Check results\n1. Fix code" }
+          { ilo_number: 1, abbreviation: 'ILO-1', name: "Create Programs", description: "1. Use compiler\n1. Create code" },
+          { ilo_number: 2, abbreviation: 'ILO-2', name: "Test Programs", description: "1. Run program\n1. Check results\n1. Fix code" }
         ],
         students: [ :cliff ]
       },
@@ -125,8 +125,8 @@ namespace :db do
         ],
         num_tasks: few_tasks,
         ilos: [
-          { ilo_number: 1, name: "Create Programs", description: "1. Use compiler\n1. Create code" },
-          { ilo_number: 2, name: "Test Programs", description: "1. Run program\n1. Check results\n1. Fix code" }
+          { ilo_number: 1, abbreviation: 'ILO-1', name: "Create Programs", description: "1. Use compiler\n1. Create code" },
+          { ilo_number: 2, abbreviation: 'ILO-2', name: "Test Programs", description: "1. Run program\n1. Check results\n1. Fix code" }
         ],
         students: [ :acain, :ajones, :alexcu ]
       },
@@ -139,8 +139,8 @@ namespace :db do
         ],
         num_tasks: few_tasks,
         ilos: [
-          { ilo_number: 1, name: "Create Programs", description: "1. Use compiler\n1. Create code" },
-          { ilo_number: 2, name: "Test Programs", description: "1. Run program\n1. Check results\n1. Fix code" }
+          { ilo_number: 1, abbreviation: 'ILO-1', name: "Create Programs", description: "1. Use compiler\n1. Create code" },
+          { ilo_number: 2, abbreviation: 'ILO-2', name: "Test Programs", description: "1. Run program\n1. Check results\n1. Fix code" }
         ],
         students: [ :acain, :ajones ]
       },

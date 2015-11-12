@@ -7,6 +7,9 @@ class LearningOutcomeTaskLink < ActiveRecord::Base
   validates :learning_outcome, presence: true
   validate :ensure_relations_unique
 
+  validates :rating, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 5 }
+
+
   def ensure_relations_unique
     return if learning_outcome.nil? || task_definition.nil?
     
