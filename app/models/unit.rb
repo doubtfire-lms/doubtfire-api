@@ -1036,4 +1036,27 @@ class Unit < ActiveRecord::Base
     task_path = FileHelper.task_file_dir_for_unit self, create=false
     "#{task_path}#{FileHelper.sanitized_filename(task_def.abbreviation)}.pdf"
   end
+
+  #
+  # Return stats on the number of students in each status
+  #
+  def task_status_stats
+    data = TaskDefinition.joins(:tasks).select( 
+      'task_definition_id, task_status_id, COUNT(tasks.id) as num_tasks'
+      ).where("task_definitions.unit_id = :unit_id", unit_id: id
+      ).group('tasks.task_definition_id', 'tasks.task_status_id'
+      ).map { |r| { task_definition_id: r.task_definition_id, status: TaskStatus.find(r.task_status_id).status_key, num: r.num_tasks}}
+
+    result = {}
+
+    data.each do |e| 
+      if not result.has_key? e[:task_definition_id]
+        result[e[:task_definition_id]] = []
+      end
+      
+      result[e[:task_definition_id]] << { status: e[:status], num: e[:num] }
+    end
+
+    result
+  end
 end
