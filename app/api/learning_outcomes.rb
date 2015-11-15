@@ -4,7 +4,8 @@ module Api
   class LearningOutcomes < Grape::API
     helpers AuthHelpers
     helpers AuthorisationHelpers
-
+    helpers MimeCheckHelpers
+    
     before do
       authenticated?
     end
@@ -77,6 +78,40 @@ module Api
 
       ilo.destroy
       nil
+    end
+
+    desc "Download the outcomes for a unit to a csv"
+    get '/units/:unit_id/outcomes/csv' do
+      unit = Unit.find(params[:unit_id])
+      error!({"error" => "Unable to locate requested unit."}, 405) if unit.nil?
+
+      if not (authorise? current_user, unit, :update)
+        error!({"error" => "You are not authorised to download outcomes for this unit."}, 403)
+      end
+
+      content_type "application/octet-stream"
+      header['Content-Disposition'] = "attachment; filename=#{unit.code}-TaskCompletion.csv "
+      env['api.format'] = :binary
+      unit.export_learning_outcome_to_csv
+    end
+
+    desc "Upload the outcomes for a unit from a csv"
+    params do
+      requires :file, type: Rack::Multipart::UploadedFile, :desc => "CSV upload file."
+      requires :unit_id, type: Integer, :desc => "The unit to upload tasks to"
+    end
+    post '/units/:unit_id/outcomes/csv' do
+      # check mime is correct before uploading
+      ensure_csv!(params[:file][:tempfile])
+      
+      unit = Unit.find(params[:unit_id])
+      
+      if not authorise? current_user, unit, :uploadCSV
+        error!({"error" => "Not authorised to upload CSV of outcomes"}, 403)
+      end
+      
+      # Actually import...
+      unit.import_outcomes_from_csv(params[:file][:tempfile])
     end
 
   end

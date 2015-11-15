@@ -417,13 +417,46 @@ class Unit < ActiveRecord::Base
     end
   end
 
+  def export_learning_outcome_to_csv
+    CSV.generate do |row|
+      row << LearningOutcome.csv_header
+      learning_outcomes.each do |outcome|
+        outcome.add_csv_row row
+      end
+    end
+  end
+
+  def import_outcomes_from_csv(file)
+    result = {
+      success: [],
+      errors: [],
+      ignored: []
+    }
+    
+    CSV.parse(file, {
+        :headers => true,
+        :header_converters => [:downcase, lambda { |hdr| hdr.strip unless hdr.nil?}],
+        :converters => [lambda{ |body| body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]
+    }).each do |row|
+      # Make sure we're not looking at the header or an empty line
+      next if row[0] =~ /unit_code/
+
+      begin
+        LearningOutcome.create_from_csv(self, row, result)
+      rescue Exception => e
+        result[:errors] << { row: row, message: "#{e.message}" }
+      end
+    end
+
+    result
+  end
+
   def export_task_alignment_to_csv
     LearningOutcomeTaskLink.export_task_alignment_to_csv(self, self)
   end
 
   # Use the values in the CSV to setup task alignments
   def import_task_alignment_from_csv(file, for_project)
-    # puts 'starting withdraw'
     success = []
     errors = []
     ignored = []
