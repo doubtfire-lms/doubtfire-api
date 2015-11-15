@@ -220,8 +220,18 @@ module Api
       unit.task_completion_csv
     end
 
+    desc "Download the stats related to the number of students aiming for each grade"
+    get '/units/:id/stats/student_target_grade' do
+      unit = Unit.find(params[:id])
+      if not authorise? current_user, unit, :downloadCSV
+        error!({"error" => "Not authorised to download stats of student tasks in #{unit.code}"}, 403)
+      end
+
+      unit.student_target_grade
+    end
+
     desc "Download stats related to the status of students with tasks"
-    get '/units/:id/task_status_stats' do
+    get '/units/:id/stats/task_status_pct' do
       unit = Unit.find(params[:id])
       if not authorise? current_user, unit, :downloadCSV
         error!({"error" => "Not authorised to download stats of student tasks in #{unit.code}"}, 403)

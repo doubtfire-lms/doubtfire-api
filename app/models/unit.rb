@@ -1059,4 +1059,102 @@ class Unit < ActiveRecord::Base
 
     result
   end
+
+  def student_target_grade_stats
+    data = projects.joins(:unit_role).select('unit_roles.tutorial_id, projects.target_grade, COUNT(projects.id) as num'
+      ).group('unit_roles.tutorial_id, projects.target_grade'
+      ).order('unit_roles.tutorial_id, projects.target_grade'
+      ).map { |r| {tutorial_id: r.tutorial_id, grade: r.target_grade, num: r.num} }
+  end
+
+  def student_task_status_stats
+    data = projects.joins(tasks: :task_definition
+      ).select('tasks.project_id, tasks.task_status_id, task_definitions.target_grade, COUNT(tasks.id) as num'
+      ).where("task_definitions.unit_id = :unit_id AND task_definitions.target_grade <= projects.target_grade", unit_id: id
+      ).group('tasks.project_id, tasks.task_status_id, task_definitions.target_grade'
+      ).map { |r| {project_id: r.project_id, grade: r.target_grade, status: TaskStatus.find(r.task_status_id).status_key, num: r.num} }
+
+    result = {}
+    
+    data.each do |e| 
+      if not result.has_key? e[:project_id]
+        result[e[:project_id]] = []
+      end
+      
+      result[e[:project_id]] << { grade: e[:grade], status: e[:status], num: e[:num] }
+    end
+
+    result
+
+    final_result = []
+
+    result.each do |k, value|
+      final_result << value
+    end
+
+    final_result
+  end
+
+  def student_ilo_progress_stats
+    data = Task.joins(project: :unit_role).joins(task_definition: :learning_outcome_task_links).select('unit_roles.tutorial_id, tasks.project_id, tasks.task_status_id, task_definitions.target_grade, learning_outcome_task_links.learning_outcome_id, learning_outcome_task_links.rating, COUNT(tasks.id) as num').where("task_definitions.unit_id = :unit_id AND learning_outcome_task_links.task_id is NULL", unit_id: id).group('unit_roles.tutorial_id, tasks.project_id, tasks.task_status_id, task_definitions.target_grade, learning_outcome_task_links.learning_outcome_id, learning_outcome_task_links.rating').order('unit_roles.tutorial_id, tasks.project_id').map { |r| {project_id: r.project_id, tutorial_id: r.tutorial_id, learning_outcome_id: r.learning_outcome_id, rating: r.rating, grade: r.target_grade, status: TaskStatus.find(r.task_status_id).status_key, num: r.num} }
+
+    grade_weight = { 0 => 1, 1 => 2, 2 => 4, 3 => 8 }
+    status_weight = {
+      ready_to_mark:      0.7,
+      not_submitted:      0.0,
+      working_on_it:      0.0,
+      need_help:          0.0,
+      redo:               0.2,
+      fix_and_include:    0.2,
+      fix_and_resubmit:   0.4,
+      discuss:            0.7,
+      complete:           0.8
+    }
+
+    result = {}
+    
+    # order by tutorial and project...
+    current = nil
+    data.each do |e|
+      # chech for change in tutorial
+      if current.nil? || e[:tutorial_id] != current[:tutorial_id]
+        # if there was a currentious element
+        if current
+          # add the project to the tutorial
+          current[:tutorial] << current[:project]
+
+          # add the tutorial to the results
+          result[current[:tutorial_id]] = current[:tutorial]
+        end
+
+        current = {project_id: e[:project_id], tutorial_id: e[:tutorial_id], tutorial: [], project: {} }
+      elsif e[:project_id] != current[:project_id] # check change of project
+        # add the project to the tutorial
+        current[:tutorial] << current[:project]
+
+        # reset the 
+        current[:project_id] = e[:project_id]
+        current[:project] = {}
+      end
+
+      old_val = 0
+      if current[:project].has_key? e[:learning_outcome_id]
+        old_val = current[:project][e[:learning_outcome_id]]
+      end
+      
+      current[:project][e[:learning_outcome_id]] = old_val + 
+        e[:rating] * status_weight[e[:status]] * grade_weight[e[:grade]]
+    end
+
+    # Add last project/tutorial to results
+    if current
+      # add the project to the tutorial
+      current[:tutorial] << current[:project]
+
+      # add the tutorial to the results
+      result[current[:tutorial_id]] = current[:tutorial]
+    end
+
+    result
+  end
 end
