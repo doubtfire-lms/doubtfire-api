@@ -29,7 +29,7 @@ class LearningOutcomeTaskLink < ActiveRecord::Base
   def self.export_task_alignment_to_csv(unit, source)
     CSV.generate do |row|
       row << ["unit_code", "learning_outcome", "task_abbr", "rating", "description"]
-      task_outcome_alignments.each do |align|
+      source.task_outcome_alignments.each do |align|
         row << [unit.code, align.learning_outcome.abbreviation,  align.task_definition.abbreviation, align.rating, align.description]
       end
     end
