@@ -21,11 +21,11 @@ module Api
         user = params[:user_id].nil? ? current_user : User.find(params[:user_id])
         unit = Unit.find(params[:unit_id])
         
-        if not authorise? user, unit, :get_ready_to_mark_submissions
+        if not authorise? user, unit, :provide_feedback
           error!({"error" => "Not authorised to batch download ready to mark submissions"}, 401)        
         end
 
-        if not authorise? current_user, unit, :get_ready_to_mark_submissions
+        if not authorise? current_user, unit, :provide_feedback
           error!({"error" => "Not authorised to batch download ready to mark submissions"}, 401)        
         end
         
@@ -59,7 +59,7 @@ module Api
         user = params[:user_id].nil? ? current_user : User.find(params[:user_id])
         unit = Unit.find(params[:unit_id])
         
-        if not authorise? user, unit, :get_ready_to_mark_submissions
+        if not authorise? user, unit, :provide_feedback
           error!({"error" => "Not authorised to batch upload marks"}, 401)        
         end
         

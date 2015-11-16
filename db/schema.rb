@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20151111234514) do
+ActiveRecord::Schema.define(version: 20151116061222) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -240,6 +240,7 @@ ActiveRecord::Schema.define(version: 20151111234514) do
     t.integer  "max_pct_similar",      default: 0
     t.integer  "group_submission_id"
     t.integer  "contribution_pct",     default: 100
+    t.integer  "times_assessed",       default: 0
   end
 
   add_index "tasks", ["group_submission_id"], name: "index_tasks_on_group_submission_id", using: :btree

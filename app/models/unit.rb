@@ -10,8 +10,8 @@ class Unit < ActiveRecord::Base
   def self.permissions
     { 
       :Student  => [ :get_unit ],
-      :Tutor    => [ :get_unit, :get_students, :enrol_student, :get_ready_to_mark_submissions],
-      :Convenor => [ :get_unit, :get_students, :enrol_student, :uploadCSV, :downloadCSV, :update, :employ_staff, :add_tutorial, :add_task_def, :get_ready_to_mark_submissions, :change_project_enrolment ],
+      :Tutor    => [ :get_unit, :get_students, :enrol_student, :provide_feedback],
+      :Convenor => [ :get_unit, :get_students, :enrol_student, :uploadCSV, :downloadCSV, :update, :employ_staff, :add_tutorial, :add_task_def, :provide_feedback, :change_project_enrolment ],
       :nil      => []
     }
   end
@@ -1069,6 +1069,24 @@ class Unit < ActiveRecord::Base
     task_path = FileHelper.task_file_dir_for_unit self, create=false
     "#{task_path}#{FileHelper.sanitized_filename(task_def.abbreviation)}.pdf"
   end
+
+  #
+  # Return the tasks that are waiting for feedback
+  #
+  def tasks_awaiting_feedback
+    tasks.where('task_status_id IN (:ids)', ids: [ TaskStatus.ready_to_mark, TaskStatus.need_help ]).order('tasks.project_id').map { |t| 
+        { 
+          project_id: t.project_id, 
+          id: t.id, 
+          task_definition_id: t.task_definition_id, 
+          tutorial_id: t.project.tutorial.id, 
+          status: t.status,
+          completion_date: t.completion_date,
+          times_assessed: t.times_assessed
+        } 
+      }
+  end
+
 
   #
   # Return stats on the number of students in each status
