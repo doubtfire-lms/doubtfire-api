@@ -26,7 +26,7 @@ module Api
 
       result = task.add_comment current_user, params[:comment]
       if result.nil?
-        error!({"error" => "No comment added"}, 403)
+        error!({"error" => "No comment added. Comment duplicates last comment, so ignored."}, 403)
       else
         result
       end
