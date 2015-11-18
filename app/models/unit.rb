@@ -1074,7 +1074,7 @@ class Unit < ActiveRecord::Base
   # Return the tasks that are waiting for feedback
   #
   def tasks_awaiting_feedback
-    tasks.where('task_status_id IN (:ids)', ids: [ TaskStatus.ready_to_mark, TaskStatus.need_help ]).order('tasks.project_id').map { |t| 
+    tasks.where('task_status_id IN (:ids)', ids: [ TaskStatus.ready_to_mark, TaskStatus.need_help, TaskStatus.discuss ]).order('tasks.project_id').map { |t| 
         { 
           project_id: t.project_id, 
           id: t.id, 
