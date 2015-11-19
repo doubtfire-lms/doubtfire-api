@@ -139,6 +139,10 @@ class Task < ActiveRecord::Base
   def discuss?
     status == :discuss
   end
+
+  def task_submission_closed?
+    complete? || discuss? || fix_and_include?
+  end
   
   def ok_to_submit?
     status != :complete && status != :discuss
@@ -229,6 +233,9 @@ class Task < ActiveRecord::Base
                   self.task_status.in?([ TaskStatus.redo, TaskStatus.complete, TaskStatus.fix_and_resubmit, 
                     TaskStatus.fix_and_include, TaskStatus.discuss ])
     
+    # Protect closed states from student changes
+    return nil if [ :student, :group_member ].include?(role) && task_submission_closed? 
+
     #
     # State transitions based upon the trigger
     #
@@ -267,6 +274,7 @@ class Task < ActiveRecord::Base
         end
     end
 
+    # if this is a status change of a group task -- and not already doing group update
     if (not group_transition) && group_task?
       # puts "#{group_transition} #{group_submission} #{trigger} #{id}"
       if not [ TaskStatus.working_on_it, TaskStatus.need_help  ].include? task_status
@@ -281,7 +289,18 @@ class Task < ActiveRecord::Base
     # Set the task's status to the assessment outcome status
     # and flag it as no longer awaiting signoff
     self.task_status       = task_status
-    self.awaiting_signoff  = false
+
+    # Ensure it has a submission date
+    if self.submission_date.nil?
+      self.submission_date = Time.zone.now
+    end
+
+    # Set the assessment date and update the times assessed
+    if self.assessment_date.nil? || self.assessment_date < self.submission_date
+      # only a new assessment if it was submitted after last assessment
+      self.times_assessed += 1
+    end  
+    self.assessment_date  = Time.zone.now
 
     # Set the completion date of the task if it's been completed
     if ready_or_complete?
@@ -317,11 +336,7 @@ class Task < ActiveRecord::Base
   end
 
   def engage(engagement_status)
-    return if [ :complete ].include? task_status.status_key
-
     self.task_status       = engagement_status
-    self.awaiting_signoff  = false
-    self.completion_date   = nil
 
     if save!
       project.start
@@ -330,11 +345,8 @@ class Task < ActiveRecord::Base
   end
 
   def submit
-    return if [ :complete ].include? task_status.status_key
-
     self.task_status      = TaskStatus.ready_to_mark
-    self.awaiting_signoff = true
-    self.completion_date  = Time.zone.now
+    self.submission_date  = Time.zone.now
 
     if save!
       project.start

@@ -588,32 +588,6 @@ class Project < ActiveRecord::Base
     completed_tasks.sort{|a, b| a.completion_date <=> b.completion_date }.last
   end
 
-  def self.status_distribution(projects)
-    project_count = projects.length
-
-    status_totals = {
-      ahead: 0,
-      on_track: 0,
-      behind: 0,
-      danger: 0,
-      doomed: 0,
-      not_started: 0,
-      total: 0
-    }
-
-    projects.each do |project|
-      if project.started?
-        status_totals[project.progress] += 1
-      else
-        status_totals[:not_started] += 1
-      end
-    end
-
-    status_totals[:total] = project_count
-
-    Hash[status_totals.sort_by{|status, count| count }]
-  end
-
   def task_completion_csv(options={})
     ordered_tasks = tasks.joins(:task_definition).order("task_definitions.target_date, task_definitions.abbreviation")
     [

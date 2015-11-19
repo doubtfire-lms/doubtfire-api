@@ -34,10 +34,6 @@ class Tutorial < ActiveRecord::Base
     "#{meeting_day} #{meeting_time} (#{meeting_location})"
   end
 
-  def status_distribution
-    Project.status_distribution(projects)
-  end
-
   def change_tutor(new_tutor)
     # Get the unit role for current tutor
     assign_tutor(new_tutor)

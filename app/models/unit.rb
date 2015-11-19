@@ -734,10 +734,6 @@ class Unit < ActiveRecord::Base
     end
   end
 
-  def status_distribution
-    Project.status_distribution(projects)
-  end
-
   #
   # Create a temp zip file with all student portfolios
   #
