@@ -200,6 +200,30 @@ module Api
       unit.import_task_files_from_zip file
     end
 
+    desc "Download the tasks related to a task definition"
+    params do
+      requires :unit_id, type: Integer, :desc => "The unit containing the task definition"
+      requires :task_def_id, type: Integer, :desc => "The task definition's id"
+    end
+    get '/units/:unit_id/task_definitions/:task_def_id/tasks' do
+      unit = Unit.find(params[:unit_id])
+      if not authorise? current_user, unit, :provide_feedback
+        error!({"error" => "Not authorised to access tasks for this unit" }, 403)
+      end
+
+      unit.student_tasks.where("task_definition_id = :id", id: params[:task_def_id]).map { |t| 
+        { 
+          project_id: t.project_id, 
+          id: t.id, 
+          task_definition_id: t.task_definition_id, 
+          tutorial_id: t.project.tutorial.id, 
+          status: t.status,
+          completion_date: t.completion_date,
+          times_assessed: t.times_assessed
+        } 
+      }
+    end
+
     desc "Download the task pdf"
     params do
       requires :unit_id, type: Integer, :desc => "The unit to upload tasks for"
