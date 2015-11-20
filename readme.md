@@ -55,13 +55,19 @@ Setting up a dev environment:
     2. `git clone https://macite@bitbucket.org/itig/doubtfire-api.git`
 5. Install rails
     1. `gem install bundler`
-    2. `bundle install --without production test replica` (in project root)
+    2. `bundle install --without production test replica` (in project root)        
 6. Create Database
     1. `rake db:create`
     2. `rake db:populate`
 7. View grape swagger
     1. Launch server: `rails s`
     2. Navigate browser to http://localhost:3000/api/docs/
+
+If there are problems installing `ruby-filemagic` try running:
+
+```
+$ env ARCHFLAGS="-arch x86_64" gem install ruby-filemagic -v '0.6.0' -- --with-magic-include=/usr/local/include --with-magic-lib=/usr/local/lib
+```
 
 # Getting Started On Windows#
 
