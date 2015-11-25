@@ -185,8 +185,7 @@ class Unit < ActiveRecord::Base
       Task.create(
         task_definition_id: task_definition.id,
         project_id: project.id,
-        task_status_id: 1,
-        awaiting_signoff: false
+        task_status_id: 1
       )
     end
 
