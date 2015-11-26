@@ -96,7 +96,6 @@ class Project < ActiveRecord::Base
     task.task_definition_id = @task_definition.id
     task.project_id         = project.id
     task.task_status_id     = 1
-    task.awaiting_signoff   = false
 
     task.save
   end

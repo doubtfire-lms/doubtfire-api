@@ -658,7 +658,6 @@ class Unit < ActiveRecord::Base
         task_definition_id: task_def.id,
         project_id:         project.id,
         task_status_id:     1,
-        awaiting_signoff:   false,
         completion_date:    nil
       )
     end
