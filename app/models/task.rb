@@ -339,7 +339,6 @@ class Task < ActiveRecord::Base
     self.task_status       = engagement_status
 
     if save!
-      project.start
       TaskEngagement.create!(task: self, engagement_time: Time.zone.now, engagement: task_status.name)
     end
   end

@@ -1145,7 +1145,23 @@ class Unit < ActiveRecord::Base
   end
 
   def student_ilo_progress_stats
-    data = Task.joins(project: :unit_role).joins(task_definition: :learning_outcome_task_links).select('unit_roles.tutorial_id, tasks.project_id, tasks.task_status_id, task_definitions.target_grade, learning_outcome_task_links.learning_outcome_id, learning_outcome_task_links.rating, COUNT(tasks.id) as num').where("task_definitions.unit_id = :unit_id AND learning_outcome_task_links.task_id is NULL", unit_id: id).group('unit_roles.tutorial_id, tasks.project_id, tasks.task_status_id, task_definitions.target_grade, learning_outcome_task_links.learning_outcome_id, learning_outcome_task_links.rating').order('unit_roles.tutorial_id, tasks.project_id').map { |r| {project_id: r.project_id, tutorial_id: r.tutorial_id, learning_outcome_id: r.learning_outcome_id, rating: r.rating, grade: r.target_grade, status: TaskStatus.find(r.task_status_id).status_key, num: r.num} }
+    data = Task.joins(project: :unit_role
+      ).joins(task_definition: :learning_outcome_task_links
+      ).select('unit_roles.tutorial_id, tasks.project_id, tasks.task_status_id, task_definitions.target_grade, learning_outcome_task_links.learning_outcome_id, learning_outcome_task_links.rating, COUNT(tasks.id) as num'
+      ).where("projects.started = TRUE AND task_definitions.unit_id = :unit_id AND learning_outcome_task_links.task_id is NULL", unit_id: id
+      ).group('unit_roles.tutorial_id, tasks.project_id, tasks.task_status_id, task_definitions.target_grade, learning_outcome_task_links.learning_outcome_id, learning_outcome_task_links.rating'
+      ).order('unit_roles.tutorial_id, tasks.project_id'
+      ).map { |r| 
+        {
+          project_id: r.project_id,
+          tutorial_id: r.tutorial_id,
+          learning_outcome_id: r.learning_outcome_id, 
+          rating: r.rating, 
+          grade: r.target_grade, 
+          status: TaskStatus.find(r.task_status_id).status_key,
+          num: r.num
+        } 
+      }
 
     grade_weight = { 0 => 1, 1 => 2, 2 => 4, 3 => 8 }
     status_weight = {
@@ -1209,6 +1225,7 @@ class Unit < ActiveRecord::Base
 
   def median_class_ilo_progress
     data = student_ilo_progress_stats.values.reduce(:+)
+
     result = {}
 
     learning_outcomes.each do |ilo|
