@@ -73,6 +73,8 @@ $ brew tap docmunch/pdftk
 $ brew install imagemagick libmagic pdftk
 ```
 
+This step may take up to 20 minutes to complete as the pdftk compilation process is slow. Refer to the GitHub issue [here](https://github.com/docmunch/homebrew-pdftk/issues/5).
+
 #### 5. Install Doubtfire API dependencies
 
 Clone project and change your working directory to the api:
