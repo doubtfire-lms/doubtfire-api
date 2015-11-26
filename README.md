@@ -1,7 +1,7 @@
 ![Doubtfire Logo](http://puu.sh/lyClF/fde5bfbbe7.png)
 
 # Doubtfire API
-            
+
 A modern, lightweight learning management system.
 
 ## Getting started
@@ -56,7 +56,7 @@ Ensure `pg_config` is on the `PATH`, and then login to Postgres:
 ```
 $ export PATH=~/Applications/Postgres.app/Contents/Versions/9.4/bin:$PATH
 $ psql
-``` 
+```
 
 Create the Doubfire user the following at the Postgres prompt:
 
@@ -88,8 +88,104 @@ Then install Doubtfire API dependencies using [bundler](http://bundler.io):
 
 ```
 $ gem install bundler
-$ bundle install --without production test
+$ bundle install --without production test replica
 ```
+
+##### Bundle resolutions
+
+You may encounter build issues when using Homebrew/Homebrew Cask to install dependencies. Some resolutions to these are listed below:
+
+###### eventmachine
+
+The `eventmachine` gem cannot find `openssl/ssl.h` when compiling with native extensions:
+
+```
+Installing eventmachine 1.0.3 with native extensions
+
+...
+
+
+make "DESTDIR="
+compiling binder.cpp
+In file included from binder.cpp:20:
+./project.h:107:10: fatal error: 'openssl/ssl.h' file not found
+#include <openssl/ssl.h>
+         ^
+1 error generated.
+make: *** [binder.o] Error 1
+```
+
+To resolve, add the following to your global bundle config:
+
+```
+$ bundle config build.eventmachine --with-cppflags=-I/usr/local/opt/openssl/include
+```
+
+Then try installing dependencies again.
+
+###### pg
+
+The `pg` gem cannot find `pg_config` when compiling with native extensions:
+
+```
+Installing pg 0.17.1 with native extensions
+
+Gem::Installer::ExtensionBuildError: ERROR: Failed to build gem native extension.
+
+    /Users/[User]/.rbenv/versions/2.0.0-p353/bin/ruby extconf.rb
+checking for pg_config... no
+No pg_config... trying anyway. If building fails, please try again with
+ --with-pg-config=/path/to/pg_config
+checking for libpq-fe.h... no
+Can't find the 'libpq-fe.h header
+*** extconf.rb failed ***
+Could not create Makefile due to some reason, probably lack of necessary
+libraries and/or headers.  Check the mkmf.log file for more details.  You may
+need configuration options.
+```
+
+To resolve, ensure `pg_config` is on the `PATH`:
+
+```
+$ export PATH=~/Applications/Postgres.app/Contents/Versions/9.4/bin:$PATH
+```
+
+_or_, add the following to your global bundle config:
+
+```
+$ bundle config build.pg --with-pg-config=~/Applications/Postgres.app/Contents/Versions/9.4/bin/pg_config
+```
+
+You may need to confirm the `Postgres.app` version (it may not be `9.4`).
+
+Then try installing dependencies again.
+
+###### ruby-filemagic
+
+The `ruby-filemagic` gem cannot find `libmagic` libraries when compiling with native extensions:
+
+```
+Installing ruby-filemagic 0.6.0 with native extensions
+
+Gem::Installer::ExtensionBuildError: ERROR: Failed to build gem native extension.
+
+    /Users/[User]/.rbenv/versions/2.0.0-p353/bin/ruby extconf.rb
+checking for magic_open() in -lmagic... no
+checking for magic.h... no
+*** ERROR: missing required library to compile this module
+*** extconf.rb failed ***
+Could not create Makefile due to some reason, probably lack of necessary
+libraries and/or headers.  Check the mkmf.log file for more details.  You may
+need configuration options.
+```
+
+To resolve, add the following to your global bundle config:
+
+```
+$ bundle config build.ruby-filemagic --with-magic-include=/usr/local/include --with-magic-lib=/usr/local/opt/libmagic/lib
+```
+
+Then try installing dependencies again.
 
 #### 6. Create and populate Doubtfire development databases
 
@@ -188,7 +284,7 @@ Then install Doubtfire API dependencies using [bundler](http://bundler.io):
 
 ```
 $ gem install bundler
-$ bundle install --without production test
+$ bundle install --without production test replica
 ```
 
 #### 6. Create and populate Doubtfire development databases
