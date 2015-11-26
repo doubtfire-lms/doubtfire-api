@@ -150,6 +150,7 @@ module Api
       requires :unit_id             , type: Integer,  desc: 'The id of the unit'
       optional :description         , type: String,   desc: 'The description of the alignment'
       optional :rating              , type: Integer,  desc: 'The rating for this link, indicating the strength of this alignment'
+      optional :task_id             , type: Integer,  desc: 'The id of the associated task'
     end
     put '/units/:unit_id/learning_alignments/:id' do
       unit = Unit.find(params[:unit_id])
@@ -182,6 +183,7 @@ module Api
     params do
       requires :id                  , type: Integer,  desc: 'The id of the task alignment'
       requires :unit_id             , type: Integer,  desc: 'The id of the unit'
+      optional :task_id             , type: Integer,  desc: 'The id of the associated task'
     end
     delete '/units/:unit_id/learning_alignments/:id' do
       unit = Unit.find(params[:unit_id])

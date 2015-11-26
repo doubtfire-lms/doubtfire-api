@@ -90,7 +90,7 @@ module Api
       end
 
       content_type "application/octet-stream"
-      header['Content-Disposition'] = "attachment; filename=#{unit.code}-TaskCompletion.csv "
+      header['Content-Disposition'] = "attachment; filename=#{unit.code}-LearningOutcomes.csv "
       env['api.format'] = :binary
       unit.export_learning_outcome_to_csv
     end
