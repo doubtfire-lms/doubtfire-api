@@ -1207,4 +1207,22 @@ class Unit < ActiveRecord::Base
 
     result
   end
+
+  def median_class_ilo_progress
+    data = student_ilo_progress_stats.values.reduce(:+)
+    result = {}
+
+    learning_outcomes.each do |ilo|
+      values = data.map { |e| e[ilo.id] }
+      values = values.sort
+
+      if values.length % 2 == 0
+        median_value = (values[values.length / 2] + values[values.length/2 - 1]) / 2.0
+      else
+        median_value = values[values.length / 2]
+      end
+      result[ilo.id] = median_value
+    end
+    result
+  end
 end
