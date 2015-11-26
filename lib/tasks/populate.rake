@@ -28,6 +28,8 @@ namespace :db do
             task.assess TaskStatus.redo, tutor, task_def.target_date
           end
         end
+
+        proj.calc_task_stats
       end
     end
   end
