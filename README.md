@@ -209,3 +209,10 @@ $ open http://localhost:3000/api/docs/
 
 You should see all the Doubtfire endpoints here, which means the API is running.
 
+## Rake Tasks
+
+You can perform developer-specific tasks using `rake`. For a list of all tasks, execute in the root directory:
+
+```
+rake --tasks
+```
