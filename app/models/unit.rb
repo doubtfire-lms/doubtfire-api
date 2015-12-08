@@ -1223,14 +1223,15 @@ class Unit < ActiveRecord::Base
     result
   end
 
-  def median_class_ilo_progress
-    data = student_ilo_progress_stats.values.reduce(:+)
-
+  def ilo_progress_class_stats
     result = {}
+    return result if students.length < 10
+
+    data = student_ilo_progress_stats.values.reduce(:+)
 
     learning_outcomes.each do |ilo|
       if data.nil?
-        median_value = 0
+        lower_value = upper_value = median_value = 0
       else
         values = data.map { |e| e[ilo.id] }
         values = values.sort
@@ -1240,8 +1241,15 @@ class Unit < ActiveRecord::Base
         else
           median_value = values[values.length / 2]
         end
+
+        lower_value = values[values.length * 3 / 10]
+        upper_value = values[values.length * 8 / 10]
       end
-      result[ilo.id] = median_value
+      result[ilo.id] = {
+          median: median_value,
+          lower: lower_value,
+          upper: upper_value 
+        }
     end
     result
   end
