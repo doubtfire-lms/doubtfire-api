@@ -314,3 +314,7 @@ You can perform developer-specific tasks using `rake`. For a list of all tasks, 
 ```
 rake --tasks
 ```
+
+## Contributing
+
+Refer to CONTRIBUTING.md
