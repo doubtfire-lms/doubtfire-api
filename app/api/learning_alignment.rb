@@ -210,14 +210,14 @@ module Api
     params do
       requires :unit_id             , type: Integer,  desc: 'The id of the unit'
     end
-    get '/units/:unit_id/learning_alignments/medians' do
+    get '/units/:unit_id/learning_alignments/class_stats' do
       unit = Unit.find(params[:unit_id])
 
       if ! authorise?(current_user, unit, :get_unit)
         error!({"error" => "You are not authorised to update the task alignments in this unit."}, 403)
       end
 
-      unit.median_class_ilo_progress      
+      unit.ilo_progress_class_stats
     end
 
   end
