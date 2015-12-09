@@ -161,6 +161,16 @@ module Api
       result
     end
 
+    desc "Download the tasks that are awaiting feedback for a unit"
+    get '/units/:id/feedback' do
+      unit = Unit.find(params[:id])
+      if not authorise? current_user, unit, :provide_feedback
+        error!({"error" => "Not authorised to provide feedback for this unit" }, 403)
+      end
+
+      unit.tasks_awaiting_feedback
+    end
+
     desc "Upload CSV of all the students in a unit"
     params do
       requires :file, type: Rack::Multipart::UploadedFile, :desc => "CSV upload file."

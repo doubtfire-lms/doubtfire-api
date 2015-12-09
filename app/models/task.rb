@@ -139,6 +139,10 @@ class Task < ActiveRecord::Base
   def discuss?
     status == :discuss
   end
+
+  def task_submission_closed?
+    complete? || discuss? || fix_and_include?
+  end
   
   def ok_to_submit?
     status != :complete && status != :discuss
@@ -229,6 +233,9 @@ class Task < ActiveRecord::Base
                   self.task_status.in?([ TaskStatus.redo, TaskStatus.complete, TaskStatus.fix_and_resubmit, 
                     TaskStatus.fix_and_include, TaskStatus.discuss ])
     
+    # Protect closed states from student changes
+    return nil if [ :student, :group_member ].include?(role) && task_submission_closed? 
+
     #
     # State transitions based upon the trigger
     #
@@ -267,6 +274,7 @@ class Task < ActiveRecord::Base
         end
     end
 
+    # if this is a status change of a group task -- and not already doing group update
     if (not group_transition) && group_task?
       # puts "#{group_transition} #{group_submission} #{trigger} #{id}"
       if not [ TaskStatus.working_on_it, TaskStatus.need_help  ].include? task_status
@@ -277,16 +285,27 @@ class Task < ActiveRecord::Base
     if not bulk then project.calc_task_stats(self) end
   end
 
-  def assess(task_status, assessor)
+  def assess(task_status, assessor, assess_date = Time.zone.now)
     # Set the task's status to the assessment outcome status
     # and flag it as no longer awaiting signoff
     self.task_status       = task_status
-    self.awaiting_signoff  = false
+
+    # Ensure it has a submission date
+    if self.submission_date.nil?
+      self.submission_date = assess_date
+    end
+
+    # Set the assessment date and update the times assessed
+    if self.assessment_date.nil? || self.assessment_date < self.submission_date
+      # only a new assessment if it was submitted after last assessment
+      self.times_assessed += 1
+    end  
+    self.assessment_date  = assess_date
 
     # Set the completion date of the task if it's been completed
     if ready_or_complete?
       if completion_date.nil?
-        self.completion_date = Time.zone.now
+        self.completion_date = assess_date
       end
     else
       self.completion_date = nil
@@ -303,7 +322,7 @@ class Task < ActiveRecord::Base
         # Grab the submission for the task if the user made one
         submission = TaskSubmission.where(task_id: id).order(:submission_time).reverse_order.first
         # Prepare the attributes of the submission
-        submission_attributes = {task: self, assessment_time: Time.zone.now, assessor: assessor, outcome: task_status.name}
+        submission_attributes = {task: self, assessment_time: assess_date, assessor: assessor, outcome: task_status.name}
 
         # Create or update the submission depending on whether one was made
         if submission.nil?
@@ -317,37 +336,29 @@ class Task < ActiveRecord::Base
   end
 
   def engage(engagement_status)
-    return if [ :complete ].include? task_status.status_key
-
     self.task_status       = engagement_status
-    self.awaiting_signoff  = false
-    self.completion_date   = nil
 
     if save!
-      project.start
       TaskEngagement.create!(task: self, engagement_time: Time.zone.now, engagement: task_status.name)
     end
   end
 
-  def submit
-    return if [ :complete ].include? task_status.status_key
-
+  def submit(submit_date = Time.zone.now)
     self.task_status      = TaskStatus.ready_to_mark
-    self.awaiting_signoff = true
-    self.completion_date  = Time.zone.now
+    self.submission_date  = submit_date
 
     if save!
       project.start
       submission = TaskSubmission.where(task_id: self.id).order(:submission_time).reverse_order.first
 
       if submission.nil?
-        TaskSubmission.create!(task: self, submission_time: Time.zone.now)
+        TaskSubmission.create!(task: self, submission_time: submit_date)
       else
-        if !submission.submission_time.nil? && submission.submission_time < 1.hour.since(Time.zone.now)
-          submission.submission_time = Time.zone.now
+        if !submission.submission_time.nil? && submission.submission_time < 1.hour.since(submit_date)
+          submission.submission_time = submit_date
           submission.save!
         else
-          TaskSubmission.create!(task: self, submission_time: Time.zone.now)
+          TaskSubmission.create!(task: self, submission_time: submit_date)
         end
       end
     end

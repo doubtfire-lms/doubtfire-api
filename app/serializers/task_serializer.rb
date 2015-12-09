@@ -1,9 +1,9 @@
 class ShallowTaskSerializer < ActiveModel::Serializer
-  attributes :id, :status, :task_definition_id, :processing_pdf, :has_pdf, :include_in_portfolio, :pct_similar, :similar_to_count
+  attributes :id, :status, :task_definition_id, :processing_pdf, :has_pdf, :include_in_portfolio, :pct_similar, :similar_to_count, :times_assessed
 end
 
 class TaskUpdateSerializer < ActiveModel::Serializer
-  attributes :id, :status, :project_id, :new_stats, :processing_pdf, :include_in_portfolio, :other_projects
+  attributes :id, :status, :project_id, :new_stats, :processing_pdf, :include_in_portfolio, :other_projects, :times_assessed
 
   def new_stats
     object.project.task_stats
@@ -21,7 +21,7 @@ class TaskUpdateSerializer < ActiveModel::Serializer
 end
 
 class TaskStatSerializer < ActiveModel::Serializer
-  attributes :id, :task_abbr, :status, :tutorial_id 
+  attributes :id, :task_abbr, :status, :tutorial_id, :times_assessed 
 
   def task_abbr
     object.task_definition.abbreviation
@@ -37,7 +37,7 @@ class TaskStatSerializer < ActiveModel::Serializer
 end
 
 class TaskSerializer < ActiveModel::Serializer
-  attributes :id, :status, :completion_date, :task_name, :task_desc, :task_weight, :task_abbr, :upload_requirements, :processing_pdf, :pct_similar, :similar_to_count
+  attributes :id, :status, :completion_date, :task_name, :task_desc, :task_weight, :task_abbr, :upload_requirements, :processing_pdf, :pct_similar, :similar_to_count, :times_assessed
 
   def task_name
   	object.task_definition.name

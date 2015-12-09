@@ -10,8 +10,8 @@ class Unit < ActiveRecord::Base
   def self.permissions
     { 
       :Student  => [ :get_unit ],
-      :Tutor    => [ :get_unit, :get_students, :enrol_student, :get_ready_to_mark_submissions],
-      :Convenor => [ :get_unit, :get_students, :enrol_student, :uploadCSV, :downloadCSV, :update, :employ_staff, :add_tutorial, :add_task_def, :get_ready_to_mark_submissions, :change_project_enrolment ],
+      :Tutor    => [ :get_unit, :get_students, :enrol_student, :provide_feedback],
+      :Convenor => [ :get_unit, :get_students, :enrol_student, :uploadCSV, :downloadCSV, :update, :employ_staff, :add_tutorial, :add_task_def, :provide_feedback, :change_project_enrolment ],
       :nil      => []
     }
   end
@@ -58,6 +58,10 @@ class Unit < ActiveRecord::Base
 
   def task_outcome_alignments
     learning_outcome_task_links.where('task_id is NULL')
+  end
+
+  def student_tasks
+    tasks.joins(:task_definition).where("projects.enrolled = TRUE AND projects.target_grade >= task_definitions.target_grade")
   end
 
   def self.for_user_admin(user)
@@ -181,8 +185,7 @@ class Unit < ActiveRecord::Base
       Task.create(
         task_definition_id: task_definition.id,
         project_id: project.id,
-        task_status_id: 1,
-        awaiting_signoff: false
+        task_status_id: 1
       )
     end
 
@@ -655,7 +658,6 @@ class Unit < ActiveRecord::Base
         task_definition_id: task_def.id,
         project_id:         project.id,
         task_status_id:     1,
-        awaiting_signoff:   false,
         completion_date:    nil
       )
     end
@@ -732,10 +734,6 @@ class Unit < ActiveRecord::Base
         csv << project.task_completion_csv
       end
     end
-  end
-
-  def status_distribution
-    Project.status_distribution(projects)
   end
 
   #
@@ -1071,6 +1069,24 @@ class Unit < ActiveRecord::Base
   end
 
   #
+  # Return the tasks that are waiting for feedback
+  #
+  def tasks_awaiting_feedback
+    student_tasks.where('task_status_id IN (:ids)', ids: [ TaskStatus.ready_to_mark, TaskStatus.need_help, TaskStatus.discuss ]).order('tasks.project_id').map { |t| 
+        { 
+          project_id: t.project_id, 
+          id: t.id, 
+          task_definition_id: t.task_definition_id, 
+          tutorial_id: t.project.tutorial.id, 
+          status: t.status,
+          completion_date: t.completion_date,
+          times_assessed: t.times_assessed
+        } 
+      }
+  end
+
+
+  #
   # Return stats on the number of students in each status
   #
   def task_status_stats
@@ -1129,7 +1145,23 @@ class Unit < ActiveRecord::Base
   end
 
   def student_ilo_progress_stats
-    data = Task.joins(project: :unit_role).joins(task_definition: :learning_outcome_task_links).select('unit_roles.tutorial_id, tasks.project_id, tasks.task_status_id, task_definitions.target_grade, learning_outcome_task_links.learning_outcome_id, learning_outcome_task_links.rating, COUNT(tasks.id) as num').where("task_definitions.unit_id = :unit_id AND learning_outcome_task_links.task_id is NULL", unit_id: id).group('unit_roles.tutorial_id, tasks.project_id, tasks.task_status_id, task_definitions.target_grade, learning_outcome_task_links.learning_outcome_id, learning_outcome_task_links.rating').order('unit_roles.tutorial_id, tasks.project_id').map { |r| {project_id: r.project_id, tutorial_id: r.tutorial_id, learning_outcome_id: r.learning_outcome_id, rating: r.rating, grade: r.target_grade, status: TaskStatus.find(r.task_status_id).status_key, num: r.num} }
+    data = Task.joins(project: :unit_role
+      ).joins(task_definition: :learning_outcome_task_links
+      ).select('unit_roles.tutorial_id, tasks.project_id, tasks.task_status_id, task_definitions.target_grade, learning_outcome_task_links.learning_outcome_id, learning_outcome_task_links.rating, COUNT(tasks.id) as num'
+      ).where("projects.started = TRUE AND task_definitions.unit_id = :unit_id AND learning_outcome_task_links.task_id is NULL", unit_id: id
+      ).group('unit_roles.tutorial_id, tasks.project_id, tasks.task_status_id, task_definitions.target_grade, learning_outcome_task_links.learning_outcome_id, learning_outcome_task_links.rating'
+      ).order('unit_roles.tutorial_id, tasks.project_id'
+      ).map { |r| 
+        {
+          project_id: r.project_id,
+          tutorial_id: r.tutorial_id,
+          learning_outcome_id: r.learning_outcome_id, 
+          rating: r.rating, 
+          grade: r.target_grade, 
+          status: TaskStatus.find(r.task_status_id).status_key,
+          num: r.num
+        } 
+      }
 
     grade_weight = { 0 => 1, 1 => 2, 2 => 4, 3 => 8 }
     status_weight = {
@@ -1188,6 +1220,25 @@ class Unit < ActiveRecord::Base
       result[current[:tutorial_id]] = current[:tutorial]
     end
 
+    result
+  end
+
+  def median_class_ilo_progress
+    data = student_ilo_progress_stats.values.reduce(:+)
+
+    result = {}
+
+    learning_outcomes.each do |ilo|
+      values = data.map { |e| e[ilo.id] }
+      values = values.sort
+
+      if values.length % 2 == 0
+        median_value = (values[values.length / 2] + values[values.length/2 - 1]) / 2.0
+      else
+        median_value = values[values.length / 2]
+      end
+      result[ilo.id] = median_value
+    end
     result
   end
 end

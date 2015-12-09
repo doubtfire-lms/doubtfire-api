@@ -25,7 +25,7 @@ class PortfolioDownloadsController < ApplicationController
 
 		    unit = Unit.find(params[:id])
 
-		    if not authorise? current_user, unit, :get_ready_to_mark_submissions
+		    if not authorise? current_user, unit, :provide_feedback
 		      error!({"error" => "Not authorised to download portfolios for unit '#{params[:id]}'"}, 401)
 		    end
 

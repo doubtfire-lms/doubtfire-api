@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20151111234514) do
+ActiveRecord::Schema.define(version: 20151116061222) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -230,7 +230,6 @@ ActiveRecord::Schema.define(version: 20151111234514) do
     t.integer  "task_definition_id"
     t.integer  "project_id"
     t.integer  "task_status_id"
-    t.boolean  "awaiting_signoff"
     t.datetime "created_at",                          null: false
     t.datetime "updated_at",                          null: false
     t.date     "completion_date"
@@ -240,6 +239,9 @@ ActiveRecord::Schema.define(version: 20151111234514) do
     t.integer  "max_pct_similar",      default: 0
     t.integer  "group_submission_id"
     t.integer  "contribution_pct",     default: 100
+    t.integer  "times_assessed",       default: 0
+    t.datetime "submission_date"
+    t.datetime "assessment_date"
   end
 
   add_index "tasks", ["group_submission_id"], name: "index_tasks_on_group_submission_id", using: :btree

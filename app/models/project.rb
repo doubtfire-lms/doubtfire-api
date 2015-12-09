@@ -96,7 +96,6 @@ class Project < ActiveRecord::Base
     task.task_definition_id = @task_definition.id
     task.project_id         = project.id
     task.task_status_id     = 1
-    task.awaiting_signoff   = false
 
     task.save
   end
@@ -586,32 +585,6 @@ class Project < ActiveRecord::Base
 
   def last_task_completed
     completed_tasks.sort{|a, b| a.completion_date <=> b.completion_date }.last
-  end
-
-  def self.status_distribution(projects)
-    project_count = projects.length
-
-    status_totals = {
-      ahead: 0,
-      on_track: 0,
-      behind: 0,
-      danger: 0,
-      doomed: 0,
-      not_started: 0,
-      total: 0
-    }
-
-    projects.each do |project|
-      if project.started?
-        status_totals[project.progress] += 1
-      else
-        status_totals[:not_started] += 1
-      end
-    end
-
-    status_totals[:total] = project_count
-
-    Hash[status_totals.sort_by{|status, count| count }]
   end
 
   def task_completion_csv(options={})

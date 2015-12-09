@@ -1,5 +1,39 @@
 namespace :db do
 
+  desc "Mark off some of the due tasks"
+  task simulate_signoff: :environment do
+
+    Unit.all.each do |unit|
+      due_tasks = unit.task_definitions.where("target_date < :now", now: Date.current)
+
+      unit.students.each do |proj|
+        tutor = proj.main_tutor
+        due_tasks.each do |task_def|
+          task = proj.task_for_task_definition(task_def)
+
+          case rand(1..100)
+          when 0..10
+            task.assess TaskStatus.complete, tutor, task_def.target_date
+          when 11..20
+            task.assess TaskStatus.complete, tutor, task_def.target_date + 1.weeks
+          when 21..30
+            task.assess TaskStatus.complete, tutor, task_def.target_date + 3.weeks
+          when 31..40
+            task.assess TaskStatus.fix_and_resubmit, tutor, task_def.target_date
+          when 41..50
+            task.assess TaskStatus.fix_and_resubmit, tutor, task_def.target_date
+          when 51..70
+            task.submit task_def.target_date
+          when 71..75
+            task.assess TaskStatus.redo, tutor, task_def.target_date
+          end
+        end
+
+        proj.calc_task_stats
+      end
+    end
+  end
+
   desc "Clear the database and fill with test data"
   task populate: [:setup, :migrate] do
     require 'populator'
@@ -232,8 +266,8 @@ namespace :db do
         code: unit_details[:code],
         name: unit_details[:name],
         description: Populator.words(10..15),
-        start_date: Date.current,
-        end_date: 13.weeks.since(Date.current)
+        start_date: Date.current  - 6.weeks,
+        end_date: 13.weeks.since(Date.current - 6.weeks)
       )
 
       puts "--------> #{unit_details[:num_tasks]} tasks"
@@ -250,7 +284,7 @@ namespace :db do
           unit_id: unit.id,
           description: Populator.words(5..10),
           weighting: BigDecimal.new("2"),
-          target_date: ((count + 1) % 12).weeks.from_now, # Assignment 6 due week 6, etc.
+          target_date: unit.start_date + ((count + 1) % 12).weeks, # Assignment 6 due week 6, etc.
           upload_requirements: up_reqs.to_json
         )
       end
@@ -292,7 +326,7 @@ namespace :db do
 
           # Add a random number of students to the tutorial
           (min_students + rand(delta_students)).times do
-            unit.enrol_student(find_or_create_student.call("student_#{student_count}"), tutorial.id)
+            proj = unit.enrol_student(find_or_create_student.call("student_#{student_count}"), tutorial.id)
             student_count += 1
           end
 
