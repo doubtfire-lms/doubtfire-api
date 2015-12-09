@@ -36,8 +36,11 @@ class Unit < ActiveRecord::Base
   has_many :projects, dependent: :destroy
   has_many :tutorials, dependent: :destroy
   has_many :unit_roles, dependent: :destroy
+  has_many :learning_outcomes, dependent: :destroy
   has_many :tasks, through: :projects
   has_many :group_sets, dependent: :destroy
+
+  has_many :learning_outcome_task_links, through: :task_definitions
   
   has_many :convenors, -> { joins(:role).where("roles.name = :role", role: 'Convenor') }, class_name: 'UnitRole'
   has_many :staff, ->     { joins(:role).where("roles.name = :role_convenor or roles.name = :role_tutor", role_convenor: 'Convenor', role_tutor: 'Tutor') }, class_name: 'UnitRole' 
@@ -48,6 +51,14 @@ class Unit < ActiveRecord::Base
   scope :not_current_for_date,  ->(date) { where("start_date > ? OR end_date < ?", date, date) }
   scope :set_active,            ->{ where("active = ?", true) }
   scope :set_inactive,          ->{ where("active = ?", false) }
+
+  def ordered_ilos()
+    learning_outcomes.order(:ilo_number)
+  end
+
+  def task_outcome_alignments
+    learning_outcome_task_links.where('task_id is NULL')
+  end
 
   def self.for_user_admin(user)
     if user.has_admin_capability?
@@ -406,6 +417,125 @@ class Unit < ActiveRecord::Base
     end
   end
 
+  def export_learning_outcome_to_csv
+    CSV.generate do |row|
+      row << LearningOutcome.csv_header
+      learning_outcomes.each do |outcome|
+        outcome.add_csv_row row
+      end
+    end
+  end
+
+  def import_outcomes_from_csv(file)
+    result = {
+      success: [],
+      errors: [],
+      ignored: []
+    }
+    
+    CSV.parse(file, {
+        :headers => true,
+        :header_converters => [:downcase, lambda { |hdr| hdr.strip unless hdr.nil?}],
+        :converters => [lambda{ |body| body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]
+    }).each do |row|
+      # Make sure we're not looking at the header or an empty line
+      next if row[0] =~ /unit_code/
+
+      begin
+        LearningOutcome.create_from_csv(self, row, result)
+      rescue Exception => e
+        result[:errors] << { row: row, message: "#{e.message}" }
+      end
+    end
+
+    result
+  end
+
+  def export_task_alignment_to_csv
+    LearningOutcomeTaskLink.export_task_alignment_to_csv(self, self)
+  end
+
+  # Use the values in the CSV to setup task alignments
+  def import_task_alignment_from_csv(file, for_project)
+    success = []
+    errors = []
+    ignored = []
+    
+    CSV.parse(file, {
+        :headers => true,
+        :header_converters => [:downcase, lambda { |hdr| hdr.strip unless hdr.nil?}],
+        :converters => [lambda{ |body| body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]
+    }).each do |row|
+      # Make sure we're not looking at the header or an empty line
+      next if row[0] =~ /unit_code/
+
+      begin
+        unit_code = row['unit_code']
+
+        if unit_code != code
+          ignored << { row: row, message: "Invalid unit code. #{unit_code} does not match #{code}" }
+          next
+        end
+
+        outcome_abbr  = row['learning_outcome']
+        outcome = learning_outcomes.where("abbreviation = :abbr", abbr: outcome_abbr).first
+
+        if outcome.nil?
+          errors << { row: row, message: "Unable to locate learning outcome with abbreviation #{outcome_abbr}" }
+          next
+        end
+
+        task_def_abbr = row['task_abbr']
+        task_def = task_definitions.where("abbreviation = :abbr", abbr: task_def_abbr).first
+
+        if task_def.nil?
+          errors << { row: row, message: "Unable to locate task with abbreviation #{task_def_abbr}" }
+          next
+        end
+        
+        rating = row['rating'].to_i
+        description = row['description']
+
+        if description.nil?
+          errors << { row: row, message: "Missing description" }
+          next
+        end
+
+        if for_project.nil?
+          link = LearningOutcomeTaskLink.find_or_create_by(task_definition_id: task_def.id, learning_outcome_id: outcome.id, task_id: nil)
+        else
+          task = for_project.tasks.where("task_definition_id = :tdid", tdid: task_def.id).first
+
+          if task.nil?
+            errors << { row: row, message: "Unable to locate task related to #{task_def_abbr}" }
+            next
+          end
+          link = LearningOutcomeTaskLink.find_or_create_by(task_definition_id: task_def.id, learning_outcome_id: outcome.id, task_id: task.id)
+        end
+
+        link.rating = rating
+        link.description = description
+
+        link.save!
+
+        if link.new_record?
+          success << { row:row, message: "Link between task #{task_def.abbreviation} and outcome #{outcome.abbreviation} created for unit" }
+        else
+          success << { row:row, message: "Link between task #{task_def.abbreviation} and outcome #{outcome.abbreviation} updated for unit" }
+        end
+
+      rescue Exception => e
+        errors << { row: row, message: "#{e.message}" }
+      end
+    end
+
+    {
+      success: success,
+      ignored: ignored,
+      errors:  errors
+    }
+  end
+
   def missing_headers(row, headers)
     headers - row.to_hash().keys
   end
@@ -637,6 +767,34 @@ class Unit < ActiveRecord::Base
   end
 
   #
+  # Create an ILO
+  #
+  def add_ilo(name, desc, abbr)
+    next_num = learning_outcomes.count + 1
+
+    LearningOutcome.create!(
+      unit_id: self.id,
+      name: name,
+      description: desc,
+      abbreviation: abbr,
+      ilo_number: next_num
+    )
+  end
+
+  #
+  # Reorder ILO sequence numbers based on ILO update
+  #
+  def move_ilo(ilo, new_num)
+    if (ilo.ilo_number < new_num)
+      # puts "Moving ILOs Up"
+      learning_outcomes.where("ilo_number > #{ilo.ilo_number} and ilo_number <= #{new_num}").each { |ilo| ilo.ilo_number -= 1; ilo.save}
+    elsif (ilo.ilo_number > new_num)
+      learning_outcomes.where("ilo_number < #{ilo.ilo_number} and ilo_number >= #{new_num}").each { |ilo| ilo.ilo_number += 1; ilo.save}
+    end 
+    ilo.ilo_number = new_num
+    ilo.save
+  end
+
   # Get all of the related tasks
   #
   def tasks_for_definition(task_def)
@@ -910,5 +1068,126 @@ class Unit < ActiveRecord::Base
   def path_to_task_pdf(task_def)
     task_path = FileHelper.task_file_dir_for_unit self, create=false
     "#{task_path}#{FileHelper.sanitized_filename(task_def.abbreviation)}.pdf"
+  end
+
+  #
+  # Return stats on the number of students in each status
+  #
+  def task_status_stats
+    data = TaskDefinition.joins(:tasks).select( 
+      'task_definition_id, task_status_id, COUNT(tasks.id) as num_tasks'
+      ).where("task_definitions.unit_id = :unit_id", unit_id: id
+      ).group('tasks.task_definition_id', 'tasks.task_status_id'
+      ).map { |r| { task_definition_id: r.task_definition_id, status: TaskStatus.find(r.task_status_id).status_key, num: r.num_tasks}}
+
+    result = {}
+
+    data.each do |e| 
+      if not result.has_key? e[:task_definition_id]
+        result[e[:task_definition_id]] = []
+      end
+      
+      result[e[:task_definition_id]] << { status: e[:status], num: e[:num] }
+    end
+
+    result
+  end
+
+  def student_target_grade_stats
+    data = projects.joins(:unit_role).select('unit_roles.tutorial_id, projects.target_grade, COUNT(projects.id) as num'
+      ).group('unit_roles.tutorial_id, projects.target_grade'
+      ).order('unit_roles.tutorial_id, projects.target_grade'
+      ).map { |r| {tutorial_id: r.tutorial_id, grade: r.target_grade, num: r.num} }
+  end
+
+  def student_task_status_stats
+    data = projects.joins(tasks: :task_definition
+      ).select('tasks.project_id, tasks.task_status_id, task_definitions.target_grade, COUNT(tasks.id) as num'
+      ).where("task_definitions.unit_id = :unit_id AND task_definitions.target_grade <= projects.target_grade", unit_id: id
+      ).group('tasks.project_id, tasks.task_status_id, task_definitions.target_grade'
+      ).map { |r| {project_id: r.project_id, grade: r.target_grade, status: TaskStatus.find(r.task_status_id).status_key, num: r.num} }
+
+    result = {}
+    
+    data.each do |e| 
+      if not result.has_key? e[:project_id]
+        result[e[:project_id]] = []
+      end
+      
+      result[e[:project_id]] << { grade: e[:grade], status: e[:status], num: e[:num] }
+    end
+
+    result
+
+    final_result = []
+
+    result.each do |k, value|
+      final_result << value
+    end
+
+    final_result
+  end
+
+  def student_ilo_progress_stats
+    data = Task.joins(project: :unit_role).joins(task_definition: :learning_outcome_task_links).select('unit_roles.tutorial_id, tasks.project_id, tasks.task_status_id, task_definitions.target_grade, learning_outcome_task_links.learning_outcome_id, learning_outcome_task_links.rating, COUNT(tasks.id) as num').where("task_definitions.unit_id = :unit_id AND learning_outcome_task_links.task_id is NULL", unit_id: id).group('unit_roles.tutorial_id, tasks.project_id, tasks.task_status_id, task_definitions.target_grade, learning_outcome_task_links.learning_outcome_id, learning_outcome_task_links.rating').order('unit_roles.tutorial_id, tasks.project_id').map { |r| {project_id: r.project_id, tutorial_id: r.tutorial_id, learning_outcome_id: r.learning_outcome_id, rating: r.rating, grade: r.target_grade, status: TaskStatus.find(r.task_status_id).status_key, num: r.num} }
+
+    grade_weight = { 0 => 1, 1 => 2, 2 => 4, 3 => 8 }
+    status_weight = {
+      ready_to_mark:      0.7,
+      not_submitted:      0.0,
+      working_on_it:      0.0,
+      need_help:          0.0,
+      redo:               0.2,
+      fix_and_include:    0.2,
+      fix_and_resubmit:   0.4,
+      discuss:            0.7,
+      complete:           0.8
+    }
+
+    result = {}
+    
+    # order by tutorial and project...
+    current = nil
+    data.each do |e|
+      # chech for change in tutorial
+      if current.nil? || e[:tutorial_id] != current[:tutorial_id]
+        # if there was a currentious element
+        if current
+          # add the project to the tutorial
+          current[:tutorial] << current[:project]
+
+          # add the tutorial to the results
+          result[current[:tutorial_id]] = current[:tutorial]
+        end
+
+        current = {project_id: e[:project_id], tutorial_id: e[:tutorial_id], tutorial: [], project: {} }
+      elsif e[:project_id] != current[:project_id] # check change of project
+        # add the project to the tutorial
+        current[:tutorial] << current[:project]
+
+        # reset the 
+        current[:project_id] = e[:project_id]
+        current[:project] = {}
+      end
+
+      old_val = 0
+      if current[:project].has_key? e[:learning_outcome_id]
+        old_val = current[:project][e[:learning_outcome_id]]
+      end
+      
+      current[:project][e[:learning_outcome_id]] = old_val + 
+        e[:rating] * status_weight[e[:status]] * grade_weight[e[:grade]]
+    end
+
+    # Add last project/tutorial to results
+    if current
+      # add the project to the tutorial
+      current[:tutorial] << current[:project]
+
+      # add the tutorial to the results
+      result[current[:tutorial_id]] = current[:tutorial]
+    end
+
+    result
   end
 end

@@ -18,6 +18,8 @@ class Project < ActiveRecord::Base
   has_many :groups, -> { where("group_memberships.active = :value", value: true) },  through: :group_memberships
   has_many :past_groups, -> { where("group_memberships.active = :value", value: false) },  through: :group_memberships, source: 'group'
 
+  has_many :learning_outcome_task_links, through: :tasks
+
   after_destroy :destroy_unit_role
 
   def destroy_unit_role
@@ -58,6 +60,10 @@ class Project < ActiveRecord::Base
     else
       nil
     end
+  end
+
+  def task_outcome_alignments
+    learning_outcome_task_links
   end
 
   #
@@ -882,5 +888,9 @@ class Project < ActiveRecord::Base
 
   def group_membership_for_groupset(gs)
     group_memberships.joins(:group).where("groups.group_set_id = :id", id: gs).first
+  end
+
+  def export_task_alignment_to_csv
+    LearningOutcomeTaskLink.export_task_alignment_to_csv(unit, self)
   end
 end

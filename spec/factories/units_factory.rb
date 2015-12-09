@@ -19,6 +19,13 @@ FactoryGirl.define do
     target_grade              { rand(0..4) }
   end
 
+  factory :learning_outcome do
+    unit
+    name                      { Populator.words(1..3) }
+    sequence(:ilo_number)     { |n| n }
+    description               { "description" }
+  end
+
   factory :unit do
     ignore do
       student_count 0
@@ -27,6 +34,7 @@ FactoryGirl.define do
       group_sets 0
       groups [ ] #[ { gs: 0, students:0 } ]
       group_tasks [ ]
+      outcome_count 2
     end
 
     name          "A"
@@ -40,6 +48,7 @@ FactoryGirl.define do
       create_list(:tutorial, eval.tutorials, unit: unit)
       create_list(:task_definition, eval.task_count, unit: unit)
       create_list(:group_set, eval.group_sets, unit: unit)
+      create_list(:learning_outcome, eval.outcome_count, unit: unit)
 
       unit.employ_staff( FactoryGirl.create(:user, :convenor), Role.convenor)
       eval.student_count.times do |i|

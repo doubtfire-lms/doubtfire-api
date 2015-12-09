@@ -96,6 +96,7 @@ class ProjectSerializer < ActiveModel::Serializer
   # has_one :unit, :unit_role
   has_many :tasks, serializer: ShallowTaskSerializer
   has_many :groups, serializer: GroupSerializer
+  has_many :task_outcome_alignments, serializer: LearningOutcomeTaskLinkSerializer
 end
 
 class GroupMemberProjectSerializer < ActiveModel::Serializer

@@ -91,6 +91,10 @@ namespace :db do
           # { user: "tutor_10", num: 4},
         ],
         num_tasks: some_tasks,
+        ilos: [
+          { ilo_number: 1, abbreviation: 'ILO-1', name: "Create Programs", description: "1. Use compiler\n1. Create code" },
+          { ilo_number: 2, abbreviation: 'ILO-2', name: "Test Programs", description: "1. Run program\n1. Check results\n1. Fix code" }
+        ],
         students: [ ]
       },
       oop: {
@@ -105,6 +109,10 @@ namespace :db do
           { user: :joostfunkekupper, num: few_tutorials },
         ],
         num_tasks: many_task,
+        ilos: [
+          { ilo_number: 1, abbreviation: 'ILO-1', name: "Create Programs", description: "1. Use compiler\n1. Create code" },
+          { ilo_number: 2, abbreviation: 'ILO-2', name: "Test Programs", description: "1. Run program\n1. Check results\n1. Fix code" }
+        ],
         students: [ :cliff ]
       },
       ai4g: {
@@ -116,6 +124,10 @@ namespace :db do
           { user: :cliff, num: few_tutorials },
         ],
         num_tasks: few_tasks,
+        ilos: [
+          { ilo_number: 1, abbreviation: 'ILO-1', name: "Create Programs", description: "1. Use compiler\n1. Create code" },
+          { ilo_number: 2, abbreviation: 'ILO-2', name: "Test Programs", description: "1. Run program\n1. Check results\n1. Fix code" }
+        ],
         students: [ :acain, :ajones, :alexcu ]
       },
       gameprog: {
@@ -126,6 +138,10 @@ namespace :db do
           { user: :cwoodward, num: few_tutorials },
         ],
         num_tasks: few_tasks,
+        ilos: [
+          { ilo_number: 1, abbreviation: 'ILO-1', name: "Create Programs", description: "1. Use compiler\n1. Create code" },
+          { ilo_number: 2, abbreviation: 'ILO-2', name: "Test Programs", description: "1. Run program\n1. Check results\n1. Fix code" }
+        ],
         students: [ :acain, :ajones ]
       },
     }
@@ -237,6 +253,12 @@ namespace :db do
           target_date: ((count + 1) % 12).weeks.from_now, # Assignment 6 due week 6, etc.
           upload_requirements: up_reqs.to_json
         )
+      end
+
+      puts "--------> Adding ILOs"
+      unit_details[:ilos].each do |ilo_params|
+        ilo_params['unit_id'] = unit.id
+        LearningOutcome.create!(ilo_params)
       end
 
       # Create convenor roles

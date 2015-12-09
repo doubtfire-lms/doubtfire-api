@@ -5,7 +5,7 @@ class ShallowUnitSerializer < ActiveModel::Serializer
 end
 
 class UnitSerializer < ActiveModel::Serializer
-  attributes :code, :id, :name, :my_role, :description, :start_date, :end_date, :active, :convenors
+  attributes :code, :id, :name, :my_role, :description, :start_date, :end_date, :active, :convenors, :ilos
 
   def start_date
     object.start_date.to_date
@@ -36,11 +36,18 @@ class UnitSerializer < ActiveModel::Serializer
     role
   end
 
+  def ilos
+    object.learning_outcomes
+  end
+
+
   has_many :tutorials
   has_many :task_definitions
   has_many :convenors, serializer: UserUnitRoleSerializer
   has_many :staff, serializer: UserUnitRoleSerializer
   has_many :group_sets, serializer: GroupSetSerializer
+  has_many :ilos, serializer: LearningOutcomeSerializer
+  has_many :task_outcome_alignments, serializer: LearningOutcomeTaskLinkSerializer
 
   def include_convenors?
     ([ Role.convenor, :convenor ].include? my_role_obj) || (my_user_role == Role.admin)
