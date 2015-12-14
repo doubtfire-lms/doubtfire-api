@@ -1,6 +1,37 @@
 namespace :db do
 
   desc "Mark off some of the due tasks"
+  task expand_first_unit: :environment do
+
+    find_or_create_student = lambda { |username|
+      result = User.find_by_username(username)
+      if result
+        return result
+      else
+        profile = {
+          first_name:   Faker::Name.first_name,
+          last_name:    Faker::Name.last_name,
+          nickname:     username,
+          role_id:  Role.student_id,
+          email:        "#{username}@doubtfire.com",
+          username:     username,
+          password:     'password',
+          password_confirmation: 'password'
+        }
+
+        result = User.create!(profile)
+        return result
+      end
+    }
+
+    unit = Unit.first
+    tutes = unit.tutorials
+    for student_count in 0..2000
+      proj = unit.enrol_student(find_or_create_student.call("student_#{student_count}"), tutes[student_count % tutes.count])
+    end
+  end
+
+  desc "Mark off some of the due tasks"
   task simulate_signoff: :environment do
 
     Unit.all.each do |unit|
@@ -23,13 +54,17 @@ namespace :db do
           when 21..30
             task.assess TaskStatus.complete, tutor, task_def.target_date + 3.weeks
           when 31..40
+            task.assess TaskStatus.discuss, tutor, task_def.target_date
+          when 41..60
             task.assess TaskStatus.fix_and_resubmit, tutor, task_def.target_date
-          when 41..50
-            task.assess TaskStatus.fix_and_resubmit, tutor, task_def.target_date
-          when 51..70
+          when 61..70
+            task.assess TaskStatus.working_on_it, tutor, task_def.target_date
+          when 71..80
             task.submit task_def.target_date
-          when 71..75
+          when 81..85
             task.assess TaskStatus.redo, tutor, task_def.target_date
+          when 86..90
+            task.assess TaskStatus.fix_and_include, tutor, task_def.target_date
           end
         end
 

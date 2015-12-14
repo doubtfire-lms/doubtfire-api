@@ -214,10 +214,24 @@ module Api
       unit = Unit.find(params[:unit_id])
 
       if ! authorise?(current_user, unit, :get_unit)
-        error!({"error" => "You are not authorised to update the task alignments in this unit."}, 403)
+        error!({"error" => "You are not authorised to access these task alignments."}, 403)
       end
 
       unit.ilo_progress_class_stats
+    end
+
+    desc "Return unit learning alignment values with median stats for each tutorial"
+    params do
+      requires :unit_id, type: Integer,  desc: 'The id of the unit'
+    end
+    get '/units/:unit_id/learning_alignments/class_details' do
+      unit = Unit.find(params[:unit_id])
+
+      if ! authorise?(current_user, unit, :provide_feedback)
+        error!({"error" => "You are not authorised to access these task alignments."}, 403)
+      end
+
+      unit.ilo_progress_class_details
     end
 
   end
