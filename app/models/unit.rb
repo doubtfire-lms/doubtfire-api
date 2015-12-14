@@ -61,7 +61,8 @@ class Unit < ActiveRecord::Base
   end
 
   def student_tasks
-    tasks.joins(:task_definition).where("projects.enrolled = TRUE AND projects.target_grade >= task_definitions.target_grade")
+    tasks.joins(:task_definition
+        ).where("projects.enrolled = TRUE AND projects.target_grade >= task_definitions.target_grade")
   end
 
   def self.for_user_admin(user)
@@ -1087,41 +1088,72 @@ class Unit < ActiveRecord::Base
 
 
   #
-  # Return stats on the number of students in each status
+  # Return stats on the number of students in each status for each task / tutorial
+  #
+  # Returns a map:
+  #   task_def_id => { 
+  #     tutorial_id => [ { :status=> :not_submitted, :num=>1}, ... ],
+  #     tutorial_id => [ { :status=> :not_submitted, :num=>1}, ... ], ...
+  #   }, 
+  #   task_def_id => { ... }
   #
   def task_status_stats
-    data = TaskDefinition.joins(:tasks).select( 
-      'task_definition_id, task_status_id, COUNT(tasks.id) as num_tasks'
-      ).where("task_definitions.unit_id = :unit_id", unit_id: id
-      ).group('tasks.task_definition_id', 'tasks.task_status_id'
-      ).map { |r| { task_definition_id: r.task_definition_id, status: TaskStatus.find(r.task_status_id).status_key, num: r.num_tasks}}
+    data = student_tasks.
+      joins(project: :unit_role).
+      select('unit_roles.tutorial_id as tutorial_id', 'task_definition_id', 'task_status_id', 'COUNT(tasks.id) as num_tasks'
+      ).group('unit_roles.tutorial_id', 'tasks.task_definition_id', 'tasks.task_status_id'
+      ).map { |r| 
+        { 
+          tutorial_id: r.tutorial_id, 
+          task_definition_id: r.task_definition_id, 
+          status: TaskStatus.find(r.task_status_id).status_key, 
+          num: r.num_tasks
+        }
+      }
 
     result = {}
 
+    task_definitions.each do |td|
+      result[td.id] = {}
+    end
+
     data.each do |e| 
-      if not result.has_key? e[:task_definition_id]
-        result[e[:task_definition_id]] = []
+      if not result[e[:task_definition_id]].has_key? e[:tutorial_id]
+        result[e[:task_definition_id] ] [e[:tutorial_id]] = []
       end
       
-      result[e[:task_definition_id]] << { status: e[:status], num: e[:num] }
+      result[e[:task_definition_id]][e[:tutorial_id]] << { status: e[:status], num: e[:num] }
     end
 
     result
   end
 
+  #
+  # Returns an array of { tutorial_id: id, grade: g, num: n } -- showing the number of students
+  # aiming for a grade in this indicated unit.
+  #
   def student_target_grade_stats
-    data = projects.joins(:unit_role).select('unit_roles.tutorial_id, projects.target_grade, COUNT(projects.id) as num'
+    data = active_projects.joins(:unit_role).select('unit_roles.tutorial_id, projects.target_grade, COUNT(projects.id) as num'
       ).group('unit_roles.tutorial_id, projects.target_grade'
       ).order('unit_roles.tutorial_id, projects.target_grade'
       ).map { |r| {tutorial_id: r.tutorial_id, grade: r.target_grade, num: r.num} }
   end
 
-  def student_task_status_stats
-    data = projects.joins(tasks: :task_definition
-      ).select('tasks.project_id, tasks.task_status_id, task_definitions.target_grade, COUNT(tasks.id) as num'
-      ).where("task_definitions.unit_id = :unit_id AND task_definitions.target_grade <= projects.target_grade", unit_id: id
-      ).group('tasks.project_id, tasks.task_status_id, task_definitions.target_grade'
-      ).map { |r| {project_id: r.project_id, grade: r.target_grade, status: TaskStatus.find(r.task_status_id).status_key, num: r.num} }
+  #
+  # 
+  #
+  def student_task_status_stats(task_def_id = nil)
+    if task_def_id.nil?
+      data = student_tasks.
+        select("Count(tasks.id) as num, tasks.project_id, tasks.task_status_id").
+        group('tasks.project_id, tasks.task_status_id').
+        map { |r| {project_id: r.project_id, status: TaskStatus.find(r.task_status_id).status_key, num: r.num} }
+    else
+      data = student_tasks.
+        where('task.task_definition_id = :task_def_id', task_def_id: task_def_id).
+        group('tasks.project_id, tasks.task_status_id').
+        map { |r| {project_id: r.project_id, status: TaskStatus.find(r.task_status_id).status_key, num: r.num} }
+    end
 
     result = {}
     
@@ -1130,7 +1162,7 @@ class Unit < ActiveRecord::Base
         result[e[:project_id]] = []
       end
       
-      result[e[:project_id]] << { grade: e[:grade], status: e[:status], num: e[:num] }
+      result[e[:project_id]] << { status: e[:status], num: e[:num] }
     end
 
     result

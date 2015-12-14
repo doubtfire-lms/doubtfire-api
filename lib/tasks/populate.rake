@@ -7,9 +7,13 @@ namespace :db do
       due_tasks = unit.task_definitions.where("target_date < :now", now: Date.current)
 
       unit.students.each do |proj|
-        tutor = proj.main_tutor
+        p = Project.find(proj.id)
+        p.target_grade = rand(0..3)
+        p.save
+
+        tutor = p.main_tutor
         due_tasks.each do |task_def|
-          task = proj.task_for_task_definition(task_def)
+          task = p.task_for_task_definition(task_def)
 
           case rand(1..100)
           when 0..10
@@ -29,7 +33,7 @@ namespace :db do
           end
         end
 
-        proj.calc_task_stats
+        p.calc_task_stats
       end
     end
   end
