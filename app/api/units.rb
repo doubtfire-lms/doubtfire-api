@@ -237,7 +237,7 @@ module Api
         error!({"error" => "Not authorised to download stats of student tasks in #{unit.code}"}, 403)
       end
 
-      unit.student_target_grade
+      unit.student_target_grade_stats
     end
 
     desc "Download stats related to the status of students with tasks"
