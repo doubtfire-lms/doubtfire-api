@@ -21,7 +21,7 @@ class ShallowProjectSerializer < ActiveModel::Serializer
 end
 
 class StudentProjectSerializer < ActiveModel::Serializer
-  attributes :project_id, :first_name, :last_name, :student_id, :student_email, :tute, :stats, :enrolled, :target_grade, :has_portfolio, :compile_portfolio, :max_pct_copy, :tasks_with_similarities
+  attributes :project_id, :first_name, :last_name, :student_id, :student_email, :tute, :stats, :enrolled, :target_grade, :has_portfolio, :compile_portfolio, :max_pct_copy
 
   def student_email
     object.student.email
@@ -47,9 +47,9 @@ class StudentProjectSerializer < ActiveModel::Serializer
     object.unit_role.tutorial_id
   end  
 
-  def tasks_with_similarities
-    object.tasks.where("tasks.max_pct_similar > 0").count
-  end
+  # def tasks_with_similarities
+  #   object.tasks.where("tasks.max_pct_similar > 0").count
+  # end
 
   def stats
     if object.task_stats.nil? || object.task_stats.empty?
@@ -59,7 +59,7 @@ class StudentProjectSerializer < ActiveModel::Serializer
     end
   end
 
-  has_many :groups, serializer: GroupSerializer
+  # has_many :groups, serializer: GroupSerializer
 end
 
 class ProjectSerializer < ActiveModel::Serializer
