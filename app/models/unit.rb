@@ -1176,14 +1176,18 @@ class Unit < ActiveRecord::Base
     final_result
   end
 
+  #
+  # Returns a result that maps tutorial_id -> { student outcome map }
+  # Where the student outcome map contains each LO and its rating for that student (no student id)
+  #
   def student_ilo_progress_stats
-    data = Task.joins(project: :unit_role
-      ).joins(task_definition: :learning_outcome_task_links
-      ).select('unit_roles.tutorial_id, tasks.project_id, tasks.task_status_id, task_definitions.target_grade, learning_outcome_task_links.learning_outcome_id, learning_outcome_task_links.rating, COUNT(tasks.id) as num'
-      ).where("projects.started = TRUE AND task_definitions.unit_id = :unit_id AND learning_outcome_task_links.task_id is NULL", unit_id: id
-      ).group('unit_roles.tutorial_id, tasks.project_id, tasks.task_status_id, task_definitions.target_grade, learning_outcome_task_links.learning_outcome_id, learning_outcome_task_links.rating'
-      ).order('unit_roles.tutorial_id, tasks.project_id'
-      ).map { |r| 
+    data = student_tasks.joins(project: :unit_role).
+      joins(task_definition: :learning_outcome_task_links).
+      select('unit_roles.tutorial_id, tasks.project_id, tasks.task_status_id, task_definitions.target_grade, learning_outcome_task_links.learning_outcome_id, learning_outcome_task_links.rating, COUNT(tasks.id) as num').
+      where("projects.started = TRUE AND learning_outcome_task_links.task_id is NULL").
+      group('unit_roles.tutorial_id, tasks.project_id, tasks.task_status_id, task_definitions.target_grade, learning_outcome_task_links.learning_outcome_id, learning_outcome_task_links.rating').
+      order('unit_roles.tutorial_id, tasks.project_id').
+      map { |r| 
         {
           project_id: r.project_id,
           tutorial_id: r.tutorial_id,
@@ -1250,6 +1254,13 @@ class Unit < ActiveRecord::Base
 
       # add the tutorial to the results
       result[current[:tutorial_id]] = current[:tutorial]
+    end
+
+    result.each do |tutorial_id_key, array_of_ilo_scores|
+      result[tutorial_id_key] = array_of_ilo_scores.map do | map_scores |
+        map_scores.each { |ilo_id, score| map_scores[ilo_id] = score.round(1) }
+        map_scores
+      end
     end
 
     result
