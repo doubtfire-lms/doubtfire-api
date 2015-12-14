@@ -249,5 +249,17 @@ module Api
 
       unit.task_status_stats
     end
+
+    desc "Download stats related to the number of completed tasks"
+    get '/units/:id/stats/task_completion_stats' do
+      unit = Unit.find(params[:id])
+      if not authorise? current_user, unit, :downloadCSV
+        error!({"error" => "Not authorised to download stats of student tasks in #{unit.code}"}, 403)
+      end
+
+      unit.student_task_completion_stats
+    end
   end
+
+  
 end

@@ -21,7 +21,19 @@ module Api
         error!({"error" => "You do not have permission to read these task details"}, 403)
       end
 
-      ActiveModel::ArraySerializer.new(Task.for_unit(unit.id).joins(project: :unit_role).select('tasks.*, unit_roles.tutorial_id as tutorial_id').where("projects.enrolled = true and tasks.task_status_id > 1 and unit_roles.tutorial_id is not null"), each_serializer: TaskStatSerializer)
+      unit.student_tasks.
+        joins(project: :unit_role).
+        joins(:task_status).
+        select('tasks.id', 'unit_roles.tutorial_id as tutorial_id', 'task_statuses.name as status_name', 'task_definition_id').
+        where("tasks.task_status_id > 1 and unit_roles.tutorial_id is not null").
+        map { |r|  
+          {
+            id: r.id,
+            tutorial_id: r.tutorial_id,
+            task_definition_id: r.task_definition_id,
+            status: TaskStatus.status_key_for_name(r.status_name)
+          }
+        }
     end
 
     desc "Get a similarity match for a given task"

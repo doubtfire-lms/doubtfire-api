@@ -34,7 +34,7 @@ class TaskStatus < ActiveRecord::Base
     end
   end
 
-  def status_key
+  def self.status_key_for_name(name)
     case name
       when "Complete"         then :complete
       when "Not Submitted"    then :not_submitted
@@ -47,6 +47,10 @@ class TaskStatus < ActiveRecord::Base
       when "Ready to Mark"    then :ready_to_mark
       else :not_submitted
     end
+  end
+
+  def status_key
+    TaskStatus.status_key_for_name(name)
   end
 
 end

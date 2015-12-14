@@ -1073,13 +1073,19 @@ class Unit < ActiveRecord::Base
   # Return the tasks that are waiting for feedback
   #
   def tasks_awaiting_feedback
-    student_tasks.where('task_status_id IN (:ids)', ids: [ TaskStatus.ready_to_mark, TaskStatus.need_help, TaskStatus.discuss ]).order('tasks.project_id').map { |t| 
+    student_tasks.
+      joins(project: :unit_role).
+      joins(:task_status).
+      select("project_id", "tasks.id as id", "task_definition_id", "unit_roles.tutorial_id as tutorial_id", "task_statuses.name as status_name", "completion_date", "times_assessed").
+      where('task_statuses.id IN (:ids)', ids: [ TaskStatus.ready_to_mark, TaskStatus.need_help, TaskStatus.discuss ]).
+      order('tasks.project_id').
+      map { |t| 
         { 
           project_id: t.project_id, 
           id: t.id, 
           task_definition_id: t.task_definition_id, 
-          tutorial_id: t.project.tutorial.id, 
-          status: t.status,
+          tutorial_id: t.tutorial_id, 
+          status: TaskStatus.status_key_for_name(t.status_name),
           completion_date: t.completion_date,
           times_assessed: t.times_assessed
         } 
@@ -1100,13 +1106,14 @@ class Unit < ActiveRecord::Base
   def task_status_stats
     data = student_tasks.
       joins(project: :unit_role).
-      select('unit_roles.tutorial_id as tutorial_id', 'task_definition_id', 'task_status_id', 'COUNT(tasks.id) as num_tasks'
-      ).group('unit_roles.tutorial_id', 'tasks.task_definition_id', 'tasks.task_status_id'
-      ).map { |r| 
+      joins(:task_status).
+      select('unit_roles.tutorial_id as tutorial_id', 'task_definition_id', 'task_statuses.name as status_name', 'COUNT(tasks.id) as num_tasks').
+      group('unit_roles.tutorial_id', 'tasks.task_definition_id', 'task_statuses.name').
+      map { |r| 
         { 
           tutorial_id: r.tutorial_id, 
           task_definition_id: r.task_definition_id, 
-          status: TaskStatus.find(r.task_status_id).status_key, 
+          status: TaskStatus.status_key_for_name(r.status_name), 
           num: r.num_tasks
         }
       }
@@ -1140,40 +1147,46 @@ class Unit < ActiveRecord::Base
   end
 
   #
-  # 
+  # Returns a map with min, max, lower, upper, and median task completion data.
+  # i.e. how many tasks students have completed
   #
-  def student_task_status_stats(task_def_id = nil)
-    if task_def_id.nil?
-      data = student_tasks.
-        select("Count(tasks.id) as num, tasks.project_id, tasks.task_status_id").
-        group('tasks.project_id, tasks.task_status_id').
-        map { |r| {project_id: r.project_id, status: TaskStatus.find(r.task_status_id).status_key, num: r.num} }
-    else
-      data = student_tasks.
-        where('task.task_definition_id = :task_def_id', task_def_id: task_def_id).
-        group('tasks.project_id, tasks.task_status_id').
-        map { |r| {project_id: r.project_id, status: TaskStatus.find(r.task_status_id).status_key, num: r.num} }
-    end
+  def student_task_completion_stats()
+    data = student_tasks.
+      select("Count(tasks.id) as num, tasks.project_id").
+      where('task_status_id = :complete', complete: TaskStatus.complete.id).  
+      group('tasks.project_id')
 
-    result = {}
-    
-    data.each do |e| 
-      if not result.has_key? e[:project_id]
-        result[e[:project_id]] = []
+    values = data.map { |r|  r.num }
+
+    if values && values.length > 10
+      values.sort!
+
+      if values.length % 2 == 0
+        median_value = ((values[values.length / 2] + values[values.length/2 - 1]) / 2.0).round(1)
+      else
+        median_value = values[values.length / 2]
       end
-      
-      result[e[:project_id]] << { status: e[:status], num: e[:num] }
+
+      lower_value = values[values.length * 3 / 10]
+      upper_value = values[values.length * 8 / 10]
+
+      {
+        median: median_value,
+        lower: lower_value,
+        upper: upper_value,
+        min: values.first,
+        max: values.last 
+      }
+    else
+      {
+        median: 0,
+        lower: 0,
+        upper: 0,
+        min: 0,
+        max: 0 
+      }
     end
 
-    result
-
-    final_result = []
-
-    result.each do |k, value|
-      final_result << value
-    end
-
-    final_result
   end
 
   #
@@ -1183,9 +1196,10 @@ class Unit < ActiveRecord::Base
   def student_ilo_progress_stats
     data = student_tasks.joins(project: :unit_role).
       joins(task_definition: :learning_outcome_task_links).
-      select('unit_roles.tutorial_id, tasks.project_id, tasks.task_status_id, task_definitions.target_grade, learning_outcome_task_links.learning_outcome_id, learning_outcome_task_links.rating, COUNT(tasks.id) as num').
+      joins(:task_status).
+      select('unit_roles.tutorial_id, tasks.project_id, task_statuses.name as status_name, task_definitions.target_grade, learning_outcome_task_links.learning_outcome_id, learning_outcome_task_links.rating, COUNT(tasks.id) as num').
       where("projects.started = TRUE AND learning_outcome_task_links.task_id is NULL").
-      group('unit_roles.tutorial_id, tasks.project_id, tasks.task_status_id, task_definitions.target_grade, learning_outcome_task_links.learning_outcome_id, learning_outcome_task_links.rating').
+      group('unit_roles.tutorial_id, tasks.project_id, task_statuses.name, task_definitions.target_grade, learning_outcome_task_links.learning_outcome_id, learning_outcome_task_links.rating').
       order('unit_roles.tutorial_id, tasks.project_id').
       map { |r| 
         {
@@ -1194,7 +1208,7 @@ class Unit < ActiveRecord::Base
           learning_outcome_id: r.learning_outcome_id, 
           rating: r.rating, 
           grade: r.target_grade, 
-          status: TaskStatus.find(r.task_status_id).status_key,
+          status: TaskStatus.status_key_for_name(r.status_name),
           num: r.num
         } 
       }
@@ -1273,7 +1287,7 @@ class Unit < ActiveRecord::Base
 
     learning_outcomes.each do |ilo|
     if data.nil?
-      lower_value = upper_value = median_value = 0
+      lower_value = upper_value = median_value = min_value = max_value = 0
     else
       values = data.map { |e| e[ilo.id] }
       values = values.sort
@@ -1286,11 +1300,15 @@ class Unit < ActiveRecord::Base
 
       lower_value = values[values.length * 3 / 10]
       upper_value = values[values.length * 8 / 10]
+      min_value = values.first
+      max_value = values.last
     end
     result[ilo.id] = {
         median: median_value,
         lower: lower_value,
-        upper: upper_value 
+        upper: upper_value,
+        min: min_value,
+        max: max_value 
       }
     end
 
