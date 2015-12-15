@@ -19,12 +19,16 @@ module Api
         optional :contributions, type: String, :desc => "Contribution details stringified json, eg: [ { project_id: 1, pct:'0.44' }, ... ]"
         optional :trigger, type: String, :desc => "Can be need_help to indicate upload is not a ready to mark submission"
       end
-      post '/submission/task/:id' do
-        task = Task.find(params[:id])
+      post '/projects/:id/task_def_id/:task_definition_id/submission' do
+        project = Project.find(params[:id])
+        task_definition = project.unit.task_definitions.find(params[:task_definition_id])
 
-        if not authorise? current_user, task, :make_submission
-          error!({"error" => "Not authorised to submit task '#{task.task_definition.name}'"}, 401)
+        # check the user can put this task
+        if not authorise? current_user, project, :make_submission
+          error!({"error" => "Not authorised to submit task '#{task_definition.name}'"}, 401)
         end
+
+        task = project.task_for_task_definition(task_definition)
 
         if task.group_task? and not task.group
           error!({"error" => "This task requires a group submission. Ensure you are in a group for the unit's #{task.task_definition.group_set.name}"}, 401)
@@ -51,12 +55,16 @@ module Api
       end #post
       
       desc "Retrieve submission document included for the task id"
-      get '/submission/task/:id' do
-        task = Task.find(params[:id])        
+      get '/projects/:id/task_def_id/:task_definition_id/submission' do
+        project = Project.find(params[:id])
+        task_definition = project.unit.task_definitions.find(params[:task_definition_id])
 
-        if not authorise? current_user, task, :get_submission
-          error!({"error" => "Not authorised to get task '#{task.task_definition.name}'"}, 401)
+        # check the user can put this task
+        if not authorise? current_user, project, :get_submission
+          error!({"error" => "Not authorised to get task '#{task_definition.name}'"}, 401)
         end
+
+        task = project.task_for_task_definition(task_definition)
 
         evidence_loc = task.portfolio_evidence
         student = task.project.student
@@ -77,12 +85,15 @@ module Api
       end # get
 
       desc "Request for a task's documents to be re-processed tp recreate the task's PDF"
-      put '/submission/task/:id' do
-        task = Task.find(params[:id])        
+      put '/projects/:id/task_def_id/:task_definition_id/submission' do
+        project = Project.find(params[:id])
+        task_definition = project.unit.task_definitions.find(params[:task_definition_id])
 
-        if not authorise? current_user, task, :get_submission
-          error!({"error" => "Not authorised to get task '#{task.task_definition.name}'"}, 401)
+        if not authorise? current_user, project, :get_submission
+          error!({"error" => "Not authorised to get task '#{task_definition.name}'"}, 401)
         end
+
+        task = project.task_for_task_definition(task_definition)
 
         if task and PortfolioEvidence.recreate_task_pdf(task)
           { result: "done" }

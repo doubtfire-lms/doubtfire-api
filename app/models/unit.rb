@@ -169,18 +169,6 @@ class Unit < ActiveRecord::Base
 
     project.tutorial_id = tutorial_id unless tutorial_id.nil?
     project.save
-
-    # Create task instances for the project
-    task_definitions_for_project = TaskDefinition.where(unit_id: self.id)
-
-    task_definitions_for_project.each do |task_definition|
-      Task.create(
-        task_definition_id: task_definition.id,
-        project_id: project.id,
-        task_status_id: 1
-      )
-    end
-
     project
   end
 

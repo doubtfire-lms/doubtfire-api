@@ -10,6 +10,9 @@ module Api
       authenticated?
     end
 
+    #
+    # Tasks only used for the task summary stats view...
+    #
     desc "Get all the current user's tasks"
     params do
       requires :unit_id, type: Integer, desc: 'Unit to fetch the task details for'
@@ -114,29 +117,22 @@ module Api
       end
     end
 
-    # desc "Get task"
-    # get '/tasks/:id' do
-    #   task = Task.find(params[:id])
-
-    #   if authorise? current_user, task, :get
-    #     task
-    #   else
-    #     error!({"error" => "Couldn't find Task with id=#{params[:id]}" }, 403)
-    #   end
-    # end
-
-    desc "Update a task"
+    desc "Update a task using its related project and task definition"
     params do
-      requires :id, type: Integer, desc: 'The task id to update'
+      requires :id, type: Integer, desc: 'The project id to locate'
+      requires :task_definition_id, type: Integer, desc: 'The id of the task definition of the task to update in this project'
       optional :trigger, type: String, desc: 'New status'
-      optional :include_in_portfolio, type: Boolean, desc: 'Include or exclude from portfolio'
+      optional :include_in_portfolio, type: Boolean, desc: 'Indicate if this task should be in the portfolio'
     end
-    put '/tasks/:id' do
-      task = Task.find(params[:id])
-      needsUploadDocs = task.upload_requirements.length > 0
-      
+    put '/projects/:id/task_def_id/:task_definition_id' do
+      project = Project.find(params[:id])
+      task_definition = project.unit.task_definitions.find(params[:task_definition_id])
+      needsUploadDocs = task_definition.upload_requirements.length > 0
+
       # check the user can put this task
-      if authorise? current_user, task, :put
+      if authorise? current_user, project, :make_submission
+        task = project.task_for_task_definition(task_definition)
+
         # if trigger supplied...
         unless params[:trigger].nil?
           # Check if they should be using portfolio_evidence api

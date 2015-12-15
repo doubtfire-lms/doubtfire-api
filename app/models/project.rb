@@ -102,16 +102,6 @@ class Project < ActiveRecord::Base
     update_attribute(:started, true)
   end
 
-  def add_task(task_definition)
-    task = Task.new
-
-    task.task_definition_id = @task_definition.id
-    task.project_id         = project.id
-    task.task_status_id     = 1
-
-    task.save
-  end
-
   def student
     user
   end
@@ -860,7 +850,15 @@ class Project < ActiveRecord::Base
   end
 
   def task_for_task_definition(td)
-    tasks.where(task_definition: td).first
+    result = tasks.where(task_definition: td).first
+    if result.nil?
+      result = Task.create(
+        task_definition_id: task_definition.id,
+        project_id: project.id,
+        task_status_id: 1
+      )
+    end
+    result
   end
 
   def group_for_groupset(gs)
