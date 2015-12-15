@@ -211,13 +211,18 @@ module Api
         error!({"error" => "Not authorised to access tasks for this unit" }, 403)
       end
 
-      unit.student_tasks.where("task_definition_id = :id", id: params[:task_def_id]).map { |t| 
+      unit.student_tasks.
+        joins(:project).
+        joins(:task_status).
+        select("projects.tutorial_id as tutorial_id", "project_id", "tasks.id as id", "task_definition_id", "task_statuses.name as status_name", "completion_date", "times_assessed").
+        where("task_definition_id = :id", id: params[:task_def_id]).
+        map { |t| 
         { 
           project_id: t.project_id, 
           id: t.id, 
           task_definition_id: t.task_definition_id, 
-          tutorial_id: t.project.tutorial.id, 
-          status: t.status,
+          tutorial_id: t.tutorial_id, 
+          status: TaskStatus.status_key_for_name(t.status_name),
           completion_date: t.completion_date,
           times_assessed: t.times_assessed
         } 

@@ -22,10 +22,9 @@ module Api
       end
 
       unit.student_tasks.
-        joins(project: :unit_role).
         joins(:task_status).
-        select('tasks.id', 'unit_roles.tutorial_id as tutorial_id', 'task_statuses.name as status_name', 'task_definition_id').
-        where("tasks.task_status_id > 1 and unit_roles.tutorial_id is not null").
+        select('tasks.id', 'projects.tutorial_id as tutorial_id', 'task_statuses.name as status_name', 'task_definition_id').
+        where("tasks.task_status_id > 1 and projects.tutorial_id is not null").
         map { |r|  
           {
             id: r.id,

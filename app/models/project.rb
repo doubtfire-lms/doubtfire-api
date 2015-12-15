@@ -8,8 +8,8 @@ class Project < ActiveRecord::Base
   include ApplicationHelper
 
   belongs_to :unit
-  belongs_to :unit_role, class_name: 'UnitRole', foreign_key: 'unit_role_id', inverse_of: :project
-  has_one :tutorial, through: :unit_role
+  belongs_to :tutorial
+  belongs_to :user
 
   # has_one :user, through: :student
   has_many :tasks, dependent: :destroy   # Destroying a project will also nuke all of its tasks
@@ -20,13 +20,7 @@ class Project < ActiveRecord::Base
 
   has_many :learning_outcome_task_links, through: :tasks
 
-  after_destroy :destroy_unit_role
-
-  def destroy_unit_role
-    return unless unit_role
-    unit_role.project = nil
-    unit_role.destroy unless unit_role.destroyed?
-  end
+  validate :must_be_in_group_tutorials
 
   def self.permissions
     { 
@@ -45,7 +39,7 @@ class Project < ActiveRecord::Base
   }
 
   def self.for_user(user)
-    active_projects.joins(:unit_role).where('unit_roles.user_id = :user_id', user_id: user.id)
+    active_projects.where('user_id = :user_id', user_id: user.id)
   end
 
   def self.active_projects
@@ -53,14 +47,32 @@ class Project < ActiveRecord::Base
   end
 
   def self.for_unit_role(unit_role)
-    if unit_role.is_student?
-      active_projects.where(unit_role_id: unit_role.id)
-    elsif unit_role.is_teacher?
+    if unit_role.is_teacher?
       active_projects.where(unit_id: unit_role.unit_id)
     else
       nil
     end
   end
+
+  #
+  # Check to see if the student has a valid tutorial
+  #
+  def must_be_in_group_tutorials
+    groups.each { |g| 
+      if g.limit_members_to_tutorial?
+        if tutorial != g.tutorial
+          if g.group_set.allow_students_to_manage_groups
+            # leave group
+            g.remove_member(project)
+          else
+            errors.add(:groups, "require you to be in tutorial #{g.tutorial.abbreviation}")
+            break
+          end
+        end
+      end
+    }
+  end
+
 
   def task_outcome_alignments
     learning_outcome_task_links
@@ -101,12 +113,12 @@ class Project < ActiveRecord::Base
   end
 
   def student
-    unit_role.user
+    user
   end
 
   def main_tutor
-    if unit_role.tutorial
-      unit_role.tutorial.tutor 
+    if tutorial
+      tutorial.tutor 
     else
       main_convenor
     end
@@ -114,10 +126,6 @@ class Project < ActiveRecord::Base
 
   def main_convenor
     unit.convenors.first.user
-  end
-
-  def tutorial
-    unit_role.tutorial
   end
 
   def tutorial_abbr

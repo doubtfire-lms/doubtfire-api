@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20151116061222) do
+ActiveRecord::Schema.define(version: 20151214194456) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -121,7 +121,6 @@ ActiveRecord::Schema.define(version: 20151116061222) do
 
   create_table "projects", force: true do |t|
     t.integer  "unit_id"
-    t.integer  "unit_role_id"
     t.string   "project_role"
     t.datetime "created_at",                                null: false
     t.datetime "updated_at",                                null: false
@@ -134,11 +133,14 @@ ActiveRecord::Schema.define(version: 20151116061222) do
     t.boolean  "compile_portfolio",         default: false
     t.date     "portfolio_production_date"
     t.integer  "max_pct_similar",           default: 0
+    t.integer  "tutorial_id"
+    t.integer  "user_id"
   end
 
   add_index "projects", ["enrolled"], name: "index_projects_on_enrolled", using: :btree
+  add_index "projects", ["tutorial_id"], name: "index_projects_on_tutorial_id", using: :btree
   add_index "projects", ["unit_id"], name: "index_projects_on_unit_id", using: :btree
-  add_index "projects", ["unit_role_id"], name: "index_projects_on_unit_role_id", using: :btree
+  add_index "projects", ["user_id"], name: "index_projects_on_user_id", using: :btree
 
   create_table "roles", force: true do |t|
     t.string   "name"

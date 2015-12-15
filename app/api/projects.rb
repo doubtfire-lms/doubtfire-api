@@ -76,11 +76,11 @@ module Api
 
         tutorial_id = params[:tutorial_id]
         if project.unit.tutorials.where('tutorials.id = :tutorial_id', tutorial_id: tutorial_id).count == 1
-          project.unit_role.tutorial_id = tutorial_id
-          project.unit_role.save!
+          project.tutorial_id = tutorial_id
+          project.save!
         elsif tutorial_id == -1
-          project.unit_role.tutorial = nil
-          project.unit_role.save!
+          project.tutorial = nil
+          project.save!
         else
           error!({"error" => "Couldn't find Tutorial with id=#{params[:tutorial_id]}" }, 403)
         end

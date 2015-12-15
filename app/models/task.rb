@@ -53,7 +53,7 @@ class Task < ActiveRecord::Base
   end
 
   def self.for_user(user)
-    Task.joins(project: :unit_role).where("unit_roles.user_id = ?", user.id)
+    Task.joins(:project).where("projects.user_id = ?", user.id)
   end
 
   def unit

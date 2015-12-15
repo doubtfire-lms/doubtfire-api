@@ -4,8 +4,7 @@ class Tutorial < ActiveRecord::Base
   belongs_to :unit_role              # Foreign key
   has_one    :tutor, through: :unit_role, source: :user
 
-  has_many   :unit_roles, dependent: :nullify # Students
-  has_many   :projects, through: :unit_roles
+  has_many   :projects, dependent: :nullify # Students
   has_many   :groups, dependent: :nullify
 
   def self.default

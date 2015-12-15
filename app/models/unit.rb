@@ -21,7 +21,7 @@ class Unit < ActiveRecord::Base
       Role.convenor
     elsif tutors.where('unit_roles.user_id=:id', id: user.id).count == 1
       Role.tutor
-    elsif students.where('unit_roles.user_id=:id', id: user.id).count == 1
+    elsif students.where('projects.user_id=:id', id: user.id).count == 1
       Role.student
     else
       nil
@@ -92,7 +92,7 @@ class Unit < ActiveRecord::Base
   end
 
   def students
-    Project.joins(:unit_role).where('unit_roles.role_id = 1 and projects.unit_id=:unit_id', unit_id: id)
+    projects
   end
 
   #
@@ -146,14 +146,14 @@ class Unit < ActiveRecord::Base
     end
 
     # Validates that a student is not already assigned to the unit
-    existing_role = unit_roles.where("user_id=:user_id", user_id: user.id).first
-    if existing_role
-      if existing_role.project && existing_role.project.enrolled == false
-        existing_role.project.enrolled = true
-        existing_role.project.save
+    existing_project = projects.where("user_id=:user_id", user_id: user.id).first
+    if existing_project
+      if existing_project.enrolled == false
+        existing_project.enrolled = true
+        existing_project.save
       end
 
-      return existing_role.project
+      return existing_project
     end
 
     # Validates that the tutorial exists for the unit
@@ -161,23 +161,14 @@ class Unit < ActiveRecord::Base
       return nil
     end
 
-    # Put the user in the appropriate tutorial (ie. create a new unit_role)
-    unit_role = UnitRole.create!(
-      user_id: user.id,
-      #tutorial_id: tutorial_id,
-      unit_id: self.id,
-      role_id: Role.where(name: 'Student').first.id
-    )
-
-    unit_role.tutorial_id = tutorial_id unless tutorial_id.nil?
-
-    unit_role.save!
-
     project = Project.create!(
-      unit_role_id: unit_role.id,
+      user_id: user.id,
       unit_id: self.id,
       task_stats: "1.0|0.0|0.0|0.0|0.0|0.0|0.0|0.0|0.0|0.0|0.0|0.0|1.0"
     )
+
+    project.tutorial_id = tutorial_id unless tutorial_id.nil?
+    project.save
 
     # Create task instances for the project
     task_definitions_for_project = TaskDefinition.where(unit_id: self.id)
@@ -191,32 +182,6 @@ class Unit < ActiveRecord::Base
     end
 
     project
-  end
-
-  # Removes a user (and their tasks etc.) from this project
-  def remove_user(user_id)
-    unit_roles = UnitRole.joins(project: :unit).where(user_id: user_id, projects: {unit_id: self.id})
-
-    unit_roles.each do |unit_role|
-      unit_role.destroy
-    end
-  end
-
-  def change_convenors(convenor_ids)
-    convenor_role = Role.convenor
-
-    # Replace the current list of convenors for this project with the new list selected by the user
-    unit_convenors        = UnitRole.where(unit_id: self.id, role_id: convenor_role.id)
-    removed_convenor_ids  = unit_convenors.map(&:user).map(&:id) - convenor_ids
-
-    # Delete any convenors that have been removed
-    UnitRole.where(unit_id: self.id, role_id: convenor_role.id, user_id: removed_convenor_ids).destroy_all
-
-    # Find or create convenors
-    convenor_ids.each do |convenor_id|
-      new_convenor = UnitRole.find_or_create_by_unit_id_and_user_id_and_role_id(unit_id: self.id, user_id: convenor_id, role_id: convenor_role.id)
-      new_convenor.save!
-    end
   end
 
   def tutorial_with_abbr(abbr)
@@ -574,7 +539,7 @@ class Unit < ActiveRecord::Base
           next
         end
 
-        project = students.where('unit_roles.user_id = :id', id: user.id).first
+        project = students.where('user_id = :id', id: user.id).first
 
         if project.nil?
           errors << { row: row,  message: "Student #{username} not found in unit" }
@@ -1074,9 +1039,8 @@ class Unit < ActiveRecord::Base
   #
   def tasks_awaiting_feedback
     student_tasks.
-      joins(project: :unit_role).
       joins(:task_status).
-      select("project_id", "tasks.id as id", "task_definition_id", "unit_roles.tutorial_id as tutorial_id", "task_statuses.name as status_name", "completion_date", "times_assessed").
+      select("project_id", "tasks.id as id", "task_definition_id", "projects.tutorial_id as tutorial_id", "task_statuses.name as status_name", "completion_date", "times_assessed").
       where('task_statuses.id IN (:ids)', ids: [ TaskStatus.ready_to_mark, TaskStatus.need_help, TaskStatus.discuss ]).
       order('tasks.project_id').
       map { |t| 
@@ -1105,10 +1069,9 @@ class Unit < ActiveRecord::Base
   #
   def task_status_stats
     data = student_tasks.
-      joins(project: :unit_role).
       joins(:task_status).
-      select('unit_roles.tutorial_id as tutorial_id', 'task_definition_id', 'task_statuses.name as status_name', 'COUNT(tasks.id) as num_tasks').
-      group('unit_roles.tutorial_id', 'tasks.task_definition_id', 'task_statuses.name').
+      select('projects.tutorial_id as tutorial_id', 'task_definition_id', 'task_statuses.name as status_name', 'COUNT(tasks.id) as num_tasks').
+      group('projects.tutorial_id', 'tasks.task_definition_id', 'task_statuses.name').
       map { |r| 
         { 
           tutorial_id: r.tutorial_id, 
@@ -1140,9 +1103,9 @@ class Unit < ActiveRecord::Base
   # aiming for a grade in this indicated unit.
   #
   def student_target_grade_stats
-    data = active_projects.joins(:unit_role).select('unit_roles.tutorial_id, projects.target_grade, COUNT(projects.id) as num'
-      ).group('unit_roles.tutorial_id, projects.target_grade'
-      ).order('unit_roles.tutorial_id, projects.target_grade'
+    data = active_projects.joins(:unit_role).select('projects.tutorial_id, projects.target_grade, COUNT(projects.id) as num'
+      ).group('projects.tutorial_id, projects.target_grade'
+      ).order('projects.tutorial_id, projects.target_grade'
       ).map { |r| {tutorial_id: r.tutorial_id, grade: r.target_grade, num: r.num} }
   end
 
@@ -1194,13 +1157,13 @@ class Unit < ActiveRecord::Base
   # Where the student outcome map contains each LO and its rating for that student (no student id)
   #
   def student_ilo_progress_stats
-    data = student_tasks.joins(project: :unit_role).
+    data = student_tasks.
       joins(task_definition: :learning_outcome_task_links).
       joins(:task_status).
-      select('unit_roles.tutorial_id, tasks.project_id, task_statuses.name as status_name, task_definitions.target_grade, learning_outcome_task_links.learning_outcome_id, learning_outcome_task_links.rating, COUNT(tasks.id) as num').
+      select('projects.tutorial_id, tasks.project_id, task_statuses.name as status_name, task_definitions.target_grade, learning_outcome_task_links.learning_outcome_id, learning_outcome_task_links.rating, COUNT(tasks.id) as num').
       where("projects.started = TRUE AND learning_outcome_task_links.task_id is NULL").
-      group('unit_roles.tutorial_id, tasks.project_id, task_statuses.name, task_definitions.target_grade, learning_outcome_task_links.learning_outcome_id, learning_outcome_task_links.rating').
-      order('unit_roles.tutorial_id, tasks.project_id').
+      group('projects.tutorial_id, tasks.project_id, task_statuses.name, task_definitions.target_grade, learning_outcome_task_links.learning_outcome_id, learning_outcome_task_links.rating').
+      order('projects.tutorial_id, tasks.project_id').
       map { |r| 
         {
           project_id: r.project_id,

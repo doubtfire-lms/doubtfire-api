@@ -7,17 +7,14 @@ class UnitRole < ActiveRecord::Base
   belongs_to :role    # Foreign key
 
   belongs_to :tutorial  # for students only! TODO: fix
-  has_one  :project, dependent: :destroy, inverse_of: :unit_role # for students only! TODO: fix
 
   has_many :taught_tutorials, class_name: "Tutorial", dependent: :nullify
 
   validates :unit_id, presence: true
   validates :user_id, presence: true
   validates :role_id, presence: true
-  validate :must_be_in_group_tutorials
 
 
-  scope :students,  -> { joins(:role).where('roles.name = :role', role: 'Student') }
   scope :tutors,    -> { joins(:role).where('roles.name = :role', role: 'Tutor') }
   scope :convenors, -> { joins(:role).where('roles.name = :role', role: 'Convenor') }
   # scope :staff,     -> { where('role_id != ?', 1) }
@@ -38,26 +35,6 @@ class UnitRole < ActiveRecord::Base
       :Convenor => [ :get, :getProjects, :delete ],
       :Tutor => [ :get, :getProjects ],
       :nil => [ ]
-    }
-  end
-
-  #
-  # Check to see if the student has a valid tutorial
-  #
-  def must_be_in_group_tutorials
-    return unless project
-    project.groups.each { |g| 
-      if g.limit_members_to_tutorial?
-        if tutorial != g.tutorial
-          if g.group_set.allow_students_to_manage_groups
-            # leave group
-            g.remove_member(project)
-          else
-            errors.add(:groups, "require you to be in tutorial #{g.tutorial.abbreviation}")
-            break
-          end
-        end
-      end
     }
   end
 

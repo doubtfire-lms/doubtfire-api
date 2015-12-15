@@ -54,7 +54,7 @@ class Group < ActiveRecord::Base
   end
 
   def has_user(user)
-    projects.joins(:unit_role).where("unit_roles.user_id = :user_id", user_id: user.id).count == 1
+    projects.where("user_id = :user_id", user_id: user.id).count == 1
   end
 
   def add_member(project)
