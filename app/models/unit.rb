@@ -238,16 +238,13 @@ class Unit < ActiveRecord::Base
         # Only import if a valid user - or if save worked
         #
         if project_participant.persisted?
-          user_not_in_project = UnitRole.joins(project: :unit).where(
-            user_id: project_participant.id,
-            projects: {unit_id: id}
-          ).count == 0
+          user_project = projects.where(user_id: project_participant.id).first
 
           tutorial = tutorial_cache[tutorial_code] || tutorial_with_abbr(tutorial_code)
           tutorial_cache[tutorial_code] ||= tutorial
 
           # Add the user to the project (if not already in there)
-          if user_not_in_project
+          if user_project.nil?
             if not tutorial.nil?
               enrol_student(project_participant, tutorial)
               success << { row: row, message: "Enrolled student with tutorial." }
@@ -257,22 +254,15 @@ class Unit < ActiveRecord::Base
             end
           else
             # update tutorial
-            unit_role = UnitRole.joins(project: :unit).where(
-              user_id: project_participant.id,
-              projects: {unit_id: id}
-            ).first
-            unit_role = UnitRole.find(unit_role.id)
-
             changes = ""          
 
-            if unit_role.tutorial != tutorial
-              unit_role.tutorial = tutorial
-              unit_role.save
+            if user_project.tutorial != tutorial
+              user_project.tutorial = tutorial
+              user_project.save
               changes << "Changed tutorial. "
             end
 
-            if not unit_role.project.enrolled
-              user_project = unit_role.project
+            if not user_project.enrolled
               user_project.enrolled = true
               user_project.save
               changes << "Changed enrolment."
@@ -1103,7 +1093,7 @@ class Unit < ActiveRecord::Base
   # aiming for a grade in this indicated unit.
   #
   def student_target_grade_stats
-    data = active_projects.joins(:unit_role).select('projects.tutorial_id, projects.target_grade, COUNT(projects.id) as num'
+    data = active_projects.select('projects.tutorial_id, projects.target_grade, COUNT(projects.id) as num'
       ).group('projects.tutorial_id, projects.target_grade'
       ).order('projects.tutorial_id, projects.target_grade'
       ).map { |r| {tutorial_id: r.tutorial_id, grade: r.target_grade, num: r.num} }
