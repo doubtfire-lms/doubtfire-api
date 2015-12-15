@@ -273,8 +273,11 @@ class Project < ActiveRecord::Base
     done_task_results = { key: "Submitted", values: [] }
     complete_task_results = { key: "Complete", values: [] }
 
+    # Get the target task from the unit's task definitions
+    target_tasks = assigned_task_defs
+
     # get total value of all tasks assigned to this project
-    total = assigned_tasks.map{|task| task.task_definition.weighting.to_f}.inject(:+)
+    total = target_tasks.map{|td| td.weighting.to_f}.inject(:+)
 
     #last done task date
     if ready_or_complete_tasks.empty?
@@ -282,9 +285,6 @@ class Project < ActiveRecord::Base
     else
       last_target_date = ready_or_complete_tasks.sort{|a,b| a.task_definition.target_date <=>  b.task_definition.target_date }.last.task_definition.target_date
     end
-
-    # Get the target task from the unit's task definitions
-    target_tasks = unit.task_definitions.select{|task_def| task_def.target_grade <= target_grade}
 
     # today is used to determine when to stop adding done tasks
     today = reference_date
@@ -532,7 +532,11 @@ class Project < ActiveRecord::Base
     end
 
     total = total_task_weight
-    assigned_tasks.each { |task| result[task.status] += task.task_definition.weighting }
+    assigned_task_defs.each { |td| result[:not_submitted] += td.weighting }
+    assigned_tasks.each { |task| 
+      result[task.status] += task.task_definition.weighting 
+      result[:not_submitted] -= task.task_definition.weighting
+    }
     convert_hash_to_pct(result, total)
 
     p_stats = progress_stats
@@ -543,8 +547,12 @@ class Project < ActiveRecord::Base
     self.task_stats
   end
 
+  def assigned_task_defs
+    unit.task_definitions.where("target_grade <= :grade", grade: target_grade)
+  end
+
   def total_task_weight
-    assigned_tasks.map{|task| task.task_definition.weighting }.inject(:+)
+    assigned_task_defs.map{|td| td.weighting }.inject(:+)
   end
 
   #
@@ -849,12 +857,16 @@ class Project < ActiveRecord::Base
     task_for_task_definition(other_task.task_definition)
   end
 
+  def has_task_for_task_definition?(td)
+    ! tasks.where(task_definition: td).first.nil?
+  end
+
   def task_for_task_definition(td)
     result = tasks.where(task_definition: td).first
     if result.nil?
       result = Task.create(
-        task_definition_id: task_definition.id,
-        project_id: project.id,
+        task_definition_id: td.id,
+        project_id: id,
         task_status_id: 1
       )
     end

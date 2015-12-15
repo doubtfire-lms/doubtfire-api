@@ -79,7 +79,7 @@ class ProjectSerializer < ActiveModel::Serializer
 
   def stats
     if object.task_stats.nil? || object.task_stats.empty?
-      object.update_task_stats
+      object.calc_task_stats
     else
       object.task_stats
     end

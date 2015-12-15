@@ -13,16 +13,15 @@ module Api
     params do
       requires :comment,              type: String,   :desc => "The comment text to add to the task"
     end
-    post '/tasks/:task_id/comments' do      
-      task = Task.find(params[:task_id]) 
-      
-      if task.nil?
-        error!({"error" => "Task not found"}, 404)
-      end
+    post '/projects/:project_id/task_def_id/:task_definition_id/comments' do
+      project = Project.find(params[:project_id])
+      task_definition = project.unit.task_definitions.find(params[:task_definition_id])
 
-      if not authorise? current_user, task, :make_submission
+      if not authorise? current_user, project, :make_submission
         error!({"error" => "Not authorised to create a comment for this task"}, 403)
       end
+
+      task = project.task_for_task_definition(task_definition)
 
       result = task.add_comment current_user, params[:comment]
       if result.nil?
@@ -33,28 +32,34 @@ module Api
     end
     
     desc "Get the comments related to a task"
-    get '/tasks/:task_id/comments' do
-      task = Task.find(params[:task_id]) 
+    get '/projects/:project_id/task_def_id/:task_definition_id/comments' do
+      project = Project.find(params[:project_id])
+      task_definition = project.unit.task_definitions.find(params[:task_definition_id])
 
-      if not authorise? current_user, task, :get
+      if not authorise? current_user, project, :get
         error!({"error" => "You cannot read the comments for this task"}, 403)
       end
 
-      if task.nil?
-        error!({"error" => "Task not found"}, 404)
-      end      
+      if project.has_task_for_task_definition? task_definition
+        task = project.task_for_task_definition(task_definition)
 
-      task.all_comments.order("created_at DESC")
+        task.all_comments.order("created_at DESC")
+      else
+        []
+      end
     end
 
     desc "Delete a comment"
-    delete '/tasks/:task_id/comments/:id' do
-      task = Task.find(params[:task_id])       
-      task_comment = TaskComment.find(params[:id])
+    delete '/projects/:project_id/task_def_id/:task_definition_id/comments/:id' do
+      project = Project.find(params[:project_id])
+      task_definition = project.unit.task_definitions.find(params[:task_definition_id])
       
-      if task.nil? || task_comment.nil?
-        error!({"error" => "Task or comment not found"}, 404)
+      if not authorise? current_user, project, :get
+        error!({"error" => "You cannot read the comments for this task"}, 403)
       end
+
+      task = project.task_for_task_definition(task_definition)
+      task_comment = task.comments.find(params[:id])
 
       if current_user == task_comment.user
         key = :delete_own_comment

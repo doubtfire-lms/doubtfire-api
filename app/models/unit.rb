@@ -595,18 +595,6 @@ class Unit < ActiveRecord::Base
     end
   end
 
-  def add_new_task_def(task_def, project_cache=nil)
-    project_cache = Project.where(unit_id: id) if project_cache.nil?
-    project_cache.each do |project|
-      Task.create(
-        task_definition_id: task_def.id,
-        project_id:         project.id,
-        task_status_id:     1,
-        completion_date:    nil
-      )
-    end
-  end
-
   def import_tasks_from_csv(file)
     success = []
     errors = []
@@ -633,18 +621,6 @@ class Unit < ActiveRecord::Base
         if task_definition.nil?
           errors << { row: row, message: message }
           next
-        end
-
-        if task_definition.persisted?
-          if new_task
-            begin
-              add_new_task_def task_definition, project_cache
-            rescue Exception => e
-              task_definition.destroy
-              errors << {row: row, message: "Error occurred added tasks for students. #{e.message}"}
-              next
-            end
-          end
         end
 
         success << { row: row, message: message }
@@ -1049,6 +1025,7 @@ class Unit < ActiveRecord::Base
     data = student_tasks.
       joins(:task_status).
       select('projects.tutorial_id as tutorial_id', 'task_definition_id', 'task_statuses.name as status_name', 'COUNT(tasks.id) as num_tasks').
+      where('task_status_id > 1').
       group('projects.tutorial_id', 'tasks.task_definition_id', 'task_statuses.name').
       map { |r| 
         { 
@@ -1058,6 +1035,26 @@ class Unit < ActiveRecord::Base
           num: r.num_tasks
         }
       }
+
+    # Calculate not started...
+    tutorials.each do |t|
+      task_definitions.each do |td|
+        count = data.select{|r| r[:task_definition_id] == td.id && r[:tutorial_id] == t.id }.map{|r| r[:num]}.inject(:+)
+        count = 0 unless count
+
+        num = t.projects.where("projects.target_grade >= :grade", grade: td.target_grade).count
+        num = 0 unless num
+
+        if num - count > 0
+          data << { 
+            tutorial_id: t.id, 
+            task_definition_id: td.id, 
+            status: :not_submitted, 
+            num: num - count
+          }
+        end
+      end
+    end
 
     result = {}
 
@@ -1099,7 +1096,7 @@ class Unit < ActiveRecord::Base
 
     values = data.map { |r|  r.num }
 
-    if values && values.length > 10
+    if values # && values.length > 10
       values.sort!
 
       if values.length % 2 == 0
