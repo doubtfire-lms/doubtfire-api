@@ -996,7 +996,8 @@ class Unit < ActiveRecord::Base
       joins(:task_status).
       select("project_id", "tasks.id as id", "task_definition_id", "projects.tutorial_id as tutorial_id", "task_statuses.name as status_name", "completion_date", "times_assessed").
       where('task_statuses.id IN (:ids)', ids: [ TaskStatus.ready_to_mark, TaskStatus.need_help, TaskStatus.discuss ]).
-      order('tasks.project_id').
+      where('(task_definitions.due_date IS NULL OR task_definitions.due_date > tasks.submission_date)').
+      order('task_definition_id').
       map { |t| 
         { 
           project_id: t.project_id, 
