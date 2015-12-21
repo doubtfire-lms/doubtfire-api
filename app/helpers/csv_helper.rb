@@ -1,6 +1,7 @@
 module CsvHelper
   def csv_date_to_date (date)
-   date = date.strip
+    return if date.nil? || date.empty?
+    date = date.strip
     
     if date !~ /20\d\d\-\d{1,2}\-\d{1,2}$/ # Matches YYYY-mm-dd by default
       if date =~ /\d{1,2}\-\d{1,2}\-20\d\d/ # Matches dd-mm-YYYY

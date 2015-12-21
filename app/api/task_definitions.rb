@@ -23,6 +23,7 @@ module Api
         requires :target_grade,         type: Integer,  :desc => "Minimum grade for task"
         optional :group_set_id,         type: Integer,  :desc => "Related group set"
         requires :target_date,          type: Date,     :desc => "The date when the task is due"
+        requires :due_date,             type: Date,     :desc => "The deadline date"
         requires :abbreviation,         type: String,   :desc => "The abbreviation of the task"
         requires :restrict_status_updates, type: Boolean,  :desc => "Restrict updating of the status to staff"
         optional :upload_requirements,  type: String,   :desc => "Task file upload requirements"
@@ -46,7 +47,8 @@ module Api
                                                   :description,        
                                                   :weighting,          
                                                   :target_grade,
-                                                  :target_date,        
+                                                  :target_date,
+                                                  :due_date,        
                                                   :abbreviation,
                                                   :restrict_status_updates,
                                                   :upload_requirements,
@@ -81,6 +83,7 @@ module Api
         optional :target_grade,         type: Integer,  :desc => "Target grade for task"
         optional :group_set_id,         type: Integer,  :desc => "Related group set"
         optional :target_date,          type: Date,     :desc => "The date when the task is due"
+        optional :due_date,             type: Date,     :desc => "The deadline date"
         optional :abbreviation,         type: String,   :desc => "The abbreviation of the task"
         optional :restrict_status_updates,    type: Boolean,  :desc => "Restrict updating of the status to staff"
         optional :upload_requirements,  type: String,   :desc => "Task file upload requirements"
@@ -103,7 +106,8 @@ module Api
                                                   :description,        
                                                   :weighting,          
                                                   :target_grade,
-                                                  :target_date,        
+                                                  :target_date, 
+                                                  :due_date,       
                                                   :abbreviation,
                                                   :restrict_status_updates,
                                                   :upload_requirements,

@@ -122,11 +122,16 @@ class TaskDefinition < ActiveRecord::Base
   end
 
   def to_csv_row
-    TaskDefinition.csv_columns.reject{|col| col == :target_date || col == :upload_requirements }.map{|column| attributes[column.to_s] } + [upload_requirements.to_json] + [target_date.strftime('%d-%m-%Y')]
+    TaskDefinition.csv_columns.
+      reject{|col| col == :target_date || col == :upload_requirements || col == :due_date }.
+      map{|column| attributes[column.to_s] } + 
+      [upload_requirements.to_json] +
+      [target_date.strftime('%d-%m-%Y')] + 
+      [ self['due_date'].nil? ? '' : due_date.strftime('%d-%m-%Y')]
   end
 
   def self.csv_columns
-    [:name, :abbreviation, :description, :weighting, :target_grade, :restrict_status_updates, :upload_requirements, :target_date]
+    [:name, :abbreviation, :description, :weighting, :target_grade, :restrict_status_updates, :upload_requirements, :target_date, :due_date]
   end
 
   def self.task_def_for_csv_row(unit, row)
@@ -156,7 +161,8 @@ class TaskDefinition < ActiveRecord::Base
     result.restrict_status_updates     = ["Yes", "y", "Y", "yes", "true", "TRUE", "1"].include? row[:restrict_status_updates]
     result.target_date                 = CsvHelper.csv_date_to_date(row[:target_date])
     result.upload_requirements         = row[:upload_requirements]
-    
+    result.due_date                    = CsvHelper.csv_date_to_date(row[:due_date])
+
     if result.valid?
       begin
         result.save
