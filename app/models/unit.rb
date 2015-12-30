@@ -1097,7 +1097,7 @@ class Unit < ActiveRecord::Base
 
     values = data.map { |r|  r.num }
 
-    if values # && values.length > 10
+    if values && values.length > 10
       values.sort!
 
       if values.length % 2 == 0
