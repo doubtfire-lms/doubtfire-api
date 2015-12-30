@@ -100,21 +100,21 @@ module Api
       end
     end
 
-
-
     desc "Add an outcome to a unit's task definition"
     params do
       requires :unit_id             , type: Integer,  desc: 'The id of the unit'
       requires :learning_outcome_id , type: Integer,  desc: 'The id of the learning outcome'
       requires :task_definition_id  , type: Integer,  desc: 'The id of the task definition'
-      optional :task_id             , type: Integer,  desc: 'The id of the task'
+      optional :project_id          , type: Integer,  desc: 'The id of the project if this is a self reflection'
       requires :description         , type: String,   desc: 'The ILO''s description'
       requires :rating              , type: Integer,  desc: 'The rating for this link, indicating the strength of this alignment'
     end
     post '/units/:unit_id/learning_alignments' do
       unit = Unit.find(params[:unit_id])
 
-      if params[:task_id].nil? && ! authorise?(current_user, unit, :update)
+      # if there is no project -- then this is a unit LO link
+      # so need to check the user is authorised to update the unit... 
+      if params[:project_id].nil? && ! authorise?(current_user, unit, :update)
         error!({"error" => "You are not authorised to create task alignments in this unit."}, 403)
       end
 
@@ -126,13 +126,13 @@ module Api
                                           .permit(
                                             :task_definition_id,
                                             :learning_outcome_id,
-                                            :task_id,
                                             :description,
                                             :rating
                                           )
 
-      if ! params[:task_id].nil?
-        task = unit.tasks.find(params[:task_id])
+      if ! params[:project_id].nil?
+        project = unit.projects.find(params[:project_id])
+        task = project.task_for_task_definition(task_def)
 
         if ! authorise?(current_user, task, :make_submission)
           error!({"error" => "You are not authorised to create outcome alignments for this task."}, 403)
