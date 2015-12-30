@@ -1225,30 +1225,31 @@ class Unit < ActiveRecord::Base
     result = {}
 
     learning_outcomes.each do |ilo|
-    if data.nil?
-      lower_value = upper_value = median_value = min_value = max_value = 0
-    else
-      values = data.map { |e| e[ilo.id] }
-      values = values.sort
-
-      if values.length % 2 == 0
-        median_value = ((values[values.length / 2] + values[values.length/2 - 1]) / 2.0).round(1)
+      if data.nil?
+        lower_value = upper_value = median_value = min_value = max_value = 0
       else
-        median_value = values[values.length / 2]
-      end
+        values = data.map { |e| e[ilo.id] }
+        values = values.sort
 
-      lower_value = values[values.length * 3 / 10]
-      upper_value = values[values.length * 8 / 10]
-      min_value = values.first
-      max_value = values.last
-    end
-    result[ilo.id] = {
-        median: median_value,
-        lower: lower_value,
-        upper: upper_value,
-        min: min_value,
-        max: max_value 
-      }
+        if values.length % 2 == 0
+          median_value = ((values[values.length / 2] + values[values.length/2 - 1]) / 2.0).round(1)
+        else
+          median_value = values[values.length / 2]
+        end
+
+        lower_value = values[values.length * 3 / 10]
+        upper_value = values[values.length * 8 / 10]
+        min_value = values.first
+        max_value = values.last
+      end
+      
+      result[ilo.id] = {
+          median: median_value,
+          lower: lower_value,
+          upper: upper_value,
+          min: min_value,
+          max: max_value 
+        }
     end
 
     result
@@ -1263,6 +1264,8 @@ class Unit < ActiveRecord::Base
 
     data = student_ilo_progress_stats.values
 
+    return {} if data.nil?
+
     tutorials.each do |tute|
       result[tute.id] = _ilo_progress_summary(data[tute.id])
       if data[tute.id]
@@ -1271,13 +1274,20 @@ class Unit < ActiveRecord::Base
         result[tute.id][:students] = []
       end
     end
+
+    result['all'] = _ilo_progress_summary(data.reduce(:+))
+
     result
   end
 
   def ilo_progress_class_stats
     return {} if students.length < 10
 
-    data = student_ilo_progress_stats.values.reduce(:+)
+    temp = student_ilo_progress_stats.values
+
+    return {} if temp.nil?
+
+    data = temp.reduce(:+)
 
     _ilo_progress_summary(data)
   end
