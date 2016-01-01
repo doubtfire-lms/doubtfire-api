@@ -1086,18 +1086,21 @@ class Unit < ActiveRecord::Base
   end
 
   #
-  # Returns a map with min, max, lower, upper, and median task completion data.
-  # i.e. how many tasks students have completed
+  # Returns the basic data used in calculating the student task completion stats
   #
-  def student_task_completion_stats()
+  def _student_task_completion_data_base()
     data = student_tasks.
-      select("Count(tasks.id) as num, tasks.project_id").
-      where('task_status_id = :complete', complete: TaskStatus.complete.id).
-      group('tasks.project_id')
+      select('projects.tutorial_id as tutorial_id', 'projects.target_grade as target_grade', "tasks.project_id", "Count(tasks.id) as num").
+      where('task_status_id = :complete', complete: TaskStatus.complete.id).  
+      group('projects.tutorial_id','projects.target_grade','tasks.project_id').
+      order('projects.tutorial_id')
+    data.map { |r| { tutorial_id: r.tutorial_id, grade: r.target_grade, project: r.project_id, num: r.num} }
+  end
 
-    values = data.map { |r|  r.num }
+  def _calculate_task_completion_stats(data)
+    values = data.map { |r|  r[:num] }
 
-    if values && values.length > 10
+    if values && values.length > 4
       values.sort!
 
       if values.length % 2 == 0
@@ -1125,7 +1128,29 @@ class Unit < ActiveRecord::Base
         max: 0
       }
     end
+  end
 
+  #
+  # Returns a map with min, max, lower, upper, and median task completion data.
+  # i.e. how many tasks students have completed
+  #
+  def student_task_completion_stats()
+    data = _student_task_completion_data_base()
+
+    result = {}
+    result[:unit] = _calculate_task_completion_stats(data)
+    result[:tutorial] = {}
+    result[:grade] = {}
+
+    tutorials.each do |t|
+      result[:tutorial][t.id] = _calculate_task_completion_stats(data.select{|r| r[:tutorial_id] == t.id})
+    end
+
+    for i in 0..4 do
+      result[:grade][i] = _calculate_task_completion_stats(data.select{|r| r[:grade] == i})
+    end
+
+    result
   end
 
   #
