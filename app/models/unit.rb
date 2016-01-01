@@ -8,7 +8,7 @@ class Unit < ActiveRecord::Base
   include FileHelper
 
   def self.permissions
-    { 
+    {
       :Student  => [ :get_unit ],
       :Tutor    => [ :get_unit, :get_students, :enrol_student, :provide_feedback],
       :Convenor => [ :get_unit, :get_students, :enrol_student, :uploadCSV, :downloadCSV, :update, :employ_staff, :add_tutorial, :add_task_def, :provide_feedback, :change_project_enrolment ],
@@ -41,9 +41,9 @@ class Unit < ActiveRecord::Base
   has_many :group_sets, dependent: :destroy
 
   has_many :learning_outcome_task_links, through: :task_definitions
-  
+
   has_many :convenors, -> { joins(:role).where("roles.name = :role", role: 'Convenor') }, class_name: 'UnitRole'
-  has_many :staff, ->     { joins(:role).where("roles.name = :role_convenor or roles.name = :role_tutor", role_convenor: 'Convenor', role_tutor: 'Tutor') }, class_name: 'UnitRole' 
+  has_many :staff, ->     { joins(:role).where("roles.name = :role_convenor or roles.name = :role_tutor", role_convenor: 'Convenor', role_tutor: 'Tutor') }, class_name: 'UnitRole'
 
   scope :current,               ->{ current_for_date(Time.zone.now) }
   scope :current_for_date,      ->(date) { where("start_date <= ? AND end_date >= ?", date, date) }
@@ -99,7 +99,7 @@ class Unit < ActiveRecord::Base
   # Last date/time of scan
   #
   def last_plagarism_scan
-    if self[:last_plagarism_scan].nil? 
+    if self[:last_plagarism_scan].nil?
       DateTime.new(2000,1,1)
     else
       self[:last_plagarism_scan]
@@ -119,7 +119,7 @@ class Unit < ActiveRecord::Base
   end
 
   def active_projects
-    projects.where('enrolled = true') 
+    projects.where('enrolled = true')
   end
 
   # Adds a staff member for a role in a unit
@@ -185,7 +185,7 @@ class Unit < ActiveRecord::Base
     success = []
     errors = []
     ignored = []
-    
+
     CSV.foreach(file) do |row|
       # Make sure we're not looking at the header or an empty line
       next if row[0] =~ /(subject|unit)_code/
@@ -242,7 +242,7 @@ class Unit < ActiveRecord::Base
             end
           else
             # update tutorial
-            changes = ""          
+            changes = ""
 
             if user_project.tutorial != tutorial
               user_project.tutorial = tutorial
@@ -269,7 +269,7 @@ class Unit < ActiveRecord::Base
         errors << { row: row, message: e.message }
       end
     end
-    
+
     {
       success: success,
       ignored: ignored,
@@ -285,7 +285,7 @@ class Unit < ActiveRecord::Base
     success = []
     errors = []
     ignored = []
-    
+
     CSV.parse(file, {
         :headers => true,
         :header_converters => [:downcase, lambda { |hdr| hdr.strip unless hdr.nil?}],
@@ -353,7 +353,7 @@ class Unit < ActiveRecord::Base
       ignored: ignored,
       errors:  errors
     }
-  end 
+  end
 
   def export_users_to_csv
     CSV.generate do |row|
@@ -379,7 +379,7 @@ class Unit < ActiveRecord::Base
       errors: [],
       ignored: []
     }
-    
+
     CSV.parse(file, {
         :headers => true,
         :header_converters => [:downcase, lambda { |hdr| hdr.strip unless hdr.nil?}],
@@ -407,7 +407,7 @@ class Unit < ActiveRecord::Base
     success = []
     errors = []
     ignored = []
-    
+
     CSV.parse(file, {
         :headers => true,
         :header_converters => [:downcase, lambda { |hdr| hdr.strip unless hdr.nil?}],
@@ -439,7 +439,7 @@ class Unit < ActiveRecord::Base
           errors << { row: row, message: "Unable to locate task with abbreviation #{task_def_abbr}" }
           next
         end
-        
+
         rating = row['rating'].to_i
         description = row['description']
 
@@ -498,7 +498,7 @@ class Unit < ActiveRecord::Base
         :converters => [lambda{ |body| body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]
     }).each do |row|
       next if row[0] =~ /^(group_name)|(name)/ # Skip header
-      
+
       begin
         missing = missing_headers(row, ['group_name', 'username', 'tutorial'])
         if missing.count > 0
@@ -580,13 +580,13 @@ class Unit < ActiveRecord::Base
   #     add_tutorial(day, time, location, tutor_username, abbrev)
   #   end
   # end
-  
+
   def add_tutorial(day, time, location, tutor, abbrev)
     tutor_role = unit_roles.where("user_id=:user_id", user_id: tutor.id).first
     if tutor_role.nil? || tutor_role.role == Role.student
       return nil
     end
-    
+
     Tutorial.find_or_create_by( { unit_id: id, abbreviation: abbrev } ) do |tutorial|
       tutorial.meeting_day      = day
       tutorial.meeting_time     = time
@@ -603,7 +603,7 @@ class Unit < ActiveRecord::Base
     project_cache = Project.where(unit_id: id)
 
     CSV.parse(file, {
-        :headers => true, 
+        :headers => true,
         :header_converters => [:downcase, lambda { |hdr| hdr.strip.gsub(" ", "_").to_sym unless hdr.nil? }],
         :converters => [lambda{ |body| body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]
     }).each do |row|
@@ -668,7 +668,7 @@ class Unit < ActiveRecord::Base
       active_projects.each do | project |
         # Skip if no portfolio at this time...
         next if not project.portfolio_available
-        
+
         # Add file to zip in grade folder
         src_path = project.portfolio_path
         if project.main_tutor
@@ -708,7 +708,7 @@ class Unit < ActiveRecord::Base
       learning_outcomes.where("ilo_number > #{ilo.ilo_number} and ilo_number <= #{new_num}").each { |ilo| ilo.ilo_number -= 1; ilo.save}
     elsif (ilo.ilo_number > new_num)
       learning_outcomes.where("ilo_number < #{ilo.ilo_number} and ilo_number >= #{new_num}").each { |ilo| ilo.ilo_number += 1; ilo.save}
-    end 
+    end
     ilo.ilo_number = new_num
     ilo.save
   end
@@ -783,7 +783,7 @@ class Unit < ActiveRecord::Base
       # Get results
       url = td.plagiarism_report_url
       puts "Processing MOSS results #{url}"
-      
+
       warn_pct = td.plagiarism_warn_pct
       warn_pct = 50 if warn_pct.nil?
 
@@ -831,12 +831,12 @@ class Unit < ActiveRecord::Base
   def add_done_files_for_plagiarism_check_of(td, tmp_path, force, to_check)
     tasks = tasks_for_definition(td)
     tasks_with_files = tasks.select { |t| t.has_pdf }
-    
+
     if td.group_set
       # group task so only select one member of each group
       seen_groups = []
 
-      tasks_with_files = tasks_with_files.select do |t| 
+      tasks_with_files = tasks_with_files.select do |t|
         if t.group.nil?
           result = false
         else
@@ -998,16 +998,16 @@ class Unit < ActiveRecord::Base
       where('task_statuses.id IN (:ids)', ids: [ TaskStatus.ready_to_mark, TaskStatus.need_help, TaskStatus.discuss ]).
       where('(task_definitions.due_date IS NULL OR task_definitions.due_date > tasks.submission_date)').
       order('task_definition_id').
-      map { |t| 
-        { 
-          project_id: t.project_id, 
-          id: t.id, 
-          task_definition_id: t.task_definition_id, 
-          tutorial_id: t.tutorial_id, 
+      map { |t|
+        {
+          project_id: t.project_id,
+          id: t.id,
+          task_definition_id: t.task_definition_id,
+          tutorial_id: t.tutorial_id,
           status: TaskStatus.status_key_for_name(t.status_name),
           completion_date: t.completion_date,
           times_assessed: t.times_assessed
-        } 
+        }
       }
   end
 
@@ -1016,10 +1016,10 @@ class Unit < ActiveRecord::Base
   # Return stats on the number of students in each status for each task / tutorial
   #
   # Returns a map:
-  #   task_def_id => { 
+  #   task_def_id => {
   #     tutorial_id => [ { :status=> :not_submitted, :num=>1}, ... ],
   #     tutorial_id => [ { :status=> :not_submitted, :num=>1}, ... ], ...
-  #   }, 
+  #   },
   #   task_def_id => { ... }
   #
   def task_status_stats
@@ -1028,11 +1028,11 @@ class Unit < ActiveRecord::Base
       select('projects.tutorial_id as tutorial_id', 'task_definition_id', 'task_statuses.name as status_name', 'COUNT(tasks.id) as num_tasks').
       where('task_status_id > 1').
       group('projects.tutorial_id', 'tasks.task_definition_id', 'task_statuses.name').
-      map { |r| 
-        { 
-          tutorial_id: r.tutorial_id, 
-          task_definition_id: r.task_definition_id, 
-          status: TaskStatus.status_key_for_name(r.status_name), 
+      map { |r|
+        {
+          tutorial_id: r.tutorial_id,
+          task_definition_id: r.task_definition_id,
+          status: TaskStatus.status_key_for_name(r.status_name),
           num: r.num_tasks
         }
       }
@@ -1047,10 +1047,10 @@ class Unit < ActiveRecord::Base
         num = 0 unless num
 
         if num - count > 0
-          data << { 
-            tutorial_id: t.id, 
-            task_definition_id: td.id, 
-            status: :not_submitted, 
+          data << {
+            tutorial_id: t.id,
+            task_definition_id: td.id,
+            status: :not_submitted,
             num: num - count
           }
         end
@@ -1063,11 +1063,11 @@ class Unit < ActiveRecord::Base
       result[td.id] = {}
     end
 
-    data.each do |e| 
+    data.each do |e|
       if not result[e[:task_definition_id]].has_key? e[:tutorial_id]
         result[e[:task_definition_id] ] [e[:tutorial_id]] = []
       end
-      
+
       result[e[:task_definition_id]][e[:tutorial_id]] << { status: e[:status], num: e[:num] }
     end
 
@@ -1092,7 +1092,7 @@ class Unit < ActiveRecord::Base
   def student_task_completion_stats()
     data = student_tasks.
       select("Count(tasks.id) as num, tasks.project_id").
-      where('task_status_id = :complete', complete: TaskStatus.complete.id).  
+      where('task_status_id = :complete', complete: TaskStatus.complete.id).
       group('tasks.project_id')
 
     values = data.map { |r|  r.num }
@@ -1114,7 +1114,7 @@ class Unit < ActiveRecord::Base
         lower: lower_value,
         upper: upper_value,
         min: values.first,
-        max: values.last 
+        max: values.last
       }
     else
       {
@@ -1122,7 +1122,7 @@ class Unit < ActiveRecord::Base
         lower: 0,
         upper: 0,
         min: 0,
-        max: 0 
+        max: 0
       }
     end
 
@@ -1140,16 +1140,16 @@ class Unit < ActiveRecord::Base
       where("projects.started = TRUE AND learning_outcome_task_links.task_id is NULL").
       group('projects.tutorial_id, tasks.project_id, task_statuses.name, task_definitions.target_grade, learning_outcome_task_links.learning_outcome_id, learning_outcome_task_links.rating').
       order('projects.tutorial_id, tasks.project_id').
-      map { |r| 
+      map { |r|
         {
           project_id: r.project_id,
           tutorial_id: r.tutorial_id,
-          learning_outcome_id: r.learning_outcome_id, 
-          rating: r.rating, 
-          grade: r.target_grade, 
+          learning_outcome_id: r.learning_outcome_id,
+          rating: r.rating,
+          grade: r.target_grade,
           status: TaskStatus.status_key_for_name(r.status_name),
           num: r.num
-        } 
+        }
       }
 
     grade_weight = { 0 => 1, 1 => 2, 2 => 4, 3 => 8 }
@@ -1166,7 +1166,7 @@ class Unit < ActiveRecord::Base
     }
 
     result = {}
-    
+
     # order by tutorial and project...
     current = nil
     data.each do |e|
@@ -1186,7 +1186,7 @@ class Unit < ActiveRecord::Base
         # add the project to the tutorial
         current[:tutorial] << current[:project]
 
-        # reset the 
+        # reset the
         current[:project_id] = e[:project_id]
         current[:project] = {}
       end
@@ -1195,8 +1195,8 @@ class Unit < ActiveRecord::Base
       if current[:project].has_key? e[:learning_outcome_id]
         old_val = current[:project][e[:learning_outcome_id]]
       end
-      
-      current[:project][e[:learning_outcome_id]] = old_val + 
+
+      current[:project][e[:learning_outcome_id]] = old_val +
         e[:rating] * status_weight[e[:status]] * grade_weight[e[:grade]]
     end
 
@@ -1228,7 +1228,7 @@ class Unit < ActiveRecord::Base
       if data.nil?
         lower_value = upper_value = median_value = min_value = max_value = 0
       else
-        values = data.map { |e| e[ilo.id] }
+        values = data.map { |e| (e.has_key? ilo.id) ? e[ilo.id] : 0 }
         values = values.sort
 
         if values.length % 2 == 0
@@ -1242,13 +1242,13 @@ class Unit < ActiveRecord::Base
         min_value = values.first
         max_value = values.last
       end
-      
+
       result[ilo.id] = {
           median: median_value,
           lower: lower_value,
           upper: upper_value,
           min: min_value,
-          max: max_value 
+          max: max_value
         }
     end
 
