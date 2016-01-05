@@ -1146,7 +1146,7 @@ class Unit < ActiveRecord::Base
       result[:tutorial][t.id] = _calculate_task_completion_stats(data.select{|r| r[:tutorial_id] == t.id})
     end
 
-    for i in 0..4 do
+    for i in 0..3 do
       result[:grade][i] = _calculate_task_completion_stats(data.select{|r| r[:grade] == i})
     end
 
