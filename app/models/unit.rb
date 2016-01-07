@@ -1161,10 +1161,10 @@ class Unit < ActiveRecord::Base
     data = student_tasks.
       joins(task_definition: :learning_outcome_task_links).
       joins(:task_status).
-      select('projects.tutorial_id, tasks.project_id, task_statuses.name as status_name, task_definitions.target_grade, learning_outcome_task_links.learning_outcome_id, learning_outcome_task_links.rating, COUNT(tasks.id) as num').
+      select('projects.tutorial_id, projects.id as project_id, task_statuses.name as status_name, task_definitions.target_grade, learning_outcome_task_links.learning_outcome_id, learning_outcome_task_links.rating, COUNT(tasks.id) as num').
       where("projects.started = TRUE AND learning_outcome_task_links.task_id is NULL").
-      group('projects.tutorial_id, tasks.project_id, task_statuses.name, task_definitions.target_grade, learning_outcome_task_links.learning_outcome_id, learning_outcome_task_links.rating').
-      order('projects.tutorial_id, tasks.project_id').
+      group('projects.tutorial_id, projects.id, task_statuses.name, task_definitions.target_grade, learning_outcome_task_links.learning_outcome_id, learning_outcome_task_links.rating').
+      order('projects.tutorial_id, projects.id').
       map { |r|
         {
           project_id: r.project_id,
@@ -1206,14 +1206,18 @@ class Unit < ActiveRecord::Base
           result[current[:tutorial_id]] = current[:tutorial]
         end
 
-        current = {project_id: e[:project_id], tutorial_id: e[:tutorial_id], tutorial: [], project: {} }
+        current = {project_id: e[:project_id], tutorial_id: e[:tutorial_id], tutorial: [], project: {id: e[:project_id]} }
       elsif e[:project_id] != current[:project_id] # check change of project
         # add the project to the tutorial
         current[:tutorial] << current[:project]
 
+        # if current[:project_id] < 3 
+        #   puts current[:project]
+        # end
+
         # reset the
         current[:project_id] = e[:project_id]
-        current[:project] = {}
+        current[:project] = { id: e[:project_id] }
       end
 
       old_val = 0
@@ -1221,8 +1225,13 @@ class Unit < ActiveRecord::Base
         old_val = current[:project][e[:learning_outcome_id]]
       end
 
+      # if current[:project_id] < 3 
+      #   puts "#{current[:project_id]} --> #{e[:learning_outcome_id]} --> #{old_val} + #{
+      #   e[:rating] * status_weight[e[:status]] * grade_weight[e[:grade]]}"
+      # end
+
       current[:project][e[:learning_outcome_id]] = old_val +
-        e[:rating] * status_weight[e[:status]] * grade_weight[e[:grade]]
+        e[:rating] * status_weight[e[:status]] * grade_weight[e[:grade]] * e[:num]
     end
 
     # Add last project/tutorial to results
@@ -1232,6 +1241,7 @@ class Unit < ActiveRecord::Base
 
       # add the tutorial to the results
       result[current[:tutorial_id]] = current[:tutorial]
+      # puts "ADDED #{current[:tutorial_id]} = #{current[:tutorial]}" 
     end
 
     result.each do |tutorial_id_key, array_of_ilo_scores|
@@ -1287,20 +1297,20 @@ class Unit < ActiveRecord::Base
     result = {}
     return result if students.length < 10
 
-    data = student_ilo_progress_stats.values
+    data = student_ilo_progress_stats
 
     return {} if data.nil?
 
     tutorials.each do |tute|
       result[tute.id] = _ilo_progress_summary(data[tute.id])
-      if data[tute.id]
-        result[tute.id][:students] = data[tute.id]
-      else
-        result[tute.id][:students] = []
-      end
+      # if data[tute.id]
+      #   result[tute.id][:students] = data[tute.id]
+      # else
+      #   result[tute.id][:students] = []
+      # end
     end
 
-    result['all'] = _ilo_progress_summary(data.reduce(:+))
+    result['all'] = _ilo_progress_summary(data.values.reduce(:+))
 
     result
   end
