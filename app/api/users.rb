@@ -6,7 +6,7 @@ module Api
     helpers AuthHelpers
     helpers AuthorisationHelpers
     helpers MimeCheckHelpers
-    
+
     before do
       authenticated?
     end
@@ -57,6 +57,7 @@ module Api
         optional :receive_task_notifications, type: Boolean, desc: 'Allow user to be sent task notifications'
         optional :receive_portfolio_notifications, type: Boolean, desc: 'Allow user to be sent portfolio notifications'
         optional :receive_feedback_notifications, type: Boolean, desc: 'Allow user to be sent feedback notifications'
+        optional :opt_in_to_research, type: Boolean, desc: 'Allow user to opt in to research conducted by Doubtfire'
       end
     end
     put '/users/:id' do
@@ -65,7 +66,7 @@ module Api
       # can only modify if current_user.id is same as :id provided
       # (i.e., user wants to update their own data) or if updateUser token
       if change_self || (authorise? current_user, User, :updateUser)
-        
+
         user = User.find(params[:id])
 
         user_parameters = ActionController::Parameters.new(params)
@@ -77,7 +78,8 @@ module Api
                                               :nickname,
                                               :receive_task_notifications,
                                               :receive_portfolio_notifications,
-                                              :receive_feedback_notifications
+                                              :receive_feedback_notifications,
+                                              :opt_in_to_research
                                             )
 
         user.role = Role.student if user.role.nil?
@@ -104,7 +106,7 @@ module Api
             error!({"error" => "No such role name #{user_parameters[:role]}"}, 403)
           end
           action = new_role.id > old_role.id ? :promoteUser : :demoteUser
-          
+
           # current user not authorised to peform action with new role?
           if not authorise? current_user, User, action, User.get_change_role_perm_fn(), [ old_role.to_sym, new_role.to_sym ]
             error!({"error" => "Not authorised to #{action} user with id=#{params[:id]} to #{new_role.name}" }, 403)
@@ -116,13 +118,13 @@ module Api
         # Update changes made to user
         user.update!(user_parameters)
         user
-      
+
       else
         error!({"error" => "Cannot modify user with id=#{ params[:id]} - not authorised" }, 403)
-      end  
-      
+      end
+
     end
-    
+
     desc "Create user"
     params do
       group :user do
@@ -153,11 +155,11 @@ module Api
                                             :nickname,
                                             :password,
                                           )
-    
+
       # have to translate the system_role -> role
       user_parameters[:role] = params[:user][:system_role]
       user_parameters[:role] = params[:user][:system_role]
-        
+
       #
       # Give new user their new role
       #
@@ -175,11 +177,11 @@ module Api
 
       # update :role to actual Role object rather than String type
       user_parameters[:role] = new_role
-      
+
       user = User.create!(user_parameters)
       user
     end
-    
+
     desc "Upload CSV of users"
     params do
       requires :file, type: Rack::Multipart::UploadedFile, :desc => "CSV upload file."
@@ -191,17 +193,17 @@ module Api
       if not authorise? current_user, User, :uploadCSV
         error!({"error" => "Not authorised to upload CSV of users"}, 403)
       end
-      
+
       # Actually import...
       User.import_from_csv(current_user, params[:file][:tempfile])
     end
-    
+
     desc "Download CSV of all users"
     get '/csv/users' do
       if not authorise? current_user, User, :downloadCSV
         error!({"error" => "Not authorised to upload CSV of users"}, 403)
       end
-      
+
       content_type "application/octet-stream"
       header['Content-Disposition'] = "attachment; filename=doubtfire_users.csv "
       env['api.format'] = :binary

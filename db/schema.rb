@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20160112020534) do
+ActiveRecord::Schema.define(version: 20160112072747) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -327,6 +327,7 @@ ActiveRecord::Schema.define(version: 20160112020534) do
     t.boolean  "receive_task_notifications",      default: true
     t.boolean  "receive_feedback_notifications",  default: true
     t.boolean  "receive_portfolio_notifications", default: true
+    t.boolean  "opt_in_to_research"
   end
 
   add_index "users", ["authentication_token"], name: "index_users_on_authentication_token", unique: true, using: :btree
