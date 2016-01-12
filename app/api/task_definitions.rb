@@ -182,6 +182,54 @@ module Api
       task_def.destroy()
     end
 
+    desc "Upload the task sheet for a given task"
+    params do
+      requires :unit_id, type: Integer, :desc => "The related unit"
+      requires :task_def_id, type: Integer, :desc => "The related task definition"
+      requires :file, type: Rack::Multipart::UploadedFile, :desc => "The task sheet pdf"
+    end
+    post '/units/:unit_id/task_definitions/:task_def_id/task_sheet' do
+      unit = Unit.find(params[:unit_id])
+      
+      if not authorise? current_user, unit, :add_task_def
+        error!({"error" => "Not authorised to upload tasks of unit"}, 403)
+      end
+
+      task_def = unit.task_definitions.find(params[:task_def_id])
+
+      file = params[:file]
+
+      if not FileHelper.accept_file(file, 'task sheet', 'document')
+        error!({"error" => "'#{file.name}' is not a valid #{file.type} file"}, 403)
+      end
+      
+      # Actually import...
+      task_def.add_task_sheet(file[:tempfile].path)
+    end
+
+    desc "Upload the task resources for a given task"
+    params do
+      requires :unit_id, type: Integer, :desc => "The related unit"
+      requires :task_def_id, type: Integer, :desc => "The related task definition"
+      requires :file, type: Rack::Multipart::UploadedFile, :desc => "The task resources zip"
+    end
+    post '/units/:unit_id/task_definitions/:task_def_id/task_resources' do
+      unit = Unit.find(params[:unit_id])
+      
+      if not authorise? current_user, unit, :add_task_def
+        error!({"error" => "Not authorised to upload tasks of unit"}, 403)
+      end
+
+      task_def = unit.task_definitions.find(params[:task_def_id])
+
+      file_path = params[:file][:tempfile].path
+
+      check_mime_against_list! file_path, 'zip', ['application/zip', 'multipart/x-gzip', 'multipart/x-zip', 'application/x-gzip', 'application/octet-stream']
+      
+      # Actually import...
+      task_def.add_task_resources(file_path)
+    end
+
     desc "Upload a zip file containing the task pdfs for a given task"
     params do
       requires :unit_id, type: Integer, :desc => "The unit to upload tasks for"

@@ -183,4 +183,12 @@ class TaskDefinition < ActiveRecord::Base
   def has_task_pdf?
     File.exists? unit.path_to_task_pdf(self)
   end
+
+  def add_task_sheet (file)
+    FileUtils.mv file, unit.path_to_task_pdf(self)
+  end
+
+  def add_task_resources (file)
+    FileUtils.mv file, unit.path_to_task_resources(self)
+  end
 end
