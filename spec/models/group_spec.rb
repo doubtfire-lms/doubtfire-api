@@ -266,7 +266,7 @@ it "should know its members" do
     p2_t1 = p2.tasks.first
 
     expect(p1_t1.task_status).to eq(TaskStatus.working_on_it)
-    expect(p2_t1.task_status).to eq(TaskStatus.not_submitted)
+    expect(p2_t1.task_status).to eq(TaskStatus.not_started)
   end
 
   it "should trigger events even without a group submission" do

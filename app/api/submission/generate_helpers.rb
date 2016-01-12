@@ -44,7 +44,7 @@ module Api::Submission::GenerateHelpers
   end
 
   def mark_col
-    "need_help|ready_to_mark (rtm)|discuss (d)|fix_and_resubmit (fix)|fix_and_include (fixinc)|redo"
+    "need_help|ready_to_mark (rtm)|discuss (d)|demonstrate (de)|fix_and_resubmit (fix)|fix_and_include (fixinc)|redo|fail (f)"
   end
 
   #

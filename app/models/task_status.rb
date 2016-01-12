@@ -5,7 +5,7 @@ class TaskStatus < ActiveRecord::Base
   # Model associations
   has_many :tasks
 
-  scope :not_submitted,     -> { TaskStatus.find(1) }
+  scope :not_started,     -> { TaskStatus.find(1) }
   scope :complete,          -> { TaskStatus.find(2) }
   scope :need_help,         -> { TaskStatus.find(3) }
   scope :working_on_it,     -> { TaskStatus.find(4) }
@@ -14,6 +14,8 @@ class TaskStatus < ActiveRecord::Base
   scope :redo,              -> { TaskStatus.find(7) }
   scope :discuss,           -> { TaskStatus.find(8) }
   scope :ready_to_mark,     -> { TaskStatus.find(9) }
+  scope :demonstrate,       -> { TaskStatus.find(10) }
+  scope :fail,              -> { TaskStatus.find(11) }
 
   def self.status_for_name(name)
     case name.downcase.strip
@@ -30,14 +32,20 @@ class TaskStatus < ActiveRecord::Base
       when "discuss"          then TaskStatus.discuss
       when "ready to mark"    then TaskStatus.ready_to_mark
       when "ready_to_mark"    then TaskStatus.ready_to_mark
-      else                    TaskStatus.not_submitted
+      when "fail"             then TaskStatus.fail
+      when "f"                then TaskStatus.fail
+      else                    TaskStatus.not_started
     end
+  end
+
+  def self.staff_assigned_statuses
+    TaskStatus.where("id > 4")
   end
 
   def self.status_key_for_name(name)
     case name
       when "Complete"         then :complete
-      when "Not Submitted"    then :not_submitted
+      when "Not Started"      then :not_started
       when "Fix and Resubmit" then :fix_and_resubmit
       when "Fix and Include"  then :fix_and_include
       when "Redo"             then :redo
@@ -45,7 +53,9 @@ class TaskStatus < ActiveRecord::Base
       when "Working On It"    then :working_on_it
       when "Discuss"          then :discuss
       when "Ready to Mark"    then :ready_to_mark
-      else :not_submitted
+      when "Demonstrate"      then :demonstrate
+      when "Fail"             then :fail
+      else :not_started
     end
   end
 

@@ -41,10 +41,12 @@ class PortfolioEvidence
         puts "Failed to process folder_id = #{folder_id} #{e.message}"
         logger.error "Failed to process folder_id = #{folder_id} #{e.message}"
 
-        if errors[task.project].nil?
-          errors[task.project] = []
+        if task
+          if errors[task.project].nil?
+            errors[task.project] = []
+          end
+          errors[task.project] << task
         end
-        errors[task.project] << task
       end
     end
 

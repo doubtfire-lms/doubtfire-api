@@ -223,17 +223,17 @@ namespace :db do
     days = %w[Monday Tuesday Wednesday Thursday Friday]
 
     puts "----> Create TaskStatus"
-    TaskStatus.create(name:  "Not Submitted",     description:  "This task has not been submitted to marked by your tutor.")
-    TaskStatus.create(name:  "Complete",          description:  "This task has been signed off by your tutor.")
-    TaskStatus.create(name:  "Need Help",         description:  "Some help is required in order to complete this task.")
-    TaskStatus.create(name:  "Working On It",     description:  "This task is currently being worked on.")
-    TaskStatus.create(name:  "Fix and Resubmit",  description:  "This task must be resubmitted after fixing some issues.")
-    TaskStatus.create(name:  "Fix and Include",   description:  "This task must be fixed and included in your portfolio, but should not be resubmitted.")
-    TaskStatus.create(name:  "Redo",              description:  "This task needs to be redone.")
-    TaskStatus.create(name:  "Discuss",           description:  "Your work looks good, discuss it with your tutor to complete.")
-    TaskStatus.create(name:  "Ready to Mark",     description:  "This task is ready for the tutor to assess to provide feedback.")
-
-
+    TaskStatus.create(name:  "Not Started", description:  "You have not yet started this task.")
+    TaskStatus.create(name:  "Complete", description:  "This task has been signed off by your tutor.")
+    TaskStatus.create(name:  "Need Help", description:  "Some help is required in order to complete this task.")
+    TaskStatus.create(name:  "Working On It", description:  "This task is currently being worked on.")
+    TaskStatus.create(name:  "Fix and Resubmit", description:  "This task must be resubmitted after fixing some issues.")
+    TaskStatus.create(name:  "Fix and Include", description:  "This task must be fixed and included in your portfolio, but should not be resubmitted.")
+    TaskStatus.create(name:  "Redo", description:  "This task needs to be redone.")
+    TaskStatus.create(name:  "Discuss", description:  "Your work looks good, discuss it with your tutor to complete.")
+    TaskStatus.create(name:  "Ready to Mark", description:  "This task is ready for the tutor to assess to provide feedback.")
+    TaskStatus.create(name:  "Demonstrate", description:  "Your work looks good, demonstrate it to your tutor to complete.")
+    TaskStatus.create(name:  "Fail", description:  "You did not successfully demonstrate the required learning in this task.")
 
     user_cache = {}
 

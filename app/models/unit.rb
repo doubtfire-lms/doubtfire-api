@@ -995,7 +995,7 @@ class Unit < ActiveRecord::Base
     student_tasks.
       joins(:task_status).
       select("project_id", "tasks.id as id", "task_definition_id", "projects.tutorial_id as tutorial_id", "task_statuses.name as status_name", "completion_date", "times_assessed").
-      where('task_statuses.id IN (:ids)', ids: [ TaskStatus.ready_to_mark, TaskStatus.need_help, TaskStatus.discuss ]).
+      where('task_statuses.id IN (:ids)', ids: [ TaskStatus.ready_to_mark, TaskStatus.need_help, TaskStatus.discuss, TaskStatus.demonstrate ]).
       where('(task_definitions.due_date IS NULL OR task_definitions.due_date > tasks.submission_date)').
       order('task_definition_id').
       map { |t|
@@ -1017,8 +1017,8 @@ class Unit < ActiveRecord::Base
   #
   # Returns a map:
   #   task_def_id => {
-  #     tutorial_id => [ { :status=> :not_submitted, :num=>1}, ... ],
-  #     tutorial_id => [ { :status=> :not_submitted, :num=>1}, ... ], ...
+  #     tutorial_id => [ { :status=> :not_started, :num=>1}, ... ],
+  #     tutorial_id => [ { :status=> :not_started, :num=>1}, ... ], ...
   #   },
   #   task_def_id => { ... }
   #
@@ -1050,7 +1050,7 @@ class Unit < ActiveRecord::Base
           data << {
             tutorial_id: t.id,
             task_definition_id: td.id,
-            status: :not_submitted,
+            status: :not_started,
             num: num - count
           }
         end
@@ -1179,15 +1179,17 @@ class Unit < ActiveRecord::Base
 
     grade_weight = { 0 => 1, 1 => 2, 2 => 4, 3 => 8 }
     status_weight = {
-      ready_to_mark:      0.5,
-      not_submitted:      0.0,
+      not_started:        0.0,
+      fail:               0.0,
       working_on_it:      0.0,
       need_help:          0.0,
       redo:               0.1,
       fix_and_include:    0.1,
       fix_and_resubmit:   0.3,
-      discuss:            0.7,
-      complete:           0.8
+      ready_to_mark:      0.5,
+      discuss:            0.8,
+      demonstrate:        0.8,
+      complete:           1.0
     }
 
     result = {}

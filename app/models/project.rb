@@ -91,7 +91,7 @@ class Project < ActiveRecord::Base
   end
 
   #
-  # All "discuss" become complete
+  # All "discuss" and "demonstrate" become complete
   #
   def trigger_week_end( by_user )
     discuss_tasks.each{|task| task.trigger_transition("complete", by_user, true) }
@@ -493,9 +493,9 @@ class Project < ActiveRecord::Base
 
     due_tasks.each { |task|
       total += task.weight
-      if [ :complete, :fix_and_resubmit, :fix_and_include, :ready_to_mark, :discuss ].include? task.status
+      if [ :complete, :fix_and_resubmit, :fix_and_include, :fail, :ready_to_mark, :discuss, :demonstrate ].include? task.status
         result[:on_time] += task.weight
-      elsif [ :not_submitted ].include? task.status
+      elsif [ :not_started ].include? task.status
         result[:not_started] += task.weight
       elsif task.days_overdue <= 7
          result[:one_week_late] += task.weight 
@@ -511,7 +511,7 @@ class Project < ActiveRecord::Base
 
   def calc_task_stats ( reload_task = nil )
     result = {
-      not_submitted: 0.0,
+      not_started: 0.0,
       fix_and_include: 0.0,
       redo: 0.0,
       need_help: 0.0,
@@ -532,16 +532,22 @@ class Project < ActiveRecord::Base
     end
 
     total = total_task_weight
-    assigned_task_defs.each { |td| result[:not_submitted] += td.weighting }
-    assigned_tasks.each { |task| 
-      result[task.status] += task.task_definition.weighting 
-      result[:not_submitted] -= task.task_definition.weighting
+    assigned_task_defs.each { |td| result[:not_started] += td.weighting }
+    assigned_tasks.each { |task|
+      if task.discuss? #includes discuss and demonstrate
+        result[:discuss] += task.task_definition.weighting
+      elsif task.status == :fail
+        result[:fix_and_include] += task.task_definition.weighting 
+      else
+        result[task.status] += task.task_definition.weighting 
+      end
+      result[:not_started] -= task.task_definition.weighting
     }
     convert_hash_to_pct(result, total)
 
     p_stats = progress_stats
 
-    self.task_stats = "#{result[:not_submitted]}|#{result[:fix_and_include]}|#{result[:redo]}|#{result[:need_help]}|#{result[:working_on_it]}|#{result[:fix_and_resubmit]}|#{result[:ready_to_mark]}|#{result[:discuss]}|#{result[:complete]}|#{p_stats[:on_time]}|#{p_stats[:one_week_late]}|#{p_stats[:two_weeks_late]}|#{p_stats[:not_started]}"
+    self.task_stats = "#{result[:not_started]}|#{result[:fix_and_include]}|#{result[:redo]}|#{result[:need_help]}|#{result[:working_on_it]}|#{result[:fix_and_resubmit]}|#{result[:ready_to_mark]}|#{result[:discuss]}|#{result[:complete]}|#{p_stats[:on_time]}|#{p_stats[:one_week_late]}|#{p_stats[:two_weeks_late]}|#{p_stats[:not_started]}"
     # puts self.task_stats
     save
     self.task_stats
@@ -699,7 +705,7 @@ class Project < ActiveRecord::Base
     #
     # status_icons = {
     #   ready_to_mark: 'fa fa-thumbs-o-up',
-    #   not_submitted: 'fa fa-times',
+    #   not_started: 'fa fa-times',
     #   working_on_it: 'fa fa-bolt',
     #   need_help: 'fa fa-question-circle',
     #   redo: 'fa fa-refresh',

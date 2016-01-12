@@ -137,15 +137,19 @@ class Task < ActiveRecord::Base
   end
 
   def discuss?
-    status == :discuss
+    status == :discuss || status == :demonstrate
+  end
+
+  def fail?
+    status == :fail
   end
 
   def task_submission_closed?
-    complete? || discuss? || fix_and_include?
+    complete? || discuss? || fix_and_include? || fail?
   end
   
   def ok_to_submit?
-    status != :complete && status != :discuss
+    status != :complete && status != :discuss && status != :demonstrate
   end
 
   def ready_to_mark?
@@ -153,7 +157,7 @@ class Task < ActiveRecord::Base
   end
 
   def ready_or_complete?
-    status == :complete || status == :discuss || status == :ready_to_mark
+    status == :complete || status == :discuss || status == :demonstrate || status == :ready_to_mark
   end
 
   def fix_and_resubmit?
@@ -230,8 +234,7 @@ class Task < ActiveRecord::Base
     #
     return nil if [ :student, :group_member ].include?(role) && 
                   task_definition.restrict_status_updates && 
-                  self.task_status.in?([ TaskStatus.redo, TaskStatus.complete, TaskStatus.fix_and_resubmit, 
-                    TaskStatus.fix_and_include, TaskStatus.discuss ])
+                  self.task_status.in?(TaskStatus.staff_assigned_statuses)
     
     # Protect closed states from student changes
     return nil if [ :student, :group_member ].include?(role) && task_submission_closed? 
@@ -246,10 +249,10 @@ class Task < ActiveRecord::Base
     case trigger
       when "ready_to_mark", "rtm"
         submit
-      when "not_submitted"
-        engage TaskStatus.not_submitted
+      when "not_started"
+        engage TaskStatus.not_started
       when "not_ready_to_mark"
-        engage TaskStatus.not_submitted
+        engage TaskStatus.not_started
       when "need_help"
         engage TaskStatus.need_help
       when "working_on_it"
@@ -260,6 +263,8 @@ class Task < ActiveRecord::Base
         #
         if role == :tutor
           case trigger
+            when "fail", 'f'
+              assess TaskStatus.fail, by_user
             when "redo"
               assess TaskStatus.redo, by_user
             when "complete"
@@ -268,6 +273,8 @@ class Task < ActiveRecord::Base
               assess TaskStatus.fix_and_resubmit, by_user
             when "fix_and_include", "fixinc"
               assess TaskStatus.fix_and_include, by_user
+            when "demonstrate", "de"
+              assess TaskStatus.demonstrate, by_user
             when "discuss", "d"
               assess TaskStatus.discuss, by_user
           end
@@ -368,6 +375,7 @@ class Task < ActiveRecord::Base
     redo? ||
     fix_and_resubmit? ||
     fix_and_include? ||
+    fail? ||
     complete?
   end
 
@@ -617,19 +625,19 @@ class Task < ActiveRecord::Base
       end
 
       if output_filename.nil?
-        puts "error processing Task #{id}"
+        puts "Error processing Task #{id} -- missing file #{file_req}"
       else
         result << { path: output_filename, type: file_req['type'] }
-      end
 
-      if file_req['type'] == 'code' && magic.file(output_filename).include?('utf-16')
-        #convert utf-16 to utf-8
-        #TODO: avoid system call... if we can work out how to get ruby to save as UTF8
-        `iconv -f UTF-16 -t UTF-8 "#{output_filename}" > new`
-        FileUtils.mv('new', output_filename)
-      end
+        if file_req['type'] == 'code' && magic.file(output_filename).include?('utf-16')
+          #convert utf-16 to utf-8
+          #TODO: avoid system call... if we can work out how to get ruby to save as UTF8
+          `iconv -f UTF-16 -t UTF-8 "#{output_filename}" > new`
+          FileUtils.mv('new', output_filename)
+        end
 
-      idx += 1 # next file index
+        idx += 1 # next file index
+      end
     end
 
     result
@@ -728,7 +736,7 @@ class Task < ActiveRecord::Base
       self.file_uploaded_at = DateTime.now
 
       # This task is now ready to submit
-      if not (discuss? || complete? || fix_and_include?)
+      if not (discuss? || complete? || fix_and_include? || fail?)
         self.trigger_transition trigger, user, false, false # dont propagate -- already done
         
         plagiarism_match_links.each do | link |
