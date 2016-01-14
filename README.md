@@ -214,20 +214,23 @@ You should see all the Doubtfire endpoints here, which means the API is running.
 Install [rbenv](https://github.com/sstephenson/rbenv) and ruby-build:
 
 ```
-$ sudo apt-get update
-$ sudo apt-get install ruby-build rbenv
-```
-
-Add the following to your `.bashrc`:
-
-```
+$ cd ~
+$ git clone git://github.com/sstephenson/rbenv.git .rbenv
+$ echo 'export PATH="$HOME/.rbenv/bin:$PATH"' >> ~/.bashrc
 $ echo 'eval "$(rbenv init -)"' >> ~/.bashrc
+$ exec $SHELL
+$ 
+$ git clone git://github.com/sstephenson/ruby-build.git ~/.rbenv/plugins/ruby-build
+$ echo 'export PATH="$HOME/.rbenv/plugins/ruby-build/bin:$PATH"' >> ~/.bashrc
+$ exec $SHELL
 ```
 
-_or_, if you're using [Oh-My-Zsh](http://ohmyz.sh), add to your `.zshrc`:
+_note_: if you're using [Oh-My-Zsh](http://ohmyz.sh), add to your `.zshrc`:
 
 ```
+$ echo 'export PATH="$HOME/.rbenv/bin:$PATH"' >> ~/.zshrc
 $ echo 'eval "$(rbenv init -)"' >> ~/.zshrc
+$ echo 'export PATH="$HOME/.rbenv/plugins/ruby-build/bin:$PATH"' >> ~/.zshrc
 ```
 
 Now install Ruby v2.0.0-p353:
@@ -241,7 +244,7 @@ $ rbenv install 2.0.0-p353
 Install [Postgres](http://www.postgresql.org/download/linux/):
 
 ```
-$ sudo apt-get install postgresql postgresql-contrib
+$  sudo apt-get install postgresql postgresql-contrib libpq-dev
 ```
 
 Ensure `pg_config` is on the `PATH`, and then login to Postgres. You will need to locate where `apt-get` has installed your  Postgres binary and add this to your `PATH`. You can use `whereis psql` for that, but ensure you add the directory and not the executable to the path
@@ -252,6 +255,8 @@ $ whereis pqsl
 /usr/bin/psql
 
 $ export PATH=/usr/bin:$PATH
+$ sudo -u postgres createuser --superuser $USER
+$ sudo -u postgres createdb $USER
 $ psql
 ```
 
@@ -266,7 +271,7 @@ CREATE ROLE itig WITH CREATEDB PASSWORD 'd872$dh' LOGIN;
 Install imagemagick, libmagic, and pdftk:
 
 ```
-$ sudo apt-get install imagemagick --fix-missing
+$ sudo apt-get install imagemagick libmagickwand-dev
 $ sudo apt-get install libmagic-dev
 $ sudo apt-get install pdftk
 ```
