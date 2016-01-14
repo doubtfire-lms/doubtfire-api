@@ -70,7 +70,7 @@ class ProjectSerializer < ActiveModel::Serializer
   end
 
   def student_name
-  	"#{object.student.name} (#{object.student.nickname})"
+  	"#{object.student.name}#{object.student.nickname.nil? ? '(' << object.student.nickname << ')' : ''}"
   end
 
   def student_id
@@ -106,7 +106,7 @@ class GroupMemberProjectSerializer < ActiveModel::Serializer
   end
 
   def student_name
-    "#{object.student.name} (#{object.student.nickname})"
+    "#{object.student.name}#{object.student.nickname.nil? ? '(' << object.student.nickname << ')' : ''}"
   end
 
   def my_role_obj
