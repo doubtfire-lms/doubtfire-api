@@ -58,6 +58,7 @@ module Api
         optional :receive_portfolio_notifications, type: Boolean, desc: 'Allow user to be sent portfolio notifications'
         optional :receive_feedback_notifications, type: Boolean, desc: 'Allow user to be sent feedback notifications'
         optional :opt_in_to_research, type: Boolean, desc: 'Allow user to opt in to research conducted by Doubtfire'
+        optional :has_run_first_time_setup, type: Boolean, desc: 'Whether or not user has run first-time setup'
       end
     end
     put '/users/:id' do
@@ -79,7 +80,8 @@ module Api
                                               :receive_task_notifications,
                                               :receive_portfolio_notifications,
                                               :receive_feedback_notifications,
-                                              :opt_in_to_research
+                                              :opt_in_to_research,
+                                              :has_run_first_time_setup
                                             )
 
         user.role = Role.student if user.role.nil?
