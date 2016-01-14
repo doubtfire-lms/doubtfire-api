@@ -8,7 +8,7 @@ class RemoveUnitRoleForStudent < ActiveRecord::Migration
   	if Role.count > 0
   		puts "-- Migrating tutorial from student unit role to project"
 	  	UnitRole.where("role_id = :student", student: Role.student.id).each do |ur|
-	  		proj = ur.project
+	  		proj = Project.find(ur.project_id)
 	  		proj.user_id = ur.user_id
 	  		proj.tutorial_id = ur.tutorial_id
 	  		proj.save
