@@ -14,6 +14,8 @@ class TaskDefinition < ActiveRecord::Base
 	validates_uniqueness_of :name, scope:  :unit_id		# task definition names within a unit must be unique
   validates_uniqueness_of :abbreviation, scope:  :unit_id   # task definition names within a unit must be unique
 
+  validates :target_grade, inclusion: { in: 0..3, message: "%{value} is not a valid target grade" }
+
   def plagiarism_checks
     # Read the JSON string in upload_requirements and convert into ruby objects
     if self['plagiarism_checks']
@@ -121,17 +123,42 @@ class TaskDefinition < ActiveRecord::Base
     end
   end
 
+  def target_week
+    ((target_date - unit.start_date) / 1.weeks).floor
+  end
+
+  def target_day
+    Date::ABBR_DAYNAMES[target_date.wday]
+  end
+
+  def due_week
+    if due_date
+      ((due_date - unit.start_date) / 1.weeks).floor
+    else
+      ''
+    end
+  end
+
+  def due_day
+    if due_date
+      Date::ABBR_DAYNAMES[due_date.wday]
+    else
+      ''
+    end
+  end
+
   def to_csv_row
     TaskDefinition.csv_columns.
-      reject{|col| col == :target_date || col == :upload_requirements || col == :due_date }.
+      reject{|col| [:target_week, :target_day, :due_week, :due_day, :upload_requirements].include? col }.
       map{|column| attributes[column.to_s] } + 
-      [upload_requirements.to_json] +
-      [target_date.strftime('%d-%m-%Y')] + 
-      [ self['due_date'].nil? ? '' : due_date.strftime('%d-%m-%Y')]
+      [ upload_requirements.to_json ] +
+      [ target_week, target_day, due_week, due_day ]
+      # [target_date.strftime('%d-%m-%Y')] + 
+      # [ self['due_date'].nil? ? '' : due_date.strftime('%d-%m-%Y')]
   end
 
   def self.csv_columns
-    [:name, :abbreviation, :description, :weighting, :target_grade, :restrict_status_updates, :upload_requirements, :target_date, :due_date]
+    [:name, :abbreviation, :description, :weighting, :target_grade, :restrict_status_updates, :upload_requirements, :target_week, :target_day, :due_week, :due_day]
   end
 
   def self.task_def_for_csv_row(unit, row)
@@ -140,6 +167,9 @@ class TaskDefinition < ActiveRecord::Base
     new_task = false
     abbreviation = row[:abbreviation].strip
     name = row[:name].strip
+    target_date = unit.date_for_week_and_day row[:target_week].to_i, row[:target_day]
+    return [nil, false, "Unable to determine target date -- need week number, and day short text eg. 'Wed'"] if target_date.nil?
+    due_date = unit.date_for_week_and_day row[:due_week].to_i, row[:due_day]
 
     result = TaskDefinition.find_by(unit_id: unit.id, abbreviation: abbreviation)
 
@@ -159,9 +189,9 @@ class TaskDefinition < ActiveRecord::Base
     result.weighting                   = row[:weighting].to_i
     result.target_grade                = row[:target_grade].to_i
     result.restrict_status_updates     = ["Yes", "y", "Y", "yes", "true", "TRUE", "1"].include? row[:restrict_status_updates]
-    result.target_date                 = CsvHelper.csv_date_to_date(row[:target_date])
+    result.target_date                 = target_date
     result.upload_requirements         = row[:upload_requirements]
-    result.due_date                    = CsvHelper.csv_date_to_date(row[:due_date])
+    result.due_date                    = due_date
 
     if result.valid?
       begin

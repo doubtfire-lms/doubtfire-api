@@ -595,12 +595,19 @@ class Unit < ActiveRecord::Base
     end
   end
 
+  def date_for_week_and_day(week, day)
+    return nil if week.nil? || day.nil?
+    dayNum = Date::ABBR_DAYNAMES.index day.titlecase
+    return nil if dayNum.nil?
+    startDayNum = start_date.wday
+
+    start_date + week.weeks + (dayNum - startDayNum).days
+  end
+
   def import_tasks_from_csv(file)
     success = []
     errors = []
     ignored = []
-
-    project_cache = Project.where(unit_id: id)
 
     CSV.parse(file, {
         :headers => true,
