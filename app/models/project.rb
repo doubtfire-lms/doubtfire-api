@@ -868,8 +868,7 @@ class Project < ActiveRecord::Base
   end
 
   def task_for_task_definition(td)
-
-    result = tasks.where(task_definition_id: td).first
+    result = tasks.where(task_definition: td).first
     if result.nil?
       result = Task.create(
         task_definition_id: td.id,
