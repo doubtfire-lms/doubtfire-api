@@ -32,43 +32,143 @@ namespace :db do
   end
 
   desc "Mark off some of the due tasks"
-  task simulate_signoff: :environment do
-
+  task simulate_signoff: :environment do    
     Unit.all.each do |unit|
-      due_tasks = unit.task_definitions.where("target_date < :now", now: Date.current)
+      current_week = ((Time.zone.now - unit.start_date) / 1.weeks).floor
 
       unit.students.each do |proj|
+        #
+        # Get the student project
+        #
         p = Project.find(proj.id)
+        p.tasks.destroy_all
+
+        # Determine who is assessing their work...
+        tutor = p.main_tutor
+
         p.target_grade = rand(0..3)
+
+        case rand(1..100)
+        when 0..5
+          kept_up_to_week = current_week + rand(1..4)
+          p.target_grade = rand(2..3)
+        when 6..10
+          kept_up_to_week = current_week + 1
+          p.target_grade = rand(1..3)
+        when 11..40
+          kept_up_to_week = current_week
+        when 41..60
+          kept_up_to_week = current_week - 1
+          kept_up_to_week = 1 unless kept_up_to_week > 0
+        when 61..70
+          kept_up_to_week = current_week - rand(1..4)
+          kept_up_to_week = 1 unless kept_up_to_week > 0
+        when 71..80
+          kept_up_to_week = current_week - rand(3..10)
+          kept_up_to_week = 1 unless kept_up_to_week > 0
+        when 81..90
+          kept_up_to_week = current_week - rand(3..10)
+          kept_up_to_week = 0 unless kept_up_to_week > 0
+        else
+          kept_up_to_week = 0
+          p.target_grade = 0
+        end
+
         p.save
 
-        tutor = p.main_tutor
-        due_tasks.each do |task_def|
-          task = p.task_for_task_definition(task_def)
+        kept_up_to_date = unit.date_for_week_and_day(kept_up_to_week, 'Fri')
 
+        assigned_task_defs = p.assigned_task_defs.where("target_date <= :up_to_date", up_to_date: kept_up_to_date)
+
+        time_to_complete_task = (kept_up_to_date - (unit.start_date + 1.weeks)) / assigned_task_defs.count
+
+        i = 0
+        assigned_task_defs.order("target_date").each do |at|
+          task = p.task_for_task_definition(at) 
+          # if its more than three week past kept up to date...
+          if kept_up_to_date >= task.target_date + 2.weeks
+            complete_date = unit.start_date + i * time_to_complete_task + rand(7..14).days
+            if complete_date < unit.start_date + 1.weeks
+              complete_date = unit.start_date + 1.weeks
+            elsif complete_date > Time.zone.now
+              complete_date = Time.zone.now
+            end
+            task.assess TaskStatus.complete, tutor, complete_date
+          elsif kept_up_to_date >= task.target_date + 1.week
+            complete_date = unit.start_date + i * time_to_complete_task + rand(7..14).days
+            if complete_date < unit.start_date + 1.weeks
+              complete_date = unit.start_date + 1.weeks
+            elsif complete_date > Time.zone.now
+              complete_date = Time.zone.now
+            end
+
+            # 1 to 3
+            case rand(1..100)
+            when 0..50
+              task.assess TaskStatus.complete, tutor, complete_date
+            when 51..75
+              task.assess TaskStatus.discuss, tutor, complete_date
+            when 76..90
+              task.assess TaskStatus.demonstrate, tutor, complete_date
+            when 91..95
+              task.assess TaskStatus.fix_and_resubmit, tutor, complete_date
+            when 96..97
+              task.assess TaskStatus.working_on_it, tutor, complete_date
+            when 97
+              task.assess TaskStatus.fix_and_include, tutor, complete_date
+            when 98..99
+              task.assess TaskStatus.redo, tutor, complete_date
+            else
+              task.submit complete_date
+            end
+          else
+            complete_date = unit.start_date + i * time_to_complete_task + rand(7..10).days
+            if complete_date < unit.start_date + 1.weeks
+              complete_date = unit.start_date + 1.weeks
+            elsif complete_date > Time.zone.now
+              complete_date = Time.zone.now
+            end
+
+            # 1 to 3
+            case rand(1..100)
+            when 0..3
+              task.assess TaskStatus.complete, tutor, complete_date
+            when 4..60
+              task.submit complete_date
+            when 61..70
+              task.assess TaskStatus.discuss, tutor, complete_date
+            when 71..80
+              task.assess TaskStatus.demonstrate, tutor, complete_date
+            when 81..90
+              task.assess TaskStatus.fix_and_resubmit, tutor, complete_date
+            when 91..98
+              task.assess TaskStatus.working_on_it, tutor, complete_date
+            when 99
+              task.assess TaskStatus.redo, tutor, complete_date
+            else
+              task.submit complete_date
+            end
+          end
+
+          i += 1
+        end
+
+        next_assigned_tasks = p.assigned_tasks.where("target_date > :up_to_date AND target_date <= :next_week", up_to_date: kept_up_to_date, next_week: kept_up_to_date + 1.weeks)
+
+        next_assigned_tasks.each do |at|
+          task = p.task_for_task_definition(at) 
+          # 1 to 3
           case rand(1..100)
-          when 0..10
-            task.assess TaskStatus.complete, tutor, task_def.target_date
-          when 11..20
-            task.assess TaskStatus.complete, tutor, task_def.target_date + 1.weeks
-          when 21..30
-            task.assess TaskStatus.complete, tutor, task_def.target_date + 3.weeks
-          when 31..40
-            task.assess TaskStatus.discuss, tutor, task_def.target_date
-          when 41..60
-            task.assess TaskStatus.fix_and_resubmit, tutor, task_def.target_date
-          when 61..70
-            task.assess TaskStatus.working_on_it, tutor, task_def.target_date
-          when 71..80
-            task.submit task_def.target_date
-          when 81..85
-            task.assess TaskStatus.redo, tutor, task_def.target_date
-          when 86..90
-            task.assess TaskStatus.fix_and_include, tutor, task_def.target_date
+          when 0..60
+            task.assess TaskStatus.working_on_it, tutor, Time.zone.now
+          when 60..75
+            task.assess TaskStatus.need_help, tutor, Time.zone.now
           end
         end
 
         p.calc_task_stats
+        # puts p.assigned_tasks.map { |e| "#{e.task_definition.abbreviation} #{e.completion_date}"  }
+        p.save
       end
     end
   end
@@ -305,8 +405,8 @@ namespace :db do
         code: unit_details[:code],
         name: unit_details[:name],
         description: Populator.words(10..15),
-        start_date: Date.current  - 6.weeks,
-        end_date: 13.weeks.since(Date.current - 6.weeks)
+        start_date: Time.zone.now  - 6.weeks,
+        end_date: 13.weeks.since(Time.zone.now - 6.weeks)
       )
 
       puts "--------> #{unit_details[:num_tasks]} tasks"

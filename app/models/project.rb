@@ -161,11 +161,11 @@ class Project < ActiveRecord::Base
   end
 
   def assigned_tasks
-    tasks.select{|task| task.task_definition.target_grade <= target_grade }
+    tasks.joins(:task_definition).where("task_definitions.target_grade <= :target", target: target_grade )
   end
 
   def portfolio_tasks
-    tasks.joins(:task_definition).order("task_definitions.target_date, task_definitions.abbreviation").select{|task| task.include_in_portfolio && task.has_pdf }
+    tasks.joins(:task_definition).order("task_definitions.target_date, task_definitions.abbreviation").select{ |task| task.include_in_portfolio && task.has_pdf }
   end
 
   def progress
@@ -572,7 +572,7 @@ class Project < ActiveRecord::Base
   # All tasks currently due
   #
   def due_tasks
-    assigned_tasks.select { |task| task.due_date < reference_date }
+    assigned_tasks.select { |task| task.target_date < reference_date }
   end
 
   def overdue_tasks
@@ -868,7 +868,8 @@ class Project < ActiveRecord::Base
   end
 
   def task_for_task_definition(td)
-    result = tasks.where(task_definition: td).first
+
+    result = tasks.where(task_definition_id: td).first
     if result.nil?
       result = Task.create(
         task_definition_id: td.id,

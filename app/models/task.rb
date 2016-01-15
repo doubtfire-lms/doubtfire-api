@@ -129,6 +129,10 @@ class Task < ActiveRecord::Base
   end
 
   def due_date
+    task_definition.due_date
+  end
+
+  def target_date
     task_definition.target_date
   end
 
