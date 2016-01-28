@@ -23,7 +23,7 @@ class Project < ActiveRecord::Base
   validate :must_be_in_group_tutorials
 
   def self.permissions
-    { 
+    {
       student: [ :get, :change_tutorial, :make_submission, :get_submission ],
       tutor: [ :get, :trigger_week_end, :change_tutorial, :make_submission, :get_submission],
       nil => []
@@ -32,7 +32,7 @@ class Project < ActiveRecord::Base
 
   def role_for(user)
     return user_role(user)
-  end  
+  end
 
   scope :with_progress, lambda {|progress_types|
     where(progress: progress_types) unless progress_types.blank?
@@ -58,7 +58,7 @@ class Project < ActiveRecord::Base
   # Check to see if the student has a valid tutorial
   #
   def must_be_in_group_tutorials
-    groups.each { |g| 
+    groups.each { |g|
       if g.limit_members_to_tutorial?
         if tutorial != g.tutorial
           if g.group_set.allow_students_to_manage_groups
@@ -108,7 +108,7 @@ class Project < ActiveRecord::Base
 
   def main_tutor
     if tutorial
-      tutorial.tutor 
+      tutorial.tutor
     else
       main_convenor
     end
@@ -304,34 +304,34 @@ class Project < ActiveRecord::Base
     # Iterate over the dates
     dates.each { |date|
       # get the target values - those from the task definitions
-      target_val = [ date.to_datetime.to_i, 
+      target_val = [ date.to_datetime.to_i,
           target_tasks.select{|task_def| task_def.target_date > date}.map{|task_def| task_def.weighting.to_f}.inject(:+)
         ]
       # get the done values - those done up to today, or the end of the unit
-      done_val = [ date.to_datetime.to_i, 
-          done_tasks.select{|task| (not task.completion_date.nil?) && task.completion_date <= date}.map{|task| task.task_definition.weighting.to_f}.inject(:+) 
+      done_val = [ date.to_datetime.to_i,
+          done_tasks.select{|task| (not task.completion_date.nil?) && task.completion_date <= date}.map{|task| task.task_definition.weighting.to_f}.inject(:+)
         ]
       # get the completed values - those signed off
-      complete_val = [ date.to_datetime.to_i, 
-          completed_tasks.select{|task| task.completion_date <= date}.map{|task| task.task_definition.weighting.to_f}.inject(:+) 
+      complete_val = [ date.to_datetime.to_i,
+          completed_tasks.select{|task| task.completion_date <= date}.map{|task| task.task_definition.weighting.to_f}.inject(:+)
         ]
       # projected value is based on amount done
       projected_val = [ date.to_datetime.to_i, projected_remaining / total ]
 
       # add one week's worth of completion data
       projected_remaining -= completion_rate
-      
+
       # if target value then its the %remaining only
       if target_val[1].nil?     then  target_val[1] = 0     else target_val[1] /= total end
       # if no done value then value is 100%, otherwise remaining is the total - %done
       if done_val[1].nil?       then  done_val[1] = 1       else done_val[1] = (total - done_val[1]) / total end
       if complete_val[1].nil?   then  complete_val[1] = 1   else complete_val[1] = (total - complete_val[1]) / total end
-      
+
       # add target, done and projected if appropriate
       if add_target then target_task_results[:values].push target_val end
       if add_done
-        done_task_results[:values].push done_val 
-        complete_task_results[:values].push complete_val 
+        done_task_results[:values].push done_val
+        complete_task_results[:values].push complete_val
       end
       if add_projected then projected_results[:values].push projected_val end
 
@@ -341,8 +341,8 @@ class Project < ActiveRecord::Base
       if add_done && date > today then add_done = false end
       # stop adding projected values once projected is complete
       if add_projected && projected_val[1] <= 0 then add_projected = false end
-    }    
-    
+    }
+
     result.push(target_task_results)
     result.push(projected_results)
     result.push(done_task_results)
@@ -460,24 +460,24 @@ class Project < ActiveRecord::Base
 
   def convert_hash_to_pct(hash, total)
     hash.each { |key, value| if hash[key] < 0.01 then hash[key] = 0.0 else hash[key] = (value / total).signif(2) end }
-    
+
     total = 0.0
     hash.each { |key, value| total += value }
 
     if total != 1.0
       dif = 1.0 - total
-      hash.each { |key, value| 
+      hash.each { |key, value|
         if value > 0.0
-          hash[key] = (hash[key] + dif).signif(2) 
+          hash[key] = (hash[key] + dif).signif(2)
           break
-        end 
+        end
       }
     end
   end
 
   #
   # Return stats on task progress:
-  # - % On Time 
+  # - % On Time
   # - % 1 week late
   # - % 2+ weeks late
   # - % late and not started
@@ -498,14 +498,14 @@ class Project < ActiveRecord::Base
       elsif [ :not_started ].include? task.status
         result[:not_started] += task.weight
       elsif task.days_overdue <= 7
-         result[:one_week_late] += task.weight 
+         result[:one_week_late] += task.weight
       else
         result[:two_weeks_late] += task.weight
       end
     }
 
     convert_hash_to_pct(result, total)
-    
+
     result
   end
 
@@ -523,11 +523,11 @@ class Project < ActiveRecord::Base
     }
 
     if reload_task
-      assigned_tasks.each { |task| 
+      assigned_tasks.each { |task|
         if reload_task.id == task.id
           task.reload
         end
-        # puts "** #{task.id}, #{task.task_status.status_key}  #{self.persisted?}" 
+        # puts "** #{task.id}, #{task.task_status.status_key}  #{self.persisted?}"
       }
     end
 
@@ -537,9 +537,9 @@ class Project < ActiveRecord::Base
       if task.discuss? #includes discuss and demonstrate
         result[:discuss] += task.task_definition.weighting
       elsif task.status == :fail
-        result[:fix_and_include] += task.task_definition.weighting 
+        result[:fix_and_include] += task.task_definition.weighting
       else
-        result[task.status] += task.task_definition.weighting 
+        result[task.status] += task.task_definition.weighting
       end
       result[:not_started] -= task.task_definition.weighting
     }
@@ -618,7 +618,7 @@ class Project < ActiveRecord::Base
   def move_to_portfolio(file, name, kind)
     # get path to portfolio dir
     portfolio_dir = FileHelper.student_portfolio_dir(self)
-    
+
     # get path to tmp folder where file parts will be stored
     portfolio_tmp_dir = File.join(portfolio_dir, "tmp")
     FileUtils.mkdir_p(portfolio_tmp_dir)
@@ -636,7 +636,7 @@ class Project < ActiveRecord::Base
       files = Dir.glob("*")
       idx = files.map { |a_file| a_file.split("-").first.to_i }.max
       if idx.nil? || idx < 1
-        idx = 1 
+        idx = 1
       else
         idx += 1
       end
@@ -651,21 +651,21 @@ class Project < ActiveRecord::Base
   def portfolio_files()
     # get path to portfolio dir
     portfolio_dir = FileHelper.student_portfolio_dir(self, false)
-    
+
     # get path to tmp folder where file parts will be stored
     portfolio_tmp_dir = File.join(portfolio_dir, "tmp")
     return [] unless Dir.exists? portfolio_tmp_dir
 
     result = []
-    
+
     Dir.chdir(portfolio_tmp_dir)
     files = Dir.glob("*").select { | f | (f =~ /^\d{3}\.(cover|document|code|image)/) == 0 }
-    files.each { | file | 
+    files.each { | file |
       parts = file.split(".");
       idx = parts[0].to_i
       kind = parts[1]
       name = parts.drop(2).join(".")
-      result << { kind: kind, name: name, idx: idx }  
+      result << { kind: kind, name: name, idx: idx }
     }
 
     result
@@ -675,14 +675,14 @@ class Project < ActiveRecord::Base
   def remove_portfolio_file(idx, kind, name)
     # get path to portfolio dir
     portfolio_dir = FileHelper.student_portfolio_dir(self, false)
-    
+
     # get path to tmp folder where file parts will be stored
     portfolio_tmp_dir = File.join(portfolio_dir, "tmp")
     return unless Dir.exists? portfolio_tmp_dir
 
     # the file is in the students portfolio tmp dir
     rm_file = File.join(
-        portfolio_tmp_dir, 
+        portfolio_tmp_dir,
         FileHelper.sanitized_filename("#{idx.to_s.rjust(3, '0')}.#{kind}.#{name}")
       )
 
@@ -724,7 +724,7 @@ class Project < ActiveRecord::Base
     <table class='table table-striped'>
     <thead><th>Task</th><th>Status</th><th></th><th>Included</th></thead>
     <tbody>\n"
-    
+
     ordered_tasks = tasks.joins(:task_definition).order("task_definitions.target_date, task_definitions.abbreviation").select{|task| task.task_definition.target_grade <= target_grade }
 
     ordered_tasks.each do | task |
@@ -737,11 +737,11 @@ class Project < ActiveRecord::Base
 
     coverpage_body << "</tbody></table>"
     coverpage_body << "</body></html>"
-    
+
     cover_filename = File.join(dest_dir, "task.cover.html")
 
     logger.debug("generating cover page #{cover_filename}")
-    
+
     #
     # Create cover page for the submitted file (<taskid>/file0.cover.html etc.)
     #
@@ -803,7 +803,7 @@ class Project < ActiveRecord::Base
     end
     task_pdfs = []
     # add in tasks
-    portfolio_tasks.each { | task | 
+    portfolio_tasks.each { | task |
         task_pdfs << task.portfolio_evidence
       }
     pdf_paths.insert(1, *task_pdfs)
@@ -875,6 +875,7 @@ class Project < ActiveRecord::Base
         project_id: id,
         task_status_id: 1
       )
+      tasks.push result
     end
     result
   end
