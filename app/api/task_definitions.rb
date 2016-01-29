@@ -22,6 +22,7 @@ module Api
         requires :weighting,            type: Integer,  :desc => "The weighting of this task"
         requires :target_grade,         type: Integer,  :desc => "Minimum grade for task"
         optional :group_set_id,         type: Integer,  :desc => "Related group set"
+        requires :start_date,           type: Date,     :desc => "The date when the task should be started"
         requires :target_date,          type: Date,     :desc => "The date when the task is due"
         optional :due_date,             type: Date,     :desc => "The deadline date"
         requires :abbreviation,         type: String,   :desc => "The abbreviation of the task"
@@ -47,6 +48,7 @@ module Api
                                                   :description,        
                                                   :weighting,          
                                                   :target_grade,
+                                                  :start_date,
                                                   :target_date,
                                                   :due_date,        
                                                   :abbreviation,
@@ -82,6 +84,7 @@ module Api
         optional :weighting,            type: Integer,  :desc => "The weighting of this task"
         optional :target_grade,         type: Integer,  :desc => "Target grade for task"
         optional :group_set_id,         type: Integer,  :desc => "Related group set"
+        optional :start_date,           type: Date,     :desc => "The date when the task should be started"
         optional :target_date,          type: Date,     :desc => "The date when the task is due"
         optional :due_date,             type: Date,     :desc => "The deadline date"
         optional :abbreviation,         type: String,   :desc => "The abbreviation of the task"
@@ -106,6 +109,7 @@ module Api
                                                   :description,        
                                                   :weighting,          
                                                   :target_grade,
+                                                  :start_date,
                                                   :target_date, 
                                                   :due_date,       
                                                   :abbreviation,
