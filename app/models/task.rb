@@ -140,8 +140,16 @@ class Task < ActiveRecord::Base
     status == :complete
   end
 
-  def discuss?
+  def discuss_or_demonstrate?
     status == :discuss || status == :demonstrate
+  end
+
+  def discuss?
+    status == :discuss
+  end
+
+  def demonstrate?
+    status == :demonstrate
   end
 
   def fail?
@@ -149,7 +157,7 @@ class Task < ActiveRecord::Base
   end
 
   def task_submission_closed?
-    complete? || discuss? || fix_and_include? || fail?
+    complete? || discuss_or_demonstrate? || fix_and_include? || fail?
   end
   
   def ok_to_submit?
@@ -740,7 +748,7 @@ class Task < ActiveRecord::Base
       self.file_uploaded_at = DateTime.now
 
       # This task is now ready to submit
-      if not (discuss? || complete? || fix_and_include? || fail?)
+      if not (discuss_or_demonstrate? || complete? || fix_and_include? || fail?)
         self.trigger_transition trigger, user, false, false # dont propagate -- already done
         
         plagiarism_match_links.each do | link |

@@ -516,6 +516,7 @@ class Project < ActiveRecord::Base
 
   def calc_task_stats ( reload_task = nil )
     result = {
+      fail: 0.0,
       not_started: 0.0,
       fix_and_include: 0.0,
       redo: 0.0,
@@ -524,6 +525,7 @@ class Project < ActiveRecord::Base
       fix_and_resubmit: 0.0,
       ready_to_mark: 0.0,
       discuss: 0.0,
+      demonstrate: 0.0,
       complete: 0.0
     }
 
@@ -539,20 +541,14 @@ class Project < ActiveRecord::Base
     total = total_task_weight
     assigned_task_defs.each { |td| result[:not_started] += td.weighting }
     assigned_tasks.each { |task|
-      if task.discuss? #includes discuss and demonstrate
-        result[:discuss] += task.task_definition.weighting
-      elsif task.status == :fail
-        result[:fix_and_include] += task.task_definition.weighting
-      else
-        result[task.status] += task.task_definition.weighting
-      end
+      result[task.status] += task.task_definition.weighting
       result[:not_started] -= task.task_definition.weighting
     }
     convert_hash_to_pct(result, total)
 
     p_stats = progress_stats
 
-    self.task_stats = "#{result[:not_started]}|#{result[:fix_and_include]}|#{result[:redo]}|#{result[:need_help]}|#{result[:working_on_it]}|#{result[:fix_and_resubmit]}|#{result[:ready_to_mark]}|#{result[:discuss]}|#{result[:complete]}|#{p_stats[:on_time]}|#{p_stats[:one_week_late]}|#{p_stats[:two_weeks_late]}|#{p_stats[:not_started]}"
+    self.task_stats = "#{result[:fail]}|#{result[:not_started]}|#{result[:fix_and_include]}|#{result[:redo]}|#{result[:need_help]}|#{result[:working_on_it]}|#{result[:fix_and_resubmit]}|#{result[:ready_to_mark]}|#{result[:discuss]}|#{result[:demonstrate]}|#{result[:complete]}|#{p_stats[:on_time]}|#{p_stats[:one_week_late]}|#{p_stats[:two_weeks_late]}|#{p_stats[:not_started]}"
     # puts self.task_stats
     save
     self.task_stats
