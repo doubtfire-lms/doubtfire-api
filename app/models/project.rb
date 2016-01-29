@@ -24,8 +24,8 @@ class Project < ActiveRecord::Base
 
   def self.permissions
     {
-      student: [ :get, :change_tutorial, :make_submission, :get_submission ],
-      tutor: [ :get, :trigger_week_end, :change_tutorial, :make_submission, :get_submission],
+      student: [ :get, :change_tutorial, :make_submission, :get_submission, :change ],
+      tutor: [ :get, :trigger_week_end, :change_tutorial, :make_submission, :get_submission, :change],
       nil => []
     }
   end
@@ -182,6 +182,11 @@ class Project < ActiveRecord::Base
 
   def status=(value)
     self[:status] = value.to_s
+  end
+
+  def target_grade=(value)
+    self[:target_grade] = value
+    calc_task_stats
   end
 
   def calculate_progress
@@ -875,6 +880,7 @@ class Project < ActiveRecord::Base
         project_id: id,
         task_status_id: 1
       )
+      result.save
       tasks.push result
     end
     result

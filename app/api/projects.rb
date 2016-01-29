@@ -91,9 +91,17 @@ module Api
         project.enrolled = params[:enrolled]
         project.save
       elsif not params[:target_grade].nil?
+        if not authorise? current_user, project, :change
+          error!({"error" => "You do not have permissions to change Project with id=#{params[:id]}" }, 403)
+        end
+
         project.target_grade = params[:target_grade]
         project.save
       elsif not params[:compile_portfolio].nil?
+        if not authorise? current_user, project, :change
+          error!({"error" => "You do not have permissions to change Project with id=#{params[:id]}" }, 403)
+        end
+        
         project.compile_portfolio = params[:compile_portfolio]
         project.save
       end
