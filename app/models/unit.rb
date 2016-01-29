@@ -32,7 +32,7 @@ class Unit < ActiveRecord::Base
 
   # Model associations.
   # When a Unit is destroyed, any TaskDefinitions, Tutorials, and ProjectConvenor instances will also be destroyed.
-  has_many :task_definitions, -> { order "target_date ASC, abbreviation ASC" }, dependent: :destroy
+  has_many :task_definitions, -> { order "start_date ASC, abbreviation ASC" }, dependent: :destroy
   has_many :projects, dependent: :destroy
   has_many :tutorials, dependent: :destroy
   has_many :unit_roles, dependent: :destroy
