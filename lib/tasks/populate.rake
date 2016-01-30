@@ -484,6 +484,14 @@ namespace :db do
         puts "!"
       end #tutorial
     end #unit
+    # Run simulate signoff?
+    puts "----> Would you like to simulate student progress? This may take a while... [y/n]"
+    if STDIN.gets.chomp.downcase == 'y'
+      puts "----> Simulating signoff..."
+      Rake::Task["db:simulate_signoff"].execute
+      puts "----> Updating student progress..."
+      Rake::Task["submission:update_progress"].execute
+    end
     puts "----> Done."
   end
 end
