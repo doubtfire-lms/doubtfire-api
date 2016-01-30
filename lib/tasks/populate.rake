@@ -32,7 +32,7 @@ namespace :db do
   end
 
   desc "Mark off some of the due tasks"
-  task simulate_signoff: :environment do    
+  task simulate_signoff: :environment do
     Unit.all.each do |unit|
       current_week = ((Time.zone.now - unit.start_date) / 1.weeks).floor
 
@@ -84,7 +84,7 @@ namespace :db do
 
         i = 0
         assigned_task_defs.order("target_date").each do |at|
-          task = p.task_for_task_definition(at) 
+          task = p.task_for_task_definition(at)
           # if its more than three week past kept up to date...
           if kept_up_to_date >= task.target_date + 2.weeks
             complete_date = unit.start_date + i * time_to_complete_task + rand(7..14).days
@@ -156,7 +156,7 @@ namespace :db do
         next_assigned_tasks = p.assigned_tasks.where("target_date > :up_to_date AND target_date <= :next_week", up_to_date: kept_up_to_date, next_week: kept_up_to_date + 1.weeks)
 
         next_assigned_tasks.each do |at|
-          task = p.task_for_task_definition(at) 
+          task = p.task_for_task_definition(at)
           # 1 to 3
           case rand(1..100)
           when 0..60
@@ -417,14 +417,17 @@ namespace :db do
           up_reqs[idx] = { :key => "file#{idx}", :name => Populator.words(1..3).capitalize, :type => ["code", "document", "image"].sample }
         end
         puts "----------> task #{count} has #{up_reqs.length} files to upload"
+        target_date = unit.start_date + ((count + 1) % 12).weeks # Assignment 6 due week 6, etc.
+        start_date = target_date - rand(1.0..2.0).weeks
         TaskDefinition.create(
           name: "Assignment #{count + 1}",
           abbreviation: "A#{count + 1}",
           unit_id: unit.id,
           description: Populator.words(5..10),
           weighting: BigDecimal.new("2"),
-          target_date: unit.start_date + ((count + 1) % 12).weeks, # Assignment 6 due week 6, etc.
-          upload_requirements: up_reqs.to_json
+          target_date: target_date,
+          upload_requirements: up_reqs.to_json,
+          start_date: start_date
         )
       end
 
