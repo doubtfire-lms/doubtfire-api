@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20160129032223) do
+ActiveRecord::Schema.define(version: 20160203083806) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -122,19 +122,21 @@ ActiveRecord::Schema.define(version: 20160129032223) do
   create_table "projects", force: true do |t|
     t.integer  "unit_id"
     t.string   "project_role"
-    t.datetime "created_at",                                null: false
-    t.datetime "updated_at",                                null: false
+    t.datetime "created_at",                                             null: false
+    t.datetime "updated_at",                                             null: false
     t.boolean  "started"
     t.string   "progress"
     t.string   "status"
     t.string   "task_stats"
-    t.boolean  "enrolled",                  default: true
-    t.integer  "target_grade",              default: 0
-    t.boolean  "compile_portfolio",         default: false
+    t.boolean  "enrolled",                               default: true
+    t.integer  "target_grade",                           default: 0
+    t.boolean  "compile_portfolio",                      default: false
     t.date     "portfolio_production_date"
-    t.integer  "max_pct_similar",           default: 0
+    t.integer  "max_pct_similar",                        default: 0
     t.integer  "tutorial_id"
     t.integer  "user_id"
+    t.integer  "grade",                                  default: 0
+    t.string   "grade_rationale",           limit: 2048
   end
 
   add_index "projects", ["enrolled"], name: "index_projects_on_enrolled", using: :btree

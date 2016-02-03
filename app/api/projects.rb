@@ -43,6 +43,9 @@ module Api
       optional :enrolled,           type: Boolean, desc: 'Enrol or withdraw this project'
       optional :target_grade,       type: Integer, desc: 'New target grade'
       optional :compile_portfolio,  type: Boolean, desc: 'Schedule a construction of the portfolio'
+      optional :grade,              type: Integer, desc: 'New grade'
+      optional :old_grade,          type: Integer, desc: 'Old grade to check it has not changed...'
+      optional :grade_rationale,    type: String,  desc: 'New grade rationale'
     end
     put '/projects/:id' do
       project = Project.find(params[:id])
@@ -85,6 +88,26 @@ module Api
 
         project.target_grade = params[:target_grade]
         project.save
+      elsif not params[:grade].nil?
+        if not authorise? current_user, project, :assess
+          error!({"error" => "You do not have permissions to assess Project with id=#{params[:id]}" }, 403)
+        end
+
+        if params[:grade_rationale].nil?
+          error!({"error" => "Grade rationale required to perform assessment." }, 403)
+        end
+
+        if params[:old_grade].nil?
+          error!({"error" => "Existing project grade is required to perform assessment." }, 403)
+        end
+
+        if params[:old_grade] != project.grade
+          error!({"error" => "Existing project grade does not match current grade. Refresh project and try again." }, 403)
+        end
+
+        project.grade = params[:grade]
+        project.grade_rationale = params[:grade_rationale]
+        project.save
       elsif not params[:compile_portfolio].nil?
         if not authorise? current_user, project, :change
           error!({"error" => "You do not have permissions to change Project with id=#{params[:id]}" }, 403)
@@ -94,6 +117,7 @@ module Api
         project.save
       end
 
+      Thread.current[:user] = current_user
       project
     end #put
 
