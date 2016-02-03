@@ -38,12 +38,16 @@ class Project < ActiveRecord::Base
     where(progress: progress_types) unless progress_types.blank?
   }
 
-  def self.for_user(user)
-    active_projects.where('user_id = :user_id', user_id: user.id)
+  def self.for_user(user, include_inactive)
+    if include_inactive
+      projects.where('user_id = :user_id', user_id: user.id)
+    else
+      active_projects.where('user_id = :user_id', user_id: user.id)
+    end
   end
 
   def self.active_projects
-    where(enrolled: true)
+    joins(:unit).where(enrolled: true).where('units.active = TRUE')
   end
 
   def self.for_unit_role(unit_role)
