@@ -5428,15 +5428,15 @@ a.label:focus {
   background-color: #c9302c;
 }
 /*!
- *  Font Awesome 4.4.0 by @davegandy - http://fontawesome.io - @fontawesome
+ *  Font Awesome 4.5.0 by @davegandy - http://fontawesome.io - @fontawesome
  *  License - http://fontawesome.io/license (Font: SIL OFL 1.1, CSS: MIT License)
  */
 /* FONT PATH
  * -------------------------- */
 @font-face {
   font-family: 'FontAwesome';
-  src: url('fonts//fontawesome-webfont.eot?v=4.4.0');
-  src: url('fonts//fontawesome-webfont.eot?#iefix&v=4.4.0') format('embedded-opentype'), url('fonts//fontawesome-webfont.woff2?v=4.4.0') format('woff2'), url('fonts//fontawesome-webfont.woff?v=4.4.0') format('woff'), url('fonts//fontawesome-webfont.ttf?v=4.4.0') format('truetype'), url('fonts//fontawesome-webfont.svg?v=4.4.0#fontawesomeregular') format('svg');
+  src: url('fonts//fontawesome-webfont.eot?v=4.5.0');
+  src: url('fonts//fontawesome-webfont.eot?#iefix&v=4.5.0') format('embedded-opentype'), url('fonts//fontawesome-webfont.woff2?v=4.5.0') format('woff2'), url('fonts//fontawesome-webfont.woff?v=4.5.0') format('woff'), url('fonts//fontawesome-webfont.ttf?v=4.5.0') format('truetype'), url('fonts//fontawesome-webfont.svg?v=4.5.0#fontawesomeregular') format('svg');
   font-weight: normal;
   font-style: normal;
 }
@@ -7453,173 +7453,71 @@ a.label:focus {
 .fa-fonticons:before {
   content: "\f280";
 }
+.fa-reddit-alien:before {
+  content: "\f281";
+}
+.fa-edge:before {
+  content: "\f282";
+}
+.fa-credit-card-alt:before {
+  content: "\f283";
+}
+.fa-codiepie:before {
+  content: "\f284";
+}
+.fa-modx:before {
+  content: "\f285";
+}
+.fa-fort-awesome:before {
+  content: "\f286";
+}
+.fa-usb:before {
+  content: "\f287";
+}
+.fa-product-hunt:before {
+  content: "\f288";
+}
+.fa-mixcloud:before {
+  content: "\f289";
+}
+.fa-scribd:before {
+  content: "\f28a";
+}
+.fa-pause-circle:before {
+  content: "\f28b";
+}
+.fa-pause-circle-o:before {
+  content: "\f28c";
+}
+.fa-stop-circle:before {
+  content: "\f28d";
+}
+.fa-stop-circle-o:before {
+  content: "\f28e";
+}
+.fa-shopping-bag:before {
+  content: "\f290";
+}
+.fa-shopping-basket:before {
+  content: "\f291";
+}
+.fa-hashtag:before {
+  content: "\f292";
+}
+.fa-bluetooth:before {
+  content: "\f293";
+}
+.fa-bluetooth-b:before {
+  content: "\f294";
+}
+.fa-percent:before {
+  content: "\f295";
+}
 /* Tell font-awesome where to find fa- fonts */
-/********************
- * HTML CSS
- */
-.chartWrap {
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-}
-/********************
-  Box shadow and border radius styling
-*/
-.nvtooltip.with-3d-shadow,
-.with-3d-shadow .nvtooltip {
-  -moz-box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
-  -webkit-box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
-  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
-  -webkit-border-radius: 6px;
-  -moz-border-radius: 6px;
-  border-radius: 6px;
-}
-/********************
- * TOOLTIP CSS
- */
-.nvtooltip {
-  position: absolute;
-  background-color: #ffffff;
-  padding: 1px;
-  border: 1px solid rgba(0, 0, 0, 0.2);
-  z-index: 10000;
-  font-family: Arial;
-  font-size: 13px;
-  text-align: left;
-  pointer-events: none;
-  white-space: nowrap;
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  -khtml-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-}
-/*Give tooltips that old fade in transition by
-    putting a "with-transitions" class on the container div.
-*/
-.nvtooltip.with-transitions,
-.with-transitions .nvtooltip {
-  transition: opacity 250ms linear;
-  -moz-transition: opacity 250ms linear;
-  -webkit-transition: opacity 250ms linear;
-  transition-delay: 250ms;
-  -moz-transition-delay: 250ms;
-  -webkit-transition-delay: 250ms;
-}
-.nvtooltip.x-nvtooltip,
-.nvtooltip.y-nvtooltip {
-  padding: 8px;
-}
-.nvtooltip h3 {
-  margin: 0;
-  padding: 4px 14px;
-  line-height: 18px;
-  font-weight: normal;
-  background-color: rgba(247, 247, 247, 0.75);
-  text-align: center;
-  border-bottom: 1px solid #ebebeb;
-  -webkit-border-radius: 5px 5px 0 0;
-  -moz-border-radius: 5px 5px 0 0;
-  border-radius: 5px 5px 0 0;
-}
-.nvtooltip p {
-  margin: 0;
-  padding: 5px 14px;
-  text-align: center;
-}
-.nvtooltip span {
-  display: inline-block;
-  margin: 2px 0;
-}
-.nvtooltip table {
-  margin: 6px;
-  border-spacing: 0;
-}
-.nvtooltip table td {
-  padding: 2px 9px 2px 0;
-  vertical-align: middle;
-}
-.nvtooltip table td.key {
-  font-weight: normal;
-}
-.nvtooltip table td.value {
-  text-align: right;
-  font-weight: bold;
-}
-.nvtooltip table tr.highlight td {
-  padding: 1px 9px 1px 0;
-  border-bottom-style: solid;
-  border-bottom-width: 1px;
-  border-top-style: solid;
-  border-top-width: 1px;
-}
-.nvtooltip table td.legend-color-guide div {
-  width: 8px;
-  height: 8px;
-  vertical-align: middle;
-}
-.nvtooltip .footer {
-  padding: 3px;
-  text-align: center;
-}
-.nvtooltip-pending-removal {
-  position: absolute;
-  pointer-events: none;
-}
-/********************
- * SVG CSS
- */
-svg {
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  -khtml-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-  /* Trying to get SVG to act like a greedy block in all browsers */
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-svg text {
-  font: normal 12px Arial;
-}
-svg .title {
-  font: bold 14px Arial;
-}
-.nvd3 .nv-background {
-  fill: white;
-  fill-opacity: 0;
-  /*
-  pointer-events: none;
-  */
-}
-.nvd3.nv-noData {
-  font-size: 18px;
-  font-weight: bold;
-}
-/**********
-*  Brush
-*/
-.nv-brush .extent {
-  fill-opacity: .125;
-  shape-rendering: crispEdges;
-}
-/**********
-*  Legend
-*/
-.nvd3 .nv-legend .nv-series {
-  cursor: pointer;
-}
-.nvd3 .nv-legend .disabled circle {
-  fill-opacity: 0;
-}
-/**********
-*  Axes
-*/
+/* nvd3 version 1.8.1 (https://github.com/novus/nvd3) 2015-06-15 */
 .nvd3 .nv-axis {
   pointer-events: none;
+  opacity: 1;
 }
 .nvd3 .nv-axis path {
   fill: none;
@@ -7650,21 +7548,10 @@ svg .title {
 .nvd3 .x3 .nv-axis .nv-axisMaxMin text {
   text-anchor: middle;
 }
-/**********
-*  Brush
-*/
-.nv-brush .resize path {
-  fill: #eee;
-  stroke: #666;
-}
-/**********
-*  Bars
-*/
-.nvd3 .nv-bars .negative rect {
-  zfill: brown;
+.nvd3 .nv-axis.nv-disabled {
+  opacity: 0;
 }
 .nvd3 .nv-bars rect {
-  zfill: steelblue;
   fill-opacity: .75;
   transition: fill-opacity 250ms linear;
   -moz-transition: fill-opacity 250ms linear;
@@ -7682,9 +7569,6 @@ svg .title {
 .nvd3 .nv-bars .hover text {
   fill: #000000;
 }
-/**********
-*  Bars
-*/
 .nvd3 .nv-multibar .nv-groups rect,
 .nvd3 .nv-multibarHorizontal .nv-groups rect,
 .nvd3 .nv-discretebar .nv-groups rect {
@@ -7695,6 +7579,7 @@ svg .title {
 }
 .nvd3 .nv-multibar .nv-groups rect:hover,
 .nvd3 .nv-multibarHorizontal .nv-groups rect:hover,
+.nvd3 .nv-candlestickBar .nv-ticks rect:hover,
 .nvd3 .nv-discretebar .nv-groups rect:hover {
   fill-opacity: 1;
 }
@@ -7704,187 +7589,23 @@ svg .title {
   fill: #000000;
   stroke: rgba(0, 0, 0, 0);
 }
-/***********
-*  Pie Chart
-*/
-.nvd3.nv-pie path {
-  stroke-opacity: 0;
-  transition: fill-opacity 250ms linear, stroke-width 250ms linear, stroke-opacity 250ms linear;
-  -moz-transition: fill-opacity 250ms linear, stroke-width 250ms linear, stroke-opacity 250ms linear;
-  -webkit-transition: fill-opacity 250ms linear, stroke-width 250ms linear, stroke-opacity 250ms linear;
+/* boxplot CSS */
+.nvd3 .nv-boxplot circle {
+  fill-opacity: 0.5;
 }
-.nvd3.nv-pie .nv-slice text {
-  stroke: #000;
-  stroke-width: 0;
+.nvd3 .nv-boxplot circle:hover {
+  fill-opacity: 1;
 }
-.nvd3.nv-pie path {
-  stroke: #fff;
-  stroke-width: 1px;
-  stroke-opacity: 1;
+.nvd3 .nv-boxplot rect:hover {
+  fill-opacity: 1;
 }
-.nvd3.nv-pie .hover path {
-  fill-opacity: .7;
+.nvd3 line.nv-boxplot-median {
+  stroke: black;
 }
-.nvd3.nv-pie .nv-label {
-  pointer-events: none;
-}
-.nvd3.nv-pie .nv-label rect {
-  fill-opacity: 0;
-  stroke-opacity: 0;
-}
-/**********
-* Lines
-*/
-.nvd3 .nv-groups path.nv-line {
-  fill: none;
-  stroke-width: 1.5px;
-  /*
-  stroke-linecap: round;
-  shape-rendering: geometricPrecision;
-
-  transition: stroke-width 250ms linear;
-  -moz-transition: stroke-width 250ms linear;
-  -webkit-transition: stroke-width 250ms linear;
-
-  transition-delay: 250ms
-  -moz-transition-delay: 250ms;
-  -webkit-transition-delay: 250ms;
-  */
-}
-.nvd3 .nv-groups path.nv-line.nv-thin-line {
-  stroke-width: 1px;
-}
-.nvd3 .nv-groups path.nv-area {
-  stroke: none;
-  /*
-  stroke-linecap: round;
-  shape-rendering: geometricPrecision;
-
+.nv-boxplot-tick:hover {
   stroke-width: 2.5px;
-  transition: stroke-width 250ms linear;
-  -moz-transition: stroke-width 250ms linear;
-  -webkit-transition: stroke-width 250ms linear;
-
-  transition-delay: 250ms
-  -moz-transition-delay: 250ms;
-  -webkit-transition-delay: 250ms;
-  */
 }
-.nvd3 .nv-line.hover path {
-  stroke-width: 6px;
-}
-/*
-.nvd3.scatter .groups .point {
-  fill-opacity: 0.1;
-  stroke-opacity: 0.1;
-}
-  */
-.nvd3.nv-line .nvd3.nv-scatter .nv-groups .nv-point {
-  fill-opacity: 0;
-  stroke-opacity: 0;
-}
-.nvd3.nv-scatter.nv-single-point .nv-groups .nv-point {
-  fill-opacity: .5 !important;
-  stroke-opacity: .5 !important;
-}
-.with-transitions .nvd3 .nv-groups .nv-point {
-  transition: stroke-width 250ms linear, stroke-opacity 250ms linear;
-  -moz-transition: stroke-width 250ms linear, stroke-opacity 250ms linear;
-  -webkit-transition: stroke-width 250ms linear, stroke-opacity 250ms linear;
-}
-.nvd3.nv-scatter .nv-groups .nv-point.hover,
-.nvd3 .nv-groups .nv-point.hover {
-  stroke-width: 7px;
-  fill-opacity: .95 !important;
-  stroke-opacity: .95 !important;
-}
-.nvd3 .nv-point-paths path {
-  stroke: #aaa;
-  stroke-opacity: 0;
-  fill: #eee;
-  fill-opacity: 0;
-}
-.nvd3 .nv-indexLine {
-  cursor: ew-resize;
-}
-/**********
-* Distribution
-*/
-.nvd3 .nv-distribution {
-  pointer-events: none;
-}
-/**********
-*  Scatter
-*/
-/* **Attempting to remove this for useVoronoi(false), need to see if it's required anywhere
-.nvd3 .nv-groups .nv-point {
-  pointer-events: none;
-}
-*/
-.nvd3 .nv-groups .nv-point.hover {
-  stroke-width: 20px;
-  stroke-opacity: .5;
-}
-.nvd3 .nv-scatter .nv-point.hover {
-  fill-opacity: 1;
-}
-/*
-.nv-group.hover .nv-point {
-  fill-opacity: 1;
-}
-*/
-/**********
-*  Stacked Area
-*/
-.nvd3.nv-stackedarea path.nv-area {
-  fill-opacity: .7;
-  /*
-  stroke-opacity: .65;
-  fill-opacity: 1;
-  */
-  stroke-opacity: 0;
-  transition: fill-opacity 250ms linear, stroke-opacity 250ms linear;
-  -moz-transition: fill-opacity 250ms linear, stroke-opacity 250ms linear;
-  -webkit-transition: fill-opacity 250ms linear, stroke-opacity 250ms linear;
-  /*
-  transition-delay: 500ms;
-  -moz-transition-delay: 500ms;
-  -webkit-transition-delay: 500ms;
-  */
-}
-.nvd3.nv-stackedarea path.nv-area.hover {
-  fill-opacity: .9;
-  /*
-  stroke-opacity: .85;
-  */
-}
-/*
-.d3stackedarea .groups path {
-  stroke-opacity: 0;
-}
-  */
-.nvd3.nv-stackedarea .nv-groups .nv-point {
-  stroke-opacity: 0;
-  fill-opacity: 0;
-}
-/*
-.nvd3.nv-stackedarea .nv-groups .nv-point.hover {
-  stroke-width: 20px;
-  stroke-opacity: .75;
-  fill-opacity: 1;
-}*/
-/**********
-*  Line Plus Bar
-*/
-.nvd3.nv-linePlusBar .nv-bar rect {
-  fill-opacity: .75;
-}
-.nvd3.nv-linePlusBar .nv-bar rect:hover {
-  fill-opacity: 1;
-}
-/**********
-*  Bullet
-*/
+/* bullet */
 .nvd3.nv-bullet {
   font: 10px sans-serif;
 }
@@ -7930,9 +7651,244 @@ svg .title {
 .nvd3.nv-bullet .nv-range:hover {
   fill-opacity: .7;
 }
-/**********
-* Sparkline
+.nvd3.nv-candlestickBar .nv-ticks .nv-tick {
+  stroke-width: 1px;
+}
+.nvd3.nv-candlestickBar .nv-ticks .nv-tick.hover {
+  stroke-width: 2px;
+}
+.nvd3.nv-candlestickBar .nv-ticks .nv-tick.positive rect {
+  stroke: #2ca02c;
+  fill: #2ca02c;
+}
+.nvd3.nv-candlestickBar .nv-ticks .nv-tick.negative rect {
+  stroke: #d62728;
+  fill: #d62728;
+}
+.with-transitions .nv-candlestickBar .nv-ticks .nv-tick {
+  transition: stroke-width 250ms linear, stroke-opacity 250ms linear;
+  -moz-transition: stroke-width 250ms linear, stroke-opacity 250ms linear;
+  -webkit-transition: stroke-width 250ms linear, stroke-opacity 250ms linear;
+}
+.nvd3.nv-candlestickBar .nv-ticks line {
+  stroke: #333;
+}
+.nvd3 .nv-legend .nv-disabled rect {
+  /*fill-opacity: 0;*/
+}
+.nvd3 .nv-check-box .nv-box {
+  fill-opacity: 0;
+  stroke-width: 2;
+}
+.nvd3 .nv-check-box .nv-check {
+  fill-opacity: 0;
+  stroke-width: 4;
+}
+.nvd3 .nv-series.nv-disabled .nv-check-box .nv-check {
+  fill-opacity: 0;
+  stroke-opacity: 0;
+}
+.nvd3 .nv-controlsWrap .nv-legend .nv-check-box .nv-check {
+  opacity: 0;
+}
+/* line plus bar */
+.nvd3.nv-linePlusBar .nv-bar rect {
+  fill-opacity: .75;
+}
+.nvd3.nv-linePlusBar .nv-bar rect:hover {
+  fill-opacity: 1;
+}
+.nvd3 .nv-groups path.nv-line {
+  fill: none;
+}
+.nvd3 .nv-groups path.nv-area {
+  stroke: none;
+}
+.nvd3.nv-line .nvd3.nv-scatter .nv-groups .nv-point {
+  fill-opacity: 0;
+  stroke-opacity: 0;
+}
+.nvd3.nv-scatter.nv-single-point .nv-groups .nv-point {
+  fill-opacity: .5 !important;
+  stroke-opacity: .5 !important;
+}
+.with-transitions .nvd3 .nv-groups .nv-point {
+  transition: stroke-width 250ms linear, stroke-opacity 250ms linear;
+  -moz-transition: stroke-width 250ms linear, stroke-opacity 250ms linear;
+  -webkit-transition: stroke-width 250ms linear, stroke-opacity 250ms linear;
+}
+.nvd3.nv-scatter .nv-groups .nv-point.hover,
+.nvd3 .nv-groups .nv-point.hover {
+  stroke-width: 7px;
+  fill-opacity: .95 !important;
+  stroke-opacity: .95 !important;
+}
+.nvd3 .nv-point-paths path {
+  stroke: #aaa;
+  stroke-opacity: 0;
+  fill: #eee;
+  fill-opacity: 0;
+}
+.nvd3 .nv-indexLine {
+  cursor: ew-resize;
+}
+/********************
+ * SVG CSS
+ */
+/********************
+  Default CSS for an svg element nvd3 used
 */
+svg.nvd3-svg {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -ms-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+/********************
+  Box shadow and border radius styling
+*/
+.nvtooltip.with-3d-shadow,
+.with-3d-shadow .nvtooltip {
+  -moz-box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+  -webkit-box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
+  border-radius: 5px;
+}
+.nvd3 text {
+  font: normal 12px Arial;
+}
+.nvd3 .title {
+  font: bold 14px Arial;
+}
+.nvd3 .nv-background {
+  fill: white;
+  fill-opacity: 0;
+}
+.nvd3.nv-noData {
+  font-size: 18px;
+  font-weight: bold;
+}
+/**********
+*  Brush
+*/
+.nv-brush .extent {
+  fill-opacity: .125;
+  shape-rendering: crispEdges;
+}
+.nv-brush .resize path {
+  fill: #eee;
+  stroke: #666;
+}
+/**********
+*  Legend
+*/
+.nvd3 .nv-legend .nv-series {
+  cursor: pointer;
+}
+.nvd3 .nv-legend .nv-disabled circle {
+  fill-opacity: 0;
+}
+/* focus */
+.nvd3 .nv-brush .extent {
+  fill-opacity: 0 !important;
+}
+.nvd3 .nv-brushBackground rect {
+  stroke: #000;
+  stroke-width: .4;
+  fill: #fff;
+  fill-opacity: .7;
+}
+.nvd3.nv-ohlcBar .nv-ticks .nv-tick {
+  stroke-width: 1px;
+}
+.nvd3.nv-ohlcBar .nv-ticks .nv-tick.hover {
+  stroke-width: 2px;
+}
+.nvd3.nv-ohlcBar .nv-ticks .nv-tick.positive {
+  stroke: #2ca02c;
+}
+.nvd3.nv-ohlcBar .nv-ticks .nv-tick.negative {
+  stroke: #d62728;
+}
+.nvd3 .background path {
+  fill: none;
+  stroke: #EEE;
+  stroke-opacity: .4;
+  shape-rendering: crispEdges;
+}
+.nvd3 .foreground path {
+  fill: none;
+  stroke-opacity: .7;
+}
+.nvd3 .nv-parallelCoordinates-brush .extent {
+  fill: #fff;
+  fill-opacity: .6;
+  stroke: gray;
+  shape-rendering: crispEdges;
+}
+.nvd3 .nv-parallelCoordinates .hover {
+  fill-opacity: 1;
+  stroke-width: 3px;
+}
+.nvd3 .missingValuesline line {
+  fill: none;
+  stroke: black;
+  stroke-width: 1;
+  stroke-opacity: 1;
+  stroke-dasharray: 5, 5;
+}
+.nvd3.nv-pie path {
+  stroke-opacity: 0;
+  transition: fill-opacity 250ms linear, stroke-width 250ms linear, stroke-opacity 250ms linear;
+  -moz-transition: fill-opacity 250ms linear, stroke-width 250ms linear, stroke-opacity 250ms linear;
+  -webkit-transition: fill-opacity 250ms linear, stroke-width 250ms linear, stroke-opacity 250ms linear;
+}
+.nvd3.nv-pie .nv-pie-title {
+  font-size: 24px;
+  fill: rgba(19, 196, 249, 0.59);
+}
+.nvd3.nv-pie .nv-slice text {
+  stroke: #000;
+  stroke-width: 0;
+}
+.nvd3.nv-pie path {
+  stroke: #fff;
+  stroke-width: 1px;
+  stroke-opacity: 1;
+}
+.nvd3.nv-pie .hover path {
+  fill-opacity: .7;
+}
+.nvd3.nv-pie .nv-label {
+  pointer-events: none;
+}
+.nvd3.nv-pie .nv-label rect {
+  fill-opacity: 0;
+  stroke-opacity: 0;
+}
+/* scatter */
+.nvd3 .nv-groups .nv-point.hover {
+  stroke-width: 20px;
+  stroke-opacity: .5;
+}
+.nvd3 .nv-scatter .nv-point.hover {
+  fill-opacity: 1;
+}
+.nv-noninteractive {
+  pointer-events: none;
+}
+.nv-distx,
+.nv-disty {
+  pointer-events: none;
+}
+/* sparkline */
 .nvd3.nv-sparkline path {
   fill: none;
 }
@@ -7953,9 +7909,6 @@ svg .title {
 }
 .nvd3.nv-sparklineplus .nv-xValue,
 .nvd3.nv-sparklineplus .nv-yValue {
-  /*
-  stroke: #666;
-  */
   stroke-width: 0;
   font-size: .9em;
   font-weight: normal;
@@ -7972,108 +7925,126 @@ svg .title {
   fill: #d62728;
 }
 .nvd3.nv-sparklineplus .nv-currentValue {
-  /*
-  stroke: #444;
-  fill: #000;
-  */
   font-weight: bold;
   font-size: 1.1em;
 }
-/**********
-* historical stock
+/* stacked area */
+.nvd3.nv-stackedarea path.nv-area {
+  fill-opacity: .7;
+  stroke-opacity: 0;
+  transition: fill-opacity 250ms linear, stroke-opacity 250ms linear;
+  -moz-transition: fill-opacity 250ms linear, stroke-opacity 250ms linear;
+  -webkit-transition: fill-opacity 250ms linear, stroke-opacity 250ms linear;
+}
+.nvd3.nv-stackedarea path.nv-area.hover {
+  fill-opacity: .9;
+}
+.nvd3.nv-stackedarea .nv-groups .nv-point {
+  stroke-opacity: 0;
+  fill-opacity: 0;
+}
+.nvtooltip {
+  position: absolute;
+  background-color: #ffffff;
+  color: #000000;
+  padding: 1px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  z-index: 10000;
+  display: block;
+  font-family: Arial;
+  font-size: 13px;
+  text-align: left;
+  pointer-events: none;
+  white-space: nowrap;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+.nvtooltip {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(0, 0, 0, 0.5);
+  border-radius: 4px;
+}
+/*Give tooltips that old fade in transition by
+    putting a "with-transitions" class on the container div.
 */
-.nvd3.nv-ohlcBar .nv-ticks .nv-tick {
-  stroke-width: 2px;
+.nvtooltip.with-transitions,
+.with-transitions .nvtooltip {
+  transition: opacity 50ms linear;
+  -moz-transition: opacity 50ms linear;
+  -webkit-transition: opacity 50ms linear;
+  transition-delay: 200ms;
+  -moz-transition-delay: 200ms;
+  -webkit-transition-delay: 200ms;
 }
-.nvd3.nv-ohlcBar .nv-ticks .nv-tick.hover {
-  stroke-width: 4px;
+.nvtooltip.x-nvtooltip,
+.nvtooltip.y-nvtooltip {
+  padding: 8px;
 }
-.nvd3.nv-ohlcBar .nv-ticks .nv-tick.positive {
-  stroke: #2ca02c;
+.nvtooltip h3 {
+  margin: 0;
+  padding: 4px 14px;
+  line-height: 18px;
+  font-weight: normal;
+  background-color: rgba(247, 247, 247, 0.75);
+  color: #000000;
+  text-align: center;
+  border-bottom: 1px solid #ebebeb;
+  -webkit-border-radius: 5px 5px 0 0;
+  -moz-border-radius: 5px 5px 0 0;
+  border-radius: 5px 5px 0 0;
 }
-.nvd3.nv-ohlcBar .nv-ticks .nv-tick.negative {
-  stroke: #d62728;
+.nvtooltip p {
+  margin: 0;
+  padding: 5px 14px;
+  text-align: center;
 }
-.nvd3.nv-historicalStockChart .nv-axis .nv-axislabel {
+.nvtooltip span {
+  display: inline-block;
+  margin: 2px 0;
+}
+.nvtooltip table {
+  margin: 6px;
+  border-spacing: 0;
+}
+.nvtooltip table td {
+  padding: 2px 9px 2px 0;
+  vertical-align: middle;
+}
+.nvtooltip table td.key {
+  font-weight: normal;
+}
+.nvtooltip table td.value {
+  text-align: right;
   font-weight: bold;
 }
-.nvd3.nv-historicalStockChart .nv-dragTarget {
-  fill-opacity: 0;
-  stroke: none;
-  cursor: move;
+.nvtooltip table tr.highlight td {
+  padding: 1px 9px 1px 0;
+  border-bottom-style: solid;
+  border-bottom-width: 1px;
+  border-top-style: solid;
+  border-top-width: 1px;
 }
-.nvd3 .nv-brush .extent {
-  /*
-  cursor: ew-resize !important;
-  */
-  fill-opacity: 0 !important;
+.nvtooltip table td.legend-color-guide div {
+  width: 8px;
+  height: 8px;
+  vertical-align: middle;
 }
-.nvd3 .nv-brushBackground rect {
-  stroke: #000;
-  stroke-width: .4;
-  fill: #fff;
-  fill-opacity: .7;
+.nvtooltip table td.legend-color-guide div {
+  width: 12px;
+  height: 12px;
+  border: 1px solid #999;
 }
-/**********
-* Indented Tree
-*/
-/**
- * TODO: the following 3 selectors are based on classes used in the example.  I should either make them standard and leave them here, or move to a CSS file not included in the library
- */
-.nvd3.nv-indentedtree .name {
-  margin-left: 5px;
+.nvtooltip .footer {
+  padding: 3px;
+  text-align: center;
 }
-.nvd3.nv-indentedtree .clickable {
-  color: #08C;
-  cursor: pointer;
-}
-.nvd3.nv-indentedtree span.clickable:hover {
-  color: #005580;
-  text-decoration: underline;
-}
-.nvd3.nv-indentedtree .nv-childrenCount {
-  display: inline-block;
-  margin-left: 5px;
-}
-.nvd3.nv-indentedtree .nv-treeicon {
-  cursor: pointer;
-  /*
-  cursor: n-resize;
-  */
-}
-.nvd3.nv-indentedtree .nv-treeicon.nv-folded {
-  cursor: pointer;
-  /*
-  cursor: s-resize;
-  */
-}
-/**********
-* Parallel Coordinates
-*/
-.nvd3 .background path {
-  fill: none;
-  stroke: #ccc;
-  stroke-opacity: .4;
-  shape-rendering: crispEdges;
-}
-.nvd3 .foreground path {
-  fill: none;
-  stroke: steelblue;
-  stroke-opacity: .7;
-}
-.nvd3 .brush .extent {
-  fill-opacity: .3;
-  stroke: #fff;
-  shape-rendering: crispEdges;
-}
-.nvd3 .axis line,
-.axis path {
-  fill: none;
-  stroke: #000;
-  shape-rendering: crispEdges;
-}
-.nvd3 .axis text {
-  text-shadow: 0 1px 0 #fff;
+.nvtooltip-pending-removal {
+  pointer-events: none;
+  display: none;
 }
 /****
 Interactive Layer
@@ -8162,6 +8133,725 @@ a.editable-empty:focus {
   font-style: italic;
   color: #D14;
   text-decoration: none;
+}
+/* BASICS */
+.CodeMirror {
+  /* Set height, width, borders, and global font properties here */
+  font-family: monospace;
+  height: 300px;
+  color: black;
+}
+/* PADDING */
+.CodeMirror-lines {
+  padding: 4px 0;
+  /* Vertical padding around content */
+}
+.CodeMirror pre {
+  padding: 0 4px;
+  /* Horizontal padding of content */
+}
+.CodeMirror-scrollbar-filler,
+.CodeMirror-gutter-filler {
+  background-color: white;
+  /* The little square between H and V scrollbars */
+}
+/* GUTTER */
+.CodeMirror-gutters {
+  border-right: 1px solid #ddd;
+  background-color: #f7f7f7;
+  white-space: nowrap;
+}
+.CodeMirror-linenumber {
+  padding: 0 3px 0 5px;
+  min-width: 20px;
+  text-align: right;
+  color: #999;
+  white-space: nowrap;
+}
+.CodeMirror-guttermarker {
+  color: black;
+}
+.CodeMirror-guttermarker-subtle {
+  color: #999;
+}
+/* CURSOR */
+.CodeMirror-cursor {
+  border-left: 1px solid black;
+  border-right: none;
+  width: 0;
+}
+/* Shown when moving in bi-directional text */
+.CodeMirror div.CodeMirror-secondarycursor {
+  border-left: 1px solid silver;
+}
+.cm-fat-cursor .CodeMirror-cursor {
+  width: auto;
+  border: 0;
+  background: #7e7;
+}
+.cm-fat-cursor div.CodeMirror-cursors {
+  z-index: 1;
+}
+.cm-animate-fat-cursor {
+  width: auto;
+  border: 0;
+  -webkit-animation: blink 1.06s steps(1) infinite;
+  -moz-animation: blink 1.06s steps(1) infinite;
+  animation: blink 1.06s steps(1) infinite;
+  background-color: #7e7;
+}
+@-moz-keyframes blink {
+  50% {
+    background-color: transparent;
+  }
+}
+@-webkit-keyframes blink {
+  50% {
+    background-color: transparent;
+  }
+}
+@keyframes blink {
+  50% {
+    background-color: transparent;
+  }
+}
+/* Can style cursor different in overwrite (non-insert) mode */
+.cm-tab {
+  display: inline-block;
+  text-decoration: inherit;
+}
+.CodeMirror-ruler {
+  border-left: 1px solid #ccc;
+  position: absolute;
+}
+/* DEFAULT THEME */
+.cm-s-default .cm-header {
+  color: blue;
+}
+.cm-s-default .cm-quote {
+  color: #090;
+}
+.cm-negative {
+  color: #d44;
+}
+.cm-positive {
+  color: #292;
+}
+.cm-header,
+.cm-strong {
+  font-weight: bold;
+}
+.cm-em {
+  font-style: italic;
+}
+.cm-link {
+  text-decoration: underline;
+}
+.cm-strikethrough {
+  text-decoration: line-through;
+}
+.cm-s-default .cm-keyword {
+  color: #708;
+}
+.cm-s-default .cm-atom {
+  color: #219;
+}
+.cm-s-default .cm-number {
+  color: #164;
+}
+.cm-s-default .cm-def {
+  color: #00f;
+}
+.cm-s-default .cm-variable-2 {
+  color: #05a;
+}
+.cm-s-default .cm-variable-3 {
+  color: #085;
+}
+.cm-s-default .cm-comment {
+  color: #a50;
+}
+.cm-s-default .cm-string {
+  color: #a11;
+}
+.cm-s-default .cm-string-2 {
+  color: #f50;
+}
+.cm-s-default .cm-meta {
+  color: #555;
+}
+.cm-s-default .cm-qualifier {
+  color: #555;
+}
+.cm-s-default .cm-builtin {
+  color: #30a;
+}
+.cm-s-default .cm-bracket {
+  color: #997;
+}
+.cm-s-default .cm-tag {
+  color: #170;
+}
+.cm-s-default .cm-attribute {
+  color: #00c;
+}
+.cm-s-default .cm-hr {
+  color: #999;
+}
+.cm-s-default .cm-link {
+  color: #00c;
+}
+.cm-s-default .cm-error {
+  color: #f00;
+}
+.cm-invalidchar {
+  color: #f00;
+}
+.CodeMirror-composing {
+  border-bottom: 2px solid;
+}
+/* Default styles for common addons */
+div.CodeMirror span.CodeMirror-matchingbracket {
+  color: #0f0;
+}
+div.CodeMirror span.CodeMirror-nonmatchingbracket {
+  color: #f22;
+}
+.CodeMirror-matchingtag {
+  background: rgba(255, 150, 0, 0.3);
+}
+.CodeMirror-activeline-background {
+  background: #e8f2ff;
+}
+/* STOP */
+/* The rest of this file contains styles related to the mechanics of
+   the editor. You probably shouldn't touch them. */
+.CodeMirror {
+  position: relative;
+  overflow: hidden;
+  background: white;
+}
+.CodeMirror-scroll {
+  overflow: scroll !important;
+  /* Things will break if this is overridden */
+  /* 30px is the magic margin used to hide the element's real scrollbars */
+  /* See overflow: hidden in .CodeMirror */
+  margin-bottom: -30px;
+  margin-right: -30px;
+  padding-bottom: 30px;
+  height: 100%;
+  outline: none;
+  /* Prevent dragging from highlighting the element */
+  position: relative;
+}
+.CodeMirror-sizer {
+  position: relative;
+  border-right: 30px solid transparent;
+}
+/* The fake, visible scrollbars. Used to force redraw during scrolling
+   before actuall scrolling happens, thus preventing shaking and
+   flickering artifacts. */
+.CodeMirror-vscrollbar,
+.CodeMirror-hscrollbar,
+.CodeMirror-scrollbar-filler,
+.CodeMirror-gutter-filler {
+  position: absolute;
+  z-index: 6;
+  display: none;
+}
+.CodeMirror-vscrollbar {
+  right: 0;
+  top: 0;
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+.CodeMirror-hscrollbar {
+  bottom: 0;
+  left: 0;
+  overflow-y: hidden;
+  overflow-x: scroll;
+}
+.CodeMirror-scrollbar-filler {
+  right: 0;
+  bottom: 0;
+}
+.CodeMirror-gutter-filler {
+  left: 0;
+  bottom: 0;
+}
+.CodeMirror-gutters {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 3;
+}
+.CodeMirror-gutter {
+  white-space: normal;
+  height: 100%;
+  display: inline-block;
+  margin-bottom: -30px;
+  /* Hack to make IE7 behave */
+  *zoom: 1;
+  *display: inline;
+}
+.CodeMirror-gutter-wrapper {
+  position: absolute;
+  z-index: 4;
+  background: none !important;
+  border: none !important;
+}
+.CodeMirror-gutter-background {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 4;
+}
+.CodeMirror-gutter-elt {
+  position: absolute;
+  cursor: default;
+  z-index: 4;
+}
+.CodeMirror-gutter-wrapper {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+}
+.CodeMirror-lines {
+  cursor: text;
+  min-height: 1px;
+  /* prevents collapsing before first draw */
+}
+.CodeMirror pre {
+  /* Reset some styles that the rest of the page might have set */
+  -moz-border-radius: 0;
+  -webkit-border-radius: 0;
+  border-radius: 0;
+  border-width: 0;
+  background: transparent;
+  font-family: inherit;
+  font-size: inherit;
+  margin: 0;
+  white-space: pre;
+  word-wrap: normal;
+  line-height: inherit;
+  color: inherit;
+  z-index: 2;
+  position: relative;
+  overflow: visible;
+  -webkit-tap-highlight-color: transparent;
+}
+.CodeMirror-wrap pre {
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  word-break: normal;
+}
+.CodeMirror-linebackground {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 0;
+}
+.CodeMirror-linewidget {
+  position: relative;
+  z-index: 2;
+  overflow: auto;
+}
+.CodeMirror-code {
+  outline: none;
+}
+/* Force content-box sizing for the elements where we expect it */
+.CodeMirror-scroll,
+.CodeMirror-sizer,
+.CodeMirror-gutter,
+.CodeMirror-gutters,
+.CodeMirror-linenumber {
+  -moz-box-sizing: content-box;
+  box-sizing: content-box;
+}
+.CodeMirror-measure {
+  position: absolute;
+  width: 100%;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+}
+.CodeMirror-cursor {
+  position: absolute;
+}
+.CodeMirror-measure pre {
+  position: static;
+}
+div.CodeMirror-cursors {
+  visibility: hidden;
+  position: relative;
+  z-index: 3;
+}
+div.CodeMirror-dragcursors {
+  visibility: visible;
+}
+.CodeMirror-focused div.CodeMirror-cursors {
+  visibility: visible;
+}
+.CodeMirror-selected {
+  background: #d9d9d9;
+}
+.CodeMirror-focused .CodeMirror-selected {
+  background: #d7d4f0;
+}
+.CodeMirror-crosshair {
+  cursor: crosshair;
+}
+.CodeMirror-line::selection,
+.CodeMirror-line > span::selection,
+.CodeMirror-line > span > span::selection {
+  background: #d7d4f0;
+}
+.CodeMirror-line::-moz-selection,
+.CodeMirror-line > span::-moz-selection,
+.CodeMirror-line > span > span::-moz-selection {
+  background: #d7d4f0;
+}
+.cm-searching {
+  background: #ffa;
+  background: rgba(255, 255, 0, 0.4);
+}
+/* IE7 hack to prevent it from returning funny offsetTops on the spans */
+.CodeMirror span {
+  *vertical-align: text-bottom;
+}
+/* Used to force a border model for a node */
+.cm-force-border {
+  padding-right: .1px;
+}
+@media print {
+  /* Hide the cursor when printing */
+  .CodeMirror div.CodeMirror-cursors {
+    visibility: hidden;
+  }
+}
+/* See issue #2901 */
+.cm-tab-wrap-hack:after {
+  content: '';
+}
+/* Help users use markselection to safely style text background */
+span.CodeMirror-selectedtext {
+  background: none;
+}
+/*
+Copyright (C) 2011 by MarkLogic Corporation
+Author: Mike Brevoort <mike@brevoort.com>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+*/
+.cm-s-xq-light span.cm-keyword {
+  line-height: 1em;
+  font-weight: bold;
+  color: #5A5CAD;
+}
+.cm-s-xq-light span.cm-atom {
+  color: #6C8CD5;
+}
+.cm-s-xq-light span.cm-number {
+  color: #164;
+}
+.cm-s-xq-light span.cm-def {
+  text-decoration: underline;
+}
+.cm-s-xq-light span.cm-variable {
+  color: black;
+}
+.cm-s-xq-light span.cm-variable-2 {
+  color: black;
+}
+.cm-s-xq-light span.cm-variable-3 {
+  color: black;
+}
+.cm-s-xq-light span.cm-comment {
+  color: #0080FF;
+  font-style: italic;
+}
+.cm-s-xq-light span.cm-string {
+  color: red;
+}
+.cm-s-xq-light span.cm-meta {
+  color: yellow;
+}
+.cm-s-xq-light span.cm-qualifier {
+  color: grey;
+}
+.cm-s-xq-light span.cm-builtin {
+  color: #7EA656;
+}
+.cm-s-xq-light span.cm-bracket {
+  color: #cc7;
+}
+.cm-s-xq-light span.cm-tag {
+  color: #3F7F7F;
+}
+.cm-s-xq-light span.cm-attribute {
+  color: #7F007F;
+}
+.cm-s-xq-light span.cm-error {
+  color: #f00;
+}
+.cm-s-xq-light .CodeMirror-activeline-background {
+  background: #e8f2ff;
+}
+.cm-s-xq-light .CodeMirror-matchingbracket {
+  outline: 1px solid grey;
+  color: black !important;
+  background: yellow;
+}
+/*!
+ * ui-select
+ * http://github.com/angular-ui/ui-select
+ * Version: 0.13.2 - 2015-10-09T15:34:24.045Z
+ * License: MIT
+ */
+/* Style when highlighting a search. */
+.ui-select-highlight {
+  font-weight: bold;
+}
+.ui-select-offscreen {
+  clip: rect(0 0 0 0) !important;
+  width: 1px !important;
+  height: 1px !important;
+  border: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  position: absolute !important;
+  outline: 0 !important;
+  left: 0px !important;
+  top: 0px !important;
+}
+.ui-select-choices-row:hover {
+  background-color: #f5f5f5;
+}
+/* Select2 theme */
+/* Mark invalid Select2 */
+.ng-dirty.ng-invalid > a.select2-choice {
+  border-color: #D44950;
+}
+.select2-result-single {
+  padding-left: 0;
+}
+.select2-locked > .select2-search-choice-close {
+  display: none;
+}
+.select-locked > .ui-select-match-close {
+  display: none;
+}
+body > .select2-container.open {
+  z-index: 9999;
+  /* The z-index Select2 applies to the select2-drop */
+}
+/* Handle up direction Select2 */
+.ui-select-container[theme="select2"].direction-up .ui-select-match {
+  border-radius: 4px;
+  /* FIXME hardcoded value :-/ */
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+.ui-select-container[theme="select2"].direction-up .ui-select-dropdown {
+  border-radius: 4px;
+  /* FIXME hardcoded value :-/ */
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  border-top-width: 1px;
+  /* FIXME hardcoded value :-/ */
+  border-top-style: solid;
+  box-shadow: 0 -4px 8px rgba(0, 0, 0, 0.25);
+  margin-top: -4px;
+  /* FIXME hardcoded value :-/ */
+}
+.ui-select-container[theme="select2"].direction-up .ui-select-dropdown .select2-search {
+  margin-top: 4px;
+  /* FIXME hardcoded value :-/ */
+}
+.ui-select-container[theme="select2"].direction-up.select2-dropdown-open .ui-select-match {
+  border-bottom-color: #5897fb;
+}
+/* Selectize theme */
+/* Helper class to show styles when focus */
+.selectize-input.selectize-focus {
+  border-color: #007FBB !important;
+}
+/* Fix input width for Selectize theme */
+.selectize-control > .selectize-input > input {
+  width: 100%;
+}
+/* Fix dropdown width for Selectize theme */
+.selectize-control > .selectize-dropdown {
+  width: 100%;
+}
+/* Mark invalid Selectize */
+.ng-dirty.ng-invalid > div.selectize-input {
+  border-color: #D44950;
+}
+/* Handle up direction Selectize */
+.ui-select-container[theme="selectize"].direction-up .ui-select-dropdown {
+  box-shadow: 0 -4px 8px rgba(0, 0, 0, 0.25);
+  margin-top: -2px;
+  /* FIXME hardcoded value :-/ */
+}
+/* Bootstrap theme */
+/* Helper class to show styles when focus */
+.btn-default-focus {
+  color: #333;
+  background-color: #EBEBEB;
+  border-color: #ADADAD;
+  text-decoration: none;
+  outline: 5px auto -webkit-focus-ring-color;
+  outline-offset: -2px;
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 8px rgba(102, 175, 233, 0.6);
+}
+.ui-select-bootstrap .ui-select-toggle {
+  position: relative;
+}
+.ui-select-bootstrap .ui-select-toggle > .caret {
+  position: absolute;
+  height: 10px;
+  top: 50%;
+  right: 10px;
+  margin-top: -2px;
+}
+/* Fix Bootstrap dropdown position when inside a input-group */
+.input-group > .ui-select-bootstrap.dropdown {
+  /* Instead of relative */
+  position: static;
+}
+.input-group > .ui-select-bootstrap > input.ui-select-search.form-control {
+  border-radius: 4px;
+  /* FIXME hardcoded value :-/ */
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.input-group > .ui-select-bootstrap > input.ui-select-search.form-control.direction-up {
+  border-radius: 4px !important;
+  /* FIXME hardcoded value :-/ */
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+.ui-select-bootstrap > .ui-select-match > .btn {
+  /* Instead of center because of .btn */
+  text-align: left !important;
+}
+.ui-select-bootstrap > .ui-select-match > .caret {
+  position: absolute;
+  top: 45%;
+  right: 15px;
+}
+/* See Scrollable Menu with Bootstrap 3 http://stackoverflow.com/questions/19227496 */
+.ui-select-bootstrap > .ui-select-choices {
+  width: 100%;
+  height: auto;
+  max-height: 200px;
+  overflow-x: hidden;
+  margin-top: -1px;
+}
+body > .ui-select-bootstrap.open {
+  z-index: 1000;
+  /* Standard Bootstrap dropdown z-index */
+}
+.ui-select-multiple.ui-select-bootstrap {
+  height: auto;
+  padding: 3px 3px 0 3px;
+}
+.ui-select-multiple.ui-select-bootstrap input.ui-select-search {
+  background-color: transparent !important;
+  /* To prevent double background when disabled */
+  border: none;
+  outline: none;
+  height: 1.666666em;
+  margin-bottom: 3px;
+}
+.ui-select-multiple.ui-select-bootstrap .ui-select-match .close {
+  font-size: 1.6em;
+  line-height: 0.75;
+}
+.ui-select-multiple.ui-select-bootstrap .ui-select-match-item {
+  outline: 0;
+  margin: 0 3px 3px 0;
+}
+.ui-select-multiple .ui-select-match-item {
+  position: relative;
+}
+.ui-select-multiple .ui-select-match-item.dropping-before:before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 100%;
+  height: 100%;
+  margin-right: 2px;
+  border-left: 1px solid #428bca;
+}
+.ui-select-multiple .ui-select-match-item.dropping-after:after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 100%;
+  height: 100%;
+  margin-left: 2px;
+  border-right: 1px solid #428bca;
+}
+.ui-select-bootstrap .ui-select-choices-row > a {
+  display: block;
+  padding: 3px 20px;
+  clear: both;
+  font-weight: 400;
+  line-height: 1.42857143;
+  color: #333;
+  white-space: nowrap;
+}
+.ui-select-bootstrap .ui-select-choices-row > a:hover,
+.ui-select-bootstrap .ui-select-choices-row > a:focus {
+  text-decoration: none;
+  color: #262626;
+  background-color: #f5f5f5;
+}
+.ui-select-bootstrap .ui-select-choices-row.active > a {
+  color: #fff;
+  text-decoration: none;
+  outline: 0;
+  background-color: #428bca;
+}
+.ui-select-bootstrap .ui-select-choices-row.disabled > a,
+.ui-select-bootstrap .ui-select-choices-row.active.disabled > a {
+  color: #777;
+  cursor: not-allowed;
+  background-color: #fff;
+}
+/* fix hide/show angular animation */
+.ui-select-match.ng-hide-add,
+.ui-select-search.ng-hide-add {
+  display: none !important;
+}
+/* Mark invalid Bootstrap */
+.ui-select-bootstrap.ng-dirty.ng-invalid > button.btn.ui-select-match {
+  border-color: #D44950;
+}
+/* Handle up direction Bootstrap */
+.ui-select-container[theme="bootstrap"].direction-up .ui-select-dropdown {
+  box-shadow: 0 -4px 8px rgba(0, 0, 0, 0.25);
 }
 @keyframes fadein {
   from {
@@ -8508,6 +9198,85 @@ a {
   text-align: center;
   display: inline-block;
 }
+.ui-select-bootstrap .ui-select-choices-row.active > a {
+  color: #333;
+  background-color: inherit;
+}
+.pointer {
+  cursor: pointer;
+}
+.large-notice-block {
+  display: -webkit-flex;
+  display: flex;
+  -webkit-align-items: center;
+  align-items: center;
+  -webkit-align-content: center;
+  align-content: center;
+  -webkit-flex-wrap: wrap;
+  flex-wrap: wrap;
+  height: 30vh;
+  width: 98%;
+  font-size: 2em;
+  text-align: center;
+  font-weight: 200;
+}
+.large-notice-block i,
+.large-notice-block p {
+  display: block;
+  width: 100%;
+  margin-top: 0.75em;
+  margin-bottom: 0.75em;
+}
+.label {
+  font-size: 100% !important;
+}
+/*
+ Define each colour here
+ */
+.task-status-ready-to-mark {
+  color: #ffffff;
+  background-color: #0079d8;
+}
+.task-status-not-started {
+  color: #ffffff;
+  background-color: #cccccc;
+}
+.task-status-working-on-it {
+  color: #ffffff;
+  background-color: #eb8f06;
+}
+.task-status-need-help {
+  color: #ffffff;
+  background-color: #a48fce;
+}
+.task-status-fix-and-resubmit {
+  color: #ffffff;
+  background-color: #f2d85c;
+}
+.task-status-fix-and-include {
+  color: #ffffff;
+  background-color: #d46b54;
+}
+.task-status-redo {
+  color: #ffffff;
+  background-color: #804000;
+}
+.task-status-discuss {
+  color: #ffffff;
+  background-color: #31b0d5;
+}
+.task-status-demonstrate {
+  color: #ffffff;
+  background-color: #428bca;
+}
+.task-status-complete {
+  color: #ffffff;
+  background-color: #5bb75b;
+}
+.task-status-fail {
+  color: #ffffff;
+  background-color: #d93713;
+}
 .breadcrumb {
   margin-left: 15px;
   margin-top: -20px;
@@ -8525,6 +9294,20 @@ a {
   animation: fadein 1s;
   text-align: center;
   margin-bottom: 0.5em;
+}
+.landing-page main h1.logo.aprilfools {
+  position: relative;
+}
+.landing-page main h1.logo.aprilfools a {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+.landing-page main h1.logo.aprilfools p {
+  font-size: 17px;
+  color: #666;
 }
 .landing-page main h1.logo i.logo {
   margin: 0 auto 0.5em auto;
@@ -8614,6 +9397,10 @@ footer.about-doubtfire a {
 }
 .dropdown-menu.project-task-bar {
   padding-bottom: 15px;
+  padding-top: 15px;
+}
+.dropdown-menu.project-task-bar h5 {
+  padding: 0;
 }
 .task-progress {
   margin-bottom: 0px;
@@ -8646,103 +9433,116 @@ footer.about-doubtfire a {
   padding-right: 10px;
 }
 .progress-bar-ready-to-mark {
-  background-color: #0079D8;
-  color: white;
+  color: #ffffff;
+  background-color: #0079d8;
 }
-.progress-bar-not-submitted {
-  background-color: #CCCCCC;
-  color: white;
+.progress-bar-not-started {
+  color: #ffffff;
+  background-color: #cccccc;
 }
 .progress-bar-working-on-it {
-  background-color: #EB8F06;
-  color: white;
+  color: #ffffff;
+  background-color: #eb8f06;
 }
 .progress-bar-need-help {
+  color: #ffffff;
   background-color: #a48fce;
-  color: white;
 }
 .progress-bar-fix-and-resubmit {
+  color: #ffffff;
   background-color: #f2d85c;
-  color: white;
 }
 .progress-bar-fix-and-include {
+  color: #ffffff;
+  background-color: #d46b54;
+}
+.progress-bar-fail {
+  color: #ffffff;
   background-color: #d93713;
-  color: white;
 }
 .progress-bar-redo {
+  color: #ffffff;
   background-color: #804000;
-  color: white;
 }
 .progress-bar-discuss {
+  color: #ffffff;
   background-color: #31b0d5;
-  color: white;
+}
+.progress-bar-demonstrate {
+  color: #ffffff;
+  background-color: #428bca;
 }
 .progress-bar-complete {
-  background-color: #5BB75B;
-  background-image: linear-gradient(#62c462, #51a351);
-  color: white;
+  color: #ffffff;
+  background-color: #5bb75b;
 }
 .progress-progress-bar {
   height: 30px;
   margin-bottom: 0px;
 }
 .progress-bar-not-started {
-  background-color: #CCCCCC;
-  color: white;
+  color: #ffffff;
+  background-color: #cccccc;
 }
 .progress-bar-one-week-late {
-  background-color: #CCCCCC;
-  color: white;
+  color: #ffffff;
+  background-color: #eb8f06;
 }
 .progress-bar-two-weeks-late {
-  background-color: #CCCCCC;
-  color: white;
+  color: #ffffff;
+  background-color: #d93713;
 }
 .progress-bar-on-time {
-  background-color: #5BB75B;
-  background-image: linear-gradient(#62c462, #51a351);
-  color: white;
+  color: #ffffff;
+  background-color: #5bb75b;
 }
 .task-engagement-dropdown button.task-status {
   width: 200px;
   text-align: left;
 }
 .task-engagement-dropdown button.task-status.ready-to-mark {
-  background-color: #0079D8;
-  color: white;
+  color: #ffffff;
+  background-color: #0079d8;
 }
-.task-engagement-dropdown button.task-status.not-submitted {
-  background-color: #CCCCCC;
-  color: white;
+.task-engagement-dropdown button.task-status.not-started {
+  color: #ffffff;
+  background-color: #cccccc;
 }
 .task-engagement-dropdown button.task-status.working-on-it {
-  background-color: #EB8F06;
-  color: white;
+  color: #ffffff;
+  background-color: #eb8f06;
 }
 .task-engagement-dropdown button.task-status.need-help {
-  background-color: #b09cd7;
-  color: white;
+  color: #ffffff;
+  background-color: #a48fce;
 }
 .task-engagement-dropdown button.task-status.fix-and-resubmit {
+  color: #ffffff;
   background-color: #f2d85c;
-  color: white;
 }
 .task-engagement-dropdown button.task-status.fix-and-include {
+  color: #ffffff;
+  background-color: #d46b54;
+}
+.task-engagement-dropdown button.task-status.fail {
+  color: #ffffff;
   background-color: #d93713;
-  color: white;
 }
 .task-engagement-dropdown button.task-status.redo {
+  color: #ffffff;
   background-color: #804000;
-  color: white;
 }
 .task-engagement-dropdown button.task-status.discuss {
+  color: #ffffff;
   background-color: #31b0d5;
-  color: white;
+}
+.task-engagement-dropdown button.task-status.demonstrate {
+  color: #ffffff;
+  background-color: #428bca;
 }
 .task-engagement-dropdown button.task-status.complete {
-  background-color: #5BB75B;
-  background-image: linear-gradient(#62c462, #51a351);
-  color: white;
+  color: #ffffff;
+  background-color: #5bb75b;
 }
 .task-engagement-dropdown button.task-status span.caret {
   float: right;
@@ -8760,179 +9560,105 @@ footer.about-doubtfire a {
   margin-top: 3px;
 }
 .task-status.ready-to-mark {
-  background-color: #0079D8;
-  color: white;
+  color: #ffffff;
+  background-color: #0079d8;
 }
-.task-status.not-submitted {
-  background-color: #CCCCCC;
-  color: white;
+.task-status.not-started {
+  color: #ffffff;
+  background-color: #cccccc;
 }
 .task-status.working-on-it {
-  background-color: #EB8F06;
-  color: white;
+  color: #ffffff;
+  background-color: #eb8f06;
 }
 .task-status.need-help {
-  background-color: #b09cd7;
-  color: white;
+  color: #ffffff;
+  background-color: #a48fce;
 }
 .task-status.fix-and-resubmit {
+  color: #ffffff;
   background-color: #f2d85c;
-  color: white;
 }
 .task-status.fix-and-include {
+  color: #ffffff;
+  background-color: #d46b54;
+}
+.task-status.fail {
+  color: #ffffff;
   background-color: #d93713;
-  color: white;
 }
 .task-status.redo {
+  color: #ffffff;
   background-color: #804000;
-  color: white;
 }
 .task-status.discuss {
+  color: #ffffff;
   background-color: #31b0d5;
-  color: white;
+}
+.task-status.demonstrate {
+  color: #ffffff;
+  background-color: #428bca;
 }
 .task-status.complete {
-  background-color: #5BB75B;
-  background-image: linear-gradient(#62c462, #51a351);
-  color: white;
+  color: #ffffff;
+  background-color: #5bb75b;
 }
-.task-status .ready-to-mark {
-  background-color: #F8F8F8;
-}
-.task-status .not-submitted {
-  background-color: #F8F8F8;
-}
-.task-status .working-on-it {
-  background-color: #F8F8F8;
-}
-.task-status .need-help {
-  background-color: #F8F8F8;
-}
-.task-status .fix-and-resubmit {
-  background-color: #F8F8F8;
-}
-.task-status .fix-and-include {
-  background-color: #F8F8F8;
-}
-.task-status .redo {
-  background-color: #F8F8F8;
-}
-.task-status .discuss {
-  background-color: #F8F8F8;
-}
+.task-status .ready-to-mark,
+.task-status .not-started,
+.task-status .working-on-it,
+.task-status .need-help,
+.task-status .fix-and-resubmit,
+.task-status .fix-and-include,
+.task-status .fail,
+.task-status .redo,
+.task-status .discuss,
+.task-status .demonstrate,
 .task-status .complete {
   background-color: #F8F8F8;
 }
 .task-status .ready-to-mark.active {
-  background-color: #0079D8;
-  color: white;
+  color: #ffffff;
+  background-color: #0079d8;
 }
-.task-status .not-submitted.active {
-  background-color: #CCCCCC;
-  color: white;
+.task-status .not-started.active {
+  color: #ffffff;
+  background-color: #cccccc;
 }
 .task-status .working-on-it.active {
-  background-color: #EB8F06;
-  color: white;
+  color: #ffffff;
+  background-color: #eb8f06;
 }
 .task-status .need-help.active {
-  background-color: #b09cd7;
-  color: white;
+  color: #ffffff;
+  background-color: #a48fce;
 }
 .task-status .fix-and-resubmit.active {
+  color: #ffffff;
   background-color: #f2d85c;
-  color: white;
 }
 .task-status .fix-and-include.active {
+  color: #ffffff;
+  background-color: #d46b54;
+}
+.task-status .fail.active {
+  color: #ffffff;
   background-color: #d93713;
-  color: white;
 }
 .task-status .redo.active {
+  color: #ffffff;
   background-color: #804000;
-  color: white;
 }
 .task-status .discuss.active {
+  color: #ffffff;
   background-color: #31b0d5;
-  color: white;
+}
+.task-status .demonstrate.active {
+  color: #ffffff;
+  background-color: #428bca;
 }
 .task-status .complete.active {
-  background-color: #5BB75B;
-  background-image: linear-gradient(#62c462, #51a351);
-  color: white;
-}
-.task-status-colored .ready-to-mark {
-  background-color: rgba(0, 125, 124, 0.2);
-  color: #CCCCCC;
-}
-.task-status-colored .not-submitted {
-  background-color: #F8F8F8;
-  color: #CCCCCC;
-}
-.task-status-colored .working-on-it {
-  background-color: rgba(234, 141, 30, 0.2);
-  color: #CCCCCC;
-}
-.task-status-colored .need-help {
-  background-color: rgba(175, 158, 214, 0.2);
-  color: #CCCCCC;
-}
-.task-status-colored .fix-and-resubmit {
-  background-color: rgba(242, 214, 99, 0.2);
-  color: #CCCCCC;
-}
-.task-status-colored .fix-and-include {
-  background-color: rgba(216, 53, 26, 0.2);
-  color: #CCCCCC;
-}
-.task-status-colored .redo {
-  background-color: rgba(127, 63, 8, 0.2);
-  color: #CCCCCC;
-}
-.task-status-colored .discuss {
-  background-color: rgba(52, 173, 207, 0.2);
-  color: #CCCCCC;
-}
-.task-status-colored .complete {
-  background-color: rgba(148, 204, 148, 0.2);
-  background-image: linear-gradient(rgba(98, 196, 98, 0.2), #51a351);
-  color: #CCCCCC;
-}
-.task-status-colored .ready-to-mark.active {
-  background-color: #0079D8;
-  color: white;
-}
-.task-status-colored .not-submitted.active {
-  background-color: #CCCCCC;
-  color: white;
-}
-.task-status-colored .working-on-it.active {
-  background-color: #EB8F06;
-  color: white;
-}
-.task-status-colored .need-help.active {
-  background-color: #b09cd7;
-  color: white;
-}
-.task-status-colored .fix-and-resubmit.active {
-  background-color: #f2d85c;
-  color: white;
-}
-.task-status-colored .fix-and-include.active {
-  background-color: #d93713;
-  color: white;
-}
-.task-status-colored .redo.active {
-  background-color: #804000;
-  color: white;
-}
-.task-status-colored .discuss.active {
-  background-color: #31b0d5;
-  color: white;
-}
-.task-status-colored .complete.active {
-  background-color: #5BB75B;
-  background-image: linear-gradient(#62c462, #51a351);
-  color: white;
+  color: #ffffff;
+  background-color: #5bb75b;
 }
 .task-icon {
   padding-left: 4px;
@@ -8944,41 +9670,48 @@ footer.about-doubtfire a {
   display: inline-block;
 }
 .well-sm.task-status.ready-to-mark {
-  background-color: #0079D8;
-  color: white;
+  color: #ffffff;
+  background-color: #0079d8;
 }
-.well-sm.task-status.not-submitted {
-  background-color: #CCCCCC;
-  color: white;
+.well-sm.task-status.not-started {
+  color: #ffffff;
+  background-color: #cccccc;
 }
 .well-sm.task-status.working-on-it {
-  background-color: #EB8F06;
-  color: white;
+  color: #ffffff;
+  background-color: #eb8f06;
 }
 .well-sm.task-status.need-help {
-  background-color: #b09cd7;
-  color: white;
+  color: #ffffff;
+  background-color: #a48fce;
 }
 .well-sm.task-status.fix-and-resubmit {
-  background-color: #d2bc4e;
-  color: white;
+  color: #ffffff;
+  background-color: #f2d85c;
 }
 .well-sm.task-status.fix-and-include {
+  color: #ffffff;
+  background-color: #d46b54;
+}
+.well-sm.task-status.fail {
+  color: #ffffff;
   background-color: #d93713;
-  color: white;
 }
 .well-sm.task-status.redo {
+  color: #ffffff;
   background-color: #804000;
-  color: white;
 }
 .well-sm.task-status.discuss {
+  color: #ffffff;
   background-color: #31b0d5;
-  color: white;
+}
+.well-sm.task-status.demonstrate {
+  color: #ffffff;
+  background-color: #428bca;
 }
 .well-sm.task-status.complete {
-  background-color: #5BB75B;
-  background-image: linear-gradient(#62c462, #51a351);
-  color: white;
+  color: #ffffff;
+  background-color: #5bb75b;
 }
 .panel-heading.nav-header h3 {
   display: inline-block;
@@ -9044,11 +9777,20 @@ a.navbar-brand h1.logo {
   box-sizing: border-box;
   width: 30%;
 }
-.burndown-chart {
-  height: 450px;
-  width: 100%;
-  margin-left: 10%;
-  margin-right: auto;
+.burndown-chart .dashed {
+  stroke-dasharray: 5,5;
+}
+.burndown-chart .nv-legendWrap .nv-series:last-child {
+  display: none;
+}
+.burndown-chart .nvtooltip tr:last-child {
+  display: none;
+}
+.burndown-chart .nv-legend {
+  transform: translate(50px, -15px);
+}
+.burndown-chart .nv-legendWrap {
+  transform: translate(50px, -15px);
 }
 .error-container h1 + p {
   margin-top: 20px;
@@ -9172,6 +9914,10 @@ a.navbar-brand h1.logo {
 .callout-success .highlight {
   background-color: #fff;
 }
+.comment-panel {
+  overflow: scroll;
+  height: 30vh;
+}
 .comment .comment-details {
   padding-top: 8px;
 }
@@ -9205,12 +9951,12 @@ a.navbar-brand h1.logo {
   color: red;
   cursor: pointer;
 }
-.comment-submitter textarea,
 .comment-submitter button {
-  height: 45px;
+  height: 59px;
 }
-.comment-submitter textarea {
-  resize: none;
+.comment-submitter .markdown-editor {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
 }
 .feedback-float-toolbar {
   margin: 3em 0;
@@ -9265,9 +10011,13 @@ a.navbar-brand h1.logo {
   font-size: 1.5em;
   margin: 0px;
 }
+.btn-group.status-switcher > button label.label.label-info {
+  font-size: 1em;
+  margin-left: 0.5ex;
+  cursor: pointer;
+}
 .btn-group.status-switcher > button span.caret {
-  margin-left: 10px;
-  margin-bottom: 6px;
+  margin-left: 1ex;
 }
 .btn-group.status-switcher.open > button {
   border-bottom-left-radius: 0px;
@@ -9281,29 +10031,30 @@ a.navbar-brand h1.logo {
 }
 .task-feedback .task-feedback-toolbar {
   border-bottom: 1px dashed #ddd;
-  padding-bottom: 2em;
   margin-bottom: 2em;
 }
 .task-feedback .task-header-info .task-description {
   float: left;
 }
-.task-feedback .task-header-info .date-info {
-  float: right;
-  text-align: right;
+.task-feedback .task-header-info .task-description h3 {
+  margin: 0;
 }
-.task-feedback .task-header-info .date-info .overdue.label {
+.task-feedback .task-header-info .overdue.label {
   font-size: 1em;
   text-align: center;
   text-transform: uppercase;
-  padding: 5px 2ex;
   cursor: pointer;
   display: inline-block;
 }
-.task-feedback .task-header-info .date-info .overdue.label i {
+.task-feedback .task-header-info .overdue.label i {
   display: inline-block;
   font-size: 2em;
   float: left;
   margin-right: 0.25ex;
+}
+.task-feedback .task-header-info .date-info {
+  float: right;
+  text-align: right;
 }
 .task-feedback .task-header-info .date-info .due-date {
   margin: 0;
@@ -9384,6 +10135,90 @@ submit-task-form file-uploader .file-upload-area .result-area > *,
 submit-task-form file-uploader .file-upload-area .progress-area > * {
   -webkit-flex-basis: 100%;
   flex-basis: 100%;
+}
+.task-feedback .task-feedback-tab-panel .task-sheet .panel-body.task-description,
+.task-feedback .task-feedback-tab-panel .task-sheet .panel-body.task-view-alignment-panel {
+  height: auto;
+}
+.task-feedback .task-feedback-tab-panel .task-sheet .panel-body.ng-hide {
+  transition: all ease-out 0.2s;
+}
+.task-feedback .task-feedback-tab-panel .task-sheet .panel-body.task-description {
+  font-size: 1.25em;
+  font-weight: lighter;
+  margin: 1em auto;
+}
+.task-feedback .task-feedback-tab-panel .task-sheet .panel-body.task-description p:last-child {
+  margin-bottom: 0;
+}
+.task-feedback .task-feedback-tab-panel .task-sheet .panel-heading {
+  color: #ffffff;
+  background-color: #428bca;
+  border-color: #428bca;
+}
+.task-feedback .task-feedback-tab-panel .task-sheet .panel-body.task-view-alignment-panel {
+  padding: 0;
+}
+.task-feedback .task-feedback-tab-panel .task-sheet .panel-body.task-buttons-download-area {
+  display: flex;
+  display: -webkit-flex;
+  background: #428bca;
+  height: 15vh;
+  min-height: 130px;
+  padding: 0;
+  -webkit-transition: all 0.3s ease-in;
+  transition: all 0.3s ease-in;
+}
+.task-feedback .task-feedback-tab-panel .task-sheet .panel-body.task-buttons-download-area .btn {
+  flex: 1;
+  -webkit-flex: 1;
+  display: flex;
+  display: -webkit-flex;
+  -webkit-justify-content: center;
+  justify-content: center;
+  -webkit-align-items: center;
+  align-items: center;
+  height: calc(100% - 1px);
+  text-align: center;
+  border-radius: 0;
+}
+.task-feedback .task-feedback-tab-panel .task-sheet .panel-body.task-buttons-download-area .btn:first-child {
+  border-bottom-left-radius: 3px;
+}
+.task-feedback .task-feedback-tab-panel .task-sheet .panel-body.task-buttons-download-area .btn:last-child {
+  border-bottom-right-radius: 3px;
+}
+.task-feedback .task-feedback-tab-panel .task-sheet .panel-body.task-buttons-download-area .btn i {
+  margin-bottom: 0.5ex;
+}
+.task-feedback .task-feedback-tab-panel .task-sheet .panel-body.task-buttons-download-area .btn i + i {
+  margin-left: 1ex;
+}
+.task-feedback .task-feedback-tab-panel .task-sheet .panel-body.task-buttons-download-area .btn p {
+  margin: 0;
+}
+.task-feedback .task-feedback-tab-panel .task-sheet .panel-body.task-buttons-download-area.small {
+  height: 10vh;
+  min-height: 50px;
+}
+.task-feedback .task-feedback-tab-panel .task-sheet .panel-body.task-buttons-download-area.small .btn:first-child {
+  flex: 2;
+  -webkit-flex: 2;
+}
+.task-feedback .task-feedback-tab-panel .task-sheet .panel-body.task-buttons-download-area.small .btn {
+  font-size: 1.4em;
+}
+.task-feedback .task-feedback-tab-panel .task-sheet .panel-body.task-buttons-download-area.small .btn i {
+  margin-bottom: 0;
+  margin-right: 1ex;
+}
+.task-feedback .task-feedback-tab-panel .task-sheet .panel-body.task-buttons-download-area.small .btn i + i {
+  margin-left: 0;
+}
+.task-feedback .task-feedback-tab-panel .task-sheet .panel-body.task-buttons-download-area.small .btn p {
+  display: inline-block;
+  vertical-align: top;
+  padding-top: 0.5em;
 }
 .task-feedback .task-feedback-tab-panel .panel-body .plagiarism-panel {
   display: block;
@@ -9622,11 +10457,22 @@ file-uploader {
 }
 pdf-panel-viewer .panel-body {
   padding: 0;
+  position: relative;
   overflow: inherit !important;
+  background-color: #d1d1d1;
+}
+pdf-panel-viewer .iframe-wrapper {
+  position: absolute;
+  top: 1px;
+  bottom: -1px;
+  left: 1px;
+  right: 0;
 }
 pdf-panel-viewer iframe {
-  width: 100%;
+  position: absolute;
+  display: block;
   height: 100%;
+  width: 100%;
   border: none;
 }
 pdf-panel-viewer .panel-footer {
@@ -9676,11 +10522,28 @@ pdf-panel-viewer .panel-footer {
   font-size: 2em;
   cursor: pointer;
 }
+.group-memberships.not-selected {
+  text-align: center;
+  border: 1px dashed grey;
+  border-radius: 1em;
+  color: grey;
+}
+.group-memberships.not-selected i:first-of-type {
+  padding-right: 1em;
+}
+.group-memberships.not-selected i {
+  margin-top: 2em;
+}
+.group-memberships.not-selected p {
+  margin-bottom: 7em;
+  margin-top: 1em;
+}
 .panel-footer .pagination,
 .modal-footer .pagination {
   margin: 0;
 }
-.panel-body + .panel-heading {
+.panel-body + .panel-heading,
+.panel-body + * > .panel-heading {
   border-top: 1px solid #ddd !important;
   border-radius: 0 !important;
 }
@@ -9708,32 +10571,29 @@ table.table-pointer tr {
 table td {
   vertical-align: middle !important;
 }
-grade-icon.text-muted span {
+.grade-icon.text-muted {
   background-color: #777777;
 }
-grade-icon.text-primary span {
+.grade-icon.text-primary {
   background-color: #428bca;
 }
-grade-icon.text-success span {
+.grade-icon.text-success {
   background-color: #5cb85c;
 }
-grade-icon.text-danger span {
+.grade-icon.text-danger {
   background-color: #d9534f;
 }
-grade-icon.text-info span {
+.grade-icon.text-info {
   background-color: #5bc0de;
 }
-grade-icon.text-warning span {
+.grade-icon.text-warning {
   background-color: #f0ad4e;
 }
-a grade-icon:hover span {
+a .grade-icon:hover {
   background-color: #2a6496;
 }
-grade-icon span {
+.grade-icon {
   color: #fff;
-  display: table-cell;
-  text-align: center;
-  vertical-align: middle;
   background: #333333;
   border-radius: 100%;
   width: 2.25em;
@@ -9741,6 +10601,10 @@ grade-icon span {
   font-weight: 100;
   font-size: 1em;
   cursor: pointer;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 /* Widths of Table */
 /* Flag Icon stuff */
@@ -9822,6 +10686,9 @@ grade-icon span {
   -webkit-flex-direction: column;
   flex-direction: column;
 }
+.tutor-student-list.fullscreen .panel-heading {
+  border-radius: 0;
+}
 .tutor-student-list.fullscreen .panel-body.student-list {
   height: 20vh;
   resize: vertical;
@@ -9836,7 +10703,14 @@ grade-icon span {
   flex: 1;
   position: relative;
 }
-.tutor-student-list.fullscreen .panel-body.project-show .no-student {
+.tutor-student-list.fullscreen .panel-body.project-show.no-padding {
+  padding: 0px;
+}
+.tutor-student-list.fullscreen .panel-body.project-show .panel,
+.tutor-student-list.fullscreen .panel-body.project-show .panel-heading {
+  border-radius: 0;
+}
+.tutor-student-list.fullscreen .panel-body.project-show .nothing-selected {
   display: -webkit-flex;
   display: flex;
   -webkit-align-items: center;
@@ -9852,8 +10726,8 @@ grade-icon span {
   text-align: center;
   font-weight: 200;
 }
-.tutor-student-list.fullscreen .panel-body.project-show .no-student i,
-.tutor-student-list.fullscreen .panel-body.project-show .no-student p {
+.tutor-student-list.fullscreen .panel-body.project-show .nothing-selected i,
+.tutor-student-list.fullscreen .panel-body.project-show .nothing-selected p {
   display: block;
   width: 100%;
   margin-bottom: 0.75em;
@@ -9878,4 +10752,617 @@ grade-icon span {
   overflow-x: scroll;
   font-family: monospace;
   white-space: nowrap;
+}
+.tabset-icon tab-heading {
+  text-align: center;
+}
+.tabset-icon tab-heading i {
+  display: block;
+  width: 100%;
+  padding-bottom: 5px;
+}
+.tabset-icon tab-heading i:not(:last-child) {
+  margin-right: 1ex;
+}
+.tabset-icon tab-heading i:not(:last-child),
+.tabset-icon tab-heading i + i:last-child {
+  display: inline-block;
+  width: inherit;
+}
+markdown-editor.col-xs-1,
+markdown-editor.col-sm-1,
+markdown-editor.col-md-1,
+markdown-editor.col-lg-1,
+markdown-editor.col-xs-2,
+markdown-editor.col-sm-2,
+markdown-editor.col-md-2,
+markdown-editor.col-lg-2,
+markdown-editor.col-xs-3,
+markdown-editor.col-sm-3,
+markdown-editor.col-md-3,
+markdown-editor.col-lg-3,
+markdown-editor.col-xs-4,
+markdown-editor.col-sm-4,
+markdown-editor.col-md-4,
+markdown-editor.col-lg-4,
+markdown-editor.col-xs-5,
+markdown-editor.col-sm-5,
+markdown-editor.col-md-5,
+markdown-editor.col-lg-5,
+markdown-editor.col-xs-6,
+markdown-editor.col-sm-6,
+markdown-editor.col-md-6,
+markdown-editor.col-lg-6,
+markdown-editor.col-xs-7,
+markdown-editor.col-sm-7,
+markdown-editor.col-md-7,
+markdown-editor.col-lg-7,
+markdown-editor.col-xs-8,
+markdown-editor.col-sm-8,
+markdown-editor.col-md-8,
+markdown-editor.col-lg-8,
+markdown-editor.col-xs-9,
+markdown-editor.col-sm-9,
+markdown-editor.col-md-9,
+markdown-editor.col-lg-9,
+markdown-editor.col-xs-10,
+markdown-editor.col-sm-10,
+markdown-editor.col-md-10,
+markdown-editor.col-lg-10,
+markdown-editor.col-xs-11,
+markdown-editor.col-sm-11,
+markdown-editor.col-md-11,
+markdown-editor.col-lg-11,
+markdown-editor.col-xs-12,
+markdown-editor.col-sm-12,
+markdown-editor.col-md-12,
+markdown-editor.col-lg-12 {
+  padding-left: 0;
+  padding-right: 0;
+}
+.markdown-editor {
+  position: relative;
+  cursor: text;
+  padding: 6px 12px;
+  border: 1px solid #cccccc;
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+  font-size: 1.2em;
+  border-radius: 4px;
+  background-color: #fff;
+}
+.markdown-editor .markdown-editor-actions {
+  position: absolute;
+  bottom: 1em;
+  right: 1em;
+  z-index: 2;
+}
+.markdown-editor .markdown-editor-action {
+  color: grey;
+  font-size: 1em;
+  cursor: pointer;
+}
+.markdown-editor .markdown-editor-action:hover {
+  color: #428bca;
+}
+.markdown-editor .markdown-editor-preview {
+  overflow: scroll;
+  display: relative;
+  z-index: 1;
+}
+.markdown-editor .CodeMirror {
+  font-family: Menlo, Monaco, monospace;
+  display: relative;
+  z-index: 1;
+}
+.markdown-editor .CodeMirror .CodeMirror-placeholder {
+  color: grey;
+}
+.markdown-to-html.dashed {
+  border-top: 1px dashed #ddd;
+  border-bottom: 1px dashed #ddd;
+  margin: 30px;
+  padding: 10px;
+}
+.markdown-to-html.bordered {
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  padding: 10px 15px;
+}
+.markdown-to-html.smaller h1,
+.markdown-to-html.smaller h2,
+.markdown-to-html.smaller h3,
+.markdown-to-html.smaller h4,
+.markdown-to-html.smaller h5,
+.markdown-to-html.smaller h6 {
+  font-size: 1.2em;
+  font-weight: bold;
+}
+.markdown-to-html pre,
+.markdown-to-html code {
+  font-family: Menlo, Monaco, monospace;
+}
+.markdown-to-html pre {
+  display: block;
+  padding: 9.5px;
+  margin: 0 0 10px;
+  font-size: 13px;
+  line-height: 1.42857143;
+  color: #333;
+  word-break: break-all;
+  word-wrap: break-word;
+  background-color: #f5f5f5;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+.markdown-to-html code {
+  padding: 2px 4px;
+  font-size: 90%;
+  color: #c7254e;
+  background-color: #f9f2f4;
+  border-radius: 4px;
+}
+.markdown-to-html pre code {
+  padding: initial;
+  font-size: initial;
+  color: initial;
+  background-color: initial;
+  border-radius: initial;
+}
+.markdown-to-html img {
+  display: inline-block;
+  max-width: 100%;
+  height: auto;
+  padding: 4px;
+  line-height: 1.42857143;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+svg.nvd3-svg {
+  margin: 0 auto;
+}
+/* Widths of Table */
+.no-task {
+  display: -webkit-flex;
+  display: flex;
+  -webkit-align-items: center;
+  align-items: center;
+  -webkit-align-content: center;
+  align-content: center;
+  -webkit-flex-wrap: wrap;
+  flex-wrap: wrap;
+  height: 90%;
+  width: 98%;
+  font-size: 2em;
+  text-align: center;
+  font-weight: 200;
+}
+.no-task i,
+.no-task p {
+  display: block;
+  width: 100%;
+  margin-top: 0.75em;
+  margin-bottom: 0.75em;
+}
+.outcome-alignment-rating.colorful .rating-static-tooltip .badge.rating-1,
+.outcome-alignment-rating.colorful .compact-rating.rating-1 {
+  background-color: #87abed !important;
+  color: white;
+}
+.outcome-alignment-rating.colorful .rating-area i:nth-of-type( 1) {
+  color: #87abed;
+}
+.outcome-alignment-rating.colorful .rating-static-tooltip .badge.rating-2,
+.outcome-alignment-rating.colorful .compact-rating.rating-2 {
+  background-color: #5b8ce6 !important;
+  color: white;
+}
+.outcome-alignment-rating.colorful .rating-area i:nth-of-type( 2) {
+  color: #5b8ce6;
+}
+.outcome-alignment-rating.colorful .rating-static-tooltip .badge.rating-3,
+.outcome-alignment-rating.colorful .compact-rating.rating-3 {
+  background-color: #2e6de0 !important;
+  color: white;
+}
+.outcome-alignment-rating.colorful .rating-area i:nth-of-type( 3) {
+  color: #2e6de0;
+}
+.outcome-alignment-rating.colorful .rating-static-tooltip .badge.rating-4,
+.outcome-alignment-rating.colorful .compact-rating.rating-4 {
+  background-color: #1d55bf !important;
+  color: white;
+}
+.outcome-alignment-rating.colorful .rating-area i:nth-of-type( 4) {
+  color: #1d55bf;
+}
+.outcome-alignment-rating.colorful .rating-static-tooltip .badge.rating-5,
+.outcome-alignment-rating.colorful .compact-rating.rating-5 {
+  background-color: #164192 !important;
+  color: white;
+}
+.outcome-alignment-rating.colorful .rating-area i:nth-of-type( 5) {
+  color: #164192;
+}
+.outcome-alignment-rating .compact-rating {
+  border-radius: 2em;
+  font-size: 2em;
+  text-align: center;
+  width: 55%;
+  cursor: pointer;
+  margin: 0 auto;
+}
+.outcome-alignment-rating .rating-area {
+  margin-bottom: 10px;
+  width: 100%;
+  text-align: center;
+  display: inline-block;
+}
+.outcome-alignment-rating .rating-area:focus {
+  outline: none;
+}
+.outcome-alignment-rating .rating-area i {
+  cursor: pointer;
+  padding: 0 10px;
+}
+.unit-oucome-alignment .popover-inner > .popover-content {
+  padding: 0;
+}
+.unit-oucome-alignment .popover-inner > .popover-content .popver-content {
+  padding: 9px 14px;
+}
+.unit-oucome-alignment .popover-inner > .popover-content .popover-footer {
+  padding: 8px 14px;
+  margin: 0;
+  font-size: 14px;
+  background-color: #f7f7f7;
+  border-top: 1px solid #ebebeb;
+  border-radius: 0 0 5px 5px;
+}
+table.table-task-alignment td.task-abbreviation {
+  width: 5ex;
+}
+table.table-task-alignment td.task-status-icon {
+  width: 6em;
+}
+table.table-task-alignment td.task-name {
+  width: 10ex;
+}
+table.table-task-alignment td.include-in-portfolio {
+  width: 10ex;
+}
+table.table-task-alignment td.task-abbreviation label {
+  display: inline-block;
+  width: 100%;
+}
+table.table-task-alignment td.include-in-portfolio button,
+table.table-task-alignment td.include-in-portfolio .button-wrapper {
+  width: 100%;
+  height: 3em;
+}
+table.table-task-alignment td.ilo-alignment .alignment-circle {
+  width: 6em;
+  padding: 0.25em;
+  margin: 0 auto;
+  border: 1px solid transparent;
+}
+table.table-task-alignment td.ilo-alignment .alignment-circle:hover {
+  border: 1px dashed #5b8ce6;
+  border-radius: 1em;
+}
+.visualisation {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  left: 0;
+  z-index: 3;
+  opacity: 0.6;
+  margin: 0;
+  border-radius: 0;
+}
+.visualisation:hover {
+  cursor: pointer;
+  opacity: 1;
+}
+.alignment-rater .rationale-wrapper {
+  display: table;
+  margin-top: 2em;
+}
+.alignment-rater .rationale {
+  display: table-cell;
+  height: 200px;
+  overflow: scroll;
+  padding: 30px;
+  border-radius: 6px;
+  font-size: 1.5em;
+  cursor: pointer;
+}
+.alignment-rater .rationale label {
+  font-size: 0.75em;
+  text-transform: uppercase;
+}
+.alignment-rater .rationale.no-rationale {
+  border: 1px dashed #aaa;
+  vertical-align: middle;
+  text-align: center;
+  color: #aaa;
+}
+.alignment-rater .rationale:hover {
+  border-color: #428bca;
+  color: #428bca;
+}
+.view-alignment .related-outcome-tasks {
+  max-height: 200px;
+  overflow: scroll;
+  background-color: #ffffff;
+  border: 1px solid #dddddd;
+  border-radius: 4px;
+}
+.view-alignment .related-outcome-tasks .list-group li {
+  border-left: none;
+  border-right: none;
+}
+.view-alignment .related-outcome-tasks .list-group li:first-child {
+  border-top: none;
+}
+.view-alignment .related-outcome-tasks .list-group li:last-child {
+  border-bottom: none;
+}
+.view-alignment .related-outcome-tasks .task-def-alignment-item {
+  font-size: 1.5em;
+}
+.view-alignment .related-outcome-tasks .task-def-alignment-item label {
+  margin-top: 10px;
+}
+.view-alignment .alignment-list {
+  margin: 0;
+}
+.view-alignment .alignment-list > li {
+  border-radius: 0;
+  border: 0;
+  padding: 3em 1.5em;
+  cursor: pointer;
+}
+.view-alignment .alignment-list > li:hover {
+  background-color: #eee;
+}
+.view-alignment .alignment-list > li.expanded {
+  background-color: #f9f9f9;
+}
+.view-alignment .alignment-list > li header {
+  display: -webkit-flex;
+  display: flex;
+}
+.view-alignment .alignment-list > li header .header-item {
+  display: -webkit-flex;
+  display: flex;
+  -webkit-align-items: center;
+  align-items: center;
+}
+.view-alignment .alignment-list > li header .header-item.pull-right {
+  -webkit-justify-content: flex-end;
+  justify-content: flex-end;
+}
+.view-alignment .alignment-list > li header .expand-icon {
+  margin-left: 2em;
+}
+.view-alignment .alignment-list > li header .label {
+  margin-right: 1em;
+}
+.view-alignment .alignment-list > li .alignment-content h5 {
+  margin-top: 2em;
+  color: #666;
+  font-size: 1.2em;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+.view-alignment .alignment-list > li .alignment-content .markdown-to-html {
+  font-size: 1.5em;
+}
+.view-alignment .alignment-list svg.nvd3-svg {
+  margin: initial;
+}
+.view-alignment .alignment-list > li:not(:first-child) {
+  border-top: 1px solid #dddddd;
+}
+.drilldown-visualiser .overview-chart {
+  cursor: pointer;
+}
+.drilldown-visualiser .overview-charts .overview-chart {
+  height: 250px;
+  cursor: pointer;
+}
+.drilldown-visualiser .overview-charts .overview-chart .no-data-to-display {
+  height: 60%;
+  text-align: center;
+  padding-top: 30%;
+  border: 1px dashed #ddd;
+  color: #ddd;
+  border-radius: 1em;
+  margin: 10%;
+}
+#home .welcome-to-doubtfire {
+  margin: 2.5em 0;
+}
+#home .welcome-to-doubtfire i.logo {
+  width: 10em;
+  height: 10em;
+}
+#home .panel-wrapper {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: stretch;
+  -webkit-justify-content: stretch;
+  -ms-flex-pack: stretch;
+  justify-content: stretch;
+}
+#home .panel-wrapper .panel-container {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  margin: 0 auto;
+}
+#home .panel-wrapper .panel {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+  -webkit-flex-direction: column;
+  -ms-flex-direction: column;
+  flex-direction: column;
+  -webkit-flex-wrap: wrap;
+  -ms-flex-wrap: wrap;
+  flex-wrap: wrap;
+}
+#home .panel-wrapper .panel .panel-heading {
+  width: 100%;
+  max-height: 38px;
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+  -webkit-align-items: center;
+  -ms-flex-align: center;
+  align-items: center;
+}
+#home .panel-wrapper .panel .list-group {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-flex-wrap: wrap;
+  -ms-flex-wrap: wrap;
+  flex-wrap: wrap;
+}
+#home .panel-wrapper .panel .no-content,
+#home .panel-wrapper .panel .list-group {
+  -webkit-box-flex: 1;
+  -webkit-flex: 1;
+  -ms-flex: 1;
+  flex: 1;
+}
+#home .panel-wrapper .panel .no-content,
+#home .panel-wrapper .panel .list-group-item {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+  -webkit-align-items: center;
+  -ms-flex-align: center;
+  align-items: center;
+}
+#home .panel-wrapper .panel .no-content div,
+#home .panel-wrapper .panel .list-group-item div {
+  width: 100%;
+}
+#home .panel-wrapper .panel .list-group-item,
+#home .panel-wrapper .panel .no-content,
+#home .panel-wrapper .panel .panel-body,
+#home .panel-wrapper .panel {
+  width: 100%;
+}
+#home .panel-admin .list-group-item i,
+#home .panel-project .list-group-item i,
+#home .panel-teaching .list-group-item i {
+  float: left;
+  width: 12%;
+  text-align: left;
+  font-size: 2em;
+  margin-top: 0.25em;
+}
+#home .panel-admin .list-group-item .list-group-item-heading,
+#home .panel-project .list-group-item .list-group-item-heading,
+#home .panel-teaching .list-group-item .list-group-item-heading,
+#home .panel-admin .list-group-item .list-group-item-text,
+#home .panel-project .list-group-item .list-group-item-text,
+#home .panel-teaching .list-group-item .list-group-item-text {
+  width: 88%;
+  float: right;
+}
+#home .panel-admin .list-group-item p,
+#home .panel-project .list-group-item p,
+#home .panel-teaching .list-group-item p {
+  margin: 0.75em 0 0.5em 0;
+}
+#home .panel-admin .list-group-item p label,
+#home .panel-project .list-group-item p label,
+#home .panel-teaching .list-group-item p label {
+  font-size: 1em;
+}
+#home .panel-admin .no-content,
+#home .panel-project .no-content,
+#home .panel-teaching .no-content {
+  text-align: center;
+  padding: 100px inherit;
+}
+#home .panel-admin .no-content i,
+#home .panel-project .no-content i,
+#home .panel-teaching .no-content i {
+  display: block;
+  margin-bottom: 10px;
+}
+.status-icon {
+  width: 80%;
+  text-align: center;
+  display: inline-block;
+}
+.status-icon.ready-to-mark i {
+  background-color: #0079d8;
+  color: #ffffff;
+}
+.status-icon.not-started i {
+  background-color: #cccccc;
+  color: #ffffff;
+  color: #444444;
+}
+.status-icon.working-on-it i {
+  background-color: #eb8f06;
+  color: #ffffff;
+}
+.status-icon.need-help i {
+  background-color: #a48fce;
+  color: #ffffff;
+}
+.status-icon.fix-and-resubmit i {
+  background-color: #f2d85c;
+  color: #ffffff;
+  color: #444444;
+}
+.status-icon.fix-and-include i {
+  background-color: #d46b54;
+  color: #ffffff;
+}
+.status-icon.redo i {
+  background-color: #804000;
+  color: #ffffff;
+}
+.status-icon.discuss i {
+  background-color: #31b0d5;
+  color: #ffffff;
+}
+.status-icon.demonstrate i {
+  background-color: #428bca;
+  color: #ffffff;
+}
+.status-icon.complete i {
+  background-color: #5bb75b;
+  color: #ffffff;
+}
+.status-icon.fail i {
+  background-color: #d93713;
+  color: #ffffff;
+}
+.status-icon i {
+  font-size: 1.25em;
+  padding: 0.55em;
+  border-radius: 1.25em;
+  cursor: pointer;
+  width: 100%;
 }
