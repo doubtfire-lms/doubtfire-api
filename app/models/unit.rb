@@ -986,12 +986,12 @@ class Unit < ActiveRecord::Base
   end
 
   def path_to_task_resources(task_def)
-    task_path = FileHelper.task_file_dir_for_unit self, create=false
+    task_path = FileHelper.task_file_dir_for_unit self, create=true
     "#{task_path}#{FileHelper.sanitized_filename(task_def.abbreviation)}.zip"
   end
 
   def path_to_task_pdf(task_def)
-    task_path = FileHelper.task_file_dir_for_unit self, create=false
+    task_path = FileHelper.task_file_dir_for_unit self, create=true
     "#{task_path}#{FileHelper.sanitized_filename(task_def.abbreviation)}.pdf"
   end
 
