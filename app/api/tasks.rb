@@ -139,11 +139,17 @@ module Api
           if needsUploadDocs && params[:trigger] == 'ready_to_mark'
             error!({"error" => "Cannot set this task status to ready to mark without uploading documents." }, 403)
           end
+
+          if task.group_task? and not task.group
+            error!({"error" => "This task requires a group. Ensure you are in a group for the unit's #{task.task_definition.group_set.name}"}, 403)
+          end
+
           result = task.trigger_transition( params[:trigger], current_user )
           if result.nil? && task.task_definition.restrict_status_updates
             error!({"error" => "This task can only be updated by your tutor." }, 403)
           end
         end
+
         # if include in portfolio supplied
         unless params[:include_in_portfolio].nil?
           task.include_in_portfolio = params[:include_in_portfolio]

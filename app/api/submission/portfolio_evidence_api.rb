@@ -31,7 +31,7 @@ module Api
         task = project.task_for_task_definition(task_definition)
 
         if task.group_task? and not task.group
-          error!({"error" => "This task requires a group submission. Ensure you are in a group for the unit's #{task.task_definition.group_set.name}"}, 401)
+          error!({"error" => "This task requires a group submission. Ensure you are in a group for the unit's #{task_definition.group_set.name}"}, 403)
         end
 
         if params[:contributions]

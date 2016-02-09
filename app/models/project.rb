@@ -67,7 +67,7 @@ class Project < ActiveRecord::Base
         if tutorial != g.tutorial
           if g.group_set.allow_students_to_manage_groups
             # leave group
-            g.remove_member(project)
+            g.remove_member(self)
           else
             errors.add(:groups, "require you to be in tutorial #{g.tutorial.abbreviation}")
             break
