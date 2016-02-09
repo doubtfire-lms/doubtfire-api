@@ -484,40 +484,6 @@ class Project < ActiveRecord::Base
     end
   end
 
-  #
-  # Return stats on task progress:
-  # - % On Time
-  # - % 1 week late
-  # - % 2+ weeks late
-  # - % late and not started
-  def progress_stats
-    result = {
-      on_time: 0.0,
-      one_week_late: 0.0,
-      two_weeks_late: 0.0,
-      not_started: 0.0
-    }
-
-    total = 0.0
-
-    due_tasks.each { |task|
-      total += task.weight
-      if [ :complete, :fix_and_resubmit, :fix_and_include, :fail, :ready_to_mark, :discuss, :demonstrate ].include? task.status
-        result[:on_time] += task.weight
-      elsif [ :not_started ].include? task.status
-        result[:not_started] += task.weight
-      elsif task.days_overdue <= 7
-         result[:one_week_late] += task.weight
-      else
-        result[:two_weeks_late] += task.weight
-      end
-    }
-
-    convert_hash_to_pct(result, total)
-
-    result
-  end
-
   def calc_task_stats ( reload_task = nil )
     result = {
       fail: 0.0,
@@ -550,9 +516,7 @@ class Project < ActiveRecord::Base
     }
     convert_hash_to_pct(result, total)
 
-    p_stats = progress_stats
-
-    self.task_stats = "#{result[:fail]}|#{result[:not_started]}|#{result[:fix_and_include]}|#{result[:redo]}|#{result[:need_help]}|#{result[:working_on_it]}|#{result[:fix_and_resubmit]}|#{result[:ready_to_mark]}|#{result[:discuss]}|#{result[:demonstrate]}|#{result[:complete]}|#{p_stats[:on_time]}|#{p_stats[:one_week_late]}|#{p_stats[:two_weeks_late]}|#{p_stats[:not_started]}"
+    self.task_stats = "#{result[:fail]}|#{result[:not_started]}|#{result[:fix_and_include]}|#{result[:redo]}|#{result[:need_help]}|#{result[:working_on_it]}|#{result[:fix_and_resubmit]}|#{result[:ready_to_mark]}|#{result[:discuss]}|#{result[:demonstrate]}|#{result[:complete]}"
     # puts self.task_stats
     save
     self.task_stats

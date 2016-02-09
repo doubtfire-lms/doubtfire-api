@@ -164,7 +164,7 @@ class Unit < ActiveRecord::Base
     project = Project.create!(
       user_id: user.id,
       unit_id: self.id,
-      task_stats: "1.0|0.0|0.0|0.0|0.0|0.0|0.0|0.0|0.0|0.0|0.0|0.0|1.0"
+      task_stats: "0.0|1.0|0.0|0.0|0.0|0.0|0.0|0.0|0.0|0.0|0.0"
     )
 
     project.tutorial_id = tutorial_id unless tutorial_id.nil?
