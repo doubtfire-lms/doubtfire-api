@@ -15,13 +15,13 @@ class GroupMembership < ActiveRecord::Base
 
   def must_be_in_same_tutorial
     # puts "checking #{project.id} ... #{project.tutorial.id} == #{group.tutorial.id}"
-    if active && ! in_group_tutorial?
+    if active && ! in_group_tutorial?(group.tutorial)
       errors.add(:group, "requires all students to be in the #{group.tutorial.abbreviation} tutorial")
     end
   end
 
-  def in_group_tutorial?
-    project.tutorial == group.tutorial
+  def in_group_tutorial? tutorial
+    project.tutorial == tutorial
   end
   
 end
