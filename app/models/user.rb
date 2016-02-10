@@ -1,4 +1,4 @@
-require 'authorisation'
+require 'authorisation_helpers'
 
 class User < ActiveRecord::Base
   # attr_encrypted :email, :key => Doubtfire::Application.config.secret_attr_key, :encode => true

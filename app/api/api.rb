@@ -1,6 +1,5 @@
 require 'grape'
 require 'grape-swagger'
-require 'authorisation'
 
 module AuthHelpers
   def warden
@@ -50,6 +49,7 @@ end
 
 module Api
   class Root < Grape::API
+    helpers AuthorisationHelpers
     helpers do
       def logger
         API.logger

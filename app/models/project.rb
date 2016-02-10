@@ -40,9 +40,9 @@ class Project < ActiveRecord::Base
 
   def self.for_user(user, include_inactive)
     if include_inactive
-      projects.where('user_id = :user_id', user_id: user.id)
+      projects.where('projects.user_id = :user_id', user_id: user.id)
     else
-      active_projects.where('user_id = :user_id', user_id: user.id)
+      active_projects.where('projects.user_id = :user_id', user_id: user.id)
     end
   end
 
