@@ -198,7 +198,12 @@ class TaskDefinition < ActiveRecord::Base
     end
 
     if result.nil?
-      result = TaskDefinition.find_or_create_by(unit_id: unit.id, name: name, abbreviation: abbreviation)
+      # Remember creation triggers project task updates... so need correct weight
+      result = TaskDefinition.find_or_create_by(unit_id: unit.id, name: name, abbreviation: abbreviation) do |td|
+        td.target_date = target_date
+        td.start_date = start_date
+        td.weighting = row[:weighting].to_i
+      end
       new_task = true
     end
 
