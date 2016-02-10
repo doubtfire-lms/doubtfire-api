@@ -37,6 +37,10 @@ class UnitRoleSerializer < ActiveModel::Serializer
   def name
     object.user.name
   end
+
+  def include_start_date?
+    object.has_attribute? :start_date
+  end
 end
 
 
