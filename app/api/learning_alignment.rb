@@ -150,14 +150,9 @@ module Api
       requires :unit_id             , type: Integer,  desc: 'The id of the unit'
       optional :description         , type: String,   desc: 'The description of the alignment'
       optional :rating              , type: Integer,  desc: 'The rating for this link, indicating the strength of this alignment'
-      optional :task_id             , type: Integer,  desc: 'The id of the associated task'
     end
     put '/units/:unit_id/learning_alignments/:id' do
       unit = Unit.find(params[:unit_id])
-
-      if params[:task_id].nil? && ! authorise?(current_user, unit, :update)
-        error!({"error" => "You are not authorised to update the task alignments in this unit."}, 403)
-      end
 
       align = unit.learning_outcome_task_links.find(params[:id])
 
@@ -167,12 +162,17 @@ module Api
                                             :rating
                                           )
 
+      # is this a project task alignment update?
       if ! align.task_id.nil?
         task = align.task
 
         if ! authorise?(current_user, task, :make_submission)
           error!({"error" => "You are not authorised to update outcome alignments for this task."}, 403)
         end
+
+      # else, this is a unit alignment update!
+      elsif ! authorise?(current_user, unit, :update)
+        error!({"error" => "You are not authorised to update the task alignments in this unit."}, 403)
       end
 
       align.update(link_parameters)
@@ -183,23 +183,23 @@ module Api
     params do
       requires :id                  , type: Integer,  desc: 'The id of the task alignment'
       requires :unit_id             , type: Integer,  desc: 'The id of the unit'
-      optional :task_id             , type: Integer,  desc: 'The id of the associated task'
     end
     delete '/units/:unit_id/learning_alignments/:id' do
       unit = Unit.find(params[:unit_id])
 
-      if params[:task_id].nil? && ! authorise?(current_user, unit, :update)
-        error!({"error" => "You are not authorised to update the task alignments in this unit."}, 403)
-      end
-
       align = unit.learning_outcome_task_links.find(params[:id])
 
+      # is this a project task alignment update?
       if ! align.task_id.nil?
         task = align.task
 
         if ! authorise?(current_user, task, :make_submission)
           error!({"error" => "You are not authorised to update outcome alignments for this task."}, 403)
         end
+
+      # else, this is a unit alignment update!
+      elsif ! authorise?(current_user, unit, :update)
+        error!({"error" => "You are not authorised to update the task alignments in this unit."}, 403)
       end
 
       align.destroy!
