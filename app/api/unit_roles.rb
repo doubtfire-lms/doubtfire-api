@@ -50,7 +50,7 @@ module Api
         error!({"error" => "Couldn't find UnitRole with id=#{params[:id]}" }, 403)
       end
       
-      unit_role
+      UnitRoleSerializer.new(unit_roles.joins(:unit).select("unit_roles.*", "units.start_date"))
     end
 
     desc "Employ a user as a teaching role in a unit" 
