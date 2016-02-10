@@ -447,11 +447,6 @@ class Unit < ActiveRecord::Base
         rating = row['rating'].to_i
         description = row['description']
 
-        if description.nil?
-          errors << { row: row, message: "Missing description" }
-          next
-        end
-
         if for_project.nil?
           link = LearningOutcomeTaskLink.find_or_create_by(task_definition_id: task_def.id, learning_outcome_id: outcome.id, task_id: nil)
         else
