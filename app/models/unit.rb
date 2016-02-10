@@ -172,6 +172,10 @@ class Unit < ActiveRecord::Base
     project
   end
 
+  def update_project_stats
+    active_projects.each { |p| p.calc_task_stats }
+  end
+
   def tutorial_with_abbr(abbr)
     tutorials.where(abbreviation: abbr).first
   end

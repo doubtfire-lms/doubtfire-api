@@ -16,6 +16,14 @@ class TaskDefinition < ActiveRecord::Base
 
   validates :target_grade, inclusion: { in: 0..3, message: "%{value} is not a valid target grade" }
 
+  after_create do |td|
+    td.unit.update_project_stats
+  end
+
+  after_destroy do |td|
+    td.unit.update_project_stats
+  end
+
   def plagiarism_checks
     # Read the JSON string in upload_requirements and convert into ruby objects
     if self['plagiarism_checks']
