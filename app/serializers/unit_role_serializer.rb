@@ -9,7 +9,7 @@ class ShallowUnitRoleSerializer < ActiveModel::Serializer
 end
 
 class UnitRoleSerializer < ActiveModel::Serializer
-  attributes :id, :role, :user_id, :unit_id, :unit_name, :name, :unit_code
+  attributes :id, :role, :user_id, :unit_id, :unit_name, :name, :unit_code, :start_date
 
   # has_one :user, serializer: ShallowUserSerializer
   # has_one :unit, serializer: ShallowUnitSerializer
@@ -36,6 +36,10 @@ class UnitRoleSerializer < ActiveModel::Serializer
 
   def name
     object.user.name
+  end
+
+  def include_start_date?
+    object.has_attribute? :start_date
   end
 end
 

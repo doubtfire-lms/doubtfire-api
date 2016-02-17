@@ -2,27 +2,27 @@ require 'task_serializer'
 
 # Shallow serialization is used for student...
 class ShallowProjectSerializer < ActiveModel::Serializer
-  attributes :unit_id, :project_id, :started, :student_name, :tutor_name, :unit_name, :target_grade, :has_portfolio, :unit_code
+  attributes :unit_id, :project_id, :student_name, :tutor_name, :unit_name, :target_grade, :has_portfolio, :unit_code, :start_date
 
   def project_id
     object.id
   end
 
-  def student_name
-    object.student.name
-  end
+  # def student_name
+  #   object.student.name
+  # end
 
-  def unit_name
-    object.unit.name
-  end
+  # def unit_name
+  #   object.unit.name
+  # end
 
-  def unit_code
-    object.unit.code
-  end
+  # def unit_code
+  #   object.unit.code
+  # end
 
-  def tutor_name
-    object.main_tutor.first_name unless object.main_tutor.nil?
-  end
+  # def tutor_name
+  #   object.main_tutor.first_name unless object.main_tutor.nil?
+  # end
 end
 
 # Student project serializer is used with teaching staff

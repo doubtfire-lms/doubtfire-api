@@ -27,5 +27,3 @@ module AuthorisationHelpers
   module_function :authorise?
 
 end
-
-
