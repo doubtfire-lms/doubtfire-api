@@ -247,4 +247,12 @@ class TaskDefinition < ActiveRecord::Base
   def add_task_resources (file)
     FileUtils.mv file, unit.path_to_task_resources(self)
   end
+
+  def task_sheet
+    unit.path_to_task_pdf(self)
+  end
+
+  def task_resources
+    unit.path_to_task_resources(self)
+  end
 end

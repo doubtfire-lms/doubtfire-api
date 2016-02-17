@@ -691,6 +691,30 @@ class Unit < ActiveRecord::Base
   end
 
   #
+  # Create a temp zip file with all student portfolios
+  #
+  def get_task_resources_zip()
+    # Get a temp file path
+    filename = FileHelper.sanitized_filename("task-resources-#{self.code}.zip")
+    result = Tempfile.new(filename)
+    # Create a new zip
+    Zip::File.open(result.path, Zip::File::CREATE) do | zip |
+      task_definitions.each do |td|
+        if td.has_task_pdf?
+          dst_path = FileHelper.sanitized_path( "#{td.abbreviation}") + ".pdf"
+          zip.add(dst_path, td.task_sheet)
+        end
+
+        if td.has_task_resources?
+          dst_path = FileHelper.sanitized_path( "#{td.abbreviation}") + ".zip"
+          zip.add(dst_path, td.task_resources)
+        end
+      end
+    end #zip
+    result
+  end  
+
+  #
   # Create an ILO
   #
   def add_ilo(name, desc, abbr)
