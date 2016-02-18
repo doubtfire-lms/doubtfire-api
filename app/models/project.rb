@@ -279,8 +279,8 @@ class Project < ActiveRecord::Base
     # values = array of [ x, y ] values
     projected_results = { key: "Projected", values: [] }
     target_task_results = { key: "Target", values: [] }
-    done_task_results = { key: "Submitted", values: [] }
-    complete_task_results = { key: "Complete", values: [] }
+    done_task_results = { key: "To Submit", values: [] }
+    complete_task_results = { key: "To Complete", values: [] }
 
     # Get the target task from the unit's task definitions
     target_tasks = assigned_task_defs
