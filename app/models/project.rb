@@ -291,8 +291,15 @@ class Project < ActiveRecord::Base
     done_task_results = { key: "To Submit", values: [] }
     complete_task_results = { key: "To Complete", values: [] }
 
+    result.push(target_task_results)
+    result.push(projected_results)
+    result.push(done_task_results)
+    result.push(complete_task_results)
+
     # Get the target task from the unit's task definitions
     target_tasks = assigned_task_defs
+
+    return if target_tasks.count == 0
 
     # get total value of all tasks assigned to this project
     total = target_tasks.map{|td| td.weighting.to_f}.inject(:+)
@@ -360,11 +367,6 @@ class Project < ActiveRecord::Base
       # stop adding projected values once projected is complete
       if add_projected && projected_val[1] <= 0 then add_projected = false end
     }
-
-    result.push(target_task_results)
-    result.push(projected_results)
-    result.push(done_task_results)
-    result.push(complete_task_results)
 
     result
   end
