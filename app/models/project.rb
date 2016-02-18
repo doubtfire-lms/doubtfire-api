@@ -169,7 +169,13 @@ class Project < ActiveRecord::Base
   end
 
   def portfolio_tasks
-    tasks.joins(:task_definition).order("task_definitions.target_date, task_definitions.abbreviation").select{ |task| task.include_in_portfolio && task.has_pdf }
+    tasks = tasks.joins(:task_definition).order("task_definitions.target_date, task_definitions.abbreviation")
+    # Select the tasks that are aligned
+    if unit.learning_oucomes.length > 0
+      tasks
+    end
+    # Now select the tasks that are included in the portfolio (and have a PDF)
+    portfolio_tasks = tasks.select{ |task| task.include_in_portfolio && task.has_pdf }
   end
 
   def progress
