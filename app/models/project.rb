@@ -169,7 +169,16 @@ class Project < ActiveRecord::Base
   end
 
   def portfolio_tasks
-    tasks.joins(:task_definition).order("task_definitions.target_date, task_definitions.abbreviation").select{ |task| task.include_in_portfolio && task.has_pdf }
+    # Get assigned tasks that are included in the portfolio
+    tasks = self.tasks.joins(:task_definition).order("task_definitions.target_date, task_definitions.abbreviation").where("tasks.include_in_portfolio = TRUE")
+    
+    # Remove the tasks that are not aligned... if there are ILOs
+    if unit.learning_outcomes.length > 0
+      tasks = tasks.select { |t| t.learning_outcome_task_links.count > 0 }
+    end
+
+    # Now select the tasks that and have a PDF... cant include the others...
+    portfolio_tasks = tasks.select{ |task| task.has_pdf }
   end
 
   def progress
@@ -279,11 +288,18 @@ class Project < ActiveRecord::Base
     # values = array of [ x, y ] values
     projected_results = { key: "Projected", values: [] }
     target_task_results = { key: "Target", values: [] }
-    done_task_results = { key: "Submitted", values: [] }
-    complete_task_results = { key: "Complete", values: [] }
+    done_task_results = { key: "To Submit", values: [] }
+    complete_task_results = { key: "To Complete", values: [] }
+
+    result.push(target_task_results)
+    result.push(projected_results)
+    result.push(done_task_results)
+    result.push(complete_task_results)
 
     # Get the target task from the unit's task definitions
     target_tasks = assigned_task_defs
+
+    return if target_tasks.count == 0
 
     # get total value of all tasks assigned to this project
     total = target_tasks.map{|td| td.weighting.to_f}.inject(:+)
@@ -351,11 +367,6 @@ class Project < ActiveRecord::Base
       # stop adding projected values once projected is complete
       if add_projected && projected_val[1] <= 0 then add_projected = false end
     }
-
-    result.push(target_task_results)
-    result.push(projected_results)
-    result.push(done_task_results)
-    result.push(complete_task_results)
 
     result
   end

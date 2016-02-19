@@ -8950,12 +8950,12 @@ body > .ui-select-bootstrap.open {
   padding-left: 15px;
   padding-right: 15px;
 }
-@media (min-width: 1440px) {
+@media (min-width: 1920px) {
   .container {
-    width: 1470px;
+    width: 1950px;
   }
 }
-@media (min-width: 1440px) {
+@media (min-width: 1920px) {
   .col-xl-1, .col-xl-2, .col-xl-3, .col-xl-4, .col-xl-5, .col-xl-6, .col-xl-7, .col-xl-8, .col-xl-9, .col-xl-10, .col-xl-11, .col-xl-12 {
     float: left;
   }
@@ -9150,13 +9150,13 @@ body > .container-fluid {
     margin-left: 4.16666667%;
   }
 }
-@media (min-width: 1440px) {
+@media (min-width: 1920px) {
   .root-view {
     float: left;
     width: 66.66666667%;
   }
 }
-@media (min-width: 1440px) {
+@media (min-width: 1920px) {
   .root-view {
     margin-left: 16.66666667%;
   }
@@ -9172,17 +9172,6 @@ a {
 }
 .alert-top {
   z-index: 5000 !important;
-}
-.center-full-screen {
-  height: 100vh;
-  display: flex;
-  display: -webkit-flex;
-  -webkit-flex-wrap: wrap;
-  flex-wrap: wrap;
-  -webkit-align-content: center;
-  align-content: center;
-  -webkit-justify-content: center;
-  justify-content: center;
 }
 .btn-download {
   padding: 1ex;
@@ -9208,20 +9197,22 @@ a {
 .large-notice-block {
   display: -webkit-flex;
   display: flex;
+  -webkit-flex-wrap: wrap;
+  flex-wrap: wrap;
   -webkit-align-items: center;
   align-items: center;
   -webkit-align-content: center;
   align-content: center;
-  -webkit-flex-wrap: wrap;
-  flex-wrap: wrap;
+  -webkit-justify-content: center;
+  justify-content: center;
+  height: 100%;
   height: 30vh;
   width: 98%;
   font-size: 2em;
   text-align: center;
   font-weight: 200;
 }
-.large-notice-block i,
-.large-notice-block p {
+.large-notice-block > * {
   display: block;
   width: 100%;
   margin-top: 0.75em;
@@ -9344,6 +9335,20 @@ footer.about-doubtfire a {
 }
 .no-ie + .landing-page {
   display: none;
+}
+.center-full-screen {
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-wrap: wrap;
+  flex-wrap: wrap;
+  -webkit-align-items: center;
+  align-items: center;
+  -webkit-align-content: center;
+  align-content: center;
+  -webkit-justify-content: center;
+  justify-content: center;
+  height: 100%;
+  height: 100vh;
 }
 .form-signin .form-control {
   position: relative;
@@ -9783,9 +9788,6 @@ a.navbar-brand h1.logo {
 .burndown-chart .nv-legendWrap .nv-series:last-child {
   display: none;
 }
-.burndown-chart .nvtooltip tr:last-child {
-  display: none;
-}
 .burndown-chart .nv-legend {
   transform: translate(50px, -15px);
 }
@@ -9963,22 +9965,22 @@ a.navbar-brand h1.logo {
   border-radius: 0;
   text-align: center;
 }
-@media (min-width: 1439px) {
+@media (min-width: 1919px) {
   .feedback-float-toolbar {
     position: fixed;
     bottom: 0;
     right: 0;
-    z-index: 2;
+    z-index: 1000;
     border-top-left-radius: 1em;
     margin: 0;
   }
 }
-@media (max-width: 1439px) and (min-width: 992px) {
+@media (max-width: 1919px) and (min-width: 992px) {
   .feedback-float-toolbar {
     position: fixed;
     bottom: 0;
     left: 0;
-    z-index: 2;
+    z-index: 1000;
     border-top-right-radius: 1em;
     margin: 0;
   }
@@ -10064,6 +10066,10 @@ a.navbar-brand h1.logo {
   overflow: scroll;
 }
 .task-feedback .task-feedback-tab-panel .panel-body .help-block {
+  height: 30vh;
+  width: 98%;
+  font-size: 2em;
+  font-weight: 200;
   display: -webkit-flex;
   display: flex;
   -webkit-flex-wrap: wrap;
@@ -10072,6 +10078,8 @@ a.navbar-brand h1.logo {
   align-items: center;
   -webkit-align-content: center;
   align-content: center;
+  -webkit-justify-content: center;
+  justify-content: center;
   height: 100%;
   margin: 0;
   color: #333;
@@ -10081,8 +10089,10 @@ a.navbar-brand h1.logo {
   font-weight: lighter;
 }
 .task-feedback .task-feedback-tab-panel .panel-body .help-block > * {
-  -webkit-flex-basis: 100%;
-  flex-basis: 100%;
+  display: block;
+  width: 100%;
+  margin-top: 0.75em;
+  margin-bottom: 0.75em;
 }
 .task-feedback .task-feedback-tab-panel .panel-body .help-block i {
   margin: 0.5em 0.5ex;
@@ -10129,12 +10139,9 @@ submit-task-form file-uploader .file-upload-area .progress-area {
   align-items: center;
   -webkit-align-content: center;
   align-content: center;
+  -webkit-justify-content: center;
+  justify-content: center;
   height: 100%;
-}
-submit-task-form file-uploader .file-upload-area .result-area > *,
-submit-task-form file-uploader .file-upload-area .progress-area > * {
-  -webkit-flex-basis: 100%;
-  flex-basis: 100%;
 }
 .task-feedback .task-feedback-tab-panel .task-sheet .panel-body.task-description,
 .task-feedback .task-feedback-tab-panel .task-sheet .panel-body.task-view-alignment-panel {
@@ -11005,52 +11012,37 @@ svg.nvd3-svg {
   cursor: pointer;
   padding: 0 10px;
 }
-.unit-oucome-alignment .popover-inner > .popover-content {
-  padding: 0;
+.unit-outcome-alignment .alignment-panels .panel-body {
+  overflow: scroll;
 }
-.unit-oucome-alignment .popover-inner > .popover-content .popver-content {
-  padding: 9px 14px;
-}
-.unit-oucome-alignment .popover-inner > .popover-content .popover-footer {
-  padding: 8px 14px;
-  margin: 0;
-  font-size: 14px;
-  background-color: #f7f7f7;
-  border-top: 1px solid #ebebeb;
-  border-radius: 0 0 5px 5px;
-}
-table.table-task-alignment td.task-abbreviation {
+.unit-outcome-alignment table.table-task-alignment td.task-abbreviation {
   width: 5ex;
 }
-table.table-task-alignment td.task-status-icon {
+.unit-outcome-alignment table.table-task-alignment td.task-status-icon {
   width: 6em;
 }
-table.table-task-alignment td.task-name {
+.unit-outcome-alignment table.table-task-alignment td.task-name {
   width: 10ex;
 }
-table.table-task-alignment td.include-in-portfolio {
+.unit-outcome-alignment table.table-task-alignment td.include-in-portfolio {
   width: 10ex;
 }
-table.table-task-alignment td.task-abbreviation label {
+.unit-outcome-alignment table.table-task-alignment td.task-abbreviation label {
   display: inline-block;
   width: 100%;
+  padding: 0.55em;
 }
-table.table-task-alignment td.include-in-portfolio button,
-table.table-task-alignment td.include-in-portfolio .button-wrapper {
+.unit-outcome-alignment table.table-task-alignment td.include-in-portfolio button,
+.unit-outcome-alignment table.table-task-alignment td.include-in-portfolio .button-wrapper {
   width: 100%;
   height: 3em;
 }
-table.table-task-alignment td.ilo-alignment .alignment-circle {
+.unit-outcome-alignment table.table-task-alignment td.ilo-alignment .btn.btn-alignment {
   width: 6em;
   padding: 0.25em;
   margin: 0 auto;
-  border: 1px solid transparent;
 }
-table.table-task-alignment td.ilo-alignment .alignment-circle:hover {
-  border: 1px dashed #5b8ce6;
-  border-radius: 1em;
-}
-.visualisation {
+.unit-outcome-alignment .visualisation {
   position: fixed;
   bottom: 0;
   right: 0;
@@ -11060,7 +11052,7 @@ table.table-task-alignment td.ilo-alignment .alignment-circle:hover {
   margin: 0;
   border-radius: 0;
 }
-.visualisation:hover {
+.unit-outcome-alignment .visualisation:hover {
   cursor: pointer;
   opacity: 1;
 }
