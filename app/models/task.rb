@@ -282,7 +282,7 @@ class Task < ActiveRecord::Base
               assess TaskStatus.redo, by_user
             when "complete"
               assess TaskStatus.complete, by_user
-            when "fix_and_resubmit", "fix", "f"
+            when "fix_and_resubmit", "fix"
               assess TaskStatus.fix_and_resubmit, by_user
             when "fix_and_include", "fixinc"
               assess TaskStatus.fix_and_include, by_user
@@ -306,10 +306,29 @@ class Task < ActiveRecord::Base
   end
 
   def grade_task(new_grade, grading_group = false)
+    grade_map = {
+      'p'  => 0,
+      'c'  => 1,
+      'd'  => 2,
+      'hd' => 3
+    }
     if task_definition.is_graded
       if new_grade.nil?
         error!({"error" => "No grade was supplied for a graded task (task id #{self.id})"}, 403)
       else
+        # validate (and convert if need be) new_grade
+        unless new_grade.is_a?(String) || new_grade.is_a?(Integer)
+          error!({"error" => "New grade supplied to task is not a string or integer (task id #{self.id})"}, 403)
+        end
+        if new_grade.is_a?(String) && grade_map.keys.include?(new_grade.downcase)
+          error!({"error" => "New grade supplied to task is not an invalid string - expects one of {p|c|d|hd} (task id #{self.id})"}, 403)
+        else
+          # convert string representation to integer representation
+          new_grade = grade_map[new_grade]
+        end
+        if new_grade.is_a?(Integer) && grade_map.values.include?(new_grade.to_i)
+          error!({"error" => "New grade supplied to task is not an invalid integer - expects one of {0|1|2|3} (task id #{self.id})"}, 403)
+        end
         # propagate new grade to all group members if not already doing so
         if group_task? && !grading_group
           ensured_group_submission.propagate_grade self, new_grade
