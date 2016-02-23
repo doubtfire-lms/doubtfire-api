@@ -199,7 +199,7 @@ ActiveRecord::Schema.define(version: 20160223054040) do
     t.integer  "group_set_id"
     t.datetime "due_date"
     t.datetime "start_date",                                                                    null: false
-    t.boolean  "is_graded_task",                                                default: false
+    t.boolean  "is_graded",                                                     default: false
   end
 
   add_index "task_definitions", ["unit_id"], name: "index_task_definitions_on_unit_id", using: :btree
