@@ -26,7 +26,7 @@ module AuthHelpers
       error!({"error" => "Could not authenticate with token. Token invalid."}, 419)
     end
   end
-  
+
   def current_user
     warden.user || User.find_by_auth_token(params[:auth_token])
   end
@@ -52,7 +52,7 @@ module Api
     helpers AuthorisationHelpers
     helpers do
       def logger
-        API.logger
+        Grape::API.logger
       end
     end
     prefix 'api'

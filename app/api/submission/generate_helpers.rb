@@ -11,11 +11,6 @@ require 'zip'
 
 module Api::Submission::GenerateHelpers
 
-  def logger
-    # Grape::API.logger
-    Rails.logger
-  end
-
   #
   # Scoops out a files array from the params provided
   #
