@@ -16,46 +16,48 @@ module Api
     desc "Add a new task definition to the given unit"
     params do
       group :task_def do
-        requires :unit_id,              type: Integer,  :desc => "The unit to create the new task def for"
-        requires :name,                 type: String,   :desc => "The name of this task def"
-        requires :description,          type: String,   :desc => "The description of this task def"
-        requires :weighting,            type: Integer,  :desc => "The weighting of this task"
-        requires :target_grade,         type: Integer,  :desc => "Minimum grade for task"
-        optional :group_set_id,         type: Integer,  :desc => "Related group set"
-        requires :start_date,           type: Date,     :desc => "The date when the task should be started"
-        requires :target_date,          type: Date,     :desc => "The date when the task is due"
-        optional :due_date,             type: Date,     :desc => "The deadline date"
-        requires :abbreviation,         type: String,   :desc => "The abbreviation of the task"
-        requires :restrict_status_updates, type: Boolean,  :desc => "Restrict updating of the status to staff"
-        optional :upload_requirements,  type: String,   :desc => "Task file upload requirements"
-        optional :plagiarism_checks,    type: String,   :desc => "The list of checks to perform"
-        requires :plagiarism_warn_pct,  type: Integer,  :desc => "The percent at which to record and warn about plagiarism"
+        requires :unit_id,                  type: Integer,  :desc => "The unit to create the new task def for"
+        requires :name,                     type: String,   :desc => "The name of this task def"
+        requires :description,              type: String,   :desc => "The description of this task def"
+        requires :weighting,                type: Integer,  :desc => "The weighting of this task"
+        requires :target_grade,             type: Integer,  :desc => "Minimum grade for task"
+        optional :group_set_id,             type: Integer,  :desc => "Related group set"
+        requires :start_date,               type: Date,     :desc => "The date when the task should be started"
+        requires :target_date,              type: Date,     :desc => "The date when the task is due"
+        optional :due_date,                 type: Date,     :desc => "The deadline date"
+        requires :abbreviation,             type: String,   :desc => "The abbreviation of the task"
+        requires :restrict_status_updates,  type: Boolean,  :desc => "Restrict updating of the status to staff"
+        optional :upload_requirements,      type: String,   :desc => "Task file upload requirements"
+        optional :plagiarism_checks,        type: String,   :desc => "The list of checks to perform"
+        requires :plagiarism_warn_pct,      type: Integer,  :desc => "The percent at which to record and warn about plagiarism"
+        requires :is_graded,                type: Boolean,  :desc => "Whether or not this task definition is a graded task"
       end
     end
-    post '/task_definitions/' do      
-      unit = Unit.find(params[:task_def][:unit_id]) 
+    post '/task_definitions/' do
+      unit = Unit.find(params[:task_def][:unit_id])
       if not authorise? current_user, unit, :add_task_def
         error!({"error" => "Not authorised to create a task definition of this unit"}, 403)
       end
-      
+
       params[:task_def][:upload_requirements] = "[]" if params[:task_def][:upload_requirements].nil?;
-      
+
       task_params = ActionController::Parameters.new(params)
                                                 .require(:task_def)
                                                 .permit(
-                                                  :unit_id,            
-                                                  :name,               
-                                                  :description,        
-                                                  :weighting,          
+                                                  :unit_id,
+                                                  :name,
+                                                  :description,
+                                                  :weighting,
                                                   :target_grade,
                                                   :start_date,
                                                   :target_date,
-                                                  :due_date,        
+                                                  :due_date,
                                                   :abbreviation,
                                                   :restrict_status_updates,
                                                   :upload_requirements,
                                                   :plagiarism_checks,
-                                                  :plagiarism_warn_pct
+                                                  :plagiarism_warn_pct,
+                                                  :is_graded
                                                 )
 
       task_def = TaskDefinition.new(task_params)
@@ -73,52 +75,54 @@ module Api
       task_def.save!
       task_def
     end
-    
+
     desc "Edits the given task definition"
     params do
       requires :id,                     type: Integer,  :desc => "The task id to edit"
       group :task_def do
-        optional :unit_id,              type: Integer,  :desc => "The unit to create the new task def for"
-        optional :name,                 type: String,   :desc => "The name of this task def"
-        optional :description,          type: String,   :desc => "The description of this task def"
-        optional :weighting,            type: Integer,  :desc => "The weighting of this task"
-        optional :target_grade,         type: Integer,  :desc => "Target grade for task"
-        optional :group_set_id,         type: Integer,  :desc => "Related group set"
-        optional :start_date,           type: Date,     :desc => "The date when the task should be started"
-        optional :target_date,          type: Date,     :desc => "The date when the task is due"
-        optional :due_date,             type: Date,     :desc => "The deadline date"
-        optional :abbreviation,         type: String,   :desc => "The abbreviation of the task"
-        optional :restrict_status_updates,    type: Boolean,  :desc => "Restrict updating of the status to staff"
-        optional :upload_requirements,  type: String,   :desc => "Task file upload requirements"
-        optional :plagiarism_checks,    type: String,   :desc => "The list of checks to perform"
-        requires :plagiarism_warn_pct,  type: Integer,  :desc => "The percent at which to record and warn about plagiarism"
+        optional :unit_id,                  type: Integer,  :desc => "The unit to create the new task def for"
+        optional :name,                     type: String,   :desc => "The name of this task def"
+        optional :description,              type: String,   :desc => "The description of this task def"
+        optional :weighting,                type: Integer,  :desc => "The weighting of this task"
+        optional :target_grade,             type: Integer,  :desc => "Target grade for task"
+        optional :group_set_id,             type: Integer,  :desc => "Related group set"
+        optional :start_date,               type: Date,     :desc => "The date when the task should be started"
+        optional :target_date,              type: Date,     :desc => "The date when the task is due"
+        optional :due_date,                 type: Date,     :desc => "The deadline date"
+        optional :abbreviation,             type: String,   :desc => "The abbreviation of the task"
+        optional :restrict_status_updates,  type: Boolean,  :desc => "Restrict updating of the status to staff"
+        optional :upload_requirements,      type: String,   :desc => "Task file upload requirements"
+        optional :plagiarism_checks,        type: String,   :desc => "The list of checks to perform"
+        requires :plagiarism_warn_pct,      type: Integer,  :desc => "The percent at which to record and warn about plagiarism"
+        optional :is_graded,                type: Boolean,  :desc => "Whether or not this task definition is a graded task"
       end
     end
-    put '/task_definitions/:id' do      
+    put '/task_definitions/:id' do
       task_def = TaskDefinition.find(params[:id])
-      
+
       if not authorise? current_user, task_def.unit, :add_task_def
         error!({"error" => "Not authorised to create a task definition of this unit"}, 403)
       end
-      
+
       task_params = ActionController::Parameters.new(params)
                                                 .require(:task_def)
                                                 .permit(
-                                                  :unit_id,            
-                                                  :name,               
-                                                  :description,        
-                                                  :weighting,          
+                                                  :unit_id,
+                                                  :name,
+                                                  :description,
+                                                  :weighting,
                                                   :target_grade,
                                                   :start_date,
-                                                  :target_date, 
-                                                  :due_date,       
+                                                  :target_date,
+                                                  :due_date,
                                                   :abbreviation,
                                                   :restrict_status_updates,
                                                   :upload_requirements,
                                                   :plagiarism_checks,
-                                                  :plagiarism_warn_pct
+                                                  :plagiarism_warn_pct,
+                                                  :is_graded
                                                 )
-      
+
       task_def.update!(task_params)
       #
       # Link in group set if specified
@@ -138,7 +142,7 @@ module Api
 
       task_def
     end
-    
+
     desc "Upload CSV of task definitions to the provided unit"
     params do
       requires :file, type: Rack::Multipart::UploadedFile, :desc => "CSV upload file."
@@ -147,17 +151,17 @@ module Api
     post '/csv/task_definitions' do
       # check mime is correct before uploading
       ensure_csv!(params[:file][:tempfile])
-      
+
       unit = Unit.find(params[:unit_id])
-      
+
       if not authorise? current_user, unit, :uploadCSV
         error!({"error" => "Not authorised to upload CSV of tasks"}, 403)
       end
-      
+
       # Actually import...
       unit.import_tasks_from_csv(params[:file][:tempfile])
     end
-    
+
     desc "Download CSV of all task definitions for the given unit"
     params do
       requires :unit_id, type: Integer, :desc => "The unit to download tasks from"
@@ -178,7 +182,7 @@ module Api
     desc "Delete a task definition"
     delete '/task_definitions/:id' do
       task_def = TaskDefinition.find(params[:id])
-      
+
       if not authorise? current_user, task_def.unit, :add_task_def
         error!({"error" => "Not authorised to delete a task definition of this unit"}, 403)
       end
@@ -194,7 +198,7 @@ module Api
     end
     post '/units/:unit_id/task_definitions/:task_def_id/task_sheet' do
       unit = Unit.find(params[:unit_id])
-      
+
       if not authorise? current_user, unit, :add_task_def
         error!({"error" => "Not authorised to upload tasks of unit"}, 403)
       end
@@ -206,7 +210,7 @@ module Api
       if not FileHelper.accept_file(file, 'task sheet', 'document')
         error!({"error" => "'#{file.name}' is not a valid #{file.type} file"}, 403)
       end
-      
+
       # Actually import...
       task_def.add_task_sheet(file[:tempfile].path)
     end
@@ -219,7 +223,7 @@ module Api
     end
     post '/units/:unit_id/task_definitions/:task_def_id/task_resources' do
       unit = Unit.find(params[:unit_id])
-      
+
       if not authorise? current_user, unit, :add_task_def
         error!({"error" => "Not authorised to upload tasks of unit"}, 403)
       end
@@ -229,7 +233,7 @@ module Api
       file_path = params[:file][:tempfile].path
 
       check_mime_against_list! file_path, 'zip', ['application/zip', 'multipart/x-gzip', 'multipart/x-zip', 'application/x-gzip', 'application/octet-stream']
-      
+
       # Actually import...
       task_def.add_task_resources(file_path)
     end
@@ -241,7 +245,7 @@ module Api
     end
     post '/units/:unit_id/task_definitions/task_pdfs' do
       unit = Unit.find(params[:unit_id])
-      
+
       if not authorise? current_user, unit, :add_task_def
         error!({"error" => "Not authorised to upload tasks of unit"}, 403)
       end
@@ -249,7 +253,7 @@ module Api
       file = params[:file][:tempfile].path
 
       check_mime_against_list! file, 'zip', ['application/zip', 'multipart/x-gzip', 'multipart/x-zip', 'application/x-gzip', 'application/octet-stream']
-      
+
       # Actually import...
       unit.import_task_files_from_zip file
     end
@@ -270,16 +274,16 @@ module Api
         joins(:task_status).
         select("projects.tutorial_id as tutorial_id", "project_id", "tasks.id as id", "task_definition_id", "task_statuses.name as status_name", "completion_date", "times_assessed").
         where("task_definition_id = :id", id: params[:task_def_id]).
-        map { |t| 
-        { 
-          project_id: t.project_id, 
-          id: t.id, 
-          task_definition_id: t.task_definition_id, 
-          tutorial_id: t.tutorial_id, 
+        map { |t|
+        {
+          project_id: t.project_id,
+          id: t.id,
+          task_definition_id: t.task_definition_id,
+          tutorial_id: t.tutorial_id,
           status: TaskStatus.status_key_for_name(t.status_name),
           completion_date: t.completion_date,
           times_assessed: t.times_assessed
-        } 
+        }
       }
     end
 
@@ -303,7 +307,7 @@ module Api
         path = Rails.root.join("public", "resources", "FileNotFound.pdf")
         header['Content-Disposition'] = "attachment; filename=FileNotFound.pdf"
       end
-      
+
       content_type "application/pdf"
       env['api.format'] = :binary
       File.read(path)
@@ -337,5 +341,3 @@ module Api
     end
   end
 end
-
-
