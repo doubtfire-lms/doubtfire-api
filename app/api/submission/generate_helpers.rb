@@ -186,6 +186,7 @@ module Api::Submission::GenerateHelpers
         end
 
         submitter_task.trigger_transition(task_entry['Status'], current_user) # saves task
+        submitter_task.grade_task(task_entry['New Grade']) # try to grade task if need be
         success << { row: task_entry, message:"Updated group task #{submitter_task.task_definition.abbreviation} for #{group.name}" }
         if not (task_entry['New Comment'].nil? || task_entry['New Comment'].empty?)
           submitter_task.add_comment current_user, task_entry['New Comment']
@@ -212,6 +213,7 @@ module Api::Submission::GenerateHelpers
         end
 
         task.trigger_transition(task_entry['Status'], current_user) # saves task
+        task.grade_task(task_entry['New Grade']) # try to grade task if need be
 
         if not (task_entry['New Comment'].nil? || task_entry['New Comment'].empty?)
           success << { row: task_entry, message:"Updated task #{task.task_definition.abbreviation} for #{task.student.name}" }

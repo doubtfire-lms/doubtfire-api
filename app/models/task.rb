@@ -308,7 +308,7 @@ class Task < ActiveRecord::Base
   def grade_task(new_grade, grading_group = false)
     if task_definition.is_graded
       if new_grade.nil?
-        error!({"error" => "No grade was supplied for this graded task."}, 403)
+        error!({"error" => "No grade was supplied for a graded task (task id #{self.id})"}, 403)
       else
         # propagate new grade to all group members if not already doing so
         if group_task? && !grading_group
@@ -320,7 +320,7 @@ class Task < ActiveRecord::Base
         end
       end
     else unless grade.nil?
-      error!({"error" => "Grade was supplied for a non-graded task."}, 403)
+      error!({"error" => "Grade was supplied for a non-graded task (task id #{self.id})"}, 403)
     end
   end
 
