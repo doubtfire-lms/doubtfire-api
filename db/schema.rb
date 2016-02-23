@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20160217031823) do
+ActiveRecord::Schema.define(version: 20160223054040) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -199,6 +199,7 @@ ActiveRecord::Schema.define(version: 20160217031823) do
     t.integer  "group_set_id"
     t.datetime "due_date"
     t.datetime "start_date",                                                                    null: false
+    t.boolean  "is_graded_task",                                                default: false
   end
 
   add_index "task_definitions", ["unit_id"], name: "index_task_definitions_on_unit_id", using: :btree
@@ -248,6 +249,7 @@ ActiveRecord::Schema.define(version: 20160217031823) do
     t.integer  "times_assessed",       default: 0
     t.datetime "submission_date"
     t.datetime "assessment_date"
+    t.integer  "grade",                default: 0
   end
 
   add_index "tasks", ["group_submission_id"], name: "index_tasks_on_group_submission_id", using: :btree
