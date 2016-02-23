@@ -305,6 +305,25 @@ class Task < ActiveRecord::Base
     if not bulk then project.calc_task_stats(self) end
   end
 
+  def grade_task(new_grade, grading_group = false)
+    if task_definition.is_graded
+      if new_grade.nil?
+        error!({"error" => "No grade was supplied for this graded task."}, 403)
+      else
+        # propagate new grade to all group members if not already doing so
+        if group_task? && !grading_group
+          ensured_group_submission.propagate_grade self, new_grade
+        # otherwise not a group task or we need to propagate
+        else
+          self.grade = new_grade
+          self.save
+        end
+      end
+    else unless grade.nil?
+      error!({"error" => "Grade was supplied for a non-graded task."}, 403)
+    end
+  end
+
   def assess(task_status, assessor, assess_date = Time.zone.now)
     # Set the task's status to the assessment outcome status
     # and flag it as no longer awaiting signoff
@@ -814,7 +833,6 @@ class Task < ActiveRecord::Base
 
     files.each_with_index.map do | file, idx |
       output_filename = File.join(tmp_dir, "#{idx.to_s.rjust(3, '0')}-#{file.type}#{File.extname(file.filename).downcase}")
-      FileUtils.cp file.tempfile.path, output_filename
     end
 
     #
