@@ -152,15 +152,15 @@ module Api::Submission::GenerateHelpers
       end
 
       # get the task...
-      task = Task.find_by_id(task_entry['ID'])
+      task = Task.find_by_id(task_entry['id'])
       if task.nil?
         errors << { row: task_entry, message: "Task id #{task_entry['ID']} not found" }
         next
       end
 
       # Ensure that this task's student matches that in entry_data
-      if task_entry['Username'] =~ /GRP_\d+_\d+/
-        group_details = /GRP_(\d+)_(\d+)/.match(task_entry['Username'])
+      if task_entry['username'] =~ /GRP_\d+_\d+/
+        group_details = /GRP_(\d+)_(\d+)/.match(task_entry['username'])
 
         # look for group submission
         subm = GroupSubmission.find_by_id( group_details[2].to_i )
@@ -185,11 +185,11 @@ module Api::Submission::GenerateHelpers
           break
         end
 
-        submitter_task.trigger_transition(task_entry['Status'], current_user) # saves task
-        submitter_task.grade_task(task_entry['New Grade']) # try to grade task if need be
+        submitter_task.trigger_transition(task_entry['status'], current_user) # saves task
+        submitter_task.grade_task(task_entry['new grade']) # try to grade task if need be
         success << { row: task_entry, message:"Updated group task #{submitter_task.task_definition.abbreviation} for #{group.name}" }
-        if not (task_entry['New Comment'].nil? || task_entry['New Comment'].empty?)
-          submitter_task.add_comment current_user, task_entry['New Comment']
+        if not (task_entry['new comment'].nil? || task_entry['new comment'].empty?)
+          submitter_task.add_comment current_user, task_entry['new comment']
         end
 
         subm.tasks.each do | task |
@@ -200,9 +200,9 @@ module Api::Submission::GenerateHelpers
           done[task.project] << task
         end
       else
-        if task_entry['Username'] != task.project.student.username
+        if task_entry['username'] != task.project.student.username
           # error!({"error" => "File #{file.name} has a mismatch of student id (task with id #{task.id} matches student #{task.project.student.username}, not that in marks.csv of #{t['id']}"}, 403)
-          errors << { row: task_entry, message: "Student mismatch (expected task #{task.id} to match #{task.project.student.username}, was #{task_entry['Username']} in marks.csv)"}
+          errors << { row: task_entry, message: "Student mismatch (expected task #{task.id} to match #{task.project.student.username}, was #{task_entry['username']} in marks.csv)"}
           next
         end
 
@@ -212,13 +212,13 @@ module Api::Submission::GenerateHelpers
           next
         end
 
-        task.trigger_transition(task_entry['Status'], current_user) # saves task
-        task.grade_task(task_entry['New Grade']) # try to grade task if need be
+        task.trigger_transition(task_entry['status'], current_user) # saves task
+        task.grade_task(task_entry['new grade']) # try to grade task if need be
 
-        if not (task_entry['New Comment'].nil? || task_entry['New Comment'].empty?)
+        if not (task_entry['new comment'].nil? || task_entry['new comment'].empty?)
           success << { row: task_entry, message:"Updated task #{task.task_definition.abbreviation} for #{task.student.name}" }
-          if task.last_comment.nil? || task.last_comment.comment != task_entry['New Comment']
-            task.add_comment current_user, task_entry['New Comment']
+          if task.last_comment.nil? || task.last_comment.comment != task_entry['new comment']
+            task.add_comment current_user, task_entry['new comment']
             success << { row: task_entry, message:"Added comment to #{task.task_definition.abbreviation} for #{task.student.name}" }
           else
             ignored << { row: task_entry, message:"Skipped comment to #{task.task_definition.abbreviation} for #{task.student.name} -- duplicates last comment." }

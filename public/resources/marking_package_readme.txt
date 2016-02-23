@@ -21,7 +21,7 @@ Doubtfire Offline Marking Package
                                 standard and you will discuss the work with them
                                 at the next tutorial.
 
-    * 'demonstrate' or 'de' -   The same as 'discuss', but a reminder for you to
+    * 'demonstrate' or 'demo' - The same as 'discuss', but a reminder for you to
                                 ask the student to show you the work in class
                                 (i.e., prove to you that the code works).
 
