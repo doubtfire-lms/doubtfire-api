@@ -249,7 +249,7 @@ ActiveRecord::Schema.define(version: 20160223054040) do
     t.integer  "times_assessed",       default: 0
     t.datetime "submission_date"
     t.datetime "assessment_date"
-    t.integer  "grade",                default: 0
+    t.integer  "grade"
   end
 
   add_index "tasks", ["group_submission_id"], name: "index_tasks_on_group_submission_id", using: :btree
