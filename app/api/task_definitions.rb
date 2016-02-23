@@ -93,7 +93,7 @@ module Api
         optional :restrict_status_updates,  type: Boolean,  :desc => "Restrict updating of the status to staff"
         optional :upload_requirements,      type: String,   :desc => "Task file upload requirements"
         optional :plagiarism_checks,        type: String,   :desc => "The list of checks to perform"
-        requires :plagiarism_warn_pct,      type: Integer,  :desc => "The percent at which to record and warn about plagiarism"
+        optional :plagiarism_warn_pct,      type: Integer,  :desc => "The percent at which to record and warn about plagiarism"
         optional :is_graded,                type: Boolean,  :desc => "Whether or not this task definition is a graded task"
       end
     end
