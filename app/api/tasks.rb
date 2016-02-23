@@ -123,11 +123,13 @@ module Api
       requires :task_definition_id, type: Integer, desc: 'The id of the task definition of the task to update in this project'
       optional :trigger, type: String, desc: 'New status'
       optional :include_in_portfolio, type: Boolean, desc: 'Indicate if this task should be in the portfolio'
+      optional :grade, type: Integer, 'Grade value if task is a graded task (required if task definition is a graded task)'
     end
     put '/projects/:id/task_def_id/:task_definition_id' do
       project = Project.find(params[:id])
       task_definition = project.unit.task_definitions.find(params[:task_definition_id])
       needsUploadDocs = task_definition.upload_requirements.length > 0
+      grade = params[:grade]
 
       # check the user can put this task
       if authorise? current_user, project, :make_submission
@@ -148,6 +150,18 @@ module Api
           if result.nil? && task.task_definition.restrict_status_updates
             error!({"error" => "This task can only be updated by your tutor." }, 403)
           end
+        end
+
+        # if grade is supplied but not a graded task?
+        if task_definition.is_graded
+          if grade.nil?
+            error!({"error" => "No grade was supplied for this graded task."}, 403)
+          else
+            task.grade = grade
+            task.save
+          end
+        else unless grade.nil?
+          error!({"error" => "Grade was supplied for a non-graded task."}, 403)
         end
 
         # if include in portfolio supplied
