@@ -123,7 +123,7 @@ module Api
       requires :task_definition_id, type: Integer, desc: 'The id of the task definition of the task to update in this project'
       optional :trigger, type: String, desc: 'New status'
       optional :include_in_portfolio, type: Boolean, desc: 'Indicate if this task should be in the portfolio'
-      optional :grade, type: Integer, 'Grade value if task is a graded task (required if task definition is a graded task)'
+      optional :grade, type: Integer, desc: 'Grade value if task is a graded task (required if task definition is a graded task)'
     end
     put '/projects/:id/task_def_id/:task_definition_id' do
       project = Project.find(params[:id])
