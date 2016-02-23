@@ -305,6 +305,9 @@ class Task < ActiveRecord::Base
     if not bulk then project.calc_task_stats(self) end
   end
 
+  #
+  # Tries to grade the task if it is a graded task
+  #
   def grade_task(new_grade, grading_group = false)
     grade_map = {
       'p'  => 0,
@@ -338,7 +341,7 @@ class Task < ActiveRecord::Base
           self.save
         end
       end
-    else unless grade.nil?
+    elsif grade?
       error!({"error" => "Grade was supplied for a non-graded task (task id #{self.id})"}, 403)
     end
   end
