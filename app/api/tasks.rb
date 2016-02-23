@@ -152,16 +152,10 @@ module Api
           end
         end
 
-        # if grade is supplied but not a graded task?
-        if task_definition.is_graded
-          if grade.nil?
-            error!({"error" => "No grade was supplied for this graded task."}, 403)
-          else
-            task.grade = grade
-            task.save
-          end
-        else unless grade.nil?
-          error!({"error" => "Grade was supplied for a non-graded task."}, 403)
+        # if grade was supplied
+        unless grade.nil?
+          # try to grade the task
+          task.grade_task grade
         end
 
         # if include in portfolio supplied
