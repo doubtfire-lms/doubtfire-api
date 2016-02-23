@@ -66,14 +66,20 @@ CREATE ROLE itig WITH CREATEDB PASSWORD 'd872$dh' LOGIN;
 
 #### 4. Install native tools
 
-Install imagemagick, libmagic, and pdftk:
+Install `imagemagick` and `libmagic` using Homebrew:
 
 ```
 $ brew tap docmunch/pdftk
-$ brew install imagemagick libmagic pdftk
+$ brew install imagemagick libmagic
 ```
 
-This step may take up to 20 minutes to complete as the pdftk compilation process is slow. Refer to the GitHub issue [here](https://github.com/docmunch/homebrew-pdftk/issues/5).
+You also need to download and install PDFtk manually by downloading it [here](https://www.pdflabs.com/tools/pdftk-the-pdf-toolkit/pdftk_server-2.02-mac_osx-10.6-setup.pkg).
+
+You will also need to install the Python `pygments` package:
+
+```
+$ sudo easy_install Pygments
+```
 
 #### 5. Install Doubtfire API dependencies
 
@@ -219,7 +225,7 @@ $ git clone git://github.com/sstephenson/rbenv.git .rbenv
 $ echo 'export PATH="$HOME/.rbenv/bin:$PATH"' >> ~/.bashrc
 $ echo 'eval "$(rbenv init -)"' >> ~/.bashrc
 $ exec $SHELL
-$ 
+$
 $ git clone git://github.com/sstephenson/ruby-build.git ~/.rbenv/plugins/ruby-build
 $ echo 'export PATH="$HOME/.rbenv/plugins/ruby-build/bin:$PATH"' >> ~/.bashrc
 $ exec $SHELL
@@ -268,12 +274,19 @@ CREATE ROLE itig WITH CREATEDB PASSWORD 'd872$dh' LOGIN;
 
 #### 4. Install native tools
 
-Install imagemagick, libmagic, and pdftk:
+Install `imagemagick` and `libmagic`:
 
 ```
 $ sudo apt-get install imagemagick libmagickwand-dev
 $ sudo apt-get install libmagic-dev
-$ sudo apt-get install pdftk
+```
+
+You also need to download and install PDFtk manually by downloading it [here](https://www.pdflabs.com/docs/install-pdftk-on-redhat-or-centos/).
+
+You will also need to install the Python `pygments` package:
+
+```
+$ sudo apt-get install python-pygments
 ```
 
 #### 5. Install Doubtfire API dependencies
