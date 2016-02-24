@@ -2,6 +2,8 @@
 # Tracks each group's submissions.
 #
 class GroupSubmission < ActiveRecord::Base
+  include LogHelper
+
   belongs_to :group
   belongs_to :task_definition
   has_many :tasks, dependent: :nullify
@@ -12,17 +14,17 @@ class GroupSubmission < ActiveRecord::Base
   # Ensure file is also deleted
   #
   before_destroy do | group_submission |
-    # puts "Delete group submission!"
+    logger.debug "Deleting group submission #{group_submission.id}"
     begin
       FileHelper.delete_group_submission(group_submission)
 
       # also remove evidence from group members
-      tasks.each do |t| 
-        t.portfolio_evidence = null 
+      tasks.each do |t|
+        t.portfolio_evidence = null
         t.save
       end
-    rescue
-      puts "Failed to delete group submission #{group_submission.id}!"
+    rescue => e
+      logger.error "Failed to delete group submission #{group_submission.id}. Error: #{e.message}"
     end
   end
 
@@ -37,7 +39,7 @@ class GroupSubmission < ActiveRecord::Base
   def submitter_task
     result = tasks.where(project: submitted_by_project).first
     return result unless result.nil?
-    
+
     tasks.first
   end
 end

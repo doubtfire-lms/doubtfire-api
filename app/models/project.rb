@@ -6,6 +6,7 @@ end
 
 class Project < ActiveRecord::Base
   include ApplicationHelper
+  include LogHelper
 
   belongs_to :unit
   belongs_to :tutorial
@@ -515,7 +516,6 @@ class Project < ActiveRecord::Base
         if reload_task.id == task.id
           task.reload
         end
-        # puts "** #{task.id}, #{task.task_status.status_key}  #{self.persisted?}"
       }
     end
 
@@ -528,7 +528,7 @@ class Project < ActiveRecord::Base
     convert_hash_to_pct(result, total)
 
     self.task_stats = "#{result[:fail]}|#{result[:not_started]}|#{result[:fix_and_include]}|#{result[:redo]}|#{result[:need_help]}|#{result[:working_on_it]}|#{result[:fix_and_resubmit]}|#{result[:ready_to_mark]}|#{result[:discuss]}|#{result[:demonstrate]}|#{result[:complete]}"
-    # puts self.task_stats
+
     save
     self.task_stats
   end
@@ -725,14 +725,11 @@ class Project < ActiveRecord::Base
     #
     # Create cover page for the submitted file (<taskid>/file0.cover.html etc.)
     #
-    # puts "generating cover page #{cover_filename}"
+    logger.debug "Generating cover page for project #{id} - #{cover_filename}"
 
     coverp_file = File.new(cover_filename, "w")
-    # puts 1
     coverp_file.write(coverpage_body)
-    # puts 2
     coverp_file.close
-    # puts 3
 
     cover_filename
   end
@@ -777,8 +774,7 @@ class Project < ActiveRecord::Base
     # create PDFs of uploaded files
     pdf_paths = FileHelper.convert_files_to_pdf(portfolio_tmp_dir, tmp_dir)
     if pdf_paths.nil?
-      logger.error("Files missing for portfolio in project #{id}")
-      puts "Files missing for portfolio of project #{id}"
+      logger.error "Files missing for portfolio in project #{id}"
       return false
     end
     task_pdfs = []
@@ -794,18 +790,16 @@ class Project < ActiveRecord::Base
 
     pdf_paths.insert(1, cover_file)
 
-    # puts pdf_paths
-
     final_pdf_path = portfolio_path
     if FileHelper.aggregate(pdf_paths, final_pdf_path)
-      logger.info "Created portfolio - #{final_pdf_path}"
+      logger.info "Created portfolio for project #{id} at #{final_pdf_path}"
       # Reuben 07.11.14 Set portfolio production date to now upon submission
 
       self.portfolio_production_date = DateTime.now
       self.save
       result = true
     else
-      logger.error "Failed to create portfolio - #{final_pdf_path}"
+      logger.error "Failed to create portfolio for project #{id} at #{final_pdf_path}"
       # failed to combine PDFs
       self.portfolio_production_date = nil
       self.save
@@ -816,7 +810,7 @@ class Project < ActiveRecord::Base
     begin
       FileUtils.rm_r(tmp_dir)
     rescue
-      logger.warn "failed to cleanup dirs from portfolio production"
+      logger.warn "Failed to cleanup directories from portfolio production (project id=#{id})"
     end
 
     return result

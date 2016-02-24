@@ -2,7 +2,7 @@ require 'authorisation_helpers'
 
 class User < ActiveRecord::Base
   # attr_encrypted :email, :key => Doubtfire::Application.config.secret_attr_key, :encode => true
-  attr_encrypted :auth_token, :key => Doubtfire::Application.config.secret_attr_key, :encode => true, :attribute => 'authentication_token'  
+  attr_encrypted :auth_token, :key => Doubtfire::Application.config.secret_attr_key, :encode => true, :attribute => 'authentication_token'
 
   # Use LDAP (SIMS) for authentication
   if Rails.env.production?
@@ -107,15 +107,15 @@ class User < ActiveRecord::Base
   def has_admin_capability?
     role_id == Role.admin_id
   end
-  
+
   def self.get_change_role_perm_fn()
-    lambda { |role, perm_hash, other| 
+    lambda { |role, perm_hash, other|
       from_role = other[0]
       to_role = other[1]
 
-      chg_roles = perm_hash[:change_role] and 
-        role_hash = chg_roles[role] and 
-        from_role_hash = role_hash[from_role] and 
+      chg_roles = perm_hash[:change_role] and
+        role_hash = chg_roles[role] and
+        from_role_hash = role_hash[from_role] and
         from_role_hash[to_role]
     }
   end
@@ -123,7 +123,7 @@ class User < ActiveRecord::Base
   def self.permissions
     {
       # change role is a complex check
-      change_role: { 
+      change_role: {
         #user role
         :Admin => {
           #from role  - to role
@@ -243,7 +243,7 @@ class User < ActiveRecord::Base
   def self.export_to_csv
     exportables = csv_columns().map{ |col| col == "role" ? "role_id" : col }
     CSV.generate do |row|
-      row << User.attribute_names.select { | attribute | exportables.include? attribute }.map { | attribute | 
+      row << User.attribute_names.select { | attribute | exportables.include? attribute }.map { | attribute |
         # rename encrypted_password key to just password and role_id key to just role
         if attribute == "encrypted_password"
           "password"
@@ -256,11 +256,11 @@ class User < ActiveRecord::Base
       User.find(:all, :order => "id").each do |user|
         row << user.attributes.select { | attribute | exportables.include? attribute }.map { | key, value |
           # pass in a blank encrypted_password and the role name instead of just role_id
-          if key == "encrypted_password" 
-            "" 
+          if key == "encrypted_password"
+            ""
           elsif key == "role_id"
             Role.find(value).name
-          else value end 
+          else value end
         }
       end
     end
@@ -278,7 +278,7 @@ class User < ActiveRecord::Base
     success = []
     errors = []
     ignored = []
-    
+
     CSV.parse(file, {
         :headers => true,
         :header_converters => [:downcase, lambda { |hdr| hdr.strip.gsub(" ", "_") unless hdr.nil? } ],
@@ -299,7 +299,7 @@ class User < ActiveRecord::Base
         username = row['username']
         nickname = row['nickname']
         role = row['role']
-        
+
         pass_checks = true
         ['username', 'email', 'role', 'first_name'].each do | col |
           if row[col].nil? || row[col].empty?
@@ -339,9 +339,6 @@ class User < ActiveRecord::Base
             user.nickname           = nickname.nil? || nickname.empty? ? first_name : nickname
             user.role_id            = new_role.id
           }
-          
-          # puts "New record: #{user.new_record?}"
-          # puts "Persisted: #{user.persisted?}"
 
           # will not be persisted initially as password cannot be blank - so can check
           # which were created using this - will persist changes imported
@@ -357,7 +354,7 @@ class User < ActiveRecord::Base
         errors << { row: row, message: e.message }
       end
     end
-    
+
     {
       success: success,
       ignored: ignored,

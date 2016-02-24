@@ -14,10 +14,10 @@ class Task < ActiveRecord::Base
   def role_for(user)
     project_role = project.user_role(user)
     return project_role unless project_role.nil?
-    # puts "getting role... #{task_definition.abbreviation} #{task_definition.group_set}"
+    logger.debug "Getting role for user #{user.id}: #{task_definition.abbreviation} #{task_definition.group_set}"
     # check for group member
     if group_task?
-      # puts "checking group"
+      logger.debug "Checking group"
       if group && group.has_user(user)
         return :group_member
       else
@@ -208,9 +208,9 @@ class Task < ActiveRecord::Base
       end
       reload
     else
-      # puts "Assigning #{id} = #{final_pdf_path}"
+      logger.debug "Assigning task #{id} to final PDF evidence path #{final_pdf_path}"
       self.portfolio_evidence = final_pdf_path
-      # puts "Path is now #{id} = #{self.portfolio_evidence}"
+      logger.debug "PDF evidence path for task #{id} is now #{self.portfolio_evidence}"
       self.save
     end
   end
@@ -238,7 +238,7 @@ class Task < ActiveRecord::Base
     # Ensure that assessor is allowed to update the task in the indicated way
     #
     role = role_for(by_user)
-    # puts "#{role} #{group_transition}"
+
     return nil if role.nil?
 
     #
@@ -296,7 +296,7 @@ class Task < ActiveRecord::Base
 
     # if this is a status change of a group task -- and not already doing group update
     if (not group_transition) && group_task?
-      # puts "#{group_transition} #{group_submission} #{trigger} #{id}"
+      logger.debug "Group task transition for #{group_submission} set to status #{trigger} (id=#{id})"
       if not [ TaskStatus.working_on_it, TaskStatus.need_help  ].include? task_status
         ensured_group_submission.propagate_transition self, trigger, by_user
       end
@@ -494,13 +494,12 @@ class Task < ActiveRecord::Base
       # Extract folders
       zip.each do |entry|
         # Extract to file/directory/symlink
-        # puts "Extracting #{entry.name}"
+        logger.debug "Extracting file from done: #{entry.name}"
         if entry.name_is_directory?
           entry.extract( name_fn.call(self, to_path, entry.name) )  { true }
         end
       end
       zip.glob("**/#{pattern}").each do |entry|
-        # puts "Here Extracting #{entry.name}"
         entry.extract( name_fn.call(self, to_path, entry.name) ) { true }
       end
     end
@@ -608,7 +607,7 @@ class Task < ActiveRecord::Base
   def __output_filename__(in_dir, idx, type)
     pwd = FileUtils.pwd
     Dir.chdir(in_dir)
-    # puts "#{idx.to_s.rjust(3, '0')}.#{type}.*"
+
     result = Dir.glob("#{idx.to_s.rjust(3, '0')}.#{type}.*").first
     if (not result.nil?) && File.exists?(result)
       FileUtils.mv result, "#{idx.to_s.rjust(3, '0')}-#{type}#{File.extname(result)}"
@@ -629,16 +628,15 @@ class Task < ActiveRecord::Base
 
     idx = 0
     upload_requirements.each do |file_req|
-      # puts file_req
       output_filename = __output_filename__(in_process_dir, idx, file_req['type'])
-      # puts output_filename
+
       if output_filename.nil?
         idx += 1 # skip headers if present
         output_filename = __output_filename__(in_process_dir, idx, file_req['type'])
       end
 
       if output_filename.nil?
-        puts "Error processing Task #{id} -- missing file #{file_req}"
+        logger.error "Error processing task #{id} - missing file #{file_req}"
       else
         result << { path: output_filename, type: file_req['type'] }
 
@@ -704,7 +702,7 @@ class Task < ActiveRecord::Base
     begin
       tac = TaskAppController.new
       tac.init(self)
-      # puts tac.task.name
+
       pdf_text = tac.make_pdf
 
       if group_task?
@@ -727,7 +725,7 @@ class Task < ActiveRecord::Base
 
       clear_in_process()
     rescue => e
-      puts "Failed to convert submission to pdf for #{id} #{e.message}"
+      logger.error "Failed to convert submission to PDF for task #{id}. Error: #{e.message}"
     end
   end
 
@@ -740,7 +738,6 @@ class Task < ActiveRecord::Base
         contribs = group.projects.map { |proj| { project: proj, pct: 100 / group.projects.count }  }
       else
         contribs = contributions.map { |data| { project: Project.find(data[:project_id]), pct: data[:pct].to_i }  }
-        # puts contribs
       end
       group_submission = group.create_submission self, "#{user.name} has submitted work", contribs
       group_submission.tasks.each { |t| t.create_submission_and_trigger_state_change(user, propagate=false) }
@@ -816,11 +813,7 @@ class Task < ActiveRecord::Base
     portfolio_evidence = nil
 
     files.each_with_index.map do | file, idx |
-
       output_filename = File.join(tmp_dir, "#{idx.to_s.rjust(3, '0')}-#{file.type}#{File.extname(file.filename).downcase}")
-
-      # puts file.tempfile.path
-      # puts output_filename
       FileUtils.cp file.tempfile.path, output_filename
     end
 
@@ -828,8 +821,8 @@ class Task < ActiveRecord::Base
     # Now copy over the temp directory over to the enqueued directory
     #
     enqueued_dir = student_work_dir(:new, self)[0..-2]
-    # puts "move ", "#{tmp_dir}", enqueued_dir
-    # FileUtils.cp_r "#{tmp_dir}", enqueued_dir
+
+    logger.debug "Moving submission evidence from #{tmp_dir} to #{enqueued_dir}"
 
     pwd = FileUtils.pwd
     # move to tmp dir
@@ -840,6 +833,5 @@ class Task < ActiveRecord::Base
     # remove the directory
     Dir.chdir(pwd)
     Dir.rmdir(tmp_dir)
-    # puts "done"
   end
 end

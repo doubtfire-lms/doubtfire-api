@@ -189,7 +189,6 @@ module Api::Submission::GenerateHelpers
 
         subm.tasks.each do | task |
           # add to done projects for emailing
-          # puts "#{task} = #{task.project}"
           if done[task.project].nil?
             done[task.project] = []
           end
@@ -233,14 +232,14 @@ module Api::Submission::GenerateHelpers
     # send emails...
     begin
       done.each do |project, tasks|
-        logger.info "checking feedback email for project #{project.id}"
+        logger.info "Checking feedback email for project #{project.id}"
         if project.student.receive_feedback_notifications
-          logger.info "emailing feedback notification to #{project.student.name}"
+          logger.info "Emailing feedback notification to #{project.student.name}"
           PortfolioEvidenceMailer.task_feedback_ready(project, tasks).deliver
         end
       end
     rescue => e
-      logger.error "failed to send emails from feedback submission: #{e.message}"
+      logger.error "Failed to send emails from feedback submission. Rescued with error: #{e.message}"
     end
 
     return true
@@ -276,7 +275,7 @@ module Api::Submission::GenerateHelpers
         tmp_dir = File.join( Dir.tmpdir, 'doubtfire', 'batch', "#{i}" )
       end
 
-      #puts tmp_dir
+      logger.debug "Created temp directory for batch zip at #{tmp_dir}"
 
       FileUtils.mkdir_p(tmp_dir)
 

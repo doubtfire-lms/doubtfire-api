@@ -28,7 +28,7 @@ module Api
         joins(:task_status).
         select('tasks.id', 'projects.tutorial_id as tutorial_id', 'task_statuses.name as status_name', 'task_definition_id').
         where("tasks.task_status_id > 1 and projects.tutorial_id is not null").
-        map { |r|  
+        map { |r|
           {
             id: r.id,
             tutorial_id: r.tutorial_id,
@@ -57,11 +57,11 @@ module Api
       match_link = task.plagiarism_match_links.order("created_at DESC")[match]
       return if match_link.nil?
 
-      # puts "here 1: #{match_link}"
-      
+      logger.debug "Plagiarism match link 1: #{match_link}"
+
       other_match_link = match_link.other_party
 
-      # puts "here 2: #{other_match_link}"
+      logger.debug "Plagiarism match link 2: #{other_match_link}"
 
       output = FileHelper.path_to_plagarism_html(match_link)
 
@@ -159,10 +159,8 @@ module Api
         TaskUpdateSerializer.new(task)
       else
         error!({"error" => "Couldn't find Task with id=#{params[:id]}" }, 403)
-      end 
+      end
     end
-    
+
   end
 end
-
-

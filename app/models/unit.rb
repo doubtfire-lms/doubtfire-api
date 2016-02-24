@@ -6,6 +6,7 @@ require 'moss_ruby'
 class Unit < ActiveRecord::Base
   include ApplicationHelper
   include FileHelper
+  include LogHelper
 
   def self.permissions
     {
@@ -285,7 +286,8 @@ class Unit < ActiveRecord::Base
   # students to false for this unit.
   # CSV should contain just the usernames to withdraw
   def unenrol_users_from_csv(file)
-    # puts 'starting withdraw'
+    logger.debug "Initiating withdraw of students from unit #{unit.id} from CSV"
+
     success = []
     errors = []
     ignored = []
@@ -307,8 +309,6 @@ class Unit < ActiveRecord::Base
           ignored << { row: row, message: "Invalid unit code. #{unit_code} does not match #{code}" }
           next
         end
-
-        # puts username
 
         project_participant = User.where(username: username)
 
@@ -712,7 +712,7 @@ class Unit < ActiveRecord::Base
       end
     end #zip
     result
-  end  
+  end
 
   #
   # Create an ILO
@@ -734,7 +734,7 @@ class Unit < ActiveRecord::Base
   #
   def move_ilo(ilo, new_num)
     if (ilo.ilo_number < new_num)
-      # puts "Moving ILOs Up"
+      logger.debug "Moving ILOs up #{ilo.ilo_number} to #{new_num}"
       learning_outcomes.where("ilo_number > #{ilo.ilo_number} and ilo_number <= #{new_num}").each { |ilo| ilo.ilo_number -= 1; ilo.save}
     elsif (ilo.ilo_number > new_num)
       learning_outcomes.where("ilo_number < #{ilo.ilo_number} and ilo_number >= #{new_num}").each { |ilo| ilo.ilo_number += 1; ilo.save}
@@ -743,6 +743,7 @@ class Unit < ActiveRecord::Base
     ilo.save
   end
 
+  #
   # Get all of the related tasks
   #
   def tasks_for_definition(task_def)
@@ -794,8 +795,8 @@ class Unit < ActiveRecord::Base
       td.plagiarism_updated = false
       td.save
 
-      #delete old plagiarism links
-      puts "Deleting old links for task definition #{td.id}"
+      # delete old plagiarism links
+      logger.debug "Deleting old links for task definition #{td.id}"
       PlagiarismMatchLink.joins(:task).where("tasks.task_definition_id" => td.id).each do | plnk |
         begin
           PlagiarismMatchLink.find(plnk.id).destroy!
@@ -804,7 +805,7 @@ class Unit < ActiveRecord::Base
       end
 
       # Reset the tasks % similar
-      puts "Clearing old task percent similar"
+      logger.debug "Clearing old task percent similar"
       tasks_for_definition(td).where("tasks.max_pct_similar > 0").each do |t|
         t.max_pct_similar = 0
         t.save
@@ -812,7 +813,7 @@ class Unit < ActiveRecord::Base
 
       # Get results
       url = td.plagiarism_report_url
-      puts "Processing MOSS results #{url}"
+      logger.debug "Processing MOSS results #{url}"
 
       warn_pct = td.plagiarism_warn_pct
       warn_pct = 50 if warn_pct.nil?
@@ -830,7 +831,7 @@ class Unit < ActiveRecord::Base
         t2 = Task.find(task_id_2)
 
         if t1.nil? || t2.nil?
-          puts "Could not find tasks #{task_id_1} or #{task_id_2}"
+          logger.error "Could not find tasks #{task_id_1} or #{task_id_2} for plagiarism stats check!"
           next
         end
 
@@ -890,7 +891,6 @@ class Unit < ActiveRecord::Base
         # extract files matching each pattern
         # -- each pattern
         check["pattern"].split("|").each do |pattern|
-          # puts "\tadding #{pattern}"
           tasks_with_files.each do |t|
             FileHelper.extract_file_from_done(t, tmp_path, pattern, lambda { | task, to_path, name |  File.join("#{to_path}", "#{t.student.username}", "#{name}") } )
           end
@@ -913,18 +913,18 @@ class Unit < ActiveRecord::Base
     pwd = FileUtils.pwd
 
     begin
-      puts "\nChecking #{name}"
+      logger.info "Checking plagiarsm for unit #{code} - #{name} (id=#{id})"
       task_definitions.each do |td|
         next if td.plagiarism_checks.length == 0
         # Is there anything to check?
 
-        puts "- Checking plagiarism for #{td.name}"
+        logger.debug "Checking plagiarism for #{td.name} (id=#{td.id})"
         tasks = tasks_for_definition(td)
         tasks_with_files = tasks.select { |t| t.has_pdf }
         if tasks_with_files.count > 1 && (tasks.where("tasks.file_uploaded_at > ?", last_plagarism_scan ).select { |t| t.has_pdf }.count > 0 || force )
           # There are new tasks, check these
 
-          puts "Contacting moss for new checks"
+          logger.debug "Contacting MOSS for new checks"
           td.plagiarism_checks.each do |check|
             next if check["type"].nil?
 
@@ -952,15 +952,14 @@ class Unit < ActiveRecord::Base
               FileUtils.chdir(tmp_path)
 
               # Get server to process files
-              puts "Sending to MOSS..."
+              logger.debug "Sending to MOSS..."
               url = moss.check(to_check, lambda { |line| puts line })
 
               td.plagiarism_report_url = url
               td.plagiarism_updated = true
               td.save
             rescue => e
-              puts "Error: Failed to check plagiarism for task"
-              puts "#{e.message}"
+              logger.error "Failed to check plagiarism for task #{td.name} (id=#{td.id}). Error: #{e.message}"
             ensure
               FileUtils.chdir(pwd)
               FileUtils.rm_rf tmp_path
@@ -1122,7 +1121,7 @@ class Unit < ActiveRecord::Base
   def _student_task_completion_data_base()
     data = student_tasks.
       select('projects.tutorial_id as tutorial_id', 'projects.target_grade as target_grade', "tasks.project_id", "Count(tasks.id) as num").
-      where('task_status_id = :complete', complete: TaskStatus.complete.id).  
+      where('task_status_id = :complete', complete: TaskStatus.complete.id).
       group('projects.tutorial_id','projects.target_grade','tasks.project_id').
       order('projects.tutorial_id')
     data.map { |r| { tutorial_id: r.tutorial_id, grade: r.target_grade, project: r.project_id, num: r.num} }
@@ -1244,10 +1243,6 @@ class Unit < ActiveRecord::Base
         # add the project to the tutorial
         current[:tutorial] << current[:project]
 
-        # if current[:project_id] < 3 
-        #   puts current[:project]
-        # end
-
         # reset the
         current[:project_id] = e[:project_id]
         current[:project] = { id: e[:project_id] }
@@ -1257,11 +1252,6 @@ class Unit < ActiveRecord::Base
       if current[:project].has_key? e[:learning_outcome_id]
         old_val = current[:project][e[:learning_outcome_id]]
       end
-
-      # if current[:project_id] < 3 
-      #   puts "#{current[:project_id]} --> #{e[:learning_outcome_id]} --> #{old_val} + #{
-      #   e[:rating] * status_weight[e[:status]] * grade_weight[e[:grade]]}"
-      # end
 
       current[:project][e[:learning_outcome_id]] = old_val +
         e[:rating] * status_weight[e[:status]] * grade_weight[e[:grade]] * e[:num]
@@ -1274,7 +1264,6 @@ class Unit < ActiveRecord::Base
 
       # add the tutorial to the results
       result[current[:tutorial_id]] = current[:tutorial]
-      # puts "ADDED #{current[:tutorial_id]} = #{current[:tutorial]}" 
     end
 
     result.each do |tutorial_id_key, array_of_ilo_scores|

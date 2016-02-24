@@ -1,4 +1,6 @@
 class Group < ActiveRecord::Base
+  include LogHelper
+
   belongs_to :group_set
   belongs_to :tutorial
 
@@ -20,7 +22,7 @@ class Group < ActiveRecord::Base
   before_destroy :ensure_no_submissions
 
   def self.permissions
-    result = { 
+    result = {
       :Student  => [ :get_members ],
       :Tutor    => [ :get_members, :manage_group ],
       :Convenor => [ :get_members, :manage_group ],
@@ -84,13 +86,13 @@ class Group < ActiveRecord::Base
   # check if the project is the same as the current submission
   #
   def __different_project_composition__ (contributors, gs)
-    # puts "Starting checks"
+    logger.debug "Starting checks"
     contributors.each do |contrib|
-      # puts "-- Checking #{contrib}"
+      logger.debug "-- Checking #{contrib}"
       return true unless gs.projects.include? contrib[:project]
       return true unless contrib[:pct].to_i > 0
     end
-    # puts "Checking #{contributors.count} == #{gs.projects.count}"
+    logger.debug "Checking #{contributors.count} == #{gs.projects.count}"
     return contributors.count != gs.projects.count
   end
 
@@ -112,7 +114,7 @@ class Group < ActiveRecord::Base
       else
         total += pct
       end
-      raise "Not all contributions were from team members." unless projects.include? project 
+      raise "Not all contributions were from team members." unless projects.include? project
     end
 
     # check for all group members
@@ -146,13 +148,11 @@ class Group < ActiveRecord::Base
         task.group_submission = gs
         task.contribution_pct = contrib[:pct]
       end
-      # puts "id is #{task.group_submission_id}"
       task.save
     end
 
     if old_gs
       old_gs.reload
-      # puts "here #{old_gs.projects.count}"
       if old_gs.projects.count == 0
         old_gs.destroy!
       end

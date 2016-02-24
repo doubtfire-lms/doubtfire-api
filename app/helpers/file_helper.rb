@@ -21,12 +21,10 @@ module FileHelper
   #
   def self.accept_file(file, name, kind)
     logger.debug "FileHelper accept_file #{file}, #{name}, #{kind}"
-    # puts "FileHelper accept_file #{file}, #{name}, #{kind}"
 
     fm = FileMagic.new(FileMagic::MAGIC_MIME)
     mime = fm.file file.tempfile.path
     logger.debug " -- #{name} is mime type: #{mime}"
-    # puts " -- #{name} is mime type: #{mime}"
 
     valid = true
 
@@ -42,7 +40,6 @@ module FileHelper
       valid = pdf_valid? file.tempfile.path
     else
       logger.error "Unknown type '#{kind}' provided for '#{name}'"
-      puts "Unknown type '#{kind}' provided for '#{name}'"
       return false
     end
 
@@ -182,7 +179,7 @@ module FileHelper
     return if File.size?(path) < 1000000
 
     tmp_file = File.join( Dir.tmpdir, 'doubtfire', 'compress', "#{File.dirname(path).split(File::Separator).last}-file#{File.extname(path)}" )
-    # puts "Compressing #{path} to \n #{tmp_file}"
+    logger.debug "File helper has started compressing #{path} to #{tmp_file}..."
 
     exec = "convert \"#{path}\" -resize 1024x1024 \"#{tmp_file}\" >>/dev/null 2>>/dev/null"
 
@@ -202,11 +199,10 @@ module FileHelper
   end
 
   def self.compress_pdf(path, max_size = 2500000)
-    #trusting path... as it needs to be replaced
-    # puts "compressing #{path} #{File.size?(path)}"
+    # trusting path... as it needs to be replaced
+    logger.debug "Compressing PDF #{path} (#{File.size?(path)} bytes) using GhostScript"
     # only compress things over max_size -- defaults to 2.5mb
     return if File.size?(path) < max_size
-    # puts "compressing..."
 
     begin
       tmp_file = File.join( Dir.tmpdir, 'doubtfire', 'compress', "#{File.dirname(path).split(File::Separator).last}-file.pdf" )
@@ -215,14 +211,10 @@ module FileHelper
       exec = "#{Rails.root.join('lib', 'shell', 'timeout.sh')} -t 15 nice -n 10 gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.3 -dDetectDuplicateImages=true -dPDFSETTINGS=/screen -dNOPAUSE -dBATCH  -dQUIET -sOutputFile=\"#{tmp_file}\" \"#{path}\" >>/dev/null 2>>/dev/null"
 
       # try with ghostscript
-      didCompress = false
-      # Terminator.terminate 120 do
       didCompress = system exec
-      # end
 
       if !didCompress
-        # puts "compressing with convert"
-        logger.info "Failed to compress pdf: #{path} using GS"
+        logger.info "Failed to compress PDF #{path} using GhostScript. Trying with convert"
 
         exec = "nice -n 10 convert \"#{path}\" -compress Zip \"#{tmp_file}\" >>/dev/null 2>>/dev/null"
 
@@ -232,8 +224,7 @@ module FileHelper
         end
 
         if !didCompress
-          logger.error "Failed to compress pdf: #{path}\n#{exec}"
-          puts "Failed to compress pdf: #{path}\n#{exec}"
+          logger.error "Failed to compress PDF #{path} using convert. Cannot compress this PDF. Command was:\n\t#{exec}"
         end
       end
 
@@ -241,8 +232,8 @@ module FileHelper
         FileUtils.mv tmp_file, path
       end
 
-    rescue
-      logger.error("Failed to compress pdf: #{path}")
+    rescue => e
+      logger.error "Failed to compress PDF #{path}. Rescued with error:\n\t#{e.message}"
     end
 
     if File.exists? tmp_file
@@ -288,8 +279,7 @@ module FileHelper
     #
     in_process_files = Dir.entries(from_path).select { | f | (f =~ /^\d{3}\.(cover|document|code|image)/) == 0 }
     if in_process_files.length < 1
-      logger.error "No files found in #{from_path}"
-      puts "Error - No files found in #{from_path}"
+      logger.error "Cannot convert files to PDF: No files found in #{from_path}"
       return nil
     end
 
@@ -326,7 +316,7 @@ module FileHelper
       outpath = "#{dest_path}/#{file[:idx]}.#{file[:type]}.pdf"
 
       convert_to_pdf(file, outpath)
-      # puts file
+
       pdf_paths[file[:idx]] = outpath
       begin
         file[:actualfile].close
@@ -341,8 +331,6 @@ module FileHelper
   # Tests if a PDF is valid / corrupt
   #
   def self.pdf_valid?(file)
-    # puts "pdftk #{file} output dont_ask /dev/null"
-
     didSucceed = false
 
     Terminator.terminate 30 do
@@ -431,7 +419,7 @@ module FileHelper
   # Converts the document provided to a pdf
   #
   def self.doc_to_pdf(file, outdir)
-    # puts file
+    logger.info "Trying to convert document file #{file[:path]} to PDF"
     # if uploaded a PDF, then directly pass in
     # if file[:ext] == '.pdf'
       # copy the file over (note we need to copy it into
@@ -439,16 +427,19 @@ module FileHelper
 
       begin
         file[:actualfile].close()
-      rescue
+      rescue => e
+        logger.error "File could not be converted: #{e.message}"
       end
 
       copy_pdf(file[:path], outdir)
 
       begin
         file[:actualfile] = File.open(file[:path])
-      rescue
+      rescue => e
+        logger.error "File could not be converted: #{e.message}"
       end
     # end
+
     # TODO msword doc...
   end
 
@@ -456,7 +447,6 @@ module FileHelper
   # Converts the cover page provided to a pdf
   #
   def self.cover_to_pdf(file, outdir)
-    # puts file
     kit = PDFKit.new(
       read_file_to_str(file[:path]),
       :page_size => 'A4',
@@ -487,14 +477,16 @@ module FileHelper
   # - returns boolean indicating success
   #
   def self.aggregate(pdf_paths, final_pdf_path)
+    logger.debug "Trying to aggregate PDFs to #{final_pdf_path}"
+
     didCompile = false
+    exec = "pdftk #{pdf_paths.join ' '} cat output '#{final_pdf_path}' dont_ask compress"
     Terminator.terminate 180 do
-      didCompile = system "pdftk #{pdf_paths.join ' '} cat output '#{final_pdf_path}' dont_ask compress"
+      didCompile = system exec
     end
 
     if !didCompile
-      logger.error "failed to create #{final_pdf_path}\n -> pdftk #{pdf_paths.join ' '} cat output #{final_pdf_path}"
-      puts "failed to create #{final_pdf_path}\n -> pdftk #{pdf_paths.join ' '} cat output #{final_pdf_path}"
+      logger.error "Failed to aggregate PDFs to #{final_pdf_path}. Command was:\n\t#{exec}"
     end
     didCompile
   end
@@ -533,13 +525,12 @@ module FileHelper
 
   def self.delete_group_submission(group_submission)
     pdf_file = PortfolioEvidence.final_pdf_path_for_group_submission(group_submission)
-    # puts "Delete #{pdf_file}"
+    logger.debug "Deleting group submission PDF file #{pdf_file}"
     if File.exists? pdf_file
       FileUtils.rm pdf_file
     end
 
     done_file = zip_file_path_for_group_done_task(group_submission)
-    # puts "Delete #{done_file}"
     if File.exists? done_file
       FileUtils.rm done_file
     end
@@ -595,13 +586,12 @@ module FileHelper
       # Extract folders
       zip.each do |entry|
         # Extract to file/directory/symlink
-        # puts "Extracting #{entry.name}"
+        logger.debug "Extract files from done is extracting #{entry.name}"
         if entry.name_is_directory?
           entry.extract( name_fn.call(task, to_path, entry.name) )  { true }
         end
       end
       zip.glob("**/#{pattern}").each do |entry|
-        # puts "Here Extracting #{entry.name}"
         entry.extract( name_fn.call(task, to_path, entry.name) ) { true }
       end
     end
