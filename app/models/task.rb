@@ -785,8 +785,8 @@ class Task < ActiveRecord::Base
     #
     # Confirm subtype categories using filemagic
     #
-    files.each do | file |
-      logger.debug "checking file type for #{file.tempfile.path}"
+    files.each_with_index do | file, index |
+      logger.debug "Accepting submission (file #{index + 1} of #{files.length}) - checking file type for #{file.tempfile.path}"
       if not FileHelper.accept_file(file, file.name, file.type)
         ui.error!({"error" => "'#{file.name}' is not a valid #{file.type} file"}, 403)
       end
@@ -802,7 +802,7 @@ class Task < ActiveRecord::Base
     # Create student submission folder (<tmpdir>/doubtfire/new/<id>)
     #
     tmp_dir = File.join( Dir.tmpdir, 'doubtfire', 'new', "#{id}" )
-    logger.debug("creating tmp dir at #{tmp_dir}")
+    logger.debug "Creating temporary directory for new dubmission at #{tmp_dir}"
 
     # ensure the dir exists
     FileUtils.mkdir_p(tmp_dir)
@@ -833,5 +833,7 @@ class Task < ActiveRecord::Base
     # remove the directory
     Dir.chdir(pwd)
     Dir.rmdir(tmp_dir)
+
+    logger.debug "Submission accepted! Status for task #{id} is now #{trigger}"
   end
 end
