@@ -2,7 +2,7 @@ require 'terminator'
 require 'zip'
 
 module FileHelper
-  include LogHelper
+  extend LogHelper
 
   def check_mime_against_list! (file, expect, type_list)
     fm = FileMagic.new(FileMagic::MAGIC_MIME)
