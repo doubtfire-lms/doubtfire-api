@@ -10,14 +10,13 @@ require 'pdfkit'
 require 'zip'
 
 module Api::Submission::GenerateHelpers
-
   #
   # Scoops out a files array from the params provided
   #
   def scoop_files(params, upload_reqs)
     files = params.reject { | key | not key =~ /^file\d+$/ }
 
-    error!({"error" => "Upload requirements mismatch with files provided"}, 403) if files.length != upload_reqs.length 
+    error!({"error" => "Upload requirements mismatch with files provided"}, 403) if files.length != upload_reqs.length
     #
     # Pair the name and type from upload_requirements to each file
     #
@@ -29,10 +28,10 @@ module Api::Submission::GenerateHelpers
         files[key].type = detail['type']
       end
     end
-    
+
     # File didn't get assigned an id above, then reject it since there was a mismatch
     files = files.reject { | key, file | file.id.nil? }
-    error!({"error" => "Upload requirements mismatch with files provided"}, 403) if files.length != upload_reqs.length 
+    error!({"error" => "Upload requirements mismatch with files provided"}, 403) if files.length != upload_reqs.length
 
     # Kill the kvp
     files.map{ | k, v | v }
@@ -52,7 +51,7 @@ module Api::Submission::GenerateHelpers
   def check_mark_csv_headers
     "Username,Name,Tutorial,Task,ID,#{mark_col},comment"
   end
-  
+
   #
   # Generates a download package of the given tasks
   #
@@ -75,7 +74,7 @@ module Api::Submission::GenerateHelpers
           mark_col = 'rtm'
         end
         csv_str << "\n#{student.username.gsub(/,/, '_')},#{student.name.gsub(/,/, '_')},#{task.project.tutorial.abbreviation},#{task.task_definition.abbreviation.gsub(/,/, '_')},#{task.id},\"#{task.last_comment_by(task.project.student).gsub(/"/, "\"\"")}\",\"#{task.last_comment_by(user).gsub(/"/, "\"\"")}\",#{mark_col},"
-        
+
         src_path = task.portfolio_evidence
 
         next if src_path.nil? || src_path.empty?
@@ -96,7 +95,7 @@ module Api::Submission::GenerateHelpers
         grp = task.group
         next if grp.nil?
         csv_str << "\nGRP_#{grp.id}_#{subm.id},#{grp.name.gsub(/,/, '_')},#{grp.tutorial.abbreviation},#{task.task_definition.abbreviation.gsub(/,/, '_')},#{task.id},\"#{task.last_comment_not_by(user).gsub(/"/, "\"\"")}\",\"#{task.last_comment_by(user).gsub(/"/, "\"\"")}\",rtm,"
-        
+
         src_path = task.portfolio_evidence
 
         next if src_path.nil? || src_path.empty?
@@ -115,7 +114,7 @@ module Api::Submission::GenerateHelpers
   end
 
   #
-  # Update the tasks status from the csv and email students 
+  # Update the tasks status from the csv and email students
   #
   def update_task_status_from_csv(csv_str, success, ignored, errors)
     done = {}
@@ -158,7 +157,7 @@ module Api::Submission::GenerateHelpers
       # Ensure that this task's student matches that in entry_data
       if task_entry['username'] =~ /GRP_\d+_\d+/
         group_details = /GRP_(\d+)_(\d+)/.match(task_entry['username'])
-        
+
         # look for group submission
         subm = GroupSubmission.find_by_id( group_details[2].to_i )
         if subm.nil?
@@ -213,7 +212,7 @@ module Api::Submission::GenerateHelpers
 
         if not (task_entry['comment'].nil? || task_entry['comment'].empty?)
           success << { row: task_entry, message:"Updated task #{task.task_definition.abbreviation} for #{task.student.name}" }
-          if task.last_comment.nil? || task.last_comment.comment != task_entry['comment'] 
+          if task.last_comment.nil? || task.last_comment.comment != task_entry['comment']
             task.add_comment current_user, task_entry['comment']
             success << { row: task_entry, message:"Added comment to #{task.task_definition.abbreviation} for #{task.student.name}" }
           else
@@ -285,12 +284,12 @@ module Api::Submission::GenerateHelpers
         Zip::File.open(file.tempfile.path) do |zip|
           # Find the marking file within the directory tree
           marking_file = zip.glob("**/marks.csv").first
-          
+
           # No marking file found
           if marking_file.nil?
             error!({"error" => "No marks.csv contained in zip"}, 403)
           end
-          
+
           # Read the csv
           csv_str = marking_file.get_input_stream.read
           csv_str.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless csv_str.nil?
@@ -344,7 +343,7 @@ module Api::Submission::GenerateHelpers
               errors << { row: "File #{file.name}", message: "Task id #{task.id} not in marks.csv"}
               next
             end
-            
+
             # Can the user assess this task?
             if not authorise? current_user, task, :put
               errors << { row: "File #{file.name}", error: "You do not have permission to assess task with id #{task.id}"}
@@ -354,7 +353,7 @@ module Api::Submission::GenerateHelpers
             # Read into the task's portfolio_evidence path the new file
             tmp_file = File.join(tmp_dir, File.basename(file.name))
             task.portfolio_evidence = task.final_pdf_path()
-            
+
             # get file out of zip... to tmp_file
             file.extract(tmp_file){ true }
 
@@ -387,10 +386,10 @@ module Api::Submission::GenerateHelpers
       errors:   errors
     }
   end
-  
+
   # module_function :combine_to_pdf
   module_function :scoop_files
   module_function :upload_batch_task_zip_or_csv
   module_function :generate_batch_task_zip
-  
+
 end

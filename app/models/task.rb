@@ -1,8 +1,9 @@
 class Task < ActiveRecord::Base
   include ApplicationHelper
+  include LogHelper
 
   def self.permissions
-    { 
+    {
       student: [ :get, :put, :get_submission, :make_submission, :delete_own_comment ],
       tutor: [ :get, :put, :get_submission, :make_submission, :delete_other_comment, :delete_own_comment, :view_plagiarism ],
       convenor: [ :get, :get_submission, :make_submission, :delete_other_comment, :delete_own_comment, :view_plagiarism ],
@@ -42,7 +43,7 @@ class Task < ActiveRecord::Base
 
   def all_comments
     if group_submission.nil?
-      comments 
+      comments
     else
       TaskComment.joins(:task).where("tasks.group_submission_id = :id", id: group_submission.id)
     end
@@ -67,7 +68,7 @@ class Task < ActiveRecord::Base
   def upload_requirements
     task_definition.upload_requirements
   end
-  
+
   def processing_pdf
     File.exists? File.join(FileHelper.student_work_dir(:new), "#{id}")
     #portfolio_evidence == nil && ready_to_mark?
@@ -159,7 +160,7 @@ class Task < ActiveRecord::Base
   def task_submission_closed?
     complete? || discuss_or_demonstrate? || fix_and_include? || fail?
   end
-  
+
   def ok_to_submit?
     status != :complete && status != :discuss && status != :demonstrate
   end
@@ -244,12 +245,12 @@ class Task < ActiveRecord::Base
     # Ensure that only staff can change from staff assigned status if
     # this is a restricted task
     #
-    return nil if [ :student, :group_member ].include?(role) && 
-                  task_definition.restrict_status_updates && 
+    return nil if [ :student, :group_member ].include?(role) &&
+                  task_definition.restrict_status_updates &&
                   self.task_status.in?(TaskStatus.staff_assigned_statuses)
-    
+
     # Protect closed states from student changes
-    return nil if [ :student, :group_member ].include?(role) && task_submission_closed? 
+    return nil if [ :student, :group_member ].include?(role) && task_submission_closed?
 
     #
     # State transitions based upon the trigger
@@ -318,7 +319,7 @@ class Task < ActiveRecord::Base
     if self.assessment_date.nil? || self.assessment_date < self.submission_date
       # only a new assessment if it was submitted after last assessment
       self.times_assessed += 1
-    end  
+    end
     self.assessment_date  = assess_date
 
     # Set the completion date of the task if it's been completed
@@ -402,7 +403,7 @@ class Task < ActiveRecord::Base
     lc = comments.last
     return if lc && lc.user == user && lc.comment == text
 
-    ensured_group_submission if group_task? 
+    ensured_group_submission if group_task?
 
     comment = TaskComment.create()
     comment.task = self
@@ -418,7 +419,7 @@ class Task < ActiveRecord::Base
 
   def last_comment_by(user)
     result = all_comments.where(user: user).last
-    
+
     return '' if result.nil?
     result.comment
   end
@@ -436,7 +437,7 @@ class Task < ActiveRecord::Base
 
   def last_comment_not_by(user)
     result = all_comments.where("user_id != :id", id: user.id).last
-    
+
     return '' if result.nil?
     result.comment
   end
@@ -494,7 +495,7 @@ class Task < ActiveRecord::Base
       zip.each do |entry|
         # Extract to file/directory/symlink
         # puts "Extracting #{entry.name}"
-        if entry.name_is_directory? 
+        if entry.name_is_directory?
           entry.extract( name_fn.call(self, to_path, entry.name) )  { true }
         end
       end
@@ -517,7 +518,7 @@ class Task < ActiveRecord::Base
 
     #compress image files
     image_files = Dir.entries(task_dir).select { | f | (f =~ /^\d{3}.(image)/) == 0 }
-    image_files.each do |img| 
+    image_files.each do |img|
       FileHelper.compress_image "#{task_dir}#{img}"
     end
 
@@ -690,7 +691,7 @@ class Task < ActiveRecord::Base
       return nil if group_submission.nil? || group_submission.task_definition.nil?
 
       File.join(
-        FileHelper.student_group_work_dir(:pdf, group_submission, task=nil, create=true), 
+        FileHelper.student_group_work_dir(:pdf, group_submission, task=nil, create=true),
         FileHelper.sanitized_filename(FileHelper.sanitized_path("#{group_submission.task_definition.abbreviation}-#{group_submission.id}") + ".pdf"))
     else
       File.join(student_work_dir(:pdf), FileHelper.sanitized_filename( FileHelper.sanitized_path("#{task_definition.abbreviation}-#{id}") + ".pdf"))
@@ -716,7 +717,7 @@ class Task < ActiveRecord::Base
         self.portfolio_evidence = final_pdf_path
       end
 
-      File.open(self.portfolio_evidence, 'w') do |fout| 
+      File.open(self.portfolio_evidence, 'w') do |fout|
         fout.puts pdf_text
       end
 
@@ -750,7 +751,7 @@ class Task < ActiveRecord::Base
       # This task is now ready to submit
       if not (discuss_or_demonstrate? || complete? || fix_and_include? || fail?)
         self.trigger_transition trigger, user, false, false # dont propagate -- already done
-        
+
         plagiarism_match_links.each do | link |
           link.destroy
         end
@@ -768,7 +769,7 @@ class Task < ActiveRecord::Base
   def accept_submission(current_user, files, student, ui, contributions, trigger)
     #
     # Ensure that each file in files has the following attributes:
-    # id, name, filename, type, tempfile  
+    # id, name, filename, type, tempfile
     #
     files.each do | file |
       ui.error!({"error" => "Missing file data for '#{file.name}'"}, 403) if file.id.nil? || file.name.nil? || file.filename.nil? || file.type.nil? || file.tempfile.nil?
@@ -778,7 +779,7 @@ class Task < ActiveRecord::Base
     if group_task? && group.nil?
       ui.error!({"error" => "You must be in a group to submit this task."}, 403)
     end
-   
+
     # file.key            = "file0"
     # file.name           = front end name for file
     # file.tempfile.path  = actual file dir
@@ -797,7 +798,7 @@ class Task < ActiveRecord::Base
         ui.error!({"error" => "'#{file.name}' exceeds the 10MB file limit. Try compressing or reformat and submit again."}, 403)
       end
     end
-    
+
     create_submission_and_trigger_state_change(current_user, propagate = true, contributions = contributions, trigger = trigger)
 
     #
@@ -805,7 +806,7 @@ class Task < ActiveRecord::Base
     #
     tmp_dir = File.join( Dir.tmpdir, 'doubtfire', 'new', "#{id}" )
     logger.debug("creating tmp dir at #{tmp_dir}")
-    
+
     # ensure the dir exists
     FileUtils.mkdir_p(tmp_dir)
 
@@ -814,15 +815,15 @@ class Task < ActiveRecord::Base
     #
     portfolio_evidence = nil
 
-    files.each_with_index.map do | file, idx |        
-      
+    files.each_with_index.map do | file, idx |
+
       output_filename = File.join(tmp_dir, "#{idx.to_s.rjust(3, '0')}-#{file.type}#{File.extname(file.filename).downcase}")
-      
+
       # puts file.tempfile.path
       # puts output_filename
       FileUtils.cp file.tempfile.path, output_filename
     end
-    
+
     #
     # Now copy over the temp directory over to the enqueued directory
     #
@@ -842,5 +843,3 @@ class Task < ActiveRecord::Base
     # puts "done"
   end
 end
-
-

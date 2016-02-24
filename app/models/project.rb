@@ -171,7 +171,7 @@ class Project < ActiveRecord::Base
   def portfolio_tasks
     # Get assigned tasks that are included in the portfolio
     tasks = self.tasks.joins(:task_definition).order("task_definitions.target_date, task_definitions.abbreviation").where("tasks.include_in_portfolio = TRUE")
-    
+
     # Remove the tasks that are not aligned... if there are ILOs
     if unit.learning_outcomes.length > 0
       tasks = tasks.select { |t| t.learning_outcome_task_links.count > 0 }

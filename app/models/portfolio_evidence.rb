@@ -1,5 +1,6 @@
 class PortfolioEvidence
   include FileHelper
+  include LogHelper
 
   def self.sanitized_path(*paths)
     FileHelper.sanitized_path *paths
@@ -11,10 +12,6 @@ class PortfolioEvidence
 
   def self.student_work_dir(type = nil, task = nil, create = true)
     FileHelper.student_work_dir(type, task, create)
-  end
-
-  def self.logger
-    Rails.logger
   end
 
   #
@@ -69,8 +66,8 @@ class PortfolioEvidence
 
   def self.final_pdf_path_for_group_submission(group_submission)
     File.join(
-      FileHelper.student_group_work_dir(:pdf, group_submission, task=nil, create=true), 
-      sanitized_filename( 
+      FileHelper.student_group_work_dir(:pdf, group_submission, task=nil, create=true),
+      sanitized_filename(
         sanitized_path("#{group_submission.task_definition.abbreviation}-#{group_submission.id}") + ".pdf"))
   end
 

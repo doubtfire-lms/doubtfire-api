@@ -2,11 +2,7 @@ require 'terminator'
 require 'zip'
 
 module FileHelper
-
-  # Provide access to the Rails logger
-  def self.logger
-    Rails.logger
-  end
+  include LogHelper
 
   def check_mime_against_list! (file, expect, type_list)
     fm = FileMagic.new(FileMagic::MAGIC_MIME)
@@ -41,7 +37,7 @@ module FileHelper
       accept = ["text/x-pascal", "text/x-c", "text/x-c++", "text/plain", "text/"]
     when 'document'
       accept = [ # -- one day"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                 # --"application/msword", 
+                 # --"application/msword",
                  "application/pdf" ]
       valid = pdf_valid? file.tempfile.path
     else
@@ -49,7 +45,7 @@ module FileHelper
       puts "Unknown type '#{kind}' provided for '#{name}'"
       return false
     end
-    
+
     # result is true when...
     mime.start_with?(*accept) && valid
   end
@@ -88,7 +84,7 @@ module FileHelper
   def self.task_file_dir_for_unit(unit, create = true)
     file_server = Doubtfire::Application.config.student_work_dir
     dst = "#{file_server}/" # trust the server config and passed in type for paths
-    dst << sanitized_path("#{unit.code}-#{unit.id}","TaskFiles") << "/" 
+    dst << sanitized_path("#{unit.code}-#{unit.id}","TaskFiles") << "/"
 
     if create and not Dir.exists? dst
       FileUtils.mkdir_p dst
@@ -99,7 +95,7 @@ module FileHelper
 
   def self.student_group_work_dir(type, group_submission, task=nil, create=false)
     return nil unless group_submission
-    
+
     file_server = Doubtfire::Application.config.student_work_dir
     dst = "#{file_server}/" # trust the server config and passed in type for paths
 
@@ -211,7 +207,7 @@ module FileHelper
     # only compress things over max_size -- defaults to 2.5mb
     return if File.size?(path) < max_size
     # puts "compressing..."
-    
+
     begin
       tmp_file = File.join( Dir.tmpdir, 'doubtfire', 'compress', "#{File.dirname(path).split(File::Separator).last}-file.pdf" )
       FileUtils.mkdir_p(File.join( Dir.tmpdir, 'doubtfire', 'compress' ))
@@ -223,7 +219,7 @@ module FileHelper
       # Terminator.terminate 120 do
       didCompress = system exec
       # end
-      
+
       if !didCompress
         # puts "compressing with convert"
         logger.info "Failed to compress pdf: #{path} using GS"
@@ -245,7 +241,7 @@ module FileHelper
         FileUtils.mv tmp_file, path
       end
 
-    rescue 
+    rescue
       logger.error("Failed to compress pdf: #{path}")
     end
 
@@ -283,7 +279,7 @@ module FileHelper
   end
 
   #
-  # Convert the files in the indicated folder into PDFs and move to 
+  # Convert the files in the indicated folder into PDFs and move to
   # a dest_path
   #
   def self.convert_files_to_pdf(from_path, dest_path)
@@ -316,19 +312,19 @@ module FileHelper
       actualfile = File.open(path)
       files << { :idx => idx, :type => type, :path => path, :ext => ext, :actualfile => actualfile }
     end
-    
+
     # ensure the dest_path exists
     if not Dir.exists? dest_path
       FileUtils.mkdir_p(dest_path)
     end
-    
+
     #
-    # Begin processing... 
+    # Begin processing...
     #
     pdf_paths = []
     files.each do | file |
       outpath = "#{dest_path}/#{file[:idx]}.#{file[:type]}.pdf"
-      
+
       convert_to_pdf(file, outpath)
       # puts file
       pdf_paths[file[:idx]] = outpath
@@ -351,7 +347,7 @@ module FileHelper
 
     Terminator.terminate 30 do
       didSucceed = system "pdftk #{file} output /dev/null dont_ask"
-    end    
+    end
 
     didSucceed
   end
@@ -371,7 +367,7 @@ module FileHelper
 
   #
   # Converts the given file to a pdf
-  #  
+  #
   def self.convert_to_pdf(file, outdir)
     case file[:type]
     when 'image'
@@ -384,7 +380,7 @@ module FileHelper
       cover_to_pdf(file, outdir)
     end
   end
-  
+
   #
   # Converts the code provided to a pdf
   #
@@ -411,7 +407,7 @@ module FileHelper
     kit.stylesheets << Rails.root.join("vendor/assets/stylesheets/coderay.css")
     kit.to_file(outdir)
   end
-  
+
   #
   # Converts the image provided to a pdf
   #
@@ -440,7 +436,7 @@ module FileHelper
     # if file[:ext] == '.pdf'
       # copy the file over (note we need to copy it into
       # output_file as file will be removed at the end of this block)
-      
+
       begin
         file[:actualfile].close()
       rescue
@@ -462,8 +458,8 @@ module FileHelper
   def self.cover_to_pdf(file, outdir)
     # puts file
     kit = PDFKit.new(
-      read_file_to_str(file[:path]), 
-      :page_size => 'A4', 
+      read_file_to_str(file[:path]),
+      :page_size => 'A4',
       :margin_top => "30mm", :margin_right => "30mm", :margin_bottom => "30mm", :margin_left => "30mm"
       )
     kit.stylesheets << Rails.root.join("vendor/assets/stylesheets/doubtfire-coverpage.css")
@@ -475,7 +471,7 @@ module FileHelper
   #
   def self.read_file_to_str(filename)
     result = ''
-    f = File.open(filename, "r") 
+    f = File.open(filename, "r")
     begin
       f.each_line do |line|
         result += line
@@ -513,7 +509,7 @@ module FileHelper
   # Save the passed in html to a file.
   #
   def self.save_plagiarism_html(match_link, html)
-    File.open(path_to_plagarism_html(match_link), 'w') do |out_file|  
+    File.open(path_to_plagarism_html(match_link), 'w') do |out_file|
       out_file.puts html
     end
   end
@@ -589,7 +585,7 @@ module FileHelper
   end
 
   #
-  # Extract files matching a pattern from the 
+  # Extract files matching a pattern from the
   #
   def self.extract_file_from_done(task, to_path, pattern, name_fn)
     zip_file = zip_file_path_for_done_task(task)
@@ -600,7 +596,7 @@ module FileHelper
       zip.each do |entry|
         # Extract to file/directory/symlink
         # puts "Extracting #{entry.name}"
-        if entry.name_is_directory? 
+        if entry.name_is_directory?
           entry.extract( name_fn.call(task, to_path, entry.name) )  { true }
         end
       end

@@ -50,11 +50,8 @@ end
 module Api
   class Root < Grape::API
     helpers AuthorisationHelpers
-    helpers do
-      def logger
-        Grape::API.logger
-      end
-    end
+    helpers LogHelper
+
     prefix 'api'
     format :json
     formatter :json, Grape::Formatter::ActiveModelSerializers
