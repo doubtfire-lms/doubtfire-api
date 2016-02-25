@@ -27,8 +27,8 @@ class TaskDefinition < ActiveRecord::Base
   def plagiarism_checks
     # Read the JSON string in upload_requirements and convert into ruby objects
     if self['plagiarism_checks']
-      JSON.parse(self['plagiarism_checks'])  
-    else 
+      JSON.parse(self['plagiarism_checks'])
+    else
       JSON.parse('[]')
     end
   end
@@ -36,20 +36,20 @@ class TaskDefinition < ActiveRecord::Base
   def plagiarism_checks=(req)
     if req.class == String
       # get the ruby objects from the json data
-      jsonData = JSON.parse(req)
+      json_data = JSON.parse(req)
     else
       # use the passed in objects
-      jsonData = req
+      json_data = req
     end
 
     # ensure we have a structure that is : [ { "key": "...", "type": "...", "pattern": "..."}, { ... } ]
-    if not jsonData.class == Array
+    if not json_data.class == Array
       errors.add(:plagiarism_checks, "is not in a valid format! Should be [ { \"key\": \"...\", \"type\": \"...\", \"pattern\": \"...\"}, { ... } ]. Did not contain array.")
       return
     end
 
     i = 0
-    for req in jsonData do
+    for req in json_data do
       if not req.class == Hash
         errors.add(:plagiarism_checks, "is not in a valid format! Should be [ { \"key\": \"...\", \"type\": \"...\", \"pattern\": \"...\"}, { ... } ]. Array did not contain hashes for item #{i + 1}..")
         return
@@ -67,7 +67,7 @@ class TaskDefinition < ActiveRecord::Base
       i += 1
     end
 
-    self['plagiarism_checks'] = JSON.unparse(jsonData)
+    self['plagiarism_checks'] = JSON.unparse(json_data)
     if self['plagiarism_checks'].nil?
       self['plagiarism_checks'] = '[]'
     end
@@ -76,8 +76,8 @@ class TaskDefinition < ActiveRecord::Base
   def upload_requirements
     # Read the JSON string in upload_requirements and convert into ruby objects
     if self['upload_requirements']
-      JSON.parse(self['upload_requirements'])  
-    else 
+      JSON.parse(self['upload_requirements'])
+    else
       JSON.parse('[]')
     end
   end
@@ -85,20 +85,20 @@ class TaskDefinition < ActiveRecord::Base
   def upload_requirements=(req)
     if req.class == String
       # get the ruby objects from the json data
-      jsonData = JSON.parse(req)
+      json_data = JSON.parse(req)
     else
       # use the passed in objects
-      jsonData = req
+      json_data = req
     end
 
     # ensure we have a structure that is : [ { "key": "...", "name": "...", "type": "..."}, { ... } ]
-    if not jsonData.class == Array
+    if not json_data.class == Array
       errors.add(:upload_requirements, "is not in a valid format! Should be [ { \"key\": \"...\", \"name\": \"...\", \"type\": \"...\"}, { ... } ]. Did not contain array.")
       return
     end
 
     i = 0
-    for req in jsonData do
+    for req in json_data do
       if not req.class == Hash
         errors.add(:upload_requirements, "is not in a valid format! Should be [ { \"key\": \"...\", \"name\": \"...\", \"type\": \"...\"}, { ... } ]. Array did not contain hashes for item #{i + 1}..")
         return
@@ -116,7 +116,7 @@ class TaskDefinition < ActiveRecord::Base
       i += 1
     end
 
-    self['upload_requirements'] = JSON.unparse(jsonData)
+    self['upload_requirements'] = JSON.unparse(json_data)
     if self['upload_requirements'].nil?
       self['upload_requirements'] = '[]'
     end
@@ -166,10 +166,10 @@ class TaskDefinition < ActiveRecord::Base
   def to_csv_row
     TaskDefinition.csv_columns.
       reject{|col| [:start_week, :start_day, :target_week, :target_day, :due_week, :due_day, :upload_requirements].include? col }.
-      map{|column| attributes[column.to_s] } + 
+      map{|column| attributes[column.to_s] } +
       [ upload_requirements.to_json ] +
       [ start_week, start_day, target_week, target_day, due_week, due_day ]
-      # [target_date.strftime('%d-%m-%Y')] + 
+      # [target_date.strftime('%d-%m-%Y')] +
       # [ self['due_date'].nil? ? '' : due_date.strftime('%d-%m-%Y')]
   end
 

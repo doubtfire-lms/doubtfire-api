@@ -65,7 +65,7 @@ module Api
       change_self = (params[:id] == current_user.id)
 
       # can only modify if current_user.id is same as :id provided
-      # (i.e., user wants to update their own data) or if updateUser token
+      # (i.e., user wants to update their own data) or if update_user token
       if change_self || (authorise? current_user, User, :update_user)
 
         user = User.find(params[:id])

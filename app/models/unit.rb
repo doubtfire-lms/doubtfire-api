@@ -634,11 +634,11 @@ class Unit < ActiveRecord::Base
 
   def date_for_week_and_day(week, day)
     return nil if week.nil? || day.nil?
-    dayNum = Date::ABBR_DAYNAMES.index day.titlecase
-    return nil if dayNum.nil?
-    startDayNum = start_date.wday
+    day_num = Date::ABBR_DAYNAMES.index day.titlecase
+    return nil if day_num.nil?
+    start_day_num = start_date.wday
 
-    start_date + week.weeks + (dayNum - startDayNum).days
+    start_date + week.weeks + (day_num - start_day_num).days
   end
 
   def import_tasks_from_csv(file)

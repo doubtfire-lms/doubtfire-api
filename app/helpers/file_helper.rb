@@ -184,12 +184,12 @@ module FileHelper
     exec = "convert \"#{path}\" -resize 1024x1024 \"#{tmp_file}\" >>/dev/null 2>>/dev/null"
 
     # try with ghostscript
-    didCompress = false
+    did_compress = false
     Terminator.terminate 120 do
-      didCompress = system exec
+      did_compress = system exec
     end
 
-    if didCompress
+    if did_compress
       FileUtils.mv tmp_file, path
     end
 
@@ -211,24 +211,24 @@ module FileHelper
       exec = "#{Rails.root.join('lib', 'shell', 'timeout.sh')} -t 15 nice -n 10 gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.3 -dDetectDuplicateImages=true -dPDFSETTINGS=/screen -dNOPAUSE -dBATCH  -dQUIET -sOutputFile=\"#{tmp_file}\" \"#{path}\" >>/dev/null 2>>/dev/null"
 
       # try with ghostscript
-      didCompress = system exec
+      did_compress = system exec
 
-      if !didCompress
+      if !did_compress
         logger.info "Failed to compress PDF #{path} using GhostScript. Trying with convert"
 
         exec = "nice -n 10 convert \"#{path}\" -compress Zip \"#{tmp_file}\" >>/dev/null 2>>/dev/null"
 
         # try with convert
         Terminator.terminate 120 do
-          didCompress = system exec
+          did_compress = system exec
         end
 
-        if !didCompress
+        if !did_compress
           logger.error "Failed to compress PDF #{path} using convert. Cannot compress this PDF. Command was:\n\t#{exec}"
         end
       end
 
-      if didCompress
+      if did_compress
         FileUtils.mv tmp_file, path
       end
 
@@ -331,13 +331,13 @@ module FileHelper
   # Tests if a PDF is valid / corrupt
   #
   def pdf_valid?(file)
-    didSucceed = false
+    did_succeed = false
 
     Terminator.terminate 30 do
-      didSucceed = system "pdftk #{file} output /dev/null dont_ask"
+      did_succeed = system "pdftk #{file} output /dev/null dont_ask"
     end
 
-    didSucceed
+    did_succeed
   end
 
   #
@@ -479,16 +479,16 @@ module FileHelper
   def aggregate(pdf_paths, final_pdf_path)
     logger.debug "Trying to aggregate PDFs to #{final_pdf_path}"
 
-    didCompile = false
+    did_compile = false
     exec = "pdftk #{pdf_paths.join ' '} cat output '#{final_pdf_path}' dont_ask compress"
     Terminator.terminate 180 do
-      didCompile = system exec
+      did_compile = system exec
     end
 
-    if !didCompile
+    if !did_compile
       logger.error "Failed to aggregate PDFs to #{final_pdf_path}. Command was:\n\t#{exec}"
     end
-    didCompile
+    did_compile
   end
 
   def path_to_plagarism_html(match_link)

@@ -4,7 +4,7 @@ module Api
   class Tutorials < Grape::API
     helpers AuthHelpers
     helpers AuthorisationHelpers
-    
+
     before do
       authenticated?
     end
@@ -24,7 +24,7 @@ module Api
       tutorial = Tutorial.find(params[:id])
       tut_params = params[:tutorial]
       # can only modify if current_user.id is same as :id provided
-      # (i.e., user wants to update their own data) or if updateUser token
+      # (i.e., user wants to update their own data) or if update_user token
       if not authorise? current_user, tutorial.unit, :add_tutorial
         error!({"error" => "Cannot update tutorial with id=#{params[:id]} - not authorised" }, 403)
       end
@@ -46,7 +46,7 @@ module Api
       tutorial.update!(tutorial_parameters)
       tutorial
     end
-    
+
     desc "Create tutorial"
     params do
       group :tutorial do
@@ -78,7 +78,7 @@ module Api
     end
     delete '/tutorials/:id' do
       tutorial = Tutorial.find(params[:id])
-      
+
       if not authorise? current_user, tutorial.unit, :add_tutorial
         error!({"error" => "Cannot delete tutorial - not authorised" }, 403)
       end
