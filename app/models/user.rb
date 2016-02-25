@@ -28,9 +28,9 @@ class User < ActiveRecord::Base
     end
 
     if remember
-      if role == Role.student || role == :Student
+      if role == Role.student || role == :student
         self.auth_token_expiry = DateTime.now + 2.weeks
-      elsif role == Role.tutor || role == :Tutor
+      elsif role == Role.tutor || role == :tutor
         self.auth_token_expiry = DateTime.now + 1.week
       else
         self.auth_token_expiry = DateTime.now + 2.hours
@@ -128,48 +128,48 @@ class User < ActiveRecord::Base
     #   who can change a Doubtfire user's role?
     change_role_permissions = {
       # The current_user's role is an Administrator
-      :Admin => {
+      :admin => {
         # User being assigned is an admin?
         #   An admin current_user can demote them to either a student, tutor or convenor
-        :Admin => {     :Student  => [ :demoteUser  ],
-                        :Tutor    => [ :demoteUser  ],
-                        :Convenor => [ :demoteUser  ]},
+        :admin => {     :student  => [ :demoteUser  ],
+                        :tutor    => [ :demoteUser  ],
+                        :convenor => [ :demoteUser  ]},
         # User being assigned is a convenor?
         #   An admin current_user can demote them to student or tutor
         #   An admin current_user can promote them to an admin
-        :Convenor => {  :Student  => [ :demoteUser  ],
-                        :Tutor    => [ :demoteUser  ],
-                        :Admin    => [ :promoteUser ]},
+        :convenor => {  :student  => [ :demoteUser  ],
+                        :tutor    => [ :demoteUser  ],
+                        :admin    => [ :promoteUser ]},
         # User being assigned is a tutor?
         #   An admin current_user can demote them to a student
         #   An admin current_user can promote them to a convenor or admin
-        :Tutor => {     :Student  => [ :demoteUser  ],
-                        :Convenor => [ :promoteUser ],
-                        :Admin    => [ :promoteUser ]},
+        :tutor => {     :student  => [ :demoteUser  ],
+                        :convenor => [ :promoteUser ],
+                        :admin    => [ :promoteUser ]},
         # User being assigned is a student?
         #   An admin current_user can promote them to a tutor, convenor or admin
-        :Student => {   :Tutor    => [ :promoteUser ],
-                        :Convenor => [ :promoteUser ],
-                        :Admin    => [ :promoteUser ]},
+        :student => {   :tutor    => [ :promoteUser ],
+                        :convenor => [ :promoteUser ],
+                        :admin    => [ :promoteUser ]},
         # User being assigned has no role?
         #   An admin current_user can create user to any role
-        :nil => {       :Student  => [ :createUser  ],
-                        :Tutor    => [ :createUser  ],
-                        :Convenor => [ :createUser  ],
-                        :Admin    => [ :createUser  ]}
+        :nil => {       :student  => [ :createUser  ],
+                        :tutor    => [ :createUser  ],
+                        :convenor => [ :createUser  ],
+                        :admin    => [ :createUser  ]}
         },
       # The current_user's role is a Convenor
-      :Convenor => {
+      :convenor => {
         # User being assigned is an tutor?
         #   A convenor current_user can demote them to a student
-        :Tutor => {     :Student  => [ :demoteUser  ] },
+        :tutor => {     :student  => [ :demoteUser  ] },
         # User being assigned is an student?
         #   A convenor current_user can promote them to a student
-        :Student => {   :Tutor    => [ :promoteUser ] },
+        :student => {   :tutor    => [ :promoteUser ] },
         # User being assigned has no role?
         #   A convenor current_user can create a user to either a student or tutor role
-        :nil => {       :Student  => [ :createUser  ],
-                        :Tutor    => [ :createUser  ] }
+        :nil => {       :student  => [ :createUser  ],
+                        :tutor    => [ :createUser  ] }
         }
     }
 
@@ -216,10 +216,10 @@ class User < ActiveRecord::Base
     # Return the permissions hash
     {
       :change_role => change_role_permissions,
-      :Admin       => admin_role_permissions,
-      :Convenor    => convenor_role_permissions,
-      :Tutor       => tutor_role_permissions,
-      :Student     => student_role_permissions
+      :admin       => admin_role_permissions,
+      :convenor    => convenor_role_permissions,
+      :tutor       => tutor_role_permissions,
+      :student     => student_role_permissions
     }
   end
 

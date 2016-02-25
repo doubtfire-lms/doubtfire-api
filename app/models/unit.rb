@@ -48,9 +48,9 @@ class Unit < ActiveRecord::Base
 
     # Return permissions hash
     {
-      :Student  => student_role_permissions,
-      :Tutor    => tutor_role_permissions,
-      :Convenor => convenor_role_permissions,
+      :student  => student_role_permissions,
+      :tutor    => tutor_role_permissions,
+      :convenor => convenor_role_permissions,
       :nil      => nil_role_permissions
     }
   end

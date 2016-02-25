@@ -46,9 +46,9 @@ class Group < ActiveRecord::Base
 
     # Return permissions hash
     {
-      :Convenor => convenor_role_permissions,
-      :Tutor    => tutor_role_permissions,
-      :Student  => student_role_permissions,
+      :convenor => convenor_role_permissions,
+      :tutor    => tutor_role_permissions,
+      :student  => student_role_permissions,
       :nil      => nil_role_permissions
     }
   end
@@ -61,7 +61,7 @@ class Group < ActiveRecord::Base
 
   def specific_permission_hash(role, perm_hash, other)
     result = perm_hash[role] unless perm_hash.nil?
-    if result && role == :Student
+  if result && role == :student
       if group_set.allow_students_to_manage_groups
         result << :manage_group
       end
