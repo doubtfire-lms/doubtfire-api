@@ -1,17 +1,17 @@
 require 'json'
 
 class TaskDefinition < ActiveRecord::Base
-	# Model associations
-	belongs_to :unit			   # Foreign key
+  # Model associations
+  belongs_to :unit         # Foreign key
   belongs_to :group_set
-	has_many :tasks, dependent:  :destroy    # Destroying a task definition will also nuke any instances
+  has_many :tasks, dependent:  :destroy    # Destroying a task definition will also nuke any instances
   has_many :group_submissions, dependent:  :destroy    # Destroying a task definition will also nuke any group submissions
 
   has_many :learning_outcome_task_links, dependent: :destroy # links to learning outcomes
   has_many :learning_outcomes, -> { where("learning_outcome_task_links.task_id is NULL") },  through: :learning_outcome_task_links # only link staff relations
 
-	# Model validations/constraints
-	validates_uniqueness_of :name, scope:  :unit_id		# task definition names within a unit must be unique
+  # Model validations/constraints
+  validates_uniqueness_of :name, scope:  :unit_id    # task definition names within a unit must be unique
   validates_uniqueness_of :abbreviation, scope:  :unit_id   # task definition names within a unit must be unique
 
   validates :target_grade, inclusion: { in: 0..3, message: "%{value} is not a valid target grade" }

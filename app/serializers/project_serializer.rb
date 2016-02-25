@@ -72,7 +72,7 @@ class ProjectSerializer < ActiveModel::Serializer
   end
 
   def student_name
-  	"#{object.student.name}#{object.student.nickname.nil? ? '' : ' (' << object.student.nickname << ')'}"
+    "#{object.student.name}#{object.student.nickname.nil? ? '' : ' (' << object.student.nickname << ')'}"
   end
 
   def student_id
@@ -80,7 +80,7 @@ class ProjectSerializer < ActiveModel::Serializer
   end
 
   def tutor_name
-  	object.main_tutor.first_name unless object.main_tutor.nil?
+    object.main_tutor.first_name unless object.main_tutor.nil?
   end
 
   def stats

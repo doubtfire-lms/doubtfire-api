@@ -9,11 +9,11 @@ class LearningOutcome < ActiveRecord::Base
   validates_uniqueness_of :abbreviation, scope:  :unit_id   # outcome names within a unit must be unique
 
   def self.csv_header
-  	["unit_code", "ilo_number", "abbreviation", "name", "description"]
+    ["unit_code", "ilo_number", "abbreviation", "name", "description"]
   end
 
   def add_csv_row (row)
-  	row << [unit.code, ilo_number, abbreviation, name, description]
+    row << [unit.code, ilo_number, abbreviation, name, description]
   end
 
   def self.create_from_csv(unit, row, result)
@@ -24,7 +24,7 @@ class LearningOutcome < ActiveRecord::Base
       return
     end
 
-	ilo_number = row['ilo_number'].to_i
+  ilo_number = row['ilo_number'].to_i
 
     abbr = row['abbreviation']
     if abbr.nil?
@@ -32,7 +32,7 @@ class LearningOutcome < ActiveRecord::Base
       return
     end
 
-	name = row['name']
+  name = row['name']
     if name.nil?
       result[:errors] << { row: row, message: "Missing name" }
       return
@@ -45,10 +45,10 @@ class LearningOutcome < ActiveRecord::Base
     end
 
     outcome = LearningOutcome.find_or_create_by(unit_id: unit.id, abbreviation: abbr) { |outcome|
-    		outcome.name = name
-    		outcome.description = description
-    		outcome.ilo_number = ilo_number
-    	}
+        outcome.name = name
+        outcome.description = description
+        outcome.ilo_number = ilo_number
+      }
 
     outcome.save!
 
