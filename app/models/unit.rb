@@ -21,7 +21,7 @@ class Unit < ActiveRecord::Base
       :get_unit,
       :get_students,
       :enrol_student,
-      :provide_feedback
+      :provide_feedback,
       :download_stats
     ]
 
