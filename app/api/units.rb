@@ -177,7 +177,7 @@ module Api
     end
     post '/csv/units/:id' do
       unit = Unit.find(params[:id])
-      if not authorise? current_user, unit, :uploadCSV
+      if not authorise? current_user, unit, :upload_csv
         error!({"error" => "Not authorised to upload CSV of students to #{unit.code}"}, 403)
       end
 
@@ -196,7 +196,7 @@ module Api
       ensure_csv!(params[:file][:tempfile])
 
       unit = Unit.find(params[:id])
-      if not authorise? current_user, unit, :uploadCSV
+      if not authorise? current_user, unit, :upload_csv
         error!({"error" => "Not authorised to upload CSV of students to #{unit.code}"}, 403)
       end
 
@@ -207,7 +207,7 @@ module Api
     desc "Download CSV of all students in this unit"
     get '/csv/units/:id' do
       unit = Unit.find(params[:id])
-      if not authorise? current_user, unit, :downloadCSV
+      if not authorise? current_user, unit, :download_csv
         error!({"error" => "Not authorised to download CSV of students enrolled in #{unit.code}"}, 403)
       end
 
@@ -220,7 +220,7 @@ module Api
     desc "Download CSV of all student tasks in this unit"
     get '/csv/units/:id/task_completion' do
       unit = Unit.find(params[:id])
-      if not authorise? current_user, unit, :downloadCSV
+      if not authorise? current_user, unit, :download_csv
         error!({"error" => "Not authorised to download CSV of student tasks in #{unit.code}"}, 403)
       end
 

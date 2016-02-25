@@ -5,7 +5,7 @@ module Api
     helpers AuthHelpers
     helpers AuthorisationHelpers
     helpers MimeCheckHelpers
-    
+
     before do
       authenticated?
     end
@@ -46,10 +46,10 @@ module Api
       end
 
       if params[:project_id].nil?
-        if not authorise? current_user, unit, :downloadCSV
+        if not authorise? current_user, unit, :download_csv
           error!({"error" => "Not authorised to download CSV of task alignment in #{unit.code}"}, 403)
         end
-        
+
         content_type "application/octet-stream"
         header['Content-Disposition'] = "attachment; filename=#{unit.code}-Alignment.csv "
         env['api.format'] = :binary
@@ -78,16 +78,16 @@ module Api
       ensure_csv!(params[:file][:tempfile])
 
       unit = Unit.find(params[:unit_id])
-      
+
       if ! authorise?(current_user, unit, :get_unit)
         error!({"error" => "You are not authorised to access this unit."}, 403)
       end
 
       if params[:project_id].nil?
-        if not authorise? current_user, unit, :uploadCSV
+        if not authorise? current_user, unit, :upload_csv
           error!({"error" => "Not authorised to upload CSV of task alignment to #{unit.code}"}, 403)
         end
-        
+
         # Actually import...
         unit.import_task_alignment_from_csv(params[:file][:tempfile], nil)
       else
@@ -113,7 +113,7 @@ module Api
       unit = Unit.find(params[:unit_id])
 
       # if there is no project -- then this is a unit LO link
-      # so need to check the user is authorised to update the unit... 
+      # so need to check the user is authorised to update the unit...
       if params[:project_id].nil? && ! authorise?(current_user, unit, :update)
         error!({"error" => "You are not authorised to create task alignments in this unit."}, 403)
       end

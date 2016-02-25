@@ -131,55 +131,55 @@ class User < ActiveRecord::Base
       :admin => {
         # User being assigned is an admin?
         #   An admin current_user can demote them to either a student, tutor or convenor
-        :admin => {     :student  => [ :demoteUser  ],
-                        :tutor    => [ :demoteUser  ],
-                        :convenor => [ :demoteUser  ]},
+        :admin => {     :student  => [ :demote_user  ],
+                        :tutor    => [ :demote_user  ],
+                        :convenor => [ :demote_user  ]},
         # User being assigned is a convenor?
         #   An admin current_user can demote them to student or tutor
         #   An admin current_user can promote them to an admin
-        :convenor => {  :student  => [ :demoteUser  ],
-                        :tutor    => [ :demoteUser  ],
-                        :admin    => [ :promoteUser ]},
+        :convenor => {  :student  => [ :demote_user  ],
+                        :tutor    => [ :demote_user  ],
+                        :admin    => [ :promote_user ]},
         # User being assigned is a tutor?
         #   An admin current_user can demote them to a student
         #   An admin current_user can promote them to a convenor or admin
-        :tutor => {     :student  => [ :demoteUser  ],
-                        :convenor => [ :promoteUser ],
-                        :admin    => [ :promoteUser ]},
+        :tutor => {     :student  => [ :demote_user  ],
+                        :convenor => [ :promote_user ],
+                        :admin    => [ :promote_user ]},
         # User being assigned is a student?
         #   An admin current_user can promote them to a tutor, convenor or admin
-        :student => {   :tutor    => [ :promoteUser ],
-                        :convenor => [ :promoteUser ],
-                        :admin    => [ :promoteUser ]},
+        :student => {   :tutor    => [ :promote_user ],
+                        :convenor => [ :promote_user ],
+                        :admin    => [ :promote_user ]},
         # User being assigned has no role?
         #   An admin current_user can create user to any role
-        :nil => {       :student  => [ :createUser  ],
-                        :tutor    => [ :createUser  ],
-                        :convenor => [ :createUser  ],
-                        :admin    => [ :createUser  ]}
+        :nil => {       :student  => [ :create_user  ],
+                        :tutor    => [ :create_user  ],
+                        :convenor => [ :create_user  ],
+                        :admin    => [ :create_user  ]}
         },
       # The current_user's role is a Convenor
       :convenor => {
         # User being assigned is an tutor?
         #   A convenor current_user can demote them to a student
-        :tutor => {     :student  => [ :demoteUser  ] },
+        :tutor => {     :student  => [ :demote_user  ] },
         # User being assigned is an student?
         #   A convenor current_user can promote them to a student
-        :student => {   :tutor    => [ :promoteUser ] },
+        :student => {   :tutor    => [ :promote_user ] },
         # User being assigned has no role?
         #   A convenor current_user can create a user to either a student or tutor role
-        :nil => {       :student  => [ :createUser  ],
-                        :tutor    => [ :createUser  ] }
+        :nil => {       :student  => [ :create_user  ],
+                        :tutor    => [ :create_user  ] }
         }
     }
 
     # What can admins do with users?
     admin_role_permissions = [
-      :createUser,
-      :uploadCSV,
-      :listUsers,
-      :downloadCSV,
-      :updateUser,
+      :create_user,
+      :upload_csv,
+      :list_users,
+      :download_csv,
+      :update_user,
       :create_unit,
       :act_tutor,
       :admin_units,
@@ -190,13 +190,13 @@ class User < ActiveRecord::Base
 
     # What can convenors do with users?
     convenor_role_permissions = [
-      :promoteUser,
-      :listUsers,
-      :createUser,
-      :updateUser,
-      :demoteUser,
-      :uploadCSV,
-      :downloadCSV,
+      :promote_user,
+      :list_users,
+      :create_user,
+      :update_user,
+      :demote_user,
+      :upload_csv,
+      :download_csv,
       :create_unit,
       :act_tutor,
       :convene_units,
@@ -371,7 +371,7 @@ class User < ActiveRecord::Base
         #
         # If the current user is allowed to create a user in this role
         #
-        if AuthorisationHelpers::authorise?(current_user, User, :createUser, User.get_change_role_perm_fn(), [ :nil, new_role.to_sym ])
+        if AuthorisationHelpers::authorise?(current_user, User, :create_user, User.get_change_role_perm_fn(), [ :nil, new_role.to_sym ])
           #
           # Find and update or create
           #

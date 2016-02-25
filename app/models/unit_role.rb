@@ -39,13 +39,11 @@ class UnitRole < ActiveRecord::Base
     ]
     # What can tutors do with unit roles?
     tutor_role_permissions = [
-      :get,
-      :getProjects
+      :get
     ]
     # What can convenors do with unit roles?
     convenor_role_permissions = [
       :get,
-      :getProjects,
       :delete
     ]
     # What can nil users do with unit roles?
