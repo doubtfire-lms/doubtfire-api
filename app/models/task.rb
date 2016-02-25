@@ -2,12 +2,48 @@ class Task < ActiveRecord::Base
   include ApplicationHelper
   include LogHelper
 
+  #
+  # Permissions around task data
+  #
   def self.permissions
+    # What can students do with tasks?
+    student_role_permissions = [
+      :get,
+      :put,
+      :get_submission,
+      :make_submission,
+      :delete_own_comment
+    ]
+    # What can tutors do with tasks?
+    tutor_role_permissions = [
+      :get,
+      :put,
+      :get_submission,
+      :make_submission,
+      :delete_other_comment,
+      :delete_own_comment,
+      :view_plagiarism
+    ]
+    # What can convenors do with tasks?
+    convenor_role_permissions = [
+      :get,
+      :get_submission,
+      :make_submission,
+      :delete_other_comment,
+      :delete_own_comment,
+      :view_plagiarism
+    ]
+    # What can nil users do with tasks?
+    nil_role_permissions = [
+
+    ]
+
+    # Return permissions hash
     {
-      student: [ :get, :put, :get_submission, :make_submission, :delete_own_comment ],
-      tutor: [ :get, :put, :get_submission, :make_submission, :delete_other_comment, :delete_own_comment, :view_plagiarism ],
-      convenor: [ :get, :get_submission, :make_submission, :delete_other_comment, :delete_own_comment, :view_plagiarism ],
-      nil => []
+      :student  => student_role_permissions,
+      :tutor    => tutor_role_permissions,
+      :convenor => convenor_role_permissions,
+      :nil      => nil_role_permissions
     }
   end
 

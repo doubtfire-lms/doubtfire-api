@@ -9,29 +9,49 @@ class Unit < ActiveRecord::Base
   include LogHelper
 
   #
-  # Who can do what with unit data
+  # Permissions around unit data
   #
   def self.permissions
+    # What can students do with units?
+    student_role_permissions = [
+      :get_unit
+    ]
+    # What can tutors do with units?
+    tutor_role_permissions = [
+      :get_unit,
+      :get_students,
+      :enrol_student,
+      :provide_feedback
+      :download_stats
+    ]
+
+    # What can convenors do with units?
+    convenor_role_permissions = [
+      :get_unit,
+      :get_students,
+      :enrol_student,
+      :uploadCSV,
+      :downloadCSV,
+      :update,
+      :employ_staff,
+      :add_tutorial,
+      :add_task_def,
+      :provide_feedback,
+      :change_project_enrolment,
+      :download_stats
+    ]
+
+    # What can other users do with units?
+    nil_role_permissions = [
+
+    ]
+
+    # Return permissions hash
     {
-      :Student  => [  :get_unit ],
-      :Tutor    => [  :get_unit,
-                      :get_students,
-                      :enrol_student,
-                      :provide_feedback,
-                      :download_stats ],
-      :Convenor => [  :get_unit,
-                      :get_students,
-                      :enrol_student,
-                      :uploadCSV,
-                      :downloadCSV,
-                      :update,
-                      :employ_staff,
-                      :add_tutorial,
-                      :add_task_def,
-                      :provide_feedback,
-                      :change_project_enrolment,
-                      :download_stats ],
-      :nil      => []
+      :Student  => student_role_permissions,
+      :Tutor    => tutor_role_permissions,
+      :Convenor => convenor_role_permissions,
+      :nil      => nil_role_permissions
     }
   end
 

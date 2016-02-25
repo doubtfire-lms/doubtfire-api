@@ -120,64 +120,106 @@ class User < ActiveRecord::Base
     }
   end
 
+  #
+  # Permissions around user data
+  #
   def self.permissions
-    {
-      # change role is a complex check
-      change_role: {
-        #user role
-        :Admin => {
-          #from role  - to role
-          :Admin => {     :Student  => [ :demoteUser  ],
-                          :Tutor    => [ :demoteUser  ],
-                          :Convenor => [ :demoteUser  ]},
-          :Convenor => {  :Student  => [ :demoteUser  ],
-                          :Tutor    => [ :demoteUser  ],
-                          :Admin    => [ :promoteUser ]},
-          :Tutor => {     :Student  => [ :demoteUser  ],
-                          :Convenor => [ :promoteUser ],
-                          :Admin    => [ :promoteUser ]},
-          :Student => {   :Tutor    => [ :promoteUser ],
-                          :Convenor => [ :promoteUser ],
-                          :Admin    => [ :promoteUser ]},
-          :nil => {       :Student  => [ :createUser  ],
-                          :Tutor    => [ :createUser  ],
-                          :Convenor => [ :createUser  ],
-                          :Admin    => [ :createUser  ]}
-          },
-        :Convenor =>     {
-          #from role  - to role
-          :Tutor =>   {   :Student  => [ :demoteUser   ]},
-          :Student => {   :Tutor    => [ :promoteUser  ]},
-          :nil => {       :Student  => [ :createUser  ],
-                          :Tutor    => [ :createUser  ]}
-          }
-      },
+    # Change role permissons:
+    #   who can change a Doubtfire user's role?
+    change_role_permissions = {
+      # The current_user's role is an Administrator
+      :Admin => {
+        # User being assigned is an admin?
+        #   An admin current_user can demote them to either a student, tutor or convenor
+        :Admin => {     :Student  => [ :demoteUser  ],
+                        :Tutor    => [ :demoteUser  ],
+                        :Convenor => [ :demoteUser  ]},
+        # User being assigned is a convenor?
+        #   An admin current_user can demote them to student or tutor
+        #   An admin current_user can promote them to an admin
+        :Convenor => {  :Student  => [ :demoteUser  ],
+                        :Tutor    => [ :demoteUser  ],
+                        :Admin    => [ :promoteUser ]},
+        # User being assigned is a tutor?
+        #   An admin current_user can demote them to a student
+        #   An admin current_user can promote them to a convenor or admin
+        :Tutor => {     :Student  => [ :demoteUser  ],
+                        :Convenor => [ :promoteUser ],
+                        :Admin    => [ :promoteUser ]},
+        # User being assigned is a student?
+        #   An admin current_user can promote them to a tutor, convenor or admin
+        :Student => {   :Tutor    => [ :promoteUser ],
+                        :Convenor => [ :promoteUser ],
+                        :Admin    => [ :promoteUser ]},
+        # User being assigned has no role?
+        #   An admin current_user can create user to any role
+        :nil => {       :Student  => [ :createUser  ],
+                        :Tutor    => [ :createUser  ],
+                        :Convenor => [ :createUser  ],
+                        :Admin    => [ :createUser  ]}
+        },
+      # The current_user's role is a Convenor
+      :Convenor => {
+        # User being assigned is an tutor?
+        #   A convenor current_user can demote them to a student
+        :Tutor => {     :Student  => [ :demoteUser  ] },
+        # User being assigned is an student?
+        #   A convenor current_user can promote them to a student
+        :Student => {   :Tutor    => [ :promoteUser ] },
+        # User being assigned has no role?
+        #   A convenor current_user can create a user to either a student or tutor role
+        :nil => {       :Student  => [ :createUser  ],
+                        :Tutor    => [ :createUser  ] }
+        }
+    }
 
-      # need nil for non-context permissions (can't have mixed array)
-      :Admin =>    [ :createUser ,
-                     :uploadCSV ,
-                     :listUsers ,
-                     :downloadCSV ,
-                     :updateUser ,
-                     :create_unit ,
-                     :act_tutor ,
-                     :admin_units ,
-                     :admin_users ,
-                     :convene_units ,
-                     :download_stats ],
-      :Convenor => [ :promoteUser ,
-                     :listUsers ,
-                     :createUser ,
-                     :updateUser ,
-                     :demoteUser ,
-                     :uploadCSV ,
-                     :downloadCSV ,
-                     :create_unit ,
-                     :act_tutor ,
-                     :convene_units ,
-                     :download_stats ],
-      :Tutor =>    [ :act_tutor      ],
-      :Student =>  [                 ]
+    # What can admins do with users?
+    admin_role_permissions = [
+      :createUser,
+      :uploadCSV,
+      :listUsers,
+      :downloadCSV,
+      :updateUser,
+      :create_unit,
+      :act_tutor,
+      :admin_units,
+      :admin_users,
+      :convene_units,
+      :download_stats
+    ]
+
+    # What can convenors do with users?
+    convenor_role_permissions = [
+      :promoteUser,
+      :listUsers,
+      :createUser,
+      :updateUser,
+      :demoteUser,
+      :uploadCSV,
+      :downloadCSV,
+      :create_unit,
+      :act_tutor,
+      :convene_units,
+      :download_stats
+    ]
+
+    # What can tutors do with users?
+    tutor_role_permissions = [
+      :act_tutor
+    ]
+
+    # What can students do with users?
+    student_role_permissions = [
+
+    ]
+
+    # Return the permissions hash
+    {
+      :change_role => change_role_permissions,
+      :Admin       => admin_role_permissions,
+      :Convenor    => convenor_role_permissions,
+      :Tutor       => tutor_role_permissions,
+      :Student     => student_role_permissions
     }
   end
 

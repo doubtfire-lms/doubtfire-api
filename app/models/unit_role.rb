@@ -3,7 +3,7 @@ class UnitRole < ActiveRecord::Base
   # Model associations
   belongs_to :unit    # Foreign key
   belongs_to :user    # Foreign key
-  
+
   belongs_to :role    # Foreign key
 
   belongs_to :tutorial  # for students only! TODO: fix
@@ -29,28 +29,52 @@ class UnitRole < ActiveRecord::Base
     []
   end
 
+  #
+  # Permissions around unit role data
+  #
   def self.permissions
-    { 
-      :Student => [ :get ],
-      :Convenor => [ :get, :getProjects, :delete ],
-      :Tutor => [ :get, :getProjects ],
-      :nil => [ ]
+    # What can students do with unit roles?
+    student_role_permissions = [
+      :get
+    ]
+    # What can tutors do with unit roles?
+    tutor_role_permissions = [
+      :get,
+      :getProjects
+    ]
+    # What can convenors do with unit roles?
+    convenor_role_permissions = [
+      :get,
+      :getProjects,
+      :delete
+    ]
+    # What can nil users do with unit roles?
+    nil_role_permissions = [
+
+    ]
+
+    # Return permissions hash
+    {
+      :Student  => student_role_permissions,
+      :Tutor    => tutor_role_permissions,
+      :Convenor => convenor_role_permissions,
+      :nil      => nil_role_permissions
     }
   end
 
-  def self.tasks_to_review(user)    
+  def self.tasks_to_review(user)
     ready_to_mark = []
-    
+
     # There has be a better way to do this surely...
     tutorials = Tutorial.find_by_user(user)
     tutorials.each do | tutorial |
       tutorial.projects.each do | project |
-        project.tasks.each do | task | 
+        project.tasks.each do | task |
           ready_to_mark << task if task.has_pdf && ( task.ready_to_mark? || task.need_help?)
         end
       end
     end
-       
+
     ready_to_mark
   end
 
@@ -60,7 +84,7 @@ class UnitRole < ActiveRecord::Base
       unit_role = nil
     end
     unit_role
-  end  
+  end
 
   def is_tutor?
     role == Role.tutor
