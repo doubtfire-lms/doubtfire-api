@@ -8,11 +8,29 @@ class Unit < ActiveRecord::Base
   include FileHelper
   include LogHelper
 
+  #
+  # Who can do what with unit data
+  #
   def self.permissions
     {
-      :Student  => [ :get_unit ],
-      :Tutor    => [ :get_unit, :get_students, :enrol_student, :provide_feedback],
-      :Convenor => [ :get_unit, :get_students, :enrol_student, :uploadCSV, :downloadCSV, :update, :employ_staff, :add_tutorial, :add_task_def, :provide_feedback, :change_project_enrolment ],
+      :Student  => [  :get_unit ],
+      :Tutor    => [  :get_unit,
+                      :get_students,
+                      :enrol_student,
+                      :provide_feedback,
+                      :download_stats ],
+      :Convenor => [  :get_unit,
+                      :get_students,
+                      :enrol_student,
+                      :uploadCSV,
+                      :downloadCSV,
+                      :update,
+                      :employ_staff,
+                      :add_tutorial,
+                      :add_task_def,
+                      :provide_feedback,
+                      :change_project_enrolment,
+                      :download_stats ],
       :nil      => []
     }
   end
