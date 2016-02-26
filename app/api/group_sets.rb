@@ -2,14 +2,23 @@ require 'grape'
 require 'mime-check-helpers'
 
 module Api
+  
+  #
+  # Allow GroupSets to be managed via the API
+  #
   class GroupSets < Grape::API
     helpers AuthHelpers
     helpers AuthorisationHelpers
     helpers MimeCheckHelpers
+    helpers LogHelper
 
     before do
       authenticated?
     end
+
+    # ------------------------------------------------------------------------
+    # Group Sets
+    # ------------------------------------------------------------------------
 
     desc "Add a new group set to the given unit"
     params do
@@ -21,18 +30,20 @@ module Api
         optional :keep_groups_in_same_class,        type: Boolean,  :desc => "Must groups be kept in the one class"
       end
     end
-    post '/units/:unit_id/group_sets' do      
-      unit = Unit.find(params[:unit_id]) 
+    post '/units/:unit_id/group_sets' do
+      unit = Unit.find(params[:unit_id])
       if not authorise? current_user, unit, :update
         error!({"error" => "Not authorised to create a group set for this unit"}, 403)
       end
       
+      logger.info "Create group set: #{current_user.username} in #{unit.code} from #{request.ip}"
+      
       group_params = ActionController::Parameters.new(params)
         .require(:group_set)
         .permit(
-          :name,               
-          :allow_students_to_create_groups,        
-          :allow_students_to_manage_groups,          
+          :name,
+          :allow_students_to_create_groups,
+          :allow_students_to_manage_groups,
           :keep_groups_in_same_class
         )
 
@@ -52,9 +63,11 @@ module Api
         optional :keep_groups_in_same_class,        type: Boolean,  :desc => "Must groups be kept in the one class"
       end
     end
-    put '/units/:unit_id/group_sets/:id' do      
+    put '/units/:unit_id/group_sets/:id' do
       group_set = GroupSet.find(params[:id])
-      unit = Unit.find(params[:unit_id]) 
+      unit = Unit.find(params[:unit_id])
+
+      logger.info "Edit group set: #{current_user.username} in #{unit.code} from #{request.ip}"
 
       if group_set.unit != unit
         error!({"error" => "Unable to locate group set for unit"}, 404)
@@ -67,9 +80,9 @@ module Api
       group_params = ActionController::Parameters.new(params)
         .require(:group_set)
         .permit(
-          :name,               
-          :allow_students_to_create_groups,        
-          :allow_students_to_manage_groups,          
+          :name,
+          :allow_students_to_create_groups,
+          :allow_students_to_manage_groups,
           :keep_groups_in_same_class
         )
       
@@ -80,7 +93,9 @@ module Api
     desc "Delete a group set"
     delete '/units/:unit_id/group_sets/:id' do
       group_set = GroupSet.find(params[:id])
-      unit = Unit.find(params[:unit_id]) 
+      unit = Unit.find(params[:unit_id])
+      
+      logger.info "Delete group set: #{current_user.username} in #{unit.code} from #{request.ip}"
 
       if group_set.unit != unit
         error!({"error" => "Unable to locate group set for unit"}, 404)
@@ -95,6 +110,10 @@ module Api
       end
       nil
     end
+    
+    # ------------------------------------------------------------------------
+    # Groups
+    # ------------------------------------------------------------------------
 
     desc "Get the groups in a group set"
     get '/units/:unit_id/group_sets/:id/groups' do
@@ -108,26 +127,6 @@ module Api
       group_set.groups
     end
 
-    desc "Upload a CSV for groups in a group set"
-    params do
-      # requires :unit_id,                            type: Integer,  :desc => "The unit for the new group"
-      # requires :group_set_id,                       type: Integer,  :desc => "The id of the group set"
-      requires :file, type: Rack::Multipart::UploadedFile, :desc => "CSV upload file."
-    end
-    post '/units/:unit_id/group_sets/:group_set_id/groups/csv' do
-      # check mime is correct before uploading
-      ensure_csv!(params[:file][:tempfile])
-
-      unit = Unit.find(params[:unit_id])
-      group_set = unit.group_sets.find(params[:group_set_id])
-
-      if not authorise? current_user, unit, :update
-        error!({"error" => "Not authorised to upload csv of groups for this unit"}, 403)
-      end
-
-      unit.import_groups_from_csv(group_set, params[:file][:tempfile])
-    end
-
     desc "Download a CSV of groups in a group set"
     get '/units/:unit_id/group_sets/:group_set_id/groups/csv' do
       unit = Unit.find(params[:unit_id])
@@ -137,7 +136,6 @@ module Api
         error!({"error" => "Not authorised to download csv of groups for this unit"}, 403)
       end
 
-
       content_type "application/octet-stream"
       header['Content-Disposition'] = "attachment; filename=#{unit.code}-groups.csv "
       env['api.format'] = :binary
@@ -146,8 +144,8 @@ module Api
 
     desc "Add a new group to the given unit's group_set"
     params do
-      # requires :unit_id,                            type: Integer,  :desc => "The unit for the new group"
-      # requires :group_set_id,                       type: Integer,  :desc => "The id of the group set"
+      requires :unit_id,                            type: Integer,  :desc => "The unit for the new group"
+      requires :group_set_id,                       type: Integer,  :desc => "The id of the group set"
       group :group do
         optional :name,                             type: String,   :desc => "The name of this group"
         requires :tutorial_id,                      type: Integer,  :desc => "The id of the tutorial for the group"
@@ -180,6 +178,26 @@ module Api
       grp.save!
       grp
     end
+
+    desc "Upload a CSV for groups in a group set"
+    params do
+      requires :unit_id,                            type: Integer,  :desc => "The unit for the new group"
+      requires :group_set_id,                       type: Integer,  :desc => "The id of the group set"
+      requires :file, type: Rack::Multipart::UploadedFile, :desc => "CSV upload file."
+    end
+    post '/units/:unit_id/group_sets/:group_set_id/groups/csv' do
+      # check mime is correct before uploading
+      ensure_csv!(params[:file][:tempfile])
+
+      unit = Unit.find(params[:unit_id])
+      group_set = unit.group_sets.find(params[:group_set_id])
+
+      if not authorise? current_user, unit, :update
+        error!({"error" => "Not authorised to upload csv of groups for this unit"}, 403)
+      end
+
+      unit.import_groups_from_csv(group_set, params[:file][:tempfile])
+    end
     
     desc "Edits the given group"
     params do
@@ -203,7 +221,7 @@ module Api
       group_params = ActionController::Parameters.new(params)
         .require(:group)
         .permit(
-          :name,               
+          :name,
           :tutorial_id
         )
       
@@ -305,5 +323,3 @@ module Api
     end
   end
 end
-
-
