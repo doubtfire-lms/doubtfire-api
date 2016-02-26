@@ -5,7 +5,6 @@ class UserSerializer < ActiveModel::Serializer
   def system_role
     object.role.name if object.role
   end
-
 end
 
 class ShallowUserSerializer < ActiveModel::Serializer

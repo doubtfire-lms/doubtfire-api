@@ -1,62 +1,20 @@
 require 'grape'
 require 'grape-swagger'
 
-module AuthHelpers
-  def warden
-    env['warden']
-  end
-
-  def authenticated?
-    if params[:auth_token]
-      user_by_token = User.find_by_auth_token(params[:auth_token])
-    else
-      user_by_token = nil
-    end
-
-    if warden.authenticated?
-      return true
-    elsif params[:auth_token] && user_by_token && user_by_token.auth_token_expiry
-      if user_by_token.auth_token_expiry > DateTime.now
-        return true
-      else
-        error!({"error" => "Authentication token expired."}, 419)
-      end
-    else
-      sleep((200 + rand(200)) / 1000.0)
-      error!({"error" => "Could not authenticate with token. Token invalid."}, 419)
-    end
-  end
-
-  def current_user
-    warden.user || User.find_by_auth_token(params[:auth_token])
-  end
-
-  # Add the required auth_token to each of the routes for the provided
-  # Grape::API.
-  #
-  def self.add_auth_to(service)
-    service.routes.each do |route|
-      options = route.instance_variable_get("@options")
-      unless options[:params]["auth_token"]
-        options[:params]["auth_token"] = {:required=>true, :type=>"String", :desc=>"Authentication token"}
-      end
-    end
-  end
-
-  module_function :authenticated?
-  module_function :current_user
-end
-
 module Api
   class Root < Grape::API
     helpers AuthorisationHelpers
     helpers LogHelper
+    helpers AuthHelpers
 
     prefix 'api'
     format :json
     formatter :json, Grape::Formatter::ActiveModelSerializers
     rescue_from :all
 
+    #
+    # Mount the api modules
+    #
     mount Api::Auth
     mount Api::GroupSets
     mount Api::Projects
@@ -75,6 +33,9 @@ module Api
     mount Api::Submission::PortfolioEvidenceApi
     mount Api::Submission::BatchTask
 
+    #
+    # Add auth details to all end points
+    #
     AuthHelpers.add_auth_to Api::GroupSets
     AuthHelpers.add_auth_to Api::Units
     AuthHelpers.add_auth_to Api::Projects
@@ -92,7 +53,7 @@ module Api
     AuthHelpers.add_auth_to Api::Submission::BatchTask
 
     add_swagger_documentation base_path: "",
-                            # api_version: 'api',
-                            hide_documentation_path: true
+                          # api_version: 'api',
+                  hide_documentation_path: true
   end
 end
