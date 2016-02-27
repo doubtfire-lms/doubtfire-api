@@ -2,7 +2,7 @@ require 'terminator'
 require 'zip'
 
 module FileHelper
-  include LogHelper
+  extend LogHelper
 
   def check_mime_against_list! (file, expect, type_list)
     fm = FileMagic.new(FileMagic::MAGIC_MIME)
@@ -19,12 +19,12 @@ module FileHelper
   # Test if a file should be accepted based on an expected kind
   # - file is passed the file uploaded to Doubtfire (a hash with all relevant data about the file)
   #
-  def self.accept_file(file, name, kind)
-    logger.debug "FileHelper accept_file #{file}, #{name}, #{kind}"
+  def accept_file(file, name, kind)
+    logger.debug "FileHelper is accepting file: filename=#{file.filename}, name=#{name}, kind=#{kind}"
 
     fm = FileMagic.new(FileMagic::MAGIC_MIME)
     mime = fm.file file.tempfile.path
-    logger.debug " -- #{name} is mime type: #{mime}"
+    logger.debug "#{name} has MIME type: #{mime}"
 
     valid = true
 
@@ -52,7 +52,7 @@ module FileHelper
   # Sanitize the passed in paths, and ensure each part is valid
   # Will kill things like ../ etc or spaces in paths
   #
-  def self.sanitized_path(*paths)
+  def sanitized_path(*paths)
     safe_paths = paths.map do | path_name |
       path_name.strip.tap do |name|
         # Finally, replace all non alphanumeric, underscore
@@ -67,7 +67,7 @@ module FileHelper
   #
   # Sanitize the passed in filename -- should not include any path details
   #
-  def self.sanitized_filename(filename)
+  def sanitized_filename(filename)
     filename.strip.tap do |name|
       # NOTE: File.basename doesn't work right with Windows paths on Unix
       # get only the filename, not the whole path
@@ -78,7 +78,7 @@ module FileHelper
     end
   end
 
-  def self.task_file_dir_for_unit(unit, create = true)
+  def task_file_dir_for_unit(unit, create = true)
     file_server = Doubtfire::Application.config.student_work_dir
     dst = "#{file_server}/" # trust the server config and passed in type for paths
     dst << sanitized_path("#{unit.code}-#{unit.id}","TaskFiles") << "/"
@@ -90,7 +90,7 @@ module FileHelper
     dst
   end
 
-  def self.student_group_work_dir(type, group_submission, task=nil, create=false)
+  def student_group_work_dir(type, group_submission, task=nil, create=false)
     return nil unless group_submission
 
     file_server = Doubtfire::Application.config.student_work_dir
@@ -124,7 +124,7 @@ module FileHelper
   # Generates a path for storing student work
   # type = [:new, :in_process, :done, :pdf, :plagarism]
   #
-  def self.student_work_dir(type = nil, task = nil, create = true)
+  def student_work_dir(type = nil, task = nil, create = true)
     if task && task.group_task?
       dst = student_group_work_dir type, task.group_submission, task
     else
@@ -162,7 +162,7 @@ module FileHelper
   #
   # Generates a path for storing student portfolios
   #
-  def self.student_portfolio_dir(project, create = true)
+  def student_portfolio_dir(project, create = true)
     file_server = Doubtfire::Application.config.student_work_dir
     dst = "#{file_server}/portfolio/" # trust the server config and passed in type for paths
 
@@ -175,7 +175,7 @@ module FileHelper
     dst
   end
 
-  def self.compress_image(path)
+  def compress_image(path)
     return if File.size?(path) < 1000000
 
     tmp_file = File.join( Dir.tmpdir, 'doubtfire', 'compress', "#{File.dirname(path).split(File::Separator).last}-file#{File.extname(path)}" )
@@ -184,12 +184,12 @@ module FileHelper
     exec = "convert \"#{path}\" -resize 1024x1024 \"#{tmp_file}\" >>/dev/null 2>>/dev/null"
 
     # try with ghostscript
-    didCompress = false
+    did_compress = false
     Terminator.terminate 120 do
-      didCompress = system exec
+      did_compress = system exec
     end
 
-    if didCompress
+    if did_compress
       FileUtils.mv tmp_file, path
     end
 
@@ -198,7 +198,7 @@ module FileHelper
     end
   end
 
-  def self.compress_pdf(path, max_size = 2500000)
+  def compress_pdf(path, max_size = 2500000)
     # trusting path... as it needs to be replaced
     logger.debug "Compressing PDF #{path} (#{File.size?(path)} bytes) using GhostScript"
     # only compress things over max_size -- defaults to 2.5mb
@@ -211,24 +211,24 @@ module FileHelper
       exec = "#{Rails.root.join('lib', 'shell', 'timeout.sh')} -t 15 nice -n 10 gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.3 -dDetectDuplicateImages=true -dPDFSETTINGS=/screen -dNOPAUSE -dBATCH  -dQUIET -sOutputFile=\"#{tmp_file}\" \"#{path}\" >>/dev/null 2>>/dev/null"
 
       # try with ghostscript
-      didCompress = system exec
+      did_compress = system exec
 
-      if !didCompress
+      if !did_compress
         logger.info "Failed to compress PDF #{path} using GhostScript. Trying with convert"
 
         exec = "nice -n 10 convert \"#{path}\" -compress Zip \"#{tmp_file}\" >>/dev/null 2>>/dev/null"
 
         # try with convert
         Terminator.terminate 120 do
-          didCompress = system exec
+          did_compress = system exec
         end
 
-        if !didCompress
+        if !did_compress
           logger.error "Failed to compress PDF #{path} using convert. Cannot compress this PDF. Command was:\n\t#{exec}"
         end
       end
 
-      if didCompress
+      if did_compress
         FileUtils.mv tmp_file, path
       end
 
@@ -244,7 +244,7 @@ module FileHelper
   #
   # Move files between stages - new -> in process -> done
   #
-  def self.move_files(from_path, to_path)
+  def move_files(from_path, to_path)
     # move into the new dir - and mv files to the in_process_dir
     pwd = FileUtils.pwd
     begin
@@ -273,7 +273,7 @@ module FileHelper
   # Convert the files in the indicated folder into PDFs and move to
   # a dest_path
   #
-  def self.convert_files_to_pdf(from_path, dest_path)
+  def convert_files_to_pdf(from_path, dest_path)
     #
     # Get access to all files to process (ensure we only work with <no>.[cover|document|code|image] etc...)
     #
@@ -330,20 +330,20 @@ module FileHelper
   #
   # Tests if a PDF is valid / corrupt
   #
-  def self.pdf_valid?(file)
-    didSucceed = false
+  def pdf_valid?(file)
+    did_succeed = false
 
     Terminator.terminate 30 do
-      didSucceed = system "pdftk #{file} output /dev/null dont_ask"
+      did_succeed = system "pdftk #{file} output /dev/null dont_ask"
     end
 
-    didSucceed
+    did_succeed
   end
 
   #
   # Copy a PDF into place
   #
-  def self.copy_pdf(file, dest_path)
+  def copy_pdf(file, dest_path)
     if pdf_valid? file
       compress_pdf(file)
       FileUtils.cp file, dest_path
@@ -356,7 +356,7 @@ module FileHelper
   #
   # Converts the given file to a pdf
   #
-  def self.convert_to_pdf(file, outdir)
+  def convert_to_pdf(file, outdir)
     case file[:type]
     when 'image'
       img_to_pdf(file, outdir)
@@ -372,7 +372,7 @@ module FileHelper
   #
   # Converts the code provided to a pdf
   #
-  def self.code_to_pdf(file, outdir)
+  def code_to_pdf(file, outdir)
     # decide language syntax highlighting
     case file[:ext]
     when '.cpp', '.cs'
@@ -399,7 +399,7 @@ module FileHelper
   #
   # Converts the image provided to a pdf
   #
-  def self.img_to_pdf(file, outdir)
+  def img_to_pdf(file, outdir)
     img = Magick::Image.read(file[:path]).first
     # resize the image if its too big (e.g., taken with a digital camera)
     if img.columns > 1000 || img.rows > 1000
@@ -418,7 +418,7 @@ module FileHelper
   #
   # Converts the document provided to a pdf
   #
-  def self.doc_to_pdf(file, outdir)
+  def doc_to_pdf(file, outdir)
     logger.info "Trying to convert document file #{file[:path]} to PDF"
     # if uploaded a PDF, then directly pass in
     # if file[:ext] == '.pdf'
@@ -446,7 +446,7 @@ module FileHelper
   #
   # Converts the cover page provided to a pdf
   #
-  def self.cover_to_pdf(file, outdir)
+  def cover_to_pdf(file, outdir)
     kit = PDFKit.new(
       read_file_to_str(file[:path]),
       :page_size => 'A4',
@@ -459,7 +459,7 @@ module FileHelper
   #
   # Read the file and return its contents as a string
   #
-  def self.read_file_to_str(filename)
+  def read_file_to_str(filename)
     result = ''
     f = File.open(filename, "r")
     begin
@@ -476,22 +476,22 @@ module FileHelper
   # Aggregate a list of PDFs into a single PDF file
   # - returns boolean indicating success
   #
-  def self.aggregate(pdf_paths, final_pdf_path)
+  def aggregate(pdf_paths, final_pdf_path)
     logger.debug "Trying to aggregate PDFs to #{final_pdf_path}"
 
-    didCompile = false
+    did_compile = false
     exec = "pdftk #{pdf_paths.join ' '} cat output '#{final_pdf_path}' dont_ask compress"
     Terminator.terminate 180 do
-      didCompile = system exec
+      did_compile = system exec
     end
 
-    if !didCompile
+    if !did_compile
       logger.error "Failed to aggregate PDFs to #{final_pdf_path}. Command was:\n\t#{exec}"
     end
-    didCompile
+    did_compile
   end
 
-  def self.path_to_plagarism_html(match_link)
+  def path_to_plagarism_html(match_link)
     to_dir = student_work_dir(:plagarism, match_link.task)
 
     File.join(to_dir, "link_#{match_link.other_task.id}.html")
@@ -500,7 +500,7 @@ module FileHelper
   #
   # Save the passed in html to a file.
   #
-  def self.save_plagiarism_html(match_link, html)
+  def save_plagiarism_html(match_link, html)
     File.open(path_to_plagarism_html(match_link), 'w') do |out_file|
       out_file.puts html
     end
@@ -509,7 +509,7 @@ module FileHelper
   #
   # Delete the html for a plagarism link
   #
-  def self.delete_plagarism_html(match_link)
+  def delete_plagarism_html(match_link)
     rm_file = path_to_plagarism_html(match_link)
     if File.exists? rm_file
       FileUtils.rm(rm_file)
@@ -523,7 +523,7 @@ module FileHelper
     self
   end
 
-  def self.delete_group_submission(group_submission)
+  def delete_group_submission(group_submission)
     pdf_file = PortfolioEvidence.final_pdf_path_for_group_submission(group_submission)
     logger.debug "Deleting group submission PDF file #{pdf_file}"
     if File.exists? pdf_file
@@ -537,18 +537,18 @@ module FileHelper
     self
   end
 
-  def self.zip_file_path_for_group_done_task(group_submission)
+  def zip_file_path_for_group_done_task(group_submission)
     zip_file = "#{student_group_work_dir(:done, group_submission)[0..-2]}.zip"
   end
 
-  def self.zip_file_path_for_done_task(task)
+  def zip_file_path_for_done_task(task)
     zip_file = "#{student_work_dir(:done, task, false)[0..-2]}.zip"
   end
 
   #
   # Compress the done files for a student - includes cover page and work uploaded
   #
-  def self.compress_done_files(task)
+  def compress_done_files(task)
     task_dir = student_work_dir(:done, task, false)
     zip_file = zip_file_path_for_done_task(task)
     return if (zip_file.nil?) || (not Dir.exists? task_dir)
@@ -570,7 +570,7 @@ module FileHelper
   #
   # Extract the files from the zip file for this tasks, and replace in new so that it is created
   #
-  def self.move_compressed_task_to_new(task)
+  def move_compressed_task_to_new(task)
     # student_work_dir(:new, task) # create task dir
     extract_file_from_done task, student_work_dir(:new), "*", lambda { | task, to_path, name |  "#{to_path}#{name}" }
   end
@@ -578,7 +578,7 @@ module FileHelper
   #
   # Extract files matching a pattern from the
   #
-  def self.extract_file_from_done(task, to_path, pattern, name_fn)
+  def extract_file_from_done(task, to_path, pattern, name_fn)
     zip_file = zip_file_path_for_done_task(task)
     return false if (zip_file.nil?) ||  (not File.exists? zip_file)
 
@@ -596,4 +596,35 @@ module FileHelper
       end
     end
   end
+
+  # Export functions as module functions
+  module_function :accept_file
+  module_function :sanitized_path
+  module_function :sanitized_filename
+  module_function :task_file_dir_for_unit
+  module_function :student_group_work_dir
+  module_function :student_work_dir
+  module_function :student_portfolio_dir
+  module_function :compress_image
+  module_function :compress_pdf
+  module_function :move_files
+  module_function :convert_files_to_pdf
+  module_function :pdf_valid?
+  module_function :copy_pdf
+  module_function :convert_to_pdf
+  module_function :code_to_pdf
+  module_function :img_to_pdf
+  module_function :doc_to_pdf
+  module_function :cover_to_pdf
+  module_function :read_file_to_str
+  module_function :aggregate
+  module_function :path_to_plagarism_html
+  module_function :save_plagiarism_html
+  module_function :delete_plagarism_html
+  module_function :delete_group_submission
+  module_function :zip_file_path_for_group_done_task
+  module_function :zip_file_path_for_done_task
+  module_function :compress_done_files
+  module_function :move_compressed_task_to_new
+  module_function :extract_file_from_done
 end

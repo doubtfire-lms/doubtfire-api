@@ -1,11 +1,11 @@
 require 'user_serializer'
 
 class ShallowUnitRoleSerializer < ActiveModel::Serializer
-	attributes :id, :role
+  attributes :id, :role
 
-	def role
-		object.role.name
-	end
+  def role
+    object.role.name
+  end
 end
 
 class UnitRoleSerializer < ActiveModel::Serializer
@@ -19,7 +19,7 @@ class UnitRoleSerializer < ActiveModel::Serializer
   has_many :other_roles, serializer: ShallowUnitRoleSerializer
 
   def role
-  	object.role.name
+    object.role.name
   end
 
   def unit_id
@@ -45,11 +45,11 @@ end
 
 
 class UserUnitRoleSerializer < ActiveModel::Serializer
-	attributes :id, :user_id, :name, :role #:user_name?
+  attributes :id, :user_id, :name, :role #:user_name?
 
-	def role
-		object.role.name
-	end
+  def role
+    object.role.name
+  end
 
   def name
     object.user.name

@@ -23,11 +23,42 @@ class Project < ActiveRecord::Base
 
   validate :must_be_in_group_tutorials
 
+  #
+  # Permissions around project data
+  #
   def self.permissions
+    # What can students do with projects?
+    student_role_permissions = [
+      :get,
+      :change_tutorial,
+      :make_submission,
+      :get_submission,
+      :change
+    ]
+    # What can tutors do with projects?
+    tutor_role_permissions = [
+      :get,
+      :trigger_week_end,
+      :change_tutorial,
+      :make_submission,
+      :get_submission,
+      :change,
+      :assess
+    ]
+    # What can convenors do with projects?
+    convenor_role_permissions = [
+
+    ]
+    # What can nil users do with projects?
+    nil_role_permissions = [
+
+    ]
+
+    # Return permissions hash
     {
-      student: [ :get, :change_tutorial, :make_submission, :get_submission, :change ],
-      tutor: [ :get, :trigger_week_end, :change_tutorial, :make_submission, :get_submission, :change, :assess],
-      nil => []
+      :student => student_role_permissions,
+      :tutor   => tutor_role_permissions,
+      :nil     => nil_role_permissions
     }
   end
 

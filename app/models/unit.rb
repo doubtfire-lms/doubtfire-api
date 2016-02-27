@@ -8,12 +8,50 @@ class Unit < ActiveRecord::Base
   include FileHelper
   include LogHelper
 
+  #
+  # Permissions around unit data
+  #
   def self.permissions
+    # What can students do with units?
+    student_role_permissions = [
+      :get_unit
+    ]
+    # What can tutors do with units?
+    tutor_role_permissions = [
+      :get_unit,
+      :get_students,
+      :enrol_student,
+      :provide_feedback,
+      :download_stats
+    ]
+
+    # What can convenors do with units?
+    convenor_role_permissions = [
+      :get_unit,
+      :get_students,
+      :enrol_student,
+      :upload_csv,
+      :download_csv,
+      :update,
+      :employ_staff,
+      :add_tutorial,
+      :add_task_def,
+      :provide_feedback,
+      :change_project_enrolment,
+      :download_stats
+    ]
+
+    # What can other users do with units?
+    nil_role_permissions = [
+
+    ]
+
+    # Return permissions hash
     {
-      :Student  => [ :get_unit ],
-      :Tutor    => [ :get_unit, :get_students, :enrol_student, :provide_feedback],
-      :Convenor => [ :get_unit, :get_students, :enrol_student, :uploadCSV, :downloadCSV, :update, :employ_staff, :add_tutorial, :add_task_def, :provide_feedback, :change_project_enrolment ],
-      :nil      => []
+      :student  => student_role_permissions,
+      :tutor    => tutor_role_permissions,
+      :convenor => convenor_role_permissions,
+      :nil      => nil_role_permissions
     }
   end
 
@@ -596,11 +634,11 @@ class Unit < ActiveRecord::Base
 
   def date_for_week_and_day(week, day)
     return nil if week.nil? || day.nil?
-    dayNum = Date::ABBR_DAYNAMES.index day.titlecase
-    return nil if dayNum.nil?
-    startDayNum = start_date.wday
+    day_num = Date::ABBR_DAYNAMES.index day.titlecase
+    return nil if day_num.nil?
+    start_day_num = start_date.wday
 
-    start_date + week.weeks + (dayNum - startDayNum).days
+    start_date + week.weeks + (day_num - start_day_num).days
   end
 
   def import_tasks_from_csv(file)

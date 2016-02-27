@@ -36,20 +36,20 @@ class TaskDefinition < ActiveRecord::Base
   def plagiarism_checks=(req)
     if req.class == String
       # get the ruby objects from the json data
-      jsonData = JSON.parse(req)
+      json_data = JSON.parse(req)
     else
       # use the passed in objects
-      jsonData = req
+      json_data = req
     end
 
     # ensure we have a structure that is : [ { "key": "...", "type": "...", "pattern": "..."}, { ... } ]
-    if not jsonData.class == Array
+    if not json_data.class == Array
       errors.add(:plagiarism_checks, "is not in a valid format! Should be [ { \"key\": \"...\", \"type\": \"...\", \"pattern\": \"...\"}, { ... } ]. Did not contain array.")
       return
     end
 
     i = 0
-    for req in jsonData do
+    for req in json_data do
       if not req.class == Hash
         errors.add(:plagiarism_checks, "is not in a valid format! Should be [ { \"key\": \"...\", \"type\": \"...\", \"pattern\": \"...\"}, { ... } ]. Array did not contain hashes for item #{i + 1}..")
         return
@@ -67,7 +67,7 @@ class TaskDefinition < ActiveRecord::Base
       i += 1
     end
 
-    self['plagiarism_checks'] = JSON.unparse(jsonData)
+    self['plagiarism_checks'] = JSON.unparse(json_data)
     if self['plagiarism_checks'].nil?
       self['plagiarism_checks'] = '[]'
     end
@@ -85,20 +85,20 @@ class TaskDefinition < ActiveRecord::Base
   def upload_requirements=(req)
     if req.class == String
       # get the ruby objects from the json data
-      jsonData = JSON.parse(req)
+      json_data = JSON.parse(req)
     else
       # use the passed in objects
-      jsonData = req
+      json_data = req
     end
 
     # ensure we have a structure that is : [ { "key": "...", "name": "...", "type": "..."}, { ... } ]
-    if not jsonData.class == Array
+    if not json_data.class == Array
       errors.add(:upload_requirements, "is not in a valid format! Should be [ { \"key\": \"...\", \"name\": \"...\", \"type\": \"...\"}, { ... } ]. Did not contain array.")
       return
     end
 
     i = 0
-    for req in jsonData do
+    for req in json_data do
       if not req.class == Hash
         errors.add(:upload_requirements, "is not in a valid format! Should be [ { \"key\": \"...\", \"name\": \"...\", \"type\": \"...\"}, { ... } ]. Array did not contain hashes for item #{i + 1}..")
         return
@@ -116,7 +116,7 @@ class TaskDefinition < ActiveRecord::Base
       i += 1
     end
 
-    self['upload_requirements'] = JSON.unparse(jsonData)
+    self['upload_requirements'] = JSON.unparse(json_data)
     if self['upload_requirements'].nil?
       self['upload_requirements'] = '[]'
     end

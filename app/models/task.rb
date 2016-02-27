@@ -2,12 +2,48 @@ class Task < ActiveRecord::Base
   include ApplicationHelper
   include LogHelper
 
+  #
+  # Permissions around task data
+  #
   def self.permissions
+    # What can students do with tasks?
+    student_role_permissions = [
+      :get,
+      :put,
+      :get_submission,
+      :make_submission,
+      :delete_own_comment
+    ]
+    # What can tutors do with tasks?
+    tutor_role_permissions = [
+      :get,
+      :put,
+      :get_submission,
+      :make_submission,
+      :delete_other_comment,
+      :delete_own_comment,
+      :view_plagiarism
+    ]
+    # What can convenors do with tasks?
+    convenor_role_permissions = [
+      :get,
+      :get_submission,
+      :make_submission,
+      :delete_other_comment,
+      :delete_own_comment,
+      :view_plagiarism
+    ]
+    # What can nil users do with tasks?
+    nil_role_permissions = [
+
+    ]
+
+    # Return permissions hash
     {
-      student: [ :get, :put, :get_submission, :make_submission, :delete_own_comment ],
-      tutor: [ :get, :put, :get_submission, :make_submission, :delete_other_comment, :delete_own_comment, :view_plagiarism ],
-      convenor: [ :get, :get_submission, :make_submission, :delete_other_comment, :delete_own_comment, :view_plagiarism ],
-      nil => []
+      :student  => student_role_permissions,
+      :tutor    => tutor_role_permissions,
+      :convenor => convenor_role_permissions,
+      :nil      => nil_role_permissions
     }
   end
 
@@ -826,8 +862,8 @@ class Task < ActiveRecord::Base
     #
     # Confirm subtype categories using filemagic
     #
-    files.each do | file |
-      logger.debug "checking file type for #{file.tempfile.path}"
+    files.each_with_index do | file, index |
+      logger.debug "Accepting submission (file #{index + 1} of #{files.length}) - checking file type for #{file.tempfile.path}"
       if not FileHelper.accept_file(file, file.name, file.type)
         ui.error!({"error" => "'#{file.name}' is not a valid #{file.type} file"}, 403)
       end
@@ -843,7 +879,7 @@ class Task < ActiveRecord::Base
     # Create student submission folder (<tmpdir>/doubtfire/new/<id>)
     #
     tmp_dir = File.join( Dir.tmpdir, 'doubtfire', 'new', "#{id}" )
-    logger.debug("creating tmp dir at #{tmp_dir}")
+    logger.debug "Creating temporary directory for new dubmission at #{tmp_dir}"
 
     # ensure the dir exists
     FileUtils.mkdir_p(tmp_dir)
@@ -873,5 +909,7 @@ class Task < ActiveRecord::Base
     # remove the directory
     Dir.chdir(pwd)
     Dir.rmdir(tmp_dir)
+
+    logger.debug "Submission accepted! Status for task #{id} is now #{trigger}"
   end
 end

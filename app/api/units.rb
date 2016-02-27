@@ -66,7 +66,7 @@ module Api
         optional :active
       end
     end
-    put '/units/:id' do 
+    put '/units/:id' do
       unit= Unit.find(params[:id])
       if not authorise? current_user, unit, :update
         error!({"error" => "Not authorised to update a unit" }, 403)
@@ -76,14 +76,14 @@ module Api
       .permit(:name,
               :code,
               :description,
-              :start_date, 
+              :start_date,
               :end_date,
               :active
              )
 
       unit.update!(unit_parameters)
       unit_parameters
-    end 
+    end
 
 
     desc "Create unit"
@@ -100,7 +100,7 @@ module Api
       if not authorise? current_user, User, :create_unit
         error!({"error" => "Not authorised to create a unit" }, 403)
       end
-      
+
       unit_parameters = ActionController::Parameters.new(params)
                                           .require(:unit)
                                           .permit(
@@ -116,7 +116,7 @@ module Api
       end
       if unit_parameters[:start_date].nil?
         start_date = Date.parse('Monday')
-        delta = start_date > Date.today ? 0 : 7 
+        delta = start_date > Date.today ? 0 : 7
         unit_parameters[:start_date] = start_date + delta
       end
       if unit_parameters[:end_date].nil?
@@ -129,7 +129,7 @@ module Api
       unit.employ_staff(current_user, Role.convenor)
       ShallowUnitSerializer.new(unit)
     end
-    
+
     desc "Add a tutorial with the provided details to this unit"
     params do
       #day, time, location, tutor_username, abbrev
@@ -146,18 +146,18 @@ module Api
       if not authorise? current_user, unit, :add_tutorial
         error!({"error" => "Not authorised to create a tutorial" }, 403)
       end
-      
+
       new_tutorial = params[:tutorial]
       tutor = User.find_by_username(new_tutorial[:tutor_username])
       if tutor.nil?
         error!({"error" => "Couldn't find User with username=#{new_tutorial[:tutor_username]}" }, 403)
       end
-      
+
       result = unit.add_tutorial(new_tutorial[:day], new_tutorial[:time], new_tutorial[:location], tutor, new_tutorial[:abbrev])
       if result.nil?
         error!({"error" => "Tutor username invalid (not a tutor for this unit)" }, 403)
       end
-      
+
       result
     end
 
@@ -177,12 +177,12 @@ module Api
     end
     post '/csv/units/:id' do
       unit = Unit.find(params[:id])
-      if not authorise? current_user, unit, :uploadCSV
+      if not authorise? current_user, unit, :upload_csv
         error!({"error" => "Not authorised to upload CSV of students to #{unit.code}"}, 403)
       end
-      
+
       ensure_csv!(params[:file][:tempfile])
-      
+
       # Actually import...
       unit.import_users_from_csv(params[:file][:tempfile])
     end
@@ -194,23 +194,23 @@ module Api
     post '/csv/units/:id/withdraw' do
       # check mime is correct before uploading
       ensure_csv!(params[:file][:tempfile])
-      
+
       unit = Unit.find(params[:id])
-      if not authorise? current_user, unit, :uploadCSV
+      if not authorise? current_user, unit, :upload_csv
         error!({"error" => "Not authorised to upload CSV of students to #{unit.code}"}, 403)
       end
-      
+
       # Actually withdraw...
       unit.unenrol_users_from_csv(params[:file][:tempfile])
     end
-    
+
     desc "Download CSV of all students in this unit"
     get '/csv/units/:id' do
       unit = Unit.find(params[:id])
-      if not authorise? current_user, unit, :downloadCSV
+      if not authorise? current_user, unit, :download_csv
         error!({"error" => "Not authorised to download CSV of students enrolled in #{unit.code}"}, 403)
       end
-      
+
       content_type "application/octet-stream"
       header['Content-Disposition'] = "attachment; filename=#{unit.code}-Students.csv "
       env['api.format'] = :binary
@@ -220,10 +220,10 @@ module Api
     desc "Download CSV of all student tasks in this unit"
     get '/csv/units/:id/task_completion' do
       unit = Unit.find(params[:id])
-      if not authorise? current_user, unit, :downloadCSV
+      if not authorise? current_user, unit, :download_csv
         error!({"error" => "Not authorised to download CSV of student tasks in #{unit.code}"}, 403)
       end
-      
+
       content_type "application/octet-stream"
       header['Content-Disposition'] = "attachment; filename=#{unit.code}-TaskCompletion.csv "
       env['api.format'] = :binary
@@ -233,7 +233,8 @@ module Api
     desc "Download the stats related to the number of students aiming for each grade"
     get '/units/:id/stats/student_target_grade' do
       unit = Unit.find(params[:id])
-      if not authorise? current_user, unit, :downloadCSV
+      if not authorise? current_user, unit, :download_stats
+        puts 1
         error!({"error" => "Not authorised to download stats of student tasks in #{unit.code}"}, 403)
       end
 
@@ -243,7 +244,8 @@ module Api
     desc "Download stats related to the status of students with tasks"
     get '/units/:id/stats/task_status_pct' do
       unit = Unit.find(params[:id])
-      if not authorise? current_user, unit, :downloadCSV
+      if not authorise? current_user, unit, :download_stats
+        puts 2
         error!({"error" => "Not authorised to download stats of student tasks in #{unit.code}"}, 403)
       end
 
@@ -253,7 +255,8 @@ module Api
     desc "Download stats related to the number of completed tasks"
     get '/units/:id/stats/task_completion_stats' do
       unit = Unit.find(params[:id])
-      if not authorise? current_user, unit, :downloadCSV
+      if not authorise? current_user, unit, :download_stats
+        puts 3
         error!({"error" => "Not authorised to download stats of student tasks in #{unit.code}"}, 403)
       end
 
@@ -261,5 +264,5 @@ module Api
     end
   end
 
-  
+
 end

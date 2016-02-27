@@ -154,7 +154,7 @@ module Api
 
       unit = Unit.find(params[:unit_id])
 
-      if not authorise? current_user, unit, :uploadCSV
+      if not authorise? current_user, unit, :upload_csv
         error!({"error" => "Not authorised to upload CSV of tasks"}, 403)
       end
 
@@ -169,7 +169,7 @@ module Api
     get '/csv/task_definitions' do
       unit = Unit.find(params[:unit_id])
 
-      if not authorise? current_user, unit, :downloadCSV
+      if not authorise? current_user, unit, :download_csv
         error!({"error" => "Not authorised to upload CSV of tasks"}, 403)
       end
 

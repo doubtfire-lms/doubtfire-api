@@ -92,7 +92,7 @@ module Api
           }
         }
       else
-        otherOutput = FileHelper.path_to_plagarism_html(other_match_link)
+        other_output = FileHelper.path_to_plagarism_html(other_match_link)
 
         {
           student: {
@@ -109,7 +109,7 @@ module Api
             name: match_link.other_student.name,
             tutor: match_link.other_tutor.name,
             tutorial: match_link.other_tutorial,
-            html: File.read(otherOutput),
+            html: File.read(other_output),
             lnk: (other_match_link.plagiarism_report_url if authorise? current_user, other_match_link.task, :view_plagiarism),
             pct: other_match_link.pct
           }
@@ -128,8 +128,7 @@ module Api
     put '/projects/:id/task_def_id/:task_definition_id' do
       project = Project.find(params[:id])
       task_definition = project.unit.task_definitions.find(params[:task_definition_id])
-      needsUploadDocs = task_definition.upload_requirements.length > 0
-      grade = params[:grade]
+      needs_upload_docs = task_definition.upload_requirements.length > 0
 
       # check the user can put this task
       if authorise? current_user, project, :make_submission
@@ -138,7 +137,7 @@ module Api
         # if trigger supplied...
         unless params[:trigger].nil?
           # Check if they should be using portfolio_evidence api
-          if needsUploadDocs && params[:trigger] == 'ready_to_mark'
+          if needs_upload_docs && params[:trigger] == 'ready_to_mark'
             error!({"error" => "Cannot set this task status to ready to mark without uploading documents." }, 403)
           end
 

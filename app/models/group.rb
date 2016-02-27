@@ -21,12 +21,35 @@ class Group < ActiveRecord::Base
 
   before_destroy :ensure_no_submissions
 
+  #
+  # Permissions around group data
+  #
   def self.permissions
-    result = {
-      :Student  => [ :get_members ],
-      :Tutor    => [ :get_members, :manage_group ],
-      :Convenor => [ :get_members, :manage_group ],
-      :nil      => [ ]
+    # What can students do with groups?
+    student_role_permissions = [
+      :get_members
+    ]
+    # What can tutors do with groups?
+    tutor_role_permissions = [
+      :get_members,
+      :manage_group
+    ]
+    # What can convenors do with groups?
+    convenor_role_permissions = [
+      :get_members,
+      :manage_group
+    ]
+    # What can nil users do with groups?
+    nil_role_permissions = [
+
+    ]
+
+    # Return permissions hash
+    {
+      :convenor => convenor_role_permissions,
+      :tutor    => tutor_role_permissions,
+      :student  => student_role_permissions,
+      :nil      => nil_role_permissions
     }
   end
 
@@ -38,7 +61,7 @@ class Group < ActiveRecord::Base
 
   def specific_permission_hash(role, perm_hash, other)
     result = perm_hash[role] unless perm_hash.nil?
-    if result && role == :Student
+  if result && role == :student
       if group_set.allow_students_to_manage_groups
         result << :manage_group
       end

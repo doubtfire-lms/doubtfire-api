@@ -5,7 +5,7 @@ module Api
     helpers AuthHelpers
     helpers AuthorisationHelpers
     helpers MimeCheckHelpers
-    
+
     before do
       authenticated?
     end
@@ -103,13 +103,13 @@ module Api
     post '/units/:unit_id/outcomes/csv' do
       # check mime is correct before uploading
       ensure_csv!(params[:file][:tempfile])
-      
+
       unit = Unit.find(params[:unit_id])
-      
-      if not authorise? current_user, unit, :uploadCSV
+
+      if not authorise? current_user, unit, :upload_csv
         error!({"error" => "Not authorised to upload CSV of outcomes"}, 403)
       end
-      
+
       # Actually import...
       unit.import_outcomes_from_csv(params[:file][:tempfile])
     end

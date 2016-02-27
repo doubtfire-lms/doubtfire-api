@@ -5,18 +5,43 @@ class GroupSet < ActiveRecord::Base
   validates_associated :groups
   validate :must_be_in_same_tutorial, if: :keep_groups_in_same_class
 
+  #
+  # Permissions around group set data
+  #
   def self.permissions
-    result = { 
-      :Student  => [ :get_groups ],
-      :Tutor    => [ :join_group, :get_groups, :create_group ],
-      :Convenor => [ :join_group, :get_groups, :create_group ],
-      :nil      => [ ]
+    # What can students do with group sets?
+    student_role_permissions = [
+      :get_groups
+    ]
+    # What can tutors do with group sets?
+    tutor_role_permissions = [
+      :get_groups,
+      :join_group,
+      :create_group
+    ]
+    # What can convenors do with group sets?
+    convenor_role_permissions = [
+      :get_groups,
+      :join_group,
+      :create_group
+    ]
+    # What can nil users do with group sets?
+    nil_role_permissions = [
+
+    ]
+
+    # Return permissions hash
+    {
+      :convenor => convenor_role_permissions,
+      :tutor    => tutor_role_permissions,
+      :student  => student_role_permissions,
+      :nil      => nil_role_permissions
     }
   end
 
   def specific_permission_hash(role, perm_hash, other)
     result = perm_hash[role] unless perm_hash.nil?
-    if result && role == :Student
+    if result && role == :student
       if allow_students_to_create_groups
         result << :create_group
       end
