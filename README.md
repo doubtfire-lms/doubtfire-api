@@ -4,9 +4,17 @@
 
 A modern, lightweight learning management system.
 
+## Table of Contents
+
+1. [Getting Started](#getting-started)
+  1. [...on OS X](#getting-started-on-os-x)
+  2. [...on Linux](#getting-started-on-linux)
+2. [Running Rake Tasks](#running-rake-tasks)
+3. [Contributing](#contributing)
+
 ## Getting started
 
-### OS X
+### Getting started on OS X
 
 #### 1. Install Homebrew and Homebrew Cask
 
@@ -211,9 +219,9 @@ $ rails s
 $ open http://localhost:3000/api/docs/
 ```
 
-You should see all the Doubtfire endpoints here, which means the API is running.
+You should see all the Doubtfire endpoints at **[http://localhost:3000/api/docs/](http://localhost:3000/api/docs/)**, which means the API is running.
 
-### Linux
+### Getting started on Linux
 
 #### 1. Install rbenv and ruby-build
 
@@ -320,12 +328,11 @@ Run the Rails server and check the API is up by viewing Grape Swagger documentat
 
 ```
 $ rails s
-$ open http://localhost:3000/api/docs/
 ```
 
-You should see all the Doubtfire endpoints here, which means the API is running.
+You should see all the Doubtfire endpoints at **[http://localhost:3000/api/docs/](http://localhost:3000/api/docs/)**, which means the API is running.
 
-## Rake Tasks
+## Running Rake Tasks
 
 You can perform developer-specific tasks using `rake`. For a list of all tasks, execute in the root directory:
 
