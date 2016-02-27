@@ -22,29 +22,29 @@
 
 
 \fancypagestyle{title}{%
-  \renewcommand{\headrulewidth}{0pt}
-  \fancyhead[L]{}
-  \fancyhead[R]{}
-  \fancyfoot[C]
-  {
-    \footnotesize Produced by Doubtfire$^{3}$
-  }
-  \fancyfoot[R]{}
-  \fancyfoot[L]{}
+    \renewcommand{\headrulewidth}{0pt}
+    \fancyhead[L]{}
+    \fancyhead[R]{}
+    \fancyfoot[C]
+    {
+        \footnotesize Produced by Doubtfire
+    }
+    \fancyfoot[R]{}
+    \fancyfoot[L]{}
 }
 
 \fancypagestyle{body}{%
-  \renewcommand{\headrulewidth}{0.4pt}
-  \renewcommand{\footrulewidth}{0.4pt}
-  \fancyhead{}
-  \fancyfoot[C]
-  {
-    \footnotesize Produced by Doubtfire$^{3}$
-  }
-  \fancyfoot[R]
-  {
-    \date{\today}
-  }
+    \renewcommand{\headrulewidth}{0.4pt}
+    \renewcommand{\footrulewidth}{0.4pt}
+    \fancyhead{}
+    \fancyfoot[C]
+    {
+        \footnotesize Produced by Doubtfire
+    }
+    \fancyfoot[R]
+    {
+        \date{\today}
+    }
 }
 
 

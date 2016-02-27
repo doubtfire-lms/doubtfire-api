@@ -123,6 +123,7 @@ module Api
       requires :task_definition_id, type: Integer, desc: 'The id of the task definition of the task to update in this project'
       optional :trigger, type: String, desc: 'New status'
       optional :include_in_portfolio, type: Boolean, desc: 'Indicate if this task should be in the portfolio'
+      optional :grade, type: Integer, desc: 'Grade value if task is a graded task (required if task definition is a graded task)'
     end
     put '/projects/:id/task_def_id/:task_definition_id' do
       project = Project.find(params[:id])
@@ -148,6 +149,12 @@ module Api
           if result.nil? && task.task_definition.restrict_status_updates
             error!({"error" => "This task can only be updated by your tutor." }, 403)
           end
+        end
+
+        # if grade was supplied
+        unless grade.nil?
+          # try to grade the task
+          task.grade_task grade
         end
 
         # if include in portfolio supplied

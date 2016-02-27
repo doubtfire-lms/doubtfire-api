@@ -37,19 +37,20 @@ module Api::Submission::GenerateHelpers
     files.map{ | k, v | v }
   end
 
-  def mark_col
-    "need_help|ready_to_mark (rtm)|discuss (d)|demonstrate (de)|fix_and_resubmit (fix)|fix_and_include (fixinc)|redo|fail (f)"
-  end
-
   #
   # Defines the csv headers for batch download
   #
   def mark_csv_headers
-    "Username,Name,Tutorial,Task,ID,student comment,previous comment,#{mark_col},comment"
+    "Username,Name,Tutorial,Task,ID,Student's Last Comment,Your Last Comment,Status,New Grade,New Comment"
   end
 
   def check_mark_csv_headers
-    "Username,Name,Tutorial,Task,ID,#{mark_col},comment"
+    "Username,Name,Tutorial,Task,ID,Status,New Grade,New Comment"
+  end
+
+  def readme_text
+    path = Rails.root.join("public", "resources", "marking_package_readme.txt")
+    File.read path
   end
 
   #
@@ -73,7 +74,7 @@ module Api::Submission::GenerateHelpers
         else
           mark_col = 'rtm'
         end
-        csv_str << "\n#{student.username.gsub(/,/, '_')},#{student.name.gsub(/,/, '_')},#{task.project.tutorial.abbreviation},#{task.task_definition.abbreviation.gsub(/,/, '_')},#{task.id},\"#{task.last_comment_by(task.project.student).gsub(/"/, "\"\"")}\",\"#{task.last_comment_by(user).gsub(/"/, "\"\"")}\",#{mark_col},"
+        csv_str << "\n#{student.username.gsub(/,/, '_')},#{student.name.gsub(/,/, '_')},#{task.project.tutorial.abbreviation},#{task.task_definition.abbreviation.gsub(/,/, '_')},#{task.id},\"#{task.last_comment_by(task.project.student).gsub(/"/, "\"\"")}\",\"#{task.last_comment_by(user).gsub(/"/, "\"\"")}\",#{mark_col},,"
 
         src_path = task.portfolio_evidence
 
@@ -94,7 +95,7 @@ module Api::Submission::GenerateHelpers
         # Add to the template entry string
         grp = task.group
         next if grp.nil?
-        csv_str << "\nGRP_#{grp.id}_#{subm.id},#{grp.name.gsub(/,/, '_')},#{grp.tutorial.abbreviation},#{task.task_definition.abbreviation.gsub(/,/, '_')},#{task.id},\"#{task.last_comment_not_by(user).gsub(/"/, "\"\"")}\",\"#{task.last_comment_by(user).gsub(/"/, "\"\"")}\",rtm,"
+        csv_str << "\nGRP_#{grp.id}_#{subm.id},#{grp.name.gsub(/,/, '_')},#{grp.tutorial.abbreviation},#{task.task_definition.abbreviation.gsub(/,/, '_')},#{task.id},\"#{task.last_comment_not_by(user).gsub(/"/, "\"\"")}\",\"#{task.last_comment_by(user).gsub(/"/, "\"\"")}\",rtm,,"
 
         src_path = task.portfolio_evidence
 
@@ -109,6 +110,9 @@ module Api::Submission::GenerateHelpers
 
       # Add marking file
       zip.get_output_stream("marks.csv") { | f | f.puts csv_str }
+
+      # Add readme file
+      zip.get_output_stream("readme.txt") { | f | f.puts readme_text }
     end
     output_zip
   end
@@ -150,7 +154,7 @@ module Api::Submission::GenerateHelpers
       # get the task...
       task = Task.find_by_id(task_entry['id'])
       if task.nil?
-        errors << { row: task_entry, message: "Task id #{task_entry['id']} not found" }
+        errors << { row: task_entry, message: "Task id #{task_entry['ID']} not found" }
         next
       end
 
@@ -181,10 +185,11 @@ module Api::Submission::GenerateHelpers
           break
         end
 
-        submitter_task.trigger_transition(task_entry[mark_col], current_user) # saves task
+        submitter_task.trigger_transition(task_entry['status'], current_user) # saves task
+        submitter_task.grade_task(task_entry['new grade']) # try to grade task if need be
         success << { row: task_entry, message:"Updated group task #{submitter_task.task_definition.abbreviation} for #{group.name}" }
-        if not (task_entry['comment'].nil? || task_entry['comment'].empty?)
-          submitter_task.add_comment current_user, task_entry['comment']
+        if not (task_entry['new comment'].nil? || task_entry['new comment'].empty?)
+          submitter_task.add_comment current_user, task_entry['new comment']
         end
 
         subm.tasks.each do | task |
@@ -207,12 +212,13 @@ module Api::Submission::GenerateHelpers
           next
         end
 
-        task.trigger_transition(task_entry[mark_col], current_user) # saves task
+        task.trigger_transition(task_entry['status'], current_user) # saves task
+        task.grade_task(task_entry['new grade']) # try to grade task if need be
 
-        if not (task_entry['comment'].nil? || task_entry['comment'].empty?)
+        if not (task_entry['new comment'].nil? || task_entry['new comment'].empty?)
           success << { row: task_entry, message:"Updated task #{task.task_definition.abbreviation} for #{task.student.name}" }
-          if task.last_comment.nil? || task.last_comment.comment != task_entry['comment']
-            task.add_comment current_user, task_entry['comment']
+          if task.last_comment.nil? || task.last_comment.comment != task_entry['new comment']
+            task.add_comment current_user, task_entry['new comment']
             success << { row: task_entry, message:"Added comment to #{task.task_definition.abbreviation} for #{task.student.name}" }
           else
             ignored << { row: task_entry, message:"Skipped comment to #{task.task_definition.abbreviation} for #{task.student.name} -- duplicates last comment." }
@@ -313,7 +319,7 @@ module Api::Submission::GenerateHelpers
           # Copy over the updated/marked files to the file system
           zip.each do |file|
             # Skip processing marking file
-            next if File.basename(file.name) == "marks.csv"
+            next if File.basename(file.name) == "marks.csv" || File.basename(file.name) == "readme.txt"
 
             # Test filename pattern
             if (/.*-\d+.pdf/i =~ File.basename(file.name)) != 0

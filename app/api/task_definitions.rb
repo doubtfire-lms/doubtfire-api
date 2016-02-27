@@ -16,20 +16,21 @@ module Api
     desc "Add a new task definition to the given unit"
     params do
       group :task_def do
-        requires :unit_id,              type: Integer,  :desc => "The unit to create the new task def for"
-        requires :name,                 type: String,   :desc => "The name of this task def"
-        requires :description,          type: String,   :desc => "The description of this task def"
-        requires :weighting,            type: Integer,  :desc => "The weighting of this task"
-        requires :target_grade,         type: Integer,  :desc => "Minimum grade for task"
-        optional :group_set_id,         type: Integer,  :desc => "Related group set"
-        requires :start_date,           type: Date,     :desc => "The date when the task should be started"
-        requires :target_date,          type: Date,     :desc => "The date when the task is due"
-        optional :due_date,             type: Date,     :desc => "The deadline date"
-        requires :abbreviation,         type: String,   :desc => "The abbreviation of the task"
-        requires :restrict_status_updates, type: Boolean,  :desc => "Restrict updating of the status to staff"
-        optional :upload_requirements,  type: String,   :desc => "Task file upload requirements"
-        optional :plagiarism_checks,    type: String,   :desc => "The list of checks to perform"
-        requires :plagiarism_warn_pct,  type: Integer,  :desc => "The percent at which to record and warn about plagiarism"
+        requires :unit_id,                  type: Integer,  :desc => "The unit to create the new task def for"
+        requires :name,                     type: String,   :desc => "The name of this task def"
+        requires :description,              type: String,   :desc => "The description of this task def"
+        requires :weighting,                type: Integer,  :desc => "The weighting of this task"
+        requires :target_grade,             type: Integer,  :desc => "Minimum grade for task"
+        optional :group_set_id,             type: Integer,  :desc => "Related group set"
+        requires :start_date,               type: Date,     :desc => "The date when the task should be started"
+        requires :target_date,              type: Date,     :desc => "The date when the task is due"
+        optional :due_date,                 type: Date,     :desc => "The deadline date"
+        requires :abbreviation,             type: String,   :desc => "The abbreviation of the task"
+        requires :restrict_status_updates,  type: Boolean,  :desc => "Restrict updating of the status to staff"
+        optional :upload_requirements,      type: String,   :desc => "Task file upload requirements"
+        optional :plagiarism_checks,        type: String,   :desc => "The list of checks to perform"
+        requires :plagiarism_warn_pct,      type: Integer,  :desc => "The percent at which to record and warn about plagiarism"
+        requires :is_graded,                type: Boolean,  :desc => "Whether or not this task definition is a graded task"
       end
     end
     post '/task_definitions/' do
@@ -55,7 +56,8 @@ module Api
                                                   :restrict_status_updates,
                                                   :upload_requirements,
                                                   :plagiarism_checks,
-                                                  :plagiarism_warn_pct
+                                                  :plagiarism_warn_pct,
+                                                  :is_graded
                                                 )
 
       task_def = TaskDefinition.new(task_params)
@@ -78,20 +80,21 @@ module Api
     params do
       requires :id,                     type: Integer,  :desc => "The task id to edit"
       group :task_def do
-        optional :unit_id,              type: Integer,  :desc => "The unit to create the new task def for"
-        optional :name,                 type: String,   :desc => "The name of this task def"
-        optional :description,          type: String,   :desc => "The description of this task def"
-        optional :weighting,            type: Integer,  :desc => "The weighting of this task"
-        optional :target_grade,         type: Integer,  :desc => "Target grade for task"
-        optional :group_set_id,         type: Integer,  :desc => "Related group set"
-        optional :start_date,           type: Date,     :desc => "The date when the task should be started"
-        optional :target_date,          type: Date,     :desc => "The date when the task is due"
-        optional :due_date,             type: Date,     :desc => "The deadline date"
-        optional :abbreviation,         type: String,   :desc => "The abbreviation of the task"
-        optional :restrict_status_updates,    type: Boolean,  :desc => "Restrict updating of the status to staff"
-        optional :upload_requirements,  type: String,   :desc => "Task file upload requirements"
-        optional :plagiarism_checks,    type: String,   :desc => "The list of checks to perform"
-        requires :plagiarism_warn_pct,  type: Integer,  :desc => "The percent at which to record and warn about plagiarism"
+        optional :unit_id,                  type: Integer,  :desc => "The unit to create the new task def for"
+        optional :name,                     type: String,   :desc => "The name of this task def"
+        optional :description,              type: String,   :desc => "The description of this task def"
+        optional :weighting,                type: Integer,  :desc => "The weighting of this task"
+        optional :target_grade,             type: Integer,  :desc => "Target grade for task"
+        optional :group_set_id,             type: Integer,  :desc => "Related group set"
+        optional :start_date,               type: Date,     :desc => "The date when the task should be started"
+        optional :target_date,              type: Date,     :desc => "The date when the task is due"
+        optional :due_date,                 type: Date,     :desc => "The deadline date"
+        optional :abbreviation,             type: String,   :desc => "The abbreviation of the task"
+        optional :restrict_status_updates,  type: Boolean,  :desc => "Restrict updating of the status to staff"
+        optional :upload_requirements,      type: String,   :desc => "Task file upload requirements"
+        optional :plagiarism_checks,        type: String,   :desc => "The list of checks to perform"
+        optional :plagiarism_warn_pct,      type: Integer,  :desc => "The percent at which to record and warn about plagiarism"
+        optional :is_graded,                type: Boolean,  :desc => "Whether or not this task definition is a graded task"
       end
     end
     put '/task_definitions/:id' do
@@ -116,7 +119,8 @@ module Api
                                                   :restrict_status_updates,
                                                   :upload_requirements,
                                                   :plagiarism_checks,
-                                                  :plagiarism_warn_pct
+                                                  :plagiarism_warn_pct,
+                                                  :is_graded
                                                 )
 
       task_def.update!(task_params)

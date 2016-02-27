@@ -713,6 +713,7 @@ class Project < ActiveRecord::Base
 
     #
     # check later -- not working at the moment fa not rendering in pdfkit
+    # @acain: this won't work as we haven't imported font-awesome on the server
     #
     # status_icons = {
     #   ready_to_mark: 'fa fa-thumbs-o-up',
@@ -726,28 +727,49 @@ class Project < ActiveRecord::Base
     #   complete: 'fa fa-check-circle-o'
     # }
 
-    coverpage_body = "<html><head>
-  <link rel='stylesheet' type='text/css' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css'>\n
-  <head>
-  <body>
-    <h1>Tasks for #{student.name}</h1>
-
-    <table class='table table-striped'>
-    <thead><th>Task</th><th>Status</th><th></th><th>Included</th></thead>
-    <tbody>\n"
+    grade_descs = [
+      'Pass',
+      'Credit',
+      'Distinction',
+      'High Distinction'
+    ]
 
     ordered_tasks = tasks.joins(:task_definition).order("task_definitions.target_date, task_definitions.abbreviation").select{|task| task.task_definition.target_grade <= target_grade }
+    coverpage_html = <<EOF
+<html>
+  <head>
+    <link rel='stylesheet' type='text/css' href='https://doubtfire.ict.swin.edu.au/assets/doubtfire.css'>
+  </head>
+  <body>
+    <h2>
+      #{unit.name} <small>#{unit.code}</small>
+      <p class="lead">#{student.name} <small>#{student.username}</small></p>
+    </h2>
+    <h1>Tasks for #{student.name}</h1>
+    <table class='table table-striped'>
+      <thead>
+        <th>Task</th>
+        <th colspan='2'>Status</th>
+        <th>Included</th>
+        <th>Grade</th>
+      </thead>
+      <tbody>
+EOF
 
     ordered_tasks.each do | task |
-      coverpage_body << "<tr>
-      <td>#{task.task_definition.name}</td>
-      <td>#{task.task_status.name}</td>
-      <td><button type='button' class='col-xs-12 btn btn-default task-status #{task.status.to_s.dasherize}'>#{task.task_definition.abbreviation}</button></td>
-      <td>#{ (task.include_in_portfolio && task.has_pdf ? 'YES' : '')}</td></tr>\n"
+      task_row_html = <<EOF
+<tr>
+  <td>#{task.task_definition.name}</td>
+  <td>#{task.task_status.name}</td>
+  <td><button type='button' class='col-xs-12 btn btn-default task-status #{task.status.to_s.dasherize}'>#{task.task_definition.abbreviation}</button></td>
+  <td><i class="glyphicon glyphicon-#{ (task.include_in_portfolio && task.has_pdf ? 'checked' : 'unchecked')}"></i></td>
+  <td>#{task.grade.nil? ? 'N/A' : grade_descs[task.grade]}</td>
+</tr>
+EOF
+      coverpage_html << task_row_html
     end
 
-    coverpage_body << "</tbody></table>"
-    coverpage_body << "</body></html>"
+    coverpage_html << "</tbody></table></body></html>"
 
     cover_filename = File.join(dest_dir, "task.cover.html")
 

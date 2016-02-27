@@ -36,6 +36,14 @@ class GroupSubmission < ActiveRecord::Base
     end
   end
 
+  def propagate_grade initial_task, new_grade
+    tasks.each do |task|
+      if task != initial_task
+        task.grade_task new_grade, grading_group = true
+      end
+    end
+  end
+
   def submitter_task
     result = tasks.where(project: submitted_by_project).first
     return result unless result.nil?
