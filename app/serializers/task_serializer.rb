@@ -1,5 +1,5 @@
 class ShallowTaskSerializer < ActiveModel::Serializer
-  attributes :id, :status, :task_definition_id, :processing_pdf, :has_pdf, :include_in_portfolio, :pct_similar, :similar_to_count, :times_assessed
+  attributes :id, :status, :task_definition_id, :processing_pdf, :has_pdf, :include_in_portfolio, :pct_similar, :similar_to_count, :times_assessed, :grade
 end
 
 class TaskUpdateSerializer < ActiveModel::Serializer
