@@ -370,15 +370,15 @@ class Task < ActiveRecord::Base
         unless new_grade.is_a?(Integer) && grade_map.values.include?(new_grade.to_i)
           ui.error!({"error" => "New grade supplied to task is not an invalid integer - expects one of {0|1|2|3} (task id #{self.id})"}, 403)
         end
-        # propagate new grade to all group members if not already doing so
+        # propagate new grade to all OTHER group members
         if group_task? && !grading_group
           logger.debug "Grading a group submission to grade #{new_grade}"
           ensured_group_submission.propagate_grade self, new_grade, ui
-        # otherwise not a group task or we need to propagate
-        else
-          logger.debug "Grade for task #{abbreviation} student #{student_id} updated to #{new_grade}"
-          update(:grade => new_grade)
         end
+        
+        # now update this task... (may be group task or individual...)
+        logger.debug "Grading task #{self.id} in a group submission to grade #{new_grade}"
+        update(:grade => new_grade)
       end
     elsif grade?
       ui.error!({"error" => "Grade was supplied for a non-graded task (task id #{self.id})"}, 403)
