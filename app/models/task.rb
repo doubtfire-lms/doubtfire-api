@@ -357,7 +357,6 @@ class Task < ActiveRecord::Base
       else
         # validate (and convert if need be) new_grade
         unless new_grade.is_a?(String) || new_grade.is_a?(Integer)
-          put 100
           ui.error!({"error" => "New grade supplied to task is not a string or integer (task id #{self.id})"}, 403)
         end
         if new_grade.is_a?(String)
@@ -373,9 +372,11 @@ class Task < ActiveRecord::Base
         end
         # propagate new grade to all group members if not already doing so
         if group_task? && !grading_group
+          logger.debug "Grading a group submission to grade #{new_grade}"
           ensured_group_submission.propagate_grade self, new_grade, ui
         # otherwise not a group task or we need to propagate
         else
+          logger.debug "Grade for task #{abbreviation} student #{student_id} updated to #{new_grade}"
           update(:grade => new_grade)
         end
       end
