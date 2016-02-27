@@ -127,6 +127,7 @@ module Api
     end
     put '/projects/:id/task_def_id/:task_definition_id' do
       project = Project.find(params[:id])
+      grade = params[:grade]
       task_definition = project.unit.task_definitions.find(params[:task_definition_id])
       needs_upload_docs = task_definition.upload_requirements.length > 0
 
