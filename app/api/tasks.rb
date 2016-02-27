@@ -155,7 +155,7 @@ module Api
         # if grade was supplied
         unless grade.nil?
           # try to grade the task
-          task.grade_task grade
+          task.grade_task grade, self
         end
 
         # if include in portfolio supplied

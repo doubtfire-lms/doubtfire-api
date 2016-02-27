@@ -344,7 +344,7 @@ class Task < ActiveRecord::Base
   #
   # Tries to grade the task if it is a graded task
   #
-  def grade_task(new_grade, grading_group = false)
+  def grade_task(new_grade, ui, grading_group = false)
     grade_map = {
       'p'  => 0,
       'c'  => 1,
@@ -353,32 +353,34 @@ class Task < ActiveRecord::Base
     }
     if task_definition.is_graded
       if new_grade.nil?
-        error!({"error" => "No grade was supplied for a graded task (task id #{self.id})"}, 403)
+        ui.error!({"error" => "No grade was supplied for a graded task (task id #{self.id})"}, 403)
       else
         # validate (and convert if need be) new_grade
         unless new_grade.is_a?(String) || new_grade.is_a?(Integer)
-          error!({"error" => "New grade supplied to task is not a string or integer (task id #{self.id})"}, 403)
+          put 100
+          ui.error!({"error" => "New grade supplied to task is not a string or integer (task id #{self.id})"}, 403)
         end
-        if new_grade.is_a?(String) && grade_map.keys.include?(new_grade.downcase)
-          error!({"error" => "New grade supplied to task is not an invalid string - expects one of {p|c|d|hd} (task id #{self.id})"}, 403)
-        else
-          # convert string representation to integer representation
-          new_grade = grade_map[new_grade]
+        if new_grade.is_a?(String)
+          unless grade_map.keys.include?(new_grade.downcase)
+            ui.error!({"error" => "New grade supplied to task is not an invalid string - expects one of {p|c|d|hd} (task id #{self.id})"}, 403)
+          else
+            # convert string representation to integer representation
+            new_grade = grade_map[new_grade]
+          end
         end
-        if new_grade.is_a?(Integer) && grade_map.values.include?(new_grade.to_i)
-          error!({"error" => "New grade supplied to task is not an invalid integer - expects one of {0|1|2|3} (task id #{self.id})"}, 403)
+        unless new_grade.is_a?(Integer) && grade_map.values.include?(new_grade.to_i)
+          ui.error!({"error" => "New grade supplied to task is not an invalid integer - expects one of {0|1|2|3} (task id #{self.id})"}, 403)
         end
         # propagate new grade to all group members if not already doing so
         if group_task? && !grading_group
-          ensured_group_submission.propagate_grade self, new_grade
+          ensured_group_submission.propagate_grade self, new_grade, ui
         # otherwise not a group task or we need to propagate
         else
-          self.grade = new_grade
-          self.save
+          update(:grade => new_grade)
         end
       end
     elsif grade?
-      error!({"error" => "Grade was supplied for a non-graded task (task id #{self.id})"}, 403)
+      ui.error!({"error" => "Grade was supplied for a non-graded task (task id #{self.id})"}, 403)
     end
   end
 

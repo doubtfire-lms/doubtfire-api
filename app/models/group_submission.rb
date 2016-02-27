@@ -36,10 +36,10 @@ class GroupSubmission < ActiveRecord::Base
     end
   end
 
-  def propagate_grade initial_task, new_grade
+  def propagate_grade initial_task, new_grade, ui
     tasks.each do |task|
       if task != initial_task
-        task.grade_task new_grade, grading_group = true
+        task.grade_task new_grade, grading_group = true, ui
       end
     end
   end
