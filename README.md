@@ -282,14 +282,13 @@ CREATE ROLE itig WITH CREATEDB PASSWORD 'd872$dh' LOGIN;
 
 #### 4. Install native tools
 
-Install `imagemagick` and `libmagic`:
+Install `imagemagick`, `libmagic` and `pdftk`:
 
 ```
 $ sudo apt-get install imagemagick libmagickwand-dev
 $ sudo apt-get install libmagic-dev
+$ sudo apt-get install pdftk
 ```
-
-You also need to download and install PDFtk manually by downloading it [here](https://www.pdflabs.com/docs/install-pdftk-on-redhat-or-centos/).
 
 You will also need to install the Python `pygments` package:
 
@@ -312,6 +311,37 @@ Then install Doubtfire API dependencies using [bundler](http://bundler.io):
 $ gem install bundler
 $ bundle install --without production test replica
 ```
+
+##### Bundle resolutions
+
+You may encounter issues when trying to install bundle dependencies. 
+
+###### ruby-filemagic
+
+The `ruby-filemagic` gem cannot find `libmagic` libraries when compiling with native extensions:
+
+```
+Installing ruby-filemagic 0.6.0 with native extensions
+
+Gem::Installer::ExtensionBuildError: ERROR: Failed to build gem native extension.
+
+    /Users/[User]/.rbenv/versions/2.0.0-p353/bin/ruby extconf.rb
+checking for magic_open() in -lmagic... no
+checking for magic.h... no
+*** ERROR: missing required library to compile this module
+*** extconf.rb failed ***
+Could not create Makefile due to some reason, probably lack of necessary
+libraries and/or headers.  Check the mkmf.log file for more details.  You may
+need configuration options.
+```
+
+To resolve, add the following to your global bundle config:
+
+```
+$ bundle config build.ruby-filemagic --with-magic-include=/usr/local/include --with-magic-lib=/usr/lib
+```
+
+Then try installing dependencies again.
 
 #### 6. Create and populate Doubtfire development databases
 
