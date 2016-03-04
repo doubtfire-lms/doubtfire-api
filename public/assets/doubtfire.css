@@ -9164,8 +9164,12 @@ body > .container-fluid {
 ul.nav.nav-tabs {
   margin-bottom: 20px;
 }
-a {
+a,
+.pointer {
   cursor: pointer;
+}
+.strong {
+  font-weight: bold;
 }
 .row {
   margin-right: 0px;
@@ -9190,9 +9194,6 @@ a {
 .ui-select-bootstrap .ui-select-choices-row.active > a {
   color: #333;
   background-color: inherit;
-}
-.pointer {
-  cursor: pointer;
 }
 .large-notice-block {
   display: -webkit-flex;
@@ -9920,8 +9921,31 @@ a.navbar-brand h1.logo {
   overflow: scroll;
   height: 30vh;
 }
+.comment-panel .no-comments {
+  height: 100%;
+}
+.comment {
+  display: flex;
+  display: -webkit-flex;
+  margin-bottom: 2em;
+}
 .comment .comment-details {
-  padding-top: 8px;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-wrap: wrap;
+  flex-wrap: wrap;
+  -webkit-align-items: center;
+  align-items: center;
+  -webkit-align-content: center;
+  align-content: center;
+  -webkit-justify-content: center;
+  justify-content: center;
+  height: 100%;
+  height: auto;
+}
+.comment .comment-details > * {
+  width: 100%;
+  text-align: right;
 }
 .comment .comment-details .comment-by,
 .comment .comment-details .comment-date {
@@ -9935,11 +9959,14 @@ a.navbar-brand h1.logo {
   font-size: 0.8em;
 }
 .comment .comment-text {
-  padding: 15px;
   background-color: #efefef;
-  border-left: 5px solid #ddd;
-  font-style: oblique;
-  margin-bottom: 20px;
+  border-radius: 1em;
+  padding: 1.5em;
+  font-size: 1.2em;
+  line-height: 1.5em;
+}
+.comment .comment-text .markdown-to-html > *:last-child {
+  margin-bottom: 0px;
 }
 .comment .comment-text img {
   border-radius: 1em;
@@ -10035,11 +10062,23 @@ a.navbar-brand h1.logo {
   border-bottom: 1px dashed #ddd;
   margin-bottom: 2em;
 }
-.task-feedback .task-header-info .task-description {
+.task-feedback .task-header-info {
+  margin-bottom: 1em;
+}
+.task-feedback .task-header-info .task-status-summary {
   float: left;
 }
-.task-feedback .task-header-info .task-description h3 {
+.task-feedback .task-header-info .task-status-summary h3 {
   margin: 0;
+}
+.task-feedback .task-header-info .task-status-summary .graded-task-mark {
+  font-weight: bold;
+}
+.task-feedback .task-header-info .task-status-summary .graded-task-mark .grade-icon {
+  display: inline-block;
+  text-align: center;
+  line-height: 2.25em;
+  margin: 0 0.5ex;
 }
 .task-feedback .task-header-info .overdue.label {
   font-size: 1em;
@@ -10055,7 +10094,6 @@ a.navbar-brand h1.logo {
   margin-right: 0.25ex;
 }
 .task-feedback .task-header-info .date-info {
-  float: right;
   text-align: right;
 }
 .task-feedback .task-header-info .date-info .due-date {
@@ -10097,40 +10135,36 @@ a.navbar-brand h1.logo {
 .task-feedback .task-feedback-tab-panel .panel-body .help-block i {
   margin: 0.5em 0.5ex;
 }
-submit-task-form .upload-assistant {
+submit-task-form .upload-type-selected-state {
+  height: 100%;
+}
+submit-task-form .upload-type-selected-state .upload-assistant {
   padding-bottom: 1.25em;
   margin-bottom: 2em;
   border-bottom: 1px solid #ddd;
 }
-submit-task-form .upload-assistant h3 {
+submit-task-form .upload-type-selected-state .upload-assistant h3 {
   float: left;
   font-size: 2em;
 }
-submit-task-form .upload-assistant h3 small {
+submit-task-form .upload-type-selected-state .upload-assistant h3 small {
   margin-top: 0.5em;
   font-weight: lighter;
   display: block;
 }
-submit-task-form .upload-assistant .upload-type-switcher {
+submit-task-form .upload-type-selected-state .upload-assistant .upload-type-switcher {
   float: right;
   text-align: right;
 }
-submit-task-form .upload-assistant .upload-type-switcher p {
+submit-task-form .upload-type-selected-state .upload-assistant .upload-type-switcher p {
   margin-top: 0.75em;
 }
-submit-task-form .upload-type-selected-state,
-submit-task-form file-uploader,
-submit-task-form .file-upload-area,
-submit-task-form .upload-area {
-  height: 100%;
-}
-submit-task-form file-uploader .file-upload-area {
-  width: 65%;
-  margin: 0 auto;
+submit-task-form .upload-type-selected-state .file-uploader {
   text-align: center;
 }
-submit-task-form file-uploader .file-upload-area .result-area,
-submit-task-form file-uploader .file-upload-area .progress-area {
+submit-task-form .upload-type-selected-state .file-uploader.is-uploading {
+  margin: 0;
+  display: block;
   display: -webkit-flex;
   display: flex;
   -webkit-flex-wrap: wrap;
@@ -10142,6 +10176,12 @@ submit-task-form file-uploader .file-upload-area .progress-area {
   -webkit-justify-content: center;
   justify-content: center;
   height: 100%;
+}
+submit-task-form .upload-type-selected-state .file-uploader .file-drop-area,
+submit-task-form .upload-type-selected-state .file-uploader .upload-area,
+submit-task-form .upload-type-selected-state .file-uploader .result-area {
+  margin: 0 auto;
+  width: 50%;
 }
 .task-feedback .task-feedback-tab-panel .task-sheet .panel-body.task-description,
 .task-feedback .task-feedback-tab-panel .task-sheet .panel-body.task-view-alignment-panel {
@@ -10356,77 +10396,77 @@ a:hover > i.logo {
   color: #C82506;
 }
 /* END TODO */
-file-uploader {
+.file-uploader {
   display: block;
   margin: 2.5em 0;
 }
-.file-upload-area .well.drop {
+.file-uploader .well.drop {
   border: 3px #bbb dotted;
   font-size: larger;
   font-weight: bold;
   color: #aaa;
   text-align: center;
 }
-.file-upload-area .well.drop,
-.file-upload-area .well.drop i {
+.file-uploader .well.drop,
+.file-uploader .well.drop i {
   -webkit-transition: all 0.25s ease;
   -o-transition: all 0.25s ease;
   transition: all 0.25s ease;
 }
-.file-upload-area .well.drop p small {
+.file-uploader .well.drop p small {
   display: block;
 }
-.file-upload-area .well.drop:hover {
+.file-uploader .well.drop:hover {
   cursor: pointer;
   border-color: #428bca;
   color: #428bca;
 }
-.file-upload-area .well.drop:hover p small {
+.file-uploader .well.drop:hover p small {
   text-decoration: underline;
 }
-.file-upload-area .well.drop.file-over {
+.file-uploader .well.drop.file-over {
   cursor: copy;
   border-color: #5cb85c;
   color: #5cb85c;
 }
-.file-upload-area .well.drop.file-over p.fa::before {
+.file-uploader .well.drop.file-over p.fa::before {
   content: "\f019";
 }
-.file-upload-area .well.drop.file-rejected {
+.file-uploader .well.drop.file-rejected {
   border-color: #d9534f;
   color: #d9534f;
 }
-.file-upload-area .well.drop.file-rejected p.fa::before {
+.file-uploader .well.drop.file-rejected p.fa::before {
   content: "\f05e";
 }
-.file-upload-area .file-title {
+.file-uploader .file-title {
   font-size: 1.4em;
   font-weight: bold;
   color: #555;
 }
-.file-upload-area p.file-registered {
+.file-uploader p.file-registered {
   font-size: 1.2em;
   display: inline-block;
 }
-.file-upload-area p.file-registered i {
+.file-uploader p.file-registered i {
   margin-right: 1ex;
 }
-.file-upload-area a.clear-upload {
+.file-uploader a.clear-upload {
   margin-left: 1ex;
   display: inline-block;
 }
-.file-upload-area a.clear-upload:hover i {
+.file-uploader a.clear-upload:hover i {
   font-size: 1.15em;
   color: #d9534f;
 }
-.file-upload-area .upload-area .progress-area .icons {
+.file-uploader .upload-area .progress-area .icons {
   width: 100%;
   display: -webkit-flex;
   display: flex;
   -webkit-justify-content: center;
   justify-content: center;
 }
-.file-upload-area .upload-area .progress-area i.fa-arrow-right {
+.file-uploader .upload-area .progress-area i.fa-arrow-right {
   -webkit-animation-duration: 1s;
   animation-duration: 1s;
   -webkit-animation-fill-mode: both;
@@ -10438,14 +10478,14 @@ file-uploader {
   -webkit-animation-name: wobble;
   animation-name: wobble;
 }
-.file-upload-area .upload-area .progress-area i {
+.file-uploader .upload-area .progress-area i {
   -webkit-flex-basis: auto !important;
   flex-basis: auto !important;
   margin-right: 1ex;
   font-size: 3em;
   margin-bottom: 1em;
 }
-.file-upload-area .upload-area .result-area i {
+.file-uploader .upload-area .result-area i {
   font-size: 6em;
   -webkit-animation-name: bounce-in;
   animation-name: bounce-in;
@@ -10454,11 +10494,11 @@ file-uploader {
   -webkit-animation-fill-mode: both;
   animation-fill-mode: both;
 }
-.file-upload-area .upload-area .result-area .retry-options {
+.file-uploader .upload-area .result-area .retry-options {
   font-weight: bolder;
   font-size: 1.2em;
 }
-.file-upload-area .upload-area .result-area .retry-options a:first-child {
+.file-uploader .upload-area .result-area .retry-options a:first-child {
   display: inline-block;
   margin-right: 2ex;
 }
@@ -10467,6 +10507,7 @@ pdf-panel-viewer .panel-body {
   position: relative;
   overflow: inherit !important;
   background-color: #d1d1d1;
+  height: 60vh;
 }
 pdf-panel-viewer .iframe-wrapper {
   position: absolute;
@@ -10481,6 +10522,27 @@ pdf-panel-viewer iframe {
   height: 100%;
   width: 100%;
   border: none;
+  z-index: 1;
+}
+pdf-panel-viewer .loading-icon {
+  z-index: 0;
+  position: relative;
+  left: 436px;
+  top: 193px;
+  width: 300px;
+  background-color: #4c494c;
+  -webkit-border-radius: 12px;
+  border-radius: 12px;
+  color: #fff;
+  margin-bottom: 40px;
+  padding: 20px;
+  text-align: center;
+  -webkit-box-shadow: 0 10px 12px 5px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 10px 12px 5px rgba(0, 0, 0, 0.2);
+}
+pdf-panel-viewer .loading-icon p.loading-text {
+  font-size: 19px;
+  margin: 0.5em 0;
 }
 pdf-panel-viewer .panel-footer {
   height: 60px;
@@ -11137,9 +11199,6 @@ svg.nvd3-svg {
 }
 .view-alignment .alignment-list > li header .expand-icon {
   margin-left: 2em;
-}
-.view-alignment .alignment-list > li header .label {
-  margin-right: 1em;
 }
 .view-alignment .alignment-list > li .alignment-content h5 {
   margin-top: 2em;
