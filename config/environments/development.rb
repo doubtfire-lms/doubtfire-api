@@ -31,7 +31,7 @@ Doubtfire::Application.configure do
   config.active_support.deprecation = :log
 
   # Logging level (:debug, :info, :warn, :error, :fatal)
-  config.log_level = :warn
+  config.log_level = :info
 
   config.eager_load = false
 

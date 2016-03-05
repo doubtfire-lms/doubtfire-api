@@ -717,6 +717,7 @@ class Task < ActiveRecord::Base
 
       if output_filename.nil?
         logger.error "Error processing task #{id} - missing file #{file_req}"
+        puts "Error processing task #{id} - missing file #{file_req}"
       else
         result << { path: output_filename, type: file_req['type'] }
 
@@ -804,8 +805,11 @@ class Task < ActiveRecord::Base
       self.save
 
       clear_in_process()
+      return true
     rescue => e
       logger.error "Failed to convert submission to PDF for task #{id}. Error: #{e.message}"
+      puts "Failed to convert submission to PDF for task #{id}. Error: #{e.message}"
+      return false
     end
   end
 

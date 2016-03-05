@@ -1,10 +1,6 @@
 namespace :submission do
   desc "Generate PDF files for submissions"
 
-  def logger
-    Rails.logger
-  end
-
   #
   # Returns the file that indicates if this rake process is already executing...
   #
@@ -43,6 +39,7 @@ namespace :submission do
     	 		  success = project.create_portfolio()
           rescue Exception => e
             logger.error "Failed creating portfolio for project #{project.id}!\n#{e.message}"
+            puts "Failed creating portfolio for project #{project.id}!\n#{e.message}"
             success = false
           end
 
@@ -57,6 +54,7 @@ namespace :submission do
           end
         end
       ensure
+        logger.info 'Ending generate pdf'
         end_executing
       end
     end
