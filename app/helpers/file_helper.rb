@@ -208,7 +208,7 @@ module FileHelper
       tmp_file = File.join( Dir.tmpdir, 'doubtfire', 'compress', "#{File.dirname(path).split(File::Separator).last}-file.pdf" )
       FileUtils.mkdir_p(File.join( Dir.tmpdir, 'doubtfire', 'compress' ))
 
-      exec = "#{Rails.root.join('lib', 'shell', 'timeout.sh')} -t 15 nice -n 10 gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.3 -dDetectDuplicateImages=true -dPDFSETTINGS=/screen -dNOPAUSE -dBATCH  -dQUIET -sOutputFile=\"#{tmp_file}\" \"#{path}\" >>/dev/null 2>>/dev/null"
+      exec = "#{Rails.root.join('lib', 'shell', 'timeout.sh')} -t 30 nice -n 10 gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.3 -dDetectDuplicateImages=true -dPDFSETTINGS=/screen -dNOPAUSE -dBATCH  -dQUIET -sOutputFile=\"#{tmp_file}\" \"#{path}\" >>/dev/null 2>>/dev/null"
 
       # try with ghostscript
       did_compress = system exec
