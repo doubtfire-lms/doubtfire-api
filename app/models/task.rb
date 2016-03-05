@@ -375,7 +375,7 @@ class Task < ActiveRecord::Base
           logger.debug "Grading a group submission to grade #{new_grade}"
           ensured_group_submission.propagate_grade self, new_grade, ui
         end
-        
+
         # now update this task... (may be group task or individual...)
         logger.debug "Grading task #{self.id} in a group submission to grade #{new_grade}"
         update(:grade => new_grade)
@@ -894,6 +894,7 @@ class Task < ActiveRecord::Base
 
     files.each_with_index.map do | file, idx |
       output_filename = File.join(tmp_dir, "#{idx.to_s.rjust(3, '0')}-#{file.type}#{File.extname(file.filename).downcase}")
+      FileUtils.cp file.tempfile.path, output_filename
     end
 
     #
