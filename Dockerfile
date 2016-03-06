@@ -19,5 +19,5 @@ WORKDIR /doubtfire-api
 EXPOSE 3000
 
 RUN bundle update
-RUN bundle install --without production replica
+RUN bundle install --without production test replica
 RUN rake db:create db:populate[extend_populate]

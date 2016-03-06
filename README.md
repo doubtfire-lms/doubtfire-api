@@ -365,19 +365,30 @@ You should see all the Doubtfire endpoints at **[http://localhost:3000/api/docs/
 
 ## Getting started via Docker
 
-Download docker and docker-machine
+### 1. Install Docker
 
-OS X:
-- brew install docker docker-machine docker-compose
+Download and install [Docker](https://www.docker.com), [Docker Machine](https://docs.docker.com/machine/) and [Docker Compose](https://docs.docker.com/machine/install-machine/) for your platform:
 
-Linux:
-- apt-get install docker docker-machine docker-compose
+#### OS X
 
-Windows:
-- Download and install [Git BASH](https://git-for-windows.github.io)
-- Download and install [Docker toolkit](https://www.docker.com/toolbox) and run through the [getting started guide](https://docs.docker.com/windows/step_one/)
+For OS X with [Homebrew](http://brew.sh) and [Homebrew Cask](http://caskroom.io) installed, run:
 
-Create the virtual machine
+```
+$ brew cask install virtualbox
+$ brew install docker docker-machine docker-compose
+```
+
+For OS X without Homebrew installed, you can download the [Docker toolbox](https://www.docker.com/toolbox) instead.
+
+#### Linux
+
+Install following the instructions for [Docker](https://docs.docker.com/linux/step_one/), [Docker Machine](https://docs.docker.com/machine/install-machine/), and [Docker Compose](https://docs.docker.com/compose/install/)
+
+#### Windows
+
+Download and install [Docker toolkit](https://www.docker.com/toolbox) and run through the [getting started guide](https://docs.docker.com/windows/step_one/)
+
+### 2. Create the virtual machine
 
 ```
 docker-machine create --driver virtualbox doubtfire
@@ -395,6 +406,8 @@ _or_, if you're using [Oh-My-Zsh](http://ohmyz.sh), add to your `.zshrc`:
 $ echo eval "$(docker-machine env doubtfire)" >> ~/.zshrc
 ```
 
+### 3. Clone Repos
+
 Clone the doubtfire API and web repos to the same directory:
 
 ```
@@ -402,13 +415,17 @@ $ git clone https://github.com/doubtfire-lms/doubtfire-web.git
 $ git clone https://github.com/doubtfire-lms/doubtfire-api.git
 ```
 
+### 4. Run Docker Compose
+
 Navigate to doubtfire-api and run the `docker-compose up` command to compile Doubtfire:
 
 ```
-$ docker-machine up -d
+$ docker-compose up -d
 ```
 
 This may take a while - go grab a coffee.
+
+### 5. Open Doubtfire
 
 Once installation is finished, find out the IP of your docker machine:
 
