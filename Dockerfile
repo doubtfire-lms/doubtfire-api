@@ -8,8 +8,7 @@ RUN apt-get install -y \
   libmagic-dev \
   pdftk \
   libpq-dev \
-  python-pygments \
-  texlive-full
+  python-pygments
 
 ENV RAILS_ENV docker
 

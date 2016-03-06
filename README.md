@@ -439,23 +439,43 @@ In the example above, Doubtfire is running on your Docker VM at:
 - **http://192.168.99.100:8000/** for the Web application
 - **http://192.168.99.100:3000/api/docs/** for the rails API
 
-**NOTE:** You should attach to the grunt watch server if working on the web app to view output, if in case you make a lint error. To do so, run:
+### 6. For future reference...
+
+#### Attaching to the Doubtfire containers
+
+##### Doubtfire Web
+
+You should attach to the grunt watch server if working on the web app to view output, if in case you make a lint error. To do so, run:
 
 ```
 $ docker attach doubtfire-web
 ```
 
-**NOTE:** You should attach to the rails app if working on the API to view debug output. To do so, run:
+##### Doubtfire API
+
+You should attach to the rails app if working on the API to view debug output. To do so, run:
 
 ```
 $ docker attach doubtfire-api
 ```
 
-**NOTE:** Should you need to execute any commands from inside the Docker container, such as running rake tasks, or a rails migration, use `docker exec` in the relevant container:
+#### Executing rake or grunt tasks within the Docker container
+
+Should you need to execute any commands from inside the Docker container, such as running rake tasks, or a rails migration, use `docker exec` in the relevant container:
 
 ```
 $ docker exec doubtfire-api <command>
 $ docker exec doubtfire-web <command>
+```
+
+#### Generating PDFs on the Dockerised API
+
+By default, LaTeX is not installed within the Doubtfire API container to save time and space.
+
+Should you need to install LaTeX within the container run:
+
+```
+$ docker exec doubtfire-api apt-get update && apt-get install texlive-full
 ```
 
 ## Running Rake Tasks
@@ -465,6 +485,12 @@ You can perform developer-specific tasks using `rake`. For a list of all tasks, 
 ```
 rake --tasks
 ```
+
+### PDF Generation
+
+PDF generation requires LaTeX to be installed. If you do not install LaTeX and execute the `submission:generate_pdfs` task, you will encounter errors.
+
+Install LaTeX on your platform before running this task. If using Docker, refer to the [Docker LaTeX section](#generating-pdfs-on-the-dockerised-api).
 
 ## Contributing
 
