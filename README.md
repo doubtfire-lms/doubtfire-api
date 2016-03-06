@@ -9,6 +9,7 @@ A modern, lightweight learning management system.
 1. [Getting Started](#getting-started)
   1. [...on OS X](#getting-started-on-os-x)
   2. [...on Linux](#getting-started-on-linux)
+  3. [...via Docker](#getting-started-via-docker)
 2. [Running Rake Tasks](#running-rake-tasks)
 3. [Contributing](#contributing)
 
@@ -94,7 +95,7 @@ $ sudo easy_install Pygments
 Clone project and change your working directory to the api:
 
 ```
-$ git clone https://[user]@bitbucket.org/itig/doubtfire-api.git
+$ git clone https://github.com/doubtfire-lms/doubtfire-web.git
 $ cd ./doubtfire-api
 ```
 
@@ -301,7 +302,7 @@ $ sudo apt-get install python-pygments
 Clone project and change your working directory to the api:
 
 ```
-$ git clone https://[user]@bitbucket.org/itig/doubtfire-api.git
+$ git clone https://github.com/doubtfire-lms/doubtfire-web.git
 $ cd ./doubtfire-api
 ```
 
@@ -314,7 +315,7 @@ $ bundle install --without production test replica
 
 ##### Bundle resolutions
 
-You may encounter issues when trying to install bundle dependencies. 
+You may encounter issues when trying to install bundle dependencies.
 
 ###### ruby-filemagic
 
@@ -361,6 +362,84 @@ $ rails s
 ```
 
 You should see all the Doubtfire endpoints at **[http://localhost:3000/api/docs/](http://localhost:3000/api/docs/)**, which means the API is running.
+
+## Getting started via Docker
+
+Download docker and docker-machine
+
+OS X:
+- brew install docker docker-machine docker-compose
+
+Linux:
+- apt-get install docker docker-machine docker-compose
+
+Windows:
+- Download and install [Git BASH](https://git-for-windows.github.io)
+- Download and install [Docker toolkit](https://www.docker.com/toolbox) and run through the [getting started guide](https://docs.docker.com/windows/step_one/)
+
+Create the virtual machine
+
+```
+docker-machine create --driver virtualbox doubtfire
+```
+
+Add the docker daemon to your `.bashrc`:
+
+```
+$ echo eval "$(docker-machine env doubtfire)" >> ~/.bashrc
+```
+
+_or_, if you're using [Oh-My-Zsh](http://ohmyz.sh), add to your `.zshrc`:
+
+```
+$ echo eval "$(docker-machine env doubtfire)" >> ~/.zshrc
+```
+
+Clone the doubtfire API and web repos to the same directory:
+
+```
+$ git clone https://github.com/doubtfire-lms/doubtfire-web.git
+$ git clone https://github.com/doubtfire-lms/doubtfire-api.git
+```
+
+Navigate to doubtfire-api and run the `docker-compose up` command to compile Doubtfire:
+
+```
+$ docker-machine up -d
+```
+
+This may take a while - go grab a coffee.
+
+Once installation is finished, find out the IP of your docker machine:
+
+```
+$ docker-machine ip doubtfire
+192.168.99.100
+```
+
+In the example above, Doubtfire is running on your Docker VM at:
+
+- **http://192.168.99.100:8000/** for the Web application
+- **http://192.168.99.100:3000/api/docs/** for the rails API
+
+**NOTE:** You should attach to the grunt watch server if working on the web app to view output, if in case you make a lint error. To do so, run:
+
+```
+$ docker attach doubtfire-web
+```
+
+**NOTE:** You should attach to the rails app if working on the API to view debug output. To do so, run:
+
+```
+$ docker attach doubtfire-api
+```
+
+**NOTE:** Should you need to execute any commands from inside the Docker container, such as running rake tasks, or a rails migration, use `docker exec` in the relevant container:
+
+```
+$ docker exec doubtfire-api <command>
+$ docker exec doubtfire-web <command>
+```
 
 ## Running Rake Tasks
 
