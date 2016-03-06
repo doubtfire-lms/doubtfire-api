@@ -1,0 +1,28 @@
+doubtfire:
+  container_name: doubtfire-api
+  build: .
+  command: rails s
+  ports:
+    - "3000:3000"
+    - "8000:8000"
+  volumes:
+    - ../doubtfire-api:/doubtfire-api
+  links:
+    - doubtfire_db
+    - doubtfire_web
+
+doubtfire_db:
+  container_name: doubtfire-db
+  image: postgres
+  environment:
+    POSTGRES_PASSWORD: 'd872$dh'
+    POSTGRES_USER: itig
+
+doubtfire_web:
+  container_name: doubtfire-web
+  build: ../doubtfire-web
+  command: grunt watchsvr
+  ports:
+    - "8000:8000"
+  volumes:
+    - ../doubtfire-web:/doubtfire-web
