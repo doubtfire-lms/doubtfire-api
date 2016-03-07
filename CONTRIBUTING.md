@@ -1,17 +1,19 @@
+# Doubtfire Git Workflow
 
-# Contributing
+We follow a [Gitflow workflow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow) when developing Doubtfire.
 
-We follow a [Gitflow workflow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow)
+## Table of Contents
 
-## Forking
+1. [About the Gitflow Workflow](#about-the-gitflow-workflow)
+2. [Getting Started with the workflow](getting-started-with-the-workflow)
+3. [Branch Prefixes](#branch-prefixes)
+4. [Writing Commit Messages](#writing-commit-messages)
+  1. [Prefix your commit subject line with a tag](#prefix-your-commit-subject-line-with-a-tag)
+  2. [Formatting your message](#formatting-your-message)
+  3. [Use the imperative mood in your commit subject line](#use-the-imperative-mood-in-your-commit-subject-line)
+  4. [Subject and body lines](#subject-and-body-lines)
 
-If you do not have direct write access, please fork this repository.
-
-When you are happy with your changes, submit a pull request for code review.
-
-## Branching
-
-### Gitflow Workflow
+## About the Gitflow Workflow
 
 ![Feature Branches](http://puu.sh/lP4eT/43f3131730.png)
 
@@ -72,7 +74,132 @@ Note that along the way **we're deleting branches after we don't need them**. Th
 
 Ideally, any changes that are merged into `master` have been **code-reviewed** before they were merged into `develop`. **You should always code review before merging back into `develop`**. You can do this by performing a Pull Request, where the reviewer can see the changes you want to merge in to `develop`.
 
-### Branch Prefixes
+## Getting Started with the workflow
+
+### Forking and Cloning the repository
+
+To get a copy of a Doubtfire repositories on your user account, you will need to fork it *for each repository*:
+
+![Fork the repo](http://puu.sh/nxPqN/68e50046d2.png)
+
+You can then clone the repo(s) using from your fork. To do so, navigate to your forked repo(s) and copy the clone URL:
+
+![Copy the clone URL](http://puu.sh/nxPy9/a360d7c755.png)
+
+Navigate to your projects or repo folder, and make a doubtfire folder. Then clone each of the repos:
+
+```
+$ cd ~/repos
+$ mkdir doubtfire
+$ git clone https://github.com/freddy/doubtfire-api.git
+$ git clone https://github.com/freddy/doubtfire-web.git
+```
+
+By default, git sets a remote access to push and pull code from this forked repo. This remote is called `origin`.
+
+You will then need to set up a new remote to point to the original Doubtfire repo. This will be useful when you need to get the latest changes other developers have contributed to the Doubtfire repo, but you do not yet have those changes in your forked repo. Call this remote `upsteam`:
+
+```
+$ cd ~/repos/doubtfire/doubtfire-api
+$ git remote add upstream https://github.com/doubtfire-lms/doubtfire-api.git
+$ cd ~/repos/doubtfire/doubtfire-web
+$ git remote add upstream https://github.com/doubtfire-lms/doubtfire-web.git
+```
+
+### Writing your new changes
+
+We **strongly advise** you branch off of `develop` to a new branch that will have your code changes in it. When branching, **be sure you are using a [branch prefix](#branch-prefixes)**:
+
+```
+$ cd ~/repos/doubtfire/doubtfire-api
+$ git checkout -b feature/my-awesome-new-feature
+```
+
+You can now begin making your changes. Commit along the way, **being sure to conform to the [commit message guidelines](#writing-commit-messages)**, on this branch and push to your fork:
+
+```
+$ git status
+
+On branch feature/my-awesome-new-feature
+Your branch is up-to-date with 'origin/feature/my-awesome-new-feature'.
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git checkout -- <file>..." to discard changes in working directory)
+
+  modified:   src/file-that-changed.js
+  modified:   src/another-file-that-changed.js
+
+$ git add src/file-that-changed.js src/another-file-that-changed.js
+$ git commit
+
+[feature/my-awesome-new-feature 7f35016] DOCS: Add new documentation about git
+ 2 files changed, 10 insertions(+), 15 deletions(-)
+
+$ git push origin feature/my-awesome-new-feature
+```
+
+### Merge your changes back into your forked `develop`
+
+When you are done with your changes, you need to pull any changes from `develop` from `upstream`. This essentially means "get me anything that has changed on the `doubtfire-lms` repos that I don't yet have".
+
+To do this, checkout develop and pull from upstream:
+
+```
+$ git checkout develop
+$ git pull upstream develop
+```
+
+Now you can merge your branch into develop, and resolve any merge conflicts you may have.
+
+```
+$ git merge feature/my-awesome-new-feature
+```
+
+We can now update your `origin`'s `develop` on GitHub such that it will include your latest changes:
+
+```
+$ git push origin develop
+```
+
+### Submitting a Pull Request (PR) to Doubtfire LMS
+
+Once you have pushed your changes to your fork, and have ensured nothing has broken, you can then submit a pull request for code review to Doubtfire.
+
+To submit a pull request, go to the relevant Doubtfire LMS Repo and click "New Pull Request":
+
+![New PR](http://puu.sh/nxQu0/77cd489a7f.png)
+
+Ensure that the **Head Fork** is set to your forked repo. If you cannot see your repo, try clicking the "Compare across forks" link.
+
+![Compare forks](http://puu.sh/nxQHG/a8c6ddd765.png)
+
+You can then begin writing the pull request. Be sure you are **Able to Merge**, otherwise try repeating an upstream pull (see the first code example in the [previous step](#merge-your-changes-back-into-your-forked-develop)).
+
+![Writing a Pull Request](http://puu.sh/nxR8z/a27e1aa222.png)
+
+With your PR body, be descriptive. GitHub may automatically add a commit summary in the body. If fixing a problem, include a description of the problem you're trying to fix and why this PR fixes it. When you are done, assign a code reviewer and add a tag (if applicable) and create the pull request!
+
+If your code is ok, it will be merged into `develop` (and eventually `master`, meaning your code will go live - woohoo :tada:)
+
+If not, the reviewer will give you suggestions and feedback for you to fix your code.
+
+### Cleaning Up
+
+Once your pull request is approved and your code changes are finalised, you may want to consider deleting your old feature branch so you don't get lots of old branches on your repository.
+
+Following from the example above, we would delete `feature/my-awesome-new-feature` as it has been merged into `develop`. We first delete the branch locally:
+
+```
+$ git branch -D feature/my-new-awesome-feature
+```
+
+Then remove it from your fork on GitHub:
+
+```
+$ git push origin --delete feature/my-new-awesome-feature
+```
+
+## Branch Prefixes
 
 When branching, try to prefix your branch with one of the following:
 
@@ -88,27 +215,29 @@ Prefix     | Description                                                        
 `speed/`   | Performance-related improvements                                          | `speed/new-algorithm-to-process-foo`
 `test/`    | Test addition or enhancement                                              | `test/unit-tests-for-new-feature-x`
 
-## Commits
+## Writing Commit Messages
+
+Parts of this section have been adapted from Chris Beam's post, [How to Write Good Commit Messages](http://chris.beams.io/posts/git-commit/).
 
 When writing commits, try to follow this guide:
 
-### Prefix your commits message subjects with tags
+### Prefix your commit subject line with a tag
 
 Each one of your commit messages should be prefixed with one of the following:
 
 Tag        | Description                                                               | Example
 -----------|---------------------------------------------------------------------------|--------------------------------------------------------------------
-`NEW`      | New feature was added                                                     | _**NEW** Add unit outcome alignment tab_
-`​FIX`      | A bug was fixed                                                           | _**FIX** Amend typo throwing error_
-`​​ENHANCE`  | Improvement to existing feature, but not visual enhancement (See `LOOKS`) | _**ENHACNE** Calculate time between classes to show on timetable_
-`​LOOKS`    | UI Refinement, but not functional change (See `ENHANCE`)                  | _**LOOKS** Make plagiarism tab consistent with other tabs_
-`​QUALITY`  | Refactoring of existing code                                              | _**QUALITY** Make directives in consistent format with eachother_
-`​DOC`      | Documentation-related changes                                             | _**DOC** Write guide on writing commit messages_
-`CONFIG`   | Project configuration changes                                             | _**CONFIG** Add new scheme for UI automation testing_
-`​SPEED`    | Performance-related improvements                                          | _**SPEED** Reduce time needed to batch process PDF submissions_
-`TEST`     | Test addition or enhancement                                              | _**TEST** Add unit tests for tutorial administration_
+`NEW`      | New feature was added                                                     | **NEW:** Add unit outcome alignment tab
+`​FIX`      | A bug was fixed                                                           | **FIX:** Amend typo throwing error
+`​​ENHANCE`  | Improvement to existing feature, but not visual enhancement (See `LOOKS`) | **ENHACNE:** Calculate time between classes to show on timetable
+`​LOOKS`    | UI Refinement, but not functional change (See `ENHANCE`)                  | **LOOKS:** Make plagiarism tab consistent with other tabs
+`​QUALITY`  | Refactoring of existing code                                              | **QUALITY:** Make directives in consistent format with eachother
+`​DOC`      | Documentation-related changes                                             | **DOC:** Write guide on writing commit messages
+`CONFIG`   | Project configuration changes                                             | **CONFIG:** Add new scheme for UI automation testing
+`​SPEED`    | Performance-related improvements                                          | **SPEED:** Reduce time needed to batch process PDF submissions
+`TEST`     | Test addition or enhancement                                              | **TEST:** Add unit tests for tutorial administration
 
-### Formatting your messages
+### Formatting your message
 
 Capitalise your commit messages and do not end the subject line with a period
 
@@ -122,7 +251,7 @@ and not
 fix: change the behaviour of the logging system.
 ```
 
-### Use the imperative mood in your commit message subjects
+### Use the imperative mood in your commit subject line
 
 Write your commits in the imperative mood and not the indicative mood
 
