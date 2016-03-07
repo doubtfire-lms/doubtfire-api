@@ -344,7 +344,12 @@ class Task < ActiveRecord::Base
   #
   # Tries to grade the task if it is a graded task
   #
-  def grade_task(new_grade, ui, grading_group = false)
+  def grade_task(new_grade, ui = nil, grading_group = false)
+    raise_error = lambda { |message|
+      ui.error!({"error" => message}, 403) unless ui.nil?
+      raise message
+    }
+
     grade_map = {
       'p'  => 0,
       'c'  => 1,
@@ -353,22 +358,22 @@ class Task < ActiveRecord::Base
     }
     if task_definition.is_graded
       if new_grade.nil?
-        ui.error!({"error" => "No grade was supplied for a graded task (task id #{self.id})"}, 403)
+        raise_error.call("No grade was supplied for a graded task (task id #{self.id})")
       else
         # validate (and convert if need be) new_grade
         unless new_grade.is_a?(String) || new_grade.is_a?(Integer)
-          ui.error!({"error" => "New grade supplied to task is not a string or integer (task id #{self.id})"}, 403)
+          raise_error.call("New grade supplied to task is not a string or integer (task id #{self.id})")
         end
         if new_grade.is_a?(String)
           unless grade_map.keys.include?(new_grade.downcase)
-            ui.error!({"error" => "New grade supplied to task is not an invalid string - expects one of {p|c|d|hd} (task id #{self.id})"}, 403)
+            raise_error.call("New grade supplied to task is not an invalid string - expects one of {p|c|d|hd} (task id #{self.id})")
           else
             # convert string representation to integer representation
             new_grade = grade_map[new_grade]
           end
         end
         unless new_grade.is_a?(Integer) && grade_map.values.include?(new_grade.to_i)
-          ui.error!({"error" => "New grade supplied to task is not an invalid integer - expects one of {0|1|2|3} (task id #{self.id})"}, 403)
+          raise_error.call("New grade supplied to task is not an invalid integer - expects one of {0|1|2|3} (task id #{self.id})")
         end
         # propagate new grade to all OTHER group members
         if group_task? && !grading_group
@@ -381,7 +386,7 @@ class Task < ActiveRecord::Base
         update(:grade => new_grade)
       end
     elsif grade?
-      ui.error!({"error" => "Grade was supplied for a non-graded task (task id #{self.id})"}, 403)
+      raise_error.call("Grade was supplied for a non-graded task (task id #{self.id})")
     end
   end
 

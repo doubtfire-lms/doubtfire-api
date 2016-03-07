@@ -168,6 +168,7 @@ module Api::Submission::GenerateHelpers
           errors << {row: task_entry, message: "Unable to find original submission for group task."}
           next
         end
+
         submitter_task = subm.submitter_task
         if submitter_task.nil?
           errors << {row: task_entry, message: "Unable to find original submission for group task."}
@@ -185,11 +186,16 @@ module Api::Submission::GenerateHelpers
           break
         end
 
-        submitter_task.trigger_transition(task_entry['status'], current_user) # saves task
-        submitter_task.grade_task(task_entry['new grade']) # try to grade task if need be
-        success << { row: task_entry, message:"Updated group task #{submitter_task.task_definition.abbreviation} for #{group.name}" }
-        if not (task_entry['new comment'].nil? || task_entry['new comment'].empty?)
-          submitter_task.add_comment current_user, task_entry['new comment']
+        begin
+          submitter_task.trigger_transition(task_entry['status'], current_user) # saves task
+          submitter_task.grade_task(task_entry['new grade']) # try to grade task if need be
+          success << { row: task_entry, message:"Updated group task #{submitter_task.task_definition.abbreviation} for #{group.name}" }
+          if not (task_entry['new comment'].nil? || task_entry['new comment'].empty?)
+            submitter_task.add_comment current_user, task_entry['new comment']
+          end
+        rescue Exception => e
+          errors << { row: task_entry, message: e.message }
+          break
         end
 
         subm.tasks.each do | task |
@@ -212,19 +218,24 @@ module Api::Submission::GenerateHelpers
           next
         end
 
-        task.trigger_transition(task_entry['status'], current_user) # saves task
-        task.grade_task(task_entry['new grade']) # try to grade task if need be
+        begin
+          task.trigger_transition(task_entry['status'], current_user) # saves task
+          task.grade_task(task_entry['new grade']) # try to grade task if need be
 
-        if not (task_entry['new comment'].nil? || task_entry['new comment'].empty?)
-          success << { row: task_entry, message:"Updated task #{task.task_definition.abbreviation} for #{task.student.name}" }
-          if task.last_comment.nil? || task.last_comment.comment != task_entry['new comment']
-            task.add_comment current_user, task_entry['new comment']
-            success << { row: task_entry, message:"Added comment to #{task.task_definition.abbreviation} for #{task.student.name}" }
+          if not (task_entry['new comment'].nil? || task_entry['new comment'].empty?)
+            success << { row: task_entry, message:"Updated task #{task.task_definition.abbreviation} for #{task.student.name}" }
+            if task.last_comment.nil? || task.last_comment.comment != task_entry['new comment']
+              task.add_comment current_user, task_entry['new comment']
+              success << { row: task_entry, message:"Added comment to #{task.task_definition.abbreviation} for #{task.student.name}" }
+            else
+              ignored << { row: task_entry, message:"Skipped comment to #{task.task_definition.abbreviation} for #{task.student.name} -- duplicates last comment." }
+            end
           else
-            ignored << { row: task_entry, message:"Skipped comment to #{task.task_definition.abbreviation} for #{task.student.name} -- duplicates last comment." }
+            success << { row: task_entry, message:"Updated task #{task.task_definition.abbreviation} for #{task.student.name} (no new comment)" }
           end
-        else
-          success << { row: task_entry, message:"Updated task #{task.task_definition.abbreviation} for #{task.student.name} (no new comment)" }
+        rescue Exception => e
+          errors << { row: task_entry, message: e.message }
+          break
         end
 
         # add to done projects for emailing
