@@ -5,7 +5,7 @@ We follow a [Gitflow workflow](https://www.atlassian.com/git/tutorials/comparing
 ## Table of Contents
 
 1. [About the Gitflow Workflow](#about-the-gitflow-workflow)
-2. [Getting Started with the workflow](getting-started-with-the-workflow)
+2. [Getting Started with the workflow](#getting-started-with-the-workflow)
 3. [Branch Prefixes](#branch-prefixes)
 4. [Writing Commit Messages](#writing-commit-messages)
   1. [Prefix your commit subject line with a tag](#prefix-your-commit-subject-line-with-a-tag)
