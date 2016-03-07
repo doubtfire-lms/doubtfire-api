@@ -420,7 +420,7 @@ $ git clone https://github.com/doubtfire-lms/doubtfire-api.git
 Navigate to doubtfire-api and run the `docker-compose up` command to compile Doubtfire:
 
 ```
-$ docker-compose up -d
+$ docker-compose -p doubtfire up -d
 ```
 
 This may take a while - go grab a coffee.
