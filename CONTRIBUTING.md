@@ -197,6 +197,12 @@ Then remove it from your fork on GitHub:
 $ git push origin --delete feature/my-awesome-new-feature
 ```
 
+Then ensure you are git is no longer tracking the deleted branch by running a fetch prune:
+
+```
+$ git fetch --prune
+```
+
 ## Branch Prefixes
 
 When branching, try to prefix your branch with one of the following:
