@@ -1,11 +1,11 @@
 # Doubtfire Git Workflow
 
-We follow a [Gitflow workflow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow) when developing Doubtfire.
+We follow a [Forking workflow](https://www.atlassian.com/git/tutorials/comparing-workflows/forking-workflow) when developing Doubtfire.
 
 ## Table of Contents
 
-1. [About the Gitflow Workflow](#about-the-gitflow-workflow)
-2. [Getting Started with the workflow](#getting-started-with-the-workflow)
+1. [About the Doubtfire Branch Structure](#about-the-doubtfire-branch-structure)
+2. [Getting started with the Forking Workflow](#getting-started-with-the-workflow)
 3. [Branch Prefixes](#branch-prefixes)
 4. [Writing Commit Messages](#writing-commit-messages)
   1. [Prefix your commit subject line with a tag](#prefix-your-commit-subject-line-with-a-tag)
@@ -13,7 +13,7 @@ We follow a [Gitflow workflow](https://www.atlassian.com/git/tutorials/comparing
   3. [Use the imperative mood in your commit subject line](#use-the-imperative-mood-in-your-commit-subject-line)
   4. [Subject and body lines](#subject-and-body-lines)
 
-## About the Gitflow Workflow
+## About the Doubtfire Branch Structure
 
 ![Feature Branches](http://puu.sh/lP4eT/43f3131730.png)
 
@@ -74,7 +74,7 @@ Note that along the way **we're deleting branches after we don't need them**. Th
 
 Ideally, any changes that are merged into `master` have been **code-reviewed** before they were merged into `develop`. **You should always code review before merging back into `develop`**. You can do this by performing a Pull Request, where the reviewer can see the changes you want to merge in to `develop`.
 
-## Getting Started with the workflow
+## Getting started with the Forking Workflow
 
 ### Forking and Cloning the repository
 
@@ -82,22 +82,23 @@ To get a copy of a Doubtfire repositories on your user account, you will need to
 
 ![Fork the repo](http://puu.sh/nxPqN/68e50046d2.png)
 
-You can then clone the repo(s) using from your fork. To do so, navigate to your forked repo(s) and copy the clone URL:
+You can then clone the repositories you have forked to your machine. To do so, navigate to your forked repositories and copy the clone URL:
 
 ![Copy the clone URL](http://puu.sh/nxPy9/a360d7c755.png)
 
-Navigate to your projects or repo folder, and make a doubtfire folder. Then clone each of the repos:
+Navigate to your `projects` or `repo` folder, and make a `doubtfire` folder. Then clone using the URLs you copied above:
 
 ```
 $ cd ~/repos
 $ mkdir doubtfire
-$ git clone https://github.com/freddy/doubtfire-api.git
-$ git clone https://github.com/freddy/doubtfire-web.git
+$ cd doubtfire
+$ git clone https://github.com/{username}/doubtfire-api.git
+$ git clone https://github.com/{username}/doubtfire-web.git
 ```
 
-By default, git sets a remote access to push and pull code from this forked repo. This remote is called `origin`.
+By default, git tracks your remote forked repository (the repository you cloned). This remote is called `origin`.
 
-You will then need to set up a new remote to point to the original Doubtfire repo. This will be useful when you need to get the latest changes other developers have contributed to the Doubtfire repo, but you do not yet have those changes in your forked repo. Call this remote `upsteam`:
+You will then need to set up a new remote to track to the `doubfire-lms` owned repository. This will be useful when you need to get the latest changes other developers have contributed to the `doubtfire-lms` repo, but you do not yet have those changes in your forked repo. Call this remote `upstream`:
 
 ```
 $ cd ~/repos/doubtfire/doubtfire-api
@@ -108,7 +109,7 @@ $ git remote add upstream https://github.com/doubtfire-lms/doubtfire-web.git
 
 ### Writing your new changes
 
-We **strongly advise** you branch off of `develop` to a new branch that will have your code changes in it. When branching, **be sure you are using a [branch prefix](#branch-prefixes)**:
+As per the [branching structure](#about-the-doubtfire-branch-structure), you need to branch off of `develop` to a new branch that will have your code changes in it. When branching, **be sure you are using a [branch prefix](#branch-prefixes)**:
 
 ```
 $ cd ~/repos/doubtfire/doubtfire-api
@@ -135,33 +136,30 @@ $ git commit
 [feature/my-awesome-new-feature 7f35016] DOCS: Add new documentation about git
  2 files changed, 10 insertions(+), 15 deletions(-)
 
+$ git push -u origin feature/my-awesome-new-feature
+```
+
+Note you only need to add the `-u` flag on an initial commit for a new branch.
+
+### Resolve pull request conflicts
+
+When you are done with your changes, you need to pull any changes from `develop` from the `upstream` repository. This essentially means "get me anything that has changed on the `doubtfire-lms` repository that I don't yet have".
+
+To do this, pull any changes (if any) from the `upstream` repository's `develop` branch into your local `develop` branch:
+
+```
+$ git pull --rebase upstream develop
+```
+
+If there are merge conflicts, you can resolve them now. Follow GitHub's [guide](https://help.github.com/articles/resolving-a-merge-conflict-from-the-command-line) for resolving merge conflicts.
+
+We can now update your `origin` repository's `my-awesome-new-feature` on GitHub such that it will include the changes from `upstream`:
+
+```
 $ git push origin feature/my-awesome-new-feature
 ```
 
-### Merge your changes back into your forked `develop`
-
-When you are done with your changes, you need to pull any changes from `develop` from `upstream`. This essentially means "get me anything that has changed on the `doubtfire-lms` repos that I don't yet have".
-
-To do this, checkout develop and pull from upstream:
-
-```
-$ git checkout develop
-$ git pull upstream develop
-```
-
-Now you can merge your branch into develop, and resolve any merge conflicts you may have.
-
-```
-$ git merge feature/my-awesome-new-feature
-```
-
-We can now update your `origin`'s `develop` on GitHub such that it will include your latest changes:
-
-```
-$ git push origin develop
-```
-
-### Submitting a Pull Request (PR) to Doubtfire LMS
+### Submitting a Pull Request (PR) to the upstream repository
 
 Once you have pushed your changes to your fork, and have ensured nothing has broken, you can then submit a pull request for code review to Doubtfire.
 
@@ -169,17 +167,17 @@ To submit a pull request, go to the relevant Doubtfire LMS Repo and click "New P
 
 ![New PR](http://puu.sh/nxQu0/77cd489a7f.png)
 
-Ensure that the **Head Fork** is set to your forked repo. If you cannot see your repo, try clicking the "Compare across forks" link.
+Ensure that the **Head Fork** is set to your forked repository and on your feature branch. If you cannot see your repository, try clicking the "Compare across forks" link.
 
-![Compare forks](http://puu.sh/nxQHG/a8c6ddd765.png)
+![Compare forks](http://puu.sh/nyYF5/22d554103e.png)
 
-You can then begin writing the pull request. Be sure you are **Able to Merge**, otherwise try repeating an upstream pull (see the first code example in the [previous step](#merge-your-changes-back-into-your-forked-develop)).
+You can then begin writing the pull request. Be sure you are **Able to Merge**, otherwise try repeating an upstream pull (see the first code example in the [previous step](#resolve-pull-request-conflicts)).
 
-![Writing a Pull Request](http://puu.sh/nxR8z/a27e1aa222.png)
+![Writing a Pull Request](http://puu.sh/nyYEd/8d3c8789a6.png)
 
 With your PR body, be descriptive. GitHub may automatically add a commit summary in the body. If fixing a problem, include a description of the problem you're trying to fix and why this PR fixes it. When you are done, assign a code reviewer and add a tag (if applicable) and create the pull request!
 
-If your code is ok, it will be merged into `develop` (and eventually `master`, meaning your code will go live - woohoo :tada:)
+If your code is ok, it will be merged into `develop`, (and eventually `master`, meaning your code will go live - woohoo :tada:)
 
 If not, the reviewer will give you suggestions and feedback for you to fix your code.
 
@@ -190,13 +188,13 @@ Once your pull request is approved and your code changes are finalised, you may 
 Following from the example above, we would delete `feature/my-awesome-new-feature` as it has been merged into `develop`. We first delete the branch locally:
 
 ```
-$ git branch -D feature/my-new-awesome-feature
+$ git branch -D feature/my-awesome-new-feature
 ```
 
 Then remove it from your fork on GitHub:
 
 ```
-$ git push origin --delete feature/my-new-awesome-feature
+$ git push origin --delete feature/my-awesome-new-feature
 ```
 
 ## Branch Prefixes
