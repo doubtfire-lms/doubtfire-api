@@ -9,14 +9,14 @@ namespace :db do
         return result
       else
         profile = {
-          first_name:   Faker::Name.first_name,
-          last_name:    Faker::Name.last_name,
-          nickname:     username,
-          role_id:  Role.student_id,
-          email:        "#{username}@doubtfire.com",
-          username:     username,
-          password:     'password',
-          password_confirmation: 'password'
+          first_name:             Faker::Name.first_name,
+          last_name:              Faker::Name.last_name,
+          nickname:               username,
+          role_id:                Role.student_id,
+          email:                  "#{username}@doubtfire.com",
+          username:               username,
+          password:               'password',
+          password_confirmation:  'password'
         }
 
         result = User.create!(profile)
@@ -160,14 +160,13 @@ namespace :db do
           # 1 to 3
           case rand(1..100)
           when 0..60
-            task.assess TaskStatus.working_on_it, tutor, Time.zone.now
+            task.assess tatus.working_on_it, tutor, Time.zone.now
           when 60..75
             task.assess TaskStatus.need_help, tutor, Time.zone.now
           end
         end
 
         p.calc_task_stats
-        # puts p.assigned_tasks.map { |e| "#{e.task_definition.abbreviation} #{e.completion_date}"  }
         p.save
       end
     end
@@ -214,8 +213,6 @@ namespace :db do
       :admin
     ]
 
-    # puts "----> ILO's"
-
     puts "----> Adding Roles"
     role_cache = {}
     roles.each do |role|
@@ -223,16 +220,16 @@ namespace :db do
     end
 
     users = {
-      acain:              {first_name: "Andrew",         last_name: "Cain",                 nickname: "Macite",     role_id: Role.admin_id},
-      cwoodward:          {first_name: "Clinton",        last_name: "Woodward",             nickname: "The Giant",  role_id: Role.admin_id},
-      ajones:             {first_name: "Allan",          last_name: "Jones",                nickname: "P-Jiddy",    role_id: Role.convenor_id},
-      rwilson:            {first_name: "Reuben",          last_name: "Wilson",               nickname: "Reubs",     role_id: Role.convenor_id},
-      akihironoguchi:     {first_name: "Akihiro",        last_name: "Noguchi",              nickname: "Animations", role_id: Role.tutor_id},
-      cliff:              {first_name: "Cliff",          last_name: "Warren",               nickname: "AvDongle",   role_id: Role.tutor_id},
-      joostfunkekupper:   {first_name: "Joost",          last_name: "Funke Kupper",         nickname: "Joe",        role_id: Role.tutor_id},
-      angusmorton:        {first_name: "Angus",          last_name: "Morton",               nickname: "Angus",      role_id: Role.tutor_id},
-      alexcu:             {first_name: "Alex",          last_name: "Cummaudo",              nickname: "Angus",      role_id: Role.convenor_id},
-      "123456X" =>        {first_name: "Fred",          last_name: "Jones",                 nickname: "Foo",        role_id: Role.student_id}
+      acain:              {first_name: "Andrew",         last_name: "Cain",                 nickname: "Macite",         role_id: Role.admin_id},
+      cwoodward:          {first_name: "Clinton",        last_name: "Woodward",             nickname: "The Giant",      role_id: Role.admin_id},
+      ajones:             {first_name: "Allan",          last_name: "Jones",                nickname: "P-Jiddy",        role_id: Role.convenor_id},
+      rwilson:            {first_name: "Reuben",         last_name: "Wilson",               nickname: "Reubs",          role_id: Role.convenor_id},
+      akihironoguchi:     {first_name: "Akihiro",        last_name: "Noguchi",              nickname: "Animations",     role_id: Role.tutor_id},
+      acummaudo:          {first_name: "Alex",           last_name: "Cummaudo",             nickname: "Angus",          role_id: Role.convenor_id},
+      cliff:              {first_name: "Cliff",          last_name: "Warren",               nickname: "DoubtfireDude",  role_id: Role.tutor_id},
+      joostfunkekupper:   {first_name: "Joost",          last_name: "Funke Kupper",         nickname: "Joe",            role_id: Role.tutor_id},
+      angusmorton:        {first_name: "Angus",          last_name: "Morton",               nickname: "Angus",          role_id: Role.tutor_id},
+      "123456X" =>        {first_name: "Fred",           last_name: "Jones",                nickname: "Foo",            role_id: Role.student_id}
     }
 
     10.times do |count|
@@ -250,46 +247,32 @@ namespace :db do
           { user: :cwoodward, num: many_tutorials},
           { user: :ajones, num: many_tutorials},
           { user: :rwilson, num: many_tutorials},
+          { user: :acummaudo, num: some_tutorials},
           { user: :akihironoguchi, num: many_tutorials},
           { user: :joostfunkekupper, num: many_tutorials},
           { user: :angusmorton, num: some_tutorials},
-          { user: :alexcu, num: some_tutorials},
-          { user: "tutor_3", num: some_tutorials},
-          { user: "tutor_4", num: some_tutorials},
           { user: :cliff, num: some_tutorials},
-          # { user: "tutor_6", num: 4},
-          # { user: "tutor_7", num: 4},
-          # { user: "tutor_8", num: 4},
-          # { user: "tutor_9", num: 4},
-          # { user: "tutor_10", num: 4},
         ],
         num_tasks: some_tasks,
-        ilos: [
-          { ilo_number: 1, abbreviation: 'ILO-1', name: "Create Programs", description: "1. Use compiler\n1. Create code" },
-          { ilo_number: 2, abbreviation: 'ILO-2', name: "Test Programs", description: "1. Run program\n1. Check results\n1. Fix code" }
-        ],
+        ilos: rand(0..3),
         students: [ ]
       },
       oop: {
         code: "COS20007",
         name: "Object Oriented Programming",
-        convenors: [ :acain, :cwoodward, :ajones ],
+        convenors: [ :acain, :cwoodward, :ajones, :acummaudo ],
         tutors: [
           { user: "tutor_1", num: few_tutorials },
-          { user: :alexcu, num: few_tutorials },
           { user: :angusmorton, num: few_tutorials },
           { user: :akihironoguchi, num: few_tutorials },
           { user: :joostfunkekupper, num: few_tutorials },
         ],
         num_tasks: many_task,
-        ilos: [
-          { ilo_number: 1, abbreviation: 'ILO-1', name: "Create Programs", description: "1. Use compiler\n1. Create code" },
-          { ilo_number: 2, abbreviation: 'ILO-2', name: "Test Programs", description: "1. Run program\n1. Check results\n1. Fix code" }
-        ],
+        ilos: rand(0..3),
         students: [ :cliff ]
       },
       ai4g: {
-        code: "COS03046",
+        code: "COS30046",
         name: "Artificial Intelligence for Games",
         convenors: [ :cwoodward ],
         tutors: [
@@ -297,24 +280,18 @@ namespace :db do
           { user: :cliff, num: few_tutorials },
         ],
         num_tasks: few_tasks,
-        ilos: [
-          { ilo_number: 1, abbreviation: 'ILO-1', name: "Create Programs", description: "1. Use compiler\n1. Create code" },
-          { ilo_number: 2, abbreviation: 'ILO-2', name: "Test Programs", description: "1. Run program\n1. Check results\n1. Fix code" }
-        ],
-        students: [ :acain, :ajones, :alexcu ]
+        ilos: rand(0..3),
+        students: [ :acummaudo ]
       },
       gameprog: {
-        code: "COS03243",
+        code: "COS30243",
         name: "Game Programming",
-        convenors: [ :cwoodward, :alexcu ],
+        convenors: [ :cwoodward, :acummaudo ],
         tutors: [
           { user: :cwoodward, num: few_tutorials },
         ],
         num_tasks: few_tasks,
-        ilos: [
-          { ilo_number: 1, abbreviation: 'ILO-1', name: "Create Programs", description: "1. Use compiler\n1. Create code" },
-          { ilo_number: 2, abbreviation: 'ILO-2', name: "Test Programs", description: "1. Run program\n1. Check results\n1. Fix code" }
-        ],
+        ilos: rand(0..3),
         students: [ :acain, :ajones ]
       },
     }
@@ -342,9 +319,9 @@ namespace :db do
     users.each do |user_key, profile|
       username = user_key.to_s
 
-      profile[:role_id] ||= Role.student_id
-      profile[:email]       ||= "#{username}@doubtfire.com"
-      profile[:username]    ||= username
+      profile[:role_id]   ||= Role.student_id
+      profile[:email]     ||= "#{username}@doubtfire.com"
+      profile[:username]  ||= username
 
       user = User.create!(profile.merge({password: 'password', password_confirmation: 'password'}))
       user_cache[user_key] = user
@@ -356,14 +333,14 @@ namespace :db do
         return user_cache[username]
       else
         profile = {
-          first_name:   Faker::Name.first_name,
-          last_name:    Faker::Name.last_name,
-          nickname:     username,
-          role_id:  Role.student_id,
-          email:        "#{username}@doubtfire.com",
-          username:     username,
-          password:     'password',
-          password_confirmation: 'password'
+          first_name:             Faker::Name.first_name,
+          last_name:              Faker::Name.last_name,
+          nickname:               username,
+          role_id:                Role.student_id,
+          email:                  "#{username}@doubtfire.com",
+          username:               username,
+          password:               'password',
+          password_confirmation:  'password'
         }
 
         user = User.create!(profile)
@@ -371,31 +348,6 @@ namespace :db do
         return user
       end
     }
-
-    # print "----> Adding Students "
-    # 1000.times do | count |
-    #   username = "student_#{count}"
-
-    #   if count % 100 == 0
-    #     print '.'
-    #   end
-
-    #   profile = {
-    #     first_name:   Faker::Name.first_name,
-    #     last_name:    Faker::Name.last_name,
-    #     nickname:     "stud_#{count}",
-    #     system_role:  'basic',
-    #     email:        "#{username}@doubtfire.com",
-    #     username:     username,
-    #     password:     'password',
-    #     password_confirmation: 'password',
-    #   }
-
-    #   user = User.create!(profile)
-    #   user_cache[username] = user
-    # end
-    # puts '!'
-
 
     puts "----> Adding Units"
     # Create projects (units) for each of the values in unit_data
@@ -411,6 +363,7 @@ namespace :db do
 
       puts "--------> #{unit_details[:num_tasks]} tasks"
       # Create tasks for unit
+      task_def_cache = {}
       unit_details[:num_tasks].times do |count|
         up_reqs = []
         rand(1..4).times.each_with_index do | file, idx |
@@ -419,7 +372,9 @@ namespace :db do
         puts "----------> task #{count} has #{up_reqs.length} files to upload"
         target_date = unit.start_date + ((count + 1) % 12).weeks # Assignment 6 due week 6, etc.
         start_date = target_date - rand(1.0..2.0).weeks
-        TaskDefinition.create(
+        # Make sure at least 30% of the tasks are pass
+        target_grade = task_def_cache.length > (unit_details[:num_tasks] / 3) ? rand(0..3) : 0
+        task_def = TaskDefinition.create(
           name: "Assignment #{count + 1}",
           abbreviation: "A#{count + 1}",
           unit_id: unit.id,
@@ -427,14 +382,40 @@ namespace :db do
           weighting: BigDecimal.new("2"),
           target_date: target_date,
           upload_requirements: up_reqs.to_json,
-          start_date: start_date
+          start_date: start_date,
+          target_grade: target_grade
         )
+        task_def_cache[task_def.id] = task_def
       end
 
-      puts "--------> Adding ILOs"
-      unit_details[:ilos].each do |ilo_params|
-        ilo_params['unit_id'] = unit.id
-        LearningOutcome.create!(ilo_params)
+      puts "--------> Adding #{unit_details[:ilos]} ILOs"
+      ilo_cache = {}
+      unit_details[:ilos].times do |index|
+        ilo = LearningOutcome.create!(
+          unit_id: unit.id,
+          ilo_number: index + 1,
+          abbreviation: Faker::Lorem.word.upcase[0..3],
+          name: Populator.words(1..4).capitalize,
+          description:  Populator.words(10..15)
+        )
+        ilo_cache[ilo.id] = ilo
+      end
+
+      if unit_details[:ilos] > 0
+        puts "--------> Aligning Tasks to ILOs"
+        20.times do
+          ilo_id = unit.learning_outcomes.pluck('id').sample
+          task_def_id = unit.task_definition_ids.sample
+          link = LearningOutcomeTaskLink.find_or_create_by(
+            task_definition_id: task_def_id,
+            learning_outcome_id: ilo_id,
+            task_id: nil
+          )
+          link.rating = rand(1..4)
+          link.description = Populator.words(5..10)
+          puts "---------> Task #{task_def_cache[task_def_id].abbreviation} links to ILO #{ilo_cache[ilo_id].abbreviation}"
+          link.save!
+        end
       end
 
       # Create convenor roles
