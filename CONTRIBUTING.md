@@ -233,7 +233,7 @@ Tag        | Description                                                        
 -----------|---------------------------------------------------------------------------|--------------------------------------------------------------------
 `NEW`      | New feature was added                                                     | **NEW:** Add unit outcome alignment tab
 `​FIX`      | A bug was fixed                                                           | **FIX:** Amend typo throwing error
-`​​ENHANCE`  | Improvement to existing feature, but not visual enhancement (See `LOOKS`) | **ENHACNE:** Calculate time between classes to show on timetable
+`​​ENHANCE`  | Improvement to existing feature, but not visual enhancement (See `LOOKS`) | **ENHANCE:** Calculate time between classes to show on timetable
 `​LOOKS`    | UI Refinement, but not functional change (See `ENHANCE`)                  | **LOOKS:** Make plagiarism tab consistent with other tabs
 `​QUALITY`  | Refactoring of existing code                                              | **QUALITY:** Make directives in consistent format with eachother
 `​DOC`      | Documentation-related changes                                             | **DOC:** Write guide on writing commit messages
