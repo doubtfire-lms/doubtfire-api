@@ -148,6 +148,7 @@ When you are done with your changes, you need to pull any changes from `develop`
 To do this, pull any changes (if any) from the `upstream` repository's `develop` branch into your local `develop` branch:
 
 ```
+$ git checkout feature/my-awesome-new-feature
 $ git pull --rebase upstream develop
 ```
 
@@ -181,9 +182,11 @@ If your code is ok, it will be merged into `develop`, (and eventually `master`, 
 
 If not, the reviewer will give you suggestions and feedback for you to fix your code.
 
+**STOP! Continue to the next step once your Pull Request is approved and merged into the `doubtfire-lms`'s `develop` branch.**
+
 ### Cleaning Up
 
-Once your pull request is approved and your code changes are finalised, you may want to consider deleting your old feature branch so you don't get lots of old branches on your repository.
+Once your pull request is approved, your code changes are finalised, and merged you will want to delete your old feature branch so you don't get lots of old branches on your repository.
 
 Following from the example above, we would delete `feature/my-awesome-new-feature` as it has been merged into `develop`. We first delete the branch locally:
 
@@ -197,10 +200,23 @@ Then remove it from your fork on GitHub:
 $ git push origin --delete feature/my-awesome-new-feature
 ```
 
-Then ensure you are git is no longer tracking the deleted branch by running a fetch prune:
+Then ensure you are git is no longer tracking the deleted branch from `origin` by running a fetch prune:
 
 ```
 $ git fetch --prune
+```
+
+As your changes have been merged into `upstream`'s `develop` branch, pull from `upstream` and you can grab those changes into your local repository:
+
+```
+$ git checkout develop
+$ git pull upstream develop
+```
+
+Then push those changes up into your `origin`'s `develop` so that it is synced with `upstream`'s `develop`:
+
+```
+$ git push origin upstream
 ```
 
 ## Branch Prefixes
