@@ -3,7 +3,7 @@ services:
   api:
     container_name: doubtfire-api
     build: .
-    command: rails s
+    command: bash -c "rm /doubtfire-api/tmp/pids/server.pid && /usr/local/bin/rails server"
     ports:
       - "3000:3000"
     volumes:
