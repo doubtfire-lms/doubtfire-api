@@ -13,8 +13,6 @@ RUN apt-get install -y \
 ADD . /doubtfire-api
 WORKDIR /doubtfire-api
 
-RUN env
-
 EXPOSE 3000
 
-RUN bundle install --path ./vendor/cache --without production test replica
+RUN bundle install --without production test replica
