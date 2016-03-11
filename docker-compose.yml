@@ -5,14 +5,15 @@ services:
     build: .
     command: rails s
     ports:
-      - "3000:3000"
-      - "8000:8000"
+      - "127.0.0.1:3000:3000"
     volumes:
       - ../doubtfire-api:/doubtfire-api
     links:
       - web
     depends_on:
       - db
+    environment:
+      DATABASE_URL: 'doubtfire-db'
 
   db:
     container_name: doubtfire-db
@@ -27,5 +28,7 @@ services:
     container_name: doubtfire-web
     build: ../doubtfire-web
     command: grunt watchsvr
+    ports:
+      - "127.0.0.1:8000:8000"
     volumes:
       - ../doubtfire-web:/doubtfire-web
