@@ -5,7 +5,7 @@ We follow a [Forking workflow](https://www.atlassian.com/git/tutorials/comparing
 ## Table of Contents
 
 1. [About the Doubtfire Branch Structure](#about-the-doubtfire-branch-structure)
-2. [Getting started with the Forking Workflow](#getting-started-with-the-workflow)
+2. [Getting started with the Forking Workflow](#getting-started-with-the-forking-workflow)
 3. [Branch Prefixes](#branch-prefixes)
 4. [Writing Commit Messages](#writing-commit-messages)
   1. [Prefix your commit subject line with a tag](#prefix-your-commit-subject-line-with-a-tag)
