@@ -5,7 +5,7 @@ services:
     build: .
     command: rails s
     ports:
-      - "127.0.0.1:3000:3000"
+      - "3000:3000"
     volumes:
       - ../doubtfire-api:/doubtfire-api
     links:
@@ -21,14 +21,16 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_PASSWORD: 'd872$dh'
+      POSTGRES_PASSWORD: d872$$dh
       POSTGRES_USER: itig
 
   web:
     container_name: doubtfire-web
     build: ../doubtfire-web
     command: grunt watchsvr
+    environment:
+      DOUBTFIRE_DOCKER_MACHINE_IP: $DOUBTFIRE_DOCKER_MACHINE_IP
     ports:
-      - "127.0.0.1:8000:8000"
+      - "8000:8000"
     volumes:
       - ../doubtfire-web:/doubtfire-web
