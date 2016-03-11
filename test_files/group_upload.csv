@@ -1,5 +1,5 @@
-group_name, username, tutorial
-Group 1, student_1, LA1-01
+group_name, username, tutorial,,,
+Group 1, student_1, LA1-01,,,
 Group 1, student_2, LA1-01
 Group 2, student_3, LA1-01
 Group 2, student_4, LA1-01
@@ -8,6 +8,3 @@ Group 3, student_1, LA1-01
 Group 3, student_1, LA1-99
 Rubish Row,,
 ,,,,,
-
-
-

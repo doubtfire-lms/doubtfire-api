@@ -1,5 +1,5 @@
-email,first_name,last_name,username,nickname,role
-blah2@doubtfire.com,Blah,Surname,blah2,Blah,Student
+email,first_name,last_name,username,nickname,role,,,
+blah2@doubtfire.com,Blah,Surname,blah2,Blah,Student,,,
 blah@doubtfire.com,Blah,Surname,blah,Blah,1
 ,,,,,,,,,
 
