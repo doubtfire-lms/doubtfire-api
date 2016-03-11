@@ -13,7 +13,7 @@ services:
     depends_on:
       - db
     environment:
-      DATABASE_URL: 'doubtfire-db'
+      DATABASE_URL: 'postgresql://itig:d872$$dh@db:5432/doubtfire_dev'
 
   db:
     container_name: doubtfire-db
