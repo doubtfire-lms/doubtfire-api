@@ -10,12 +10,11 @@ RUN apt-get install -y \
   libpq-dev \
   python-pygments
 
-ENV RAILS_ENV docker
-
 ADD . /doubtfire-api
 WORKDIR /doubtfire-api
 
+RUN env
+
 EXPOSE 3000
 
-RUN bundle update backports
-RUN bundle install --without production test replica
+RUN bundle install --path ./vendor/cache --without production test replica
