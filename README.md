@@ -415,29 +415,27 @@ $ git clone https://github.com/doubtfire-lms/doubtfire-web.git
 $ git clone https://github.com/doubtfire-lms/doubtfire-api.git
 ```
 
-### 4. Run Docker Compose
+### 4. Starting Doubtfire
 
-Navigate to doubtfire-api and run the `docker-compose up` command to compile Doubtfire:
-
-```
-$ docker-compose -p doubtfire up -d
-```
-
-This may take a while - go grab a coffee.
-
-### 5. Open Doubtfire
-
-Once installation is finished, find out the IP of your docker machine:
+Execute the docker start script under `doubtfire-api`:
 
 ```
-$ docker-machine ip doubtfire
-192.168.99.100
+$ cd /path/to/doubtfire-api
+$ ./docker-start.sh
 ```
 
-In the example above, Doubtfire is running on your Docker VM at:
+The populate script will ask you if you would like extended population.
 
-- **http://192.168.99.100:8000/** for the Web application
-- **http://192.168.99.100:3000/api/docs/** for the rails API
+Note that the API and Web servers will take a moment to get up and running.
+
+### 5. Stopping Doubtfire
+
+To stop Doubtfire running, run the stop script under `doubtfire-api`:
+
+```
+$ cd /path/to/doubtfire-api
+$ ./docker-stop.sh
+```
 
 ### 6. For future reference...
 
@@ -461,11 +459,12 @@ $ docker attach doubtfire-api
 
 #### Executing rake or grunt tasks within the Docker container
 
-Should you need to execute any commands from inside the Docker container, such as running rake tasks, or a rails migration, use `docker exec` in the relevant container:
+Should you need to execute any commands from inside the Docker container, such as running rake tasks, or a rails migration, use `docker-compose` but execute from within `doubtfire-api`:
 
 ```
-$ docker exec doubtfire-api <command>
-$ docker exec doubtfire-web <command>
+$ cd /path/to/doubtfire-api
+$ docker-compose -p doubtfire run api <api command>
+$ docker-compose -p doubtfire run web <web command>
 ```
 
 #### Generating PDFs on the Dockerised API
@@ -475,7 +474,7 @@ By default, LaTeX is not installed within the Doubtfire API container to save ti
 Should you need to install LaTeX within the container run:
 
 ```
-$ docker exec doubtfire-api apt-get update && apt-get install texlive-full
+$ docker-compose -p doubtfire run api "bash -c 'apt-get update && apt-get install texlive-full'"
 ```
 
 ## Running Rake Tasks
