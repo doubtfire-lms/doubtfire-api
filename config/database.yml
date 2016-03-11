@@ -3,7 +3,7 @@ development:
   database: doubtfire_dev
   username: itig
   password: d872$dh
-  host: localhost
+  host:  localhost
   min_messages: warning
 
 replica:
@@ -19,12 +19,4 @@ test:
   username: itig
   password: d872$dh
   host: localhost
-  min_messages: warning
-
-docker:
-  adapter: postgresql
-  database: doubtfire_dev
-  username: itig
-  password: d872$dh
-  host: doubtfire-db
   min_messages: warning
