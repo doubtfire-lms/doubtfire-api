@@ -11,6 +11,7 @@ A modern, lightweight learning management system.
   2. [...on Linux](#getting-started-on-linux)
 2. [Running Rake Tasks](#running-rake-tasks)
 3. [Contributing](#contributing)
+4. [License](#license)
 
 ## Getting started
 
@@ -314,7 +315,7 @@ $ bundle install --without production test replica
 
 ##### Bundle resolutions
 
-You may encounter issues when trying to install bundle dependencies. 
+You may encounter issues when trying to install bundle dependencies.
 
 ###### ruby-filemagic
 
@@ -373,3 +374,7 @@ rake --tasks
 ## Contributing
 
 Refer to CONTRIBUTING.md
+
+## License
+
+Licensed under GNU Affero General Public License (AGPL) v3
