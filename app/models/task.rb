@@ -322,7 +322,7 @@ class Task < ActiveRecord::Base
               assess TaskStatus.fix_and_resubmit, by_user
             when "do_not_resubmit", "dnr", "fix_and_include", "fixinc"
               assess TaskStatus.fix_and_include, by_user
-            when "demonstrate", "de"
+            when "demonstrate", "de", "demo"
               assess TaskStatus.demonstrate, by_user
             when "discuss", "d"
               assess TaskStatus.discuss, by_user
