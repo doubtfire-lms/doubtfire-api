@@ -323,7 +323,7 @@ module Api::Submission::GenerateHelpers
           # read keys from CSV - to check that files exist in csv
           entry_data = CSV.parse(csv_str, {
               :headers => true,
-              :header_converters => [:downcase],
+              :header_converters => [lambda { |i| i.nil? ? '' : i }, :downcase],
               :converters => [lambda{ |body| body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]
             })
 

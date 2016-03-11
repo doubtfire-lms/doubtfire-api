@@ -1,6 +1,6 @@
-unit_code,ilo_number,abbreviation,name,description
+unit_code,ilo_number,abbreviation,name,description,,,
 COS10001,4,DECOMP,Functional Decomposition,"Use modular and functional decomposition to break problems down functionally, represent the resulting structures diagrammatically, and implement these structures in code as functions and procedures.
-"
+",,,
 COS10001,3,PROG,Program,"Construct small programs, using the programming languages covered, that include the use of arrays, functions and procedures, parameter passing with call by value and call by reference, custom data types, and pointers. 
 "
 COS10001,2,PRIN,Structured Programming,"Describe the principles of structured programming, and relate these to the syntactical elements of the programming language used and the way programs are developed. 

@@ -324,7 +324,7 @@ class Unit < ActiveRecord::Base
   # students to false for this unit.
   # CSV should contain just the usernames to withdraw
   def unenrol_users_from_csv(file)
-    logger.debug "Initiating withdraw of students from unit #{unit.id} from CSV"
+    logger.info "Initiating withdraw of students from unit #{id} using CSV"
 
     success = []
     errors = []
@@ -332,7 +332,7 @@ class Unit < ActiveRecord::Base
 
     CSV.parse(file, {
         :headers => true,
-        :header_converters => [:downcase, lambda { |hdr| hdr.strip unless hdr.nil?}],
+        :header_converters => [lambda { |i| i.nil? ? '' : i }, :downcase, lambda { |hdr| hdr.strip unless hdr.nil?}],
         :converters => [lambda{ |body| body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]
     }).each do |row|
       # Make sure we're not looking at the header or an empty line
@@ -424,7 +424,7 @@ class Unit < ActiveRecord::Base
 
     CSV.parse(file, {
         :headers => true,
-        :header_converters => [:downcase, lambda { |hdr| hdr.strip unless hdr.nil?}],
+        :header_converters => [lambda { |i| i.nil? ? '' : i }, :downcase, lambda { |hdr| hdr.strip unless hdr.nil?}],
         :converters => [lambda{ |body| body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]
     }).each do |row|
       # Make sure we're not looking at the header or an empty line
@@ -452,7 +452,7 @@ class Unit < ActiveRecord::Base
 
     CSV.parse(file, {
         :headers => true,
-        :header_converters => [:downcase, lambda { |hdr| hdr.strip unless hdr.nil?}],
+        :header_converters => [lambda { |i| i.nil? ? '' : i }, :downcase, lambda { |hdr| hdr.strip unless hdr.nil?}],
         :converters => [lambda{ |body| body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]
     }).each do |row|
       # Make sure we're not looking at the header or an empty line
@@ -528,10 +528,12 @@ class Unit < ActiveRecord::Base
     success = []
     errors = []
     ignored = []
+    
+    logger.info "Starting import of group for #{group_set.name} for #{self.code}"
 
     CSV.parse(file, {
         :headers => true,
-        :header_converters => [:downcase, lambda { |hdr| hdr.strip unless hdr.nil?}],
+        :header_converters => [lambda { |i| i.nil? ? '' : i },  :downcase, lambda { |hdr| hdr.strip unless hdr.nil?}],
         :converters => [lambda{ |body| body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]
     }).each do |row|
       next if row[0] =~ /^(group_name)|(name)/ # Skip header
@@ -648,7 +650,7 @@ class Unit < ActiveRecord::Base
 
     CSV.parse(file, {
         :headers => true,
-        :header_converters => [:downcase, lambda { |hdr| hdr.strip.gsub(" ", "_").to_sym unless hdr.nil? }],
+        :header_converters => [lambda { |i| i.nil? ? '' : i }, :downcase, lambda { |hdr| hdr.strip.gsub(" ", "_").to_sym unless hdr.nil? }],
         :converters => [lambda{ |body| body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]
     }).each do |row|
       next if row[0] =~ /^(Task Name)|(name)/ # Skip header

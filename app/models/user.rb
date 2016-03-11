@@ -325,7 +325,7 @@ class User < ActiveRecord::Base
 
     CSV.parse(file, {
         :headers => true,
-        :header_converters => [:downcase, lambda { |hdr| hdr.strip.gsub(" ", "_") unless hdr.nil? } ],
+        :header_converters => [lambda { |i| i.nil? ? '' : i }, :downcase, lambda { |hdr| hdr.strip.gsub(" ", "_") unless hdr.nil? } ],
         :converters => [lambda{ |body| body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]
     }).each do |row|
       next if row[0] =~ /(email)|(username)/
