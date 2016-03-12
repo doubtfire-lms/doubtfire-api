@@ -173,7 +173,7 @@ namespace :db do
   end
 
   desc "Clear the database and fill with test data"
-  task populate: [:setup, :migrate] do
+  task populate: [:setup, :migrate] do |task, args|
     require 'populator'
     require 'faker'
     require 'bcrypt'
@@ -466,8 +466,10 @@ namespace :db do
       end #tutorial
     end #unit
     # Run simulate signoff?
-    puts "----> Would you like to simulate student progress? This may take a while... [y/n]"
-    if STDIN.gets.chomp.downcase == 'y'
+    unless !args.nil? && args[:extend_populate]
+      puts "----> Would you like to simulate student progress? This may take a while... [y/n]"
+    end
+    if STDIN.gets.chomp.downcase == 'y' or args[:extend_populate]
       puts "----> Simulating signoff..."
       Rake::Task["db:simulate_signoff"].execute
       puts "----> Updating student progress..."

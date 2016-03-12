@@ -1,5 +1,10 @@
 source 'https://rubygems.org'
-ruby '2.0.0'
+group :production, :replica do
+   ruby '2.0.0'
+end
+group :development, :test do
+   ruby '2.1.2'
+end
 
 # The venerable, almighty Rails
 gem 'rails', '4.0.3'

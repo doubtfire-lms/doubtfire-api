@@ -9,6 +9,7 @@ A modern, lightweight learning management system.
 1. [Getting Started](#getting-started)
   1. [...on OS X](#getting-started-on-os-x)
   2. [...on Linux](#getting-started-on-linux)
+  3. [...via Docker](#getting-started-via-docker)
 2. [Running Rake Tasks](#running-rake-tasks)
 3. [Contributing](#contributing)
 4. [License](#license)
@@ -95,7 +96,7 @@ $ sudo easy_install Pygments
 Clone project and change your working directory to the api:
 
 ```
-$ git clone https://[user]@bitbucket.org/itig/doubtfire-api.git
+$ git clone https://github.com/doubtfire-lms/doubtfire-web.git
 $ cd ./doubtfire-api
 ```
 
@@ -302,7 +303,7 @@ $ sudo apt-get install python-pygments
 Clone project and change your working directory to the api:
 
 ```
-$ git clone https://[user]@bitbucket.org/itig/doubtfire-api.git
+$ git clone https://github.com/doubtfire-lms/doubtfire-web.git
 $ cd ./doubtfire-api
 ```
 
@@ -363,6 +364,122 @@ $ rails s
 
 You should see all the Doubtfire endpoints at **[http://localhost:3000/api/docs/](http://localhost:3000/api/docs/)**, which means the API is running.
 
+## Getting started via Docker
+
+### 1. Install Docker
+
+Download and install [Docker](https://www.docker.com), [Docker Machine](https://docs.docker.com/machine/) and [Docker Compose](https://docs.docker.com/machine/install-machine/) for your platform:
+
+#### OS X
+
+For OS X with [Homebrew](http://brew.sh) and [Homebrew Cask](http://caskroom.io) installed, run:
+
+```
+$ brew cask install virtualbox
+$ brew install docker docker-machine docker-compose
+```
+
+For OS X without Homebrew installed, you can download the [Docker toolbox](https://www.docker.com/toolbox) instead.
+
+#### Linux
+
+Install following the instructions for [Docker](https://docs.docker.com/linux/step_one/), [Docker Machine](https://docs.docker.com/machine/install-machine/), and [Docker Compose](https://docs.docker.com/compose/install/)
+
+#### Windows
+
+Download and install [Docker toolkit](https://www.docker.com/toolbox) and run through the [getting started guide](https://docs.docker.com/windows/step_one/)
+
+### 2. Create the virtual machine
+
+```
+docker-machine create --driver virtualbox doubtfire
+```
+
+Add the docker daemon to your `.bashrc`:
+
+```
+$ echo eval "$(docker-machine env doubtfire)" >> ~/.bashrc
+```
+
+_or_, if you're using [Oh-My-Zsh](http://ohmyz.sh), add to your `.zshrc`:
+
+```
+$ echo eval "$(docker-machine env doubtfire)" >> ~/.zshrc
+```
+
+### 3. Clone Repos
+
+Clone the doubtfire API and web repos to the same directory:
+
+```
+$ git clone https://github.com/doubtfire-lms/doubtfire-web.git
+$ git clone https://github.com/doubtfire-lms/doubtfire-api.git
+```
+
+### 4. Starting Doubtfire
+
+Execute the docker start script under `doubtfire-api`:
+
+```
+$ cd /path/to/doubtfire-api
+$ ./docker.sh start
+```
+
+The populate script will ask you if you would like extended population.
+
+Note that the API and Web servers will take a moment to get up and running.
+
+### 5. Stopping Doubtfire
+
+To stop Doubtfire running, run the stop script under `doubtfire-api`:
+
+```
+$ cd /path/to/doubtfire-api
+$ ./docker.sh stop
+```
+
+### 6. For future reference...
+
+#### Attaching to the Doubtfire containers
+
+##### Doubtfire Web
+
+You should attach to the grunt watch server if working on the web app to view output, if in case you make a lint error. To do so, run:
+
+```
+$ cd /path/to/doubtfire-api
+$ ./docker.sh attach web
+```
+
+##### Doubtfire API
+
+You should attach to the rails app if working on the API to view debug output. To do so, run:
+
+```
+$ cd /path/to/doubtfire-api
+$ ./docker.sh attach api
+```
+
+#### Executing rake or grunt tasks within the Docker container
+
+Should you need to execute any commands from inside the Docker container, such as running rake tasks, or a rails migration, use `docker-compose` but execute from within `doubtfire-api`:
+
+```
+$ cd /path/to/doubtfire-api
+$ docker-compose -p doubtfire run api <api command>
+$ docker-compose -p doubtfire run web <web command>
+```
+
+#### Generating PDFs on the Dockerised API
+
+By default, LaTeX is not installed within the Doubtfire API container to save time and space.
+
+Should you need to install LaTeX within the container run:
+
+```
+$ docker-compose -p doubtfire run api "bash -c 'apt-get update && apt-get install texlive-full'"
+```
+
 ## Running Rake Tasks
 
 You can perform developer-specific tasks using `rake`. For a list of all tasks, execute in the root directory:
@@ -370,6 +487,12 @@ You can perform developer-specific tasks using `rake`. For a list of all tasks, 
 ```
 rake --tasks
 ```
+
+### PDF Generation
+
+PDF generation requires LaTeX to be installed. If you do not install LaTeX and execute the `submission:generate_pdfs` task, you will encounter errors.
+
+Install LaTeX on your platform before running this task. If using Docker, refer to the [Docker LaTeX section](#generating-pdfs-on-the-dockerised-api).
 
 ## Contributing
 

@@ -1,0 +1,37 @@
+version: '2'
+services:
+  api:
+    container_name: doubtfire-api
+    build: .
+    command: bash -c "if [ -f /doubtfire-api/tmp/pids/server.pid ]; then rm /doubtfire-api/tmp/pids/server.pid; fi && /usr/local/bin/rails server"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../doubtfire-api:/doubtfire-api
+    links:
+      - web
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: 'postgresql://itig:d872$$dh@db:5432/doubtfire_dev'
+
+  db:
+    container_name: doubtfire-db
+    image: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: d872$$dh
+      POSTGRES_USER: itig
+
+  web:
+    container_name: doubtfire-web
+    build: ../doubtfire-web
+    command: grunt watchsvr
+    environment:
+      DOUBTFIRE_DOCKER_MACHINE_IP: $DOUBTFIRE_DOCKER_MACHINE_IP
+    ports:
+      - "8000:8000"
+      - "35729:35729"
+    volumes:
+      - ../doubtfire-web:/doubtfire-web

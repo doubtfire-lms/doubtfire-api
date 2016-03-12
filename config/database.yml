@@ -3,7 +3,7 @@ development:
   database: doubtfire_dev
   username: itig
   password: d872$dh
-  host: localhost
+  host:  localhost
   min_messages: warning
 
 replica:
