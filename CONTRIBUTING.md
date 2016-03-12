@@ -6,6 +6,11 @@ We follow a [Forking workflow](https://www.atlassian.com/git/tutorials/comparing
 
 1. [About the Doubtfire Branch Structure](#about-the-doubtfire-branch-structure)
 2. [Getting started with the Forking Workflow](#getting-started-with-the-forking-workflow)
+  1. [Forking and Cloning the repository](#1-forking-and-cloning-the-repository)
+  2. [Writing your new changes](#2-writing-your-new-changes)
+  3. [Prepare for a Pull Request](#3-prepare-for-a-pull-request)
+  4. [Submitting a Pull Request (PR) to the upstream repository](#4-submitting-a-pull-request-pr-to-the-upstream-repository)
+  5. [Cleaning Up](#5-cleaning-up)
 3. [Branch Prefixes](#branch-prefixes)
 4. [Writing Commit Messages](#writing-commit-messages)
   1. [Prefix your commit subject line with a tag](#prefix-your-commit-subject-line-with-a-tag)
@@ -151,7 +156,7 @@ To do this, pull any changes (if any) from the `upstream` repository's `develop`
 
 ```
 $ git checkout feature/my-awesome-new-feature
-$ git pull upstream develop
+$ git pull --ff upstream develop
 ```
 
 If there are merge conflicts, you can resolve them now. Follow GitHub's [guide](https://help.github.com/articles/resolving-a-merge-conflict-from-the-command-line) for resolving merge conflicts.
@@ -174,7 +179,7 @@ Ensure that the **Head Fork** is set to your forked repository and on your featu
 
 ![Compare forks](http://puu.sh/nyYF5/22d554103e.png)
 
-You can then begin writing the pull request. Be sure you are **Able to Merge**, otherwise **try repeating an upstream pull of develop into your feature branch, as per the [previous step](#3-prepare-for-a-pull-request))**.
+You can then begin writing the pull request. Be sure you are **Able to Merge**, otherwise **try repeating an upstream pull of develop into your feature branch, as per the [previous step](#3-prepare-for-a-pull-request)**.
 
 ![Writing a Pull Request](http://puu.sh/nyYEd/8d3c8789a6.png)
 
