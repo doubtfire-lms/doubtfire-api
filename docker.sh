@@ -280,6 +280,31 @@ restart_doubtfire () {
 }
 
 #
+# Attach to container
+#
+attach_to () {
+  get_docker_machine_ip
+
+  case $1 in
+    'api'|'web'|'db')
+      ;;
+    *)
+      msg "Invalid container provided. Please provide one of api, web or db."
+      return 1
+      ;;
+  esac
+
+  if ! is_doubtfire_running; then
+    msg "Cannot attach or ssh into to Doubtfire container. Doubtfire is not running"
+    return 1
+  fi
+
+  msg "Attaching to $1. Use ctrl+c to detach."
+  docker attach --sig-proxy=false doubtfire-$1
+  msg "\nDeattached from $1."
+}
+
+#
 # Show help
 #
 show_help () {
@@ -299,6 +324,7 @@ show_help () {
   msg "  restart    Restart Doubtfire docker services"
   msg "  build      (Re)build Doubtfire docker images"
   msg "  populate   Populate the API with test data"
+  msg "  attach     Attach to one of the api, web or db containers"
   return 0
 }
 
@@ -309,6 +335,11 @@ handle_options () {
   COMMAND=$1
   VERBOSE_OUTPUT=1
   shift 1
+  # Not a switch?
+  if [[ $1 != "-"* ]]; then
+    ARG_1=$1
+    shift 1
+  fi
   while getopts ":vh" OPT; do
     case $OPT in
       v)
@@ -342,6 +373,10 @@ handle_options () {
       ;;
     "build")
       build_doubtfire_images
+      return $?
+      ;;
+    "attach")
+      attach_to $ARG_1
       return $?
       ;;
     "")
