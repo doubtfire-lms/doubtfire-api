@@ -421,7 +421,7 @@ Execute the docker start script under `doubtfire-api`:
 
 ```
 $ cd /path/to/doubtfire-api
-$ ./docker-start.sh
+$ ./docker.sh start
 ```
 
 The populate script will ask you if you would like extended population.
@@ -434,7 +434,7 @@ To stop Doubtfire running, run the stop script under `doubtfire-api`:
 
 ```
 $ cd /path/to/doubtfire-api
-$ ./docker-stop.sh
+$ ./docker.sh stop
 ```
 
 ### 6. For future reference...
@@ -446,7 +446,8 @@ $ ./docker-stop.sh
 You should attach to the grunt watch server if working on the web app to view output, if in case you make a lint error. To do so, run:
 
 ```
-$ docker attach doubtfire-web
+$ cd /path/to/doubtfire-api
+$ ./docker.sh attach web
 ```
 
 ##### Doubtfire API
@@ -454,7 +455,8 @@ $ docker attach doubtfire-web
 You should attach to the rails app if working on the API to view debug output. To do so, run:
 
 ```
-$ docker attach doubtfire-api
+$ cd /path/to/doubtfire-api
+$ ./docker.sh attach api
 ```
 
 #### Executing rake or grunt tasks within the Docker container
