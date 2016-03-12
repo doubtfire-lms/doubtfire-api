@@ -76,7 +76,7 @@ Ideally, any changes that are merged into `master` have been **code-reviewed** b
 
 ## Getting started with the Forking Workflow
 
-### Forking and Cloning the repository
+### 1. Forking and Cloning the repository
 
 To get a copy of a Doubtfire repositories on your user account, you will need to fork it *for each repository*:
 
@@ -107,7 +107,7 @@ $ cd ~/repos/doubtfire/doubtfire-web
 $ git remote add upstream https://github.com/doubtfire-lms/doubtfire-web.git
 ```
 
-### Writing your new changes
+### 2. Writing your new changes
 
 As per the [branching structure](#about-the-doubtfire-branch-structure), you need to branch off of `develop` to a new branch that will have your code changes in it. When branching, **be sure you are using a [branch prefix](#branch-prefixes)**:
 
@@ -141,7 +141,9 @@ $ git push -u origin feature/my-awesome-new-feature
 
 Note you only need to add the `-u` flag on an initial commit for a new branch.
 
-### Resolve pull request conflicts
+### 3. Prepare for a Pull Request
+
+**Note, while it is advised you perform this step, it you can skip it and move straight to the [Pull Request step](#4-submitting-a-pull-request-pr-to-the-upstream-repository). If the branch cannot be automatically merged, then you should run through these steps.**
 
 When you are done with your changes, you need to pull any changes from `develop` from the `upstream` repository. This essentially means "get me anything that has changed on the `doubtfire-lms` repository that I don't yet have".
 
@@ -149,7 +151,7 @@ To do this, pull any changes (if any) from the `upstream` repository's `develop`
 
 ```
 $ git checkout feature/my-awesome-new-feature
-$ git pull --rebase upstream develop
+$ git pull upstream develop
 ```
 
 If there are merge conflicts, you can resolve them now. Follow GitHub's [guide](https://help.github.com/articles/resolving-a-merge-conflict-from-the-command-line) for resolving merge conflicts.
@@ -160,7 +162,7 @@ We can now update your `origin` repository's `my-awesome-new-feature` on GitHub 
 $ git push origin feature/my-awesome-new-feature
 ```
 
-### Submitting a Pull Request (PR) to the upstream repository
+### 4. Submitting a Pull Request (PR) to the upstream repository
 
 Once you have pushed your changes to your fork, and have ensured nothing has broken, you can then submit a pull request for code review to Doubtfire.
 
@@ -172,7 +174,7 @@ Ensure that the **Head Fork** is set to your forked repository and on your featu
 
 ![Compare forks](http://puu.sh/nyYF5/22d554103e.png)
 
-You can then begin writing the pull request. Be sure you are **Able to Merge**, otherwise try repeating an upstream pull (see the first code example in the [previous step](#resolve-pull-request-conflicts)).
+You can then begin writing the pull request. Be sure you are **Able to Merge**, otherwise **try repeating an upstream pull of develop into your feature branch, as per the [previous step](#3-prepare-for-a-pull-request))**.
 
 ![Writing a Pull Request](http://puu.sh/nyYEd/8d3c8789a6.png)
 
@@ -184,7 +186,7 @@ If not, the reviewer will give you suggestions and feedback for you to fix your 
 
 **STOP! Continue to the next step once your Pull Request is approved and merged into the `doubtfire-lms`'s `develop` branch.**
 
-### Cleaning Up
+### 5. Cleaning Up
 
 Once your pull request is approved, your code changes are finalised, and merged you will want to delete your old feature branch so you don't get lots of old branches on your repository.
 
