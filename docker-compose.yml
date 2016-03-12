@@ -32,5 +32,6 @@ services:
       DOUBTFIRE_DOCKER_MACHINE_IP: $DOUBTFIRE_DOCKER_MACHINE_IP
     ports:
       - "8000:8000"
+      - "35729:35729"
     volumes:
       - ../doubtfire-web:/doubtfire-web
