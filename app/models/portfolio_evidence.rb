@@ -2,6 +2,10 @@ class PortfolioEvidence
   include FileHelper
   include LogHelper
 
+  def self.logger
+    LogHelper::logger
+  end
+
   def self.sanitized_path(*paths)
     FileHelper.sanitized_path *paths
   end

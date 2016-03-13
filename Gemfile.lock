@@ -267,3 +267,6 @@ DEPENDENCIES
   terminator
   thin
   wkhtmltopdf-binary-11
+
+BUNDLED WITH
+   1.10.0.rc
