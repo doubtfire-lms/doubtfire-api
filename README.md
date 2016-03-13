@@ -100,6 +100,13 @@ $ git clone https://github.com/doubtfire-lms/doubtfire-web.git
 $ cd ./doubtfire-api
 ```
 
+Set up [overcommit](https://github.com/brigade/overcommit) and install hooks:
+
+```
+$ gem install overcommit
+$ overcommit --install
+```
+
 Then install Doubtfire API dependencies using [bundler](http://bundler.io):
 
 ```
@@ -307,6 +314,13 @@ $ git clone https://github.com/doubtfire-lms/doubtfire-web.git
 $ cd ./doubtfire-api
 ```
 
+Set up [overcommit](https://github.com/brigade/overcommit) and install hooks:
+
+```
+$ gem install overcommit
+$ overcommit --install
+```
+
 Then install Doubtfire API dependencies using [bundler](http://bundler.io):
 
 ```
@@ -415,6 +429,22 @@ Clone the doubtfire API and web repos to the same directory:
 $ git clone https://github.com/doubtfire-lms/doubtfire-web.git
 $ git clone https://github.com/doubtfire-lms/doubtfire-api.git
 ```
+
+Set up [overcommit](https://github.com/brigade/overcommit) and install hooks:
+
+```
+$ sudo gem install overcommit
+$ cd /path/to/doubtfire-api
+$ overcommit --install
+$ cd /path/to/doubtfire-web
+$ overcommit --install
+```
+
+If `gem` fails, you should ensure Ruby is installed on your system:
+
+- **OS X**: ruby comes installed with OS X
+- **Linux**: try installing using `apt-get install ruby-full`
+- **Windows**: try [RubyInstaller](http://rubyinstaller.org)
 
 ### 4. Starting Doubtfire
 
