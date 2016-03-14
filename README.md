@@ -104,6 +104,7 @@ Set up [overcommit](https://github.com/brigade/overcommit) and install hooks:
 
 ```
 $ gem install overcommit
+$ rbenv rehash
 $ overcommit --install
 ```
 
@@ -111,6 +112,7 @@ Then install Doubtfire API dependencies using [bundler](http://bundler.io):
 
 ```
 $ gem install bundler
+$ rbenv rehash
 $ bundle install --without production test replica
 ```
 
@@ -318,6 +320,7 @@ Set up [overcommit](https://github.com/brigade/overcommit) and install hooks:
 
 ```
 $ gem install overcommit
+$ rbenv rehash
 $ overcommit --install
 ```
 
@@ -325,6 +328,7 @@ Then install Doubtfire API dependencies using [bundler](http://bundler.io):
 
 ```
 $ gem install bundler
+$ rbenv rehash
 $ bundle install --without production test replica
 ```
 
