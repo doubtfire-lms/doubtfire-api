@@ -106,6 +106,7 @@ Set up [overcommit](https://github.com/brigade/overcommit) and install hooks:
 $ gem install overcommit
 $ rbenv rehash
 $ overcommit --install
+$ overcommit --sign
 ```
 
 Then install Doubtfire API dependencies using [bundler](http://bundler.io):
@@ -322,6 +323,7 @@ Set up [overcommit](https://github.com/brigade/overcommit) and install hooks:
 $ gem install overcommit
 $ rbenv rehash
 $ overcommit --install
+$ overcommit --sign
 ```
 
 Then install Doubtfire API dependencies using [bundler](http://bundler.io):
@@ -440,8 +442,10 @@ Set up [overcommit](https://github.com/brigade/overcommit) and install hooks:
 $ sudo gem install overcommit
 $ cd /path/to/doubtfire-api
 $ overcommit --install
+$ overcommit --sign
 $ cd /path/to/doubtfire-web
 $ overcommit --install
+$ overcommit --sign
 ```
 
 If `gem` fails, you should ensure Ruby is installed on your system:
