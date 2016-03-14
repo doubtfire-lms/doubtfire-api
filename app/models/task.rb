@@ -194,7 +194,7 @@ class Task < ActiveRecord::Base
   end
 
   def task_submission_closed?
-    complete? || discuss_or_demonstrate? || fix_and_include? || fail?
+    complete? || discuss_or_demonstrate? || do_not_resubmit? || fail?
   end
 
   def ok_to_submit?
@@ -213,8 +213,8 @@ class Task < ActiveRecord::Base
     status == :fix_and_resubmit
   end
 
-  def fix_and_include?
-    status == :fix_and_include
+  def do_not_resubmit?
+    status == :do_not_resubmit
   end
 
   def redo?
@@ -320,8 +320,8 @@ class Task < ActiveRecord::Base
               assess TaskStatus.complete, by_user
             when "fix_and_resubmit", "fix"
               assess TaskStatus.fix_and_resubmit, by_user
-            when "do_not_resubmit", "dnr", "fix_and_include", "fixinc"
-              assess TaskStatus.fix_and_include, by_user
+            when "do_not_resubmit", "dnr", "do_not_resubmit", "fixinc"
+              assess TaskStatus.do_not_resubmit, by_user
             when "demonstrate", "de", "demo"
               assess TaskStatus.demonstrate, by_user
             when "discuss", "d"
@@ -472,7 +472,7 @@ class Task < ActiveRecord::Base
   def assessed?
     redo? ||
     fix_and_resubmit? ||
-    fix_and_include? ||
+    do_not_resubmit? ||
     fail? ||
     complete?
   end
@@ -835,7 +835,7 @@ class Task < ActiveRecord::Base
       self.file_uploaded_at = DateTime.now
 
       # This task is now ready to submit
-      if not (discuss_or_demonstrate? || complete? || fix_and_include? || fail?)
+      if not (discuss_or_demonstrate? || complete? || do_not_resubmit? || fail?)
         self.trigger_transition trigger, user, false, false # dont propagate -- already done
 
         plagiarism_match_links.each do | link |
