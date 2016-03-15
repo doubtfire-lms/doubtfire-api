@@ -528,7 +528,7 @@ class Unit < ActiveRecord::Base
     success = []
     errors = []
     ignored = []
-    
+
     logger.info "Starting import of group for #{group_set.name} for #{self.code}"
 
     CSV.parse(file, {
@@ -626,7 +626,7 @@ class Unit < ActiveRecord::Base
       return nil
     end
 
-    Tutorial.find_or_create_by( { unit_id: id, abbreviation: abbrev } ) do |tutorial|
+    Tutorial.create( { unit_id: id, abbreviation: abbrev } ) do |tutorial|
       tutorial.meeting_day      = day
       tutorial.meeting_time     = time
       tutorial.meeting_location = location
