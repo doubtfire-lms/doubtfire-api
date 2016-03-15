@@ -9,7 +9,7 @@ ruby_versions = {
   production:   '2.0.0'
 }
 # Get the ruby version for the current enviornment
-ruby ruby_versions[ENV["RAILS_ENV"].to_sym]
+ruby ruby_versions[(ENV["RAILS_ENV"] || 'development').to_sym]
 
 # The venerable, almighty Rails
 gem 'rails', '4.0.3'
