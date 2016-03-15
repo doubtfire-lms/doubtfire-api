@@ -27,10 +27,3 @@ PreCommit:
     enabled: true
   TrailingWhitespace:
     enabled: true
-
-#
-# Repo-Specific Overcommit Config
-#
-PreCommit:
-  RuboCop:
-    enabled: true
