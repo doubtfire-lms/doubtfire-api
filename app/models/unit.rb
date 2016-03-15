@@ -1254,7 +1254,7 @@ class Unit < ActiveRecord::Base
       working_on_it:      0.0,
       need_help:          0.0,
       redo:               0.1,
-      fix_and_include:    0.1,
+      do_not_resubmit:    0.1,
       fix_and_resubmit:   0.3,
       ready_to_mark:      0.5,
       discuss:            0.8,

@@ -115,7 +115,7 @@ namespace :db do
             when 96..97
               task.assess TaskStatus.working_on_it, tutor, complete_date
             when 97
-              task.assess TaskStatus.fix_and_include, tutor, complete_date
+              task.assess TaskStatus.do_not_resubmit, tutor, complete_date
             when 98..99
               task.assess TaskStatus.redo, tutor, complete_date
             else
