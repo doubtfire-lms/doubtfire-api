@@ -1,10 +1,14 @@
 source 'https://rubygems.org'
-group :production, :replica do
-   ruby '2.0.0'
-end
-group :development, :test do
-   ruby '2.1.2'
-end
+
+# Ruby versions for various enviornments
+ruby_versions = {
+  development:  '2.1.2',
+  test:         '2.1.2',
+  replica:      '2.0.0',
+  production:   '2.0.0'
+}
+# Get the ruby version for the current enviornment
+ruby ruby_versions[ENV["RAILS_ENV"].to_sym]
 
 # The venerable, almighty Rails
 gem 'rails', '4.0.3'
