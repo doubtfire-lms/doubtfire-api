@@ -626,7 +626,7 @@ class Unit < ActiveRecord::Base
       return nil
     end
 
-    Tutorial.create( { unit_id: id, abbreviation: abbrev } ) do |tutorial|
+    Tutorial.create!( { unit_id: id, abbreviation: abbrev } ) do |tutorial|
       tutorial.meeting_day      = day
       tutorial.meeting_time     = time
       tutorial.meeting_location = location
