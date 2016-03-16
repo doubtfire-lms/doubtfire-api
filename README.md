@@ -50,7 +50,6 @@ $ echo 'eval "$(rbenv init -)"' >> ~/.zshrc
 Now install Ruby v2.0.0-p353:
 
 ```
-$ sudo apt-get install -y libreadline-dev
 $ rbenv install 2.0.0-p353
 ```
 
@@ -97,7 +96,7 @@ $ sudo easy_install Pygments
 Clone project and change your working directory to the api:
 
 ```
-$ git clone https://github.com/doubtfire-lms/doubtfire-web.git
+$ git clone https://github.com/doubtfire-lms/doubtfire-api.git
 $ cd ./doubtfire-api
 ```
 
@@ -263,6 +262,7 @@ $ echo 'export PATH="$HOME/.rbenv/plugins/ruby-build/bin:$PATH"' >> ~/.zshrc
 Now install Ruby v2.0.0:
 
 ```
+$ sudo apt-get install -y libreadline-dev
 $ rbenv install 2.0.0-p353
 ```
 
@@ -314,7 +314,7 @@ $ sudo apt-get install python-pygments
 Clone project and change your working directory to the api:
 
 ```
-$ git clone https://github.com/doubtfire-lms/doubtfire-web.git
+$ git clone https://github.com/doubtfire-lms/doubtfire-api.git
 $ cd ./doubtfire-api
 ```
 
