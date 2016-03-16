@@ -50,6 +50,7 @@ $ echo 'eval "$(rbenv init -)"' >> ~/.zshrc
 Now install Ruby v2.0.0-p353:
 
 ```
+$ sudo apt-get install -y libreadline-dev
 $ rbenv install 2.0.0-p353
 ```
 
