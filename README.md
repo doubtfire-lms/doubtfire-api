@@ -47,10 +47,10 @@ _or_, if you're using [Oh-My-Zsh](http://ohmyz.sh), add to your `.zshrc`:
 $ echo 'eval "$(rbenv init -)"' >> ~/.zshrc
 ```
 
-Now install Ruby v2.0.0:
+Now install Ruby v2.0.0-p353:
 
 ```
-$ rbenv install 2.0.0
+$ rbenv install 2.0.0-p353
 ```
 
 #### 3. Install Postgres
@@ -262,7 +262,7 @@ $ echo 'export PATH="$HOME/.rbenv/plugins/ruby-build/bin:$PATH"' >> ~/.zshrc
 Now install Ruby v2.0.0:
 
 ```
-$ rbenv install 2.0.0
+$ rbenv install 2.0.0-p353
 ```
 
 #### 3. Install Postgres
@@ -347,7 +347,7 @@ Installing ruby-filemagic 0.6.0 with native extensions
 
 Gem::Installer::ExtensionBuildError: ERROR: Failed to build gem native extension.
 
-    /Users/[User]/.rbenv/versions/2.0.0/bin/ruby extconf.rb
+    /Users/[User]/.rbenv/versions/2.0.0-p353/bin/ruby extconf.rb
 checking for magic_open() in -lmagic... no
 checking for magic.h... no
 *** ERROR: missing required library to compile this module
