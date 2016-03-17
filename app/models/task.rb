@@ -814,6 +814,10 @@ class Task < ActiveRecord::Base
     rescue => e
       logger.error "Failed to convert submission to PDF for task #{id}. Error: #{e.message}"
       puts "Failed to convert submission to PDF for task #{id}. Error: #{e.message}"
+
+      add_comment project.main_tutor, "**Automated Comment**: Failed to process submitted files. Check code files submitted for invalid characters, that documents are valid pdfs, and that images are valid."
+      trigger_transition 'fix', project.main_tutor
+
       return false
     end
   end
