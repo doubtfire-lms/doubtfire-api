@@ -781,7 +781,7 @@ EOF
     logger.debug "Generating cover page for project #{id} - #{cover_filename}"
 
     coverp_file = File.new(cover_filename, "w")
-    coverp_file.write(coverpage_body)
+    coverp_file.write(coverpage_html)
     coverp_file.close
 
     cover_filename
