@@ -17,6 +17,10 @@ CommitMsg:
   TextWidth:
     enabled: true
 PreCommit:
+  ALL:
+    exclude: &default_excludes
+        - 'vendor/**/*'
+        - 'public/**/*'
   AuthorEmail:
     enabled: true
     on_warn: fail
