@@ -187,7 +187,7 @@ module Api
       needs_upload_docs = task_definition.upload_requirements.length > 0
 
       # check if we actually have this task... if not must be false.
-      if needs_upload_docs && project.has_task_for_task_definition? task_definition
+      if needs_upload_docs && project.has_task_for_task_definition?(task_definition)
         task = project.task_for_task_definition(task_definition)
 
         # return the details as json
