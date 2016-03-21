@@ -83,9 +83,13 @@ Ideally, any changes that are merged into `master` have been **code-reviewed** b
 
 ### 1. Forking and Cloning the repository
 
+#### Fork the Repo
+
 To get a copy of a Doubtfire repositories on your user account, you will need to fork it *for each repository*:
 
 ![Fork the repo](http://puu.sh/nxPqN/68e50046d2.png)
+
+#### Clone the Fork
 
 You can then clone the repositories you have forked to your machine. To do so, navigate to your forked repositories and copy the clone URL:
 
@@ -101,6 +105,8 @@ $ git clone https://github.com/{username}/doubtfire-api.git
 $ git clone https://github.com/{username}/doubtfire-web.git
 ```
 
+#### Set up your upstream to `doubtfire-lms`
+
 By default, git tracks your remote forked repository (the repository you cloned). This remote is called `origin`.
 
 You will then need to set up a new remote to track to the `doubfire-lms` owned repository. This will be useful when you need to get the latest changes other developers have contributed to the `doubtfire-lms` repo, but you do not yet have those changes in your forked repo. Call this remote `upstream`:
@@ -110,6 +116,31 @@ $ cd ~/repos/doubtfire/doubtfire-api
 $ git remote add upstream https://github.com/doubtfire-lms/doubtfire-api.git
 $ cd ~/repos/doubtfire/doubtfire-web
 $ git remote add upstream https://github.com/doubtfire-lms/doubtfire-web.git
+```
+
+#### Ensure you have your author credentials set up
+
+You should ensure your git user config are set and set to the email address you use with GitHub:
+
+```
+$ git config --global user.email "my-github-email@gmail.com"
+$ git config --global user.name "Freddy Smith"
+```
+
+#### Use a rebase pull
+
+We also want to avoid having merge commits whenever you pull from `upstream`. It is useful to pull from upstream using the `--rebase` switch, as this avoids an unnecessary merge commit when pulling if there are conflicts.
+
+To fix this, always pull with `--rebase` (unless otherwise specified—see the `--ff` switch needed in [Step 3](#3-prepare-for-a-pull-request)):
+
+```
+$ git pull upstream develop --rebase
+```
+
+or alternatively, make a rebase pull as your default setting:
+
+```
+$ git config --global pull.rebase true
 ```
 
 ### 2. Writing your new changes
