@@ -170,5 +170,38 @@ module Api
       end
     end
 
+    desc "Get the submission details of a task, indicating if it has a pdf to view"
+    params do
+      requires :id, type: Integer, desc: 'The project id to locate'
+      requires :task_definition_id, type: Integer, desc: 'The id of the task definition of the task to update in this project'
+    end
+    get '/projects/:id/task_def_id/:task_definition_id/submission_details' do
+      # Get the project and task_definition based on uploaded details.
+      project = Project.find(params[:id])
+      task_definition = project.unit.task_definitions.find(params[:task_definition_id])
+
+      # check the user can put this task
+      error!({"error" => "You do not have permission to read submissions for this project."}) unless authorise? current_user, project, :get_submission
+
+      # ensure there can be a pdf...
+      needs_upload_docs = task_definition.upload_requirements.length > 0
+
+      # check if we actually have this task... if not must be false.
+      if needs_upload_docs && project.has_task_for_task_definition? task_definition
+        task = project.task_for_task_definition(task_definition)
+
+        # return the details as json
+        {
+          has_pdf: task.has_pdf,
+          processing_pdf: task.processing_pdf
+        }
+      else
+        {
+          has_pdf: false,
+          processing_pdf: false
+        }
+      end
+    end
+
   end
 end

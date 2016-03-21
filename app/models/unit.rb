@@ -1076,7 +1076,7 @@ class Unit < ActiveRecord::Base
           status: TaskStatus.status_key_for_name(t.status_name),
           completion_date: t.completion_date,
           times_assessed: t.times_assessed,
-          has_pdf: t.has_pdf
+          # has_pdf: t.has_pdf
         }
       }
   end
