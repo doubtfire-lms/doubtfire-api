@@ -119,6 +119,13 @@ ActiveRecord::Schema.define(version: 20160325083552) do
   add_index "plagiarism_match_links", ["other_task_id"], name: "index_plagiarism_match_links_on_other_task_id", using: :btree
   add_index "plagiarism_match_links", ["task_id"], name: "index_plagiarism_match_links_on_task_id", using: :btree
 
+  create_table "project_convenors", force: true do |t|
+    t.integer  "unit_id"
+    t.integer  "user_id"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
   create_table "projects", force: true do |t|
     t.integer  "unit_id"
     t.string   "project_role"
@@ -257,6 +264,20 @@ ActiveRecord::Schema.define(version: 20160325083552) do
   add_index "tasks", ["project_id"], name: "index_tasks_on_project_id", using: :btree
   add_index "tasks", ["task_definition_id"], name: "index_tasks_on_task_definition_id", using: :btree
   add_index "tasks", ["task_status_id"], name: "index_tasks_on_task_status_id", using: :btree
+
+  create_table "teams", force: true do |t|
+    t.integer  "unit_id"
+    t.integer  "user_id"
+    t.string   "meeting_day"
+    t.string   "meeting_time"
+    t.string   "meeting_location"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.string   "official_name"
+  end
+
+  add_index "teams", ["unit_id"], name: "index_teams_on_unit_id", using: :btree
+  add_index "teams", ["user_id"], name: "index_teams_on_user_id", using: :btree
 
   create_table "tutorials", force: true do |t|
     t.integer  "unit_id"

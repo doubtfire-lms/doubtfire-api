@@ -13,7 +13,7 @@ end
 
 module Doubtfire
   class Application < Rails::Application
-    
+
     # Ensure that auth tokens do not appear in log files
     config.filter_parameters += [:auth_token, :password, :password_confirmation, :credit_card]
 
@@ -33,14 +33,13 @@ module Doubtfire
     end
 
     config.generators do |g|
-      g.test_framework :rspec,
+      g.test_framework :minitest,
         fixtures: true,
         view_specs: false,
         helper_specs: false,
         routing_specs: false,
         controller_specs: true,
         request_specs: true
-      g.fixture_replacement :factory_girl, dir: "spec/factories", suffix: 'factory'
     end
   end
 end
