@@ -4,16 +4,16 @@ class UserTest < ActiveSupport::TestCase
 
   setup do
     # Make it Andrew Cain
-    @user = User.last
+    @user = User.first
   end
 
-  # teardown do
-  #   DatabaseCleaner.clean
-  # end
-
-  test "user authentication" do
+  test "user authentication post" do
     assert      @user.authenticate? 'password'
     assert_not  @user.authenticate? 'potato'
+  end
+
+  test "user authentication put" do
+    # Get clarification for testing requirements
   end
 
   test "create user" do
