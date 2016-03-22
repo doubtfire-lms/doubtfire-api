@@ -23,7 +23,7 @@ class TaskStatus < ActiveRecord::Base
       when "fix_and_resubmit" then TaskStatus.fix_and_resubmit
       when "fix and resubmit" then TaskStatus.fix_and_resubmit
       when "do_not_resubmit"  then TaskStatus.do_not_resubmit
-      when "fix and include"  then TaskStatus.do_not_resubmit
+      when "do not resubmit"  then TaskStatus.do_not_resubmit
       when "redo"             then TaskStatus.redo
       when "need_help"        then TaskStatus.need_help
       when "need help"        then TaskStatus.need_help
@@ -47,7 +47,7 @@ class TaskStatus < ActiveRecord::Base
       when "Complete"         then :complete
       when "Not Started"      then :not_started
       when "Fix and Resubmit" then :fix_and_resubmit
-      when "Fix and Include"  then :do_not_resubmit
+      when "Do Not Resubmit"  then :do_not_resubmit
       when "Redo"             then :redo
       when "Need Help"        then :need_help
       when "Working On It"    then :working_on_it
