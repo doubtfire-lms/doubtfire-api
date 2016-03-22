@@ -305,7 +305,7 @@ namespace :db do
     TaskStatus.create(name:  "Need Help", description:  "Some help is required in order to complete this task.")
     TaskStatus.create(name:  "Working On It", description:  "This task is currently being worked on.")
     TaskStatus.create(name:  "Fix and Resubmit", description:  "This task must be resubmitted after fixing some issues.")
-    TaskStatus.create(name:  "Fix and Include", description:  "This task must be fixed and included in your portfolio, but should not be resubmitted.")
+    TaskStatus.create(name:  "Do Not Resubmit", description:  "This task must be fixed and included in your portfolio, but should not be resubmitted.")
     TaskStatus.create(name:  "Redo", description:  "This task needs to be redone.")
     TaskStatus.create(name:  "Discuss", description:  "Your work looks good, discuss it with your tutor to complete.")
     TaskStatus.create(name:  "Ready to Mark", description:  "This task is ready for the tutor to assess to provide feedback.")

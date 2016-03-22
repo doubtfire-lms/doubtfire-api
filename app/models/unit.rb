@@ -189,6 +189,8 @@ class Unit < ActiveRecord::Base
     if existing_project
       if existing_project.enrolled == false
         existing_project.enrolled = true
+        # If they are part of the unit, update their tutorial if supplied
+        existing_project.tutorial_id = tutorial_id unless tutorial_id.nil?
         existing_project.save
       end
 
