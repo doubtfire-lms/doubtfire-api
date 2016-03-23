@@ -262,7 +262,7 @@ $ git push origin upstream
 
 Workflow when making changes:
 
-```
+```bash
 # make sure your develop is update with upstream and create your branch:
 
 $ git checkout develop
