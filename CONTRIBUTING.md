@@ -11,6 +11,7 @@ We follow a [Forking workflow](https://www.atlassian.com/git/tutorials/comparing
   3. [Prepare for a Pull Request](#3-prepare-for-a-pull-request)
   4. [Submitting a Pull Request (PR) to the upstream repository](#4-submitting-a-pull-request-pr-to-the-upstream-repository)
   5. [Cleaning Up](#5-cleaning-up)
+  6. [Workflow Summary](#workflow-summary)
 3. [Branch Prefixes](#branch-prefixes)
 4. [Writing Commit Messages](#writing-commit-messages)
   1. [Prefix your commit subject line with a tag](#prefix-your-commit-subject-line-with-a-tag)
@@ -255,6 +256,38 @@ Then push those changes up into your `origin`'s `develop` so that it is synced w
 
 ```
 $ git push origin upstream
+```
+
+### Workflow Summary
+
+Workflow when making changes:
+
+```
+# make sure your develop is update with upstream and create your branch:
+
+$ git checkout develop
+$ git pull --rebase upstream develop
+$ git checkout -b my-new-branch
+
+# make your changes, commit and push to origin
+
+# make a pull request
+
+# if unable to merge:
+
+$ git pull --ff upstream develop
+$ git push origin
+
+# and try again
+
+# when your pull request is merged:
+
+$ git checkout develop
+$ git branch -D my-new-branch
+$ git push --delete my-new-branch
+$ git fetch origin --prune
+$ git pull --rebase upstream develop
+$ git push origin develop
 ```
 
 ## Branch Prefixes
