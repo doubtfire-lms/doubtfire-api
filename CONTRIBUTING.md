@@ -260,34 +260,37 @@ $ git push origin upstream
 
 ### Workflow Summary
 
-Workflow when making changes:
+**Step 1.** Set up for new feature branch:
 
 ```bash
-# make sure your develop is update with upstream and create your branch:
+$ git checkout develop                    # make sure you are on develop
+$ git pull --rebase upstream develop      # sync your local develop with upstream's develop
+$ git checkout -b my-new-branch           # create your new feature branch
+```
 
-$ git checkout develop
-$ git pull --rebase upstream develop
-$ git checkout -b my-new-branch
+**Step 2.** Make changes, and repeat until you are done:
 
-# make your changes, commit and push to origin
+```bash
+$ git add ... ; git commit ; git push     # make changes, commit, and push to origin
+```
 
-# make a pull request
+**Step 3.** Submit a [pull request](#4-submitting-a-pull-request-pr-to-the-upstream-repository), and **if unable to merge**:
 
-# if unable to merge:
+```bash
+$ git pull --ff upstream develop          # merge upstream's develop in your feature branch
+$ git add ... ; git commit                # resolve merge conflicts and commit
+$ git push origin                         # push your merge conflict resolution to origin
+```
 
-$ git pull --ff upstream develop
-$ git push origin
+**Step 4.** Only when the pull request has been **approved and merged**, clean up:
 
-# and try again
-
-# when your pull request is merged:
-
-$ git checkout develop
-$ git branch -D my-new-branch
-$ git push --delete my-new-branch
-$ git fetch origin --prune
-$ git pull --rebase upstream develop
-$ git push origin develop
+```bash
+$ git checkout develop                    # make sure you are back on develop
+$ git branch -D my-new-branch             # delete the feature branch locally
+$ git push --delete my-new-branch         # delete the feature branch on origin
+$ git fetch origin --prune                # make sure you no longer track the deleted branch
+$ git pull --rebase upstream develop      # pull the merged changes from develop
+$ git push origin develop                 # push to origin to sync origin with develop
 ```
 
 ## Branch Prefixes
