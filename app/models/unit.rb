@@ -1078,8 +1078,8 @@ class Unit < ActiveRecord::Base
           status: TaskStatus.status_key_for_name(t.status_name),
           completion_date: t.completion_date,
           submission_date: t.submission_date,
-          times_assessed: t.times_assessed,
-          times_submitted: t.times_submitted
+          times_submitted: t.times_submitted,
+          times_assessed: t.times_assessed
           # has_pdf: t.has_pdf
         }
       }
