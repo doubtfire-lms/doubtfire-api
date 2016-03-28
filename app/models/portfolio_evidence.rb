@@ -33,7 +33,6 @@ class PortfolioEvidence
         task = Task.find(folder_id)
 
         add_error = lambda { | message |
-          puts "Failed to process folder_id = #{folder_id}. #{message}"
           logger.error "Failed to process folder_id = #{folder_id}. #{message}"
 
           if task
