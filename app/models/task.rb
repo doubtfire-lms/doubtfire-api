@@ -722,7 +722,6 @@ class Task < ActiveRecord::Base
 
       if output_filename.nil?
         logger.error "Error processing task #{id} - missing file #{file_req}"
-        puts "Error processing task #{id} - missing file #{file_req}"
       else
         result << { path: output_filename, type: file_req['type'] }
 

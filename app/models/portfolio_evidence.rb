@@ -39,7 +39,6 @@ class PortfolioEvidence
         end
         done[task.project] << task
       rescue Exception => e
-        puts "Failed to process folder_id = #{folder_id} #{e.message}"
         logger.error "Failed to process folder_id = #{folder_id} #{e.message}"
 
         if task
