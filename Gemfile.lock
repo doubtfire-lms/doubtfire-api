@@ -254,6 +254,7 @@ DEPENDENCIES
   grape-swagger
   hirb
   launchy
+  minitest (~> 4.7.5)
   minitest-rails
   moss_ruby (= 1.1.2)
   mysql2

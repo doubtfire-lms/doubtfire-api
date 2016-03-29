@@ -59,8 +59,10 @@ end
 group :development, :test, :replica do
   gem 'rspec-rails', '~> 3'
   gem 'factory_girl_rails'
-  gem 'minitest-rails'
   gem 'database_cleaner'
+  gem 'minitest', '~> 4.7.5'
+  gem 'minitest-rails'
+  # gem "minitest-hyper"
 end
 
 # Student submission
