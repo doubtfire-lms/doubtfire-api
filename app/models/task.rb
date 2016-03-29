@@ -766,6 +766,11 @@ class Task < ActiveRecord::Base
       when ['c', 'h', 'idc'].include?(extn) then 'c'
       when ['cpp', 'hpp', 'c++', 'h++', 'cc', 'cxx', 'cp'].include?(extn) then 'cpp'
       when ['java'].include?(extn) then 'java'
+      when ['js'].include?(extn) then 'js'
+      when ['html'].include?(extn) then 'html'
+      when ['css'].include?(extn) then 'css'
+      when ['rb'].include?(extn) then 'ruby'
+      when ['coffee'].include?(extn) then 'coffeescript'
       else 'c'
     end
   end
