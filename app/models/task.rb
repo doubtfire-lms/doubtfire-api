@@ -595,33 +595,37 @@ class Task < ActiveRecord::Base
   #
   def compress_new_to_done()
     task_dir = student_work_dir(:new, false)
-    zip_file = zip_file_path_for_done_task()
-    return if zip_file.nil? || (not Dir.exists? task_dir)
+    begin
+      zip_file = zip_file_path_for_done_task()
+      return if zip_file.nil? || (not Dir.exists? task_dir)
 
-    FileUtils.rm(zip_file) if File.exists? zip_file
+      FileUtils.rm(zip_file) if File.exists? zip_file
 
-    #compress image files
-    image_files = Dir.entries(task_dir).select { | f | (f =~ /^\d{3}.(image)/) == 0 }
-    image_files.each do |img|
-      FileHelper.compress_image "#{task_dir}#{img}"
-    end
-
-    #copy all files into zip
-    input_files = Dir.entries(task_dir).select { | f | (f =~ /^\d{3}.(cover|document|code|image)/) == 0 }
-
-    zip_dir = File.dirname(zip_file)
-    if not Dir.exists? zip_dir
-      FileUtils.mkdir_p zip_dir
-    end
-
-    Zip::File.open(zip_file, Zip::File::CREATE) do | zip |
-      zip.mkdir "#{id}"
-      input_files.each do |in_file|
-        zip.add "#{id}/#{in_file}", "#{task_dir}#{in_file}"
+      #compress image files
+      image_files = Dir.entries(task_dir).select { | f | (f =~ /^\d{3}.(image)/) == 0 }
+      image_files.each do |img|
+        return false unless FileHelper.compress_image("#{task_dir}#{img}")
       end
+
+      #copy all files into zip
+      input_files = Dir.entries(task_dir).select { | f | (f =~ /^\d{3}.(cover|document|code|image)/) == 0 }
+
+      zip_dir = File.dirname(zip_file)
+      if not Dir.exists? zip_dir
+        FileUtils.mkdir_p zip_dir
+      end
+
+      Zip::File.open(zip_file, Zip::File::CREATE) do | zip |
+        zip.mkdir "#{id}"
+        input_files.each do |in_file|
+          zip.add "#{id}/#{in_file}", "#{task_dir}#{in_file}"
+        end
+      end
+    ensure
+      FileUtils.rm_rf(task_dir)
     end
 
-    FileUtils.rm_rf(task_dir)
+    true
   end
 
   def clear_in_process
@@ -673,7 +677,7 @@ class Task < ActiveRecord::Base
     from_dir = student_work_dir(:new, false)
     if Dir.exists?(from_dir)
       #save new files in done folder
-      compress_new_to_done
+      return false unless compress_new_to_done
     end
 
     zip_file = zip_file_path_for_done_task()
@@ -815,10 +819,22 @@ class Task < ActiveRecord::Base
       logger.error "Failed to convert submission to PDF for task #{id}. Error: #{e.message}"
       puts "Failed to convert submission to PDF for task #{id}. Error: #{e.message}"
 
-      add_comment project.main_tutor, "**Automated Comment**: Failed to process submitted files. Check code files submitted for invalid characters, that documents are valid pdfs, and that images are valid."
-      trigger_transition 'fix', project.main_tutor
+      log_file = e.message.scan(/\/.*\.log/).first
+      # puts "log file is ... #{log_file}"
+      if log_file && File.exists?(log_file)
+        # puts "exists"
+        begin
+          puts "--- Latex Log ---\n"
+          puts File.read(log_file)
+          puts "---    End    ---\n\n"
+        rescue
+        end
+      end
 
-      return false
+      clear_in_process()
+
+      trigger_transition 'fix', project.main_tutor
+      raise "Check code files submitted for invalid characters, that documents are valid pdfs, and that images are valid."
     end
   end
 
