@@ -176,26 +176,33 @@ module FileHelper
   end
 
   def compress_image(path)
-    return if File.size?(path) < 1000000
+    return true if File.size?(path) < 1000000
 
     tmp_file = File.join( Dir.tmpdir, 'doubtfire', 'compress', "#{File.dirname(path).split(File::Separator).last}-file#{File.extname(path)}" )
     logger.debug "File helper has started compressing #{path} to #{tmp_file}..."
 
-    exec = "convert \"#{path}\" -resize 1024x1024 \"#{tmp_file}\" >>/dev/null 2>>/dev/null"
+    begin
+      exec = "#{Rails.root.join('lib', 'shell', 'timeout.sh')} -t 30 nice -n 10 convert \"#{path}\" -resize 1024x1024 \"#{tmp_file}\" >>/dev/null 2>>/dev/null"
+      # puts exec
 
-    # try with ghostscript
-    did_compress = false
-    Terminator.terminate 120 do
-      did_compress = system exec
+      # try with convert
+      did_compress = false
+      Terminator.terminate 40 do
+        did_compress = system exec
+      end
+
+      if did_compress
+        FileUtils.mv tmp_file, path
+      end
+    ensure
+      if File.exists? tmp_file
+        FileUtils.rm tmp_file
+      end
     end
 
-    if did_compress
-      FileUtils.mv tmp_file, path
-    end
-
-    if File.exists? tmp_file
-      FileUtils.rm tmp_file
-    end
+    # puts "#{did_compress}"
+    raise "Failed to compress an image. Ensure all images are smaller than 1MB." unless did_compress
+    return true
   end
 
   def compress_pdf(path, max_size = 2500000)
@@ -216,10 +223,10 @@ module FileHelper
       if !did_compress
         logger.info "Failed to compress PDF #{path} using GhostScript. Trying with convert"
 
-        exec = "nice -n 10 convert \"#{path}\" -compress Zip \"#{tmp_file}\" >>/dev/null 2>>/dev/null"
+        exec = "#{Rails.root.join('lib', 'shell', 'timeout.sh')} -t 30 nice -n 10 convert \"#{path}\" -compress Zip \"#{tmp_file}\" >>/dev/null 2>>/dev/null"
 
         # try with convert
-        Terminator.terminate 120 do
+        Terminator.terminate 40 do
           did_compress = system exec
         end
 
@@ -334,7 +341,7 @@ module FileHelper
     did_succeed = false
 
     Terminator.terminate 30 do
-      did_succeed = system "pdftk #{file} output /dev/null dont_ask"
+      did_succeed = system "nice -n 10 pdftk #{file} output /dev/null dont_ask"
     end
 
     did_succeed
@@ -480,7 +487,7 @@ module FileHelper
     logger.debug "Trying to aggregate PDFs to #{final_pdf_path}"
 
     did_compile = false
-    exec = "pdftk #{pdf_paths.join ' '} cat output '#{final_pdf_path}' dont_ask compress"
+    exec = "nice -n 10 pdftk #{pdf_paths.join ' '} cat output '#{final_pdf_path}' dont_ask compress"
     Terminator.terminate 180 do
       did_compile = system exec
     end
