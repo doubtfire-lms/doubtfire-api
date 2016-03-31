@@ -771,6 +771,11 @@ class Task < ActiveRecord::Base
       when ['css'].include?(extn) then 'css'
       when ['rb'].include?(extn) then 'ruby'
       when ['coffee'].include?(extn) then 'coffeescript'
+      when ['yaml', 'yml'].include?(extn) then 'yaml'
+      when ['xml'].include?(extn) then 'xml'
+      when ['scss'].include?(extn) then 'scss'
+      when ['json'].include?(extn) then 'json'
+      when ['ts'].include?(extn) then 'ts'
       else 'c'
     end
   end
