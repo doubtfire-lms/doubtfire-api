@@ -21,6 +21,7 @@ PreCommit:
     exclude: &default_excludes
         - 'vendor/**/*'
         - 'public/**/*'
+        - 'test_files/**/*'
   AuthorEmail:
     enabled: true
     on_warn: fail
