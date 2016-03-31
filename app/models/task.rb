@@ -449,6 +449,9 @@ class Task < ActiveRecord::Base
   end
 
   def submit(submit_date = Time.zone.now)
+    if self.task_status != TaskStatus.ready_to_mark
+      self.times_submitted += 1
+    end
     self.task_status      = TaskStatus.ready_to_mark
     self.submission_date  = submit_date
 

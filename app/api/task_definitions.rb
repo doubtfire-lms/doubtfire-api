@@ -272,7 +272,7 @@ module Api
       unit.student_tasks.
         joins(:project).
         joins(:task_status).
-        select("projects.tutorial_id as tutorial_id", "project_id", "tasks.id as id", "task_definition_id", "task_statuses.name as status_name", "completion_date", "times_assessed").
+        select("projects.tutorial_id as tutorial_id", "project_id", "tasks.id as id", "task_definition_id", "task_statuses.name as status_name", "completion_date", "times_assessed", "submission_date", "times_submitted").
         where("task_definition_id = :id", id: params[:task_def_id]).
         map { |t|
         {
@@ -282,6 +282,8 @@ module Api
           tutorial_id: t.tutorial_id,
           status: TaskStatus.status_key_for_name(t.status_name),
           completion_date: t.completion_date,
+          submission_date: t.submission_date,
+          times_submitted: t.times_submitted,
           times_assessed: t.times_assessed
         }
       }
