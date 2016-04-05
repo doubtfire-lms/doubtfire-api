@@ -11,8 +11,9 @@ A modern, lightweight learning management system.
   2. [...on Linux](#getting-started-on-linux)
   3. [...via Docker](#getting-started-via-docker)
 2. [Running Rake Tasks](#running-rake-tasks)
-3. [Contributing](#contributing)
-4. [License](#license)
+3. [PDF Generation Prerequisites](#pdf-generation-prerequisites)
+4. [Contributing](#contributing)
+5. [License](#license)
 
 ## Getting started
 
@@ -508,7 +509,53 @@ $ docker-compose -p doubtfire run api <api command>
 $ docker-compose -p doubtfire run web <web command>
 ```
 
-#### Generating PDFs on the Dockerised API
+## Running Rake Tasks
+
+You can perform developer-specific tasks using `rake`. For a list of all tasks, execute in the root directory:
+
+```
+rake --tasks
+```
+
+## PDF Generation Prerequisites
+
+PDF generation requires [LaTeX](https://en.wikipedia.org/wiki/LaTeX) to be installed. If you do not install LaTeX and execute the `submission:generate_pdfs` task, you will encounter errors.
+
+Install LaTeX on your platform before running this task.
+
+### Installing LaTeX on OS X
+
+For OS X with Homebrew Cask, use:
+
+```
+$ brew cask install mactex
+```
+
+For OS X without Homebrew, download and install the [MacTeX distribution](http://www.tug.org/mactex/mactex-download.html).
+
+A note especially for OS X users who have installed LaTeX under El Capitan, your installation will be under `/Library/TeX/texbin`. This **needs to be added to the `PATH`**:
+
+```
+$ echo "export PATH=$PATH:/Library/TeX/texbin" >> ~/.bashrc
+```
+
+or, if using zsh:
+
+```
+$ echo "export PATH=$PATH:/Library/TeX/texbin" >> ~/.zshrc
+```
+
+Refer to [this artcile](http://www.tug.org/mactex/elcapitan.html) for more about MacTeX installs on El Capitan.
+
+### Installing LaTeX on Linux
+
+For Linux, use:
+
+```
+$ apt-get install texlive-full
+```
+
+### Installing LaTeX on a Docker container
 
 By default, LaTeX is not installed within the Doubtfire API container to save time and space.
 
@@ -518,19 +565,24 @@ Should you need to install LaTeX within the container run:
 $ docker-compose -p doubtfire run api "bash -c 'apt-get update && apt-get install texlive-full'"
 ```
 
-## Running Rake Tasks
+### Check your PATH for Linux and OS X
 
-You can perform developer-specific tasks using `rake`. For a list of all tasks, execute in the root directory:
+After installing LaTeX, you must ensure the following are listed on the `PATH`:
 
 ```
-rake --tasks
+$ which convert
+/usr/local/bin/convert
+$ which pdftk
+/usr/local/bin/pdftk
+$ which pygmentize
+/usr/local/bin/pygmentize
+$ which pdflatex
+/Library/TeX/texbin/pdflatex
 ```
 
-### PDF Generation
+If any of the following are not found, then you will need to double check your installation and ensure the binaries are on the `PATH`. If they are not installed correctly, refer to the install native tools section for [OS X](#4-install-native-tools) and [Linux](#4-install-native-tools-1) and ensure the native tools are installing properly.
 
-PDF generation requires LaTeX to be installed. If you do not install LaTeX and execute the `submission:generate_pdfs` task, you will encounter errors.
-
-Install LaTeX on your platform before running this task. If using Docker, refer to the [Docker LaTeX section](#generating-pdfs-on-the-dockerised-api).
+This section does not apply to users using Docker for Doubtfire.
 
 ## Contributing
 
