@@ -27,8 +27,7 @@
 \emph{Submitted By:} \\
 <%  if @task.group_task? %>
 <%=   lesc @task.group_submission.submitted_by_project.student.first_name %> \textsc{<%= lesc @task.group_submission.submitted_by_project.student.last_name %>}\\
-<%=   lesc @task.group_submission.submitted_by_project.student.username %>\\
-\\[1cm]
+<%=   lesc @task.group_submission.submitted_by_project.student.username %>\\[1cm]
 \emph{Group Members:} \\
 <%    total = @task.group_submission.tasks.count * 10 %>
 <%    for grp_task in @task.group_submission.tasks %>
@@ -41,7 +40,7 @@
 <%  else %>
 <%=   lesc @task.student.first_name %> \textsc{<%= lesc @task.student.last_name %>}\\
 <%=   lesc @task.student.username %>\\
-<%=   lesc \date{@task.submission_date} %>
+<%=   lesc @task.submission_date.nil? ? "" : @task.submission_date.localtime.strftime("%Y/%M/%d %H:%M") %>
 <%  end %>
 \end{flushleft}
 \end{minipage}
