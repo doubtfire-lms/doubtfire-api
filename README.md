@@ -79,7 +79,6 @@ CREATE ROLE itig WITH CREATEDB PASSWORD 'd872$dh' LOGIN;
 Install `imagemagick` and `libmagic` using Homebrew:
 
 ```
-$ brew tap docmunch/pdftk
 $ brew install imagemagick libmagic
 ```
 
