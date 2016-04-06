@@ -20,6 +20,9 @@ class ActiveSupport::TestCase
   # -- they do not yet inherit this setting
   fixtures :all
 
+  # Silence deprecation warnings
+  ActiveSupport::Deprecation.silenced = true
+
   # Populate the database ONCE on each start
   system 'rake db:seed'
 
