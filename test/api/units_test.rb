@@ -38,4 +38,10 @@ class UnitsTest < MiniTest::Test
     # Check to see if the unit's end date matches what was expected
     assert JSON.parse(last_response.body)['end_date'], '2017-05-14T00:00:00.000Z'
   end
+
+  # GET test
+  def test_units_get
+    # Get response back from posting new unit
+    get  "/api/units.json?auth_token=#{@auth_token}"
+  end
 end
