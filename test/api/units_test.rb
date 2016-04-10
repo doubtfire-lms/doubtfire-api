@@ -19,16 +19,16 @@ class UnitsTest < MiniTest::Test
   # POST test
   def test_units_post
     # Get response back from posting new unit
-    post '/api/units.json',
-                          '{"unit":'                                    +
-                            '{'                                         +
-                            '"name":"Intro to Social Skills",'          +
-                            '"code":"JRRW40003",'                       +
-                            '"start_date":"2016-05-14T00:00:00.000Z",'  +
-                            '"end_date":"2017-05-14T00:00:00.000Z"'     +
-                            '},'                                        +
-                          '"auth_token":' + '"' + @auth_token + '"'     +
-                          '}', "CONTENT_TYPE" => 'application/json'
+    post  '/api/units.json',
+          '{"unit":'                                    +
+            '{'                                         +
+            '"name":"Intro to Social Skills",'          +
+            '"code":"JRRW40003",'                       +
+            '"start_date":"2016-05-14T00:00:00.000Z",'  +
+            '"end_date":"2017-05-14T00:00:00.000Z"'     +
+            '},'                                        +
+          '"auth_token":' + '"' + @auth_token + '"'     +
+          '}', "CONTENT_TYPE" => 'application/json'
     # Check to see if the unit's name matches what was expected
     assert JSON.parse(last_response.body)['name'], 'Intro to Social Skills'
     # Check to see if the unit's code matches what was expected
