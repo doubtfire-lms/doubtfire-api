@@ -43,7 +43,9 @@ class UnitsTest < MiniTest::Test
   # GET test
   def test_units_get
     # Get response back from posting new unit
+    # The GET we are testing
     get  "/api/units.json?auth_token=#{@auth_token}"
+
     # Check to see if the first unit's name matches
     assert_equal JSON.parse(last_response.body)[0]['name'], 'Introduction to Programming'
     # Check to see if the first unit's code matches
@@ -54,9 +56,14 @@ class UnitsTest < MiniTest::Test
     # Check end date
     assert (13.weeks.since(Time.zone.now - 6.weeks)).to_date, JSON.parse(last_response.body)[0]['end_date'].to_date
 
-  #  assert_equal JSON.parse(last_response.body)[1]['name'], 'Object Oriented Programming'
-  #  assert_equal JSON.parse(last_response.body)[1]['code'], 'COS20007'
-    # assert_equal JSON.parse(last_response.body)[1]['start_date'], 'Introduction to Programming'
-    # assert_equal JSON.parse(last_response.body)[1]['end_date'], 'Introduction to Programming'
+    # Check second unit in Units
+    # Check Name of second unit created
+    assert_equal JSON.parse(last_response.body)[1]['name'], 'Game Programming'
+    # Check code of second unit created
+    assert_equal JSON.parse(last_response.body)[1]['code'], 'COS30243'
+    # Check start date
+    assert (Time.zone.now - 6.weeks).to_date, JSON.parse(last_response.body)[1]['start_date'].to_date
+    # Check end date
+    assert (13.weeks.since(Time.zone.now - 6.weeks)).to_date, JSON.parse(last_response.body)[1]['end_date'].to_date
   end
 end
