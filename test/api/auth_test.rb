@@ -27,11 +27,15 @@ class AuthTest < MiniTest::Test
           "CONTENT_TYPE" => 'application/json'
 
     # Check to see if the username matches what was expected
-    assert JSON.parse(last_response.body)['user']['username'], 'acain'
+    assert_equal('acain', JSON.parse(last_response.body)['user']['username'])
     # Check to see if the first name matches what was expected
-    assert JSON.parse(last_response.body)['user']['first_name'], 'andrew'
+    assert_equal('Andrew', JSON.parse(last_response.body)['user']['first_name'])
+    # Check to see if first name is written in Pascal Case
+    refute_equal('andrew', JSON.parse(last_response.body)['user']['first_name'])
     # Check to see if the last name matches what was expected
-    assert JSON.parse(last_response.body)['user']['last_name'], 'cain'
+    assert_equal('Cain', JSON.parse(last_response.body)['user']['last_name'])
+    # Check to see if last name is written in Pascal Case
+    refute_equal('cain', JSON.parse(last_response.body)['user']['last_name'])
   end
 
   # PUT test
@@ -43,7 +47,7 @@ class AuthTest < MiniTest::Test
         "CONTENT_TYPE" => 'application/json'
 
     # Check to see if the response auth token matches the auth token that was sent through in put
-    assert JSON.parse(last_response.body)['auth_token'], @auth_token
+    assert_equal(@auth_token, JSON.parse(last_response.body)['auth_token'])
   end
 
   # DELETE test
