@@ -19,11 +19,12 @@ class AuthTest < MiniTest::Test
   # POST test
   def test_auth_post
     # Get response back for logging in with username 'acain' password 'password'
-    post '/api/auth.json',
-                          '{'                       +
-                            '"username":"acain",'   +
-                            '"password":"password"' +
-                          '}', "CONTENT_TYPE" => 'application/json'
+    post  '/api/auth.json',
+          '{'                       +
+            '"username":"acain",'   +
+            '"password":"password"' +
+          '}',
+          "CONTENT_TYPE" => 'application/json'
 
     # Check to see if the username matches what was expected
     assert JSON.parse(last_response.body)['user']['username'], 'acain'
@@ -35,10 +36,11 @@ class AuthTest < MiniTest::Test
 
   # PUT test
   def test_auth_put
-    put "/api/auth/#{@auth_token}.json",
-                                        '{'                     +
-                                          '"username":"acain"'  +
-                                        '}', "CONTENT_TYPE" => 'application/json'
+    put '/api/auth/#{@auth_token}.json',
+        '{'                     +
+          '"username":"acain"'  +
+        '}',
+        "CONTENT_TYPE" => 'application/json'
 
     # Check to see if the response auth token matches the auth token that was sent through in put
     assert JSON.parse(last_response.body)['auth_token'], @auth_token
