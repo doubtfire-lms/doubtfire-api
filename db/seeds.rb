@@ -61,9 +61,91 @@ class DatabasePopulator
       @user_cache.push user
     end
   end
+
+  def generate_units
+    min_students = 5
+    delta_students = 2
+    few_tasks = 5
+    some_tasks = 10
+    many_task = 20
+    few_tutorials = 1
+    some_tutorials = 1
+    many_tutorials = 1
+    max_tutorials = 4
+    unit_data = {
+      intro_prog: {
+        code: "COS10001",
+        name: "Introduction to Programming",
+        convenors: [ :acain, :cwoodward ],
+        tutors: [
+          { user: :acain, num: many_tutorials},
+          { user: :cwoodward, num: many_tutorials},
+          { user: :ajones, num: many_tutorials},
+          { user: :rwilson, num: many_tutorials},
+          { user: :acummaudo, num: some_tutorials},
+          { user: :akihironoguchi, num: many_tutorials},
+          { user: :joostfunkekupper, num: many_tutorials},
+          { user: :angusmorton, num: some_tutorials},
+          { user: :cliff, num: some_tutorials},
+        ],
+        num_tasks: some_tasks,
+        ilos: rand(0..3),
+        students: [ ]
+      },
+      oop: {
+        code: "COS20007",
+        name: "Object Oriented Programming",
+        convenors: [ :acain, :cwoodward, :ajones, :acummaudo ],
+        tutors: [
+          { user: "tutor_1", num: few_tutorials },
+          { user: :angusmorton, num: few_tutorials },
+          { user: :akihironoguchi, num: few_tutorials },
+          { user: :joostfunkekupper, num: few_tutorials },
+        ],
+        num_tasks: many_task,
+        ilos: rand(0..3),
+        students: [ :cliff ]
+      },
+      ai4g: {
+        code: "COS30046",
+        name: "Artificial Intelligence for Games",
+        convenors: [ :cwoodward ],
+        tutors: [
+          { user: :cwoodward, num: few_tutorials },
+          { user: :cliff, num: few_tutorials },
+        ],
+        num_tasks: few_tasks,
+        ilos: rand(0..3),
+        students: [ :acummaudo ]
+      },
+      gameprog: {
+        code: "COS30243",
+        name: "Game Programming",
+        convenors: [ :cwoodward, :acummaudo ],
+        tutors: [
+          { user: :cwoodward, num: few_tutorials },
+        ],
+        num_tasks: few_tasks,
+        ilos: rand(0..3),
+        students: [ :acain, :ajones ]
+      },
+    }
+
+    unit_data.each do | unit_key, unit_details |
+      puts "------> #{unit_details[:code]}"
+      unit = Unit.create!(
+        code: unit_details[:code],
+        name: unit_details[:name],
+        description: Populator.words(10..15),
+        start_date: Time.zone.now  - 6.weeks,
+        end_date: 13.weeks.since(Time.zone.now - 6.weeks)
+      )
+    end
+  end
 end
 
 p = DatabasePopulator.new
 
 p.generate_user_roles()
 p.generate_users()
+p.generate_units()
