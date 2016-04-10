@@ -15,9 +15,12 @@ class UnitsTest < MiniTest::Test
   # --------------------------------------------------------------------------- #
   # --- Endpoint testing for:
   # ------- /api/units.json
-  # ------- POST GET
+  # ------- POST GET PUT
 
-  # POST test
+  # --------------------------------------------------------------------------- #
+  # POST tests
+
+  # Test POST for creating new unit
   def test_units_post
     # Get response back from posting new unit
     post  '/api/units.json',
@@ -39,8 +42,13 @@ class UnitsTest < MiniTest::Test
     # Check to see if the unit's end date matches what was expected
     assert_equal JSON.parse(last_response.body)['end_date'], '2017-05-14T00:00:00.000Z'
   end
+  # End POST tests
+  # --------------------------------------------------------------------------- #
 
-  # GET test
+  # --------------------------------------------------------------------------- #
+  # GET tests
+
+  # Test GET for getting all units
   def test_units_get
     # Get response back from posting new unit
     # The GET we are testing
@@ -66,4 +74,39 @@ class UnitsTest < MiniTest::Test
     # Check end date
     assert (13.weeks.since(Time.zone.now - 6.weeks)).to_date, JSON.parse(last_response.body)[1]['end_date'].to_date
   end
+
+  # Test GET for getting a specific unit by id
+  def test_units_get_by_id
+    # Get response back from getting a unit by id
+
+    # Test getting the first unit with id of 1
+    get  "/api/units/1.json?auth_token=#{@auth_token}"
+
+    # Check to see if the first unit's name matches
+    assert_equal JSON.parse(last_response.body)['name'], 'Introduction to Programming'
+    # Check to see if the first unit's code matches
+    assert_equal JSON.parse(last_response.body)['code'], 'COS10001'
+    # Test time zones, need to use operator for date conversion.
+    # Check tart date
+    assert (Time.zone.now - 6.weeks).to_date, JSON.parse(last_response.body)['start_date'].to_date
+    # Check end date
+    assert (13.weeks.since(Time.zone.now - 6.weeks)).to_date, JSON.parse(last_response.body)['end_date'].to_date
+
+    # Get response back from getting a unit by id
+    # Test getting the first unit with id of 2
+    get  "/api/units/2.json?auth_token=#{@auth_token}"
+
+    # Check to see if the first unit's name matches
+    assert_equal JSON.parse(last_response.body)['name'], 'Game Programming'
+    # Check to see if the first unit's code matches
+    assert_equal JSON.parse(last_response.body)['code'], 'COS30243'
+    # Test time zones, need to use operator for date conversion.
+    # Check tart date
+    assert (Time.zone.now - 6.weeks).to_date, JSON.parse(last_response.body)['start_date'].to_date
+    # Check end date
+    assert (13.weeks.since(Time.zone.now - 6.weeks)).to_date, JSON.parse(last_response.body)['end_date'].to_date
+  end
+  # End GET tests
+  # --------------------------------------------------------------------------- #
+
 end
