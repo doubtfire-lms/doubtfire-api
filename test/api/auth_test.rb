@@ -16,7 +16,10 @@ class AuthTest < MiniTest::Test
   # ------- /api/auth.json
   # ------- POST PUT DELETE
 
-  # POST test
+  # --------------------------------------------------------------------------- #
+  # POST tests
+
+  # Test POST for new authentication token
   def test_auth_post
     # Get response back for logging in with username 'acain' password 'password'
     post  '/api/auth.json',
@@ -27,18 +30,23 @@ class AuthTest < MiniTest::Test
           "CONTENT_TYPE" => 'application/json'
 
     # Check to see if the username matches what was expected
-    assert_equal('acain', JSON.parse(last_response.body)['user']['username'])
+    assert_equal 'acain', JSON.parse(last_response.body)['user']['username']
     # Check to see if the first name matches what was expected
-    assert_equal('Andrew', JSON.parse(last_response.body)['user']['first_name'])
+    assert_equal 'Andrew', JSON.parse(last_response.body)['user']['first_name']
     # Check to see if first name is written in Pascal Case
-    refute_equal('andrew', JSON.parse(last_response.body)['user']['first_name'])
+    refute_equal 'andrew', JSON.parse(last_response.body)['user']['first_name']
     # Check to see if the last name matches what was expected
-    assert_equal('Cain', JSON.parse(last_response.body)['user']['last_name'])
+    assert_equal 'Cain', JSON.parse(last_response.body)['user']['last_name']
     # Check to see if last name is written in Pascal Case
-    refute_equal('cain', JSON.parse(last_response.body)['user']['last_name'])
+    refute_equal 'cain', JSON.parse(last_response.body)['user']['last_name']
   end
+  # End POST tests
+  # --------------------------------------------------------------------------- #
 
-  # PUT test
+  # --------------------------------------------------------------------------- #
+  # PUT tests
+
+  # Test put for authentication token
   def test_auth_put
     put "/api/auth/#{@auth_token}.json",
         '{'                     +
@@ -47,14 +55,21 @@ class AuthTest < MiniTest::Test
         "CONTENT_TYPE" => 'application/json'
 
     # Check to see if the response auth token matches the auth token that was sent through in put
-    assert_equal(@auth_token, JSON.parse(last_response.body)['auth_token'])
+    assert_equal @auth_token, JSON.parse(last_response.body)['auth_token']
   end
+  # End PUT tests
+  # --------------------------------------------------------------------------- #
 
-  # DELETE test
+  # --------------------------------------------------------------------------- #
+  # DELETE tests
+
+  # Test for deleting authentication token
   def test_auth_delete
     # Get the auth token needed for delete test
     delete "/api/auth/#{@auth_token}.json", "CONTENT_TYPE" => 'application/json'
     # 200 response code means success!
-    assert_equal(last_response.status, 200)
+    assert_equal last_response.status, 200
   end
+  # End DELETE tests
+  # --------------------------------------------------------------------------- #
 end
