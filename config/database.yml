@@ -23,7 +23,7 @@ replica:
 
 test:
   adapter: postgresql
-  database: doubtfire_dev
+  database: doubtfire_dev_test
   username: itig
   password: d872$dh
   host: localhost
