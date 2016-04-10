@@ -36,7 +36,7 @@ class AuthTest < MiniTest::Test
 
   # PUT test
   def test_auth_put
-    put '/api/auth/#{@auth_token}.json',
+    put "/api/auth/#{@auth_token}.json",
         '{'                     +
           '"username":"acain"'  +
         '}',
