@@ -48,7 +48,6 @@ class DatabasePopulator
       jrenzella:          {first_name: "Jake",           last_name: "Renzella",             nickname: "FactoryBoy<3",   role_id: Role.convenor_id},
       rwilson:            {first_name: "Reuben",         last_name: "Wilson",               nickname: "FactoryGurl</3", role_id: Role.tutor_id},
       acummaudo:          {first_name: "Alex",           last_name: "Cummaudo",             nickname: "Doubtfire Dude", role_id: Role.student_id},
-
     }
     users.each do |user_key, profile|
       puts "--> Generating #{user_key}"
@@ -63,15 +62,11 @@ class DatabasePopulator
   end
 
   def generate_units
-    min_students = 5
-    delta_students = 2
     few_tasks = 5
     some_tasks = 10
-    many_task = 20
-    few_tutorials = 1
-    some_tutorials = 1
-    many_tutorials = 1
-    max_tutorials = 4
+    some_tutorials = 2
+    many_tutorials = 4
+
     unit_data = {
       intro_prog: {
         code: "COS10001",
@@ -79,44 +74,13 @@ class DatabasePopulator
         convenors: [ :acain, :cwoodward ],
         tutors: [
           { user: :acain, num: many_tutorials},
-          { user: :cwoodward, num: many_tutorials},
-          { user: :ajones, num: many_tutorials},
           { user: :rwilson, num: many_tutorials},
           { user: :acummaudo, num: some_tutorials},
-          { user: :akihironoguchi, num: many_tutorials},
-          { user: :joostfunkekupper, num: many_tutorials},
-          { user: :angusmorton, num: some_tutorials},
-          { user: :cliff, num: some_tutorials},
+          { user: :jrenzella, num: some_tutorials}
         ],
         num_tasks: some_tasks,
         ilos: rand(0..3),
         students: [ ]
-      },
-      oop: {
-        code: "COS20007",
-        name: "Object Oriented Programming",
-        convenors: [ :acain, :cwoodward, :ajones, :acummaudo ],
-        tutors: [
-          { user: "tutor_1", num: few_tutorials },
-          { user: :angusmorton, num: few_tutorials },
-          { user: :akihironoguchi, num: few_tutorials },
-          { user: :joostfunkekupper, num: few_tutorials },
-        ],
-        num_tasks: many_task,
-        ilos: rand(0..3),
-        students: [ :cliff ]
-      },
-      ai4g: {
-        code: "COS30046",
-        name: "Artificial Intelligence for Games",
-        convenors: [ :cwoodward ],
-        tutors: [
-          { user: :cwoodward, num: few_tutorials },
-          { user: :cliff, num: few_tutorials },
-        ],
-        num_tasks: few_tasks,
-        ilos: rand(0..3),
-        students: [ :acummaudo ]
       },
       gameprog: {
         code: "COS30243",
@@ -127,7 +91,7 @@ class DatabasePopulator
         ],
         num_tasks: few_tasks,
         ilos: rand(0..3),
-        students: [ :acain, :ajones ]
+        students: [ :acain, :jrenzella, :rwilson ]
       },
     }
 
