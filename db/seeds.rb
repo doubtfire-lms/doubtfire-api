@@ -62,8 +62,8 @@ class DatabasePopulator
   end
 
   def generate_units
-    few_tasks = 5
-    some_tasks = 10
+    some_tasks = 5
+    many_tasks = 10
     some_tutorials = 2
     many_tutorials = 4
 
@@ -87,9 +87,9 @@ class DatabasePopulator
         name: "Game Programming",
         convenors: [ :cwoodward, :acummaudo ],
         tutors: [
-          { user: :cwoodward, num: few_tutorials },
+          { user: :cwoodward, num: some_tutorials },
         ],
-        num_tasks: few_tasks,
+        num_tasks: some_tasks,
         ilos: rand(0..3),
         students: [ :acain, :jrenzella, :rwilson ]
       },
