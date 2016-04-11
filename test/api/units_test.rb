@@ -23,6 +23,7 @@ class UnitsTest < MiniTest::Test
 
   # Test POST for creating new unit
   def test_units_post
+
     data_to_post = add_auth_token({
       unit: {
         name: "Intro to Social Skills",
@@ -31,24 +32,22 @@ class UnitsTest < MiniTest::Test
         end_date: "2017-05-14T00:00:00.000Z"
       },
     })
-
+    expected_unit = data_to_post[:unit]
     unit_count = Unit.all.length
 
+    # The post that we will be testing.
     post '/api/units.json', data_to_post.to_json, "CONTENT_TYPE" => 'application/json'
 
     # Check to see if the unit's name matches what was expected
-    response = JSON.parse(last_response.body)
+    actual_unit = JSON.parse(last_response.body)
 
-    assert_equal response['name'], data_to_post[:unit][:name]
-    # Check to see if the unit's code matches what was expected
-    assert_equal response['code'], data_to_post[:unit][:code]
-    # Check to see if the unit's stat date matches what was expected
-    assert_equal response['start_date'], data_to_post[:unit][:start_date]
-    # Check to see if the unit's end date matches what was expected
-    assert_equal response['end_date'], data_to_post[:unit][:end_date]
+    assert_equal expected_unit[:name], actual_unit['name']
+    assert_equal expected_unit[:code], actual_unit['code']
+    assert_equal expected_unit[:start_date], actual_unit['start_date']
+    assert_equal expected_unit[:end_date], actual_unit['end_date']
 
-    assert_equal Unit.all.count, unit_count + 1
-    assert_equal Unit.last.name, data_to_post[:unit][:name]
+    assert_equal unit_count + 1, Unit.all.count
+    assert_equal expected_unit[:name], Unit.last.name
   end
 
   # Test POST for adding a tutorial to a unit
@@ -164,6 +163,8 @@ class UnitsTest < MiniTest::Test
       end_date: "2017-05-14T00:00:00.000Z",
       description: "Woglyf"
     })
+
+    unit_to_update.employ_staff(:acain, Role.convenor)
     unit_to_update.save!
 
     actual_unit = unit_to_update
