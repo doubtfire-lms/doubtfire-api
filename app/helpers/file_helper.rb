@@ -1,8 +1,8 @@
-require 'terminator'
 require 'zip'
 
 module FileHelper
   extend LogHelper
+  extend TimeoutHelper
 
   def check_mime_against_list! (file, expect, type_list)
     fm = FileMagic.new(FileMagic::MAGIC_MIME)
@@ -185,7 +185,7 @@ module FileHelper
 
     # try with ghostscript
     did_compress = false
-    Terminator.terminate 120 do
+    try_within 120, "compressing image" do
       did_compress = system exec
     end
 
@@ -219,7 +219,7 @@ module FileHelper
         exec = "nice -n 10 convert \"#{path}\" -compress Zip \"#{tmp_file}\" >>/dev/null 2>>/dev/null"
 
         # try with convert
-        Terminator.terminate 120 do
+        try_within 120, "compressing PDF" do
           did_compress = system exec
         end
 
@@ -333,8 +333,11 @@ module FileHelper
   def pdf_valid?(file)
     did_succeed = false
 
-    Terminator.terminate 30 do
-      did_succeed = system "pdftk #{file} output /dev/null dont_ask"
+    try_within 120, "validating PDF" do
+      did_succeed = system "nice -n 10 pdftk #{file} output /dev/null dont_ask"
+      unless did_succeed
+        logger.error "Failed to validate PDF file. Is pdftk installed?"
+      end
     end
 
     did_succeed
@@ -481,7 +484,7 @@ module FileHelper
 
     did_compile = false
     exec = "pdftk #{pdf_paths.join ' '} cat output '#{final_pdf_path}' dont_ask compress"
-    Terminator.terminate 180 do
+    try_within 180, "aggregating PDFs" do
       did_compile = system exec
     end
 
