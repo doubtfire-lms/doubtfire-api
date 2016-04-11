@@ -32,7 +32,9 @@ module FileHelper
     when 'image'
       accept = ["image/png", "image/gif", "image/bmp", "image/tiff", "image/jpeg", "image/x-ms-bmp"]
     when 'code'
-      accept = ["text/x-pascal", "text/x-c", "text/x-c++", "text/plain", "text/"]
+      accept = ["text/x-pascal", "text/x-c", "text/x-c++", "text/plain", "text/", "application/javascript, text/html",
+                "text/css", "text/x-ruby", "text/coffeescript", "text/x-scss", "application/json", "text/xml", "application/xml",
+                "text/x-yaml", "application/xml", "text/x-typescript"]
     when 'document'
       accept = [ # -- one day"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                  # --"application/msword",
@@ -176,12 +178,14 @@ module FileHelper
   end
 
   def compress_image(path)
-    return if File.size?(path) < 1000000
+    return true if File.size?(path) < 1000000
 
     tmp_file = File.join( Dir.tmpdir, 'doubtfire', 'compress', "#{File.dirname(path).split(File::Separator).last}-file#{File.extname(path)}" )
     logger.debug "File helper has started compressing #{path} to #{tmp_file}..."
 
-    exec = "convert \"#{path}\" -resize 1024x1024 \"#{tmp_file}\" >>/dev/null 2>>/dev/null"
+    begin
+      exec = "#{Rails.root.join('lib', 'shell', 'timeout.sh')} -t 30 nice -n 10 convert \"#{path}\" -resize 1024x1024 \"#{tmp_file}\" >>/dev/null 2>>/dev/null"
+      # puts exec
 
     # try with ghostscript
     did_compress = false
@@ -189,13 +193,18 @@ module FileHelper
       did_compress = system exec
     end
 
-    if did_compress
-      FileUtils.mv tmp_file, path
+      if did_compress
+        FileUtils.mv tmp_file, path
+      end
+    ensure
+      if File.exists? tmp_file
+        FileUtils.rm tmp_file
+      end
     end
 
-    if File.exists? tmp_file
-      FileUtils.rm tmp_file
-    end
+    # puts "#{did_compress}"
+    raise "Failed to compress an image. Ensure all images are smaller than 1MB." unless did_compress
+    return true
   end
 
   def compress_pdf(path, max_size = 2500000)
@@ -216,7 +225,7 @@ module FileHelper
       if !did_compress
         logger.info "Failed to compress PDF #{path} using GhostScript. Trying with convert"
 
-        exec = "nice -n 10 convert \"#{path}\" -compress Zip \"#{tmp_file}\" >>/dev/null 2>>/dev/null"
+        exec = "#{Rails.root.join('lib', 'shell', 'timeout.sh')} -t 30 nice -n 10 convert \"#{path}\" -compress Zip \"#{tmp_file}\" >>/dev/null 2>>/dev/null"
 
         # try with convert
         try_within 120, "compressing PDF" do
@@ -483,8 +492,8 @@ module FileHelper
     logger.debug "Trying to aggregate PDFs to #{final_pdf_path}"
 
     did_compile = false
-    exec = "pdftk #{pdf_paths.join ' '} cat output '#{final_pdf_path}' dont_ask compress"
-    try_within 180, "aggregating PDFs" do
+    exec = "nice -n 10 pdftk #{pdf_paths.join ' '} cat output '#{final_pdf_path}' dont_ask compress"
+    Terminator.terminate 180 do
       did_compile = system exec
     end
 
