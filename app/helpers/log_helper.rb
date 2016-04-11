@@ -14,8 +14,17 @@ module LogHelper
     # Rails.logger initialises these as nil, so we will do the same
     @@logger = DoubtfireLogger.new(nil, nil, nil)
 
+    #
+    # Singleton logger returned
+    #
+    def self.logger
+      @@logger
+    end
+
+    #
     # Override fatal and error to puts to the console
     # as well as log using Rails
+    #
     def fatal(msg)
       puts msg
       super(msg)
@@ -25,6 +34,10 @@ module LogHelper
       super(msg)
     end
   end
+
+  #
+  # Logger function returns the singleton logger
+  #
   def logger
     DoubtfireLogger.logger
   end
