@@ -12,7 +12,7 @@ class DatabasePopulator
     # Set up our caches
     puts '-> Setting up populate cache'
     @role_cache = {}
-    @user_cache = []
+    @user_cache = {}
   end
 
   #
@@ -57,7 +57,14 @@ class DatabasePopulator
       profile[:username]  ||= username
 
       user = User.create!(profile.merge({password: 'password', password_confirmation: 'password'}))
-      @user_cache.push user
+      @user_cache[user_key] = user
+    end
+  end
+
+  def generate_convenors(unit_details, unit)
+    unit_details[:convenors].each do | user_key |
+      puts "------> Adding convenor #{user_key} for #{unit_details[:code]}"
+      unit.employ_staff(@user_cache[user_key], Role.convenor)
     end
   end
 
@@ -71,7 +78,7 @@ class DatabasePopulator
       intro_prog: {
         code: "COS10001",
         name: "Introduction to Programming",
-        convenors: [ :acain, :cwoodward ],
+        convenors: [ :acain ],
         tutors: [
           { user: :acain, num: many_tutorials},
           { user: :rwilson, num: many_tutorials},
@@ -85,7 +92,7 @@ class DatabasePopulator
       gameprog: {
         code: "COS30243",
         name: "Game Programming",
-        convenors: [ :cwoodward, :acummaudo ],
+        convenors: [ :acummaudo ],
         tutors: [
           { user: :cwoodward, num: some_tutorials },
         ],
@@ -104,6 +111,8 @@ class DatabasePopulator
         start_date: Time.zone.now  - 6.weeks,
         end_date: 13.weeks.since(Time.zone.now - 6.weeks)
       )
+
+      generate_convenors(unit_details, unit)
     end
   end
 end
