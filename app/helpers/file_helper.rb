@@ -189,7 +189,7 @@ module FileHelper
 
     # try with ghostscript
     did_compress = false
-    try_within 120, "compressing image" do
+    try_within 40, "compressing image" do
       did_compress = system exec
     end
 
@@ -342,7 +342,7 @@ module FileHelper
   def pdf_valid?(file)
     did_succeed = false
 
-    try_within 120, "validating PDF" do
+    try_within 60, "validating PDF" do
       did_succeed = system "nice -n 10 pdftk #{file} output /dev/null dont_ask"
       unless did_succeed
         logger.error "Failed to validate PDF file. Is pdftk installed?"
