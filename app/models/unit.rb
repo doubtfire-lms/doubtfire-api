@@ -1065,7 +1065,7 @@ class Unit < ActiveRecord::Base
   def tasks_awaiting_feedback
     student_tasks.
       joins(:task_status).
-      select("project_id", "tasks.id as id", "task_definition_id", "projects.tutorial_id as tutorial_id", "task_statuses.name as status_name", "completion_date", "times_assessed", "portfolio_evidence").
+      select("project_id", "tasks.id as id", "task_definition_id", "projects.tutorial_id as tutorial_id", "task_statuses.name as status_name", "completion_date", "times_assessed", "submission_date", "portfolio_evidence").
       where('task_statuses.id IN (:ids)', ids: [ TaskStatus.ready_to_mark, TaskStatus.need_help, TaskStatus.discuss, TaskStatus.demonstrate ]).
       where('(task_definitions.due_date IS NULL OR task_definitions.due_date > tasks.submission_date)').
       order('task_definition_id').
