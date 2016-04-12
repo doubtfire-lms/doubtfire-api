@@ -40,7 +40,7 @@
 <%  else %>
 <%=   lesc @task.student.first_name %> \textsc{<%= lesc @task.student.last_name %>}\\
 <%=   lesc @task.student.username %>\\
-<%=   lesc @task.submission_date.nil? ? "" : @task.submission_date.localtime.strftime("%Y/%M/%d %H:%M") %>
+<%=   lesc @task.submission_date.nil? ? "" : @task.submission_date.localtime.strftime("%Y/%m/%d %H:%M") %>
 <%  end %>
 \end{flushleft}
 \end{minipage}
