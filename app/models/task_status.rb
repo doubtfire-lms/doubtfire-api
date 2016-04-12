@@ -43,18 +43,18 @@ class TaskStatus < ActiveRecord::Base
   end
 
   def self.status_key_for_name(name)
-    case name
-      when "Complete"         then :complete
-      when "Not Started"      then :not_started
-      when "Fix and Resubmit" then :fix_and_resubmit
-      when "Do Not Resubmit"  then :do_not_resubmit
-      when "Redo"             then :redo
-      when "Need Help"        then :need_help
-      when "Working On It"    then :working_on_it
-      when "Discuss"          then :discuss
-      when "Ready to Mark"    then :ready_to_mark
-      when "Demonstrate"      then :demonstrate
-      when "Fail"             then :fail
+    case name.downcase
+      when "complete"         then :complete
+      when "not started"      then :not_started
+      when "fix and resubmit" then :fix_and_resubmit
+      when "do not resubmit"  then :do_not_resubmit
+      when "redo"             then :redo
+      when "need help"        then :need_help
+      when "working on it"    then :working_on_it
+      when "discuss"          then :discuss
+      when "ready to mark"    then :ready_to_mark
+      when "demonstrate"      then :demonstrate
+      when "fail"             then :fail
       else :not_started
     end
   end
