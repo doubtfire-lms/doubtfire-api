@@ -187,11 +187,11 @@ module FileHelper
       exec = "#{Rails.root.join('lib', 'shell', 'timeout.sh')} -t 30 nice -n 10 convert \"#{path}\" -resize 1024x1024 \"#{tmp_file}\" >>/dev/null 2>>/dev/null"
       # puts exec
 
-    # try with ghostscript
-    did_compress = false
-    try_within 40, "compressing image" do
-      did_compress = system exec
-    end
+      # try with convert
+      did_compress = false
+      try_within 40, "compressing image" do
+        did_compress = system exec
+      end
 
       if did_compress
         FileUtils.mv tmp_file, path
@@ -228,7 +228,7 @@ module FileHelper
         exec = "#{Rails.root.join('lib', 'shell', 'timeout.sh')} -t 30 nice -n 10 convert \"#{path}\" -compress Zip \"#{tmp_file}\" >>/dev/null 2>>/dev/null"
 
         # try with convert
-        try_within 120, "compressing PDF" do
+        try_within 40, "compressing PDF" do
           did_compress = system exec
         end
 
@@ -342,7 +342,7 @@ module FileHelper
   def pdf_valid?(file)
     did_succeed = false
 
-    try_within 60, "validating PDF" do
+    try_within 30, "validating PDF" do
       did_succeed = system "nice -n 10 pdftk #{file} output /dev/null dont_ask"
       unless did_succeed
         logger.error "Failed to validate PDF file. Is pdftk installed?"
