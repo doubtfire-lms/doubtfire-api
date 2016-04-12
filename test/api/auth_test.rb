@@ -28,11 +28,11 @@ class AuthTest < MiniTest::Test
     expected_auth = User.first
 
     # Check to see if the username matches what was expected
-    assert_equal actual_auth['user']['username'], User.first.username
+    assert_equal actual_auth['user']['username'], expected_auth.username
     # Check to see if the first name matches what was expected
-    assert_equal actual_auth['user']['first_name'], User.first.first_name
+    assert_equal actual_auth['user']['first_name'], expected_auth.first_name
     # Check to see if the last name matches what was expected
-    assert_equal actual_auth['user']['last_name'], User.first.last_name
+    assert_equal actual_auth['user']['last_name'], expected_auth.last_name
   end
   # End POST tests
   # --------------------------------------------------------------------------- #
