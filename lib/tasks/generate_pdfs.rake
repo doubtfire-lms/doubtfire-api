@@ -23,20 +23,19 @@ namespace :submission do
 
   task generate_pdfs:  :environment do
     if is_executing?
-      puts 'Skip generate pdf -- already executing'
-      logger.info 'Skip generate pdf'
+      logger.error 'Skip generate pdf -- already executing'
     else
       start_executing
 
       begin
         logger.info 'Starting generate pdf'
 
-      	PortfolioEvidence.process_new_to_pdf
+        PortfolioEvidence.process_new_to_pdf
 
-      	projects_to_compile = Project.where(compile_portfolio: true)
-      	projects_to_compile.each do | project |
-    		  begin
-    	 		  success = project.create_portfolio()
+        projects_to_compile = Project.where(compile_portfolio: true)
+        projects_to_compile.each do | project |
+          begin
+             success = project.create_portfolio()
           rescue Exception => e
             logger.error "Failed creating portfolio for project #{project.id}!\n#{e.message}"
             puts "Failed creating portfolio for project #{project.id}!\n#{e.message}"
