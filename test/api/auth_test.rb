@@ -28,11 +28,11 @@ class AuthTest < MiniTest::Test
     expected_auth = User.first
 
     # Check to see if the username matches what was expected
-    assert_equal actual_auth['user']['username'], expected_auth.username
+    assert_equal expected_auth.username, actual_auth['user']['username']
     # Check to see if the first name matches what was expected
-    assert_equal actual_auth['user']['first_name'], expected_auth.first_name
+    assert_equal expected_auth.first_name, actual_auth['user']['first_name']
     # Check to see if the last name matches what was expected
-    assert_equal actual_auth['user']['last_name'], expected_auth.last_name
+    assert_equal expected_auth.last_name, actual_auth['user']['last_name']
   end
   # End POST tests
   # --------------------------------------------------------------------------- #
@@ -52,7 +52,7 @@ class AuthTest < MiniTest::Test
     expected_auth = User.first.auth_token
 
     # Check to see if the response auth token matches the auth token that was sent through in put
-    assert_equal actual_auth, expected_auth
+    assert_equal expected_auth, actual_auth
   end
   # End PUT tests
   # --------------------------------------------------------------------------- #
@@ -66,7 +66,7 @@ class AuthTest < MiniTest::Test
     # Get the auth token needed for delete test
     delete "/api/auth/#{auth_token}.json", "CONTENT_TYPE" => 'application/json'
     # 200 response code means success!
-    assert_equal last_response.status, 200
+    assert_equal 200, last_response.status 
   end
   # End DELETE tests
   # --------------------------------------------------------------------------- #
