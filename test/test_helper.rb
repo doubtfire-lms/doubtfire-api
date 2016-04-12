@@ -11,6 +11,9 @@ require 'database_cleaner'
 # Uncomment for awesome colorful output
 require "minitest/pride"
 
+# Require help with all tests
+require 'helpers/auth_helper'
+
 class ActiveSupport::TestCase
     ActiveRecord::Migration.check_pending!
 
