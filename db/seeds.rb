@@ -111,7 +111,6 @@ class DatabasePopulator
         start_date: Time.zone.now  - 6.weeks,
         end_date: 13.weeks.since(Time.zone.now - 6.weeks)
       )
-
       generate_convenors(unit_details, unit)
     end
   end
