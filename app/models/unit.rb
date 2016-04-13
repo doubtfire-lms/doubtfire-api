@@ -363,22 +363,12 @@ class Unit < ActiveRecord::Base
 
         project_participant = project_participant.first
 
-        user_project = UnitRole.joins(project: :unit).where(
-            user_id: project_participant.id,
-            projects: {unit_id: id}
-          )
+        user_project = projects.where(user_id: project_participant.id).first
 
-        if not user_project
+        unless user_project
           ignored << { row:row, message: "User #{username} not enrolled in unit" }
           next
         end
-
-        if not user_project.count == 1
-          ignored << { row:row, message: "User #{username} not enrolled in unit" }
-          next
-        end
-
-        user_project = user_project.first.project
 
         if user_project.enrolled
           user_project.enrolled = false
