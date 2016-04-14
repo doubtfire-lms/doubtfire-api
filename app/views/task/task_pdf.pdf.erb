@@ -79,9 +79,9 @@ No Tutor % Supervisor's Name
   <%  end %>
 
   \fancyhead[L]{ File <%= idx + 1 %> of <%= @files.count %>  }
+  \fancyhead[R]{ <%= lesc @task.upload_requirements[idx]['name'] %>  }
 
   <% if file[:type] == 'image' %>
-    \fancyhead[R]{ <%= @task.upload_requirements[idx]['name'] %>  }
     \graphicspath{ {<%= @base_path %>} }
     \includegraphics[width=\textwidth]{{<%= File.basename(file[:path], File.extname(file[:path])) %>}<%= File.extname(file[:path]) %>}
   <% end %>
@@ -96,4 +96,3 @@ No Tutor % Supervisor's Name
 <% end %>
 
  % section hello_world (end) Hello World
-
