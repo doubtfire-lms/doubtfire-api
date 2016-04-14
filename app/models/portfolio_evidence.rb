@@ -2,6 +2,10 @@ class PortfolioEvidence
   include FileHelper
   include LogHelper
 
+  def self.logger
+    LogHelper::logger
+  end
+
   def self.sanitized_path(*paths)
     FileHelper.sanitized_path *paths
   end
@@ -27,23 +31,34 @@ class PortfolioEvidence
     new_root_dir.each do | folder_id |
       begin
         task = Task.find(folder_id)
-        logger.info "creating pdf for task #{task.id}"
-        task.convert_submission_to_pdf
 
-        if done[task.project].nil?
-          done[task.project] = []
-        end
-        done[task.project] << task
-      rescue Exception => e
-        puts "Failed to process folder_id = #{folder_id} #{e.message}"
-        logger.error "Failed to process folder_id = #{folder_id} #{e.message}"
+        add_error = lambda { | message |
+          logger.error "Failed to process folder_id = #{folder_id}. #{message}"
 
-        if task
-          if errors[task.project].nil?
-            errors[task.project] = []
+          if task
+            task.add_comment task.project.main_tutor, "**Automated Comment**: Something went wrong with your submission. Check the files and resubmit this task. #{message}"
+            task.trigger_transition 'fix', task.project.main_tutor
+
+            if errors[task.project].nil?
+              errors[task.project] = []
+            end
+            errors[task.project] << task
           end
-          errors[task.project] << task
+        }
+
+        logger.info "creating pdf for task #{task.id}"
+        success = task.convert_submission_to_pdf
+
+        if success
+          if done[task.project].nil?
+            done[task.project] = []
+          end
+          done[task.project] << task
+        else
+          add_error.call("Failed to convert your submission to pdf.")
         end
+      rescue Exception => e
+        add_error.call("#{e.message}")
       end
     end
 

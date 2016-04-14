@@ -11,6 +11,7 @@ We follow a [Forking workflow](https://www.atlassian.com/git/tutorials/comparing
   3. [Prepare for a Pull Request](#3-prepare-for-a-pull-request)
   4. [Submitting a Pull Request (PR) to the upstream repository](#4-submitting-a-pull-request-pr-to-the-upstream-repository)
   5. [Cleaning Up](#5-cleaning-up)
+  6. [Workflow Summary](#workflow-summary)
 3. [Branch Prefixes](#branch-prefixes)
 4. [Writing Commit Messages](#writing-commit-messages)
   1. [Prefix your commit subject line with a tag](#prefix-your-commit-subject-line-with-a-tag)
@@ -83,9 +84,13 @@ Ideally, any changes that are merged into `master` have been **code-reviewed** b
 
 ### 1. Forking and Cloning the repository
 
+#### Fork the Repo
+
 To get a copy of a Doubtfire repositories on your user account, you will need to fork it *for each repository*:
 
 ![Fork the repo](http://puu.sh/nxPqN/68e50046d2.png)
+
+#### Clone the Fork
 
 You can then clone the repositories you have forked to your machine. To do so, navigate to your forked repositories and copy the clone URL:
 
@@ -101,6 +106,8 @@ $ git clone https://github.com/{username}/doubtfire-api.git
 $ git clone https://github.com/{username}/doubtfire-web.git
 ```
 
+#### Set up your upstream to `doubtfire-lms`
+
 By default, git tracks your remote forked repository (the repository you cloned). This remote is called `origin`.
 
 You will then need to set up a new remote to track to the `doubfire-lms` owned repository. This will be useful when you need to get the latest changes other developers have contributed to the `doubtfire-lms` repo, but you do not yet have those changes in your forked repo. Call this remote `upstream`:
@@ -110,6 +117,31 @@ $ cd ~/repos/doubtfire/doubtfire-api
 $ git remote add upstream https://github.com/doubtfire-lms/doubtfire-api.git
 $ cd ~/repos/doubtfire/doubtfire-web
 $ git remote add upstream https://github.com/doubtfire-lms/doubtfire-web.git
+```
+
+#### Ensure you have your author credentials set up
+
+You should ensure your git user config are set and set to the email address you use with GitHub:
+
+```
+$ git config --global user.email "my-github-email@gmail.com"
+$ git config --global user.name "Freddy Smith"
+```
+
+#### Use a rebase pull
+
+We also want to avoid having merge commits whenever you pull from `upstream`. It is useful to pull from upstream using the `--rebase` switch, as this avoids an unnecessary merge commit when pulling if there are conflicts.
+
+To fix this, always pull with `--rebase` (unless otherwise specified—see the `--ff` switch needed in [Step 3](#3-prepare-for-a-pull-request)):
+
+```
+$ git pull upstream develop --rebase
+```
+
+or alternatively, make a rebase pull as your default setting:
+
+```
+$ git config --global pull.rebase true
 ```
 
 ### 2. Writing your new changes
@@ -224,6 +256,41 @@ Then push those changes up into your `origin`'s `develop` so that it is synced w
 
 ```
 $ git push origin upstream
+```
+
+### Workflow Summary
+
+**Step 1.** Set up for new feature branch:
+
+```bash
+$ git checkout develop                    # make sure you are on develop
+$ git pull --rebase upstream develop      # sync your local develop with upstream's develop
+$ git checkout -b my-new-branch           # create your new feature branch
+```
+
+**Step 2.** Make changes, and repeat until you are done:
+
+```bash
+$ git add ... ; git commit ; git push     # make changes, commit, and push to origin
+```
+
+**Step 3.** Submit a [pull request](#4-submitting-a-pull-request-pr-to-the-upstream-repository), and **if unable to merge**:
+
+```bash
+$ git pull --ff upstream develop          # merge upstream's develop in your feature branch
+$ git add ... ; git commit                # resolve merge conflicts and commit
+$ git push origin                         # push your merge conflict resolution to origin
+```
+
+**Step 4.** Only when the pull request has been **approved and merged**, clean up:
+
+```bash
+$ git checkout develop                    # make sure you are back on develop
+$ git branch -D my-new-branch             # delete the feature branch locally
+$ git push --delete my-new-branch         # delete the feature branch on origin
+$ git fetch origin --prune                # make sure you no longer track the deleted branch
+$ git pull --rebase upstream develop      # pull the merged changes from develop
+$ git push origin develop                 # push to origin to sync origin with develop
 ```
 
 ## Branch Prefixes

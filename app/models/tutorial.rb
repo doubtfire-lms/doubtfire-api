@@ -7,6 +7,9 @@ class Tutorial < ActiveRecord::Base
   has_many   :projects, dependent: :nullify # Students
   has_many   :groups, dependent: :nullify
 
+  validates :abbreviation, uniqueness: { scope: :unit,
+    message: "must be unique within the unit" }
+
   def self.default
     tutorial = self.new
 
@@ -17,7 +20,7 @@ class Tutorial < ActiveRecord::Base
 
     tutorial
   end
-  
+
   def self.find_by_user(user)
     Tutorial.joins(:tutor).where('user_id = :user_id', user_id: user.id)
   end
@@ -26,7 +29,7 @@ class Tutorial < ActiveRecord::Base
     result = UnitRole.find_by_id(unit_role_id)
     result.user unless result.nil?
   end
-  
+
   def name
     # TODO: Will probably need to make this more flexible when
     # a tutorial is representing something other than a tutorial

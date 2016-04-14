@@ -10,7 +10,7 @@ class TaskStatus < ActiveRecord::Base
   scope :need_help,         -> { TaskStatus.find(3) }
   scope :working_on_it,     -> { TaskStatus.find(4) }
   scope :fix_and_resubmit,  -> { TaskStatus.find(5) }
-  scope :fix_and_include,   -> { TaskStatus.find(6) }
+  scope :do_not_resubmit,   -> { TaskStatus.find(6) }
   scope :redo,              -> { TaskStatus.find(7) }
   scope :discuss,           -> { TaskStatus.find(8) }
   scope :ready_to_mark,     -> { TaskStatus.find(9) }
@@ -22,8 +22,8 @@ class TaskStatus < ActiveRecord::Base
       when "complete"         then TaskStatus.complete
       when "fix_and_resubmit" then TaskStatus.fix_and_resubmit
       when "fix and resubmit" then TaskStatus.fix_and_resubmit
-      when "fix_and_include"  then TaskStatus.fix_and_include
-      when "fix and include"  then TaskStatus.fix_and_include
+      when "do_not_resubmit"  then TaskStatus.do_not_resubmit
+      when "do not resubmit"  then TaskStatus.do_not_resubmit
       when "redo"             then TaskStatus.redo
       when "need_help"        then TaskStatus.need_help
       when "need help"        then TaskStatus.need_help
@@ -43,18 +43,18 @@ class TaskStatus < ActiveRecord::Base
   end
 
   def self.status_key_for_name(name)
-    case name
-      when "Complete"         then :complete
-      when "Not Started"      then :not_started
-      when "Fix and Resubmit" then :fix_and_resubmit
-      when "Fix and Include"  then :fix_and_include
-      when "Redo"             then :redo
-      when "Need Help"        then :need_help
-      when "Working On It"    then :working_on_it
-      when "Discuss"          then :discuss
-      when "Ready to Mark"    then :ready_to_mark
-      when "Demonstrate"      then :demonstrate
-      when "Fail"             then :fail
+    case name.downcase
+      when "complete"         then :complete
+      when "not started"      then :not_started
+      when "fix and resubmit" then :fix_and_resubmit
+      when "do not resubmit"  then :do_not_resubmit
+      when "redo"             then :redo
+      when "need help"        then :need_help
+      when "working on it"    then :working_on_it
+      when "discuss"          then :discuss
+      when "ready to mark"    then :ready_to_mark
+      when "demonstrate"      then :demonstrate
+      when "fail"             then :fail
       else :not_started
     end
   end

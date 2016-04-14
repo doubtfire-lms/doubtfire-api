@@ -194,7 +194,7 @@ class Task < ActiveRecord::Base
   end
 
   def task_submission_closed?
-    complete? || discuss_or_demonstrate? || fix_and_include? || fail?
+    complete? || discuss_or_demonstrate? || do_not_resubmit? || fail?
   end
 
   def ok_to_submit?
@@ -213,8 +213,8 @@ class Task < ActiveRecord::Base
     status == :fix_and_resubmit
   end
 
-  def fix_and_include?
-    status == :fix_and_include
+  def do_not_resubmit?
+    status == :do_not_resubmit
   end
 
   def redo?
@@ -321,7 +321,7 @@ class Task < ActiveRecord::Base
             when "fix_and_resubmit", "fix"
               assess TaskStatus.fix_and_resubmit, by_user
             when "do_not_resubmit", "dnr", "fix_and_include", "fixinc"
-              assess TaskStatus.fix_and_include, by_user
+              assess TaskStatus.do_not_resubmit, by_user
             when "demonstrate", "de", "demo"
               assess TaskStatus.demonstrate, by_user
             when "discuss", "d"
@@ -472,7 +472,7 @@ class Task < ActiveRecord::Base
   def assessed?
     redo? ||
     fix_and_resubmit? ||
-    fix_and_include? ||
+    do_not_resubmit? ||
     fail? ||
     complete?
   end
@@ -595,33 +595,37 @@ class Task < ActiveRecord::Base
   #
   def compress_new_to_done()
     task_dir = student_work_dir(:new, false)
-    zip_file = zip_file_path_for_done_task()
-    return if zip_file.nil? || (not Dir.exists? task_dir)
+    begin
+      zip_file = zip_file_path_for_done_task()
+      return if zip_file.nil? || (not Dir.exists? task_dir)
 
-    FileUtils.rm(zip_file) if File.exists? zip_file
+      FileUtils.rm(zip_file) if File.exists? zip_file
 
-    #compress image files
-    image_files = Dir.entries(task_dir).select { | f | (f =~ /^\d{3}.(image)/) == 0 }
-    image_files.each do |img|
-      FileHelper.compress_image "#{task_dir}#{img}"
-    end
-
-    #copy all files into zip
-    input_files = Dir.entries(task_dir).select { | f | (f =~ /^\d{3}.(cover|document|code|image)/) == 0 }
-
-    zip_dir = File.dirname(zip_file)
-    if not Dir.exists? zip_dir
-      FileUtils.mkdir_p zip_dir
-    end
-
-    Zip::File.open(zip_file, Zip::File::CREATE) do | zip |
-      zip.mkdir "#{id}"
-      input_files.each do |in_file|
-        zip.add "#{id}/#{in_file}", "#{task_dir}#{in_file}"
+      #compress image files
+      image_files = Dir.entries(task_dir).select { | f | (f =~ /^\d{3}.(image)/) == 0 }
+      image_files.each do |img|
+        return false unless FileHelper.compress_image("#{task_dir}#{img}")
       end
+
+      #copy all files into zip
+      input_files = Dir.entries(task_dir).select { | f | (f =~ /^\d{3}.(cover|document|code|image)/) == 0 }
+
+      zip_dir = File.dirname(zip_file)
+      if not Dir.exists? zip_dir
+        FileUtils.mkdir_p zip_dir
+      end
+
+      Zip::File.open(zip_file, Zip::File::CREATE) do | zip |
+        zip.mkdir "#{id}"
+        input_files.each do |in_file|
+          zip.add "#{id}/#{in_file}", "#{task_dir}#{in_file}"
+        end
+      end
+    ensure
+      FileUtils.rm_rf(task_dir)
     end
 
-    FileUtils.rm_rf(task_dir)
+    true
   end
 
   def clear_in_process
@@ -673,7 +677,7 @@ class Task < ActiveRecord::Base
     from_dir = student_work_dir(:new, false)
     if Dir.exists?(from_dir)
       #save new files in done folder
-      compress_new_to_done
+      return false unless compress_new_to_done
     end
 
     zip_file = zip_file_path_for_done_task()
@@ -722,7 +726,6 @@ class Task < ActiveRecord::Base
 
       if output_filename.nil?
         logger.error "Error processing task #{id} - missing file #{file_req}"
-        puts "Error processing task #{id} - missing file #{file_req}"
       else
         result << { path: output_filename, type: file_req['type'] }
 
@@ -766,6 +769,16 @@ class Task < ActiveRecord::Base
       when ['c', 'h', 'idc'].include?(extn) then 'c'
       when ['cpp', 'hpp', 'c++', 'h++', 'cc', 'cxx', 'cp'].include?(extn) then 'cpp'
       when ['java'].include?(extn) then 'java'
+      when ['js'].include?(extn) then 'js'
+      when ['html'].include?(extn) then 'html'
+      when ['css'].include?(extn) then 'css'
+      when ['rb'].include?(extn) then 'ruby'
+      when ['coffee'].include?(extn) then 'coffeescript'
+      when ['yaml', 'yml'].include?(extn) then 'yaml'
+      when ['xml'].include?(extn) then 'xml'
+      when ['scss'].include?(extn) then 'scss'
+      when ['json'].include?(extn) then 'json'
+      when ['ts'].include?(extn) then 'ts'
       else 'c'
     end
   end
@@ -814,7 +827,23 @@ class Task < ActiveRecord::Base
     rescue => e
       logger.error "Failed to convert submission to PDF for task #{id}. Error: #{e.message}"
       puts "Failed to convert submission to PDF for task #{id}. Error: #{e.message}"
-      return false
+
+      log_file = e.message.scan(/\/.*\.log/).first
+      # puts "log file is ... #{log_file}"
+      if log_file && File.exists?(log_file)
+        # puts "exists"
+        begin
+          puts "--- Latex Log ---\n"
+          puts File.read(log_file)
+          puts "---    End    ---\n\n"
+        rescue
+        end
+      end
+
+      clear_in_process()
+
+      trigger_transition 'fix', project.main_tutor
+      raise "Check code files submitted for invalid characters, that documents are valid pdfs, and that images are valid."
     end
   end
 
@@ -835,7 +864,7 @@ class Task < ActiveRecord::Base
       self.file_uploaded_at = DateTime.now
 
       # This task is now ready to submit
-      if not (discuss_or_demonstrate? || complete? || fix_and_include? || fail?)
+      if not (discuss_or_demonstrate? || complete? || do_not_resubmit? || fail?)
         self.trigger_transition trigger, user, false, false # dont propagate -- already done
 
         plagiarism_match_links.each do | link |

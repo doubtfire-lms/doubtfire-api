@@ -472,7 +472,7 @@ class Project < ActiveRecord::Base
   def partially_completed_tasks
     # TODO: Should probably have a better definition
     # of partially complete than just 'fix' tasks
-    assigned_tasks.select{|task| task.fix_and_resubmit? || task.fix_and_include? }
+    assigned_tasks.select{|task| task.fix_and_resubmit? || task.do_not_resubmit? }
   end
 
   def completed?
@@ -531,7 +531,7 @@ class Project < ActiveRecord::Base
     result = {
       fail: 0.0,
       not_started: 0.0,
-      fix_and_include: 0.0,
+      do_not_resubmit: 0.0,
       redo: 0.0,
       need_help: 0.0,
       working_on_it: 0.0,
@@ -558,7 +558,7 @@ class Project < ActiveRecord::Base
     }
     convert_hash_to_pct(result, total)
 
-    self.task_stats = "#{result[:fail]}|#{result[:not_started]}|#{result[:fix_and_include]}|#{result[:redo]}|#{result[:need_help]}|#{result[:working_on_it]}|#{result[:fix_and_resubmit]}|#{result[:ready_to_mark]}|#{result[:discuss]}|#{result[:demonstrate]}|#{result[:complete]}"
+    self.task_stats = "#{result[:fail]}|#{result[:not_started]}|#{result[:do_not_resubmit]}|#{result[:redo]}|#{result[:need_help]}|#{result[:working_on_it]}|#{result[:fix_and_resubmit]}|#{result[:ready_to_mark]}|#{result[:discuss]}|#{result[:demonstrate]}|#{result[:complete]}"
 
     save
     self.task_stats
@@ -721,7 +721,7 @@ class Project < ActiveRecord::Base
     #   working_on_it: 'fa fa-bolt',
     #   need_help: 'fa fa-question-circle',
     #   redo: 'fa fa-refresh',
-    #   fix_and_include: 'fa fa-stop',
+    #   do_not_resubmit: 'fa fa-stop',
     #   fix_and_resubmit: 'fa fa-wrench',
     #   discuss: 'fa fa-check',
     #   complete: 'fa fa-check-circle-o'
@@ -781,7 +781,7 @@ EOF
     logger.debug "Generating cover page for project #{id} - #{cover_filename}"
 
     coverp_file = File.new(cover_filename, "w")
-    coverp_file.write(coverpage_body)
+    coverp_file.write(coverpage_html)
     coverp_file.close
 
     cover_filename

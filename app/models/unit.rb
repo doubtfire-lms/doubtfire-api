@@ -189,6 +189,8 @@ class Unit < ActiveRecord::Base
     if existing_project
       if existing_project.enrolled == false
         existing_project.enrolled = true
+        # If they are part of the unit, update their tutorial if supplied
+        existing_project.tutorial_id = tutorial_id unless tutorial_id.nil?
         existing_project.save
       end
 
@@ -361,22 +363,12 @@ class Unit < ActiveRecord::Base
 
         project_participant = project_participant.first
 
-        user_project = UnitRole.joins(project: :unit).where(
-            user_id: project_participant.id,
-            projects: {unit_id: id}
-          )
+        user_project = projects.where(user_id: project_participant.id).first
 
-        if not user_project
+        unless user_project
           ignored << { row:row, message: "User #{username} not enrolled in unit" }
           next
         end
-
-        if not user_project.count == 1
-          ignored << { row:row, message: "User #{username} not enrolled in unit" }
-          next
-        end
-
-        user_project = user_project.first.project
 
         if user_project.enrolled
           user_project.enrolled = false
@@ -528,7 +520,7 @@ class Unit < ActiveRecord::Base
     success = []
     errors = []
     ignored = []
-    
+
     logger.info "Starting import of group for #{group_set.name} for #{self.code}"
 
     CSV.parse(file, {
@@ -626,7 +618,7 @@ class Unit < ActiveRecord::Base
       return nil
     end
 
-    Tutorial.find_or_create_by( { unit_id: id, abbreviation: abbrev } ) do |tutorial|
+    Tutorial.create!( { unit_id: id, abbreviation: abbrev } ) do |tutorial|
       tutorial.meeting_day      = day
       tutorial.meeting_time     = time
       tutorial.meeting_location = location
@@ -1063,7 +1055,7 @@ class Unit < ActiveRecord::Base
   def tasks_awaiting_feedback
     student_tasks.
       joins(:task_status).
-      select("project_id", "tasks.id as id", "task_definition_id", "projects.tutorial_id as tutorial_id", "task_statuses.name as status_name", "completion_date", "times_assessed", "portfolio_evidence").
+      select("project_id", "tasks.id as id", "task_definition_id", "projects.tutorial_id as tutorial_id", "task_statuses.name as status_name", "completion_date", "times_assessed", "submission_date", "portfolio_evidence").
       where('task_statuses.id IN (:ids)', ids: [ TaskStatus.ready_to_mark, TaskStatus.need_help, TaskStatus.discuss, TaskStatus.demonstrate ]).
       where('(task_definitions.due_date IS NULL OR task_definitions.due_date > tasks.submission_date)').
       order('task_definition_id').
@@ -1075,8 +1067,9 @@ class Unit < ActiveRecord::Base
           tutorial_id: t.tutorial_id,
           status: TaskStatus.status_key_for_name(t.status_name),
           completion_date: t.completion_date,
-          times_assessed: t.times_assessed,
-          has_pdf: t.has_pdf
+          submission_date: t.submission_date,
+          times_assessed: t.times_assessed
+          # has_pdf: t.has_pdf
         }
       }
   end
@@ -1254,7 +1247,7 @@ class Unit < ActiveRecord::Base
       working_on_it:      0.0,
       need_help:          0.0,
       redo:               0.1,
-      fix_and_include:    0.1,
+      do_not_resubmit:    0.1,
       fix_and_resubmit:   0.3,
       ready_to_mark:      0.5,
       discuss:            0.8,

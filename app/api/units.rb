@@ -234,7 +234,6 @@ module Api
     get '/units/:id/stats/student_target_grade' do
       unit = Unit.find(params[:id])
       if not authorise? current_user, unit, :download_stats
-        puts 1
         error!({"error" => "Not authorised to download stats of student tasks in #{unit.code}"}, 403)
       end
 
@@ -245,7 +244,6 @@ module Api
     get '/units/:id/stats/task_status_pct' do
       unit = Unit.find(params[:id])
       if not authorise? current_user, unit, :download_stats
-        puts 2
         error!({"error" => "Not authorised to download stats of student tasks in #{unit.code}"}, 403)
       end
 
@@ -256,7 +254,6 @@ module Api
     get '/units/:id/stats/task_completion_stats' do
       unit = Unit.find(params[:id])
       if not authorise? current_user, unit, :download_stats
-        puts 3
         error!({"error" => "Not authorised to download stats of student tasks in #{unit.code}"}, 403)
       end
 

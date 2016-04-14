@@ -1,9 +1,9 @@
 class ShallowTaskSerializer < ActiveModel::Serializer
-  attributes :id, :status, :task_definition_id, :processing_pdf, :has_pdf, :include_in_portfolio, :pct_similar, :similar_to_count, :times_assessed, :grade
+  attributes :id, :status, :task_definition_id, :include_in_portfolio, :pct_similar, :similar_to_count, :times_assessed, :grade
 end
 
 class TaskUpdateSerializer < ActiveModel::Serializer
-  attributes :id, :status, :project_id, :new_stats, :processing_pdf, :include_in_portfolio, :other_projects, :times_assessed, :grade
+  attributes :id, :status, :project_id, :new_stats, :include_in_portfolio, :other_projects, :times_assessed, :grade
 
   def new_stats
     object.project.task_stats
@@ -37,22 +37,22 @@ class TaskStatSerializer < ActiveModel::Serializer
 end
 
 class TaskSerializer < ActiveModel::Serializer
-  attributes :id, :status, :completion_date, :task_name, :task_desc, :task_weight, :task_abbr, :upload_requirements, :processing_pdf, :pct_similar, :similar_to_count, :times_assessed
+  attributes :id, :status, :completion_date, :task_name, :task_desc, :task_weight, :task_abbr, :upload_requirements, :pct_similar, :similar_to_count, :times_assessed
 
   def task_name
-  	object.task_definition.name
+    object.task_definition.name
   end
 
   def task_desc
-  	object.task_definition.description
+    object.task_definition.description
   end
 
   def task_weight
-  	object.task_definition.weighting
+    object.task_definition.weighting
   end
 
   def task_abbr
-  	object.task_definition.abbreviation
+    object.task_definition.abbreviation
   end
 
   def upload_requirements

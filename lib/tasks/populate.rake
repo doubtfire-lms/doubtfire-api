@@ -115,7 +115,7 @@ namespace :db do
             when 96..97
               task.assess TaskStatus.working_on_it, tutor, complete_date
             when 97
-              task.assess TaskStatus.fix_and_include, tutor, complete_date
+              task.assess TaskStatus.do_not_resubmit, tutor, complete_date
             when 98..99
               task.assess TaskStatus.redo, tutor, complete_date
             else
@@ -305,7 +305,7 @@ namespace :db do
     TaskStatus.create(name:  "Need Help", description:  "Some help is required in order to complete this task.")
     TaskStatus.create(name:  "Working On It", description:  "This task is currently being worked on.")
     TaskStatus.create(name:  "Fix and Resubmit", description:  "This task must be resubmitted after fixing some issues.")
-    TaskStatus.create(name:  "Fix and Include", description:  "This task must be fixed and included in your portfolio, but should not be resubmitted.")
+    TaskStatus.create(name:  "Do Not Resubmit", description:  "This task must be fixed and included in your portfolio, but should not be resubmitted.")
     TaskStatus.create(name:  "Redo", description:  "This task needs to be redone.")
     TaskStatus.create(name:  "Discuss", description:  "Your work looks good, discuss it with your tutor to complete.")
     TaskStatus.create(name:  "Ready to Mark", description:  "This task is ready for the tutor to assess to provide feedback.")

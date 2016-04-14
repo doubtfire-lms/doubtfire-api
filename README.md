@@ -11,8 +11,9 @@ A modern, lightweight learning management system.
   2. [...on Linux](#getting-started-on-linux)
   3. [...via Docker](#getting-started-via-docker)
 2. [Running Rake Tasks](#running-rake-tasks)
-3. [Contributing](#contributing)
-4. [License](#license)
+3. [PDF Generation Prerequisites](#pdf-generation-prerequisites)
+4. [Contributing](#contributing)
+5. [License](#license)
 
 ## Getting started
 
@@ -47,10 +48,10 @@ _or_, if you're using [Oh-My-Zsh](http://ohmyz.sh), add to your `.zshrc`:
 $ echo 'eval "$(rbenv init -)"' >> ~/.zshrc
 ```
 
-Now install Ruby v2.1.2:
+Now install Ruby v2.0.0-p353:
 
 ```
-$ rbenv install 2.1.2
+$ rbenv install 2.0.0-p353
 ```
 
 #### 3. Install Postgres
@@ -79,7 +80,6 @@ CREATE ROLE itig WITH CREATEDB PASSWORD 'd872$dh' LOGIN;
 Install `imagemagick` and `libmagic` using Homebrew:
 
 ```
-$ brew tap docmunch/pdftk
 $ brew install imagemagick libmagic
 ```
 
@@ -96,14 +96,24 @@ $ sudo easy_install Pygments
 Clone project and change your working directory to the api:
 
 ```
-$ git clone https://github.com/doubtfire-lms/doubtfire-web.git
+$ git clone https://github.com/doubtfire-lms/doubtfire-api.git
 $ cd ./doubtfire-api
+```
+
+Set up [overcommit](https://github.com/brigade/overcommit) and install hooks:
+
+```
+$ gem install overcommit
+$ rbenv rehash
+$ overcommit --install
+$ overcommit --sign
 ```
 
 Then install Doubtfire API dependencies using [bundler](http://bundler.io):
 
 ```
 $ gem install bundler
+$ rbenv rehash
 $ bundle install --without production test replica
 ```
 
@@ -148,7 +158,7 @@ Installing pg 0.17.1 with native extensions
 
 Gem::Installer::ExtensionBuildError: ERROR: Failed to build gem native extension.
 
-    /Users/[User]/.rbenv/versions/2.1.2/bin/ruby extconf.rb
+    /Users/[User]/.rbenv/versions/2.0.0/bin/ruby extconf.rb
 checking for pg_config... no
 No pg_config... trying anyway. If building fails, please try again with
  --with-pg-config=/path/to/pg_config
@@ -185,7 +195,7 @@ Installing ruby-filemagic 0.6.0 with native extensions
 
 Gem::Installer::ExtensionBuildError: ERROR: Failed to build gem native extension.
 
-    /Users/[User]/.rbenv/versions/2.1.2/bin/ruby extconf.rb
+    /Users/[User]/.rbenv/versions/2.0.0/bin/ruby extconf.rb
 checking for magic_open() in -lmagic... no
 checking for magic.h... no
 *** ERROR: missing required library to compile this module
@@ -249,10 +259,11 @@ $ echo 'eval "$(rbenv init -)"' >> ~/.zshrc
 $ echo 'export PATH="$HOME/.rbenv/plugins/ruby-build/bin:$PATH"' >> ~/.zshrc
 ```
 
-Now install Ruby v2.1.2:
+Now install Ruby v2.0.0:
 
 ```
-$ rbenv install 2.1.2
+$ sudo apt-get install -y libreadline-dev
+$ rbenv install 2.0.0-p353
 ```
 
 #### 3. Install Postgres
@@ -303,14 +314,24 @@ $ sudo apt-get install python-pygments
 Clone project and change your working directory to the api:
 
 ```
-$ git clone https://github.com/doubtfire-lms/doubtfire-web.git
+$ git clone https://github.com/doubtfire-lms/doubtfire-api.git
 $ cd ./doubtfire-api
+```
+
+Set up [overcommit](https://github.com/brigade/overcommit) and install hooks:
+
+```
+$ gem install overcommit
+$ rbenv rehash
+$ overcommit --install
+$ overcommit --sign
 ```
 
 Then install Doubtfire API dependencies using [bundler](http://bundler.io):
 
 ```
 $ gem install bundler
+$ rbenv rehash
 $ bundle install --without production test replica
 ```
 
@@ -327,7 +348,7 @@ Installing ruby-filemagic 0.6.0 with native extensions
 
 Gem::Installer::ExtensionBuildError: ERROR: Failed to build gem native extension.
 
-    /Users/[User]/.rbenv/versions/2.1.2/bin/ruby extconf.rb
+    /Users/[User]/.rbenv/versions/2.0.0-p353/bin/ruby extconf.rb
 checking for magic_open() in -lmagic... no
 checking for magic.h... no
 *** ERROR: missing required library to compile this module
@@ -416,6 +437,24 @@ $ git clone https://github.com/doubtfire-lms/doubtfire-web.git
 $ git clone https://github.com/doubtfire-lms/doubtfire-api.git
 ```
 
+Set up [overcommit](https://github.com/brigade/overcommit) and install hooks:
+
+```
+$ sudo gem install overcommit
+$ cd /path/to/doubtfire-api
+$ overcommit --install
+$ overcommit --sign
+$ cd /path/to/doubtfire-web
+$ overcommit --install
+$ overcommit --sign
+```
+
+If `gem` fails, you should ensure Ruby is installed on your system:
+
+- **OS X**: ruby comes installed with OS X
+- **Linux**: try installing using `apt-get install ruby-full`
+- **Windows**: try [RubyInstaller](http://rubyinstaller.org)
+
 ### 4. Starting Doubtfire
 
 Execute the docker start script under `doubtfire-api`:
@@ -470,7 +509,53 @@ $ docker-compose -p doubtfire run api <api command>
 $ docker-compose -p doubtfire run web <web command>
 ```
 
-#### Generating PDFs on the Dockerised API
+## Running Rake Tasks
+
+You can perform developer-specific tasks using `rake`. For a list of all tasks, execute in the root directory:
+
+```
+rake --tasks
+```
+
+## PDF Generation Prerequisites
+
+PDF generation requires [LaTeX](https://en.wikipedia.org/wiki/LaTeX) to be installed. If you do not install LaTeX and execute the `submission:generate_pdfs` task, you will encounter errors.
+
+Install LaTeX on your platform before running this task.
+
+### Installing LaTeX on OS X
+
+For OS X with Homebrew Cask, use:
+
+```
+$ brew cask install mactex
+```
+
+For OS X without Homebrew, download and install the [MacTeX distribution](http://www.tug.org/mactex/mactex-download.html).
+
+A note especially for OS X users who have installed LaTeX under El Capitan, your installation will be under `/Library/TeX/texbin`. This **needs to be added to the `PATH`**:
+
+```
+$ echo "export PATH=$PATH:/Library/TeX/texbin" >> ~/.bashrc
+```
+
+or, if using zsh:
+
+```
+$ echo "export PATH=$PATH:/Library/TeX/texbin" >> ~/.zshrc
+```
+
+Refer to [this artcile](http://www.tug.org/mactex/elcapitan.html) for more about MacTeX installs on El Capitan.
+
+### Installing LaTeX on Linux
+
+For Linux, use:
+
+```
+$ apt-get install texlive-full
+```
+
+### Installing LaTeX on a Docker container
 
 By default, LaTeX is not installed within the Doubtfire API container to save time and space.
 
@@ -480,19 +565,24 @@ Should you need to install LaTeX within the container run:
 $ docker-compose -p doubtfire run api "bash -c 'apt-get update && apt-get install texlive-full'"
 ```
 
-## Running Rake Tasks
+### Check your PATH for Linux and OS X
 
-You can perform developer-specific tasks using `rake`. For a list of all tasks, execute in the root directory:
+After installing LaTeX, you must ensure the following are listed on the `PATH`:
 
 ```
-rake --tasks
+$ which convert
+/usr/local/bin/convert
+$ which pdftk
+/usr/local/bin/pdftk
+$ which pygmentize
+/usr/local/bin/pygmentize
+$ which pdflatex
+/Library/TeX/texbin/pdflatex
 ```
 
-### PDF Generation
+If any of the following are not found, then you will need to double check your installation and ensure the binaries are on the `PATH`. If they are not installed correctly, refer to the install native tools section for [OS X](#4-install-native-tools) and [Linux](#4-install-native-tools-1) and ensure the native tools are installing properly.
 
-PDF generation requires LaTeX to be installed. If you do not install LaTeX and execute the `submission:generate_pdfs` task, you will encounter errors.
-
-Install LaTeX on your platform before running this task. If using Docker, refer to the [Docker LaTeX section](#generating-pdfs-on-the-dockerised-api).
+This section does not apply to users using Docker for Doubtfire.
 
 ## Contributing
 
