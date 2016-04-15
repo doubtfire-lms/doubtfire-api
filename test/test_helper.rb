@@ -13,6 +13,7 @@ require "minitest/pride"
 
 # Require help with all tests
 require 'helpers/auth_helper'
+require 'helpers/assert_helper'
 
 class ActiveSupport::TestCase
     ActiveRecord::Migration.check_pending!
