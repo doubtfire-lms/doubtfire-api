@@ -1,3 +1,5 @@
+require 'doubtfire_logger'
+
 Doubtfire::Application.configure do
   # Settings specified here will take precedence over those in config/application.rb
 
@@ -48,4 +50,6 @@ Doubtfire::Application.configure do
   # ActiveRecord::Base.logger = Logger.new(STDOUT)
 
   config.moss_key = "924185900"
+
+  config.logger = DoubtfireLogger.logger
 end

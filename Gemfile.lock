@@ -59,7 +59,9 @@ GEM
     colored (1.2)
     daemon_controller (1.2.0)
     daemons (1.1.9)
+    database_cleaner (1.5.1)
     descendants_tracker (0.0.3)
+      thread_safe (~> 0.3, >= 0.3.1)
     devise (3.1.2)
       bcrypt-ruby (~> 3.0)
       orm_adapter (~> 0.1)
@@ -117,6 +119,12 @@ GEM
     mime-types (1.25.1)
     mini_portile (0.5.2)
     minitest (4.7.5)
+    minitest-rails (1.0.1)
+      minitest (~> 4.7)
+      minitest-test (~> 1.0)
+      railties (>= 3.0, < 4.1)
+    minitest-test (1.1.0)
+      minitest (~> 4.0)
     moss_ruby (1.1.2)
     multi_json (1.8.4)
     multi_xml (0.5.5)
@@ -239,6 +247,7 @@ DEPENDENCIES
   capybara
   ci_reporter
   coderay
+  database_cleaner
   devise (~> 3.1.2)
   devise_ldap_authenticatable
   factory_girl_rails
@@ -248,6 +257,7 @@ DEPENDENCIES
   grape-swagger
   hirb
   launchy
+  minitest-rails
   moss_ruby (= 1.1.2)
   mysql2
   passenger (= 4.0.42)

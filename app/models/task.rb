@@ -449,9 +449,6 @@ class Task < ActiveRecord::Base
   end
 
   def submit(submit_date = Time.zone.now)
-    if self.task_status != TaskStatus.ready_to_mark
-      self.times_submitted += 1
-    end
     self.task_status      = TaskStatus.ready_to_mark
     self.submission_date  = submit_date
 
@@ -729,7 +726,6 @@ class Task < ActiveRecord::Base
 
       if output_filename.nil?
         logger.error "Error processing task #{id} - missing file #{file_req}"
-        puts "Error processing task #{id} - missing file #{file_req}"
       else
         result << { path: output_filename, type: file_req['type'] }
 

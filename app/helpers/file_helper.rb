@@ -1,8 +1,8 @@
-require 'terminator'
 require 'zip'
 
 module FileHelper
   extend LogHelper
+  extend TimeoutHelper
 
   def check_mime_against_list! (file, expect, type_list)
     fm = FileMagic.new(FileMagic::MAGIC_MIME)
@@ -189,7 +189,7 @@ module FileHelper
 
       # try with convert
       did_compress = false
-      Terminator.terminate 40 do
+      try_within 40, "compressing image" do
         did_compress = system exec
       end
 
@@ -228,7 +228,7 @@ module FileHelper
         exec = "#{Rails.root.join('lib', 'shell', 'timeout.sh')} -t 30 nice -n 10 convert \"#{path}\" -compress Zip \"#{tmp_file}\" >>/dev/null 2>>/dev/null"
 
         # try with convert
-        Terminator.terminate 40 do
+        try_within 40, "compressing PDF" do
           did_compress = system exec
         end
 
@@ -342,8 +342,11 @@ module FileHelper
   def pdf_valid?(file)
     did_succeed = false
 
-    Terminator.terminate 30 do
+    try_within 30, "validating PDF" do
       did_succeed = system "nice -n 10 pdftk #{file} output /dev/null dont_ask"
+      unless did_succeed
+        logger.error "Failed to validate PDF file. Is pdftk installed?"
+      end
     end
 
     did_succeed
