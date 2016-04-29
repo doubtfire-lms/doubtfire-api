@@ -697,7 +697,7 @@ class Task < ActiveRecord::Base
     pwd = FileUtils.pwd
     Dir.chdir(in_dir)
 
-    result = Dir.glob("#{idx.to_s.rjust(3, '0')}.#{type}.*").first
+    result = Dir.glob("#{idx.to_s.rjust(3, '0')}-#{type}.*").first
     if (not result.nil?) && File.exists?(result)
       FileUtils.mv result, "#{idx.to_s.rjust(3, '0')}-#{type}#{File.extname(result)}"
     end

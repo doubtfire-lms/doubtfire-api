@@ -322,7 +322,7 @@ module FileHelper
     #
     pdf_paths = []
     files.each do | file |
-      outpath = "#{dest_path}/#{file[:idx]}.#{file[:type]}.pdf"
+      outpath = "#{dest_path}/#{file[:idx]}-#{file[:type]}.pdf"
 
       convert_to_pdf(file, outpath)
 
