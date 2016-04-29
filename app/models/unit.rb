@@ -1106,7 +1106,7 @@ class Unit < ActiveRecord::Base
         count = data.select{|r| r[:task_definition_id] == td.id && r[:tutorial_id] == t.id }.map{|r| r[:num]}.inject(:+)
         count = 0 unless count
 
-        num = t.projects.where("projects.target_grade >= :grade", grade: td.target_grade).count
+        num = t.projects.where("projects.enrolled = TRUE AND projects.target_grade >= :grade", grade: td.target_grade).count
         num = 0 unless num
 
         if num - count > 0

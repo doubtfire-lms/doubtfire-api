@@ -862,6 +862,7 @@ class Task < ActiveRecord::Base
       reload
     else
       self.file_uploaded_at = DateTime.now
+      self.submission_date = Time.zone.now
 
       # This task is now ready to submit
       if not (discuss_or_demonstrate? || complete? || do_not_resubmit? || fail?)
