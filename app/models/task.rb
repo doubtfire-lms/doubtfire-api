@@ -708,7 +708,7 @@ class Task < ActiveRecord::Base
       Dir.chdir(pwd)
     end
 
-    return File.join(in_dir, result) unless result.nil
+    return File.join(in_dir, result) unless result.nil?
     nil
   end
 
