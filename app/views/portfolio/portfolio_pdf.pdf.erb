@@ -28,7 +28,6 @@ end
 def task_for_def(td)
   task_for_def_id(td.id)
 end
-
 %>
 
 \begin{titlepage}
@@ -153,6 +152,32 @@ No Tutor
 \end{tabular}
 <% end %>
 
+% -----------------------------------------------------------------------------
+% Additional Files
+% -----------------------------------------------------------------------------
+
+\clearpage
+
+<% if @files.count > 0 %>
+  \section{Additional Files}
+
+  \begin{enumerate}
+    <% @files.each do |f| %>
+      <% next if f[:idx] == 0 %>
+      \item <%= lesc f[:name] %>
+    <% end %>
+  \end{enumerate}
+
+  <% @files.each do |f| %>
+    <% next if f[:idx] == 0 %>
+    \clearpage
+
+    \phantomsection
+    \label{additional_file_<%= f[:idx] %>}
+    \addcontentsline{toc}{subsection}{<%= lesc f[:name] %>}
+    <%= render partial:"shared/file", locals: {idx: f[:idx] - 1, count: @files.count - 1, name: f[:name], base_path: @base_path, file_name: @project.portfolio_tmp_file_path(f), file_type: f[:kind]} %>
+  <% end %>
+<% end %>
 
 % -----------------------------------------------------------------------------
 % Portfolio Task Pages
@@ -160,10 +185,11 @@ No Tutor
 
 <% @portfolio_tasks.each do |task| %>
   \clearpage
+
   \section{<%= lesc task.task_definition.name %>}
   \label{sec_<%= lesc task.task_definition.abbreviation %>}
 
-  <%= task.task_definition.description %>
+  <%= lesc task.task_definition.description %>
   \bigskip
 
   <% task.learning_outcome_task_links.each do | link | %>

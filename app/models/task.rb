@@ -761,7 +761,7 @@ class Task < ActiveRecord::Base
     end
   end
 
-  def pygments_lang(extn)
+  def self.pygments_lang(extn)
     extn = extn.downcase
     case
       when ['pas', 'pp'].include?(extn) then 'pas'

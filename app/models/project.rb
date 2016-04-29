@@ -625,13 +625,23 @@ class Project < ActiveRecord::Base
   #
   # Portfolio production code
   #
+  def portfolio_temp_path
+    portfolio_dir = FileHelper.student_portfolio_dir(self, false)
+    portfolio_tmp_dir = File.join(portfolio_dir, "tmp")
+  end
+
+  def portfolio_tmp_file_name(dict)
+    FileHelper.sanitized_filename("#{dict[:idx].to_s.rjust(3, '0')}-#{dict[:kind]}-#{dict[:name]}")
+  end
+
+  def portfolio_tmp_file_path(dict)
+    File.join(portfolio_temp_path, portfolio_tmp_file_name(dict))
+  end
 
   def move_to_portfolio(file, name, kind)
     # get path to portfolio dir
-    portfolio_dir = FileHelper.student_portfolio_dir(self)
-
     # get path to tmp folder where file parts will be stored
-    portfolio_tmp_dir = File.join(portfolio_dir, "tmp")
+    portfolio_tmp_dir = portfolio_temp_path
     FileUtils.mkdir_p(portfolio_tmp_dir)
     result = {
       kind: kind,
@@ -654,17 +664,14 @@ class Project < ActiveRecord::Base
       result[:idx] = idx
     end
 
-    dest_file = FileHelper.sanitized_filename("#{result[:idx].to_s.rjust(3, '0')}-#{kind}-#{result[:name]}")
+    dest_file = portfolio_tmp_file_name(result)
     FileUtils.cp file.tempfile.path, File.join(portfolio_tmp_dir, dest_file)
     result
   end
 
   def portfolio_files()
     # get path to portfolio dir
-    portfolio_dir = FileHelper.student_portfolio_dir(self, false)
-
-    # get path to tmp folder where file parts will be stored
-    portfolio_tmp_dir = File.join(portfolio_dir, "tmp")
+    portfolio_tmp_dir = portfolio_temp_path
     return [] unless Dir.exists? portfolio_tmp_dir
 
     result = []
@@ -685,10 +692,7 @@ class Project < ActiveRecord::Base
   # Remove a file from the portfolio tmp folder
   def remove_portfolio_file(idx, kind, name)
     # get path to portfolio dir
-    portfolio_dir = FileHelper.student_portfolio_dir(self, false)
-
-    # get path to tmp folder where file parts will be stored
-    portfolio_tmp_dir = File.join(portfolio_dir, "tmp")
+    portfolio_tmp_dir = portfolio_temp_path
     return unless Dir.exists? portfolio_tmp_dir
 
     # the file is in the students portfolio tmp dir
@@ -818,8 +822,7 @@ EOF
     save!
 
     # get path to portfolio dirs
-    portfolio_dir = FileHelper.student_portfolio_dir(self, false)
-    portfolio_tmp_dir = File.join(portfolio_dir, "tmp")
+    portfolio_tmp_dir = portfolio_temp_path
     return false unless Dir.exists? portfolio_tmp_dir
 
     tmp_dir = File.join( Dir.tmpdir, 'doubtfire', 'portfolio', id.to_s )
@@ -935,8 +938,8 @@ EOF
       @student = project.student
       @project = project
       @learning_summary_report = project.learning_summary_report_path
-      # @files = task.in_process_files_for_task
-      # @base_path = project.student_work_dir(:in_process, false)
+      @files = project.portfolio_files
+      @base_path = project.portfolio_temp_path
       @image_path = Rails.root.join("public", "assets", "images")
 
       @ordered_tasks = project.tasks.joins(:task_definition).order("task_definitions.start_date, task_definitions.abbreviation").where("task_definitions.target_grade <= #{project.target_grade}")
@@ -957,8 +960,7 @@ EOF
   # This returns nil if there is no learning summary report.
   #
   def learning_summary_report_path
-    portfolio_dir = FileHelper.student_portfolio_dir(self, false)
-    portfolio_tmp_dir = File.join(portfolio_dir, "tmp")
+    portfolio_tmp_dir = portfolio_temp_path
 
     return nil unless Dir.exists? portfolio_tmp_dir
 
