@@ -654,7 +654,7 @@ class Project < ActiveRecord::Base
       result[:idx] = idx
     end
 
-    dest_file = FileHelper.sanitized_filename("#{result[:idx].to_s.rjust(3, '0')}.#{kind}.#{result[:name]}")
+    dest_file = FileHelper.sanitized_filename("#{result[:idx].to_s.rjust(3, '0')}-#{kind}-#{result[:name]}")
     FileUtils.cp file.tempfile.path, File.join(portfolio_tmp_dir, dest_file)
     result
   end
@@ -670,12 +670,12 @@ class Project < ActiveRecord::Base
     result = []
 
     Dir.chdir(portfolio_tmp_dir)
-    files = Dir.glob("*").select { | f | (f =~ /^\d{3}\.(cover|document|code|image)/) == 0 }
+    files = Dir.glob("*").select { | f | (f =~ /^\d{3}\-(cover|document|code|image)/) == 0 }
     files.each { | file |
-      parts = file.split(".");
+      parts = file.split("-");
       idx = parts[0].to_i
       kind = parts[1]
-      name = parts.drop(2).join(".")
+      name = parts.drop(2).join("-")
       result << { kind: kind, name: name, idx: idx }
     }
 
@@ -694,7 +694,7 @@ class Project < ActiveRecord::Base
     # the file is in the students portfolio tmp dir
     rm_file = File.join(
         portfolio_tmp_dir,
-        FileHelper.sanitized_filename("#{idx.to_s.rjust(3, '0')}.#{kind}.#{name}")
+        FileHelper.sanitized_filename("#{idx.to_s.rjust(3, '0')}-#{kind}-#{name}")
       )
 
     # try to remove the file
@@ -788,7 +788,7 @@ EOF
   end
 
   def portfolio_path()
-    File.join(FileHelper.student_portfolio_dir(self, false), FileHelper.sanitized_filename("#{student.username}-portfolio.pdf"))
+    File.join(FileHelper.student_portfolio_dir(self, true), FileHelper.sanitized_filename("#{student.username}-portfolio.pdf"))
   end
 
   def has_portfolio()
@@ -918,5 +918,92 @@ EOF
 
   def export_task_alignment_to_csv
     LearningOutcomeTaskLink.export_task_alignment_to_csv(unit, self)
+  end
+
+  class ProjectAppController < ApplicationController
+    attr_accessor :student
+    attr_accessor :project
+    attr_accessor :base_path
+    attr_accessor :image_path
+    attr_accessor :learning_summary_report
+    attr_accessor :ordered_tasks
+    attr_accessor :portfolio_tasks
+    attr_accessor :task_defs
+    attr_accessor :outcomes
+
+    def init(project)
+      @student = project.student
+      @project = project
+      @learning_summary_report = project.learning_summary_report_path
+      # @files = task.in_process_files_for_task
+      # @base_path = project.student_work_dir(:in_process, false)
+      @image_path = Rails.root.join("public", "assets", "images")
+
+      @ordered_tasks = project.tasks.joins(:task_definition).order("task_definitions.start_date, task_definitions.abbreviation").where("task_definitions.target_grade <= #{project.target_grade}")
+
+      @portfolio_tasks = project.portfolio_tasks
+      @task_defs = project.unit.task_definitions.order(:start_date)
+      @outcomes = project.unit.learning_outcomes.order(:ilo_number)
+    end
+
+    def make_pdf()
+      render_to_string(:template => "/portfolio/portfolio_pdf.pdf.erb", :layout => true)
+    end
+  end
+
+
+  #
+  # Return the path to the student's learning summary report.
+  # This returns nil if there is no learning summary report.
+  #
+  def learning_summary_report_path
+    portfolio_dir = FileHelper.student_portfolio_dir(self, false)
+    portfolio_tmp_dir = File.join(portfolio_dir, "tmp")
+
+    return nil unless Dir.exists? portfolio_tmp_dir
+
+    filename = "#{portfolio_tmp_dir}/000-document-LearningSummaryReport.pdf"
+    return nil unless File.exists? filename
+    filename
+  end
+
+  def create_project_portfolio
+    begin
+      pac = ProjectAppController.new
+      pac.init(self)
+
+      pdf_text = pac.make_pdf
+
+      File.open(self.portfolio_path, 'w') do |fout|
+        fout.puts pdf_text
+      end
+
+      #
+      # FileHelper.compress_pdf(self.portfolio_evidence)
+      #
+      # self.save
+      #
+      # clear_in_process()
+      return true
+    rescue => e
+      logger.error "Failed to convert portfolio to PDF project #{id} - #{student.username}.\nError: #{e.message}"
+
+      log_file = e.message.scan(/\/.*\.log/).first
+      # puts "log file is ... #{log_file}"
+      if log_file && File.exists?(log_file)
+        # puts "exists"
+        begin
+          puts "--- Latex Log ---\n"
+          puts File.read(log_file)
+          puts "---    End    ---\n\n"
+        rescue
+        end
+      end
+
+      # clear_in_process()
+      #
+      # trigger_transition 'fix', project.main_tutor
+      # raise "Check code files submitted for invalid characters, that documents are valid pdfs, and that images are valid."
+    end
   end
 end

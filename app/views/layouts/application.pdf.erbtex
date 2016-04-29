@@ -8,6 +8,15 @@
 \usepackage{pdfpages}
 \usepackage{epstopdf}
 \usepackage{amssymb}
+\usepackage{colortbl}
+\usepackage{lastpage}
+\usepackage[colorlinks]{hyperref}
+\hypersetup{colorlinks,
+  linkcolor=black,
+  filecolor=black,
+  urlcolor=blue,
+  citecolor=black}
+
 \epstopdfDeclareGraphicsRule{.tif}{png}{.png}{convert #1 \OutputFile}
 \AppendGraphicsExtensions{.tif}
 \epstopdfDeclareGraphicsRule{.tiff}{png}{.png}{convert #1 \OutputFile}
@@ -40,14 +49,23 @@
     \fancyhead{}
     \fancyfoot[C]
     {
-        \footnotesize Produced by Doubtfire
+      \footnotesize Page {\thepage} of \pageref{LastPage}
     }
-    \fancyfoot[R]
-    {
-        \date{\today}
-    }
+    \fancyfoot[R]{}
 }
 
+\definecolor{complete}{rgb}{0.357, 0.718, 0.357}
+\definecolor{rtm}{rgb}{0.0,0.47,0.84}
+
+\definecolor{notstarted}{rgb}{0.8,0.8,0.8}
+\definecolor{workingonit}{rgb}{0.922, 0.561, 0.024}
+\definecolor{needhelp}{rgb}{0.643, 0.561, 0.808}
+\definecolor{fix}{rgb}{0.949, 0.847, 0.361}
+\definecolor{dnr}{rgb}{0.831, 0.42, 0.329}
+\definecolor{redo}{rgb}{0.502, 0.251, 0}
+\definecolor{discuss}{rgb}{0.192, 0.69, 0.835}
+\definecolor{demo}{rgb}{0.259, 0.545, 0.792}
+\definecolor{fail}{rgb}{0.851, 0.216, 0.075}
 
 \begin{document}
 

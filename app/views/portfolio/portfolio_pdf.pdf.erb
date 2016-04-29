@@ -1,0 +1,194 @@
+<% @latex_config={:parse_runs => 3} %>
+
+<%
+def latex_color_for_status(task)
+  if task.nil?
+    'notstarted'
+  else
+    case task.status
+    when :complete          then 'complete'
+    when :not_started       then 'notstarted'
+    when :fix_and_resubmit  then 'fix'
+    when :do_not_resubmit   then 'dnr'
+    when :redo              then 'redo'
+    when :need_help         then 'needhelp'
+    when :working_on_it     then 'workingonit'
+    when :discuss           then 'discuss'
+    when :ready_to_mark     then 'rtm'
+    when :demonstrate       then 'demo'
+    when :fail              then 'fail'
+    end
+  end
+end
+
+def task_for_def_id(id)
+  @project.tasks.where(task_definition_id: id).first
+end
+
+def task_for_def(td)
+  task_for_def_id(td.id)
+end
+
+%>
+
+\begin{titlepage}
+  <% if @learning_summary_report %>
+    \includepdf[pages={1-1}]{<%= @learning_summary_report %>}
+  <% end %>
+
+  \thispagestyle{title}
+  \center
+
+%----------------------------------------------------------------------------------------
+%   HEADING SECTIONS
+%----------------------------------------------------------------------------------------
+
+  \textsc{\LARGE Swinburne University of Technology}\\[1.5cm]
+  \textsc{\Large <%= lesc @project.unit.name %>}\\[0.5cm]
+  \textsc{\large <%=   lesc @student.first_name %> \textsc{<%= lesc @student.last_name %>}}\\[0.5cm]
+
+%----------------------------------------------------------------------------------------
+%   TITLE SECTION
+%----------------------------------------------------------------------------------------
+
+  \HRule \\[0.4cm]
+  { \huge \bfseries Portfolio Submission}\\[0.4cm] % Title of your document
+  \HRule \\[1.5cm]
+
+%----------------------------------------------------------------------------------------
+%   AUTHOR SECTION
+%----------------------------------------------------------------------------------------
+
+\begin{minipage}{0.4\textwidth}
+\begin{flushleft} \large
+\emph{Submitted By:} \\
+<%=   lesc @student.first_name %> \textsc{<%= lesc @student.last_name %>}\\
+<%=   lesc @student.username %>\\
+\end{flushleft}
+\end{minipage}
+~
+\begin{minipage}{0.4\textwidth}
+\begin{flushright} \large
+\emph{Tutor:} \\
+<%  if not @project.main_tutor.nil? %>
+<%=   lesc @project.main_tutor.first_name %> \textsc{<%= lesc @project.main_tutor.last_name %>}
+<%  else %>
+No Tutor
+<%  end %>
+\end{flushright}
+\end{minipage}\\[4cm]
+
+%----------------------------------------------------------------------------------------
+% DATE SECTION
+%----------------------------------------------------------------------------------------
+
+{\large \today}\\[3cm] % Date, change the \today to a set date if you want to be precise
+
+%----------------------------------------------------------------------------------------
+% LOGO SECTION
+%----------------------------------------------------------------------------------------
+
+\includegraphics[width=1cm]{apple-touch-icon-180x180.png}
+
+\vfill
+
+\end{titlepage}
+
+\pagestyle{body}
+
+\tableofcontents
+
+\clearpage
+<% if @learning_summary_report %>
+  \includepdf[addtotoc={\thepage,section,1,Learning Summary Report,chap:learningsummary},pages={2-}]{<%= @learning_summary_report %>}
+<% end %>
+
+% -----------------------------------------------------------------------------
+% Overall task status details
+% -----------------------------------------------------------------------------
+
+\section{Overall Task Status}
+\label{sec:Overall Task Status}
+
+\begin{tabular}{p{8cm}|l|l}
+  \textbf{Task} & \textbf{Status} & \textbf{Times Assessed} \\
+  \hline
+<% @task_defs.each do |td| %>
+  <%= lesc td.name %> &
+  <% task = task_for_def(td)
+    if task.nil?
+  %>
+  \cellcolor{<%= latex_color_for_status(task) %>}<%= lesc 'Not Started' %> &  \\
+  <% else %>
+  \cellcolor{<%= latex_color_for_status(task) %>}<%= lesc task.task_status.name %> & <%= lesc task.times_assessed %> \\
+  <% end %>
+<% end %>
+\end{tabular}
+
+
+% -----------------------------------------------------------------------------
+% Learning Outcomes
+% -----------------------------------------------------------------------------
+
+\clearpage
+\section{Learning Outcomes}
+\label{sec:Learning Outcomes}
+
+<% @outcomes.each do | outcome | %>
+\subsection{<%= lesc outcome.name %>}
+\label{sub:<%= lesc outcome.name %>}
+
+<%= lesc outcome.description %>
+\medskip
+
+\begin{tabular}{p{6cm}|l|m{3cm}|l}
+  \textbf{Task} & \textbf{Rating} & \textbf{Status} & \textbf{Times Assessed}\\ \hline
+  <% @project.tasks.joins(:learning_outcome_task_links).joins(:task_definition).where("learning_outcome_task_links.learning_outcome_id = #{outcome.id}").select("learning_outcome_task_links.rating AS r", "task_definitions.name AS task_name","task_definitions.id AS td_id").each do | data | %>
+    <% task = task_for_def_id(data.td_id) %>
+    <%= lesc data.task_name %> &
+    $<%= '\blacklozenge' * data.r %><%= '\lozenge' * (5 - data.r) %>$ &
+    \cellcolor{<%= latex_color_for_status(task) %>}{<%= lesc task.task_status.name %>} &
+    <%= lesc task.times_assessed %> \\
+  <% end %>
+\end{tabular}
+<% end %>
+
+
+% -----------------------------------------------------------------------------
+% Portfolio Task Pages
+% -----------------------------------------------------------------------------
+
+<% @portfolio_tasks.each do |task| %>
+  \clearpage
+  \section{<%= lesc task.task_definition.name %>}
+  \label{sec_<%= lesc task.task_definition.abbreviation %>}
+
+  <%= task.task_definition.description %>
+  \bigskip
+
+  <% task.learning_outcome_task_links.each do | link | %>
+    \begin{tabular}{p{8cm}|l}
+      \textbf{Outcome} & \textbf{Weight}\\
+      \hline
+      <%= lesc link.learning_outcome.name %> &
+      $<%= '\blacklozenge' * link.rating %><%= '\lozenge' * (5 - link.rating) %>$ \\
+      \end{tabular}
+      \medskip
+
+      <%= lesc link.description %>
+      \bigskip
+
+  <% end %>
+
+  <% if task.comments.count > 0 %>
+    \begin{tabular}{p{3cm}|p{3cm}|p{9cm}}
+      \textbf{Date} & \textbf{Author} & \textbf{Comment} \\ \hline
+      <% task.comments.each do |comment| %>
+        <%= lesc comment.created_at.localtime.strftime("%Y/%m/%d %H:%M") %> & <%= lesc comment.user.name %> & <%= lesc comment.comment %> \\
+      <% end %>
+    \end{tabular}
+  <% end %>
+  <% if File.exists? task.portfolio_evidence %>
+    \includepdf[pages={2-}]{<%= task.portfolio_evidence %>}
+  <% end %>
+<% end %>
