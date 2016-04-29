@@ -696,15 +696,19 @@ class Task < ActiveRecord::Base
   def __output_filename__(in_dir, idx, type)
     pwd = FileUtils.pwd
     Dir.chdir(in_dir)
+    begin
+      # Rename files with 000.type.* to 000-type-*
+      result = Dir.glob("#{idx.to_s.rjust(3, '0')}.#{type}.*").first
 
-    result = Dir.glob("#{idx.to_s.rjust(3, '0')}-#{type}.*").first
-    if (not result.nil?) && File.exists?(result)
-      FileUtils.mv result, "#{idx.to_s.rjust(3, '0')}-#{type}#{File.extname(result)}"
+      if (not result.nil?) && File.exists?(result)
+        FileUtils.mv result, "#{idx.to_s.rjust(3, '0')}-#{type}#{File.extname(result)}"
+      end
+      result = Dir.glob("#{idx.to_s.rjust(3, '0')}-#{type}.*").first
+    ensure
+      Dir.chdir(pwd)
     end
 
-    result = Dir.glob("#{idx.to_s.rjust(3, '0')}-#{type}.*").first
-    Dir.chdir(pwd)
-    return File.join(in_dir, result) unless result.nil?
+    return File.join(in_dir, result) unless result.nil
     nil
   end
 
