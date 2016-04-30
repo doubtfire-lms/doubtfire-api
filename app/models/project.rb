@@ -900,13 +900,18 @@ EOF
   def task_for_task_definition(td)
     result = tasks.where(task_definition: td).first
     if result.nil?
-      result = Task.create(
-        task_definition_id: td.id,
-        project_id: id,
-        task_status_id: 1
-      )
-      result.save
-      tasks.push result
+      begin
+        result = Task.create!(
+          task_definition_id: td.id,
+          project_id: id,
+          task_status_id: 1
+        )
+        result.save
+        tasks.push result
+      rescue
+        reload
+        result = tasks.where(task_definition: td).first
+      end
     end
     result
   end
