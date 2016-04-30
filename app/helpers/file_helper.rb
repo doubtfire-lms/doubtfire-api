@@ -492,7 +492,7 @@ module FileHelper
     logger.debug "Trying to aggregate PDFs to #{final_pdf_path}"
 
     did_compile = false
-    exec = "nice -n 10 pdftk #{pdf_paths.join ' '} cat output '#{final_pdf_path}' dont_ask compress"
+    exec = "nice -n 10 gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -dPDFSETTINGS=/screen -sOutputFile='#{final_pdf_path}' #{pdf_paths.join ' '}"
     Terminator.terminate 180 do
       did_compile = system exec
     end
