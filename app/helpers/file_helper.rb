@@ -184,14 +184,12 @@ module FileHelper
     logger.debug "File helper has started compressing #{path} to #{tmp_file}..."
 
     begin
-      exec = "#{Rails.root.join('lib', 'shell', 'timeout.sh')} -t 30 nice -n 10 convert \"#{path}\" -resize 1024x1024 \"#{tmp_file}\" >>/dev/null 2>>/dev/null"
-      # puts exec
+      exec = "convert \
+              \"#{path}\" \
+              -resize 1024x1024 \
+              \"#{tmp_file}\" >>/dev/null 2>>/dev/null"
 
-      # try with convert
-      did_compress = false
-      try_within 40, "compressing image" do
-        did_compress = system exec
-      end
+      did_compress = system_try_within 40, "compressing image using convert", exec
 
       if did_compress
         FileUtils.mv tmp_file, path
@@ -217,20 +215,30 @@ module FileHelper
       tmp_file = File.join( Dir.tmpdir, 'doubtfire', 'compress', "#{File.dirname(path).split(File::Separator).last}-file.pdf" )
       FileUtils.mkdir_p(File.join( Dir.tmpdir, 'doubtfire', 'compress' ))
 
-      exec = "#{Rails.root.join('lib', 'shell', 'timeout.sh')} -t 30 nice -n 10 gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.3 -dDetectDuplicateImages=true -dPDFSETTINGS=/screen -dNOPAUSE -dBATCH  -dQUIET -sOutputFile=\"#{tmp_file}\" \"#{path}\" >>/dev/null 2>>/dev/null"
+      exec = "gs -sDEVICE=pdfwrite \
+                 -dCompatibilityLevel=1.3 \
+                 -dDetectDuplicateImages=true \
+                 -dPDFSETTINGS=/screen \
+                 -dNOPAUSE \
+                 -dBATCH \
+                 -dQUIET \
+                 -sOutputFile=\"#{tmp_file}\" \
+                 \"#{path}\" \
+                 >>/dev/null 2>>/dev/null"
 
       # try with ghostscript
-      did_compress = system exec
+      did_compress = system_try_within 30, "compressing PDF using ghostscript", exec
 
       if !did_compress
         logger.info "Failed to compress PDF #{path} using GhostScript. Trying with convert"
 
-        exec = "#{Rails.root.join('lib', 'shell', 'timeout.sh')} -t 30 nice -n 10 convert \"#{path}\" -compress Zip \"#{tmp_file}\" >>/dev/null 2>>/dev/null"
+        exec = "convert \"#{path}\" \
+                -compress Zip \
+                \"#{tmp_file}\" \
+                >>/dev/null 2>>/dev/null"
 
         # try with convert
-        try_within 40, "compressing PDF" do
-          did_compress = system exec
-        end
+        did_compress = system_try_within 40, "compressing PDF using convert", exec
 
         if !did_compress
           logger.error "Failed to compress PDF #{path} using convert. Cannot compress this PDF. Command was:\n\t#{exec}"
@@ -342,11 +350,17 @@ module FileHelper
   def pdf_valid?(file)
     did_succeed = false
 
-    try_within 30, "validating PDF using ghostscript" do
-      did_succeed = system "nice -n 10 gs -o /dev/null -sDEVICE=nullpage -r36x36 -dNOPAUSE -q #{file} >>/dev/null 2>>/dev/null"
-      unless did_succeed
-        logger.error "Failed to validate pdf file. Is ghostscript installed?"
-      end
+    exec = "gs -o /dev/null \
+           -sDEVICE=nullpage \
+           -r36x36 \
+           -dNOPAUSE \
+           -q \
+           #{file} >>/dev/null 2>>/dev/null"
+
+    did_succeed = system_try_within 30, "validating PDF using ghostscript", exec
+
+    unless did_succeed
+      logger.error "Failed to validate pdf file. Is ghostscript installed?"
     end
 
     did_succeed
@@ -492,14 +506,21 @@ module FileHelper
     logger.debug "Trying to aggregate PDFs to #{final_pdf_path}"
 
     did_compile = false
-    exec = "nice -n 10 gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -dPDFSETTINGS=/screen -sOutputFile='#{final_pdf_path}' #{pdf_paths.join ' '}"
-    Terminator.terminate 180 do
-      did_compile = system exec
-    end
+    exec = "gs \
+            -dBATCH \
+            -dNOPAUSE \
+            -q \
+            -sDEVICE=pdfwrite \
+            -dPDFSETTINGS=/screen \
+            -sOutputFile='#{final_pdf_path}' \
+            #{pdf_paths.join ' '}"
 
-    if !did_compile
+    did_compile = system_try_within 180, "trying to aggregate PDFs", exec
+
+    unless did_compile
       logger.error "Failed to aggregate PDFs to #{final_pdf_path}. Command was:\n\t#{exec}"
     end
+
     did_compile
   end
 
