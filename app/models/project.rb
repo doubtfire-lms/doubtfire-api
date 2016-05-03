@@ -109,6 +109,9 @@ class Project < ActiveRecord::Base
     }
   end
 
+  def log_details
+    "#{id} - #{student.name} (#{student.username}) #{unit.code}"
+  end
 
   def task_outcome_alignments
     learning_outcome_task_links
@@ -777,12 +780,12 @@ EOF
 
     cover_filename = File.join(dest_dir, "task.cover.html")
 
-    logger.debug("generating cover page #{cover_filename}")
+    logger.debug("Generating cover page #{cover_filename} - #{log_details()}")
 
     #
     # Create cover page for the submitted file (<taskid>/file0.cover.html etc.)
     #
-    logger.debug "Generating cover page for project #{id} - #{cover_filename}"
+    logger.debug "Generating cover page #{cover_filename} - #{log_details()}"
 
     coverp_file = File.new(cover_filename, "w")
     coverp_file.write(coverpage_html)
@@ -830,7 +833,7 @@ EOF
     # create PDFs of uploaded files
     pdf_paths = FileHelper.convert_files_to_pdf(portfolio_tmp_dir, tmp_dir)
     if pdf_paths.nil?
-      logger.error "Files missing for portfolio in project #{id}"
+      logger.error "Files missing for portfolio in - #{log_details()}"
       return false
     end
     task_pdfs = []
@@ -848,14 +851,14 @@ EOF
 
     final_pdf_path = portfolio_path
     if FileHelper.aggregate(pdf_paths, final_pdf_path)
-      logger.info "Created portfolio for project #{id} at #{final_pdf_path}"
+      logger.info "Created portfolio at #{final_pdf_path} - #{log_details()}"
       # Reuben 07.11.14 Set portfolio production date to now upon submission
 
       self.portfolio_production_date = DateTime.now
       self.save
       result = true
     else
-      logger.error "Failed to create portfolio for project #{id} at #{final_pdf_path}"
+      logger.error "Failed to create portfolio at #{final_pdf_path} - #{log_details()}"
       # failed to combine PDFs
       self.portfolio_production_date = nil
       self.save
@@ -866,7 +869,7 @@ EOF
     begin
       FileUtils.rm_r(tmp_dir)
     rescue
-      logger.warn "Failed to cleanup directories from portfolio production (project id=#{id})"
+      logger.warn "Failed to cleanup directories from portfolio production - #{log_details()}"
     end
 
     return result
@@ -897,7 +900,12 @@ EOF
     ! tasks.where(task_definition: td).first.nil?
   end
 
+  #
+  # Get the task for the requested definition. This will create the
+  # task if the task does not exist for this project.
+  #
   def task_for_task_definition(td)
+    logger.debug "Finding task #{td.abbreviation} for project #{log_details()}"
     result = tasks.where(task_definition: td).first
     if result.nil?
       begin
@@ -906,10 +914,10 @@ EOF
           project_id: id,
           task_status_id: 1
         )
+        logger.info "Created task #{result.id} - #{td.abbreviation} for project #{log_details()}"
         result.save
         tasks.push result
       rescue
-        reload
         result = tasks.where(task_definition: td).first
       end
     end
@@ -993,7 +1001,7 @@ EOF
       # clear_in_process()
       return true
     rescue => e
-      logger.error "Failed to convert portfolio to PDF project #{id} - #{student.username}.\nError: #{e.message}"
+      logger.error "Failed to convert portfolio to PDF - #{log_details()} -\nError: #{e.message}"
 
       log_file = e.message.scan(/\/.*\.log/).first
       # puts "log file is ... #{log_file}"

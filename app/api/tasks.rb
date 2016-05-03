@@ -146,7 +146,7 @@ module Api
             error!({"error" => "This task requires a group. Ensure you are in a group for the unit's #{task.task_definition.group_set.name}"}, 403)
           end
 
-          logger.info "Assessing #{task.id} to #{params[:trigger]}"
+          logger.info "Assessing task #{task.id} to #{params[:trigger]}"
           result = task.trigger_transition( params[:trigger], current_user )
           if result.nil? && task.task_definition.restrict_status_updates
             error!({"error" => "This task can only be updated by your tutor." }, 403)

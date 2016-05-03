@@ -240,6 +240,10 @@ class Task < ActiveRecord::Base
     (not portfolio_evidence.nil?) and File.exists?(portfolio_evidence)
   end
 
+  def log_details
+    "#{id} - #{project.student.code}, #{project.unit.code}"
+  end
+
   def assign_evidence_path(final_pdf_path, propagate=true)
     if group_task? and propagate
       group_submission.tasks.each do |task|
@@ -732,7 +736,7 @@ class Task < ActiveRecord::Base
       end
 
       if output_filename.nil?
-        logger.error "Error processing task #{id} - missing file #{file_req}"
+        logger.error "Error processing task #{log_details()} - missing file #{file_req}"
       else
         result << { path: output_filename, type: file_req['type'] }
 
@@ -832,8 +836,7 @@ class Task < ActiveRecord::Base
       clear_in_process()
       return true
     rescue => e
-      logger.error "Failed to convert submission to PDF for task #{id}. Error: #{e.message}"
-      puts "Failed to convert submission to PDF for task #{id}. Error: #{e.message}"
+      logger.error "Failed to convert submission to PDF for task #{log_details()}. Error: #{e.message}"
 
       log_file = e.message.scan(/\/.*\.log/).first
       # puts "log file is ... #{log_file}"
