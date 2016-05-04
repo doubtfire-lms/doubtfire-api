@@ -241,7 +241,7 @@ class Task < ActiveRecord::Base
   end
 
   def log_details
-    "#{id} - #{project.student.code}, #{project.unit.code}"
+    "#{id} - #{project.student.username}, #{project.unit.code}"
   end
 
   def assign_evidence_path(final_pdf_path, propagate=true)
@@ -737,6 +737,7 @@ class Task < ActiveRecord::Base
 
       if output_filename.nil?
         logger.error "Error processing task #{log_details()} - missing file #{file_req}"
+        raise "File `#{file_req['name']}` missing from submission."
       else
         result << { path: output_filename, type: file_req['type'] }
 
@@ -813,7 +814,25 @@ class Task < ActiveRecord::Base
       tac = TaskAppController.new
       tac.init(self)
 
-      pdf_text = tac.make_pdf
+      begin
+        pdf_text = tac.make_pdf
+      rescue => e
+        logger.error "Failed to create PDF for task #{log_details()}. Error: #{e.message}"
+
+        log_file = e.message.scan(/\/.*\.log/).first
+        # puts "log file is ... #{log_file}"
+        if log_file && File.exists?(log_file)
+          # puts "exists"
+          begin
+            puts "--- Latex Log ---\n"
+            puts File.read(log_file)
+            puts "---    End    ---\n\n"
+          rescue
+          end
+        end
+
+        raise "Failed to convert your submission to PDF. Check code files submitted for invalid characters, that documents are valid pdfs, and that images are valid."
+      end
 
       if group_task?
         group_submission.tasks.each do |t|
@@ -836,24 +855,10 @@ class Task < ActiveRecord::Base
       clear_in_process()
       return true
     rescue => e
-      logger.error "Failed to convert submission to PDF for task #{log_details()}. Error: #{e.message}"
-
-      log_file = e.message.scan(/\/.*\.log/).first
-      # puts "log file is ... #{log_file}"
-      if log_file && File.exists?(log_file)
-        # puts "exists"
-        begin
-          puts "--- Latex Log ---\n"
-          puts File.read(log_file)
-          puts "---    End    ---\n\n"
-        rescue
-        end
-      end
-
       clear_in_process()
 
       trigger_transition 'fix', project.main_tutor
-      raise "Check code files submitted for invalid characters, that documents are valid pdfs, and that images are valid."
+      raise e
     end
   end
 
