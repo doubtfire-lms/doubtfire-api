@@ -32,7 +32,7 @@ end
 
 \begin{titlepage}
   <% if @learning_summary_report %>
-    \includepdf[pages={1-1}]{<%= @learning_summary_report %>}
+    \includepdf[addtotoc={\thepage,section,1,Learning Summary Report,chap:learningsummary},pages={1-}]{<%= @learning_summary_report %>}
   <% end %>
 
   \thispagestyle{title}
@@ -98,9 +98,6 @@ No Tutor
 \tableofcontents
 
 \clearpage
-<% if @learning_summary_report %>
-  \includepdf[addtotoc={\thepage,section,1,Learning Summary Report,chap:learningsummary},pages={2-}]{<%= @learning_summary_report %>}
-<% end %>
 
 % -----------------------------------------------------------------------------
 % Overall task status details
@@ -215,6 +212,6 @@ No Tutor
     \end{tabular}
   <% end %>
   <% if File.exists? task.portfolio_evidence %>
-    \includepdf[pages={2-}]{<%= task.portfolio_evidence %>}
+    \includepdf[pages={1-}]{<%= task.portfolio_evidence %>}
   <% end %>
 <% end %>
