@@ -816,65 +816,6 @@ EOF
     (File.exists? portfolio_path) && ! self.compile_portfolio
   end
 
-  # Create the student's portfolio
-  def create_portfolio()
-    return false unless compile_portfolio
-
-    # remove from schedule
-    self.compile_portfolio = false
-    save!
-
-    # get path to portfolio dirs
-    portfolio_tmp_dir = portfolio_temp_path
-    return false unless Dir.exists? portfolio_tmp_dir
-
-    tmp_dir = File.join( Dir.tmpdir, 'doubtfire', 'portfolio', id.to_s )
-
-    # create PDFs of uploaded files
-    pdf_paths = FileHelper.convert_files_to_pdf(portfolio_tmp_dir, tmp_dir)
-    if pdf_paths.nil?
-      logger.error "Files missing for portfolio in - #{log_details()}"
-      return false
-    end
-    task_pdfs = []
-    # add in tasks
-    portfolio_tasks.each { | task |
-        task_pdfs << task.portfolio_evidence
-      }
-    pdf_paths.insert(1, *task_pdfs)
-
-    task_cover = create_task_cover_page(portfolio_tmp_dir)
-    cover_file = File.join(tmp_dir, "task_cover.pdf")
-    FileHelper.cover_to_pdf( { path: task_cover }, cover_file )
-
-    pdf_paths.insert(1, cover_file)
-
-    final_pdf_path = portfolio_path
-    if FileHelper.aggregate(pdf_paths, final_pdf_path)
-      logger.info "Created portfolio at #{final_pdf_path} - #{log_details()}"
-      # Reuben 07.11.14 Set portfolio production date to now upon submission
-
-      self.portfolio_production_date = DateTime.now
-      self.save
-      result = true
-    else
-      logger.error "Failed to create portfolio at #{final_pdf_path} - #{log_details()}"
-      # failed to combine PDFs
-      self.portfolio_production_date = nil
-      self.save
-      result = false
-    end
-
-    # Cleanup
-    begin
-      FileUtils.rm_r(tmp_dir)
-    rescue
-      logger.warn "Failed to cleanup directories from portfolio production - #{log_details()}"
-    end
-
-    return result
-  end
-
   def remove_portfolio()
     portfolio = portfolio_path()
     if File.exists?(portfolio)
@@ -982,7 +923,12 @@ EOF
     filename
   end
 
-  def create_project_portfolio
+  def create_portfolio
+    return false unless compile_portfolio
+
+    self.compile_portfolio = false
+    save!
+
     begin
       pac = ProjectAppController.new
       pac.init(self)
@@ -993,12 +939,12 @@ EOF
         fout.puts pdf_text
       end
 
-      #
-      # FileHelper.compress_pdf(self.portfolio_evidence)
-      #
-      # self.save
-      #
-      # clear_in_process()
+      FileHelper.compress_pdf(self.portfolio_path)
+
+      logger.info "Created portfolio at #{portfolio_path} - #{log_details()}"
+
+      self.portfolio_production_date = DateTime.now
+      self.save
       return true
     rescue => e
       logger.error "Failed to convert portfolio to PDF - #{log_details()} -\nError: #{e.message}"
@@ -1014,11 +960,7 @@ EOF
         rescue
         end
       end
-
-      # clear_in_process()
-      #
-      # trigger_transition 'fix', project.main_tutor
-      # raise "Check code files submitted for invalid characters, that documents are valid pdfs, and that images are valid."
+      return false
     end
   end
 end
