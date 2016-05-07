@@ -53,7 +53,6 @@ namespace :db do
         profile[:username]  ||= username
 
         user = User.create!(profile.merge({password: 'password', password_confirmation: 'password'}))
-        puts user[:username]
         @user_cache.push user
       end
     end
@@ -61,7 +60,6 @@ namespace :db do
     def generate_convenors(unit_details, unit)
       unit_details[:convenors].each do | user_key |
         puts "------> Adding convenor #{user_key} for #{unit_details[:code]}"
-        puts user_key
         unit.employ_staff(@user_cache.find {|user| user[:username] = user_key}, Role.convenor)
       end
     end
