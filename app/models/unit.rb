@@ -223,23 +223,25 @@ class Unit < ActiveRecord::Base
 
   #
   # Imports users into a project from CSV file.
-  # Format: unit_code, Student ID,First Name,Surname,email,tutorial
-  #
+  # Format: Subject/Unit Code, Student ID,First Name, Surname, email, tutorial
+  # Expected columns: unit_code, username, first_name, last_name, email, tutorial
   def import_users_from_csv(file)
     tutorial_cache = {}
     success = []
     errors = []
     ignored = []
 
-    CSV.foreach(file) do |row|
+    CSV.foreach(file, headers: true) do |row|
       # Make sure we're not looking at the header or an empty line
-      next if row[0] =~ /(subject|unit)_code/
-      # next if row[5] !~ /^LA\d/
+      next if row['unit_code'] =~ /unit_code/
 
       begin
-        unit_code, username  = row[0..1]
-        first_name, last_name   = [row[2], row[3]].map{|name| name.titleize unless name.nil? }
-        email, tutorial_code    = row[4..5]
+        unit_code = row['unit_code']
+        username = row['username'].downcase
+        first_name = row['first_name'] == nil ? row['first_name'] : row['first_name'].titleize
+        last_name = row['last_name'] == nil ? row['last_name'] : row['last_name'].titleize
+        email = row['email']
+        tutorial_code = row['tutorial']
 
         if unit_code != code
           ignored << { row: row, message: "Invalid unit code. #{unit_code} does not match #{code}" }
@@ -250,8 +252,6 @@ class Unit < ActiveRecord::Base
           errors << { row: row, message: "Invalid email address (#{email})" }
           next
         end
-
-        username = username.downcase
 
         project_participant = User.find_or_create_by(username: username) {|new_user|
           new_user.first_name         = first_name
@@ -363,12 +363,22 @@ class Unit < ActiveRecord::Base
 
         project_participant = project_participant.first
 
-        user_project = projects.where(user_id: project_participant.id).first
+        user_project = UnitRole.joins(project: :unit).where(
+            user_id: project_participant.id,
+            projects: {unit_id: id}
+          )
 
-        unless user_project
+        if not user_project
           ignored << { row:row, message: "User #{username} not enrolled in unit" }
           next
         end
+
+        if not user_project.count == 1
+          ignored << { row:row, message: "User #{username} not enrolled in unit" }
+          next
+        end
+
+        user_project = user_project.first.project
 
         if user_project.enrolled
           user_project.enrolled = false
@@ -1055,7 +1065,7 @@ class Unit < ActiveRecord::Base
   def tasks_awaiting_feedback
     student_tasks.
       joins(:task_status).
-      select("project_id", "tasks.id as id", "task_definition_id", "projects.tutorial_id as tutorial_id", "task_statuses.name as status_name", "completion_date", "times_assessed", "submission_date", "portfolio_evidence").
+      select("project_id", "tasks.id as id", "task_definition_id", "projects.tutorial_id as tutorial_id", "task_statuses.name as status_name", "completion_date", "times_assessed", "portfolio_evidence", "submission_date", "times_submitted").
       where('task_statuses.id IN (:ids)', ids: [ TaskStatus.ready_to_mark, TaskStatus.need_help, TaskStatus.discuss, TaskStatus.demonstrate ]).
       where('(task_definitions.due_date IS NULL OR task_definitions.due_date > tasks.submission_date)').
       order('task_definition_id').
@@ -1068,6 +1078,7 @@ class Unit < ActiveRecord::Base
           status: TaskStatus.status_key_for_name(t.status_name),
           completion_date: t.completion_date,
           submission_date: t.submission_date,
+          times_submitted: t.times_submitted,
           times_assessed: t.times_assessed
           # has_pdf: t.has_pdf
         }
