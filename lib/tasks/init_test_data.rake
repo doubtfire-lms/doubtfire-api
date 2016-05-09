@@ -57,8 +57,64 @@ namespace :db do
       end
     end
 
+    def generate_convenors(unit_details, unit)
+      unit_details[:convenors].each do | user_key |
+        puts "------> Adding convenor #{user_key} for #{unit_details[:code]}"
+        unit.employ_staff(@user_cache.find {|user| user[:username] = user_key}, Role.convenor)
+      end
+    end
+
+    def generate_units
+      some_tasks = 5
+      many_tasks = 10
+      some_tutorials = 2
+      many_tutorials = 4
+
+      unit_data = {
+        intro_prog: {
+          code: "COS10001",
+          name: "Introduction to Programming",
+          convenors: [ :acain ],
+          tutors: [
+            { user: :acain, num: many_tutorials},
+            { user: :rwilson, num: many_tutorials},
+            { user: :acummaudo, num: some_tutorials},
+            { user: :jrenzella, num: some_tutorials}
+          ],
+          num_tasks: some_tasks,
+          ilos: rand(0..3),
+          students: [ ]
+        },
+        gameprog: {
+          code: "COS30243",
+          name: "Game Programming",
+          convenors: [ :acummaudo ],
+          tutors: [
+            { user: :cwoodward, num: some_tutorials },
+          ],
+          num_tasks: some_tasks,
+          ilos: rand(0..3),
+          students: [ :acain, :jrenzella, :rwilson ]
+        },
+      }
+
+      unit_data.each do | unit_key, unit_details |
+        puts "------> #{unit_details[:code]}"
+        unit = Unit.create!(
+          code: unit_details[:code],
+          name: unit_details[:name],
+          description: Populator.words(10..15),
+          start_date: Time.zone.now  - 6.weeks,
+          end_date: 13.weeks.since(Time.zone.now - 6.weeks)
+        )
+
+        generate_convenors(unit_details, unit)
+      end
+    end
+
     setup_cache()
     generate_user_roles()
     generate_users()
+    generate_units()
   end
 end
