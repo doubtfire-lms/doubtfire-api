@@ -939,7 +939,7 @@ EOF
         fout.puts pdf_text
       end
 
-      FileHelper.compress_pdf(self.portfolio_path)
+      # FileHelper.compress_pdf(self.portfolio_path)
 
       logger.info "Created portfolio at #{portfolio_path} - #{log_details()}"
 
