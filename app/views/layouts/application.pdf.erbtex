@@ -1,6 +1,11 @@
+<% @latex_config={:command => "lualatex",:parse_runs => 2} %>
 \documentclass[11pt,a4paper]{article}
-\usepackage[warnunknown]{ucs}
-\usepackage[utf8x]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{textcomp}
+
+\usepackage{luatextra}
+\defaultfontfeatures{Ligatures=TeX}
+
 \usepackage{minted}
 \usepackage{graphicx}
 \usepackage[margin=2.0cm]{geometry}
