@@ -137,7 +137,8 @@ No Tutor
 
 \begin{tabular}{p{6cm}|l|m{3cm}|l}
   \textbf{Task} & \textbf{Rating} & \textbf{Status} & \textbf{Times Assessed}\\ \hline
-  <% @project.tasks.joins(:learning_outcome_task_links).joins(:task_definition).where("learning_outcome_task_links.learning_outcome_id = #{outcome.id}").select("learning_outcome_task_links.rating AS r", "task_definitions.name AS task_name","task_definitions.id AS td_id").each do | data | %>
+  <% query_result = @project.tasks.joins(:learning_outcome_task_links).joins(:task_definition).where("learning_outcome_task_links.learning_outcome_id = #{outcome.id}").select("learning_outcome_task_links.rating AS r", "task_definitions.name AS task_name","task_definitions.id AS td_id")
+    query_result.each do | data | %>
     <% task = task_for_def_id(data.td_id) %>
     <%= lesc data.task_name %> &
     $<%= '\blacklozenge' * data.r %><%= '\lozenge' * (5 - data.r) %>$ &
@@ -145,6 +146,11 @@ No Tutor
     <%= lesc task.times_assessed %> \\
   <% end %>
 \end{tabular}
+
+<% if query_result.length > 15 %>
+\clearpage
+<% end %>
+
 <% end %>
 
 % -----------------------------------------------------------------------------
