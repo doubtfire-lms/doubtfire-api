@@ -987,6 +987,8 @@ class Unit < ActiveRecord::Base
               logger.debug "Sending to MOSS..."
               url = moss.check(to_check, lambda { |line| puts line })
 
+              logger.info "MOSS check for #{code} #{td.abbreviation} url: #{url}"
+
               td.plagiarism_report_url = url
               td.plagiarism_updated = true
               td.save
