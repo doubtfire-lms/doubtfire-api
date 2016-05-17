@@ -50,7 +50,7 @@ class Task < ActiveRecord::Base
   def role_for(user)
     project_role = project.user_role(user)
     return project_role unless project_role.nil?
-    logger.debug "Getting role for user #{user.id}: #{task_definition.abbreviation} #{task_definition.group_set}"
+    logger.debug "Getting role for user #{user.id unless user.nil?}: #{task_definition.abbreviation} #{task_definition.group_set}"
     # check for group member
     if group_task?
       logger.debug "Checking group"

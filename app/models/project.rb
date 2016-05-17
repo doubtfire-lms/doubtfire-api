@@ -164,6 +164,7 @@ class Project < ActiveRecord::Base
   def user_role(user)
     if user == student then :student
     elsif user == main_tutor then :tutor
+    elsif user.nil? then nil
     elsif self.unit.tutors.where(id: user.id).count != 0 then :tutor
     else nil
     end
@@ -614,7 +615,7 @@ class Project < ActiveRecord::Base
   end
 
   def task_completion_csv(options={})
-    ordered_tasks = tasks.joins(:task_definition).order("task_definitions.target_date, task_definitions.abbreviation")
+    all_tasks = unit.task_definitions.order("task_definitions.start_date, task_definitions.abbreviation")
     [
       student.username,
       student.name,
@@ -622,7 +623,14 @@ class Project < ActiveRecord::Base
       student.email,
       portfolio_status,
       if tutorial then tutorial.abbreviation else '' end
-    ] + ordered_tasks.map{|task| task.task_status.name }
+    ] + all_tasks.map { |td|
+        task = tasks.where(task_definition_id: td.id).first
+        if task
+          task.task_status.name
+        else
+          TaskStatus.not_started.name
+        end
+      }
   end
 
   #
