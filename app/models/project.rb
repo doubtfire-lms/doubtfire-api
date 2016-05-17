@@ -164,6 +164,7 @@ class Project < ActiveRecord::Base
   def user_role(user)
     if user == student then :student
     elsif user == main_tutor then :tutor
+    elsif user.nil? then nil
     elsif self.unit.tutors.where(id: user.id).count != 0 then :tutor
     else nil
     end
