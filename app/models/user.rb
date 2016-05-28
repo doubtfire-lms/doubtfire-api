@@ -205,7 +205,8 @@ class User < ActiveRecord::Base
 
     # What can tutors do with users?
     tutor_role_permissions = [
-      :act_tutor
+      :act_tutor,
+      :download_csv
     ]
 
     # What can students do with users?
