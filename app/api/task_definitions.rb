@@ -169,8 +169,8 @@ module Api
     get '/csv/task_definitions' do
       unit = Unit.find(params[:unit_id])
 
-      if not authorise? current_user, unit, :download_csv
-        error!({"error" => "Not authorised to upload CSV of tasks"}, 403)
+      if not authorise? current_user, unit, :download_unit_csv
+        error!({"error" => "Not authorised to download CSV of tasks"}, 403)
       end
 
       content_type "application/octet-stream"

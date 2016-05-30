@@ -22,7 +22,8 @@ class Unit < ActiveRecord::Base
       :get_students,
       :enrol_student,
       :provide_feedback,
-      :download_stats
+      :download_stats,
+      :download_unit_csv
     ]
 
     # What can convenors do with units?
@@ -31,7 +32,7 @@ class Unit < ActiveRecord::Base
       :get_students,
       :enrol_student,
       :upload_csv,
-      :download_csv,
+      :download_unit_csv,
       :update,
       :employ_staff,
       :add_tutorial,

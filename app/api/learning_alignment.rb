@@ -46,7 +46,7 @@ module Api
       end
 
       if params[:project_id].nil?
-        if not authorise? current_user, unit, :download_csv
+        if not authorise? current_user, unit, :download_unit_csv
           error!({"error" => "Not authorised to download CSV of task alignment in #{unit.code}"}, 403)
         end
 
