@@ -171,6 +171,20 @@ module Api
       unit.tasks_awaiting_feedback
     end
 
+    desc "Download the grades for a unit"
+    get '/units/:id/grades' do
+      unit = Unit.find(params[:id])
+      if not authorise? current_user, unit, :download_grades
+        error!({"error" => "Not authorised to download grades for this unit" }, 403)
+      end
+
+      content_type "application/octet-stream"
+      header['Content-Disposition'] = "attachment; filename=#{unit.code}-Students.csv "
+      env['api.format'] = :binary
+
+      unit.student_grades_csv
+    end
+
     desc "Upload CSV of all the students in a unit"
     params do
       requires :file, type: Rack::Multipart::UploadedFile, :desc => "CSV upload file."

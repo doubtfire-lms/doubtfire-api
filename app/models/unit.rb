@@ -23,7 +23,8 @@ class Unit < ActiveRecord::Base
       :enrol_student,
       :provide_feedback,
       :download_stats,
-      :download_unit_csv
+      :download_unit_csv,
+      :download_grades
     ]
 
     # What can convenors do with units?
@@ -39,7 +40,8 @@ class Unit < ActiveRecord::Base
       :add_task_def,
       :provide_feedback,
       :change_project_enrolment,
-      :download_stats
+      :download_stats,
+      :download_grades
     ]
 
     # What can other users do with units?
@@ -1383,5 +1385,16 @@ class Unit < ActiveRecord::Base
     data = temp.reduce(:+)
 
     _ilo_progress_summary(data)
+  end
+
+  def student_grades_csv
+    students_with_grades = students.where("grade > 0")
+
+    CSV.generate do |row|
+      row << ["unit_code", "username", "grade", "rationale"]
+      students_with_grades.each do |project|
+        row << [project.unit.code, project.student.username,  project.grade, project.grade_rationale]
+      end
+    end
   end
 end

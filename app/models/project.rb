@@ -642,7 +642,10 @@ class Project < ActiveRecord::Base
   end
 
   def portfolio_tmp_file_name(dict)
-    FileHelper.sanitized_filename("#{dict[:idx].to_s.rjust(3, '0')}-#{dict[:kind]}-#{dict[:name]}")
+    extn = File.extname(dict[:name])
+    name = File.basename(dict[:name], extn)
+    name = name.gsub(".","_") + extn
+    FileHelper.sanitized_filename("#{dict[:idx].to_s.rjust(3, '0')}-#{dict[:kind]}-#{name}")
   end
 
   def portfolio_tmp_file_path(dict)
