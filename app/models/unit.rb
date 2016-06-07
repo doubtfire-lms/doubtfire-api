@@ -690,7 +690,13 @@ class Unit < ActiveRecord::Base
         'Email',
         'Portfolio',
         'Tutorial',
-      ] + task_definitions.map{|task_definition| task_definition.abbreviation }
+      ] + task_definitions.map{ |task_definition|
+        if task_definition.is_graded
+          [ task_definition.abbreviation, "#{task_definition.abbreviation} grade" ]
+        else
+          task_definition.abbreviation
+        end
+      }.flatten
       active_projects.each do |project|
         csv << project.task_completion_csv
       end
