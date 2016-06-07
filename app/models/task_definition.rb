@@ -24,6 +24,12 @@ class TaskDefinition < ActiveRecord::Base
     td.unit.update_project_stats
   end
 
+  after_update do |td|
+    if plagiarism_checks.length == 0 && has_plagiarism?
+      clear_related_plagiarism()
+    end
+  end
+
   def plagiarism_checks
     # Read the JSON string in upload_requirements and convert into ruby objects
     if self['plagiarism_checks']
@@ -119,6 +125,28 @@ class TaskDefinition < ActiveRecord::Base
     self['upload_requirements'] = JSON.unparse(json_data)
     if self['upload_requirements'].nil?
       self['upload_requirements'] = '[]'
+    end
+  end
+
+  def has_plagiarism?()
+    PlagiarismMatchLink.joins(:task).where("tasks.task_definition_id" => self.id).count > 0
+  end
+
+  def clear_related_plagiarism()
+    # delete old plagiarism links
+    logger.info "Deleting old links for task definition #{self.id} - #{self.abbreviation}"
+    PlagiarismMatchLink.joins(:task).where("tasks.task_definition_id" => self.id).each do | plnk |
+      begin
+        PlagiarismMatchLink.find(plnk.id).destroy!
+      rescue
+      end
+    end
+
+    # Reset the tasks % similar
+    logger.debug "Clearing old task percent similar"
+    tasks.where("tasks.max_pct_similar > 0").each do |t|
+      t.max_pct_similar = 0
+      t.save
     end
   end
 
