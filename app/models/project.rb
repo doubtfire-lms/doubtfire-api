@@ -625,12 +625,14 @@ class Project < ActiveRecord::Base
       if tutorial then tutorial.abbreviation else '' end
     ] + all_tasks.map { |td|
         task = tasks.where(task_definition_id: td.id).first
-        if task
-          task.task_status.name
+        status = if task then task.task_status.name else TaskStatus.not_started.name end
+
+        if td.is_graded
+          [status, task.grade_desc]
         else
-          TaskStatus.not_started.name
+          status
         end
-      }
+      }.flatten
   end
 
   #
