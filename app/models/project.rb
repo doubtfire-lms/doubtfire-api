@@ -626,9 +626,10 @@ class Project < ActiveRecord::Base
     ] + all_tasks.map { |td|
         task = tasks.where(task_definition_id: td.id).first
         status = if task then task.task_status.name else TaskStatus.not_started.name end
+        grade = if task then task.grade_desc else nil end
 
         if td.is_graded
-          [status, task.grade_desc]
+          [status, grade]
         else
           status
         end
