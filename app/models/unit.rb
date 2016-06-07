@@ -830,21 +830,7 @@ class Unit < ActiveRecord::Base
       td.plagiarism_updated = false
       td.save
 
-      # delete old plagiarism links
-      logger.debug "Deleting old links for task definition #{td.id}"
-      PlagiarismMatchLink.joins(:task).where("tasks.task_definition_id" => td.id).each do | plnk |
-        begin
-          PlagiarismMatchLink.find(plnk.id).destroy!
-        rescue
-        end
-      end
-
-      # Reset the tasks % similar
-      logger.debug "Clearing old task percent similar"
-      tasks_for_definition(td).where("tasks.max_pct_similar > 0").each do |t|
-        t.max_pct_similar = 0
-        t.save
-      end
+      td.clear_related_plagiarism
 
       # Get results
       url = td.plagiarism_report_url
@@ -956,7 +942,7 @@ class Unit < ActiveRecord::Base
         logger.debug "Checking plagiarism for #{td.name} (id=#{td.id})"
         tasks = tasks_for_definition(td)
         tasks_with_files = tasks.select { |t| t.has_pdf }
-        if tasks_with_files.count > 1 && (tasks.where("tasks.file_uploaded_at > ?", last_plagarism_scan ).select { |t| t.has_pdf }.count > 0 || force )
+        if tasks_with_files.count > 1 && (tasks.where("tasks.file_uploaded_at > ?", last_plagarism_scan ).select { |t| t.has_pdf }.count > 0 || td.updated_at > last_plagarism_scan || force )
           # There are new tasks, check these
 
           logger.debug "Contacting MOSS for new checks"
