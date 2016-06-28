@@ -348,6 +348,21 @@ class Task < ActiveRecord::Base
     if not bulk then project.calc_task_stats(self) end
   end
 
+  def grade_desc
+    case grade
+    when 0
+      'Pass'
+    when 1
+      'Credit'
+    when 2
+      'Distinction'
+    when 3
+      'High Distinction'
+    else
+      nil
+    end
+  end
+
   #
   # Tries to grade the task if it is a graded task
   #
