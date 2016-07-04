@@ -15,7 +15,7 @@ module Api
 
     desc "Add a new task definition to the given unit"
     params do
-      group :task_def do
+      requires :task_def, type: Hash do
         requires :unit_id,                  type: Integer,  :desc => "The unit to create the new task def for"
         requires :name,                     type: String,   :desc => "The name of this task def"
         requires :description,              type: String,   :desc => "The description of this task def"
@@ -79,7 +79,7 @@ module Api
     desc "Edits the given task definition"
     params do
       requires :id,                     type: Integer,  :desc => "The task id to edit"
-      group :task_def do
+      requires :task_def, type: Hash do
         optional :unit_id,                  type: Integer,  :desc => "The unit to create the new task def for"
         optional :name,                     type: String,   :desc => "The name of this task def"
         optional :description,              type: String,   :desc => "The description of this task def"

@@ -57,7 +57,7 @@ module Api
     desc "Update unit"
     params do
       requires :id, type: Integer, desc: 'The unit id to update'
-      group :unit do
+      requires :unit, type: Hash do
         optional :name
         optional :code
         optional :description
@@ -88,7 +88,7 @@ module Api
 
     desc "Create unit"
     params do
-      group :unit do
+      requires :unit, type: Hash do
         requires :name
         requires :code
         optional :description
@@ -133,7 +133,7 @@ module Api
     desc "Add a tutorial with the provided details to this unit"
     params do
       #day, time, location, tutor_username, abbrev
-      group :tutorial do
+      requires :tutorial, type: Hash do
         requires :day
         requires :time
         requires :location
@@ -168,7 +168,7 @@ module Api
         error!({"error" => "Not authorised to provide feedback for this unit" }, 403)
       end
 
-      unit.tasks_awaiting_feedback
+      ActiveModel::ArraySerializer.new(unit.tasks_awaiting_feedback, each_serializer: TaskFeedbackSerializer)
     end
 
     desc "Download the grades for a unit"

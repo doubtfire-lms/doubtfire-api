@@ -41,6 +41,11 @@ class UnitRoleSerializer < ActiveModel::Serializer
   def include_start_date?
     object.has_attribute? :start_date
   end
+
+  def filter(keys)
+    keys.delete :start_date unless include_start_date?
+    keys
+  end
 end
 
 

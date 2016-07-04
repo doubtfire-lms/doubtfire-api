@@ -20,7 +20,7 @@ module Api
 
       if (authorise? current_user, unit, :get_students) || (authorise? current_user, User, :admin_units)
         result = unit.students
-        
+
         if params[:all].nil? or ((not params[:all].nil?) and not params[:all])
           result = result.where('enrolled = true')
         end

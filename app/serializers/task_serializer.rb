@@ -2,6 +2,21 @@ class ShallowTaskSerializer < ActiveModel::Serializer
   attributes :id, :status, :task_definition_id, :include_in_portfolio, :pct_similar, :similar_to_count, :times_assessed, :grade
 end
 
+class TaskFeedbackSerializer < ActiveModel::Serializer
+  attributes :project_id
+  attributes :id
+  attributes :task_definition_id
+  attributes :tutorial_id
+  attributes :status
+  attributes :completion_date
+  attributes :submission_date
+  attributes :times_assessed
+
+  def status
+    TaskStatus.status_key_for_name(object.status_name)
+  end
+end
+
 class TaskUpdateSerializer < ActiveModel::Serializer
   attributes :id, :status, :project_id, :new_stats, :include_in_portfolio, :other_projects, :times_assessed, :grade
 
@@ -14,10 +29,10 @@ class TaskUpdateSerializer < ActiveModel::Serializer
     others = grp.projects.select { |p| p.id != object.project_id }.map{|p| {id: p.id, new_stats: p.task_stats}}
   end
 
-  def include_other_projects?
-    object.group_task? && ! object.group.nil?
+  def filter(keys)
+    keys.delete :other_projects unless object.group_task? && ! object.group.nil?
+    keys
   end
-
 end
 
 class TaskStatSerializer < ActiveModel::Serializer

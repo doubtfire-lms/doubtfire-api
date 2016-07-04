@@ -2,27 +2,14 @@ require 'task_serializer'
 
 # Shallow serialization is used for student...
 class ShallowProjectSerializer < ActiveModel::Serializer
-  attributes :unit_id, :project_id, :student_name, :tutor_name, :unit_name, :target_grade, :has_portfolio, :unit_code, :start_date
+  attributes :unit_id, :unit_code, :unit_name,
+    :project_id, :student_name,
+    :tutor_name, :target_grade,
+    :has_portfolio, :start_date
 
   def project_id
     object.id
   end
-
-  # def student_name
-  #   object.student.name
-  # end
-
-  # def unit_name
-  #   object.unit.name
-  # end
-
-  # def unit_code
-  #   object.unit.code
-  # end
-
-  # def tutor_name
-  #   object.main_tutor.first_name unless object.main_tutor.nil?
-  # end
 end
 
 # Student project serializer is used with teaching staff
@@ -108,6 +95,12 @@ class ProjectSerializer < ActiveModel::Serializer
   def include_grade_rationale?
     ([ Role.convenor, :convenor, Role.tutor, :tutor ].include? my_role_obj)
   end
+
+  def filter(keys)
+    keys.delete :grade unless include_grade?
+    keys.delete :grade_rationale unless include_grade_rationale?
+    keys
+  end
 end
 
 class GroupMemberProjectSerializer < ActiveModel::Serializer
@@ -135,4 +128,8 @@ class GroupMemberProjectSerializer < ActiveModel::Serializer
     ([ Role.convenor, Role.tutor, :tutor, :convenor ].include? my_role_obj )
   end
 
+  def filter(keys)
+    keys.delete :student_id unless include_student_id?
+    keys
+  end
 end

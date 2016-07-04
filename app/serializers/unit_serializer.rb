@@ -11,7 +11,7 @@ class UnitSerializer < ActiveModel::Serializer
     object.start_date.to_date
   end
 
-  def end_date 
+  def end_date
     object.end_date.to_date
   end
 
@@ -55,5 +55,11 @@ class UnitSerializer < ActiveModel::Serializer
 
   def include_staff?
     ([ Role.convenor, :convenor ].include? my_role_obj) || (my_user_role == Role.admin)
+  end
+
+  def filter(keys)
+    keys.delete :convenors unless include_convenors?
+    keys.delete :staff unless include_staff?
+    keys
   end
 end

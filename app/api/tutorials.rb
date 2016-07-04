@@ -12,7 +12,7 @@ module Api
     desc "Update a tutorial"
     params do
       requires :id, type: Integer, desc: 'The user id to update'
-      group :tutorial do
+      requires :tutorial, type: Hash do
         optional :abbreviation  , type: String,   desc: 'The tutorials code'
         optional :meeting_location      , type: String,   desc: 'The tutorials location'
         optional :meeting_day           , type: String,   desc: 'Day of the tutorial'
@@ -49,7 +49,7 @@ module Api
 
     desc "Create tutorial"
     params do
-      group :tutorial do
+      requires :tutorial, type: Hash do
         requires :unit_id               , type: Integer,  desc: 'Id of the unit'
         requires :tutor_id              , type: Integer,  desc: 'Id of the tutor'
         requires :abbreviation          , type: String,   desc: 'The tutorials code'
