@@ -83,8 +83,6 @@ Install `imagemagick` and `libmagic` using Homebrew:
 $ brew install imagemagick libmagic
 ```
 
-You also need to download and install PDFtk manually by downloading it [here](https://www.pdflabs.com/tools/pdftk-the-pdf-toolkit/pdftk_server-2.02-mac_osx-10.6-setup.pkg).
-
 You will also need to install the Python `pygments` package:
 
 ```
@@ -295,12 +293,11 @@ CREATE ROLE itig WITH CREATEDB PASSWORD 'd872$dh' LOGIN;
 
 #### 4. Install native tools
 
-Install `imagemagick`, `libmagic` and `pdftk`:
+Install `imagemagick`, and `libmagic`:
 
 ```
 $ sudo apt-get install imagemagick libmagickwand-dev
 $ sudo apt-get install libmagic-dev
-$ sudo apt-get install pdftk
 ```
 
 You will also need to install the Python `pygments` package:
@@ -572,8 +569,6 @@ After installing LaTeX, you must ensure the following are listed on the `PATH`:
 ```
 $ which convert
 /usr/local/bin/convert
-$ which pdftk
-/usr/local/bin/pdftk
 $ which pygmentize
 /usr/local/bin/pygmentize
 $ which pdflatex
