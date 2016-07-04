@@ -6,7 +6,6 @@ RUN apt-get install -y \
   libpq-dev imagemagick \
   libmagickwand-dev \
   libmagic-dev \
-  pdftk \
   libpq-dev \
   python-pygments \
   ghostscript

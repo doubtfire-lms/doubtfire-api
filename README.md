@@ -295,8 +295,8 @@ CREATE ROLE itig WITH CREATEDB PASSWORD 'd872$dh' LOGIN;
 
 #### 4. Install native tools
 
-Install `imagemagick`, `libmagic`, `ghostscript`. You will also need to install
-the Python `pygments` package:
+Install `imagemagick`, `libmagic` and `ghostscript`. You will also need to
+install the Python `pygments` package:
 
 ```
 $ sudo apt-get install ghostscript \
@@ -569,8 +569,6 @@ After installing LaTeX, you must ensure the following are listed on the `PATH`:
 ```
 $ which convert
 /usr/local/bin/convert
-$ which pdftk
-/usr/local/bin/pdftk
 $ which pygmentize
 /usr/local/bin/pygmentize
 $ which pdflatex

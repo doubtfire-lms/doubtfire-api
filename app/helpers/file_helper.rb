@@ -346,23 +346,13 @@ module FileHelper
   #
   # Tests if a PDF is valid / corrupt
   #
-  def pdf_valid?(file)
-    did_succeed = false
-
-    exec = "gs -o /dev/null \
-           -sDEVICE=nullpage \
-           -r36x36 \
-           -dNOPAUSE \
-           -q \
-           #{file} >>/dev/null 2>>/dev/null"
-
-    did_succeed = system_try_within 30, "validating PDF using ghostscript", exec
-
-    unless did_succeed
-      logger.error "Failed to validate pdf file. Is ghostscript installed?"
+  def pdf_valid? filename
+    # Scan last 1024 bytes for the EOF mark
+    return false unless File.exists? filename
+    File.open(filename) do |f|
+      f.seek -1024, IO::SEEK_END
+      f.read.include? '%%EOF'
     end
-
-    did_succeed
   end
 
   #
@@ -497,32 +487,6 @@ module FileHelper
     result
   end
 
-  #
-  # Aggregate a list of PDFs into a single PDF file
-  # - returns boolean indicating success
-  #
-  def aggregate(pdf_paths, final_pdf_path)
-    logger.debug "Trying to aggregate PDFs to #{final_pdf_path}"
-
-    did_compile = false
-    exec = "gs \
-            -dBATCH \
-            -dNOPAUSE \
-            -q \
-            -sDEVICE=pdfwrite \
-            -dPDFSETTINGS=/screen \
-            -sOutputFile='#{final_pdf_path}' \
-            #{pdf_paths.join ' '}"
-
-    did_compile = system_try_within 180, "trying to aggregate PDFs", exec
-
-    unless did_compile
-      logger.error "Failed to aggregate PDFs to #{final_pdf_path}. Command was:\n\t#{exec}"
-    end
-
-    did_compile
-  end
-
   def path_to_plagarism_html(match_link)
     to_dir = student_work_dir(:plagarism, match_link.task)
 
@@ -649,7 +613,6 @@ module FileHelper
   module_function :doc_to_pdf
   module_function :cover_to_pdf
   module_function :read_file_to_str
-  module_function :aggregate
   module_function :path_to_plagarism_html
   module_function :save_plagiarism_html
   module_function :delete_plagarism_html
