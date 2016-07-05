@@ -953,8 +953,6 @@ EOF
         fout.puts pdf_text
       end
 
-      # FileHelper.compress_pdf(self.portfolio_path)
-
       logger.info "Created portfolio at #{portfolio_path} - #{log_details()}"
 
       self.portfolio_production_date = DateTime.now
@@ -964,9 +962,7 @@ EOF
       logger.error "Failed to convert portfolio to PDF - #{log_details()} -\nError: #{e.message}"
 
       log_file = e.message.scan(/\/.*\.log/).first
-      # puts "log file is ... #{log_file}"
       if log_file && File.exists?(log_file)
-        # puts "exists"
         begin
           puts "--- Latex Log ---\n"
           puts File.read(log_file)

@@ -8,7 +8,8 @@ RUN apt-get install -y \
   libmagic-dev \
   pdftk \
   libpq-dev \
-  python-pygments
+  python-pygments \
+  ghostscript
 
 ADD . /doubtfire-api
 WORKDIR /doubtfire-api

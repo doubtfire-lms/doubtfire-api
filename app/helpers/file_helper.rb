@@ -200,7 +200,6 @@ module FileHelper
       end
     end
 
-    # puts "#{did_compress}"
     raise "Failed to compress an image. Ensure all images are smaller than 1MB." unless did_compress
     return true
   end

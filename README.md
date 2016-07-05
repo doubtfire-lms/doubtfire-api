@@ -77,10 +77,10 @@ CREATE ROLE itig WITH CREATEDB PASSWORD 'd872$dh' LOGIN;
 
 #### 4. Install native tools
 
-Install `imagemagick`, `libmagic` using Homebrew:
+Install `imagemagick`, `libmagic` and `ghostscript` using Homebrew:
 
 ```
-$ brew install imagemagick libmagic
+$ brew install imagemagick libmagic ghostscript
 ```
 
 You will also need to install the Python `pygments` package:
@@ -295,11 +295,12 @@ CREATE ROLE itig WITH CREATEDB PASSWORD 'd872$dh' LOGIN;
 
 #### 4. Install native tools
 
-Install `imagemagick`, `libmagic`. You will also need to install the Python
-`pygments` package:
+Install `imagemagick`, `libmagic`, `ghostscript`. You will also need to install
+the Python `pygments` package:
 
 ```
-$ sudo apt-get install imagemagick \
+$ sudo apt-get install ghostscript \
+                       imagemagick \
                        libmagickwand-dev \
                        libmagic-dev \
                        python-pygments
