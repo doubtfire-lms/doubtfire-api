@@ -169,8 +169,8 @@ module Api
     get '/csv/task_definitions' do
       unit = Unit.find(params[:unit_id])
 
-      if not authorise? current_user, unit, :download_csv
-        error!({"error" => "Not authorised to upload CSV of tasks"}, 403)
+      if not authorise? current_user, unit, :download_unit_csv
+        error!({"error" => "Not authorised to download CSV of tasks"}, 403)
       end
 
       content_type "application/octet-stream"
@@ -272,7 +272,7 @@ module Api
       unit.student_tasks.
         joins(:project).
         joins(:task_status).
-        select("projects.tutorial_id as tutorial_id", "project_id", "tasks.id as id", "task_definition_id", "task_statuses.name as status_name", "completion_date", "times_assessed", "submission_date", "times_submitted").
+        select("projects.tutorial_id as tutorial_id", "project_id", "tasks.id as id", "task_definition_id", "task_statuses.name as status_name", "completion_date", "times_assessed", "submission_date").
         where("task_definition_id = :id", id: params[:task_def_id]).
         map { |t|
         {
@@ -283,7 +283,6 @@ module Api
           status: TaskStatus.status_key_for_name(t.status_name),
           completion_date: t.completion_date,
           submission_date: t.submission_date,
-          times_submitted: t.times_submitted,
           times_assessed: t.times_assessed
         }
       }

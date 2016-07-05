@@ -178,7 +178,8 @@ class User < ActiveRecord::Base
       :create_user,
       :upload_csv,
       :list_users,
-      :download_csv,
+      :download_system_csv,
+      :download_unit_csv,
       :update_user,
       :create_unit,
       :act_tutor,
@@ -196,7 +197,7 @@ class User < ActiveRecord::Base
       :update_user,
       :demote_user,
       :upload_csv,
-      :download_csv,
+      :download_unit_csv,
       :create_unit,
       :act_tutor,
       :convene_units,
@@ -205,7 +206,8 @@ class User < ActiveRecord::Base
 
     # What can tutors do with users?
     tutor_role_permissions = [
-      :act_tutor
+      :act_tutor,
+      :download_unit_csv
     ]
 
     # What can students do with users?

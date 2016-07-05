@@ -1,10 +1,14 @@
+require 'doubtfire_logger'
+
 #
 # A universal logger
 #
 module LogHelper
+  #
+  # Logger function returns the singleton logger
+  #
   def logger
-    # Grape::API.logger
-    Rails.logger
+    DoubtfireLogger.logger
   end
 
   # Export functions as module functions

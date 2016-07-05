@@ -22,7 +22,9 @@ class Unit < ActiveRecord::Base
       :get_students,
       :enrol_student,
       :provide_feedback,
-      :download_stats
+      :download_stats,
+      :download_unit_csv,
+      :download_grades
     ]
 
     # What can convenors do with units?
@@ -31,14 +33,15 @@ class Unit < ActiveRecord::Base
       :get_students,
       :enrol_student,
       :upload_csv,
-      :download_csv,
+      :download_unit_csv,
       :update,
       :employ_staff,
       :add_tutorial,
       :add_task_def,
       :provide_feedback,
       :change_project_enrolment,
-      :download_stats
+      :download_stats,
+      :download_grades
     ]
 
     # What can other users do with units?
@@ -363,22 +366,12 @@ class Unit < ActiveRecord::Base
 
         project_participant = project_participant.first
 
-        user_project = UnitRole.joins(project: :unit).where(
-            user_id: project_participant.id,
-            projects: {unit_id: id}
-          )
+        user_project = projects.where(user_id: project_participant.id).first
 
-        if not user_project
+        unless user_project
           ignored << { row:row, message: "User #{username} not enrolled in unit" }
           next
         end
-
-        if not user_project.count == 1
-          ignored << { row:row, message: "User #{username} not enrolled in unit" }
-          next
-        end
-
-        user_project = user_project.first.project
 
         if user_project.enrolled
           user_project.enrolled = false
@@ -697,7 +690,13 @@ class Unit < ActiveRecord::Base
         'Email',
         'Portfolio',
         'Tutorial',
-      ] + task_definitions.map{|task_definition| task_definition.abbreviation }
+      ] + task_definitions.map{ |task_definition|
+        if task_definition.is_graded
+          [ task_definition.abbreviation, "#{task_definition.abbreviation} grade" ]
+        else
+          task_definition.abbreviation
+        end
+      }.flatten
       active_projects.each do |project|
         csv << project.task_completion_csv
       end
@@ -837,21 +836,7 @@ class Unit < ActiveRecord::Base
       td.plagiarism_updated = false
       td.save
 
-      # delete old plagiarism links
-      logger.debug "Deleting old links for task definition #{td.id}"
-      PlagiarismMatchLink.joins(:task).where("tasks.task_definition_id" => td.id).each do | plnk |
-        begin
-          PlagiarismMatchLink.find(plnk.id).destroy!
-        rescue
-        end
-      end
-
-      # Reset the tasks % similar
-      logger.debug "Clearing old task percent similar"
-      tasks_for_definition(td).where("tasks.max_pct_similar > 0").each do |t|
-        t.max_pct_similar = 0
-        t.save
-      end
+      td.clear_related_plagiarism
 
       # Get results
       url = td.plagiarism_report_url
@@ -963,7 +948,7 @@ class Unit < ActiveRecord::Base
         logger.debug "Checking plagiarism for #{td.name} (id=#{td.id})"
         tasks = tasks_for_definition(td)
         tasks_with_files = tasks.select { |t| t.has_pdf }
-        if tasks_with_files.count > 1 && (tasks.where("tasks.file_uploaded_at > ?", last_plagarism_scan ).select { |t| t.has_pdf }.count > 0 || force )
+        if tasks_with_files.count > 1 && (tasks.where("tasks.file_uploaded_at > ?", last_plagarism_scan ).select { |t| t.has_pdf }.count > 0 || td.updated_at > last_plagarism_scan || force )
           # There are new tasks, check these
 
           logger.debug "Contacting MOSS for new checks"
@@ -996,6 +981,8 @@ class Unit < ActiveRecord::Base
               # Get server to process files
               logger.debug "Sending to MOSS..."
               url = moss.check(to_check, lambda { |line| puts line })
+
+              logger.info "MOSS check for #{code} #{td.abbreviation} url: #{url}"
 
               td.plagiarism_report_url = url
               td.plagiarism_updated = true
@@ -1065,7 +1052,7 @@ class Unit < ActiveRecord::Base
   def tasks_awaiting_feedback
     student_tasks.
       joins(:task_status).
-      select("project_id", "tasks.id as id", "task_definition_id", "projects.tutorial_id as tutorial_id", "task_statuses.name as status_name", "completion_date", "times_assessed", "portfolio_evidence", "submission_date", "times_submitted").
+      select("project_id", "tasks.id as id", "task_definition_id", "projects.tutorial_id as tutorial_id", "task_statuses.name as status_name", "completion_date", "times_assessed", "submission_date", "portfolio_evidence").
       where('task_statuses.id IN (:ids)', ids: [ TaskStatus.ready_to_mark, TaskStatus.need_help, TaskStatus.discuss, TaskStatus.demonstrate ]).
       where('(task_definitions.due_date IS NULL OR task_definitions.due_date > tasks.submission_date)').
       order('task_definition_id').
@@ -1078,7 +1065,6 @@ class Unit < ActiveRecord::Base
           status: TaskStatus.status_key_for_name(t.status_name),
           completion_date: t.completion_date,
           submission_date: t.submission_date,
-          times_submitted: t.times_submitted,
           times_assessed: t.times_assessed
           # has_pdf: t.has_pdf
         }
@@ -1117,7 +1103,7 @@ class Unit < ActiveRecord::Base
         count = data.select{|r| r[:task_definition_id] == td.id && r[:tutorial_id] == t.id }.map{|r| r[:num]}.inject(:+)
         count = 0 unless count
 
-        num = t.projects.where("projects.target_grade >= :grade", grade: td.target_grade).count
+        num = t.projects.where("projects.enrolled = TRUE AND projects.target_grade >= :grade", grade: td.target_grade).count
         num = 0 unless num
 
         if num - count > 0
@@ -1391,5 +1377,16 @@ class Unit < ActiveRecord::Base
     data = temp.reduce(:+)
 
     _ilo_progress_summary(data)
+  end
+
+  def student_grades_csv
+    students_with_grades = students.where("grade > 0")
+
+    CSV.generate do |row|
+      row << ["unit_code", "username", "grade", "rationale"]
+      students_with_grades.each do |project|
+        row << [project.unit.code, project.student.username,  project.grade, project.grade_rationale]
+      end
+    end
   end
 end

@@ -146,7 +146,7 @@ module Api
             error!({"error" => "This task requires a group. Ensure you are in a group for the unit's #{task.task_definition.group_set.name}"}, 403)
           end
 
-          logger.info "Assessing #{task.id} to #{params[:trigger]}"
+          logger.info "Assessing task #{task.id} to #{params[:trigger]}"
           result = task.trigger_transition( params[:trigger], current_user )
           if result.nil? && task.task_definition.restrict_status_updates
             error!({"error" => "This task can only be updated by your tutor." }, 403)
@@ -204,5 +204,38 @@ module Api
       end
     end
 
+    desc "Get the files associated with a submission"
+    params do
+      requires :id, type: Integer, desc: 'The project id to locate'
+      requires :task_definition_id, type: Integer, desc: 'The id of the task definition of the task to get the files from'
+    end
+    get '/projects/:id/task_def_id/:task_definition_id/submission_files' do
+      # Get the project and task_definition based on uploaded details.
+      project = Project.find(params[:id])
+      task_definition = project.unit.task_definitions.find(params[:task_definition_id])
+
+      # check the user can put this task
+      error!({"error" => "You do not have permission to read submissions for this project."}) unless authorise? current_user, project, :get_submission
+
+      # Get the actual task...
+      task = project.task_for_task_definition(task_definition)
+
+      # Find the file
+      file_loc = FileHelper.zip_file_path_for_done_task(task)
+
+      if file_loc.nil?
+        file_loc = Rails.root.join("public", "resources", "FileNotFound.pdf")
+        header['Content-Disposition'] = "attachment; filename=FileNotFound.pdf"
+      else
+        header['Content-Disposition'] = "attachment; filename=#{project.student.username}-#{task.task_definition.abbreviation}.zip"
+      end
+
+      # Set download headers...
+      content_type "application/octet-stream"
+      env['api.format'] = :binary
+
+      # Return the file data
+      File.read(file_loc)
+    end
   end
 end

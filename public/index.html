@@ -35,12 +35,10 @@
 
     <!-- compiled CSS -->
     <link rel="stylesheet" type="text/css" href="assets/doubtfire.css" />
-
-    <!-- compiled JS -->
-    <script type="text/javascript" src="assets/doubtfire.js"></script>
-    <script type="text/javascript" src="assets/vendor/pdfjs-bower/dist/compatibility.js"></script>
-    <script type="text/javascript" src="assets/vendor/pdfjs-bower/dist/pdf.js"></script>
-    <script type="text/javascript" src="assets/vendor/pdfjs-bower/dist/pdf.worker.js"></script>
+    <link rel="stylesheet" type="text/css" href="assets/vendor/angular-xeditable/dist/css/xeditable.css" />
+    <link rel="stylesheet" type="text/css" href="assets/vendor/codemirror/lib/codemirror.css" />
+    <link rel="stylesheet" type="text/css" href="assets/vendor/codemirror/theme/xq-light.css" />
+    <link rel="stylesheet" type="text/css" href="assets/vendor/nvd3/build/nv.d3.css" />
 
     <!-- Google Analytics -->
     <script>
@@ -57,17 +55,10 @@
       <div ui-view="main" class="container-fluid container-fixed-lg"></div>
     </div>
 
-    <div class="alert-top">
-      <alert ng-repeat="alert in alerts" class="col-xs-12 col-md-4 col-md-push-8" type="{{alert.type}}" close="alert.close()">
-        <div class="alert-wrapper">
-          <i class="fa fa-3x"></i>
-          <div class="alert-content">
-            <h4>{{alert.type | ucfirst}}</h4>
-            <div ng-bind-html="alert.msg"></div>
-          </div>
-        </div>
-      </alert>
-    </div>
+    <alert-list> </alert-list>
+
+    <!-- compiled JS -->
+    <script type="text/javascript" src="assets/doubtfire.js"></script>
 
   </body>
 </html>

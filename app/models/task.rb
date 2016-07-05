@@ -50,7 +50,7 @@ class Task < ActiveRecord::Base
   def role_for(user)
     project_role = project.user_role(user)
     return project_role unless project_role.nil?
-    logger.debug "Getting role for user #{user.id}: #{task_definition.abbreviation} #{task_definition.group_set}"
+    logger.debug "Getting role for user #{user.id unless user.nil?}: #{task_definition.abbreviation} #{task_definition.group_set}"
     # check for group member
     if group_task?
       logger.debug "Checking group"
@@ -74,6 +74,9 @@ class Task < ActiveRecord::Base
   has_many :reverse_plagiarism_match_links, class_name: "PlagiarismMatchLink", dependent: :destroy, inverse_of: :other_task, foreign_key: "other_task_id"
   has_many :learning_outcome_task_links, dependent: :destroy # links to learning outcomes
   has_many :learning_outcomes,  through: :learning_outcome_task_links
+
+  validates :task_definition_id, uniqueness: { scope: :project,
+    message: "must be unique within the project" }
 
   after_save :update_project
 
@@ -237,6 +240,10 @@ class Task < ActiveRecord::Base
     (not portfolio_evidence.nil?) and File.exists?(portfolio_evidence)
   end
 
+  def log_details
+    "#{id} - #{project.student.username}, #{project.unit.code}"
+  end
+
   def assign_evidence_path(final_pdf_path, propagate=true)
     if group_task? and propagate
       group_submission.tasks.each do |task|
@@ -339,6 +346,21 @@ class Task < ActiveRecord::Base
     end
 
     if not bulk then project.calc_task_stats(self) end
+  end
+
+  def grade_desc
+    case grade
+    when 0
+      'Pass'
+    when 1
+      'Credit'
+    when 2
+      'Distinction'
+    when 3
+      'High Distinction'
+    else
+      nil
+    end
   end
 
   #
@@ -449,9 +471,6 @@ class Task < ActiveRecord::Base
   end
 
   def submit(submit_date = Time.zone.now)
-    if self.task_status != TaskStatus.ready_to_mark
-      self.times_submitted += 1
-    end
     self.task_status      = TaskStatus.ready_to_mark
     self.submission_date  = submit_date
 
@@ -699,14 +718,18 @@ class Task < ActiveRecord::Base
   def __output_filename__(in_dir, idx, type)
     pwd = FileUtils.pwd
     Dir.chdir(in_dir)
+    begin
+      # Rename files with 000.type.* to 000-type-*
+      result = Dir.glob("#{idx.to_s.rjust(3, '0')}.#{type}.*").first
 
-    result = Dir.glob("#{idx.to_s.rjust(3, '0')}.#{type}.*").first
-    if (not result.nil?) && File.exists?(result)
-      FileUtils.mv result, "#{idx.to_s.rjust(3, '0')}-#{type}#{File.extname(result)}"
+      if (not result.nil?) && File.exists?(result)
+        FileUtils.mv result, "#{idx.to_s.rjust(3, '0')}-#{type}#{File.extname(result)}"
+      end
+      result = Dir.glob("#{idx.to_s.rjust(3, '0')}-#{type}.*").first
+    ensure
+      Dir.chdir(pwd)
     end
 
-    result = Dir.glob("#{idx.to_s.rjust(3, '0')}-#{type}.*").first
-    Dir.chdir(pwd)
     return File.join(in_dir, result) unless result.nil?
     nil
   end
@@ -728,8 +751,8 @@ class Task < ActiveRecord::Base
       end
 
       if output_filename.nil?
-        logger.error "Error processing task #{id} - missing file #{file_req}"
-        puts "Error processing task #{id} - missing file #{file_req}"
+        logger.error "Error processing task #{log_details()} - missing file #{file_req}"
+        raise "File `#{file_req['name']}` missing from submission."
       else
         result << { path: output_filename, type: file_req['type'] }
 
@@ -765,7 +788,7 @@ class Task < ActiveRecord::Base
     end
   end
 
-  def pygments_lang(extn)
+  def self.pygments_lang(extn)
     extn = extn.downcase
     case
       when ['pas', 'pp'].include?(extn) then 'pas'
@@ -806,7 +829,25 @@ class Task < ActiveRecord::Base
       tac = TaskAppController.new
       tac.init(self)
 
-      pdf_text = tac.make_pdf
+      begin
+        pdf_text = tac.make_pdf
+      rescue => e
+        logger.error "Failed to create PDF for task #{log_details()}. Error: #{e.message}"
+
+        log_file = e.message.scan(/\/.*\.log/).first
+        # puts "log file is ... #{log_file}"
+        if log_file && File.exists?(log_file)
+          # puts "exists"
+          begin
+            puts "--- Latex Log ---\n"
+            puts File.read(log_file)
+            puts "---    End    ---\n\n"
+          rescue
+          end
+        end
+
+        raise "Failed to convert your submission to PDF. Check code files submitted for invalid characters, that documents are valid pdfs, and that images are valid."
+      end
 
       if group_task?
         group_submission.tasks.each do |t|
@@ -829,25 +870,10 @@ class Task < ActiveRecord::Base
       clear_in_process()
       return true
     rescue => e
-      logger.error "Failed to convert submission to PDF for task #{id}. Error: #{e.message}"
-      puts "Failed to convert submission to PDF for task #{id}. Error: #{e.message}"
-
-      log_file = e.message.scan(/\/.*\.log/).first
-      # puts "log file is ... #{log_file}"
-      if log_file && File.exists?(log_file)
-        # puts "exists"
-        begin
-          puts "--- Latex Log ---\n"
-          puts File.read(log_file)
-          puts "---    End    ---\n\n"
-        rescue
-        end
-      end
-
       clear_in_process()
 
       trigger_transition 'fix', project.main_tutor
-      raise "Check code files submitted for invalid characters, that documents are valid pdfs, and that images are valid."
+      raise e
     end
   end
 
@@ -866,6 +892,7 @@ class Task < ActiveRecord::Base
       reload
     else
       self.file_uploaded_at = DateTime.now
+      self.submission_date = Time.zone.now
 
       # This task is now ready to submit
       if not (discuss_or_demonstrate? || complete? || do_not_resubmit? || fail?)

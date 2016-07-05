@@ -202,8 +202,8 @@ module Api
 
     desc "Download CSV of all users"
     get '/csv/users' do
-      if not authorise? current_user, User, :download_csv
-        error!({"error" => "Not authorised to upload CSV of users"}, 403)
+      if not authorise? current_user, User, :download_system_csv
+        error!({"error" => "Not authorised to download CSV of all users"}, 403)
       end
 
       content_type "application/octet-stream"

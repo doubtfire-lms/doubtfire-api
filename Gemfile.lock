@@ -61,6 +61,7 @@ GEM
     daemons (1.1.9)
     database_cleaner (1.5.1)
     descendants_tracker (0.0.3)
+      thread_safe (~> 0.3, >= 0.3.1)
     devise (3.1.2)
       bcrypt-ruby (~> 3.0)
       orm_adapter (~> 0.1)

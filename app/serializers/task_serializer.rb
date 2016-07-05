@@ -3,7 +3,7 @@ class ShallowTaskSerializer < ActiveModel::Serializer
 end
 
 class TaskUpdateSerializer < ActiveModel::Serializer
-  attributes :id, :status, :project_id, :new_stats, :include_in_portfolio, :other_projects, :times_assessed, :grade, :submission_date, :times_submitted
+  attributes :id, :status, :project_id, :new_stats, :include_in_portfolio, :other_projects, :times_assessed, :grade
 
   def new_stats
     object.project.task_stats

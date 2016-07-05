@@ -29,24 +29,23 @@ class PortfolioEvidence
     # For each folder in new (i.e., queued folders to process) that matches appropriate name
     new_root_dir = Dir.entries(student_work_dir(:new)).select { | f | (f =~ /^\d+$/) == 0 }
     new_root_dir.each do | folder_id |
-      begin
-        task = Task.find(folder_id)
+      task = Task.find(folder_id)
 
-        add_error = lambda { | message |
-          puts "Failed to process folder_id = #{folder_id}. #{message}"
-          logger.error "Failed to process folder_id = #{folder_id}. #{message}"
+      add_error = lambda { | message |
+        logger.error "Failed to process folder_id = #{folder_id}. #{message}"
 
-          if task
-            task.add_comment task.project.main_tutor, "**Automated Comment**: Something went wrong with your submission. Check the files and resubmit this task. #{message}"
-            task.trigger_transition 'fix', task.project.main_tutor
+        if task
+          task.add_comment task.project.main_tutor, "**Automated Comment**: Something went wrong with your submission. Check the files and resubmit this task. #{message}"
+          task.trigger_transition 'fix', task.project.main_tutor
 
-            if errors[task.project].nil?
-              errors[task.project] = []
-            end
-            errors[task.project] << task
+          if errors[task.project].nil?
+            errors[task.project] = []
           end
-        }
+          errors[task.project] << task
+        end
+      }
 
+      begin
         logger.info "creating pdf for task #{task.id}"
         success = task.convert_submission_to_pdf
 

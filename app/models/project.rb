@@ -72,7 +72,7 @@ class Project < ActiveRecord::Base
 
   def self.for_user(user, include_inactive)
     if include_inactive
-      projects.where('projects.user_id = :user_id', user_id: user.id)
+      where('projects.user_id = :user_id', user_id: user.id)
     else
       active_projects.where('projects.user_id = :user_id', user_id: user.id)
     end
@@ -109,6 +109,9 @@ class Project < ActiveRecord::Base
     }
   end
 
+  def log_details
+    "#{id} - #{student.name} (#{student.username}) #{unit.code}"
+  end
 
   def task_outcome_alignments
     learning_outcome_task_links
@@ -161,6 +164,7 @@ class Project < ActiveRecord::Base
   def user_role(user)
     if user == student then :student
     elsif user == main_tutor then :tutor
+    elsif user.nil? then nil
     elsif self.unit.tutors.where(id: user.id).count != 0 then :tutor
     else nil
     end
@@ -611,7 +615,7 @@ class Project < ActiveRecord::Base
   end
 
   def task_completion_csv(options={})
-    ordered_tasks = tasks.joins(:task_definition).order("task_definitions.target_date, task_definitions.abbreviation")
+    all_tasks = unit.task_definitions.order("task_definitions.start_date, task_definitions.abbreviation")
     [
       student.username,
       student.name,
@@ -619,19 +623,42 @@ class Project < ActiveRecord::Base
       student.email,
       portfolio_status,
       if tutorial then tutorial.abbreviation else '' end
-    ] + ordered_tasks.map{|task| task.task_status.name }
+    ] + all_tasks.map { |td|
+        task = tasks.where(task_definition_id: td.id).first
+        status = if task then task.task_status.name else TaskStatus.not_started.name end
+        grade = if task then task.grade_desc else nil end
+
+        if td.is_graded
+          [status, grade]
+        else
+          status
+        end
+      }.flatten
   end
 
   #
   # Portfolio production code
   #
+  def portfolio_temp_path
+    portfolio_dir = FileHelper.student_portfolio_dir(self, false)
+    portfolio_tmp_dir = File.join(portfolio_dir, "tmp")
+  end
+
+  def portfolio_tmp_file_name(dict)
+    extn = File.extname(dict[:name])
+    name = File.basename(dict[:name], extn)
+    name = name.gsub(".","_") + extn
+    FileHelper.sanitized_filename("#{dict[:idx].to_s.rjust(3, '0')}-#{dict[:kind]}-#{name}")
+  end
+
+  def portfolio_tmp_file_path(dict)
+    File.join(portfolio_temp_path, portfolio_tmp_file_name(dict))
+  end
 
   def move_to_portfolio(file, name, kind)
     # get path to portfolio dir
-    portfolio_dir = FileHelper.student_portfolio_dir(self)
-
     # get path to tmp folder where file parts will be stored
-    portfolio_tmp_dir = File.join(portfolio_dir, "tmp")
+    portfolio_tmp_dir = portfolio_temp_path
     FileUtils.mkdir_p(portfolio_tmp_dir)
     result = {
       kind: kind,
@@ -654,28 +681,25 @@ class Project < ActiveRecord::Base
       result[:idx] = idx
     end
 
-    dest_file = FileHelper.sanitized_filename("#{result[:idx].to_s.rjust(3, '0')}.#{kind}.#{result[:name]}")
+    dest_file = portfolio_tmp_file_name(result)
     FileUtils.cp file.tempfile.path, File.join(portfolio_tmp_dir, dest_file)
     result
   end
 
   def portfolio_files()
     # get path to portfolio dir
-    portfolio_dir = FileHelper.student_portfolio_dir(self, false)
-
-    # get path to tmp folder where file parts will be stored
-    portfolio_tmp_dir = File.join(portfolio_dir, "tmp")
+    portfolio_tmp_dir = portfolio_temp_path
     return [] unless Dir.exists? portfolio_tmp_dir
 
     result = []
 
     Dir.chdir(portfolio_tmp_dir)
-    files = Dir.glob("*").select { | f | (f =~ /^\d{3}\.(cover|document|code|image)/) == 0 }
+    files = Dir.glob("*").select { | f | (f =~ /^\d{3}\-(cover|document|code|image)/) == 0 }
     files.each { | file |
-      parts = file.split(".");
+      parts = file.split("-");
       idx = parts[0].to_i
       kind = parts[1]
-      name = parts.drop(2).join(".")
+      name = parts.drop(2).join("-")
       result << { kind: kind, name: name, idx: idx }
     }
 
@@ -685,16 +709,13 @@ class Project < ActiveRecord::Base
   # Remove a file from the portfolio tmp folder
   def remove_portfolio_file(idx, kind, name)
     # get path to portfolio dir
-    portfolio_dir = FileHelper.student_portfolio_dir(self, false)
-
-    # get path to tmp folder where file parts will be stored
-    portfolio_tmp_dir = File.join(portfolio_dir, "tmp")
+    portfolio_tmp_dir = portfolio_temp_path
     return unless Dir.exists? portfolio_tmp_dir
 
     # the file is in the students portfolio tmp dir
     rm_file = File.join(
         portfolio_tmp_dir,
-        FileHelper.sanitized_filename("#{idx.to_s.rjust(3, '0')}.#{kind}.#{name}")
+        FileHelper.sanitized_filename("#{idx.to_s.rjust(3, '0')}-#{kind}-#{name}")
       )
 
     # try to remove the file
@@ -773,12 +794,12 @@ EOF
 
     cover_filename = File.join(dest_dir, "task.cover.html")
 
-    logger.debug("generating cover page #{cover_filename}")
+    logger.debug("Generating cover page #{cover_filename} - #{log_details()}")
 
     #
     # Create cover page for the submitted file (<taskid>/file0.cover.html etc.)
     #
-    logger.debug "Generating cover page for project #{id} - #{cover_filename}"
+    logger.debug "Generating cover page #{cover_filename} - #{log_details()}"
 
     coverp_file = File.new(cover_filename, "w")
     coverp_file.write(coverpage_html)
@@ -788,7 +809,7 @@ EOF
   end
 
   def portfolio_path()
-    File.join(FileHelper.student_portfolio_dir(self, false), FileHelper.sanitized_filename("#{student.username}-portfolio.pdf"))
+    File.join(FileHelper.student_portfolio_dir(self, true), FileHelper.sanitized_filename("#{student.username}-portfolio.pdf"))
   end
 
   def has_portfolio()
@@ -807,66 +828,6 @@ EOF
 
   def portfolio_available()
     (File.exists? portfolio_path) && ! self.compile_portfolio
-  end
-
-  # Create the student's portfolio
-  def create_portfolio()
-    return false unless compile_portfolio
-
-    # remove from schedule
-    self.compile_portfolio = false
-    save!
-
-    # get path to portfolio dirs
-    portfolio_dir = FileHelper.student_portfolio_dir(self, false)
-    portfolio_tmp_dir = File.join(portfolio_dir, "tmp")
-    return false unless Dir.exists? portfolio_tmp_dir
-
-    tmp_dir = File.join( Dir.tmpdir, 'doubtfire', 'portfolio', id.to_s )
-
-    # create PDFs of uploaded files
-    pdf_paths = FileHelper.convert_files_to_pdf(portfolio_tmp_dir, tmp_dir)
-    if pdf_paths.nil?
-      logger.error "Files missing for portfolio in project #{id}"
-      return false
-    end
-    task_pdfs = []
-    # add in tasks
-    portfolio_tasks.each { | task |
-        task_pdfs << task.portfolio_evidence
-      }
-    pdf_paths.insert(1, *task_pdfs)
-
-    task_cover = create_task_cover_page(portfolio_tmp_dir)
-    cover_file = File.join(tmp_dir, "task_cover.pdf")
-    FileHelper.cover_to_pdf( { path: task_cover }, cover_file )
-
-    pdf_paths.insert(1, cover_file)
-
-    final_pdf_path = portfolio_path
-    if FileHelper.aggregate(pdf_paths, final_pdf_path)
-      logger.info "Created portfolio for project #{id} at #{final_pdf_path}"
-      # Reuben 07.11.14 Set portfolio production date to now upon submission
-
-      self.portfolio_production_date = DateTime.now
-      self.save
-      result = true
-    else
-      logger.error "Failed to create portfolio for project #{id} at #{final_pdf_path}"
-      # failed to combine PDFs
-      self.portfolio_production_date = nil
-      self.save
-      result = false
-    end
-
-    # Cleanup
-    begin
-      FileUtils.rm_r(tmp_dir)
-    rescue
-      logger.warn "Failed to cleanup directories from portfolio production (project id=#{id})"
-    end
-
-    return result
   end
 
   def remove_portfolio()
@@ -894,16 +855,26 @@ EOF
     ! tasks.where(task_definition: td).first.nil?
   end
 
+  #
+  # Get the task for the requested definition. This will create the
+  # task if the task does not exist for this project.
+  #
   def task_for_task_definition(td)
+    logger.debug "Finding task #{td.abbreviation} for project #{log_details()}"
     result = tasks.where(task_definition: td).first
     if result.nil?
-      result = Task.create(
-        task_definition_id: td.id,
-        project_id: id,
-        task_status_id: 1
-      )
-      result.save
-      tasks.push result
+      begin
+        result = Task.create!(
+          task_definition_id: td.id,
+          project_id: id,
+          task_status_id: 1
+        )
+        logger.info "Created task #{result.id} - #{td.abbreviation} for project #{log_details()}"
+        result.save
+        tasks.push result
+      rescue
+        result = tasks.where(task_definition: td).first
+      end
     end
     result
   end
@@ -918,5 +889,92 @@ EOF
 
   def export_task_alignment_to_csv
     LearningOutcomeTaskLink.export_task_alignment_to_csv(unit, self)
+  end
+
+  class ProjectAppController < ApplicationController
+    attr_accessor :student
+    attr_accessor :project
+    attr_accessor :base_path
+    attr_accessor :image_path
+    attr_accessor :learning_summary_report
+    attr_accessor :ordered_tasks
+    attr_accessor :portfolio_tasks
+    attr_accessor :task_defs
+    attr_accessor :outcomes
+
+    def init(project)
+      @student = project.student
+      @project = project
+      @learning_summary_report = project.learning_summary_report_path
+      @files = project.portfolio_files
+      @base_path = project.portfolio_temp_path
+      @image_path = Rails.root.join("public", "assets", "images")
+
+      @ordered_tasks = project.tasks.joins(:task_definition).order("task_definitions.start_date, task_definitions.abbreviation").where("task_definitions.target_grade <= #{project.target_grade}")
+
+      @portfolio_tasks = project.portfolio_tasks
+      @task_defs = project.unit.task_definitions.order(:start_date)
+      @outcomes = project.unit.learning_outcomes.order(:ilo_number)
+    end
+
+    def make_pdf()
+      render_to_string(:template => "/portfolio/portfolio_pdf.pdf.erb", :layout => true)
+    end
+  end
+
+
+  #
+  # Return the path to the student's learning summary report.
+  # This returns nil if there is no learning summary report.
+  #
+  def learning_summary_report_path
+    portfolio_tmp_dir = portfolio_temp_path
+
+    return nil unless Dir.exists? portfolio_tmp_dir
+
+    filename = "#{portfolio_tmp_dir}/000-document-LearningSummaryReport.pdf"
+    return nil unless File.exists? filename
+    filename
+  end
+
+  def create_portfolio
+    return false unless compile_portfolio
+
+    self.compile_portfolio = false
+    save!
+
+    begin
+      pac = ProjectAppController.new
+      pac.init(self)
+
+      pdf_text = pac.make_pdf
+
+      File.open(self.portfolio_path, 'w') do |fout|
+        fout.puts pdf_text
+      end
+
+      # FileHelper.compress_pdf(self.portfolio_path)
+
+      logger.info "Created portfolio at #{portfolio_path} - #{log_details()}"
+
+      self.portfolio_production_date = DateTime.now
+      self.save
+      return true
+    rescue => e
+      logger.error "Failed to convert portfolio to PDF - #{log_details()} -\nError: #{e.message}"
+
+      log_file = e.message.scan(/\/.*\.log/).first
+      # puts "log file is ... #{log_file}"
+      if log_file && File.exists?(log_file)
+        # puts "exists"
+        begin
+          puts "--- Latex Log ---\n"
+          puts File.read(log_file)
+          puts "---    End    ---\n\n"
+        rescue
+        end
+      end
+      return false
+    end
   end
 end

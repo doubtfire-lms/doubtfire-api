@@ -13,6 +13,7 @@ require "minitest/pride"
 
 # Require help with all tests
 require 'helpers/auth_helper'
+require 'helpers/assert_helper'
 
 class ActiveSupport::TestCase
     ActiveRecord::Migration.check_pending!
@@ -27,7 +28,7 @@ class ActiveSupport::TestCase
   ActiveSupport::Deprecation.silenced = true
 
   # Populate the database ONCE on each start
-  system 'rake db:seed'
+  system 'RAILS_ENV=test rake db:init_test_data'
 
   # Support rollback of db changes after all tests
   DatabaseCleaner.strategy = :transaction
