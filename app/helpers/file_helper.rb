@@ -342,20 +342,30 @@ module FileHelper
   def pdf_valid?(file)
     did_succeed = false
 
-    try_within 30, "validating PDF using pdftk" do
-      did_succeed = system "nice -n 10 pdftk #{file} output /dev/null dont_ask"
+    begin
+      try_within 30, "validating PDF using pdf-reader" do
+        reader = PDF::Reader.new(file)
+        # check it has at least one page
+        did_succeed = reader.page_count > 0
+      end
+    rescue MalformedPDFError
+      logger.warn "Failed to validate PDF file. PDF was malformed."
     end
 
-    unless did_succeed
-      logger.warn "Failed to validate PDF file. Trying with ghostscript"
-      try_within 30, "validating PDF using ghostscript" do
-        did_succeed = system "nice -n 10 gs -o /dev/null -sDEVICE=nullpage -r36x36 -dNOPAUSE -q #{file} >>/dev/null 2>>/dev/null"
-      end
-
-      unless did_succeed
-        logger.error "Failed to validate pdf file. Is ghostscript installed?"
-      end
-    end
+    # try_within 30, "validating PDF using pdftk" do
+    #   did_succeed = system "nice -n 10 pdftk #{file} output /dev/null dont_ask"
+    # end
+    #
+    # unless did_succeed
+    #   logger.warn "Failed to validate PDF file. Trying with ghostscript"
+    #   try_within 30, "validating PDF using ghostscript" do
+    #     did_succeed = system "nice -n 10 gs -o /dev/null -sDEVICE=nullpage -r36x36 -dNOPAUSE -q #{file} >>/dev/null 2>>/dev/null"
+    #   end
+    #
+    #   unless did_succeed
+    #     logger.error "Failed to validate pdf file. Is ghostscript installed?"
+    #   end
+    # end
 
     did_succeed
   end
