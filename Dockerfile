@@ -1,4 +1,4 @@
-FROM ruby:2.1.2
+FROM ruby:2.0.0
 
 RUN apt-get update
 RUN apt-get install -y \
@@ -7,7 +7,8 @@ RUN apt-get install -y \
   libmagickwand-dev \
   libmagic-dev \
   libpq-dev \
-  python-pygments
+  python-pygments \
+  ghostscript
 
 ADD . /doubtfire-api
 WORKDIR /doubtfire-api

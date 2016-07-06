@@ -77,10 +77,10 @@ CREATE ROLE itig WITH CREATEDB PASSWORD 'd872$dh' LOGIN;
 
 #### 4. Install native tools
 
-Install `imagemagick` and `libmagic` using Homebrew:
+Install `imagemagick`, `libmagic` and `ghostscript` using Homebrew:
 
 ```
-$ brew install imagemagick libmagic
+$ brew install imagemagick libmagic ghostscript
 ```
 
 You will also need to install the Python `pygments` package:
@@ -269,7 +269,9 @@ $ rbenv install 2.0.0-p353
 Install [Postgres](http://www.postgresql.org/download/linux/):
 
 ```
-$  sudo apt-get install postgresql postgresql-contrib libpq-dev
+$  sudo apt-get install postgresql \
+                        postgresql-contrib \
+                        libpq-dev
 ```
 
 Ensure `pg_config` is on the `PATH`, and then login to Postgres. You will need to locate where `apt-get` has installed your  Postgres binary and add this to your `PATH`. You can use `whereis psql` for that, but ensure you add the directory and not the executable to the path
@@ -293,17 +295,15 @@ CREATE ROLE itig WITH CREATEDB PASSWORD 'd872$dh' LOGIN;
 
 #### 4. Install native tools
 
-Install `imagemagick`, and `libmagic`:
+Install `imagemagick`, `libmagic` and `ghostscript`. You will also need to
+install the Python `pygments` package:
 
 ```
-$ sudo apt-get install imagemagick libmagickwand-dev
-$ sudo apt-get install libmagic-dev
-```
-
-You will also need to install the Python `pygments` package:
-
-```
-$ sudo apt-get install python-pygments
+$ sudo apt-get install ghostscript \
+                       imagemagick \
+                       libmagickwand-dev \
+                       libmagic-dev \
+                       python-pygments
 ```
 
 #### 5. Install Doubtfire API dependencies

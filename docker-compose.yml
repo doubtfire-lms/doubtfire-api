@@ -27,7 +27,7 @@ services:
   web:
     container_name: doubtfire-web
     build: ../doubtfire-web
-    command: grunt watchsvr
+    command: npm start
     environment:
       DOUBTFIRE_DOCKER_MACHINE_IP: $DOUBTFIRE_DOCKER_MACHINE_IP
     ports:

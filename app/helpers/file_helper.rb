@@ -184,14 +184,12 @@ module FileHelper
     logger.debug "File helper has started compressing #{path} to #{tmp_file}..."
 
     begin
-      exec = "#{Rails.root.join('lib', 'shell', 'timeout.sh')} -t 30 nice -n 10 convert \"#{path}\" -resize 1024x1024 \"#{tmp_file}\" >>/dev/null 2>>/dev/null"
-      # puts exec
+      exec = "convert \
+              \"#{path}\" \
+              -resize 1024x1024 \
+              \"#{tmp_file}\" >>/dev/null 2>>/dev/null"
 
-      # try with convert
-      did_compress = false
-      try_within 40, "compressing image" do
-        did_compress = system exec
-      end
+      did_compress = system_try_within 40, "compressing image using convert", exec
 
       if did_compress
         FileUtils.mv tmp_file, path
@@ -202,7 +200,6 @@ module FileHelper
       end
     end
 
-    # puts "#{did_compress}"
     raise "Failed to compress an image. Ensure all images are smaller than 1MB." unless did_compress
     return true
   end
@@ -217,20 +214,30 @@ module FileHelper
       tmp_file = File.join( Dir.tmpdir, 'doubtfire', 'compress', "#{File.dirname(path).split(File::Separator).last}-file.pdf" )
       FileUtils.mkdir_p(File.join( Dir.tmpdir, 'doubtfire', 'compress' ))
 
-      exec = "#{Rails.root.join('lib', 'shell', 'timeout.sh')} -t 30 nice -n 10 gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.3 -dDetectDuplicateImages=true -dPDFSETTINGS=/screen -dNOPAUSE -dBATCH  -dQUIET -sOutputFile=\"#{tmp_file}\" \"#{path}\" >>/dev/null 2>>/dev/null"
+      exec = "gs -sDEVICE=pdfwrite \
+                 -dCompatibilityLevel=1.3 \
+                 -dDetectDuplicateImages=true \
+                 -dPDFSETTINGS=/screen \
+                 -dNOPAUSE \
+                 -dBATCH \
+                 -dQUIET \
+                 -sOutputFile=\"#{tmp_file}\" \
+                 \"#{path}\" \
+                 >>/dev/null 2>>/dev/null"
 
       # try with ghostscript
-      did_compress = system exec
+      did_compress = system_try_within 30, "compressing PDF using ghostscript", exec
 
       if !did_compress
         logger.info "Failed to compress PDF #{path} using GhostScript. Trying with convert"
 
-        exec = "#{Rails.root.join('lib', 'shell', 'timeout.sh')} -t 30 nice -n 10 convert \"#{path}\" -compress Zip \"#{tmp_file}\" >>/dev/null 2>>/dev/null"
+        exec = "convert \"#{path}\" \
+                -compress Zip \
+                \"#{tmp_file}\" \
+                >>/dev/null 2>>/dev/null"
 
         # try with convert
-        try_within 40, "compressing PDF" do
-          did_compress = system exec
-        end
+        did_compress = system_try_within 40, "compressing PDF using convert", exec
 
         if !did_compress
           logger.error "Failed to compress PDF #{path} using convert. Cannot compress this PDF. Command was:\n\t#{exec}"
