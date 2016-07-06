@@ -2,9 +2,8 @@ source 'https://rubygems.org'
 
 # Ruby versions for various enviornments
 ruby_versions = {
-  experimental: '2.1.2',
   development:  '2.3.1',
-  test:         '2.0.0',
+  test:         '2.3.1',
   replica:      '2.0.0',
   production:   '2.0.0'
 }
