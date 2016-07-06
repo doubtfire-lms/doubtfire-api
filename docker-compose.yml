@@ -3,7 +3,7 @@ services:
   api:
     container_name: doubtfire-api
     build: .
-    command: bash -c "if [ -f /doubtfire-api/tmp/pids/server.pid ]; then rm /doubtfire-api/tmp/pids/server.pid; fi && /usr/local/bin/rails server"
+    command: bash -c "if [ -f /doubtfire-api/tmp/pids/server.pid ]; then rm /doubtfire-api/tmp/pids/server.pid; fi && rails server"
     ports:
       - "3000:3000"
     volumes:
