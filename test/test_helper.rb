@@ -18,6 +18,8 @@ require 'helpers/assert_helper'
 class ActiveSupport::TestCase
     ActiveRecord::Migration.check_pending!
 
+  puts "hey"
+
   # Setup all fixtures in test/fixtures/*.(yml|csv) for all tests in alphabetical order.
   #
   # Note: You'll currently still have to declare fixtures explicitly in integration tests

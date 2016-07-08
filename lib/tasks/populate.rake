@@ -594,8 +594,3 @@ class DatabasePopulator
   end
 end
 
-p = DatabasePopulator.new
-
-p.generate_user_roles()
-p.generate_users()
-p.generate_units()

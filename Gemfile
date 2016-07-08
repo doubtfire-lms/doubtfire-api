@@ -60,6 +60,7 @@ group :development, :test, :replica do
   gem 'rspec-rails', '~> 3'
   gem 'factory_girl_rails'
   gem 'minitest-rails'
+  gem 'minitest-hyper'
   gem 'database_cleaner'
 end
 
