@@ -12,8 +12,9 @@ A modern, lightweight learning management system.
   3. [...via Docker](#getting-started-via-docker)
 2. [Running Rake Tasks](#running-rake-tasks)
 3. [PDF Generation Prerequisites](#pdf-generation-prerequisites)
-4. [Contributing](#contributing)
-5. [License](#license)
+4. [Testing](#testing)
+5. [Contributing](#contributing)
+6. [License](#license)
 
 ## Getting started
 
@@ -578,6 +579,28 @@ $ which pdflatex
 If any of the following are not found, then you will need to double check your installation and ensure the binaries are on the `PATH`. If they are not installed correctly, refer to the install native tools section for [OS X](#4-install-native-tools) and [Linux](#4-install-native-tools-1) and ensure the native tools are installing properly.
 
 This section does not apply to users using Docker for Doubtfire.
+
+## Testing
+
+Our aim with testing Doubtfire is to migrate to a [Test-Driven Development](https://en.wikipedia.org/wiki/Test-driven_development)
+strategy, testing all new models and API endpoints (although we plan on writing
+more tests for _existing_ models and API endpoints). If you are writing a new
+API endpoint or model, we strongly suggest you include unit tests in the
+appropriate folders (see below).
+
+To run unit tests, execute:
+
+```bash
+$ rake test
+```
+
+A report will be generated under `spec/reports/hyper/index.html`.
+
+Unit tests are located in the `test` directory, where **model** tests are under
+the `model` subdirectory and **API** tests are under the `api` subdirectory.
+
+Any **helpers** should be included in the `helpers` subdirectory and helper
+modules should be written under the `TestHelpers` module.
 
 ## Contributing
 
