@@ -10,7 +10,7 @@ module Api
     prefix 'api'
     format :json
     formatter :json, Grape::Formatter::ActiveModelSerializers
-    rescue_from :all
+    # rescue_from :all
 
     #
     # Mount the api modules

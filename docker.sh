@@ -111,8 +111,18 @@ restore_doubtfire_services () {
 # Tries and restores a previous instance of the docker
 #
 build_doubtfire_images () {
-  msg "Building Doubtfire images. This may take a while..."
-  DOUBTFIRE_DOCKER_MACHINE_IP=$DOUBTFIRE_DOCKER_MACHINE_IP docker-compose -p doubtfire build
+  case $1 in
+    'api'|'web'|'db')
+      ;;
+    '')
+      msg "Building all Doubtfire images. This may take a while..."
+      ;;
+    *)
+      msg "Invalid image provided. Please provide one of api, web or db."
+      return 1
+      ;;
+  esac
+  DOUBTFIRE_DOCKER_MACHINE_IP=$DOUBTFIRE_DOCKER_MACHINE_IP docker-compose -p doubtfire build $1
   if [ $? -ne 0 ]; then
     error "Failed to build Doubtfire. Refer to logs above."
     return 1
@@ -322,7 +332,7 @@ show_help () {
   msg "  start      Start Doubtfire docker services"
   msg "  stop       Stop Doubtfire docker services"
   msg "  restart    Restart Doubtfire docker services"
-  msg "  build      (Re)build Doubtfire docker images"
+  msg "  build      (Re)build Doubtfire docker image(s)"
   msg "  populate   Populate the API with test data"
   msg "  attach     Attach to one of the api, web or db containers"
   return 0
@@ -372,7 +382,7 @@ handle_options () {
       return $?
       ;;
     "build")
-      build_doubtfire_images
+      build_doubtfire_images $ARG_1
       return $?
       ;;
     "attach")

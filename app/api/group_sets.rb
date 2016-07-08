@@ -2,7 +2,7 @@ require 'grape'
 require 'mime-check-helpers'
 
 module Api
-  
+
   #
   # Allow GroupSets to be managed via the API
   #
@@ -23,7 +23,7 @@ module Api
     desc "Add a new group set to the given unit"
     params do
       requires :unit_id,                            type: Integer,  :desc => "The unit for the new group set"
-      group :group_set do
+      requires :group_set, type: Hash do
         requires :name,                             type: String,   :desc => "The name of this group set"
         optional :allow_students_to_create_groups,  type: Boolean,  :desc => "Are students allowed to create groups"
         optional :allow_students_to_manage_groups,  type: Boolean,  :desc => "Are students allowed to manage their group memberships"
@@ -35,9 +35,9 @@ module Api
       if not authorise? current_user, unit, :update
         error!({"error" => "Not authorised to create a group set for this unit"}, 403)
       end
-      
+
       logger.info "Create group set: #{current_user.username} in #{unit.code} from #{request.ip}"
-      
+
       group_params = ActionController::Parameters.new(params)
         .require(:group_set)
         .permit(
@@ -52,11 +52,11 @@ module Api
       group_set.save!
       group_set
     end
-    
+
     desc "Edits the given group set"
     params do
       requires :id,                     type: Integer,  :desc => "The group set id to edit"
-      group :group_set do
+      requires :group_set, type: Hash do
         optional :name,                             type: String,   :desc => "The name of this group set"
         optional :allow_students_to_create_groups,  type: Boolean,  :desc => "Are students allowed to create groups"
         optional :allow_students_to_manage_groups,  type: Boolean,  :desc => "Are students allowed to manage their group memberships"
@@ -72,11 +72,11 @@ module Api
       if group_set.unit != unit
         error!({"error" => "Unable to locate group set for unit"}, 404)
       end
-      
+
       if not authorise? current_user, unit, :update
         error!({"error" => "Not authorised to update group set for this unit"}, 403)
       end
-      
+
       group_params = ActionController::Parameters.new(params)
         .require(:group_set)
         .permit(
@@ -85,22 +85,22 @@ module Api
           :allow_students_to_manage_groups,
           :keep_groups_in_same_class
         )
-      
+
       group_set.update!(group_params)
       group_set
     end
-    
+
     desc "Delete a group set"
     delete '/units/:unit_id/group_sets/:id' do
       group_set = GroupSet.find(params[:id])
       unit = Unit.find(params[:unit_id])
-      
+
       logger.info "Delete group set: #{current_user.username} in #{unit.code} from #{request.ip}"
 
       if group_set.unit != unit
         error!({"error" => "Unable to locate group set for unit"}, 404)
       end
-      
+
       if not authorise? current_user, unit, :update
         error!({"error" => "Not authorised to delete group set for this unit"}, 403)
       end
@@ -110,7 +110,7 @@ module Api
       end
       nil
     end
-    
+
     # ------------------------------------------------------------------------
     # Groups
     # ------------------------------------------------------------------------
@@ -146,7 +146,7 @@ module Api
     params do
       requires :unit_id,                            type: Integer,  :desc => "The unit for the new group"
       requires :group_set_id,                       type: Integer,  :desc => "The id of the group set"
-      group :group do
+      requires :group, type: Hash do
         optional :name,                             type: String,   :desc => "The name of this group"
         requires :tutorial_id,                      type: Integer,  :desc => "The id of the tutorial for the group"
       end
@@ -198,13 +198,13 @@ module Api
 
       unit.import_groups_from_csv(group_set, params[:file][:tempfile])
     end
-    
+
     desc "Edits the given group"
     params do
       requires :unit_id,                            type: Integer,  :desc => "The unit for the new group"
       requires :group_set_id,                       type: Integer,  :desc => "The id of the group set"
       requires :group_id,                           type: Integer,  :desc => "The id of the group"
-      group :group do
+      requires :group, type: Hash do
         optional :name,                             type: String,   :desc => "The name of this group set"
         optional :tutorial_id,                      type: Integer,  :desc => "Tutorial of the group"
       end
@@ -217,18 +217,18 @@ module Api
       if not authorise? current_user, grp, :manage_group, lambda { |role, perm_hash, other| grp.specific_permission_hash(role, perm_hash, other) }
         error!({"error" => "Not authorised to update this group"}, 403)
       end
-      
+
       group_params = ActionController::Parameters.new(params)
         .require(:group)
         .permit(
           :name,
           :tutorial_id
         )
-      
+
       grp.update!(group_params)
       grp
     end
-    
+
     desc "Delete a group"
     params do
       requires :unit_id,                            type: Integer,  :desc => "The unit for the new group"
@@ -281,7 +281,7 @@ module Api
       unit = Unit.find(params[:unit_id])
       gs = unit.group_sets.find(params[:group_set_id])
       grp = gs.groups.find(params[:group_id])
-      
+
       prj = unit.projects.find(params[:project_id])
 
       if not authorise? current_user, gs, :join_group, lambda { |role, perm_hash, other| gs.specific_permission_hash(role, perm_hash, other) }

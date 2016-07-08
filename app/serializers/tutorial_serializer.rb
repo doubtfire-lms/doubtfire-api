@@ -27,4 +27,10 @@ class TutorialSerializer < ActiveModel::Serializer
       [ Role.convenor, Role.tutor, Role.admin ].include? my_role
     end
   end
+
+  def filter(keys)
+    keys.delete :tutor unless include_tutor?
+    keys.delete :num_students unless include_num_students?
+    keys
+  end
 end

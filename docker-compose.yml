@@ -3,7 +3,7 @@ services:
   api:
     container_name: doubtfire-api
     build: .
-    command: bash -c "if [ -f /doubtfire-api/tmp/pids/server.pid ]; then rm /doubtfire-api/tmp/pids/server.pid; fi && /usr/local/bin/rails server"
+    command: bash -c "if [ -f /doubtfire-api/tmp/pids/server.pid ]; then rm /doubtfire-api/tmp/pids/server.pid; fi && rails server -b 0.0.0.0"
     ports:
       - "3000:3000"
     volumes:
@@ -14,6 +14,7 @@ services:
       - db
     environment:
       DATABASE_URL: 'postgresql://itig:d872$$dh@db:5432/doubtfire_dev'
+      RAILS_ENV: 'development'
 
   db:
     container_name: doubtfire-db
@@ -27,11 +28,11 @@ services:
   web:
     container_name: doubtfire-web
     build: ../doubtfire-web
-    command: grunt watchsvr
+    command: npm start
     environment:
       DOUBTFIRE_DOCKER_MACHINE_IP: $DOUBTFIRE_DOCKER_MACHINE_IP
     ports:
       - "8000:8000"
-      - "35729:35729"
+      - "8080:8080"
     volumes:
       - ../doubtfire-web:/doubtfire-web

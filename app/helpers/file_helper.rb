@@ -184,14 +184,12 @@ module FileHelper
     logger.debug "File helper has started compressing #{path} to #{tmp_file}..."
 
     begin
-      exec = "#{Rails.root.join('lib', 'shell', 'timeout.sh')} -t 30 nice -n 10 convert \"#{path}\" -resize 1024x1024 \"#{tmp_file}\" >>/dev/null 2>>/dev/null"
-      # puts exec
+      exec = "convert \
+              \"#{path}\" \
+              -resize 1024x1024 \
+              \"#{tmp_file}\" >>/dev/null 2>>/dev/null"
 
-      # try with convert
-      did_compress = false
-      try_within 40, "compressing image" do
-        did_compress = system exec
-      end
+      did_compress = system_try_within 40, "compressing image using convert", exec
 
       if did_compress
         FileUtils.mv tmp_file, path
@@ -202,7 +200,6 @@ module FileHelper
       end
     end
 
-    # puts "#{did_compress}"
     raise "Failed to compress an image. Ensure all images are smaller than 1MB." unless did_compress
     return true
   end
@@ -217,20 +214,30 @@ module FileHelper
       tmp_file = File.join( Dir.tmpdir, 'doubtfire', 'compress', "#{File.dirname(path).split(File::Separator).last}-file.pdf" )
       FileUtils.mkdir_p(File.join( Dir.tmpdir, 'doubtfire', 'compress' ))
 
-      exec = "#{Rails.root.join('lib', 'shell', 'timeout.sh')} -t 30 nice -n 10 gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.3 -dDetectDuplicateImages=true -dPDFSETTINGS=/screen -dNOPAUSE -dBATCH  -dQUIET -sOutputFile=\"#{tmp_file}\" \"#{path}\" >>/dev/null 2>>/dev/null"
+      exec = "gs -sDEVICE=pdfwrite \
+                 -dCompatibilityLevel=1.3 \
+                 -dDetectDuplicateImages=true \
+                 -dPDFSETTINGS=/screen \
+                 -dNOPAUSE \
+                 -dBATCH \
+                 -dQUIET \
+                 -sOutputFile=\"#{tmp_file}\" \
+                 \"#{path}\" \
+                 >>/dev/null 2>>/dev/null"
 
       # try with ghostscript
-      did_compress = system exec
+      did_compress = system_try_within 30, "compressing PDF using ghostscript", exec
 
       if !did_compress
         logger.info "Failed to compress PDF #{path} using GhostScript. Trying with convert"
 
-        exec = "#{Rails.root.join('lib', 'shell', 'timeout.sh')} -t 30 nice -n 10 convert \"#{path}\" -compress Zip \"#{tmp_file}\" >>/dev/null 2>>/dev/null"
+        exec = "convert \"#{path}\" \
+                -compress Zip \
+                \"#{tmp_file}\" \
+                >>/dev/null 2>>/dev/null"
 
         # try with convert
-        try_within 40, "compressing PDF" do
-          did_compress = system exec
-        end
+        did_compress = system_try_within 40, "compressing PDF using convert", exec
 
         if !did_compress
           logger.error "Failed to compress PDF #{path} using convert. Cannot compress this PDF. Command was:\n\t#{exec}"
@@ -339,17 +346,13 @@ module FileHelper
   #
   # Tests if a PDF is valid / corrupt
   #
-  def pdf_valid?(file)
-    did_succeed = false
-
-    try_within 30, "validating PDF" do
-      did_succeed = system "nice -n 10 pdftk #{file} output /dev/null dont_ask"
-      unless did_succeed
-        logger.error "Failed to validate PDF file. Is pdftk installed?"
-      end
+  def pdf_valid? filename
+    # Scan last 1024 bytes for the EOF mark
+    return false unless File.exists? filename
+    File.open(filename) do |f|
+      f.seek -1024, IO::SEEK_END
+      f.read.include? '%%EOF'
     end
-
-    did_succeed
   end
 
   #
@@ -484,25 +487,6 @@ module FileHelper
     result
   end
 
-  #
-  # Aggregate a list of PDFs into a single PDF file
-  # - returns boolean indicating success
-  #
-  def aggregate(pdf_paths, final_pdf_path)
-    logger.debug "Trying to aggregate PDFs to #{final_pdf_path}"
-
-    did_compile = false
-    exec = "nice -n 10 pdftk #{pdf_paths.join ' '} cat output '#{final_pdf_path}' dont_ask compress"
-    Terminator.terminate 180 do
-      did_compile = system exec
-    end
-
-    if !did_compile
-      logger.error "Failed to aggregate PDFs to #{final_pdf_path}. Command was:\n\t#{exec}"
-    end
-    did_compile
-  end
-
   def path_to_plagarism_html(match_link)
     to_dir = student_work_dir(:plagarism, match_link.task)
 
@@ -629,7 +613,6 @@ module FileHelper
   module_function :doc_to_pdf
   module_function :cover_to_pdf
   module_function :read_file_to_str
-  module_function :aggregate
   module_function :path_to_plagarism_html
   module_function :save_plagiarism_html
   module_function :delete_plagarism_html

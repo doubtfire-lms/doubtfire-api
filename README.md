@@ -48,10 +48,10 @@ _or_, if you're using [Oh-My-Zsh](http://ohmyz.sh), add to your `.zshrc`:
 $ echo 'eval "$(rbenv init -)"' >> ~/.zshrc
 ```
 
-Now install Ruby v2.0.0-p353:
+Now install Ruby v2.3.1:
 
 ```
-$ rbenv install 2.0.0-p353
+$ rbenv install 2.3.1
 ```
 
 #### 3. Install Postgres
@@ -77,13 +77,11 @@ CREATE ROLE itig WITH CREATEDB PASSWORD 'd872$dh' LOGIN;
 
 #### 4. Install native tools
 
-Install `imagemagick` and `libmagic` using Homebrew:
+Install `imagemagick`, `libmagic` and `ghostscript` using Homebrew:
 
 ```
-$ brew install imagemagick libmagic
+$ brew install imagemagick libmagic ghostscript
 ```
-
-You also need to download and install PDFtk manually by downloading it [here](https://www.pdflabs.com/tools/pdftk-the-pdf-toolkit/pdftk_server-2.02-mac_osx-10.6-setup.pkg).
 
 You will also need to install the Python `pygments` package:
 
@@ -158,7 +156,7 @@ Installing pg 0.17.1 with native extensions
 
 Gem::Installer::ExtensionBuildError: ERROR: Failed to build gem native extension.
 
-    /Users/[User]/.rbenv/versions/2.0.0/bin/ruby extconf.rb
+    /Users/[User]/.rbenv/versions/2.3.1/bin/ruby extconf.rb
 checking for pg_config... no
 No pg_config... trying anyway. If building fails, please try again with
  --with-pg-config=/path/to/pg_config
@@ -195,7 +193,7 @@ Installing ruby-filemagic 0.6.0 with native extensions
 
 Gem::Installer::ExtensionBuildError: ERROR: Failed to build gem native extension.
 
-    /Users/[User]/.rbenv/versions/2.0.0/bin/ruby extconf.rb
+    /Users/[User]/.rbenv/versions/2.3.1/bin/ruby extconf.rb
 checking for magic_open() in -lmagic... no
 checking for magic.h... no
 *** ERROR: missing required library to compile this module
@@ -259,11 +257,11 @@ $ echo 'eval "$(rbenv init -)"' >> ~/.zshrc
 $ echo 'export PATH="$HOME/.rbenv/plugins/ruby-build/bin:$PATH"' >> ~/.zshrc
 ```
 
-Now install Ruby v2.0.0:
+Now install Ruby v2.3.1:
 
 ```
 $ sudo apt-get install -y libreadline-dev
-$ rbenv install 2.0.0-p353
+$ rbenv install 2.3.1
 ```
 
 #### 3. Install Postgres
@@ -271,7 +269,9 @@ $ rbenv install 2.0.0-p353
 Install [Postgres](http://www.postgresql.org/download/linux/):
 
 ```
-$  sudo apt-get install postgresql postgresql-contrib libpq-dev
+$  sudo apt-get install postgresql \
+                        postgresql-contrib \
+                        libpq-dev
 ```
 
 Ensure `pg_config` is on the `PATH`, and then login to Postgres. You will need to locate where `apt-get` has installed your  Postgres binary and add this to your `PATH`. You can use `whereis psql` for that, but ensure you add the directory and not the executable to the path
@@ -295,18 +295,15 @@ CREATE ROLE itig WITH CREATEDB PASSWORD 'd872$dh' LOGIN;
 
 #### 4. Install native tools
 
-Install `imagemagick`, `libmagic` and `pdftk`:
+Install `imagemagick`, `libmagic` and `ghostscript`. You will also need to
+install the Python `pygments` package:
 
 ```
-$ sudo apt-get install imagemagick libmagickwand-dev
-$ sudo apt-get install libmagic-dev
-$ sudo apt-get install pdftk
-```
-
-You will also need to install the Python `pygments` package:
-
-```
-$ sudo apt-get install python-pygments
+$ sudo apt-get install ghostscript \
+                       imagemagick \
+                       libmagickwand-dev \
+                       libmagic-dev \
+                       python-pygments
 ```
 
 #### 5. Install Doubtfire API dependencies
@@ -348,7 +345,7 @@ Installing ruby-filemagic 0.6.0 with native extensions
 
 Gem::Installer::ExtensionBuildError: ERROR: Failed to build gem native extension.
 
-    /Users/[User]/.rbenv/versions/2.0.0-p353/bin/ruby extconf.rb
+    /Users/[User]/.rbenv/versions/2.3.1/bin/ruby extconf.rb
 checking for magic_open() in -lmagic... no
 checking for magic.h... no
 *** ERROR: missing required library to compile this module
@@ -572,8 +569,6 @@ After installing LaTeX, you must ensure the following are listed on the `PATH`:
 ```
 $ which convert
 /usr/local/bin/convert
-$ which pdftk
-/usr/local/bin/pdftk
 $ which pygmentize
 /usr/local/bin/pygmentize
 $ which pdflatex

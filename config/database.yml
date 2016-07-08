@@ -6,14 +6,6 @@ development:
   host:  localhost
   min_messages: warning
 
-experimental:
-  adapter: postgresql
-  database: doubtfire_dev
-  username: itig
-  password: d872$dh
-  host:  localhost
-  min_messages: warning
-
 replica:
   adapter: mysql2
   host: localhost

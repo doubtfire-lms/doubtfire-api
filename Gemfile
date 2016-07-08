@@ -2,9 +2,8 @@ source 'https://rubygems.org'
 
 # Ruby versions for various enviornments
 ruby_versions = {
-  experimental: '2.1.2',
-  development:  '2.0.0',
-  test:         '2.0.0',
+  development:  '2.3.1',
+  test:         '2.3.1',
   replica:      '2.0.0',
   production:   '2.0.0'
 }
@@ -12,20 +11,21 @@ ruby_versions = {
 ruby ruby_versions[(ENV["RAILS_ENV"] || 'development').to_sym]
 
 # The venerable, almighty Rails
-gem 'rails', '4.0.3'
+gem 'rails', '4.2.6'
 
 # This is how we get creative
 gem 'populator'
 gem 'faker'
 
 # Auth
-gem 'devise', '~> 3.1.2'
+gem 'devise', '~> 4.1.1'
 gem 'devise_ldap_authenticatable'
 # gem 'cancan'
 gem 'attr_encrypted', '~> 1.3.2'
 
-gem 'grape', '0.6.1'
-gem 'grape-active_model_serializers', '~> 1.0.0'
+gem 'grape', '0.16.2'
+gem 'active_model_serializers', '~> 0.9.0'
+gem 'grape-active_model_serializers', '~> 1.3.2'
 gem 'grape-swagger'
 
 gem 'rack-cors', require: 'rack/cors'
@@ -67,13 +67,10 @@ end
 gem 'coderay'
 gem 'ruby-filemagic'
 gem 'rmagick', '~> 2.15' #require: false #already included in other gems - remove to avoid duplicate errors
-gem 'pdfkit'
-gem 'wkhtmltopdf-binary-11' #too old!
-gem 'pdftk'
 gem 'rubyzip'
 
 # Plagarism detection
 gem 'moss_ruby', '= 1.1.2'
 
 # Latex
-gem 'rails-latex', '=1.0.13'
+gem 'rails-latex', '=2.0.1'

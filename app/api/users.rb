@@ -48,7 +48,7 @@ module Api
     desc "Update a user"
     params do
       requires :id, type: Integer, desc: 'The user id to update'
-      group :user do
+      requires :user, type: Hash do
         optional :first_name    , type: String,   desc: 'New first name for user'
         optional :last_name     , type: String,   desc: 'New last name for user'
         optional :email         , type: String,   desc: 'New email address for user'
@@ -129,7 +129,7 @@ module Api
 
     desc "Create user"
     params do
-      group :user do
+      requires :user, type: Hash do
         requires :first_name    , type: String,   desc: 'New first name for user'
         requires :last_name     , type: String,   desc: 'New last name for user'
         requires :email         , type: String,   desc: 'New email address for user'

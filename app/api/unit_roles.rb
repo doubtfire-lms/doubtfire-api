@@ -31,13 +31,13 @@ module Api
     end
 
     desc "Delete a unit role"
-    delete '/unit_roles/:id' do 
+    delete '/unit_roles/:id' do
       unit_role = UnitRole.find(params[:id])
 
       if not ((authorise? current_user, unit_role.unit, :employ_staff) || (authorise? current_user, User, :admin_units))
         error!({"error" => "Couldn't find UnitRole with id=#{params[:id]}" }, 403)
       end
-      
+
       unit_role.destroy
     end
 
@@ -49,17 +49,17 @@ module Api
       if not authorise? current_user, unit_role, :get
         error!({"error" => "Couldn't find UnitRole with id=#{params[:id]}" }, 403)
       end
-      
+
       unit_role
     end
 
-    desc "Employ a user as a teaching role in a unit" 
-    params do 
+    desc "Employ a user as a teaching role in a unit"
+    params do
       requires :unit_id, type: Integer, desc: 'The id of the unit to employ the staff for'
       requires :user_id, type: Integer, desc: 'The id of the tutor'
       requires :role, type: String, desc: 'The role for the staff member'
-    end 
-    post '/unit_roles' do 
+    end
+    post '/unit_roles' do
       unit = Unit.find(params[:unit_id])
 
       if not ((authorise? current_user, unit, :employ_staff) || (authorise? current_user, User, :admin_units))
@@ -77,15 +77,15 @@ module Api
       end
 
       unit.employ_staff(user, role)
-    end 
+    end
 
-    desc "Update a role " 
-    params do 
-      group :unit_role do 
+    desc "Update a role "
+    params do
+      requires :unit_role, type: Hash do
         requires :role_id, type: Integer, desc: 'The role to create with'
-      end 
-    end 
-    put '/unit_roles/:id' do 
+      end
+    end
+    put '/unit_roles/:id' do
       unit_role = UnitRole.find_by_id(params[:id])
 
       if not ((authorise? current_user, unit_role.unit, :employ_staff) || (authorise? current_user, User, :admin_units))
@@ -97,13 +97,13 @@ module Api
         .permit(
           :role_id
         )
-      
+
       if unit_role_parameters[:role_id] == Role.tutor.id && unit_role.role == Role.convenor && unit_role.unit.convenors.count == 1
         error!({"error" => "There must be at least one convenor for the unit"}, 403)
       end
 
       unit_role.update!(unit_role_parameters)
       unit_role
-    end 
+    end
   end
 end

@@ -3,9 +3,9 @@ require 'filemagic'
 # image to pdf
 require 'rmagick'
 # code to html
-require 'coderay'
+# require 'coderay'
 # html to pdf
-require 'pdfkit'
+# require 'pdfkit'
 # zipping files
 require 'zip'
 
