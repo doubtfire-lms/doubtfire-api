@@ -20,19 +20,6 @@ gem 'faker'
 # Auth
 gem 'devise', '~> 4.1.1'
 gem 'devise_ldap_authenticatable'
-# gem 'cancan'
-gem 'attr_encrypted', '~> 1.3.2'
-
-gem 'grape', '0.16.2'
-gem 'active_model_serializers', '~> 0.9.0'
-gem 'grape-active_model_serializers', '~> 1.3.2'
-gem 'grape-swagger'
-
-gem 'rack-cors', require: 'rack/cors'
-
-gem 'ci_reporter'
-
-gem 'terminator'
 
 group :development, :replica do
   gem 'pg'
@@ -76,3 +63,16 @@ gem 'moss_ruby', '= 1.1.2'
 
 # Latex
 gem 'rails-latex', '=2.0.1'
+
+# API
+gem 'grape', '0.16.2'
+gem 'active_model_serializers', '~> 0.9.0'
+gem 'grape-active_model_serializers', '~> 1.3.2'
+gem 'grape-swagger'
+
+# Miscellaneous
+gem 'attr_encrypted', '~> 1.3.2'
+gem 'rack-cors', require: 'rack/cors'
+gem 'ci_reporter'
+gem 'terminator'
+gem 'require_all', '1.3.3'
