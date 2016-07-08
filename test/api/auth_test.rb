@@ -2,8 +2,8 @@ require 'test_helper'
 
 class AuthTest < MiniTest::Test
   include Rack::Test::Methods
-  include AuthHelper
-  include AssertHelper
+  include TestHelpers::AuthHelper
+  include TestHelpers::AssertHelper
 
   def app
     Rails.application

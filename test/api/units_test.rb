@@ -3,7 +3,7 @@ require 'date'
 
 class UnitsTest < MiniTest::Test
   include Rack::Test::Methods
-  include AuthHelper
+  include TestHelpers::AuthHelper
 
   def app
     Rails.application

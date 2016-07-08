@@ -22,7 +22,6 @@ class UserTest < ActiveSupport::TestCase
       last_name: "Test",
       nickname: "Test",
       role_id: 1,
-      password: "freddy",
       email: "test@test.org",
       username: "metoo",
       password: 'potato123',
