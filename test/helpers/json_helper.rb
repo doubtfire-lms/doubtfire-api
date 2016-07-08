@@ -4,7 +4,21 @@ module TestHelpers
   #
   # JSON Helpers
   #
-  module AssertHelper
+  module JsonHelper
+    #
+    # POSTs a hash data as JSON with content-type "application/json"
+    #
+    def post_json(endpoint, data)
+      post endpoint, data.to_json, 'CONTENT_TYPE' => 'application/json'
+    end
+
+    #
+    # PUTs a hash data as JSON with content-type "application/json"
+    #
+    def put_json(endpoint, data)
+      put endpoint, data.to_json, 'CONTENT_TYPE' => 'application/json'
+    end
+
     #
     # Assert that a JSON response matches the model and keys provided
     #
@@ -14,5 +28,6 @@ module TestHelpers
     end
 
     module_function :assert_json_matches_model
+    module_function :post_json
   end
 end
