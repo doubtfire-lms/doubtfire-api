@@ -27,7 +27,7 @@ FactoryGirl.define do
   end
 
   factory :unit do
-    ignore do
+    transient do
       student_count 0
       task_count 2
       tutorials 1
