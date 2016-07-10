@@ -2,8 +2,8 @@ require 'test_helper'
 
 class AuthTest < MiniTest::Test
   include Rack::Test::Methods
-  include AuthHelper
-  include AssertHelper
+  include TestHelpers::AuthHelper
+  include TestHelpers::JsonHelper
 
   def app
     Rails.application
@@ -24,7 +24,7 @@ class AuthTest < MiniTest::Test
         password: "password"
     }
     # Get response back for logging in with username 'acain' password 'password'
-    post  '/api/auth.json', data_to_post.to_json, "CONTENT_TYPE" => 'application/json'
+    post_json '/api/auth.json', data_to_post
     actual_auth = JSON.parse(last_response.body)
     expected_auth = User.first
 
@@ -57,7 +57,7 @@ class AuthTest < MiniTest::Test
         password: "password1"
     }
     # Get response back for logging in with username 'acain' password 'password'
-    post  '/api/auth.json', data_to_post.to_json, "CONTENT_TYPE" => 'application/json'
+    post_json '/api/auth.json', data_to_post
     actual_auth = JSON.parse(last_response.body)
 
     refute actual_auth.has_key?('user'), 'User not expected if auth fails'
@@ -101,7 +101,7 @@ class AuthTest < MiniTest::Test
 
     post_tests.each do |test_data|
       # Get response back for logging in with username 'acain' password 'password'
-      post  '/api/auth.json', test_data[:post].to_json, "CONTENT_TYPE" => 'application/json'
+      post_json '/api/auth.json', test_data[:post]
       actual_auth = JSON.parse(last_response.body)
 
       assert_equal test_data[:expect].name, actual_auth['user']['system_role'], 'Roles match expected role'
@@ -121,7 +121,7 @@ class AuthTest < MiniTest::Test
         username: "acain",
         password: "password"
     }
-    put "/api/auth/#{auth_token}.json", data_to_put.to_json, "CONTENT_TYPE" => 'application/json'
+    put_json "/api/auth/#{auth_token}.json", data_to_put
     actual_auth = JSON.parse(last_response.body)['auth_token']
     expected_auth = User.first.auth_token
 

@@ -3,7 +3,8 @@ require 'date'
 
 class UnitsTest < MiniTest::Test
   include Rack::Test::Methods
-  include AuthHelper
+  include TestHelpers::AuthHelper
+  include TestHelpers::JsonHelper
 
   def app
     Rails.application
@@ -36,7 +37,7 @@ class UnitsTest < MiniTest::Test
     unit_count = Unit.all.length
 
     # The post that we will be testing.
-    post '/api/units.json', data_to_post.to_json, "CONTENT_TYPE" => 'application/json'
+    post_json '/api/units.json', data_to_post
 
     # Check to see if the unit's name matches what was expected
     actual_unit = JSON.parse(last_response.body)
@@ -62,7 +63,7 @@ class UnitsTest < MiniTest::Test
       tutor_username: "rwilson"
       },
     })
-    post  '/api/units/1/tutorials.json', data_to_post.to_json, "CONTENT_TYPE" => 'application/json'
+    post_json '/api/units/1/tutorials.json', data_to_post
 
     # tutor_count = Unit.all.length
 
@@ -79,7 +80,7 @@ class UnitsTest < MiniTest::Test
     #       '"auth_token":' + '"' + @auth_token + '"'         +
     #       '}', "CONTENT_TYPE" => 'application/json'
 
-    puts JSON.parse(last_response.body)
+    # puts JSON.parse(last_response.body)
 
     # # Check to see if the unit's name matches what was expected
     # assert_equal JSON.parse(last_response.body)['name'], 'Intro to Social Skills'
@@ -98,9 +99,8 @@ class UnitsTest < MiniTest::Test
 
   # Test GET for getting all units
   def test_units_get
-    # Get response back from posting new unit
     # The GET we are testing
-    get  "/api/units.json?auth_token=#{@auth_token}"
+    get "/api/units.json?auth_token=#{@auth_token}"
 
     actual_unit = JSON.parse(last_response.body)[0]
     expected_unit = Unit.first
