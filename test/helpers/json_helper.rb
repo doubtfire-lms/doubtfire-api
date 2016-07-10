@@ -29,5 +29,6 @@ module TestHelpers
 
     module_function :assert_json_matches_model
     module_function :post_json
+    module_function :put_json
   end
 end
