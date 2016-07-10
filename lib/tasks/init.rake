@@ -53,7 +53,4 @@ namespace :db do
       end
     end
   end
-
-  task setup_test: [:setup, :migrate, :init] do
-  end
 end

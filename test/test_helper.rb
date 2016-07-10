@@ -9,8 +9,7 @@ rescue ActiveRecord::NoDatabaseError
   # No database... try setting up
   puts "No test database has been setup! Setting first-time up..."
   require 'rake'
-  Rake::Task['db:setup'].invoke
-  Rake::Task['db:init_test_data'].invoke
+  Rake::Task['test:setup'].invoke
   puts "First-time test setup complete. Please re-run `rake test` again."
   exit
 end

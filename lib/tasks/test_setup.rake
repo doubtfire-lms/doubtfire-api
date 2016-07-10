@@ -1,8 +1,9 @@
-#
-namespace :db do
-  desc "Setup the database for minitests"
+# Enforce test environment
+ENV["RAILS_ENV"] = "test"
 
-  task init_test_data:  :environment do
+namespace :test do
+  desc "Setup the test database for minitest"
+  task setup: [:environment, 'db:setup', 'db:migrate'] do
     def setup_cache
       # Set up our caches
       puts '-> Setting up populate cache'
