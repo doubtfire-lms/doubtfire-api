@@ -53,7 +53,7 @@ module Api
     AuthHelpers.add_auth_to Api::Submission::BatchTask
 
     add_swagger_documentation \
-      base_path: "http://localhost:3000/",
+      base_path: nil,
       add_version: false,
       hide_documentation_path: true,
       info: {
