@@ -742,12 +742,12 @@ class Unit < ActiveRecord::Base
     Zip::File.open(result.path, Zip::File::CREATE) do | zip |
       task_definitions.each do |td|
         if td.has_task_pdf?
-          dst_path = FileHelper.sanitized_path( "#{td.abbreviation}") + ".pdf"
+          dst_path = FileHelper.sanitized_filename( "#{td.abbreviation}") + ".pdf"
           zip.add(dst_path, td.task_sheet)
         end
 
         if td.has_task_resources?
-          dst_path = FileHelper.sanitized_path( "#{td.abbreviation}") + ".zip"
+          dst_path = FileHelper.sanitized_filename( "#{td.abbreviation}") + ".zip"
           zip.add(dst_path, td.task_resources)
         end
       end
@@ -1043,7 +1043,7 @@ class Unit < ActiveRecord::Base
 
   def path_to_task_pdf(task_def)
     task_path = FileHelper.task_file_dir_for_unit self, create=true
-    "#{task_path}#{FileHelper.sanitized_filename(task_def.abbreviation)}.pdf"
+    "#{task_path}#{FileHelper.sanitized_filename(task_def.abbreviation + ".pdf")}"
   end
 
   #
