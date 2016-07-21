@@ -1,6 +1,6 @@
 require 'test_helper'
 
-class AuthTest < MiniTest::Test
+class AuthTest < ActiveSupport::TestCase
   include Rack::Test::Methods
   include TestHelpers::AuthHelper
   include TestHelpers::JsonHelper
@@ -72,28 +72,28 @@ class AuthTest < MiniTest::Test
       {
         expect: Role.admin,
         post: {
-            username: "acain",
+            username: "aadmin",
             password: "password"
         }
       },
       {
         expect: Role.convenor,
         post: {
-            username: "jrenzella",
+            username: "aconvenor",
             password: "password"
         }
       },
       {
         expect: Role.tutor,
         post: {
-            username: "rwilson",
+            username: "atutor",
             password: "password"
         }
       },
       {
         expect: Role.student,
         post: {
-            username: "acummaudo",
+            username: "astudent",
             password: "password"
         }
       }

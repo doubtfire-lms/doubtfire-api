@@ -1,7 +1,7 @@
 require 'test_helper'
 require 'date'
 
-class UnitsTest < MiniTest::Test
+class UnitsTest < ActiveSupport::TestCase
   include Rack::Test::Methods
   include TestHelpers::AuthHelper
   include TestHelpers::JsonHelper

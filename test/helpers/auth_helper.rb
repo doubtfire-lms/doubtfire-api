@@ -12,6 +12,11 @@ module TestHelpers
       user.auth_token
     end
 
+    def auth_token_for(user)
+      user.extend_authentication_token(true)
+      user.auth_token
+    end
+
     #
     # Adds an authentication token to the hash of data provided
     # This prevents us from having to keep adding the :auth_token

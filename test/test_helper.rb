@@ -17,8 +17,8 @@ end
 # Require minitest extensions
 require 'minitest/rails'
 require 'minitest/pride'
-require 'minitest/autorun'
 require 'minitest/osx'
+require 'minitest/around'
 
 # Require all test helpers
 require_all 'test/helpers'
@@ -26,7 +26,6 @@ require 'rails/test_help'
 require 'database_cleaner'
 
 class ActiveSupport::TestCase
-  # Check if migrations are pending
   ActiveRecord::Migration.check_pending!
 
   # Setup all fixtures in test/fixtures/*.(yml|csv) for all tests in alphabetical order.
@@ -41,17 +40,20 @@ class ActiveSupport::TestCase
   # Support rollback of db changes after all tests
   DatabaseCleaner.strategy = :transaction
 
-  # After setup of all test, start database cleaner to undo transactions
-  def before_teardown
-    super
+  def setup
     DatabaseCleaner.start
   end
 
-  # After teardown
-  def after_teardown
+  def teardown
     DatabaseCleaner.clean
-    super
   end
 
   # Add more helper methods to be used by all tests here...
+  require_all 'test/helpers'
+
+  extend MiniTest::Spec::DSL
+
+  register_spec_type self do |desc|
+    desc < ActiveRecord::Base if desc_is_a? Class
+  end
 end
