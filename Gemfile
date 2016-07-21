@@ -48,7 +48,8 @@ group :development, :test, :replica do
   gem 'minitest-rails'
   gem 'minitest-hyper'
   gem 'database_cleaner'
-  gem "minitest-osx"
+  gem 'minitest-osx'
+  gem 'minitest-around'
 end
 
 # Student submission
