@@ -172,16 +172,14 @@ need configuration options.
 To resolve, ensure `pg_config` is on the `PATH`:
 
 ```
-$ export PATH=/Applications/Postgres.app/Contents/Versions/9.4/bin:$PATH
+$ export PATH=/Applications/Postgres.app/Contents/Versions/latest/bin:$PATH
 ```
 
 _or_, add the following to your global bundle config:
 
 ```
-$ bundle config build.pg --with-pg-config=/Applications/Postgres.app/Contents/Versions/9.4/bin/pg_config
+$ bundle config build.pg --with-pg-config=/Applications/Postgres.app/Contents/Versions/latest/bin/pg_config
 ```
-
-You may need to confirm the `Postgres.app` version (it may not be `9.4`).
 
 Then try installing dependencies again.
 
