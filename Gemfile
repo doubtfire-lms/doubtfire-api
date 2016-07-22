@@ -8,18 +8,10 @@ ruby_versions = {
   production:   '2.0.0'
 }
 # Get the ruby version for the current enviornment
-ruby ruby_versions[(ENV["RAILS_ENV"] || 'development').to_sym]
+ruby ruby_versions[(ENV['RAILS_ENV'] || 'development').to_sym]
 
 # The venerable, almighty Rails
 gem 'rails', '4.2.6'
-
-# This is how we get creative
-gem 'populator'
-gem 'faker'
-
-# Auth
-gem 'devise', '~> 4.1.1'
-gem 'devise_ldap_authenticatable'
 
 group :development, :replica do
   gem 'pg'
@@ -30,27 +22,29 @@ group :development, :replica do
 end
 
 group :test do
-  gem 'simplecov'
-  gem 'capybara'
-  gem 'launchy'
+  gem 'rspec-rails', '~> 3'
+  gem 'factory_girl_rails'
+  gem 'minitest-rails'
+  gem 'minitest-hyper'
+  gem 'database_cleaner'
+  gem 'minitest-osx'
 end
 
 group :production do
   gem 'passenger', '= 4.0.42'
 end
 
-group :production, :test, :replica do
+group :production, :replica do
   gem 'mysql2'
 end
 
-group :development, :test, :replica do
-  gem 'rspec-rails', '~> 3'
-  gem 'factory_girl_rails'
-  gem 'minitest-rails'
-  gem 'minitest-hyper'
-  gem 'database_cleaner'
-  gem "minitest-osx"
-end
+# Authentication
+gem 'devise', '~> 4.1.1'
+gem 'devise_ldap_authenticatable'
+
+# Generators for population
+gem 'populator'
+gem 'faker'
 
 # Student submission
 gem 'coderay'
