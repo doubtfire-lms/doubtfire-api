@@ -2,6 +2,7 @@ require 'populator'
 require 'faker'
 require 'bcrypt'
 require 'json'
+require_all 'lib/helpers'
 
 #
 # This class populates data in the database
@@ -320,27 +321,6 @@ class DatabasePopulator
       end
       puts "!"
     end
-  end
-
-  #
-  # Finds or creates a student if not found
-  #
-  def find_or_create_student(username)
-    unless @user_cache.has_key?(username)
-      profile = {
-        first_name:             Faker::Name.first_name,
-        last_name:              Faker::Name.last_name,
-        nickname:               username,
-        role_id:                Role.student_id,
-        email:                  "#{username}@doubtfire.com",
-        username:               username,
-        password:               'password',
-        password_confirmation:  'password'
-      }
-      user = User.create!(profile)
-      @user_cache[username] = user
-    end
-    @user_cache[username]
   end
 
   #

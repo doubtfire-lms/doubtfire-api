@@ -2,32 +2,11 @@ require_all 'lib/helpers'
 namespace :db do
   desc "Mark off some of the due tasks"
   task expand_first_unit: :environment do
-
-    find_or_create_student = lambda { |username|
-      result = User.find_by_username(username)
-      if result
-        return result
-      else
-        profile = {
-          first_name:             Faker::Name.first_name,
-          last_name:              Faker::Name.last_name,
-          nickname:               username,
-          role_id:                Role.student_id,
-          email:                  "#{username}@doubtfire.com",
-          username:               username,
-          password:               'password',
-          password_confirmation:  'password'
-        }
-
-        result = User.create!(profile)
-        return result
-      end
-    }
-
     unit = Unit.first
     tutes = unit.tutorials
     for student_count in 0..2000
-      proj = unit.enrol_student(find_or_create_student.call("student_#{student_count}"), tutes[student_count % tutes.count])
+      student = find_or_create_student("student_#{student_count}")
+      proj = unit.enrol_student(student, tutes[student_count % tutes.count])
     end
   end
 
