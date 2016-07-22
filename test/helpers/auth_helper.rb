@@ -6,28 +6,43 @@ module TestHelpers
     #
     # Gets an authentication token for User.first
     #
-    def get_auth_token
-      user = User.first
-      user.extend_authentication_token(true)
-      user.auth_token
+    def auth_token
+      auth_token_for(User.first)
     end
 
-    def auth_token_for(user)
+    #
+    # Gets an auth token for the provided user
+    #
+    def auth_token_for_user(user)
       user.extend_authentication_token(true)
       user.auth_token
     end
 
     #
-    # Adds an authentication token to the hash of data provided
+    # Adds an authentication token to the hash data or string URL
     # This prevents us from having to keep adding the :auth_token
-    # key to any POST data that is needed
+    # key to any GET/POST/PUT etc. data that is needed
     #
-    def add_auth_token(hash)
-      hash[:auth_token] = get_auth_token
-      hash
+    def add_auth_token(data, user = User.first)
+      if data.is_a? Hash
+        data[:auth_token] = auth_token
+      elsif data.is_a? String
+        # If we have a question mark, we need to add a query paramater using &
+        # otherwise use ?
+        data << (data.include?('?') ? "&" : "?") << "auth_token=#{auth_token}"
+      end
+      data
     end
 
-    module_function :get_auth_token
+    #
+    # Alias for above for nicer usage (e.g., get with_auth_token "http://")
+    #
+    def with_auth_token(data)
+      add_auth_token data
+    end
+
+    module_function :auth_token
     module_function :add_auth_token
+    module_function :auth_token_for_user
   end
 end
