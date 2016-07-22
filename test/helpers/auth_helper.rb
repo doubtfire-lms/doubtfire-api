@@ -37,12 +37,13 @@ module TestHelpers
     #
     # Alias for above for nicer usage (e.g., get with_auth_token "http://")
     #
-    def with_auth_token(data)
-      add_auth_token data
+    def with_auth_token(data, user = User.first)
+      add_auth_token data, user
     end
 
     module_function :auth_token
     module_function :add_auth_token
     module_function :auth_token_for_user
+    module_function :with_auth_token
   end
 end
