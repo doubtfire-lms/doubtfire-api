@@ -152,16 +152,19 @@ namespace :db do
   end
 
   desc "Clear the database and fill with test data"
-  task populate: [:setup, :migrate] do |task, args|
-    dbpop = DatabasePopulator.new ENV['SCALE']
+  task populate: [:setup, :migrate] do
+    scale = ENV['SCALE'] ? ENV['SCALE'].to_sym : :small
+    extended = ENV['EXTENDED'] == 'true'
+
+    dbpop = DatabasePopulator.new scale
     dbpop.generate_users()
     dbpop.generate_units()
 
     # Run simulate signoff?
-    unless !args.nil? && args[:extend_populate]
+    unless extended
       puts "-> Would you like to simulate student progress? This may take a while... [y/n]"
     end
-    if STDIN.gets.chomp.downcase == 'y' or args[:extend_populate]
+    if extended || STDIN.gets.chomp.downcase == 'y'
       puts "-> Simulating signoff..."
       Rake::Task["db:simulate_signoff"].execute
       puts "-> Updating student progress..."

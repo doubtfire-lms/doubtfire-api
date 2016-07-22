@@ -318,8 +318,8 @@ class DatabasePopulator
             unit.enrol_student(@user_cache[student_key], tutorial.id)
           end
         end
+        puts "!"
       end
-      puts "!"
     end
   end
 
