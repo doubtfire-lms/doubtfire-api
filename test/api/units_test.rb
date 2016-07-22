@@ -10,10 +10,6 @@ class UnitsTest < ActiveSupport::TestCase
     Rails.application
   end
 
-  def setup
-    @auth_token = get_auth_token()
-  end
-
   # --------------------------------------------------------------------------- #
   # --- Endpoint testing for:
   # ------- /api/units.json

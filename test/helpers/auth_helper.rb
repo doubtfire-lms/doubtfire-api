@@ -7,7 +7,7 @@ module TestHelpers
     # Gets an authentication token for User.first
     #
     def auth_token
-      auth_token_for(User.first)
+      auth_token_for_user(User.first)
     end
 
     #
