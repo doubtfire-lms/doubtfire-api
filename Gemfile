@@ -39,7 +39,7 @@ group :production do
   gem 'passenger', '= 4.0.42'
 end
 
-group :production, :test, :replica do
+group :production, :replica do
   gem 'mysql2'
 end
 
