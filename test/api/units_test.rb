@@ -96,7 +96,7 @@ class UnitsTest < ActiveSupport::TestCase
   # Test GET for getting all units
   def test_units_get
     # The GET we are testing
-    get "/api/units.json?auth_token=#{@auth_token}"
+    get with_auth_token "/api/units.json"
 
     actual_unit = JSON.parse(last_response.body)[0]
     expected_unit = Unit.first
@@ -120,7 +120,7 @@ class UnitsTest < ActiveSupport::TestCase
     # Get response back from getting a unit by id
 
     # Test getting the first unit with id of 1
-    get  "/api/units/1.json?auth_token=#{@auth_token}"
+    get with_auth_token "/api/units/1.json"
 
     actual_unit = JSON.parse(last_response.body)
     expected_unit = Unit.find(1)
@@ -133,7 +133,7 @@ class UnitsTest < ActiveSupport::TestCase
 
     # Get response back from getting a unit by id
     # Test getting the first unit with id of 2
-    get  "/api/units/2.json?auth_token=#{@auth_token}"
+    get with_auth_token "/api/units/2.json"
 
     actual_unit = JSON.parse(last_response.body)
     expected_unit = Unit.find(2)
