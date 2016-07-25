@@ -1,17 +1,13 @@
 require 'test_helper'
 require 'date'
 
-class UnitsTest < MiniTest::Test
+class UnitsTest < ActiveSupport::TestCase
   include Rack::Test::Methods
   include TestHelpers::AuthHelper
   include TestHelpers::JsonHelper
 
   def app
     Rails.application
-  end
-
-  def setup
-    @auth_token = get_auth_token()
   end
 
   # --------------------------------------------------------------------------- #
@@ -40,7 +36,7 @@ class UnitsTest < MiniTest::Test
     post_json '/api/units.json', data_to_post
 
     # Check to see if the unit's name matches what was expected
-    actual_unit = JSON.parse(last_response.body)
+    actual_unit = last_response_body
 
     assert_equal expected_unit[:name], actual_unit['name']
     assert_equal expected_unit[:code], actual_unit['code']
@@ -80,16 +76,16 @@ class UnitsTest < MiniTest::Test
     #       '"auth_token":' + '"' + @auth_token + '"'         +
     #       '}', "CONTENT_TYPE" => 'application/json'
 
-    # puts JSON.parse(last_response.body)
+    # puts last_response_body
 
     # # Check to see if the unit's name matches what was expected
-    # assert_equal JSON.parse(last_response.body)['name'], 'Intro to Social Skills'
+    # assert_equal last_response_body['name'], 'Intro to Social Skills'
     # # Check to see if the unit's code matches what was expected
-    # assert_equal JSON.parse(last_response.body)['code'], 'JRRW40003'
+    # assert_equal last_response_body['code'], 'JRRW40003'
     # # Check to see if the unit's stat date matches what was expected
-    # assert_equal JSON.parse(last_response.body)['start_date'], '2016-05-14T00:00:00.000Z'
+    # assert_equal last_response_body['start_date'], '2016-05-14T00:00:00.000Z'
     # # Check to see if the unit's end date matches what was expected
-    # assert_equal JSON.parse(last_response.body)['end_date'], '2017-05-14T00:00:00.000Z'
+    # assert_equal last_response_body['end_date'], '2017-05-14T00:00:00.000Z'
   end
   # End POST tests
   # --------------------------------------------------------------------------- #
@@ -100,9 +96,9 @@ class UnitsTest < MiniTest::Test
   # Test GET for getting all units
   def test_units_get
     # The GET we are testing
-    get "/api/units.json?auth_token=#{@auth_token}"
+    get with_auth_token "/api/units.json"
 
-    actual_unit = JSON.parse(last_response.body)[0]
+    actual_unit = last_response_body[0]
     expected_unit = Unit.first
     assert_equal expected_unit.name, actual_unit['name']
     assert_equal expected_unit.code, actual_unit['code']
@@ -110,7 +106,7 @@ class UnitsTest < MiniTest::Test
     assert_equal expected_unit.end_date.to_date, actual_unit['end_date'].to_date.to_date
 
     # Check last unit in Units (created in seed.db)
-    actual_unit = JSON.parse(last_response.body)[1]
+    actual_unit = last_response_body[1]
     expected_unit = Unit.find(2)
 
     assert_equal expected_unit.name, actual_unit['name']
@@ -124,9 +120,9 @@ class UnitsTest < MiniTest::Test
     # Get response back from getting a unit by id
 
     # Test getting the first unit with id of 1
-    get  "/api/units/1.json?auth_token=#{@auth_token}"
+    get with_auth_token "/api/units/1.json"
 
-    actual_unit = JSON.parse(last_response.body)
+    actual_unit = last_response_body
     expected_unit = Unit.find(1)
 
     # Check to see if the first unit's match
@@ -137,9 +133,9 @@ class UnitsTest < MiniTest::Test
 
     # Get response back from getting a unit by id
     # Test getting the first unit with id of 2
-    get  "/api/units/2.json?auth_token=#{@auth_token}"
+    get with_auth_token "/api/units/2.json"
 
-    actual_unit = JSON.parse(last_response.body)
+    actual_unit = last_response_body
     expected_unit = Unit.find(2)
 
     # Check to see if the first unit's match
@@ -217,7 +213,7 @@ class UnitsTest < MiniTest::Test
     # })
     # put "/api/units/#{unit_id}.json", data_to_put.to_json, "CONTENT_TYPE" => 'application/json'
     #
-    # actual_unit = JSON.parse(last_response.body)
+    # actual_unit = last_response_body
     # expected_unit = data_to_put
     #
     # puts actual_unit

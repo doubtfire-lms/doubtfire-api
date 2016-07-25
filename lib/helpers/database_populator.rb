@@ -330,15 +330,16 @@ class DatabasePopulator
     # Define fixed user data here
     @user_data = {
       acain:              {first_name: "Andrew",  last_name: "Cain",          nickname: "Macite",         role_id: Role.admin_id },
-      cwoodward:          {first_name: "Clinton", last_name: "Woodward",      nickname: "The Giant",      role_id: Role.admin_id },
-      ajones:             {first_name: "Allan",   last_name: "Jones",         nickname: "P-Jiddy",        role_id: Role.convenor_id },
+      aconvenor:          {first_name: "Clinton", last_name: "Woodward",      nickname: "The Giant",      role_id: Role.convenor_id },
+      aadmin:             {first_name: "Allan",   last_name: "Jones",         nickname: "P-Jiddy",        role_id: Role.admin_id },
       rwilson:            {first_name: "Reuben",  last_name: "Wilson",        nickname: "Reubs",          role_id: Role.convenor_id },
-      akihironoguchi:     {first_name: "Akihiro", last_name: "Noguchi",       nickname: "Animations",     role_id: Role.tutor_id },
+      atutor:             {first_name: "Akihiro", last_name: "Noguchi",       nickname: "Animations",     role_id: Role.tutor_id },
       acummaudo:          {first_name: "Alex",    last_name: "Cummaudo",      nickname: "DoubtfireDude",  role_id: Role.convenor_id },
       cliff:              {first_name: "Cliff",   last_name: "Warren",        nickname: "Cliff",          role_id: Role.tutor_id },
       joostfunkekupper:   {first_name: "Joost",   last_name: "Funke Kupper",  nickname: "Joe",            role_id: Role.tutor_id },
       angusmorton:        {first_name: "Angus",   last_name: "Morton",        nickname: "Angus",          role_id: Role.tutor_id },
-      "123456X" =>        {first_name: "Fred",    last_name: "Jones",         nickname: "Foo",            role_id: Role.student_id }
+      "123456X" =>        {first_name: "Fred",    last_name: "Jones",         nickname: "Foo",            role_id: Role.student_id },
+      astudent:           {first_name: "student", last_name: "surname",       nickname: "Foo",            role_id: Role.student_id }
     }
     # Add 10 tutors to fixed info
     10.times do |count|
@@ -361,14 +362,14 @@ class DatabasePopulator
       intro_prog: {
         code: "COS10001",
         name: "Introduction to Programming",
-        convenors: [ :acain, :cwoodward ],
+        convenors: [ :acain, :aconvenor ],
         tutors: [
           { user: :acain, num: many_tutorials },
-          { user: :cwoodward, num: many_tutorials },
-          { user: :ajones, num: many_tutorials },
+          { user: :aconvenor, num: many_tutorials },
+          { user: :aadmin, num: many_tutorials },
           { user: :rwilson, num: many_tutorials },
           { user: :acummaudo, num: some_tutorials },
-          { user: :akihironoguchi, num: many_tutorials },
+          { user: :atutor, num: many_tutorials },
           { user: :joostfunkekupper, num: many_tutorials },
           { user: :angusmorton, num: some_tutorials },
           { user: :cliff, num: some_tutorials },
@@ -380,11 +381,11 @@ class DatabasePopulator
       oop: {
         code: "COS20007",
         name: "Object Oriented Programming",
-        convenors: [ :acain, :cwoodward, :ajones, :acummaudo ],
+        convenors: [ :acain, :aconvenor, :aadmin, :acummaudo ],
         tutors: [
           { user: "tutor_1", num: few_tutorials },
           { user: :angusmorton, num: few_tutorials },
-          { user: :akihironoguchi, num: few_tutorials },
+          { user: :atutor, num: few_tutorials },
           { user: :joostfunkekupper, num: few_tutorials },
         ],
         num_tasks: many_tasks,
@@ -394,9 +395,9 @@ class DatabasePopulator
       ai4g: {
         code: "COS30046",
         name: "Artificial Intelligence for Games",
-        convenors: [ :cwoodward ],
+        convenors: [ :aconvenor ],
         tutors: [
-          { user: :cwoodward, num: few_tutorials },
+          { user: :aconvenor, num: few_tutorials },
           { user: :cliff, num: few_tutorials },
         ],
         num_tasks: few_tasks,
@@ -406,13 +407,13 @@ class DatabasePopulator
       gameprog: {
         code: "COS30243",
         name: "Game Programming",
-        convenors: [ :cwoodward, :acummaudo ],
+        convenors: [ :aconvenor, :acummaudo ],
         tutors: [
-          { user: :cwoodward, num: few_tutorials },
+          { user: :aconvenor, num: few_tutorials },
         ],
         num_tasks: few_tasks,
         ilos: rand(0..3),
-        students: [ :acain, :ajones ]
+        students: [ :acain, :aadmin ]
       },
     }
     puts "-> Defined #{@user_data.length} fixed users and #{@unit_data.length} units"

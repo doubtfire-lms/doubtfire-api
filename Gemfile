@@ -39,17 +39,17 @@ group :production do
   gem 'passenger', '= 4.0.42'
 end
 
-group :production, :test, :replica do
+group :production, :replica do
   gem 'mysql2'
 end
 
 group :development, :test, :replica do
-  gem 'rspec-rails', '~> 3'
   gem 'factory_girl_rails'
   gem 'minitest-rails'
   gem 'minitest-hyper'
   gem 'database_cleaner'
-  gem "minitest-osx"
+  gem 'minitest-osx'
+  gem 'minitest-around'
 end
 
 # Student submission
