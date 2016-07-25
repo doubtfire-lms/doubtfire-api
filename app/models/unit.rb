@@ -1012,23 +1012,31 @@ class Unit < ActiveRecord::Base
     task_path = FileHelper.task_file_dir_for_unit self, create=true
 
     result = {
-      :added_files => [],
-      :ignored_files => []
+      :success => [],
+      :errors => [],
+      :ignored => []
     }
 
     Zip::File.open(zip_file) do |zip|
       zip.each do |file|
+        next unless file.file? # Skip folders
         file_name = File.basename(file.name)
-        if not task_definitions.where(abbreviation: File.basename(file_name, ".*"))
-          result[:ignored_files] << { name: file.name }
-        elsif File.extname(file.name) == ".pdf"
-          file.extract ("#{task_path}#{FileHelper.sanitized_filename(file_name)}") {true}
-          result[:added_files] << { name: file.name }
-        elsif File.extname(file.name) == ".zip"
-          file.extract ("#{task_path}#{FileHelper.sanitized_filename(file_name)}") {true}
-          result[:added_files] << { name: file.name }
+        if (File.extname(file.name) == ".pdf") || (File.extname(file.name) == ".zip")
+          found = false
+          task_definitions.each do |td|
+            if /^#{td.abbreviation}/ =~ file_name
+              file.extract ("#{task_path}#{FileHelper.sanitized_filename(td.abbreviation)}#{File.extname(file.name)}") {true}
+              result[:success] << { row: file.name, message: "Added as task #{td.abbreviation}" }
+              found = true
+              break
+            end
+          end
+
+          if not found
+            result[:errors] << { row: file.name, message: "Unable to find a task with matching abbreviation." }
+          end
         else
-          result[:ignored_files] << { name: file.name }
+          result[:ignored] << { row: file.name, message: "Unknown file type." }
         end
       end
     end
