@@ -4,16 +4,9 @@ module TestHelpers
   #
   module AuthHelper
     #
-    # Gets an authentication token for User.first
-    #
-    def auth_token
-      auth_token_for_user(User.first)
-    end
-
-    #
     # Gets an auth token for the provided user
     #
-    def auth_token_for_user(user)
+    def auth_token(user = User.first)
       user.extend_authentication_token(true)
       user.auth_token
     end
@@ -43,7 +36,6 @@ module TestHelpers
 
     module_function :auth_token
     module_function :add_auth_token
-    module_function :auth_token_for_user
     module_function :with_auth_token
   end
 end
