@@ -17,8 +17,10 @@ module TestHelpers
     # key to any GET/POST/PUT etc. data that is needed
     #
     def add_auth_token(data, user = User.first)
+      # Passed in an id instead of a user model? Find the user model from User.find
+      user = User.find(user) if user.is_a? Fixnum
       if data.is_a? Hash
-        data[:auth_token] = auth_token
+        data[:auth_token] = auth_token user
       elsif data.is_a? String
         # If we have a question mark, we need to add a query paramater using &
         # otherwise use ?
