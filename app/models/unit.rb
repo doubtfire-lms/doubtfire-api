@@ -1544,7 +1544,11 @@ class Unit < ActiveRecord::Base
       related_tasks = nil
 
       # get the task...
-      if task_entry['username'] =~ /GRP_\d+_\d+/
+      if td.is_group_task?
+        unless task_entry['username'] =~ /GRP_\d+_\d+/
+          errors << {row: task_entry, message: "Group username is in the wrong format."}
+          next
+        end
         # its a group submission... so find task from group submission
         group_details = /GRP_(\d+)_(\d+)/.match(task_entry['username'])
 
@@ -1562,7 +1566,7 @@ class Unit < ActiveRecord::Base
 
         group = Group.find( group_details[1].to_i )
         if group.id != task.group.id
-          errors << { row: task_entry, error: "Group mismatch (expected task #{task.task_definition.abbreviation} to match #{task.group.name})"}
+          errors << { row: task_entry, message: "Group mismatch (expected task #{td.abbreviation} to match #{task.group.name})"}
           next
         end
 
