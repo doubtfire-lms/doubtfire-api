@@ -15,6 +15,7 @@ class TaskDefinition < ActiveRecord::Base
   validates_uniqueness_of :abbreviation, scope:  :unit_id   # task definition names within a unit must be unique
 
   validates :target_grade, inclusion: { in: 0..3, message: "%{value} is not a valid target grade" }
+  validates :max_quality_pts, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 10, message: "must be between 0 and 10" }
 
   after_create do |td|
     td.unit.update_project_stats
@@ -202,7 +203,7 @@ class TaskDefinition < ActiveRecord::Base
   end
 
   def self.csv_columns
-    [:name, :abbreviation, :description, :weighting, :target_grade, :restrict_status_updates, :is_graded, :upload_requirements, :start_week, :start_day, :target_week, :target_day, :due_week, :due_day]
+    [:name, :abbreviation, :description, :weighting, :target_grade, :restrict_status_updates, :max_quality_pts, :is_graded, :upload_requirements, :start_week, :start_day, :target_week, :target_day, :due_week, :due_day]
   end
 
   def self.task_def_for_csv_row(unit, row)
@@ -242,7 +243,8 @@ class TaskDefinition < ActiveRecord::Base
     result.weighting                   = row[:weighting].to_i
     result.target_grade                = row[:target_grade].to_i
     result.restrict_status_updates     = ["Yes", "y", "Y", "yes", "true", "TRUE", "1"].include? row[:restrict_status_updates]
-    result.is_graded                    = ["Yes", "y", "Y", "yes", "true", "TRUE", "1"].include? row[:is_graded]
+    result.max_quality_pts             = row[:max_quality_pts].to_i
+    result.is_graded                   = ["Yes", "y", "Y", "yes", "true", "TRUE", "1"].include? row[:is_graded]
     result.start_date                  = start_date
     result.target_date                 = target_date
     result.upload_requirements         = row[:upload_requirements]

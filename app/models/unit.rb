@@ -1068,7 +1068,7 @@ class Unit < ActiveRecord::Base
   def tasks_awaiting_feedback
     student_tasks.
       joins(:task_status).
-      select("project_id", "tasks.id as id", "task_definition_id", "projects.tutorial_id as tutorial_id", "task_statuses.name as status_name", "completion_date", "times_assessed", "submission_date", "portfolio_evidence").
+      select("project_id", "tasks.id as id", "task_definition_id", "projects.tutorial_id as tutorial_id", "task_statuses.name as status_name", "completion_date", "times_assessed", "submission_date", "portfolio_evidence", "tasks.grade as grade", "quality_pts").
       where('task_statuses.id IN (:ids)', ids: [ TaskStatus.ready_to_mark, TaskStatus.need_help, TaskStatus.discuss, TaskStatus.demonstrate ]).
       where('(task_definitions.due_date IS NULL OR task_definitions.due_date > tasks.submission_date)').
       order('task_definition_id').
@@ -1081,7 +1081,9 @@ class Unit < ActiveRecord::Base
           status: TaskStatus.status_key_for_name(t.status_name),
           completion_date: t.completion_date,
           submission_date: t.submission_date,
-          times_assessed: t.times_assessed
+          times_assessed: t.times_assessed,
+          grade: t.grade,
+          quality_pts: t.quality_pts
           # has_pdf: t.has_pdf
         }
       }
@@ -1415,11 +1417,11 @@ class Unit < ActiveRecord::Base
   # Defines the csv headers for batch download
   #
   def mark_csv_headers
-    "Username,Name,Tutorial,Task,Student's Last Comment,Your Last Comment,Status,New Grade,New Comment"
+    "Username,Name,Tutorial,Task,Student's Last Comment,Your Last Comment,Status,New Grade,New Quality,Max Quality,New Comment"
   end
 
   def check_mark_csv_headers
-    "Username,Name,Tutorial,Task,Status,New Grade,New Comment"
+    "Username,Name,Tutorial,Task,Status,New Grade,New Quality,New Comment"
   end
 
   def readme_text
@@ -1455,7 +1457,7 @@ class Unit < ActiveRecord::Base
           mark_col = 'rtm'
         end
 
-        csv_str << "\n#{student.username.gsub(/,/, '_')},#{student.name.gsub(/,/, '_')},#{task.project.tutorial.abbreviation},#{task.task_definition.abbreviation.gsub(/,/, '_')},\"#{task.last_comment_by(task.project.student).gsub(/"/, "\"\"")}\",\"#{task.last_comment_by(user).gsub(/"/, "\"\"")}\",#{mark_col},,"
+        csv_str << "\n#{student.username.gsub(/,/, '_')},#{student.name.gsub(/,/, '_')},#{task.project.tutorial.abbreviation},#{task.task_definition.abbreviation.gsub(/,/, '_')},\"#{task.last_comment_by(task.project.student).gsub(/"/, "\"\"")}\",\"#{task.last_comment_by(user).gsub(/"/, "\"\"")}\",#{mark_col},,,#{task.task_definition.max_quality_pts},"
 
         src_path = task.portfolio_evidence
 
@@ -1477,7 +1479,7 @@ class Unit < ActiveRecord::Base
         # Add to the template entry string
         grp = task.group
         next if grp.nil?
-        csv_str << "\nGRP_#{grp.id}_#{subm.id},#{grp.name.gsub(/,/, '_')},#{grp.tutorial.abbreviation},#{task.task_definition.abbreviation.gsub(/,/, '_')},\"#{task.last_comment_not_by(user).gsub(/"/, "\"\"")}\",\"#{task.last_comment_by(user).gsub(/"/, "\"\"")}\",rtm,,"
+        csv_str << "\nGRP_#{grp.id}_#{subm.id},#{grp.name.gsub(/,/, '_')},#{grp.tutorial.abbreviation},#{task.task_definition.abbreviation.gsub(/,/, '_')},\"#{task.last_comment_not_by(user).gsub(/"/, "\"\"")}\",\"#{task.last_comment_by(user).gsub(/"/, "\"\"")}\",rtm,,#{task.task_definition.max_quality_pts},"
 
         src_path = task.portfolio_evidence
 
@@ -1596,7 +1598,7 @@ class Unit < ActiveRecord::Base
       end
 
       begin
-        task.trigger_transition(task_entry['status'], user) # saves task
+        task.trigger_transition(trigger: task_entry['status'], by_user: user, quality: task_entry['new quality'].to_i) # saves task
         task.grade_task(task_entry['new grade']) # try to grade task if need be
 
         if not (task_entry['new comment'].nil? || task_entry['new comment'].empty?)
@@ -1744,7 +1746,7 @@ class Unit < ActiveRecord::Base
               next
             end
 
-            if task.unit_id != id
+            if task.unit != self
               errors << { row: "File #{file.name}", message: "This task does not relate to this unit."}
               next
             end
