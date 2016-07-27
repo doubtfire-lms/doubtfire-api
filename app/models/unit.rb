@@ -1533,105 +1533,81 @@ class Unit < ActiveRecord::Base
         next
       end
 
-      # get the task...
-      project = projects.joins(:user).where("users.username" => task_entry['username']).first
-      if project.nil?
-        errors << { row: task_entry, message: "Unable to find student project for this task." }
-        next
-      end
-
+      # Find the related task definition
       td = task_definitions.select {|td| td.abbreviation.gsub(/,/, "_") == task_entry['task'] }.first
       if td.nil?
         errors << { row: task_entry, message: "Unable to find task with abbreviation #{task_entry['task']}" }
         next
       end
 
-      task = project.task_for_task_definition(td)
-      if task.nil?
-        errors << { row: task_entry, message: "Unable to find task for #{task_entry['task']} not found" }
-        next
-      end
+      task = nil
+      related_tasks = nil
 
-      # Ensure that this task's student matches that in entry_data
+      # get the task...
       if task_entry['username'] =~ /GRP_\d+_\d+/
+        # its a group submission... so find task from group submission
         group_details = /GRP_(\d+)_(\d+)/.match(task_entry['username'])
 
-        # look for group submission
         subm = GroupSubmission.find_by_id( group_details[2].to_i )
         if subm.nil?
           errors << {row: task_entry, message: "Unable to find original submission for group task."}
           next
         end
 
-        submitter_task = subm.submitter_task
-        if submitter_task.nil?
+        task = subm.submitter_task
+        if task.nil?
           errors << {row: task_entry, message: "Unable to find original submission for group task."}
           next
         end
 
         group = Group.find( group_details[1].to_i )
         if group.id != task.group.id
-          errors << { row: task_entry, error: "Group mismatch (expected task #{task.id} to match #{task.group.name})"}
+          errors << { row: task_entry, error: "Group mismatch (expected task #{task.task_definition.abbreviation} to match #{task.group.name})"}
           next
         end
 
-        if not AuthorisationHelpers::authorise? user, submitter_task, :put
-          errors << { row: task_entry, error: "You do not have permission to assess group task with id #{task.id}"}
-          break
-        end
-
-        begin
-          submitter_task.trigger_transition(task_entry['status'], user) # saves task
-          submitter_task.grade_task(task_entry['new grade']) # try to grade task if need be
-          success << { row: task_entry, message:"Updated group task #{submitter_task.task_definition.abbreviation} for #{group.name}" }
-          if not (task_entry['new comment'].nil? || task_entry['new comment'].empty?)
-            submitter_task.add_comment user, task_entry['new comment']
-          end
-        rescue Exception => e
-          errors << { row: task_entry, message: e.message }
-          break
-        end
-
-        subm.tasks.each do | task |
-          # add to done projects for emailing
-          if done[task.project].nil?
-            done[task.project] = []
-          end
-          done[task.project] << task
-        end
+        related_tasks = subm.tasks
+        owner_text = group.name
       else
-        if task_entry['username'] != task.project.student.username
-          # error!({"error" => "File #{file.name} has a mismatch of student id (task with id #{task.id} matches student #{task.project.student.username}, not that in marks.csv of #{t['id']}"}, 403)
-          errors << { row: task_entry, message: "Student mismatch (expected task #{task.id} to match #{task.project.student.username}, was #{task_entry['username']} in marks.csv)"}
+        # its an individual task... so find from the project
+        project = projects.joins(:user).where("users.username" => task_entry['username']).first
+        if project.nil?
+          errors << { row: task_entry, message: "Unable to find student project for this task." }
           next
         end
 
-        # Can the user assess this task?
-        if not AuthorisationHelpers::authorise? user, task, :put
-          errors << { row: task_entry, message: "You do not have permission to assess task with id #{task.id}"}
+        task = project.task_for_task_definition(td)
+        if task.nil?
+          errors << { row: task_entry, message: "Unable to find task for #{task_entry['task']} not found" }
           next
         end
 
-        begin
-          task.trigger_transition(task_entry['status'], user) # saves task
-          task.grade_task(task_entry['new grade']) # try to grade task if need be
+        related_tasks = [ task ]
+        owner_text = project.user.name
+      end
 
-          if not (task_entry['new comment'].nil? || task_entry['new comment'].empty?)
-            success << { row: task_entry, message:"Updated task #{task.task_definition.abbreviation} for #{task.student.name}" }
-            if task.last_comment.nil? || task.last_comment.comment != task_entry['new comment']
-              task.add_comment user, task_entry['new comment']
-              success << { row: task_entry, message:"Added comment to #{task.task_definition.abbreviation} for #{task.student.name}" }
-            else
-              ignored << { row: task_entry, message:"Skipped comment to #{task.task_definition.abbreviation} for #{task.student.name} -- duplicates last comment." }
-            end
-          else
-            success << { row: task_entry, message:"Updated task #{task.task_definition.abbreviation} for #{task.student.name} (no new comment)" }
-          end
-        rescue Exception => e
-          errors << { row: task_entry, message: e.message }
-          break
+      if not AuthorisationHelpers::authorise? user, task, :put
+        errors << { row: task_entry, error: "You do not have permission to assess this task."}
+        next
+      end
+
+      begin
+        task.trigger_transition(task_entry['status'], user) # saves task
+        task.grade_task(task_entry['new grade']) # try to grade task if need be
+
+        if not (task_entry['new comment'].nil? || task_entry['new comment'].empty?)
+          task.add_comment user, task_entry['new comment']
+          success << { row: task_entry, message:"Updated task #{task.task_definition.abbreviation} for #{owner_text}" }
+          success << { row: {}, message:"Added comment to #{task.task_definition.abbreviation} for #{owner_text}" }
+        else
+          success << { row: task_entry, message:"Updated task #{task.task_definition.abbreviation} for #{owner_text}" }
         end
+      rescue Exception => e
+        errors << { row: task_entry, message: e.message }
+        next
+      end
 
+      related_tasks.each do | task |
         # add to done projects for emailing
         if done[task.project].nil?
           done[task.project] = []

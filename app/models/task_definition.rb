@@ -261,6 +261,10 @@ class TaskDefinition < ActiveRecord::Base
     [result, new_task, new_task ? "Added new task definition #{result.abbreviation}." : "Updated existing task #{result.abbreviation}" ]
   end
 
+  def is_group_task?
+    not group_set.nil?
+  end
+
   def has_task_resources?
     File.exists? unit.path_to_task_resources(self)
   end
