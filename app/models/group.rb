@@ -132,11 +132,17 @@ class Group < ActiveRecord::Base
     contributors.each do |contrib|
       project = contrib[:project]
       pct = contrib[:pct].to_i
+      pts = contrib[:pts].to_i
+
       if pct < 0
         contrib[:pct] = 0
       else
         total += pct
       end
+
+      contrib[:pts] = 0 unless pts > 0
+      contrib[:pts] = 5 unless pts < 5
+
       raise "Not all contributions were from team members." unless projects.include? project
     end
 
@@ -170,6 +176,7 @@ class Group < ActiveRecord::Base
       if contrib[:pct].to_i > 0
         task.group_submission = gs
         task.contribution_pct = contrib[:pct]
+        task.contribution_pts = contrib[:pts]
       end
       task.save
     end
