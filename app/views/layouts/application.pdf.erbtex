@@ -2,6 +2,7 @@
 \documentclass[11pt,a4paper]{article}
 \usepackage[T1]{fontenc}
 \usepackage{textcomp}
+\usepackage{shellesc}
 
 \usepackage{luatextra}
 \defaultfontfeatures{Ligatures=TeX}
