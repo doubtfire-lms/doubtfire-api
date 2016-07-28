@@ -7,16 +7,16 @@ module Api
       helpers GenerateHelpers
       helpers AuthHelpers
       helpers AuthorisationHelpers
-    
+
       before do
         authenticated?
       end
-      
+
       desc "Upload and generate doubtfire-task-specific submission document"
       params do
         requires :file0, type: Rack::Multipart::UploadedFile, :desc => "file 0."
         optional :file1, type: Rack::Multipart::UploadedFile, :desc => "file 1."
-        optional :contributions, type: String, :desc => "Contribution details stringified json, eg: [ { project_id: 1, pct:'0.44' }, ... ]"
+        optional :contributions, type: String, :desc => "Contribution details stringified json, eg: [ { project_id: 1, pct:'0.44', pts: 4 }, ... ]"
         optional :trigger, type: String, :desc => "Can be need_help to indicate upload is not a ready to mark submission"
       end
       post '/projects/:id/task_def_id/:task_definition_id/submission' do
@@ -43,7 +43,7 @@ module Api
         else
           trigger = 'ready_to_mark'
         end
-        
+
         upload_reqs = task.upload_requirements
         student = task.project.student
         unit = task.project.unit
@@ -53,7 +53,7 @@ module Api
 
         TaskUpdateSerializer.new(task)
       end #post
-      
+
       desc "Retrieve submission document included for the task id"
       get '/projects/:id/task_def_id/:task_definition_id/submission' do
         project = Project.find(params[:id])
@@ -69,14 +69,14 @@ module Api
         evidence_loc = task.portfolio_evidence
         student = task.project.student
         unit = task.project.unit
-        
+
         if evidence_loc.nil? || task.processing_pdf
           evidence_loc = Rails.root.join("public", "resources", "FileNotFound.pdf")
           header['Content-Disposition'] = "attachment; filename=FileNotFound.pdf"
         else
           header['Content-Disposition'] = "attachment; filename=#{task.task_definition.abbreviation}.pdf"
         end
-        
+
         # Set download headers...
         content_type "application/octet-stream"
         env['api.format'] = :binary

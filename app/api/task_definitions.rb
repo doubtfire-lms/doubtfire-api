@@ -31,6 +31,7 @@ module Api
         optional :plagiarism_checks,        type: String,   :desc => "The list of checks to perform"
         requires :plagiarism_warn_pct,      type: Integer,  :desc => "The percent at which to record and warn about plagiarism"
         requires :is_graded,                type: Boolean,  :desc => "Whether or not this task definition is a graded task"
+        requires :max_quality_pts,          type: Integer,  :desc => "A range for quality points when quality is assessed"
       end
     end
     post '/task_definitions/' do
@@ -57,7 +58,8 @@ module Api
                                                   :upload_requirements,
                                                   :plagiarism_checks,
                                                   :plagiarism_warn_pct,
-                                                  :is_graded
+                                                  :is_graded,
+                                                  :max_quality_pts
                                                 )
 
       task_def = TaskDefinition.new(task_params)
@@ -95,6 +97,7 @@ module Api
         optional :plagiarism_checks,        type: String,   :desc => "The list of checks to perform"
         optional :plagiarism_warn_pct,      type: Integer,  :desc => "The percent at which to record and warn about plagiarism"
         optional :is_graded,                type: Boolean,  :desc => "Whether or not this task definition is a graded task"
+        optional :max_quality_pts,          type: Integer,  :desc => "A range for quality points when quality is assessed"
       end
     end
     put '/task_definitions/:id' do
@@ -120,7 +123,8 @@ module Api
                                                   :upload_requirements,
                                                   :plagiarism_checks,
                                                   :plagiarism_warn_pct,
-                                                  :is_graded
+                                                  :is_graded,
+                                                  :max_quality_pts
                                                 )
 
       task_def.update!(task_params)

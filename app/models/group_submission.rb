@@ -28,10 +28,10 @@ class GroupSubmission < ActiveRecord::Base
     end
   end
 
-  def propagate_transition initial_task, trigger, by_user
+  def propagate_transition initial_task, trigger, by_user, quality
     tasks.each do |task|
       if task != initial_task
-        task.trigger_transition(trigger, by_user, bulk=false, group_transition=true)
+        task.trigger_transition(trigger: trigger, by_user: by_user, group_transition: true, quality: quality)
       end
     end
   end

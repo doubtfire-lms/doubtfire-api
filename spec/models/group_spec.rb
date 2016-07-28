@@ -156,8 +156,8 @@ it "should know its members" do
   end
 
   it "should fail on submission if submitted to wrong group" do
-    unit = FactoryGirl.create(:unit, group_sets: 2, task_count: 2, student_count: 4, 
-        :groups => [ { gs: 0, students: 2}, { gs: 0, students: 2}, {gs: 1, students: 2}, {gs: 1, students: 2} ], 
+    unit = FactoryGirl.create(:unit, group_sets: 2, task_count: 2, student_count: 4,
+        :groups => [ { gs: 0, students: 2}, { gs: 0, students: 2}, {gs: 1, students: 2}, {gs: 1, students: 2} ],
         :group_tasks => [ { gs: 0, idx: 0 }, { gs: 1, idx: 1} ])
 
     grp0 = unit.group_sets[0].groups[0]
@@ -218,7 +218,7 @@ it "should know its members" do
 
     submission = grp.create_submission p1_t1, "Group has submitted its awesome work", [ { project: p1, pct: 50}, { project: p2, pct: 50} ]
 
-    p1_t1.trigger_transition( "rtm", unit.convenors.first.user)
+    p1_t1.trigger_transition( trigger: "rtm", by_user:unit.convenors.first.user)
 
     p2_t1 = p2.tasks.first
 
@@ -227,9 +227,9 @@ it "should know its members" do
   end
 
   it "should allow students to trigger submission state across tasks in the group" do
-    unit = FactoryGirl.create(:unit, group_sets: 1, task_count: 1, 
-      student_count: 2, 
-      :groups => [ { gs: 0, students: 2} ], 
+    unit = FactoryGirl.create(:unit, group_sets: 1, task_count: 1,
+      student_count: 2,
+      :groups => [ { gs: 0, students: 2} ],
       :group_tasks => [ { gs: 0, idx: 0 } ] )
 
     grp = unit.group_sets[0].groups.first
@@ -241,7 +241,7 @@ it "should know its members" do
 
     submission = grp.create_submission p1_t1, "Group has submitted its awesome work", [ { project: p1, pct: 50}, { project: p2, pct: 50} ]
 
-    p1_t1.trigger_transition( "rtm", p1.student )
+    p1_t1.trigger_transition( trigger: "rtm", by_user: p1.student )
 
     p2_t1 = p2.tasks.first
 
@@ -261,7 +261,7 @@ it "should know its members" do
 
     submission = grp.create_submission p1_t1, "Group has submitted its awesome work", [ { project: p1, pct: 50}, { project: p2, pct: 50} ]
 
-    p1_t1.trigger_transition( "working_on_it", p1.student )
+    p1_t1.trigger_transition( trigger: "working_on_it", by_user: p1.student )
 
     p2_t1 = p2.tasks.first
 
@@ -279,7 +279,7 @@ it "should know its members" do
 
     p1_t1 = p1.tasks.first
 
-    p1_t1.trigger_transition( "rtm", p1.student )
+    p1_t1.trigger_transition( trigger: "rtm", by_user: p1.student )
 
     p2_t1 = p2.tasks.first
 
@@ -380,9 +380,9 @@ it "should know its members" do
   end
 
   it "should delete old group submissions, when new group submits work" do
-    unit = FactoryGirl.create(:unit, group_sets: 1, task_count: 1, 
-      student_count: 3, 
-      :groups => [ { gs: 0, students: 2}, {gs: 0, students: 1} ], 
+    unit = FactoryGirl.create(:unit, group_sets: 1, task_count: 1,
+      student_count: 3,
+      :groups => [ { gs: 0, students: 2}, {gs: 0, students: 1} ],
       :group_tasks => [ { gs: 0, idx: 0 } ]
     )
 
@@ -413,9 +413,9 @@ it "should know its members" do
   end
 
   it "should allow comments to be viewed across all related tasks" do
-    unit = FactoryGirl.create(:unit, group_sets: 1, task_count: 2, 
-      student_count: 3, 
-      :groups => [ { gs: 0, students: 2}, {gs: 0, students: 1} ], 
+    unit = FactoryGirl.create(:unit, group_sets: 1, task_count: 2,
+      student_count: 3,
+      :groups => [ { gs: 0, students: 2}, {gs: 0, students: 1} ],
       :group_tasks => [ { gs: 0, idx: 0 } ]
     )
 
@@ -470,7 +470,7 @@ it "should know its members" do
 
     gs.reload
     gs.keep_groups_in_same_class = true
-    expect { gs.save! }.to raise_exception ActiveRecord::RecordInvalid 
+    expect { gs.save! }.to raise_exception ActiveRecord::RecordInvalid
   end
 
 end
