@@ -1046,7 +1046,15 @@ class Unit < ActiveRecord::Base
 
   def path_to_task_resources(task_def)
     task_path = FileHelper.task_file_dir_for_unit self, create=true
-    "#{task_path}#{FileHelper.sanitized_filename(task_def.abbreviation)}.zip"
+
+    result_with_sanitised_path = "#{task_path}#{FileHelper.sanitized_path(task_def.abbreviation)}.zip"
+    result_with_sanitised_file = "#{task_path}#{FileHelper.sanitized_filename(task_def.abbreviation)}.zip"
+
+    if File.exists? result_with_sanitised_path
+        result_with_sanitised_path
+    else
+        result_with_sanitised_file
+    end
   end
 
   def path_to_task_pdf(task_def)
