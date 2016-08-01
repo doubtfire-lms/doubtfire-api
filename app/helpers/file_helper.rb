@@ -180,7 +180,11 @@ module FileHelper
   def compress_image(path)
     return true if File.size?(path) < 1000000
 
-    tmp_file = File.join( Dir.tmpdir, 'doubtfire', 'compress', "#{File.dirname(path).split(File::Separator).last}-file#{File.extname(path)}" )
+    compress_folder = File.join(Dir.tmpdir, 'doubtfire', 'compress')
+
+    FileUtils.mkdir compress_folder unless Directory.exists? compress_folder
+
+    tmp_file = File.join( compress_folder, "#{File.dirname(path).split(File::Separator).last}-file#{File.extname(path)}" )
     logger.debug "File helper has started compressing #{path} to #{tmp_file}..."
 
     begin
