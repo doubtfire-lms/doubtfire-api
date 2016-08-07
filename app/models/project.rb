@@ -133,7 +133,7 @@ class Project < ActiveRecord::Base
   # All "discuss" and "demonstrate" become complete
   #
   def trigger_week_end( by_user )
-    discuss_and_demonstrate_tasks.each{|task| task.trigger_transition("complete", by_user, true) }
+    discuss_and_demonstrate_tasks.each{|task| task.trigger_transition(trigger: "complete", by_user: by_user, bulk: true, quality: task.quality_pts) }
     calc_task_stats
   end
 

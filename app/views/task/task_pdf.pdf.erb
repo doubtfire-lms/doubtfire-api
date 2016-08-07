@@ -28,15 +28,6 @@
 <%  if @task.group_task? %>
 <%=   lesc @task.group_submission.submitted_by_project.student.first_name %> \textsc{<%= lesc @task.group_submission.submitted_by_project.student.last_name %>}\\
 <%=   lesc @task.group_submission.submitted_by_project.student.username %>\\[1cm]
-\emph{Group Members:} \\
-<%    total = @task.group_submission.tasks.count * 10 %>
-<%    for grp_task in @task.group_submission.tasks %>
-<%      next if grp_task.nil? %>
-<%      weight = total * grp_task.contribution_pct / 100 %>
-<%      weight = 30 if weight > 30 %>
-<%=     lesc grp_task.student.first_name %> \textsc{<%= lesc grp_task.student.last_name %>} {\footnotesize \ttfamily <%= lesc '-' * weight %>>}\\
-<%=     lesc @task.group_submission.submitted_by_project.student.username %>\\
-<%    end %>
 <%  else %>
 <%=   lesc @task.student.first_name %> \textsc{<%= lesc @task.student.last_name %>}\\
 <%=   lesc @task.student.username %>\\
@@ -57,6 +48,19 @@ No Tutor % Supervisor's Name
 <%  end %>
 \end{flushright}
 \end{minipage}\\[4cm]
+
+<%  if @task.group_task? %>
+\emph{Group Members:} \\
+\begin{tabular}{llll}
+<%    for grp_task in @task.group_submission.tasks %>
+<%      next if grp_task.nil? %>
+<%= lesc grp_task.student.username %> &
+<%= lesc grp_task.student.first_name %> &
+\textsc{<%= lesc grp_task.student.last_name %>} &
+{\footnotesize \ttfamily <%= '\faChild' * grp_task.contribution_pts %>}\\
+<%    end %>
+\end{tabular}\\[2cm]
+<%  end %>
 
 %----------------------------------------------------------------------------------------
 % DATE SECTION

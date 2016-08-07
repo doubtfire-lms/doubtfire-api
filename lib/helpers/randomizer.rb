@@ -12,7 +12,14 @@ class Randomizer
   # Randomly returns a new task for the given project
   #
   def self.random_task_for_project(project)
-    task_def = project.unit.task_definitions.sample
+    task_def = self.random_task_def_for_project(project)
     project.task_for_task_definition(task_def)
+  end
+
+  #
+  # Randomly returns a new task definition for the given project
+  #
+  def self.random_task_def_for_project(project)
+    project.unit.task_definitions.sample
   end
 end

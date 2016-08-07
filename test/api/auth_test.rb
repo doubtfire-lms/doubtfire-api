@@ -1,6 +1,6 @@
 require 'test_helper'
 
-class AuthTest < MiniTest::Test
+class AuthTest < ActiveSupport::TestCase
   include Rack::Test::Methods
   include TestHelpers::AuthHelper
   include TestHelpers::JsonHelper
@@ -72,28 +72,28 @@ class AuthTest < MiniTest::Test
       {
         expect: Role.admin,
         post: {
-            username: "acain",
+            username: "aadmin",
             password: "password"
         }
       },
       {
         expect: Role.convenor,
         post: {
-            username: "jrenzella",
+            username: "aconvenor",
             password: "password"
         }
       },
       {
         expect: Role.tutor,
         post: {
-            username: "rwilson",
+            username: "atutor",
             password: "password"
         }
       },
       {
         expect: Role.student,
         post: {
-            username: "acummaudo",
+            username: "astudent",
             password: "password"
         }
       }
@@ -116,7 +116,6 @@ class AuthTest < MiniTest::Test
 
   # Test put for authentication token
   def test_auth_put
-    auth_token = get_auth_token
     data_to_put = {
         username: "acain",
         password: "password"
@@ -136,7 +135,6 @@ class AuthTest < MiniTest::Test
 
   # Test for deleting authentication token
   def test_auth_delete
-    auth_token = get_auth_token
     # Get the auth token needed for delete test
     delete "/api/auth/#{auth_token}.json", "CONTENT_TYPE" => 'application/json'
     # 200 response code means success!

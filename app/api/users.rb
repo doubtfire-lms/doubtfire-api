@@ -173,12 +173,14 @@ module Api
       #
       # Check permission to create user with this role
       #
-      if not authorise? current_user, User, :create_user, User.get_change_role_perm_fn(), [ :nil, new_role.name.to_sym ]
+      if not authorise? current_user, User, :create_user, User.get_change_role_perm_fn(), [ :nil, new_role.name.downcase.to_sym ]
         error!({"error" => "Not authorised to create new users with role #{new_role.name}"}, 403)
       end
 
       # update :role to actual Role object rather than String type
       user_parameters[:role] = new_role
+
+      logger.info "#{current_user.username}: Created new user #{user_parameters[:username]} with role #{new_role.name}"
 
       user = User.create!(user_parameters)
       user

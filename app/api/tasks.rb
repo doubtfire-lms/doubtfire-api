@@ -124,6 +124,7 @@ module Api
       optional :trigger, type: String, desc: 'New status'
       optional :include_in_portfolio, type: Boolean, desc: 'Indicate if this task should be in the portfolio'
       optional :grade, type: Integer, desc: 'Grade value if task is a graded task (required if task definition is a graded task)'
+      optional :quality_pts, type: Integer, desc: 'Quality points value if task has quality assessment'
     end
     put '/projects/:id/task_def_id/:task_definition_id' do
       project = Project.find(params[:id])
@@ -146,8 +147,8 @@ module Api
             error!({"error" => "This task requires a group. Ensure you are in a group for the unit's #{task.task_definition.group_set.name}"}, 403)
           end
 
-          logger.info "Assessing task #{task.id} to #{params[:trigger]}"
-          result = task.trigger_transition( params[:trigger], current_user )
+          logger.info "#{current_user.username} assessing task #{task.id} to #{params[:trigger]}"
+          result = task.trigger_transition( trigger: params[:trigger], by_user: current_user, quality: params[:quality_pts] )
           if result.nil? && task.task_definition.restrict_status_updates
             error!({"error" => "This task can only be updated by your tutor." }, 403)
           end

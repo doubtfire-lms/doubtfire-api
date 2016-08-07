@@ -78,7 +78,19 @@ class Task < ActiveRecord::Base
   validates :task_definition_id, uniqueness: { scope: :project,
     message: "must be unique within the project" }
 
+  validate :must_have_quality_pts, if: :for_task_with_quality?
+
   after_save :update_project
+
+  def for_task_with_quality?
+    self.task_definition.max_quality_pts > 0
+  end
+
+  def must_have_quality_pts
+    if quality_pts.nil? || quality_pts < 0 || quality_pts > task_definition.max_quality_pts
+      errors.add(:quality_pts, "must be between 0 and #{task_definition.max_quality_pts}")
+    end
+  end
 
   def all_comments
     if group_submission.nil?
@@ -276,7 +288,7 @@ class Task < ActiveRecord::Base
     group.create_submission self, "", group.projects.map { |proj| { project: proj, pct: 100 / group.projects.count }  }
   end
 
-  def trigger_transition(trigger="", by_user=nil, bulk=false, group_transition=false)
+  def trigger_transition(trigger:"", by_user:nil, bulk:false, group_transition:false, quality:1)
     #
     # Ensure that assessor is allowed to update the task in the indicated way
     #
@@ -318,6 +330,12 @@ class Task < ActiveRecord::Base
         # Only tutors can perform these actions
         #
         if role == :tutor
+          if task_definition.max_quality_pts > 0
+            if ["complete", "discuss", "demonstrate", "de", "demo", "d"].include? trigger
+              update(quality_pts: quality)
+            end
+          end
+
           case trigger
             when "fail", 'f'
               assess TaskStatus.fail, by_user
@@ -341,7 +359,7 @@ class Task < ActiveRecord::Base
     if (not group_transition) && group_task?
       logger.debug "Group task transition for #{group_submission} set to status #{trigger} (id=#{id})"
       if not [ TaskStatus.working_on_it, TaskStatus.need_help  ].include? task_status
-        ensured_group_submission.propagate_transition self, trigger, by_user
+        ensured_group_submission.propagate_transition self, trigger, by_user, quality
       end
     end
 
@@ -575,7 +593,7 @@ class Task < ActiveRecord::Base
 
   def student_work_dir(type, create = true)
     if group_task?
-      FileHelper.student_group_work_dir(type, group_submission, self, create)
+      FileHelper.student_group_work_dir(type, group_submission, group_submission.submitter_task, create)
     else
       FileHelper.student_work_dir(type, self, create)
     end
@@ -704,8 +722,9 @@ class Task < ActiveRecord::Base
 
     zip_file = zip_file_path_for_done_task()
     if zip_file && File.exists?(zip_file)
-      extract_file_from_done FileHelper.student_work_dir(:new), "*", lambda { | task, to_path, name |  "#{to_path}#{name}" }
-      return false if not Dir.exists?(from_dir)
+      extract_file_from_done FileHelper.student_work_dir(:new), "*", lambda { | task, to_path, name |
+         "#{to_path}#{name}" }
+      return false unless Dir.exists?(from_dir)
     else
       return false
     end
@@ -872,7 +891,7 @@ class Task < ActiveRecord::Base
     rescue => e
       clear_in_process()
 
-      trigger_transition 'fix', project.main_tutor
+      trigger_transition trigger: 'fix', by_user: project.main_tutor
       raise e
     end
   end
@@ -883,9 +902,9 @@ class Task < ActiveRecord::Base
   def create_submission_and_trigger_state_change (user, propagate = true, contributions = nil, trigger = 'ready_to_mark')
     if group_task? && propagate
       if contributions.nil? # even distribution
-        contribs = group.projects.map { |proj| { project: proj, pct: 100 / group.projects.count }  }
+        contribs = group.projects.map { |proj| { project: proj, pct: 100 / group.projects.count, pts: 3 }  }
       else
-        contribs = contributions.map { |data| { project: Project.find(data[:project_id]), pct: data[:pct].to_i }  }
+        contribs = contributions.map { |data| { project: Project.find(data[:project_id]), pct: data[:pct].to_i, pts: data[:pts].to_i }  }
       end
       group_submission = group.create_submission self, "#{user.name} has submitted work", contribs
       group_submission.tasks.each { |t| t.create_submission_and_trigger_state_change(user, propagate=false) }
@@ -896,7 +915,7 @@ class Task < ActiveRecord::Base
 
       # This task is now ready to submit
       if not (discuss_or_demonstrate? || complete? || do_not_resubmit? || fail?)
-        self.trigger_transition trigger, user, false, false # dont propagate -- already done
+        self.trigger_transition trigger: trigger, by_user: user, group_transition: false
 
         plagiarism_match_links.each do | link |
           link.destroy
