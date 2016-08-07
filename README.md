@@ -113,8 +113,7 @@ Then install Doubtfire API dependencies using [bundler](http://bundler.io):
 ```
 $ gem install bundler
 $ rbenv rehash
-$ bundle install --without production test replica
-```
+$ bundle install --without production ```
 
 ##### Bundle resolutions
 
@@ -328,7 +327,7 @@ Then install Doubtfire API dependencies using [bundler](http://bundler.io):
 ```
 $ gem install bundler
 $ rbenv rehash
-$ bundle install --without production test replica
+$ bundle install --without production replica
 ```
 
 ##### Bundle resolutions
