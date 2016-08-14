@@ -7,6 +7,7 @@ class Unit < ActiveRecord::Base
   include ApplicationHelper
   include FileHelper
   include LogHelper
+  include MimeCheckHelpers
 
   #
   # Permissions around unit data
@@ -1650,18 +1651,18 @@ class Unit < ActiveRecord::Base
   # Uploads a batch package back into doubtfire
   #
   def upload_batch_task_zip_or_csv(user, file)
-    fm = FileMagic.new(FileMagic::MAGIC_MIME)
-
     success = []
     errors = []
     ignored = []
 
-    mime_type = fm.file(file.tempfile.path)
+    type = mime_type(file.tempfile.path)
+
+    puts "type #{type}"
 
     # check mime is correct before uploading
     accept = ['text/', 'text/plain', 'text/csv', 'application/zip', 'multipart/x-gzip', 'multipart/x-zip', 'application/x-gzip', 'application/octet-stream']
-    if not mime_type.start_with?(*accept)
-      errors << { row: {}, message: "File given is not a zip or csv file - detected #{mime_type}" }
+    if not mime_in_list?(file.tempfile.path, accept)
+      errors << { row: {}, message: "File given is not a zip or csv file - detected #{type}" }
       return {
         success:  success,
         ignored:  ignored,
@@ -1669,7 +1670,7 @@ class Unit < ActiveRecord::Base
       }
     end
 
-    if mime_type.start_with?('text/', 'text/plain', 'text/csv')
+    if type.start_with?('text/', 'text/plain', 'text/csv')
       update_task_status_from_csv(user, File.open(file.tempfile.path).read, success, ignored, errors)
     else
       # files are extracted to a temp dir first

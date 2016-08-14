@@ -1,11 +1,3 @@
-# getting file MIME types
-require 'filemagic'
-# image to pdf
-require 'rmagick'
-# code to html
-require 'coderay'
-# html to pdf
-require 'pdfkit'
 # zipping files
 require 'zip'
 

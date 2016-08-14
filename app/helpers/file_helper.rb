@@ -3,17 +3,8 @@ require 'zip'
 module FileHelper
   extend LogHelper
   extend TimeoutHelper
+  extend MimeCheckHelpers
 
-  def check_mime_against_list! (file, expect, type_list)
-    fm = FileMagic.new(FileMagic::MAGIC_MIME)
-
-    mime_type = fm.file(file)
-
-    # check mime is correct before uploading
-    if not mime_type.start_with?(*type_list)
-      error!({"error" => "File given is not a #{expect} file - detected #{mime_type}"}, 403)
-    end
-  end
 
   #
   # Test if a file should be accepted based on an expected kind
@@ -21,10 +12,6 @@ module FileHelper
   #
   def accept_file(file, name, kind)
     logger.debug "FileHelper is accepting file: filename=#{file.filename}, name=#{name}, kind=#{kind}"
-
-    fm = FileMagic.new(FileMagic::MAGIC_MIME)
-    mime = fm.file file.tempfile.path
-    logger.debug "#{name} has MIME type: #{mime}"
 
     valid = true
 
@@ -46,7 +33,7 @@ module FileHelper
     end
 
     # result is true when...
-    mime.start_with?(*accept) && valid
+    mime_in_list?(file.tempfile.path, accept) && valid
   end
 
 
@@ -283,64 +270,6 @@ module FileHelper
   end
 
   #
-  # Convert the files in the indicated folder into PDFs and move to
-  # a dest_path
-  #
-  def convert_files_to_pdf(from_path, dest_path)
-    #
-    # Get access to all files to process (ensure we only work with <no>.[cover|document|code|image] etc...)
-    #
-    in_process_files = Dir.entries(from_path).select { | f | (f =~ /^\d{3}\.(cover|document|code|image)/) == 0 }
-    if in_process_files.length < 1
-      logger.error "Cannot convert files to PDF: No files found in #{from_path}"
-      return nil
-    end
-
-    #
-    # Map each process file to have extra info i.e.:
-    #
-    # file.idx            = 0..n
-    # file.path           = actual file dir sitting in in_process directory
-    # file.ext            = file extension
-    # file.type           = cover/image/code/document
-    # file.actualfile     = actual file variable that can be used - File.open(path)
-    #
-    files = []
-    in_process_files.each do | file |
-      # file0.code.png
-      idx = file.split('.').first.to_i
-      type = file.split('.').second
-      path = File.join("#{from_path}", "#{file}")
-      ext = File.extname(path).downcase
-      actualfile = File.open(path)
-      files << { :idx => idx, :type => type, :path => path, :ext => ext, :actualfile => actualfile }
-    end
-
-    # ensure the dest_path exists
-    if not Dir.exists? dest_path
-      FileUtils.mkdir_p(dest_path)
-    end
-
-    #
-    # Begin processing...
-    #
-    pdf_paths = []
-    files.each do | file |
-      outpath = "#{dest_path}/#{file[:idx]}-#{file[:type]}.pdf"
-
-      convert_to_pdf(file, outpath)
-
-      pdf_paths[file[:idx]] = outpath
-      begin
-        file[:actualfile].close
-      rescue
-      end
-    end
-
-    pdf_paths
-  end
-
-  #
   # Tests if a PDF is valid / corrupt
   #
   def pdf_valid?(file)
@@ -370,109 +299,6 @@ module FileHelper
   end
 
   #
-  # Converts the given file to a pdf
-  #
-  def convert_to_pdf(file, outdir)
-    case file[:type]
-    when 'image'
-      img_to_pdf(file, outdir)
-    when 'code'
-      code_to_pdf(file, outdir)
-    when 'document'
-      doc_to_pdf(file, outdir)
-    when 'cover'
-      cover_to_pdf(file, outdir)
-    end
-  end
-
-  #
-  # Converts the code provided to a pdf
-  #
-  def code_to_pdf(file, outdir)
-    # decide language syntax highlighting
-    case file[:ext]
-    when '.cpp', '.cs'
-      lang = :cplusplus
-    when '.c', '.h'
-      lang = :c
-    when '.java'
-      lang = :java
-    when '.pas'
-      lang = :delphi
-    else
-      # should follow basic C syntax (if, else etc...)
-      lang = :c
-    end
-    # code -> HTML
-    html_body = CodeRay.scan_file(file[:actualfile], lang).html(:wrap => :div, :tab_width => 2, :css => :class, :line_numbers => :table, :line_number_anchors => false)
-
-    # HTML -> PDF
-    kit = PDFKit.new(html_body, :page_size => 'A4', :header_right => "[page]/[toPage]", :margin_top => "10mm", :margin_right => "5mm", :margin_bottom => "5mm", :margin_left => "5mm", :lowquality => true, :minimum_font_size => 8)
-    kit.stylesheets << Rails.root.join("vendor/assets/stylesheets/coderay.css")
-    kit.to_file(outdir)
-  end
-
-  #
-  # Converts the image provided to a pdf
-  #
-  def img_to_pdf(file, outdir)
-    img = Magick::Image.read(file[:path]).first
-    # resize the image if its too big (e.g., taken with a digital camera)
-    if img.columns > 1000 || img.rows > 1000
-      # resize such that it's 1000px in width
-      scale = 1
-      if img.columns > img.rows
-        scale = 1000.0 / img.columns
-      else
-        scale = 1000.0 / img.rows
-      end
-      img = img.resize(scale)
-    end
-    img.write("pdf:#{outdir}") { self.quality = 75 }
-  end
-
-  #
-  # Converts the document provided to a pdf
-  #
-  def doc_to_pdf(file, outdir)
-    logger.info "Trying to convert document file #{file[:path]} to PDF"
-    # if uploaded a PDF, then directly pass in
-    # if file[:ext] == '.pdf'
-      # copy the file over (note we need to copy it into
-      # output_file as file will be removed at the end of this block)
-
-      begin
-        file[:actualfile].close()
-      rescue => e
-        logger.error "File could not be converted: #{e.message}"
-      end
-
-      copy_pdf(file[:path], outdir)
-
-      begin
-        file[:actualfile] = File.open(file[:path])
-      rescue => e
-        logger.error "File could not be converted: #{e.message}"
-      end
-    # end
-
-    # TODO msword doc...
-  end
-
-  #
-  # Converts the cover page provided to a pdf
-  #
-  def cover_to_pdf(file, outdir)
-    kit = PDFKit.new(
-      read_file_to_str(file[:path]),
-      :page_size => 'A4',
-      :margin_top => "30mm", :margin_right => "30mm", :margin_bottom => "30mm", :margin_left => "30mm"
-      )
-    kit.stylesheets << Rails.root.join("vendor/assets/stylesheets/doubtfire-coverpage.css")
-    kit.to_file outdir
-  end
-
-  #
   # Read the file and return its contents as a string
   #
   def read_file_to_str(filename)
@@ -486,25 +312,6 @@ module FileHelper
       f.close unless f.nil?
     end
     result
-  end
-
-  #
-  # Aggregate a list of PDFs into a single PDF file
-  # - returns boolean indicating success
-  #
-  def aggregate(pdf_paths, final_pdf_path)
-    logger.debug "Trying to aggregate PDFs to #{final_pdf_path}"
-
-    did_compile = false
-    exec = "nice -n 10 pdftk #{pdf_paths.join ' '} cat output '#{final_pdf_path}' dont_ask compress"
-    Terminator.terminate 180 do
-      did_compile = system exec
-    end
-
-    if !did_compile
-      logger.error "Failed to aggregate PDFs to #{final_pdf_path}. Command was:\n\t#{exec}"
-    end
-    did_compile
   end
 
   def path_to_plagarism_html(match_link)
@@ -624,16 +431,9 @@ module FileHelper
   module_function :compress_image
   module_function :compress_pdf
   module_function :move_files
-  module_function :convert_files_to_pdf
   module_function :pdf_valid?
   module_function :copy_pdf
-  module_function :convert_to_pdf
-  module_function :code_to_pdf
-  module_function :img_to_pdf
-  module_function :doc_to_pdf
-  module_function :cover_to_pdf
   module_function :read_file_to_str
-  module_function :aggregate
   module_function :path_to_plagarism_html
   module_function :save_plagiarism_html
   module_function :delete_plagarism_html

@@ -825,6 +825,8 @@ class Task < ActiveRecord::Base
       when ['scss'].include?(extn) then 'scss'
       when ['json'].include?(extn) then 'json'
       when ['ts'].include?(extn) then 'ts'
+      when ['sql'].include?(extn) then 'sql'
+      when ['vb'].include?(extn) then 'vbnet'
       else 'c'
     end
   end
