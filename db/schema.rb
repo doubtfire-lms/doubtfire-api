@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20160527112010) do
+ActiveRecord::Schema.define(version: 20160528223143) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -92,7 +92,7 @@ ActiveRecord::Schema.define(version: 20160527112010) do
     t.integer "unit_id"
     t.integer "ilo_number"
     t.string  "name"
-    t.string  "description",  limit: 2048
+    t.string  "description",  limit: 4096
     t.string  "abbreviation"
   end
 
@@ -136,7 +136,7 @@ ActiveRecord::Schema.define(version: 20160527112010) do
     t.integer  "tutorial_id"
     t.integer  "user_id"
     t.integer  "grade",                                  default: 0
-    t.string   "grade_rationale",           limit: 2048
+    t.string   "grade_rationale",           limit: 4096
   end
 
   add_index "projects", ["enrolled"], name: "index_projects_on_enrolled", using: :btree
@@ -174,7 +174,7 @@ ActiveRecord::Schema.define(version: 20160527112010) do
   create_table "task_comments", force: true do |t|
     t.integer  "task_id",                 null: false
     t.integer  "user_id",                 null: false
-    t.string   "comment",    limit: 2048
+    t.string   "comment",    limit: 4096
     t.datetime "created_at",              null: false
   end
 
@@ -183,16 +183,16 @@ ActiveRecord::Schema.define(version: 20160527112010) do
   create_table "task_definitions", force: true do |t|
     t.integer  "unit_id"
     t.string   "name"
-    t.string   "description"
+    t.string   "description",             limit: 4096
     t.decimal  "weighting",                            precision: 10, scale: 0
     t.datetime "target_date",                                                                   null: false
     t.datetime "created_at",                                                                    null: false
     t.datetime "updated_at",                                                                    null: false
     t.string   "abbreviation"
-    t.string   "upload_requirements",     limit: 2048
+    t.string   "upload_requirements",     limit: 4096
     t.integer  "target_grade",                                                  default: 0
     t.boolean  "restrict_status_updates",                                       default: false
-    t.string   "plagiarism_checks",       limit: 2048
+    t.string   "plagiarism_checks",       limit: 4096
     t.string   "plagiarism_report_url"
     t.boolean  "plagiarism_updated",                                            default: false
     t.integer  "plagiarism_warn_pct",                                           default: 50
@@ -293,13 +293,13 @@ ActiveRecord::Schema.define(version: 20160527112010) do
 
   create_table "units", force: true do |t|
     t.string   "name"
-    t.string   "description"
+    t.string   "description",         limit: 4096
     t.datetime "start_date"
     t.datetime "end_date"
-    t.datetime "created_at",                         null: false
-    t.datetime "updated_at",                         null: false
+    t.datetime "created_at",                                      null: false
+    t.datetime "updated_at",                                      null: false
     t.string   "code"
-    t.boolean  "active",              default: true
+    t.boolean  "active",                           default: true
     t.datetime "last_plagarism_scan"
   end
 
