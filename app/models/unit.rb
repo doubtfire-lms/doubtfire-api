@@ -9,6 +9,7 @@ class Unit < ActiveRecord::Base
   include LogHelper
   include MimeCheckHelpers
 
+  validates_length_of :description, :maximum => 4095, :allow_blank => true
   #
   # Permissions around unit data
   #

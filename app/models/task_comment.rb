@@ -4,5 +4,5 @@ class TaskComment < ActiveRecord::Base
 
   validates :task, presence: true
   validates :user, presence: true
-  validates :comment, presence: true
+  validates_length_of :comment, :minimum => 1, :maximum => 4095, :allow_blank => false
 end

@@ -22,6 +22,7 @@ class Project < ActiveRecord::Base
   has_many :learning_outcome_task_links, through: :tasks
 
   validate :must_be_in_group_tutorials
+  validates_length_of :grade_rationale, :maximum => 4095, :allow_blank => true
 
   #
   # Permissions around project data
