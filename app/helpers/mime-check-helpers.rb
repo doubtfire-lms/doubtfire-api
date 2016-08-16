@@ -9,6 +9,9 @@ module MimeCheckHelpers
   end
 
   def ensure_csv!(file_path)
+    if file_path.is_a?(Tempfile)
+        file_path = file_path.path
+    end
     type = mime_type(file_path)
 
     # check mime is correct before uploading
