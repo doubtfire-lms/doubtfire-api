@@ -7,6 +7,7 @@ class LearningOutcome < ActiveRecord::Base
   has_many :related_task_definitions, -> { where("learning_outcome_task_links.task_id is NULL") },  through: :learning_outcome_task_links, source: :task_definition # only link staff relations
 
   validates_uniqueness_of :abbreviation, scope:  :unit_id   # outcome names within a unit must be unique
+  validates_length_of :description, :maximum => 4095, :allow_blank => true
 
   def self.csv_header
     ["unit_code", "ilo_number", "abbreviation", "name", "description"]

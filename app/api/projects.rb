@@ -121,7 +121,7 @@ module Api
 
         project.grade = params[:grade]
         project.grade_rationale = params[:grade_rationale]
-        project.save
+        project.save!
       elsif not params[:compile_portfolio].nil?
         if not authorise? current_user, project, :change
           error!({"error" => "You do not have permissions to change Project with id=#{params[:id]}" }, 403)

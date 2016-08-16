@@ -17,6 +17,10 @@ class TaskDefinition < ActiveRecord::Base
   validates :target_grade, inclusion: { in: 0..3, message: "%{value} is not a valid target grade" }
   validates :max_quality_pts, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 10, message: "must be between 0 and 10" }
 
+  validates_length_of :upload_requirements, :maximum => 4095, :allow_blank => true
+  validates_length_of :plagiarism_checks, :maximum => 4095, :allow_blank => true
+  validates_length_of :description, :maximum => 4095, :allow_blank => true
+
   after_create do |td|
     td.unit.update_project_stats
   end
