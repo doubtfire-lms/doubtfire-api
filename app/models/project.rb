@@ -148,7 +148,9 @@ class Project < ActiveRecord::Base
 
   def main_tutor
     if tutorial
-      tutorial.tutor
+      result = tutorial.tutor
+      result = main_convenor if result.nil?
+      result
     else
       main_convenor
     end
