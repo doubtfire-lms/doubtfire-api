@@ -228,23 +228,25 @@ class Unit < ActiveRecord::Base
 
   #
   # Imports users into a project from CSV file.
-  # Format: unit_code, Student ID,First Name,Surname,email,tutorial
-  #
+  # Format: Subject/Unit Code, Student ID,First Name, Surname, email, tutorial
+  # Expected columns: unit_code, username, first_name, last_name, email, tutorial
   def import_users_from_csv(file)
     tutorial_cache = {}
     success = []
     errors = []
     ignored = []
 
-    CSV.foreach(file) do |row|
+    CSV.foreach(file, headers: true) do |row|
       # Make sure we're not looking at the header or an empty line
-      next if row[0] =~ /(subject|unit)_code/
-      # next if row[5] !~ /^LA\d/
+      next if row['unit_code'] =~ /unit_code/
 
       begin
-        unit_code, username  = row[0..1]
-        first_name, last_name   = [row[2], row[3]].map{|name| name.titleize unless name.nil? }
-        email, tutorial_code    = row[4..5]
+        unit_code = row['unit_code']
+        username = row['username'].downcase
+        first_name = row['first_name'] == nil ? row['first_name'] : row['first_name'].titleize
+        last_name = row['last_name'] == nil ? row['last_name'] : row['last_name'].titleize
+        email = row['email']
+        tutorial_code = row['tutorial']
 
         if unit_code != code
           ignored << { row: row, message: "Invalid unit code. #{unit_code} does not match #{code}" }
