@@ -228,7 +228,7 @@ class Unit < ActiveRecord::Base
 
   #
   # Imports users into a project from CSV file.
-  # Format: Subject/Unit Code, Student ID,First Name, Surname, email, tutorial
+  # Format: Unit Code, Student ID,First Name, Surname, email, tutorial
   # Expected columns: unit_code, username, first_name, last_name, email, tutorial
   def import_users_from_csv(file)
     tutorial_cache = {}
@@ -236,9 +236,19 @@ class Unit < ActiveRecord::Base
     errors = []
     ignored = []
 
-    CSV.foreach(file, headers: true) do |row|
+    CSV.foreach(file, {
+        headers: true,
+        :header_converters => [lambda { |i| i.nil? ? '' : i }, :downcase, lambda { |hdr| hdr.strip unless hdr.nil?}],
+        :converters => [lambda { |i| i.nil? ? '' : i}, lambda{ |body| body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]
+    }) do |row|
       # Make sure we're not looking at the header or an empty line
       next if row['unit_code'] =~ /unit_code/
+
+      missing = missing_headers(row, ['unit_code', 'username', 'first_name', 'last_name', 'email', 'tutorial'])
+      if missing.count > 0
+        errors << { row: row, message: "Missing headers: #{missing.join(', ')}" }
+        next
+      end
 
       begin
         unit_code = row['unit_code']
