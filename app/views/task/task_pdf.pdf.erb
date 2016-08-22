@@ -94,7 +94,7 @@ No Tutor % Supervisor's Name
   <% end %>
 
   <% if file[:type] == 'code' %>
-    \inputminted[breaklines,linenos]{<%= Task.pygments_lang(File.extname(file[:path])[1..-1]) %>}{<%= file[:path] %>}
+    \inputminted[breaklines,linenos,breakanywhere,tabsize=4]{<%= Task.pygments_lang(File.extname(file[:path])[1..-1]) %>}{<%= file[:path] %>}
   <% end %>
 
   <% if file[:type] == 'document' %>
