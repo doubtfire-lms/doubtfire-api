@@ -695,6 +695,11 @@ class Unit < ActiveRecord::Base
     TaskDefinition.to_csv(task_definitions)
   end
 
+  def task_definitions_by_grade
+    # Need to search as relation is already ordered
+    TaskDefinition.where(unit_id: id).order("target_grade ASC, start_date ASC, abbreviation ASC")
+  end
+
   def task_completion_csv(options={})
     CSV.generate(options) do |csv|
       csv << [
@@ -704,12 +709,15 @@ class Unit < ActiveRecord::Base
         'Email',
         'Portfolio',
         'Tutorial',
-      ] + task_definitions.map{ |task_definition|
-        if task_definition.is_graded
-          [ task_definition.abbreviation, "#{task_definition.abbreviation} grade" ]
-        else
-          task_definition.abbreviation
-        end
+        'Tutor',
+      ] +
+      group_sets.map{ |gs| gs.name } +
+      task_definitions_by_grade.map{ |task_definition|
+        result = [ task_definition.abbreviation  ]
+        result << "#{task_definition.abbreviation} grade" if task_definition.is_graded?
+        result << "#{task_definition.abbreviation} stars" if task_definition.has_stars?
+        result << "#{task_definition.abbreviation} contribution" if task_definition.is_group_task?
+        result
       }.flatten
       active_projects.each do |project|
         csv << project.task_completion_csv

@@ -617,26 +617,41 @@ class Project < ActiveRecord::Base
     completed_tasks.sort{|a, b| a.completion_date <=> b.completion_date }.last
   end
 
-  def task_completion_csv(options={})
-    all_tasks = unit.task_definitions.order("task_definitions.start_date, task_definitions.abbreviation")
+  def task_completion_csv()
+    all_tasks = unit.task_definitions_by_grade
     [
       student.username,
       student.name,
-      target_grade,
+      target_grade_desc,
       student.email,
       portfolio_status,
-      if tutorial then tutorial.abbreviation else '' end
-    ] + all_tasks.map { |td|
-        task = tasks.where(task_definition_id: td.id).first
-        status = if task then task.task_status.name else TaskStatus.not_started.name end
-        grade = if task then task.grade_desc else nil end
+      if tutorial then tutorial.abbreviation else '' end,
+      main_tutor().name
+    ] +
+    unit.group_sets.map { |gs|
+      grp = group_for_groupset(gs)
+      if grp then grp.name else nil end
+    } +
+    all_tasks.map { |td|
+      task = tasks.where(task_definition_id: td.id).first
+      if task
+        status = task.task_status.name
+        grade = task.grade_desc
+        stars = task.quality_pts
+        people = task.contribution_pts
+      else
+        status = TaskStatus.not_started.name
+        grade = nil
+        stars = nil
+        people = nil
+      end
 
-        if td.is_graded
-          [status, grade]
-        else
-          status
-        end
-      }.flatten
+      result = [status]
+      result << grade if td.is_graded?
+      result << stars if td.has_stars?
+      result << people if td.is_group_task?
+      result
+    }.flatten
   end
 
   #

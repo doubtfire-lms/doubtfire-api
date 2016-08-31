@@ -827,7 +827,8 @@ class Task < ActiveRecord::Base
       when ['ts'].include?(extn) then 'ts'
       when ['sql'].include?(extn) then 'sql'
       when ['vb'].include?(extn) then 'vbnet'
-      else 'c'
+      when ['txt'].include?(extn) then 'text'
+      else 'text'
     end
   end
 

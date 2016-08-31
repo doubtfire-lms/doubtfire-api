@@ -279,6 +279,14 @@ class TaskDefinition < ActiveRecord::Base
     File.exists? unit.path_to_task_pdf(self)
   end
 
+  def is_graded?
+    is_graded
+  end
+
+  def has_stars?
+    max_quality_pts > 0
+  end
+
   def add_task_sheet (file)
     FileUtils.mv file, unit.path_to_task_pdf(self)
   end
