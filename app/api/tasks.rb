@@ -79,7 +79,8 @@ module Api
             tutorial: match_link.tutorial,
             html: File.read(output),
             lnk: (match_link.plagiarism_report_url if authorise? current_user, match_link.task, :view_plagiarism ),
-            pct: match_link.pct
+            pct: match_link.pct,
+            dismissed: match_link.dismissed
           },
           other_student: {
             username: "???",
@@ -88,7 +89,8 @@ module Api
             tutorial: match_link.other_tutorial,
             html: "<pre>???</pre>",
             lnk: "",
-            pct: other_match_link.pct
+            pct: other_match_link.pct,
+            dismissed: other_match_link.dismissed
           }
         }
       else
@@ -102,7 +104,8 @@ module Api
             tutorial: match_link.tutorial,
             html: File.read(output),
             lnk: (match_link.plagiarism_report_url if authorise? current_user, match_link.task, :view_plagiarism ),
-            pct: match_link.pct
+            pct: match_link.pct,
+            dismissed: match_link.dismissed
           },
           other_student: {
             username: match_link.other_student.username,
@@ -111,10 +114,47 @@ module Api
             tutorial: match_link.other_tutorial,
             html: File.read(other_output),
             lnk: (other_match_link.plagiarism_report_url if authorise? current_user, other_match_link.task, :view_plagiarism),
-            pct: other_match_link.pct
+            pct: other_match_link.pct,
+            dismissed: other_match_link.dismissed
           }
         }
       end
+    end
+
+    desc "Dismiss a similarity match for a given task"
+    params do
+      requires :dismissed, type: Boolean, desc: 'Should this similarity be dismissed?'
+      requires :other, type: Boolean, desc: 'This tasks match or its reverse?'
+    end
+    put '/tasks/:id/similarity/:count' do
+      if not authenticated?
+        error!({"error" => "Not authorised to access this task '#{params[:id]}'"}, 401)
+      end
+      task = Task.find(params[:id])
+
+      if not authorise? current_user, task, :delete_plagiarism
+        error!({"error" => "Not authorised to remove similarity for task '#{params[:id]}'"}, 401)
+      end
+
+      match = params[:count].to_i % task.similar_to_count
+      if match < 0
+        error!({"error" => "Invalid match sequence, must be 0 or larger"}, 403)
+      end
+
+      match_link = task.plagiarism_match_links.order("created_at DESC")[match]
+      return if match_link.nil?
+
+      if params[:other]
+        match_link = match_link.other_party
+      end
+
+      logger.info "#{current_user.username} changing plagiarism: setting dismissed for #{task.task_definition.abbreviation} by #{task.student.username} to #{params[:dismissed]}"
+
+      logger.debug "    plagiarism match link 1: #{match_link}"
+
+      match_link.dismissed = params[:dismissed]
+      match_link.save!
+      match_link.dismissed
     end
 
     desc "Update a task using its related project and task definition"

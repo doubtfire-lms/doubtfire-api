@@ -187,19 +187,19 @@ class Unit < ActiveRecord::Base
       end
 
       q.map { |t|
+        # puts "#{t.project_id} #{t.first_name} #{t.fail_count} Grade:#{t.grade} Count:#{task_count[t.grade]}"
+        fail_pct = (t.fail_count / task_count[t.target_grade]).signif(2)
+        do_not_resubmit_pct = (t.do_not_resubmit_count / task_count[t.target_grade]).signif(2)
+        redo_pct = (t.redo_count / task_count[t.target_grade]).signif(2)
+        need_help_pct = (t.need_help_count / task_count[t.target_grade]).signif(2)
+        working_on_it_pct = (t.working_on_it_count / task_count[t.target_grade]).signif(2)
+        fix_and_resubmit_pct = (t.fix_and_resubmit_count / task_count[t.target_grade]).signif(2)
+        ready_to_mark_pct = (t.ready_to_mark_count / task_count[t.target_grade]).signif(2)
+        discuss_pct = (t.discuss_count / task_count[t.target_grade]).signif(2)
+        demonstrate_pct = (t.demonstrate_count / task_count[t.target_grade]).signif(2)
+        complete_pct = (t.complete_count / task_count[t.target_grade]).signif(2)
 
-        fail_pct = (t.fail_count / task_count[t.grade]).signif(2)
-        do_not_resubmit_pct = (t.do_not_resubmit_count / task_count[t.grade]).signif(2)
-        redo_pct = (t.redo_count / task_count[t.grade]).signif(2)
-        need_help_pct = (t.need_help_count / task_count[t.grade]).signif(2)
-        working_on_it_pct = (t.working_on_it_count / task_count[t.grade]).signif(2)
-        fix_and_resubmit_pct = (t.fix_and_resubmit_count / task_count[t.grade]).signif(2)
-        ready_to_mark_pct = (t.ready_to_mark_count / task_count[t.grade]).signif(2)
-        discuss_pct = (t.discuss_count / task_count[t.grade]).signif(2)
-        demonstrate_pct = (t.demonstrate_count / task_count[t.grade]).signif(2)
-        complete_pct = (t.complete_count / task_count[t.grade]).signif(2)
-
-        not_started_pct = 1 - fail_pct - do_not_resubmit_pct - redo_pct - need_help_pct - working_on_it_pct - fix_and_resubmit_pct - ready_to_mark_pct - discuss_pct - demonstrate_pct - complete_pct
+        not_started_pct = (1 - fail_pct - do_not_resubmit_pct - redo_pct - need_help_pct - working_on_it_pct - fix_and_resubmit_pct - ready_to_mark_pct - discuss_pct - demonstrate_pct - complete_pct).signif(2)
 
         {
           project_id: t.project_id,

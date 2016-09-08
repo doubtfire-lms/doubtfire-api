@@ -22,7 +22,8 @@ class Task < ActiveRecord::Base
       :make_submission,
       :delete_other_comment,
       :delete_own_comment,
-      :view_plagiarism
+      :view_plagiarism,
+      :delete_plagiarism
     ]
     # What can convenors do with tasks?
     convenor_role_permissions = [
@@ -31,7 +32,8 @@ class Task < ActiveRecord::Base
       :make_submission,
       :delete_other_comment,
       :delete_own_comment,
-      :view_plagiarism
+      :view_plagiarism,
+      :delete_plagiarism
     ]
     # What can nil users do with tasks?
     nil_role_permissions = [
@@ -581,7 +583,7 @@ class Task < ActiveRecord::Base
   end
 
   def similar_to_count
-    current_plagiarism_match_links.count
+    plagiarism_match_links.count
   end
 
   def recalculate_max_similar_pct
