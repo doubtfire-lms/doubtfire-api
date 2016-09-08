@@ -994,6 +994,9 @@ class Unit < ActiveRecord::Base
     end # for each task definition where it needs to be updated
     update_student_max_pct_similar()
 
+    self.last_plagarism_scan = DateTime.now
+    self.save!
+
     self
   end
 
@@ -1023,7 +1026,7 @@ class Unit < ActiveRecord::Base
     end
 
     # check number of files, and they are new
-    if tasks_with_files.count > 1 && (tasks.where("tasks.file_uploaded_at > ?", last_plagarism_scan ).select { |t| t.has_pdf }.count > 0 || force )
+    if tasks_with_files.count > 1 && (tasks.where("tasks.file_uploaded_at > ?", last_plagarism_scan ).select { |t| t.has_pdf }.count > 0 || td.updated_at > last_plagarism_scan || force )
       td.plagiarism_checks.each do |check|
         next if check["type"].nil?
 
@@ -1063,7 +1066,7 @@ class Unit < ActiveRecord::Base
         logger.debug "Checking plagiarism for #{td.name} (id=#{td.id})"
         tasks = tasks_for_definition(td)
         tasks_with_files = tasks.select { |t| t.has_pdf }
-        if tasks_with_files.count > 1 && (tasks.where("tasks.file_uploaded_at > ?", last_plagarism_scan ).select { |t| t.has_pdf }.count > 0 || td.updated_at > last_plagarism_scan || force )
+        if tasks_with_files.count > 1 && ( tasks.where("tasks.file_uploaded_at > ?", last_plagarism_scan ).select { |t| t.has_pdf }.count > 0 || td.updated_at > last_plagarism_scan || force )
           # There are new tasks, check these
 
           logger.debug "Contacting MOSS for new checks"
