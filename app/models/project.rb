@@ -135,7 +135,8 @@ class Project < ActiveRecord::Base
   #
   def trigger_week_end( by_user )
     discuss_and_demonstrate_tasks.each{|task| task.trigger_transition(trigger: "complete", by_user: by_user, bulk: true, quality: task.quality_pts) }
-    calc_task_stats
+    #TODO: Remove once task_stats deleted
+    #calc_task_stats
   end
 
   def start
@@ -238,7 +239,8 @@ class Project < ActiveRecord::Base
 
   def target_grade=(value)
     self[:target_grade] = value
-    calc_task_stats
+    #TODO: Remove once task_stats deleted
+    # calc_task_stats
   end
 
   def calculate_progress
@@ -534,40 +536,35 @@ class Project < ActiveRecord::Base
     end
   end
 
+  def task_stats
+    task_count = unit.task_definitions.where("target_grade <= #{target_grade}").count + 0.0
+    task_count = 1.0 unless task_count > 1.0
+    tasks.
+      group("project_id").
+      select(
+        "project_id",
+        *TaskStatus.all.map { |s| "SUM(CASE WHEN tasks.task_status_id = #{s.id} THEN 1 ELSE 0 END) AS #{s.status_key}_count" }
+        ).
+      map { |t|
+        # puts "#{t.project_id} #{t.first_name} #{t.fail_count} Grade:#{t.grade} Count:#{task_count[t.grade]}"
+        fail_pct = (t.fail_count / task_count).signif(2)
+        do_not_resubmit_pct = (t.do_not_resubmit_count / task_count).signif(2)
+        redo_pct = (t.redo_count / task_count).signif(2)
+        need_help_pct = (t.need_help_count / task_count).signif(2)
+        working_on_it_pct = (t.working_on_it_count / task_count).signif(2)
+        fix_and_resubmit_pct = (t.fix_and_resubmit_count / task_count).signif(2)
+        ready_to_mark_pct = (t.ready_to_mark_count / task_count).signif(2)
+        discuss_pct = (t.discuss_count / task_count).signif(2)
+        demonstrate_pct = (t.demonstrate_count / task_count).signif(2)
+        complete_pct = (t.complete_count / task_count).signif(2)
+
+        not_started_pct = (1 - fail_pct - do_not_resubmit_pct - redo_pct - need_help_pct - working_on_it_pct - fix_and_resubmit_pct - ready_to_mark_pct - discuss_pct - demonstrate_pct - complete_pct).signif(2)
+
+        "#{fail_pct}|#{not_started_pct}|#{do_not_resubmit_pct}|#{redo_pct}|#{need_help_pct}|#{working_on_it_pct}|#{fix_and_resubmit_pct}|#{ready_to_mark_pct}|#{discuss_pct}|#{demonstrate_pct}|#{complete_pct}"
+      }.first
+  end
+
   def calc_task_stats ( reload_task = nil )
-    result = {
-      fail: 0.0,
-      not_started: 0.0,
-      do_not_resubmit: 0.0,
-      redo: 0.0,
-      need_help: 0.0,
-      working_on_it: 0.0,
-      fix_and_resubmit: 0.0,
-      ready_to_mark: 0.0,
-      discuss: 0.0,
-      demonstrate: 0.0,
-      complete: 0.0
-    }
-
-    if reload_task
-      assigned_tasks.each { |task|
-        if reload_task.id == task.id
-          task.reload
-        end
-      }
-    end
-
-    total = total_task_weight
-    assigned_task_defs.each { |td| result[:not_started] += td.weighting }
-    assigned_tasks.each { |task|
-      result[task.status] += task.task_definition.weighting
-      result[:not_started] -= task.task_definition.weighting
-    }
-    convert_hash_to_pct(result, total)
-
-    self.task_stats = "#{result[:fail]}|#{result[:not_started]}|#{result[:do_not_resubmit]}|#{result[:redo]}|#{result[:need_help]}|#{result[:working_on_it]}|#{result[:fix_and_resubmit]}|#{result[:ready_to_mark]}|#{result[:discuss]}|#{result[:demonstrate]}|#{result[:complete]}"
-
-    save
     self.task_stats
   end
 
@@ -855,14 +852,9 @@ EOF
     end
   end
 
-  def max_pct_copy
-    # tasks.sort { |t1, t2|  t1.pct_similar <=> t2.pct_similar }.last.pct_similar
-    max_pct_similar
-  end
-
   def recalculate_max_similar_pct
-    self.max_pct_similar = tasks.sort { |t1, t2|  t1.max_pct_similar <=> t2.max_pct_similar }.last.max_pct_similar
-    self.save
+    # self.max_pct_similar = tasks.sort { |t1, t2|  t1.max_pct_similar <=> t2.max_pct_similar }.last.max_pct_similar
+    # self.save
   end
 
   def matching_task(other_task)

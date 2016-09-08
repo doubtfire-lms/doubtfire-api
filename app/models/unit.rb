@@ -300,7 +300,8 @@ class Unit < ActiveRecord::Base
   end
 
   def update_project_stats
-    active_projects.each { |p| p.calc_task_stats }
+    #TODO: Remove once task_stats deleted
+    # active_projects.each { |p| p.calc_task_stats }
   end
 
   def tutorial_with_abbr(abbr)
@@ -898,10 +899,11 @@ class Unit < ActiveRecord::Base
   # Update the student's max_pct_similar for all of their tasks
   #
   def update_student_max_pct_similar()
-    projects.each do | p |
-      p.max_pct_similar = p.tasks.maximum(:max_pct_similar)
-      p.save
-    end
+    #TODO: Remove once max_pct_similar is deleted
+    # projects.each do | p |
+    #   p.max_pct_similar = p.tasks.maximum(:max_pct_similar)
+    #   p.save
+    # end
   end
 
   def create_plagiarism_link(t1, t2, match)
@@ -992,7 +994,9 @@ class Unit < ActiveRecord::Base
         end
       end # end of each result
     end # for each task definition where it needs to be updated
-    update_student_max_pct_similar()
+
+    #TODO: Remove once max_pct_similar is deleted
+    #update_student_max_pct_similar()
 
     self.last_plagarism_scan = DateTime.now
     self.save!
@@ -1114,7 +1118,6 @@ class Unit < ActiveRecord::Base
           end
         end
       end
-      update_student_max_pct_similar()
       self.last_plagarism_scan = DateTime.now
       self.save!
     ensure

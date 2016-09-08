@@ -25,45 +25,6 @@ class ShallowProjectSerializer < ActiveModel::Serializer
   # end
 end
 
-# Student project serializer is used with teaching staff
-class StudentProjectSerializer < ActiveModel::Serializer
-  attributes :project_id, :first_name, :last_name, :student_id, :student_email, :tutorial_id, :stats, :enrolled, :target_grade, :has_portfolio, :compile_portfolio, :max_pct_copy, :grade, :grade_rationale
-
-  def student_email
-    object.student.email
-  end
-
-  def project_id
-    object.id
-  end
-
-  def first_name
-    object.student.first_name
-  end
-
-  def last_name
-    object.student.last_name
-  end
-
-  def student_id
-    object.student.username
-  end
-
-  # def tasks_with_similarities
-  #   object.tasks.where("tasks.max_pct_similar > 0").count
-  # end
-
-  def stats
-    if object.task_stats.nil? || object.task_stats.empty?
-      object.update_task_stats
-    else
-      object.task_stats
-    end
-  end
-
-  # has_many :groups, serializer: GroupSerializer
-end
-
 class ProjectSerializer < ActiveModel::Serializer
   attributes :unit_id, :project_id, :student_id, :started, :stats, :student_name, :tutor_name, :tutorial_id, :burndown_chart_data, :enrolled, :target_grade, :portfolio_files, :compile_portfolio, :portfolio_available, :grade, :grade_rationale
 

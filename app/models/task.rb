@@ -369,7 +369,8 @@ class Task < ActiveRecord::Base
       end
     end
 
-    if not bulk then project.calc_task_stats(self) end
+    #TODO: Remove once task_stats deleted
+    # if not bulk then project.calc_task_stats(self) end
   end
 
   def grade_desc
@@ -591,10 +592,11 @@ class Task < ActiveRecord::Base
   end
 
   def recalculate_max_similar_pct
-    self.max_pct_similar = pct_similar()
-    self.save
-
-    project.recalculate_max_similar_pct()
+    #TODO: Remove once max_pct_similar is deleted
+    # self.max_pct_similar = pct_similar()
+    # self.save
+    #
+    # project.recalculate_max_similar_pct()
   end
 
   def name
