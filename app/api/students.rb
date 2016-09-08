@@ -19,13 +19,11 @@ module Api
       unit = Unit.find(params[:unit_id])
 
       if (authorise? current_user, unit, :get_students) || (authorise? current_user, User, :admin_units)
-        result = unit.students
-        
         if params[:all].nil? or ((not params[:all].nil?) and not params[:all])
-          result = result.where('enrolled = true')
+          result = unit.student_query(true)
+        else
+          result = unit.student_query(false)
         end
-
-        ActiveModel::ArraySerializer.new(result, each_serializer: StudentProjectSerializer)
       else
         error!({"error" => "Couldn't find Unit with id=#{params[:unit_id]}" }, 403)
       end

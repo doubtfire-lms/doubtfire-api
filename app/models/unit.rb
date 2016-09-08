@@ -139,6 +139,87 @@ class Unit < ActiveRecord::Base
     projects
   end
 
+  def student_query(limit_to_enrolled)
+    # Get the number of tasks for each grade... with 1 as minimum to avoid / 0
+    task_count = [0, 1, 2, 3].map { |e|
+        task_definitions.where("target_grade <= #{e}").count + 0.0
+     }. map { |e| if e == 0 then 1 else e end }
+
+    task_definitions.where
+    q = projects.
+      joins(:user).
+      joins(:tasks).
+      joins("LEFT OUTER JOIN plagiarism_match_links ON tasks.id = plagiarism_match_links.task_id" ).
+      group(
+          "projects.id",
+          "projects.target_grade",
+          "projects.enrolled",
+          "users.first_name",
+          "users.last_name",
+          "users.username",
+          "users.email",
+          "projects.tutorial_id",
+          "projects.portfolio_production_date",
+          "projects.compile_portfolio",
+          "projects.grade",
+          "projects.grade_rationale"
+          ).
+      select(
+          "projects.id AS project_id",
+          "projects.enrolled AS enrolled",
+          "users.first_name AS first_name",
+          "users.last_name AS last_name",
+          "users.username AS student_id",
+          "users.email AS student_email",
+          "projects.target_grade AS target_grade",
+          "projects.tutorial_id AS tutorial_id",
+          "projects.compile_portfolio AS compile_portfolio",
+          "projects.grade AS grade",
+          "projects.grade_rationale AS grade_rationale",
+          "projects.portfolio_production_date AS portfolio_production_date",
+          "MAX(CASE WHEN plagiarism_match_links.dismissed = FALSE THEN plagiarism_match_links.pct ELSE 0 END) AS plagiarism_match_links_max_pct",
+          *TaskStatus.all.map { |s| "SUM(CASE WHEN tasks.task_status_id = #{s.id} THEN 1 ELSE 0 END) AS #{s.status_key}_count" }
+          ).
+      order("users.first_name")
+
+      if limit_to_enrolled
+        q = q.where("projects.enrolled = TRUE")
+      end
+
+      q.map { |t|
+
+        fail_pct = (t.fail_count / task_count[t.grade]).signif(2)
+        do_not_resubmit_pct = (t.do_not_resubmit_count / task_count[t.grade]).signif(2)
+        redo_pct = (t.redo_count / task_count[t.grade]).signif(2)
+        need_help_pct = (t.need_help_count / task_count[t.grade]).signif(2)
+        working_on_it_pct = (t.working_on_it_count / task_count[t.grade]).signif(2)
+        fix_and_resubmit_pct = (t.fix_and_resubmit_count / task_count[t.grade]).signif(2)
+        ready_to_mark_pct = (t.ready_to_mark_count / task_count[t.grade]).signif(2)
+        discuss_pct = (t.discuss_count / task_count[t.grade]).signif(2)
+        demonstrate_pct = (t.demonstrate_count / task_count[t.grade]).signif(2)
+        complete_pct = (t.complete_count / task_count[t.grade]).signif(2)
+
+        not_started_pct = 1 - fail_pct - do_not_resubmit_pct - redo_pct - need_help_pct - working_on_it_pct - fix_and_resubmit_pct - ready_to_mark_pct - discuss_pct - demonstrate_pct - complete_pct
+
+        {
+          project_id: t.project_id,
+          enrolled: t.enrolled,
+          first_name: t.first_name,
+          last_name: t.last_name,
+          student_id: t.student_id,
+          student_email: t.student_email,
+          target_grade: t.target_grade,
+          tutorial_id: t.tutorial_id,
+          compile_portfolio: t.compile_portfolio,
+          grade: t.grade,
+          grade_rationale: t.grade_rationale,
+          max_pct_copy: t.plagiarism_match_links_max_pct,
+          has_portfolio: ! t.portfolio_production_date.nil?,
+          stats: "#{fail_pct}|#{not_started_pct}|#{do_not_resubmit_pct}|#{redo_pct}|#{need_help_pct}|#{working_on_it_pct}|#{fix_and_resubmit_pct}|#{ready_to_mark_pct}|#{discuss_pct}|#{demonstrate_pct}|#{complete_pct}"
+        }
+      }
+  end
+
   #
   # Last date/time of scan
   #
@@ -827,25 +908,36 @@ class Unit < ActiveRecord::Base
     plk1 = PlagiarismMatchLink.where(task_id: t1.id, other_task_id: t2.id).first
     plk2 = PlagiarismMatchLink.where(task_id: t2.id, other_task_id: t1.id).first
 
-    # Delete old links between tasks
-    plk1.destroy unless plk1.nil? ## will delete its pair
-    plk2.destroy unless plk2.nil?
+    if plk1.nil? or plk2.nil?
+        # Delete old links between tasks
+        plk1.destroy unless plk1.nil? ## will delete its pair
+        plk2.destroy unless plk2.nil?
 
-    plk1 = PlagiarismMatchLink.create do | pml |
-      pml.task = t1
-      pml.other_task = t2
-      pml.plagiarism_report_url = match[0][:url]
+        plk1 = PlagiarismMatchLink.create { |plm|
+          plm.task = t1
+          plm.other_task = t2
+          plm.dismissed = false
+          plm.pct = match[0][:pct]
+        }
 
-      pml.pct = match[0][:pct]
+        plk2 = PlagiarismMatchLink.create { |plm|
+          plm.task = t2
+          plm.other_task = t1
+          plm.dismissed = false
+          plm.pct = match[1][:pct]
+        }
+    else
+        plk1.dismissed = false unless plk1.pct != match[0][:pct]
+        plk2.dismissed = false unless plk2.pct != match[1][:pct]
+        plk1.pct = match[0][:pct]
+        plk2.pct = match[1][:pct]
     end
 
-    plk2 = PlagiarismMatchLink.create do | pml |
-      pml.task = t2
-      pml.other_task = t1
-      pml.plagiarism_report_url = match[1][:url]
+    plk1.plagiarism_report_url = match[0][:url]
+    plk2.plagiarism_report_url = match[1][:url]
 
-      pml.pct = match[1][:pct]
-    end
+    plk1.save!
+    plk2.save!
 
     FileHelper.save_plagiarism_html(plk1, match[0][:html])
     FileHelper.save_plagiarism_html(plk2, match[1][:html])
@@ -857,8 +949,6 @@ class Unit < ActiveRecord::Base
     task_definitions.where(plagiarism_updated: true).each do |td|
       td.plagiarism_updated = false
       td.save
-
-      td.clear_related_plagiarism
 
       # Get results
       url = td.plagiarism_report_url

@@ -34,7 +34,7 @@ class PlagiarismMatchLink < ActiveRecord::Base
   #
   after_save do | match_link |
     task = match_link.task
-    if task.max_pct_similar < match_link.pct
+    if (not match_link.dismissed) && task.max_pct_similar < match_link.pct
       task.max_pct_similar = match_link.pct
       task.save
     end

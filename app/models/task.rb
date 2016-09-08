@@ -100,6 +100,10 @@ class Task < ActiveRecord::Base
     end
   end
 
+  def current_plagiarism_match_links
+    plagiarism_match_links.where(dismissed: false)
+  end
+
   def self.for_unit(unit_id)
     Task.joins(:project).where("projects.unit_id = :unit_id", unit_id: unit_id)
   end
@@ -569,15 +573,15 @@ class Task < ActiveRecord::Base
 
   # Indicates what is the largest % similarity is for this task
   def pct_similar
-    if plagiarism_match_links.order(pct: :desc).first.nil?
+    if current_plagiarism_match_links.order(pct: :desc).first.nil?
       0
     else
-      plagiarism_match_links.order(pct: :desc).first.pct
+      current_plagiarism_match_links.order(pct: :desc).first.pct
     end
   end
 
   def similar_to_count
-    plagiarism_match_links.count
+    current_plagiarism_match_links.count
   end
 
   def recalculate_max_similar_pct
