@@ -586,6 +586,10 @@ class Task < ActiveRecord::Base
     plagiarism_match_links.count
   end
 
+  def similar_to_dismissed_count
+    plagiarism_match_links.where("dismissed = TRUE").count
+  end
+
   def recalculate_max_similar_pct
     self.max_pct_similar = pct_similar()
     self.save

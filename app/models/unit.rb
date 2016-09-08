@@ -927,8 +927,11 @@ class Unit < ActiveRecord::Base
           plm.pct = match[1][:pct]
         }
     else
-        plk1.dismissed = false unless plk1.pct != match[0][:pct]
-        plk2.dismissed = false unless plk2.pct != match[1][:pct]
+      # puts "#{plk1.pct} != #{match[0][:pct]}, #{plk1.pct != match[0][:pct]}"
+      # puts "#{plk1.dismissed}"
+        plk1.dismissed = false unless plk1.pct == match[0][:pct]
+        plk2.dismissed = false unless plk2.pct == match[1][:pct]
+        # puts "#{plk1.dismissed}"
         plk1.pct = match[0][:pct]
         plk2.pct = match[1][:pct]
     end
