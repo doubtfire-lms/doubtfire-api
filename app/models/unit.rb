@@ -148,7 +148,7 @@ class Unit < ActiveRecord::Base
     task_definitions.where
     q = projects.
       joins(:user).
-      joins(:tasks).
+      joins("LEFT OUTER JOIN tasks ON projects.id = tasks.project_id" ).
       joins("LEFT OUTER JOIN plagiarism_match_links ON tasks.id = plagiarism_match_links.task_id" ).
       group(
           "projects.id",
