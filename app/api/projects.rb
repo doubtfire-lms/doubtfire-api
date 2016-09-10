@@ -154,7 +154,7 @@ module Api
         if proj.nil?
           error!({"error" => "Error adding student to unit" }, 403)
         else
-          StudentProjectSerializer.new proj
+          proj
         end
       else
         error!({"error" => "Couldn't find Unit with id=#{params[:unit_id]}" }, 403)
