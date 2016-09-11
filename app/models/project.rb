@@ -539,7 +539,7 @@ class Project < ActiveRecord::Base
   def task_stats
     task_count = unit.task_definitions.where("target_grade <= #{target_grade}").count + 0.0
     task_count = 1.0 unless task_count > 1.0
-    tasks.
+    result = tasks.
       group("project_id").
       select(
         "project_id",
@@ -562,6 +562,12 @@ class Project < ActiveRecord::Base
 
         "#{fail_pct}|#{not_started_pct}|#{do_not_resubmit_pct}|#{redo_pct}|#{need_help_pct}|#{working_on_it_pct}|#{fix_and_resubmit_pct}|#{ready_to_mark_pct}|#{discuss_pct}|#{demonstrate_pct}|#{complete_pct}"
       }.first
+
+      if result.nil?
+        "0|1|0|0|0|0|0|0|0|0|0"
+      else
+        result
+      end
   end
 
   def calc_task_stats ( reload_task = nil )
