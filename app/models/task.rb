@@ -359,6 +359,8 @@ class Task < ActiveRecord::Base
               assess TaskStatus.discuss, by_user
           end
         end
+
+        return true
     end
 
     # if this is a status change of a group task -- and not already doing group update
