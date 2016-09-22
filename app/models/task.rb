@@ -359,8 +359,6 @@ class Task < ActiveRecord::Base
               assess TaskStatus.discuss, by_user
           end
         end
-
-        return true
     end
 
     # if this is a status change of a group task -- and not already doing group update
@@ -373,6 +371,7 @@ class Task < ActiveRecord::Base
 
     #TODO: Remove once task_stats deleted
     # if not bulk then project.calc_task_stats(self) end
+    return true
   end
 
   def grade_desc
