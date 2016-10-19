@@ -1537,6 +1537,25 @@ class Unit < ActiveRecord::Base
     end
   end
 
+  # Used to calculate the number of assessment each tutor has performed
+  def tutor_assessment_csv(options={})
+    CSV.generate(options) do |csv|
+      csv << [
+        'Username',
+        'Tutor Name',
+        'Total Tasks Assessed'
+      ]
+
+      tasks.
+        joins( project: [ { tutorial: { unit_role: :user } } ] ).
+        select( "users.username", "users.first_name", "users.last_name", "SUM(times_assessed) AS total" ).
+        group("users.username", "users.first_name", "users.last_name").
+        each { |r|
+          csv << [ r.username, "#{r.first_name} #{r.last_name}", r.total ]
+        }
+    end
+  end
+
   #----------------------------------------------------------------------------
   # Task updates from offline download/upload
   #----------------------------------------------------------------------------

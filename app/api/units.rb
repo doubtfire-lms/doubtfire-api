@@ -273,6 +273,20 @@ module Api
 
       unit.student_task_completion_stats
     end
+
+    desc "Download stats related to the number of tasks assessed by each tutor"
+    get '/csv/units/:id/tutor_assessments' do
+      unit = Unit.find(params[:id])
+      if not authorise? current_user, unit, :download_stats
+        error!({"error" => "Not authorised to download stats of statistics for #{unit.code}"}, 403)
+      end
+
+      content_type "application/octet-stream"
+      header['Content-Disposition'] = "attachment; filename=#{unit.code}-TutorAssessments.csv "
+      env['api.format'] = :binary
+
+      unit.tutor_assessment_csv
+    end
   end
 
 
