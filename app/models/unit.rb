@@ -860,6 +860,45 @@ class Unit < ActiveRecord::Base
   end
 
   #
+  # Create a temp zip file with all submissions for a task
+  #
+  def get_task_submissions_zip(current_user, td)
+    # Get a temp file path
+    filename = FileHelper.sanitized_filename("submissions-#{self.code}-#{td.abbreviation}-#{current_user.username}.zip")
+    result = Tempfile.new(filename)
+
+    tasks_with_files = td.related_tasks_with_files
+
+    # Create a new zip
+    Zip::File.open(result.path, Zip::File::CREATE) do | zip |
+      Dir.mktmpdir do |dir|
+        # Extract all of the files...
+        tasks_with_files.each do | task |
+
+          if td.is_group_task? && task.group
+            path_part = "#{task.group.name}"
+          else
+            path_part = "#{task.student.username}"
+          end
+
+          task.extract_file_from_done(dir, "*",
+            lambda { | task, to_path, name | File.join("#{to_path}", path_part, "#{name}") }
+          ) # call
+
+          FileUtils.mv Dir.glob("#{dir}/#{path_part}/#{task.id}/*"), File.join(dir, "#{path_part}")
+          FileUtils.rm_r "#{dir}/#{path_part}/#{task.id}"
+        end # each task
+
+        # Copy files into zip
+        zip_root_path = "#{td.abbreviation}-submissions"
+        FileHelper.recursively_add_dir_to_zip(zip, dir, zip_root_path)
+      end # mktmpdir
+    end #zip
+    result
+  end
+
+
+  #
   # Create an ILO
   #
   def add_ilo(name, desc, abbr)
@@ -1010,24 +1049,7 @@ class Unit < ActiveRecord::Base
   #
   def add_done_files_for_plagiarism_check_of(td, tmp_path, force, to_check)
     tasks = tasks_for_definition(td)
-    tasks_with_files = tasks.select { |t| t.has_pdf }
-
-    if td.group_set
-      # group task so only select one member of each group
-      seen_groups = []
-
-      tasks_with_files = tasks_with_files.select do |t|
-        if t.group.nil?
-          result = false
-        else
-          result = ! seen_groups.include?(t.group)
-          if result
-            seen_groups << t.group
-          end
-        end
-        result
-      end
-    end
+    tasks_with_files = td.related_tasks_with_files
 
     # check number of files, and they are new
     if tasks_with_files.count > 1 && (tasks.where("tasks.file_uploaded_at > ?", last_plagarism_scan ).select { |t| t.has_pdf }.count > 0 || td.updated_at > last_plagarism_scan || force )
@@ -1041,7 +1063,7 @@ class Unit < ActiveRecord::Base
         # -- each pattern
         check["pattern"].split("|").each do |pattern|
           tasks_with_files.each do |t|
-            FileHelper.extract_file_from_done(t, tmp_path, pattern, lambda { | task, to_path, name |  File.join("#{to_path}", "#{t.student.username}", "#{name}") } )
+            t.extract_file_from_done(tmp_path, pattern, lambda { | task, to_path, name |  File.join("#{to_path}", "#{t.student.username}", "#{name}") } )
           end
           MossRuby.add_file(to_check, "**/#{pattern}")
         end
