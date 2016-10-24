@@ -1617,7 +1617,7 @@ class Unit < ActiveRecord::Base
       # Add individual tasks...
       tasks.select { |t| t.group_submission.nil? }.each  do | task |
         # Skip tasks that do not yet have a PDF generated
-        next if task.processing_pdf
+        next if task.processing_pdf?
 
         # Add to the template entry string
         student = task.project.student
@@ -1644,7 +1644,7 @@ class Unit < ActiveRecord::Base
       tasks.select { |t| t.group_submission }.group_by { |t| t.group_submission } .each do | subm, tasks |
         task = tasks.first
         # Skip tasks that do not yet have a PDF generated
-        next if task.processing_pdf
+        next if task.processing_pdf?
 
         # Add to the template entry string
         grp = task.group

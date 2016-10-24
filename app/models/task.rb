@@ -126,8 +126,12 @@ class Task < ActiveRecord::Base
     task_definition.upload_requirements
   end
 
-  def processing_pdf
-    File.exists? File.join(FileHelper.student_work_dir(:new), "#{id}")
+  def processing_pdf?
+    if group_task? && group_submission
+      File.exists? File.join(FileHelper.student_work_dir(:new), "#{group_submission.submitter_task.id}")
+    else
+      File.exists? File.join(FileHelper.student_work_dir(:new), "#{id}")
+    end
     #portfolio_evidence == nil && ready_to_mark?
   end
 
@@ -961,6 +965,10 @@ class Task < ActiveRecord::Base
       ui.error!({"error" => "You must be in a group to submit this task."}, 403)
     end
 
+    # Ensure not already submitted if group task
+    if group_task? && group_submission && group_submission.processing_pdf? && group_submission.submitter_task != self
+      ui.error!({"error" => "#{group_submission.submitter_task.project.student.name} has just submitted this task. Only one team member needs to submit this task, so check back soon to see what was uploaded."}, 403)
+    end
     # file.key            = "file0"
     # file.name           = front end name for file
     # file.tempfile.path  = actual file dir

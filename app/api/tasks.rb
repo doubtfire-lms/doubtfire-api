@@ -235,7 +235,7 @@ module Api
         # return the details as json
         {
           has_pdf: task.has_pdf,
-          processing_pdf: task.processing_pdf
+          processing_pdf: task.processing_pdf?
         }
       else
         {
