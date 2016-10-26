@@ -147,12 +147,13 @@ class TaskDefinition < ActiveRecord::Base
       end
     end
 
-    # Reset the tasks % similar
-    logger.debug "Clearing old task percent similar"
-    tasks.where("tasks.max_pct_similar > 0").each do |t|
-      t.max_pct_similar = 0
-      t.save
-    end
+    #TODO: Remove once max_pct_similar is deleted
+    # # Reset the tasks % similar
+    # logger.debug "Clearing old task percent similar"
+    # tasks.where("tasks.max_pct_similar > 0").each do |t|
+    #   t.max_pct_similar = 0
+    #   t.save
+    # end
   end
 
   def self.to_csv(task_definitions, options = {})
@@ -301,5 +302,28 @@ class TaskDefinition < ActiveRecord::Base
 
   def task_resources
     unit.path_to_task_resources(self)
+  end
+
+  def related_tasks_with_files (consolidate_groups = true)
+    tasks_with_files = tasks.select { |t| t.has_pdf }
+
+    if is_group_task? && consolidate_groups
+      # group task so only select one member of each group
+      seen_groups = []
+
+      tasks_with_files = tasks_with_files.select do |t|
+        if t.group.nil?
+          result = false
+        else
+          result = ! seen_groups.include?(t.group)
+          if result
+            seen_groups << t.group
+          end
+        end
+        result
+      end
+    end
+
+    tasks_with_files
   end
 end

@@ -154,7 +154,22 @@ module Api
         if proj.nil?
           error!({"error" => "Error adding student to unit" }, 403)
         else
-          StudentProjectSerializer.new proj
+          {
+            project_id: proj.id,
+            enrolled: proj.enrolled,
+            first_name: proj.student.first_name,
+            last_name: proj.student.last_name,
+            student_id: proj.student.username,
+            student_email: proj.student.email,
+            target_grade: proj.target_grade,
+            tutorial_id: proj.tutorial_id,
+            compile_portfolio: false,
+            grade: proj.grade,
+            grade_rationale: proj.grade_rationale,
+            max_pct_copy: 0,
+            has_portfolio: false,
+            stats: "0|1|0|0|0|0|0|0|0|0|0"
+          }
         end
       else
         error!({"error" => "Couldn't find Unit with id=#{params[:unit_id]}" }, 403)

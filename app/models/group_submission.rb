@@ -50,4 +50,8 @@ class GroupSubmission < ActiveRecord::Base
 
     tasks.first
   end
+
+  def processing_pdf?
+    submitter_task.processing_pdf?
+  end
 end

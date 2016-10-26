@@ -139,6 +139,87 @@ class Unit < ActiveRecord::Base
     projects
   end
 
+  def student_query(limit_to_enrolled)
+    # Get the number of tasks for each grade... with 1 as minimum to avoid / 0
+    task_count = [0, 1, 2, 3].map { |e|
+        task_definitions.where("target_grade <= #{e}").count + 0.0
+     }. map { |e| if e == 0 then 1 else e end }
+
+    task_definitions.where
+    q = projects.
+      joins(:user).
+      joins("LEFT OUTER JOIN tasks ON projects.id = tasks.project_id" ).
+      joins("LEFT OUTER JOIN plagiarism_match_links ON tasks.id = plagiarism_match_links.task_id" ).
+      group(
+          "projects.id",
+          "projects.target_grade",
+          "projects.enrolled",
+          "users.first_name",
+          "users.last_name",
+          "users.username",
+          "users.email",
+          "projects.tutorial_id",
+          "projects.portfolio_production_date",
+          "projects.compile_portfolio",
+          "projects.grade",
+          "projects.grade_rationale"
+          ).
+      select(
+          "projects.id AS project_id",
+          "projects.enrolled AS enrolled",
+          "users.first_name AS first_name",
+          "users.last_name AS last_name",
+          "users.username AS student_id",
+          "users.email AS student_email",
+          "projects.target_grade AS target_grade",
+          "projects.tutorial_id AS tutorial_id",
+          "projects.compile_portfolio AS compile_portfolio",
+          "projects.grade AS grade",
+          "projects.grade_rationale AS grade_rationale",
+          "projects.portfolio_production_date AS portfolio_production_date",
+          "MAX(CASE WHEN plagiarism_match_links.dismissed = FALSE THEN plagiarism_match_links.pct ELSE 0 END) AS plagiarism_match_links_max_pct",
+          *TaskStatus.all.map { |s| "SUM(CASE WHEN tasks.task_status_id = #{s.id} THEN 1 ELSE 0 END) AS #{s.status_key}_count" }
+          ).
+      order("users.first_name")
+
+      if limit_to_enrolled
+        q = q.where("projects.enrolled = TRUE")
+      end
+
+      q.map { |t|
+        # puts "#{t.project_id} #{t.first_name} #{t.fail_count} Grade:#{t.grade} Count:#{task_count[t.grade]}"
+        fail_pct = (t.fail_count / task_count[t.target_grade]).signif(2)
+        do_not_resubmit_pct = (t.do_not_resubmit_count / task_count[t.target_grade]).signif(2)
+        redo_pct = (t.redo_count / task_count[t.target_grade]).signif(2)
+        need_help_pct = (t.need_help_count / task_count[t.target_grade]).signif(2)
+        working_on_it_pct = (t.working_on_it_count / task_count[t.target_grade]).signif(2)
+        fix_and_resubmit_pct = (t.fix_and_resubmit_count / task_count[t.target_grade]).signif(2)
+        ready_to_mark_pct = (t.ready_to_mark_count / task_count[t.target_grade]).signif(2)
+        discuss_pct = (t.discuss_count / task_count[t.target_grade]).signif(2)
+        demonstrate_pct = (t.demonstrate_count / task_count[t.target_grade]).signif(2)
+        complete_pct = (t.complete_count / task_count[t.target_grade]).signif(2)
+
+        not_started_pct = (1 - fail_pct - do_not_resubmit_pct - redo_pct - need_help_pct - working_on_it_pct - fix_and_resubmit_pct - ready_to_mark_pct - discuss_pct - demonstrate_pct - complete_pct).signif(2)
+
+        {
+          project_id: t.project_id,
+          enrolled: t.enrolled,
+          first_name: t.first_name,
+          last_name: t.last_name,
+          student_id: t.student_id,
+          student_email: t.student_email,
+          target_grade: t.target_grade,
+          tutorial_id: t.tutorial_id,
+          compile_portfolio: t.compile_portfolio,
+          grade: t.grade,
+          grade_rationale: t.grade_rationale,
+          max_pct_copy: t.plagiarism_match_links_max_pct,
+          has_portfolio: ! t.portfolio_production_date.nil?,
+          stats: "#{fail_pct}|#{not_started_pct}|#{do_not_resubmit_pct}|#{redo_pct}|#{need_help_pct}|#{working_on_it_pct}|#{fix_and_resubmit_pct}|#{ready_to_mark_pct}|#{discuss_pct}|#{demonstrate_pct}|#{complete_pct}"
+        }
+      }
+  end
+
   #
   # Last date/time of scan
   #
@@ -219,7 +300,8 @@ class Unit < ActiveRecord::Base
   end
 
   def update_project_stats
-    active_projects.each { |p| p.calc_task_stats }
+    #TODO: Remove once task_stats deleted
+    # active_projects.each { |p| p.calc_task_stats }
   end
 
   def tutorial_with_abbr(abbr)
@@ -778,6 +860,45 @@ class Unit < ActiveRecord::Base
   end
 
   #
+  # Create a temp zip file with all submissions for a task
+  #
+  def get_task_submissions_zip(current_user, td)
+    # Get a temp file path
+    filename = FileHelper.sanitized_filename("submissions-#{self.code}-#{td.abbreviation}-#{current_user.username}.zip")
+    result = Tempfile.new(filename)
+
+    tasks_with_files = td.related_tasks_with_files
+
+    # Create a new zip
+    Zip::File.open(result.path, Zip::File::CREATE) do | zip |
+      Dir.mktmpdir do |dir|
+        # Extract all of the files...
+        tasks_with_files.each do | task |
+
+          if td.is_group_task? && task.group
+            path_part = "#{task.group.name}"
+          else
+            path_part = "#{task.student.username}"
+          end
+
+          task.extract_file_from_done(dir, "*",
+            lambda { | task, to_path, name | File.join("#{to_path}", path_part, "#{name}") }
+          ) # call
+
+          FileUtils.mv Dir.glob("#{dir}/#{path_part}/#{task.id}/*"), File.join(dir, "#{path_part}")
+          FileUtils.rm_r "#{dir}/#{path_part}/#{task.id}"
+        end # each task
+
+        # Copy files into zip
+        zip_root_path = "#{td.abbreviation}-submissions"
+        FileHelper.recursively_add_dir_to_zip(zip, dir, zip_root_path)
+      end # mktmpdir
+    end #zip
+    result
+  end
+
+
+  #
   # Create an ILO
   #
   def add_ilo(name, desc, abbr)
@@ -817,35 +938,50 @@ class Unit < ActiveRecord::Base
   # Update the student's max_pct_similar for all of their tasks
   #
   def update_student_max_pct_similar()
-    projects.each do | p |
-      p.max_pct_similar = p.tasks.maximum(:max_pct_similar)
-      p.save
-    end
+    #TODO: Remove once max_pct_similar is deleted
+    # projects.each do | p |
+    #   p.max_pct_similar = p.tasks.maximum(:max_pct_similar)
+    #   p.save
+    # end
   end
 
   def create_plagiarism_link(t1, t2, match)
     plk1 = PlagiarismMatchLink.where(task_id: t1.id, other_task_id: t2.id).first
     plk2 = PlagiarismMatchLink.where(task_id: t2.id, other_task_id: t1.id).first
 
-    # Delete old links between tasks
-    plk1.destroy unless plk1.nil? ## will delete its pair
-    plk2.destroy unless plk2.nil?
+    if plk1.nil? or plk2.nil?
+        # Delete old links between tasks
+        plk1.destroy unless plk1.nil? ## will delete its pair
+        plk2.destroy unless plk2.nil?
 
-    plk1 = PlagiarismMatchLink.create do | pml |
-      pml.task = t1
-      pml.other_task = t2
-      pml.plagiarism_report_url = match[0][:url]
+        plk1 = PlagiarismMatchLink.create { |plm|
+          plm.task = t1
+          plm.other_task = t2
+          plm.dismissed = false
+          plm.pct = match[0][:pct]
+        }
 
-      pml.pct = match[0][:pct]
+        plk2 = PlagiarismMatchLink.create { |plm|
+          plm.task = t2
+          plm.other_task = t1
+          plm.dismissed = false
+          plm.pct = match[1][:pct]
+        }
+    else
+      # puts "#{plk1.pct} != #{match[0][:pct]}, #{plk1.pct != match[0][:pct]}"
+      # puts "#{plk1.dismissed}"
+        plk1.dismissed = false unless plk1.pct == match[0][:pct]
+        plk2.dismissed = false unless plk2.pct == match[1][:pct]
+        # puts "#{plk1.dismissed}"
+        plk1.pct = match[0][:pct]
+        plk2.pct = match[1][:pct]
     end
 
-    plk2 = PlagiarismMatchLink.create do | pml |
-      pml.task = t2
-      pml.other_task = t1
-      pml.plagiarism_report_url = match[1][:url]
+    plk1.plagiarism_report_url = match[0][:url]
+    plk2.plagiarism_report_url = match[1][:url]
 
-      pml.pct = match[1][:pct]
-    end
+    plk1.save!
+    plk2.save!
 
     FileHelper.save_plagiarism_html(plk1, match[0][:html])
     FileHelper.save_plagiarism_html(plk2, match[1][:html])
@@ -857,8 +993,6 @@ class Unit < ActiveRecord::Base
     task_definitions.where(plagiarism_updated: true).each do |td|
       td.plagiarism_updated = false
       td.save
-
-      td.clear_related_plagiarism
 
       # Get results
       url = td.plagiarism_report_url
@@ -899,7 +1033,12 @@ class Unit < ActiveRecord::Base
         end
       end # end of each result
     end # for each task definition where it needs to be updated
-    update_student_max_pct_similar()
+
+    #TODO: Remove once max_pct_similar is deleted
+    #update_student_max_pct_similar()
+
+    self.last_plagarism_scan = DateTime.now
+    self.save!
 
     self
   end
@@ -910,27 +1049,10 @@ class Unit < ActiveRecord::Base
   #
   def add_done_files_for_plagiarism_check_of(td, tmp_path, force, to_check)
     tasks = tasks_for_definition(td)
-    tasks_with_files = tasks.select { |t| t.has_pdf }
-
-    if td.group_set
-      # group task so only select one member of each group
-      seen_groups = []
-
-      tasks_with_files = tasks_with_files.select do |t|
-        if t.group.nil?
-          result = false
-        else
-          result = ! seen_groups.include?(t.group)
-          if result
-            seen_groups << t.group
-          end
-        end
-        result
-      end
-    end
+    tasks_with_files = td.related_tasks_with_files
 
     # check number of files, and they are new
-    if tasks_with_files.count > 1 && (tasks.where("tasks.file_uploaded_at > ?", last_plagarism_scan ).select { |t| t.has_pdf }.count > 0 || force )
+    if tasks_with_files.count > 1 && (tasks.where("tasks.file_uploaded_at > ?", last_plagarism_scan ).select { |t| t.has_pdf }.count > 0 || td.updated_at > last_plagarism_scan || force )
       td.plagiarism_checks.each do |check|
         next if check["type"].nil?
 
@@ -941,7 +1063,7 @@ class Unit < ActiveRecord::Base
         # -- each pattern
         check["pattern"].split("|").each do |pattern|
           tasks_with_files.each do |t|
-            FileHelper.extract_file_from_done(t, tmp_path, pattern, lambda { | task, to_path, name |  File.join("#{to_path}", "#{t.student.username}", "#{name}") } )
+            t.extract_file_from_done(tmp_path, pattern, lambda { | task, to_path, name |  File.join("#{to_path}", "#{t.student.username}", "#{name}") } )
           end
           MossRuby.add_file(to_check, "**/#{pattern}")
         end
@@ -970,7 +1092,7 @@ class Unit < ActiveRecord::Base
         logger.debug "Checking plagiarism for #{td.name} (id=#{td.id})"
         tasks = tasks_for_definition(td)
         tasks_with_files = tasks.select { |t| t.has_pdf }
-        if tasks_with_files.count > 1 && (tasks.where("tasks.file_uploaded_at > ?", last_plagarism_scan ).select { |t| t.has_pdf }.count > 0 || td.updated_at > last_plagarism_scan || force )
+        if tasks_with_files.count > 1 && ( tasks.where("tasks.file_uploaded_at > ?", last_plagarism_scan ).select { |t| t.has_pdf }.count > 0 || td.updated_at > last_plagarism_scan || force )
           # There are new tasks, check these
 
           logger.debug "Contacting MOSS for new checks"
@@ -1018,7 +1140,6 @@ class Unit < ActiveRecord::Base
           end
         end
       end
-      update_student_max_pct_similar()
       self.last_plagarism_scan = DateTime.now
       self.save!
     ensure
@@ -1423,6 +1544,25 @@ class Unit < ActiveRecord::Base
     end
   end
 
+  # Used to calculate the number of assessment each tutor has performed
+  def tutor_assessment_csv(options={})
+    CSV.generate(options) do |csv|
+      csv << [
+        'Username',
+        'Tutor Name',
+        'Total Tasks Assessed'
+      ]
+
+      tasks.
+        joins( project: [ { tutorial: { unit_role: :user } } ] ).
+        select( "users.username", "users.first_name", "users.last_name", "SUM(times_assessed) AS total" ).
+        group("users.username", "users.first_name", "users.last_name").
+        each { |r|
+          csv << [ r.username, "#{r.first_name} #{r.last_name}", r.total ]
+        }
+    end
+  end
+
   #----------------------------------------------------------------------------
   # Task updates from offline download/upload
   #----------------------------------------------------------------------------
@@ -1462,7 +1602,7 @@ class Unit < ActiveRecord::Base
       # Add individual tasks...
       tasks.select { |t| t.group_submission.nil? }.each  do | task |
         # Skip tasks that do not yet have a PDF generated
-        next if task.processing_pdf
+        next if task.processing_pdf?
 
         # Add to the template entry string
         student = task.project.student
@@ -1489,7 +1629,7 @@ class Unit < ActiveRecord::Base
       tasks.select { |t| t.group_submission }.group_by { |t| t.group_submission } .each do | subm, tasks |
         task = tasks.first
         # Skip tasks that do not yet have a PDF generated
-        next if task.processing_pdf
+        next if task.processing_pdf?
 
         # Add to the template entry string
         grp = task.group

@@ -22,7 +22,8 @@ class Task < ActiveRecord::Base
       :make_submission,
       :delete_other_comment,
       :delete_own_comment,
-      :view_plagiarism
+      :view_plagiarism,
+      :delete_plagiarism
     ]
     # What can convenors do with tasks?
     convenor_role_permissions = [
@@ -31,7 +32,8 @@ class Task < ActiveRecord::Base
       :make_submission,
       :delete_other_comment,
       :delete_own_comment,
-      :view_plagiarism
+      :view_plagiarism,
+      :delete_plagiarism
     ]
     # What can nil users do with tasks?
     nil_role_permissions = [
@@ -100,6 +102,10 @@ class Task < ActiveRecord::Base
     end
   end
 
+  def current_plagiarism_match_links
+    plagiarism_match_links.where(dismissed: false)
+  end
+
   def self.for_unit(unit_id)
     Task.joins(:project).where("projects.unit_id = :unit_id", unit_id: unit_id)
   end
@@ -120,8 +126,12 @@ class Task < ActiveRecord::Base
     task_definition.upload_requirements
   end
 
-  def processing_pdf
-    File.exists? File.join(FileHelper.student_work_dir(:new), "#{id}")
+  def processing_pdf?
+    if group_task? && group_submission
+      File.exists? File.join(FileHelper.student_work_dir(:new), "#{group_submission.submitter_task.id}")
+    else
+      File.exists? File.join(FileHelper.student_work_dir(:new), "#{id}")
+    end
     #portfolio_evidence == nil && ready_to_mark?
   end
 
@@ -363,7 +373,9 @@ class Task < ActiveRecord::Base
       end
     end
 
-    if not bulk then project.calc_task_stats(self) end
+    #TODO: Remove once task_stats deleted
+    # if not bulk then project.calc_task_stats(self) end
+    return true
   end
 
   def grade_desc
@@ -569,10 +581,10 @@ class Task < ActiveRecord::Base
 
   # Indicates what is the largest % similarity is for this task
   def pct_similar
-    if plagiarism_match_links.order(pct: :desc).first.nil?
+    if current_plagiarism_match_links.order(pct: :desc).first.nil?
       0
     else
-      plagiarism_match_links.order(pct: :desc).first.pct
+      current_plagiarism_match_links.order(pct: :desc).first.pct
     end
   end
 
@@ -580,11 +592,16 @@ class Task < ActiveRecord::Base
     plagiarism_match_links.count
   end
 
-  def recalculate_max_similar_pct
-    self.max_pct_similar = pct_similar()
-    self.save
+  def similar_to_dismissed_count
+    plagiarism_match_links.where("dismissed = TRUE").count
+  end
 
-    project.recalculate_max_similar_pct()
+  def recalculate_max_similar_pct
+    #TODO: Remove once max_pct_similar is deleted
+    # self.max_pct_similar = pct_similar()
+    # self.save
+    #
+    # project.recalculate_max_similar_pct()
   end
 
   def name
@@ -948,6 +965,10 @@ class Task < ActiveRecord::Base
       ui.error!({"error" => "You must be in a group to submit this task."}, 403)
     end
 
+    # Ensure not already submitted if group task
+    if group_task? && group_submission && group_submission.processing_pdf? && group_submission.submitter_task != self
+      ui.error!({"error" => "#{group_submission.submitter_task.project.student.name} has just submitted this task. Only one team member needs to submit this task, so check back soon to see what was uploaded."}, 403)
+    end
     # file.key            = "file0"
     # file.name           = front end name for file
     # file.tempfile.path  = actual file dir

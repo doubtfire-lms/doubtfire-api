@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20160528223143) do
+ActiveRecord::Schema.define(version: 20160529012853) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -114,6 +114,7 @@ ActiveRecord::Schema.define(version: 20160528223143) do
     t.datetime "created_at"
     t.datetime "updated_at"
     t.string   "plagiarism_report_url", limit: 255
+    t.boolean  "dismissed",             default: false
   end
 
   add_index "plagiarism_match_links", ["other_task_id"], name: "index_plagiarism_match_links_on_other_task_id", using: :btree
@@ -251,9 +252,8 @@ ActiveRecord::Schema.define(version: 20160528223143) do
     t.datetime "submission_date"
     t.datetime "assessment_date"
     t.integer  "grade"
-    t.integer  "times_submitted",                  default: 0
-    t.integer  "contribution_pts",                 default: 3
-    t.integer  "quality_pts",                      default: 0
+    t.integer  "contribution_pts",     default: 3
+    t.integer  "quality_pts",          default: 0
   end
 
   add_index "tasks", ["group_submission_id"], name: "index_tasks_on_group_submission_id", using: :btree

@@ -393,34 +393,40 @@ module FileHelper
     FileUtils.rm_rf(task_dir)
   end
 
+  def write_entries_to_zip(entries, disk_root_path, zip_root_path, path, zip)
+    entries.each do |e|
+      # puts "Adding entry #{e}"
+      file_path = path == "" ? e : File.join(path, e)
+      zip_file_path = zip_root_path == "" ? file_path : File.join(zip_root_path, file_path)
+      disk_file_path = File.join(disk_root_path, file_path)
+
+      if File.directory? disk_file_path
+        # puts "Making dir: #{zip_file_path} for #{disk_file_path}"
+        zip.mkdir(zip_file_path)
+        subdir = (Dir.entries(disk_file_path) - %w(. ..))
+        # puts "subdir: #{subdir}"
+        write_entries_to_zip(subdir, disk_root_path, zip_root_path, file_path, zip)
+      else
+        # puts "Adding file: #{disk_file_path} -- #{File.exists? disk_file_path}"
+        zip.get_output_stream(zip_file_path) do |f|
+          f.puts(File.open(disk_file_path, 'rb').read)
+        end
+      end
+    end
+  end
+
+  def recursively_add_dir_to_zip(zip, dir, zip_root_path)
+    entries = Dir.entries(dir) - %w(. ..)
+    zip.mkdir(zip_root_path)
+    write_entries_to_zip(entries, dir, zip_root_path, "", zip)
+  end
+
   #
   # Extract the files from the zip file for this tasks, and replace in new so that it is created
   #
   def move_compressed_task_to_new(task)
     # student_work_dir(:new, task) # create task dir
-    extract_file_from_done task, student_work_dir(:new), "*", lambda { | task, to_path, name |  "#{to_path}#{name}" }
-  end
-
-  #
-  # Extract files matching a pattern from the
-  #
-  def extract_file_from_done(task, to_path, pattern, name_fn)
-    zip_file = zip_file_path_for_done_task(task)
-    return false if (zip_file.nil?) ||  (not File.exists? zip_file)
-
-    Zip::File.open(zip_file) do |zip|
-      # Extract folders
-      zip.each do |entry|
-        # Extract to file/directory/symlink
-        logger.debug "Extract files from done is extracting #{entry.name}"
-        if entry.name_is_directory?
-          entry.extract( name_fn.call(task, to_path, entry.name) )  { true }
-        end
-      end
-      zip.glob("**/#{pattern}").each do |entry|
-        entry.extract( name_fn.call(task, to_path, entry.name) ) { true }
-      end
-    end
+    task.extract_file_from_done student_work_dir(:new), "*", lambda { | task, to_path, name |  "#{to_path}#{name}" }
   end
 
   # Export functions as module functions
@@ -445,5 +451,6 @@ module FileHelper
   module_function :zip_file_path_for_done_task
   module_function :compress_done_files
   module_function :move_compressed_task_to_new
-  module_function :extract_file_from_done
+  module_function :recursively_add_dir_to_zip
+  module_function :write_entries_to_zip
 end

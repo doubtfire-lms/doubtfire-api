@@ -70,7 +70,7 @@ module Api
         student = task.project.student
         unit = task.project.unit
 
-        if evidence_loc.nil? || task.processing_pdf
+        if evidence_loc.nil? || task.processing_pdf?
           evidence_loc = Rails.root.join("public", "resources", "FileNotFound.pdf")
           header['Content-Disposition'] = "attachment; filename=FileNotFound.pdf"
         else
