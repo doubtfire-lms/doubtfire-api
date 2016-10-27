@@ -610,7 +610,12 @@ class Task < ActiveRecord::Base
 
   def student_work_dir(type, create = true)
     if group_task?
-      FileHelper.student_group_work_dir(type, group_submission, group_submission.submitter_task, create)
+      # New submissions need to use the path of this task
+      if type == :new
+        FileHelper.student_group_work_dir(type, group_submission, self, create)
+      else
+        FileHelper.student_group_work_dir(type, group_submission, group_submission.submitter_task, create)
+      end
     else
       FileHelper.student_work_dir(type, self, create)
     end
@@ -653,6 +658,10 @@ class Task < ActiveRecord::Base
   def compress_new_to_done()
     task_dir = student_work_dir(:new, false)
     begin
+      # Ensure that this task is the submitter task for a  group_task... otherwise
+      # remove this submission
+      raise "Multiple team member submissions received at the same time. Please ensure that only one member submits the task." if group_task? && self != group_submission.submitter_task
+
       zip_file = zip_file_path_for_done_task()
       return if zip_file.nil? || (not Dir.exists? task_dir)
 
