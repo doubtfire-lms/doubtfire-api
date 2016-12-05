@@ -3,7 +3,7 @@ require 'task_serializer'
 
 module Api
   class Tasks < Grape::API
-    helpers AuthHelpers
+    helpers AuthenticationHelpers
     helpers AuthorisationHelpers
 
     before do

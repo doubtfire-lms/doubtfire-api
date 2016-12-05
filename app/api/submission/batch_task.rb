@@ -5,7 +5,7 @@ module Api
   module Submission
     class BatchTask < Grape::API
       helpers GenerateHelpers
-      helpers AuthHelpers
+      helpers AuthenticationHelpers
       helpers AuthorisationHelpers
 
       before do
