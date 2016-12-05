@@ -545,7 +545,7 @@ rake --tasks
 
 PDF generation requires [LaTeX](https://en.wikipedia.org/wiki/LaTeX) to be installed. If you do not install LaTeX and execute the `submission:generate_pdfs` task, you will encounter errors.
 
-Install LaTeX on your platform before running this task.
+Install LaTeX on your platform before running this task. We suggest using [TeXLive](https://www.tug.org/texlive/) to install LaTeX. Please ensure you download and install a TeXLive distribution **from 2016 onwards**.
 
 ### Installing LaTeX on OS X
 
