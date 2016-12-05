@@ -21,13 +21,13 @@ group :development, :replica do
   gem 'thin'
 end
 
-group :test do
-  gem 'rspec-rails', '~> 3'
-  gem 'factory_girl_rails'
-  gem 'minitest-rails'
-  gem 'minitest-hyper'
+group :development, :test do
   gem 'database_cleaner'
+  gem 'factory_girl_rails'
+  gem 'minitest-around'
+  gem 'minitest-hyper'
   gem 'minitest-osx'
+  gem 'minitest-rails'
 end
 
 group :production do
