@@ -225,15 +225,14 @@ class User < ActiveRecord::Base
   end
 
   def self.default
-    user = self.new
-
-    user.username           = "username"
-    user.first_name         = "First"
-    user.last_name          = "Last"
-    user.email              = "XXXXXXX@swin.edu.au"
-    user.nickname           = "Nickname"
-    user.role_id            = Role.student_id
-
+    user = new
+    institution_email_domain = Doubtfire::Application.config.institution[:domain]
+    user.username   = 'username'
+    user.first_name = 'First'
+    user.last_name  = 'Last'
+    user.email      = "XXXXXXX@#{institution_email_domain}"
+    user.nickname   = 'Nickname'
+    user.role_id    = Role.student_id
     user
   end
 
