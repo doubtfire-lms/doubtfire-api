@@ -90,7 +90,23 @@ You will also need to install the Python `pygments` package:
 $ sudo easy_install Pygments
 ```
 
-#### 5. Install Doubtfire API dependencies
+#### 5. Install DSTIL dotfiles
+
+Comply with [DSTIL](https://github.com/dstil) best practices using DSTIL's [dotfiles](https://github.com/dstil/dotfiles) repo. Run the following command to install DSTIL's dotfiles.
+
+```
+$ curl -s https://raw.githubusercontent.com/dstil/dotfiles/master/bootstrap | bash
+```
+
+Restart your terminal so that you can run `dstil`:
+
+```
+$ exec $SHELL
+$ which dstil
+dstil: aliased to /Users/Fred/.dstil/current/sources/1/files/labcheck
+```
+
+#### 6. Install Doubtfire API dependencies
 
 Clone project and change your working directory to the api:
 
@@ -105,7 +121,7 @@ Set up [overcommit](https://github.com/brigade/overcommit) and install hooks:
 $ gem install overcommit
 $ rbenv rehash
 $ overcommit --install
-$ overcommit --sign
+$ dstil --sign
 ```
 
 Then install Doubtfire API dependencies using [bundler](http://bundler.io):
@@ -113,7 +129,8 @@ Then install Doubtfire API dependencies using [bundler](http://bundler.io):
 ```
 $ gem install bundler
 $ rbenv rehash
-$ bundle install --without production ```
+$ bundle install --without production
+```
 
 ##### Bundle resolutions
 
@@ -209,7 +226,7 @@ $ bundle config build.ruby-filemagic --with-magic-include=/usr/local/include --w
 
 Then try installing dependencies again.
 
-#### 6. Create and populate Doubtfire development databases
+#### 7. Create and populate Doubtfire development databases
 
 Whilst still in the Doubtfire API project root, execute:
 
@@ -218,7 +235,7 @@ $ rake db:create
 $ rake db:populate
 ```
 
-#### 7. Get it up and running!
+#### 8. Get it up and running!
 
 Run the Rails server and check the API is up by viewing Grape Swagger documentation:
 
@@ -304,7 +321,23 @@ $ sudo apt-get install ghostscript \
                        python-pygments
 ```
 
-#### 5. Install Doubtfire API dependencies
+#### 5. Install DSTIL dotfiles
+
+Comply with [DSTIL](https://github.com/dstil) best practices using DSTIL's [dotfiles](https://github.com/dstil/dotfiles) repo. Run the following command to install DSTIL's dotfiles.
+
+```
+$ curl -s https://raw.githubusercontent.com/dstil/dotfiles/master/bootstrap | bash
+```
+
+Restart your terminal so that you can run `dstil`:
+
+```
+$ exec $SHELL
+$ which dstil
+dstil: aliased to /Users/Fred/.dstil/current/sources/1/files/labcheck
+```
+
+#### 6. Install Doubtfire API dependencies
 
 Clone project and change your working directory to the api:
 
@@ -319,7 +352,7 @@ Set up [overcommit](https://github.com/brigade/overcommit) and install hooks:
 $ gem install overcommit
 $ rbenv rehash
 $ overcommit --install
-$ overcommit --sign
+$ dstil --sign
 ```
 
 Then install Doubtfire API dependencies using [bundler](http://bundler.io):
@@ -327,7 +360,7 @@ Then install Doubtfire API dependencies using [bundler](http://bundler.io):
 ```
 $ gem install bundler
 $ rbenv rehash
-$ bundle install --without production replica
+$ bundle install --without production
 ```
 
 ##### Bundle resolutions
@@ -361,7 +394,7 @@ $ bundle config build.ruby-filemagic --with-magic-include=/usr/local/include --w
 
 Then try installing dependencies again.
 
-#### 6. Create and populate Doubtfire development databases
+#### 7. Create and populate Doubtfire development databases
 
 Whilst still in the Doubtfire API project root, execute:
 
@@ -370,7 +403,7 @@ $ rake db:create
 $ rake db:populate
 ```
 
-#### 7. Get it up and running!
+#### 8. Get it up and running!
 
 Run the Rails server and check the API is up by viewing Grape Swagger documentation:
 
