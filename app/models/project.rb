@@ -777,10 +777,11 @@ class Project < ActiveRecord::Base
     ]
 
     ordered_tasks = tasks.joins(:task_definition).order("task_definitions.target_date, task_definitions.abbreviation").select{|task| task.task_definition.target_grade <= target_grade }
+    host = Doubtfire::Application.config.institution[:host]
     coverpage_html = <<EOF
 <html>
   <head>
-    <link rel='stylesheet' type='text/css' href='https://doubtfire.ict.swin.edu.au/assets/doubtfire.css'>
+    <link rel='stylesheet' type='text/css' href='https://#{host}/assets/doubtfire.css'>
   </head>
   <body>
     <h2>
