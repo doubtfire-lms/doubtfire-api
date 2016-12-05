@@ -99,13 +99,27 @@ $ git clone https://github.com/doubtfire-lms/doubtfire-api.git
 $ cd ./doubtfire-api
 ```
 
+Comply with [DSTIL](https://github.com/dstil) best practices using DSTIL's [dotfiles](https://github.com/dstil/dotfiles) repo. Run the following command to install DSTIL's dotfiles.
+
+```
+$ curl -s https://raw.githubusercontent.com/dstil/dotfiles/master/bootstrap | bash
+```
+
+Restart your terminal so that you can run `dstil`:
+
+```
+$ exec $SHELL
+$ which dstil
+dstil: aliased to /Users/Fred/.dstil/current/sources/1/files/labcheck
+```
+
 Set up [overcommit](https://github.com/brigade/overcommit) and install hooks:
 
 ```
 $ gem install overcommit
 $ rbenv rehash
 $ overcommit --install
-$ overcommit --sign
+$ dstil --sign
 ```
 
 Then install Doubtfire API dependencies using [bundler](http://bundler.io):
@@ -113,7 +127,8 @@ Then install Doubtfire API dependencies using [bundler](http://bundler.io):
 ```
 $ gem install bundler
 $ rbenv rehash
-$ bundle install --without production ```
+$ bundle install --without production
+```
 
 ##### Bundle resolutions
 
@@ -313,13 +328,27 @@ $ git clone https://github.com/doubtfire-lms/doubtfire-api.git
 $ cd ./doubtfire-api
 ```
 
+Comply with [DSTIL](https://github.com/dstil) best practices using DSTIL's [dotfiles](https://github.com/dstil/dotfiles) repo. Run the following command to install DSTIL's dotfiles.
+
+```
+$ curl -s https://raw.githubusercontent.com/dstil/dotfiles/master/bootstrap | bash
+```
+
+Restart your terminal so that you can run `dstil`:
+
+```
+$ exec $SHELL
+$ which dstil
+dstil: aliased to /Users/Fred/.dstil/current/sources/1/files/labcheck
+```
+
 Set up [overcommit](https://github.com/brigade/overcommit) and install hooks:
 
 ```
 $ gem install overcommit
 $ rbenv rehash
 $ overcommit --install
-$ overcommit --sign
+$ dstil --sign
 ```
 
 Then install Doubtfire API dependencies using [bundler](http://bundler.io):
@@ -327,7 +356,7 @@ Then install Doubtfire API dependencies using [bundler](http://bundler.io):
 ```
 $ gem install bundler
 $ rbenv rehash
-$ bundle install --without production replica
+$ bundle install --without production
 ```
 
 ##### Bundle resolutions
