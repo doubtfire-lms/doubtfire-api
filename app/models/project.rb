@@ -926,12 +926,11 @@ EOF
       @files = project.portfolio_files
       @base_path = project.portfolio_temp_path
       @image_path = Rails.root.join("public", "assets", "images")
-
       @ordered_tasks = project.tasks.joins(:task_definition).order("task_definitions.start_date, task_definitions.abbreviation").where("task_definitions.target_grade <= #{project.target_grade}")
-
       @portfolio_tasks = project.portfolio_tasks
       @task_defs = project.unit.task_definitions.order(:start_date)
       @outcomes = project.unit.learning_outcomes.order(:ilo_number)
+      @institution_name = Doubtfire::Application.config.institution[:name]
     end
 
     def make_pdf()

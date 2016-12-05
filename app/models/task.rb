@@ -816,7 +816,8 @@ class Task < ActiveRecord::Base
       @task = task
       @files = task.in_process_files_for_task
       @base_path = task.student_work_dir(:in_process, false)
-      @image_path = Rails.root.join("public", "assets", "images")
+      @image_path = Rails.root.join('public', 'assets', 'images')
+      @institution_name = Doubtfire::Application.config.institution[:name]
     end
 
     def make_pdf()
