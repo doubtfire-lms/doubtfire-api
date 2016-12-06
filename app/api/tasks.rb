@@ -111,7 +111,7 @@ module Api
         other_student_hash[:name]      = match_link.other_student.name
         other_student_hash[:tutor]     = match_link.other_tutor.name
         other_student_hash[:tutorial]  = match_link.other_tutorial
-        other_student_hash[:tml]       = File.read(other_output)
+        other_student_hash[:html]      = File.read(other_output)
         other_student_hash[:url]       = other_student_url
         other_student_hash[:pct]       = other_match_link.pct
         other_student_hash[:dismissed] = other_match_link.dismissed
