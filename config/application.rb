@@ -17,7 +17,7 @@ module Doubtfire
     # Localization
     config.i18n.enforce_available_locales = true
     # Institution load
-    config.institution = YAML.load_file "#{Rails.root}/config/institution.yml"
+    config.institution = YAML.load_file("#{Rails.root}/config/institution.yml").with_indifferent_access
     # Ensure that auth tokens do not appear in log files
     config.filter_parameters += %i(
       auth_token
