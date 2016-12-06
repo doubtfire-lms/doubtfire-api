@@ -226,7 +226,7 @@ class User < ActiveRecord::Base
 
   def self.default
     user = new
-    institution_email_domain = Doubtfire::Application.config.institution[:domain]
+    institution_email_domain = Doubtfire::Application.config.institution[:email_domain]
     user.username   = 'username'
     user.first_name = 'First'
     user.last_name  = 'Last'

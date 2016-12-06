@@ -37,7 +37,7 @@ module Api
 
       # User lookup
       username = username.downcase
-      institution_email_domain = Doubtfire::Application.config.institution[:domain]
+      institution_email_domain = Doubtfire::Application.config.institution[:email_domain]
       user = User.find_or_create_by(username: username) do |new_user|
         new_user.first_name = 'First Name'
         new_user.last_name  = 'Surname'

@@ -1,6 +1,6 @@
 class ConvenorContactMailer < ActionMailer::Base
   def request_project_membership(user, convenor, unit, first_name, last_name)
-    institution_email_domain = Doubtfire::Application.config.institution[:domain]
+    institution_email_domain = Doubtfire::Application.config.institution[:email_domain]
     admin_emails = User.admins.map(&:email)
     user_email = "#{user.username}@#{institution_email_domain}"
     mail to: admin_emails,
