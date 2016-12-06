@@ -10,6 +10,20 @@ class UnitsTest < ActiveSupport::TestCase
     Rails.application
   end
 
+  # WIP
+  def test_task_get
+    # The GET we are testing
+    get with_auth_token '/api/tasks?unit_id=1'
+    expected_data = Unit.first.student_tasks.where('task_status_id > ?', 1)
+
+    last_response_body.each_with_index do |r, i|
+      puts r
+      puts expected_data[i].as_json
+      assert_json_matches_model r, expected_data[i].as_json, ['id', 'tutorial_id', 'task_definition_id', 'status']
+    end
+  end
+
+
   # --------------------------------------------------------------------------- #
   # --- Endpoint testing for:
   # ------- /api/units.json
