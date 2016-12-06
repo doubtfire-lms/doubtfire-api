@@ -20,6 +20,7 @@ spec/reports
 
 config/initializers/pdfkit.rb
 config/institution.yml
+config/ldap.yml
 student_work/
 
 .DS_Store
