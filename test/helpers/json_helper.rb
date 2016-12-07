@@ -5,6 +5,8 @@ module TestHelpers
   # JSON Helpers
   #
   module JsonHelper
+    module_function
+
     #
     # POSTs a hash data as JSON with content-type "application/json"
     #
@@ -54,12 +56,5 @@ module TestHelpers
     def assert_json_equal(lhs, rhs)
       assert_equal json_hashed(lhs), json_hashed(rhs)
     end
-
-    module_function :assert_json_matches_model
-    module_function :post_json
-    module_function :put_json
-    module_function :last_response_body
-    module_function :json_hashed
-    module_function :assert_json_equal
   end
 end
