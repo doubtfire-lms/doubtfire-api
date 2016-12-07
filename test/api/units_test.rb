@@ -10,20 +10,6 @@ class UnitsTest < ActiveSupport::TestCase
     Rails.application
   end
 
-  # WIP
-  def test_task_get
-    # The GET we are testing
-    get with_auth_token '/api/tasks?unit_id=1'
-    expected_data = Unit.first.student_tasks.where('task_status_id > ?', 1)
-
-    last_response_body.each_with_index do |r, i|
-      puts r
-      puts expected_data[i].as_json
-      assert_json_matches_model r, expected_data[i].as_json, ['id', 'tutorial_id', 'task_definition_id', 'status']
-    end
-  end
-
-
   # --------------------------------------------------------------------------- #
   # --- Endpoint testing for:
   # ------- /api/units.json
@@ -34,7 +20,6 @@ class UnitsTest < ActiveSupport::TestCase
 
   # Test POST for creating new unit
   def test_units_post
-
     data_to_post = add_auth_token({
       unit: {
         name: "Intro to Social Skills",
@@ -60,47 +45,6 @@ class UnitsTest < ActiveSupport::TestCase
     assert_equal unit_count + 1, Unit.all.count
     assert_equal expected_unit[:name], Unit.last.name
   end
-
-  # Test POST for adding a tutorial to a unit
-  def test_units_post_tutorial
-
-  data_to_post = add_auth_token({
-    tutorial: {
-      day: "Monday",
-      time: "2016-05-14T10:00:00+10:00",
-      location: "The Moon",
-      abbrev: "Boss Mode Unlocked",
-      tutor_username: "rwilson"
-      },
-    })
-    post_json '/api/units/1/tutorials.json', data_to_post
-
-    # tutor_count = Unit.all.length
-
-    # Let us add a tutorial to the first unit, which is Introduction to Programming (id 1)
-    # post  '/api/units/1/tutorials.json',
-    #       '{"tutorial":'                                    +
-    #         '{'                                             +
-    #         '"day":"Monday",'                               +
-    #         '"time":"2016-05-14T10:00:00+10:00",'           +
-    #         '"location":"The Moon",'                        +
-    #         '"abbrev":"Boss Mode Unlocked",'                +
-    #         '"tutor_username":"rwilson"'                    +
-    #         '},'                                            +
-    #       '"auth_token":' + '"' + @auth_token + '"'         +
-    #       '}', "CONTENT_TYPE" => 'application/json'
-
-    # puts last_response_body
-
-    # # Check to see if the unit's name matches what was expected
-    # assert_equal last_response_body['name'], 'Intro to Social Skills'
-    # # Check to see if the unit's code matches what was expected
-    # assert_equal last_response_body['code'], 'JRRW40003'
-    # # Check to see if the unit's stat date matches what was expected
-    # assert_equal last_response_body['start_date'], '2016-05-14T00:00:00.000Z'
-    # # Check to see if the unit's end date matches what was expected
-    # assert_equal last_response_body['end_date'], '2017-05-14T00:00:00.000Z'
-  end
   # End POST tests
   # --------------------------------------------------------------------------- #
 
@@ -110,7 +54,7 @@ class UnitsTest < ActiveSupport::TestCase
   # Test GET for getting all units
   def test_units_get
     # The GET we are testing
-    get with_auth_token "/api/units.json"
+    get with_auth_token '/api/units'
 
     actual_unit = last_response_body[0]
     expected_unit = Unit.first
@@ -131,10 +75,8 @@ class UnitsTest < ActiveSupport::TestCase
 
   # Test GET for getting a specific unit by id
   def test_units_get_by_id
-    # Get response back from getting a unit by id
-
     # Test getting the first unit with id of 1
-    get with_auth_token "/api/units/1.json"
+    get with_auth_token '/api/units/1'
 
     actual_unit = last_response_body
     expected_unit = Unit.find(1)
@@ -147,7 +89,7 @@ class UnitsTest < ActiveSupport::TestCase
 
     # Get response back from getting a unit by id
     # Test getting the first unit with id of 2
-    get with_auth_token "/api/units/2.json"
+    get with_auth_token '/api/units/2'
 
     actual_unit = last_response_body
     expected_unit = Unit.find(2)
