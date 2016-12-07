@@ -252,7 +252,7 @@ Devise.setup do |config|
   # ==> JWT OmniAuth
   # Devise method for JWT
   if Doubtfire::Application.config.devise_auth_method == :jwt
-    df_host = Doubtfire::Application.config.institution.host
+    df_host = Doubtfire::Application.config.institution[:host]
     secret_key_jwt = Doubtfire::Application.secrets.secret_key_jwt
     config.omniauth :jwt,
                     secret_key_jwt,
