@@ -250,4 +250,25 @@ Devise.setup do |config|
   # When using omniauth, Devise cannot automatically set Omniauth path,
   # so you need to do it manually. For the users scope, it would be:
   # config.omniauth_path_prefix = "/my_engine/users/auth"
+
+  # ==> JWT OmniAuth
+  # Devise method for JWT
+  if Doubtfire::Application.config.devise_auth_method == :jwt
+    df_host = Doubtfire::Application.config.institution.host
+    secret_key_jwt = Doubtfire::Application.secrets.secret_key_jwt
+    config.omniauth :jwt,
+                    secret_key_jwt,
+                    auth_url: "https://#{df_host}/auth",
+                    required_claims: %w(iss jti nbf exp typ aud sub),
+                    info_map: { email: 'mail', name: 'cn' },
+                    uid_claim: 'mail',
+                    valid_within: 60,
+                    params_key: 'assertion',
+                    # user_claims_key: 'your_providers_super_custom_user_claims_key',
+                    required_user_claims: %w(mail cn)
+  end
+
+  # ==> Devise secret key
+  # Secret key to be used by devise in prod.
+  config.secret_key = Doubtfire::Application.secrets.secret_key_devise if Rails.env.production?
 end

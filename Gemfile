@@ -70,3 +70,5 @@ gem 'rack-cors', require: 'rack/cors'
 gem 'ci_reporter'
 gem 'terminator'
 gem 'require_all', '1.3.3'
+
+gem 'omniauth-jwt', '0.0.2'
