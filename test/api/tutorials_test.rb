@@ -94,7 +94,7 @@ class TutorialsTest < ActiveSupport::TestCase
   def test_tutorials_delete
     number_of_tutorials = Tutorial.all.length
 
-    id_of_tutorial_to_delete = rand(1..Tutorial.all.length)
+    id_of_tutorial_to_delete = Tutorial.pluck(:id).sample
 
     # perform the post
     delete_json with_auth_token "/api/tutorials/#{id_of_tutorial_to_delete}"
@@ -105,5 +105,4 @@ class TutorialsTest < ActiveSupport::TestCase
     # Check that you can't find the deleted id
     refute Tutorial.exists?(id_of_tutorial_to_delete)
   end
-
 end
