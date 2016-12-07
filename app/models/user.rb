@@ -31,14 +31,14 @@ class User < ActiveRecord::Base
 
     if remember
       if role == Role.student || role == :student
-        self.auth_token_expiry = DateTime.now + 2.weeks
+        self.auth_token_expiry = Time.zone.now + 2.weeks
       elsif role == Role.tutor || role == :tutor
-        self.auth_token_expiry = DateTime.now + 1.week
+        self.auth_token_expiry = Time.zone.now + 1.week
       else
-        self.auth_token_expiry = DateTime.now + 2.hours
+        self.auth_token_expiry = Time.zone.now + 2.hours
       end
     else
-      self.auth_token_expiry = DateTime.now + 2.hours
+      self.auth_token_expiry = Time.zone.now + 2.hours
     end
 
     self.save
@@ -61,7 +61,7 @@ class User < ActiveRecord::Base
 
   def reset_authentication_token!
     self.auth_token = nil
-    self.auth_token_expiry = DateTime.now - 1.week
+    self.auth_token_expiry = Time.zone.now - 1.week
     self.save
   end
 

@@ -72,7 +72,7 @@ module Api
       end
 
       # Token has expired
-      if user.auth_token_expiry.nil? || user.auth_token_expiry <= DateTime.current
+      if user.auth_token_expiry.nil? || user.auth_token_expiry <= Time.zone.now
         # Create a new token
         user.generate_authentication_token! remember
       else
@@ -104,7 +104,7 @@ module Api
       if user.nil? || user.username != params[:username]
         error!({ error: 'Invalid token.' }, 404)
       else
-        if user.auth_token_expiry > DateTime.current && user.auth_token_expiry < DateTime.current + 1.hour
+        if user.auth_token_expiry > Time.zone.now && user.auth_token_expiry < Time.zone.now + 1.hour
           user.reset_authentication_token!
           user.generate_authentication_token! remember
         end

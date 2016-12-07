@@ -20,7 +20,7 @@ module AuthenticationHelpers
     # Check user by token
     if params[:auth_token] && user_by_token && user_by_token.auth_token_expiry
       # Non-expired token
-      return true if user_by_token.auth_token_expiry > DateTime.current
+      return true if user_by_token.auth_token_expiry > Time.zone.now
       # Time out this token
       error!({ error: 'Authentication token expired.' }, 419)
     else
