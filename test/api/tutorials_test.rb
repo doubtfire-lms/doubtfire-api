@@ -93,8 +93,10 @@ class TutorialsTest < ActiveSupport::TestCase
 
   def test_tutorials_delete
     number_of_tutorials = Tutorial.all.length
-
-    id_of_tutorial_to_delete = Tutorial.pluck(:id).sample
+    # Should be random unit where convenor is User.first
+    # test_tutorial = Tutorial.where(:convenors == User.first).order('RANDOM()').first
+    test_tutorial = Tutorial.all.first
+    id_of_tutorial_to_delete = test_tutorial.id
 
     # perform the post
     delete_json with_auth_token "/api/tutorials/#{id_of_tutorial_to_delete}"
@@ -104,5 +106,6 @@ class TutorialsTest < ActiveSupport::TestCase
 
     # Check that you can't find the deleted id
     refute Tutorial.exists?(id_of_tutorial_to_delete)
+    assert_equal last_response.status 200
   end
 end
