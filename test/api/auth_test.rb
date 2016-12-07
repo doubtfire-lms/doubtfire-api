@@ -120,7 +120,7 @@ class AuthTest < ActiveSupport::TestCase
         username: "acain",
         password: "password"
     }
-    put_json "/api/auth/#{auth_token}.json", data_to_put
+    put_json "/api/auth/#{auth_token}", data_to_put
     actual_auth = JSON.parse(last_response.body)['auth_token']
     expected_auth = User.first.auth_token
 
