@@ -20,6 +20,13 @@ module TestHelpers
     end
 
     #
+    # PUTs a hash data as JSON with content-type "application/json"
+    #
+    def delete_json(endpoint)
+      delete endpoint, 'CONTENT_TYPE' => 'application/json'
+    end
+
+    #
     # Assert that a JSON response matches the model and keys provided
     #
     def assert_json_matches_model(response_json, model, keys)
