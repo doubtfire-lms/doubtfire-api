@@ -1,16 +1,18 @@
 require 'authorisation_helpers'
 
 class User < ActiveRecord::Base
-  # attr_encrypted :email, :key => Doubtfire::Application.config.secret_attr_key, :encode => true
-  attr_encrypted :auth_token, :key => Doubtfire::Application.config.secret_attr_key, :encode => true, :attribute => 'authentication_token'
+  # Auth token encryption settings
+  attr_encrypted :auth_token,
+                 key: Doubtfire::Application.secrets.secret_key_attr,
+                 encode: true,
+                 attribute: 'authentication_token'
 
-  # Use LDAP (SIMS) for authentication
+  # Use LDAP for authentication
+  devise_keys = %i(registerable recoverable rememberable trackable validatable)
   if Rails.env.production?
-    devise :ldap_authenticatable, :registerable,
-         :recoverable, :rememberable, :trackable, :validatable
+    devise :ldap_authenticatable, *devise_keys
   else
-    devise :database_authenticatable, :registerable,
-         :recoverable, :rememberable, :trackable, :validatable
+    devise :database_authenticatable, *devise_keys
   end
 
   def authenticate? (password)

@@ -1,6 +1,6 @@
 class PortfolioEvidenceMailer < ActionMailer::Base
   @doubtfire_host = Doubtfire::Application.config.institution[:host]
-  @unsubscribe_url = "#{Doubtfire::Application.config.mail_base_url}home?notifications"
+  @unsubscribe_url = "https://#{@doubtfire_host}/#/home?notifications"
 
   def task_pdf_failed(project, tasks)
     return nil if project.nil? || tasks.nil? || tasks.length.zero?
