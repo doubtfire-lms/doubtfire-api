@@ -51,6 +51,7 @@ module Api
         new_user.email      = "#{username}@#{institution_email_domain}"
         new_user.nickname   = 'Nickname'
         new_user.role_id    = Role.student.id
+        new_user.login_id   = username
       end
 
       # Redirect acain_student or acain_tutor
