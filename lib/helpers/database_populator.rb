@@ -85,15 +85,12 @@ class DatabasePopulator
 
       profile[:email]     ||= "#{username}@doubtfire.com"
       profile[:username]  ||= username
-
-      profile[:login_id]  = username
+      profile[:login_id]  ||= username
 
       user = User.create!(profile.merge({
         password: 'password',
         password_confirmation: 'password'
       }))
-
-      puts username
 
       @user_cache[user_key] = user
     end
