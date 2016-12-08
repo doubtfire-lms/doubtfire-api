@@ -1,5 +1,6 @@
 require 'grape'
 require 'user_serializer'
+require 'json/jwt'
 
 module Api
   #
@@ -9,6 +10,7 @@ module Api
   #
   class Authentication < Grape::API
     helpers LogHelper
+    helpers AuthenticationHelpers
 
     #
     # Sign in
@@ -20,6 +22,11 @@ module Api
       optional :remember, type: Boolean, desc: 'User has requested to remember login', default: false
     end
     post '/auth' do
+      # If AAF, redirect to AAF redirection URL -- this endpoint is useless
+      if aaf_auth?
+        return { redirect_to: Doubtfire::Application.config.aaf[:redirect_url] }
+      end
+
       username = params[:username]
       password = params[:password]
       remember = params[:remember]
@@ -71,17 +78,46 @@ module Api
         user.save
       end
 
-      # Token has expired
-      if user.auth_token_expiry.nil? || user.auth_token_expiry <= Time.zone.now
-        # Create a new token
-        user.generate_authentication_token! remember
-      else
-        # Extend the existing token's time
-        user.extend_authentication_token remember
-      end
+      user.extend_authentication_token(remember)
 
       # Return user details
       { user: UserSerializer.new(user), auth_token: user.auth_token }
+    end
+
+    #
+    # AAF JWT callback
+    #
+    if AuthenticationHelpers.aaf_auth?
+      desc 'AAF Rapid Connect JWT callback'
+      params do
+        requires :assertion, type: String, desc: 'Data provided for further processing.'
+      end
+      post '/auth/jwt' do
+        jws = params[:assertion]
+        error!({ error: 'JWS was not found in request' }, 500) unless jws
+
+        # Decode JWS
+        jwt = User.decode_jws(jws)
+        error!({ error: 'Invalid JWS' }, 500) unless jwt
+
+        # User lookup via unique login id
+        # attrs = jwt['https://aaf.edu.au/attributes']
+        # email = attrs[:mail]
+        # user = User.find_or_create_by(username: username) do |new_user|
+        #   new_user.first_name = 'First Name'
+        #   new_user.last_name  = 'Surname'
+        #   new_user.email      = "#{username}@#{institution_email_domain}"
+        #   new_user.nickname   = 'Nickname'
+        #   new_user.role_id    = Role.student.id
+        # end
+
+        # Try to authenticate
+        unless user.authenticate?(jws)
+          error!({ error: 'Invalid JSON web token.' }, 401)
+          return
+        end
+
+      end
     end
 
     #

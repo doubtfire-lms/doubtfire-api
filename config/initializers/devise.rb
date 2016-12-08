@@ -249,14 +249,14 @@ Devise.setup do |config|
   # so you need to do it manually. For the users scope, it would be:
   # config.omniauth_path_prefix = "/my_engine/users/auth"
 
-  # ==> JWT OmniAuth
+  # ==> AAF via JWT OmniAuth
   # Devise method for JWT
   if Doubtfire::Application.config.devise_auth_method == :jwt
-    df_host = Doubtfire::Application.config.institution[:host]
-    secret_key_jwt = Doubtfire::Application.secrets.secret_key_jwt
+    aaf_secret = Doubtfire::Application.secrets.secret_key_aaf
+    aaf_config = Doubtfire::Application.config.aaf
     config.omniauth :jwt,
-                    secret_key_jwt,
-                    auth_url: "https://#{df_host}/auth",
+                    aaf_secret,
+                    auth_url: aaf_config.audience_url,
                     required_claims: %w(iss jti nbf exp typ aud sub),
                     info_map: { email: 'mail', name: 'cn' },
                     uid_claim: 'mail',

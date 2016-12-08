@@ -9,6 +9,8 @@ module AuthenticationHelpers
     env['warden']
   end
 
+  module_function
+
   #
   # Checks if the requested user is authenticated.
   # Reads details from the params fetched from the caller context.
@@ -30,7 +32,9 @@ module AuthenticationHelpers
     end
   end
 
+  #
   # Get the current user either from warden or from the token
+  #
   def current_user
     warden.user || User.find_by_auth_token(params[:auth_token])
   end
@@ -39,7 +43,7 @@ module AuthenticationHelpers
   # Add the required auth_token to each of the routes for the provided
   # Grape::API.
   #
-  def self.add_auth_to(service)
+  def add_auth_to(service)
     service.routes.each do |route|
       options = route.instance_variable_get('@options')
       next if options[:params]['auth_token']
@@ -51,7 +55,24 @@ module AuthenticationHelpers
     end
   end
 
-  # Export functions as module functions
-  module_function :authenticated?
-  module_function :current_user
+  #
+  # Returns true iff using AAF devise auth strategy
+  #
+  def aaf_auth?
+    Doubtfire::Application.config.devise_auth_method == :aaf
+  end
+
+  #
+  # Returns true iff using LDAP devise auth strategy
+  #
+  def ldap_auth?
+    Doubtfire::Application.config.devise_auth_method == :ldap
+  end
+
+  #
+  # Returns true iff using database devise auth strategy
+  #
+  def db_auth?
+    Doubtfire::Application.config.devise_auth_method == :database
+  end
 end

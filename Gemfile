@@ -41,6 +41,7 @@ end
 # Authentication
 gem 'devise', '~> 4.1.1'
 gem 'devise_ldap_authenticatable'
+gem 'omniauth-jwt', '0.0.2'
 
 # Generators for population
 gem 'populator'
@@ -70,5 +71,4 @@ gem 'rack-cors', require: 'rack/cors'
 gem 'ci_reporter'
 gem 'terminator'
 gem 'require_all', '1.3.3'
-
-gem 'omniauth-jwt', '0.0.2'
+gem 'json-jwt', '1.7.0'

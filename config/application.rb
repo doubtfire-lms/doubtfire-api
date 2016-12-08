@@ -16,7 +16,7 @@ module Doubtfire
   class Application < Rails::Application
     # ==> Authentication Method
     # Authentication method default is database, but possible settings
-    # are: database, ldap, aff. It can be overridden using the DF_DEVISE_AUTH_METHOD
+    # are: database, ldap, aaf. It can be overridden using the DF_DEVISE_AUTH_METHOD
     # environment variable.
     config.devise_auth_method = (ENV['DF_DEVISE_AUTH_METHOD'] || :database).to_sym
     # ==> Student work directory
@@ -29,6 +29,35 @@ module Doubtfire
     config.institution = YAML.load_file("#{Rails.root}/config/institution.yml").with_indifferent_access
     # Institution host becomes localhost in all but prod
     config.institution[:host] = 'localhost:3000' unless Rails.env.production?
+    # ==> AAF authentication
+    # Must require AAF devise authentication method.
+    if config.devise_auth_method == :aaf
+      config.aaf = HashWithIndifferentAccess.new
+      # URL of the issuer (i.e., https://rapid.[test.]aaf.edu.au)
+      config.aaf[:issuer_url] = ENV['DF_AAF_ISSUER_URL']
+      # URL of the registered application (e.g., https://doubtfire.unifoo.edu.au)
+      config.aaf[:audience_url] = ENV['DF_AAF_AUDIENCE_URL']
+      # The secure URL within your application that AAF Rapid Connect should
+      # POST responses to (e.g., https://doubtfire.unifoo.edu.au/auth/jwt)
+      config.aaf[:callback_url] = ENV['DF_AAF_CALLBACK_URL']
+      # URL of the unique url provided by rapid connect
+      # (e.g., https://rapid.aaf.edu.au/jwt/authnrequest/auresearch/XXXXXXX)
+      config.aaf[:redirect_url] = ENV['DF_AAF_REDIRECT_URL']
+      # URL of the identity provider (e.g., https://unifoo.edu.au/idp/shibboleth)
+      identity_provider_url = ENV['DF_AAF_IDENTITY_PROVIDER_URL']
+      config.aaf[:redirect_url] += "?entityID=#{identity_provider_url}" if identity_provider_url
+      # Check we have all values
+      if config.aaf.values.compact.length != 4 || secrets.secret_key_aaf.nil?
+        raise "Invalid values specified to AAF, check the following environment variables: \n"\
+              "  key                          => variable set?\n"\
+              "  DF_AAF_ISSUER_URL            => #{!ENV['DF_AAF_ISSUER_URL'].nil?}\n"\
+              "  DF_AAF_AUDIENCE_URL          => #{!ENV['DF_AAF_AUDIENCE_URL'].nil?}\n"\
+              "  DF_AAF_CALLBACK_URL          => #{!ENV['DF_AAF_CALLBACK_URL'].nil?}\n"\
+              "  DF_AAF_IDENTITY_PROVIDER_URL => #{!ENV['DF_AAF_IDENTITY_PROVIDER_URL'].nil?}\n"\
+              "  DF_AAF_REDIRECT_URL          => #{!ENV['DF_AAF_REDIRECT_URL'].nil?}\n"\
+              "  DF_SECRET_KEY_AAF            => #{!secrets.secret_key_aaf.nil?}\n"
+      end
+    end
     # Localization
     config.i18n.enforce_available_locales = true
     # Ensure that auth tokens do not appear in log files

@@ -50,6 +50,7 @@ GEM
       coderay (>= 1.0.0)
       erubis (>= 2.6.6)
       rack (>= 0.9.0)
+    bindata (2.3.4)
     builder (3.2.2)
     ci_reporter (2.0.0)
       builder (>= 2.1.2)
@@ -108,6 +109,12 @@ GEM
     i18n (0.7.0)
     ice_nine (0.11.2)
     json (1.8.3)
+    json-jwt (1.7.0)
+      activesupport
+      bindata
+      multi_json (>= 1.3)
+      securecompare
+      url_safe_base64
     jwt (1.5.6)
     loofah (2.0.3)
       nokogiri (>= 1.5.9)
@@ -199,6 +206,7 @@ GEM
     ruby-filemagic (0.7.1)
     ruby-progressbar (1.8.1)
     rubyzip (1.2.0)
+    securecompare (1.0.0)
     sexp_processor (4.7.0)
     sprockets (3.6.3)
       concurrent-ruby (~> 1.0)
@@ -218,6 +226,7 @@ GEM
     thread_safe (0.3.5)
     tzinfo (1.2.2)
       thread_safe (~> 0.1)
+    url_safe_base64 (0.2.2)
     virtus (1.0.5)
       axiom-types (~> 0.1)
       coercible (~> 1.0)
@@ -245,6 +254,7 @@ DEPENDENCIES
   grape-swagger
   hirb
   minitest-around
+  json-jwt (= 1.7.0)
   minitest-hyper
   minitest-osx
   minitest-rails

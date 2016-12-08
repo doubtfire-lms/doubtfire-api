@@ -1,69 +1,141 @@
 require 'authorisation_helpers'
 
 class User < ActiveRecord::Base
+  include AuthenticationHelpers
+
+  ###
+  # Authentication
+  ###
+
   # Auth token encryption settings
   attr_encrypted :auth_token,
                  key: Doubtfire::Application.secrets.secret_key_attr,
                  encode: true,
                  attribute: 'authentication_token'
 
-  # Use LDAP for authentication
-  devise_keys = %i(registerable recoverable rememberable trackable validatable)
-  if Rails.env.production?
-    devise :ldap_authenticatable, *devise_keys
+  # User authentication config
+  if AuthenticationHelpers.aaf_auth?
+    # AAF uses JWT
+    # devise :omniauthable, omniauth_providers: [:jwt]
+    # TODO: Don't just store in array
+    @jti_claims = []
+
+    #
+    # Decodes a JWS against the JWT secret, returning JWT data or nil if no data
+    # could be decoded
+    #
+    def self.decode_jws(jws)
+      JSON::JWT.decode(jws.to_s, Doubtfire::Application.secrets.secret_key_aaf)
+    rescue
+      nil
+    end
+
+    #
+    # Validates a JSON web Signature against assertion rules. Returns false if
+    # it could not be verified.
+    #
+    def valid_jwt?(jws)
+      # 1. The signed JWT matches the JWT key
+      jwt = User.decode_jws(jws)
+      return false if jwt.nil?
+      # 2. The `aud` claim matches the application URL
+      aud_ok = jwt['aud'] == Doubtfire::Application.config.aaf[:audience_url]
+      # 3. The `iss` claim has the correct issuer URL
+      iss_ok = jwt['iss'] == Doubtfire::Application.config.aaf[:issuer_url]
+      # 4. The time MUST >= nbf time and < exp claim
+      time_ok = Time.zone.now >= Time.zone.at(jwt['nbf']) &&
+                Time.zone.now <  Time.zone.at(jwt['exp'])
+      # 5. JTI claim must be unique
+      jti = jwt['jti']
+      jti_ok = !jti_claims.include?(jti)
+      User.jti_claims << jti if jti_ok
+      # Assert all
+      aud_ok && iss_ok && time_ok && jti_ok
+    end
   else
-    devise :database_authenticatable, *devise_keys
+    devise_keys = %i(registerable recoverable rememberable trackable validatable)
+    strategy = AuthenticationHelpers.ldap_auth? ? :ldap_authenticatable : :database_authenticatable
+    devise strategy, *devise_keys
   end
 
-  def authenticate? (password)
-    if Rails.env.production?
-      self.valid_ldap_authentication?(password)
+  #
+  # Authenticates a user against a piece of data
+  #
+  def authenticate?(data)
+    if aaf_auth?
+      valid_jwt?(data)
+    elsif ldap_auth?
+      valid_ldap_authentication?(data)
     else
-      self.valid_password?(password)
+      valid_password?(data)
     end
   end
 
-  def extend_authentication_token (remember)
-    if auth_token.nil?
+  #
+  # Creates or extends a users auth token if needed
+  #
+  def extend_authentication_token(remember)
+    # If there is no auth token to begin with or it has expired create one
+    if auth_token.nil? || authentication_token_expired?
       generate_authentication_token! false
       return
     end
 
+    # Default expire time
+    expiry_time = Time.zone.now + 2.hours
+
+    # Extended expiry times only apply to students and convenors
     if remember
-      if role == Role.student || role == :student
-        self.auth_token_expiry = Time.zone.now + 2.weeks
-      elsif role == Role.tutor || role == :tutor
-        self.auth_token_expiry = Time.zone.now + 1.week
-      else
-        self.auth_token_expiry = Time.zone.now + 2.hours
-      end
-    else
-      self.auth_token_expiry = Time.zone.now + 2.hours
+      student_expiry_time = Time.zone.now + 2.weeks
+      tutor_expiry_time = Time.zone.now + 1.week
+      expiry_time =
+        if role == Role.student || role == :student
+          student_expiry_time
+        elsif role == Role.tutor || role == :tutor
+          tutor_expiry_time
+        end
     end
 
-    self.save
+    self.auth_token_expiry = expiry_time
+    save
   end
 
-  def generate_authentication_token! (remember)
-    token = nil
-
+  #
+  # Force-generates a new authentication token, regardless of whether or not
+  # it is actually expired
+  #
+  def generate_authentication_token!(remember)
+    # Loop until new unique auth token is found
     token = loop do
       token = Devise.friendly_token
       break token unless User.find_by_auth_token(token)
     end
+    # Set and return new auth token
     self.auth_token = token
-
-    extend_authentication_token remember
-
-    self.save
+    extend_authentication_token(remember)
+    save
     token
   end
 
+  #
+  # Deletes authentication token
+  #
   def reset_authentication_token!
     self.auth_token = nil
     self.auth_token_expiry = Time.zone.now - 1.week
-    self.save
+    save
   end
+
+  #
+  # Returns whether the authentication token has expired
+  #
+  def authentication_token_expired?
+    auth_token_expiry.nil? || auth_token_expiry <= Time.zone.now
+  end
+
+  ###
+  # Schema
+  ###
 
   # Model associations
   belongs_to  :role   # Foreign Key
