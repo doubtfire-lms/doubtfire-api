@@ -12,6 +12,7 @@ class TutorialsTest < ActiveSupport::TestCase
   def assert_tutorial_model_response(response, expected)
     expected = expected.as_json
 
+    # Can't use assert_json_matches_model as keys differ
     assert_equal response[:meeting_day], expected[:day]
     assert_equal response[:meeting_time], expected[:time]
     assert_equal response[:location], expected[:location]
@@ -106,6 +107,6 @@ class TutorialsTest < ActiveSupport::TestCase
 
     # Check that you can't find the deleted id
     refute Tutorial.exists?(id_of_tutorial_to_delete)
-    assert_equal last_response.status 200
+    assert_equal last_response.status, 200
   end
 end
