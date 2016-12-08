@@ -40,9 +40,9 @@ module Doubtfire
       # The secure URL within your application that AAF Rapid Connect should
       # POST responses to (e.g., https://doubtfire.unifoo.edu.au/auth/jwt)
       config.aaf[:callback_url] = ENV['DF_AAF_CALLBACK_URL']
-      # URL of the unique url provided by rapid connect
+      # URL of the unique url provided by rapid connect used for redirect
       # (e.g., https://rapid.aaf.edu.au/jwt/authnrequest/auresearch/XXXXXXX)
-      config.aaf[:redirect_url] = ENV['DF_AAF_REDIRECT_URL']
+      config.aaf[:redirect_url] = ENV['DF_AAF_UNIQUE_URL']
       # URL of the identity provider (e.g., https://unifoo.edu.au/idp/shibboleth)
       identity_provider_url = ENV['DF_AAF_IDENTITY_PROVIDER_URL']
       config.aaf[:redirect_url] += "?entityID=#{identity_provider_url}" if identity_provider_url
@@ -54,7 +54,7 @@ module Doubtfire
               "  DF_AAF_AUDIENCE_URL          => #{!ENV['DF_AAF_AUDIENCE_URL'].nil?}\n"\
               "  DF_AAF_CALLBACK_URL          => #{!ENV['DF_AAF_CALLBACK_URL'].nil?}\n"\
               "  DF_AAF_IDENTITY_PROVIDER_URL => #{!ENV['DF_AAF_IDENTITY_PROVIDER_URL'].nil?}\n"\
-              "  DF_AAF_REDIRECT_URL          => #{!ENV['DF_AAF_REDIRECT_URL'].nil?}\n"\
+              "  DF_AAF_UNIQUE_URL            => #{!ENV['DF_AAF_UNIQUE_URL'].nil?}\n"\
               "  DF_SECRET_KEY_AAF            => #{!secrets.secret_key_aaf.nil?}\n"
       end
     end
