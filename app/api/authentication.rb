@@ -79,7 +79,8 @@ module Api
         user.save
       end
 
-      user.extend_authentication_token(remember)
+      # Revise an auth_token for future requests
+      user.revise_authentication_token(remember)
 
       # Return user details
       { user: UserSerializer.new(user), auth_token: user.auth_token }
@@ -95,29 +96,58 @@ module Api
       end
       post '/auth/jwt' do
         jws = params[:assertion]
-        error!({ error: 'JWS was not found in request' }, 500) unless jws
+        error!({ error: 'JWS was not found in request.' }, 500) unless jws
 
         # Decode JWS
         jwt = User.decode_jws(jws)
-        error!({ error: 'Invalid JWS' }, 500) unless jwt
+        error!({ error: 'Invalid JWS.' }, 500) unless jwt
 
         # User lookup via unique login id
-        # attrs = jwt['https://aaf.edu.au/attributes']
-        # email = attrs[:mail]
-        # user = User.find_or_create_by(username: username) do |new_user|
-        #   new_user.first_name = 'First Name'
-        #   new_user.last_name  = 'Surname'
-        #   new_user.email      = "#{username}@#{institution_email_domain}"
-        #   new_user.nickname   = 'Nickname'
-        #   new_user.role_id    = Role.student.id
-        # end
+        attrs = jwt['https://aaf.edu.au/attributes']
+        login_id = jwt[:sub]
+        email = attrs[:mail]
+        username = email.split('@').first
+
+        # Lookup using login_id if it exists
+        # Lookup using email otherwise and set login_id
+        # Otherwise create new
+        user = User.find_by(login_id: login_id) ||
+               User.find_by(email: email) ||
+               User.find_or_create_by(login_id: login_id) do |new_user|
+                 # Some institutions may provide givenname and surname, others
+                 # may only provide common name which we will use as first name
+                 new_user.first_name = attrs[:givenname] || attrs[:cn]
+                 new_user.last_name  = attrs[:surname]
+                 new_user.email      = email
+                 new_user.username   = username
+                 new_user.nickname   = new_user.first_name
+                 new_user.role_id    = Role.student.id
+               end
+
+        # Set login id + username if not yet specified
+        user.login_id = login_id if user.login_id.nil?
+        user.username = username if user.username.nil?
 
         # Try to authenticate
-        unless user.authenticate?(jws)
-          error!({ error: 'Invalid JSON web token.' }, 401)
-          return
+        return error!({ error: 'Invalid JSON web token.' }, 401) unless user.authenticate?(jws)
+
+        # Try and save the user once authenticated if new
+        if user.new_record?
+          user.password = 'password'
+          user.encrypted_password = BCrypt::Password.create('password')
+          unless user.valid?
+            error!(error: 'There was an error creating your account in Doubtfire. ' \
+                          'Please get in contact with your unit convenor or the ' \
+                          'Doubtfire administrators.')
+          end
+          user.save
         end
 
+        # Revise an auth_token for future requests
+        user.revise_authentication_token(true)
+
+        # Return user details
+        { user: UserSerializer.new(user), auth_token: user.auth_token }
       end
     end
 

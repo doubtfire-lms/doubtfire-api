@@ -15,11 +15,6 @@ class User < ActiveRecord::Base
 
   # User authentication config
   if AuthenticationHelpers.aaf_auth?
-    # AAF uses JWT
-    # devise :omniauthable, omniauth_providers: [:jwt]
-    # TODO: Don't just store in array
-    @jti_claims = []
-
     #
     # Decodes a JWS against the JWT secret, returning JWT data or nil if no data
     # could be decoded
@@ -45,12 +40,8 @@ class User < ActiveRecord::Base
       # 4. The time MUST >= nbf time and < exp claim
       time_ok = Time.zone.now >= Time.zone.at(jwt['nbf']) &&
                 Time.zone.now <  Time.zone.at(jwt['exp'])
-      # 5. JTI claim must be unique
-      jti = jwt['jti']
-      jti_ok = !jti_claims.include?(jti)
-      User.jti_claims << jti if jti_ok
       # Assert all
-      aud_ok && iss_ok && time_ok && jti_ok
+      aud_ok && iss_ok && time_ok
     end
   else
     devise_keys = %i(registerable recoverable rememberable trackable validatable)
@@ -72,11 +63,11 @@ class User < ActiveRecord::Base
   end
 
   #
-  # Creates or extends a users auth token if needed
+  # Extends an existing auth_token if needed
   #
   def extend_authentication_token(remember)
-    # If there is no auth token to begin with or it has expired create one
-    if auth_token.nil? || authentication_token_expired?
+    # Extending a nil token will just create one first
+    if auth_token.nil?
       generate_authentication_token! false
       return
     end
@@ -115,6 +106,20 @@ class User < ActiveRecord::Base
     extend_authentication_token(remember)
     save
     token
+  end
+
+  #
+  # Generates a new authentication token if it has expired or extends the time
+  # an existing authentication token if it has not.
+  #
+  def revise_authentication_token(remember)
+    if authentication_token_expired?
+      # Create a new token
+      generate_authentication_token! remember
+    else
+      # Extend the existing token's time
+      extend_authentication_token remember
+    end
   end
 
   #
