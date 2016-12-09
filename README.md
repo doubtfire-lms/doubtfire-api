@@ -253,6 +253,15 @@ If you have chosen to use AAF Rapid Connect authentication, then you will also n
 | `DF_AAF_IDENTITY_PROVIDER_URL` | The URL of the AAF-registered identity provider. This value is **optional**.                                                                                                       | N/A                             |
 | `DF_SECRET_KEY_AAF`            | The secret used to register your application with AAF.                                                                                                                             | `secretsecret12345`             |
 
+You may choose to keep your environment variables inside a `.env` file using key-value pairs:
+
+```
+DF_INSTITUTION_HOST=doubtfire.unifoo.edu.au
+DF_INSTITUTION_NAME="University of Foo"
+```
+
+You can also keep multiple `.env` files for different environments, e.g.: `.env.production` is different to `.env.develoment`. Doubtfire uses the [dotenv](https://github.com/bkeepers/dotenv) gem to make this happen.
+
 ##### Database Population
 
 Whilst still in the Doubtfire API project root, execute:
@@ -452,6 +461,15 @@ If you have chosen to use AAF Rapid Connect authentication, then you will also n
 | `DF_AAF_UNIQUE_URL`            | The unique URL provided by AAF Rapid Connect used for redirection out of Doubtfire.                                                                                                    | No default - required           |
 | `DF_AAF_IDENTITY_PROVIDER_URL` | The URL of the AAF-registered identity provider. This value is **optional**.                                                                                                           | N/A                             |
 | `DF_SECRET_KEY_AAF`            | The secret used to register your application with AAF.                                                                                                                                 | `secretsecret12345`             |
+
+You may choose to keep your environment variables inside a `.env` file using key-value pairs:
+
+```
+DF_INSTITUTION_HOST=doubtfire.unifoo.edu.au
+DF_INSTITUTION_NAME="University of Foo"
+```
+
+You can also keep multiple `.env` files for different environments, e.g.: `.env.production` is different to `.env.develoment`. Doubtfire uses the [dotenv](https://github.com/bkeepers/dotenv) gem to make this happen.
 
 ##### Database Population
 
