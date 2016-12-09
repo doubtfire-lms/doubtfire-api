@@ -34,7 +34,7 @@ module Doubtfire
     if config.auth_method == :aaf
       config.aaf = HashWithIndifferentAccess.new
       # URL of the issuer (i.e., https://rapid.[test.]aaf.edu.au)
-      config.aaf[:issuer_url] = ENV['DF_AAF_ISSUER_URL']
+      config.aaf[:issuer_url] = ENV['DF_AAF_ISSUER_URL'] || 'https://rapid.test.aaf.edu.au'
       # URL of the registered application (e.g., https://doubtfire.unifoo.edu.au)
       config.aaf[:audience_url] = ENV['DF_AAF_AUDIENCE_URL']
       # The secure URL within your application that AAF Rapid Connect should
