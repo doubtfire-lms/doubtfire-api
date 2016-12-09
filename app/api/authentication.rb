@@ -151,8 +151,8 @@ module Api
 
         # Must redirect to the front-end after sign in
         protocol = Rails.env.production? ? 'https' : 'http'
-        host = Doubtfire::Application.config.institution.host
-        redirect "#{protocol}/#{host}/#sign_in?auth_token=#{user.auth_token}&dest=home"
+        host = Rails.env.production? ? Doubtfire::Application.config.institution[:host] : 'localhost:8000'
+        redirect "#{protocol}://#{host}/#sign_in?authToken=#{user.auth_token}"
       end
 
       #
@@ -167,14 +167,16 @@ module Api
         logger.info "Get user via auth_token from #{request.ip}"
 
         # Authenticate that the token is okay
-        user = authenticated?
+        if authenticated?
+          user = User.find_by_auth_token(params[:auth_token])
 
-        # Invalidate the token and regenrate a new one
-        user.reset_authentication_token!
-        user.generate_authentication_token! true
+          # Invalidate the token and regenrate a new one
+          user.reset_authentication_token!
+          user.generate_authentication_token! true
 
-        # Respond user details with new auth token
-        { user: UserSerializer.new(user), auth_token: user.auth_token }
+          # Respond user details with new auth token
+          { user: UserSerializer.new(user), auth_token: user.auth_token }
+        end
       end
     end
 
