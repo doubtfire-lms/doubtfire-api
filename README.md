@@ -226,24 +226,34 @@ Then try installing dependencies again.
 
 #### 6. Create and populate Doubtfire
 
-Doubtfire requires an institution configuration file that defines settings about the institution it is being run at.
+##### Environment variables
 
-Create this configuration file under the Doubtfire API project root `config` folder as `institution.yml`:
+Doubtfire requires multiple environment variables that help define settings about the Doubtfire instance running. Whilst these will default to other values, you may want to override them in production.
 
-```
-$ touch config/institution.yml
-```
 
-Edit this file using the template below:
+| Key                           | Description                                                                                                                                                                                                                                                                   | Default                                                 |
+|-------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------|
+| `DF_AUTH_METHOD`              | The authentication method you would like Doubtfire to use. Possible values are `database` for standard authentication with the database, `ldap` for [LDAP](https://www.freebsd.org/doc/en/articles/ldap-auth/), and `aaf` for [AAF Rapid Connect](https://rapid.aaf.edu.au/). | `database`                                              |
+| `DF_STUDENT_WORK_DIR`         | The directory to store uploaded student work for processing.                                                                                                                                                                                                                  | `student_work`                                          |
+| `DF_INSTITUTION_NAME`         | The name of your institution running Doubtfire.                                                                                                                                                                                                                               | University of Foo                                       |
+| `DF_INSTITUTION_EMAIL_DOMAIN` | The email domain from which emails are sent to and from in your institution.                                                                                                                                                                                                  | `doubtfire.com`                                         |
+| `DF_INSTITUTION_HOST`         | The host running the Doubtfire instance.                                                                                                                                                                                                                                      | `localhost:3000`                                        |
+| `DF_SECRET_KEY_BASE`          | The Rails secret key.                                                                                                                                                                                                                                                         | Automatically generated in non-production environments. |
+| `DF_SECRET_KEY_ATTR`          | The secret key to encrypt certain database fields.                                                                                                                                                                                                                            | Automatically generated in non-production environments. |
+| `DF_SECRET_KEY_DEVISE`        | The secret key provided to Devise.                                                                                                                                                                                                                                            | Automatically generated in non-production environments. |
 
-```yaml
-# Name of the institution
-name: The University of Foo
-# Email domain of the institution (e.g., user@unifoo.edu.au)
-email_domain: unifoo.edu.au
-# Host that is running Doubtfire
-host: doubtfire.ict.unifoo.edu.au
-```
+If you have chosen to use AAF Rapid Connect authentication, then you will also need to provide the following:
+
+| Key                            | Description                                                                                                                                                                        | Default                         |
+|--------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------|
+| `DF_AAF_ISSUER_URL`            | The URL of the AFF issuer, either `https://rapid.test.aaf.edu.au` for testing or `https://rapid.aaf.edu.au` for production.                                                        | `https://rapid.test.aaf.edu.au` |
+| `DF_AAF_AUDIENCE_URL`          | The URL of the AAF registered application.                                                                                                                                         | No default - required           |
+| `DF_AAF_CALLBACK_URL`          | The secure endpoint within your application that AAF Rapid Connect should POST responses to. It **must end with `/auth/jwt`** to access the Doubtfire JWT authentication endpoint. | No default - required           |
+| `DF_AAF_UNIQUE_URL`            | The unique URL provided by AAF Rapid Connect used for redirection out of Doubtfire.                                                                                                | No default - required           |
+| `DF_AAF_IDENTITY_PROVIDER_URL` | The URL of the AAF-registered identity provider. This value is **optional**.                                                                                                       | N/A                             |
+| `DF_SECRET_KEY_AAF`            | The secret used to register your application with AAF.                                                                                                                             | `secretsecret12345`             |
+
+##### Database Population
 
 Whilst still in the Doubtfire API project root, execute:
 
@@ -416,24 +426,34 @@ Then try installing dependencies again.
 
 #### 6. Create and populate Doubtfire
 
-Doubtfire requires an institution configuration file that defines settings about the institution it is being run at.
+##### Environment variables
 
-Create this configuration file under the Doubtfire API project root `config` folder as `institution.yml`:
+Doubtfire requires multiple environment variables that help define settings about the Doubtfire instance running. Whilst these will default to other values, you may want to override them in production.
 
-```
-$ touch config/institution.yml
-```
 
-Edit this file using the template below:
+| Key                           | Description                                                                                                                                                                                                                                                                   | Default                                                 |
+|-------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------|
+| `DF_AUTH_METHOD`              | The authentication method you would like Doubtfire to use. Possible values are `database` for standard authentication with the database, `ldap` for [LDAP](https://www.freebsd.org/doc/en/articles/ldap-auth/), and `aaf` for [AAF Rapid Connect](https://rapid.aaf.edu.au/). | `database`                                              |
+| `DF_STUDENT_WORK_DIR`         | The directory to store uploaded student work for processing.                                                                                                                                                                                                                  | `student_work`                                          |
+| `DF_INSTITUTION_NAME`         | The name of your institution running Doubtfire.                                                                                                                                                                                                                               | University of Foo                                       |
+| `DF_INSTITUTION_EMAIL_DOMAIN` | The email domain from which emails are sent to and from in your institution.                                                                                                                                                                                                  | `doubtfire.com`                                         |
+| `DF_INSTITUTION_HOST`         | The host running the Doubtfire instance.                                                                                                                                                                                                                                      | `localhost:3000`                                        |
+| `DF_SECRET_KEY_BASE`          | The Rails secret key.                                                                                                                                                                                                                                                         | Automatically generated in non-production environments. |
+| `DF_SECRET_KEY_ATTR`          | The secret key to encrypt certain database fields.                                                                                                                                                                                                                            | Automatically generated in non-production environments. |
+| `DF_SECRET_KEY_DEVISE`        | The secret key provided to Devise.                                                                                                                                                                                                                                            | Automatically generated in non-production environments. |
 
-```yaml
-# Name of the institution
-name: The University of Foo
-# Email domain of the institution (e.g., user@unifoo.edu.au)
-email_domain: unifoo.edu.au
-# Host that is running Doubtfire
-host: doubtfire.ict.unifoo.edu.au
-```
+If you have chosen to use AAF Rapid Connect authentication, then you will also need to provide the following:
+
+| Key                            | Description                                                                                                                                                                        | Default                         |
+|--------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------|
+| `DF_AAF_ISSUER_URL`            | The URL of the AFF issuer, either `https://rapid.test.aaf.edu.au` for testing or `https://rapid.aaf.edu.au` for production.                                                        | `https://rapid.test.aaf.edu.au` |
+| `DF_AAF_AUDIENCE_URL`          | The URL of the AAF registered application.                                                                                                                                         | No default - required           |
+| `DF_AAF_CALLBACK_URL`          | The secure endpoint within your application that AAF Rapid Connect should POST responses to. It **must end with `/auth/jwt`** to access the Doubtfire JWT authentication endpoint. | No default - required           |
+| `DF_AAF_UNIQUE_URL`            | The unique URL provided by AAF Rapid Connect used for redirection out of Doubtfire.                                                                                                | No default - required           |
+| `DF_AAF_IDENTITY_PROVIDER_URL` | The URL of the AAF-registered identity provider. This value is **optional**.                                                                                                       | N/A                             |
+| `DF_SECRET_KEY_AAF`            | The secret used to register your application with AAF.                                                                                                                             | `secretsecret12345`             |
+
+##### Database Population
 
 Whilst still in the Doubtfire API project root, execute:
 
