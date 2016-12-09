@@ -25,6 +25,42 @@ A modern, lightweight learning management system.
 #### 2. Manual install
 The manual installation guide can be found on the wiki at: Linux, MacOS, Docker
 
+### Environment variables
+Doubtfire requires multiple environment variables that help define settings about the Doubtfire instance running. Whilst these will default to other values, you may want to override them in production.
+
+
+| Key                           | Description                                                                                                                                                                                                                                                                   | Default                                                 |
+|-------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------|
+| `DF_AUTH_METHOD`              | The authentication method you would like Doubtfire to use. Possible values are `database` for standard authentication with the database, `ldap` for [LDAP](https://www.freebsd.org/doc/en/articles/ldap-auth/), and `aaf` for [AAF Rapid Connect](https://rapid.aaf.edu.au/). | `database`                                              |
+| `DF_STUDENT_WORK_DIR`         | The directory to store uploaded student work for processing.                                                                                                                                                                                                                  | `student_work`                                          |
+| `DF_INSTITUTION_NAME`         | The name of your institution running Doubtfire.                                                                                                                                                                                                                               | University of Foo                                       |
+| `DF_INSTITUTION_EMAIL_DOMAIN` | The email domain from which emails are sent to and from in your institution.                                                                                                                                                                                                  | `doubtfire.com`                                         |
+| `DF_INSTITUTION_HOST`         | The host running the Doubtfire instance.                                                                                                                                                                                                                                      | `localhost:3000`                                        |
+| `DF_SECRET_KEY_BASE`          | The Rails secret key.                                                                                                                                                                                                                                                         | Automatically generated in non-production environments. |
+| `DF_SECRET_KEY_ATTR`          | The secret key to encrypt certain database fields.                                                                                                                                                                                                                            | Automatically generated in non-production environments. |
+| `DF_SECRET_KEY_DEVISE`        | The secret key provided to Devise.                                                                                                                                                                                                                                            | Automatically generated in non-production environments. |
+
+If you have chosen to use AAF Rapid Connect authentication, then you will also need to provide the following:
+
+| Key                            | Description                                                                                                                                                                            | Default                         |
+|--------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------|
+| `DF_AAF_ISSUER_URL`            | The URL of the AFF issuer, either `https://rapid.test.aaf.edu.au` for testing or `https://rapid.aaf.edu.au` for production.                                                            | `https://rapid.test.aaf.edu.au` |
+| `DF_AAF_AUDIENCE_URL`          | The URL of the AAF registered application.                                                                                                                                             | No default - required           |
+| `DF_AAF_CALLBACK_URL`          | The secure endpoint within your application that AAF Rapid Connect should POST responses to. It **must end with `/api/auth/jwt`** to access the Doubtfire JWT authentication endpoint. | No default - required           |
+| `DF_AAF_UNIQUE_URL`            | The unique URL provided by AAF Rapid Connect used for redirection out of Doubtfire.                                                                                                    | No default - required           |
+| `DF_AAF_IDENTITY_PROVIDER_URL` | The URL of the AAF-registered identity provider. This value is **optional**.                                                                                                           | N/A                             |
+| `DF_SECRET_KEY_AAF`            | The secret used to register your application with AAF.                                                                                                                                 | `secretsecret12345`             |
+
+You may choose to keep your environment variables inside a `.env` file using key-value pairs:
+
+```
+DF_INSTITUTION_HOST=doubtfire.unifoo.edu.au
+DF_INSTITUTION_NAME="University of Foo"
+```
+
+You can also keep multiple `.env` files for different environments, e.g.: `.env.production` is different to `.env.develoment`. Doubtfire uses the [dotenv](https://github.com/bkeepers/dotenv) gem to make this happen.
+
+
 #### 3. Get it up and running!
 Once you've installed using either in install script or the manual install steps,
 Run the Rails server and check the API is up by viewing Grape Swagger documentation:
