@@ -444,14 +444,14 @@ Doubtfire requires multiple environment variables that help define settings abou
 
 If you have chosen to use AAF Rapid Connect authentication, then you will also need to provide the following:
 
-| Key                            | Description                                                                                                                                                                        | Default                         |
-|--------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------|
-| `DF_AAF_ISSUER_URL`            | The URL of the AFF issuer, either `https://rapid.test.aaf.edu.au` for testing or `https://rapid.aaf.edu.au` for production.                                                        | `https://rapid.test.aaf.edu.au` |
-| `DF_AAF_AUDIENCE_URL`          | The URL of the AAF registered application.                                                                                                                                         | No default - required           |
-| `DF_AAF_CALLBACK_URL`          | The secure endpoint within your application that AAF Rapid Connect should POST responses to. It **must end with `/auth/jwt`** to access the Doubtfire JWT authentication endpoint. | No default - required           |
-| `DF_AAF_UNIQUE_URL`            | The unique URL provided by AAF Rapid Connect used for redirection out of Doubtfire.                                                                                                | No default - required           |
-| `DF_AAF_IDENTITY_PROVIDER_URL` | The URL of the AAF-registered identity provider. This value is **optional**.                                                                                                       | N/A                             |
-| `DF_SECRET_KEY_AAF`            | The secret used to register your application with AAF.                                                                                                                             | `secretsecret12345`             |
+| Key                            | Description                                                                                                                                                                            | Default                         |
+|--------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------|
+| `DF_AAF_ISSUER_URL`            | The URL of the AFF issuer, either `https://rapid.test.aaf.edu.au` for testing or `https://rapid.aaf.edu.au` for production.                                                            | `https://rapid.test.aaf.edu.au` |
+| `DF_AAF_AUDIENCE_URL`          | The URL of the AAF registered application.                                                                                                                                             | No default - required           |
+| `DF_AAF_CALLBACK_URL`          | The secure endpoint within your application that AAF Rapid Connect should POST responses to. It **must end with `/api/auth/jwt`** to access the Doubtfire JWT authentication endpoint. | No default - required           |
+| `DF_AAF_UNIQUE_URL`            | The unique URL provided by AAF Rapid Connect used for redirection out of Doubtfire.                                                                                                    | No default - required           |
+| `DF_AAF_IDENTITY_PROVIDER_URL` | The URL of the AAF-registered identity provider. This value is **optional**.                                                                                                           | N/A                             |
+| `DF_SECRET_KEY_AAF`            | The secret used to register your application with AAF.                                                                                                                                 | `secretsecret12345`             |
 
 ##### Database Population
 
