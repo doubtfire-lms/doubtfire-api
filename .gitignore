@@ -24,3 +24,4 @@ student_work/
 
 .DS_Store
 .env
+.env*

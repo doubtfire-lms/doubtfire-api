@@ -14,6 +14,8 @@ module Doubtfire
   # Doubtfire generic application configuration
   #
   class Application < Rails::Application
+    # Load .env variables
+    Dotenv::Railtie.load
     # ==> Authentication Method
     # Authentication method default is database, but possible settings
     # are: database, ldap, aaf. It can be overridden using the DF_AUTH_METHOD
