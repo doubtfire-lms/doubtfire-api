@@ -251,7 +251,7 @@ Devise.setup do |config|
 
   # ==> AAF via JWT OmniAuth
   # Devise method for JWT
-  # if Doubtfire::Application.config.devise_auth_method == :jwt
+  # if Doubtfire::Application.config.auth_method == :jwt
   #   aaf_secret = Doubtfire::Application.secrets.secret_key_aaf
   #   aaf_config = Doubtfire::Application.config.aaf
   #   config.omniauth :jwt,

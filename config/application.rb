@@ -16,9 +16,9 @@ module Doubtfire
   class Application < Rails::Application
     # ==> Authentication Method
     # Authentication method default is database, but possible settings
-    # are: database, ldap, aaf. It can be overridden using the DF_DEVISE_AUTH_METHOD
+    # are: database, ldap, aaf. It can be overridden using the DF_AUTH_METHOD
     # environment variable.
-    config.devise_auth_method = (ENV['DF_DEVISE_AUTH_METHOD'] || :database).to_sym
+    config.auth_method = (ENV['DF_AUTH_METHOD'] || :database).to_sym
     # ==> Student work directory
     # File server location for storing student's work. Defaults to `student_work`
     # directory under root but is overridden using DF_STUDENT_WORK_DIR environment
@@ -31,7 +31,7 @@ module Doubtfire
     config.institution[:host] = 'localhost:3000' unless Rails.env.production?
     # ==> AAF authentication
     # Must require AAF devise authentication method.
-    if config.devise_auth_method == :aaf
+    if config.auth_method == :aaf
       config.aaf = HashWithIndifferentAccess.new
       # URL of the issuer (i.e., https://rapid.[test.]aaf.edu.au)
       config.aaf[:issuer_url] = ENV['DF_AAF_ISSUER_URL']

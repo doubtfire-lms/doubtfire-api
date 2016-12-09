@@ -154,7 +154,7 @@ module Api
     desc 'Authentication method configuration'
     get '/auth/method' do
       response = {
-        method: Doubtfire::Application.config.devise_auth_method
+        method: Doubtfire::Application.config.auth_method
       }
       response[:redirect_to] = Doubtfire::Application.config.aaf[:redirect_url] if aaf_auth?
       response
