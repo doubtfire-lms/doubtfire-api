@@ -58,6 +58,16 @@ module Doubtfire
               "  DF_SECRET_KEY_AAF            => #{!secrets.secret_key_aaf.nil?}\n"
       end
     end
+    # Check secrets set for DF_SECRET_KEY_BASE, DF_SECRET_KEY_ATTR, DF_SECRET_KEY_DEVISE
+    if secrets.secret_key_base.nil? ||
+       secrets.secret_key_attr.nil? ||
+       secrets.secret_key_devise.nil?
+      raise "Required keys are not set, check the following environment variables: \n"\
+            "  key                          => variable set?\n"\
+            "  DF_SECRET_KEY_BASE           => #{!secrets.secret_key_base.nil?}\n"\
+            "  DF_SECRET_KEY_ATTR           => #{!secrets.secret_key_base.nil?}\n"\
+            "  DF_SECRET_KEY_DEVISE         => #{!secrets.secret_key_base.nil?}"
+    end
     # Localization
     config.i18n.enforce_available_locales = true
     # Ensure that auth tokens do not appear in log files
