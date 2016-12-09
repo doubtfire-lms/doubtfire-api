@@ -13,81 +13,78 @@ module Api
     helpers AuthenticationHelpers
 
     #
-    # Sign in
+    # Sign in - only mounted if AAF auth is NOT used
     #
-    desc 'Sign in'
-    params do
-      requires :username, type: String, desc: 'User username'
-      requires :password, type: String, desc: 'User\'s password'
-      optional :remember, type: Boolean, desc: 'User has requested to remember login', default: false
-    end
-    post '/auth' do
-      # If AAF, redirect to AAF redirection URL -- this endpoint is useless
-      if aaf_auth?
-        return { redirect_to: Doubtfire::Application.config.aaf[:redirect_url] }
+    unless AuthenticationHelpers.aaf_auth?
+      desc 'Sign in'
+      params do
+        requires :username, type: String, desc: 'User username'
+        requires :password, type: String, desc: 'User\'s password'
+        optional :remember, type: Boolean, desc: 'User has requested to remember login', default: false
       end
+      post '/auth' do
+        username = params[:username]
+        password = params[:password]
+        remember = params[:remember]
+        logger.info "Authenticate #{username} from #{request.ip}"
 
-      username = params[:username]
-      password = params[:password]
-      remember = params[:remember]
-      logger.info "Authenticate #{username} from #{request.ip}"
+        # Truncate the 's' from sXXX for Swinburne auth
+        truncate_s_match = (username =~ /^[Ss]\d{6,10}([Xx]|\d)$/)
+        username[0] = '' if !truncate_s_match.nil? && truncate_s_match.zero?
 
-      # Truncate the 's' from sXXX for Swinburne auth
-      truncate_s_match = (username =~ /^[Ss]\d{6,10}([Xx]|\d)$/)
-      username[0] = '' if !truncate_s_match.nil? && truncate_s_match.zero?
-
-      # No provided credentials
-      if username.nil? || password.nil?
-        error!({ error: 'The request must contain the user username and password.' }, 400)
-        return
-      end
-
-      # User lookup
-      username = username.downcase
-      institution_email_domain = Doubtfire::Application.config.institution[:email_domain]
-      user = User.find_or_create_by(username: username) do |new_user|
-        new_user.first_name = 'First Name'
-        new_user.last_name  = 'Surname'
-        new_user.email      = "#{username}@#{institution_email_domain}"
-        new_user.nickname   = 'Nickname'
-        new_user.role_id    = Role.student.id
-        new_user.login_id   = username
-      end
-
-      # Redirect acain_student or acain_tutor
-      acain_match = username =~ /^acain_.*$/
-      user.username = 'acain' if !acain_match.nil? && acain_match.zero?
-
-      # Try to authenticate
-      unless user.authenticate?(password)
-        error!({ error: 'Invalid email or password.' }, 401)
-        return
-      end
-
-      # Restore username if acain_...
-      user.username = username if !acain_match.nil? && acain_match.zero?
-
-      # Create user if they are a new record
-      if user.new_record?
-        user.password = 'password'
-        user.encrypted_password = BCrypt::Password.create('password')
-        unless user.valid?
-          error!(error: 'There was an error creating your account in Doubtfire. ' \
-                        'Please get in contact with your unit convenor or the ' \
-                        'Doubtfire administrators.')
+        # No provided credentials
+        if username.nil? || password.nil?
+          error!({ error: 'The request must contain the user username and password.' }, 400)
+          return
         end
-        user.save
+
+        # User lookup
+        username = username.downcase
+        institution_email_domain = Doubtfire::Application.config.institution[:email_domain]
+        user = User.find_or_create_by(username: username) do |new_user|
+          new_user.first_name = 'First Name'
+          new_user.last_name  = 'Surname'
+          new_user.email      = "#{username}@#{institution_email_domain}"
+          new_user.nickname   = 'Nickname'
+          new_user.role_id    = Role.student.id
+          new_user.login_id   = username
+        end
+
+        # Redirect acain_student or acain_tutor
+        acain_match = username =~ /^acain_.*$/
+        user.username = 'acain' if !acain_match.nil? && acain_match.zero?
+
+        # Try to authenticate
+        unless user.authenticate?(password)
+          error!({ error: 'Invalid email or password.' }, 401)
+          return
+        end
+
+        # Restore username if acain_...
+        user.username = username if !acain_match.nil? && acain_match.zero?
+
+        # Create user if they are a new record
+        if user.new_record?
+          user.password = 'password'
+          user.encrypted_password = BCrypt::Password.create('password')
+          unless user.valid?
+            error!(error: 'There was an error creating your account in Doubtfire. ' \
+                          'Please get in contact with your unit convenor or the ' \
+                          'Doubtfire administrators.')
+          end
+          user.save
+        end
+
+        # Revise an auth_token for future requests
+        user.revise_authentication_token(remember)
+
+        # Return user details
+        { user: UserSerializer.new(user), auth_token: user.auth_token }
       end
-
-      # Revise an auth_token for future requests
-      user.revise_authentication_token(remember)
-
-      # Return user details
-      { user: UserSerializer.new(user), auth_token: user.auth_token }
     end
 
     #
-    # AAF JWT callback
+    # AAF JWT callback - only mounted if AAF auth is used
     #
     if AuthenticationHelpers.aaf_auth?
       desc 'AAF Rapid Connect JWT callback'
@@ -149,6 +146,18 @@ module Api
         # Return user details
         { user: UserSerializer.new(user), auth_token: user.auth_token }
       end
+    end
+
+    #
+    # Returns the current auth method
+    #
+    desc 'Authentication method configuration'
+    get '/auth/method' do
+      response = {
+        method: Doubtfire::Application.config.devise_auth_method
+      }
+      response[:redirect_to] = Doubtfire::Application.config.aaf[:redirect_url] if aaf_auth?
+      response
     end
 
     #
