@@ -78,6 +78,7 @@ class User < ActiveRecord::Base
   # Queries
   scope :tutors,    -> { joins(:role).where('roles.id = :tutor_role or roles.id = :convenor_role or roles.id = :admin_role', tutor_role: Role.tutor_id, convenor_role: Role.convenor_id, admin_role: Role.admin_id) }
   scope :convenors, -> { joins(:role).where('roles.id = :convenor_role or roles.id = :admin_role', convenor_role: Role.convenor_id, admin_role: Role.admin_id) }
+  scope :admins,    -> { joins(:role).where('roles.id = :admin_role', admin_role: Role.admin_id) }
 
   def self.teaching (unit)
     User.joins(:unit_roles).where("unit_roles.unit_id = :unit_id and ( unit_roles.role_id = :tutor_role_id or unit_roles.role_id = :convenor_role_id) ", unit_id: unit.id, tutor_role_id: Role.tutor_id, convenor_role_id: Role.convenor_id)
@@ -85,10 +86,8 @@ class User < ActiveRecord::Base
 
   def username=(name)
     # strip S or s from start of ids in the form S1234567 or S123456X
-    if (name =~ /^[Ss]\d{6}([Xx]|\d)$/) == 0
-      name[0] = ""
-    end
-
+    truncate_s_match = (name =~ /^[Ss]\d{6,10}([Xx]|\d)$/)
+    name[0] = '' if !truncate_s_match.nil? && truncate_s_match.zero?
     self[:username] = name.downcase
   end
 
@@ -226,15 +225,14 @@ class User < ActiveRecord::Base
   end
 
   def self.default
-    user = self.new
-
-    user.username           = "username"
-    user.first_name         = "First"
-    user.last_name          = "Last"
-    user.email              = "XXXXXXX@swin.edu.au"
-    user.nickname           = "Nickname"
-    user.role_id            = Role.student_id
-
+    user = new
+    institution_email_domain = Doubtfire::Application.config.institution[:email_domain]
+    user.username   = 'username'
+    user.first_name = 'First'
+    user.last_name  = 'Last'
+    user.email      = "XXXXXXX@#{institution_email_domain}"
+    user.nickname   = 'Nickname'
+    user.role_id    = Role.student_id
     user
   end
 

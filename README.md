@@ -224,12 +224,36 @@ $ bundle config build.ruby-filemagic --with-magic-include=/usr/local/include --w
 
 Then try installing dependencies again.
 
-#### 6. Create and populate Doubtfire development databases
+#### 6. Create and populate Doubtfire
+
+Doubtfire requires an institution configuration file that defines settings about the institution it is being run at.
+
+Create this configuration file under the Doubtfire API project root `config` folder as `institution.yml`:
+
+```
+$ touch config/institution.yml
+```
+
+Edit this file using the template below:
+
+```yaml
+# Name of the institution
+name: The University of Foo
+# Email domain of the institution (e.g., user@unifoo.edu.au)
+email_domain: unifoo.edu.au
+# Host that is running Doubtfire
+host: doubtfire.ict.unifoo.edu.au
+```
 
 Whilst still in the Doubtfire API project root, execute:
 
 ```
 $ rake db:create
+```
+
+You can choose to populate the database with some fake test data using:
+
+```
 $ rake db:populate
 ```
 
@@ -390,12 +414,36 @@ $ bundle config build.ruby-filemagic --with-magic-include=/usr/local/include --w
 
 Then try installing dependencies again.
 
-#### 6. Create and populate Doubtfire development databases
+#### 6. Create and populate Doubtfire
+
+Doubtfire requires an institution configuration file that defines settings about the institution it is being run at.
+
+Create this configuration file under the Doubtfire API project root `config` folder as `institution.yml`:
+
+```
+$ touch config/institution.yml
+```
+
+Edit this file using the template below:
+
+```yaml
+# Name of the institution
+name: The University of Foo
+# Email domain of the institution (e.g., user@unifoo.edu.au)
+email_domain: unifoo.edu.au
+# Host that is running Doubtfire
+host: doubtfire.ict.unifoo.edu.au
+```
 
 Whilst still in the Doubtfire API project root, execute:
 
 ```
 $ rake db:create
+```
+
+You can choose to populate the database with some fake test data using:
+
+```
 $ rake db:populate
 ```
 

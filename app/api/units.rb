@@ -4,7 +4,7 @@ require 'mime-check-helpers'
 
 module Api
   class Units < Grape::API
-    helpers AuthHelpers
+    helpers AuthenticationHelpers
     helpers AuthorisationHelpers
     helpers MimeCheckHelpers
 

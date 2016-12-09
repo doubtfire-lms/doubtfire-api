@@ -1,7 +1,7 @@
 require 'grape'
 
 class TaskDownloadsController < ApplicationController
-  include AuthHelpers
+  include AuthenticationHelpers
   include AuthorisationHelpers
   include LogHelper
 

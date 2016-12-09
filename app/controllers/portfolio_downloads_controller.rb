@@ -1,7 +1,7 @@
 require 'grape'
 
 class PortfolioDownloadsController < ApplicationController
-  include AuthHelpers
+  include AuthenticationHelpers
   include AuthorisationHelpers
   include LogHelper
 

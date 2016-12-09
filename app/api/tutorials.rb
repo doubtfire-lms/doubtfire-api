@@ -2,7 +2,7 @@ require 'grape'
 
 module Api
   class Tutorials < Grape::API
-    helpers AuthHelpers
+    helpers AuthenticationHelpers
     helpers AuthorisationHelpers
 
     before do
