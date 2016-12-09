@@ -30,6 +30,7 @@ module AuthenticationHelpers
       sleep((200 + rand(200)) / 1000.0)
       error!({ error: 'Could not authenticate with token. Token invalid.' }, 419)
     end
+    user_by_token
   end
 
   #

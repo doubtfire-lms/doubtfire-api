@@ -76,7 +76,13 @@ module Api
         end
 
         # Revise an auth_token for future requests
-        user.revise_authentication_token(remember)
+        if authentication_token_expired?
+          # Create a new token
+          generate_authentication_token! remember
+        else
+          # Extend the existing token's time
+          extend_authentication_token remember
+        end
 
         # Return user details
         { user: UserSerializer.new(user), auth_token: user.auth_token }
@@ -140,10 +146,34 @@ module Api
           user.save
         end
 
-        # Revise an auth_token for future requests
-        user.revise_authentication_token(true)
+        # Generate a temporary auth_token for future requests
+        user.generate_temporary_authentication_token!
 
-        # Return user details
+        # Must redirect to the front-end after sign in
+        protocol = Rails.env.production? ? 'https' : 'http'
+        host = Doubtfire::Application.config.institution.host
+        redirect "#{protocol}/#{host}/#sign_in?auth_token=#{user.auth_token}&dest=home"
+      end
+
+      #
+      # Respond user details provided a temporary login token
+      #
+      desc 'Get user details from an authentication token'
+      params do
+        requires :auth_token, type: String, desc: 'The user\'s temporary auth token'
+      end
+      post '/auth' do
+        error!({ error: 'Invalid token.' }, 404) if params[:auth_token].nil?
+        logger.info "Get user via auth_token from #{request.ip}"
+
+        # Authenticate that the token is okay
+        user = authenticated?
+
+        # Invalidate the token and regenrate a new one
+        user.reset_authentication_token!
+        user.generate_authentication_token! true
+
+        # Respond user details with new auth token
         { user: UserSerializer.new(user), auth_token: user.auth_token }
       end
     end
