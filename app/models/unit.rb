@@ -232,14 +232,15 @@ class Unit < ActiveRecord::Base
   end
 
   #
-  # Returns the email of the first convenor or "acain@swin.edu.au" if there are no convenors
+  # Returns the email of the first convenor or the first administrator if there
+  # are no convenors
   #
   def convenor_email
     convenor = convenors.first
     if convenor
       convenor.user.email
     else
-      "acain@swin.edu.au"
+      User.admins.first.email
     end
   end
 
@@ -1037,7 +1038,7 @@ class Unit < ActiveRecord::Base
     #TODO: Remove once max_pct_similar is deleted
     #update_student_max_pct_similar()
 
-    self.last_plagarism_scan = DateTime.now
+    self.last_plagarism_scan = Time.zone.now
     self.save!
 
     self
@@ -1140,7 +1141,7 @@ class Unit < ActiveRecord::Base
           end
         end
       end
-      self.last_plagarism_scan = DateTime.now
+      self.last_plagarism_scan = Time.zone.now
       self.save!
     ensure
       if FileUtils.pwd() != pwd

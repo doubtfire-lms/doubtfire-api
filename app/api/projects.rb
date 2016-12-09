@@ -3,7 +3,7 @@ require 'project_serializer'
 
 module Api
   class Projects < Grape::API
-    helpers AuthHelpers
+    helpers AuthenticationHelpers
     helpers AuthorisationHelpers
     helpers DbHelpers
 

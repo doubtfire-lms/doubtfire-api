@@ -64,7 +64,7 @@ namespace :submission do
   task set_portfolio_production_date:  :environment do
     logger.info 'Setting portfolio production dates'
 
-    Project.where("portfolio_production_date is null").select{|p| p.portfolio_available}.each{|p| p.portfolio_production_date = DateTime.now;p.save}
+    Project.where("portfolio_production_date is null").select{|p| p.portfolio_available}.each{|p| p.portfolio_production_date = Time.zone.now;p.save}
   end
 
   task check_task_pdfs: :environment do

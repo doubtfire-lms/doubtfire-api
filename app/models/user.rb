@@ -1,67 +1,146 @@
 require 'authorisation_helpers'
 
 class User < ActiveRecord::Base
-  # attr_encrypted :email, :key => Doubtfire::Application.config.secret_attr_key, :encode => true
-  attr_encrypted :auth_token, :key => Doubtfire::Application.config.secret_attr_key, :encode => true, :attribute => 'authentication_token'
+  include AuthenticationHelpers
 
-  # Use LDAP (SIMS) for authentication
-  if Rails.env.production?
-    devise :ldap_authenticatable, :registerable,
-         :recoverable, :rememberable, :trackable, :validatable
+  ###
+  # Authentication
+  ###
+
+  # Auth token encryption settings
+  attr_encrypted :auth_token,
+                 key: Doubtfire::Application.secrets.secret_key_attr,
+                 encode: true,
+                 attribute: 'authentication_token'
+
+  # User authentication config
+  if AuthenticationHelpers.aaf_auth?
+    #
+    # Decodes a JWS against the JWT secret, returning JWT data or nil if no data
+    # could be decoded
+    #
+    def self.decode_jws(jws)
+      JSON::JWT.decode(jws.to_s, Doubtfire::Application.secrets.secret_key_aaf)
+    rescue
+      nil
+    end
+
+    #
+    # Validates a JSON web Signature against assertion rules. Returns false if
+    # it could not be verified.
+    #
+    def valid_jwt?(jws)
+      # 1. The signed JWT matches the JWT key
+      jwt = User.decode_jws(jws)
+      return false if jwt.nil?
+      # 2. The `aud` claim matches the application URL
+      aud_ok = jwt['aud'] == Doubtfire::Application.config.aaf[:audience_url]
+      # 3. The `iss` claim has the correct issuer URL
+      iss_ok = jwt['iss'] == Doubtfire::Application.config.aaf[:issuer_url]
+      # 4. The time MUST >= nbf time and < exp claim
+      time_ok = Time.zone.now >= Time.zone.at(jwt['nbf']) &&
+                Time.zone.now <  Time.zone.at(jwt['exp'])
+      # Assert all
+      aud_ok && iss_ok && time_ok
+    end
   else
-    devise :database_authenticatable, :registerable,
-         :recoverable, :rememberable, :trackable, :validatable
+    devise_keys = %i(registerable recoverable rememberable trackable validatable)
+    strategy = AuthenticationHelpers.ldap_auth? ? :ldap_authenticatable : :database_authenticatable
+    devise strategy, *devise_keys
   end
 
-  def authenticate? (password)
-    if Rails.env.production?
-      self.valid_ldap_authentication?(password)
+  #
+  # Authenticates a user against a piece of data
+  #
+  def authenticate?(data)
+    if aaf_auth?
+      valid_jwt?(data)
+    elsif ldap_auth?
+      valid_ldap_authentication?(data)
     else
-      self.valid_password?(password)
+      valid_password?(data)
     end
   end
 
-  def extend_authentication_token (remember)
+  #
+  # Extends an existing auth_token if needed
+  #
+  def extend_authentication_token(remember)
+    # Extending a nil token will just create one first
     if auth_token.nil?
       generate_authentication_token! false
       return
     end
 
+    # Default expire time
+    expiry_time = Time.zone.now + 2.hours
+
+    # Extended expiry times only apply to students and convenors
     if remember
-      if role == Role.student || role == :student
-        self.auth_token_expiry = DateTime.now + 2.weeks
-      elsif role == Role.tutor || role == :tutor
-        self.auth_token_expiry = DateTime.now + 1.week
-      else
-        self.auth_token_expiry = DateTime.now + 2.hours
-      end
-    else
-      self.auth_token_expiry = DateTime.now + 2.hours
+      student_expiry_time = Time.zone.now + 2.weeks
+      tutor_expiry_time = Time.zone.now + 1.week
+      expiry_time =
+        if role == Role.student || role == :student
+          student_expiry_time
+        elsif role == Role.tutor || role == :tutor
+          tutor_expiry_time
+        end
     end
 
-    self.save
+    self.auth_token_expiry = expiry_time
+    save
   end
 
-  def generate_authentication_token! (remember)
-    token = nil
-
+  #
+  # Force-generates a new authentication token, regardless of whether or not
+  # it is actually expired
+  #
+  def generate_authentication_token!(remember)
+    # Loop until new unique auth token is found
     token = loop do
       token = Devise.friendly_token
       break token unless User.find_by_auth_token(token)
     end
+    # Set and return new auth token
     self.auth_token = token
-
-    extend_authentication_token remember
-
-    self.save
+    extend_authentication_token(remember)
+    save
     token
   end
 
+  #
+  # Generates a new authentication token if it has expired or extends the time
+  # an existing authentication token if it has not.
+  #
+  def revise_authentication_token(remember)
+    if authentication_token_expired?
+      # Create a new token
+      generate_authentication_token! remember
+    else
+      # Extend the existing token's time
+      extend_authentication_token remember
+    end
+  end
+
+  #
+  # Deletes authentication token
+  #
   def reset_authentication_token!
     self.auth_token = nil
-    self.auth_token_expiry = DateTime.now - 1.week
-    self.save
+    self.auth_token_expiry = Time.zone.now - 1.week
+    save
   end
+
+  #
+  # Returns whether the authentication token has expired
+  #
+  def authentication_token_expired?
+    auth_token_expiry.nil? || auth_token_expiry <= Time.zone.now
+  end
+
+  ###
+  # Schema
+  ###
 
   # Model associations
   belongs_to  :role   # Foreign Key
@@ -78,6 +157,7 @@ class User < ActiveRecord::Base
   # Queries
   scope :tutors,    -> { joins(:role).where('roles.id = :tutor_role or roles.id = :convenor_role or roles.id = :admin_role', tutor_role: Role.tutor_id, convenor_role: Role.convenor_id, admin_role: Role.admin_id) }
   scope :convenors, -> { joins(:role).where('roles.id = :convenor_role or roles.id = :admin_role', convenor_role: Role.convenor_id, admin_role: Role.admin_id) }
+  scope :admins,    -> { joins(:role).where('roles.id = :admin_role', admin_role: Role.admin_id) }
 
   def self.teaching (unit)
     User.joins(:unit_roles).where("unit_roles.unit_id = :unit_id and ( unit_roles.role_id = :tutor_role_id or unit_roles.role_id = :convenor_role_id) ", unit_id: unit.id, tutor_role_id: Role.tutor_id, convenor_role_id: Role.convenor_id)
@@ -85,10 +165,8 @@ class User < ActiveRecord::Base
 
   def username=(name)
     # strip S or s from start of ids in the form S1234567 or S123456X
-    if (name =~ /^[Ss]\d{6}([Xx]|\d)$/) == 0
-      name[0] = ""
-    end
-
+    truncate_s_match = (name =~ /^[Ss]\d{6,10}([Xx]|\d)$/)
+    name[0] = '' if !truncate_s_match.nil? && truncate_s_match.zero?
     self[:username] = name.downcase
   end
 
@@ -226,15 +304,14 @@ class User < ActiveRecord::Base
   end
 
   def self.default
-    user = self.new
-
-    user.username           = "username"
-    user.first_name         = "First"
-    user.last_name          = "Last"
-    user.email              = "XXXXXXX@swin.edu.au"
-    user.nickname           = "Nickname"
-    user.role_id            = Role.student_id
-
+    user = new
+    institution_email_domain = Doubtfire::Application.config.institution[:email_domain]
+    user.username   = 'username'
+    user.first_name = 'First'
+    user.last_name  = 'Last'
+    user.email      = "XXXXXXX@#{institution_email_domain}"
+    user.nickname   = 'Nickname'
+    user.role_id    = Role.student_id
     user
   end
 

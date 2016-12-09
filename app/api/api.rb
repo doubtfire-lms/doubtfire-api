@@ -5,7 +5,7 @@ module Api
   class Root < Grape::API
     helpers AuthorisationHelpers
     helpers LogHelper
-    helpers AuthHelpers
+    helpers AuthenticationHelpers
 
     prefix 'api'
     format :json
@@ -15,7 +15,7 @@ module Api
     #
     # Mount the api modules
     #
-    mount Api::Auth
+    mount Api::Authentication
     mount Api::GroupSets
     mount Api::Projects
     mount Api::Students
@@ -36,21 +36,21 @@ module Api
     #
     # Add auth details to all end points
     #
-    AuthHelpers.add_auth_to Api::GroupSets
-    AuthHelpers.add_auth_to Api::Units
-    AuthHelpers.add_auth_to Api::Projects
-    AuthHelpers.add_auth_to Api::Students
-    AuthHelpers.add_auth_to Api::Tasks
-    AuthHelpers.add_auth_to Api::TaskComments
-    AuthHelpers.add_auth_to Api::TaskDefinitions
-    AuthHelpers.add_auth_to Api::Tutorials
-    AuthHelpers.add_auth_to Api::Users
-    AuthHelpers.add_auth_to Api::UnitRoles
-    AuthHelpers.add_auth_to Api::LearningOutcomes
-    AuthHelpers.add_auth_to Api::LearningAlignment
-    AuthHelpers.add_auth_to Api::Submission::PortfolioApi
-    AuthHelpers.add_auth_to Api::Submission::PortfolioEvidenceApi
-    AuthHelpers.add_auth_to Api::Submission::BatchTask
+    AuthenticationHelpers.add_auth_to Api::GroupSets
+    AuthenticationHelpers.add_auth_to Api::Units
+    AuthenticationHelpers.add_auth_to Api::Projects
+    AuthenticationHelpers.add_auth_to Api::Students
+    AuthenticationHelpers.add_auth_to Api::Tasks
+    AuthenticationHelpers.add_auth_to Api::TaskComments
+    AuthenticationHelpers.add_auth_to Api::TaskDefinitions
+    AuthenticationHelpers.add_auth_to Api::Tutorials
+    AuthenticationHelpers.add_auth_to Api::Users
+    AuthenticationHelpers.add_auth_to Api::UnitRoles
+    AuthenticationHelpers.add_auth_to Api::LearningOutcomes
+    AuthenticationHelpers.add_auth_to Api::LearningAlignment
+    AuthenticationHelpers.add_auth_to Api::Submission::PortfolioApi
+    AuthenticationHelpers.add_auth_to Api::Submission::PortfolioEvidenceApi
+    AuthenticationHelpers.add_auth_to Api::Submission::BatchTask
 
     add_swagger_documentation \
       base_path: nil,

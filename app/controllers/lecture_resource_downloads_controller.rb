@@ -1,7 +1,7 @@
 require 'grape'
 
 class LectureResourceDownloadsController < ApplicationController
-  include AuthHelpers
+  include AuthenticationHelpers
   include AuthorisationHelpers
 
   class MyException < Exception

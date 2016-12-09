@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20160529012853) do
+ActiveRecord::Schema.define(version: 20161208055326) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -74,6 +74,31 @@ ActiveRecord::Schema.define(version: 20160529012853) do
 
   add_index "helpdesk_schedules", ["user_id"], name: "index_helpdesk_schedules_on_user_id", using: :btree
 
+  create_table "helpdesk_sessions", force: :cascade do |t|
+    t.integer  "user_id",        null: false
+    t.datetime "clock_on_time",  null: false
+    t.datetime "clock_off_time", null: false
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  add_index "helpdesk_sessions", ["user_id"], name: "index_helpdesk_sessions_on_user_id", using: :btree
+
+  create_table "helpdesk_tickets", force: :cascade do |t|
+    t.integer  "project_id",                                      null: false
+    t.integer  "task_id"
+    t.string   "description",        limit: 2048
+    t.boolean  "is_resolved",                     default: false, null: false
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.datetime "closed_at"
+    t.float    "minutes_to_resolve"
+    t.boolean  "is_closed",                       default: false
+  end
+
+  add_index "helpdesk_tickets", ["project_id"], name: "index_helpdesk_tickets_on_project_id", using: :btree
+  add_index "helpdesk_tickets", ["task_id"], name: "index_helpdesk_tickets_on_task_id", using: :btree
+
   create_table "learning_outcome_task_links", force: :cascade do |t|
     t.text     "description"
     t.integer  "rating"
@@ -114,11 +139,18 @@ ActiveRecord::Schema.define(version: 20160529012853) do
     t.datetime "created_at"
     t.datetime "updated_at"
     t.string   "plagiarism_report_url", limit: 255
-    t.boolean  "dismissed",             default: false
+    t.boolean  "dismissed",                         default: false
   end
 
   add_index "plagiarism_match_links", ["other_task_id"], name: "index_plagiarism_match_links_on_other_task_id", using: :btree
   add_index "plagiarism_match_links", ["task_id"], name: "index_plagiarism_match_links_on_task_id", using: :btree
+
+  create_table "project_convenors", force: :cascade do |t|
+    t.integer  "unit_id"
+    t.integer  "user_id"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
 
   create_table "projects", force: :cascade do |t|
     t.integer  "unit_id"
@@ -252,8 +284,8 @@ ActiveRecord::Schema.define(version: 20160529012853) do
     t.datetime "submission_date"
     t.datetime "assessment_date"
     t.integer  "grade"
-    t.integer  "contribution_pts",     default: 3
-    t.integer  "quality_pts",          default: 0
+    t.integer  "contribution_pts",                 default: 3
+    t.integer  "quality_pts",                      default: 0
   end
 
   add_index "tasks", ["group_submission_id"], name: "index_tasks_on_group_submission_id", using: :btree
@@ -261,6 +293,20 @@ ActiveRecord::Schema.define(version: 20160529012853) do
   add_index "tasks", ["project_id"], name: "index_tasks_on_project_id", using: :btree
   add_index "tasks", ["task_definition_id"], name: "index_tasks_on_task_definition_id", using: :btree
   add_index "tasks", ["task_status_id"], name: "index_tasks_on_task_status_id", using: :btree
+
+  create_table "teams", force: :cascade do |t|
+    t.integer  "unit_id"
+    t.integer  "user_id"
+    t.string   "meeting_day",      limit: 255
+    t.string   "meeting_time",     limit: 255
+    t.string   "meeting_location", limit: 255
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.string   "official_name",    limit: 255
+  end
+
+  add_index "teams", ["unit_id"], name: "index_teams_on_unit_id", using: :btree
+  add_index "teams", ["user_id"], name: "index_teams_on_user_id", using: :btree
 
   create_table "tutorials", force: :cascade do |t|
     t.integer  "unit_id"
@@ -339,8 +385,10 @@ ActiveRecord::Schema.define(version: 20160529012853) do
     t.boolean  "receive_portfolio_notifications",             default: true
     t.boolean  "opt_in_to_research"
     t.boolean  "has_run_first_time_setup",                    default: false
+    t.string   "login_id"
   end
 
   add_index "users", ["authentication_token"], name: "index_users_on_authentication_token", unique: true, using: :btree
+  add_index "users", ["login_id"], name: "index_users_on_login_id", unique: true, using: :btree
 
 end

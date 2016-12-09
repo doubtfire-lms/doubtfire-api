@@ -5,7 +5,7 @@ module Api
   module Submission
     class PortfolioEvidenceApi < Grape::API
       helpers GenerateHelpers
-      helpers AuthHelpers
+      helpers AuthenticationHelpers
       helpers AuthorisationHelpers
 
       before do

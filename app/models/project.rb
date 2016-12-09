@@ -777,10 +777,11 @@ class Project < ActiveRecord::Base
     ]
 
     ordered_tasks = tasks.joins(:task_definition).order("task_definitions.target_date, task_definitions.abbreviation").select{|task| task.task_definition.target_grade <= target_grade }
+    host = Doubtfire::Application.config.institution[:host]
     coverpage_html = <<EOF
 <html>
   <head>
-    <link rel='stylesheet' type='text/css' href='https://doubtfire.ict.swin.edu.au/assets/doubtfire.css'>
+    <link rel='stylesheet' type='text/css' href='https://#{host}/assets/doubtfire.css'>
   </head>
   <body>
     <h2>
@@ -925,12 +926,11 @@ EOF
       @files = project.portfolio_files
       @base_path = project.portfolio_temp_path
       @image_path = Rails.root.join("public", "assets", "images")
-
       @ordered_tasks = project.tasks.joins(:task_definition).order("task_definitions.start_date, task_definitions.abbreviation").where("task_definitions.target_grade <= #{project.target_grade}")
-
       @portfolio_tasks = project.portfolio_tasks
       @task_defs = project.unit.task_definitions.order(:start_date)
       @outcomes = project.unit.learning_outcomes.order(:ilo_number)
+      @institution_name = Doubtfire::Application.config.institution[:name]
     end
 
     def make_pdf()
@@ -971,7 +971,7 @@ EOF
 
       logger.info "Created portfolio at #{portfolio_path} - #{log_details()}"
 
-      self.portfolio_production_date = DateTime.now
+      self.portfolio_production_date = Time.zone.now
       self.save
       return true
     rescue => e

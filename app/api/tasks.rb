@@ -3,7 +3,7 @@ require 'task_serializer'
 
 module Api
   class Tasks < Grape::API
-    helpers AuthHelpers
+    helpers AuthenticationHelpers
     helpers AuthorisationHelpers
 
     before do
@@ -20,32 +20,37 @@ module Api
     get '/tasks' do
       unit = Unit.find(params[:unit_id])
 
-      if not authorise? current_user, unit, :get_students
+      unless authorise? current_user, unit, :get_students
         error!({"error" => "You do not have permission to read these task details"}, 403)
       end
 
-      unit.student_tasks.
-        joins(:task_status).
-        select('tasks.id', 'projects.tutorial_id as tutorial_id', 'task_statuses.name as status_name', 'task_definition_id').
-        where("tasks.task_status_id > 1 and projects.tutorial_id is not null").
-        map { |r|
-          {
-            id: r.id,
-            tutorial_id: r.tutorial_id,
-            task_definition_id: r.task_definition_id,
-            status: TaskStatus.status_key_for_name(r.status_name)
-          }
-        }
+      unit.student_tasks
+          .joins(:task_status)
+          .select(
+            'tasks.id',
+            'projects.tutorial_id as tutorial_id',
+            'task_statuses.name as status_name',
+            'task_definition_id'
+          )
+          .where('tasks.task_status_id > 1 and projects.tutorial_id is not null')
+          .map do |r|
+            {
+              id: r.id,
+              tutorial_id: r.tutorial_id,
+              task_definition_id: r.task_definition_id,
+              status: TaskStatus.status_key_for_name(r.status_name)
+            }
+          end
     end
 
     desc "Get a similarity match for a given task"
     get '/tasks/:id/similarity/:count' do
-      if not authenticated?
+      unless authenticated?
         error!({"error" => "Not authorised to download details for task '#{params[:id]}'"}, 401)
       end
       task = Task.find(params[:id])
 
-      if not authorise? current_user, task, :get_submission
+      unless authorise? current_user, task, :get_submission
         error!({"error" => "Not authorised to download details for task '#{params[:id]}'"}, 401)
       end
 
@@ -58,67 +63,63 @@ module Api
       return if match_link.nil?
 
       logger.debug "Plagiarism match link 1: #{match_link}"
-
       other_match_link = match_link.other_party
-
       logger.debug "Plagiarism match link 2: #{other_match_link}"
-
       output = FileHelper.path_to_plagarism_html(match_link)
 
-      if output.nil? || ! File.exists?(output)
+      if output.nil? || !File.exists?(output)
         error!({"error" => "No files to download"}, 403)
       end
 
-      # check if returning both parties
-      if not authorise? current_user, other_match_link.task, :get_submission
-        {
-          student: {
-            username: match_link.student.username,
-            name: match_link.student.name,
-            tutor: match_link.tutor.name,
-            tutorial: match_link.tutorial,
-            html: File.read(output),
-            lnk: (match_link.plagiarism_report_url if authorise? current_user, match_link.task, :view_plagiarism ),
-            pct: match_link.pct,
-            dismissed: match_link.dismissed
-          },
-          other_student: {
-            username: "???",
-            name: "???",
-            tutor: match_link.other_tutor.name,
-            tutorial: match_link.other_tutorial,
-            html: "<pre>???</pre>",
-            lnk: "",
-            pct: other_match_link.pct,
-            dismissed: other_match_link.dismissed
-          }
-        }
-      else
-        other_output = FileHelper.path_to_plagarism_html(other_match_link)
-
-        {
-          student: {
-            username: match_link.student.username,
-            name: match_link.student.name,
-            tutor: match_link.tutor.name,
-            tutorial: match_link.tutorial,
-            html: File.read(output),
-            lnk: (match_link.plagiarism_report_url if authorise? current_user, match_link.task, :view_plagiarism ),
-            pct: match_link.pct,
-            dismissed: match_link.dismissed
-          },
-          other_student: {
-            username: match_link.other_student.username,
-            name: match_link.other_student.name,
-            tutor: match_link.other_tutor.name,
-            tutorial: match_link.other_tutorial,
-            html: File.read(other_output),
-            lnk: (other_match_link.plagiarism_report_url if authorise? current_user, other_match_link.task, :view_plagiarism),
-            pct: other_match_link.pct,
-            dismissed: other_match_link.dismissed
-          }
-        }
+      if authorise? current_user, match_link.task, :view_plagiarism
+        student_url = match_link.plagiarism_report_url
       end
+
+      student_hash = {
+        username: match_link.student.username,
+        email: match_link.student.email,
+        name: match_link.student.name,
+        tutor: match_link.tutor.name,
+        tutorial: match_link.tutorial,
+        html: File.read(output),
+        url: student_url,
+        pct: match_link.pct,
+        dismissed: match_link.dismissed
+      }
+      other_student_hash = {
+        username: nil,
+        email: nil,
+        name: nil,
+        tutor: match_link.other_tutor.name,
+        tutorial: match_link.other_tutorial,
+        html: nil,
+        url: nil,
+        pct: other_match_link.pct,
+        dismissed: other_match_link.dismissed
+      }
+
+      # Check if returning both parties
+      authorised_to_view_both = authorise? current_user, other_match_link.task, :get_submission
+      if authorised_to_view_both
+        other_output = FileHelper.path_to_plagarism_html(other_match_link)
+        if authorise? current_user, other_match_link.task, :view_plagiarism
+          other_student_url = other_match_link.plagiarism_report_url
+        end
+        # Update other_student_hash to include details
+        other_student_hash[:username]  = match_link.other_student.username
+        other_student_hash[:email]     = match_link.other_student.email
+        other_student_hash[:name]      = match_link.other_student.name
+        other_student_hash[:tutor]     = match_link.other_tutor.name
+        other_student_hash[:tutorial]  = match_link.other_tutorial
+        other_student_hash[:html]      = File.read(other_output)
+        other_student_hash[:url]       = other_student_url
+        other_student_hash[:pct]       = other_match_link.pct
+        other_student_hash[:dismissed] = other_match_link.dismissed
+      end
+      {
+        student: student_hash,
+        other_student: other_student_hash
+      }
     end
 
     desc "Dismiss a similarity match for a given task"
