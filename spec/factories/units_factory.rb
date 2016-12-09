@@ -39,8 +39,8 @@ FactoryGirl.define do
 
     name          "A"
     description   "Description"
-    start_date    DateTime.now
-    end_date      DateTime.now + 14.weeks
+    start_date    Time.zone.now
+    end_date      Time.zone.now + 14.weeks
     code          "COS10001"
     active        true
 

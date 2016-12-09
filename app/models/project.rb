@@ -971,7 +971,7 @@ EOF
 
       logger.info "Created portfolio at #{portfolio_path} - #{log_details()}"
 
-      self.portfolio_production_date = DateTime.now
+      self.portfolio_production_date = Time.zone.now
       self.save
       return true
     rescue => e

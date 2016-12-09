@@ -1038,7 +1038,7 @@ class Unit < ActiveRecord::Base
     #TODO: Remove once max_pct_similar is deleted
     #update_student_max_pct_similar()
 
-    self.last_plagarism_scan = DateTime.now
+    self.last_plagarism_scan = Time.zone.now
     self.save!
 
     self
@@ -1141,7 +1141,7 @@ class Unit < ActiveRecord::Base
           end
         end
       end
-      self.last_plagarism_scan = DateTime.now
+      self.last_plagarism_scan = Time.zone.now
       self.save!
     ensure
       if FileUtils.pwd() != pwd
