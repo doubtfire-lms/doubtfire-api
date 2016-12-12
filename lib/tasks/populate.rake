@@ -1,6 +1,6 @@
 require_all 'lib/helpers'
 namespace :db do
-  desc "Mark off some of the due tasks"
+  desc 'Mark off some of the due tasks'
   task expand_first_unit: :environment do
     unit = Unit.first
     tutes = unit.tutorials
@@ -10,10 +10,10 @@ namespace :db do
     end
   end
 
-  desc "Mark off some of the due tasks"
+  desc 'Mark off some of the due tasks'
   task simulate_signoff: :environment do
     Unit.all.each do |unit|
-      current_week = ((Time.zone.now - unit.start_date) / 1.weeks).floor
+      current_week = ((Time.zone.now - unit.start_date) / 1.week).floor
 
       unit.students.each do |proj|
         #
@@ -57,26 +57,26 @@ namespace :db do
 
         kept_up_to_date = unit.date_for_week_and_day(kept_up_to_week, 'Fri')
 
-        assigned_task_defs = p.assigned_task_defs.where("target_date <= :up_to_date", up_to_date: kept_up_to_date)
+        assigned_task_defs = p.assigned_task_defs.where('target_date <= :up_to_date', up_to_date: kept_up_to_date)
 
-        time_to_complete_task = (kept_up_to_date - (unit.start_date + 1.weeks)) / assigned_task_defs.count
+        time_to_complete_task = (kept_up_to_date - (unit.start_date + 1.week)) / assigned_task_defs.count
 
         i = 0
-        assigned_task_defs.order("target_date").each do |at|
+        assigned_task_defs.order('target_date').each do |at|
           task = p.task_for_task_definition(at)
           # if its more than three week past kept up to date...
           if kept_up_to_date >= task.target_date + 2.weeks
             complete_date = unit.start_date + i * time_to_complete_task + rand(7..14).days
-            if complete_date < unit.start_date + 1.weeks
-              complete_date = unit.start_date + 1.weeks
+            if complete_date < unit.start_date + 1.week
+              complete_date = unit.start_date + 1.week
             elsif complete_date > Time.zone.now
               complete_date = Time.zone.now
             end
             task.assess TaskStatus.complete, tutor, complete_date
           elsif kept_up_to_date >= task.target_date + 1.week
             complete_date = unit.start_date + i * time_to_complete_task + rand(7..14).days
-            if complete_date < unit.start_date + 1.weeks
-              complete_date = unit.start_date + 1.weeks
+            if complete_date < unit.start_date + 1.week
+              complete_date = unit.start_date + 1.week
             elsif complete_date > Time.zone.now
               complete_date = Time.zone.now
             end
@@ -102,8 +102,8 @@ namespace :db do
             end
           else
             complete_date = unit.start_date + i * time_to_complete_task + rand(7..10).days
-            if complete_date < unit.start_date + 1.weeks
-              complete_date = unit.start_date + 1.weeks
+            if complete_date < unit.start_date + 1.week
+              complete_date = unit.start_date + 1.week
             elsif complete_date > Time.zone.now
               complete_date = Time.zone.now
             end
@@ -132,7 +132,7 @@ namespace :db do
           i += 1
         end
 
-        next_assigned_tasks = p.assigned_tasks.where("target_date > :up_to_date AND target_date <= :next_week", up_to_date: kept_up_to_date, next_week: kept_up_to_date + 1.weeks)
+        next_assigned_tasks = p.assigned_tasks.where('target_date > :up_to_date AND target_date <= :next_week', up_to_date: kept_up_to_date, next_week: kept_up_to_date + 1.week)
 
         next_assigned_tasks.each do |at|
           task = p.task_for_task_definition(at)
@@ -151,25 +151,25 @@ namespace :db do
     end
   end
 
-  desc "Clear the database and fill with test data"
+  desc 'Clear the database and fill with test data'
   task populate: [:setup, :migrate] do
     scale = ENV['SCALE'] ? ENV['SCALE'].to_sym : :small
     extended = ENV['EXTENDED'] == 'true'
 
     dbpop = DatabasePopulator.new scale
-    dbpop.generate_users()
-    dbpop.generate_units()
+    dbpop.generate_users
+    dbpop.generate_units
 
     # Run simulate signoff?
     unless extended
-      puts "-> Would you like to simulate student progress? This may take a while... [y/n]"
+      puts '-> Would you like to simulate student progress? This may take a while... [y/n]'
     end
-    if extended || STDIN.gets.chomp.downcase == 'y'
-      puts "-> Simulating signoff..."
-      Rake::Task["db:simulate_signoff"].execute
-      puts "-> Updating student progress..."
-      Rake::Task["submission:update_progress"].execute
+    if extended || STDIN.gets.chomp.casecmp('y').zero?
+      puts '-> Simulating signoff...'
+      Rake::Task['db:simulate_signoff'].execute
+      puts '-> Updating student progress...'
+      Rake::Task['submission:update_progress'].execute
     end
-    puts "-> Done."
+    puts '-> Done.'
   end
 end
