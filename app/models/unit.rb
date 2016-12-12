@@ -989,7 +989,9 @@ class Unit < ActiveRecord::Base
   end
 
   def update_plagiarism_stats()
-    moss = MossRuby.new(Doubtfire::Application.config.moss_key)
+    moss_key = Doubtfire::Application.secrets.secret_key_moss
+    raise "No moss key set. Check ENV['DF_SECRET_KEY_MOSS'] first." if moss_key.nil?
+    moss = MossRuby.new(moss_key)
 
     task_definitions.where(plagiarism_updated: true).each do |td|
       td.plagiarism_updated = false
@@ -1104,7 +1106,10 @@ class Unit < ActiveRecord::Base
             next if type_data.nil? or type_data.length != 2 or type_data[0] != "moss"
 
             # Create the MossRuby object
-            moss = MossRuby.new(Doubtfire::Application.config.moss_key)
+            # Doubtfire::Application.secrets
+            moss_key = Doubtfire::Application.secrets.secret_key_moss
+            raise "No moss key set. Check ENV['DF_SECRET_KEY_MOSS'] first." if moss_key.nil?
+            moss = MossRuby.new(moss_key)
 
             # Set options  -- the options will already have these default values
             moss.options[:max_matches] = 7
