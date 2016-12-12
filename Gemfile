@@ -19,6 +19,7 @@ group :development, :replica do
   gem 'better_errors'
   gem 'rails_best_practices'
   gem 'thin'
+  gem 'rubocop', '0.46.0'
 end
 
 group :development, :test do
