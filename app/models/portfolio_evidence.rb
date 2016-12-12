@@ -3,7 +3,7 @@ class PortfolioEvidence
   include LogHelper
 
   def self.logger
-    LogHelper::logger
+    LogHelper.logger
   end
 
   def self.sanitized_path(*paths)
@@ -23,42 +23,38 @@ class PortfolioEvidence
   # into PDF files
   #
   def self.process_new_to_pdf
-    done = { }
-    errors = { }
+    done = {}
+    errors = {}
 
     # For each folder in new (i.e., queued folders to process) that matches appropriate name
-    new_root_dir = Dir.entries(student_work_dir(:new)).select { | f | (f =~ /^\d+$/) == 0 }
-    new_root_dir.each do | folder_id |
+    new_root_dir = Dir.entries(student_work_dir(:new)).select { |f| (f =~ /^\d+$/).zero? }
+    new_root_dir.each do |folder_id|
       task = Task.find(folder_id)
 
-      add_error = lambda { | message |
+      add_error = lambda do |message|
         logger.error "Failed to process folder_id = #{folder_id}. #{message}"
 
         if task
           task.add_comment task.project.main_tutor, "**Automated Comment**: Something went wrong with your submission. Check the files and resubmit this task. #{message}"
           task.trigger_transition trigger: 'fix', by_user: task.project.main_tutor
 
-          if errors[task.project].nil?
-            errors[task.project] = []
-          end
+          errors[task.project] = [] if errors[task.project].nil?
           errors[task.project] << task
         end
-      }
+      end
 
       begin
         logger.info "creating pdf for task #{task.id}"
         success = task.convert_submission_to_pdf
 
         if success
-          if done[task.project].nil?
-            done[task.project] = []
-          end
+          done[task.project] = [] if done[task.project].nil?
           done[task.project] << task
         else
-          add_error.call("Failed to convert your submission to pdf.")
+          add_error.call('Failed to convert your submission to pdf.')
         end
       rescue Exception => e
-        add_error.call("#{e.message}")
+        add_error.call(e.message.to_s)
       end
     end
 
@@ -81,12 +77,14 @@ class PortfolioEvidence
 
   def self.final_pdf_path_for_group_submission(group_submission)
     File.join(
-      FileHelper.student_group_work_dir(:pdf, group_submission, task=nil, create=true),
+      FileHelper.student_group_work_dir(:pdf, group_submission, task = nil, create = true),
       sanitized_filename(
-        sanitized_path("#{group_submission.task_definition.abbreviation}-#{group_submission.id}") + ".pdf"))
+        sanitized_path("#{group_submission.task_definition.abbreviation}-#{group_submission.id}") + '.pdf'
+      )
+    )
   end
 
   def self.recreate_task_pdf(task)
-    task.move_done_to_new()
+    task.move_done_to_new
   end
 end

@@ -10,9 +10,13 @@ module TimeoutHelper
   #     long_operation()
   #   end
   #
-  def try_within(sec, timeout_message = "operation", &block)
+  def try_within(sec, timeout_message = 'operation')
     Terminator.terminate sec do
-      block.call rescue logger.error "Timeout when #{timeout_message} after #{sec}s"
+      begin
+        yield
+      rescue
+        logger.error "Timeout when #{timeout_message} after #{sec}s"
+      end
     end
   end
 

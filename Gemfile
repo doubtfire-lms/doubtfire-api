@@ -50,7 +50,7 @@ gem 'faker'
 # Student submission
 gem 'coderay'
 gem 'ruby-filemagic'
-gem 'rmagick', '~> 2.15' #require: false #already included in other gems - remove to avoid duplicate errors
+gem 'rmagick', '~> 2.15' # require: false #already included in other gems - remove to avoid duplicate errors
 gem 'rubyzip'
 
 # Plagarism detection

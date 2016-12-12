@@ -8,12 +8,12 @@ class GroupSubmission < ActiveRecord::Base
   belongs_to :task_definition
   has_many :tasks, dependent: :nullify
   has_many :projects, through: :tasks
-  belongs_to :submitted_by_project, class_name: "Project", foreign_key: 'submitted_by_project_id'
+  belongs_to :submitted_by_project, class_name: 'Project', foreign_key: 'submitted_by_project_id'
 
   #
   # Ensure file is also deleted
   #
-  before_destroy do | group_submission |
+  before_destroy do |group_submission|
     logger.debug "Deleting group submission #{group_submission.id}"
     begin
       FileHelper.delete_group_submission(group_submission)
@@ -28,7 +28,7 @@ class GroupSubmission < ActiveRecord::Base
     end
   end
 
-  def propagate_transition initial_task, trigger, by_user, quality
+  def propagate_transition(initial_task, trigger, by_user, quality)
     tasks.each do |task|
       if task != initial_task
         task.trigger_transition(trigger: trigger, by_user: by_user, group_transition: true, quality: quality)
@@ -36,7 +36,7 @@ class GroupSubmission < ActiveRecord::Base
     end
   end
 
-  def propagate_grade initial_task, new_grade, ui
+  def propagate_grade(initial_task, new_grade, ui)
     tasks.each do |task|
       if task != initial_task
         task.grade_task new_grade, ui, grading_group = true
@@ -51,7 +51,5 @@ class GroupSubmission < ActiveRecord::Base
     tasks.first
   end
 
-  def processing_pdf?
-    submitter_task.processing_pdf?
-  end
+  delegate :processing_pdf?, to: :submitter_task
 end

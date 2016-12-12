@@ -5,7 +5,6 @@ module FileHelper
   extend TimeoutHelper
   extend MimeCheckHelpers
 
-
   #
   # Test if a file should be accepted based on an expected kind
   # - file is passed the file uploaded to Doubtfire (a hash with all relevant data about the file)
@@ -17,15 +16,16 @@ module FileHelper
 
     case kind
     when 'image'
-      accept = ["image/png", "image/gif", "image/bmp", "image/tiff", "image/jpeg", "image/x-ms-bmp"]
+      accept = ['image/png', 'image/gif', 'image/bmp', 'image/tiff', 'image/jpeg', 'image/x-ms-bmp']
     when 'code'
-      accept = ["text/x-pascal", "text/x-c", "text/x-c++", "text/plain", "text/", "application/javascript, text/html",
-                "text/css", "text/x-ruby", "text/coffeescript", "text/x-scss", "application/json", "text/xml", "application/xml",
-                "text/x-yaml", "application/xml", "text/x-typescript"]
+      accept = ['text/x-pascal', 'text/x-c', 'text/x-c++', 'text/plain', 'text/', 'application/javascript, text/html',
+                'text/css', 'text/x-ruby', 'text/coffeescript', 'text/x-scss', 'application/json', 'text/xml', 'application/xml',
+                'text/x-yaml', 'application/xml', 'text/x-typescript']
     when 'document'
       accept = [ # -- one day"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                 # --"application/msword",
-                 "application/pdf" ]
+        # --"application/msword",
+        'application/pdf'
+      ]
       valid = pdf_valid? file.tempfile.path
     else
       logger.error "Unknown type '#{kind}' provided for '#{name}'"
@@ -36,13 +36,12 @@ module FileHelper
     mime_in_list?(file.tempfile.path, accept) && valid
   end
 
-
   #
   # Sanitize the passed in paths, and ensure each part is valid
   # Will kill things like ../ etc or spaces in paths
   #
   def sanitized_path(*paths)
-    safe_paths = paths.map do | path_name |
+    safe_paths = paths.map do |path_name|
       path_name.strip.tap do |name|
         # Finally, replace all non alphanumeric, underscore
         # or periods with underscore
@@ -70,16 +69,14 @@ module FileHelper
   def task_file_dir_for_unit(unit, create = true)
     file_server = Doubtfire::Application.config.student_work_dir
     dst = "#{file_server}/" # trust the server config and passed in type for paths
-    dst << sanitized_path("#{unit.code}-#{unit.id}","TaskFiles") << "/"
+    dst << sanitized_path("#{unit.code}-#{unit.id}", 'TaskFiles') << '/'
 
-    if create and not Dir.exists? dst
-      FileUtils.mkdir_p dst
-    end
+    FileUtils.mkdir_p dst if create && (!Dir.exist? dst)
 
     dst
   end
 
-  def student_group_work_dir(type, group_submission, task=nil, create=false)
+  def student_group_work_dir(type, group_submission, task = nil, create = false)
     return nil unless group_submission
 
     file_server = Doubtfire::Application.config.student_work_dir
@@ -90,22 +87,18 @@ module FileHelper
     unit = group.unit
 
     if type == :pdf
-      dst << sanitized_path("#{unit.code}-#{unit.id}","Group-#{group.id}", "#{type}") << "/"
+      dst << sanitized_path("#{unit.code}-#{unit.id}", "Group-#{group.id}", type.to_s) << '/'
     elsif type == :done
-      dst << sanitized_path("#{unit.code}-#{unit.id}","Group-#{group.id}", "#{type}", "#{group_submission.id}") << "/"
+      dst << sanitized_path("#{unit.code}-#{unit.id}", "Group-#{group.id}", type.to_s, group_submission.id.to_s) << '/'
     elsif type == :plagarism
-      dst << sanitized_path("#{unit.code}-#{unit.id}","Group-#{group.id}", "#{type}", "#{group_submission.id}") << "/"
-    else  # new and in_process -- just have task id -- will link to group when done etc.
+      dst << sanitized_path("#{unit.code}-#{unit.id}", "Group-#{group.id}", type.to_s, group_submission.id.to_s) << '/'
+    else # new and in_process -- just have task id -- will link to group when done etc.
       # Add task id to dst if we want task
-      if task.nil?
-        raise 'Unable to locate file!'
-      end
+      raise 'Unable to locate file!' if task.nil?
       dst << "#{type}/#{task.id}/"
     end
 
-    if create
-      FileUtils.mkdir_p(dst)
-    end
+    FileUtils.mkdir_p(dst) if create
     dst
   end
 
@@ -120,31 +113,29 @@ module FileHelper
       file_server = Doubtfire::Application.config.student_work_dir
       dst = "#{file_server}/" # trust the server config and passed in type for paths
 
-      if not (type.nil? || task.nil?)
+      if !(type.nil? || task.nil?)
         if type == :pdf
-          dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}","#{task.project.student.username}", "#{type}") << "/"
+          dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}", task.project.student.username.to_s, type.to_s) << '/'
         elsif type == :done
-          dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}","#{task.project.student.username}", "#{type}", "#{task.id}") << "/"
+          dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}", task.project.student.username.to_s, type.to_s, task.id.to_s) << '/'
         elsif type == :plagarism
-          dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}","#{task.project.student.username}", "#{type}", "#{task.id}") << "/"
-        else  # new and in_process -- just have task id
+          dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}", task.project.student.username.to_s, type.to_s, task.id.to_s) << '/'
+        else # new and in_process -- just have task id
           # Add task id to dst if we want task
           dst << "#{type}/#{task.id}/"
         end
-      elsif (not type.nil?)
+      elsif !type.nil?
         if [:in_process, :new].include? type
           # Add task id to dst if we want task
           dst << "#{type}/"
         else
-          raise "Error in request to student work directory"
+          raise 'Error in request to student work directory'
         end
       end
     end
 
     # Create current dst directory should it not exist
-    if create
-      FileUtils.mkdir_p(dst)
-    end
+    FileUtils.mkdir_p(dst) if create
     dst
   end
 
@@ -155,23 +146,21 @@ module FileHelper
     file_server = Doubtfire::Application.config.student_work_dir
     dst = "#{file_server}/portfolio/" # trust the server config and passed in type for paths
 
-    dst << sanitized_path("#{project.unit.code}-#{project.unit.id}", "#{project.student.username}" )
+    dst << sanitized_path("#{project.unit.code}-#{project.unit.id}", project.student.username.to_s)
 
     # Create current dst directory should it not exist
-    if create
-      FileUtils.mkdir_p(dst)
-    end
+    FileUtils.mkdir_p(dst) if create
     dst
   end
 
   def compress_image(path)
-    return true if File.size?(path) < 1000000
+    return true if File.size?(path) < 1_000_000
 
     compress_folder = File.join(Dir.tmpdir, 'doubtfire', 'compress')
 
     FileUtils.mkdir compress_folder unless File.directory? compress_folder
 
-    tmp_file = File.join( compress_folder, "#{File.dirname(path).split(File::Separator).last}-file#{File.extname(path)}" )
+    tmp_file = File.join(compress_folder, "#{File.dirname(path).split(File::Separator).last}-file#{File.extname(path)}")
     logger.debug "File helper has started compressing #{path} to #{tmp_file}..."
 
     begin
@@ -180,30 +169,26 @@ module FileHelper
               -resize 1024x1024 \
               \"#{tmp_file}\" >>/dev/null 2>>/dev/null"
 
-      did_compress = system_try_within 40, "compressing image using convert", exec
+      did_compress = system_try_within 40, 'compressing image using convert', exec
 
-      if did_compress
-        FileUtils.mv tmp_file, path
-      end
+      FileUtils.mv tmp_file, path if did_compress
     ensure
-      if File.exists? tmp_file
-        FileUtils.rm tmp_file
-      end
+      FileUtils.rm tmp_file if File.exist? tmp_file
     end
 
-    raise "Failed to compress an image. Ensure all images are smaller than 1MB." unless did_compress
-    return true
+    raise 'Failed to compress an image. Ensure all images are smaller than 1MB.' unless did_compress
+    true
   end
 
-  def compress_pdf(path, max_size = 2500000)
+  def compress_pdf(path, max_size = 2_500_000)
     # trusting path... as it needs to be replaced
     logger.debug "Compressing PDF #{path} (#{File.size?(path)} bytes) using GhostScript"
     # only compress things over max_size -- defaults to 2.5mb
     return if File.size?(path) < max_size
 
     begin
-      tmp_file = File.join( Dir.tmpdir, 'doubtfire', 'compress', "#{File.dirname(path).split(File::Separator).last}-file.pdf" )
-      FileUtils.mkdir_p(File.join( Dir.tmpdir, 'doubtfire', 'compress' ))
+      tmp_file = File.join(Dir.tmpdir, 'doubtfire', 'compress', "#{File.dirname(path).split(File::Separator).last}-file.pdf")
+      FileUtils.mkdir_p(File.join(Dir.tmpdir, 'doubtfire', 'compress'))
 
       exec = "gs -sDEVICE=pdfwrite \
                  -dCompatibilityLevel=1.3 \
@@ -217,9 +202,9 @@ module FileHelper
                  >>/dev/null 2>>/dev/null"
 
       # try with ghostscript
-      did_compress = system_try_within 30, "compressing PDF using ghostscript", exec
+      did_compress = system_try_within 30, 'compressing PDF using ghostscript', exec
 
-      if !did_compress
+      unless did_compress
         logger.info "Failed to compress PDF #{path} using GhostScript. Trying with convert"
 
         exec = "convert \"#{path}\" \
@@ -228,24 +213,20 @@ module FileHelper
                 >>/dev/null 2>>/dev/null"
 
         # try with convert
-        did_compress = system_try_within 40, "compressing PDF using convert", exec
+        did_compress = system_try_within 40, 'compressing PDF using convert', exec
 
-        if !did_compress
+        unless did_compress
           logger.error "Failed to compress PDF #{path} using convert. Cannot compress this PDF. Command was:\n\t#{exec}"
         end
       end
 
-      if did_compress
-        FileUtils.mv tmp_file, path
-      end
+      FileUtils.mv tmp_file, path if did_compress
 
     rescue => e
       logger.error "Failed to compress PDF #{path}. Rescued with error:\n\t#{e.message}"
     end
 
-    if File.exists? tmp_file
-      FileUtils.rm tmp_file
-    end
+    FileUtils.rm tmp_file if File.exist? tmp_file
   end
 
   #
@@ -255,22 +236,22 @@ module FileHelper
     # move into the new dir - and mv files to the in_process_dir
     pwd = FileUtils.pwd
     begin
-      FileUtils.mkdir_p(to_path) if not Dir.exists? to_path
+      FileUtils.mkdir_p(to_path) unless Dir.exist? to_path
       Dir.chdir(from_path)
-      FileUtils.mv Dir.glob("*"), to_path, :force => true
+      FileUtils.mv Dir.glob('*'), to_path, force: true
       Dir.chdir(to_path)
       begin
-        #remove from_path as files are now "in process"
+        # remove from_path as files are now "in process"
         FileUtils.rm_r(from_path)
       rescue
         logger.warn "failed to rm #{from_path}"
       end
     ensure
-      if FileUtils.pwd() != pwd
-        if Dir.exists? pwd
+      if FileUtils.pwd != pwd
+        if Dir.exist? pwd
           FileUtils.chdir(pwd)
         else
-          FileUtils.chdir( student_work_dir() )
+          FileUtils.chdir(student_work_dir)
         end
       end
     end
@@ -279,9 +260,9 @@ module FileHelper
   #
   # Tests if a PDF is valid / corrupt
   #
-  def pdf_valid? filename
+  def pdf_valid?(filename)
     # Scan last 1024 bytes for the EOF mark
-    return false unless File.exists? filename
+    return false unless File.exist? filename
     File.open(filename) do |f|
       f.seek -1024, IO::SEEK_END
       f.read.include? '%%EOF'
@@ -306,7 +287,7 @@ module FileHelper
   #
   def read_file_to_str(filename)
     result = ''
-    f = File.open(filename, "r")
+    f = File.open(filename, 'r')
     begin
       f.each_line do |line|
         result += line
@@ -337,13 +318,11 @@ module FileHelper
   #
   def delete_plagarism_html(match_link)
     rm_file = path_to_plagarism_html(match_link)
-    if File.exists? rm_file
+    if File.exist? rm_file
       FileUtils.rm(rm_file)
       to_dir = student_work_dir(:plagarism, match_link.task)
 
-      if Dir[File.join(to_dir, '*.html')].count == 0
-        FileUtils.rm_rf(to_dir)
-      end
+      FileUtils.rm_rf(to_dir) if Dir[File.join(to_dir, '*.html')].count.zero?
     end
 
     self
@@ -352,14 +331,10 @@ module FileHelper
   def delete_group_submission(group_submission)
     pdf_file = PortfolioEvidence.final_pdf_path_for_group_submission(group_submission)
     logger.debug "Deleting group submission PDF file #{pdf_file}"
-    if File.exists? pdf_file
-      FileUtils.rm pdf_file
-    end
+    FileUtils.rm pdf_file if File.exist? pdf_file
 
     done_file = zip_file_path_for_group_done_task(group_submission)
-    if File.exists? done_file
-      FileUtils.rm done_file
-    end
+    FileUtils.rm done_file if File.exist? done_file
     self
   end
 
@@ -377,14 +352,14 @@ module FileHelper
   def compress_done_files(task)
     task_dir = student_work_dir(:done, task, false)
     zip_file = zip_file_path_for_done_task(task)
-    return if (zip_file.nil?) || (not Dir.exists? task_dir)
+    return if zip_file.nil? || (!Dir.exist? task_dir)
 
-    FileUtils.rm(zip_file) if File.exists? zip_file
+    FileUtils.rm(zip_file) if File.exist? zip_file
 
-    input_files = Dir.entries(task_dir).select { | f | (f =~ /^\d{3}\.(cover|document|code|image)/) == 0 }
+    input_files = Dir.entries(task_dir).select { |f| (f =~ /^\d{3}\.(cover|document|code|image)/).zero? }
 
-    Zip::File.open(zip_file, Zip::File::CREATE) do | zip |
-      zip.mkdir "#{task.id}"
+    Zip::File.open(zip_file, Zip::File::CREATE) do |zip|
+      zip.mkdir task.id.to_s
       input_files.each do |in_file|
         zip.add "#{task.id}/#{in_file}", "#{task_dir}#{in_file}"
       end
@@ -396,8 +371,8 @@ module FileHelper
   def write_entries_to_zip(entries, disk_root_path, zip_root_path, path, zip)
     entries.each do |e|
       # puts "Adding entry #{e}"
-      file_path = path == "" ? e : File.join(path, e)
-      zip_file_path = zip_root_path == "" ? file_path : File.join(zip_root_path, file_path)
+      file_path = path == '' ? e : File.join(path, e)
+      zip_file_path = zip_root_path == '' ? file_path : File.join(zip_root_path, file_path)
       disk_file_path = File.join(disk_root_path, file_path)
 
       if File.directory? disk_file_path
@@ -418,7 +393,7 @@ module FileHelper
   def recursively_add_dir_to_zip(zip, dir, zip_root_path)
     entries = Dir.entries(dir) - %w(. ..)
     zip.mkdir(zip_root_path)
-    write_entries_to_zip(entries, dir, zip_root_path, "", zip)
+    write_entries_to_zip(entries, dir, zip_root_path, '', zip)
   end
 
   #
@@ -426,7 +401,7 @@ module FileHelper
   #
   def move_compressed_task_to_new(task)
     # student_work_dir(:new, task) # create task dir
-    task.extract_file_from_done student_work_dir(:new), "*", lambda { | task, to_path, name |  "#{to_path}#{name}" }
+    task.extract_file_from_done student_work_dir(:new), '*', ->(_task, to_path, name) { "#{to_path}#{name}" }
   end
 
   # Export functions as module functions

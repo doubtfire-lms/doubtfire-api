@@ -57,10 +57,10 @@ module Api
       add_version: false,
       hide_documentation_path: true,
       info: {
-        title: "Doubtfire API Documentaion",
-        description: "Doubtfire is a modern, lightweight learning management system.",
-        license: "AGPL v3.0",
-        license_url: "https://github.com/doubtfire-lms/doubtfire-api/blob/master/LICENSE"
+        title: 'Doubtfire API Documentaion',
+        description: 'Doubtfire is a modern, lightweight learning management system.',
+        license: 'AGPL v3.0',
+        license_url: 'https://github.com/doubtfire-lms/doubtfire-api/blob/master/LICENSE'
       }
   end
 end
