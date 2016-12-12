@@ -368,14 +368,16 @@ class User < ActiveRecord::Base
           attribute
         end
       end
-      User.all(order: 'id').find_each do |user|
+      User.order('id').each do |user|
         row << user.attributes.select { |attribute| exportables.include? attribute }.map do |key, value|
           # pass in a blank encrypted_password and the role name instead of just role_id
           if key == 'encrypted_password'
             ''
           elsif key == 'role_id'
             Role.find(value).name
-          else value end
+          else
+            value
+          end
         end
       end
     end
