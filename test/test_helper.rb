@@ -1,16 +1,16 @@
 # Setup RAILS_ENV as test and expand config for test environment
-ENV["RAILS_ENV"] = "test"
-require File.expand_path("../../config/environment", __FILE__)
+ENV['RAILS_ENV'] = 'test'
+require File.expand_path('../../config/environment', __FILE__)
 
 # Check if we're connected to the test DB
 begin
   ActiveRecord::Base.connection
 rescue ActiveRecord::NoDatabaseError
   # No database... try setting up
-  puts "No test database has been setup! Setting first-time up..."
+  puts 'No test database has been setup! Setting first-time up...'
   require 'rake'
   Rake::Task['test:setup'].invoke
-  puts "First-time test setup complete. Please re-run `rake test` again."
+  puts 'First-time test setup complete. Please re-run `rake test` again.'
   exit
 end
 

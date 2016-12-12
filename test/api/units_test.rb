@@ -20,14 +20,12 @@ class UnitsTest < ActiveSupport::TestCase
 
   # Test POST for creating new unit
   def test_units_post
-    data_to_post = add_auth_token({
-      unit: {
-        name: "Intro to Social Skills",
-        code: "JRRW40003",
-        start_date: "2016-05-14T00:00:00.000Z",
-        end_date: "2017-05-14T00:00:00.000Z"
-      },
-    })
+    data_to_post = add_auth_token(unit: {
+                                    name: 'Intro to Social Skills',
+                                    code: 'JRRW40003',
+                                    start_date: '2016-05-14T00:00:00.000Z',
+                                    end_date: '2017-05-14T00:00:00.000Z'
+                                  })
     expected_unit = data_to_post[:unit]
     unit_count = Unit.all.length
 
@@ -181,5 +179,4 @@ class UnitsTest < ActiveSupport::TestCase
   end
   # End PUT tests
   # --------------------------------------------------------------------------- #
-
 end

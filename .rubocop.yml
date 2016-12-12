@@ -6,6 +6,10 @@ AllCops:
 Rails:
   Enabled: true
 
+Rails/HttpPositionalArguments:
+  Exclude:
+    - test/**/*
+
 Rails/DynamicFindBy:
   Whitelist:
     - find_by_auth_token
@@ -22,11 +26,11 @@ Metrics/LineLength:
 
 Metrics/MethodLength:
   Exclude:
-    - 'db/migrate/**/*'
+    - db/migrate/**/*
 
 Style/BlockComments:
   Exclude:
-    - 'spec/spec_helper.rb'
+    - spec/spec_helper.rb
 
 Style/Documentation:
   Description: 'Document classes and non-namespace modules.'

@@ -20,8 +20,8 @@ class AuthTest < ActiveSupport::TestCase
   # Test POST for new authentication token
   def test_auth_post
     data_to_post = {
-        username: "acain",
-        password: "password"
+      username: 'acain',
+      password: 'password'
     }
     # Get response back for logging in with username 'acain' password 'password'
     post_json '/api/auth.json', data_to_post
@@ -36,11 +36,11 @@ class AuthTest < ActiveSupport::TestCase
 
     # Check that the returned user has the required details.
     # These match the model object... so can compare in loops
-    user_keys = [ 'id', 'email', 'first_name', 'last_name', 'username', 'nickname', 'receive_task_notifications', 'receive_portfolio_notifications', 'receive_feedback_notifications', 'opt_in_to_research', 'has_run_first_time_setup' ]
+    user_keys = %w(id email first_name last_name username nickname receive_task_notifications receive_portfolio_notifications receive_feedback_notifications opt_in_to_research has_run_first_time_setup)
 
     assert_json_matches_model(response_user_data, expected_auth, user_keys)
 
-    user_keys.each { |k| assert response_user_data.has_key?(k), "Response has key #{k}" }
+    user_keys.each { |k| assert response_user_data.key?(k), "Response has key #{k}" }
     user_keys.each { |k| assert_equal expected_auth[k], response_user_data[k], "Values for key #{k} match" }
 
     # Check other values returned
@@ -53,17 +53,17 @@ class AuthTest < ActiveSupport::TestCase
   # Test auth when password is invalid
   def test_fail_auth
     data_to_post = {
-        username: "acain",
-        password: "password1"
+      username: 'acain',
+      password: 'password1'
     }
     # Get response back for logging in with username 'acain' password 'password'
     post_json '/api/auth.json', data_to_post
     actual_auth = JSON.parse(last_response.body)
 
-    refute actual_auth.has_key?('user'), 'User not expected if auth fails'
-    refute actual_auth.has_key?('auth_token'), 'Auth token not expected if auth fails'
+    refute actual_auth.key?('user'), 'User not expected if auth fails'
+    refute actual_auth.key?('auth_token'), 'Auth token not expected if auth fails'
 
-    assert actual_auth.has_key? 'error'
+    assert actual_auth.key? 'error'
   end
 
   # Test auth with tutor role
@@ -72,29 +72,29 @@ class AuthTest < ActiveSupport::TestCase
       {
         expect: Role.admin,
         post: {
-            username: "aadmin",
-            password: "password"
+          username: 'aadmin',
+          password: 'password'
         }
       },
       {
         expect: Role.convenor,
         post: {
-            username: "aconvenor",
-            password: "password"
+          username: 'aconvenor',
+          password: 'password'
         }
       },
       {
         expect: Role.tutor,
         post: {
-            username: "atutor",
-            password: "password"
+          username: 'atutor',
+          password: 'password'
         }
       },
       {
         expect: Role.student,
         post: {
-            username: "astudent",
-            password: "password"
+          username: 'astudent',
+          password: 'password'
         }
       }
     ]
@@ -117,8 +117,8 @@ class AuthTest < ActiveSupport::TestCase
   # Test put for authentication token
   def test_auth_put
     data_to_put = {
-        username: "acain",
-        password: "password"
+      username: 'acain',
+      password: 'password'
     }
     put_json "/api/auth/#{auth_token}", data_to_put
     actual_auth = JSON.parse(last_response.body)['auth_token']
@@ -136,7 +136,7 @@ class AuthTest < ActiveSupport::TestCase
   # Test for deleting authentication token
   def test_auth_delete
     # Get the auth token needed for delete test
-    delete "/api/auth/#{auth_token}.json", "CONTENT_TYPE" => 'application/json'
+    delete "/api/auth/#{auth_token}.json", 'CONTENT_TYPE' => 'application/json'
     # 200 response code means success!
     assert_equal 200, last_response.status
   end
