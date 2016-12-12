@@ -76,12 +76,12 @@ module Api
         end
 
         # Revise an auth_token for future requests
-        if authentication_token_expired?
+        if user.authentication_token_expired?
           # Create a new token
-          generate_authentication_token! remember
+          user.generate_authentication_token! remember
         else
           # Extend the existing token's time
-          extend_authentication_token remember
+          user.extend_authentication_token remember
         end
 
         # Return user details
