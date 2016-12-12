@@ -5,6 +5,8 @@ module TestHelpers
   # JSON Helpers
   #
   module JsonHelper
+    module_function
+
     #
     # POSTs a hash data as JSON with content-type "application/json"
     #
@@ -20,10 +22,17 @@ module TestHelpers
     end
 
     #
+    # PUTs a hash data as JSON with content-type "application/json"
+    #
+    def delete_json(endpoint)
+      delete endpoint, 'CONTENT_TYPE' => 'application/json'
+    end
+
+    #
     # Assert that a JSON response matches the model and keys provided
     #
     def assert_json_matches_model(response_json, model, keys)
-      keys.each { |k| assert response_json.has_key?(k), "Response has key #{k}"}
+      keys.each { |k| assert response_json.key?(k), "Response has key #{k}" }
       keys.each { |k| assert_equal model[k], response_json[k], "Values for key #{k} match" }
     end
 
@@ -47,12 +56,5 @@ module TestHelpers
     def assert_json_equal(lhs, rhs)
       assert_equal json_hashed(lhs), json_hashed(rhs)
     end
-
-    module_function :assert_json_matches_model
-    module_function :post_json
-    module_function :put_json
-    module_function :last_response_body
-    module_function :json_hashed
-    module_function :assert_json_equal
   end
 end
