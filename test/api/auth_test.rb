@@ -25,12 +25,12 @@ class AuthTest < ActiveSupport::TestCase
     }
     # Get response back for logging in with username 'acain' password 'password'
     post_json '/api/auth.json', data_to_post
-    actual_auth = last_response_body
+    actual_auth = JSON.parse(last_response.body)
     expected_auth = User.first
 
     # Check that response contains a user.
-    assert actual_auth.key?('user'), 'Expect response to have a user'
-    assert actual_auth.key?('auth_token'), 'Expect response to have a auth token'
+    assert actual_auth.has_key?('user'), 'Expect response to have a user'
+    assert actual_auth.has_key?('auth_token'), 'Expect response to have a auth token'
 
     response_user_data = actual_auth['user']
 
@@ -120,7 +120,7 @@ class AuthTest < ActiveSupport::TestCase
         username: "acain",
         password: "password"
     }
-    put_json "/api/auth/#{auth_token}", data_to_put
+    put_json "/api/auth/#{auth_token}.json", data_to_put
     actual_auth = JSON.parse(last_response.body)['auth_token']
     expected_auth = User.first.auth_token
 
