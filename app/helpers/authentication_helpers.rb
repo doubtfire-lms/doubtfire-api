@@ -16,7 +16,7 @@ module AuthenticationHelpers
   # Reads details from the params fetched from the caller context.
   #
   def authenticated?
-    user_by_token = User.find_by(auth_token:params[:auth_token]) if params[:auth_token]
+    user_by_token = User.find_by_auth_token(params[:auth_token]) if params[:auth_token]
     # Check warden -- authenticate using DB or LDAP etc.
     return true if warden.authenticated?
     # Check user by token
@@ -36,7 +36,7 @@ module AuthenticationHelpers
   # Get the current user either from warden or from the token
   #
   def current_user
-    warden.user || User.find_by(auth_token:params[:auth_token])
+    warden.user || User.find_by_auth_token(params[:auth_token])
   end
 
   #
