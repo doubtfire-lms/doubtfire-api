@@ -10,7 +10,8 @@ module AuthorisationHelpers
     # Can pass in instance or class
     obj_class = object.class == Class ? object : object.class
 
-    (role_obj = object.role_for(user)) && (role = role_obj.to_sym)
+    role_obj = object.role_for(user)
+    role = role_obj.to_sym
     perm_hash = obj_class.permissions
     perms = perm_get_fn.call(role, perm_hash, other)
 
