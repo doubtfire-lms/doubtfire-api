@@ -166,7 +166,7 @@ module Api
       if group_params[:name].nil? || group_params[:name].empty?
         id = group_set.groups.count
         group_params[:name] = "Group #{id}"
-        while group_set.groups.where(name:  group_params[:name]).count > 0
+        while group_set.groups.where(name: group_params[:name]).count > 0
           id += 1
           group_params[:name] = "Group #{id}"
         end

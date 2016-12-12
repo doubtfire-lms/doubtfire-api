@@ -134,7 +134,7 @@ module Api
         requires :email, type: String, desc: 'New email address for user'
         requires :username, type: String,   desc: 'New username for user'
         requires :nickname, type: String,   desc: 'New nickname for user'
-        requires :system_role, type: String,   desc: 'New system role for user [Admin, Convenor, Tutor, Student]'
+        requires :system_role, type: String, desc: 'New system role for user [Admin, Convenor, Tutor, Student]'
       end
     end
     post '/users' do

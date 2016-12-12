@@ -143,7 +143,7 @@ module Api
       end
 
       new_tutorial = params[:tutorial]
-      tutor = User.find_by_username(new_tutorial[:tutor_username])
+      tutor = User.find_by(username: new_tutorial[:tutor_username])
       if tutor.nil?
         error!({ error: "Couldn't find User with username=#{new_tutorial[:tutor_username]}" }, 403)
       end

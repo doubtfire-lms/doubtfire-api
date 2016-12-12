@@ -1,22 +1,22 @@
 class Tutorial < ActiveRecord::Base
   # Model associations
-  belongs_to :unit  # Foreign key
-  belongs_to :unit_role              # Foreign key
+  belongs_to :unit # Foreign key
+  belongs_to :unit_role # Foreign key
   has_one    :tutor, through: :unit_role, source: :user
 
   has_many   :projects, dependent: :nullify # Students
   has_many   :groups, dependent: :nullify
 
   validates :abbreviation, uniqueness: { scope: :unit,
-    message: "must be unique within the unit" }
+                                         message: 'must be unique within the unit' }
 
   def self.default
-    tutorial = self.new
+    tutorial = new
 
     tutorial.unit_role_id     = -1
-    tutorial.meeting_day      = "Enter a regular meeting day."
-    tutorial.meeting_time     = "Enter a regular meeting time."
-    tutorial.meeting_location = "Enter a location."
+    tutorial.meeting_day      = 'Enter a regular meeting day.'
+    tutorial.meeting_time     = 'Enter a regular meeting time.'
+    tutorial.meeting_location = 'Enter a location.'
 
     tutorial
   end
@@ -26,7 +26,7 @@ class Tutorial < ActiveRecord::Base
   end
 
   def tutor
-    result = UnitRole.find_by_id(unit_role_id)
+    result = UnitRole.find_by(id: unit_role_id)
     result.user unless result.nil?
   end
 
@@ -46,7 +46,7 @@ class Tutorial < ActiveRecord::Base
     # TODO: Move creation to UnitRole and pass it approriate params
     tutor_unit_role = UnitRole.find_by(
       unit_id: unit_id,
-      user_id: tutor_user.id,
+      user_id: tutor_user.id
     )
 
     if tutor_unit_role && tutor_user.has_tutor_capability? && (tutor_unit_role.role == Role.tutor || tutor_unit_role.role == Role.convenor)

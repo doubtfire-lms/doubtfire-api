@@ -143,7 +143,7 @@ module Api
     end
     post '/projects' do
       unit = Unit.find(params[:unit_id])
-      student = User.find_by_username(params[:student_num])
+      student = User.find_by(username: params[:student_num])
 
       if student.nil?
         error!({ error: "Couldn't find Student with username=#{params[:student_num]}" }, 403)

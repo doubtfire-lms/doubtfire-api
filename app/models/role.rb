@@ -1,5 +1,4 @@
 class Role < ActiveRecord::Base
-
   def self.student
     Role.find(student_id)
   end
@@ -42,15 +41,14 @@ class Role < ActiveRecord::Base
 
   def self.with_name(name)
     case name
-      when /[Aa]dmin/
-        self.admin
-      when /[Cc]onvenor/
-        self.convenor
-      when /[Tt]utor/
-        self.tutor
-      when /[Ss]tudent/
-        self.student
+    when /[Aa]dmin/
+      admin
+    when /[Cc]onvenor/
+      convenor
+    when /[Tt]utor/
+      tutor
+    when /[Ss]tudent/
+      student
     end
   end
-
 end

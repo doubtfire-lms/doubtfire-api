@@ -83,7 +83,7 @@ module Api
       end
     end
     put '/unit_roles/:id' do
-      unit_role = UnitRole.find_by_id(params[:id])
+      unit_role = UnitRole.find_by(id: params[:id])
 
       unless (authorise? current_user, unit_role.unit, :employ_staff) || (authorise? current_user, User, :admin_units)
         error!({ error: "Couldn't find Unit with id=#{params[:id]}" }, 403)

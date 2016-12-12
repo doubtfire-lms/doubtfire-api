@@ -168,7 +168,7 @@ module Api
 
         # Authenticate that the token is okay
         if authenticated?
-          user = User.find_by_auth_token(params[:auth_token])
+          user = User.find_by(auth_token:params[:auth_token])
 
           # Invalidate the token and regenrate a new one
           user.reset_authentication_token!
@@ -205,7 +205,7 @@ module Api
       logger.info "Update token #{params[:username]} from #{request.ip}"
 
       # Find user
-      user = User.find_by_auth_token(params[:auth_token])
+      user = User.find_by(auth_token:params[:auth_token])
       remember = params[:remember] || false
 
       # Token does not match user
@@ -226,7 +226,7 @@ module Api
     #
     desc 'Sign out'
     delete '/auth/:auth_token' do
-      user = User.find_by_auth_token(params[:auth_token])
+      user = User.find_by(auth_token:params[:auth_token])
 
       if user
         logger.info "Sign out #{user.username} from #{request.ip}"

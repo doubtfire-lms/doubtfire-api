@@ -36,6 +36,8 @@ module Api
     end
     post '/task_definitions/' do
       unit = Unit.find(params[:task_def][:unit_id])
+
+      puts current_user
       unless authorise? current_user, unit, :add_task_def
         error!({ error: 'Not authorised to create a task definition of this unit' }, 403)
       end
