@@ -1,3 +1,4 @@
+require 'bcrypt'
 require 'authorisation_helpers'
 
 class User < ActiveRecord::Base
@@ -445,19 +446,19 @@ class User < ActiveRecord::Base
           #
           # Find and update or create
           #
-          user = User.find_or_create_by(username: username) do |user|
-            user.first_name         = first_name.titleize
-            user.last_name          = last_name.titleize
-            user.email              = email
-            user.encrypted_password = BCrypt::Password.create('password')
-            user.nickname           = nickname.nil? || nickname.empty? ? first_name : nickname
-            user.role_id            = new_role.id
+          user = User.find_or_create_by(username: username) do |new_user|
+            new_user.first_name         = first_name.titleize
+            new_user.last_name          = last_name.titleize
+            new_user.email              = email
+            new_user.nickname           = nickname
+            new_user.role_id            = new_role.id
+            new_user.encrypted_password = BCrypt::Password.create('password')
           end
 
           # will not be persisted initially as password cannot be blank - so can check
           # which were created using this - will persist changes imported
           if user.new_record?
-            user.password           = 'password'
+            user.password = 'password'
             user.save!
             success << { row: row, message: "Added user #{username} as #{role}." }
           else
