@@ -84,6 +84,8 @@ class User < ActiveRecord::Base
           student_expiry_time
         elsif role == Role.tutor || role == :tutor
           tutor_expiry_time
+        else
+          expiry_time
         end
     end
 
@@ -108,6 +110,9 @@ class User < ActiveRecord::Base
     token
   end
 
+  #
+  # Generate an authentication token that will expire in 30 seconds
+  #
   def generate_temporary_authentication_token!
     generate_authentication_token!(false)
     self.auth_token_expiry = Time.zone.now + 30.seconds
