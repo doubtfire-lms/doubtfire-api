@@ -3,9 +3,9 @@ require 'task_serializer'
 # Shallow serialization is used for student...
 class ShallowProjectSerializer < ActiveModel::Serializer
   attributes :unit_id, :unit_code, :unit_name,
-    :project_id, :student_name,
-    :tutor_name, :target_grade,
-    :has_portfolio, :start_date
+             :project_id, :student_name,
+             :tutor_name, :target_grade,
+             :has_portfolio, :start_date
 
   def project_id
     object.id
@@ -44,9 +44,7 @@ class ProjectSerializer < ActiveModel::Serializer
   has_many :task_outcome_alignments, serializer: LearningOutcomeTaskLinkSerializer
 
   def my_role_obj
-    if Thread.current[:user]
-      object.role_for(Thread.current[:user])
-    end
+    object.role_for(Thread.current[:user]) if Thread.current[:user]
   end
 
   def include_grade?
@@ -80,13 +78,11 @@ class GroupMemberProjectSerializer < ActiveModel::Serializer
   end
 
   def my_role_obj
-    if Thread.current[:user]
-      object.role_for(Thread.current[:user])
-    end
+    object.role_for(Thread.current[:user]) if Thread.current[:user]
   end
 
   def include_student_id?
-    ([ Role.convenor, Role.tutor, :tutor, :convenor ].include? my_role_obj )
+    ([ Role.convenor, Role.tutor, :tutor, :convenor ].include? my_role_obj)
   end
 
   def filter(keys)
