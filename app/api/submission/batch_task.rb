@@ -22,11 +22,11 @@ module Api
         unit = Unit.find(params[:unit_id])
 
         unless authorise? user, unit, :provide_feedback
-          error!({ 'error' => 'Not authorised to batch download ready to mark submissions' }, 401)
+          error!({ error: 'Not authorised to batch download ready to mark submissions' }, 401)
         end
 
         unless authorise? current_user, unit, :provide_feedback
-          error!({ 'error' => 'Not authorised to batch download ready to mark submissions' }, 401)
+          error!({ error: 'Not authorised to batch download ready to mark submissions' }, 401)
         end
 
         # Array of tasks that need marking for the given unit id
@@ -34,7 +34,7 @@ module Api
 
         output_zip = unit.generate_batch_task_zip(current_user, tasks_to_download)
 
-        error!({ 'error' => 'No files to download' }, 401) if output_zip.nil?
+        error!({ error: 'No files to download' }, 401) if output_zip.nil?
 
         # Set download headers...
         content_type 'application/octet-stream'
@@ -58,7 +58,7 @@ module Api
         unit = Unit.find(params[:unit_id])
 
         unless authorise? user, unit, :provide_feedback
-          error!({ 'error' => 'Not authorised to batch upload marks' }, 401)
+          error!({ error: 'Not authorised to batch upload marks' }, 401)
         end
 
         unit.upload_batch_task_zip_or_csv(current_user, params[:file])

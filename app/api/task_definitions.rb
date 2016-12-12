@@ -37,7 +37,7 @@ module Api
     post '/task_definitions/' do
       unit = Unit.find(params[:task_def][:unit_id])
       unless authorise? current_user, unit, :add_task_def
-        error!({ 'error' => 'Not authorised to create a task definition of this unit' }, 403)
+        error!({ error: 'Not authorised to create a task definition of this unit' }, 403)
       end
 
       params[:task_def][:upload_requirements] = '[]' if params[:task_def][:upload_requirements].nil?
@@ -102,7 +102,7 @@ module Api
       task_def = TaskDefinition.find(params[:id])
 
       unless authorise? current_user, task_def.unit, :add_task_def
-        error!({ 'error' => 'Not authorised to create a task definition of this unit' }, 403)
+        error!({ error: 'Not authorised to create a task definition of this unit' }, 403)
       end
 
       task_params = ActionController::Parameters.new(params)
@@ -157,7 +157,7 @@ module Api
       unit = Unit.find(params[:unit_id])
 
       unless authorise? current_user, unit, :upload_csv
-        error!({ 'error' => 'Not authorised to upload CSV of tasks' }, 403)
+        error!({ error: 'Not authorised to upload CSV of tasks' }, 403)
       end
 
       # Actually import...
@@ -172,7 +172,7 @@ module Api
       unit = Unit.find(params[:unit_id])
 
       unless authorise? current_user, unit, :download_unit_csv
-        error!({ 'error' => 'Not authorised to download CSV of tasks' }, 403)
+        error!({ error: 'Not authorised to download CSV of tasks' }, 403)
       end
 
       content_type 'application/octet-stream'
@@ -186,7 +186,7 @@ module Api
       task_def = TaskDefinition.find(params[:id])
 
       unless authorise? current_user, task_def.unit, :add_task_def
-        error!({ 'error' => 'Not authorised to delete a task definition of this unit' }, 403)
+        error!({ error: 'Not authorised to delete a task definition of this unit' }, 403)
       end
 
       task_def.destroy
@@ -202,7 +202,7 @@ module Api
       unit = Unit.find(params[:unit_id])
 
       unless authorise? current_user, unit, :add_task_def
-        error!({ 'error' => 'Not authorised to upload tasks of unit' }, 403)
+        error!({ error: 'Not authorised to upload tasks of unit' }, 403)
       end
 
       task_def = unit.task_definitions.find(params[:task_def_id])
@@ -210,7 +210,7 @@ module Api
       file = params[:file]
 
       unless FileHelper.accept_file(file, 'task sheet', 'document')
-        error!({ 'error' => "'#{file.name}' is not a valid #{file.type} file" }, 403)
+        error!({ error: "'#{file.name}' is not a valid #{file.type} file" }, 403)
       end
 
       # Actually import...
@@ -227,7 +227,7 @@ module Api
       unit = Unit.find(params[:unit_id])
 
       unless authorise? current_user, unit, :add_task_def
-        error!({ 'error' => 'Not authorised to upload tasks of unit' }, 403)
+        error!({ error: 'Not authorised to upload tasks of unit' }, 403)
       end
 
       task_def = unit.task_definitions.find(params[:task_def_id])
@@ -249,7 +249,7 @@ module Api
       unit = Unit.find(params[:unit_id])
 
       unless authorise? current_user, unit, :add_task_def
-        error!({ 'error' => 'Not authorised to upload tasks of unit' }, 403)
+        error!({ error: 'Not authorised to upload tasks of unit' }, 403)
       end
 
       file = params[:file][:tempfile].path
@@ -268,7 +268,7 @@ module Api
     get '/units/:unit_id/task_definitions/:task_def_id/tasks' do
       unit = Unit.find(params[:unit_id])
       unless authorise? current_user, unit, :provide_feedback
-        error!({ 'error' => 'Not authorised to access tasks for this unit' }, 403)
+        error!({ error: 'Not authorised to access tasks for this unit' }, 403)
       end
 
       unit.student_tasks
@@ -300,7 +300,7 @@ module Api
       task_def = unit.task_definitions.find(params[:task_def_id])
 
       unless authorise? current_user, unit, :get_unit
-        error!({ 'error' => 'Not authorised to download task details of unit' }, 403)
+        error!({ error: 'Not authorised to download task details of unit' }, 403)
       end
 
       if task_def.has_task_pdf?
@@ -326,7 +326,7 @@ module Api
       task_def = unit.task_definitions.find(params[:task_def_id])
 
       unless authorise? current_user, unit, :get_unit
-        error!({ 'error' => 'Not authorised to download task details of unit' }, 403)
+        error!({ error: 'Not authorised to download task details of unit' }, 403)
       end
 
       if task_def.has_task_resources?

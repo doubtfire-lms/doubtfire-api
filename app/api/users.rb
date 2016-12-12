@@ -14,7 +14,7 @@ module Api
     desc 'Get the list of users'
     get '/users' do
       unless authorise? current_user, User, :list_users
-        error!({ 'error' => 'Cannot list users - not authorised' }, 403)
+        error!({ error: 'Cannot list users - not authorised' }, 403)
       end
 
       @users = User.all
@@ -24,7 +24,7 @@ module Api
     get '/users/:id', requirements: { id: /[0-9]*/ } do
       user = User.find(params[:id])
       unless (user.id == current_user.id) || (authorise? current_user, User, :admin_users)
-        error!({ 'error' => "Cannot find User with id #{params[:id]}" }, 403)
+        error!({ error: "Cannot find User with id #{params[:id]}" }, 403)
       end
       user
     end
@@ -32,7 +32,7 @@ module Api
     desc 'Get convenors'
     get '/users/convenors' do
       unless authorise? current_user, User, :convene_units
-        error!({ 'error' => 'Cannot list convenors - not authorised' }, 403)
+        error!({ error: 'Cannot list convenors - not authorised' }, 403)
       end
       @user_roles = User.convenors
     end
@@ -40,7 +40,7 @@ module Api
     desc 'Get tutors'
     get '/users/tutors' do
       unless authorise? current_user, User, :convene_units
-        error!({ 'error' => 'Cannot list tutors - not authorised' }, 403)
+        error!({ error: 'Cannot list tutors - not authorised' }, 403)
       end
       @user_roles = User.tutors
     end
@@ -105,13 +105,13 @@ module Api
           new_role = Role.with_name(user_parameters[:role])
 
           if new_role.nil?
-            error!({ 'error' => "No such role name #{user_parameters[:role]}" }, 403)
+            error!({ error: "No such role name #{user_parameters[:role]}" }, 403)
           end
           action = new_role.id > old_role.id ? :promote_user : :demote_user
 
           # current user not authorised to peform action with new role?
           unless authorise? current_user, User, action, User.get_change_role_perm_fn, [ old_role.to_sym, new_role.to_sym ]
-            error!({ 'error' => "Not authorised to #{action} user with id=#{params[:id]} to #{new_role.name}" }, 403)
+            error!({ error: "Not authorised to #{action} user with id=#{params[:id]} to #{new_role.name}" }, 403)
           end
           # update :role to actual Role object rather than String type
           user_parameters[:role] = new_role
@@ -122,7 +122,7 @@ module Api
         user
 
       else
-        error!({ 'error' => "Cannot modify user with id=#{params[:id]} - not authorised" }, 403)
+        error!({ error: "Cannot modify user with id=#{params[:id]} - not authorised" }, 403)
       end
     end
 
@@ -142,7 +142,7 @@ module Api
       # Only admins and convenors can create users
       #
       unless authorise? current_user, User, :create_user
-        error!({ 'error' => 'Not authorised to create new users' }, 403)
+        error!({ error: 'Not authorised to create new users' }, 403)
       end
 
       params[:user][:password] = 'password'
@@ -166,14 +166,14 @@ module Api
       #
       new_role = Role.with_name(user_parameters[:role])
       if new_role.nil?
-        error!({ 'error' => "No such role name #{user_parameters[:role]}" }, 403)
+        error!({ error: "No such role name #{user_parameters[:role]}" }, 403)
       end
 
       #
       # Check permission to create user with this role
       #
       unless authorise? current_user, User, :create_user, User.get_change_role_perm_fn, [ :nil, new_role.name.downcase.to_sym ]
-        error!({ 'error' => "Not authorised to create new users with role #{new_role.name}" }, 403)
+        error!({ error: "Not authorised to create new users with role #{new_role.name}" }, 403)
       end
 
       # update :role to actual Role object rather than String type
@@ -194,7 +194,7 @@ module Api
       ensure_csv!(params[:file][:tempfile])
 
       unless authorise? current_user, User, :upload_csv
-        error!({ 'error' => 'Not authorised to upload CSV of users' }, 403)
+        error!({ error: 'Not authorised to upload CSV of users' }, 403)
       end
 
       # Actually import...
@@ -204,7 +204,7 @@ module Api
     desc 'Download CSV of all users'
     get '/csv/users' do
       unless authorise? current_user, User, :download_system_csv
-        error!({ 'error' => 'Not authorised to download CSV of all users' }, 403)
+        error!({ error: 'Not authorised to download CSV of all users' }, 403)
       end
 
       content_type 'application/octet-stream'

@@ -25,13 +25,13 @@ module Api
 
         # check the user can put this task
         unless authorise? current_user, project, :make_submission
-          error!({ 'error' => "Not authorised to submit task '#{task_definition.name}'" }, 401)
+          error!({ error: "Not authorised to submit task '#{task_definition.name}'" }, 401)
         end
 
         task = project.task_for_task_definition(task_definition)
 
         if task.group_task? && !task.group
-          error!({ 'error' => "This task requires a group submission. Ensure you are in a group for the unit's #{task_definition.group_set.name}" }, 403)
+          error!({ error: "This task requires a group submission. Ensure you are in a group for the unit's #{task_definition.group_set.name}" }, 403)
         end
 
         if params[:contributions]
@@ -61,7 +61,7 @@ module Api
 
         # check the user can put this task
         unless authorise? current_user, project, :get_submission
-          error!({ 'error' => "Not authorised to get task '#{task_definition.name}'" }, 401)
+          error!({ error: "Not authorised to get task '#{task_definition.name}'" }, 401)
         end
 
         task = project.task_for_task_definition(task_definition)
@@ -90,7 +90,7 @@ module Api
         task_definition = project.unit.task_definitions.find(params[:task_definition_id])
 
         unless authorise? current_user, project, :get_submission
-          error!({ 'error' => "Not authorised to get task '#{task_definition.name}'" }, 401)
+          error!({ error: "Not authorised to get task '#{task_definition.name}'" }, 401)
         end
 
         task = project.task_for_task_definition(task_definition)

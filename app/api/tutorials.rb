@@ -26,7 +26,7 @@ module Api
       # can only modify if current_user.id is same as :id provided
       # (i.e., user wants to update their own data) or if update_user token
       unless authorise? current_user, tutorial.unit, :add_tutorial
-        error!({ 'error' => "Cannot update tutorial with id=#{params[:id]} - not authorised" }, 403)
+        error!({ error: "Cannot update tutorial with id=#{params[:id]} - not authorised" }, 403)
       end
 
       tutorial_parameters = ActionController::Parameters.new(params)
@@ -63,7 +63,7 @@ module Api
       unit = Unit.find(tut_params[:unit_id])
 
       unless authorise? current_user, unit, :add_tutorial
-        error!({ 'error' => 'Not authorised to create new tutorials' }, 403)
+        error!({ error: 'Not authorised to create new tutorials' }, 403)
       end
 
       tutor = User.find(tut_params[:tutor_id])
@@ -80,7 +80,7 @@ module Api
       tutorial = Tutorial.find(params[:id])
 
       unless authorise? current_user, tutorial.unit, :add_tutorial
-        error!({ 'error' => 'Cannot delete tutorial - not authorised' }, 403)
+        error!({ error: 'Cannot delete tutorial - not authorised' }, 403)
       end
 
       tutorial.destroy!

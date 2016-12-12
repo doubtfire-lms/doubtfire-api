@@ -8,7 +8,7 @@ module Api::Submission::GenerateHelpers
   def scoop_files(params, upload_reqs)
     files = params.reject { |key| !(key =~ /^file\d+$/) }
 
-    error!({ 'error' => 'Upload requirements mismatch with files provided' }, 403) if files.length != upload_reqs.length
+    error!({ error: 'Upload requirements mismatch with files provided' }, 403) if files.length != upload_reqs.length
     #
     # Pair the name and type from upload_requirements to each file
     #
@@ -22,7 +22,7 @@ module Api::Submission::GenerateHelpers
 
     # File didn't get assigned an id above, then reject it since there was a mismatch
     files = files.reject { |_key, file| file.id.nil? }
-    error!({ 'error' => 'Upload requirements mismatch with files provided' }, 403) if files.length != upload_reqs.length
+    error!({ error: 'Upload requirements mismatch with files provided' }, 403) if files.length != upload_reqs.length
 
     # Kill the kvp
     files.map { |_k, v| v }

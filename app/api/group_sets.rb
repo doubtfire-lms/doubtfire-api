@@ -32,7 +32,7 @@ module Api
     post '/units/:unit_id/group_sets' do
       unit = Unit.find(params[:unit_id])
       unless authorise? current_user, unit, :update
-        error!({ 'error' => 'Not authorised to create a group set for this unit' }, 403)
+        error!({ error: 'Not authorised to create a group set for this unit' }, 403)
       end
 
       logger.info "Create group set: #{current_user.username} in #{unit.code} from #{request.ip}"
@@ -69,11 +69,11 @@ module Api
       logger.info "Edit group set: #{current_user.username} in #{unit.code} from #{request.ip}"
 
       if group_set.unit != unit
-        error!({ 'error' => 'Unable to locate group set for unit' }, 404)
+        error!({ error: 'Unable to locate group set for unit' }, 404)
       end
 
       unless authorise? current_user, unit, :update
-        error!({ 'error' => 'Not authorised to update group set for this unit' }, 403)
+        error!({ error: 'Not authorised to update group set for this unit' }, 403)
       end
 
       group_params = ActionController::Parameters.new(params)
@@ -97,14 +97,14 @@ module Api
       logger.info "Delete group set: #{current_user.username} in #{unit.code} from #{request.ip}"
 
       if group_set.unit != unit
-        error!({ 'error' => 'Unable to locate group set for unit' }, 404)
+        error!({ error: 'Unable to locate group set for unit' }, 404)
       end
 
       unless authorise? current_user, unit, :update
-        error!({ 'error' => 'Not authorised to delete group set for this unit' }, 403)
+        error!({ error: 'Not authorised to delete group set for this unit' }, 403)
       end
 
-      error!('error' => group_set.errors[:base].last) unless group_set.destroy
+      error!(error: group_set.errors[:base].last) unless group_set.destroy
       nil
     end
 
@@ -118,7 +118,7 @@ module Api
       group_set = unit.group_sets.find(params[:id])
 
       unless authorise? current_user, group_set, :get_groups, ->(role, perm_hash, other) { group_set.specific_permission_hash(role, perm_hash, other) }
-        error!({ 'error' => 'Not authorised to get groups for this unit' }, 403)
+        error!({ error: 'Not authorised to get groups for this unit' }, 403)
       end
 
       group_set.groups
@@ -130,7 +130,7 @@ module Api
       group_set = unit.group_sets.find(params[:group_set_id])
 
       unless authorise? current_user, unit, :update
-        error!({ 'error' => 'Not authorised to download csv of groups for this unit' }, 403)
+        error!({ error: 'Not authorised to download csv of groups for this unit' }, 403)
       end
 
       content_type 'application/octet-stream'
@@ -154,7 +154,7 @@ module Api
       tutorial = unit.tutorials.find(params[:group][:tutorial_id])
 
       unless authorise? current_user, group_set, :create_group, ->(role, perm_hash, other) { group_set.specific_permission_hash(role, perm_hash, other) }
-        error!({ 'error' => 'Not authorised to create a group set for this unit' }, 403)
+        error!({ error: 'Not authorised to create a group set for this unit' }, 403)
       end
 
       group_params = ActionController::Parameters.new(params)
@@ -190,7 +190,7 @@ module Api
       group_set = unit.group_sets.find(params[:group_set_id])
 
       unless authorise? current_user, unit, :update
-        error!({ 'error' => 'Not authorised to upload csv of groups for this unit' }, 403)
+        error!({ error: 'Not authorised to upload csv of groups for this unit' }, 403)
       end
 
       unit.import_groups_from_csv(group_set, params[:file][:tempfile])
@@ -212,7 +212,7 @@ module Api
       grp = gs.groups.find(params[:group_id])
 
       unless authorise? current_user, grp, :manage_group, ->(role, perm_hash, other) { grp.specific_permission_hash(role, perm_hash, other) }
-        error!({ 'error' => 'Not authorised to update this group' }, 403)
+        error!({ error: 'Not authorised to update this group' }, 403)
       end
 
       group_params = ActionController::Parameters.new(params)
@@ -238,16 +238,16 @@ module Api
       grp = gs.groups.find(params[:group_id])
 
       unless authorise? current_user, grp, :manage_group, ->(role, perm_hash, other) { grp.specific_permission_hash(role, perm_hash, other) }
-        error!({ 'error' => 'Not authorised to delete group set for this unit' }, 403)
+        error!({ error: 'Not authorised to delete group set for this unit' }, 403)
       end
 
       unless unit.tutors.include? current_user
         # check that they are the only member of the group, or the group is empty
-        error!({ 'error' => 'You cannot delete a group with members' }, 403) unless grp.projects.count <= 1
-        error!({ 'error' => 'You cannot delete this group' }, 403) unless grp.projects.count.zero? || grp.projects.first.student == current_user
+        error!({ error: 'You cannot delete a group with members' }, 403) unless grp.projects.count <= 1
+        error!({ error: 'You cannot delete this group' }, 403) unless grp.projects.count.zero? || grp.projects.first.student == current_user
       end
 
-      error!('error' => grp.errors[:base].last) unless grp.destroy
+      error!(error: grp.errors[:base].last) unless grp.destroy
       nil
     end
 
@@ -258,7 +258,7 @@ module Api
       grp = group_set.groups.find(params[:group_id])
 
       unless authorise? current_user, grp, :get_members, ->(role, perm_hash, other) { grp.specific_permission_hash(role, perm_hash, other) }
-        error!({ 'error' => 'Not authorised to get groups for this unit' }, 403)
+        error!({ error: 'Not authorised to get groups for this unit' }, 403)
       end
 
       Thread.current[:user] = current_user
@@ -280,11 +280,11 @@ module Api
       prj = unit.projects.find(params[:project_id])
 
       unless authorise? current_user, gs, :join_group, ->(role, perm_hash, other) { gs.specific_permission_hash(role, perm_hash, other) }
-        error!({ 'error' => 'Not authorised to manage this group' }, 403)
+        error!({ error: 'Not authorised to manage this group' }, 403)
       end
 
       unless authorise? current_user, prj, :get
-        error!({ 'error' => 'Not authorised to manage this student' }, 403)
+        error!({ error: 'Not authorised to manage this student' }, 403)
       end
 
       gm = grp.add_member(prj)
@@ -306,11 +306,11 @@ module Api
       prj = grp.projects.find(params[:id])
 
       unless authorise? current_user, grp, :manage_group, ->(role, perm_hash, other) { grp.specific_permission_hash(role, perm_hash, other) }
-        error!({ 'error' => 'Not authorised to manage this group' }, 403)
+        error!({ error: 'Not authorised to manage this group' }, 403)
       end
 
       unless authorise? current_user, prj, :get
-        error!({ 'error' => 'Not authorised to manage this student' }, 403)
+        error!({ error: 'Not authorised to manage this student' }, 403)
       end
 
       grp.remove_member(prj)

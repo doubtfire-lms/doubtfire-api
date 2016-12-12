@@ -18,14 +18,14 @@ module Api
       task_definition = project.unit.task_definitions.find(params[:task_definition_id])
 
       unless authorise? current_user, project, :make_submission
-        error!({ 'error' => 'Not authorised to create a comment for this task' }, 403)
+        error!({ error: 'Not authorised to create a comment for this task' }, 403)
       end
 
       task = project.task_for_task_definition(task_definition)
 
       result = task.add_comment current_user, params[:comment]
       if result.nil?
-        error!({ 'error' => 'No comment added. Comment duplicates last comment, so ignored.' }, 403)
+        error!({ error: 'No comment added. Comment duplicates last comment, so ignored.' }, 403)
       else
         result
       end
@@ -37,7 +37,7 @@ module Api
       task_definition = project.unit.task_definitions.find(params[:task_definition_id])
 
       unless authorise? current_user, project, :get
-        error!({ 'error' => 'You cannot read the comments for this task' }, 403)
+        error!({ error: 'You cannot read the comments for this task' }, 403)
       end
 
       if project.has_task_for_task_definition? task_definition
@@ -55,7 +55,7 @@ module Api
       task_definition = project.unit.task_definitions.find(params[:task_definition_id])
 
       unless authorise? current_user, project, :get
-        error!({ 'error' => 'You cannot read the comments for this task' }, 403)
+        error!({ error: 'You cannot read the comments for this task' }, 403)
       end
 
       task = project.task_for_task_definition(task_definition)
@@ -68,7 +68,7 @@ module Api
             end
 
       unless authorise? current_user, task, key
-        error!({ 'error' => 'Not authorised to delete this comment' }, 403)
+        error!({ error: 'Not authorised to delete this comment' }, 403)
       end
 
       task_comment.destroy

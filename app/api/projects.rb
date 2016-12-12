@@ -46,7 +46,7 @@ module Api
       if authorise? current_user, project, :get
         project
       else
-        error!({ 'error' => "Couldn't find Project with id=#{params[:id]}" }, 403)
+        error!({ error: "Couldn't find Project with id=#{params[:id]}" }, 403)
       end
     end
 
@@ -69,14 +69,14 @@ module Api
           if authorise? current_user, project, :trigger_week_end
             project.trigger_week_end(current_user)
           else
-            error!({ 'error' => "You are not authorised to perform this action for Project with id=#{params[:id]}" }, 403)
+            error!({ error: "You are not authorised to perform this action for Project with id=#{params[:id]}" }, 403)
           end
         else
-          error!({ 'error' => "Invalid trigger - #{params[:trigger]} unknown" }, 403)
+          error!({ error: "Invalid trigger - #{params[:trigger]} unknown" }, 403)
         end
       elsif !params[:tutorial_id].nil?
         unless authorise? current_user, project, :change_tutorial
-          error!({ 'error' => "Couldn't find Project with id=#{params[:id]}" }, 403)
+          error!({ error: "Couldn't find Project with id=#{params[:id]}" }, 403)
         end
 
         tutorial_id = params[:tutorial_id]
@@ -87,36 +87,36 @@ module Api
           project.tutorial = nil
           project.save!
         else
-          error!({ 'error' => "Couldn't find Tutorial with id=#{params[:tutorial_id]}" }, 403)
+          error!({ error: "Couldn't find Tutorial with id=#{params[:tutorial_id]}" }, 403)
         end
       elsif !params[:enrolled].nil?
         unless authorise? current_user, project.unit, :change_project_enrolment
-          error!({ 'error' => "You cannot change the enrolment for project #{params[:id]}" }, 403)
+          error!({ error: "You cannot change the enrolment for project #{params[:id]}" }, 403)
         end
         project.enrolled = params[:enrolled]
         project.save
       elsif !params[:target_grade].nil?
         unless authorise? current_user, project, :change
-          error!({ 'error' => "You do not have permissions to change Project with id=#{params[:id]}" }, 403)
+          error!({ error: "You do not have permissions to change Project with id=#{params[:id]}" }, 403)
         end
 
         project.target_grade = params[:target_grade]
         project.save
       elsif !params[:grade].nil?
         unless authorise? current_user, project, :assess
-          error!({ 'error' => "You do not have permissions to assess Project with id=#{params[:id]}" }, 403)
+          error!({ error: "You do not have permissions to assess Project with id=#{params[:id]}" }, 403)
         end
 
         if params[:grade_rationale].nil?
-          error!({ 'error' => 'Grade rationale required to perform assessment.' }, 403)
+          error!({ error: 'Grade rationale required to perform assessment.' }, 403)
         end
 
         if params[:old_grade].nil?
-          error!({ 'error' => 'Existing project grade is required to perform assessment.' }, 403)
+          error!({ error: 'Existing project grade is required to perform assessment.' }, 403)
         end
 
         if params[:old_grade] != project.grade
-          error!({ 'error' => 'Existing project grade does not match current grade. Refresh project and try again.' }, 403)
+          error!({ error: 'Existing project grade does not match current grade. Refresh project and try again.' }, 403)
         end
 
         project.grade = params[:grade]
@@ -124,7 +124,7 @@ module Api
         project.save!
       elsif !params[:compile_portfolio].nil?
         unless authorise? current_user, project, :change
-          error!({ 'error' => "You do not have permissions to change Project with id=#{params[:id]}" }, 403)
+          error!({ error: "You do not have permissions to change Project with id=#{params[:id]}" }, 403)
         end
 
         project.compile_portfolio = params[:compile_portfolio]
@@ -146,13 +146,13 @@ module Api
       student = User.find_by_username(params[:student_num])
 
       if student.nil?
-        error!({ 'error' => "Couldn't find Student with username=#{params[:student_num]}" }, 403)
+        error!({ error: "Couldn't find Student with username=#{params[:student_num]}" }, 403)
       end
 
       if authorise? current_user, unit, :enrol_student
         proj = unit.enrol_student(student, params[:tutorial_id])
         if proj.nil?
-          error!({ 'error' => 'Error adding student to unit' }, 403)
+          error!({ error: 'Error adding student to unit' }, 403)
         else
           {
             project_id: proj.id,
@@ -172,7 +172,7 @@ module Api
           }
         end
       else
-        error!({ 'error' => "Couldn't find Unit with id=#{params[:unit_id]}" }, 403)
+        error!({ error: "Couldn't find Unit with id=#{params[:unit_id]}" }, 403)
       end
     end
   end

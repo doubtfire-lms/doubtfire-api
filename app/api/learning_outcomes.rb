@@ -21,7 +21,7 @@ module Api
       unit = Unit.find(params[:unit_id])
 
       unless authorise? current_user, unit, :update
-        error!({ 'error' => 'You are not authorised to create outcomes in this unit.' }, 403)
+        error!({ error: 'You are not authorised to create outcomes in this unit.' }, 403)
       end
 
       ilo = unit.add_ilo(params[:name], params[:description], params[:abbreviation])
@@ -38,14 +38,14 @@ module Api
     end
     put '/units/:unit_id/outcomes/:id' do
       unit = Unit.find(params[:unit_id])
-      error!({ 'error' => 'Unable to locate requested unit.' }, 405) if unit.nil?
+      error!({ error: 'Unable to locate requested unit.' }, 405) if unit.nil?
 
       unless authorise? current_user, unit, :update
-        error!({ 'error' => 'You are not authorised to update outcomes in this unit.' }, 403)
+        error!({ error: 'You are not authorised to update outcomes in this unit.' }, 403)
       end
 
       ilo = unit.learning_outcomes.find(params[:id])
-      error!({ 'error' => 'Unable to locate outcome requested.' }, 405) if ilo.nil?
+      error!({ error: 'Unable to locate outcome requested.' }, 405) if ilo.nil?
 
       ilo_parameters = ActionController::Parameters.new(params)
                                                    .permit(
@@ -65,14 +65,14 @@ module Api
     end
     delete '/units/:unit_id/outcomes/:id' do
       unit = Unit.find(params[:unit_id])
-      error!({ 'error' => 'Unable to locate requested unit.' }, 405) if unit.nil?
+      error!({ error: 'Unable to locate requested unit.' }, 405) if unit.nil?
 
       unless authorise? current_user, unit, :update
-        error!({ 'error' => 'You are not authorised to delete outcomes in this unit.' }, 403)
+        error!({ error: 'You are not authorised to delete outcomes in this unit.' }, 403)
       end
 
       ilo = unit.learning_outcomes.find(params[:id])
-      error!({ 'error' => 'Unable to locate outcome requested.' }, 405) if ilo.nil?
+      error!({ error: 'Unable to locate outcome requested.' }, 405) if ilo.nil?
 
       ilo.destroy
       nil
@@ -81,10 +81,10 @@ module Api
     desc 'Download the outcomes for a unit to a csv'
     get '/units/:unit_id/outcomes/csv' do
       unit = Unit.find(params[:unit_id])
-      error!({ 'error' => 'Unable to locate requested unit.' }, 405) if unit.nil?
+      error!({ error: 'Unable to locate requested unit.' }, 405) if unit.nil?
 
       unless authorise? current_user, unit, :update
-        error!({ 'error' => 'You are not authorised to download outcomes for this unit.' }, 403)
+        error!({ error: 'You are not authorised to download outcomes for this unit.' }, 403)
       end
 
       content_type 'application/octet-stream'
@@ -105,7 +105,7 @@ module Api
       unit = Unit.find(params[:unit_id])
 
       unless authorise? current_user, unit, :upload_csv
-        error!({ 'error' => 'Not authorised to upload CSV of outcomes' }, 403)
+        error!({ error: 'Not authorised to upload CSV of outcomes' }, 403)
       end
 
       # Actually import...

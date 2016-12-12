@@ -25,7 +25,7 @@ module Api
                    unit.student_query(false)
                  end
       else
-        error!({ 'error' => "Couldn't find Unit with id=#{params[:unit_id]}" }, 403)
+        error!({ error: "Couldn't find Unit with id=#{params[:unit_id]}" }, 403)
       end
     end
   end

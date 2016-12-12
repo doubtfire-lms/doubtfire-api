@@ -19,18 +19,18 @@ class LectureResourceDownloadsController < ApplicationController
   # desc "Retrieve all task sheets, and resources for a unit"
   def index
     unless authenticated?
-      error!({ 'error' => "Not authorised to download task sheets and resources for unit '#{params[:id]}'" }, 401)
+      error!({ error: "Not authorised to download task sheets and resources for unit '#{params[:id]}'" }, 401)
     end
 
     unit = Unit.find(params[:id])
 
     unless authorise? current_user, unit, :get_unit
-      error!({ 'error' => "Not authorised to download resources for unit '#{params[:id]}'" }, 401)
+      error!({ error: "Not authorised to download resources for unit '#{params[:id]}'" }, 401)
     end
 
     output_zip = unit.get_task_resources_zip
 
-    error!({ 'error' => 'No files to download' }, 403) if output_zip.nil?
+    error!({ error: 'No files to download' }, 403) if output_zip.nil?
 
     download_id = "#{Time.new.strftime('%Y-%m-%d %H:%m:%S')}-resources-#{unit.code}"
     download_id.gsub! /[\\\/]/, '-'

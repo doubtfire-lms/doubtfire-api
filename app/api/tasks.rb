@@ -21,7 +21,7 @@ module Api
       unit = Unit.find(params[:unit_id])
 
       unless authorise? current_user, unit, :get_students
-        error!({ 'error' => 'You do not have permission to read these task details' }, 403)
+        error!({ error: 'You do not have permission to read these task details' }, 403)
       end
 
       unit.student_tasks
@@ -46,17 +46,17 @@ module Api
     desc 'Get a similarity match for a given task'
     get '/tasks/:id/similarity/:count' do
       unless authenticated?
-        error!({ 'error' => "Not authorised to download details for task '#{params[:id]}'" }, 401)
+        error!({ error: "Not authorised to download details for task '#{params[:id]}'" }, 401)
       end
       task = Task.find(params[:id])
 
       unless authorise? current_user, task, :get_submission
-        error!({ 'error' => "Not authorised to download details for task '#{params[:id]}'" }, 401)
+        error!({ error: "Not authorised to download details for task '#{params[:id]}'" }, 401)
       end
 
       match = params[:count].to_i % task.similar_to_count
       if match < 0
-        error!({ 'error' => 'Invalid match sequence, must be 0 or larger' }, 403)
+        error!({ error: 'Invalid match sequence, must be 0 or larger' }, 403)
       end
 
       match_link = task.plagiarism_match_links.order('created_at DESC')[match]
@@ -68,7 +68,7 @@ module Api
       output = FileHelper.path_to_plagarism_html(match_link)
 
       if output.nil? || !File.exist?(output)
-        error!({ 'error' => 'No files to download' }, 403)
+        error!({ error: 'No files to download' }, 403)
       end
 
       if authorise? current_user, match_link.task, :view_plagiarism
@@ -129,17 +129,17 @@ module Api
     end
     put '/tasks/:id/similarity/:count' do
       unless authenticated?
-        error!({ 'error' => "Not authorised to access this task '#{params[:id]}'" }, 401)
+        error!({ error: "Not authorised to access this task '#{params[:id]}'" }, 401)
       end
       task = Task.find(params[:id])
 
       unless authorise? current_user, task, :delete_plagiarism
-        error!({ 'error' => "Not authorised to remove similarity for task '#{params[:id]}'" }, 401)
+        error!({ error: "Not authorised to remove similarity for task '#{params[:id]}'" }, 401)
       end
 
       match = params[:count].to_i % task.similar_to_count
       if match < 0
-        error!({ 'error' => 'Invalid match sequence, must be 0 or larger' }, 403)
+        error!({ error: 'Invalid match sequence, must be 0 or larger' }, 403)
       end
 
       match_link = task.plagiarism_match_links.order('created_at DESC')[match]
@@ -179,17 +179,17 @@ module Api
         unless params[:trigger].nil?
           # Check if they should be using portfolio_evidence api
           if needs_upload_docs && params[:trigger] == 'ready_to_mark'
-            error!({ 'error' => 'Cannot set this task status to ready to mark without uploading documents.' }, 403)
+            error!({ error: 'Cannot set this task status to ready to mark without uploading documents.' }, 403)
           end
 
           if task.group_task? && !task.group
-            error!({ 'error' => "This task requires a group. Ensure you are in a group for the unit's #{task.task_definition.group_set.name}" }, 403)
+            error!({ error: "This task requires a group. Ensure you are in a group for the unit's #{task.task_definition.group_set.name}" }, 403)
           end
 
           logger.info "#{current_user.username} assessing task #{task.id} to #{params[:trigger]}"
           result = task.trigger_transition(trigger: params[:trigger], by_user: current_user, quality: params[:quality_pts])
           if result.nil? && task.task_definition.restrict_status_updates
-            error!({ 'error' => 'This task can only be updated by your tutor.' }, 403)
+            error!({ error: 'This task can only be updated by your tutor.' }, 403)
           end
         end
 
@@ -207,7 +207,7 @@ module Api
 
         TaskUpdateSerializer.new(task)
       else
-        error!({ 'error' => "Couldn't find Task with id=#{params[:id]}" }, 403)
+        error!({ error: "Couldn't find Task with id=#{params[:id]}" }, 403)
       end
     end
 
@@ -222,7 +222,7 @@ module Api
       task_definition = project.unit.task_definitions.find(params[:task_definition_id])
 
       # check the user can put this task
-      error!('error' => 'You do not have permission to read submissions for this project.') unless authorise? current_user, project, :get_submission
+      error!(error: 'You do not have permission to read submissions for this project.') unless authorise? current_user, project, :get_submission
 
       # ensure there can be a pdf...
       needs_upload_docs = !task_definition.upload_requirements.empty?
@@ -255,7 +255,7 @@ module Api
       task_definition = project.unit.task_definitions.find(params[:task_definition_id])
 
       # check the user can put this task
-      error!('error' => 'You do not have permission to read submissions for this project.') unless authorise? current_user, project, :get_submission
+      error!(error: 'You do not have permission to read submissions for this project.') unless authorise? current_user, project, :get_submission
 
       # Get the actual task...
       task = project.task_for_task_definition(task_definition)

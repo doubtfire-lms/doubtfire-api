@@ -20,18 +20,18 @@ class PortfolioDownloadsController < ApplicationController
   # desc "Retrieve portfolios for a unit"
   def index
     unless authenticated?
-      error!({ 'error' => "Not authorised to download portfolios for unit '#{params[:id]}'" }, 401)
+      error!({ error: "Not authorised to download portfolios for unit '#{params[:id]}'" }, 401)
     end
 
     unit = Unit.find(params[:id])
 
     unless authorise? current_user, unit, :provide_feedback
-      error!({ 'error' => "Not authorised to download portfolios for unit '#{params[:id]}'" }, 401)
+      error!({ error: "Not authorised to download portfolios for unit '#{params[:id]}'" }, 401)
     end
 
     output_zip = unit.get_portfolio_zip(current_user)
 
-    error!({ 'error' => 'No files to download' }, 403) if output_zip.nil?
+    error!({ error: 'No files to download' }, 403) if output_zip.nil?
 
     # Set download headers...
     # content_type "application/octet-stream"

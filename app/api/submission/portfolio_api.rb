@@ -22,7 +22,7 @@ module Api
         project = Project.find(params[:id])
 
         unless authorise? current_user, project, :make_submission
-          error!({ 'error' => "Not authorised to submit portfolio for project '#{params[:id]}'" }, 401)
+          error!({ error: "Not authorised to submit portfolio for project '#{params[:id]}'" }, 401)
         end
 
         file = params[:file0]
@@ -31,7 +31,7 @@ module Api
 
         # Check that the file is OK to accept
         unless FileHelper.accept_file(file, name, kind)
-          error!({ 'error' => "'#{file.filename}' is not a valid #{kind} file" }, 403)
+          error!({ error: "'#{file.filename}' is not a valid #{kind} file" }, 403)
         end
 
         # Move file into place
@@ -48,7 +48,7 @@ module Api
         project = Project.find(params[:id])
 
         unless authorise? current_user, project, :make_submission
-          error!({ 'error' => "Not authorised to alter portfolio for project '#{params[:id]}'" }, 401)
+          error!({ error: "Not authorised to alter portfolio for project '#{params[:id]}'" }, 401)
         end
 
         # Remove file or portfolio?
@@ -69,7 +69,7 @@ module Api
         project = Project.find(params[:id])
 
         unless authorise? current_user, project, :get_submission
-          error!({ 'error' => "Not authorised to download portfolio for project '#{params[:id]}'" }, 401)
+          error!({ error: "Not authorised to download portfolio for project '#{params[:id]}'" }, 401)
         end
 
         evidence_loc = project.portfolio_path

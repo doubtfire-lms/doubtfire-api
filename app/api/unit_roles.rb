@@ -33,7 +33,7 @@ module Api
       unit_role = UnitRole.find(params[:id])
 
       unless (authorise? current_user, unit_role.unit, :employ_staff) || (authorise? current_user, User, :admin_units)
-        error!({ 'error' => "Couldn't find UnitRole with id=#{params[:id]}" }, 403)
+        error!({ error: "Couldn't find UnitRole with id=#{params[:id]}" }, 403)
       end
 
       unit_role.destroy
@@ -44,7 +44,7 @@ module Api
       unit_role = UnitRole.find(params[:id])
 
       unless authorise? current_user, unit_role, :get
-        error!({ 'error' => "Couldn't find UnitRole with id=#{params[:id]}" }, 403)
+        error!({ error: "Couldn't find UnitRole with id=#{params[:id]}" }, 403)
       end
 
       unit_role
@@ -60,17 +60,17 @@ module Api
       unit = Unit.find(params[:unit_id])
 
       unless (authorise? current_user, unit, :employ_staff) || (authorise? current_user, User, :admin_units)
-        error!({ 'error' => "Couldn't find Unit with id=#{params[:id]}" }, 403)
+        error!({ error: "Couldn't find Unit with id=#{params[:id]}" }, 403)
       end
       user = User.find(params[:user_id])
       role = Role.with_name(params[:role])
 
       if role.nil?
-        error!({ 'error' => "Couldn't find Role with name=#{params[:role]}" }, 403)
+        error!({ error: "Couldn't find Role with name=#{params[:role]}" }, 403)
       end
 
       if role == Role.student
-        error!({ 'error' => 'Enrol students as projects not unit roles' }, 403)
+        error!({ error: 'Enrol students as projects not unit roles' }, 403)
       end
 
       unit.employ_staff(user, role)
@@ -86,7 +86,7 @@ module Api
       unit_role = UnitRole.find_by_id(params[:id])
 
       unless (authorise? current_user, unit_role.unit, :employ_staff) || (authorise? current_user, User, :admin_units)
-        error!({ 'error' => "Couldn't find Unit with id=#{params[:id]}" }, 403)
+        error!({ error: "Couldn't find Unit with id=#{params[:id]}" }, 403)
       end
 
       unit_role_parameters = ActionController::Parameters.new(params)
@@ -96,7 +96,7 @@ module Api
                                                          )
 
       if unit_role_parameters[:role_id] == Role.tutor.id && unit_role.role == Role.convenor && unit_role.unit.convenors.count == 1
-        error!({ 'error' => 'There must be at least one convenor for the unit' }, 403)
+        error!({ error: 'There must be at least one convenor for the unit' }, 403)
       end
 
       unit_role.update!(unit_role_parameters)

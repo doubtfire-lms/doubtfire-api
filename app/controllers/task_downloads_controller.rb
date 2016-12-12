@@ -20,20 +20,20 @@ class TaskDownloadsController < ApplicationController
   # desc "Retrieve portfolios for a unit"
   def index
     unless authenticated?
-      error!({ 'error' => "Not authorised to download tasks for unit '#{params[:id]}'" }, 401)
+      error!({ error: "Not authorised to download tasks for unit '#{params[:id]}'" }, 401)
     end
 
     unit = Unit.find(params[:id])
 
     unless authorise? current_user, unit, :provide_feedback
-      error!({ 'error' => "Not authorised to download tasks for unit '#{params[:id]}'" }, 401)
+      error!({ error: "Not authorised to download tasks for unit '#{params[:id]}'" }, 401)
     end
 
     td = unit.task_definitions.find(params[:task_def_id])
 
     output_zip = unit.get_task_submissions_zip(current_user, td)
 
-    error!({ 'error' => 'No files to download' }, 403) if output_zip.nil?
+    error!({ error: 'No files to download' }, 403) if output_zip.nil?
 
     # Set download headers...
     # content_type "application/octet-stream"

@@ -27,7 +27,7 @@ module Api
     end
     get '/units' do
       unless authorise? current_user, User, :convene_units
-        error!({ 'error' => 'Unable to list units' }, 403)
+        error!({ error: 'Unable to list units' }, 403)
       end
 
       # gets only the units the current user can "see"
@@ -42,7 +42,7 @@ module Api
     get '/units/:id' do
       unit = Unit.find(params[:id])
       unless (authorise? current_user, unit, :get_unit) || (authorise? current_user, User, :admin_units)
-        error!({ 'error' => "Couldn't find Unit with id=#{params[:id]}" }, 403)
+        error!({ error: "Couldn't find Unit with id=#{params[:id]}" }, 403)
       end
       #
       # Unit uses user from thread to limit exposure
@@ -66,7 +66,7 @@ module Api
     put '/units/:id' do
       unit = Unit.find(params[:id])
       unless authorise? current_user, unit, :update
-        error!({ 'error' => 'Not authorised to update a unit' }, 403)
+        error!({ error: 'Not authorised to update a unit' }, 403)
       end
       unit_parameters = ActionController::Parameters.new(params)
                                                     .require(:unit)
@@ -93,7 +93,7 @@ module Api
     end
     post '/units' do
       unless authorise? current_user, User, :create_unit
-        error!({ 'error' => 'Not authorised to create a unit' }, 403)
+        error!({ error: 'Not authorised to create a unit' }, 403)
       end
 
       unit_parameters = ActionController::Parameters.new(params)
@@ -139,18 +139,18 @@ module Api
     post '/units/:id/tutorials' do
       unit = Unit.find(params[:id])
       unless authorise? current_user, unit, :add_tutorial
-        error!({ 'error' => 'Not authorised to create a tutorial' }, 403)
+        error!({ error: 'Not authorised to create a tutorial' }, 403)
       end
 
       new_tutorial = params[:tutorial]
       tutor = User.find_by_username(new_tutorial[:tutor_username])
       if tutor.nil?
-        error!({ 'error' => "Couldn't find User with username=#{new_tutorial[:tutor_username]}" }, 403)
+        error!({ error: "Couldn't find User with username=#{new_tutorial[:tutor_username]}" }, 403)
       end
 
       result = unit.add_tutorial(new_tutorial[:day], new_tutorial[:time], new_tutorial[:location], tutor, new_tutorial[:abbrev])
       if result.nil?
-        error!({ 'error' => 'Tutor username invalid (not a tutor for this unit)' }, 403)
+        error!({ error: 'Tutor username invalid (not a tutor for this unit)' }, 403)
       end
 
       result
@@ -160,7 +160,7 @@ module Api
     get '/units/:id/feedback' do
       unit = Unit.find(params[:id])
       unless authorise? current_user, unit, :provide_feedback
-        error!({ 'error' => 'Not authorised to provide feedback for this unit' }, 403)
+        error!({ error: 'Not authorised to provide feedback for this unit' }, 403)
       end
 
       ActiveModel::ArraySerializer.new(unit.tasks_awaiting_feedback, each_serializer: TaskFeedbackSerializer)
@@ -170,7 +170,7 @@ module Api
     get '/units/:id/grades' do
       unit = Unit.find(params[:id])
       unless authorise? current_user, unit, :download_grades
-        error!({ 'error' => 'Not authorised to download grades for this unit' }, 403)
+        error!({ error: 'Not authorised to download grades for this unit' }, 403)
       end
 
       content_type 'application/octet-stream'
@@ -187,7 +187,7 @@ module Api
     post '/csv/units/:id' do
       unit = Unit.find(params[:id])
       unless authorise? current_user, unit, :upload_csv
-        error!({ 'error' => "Not authorised to upload CSV of students to #{unit.code}" }, 403)
+        error!({ error: "Not authorised to upload CSV of students to #{unit.code}" }, 403)
       end
 
       ensure_csv!(params[:file][:tempfile])
@@ -206,7 +206,7 @@ module Api
 
       unit = Unit.find(params[:id])
       unless authorise? current_user, unit, :upload_csv
-        error!({ 'error' => "Not authorised to upload CSV of students to #{unit.code}" }, 403)
+        error!({ error: "Not authorised to upload CSV of students to #{unit.code}" }, 403)
       end
 
       # Actually withdraw...
@@ -217,7 +217,7 @@ module Api
     get '/csv/units/:id' do
       unit = Unit.find(params[:id])
       unless authorise? current_user, unit, :download_unit_csv
-        error!({ 'error' => "Not authorised to download CSV of students enrolled in #{unit.code}" }, 403)
+        error!({ error: "Not authorised to download CSV of students enrolled in #{unit.code}" }, 403)
       end
 
       content_type 'application/octet-stream'
@@ -230,7 +230,7 @@ module Api
     get '/csv/units/:id/task_completion' do
       unit = Unit.find(params[:id])
       unless authorise? current_user, unit, :download_unit_csv
-        error!({ 'error' => "Not authorised to download CSV of student tasks in #{unit.code}" }, 403)
+        error!({ error: "Not authorised to download CSV of student tasks in #{unit.code}" }, 403)
       end
 
       content_type 'application/octet-stream'
@@ -243,7 +243,7 @@ module Api
     get '/units/:id/stats/student_target_grade' do
       unit = Unit.find(params[:id])
       unless authorise? current_user, unit, :download_stats
-        error!({ 'error' => "Not authorised to download stats of student tasks in #{unit.code}" }, 403)
+        error!({ error: "Not authorised to download stats of student tasks in #{unit.code}" }, 403)
       end
 
       unit.student_target_grade_stats
@@ -253,7 +253,7 @@ module Api
     get '/units/:id/stats/task_status_pct' do
       unit = Unit.find(params[:id])
       unless authorise? current_user, unit, :download_stats
-        error!({ 'error' => "Not authorised to download stats of student tasks in #{unit.code}" }, 403)
+        error!({ error: "Not authorised to download stats of student tasks in #{unit.code}" }, 403)
       end
 
       unit.task_status_stats
@@ -263,7 +263,7 @@ module Api
     get '/units/:id/stats/task_completion_stats' do
       unit = Unit.find(params[:id])
       unless authorise? current_user, unit, :download_stats
-        error!({ 'error' => "Not authorised to download stats of student tasks in #{unit.code}" }, 403)
+        error!({ error: "Not authorised to download stats of student tasks in #{unit.code}" }, 403)
       end
 
       unit.student_task_completion_stats
@@ -273,7 +273,7 @@ module Api
     get '/csv/units/:id/tutor_assessments' do
       unit = Unit.find(params[:id])
       unless authorise? current_user, unit, :download_stats
-        error!({ 'error' => "Not authorised to download stats of statistics for #{unit.code}" }, 403)
+        error!({ error: "Not authorised to download stats of statistics for #{unit.code}" }, 403)
       end
 
       content_type 'application/octet-stream'

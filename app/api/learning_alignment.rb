@@ -19,7 +19,7 @@ module Api
       unit = Unit.find(params[:unit_id])
 
       unless authorise?(current_user, unit, :get_unit)
-        error!({ 'error' => 'You are not authorised to access this unit.' }, 403)
+        error!({ error: 'You are not authorised to access this unit.' }, 403)
       end
 
       if params[:project_id].nil?
@@ -27,7 +27,7 @@ module Api
       else
         proj = unit.projects.find(params[:project_id])
         unless authorise?(current_user, proj, :get)
-          error!({ 'error' => 'You are not authorised to access this project.' }, 403)
+          error!({ error: 'You are not authorised to access this project.' }, 403)
         end
         return proj.task_outcome_alignments
       end
@@ -42,12 +42,12 @@ module Api
       unit = Unit.find(params[:unit_id])
 
       unless authorise?(current_user, unit, :get_unit)
-        error!({ 'error' => 'You are not authorised to access this unit.' }, 403)
+        error!({ error: 'You are not authorised to access this unit.' }, 403)
       end
 
       if params[:project_id].nil?
         unless authorise? current_user, unit, :download_unit_csv
-          error!({ 'error' => "Not authorised to download CSV of task alignment in #{unit.code}" }, 403)
+          error!({ error: "Not authorised to download CSV of task alignment in #{unit.code}" }, 403)
         end
 
         content_type 'application/octet-stream'
@@ -57,7 +57,7 @@ module Api
       else
         proj = unit.projects.find(params[:project_id])
         unless authorise?(current_user, proj, :get)
-          error!({ 'error' => 'You are not authorised to access this project.' }, 403)
+          error!({ error: 'You are not authorised to access this project.' }, 403)
         end
 
         content_type 'application/octet-stream'
@@ -79,12 +79,12 @@ module Api
       unit = Unit.find(params[:unit_id])
 
       unless authorise?(current_user, unit, :get_unit)
-        error!({ 'error' => 'You are not authorised to access this unit.' }, 403)
+        error!({ error: 'You are not authorised to access this unit.' }, 403)
       end
 
       if params[:project_id].nil?
         unless authorise? current_user, unit, :upload_csv
-          error!({ 'error' => "Not authorised to upload CSV of task alignment to #{unit.code}" }, 403)
+          error!({ error: "Not authorised to upload CSV of task alignment to #{unit.code}" }, 403)
         end
 
         # Actually import...
@@ -92,7 +92,7 @@ module Api
       else
         proj = unit.projects.find(params[:project_id])
         unless authorise?(current_user, proj, :make_submission)
-          error!({ 'error' => 'You are not authorised to access this project.' }, 403)
+          error!({ error: 'You are not authorised to access this project.' }, 403)
         end
 
         unit.import_task_alignment_from_csv(params[:file][:tempfile], proj)
@@ -114,7 +114,7 @@ module Api
       # if there is no project -- then this is a unit LO link
       # so need to check the user is authorised to update the unit...
       if params[:project_id].nil? && !authorise?(current_user, unit, :update)
-        error!({ 'error' => 'You are not authorised to create task alignments in this unit.' }, 403)
+        error!({ error: 'You are not authorised to create task alignments in this unit.' }, 403)
       end
 
       unit.learning_outcomes.find(params[:learning_outcome_id])
@@ -134,7 +134,7 @@ module Api
         task = project.task_for_task_definition(task_def)
 
         unless authorise?(current_user, task, :make_submission)
-          error!({ 'error' => 'You are not authorised to create outcome alignments for this task.' }, 403)
+          error!({ error: 'You are not authorised to create outcome alignments for this task.' }, 403)
         end
 
         link_parameters[:task_id] = task.id
@@ -166,12 +166,12 @@ module Api
         task = align.task
 
         unless authorise?(current_user, task, :make_submission)
-          error!({ 'error' => 'You are not authorised to update outcome alignments for this task.' }, 403)
+          error!({ error: 'You are not authorised to update outcome alignments for this task.' }, 403)
         end
 
       # else, this is a unit alignment update!
       elsif !authorise?(current_user, unit, :update)
-        error!({ 'error' => 'You are not authorised to update the task alignments in this unit.' }, 403)
+        error!({ error: 'You are not authorised to update the task alignments in this unit.' }, 403)
       end
 
       align.update(link_parameters)
@@ -193,12 +193,12 @@ module Api
         task = align.task
 
         unless authorise?(current_user, task, :make_submission)
-          error!({ 'error' => 'You are not authorised to update outcome alignments for this task.' }, 403)
+          error!({ error: 'You are not authorised to update outcome alignments for this task.' }, 403)
         end
 
       # else, this is a unit alignment update!
       elsif !authorise?(current_user, unit, :update)
-        error!({ 'error' => 'You are not authorised to update the task alignments in this unit.' }, 403)
+        error!({ error: 'You are not authorised to update the task alignments in this unit.' }, 403)
       end
 
       align.destroy!
@@ -213,7 +213,7 @@ module Api
       unit = Unit.find(params[:unit_id])
 
       unless authorise?(current_user, unit, :get_unit)
-        error!({ 'error' => 'You are not authorised to access these task alignments.' }, 403)
+        error!({ error: 'You are not authorised to access these task alignments.' }, 403)
       end
 
       unit.ilo_progress_class_stats
@@ -227,7 +227,7 @@ module Api
       unit = Unit.find(params[:unit_id])
 
       unless authorise?(current_user, unit, :provide_feedback)
-        error!({ 'error' => 'You are not authorised to access these task alignments.' }, 403)
+        error!({ error: 'You are not authorised to access these task alignments.' }, 403)
       end
 
       unit.ilo_progress_class_details
