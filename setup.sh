@@ -121,7 +121,7 @@ install_rbenv () {
     else 
         install_rbenv_linux
     fi
-    msg "installed Ruby"
+    verbose "installed Ruby"
 
     if [ -n "$ZSH_VERSION" ]; then
         echo 'eval "$(rbenv init -)"' >> ~/.zshrc
@@ -155,7 +155,7 @@ install_postgres () {
 
         export PATH=/Applications/Postgres.app/Contents/Versions/*/bin:$PATH
 
-        msg "installed Postgres, should now be on path"
+        verbose "Installed Postgres, should now be on path"
         # TODO replace this with cli open.
         open -a postgres
         sleep 5
