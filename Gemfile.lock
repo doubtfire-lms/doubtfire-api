@@ -74,7 +74,6 @@ GEM
     devise_ldap_authenticatable (0.8.5)
       devise (>= 3.4.1)
       net-ldap (>= 0.6.0, <= 0.11)
-    diff-lcs (1.2.5)
     dotenv (2.1.1)
     dotenv-rails (2.1.1)
       dotenv (= 2.1.1)
@@ -252,8 +251,8 @@ DEPENDENCIES
   grape-active_model_serializers (~> 1.3.2)
   grape-swagger
   hirb
-  minitest-around
   json-jwt (= 1.7.0)
+  minitest-around
   minitest-hyper
   minitest-osx
   minitest-rails
