@@ -233,7 +233,7 @@ install_dfire_dependencies () {
 }
 
 # 
-# Install doubtfire gem dependencies
+# Install Overcommit and DSTIL hooks.
 # 
 install_dstil_overcommit () {
     msg "Installing DSTIL hooks..."
@@ -247,6 +247,9 @@ install_dstil_overcommit () {
     verbose "installed DSTIL hooks."
 }
 
+# 
+# Install LaTeX.
+# 
 install_latex () {
     msg "LaTeX is required for PDF generation, it could take up to several hours to install"
     if isMac; then
@@ -275,7 +278,8 @@ install_native_tools
 install_dfire_dependencies
 install_dstil_overcommit
 install_latex
-exec $SHELL
 
 msg "You should now be able to launch the server with rails s"
-verbose "Doubtfire developed successfuly installed!"
+verbose "Doubtfire should be successfuly installed!"
+
+exec $SHELL
