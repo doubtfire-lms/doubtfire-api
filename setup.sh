@@ -1,14 +1,7 @@
 #!/bin/bash
 
 #
-# Doubtfire MacOS Development Install Script
-# =======================
-#
-# Provides commands to install Doubtfire
-#
-
-#
-# OS Detection functions
+# Detects if system is macOS
 #
 isMac() {
     if [[ `uname` == Darwin ]]; then
@@ -19,6 +12,9 @@ isMac() {
     fi
 }
 
+#
+# Detects if system is Linux
+#
 isLinux() {
     if [[ `uname` == Linux ]]; then
         # 0 = true
@@ -28,6 +24,9 @@ isLinux() {
     fi
 }
 
+#
+# Detects if environment is ZSH
+#
 is_zsh() {
     if [ -n "$ZSH_VERSION" ]; then
         # 0 = true
