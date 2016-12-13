@@ -7,14 +7,15 @@ A modern, lightweight learning management system.
 ## Table of Contents
 
 1. [Getting Started](#getting-started)
-  1. [...on macOS](#getting-started-on-os-x)
-  2. [...on Linux](#getting-started-on-linux)
-  3. [...via Docker](#getting-started-via-docker)
-2. [Running Rake Tasks](#running-rake-tasks)
-3. [PDF Generation Prerequisites](#pdf-generation-prerequisites)
-4. [Testing](#testing)
-5. [Contributing](#contributing)
-6. [License](#license)
+  1. [...Install Script](#install-script)
+  2. [...Manual Install](#manual-install)
+2. [Environment Variables](#environment-variables)
+3. [Getting up and Running](#getting-up-and-running)
+4. [Running Rake Tasks](#running-rake-tasks)
+5. [PDF Generation Prerequisites](#pdf-generation-prerequisites)
+6. [Testing](#testing)
+7. [Contributing](#contributing)
+8. [License](#license)
 
 ## Getting started
 
