@@ -85,7 +85,7 @@ install_homebrew () {
 }
 
 #
-# Install ruby envioronment for linux
+# Install Ruby envioronment for linux
 #
 install_rbenv_linux() {
     msg "Installing Ruby..."
@@ -121,7 +121,7 @@ install_rbenv () {
     else 
         install_rbenv_linux
     fi
-    verbose "installed Ruby"
+    verbose "Installed Ruby"
 
     if [ -n "$ZSH_VERSION" ]; then
         echo 'eval "$(rbenv init -)"' >> ~/.zshrc
@@ -129,14 +129,14 @@ install_rbenv () {
         echo 'eval "$(rbenv init -)"' >> ~/.bashrc
     fi
 
-    msg "installing Ruby 2.3.1, this will take a few minutes..."
+    msg "Installing Ruby 2.3.1, this will take a few minutes..."
     CONFIGURE_OPTS="--disable-install-doc --enable-shared" rbenv install 2.3.1
 
     if [ $? -ne 0 ]; then
-        error "Was not able to install rbenv, or rbenv was already installed, will continue with installation."
+        error "Was not able to install rbenv, or rbenv was already Installed, will continue with installation."
     fi
 
-    verbose "installed ruby-build and rbenv"
+    verbose "Installed Ruby-build and rbenv"
     rbenv global 2.3.1
     eval "$(rbenv init -)"
     rbenv rehash
@@ -163,13 +163,13 @@ install_postgres () {
         if [ $? -ne 0 ]; then
             error "Could not install postgres."
         fi
-        verbose "installed postgres"
+        verbose "Installed postgres"
     else 
         sudo apt-get install -y postgresql \
                         postgresql-contrib \
                         libpq-dev
 
-        msg "Ensure pg_config is on the PATH, and then login to Postgres. You will need to locate where `apt-get` has installed your Postgres binary and add this to your PATH. You can use: whereis psql for that, but ensure you add the directory and not the executable to the path"
+        msg "Ensure pg_config is on the PATH, and then login to Postgres. You will need to locate where `apt-get` has Installed your Postgres binary and add this to your PATH. You can use: whereis psql for that, but ensure you add the directory and not the executable to the path"
         read -p "Press enter to continue"
 
         export PATH=/usr/bin:$PATH
@@ -183,7 +183,7 @@ install_postgres () {
         exit 1
     fi
 
-    verbose "installed Postgres"
+    verbose "Installed Postgres"
 }
 
 # 
@@ -204,17 +204,17 @@ install_native_tools () {
     fi
     if [ $? -ne 0 ]; then
         error "Could not install native tools, please review the terminal window for details."
-        error "Packages may have already been installed, attempting to continue with setup."
+        error "Packages may have already been Installed, attempting to continue with setup."
     else
-        verbose "installed native tools"
+        verbose "Installed native tools"
     fi
 }
 
 # 
-# Install doubtfire gem dependencies
+# Install Doubtfire gem dependencies
 # 
 install_dfire_dependencies () {
-    msg "Installing doubtfire dependencies..."
+    msg "Installing Doubtfire dependencies..."
     gem install bundler
     bundler install --without production replica
     rbenv rehash
@@ -244,7 +244,7 @@ install_dstil_overcommit () {
     overcommit --install
     dstil --sign
 
-    verbose "installed DSTIL hooks."
+    verbose "Installed DSTIL hooks."
 }
 
 # 
@@ -284,6 +284,6 @@ install_dstil_overcommit
 install_latex
 
 msg "You should now be able to launch the server with rails s"
-verbose "Doubtfire should be successfuly installed!"
+verbose "Doubtfire should be successfuly Installed!"
 
 exec $SHELL
