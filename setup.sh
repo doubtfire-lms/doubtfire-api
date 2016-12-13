@@ -265,6 +265,10 @@ install_latex () {
     else 
         sudo apt-get install texlive-full
     fi
+    if [ $? -ne 0 ]; then
+        error "Could not install LaTeX."
+        exit 1
+    fi
     verbose "Installed LaTeX"
 }
 
