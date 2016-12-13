@@ -18,7 +18,7 @@ module TestHelpers
     #
     def add_auth_token(data, user = User.first)
       # Passed in an id instead of a user model? Find the user model from User.find
-      user = User.find(user) if user.is_a? Fixnum
+      user = User.find(user) if user.is_a? Integer
       if data.is_a? Hash
         data[:auth_token] = auth_token user
       elsif data.is_a? String

@@ -1,19 +1,17 @@
 class UnitRole < ActiveRecord::Base
-
   # Model associations
   belongs_to :unit    # Foreign key
   belongs_to :user    # Foreign key
 
   belongs_to :role    # Foreign key
 
-  belongs_to :tutorial  # for students only! TODO: fix
+  belongs_to :tutorial # for students only! TODO: fix
 
-  has_many :taught_tutorials, class_name: "Tutorial", dependent: :nullify
+  has_many :taught_tutorials, class_name: 'Tutorial', dependent: :nullify
 
   validates :unit_id, presence: true
   validates :user_id, presence: true
   validates :role_id, presence: true
-
 
   scope :tutors,    -> { joins(:role).where('roles.name = :role', role: 'Tutor') }
   scope :convenors, -> { joins(:role).where('roles.name = :role', role: 'Convenor') }
@@ -53,34 +51,25 @@ class UnitRole < ActiveRecord::Base
 
     # Return permissions hash
     {
-      :student  => student_role_permissions,
-      :tutor    => tutor_role_permissions,
-      :convenor => convenor_role_permissions,
-      :nil      => nil_role_permissions
+      student: student_role_permissions,
+      tutor: tutor_role_permissions,
+      convenor: convenor_role_permissions,
+      nil: nil_role_permissions
     }
   end
 
   def self.tasks_to_review(user)
-    ready_to_mark = []
-
-    # There has be a better way to do this surely...
-    tutorials = Tutorial.find_by_user(user)
-    tutorials.each do | tutorial |
-      tutorial.projects.each do | project |
-        project.tasks.each do | task |
-          ready_to_mark << task if task.has_pdf && ( task.ready_to_mark? || task.need_help?)
-        end
-      end
-    end
-
-    ready_to_mark
+    Tutorial.find_by_user(user)
+            .map(&:projects)
+            .flatten
+            .map(&:tasks)
+            .flatten
+            .select(&:reviewable?)
   end
 
   def role_for(user)
     unit_role = unit.role_for(user)
-    if unit_role == Role.student && self.user != user
-      unit_role = nil
-    end
+    unit_role = nil if unit_role == Role.student && self.user != user
     unit_role
   end
 

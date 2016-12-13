@@ -16,7 +16,7 @@ class TasksTest < ActiveSupport::TestCase
     expected_data = Unit.first.student_tasks.where('task_status_id > ?', 1)
 
     last_response_body.each_with_index do |r, i|
-    #   assert_json_matches_model r, expected_data[i].as_json, ['id', 'tutorial_id', 'task_definition_id', 'status']
+      #   assert_json_matches_model r, expected_data[i].as_json, ['id', 'tutorial_id', 'task_definition_id', 'status']
     end
   end
 end

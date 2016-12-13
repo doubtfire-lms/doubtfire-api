@@ -47,9 +47,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     }
     post "/api/units/#{test_unit_id}/task_definitions/#{test_task_definition_id}/task_resources", with_auth_token(data_to_post)
 
-    if last_response.status == 403
-      puts last_response_body
-    end
+    puts last_response_body if last_response.status == 403
 
     assert_equal 201, last_response.status
   end

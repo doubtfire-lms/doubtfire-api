@@ -4,22 +4,22 @@ class TaskDefinition < ActiveRecord::Base
   # Model associations
   belongs_to :unit # Foreign key
   belongs_to :group_set
-  has_many :tasks, dependent:  :destroy    # Destroying a task definition will also nuke any instances
-  has_many :group_submissions, dependent:  :destroy    # Destroying a task definition will also nuke any group submissions
+  has_many :tasks, dependent:  :destroy # Destroying a task definition will also nuke any instances
+  has_many :group_submissions, dependent: :destroy # Destroying a task definition will also nuke any group submissions
 
   has_many :learning_outcome_task_links, dependent: :destroy # links to learning outcomes
-  has_many :learning_outcomes, -> { where("learning_outcome_task_links.task_id is NULL") },  through: :learning_outcome_task_links # only link staff relations
+  has_many :learning_outcomes, -> { where('learning_outcome_task_links.task_id is NULL') }, through: :learning_outcome_task_links # only link staff relations
 
   # Model validations/constraints
-  validates_uniqueness_of :name, scope:  :unit_id  # task definition names within a unit must be unique
-  validates_uniqueness_of :abbreviation, scope:  :unit_id   # task definition names within a unit must be unique
+  validates :name, uniqueness: { scope:  :unit_id } # task definition names within a unit must be unique
+  validates :abbreviation, uniqueness: { scope: :unit_id } # task definition names within a unit must be unique
 
-  validates :target_grade, inclusion: { in: 0..3, message: "%{value} is not a valid target grade" }
-  validates :max_quality_pts, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 10, message: "must be between 0 and 10" }
+  validates :target_grade, inclusion: { in: 0..3, message: '%{value} is not a valid target grade' }
+  validates :max_quality_pts, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 10, message: 'must be between 0 and 10' }
 
-  validates_length_of :upload_requirements, :maximum => 4095, :allow_blank => true
-  validates_length_of :plagiarism_checks, :maximum => 4095, :allow_blank => true
-  validates_length_of :description, :maximum => 4095, :allow_blank => true
+  validates :upload_requirements, length: { maximum: 4095, allow_blank: true }
+  validates :plagiarism_checks, length: { maximum: 4095, allow_blank: true }
+  validates :description, length: { maximum: 4095, allow_blank: true }
 
   after_create do |td|
     td.unit.update_project_stats
@@ -29,10 +29,8 @@ class TaskDefinition < ActiveRecord::Base
     td.unit.update_project_stats
   end
 
-  after_update do |td|
-    if plagiarism_checks.length == 0 && has_plagiarism?
-      clear_related_plagiarism()
-    end
+  after_update do |_td|
+    clear_related_plagiarism if plagiarism_checks.empty? && has_plagiarism?
   end
 
   def plagiarism_checks
@@ -45,32 +43,32 @@ class TaskDefinition < ActiveRecord::Base
   end
 
   def plagiarism_checks=(req)
-    if req.class == String
-      # get the ruby objects from the json data
-      json_data = JSON.parse(req)
-    else
-      # use the passed in objects
-      json_data = req
-    end
+    json_data = if req.class == String
+                  # get the ruby objects from the json data
+                  JSON.parse(req)
+                else
+                  # use the passed in objects
+                  req
+                end
 
     # ensure we have a structure that is : [ { "key": "...", "type": "...", "pattern": "..."}, { ... } ]
-    if not json_data.class == Array
-      errors.add(:plagiarism_checks, "is not in a valid format! Should be [ { \"key\": \"...\", \"type\": \"...\", \"pattern\": \"...\"}, { ... } ]. Did not contain array.")
+    unless json_data.class == Array
+      errors.add(:plagiarism_checks, 'is not in a valid format! Should be [ { "key": "...", "type": "...", "pattern": "..."}, { ... } ]. Did not contain array.')
       return
     end
 
     i = 0
     for req in json_data do
-      if not req.class == Hash
+      unless req.class == Hash
         errors.add(:plagiarism_checks, "is not in a valid format! Should be [ { \"key\": \"...\", \"type\": \"...\", \"pattern\": \"...\"}, { ... } ]. Array did not contain hashes for item #{i + 1}..")
         return
       end
 
-      req.delete_if {|key, value| not ["key", "type", "pattern"].include? key }
+      req.delete_if { |key, _value| !%w(key type pattern).include? key }
 
-      req["key"] = "check#{i}"
+      req['key'] = "check#{i}"
 
-      if (not req.has_key? "key") or (not req.has_key? "type") or (not req.has_key? "pattern") then
+      if (!req.key? 'key') || (!req.key? 'type') || (!req.key? 'pattern')
         errors.add(:plagiarism_checks, "is not in a valid format! Should be [ { \"key\": \"...\", \"type\": \"...\", \"pattern\": \"...\"}, { ... } ]. Missing a key for item #{i + 1}.")
         return
       end
@@ -79,9 +77,7 @@ class TaskDefinition < ActiveRecord::Base
     end
 
     self['plagiarism_checks'] = JSON.unparse(json_data)
-    if self['plagiarism_checks'].nil?
-      self['plagiarism_checks'] = '[]'
-    end
+    self['plagiarism_checks'] = '[]' if self['plagiarism_checks'].nil?
   end
 
   def upload_requirements
@@ -94,32 +90,32 @@ class TaskDefinition < ActiveRecord::Base
   end
 
   def upload_requirements=(req)
-    if req.class == String
-      # get the ruby objects from the json data
-      json_data = JSON.parse(req)
-    else
-      # use the passed in objects
-      json_data = req
-    end
+    json_data = if req.class == String
+                  # get the ruby objects from the json data
+                  JSON.parse(req)
+                else
+                  # use the passed in objects
+                  req
+                end
 
     # ensure we have a structure that is : [ { "key": "...", "name": "...", "type": "..."}, { ... } ]
-    if not json_data.class == Array
-      errors.add(:upload_requirements, "is not in a valid format! Should be [ { \"key\": \"...\", \"name\": \"...\", \"type\": \"...\"}, { ... } ]. Did not contain array.")
+    unless json_data.class == Array
+      errors.add(:upload_requirements, 'is not in a valid format! Should be [ { "key": "...", "name": "...", "type": "..."}, { ... } ]. Did not contain array.')
       return
     end
 
     i = 0
     for req in json_data do
-      if not req.class == Hash
+      unless req.class == Hash
         errors.add(:upload_requirements, "is not in a valid format! Should be [ { \"key\": \"...\", \"name\": \"...\", \"type\": \"...\"}, { ... } ]. Array did not contain hashes for item #{i + 1}..")
         return
       end
 
-      req.delete_if {|key, value| not ["key", "name", "type"].include? key }
+      req.delete_if { |key, _value| !%w(key name type).include? key }
 
-      req["key"] = "file#{i}"
+      req['key'] = "file#{i}"
 
-      if (not req.has_key? "key") or (not req.has_key? "name") or (not req.has_key? "type") then
+      if (!req.key? 'key') || (!req.key? 'name') || (!req.key? 'type')
         errors.add(:upload_requirements, "is not in a valid format! Should be [ { \"key\": \"...\", \"name\": \"...\", \"type\": \"...\"}, { ... } ]. Missing a key for item #{i + 1}.")
         return
       end
@@ -128,26 +124,24 @@ class TaskDefinition < ActiveRecord::Base
     end
 
     self['upload_requirements'] = JSON.unparse(json_data)
-    if self['upload_requirements'].nil?
-      self['upload_requirements'] = '[]'
-    end
+    self['upload_requirements'] = '[]' if self['upload_requirements'].nil?
   end
 
-  def has_plagiarism?()
-    PlagiarismMatchLink.joins(:task).where("tasks.task_definition_id" => self.id).count > 0
+  def has_plagiarism?
+    PlagiarismMatchLink.joins(:task).where('tasks.task_definition_id' => id).count > 0
   end
 
-  def clear_related_plagiarism()
+  def clear_related_plagiarism
     # delete old plagiarism links
-    logger.info "Deleting old links for task definition #{self.id} - #{self.abbreviation}"
-    PlagiarismMatchLink.joins(:task).where("tasks.task_definition_id" => self.id).each do | plnk |
+    logger.info "Deleting old links for task definition #{id} - #{abbreviation}"
+    PlagiarismMatchLink.joins(:task).where('tasks.task_definition_id' => id).find_each do |plnk|
       begin
         PlagiarismMatchLink.find(plnk.id).destroy!
       rescue
       end
     end
 
-    #TODO: Remove once max_pct_similar is deleted
+    # TODO: Remove once max_pct_similar is deleted
     # # Reset the tasks % similar
     # logger.debug "Clearing old task percent similar"
     # tasks.where("tasks.max_pct_similar > 0").each do |t|
@@ -166,7 +160,7 @@ class TaskDefinition < ActiveRecord::Base
   end
 
   def start_week
-    ((start_date - unit.start_date) / 1.weeks).floor
+    ((start_date - unit.start_date) / 1.week).floor
   end
 
   def start_day
@@ -174,7 +168,7 @@ class TaskDefinition < ActiveRecord::Base
   end
 
   def target_week
-    ((target_date - unit.start_date) / 1.weeks).floor
+    ((target_date - unit.start_date) / 1.week).floor
   end
 
   def target_day
@@ -183,7 +177,7 @@ class TaskDefinition < ActiveRecord::Base
 
   def due_week
     if due_date
-      ((due_date - unit.start_date) / 1.weeks).floor
+      ((due_date - unit.start_date) / 1.week).floor
     else
       ''
     end
@@ -198,13 +192,13 @@ class TaskDefinition < ActiveRecord::Base
   end
 
   def to_csv_row
-    TaskDefinition.csv_columns.
-      reject{|col| [:start_week, :start_day, :target_week, :target_day, :due_week, :due_day, :upload_requirements].include? col }.
-      map{|column| attributes[column.to_s] } +
+    TaskDefinition.csv_columns
+                  .reject { |col| [:start_week, :start_day, :target_week, :target_day, :due_week, :due_day, :upload_requirements].include? col }
+                  .map { |column| attributes[column.to_s] } +
       [ upload_requirements.to_json ] +
       [ start_week, start_day, target_week, target_day, due_week, due_day ]
-      # [target_date.strftime('%d-%m-%Y')] +
-      # [ self['due_date'].nil? ? '' : due_date.strftime('%d-%m-%Y')]
+    # [target_date.strftime('%d-%m-%Y')] +
+    # [ self['due_date'].nil? ? '' : due_date.strftime('%d-%m-%Y')]
   end
 
   def self.csv_columns
@@ -212,7 +206,7 @@ class TaskDefinition < ActiveRecord::Base
   end
 
   def self.task_def_for_csv_row(unit, row)
-    return [nil, false, "Abbreviation and name cannot be empty."] if row[:abbreviation].nil? || row[:name].nil? || row[:abbreviation].empty? || row[:name].empty?
+    return [nil, false, 'Abbreviation and name cannot be empty.'] if row[:abbreviation].nil? || row[:name].nil? || row[:abbreviation].empty? || row[:name].empty?
 
     new_task = false
     abbreviation = row[:abbreviation].strip
@@ -227,9 +221,7 @@ class TaskDefinition < ActiveRecord::Base
 
     result = TaskDefinition.find_by(unit_id: unit.id, abbreviation: abbreviation)
 
-    if result.nil?
-      result = TaskDefinition.find_by(unit_id: unit.id, name: name)
-    end
+    result = TaskDefinition.find_by(unit_id: unit.id, name: name) if result.nil?
 
     if result.nil?
       # Remember creation triggers project task updates... so need correct weight
@@ -247,9 +239,9 @@ class TaskDefinition < ActiveRecord::Base
     result.description                 = row[:description]
     result.weighting                   = row[:weighting].to_i
     result.target_grade                = row[:target_grade].to_i
-    result.restrict_status_updates     = ["Yes", "y", "Y", "yes", "true", "TRUE", "1"].include? row[:restrict_status_updates]
+    result.restrict_status_updates     = %w(Yes y Y yes true TRUE 1).include? row[:restrict_status_updates]
     result.max_quality_pts             = row[:max_quality_pts].to_i
-    result.is_graded                   = ["Yes", "y", "Y", "yes", "true", "TRUE", "1"].include? row[:is_graded]
+    result.is_graded                   = %w(Yes y Y yes true TRUE 1).include? row[:is_graded]
     result.start_date                  = start_date
     result.target_date                 = target_date
     result.upload_requirements         = row[:upload_requirements]
@@ -260,24 +252,24 @@ class TaskDefinition < ActiveRecord::Base
         result.save
       rescue
         result.destroy
-        return [nil, false, "Failed to save definition due to data error."]
+        return [nil, false, 'Failed to save definition due to data error.']
       end
     else
-      return [nil, false, result.errors.join(". ")]
+      return [nil, false, result.errors.join('. ')]
     end
     [result, new_task, new_task ? "Added new task definition #{result.abbreviation}." : "Updated existing task #{result.abbreviation}" ]
   end
 
   def is_group_task?
-    not group_set.nil?
+    !group_set.nil?
   end
 
   def has_task_resources?
-    File.exists? unit.path_to_task_resources(self)
+    File.exist? unit.path_to_task_resources(self)
   end
 
   def has_task_pdf?
-    File.exists? unit.path_to_task_pdf(self)
+    File.exist? unit.path_to_task_pdf(self)
   end
 
   def is_graded?
@@ -288,11 +280,11 @@ class TaskDefinition < ActiveRecord::Base
     max_quality_pts > 0
   end
 
-  def add_task_sheet (file)
+  def add_task_sheet(file)
     FileUtils.mv file, unit.path_to_task_pdf(self)
   end
 
-  def add_task_resources (file)
+  def add_task_resources(file)
     FileUtils.mv file, unit.path_to_task_resources(self)
   end
 
@@ -304,8 +296,8 @@ class TaskDefinition < ActiveRecord::Base
     unit.path_to_task_resources(self)
   end
 
-  def related_tasks_with_files (consolidate_groups = true)
-    tasks_with_files = tasks.select { |t| t.has_pdf }
+  def related_tasks_with_files(consolidate_groups = true)
+    tasks_with_files = tasks.select(&:has_pdf)
 
     if is_group_task? && consolidate_groups
       # group task so only select one member of each group
@@ -315,10 +307,8 @@ class TaskDefinition < ActiveRecord::Base
         if t.group.nil?
           result = false
         else
-          result = ! seen_groups.include?(t.group)
-          if result
-            seen_groups << t.group
-          end
+          result = !seen_groups.include?(t.group)
+          seen_groups << t.group if result
         end
         result
       end

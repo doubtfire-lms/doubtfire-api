@@ -15,7 +15,7 @@ class UnitRoleSerializer < ActiveModel::Serializer
   # has_one :unit, serializer: ShallowUnitSerializer
   # has_one :role
 
-  #TODO: remove this
+  # TODO: remove this
   has_many :other_roles, serializer: ShallowUnitRoleSerializer
 
   def role
@@ -47,7 +47,6 @@ class UnitRoleSerializer < ActiveModel::Serializer
     keys
   end
 end
-
 
 class UserUnitRoleSerializer < ActiveModel::Serializer
   attributes :id, :user_id, :name, :role #:user_name?

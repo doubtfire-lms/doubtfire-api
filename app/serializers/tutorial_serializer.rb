@@ -5,7 +5,7 @@ class TutorialSerializer < ActiveModel::Serializer
 
   def meeting_time
     object.meeting_time.to_time
-    #DateTime.parse("#{object.meeting_time}")
+    # DateTime.parse("#{object.meeting_time}")
   end
 
   def tutor_name

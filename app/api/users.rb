@@ -11,49 +11,49 @@ module Api
       authenticated?
     end
 
-    desc "Get the list of users"
+    desc 'Get the list of users'
     get '/users' do
-      if not authorise? current_user, User, :list_users
-        error!({"error" => "Cannot list users - not authorised" }, 403)
+      unless authorise? current_user, User, :list_users
+        error!({ error: 'Cannot list users - not authorised' }, 403)
       end
 
       @users = User.all
     end
 
-    desc "Get user"
-    get '/users/:id', requirements: { id: /[0-9]*/ }  do
+    desc 'Get user'
+    get '/users/:id', requirements: { id: /[0-9]*/ } do
       user = User.find(params[:id])
-      if not ((user.id == current_user.id) || (authorise? current_user, User, :admin_users))
-        error!({"error" => "Cannot find User with id #{params[:id]}" }, 403)
+      unless (user.id == current_user.id) || (authorise? current_user, User, :admin_users)
+        error!({ error: "Cannot find User with id #{params[:id]}" }, 403)
       end
       user
     end
 
-    desc "Get convenors"
+    desc 'Get convenors'
     get '/users/convenors' do
-      if not authorise? current_user, User, :convene_units
-        error!({"error" => "Cannot list convenors - not authorised" }, 403)
+      unless authorise? current_user, User, :convene_units
+        error!({ error: 'Cannot list convenors - not authorised' }, 403)
       end
       @user_roles = User.convenors
     end
 
-    desc "Get tutors"
+    desc 'Get tutors'
     get '/users/tutors' do
-      if not authorise? current_user, User, :convene_units
-        error!({"error" => "Cannot list tutors - not authorised" }, 403)
+      unless authorise? current_user, User, :convene_units
+        error!({ error: 'Cannot list tutors - not authorised' }, 403)
       end
       @user_roles = User.tutors
     end
 
-    desc "Update a user"
+    desc 'Update a user'
     params do
       requires :id, type: Integer, desc: 'The user id to update'
       requires :user, type: Hash do
-        optional :first_name    , type: String,   desc: 'New first name for user'
-        optional :last_name     , type: String,   desc: 'New last name for user'
-        optional :email         , type: String,   desc: 'New email address for user'
-        optional :nickname      , type: String,   desc: 'New nickname for user'
-        optional :system_role   , type: String,   desc: 'New role for user [Admin, Convenor, Tutor, Student]'
+        optional :first_name, type: String, desc: 'New first name for user'
+        optional :last_name, type: String, desc: 'New last name for user'
+        optional :email, type: String, desc: 'New email address for user'
+        optional :nickname, type: String, desc: 'New nickname for user'
+        optional :system_role, type: String, desc: 'New role for user [Admin, Convenor, Tutor, Student]'
         optional :receive_task_notifications, type: Boolean, desc: 'Allow user to be sent task notifications'
         optional :receive_portfolio_notifications, type: Boolean, desc: 'Allow user to be sent portfolio notifications'
         optional :receive_feedback_notifications, type: Boolean, desc: 'Allow user to be sent feedback notifications'
@@ -71,18 +71,18 @@ module Api
         user = User.find(params[:id])
 
         user_parameters = ActionController::Parameters.new(params)
-                                            .require(:user)
-                                            .permit(
-                                              :first_name,
-                                              :last_name,
-                                              :email,
-                                              :nickname,
-                                              :receive_task_notifications,
-                                              :receive_portfolio_notifications,
-                                              :receive_feedback_notifications,
-                                              :opt_in_to_research,
-                                              :has_run_first_time_setup
-                                            )
+                                                      .require(:user)
+                                                      .permit(
+                                                        :first_name,
+                                                        :last_name,
+                                                        :email,
+                                                        :nickname,
+                                                        :receive_task_notifications,
+                                                        :receive_portfolio_notifications,
+                                                        :receive_feedback_notifications,
+                                                        :opt_in_to_research,
+                                                        :has_run_first_time_setup
+                                                      )
 
         user.role = Role.student if user.role.nil?
         old_role = user.role
@@ -93,7 +93,7 @@ module Api
         #
         # You cannot change your own permissions
         #
-        if (not change_self) && params[:user][:system_role] && old_role.id != Role.with_name(params[:user][:system_role]).id
+        if !change_self && params[:user][:system_role] && old_role.id != Role.with_name(params[:user][:system_role]).id
           user_parameters[:role] = params[:user][:system_role]
         end
 
@@ -105,13 +105,13 @@ module Api
           new_role = Role.with_name(user_parameters[:role])
 
           if new_role.nil?
-            error!({"error" => "No such role name #{user_parameters[:role]}"}, 403)
+            error!({ error: "No such role name #{user_parameters[:role]}" }, 403)
           end
           action = new_role.id > old_role.id ? :promote_user : :demote_user
 
           # current user not authorised to peform action with new role?
-          if not authorise? current_user, User, action, User.get_change_role_perm_fn(), [ old_role.to_sym, new_role.to_sym ]
-            error!({"error" => "Not authorised to #{action} user with id=#{params[:id]} to #{new_role.name}" }, 403)
+          unless authorise? current_user, User, action, User.get_change_role_perm_fn, [ old_role.to_sym, new_role.to_sym ]
+            error!({ error: "Not authorised to #{action} user with id=#{params[:id]} to #{new_role.name}" }, 403)
           end
           # update :role to actual Role object rather than String type
           user_parameters[:role] = new_role
@@ -122,41 +122,40 @@ module Api
         user
 
       else
-        error!({"error" => "Cannot modify user with id=#{ params[:id]} - not authorised" }, 403)
+        error!({ error: "Cannot modify user with id=#{params[:id]} - not authorised" }, 403)
       end
-
     end
 
-    desc "Create user"
+    desc 'Create user'
     params do
       requires :user, type: Hash do
-        requires :first_name    , type: String,   desc: 'New first name for user'
-        requires :last_name     , type: String,   desc: 'New last name for user'
-        requires :email         , type: String,   desc: 'New email address for user'
-        requires :username      , type: String,   desc: 'New username for user'
-        requires :nickname      , type: String,   desc: 'New nickname for user'
-        requires :system_role   , type: String,   desc: 'New system role for user [Admin, Convenor, Tutor, Student]'
+        requires :first_name, type: String, desc: 'New first name for user'
+        requires :last_name, type: String, desc: 'New last name for user'
+        requires :email, type: String, desc: 'New email address for user'
+        requires :username, type: String,   desc: 'New username for user'
+        requires :nickname, type: String,   desc: 'New nickname for user'
+        requires :system_role, type: String, desc: 'New system role for user [Admin, Convenor, Tutor, Student]'
       end
     end
     post '/users' do
       #
       # Only admins and convenors can create users
       #
-      if not (authorise? current_user, User, :create_user)
-        error!({"error" => "Not authorised to create new users"}, 403)
+      unless authorise? current_user, User, :create_user
+        error!({ error: 'Not authorised to create new users' }, 403)
       end
 
-      params[:user][:password] = "password"
+      params[:user][:password] = 'password'
       user_parameters = ActionController::Parameters.new(params)
-                                          .require(:user)
-                                          .permit(
-                                            :first_name,
-                                            :last_name,
-                                            :email,
-                                            :username,
-                                            :nickname,
-                                            :password,
-                                          )
+                                                    .require(:user)
+                                                    .permit(
+                                                      :first_name,
+                                                      :last_name,
+                                                      :email,
+                                                      :username,
+                                                      :nickname,
+                                                      :password
+                                                    )
 
       # have to translate the system_role -> role
       user_parameters[:role] = params[:user][:system_role]
@@ -167,14 +166,14 @@ module Api
       #
       new_role = Role.with_name(user_parameters[:role])
       if new_role.nil?
-        error!({"error" => "No such role name #{user_parameters[:role]}"}, 403)
+        error!({ error: "No such role name #{user_parameters[:role]}" }, 403)
       end
 
       #
       # Check permission to create user with this role
       #
-      if not authorise? current_user, User, :create_user, User.get_change_role_perm_fn(), [ :nil, new_role.name.downcase.to_sym ]
-        error!({"error" => "Not authorised to create new users with role #{new_role.name}"}, 403)
+      unless authorise? current_user, User, :create_user, User.get_change_role_perm_fn, [ :nil, new_role.name.downcase.to_sym ]
+        error!({ error: "Not authorised to create new users with role #{new_role.name}" }, 403)
       end
 
       # update :role to actual Role object rather than String type
@@ -186,33 +185,32 @@ module Api
       user
     end
 
-    desc "Upload CSV of users"
+    desc 'Upload CSV of users'
     params do
-      requires :file, type: Rack::Multipart::UploadedFile, :desc => "CSV upload file."
+      requires :file, type: Rack::Multipart::UploadedFile, desc: 'CSV upload file.'
     end
     post '/csv/users' do
       # check mime is correct before uploading
       ensure_csv!(params[:file][:tempfile])
 
-      if not authorise? current_user, User, :upload_csv
-        error!({"error" => "Not authorised to upload CSV of users"}, 403)
+      unless authorise? current_user, User, :upload_csv
+        error!({ error: 'Not authorised to upload CSV of users' }, 403)
       end
 
       # Actually import...
       User.import_from_csv(current_user, params[:file][:tempfile])
     end
 
-    desc "Download CSV of all users"
+    desc 'Download CSV of all users'
     get '/csv/users' do
-      if not authorise? current_user, User, :download_system_csv
-        error!({"error" => "Not authorised to download CSV of all users"}, 403)
+      unless authorise? current_user, User, :download_system_csv
+        error!({ error: 'Not authorised to download CSV of all users' }, 403)
       end
 
-      content_type "application/octet-stream"
-      header['Content-Disposition'] = "attachment; filename=doubtfire_users.csv "
+      content_type 'application/octet-stream'
+      header['Content-Disposition'] = 'attachment; filename=doubtfire_users.csv '
       env['api.format'] = :binary
       User.export_to_csv
     end
-
   end
 end

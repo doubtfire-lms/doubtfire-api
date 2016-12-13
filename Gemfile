@@ -19,6 +19,7 @@ group :development, :replica do
   gem 'better_errors'
   gem 'rails_best_practices'
   gem 'thin'
+  gem 'rubocop', '0.46.0'
 end
 
 group :development, :test do
@@ -50,7 +51,7 @@ gem 'faker'
 # Student submission
 gem 'coderay'
 gem 'ruby-filemagic'
-gem 'rmagick', '~> 2.15' #require: false #already included in other gems - remove to avoid duplicate errors
+gem 'rmagick', '~> 2.15' # require: false #already included in other gems - remove to avoid duplicate errors
 gem 'rubyzip'
 
 # Plagarism detection

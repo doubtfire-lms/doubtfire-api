@@ -8,7 +8,7 @@ class DoubtfireLogger < ActiveSupport::Logger
   #                   is a number
   #
   # Rails.logger initialises these as nil, so we will do the same
-  @@logger = DoubtfireLogger.new(Doubtfire::Application.config.paths["log"].first)
+  @@logger = DoubtfireLogger.new(Doubtfire::Application.config.paths['log'].first)
 
   #
   # Singleton logger returned

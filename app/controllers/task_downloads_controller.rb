@@ -5,53 +5,49 @@ class TaskDownloadsController < ApplicationController
   include AuthorisationHelpers
   include LogHelper
 
-  class MyException < Exception
-    attr :status
+  class MyException < RuntimeError
+    attr_reader :status
 
     def initialize(status)
       @status = status
     end
   end
 
-  def error!(message, status = options[:default_status], headers = {}, backtrace = [])
+  def error!(message, status = options[:default_status], _headers = {}, _backtrace = [])
     raise MyException.new(status), message
   end
 
   # desc "Retrieve portfolios for a unit"
   def index
-    begin
-      if not authenticated?
-        error!({"error" => "Not authorised to download tasks for unit '#{params[:id]}'"}, 401)
-      end
-
-      unit = Unit.find(params[:id])
-
-      if not authorise? current_user, unit, :provide_feedback
-        error!({"error" => "Not authorised to download tasks for unit '#{params[:id]}'"}, 401)
-      end
-
-      td = unit.task_definitions.find(params[:task_def_id])
-
-      output_zip = unit.get_task_submissions_zip(current_user, td)
-
-      if output_zip.nil?
-        error!({"error" => "No files to download"}, 403)
-      end
-
-      # Set download headers...
-      # content_type "application/octet-stream"
-      download_id = "#{Time.new.strftime("%Y-%m-%d %H:%m:%S")}-#{unit.code}-#{td.abbreviation}-#{current_user.username}"
-      download_id.gsub! /[\\\/]/, '-'
-      download_id = FileHelper.sanitized_filename(download_id)
-      # header['Content-Disposition'] = "attachment; filename=#{download_id}.zip"
-      # env['api.format'] = :binary
-
-      logger.debug "Downloading task for #{td.abbreviation} from #{output_zip.path}"
-
-      send_file output_zip.path, :content_type => "application/octet-stream", :disposition => "attachment; filename=#{download_id}.zip"
-      output_zip.close
-    rescue MyException => e
-      render json: e.message, status: e.status
+    unless authenticated?
+      error!({ error: "Not authorised to download tasks for unit '#{params[:id]}'" }, 401)
     end
+
+    unit = Unit.find(params[:id])
+
+    unless authorise? current_user, unit, :provide_feedback
+      error!({ error: "Not authorised to download tasks for unit '#{params[:id]}'" }, 401)
+    end
+
+    td = unit.task_definitions.find(params[:task_def_id])
+
+    output_zip = unit.get_task_submissions_zip(current_user, td)
+
+    error!({ error: 'No files to download' }, 403) if output_zip.nil?
+
+    # Set download headers...
+    # content_type "application/octet-stream"
+    download_id = "#{Time.new.strftime('%Y-%m-%d %H:%m:%S')}-#{unit.code}-#{td.abbreviation}-#{current_user.username}"
+    download_id.gsub! /[\\\/]/, '-'
+    download_id = FileHelper.sanitized_filename(download_id)
+    # header['Content-Disposition'] = "attachment; filename=#{download_id}.zip"
+    # env['api.format'] = :binary
+
+    logger.debug "Downloading task for #{td.abbreviation} from #{output_zip.path}"
+
+    send_file output_zip.path, content_type: 'application/octet-stream', disposition: "attachment; filename=#{download_id}.zip"
+    output_zip.close
+  rescue MyException => e
+    render json: e.message, status: e.status
   end
 end

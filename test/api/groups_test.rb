@@ -12,7 +12,7 @@
 #   def test_get_groups
 #     # The GET we are testing
 #     unit_id = rand(1..Unit.all.length)
- 
+
 #   end
 
 # end

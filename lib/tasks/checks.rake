@@ -1,5 +1,5 @@
 namespace :submission do
-  desc "Check active units for task plagiarism"
+  desc 'Check active units for task plagiarism'
 
   def logger
     Rails.logger
@@ -25,7 +25,7 @@ namespace :submission do
     FileUtils.rm(rake_executing_marker_file)
   end
 
-  task check_plagiarism:  :environment do
+  task check_plagiarism: :environment do
     if is_executing?
       puts 'Skip plagiarism check -- already executing'
       logger.info 'Skip plagiarism check -- already executing'
@@ -37,18 +37,18 @@ namespace :submission do
 
         active_units = Unit.where(active: true)
 
-        active_units.each do | unit |
-          puts " ------------------------------------------------------------ "
+        active_units.each do |unit|
+          puts ' ------------------------------------------------------------ '
           puts "  Starting Plagiarism Check for #{unit.name}"
-          puts " ------------------------------------------------------------ "
+          puts ' ------------------------------------------------------------ '
           unit.check_plagiarism
           unit.update_plagiarism_stats
         end
-        puts " ------------------------------------------------------------ "
-        puts " done."
+        puts ' ------------------------------------------------------------ '
+        puts ' done.'
       rescue => e
-        puts "Failed with error"
-        puts "#{e.message}"
+        puts 'Failed with error'
+        puts e.message.to_s
       ensure
         end_executing
       end

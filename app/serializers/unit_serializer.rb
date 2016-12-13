@@ -16,15 +16,11 @@ class UnitSerializer < ActiveModel::Serializer
   end
 
   def my_role_obj
-    if Thread.current[:user]
-      object.role_for(Thread.current[:user])
-    end
+    object.role_for(Thread.current[:user]) if Thread.current[:user]
   end
 
   def my_user_role
-    if Thread.current[:user]
-      Thread.current[:user].role
-    end
+    Thread.current[:user].role if Thread.current[:user]
   end
 
   def role
@@ -39,7 +35,6 @@ class UnitSerializer < ActiveModel::Serializer
   def ilos
     object.learning_outcomes
   end
-
 
   has_many :tutorials
   has_many :task_definitions

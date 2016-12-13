@@ -1,3 +1,4 @@
+require 'bcrypt'
 require 'authorisation_helpers'
 
 class User < ActiveRecord::Base
@@ -139,7 +140,7 @@ class User < ActiveRecord::Base
   ###
 
   # Model associations
-  belongs_to  :role   # Foreign Key
+  belongs_to  :role # Foreign Key
   has_many    :unit_roles, dependent: :destroy
   has_many    :projects
 
@@ -147,16 +148,16 @@ class User < ActiveRecord::Base
   validates :first_name,  presence: true
   validates :last_name,   presence: true
   validates :role_id,     presence: true
-  validates :username,    presence: true, :uniqueness => {:case_sensitive => false}
-  validates :email,       presence: true, :uniqueness => {:case_sensitive => false}
+  validates :username,    presence: true, uniqueness: { case_sensitive: false }
+  validates :email,       presence: true, uniqueness: { case_sensitive: false }
 
   # Queries
   scope :tutors,    -> { joins(:role).where('roles.id = :tutor_role or roles.id = :convenor_role or roles.id = :admin_role', tutor_role: Role.tutor_id, convenor_role: Role.convenor_id, admin_role: Role.admin_id) }
   scope :convenors, -> { joins(:role).where('roles.id = :convenor_role or roles.id = :admin_role', convenor_role: Role.convenor_id, admin_role: Role.admin_id) }
   scope :admins,    -> { joins(:role).where('roles.id = :admin_role', admin_role: Role.admin_id) }
 
-  def self.teaching (unit)
-    User.joins(:unit_roles).where("unit_roles.unit_id = :unit_id and ( unit_roles.role_id = :tutor_role_id or unit_roles.role_id = :convenor_role_id) ", unit_id: unit.id, tutor_role_id: Role.tutor_id, convenor_role_id: Role.convenor_id)
+  def self.teaching(unit)
+    User.joins(:unit_roles).where('unit_roles.unit_id = :unit_id and ( unit_roles.role_id = :tutor_role_id or unit_roles.role_id = :convenor_role_id) ', unit_id: unit.id, tutor_role_id: Role.tutor_id, convenor_role_id: Role.convenor_id)
   end
 
   def username=(name)
@@ -182,16 +183,16 @@ class User < ActiveRecord::Base
     role_id == Role.admin_id
   end
 
-  def self.get_change_role_perm_fn()
-    lambda { |role, perm_hash, other|
+  def self.get_change_role_perm_fn
+    lambda do |role, perm_hash, other|
       from_role = other[0]
       to_role = other[1]
 
-      chg_roles = perm_hash[:change_role] and
-        role_hash = chg_roles[role] and
-        from_role_hash = role_hash[from_role] and
+      (chg_roles = perm_hash[:change_role]) &&
+        (role_hash = chg_roles[role]) &&
+        (from_role_hash = role_hash[from_role]) &&
         from_role_hash[to_role]
-    }
+    end
   end
 
   #
@@ -202,49 +203,49 @@ class User < ActiveRecord::Base
     #   who can change a Doubtfire user's role?
     change_role_permissions = {
       # The current_user's role is an Administrator
-      :admin => {
+      admin: {
         # User being assigned is an admin?
         #   An admin current_user can demote them to either a student, tutor or convenor
-        :admin => {     :student  => [ :demote_user  ],
-                        :tutor    => [ :demote_user  ],
-                        :convenor => [ :demote_user  ]},
+        admin: {     student: [ :demote_user  ],
+                     tutor: [ :demote_user ],
+                     convenor: [ :demote_user ] },
         # User being assigned is a convenor?
         #   An admin current_user can demote them to student or tutor
         #   An admin current_user can promote them to an admin
-        :convenor => {  :student  => [ :demote_user  ],
-                        :tutor    => [ :demote_user  ],
-                        :admin    => [ :promote_user ]},
+        convenor: {  student: [ :demote_user  ],
+                     tutor: [ :demote_user  ],
+                     admin: [ :promote_user ] },
         # User being assigned is a tutor?
         #   An admin current_user can demote them to a student
         #   An admin current_user can promote them to a convenor or admin
-        :tutor => {     :student  => [ :demote_user  ],
-                        :convenor => [ :promote_user ],
-                        :admin    => [ :promote_user ]},
+        tutor: {     student: [ :demote_user  ],
+                     convenor: [ :promote_user ],
+                     admin: [ :promote_user ] },
         # User being assigned is a student?
         #   An admin current_user can promote them to a tutor, convenor or admin
-        :student => {   :tutor    => [ :promote_user ],
-                        :convenor => [ :promote_user ],
-                        :admin    => [ :promote_user ]},
+        student: {   tutor: [ :promote_user ],
+                     convenor: [ :promote_user ],
+                     admin: [ :promote_user ] },
         # User being assigned has no role?
         #   An admin current_user can create user to any role
-        :nil => {       :student  => [ :create_user  ],
-                        :tutor    => [ :create_user  ],
-                        :convenor => [ :create_user  ],
-                        :admin    => [ :create_user  ]}
-        },
+        nil: {       student: [ :create_user  ],
+                     tutor: [ :create_user  ],
+                     convenor: [ :create_user ],
+                     admin: [ :create_user  ] }
+      },
       # The current_user's role is a Convenor
-      :convenor => {
+      convenor: {
         # User being assigned is an tutor?
         #   A convenor current_user can demote them to a student
-        :tutor => {     :student  => [ :demote_user  ] },
+        tutor: {     student: [ :demote_user  ] },
         # User being assigned is an student?
         #   A convenor current_user can promote them to a student
-        :student => {   :tutor    => [ :promote_user ] },
+        student: {   tutor: [ :promote_user ] },
         # User being assigned has no role?
         #   A convenor current_user can create a user to either a student or tutor role
-        :nil => {       :student  => [ :create_user  ],
-                        :tutor    => [ :create_user  ] }
-        }
+        nil: {       student: [ :create_user  ],
+                     tutor: [ :create_user  ] }
+      }
     }
 
     # What can admins do with users?
@@ -291,11 +292,11 @@ class User < ActiveRecord::Base
 
     # Return the permissions hash
     {
-      :change_role => change_role_permissions,
-      :admin       => admin_role_permissions,
-      :convenor    => convenor_role_permissions,
-      :tutor       => tutor_role_permissions,
-      :student     => student_role_permissions
+      change_role: change_role_permissions,
+      admin: admin_role_permissions,
+      convenor: convenor_role_permissions,
+      tutor: tutor_role_permissions,
+      student: student_role_permissions
     }
   end
 
@@ -312,7 +313,7 @@ class User < ActiveRecord::Base
   end
 
   def self.role_for(user)
-    return user.role
+    user.role
   end
 
   def role_id=(new_role_id)
@@ -324,7 +325,7 @@ class User < ActiveRecord::Base
     fail_if_in_unit_role = [] if new_role == Role.admin || new_role == Role.convenor
 
     for check_role in fail_if_in_unit_role do
-      if unit_roles.where("role_id = :role_id", role_id: check_role.id).count > 0
+      if unit_roles.where('role_id = :role_id', role_id: check_role.id).count > 0
         return role
       end
     end
@@ -348,49 +349,47 @@ class User < ActiveRecord::Base
     # fn = nickname
     sn = last_name
 
-    if fn.length > 15
-      fn = "#{fn[0..11]}..."
-    end
+    fn = "#{fn[0..11]}..." if fn.length > 15
 
-    if sn.length > 15
-      sn = "#{sn[0..11]}..."
-    end
+    sn = "#{sn[0..11]}..." if sn.length > 15
 
     "#{fn} #{sn}"
   end
 
   def self.export_to_csv
-    exportables = csv_columns().map{ |col| col == "role" ? "role_id" : col }
+    exportables = csv_columns.map { |col| col == 'role' ? 'role_id' : col }
     CSV.generate do |row|
-      row << User.attribute_names.select { | attribute | exportables.include? attribute }.map { | attribute |
+      row << User.attribute_names.select { |attribute| exportables.include? attribute }.map do |attribute|
         # rename encrypted_password key to just password and role_id key to just role
-        if attribute == "encrypted_password"
-          "password"
-        elsif attribute == "role_id"
-          "role"
+        if attribute == 'encrypted_password'
+          'password'
+        elsif attribute == 'role_id'
+          'role'
         else
           attribute
         end
-      }
-      User.find(:all, :order => "id").each do |user|
-        row << user.attributes.select { | attribute | exportables.include? attribute }.map { | key, value |
+      end
+      User.order('id').each do |user|
+        row << user.attributes.select { |attribute| exportables.include? attribute }.map do |key, value|
           # pass in a blank encrypted_password and the role name instead of just role_id
-          if key == "encrypted_password"
-            ""
-          elsif key == "role_id"
+          if key == 'encrypted_password'
+            ''
+          elsif key == 'role_id'
             Role.find(value).name
-          else value end
-        }
+          else
+            value
+          end
+        end
       end
     end
   end
 
   def self.missing_headers(row, headers)
-    headers - row.to_hash().keys
+    headers - row.to_hash.keys
   end
 
   def self.csv_columns
-    ["username", "first_name", "last_name", "email", "nickname", "role"]
+    %w(username first_name last_name email nickname role)
   end
 
   def self.import_from_csv(current_user, file)
@@ -398,11 +397,9 @@ class User < ActiveRecord::Base
     errors = []
     ignored = []
 
-    CSV.parse(file, {
-        :headers => true,
-        :header_converters => [lambda { |i| i.nil? ? '' : i }, :downcase, lambda { |hdr| hdr.strip.gsub(" ", "_") unless hdr.nil? } ],
-        :converters => [lambda{ |body| body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]
-    }).each do |row|
+    CSV.parse(file,                 headers: true,
+                                    header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip.tr(' ', '_') unless hdr.nil? } ],
+                                    converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
       next if row[0] =~ /(email)|(username)/
 
       begin
@@ -420,53 +417,52 @@ class User < ActiveRecord::Base
         role = row['role']
 
         pass_checks = true
-        ['username', 'email', 'role', 'first_name'].each do | col |
-          if row[col].nil? || row[col].empty?
-            errors << { row: row, message: "The #{col} cannot be blank or empty" }
-            pass_checks = false
-            break
-          end
+        %w(username email role first_name).each do |col|
+          next unless row[col].nil? || row[col].empty?
+          errors << { row: row, message: "The #{col} cannot be blank or empty" }
+          pass_checks = false
+          break
         end
 
         next unless pass_checks
 
-        if ! email =~ /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\z/i
+        if !email =~ /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\z/i
           errors << { row: row, message: "Invalid email address (#{email})" }
           next
         end
 
         new_role = Role.with_name(role)
-        username = username.downcase    # ensure that find by username uses lowercase
+        username = username.downcase # ensure that find by username uses lowercase
 
         if new_role.nil?
-          errors << { row: row, message:"Unable to find role #{new_role}" }
+          errors << { row: row, message: "Unable to find role #{new_role}" }
           next
         end
 
         #
         # If the current user is allowed to create a user in this role
         #
-        if AuthorisationHelpers::authorise?(current_user, User, :create_user, User.get_change_role_perm_fn(), [ :nil, new_role.to_sym ])
+        if AuthorisationHelpers.authorise?(current_user, User, :create_user, User.get_change_role_perm_fn, [ :nil, new_role.to_sym ])
           #
           # Find and update or create
           #
-          user = User.find_or_create_by(username: username) {|user|
-            user.first_name         = first_name.titleize
-            user.last_name          = last_name.titleize
-            user.email              = email
-            user.encrypted_password = BCrypt::Password.create("password")
-            user.nickname           = nickname.nil? || nickname.empty? ? first_name : nickname
-            user.role_id            = new_role.id
-          }
+          user = User.find_or_create_by(username: username) do |new_user|
+            new_user.first_name         = first_name.titleize
+            new_user.last_name          = last_name.titleize
+            new_user.email              = email
+            new_user.nickname           = nickname
+            new_user.role_id            = new_role.id
+            new_user.encrypted_password = BCrypt::Password.create('password')
+          end
 
           # will not be persisted initially as password cannot be blank - so can check
           # which were created using this - will persist changes imported
           if user.new_record?
-            user.password           = "password"
+            user.password = 'password'
             user.save!
-            success << {row: row, message: "Added user #{username} as #{role}."}
+            success << { row: row, message: "Added user #{username} as #{role}." }
           else
-            ignored << {row: row, message: "User #{username} already existed."}
+            ignored << { row: row, message: "User #{username} already existed." }
           end
         end
       rescue Exception => e
