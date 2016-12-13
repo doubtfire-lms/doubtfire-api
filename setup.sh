@@ -5,7 +5,6 @@
 #
 isMac() {
     if [[ `uname` == "Darwin" ]]; then
-        # 0 = true
         return 0
     else 
         return 1
@@ -17,7 +16,6 @@ isMac() {
 #
 isLinux() {
     if [[ `uname` == "Linux" ]]; then
-        # 0 = true
         return 0
     else 
         return 1
@@ -29,7 +27,6 @@ isLinux() {
 #
 is_zsh() {
     if [ -n "$ZSH_VERSION" ]; then
-        # 0 = true
         return 0
     elif [ -n "$BASH_VERSION" ]; then
         return 1
@@ -91,14 +88,14 @@ install_homebrew () {
 # Install ruby envioronment for linux
 #
 install_rbenv_linux() {
-    msg "installing Ruby..."
+    msg "Installing Ruby..."
     sudo apt update
     git clone git://github.com/sstephenson/rbenv.git ~/.rbenv
     git clone git://github.com/sstephenson/ruby-build.git ~/.rbenv/plugins/ruby-build
 
     sudo apt-get install -y libreadline-dev
 
-    verbose "git repos cloned"
+    verbose "Git repos cloned"
 
     if [ -n "$ZSH_VERSION" ]; then
         echo 'export PATH="$HOME/.rbenv/bin:$PATH"' >> ~/.zshrc
@@ -116,7 +113,7 @@ install_rbenv_linux() {
 # 
 install_rbenv () {
     echo '2.3.1' >> ~/.ruby_version
-    msg "Installing ruby-build and rbenv..."
+    msg "Installing Ruby-build and rbenv..."
 
     if isMac;
     then
@@ -158,7 +155,7 @@ install_postgres () {
 
         export PATH=/Applications/Postgres.app/Contents/Versions/*/bin:$PATH
 
-        msg "installed postgress, should now be on path"
+        msg "installed Postgres, should now be on path"
         # TODO replace this with cli open.
         open -a postgres
         sleep 5
@@ -208,7 +205,8 @@ install_native_tools () {
     if [ $? -ne 0 ]; then
         error "Could not install native tools, please review the terminal window for details."
         error "Packages may have already been installed, attempting to continue with setup."
-    else verbose "installed native tools"
+    else
+        verbose "installed native tools"
     fi
 }
 
