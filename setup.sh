@@ -278,6 +278,5 @@ install_dstil_overcommit
 install_latex
 exec $SHELL
 
-msg "You can now launch the server with rails s"
-
+msg "You should now be able to launch the server with rails s"
 verbose "Doubtfire developed successfuly installed!"
