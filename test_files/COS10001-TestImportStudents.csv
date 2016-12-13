@@ -1,0 +1,11 @@
+unit_code,username,first_name,last_name,email,tutorial
+COS10001,TEST_STUDENT_5,Imported Amiya,Senger Import,TEST_STUDENT_5@doubtfire.com,LA1-02
+COS10001,TEST_STUDENT_9,Imported Domenic,Greenholt Import,TEST_STUDENT_9@doubtfire.com,LA1-02
+COS10001,TEST_STUDENT_6,Imported Jana,Padberg Import,TEST_STUDENT_6@doubtfire.com,LA1-02
+COS10001,TEST_STUDENT_8,Imported Shaylee,Breitenberg Import,TEST_STUDENT_8@doubtfire.com,LA1-02
+COS10001,TEST_STUDENT_3,Imported Nick,Wintheiser Import,TEST_STUDENT_3@doubtfire.com,
+COS10001,TEST_STUDENT_2,Imported Brody,Erdman Import,TEST_STUDENT_2@doubtfire.com,
+COS10001,TEST_STUDENT_7,Imported Eliane,Okuneva Import,TEST_STUDENT_7@doubtfire.com,LA1-02
+COS10001,TEST_STUDENT_4,Imported Angie,Christiansen Import,TEST_STUDENT_4@doubtfire.com,
+COS10001,TEST_STUDENT_1,Imported Pablo,Mraz Import,TEST_STUDENT_1@doubtfire.com,
+COS10001,TEST_STUDENT_0,Imported Maxine,Hettinger Import,TEST_STUDENT_0@doubtfire.com,
