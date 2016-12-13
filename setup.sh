@@ -88,6 +88,9 @@ install_homebrew () {
     fi
 }
 
+#
+# Install ruby envioronment for linux
+#
 install_rbenv_linux() {
     msg "installing ruby"
     sudo apt update
@@ -130,12 +133,13 @@ install_rbenv () {
         echo 'eval "$(rbenv init -)"' >> ~/.bashrc
     fi
 
-    msg "here"
-    # CONFIGURE_OPTS="--disable-install-doc --enable-shared" rbenv install 2.3.1
+    msg "installing ruby 2.3.1, this will take a few minutes..."
+    CONFIGURE_OPTS="--disable-install-doc --enable-shared" rbenv install 2.3.1
 
     if [ $? -ne 0 ]; then
-        error "Was not able to install rbenv, or rbenv was already installed, trying to continue with installation."
+        error "Was not able to install rbenv, or rbenv was already installed, will continue with installation."
     fi
+
     verbose "installed ruby-build and rbenv"
     rbenv global 2.3.1
     eval "$(rbenv init -)"
@@ -178,6 +182,12 @@ install_postgres () {
         fi
 
         psql -c "CREATE ROLE itig WITH CREATEDB PASSWORD 'd872\$dh' LOGIN;"
+        if [ $? -ne 0 ]; then
+            error "Could not install postgres. Please ensure psql is on the path, and then rerun this script."
+            exit 1
+        fi
+
+        verbose "installed postgres"
 }
 
 # 
@@ -196,19 +206,23 @@ install_native_tools () {
                        libmagic-dev \
                        python-pygments
     fi
-    verbose "installed native tools"
+    if [ $? -ne 0 ]; then
+        error "Could not install native tools, please review the terminal window for details."
+        error "Packages may have already been installed, attempting to continue with setup."
+    else verbose "installed native tools"
+    fi
 }
 
 # 
 # Install doubtfire gem dependencies
 # 
 install_dfire_dependencies () {
-    
     msg "Installing doubtfire dependencies"
-    source ~/.bashrc
     gem install bundler
     bundler install --without production replica
     rbenv rehash
+    source ~/.bashrc
+
     msg "Populating database"
     rake db:create
     rake db:populate
@@ -226,12 +240,13 @@ install_dfire_dependencies () {
 # 
 install_dstil_overcommit () {
     curl -s https://raw.githubusercontent.com/dstil/dotfiles/master/bootstrap | bash
-    exec $SHELL
 
     gem install overcommit
     rbenv rehash
     overcommit --install
     dstil --sign
+
+    verbose "installed dstil hooks."
 }
 
 install_latex () {
@@ -248,8 +263,7 @@ install_latex () {
     else 
         sudo apt-get install -y texlive-full
     fi
-
-    
+    verbose "Installed LaTeX"
 }
 
 if isMac; then
@@ -260,6 +274,7 @@ install_rbenv
 install_postgres
 install_native_tools
 install_dfire_dependencies
+install_dstil_overcommit
 install_latex
 exec $SHELL
 
