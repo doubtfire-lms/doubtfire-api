@@ -4,7 +4,7 @@
 # Detects if system is macOS
 #
 isMac() {
-    if [[ `uname` == Darwin ]]; then
+    if [[ `uname` == "Darwin" ]]; then
         # 0 = true
         return 0
     else 
@@ -16,7 +16,7 @@ isMac() {
 # Detects if system is Linux
 #
 isLinux() {
-    if [[ `uname` == Linux ]]; then
+    if [[ `uname` == "Linux" ]]; then
         # 0 = true
         return 0
     else 
