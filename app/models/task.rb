@@ -244,6 +244,10 @@ class Task < ActiveRecord::Base
     status == :working_on_it
   end
 
+  def reviewable?
+    has_pdf && (ready_to_mark? || need_help?)
+  end
+
   def status
     task_status.status_key
   end

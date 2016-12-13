@@ -59,19 +59,12 @@ class UnitRole < ActiveRecord::Base
   end
 
   def self.tasks_to_review(user)
-    ready_to_mark = []
-
-    # There has be a better way to do this surely...
-    tutorials = Tutorial.find_by(user: user)
-    tutorials.each do |tutorial|
-      tutorial.projects.each do |project|
-        project.tasks.each do |task|
-          ready_to_mark << task if task.has_pdf && (task.ready_to_mark? || task.need_help?)
-        end
-      end
-    end
-
-    ready_to_mark
+    Tutorial.find_by_user(user)
+            .map(&:projects)
+            .flatten
+            .map(&:tasks)
+            .flatten
+            .select(&:reviewable?)
   end
 
   def role_for(user)
