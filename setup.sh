@@ -168,26 +168,26 @@ install_postgres () {
             error "Could not install postgres."
         fi
         verbose "installed postgres"
-        else 
-            sudo apt-get install -y postgresql \
-                            postgresql-contrib \
-                            libpq-dev
+    else 
+        sudo apt-get install -y postgresql \
+                        postgresql-contrib \
+                        libpq-dev
 
-            echo "Ensure pg_config is on the PATH, and then login to Postgres. You will need to locate where `apt-get` has installed your Postgres binary and add this to your PATH. You can use: whereis psql for that, but ensure you add the directory and not the executable to the path"
-            read -p "Press enter to continue"
+        echo "Ensure pg_config is on the PATH, and then login to Postgres. You will need to locate where `apt-get` has installed your Postgres binary and add this to your PATH. You can use: whereis psql for that, but ensure you add the directory and not the executable to the path"
+        read -p "Press enter to continue"
 
-            export PATH=/usr/bin:$PATH
-            sudo -u postgres createuser --superuser $USER
-            sudo -u postgres createdb $USER
-        fi
+        export PATH=/usr/bin:$PATH
+        sudo -u postgres createuser --superuser $USER
+        sudo -u postgres createdb $USER
+    fi
 
-        psql -c "CREATE ROLE itig WITH CREATEDB PASSWORD 'd872\$dh' LOGIN;"
-        if [ $? -ne 0 ]; then
-            error "Could not install postgres. Please ensure psql is on the path, and then rerun this script."
-            exit 1
-        fi
+    psql -c "CREATE ROLE itig WITH CREATEDB PASSWORD 'd872\$dh' LOGIN;"
+    if [ $? -ne 0 ]; then
+        error "Could not install postgres. Please ensure psql is on the path, and then rerun this script."
+        exit 1
+    fi
 
-        verbose "installed postgres"
+    verbose "installed postgres"
 }
 
 # 
