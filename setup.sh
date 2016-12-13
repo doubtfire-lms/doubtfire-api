@@ -76,7 +76,7 @@ msg () {
 # Install Homebrew
 #
 install_homebrew () {
-    msg "Installing Homebrew"
+    msg "Installing Homebrew..."
 
     /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
     brew tap caskroom/cask
@@ -91,14 +91,14 @@ install_homebrew () {
 # Install ruby envioronment for linux
 #
 install_rbenv_linux() {
-    msg "installing ruby"
+    msg "installing Ruby..."
     sudo apt update
     git clone git://github.com/sstephenson/rbenv.git ~/.rbenv
     git clone git://github.com/sstephenson/ruby-build.git ~/.rbenv/plugins/ruby-build
 
     sudo apt-get install -y libreadline-dev
 
-    msg "git repos cloned"
+    verbose "git repos cloned"
 
     if [ -n "$ZSH_VERSION" ]; then
         echo 'export PATH="$HOME/.rbenv/bin:$PATH"' >> ~/.zshrc
@@ -116,7 +116,7 @@ install_rbenv_linux() {
 # 
 install_rbenv () {
     echo '2.3.1' >> ~/.ruby_version
-    msg "Installing ruby-build and rbenv"
+    msg "Installing ruby-build and rbenv..."
 
     if isMac;
     then
@@ -124,7 +124,7 @@ install_rbenv () {
     else 
         install_rbenv_linux
     fi
-    msg "installed ruby"
+    msg "installed Ruby"
 
     if [ -n "$ZSH_VERSION" ]; then
         echo 'eval "$(rbenv init -)"' >> ~/.zshrc
@@ -132,7 +132,7 @@ install_rbenv () {
         echo 'eval "$(rbenv init -)"' >> ~/.bashrc
     fi
 
-    msg "installing ruby 2.3.1, this will take a few minutes..."
+    msg "installing Ruby 2.3.1, this will take a few minutes..."
     CONFIGURE_OPTS="--disable-install-doc --enable-shared" rbenv install 2.3.1
 
     if [ $? -ne 0 ]; then
@@ -150,7 +150,7 @@ install_rbenv () {
 # Install postgres
 # 
 install_postgres () {
-    msg "Installing postgres"
+    msg "Installing Postgres..."
 
     if isMac;
     then
@@ -172,7 +172,7 @@ install_postgres () {
                         postgresql-contrib \
                         libpq-dev
 
-        echo "Ensure pg_config is on the PATH, and then login to Postgres. You will need to locate where `apt-get` has installed your Postgres binary and add this to your PATH. You can use: whereis psql for that, but ensure you add the directory and not the executable to the path"
+        msg "Ensure pg_config is on the PATH, and then login to Postgres. You will need to locate where `apt-get` has installed your Postgres binary and add this to your PATH. You can use: whereis psql for that, but ensure you add the directory and not the executable to the path"
         read -p "Press enter to continue"
 
         export PATH=/usr/bin:$PATH
@@ -186,14 +186,14 @@ install_postgres () {
         exit 1
     fi
 
-    verbose "installed postgres"
+    verbose "installed Postgres"
 }
 
 # 
 # Install native tools
 # 
 install_native_tools () {
-    msg "Installing native tools"
+    msg "Installing native tools..."
     if isMac; then
         brew install imagemagick libmagic ghostscript
         msg "Trying to install pygments with easy_install, please enter your password"
@@ -216,7 +216,7 @@ install_native_tools () {
 # Install doubtfire gem dependencies
 # 
 install_dfire_dependencies () {
-    msg "Installing doubtfire dependencies"
+    msg "Installing doubtfire dependencies..."
     gem install bundler
     bundler install --without production replica
     rbenv rehash
@@ -238,6 +238,7 @@ install_dfire_dependencies () {
 # Install doubtfire gem dependencies
 # 
 install_dstil_overcommit () {
+    msg "Installing DSTIL hooks..."
     curl -s https://raw.githubusercontent.com/dstil/dotfiles/master/bootstrap | bash
 
     gem install overcommit
@@ -245,7 +246,7 @@ install_dstil_overcommit () {
     overcommit --install
     dstil --sign
 
-    verbose "installed dstil hooks."
+    verbose "installed DSTIL hooks."
 }
 
 install_latex () {
