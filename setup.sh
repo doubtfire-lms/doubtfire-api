@@ -250,8 +250,9 @@ install_dstil_overcommit () {
 }
 
 install_latex () {
+    msg "LaTeX is required for PDF generation, it could take up to several hours to install"
     if isMac; then
-        read -r -p "LaTeX is required for PDF generation, it could take up to several hours to install, would you like to install LaTeX now? [y/N] " response
+        read -r -p "Would you like to install LaTeX now? [y/N] " response
         case $response in
             [yY][eE][sS]|[yY]) 
                 brew cask install mactex
@@ -261,7 +262,7 @@ install_latex () {
                 ;;
         esac
     else 
-        sudo apt-get install -y texlive-full
+        sudo apt-get install texlive-full
     fi
     verbose "Installed LaTeX"
 }
