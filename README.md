@@ -7,7 +7,7 @@ A modern, lightweight learning management system.
 ## Table of Contents
 
 1. [Getting Started](#getting-started)
-  1. [...on OS X](#getting-started-on-os-x)
+  1. [...on macOS](#getting-started-on-os-x)
   2. [...on Linux](#getting-started-on-linux)
   3. [...via Docker](#getting-started-via-docker)
 2. [Running Rake Tasks](#running-rake-tasks)
@@ -18,15 +18,16 @@ A modern, lightweight learning management system.
 
 ## Getting started
 
-### Getting started on MacOS, Linux or Docker.
+### Install script
 
-#### 1. Install script
-The install script will try to setup the development envioronment for either MacOS or Linux, and can be found in the root of the project as `setup.sh`
+The install script will try to setup the development environment for either macOS or Linux, and can be found in the root of the project as `setup.sh`.
 
-#### 2. Manual install
-The manual installation guide can be found on the wiki for: [Linux](https://github.com/doubtfire-lms/doubtfire-api/wiki/Linux-setup), [MacOS](https://github.com/doubtfire-lms/doubtfire-api/wiki/MacOS-setup), or [Docker](https://github.com/doubtfire-lms/doubtfire-api/wiki/Docker-setup)
+### Manual install
 
-### Environment variables
+The manual installation guide can be found on the wiki for: [Linux](https://github.com/doubtfire-lms/doubtfire-api/wiki/Linux-Setup), [macOS](https://github.com/doubtfire-lms/doubtfire-api/wiki/MacOS-Setup), or [Docker](https://github.com/doubtfire-lms/doubtfire-api/wiki/Docker-Setup).
+
+## Environment variables
+
 Doubtfire requires multiple environment variables that help define settings about the Doubtfire instance running. Whilst these will default to other values, you may want to override them in production.
 
 
@@ -63,18 +64,17 @@ DF_INSTITUTION_NAME="University of Foo"
 You can also keep multiple `.env` files for different environments, e.g.: `.env.production` is different to `.env.develoment`. Doubtfire uses the [dotenv](https://github.com/bkeepers/dotenv) gem to make this happen.
 
 
-#### 3. Get it up and running!
-Once you've installed using either in install script or the manual install steps,
-Run the Rails server and check the API is up by viewing Grape Swagger documentation:
+### Get it up and running!
+
+Once you've installed using either in install script or the manual install steps.
 
 ```
 $ rails s
-$ open http://localhost:3000/api/docs/
 ```
 
 You should see all the Doubtfire endpoints at **[http://localhost:3000/api/docs/](http://localhost:3000/api/docs/)**, which means the API is running.
 
-## Running Rake Tasks
+# Running Rake Tasks
 
 You can perform developer-specific tasks using `rake`. For a list of all tasks, execute in the root directory:
 
@@ -82,7 +82,7 @@ You can perform developer-specific tasks using `rake`. For a list of all tasks, 
 rake --tasks
 ```
 
-## Testing
+# Testing
 
 Our aim with testing Doubtfire is to migrate to a [Test-Driven Development](https://en.wikipedia.org/wiki/Test-driven_development)
 strategy, testing all new models and API endpoints (although we plan on writing
@@ -104,10 +104,10 @@ the `model` subdirectory and **API** tests are under the `api` subdirectory.
 Any **helpers** should be included in the `helpers` subdirectory and helper
 modules should be written under the `TestHelpers` module.
 
-## Contributing
+# Contributing
 
 Refer to CONTRIBUTING.md
 
-## License
+# License
 
 Licensed under GNU Affero General Public License (AGPL) v3
