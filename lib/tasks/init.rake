@@ -6,6 +6,5 @@ namespace :db do
     dbpop.generate_user_roles
     dbpop.generate_task_statuses
     dbpop.generate_users(Role.admin)
-    
   end
 end

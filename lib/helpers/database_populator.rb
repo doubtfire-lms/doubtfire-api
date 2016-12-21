@@ -184,7 +184,8 @@ class DatabasePopulator
       "Discuss": "Your work looks good, discuss it with your tutor to complete.",
       "Ready to Mark": "This task is ready for the tutor to assess to provide feedback.",
       "Demonstrate": "Your work looks good, demonstrate it to your tutor to complete.",
-      "Fail": "You did not successfully demonstrate the required learning in this task."
+      "Fail": "You did not successfully demonstrate the required learning in this task.",
+      "Time Exceeded": "You did not submit or complete the task before the appropriate deadline."
     }
     statuses.each do | name, desc |
       print "."

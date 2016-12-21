@@ -30,14 +30,18 @@ class TaskStatus < ActiveRecord::Base
     when 'need help'        then TaskStatus.need_help
     when 'working_on_it'    then TaskStatus.working_on_it
     when 'working on it'    then TaskStatus.working_on_it
-    when 'discuss'          then TaskStatus.discuss
+    when 'discuss', 'd'     then TaskStatus.discuss
+    when 'demonstrate'      then TaskStatus.demonstrate
     when 'ready to mark'    then TaskStatus.ready_to_mark
     when 'ready_to_mark'    then TaskStatus.ready_to_mark
+    when 'rtm'              then TaskStatus.ready_to_mark
     when 'fail'             then TaskStatus.fail
     when 'f'                then TaskStatus.fail
     when 'not_started'      then TaskStatus.not_started
     when 'not started'      then TaskStatus.not_started
     when 'ns'               then TaskStatus.not_started
+    when 'time exceeded'    then TaskStatus.time_exceeded
+    when 'time_exceeded'    then TaskStatus.time_exceeded
     else nil
     end
   end
@@ -46,7 +50,7 @@ class TaskStatus < ActiveRecord::Base
     TaskStatus.where('id > 4')
   end
 
-  def status_key()
+  def status_key
     return :complete if self == TaskStatus.complete
     return :not_started if self == TaskStatus.not_started
     return :fix_and_resubmit if self == TaskStatus.fix_and_resubmit
@@ -55,8 +59,10 @@ class TaskStatus < ActiveRecord::Base
     return :working_on_it if self == TaskStatus.working_on_it
     return :discuss if self == TaskStatus.discuss
     return :ready_to_mark if self == TaskStatus.ready_to_mark
-    return :discuss if self == TaskStatus.demonstrate
+    return :demonstrate if self == TaskStatus.demonstrate
     return :fail if self == TaskStatus.fail
+    return :do_not_resubmit if self == TaskStatus.do_not_resubmit
+    return :time_exceeded if self == TaskStatus.time_exceeded
     return :not_started
   end
 end
