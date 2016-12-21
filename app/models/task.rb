@@ -188,9 +188,9 @@ class Task < ActiveRecord::Base
   # submission date or latest student comment -- whichever is newer
   def action_date
     return nil if last_student_comment.nil? || submission_date.nil?
-    return last_student_comment if !last_student_comment.nil? && submission_date.nil?
-    return submission_date      if !submission_date.nil? && last_student_comment.nil?
-    last_student_comment > submission_date ? last_student_comment : submission_date
+    return last_student_comment.created_at if !last_student_comment.nil? && submission_date.nil?
+    return submission_date.created_at      if !submission_date.nil? && last_student_comment.nil?
+    last_student_comment.created_at > submission_date ? last_student_comment.created_at : submission_date
   end
 
   # Returns the last student comment for this task
@@ -200,7 +200,7 @@ class Task < ActiveRecord::Base
 
   # Returns the last tutor comment for this task
   def last_tutor_comment
-    comments.where(user: project.tutorial.tutor.user).order(:created_at).last
+    comments.where(user: project.tutorial.tutor).order(:created_at).last
   end
 
   # Returns the number of new comments for a user
