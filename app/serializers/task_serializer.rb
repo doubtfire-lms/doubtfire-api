@@ -20,7 +20,8 @@ class TaskFeedbackSerializer < ActiveModel::Serializer
   end
 
   def num_new_comments
-    object.new_comments_for_user(user)
+    # TODO: JAKE - Stub using user first -- need to get actual current user
+    object.new_comments_for_user(User.first)
   end
 end
 

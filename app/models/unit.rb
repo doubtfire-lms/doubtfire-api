@@ -1216,9 +1216,8 @@ class Unit < ActiveRecord::Base
   # student comment -- whichever is newer.
   #
   def tasks_for_task_inbox
-    # TODO: JAKE fill query
-    student_tasks
-      .joins(:task_status)
+    # TODO: JAKE write query -- stub using tasks_awaiting_feedback
+    tasks_awaiting_feedback
   end
 
   #
