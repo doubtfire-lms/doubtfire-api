@@ -8,5 +8,6 @@ class TaskComment < ActiveRecord::Base
 
   def new_for_user?(user)
     # TODO: JAKE - rules applicable for user
+    Random.rand(0..1)
   end
 end
