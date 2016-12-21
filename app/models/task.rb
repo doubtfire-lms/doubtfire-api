@@ -205,7 +205,7 @@ class Task < ActiveRecord::Base
 
   # Returns the number of new comments for a user
   def new_comments_for_user(user)
-    comments.map { |c| c.new_for_user?(user) }.compact.length
+    comments.where(recipient: user, is_new: true).count
   end
 
   delegate :due_date, to: :task_definition
