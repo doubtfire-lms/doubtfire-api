@@ -2,10 +2,10 @@ source 'https://rubygems.org'
 
 # Ruby versions for various enviornments
 ruby_versions = {
-  development:  '2.3.1',
-  test:         '2.3.1',
-  replica:      '2.0.0',
-  production:   '2.0.0'
+  development:  '2.3.0',
+  test:         '2.3.0',
+  replica:      '2.3.0',
+  production:   '2.3.0'
 }
 # Get the ruby version for the current enviornment
 ruby ruby_versions[(ENV['RAILS_ENV'] || 'development').to_sym]
