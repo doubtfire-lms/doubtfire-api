@@ -1198,7 +1198,7 @@ class Unit < ActiveRecord::Base
   def tasks_awaiting_feedback
     student_tasks
       .joins(:task_status)
-      .select('project_id', 'tasks.id as id', 'task_definition_id', 'projects.tutorial_id as tutorial_id', 'task_statuses.name as status_name', 'completion_date', 'times_assessed', 'submission_date', 'portfolio_evidence', 'tasks.grade as grade', 'quality_pts')
+      .select('project_id', 'tasks.id as id', 'task_definition_id', 'projects.tutorial_id as tutorial_id', 'task_statuses.id as status_id', 'completion_date', 'times_assessed', 'submission_date', 'portfolio_evidence', 'tasks.grade as grade', 'quality_pts')
       .where('task_statuses.id IN (:ids)', ids: [ TaskStatus.ready_to_mark, TaskStatus.need_help, TaskStatus.discuss, TaskStatus.demonstrate ])
       .where('(task_definitions.due_date IS NULL OR task_definitions.due_date > tasks.submission_date)')
       .order('task_definition_id')
@@ -1217,14 +1217,14 @@ class Unit < ActiveRecord::Base
   def task_status_stats
     data = student_tasks
            .joins(:task_status)
-           .select('projects.tutorial_id as tutorial_id', 'task_definition_id', 'task_statuses.name as status_name', 'COUNT(tasks.id) as num_tasks')
+           .select('projects.tutorial_id as tutorial_id', 'task_definition_id', 'task_statuses.id as status_id', 'COUNT(tasks.id) as num_tasks')
            .where('task_status_id > 1')
            .group('projects.tutorial_id', 'tasks.task_definition_id', 'task_statuses.name')
            .map do |r|
       {
         tutorial_id: r.tutorial_id,
         task_definition_id: r.task_definition_id,
-        status: TaskStatus.status_key_for_name(r.status_name),
+        status: TaskStatus.find(r.status_id).status_key,
         num: r.num_tasks
       }
     end
@@ -1349,9 +1349,9 @@ class Unit < ActiveRecord::Base
     data = student_tasks
            .joins(task_definition: :learning_outcome_task_links)
            .joins(:task_status)
-           .select('projects.tutorial_id, projects.id as project_id, task_statuses.name as status_name, task_definitions.target_grade, learning_outcome_task_links.learning_outcome_id, learning_outcome_task_links.rating, COUNT(tasks.id) as num')
+           .select('projects.tutorial_id, projects.id as project_id, task_statuses.id as status_id, task_definitions.target_grade, learning_outcome_task_links.learning_outcome_id, learning_outcome_task_links.rating, COUNT(tasks.id) as num')
            .where('projects.started = TRUE AND learning_outcome_task_links.task_id is NULL')
-           .group('projects.tutorial_id, projects.id, task_statuses.name, task_definitions.target_grade, learning_outcome_task_links.learning_outcome_id, learning_outcome_task_links.rating')
+           .group('projects.tutorial_id, projects.id, task_statuses.id, task_definitions.target_grade, learning_outcome_task_links.learning_outcome_id, learning_outcome_task_links.rating')
            .order('projects.tutorial_id, projects.id')
            .map do |r|
       {
@@ -1360,7 +1360,7 @@ class Unit < ActiveRecord::Base
         learning_outcome_id: r.learning_outcome_id,
         rating: r.rating,
         grade: r.target_grade,
-        status: TaskStatus.status_key_for_name(r.status_name),
+        status: TaskStatus.find(r.status_id).status_key,
         num: r.num
       }
     end

@@ -15,7 +15,7 @@ class TaskFeedbackSerializer < ActiveModel::Serializer
   attributes :quality_pts
 
   def status
-    TaskStatus.status_key_for_name(object.status_name)
+    TaskStatus.find(object.status_id).status_key
   end
 end
 
@@ -28,7 +28,7 @@ class TaskUpdateSerializer < ActiveModel::Serializer
 
   def other_projects
     grp = object.group
-    others = grp.projects.select { |p| p.id != object.project_id }.map { |p| { id: p.id, new_stats: p.task_stats } }
+    grp.projects.select { |p| p.id != object.project_id }.map { |p| { id: p.id, new_stats: p.task_stats } }
   end
 
   def filter(keys)

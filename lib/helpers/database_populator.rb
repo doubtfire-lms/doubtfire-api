@@ -54,8 +54,8 @@ class DatabasePopulator
     @scale = scale_data[scale]
     # Fixed data contains all fixed units and users created
     generate_fixed_data()
-    generate_user_roles()
-    generate_task_statuses()
+    # generate_user_roles()
+    # generate_task_statuses()
   end
 
   #

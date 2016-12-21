@@ -5,7 +5,7 @@ class TaskStatus < ActiveRecord::Base
   # Model associations
   has_many :tasks
 
-  scope :not_started, -> { TaskStatus.find(1) }
+  scope :not_started,       -> { TaskStatus.find(1) }
   scope :complete,          -> { TaskStatus.find(2) }
   scope :need_help,         -> { TaskStatus.find(3) }
   scope :working_on_it,     -> { TaskStatus.find(4) }
@@ -16,6 +16,7 @@ class TaskStatus < ActiveRecord::Base
   scope :ready_to_mark,     -> { TaskStatus.find(9) }
   scope :demonstrate,       -> { TaskStatus.find(10) }
   scope :fail,              -> { TaskStatus.find(11) }
+  scope :time_exceeded,     -> { TaskStatus.find(12) }
 
   def self.status_for_name(name)
     case name.downcase.strip
@@ -34,7 +35,10 @@ class TaskStatus < ActiveRecord::Base
     when 'ready_to_mark'    then TaskStatus.ready_to_mark
     when 'fail'             then TaskStatus.fail
     when 'f'                then TaskStatus.fail
-    else TaskStatus.not_started
+    when 'not_started'      then TaskStatus.not_started
+    when 'not started'      then TaskStatus.not_started
+    when 'ns'               then TaskStatus.not_started
+    else nil
     end
   end
 
@@ -42,24 +46,17 @@ class TaskStatus < ActiveRecord::Base
     TaskStatus.where('id > 4')
   end
 
-  def self.status_key_for_name(name)
-    case name.downcase
-    when 'complete'         then :complete
-    when 'not started'      then :not_started
-    when 'fix and resubmit' then :fix_and_resubmit
-    when 'do not resubmit'  then :do_not_resubmit
-    when 'redo'             then :redo
-    when 'need help'        then :need_help
-    when 'working on it'    then :working_on_it
-    when 'discuss'          then :discuss
-    when 'ready to mark'    then :ready_to_mark
-    when 'demonstrate'      then :demonstrate
-    when 'fail'             then :fail
-    else :not_started
-    end
-  end
-
-  def status_key
-    TaskStatus.status_key_for_name(name)
+  def status_key()
+    return :complete if self == TaskStatus.complete
+    return :not_started if self == TaskStatus.not_started
+    return :fix_and_resubmit if self == TaskStatus.fix_and_resubmit
+    return :redo if self == TaskStatus.redo
+    return :need_help if self == TaskStatus.need_help
+    return :working_on_it if self == TaskStatus.working_on_it
+    return :discuss if self == TaskStatus.discuss
+    return :ready_to_mark if self == TaskStatus.ready_to_mark
+    return :discuss if self == TaskStatus.demonstrate
+    return :fail if self == TaskStatus.fail
+    return :not_started
   end
 end
