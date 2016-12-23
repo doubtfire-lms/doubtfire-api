@@ -7,8 +7,8 @@ A modern, lightweight learning management system.
 ## Table of Contents
 
 1. [Getting Started](#getting-started)
-  1. [...Install Script](#install-script)
-  2. [...Manual Install](#manual-install)
+  1. [Install Script](#install-script)
+  2. [Manual Install](#manual-install)
 2. [Environment Variables](#environment-variables)
 3. [Getting up and Running](#getting-up-and-running)
 4. [Running Rake Tasks](#running-rake-tasks)
@@ -25,7 +25,7 @@ The install script will try to setup the development environment for either macO
 
 ### Manual install
 
-The manual installation guide can be found on the wiki for: [Linux](https://github.com/doubtfire-lms/doubtfire-api/wiki/Linux-Setup), [macOS](https://github.com/doubtfire-lms/doubtfire-api/wiki/MacOS-Setup), or [Docker](https://github.com/doubtfire-lms/doubtfire-api/wiki/Docker-Setup).
+The manual installation guide can be found on the wiki for: [Linux](https://github.com/doubtfire-lms/doubtfire-api/wiki/Manual-install-on-Linux), [macOS](https://github.com/doubtfire-lms/doubtfire-api/wiki/Manual-install-on-macOS), or [Docker](https://github.com/doubtfire-lms/doubtfire-api/wiki/Docker-Setup).
 
 ## Environment variables
 
