@@ -25,7 +25,7 @@ The install script will try to setup the development environment for either macO
 
 ### Manual install
 
-The manual installation guide can be found on the wiki for: [Linux](https://github.com/doubtfire-lms/doubtfire-api/wiki/Manual-install-on-Linux), [macOS](https://github.com/doubtfire-lms/doubtfire-api/wiki/Manual-install-on-macOS), or [Docker](https://github.com/doubtfire-lms/doubtfire-api/wiki/Docker-Setup).
+The manual installation guide can be found on the wiki for: [Linux](https://github.com/doubtfire-lms/doubtfire-api/wiki/Manual-install-on-Linux), [macOS](https://github.com/doubtfire-lms/doubtfire-api/wiki/Manual-install-on-macOS), or [Docker](https://github.com/doubtfire-lms/doubtfire-api/wiki/Getting-Started-Using-Docker).
 
 ## Environment variables
 
