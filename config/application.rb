@@ -27,8 +27,11 @@ module Doubtfire
     # variable.
     config.student_work_dir = ENV['DF_STUDENT_WORK_DIR'] || "#{Rails.root}/student_work"
     # ==> Institution settings
-    # Institution YAML config load
+    # Institution YAML and ENV (override) config load
     config.institution = YAML.load_file("#{Rails.root}/config/institution.yml").with_indifferent_access
+    config.institution[:name] = ENV['DF_INSTITUTION_NAME'] if ENV['DF_INSTITUTION_NAME']
+    config.institution[:email_domain] = ENV['DF_INSTITUTION_EMAIL_DOMAIN'] if ENV['DF_INSTITUTION_EMAIL_DOMAIN']
+    config.institution[:host] = ENV['DF_INSTITUTION_HOST'] if ENV['DF_INSTITUTION_HOST']
     # Institution host becomes localhost in all but prod
     config.institution[:host] = 'localhost:3000' unless Rails.env.production?
     # ==> AAF authentication
