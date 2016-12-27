@@ -27,7 +27,11 @@ class PortfolioEvidence
     errors = {}
 
     # For each folder in new (i.e., queued folders to process) that matches appropriate name
-    new_root_dir = Dir.entries(student_work_dir(:new)).select { |f| (f =~ /^\d+$/).zero? }
+    new_root_dir = Dir.entries(student_work_dir(:new)).select do |f|
+      # rubocop:disable Style/NumericPredicate
+      (f =~ /^\d+$/) == 0
+      # rubocop:enable Style/NumericPredicate
+    end
     new_root_dir.each do |folder_id|
       task = Task.find(folder_id)
 
