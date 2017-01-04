@@ -558,6 +558,8 @@ class Task < ActiveRecord::Base
     comment.task = self
     comment.user = user
     comment.comment = text
+    comment.isNew = true
+    comment.recipient = comment.task.project.main_tutor
     comment.save!
     comment
   end
