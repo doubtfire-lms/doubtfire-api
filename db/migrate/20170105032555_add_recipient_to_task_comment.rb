@@ -5,8 +5,6 @@ class AddRecipientToTaskComment < ActiveRecord::Migration
     add_reference :task_comment, :recipient, references: :user
     add_foreign_key :task_comment, :user, column: :recipient_id
 
-    TaskComment.all.each do |task_comment|
-      task_comment.is_new = false
-    end
+    TaskComment.update_all(is_new: false)
   end
 end
