@@ -534,11 +534,8 @@ class Task < ActiveRecord::Base
     comment.task = self
     comment.user = user
     comment.comment = text
-    comment.isNew = true
-    if user == comment.task.project.student then
-      comment.recipient = comment.task.project.main_tutor
-    else
-      comment.recipient == comment.task.project.student
+    comment.is_new = true
+    comment.recipient = user == project.student ? project.main_tutor : project.student
     comment.save!
     comment
   end
