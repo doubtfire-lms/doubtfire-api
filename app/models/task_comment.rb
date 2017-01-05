@@ -2,6 +2,8 @@ class TaskComment < ActiveRecord::Base
   belongs_to :task # Foreign key
   belongs_to :user
 
+  has_one :user, foreign_key: 'recipient'
+
   validates :task, presence: true
   validates :user, presence: true
   validates :recipient, presence: true
