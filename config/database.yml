@@ -13,3 +13,17 @@ test:
   password: d872$dh
   host: localhost
   min_messages: warning
+
+staging:
+  adapter:  # staging DB adapter
+  host:     # staging DB host
+  database: # staging DB
+  username: # staging DB username
+  password: # staging DB password
+
+production:
+  adapter:  # prod DB adapter
+  host:     # prod DB host
+  database: # prod DB
+  username: # prod DB username
+  password: # prod DB password
