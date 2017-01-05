@@ -15,15 +15,15 @@ test:
   min_messages: warning
 
 staging:
-  adapter:  # staging DB adapter
-  host:     # staging DB host
-  database: # staging DB
-  username: # staging DB username
-  password: # staging DB password
+  adapter:  <%= ENV['DF_STAGING_DB_ADAPTER']  %>
+  host:     <%= ENV['DF_STAGING_DB_HOST']     %>
+  database: <%= ENV['DF_STAGING_DB_DATABASE'] %>
+  username: <%= ENV['DF_STAGING_DB_USERNAME'] %>
+  password: <%= ENV['DF_STAGING_DB_PASSWORD'] %>
 
 production:
-  adapter:  # prod DB adapter
-  host:     # prod DB host
-  database: # prod DB
-  username: # prod DB username
-  password: # prod DB password
+  adapter:  <%= ENV['DF_PRODUCTION_DB_ADAPTER']  %>
+  host:     <%= ENV['DF_PRODUCTION_DB_HOST']     %>
+  database: <%= ENV['DF_PRODUCTION_DB_DATABASE'] %>
+  username: <%= ENV['DF_PRODUCTION_DB_USERNAME'] %>
+  password: <%= ENV['DF_PRODUCTION_DB_PASSWORD'] %>
