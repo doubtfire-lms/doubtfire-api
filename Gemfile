@@ -5,6 +5,7 @@ ruby_versions = {
   development:  '2.3.0',
   test:         '2.3.0',
   replica:      '2.3.0',
+  staging:      '2.3.0',
   production:   '2.3.0'
 }
 # Get the ruby version for the current enviornment
@@ -35,7 +36,7 @@ group :production do
   gem 'passenger', '= 4.0.42'
 end
 
-group :production, :replica do
+group :production, :replica, :staging do
   gem 'mysql2'
 end
 
