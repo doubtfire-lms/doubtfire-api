@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20161208055326) do
+ActiveRecord::Schema.define(version: 20170105032555) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -205,10 +205,12 @@ ActiveRecord::Schema.define(version: 20161208055326) do
   end
 
   create_table "task_comments", force: :cascade do |t|
-    t.integer  "task_id",                 null: false
-    t.integer  "user_id",                 null: false
-    t.string   "comment",    limit: 4096
-    t.datetime "created_at",              null: false
+    t.integer  "task_id",                                  null: false
+    t.integer  "user_id",                                  null: false
+    t.string   "comment",      limit: 4096
+    t.datetime "created_at",                               null: false
+    t.boolean  "is_new",                    default: true
+    t.integer  "recipient_id"
   end
 
   add_index "task_comments", ["task_id"], name: "index_task_comments_on_task_id", using: :btree
@@ -391,4 +393,5 @@ ActiveRecord::Schema.define(version: 20161208055326) do
   add_index "users", ["authentication_token"], name: "index_users_on_authentication_token", unique: true, using: :btree
   add_index "users", ["login_id"], name: "index_users_on_login_id", unique: true, using: :btree
 
+  add_foreign_key "task_comments", "users", column: "recipient_id"
 end
