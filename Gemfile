@@ -4,7 +4,6 @@ source 'https://rubygems.org'
 ruby_versions = {
   development:  '2.3.0',
   test:         '2.3.0',
-  replica:      '2.3.0',
   staging:      '2.3.0',
   production:   '2.3.0'
 }
@@ -14,7 +13,7 @@ ruby ruby_versions[(ENV['RAILS_ENV'] || 'development').to_sym]
 # The venerable, almighty Rails
 gem 'rails', '4.2.6'
 
-group :development, :replica do
+group :development do
   gem 'pg'
   gem 'hirb'
   gem 'better_errors'
@@ -36,7 +35,7 @@ group :production do
   gem 'passenger', '= 4.0.42'
 end
 
-group :production, :replica, :staging do
+group :production, :staging do
   gem 'mysql2'
 end
 
