@@ -43,10 +43,22 @@ module Api
       if project.has_task_for_task_definition? task_definition
         task = project.task_for_task_definition(task_definition)
 
-        task.all_comments.order('created_at DESC')
+        comments = task.all_comments(current_user).order('created_at ASC')
+        result = comments.map do |c|
+          {
+            id: c.id,
+            comment: c.comment,
+            comment_by: c.user_id,
+            is_new: c.new_for?(current_user),
+            recipient: c.recipient.nickname,
+            created_at: c.created_at
+          }
+        end
+        task.mark_comments_as_read(current_user, comments)
       else
-        []
+        result = []
       end
+      result
     end
 
     desc 'Delete a comment'
