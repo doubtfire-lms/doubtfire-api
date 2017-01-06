@@ -33,7 +33,7 @@ module Doubtfire
     config.institution[:email_domain] = ENV['DF_INSTITUTION_EMAIL_DOMAIN'] if ENV['DF_INSTITUTION_EMAIL_DOMAIN']
     config.institution[:host] = ENV['DF_INSTITUTION_HOST'] if ENV['DF_INSTITUTION_HOST']
     # Institution host becomes localhost in all but prod
-    config.institution[:host] = 'localhost:3000' unless Rails.env.production?
+    config.institution[:host] = 'localhost:3000' if Rails.env.development?
     # ==> AAF authentication
     # Must require AAF devise authentication method.
     if config.auth_method == :aaf
