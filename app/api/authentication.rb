@@ -150,7 +150,7 @@ module Api
         user.generate_temporary_authentication_token!
 
         # Must redirect to the front-end after sign in
-        protocol = Rails.env.development? ? 'http' : 'https'
+        protocol = Doubtfire::Application.config.force_ssl ? 'https' : 'http'
         host = Rails.env.development? ? 'localhost:8000' : Doubtfire::Application.config.institution[:host]
         redirect "#{protocol}://#{host}/#sign_in?authToken=#{user.auth_token}"
       end
