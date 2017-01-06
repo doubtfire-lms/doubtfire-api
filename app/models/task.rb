@@ -94,11 +94,34 @@ class Task < ActiveRecord::Base
     end
   end
 
-  def all_comments
+  def all_comments(current_user)
     if group_submission.nil?
       comments
     else
       TaskComment.joins(:task).where('tasks.group_submission_id = :id', id: group_submission.id)
+    end
+  end
+
+  def create_comment_read_entry(user, comment)
+    comments_read = CommentsReadReceipts.create
+    comments_read.user = user
+    comments_read.task_comment = comment
+    comments_read.save!
+  end
+
+  def mark_comment_as_read(user, comment)
+    if user == comment.task.project.main_tutor
+      unit.staff.each do |staff_member|
+        create_comment_read_entry(staff_member.user, comment)
+      end
+    else
+      create_comment_read_entry(user, comment)
+    end
+  end
+
+  def mark_comments_as_read(user, comments)
+    comments.each do |c|
+      mark_comment_as_read(user, c)
     end
   end
 
