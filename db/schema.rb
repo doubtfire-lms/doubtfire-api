@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170105032555) do
+ActiveRecord::Schema.define(version: 20170106055629) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -25,6 +25,17 @@ ActiveRecord::Schema.define(version: 20170105032555) do
     t.datetime "created_at",                         null: false
     t.datetime "updated_at",                         null: false
   end
+
+  create_table "comments_read_receipts", id: false, force: :cascade do |t|
+    t.integer  "task_comment_id", null: false
+    t.integer  "user_id",         null: false
+    t.datetime "created_at",      null: false
+    t.datetime "updated_at",      null: false
+  end
+
+  add_index "comments_read_receipts", ["task_comment_id", "user_id"], name: "index_comments_read_receipts_on_task_comment_id_and_user_id", unique: true, using: :btree
+  add_index "comments_read_receipts", ["task_comment_id"], name: "index_comments_read_receipts_on_task_comment_id", using: :btree
+  add_index "comments_read_receipts", ["user_id"], name: "index_comments_read_receipts_on_user_id", using: :btree
 
   create_table "group_memberships", force: :cascade do |t|
     t.integer  "group_id"
@@ -205,11 +216,10 @@ ActiveRecord::Schema.define(version: 20170105032555) do
   end
 
   create_table "task_comments", force: :cascade do |t|
-    t.integer  "task_id",                                  null: false
-    t.integer  "user_id",                                  null: false
+    t.integer  "task_id",                   null: false
+    t.integer  "user_id",                   null: false
     t.string   "comment",      limit: 4096
-    t.datetime "created_at",                               null: false
-    t.boolean  "is_new",                    default: true
+    t.datetime "created_at",                null: false
     t.integer  "recipient_id"
   end
 
@@ -393,5 +403,7 @@ ActiveRecord::Schema.define(version: 20170105032555) do
   add_index "users", ["authentication_token"], name: "index_users_on_authentication_token", unique: true, using: :btree
   add_index "users", ["login_id"], name: "index_users_on_login_id", unique: true, using: :btree
 
+  add_foreign_key "comments_read_receipts", "task_comments"
+  add_foreign_key "comments_read_receipts", "users"
   add_foreign_key "task_comments", "users", column: "recipient_id"
 end
