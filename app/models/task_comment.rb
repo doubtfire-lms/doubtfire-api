@@ -12,6 +12,6 @@ class TaskComment < ActiveRecord::Base
   validates :comment, length: { minimum: 1, maximum: 4095, allow_blank: false }
 
   def new_for?(user)
-     CommentsReadReceipts.where(user: user).empty?
+    CommentsReadReceipts.where(user: user, task_comment_id: self).empty?
   end
 end
