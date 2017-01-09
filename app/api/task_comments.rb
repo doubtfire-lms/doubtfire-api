@@ -28,10 +28,10 @@ module Api
       if result.nil?
         error!({ error: 'No comment added. Comment duplicates last comment, so ignored.' }, 403)
       else
-        comments_read = CommentsReadReceipts.create
-        comments_read.user = current_user
-        comments_read.task_comment = result
-        comments_read.save!
+        comments_read_receipt = CommentsReadReceipts.create
+        comments_read_receipt.user = current_user
+        comments_read_receipt.task_comment = result
+        comments_read_receipt.save!
 
         result
       end
