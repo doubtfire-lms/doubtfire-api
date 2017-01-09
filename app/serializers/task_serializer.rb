@@ -22,7 +22,7 @@ class TaskFeedbackSerializer < ActiveModel::Serializer
   def num_new_comments
     # TODO: JAKE - Stub using user first -- need to get actual current user
     # object.new_comments_for_user(User.first)
-    Random.rand(0..3)
+    object.number_of_comments_unread_for(User.first)
   end
 end
 
@@ -46,10 +46,6 @@ end
 
 class TaskStatSerializer < ActiveModel::Serializer
   attributes :id, :task_abbr, :status, :tutorial_id, :times_assessed
-
-  def task_abbr
-    object.task_definition.abbreviation
-  end
 
   def task_abbr
     object.task_definition.abbreviation
