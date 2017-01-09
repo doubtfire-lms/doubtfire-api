@@ -227,8 +227,13 @@ class Task < ActiveRecord::Base
   end
 
   # Returns the number of new comments for a user
-  def new_comments_for_user(user)
-    comments.where(recipient: user, is_new: true).count
+  def number_of_comments_unread_for(user)
+    cmments.count - number_of_comments_read_for(user).count
+  end
+
+  # Returns the number of new comments for a user
+  def number_of_comments_read_for(user)
+    CommentsReadReceipts.where(user: user, task_comment: comments).count
   end
 
   delegate :due_date, to: :task_definition
