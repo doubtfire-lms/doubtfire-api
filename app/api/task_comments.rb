@@ -57,7 +57,8 @@ module Api
             comment_by: c.user_id,
             is_new: c.new_for?(current_user),
             recipient: c.recipient.name,
-            created_at: c.created_at
+            created_at: c.created_at,
+            time_read: Time.zone.now
           }
         end
         task.mark_comments_as_read(current_user, comments)
