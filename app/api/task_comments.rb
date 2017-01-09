@@ -24,9 +24,15 @@ module Api
       task = project.task_for_task_definition(task_definition)
 
       result = task.add_comment current_user, params[:comment]
+
       if result.nil?
         error!({ error: 'No comment added. Comment duplicates last comment, so ignored.' }, 403)
       else
+        comments_read = CommentsReadReceipts.create
+        comments_read.user = current_user
+        comments_read.task_comment = result
+        comments_read.save!
+
         result
       end
     end
