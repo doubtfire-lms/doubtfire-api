@@ -56,7 +56,7 @@ module Api
             comment: c.comment,
             comment_by: c.user_id,
             is_new: c.new_for?(current_user),
-            recipient: c.recipient.nickname,
+            recipient: c.recipient.name,
             created_at: c.created_at
           }
         end
