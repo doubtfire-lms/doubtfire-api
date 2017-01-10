@@ -45,4 +45,8 @@ class TaskComment < ActiveRecord::Base
       remove_comment_read_entry(user)
     end
   end
+
+  def time_read_by(user)
+    CommentsReadReceipts.find_by(user: user, task_comment: self).created_at
+  end
 end
