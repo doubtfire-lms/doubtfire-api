@@ -4,7 +4,7 @@ class TaskComment < ActiveRecord::Base
 
   belongs_to :recipient, class_name: 'User'
 
-  has_many :comments_read_receipts
+  has_many :comments_read_receipts, class_name: 'CommentsReadReceipts', dependent: :destroy, inverse_of: :task_comment
 
   validates :task, presence: true
   validates :user, presence: true
