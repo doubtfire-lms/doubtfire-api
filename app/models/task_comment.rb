@@ -47,6 +47,6 @@ class TaskComment < ActiveRecord::Base
   end
 
   def time_read_by(user)
-    CommentsReadReceipts.find_by(user: user, task_comment: self).created_at
+    CommentsReadReceipts.find_by(user: user, task_comment: self).created_at if CommentsReadReceipts.find_by(user: user, task_comment: self)
   end
 end
