@@ -87,5 +87,20 @@ module Api
 
       task_comment.destroy
     end
+
+    desc 'Mark a comment as unread'
+    post '/projects/:project_id/task_def_id/:task_definition_id/comments/:id' do
+      project = Project.find(params[:project_id])
+      task_definition = project.unit.task_definitions.find(params[:task_definition_id])
+
+      unless authorise? current_user, project, :make_submission
+        error!({ error: 'Not authorised to mark comment as unread' }, 403)
+      end
+
+      task = project.task_for_task_definition(task_definition)
+
+      task_comment = task.comments.find(params[:id])
+      task_comment.mark_as_unread(current_user, project.unit)
+    end
   end
 end

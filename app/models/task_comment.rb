@@ -23,7 +23,7 @@ class TaskComment < ActiveRecord::Base
   end
 
   def remove_comment_read_entry(user)
-    CommentsReadReceipts.find_by!(user: user, task_comment: self).destroy
+    CommentsReadReceipts.delete_all(user: user, task_comment: self)
   end
 
   def mark_as_read(user, unit)
@@ -36,7 +36,7 @@ class TaskComment < ActiveRecord::Base
     end
   end
 
-  def mark_comment_as_unread(user, unit)
+  def mark_as_unread(user, unit)
     if user == task.project.main_tutor
       unit.staff.each do |staff_member|
         remove_comment_read_entry(staff_member.user)
