@@ -217,7 +217,7 @@ class Task < ActiveRecord::Base
 
   # Returns the number of new comments for a user
   def number_of_comments_unread_for(user)
-    cmments.count - number_of_comments_read_for(user).count
+    comments.count - number_of_comments_read_for(user)
   end
 
   # Returns the number of new comments for a user
