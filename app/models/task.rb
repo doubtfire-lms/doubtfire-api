@@ -102,26 +102,15 @@ class Task < ActiveRecord::Base
     end
   end
 
-  def create_comment_read_entry(user, comment)
-    comments_read_receipt = CommentsReadReceipts.find_or_create_by(user: user, task_comment: comment)
-    comments_read_receipt.user = user
-    comments_read_receipt.task_comment = comment
-    comments_read_receipt.save!
-  end
-
-  def mark_comment_as_read(user, comment)
-    if user == comment.task.project.main_tutor
-      unit.staff.each do |staff_member|
-        create_comment_read_entry(staff_member.user, comment)
-      end
-    else
-      create_comment_read_entry(user, comment)
+  def mark_comments_as_read(user, comments)
+    comments.each do |c|
+      c.mark_as_read(user, unit)
     end
   end
 
-  def mark_comments_as_read(user, comments)
+  def mark_comments_as_unread(user, comments)
     comments.each do |c|
-      mark_comment_as_read(user, c)
+      c.mark_as_unread(user)
     end
   end
 

@@ -14,4 +14,25 @@ class TaskComment < ActiveRecord::Base
   def new_for?(user)
     CommentsReadReceipts.where(user: user, task_comment_id: self).empty?
   end
+
+  def create_comment_read_entry(user)
+    comments_read_receipt = CommentsReadReceipts.find_or_create_by(user: user, task_comment: self)
+    comments_read_receipt.user = user
+    comments_read_receipt.task_comment = self
+    comments_read_receipt.save!
+  end
+
+  def mark_as_read(user, unit)
+    if user == task.project.main_tutor
+      unit.staff.each do |staff_member|
+        create_comment_read_entry(staff_member.user)
+      end
+    else
+      create_comment_read_entry(user)
+    end
+  end
+
+  def mark_comment_as_unread(user)
+    CommentsReadReceipts.find_by(user: user, task_comment: self)
+  end
 end
