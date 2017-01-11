@@ -190,7 +190,7 @@ module Api
       end
 
       tasks = unit.tasks_for_task_inbox(current_user)
-      tasks.sort_by { |task| [task.comments.pluck(:created_at).max, task.submission_date] }
+      tasks.sort_by { |task| [task.action_date ? 1 : 0, task.action_date] }
 
       tasks.map do |t|
         {
