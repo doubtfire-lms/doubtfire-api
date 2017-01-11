@@ -164,7 +164,7 @@ module Api
         error!({ error: 'Not authorised to provide feedback for this unit' }, 403)
       end
 
-      result = unit.tasks_awaiting_feedback.map do |t|
+      unit.tasks_awaiting_feedback.map do |t|
         {
           id: t.id,
           project_id: t.project_id,
@@ -179,7 +179,6 @@ module Api
           num_new_comments: t.number_of_comments_unread_for(current_user)
         }
       end
-      result
     end
 
     desc 'Download the tasks that should be listed under the task inbox'
@@ -193,7 +192,7 @@ module Api
       tasks = unit.tasks_for_task_inbox(current_user)
       tasks.sort_by { |task| [task.comments.pluck(:created_at).max, task.submission_date] }
 
-      result = tasks.map do |t|
+      tasks.map do |t|
         {
           id: t.id,
           project_id: t.project_id,
@@ -208,7 +207,6 @@ module Api
           num_new_comments: t.number_of_comments_unread_for(current_user)
         }
       end
-      result
     end
 
     desc 'Download the grades for a unit'
