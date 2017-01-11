@@ -189,24 +189,7 @@ module Api
         error!({ error: 'Not authorised to provide feedback for this unit' }, 403)
       end
 
-      tasks = unit.tasks_for_task_inbox(current_user)
-      tasks.sort_by { |task| [task.action_date ? 1 : 0, task.action_date] }
-
-      tasks.map do |t|
-        {
-          id: t.id,
-          project_id: t.project_id,
-          task_definition_id: t.task_definition_id,
-          tutorial_id: t.project.tutorial_id,
-          status: t.task_status.name,
-          completion_date: t.completion_date,
-          submission_date: t.submission_date,
-          times_assessed: t.times_assessed,
-          grade: t.grade,
-          quality_pts: t.quality_pts,
-          num_new_comments: t.number_of_comments_unread_for(current_user)
-        }
-      end
+      unit.tasks_for_task_inbox(current_user)
     end
 
     desc 'Download the grades for a unit'
