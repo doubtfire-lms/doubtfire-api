@@ -1197,14 +1197,11 @@ class Unit < ActiveRecord::Base
   #
   def tasks_awaiting_feedback
     student_tasks
-      .joins(:task_status, :comments)
-      .joins('LEFT JOIN comments_read_receipts crr ON crr.task_comment_id = task_comments.id')
-      .select('crr.created_at as date_read')
+      .joins(:task_status)
       .select('project_id', 'tasks.id as id', 'task_definition_id', 'projects.tutorial_id as tutorial_id', 'task_statuses.name as status_name', 'completion_date', 'times_assessed', 'submission_date', 'portfolio_evidence', 'tasks.grade as grade', 'quality_pts')
       .where('task_statuses.id IN (:ids)', ids: [ TaskStatus.ready_to_mark, TaskStatus.need_help, TaskStatus.discuss, TaskStatus.demonstrate ])
-      .where('(task_definitions.due_date IS NULL OR task_definitions.due_date > tasks.submission_date) OR crr.created_at IS NULL')
-      .group('task_comments.id', 'date_read', 'tasks.project_id', 'tasks.id', 'tutorial_id', 'status_name')
-      .order('date_read')
+      .where('(task_definitions.due_date IS NULL OR task_definitions.due_date > tasks.submission_date)')
+      .order('task_definition_id')
   end
 
   #
