@@ -164,7 +164,22 @@ module Api
         error!({ error: 'Not authorised to provide feedback for this unit' }, 403)
       end
 
-      ActiveModel::ArraySerializer.new(unit.tasks_awaiting_feedback, each_serializer: TaskFeedbackSerializer)
+      result = unit.tasks_awaiting_feedback.map do |t|
+        {
+          id: t.id,
+          project_id: t.project_id,
+          task_definition_id: t.task_definition_id,
+          tutorial_id: t.tutorial_id,
+          status: TaskStatus.status_key_for_name(t.status_name),
+          completion_date: t.completion_date,
+          submission_date: t.submission_date,
+          times_assessed: t.times_assessed,
+          grade: t.grade,
+          quality_pts: t.quality_pts,
+          num_new_comments: t.number_of_comments_unread_for(current_user)
+        }
+      end
+      result
     end
 
     desc 'Download the tasks that should be listed under the task inbox'
@@ -175,7 +190,25 @@ module Api
         error!({ error: 'Not authorised to provide feedback for this unit' }, 403)
       end
 
-      ActiveModel::ArraySerializer.new(unit.tasks_for_task_inbox, each_serializer: TaskFeedbackSerializer)
+      tasks = unit.tasks_for_task_inbox(current_user)
+      tasks.sort_by { |task| [task.comments.pluck(:created_at).max, task.submission_date] }
+
+      result = tasks.map do |t|
+        {
+          id: t.id,
+          project_id: t.project_id,
+          task_definition_id: t.task_definition_id,
+          tutorial_id: t.project.tutorial_id,
+          status: t.project.status,
+          completion_date: t.completion_date,
+          submission_date: t.submission_date,
+          times_assessed: t.times_assessed,
+          grade: t.grade,
+          quality_pts: t.quality_pts,
+          num_new_comments: t.number_of_comments_unread_for(current_user)
+        }
+      end
+      result
     end
 
     desc 'Download the grades for a unit'

@@ -1215,9 +1215,12 @@ class Unit < ActiveRecord::Base
   # time a task has been "actioned", either the submission date or latest
   # student comment -- whichever is newer.
   #
-  def tasks_for_task_inbox
-    # TODO: JAKE write query -- stub using tasks_awaiting_feedback
-    tasks_awaiting_feedback
+  def tasks_for_task_inbox(user)
+    result = []
+    tasks.each do |t|
+      if t.number_of_comments_unread_for(user).positive? then result << t end
+    end
+    result + tasks_awaiting_feedback
   end
 
   #
