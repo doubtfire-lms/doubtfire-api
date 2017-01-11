@@ -103,14 +103,14 @@ class Task < ActiveRecord::Base
   end
 
   def mark_comments_as_read(user, comments)
-    comments.each do |c|
-      c.mark_as_read(user, unit)
+    comments.each do |comment|
+      comment.mark_as_read(user, unit)
     end
   end
 
   def mark_comments_as_unread(user, comments)
-    comments.each do |c|
-      c.mark_as_unread(user)
+    comments.each do |comment|
+      comment.mark_as_unread(user)
     end
   end
 
