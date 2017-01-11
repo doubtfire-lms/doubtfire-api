@@ -1216,11 +1216,24 @@ class Unit < ActiveRecord::Base
   # student comment -- whichever is newer.
   #
   def tasks_for_task_inbox(user)
-    result = []
-    tasks.each do |t|
-      if t.number_of_comments_unread_for(user).positive? then result << t end
-    end
-    result + tasks_awaiting_feedback
+    student_tasks.joins(:task_status, :comments).joins("LEFT JOIN comments_read_receipts crr ON crr.task_comment_id = task_comments.id AND crr.user_id = #{user.id}")
+      .select(
+        'SUM(case when crr.user_id is null then 1 else 0 end) as number_unread',
+        'project_id', 
+        'tasks.id as id',
+        'task_definition_id',
+        'projects.tutorial_id as tutorial_id',
+        'task_statuses.name as status_name',
+        'completion_date', 
+        'times_assessed', 
+        'submission_date', 
+        'portfolio_evidence', 
+        'tasks.grade as grade', 
+        'quality_pts').
+      where('(task_definitions.due_date IS NULL OR task_definitions.due_date > tasks.submission_date)').
+      group('task_statuses.id', 'tasks.project_id', 'tutorial_id', 'tasks.id', 'task_definition_id', 'status_name', 'completion_date', 'times_assessed', 'submission_date', 'portfolio_evidence', 'grade', 'quality_pts').
+      having('task_statuses.id IN (:ids) OR SUM(case when crr.user_id is null then 1 else 0 end) > 0', ids: [ TaskStatus.ready_to_mark, TaskStatus.need_help, TaskStatus.discuss, TaskStatus.demonstrate ]).
+      map { |r| { number_unread: r.number_unread, task_id: r.id}  }
   end
 
   #
