@@ -1198,10 +1198,28 @@ class Unit < ActiveRecord::Base
   def tasks_awaiting_feedback
     student_tasks
       .joins(:task_status)
-      .select('project_id', 'tasks.id as id', 'task_definition_id', 'projects.tutorial_id as tutorial_id', 'task_statuses.name as status_name', 'completion_date', 'times_assessed', 'submission_date', 'portfolio_evidence', 'tasks.grade as grade', 'quality_pts')
+      .select(
+        'project_id', 'tasks.id as id', 'task_definition_id', 'projects.tutorial_id as tutorial_id',
+        'task_statuses.name as status_name', 'completion_date', 'times_assessed', 'submission_date',
+        'portfolio_evidence', 'tasks.grade as grade', 'quality_pts'
+      )
       .where('task_statuses.id IN (:ids)', ids: [ TaskStatus.ready_to_mark, TaskStatus.need_help, TaskStatus.discuss, TaskStatus.demonstrate ])
       .where('(task_definitions.due_date IS NULL OR task_definitions.due_date > tasks.submission_date)')
       .order('task_definition_id')
+      .map do |t|
+        {
+          id: t.id,
+          project_id: t.project_id,
+          task_definition_id: t.task_definition_id,
+          tutorial_id: t.tutorial_id,
+          status: t.status_name,
+          completion_date: t.completion_date,
+          submission_date: t.submission_date,
+          times_assessed: t.times_assessed,
+          grade: t.grade,
+          quality_pts: t.quality_pts
+        }
+      end
   end
 
   #
