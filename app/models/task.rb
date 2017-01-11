@@ -220,7 +220,7 @@ class Task < ActiveRecord::Base
     comments.count - number_of_comments_read_for(user)
   end
 
-  # Returns the number of new comments for a user
+  # Returns the number of read comments for a user
   def number_of_comments_read_for(user)
     CommentsReadReceipts.where(user: user, task_comment: comments).count
   end
