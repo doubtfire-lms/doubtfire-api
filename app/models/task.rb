@@ -85,11 +85,11 @@ class Task < ActiveRecord::Base
   after_save :update_project
 
   def for_task_with_quality?
-    task_definition.max_quality_pts > 0
+    task_definition.max_quality_pts.positive?
   end
 
   def must_have_quality_pts
-    if quality_pts.nil? || quality_pts < 0 || quality_pts > task_definition.max_quality_pts
+    if quality_pts.nil? || quality_pts.positive? || quality_pts > task_definition.max_quality_pts
       errors.add(:quality_pts, "must be between 0 and #{task_definition.max_quality_pts}")
     end
   end
