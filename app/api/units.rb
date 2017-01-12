@@ -164,7 +164,8 @@ module Api
         error!({ error: 'Not authorised to provide feedback for this unit' }, 403)
       end
 
-      unit.tasks_awaiting_feedback
+      tasks = unit.tasks_awaiting_feedback(current_user)
+      unit.tasks_as_hash(tasks)
     end
 
     desc 'Download the tasks that should be listed under the task inbox'
@@ -175,7 +176,8 @@ module Api
         error!({ error: 'Not authorised to provide feedback for this unit' }, 403)
       end
 
-      unit.tasks_for_task_inbox(current_user)
+      tasks = unit.tasks_for_task_inbox(current_user)
+      unit.tasks_as_hash(tasks)
     end
 
     desc 'Download the grades for a unit'
