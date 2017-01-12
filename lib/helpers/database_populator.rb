@@ -53,11 +53,15 @@ class DatabasePopulator
     end
     @scale = scale_data[scale]
     # Fixed data contains all fixed units and users created
-    generate_fixed_data()
-    generate_user_roles()
-    generate_task_statuses()
+    generate_user_roles
+    generate_task_statuses
   end
 
+  def generate_admin
+    @user_data = {
+      acain: {first_name: "Andrew",  last_name: "Cain",          nickname: "Macite",         role_id: Role.admin_id }
+    }
+  end
   #
   # Generate some users. Pass in an optional filter(s) for:
   # Role.admin, Role.convenor, Role.tutor, Role.student
