@@ -150,6 +150,7 @@ class User < ActiveRecord::Base
   validates :role_id,     presence: true
   validates :username,    presence: true, uniqueness: { case_sensitive: false }
   validates :email,       presence: true, uniqueness: { case_sensitive: false }
+  validates :student_id,  uniqueness: true, allow_nil: true
 
   # Queries
   scope :tutors,    -> { joins(:role).where('roles.id = :tutor_role or roles.id = :convenor_role or roles.id = :admin_role', tutor_role: Role.tutor_id, convenor_role: Role.convenor_id, admin_role: Role.admin_id) }
