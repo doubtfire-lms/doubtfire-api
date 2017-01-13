@@ -1511,7 +1511,7 @@ class Unit < ActiveRecord::Base
     students_with_grades = students.where('grade > 0')
 
     CSV.generate do |row|
-      row << %w(unit_code username grade rationale)
+      row << %w(unit_code username student_id grade rationale)
       students_with_grades.each do |project|
         row << [project.unit.code, project.student.username, project.grade, project.grade_rationale]
       end

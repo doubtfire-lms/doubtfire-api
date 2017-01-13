@@ -390,7 +390,7 @@ class User < ActiveRecord::Base
   end
 
   def self.csv_columns
-    %w(username first_name last_name email nickname role)
+    %w(username first_name last_name email student_id nickname role)
   end
 
   def self.import_from_csv(current_user, file)
