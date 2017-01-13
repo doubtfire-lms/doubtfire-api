@@ -109,6 +109,7 @@ module Api
         attrs = jwt['https://aaf.edu.au/attributes']
         login_id = jwt[:sub]
         email = attrs[:mail]
+        role = attrs[:edupersonscopedaffiliation]
         username = email.split('@').first
 
         # Lookup using login_id if it exists
@@ -124,7 +125,7 @@ module Api
                  new_user.email      = email
                  new_user.username   = username
                  new_user.nickname   = new_user.first_name
-                 new_user.role_id    = Role.student.id
+                 new_user.role_id    = Role.aaf_affiliation_to_role_id(role)
                end
 
         # Set login id + username if not yet specified
