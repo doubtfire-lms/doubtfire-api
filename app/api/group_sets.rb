@@ -294,16 +294,16 @@ module Api
 
     desc 'Remove a group member'
     params do
-      requires :unit_id,                            type: Integer,  desc: 'The unit for the new group'
-      requires :group_set_id,                       type: Integer,  desc: 'The id of the group set'
-      requires :group_id,                           type: Integer,  desc: 'The id of the group'
-      requires :id,                                 type: Integer,  desc: 'The project id of the member'
+      requires :unit_id,      type: Integer,  desc: 'The unit for the new group'
+      requires :group_set_id, type: Integer,  desc: 'The id of the group set'
+      requires :group_id,     type: Integer,  desc: 'The id of the group'
+      requires :project_id,   type: Integer,  desc: 'The project id of the member'
     end
     delete '/units/:unit_id/group_sets/:group_set_id/groups/:group_id/members/:id' do
       unit = Unit.find(params[:unit_id])
       gs = unit.group_sets.find(params[:group_set_id])
       grp = gs.groups.find(params[:group_id])
-      prj = grp.projects.find(params[:id])
+      prj = grp.projects.find(params[:project_id])
 
       unless authorise? current_user, grp, :manage_group, ->(role, perm_hash, other) { grp.specific_permission_hash(role, perm_hash, other) }
         error!({ error: 'Not authorised to manage this group' }, 403)
