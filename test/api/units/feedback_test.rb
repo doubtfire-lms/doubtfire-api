@@ -14,7 +14,7 @@ class FeedbackTest < ActiveSupport::TestCase
     unit = random_unitrole.unit
     user = random_unitrole.user
 
-    expected_response = unit.tasks_awaiting_feedback
+    expected_response = unit.tasks_awaiting_feedback(User.first)
 
     get with_auth_token "/api/units/#{unit.id}/feedback", user
 
