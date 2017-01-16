@@ -11,10 +11,10 @@ class FeedbackTest < ActiveSupport::TestCase
 
   def test_get_awaiting_feedback
     random_unitrole = UnitRole.tutors.sample
-    unit = random_unitrole.unit
-    user = random_unitrole.user
+    user = User.first
+    unit = Unit.first
 
-    expected_response = unit.tasks_awaiting_feedback(User.first)
+    expected_response = unit.tasks_awaiting_feedback(user)
 
     get with_auth_token "/api/units/#{unit.id}/feedback", user
 
