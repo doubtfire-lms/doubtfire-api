@@ -163,13 +163,14 @@ module Api
                                                    :name
                                                  )
 
+      # Group with the same name
+      unless group_set.groups.where(name: group_params[:name]).empty?
+        error!({ error: "This group name is not unique to the #{group_set.name} group set." }, 403)
+      end
+
       num = group_set.groups.count + 1
       if group_params[:name].nil? || group_params[:name].empty?
         group_params[:name] = "Group #{num}"
-        while group_set.groups.where(name: group_params[:name]).count > 0
-          num += 1
-          group_params[:name] = "Group #{num}"
-        end
       end
       grp = Group.create(name: group_params[:name], group_set: group_set, tutorial: tutorial, number: num)
       grp.save!
