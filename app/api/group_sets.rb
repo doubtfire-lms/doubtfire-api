@@ -163,15 +163,14 @@ module Api
                                                    :name
                                                  )
 
+      num = group_set.groups.count + 1
       if group_params[:name].nil? || group_params[:name].empty?
-        id = group_set.groups.count
-        group_params[:name] = "Group #{id}"
+        group_params[:name] = "Group #{num}"
         while group_set.groups.where(name: group_params[:name]).count > 0
-          id += 1
-          group_params[:name] = "Group #{id}"
+          num += 1
+          group_params[:name] = "Group #{num}"
         end
       end
-      num = group_set.groups.last.number + 1
       grp = Group.create(name: group_params[:name], group_set: group_set, tutorial: tutorial, number: num)
       grp.save!
       grp
