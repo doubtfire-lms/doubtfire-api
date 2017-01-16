@@ -171,7 +171,8 @@ module Api
           group_params[:name] = "Group #{id}"
         end
       end
-      grp = Group.create(name: group_params[:name], group_set: group_set, tutorial: tutorial)
+      num = group_set.groups.last.number + 1
+      grp = Group.create(name: group_params[:name], group_set: group_set, tutorial: tutorial, number: num)
       grp.save!
       grp
     end

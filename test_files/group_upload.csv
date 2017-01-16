@@ -1,10 +1,10 @@
-group_name, username, tutorial,,,
-Group 1, student_1, LA1-01,,,
-Group 1, student_2, LA1-01
-Group 2, student_3, LA1-01
-Group 2, student_4, LA1-01
+group_name,group_number,username, tutorial
+Group 1,1, student_1, LA1-01
+Group 1,2, student_2, LA1-01
+Group 2,3, student_3, LA1-01
+Group 2,4, student_4, LA1-01
 ,student_5,LA1-02
-Group 3, student_1, LA1-01
-Group 3, student_1, LA1-99
+Group 3,5, student_1, LA1-01
+Group 3,6, student_1, LA1-99
 Rubish Row,,
-,,,,,
+,,
