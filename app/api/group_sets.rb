@@ -168,7 +168,7 @@ module Api
         error!({ error: "This group name is not unique to the #{group_set.name} group set." }, 403)
       end
 
-      num = group_set.groups.count + 1
+      num = group_set.groups.last.number + 1
       if group_params[:name].nil? || group_params[:name].empty?
         group_params[:name] = "Group #{num}"
       end
