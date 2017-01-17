@@ -298,7 +298,7 @@ module Api
         error!({ error: "tudents from the tutorial '#{grp.tutorial.abbreviation}' can only be added to this group." }, 403)
       end
 
-      if grp.group_memberships.find_by(project: prj)
+      if grp.group_memberships.find_by(project: prj, active: true)
         error!({ error: "#{prj.student.name} is already a member of this group" }, 403)
       end
 
