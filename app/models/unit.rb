@@ -1213,10 +1213,10 @@ class Unit < ActiveRecord::Base
   #
   # Return all tasks from the database for this unit and given user
   #
-  def get_all_tasks_for(user)
+  def get_all_tasks_for(staff_member, student = nil)
     student_tasks
       .joins(:task_status, :comments)
-      .joins("LEFT JOIN comments_read_receipts crr ON crr.task_comment_id = task_comments.id AND crr.user_id = #{user.id}")
+      .joins("LEFT JOIN comments_read_receipts crr ON crr.task_comment_id = task_comments.id AND crr.user_id = #{staff_member.id}")
       .select(
         'SUM(case when crr.user_id is null then 1 else 0 end) as number_unread', 'project_id', 'tasks.id as id',
         'task_definition_id', 'projects.tutorial_id as tutorial_id', 'task_statuses.name as status_name',
@@ -1226,6 +1226,8 @@ class Unit < ActiveRecord::Base
         'task_statuses.id', 'tasks.project_id', 'tutorial_id', 'tasks.id', 'task_definition_id', 'status_name',
         'completion_date', 'times_assessed', 'submission_date', 'portfolio_evidence', 'grade', 'quality_pts'
       )
+
+      student.nil? ? student_tasks : student_tasks.where(user: student)
   end
 
   #
