@@ -2,28 +2,6 @@ class ShallowTaskSerializer < ActiveModel::Serializer
   attributes :id, :status, :task_definition_id, :include_in_portfolio, :pct_similar, :similar_to_count, :times_assessed, :grade, :quality_pts, :similar_to_dismissed_count
 end
 
-class TaskFeedbackSerializer < ActiveModel::Serializer
-  attributes :project_id,
-             :id,
-             :task_definition_id,
-             :tutorial_id,
-             :status,
-             :completion_date,
-             :submission_date,
-             :times_assessed,
-             :grade,
-             :quality_pts,
-             :num_new_comments
-
-  def status
-    TaskStatus.status_key_for_name(object.status_name)
-  end
-
-  def num_new_comments
-    object.number_of_comments_unread_for(Thread.current[:user])
-  end
-end
-
 class TaskUpdateSerializer < ActiveModel::Serializer
   attributes :id, :status, :project_id, :new_stats, :include_in_portfolio, :other_projects, :times_assessed, :grade, :quality_pts
 
