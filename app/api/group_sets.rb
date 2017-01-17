@@ -319,6 +319,10 @@ module Api
         error!({ error: 'Not authorised to manage this student' }, 403)
       end
 
+      if grp.group_memberships.find_by(project: prj).nil?
+        error!({ error: "#{prj.student.name} is not a member of this group" }, 403)
+      end
+
       grp.remove_member(prj)
       nil
     end
