@@ -1213,12 +1213,13 @@ class Unit < ActiveRecord::Base
   #
   # Return all tasks from the database for this unit and given user
   #
-  def get_all_tasks_for(staff_member, student = nil)
+  def get_all_tasks_for(user)
     student_tasks
-      .joins(:task_status, :comments)
-      .joins("LEFT JOIN comments_read_receipts crr ON crr.task_comment_id = task_comments.id AND crr.user_id = #{staff_member.id}")
+      .joins(:task_status)
+      .joins("LEFT JOIN task_comments ON task_comments.task_id = tasks.id")
+      .joins("LEFT JOIN comments_read_receipts crr ON crr.task_comment_id = task_comments.id AND crr.user_id = #{user.id}")
       .select(
-        'SUM(case when crr.user_id is null then 1 else 0 end) as number_unread', 'project_id', 'tasks.id as id',
+        'SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) as number_unread', 'project_id', 'tasks.id as id',
         'task_definition_id', 'projects.tutorial_id as tutorial_id', 'task_statuses.name as status_name',
         'completion_date', 'times_assessed', 'submission_date', 'portfolio_evidence', 'tasks.grade as grade', 'quality_pts'
       )
@@ -1226,8 +1227,6 @@ class Unit < ActiveRecord::Base
         'task_statuses.id', 'tasks.project_id', 'tutorial_id', 'tasks.id', 'task_definition_id', 'status_name',
         'completion_date', 'times_assessed', 'submission_date', 'portfolio_evidence', 'grade', 'quality_pts'
       )
-
-      student.nil? ? student_tasks : student_tasks.where(user: student)
   end
 
   #
@@ -1254,7 +1253,7 @@ class Unit < ActiveRecord::Base
   def tasks_for_task_inbox(user)
     get_all_tasks_for(user)
       .where('(task_definitions.due_date IS NULL OR task_definitions.due_date > tasks.submission_date)')
-      .having('task_statuses.id IN (:ids) OR SUM(case when crr.user_id is null then 1 else 0 end) > 0', ids: [ TaskStatus.ready_to_mark, TaskStatus.need_help, TaskStatus.discuss, TaskStatus.demonstrate ])
+      .having('task_statuses.id IN (:ids) OR SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) > 0', ids: [ TaskStatus.ready_to_mark, TaskStatus.need_help, TaskStatus.discuss, TaskStatus.demonstrate ])
       .order('MAX(task_comments.created_at) ASC, submission_date ASC')
   end
 
