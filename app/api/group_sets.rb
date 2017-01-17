@@ -289,6 +289,10 @@ module Api
         error!({ error: 'Not authorised to manage this student' }, 403)
       end
 
+      if grp.group_memberships.find_by(project: prj)
+        error!({ error: "#{prj.student.name} is already a member of this group" }, 403)
+      end
+
       gm = grp.add_member(prj)
       Thread.current[:user] = current_user
       GroupMemberProjectSerializer.new(prj)
