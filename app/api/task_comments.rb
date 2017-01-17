@@ -44,7 +44,7 @@ module Api
       if project.has_task_for_task_definition? task_definition
         task = project.task_for_task_definition(task_definition)
 
-        comments = task.all_comments(current_user).order('created_at ASC')
+        comments = task.all_comments.order('created_at ASC')
         result = comments.map do |c|
           {
             id: c.id,
