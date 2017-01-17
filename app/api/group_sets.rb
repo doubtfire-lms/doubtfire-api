@@ -235,9 +235,9 @@ module Api
 
     desc 'Delete a group'
     params do
-      requires :unit_id,                            type: Integer,  desc: 'The unit for the new group'
-      requires :group_set_id,                       type: Integer,  desc: 'The id of the group set'
-      requires :group_id,                           type: Integer,  desc: 'The id of the group'
+      requires :unit_id,      type: Integer,  desc: 'The unit for the new group'
+      requires :group_set_id, type: Integer,  desc: 'The id of the group set'
+      requires :group_id,     type: Integer,  desc: 'The id of the group'
     end
     delete '/units/:unit_id/group_sets/:group_set_id/groups/:group_id' do
       unit = Unit.find(params[:unit_id])
@@ -292,6 +292,10 @@ module Api
 
       unless authorise? current_user, prj, :get
         error!({ error: 'Not authorised to manage this student' }, 403)
+      end
+
+      if gs.keep_groups_in_same_class && prj.tutorial != grp.tutorial
+        error!({ error: "tudents from the tutorial '#{grp.tutorial.abbreviation}' can only be added to this group." }, 403)
       end
 
       if grp.group_memberships.find_by(project: prj)
