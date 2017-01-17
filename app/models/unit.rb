@@ -1205,7 +1205,7 @@ class Unit < ActiveRecord::Base
         times_assessed: t.times_assessed,
         grade: t.grade,
         quality_pts: t.quality_pts,
-        num_of_comments_unread: t.number_unread
+        num_new_comments: t.number_unread
       }
     end
   end
