@@ -36,14 +36,8 @@ class TaskComment < ActiveRecord::Base
     end
   end
 
-  def mark_as_unread(user, unit)
-    if user == task.project.main_tutor
-      unit.staff.each do |staff_member|
-        remove_comment_read_entry(staff_member.user)
-      end
-    else
-      remove_comment_read_entry(user)
-    end
+  def mark_as_unread(user)
+    remove_comment_read_entry(user)
   end
 
   def time_read_by(user)

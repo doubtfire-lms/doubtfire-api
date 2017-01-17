@@ -100,7 +100,7 @@ module Api
       task = project.task_for_task_definition(task_definition)
 
       task_comment = task.comments.find(params[:id])
-      task_comment.mark_as_unread(current_user, project.unit)
+      task_comment.mark_as_unread(current_user)
     end
   end
 end
