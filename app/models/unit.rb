@@ -1199,7 +1199,7 @@ class Unit < ActiveRecord::Base
         project_id: t.project_id,
         task_definition_id: t.task_definition_id,
         tutorial_id: t.tutorial_id,
-        status: t.status_name,
+        status: TaskStatus.status_key_for_name(t.status_name),
         completion_date: t.completion_date,
         submission_date: t.submission_date,
         times_assessed: t.times_assessed,
