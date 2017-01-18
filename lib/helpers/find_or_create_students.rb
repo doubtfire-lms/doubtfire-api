@@ -5,26 +5,17 @@ def find_or_create_student(username)
   user_created = nil
   using_cache = !!@user_cache
   if !using_cache || !@user_cache.key?(username)
-    if AuthenticationHelpers.aaf_auth?
-      profile = {
+    profile = {
         first_name:             Faker::Name.first_name,
         last_name:              Faker::Name.last_name,
         nickname:               username,
         role_id:                Role.student_id,
         email:                  "#{username}@doubtfire.com",
-        username:               username,
-      }
-    else
-      profile = {
-        first_name:             Faker::Name.first_name,
-        last_name:              Faker::Name.last_name,
-        nickname:               username,
-        role_id:                Role.student_id,
-        email:                  "#{username}@doubtfire.com",
-        username:               username,
-        password:               'password',
-        password_confirmation:  'password'
-      }
+        username:               username
+    }
+    if !AuthenticationHelpers.aaf_auth?
+      profile[:password] = 'password'
+      profile[:password_confirmation] = 'password'
     end
     user_created = User.create!(profile)
     @user_cache[username] = user_created if using_cache
