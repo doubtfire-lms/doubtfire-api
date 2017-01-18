@@ -295,7 +295,7 @@ module Api
       end
 
       if gs.keep_groups_in_same_class && prj.tutorial != grp.tutorial
-        error!({ error: "tudents from the tutorial '#{grp.tutorial.abbreviation}' can only be added to this group." }, 403)
+        error!({ error: "Students from the tutorial '#{grp.tutorial.abbreviation}' can only be added to this group." }, 403)
       end
 
       if grp.group_memberships.find_by(project: prj, active: true)
