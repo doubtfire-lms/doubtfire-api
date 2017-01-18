@@ -157,6 +157,7 @@ namespace :db do
     extended = ENV['EXTENDED'] == 'true'
 
     dbpop = DatabasePopulator.new scale
+    dbpop.generate_fixed_data
     dbpop.generate_users
     dbpop.generate_units
 
