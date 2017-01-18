@@ -1205,6 +1205,22 @@ class Unit < ActiveRecord::Base
   end
 
   #
+  # Return the tasks that should be listed under a tutor's task inbox.
+  #
+  # Thses tasks are:
+  #   - those that have the ready for feedback (rtm) state, or
+  #   - where new student comments are > 0
+  #
+  # They are sorted by a task's "action_date". This defines the last
+  # time a task has been "actioned", either the submission date or latest
+  # student comment -- whichever is newer.
+  #
+  def tasks_for_task_inbox
+    # TODO: JAKE write query -- stub using tasks_awaiting_feedback
+    tasks_awaiting_feedback
+  end
+
+  #
   # Return stats on the number of students in each status for each task / tutorial
   #
   # Returns a map:
