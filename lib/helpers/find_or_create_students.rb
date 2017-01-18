@@ -3,7 +3,7 @@
 #
 def find_or_create_student(username)
   user_created = nil
-  using_cache = !!@user_cache
+  using_cache = !@user_cache.nil?
   if !using_cache || !@user_cache.key?(username)
     profile = {
         first_name:             Faker::Name.first_name,
