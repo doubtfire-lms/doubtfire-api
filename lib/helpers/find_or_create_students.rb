@@ -13,7 +13,7 @@ def find_or_create_student(username)
       email:                  "#{username}@doubtfire.com",
       username:               username
     }
-    if !AuthenticationHelpers.aaf_auth?
+    unless AuthenticationHelpers.aaf_auth?
       profile[:password] = 'password'
       profile[:password_confirmation] = 'password'
     end
