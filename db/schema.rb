@@ -387,6 +387,7 @@ ActiveRecord::Schema.define(version: 20170116035300) do
     t.boolean  "opt_in_to_research"
     t.boolean  "has_run_first_time_setup",                    default: false
     t.string   "login_id"
+    t.string   "student_id"
   end
 
   add_index "users", ["authentication_token"], name: "index_users_on_authentication_token", unique: true, using: :btree

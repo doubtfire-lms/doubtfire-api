@@ -52,6 +52,7 @@ module Api
         optional :first_name, type: String, desc: 'New first name for user'
         optional :last_name, type: String, desc: 'New last name for user'
         optional :email, type: String, desc: 'New email address for user'
+        optional :student_id, type: String, desc: 'New student_id for user'
         optional :nickname, type: String, desc: 'New nickname for user'
         optional :system_role, type: String, desc: 'New role for user [Admin, Convenor, Tutor, Student]'
         optional :receive_task_notifications, type: Boolean, desc: 'Allow user to be sent task notifications'
@@ -76,6 +77,7 @@ module Api
                                                         :first_name,
                                                         :last_name,
                                                         :email,
+                                                        :student_id,
                                                         :nickname,
                                                         :receive_task_notifications,
                                                         :receive_portfolio_notifications,
@@ -132,6 +134,7 @@ module Api
         requires :first_name, type: String, desc: 'New first name for user'
         requires :last_name, type: String, desc: 'New last name for user'
         requires :email, type: String, desc: 'New email address for user'
+        optional :student_id, type: String, desc: 'New student_id for user'
         requires :username, type: String,   desc: 'New username for user'
         requires :nickname, type: String,   desc: 'New nickname for user'
         requires :system_role, type: String, desc: 'New system role for user [Admin, Convenor, Tutor, Student]'
@@ -151,6 +154,7 @@ module Api
                                                     .permit(
                                                       :first_name,
                                                       :last_name,
+                                                      :student_id,
                                                       :email,
                                                       :username,
                                                       :nickname,
