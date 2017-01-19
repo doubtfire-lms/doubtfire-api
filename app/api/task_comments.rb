@@ -59,7 +59,7 @@ module Api
               name: c.recipient.name
             },
             created_at: c.created_at,
-            time_read: c.time_read_by(current_user)
+            recipient_read_time: c.time_read_by(c.recipient),
           }
         end
         task.mark_comments_as_read(current_user, comments)
