@@ -91,10 +91,14 @@ class DatabasePopulator
       profile[:username]  ||= username
       profile[:login_id]  ||= username
 
-      user = User.create!(profile.merge({
-        password: 'password',
-        password_confirmation: 'password'
-      }))
+      if AuthenticationHelpers.aaf_auth?
+        user = User.create!(profile)
+      else
+        user = User.create!(profile.merge({
+          password: 'password',
+          password_confirmation: 'password'
+        }))
+      end
 
       @user_cache[user_key] = user
     end
