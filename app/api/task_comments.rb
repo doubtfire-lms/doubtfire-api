@@ -49,7 +49,7 @@ module Api
           {
             id: c.id,
             comment: c.comment,
-            comment_by: c.user_id,
+            comment_by: c.user.name,
             is_new: c.new_for?(current_user),
             recipient: c.recipient.name,
             created_at: c.created_at,
