@@ -49,9 +49,15 @@ module Api
           {
             id: c.id,
             comment: c.comment,
-            comment_by: c.user.name,
             is_new: c.new_for?(current_user),
-            recipient: c.recipient.name,
+            author: {
+              id: c.user.id,
+              name: c.user.name,
+            },
+            recipient: {
+              id: c.recipient.id,
+              name: c.recipient.name
+            },
             created_at: c.created_at,
             time_read: c.time_read_by(current_user)
           }
