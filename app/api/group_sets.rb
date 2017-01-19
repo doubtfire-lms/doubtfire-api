@@ -163,15 +163,17 @@ module Api
                                                    :name
                                                  )
 
-      if group_params[:name].nil? || group_params[:name].empty?
-        id = group_set.groups.count
-        group_params[:name] = "Group #{id}"
-        while group_set.groups.where(name: group_params[:name]).count > 0
-          id += 1
-          group_params[:name] = "Group #{id}"
-        end
+      # Group with the same name
+      unless group_set.groups.where(name: group_params[:name]).empty?
+        error!({ error: "This group name is not unique to the #{group_set.name} group set." }, 403)
       end
-      grp = Group.create(name: group_params[:name], group_set: group_set, tutorial: tutorial)
+
+      last = group_set.groups.last
+      num = last.nil? ? 1 : last.number + 1
+      if group_params[:name].nil? || group_params[:name].empty?
+        group_params[:name] = "Group #{num}"
+      end
+      grp = Group.create(name: group_params[:name], group_set: group_set, tutorial: tutorial, number: num)
       grp.save!
       grp
     end
@@ -215,6 +217,11 @@ module Api
         error!({ error: 'Not authorised to update this group' }, 403)
       end
 
+      # Switching tutorials will violate any existing group members
+      if !grp.group_memberships.empty? && params[:tutorial_id] != grp.tutorial.id && gs.keep_groups_in_same_class
+        error!({ error: 'Cannot modify group tutorial as members already exist and they must be in the same tutorial. Clear all members first.' }, 403)
+      end
+
       group_params = ActionController::Parameters.new(params)
                                                  .require(:group)
                                                  .permit(
@@ -228,9 +235,9 @@ module Api
 
     desc 'Delete a group'
     params do
-      requires :unit_id,                            type: Integer,  desc: 'The unit for the new group'
-      requires :group_set_id,                       type: Integer,  desc: 'The id of the group set'
-      requires :group_id,                           type: Integer,  desc: 'The id of the group'
+      requires :unit_id,      type: Integer,  desc: 'The unit for the new group'
+      requires :group_set_id, type: Integer,  desc: 'The id of the group set'
+      requires :group_id,     type: Integer,  desc: 'The id of the group'
     end
     delete '/units/:unit_id/group_sets/:group_set_id/groups/:group_id' do
       unit = Unit.find(params[:unit_id])
@@ -287,6 +294,14 @@ module Api
         error!({ error: 'Not authorised to manage this student' }, 403)
       end
 
+      if gs.keep_groups_in_same_class && prj.tutorial != grp.tutorial
+        error!({ error: "Students from the tutorial '#{grp.tutorial.abbreviation}' can only be added to this group." }, 403)
+      end
+
+      if grp.group_memberships.find_by(project: prj, active: true)
+        error!({ error: "#{prj.student.name} is already a member of this group" }, 403)
+      end
+
       gm = grp.add_member(prj)
       Thread.current[:user] = current_user
       GroupMemberProjectSerializer.new(prj)
@@ -311,6 +326,10 @@ module Api
 
       unless authorise? current_user, prj, :get
         error!({ error: 'Not authorised to manage this student' }, 403)
+      end
+
+      if grp.group_memberships.find_by(project: prj).nil?
+        error!({ error: "#{prj.student.name} is not a member of this group" }, 403)
       end
 
       grp.remove_member(prj)

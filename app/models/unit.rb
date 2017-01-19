@@ -616,7 +616,7 @@ class Unit < ActiveRecord::Base
       next if row[0] =~ /^(group_name)|(name)/ # Skip header
 
       begin
-        missing = missing_headers(row, %w(group_name username tutorial))
+        missing = missing_headers(row, %w(group_name group_number username tutorial))
         if missing.count > 0
           errors << { row: row, message: "Missing headers: #{missing.join(', ')}" }
           next
@@ -624,6 +624,7 @@ class Unit < ActiveRecord::Base
 
         username = row['username'].downcase.strip unless row['username'].nil?
         group_name = row['group_name'].strip unless row['group_name'].nil?
+        group_number = row['group_number'].strip unless row['group_number'].nil?
         tutorial = row['tutorial'].strip unless row['tutorial'].nil?
 
         user = User.where(username: username).first
@@ -653,6 +654,7 @@ class Unit < ActiveRecord::Base
 
           change = 'Created new group. '
           grp.tutorial = tutorial
+          grp.number = group_number
           grp.save!
         end
 
@@ -680,7 +682,7 @@ class Unit < ActiveRecord::Base
       row << %w(group_name username tutorial)
       group_set.groups.each do |grp|
         grp.projects.each do |project|
-          row << [grp.name, project.student.username, grp.tutorial.abbreviation]
+          row << [grp.name, grp.number, project.student.username, grp.tutorial.abbreviation]
         end
       end
     end
@@ -1564,7 +1566,7 @@ class Unit < ActiveRecord::Base
     students_with_grades = students.where('grade > 0')
 
     CSV.generate do |row|
-      row << %w(unit_code username grade rationale)
+      row << %w(unit_code username student_id grade rationale)
       students_with_grades.each do |project|
         row << [project.unit.code, project.student.username, project.grade, project.grade_rationale]
       end

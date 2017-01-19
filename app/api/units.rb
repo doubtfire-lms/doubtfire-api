@@ -180,6 +180,17 @@ module Api
       unit.tasks_as_hash(tasks)
     end
 
+    desc 'Download the tasks that should be listed under the task inbox'
+    get '/units/:id/tasks/inbox' do
+      unit = Unit.find(params[:id])
+
+      unless authorise? current_user, unit, :provide_feedback
+        error!({ error: 'Not authorised to provide feedback for this unit' }, 403)
+      end
+
+      ActiveModel::ArraySerializer.new(unit.tasks_for_task_inbox, each_serializer: TaskFeedbackSerializer)
+    end
+
     desc 'Download the grades for a unit'
     get '/units/:id/grades' do
       unit = Unit.find(params[:id])

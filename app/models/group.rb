@@ -12,9 +12,12 @@ class Group < ActiveRecord::Base
   has_one :tutor, through: :tutorial
 
   validates :name, presence: true, allow_nil: false
+  validates :number, presence: true, allow_nil: false
   validates :group_set, presence: true, allow_nil: false
   validates :tutorial, presence: true, allow_nil: false
   validates_associated :group_memberships
+  validates :number, uniqueness: { scope: :group_set,
+                                 message: 'must be unique within the set of groups' }
   validates :name, uniqueness: { scope: :group_set,
                                  message: 'must be unique within the set of groups' }
   validate :must_be_in_same_tutorial, if: :limit_members_to_tutorial?
