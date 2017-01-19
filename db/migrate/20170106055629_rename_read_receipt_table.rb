@@ -1,6 +1,5 @@
 class RenameReadReceiptTable < ActiveRecord::Migration
   def change
-    drop_table :task_comments_read
     # unique rows
     create_table :comments_read_receipts, id: false do |t|
       t.references :task_comment, index: true, foreign_key: true, null: false

@@ -72,6 +72,7 @@ ActiveRecord::Schema.define(version: 20170117233120) do
     t.string   "name",         limit: 255
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.integer  "number",                   null: false
   end
 
   create_table "helpdesk_schedules", force: :cascade do |t|
@@ -216,10 +217,11 @@ ActiveRecord::Schema.define(version: 20170117233120) do
   end
 
   create_table "task_comments", force: :cascade do |t|
-    t.integer  "task_id",                   null: false
-    t.integer  "user_id",                   null: false
+    t.integer  "task_id",                                  null: false
+    t.integer  "user_id",                                  null: false
     t.string   "comment",      limit: 4096
-    t.datetime "created_at",                null: false
+    t.datetime "created_at",                               null: false
+    t.boolean  "is_new",                    default: true
     t.integer  "recipient_id"
   end
 
@@ -398,6 +400,7 @@ ActiveRecord::Schema.define(version: 20170117233120) do
     t.boolean  "opt_in_to_research"
     t.boolean  "has_run_first_time_setup",                    default: false
     t.string   "login_id"
+    t.string   "student_id"
   end
 
   add_index "users", ["authentication_token"], name: "index_users_on_authentication_token", unique: true, using: :btree
