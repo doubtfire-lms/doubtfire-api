@@ -1,5 +1,19 @@
 class ShallowTaskSerializer < ActiveModel::Serializer
-  attributes :id, :status, :task_definition_id, :include_in_portfolio, :pct_similar, :similar_to_count, :times_assessed, :grade, :quality_pts, :similar_to_dismissed_count
+  attributes :id,
+             :status,
+             :task_definition_id,
+             :include_in_portfolio,
+             :pct_similar,
+             :similar_to_count,
+             :times_assessed,
+             :grade,
+             :quality_pts,
+             :similar_to_dismissed_count,
+             :num_new_comments
+
+  def num_new_comments
+    object.new_comments_for_user(Thread.current[:user])
+  end
 end
 
 class TaskFeedbackSerializer < ActiveModel::Serializer

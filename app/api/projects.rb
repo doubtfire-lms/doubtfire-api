@@ -48,6 +48,9 @@ module Api
       else
         error!({ error: "Couldn't find Project with id=#{params[:id]}" }, 403)
       end
+
+      Thread.current[:user] = current_user
+      project
     end
 
     desc 'Update a project'

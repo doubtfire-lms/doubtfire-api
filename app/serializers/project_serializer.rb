@@ -13,7 +13,22 @@ class ShallowProjectSerializer < ActiveModel::Serializer
 end
 
 class ProjectSerializer < ActiveModel::Serializer
-  attributes :unit_id, :project_id, :student_id, :started, :stats, :student_name, :tutor_name, :tutorial_id, :burndown_chart_data, :enrolled, :target_grade, :portfolio_files, :compile_portfolio, :portfolio_available, :grade, :grade_rationale
+  attributes :unit_id,
+             :project_id,
+             :student_id,
+             :started,
+             :stats,
+             :student_name,
+             :tutor_name,
+             :tutorial_id,
+             :burndown_chart_data,
+             :enrolled,
+             :target_grade,
+             :portfolio_files,
+             :compile_portfolio,
+             :portfolio_available,
+             :grade,
+             :grade_rationale
 
   def project_id
     object.id
