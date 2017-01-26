@@ -1194,14 +1194,49 @@ class Unit < ActiveRecord::Base
     end
   end
 
+  def tasks_as_hash(data)
+    data.map do |t|
+      {
+        id: t.id,
+        project_id: t.project_id,
+        task_definition_id: t.task_definition_id,
+        tutorial_id: t.tutorial_id,
+        status: TaskStatus.status_key_for_name(t.status_name),
+        completion_date: t.completion_date,
+        submission_date: t.submission_date,
+        times_assessed: t.times_assessed,
+        grade: t.grade,
+        quality_pts: t.quality_pts,
+        num_new_comments: t.number_unread
+      }
+    end
+  end
+
+  #
+  # Return all tasks from the database for this unit and given user
+  #
+  def get_all_tasks_for(user)
+    student_tasks
+      .joins(:task_status)
+      .joins("LEFT JOIN task_comments ON task_comments.task_id = tasks.id")
+      .joins("LEFT JOIN comments_read_receipts crr ON crr.task_comment_id = task_comments.id AND crr.user_id = #{user.id}")
+      .select(
+        'SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) as number_unread', 'project_id', 'tasks.id as id',
+        'task_definition_id', 'projects.tutorial_id as tutorial_id', 'task_statuses.name as status_name',
+        'completion_date', 'times_assessed', 'submission_date', 'portfolio_evidence', 'tasks.grade as grade', 'quality_pts'
+      )
+      .group(
+        'task_statuses.id', 'tasks.project_id', 'tutorial_id', 'tasks.id', 'task_definition_id', 'status_name',
+        'completion_date', 'times_assessed', 'submission_date', 'portfolio_evidence', 'grade', 'quality_pts'
+      )
+  end
+
   #
   # Return the tasks that are waiting for feedback
   #
-  def tasks_awaiting_feedback
-    student_tasks
-      .joins(:task_status)
-      .select('project_id', 'tasks.id as id', 'task_definition_id', 'projects.tutorial_id as tutorial_id', 'task_statuses.name as status_name', 'completion_date', 'times_assessed', 'submission_date', 'portfolio_evidence', 'tasks.grade as grade', 'quality_pts')
-      .where('task_statuses.id IN (:ids)', ids: [ TaskStatus.ready_to_mark, TaskStatus.need_help, TaskStatus.discuss, TaskStatus.demonstrate ])
+  def tasks_awaiting_feedback(user)
+    get_all_tasks_for(user)
+      .where('task_statuses.id IN (:ids)', ids: [ TaskStatus.discuss, TaskStatus.redo, TaskStatus.demonstrate, TaskStatus.fix_and_resubmit ])
       .where('(task_definitions.due_date IS NULL OR task_definitions.due_date > tasks.submission_date)')
       .order('task_definition_id')
   end
@@ -1217,9 +1252,11 @@ class Unit < ActiveRecord::Base
   # time a task has been "actioned", either the submission date or latest
   # student comment -- whichever is newer.
   #
-  def tasks_for_task_inbox
-    # TODO: JAKE write query -- stub using tasks_awaiting_feedback
-    tasks_awaiting_feedback
+  def tasks_for_task_inbox(user)
+    get_all_tasks_for(user)
+      .where('(task_definitions.due_date IS NULL OR task_definitions.due_date > tasks.submission_date)')
+      .having('task_statuses.id IN (:ids) OR SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) > 0', ids: [ TaskStatus.ready_to_mark, TaskStatus.need_help, TaskStatus.discuss, TaskStatus.demonstrate ])
+      .order('MAX(task_comments.created_at) ASC, submission_date ASC')
   end
 
   #
@@ -1306,7 +1343,7 @@ class Unit < ActiveRecord::Base
   def _calculate_task_completion_stats(data)
     values = data.map { |r| r[:num] }
 
-    if values && values.length > 4
+    if values && values.length > 0
       values.sort!
 
       median_value = if values.length.even?
@@ -1342,6 +1379,8 @@ class Unit < ActiveRecord::Base
   #
   def student_task_completion_stats
     data = _student_task_completion_data_base
+
+    puts data
 
     result = {}
     result[:unit] = _calculate_task_completion_stats(data)
@@ -1461,7 +1500,7 @@ class Unit < ActiveRecord::Base
       if data.nil?
         lower_value = upper_value = median_value = min_value = max_value = 0
       else
-        values = data.map { |e| e.key? ilo.id ? e[ilo.id] : 0 }
+        values = data.map { |e| e.key?(ilo.id) ? e[ilo.id] : 0 }
         values = values.sort
 
         median_value = if values.length.even?
@@ -1493,8 +1532,6 @@ class Unit < ActiveRecord::Base
   #
   def ilo_progress_class_details
     result = {}
-    return result if students.length < 10
-
     data = student_ilo_progress_stats
 
     return {} if data.nil?
@@ -1514,8 +1551,6 @@ class Unit < ActiveRecord::Base
   end
 
   def ilo_progress_class_stats
-    return {} if students.length < 10
-
     temp = student_ilo_progress_stats.values
 
     return {} if temp.nil?

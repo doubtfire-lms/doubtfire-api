@@ -51,10 +51,6 @@ class TaskStatSerializer < ActiveModel::Serializer
     object.task_definition.abbreviation
   end
 
-  def task_abbr
-    object.task_definition.abbreviation
-  end
-
   # def tutorial_id
   #   object.project.tutorial.id unless object.project.tutorial.nil?
   # end

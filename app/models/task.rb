@@ -85,11 +85,11 @@ class Task < ActiveRecord::Base
   after_save :update_project
 
   def for_task_with_quality?
-    task_definition.max_quality_pts > 0
+    task_definition.max_quality_pts.positive?
   end
 
   def must_have_quality_pts
-    if quality_pts.nil? || quality_pts < 0 || quality_pts > task_definition.max_quality_pts
+    if quality_pts.nil? || quality_pts.negative? || quality_pts > task_definition.max_quality_pts
       errors.add(:quality_pts, "must be between 0 and #{task_definition.max_quality_pts}")
     end
   end
@@ -99,6 +99,18 @@ class Task < ActiveRecord::Base
       comments
     else
       TaskComment.joins(:task).where('tasks.group_submission_id = :id', id: group_submission.id)
+    end
+  end
+
+  def mark_comments_as_read(user, comments)
+    comments.each do |comment|
+      comment.mark_as_read(user, unit)
+    end
+  end
+
+  def mark_comments_as_unread(user, comments)
+    comments.each do |comment|
+      comment.mark_as_unread(user)
     end
   end
 
@@ -558,6 +570,7 @@ class Task < ActiveRecord::Base
     comment.task = self
     comment.user = user
     comment.comment = text
+    comment.recipient = user == project.student ? project.main_tutor : project.student
     comment.save!
     comment
   end
