@@ -1343,7 +1343,7 @@ class Unit < ActiveRecord::Base
   def _calculate_task_completion_stats(data)
     values = data.map { |r| r[:num] }
 
-    if values && values.length > 4
+    if values && values.length > 0
       values.sort!
 
       median_value = if values.length.even?
@@ -1379,6 +1379,8 @@ class Unit < ActiveRecord::Base
   #
   def student_task_completion_stats
     data = _student_task_completion_data_base
+
+    puts data
 
     result = {}
     result[:unit] = _calculate_task_completion_stats(data)
@@ -1530,8 +1532,6 @@ class Unit < ActiveRecord::Base
   #
   def ilo_progress_class_details
     result = {}
-    return result if students.length < 5
-
     data = student_ilo_progress_stats
 
     return {} if data.nil?
@@ -1551,8 +1551,6 @@ class Unit < ActiveRecord::Base
   end
 
   def ilo_progress_class_stats
-    return {} if students.length < 10
-
     temp = student_ilo_progress_stats.values
 
     return {} if temp.nil?
