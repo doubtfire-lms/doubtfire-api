@@ -1498,7 +1498,7 @@ class Unit < ActiveRecord::Base
       if data.nil?
         lower_value = upper_value = median_value = min_value = max_value = 0
       else
-        values = data.map { |e| e.key? ilo.id ? e[ilo.id] : 0 }
+        values = data.map { |e| e.key?(ilo.id) ? e[ilo.id] : 0 }
         values = values.sort
 
         median_value = if values.length.even?
@@ -1530,7 +1530,7 @@ class Unit < ActiveRecord::Base
   #
   def ilo_progress_class_details
     result = {}
-    return result if students.length < 10
+    return result if students.length < 5
 
     data = student_ilo_progress_stats
 
