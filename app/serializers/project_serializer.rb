@@ -28,7 +28,8 @@ class ProjectSerializer < ActiveModel::Serializer
              :compile_portfolio,
              :portfolio_available,
              :grade,
-             :grade_rationale
+             :grade_rationale,
+             :tasks
 
   def project_id
     object.id
@@ -54,7 +55,10 @@ class ProjectSerializer < ActiveModel::Serializer
     end
   end
 
-  has_many :tasks, serializer: ShallowTaskSerializer
+  def tasks
+    object.task_details_for_shallow_serializer(Thread.current[:user])
+  end
+
   has_many :groups, serializer: GroupSerializer
   has_many :task_outcome_alignments, serializer: LearningOutcomeTaskLinkSerializer
 

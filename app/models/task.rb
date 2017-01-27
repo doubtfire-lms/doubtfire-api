@@ -215,11 +215,6 @@ class Task < ActiveRecord::Base
     comments.where(user: project.tutorial.tutor).order(:created_at).last
   end
 
-  # Returns the number of new comments for a user
-  def new_comments_for_user(user)
-    comments.where(recipient: user, is_new: true).count
-  end
-
   delegate :due_date, to: :task_definition
 
   delegate :target_date, to: :task_definition
