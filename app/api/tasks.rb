@@ -234,6 +234,7 @@ module Api
         # return the details as json
         {
           has_pdf: task.has_pdf,
+          submission_date: task.submission_date,
           processing_pdf: task.processing_pdf?
         }
       else
