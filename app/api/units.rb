@@ -188,7 +188,8 @@ module Api
         error!({ error: 'Not authorised to provide feedback for this unit' }, 403)
       end
 
-      ActiveModel::ArraySerializer.new(unit.tasks_for_task_inbox, each_serializer: TaskFeedbackSerializer)
+      tasks = unit.tasks_for_task_inbox
+      unit.tasks_as_hash(tasks)
     end
 
     desc 'Download the grades for a unit'

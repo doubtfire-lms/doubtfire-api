@@ -195,6 +195,38 @@ class Project < ActiveRecord::Base
     end
   end
 
+  def task_details_for_shallow_serializer(user)
+    tasks
+      .joins(:task_status)
+      .joins("LEFT JOIN task_comments ON task_comments.task_id = tasks.id")
+      .joins("LEFT JOIN comments_read_receipts crr ON crr.task_comment_id = task_comments.id AND crr.user_id = #{user.id}")
+      .select(
+        'SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) as number_unread', 'project_id', 'tasks.id as id',
+        'task_definition_id', 'task_statuses.name as status_name',
+        'completion_date', 'times_assessed', 'submission_date', 'portfolio_evidence', 'tasks.grade as grade', 'quality_pts', 'include_in_portfolio', 'grade'
+      )
+      .group(
+        'task_statuses.id', 'tasks.project_id', 'tasks.id', 'task_definition_id', 'status_name',
+        'completion_date', 'times_assessed', 'submission_date', 'portfolio_evidence', 'grade', 'quality_pts',
+        'include_in_portfolio', 'grade'
+      )
+      .map do |r|
+        t = Task.find(r.id)
+        {
+          id: r.id,
+          status: TaskStatus.status_key_for_name(r.status_name),
+          task_definition_id: r.task_definition_id,
+          include_in_portfolio: r.include_in_portfolio,
+          pct_similar: t.pct_similar,
+          similar_to_count: t.similar_to_count,
+          times_assessed: r.times_assessed,
+          grade: r.grade,
+          quality_pts: r.quality_pts,
+          num_new_comments: r.number_unread
+        }
+      end
+  end
+
   def assigned_tasks
     tasks.joins(:task_definition).where('task_definitions.target_grade <= :target', target: target_grade)
   end

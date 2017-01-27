@@ -13,7 +13,23 @@ class ShallowProjectSerializer < ActiveModel::Serializer
 end
 
 class ProjectSerializer < ActiveModel::Serializer
-  attributes :unit_id, :project_id, :student_id, :started, :stats, :student_name, :tutor_name, :tutorial_id, :burndown_chart_data, :enrolled, :target_grade, :portfolio_files, :compile_portfolio, :portfolio_available, :grade, :grade_rationale
+  attributes :unit_id,
+             :project_id,
+             :student_id,
+             :started,
+             :stats,
+             :student_name,
+             :tutor_name,
+             :tutorial_id,
+             :burndown_chart_data,
+             :enrolled,
+             :target_grade,
+             :portfolio_files,
+             :compile_portfolio,
+             :portfolio_available,
+             :grade,
+             :grade_rationale,
+             :tasks
 
   def project_id
     object.id
@@ -39,7 +55,10 @@ class ProjectSerializer < ActiveModel::Serializer
     end
   end
 
-  has_many :tasks, serializer: ShallowTaskSerializer
+  def tasks
+    object.task_details_for_shallow_serializer(Thread.current[:user])
+  end
+
   has_many :groups, serializer: GroupSerializer
   has_many :task_outcome_alignments, serializer: LearningOutcomeTaskLinkSerializer
 
