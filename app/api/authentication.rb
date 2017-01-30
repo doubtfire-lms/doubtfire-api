@@ -101,6 +101,16 @@ module Api
         jws = params[:assertion]
         error!({ error: 'JWS was not found in request.' }, 500) unless jws
 
+        # Identity provider must match the one set in the configuration -- this
+        # prevents an identity provider from a different institution from trying
+        # to log into this instance of Doubtfire
+        referer = request.referer
+        error!({ error: 'This URL must be referered by AAF.' }, 500) unless referer
+        request_idp = referer.split('entityID=').last
+        unless request_idp == Doubtfire::Application.config.aaf[:identity_provider_url]
+          error!({ error: 'This request was not verified by the correct identity provider.' }, 500)
+        end
+
         # Decode JWS
         jwt = User.decode_jws(jws)
         error!({ error: 'Invalid JWS.' }, 500) unless jwt

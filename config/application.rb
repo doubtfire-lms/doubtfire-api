@@ -49,12 +49,14 @@ module Doubtfire
       # (e.g., https://rapid.aaf.edu.au/jwt/authnrequest/auresearch/XXXXXXX)
       config.aaf[:redirect_url] = ENV['DF_AAF_UNIQUE_URL']
       # URL of the identity provider (e.g., https://unifoo.edu.au/idp/shibboleth)
-      identity_provider_url = ENV['DF_AAF_IDENTITY_PROVIDER_URL']
-      config.aaf[:redirect_url] += "?entityID=#{identity_provider_url}" if identity_provider_url
+      config.aaf[:identity_provider_url] = ENV['DF_AAF_IDENTITY_PROVIDER_URL']
+      # Redirection URL to use on front-end
+      config.aaf[:redirect_url] += "?entityID=#{config.aaf[:identity_provider_url]}"
       # Check we have all values
       if config.aaf[:audience_url].nil? ||
          config.aaf[:callback_url].nil? ||
-         config.aaf[:redirect_url].nil?
+         config.aaf[:redirect_url].nil? ||
+         config.aaf[:identity_provider_url].nil?
         raise "Invalid values specified to AAF, check the following environment variables: \n"\
               "  key                          => variable set?\n"\
               "  DF_AAF_ISSUER_URL            => #{!ENV['DF_AAF_ISSUER_URL'].nil?}\n"\

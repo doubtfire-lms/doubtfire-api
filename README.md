@@ -52,7 +52,7 @@ If you have chosen to use AAF Rapid Connect authentication, then you will also n
 | `DF_AAF_AUDIENCE_URL`          | The URL of the AAF registered application.                                                                                                                                             | No default - required           |
 | `DF_AAF_CALLBACK_URL`          | The secure endpoint within your application that AAF Rapid Connect should POST responses to. It **must end with `/api/auth/jwt`** to access the Doubtfire JWT authentication endpoint. | No default - required           |
 | `DF_AAF_UNIQUE_URL`            | The unique URL provided by AAF Rapid Connect used for redirection out of Doubtfire.                                                                                                    | No default - required           |
-| `DF_AAF_IDENTITY_PROVIDER_URL` | The URL of the AAF-registered identity provider. This value is **optional**.                                                                                                           | N/A                             |
+| `DF_AAF_IDENTITY_PROVIDER_URL` | The URL of the AAF-registered identity provider.                                                                                                                                       | No default - required           |
 | `DF_SECRET_KEY_AAF`            | The secret used to register your application with AAF.                                                                                                                                 | `secretsecret12345`             |
 
 You may choose to keep your environment variables inside a `.env` file using key-value pairs:
