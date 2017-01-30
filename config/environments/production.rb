@@ -22,8 +22,8 @@ Doubtfire::Application.configure do
   # Eager loading on models
   config.eager_load = true
 
-  # Force all access to the app over SSL, use Strict-Transport-Security, and use secure cookies.
-  config.force_ssl = true
+  # Prevent too many redirects issue if SSL handled elsewhere
+  config.force_ssl = false
 
   # Enable locale fallbacks for I18n (makes lookups for any locale fall back to
   # the I18n.default_locale when a translation can not be found)
