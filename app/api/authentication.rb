@@ -110,6 +110,8 @@ module Api
         login_id = jwt[:sub]
         email = attrs[:mail]
         role = attrs[:edupersonscopedaffiliation]
+        first_name = (attrs[:givenname] || attrs[:cn]).capitalize
+        last_name = attrs[:surname].capitalize
         username = email.split('@').first
 
         # Lookup using login_id if it exists
@@ -120,11 +122,11 @@ module Api
                User.find_or_create_by(login_id: login_id) do |new_user|
                  # Some institutions may provide givenname and surname, others
                  # may only provide common name which we will use as first name
-                 new_user.first_name = attrs[:givenname] || attrs[:cn]
-                 new_user.last_name  = attrs[:surname]
+                 new_user.first_name = first_name
+                 new_user.last_name  = last_name
                  new_user.email      = email
                  new_user.username   = username
-                 new_user.nickname   = new_user.first_name
+                 new_user.nickname   = first_name
                  new_user.role_id    = Role.aaf_affiliation_to_role_id(role)
                end
 
