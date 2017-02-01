@@ -961,9 +961,27 @@ class Task < ActiveRecord::Base
   end
 
   #
+  # Create alignments on submission
+  #
+  def create_alignments_from_submission(current_user, alignments)
+    # Remove existing alignments no longer applicable
+    LearningOutcomeTaskLink.where(task_id: id).delete_all()
+    alignments.each do |alignment|
+      link = LearningOutcomeTaskLink.find_or_create_by(
+        task_definition_id: task_definition.id,
+        learning_outcome_id: alignment.ilo_id,
+        task_id: id
+      )
+      link.rating = alignment.rating
+      link.description = alignment.rationale
+      link.save!
+    end
+  end
+
+  #
   # Moves submission into place
   #
-  def accept_submission(current_user, files, _student, ui, contributions, trigger)
+  def accept_submission(current_user, files, _student, ui, contributions, trigger, alignments)
     #
     # Ensure that each file in files has the following attributes:
     # id, name, filename, type, tempfile
@@ -1000,6 +1018,7 @@ class Task < ActiveRecord::Base
       end
     end
 
+    create_alignments_from_submission(current_user, alignments) unless alignments.nil?
     create_submission_and_trigger_state_change(current_user, propagate = true, contributions = contributions, trigger = trigger)
 
     #

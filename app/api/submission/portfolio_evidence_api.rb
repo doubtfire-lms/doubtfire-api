@@ -16,7 +16,8 @@ module Api
       params do
         requires :file0, type: Rack::Multipart::UploadedFile, desc: 'file 0.'
         optional :file1, type: Rack::Multipart::UploadedFile, desc: 'file 1.'
-        optional :contributions, type: String, desc: "Contribution details stringified json, eg: [ { project_id: 1, pct:'0.44', pts: 4 }, ... ]"
+        optional :contributions, type: JSON, desc: "Contribution details JSON, eg: [ { project_id: 1, pct:'0.44', pts: 4 }, ... ]"
+        optional :alignment_data, type: JSON, desc: "Data for task alignment, eg: [ { ilo_id: 1, rating: 5, rationale: 'Hello' }, ... ]"
         optional :trigger, type: String, desc: 'Can be need_help to indicate upload is not a ready to mark submission'
       end
       post '/projects/:id/task_def_id/:task_definition_id/submission' do
@@ -34,22 +35,19 @@ module Api
           error!({ error: "This task requires a group submission. Ensure you are in a group for the unit's #{task_definition.group_set.name}" }, 403)
         end
 
-        if params[:contributions]
-          params[:contributions] = JSON.parse(params[:contributions])
-        end
-
         trigger = if params[:trigger] && params[:trigger].tr('"\'', '') == 'need_help'
                     'need_help'
                   else
                     'ready_to_mark'
                   end
 
+        alignments = params[:alignment_data]
         upload_reqs = task.upload_requirements
         student = task.project.student
         unit = task.project.unit
 
         # Copy files to be PDFed
-        task.accept_submission(current_user, scoop_files(params, upload_reqs), student, self, params[:contributions], trigger)
+        task.accept_submission(current_user, scoop_files(params, upload_reqs), student, self, params[:contributions], trigger, alignments)
 
         TaskUpdateSerializer.new(task)
       end # post
