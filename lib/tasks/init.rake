@@ -4,6 +4,5 @@ namespace :db do
   task init: [:drop, :setup, :environment] do
     dbpop = DatabasePopulator.new ENV['SCALE']
     dbpop.generate_admin
-    dbpop.generate_users(Role.admin)
   end
 end
