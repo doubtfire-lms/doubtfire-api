@@ -16,16 +16,19 @@ module Doubtfire
   class Application < Rails::Application
     # Load .env variables
     Dotenv::Railtie.load
+
     # ==> Authentication Method
     # Authentication method default is database, but possible settings
     # are: database, ldap, aaf. It can be overridden using the DF_AUTH_METHOD
     # environment variable.
     config.auth_method = (ENV['DF_AUTH_METHOD'] || :database).to_sym
+
     # ==> Student work directory
     # File server location for storing student's work. Defaults to `student_work`
     # directory under root but is overridden using DF_STUDENT_WORK_DIR environment
     # variable.
     config.student_work_dir = ENV['DF_STUDENT_WORK_DIR'] || "#{Rails.root}/student_work"
+
     # ==> Institution settings
     # Institution YAML and ENV (override) config load
     config.institution = YAML.load_file("#{Rails.root}/config/institution.yml").with_indifferent_access
@@ -34,6 +37,8 @@ module Doubtfire
     config.institution[:host] = ENV['DF_INSTITUTION_HOST'] if ENV['DF_INSTITUTION_HOST']
     # Institution host becomes localhost in all but prod
     config.institution[:host] = 'localhost:3000' if Rails.env.development?
+    config.institution[:host_url] = Rails.env.development? ? "http://#{config.institution[:host]}/" : "https://#{config.institution[:host]}/"
+
     # ==> AAF authentication
     # Must require AAF devise authentication method.
     if config.auth_method == :aaf
