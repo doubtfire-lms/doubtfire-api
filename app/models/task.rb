@@ -672,7 +672,7 @@ class Task < ActiveRecord::Base
     task_dir = student_work_dir(:new, false)
     begin
       zip_file = zip_file_path_for_done_task
-      return if zip_file.nil? || (!Dir.exist? task_dir)
+      return false if zip_file.nil? || (!Dir.exist? task_dir)
 
       FileUtils.rm(zip_file) if File.exist? zip_file
 
