@@ -362,6 +362,11 @@ class Unit < ActiveRecord::Base
           project_participant.save
         end
 
+        if (project_participant.student_id.nil? || project_participant.student_id.empty?) && student_id
+          project_participant.student_id = student_id
+          project_participant.save
+        end
+
         #
         # Only import if a valid user - or if save worked
         #
