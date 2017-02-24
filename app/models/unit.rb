@@ -320,7 +320,7 @@ class Unit < ActiveRecord::Base
       # Make sure we're not looking at the header or an empty line
       next if row['unit_code'] =~ /unit_code/
 
-      missing = missing_headers(row, %w(unit_code username first_name last_name email tutorial))
+      missing = missing_headers(row, %w(unit_code username student_id first_name last_name email tutorial))
       if missing.count > 0
         errors << { row: row, message: "Missing headers: #{missing.join(', ')}" }
         next
@@ -329,6 +329,7 @@ class Unit < ActiveRecord::Base
       begin
         unit_code = row['unit_code']
         username = row['username'].downcase
+        student_id = row['student_id']
         first_name = row['first_name'].nil? ? row['first_name'] : row['first_name'].titleize
         last_name = row['last_name'].nil? ? row['last_name'] : row['last_name'].titleize
         email = row['email']
@@ -349,6 +350,7 @@ class Unit < ActiveRecord::Base
         project_participant = User.find_or_create_by(username: username) do |new_user|
           new_user.first_name         = first_name
           new_user.last_name          = last_name
+          new_user.student_id         = student_id
           new_user.nickname           = first_name
           new_user.role_id            = Role.student_id
           new_user.email              = email
@@ -482,9 +484,9 @@ class Unit < ActiveRecord::Base
 
   def export_users_to_csv
     CSV.generate do |row|
-      row << %w(unit_code username first_name last_name email tutorial)
+      row << %w(unit_code username student_id first_name last_name email tutorial)
       students.each do |project|
-        row << [project.unit.code, project.student.username, project.student.first_name, project.student.last_name, project.student.email, project.tutorial_abbr]
+        row << [project.unit.code, project.student.username, project.student.student_id, project.student.first_name, project.student.last_name, project.student.email, project.tutorial_abbr]
       end
     end
   end
