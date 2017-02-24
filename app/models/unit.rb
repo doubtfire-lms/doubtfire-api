@@ -362,15 +362,15 @@ class Unit < ActiveRecord::Base
           project_participant.save
         end
 
-        if (project_participant.student_id.nil? || project_participant.student_id.empty?) && student_id
-          project_participant.student_id = student_id
-          project_participant.save
-        end
-
         #
         # Only import if a valid user - or if save worked
         #
         if project_participant.persisted?
+          if (project_participant.student_id.nil? || project_participant.student_id.empty?) && student_id
+            project_participant.student_id = student_id
+            project_participant.save!
+          end
+
           user_project = projects.where(user_id: project_participant.id).first
 
           tutorial = tutorial_cache[tutorial_code] || tutorial_with_abbr(tutorial_code)
