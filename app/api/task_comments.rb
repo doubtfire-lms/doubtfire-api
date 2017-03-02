@@ -53,10 +53,12 @@ module Api
             author: {
               id: c.user.id,
               name: c.user.name,
+              email: c.user.email
             },
             recipient: {
               id: c.recipient.id,
-              name: c.recipient.name
+              name: c.recipient.name,
+              email: c.user.email
             },
             created_at: c.created_at,
             recipient_read_time: c.time_read_by(c.recipient),
