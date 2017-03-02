@@ -5,6 +5,7 @@ class TaskCommentSerializer < ActiveModel::Serializer
     {
       id: object.user.id,
       name: object.user.name,
+      email: object.user.email
     }
   end
 
@@ -12,6 +13,7 @@ class TaskCommentSerializer < ActiveModel::Serializer
     {
       id: object.recipient.id,
       name: object.recipient.name,
+      email: object.user.email
     }
   end
 end
