@@ -1204,7 +1204,7 @@ class Unit < ActiveRecord::Base
   def tasks_as_hash(data)
     data.map do |t|
       {
-        id: t.id,
+        id: t.task_id,
         project_id: t.project_id,
         task_definition_id: t.task_definition_id,
         tutorial_id: t.tutorial_id,
@@ -1228,12 +1228,12 @@ class Unit < ActiveRecord::Base
       .joins("LEFT JOIN task_comments ON task_comments.task_id = tasks.id")
       .joins("LEFT JOIN comments_read_receipts crr ON crr.task_comment_id = task_comments.id AND crr.user_id = #{user.id}")
       .select(
-        'SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) as number_unread', 'project_id', 'tasks.id as id',
+        'SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) as number_unread', 'project_id', 'tasks.id as task_id',
         'task_definition_id', 'projects.tutorial_id as tutorial_id', 'task_statuses.name as status_name', 'task_statuses.id',
         'completion_date', 'times_assessed', 'submission_date', 'portfolio_evidence', 'tasks.grade as grade', 'quality_pts'
       )
       .group(
-        'task_statuses.id', 'tasks.project_id', 'tutorial_id', 'tasks.id', 'task_definition_id', 'status_name',
+        'task_statuses.id', 'project_id', 'tutorial_id', 'tasks.id', 'task_definition_id', 'status_name',
         'completion_date', 'times_assessed', 'submission_date', 'portfolio_evidence', 'grade', 'quality_pts'
       )
   end
@@ -1244,7 +1244,6 @@ class Unit < ActiveRecord::Base
   def tasks_awaiting_feedback(user)
     get_all_tasks_for(user)
       .where('task_statuses.id IN (:ids)', ids: [ TaskStatus.discuss, TaskStatus.redo, TaskStatus.demonstrate, TaskStatus.fix_and_resubmit ])
-      .where('(task_definitions.due_date IS NULL OR task_definitions.due_date > tasks.submission_date)')
       .order('task_definition_id')
   end
 
@@ -1261,8 +1260,7 @@ class Unit < ActiveRecord::Base
   #
   def tasks_for_task_inbox(user)
     get_all_tasks_for(user)
-      .where('(task_definitions.due_date IS NULL OR task_definitions.due_date > tasks.submission_date)')
-      .having('task_statuses.id IN (:ids) OR SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) > 0', ids: [ TaskStatus.ready_to_mark, TaskStatus.need_help, TaskStatus.discuss, TaskStatus.demonstrate ])
+      .having('task_statuses.id IN (:ids) OR SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) > 0', ids: [ TaskStatus.ready_to_mark, TaskStatus.need_help ])
       .order('MAX(task_comments.created_at) ASC, submission_date ASC')
   end
 
