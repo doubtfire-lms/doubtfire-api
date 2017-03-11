@@ -807,10 +807,28 @@ class Task < ActiveRecord::Base
       else
         result << { path: output_filename, type: file_req['type'] }
 
-        if file_req['type'] == 'code' && magic.file(output_filename).include?('utf-16')
+        if file_req['type'] == 'code'
           # convert utf-16 to utf-8
           # TODO: avoid system call... if we can work out how to get ruby to save as UTF8
-          `iconv -f UTF-16 -t UTF-8 "#{output_filename}" > new`
+          # Encode fails... if the file is read with invalid encoding...
+          
+          # So... read encoding using file
+          encoding = `file --brief --mime-encoding #{output_filename}`.strip
+
+          # Convert to utf8 from read encoding
+          `iconv -c -f #{encoding} -t UTF-8 "#{output_filename}" > new`
+
+          # Read the contents
+          file = File.open("new", "r") 
+          content = file.read.encode().encode("UTF-8", { invalid: :replace, undef: :replace, replace: '?'} )
+          file.close()
+          # Strip BOM
+          content.gsub!("\xEF\xBB\xBF".force_encoding("UTF-8"), '')
+
+          # Write contents
+          File.open("new", 'w') { |file| file.write(content) }
+
+          # Move into place
           FileUtils.mv('new', output_filename)
         end
 
