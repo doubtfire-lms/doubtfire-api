@@ -27,7 +27,7 @@ module Api
       if result.nil?
         error!({ error: 'No comment added. Comment duplicates last comment, so ignored.' }, 403)
       else
-        result.create_comment_read_receipt_entry(current_user)
+        result.mark_as_read(current_user, project.unit)
         result
       end
     end
