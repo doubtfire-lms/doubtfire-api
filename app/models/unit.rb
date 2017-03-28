@@ -65,7 +65,7 @@ class Unit < ActiveRecord::Base
       Role.convenor
     elsif tutors.where('unit_roles.user_id=:id', id: user.id).count == 1
       Role.tutor
-    elsif students.where('projects.user_id=:id', id: user.id).count == 1
+    elsif active_projects.where('projects.user_id=:id', id: user.id).count == 1
       Role.student
     end
   end
@@ -490,7 +490,7 @@ class Unit < ActiveRecord::Base
   def export_users_to_csv
     CSV.generate do |row|
       row << %w(unit_code username student_id first_name last_name email tutorial)
-      students.each do |project|
+      active_projects.each do |project|
         row << [project.unit.code, project.student.username, project.student.student_id, project.student.first_name, project.student.last_name, project.student.email, project.tutorial_abbr]
       end
     end
@@ -1566,7 +1566,7 @@ class Unit < ActiveRecord::Base
   end
 
   def student_grades_csv
-    students_with_grades = students.where('grade > 0')
+    students_with_grades = active_projects.where('grade > 0')
 
     CSV.generate do |row|
       row << %w(unit_code username student_id grade rationale)
