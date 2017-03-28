@@ -4,7 +4,7 @@ source 'https://rubygems.org'
 ruby_versions = {
   development:  '2.3.0',
   test:         '2.3.0',
-  staging:      '2.3.0',
+  staging:      '2.3.1',
   production:   '2.3.0'
 }
 # Get the ruby version for the current enviornment
