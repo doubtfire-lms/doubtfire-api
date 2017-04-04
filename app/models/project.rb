@@ -219,6 +219,7 @@ class Project < ActiveRecord::Base
           include_in_portfolio: r.include_in_portfolio,
           pct_similar: t.pct_similar,
           similar_to_count: t.similar_to_count,
+          similar_to_dismissed_count: t.similar_to_dismissed_count,
           times_assessed: r.times_assessed,
           grade: r.grade,
           quality_pts: r.quality_pts,
