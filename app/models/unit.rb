@@ -1336,6 +1336,14 @@ class Unit < ActiveRecord::Base
   end
 
   #
+  # Returns only active units
+  #
+  def self.active_units
+    Unit.where(active: true)
+  end
+
+
+  #
   # Returns the basic data used in calculating the student task completion stats
   #
   def _student_task_completion_data_base
