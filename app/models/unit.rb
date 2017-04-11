@@ -1201,7 +1201,23 @@ class Unit < ActiveRecord::Base
     end
   end
 
+  #
+  # Returns the task ids provided mapped to the number of unresolved
+  # plagiarism detections
+  #
+  def map_task_ids_to_similarity_count(task_ids)
+    PlagiarismMatchLink.where('task_id IN (?)', task_ids)
+                       .where(dismissed: false)
+                       .group(:task_id)
+                       .count
+  end
+
+
+
   def tasks_as_hash(data)
+    task_ids = data.map(&:task_id).uniq
+    plagiarism_counts = map_task_ids_to_similarity_count(task_ids)
+    puts plagiarism_counts.inspect
     data.map do |t|
       {
         id: t.task_id,
@@ -1214,7 +1230,8 @@ class Unit < ActiveRecord::Base
         times_assessed: t.times_assessed,
         grade: t.grade,
         quality_pts: t.quality_pts,
-        num_new_comments: t.number_unread
+        num_new_comments: t.number_unread,
+        similar_to_count: plagiarism_counts[t.task_id]
       }
     end
   end
