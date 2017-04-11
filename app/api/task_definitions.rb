@@ -287,7 +287,8 @@ module Api
           status: TaskStatus.status_key_for_name(t.status_name),
           completion_date: t.completion_date,
           submission_date: t.submission_date,
-          times_assessed: t.times_assessed
+          times_assessed: t.times_assessed,
+          similar_to_count: t.similar_to_count
         }
       end
     end
