@@ -785,7 +785,7 @@ class Task < ActiveRecord::Base
     nil
   end
 
-  def in_process_files_for_task
+  def in_process_files_for_task(is_retry)
     magic = FileMagic.new(FileMagic::MAGIC_MIME)
     in_process_dir = student_work_dir(:in_process, false)
     return [] unless Dir.exist? in_process_dir
@@ -816,7 +816,11 @@ class Task < ActiveRecord::Base
           encoding = `file --brief --mime-encoding #{output_filename}`.strip
 
           # Convert to utf8 from read encoding
-          `iconv -c -f #{encoding} -t UTF-8 "#{output_filename}" > new`
+          if is_retry
+            `iconv -c -f #{encoding} -t UTF-8 "#{output_filename}" > new`
+          else
+            `iconv -c -f #{encoding} -t ascii "#{output_filename}" > new`
+          end
 
           # Read the contents
           file = File.open("new", "r") 
@@ -845,9 +849,9 @@ class Task < ActiveRecord::Base
     attr_accessor :base_path
     attr_accessor :image_path
 
-    def init(task)
+    def init(task, is_retry)
       @task = task
-      @files = task.in_process_files_for_task
+      @files = task.in_process_files_for_task(is_retry)
       @base_path = task.student_work_dir(:in_process, false)
       @image_path = Rails.root.join('public', 'assets', 'images')
       @institution_name = Doubtfire::Application.config.institution[:name]
@@ -900,26 +904,35 @@ class Task < ActiveRecord::Base
 
     begin
       tac = TaskAppController.new
-      tac.init(self)
+      tac.init(self, false)
 
       begin
         pdf_text = tac.make_pdf
       rescue => e
-        logger.error "Failed to create PDF for task #{log_details}. Error: #{e.message}"
 
-        log_file = e.message.scan(/\/.*\.log/).first
-        # puts "log file is ... #{log_file}"
-        if log_file && File.exist?(log_file)
-          # puts "exists"
-          begin
-            puts "--- Latex Log ---\n"
-            puts File.read(log_file)
-            puts "---    End    ---\n\n"
-          rescue
+        # Try again... with convert to ascii
+        tac2 = TaskAppController.new
+        tac2.init(self, true)
+
+        begin
+          pdf_text = tac2.make_pdf
+        rescue => e2
+          logger.error "Failed to create PDF for task #{log_details}. Error: #{e.message}"
+
+          log_file = e.message.scan(/\/.*\.log/).first
+          # puts "log file is ... #{log_file}"
+          if log_file && File.exist?(log_file)
+            # puts "exists"
+            begin
+              puts "--- Latex Log ---\n"
+              puts File.read(log_file)
+              puts "---    End    ---\n\n"
+            rescue
+            end
           end
-        end
 
-        raise 'Failed to convert your submission to PDF. Check code files submitted for invalid characters, that documents are valid pdfs, and that images are valid.'
+          raise 'Failed to convert your submission to PDF. Check code files submitted for invalid characters, that documents are valid pdfs, and that images are valid.'
+        end
       end
 
       if group_task?
