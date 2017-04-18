@@ -2,8 +2,8 @@ source 'https://rubygems.org'
 
 # Ruby versions for various enviornments
 ruby_versions = {
-  development:  '2.3.0',
-  test:         '2.3.0',
+  development:  '2.3.1',
+  test:         '2.3.1',
   staging:      '2.3.1',
   production:   '2.3.1'
 }
