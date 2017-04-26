@@ -493,20 +493,20 @@ class Task < ActiveRecord::Base
       # has definitely started
       project.start
 
-      # If the task was given an assessment outcome
-      if assessed?
-        # Grab the submission for the task if the user made one
-        submission = TaskSubmission.where(task_id: id).order(:submission_time).reverse_order.first
-        # Prepare the attributes of the submission
-        submission_attributes = { task: self, assessment_time: assess_date, assessor: assessor, outcome: task_status.name }
+      TaskEngagement.create!(task: self, engagement_time: Time.zone.now, engagement: task_status.name)
 
-        # Create or update the submission depending on whether one was made
-        if submission.nil?
-          TaskSubmission.create! submission_attributes
-        else
-          submission.update_attributes submission_attributes
-          submission.save
-        end
+      # Grab the submission for the task if the user made one
+      submission = TaskSubmission.where(task_id: id).order(:submission_time).reverse_order.first
+      # Prepare the attributes of the submission
+      submission_attributes = { task: self, assessment_time: assess_date, assessor: assessor, outcome: task_status.name }
+
+      # Create or update the submission depending on whether one was made
+      if submission.nil?
+        submission_attributes[:submission_time] = assess_date
+        submission = TaskSubmission.create! submission_attributes
+      else
+        submission.update_attributes submission_attributes
+        submission.save
       end
     end
   end
@@ -525,12 +525,14 @@ class Task < ActiveRecord::Base
 
     if save!
       project.start
+      TaskEngagement.create!(task: self, engagement_time: Time.zone.now, engagement: task_status.name)
       submission = TaskSubmission.where(task_id: id).order(:submission_time).reverse_order.first
 
       if submission.nil?
         TaskSubmission.create!(task: self, submission_time: submit_date)
       else
-        if !submission.submission_time.nil? && submission.submission_time < 1.hour.since(submit_date)
+        if (!submission.submission_time.nil?) && submit_date < submission.submission_time + 1.hour && submission.assessor.nil?
+          # update old submission if within time window
           submission.submission_time = submit_date
           submission.save!
         else
