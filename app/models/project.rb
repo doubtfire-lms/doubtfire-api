@@ -129,8 +129,6 @@ class Project < ActiveRecord::Base
   #
   def trigger_week_end(by_user)
     discuss_and_demonstrate_tasks.each { |task| task.trigger_transition(trigger: 'complete', by_user: by_user, bulk: true, quality: task.quality_pts) }
-    # TODO: Remove once task_stats deleted
-    # calc_task_stats
   end
 
   def start
@@ -263,8 +261,6 @@ class Project < ActiveRecord::Base
 
   def target_grade=(value)
     self[:target_grade] = value
-    # TODO: Remove once task_stats deleted
-    # calc_task_stats
   end
 
   def calculate_progress
@@ -560,7 +556,7 @@ class Project < ActiveRecord::Base
   def task_stats
     task_count = unit.task_definitions.where("target_grade <= #{target_grade}").count + 0.0
     task_count = 1.0 unless task_count > 1.0
-    result = tasks
+    result = assigned_tasks
              .group('project_id')
              .select(
                'project_id',
@@ -589,10 +585,6 @@ class Project < ActiveRecord::Base
     else
       result
     end
-  end
-
-  def calc_task_stats(_reload_task = nil)
-    task_stats
   end
 
   def assigned_task_defs

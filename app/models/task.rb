@@ -398,8 +398,6 @@ class Task < ActiveRecord::Base
       end
     end
 
-    # TODO: Remove once task_stats deleted
-    # if not bulk then project.calc_task_stats(self) end
     true
   end
 

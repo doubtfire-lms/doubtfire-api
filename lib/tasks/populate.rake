@@ -145,7 +145,6 @@ namespace :db do
           end
         end
 
-        p.calc_task_stats
         p.save
       end
     end
