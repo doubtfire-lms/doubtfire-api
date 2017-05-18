@@ -146,6 +146,7 @@ class Unit < ActiveRecord::Base
     q = projects
         .joins(:user)
         .joins('LEFT OUTER JOIN tasks ON projects.id = tasks.project_id')
+        .joins('LEFT JOIN task_definitions ON tasks.task_definition_id = task_definitions.id')
         .joins('LEFT OUTER JOIN plagiarism_match_links ON tasks.id = plagiarism_match_links.task_id')
         .group(
           'projects.id',
@@ -176,6 +177,9 @@ class Unit < ActiveRecord::Base
           'projects.portfolio_production_date AS portfolio_production_date',
           'MAX(CASE WHEN plagiarism_match_links.dismissed = FALSE THEN plagiarism_match_links.pct ELSE 0 END) AS plagiarism_match_links_max_pct',
           *TaskStatus.all.map { |s| "SUM(CASE WHEN tasks.task_status_id = #{s.id} THEN 1 ELSE 0 END) AS #{s.status_key}_count" }
+        )
+        .where(
+          'projects.target_grade >= task_definitions.target_grade'
         )
         .order('users.first_name')
 
