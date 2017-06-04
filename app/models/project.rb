@@ -720,7 +720,7 @@ class Project < ActiveRecord::Base
     result
   end
 
-  def portfolio_files
+  def portfolio_files(ensure_valid = false, force_ascii = false)
     # get path to portfolio dir
     portfolio_tmp_dir = portfolio_temp_path
     return [] unless Dir.exist? portfolio_tmp_dir
@@ -735,6 +735,8 @@ class Project < ActiveRecord::Base
       kind = parts[1]
       name = parts.drop(2).join('-')
       result << { kind: kind, name: name, idx: idx }
+
+      FileHelper.ensure_utf8_code(file, force_ascii) if ensure_valid && kind == "code"
     end
 
     result
@@ -927,11 +929,11 @@ EOF
     attr_accessor :task_defs
     attr_accessor :outcomes
 
-    def init(project)
+    def init(project, is_retry)
       @student = project.student
       @project = project
       @learning_summary_report = project.learning_summary_report_path
-      @files = project.portfolio_files
+      @files = project.portfolio_files(true, is_retry)
       @base_path = project.portfolio_temp_path
       @image_path = Rails.root.join('public', 'assets', 'images')
       @ordered_tasks = project.tasks.joins(:task_definition).order('task_definitions.start_date, task_definitions.abbreviation').where("task_definitions.target_grade <= #{project.target_grade}")
@@ -968,9 +970,17 @@ EOF
 
     begin
       pac = ProjectAppController.new
-      pac.init(self)
+      pac.init(self, false)
 
-      pdf_text = pac.make_pdf
+      begin
+        pdf_text = pac.make_pdf
+      rescue => e
+        # Try again... with convert to ascii
+        pac2 = ProjectAppController.new
+        pac2.init(self, true)
+
+        pdf_text = pac2.make_pdf
+      end
 
       File.open(portfolio_path, 'w') do |fout|
         fout.puts pdf_text

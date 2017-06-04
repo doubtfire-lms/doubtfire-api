@@ -1,4 +1,5 @@
 require 'zip'
+require 'tmpdir'
 
 module FileHelper
   extend LogHelper
@@ -404,6 +405,24 @@ module FileHelper
     task.extract_file_from_done student_work_dir(:new), '*', ->(_task, to_path, name) { "#{to_path}#{name}" }
   end
 
+  #
+  # Ensure that the contents of a file appear to be valid UTF8, on retry convert to ASCII to ensure
+  #
+  def ensure_utf8_code(output_filename, force_ascii)
+    # puts "Converting #{output_filename} to utf8"
+    tmp_filename = Dir::Tmpname.create( [ "new", ".code" ] ) { }
+
+    # Convert to utf8 from read encoding
+    if force_ascii
+      `iconv -c -t ascii "#{output_filename}" > "#{tmp_filename}"`
+    else
+      `iconv -c -t UTF-8 "#{output_filename}" > "#{tmp_filename}"`
+    end
+
+    # Move into place
+    FileUtils.mv(tmp_filename, output_filename)
+  end
+
   # Export functions as module functions
   module_function :accept_file
   module_function :sanitized_path
@@ -428,4 +447,5 @@ module FileHelper
   module_function :move_compressed_task_to_new
   module_function :recursively_add_dir_to_zip
   module_function :write_entries_to_zip
+  module_function :ensure_utf8_code
 end
