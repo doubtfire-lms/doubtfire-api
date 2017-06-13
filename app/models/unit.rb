@@ -145,9 +145,9 @@ class Unit < ActiveRecord::Base
     task_definitions.where
     q = projects
         .joins(:user)
+        .joins('LEFT OUTER JOIN tasks ON projects.id = tasks.project_id')
         .joins('LEFT JOIN task_definitions ON tasks.task_definition_id = task_definitions.id')
         .joins('LEFT OUTER JOIN plagiarism_match_links ON tasks.id = plagiarism_match_links.task_id')
-        .joins('LEFT OUTER JOIN tasks ON projects.id = tasks.project_id')
         .group(
           'projects.id',
           'projects.target_grade',
@@ -1104,7 +1104,7 @@ class Unit < ActiveRecord::Base
           moss.options[:comment] = ''
           moss.options[:language] = type_data[1]
 
-          tmp_path = File.join(Dir.tmpdir, 'doubtfire', "x#{id}-#{td.id}")
+          tmp_path = File.join(Dir.tmpdir, 'doubtfire', "check-#{id}-#{td.id}")
 
           begin
             # Create a file hash, with the files to be processed
