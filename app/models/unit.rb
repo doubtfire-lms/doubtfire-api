@@ -1595,7 +1595,7 @@ class Unit < ActiveRecord::Base
     CSV.generate do |row|
       row << %w(unit_code username student_id grade rationale)
       students_with_grades.each do |project|
-        row << [project.unit.code, project.student.username, project.grade, project.grade_rationale]
+        row << [project.unit.code, project.student.username, project.student.student_id, project.grade, project.grade_rationale]
       end
     end
   end
