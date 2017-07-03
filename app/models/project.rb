@@ -4,6 +4,12 @@ class Float
   end
 end
 
+class Fixnum
+  def signif(signs)
+    Float("%.#{signs}f" % self)
+  end
+end
+
 class Project < ActiveRecord::Base
   include ApplicationHelper
   include LogHelper
