@@ -3,10 +3,10 @@
 #
 # Detects if system is macOS
 #
-isMac() {
+is_mac() {
     if [[ `uname` == "Darwin" ]]; then
         return 0
-    else 
+    else
         return 1
     fi
 }
@@ -14,10 +14,10 @@ isMac() {
 #
 # Detects if system is Linux
 #
-isLinux() {
+is_linux() {
     if [[ `uname` == "Linux" ]]; then
         return 0
-    else 
+    else
         return 1
     fi
 }
@@ -54,9 +54,6 @@ error () {
 # Log verbose message
 #
 verbose () {
-  if [ $VERBOSE_OUTPUT -eq 1 ]; then
-    return
-  fi
   CYAN_FORE='\033[0;36m'
   printf "${CYAN_FORE}INFO: $1"
   msg_reset
@@ -73,15 +70,17 @@ msg () {
 # Install Homebrew
 #
 install_homebrew () {
-    msg "Installing Homebrew..."
+    command -v brew >/dev/null 2>&1 || {
+        msg "Installing Homebrew..."
 
-    /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
-    brew tap caskroom/cask
+        /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+        brew tap caskroom/cask
 
-    if [ $? -ne 0 ]; then
-        error "Was not able to install Homebrew."
-        exit 1
-    fi
+        if [ $? -ne 0 ]; then
+            error "Was not able to install Homebrew."
+            exit 1
+        fi
+    }
 }
 
 #
@@ -108,63 +107,59 @@ install_rbenv_linux() {
     fi
 }
 
-# 
+#
 # Install rbenv and ruby-build
-# 
+#
 install_rbenv () {
-    echo '2.3.1' >> ~/.ruby_version
     msg "Installing Ruby-build and rbenv..."
 
-    if isMac;
-    then
-        brew install ruby ruby-build rbenv
-    else 
-        install_rbenv_linux
-    fi
-    verbose "Installed Ruby"
+    command -v rbenv >/dev/null 2>&1 || {
+        if is_mac;
+        then
+            brew install ruby ruby-build rbenv
+        else
+            install_rbenv_linux
+        fi
+        if [ -n "$ZSH_VERSION" ]; then
+            echo 'eval "$(rbenv init -)"' >> ~/.zshrc
+        elif [ -n "$BASH_VERSION" ]; then
+            echo 'eval "$(rbenv init -)"' >> ~/.bashrc
+        fi
+        verbose "Installed rbenv"
+    }
 
-    if [ -n "$ZSH_VERSION" ]; then
-        echo 'eval "$(rbenv init -)"' >> ~/.zshrc
-    elif [ -n "$BASH_VERSION" ]; then
-        echo 'eval "$(rbenv init -)"' >> ~/.bashrc
-    fi
-
-    msg "Installing Ruby 2.3.1, this will take a few minutes..."
-    CONFIGURE_OPTS="--disable-install-doc --enable-shared" rbenv install 2.3.1
+    RUBY_VERSION=$(cat .ruby-version)
+    msg "Installing Ruby $RUBY_VERSION, this will take a few minutes..."
+    CONFIGURE_OPTS="--disable-install-doc --enable-shared" rbenv install $RUBY_VERSION
 
     if [ $? -ne 0 ]; then
         error "Was not able to install rbenv, or rbenv was already Installed, will continue with installation."
     fi
 
     verbose "Installed Ruby-build and rbenv"
-    rbenv global 2.3.1
     eval "$(rbenv init -)"
     rbenv rehash
-    source ~/.bashrc
 }
 
-# 
+#
 # Install postgres
-# 
+#
 install_postgres () {
     msg "Installing Postgres..."
 
-    if isMac;
+    if is_mac;
     then
         brew cask install postgres --appdir=/Applications
 
         export PATH=/Applications/Postgres.app/Contents/Versions/*/bin:$PATH
 
         verbose "Installed Postgres, should now be on path"
-        # TODO replace this with cli open.
-        open -a postgres
-        sleep 5
-        
+
         if [ $? -ne 0 ]; then
             error "Could not install postgres."
         fi
         verbose "Installed postgres"
-    else 
+    else
         sudo apt-get install -y postgresql \
                         postgresql-contrib \
                         libpq-dev
@@ -177,7 +172,9 @@ install_postgres () {
         sudo -u postgres createdb $USER
     fi
 
-    psql -c "CREATE ROLE itig WITH CREATEDB PASSWORD 'd872\$dh' LOGIN;"
+
+    psql -c "DO \$body\$ BEGIN IF NOT EXISTS (SELECT * FROM pg_catalog.pg_user WHERE  usename = 'itig') THEN CREATE ROLE itig WITH CREATEDB PASSWORD 'd872\$dh' LOGIN; END IF; END \$body\$;"
+
     if [ $? -ne 0 ]; then
         error "Could not install postgres. Please ensure psql is on the path, and then rerun this script."
         exit 1
@@ -186,13 +183,14 @@ install_postgres () {
     verbose "Installed Postgres"
 }
 
-# 
+#
 # Install native tools
-# 
+#
 install_native_tools () {
     msg "Installing native tools..."
-    if isMac; then
-        brew install imagemagick libmagic ghostscript
+    if is_mac; then
+        brew install imagemagick@6 libmagic ghostscript
+        brew link --force imagemagick@6
         msg "Trying to install pygments with easy_install, please enter your password"
         sudo easy_install Pygments
     else
@@ -210,13 +208,13 @@ install_native_tools () {
     fi
 }
 
-# 
+#
 # Install Doubtfire gem dependencies
-# 
+#
 install_dfire_dependencies () {
     msg "Installing Doubtfire dependencies..."
     gem install bundler
-    bundler install --without production replica
+    bundler install --without production staging
     rbenv rehash
     source ~/.bashrc
 
@@ -232,9 +230,9 @@ install_dfire_dependencies () {
     verbose "populated database"
 }
 
-# 
+#
 # Install Overcommit and DSTIL hooks.
-# 
+#
 install_dstil_overcommit () {
     msg "Installing DSTIL hooks..."
     curl -s https://raw.githubusercontent.com/dstil/dotfiles/master/bootstrap | bash
@@ -247,22 +245,22 @@ install_dstil_overcommit () {
     verbose "Installed DSTIL hooks."
 }
 
-# 
+#
 # Install LaTeX.
-# 
+#
 install_latex () {
     msg "LaTeX is required for PDF generation, it could take up to several hours to install"
-    if isMac; then
+    if is_mac; then
         read -r -p "Would you like to install LaTeX now? [y/N] " response
         case $response in
-            [yY][eE][sS]|[yY]) 
+            [yY][eE][sS]|[yY])
                 brew cask install mactex
                 ;;
             *)
                 msg "You will not be able to generate PDF's without LaTeX"
                 ;;
         esac
-    else 
+    else
         sudo apt-get install texlive-full
     fi
     if [ $? -ne 0 ]; then
@@ -272,7 +270,7 @@ install_latex () {
     verbose "Installed LaTeX"
 }
 
-if isMac; then
+if is_mac; then
     install_homebrew
 fi
 

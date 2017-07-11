@@ -185,7 +185,7 @@ GEM
     rails-html-sanitizer (1.0.3)
       loofah (~> 2.0)
     rails-latex (2.0.1)
-      rails (>= 3.0.0)
+      rails (>= 3.0.0, < 5)
     rails_best_practices (1.16.0)
       activesupport
       code_analyzer (>= 0.4.3)
@@ -289,4 +289,4 @@ RUBY VERSION
    ruby 2.3.1p112
 
 BUNDLED WITH
-   1.13.6
+   1.15.1
