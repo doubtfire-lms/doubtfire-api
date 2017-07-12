@@ -9,14 +9,11 @@ class ShallowUnitRoleSerializer < ActiveModel::Serializer
 end
 
 class UnitRoleSerializer < ActiveModel::Serializer
-  attributes :id, :role, :user_id, :unit_id, :unit_name, :name, :unit_code, :start_date
+  attributes :id, :role, :user_id, :unit_id, :unit_name, :name, :unit_code, :start_date, :active
 
   # has_one :user, serializer: ShallowUserSerializer
   # has_one :unit, serializer: ShallowUnitSerializer
   # has_one :role
-
-  # TODO: remove this
-  has_many :other_roles, serializer: ShallowUnitRoleSerializer
 
   def role
     object.role.name
@@ -36,6 +33,10 @@ class UnitRoleSerializer < ActiveModel::Serializer
 
   def name
     object.user.name
+  end
+
+  def active
+    object.unit.active
   end
 
   def include_start_date?
