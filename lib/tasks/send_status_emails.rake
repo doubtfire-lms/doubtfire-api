@@ -9,7 +9,7 @@ namespace :mailer do
         summary_stats[:weeks_engagements] = TaskEngagement.where("engagement_time >= :start AND engagement_time < :end", start: summary_stats[:week_start], end: summary_stats[:week_end]).count
 
         Unit.where(active: true).each do |unit|
-            next unless summary_stats[:week_start] > unit.start_date && summary_stats[:week_start] < unit.end_date
+            next unless summary_stats[:week_end] > unit.start_date && summary_stats[:week_start] < unit.end_date
             
             unit.send_weekly_status_emails(summary_stats)
         end
