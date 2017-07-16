@@ -76,13 +76,12 @@ class Task < ActiveRecord::Base
   has_many :reverse_plagiarism_match_links, class_name: 'PlagiarismMatchLink', dependent: :destroy, inverse_of: :other_task, foreign_key: 'other_task_id'
   has_many :learning_outcome_task_links, dependent: :destroy # links to learning outcomes
   has_many :learning_outcomes, through: :learning_outcome_task_links
+  has_many :task_engagements
 
   validates :task_definition_id, uniqueness: { scope: :project,
                                                message: 'must be unique within the project' }
 
   validate :must_have_quality_pts, if: :for_task_with_quality?
-
-  after_save :update_project
 
   def for_task_with_quality?
     task_definition.max_quality_pts.positive?
@@ -139,11 +138,6 @@ class Task < ActiveRecord::Base
       File.exist? File.join(FileHelper.student_work_dir(:new), id.to_s)
     end
     # portfolio_evidence == nil && ready_to_mark?
-  end
-
-  def update_project
-    project.update_attribute(:progress, project.calculate_progress)
-    project.update_attribute(:status, project.calculate_status)
   end
 
   def overdue?

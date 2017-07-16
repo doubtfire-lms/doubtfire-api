@@ -81,6 +81,8 @@ class Unit < ActiveRecord::Base
   has_many :learning_outcomes, dependent: :destroy
   has_many :tasks, through: :projects
   has_many :group_sets, dependent: :destroy
+  has_many :task_engagements, through: :projects
+  has_many :comments, through: :projects
 
   has_many :learning_outcome_task_links, through: :task_definitions
 
@@ -1996,5 +1998,16 @@ class Unit < ActiveRecord::Base
       ignored:  ignored,
       errors:   errors
     }
+  end
+
+  def send_weekly_status_emails(summary_stats)
+
+    summary_stats[:unit] = self
+    summary_stats[:unit_week_comments] = comments.where("task_comments.created_at > :start AND task_comments.created_at < :end", start: summary_stats[:week_start], end: summary_stats[:week_end]).count
+    summary_stats[:unit_week_engagements] = task_engagements.where("task_engagements.engagement_time > :start AND task_engagements.engagement_time < :end", start: summary_stats[:week_start], end: summary_stats[:week_end]).count
+
+    active_projects.each do |project|
+      project.send_weekly_status_email(summary_stats)
+    end
   end
 end

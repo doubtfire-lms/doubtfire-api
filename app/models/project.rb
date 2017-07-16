@@ -24,6 +24,8 @@ class Project < ActiveRecord::Base
   has_many :group_memberships, dependent: :destroy
   has_many :groups, -> { where('group_memberships.active = :value', value: true) }, through: :group_memberships
   has_many :past_groups, -> { where('group_memberships.active = :value', value: false) }, through: :group_memberships, source: 'group'
+  has_many :task_engagements, through: :tasks
+  has_many :comments, through: :tasks
 
   has_many :learning_outcome_task_links, through: :tasks
 
@@ -249,90 +251,72 @@ class Project < ActiveRecord::Base
     portfolio_tasks = tasks.select(&:has_pdf)
   end
 
-  def progress
-    self[:progress].to_sym
-  end
-
-  def progress=(value)
-    self[:progress] = value.to_s
-  end
-
-  def status
-    self[:status].to_sym
-  end
-
-  def status=(value)
-    self[:status] = value.to_s
-  end
-
   def target_grade=(value)
     self[:target_grade] = value
   end
 
-  def calculate_progress
-    relative_progress = progress_in_weeks
+  #
+  # Calculate a list of the top 5 task definitions the student should focus on,
+  # in order of priority with reason.
+  #
+  def top_tasks
+    result = []
 
-    if relative_progress >= 0
-      :ahead
-    elsif (relative_progress == -1) || (relative_progress == -2)
-      :on_track
-    else
-      weeks_behind = relative_progress.abs
+    #
+    # Get list of tasks that could be top tasks...
+    #
+    task_states = assigned_task_defs.order("start_date ASC, abbreviation ASC").
+      map { |td| {task_definition: td, status: status_for_task_definition(td) } }.
+      select { |r| [:not_started, :redo, :need_help, :working_on_it, :fix_and_resubmit, :demonstrate, :discuss].include? r[:status] }
 
-      if weeks_behind <= 3
-        :behind
-      elsif weeks_behind > 3 && weeks_behind <= 5
-        :danger
-      else
-        :doomed
+    #
+    # Start with overdue...
+    #
+    overdue_tasks = task_states.select { |ts| ts[:task_definition].target_date < Time.zone.today }
+
+    grades = [ "Pass", "Credit", "Distinction", "High Distinction" ]
+
+    for i in 0..3
+      graded_tasks = overdue_tasks.select { |ts| ts[:task_definition].target_grade == i  }
+
+      graded_tasks.each do |ts|
+        result << { task_definition: ts[:task_definition], status: ts[:status], reason: :overdue }
       end
-    end
-  end
 
-  def calculate_status
-    if !commenced?
-      :not_commenced
-    elsif concluded?
-      completed? ? :completed : :not_completed
-    else
-      if completed?
-        :completed
-      elsif started?
-        :in_progress
-      else
-        :not_started
+      return result.slice(0..4) if result.count >= 5
+    end
+
+    #
+    # Add in soon tasks...
+    #
+    soon_tasks = task_states.select { |ts| ts[:task_definition].target_date >= Time.zone.today && ts[:task_definition].target_date < Time.zone.today + 7.days }
+
+    for i in 0..3
+      graded_tasks = soon_tasks.select { |ts| ts[:task_definition].target_grade == i  }
+
+      graded_tasks.each do |ts|
+        result << { task_definition: ts[:task_definition], status: ts[:status], reason: :soon }
       end
-    end
-  end
 
-  def progress_in_weeks
-    progress_in_days / 7
-  end
-
-  def progress_in_days
-    units_completed = task_units_completed
-
-    # current_week  = weeks_elapsed
-    date_progress = unit.start_date
-
-    progress_points.each do |date, weight|
-      break if weight > units_completed
-      date_progress = date
+      return result.slice(0..4) if result.count >= 5
     end
 
-    (date_progress - reference_date).to_i / 1.day
-  end
+    #
+    # Add in ahead tasks...
+    #
+    ahead_tasks = task_states.select { |ts| ts[:task_definition].target_date >= Time.zone.today && ts[:task_definition].target_date < Time.zone.today + 7.days }
 
-  def progress_points
-    date_accumulated_weight_map = {}
+    for i in 0..3
+      graded_tasks = ahead_tasks.select { |ts| ts[:task_definition].target_grade == i  }
 
-    assigned_tasks.sort { |a, b| a.task_definition.target_date <=> b.task_definition.target_date }.each do |project_task|
-      date_accumulated_weight_map[project_task.task_definition.target_date] = assigned_tasks.select do |task|
-        task.task_definition.target_date <= project_task.task_definition.target_date
-      end.map { |task| task.task_definition.weighting.to_f }.inject(:+)
+      graded_tasks.each do |ts|
+        result << { task_definition: ts[:task_definition], status: ts[:status], reason: :ahead }
+      end
+
+      return result.slice(0..4) if result.count >= 5
     end
 
-    date_accumulated_weight_map
+    result.slice(0..4)
   end
 
   #
@@ -889,6 +873,17 @@ EOF
   end
 
   #
+  # Get the status of a task, without creating it if it does not exist...
+  #
+  def status_for_task_definition(td)
+    if has_task_for_task_definition? td
+      task_for_task_definition(td).status
+    else
+      :not_started
+    end
+  end
+
+  #
   # Get the task for the requested definition. This will create the
   # task if the task does not exist for this project.
   #
@@ -1011,5 +1006,9 @@ EOF
       end
       return false
     end
+  end
+
+  def send_weekly_status_email(summary_stats)
+    NotificationsMailer.weekly_student_summary(self, summary_stats).deliver_now
   end
 end

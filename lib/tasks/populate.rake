@@ -167,8 +167,6 @@ namespace :db do
     if extended || STDIN.gets.chomp.casecmp('y').zero?
       puts '-> Simulating signoff...'
       Rake::Task['db:simulate_signoff'].execute
-      puts '-> Updating student progress...'
-      Rake::Task['submission:update_progress'].execute
     end
     puts '-> Done.'
   end

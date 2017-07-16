@@ -1,0 +1,53 @@
+Hi <%= @student.first_name %>,
+
+<%= @summary_stats[:unit].name %> - Weekly Summary
+<%= "#{@summary_stats[:week_start].day.ordinalize} #{@summary_stats[:week_start].strftime("%B %Y")}" %> to <%= "#{@summary_stats[:week_end].day.ordinalize} #{@summary_stats[:week_end].strftime("%B %Y")}" %>
+
+Hope you had a good week! Here's a summary of what has happened in this unit over the last week and some notes on what you should do next.
+
+Firstly, here is what you should focus on right now.
+<%  if @top_tasks && @top_tasks.count > 0 %>
+<%      if @overdue_top && @overdue_top.count > 0 %>
+
+Catch up by completing the following *overdue* task<%="s" if @overdue_top.count > 1%>!
+<%          @overdue_top.each do |ot| %>
+* <%= top_task_desc(ot) %>
+<%          end %>
+<%      end %>
+<%      if @soon_top && @soon_top.count > 0 %>
+
+Work to get the following task<%="s" if @soon_top.count > 1%> done, as these are *due* soon!
+<%          @soon_top.each do |st| %>
+* <%= top_task_desc(st) %>
+<%          end %>
+<%      end %>
+<%      if @soon_top && @soon_top.count > 0 %>
+
+Get ahead by working on the following task<%="s" if @ahead_top.count > 1%> next!
+<%          @ahead_top.each do |st| %>
+* <%= top_task_desc(st) %>
+<%          end %>
+<%      end %>
+<%  elsif @project.has_portfolio %>
+Its time to Party! You have completed all of the tasks and prepared your portfolio.
+<%  else %>
+Its almost party time... You have completed all of the tasks, now make sure you login and prepare your portfolio.
+<%  end %>
+
+So what has happened in the last week?
+
+* In total, there <%= were_was(@summary_stats[:unit_week_comments]) %> <%= @summary_stats[:unit_week_comments] %> comment<%= "s" if @summary_stats[:unit_week_comments] != 1 %> made in this unit.
+* You posted a total of <%= @sent_comments %> comment<%= "s" if @sent_comments != 1 %>, and received back <%= @received_comments %> comment<%= "s" if @received_comments != 1 %> <%= "- try posting some comments this week" if @sent_comments == 0 %>
+* Tasks changed state <%= @summary_stats[:unit_week_engagements] %> time<%= "s" unless @summary_stats[:unit_week_engagements] == 1 %> in this unit.
+* Your tasks changed state <%= @engagements_count %> time<%= "s" unless @engagements_count == 1 %> <%= "- looks like you need to be more active" if @student_engagements == 0%>
+
+We hope your studies are going well, and look forward to your submissions over the next week!
+
+Cheers,
+<%= @tutor.name %>
+
+---
+
+Visit <%= @unsubscribe_url%> to unsubscribe from these notifications.
+
+Generated with Doubtfire
