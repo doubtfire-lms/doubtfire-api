@@ -1,4 +1,4 @@
-namespace :mailer
+namespace :mailer do
 
     task send_status_emails: :environment do
         summary_stats = {}
