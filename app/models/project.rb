@@ -1009,6 +1009,7 @@ EOF
   end
 
   def send_weekly_status_email(summary_stats)
+    return unless student.receive_feedback_notifications
     NotificationsMailer.weekly_student_summary(self, summary_stats).deliver_now
   end
 end
