@@ -304,7 +304,7 @@ class Project < ActiveRecord::Base
     #
     # Add in ahead tasks...
     #
-    ahead_tasks = task_states.select { |ts| ts[:task_definition].target_date >= Time.zone.today && ts[:task_definition].target_date < Time.zone.today + 7.days }
+    ahead_tasks = task_states.select { |ts| ts[:task_definition].target_date >= Time.zone.today + 7.days }
 
     for i in 0..3
       graded_tasks = ahead_tasks.select { |ts| ts[:task_definition].target_grade == i  }
