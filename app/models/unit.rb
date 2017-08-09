@@ -1247,11 +1247,11 @@ class Unit < ActiveRecord::Base
       .joins("LEFT JOIN comments_read_receipts crr ON crr.task_comment_id = task_comments.id AND crr.user_id = #{user.id}")
       .select(
         'SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) as number_unread', 'project_id', 'tasks.id as task_id',
-        'task_definition_id', 'projects.tutorial_id as tutorial_id', 'task_statuses.name as status_name', 'task_statuses.id',
+        'task_definition_id', 'task_definitions.start_date as start_date', 'projects.tutorial_id as tutorial_id', 'task_statuses.name as status_name', 'task_statuses.id',
         'completion_date', 'times_assessed', 'submission_date', 'portfolio_evidence', 'tasks.grade as grade', 'quality_pts'
       )
       .group(
-        'task_statuses.id', 'project_id', 'tutorial_id', 'tasks.id', 'task_definition_id', 'status_name',
+        'task_statuses.id', 'project_id', 'tutorial_id', 'tasks.id', 'task_definition_id', 'task_definitions.start_date', 'status_name',
         'completion_date', 'times_assessed', 'submission_date', 'portfolio_evidence', 'grade', 'quality_pts'
       )
   end
@@ -1279,7 +1279,7 @@ class Unit < ActiveRecord::Base
   def tasks_for_task_inbox(user)
     get_all_tasks_for(user)
       .having('task_statuses.id IN (:ids) OR SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) > 0', ids: [ TaskStatus.ready_to_mark, TaskStatus.need_help ])
-      .order('MAX(task_comments.created_at) ASC, submission_date ASC')
+      .order('start_date ASC, submission_date ASC, MAX(task_comments.created_at) ASC')
   end
 
   #
