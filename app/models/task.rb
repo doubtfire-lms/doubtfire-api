@@ -278,7 +278,7 @@ class Task < ActiveRecord::Base
   end
 
   def has_pdf
-    !portfolio_evidence.nil? && File.exist?(portfolio_evidence)
+    !portfolio_evidence.nil? && File.exist?(portfolio_evidence) && !processing_pdf?
   end
 
   def log_details

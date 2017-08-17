@@ -209,6 +209,7 @@ class Unit < ActiveRecord::Base
         last_name: t.last_name,
         student_id: t.student_id,
         student_email: t.student_email,
+        student_name: "#{t.first_name} #{t.last_name}",
         target_grade: t.target_grade,
         tutorial_id: t.tutorial_id,
         compile_portfolio: t.compile_portfolio,
