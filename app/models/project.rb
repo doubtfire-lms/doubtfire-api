@@ -333,11 +333,11 @@ class Project < ActiveRecord::Base
     task_states = task_definitions_and_status(0)
     overdue_tasks = task_states.select { |ts| ts[:task_definition].target_date < Time.zone.today }
 
+    # More than 2 pass tasks overdue
+    return false unless overdue_tasks.count > 2    
+
     # Oldest is more than 2 weeks past target
     return false unless (Time.zone.today - overdue_tasks.first[:task_definition].target_date.to_date).to_i > 14
-
-    # More than 2 pass tasks overdue
-    return false unless overdue_tasks.count > 2
 
     return true
   end
