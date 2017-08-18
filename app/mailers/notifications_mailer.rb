@@ -2,7 +2,7 @@ class NotificationsMailer < ActionMailer::Base
   @doubtfire_host = Doubtfire::Application.config.institution[:host]
   @unsubscribe_url = "https://#{@doubtfire_host}/#/home?notifications"
 
-  def weekly_student_summary(project, summary_stats)
+  def weekly_student_summary(project, summary_stats, did_revert_to_pass)
     return nil if project.nil?
 
     @student = project.student
@@ -10,6 +10,7 @@ class NotificationsMailer < ActionMailer::Base
     @tutor = project.main_tutor
     @convenor = project.main_convenor
     @summary_stats = summary_stats
+    @did_revert_to_pass = did_revert_to_pass
 
     @engagements = @project.task_engagements.where("task_engagements.engagement_time >= :start AND task_engagements.engagement_time < :end", start: summary_stats[:week_start], end: summary_stats[:week_end])
 

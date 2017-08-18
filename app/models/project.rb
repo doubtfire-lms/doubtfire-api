@@ -256,6 +256,16 @@ class Project < ActiveRecord::Base
   end
 
   #
+  # Get task_definitions and status for the current student for all tasks that are <= the target
+  #
+  def task_definitions_and_status(target)
+    assigned_task_defs_for_grade(target).
+      order("start_date ASC, abbreviation ASC").
+      map { |td| {task_definition: td, status: status_for_task_definition(td) } }.
+      select { |r| [:not_started, :redo, :need_help, :working_on_it, :fix_and_resubmit, :demonstrate, :discuss].include? r[:status] }
+  end
+
+  #
   # Calculate a list of the top 5 task definitions the student should focus on,
   # in order of priority with reason.
   #
@@ -265,9 +275,7 @@ class Project < ActiveRecord::Base
     #
     # Get list of tasks that could be top tasks...
     #
-    task_states = assigned_task_defs.order("start_date ASC, abbreviation ASC").
-      map { |td| {task_definition: td, status: status_for_task_definition(td) } }.
-      select { |r| [:not_started, :redo, :need_help, :working_on_it, :fix_and_resubmit, :demonstrate, :discuss].include? r[:status] }
+    task_states = task_definitions_and_status(4)
 
     #
     # Start with overdue...
@@ -317,6 +325,21 @@ class Project < ActiveRecord::Base
     end
 
     result.slice(0..4)
+  end
+
+  def should_revert_to_pass
+    return false unless self.target_grade > 0
+
+    task_states = task_definitions_and_status(0)
+    overdue_tasks = task_states.select { |ts| ts[:task_definition].target_date < Time.zone.today }
+
+    # Oldest is more than 2 weeks past target
+    return false unless (Time.zone.today - overdue_tasks.first[:task_definition].target_date.to_date).to_i > 14
+
+    # More than 2 pass tasks overdue
+    return false unless overdue_tasks.count > 2
+
+    return true
   end
 
   #
@@ -577,8 +600,12 @@ class Project < ActiveRecord::Base
     end
   end
 
+  def assigned_task_defs_for_grade(target)
+    unit.task_definitions.where('target_grade <= :grade', grade: target)
+  end
+
   def assigned_task_defs
-    unit.task_definitions.where('target_grade <= :grade', grade: target_grade)
+    assigned_task_defs_for_grade target_grade
   end
 
   def total_task_weight
@@ -1009,7 +1036,14 @@ EOF
   end
 
   def send_weekly_status_email(summary_stats)
+    did_revert_to_pass = false
+    if should_revert_to_pass
+      self.target_grade = 0
+      save
+      did_revert_to_pass = true
+    end
+
     return unless student.receive_feedback_notifications
-    NotificationsMailer.weekly_student_summary(self, summary_stats).deliver_now
+    NotificationsMailer.weekly_student_summary(self, summary_stats, did_revert_to_pass).deliver_now
   end
 end
