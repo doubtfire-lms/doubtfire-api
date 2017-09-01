@@ -5,9 +5,11 @@ class UnitRole < ActiveRecord::Base
 
   belongs_to :role    # Foreign key
 
-  belongs_to :tutorial # for students only! TODO: fix
-
-  has_many :taught_tutorials, class_name: 'Tutorial', dependent: :nullify
+  has_many :tutorials, class_name: 'Tutorial', dependent: :nullify
+  has_many :projects, through: :tutorials
+  has_many :tasks, through: :projects
+  has_many :task_engagements, through: :tasks
+  has_many :comments, through: :tasks
 
   validates :unit_id, presence: true
   validates :user_id, presence: true
@@ -25,6 +27,14 @@ class UnitRole < ActiveRecord::Base
   # TODO: check this usage
   def other_roles
     []
+  end
+
+  def tasks_awaiting_feedback
+    tasks.where(task_status: TaskStatus.ready_to_mark)
+  end
+
+  def oldest_task_awaiting_feedback
+    tasks_awaiting_feedback.order("submission_date ASC").first
   end
 
   #
@@ -87,5 +97,55 @@ class UnitRole < ActiveRecord::Base
 
   def is_teacher?
     is_tutor? || is_convenor?
+  end
+
+  def has_students?
+    number_of_students > 0
+  end
+
+  def number_of_students
+    projects.where(enrolled: true).count
+  end
+
+  #
+  # Add data to the summary stats about this staff member
+  #
+  def populate_summary_stats(summary_stats)
+
+    data = {}
+
+    data[:staff] = user
+    data[:unit_role] = self
+
+    data[:engagements] = task_engagements.
+      where(
+        "task_engagements.engagement_time >= :start AND task_engagements.engagement_time < :end", 
+        start: summary_stats[:week_start], end: summary_stats[:week_end])
+
+    data[:total_engagements_count] = task_engagements.count
+    data[:weekly_engagements_count] = data[:engagements].count
+
+    if tasks_awaiting_feedback.count > 0
+      data[:oldest_task_days] = (Time.zone.today - tasks_awaiting_feedback.order("submission_date ASC").first.submission_date.to_date).to_i
+      data[:tasks_awaiting_feedback_count] = tasks_awaiting_feedback.count
+    else
+      data[:oldest_task_days] = 0
+      data[:tasks_awaiting_feedback_count] = 0
+    end
+
+    data[:number_of_students] = number_of_students
+
+    data[:total_staff_engagements] = task_engagements.where(engagement: [TaskStatus.complete.name, TaskStatus.do_not_resubmit.name, TaskStatus.redo.name, TaskStatus.discuss.name, TaskStatus.demonstrate.name, TaskStatus.fail.name]).count
+    data[:staff_engagements] = data[:engagements].where(engagement: [TaskStatus.complete.name, TaskStatus.do_not_resubmit.name, TaskStatus.redo.name, TaskStatus.discuss.name, TaskStatus.demonstrate.name, TaskStatus.fail.name]).count
+
+    data[:received_comments] = comments.where("recipient_id = :staff_id AND task_comments.created_at > :start", staff_id: data[:staff].id, start: Time.zone.today - 7.days).count
+    data[:sent_comments] = comments.where("task_comments.user_id = :staff_id AND task_comments.created_at > :start", staff_id: data[:staff].id, start: Time.zone.today - 7.days).count
+    data[:total_comments] = comments.where("task_comments.user_id = :staff_id", staff_id: data[:staff].id).count
+
+    summary_stats[:staff][self] = data
+  end
+
+  def send_weekly_status_email(summary_stats)
+    NotificationsMailer.weekly_staff_summary(self, summary_stats).deliver_now
   end
 end

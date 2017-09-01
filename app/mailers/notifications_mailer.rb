@@ -2,13 +2,29 @@ class NotificationsMailer < ActionMailer::Base
   @doubtfire_host = Doubtfire::Application.config.institution[:host]
   @unsubscribe_url = "https://#{@doubtfire_host}/#/home?notifications"
 
+  def weekly_staff_summary(unit_role, summary_stats)
+    return nil if unit_role.nil?
+
+    @staff = unit_role.user
+    @unit_role = unit_role
+    @unit = summary_stats[:unit]
+    @data = summary_stats[:staff][unit_role]
+    @convenor = @unit.main_convenor
+    @summary_stats = summary_stats
+
+    email_with_name = %("#{@staff.name}" <#{@staff.email}>)
+    convenor_email = %("#{@convenor.name}" <#{@convenor.email}>)
+    subject = "#{@unit.name}: Weekly Summary"
+
+    mail(to: email_with_name, from: convenor_email, subject: subject)
+  end
+
   def weekly_student_summary(project, summary_stats, did_revert_to_pass)
     return nil if project.nil?
 
     @student = project.student
     @project = project
     @tutor = project.main_tutor
-    @convenor = project.main_convenor
     @summary_stats = summary_stats
     @did_revert_to_pass = did_revert_to_pass
 
@@ -49,6 +65,24 @@ class NotificationsMailer < ActionMailer::Base
     end
   end
 
+  def are_is(num)
+    if num == 1 
+        "is"
+    else 
+        "are"
+    end
+  end
+  
+  def this_these(num)
+    if num == 1 
+        "this"
+    else 
+        "these"
+    end
+  end
+  
   helper_method :top_task_desc
   helper_method :were_was
+  helper_method :are_is
+  helper_method :this_these
 end

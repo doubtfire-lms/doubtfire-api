@@ -134,6 +134,10 @@ class Unit < ActiveRecord::Base
     User.teaching(self)
   end
 
+  def main_convenor
+    convenors.first.user
+  end
+
   def students
     projects
   end
@@ -2006,9 +2010,29 @@ class Unit < ActiveRecord::Base
     summary_stats[:unit] = self
     summary_stats[:unit_week_comments] = comments.where("task_comments.created_at > :start AND task_comments.created_at < :end", start: summary_stats[:week_start], end: summary_stats[:week_end]).count
     summary_stats[:unit_week_engagements] = task_engagements.where("task_engagements.engagement_time > :start AND task_engagements.engagement_time < :end", start: summary_stats[:week_start], end: summary_stats[:week_end]).count
+    summary_stats[:revert_count] = 0
+    summary_stats[:revert] = {}
+    summary_stats[:staff] = {}
+
+    staff.each do |ur|
+      summary_stats[:revert][ur.user] = []
+    end
 
     active_projects.each do |project|
       project.send_weekly_status_email(summary_stats)
     end
+
+    summary_stats[:num_students_without_tutors] = active_projects.where(tutorial_id: nil).count
+
+    staff.each do |ur|
+      ur.populate_summary_stats(summary_stats)
+    end
+
+    staff.each do |ur|
+      ur.send_weekly_status_email(summary_stats)
+    end
+
+    summary_stats[:staff] = {}
+
   end
 end

@@ -158,7 +158,7 @@ class Project < ActiveRecord::Base
   end
 
   def main_convenor
-    unit.convenors.first.user
+    unit.main_convenor
   end
 
   def tutorial_abbr
@@ -337,7 +337,7 @@ class Project < ActiveRecord::Base
     return false unless overdue_tasks.count > 2    
 
     # Oldest is more than 2 weeks past target
-    return false unless (Time.zone.today - overdue_tasks.first[:task_definition].target_date.to_date).to_i > 14
+    return false unless (Time.zone.today - overdue_tasks.first[:task_definition].target_date.to_date).to_i >= 14
 
     return true
   end
@@ -1041,6 +1041,9 @@ EOF
       self.target_grade = 0
       save
       did_revert_to_pass = true
+
+      summary_stats[:revert_count] = summary_stats[:revert_count] + 1
+      summary_stats[:revert][main_tutor] << self
     end
 
     return unless student.receive_feedback_notifications
