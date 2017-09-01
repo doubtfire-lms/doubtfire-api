@@ -146,6 +146,8 @@ class UnitRole < ActiveRecord::Base
   end
 
   def send_weekly_status_email(summary_stats)
+    return unless user.receive_feedback_notifications
+
     NotificationsMailer.weekly_staff_summary(self, summary_stats).deliver_now
   end
 end
