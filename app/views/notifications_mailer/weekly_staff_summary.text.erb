@@ -35,6 +35,7 @@ Name         | Number   | Task Assessments | Comments Made | Awaiting | Oldest |
              | Students | Total   |  Week  | Total | Week  | Feedback | Task   |
 --------------------------------------------------------------------------------
 <% @summary_stats[:staff].each do | user, data | %>
+<%    next unless data[:number_of_students] > 0%>
 <%= '%-12s' % data[:staff].name.truncate(12) %> | <%= '%8i' % data[:number_of_students] %> | <%= '%7i' % data[:total_staff_engagements] %> | <%= '%6i' % data[:staff_engagements] %> | <%= '%5i' % data[:total_comments] %> | <%= '%5i' % data[:sent_comments] %> | <%= '%8i' % data[:tasks_awaiting_feedback_count] %> | <%= '%6i' % data[:oldest_task_days] %> |
 <%   end %>
 --------------------------------------------------------------------------------
