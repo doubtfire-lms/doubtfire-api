@@ -13,32 +13,32 @@ With that out of the way, here's a summary of what has happened in this unit ove
 Hope you had a good week! Here's a summary of what has happened in this unit over the last week and some notes on what you should do next.
 <% end %>
 <% if @project.tutorial.nil? %>
+
 Firstly... it looks like you are not assigned a tutor! Please login and make sure your tutorial is correctly set. You should be able to do that here: https://doubtfire.deakin.edu.au/#/projects/<%= @project.id %>/tutorials
 
 Here is what you should focus on right now.
 <% else %>
+
 Firstly, here is what you should focus on right now.
 <% end %>
+
 <%  if @top_tasks && @top_tasks.count > 0 %>
 <%      if @overdue_top && @overdue_top.count > 0 %>
-
 Catch up by completing the following *overdue* task<%="s" if @overdue_top.count > 1%>!
 <%          @overdue_top.each do |ot| %>
 * <%= top_task_desc(ot) %>
 <%          end %>
 <%      end %>
 <%      if @soon_top && @soon_top.count > 0 %>
-
 Work to get the following task<%="s" if @soon_top.count > 1%> done, as these are *due* soon!
 <%          @soon_top.each do |st| %>
 * <%= top_task_desc(st) %>
 <%          end %>
 <%      end %>
-<%      if @soon_top && @soon_top.count > 0 %>
-
+<%      if @ahead_top && @ahead_top.count > 0 %>
 Get ahead by working on the following task<%="s" if @ahead_top.count > 1%> next!
-<%          @ahead_top.each do |st| %>
-* <%= top_task_desc(st) %>
+<%          @ahead_top.each do |at| %>
+* <%= top_task_desc(at) %>
 <%          end %>
 <%      end %>
 <%  elsif @project.has_portfolio %>

@@ -275,7 +275,7 @@ class Project < ActiveRecord::Base
     #
     # Get list of tasks that could be top tasks...
     #
-    task_states = task_definitions_and_status(4)
+    task_states = task_definitions_and_status(target_grade)
 
     #
     # Start with overdue...
