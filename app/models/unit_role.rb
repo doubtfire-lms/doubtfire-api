@@ -30,7 +30,7 @@ class UnitRole < ActiveRecord::Base
   end
 
   def tasks_awaiting_feedback
-    tasks.where(task_status: TaskStatus.ready_to_mark)
+    tasks.joins(:task_definition).where('projects.enrolled = TRUE AND projects.target_grade >= task_definitions.target_grade AND tasks.task_status_id = :status', status: TaskStatus.ready_to_mark)
   end
 
   def oldest_task_awaiting_feedback
