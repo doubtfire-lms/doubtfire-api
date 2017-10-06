@@ -2018,8 +2018,11 @@ class Unit < ActiveRecord::Base
       summary_stats[:revert][ur.user] = []
     end
 
+    days_to_end_of_unit = (end_date.to_date - DateTime.now).to_i
+    days_from_start_of_unit = (DateTime.now - start_date.to_date).to_i
+
     active_projects.each do |project|
-      project.send_weekly_status_email(summary_stats)
+      project.send_weekly_status_email(summary_stats, days_from_start_of_unit > 28 && days_to_end_of_unit > 14 )
     end
 
     summary_stats[:num_students_without_tutors] = active_projects.where(tutorial_id: nil).count

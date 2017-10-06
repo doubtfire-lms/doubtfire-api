@@ -1035,9 +1035,9 @@ EOF
     end
   end
 
-  def send_weekly_status_email(summary_stats)
+  def send_weekly_status_email(summary_stats, allow_revert?)
     did_revert_to_pass = false
-    if should_revert_to_pass
+    if allow_revert? && should_revert_to_pass
       self.target_grade = 0
       save
       did_revert_to_pass = true
