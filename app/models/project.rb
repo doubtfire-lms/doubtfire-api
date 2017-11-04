@@ -1035,9 +1035,9 @@ EOF
     end
   end
 
-  def send_weekly_status_email(summary_stats, allow_revert)
+  def send_weekly_status_email ( summary_stats, middle_of_unit )
     did_revert_to_pass = false
-    if allow_revert && should_revert_to_pass
+    if middle_of_unit && should_revert_to_pass && ! has_portfolio
       self.target_grade = 0
       save
       did_revert_to_pass = true
@@ -1047,6 +1047,7 @@ EOF
     end
 
     return unless student.receive_feedback_notifications
+    return if has_portfolio && ! middle_of_unit
     NotificationsMailer.weekly_student_summary(self, summary_stats, did_revert_to_pass).deliver_now
   end
 end
