@@ -71,16 +71,19 @@ module Api
         student = task.project.student
         unit = task.project.unit
 
+        if task.processing_pdf?
+          evidence_loc = Rails.root.join('public', 'resources', 'AwaitingProcessing.pdf')
+          filename='AwaitingProcessing.pdf'
+        elsif evidence_loc.nil?
+          evidence_loc = Rails.root.join('public', 'resources', 'FileNotFound.pdf')
+          filename='FileNotFound.pdf'
+        else
+          filename="#{task.task_definition.abbreviation}.pdf"
+        end
+
+
         if params[:as_attachment]
-          if task.processing_pdf?
-            evidence_loc = Rails.root.join('public', 'resources', 'AwaitingProcessing.pdf')
-            header['Content-Disposition'] = 'attachment; filename=AwaitingProcessing.pdf'
-          elsif evidence_loc.nil?
-            evidence_loc = Rails.root.join('public', 'resources', 'FileNotFound.pdf')
-            header['Content-Disposition'] = 'attachment; filename=FileNotFound.pdf'
-          else
-            header['Content-Disposition'] = "attachment; filename=#{task.task_definition.abbreviation}.pdf"
-          end
+          header['Content-Disposition'] = "attachment; filename=#{filename}"
         end
 
         # Set download headers...

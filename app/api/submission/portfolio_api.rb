@@ -77,13 +77,15 @@ module Api
 
         evidence_loc = project.portfolio_path
 
+        if evidence_loc.nil? || File.exist?(evidence_loc) == false
+          evidence_loc = Rails.root.join('public', 'resources', 'FileNotFound.pdf')
+          filename = "FileNotFound.pdf"
+        else
+          filename = "#{unit.code}-#{student.username}-portfolio.pdf"
+        end
+
         if params[:as_attachment]
-          if evidence_loc.nil? || File.exist?(evidence_loc) == false
-            evidence_loc = Rails.root.join('public', 'resources', 'FileNotFound.pdf')
-            header['Content-Disposition'] = 'attachment; filename=FileNotFound.pdf'
-          else
-            header['Content-Disposition'] = 'attachment; filename=portfolio.pdf'
-          end
+          header['Content-Disposition'] = "attachment; filename=#{filename}"
         end
 
         # Set download headers...
