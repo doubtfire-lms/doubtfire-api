@@ -297,6 +297,7 @@ module Api
     params do
       requires :unit_id, type: Integer, desc: 'The unit to upload tasks for'
       requires :task_def_id, type: Integer, desc: 'The task definition to get the pdf of'
+      optional :as_attachment, type: Boolean, desc: 'Whether or not to download file as attachment. Default is false.'
     end
     get '/units/:unit_id/task_definitions/:task_def_id/task_pdf' do
       unit = Unit.find(params[:unit_id])
@@ -307,11 +308,15 @@ module Api
       end
 
       if task_def.has_task_pdf?
-        header['Content-Disposition'] = "attachment; filename=#{task_def.abbreviation}.pdf"
         path = unit.path_to_task_pdf(task_def)
+        filename = "#{task_def.unit.code}-#{task_def.abbreviation}.pdf"
       else
         path = Rails.root.join('public', 'resources', 'FileNotFound.pdf')
-        header['Content-Disposition'] = 'attachment; filename=FileNotFound.pdf'
+        filename = "FileNotFound.pdf"
+      end
+
+      if params[:as_attachment]
+        header['Content-Disposition'] = "attachment; filename=#{filename}"
       end
 
       content_type 'application/pdf'

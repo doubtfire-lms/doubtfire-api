@@ -53,6 +53,9 @@ module Api
       end # post
 
       desc 'Retrieve submission document included for the task id'
+      params do
+        optional :as_attachment, type: Boolean, desc: 'Whether or not to download file as attachment. Default is false.'
+      end
       get '/projects/:id/task_def_id/:task_definition_id/submission' do
         project = Project.find(params[:id])
         task_definition = project.unit.task_definitions.find(params[:task_definition_id])
@@ -70,16 +73,21 @@ module Api
 
         if task.processing_pdf?
           evidence_loc = Rails.root.join('public', 'resources', 'AwaitingProcessing.pdf')
-          header['Content-Disposition'] = 'attachment; filename=AwaitingProcessing.pdf'
+          filename='AwaitingProcessing.pdf'
         elsif evidence_loc.nil?
           evidence_loc = Rails.root.join('public', 'resources', 'FileNotFound.pdf')
-          header['Content-Disposition'] = 'attachment; filename=FileNotFound.pdf'
+          filename='FileNotFound.pdf'
         else
-          header['Content-Disposition'] = "attachment; filename=#{task.task_definition.abbreviation}.pdf"
+          filename="#{task.task_definition.abbreviation}.pdf"
+        end
+
+
+        if params[:as_attachment]
+          header['Content-Disposition'] = "attachment; filename=#{filename}"
         end
 
         # Set download headers...
-        content_type 'application/octet-stream'
+        content_type 'application/pdf'
         env['api.format'] = :binary
 
         File.read(evidence_loc)
