@@ -640,6 +640,11 @@ class Unit < ActiveRecord::Base
           next
         end
 
+        if row['username'].nil?
+          ignored << { row: row, message: "Skipping row with missing username" }
+          next
+        end
+
         username = row['username'].downcase.strip unless row['username'].nil?
         group_name = row['group_name'].strip unless row['group_name'].nil?
         group_number = row['group_number'].strip unless row['group_number'].nil?
