@@ -81,7 +81,7 @@ module Api
           evidence_loc = Rails.root.join('public', 'resources', 'FileNotFound.pdf')
           filename = "FileNotFound.pdf"
         else
-          filename = "#{unit.code}-#{student.username}-portfolio.pdf"
+          filename = "#{project.unit.code}-#{project.student.username}-portfolio.pdf"
         end
 
         if params[:as_attachment]

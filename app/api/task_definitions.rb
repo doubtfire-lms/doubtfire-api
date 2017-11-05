@@ -309,7 +309,7 @@ module Api
 
       if task_def.has_task_pdf?
         path = unit.path_to_task_pdf(task_def)
-        filename = "#{task.unit.code}-#{task.task_definition.abbreviation}.pdf"
+        filename = "#{task_def.unit.code}-#{task_def.abbreviation}.pdf"
       else
         path = Rails.root.join('public', 'resources', 'FileNotFound.pdf')
         filename = "FileNotFound.pdf"
