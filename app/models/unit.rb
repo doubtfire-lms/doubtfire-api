@@ -333,6 +333,11 @@ class Unit < ActiveRecord::Base
       end
 
       begin
+        if row['username'].nil?
+          ignored << { row: row, message: "Skipping row with missing username" }
+          next
+        end
+
         unit_code = row['unit_code']
         username = row['username'].downcase
         student_id = row['student_id']
