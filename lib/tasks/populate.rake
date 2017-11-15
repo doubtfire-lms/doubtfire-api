@@ -1,7 +1,7 @@
 require_all 'lib/helpers'
 namespace :db do
   desc 'Mark off some of the due tasks'
-  task expand_first_unit: :environment do
+  task expand_first_unit: [:skip_prod, :environment] do
     unit = Unit.first
     tutes = unit.tutorials
     for student_count in 0..2000
@@ -11,7 +11,7 @@ namespace :db do
   end
 
   desc 'Mark off some of the due tasks'
-  task simulate_signoff: :environment do
+  task simulate_signoff: [:skip_prod, :environment] do
     Unit.all.each do |unit|
       current_week = ((Time.zone.now - unit.start_date) / 1.week).floor
 
@@ -151,7 +151,7 @@ namespace :db do
   end
 
   desc 'Clear the database and fill with test data'
-  task populate: [:setup, :migrate] do
+  task populate: [:skip_prod, :setup, :migrate] do
     scale = ENV['SCALE'] ? ENV['SCALE'].to_sym : :small
     extended = ENV['EXTENDED'] == 'true'
 

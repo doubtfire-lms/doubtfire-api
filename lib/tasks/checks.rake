@@ -25,7 +25,7 @@ namespace :submission do
     FileUtils.rm(rake_executing_marker_file)
   end
 
-  task :simulate_plagiarism, [:num_links] => [:environment] do |t, args|
+  task :simulate_plagiarism, [:num_links] => [:skip_prod, :environment] do |t, args|
     if is_executing?
       puts 'Skip plagiarism check -- already executing'
       logger.info 'Skip plagiarism check -- already executing'
