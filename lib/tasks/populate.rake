@@ -130,6 +130,10 @@ namespace :db do
           end
 
           i += 1
+          pdf_path = task.final_pdf_path
+          if pdf_path
+            FileUtils.ln_s(Rails.root.join('test_files', 'unit_files', 'sample-student-submission.pdf'), pdf_path)
+          end
         end
 
         next_assigned_tasks = p.assigned_tasks.where('target_date > :up_to_date AND target_date <= :next_week', up_to_date: kept_up_to_date, next_week: kept_up_to_date + 1.week)
@@ -142,6 +146,11 @@ namespace :db do
             task.assess tatus.working_on_it, tutor, Time.zone.now
           when 60..75
             task.assess TaskStatus.need_help, tutor, Time.zone.now
+            
+            pdf_path = task.final_pdf_path
+            if pdf_path
+              FileUtils.ln_s(Rails.root.join('test_files', 'unit_files', 'sample-student-submission.pdf'), pdf_path)
+            end
           end
         end
 
