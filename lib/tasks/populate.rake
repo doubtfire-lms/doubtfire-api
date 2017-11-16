@@ -1,4 +1,5 @@
 require_all 'lib/helpers'
+
 namespace :db do
   desc 'Mark off some of the due tasks'
   task expand_first_unit: [:skip_prod, :environment] do
@@ -8,6 +9,38 @@ namespace :db do
       student = find_or_create_student("student_#{student_count}")
       proj = unit.enrol_student(student, tutes[student_count % tutes.count])
     end
+  end
+
+  def assess_task(current_user, task, tutor, status, complete_date)
+    alignments = []
+    sum_ratings = 0
+    task.unit.learning_outcomes.each do |lo|
+      data = {
+        ilo_id: lo.id,
+        rating: rand(0..5),
+        rationale: "Simulated rationale text..."
+      }
+      sum_ratings += data[:rating]
+      alignments << data
+    end
+
+    if task.group_task?
+      raise "Cant support group tasks yet in simulation :("
+    end
+    contributions = nil
+    trigger = 
+
+    task.create_alignments_from_submission(current_user, alignments) unless alignments.nil?
+    task.create_submission_and_trigger_state_change(current_user) #, propagate = true, contributions = contributions, trigger = trigger)
+    task.assess status, tutor, complete_date
+
+    pdf_path = task.final_pdf_path
+    if pdf_path
+      FileUtils.ln_s(Rails.root.join('test_files', 'unit_files', 'sample-student-submission.pdf'), pdf_path)
+    end
+
+    task.portfolio_evidence = pdf_path
+    task.save
   end
 
   desc 'Mark off some of the due tasks'
@@ -21,6 +54,7 @@ namespace :db do
         #
         p = Project.find(proj.id)
         p.tasks.destroy_all
+        p.remove_portfolio
 
         # Determine who is assessing their work...
         tutor = p.main_tutor
@@ -72,7 +106,7 @@ namespace :db do
             elsif complete_date > Time.zone.now
               complete_date = Time.zone.now
             end
-            task.assess TaskStatus.complete, tutor, complete_date
+            assess_task(proj, task, tutor, TaskStatus.complete, complete_date)
           elsif kept_up_to_date >= task.target_date + 1.week
             complete_date = unit.start_date + i * time_to_complete_task + rand(7..14).days
             if complete_date < unit.start_date + 1.week
@@ -84,21 +118,21 @@ namespace :db do
             # 1 to 3
             case rand(1..100)
             when 0..50
-              task.assess TaskStatus.complete, tutor, complete_date
+              assess_task(proj, task, tutor, TaskStatus.complete, complete_date)
             when 51..75
-              task.assess TaskStatus.discuss, tutor, complete_date
+              assess_task(proj, task, tutor, TaskStatus.discuss, complete_date)
             when 76..90
-              task.assess TaskStatus.demonstrate, tutor, complete_date
+              assess_task(proj, task, tutor, TaskStatus.demonstrate, complete_date)
             when 91..95
-              task.assess TaskStatus.fix_and_resubmit, tutor, complete_date
+              assess_task(proj, task, tutor, TaskStatus.fix_and_resubmit, complete_date)
             when 96..97
-              task.assess TaskStatus.working_on_it, tutor, complete_date
+              assess_task(proj, task, tutor, TaskStatus.working_on_it, complete_date)
             when 97
-              task.assess TaskStatus.do_not_resubmit, tutor, complete_date
+              assess_task(proj, task, tutor, TaskStatus.do_not_resubmit, complete_date)
             when 98..99
-              task.assess TaskStatus.redo, tutor, complete_date
+              assess_task(proj, task, tutor, TaskStatus.redo, complete_date)
             else
-              task.submit complete_date
+              assess_task(proj, task, tutor, TaskStatus.ready_to_mark, complete_date)
             end
           else
             complete_date = unit.start_date + i * time_to_complete_task + rand(7..10).days
@@ -111,29 +145,25 @@ namespace :db do
             # 1 to 3
             case rand(1..100)
             when 0..3
-              task.assess TaskStatus.complete, tutor, complete_date
+              assess_task(proj, task, tutor, TaskStatus.complete, complete_date)
             when 4..60
-              task.submit complete_date
+              assess_task(proj, task, tutor, TaskStatus.ready_to_mark, complete_date)
             when 61..70
-              task.assess TaskStatus.discuss, tutor, complete_date
+              assess_task(proj, task, tutor, TaskStatus.discuss, complete_date)
             when 71..80
-              task.assess TaskStatus.demonstrate, tutor, complete_date
+              assess_task(proj, task, tutor, TaskStatus.demonstrate, complete_date)
             when 81..90
-              task.assess TaskStatus.fix_and_resubmit, tutor, complete_date
+              assess_task(proj, task, tutor, TaskStatus.fix_and_resubmit, complete_date)
             when 91..98
-              task.assess TaskStatus.working_on_it, tutor, complete_date
+              assess_task(proj, task, tutor, TaskStatus.working_on_it, complete_date)
             when 99
-              task.assess TaskStatus.redo, tutor, complete_date
+              assess_task(proj, task, tutor, TaskStatus.redo, complete_date)
             else
-              task.submit complete_date
+              assess_task(proj, task, tutor, TaskStatus.ready_to_mark, complete_date)
             end
           end
 
           i += 1
-          pdf_path = task.final_pdf_path
-          if pdf_path
-            FileUtils.ln_s(Rails.root.join('test_files', 'unit_files', 'sample-student-submission.pdf'), pdf_path)
-          end
         end
 
         next_assigned_tasks = p.assigned_tasks.where('target_date > :up_to_date AND target_date <= :next_week', up_to_date: kept_up_to_date, next_week: kept_up_to_date + 1.week)
@@ -152,6 +182,16 @@ namespace :db do
               FileUtils.ln_s(Rails.root.join('test_files', 'unit_files', 'sample-student-submission.pdf'), pdf_path)
             end
           end
+        end
+
+        if rand(0..99) > 70
+          portfolio_tmp_dir = p.portfolio_temp_path
+          FileUtils.mkdir_p(portfolio_tmp_dir)
+
+          lsr_path = File.join(portfolio_tmp_dir, "000-document-LearningSummaryReport.pdf")
+          FileUtils.ln_s(Rails.root.join('test_files', 'unit_files', 'sample-learning-summary.pdf'), lsr_path) unless File.exists? lsr_path
+          p.compile_portfolio = true
+          p.create_portfolio
         end
 
         p.save

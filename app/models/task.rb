@@ -970,11 +970,11 @@ class Task < ActiveRecord::Base
     alignments.each do |alignment|
       link = LearningOutcomeTaskLink.find_or_create_by(
         task_definition_id: task_definition.id,
-        learning_outcome_id: alignment.ilo_id,
+        learning_outcome_id: alignment[:ilo_id],
         task_id: id
       )
-      link.rating = alignment.rating
-      link.description = alignment.rationale
+      link.rating = alignment[:rating]
+      link.description = alignment[:rationale]
       link.save!
     end
   end
