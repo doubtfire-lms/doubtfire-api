@@ -35,6 +35,7 @@ module Doubtfire
     config.institution[:name] = ENV['DF_INSTITUTION_NAME'] if ENV['DF_INSTITUTION_NAME']
     config.institution[:email_domain] = ENV['DF_INSTITUTION_EMAIL_DOMAIN'] if ENV['DF_INSTITUTION_EMAIL_DOMAIN']
     config.institution[:host] = ENV['DF_INSTITUTION_HOST'] if ENV['DF_INSTITUTION_HOST']
+    config.institution[:host_name] = ENV['DF_INSTITUTION_HOST_NAME'] if ENV['DF_INSTITUTION_HOST_NAME']
     # Institution host becomes localhost in all but prod
     config.institution[:host] = 'localhost:3000' if Rails.env.development?
     config.institution[:host_url] = Rails.env.development? ? "http://#{config.institution[:host]}/" : "https://#{config.institution[:host]}/"
