@@ -1,10 +1,15 @@
 class PortfolioEvidenceMailer < ActionMailer::Base
-  @doubtfire_host = Doubtfire::Application.config.institution[:host]
-  @unsubscribe_url = "https://#{@doubtfire_host}/#/home?notifications"
+
+  def add_general
+    @doubtfire_host = Doubtfire::Application.config.institution[:host]
+    @doubtfire_host_name = Doubtfire::Application.config.institution[:host_name]
+    @unsubscribe_url = "https://#{@doubtfire_host}/#/home?notifications"
+  end
 
   def task_pdf_failed(project, tasks)
     return nil if project.nil? || tasks.nil? || tasks.length.zero?
 
+    add_general
     @student = project.student
     @project = project
     @tasks = tasks.sort_by { |t| t.task_definition.abbreviation }
@@ -20,6 +25,7 @@ class PortfolioEvidenceMailer < ActionMailer::Base
   def task_pdf_ready_message(project, tasks)
     return nil if project.nil? || tasks.nil? || tasks.length.zero?
 
+    add_general
     @student = project.student
     @project = project
     @tasks = tasks.sort_by { |t| t.task_definition.abbreviation }
@@ -35,6 +41,7 @@ class PortfolioEvidenceMailer < ActionMailer::Base
   def task_feedback_ready(project, tasks)
     return nil if project.nil? || tasks.nil? || tasks.length.zero?
 
+    add_general
     @student = project.student
     @project = project
     @tasks = tasks.sort_by { |t| t.task_definition.abbreviation }
@@ -51,6 +58,8 @@ class PortfolioEvidenceMailer < ActionMailer::Base
   def portfolio_ready(project)
     return nil if project.nil?
 
+    add_general
+
     @student = project.student
     @project = project
     @convenor = project.unit.convenors.first.user
@@ -64,6 +73,8 @@ class PortfolioEvidenceMailer < ActionMailer::Base
   def portfolio_failed(project)
     return nil if project.nil?
 
+    add_general
+    
     @student = project.student
     @project = project
     @convenor = project.unit.convenors.first.user
