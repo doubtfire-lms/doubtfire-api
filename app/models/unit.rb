@@ -148,7 +148,6 @@ class Unit < ActiveRecord::Base
                    task_definitions.where("target_grade <= #{e}").count + 0.0
                  end. map { |e| e == 0 ? 1 : e }
 
-    task_definitions.where
     q = projects
         .joins(:user)
         .joins('LEFT OUTER JOIN tasks ON projects.id = tasks.project_id')
@@ -185,7 +184,7 @@ class Unit < ActiveRecord::Base
           *TaskStatus.all.map { |s| "SUM(CASE WHEN tasks.task_status_id = #{s.id} THEN 1 ELSE 0 END) AS #{s.status_key}_count" }
         )
         .where(
-          'projects.target_grade >= task_definitions.target_grade OR (projects.target_grade = 0 AND task_definitions.target_grade IS NULL)'
+          'projects.target_grade >= task_definitions.target_grade OR (task_definitions.target_grade IS NULL)'
         )
         .order('users.first_name')
 
