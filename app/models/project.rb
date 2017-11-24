@@ -355,7 +355,7 @@ class Project < ActiveRecord::Base
 
     # Get the weeks between start and end date as an array
     # dates = unit.start_date.to_date.step(unit.end_date.to_date + 1.week, step=7).to_a
-    dates = unit.start_date.to_date.step(unit.end_date.to_date + 1.week, 7).to_a
+    dates = unit.start_date.to_date.step(unit.end_date.to_date + 3.week, 7).to_a
 
     # Setup the dictionaries to contain the keys and values
     # key = series name
