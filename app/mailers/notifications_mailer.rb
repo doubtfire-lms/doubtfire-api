@@ -1,9 +1,15 @@
 class NotificationsMailer < ActionMailer::Base
-  @doubtfire_host = Doubtfire::Application.config.institution[:host]
-  @unsubscribe_url = "https://#{@doubtfire_host}/#/home?notifications"
+
+  def add_general
+    @doubtfire_host = Doubtfire::Application.config.institution[:host]
+    @doubtfire_product_name = Doubtfire::Application.config.institution[:product_name]
+    @unsubscribe_url = "https://#{@doubtfire_host}/#/home?notifications"
+  end
 
   def weekly_staff_summary(unit_role, summary_stats)
     return nil if unit_role.nil?
+
+    add_general
 
     @staff = unit_role.user
     @unit_role = unit_role
@@ -22,6 +28,8 @@ class NotificationsMailer < ActionMailer::Base
   def weekly_student_summary(project, summary_stats, did_revert_to_pass)
     return nil if project.nil?
 
+    add_general
+    
     @student = project.student
     @project = project
     @tutor = project.main_tutor
