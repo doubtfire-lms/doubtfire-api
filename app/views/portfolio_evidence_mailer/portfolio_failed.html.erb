@@ -45,18 +45,18 @@
 </head>
 <body>
   <main>
-    <h1> <%= @doubtfire_host_name %> Notification </h1>
+    <h1> <%= @doubtfire_product_name %> Notification </h1>
     <p>Hi <%= @student.first_name %>,<p/>
     <p>
         There was an error compiling your portfolio. This usually means that one of your task PDFs is corrupt. Login to <a href="http://<%= @doubtfire_host %>">Doubtfire</a> and check each of your task PDFs. Once you have checked that all of the PDFs are valid you can schedule your portfolio to compile again.
     </p>
     <p>
         Cheers, <br />
-        The <%= @doubtfire_host_name %> Team on behalf of <%= @convenor.name %>
+        The <%= @doubtfire_product_name %> Team on behalf of <%= @convenor.name %>
     </p>
   </main>
   <footer>
-    <a href="<%= @unsubscribe_url %>">Unsubscribe</a> | Generated with <%= @doubtfire_host_name %>
+    <a href="<%= @unsubscribe_url %>">Unsubscribe</a> | Generated with <%= @doubtfire_product_name %>
   </footer>
 </body>
 </html>
