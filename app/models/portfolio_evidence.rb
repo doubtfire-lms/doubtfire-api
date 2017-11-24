@@ -62,13 +62,14 @@ class PortfolioEvidence
       end
     end
 
-    done.each do |project, tasks|
-      logger.info "checking email for project #{project.id}"
-      if project.student.receive_task_notifications
-        logger.info "emailing task notification to #{project.student.name}"
-        PortfolioEvidenceMailer.task_pdf_ready_message(project, tasks).deliver
-      end
-    end
+    # Remove email of task notification success - only email on fail
+    # done.each do |project, tasks|
+    #   logger.info "checking email for project #{project.id}"
+    #   if project.student.receive_task_notifications
+    #     logger.info "emailing task notification to #{project.student.name}"
+    #     PortfolioEvidenceMailer.task_pdf_ready_message(project, tasks).deliver
+    #   end
+    # end
 
     errors.each do |project, tasks|
       logger.info "checking email for project #{project.id}"
