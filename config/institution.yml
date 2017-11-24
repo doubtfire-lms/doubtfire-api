@@ -1,4 +1,4 @@
 name:         Doubtfire University
 email_domain: doubtfire.com
 host:         localhost:3000
-host_name:    Doubtfire
+product_name: Doubtfire

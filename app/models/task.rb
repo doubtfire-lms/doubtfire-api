@@ -833,7 +833,7 @@ class Task < ActiveRecord::Base
       @base_path = task.student_work_dir(:in_process, false)
       @image_path = Rails.root.join('public', 'assets', 'images')
       @institution_name = Doubtfire::Application.config.institution[:name]
-      @doubtfire_host_name = Doubtfire::Application.config.institution[:host_name]
+      @doubtfire_product_name = Doubtfire::Application.config.institution[:product_name]
     end
 
     def make_pdf

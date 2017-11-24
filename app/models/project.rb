@@ -969,7 +969,7 @@ EOF
       @task_defs = project.unit.task_definitions.order(:start_date)
       @outcomes = project.unit.learning_outcomes.order(:ilo_number)
       @institution_name = Doubtfire::Application.config.institution[:name]
-      @doubtfire_host_name = Doubtfire::Application.config.institution[:host_name]
+      @doubtfire_product_name = Doubtfire::Application.config.institution[:product_name]
     end
 
     def make_pdf
