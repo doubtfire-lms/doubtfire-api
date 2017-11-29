@@ -65,8 +65,13 @@ module Api
 
         # Create user if they are a new record
         if user.new_record?
-          user.password = 'password'
-          user.encrypted_password = BCrypt::Password.create('password')
+          if User.column_names.include? "password"
+            user.password = 'password'
+          end
+
+          if User.column_names.include? "encrypted_password"
+            user.encrypted_password = BCrypt::Password.create('password')
+          end
           unless user.valid?
             error!(error: 'There was an error creating your account in Doubtfire. ' \
                           'Please get in contact with your unit convenor or the ' \
@@ -149,8 +154,14 @@ module Api
 
         # Try and save the user once authenticated if new
         if user.new_record?
-          user.password = 'password'
-          user.encrypted_password = BCrypt::Password.create('password')
+          if User.column_names.include? "password"
+            user.password = 'password'
+          end
+
+          if User.column_names.include? "encrypted_password"
+            user.encrypted_password = BCrypt::Password.create('password')
+          end
+
           unless user.valid?
             error!(error: 'There was an error creating your account in Doubtfire. ' \
                           'Please get in contact with your unit convenor or the ' \
