@@ -129,6 +129,7 @@ module Api
         # Lookup using email otherwise and set login_id
         # Otherwise create new
         user = User.find_by(login_id: login_id) ||
+               User.find_by_username(email[/(.*)@/,1]) ||
                User.find_by(email: email) ||
                User.find_or_create_by(login_id: login_id) do |new_user|
                  role = Role.aaf_affiliation_to_role_id(attrs[:edupersonscopedaffiliation])
