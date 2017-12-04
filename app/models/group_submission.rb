@@ -44,6 +44,12 @@ class GroupSubmission < ActiveRecord::Base
     end
   end
 
+  def propogate_alignments_from_submission(alignments)
+    tasks.each do |task|
+      task.create_alignments_from_submission(alignments)
+    end
+  end
+
   def submitter_task
     result = tasks.where(project: submitted_by_project).first
     return result unless result.nil?

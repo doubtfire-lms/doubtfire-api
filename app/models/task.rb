@@ -974,7 +974,7 @@ class Task < ActiveRecord::Base
   #
   # Create alignments on submission
   #
-  def create_alignments_from_submission(current_user, alignments)
+  def create_alignments_from_submission(alignments)
     # Remove existing alignments no longer applicable
     LearningOutcomeTaskLink.where(task_id: id).delete_all()
     alignments.each do |alignment|
@@ -1029,14 +1029,21 @@ class Task < ActiveRecord::Base
       end
     end
 
-    create_alignments_from_submission(current_user, alignments) unless alignments.nil?
     create_submission_and_trigger_state_change(current_user, propagate = true, contributions = contributions, trigger = trigger)
+
+    unless alignments.nil?
+      if group_task?
+        ensured_group_submission.propogate_alignments_from_submission(alignments)
+      else
+        create_alignments_from_submission(alignments)
+      end
+    end
 
     #
     # Create student submission folder (<tmpdir>/doubtfire/new/<id>)
     #
     tmp_dir = File.join(Dir.tmpdir, 'doubtfire', 'new', id.to_s)
-    logger.debug "Creating temporary directory for new dubmission at #{tmp_dir}"
+    logger.debug "Creating temporary directory for new submission at #{tmp_dir}"
 
     # ensure the dir exists
     FileUtils.mkdir_p(tmp_dir)

@@ -30,7 +30,7 @@ namespace :db do
     contributions = nil
     trigger = 
 
-    task.create_alignments_from_submission(current_user, alignments) unless alignments.nil?
+    task.create_alignments_from_submission(alignments) unless alignments.nil?
     task.create_submission_and_trigger_state_change(current_user) #, propagate = true, contributions = contributions, trigger = trigger)
     task.assess status, tutor, complete_date
 
