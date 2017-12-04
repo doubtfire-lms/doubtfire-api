@@ -81,10 +81,10 @@ module Api
       end
 
       task = project.task_for_task_definition(task_definition)
-      task_comment = task.comments.find(params[:id])
+      task_comment = task.all_comments.find(params[:id])
 
       key = if current_user == task_comment.user
-            :delete_own_comment
+              :delete_own_comment
             else
               :delete_other_comment
             end
