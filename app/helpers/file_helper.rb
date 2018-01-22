@@ -121,6 +121,8 @@ module FileHelper
           dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}", task.project.student.username.to_s, type.to_s, task.id.to_s) << '/'
         elsif type == :plagarism
           dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}", task.project.student.username.to_s, type.to_s, task.id.to_s) << '/'
+        elsif type == :comment
+          dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}", task.project.student.username.to_s, type.to_s) << '/'        
         else # new and in_process -- just have task id
           # Add task id to dst if we want task
           dst << "#{type}/#{task.id}/"
@@ -152,6 +154,10 @@ module FileHelper
     # Create current dst directory should it not exist
     FileUtils.mkdir_p(dst) if create
     dst
+  end
+
+  def comment_attachment_path(task_comment, attachment)
+    "#{File.join( student_work_dir(:comment, task_comment.task), task_comment.id.to_s)}-:filename"
   end
 
   def compress_image(path)
@@ -431,6 +437,7 @@ module FileHelper
   module_function :student_group_work_dir
   module_function :student_work_dir
   module_function :student_portfolio_dir
+  module_function :comment_attachment_path
   module_function :compress_image
   module_function :compress_pdf
   module_function :move_files

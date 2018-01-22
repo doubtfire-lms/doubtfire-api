@@ -11,7 +11,9 @@ module Api
 
     desc 'Add a new comment to a task'
     params do
-      requires :comment, type: String, desc: 'The comment text to add to the task'
+      requires :type, type: Symbol, default: :text, values: [:text, :image, :audio, :video], desc: 'The type of comment to add to the task'
+      optional :comment, type: String, desc: 'The comment text to add to the task'
+      optional :attachment, type: Rack::Multipart::UploadedFile, desc: 'Image, sound, or video comment file'
     end
     post '/projects/:project_id/task_def_id/:task_definition_id/comments' do
       project = Project.find(params[:project_id])
@@ -22,13 +24,48 @@ module Api
       end
 
       task = project.task_for_task_definition(task_definition)
-      result = task.add_comment current_user, params[:comment]
+
+      if params[:type] == :text
+        textcomment = params[:comment]
+        result = task.add_text_comment(current_user, textcomment)
+      else
+        result = task.add_comment_with_attachment(current_user, params[:attachment])
+      end
+
+
+      #result = task.add_comment current_user, params[:comment]
 
       if result.nil?
         error!({ error: 'No comment added. Comment duplicates last comment, so ignored.' }, 403)
       else
         result.mark_as_read(current_user, project.unit)
         result
+      end
+    end
+    
+    desc 'Get an attachment related to a task comment'
+    params do
+      optional :as_attachment, type: Boolean, desc: 'Whether or not to download file as attachment. Default is false.'
+    end
+    get '/projects/:project_id/task_def_id/:task_definition_id/comments/:id' do
+      project = Project.find(params[:project_id])
+      task_definition = project.unit.task_definitions.find(params[:task_definition_id])
+
+      unless authorise? current_user, project, :get
+        error!({ error: 'You cannot read the comments for this task' }, 403)
+      end
+
+      if project.has_task_for_task_definition? task_definition
+        task = project.task_for_task_definition(task_definition)
+
+        comment = task.comments.find(params[:id])
+
+        content_type comment.attachment.content_type
+        env['api.format'] = :binary
+        if params[:as_attachment]
+          header['Content-Disposition'] = "attachment; filename=#{comment.attachment_file_name}"
+        end
+        File.read(comment.attachment.path)
       end
     end
 
@@ -49,6 +86,7 @@ module Api
           {
             id: c.id,
             comment: c.comment,
+            has_attachment: c.attachment.exists?,
             is_new: c.new_for?(current_user),
             author: {
               id: c.user.id,
