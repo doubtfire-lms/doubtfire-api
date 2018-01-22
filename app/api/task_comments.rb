@@ -24,12 +24,13 @@ module Api
       end
 
       task = project.task_for_task_definition(task_definition)
+      content_type = params[:type]      
 
-      if params[:type] == :text
-        textcomment = params[:comment]
-        result = task.add_text_comment(current_user, textcomment)
+      if content_type == :text
+        text_comment = params[:comment]
+        result = task.add_text_comment(current_user, text_comment, content_type)
       else
-        result = task.add_comment_with_attachment(current_user, params[:attachment])
+        result = task.add_comment_with_attachment(current_user, params[:attachment], content_type)
       end
 
 
@@ -87,6 +88,7 @@ module Api
             id: c.id,
             comment: c.comment,
             has_attachment: c.attachment.exists?,
+            type: c.content_type,
             is_new: c.new_for?(current_user),
             author: {
               id: c.user.id,
