@@ -22,20 +22,30 @@ module Api
       unless authorise? current_user, project, :make_submission
         error!({ error: 'Not authorised to create a comment for this task' }, 403)
       end
+      
+      content_type = params[:type]      
+      text_comment = params[:comment]
+      attachment_comment = params[:attachment]    
 
       task = project.task_for_task_definition(task_definition)
-      content_type = params[:type]      
+      type_string = content_type.to_s
 
       if content_type == :text
-        text_comment = params[:comment]
+        if text_comment.nil?
+          error!({ error: "text field is empty"}, 403)          
+        end
         result = task.add_text_comment(current_user, text_comment, content_type)
       else
-        result = task.add_comment_with_attachment(current_user, params[:attachment], content_type)
+        if attachment_comment.nil?
+          error!({ error: "No file attached"}, 403)          
+        else
+          unless FileHelper.accept_file(attachment_comment, "comment attachment - TaskComment", type_string)
+            error!({ error: "File attached is not a valid #{type_string} file" }, 403)
+          end
+        end
+        result = task.add_comment_with_attachment(current_user, attachment_comment, content_type)
       end
-
-
-      #result = task.add_comment current_user, params[:comment]
-
+      
       if result.nil?
         error!({ error: 'No comment added. Comment duplicates last comment, so ignored.' }, 403)
       else

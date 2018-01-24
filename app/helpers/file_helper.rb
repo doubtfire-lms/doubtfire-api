@@ -28,6 +28,10 @@ module FileHelper
         'application/pdf'
       ]
       valid = pdf_valid? file.tempfile.path
+    when 'audio'
+      accept = ['application/octet-stream', 'audio/mpeg', 'audio/x-mpeg', 'audio/mp3', 'audio/x-mp3', 'audio/mpeg3', 'audio/x-mpeg3', 'audio/mpg', 'audio/x-mpg', 'audio/x-mpegaudio']
+    when 'video'
+      accept = ['video/mp4']
     else
       logger.error "Unknown type '#{kind}' provided for '#{name}'"
       return false
