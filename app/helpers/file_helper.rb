@@ -29,7 +29,17 @@ module FileHelper
       ]
       valid = pdf_valid? file.tempfile.path
     when 'audio'
-      accept = ['application/octet-stream', 'audio/mpeg', 'audio/x-mpeg', 'audio/mp3', 'audio/x-mp3', 'audio/mpeg3', 'audio/x-mpeg3', 'audio/mpg', 'audio/x-mpg', 'audio/x-mpegaudio']
+      accept = ['application/octet-stream', 'audio/mpeg', 'audio/x-mpeg', 'audio/mp3', 'audio/x-mp3', 'audio/mpeg3', 'audio/x-mpeg3', 'audio/mpg', 'audio/x-mpg', 'audio/x-mpegaudio', 'text/plain']
+      accept2 = ['text/plain']
+      if mime_in_list?(file.tempfile.path, accept2)
+        audio_txt = read_file_to_str(file.tempfile)
+        if audio_txt[0,15] == 'data:video/webm'
+          valid = true          
+        else
+          valid = false          
+        end        
+      end
+
     when 'video'
       accept = ['video/mp4']
     else
