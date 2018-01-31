@@ -9,7 +9,12 @@ class TaskComment < ActiveRecord::Base
   validates :task, presence: true
   validates :user, presence: true
   validates :recipient, presence: true
-  validates :comment, length: { minimum: 1, maximum: 4095, allow_blank: false }
+  validates :comment, length: { minimum: 0, maximum: 4095, allow_blank: true }
+  has_attached_file :attachment, :styles => {
+    :medium => { :geometry => "640x480", :format => 'flv' },
+    :thumb => { :geometry => "100x100#", :format => 'jpg', :time => 10 }
+  }, :processors => [:transcoder], :path => proc { |attachment| FileHelper.comment_attachment_path(attachment.instance, attachment) }
+  do_not_validate_attachment_file_type :attachment
 
   def new_for?(user)
     CommentsReadReceipts.where(user: user, task_comment_id: self).empty?
@@ -20,6 +25,16 @@ class TaskComment < ActiveRecord::Base
     comment_read_receipt.user = user
     comment_read_receipt.task_comment = self
     comment_read_receipt.save!
+  end
+
+  def add_attachment(tempfile)
+    attachmenttodisplay = {
+      :filename => tempfile[:filename],
+      :type => tempfile[:type],
+      :headers => tempfile[:head],
+      :tempfile => tempfile[:tempfile]
+    }
+    self.attachment = ActionDispatch::Http::UploadedFile.new(attachmenttodisplay)    
   end
 
   def remove_comment_read_entry(user)

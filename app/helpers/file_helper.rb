@@ -28,6 +28,20 @@ module FileHelper
         'application/pdf'
       ]
       valid = pdf_valid? file.tempfile.path
+    when 'audio'
+      accept = ['application/octet-stream', 'audio/mpeg', 'audio/x-mpeg', 'audio/mp3', 'audio/x-mp3', 'audio/mpeg3', 'audio/x-mpeg3', 'audio/mpg', 'audio/x-mpg', 'audio/x-mpegaudio', 'text/plain']
+      accept2 = ['text/plain']
+      if mime_in_list?(file.tempfile.path, accept2)
+        audio_txt = read_file_to_str(file.tempfile)
+        if audio_txt[0,15] == 'data:video/webm'
+          valid = true          
+        else
+          valid = false          
+        end        
+      end
+
+    when 'video'
+      accept = ['video/mp4']
     else
       logger.error "Unknown type '#{kind}' provided for '#{name}'"
       return false
@@ -121,6 +135,8 @@ module FileHelper
           dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}", task.project.student.username.to_s, type.to_s, task.id.to_s) << '/'
         elsif type == :plagarism
           dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}", task.project.student.username.to_s, type.to_s, task.id.to_s) << '/'
+        elsif type == :comment
+          dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}", task.project.student.username.to_s, type.to_s) << '/'        
         else # new and in_process -- just have task id
           # Add task id to dst if we want task
           dst << "#{type}/#{task.id}/"
@@ -152,6 +168,10 @@ module FileHelper
     # Create current dst directory should it not exist
     FileUtils.mkdir_p(dst) if create
     dst
+  end
+
+  def comment_attachment_path(task_comment, attachment)
+    "#{File.join( student_work_dir(:comment, task_comment.task), task_comment.id.to_s)}-:filename"
   end
 
   def compress_image(path)
@@ -431,6 +451,7 @@ module FileHelper
   module_function :student_group_work_dir
   module_function :student_work_dir
   module_function :student_portfolio_dir
+  module_function :comment_attachment_path
   module_function :compress_image
   module_function :compress_pdf
   module_function :move_files
