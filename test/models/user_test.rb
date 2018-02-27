@@ -23,8 +23,8 @@ class UserTest < ActiveSupport::TestCase
       role_id: 1,
       email: 'test@test.org',
       username: 'metoo',
-      password: 'potato123',
-      password_confirmation: 'potato123'
+      password: 'password',
+      password_confirmation: 'password'
     }
     User.create!(profile)
     assert User.last, profile
