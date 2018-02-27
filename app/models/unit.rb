@@ -2,12 +2,14 @@ require 'csv'
 require 'bcrypt'
 require 'json'
 require 'moss_ruby'
+require 'csv_helper'
 
 class Unit < ActiveRecord::Base
   include ApplicationHelper
   include FileHelper
   include LogHelper
   include MimeCheckHelpers
+  include CsvHelper
 
   validates :description, length: { maximum: 4095, allow_blank: true }
   #
@@ -313,37 +315,81 @@ class Unit < ActiveRecord::Base
   # Imports users into a project from CSV file.
   # Format: Unit Code, Student ID,First Name, Surname, email, tutorial
   # Expected columns: unit_code, username, first_name, last_name, email, tutorial
+  #
   def import_users_from_csv(file)
     tutorial_cache = {}
     success = []
     errors = []
     ignored = []
 
+    csv = CSV.new(File.read(file), headers: true,
+        header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
+        converters: [->(i) { i.nil? ? '' : i }, ->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]
+        )
+
+    # Read the header row to determine what kind of file it is
+    if csv.header_row?
+      csv.shift
+    else
+      errors << {row: [], message: "Header row missing" }
+      return
+    end
+
+    # Check if these headers should be processed by institution file or from DF format
+    if Doubtfire::Application.config.institution_settings.are_headers_institution_users? csv.headers
+      missing_headers_lambda = Doubtfire::Application.config.institution_settings.missing_header_for(csv.headers)
+      fetch_row_data_lambda = Doubtfire::Application.config.institution_settings.fetch_row_data(csv.headers)
+    else
+      missing_headers_lambda = ->(row) {
+        missing_headers(row, %w(unit_code username student_id first_name last_name email tutorial))
+      }
+      fetch_row_data_lambda = ->(row, unit) {
+        {
+            unit_code:      row['unit_code'],
+            username:       row['username'],
+            student_id:     row['student_id'],
+            first_name:     row['first_name'],
+            nickname:       nil,
+            last_name:      row['last_name'],
+            email:          row['email'],
+            enrolled:       true,
+            tutorial_code:  row['tutorial']
+        }
+      }
+    end
+
+    # Determine kind of file to process
     CSV.foreach(file, headers: true,
                       header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
                       converters: [->(i) { i.nil? ? '' : i }, ->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]) do |row|
-      # Make sure we're not looking at the header or an empty line
-      next if row['unit_code'] =~ /unit_code/
-
-      missing = missing_headers(row, %w(unit_code username student_id first_name last_name email tutorial))
+      
+      missing = missing_headers_lambda.call(row)
       if missing.count > 0
         errors << { row: row, message: "Missing headers: #{missing.join(', ')}" }
         next
       end
 
       begin
-        if row['username'].nil?
+        row_data = fetch_row_data_lambda.call(row, self)
+
+        if row_data[:username].nil?
           ignored << { row: row, message: "Skipping row with missing username" }
           next
         end
 
-        unit_code = row['unit_code']
-        username = row['username'].downcase
-        student_id = row['student_id']
-        first_name = row['first_name'].nil? ? row['first_name'] : row['first_name'].titleize
-        last_name = row['last_name'].nil? ? row['last_name'] : row['last_name'].titleize
-        email = row['email']
-        tutorial_code = row['tutorial']
+        unit_code = row_data[:unit_code]
+        username = row_data[:username].downcase
+        student_id = row_data[:student_id]
+        first_name = row_data[:first_name].nil? ? nil : row_data[:first_name].titleize
+        last_name = row_data[:last_name].nil? ? nil : row_data[:last_name].titleize
+        nickname = row_data[:nickname]
+        email = row_data[:email]
+        tutorial_code = row_data[:tutorial_code]
+
+        # If either first or last name is nil... copy over the other component
+        first_name = first_name || last_name
+        last_name = last_name || first_name
+        nickname = nickname || first_name
 
         if unit_code != code
           ignored << { row: row, message: "Invalid unit code. #{unit_code} does not match #{code}" }
@@ -357,11 +403,25 @@ class Unit < ActiveRecord::Base
 
         username = username.downcase
 
+        unless row_data[:enrolled]
+          project_participant = User.where(username: username)
+          
+          if project_participant.nil?
+            ignored << { row: row, message: "Ignoring student to withdraw, as not enrolled" }
+          else
+            user_project = projects.where(user_id: project_participant.first.id).first
+            user_project.enrolled = false
+            user_project.save
+          end
+
+          next
+        end
+
         project_participant = User.find_or_create_by(username: username) do |new_user|
           new_user.first_name         = first_name
           new_user.last_name          = last_name
           new_user.student_id         = student_id
-          new_user.nickname           = first_name
+          new_user.nickname           = nickname
           new_user.role_id            = Role.student_id
           new_user.email              = email
           new_user.encrypted_password = BCrypt::Password.create('password')
@@ -614,10 +674,6 @@ class Unit < ActiveRecord::Base
       ignored: ignored,
       errors:  errors
     }
-  end
-
-  def missing_headers(row, headers)
-    headers - row.to_hash.keys
   end
 
   def import_groups_from_csv(group_set, file)
