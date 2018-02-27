@@ -50,6 +50,10 @@ class User < ActiveRecord::Base
     devise strategy, *devise_keys
   end
 
+  def password= (value)
+    self.encrypted_password = BCrypt::Password.create(value)
+  end
+
   #
   # Authenticates a user against a piece of data
   #
