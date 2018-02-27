@@ -46,7 +46,7 @@ class DeakinInstitutionSettings
     end
 
     def fetch_star_row(row, unit)
-        email_match = /(.*)(?=@)/.match( row["email_address"] )[0]
+        email_match = /(.*)(?=@)/.match( row["email_address"] )
         subject_match = /.*?(?=_)/.match( row["subject_code"] )
         username = email_match.nil? ? nil : email_match[0]
         unit_code = subject_match.nil? ? nil : subject_match[0]
