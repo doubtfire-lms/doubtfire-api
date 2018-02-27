@@ -148,7 +148,6 @@ module Api
         error!({ error: 'Not authorised to create new users' }, 403)
       end
 
-      params[:user][:password] = 'password'
       user_parameters = ActionController::Parameters.new(params)
                                                     .require(:user)
                                                     .permit(
@@ -157,8 +156,7 @@ module Api
                                                       :student_id,
                                                       :email,
                                                       :username,
-                                                      :nickname,
-                                                      :password
+                                                      :nickname
                                                     )
 
       # have to translate the system_role -> role
