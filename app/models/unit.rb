@@ -410,9 +410,13 @@ class Unit < ActiveRecord::Base
             ignored << { row: row, message: "Ignoring student to withdraw, as not enrolled" }
           else
             user_project = projects.where(user_id: project_participant.first.id).first
-            user_project.enrolled = false
-            user_project.save
-            success << { row: row, message: "Student was withdrawn" }
+            if user_project.nil?
+              ignored << { row: row, message: "Ignoring student to withdraw, as not enrolled" }
+            else
+              user_project.enrolled = false 
+              user_project.save
+              success << { row: row, message: "Student was withdrawn" }
+            end
           end
 
           next
