@@ -52,11 +52,9 @@ class DeakinInstitutionSettings
         unit_code = subject_match.nil? ? nil : subject_match[0]
 
         tutorial_code = row["campus"].strip() == "" ? nil : "#{row["campus"]}-#{row["activity_code"]}"
-        
-        puts tutorial_code
 
         unless tutorial_code.nil?
-            if unit.tutorials.where(abbreviation: tutorial_code).nil? && unit_code == unit.code
+            if unit.tutorials.where(abbreviation: tutorial_code).count == 0 && unit_code == unit.code
                 unit.add_tutorial(
                     day_abbr_to_name(row["day_of_week"]),
                     row["start_time"],
@@ -73,7 +71,7 @@ class DeakinInstitutionSettings
             student_id:     row["student_code"],
             first_name:     row["first_name"],
             last_name:      row["last_name"],
-            nickname:       row["preferred_name"],
+            nickname:       row["preferred_name"] == '-' ? nil : row["preferred_name"],
             email:          row["email_address"],
             enrolled:       true,
             tutorial_code:  tutorial_code
@@ -89,7 +87,7 @@ class DeakinInstitutionSettings
                     student_id:     row["person id"],
                     first_name:     row["given names"],
                     last_name:      row["surname"],
-                    nickname:       row["preferred given name"],
+                    nickname:       row["preferred given name"] == "-" ? nil : row["preferred given name"],
                     email:          "#{row["email"]}@deakin.edu.au",
                     enrolled:       row["student attempt status"] == 'ENROLLED',
                     tutorial_code:  nil
