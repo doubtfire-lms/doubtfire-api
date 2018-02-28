@@ -412,6 +412,7 @@ class Unit < ActiveRecord::Base
             user_project = projects.where(user_id: project_participant.first.id).first
             user_project.enrolled = false
             user_project.save
+            success << { row: row, message: "Student was withdrawn" }
           end
 
           next
