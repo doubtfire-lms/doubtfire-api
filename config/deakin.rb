@@ -1,7 +1,7 @@
 class DeakinInstitutionSettings
 
     def are_callista_headers? (headers)
-        headers[0] == "person id" && headers.count == 34
+        headers[0] == "person id" && headers.count == 35
     end
 
     def are_star_headers? (headers)
@@ -19,7 +19,7 @@ class DeakinInstitutionSettings
     def missing_header_for(headers)
         if are_callista_headers?(headers)
             ->(row) {
-                missing_headers(row, ["person id", "surname", "given names", "unit code", "student attempt status", "email"])
+                missing_headers(row, ["person id", "surname", "given names", "unit code", "student attempt status", "email", "preferred given name"])
             }
         else
             ->(row) {
@@ -89,7 +89,7 @@ class DeakinInstitutionSettings
                     student_id:     row["person id"],
                     first_name:     row["given names"],
                     last_name:      row["surname"],
-                    nickname:       nil,
+                    nickname:       row["preferred given name"],
                     email:          "#{row["email"]}@deakin.edu.au",
                     enrolled:       row["student attempt status"] == 'ENROLLED',
                     tutorial_code:  nil

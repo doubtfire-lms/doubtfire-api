@@ -382,7 +382,7 @@ class Unit < ActiveRecord::Base
         student_id = row_data[:student_id]
         first_name = row_data[:first_name].nil? ? nil : row_data[:first_name].titleize
         last_name = row_data[:last_name].nil? ? nil : row_data[:last_name].titleize
-        nickname = row_data[:nickname]
+        nickname = row_data[:nickname].nil? ? nil : row_data[:nickname].titleize
         email = row_data[:email]
         tutorial_code = row_data[:tutorial_code]
 
