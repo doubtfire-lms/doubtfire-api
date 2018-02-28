@@ -406,7 +406,7 @@ class Unit < ActiveRecord::Base
         unless row_data[:enrolled]
           project_participant = User.where(username: username)
           
-          if project_participant.nil?
+          if project_participant.nil? || project_participant.count == 0
             ignored << { row: row, message: "Ignoring student to withdraw, as not enrolled" }
           else
             user_project = projects.where(user_id: project_participant.first.id).first
