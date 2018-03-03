@@ -147,8 +147,8 @@ class Unit < ActiveRecord::Base
   def student_query(limit_to_enrolled)
     # Get the number of tasks for each grade... with 1 as minimum to avoid / 0
     task_count = [0, 1, 2, 3].map do |e|
-                   task_definitions.where("target_grade <= #{e}").count + 0.0
-                 end. map { |e| e == 0 ? 1 : e }
+      task_definitions.where("target_grade <= #{e}").count + 0.0
+    end.map { |e| e == 0 ? 1 : e }
 
     q = projects
         .joins(:user)
@@ -193,11 +193,10 @@ class Unit < ActiveRecord::Base
     q = q.where('projects.enrolled = TRUE') if limit_to_enrolled
 
     q.map do |t|
-      # puts "#{t.project_id} #{t.first_name} #{t.fail_count} Grade:#{t.grade} Count:#{task_count[t.grade]}"
-      red_pct = ((t.fail_count + t.do_not_resubmit_count + t.time_exceeded_count)/ task_count).signif(2)
-      orange_pct = ((t.redo_count + t.need_help_count + t.fix_and_resubmit_count) / task_count).signif(2)
-      green_pct = ((t.discuss_count + t.demonstrate_count + t.complete_count) / task_count).signif(2)
-      blue_pct = (t.ready_to_mark_count / task_count).signif(2)
+      red_pct = ((t.fail_count + t.do_not_resubmit_count + t.time_exceeded_count) / task_count[3]).signif(2)
+      orange_pct = ((t.redo_count + t.need_help_count + t.fix_and_resubmit_count) / task_count[3]).signif(2)
+      green_pct = ((t.discuss_count + t.demonstrate_count + t.complete_count) / task_count[3]).signif(2)
+      blue_pct = (t.ready_to_mark_count / task_count[3]).signif(2)
       grey_pct = (1 - red_pct - orange_pct - green_pct - blue_pct).signif(2)
 
       {
