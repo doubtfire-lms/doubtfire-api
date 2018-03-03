@@ -347,6 +347,10 @@ class Task < ActiveRecord::Base
       return nil
     when TaskStatus.ready_to_mark
       submit
+
+      if task_definition.due_date && task_definition.due_date < Time.zone.now
+        assess TaskStatus.time_exceeded, by_user
+      end
     when TaskStatus.not_started, TaskStatus.need_help, TaskStatus.working_on_it
       engage status
     else
