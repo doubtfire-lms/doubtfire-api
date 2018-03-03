@@ -194,18 +194,11 @@ class Unit < ActiveRecord::Base
 
     q.map do |t|
       # puts "#{t.project_id} #{t.first_name} #{t.fail_count} Grade:#{t.grade} Count:#{task_count[t.grade]}"
-      fail_pct = (t.fail_count / task_count[t.target_grade]).signif(2)
-      do_not_resubmit_pct = (t.do_not_resubmit_count / task_count[t.target_grade]).signif(2)
-      redo_pct = (t.redo_count / task_count[t.target_grade]).signif(2)
-      need_help_pct = (t.need_help_count / task_count[t.target_grade]).signif(2)
-      working_on_it_pct = (t.working_on_it_count / task_count[t.target_grade]).signif(2)
-      fix_and_resubmit_pct = (t.fix_and_resubmit_count / task_count[t.target_grade]).signif(2)
-      ready_to_mark_pct = (t.ready_to_mark_count / task_count[t.target_grade]).signif(2)
-      discuss_pct = (t.discuss_count / task_count[t.target_grade]).signif(2)
-      demonstrate_pct = (t.demonstrate_count / task_count[t.target_grade]).signif(2)
-      complete_pct = (t.complete_count / task_count[t.target_grade]).signif(2)
-
-      not_started_pct = (1 - fail_pct - do_not_resubmit_pct - redo_pct - need_help_pct - working_on_it_pct - fix_and_resubmit_pct - ready_to_mark_pct - discuss_pct - demonstrate_pct - complete_pct).signif(2)
+      red_pct = ((t.fail_count + t.do_not_resubmit_count + t.time_exceeded_count)/ task_count).signif(2)
+      orange_pct = ((t.redo_count + t.need_help_count + t.fix_and_resubmit_count) / task_count).signif(2)
+      green_pct = ((t.discuss_count + t.demonstrate_count + t.complete_count) / task_count).signif(2)
+      blue_pct = (t.ready_to_mark_count / task_count).signif(2)
+      grey_pct = (1 - red_pct - orange_pct - green_pct - blue_pct).signif(2)
 
       {
         project_id: t.project_id,
@@ -222,7 +215,7 @@ class Unit < ActiveRecord::Base
         grade_rationale: t.grade_rationale,
         max_pct_copy: t.plagiarism_match_links_max_pct,
         has_portfolio: !t.portfolio_production_date.nil?,
-        stats: "#{fail_pct}|#{not_started_pct}|#{do_not_resubmit_pct}|#{redo_pct}|#{need_help_pct}|#{working_on_it_pct}|#{fix_and_resubmit_pct}|#{ready_to_mark_pct}|#{discuss_pct}|#{demonstrate_pct}|#{complete_pct}"
+        stats: "#{red_pct}|#{grey_pct}|#{orange_pct}|#{blue_pct}|#{green_pct}"
       }
     end
   end
@@ -299,7 +292,7 @@ class Unit < ActiveRecord::Base
     project = Project.create!(
       user_id: user.id,
       unit_id: id,
-      task_stats: '0.0|1.0|0.0|0.0|0.0|0.0|0.0|0.0|0.0|0.0|0.0'
+      task_stats: '0.0|1.0|0.0|0.0|0.0'
     )
 
     project.tutorial_id = tutorial_id unless tutorial_id.nil?
