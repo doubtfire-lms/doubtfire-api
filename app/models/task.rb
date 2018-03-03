@@ -76,20 +76,19 @@ class Task < ActiveRecord::Base
   has_many :reverse_plagiarism_match_links, class_name: 'PlagiarismMatchLink', dependent: :destroy, inverse_of: :other_task, foreign_key: 'other_task_id'
   has_many :learning_outcome_task_links, dependent: :destroy # links to learning outcomes
   has_many :learning_outcomes, through: :learning_outcome_task_links
+  has_many :task_engagements
 
   validates :task_definition_id, uniqueness: { scope: :project,
                                                message: 'must be unique within the project' }
 
   validate :must_have_quality_pts, if: :for_task_with_quality?
 
-  after_save :update_project
-
   def for_task_with_quality?
-    task_definition.max_quality_pts > 0
+    task_definition.max_quality_pts.positive?
   end
 
   def must_have_quality_pts
-    if quality_pts.nil? || quality_pts < 0 || quality_pts > task_definition.max_quality_pts
+    if quality_pts.nil? || quality_pts.negative? || quality_pts > task_definition.max_quality_pts
       errors.add(:quality_pts, "must be between 0 and #{task_definition.max_quality_pts}")
     end
   end
@@ -99,6 +98,18 @@ class Task < ActiveRecord::Base
       comments
     else
       TaskComment.joins(:task).where('tasks.group_submission_id = :id', id: group_submission.id)
+    end
+  end
+
+  def mark_comments_as_read(user, comments)
+    comments.each do |comment|
+      comment.mark_as_read(user, unit)
+    end
+  end
+
+  def mark_comments_as_unread(user, comments)
+    comments.each do |comment|
+      comment.mark_as_unread(user)
     end
   end
 
@@ -127,11 +138,6 @@ class Task < ActiveRecord::Base
       File.exist? File.join(FileHelper.student_work_dir(:new), id.to_s)
     end
     # portfolio_evidence == nil && ready_to_mark?
-  end
-
-  def update_project
-    project.update_attribute(:progress, project.calculate_progress)
-    project.update_attribute(:status, project.calculate_status)
   end
 
   def overdue?
@@ -182,6 +188,25 @@ class Task < ActiveRecord::Base
 
   def days_overdue
     (project.reference_date - task_definition.target_date).to_i / 1.day
+  end
+
+  # Action date defines the last time a task has been "actioned", either the
+  # submission date or latest student comment -- whichever is newer
+  def action_date
+    return nil if last_student_comment.nil? || submission_date.nil?
+    return last_student_comment.created_at if !last_student_comment.nil? && submission_date.nil?
+    return submission_date.created_at      if !submission_date.nil? && last_student_comment.nil?
+    last_student_comment.created_at > submission_date ? last_student_comment.created_at : submission_date
+  end
+
+  # Returns the last student comment for this task
+  def last_student_comment
+    comments.where(user: project.user).order(:created_at).last
+  end
+
+  # Returns the last tutor comment for this task
+  def last_tutor_comment
+    comments.where(user: project.tutorial.tutor).order(:created_at).last
   end
 
   delegate :due_date, to: :task_definition
@@ -253,7 +278,7 @@ class Task < ActiveRecord::Base
   end
 
   def has_pdf
-    !portfolio_evidence.nil? && File.exist?(portfolio_evidence)
+    !portfolio_evidence.nil? && File.exist?(portfolio_evidence) && !processing_pdf?
   end
 
   def log_details
@@ -345,8 +370,6 @@ class Task < ActiveRecord::Base
       end
     end
 
-    # TODO: Remove once task_stats deleted
-    # if not bulk then project.calc_task_stats(self) end
     true
   end
 
@@ -440,20 +463,20 @@ class Task < ActiveRecord::Base
       # has definitely started
       project.start
 
-      # If the task was given an assessment outcome
-      if assessed?
-        # Grab the submission for the task if the user made one
-        submission = TaskSubmission.where(task_id: id).order(:submission_time).reverse_order.first
-        # Prepare the attributes of the submission
-        submission_attributes = { task: self, assessment_time: assess_date, assessor: assessor, outcome: task_status.name }
+      TaskEngagement.create!(task: self, engagement_time: Time.zone.now, engagement: task_status.name)
 
-        # Create or update the submission depending on whether one was made
-        if submission.nil?
-          TaskSubmission.create! submission_attributes
-        else
-          submission.update_attributes submission_attributes
-          submission.save
-        end
+      # Grab the submission for the task if the user made one
+      submission = TaskSubmission.where(task_id: id).order(:submission_time).reverse_order.first
+      # Prepare the attributes of the submission
+      submission_attributes = { task: self, assessment_time: assess_date, assessor: assessor, outcome: task_status.name }
+
+      # Create or update the submission depending on whether one was made
+      if submission.nil?
+        submission_attributes[:submission_time] = assess_date
+        submission = TaskSubmission.create! submission_attributes
+      else
+        submission.update_attributes submission_attributes
+        submission.save
       end
     end
   end
@@ -472,12 +495,14 @@ class Task < ActiveRecord::Base
 
     if save!
       project.start
+      TaskEngagement.create!(task: self, engagement_time: Time.zone.now, engagement: task_status.name)
       submission = TaskSubmission.where(task_id: id).order(:submission_time).reverse_order.first
 
       if submission.nil?
         TaskSubmission.create!(task: self, submission_time: submit_date)
       else
-        if !submission.submission_time.nil? && submission.submission_time < 1.hour.since(submit_date)
+        if (!submission.submission_time.nil?) && submit_date < submission.submission_time + 1.hour && submission.assessor.nil?
+          # update old submission if within time window
           submission.submission_time = submit_date
           submission.save!
         else
@@ -512,6 +537,7 @@ class Task < ActiveRecord::Base
     comment.task = self
     comment.user = user
     comment.comment = text
+    comment.recipient = user == project.student ? project.main_tutor : project.student
     comment.save!
     comment
   end
@@ -574,7 +600,12 @@ class Task < ActiveRecord::Base
 
   def student_work_dir(type, create = true)
     if group_task?
-      FileHelper.student_group_work_dir(type, group_submission, group_submission.submitter_task, create)
+      # New submissions need to use the path of this task
+      if type == :new
+        FileHelper.student_group_work_dir(type, group_submission, self, create)
+      else
+        FileHelper.student_group_work_dir(type, group_submission, group_submission.submitter_task, create)
+      end
     else
       FileHelper.student_work_dir(type, self, create)
     end
@@ -617,8 +648,12 @@ class Task < ActiveRecord::Base
   def compress_new_to_done
     task_dir = student_work_dir(:new, false)
     begin
+      # Ensure that this task is the submitter task for a  group_task... otherwise
+      # remove this submission
+      raise "Multiple team member submissions received at the same time. Please ensure that only one member submits the task." if group_task? && self != group_submission.submitter_task
+      
       zip_file = zip_file_path_for_done_task
-      return if zip_file.nil? || (!Dir.exist? task_dir)
+      return false if zip_file.nil? || (!Dir.exist? task_dir)
 
       FileUtils.rm(zip_file) if File.exist? zip_file
 
@@ -731,7 +766,7 @@ class Task < ActiveRecord::Base
     nil
   end
 
-  def in_process_files_for_task
+  def in_process_files_for_task(is_retry)
     magic = FileMagic.new(FileMagic::MAGIC_MIME)
     in_process_dir = student_work_dir(:in_process, false)
     return [] unless Dir.exist? in_process_dir
@@ -753,11 +788,8 @@ class Task < ActiveRecord::Base
       else
         result << { path: output_filename, type: file_req['type'] }
 
-        if file_req['type'] == 'code' && magic.file(output_filename).include?('utf-16')
-          # convert utf-16 to utf-8
-          # TODO: avoid system call... if we can work out how to get ruby to save as UTF8
-          `iconv -f UTF-16 -t UTF-8 "#{output_filename}" > new`
-          FileUtils.mv('new', output_filename)
+        if file_req['type'] == 'code'
+          FileHelper.ensure_utf8_code(output_filename, is_retry)
         end
 
         idx += 1 # next file index
@@ -773,12 +805,13 @@ class Task < ActiveRecord::Base
     attr_accessor :base_path
     attr_accessor :image_path
 
-    def init(task)
+    def init(task, is_retry)
       @task = task
-      @files = task.in_process_files_for_task
+      @files = task.in_process_files_for_task(is_retry)
       @base_path = task.student_work_dir(:in_process, false)
       @image_path = Rails.root.join('public', 'assets', 'images')
       @institution_name = Doubtfire::Application.config.institution[:name]
+      @doubtfire_product_name = Doubtfire::Application.config.institution[:product_name]
     end
 
     def make_pdf
@@ -806,7 +839,8 @@ class Task < ActiveRecord::Base
     elsif ['sql'].include?(extn) then 'sql'
     elsif ['vb'].include?(extn) then 'vbnet'
     elsif ['txt'].include?(extn) then 'text'
-    else 'text'
+    elsif ['py'].include?(extn) then 'python'
+    else extn
     end
   end
 
@@ -828,26 +862,35 @@ class Task < ActiveRecord::Base
 
     begin
       tac = TaskAppController.new
-      tac.init(self)
+      tac.init(self, false)
 
       begin
         pdf_text = tac.make_pdf
       rescue => e
-        logger.error "Failed to create PDF for task #{log_details}. Error: #{e.message}"
 
-        log_file = e.message.scan(/\/.*\.log/).first
-        # puts "log file is ... #{log_file}"
-        if log_file && File.exist?(log_file)
-          # puts "exists"
-          begin
-            puts "--- Latex Log ---\n"
-            puts File.read(log_file)
-            puts "---    End    ---\n\n"
-          rescue
+        # Try again... with convert to ascii
+        tac2 = TaskAppController.new
+        tac2.init(self, true)
+
+        begin
+          pdf_text = tac2.make_pdf
+        rescue => e2
+          logger.error "Failed to create PDF for task #{log_details}. Error: #{e.message}"
+
+          log_file = e.message.scan(/\/.*\.log/).first
+          # puts "log file is ... #{log_file}"
+          if log_file && File.exist?(log_file)
+            # puts "exists"
+            begin
+              puts "--- Latex Log ---\n"
+              puts File.read(log_file)
+              puts "---    End    ---\n\n"
+            rescue
+            end
           end
-        end
 
-        raise 'Failed to convert your submission to PDF. Check code files submitted for invalid characters, that documents are valid pdfs, and that images are valid.'
+          raise 'Failed to convert your submission to PDF. Check code files submitted for invalid characters, that documents are valid pdfs, and that images are valid.'
+        end
       end
 
       if group_task?
@@ -907,9 +950,27 @@ class Task < ActiveRecord::Base
   end
 
   #
+  # Create alignments on submission
+  #
+  def create_alignments_from_submission(alignments)
+    # Remove existing alignments no longer applicable
+    LearningOutcomeTaskLink.where(task_id: id).delete_all()
+    alignments.each do |alignment|
+      link = LearningOutcomeTaskLink.find_or_create_by(
+        task_definition_id: task_definition.id,
+        learning_outcome_id: alignment[:ilo_id],
+        task_id: id
+      )
+      link.rating = alignment[:rating]
+      link.description = alignment[:rationale]
+      link.save!
+    end
+  end
+
+  #
   # Moves submission into place
   #
-  def accept_submission(current_user, files, _student, ui, contributions, trigger)
+  def accept_submission(current_user, files, _student, ui, contributions, trigger, alignments)
     #
     # Ensure that each file in files has the following attributes:
     # id, name, filename, type, tempfile
@@ -948,11 +1009,19 @@ class Task < ActiveRecord::Base
 
     create_submission_and_trigger_state_change(current_user, propagate = true, contributions = contributions, trigger = trigger)
 
+    unless alignments.nil?
+      if group_task?
+        ensured_group_submission.propogate_alignments_from_submission(alignments)
+      else
+        create_alignments_from_submission(alignments)
+      end
+    end
+
     #
     # Create student submission folder (<tmpdir>/doubtfire/new/<id>)
     #
     tmp_dir = File.join(Dir.tmpdir, 'doubtfire', 'new', id.to_s)
-    logger.debug "Creating temporary directory for new dubmission at #{tmp_dir}"
+    logger.debug "Creating temporary directory for new submission at #{tmp_dir}"
 
     # ensure the dir exists
     FileUtils.mkdir_p(tmp_dir)

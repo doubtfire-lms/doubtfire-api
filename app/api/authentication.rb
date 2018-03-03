@@ -50,23 +50,16 @@ module Api
           new_user.login_id   = username
         end
 
-        # Redirect acain_student or acain_tutor
-        acain_match = username =~ /^acain_.*$/
-        user.username = 'acain' if !acain_match.nil? && acain_match.zero?
-
         # Try to authenticate
         unless user.authenticate?(password)
           error!({ error: 'Invalid email or password.' }, 401)
           return
         end
 
-        # Restore username if acain_...
-        user.username = username if !acain_match.nil? && acain_match.zero?
-
         # Create user if they are a new record
         if user.new_record?
-          user.password = 'password'
           user.encrypted_password = BCrypt::Password.create('password')
+
           unless user.valid?
             error!(error: 'There was an error creating your account in Doubtfire. ' \
                           'Please get in contact with your unit convenor or the ' \
@@ -101,6 +94,16 @@ module Api
         jws = params[:assertion]
         error!({ error: 'JWS was not found in request.' }, 500) unless jws
 
+        # Identity provider must match the one set in the configuration -- this
+        # prevents an identity provider from a different institution from trying
+        # to log into this instance of Doubtfire
+        referer = request.referer
+        error!({ error: 'This URL must be referered by AAF.' }, 500) unless referer
+        request_idp = referer.split('entityID=').last
+        unless request_idp == Doubtfire::Application.config.aaf[:identity_provider_url]
+          error!({ error: 'This request was not verified by the correct identity provider.' }, 500)
+        end
+
         # Decode JWS
         jwt = User.decode_jws(jws)
         error!({ error: 'Invalid JWS.' }, 500) unless jwt
@@ -109,22 +112,26 @@ module Api
         attrs = jwt['https://aaf.edu.au/attributes']
         login_id = jwt[:sub]
         email = attrs[:mail]
-        username = email.split('@').first
 
         # Lookup using login_id if it exists
         # Lookup using email otherwise and set login_id
         # Otherwise create new
         user = User.find_by(login_id: login_id) ||
+               User.find_by_username(email[/(.*)@/,1]) ||
                User.find_by(email: email) ||
                User.find_or_create_by(login_id: login_id) do |new_user|
+                 role = Role.aaf_affiliation_to_role_id(attrs[:edupersonscopedaffiliation])
+                 first_name = (attrs[:givenname] || attrs[:cn]).capitalize
+                 last_name = attrs[:surname].capitalize
+                 username = email.split('@').first
                  # Some institutions may provide givenname and surname, others
                  # may only provide common name which we will use as first name
-                 new_user.first_name = attrs[:givenname] || attrs[:cn]
-                 new_user.last_name  = attrs[:surname]
+                 new_user.first_name = first_name
+                 new_user.last_name  = last_name
                  new_user.email      = email
                  new_user.username   = username
-                 new_user.nickname   = new_user.first_name
-                 new_user.role_id    = Role.student.id
+                 new_user.nickname   = first_name
+                 new_user.role_id    = role
                end
 
         # Set login id + username if not yet specified
@@ -136,8 +143,8 @@ module Api
 
         # Try and save the user once authenticated if new
         if user.new_record?
-          user.password = 'password'
           user.encrypted_password = BCrypt::Password.create('password')
+
           unless user.valid?
             error!(error: 'There was an error creating your account in Doubtfire. ' \
                           'Please get in contact with your unit convenor or the ' \
@@ -150,8 +157,8 @@ module Api
         user.generate_temporary_authentication_token!
 
         # Must redirect to the front-end after sign in
-        protocol = Rails.env.production? ? 'https' : 'http'
-        host = Rails.env.production? ? Doubtfire::Application.config.institution[:host] : 'localhost:8000'
+        protocol = Rails.env.development? ? 'http' : 'https'
+        host = Rails.env.development? ? 'localhost:8000' : Doubtfire::Application.config.institution[:host]
         redirect "#{protocol}://#{host}/#sign_in?authToken=#{user.auth_token}"
       end
 

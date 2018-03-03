@@ -50,6 +50,21 @@ class User < ActiveRecord::Base
     devise strategy, *devise_keys
   end
 
+  # 
+  # We incorporate password details for local dev server - needed to keep devise happy
+  #
+  def password
+    'password'
+  end
+
+  def password_confirmation
+    'password'
+  end
+
+  def password= (value)
+    self.encrypted_password = BCrypt::Password.create(value)
+  end
+
   #
   # Authenticates a user against a piece of data
   #
@@ -150,6 +165,7 @@ class User < ActiveRecord::Base
   validates :role_id,     presence: true
   validates :username,    presence: true, uniqueness: { case_sensitive: false }
   validates :email,       presence: true, uniqueness: { case_sensitive: false }
+  validates :student_id,  uniqueness: true, allow_nil: true
 
   # Queries
   scope :tutors,    -> { joins(:role).where('roles.id = :tutor_role or roles.id = :convenor_role or roles.id = :admin_role', tutor_role: Role.tutor_id, convenor_role: Role.convenor_id, admin_role: Role.admin_id) }
@@ -389,7 +405,7 @@ class User < ActiveRecord::Base
   end
 
   def self.csv_columns
-    %w(username first_name last_name email nickname role)
+    %w(username first_name last_name email student_id nickname role)
   end
 
   def self.import_from_csv(current_user, file)
@@ -458,7 +474,6 @@ class User < ActiveRecord::Base
           # will not be persisted initially as password cannot be blank - so can check
           # which were created using this - will persist changes imported
           if user.new_record?
-            user.password = 'password'
             user.save!
             success << { row: row, message: "Added user #{username} as #{role}." }
           else

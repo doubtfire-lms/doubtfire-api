@@ -1,0 +1,33 @@
+<PRE>&gt;&gt;&gt;&gt; file: 000-code.cs
+using System;
+<FONT color = #FF0000>
+
+using SplashKitSDK;
+
+public class Program
+{
+    public static void Main()
+    {
+        string name;
+        string inputText;
+        int heightInCM;
+        double weightInKG;
+        double heightInMeters;
+        double bmi;
+        Console.WriteLine($"Enter your name:");
+        name = Console.ReadLine();
+        Console.WriteLine($"Hello " + name);
+        Console.WriteLine($"Enter Height in CM:");
+        inputText = Console.ReadLine();
+        heightInCM = Convert.ToInt32(inputText);
+        heightInMeters = heightInCM / 100.0;
+        Console.WriteLine($"Height in Meters " + heightInMeters);
+        Console.WriteLine($"Enter Weight in KG:");
+        string weight = Console.ReadLine();
+        weightInKG = Convert.ToDouble(weight);
+        Console.WriteLine($"Weight is" + weightInKG);
+        bmi = weightInKG/(heightInMeters*heightInMeters);
+        Console.WriteLine($"Your BMI:" + bmi);
+</FONT>    }
+}
+</PRE>

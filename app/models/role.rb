@@ -20,6 +20,16 @@ class Role < ActiveRecord::Base
   end
 
   #
+  # Checks to see if the role returned by aaf is tutor, returns student if
+  # it is anything else.
+  #
+  if AuthenticationHelpers.aaf_auth?
+    def self.aaf_affiliation_to_role_id(affiliation)
+      affiliation.include?('staff') ? Role.tutor.id : Role.student.id
+    end
+  end
+
+  #
   # Helpers to get the role id's:
   # - These could be made into DB queries, but these values should not change
   #

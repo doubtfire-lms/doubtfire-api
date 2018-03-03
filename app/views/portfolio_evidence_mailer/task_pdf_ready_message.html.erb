@@ -53,7 +53,7 @@
             <% @tasks.each do |task| %>
             <li>
                 <strong><%= task.task_definition.abbreviation %> - </strong>
-                <a href="<%=Doubtfire::Application.config.mail_base_url%>projects/<%=@project.id%>/feedback/<%=task.id%>">
+                <a href="<%=Doubtfire::Application.config.institution[:host_url]%>#/projects/<%=@project.id%>/dashboard/<%=task.task_definition.abbreviation%>">
                     <%=task.task_definition.name%>
                 </a>
             </li>
@@ -62,11 +62,11 @@
     </p>
     <p>
         Cheers, <br />
-        <%= @tutor.name %>
+        The <%= @doubtfire_product_name %> Team on behalf of <%= @tutor.name %>
     </p>
   </main>
   <footer>
-    <a href="<%= @unsubscribe_url %>">Unsubscribe</a> | Generated with Doubtfire
+    <a href="<%= @unsubscribe_url %>">Unsubscribe</a> | Generated with <%= @doubtfire_product_name %>
   </footer>
 </body>
 </html>

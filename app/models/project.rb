@@ -4,6 +4,12 @@ class Float
   end
 end
 
+class Fixnum
+  def signif(signs)
+    Float("%.#{signs}f" % self)
+  end
+end
+
 class Project < ActiveRecord::Base
   include ApplicationHelper
   include LogHelper
@@ -18,6 +24,8 @@ class Project < ActiveRecord::Base
   has_many :group_memberships, dependent: :destroy
   has_many :groups, -> { where('group_memberships.active = :value', value: true) }, through: :group_memberships
   has_many :past_groups, -> { where('group_memberships.active = :value', value: false) }, through: :group_memberships, source: 'group'
+  has_many :task_engagements, through: :tasks
+  has_many :comments, through: :tasks
 
   has_many :learning_outcome_task_links, through: :tasks
 
@@ -129,8 +137,6 @@ class Project < ActiveRecord::Base
   #
   def trigger_week_end(by_user)
     discuss_and_demonstrate_tasks.each { |task| task.trigger_transition(trigger: 'complete', by_user: by_user, bulk: true, quality: task.quality_pts) }
-    # TODO: Remove once task_stats deleted
-    # calc_task_stats
   end
 
   def start
@@ -152,7 +158,7 @@ class Project < ActiveRecord::Base
   end
 
   def main_convenor
-    unit.convenors.first.user
+    unit.main_convenor
   end
 
   def tutorial_abbr
@@ -195,6 +201,39 @@ class Project < ActiveRecord::Base
     end
   end
 
+  def task_details_for_shallow_serializer(user)
+    tasks
+      .joins(:task_status)
+      .joins("LEFT JOIN task_comments ON task_comments.task_id = tasks.id")
+      .joins("LEFT JOIN comments_read_receipts crr ON crr.task_comment_id = task_comments.id AND crr.user_id = #{user.id}")
+      .select(
+        'SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) as number_unread', 'project_id', 'tasks.id as id',
+        'task_definition_id', 'task_statuses.name as status_name',
+        'completion_date', 'times_assessed', 'submission_date', 'portfolio_evidence', 'tasks.grade as grade', 'quality_pts', 'include_in_portfolio', 'grade'
+      )
+      .group(
+        'task_statuses.id', 'tasks.project_id', 'tasks.id', 'task_definition_id', 'status_name',
+        'completion_date', 'times_assessed', 'submission_date', 'portfolio_evidence', 'grade', 'quality_pts',
+        'include_in_portfolio', 'grade'
+      )
+      .map do |r|
+        t = Task.find(r.id)
+        {
+          id: r.id,
+          status: TaskStatus.status_key_for_name(r.status_name),
+          task_definition_id: r.task_definition_id,
+          include_in_portfolio: r.include_in_portfolio,
+          pct_similar: t.pct_similar,
+          similar_to_count: t.similar_to_count,
+          similar_to_dismissed_count: t.similar_to_dismissed_count,
+          times_assessed: r.times_assessed,
+          grade: r.grade,
+          quality_pts: r.quality_pts,
+          num_new_comments: r.number_unread
+        }
+      end
+  end
+
   def assigned_tasks
     tasks.joins(:task_definition).where('task_definitions.target_grade <= :target', target: target_grade)
   end
@@ -212,92 +251,95 @@ class Project < ActiveRecord::Base
     portfolio_tasks = tasks.select(&:has_pdf)
   end
 
-  def progress
-    self[:progress].to_sym
-  end
-
-  def progress=(value)
-    self[:progress] = value.to_s
-  end
-
-  def status
-    self[:status].to_sym
-  end
-
-  def status=(value)
-    self[:status] = value.to_s
-  end
-
   def target_grade=(value)
     self[:target_grade] = value
-    # TODO: Remove once task_stats deleted
-    # calc_task_stats
   end
 
-  def calculate_progress
-    relative_progress = progress_in_weeks
+  #
+  # Get task_definitions and status for the current student for all tasks that are <= the target
+  #
+  def task_definitions_and_status(target)
+    assigned_task_defs_for_grade(target).
+      order("start_date ASC, abbreviation ASC").
+      map { |td| {task_definition: td, status: status_for_task_definition(td) } }.
+      select { |r| [:not_started, :redo, :need_help, :working_on_it, :fix_and_resubmit, :demonstrate, :discuss].include? r[:status] }
+  end
 
-    if relative_progress >= 0
-      :ahead
-    elsif (relative_progress == -1) || (relative_progress == -2)
-      :on_track
-    else
-      weeks_behind = relative_progress.abs
+  #
+  # Calculate a list of the top 5 task definitions the student should focus on,
+  # in order of priority with reason.
+  #
+  def top_tasks
+    result = []
 
-      if weeks_behind <= 3
-        :behind
-      elsif weeks_behind > 3 && weeks_behind <= 5
-        :danger
-      else
-        :doomed
+    #
+    # Get list of tasks that could be top tasks...
+    #
+    task_states = task_definitions_and_status(target_grade)
+
+    #
+    # Start with overdue...
+    #
+    overdue_tasks = task_states.select { |ts| ts[:task_definition].target_date < Time.zone.today }
+
+    grades = [ "Pass", "Credit", "Distinction", "High Distinction" ]
+
+    for i in 0..3
+      graded_tasks = overdue_tasks.select { |ts| ts[:task_definition].target_grade == i  }
+
+      graded_tasks.each do |ts|
+        result << { task_definition: ts[:task_definition], status: ts[:status], reason: :overdue }
       end
-    end
-  end
 
-  def calculate_status
-    if !commenced?
-      :not_commenced
-    elsif concluded?
-      completed? ? :completed : :not_completed
-    else
-      if completed?
-        :completed
-      elsif started?
-        :in_progress
-      else
-        :not_started
+      return result.slice(0..4) if result.count >= 5
+    end
+
+    #
+    # Add in soon tasks...
+    #
+    soon_tasks = task_states.select { |ts| ts[:task_definition].target_date >= Time.zone.today && ts[:task_definition].target_date < Time.zone.today + 7.days }
+
+    for i in 0..3
+      graded_tasks = soon_tasks.select { |ts| ts[:task_definition].target_grade == i  }
+
+      graded_tasks.each do |ts|
+        result << { task_definition: ts[:task_definition], status: ts[:status], reason: :soon }
       end
-    end
-  end
 
-  def progress_in_weeks
-    progress_in_days / 7
-  end
-
-  def progress_in_days
-    units_completed = task_units_completed
-
-    # current_week  = weeks_elapsed
-    date_progress = unit.start_date
-
-    progress_points.each do |date, weight|
-      break if weight > units_completed
-      date_progress = date
+      return result.slice(0..4) if result.count >= 5
     end
 
-    (date_progress - reference_date).to_i / 1.day
-  end
+    #
+    # Add in ahead tasks...
+    #
+    ahead_tasks = task_states.select { |ts| ts[:task_definition].target_date >= Time.zone.today + 7.days }
 
-  def progress_points
-    date_accumulated_weight_map = {}
+    for i in 0..3
+      graded_tasks = ahead_tasks.select { |ts| ts[:task_definition].target_grade == i  }
 
-    assigned_tasks.sort { |a, b| a.task_definition.target_date <=> b.task_definition.target_date }.each do |project_task|
-      date_accumulated_weight_map[project_task.task_definition.target_date] = assigned_tasks.select do |task|
-        task.task_definition.target_date <= project_task.task_definition.target_date
-      end.map { |task| task.task_definition.weighting.to_f }.inject(:+)
+      graded_tasks.each do |ts|
+        result << { task_definition: ts[:task_definition], status: ts[:status], reason: :ahead }
+      end
+
+      return result.slice(0..4) if result.count >= 5
     end
 
-    date_accumulated_weight_map
+    result.slice(0..4)
+  end
+
+  def should_revert_to_pass
+    return false unless self.target_grade > 0
+
+    task_states = task_definitions_and_status(0)
+    overdue_tasks = task_states.select { |ts| ts[:task_definition].target_date < Time.zone.today }
+
+    # More than 2 pass tasks overdue
+    return false unless overdue_tasks.count > 2    
+
+    # Oldest is more than 2 weeks past target
+    return false unless (Time.zone.today - overdue_tasks.first[:task_definition].target_date.to_date).to_i >= 14
+
+    return true
   end
 
   #
@@ -313,7 +355,7 @@ class Project < ActiveRecord::Base
 
     # Get the weeks between start and end date as an array
     # dates = unit.start_date.to_date.step(unit.end_date.to_date + 1.week, step=7).to_a
-    dates = unit.start_date.to_date.step(unit.end_date.to_date + 1.week, 7).to_a
+    dates = unit.start_date.to_date.step(unit.end_date.to_date + 3.week, 7).to_a
 
     # Setup the dictionaries to contain the keys and values
     # key = series name
@@ -527,7 +569,7 @@ class Project < ActiveRecord::Base
   def task_stats
     task_count = unit.task_definitions.where("target_grade <= #{target_grade}").count + 0.0
     task_count = 1.0 unless task_count > 1.0
-    result = tasks
+    result = assigned_tasks
              .group('project_id')
              .select(
                'project_id',
@@ -558,12 +600,12 @@ class Project < ActiveRecord::Base
     end
   end
 
-  def calc_task_stats(_reload_task = nil)
-    task_stats
+  def assigned_task_defs_for_grade(target)
+    unit.task_definitions.where('target_grade <= :grade', grade: target)
   end
 
   def assigned_task_defs
-    unit.task_definitions.where('target_grade <= :grade', grade: target_grade)
+    assigned_task_defs_for_grade target_grade
   end
 
   def total_task_weight
@@ -695,7 +737,7 @@ class Project < ActiveRecord::Base
     result
   end
 
-  def portfolio_files
+  def portfolio_files(ensure_valid = false, force_ascii = false)
     # get path to portfolio dir
     portfolio_tmp_dir = portfolio_temp_path
     return [] unless Dir.exist? portfolio_tmp_dir
@@ -710,6 +752,8 @@ class Project < ActiveRecord::Base
       kind = parts[1]
       name = parts.drop(2).join('-')
       result << { kind: kind, name: name, idx: idx }
+
+      FileHelper.ensure_utf8_code(file, force_ascii) if ensure_valid && kind == "code"
     end
 
     result
@@ -856,6 +900,17 @@ EOF
   end
 
   #
+  # Get the status of a task, without creating it if it does not exist...
+  #
+  def status_for_task_definition(td)
+    if has_task_for_task_definition? td
+      task_for_task_definition(td).status
+    else
+      :not_started
+    end
+  end
+
+  #
   # Get the task for the requested definition. This will create the
   # task if the task does not exist for this project.
   #
@@ -902,11 +957,11 @@ EOF
     attr_accessor :task_defs
     attr_accessor :outcomes
 
-    def init(project)
+    def init(project, is_retry)
       @student = project.student
       @project = project
       @learning_summary_report = project.learning_summary_report_path
-      @files = project.portfolio_files
+      @files = project.portfolio_files(true, is_retry)
       @base_path = project.portfolio_temp_path
       @image_path = Rails.root.join('public', 'assets', 'images')
       @ordered_tasks = project.tasks.joins(:task_definition).order('task_definitions.start_date, task_definitions.abbreviation').where("task_definitions.target_grade <= #{project.target_grade}")
@@ -914,6 +969,7 @@ EOF
       @task_defs = project.unit.task_definitions.order(:start_date)
       @outcomes = project.unit.learning_outcomes.order(:ilo_number)
       @institution_name = Doubtfire::Application.config.institution[:name]
+      @doubtfire_product_name = Doubtfire::Application.config.institution[:product_name]
     end
 
     def make_pdf
@@ -943,9 +999,17 @@ EOF
 
     begin
       pac = ProjectAppController.new
-      pac.init(self)
+      pac.init(self, false)
 
-      pdf_text = pac.make_pdf
+      begin
+        pdf_text = pac.make_pdf
+      rescue => e
+        # Try again... with convert to ascii
+        pac2 = ProjectAppController.new
+        pac2.init(self, true)
+
+        pdf_text = pac2.make_pdf
+      end
 
       File.open(portfolio_path, 'w') do |fout|
         fout.puts pdf_text
@@ -970,5 +1034,21 @@ EOF
       end
       return false
     end
+  end
+
+  def send_weekly_status_email ( summary_stats, middle_of_unit )
+    did_revert_to_pass = false
+    if middle_of_unit && should_revert_to_pass && ! has_portfolio
+      self.target_grade = 0
+      save
+      did_revert_to_pass = true
+
+      summary_stats[:revert_count] = summary_stats[:revert_count] + 1
+      summary_stats[:revert][main_tutor] << self
+    end
+
+    return unless student.receive_feedback_notifications
+    return if has_portfolio && ! middle_of_unit
+    NotificationsMailer.weekly_student_summary(self, summary_stats, did_revert_to_pass).deliver_now
   end
 end

@@ -24,5 +24,11 @@ module CsvHelper
     Date.parse(date)
   end
 
+  def missing_headers(row, headers)
+    headers - row.to_hash.keys
+  end
+
+
   module_function :csv_date_to_date
+  module_function :missing_headers
 end

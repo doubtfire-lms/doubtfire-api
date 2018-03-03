@@ -16,21 +16,33 @@ module Doubtfire
   class Application < Rails::Application
     # Load .env variables
     Dotenv::Railtie.load
+
     # ==> Authentication Method
     # Authentication method default is database, but possible settings
     # are: database, ldap, aaf. It can be overridden using the DF_AUTH_METHOD
     # environment variable.
     config.auth_method = (ENV['DF_AUTH_METHOD'] || :database).to_sym
+
     # ==> Student work directory
     # File server location for storing student's work. Defaults to `student_work`
     # directory under root but is overridden using DF_STUDENT_WORK_DIR environment
     # variable.
     config.student_work_dir = ENV['DF_STUDENT_WORK_DIR'] || "#{Rails.root}/student_work"
+
     # ==> Institution settings
-    # Institution YAML config load
+    # Institution YAML and ENV (override) config load
     config.institution = YAML.load_file("#{Rails.root}/config/institution.yml").with_indifferent_access
+    config.institution[:name] = ENV['DF_INSTITUTION_NAME'] if ENV['DF_INSTITUTION_NAME']
+    config.institution[:email_domain] = ENV['DF_INSTITUTION_EMAIL_DOMAIN'] if ENV['DF_INSTITUTION_EMAIL_DOMAIN']
+    config.institution[:host] = ENV['DF_INSTITUTION_HOST'] if ENV['DF_INSTITUTION_HOST']
+    config.institution[:product_name] = ENV['DF_INSTITUTION_PRODUCT_NAME'] if ENV['DF_INSTITUTION_PRODUCT_NAME']
     # Institution host becomes localhost in all but prod
-    config.institution[:host] = 'localhost:3000' unless Rails.env.production?
+    config.institution[:host] = 'localhost:3000' if Rails.env.development?
+    config.institution[:host_url] = Rails.env.development? ? "http://#{config.institution[:host]}/" : "https://#{config.institution[:host]}/"
+    config.institution[:settings] = ENV['DF_INSTITUTION_SETTINGS_RB'] if ENV['DF_INSTITUTION_SETTINGS_RB']
+    
+    require "#{Rails.root}/config/#{config.institution[:settings]}" unless config.institution[:settings].nil?
+
     # ==> AAF authentication
     # Must require AAF devise authentication method.
     if config.auth_method == :aaf
@@ -46,12 +58,14 @@ module Doubtfire
       # (e.g., https://rapid.aaf.edu.au/jwt/authnrequest/auresearch/XXXXXXX)
       config.aaf[:redirect_url] = ENV['DF_AAF_UNIQUE_URL']
       # URL of the identity provider (e.g., https://unifoo.edu.au/idp/shibboleth)
-      identity_provider_url = ENV['DF_AAF_IDENTITY_PROVIDER_URL']
-      config.aaf[:redirect_url] += "?entityID=#{identity_provider_url}" if identity_provider_url
+      config.aaf[:identity_provider_url] = ENV['DF_AAF_IDENTITY_PROVIDER_URL']
+      # Redirection URL to use on front-end
+      config.aaf[:redirect_url] += "?entityID=#{config.aaf[:identity_provider_url]}"
       # Check we have all values
       if config.aaf[:audience_url].nil? ||
          config.aaf[:callback_url].nil? ||
-         config.aaf[:redirect_url].nil?
+         config.aaf[:redirect_url].nil? ||
+         config.aaf[:identity_provider_url].nil?
         raise "Invalid values specified to AAF, check the following environment variables: \n"\
               "  key                          => variable set?\n"\
               "  DF_AAF_ISSUER_URL            => #{!ENV['DF_AAF_ISSUER_URL'].nil?}\n"\
