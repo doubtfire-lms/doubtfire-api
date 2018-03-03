@@ -220,7 +220,7 @@ class Project < ActiveRecord::Base
         t = Task.find(r.id)
         {
           id: r.id,
-          status: TaskStatus.find(r.status_id),
+          status: TaskStatus.find(r.status_id).status_key,
           task_definition_id: r.task_definition_id,
           include_in_portfolio: r.include_in_portfolio,
           pct_similar: t.pct_similar,
