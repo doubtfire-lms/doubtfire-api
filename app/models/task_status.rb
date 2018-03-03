@@ -5,6 +5,15 @@ class TaskStatus < ActiveRecord::Base
   # Model associations
   has_many :tasks
 
+  #
+  # Override find to ensure that task status objects are cached - these do not change
+  #
+  def self.find(id)
+    Rails.cache.fetch("task_statuses/#{id}", expires_in: 12.hours) do
+      super
+    end
+  end
+
   scope :not_started,       -> { TaskStatus.find(1) }
   scope :complete,          -> { TaskStatus.find(2) }
   scope :need_help,         -> { TaskStatus.find(3) }
