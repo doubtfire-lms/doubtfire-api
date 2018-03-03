@@ -2,12 +2,14 @@ require 'csv'
 require 'bcrypt'
 require 'json'
 require 'moss_ruby'
+require 'csv_helper'
 
 class Unit < ActiveRecord::Base
   include ApplicationHelper
   include FileHelper
   include LogHelper
   include MimeCheckHelpers
+  include CsvHelper
 
   validates :description, length: { maximum: 4095, allow_blank: true }
   #
@@ -65,7 +67,7 @@ class Unit < ActiveRecord::Base
       Role.convenor
     elsif tutors.where('unit_roles.user_id=:id', id: user.id).count == 1
       Role.tutor
-    elsif students.where('projects.user_id=:id', id: user.id).count == 1
+    elsif active_projects.where('projects.user_id=:id', id: user.id).count == 1
       Role.student
     end
   end
@@ -81,6 +83,8 @@ class Unit < ActiveRecord::Base
   has_many :learning_outcomes, dependent: :destroy
   has_many :tasks, through: :projects
   has_many :group_sets, dependent: :destroy
+  has_many :task_engagements, through: :projects
+  has_many :comments, through: :projects
 
   has_many :learning_outcome_task_links, through: :task_definitions
 
@@ -132,6 +136,10 @@ class Unit < ActiveRecord::Base
     User.teaching(self)
   end
 
+  def main_convenor
+    convenors.first.user
+  end
+
   def students
     projects
   end
@@ -142,10 +150,10 @@ class Unit < ActiveRecord::Base
                    task_definitions.where("target_grade <= #{e}").count + 0.0
                  end. map { |e| e == 0 ? 1 : e }
 
-    task_definitions.where
     q = projects
         .joins(:user)
         .joins('LEFT OUTER JOIN tasks ON projects.id = tasks.project_id')
+        .joins('LEFT JOIN task_definitions ON tasks.task_definition_id = task_definitions.id')
         .joins('LEFT OUTER JOIN plagiarism_match_links ON tasks.id = plagiarism_match_links.task_id')
         .group(
           'projects.id',
@@ -177,6 +185,9 @@ class Unit < ActiveRecord::Base
           'MAX(CASE WHEN plagiarism_match_links.dismissed = FALSE THEN plagiarism_match_links.pct ELSE 0 END) AS plagiarism_match_links_max_pct',
           *TaskStatus.all.map { |s| "SUM(CASE WHEN tasks.task_status_id = #{s.id} THEN 1 ELSE 0 END) AS #{s.status_key}_count" }
         )
+        .where(
+          'projects.target_grade >= task_definitions.target_grade OR (task_definitions.target_grade IS NULL)'
+        )
         .order('users.first_name')
 
     q = q.where('projects.enrolled = TRUE') if limit_to_enrolled
@@ -203,6 +214,7 @@ class Unit < ActiveRecord::Base
         last_name: t.last_name,
         student_id: t.student_id,
         student_email: t.student_email,
+        student_name: "#{t.first_name} #{t.last_name}",
         target_grade: t.target_grade,
         tutorial_id: t.tutorial_id,
         compile_portfolio: t.compile_portfolio,
@@ -295,11 +307,6 @@ class Unit < ActiveRecord::Base
     project
   end
 
-  def update_project_stats
-    # TODO: Remove once task_stats deleted
-    # active_projects.each { |p| p.calc_task_stats }
-  end
-
   def tutorial_with_abbr(abbr)
     tutorials.where(abbreviation: abbr).first
   end
@@ -308,31 +315,81 @@ class Unit < ActiveRecord::Base
   # Imports users into a project from CSV file.
   # Format: Unit Code, Student ID,First Name, Surname, email, tutorial
   # Expected columns: unit_code, username, first_name, last_name, email, tutorial
+  #
   def import_users_from_csv(file)
     tutorial_cache = {}
     success = []
     errors = []
     ignored = []
 
+    csv = CSV.new(File.read(file), headers: true,
+        header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
+        converters: [->(i) { i.nil? ? '' : i }, ->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]
+        )
+
+    # Read the header row to determine what kind of file it is
+    if csv.header_row?
+      csv.shift
+    else
+      errors << {row: [], message: "Header row missing" }
+      return
+    end
+
+    # Check if these headers should be processed by institution file or from DF format
+    if Doubtfire::Application.config.institution_settings.are_headers_institution_users? csv.headers
+      missing_headers_lambda = Doubtfire::Application.config.institution_settings.missing_header_for(csv.headers)
+      fetch_row_data_lambda = Doubtfire::Application.config.institution_settings.fetch_row_data(csv.headers)
+    else
+      missing_headers_lambda = ->(row) {
+        missing_headers(row, %w(unit_code username student_id first_name last_name email tutorial))
+      }
+      fetch_row_data_lambda = ->(row, unit) {
+        {
+            unit_code:      row['unit_code'],
+            username:       row['username'],
+            student_id:     row['student_id'],
+            first_name:     row['first_name'],
+            nickname:       nil,
+            last_name:      row['last_name'],
+            email:          row['email'],
+            enrolled:       true,
+            tutorial_code:  row['tutorial']
+        }
+      }
+    end
+
+    # Determine kind of file to process
     CSV.foreach(file, headers: true,
                       header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
                       converters: [->(i) { i.nil? ? '' : i }, ->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]) do |row|
-      # Make sure we're not looking at the header or an empty line
-      next if row['unit_code'] =~ /unit_code/
-
-      missing = missing_headers(row, %w(unit_code username first_name last_name email tutorial))
+      
+      missing = missing_headers_lambda.call(row)
       if missing.count > 0
         errors << { row: row, message: "Missing headers: #{missing.join(', ')}" }
         next
       end
 
       begin
-        unit_code = row['unit_code']
-        username = row['username'].downcase
-        first_name = row['first_name'].nil? ? row['first_name'] : row['first_name'].titleize
-        last_name = row['last_name'].nil? ? row['last_name'] : row['last_name'].titleize
-        email = row['email']
-        tutorial_code = row['tutorial']
+        row_data = fetch_row_data_lambda.call(row, self)
+
+        if row_data[:username].nil?
+          ignored << { row: row, message: "Skipping row with missing username" }
+          next
+        end
+
+        unit_code = row_data[:unit_code]
+        username = row_data[:username].downcase
+        student_id = row_data[:student_id]
+        first_name = row_data[:first_name].nil? ? nil : row_data[:first_name].titleize
+        last_name = row_data[:last_name].nil? ? nil : row_data[:last_name].titleize
+        nickname = row_data[:nickname].nil? ? nil : row_data[:nickname].titleize
+        email = row_data[:email]
+        tutorial_code = row_data[:tutorial_code]
+
+        # If either first or last name is nil... copy over the other component
+        first_name = first_name || last_name
+        last_name = last_name || first_name
+        nickname = nickname || first_name
 
         if unit_code != code
           ignored << { row: row, message: "Invalid unit code. #{unit_code} does not match #{code}" }
@@ -346,17 +403,36 @@ class Unit < ActiveRecord::Base
 
         username = username.downcase
 
+        unless row_data[:enrolled]
+          project_participant = User.where(username: username)
+          
+          if project_participant.nil? || project_participant.count == 0
+            ignored << { row: row, message: "Ignoring student to withdraw, as not enrolled" }
+          else
+            user_project = projects.where(user_id: project_participant.first.id).first
+            if user_project.nil?
+              ignored << { row: row, message: "Ignoring student to withdraw, as not enrolled" }
+            else
+              user_project.enrolled = false 
+              user_project.save
+              success << { row: row, message: "Student was withdrawn" }
+            end
+          end
+
+          next
+        end
+
         project_participant = User.find_or_create_by(username: username) do |new_user|
           new_user.first_name         = first_name
           new_user.last_name          = last_name
-          new_user.nickname           = first_name
+          new_user.student_id         = student_id
+          new_user.nickname           = nickname
           new_user.role_id            = Role.student_id
           new_user.email              = email
           new_user.encrypted_password = BCrypt::Password.create('password')
         end
 
         unless project_participant.persisted?
-          project_participant.password = 'password'
           project_participant.save
         end
 
@@ -364,6 +440,11 @@ class Unit < ActiveRecord::Base
         # Only import if a valid user - or if save worked
         #
         if project_participant.persisted?
+          if (project_participant.student_id.nil? || project_participant.student_id.empty?) && student_id
+            project_participant.student_id = student_id
+            project_participant.save!
+          end
+
           user_project = projects.where(user_id: project_participant.id).first
 
           tutorial = tutorial_cache[tutorial_code] || tutorial_with_abbr(tutorial_code)
@@ -482,9 +563,9 @@ class Unit < ActiveRecord::Base
 
   def export_users_to_csv
     CSV.generate do |row|
-      row << %w(unit_code username first_name last_name email tutorial)
-      students.each do |project|
-        row << [project.unit.code, project.student.username, project.student.first_name, project.student.last_name, project.student.email, project.tutorial_abbr]
+      row << %w(unit_code username student_id first_name last_name email tutorial)
+      active_projects.each do |project|
+        row << [project.unit.code, project.student.username, project.student.student_id, project.student.first_name, project.student.last_name, project.student.email, project.tutorial_abbr]
       end
     end
   end
@@ -599,10 +680,6 @@ class Unit < ActiveRecord::Base
     }
   end
 
-  def missing_headers(row, headers)
-    headers - row.to_hash.keys
-  end
-
   def import_groups_from_csv(group_set, file)
     success = []
     errors = []
@@ -616,14 +693,20 @@ class Unit < ActiveRecord::Base
       next if row[0] =~ /^(group_name)|(name)/ # Skip header
 
       begin
-        missing = missing_headers(row, %w(group_name username tutorial))
+        missing = missing_headers(row, %w(group_name group_number username tutorial))
         if missing.count > 0
           errors << { row: row, message: "Missing headers: #{missing.join(', ')}" }
           next
         end
 
+        if row['username'].nil?
+          ignored << { row: row, message: "Skipping row with missing username" }
+          next
+        end
+
         username = row['username'].downcase.strip unless row['username'].nil?
         group_name = row['group_name'].strip unless row['group_name'].nil?
+        group_number = row['group_number'].strip unless row['group_number'].nil?
         tutorial = row['tutorial'].strip unless row['tutorial'].nil?
 
         user = User.where(username: username).first
@@ -653,6 +736,7 @@ class Unit < ActiveRecord::Base
 
           change = 'Created new group. '
           grp.tutorial = tutorial
+          grp.number = group_number
           grp.save!
         end
 
@@ -680,7 +764,7 @@ class Unit < ActiveRecord::Base
       row << %w(group_name username tutorial)
       group_set.groups.each do |grp|
         grp.projects.each do |project|
-          row << [grp.name, project.student.username, grp.tutorial.abbreviation]
+          row << [grp.name, grp.number, project.student.username, grp.tutorial.abbreviation]
         end
       end
     end
@@ -700,7 +784,6 @@ class Unit < ActiveRecord::Base
   def add_tutorial(day, time, location, tutor, abbrev)
     tutor_role = unit_roles.where('user_id=:user_id', user_id: tutor.id).first
     return nil if tutor_role.nil? || tutor_role.role == Role.student
-
     Tutorial.create!(unit_id: id, abbreviation: abbrev) do |tutorial|
       tutorial.meeting_day      = day
       tutorial.meeting_time     = time
@@ -1193,15 +1276,83 @@ class Unit < ActiveRecord::Base
   end
 
   #
-  # Return the tasks that are waiting for feedback
+  # Returns the task ids provided mapped to the number of unresolved
+  # plagiarism detections
   #
-  def tasks_awaiting_feedback
+  def map_task_ids_to_similarity_count(task_ids)
+    PlagiarismMatchLink.where('task_id IN (?)', task_ids)
+                       .where(dismissed: false)
+                       .group(:task_id)
+                       .count
+  end
+
+
+
+  def tasks_as_hash(data)
+    task_ids = data.map(&:task_id).uniq
+    plagiarism_counts = map_task_ids_to_similarity_count(task_ids)
+    puts plagiarism_counts.inspect
+    data.map do |t|
+      {
+        id: t.task_id,
+        project_id: t.project_id,
+        task_definition_id: t.task_definition_id,
+        tutorial_id: t.tutorial_id,
+        status: TaskStatus.status_key_for_name(t.status_name),
+        completion_date: t.completion_date,
+        submission_date: t.submission_date,
+        times_assessed: t.times_assessed,
+        grade: t.grade,
+        quality_pts: t.quality_pts,
+        num_new_comments: t.number_unread,
+        similar_to_count: plagiarism_counts[t.task_id]
+      }
+    end
+  end
+
+  #
+  # Return all tasks from the database for this unit and given user
+  #
+  def get_all_tasks_for(user)
     student_tasks
       .joins(:task_status)
-      .select('project_id', 'tasks.id as id', 'task_definition_id', 'projects.tutorial_id as tutorial_id', 'task_statuses.id as status_id', 'completion_date', 'times_assessed', 'submission_date', 'portfolio_evidence', 'tasks.grade as grade', 'quality_pts')
-      .where('task_statuses.id IN (:ids)', ids: [ TaskStatus.ready_to_mark, TaskStatus.need_help, TaskStatus.discuss, TaskStatus.demonstrate ])
-      .where('(task_definitions.due_date IS NULL OR task_definitions.due_date > tasks.submission_date)')
+      .joins("LEFT JOIN task_comments ON task_comments.task_id = tasks.id")
+      .joins("LEFT JOIN comments_read_receipts crr ON crr.task_comment_id = task_comments.id AND crr.user_id = #{user.id}")
+      .select(
+        'SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) as number_unread', 'project_id', 'tasks.id as task_id',
+        'task_definition_id', 'task_definitions.start_date as start_date', 'projects.tutorial_id as tutorial_id', 'task_statuses.name as status_name', 'task_statuses.id',
+        'completion_date', 'times_assessed', 'submission_date', 'portfolio_evidence', 'tasks.grade as grade', 'quality_pts'
+      )
+      .group(
+        'task_statuses.id', 'project_id', 'tutorial_id', 'tasks.id', 'task_definition_id', 'task_definitions.start_date', 'status_name',
+        'completion_date', 'times_assessed', 'submission_date', 'portfolio_evidence', 'grade', 'quality_pts'
+      )
+  end
+
+  #
+  # Return the tasks that are waiting for feedback
+  #
+  def tasks_awaiting_feedback(user)
+    get_all_tasks_for(user)
+      .where('task_statuses.id IN (:ids)', ids: [ TaskStatus.discuss, TaskStatus.redo, TaskStatus.demonstrate, TaskStatus.fix_and_resubmit ])
       .order('task_definition_id')
+  end
+
+  #
+  # Return the tasks that should be listed under a tutor's task inbox.
+  #
+  # Thses tasks are:
+  #   - those that have the ready for feedback (rtm) state, or
+  #   - where new student comments are > 0
+  #
+  # They are sorted by a task's "action_date". This defines the last
+  # time a task has been "actioned", either the submission date or latest
+  # student comment -- whichever is newer.
+  #
+  def tasks_for_task_inbox(user)
+    get_all_tasks_for(user)
+      .having('task_statuses.id IN (:ids) OR SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) > 0', ids: [ TaskStatus.ready_to_mark, TaskStatus.need_help ])
+      .order('start_date ASC, task_definition_id ASC, submission_date ASC, MAX(task_comments.created_at) ASC')
   end
 
   #
@@ -1274,6 +1425,14 @@ class Unit < ActiveRecord::Base
   end
 
   #
+  # Returns only active units
+  #
+  def self.active_units
+    Unit.where(active: true)
+  end
+
+
+  #
   # Returns the basic data used in calculating the student task completion stats
   #
   def _student_task_completion_data_base
@@ -1288,7 +1447,7 @@ class Unit < ActiveRecord::Base
   def _calculate_task_completion_stats(data)
     values = data.map { |r| r[:num] }
 
-    if values && values.length > 4
+    if values && values.length > 0
       values.sort!
 
       median_value = if values.length.even?
@@ -1324,6 +1483,8 @@ class Unit < ActiveRecord::Base
   #
   def student_task_completion_stats
     data = _student_task_completion_data_base
+
+    puts data
 
     result = {}
     result[:unit] = _calculate_task_completion_stats(data)
@@ -1443,7 +1604,7 @@ class Unit < ActiveRecord::Base
       if data.nil?
         lower_value = upper_value = median_value = min_value = max_value = 0
       else
-        values = data.map { |e| e.key? ilo.id ? e[ilo.id] : 0 }
+        values = data.map { |e| e.key?(ilo.id) ? e[ilo.id] : 0 }
         values = values.sort
 
         median_value = if values.length.even?
@@ -1475,8 +1636,6 @@ class Unit < ActiveRecord::Base
   #
   def ilo_progress_class_details
     result = {}
-    return result if students.length < 10
-
     data = student_ilo_progress_stats
 
     return {} if data.nil?
@@ -1496,8 +1655,6 @@ class Unit < ActiveRecord::Base
   end
 
   def ilo_progress_class_stats
-    return {} if students.length < 10
-
     temp = student_ilo_progress_stats.values
 
     return {} if temp.nil?
@@ -1508,12 +1665,12 @@ class Unit < ActiveRecord::Base
   end
 
   def student_grades_csv
-    students_with_grades = students.where('grade > 0')
+    students_with_grades = active_projects.where('grade > 0')
 
     CSV.generate do |row|
-      row << %w(unit_code username grade rationale)
+      row << %w(unit_code username student_id grade rationale)
       students_with_grades.each do |project|
-        row << [project.unit.code, project.student.username, project.grade, project.grade_rationale]
+        row << [project.unit.code, project.student.username, project.student.student_id, project.grade, project.grade_rationale]
       end
     end
   end
@@ -1914,5 +2071,41 @@ class Unit < ActiveRecord::Base
       ignored:  ignored,
       errors:   errors
     }
+  end
+
+  def send_weekly_status_emails(summary_stats)
+
+    summary_stats[:unit] = self
+    summary_stats[:unit_week_comments] = comments.where("task_comments.created_at > :start AND task_comments.created_at < :end", start: summary_stats[:week_start], end: summary_stats[:week_end]).count
+    summary_stats[:unit_week_engagements] = task_engagements.where("task_engagements.engagement_time > :start AND task_engagements.engagement_time < :end", start: summary_stats[:week_start], end: summary_stats[:week_end]).count
+    summary_stats[:revert_count] = 0
+    summary_stats[:revert] = {}
+    summary_stats[:staff] = {}
+
+    days_to_end_of_unit = (end_date.to_date - DateTime.now).to_i
+    days_from_start_of_unit = (DateTime.now - start_date.to_date).to_i
+
+    return if days_from_start_of_unit < 4 || days_to_end_of_unit < 0
+
+    staff.each do |ur|
+      summary_stats[:revert][ur.user] = []
+    end
+
+    active_projects.each do |project|
+      project.send_weekly_status_email(summary_stats, days_from_start_of_unit > 28 && days_to_end_of_unit > 14 )
+    end
+
+    summary_stats[:num_students_without_tutors] = active_projects.where(tutorial_id: nil).count
+
+    staff.each do |ur|
+      ur.populate_summary_stats(summary_stats)
+    end
+
+    staff.each do |ur|
+      ur.send_weekly_status_email(summary_stats)
+    end
+
+    summary_stats[:staff] = {}
+
   end
 end

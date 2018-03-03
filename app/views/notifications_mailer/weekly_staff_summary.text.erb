@@ -1,0 +1,59 @@
+Hi <%= @staff.first_name %>,
+
+<%= @summary_stats[:unit].name %> - Weekly Summary
+<%= "#{@summary_stats[:week_start].day.ordinalize} #{@summary_stats[:week_start].strftime("%B %Y")}" %> to <%= "#{@summary_stats[:week_end].day.ordinalize} #{@summary_stats[:week_end].strftime("%B %Y")}" %>
+
+Hope you had a good week! Here's a summary of what has happened in this unit over the last week.
+
+<% if @unit_role.has_students? %>
+* In total, there <%= were_was(@summary_stats[:unit_week_comments]) %> <%= @summary_stats[:unit_week_comments] %> comment<%= "s" if @summary_stats[:unit_week_comments] != 1 %> made this unit.
+* You received <%= @data[:received_comments] %> comment<%= "s" if @data[:received_comments] != 1 %> and posted a total of <%= @data[:sent_comments] %> comment<%= "s" if @data[:sent_comments] != 1 %>.
+* Tasks changed state <%= @summary_stats[:unit_week_engagements] %> time<%= "s" unless @summary_stats[:unit_week_engagements] == 1 %> in this unit.
+* Your student's tasks changed state <%= @data[:weekly_engagements_count] %> time<%= "s" unless @data[:weekly_engagements_count] == 1 %>.
+* You assigned a new status to <%= @data[:staff_engagements] %> task<%= "s" unless @data[:staff_engagements] == 1 %>.
+* You have <%= @data[:tasks_awaiting_feedback_count] %> task<%= "s" unless @data[:tasks_awaiting_feedback_count] == 1 %> waiting for feedback.
+<%   if @data[:tasks_awaiting_feedback_count] > 0 %>
+* The oldest of these tasks was submitted <%= @data[:oldest_task_days] %> day<%= "s" unless @data[:oldest_task_days] == 1 %> ago.
+<%   end %>
+<%   if @summary_stats[:revert][@staff].count > 0 %>
+
+The following students in your tutorials have been advised to revert their grade to Pass as they are falling behind with their pass tasks:
+<%     @summary_stats[:revert][@staff].each do |p|%>
+* <%= p.student.name %>
+<%     end %>
+<%   end %>
+<% else %>
+* In total, there <%= were_was(@summary_stats[:unit_week_comments]) %> <%= @summary_stats[:unit_week_comments] %> comment<%= "s" if @summary_stats[:unit_week_comments] != 1 %> made in this unit.
+* Tasks changed state <%= @summary_stats[:unit_week_engagements] %> time<%= "s" unless @summary_stats[:unit_week_engagements] == 1 %> in this unit.
+<% end %>
+
+<% if @unit_role.is_convenor? %>
+Here is a quick summary of how the tutors are going in this unit:
+
+--------------------------------------------------------------------------------
+Name         | Number   | Task Assessments | Comments Made | Awaiting | Oldest | 
+             | Students | Total   |  Week  | Total | Week  | Feedback | Task   |
+--------------------------------------------------------------------------------
+<% @summary_stats[:staff].each do | user, data | %>
+<%    next unless data[:number_of_students] > 0%>
+<%= '%-12s' % data[:staff].name.truncate(12) %> | <%= '%8i' % data[:number_of_students] %> | <%= '%7i' % data[:total_staff_engagements] %> | <%= '%6i' % data[:staff_engagements] %> | <%= '%5i' % data[:total_comments] %> | <%= '%5i' % data[:sent_comments] %> | <%= '%8i' % data[:tasks_awaiting_feedback_count] %> | <%= '%6i' % data[:oldest_task_days] %> |
+<%   end %>
+--------------------------------------------------------------------------------
+
+<%   if @summary_stats[:num_students_without_tutors] > 0 %>
+Please note that <%=@summary_stats[:num_students_without_tutors]%> student<%= "s" unless @summary_stats[:num_students_without_tutors] == 1 %> <%= are_is(@summary_stats[:num_students_without_tutors]) %> not allocated to a tutorial. Work submitted by <%= this_these(@summary_stats[:num_students_without_tutors]) %> student<%= "s" unless @summary_stats[:num_students_without_tutors] == 1 %> will not appear in any of the tutor inboxes!
+<%   end %>
+
+<%   if @summary_stats[:revert_count] > 0 %>
+<%= @summary_stats[:revert_count] %> student<%= "s" unless @summary_stats[:revert_count] == 1%> <%= were_was(@summary_stats[:revert_count])%> automatically reverted to Pass target grade due to progress on their pass tasks.
+<%   end %>
+<% end %>
+
+cheers,
+The <%= @doubtfire_product_name %> Team on behalf of <%= @convenor.name %>
+
+---
+
+Visit <%= @unsubscribe_url%> to unsubscribe from these notifications.
+
+Generated with <%= @doubtfire_product_name %>

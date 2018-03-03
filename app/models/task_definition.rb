@@ -21,14 +21,6 @@ class TaskDefinition < ActiveRecord::Base
   validates :plagiarism_checks, length: { maximum: 4095, allow_blank: true }
   validates :description, length: { maximum: 4095, allow_blank: true }
 
-  after_create do |td|
-    td.unit.update_project_stats
-  end
-
-  after_destroy do |td|
-    td.unit.update_project_stats
-  end
-
   after_update do |_td|
     clear_related_plagiarism if plagiarism_checks.empty? && has_plagiarism?
   end

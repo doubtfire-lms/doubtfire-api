@@ -27,7 +27,11 @@ class PortfolioEvidence
     errors = {}
 
     # For each folder in new (i.e., queued folders to process) that matches appropriate name
-    new_root_dir = Dir.entries(student_work_dir(:new)).select { |f| (f =~ /^\d+$/).zero? }
+    new_root_dir = Dir.entries(student_work_dir(:new)).select do |f|
+      # rubocop:disable Style/NumericPredicate
+      (f =~ /^\d+$/) == 0
+      # rubocop:enable Style/NumericPredicate
+    end
     new_root_dir.each do |folder_id|
       task = Task.find(folder_id)
 
@@ -58,13 +62,14 @@ class PortfolioEvidence
       end
     end
 
-    done.each do |project, tasks|
-      logger.info "checking email for project #{project.id}"
-      if project.student.receive_task_notifications
-        logger.info "emailing task notification to #{project.student.name}"
-        PortfolioEvidenceMailer.task_pdf_ready_message(project, tasks).deliver
-      end
-    end
+    # Remove email of task notification success - only email on fail
+    # done.each do |project, tasks|
+    #   logger.info "checking email for project #{project.id}"
+    #   if project.student.receive_task_notifications
+    #     logger.info "emailing task notification to #{project.student.name}"
+    #     PortfolioEvidenceMailer.task_pdf_ready_message(project, tasks).deliver
+    #   end
+    # end
 
     errors.each do |project, tasks|
       logger.info "checking email for project #{project.id}"

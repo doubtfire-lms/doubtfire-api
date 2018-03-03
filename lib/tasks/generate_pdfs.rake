@@ -46,9 +46,9 @@ namespace :submission do
           logger.info "emailing portfolio notification to #{project.student.name}"
 
           if success
-            PortfolioEvidenceMailer.portfolio_ready(project).deliver
+            PortfolioEvidenceMailer.portfolio_ready(project).deliver_now
           else
-            PortfolioEvidenceMailer.portfolio_failed(project).deliver
+            PortfolioEvidenceMailer.portfolio_failed(project).deliver_now
           end
         end
       ensure

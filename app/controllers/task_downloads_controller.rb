@@ -17,7 +17,7 @@ class TaskDownloadsController < ApplicationController
     raise MyException.new(status), message
   end
 
-  # desc "Retrieve portfolios for a unit"
+  # desc "Retrieve tasks for a unit"
   def index
     unless authenticated?
       error!({ error: "Not authorised to download tasks for unit '#{params[:id]}'" }, 401)

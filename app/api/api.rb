@@ -10,7 +10,7 @@ module Api
     prefix 'api'
     format :json
     formatter :json, Grape::Formatter::ActiveModelSerializers
-    # rescue_from :all
+    rescue_from :all
 
     #
     # Mount the api modules
@@ -32,6 +32,7 @@ module Api
     mount Api::Submission::PortfolioApi
     mount Api::Submission::PortfolioEvidenceApi
     mount Api::Submission::BatchTask
+    mount Api::Settings
 
     #
     # Add auth details to all end points

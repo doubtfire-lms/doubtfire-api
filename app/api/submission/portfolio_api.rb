@@ -65,6 +65,9 @@ module Api
       end
 
       desc 'Retrieve portfolio for project with the given id'
+      params do
+        optional :as_attachment, type: Boolean, desc: 'Whether or not to download file as attachment. Default is false.'
+      end
       get '/submission/project/:id/portfolio' do
         project = Project.find(params[:id])
 
@@ -76,9 +79,13 @@ module Api
 
         if evidence_loc.nil? || File.exist?(evidence_loc) == false
           evidence_loc = Rails.root.join('public', 'resources', 'FileNotFound.pdf')
-          header['Content-Disposition'] = 'attachment; filename=FileNotFound.pdf'
+          filename = "FileNotFound.pdf"
         else
-          header['Content-Disposition'] = 'attachment; filename=portfolio.pdf'
+          filename = "#{project.unit.code}-#{project.student.username}-portfolio.pdf"
+        end
+
+        if params[:as_attachment]
+          header['Content-Disposition'] = "attachment; filename=#{filename}"
         end
 
         # Set download headers...

@@ -7,8 +7,8 @@ A modern, lightweight learning management system.
 ## Table of Contents
 
 1. [Getting Started](#getting-started)
-  1. [...Install Script](#install-script)
-  2. [...Manual Install](#manual-install)
+  1. [Install Script](#install-script)
+  2. [Manual Install](#manual-install)
 2. [Environment Variables](#environment-variables)
 3. [Getting up and Running](#getting-up-and-running)
 4. [Running Rake Tasks](#running-rake-tasks)
@@ -25,7 +25,7 @@ The install script will try to setup the development environment for either macO
 
 ### Manual install
 
-The manual installation guide can be found on the wiki for: [Linux](https://github.com/doubtfire-lms/doubtfire-api/wiki/Linux-Setup), [macOS](https://github.com/doubtfire-lms/doubtfire-api/wiki/MacOS-Setup), or [Docker](https://github.com/doubtfire-lms/doubtfire-api/wiki/Docker-Setup).
+The manual installation guide can be found on the wiki for: [Linux](https://github.com/doubtfire-lms/doubtfire-api/wiki/Manual-install-on-Linux), [macOS](https://github.com/doubtfire-lms/doubtfire-api/wiki/Manual-install-on-macOS), or [Docker](https://github.com/doubtfire-lms/doubtfire-api/wiki/Getting-Started-Using-Docker).
 
 ## Environment variables
 
@@ -39,6 +39,7 @@ Doubtfire requires multiple environment variables that help define settings abou
 | `DF_INSTITUTION_NAME`         | The name of your institution running Doubtfire.                                                                                                                                                                                                                               | _University of Foo_   |
 | `DF_INSTITUTION_EMAIL_DOMAIN` | The email domain from which emails are sent to and from in your institution.                                                                                                                                                                                                  | `doubtfire.com`       |
 | `DF_INSTITUTION_HOST`         | The host running the Doubtfire instance.                                                                                                                                                                                                                                      | `localhost:3000`      |
+| `DF_INSTITUTION_PRODUCT_NAME` | The name of the product (i.e. Doubtfire) at your institution.                                                                                                                                                                                                                 | _Doubtfire_           |
 | `DF_SECRET_KEY_BASE`          | The Rails secret key.                                                                                                                                                                                                                                                         | Default key provided. |
 | `DF_SECRET_KEY_ATTR`          | The secret key to encrypt certain database fields.                                                                                                                                                                                                                            | Default key provided. |
 | `DF_SECRET_KEY_DEVISE`        | The secret key provided to Devise.                                                                                                                                                                                                                                            | Default key provided. |
@@ -52,7 +53,7 @@ If you have chosen to use AAF Rapid Connect authentication, then you will also n
 | `DF_AAF_AUDIENCE_URL`          | The URL of the AAF registered application.                                                                                                                                             | No default - required           |
 | `DF_AAF_CALLBACK_URL`          | The secure endpoint within your application that AAF Rapid Connect should POST responses to. It **must end with `/api/auth/jwt`** to access the Doubtfire JWT authentication endpoint. | No default - required           |
 | `DF_AAF_UNIQUE_URL`            | The unique URL provided by AAF Rapid Connect used for redirection out of Doubtfire.                                                                                                    | No default - required           |
-| `DF_AAF_IDENTITY_PROVIDER_URL` | The URL of the AAF-registered identity provider. This value is **optional**.                                                                                                           | N/A                             |
+| `DF_AAF_IDENTITY_PROVIDER_URL` | The URL of the AAF-registered identity provider.                                                                                                                                       | No default - required           |
 | `DF_SECRET_KEY_AAF`            | The secret used to register your application with AAF.                                                                                                                                 | `secretsecret12345`             |
 
 You may choose to keep your environment variables inside a `.env` file using key-value pairs:

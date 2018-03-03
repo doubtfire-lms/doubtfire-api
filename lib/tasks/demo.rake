@@ -1,6 +1,6 @@
 namespace :db do
   desc 'Initialise the app with an empty database and only minimal users (the superuser)'
-  task demo: :environment do
+  task demo: [:skip_prod, :environment] do
     require 'populator'
     require 'faker'
     require 'bcrypt'

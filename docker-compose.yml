@@ -30,7 +30,7 @@ services:
     build: ../doubtfire-web
     command: npm start
     environment:
-      DOUBTFIRE_DOCKER_MACHINE_IP: $DOUBTFIRE_DOCKER_MACHINE_IP
+      DF_DOCKER_MACHINE_IP: $DF_DOCKER_MACHINE_IP
     ports:
       - "8000:8000"
       - "8080:8080"

@@ -1,24 +1,3 @@
-class ShallowTaskSerializer < ActiveModel::Serializer
-  attributes :id, :status, :task_definition_id, :include_in_portfolio, :pct_similar, :similar_to_count, :times_assessed, :grade, :quality_pts, :similar_to_dismissed_count
-end
-
-class TaskFeedbackSerializer < ActiveModel::Serializer
-  attributes :project_id
-  attributes :id
-  attributes :task_definition_id
-  attributes :tutorial_id
-  attributes :status
-  attributes :completion_date
-  attributes :submission_date
-  attributes :times_assessed
-  attributes :grade
-  attributes :quality_pts
-
-  def status
-    TaskStatus.find(object.status_id).status_key
-  end
-end
-
 class TaskUpdateSerializer < ActiveModel::Serializer
   attributes :id, :status, :project_id, :new_stats, :include_in_portfolio, :other_projects, :times_assessed, :grade, :quality_pts
 
@@ -39,10 +18,6 @@ end
 
 class TaskStatSerializer < ActiveModel::Serializer
   attributes :id, :task_abbr, :status, :tutorial_id, :times_assessed
-
-  def task_abbr
-    object.task_definition.abbreviation
-  end
 
   def task_abbr
     object.task_definition.abbreviation

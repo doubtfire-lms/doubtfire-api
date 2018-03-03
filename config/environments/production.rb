@@ -8,7 +8,7 @@ Doubtfire::Application.configure do
   config.action_controller.perform_caching = true
 
   # Disable Rails's static asset server (Apache or nginx will already do this)
-  config.serve_static_assets = false
+  config.serve_static_files = false
 
   # Compress JavaScripts and CSS
   config.assets.compress = true
@@ -22,8 +22,8 @@ Doubtfire::Application.configure do
   # Eager loading on models
   config.eager_load = true
 
-  # Force all access to the app over SSL, use Strict-Transport-Security, and use secure cookies.
-  config.force_ssl = true
+  # Prevent too many redirects issue if SSL handled elsewhere
+  config.force_ssl = false
 
   # Enable locale fallbacks for I18n (makes lookups for any locale fall back to
   # the I18n.default_locale when a translation can not be found)
@@ -31,4 +31,6 @@ Doubtfire::Application.configure do
 
   # Send deprecation notices to registered listeners
   config.active_support.deprecation = :notify
+
+  config.log_level = :info
 end

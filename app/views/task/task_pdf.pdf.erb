@@ -8,7 +8,7 @@
 
   \textsc{\LARGE <%= lesc @institution_name  %>}\\[1.5cm] % Name of your university/college
   \textsc{\Large <%= lesc @task.unit.name %>}\\[0.5cm] % Major heading such as course name
-  \textsc{\large Doubtfire Submission}\\[0.5cm] % Minor heading such as course title
+  \textsc{\large <%= lesc @doubtfire_product_name %> Submission}\\[0.5cm] % Minor heading such as course title
 
 %----------------------------------------------------------------------------------------
 %   TITLE SECTION
@@ -47,7 +47,7 @@
 No Tutor % Supervisor's Name
 <%  end %>
 \end{flushright}
-\end{minipage}\\[4cm]
+\end{minipage}\\[1cm]
 
 <%  if @task.group_task? %>
 \emph{Group Members:} \\
@@ -59,9 +59,22 @@ No Tutor % Supervisor's Name
 \textsc{<%= lesc grp_task.student.last_name %>} &
 {\footnotesize \ttfamily <%= '\faChild' * grp_task.contribution_pts %>}\\
 <%    end %>
-\end{tabular}\\[2cm]
+\end{tabular}\\[1cm]
 <%  end %>
 
+<% if @task.learning_outcome_task_links.count > 0 %>
+\begin{tabular}{p{8cm}|l}
+\textbf{Outcome} & \textbf{Weight}\\
+\hline
+<% @task.learning_outcome_task_links.each do | link | %>
+    <%= lesc link.learning_outcome.name %> &
+    $<%= '\blacklozenge' * link.rating %><%= '\lozenge' * (5 - link.rating) %>$ \\
+<%    end %>
+\end{tabular}\\[0.5cm]
+
+<%= lesc @task.learning_outcome_task_links.last.description %> \\[2cm]
+
+<% end %>
 %----------------------------------------------------------------------------------------
 % DATE SECTION
 %----------------------------------------------------------------------------------------

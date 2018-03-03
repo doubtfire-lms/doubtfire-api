@@ -49,7 +49,7 @@ msg () {
 # Returns the IP or else exits the script
 #
 get_docker_machine_ip () {
-  DOUBTFIRE_DOCKER_MACHINE_IP=$(docker-machine ip doubtfire)
+  DF_DOCKER_MACHINE_IP=$(docker-machine ip doubtfire)
 
   if [ $? -ne 0 ]; then
     verbose "Docker machine is not running. Attempting to start..."
@@ -71,7 +71,7 @@ get_docker_machine_ip () {
 #
 is_service_running () {
   verbose "Checking if $1 is running..."
-  DOUBTFIRE_DOCKER_MACHINE_IP=$DOUBTFIRE_DOCKER_MACHINE_IP docker-compose -p doubtfire ps $1 | grep 'Up' &> /dev/null
+  DF_DOCKER_MACHINE_IP=$DF_DOCKER_MACHINE_IP docker-compose -p doubtfire ps $1 | grep 'Up' &> /dev/null
   if [ $? -ne 0 ]; then
     verbose "Service $1 is not running!"
     return 1
@@ -98,7 +98,7 @@ is_doubtfire_running () {
 #
 restore_doubtfire_services () {
   msg "Attempting to restore Doubtfire services..."
-  DOUBTFIRE_DOCKER_MACHINE_IP=$DOUBTFIRE_DOCKER_MACHINE_IP docker-compose -p doubtfire up -d
+  DF_DOCKER_MACHINE_IP=$DF_DOCKER_MACHINE_IP docker-compose -p doubtfire up -d
   if [ $? -ne 0 ]; then
     verbose "Failed to restore Doubtfire."
     return 1
@@ -122,7 +122,7 @@ build_doubtfire_images () {
       return 1
       ;;
   esac
-  DOUBTFIRE_DOCKER_MACHINE_IP=$DOUBTFIRE_DOCKER_MACHINE_IP docker-compose -p doubtfire build $1
+  DF_DOCKER_MACHINE_IP=$DF_DOCKER_MACHINE_IP docker-compose -p doubtfire build $1
   if [ $? -ne 0 ]; then
     error "Failed to build Doubtfire. Refer to logs above."
     return 1
@@ -136,7 +136,7 @@ build_doubtfire_images () {
 #
 create_doubtfire_services () {
   verbose "Attempting to create Doubtfire services..."
-  DOUBTFIRE_DOCKER_MACHINE_IP=$DOUBTFIRE_DOCKER_MACHINE_IP docker-compose -p doubtfire create
+  DF_DOCKER_MACHINE_IP=$DF_DOCKER_MACHINE_IP docker-compose -p doubtfire create
   if [ $? -ne 0 ]; then
     error "Failed to create services! Refer to docker-compose output above."
     return 1
@@ -150,7 +150,7 @@ create_doubtfire_services () {
 #
 start_doubtfire_database () {
   verbose "Attempting to start Doubtfire database container..."
-  DOUBTFIRE_DOCKER_MACHINE_IP=$DOUBTFIRE_DOCKER_MACHINE_IP docker-compose -p doubtfire start db
+  DF_DOCKER_MACHINE_IP=$DF_DOCKER_MACHINE_IP docker-compose -p doubtfire start db
   if [ $? -ne 0 ]; then
     error "Failed to start Doubtfire database! Refer to docker-compose output above."
     return 1
@@ -163,7 +163,7 @@ start_doubtfire_database () {
 # Tries a direct connect to the DF postgresql database
 #
 is_postgres_running () {
-  IS_RUNNING=$(DOUBTFIRE_DOCKER_MACHINE_IP=$DOUBTFIRE_DOCKER_MACHINE_IP docker-compose -p doubtfire run db bash -c "PGPASSWORD=d872\\\$dh psql -h db -U itig -c \"select 'It is running'\" 2>/dev/null | grep -c \"It is running\"")
+  IS_RUNNING=$(DF_DOCKER_MACHINE_IP=$DF_DOCKER_MACHINE_IP docker-compose -p doubtfire run db bash -c "PGPASSWORD=d872\\\$dh psql -h db -U itig -c \"select 'It is running'\" 2>/dev/null | grep -c \"It is running\"")
   if [[ $IS_RUNNING == *"1"* ]]; then
     return 0
   else
@@ -187,7 +187,7 @@ populate_doubtfire_database () {
     sleep 1
   done
   msg "Populating database with test data..."
-  DOUBTFIRE_DOCKER_MACHINE_IP=$DOUBTFIRE_DOCKER_MACHINE_IP docker-compose -p doubtfire run api rake db:populate
+  DF_DOCKER_MACHINE_IP=$DF_DOCKER_MACHINE_IP docker-compose -p doubtfire run api rake db:populate
   if [ $? -ne 0 ]; then
     error "Failed to populate Doubtfire database! Refer to error above."
     return 1
@@ -201,8 +201,8 @@ populate_doubtfire_database () {
 #
 show_running_message () {
   msg "Doubtfire is now running at:"
-  msg "  Doubtfire API: http://$DOUBTFIRE_DOCKER_MACHINE_IP:3000/api/docs/"
-  msg "  Doubtfire Web: http://$DOUBTFIRE_DOCKER_MACHINE_IP:8000/"
+  msg "  Doubtfire API: http://$DF_DOCKER_MACHINE_IP:3000/api/docs/"
+  msg "  Doubtfire Web: http://$DF_DOCKER_MACHINE_IP:8000/"
   msg "It may take several moments for the URLs above to become active"
 }
 
@@ -256,7 +256,7 @@ stop_doubtfire () {
   fi
 
   msg "Stopping doubtfire ..."
-  DOUBTFIRE_DOCKER_MACHINE_IP=$DOUBTFIRE_DOCKER_MACHINE_IP docker-compose -p doubtfire down
+  DF_DOCKER_MACHINE_IP=$DF_DOCKER_MACHINE_IP docker-compose -p doubtfire down
 
   if [ $? -ne 0 ]; then
     error "Failed to stop Doubtfire! Check logs above"
@@ -278,7 +278,7 @@ restart_doubtfire () {
   fi
 
   msg "Restarting doubtfire ..."
-  DOUBTFIRE_DOCKER_MACHINE_IP=$DOUBTFIRE_DOCKER_MACHINE_IP docker-compose -p doubtfire restart
+  DF_DOCKER_MACHINE_IP=$DF_DOCKER_MACHINE_IP docker-compose -p doubtfire restart
 
   if [ $? -ne 0 ]; then
     error "Failed to restart Doubtfire! Check logs above"

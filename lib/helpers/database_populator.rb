@@ -52,12 +52,19 @@ class DatabasePopulator
       puts "-> Scale is set to #{scale}"
     end
     @scale = scale_data[scale]
+    
+    generate_user_roles
+    generate_task_statuses
+    
     # Fixed data contains all fixed units and users created
     generate_fixed_data()
-    # generate_user_roles()
-    # generate_task_statuses()
   end
 
+  def generate_admin
+    @user_data = {
+      acain: { first_name: 'Andrew', last_name: 'Cain', nickname: 'Macite', role_id: Role.admin_id }
+    }
+  end
   #
   # Generate some users. Pass in an optional filter(s) for:
   # Role.admin, Role.convenor, Role.tutor, Role.student
@@ -80,21 +87,25 @@ class DatabasePopulator
 
     # Create each user
     users_to_generate.each do |user_key, profile|
-      print "."
+      print '.'
       username = user_key.to_s
 
       profile[:email]     ||= "#{username}@doubtfire.com"
       profile[:username]  ||= username
       profile[:login_id]  ||= username
 
-      user = User.create!(profile.merge({
-        password: 'password',
-        password_confirmation: 'password'
-      }))
+      if AuthenticationHelpers.aaf_auth?
+        user = User.create!(profile)
+      else
+        user = User.create!(profile.merge({
+          password: 'password',
+          password_confirmation: 'password'
+        }))
+      end
 
       @user_cache[user_key] = user
     end
-    puts "!"
+    puts '!'
   end
 
   #
@@ -145,6 +156,102 @@ class DatabasePopulator
   def random_project
     id = Project.pluck(:id).sample
     Project.find(id)
+  end
+
+  #
+  # Generated fixed data here for students and units
+  #
+  def generate_fixed_data
+    # Define fixed user data here
+    @user_data = {
+      acain:              {first_name: "Andrew",  last_name: "Cain",          nickname: "Macite",         role_id: Role.admin_id },
+      aconvenor:          {first_name: "Clinton", last_name: "Woodward",      nickname: "The Giant",      role_id: Role.convenor_id },
+      aadmin:             {first_name: "Allan",   last_name: "Jones",         nickname: "P-Jiddy",        role_id: Role.admin_id },
+      rwilson:            {first_name: "Reuben",  last_name: "Wilson",        nickname: "Reubs",          role_id: Role.convenor_id },
+      atutor:             {first_name: "Akihiro", last_name: "Noguchi",       nickname: "Animations",     role_id: Role.tutor_id },
+      acummaudo:          {first_name: "Alex",    last_name: "Cummaudo",      nickname: "DoubtfireDude",  role_id: Role.convenor_id },
+      cliff:              {first_name: "Cliff",   last_name: "Warren",        nickname: "Cliff",          role_id: Role.tutor_id },
+      joostfunkekupper:   {first_name: "Joost",   last_name: "Funke Kupper",  nickname: "Joe",            role_id: Role.tutor_id },
+      angusmorton:        {first_name: "Angus",   last_name: "Morton",        nickname: "Angus",          role_id: Role.tutor_id },
+      "123456X" =>        {first_name: "Fred",    last_name: "Jones",         nickname: "Foo",            role_id: Role.student_id },
+      astudent:           {first_name: "student", last_name: "surname",       nickname: "Foo",            role_id: Role.student_id }
+    }
+    # Add 10 tutors to fixed info
+    10.times do |count|
+      tutor_name = "tutor_#{count}";
+      @user_data[tutor_name] = {
+        first_name: Faker::Name.first_name,
+        last_name: Faker::Name.last_name,
+        nickname: tutor_name,
+        role_id: Role.tutor_id
+      }
+    end
+    # Define fixed unit details here
+    many_tutorials = @scale[:many_tutorials]
+    some_tutorials = @scale[:some_tutorials]
+    few_tutorials  = @scale[:few_tutorials]
+    some_tasks     = @scale[:some_tasks]
+    many_tasks     = @scale[:many_tasks]
+    few_tasks      = @scale[:few_tasks]
+    @unit_data = {
+      intro_prog: {
+        code: "COS10001",
+        name: "Introduction to Programming",
+        convenors: [ :acain, :aconvenor ],
+        tutors: [
+          { user: :acain, num: many_tutorials },
+          { user: :aconvenor, num: many_tutorials },
+          { user: :aadmin, num: many_tutorials },
+          { user: :rwilson, num: many_tutorials },
+          { user: :acummaudo, num: some_tutorials },
+          { user: :atutor, num: many_tutorials },
+          { user: :joostfunkekupper, num: many_tutorials },
+          { user: :angusmorton, num: some_tutorials },
+          { user: :cliff, num: some_tutorials },
+        ],
+        num_tasks: some_tasks,
+        ilos: rand(0..3),
+        students: [ ]
+      },
+      oop: {
+        code: "COS20007",
+        name: "Object Oriented Programming",
+        convenors: [ :acain, :aconvenor, :aadmin, :acummaudo ],
+        tutors: [
+          { user: "tutor_1", num: few_tutorials },
+          { user: :angusmorton, num: few_tutorials },
+          { user: :atutor, num: few_tutorials },
+          { user: :joostfunkekupper, num: few_tutorials },
+        ],
+        num_tasks: many_tasks,
+        ilos: rand(0..3),
+        students: [ :cliff ]
+      },
+      ai4g: {
+        code: "COS30046",
+        name: "Artificial Intelligence for Games",
+        convenors: [ :aconvenor ],
+        tutors: [
+          { user: :aconvenor, num: few_tutorials },
+          { user: :cliff, num: few_tutorials },
+        ],
+        num_tasks: few_tasks,
+        ilos: rand(0..3),
+        students: [ :acummaudo ]
+      },
+      gameprog: {
+        code: "COS30243",
+        name: "Game Programming",
+        convenors: [ :aconvenor, :acummaudo ],
+        tutors: [
+          { user: :aconvenor, num: few_tutorials },
+        ],
+        num_tasks: few_tasks,
+        ilos: rand(0..3),
+        students: [ :acain, :aadmin ]
+      },
+    }
+    puts "-> Defined #{@user_data.length} fixed users and #{@unit_data.length} units"
   end
 
   private
@@ -264,9 +371,9 @@ class DatabasePopulator
         link.rating = rand(1..4)
         link.description = Populator.words(5..10)
         link.save!
-        print "."
+        print '.'
       end
-      puts "!"
+      puts '!'
     end
   end
 
@@ -323,101 +430,5 @@ class DatabasePopulator
         puts "!"
       end
     end
-  end
-
-  #
-  # Generated fixed data here for students and units
-  #
-  def generate_fixed_data
-    # Define fixed user data here
-    @user_data = {
-      acain:              {first_name: "Andrew",  last_name: "Cain",          nickname: "Macite",         role_id: Role.admin_id },
-      aconvenor:          {first_name: "Clinton", last_name: "Woodward",      nickname: "The Giant",      role_id: Role.convenor_id },
-      aadmin:             {first_name: "Allan",   last_name: "Jones",         nickname: "P-Jiddy",        role_id: Role.admin_id },
-      rwilson:            {first_name: "Reuben",  last_name: "Wilson",        nickname: "Reubs",          role_id: Role.convenor_id },
-      atutor:             {first_name: "Akihiro", last_name: "Noguchi",       nickname: "Animations",     role_id: Role.tutor_id },
-      acummaudo:          {first_name: "Alex",    last_name: "Cummaudo",      nickname: "DoubtfireDude",  role_id: Role.convenor_id },
-      cliff:              {first_name: "Cliff",   last_name: "Warren",        nickname: "Cliff",          role_id: Role.tutor_id },
-      joostfunkekupper:   {first_name: "Joost",   last_name: "Funke Kupper",  nickname: "Joe",            role_id: Role.tutor_id },
-      angusmorton:        {first_name: "Angus",   last_name: "Morton",        nickname: "Angus",          role_id: Role.tutor_id },
-      "123456X" =>        {first_name: "Fred",    last_name: "Jones",         nickname: "Foo",            role_id: Role.student_id },
-      astudent:           {first_name: "student", last_name: "surname",       nickname: "Foo",            role_id: Role.student_id }
-    }
-    # Add 10 tutors to fixed info
-    10.times do |count|
-      tutor_name = "tutor_#{count}";
-      @user_data[tutor_name] = {
-        first_name: Faker::Name.first_name,
-        last_name: Faker::Name.last_name,
-        nickname: tutor_name,
-        role_id: Role.tutor_id
-      }
-    end
-    # Define fixed unit details here
-    many_tutorials = @scale[:many_tutorials]
-    some_tutorials = @scale[:some_tutorials]
-    few_tutorials  = @scale[:few_tutorials]
-    some_tasks     = @scale[:some_tasks]
-    many_tasks     = @scale[:many_tasks]
-    few_tasks      = @scale[:few_tasks]
-    @unit_data = {
-      intro_prog: {
-        code: "COS10001",
-        name: "Introduction to Programming",
-        convenors: [ :acain, :aconvenor ],
-        tutors: [
-          { user: :acain, num: many_tutorials },
-          { user: :aconvenor, num: many_tutorials },
-          { user: :aadmin, num: many_tutorials },
-          { user: :rwilson, num: many_tutorials },
-          { user: :acummaudo, num: some_tutorials },
-          { user: :atutor, num: many_tutorials },
-          { user: :joostfunkekupper, num: many_tutorials },
-          { user: :angusmorton, num: some_tutorials },
-          { user: :cliff, num: some_tutorials },
-        ],
-        num_tasks: some_tasks,
-        ilos: rand(0..3),
-        students: [ ]
-      },
-      oop: {
-        code: "COS20007",
-        name: "Object Oriented Programming",
-        convenors: [ :acain, :aconvenor, :aadmin, :acummaudo ],
-        tutors: [
-          { user: "tutor_1", num: few_tutorials },
-          { user: :angusmorton, num: few_tutorials },
-          { user: :atutor, num: few_tutorials },
-          { user: :joostfunkekupper, num: few_tutorials },
-        ],
-        num_tasks: many_tasks,
-        ilos: rand(0..3),
-        students: [ :cliff ]
-      },
-      ai4g: {
-        code: "COS30046",
-        name: "Artificial Intelligence for Games",
-        convenors: [ :aconvenor ],
-        tutors: [
-          { user: :aconvenor, num: few_tutorials },
-          { user: :cliff, num: few_tutorials },
-        ],
-        num_tasks: few_tasks,
-        ilos: rand(0..3),
-        students: [ :acummaudo ]
-      },
-      gameprog: {
-        code: "COS30243",
-        name: "Game Programming",
-        convenors: [ :aconvenor, :acummaudo ],
-        tutors: [
-          { user: :aconvenor, num: few_tutorials },
-        ],
-        num_tasks: few_tasks,
-        ilos: rand(0..3),
-        students: [ :acain, :aadmin ]
-      },
-    }
-    puts "-> Defined #{@user_data.length} fixed users and #{@unit_data.length} units"
   end
 end
