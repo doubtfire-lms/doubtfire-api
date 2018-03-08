@@ -147,6 +147,8 @@ module Api
     post '/projects' do
       unit = Unit.find(params[:unit_id])
       student = User.find_by(username: params[:student_num])
+      student = User.find_by(student_id: params[:student_num]) if student.nil?
+      student = User.find_by(email: params[:student_num]) if student.nil?
 
       if student.nil?
         error!({ error: "Couldn't find Student with username=#{params[:student_num]}" }, 403)
