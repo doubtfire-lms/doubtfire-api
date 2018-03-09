@@ -147,8 +147,8 @@ class Unit < ActiveRecord::Base
   def student_query(limit_to_enrolled)
     # Get the number of tasks for each grade... with 1 as minimum to avoid / 0
     task_count = [0, 1, 2, 3].map do |e|
-                   task_definitions.where("target_grade <= #{e}").count + 0.0
-                 end. map { |e| e == 0 ? 1 : e }
+      task_definitions.where("target_grade <= #{e}").count + 0.0
+    end.map { |e| e == 0 ? 1 : e }
 
     q = projects
         .joins(:user)
@@ -193,19 +193,11 @@ class Unit < ActiveRecord::Base
     q = q.where('projects.enrolled = TRUE') if limit_to_enrolled
 
     q.map do |t|
-      # puts "#{t.project_id} #{t.first_name} #{t.fail_count} Grade:#{t.grade} Count:#{task_count[t.grade]}"
-      fail_pct = (t.fail_count / task_count[t.target_grade]).signif(2)
-      do_not_resubmit_pct = (t.do_not_resubmit_count / task_count[t.target_grade]).signif(2)
-      redo_pct = (t.redo_count / task_count[t.target_grade]).signif(2)
-      need_help_pct = (t.need_help_count / task_count[t.target_grade]).signif(2)
-      working_on_it_pct = (t.working_on_it_count / task_count[t.target_grade]).signif(2)
-      fix_and_resubmit_pct = (t.fix_and_resubmit_count / task_count[t.target_grade]).signif(2)
-      ready_to_mark_pct = (t.ready_to_mark_count / task_count[t.target_grade]).signif(2)
-      discuss_pct = (t.discuss_count / task_count[t.target_grade]).signif(2)
-      demonstrate_pct = (t.demonstrate_count / task_count[t.target_grade]).signif(2)
-      complete_pct = (t.complete_count / task_count[t.target_grade]).signif(2)
-
-      not_started_pct = (1 - fail_pct - do_not_resubmit_pct - redo_pct - need_help_pct - working_on_it_pct - fix_and_resubmit_pct - ready_to_mark_pct - discuss_pct - demonstrate_pct - complete_pct).signif(2)
+      red_pct = ((t.fail_count + t.do_not_resubmit_count + t.time_exceeded_count) / task_count[3]).signif(2)
+      orange_pct = ((t.redo_count + t.need_help_count + t.fix_and_resubmit_count) / task_count[3]).signif(2)
+      green_pct = ((t.discuss_count + t.demonstrate_count + t.complete_count) / task_count[3]).signif(2)
+      blue_pct = (t.ready_to_mark_count / task_count[3]).signif(2)
+      grey_pct = (1 - red_pct - orange_pct - green_pct - blue_pct).signif(2)
 
       {
         project_id: t.project_id,
@@ -222,7 +214,7 @@ class Unit < ActiveRecord::Base
         grade_rationale: t.grade_rationale,
         max_pct_copy: t.plagiarism_match_links_max_pct,
         has_portfolio: !t.portfolio_production_date.nil?,
-        stats: "#{fail_pct}|#{not_started_pct}|#{do_not_resubmit_pct}|#{redo_pct}|#{need_help_pct}|#{working_on_it_pct}|#{fix_and_resubmit_pct}|#{ready_to_mark_pct}|#{discuss_pct}|#{demonstrate_pct}|#{complete_pct}"
+        stats: "#{red_pct}|#{grey_pct}|#{orange_pct}|#{blue_pct}|#{green_pct}"
       }
     end
   end
@@ -299,7 +291,7 @@ class Unit < ActiveRecord::Base
     project = Project.create!(
       user_id: user.id,
       unit_id: id,
-      task_stats: '0.0|1.0|0.0|0.0|0.0|0.0|0.0|0.0|0.0|0.0|0.0'
+      task_stats: '0.0|1.0|0.0|0.0|0.0'
     )
 
     project.tutorial_id = tutorial_id unless tutorial_id.nil?
@@ -1298,7 +1290,7 @@ class Unit < ActiveRecord::Base
         project_id: t.project_id,
         task_definition_id: t.task_definition_id,
         tutorial_id: t.tutorial_id,
-        status: TaskStatus.status_key_for_name(t.status_name),
+        status: TaskStatus.find(t.status_id).status_key,
         completion_date: t.completion_date,
         submission_date: t.submission_date,
         times_assessed: t.times_assessed,
@@ -1320,11 +1312,11 @@ class Unit < ActiveRecord::Base
       .joins("LEFT JOIN comments_read_receipts crr ON crr.task_comment_id = task_comments.id AND crr.user_id = #{user.id}")
       .select(
         'SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) as number_unread', 'project_id', 'tasks.id as task_id',
-        'task_definition_id', 'task_definitions.start_date as start_date', 'projects.tutorial_id as tutorial_id', 'task_statuses.name as status_name', 'task_statuses.id',
+        'task_definition_id', 'task_definitions.start_date as start_date', 'projects.tutorial_id as tutorial_id', 'task_statuses.id as status_id', 'task_statuses.id',
         'completion_date', 'times_assessed', 'submission_date', 'portfolio_evidence', 'tasks.grade as grade', 'quality_pts'
       )
       .group(
-        'task_statuses.id', 'project_id', 'tutorial_id', 'tasks.id', 'task_definition_id', 'task_definitions.start_date', 'status_name',
+        'task_statuses.id', 'project_id', 'tutorial_id', 'tasks.id', 'task_definition_id', 'task_definitions.start_date', 'status_id',
         'completion_date', 'times_assessed', 'submission_date', 'portfolio_evidence', 'grade', 'quality_pts'
       )
   end
@@ -1368,14 +1360,14 @@ class Unit < ActiveRecord::Base
   def task_status_stats
     data = student_tasks
            .joins(:task_status)
-           .select('projects.tutorial_id as tutorial_id', 'task_definition_id', 'task_statuses.name as status_name', 'COUNT(tasks.id) as num_tasks')
+           .select('projects.tutorial_id as tutorial_id', 'task_definition_id', 'task_statuses.id as status_id', 'COUNT(tasks.id) as num_tasks')
            .where('task_status_id > 1')
-           .group('projects.tutorial_id', 'tasks.task_definition_id', 'task_statuses.name')
+           .group('projects.tutorial_id', 'tasks.task_definition_id', 'status_id')
            .map do |r|
       {
         tutorial_id: r.tutorial_id,
         task_definition_id: r.task_definition_id,
-        status: TaskStatus.status_key_for_name(r.status_name),
+        status: TaskStatus.find(r.status_id).status_key,
         num: r.num_tasks
       }
     end
@@ -1510,9 +1502,9 @@ class Unit < ActiveRecord::Base
     data = student_tasks
            .joins(task_definition: :learning_outcome_task_links)
            .joins(:task_status)
-           .select('projects.tutorial_id, projects.id as project_id, task_statuses.name as status_name, task_definitions.target_grade, learning_outcome_task_links.learning_outcome_id, learning_outcome_task_links.rating, COUNT(tasks.id) as num')
+           .select('projects.tutorial_id, projects.id as project_id, task_statuses.id as status_id, task_definitions.target_grade, learning_outcome_task_links.learning_outcome_id, learning_outcome_task_links.rating, COUNT(tasks.id) as num')
            .where('projects.started = TRUE AND learning_outcome_task_links.task_id is NULL')
-           .group('projects.tutorial_id, projects.id, task_statuses.name, task_definitions.target_grade, learning_outcome_task_links.learning_outcome_id, learning_outcome_task_links.rating')
+           .group('projects.tutorial_id, projects.id, task_statuses.id, task_definitions.target_grade, learning_outcome_task_links.learning_outcome_id, learning_outcome_task_links.rating')
            .order('projects.tutorial_id, projects.id')
            .map do |r|
       {
@@ -1521,7 +1513,7 @@ class Unit < ActiveRecord::Base
         learning_outcome_id: r.learning_outcome_id,
         rating: r.rating,
         grade: r.target_grade,
-        status: TaskStatus.status_key_for_name(r.status_name),
+        status: TaskStatus.find(r.status_id).status_key,
         num: r.num
       }
     end

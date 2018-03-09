@@ -208,11 +208,11 @@ class Project < ActiveRecord::Base
       .joins("LEFT JOIN comments_read_receipts crr ON crr.task_comment_id = task_comments.id AND crr.user_id = #{user.id}")
       .select(
         'SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) as number_unread', 'project_id', 'tasks.id as id',
-        'task_definition_id', 'task_statuses.name as status_name',
+        'task_definition_id', 'task_statuses.id as status_id',
         'completion_date', 'times_assessed', 'submission_date', 'portfolio_evidence', 'tasks.grade as grade', 'quality_pts', 'include_in_portfolio', 'grade'
       )
       .group(
-        'task_statuses.id', 'tasks.project_id', 'tasks.id', 'task_definition_id', 'status_name',
+        'task_statuses.id', 'tasks.project_id', 'tasks.id', 'task_definition_id', 'status_id',
         'completion_date', 'times_assessed', 'submission_date', 'portfolio_evidence', 'grade', 'quality_pts',
         'include_in_portfolio', 'grade'
       )
@@ -220,7 +220,7 @@ class Project < ActiveRecord::Base
         t = Task.find(r.id)
         {
           id: r.id,
-          status: TaskStatus.status_key_for_name(r.status_name),
+          status: TaskStatus.find(r.status_id).status_key,
           task_definition_id: r.task_definition_id,
           include_in_portfolio: r.include_in_portfolio,
           pct_similar: t.pct_similar,
@@ -577,24 +577,18 @@ class Project < ActiveRecord::Base
              )
              .map do |t|
       # puts "#{t.project_id} #{t.first_name} #{t.fail_count} Grade:#{t.grade} Count:#{task_count[t.grade]}"
-      fail_pct = (t.fail_count / task_count).signif(2)
-      do_not_resubmit_pct = (t.do_not_resubmit_count / task_count).signif(2)
-      redo_pct = (t.redo_count / task_count).signif(2)
-      need_help_pct = (t.need_help_count / task_count).signif(2)
-      working_on_it_pct = (t.working_on_it_count / task_count).signif(2)
-      fix_and_resubmit_pct = (t.fix_and_resubmit_count / task_count).signif(2)
-      ready_to_mark_pct = (t.ready_to_mark_count / task_count).signif(2)
-      discuss_pct = (t.discuss_count / task_count).signif(2)
-      demonstrate_pct = (t.demonstrate_count / task_count).signif(2)
-      complete_pct = (t.complete_count / task_count).signif(2)
+      
+      red_pct = ((t.fail_count + t.do_not_resubmit_count + t.time_exceeded_count)/ task_count).signif(2)
+      orange_pct = ((t.redo_count + t.need_help_count + t.fix_and_resubmit_count) / task_count).signif(2)
+      green_pct = ((t.discuss_count + t.demonstrate_count + t.complete_count) / task_count).signif(2)
+      blue_pct = (t.ready_to_mark_count / task_count).signif(2)
+      grey_pct = (1 - red_pct - orange_pct - green_pct - blue_pct).signif(2)
 
-      not_started_pct = (1 - fail_pct - do_not_resubmit_pct - redo_pct - need_help_pct - working_on_it_pct - fix_and_resubmit_pct - ready_to_mark_pct - discuss_pct - demonstrate_pct - complete_pct).signif(2)
-
-      "#{fail_pct}|#{not_started_pct}|#{do_not_resubmit_pct}|#{redo_pct}|#{need_help_pct}|#{working_on_it_pct}|#{fix_and_resubmit_pct}|#{ready_to_mark_pct}|#{discuss_pct}|#{demonstrate_pct}|#{complete_pct}"
+      "#{red_pct}|#{grey_pct}|#{orange_pct}|#{blue_pct}|#{green_pct}"
     end.first
 
     if result.nil?
-      '0|1|0|0|0|0|0|0|0|0|0'
+      '0|1|0|0|0'
     else
       result
     end

@@ -1,4 +1,15 @@
 class Role < ActiveRecord::Base
+
+  #
+  # Override find to ensure that role objects are cached - these do not change
+  #
+  def self.find(id)
+    Rails.cache.fetch("roles/#{id}", expires_in: 12.hours) do
+      super
+    end
+  end
+
+
   def self.student
     Role.find(student_id)
   end

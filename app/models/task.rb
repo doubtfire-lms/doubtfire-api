@@ -340,47 +340,29 @@ class Task < ActiveRecord::Base
     # State transitions based upon the trigger
     #
 
-    #
-    # Tutor and student can trigger these actions...
-    #
-    case trigger
-    when 'ready_to_mark', 'rtm'
+    status = TaskStatus.status_for_name(trigger)
+
+    case status
+    when nil
+      return nil
+    when TaskStatus.ready_to_mark
       submit
-    when 'not_started'
-      engage TaskStatus.not_started
-    when 'not_ready_to_mark'
-      engage TaskStatus.not_started
-    when 'need_help'
-      engage TaskStatus.need_help
-    when 'working_on_it'
-      engage TaskStatus.working_on_it
+
+      if task_definition.due_date && task_definition.due_date < Time.zone.now
+        assess TaskStatus.time_exceeded, by_user
+      end
+    when TaskStatus.not_started, TaskStatus.need_help, TaskStatus.working_on_it
+      engage status
     else
-      #
       # Only tutors can perform these actions
-      #
       if role == :tutor
         if task_definition.max_quality_pts > 0
-          if %w(complete discuss demonstrate de demo d).include? trigger
+          case status
+          when TaskStatus.complete, TaskStatus.discuss, TaskStatus.demonstrate
             update(quality_pts: quality)
           end
         end
-
-        case trigger
-        when 'fail', 'f'
-          assess TaskStatus.fail, by_user
-        when 'redo'
-          assess TaskStatus.redo, by_user
-        when 'complete'
-          assess TaskStatus.complete, by_user
-        when 'fix_and_resubmit', 'fix'
-          assess TaskStatus.fix_and_resubmit, by_user
-        when 'do_not_resubmit', 'dnr', 'fix_and_include', 'fixinc'
-          assess TaskStatus.do_not_resubmit, by_user
-        when 'demonstrate', 'de', 'demo'
-          assess TaskStatus.demonstrate, by_user
-        when 'discuss', 'd'
-          assess TaskStatus.discuss, by_user
-        end
+        assess status, by_user
       end
     end
 
