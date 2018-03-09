@@ -7,7 +7,7 @@ class TaskUpdateSerializer < ActiveModel::Serializer
 
   def other_projects
     grp = object.group
-    others = grp.projects.select { |p| p.id != object.project_id }.map { |p| { id: p.id, new_stats: p.task_stats } }
+    grp.projects.select { |p| p.id != object.project_id }.map { |p| { id: p.id, new_stats: p.task_stats } }
   end
 
   def filter(keys)

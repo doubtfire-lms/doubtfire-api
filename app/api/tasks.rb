@@ -29,7 +29,7 @@ module Api
           .select(
             'tasks.id',
             'projects.tutorial_id as tutorial_id',
-            'task_statuses.name as status_name',
+            'task_statuses.id as status_id',
             'task_definition_id'
           )
           .where('tasks.task_status_id > 1 and projects.tutorial_id is not null')
@@ -38,7 +38,7 @@ module Api
               id: r.id,
               tutorial_id: r.tutorial_id,
               task_definition_id: r.task_definition_id,
-              status: TaskStatus.status_key_for_name(r.status_name)
+              status: TaskStatus.find(r.status_id).status_key
             }
           end
     end
