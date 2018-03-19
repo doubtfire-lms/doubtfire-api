@@ -329,24 +329,30 @@ class Unit < ActiveRecord::Base
 
     # Check if these headers should be processed by institution file or from DF format
     if Doubtfire::Application.config.institution_settings.are_headers_institution_users? csv.headers
-      missing_headers_lambda = Doubtfire::Application.config.institution_settings.missing_header_for(csv.headers)
-      fetch_row_data_lambda = Doubtfire::Application.config.institution_settings.fetch_row_data(csv.headers)
+      import_settings = Doubtfire::Application.config.institution_settings.user_import_settings_for(csv.headers)
     else
-      missing_headers_lambda = ->(row) {
-        missing_headers(row, %w(unit_code username student_id first_name last_name email tutorial))
-      }
-      fetch_row_data_lambda = ->(row, unit) {
-        {
-            unit_code:      row['unit_code'],
-            username:       row['username'],
-            student_id:     row['student_id'],
-            first_name:     row['first_name'],
-            nickname:       nil,
-            last_name:      row['last_name'],
-            email:          row['email'],
-            enrolled:       true,
-            tutorial_code:  row['tutorial']
-        }
+      # Settings include:
+      #   missing_headers_lambda - lambda to check if row is missing key data
+      #   fetch_row_data_lambda - lambda to convert row from csv to required import data
+      #   replace_existing_tutorial - boolean to indicate if tutorials in csv override ones in doubtfire
+      import_settings = {
+        missing_headers_lambda: ->(row) {
+          missing_headers(row, %w(unit_code username student_id first_name last_name email tutorial))
+        },
+        fetch_row_data_lambda: ->(row, unit) {
+          {
+              unit_code:      row['unit_code'],
+              username:       row['username'],
+              student_id:     row['student_id'],
+              first_name:     row['first_name'],
+              nickname:       nil,
+              last_name:      row['last_name'],
+              email:          row['email'],
+              enrolled:       true,
+              tutorial_code:  row['tutorial']
+          }
+        },
+        replace_existing_tutorial: true
       }
     end
 
@@ -355,14 +361,14 @@ class Unit < ActiveRecord::Base
                       header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
                       converters: [->(i) { i.nil? ? '' : i }, ->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]) do |row|
       
-      missing = missing_headers_lambda.call(row)
+      missing = import_settings[:missing_headers_lambda].call(row)
       if missing.count > 0
         errors << { row: row, message: "Missing headers: #{missing.join(', ')}" }
         next
       end
 
       begin
-        row_data = fetch_row_data_lambda.call(row, self)
+        row_data = import_settings[:fetch_row_data_lambda].call(row, self)
 
         if row_data[:username].nil?
           ignored << { row: row, message: "Skipping row with missing username" }
@@ -395,25 +401,34 @@ class Unit < ActiveRecord::Base
 
         username = username.downcase
 
+        # Perform withdraw if needed...
         unless row_data[:enrolled]
+          # Find the user
           project_participant = User.where(username: username)
           
+          # If they dont exist... ignore
           if project_participant.nil? || project_participant.count == 0
             ignored << { row: row, message: "Ignoring student to withdraw, as not enrolled" }
           else
+            # Get the user's project
             user_project = projects.where(user_id: project_participant.first.id).first
-            if user_project.nil?
+
+            # If no project... then not enrolled
+            if user_project.nil? || !user_project.enrolled
               ignored << { row: row, message: "Ignoring student to withdraw, as not enrolled" }
             else
+              # Withdraw...
               user_project.enrolled = false 
               user_project.save
               success << { row: row, message: "Student was withdrawn" }
             end
           end
 
+          # Move to next row as this was a withdraw...
           next
         end
 
+        # Is an enrolment... so first find the user
         project_participant = User.find_or_create_by(username: username) do |new_user|
           new_user.first_name         = first_name
           new_user.last_name          = last_name
@@ -424,6 +439,7 @@ class Unit < ActiveRecord::Base
           new_user.encrypted_password = BCrypt::Password.create('password')
         end
 
+        # If new user then make sure they are saved
         unless project_participant.persisted?
           project_participant.save
         end
@@ -432,19 +448,24 @@ class Unit < ActiveRecord::Base
         # Only import if a valid user - or if save worked
         #
         if project_participant.persisted?
+          # Add in the student id if it was supplied...
           if (project_participant.student_id.nil? || project_participant.student_id.empty?) && student_id
             project_participant.student_id = student_id
             project_participant.save!
           end
 
+          # Now find the project for the user
           user_project = projects.where(user_id: project_participant.id).first
 
+          # And find the tutorial for the user
           tutorial = tutorial_cache[tutorial_code] || tutorial_with_abbr(tutorial_code)
           tutorial_cache[tutorial_code] ||= tutorial
 
           # Add the user to the project (if not already in there)
           if user_project.nil?
-            if !tutorial.nil?
+            # Need to enrol user... can always set tutorial as does not already exist...
+            if (!tutorial.nil?) 
+              # Use tutorial if we have it :)
               enrol_student(project_participant, tutorial)
               success << { row: row, message: 'Enrolled student with tutorial.' }
             else
@@ -452,21 +473,25 @@ class Unit < ActiveRecord::Base
               success << { row: row, message: 'Enrolled student without tutorial.' }
             end
           else
-            # update tutorial
+            # update enrolment... if currently not enrolled
             changes = ''
-
-            if user_project.tutorial != tutorial
-              user_project.tutorial = tutorial
-              user_project.save
-              changes << 'Changed tutorial. '
-            end
-
             unless user_project.enrolled
               user_project.enrolled = true
               user_project.save
               changes << 'Changed enrolment.'
             end
 
+            # replace tutorial if we are allowed... and it has changed
+            if import_settings[:replace_existing_tutorial] || user_project.tutorial.nil?
+              # check it has changed first...
+              if user_project.tutorial != tutorial
+                user_project.tutorial = tutorial
+                user_project.save
+                changes << 'Changed tutorial. '
+              end
+            end
+
+            # Get back to user with changes... if any
             if changes.empty?
               ignored << { row: row, message: 'No change.' }
             else
@@ -474,7 +499,7 @@ class Unit < ActiveRecord::Base
             end
           end
         else
-          errors << { row: row, message: 'Student record is invalid.' }
+          errors << { row: row, message: "Student record is invalid. #{project_participant.errors.full_messages.first}" }
         end
       rescue Exception => e
         errors << { row: row, message: e.message }
