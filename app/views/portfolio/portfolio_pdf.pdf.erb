@@ -7,6 +7,7 @@ def latex_color_for_status(task)
     when :complete          then 'complete'
     when :not_started       then 'notstarted'
     when :fix_and_resubmit  then 'fix'
+    when :time_exceeded     then 'timeexceeded'
     when :do_not_resubmit   then 'dnr'
     when :redo              then 'redo'
     when :need_help         then 'needhelp'
