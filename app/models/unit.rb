@@ -91,6 +91,9 @@ class Unit < ActiveRecord::Base
   has_many :convenors, -> { joins(:role).where('roles.name = :role', role: 'Convenor') }, class_name: 'UnitRole'
   has_many :staff, ->     { joins(:role).where('roles.name = :role_convenor or roles.name = :role_tutor', role_convenor: 'Convenor', role_tutor: 'Tutor') }, class_name: 'UnitRole'
 
+  # Unit has a teaching period
+  belongs_to :teaching_period
+
   scope :current,               -> { current_for_date(Time.zone.now) }
   scope :current_for_date,      ->(date) { where('start_date <= ? AND end_date >= ?', date, date) }
   scope :not_current,           -> { not_current_for_date(Time.zone.now) }
