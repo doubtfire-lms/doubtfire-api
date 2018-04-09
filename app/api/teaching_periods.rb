@@ -16,11 +16,17 @@ module Api
           requires :end_date, type: Date, desc: 'The last date of the teaching period'
         end
         post '/teaching_periods' do
+            unless authorise? current_user, User, :handle_teaching_period
+                error!({ error: 'Not authorised to create a teaching period' }, 403)
+            end
 
         end
         
         desc 'Get all the Teaching Periods'
         get '/teaching_periods' do
+            unless authorise? current_user, unit, :get_teaching_periods
+                error!({ error: 'Not authorised to get teaching periods' }, 403)
+            end
             teaching_periods = teaching_period.all_teaching_periods
             result = teaching_periods.map do |c|
                 {
