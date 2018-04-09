@@ -24,8 +24,8 @@ module Api
             start_date = params[:start_date]
             end_date = params[:end_date]
 
-            teaching_period = TeachingPeriod.create
-            result = teaching_period.add_teaching_period(start_date, end_date)
+            teaching_period = TeachingPeriod.new
+            result = teaching_period.add_teaching_period(period, start_date, end_date)
 
             if result.nil?
                 error!({ error: 'No teaching period added.' }, 403)
@@ -36,11 +36,10 @@ module Api
         
         desc 'Get all the Teaching Periods'
         get '/teaching_periods' do
-            unless authorise? current_user, unit, :get_teaching_periods
+            unless authorise? current_user, User, :get_teaching_periods
                 error!({ error: 'Not authorised to get teaching periods' }, 403)
-            end
-            teaching_period = TeachingPeriod.create            
-            teaching_periods = teaching_period.all_teaching_periods
+            end            
+            teaching_periods = TeachingPeriod.all_teaching_periods
             result = teaching_periods.map do |c|
                 {
                     id: c.id,
