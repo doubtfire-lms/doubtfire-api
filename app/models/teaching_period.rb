@@ -1,17 +1,19 @@
 class TeachingPeriod < ActiveRecord::Base
     has_many :units
 
-    def add_teaching_period (start_date, end_date)
-        period = self
-        period.period = self
-        period.start_date = start_date
-        period.end_date = end_date
-        period.save!
-        period
+    def add_teaching_period (period, start_date, end_date)
+        teaching_period = self
+        teaching_period.period = period
+        teaching_period.start_date = start_date
+        teaching_period.end_date = end_date
+        teaching_period.save!
+        teaching_period
     end
 
-    def all_teaching_periods
-        TeachingPeriod.all
+    class << self
+        def all_teaching_periods
+            TeachingPeriod.all
+        end
     end
 
     def find_specific_period(id)

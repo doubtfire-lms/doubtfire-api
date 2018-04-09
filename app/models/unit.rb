@@ -45,8 +45,7 @@ class Unit < ActiveRecord::Base
       :provide_feedback,
       :change_project_enrolment,
       :download_stats,
-      :download_grades,
-      :get_teaching_periods
+      :download_grades
     ]
 
     # What can other users do with units?
