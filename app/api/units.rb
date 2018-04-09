@@ -114,19 +114,24 @@ module Api
       if unit_parameters[:description].nil?
         unit_parameters[:description] = unit_parameters[:name]
       end
+      teaching_period_id = unit_parameters[:teaching_period_id]      
       if unit_parameters[:start_date].nil?
-        teaching_period_id = unit_parameters[:teaching_period_id]
         if teaching_period_id.blank?
           start_date = Date.parse('Monday')
           delta = start_date > Date.today ? 0 : 7
           unit_parameters[:start_date] = start_date + delta          
         else
-          teaching_period = TeachingPeriod.find(teaching_period_id)
+          teaching_period = TeachingPeriod.find(teaching_period_id)         
           unit_parameters[:start_date] =  teaching_period.start_date         
         end
       end
       if unit_parameters[:end_date].nil?
-        unit_parameters[:end_date] = unit_parameters[:start_date] + 16.weeks
+        if teaching_period_id.blank?
+          unit_parameters[:end_date] = unit_parameters[:start_date] + 16.weeks          
+        else
+          teaching_period = TeachingPeriod.find(teaching_period_id)          
+          unit_parameters[:end_date] =  teaching_period.end_date          
+        end        
       end
 
       unit = Unit.create!(unit_parameters)
