@@ -105,6 +105,7 @@ module Api
                                                     .permit(
                                                       :name,
                                                       :code,
+                                                      :teaching_period_id,
                                                       :description,
                                                       :start_date,
                                                       :end_date
@@ -114,14 +115,14 @@ module Api
         unit_parameters[:description] = unit_parameters[:name]
       end
       if unit_parameters[:start_date].nil?
-        teaching_period_id = params[:teaching_period_id]        
+        teaching_period_id = unit_parameters[:teaching_period_id]
         if teaching_period_id.blank?
           start_date = Date.parse('Monday')
           delta = start_date > Date.today ? 0 : 7
           unit_parameters[:start_date] = start_date + delta          
         else
-          teaching_period = Unit.find_by(teaching_period_id: teaching_period_id)
-          unit_parameters[:start_date] = teaching_period.find_specific_period(teaching_period_id)          
+          teaching_period = TeachingPeriod.find(teaching_period_id)
+          unit_parameters[:start_date] =  teaching_period.start_date         
         end
       end
       if unit_parameters[:end_date].nil?
