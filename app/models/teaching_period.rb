@@ -7,6 +7,7 @@ class TeachingPeriod < ActiveRecord::Base
         period.start_date = start_date
         period.end_date = end_date
         period.save!
+        period
     end
 
     def all_teaching_periods
