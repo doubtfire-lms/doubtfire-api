@@ -7,7 +7,17 @@ module Api
     
         before do
           authenticated?
-        end        
+        end
+        
+        desc 'Add a Teaching Period'
+        params do
+          requires :period, type: String, desc: 'The teaching period to add'
+          requires :start_date, type: Date, desc: 'The start date of the teaching period'
+          requires :end_date, type: Date, desc: 'The last date of the teaching period'
+        end
+        post '/teaching_periods' do
+
+        end
         
         desc 'Get all the Teaching Periods'
         get '/teaching_periods' do
