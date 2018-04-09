@@ -89,6 +89,7 @@ module Api
       requires :unit, type: Hash do
         requires :name
         requires :code
+        optional :teaching_period_id
         optional :description
         optional :start_date
         optional :end_date
@@ -113,9 +114,15 @@ module Api
         unit_parameters[:description] = unit_parameters[:name]
       end
       if unit_parameters[:start_date].nil?
-        start_date = Date.parse('Monday')
-        delta = start_date > Date.today ? 0 : 7
-        unit_parameters[:start_date] = start_date + delta
+        teaching_period_id = params[:teaching_period_id]        
+        if teaching_period_id.blank?
+          start_date = Date.parse('Monday')
+          delta = start_date > Date.today ? 0 : 7
+          unit_parameters[:start_date] = start_date + delta          
+        else
+          teaching_period = Unit.find_by(teaching_period_id: teaching_period_id)
+          unit_parameters[:start_date] = teaching_period.find_specific_period(teaching_period_id)          
+        end
       end
       if unit_parameters[:end_date].nil?
         unit_parameters[:end_date] = unit_parameters[:start_date] + 16.weeks

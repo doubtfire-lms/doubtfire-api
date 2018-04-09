@@ -13,4 +13,8 @@ class TeachingPeriod < ActiveRecord::Base
     def all_teaching_periods
         TeachingPeriod.all
     end
+
+    def find_specific_period(id)
+        TeachingPeriod.find_by(id: id)
+    end
 end
