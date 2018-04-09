@@ -134,7 +134,11 @@ module Api
         end        
       end
 
-      unit = Unit.create!(unit_parameters)
+      if unit_parameters[:end_date] > unit_parameters[:start_date]
+        unit = Unit.create!(unit_parameters)        
+      else
+        error!({ error: 'End date should be after the start date' }, 403)        
+      end      
 
       # Employ current user as convenor
       unit.employ_staff(current_user, Role.convenor)
