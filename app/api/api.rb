@@ -33,6 +33,7 @@ module Api
     mount Api::Submission::PortfolioEvidenceApi
     mount Api::Submission::BatchTask
     mount Api::Settings
+    mount Api::TeachingPeriods
 
     #
     # Add auth details to all end points
@@ -52,6 +53,7 @@ module Api
     AuthenticationHelpers.add_auth_to Api::Submission::PortfolioApi
     AuthenticationHelpers.add_auth_to Api::Submission::PortfolioEvidenceApi
     AuthenticationHelpers.add_auth_to Api::Submission::BatchTask
+    AuthenticationHelpers.add_auth_to Api::TeachingPeriods
 
     add_swagger_documentation \
       base_path: nil,

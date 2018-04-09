@@ -2,10 +2,15 @@ require 'grape'
 
 module Api
     class TeachingPeriods < Grape::API
-        
+        helpers AuthenticationHelpers
+        helpers AuthorisationHelpers
+    
+        before do
+          authenticated?
+        end        
         
         desc 'Get all the Teaching Periods'
-        get '/teaching_period_id' do
+        get '/teaching_periods' do
             teaching_periods = teaching_period.all_teaching_periods
             result = teaching_periods.map do |c|
                 {
