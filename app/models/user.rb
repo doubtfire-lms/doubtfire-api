@@ -277,7 +277,7 @@ class User < ActiveRecord::Base
       :admin_units,
       :admin_users,
       :convene_units,
-      :download_stats
+      :download_stats,
       :handle_teaching_period
     ]
 
