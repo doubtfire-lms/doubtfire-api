@@ -55,5 +55,14 @@ module Api
             result        
         end
 
+        desc 'Delete a teaching period'
+        delete '/teaching_periods/:teaching_period_id' do
+            unless authorise? current_user, User, :handle_teaching_period
+                error!({ error: 'Not authorised to delete a teaching period' }, 403)
+            end
+
+            teaching_period_id = params[:teaching_period_id]
+            TeachingPeriod.find(teaching_period_id).destroy            
+        end
     end    
 end
