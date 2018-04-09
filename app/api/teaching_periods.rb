@@ -24,8 +24,12 @@ module Api
             start_date = params[:start_date]
             end_date = params[:end_date]
 
-            teaching_period = TeachingPeriod.new
-            result = teaching_period.add_teaching_period(period, start_date, end_date)
+            if end_date > start_date
+                teaching_period = TeachingPeriod.new
+                result = teaching_period.add_teaching_period(period, start_date, end_date)            
+            else
+                error!({ error: 'End date should be after the start date' }, 403)        
+            end
 
             if result.nil?
                 error!({ error: 'No teaching period added.' }, 403)
