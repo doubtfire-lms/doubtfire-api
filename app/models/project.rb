@@ -170,6 +170,7 @@ class Project < ActiveRecord::Base
     elsif user == main_tutor then :tutor
     elsif user.nil? then nil
     elsif unit.tutors.where(id: user.id).count != 0 then :tutor
+    else nil
     end
   end
 
