@@ -11,9 +11,9 @@ module Api
         
         desc 'Add a Teaching Period'
         params do
-          requires :period, type: String, desc: 'The teaching period to add'
-          requires :start_date, type: Date, desc: 'The start date of the teaching period'
-          requires :end_date, type: Date, desc: 'The last date of the teaching period'
+          requires :period, type: String, desc: 'The teaching period to add', allow_blank: false
+          requires :start_date, type: Date, desc: 'The start date of the teaching period', allow_blank: false
+          requires :end_date, type: Date, desc: 'The last date of the teaching period', allow_blank: false
         end
         post '/teaching_periods' do
             unless authorise? current_user, User, :handle_teaching_period
