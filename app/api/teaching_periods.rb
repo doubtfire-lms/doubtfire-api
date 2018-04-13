@@ -25,8 +25,7 @@ module Api
             end_date = params[:end_date]
 
             if end_date > start_date
-                teaching_period = TeachingPeriod.new
-                result = teaching_period.add_teaching_period(period, start_date, end_date)            
+                result = TeachingPeriod.create!(period: period, start_date: start_date, end_date: end_date)                 
             else
                 error!({ error: 'End date should be after the start date' }, 403)        
             end
@@ -43,7 +42,7 @@ module Api
             unless authorise? current_user, User, :get_teaching_periods
                 error!({ error: 'Not authorised to get teaching periods' }, 403)
             end            
-            teaching_periods = TeachingPeriod.all_teaching_periods
+            teaching_periods = TeachingPeriod.all
             result = teaching_periods.map do |c|
                 {
                     id: c.id,
