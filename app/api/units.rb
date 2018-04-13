@@ -114,24 +114,34 @@ module Api
       if unit_parameters[:description].nil?
         unit_parameters[:description] = unit_parameters[:name]
       end
+      
       teaching_period_id = unit_parameters[:teaching_period_id]      
-      if unit_parameters[:start_date].nil?
-        if teaching_period_id.blank?
+      if teaching_period_id.blank?
+        if unit_parameters[:start_date].nil?
           start_date = Date.parse('Monday')
           delta = start_date > Date.today ? 0 : 7
-          unit_parameters[:start_date] = start_date + delta          
-        else
-          teaching_period = TeachingPeriod.find(teaching_period_id)         
-          unit_parameters[:start_date] =  teaching_period.start_date         
+          unit_parameters[:start_date] = start_date + delta                 
         end
-      end
-      if unit_parameters[:end_date].nil?
-        if teaching_period_id.blank?
-          unit_parameters[:end_date] = unit_parameters[:start_date] + 16.weeks          
+      else
+        if unit_parameters[:start_date].nil?
+          teaching_period = TeachingPeriod.find(teaching_period_id)
+          unit_parameters[:start_date] =  teaching_period.start_date          
         else
+          error!({ error: 'Cannot specify start date as teaching period is selected' }, 403)          
+        end        
+      end
+
+      if teaching_period_id.blank?
+        if unit_parameters[:end_date].nil?
+          unit_parameters[:end_date] = unit_parameters[:start_date] + 16.weeks          
+        end
+      else
+        if unit_parameters[:end_date].nil?
           teaching_period = TeachingPeriod.find(teaching_period_id)          
           unit_parameters[:end_date] =  teaching_period.end_date          
-        end        
+        else
+          error!({ error: 'Cannot specify end date as teaching period is selected' }, 403)          
+        end                      
       end
 
       if unit_parameters[:end_date] > unit_parameters[:start_date]
