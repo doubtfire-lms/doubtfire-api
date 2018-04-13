@@ -1046,19 +1046,21 @@ class Task < ActiveRecord::Base
     #
     # Now copy over the temp directory over to the enqueued directory
     #
-    enqueued_dir = student_work_dir(:new, self)[0..-2]
+    enqueued_dir = student_work_dir(:new, false)[0..-2]
 
     logger.debug "Moving submission evidence from #{tmp_dir} to #{enqueued_dir}"
 
-    pwd = FileUtils.pwd
-    # move to tmp dir
-    Dir.chdir(tmp_dir)
-    # move all files to the enq dir
-    FileUtils.mv Dir.glob('*'), enqueued_dir
-    # FileUtils.rm Dir.glob("*")
-    # remove the directory
-    Dir.chdir(pwd)
-    Dir.rmdir(tmp_dir)
+    FileUtils.mv tmp_dir, enqueued_dir, :force => true
+
+    # pwd = FileUtils.pwd
+    # # move to tmp dir
+    # Dir.chdir(tmp_dir)
+    # # move all files to the enq dir
+    # FileUtils.mv Dir.glob('*'), enqueued_dir
+    # # FileUtils.rm Dir.glob("*")
+    # # remove the directory
+    # Dir.chdir(pwd)
+    # Dir.rmdir(tmp_dir)
 
     logger.debug "Submission accepted! Status for task #{id} is now #{trigger}"
   end
