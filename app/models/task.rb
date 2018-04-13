@@ -363,6 +363,9 @@ class Task < ActiveRecord::Base
           end
         end
         assess status, by_user
+      else
+        # Attempt to move to tutor state by non-tutor
+        return nil
       end
     end
 
