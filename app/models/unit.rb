@@ -85,6 +85,7 @@ class Unit < ActiveRecord::Base
   has_many :group_sets, dependent: :destroy
   has_many :task_engagements, through: :projects
   has_many :comments, through: :projects
+  has_many :groups, through: :group_sets
 
   has_many :learning_outcome_task_links, through: :task_definitions
 
