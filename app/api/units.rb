@@ -61,6 +61,7 @@ module Api
         optional :name
         optional :code
         optional :description
+        optional :teaching_period_id
         optional :start_date
         optional :end_date
         optional :active
@@ -76,9 +77,25 @@ module Api
                                                     .permit(:name,
                                                             :code,
                                                             :description,
+                                                            :teaching_period_id,
                                                             :start_date,
                                                             :end_date,
                                                             :active)
+                                                            
+      teaching_period_id = unit_parameters[:teaching_period_id]
+      if teaching_period_id.present?
+        if unit_parameters[:start_date].nil? && unit_parameters[:end_date].nil?
+          teaching_period = TeachingPeriod.find(teaching_period_id)
+          unit_parameters[:start_date] =  teaching_period.start_date
+          unit_parameters[:end_date] =  teaching_period.end_date          
+        else
+          error!({ error: 'Cannot specify dates as teaching period is selected' }, 403)          
+        end
+      else
+        if unit_parameters[:start_date].present? || unit_parameters[:end_date].present?
+          unit_parameters[:teaching_period_id] = nil
+        end
+      end
 
       unit.update!(unit_parameters)
       unit_parameters
