@@ -41,9 +41,9 @@ module Api
     params do
       requires :id, type: Integer, desc: 'The teaching period id to update'
       requires :teaching_period, type: Hash do
-        optional :period
-        optional :start_date
-        optional :end_date
+        optional :period, type: String, desc: 'The name of the teaching period'
+        optional :start_date, type: Date, desc: 'The start date of the teaching period'
+        optional :end_date, type: Date, desc: 'The end date of the teaching period'
       end
     end
     put '/teaching_periods/:id' do
