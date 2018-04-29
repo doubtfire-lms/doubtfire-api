@@ -37,6 +37,30 @@ module Api
       end
     end
     
+    desc 'Update teaching period'
+    params do
+      requires :id, type: Integer, desc: 'The teaching period id to update'
+      requires :teaching_period, type: Hash do
+        optional :period
+        optional :start_date
+        optional :end_date
+      end
+    end
+    put '/teaching_periods/:id' do
+      teaching_period = TeachingPeriod.find(params[:id])
+      unless authorise? current_user, User, :handle_teaching_period
+        error!({ error: 'Not authorised to update a teaching period' }, 403)
+      end
+      teaching_period_parameters = ActionController::Parameters.new(params)
+                                                               .require(:teaching_period)
+                                                               .permit(:period,
+                                                            :start_date,
+                                                            :end_date)
+
+      teaching_period.update!(teaching_period_parameters)
+      teaching_period_parameters
+    end
+
     desc 'Get all the Teaching Periods'
     get '/teaching_periods' do
       unless authorise? current_user, User, :get_teaching_periods
