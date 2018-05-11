@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style type="text/css">
+    body {
+      font-family: "Lucida Grande", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      color: #333;
+      font-size: 14px;
+      width: 800px;
+      margin: 100px auto 0px auto;
+      font-size: 0.9em;
+    }
+    main {
+      background-image: url('http://<%= @doubtfire_host %>/assets/images/logo.png');
+      background-size: 3.5em;
+      background-repeat: no-repeat;
+      background-position: 30px 45px;
+      padding: 30px 40px;
+      padding-left: 100px;
+      border: solid 1px #aaa;
+      border-radius: 7px;
+      line-height: 200%;
+      text-align: justify;
+    }
+    .subtext {
+        color: #aaa;
+        font-size: 0.7em;
+        margin-bottom: 10px;
+        margin-top: -10px;
+    }
+    table {
+        overflow: scroll;
+    }
+    footer {
+      text-align: right;
+      margin-top: 10px;
+      color: #aaa;
+      font-size: 0.7em;
+    }
+    a, a:visited {
+      color: #6a97d2;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    h1 {
+      font-size: 1.1em;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1><%= @summary_stats[:unit].name %> - Weekly Summary</h1>
+    <p class="subtext"><%= "#{@summary_stats[:week_start].day.ordinalize} #{@summary_stats[:week_start].strftime("%B %Y")}" %> to <%= "#{@summary_stats[:week_end].day.ordinalize} #{@summary_stats[:week_end].strftime("%B %Y")}" %></p>
+    
+    <p>Hi <%= @student.first_name %>,</p>
+<% if @did_revert_to_pass %>
+    <p>Hope you had a good week!</p>
+    <p>Before we get into the summary, it seems that you are falling behind in your Pass Tasks. It is really important that you catch up with these tasks, as you must have all Pass tasks marked as Complete to Pass the unit. I've reset your Target Grade to Pass for the moment, to help you focus on these tasks. I would like to encourage you to work through the Pass tasks in order to catch up as quickly as you can. Once you have caught up, you can upgrade your Target Grade again, and go back and complete any higher grade tasks you skipped.</p>
+    <p>With that out of the way, here's a summary of what has happened in this unit over the last week and some notes on what you should do next.</p>
+<% else %>
+    <p>Hope you had a good week! Here's a summary of what has happened in this unit over the last week and some notes on what you should do next.</p>
+<% end %>
+<% if @project.tutorial.nil? %>
+    <p>Firstly... it looks like you are not assigned a tutor! Please login and make sure your tutorial is correctly set. You should be able to do that on the <a href="https://<%= @doubtfire_host%>/#/projects/<%= @project.id%>/tutorials">tutorials page</a>.</p>
+<% end %>
+    <p>Here is what you should focus on right now.</p>
+
+<%  if @top_tasks && @top_tasks.count > 0 %>
+<%      if @overdue_top && @overdue_top.count > 0 %>
+    <p>Catch up by completing the following <b>overdue</b> task<%="s" if @overdue_top.count > 1%>!</p>
+    <ul>
+<%          @overdue_top.each do |ot| %>
+        <li><%= top_task_desc(ot) %></li>
+<%          end %>
+    </ul>
+<%      end %>
+<%      if @soon_top && @soon_top.count > 0 %>
+    <p>Work to get the following task<%="s" if @soon_top.count > 1%> done, as these are <b>due</b> soon!</p>
+    <ul>
+<%          @soon_top.each do |st| %>
+        </li><%= top_task_desc(st) %></li>
+<%          end %>
+    </ul>
+<%      end %>
+<%      if @ahead_top && @ahead_top.count > 0 %>
+    <p>Get ahead by working on the following task<%="s" if @ahead_top.count > 1%> next!</p>
+    <ul>
+<%          @ahead_top.each do |at| %>
+        <li><%= top_task_desc(at) %></li>
+<%          end %>
+    </ul>
+<%      end %>
+<%  elsif @project.has_portfolio %>
+    <p>Its time to Party! You have completed all of the tasks and prepared your portfolio.</p>
+<%  else %>
+    <p>Its almost party time... You have completed all of the tasks, now make sure you login and prepare your portfolio.</p>
+<%  end %>
+    <p>
+        Cheers, <br />
+        The <%= @doubtfire_product_name %> Team on behalf of <%= @tutor.name %>
+    </p>
+  </main>
+  <footer>
+    <a href="<%= @unsubscribe_url %>">Unsubscribe</a> | Generated with <%= @doubtfire_product_name %>
+  </footer>
+</body>
+</html>
