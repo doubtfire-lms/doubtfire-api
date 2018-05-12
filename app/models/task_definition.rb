@@ -284,9 +284,11 @@ class TaskDefinition < ActiveRecord::Base
 
   def to_csv_row
     TaskDefinition.csv_columns
-                  .reject { |col| [:start_week, :start_day, :target_week, :target_day, :due_week, :due_day, :upload_requirements, :group_set].include? col }
+                  .reject { |col| [:start_week, :start_day, :target_week, :target_day, :due_week, :due_day, :upload_requirements, :plagiarism_checks, :group_set].include? col }
                   .map { |column| attributes[column.to_s] } +
-      [ group_set.nil? ? "" : group_set.name, 
+      [ 
+        plagiarism_checks.to_json,
+        group_set.nil? ? "" : group_set.name, 
         upload_requirements.to_json,
         start_week, 
         start_day, 
