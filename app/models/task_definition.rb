@@ -18,7 +18,9 @@ class TaskDefinition < ActiveRecord::Base
   validates :max_quality_pts, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 10, message: 'must be between 0 and 10' }
 
   validates :upload_requirements, length: { maximum: 4095, allow_blank: true }
+  validate :upload_requirements, :check_upload_requirements_format
   validates :plagiarism_checks, length: { maximum: 4095, allow_blank: true }
+  validate :plagiarism_checks, :check_plagiarism_format
   validates :description, length: { maximum: 4095, allow_blank: true }
 
   after_update do |_td|
@@ -28,46 +30,101 @@ class TaskDefinition < ActiveRecord::Base
   def plagiarism_checks
     # Read the JSON string in upload_requirements and convert into ruby objects
     if self['plagiarism_checks']
-      JSON.parse(self['plagiarism_checks'])
+      begin
+        # Parse into ruby objects
+        JSON.parse(self['plagiarism_checks'])
+      rescue
+        # If this fails return the string - validation should then invalidate this object
+        self['plagiarism_checks']
+      end
     else
+      # If it was empty then return an empty array
       JSON.parse('[]')
     end
   end
 
-  def plagiarism_checks=(req)
-    json_data = if req.class == String
-                  # get the ruby objects from the json data
-                  JSON.parse(req)
-                else
-                  # use the passed in objects
-                  req
-                end
-
+  def check_plagiarism_format()
+    json_data = self.plagiarism_checks
+    
     # ensure we have a structure that is : [ { "key": "...", "type": "...", "pattern": "..."}, { ... } ]
     unless json_data.class == Array
       errors.add(:plagiarism_checks, 'is not in a valid format! Should be [ { "key": "...", "type": "...", "pattern": "..."}, { ... } ]. Did not contain array.')
       return
     end
 
+    # Loop through checks in the array
     i = 0
     for req in json_data do
+      # They must be json objects
       unless req.class == Hash
         errors.add(:plagiarism_checks, "is not in a valid format! Should be [ { \"key\": \"...\", \"type\": \"...\", \"pattern\": \"...\"}, { ... } ]. Array did not contain hashes for item #{i + 1}..")
         return
       end
 
-      req.delete_if { |key, _value| !%w(key type pattern).include? key }
-
-      req['key'] = "check#{i}"
-
+      # They must have these keys...
       if (!req.key? 'key') || (!req.key? 'type') || (!req.key? 'pattern')
         errors.add(:plagiarism_checks, "is not in a valid format! Should be [ { \"key\": \"...\", \"type\": \"...\", \"pattern\": \"...\"}, { ... } ]. Missing a key for item #{i + 1}.")
         return
       end
 
+      # Validate the type (MOSS now, Turnitin later)
+      if (!req['type'].match(/^moss /))
+        errors.add(:plagiarism_checks, "does not have a valid type.")
+        return
+      end
+
+      # Check patter to exclude any path separators
+      if (req['pattern'].match(/(\/)|([.][.])/))
+        errors.add(:plagiarism_checks, " pattern contains invalid characters.")
+        return
+      end
+
+      # Move to the next check
+      i += 1
+    end
+  end
+
+  def plagiarism_checks=(req)
+    begin
+      json_data = if req.class == String
+          # get the ruby objects from the json data
+          JSON.parse(req)
+        else
+          # use the passed in objects
+          req
+        end
+    rescue
+      # Not valid json!
+      # Save what we have - validation should raise an error
+      self['plagiarism_checks'] = req
+      return
+    end
+    
+    # Cant process unless it is an array...
+    unless json_data.class == Array
+      # Save what we have - validation should raise an error
+      self['plagiarism_checks'] = req
+      return
+    end
+
+    # Loop through all items in json array
+    i = 0
+    for req in json_data do
+      unless req.class == Hash
+        # Cant process if it is not an object - leave for validation to check
+        next
+      end
+
+      # Delete any other keys
+      req.delete_if { |key, _value| !%w(key type pattern).include? key }
+
+      # Add in check key
+      req['key'] = "check#{i}"
+
       i += 1
     end
 
+    # Save
     self['plagiarism_checks'] = JSON.unparse(json_data)
     self['plagiarism_checks'] = '[]' if self['plagiarism_checks'].nil?
   end
@@ -75,38 +132,39 @@ class TaskDefinition < ActiveRecord::Base
   def upload_requirements
     # Read the JSON string in upload_requirements and convert into ruby objects
     if self['upload_requirements']
-      JSON.parse(self['upload_requirements'])
+      begin
+        # convert to ruby objects
+        JSON.parse(self['upload_requirements'])
+      rescue
+        # Its not valid json - so return the string and validation should fail this object
+        self['upload_requirements']
+      end
     else
+      # Return an empty array as no requirements
       JSON.parse('[]')
     end
   end
 
-  def upload_requirements=(req)
-    json_data = if req.class == String
-                  # get the ruby objects from the json data
-                  JSON.parse(req)
-                else
-                  # use the passed in objects
-                  req
-                end
-
+  # Validate the format of the upload requirements
+  def check_upload_requirements_format()
+    json_data = self.upload_requirements
+    
     # ensure we have a structure that is : [ { "key": "...", "name": "...", "type": "..."}, { ... } ]
     unless json_data.class == Array
       errors.add(:upload_requirements, 'is not in a valid format! Should be [ { "key": "...", "name": "...", "type": "..."}, { ... } ]. Did not contain array.')
       return
     end
 
+    # Checking each upload requirement - i used to index files and for user errors
     i = 0
     for req in json_data do
+      # Each requirement is a json object
       unless req.class == Hash
         errors.add(:upload_requirements, "is not in a valid format! Should be [ { \"key\": \"...\", \"name\": \"...\", \"type\": \"...\"}, { ... } ]. Array did not contain hashes for item #{i + 1}..")
         return
       end
 
-      req.delete_if { |key, _value| !%w(key name type).include? key }
-
-      req['key'] = "file#{i}"
-
+      # Check we have the keys we need
       if (!req.key? 'key') || (!req.key? 'name') || (!req.key? 'type')
         errors.add(:upload_requirements, "is not in a valid format! Should be [ { \"key\": \"...\", \"name\": \"...\", \"type\": \"...\"}, { ... } ]. Missing a key for item #{i + 1}.")
         return
@@ -114,7 +172,48 @@ class TaskDefinition < ActiveRecord::Base
 
       i += 1
     end
+  end
 
+  def upload_requirements=(req)
+    begin
+      json_data = if req.class == String
+          # get the ruby objects from the json data
+          JSON.parse(req)
+        else
+          # use the passed in objects
+          req
+        end
+    rescue
+      # Not valid json
+      # Save what we have - validation should raise an error
+      self['upload_requirements'] = req
+      return
+    end
+
+    # cant process unless it is an array
+    unless json_data.class == Array
+      self['upload_requirements'] = req
+      return
+    end
+
+    # Checking each upload requirement - i used to index files and for user errors
+    i = 0
+    for req in json_data do
+      # Cant process unless it is a hash
+      unless req.class == Hash
+        next
+      end
+
+      # Delete all other keys...
+      req.delete_if { |key, _value| !%w(key name type).include? key }
+
+      # Set the 'key' to be the matching file
+      req['key'] = "file#{i}"
+
+      i += 1
+    end
+
+    # Save
     self['upload_requirements'] = JSON.unparse(json_data)
     self['upload_requirements'] = '[]' if self['upload_requirements'].nil?
   end
@@ -185,16 +284,23 @@ class TaskDefinition < ActiveRecord::Base
 
   def to_csv_row
     TaskDefinition.csv_columns
-                  .reject { |col| [:start_week, :start_day, :target_week, :target_day, :due_week, :due_day, :upload_requirements].include? col }
+                  .reject { |col| [:start_week, :start_day, :target_week, :target_day, :due_week, :due_day, :upload_requirements, :group_set].include? col }
                   .map { |column| attributes[column.to_s] } +
-      [ upload_requirements.to_json ] +
-      [ start_week, start_day, target_week, target_day, due_week, due_day ]
+      [ group_set.nil? ? "" : group_set.name, 
+        upload_requirements.to_json,
+        start_week, 
+        start_day, 
+        target_week, 
+        target_day, 
+        due_week, 
+        due_day 
+      ]
     # [target_date.strftime('%d-%m-%Y')] +
     # [ self['due_date'].nil? ? '' : due_date.strftime('%d-%m-%Y')]
   end
 
   def self.csv_columns
-    [:name, :abbreviation, :description, :weighting, :target_grade, :restrict_status_updates, :max_quality_pts, :is_graded, :upload_requirements, :start_week, :start_day, :target_week, :target_day, :due_week, :due_day]
+    [:name, :abbreviation, :description, :weighting, :target_grade, :restrict_status_updates, :max_quality_pts, :is_graded, :plagiarism_warn_pct, :plagiarism_checks, :group_set, :upload_requirements, :start_week, :start_day, :target_week, :target_day, :due_week, :due_day]
   end
 
   def self.task_def_for_csv_row(unit, row)
@@ -239,7 +345,14 @@ class TaskDefinition < ActiveRecord::Base
     result.upload_requirements         = row[:upload_requirements]
     result.due_date                    = due_date
 
-    if result.valid?
+    result.plagiarism_warn_pct         = row[:plagiarism_warn_pct]
+    result.plagiarism_checks           = row[:plagiarism_checks]
+    
+
+    row[:group_set] = nil if row[:group_set].empty?
+    result.group_set                   = unit.group_sets.where(name: row[:group_set]).first
+
+    if result.valid? && (row[:group_set].nil? || !result.group_set.nil?)
       begin
         result.save
       rescue
@@ -247,8 +360,13 @@ class TaskDefinition < ActiveRecord::Base
         return [nil, false, 'Failed to save definition due to data error.']
       end
     else
-      return [nil, false, result.errors.join('. ')]
+      if result.group_set.nil? && !row[:group_set].nil?
+        return [nil, false, "Unable to find groupset with name #{row[:group_set]} in unit."]
+      else
+        return [nil, false, result.errors.full_messages.join('. ')]
+      end
     end
+
     [result, new_task, new_task ? "Added new task definition #{result.abbreviation}." : "Updated existing task #{result.abbreviation}" ]
   end
 

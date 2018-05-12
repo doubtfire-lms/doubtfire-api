@@ -824,9 +824,11 @@ class Unit < ActiveRecord::Base
     errors = []
     ignored = []
 
-    CSV.parse(file,                 headers: true,
-                                    header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip.tr(' ', '_').to_sym unless hdr.nil? }],
-                                    converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
+    CSV.parse(file,
+              headers: true,
+              header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip.tr(' ', '_').to_sym unless hdr.nil? }],
+              converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]
+              ).each do |row|
       next if row[0] =~ /^(Task Name)|(name)/ # Skip header
 
       begin
