@@ -37,6 +37,15 @@ module Api
       end
     end
     
+    desc "Get a teaching period's details"
+    get '/teaching_periods/:id' do
+      teaching_period = TeachingPeriod.find(params[:id])
+      unless (authorise? current_user, User, :get_teaching_periods) || (authorise? current_user, User, :handle_teaching_period)
+        error!({ error: "Couldn't find Teaching Period with id=#{params[:id]}" }, 403)
+      end
+      teaching_period
+    end
+
     desc 'Update teaching period'
     params do
       requires :id, type: Integer, desc: 'The teaching period id to update'
