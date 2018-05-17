@@ -11,24 +11,23 @@ module Api
     
     desc 'Add a Teaching Period'
     params do
-      requires :period, type: String, desc: 'The teaching period to add', allow_blank: false
-      requires :start_date, type: Date, desc: 'The start date of the teaching period', allow_blank: false
-      requires :end_date, type: Date, desc: 'The last date of the teaching period', allow_blank: false
+      requires :teaching_period, type: Hash do
+        optional :period, type: String, desc: 'The name of the teaching period'
+        optional :start_date, type: Date, desc: 'The start date of the teaching period'
+        optional :end_date, type: Date, desc: 'The end date of the teaching period'
+      end
     end
     post '/teaching_periods' do
       unless authorise? current_user, User, :handle_teaching_period
         error!({ error: 'Not authorised to create a teaching period' }, 403)
       end
+      teaching_period_parameters = ActionController::Parameters.new(params)
+                                                               .require(:teaching_period)
+                                                               .permit(:period,
+                                                                       :start_date,
+                                                                       :end_date)
 
-      period = params[:period]
-      start_date = params[:start_date]
-      end_date = params[:end_date]
-
-      if end_date > start_date
-        result = TeachingPeriod.create!(period: period, start_date: start_date, end_date: end_date)                 
-      else
-        error!({ error: 'End date should be after the start date' }, 403)        
-      end
+      result = TeachingPeriod.create!(teaching_period_parameters)
 
       if result.nil?
         error!({ error: 'No teaching period added.' }, 403)
@@ -63,8 +62,8 @@ module Api
       teaching_period_parameters = ActionController::Parameters.new(params)
                                                                .require(:teaching_period)
                                                                .permit(:period,
-                                                            :start_date,
-                                                            :end_date)
+                                                                       :start_date,
+                                                                       :end_date)
 
       teaching_period.update!(teaching_period_parameters)
       teaching_period_parameters
