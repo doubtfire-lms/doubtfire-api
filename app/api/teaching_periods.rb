@@ -66,7 +66,7 @@ module Api
                                                                        :end_date)
 
       teaching_period.update!(teaching_period_parameters)
-      teaching_period_parameters
+      teaching_period
     end
 
     desc 'Get all the Teaching Periods'
