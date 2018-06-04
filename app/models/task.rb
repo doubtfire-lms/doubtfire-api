@@ -945,10 +945,12 @@ class Task < ActiveRecord::Base
       # This task is now ready to submit
       unless discuss_or_demonstrate? || complete? || do_not_resubmit? || fail?
         trigger_transition trigger: trigger, by_user: user, group_transition: false
-
-        plagiarism_match_links.each(&:destroy)
-        reverse_plagiarism_match_links(&:destroy)
       end
+
+      # Destroy the links to ensure we test new files
+      plagiarism_match_links.each(&:destroy)
+      reverse_plagiarism_match_links(&:destroy)
+
       save
     end
   end
