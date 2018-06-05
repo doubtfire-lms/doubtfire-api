@@ -27,6 +27,28 @@ class TaskComment < ActiveRecord::Base
     comment_read_receipt.save!
   end
 
+  def serialize(user)
+    {
+      id: self.id,
+      comment: self.comment,
+      has_attachment: self.attachment.exists?,
+      type: self.content_type,
+      is_new: self.new_for?(  user),
+      author: {
+        id: self.user.id,
+        name: self.user.name,
+        email: self.user.email
+      },
+      recipient: {
+        id: self.recipient.id,
+        name: self.recipient.name,
+        email: self.user.email
+      },
+      created_at: self.created_at,
+      recipient_read_time: self.time_read_by(self.recipient),
+    }
+  end
+
   def add_attachment(tempfile)
     attachmenttodisplay = {
       :filename => tempfile[:filename],
