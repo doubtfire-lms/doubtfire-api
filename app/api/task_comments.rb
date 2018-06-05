@@ -50,7 +50,7 @@ module Api
         error!({ error: 'No comment added. Comment duplicates last comment, so ignored.' }, 403)
       else
         result.mark_as_read(current_user, project.unit)
-        result
+        result.serialize(current_user)
       end
     end
     
@@ -93,27 +93,7 @@ module Api
         task = project.task_for_task_definition(task_definition)
 
         comments = task.all_comments.order('created_at ASC')
-        result = comments.map do |c|
-          {
-            id: c.id,
-            comment: c.comment,
-            has_attachment: c.attachment.exists?,
-            type: c.content_type,
-            is_new: c.new_for?(current_user),
-            author: {
-              id: c.user.id,
-              name: c.user.name,
-              email: c.user.email
-            },
-            recipient: {
-              id: c.recipient.id,
-              name: c.recipient.name,
-              email: c.user.email
-            },
-            created_at: c.created_at,
-            recipient_read_time: c.time_read_by(c.recipient),
-          }
-        end
+        result = comments.map { |c| c.serialize(current_user) }          
         task.mark_comments_as_read(current_user, comments)
       else
         result = []
