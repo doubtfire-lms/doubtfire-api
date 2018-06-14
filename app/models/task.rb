@@ -83,6 +83,8 @@ class Task < ActiveRecord::Base
 
   validate :must_have_quality_pts, if: :for_task_with_quality?
 
+  validate :extensions_must_end_with_due_date
+
   def for_task_with_quality?
     task_definition.max_quality_pts.positive?
   end
@@ -90,6 +92,14 @@ class Task < ActiveRecord::Base
   def must_have_quality_pts
     if quality_pts.nil? || quality_pts.negative? || quality_pts > task_definition.max_quality_pts
       errors.add(:quality_pts, "must be between 0 and #{task_definition.max_quality_pts}")
+    end
+  end
+
+  # Ensure that extensions do not exceed the defined due date
+  def extensions_must_end_with_due_date
+    # First check the raw extension date - but allow it to be up to a week later in case due date and target date are on different days
+    if raw_extension_date >= task_definition.due_date && raw_extension_date.to_date - 7.days >= task_definition.due_date.to_date
+      errors.add(:extensions, "have exceeded deadline for task. Work must be submitted within current timeframe. Work submitted after current due date will be assessed in the portfolio")
     end
   end
 
@@ -209,7 +219,34 @@ class Task < ActiveRecord::Base
     comments.where(user: project.tutorial.tutor).order(:created_at).last
   end
 
-  delegate :due_date, to: :task_definition
+  # Get the raw extension date - with extensions representing weeks
+  def raw_extension_date
+    target_date + extensions.weeks
+  end
+
+  # Get the adjusted extension date, which ensures it is never past the due date
+  def extension_date
+    result = raw_extension_date
+    return task_definition.due_date if result > task_definition.due_date
+    return result
+  end
+
+  # The student can apply for an extension if the current extension date is
+  # before the task's due date
+  def can_apply_for_extension?
+    raw_extension_date < task_definition.due_date
+  end
+
+  # Applying for an extension will 
+  def apply_for_extension
+    self.extensions = self.extensions + 1
+  end
+
+  # delegate :due_date, to: :task_definition
+  def due_date
+    return target_date if extensions == 0
+    return extension_date
+  end
 
   delegate :target_date, to: :task_definition
 
@@ -348,7 +385,7 @@ class Task < ActiveRecord::Base
     when TaskStatus.ready_to_mark
       submit
 
-      if task_definition.due_date && task_definition.due_date < Time.zone.now
+      if due_date < Time.zone.now
         assess TaskStatus.time_exceeded, by_user
       end
     when TaskStatus.not_started, TaskStatus.need_help, TaskStatus.working_on_it

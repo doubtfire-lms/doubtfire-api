@@ -16,7 +16,7 @@ module AuthenticationHelpers
   # Reads details from the params fetched from the caller context.
   #
   def authenticated?
-    user_by_token = User.find_by_auth_token(params[:auth_token]) if params[:auth_token]
+    user_by_token = User.find_by_auth_token(params[:auth_token]) if params && params[:auth_token]
     # Check warden -- authenticate using DB or LDAP etc.
     return true if warden.authenticated?
     # Check user by token
