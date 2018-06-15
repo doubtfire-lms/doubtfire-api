@@ -567,29 +567,51 @@ class Project < ActiveRecord::Base
     end
   end
 
-  def task_stats
-    task_count = unit.task_definitions.where("target_grade <= #{target_grade}").count + 0.0
-    task_count = 1.0 unless task_count > 1.0
-    result = assigned_tasks
-             .group('project_id')
-             .select(
-               'project_id',
-               *TaskStatus.all.map { |s| "SUM(CASE WHEN tasks.task_status_id = #{s.id} THEN 1 ELSE 0 END) AS #{s.status_key}_count" }
-             )
-             .map do |t|
-      # puts "#{t.project_id} #{t.first_name} #{t.fail_count} Grade:#{t.grade} Count:#{task_count[t.grade]}"
-      
-      red_pct = ((t.fail_count + t.do_not_resubmit_count + t.time_exceeded_count)/ task_count).signif(2)
-      orange_pct = ((t.redo_count + t.need_help_count + t.fix_and_resubmit_count) / task_count).signif(2)
-      green_pct = ((t.discuss_count + t.demonstrate_count + t.complete_count) / task_count).signif(2)
-      blue_pct = (t.ready_to_mark_count / task_count).signif(2)
-      grey_pct = (1 - red_pct - orange_pct - green_pct - blue_pct).signif(2)
+  # Calculate the task stats text to send progress data back to the client
+  # Total task counts must contain an array of the cummulative task counts (with none being 0)
+  # Project task counts is an object with fail_count, complete_count etc for each status
+  def self.create_task_stats_from(total_task_counts, project_task_counts, target_grade)
+    red_pct = ((project_task_counts.fail_count + project_task_counts.do_not_resubmit_count + project_task_counts.time_exceeded_count) / total_task_counts[target_grade]).signif(2)
+    orange_pct = ((project_task_counts.redo_count + project_task_counts.need_help_count + project_task_counts.fix_and_resubmit_count) / total_task_counts[target_grade]).signif(2)
+    green_pct = ((project_task_counts.discuss_count + project_task_counts.demonstrate_count + project_task_counts.complete_count) / total_task_counts[target_grade]).signif(2)
+    blue_pct = (project_task_counts.ready_to_mark_count / total_task_counts[target_grade]).signif(2)
+    grey_pct = (1 - red_pct - orange_pct - green_pct - blue_pct).signif(2)
 
-      "#{red_pct}|#{grey_pct}|#{orange_pct}|#{blue_pct}|#{green_pct}"
-    end.first
+    order_scale = green_pct * 100 + blue_pct * 100 + orange_pct * 10 - red_pct
+
+    {
+      red_pct: red_pct,
+      grey_pct: grey_pct,
+      orange_pct: orange_pct,
+      blue_pct: blue_pct,
+      green_pct: green_pct,
+      order_scale: order_scale
+    }
+  end
+
+  def task_stats
+    task_count = [0, 1, 2, 3].map do |e|
+      unit.task_definitions.where("target_grade <= #{e}").count + 0.0
+    end.map { |e| e == 0 ? 1 : e }
+
+    result = assigned_tasks
+        .group('project_id')
+        .select(
+          'project_id',
+          *TaskStatus.all.map { |s| "SUM(CASE WHEN tasks.task_status_id = #{s.id} THEN 1 ELSE 0 END) AS #{s.status_key}_count" }
+        )
+        .map do |t| Project.create_task_stats_from(task_count, t, target_grade) end
+        .first
 
     if result.nil?
-      '0|1|0|0|0'
+      {
+        red_pct: 0,
+        grey_pct: 1,
+        orange_pct: 0,
+        blue_pct: 0,
+        green_pct: 0,
+        order_scale: 0
+      }
     else
       result
     end
