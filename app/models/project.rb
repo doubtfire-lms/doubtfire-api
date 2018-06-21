@@ -393,6 +393,9 @@ class Project < ActiveRecord::Base
     # today is used to determine when to stop adding done tasks
     today = reference_date
 
+    # Actual tasks
+    my_tasks = tasks
+
     # Get the tasks currently marked as done (or ready to mark)
     done_tasks = ready_or_complete_tasks
 
@@ -409,7 +412,7 @@ class Project < ActiveRecord::Base
     dates.each do |date|
       # get the target values - those from the task definitions
       target_val = [ date.to_datetime.to_i,
-                     target_tasks.select { |task_def| task_def.target_date > date }.map { |task_def| task_def.weighting.to_f }.inject(:+)]
+                     target_tasks.select { |task_def| (tasks.where(task_definition: task_def).empty? ? task_def.target_date : tasks.where(task_definition: task_def).first.due_date ) > date }.map { |task_def| task_def.weighting.to_f }.inject(:+)]
       # get the done values - those done up to today, or the end of the unit
       done_val = [ date.to_datetime.to_i,
                    done_tasks.select { |task| !task.completion_date.nil? && task.completion_date <= date }.map { |task| task.task_definition.weighting.to_f }.inject(:+)]
