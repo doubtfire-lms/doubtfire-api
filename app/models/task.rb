@@ -382,6 +382,8 @@ class Task < ActiveRecord::Base
 
   def grade_desc
     case grade
+    when -1
+      'Fail'
     when 0
       'Pass'
     when 1
@@ -403,6 +405,7 @@ class Task < ActiveRecord::Base
     end
 
     grade_map = {
+      'f'  => -1,
       'p'  => 0,
       'c'  => 1,
       'd'  => 2,
