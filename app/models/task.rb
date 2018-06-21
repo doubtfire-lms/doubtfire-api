@@ -98,7 +98,7 @@ class Task < ActiveRecord::Base
   # Ensure that extensions do not exceed the defined due date
   def extensions_must_end_with_due_date
     # First check the raw extension date - but allow it to be up to a week later in case due date and target date are on different days
-    if raw_extension_date >= task_definition.due_date && raw_extension_date.to_date - 7.days >= task_definition.due_date.to_date
+    if raw_extension_date.to_date - 7.days >= task_definition.due_date.to_date
       errors.add(:extensions, "have exceeded deadline for task. Work must be submitted within current timeframe. Work submitted after current due date will be assessed in the portfolio")
     end
   end
