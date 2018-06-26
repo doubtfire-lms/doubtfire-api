@@ -50,6 +50,21 @@ class User < ActiveRecord::Base
     devise strategy, *devise_keys
   end
 
+  # 
+  # We incorporate password details for local dev server - needed to keep devise happy
+  #
+  def password
+    'password'
+  end
+
+  def password_confirmation
+    'password'
+  end
+
+  def password= (value)
+    self.encrypted_password = BCrypt::Password.create(value)
+  end
+
   #
   # Authenticates a user against a piece of data
   #
@@ -459,7 +474,6 @@ class User < ActiveRecord::Base
           # will not be persisted initially as password cannot be blank - so can check
           # which were created using this - will persist changes imported
           if user.new_record?
-            user.password = 'password'
             user.save!
             success << { row: row, message: "Added user #{username} as #{role}." }
           else

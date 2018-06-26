@@ -73,6 +73,7 @@
 \definecolor{discuss}{rgb}{0.192, 0.69, 0.835}
 \definecolor{demo}{rgb}{0.259, 0.545, 0.792}
 \definecolor{fail}{rgb}{0.851, 0.216, 0.075}
+\definecolor{timeexceeded}{rgb}{0.851, 0.216, 0.075}
 
 \begin{document}
 

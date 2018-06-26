@@ -1,5 +1,5 @@
 class TaskUpdateSerializer < ActiveModel::Serializer
-  attributes :id, :status, :project_id, :new_stats, :include_in_portfolio, :other_projects, :times_assessed, :grade, :quality_pts
+  attributes :id, :status, :project_id, :new_stats, :include_in_portfolio, :other_projects, :times_assessed, :grade, :quality_pts, :due_date, :extensions
 
   def new_stats
     object.project.task_stats
@@ -7,7 +7,7 @@ class TaskUpdateSerializer < ActiveModel::Serializer
 
   def other_projects
     grp = object.group
-    others = grp.projects.select { |p| p.id != object.project_id }.map { |p| { id: p.id, new_stats: p.task_stats } }
+    grp.projects.select { |p| p.id != object.project_id }.map { |p| { id: p.id, new_stats: p.task_stats } }
   end
 
   def filter(keys)
@@ -29,7 +29,7 @@ class TaskStatSerializer < ActiveModel::Serializer
 end
 
 class TaskSerializer < ActiveModel::Serializer
-  attributes :id, :status, :completion_date, :task_name, :task_desc, :task_weight, :task_abbr, :upload_requirements, :pct_similar, :similar_to_count, :times_assessed, :similar_to_dismissed_count
+  attributes :id, :status, :completion_date, :due_date, :extensions, :task_name, :task_desc, :task_weight, :task_abbr, :upload_requirements, :pct_similar, :similar_to_count, :times_assessed, :similar_to_dismissed_count
 
   def task_name
     object.task_definition.name

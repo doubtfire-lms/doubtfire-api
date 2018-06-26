@@ -83,6 +83,8 @@ class Task < ActiveRecord::Base
 
   validate :must_have_quality_pts, if: :for_task_with_quality?
 
+  validate :extensions_must_end_with_due_date
+
   def for_task_with_quality?
     task_definition.max_quality_pts.positive?
   end
@@ -90,6 +92,14 @@ class Task < ActiveRecord::Base
   def must_have_quality_pts
     if quality_pts.nil? || quality_pts.negative? || quality_pts > task_definition.max_quality_pts
       errors.add(:quality_pts, "must be between 0 and #{task_definition.max_quality_pts}")
+    end
+  end
+
+  # Ensure that extensions do not exceed the defined due date
+  def extensions_must_end_with_due_date
+    # First check the raw extension date - but allow it to be up to a week later in case due date and target date are on different days
+    if raw_extension_date.to_date - 7.days >= task_definition.due_date.to_date
+      errors.add(:extensions, "have exceeded deadline for task. Work must be submitted within current timeframe. Work submitted after current due date will be assessed in the portfolio")
     end
   end
 
@@ -209,7 +219,34 @@ class Task < ActiveRecord::Base
     comments.where(user: project.tutorial.tutor).order(:created_at).last
   end
 
-  delegate :due_date, to: :task_definition
+  # Get the raw extension date - with extensions representing weeks
+  def raw_extension_date
+    target_date + extensions.weeks
+  end
+
+  # Get the adjusted extension date, which ensures it is never past the due date
+  def extension_date
+    result = raw_extension_date
+    return task_definition.due_date if result > task_definition.due_date
+    return result
+  end
+
+  # The student can apply for an extension if the current extension date is
+  # before the task's due date
+  def can_apply_for_extension?
+    raw_extension_date < task_definition.due_date
+  end
+
+  # Applying for an extension will 
+  def apply_for_extension
+    self.extensions = self.extensions + 1
+  end
+
+  # delegate :due_date, to: :task_definition
+  def due_date
+    return target_date if extensions == 0
+    return extension_date
+  end
 
   delegate :target_date, to: :task_definition
 
@@ -340,47 +377,32 @@ class Task < ActiveRecord::Base
     # State transitions based upon the trigger
     #
 
-    #
-    # Tutor and student can trigger these actions...
-    #
-    case trigger
-    when 'ready_to_mark', 'rtm'
+    status = TaskStatus.status_for_name(trigger)
+
+    case status
+    when nil
+      return nil
+    when TaskStatus.ready_to_mark
       submit
-    when 'not_started'
-      engage TaskStatus.not_started
-    when 'not_ready_to_mark'
-      engage TaskStatus.not_started
-    when 'need_help'
-      engage TaskStatus.need_help
-    when 'working_on_it'
-      engage TaskStatus.working_on_it
+
+      if due_date < Time.zone.now
+        assess TaskStatus.time_exceeded, by_user
+      end
+    when TaskStatus.not_started, TaskStatus.need_help, TaskStatus.working_on_it
+      engage status
     else
-      #
       # Only tutors can perform these actions
-      #
       if role == :tutor
         if task_definition.max_quality_pts > 0
-          if %w(complete discuss demonstrate de demo d).include? trigger
+          case status
+          when TaskStatus.complete, TaskStatus.discuss, TaskStatus.demonstrate
             update(quality_pts: quality)
           end
         end
-
-        case trigger
-        when 'fail', 'f'
-          assess TaskStatus.fail, by_user
-        when 'redo'
-          assess TaskStatus.redo, by_user
-        when 'complete'
-          assess TaskStatus.complete, by_user
-        when 'fix_and_resubmit', 'fix'
-          assess TaskStatus.fix_and_resubmit, by_user
-        when 'do_not_resubmit', 'dnr', 'fix_and_include', 'fixinc'
-          assess TaskStatus.do_not_resubmit, by_user
-        when 'demonstrate', 'de', 'demo'
-          assess TaskStatus.demonstrate, by_user
-        when 'discuss', 'd'
-          assess TaskStatus.discuss, by_user
-        end
+        assess status, by_user
+      else
+        # Attempt to move to tutor state by non-tutor
+        return nil
       end
     end
 
@@ -397,6 +419,8 @@ class Task < ActiveRecord::Base
 
   def grade_desc
     case grade
+    when -1
+      'Fail'
     when 0
       'Pass'
     when 1
@@ -418,6 +442,7 @@ class Task < ActiveRecord::Base
     end
 
     grade_map = {
+      'f'  => -1,
       'p'  => 0,
       'c'  => 1,
       'd'  => 2,
@@ -863,16 +888,13 @@ class Task < ActiveRecord::Base
     elsif %w(c h idc).include?(extn) then 'c'
     elsif ['cpp', 'hpp', 'c++', 'h++', 'cc', 'cxx', 'cp'].include?(extn) then 'cpp'
     elsif ['java'].include?(extn) then 'java'
-    elsif ['js'].include?(extn) then 'js'
+    elsif %w(js json ts).include?(extn) then 'js'
     elsif ['html'].include?(extn) then 'html'
-    elsif ['css'].include?(extn) then 'css'
+    elsif %w(css scss).include?(extn) then 'css'
     elsif ['rb'].include?(extn) then 'ruby'
     elsif ['coffee'].include?(extn) then 'coffeescript'
     elsif %w(yaml yml).include?(extn) then 'yaml'
     elsif ['xml'].include?(extn) then 'xml'
-    elsif ['scss'].include?(extn) then 'scss'
-    elsif ['json'].include?(extn) then 'json'
-    elsif ['ts'].include?(extn) then 'ts'
     elsif ['sql'].include?(extn) then 'sql'
     elsif ['vb'].include?(extn) then 'vbnet'
     elsif ['txt'].include?(extn) then 'text'
@@ -978,10 +1000,12 @@ class Task < ActiveRecord::Base
       # This task is now ready to submit
       unless discuss_or_demonstrate? || complete? || do_not_resubmit? || fail?
         trigger_transition trigger: trigger, by_user: user, group_transition: false
-
-        plagiarism_match_links.each(&:destroy)
-        reverse_plagiarism_match_links(&:destroy)
       end
+
+      # Destroy the links to ensure we test new files
+      plagiarism_match_links.each(&:destroy)
+      reverse_plagiarism_match_links(&:destroy)
+
       save
     end
   end
@@ -1076,19 +1100,12 @@ class Task < ActiveRecord::Base
     #
     # Now copy over the temp directory over to the enqueued directory
     #
-    enqueued_dir = student_work_dir(:new, self)[0..-2]
+    enqueued_dir = student_work_dir(:new, false)[0..-2]
 
     logger.debug "Moving submission evidence from #{tmp_dir} to #{enqueued_dir}"
 
-    pwd = FileUtils.pwd
-    # move to tmp dir
-    Dir.chdir(tmp_dir)
-    # move all files to the enq dir
-    FileUtils.mv Dir.glob('*'), enqueued_dir
-    # FileUtils.rm Dir.glob("*")
-    # remove the directory
-    Dir.chdir(pwd)
-    Dir.rmdir(tmp_dir)
+    # Move files into place
+    FileUtils.mv tmp_dir, enqueued_dir, :force => true
 
     logger.debug "Submission accepted! Status for task #{id} is now #{trigger}"
   end

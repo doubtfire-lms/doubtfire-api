@@ -29,7 +29,7 @@ module Api
           .select(
             'tasks.id',
             'projects.tutorial_id as tutorial_id',
-            'task_statuses.name as status_name',
+            'task_statuses.id as status_id',
             'task_definition_id'
           )
           .where('tasks.task_status_id > 1 and projects.tutorial_id is not null')
@@ -38,7 +38,7 @@ module Api
               id: r.id,
               tutorial_id: r.tutorial_id,
               task_definition_id: r.task_definition_id,
-              status: TaskStatus.status_key_for_name(r.status_name)
+              status: TaskStatus.find(r.status_id).status_key
             }
           end
     end
@@ -208,6 +208,24 @@ module Api
         TaskUpdateSerializer.new(task)
       else
         error!({ error: "Couldn't find Task with id=#{params[:id]}" }, 403)
+      end
+    end
+
+    desc 'Request an extension - adds a week to the due date if extensions are available for the task'
+    post '/projects/:id/task_def_id/:task_definition_id/extension' do
+      project = Project.find(params[:id])
+      task_definition = project.unit.task_definitions.find(params[:task_definition_id])
+
+      # check the user can put this task
+      if authorise? current_user, project, :apply_extension
+        task = project.task_for_task_definition(task_definition)
+
+        task.apply_for_extension
+        task.save!
+
+        TaskUpdateSerializer.new(task)
+      else
+        error!({ error: "You do not have permission to apply for an extension for this task." }, 403)
       end
     end
 

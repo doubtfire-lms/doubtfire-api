@@ -2,3 +2,4 @@ name:         Doubtfire University
 email_domain: doubtfire.com
 host:         localhost:3000
 product_name: Doubtfire
+settings:     no_institution_setting.rb

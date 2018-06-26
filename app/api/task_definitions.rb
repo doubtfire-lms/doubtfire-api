@@ -37,7 +37,6 @@ module Api
     post '/task_definitions/' do
       unit = Unit.find(params[:task_def][:unit_id])
 
-      puts current_user
       unless authorise? current_user, unit, :add_task_def
         error!({ error: 'Not authorised to create a task definition of this unit' }, 403)
       end
@@ -276,7 +275,7 @@ module Api
       unit.student_tasks
           .joins(:project)
           .joins(:task_status)
-          .select('projects.tutorial_id as tutorial_id', 'project_id', 'tasks.id as id', 'task_definition_id', 'task_statuses.name as status_name', 'completion_date', 'times_assessed', 'submission_date')
+          .select('projects.tutorial_id as tutorial_id', 'project_id', 'tasks.id as id', 'task_definition_id', 'task_statuses.id as status_id', 'completion_date', 'times_assessed', 'submission_date', 'grade')
           .where('task_definition_id = :id', id: params[:task_def_id])
           .map do |t|
         {
@@ -284,11 +283,12 @@ module Api
           id: t.id,
           task_definition_id: t.task_definition_id,
           tutorial_id: t.tutorial_id,
-          status: TaskStatus.status_key_for_name(t.status_name),
+          status: TaskStatus.find(t.status_id).status_key,
           completion_date: t.completion_date,
           submission_date: t.submission_date,
           times_assessed: t.times_assessed,
-          similar_to_count: t.similar_to_count
+          similar_to_count: t.similar_to_count,
+          grade: t.grade
         }
       end
     end
