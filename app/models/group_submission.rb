@@ -30,6 +30,7 @@ class GroupSubmission < ActiveRecord::Base
 
   def propagate_transition(initial_task, trigger, by_user, quality)
     tasks.each do |task|
+      next if [TaskStatus.complete.id, TaskStatus.do_not_resubmit.id, TaskStatus.fail.id].include? task.task_status_id
       if task != initial_task
         task.trigger_transition(trigger: trigger, by_user: by_user, group_transition: true, quality: quality)
       end

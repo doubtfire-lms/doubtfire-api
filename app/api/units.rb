@@ -1,12 +1,15 @@
 require 'grape'
 require 'unit_serializer'
 require 'mime-check-helpers'
+require 'csv_helper'
 
 module Api
   class Units < Grape::API
     helpers AuthenticationHelpers
     helpers AuthorisationHelpers
     helpers MimeCheckHelpers
+    helpers CsvHelper
+
 
     before do
       authenticated?

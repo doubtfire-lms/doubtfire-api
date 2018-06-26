@@ -1,6 +1,6 @@
 Hi <%= @student.first_name %>,
 
-The following evidence you submitted to Doubtfire is now prepared and ready to be viewed and assessed by your tutor:
+The following evidence you submitted to <%= @doubtfire_product_name %> is now prepared and ready to be viewed and assessed by your tutor:
 
 <% @tasks.each do |task| %>
   * <%= task.task_definition.abbreviation %> - <%=task.task_definition.name%>

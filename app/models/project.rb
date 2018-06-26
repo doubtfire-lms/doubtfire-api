@@ -42,6 +42,7 @@ class Project < ActiveRecord::Base
       :change_tutorial,
       :make_submission,
       :get_submission,
+      :apply_extension,
       :change
     ]
     # What can tutors do with projects?
@@ -51,12 +52,13 @@ class Project < ActiveRecord::Base
       :change_tutorial,
       :make_submission,
       :get_submission,
+      :apply_extension,
       :change,
       :assess
     ]
     # What can convenors do with projects?
     convenor_role_permissions = [
-
+      :apply_extension
     ]
     # What can nil users do with projects?
     nil_role_permissions = [
@@ -170,6 +172,7 @@ class Project < ActiveRecord::Base
     elsif user == main_tutor then :tutor
     elsif user.nil? then nil
     elsif unit.tutors.where(id: user.id).count != 0 then :tutor
+    else nil
     end
   end
 
@@ -208,11 +211,11 @@ class Project < ActiveRecord::Base
       .joins("LEFT JOIN comments_read_receipts crr ON crr.task_comment_id = task_comments.id AND crr.user_id = #{user.id}")
       .select(
         'SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) as number_unread', 'project_id', 'tasks.id as id',
-        'task_definition_id', 'task_statuses.name as status_name',
+        'task_definition_id', 'task_statuses.id as status_id',
         'completion_date', 'times_assessed', 'submission_date', 'portfolio_evidence', 'tasks.grade as grade', 'quality_pts', 'include_in_portfolio', 'grade'
       )
       .group(
-        'task_statuses.id', 'tasks.project_id', 'tasks.id', 'task_definition_id', 'status_name',
+        'task_statuses.id', 'tasks.project_id', 'tasks.id', 'task_definition_id', 'status_id',
         'completion_date', 'times_assessed', 'submission_date', 'portfolio_evidence', 'grade', 'quality_pts',
         'include_in_portfolio', 'grade'
       )
@@ -220,7 +223,7 @@ class Project < ActiveRecord::Base
         t = Task.find(r.id)
         {
           id: r.id,
-          status: TaskStatus.status_key_for_name(r.status_name),
+          status: TaskStatus.find(r.status_id).status_key,
           task_definition_id: r.task_definition_id,
           include_in_portfolio: r.include_in_portfolio,
           pct_similar: t.pct_similar,
@@ -229,7 +232,9 @@ class Project < ActiveRecord::Base
           times_assessed: r.times_assessed,
           grade: r.grade,
           quality_pts: r.quality_pts,
-          num_new_comments: r.number_unread
+          num_new_comments: r.number_unread,
+          extensions: t.extensions,
+          due_date: t.due_date
         }
       end
   end
@@ -388,6 +393,9 @@ class Project < ActiveRecord::Base
     # today is used to determine when to stop adding done tasks
     today = reference_date
 
+    # Actual tasks
+    my_tasks = tasks
+
     # Get the tasks currently marked as done (or ready to mark)
     done_tasks = ready_or_complete_tasks
 
@@ -404,7 +412,7 @@ class Project < ActiveRecord::Base
     dates.each do |date|
       # get the target values - those from the task definitions
       target_val = [ date.to_datetime.to_i,
-                     target_tasks.select { |task_def| task_def.target_date > date }.map { |task_def| task_def.weighting.to_f }.inject(:+)]
+                     target_tasks.select { |task_def| (tasks.where(task_definition: task_def).empty? ? task_def.target_date : tasks.where(task_definition: task_def).first.due_date ) > date }.map { |task_def| task_def.weighting.to_f }.inject(:+)]
       # get the done values - those done up to today, or the end of the unit
       done_val = [ date.to_datetime.to_i,
                    done_tasks.select { |task| !task.completion_date.nil? && task.completion_date <= date }.map { |task| task.task_definition.weighting.to_f }.inject(:+)]
@@ -566,35 +574,51 @@ class Project < ActiveRecord::Base
     end
   end
 
+  # Calculate the task stats text to send progress data back to the client
+  # Total task counts must contain an array of the cummulative task counts (with none being 0)
+  # Project task counts is an object with fail_count, complete_count etc for each status
+  def self.create_task_stats_from(total_task_counts, project_task_counts, target_grade)
+    red_pct = ((project_task_counts.fail_count + project_task_counts.do_not_resubmit_count + project_task_counts.time_exceeded_count) / total_task_counts[target_grade]).signif(2)
+    orange_pct = ((project_task_counts.redo_count + project_task_counts.need_help_count + project_task_counts.fix_and_resubmit_count) / total_task_counts[target_grade]).signif(2)
+    green_pct = ((project_task_counts.discuss_count + project_task_counts.demonstrate_count + project_task_counts.complete_count) / total_task_counts[target_grade]).signif(2)
+    blue_pct = (project_task_counts.ready_to_mark_count / total_task_counts[target_grade]).signif(2)
+    grey_pct = (1 - red_pct - orange_pct - green_pct - blue_pct).signif(2)
+
+    order_scale = green_pct * 100 + blue_pct * 100 + orange_pct * 10 - red_pct
+
+    {
+      red_pct: red_pct,
+      grey_pct: grey_pct,
+      orange_pct: orange_pct,
+      blue_pct: blue_pct,
+      green_pct: green_pct,
+      order_scale: order_scale
+    }
+  end
+
   def task_stats
-    task_count = unit.task_definitions.where("target_grade <= #{target_grade}").count + 0.0
-    task_count = 1.0 unless task_count > 1.0
+    task_count = [0, 1, 2, 3].map do |e|
+      unit.task_definitions.where("target_grade <= #{e}").count + 0.0
+    end.map { |e| e == 0 ? 1 : e }
+
     result = assigned_tasks
-             .group('project_id')
-             .select(
-               'project_id',
-               *TaskStatus.all.map { |s| "SUM(CASE WHEN tasks.task_status_id = #{s.id} THEN 1 ELSE 0 END) AS #{s.status_key}_count" }
-             )
-             .map do |t|
-      # puts "#{t.project_id} #{t.first_name} #{t.fail_count} Grade:#{t.grade} Count:#{task_count[t.grade]}"
-      fail_pct = (t.fail_count / task_count).signif(2)
-      do_not_resubmit_pct = (t.do_not_resubmit_count / task_count).signif(2)
-      redo_pct = (t.redo_count / task_count).signif(2)
-      need_help_pct = (t.need_help_count / task_count).signif(2)
-      working_on_it_pct = (t.working_on_it_count / task_count).signif(2)
-      fix_and_resubmit_pct = (t.fix_and_resubmit_count / task_count).signif(2)
-      ready_to_mark_pct = (t.ready_to_mark_count / task_count).signif(2)
-      discuss_pct = (t.discuss_count / task_count).signif(2)
-      demonstrate_pct = (t.demonstrate_count / task_count).signif(2)
-      complete_pct = (t.complete_count / task_count).signif(2)
-
-      not_started_pct = (1 - fail_pct - do_not_resubmit_pct - redo_pct - need_help_pct - working_on_it_pct - fix_and_resubmit_pct - ready_to_mark_pct - discuss_pct - demonstrate_pct - complete_pct).signif(2)
-
-      "#{fail_pct}|#{not_started_pct}|#{do_not_resubmit_pct}|#{redo_pct}|#{need_help_pct}|#{working_on_it_pct}|#{fix_and_resubmit_pct}|#{ready_to_mark_pct}|#{discuss_pct}|#{demonstrate_pct}|#{complete_pct}"
-    end.first
+        .group('project_id')
+        .select(
+          'project_id',
+          *TaskStatus.all.map { |s| "SUM(CASE WHEN tasks.task_status_id = #{s.id} THEN 1 ELSE 0 END) AS #{s.status_key}_count" }
+        )
+        .map do |t| Project.create_task_stats_from(task_count, t, target_grade) end
+        .first
 
     if result.nil?
-      '0|1|0|0|0|0|0|0|0|0|0'
+      {
+        red_pct: 0,
+        grey_pct: 1,
+        orange_pct: 0,
+        blue_pct: 0,
+        green_pct: 0,
+        order_scale: 0
+      }
     else
       result
     end

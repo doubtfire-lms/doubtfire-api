@@ -167,6 +167,12 @@ class TaskDefinition < ActiveRecord::Base
     Date::ABBR_DAYNAMES[target_date.wday]
   end
 
+  # Override due date to return either the final date of the unit, or the set due date
+  def due_date
+    return self['due_date'] if self['due_date'].present?
+    return unit.end_date
+  end
+
   def due_week
     if due_date
       ((due_date - unit.start_date) / 1.week).floor
