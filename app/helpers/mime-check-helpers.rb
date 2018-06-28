@@ -2,6 +2,8 @@
 require 'filemagic'
 
 module MimeCheckHelpers
+  extend LogHelper
+
   def mime_type(file_path)
     fm = FileMagic.new(FileMagic::MAGIC_MIME)
     fm.file(file_path)
@@ -33,7 +35,9 @@ module MimeCheckHelpers
   end
 
   def mime_in_list?(file, type_list)
+    logger.error(file)
     type = mime_type(file)
+    logger.error "type = #{type}"
 
     # check mime is correct before uploading
     type.start_with?(*type_list)

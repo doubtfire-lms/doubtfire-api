@@ -11,8 +11,6 @@ module FileHelper
   # - file is passed the file uploaded to Doubtfire (a hash with all relevant data about the file)
   #
   def accept_file(file, name, kind)
-    logger.debug "FileHelper is accepting file: filename=#{file.filename}, name=#{name}, kind=#{kind}"
-
     valid = true
 
     case kind
@@ -29,16 +27,7 @@ module FileHelper
       ]
       valid = pdf_valid? file.tempfile.path
     when 'audio'
-      accept = ['application/octet-stream', 'audio/mpeg', 'audio/x-mpeg', 'audio/mp3', 'audio/x-mp3', 'audio/mpeg3', 'audio/x-mpeg3', 'audio/mpg', 'audio/x-mpg', 'audio/x-mpegaudio', 'text/plain']
-      accept2 = ['text/plain']
-      if mime_in_list?(file.tempfile.path, accept2)
-        audio_txt = read_file_to_str(file.tempfile)
-        if audio_txt[0,15] == 'data:video/webm'
-          valid = true          
-        else
-          valid = false          
-        end        
-      end
+      accept = ['application/octet-stream', 'audio/mpeg', 'audio/x-mpeg', 'audio/mp3', 'audio/x-mp3', 'audio/mpeg3', 'audio/x-mpeg3', 'audio/mpg', 'audio/x-mpg', 'audio/x-mpegaudio', 'text/plain', 'audio/wav', 'video/webm; charset=binary']
 
     when 'video'
       accept = ['video/mp4']
@@ -47,7 +36,6 @@ module FileHelper
       return false
     end
 
-    # result is true when...
     mime_in_list?(file.tempfile.path, accept) && valid
   end
 
@@ -136,7 +124,7 @@ module FileHelper
         elsif type == :plagarism
           dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}", task.project.student.username.to_s, type.to_s, task.id.to_s) << '/'
         elsif type == :comment
-          dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}", task.project.student.username.to_s, type.to_s) << '/'        
+          dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}", task.project.student.username.to_s, type.to_s) << '/'
         else # new and in_process -- just have task id
           # Add task id to dst if we want task
           dst << "#{type}/#{task.id}/"

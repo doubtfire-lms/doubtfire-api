@@ -56,7 +56,7 @@ class TaskComment < ActiveRecord::Base
       :headers => tempfile[:head],
       :tempfile => tempfile[:tempfile]
     }
-    self.attachment = ActionDispatch::Http::UploadedFile.new(attachmenttodisplay)    
+    self.attachment = ActionDispatch::Http::UploadedFile.new(attachmenttodisplay)
   end
 
   def remove_comment_read_entry(user)
