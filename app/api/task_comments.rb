@@ -22,30 +22,30 @@ module Api
       unless authorise? current_user, project, :make_submission
         error!({ error: 'Not authorised to create a comment for this task' }, 403)
       end
-      
-      content_type = params[:type]      
+
+      content_type = params[:type]
       text_comment = params[:comment]
-      attachment_comment = params[:attachment]    
+      attachment_comment = params[:attachment]
 
       task = project.task_for_task_definition(task_definition)
       type_string = content_type.to_s
 
       if content_type == :text
         if text_comment.nil?
-          error!({ error: "text field is empty"}, 403)          
+          error!({ error: "text field is empty"}, 403)
         end
         result = task.add_text_comment(current_user, text_comment, content_type)
       else
         if attachment_comment.nil?
-          error!({ error: "No file attached"}, 403)          
+          error!({ error: "No file attached"}, 403)
         else
           unless FileHelper.accept_file(attachment_comment, "comment attachment - TaskComment", type_string)
-            error!({ error: "File attached is not a valid #{type_string} file" }, 403)
+            error!({ error: "File #{attachment_comment[:type]} attached is not a valid #{type_string} file" }, 403)
           end
         end
         result = task.add_comment_with_attachment(current_user, attachment_comment, content_type)
       end
-      
+
       if result.nil?
         error!({ error: 'No comment added. Comment duplicates last comment, so ignored.' }, 403)
       else
@@ -53,7 +53,7 @@ module Api
         result.serialize(current_user)
       end
     end
-    
+
     desc 'Get an attachment related to a task comment'
     params do
       optional :as_attachment, type: Boolean, desc: 'Whether or not to download file as attachment. Default is false.'

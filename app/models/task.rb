@@ -591,18 +591,17 @@ class Task < ActiveRecord::Base
   end
 
   def add_comment_with_attachment(user, tempfile, type)
-    
     ensured_group_submission if group_task?
 
     comment = TaskComment.create
     comment.task = self
-    comment.user = user  
-    comment.content_type = type  
+    comment.user = user
+    comment.content_type = type
     comment.recipient = user == project.student ? project.main_tutor : project.student
     comment.add_attachment(tempfile)
     comment.save!
     comment
-  end  
+  end
 
   def last_comment
     all_comments.last
