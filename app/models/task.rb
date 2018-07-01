@@ -322,20 +322,6 @@ class Task < ActiveRecord::Base
     "#{id} - #{project.student.username}, #{project.unit.code}"
   end
 
-  def assign_evidence_path(final_pdf_path, propagate = true)
-    if group_task? && propagate
-      group_submission.tasks.each do |task|
-        task.assign_evidence_path(final_pdf_path, false)
-      end
-      reload
-    else
-      logger.debug "Assigning task #{id} to final PDF evidence path #{final_pdf_path}"
-      self.portfolio_evidence = final_pdf_path
-      logger.debug "PDF evidence path for task #{id} is now #{portfolio_evidence}"
-      save
-    end
-  end
-
   def group_task?
     !group_submission.nil? || !task_definition.group_set.nil?
   end
