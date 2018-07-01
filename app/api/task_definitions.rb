@@ -293,7 +293,7 @@ module Api
       end
     end
 
-    desc 'Download the task pdf'
+    desc 'Download the task sheet containing the details related to performing that task'
     params do
       requires :unit_id, type: Integer, desc: 'The unit to upload tasks for'
       requires :task_def_id, type: Integer, desc: 'The task definition to get the pdf of'
@@ -307,8 +307,8 @@ module Api
         error!({ error: 'Not authorised to download task details of unit' }, 403)
       end
 
-      if task_def.has_task_pdf?
-        path = unit.path_to_task_pdf(task_def)
+      if task_def.has_task_sheet?
+        path = task_def.task_sheet
         filename = "#{task_def.unit.code}-#{task_def.abbreviation}.pdf"
       else
         path = Rails.root.join('public', 'resources', 'FileNotFound.pdf')
@@ -338,7 +338,7 @@ module Api
       end
 
       if task_def.has_task_resources?
-        path = unit.path_to_task_resources(task_def)
+        path = task_def.task_resources
         content_type 'application/octet-stream'
         header['Content-Disposition'] = "attachment; filename=#{task_def.abbreviation}-resources.zip"
       else

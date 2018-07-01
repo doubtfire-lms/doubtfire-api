@@ -25,6 +25,18 @@ class TaskDefinition < ActiveRecord::Base
     clear_related_plagiarism if plagiarism_checks.empty? && has_plagiarism?
   end
 
+  after_update :move_files_on_abbreviation_change, if: :abbreviation_changed?
+
+  def move_files_on_abbreviation_change
+    if File.exists? task_sheet_with_abbreviation(abbreviation_was)
+      FileUtils.mv(task_sheet_with_abbreviation(abbreviation_was), task_sheet())
+    end
+
+    if File.exists? task_resources_with_abbreviation(abbreviation_was)
+      FileUtils.mv(task_resources_with_abbreviation(abbreviation_was), task_resources())
+    end
+  end
+
   def plagiarism_checks
     # Read the JSON string in upload_requirements and convert into ruby objects
     if self['plagiarism_checks']
@@ -263,11 +275,11 @@ class TaskDefinition < ActiveRecord::Base
   end
 
   def has_task_resources?
-    File.exist? unit.path_to_task_resources(self)
+    File.exist? task_resources
   end
 
-  def has_task_pdf?
-    File.exist? unit.path_to_task_pdf(self)
+  def has_task_sheet?
+    File.exist? task_sheet
   end
 
   def is_graded?
@@ -279,19 +291,20 @@ class TaskDefinition < ActiveRecord::Base
   end
 
   def add_task_sheet(file)
-    FileUtils.mv file, unit.path_to_task_pdf(self)
+    FileUtils.mv file, task_sheet
   end
 
   def add_task_resources(file)
-    FileUtils.mv file, unit.path_to_task_resources(self)
+    FileUtils.mv file, task_resources
   end
 
+  # Get the path to the task sheet - using the current abbreviation
   def task_sheet
-    unit.path_to_task_pdf(self)
+    task_sheet_with_abbreviation(abbreviation)
   end
 
   def task_resources
-    unit.path_to_task_resources(self)
+    task_resources_with_abbreviation(abbreviation)
   end
 
   def related_tasks_with_files(consolidate_groups = true)
@@ -314,4 +327,37 @@ class TaskDefinition < ActiveRecord::Base
 
     tasks_with_files
   end
+
+  private
+    # Calculate the path to the task sheet using the provided abbreviation
+    # This allows the path to be calculated on abbreviation change to allow files to
+    # be moved
+    def task_sheet_with_abbreviation(abbr)
+      task_path = FileHelper.task_file_dir_for_unit unit, create = true
+
+      result_with_sanitised_path = "#{task_path}#{FileHelper.sanitized_path(abbr)}.pdf"
+      result_with_sanitised_file = "#{task_path}#{FileHelper.sanitized_filename(abbr)}.pdf"
+
+      if File.exist? result_with_sanitised_path
+        result_with_sanitised_path
+      else
+        result_with_sanitised_file
+      end
+    end
+
+    # Calculate the path to the task sheet using the provided abbreviation
+    # This allows the path to be calculated on abbreviation change to allow files to
+    # be moved
+    def task_resources_with_abbreviation(abbr)
+      task_path = FileHelper.task_file_dir_for_unit unit, create = true
+
+      result_with_sanitised_path = "#{task_path}#{FileHelper.sanitized_path(abbr)}.zip"
+      result_with_sanitised_file = "#{task_path}#{FileHelper.sanitized_filename(abbr)}.zip"
+
+      if File.exist? result_with_sanitised_path
+        result_with_sanitised_path
+      else
+        result_with_sanitised_file
+      end
+    end
 end
