@@ -1,6 +1,14 @@
 require 'json'
 
 class TaskDefinition < ActiveRecord::Base
+  # Record triggers - before associations
+  after_update do |_td|
+    clear_related_plagiarism if plagiarism_checks.empty? && has_plagiarism?
+  end
+
+  before_destroy :delete_associated_files
+  after_update :move_files_on_abbreviation_change, if: :abbreviation_changed?
+
   # Model associations
   belongs_to :unit # Foreign key
   belongs_to :group_set
@@ -20,12 +28,6 @@ class TaskDefinition < ActiveRecord::Base
   validates :upload_requirements, length: { maximum: 4095, allow_blank: true }
   validates :plagiarism_checks, length: { maximum: 4095, allow_blank: true }
   validates :description, length: { maximum: 4095, allow_blank: true }
-
-  after_update do |_td|
-    clear_related_plagiarism if plagiarism_checks.empty? && has_plagiarism?
-  end
-
-  after_update :move_files_on_abbreviation_change, if: :abbreviation_changed?
 
   def move_files_on_abbreviation_change
     if File.exists? task_sheet_with_abbreviation(abbreviation_was)
@@ -341,6 +343,12 @@ class TaskDefinition < ActiveRecord::Base
   end
 
   private
+
+    def delete_associated_files()
+      remove_task_sheet()
+      remove_task_resources()
+    end
+
     # Calculate the path to the task sheet using the provided abbreviation
     # This allows the path to be calculated on abbreviation change to allow files to
     # be moved
