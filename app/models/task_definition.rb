@@ -293,9 +293,21 @@ class TaskDefinition < ActiveRecord::Base
   def add_task_sheet(file)
     FileUtils.mv file, task_sheet
   end
+  
+  def remove_task_sheet()
+    if has_task_sheet?
+      FileUtils.rm task_sheet
+    end
+  end
 
   def add_task_resources(file)
     FileUtils.mv file, task_resources
+  end
+
+  def remove_task_resources()
+    if has_task_resources?
+      FileUtils.rm task_resources
+    end
   end
 
   # Get the path to the task sheet - using the current abbreviation

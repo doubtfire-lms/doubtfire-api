@@ -218,6 +218,24 @@ module Api
       task_def.add_task_sheet(file[:tempfile].path)
     end
 
+    desc 'Remove the task sheet for a given task'
+    params do
+      requires :unit_id, type: Integer, desc: 'The related unit'
+      requires :task_def_id, type: Integer, desc: 'The related task definition'
+    end
+    delete '/units/:unit_id/task_definitions/:task_def_id/task_sheet' do
+      unit = Unit.find(params[:unit_id])
+
+      unless authorise? current_user, unit, :add_task_def
+        error!({ error: 'Not authorised to remove task sheets of unit' }, 403)
+      end
+
+      task_def = unit.task_definitions.find(params[:task_def_id])
+
+      # Actually delete...
+      task_def.remove_task_sheet()
+    end
+
     desc 'Upload the task resources for a given task'
     params do
       requires :unit_id, type: Integer, desc: 'The related unit'
@@ -239,6 +257,24 @@ module Api
 
       # Actually import...
       task_def.add_task_resources(file_path)
+    end
+
+    desc 'Remove the task resources for a given task'
+    params do
+      requires :unit_id, type: Integer, desc: 'The related unit'
+      requires :task_def_id, type: Integer, desc: 'The related task definition'
+    end
+    post '/units/:unit_id/task_definitions/:task_def_id/task_resources' do
+      unit = Unit.find(params[:unit_id])
+
+      unless authorise? current_user, unit, :add_task_def
+        error!({ error: 'Not authorised to remove task resources of unit' }, 403)
+      end
+
+      task_def = unit.task_definitions.find(params[:task_def_id])
+
+      # Actually remove...
+      task_def.remove_task_resources
     end
 
     desc 'Upload a zip file containing the task pdfs for a given task'
