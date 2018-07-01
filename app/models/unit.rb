@@ -922,7 +922,7 @@ class Unit < ActiveRecord::Base
     # Create a new zip
     Zip::File.open(result.path, Zip::File::CREATE) do |zip|
       task_definitions.each do |td|
-        if td.has_task_pdf?
+        if td.has_task_sheet?
           dst_path = FileHelper.sanitized_filename(td.abbreviation.to_s) + '.pdf'
           zip.add(dst_path, td.task_sheet)
         end

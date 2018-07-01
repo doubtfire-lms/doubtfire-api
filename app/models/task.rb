@@ -64,6 +64,9 @@ class Task < ActiveRecord::Base
     end
   end
 
+  # Delete action - before dependent association
+  before_destroy :delete_associated_files
+
   # Model associations
   belongs_to :task_definition       # Foreign key
   belongs_to :project               # Foreign key
@@ -1080,4 +1083,19 @@ class Task < ActiveRecord::Base
 
     logger.debug "Submission accepted! Status for task #{id} is now #{trigger}"
   end
+
+  private
+    def delete_associated_files
+      if group_submission && group_submission.tasks.count <= 1
+        group_submission.destroy
+      else
+        zip_file = zip_file_path_for_done_task()
+        if File.exists? zip_file
+          FileUtils.rm zip_file
+        end
+        if portfolio_evidence.present? && File.exists?(portfolio_evidence)
+          FileUtils.rm portfolio_evidence
+        end
+      end
+    end
 end

@@ -234,6 +234,7 @@ module Api
 
       # Actually delete...
       task_def.remove_task_sheet()
+      task_def
     end
 
     desc 'Upload the task resources for a given task'
@@ -264,7 +265,7 @@ module Api
       requires :unit_id, type: Integer, desc: 'The related unit'
       requires :task_def_id, type: Integer, desc: 'The related task definition'
     end
-    post '/units/:unit_id/task_definitions/:task_def_id/task_resources' do
+    delete '/units/:unit_id/task_definitions/:task_def_id/task_resources' do
       unit = Unit.find(params[:unit_id])
 
       unless authorise? current_user, unit, :add_task_def
@@ -275,6 +276,7 @@ module Api
 
       # Actually remove...
       task_def.remove_task_resources
+      task_def
     end
 
     desc 'Upload a zip file containing the task pdfs for a given task'
