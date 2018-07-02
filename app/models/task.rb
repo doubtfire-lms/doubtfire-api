@@ -64,6 +64,9 @@ class Task < ActiveRecord::Base
     end
   end
 
+  # Delete action - before dependent association
+  before_destroy :delete_associated_files
+
   # Model associations
   belongs_to :task_definition       # Foreign key
   belongs_to :project               # Foreign key
@@ -83,6 +86,8 @@ class Task < ActiveRecord::Base
 
   validate :must_have_quality_pts, if: :for_task_with_quality?
 
+  validate :extensions_must_end_with_due_date
+
   def for_task_with_quality?
     task_definition.max_quality_pts.positive?
   end
@@ -90,6 +95,14 @@ class Task < ActiveRecord::Base
   def must_have_quality_pts
     if quality_pts.nil? || quality_pts.negative? || quality_pts > task_definition.max_quality_pts
       errors.add(:quality_pts, "must be between 0 and #{task_definition.max_quality_pts}")
+    end
+  end
+
+  # Ensure that extensions do not exceed the defined due date
+  def extensions_must_end_with_due_date
+    # First check the raw extension date - but allow it to be up to a week later in case due date and target date are on different days
+    if raw_extension_date.to_date - 7.days >= task_definition.due_date.to_date
+      errors.add(:extensions, "have exceeded deadline for task. Work must be submitted within current timeframe. Work submitted after current due date will be assessed in the portfolio")
     end
   end
 
@@ -209,7 +222,34 @@ class Task < ActiveRecord::Base
     comments.where(user: project.tutorial.tutor).order(:created_at).last
   end
 
-  delegate :due_date, to: :task_definition
+  # Get the raw extension date - with extensions representing weeks
+  def raw_extension_date
+    target_date + extensions.weeks
+  end
+
+  # Get the adjusted extension date, which ensures it is never past the due date
+  def extension_date
+    result = raw_extension_date
+    return task_definition.due_date if result > task_definition.due_date
+    return result
+  end
+
+  # The student can apply for an extension if the current extension date is
+  # before the task's due date
+  def can_apply_for_extension?
+    raw_extension_date < task_definition.due_date
+  end
+
+  # Applying for an extension will 
+  def apply_for_extension
+    self.extensions = self.extensions + 1
+  end
+
+  # delegate :due_date, to: :task_definition
+  def due_date
+    return target_date if extensions == 0
+    return extension_date
+  end
 
   delegate :target_date, to: :task_definition
 
@@ -285,20 +325,6 @@ class Task < ActiveRecord::Base
     "#{id} - #{project.student.username}, #{project.unit.code}"
   end
 
-  def assign_evidence_path(final_pdf_path, propagate = true)
-    if group_task? && propagate
-      group_submission.tasks.each do |task|
-        task.assign_evidence_path(final_pdf_path, false)
-      end
-      reload
-    else
-      logger.debug "Assigning task #{id} to final PDF evidence path #{final_pdf_path}"
-      self.portfolio_evidence = final_pdf_path
-      logger.debug "PDF evidence path for task #{id} is now #{portfolio_evidence}"
-      save
-    end
-  end
-
   def group_task?
     !group_submission.nil? || !task_definition.group_set.nil?
   end
@@ -348,7 +374,7 @@ class Task < ActiveRecord::Base
     when TaskStatus.ready_to_mark
       submit
 
-      if task_definition.due_date && task_definition.due_date < Time.zone.now
+      if due_date < Time.zone.now
         assess TaskStatus.time_exceeded, by_user
       end
     when TaskStatus.not_started, TaskStatus.need_help, TaskStatus.working_on_it
@@ -382,6 +408,8 @@ class Task < ActiveRecord::Base
 
   def grade_desc
     case grade
+    when -1
+      'Fail'
     when 0
       'Pass'
     when 1
@@ -403,6 +431,7 @@ class Task < ActiveRecord::Base
     end
 
     grade_map = {
+      'f'  => -1,
       'p'  => 0,
       'c'  => 1,
       'd'  => 2,
@@ -833,16 +862,13 @@ class Task < ActiveRecord::Base
     elsif %w(c h idc).include?(extn) then 'c'
     elsif ['cpp', 'hpp', 'c++', 'h++', 'cc', 'cxx', 'cp'].include?(extn) then 'cpp'
     elsif ['java'].include?(extn) then 'java'
-    elsif ['js'].include?(extn) then 'js'
+    elsif %w(js json ts).include?(extn) then 'js'
     elsif ['html'].include?(extn) then 'html'
-    elsif ['css'].include?(extn) then 'css'
+    elsif %w(css scss).include?(extn) then 'css'
     elsif ['rb'].include?(extn) then 'ruby'
     elsif ['coffee'].include?(extn) then 'coffeescript'
     elsif %w(yaml yml).include?(extn) then 'yaml'
     elsif ['xml'].include?(extn) then 'xml'
-    elsif ['scss'].include?(extn) then 'scss'
-    elsif ['json'].include?(extn) then 'json'
-    elsif ['ts'].include?(extn) then 'ts'
     elsif ['sql'].include?(extn) then 'sql'
     elsif ['vb'].include?(extn) then 'vbnet'
     elsif ['txt'].include?(extn) then 'text'
@@ -948,10 +974,12 @@ class Task < ActiveRecord::Base
       # This task is now ready to submit
       unless discuss_or_demonstrate? || complete? || do_not_resubmit? || fail?
         trigger_transition trigger: trigger, by_user: user, group_transition: false
-
-        plagiarism_match_links.each(&:destroy)
-        reverse_plagiarism_match_links(&:destroy)
       end
+
+      # Destroy the links to ensure we test new files
+      plagiarism_match_links.each(&:destroy)
+      reverse_plagiarism_match_links(&:destroy)
+
       save
     end
   end
@@ -1055,4 +1083,19 @@ class Task < ActiveRecord::Base
 
     logger.debug "Submission accepted! Status for task #{id} is now #{trigger}"
   end
+
+  private
+    def delete_associated_files
+      if group_submission && group_submission.tasks.count <= 1
+        group_submission.destroy
+      else
+        zip_file = zip_file_path_for_done_task()
+        if File.exists? zip_file
+          FileUtils.rm zip_file
+        end
+        if portfolio_evidence.present? && File.exists?(portfolio_evidence)
+          FileUtils.rm portfolio_evidence
+        end
+      end
+    end
 end

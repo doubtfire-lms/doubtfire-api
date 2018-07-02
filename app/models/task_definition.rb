@@ -1,6 +1,14 @@
 require 'json'
 
 class TaskDefinition < ActiveRecord::Base
+  # Record triggers - before associations
+  after_update do |_td|
+    clear_related_plagiarism if plagiarism_checks.empty? && has_plagiarism?
+  end
+
+  before_destroy :delete_associated_files
+  after_update :move_files_on_abbreviation_change, if: :abbreviation_changed?
+
   # Model associations
   belongs_to :unit # Foreign key
   belongs_to :group_set
@@ -23,8 +31,14 @@ class TaskDefinition < ActiveRecord::Base
   validate :plagiarism_checks, :check_plagiarism_format
   validates :description, length: { maximum: 4095, allow_blank: true }
 
-  after_update do |_td|
-    clear_related_plagiarism if plagiarism_checks.empty? && has_plagiarism?
+  def move_files_on_abbreviation_change
+    if File.exists? task_sheet_with_abbreviation(abbreviation_was)
+      FileUtils.mv(task_sheet_with_abbreviation(abbreviation_was), task_sheet())
+    end
+
+    if File.exists? task_resources_with_abbreviation(abbreviation_was)
+      FileUtils.mv(task_resources_with_abbreviation(abbreviation_was), task_resources())
+    end
   end
 
   def plagiarism_checks
@@ -266,6 +280,12 @@ class TaskDefinition < ActiveRecord::Base
     Date::ABBR_DAYNAMES[target_date.wday]
   end
 
+  # Override due date to return either the final date of the unit, or the set due date
+  def due_date
+    return self['due_date'] if self['due_date'].present?
+    return unit.end_date
+  end
+
   def due_week
     if due_date
       ((due_date - unit.start_date) / 1.week).floor
@@ -377,11 +397,11 @@ class TaskDefinition < ActiveRecord::Base
   end
 
   def has_task_resources?
-    File.exist? unit.path_to_task_resources(self)
+    File.exist? task_resources
   end
 
-  def has_task_pdf?
-    File.exist? unit.path_to_task_pdf(self)
+  def has_task_sheet?
+    File.exist? task_sheet
   end
 
   def is_graded?
@@ -393,19 +413,32 @@ class TaskDefinition < ActiveRecord::Base
   end
 
   def add_task_sheet(file)
-    FileUtils.mv file, unit.path_to_task_pdf(self)
+    FileUtils.mv file, task_sheet
+  end
+  
+  def remove_task_sheet()
+    if has_task_sheet?
+      FileUtils.rm task_sheet
+    end
   end
 
   def add_task_resources(file)
-    FileUtils.mv file, unit.path_to_task_resources(self)
+    FileUtils.mv file, task_resources
   end
 
+  def remove_task_resources()
+    if has_task_resources?
+      FileUtils.rm task_resources
+    end
+  end
+
+  # Get the path to the task sheet - using the current abbreviation
   def task_sheet
-    unit.path_to_task_pdf(self)
+    task_sheet_with_abbreviation(abbreviation)
   end
 
   def task_resources
-    unit.path_to_task_resources(self)
+    task_resources_with_abbreviation(abbreviation)
   end
 
   def related_tasks_with_files(consolidate_groups = true)
@@ -428,4 +461,43 @@ class TaskDefinition < ActiveRecord::Base
 
     tasks_with_files
   end
+
+  private
+
+    def delete_associated_files()
+      remove_task_sheet()
+      remove_task_resources()
+    end
+
+    # Calculate the path to the task sheet using the provided abbreviation
+    # This allows the path to be calculated on abbreviation change to allow files to
+    # be moved
+    def task_sheet_with_abbreviation(abbr)
+      task_path = FileHelper.task_file_dir_for_unit unit, create = true
+
+      result_with_sanitised_path = "#{task_path}#{FileHelper.sanitized_path(abbr)}.pdf"
+      result_with_sanitised_file = "#{task_path}#{FileHelper.sanitized_filename(abbr)}.pdf"
+
+      if File.exist? result_with_sanitised_path
+        result_with_sanitised_path
+      else
+        result_with_sanitised_file
+      end
+    end
+
+    # Calculate the path to the task sheet using the provided abbreviation
+    # This allows the path to be calculated on abbreviation change to allow files to
+    # be moved
+    def task_resources_with_abbreviation(abbr)
+      task_path = FileHelper.task_file_dir_for_unit unit, create = true
+
+      result_with_sanitised_path = "#{task_path}#{FileHelper.sanitized_path(abbr)}.zip"
+      result_with_sanitised_file = "#{task_path}#{FileHelper.sanitized_filename(abbr)}.zip"
+
+      if File.exist? result_with_sanitised_path
+        result_with_sanitised_path
+      else
+        result_with_sanitised_file
+      end
+    end
 end
