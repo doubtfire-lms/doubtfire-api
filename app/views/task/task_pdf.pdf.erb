@@ -72,7 +72,7 @@ No Tutor % Supervisor's Name
 <%    end %>
 \end{tabular}\\[0.5cm]
 
-<%= lesc @task.learning_outcome_task_links.last.description %> \\[2cm]
+<%= lesc @task.learning_outcome_task_links.last.description.present? && @task.learning_outcome_task_links.last.description.strip.length > 0 ? @task.learning_outcome_task_links.last.description : "(none)" %> \\[2cm]
 
 <% end %>
 %----------------------------------------------------------------------------------------

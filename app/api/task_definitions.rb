@@ -218,6 +218,25 @@ module Api
       task_def.add_task_sheet(file[:tempfile].path)
     end
 
+    desc 'Remove the task sheet for a given task'
+    params do
+      requires :unit_id, type: Integer, desc: 'The related unit'
+      requires :task_def_id, type: Integer, desc: 'The related task definition'
+    end
+    delete '/units/:unit_id/task_definitions/:task_def_id/task_sheet' do
+      unit = Unit.find(params[:unit_id])
+
+      unless authorise? current_user, unit, :add_task_def
+        error!({ error: 'Not authorised to remove task sheets of unit' }, 403)
+      end
+
+      task_def = unit.task_definitions.find(params[:task_def_id])
+
+      # Actually delete...
+      task_def.remove_task_sheet()
+      task_def
+    end
+
     desc 'Upload the task resources for a given task'
     params do
       requires :unit_id, type: Integer, desc: 'The related unit'
@@ -239,6 +258,25 @@ module Api
 
       # Actually import...
       task_def.add_task_resources(file_path)
+    end
+
+    desc 'Remove the task resources for a given task'
+    params do
+      requires :unit_id, type: Integer, desc: 'The related unit'
+      requires :task_def_id, type: Integer, desc: 'The related task definition'
+    end
+    delete '/units/:unit_id/task_definitions/:task_def_id/task_resources' do
+      unit = Unit.find(params[:unit_id])
+
+      unless authorise? current_user, unit, :add_task_def
+        error!({ error: 'Not authorised to remove task resources of unit' }, 403)
+      end
+
+      task_def = unit.task_definitions.find(params[:task_def_id])
+
+      # Actually remove...
+      task_def.remove_task_resources
+      task_def
     end
 
     desc 'Upload a zip file containing the task pdfs for a given task'
@@ -275,7 +313,7 @@ module Api
       unit.student_tasks
           .joins(:project)
           .joins(:task_status)
-          .select('projects.tutorial_id as tutorial_id', 'project_id', 'tasks.id as id', 'task_definition_id', 'task_statuses.id as status_id', 'completion_date', 'times_assessed', 'submission_date')
+          .select('projects.tutorial_id as tutorial_id', 'project_id', 'tasks.id as id', 'task_definition_id', 'task_statuses.id as status_id', 'completion_date', 'times_assessed', 'submission_date', 'grade')
           .where('task_definition_id = :id', id: params[:task_def_id])
           .map do |t|
         {
@@ -287,12 +325,13 @@ module Api
           completion_date: t.completion_date,
           submission_date: t.submission_date,
           times_assessed: t.times_assessed,
-          similar_to_count: t.similar_to_count
+          similar_to_count: t.similar_to_count,
+          grade: t.grade
         }
       end
     end
 
-    desc 'Download the task pdf'
+    desc 'Download the task sheet containing the details related to performing that task'
     params do
       requires :unit_id, type: Integer, desc: 'The unit to upload tasks for'
       requires :task_def_id, type: Integer, desc: 'The task definition to get the pdf of'
@@ -306,8 +345,8 @@ module Api
         error!({ error: 'Not authorised to download task details of unit' }, 403)
       end
 
-      if task_def.has_task_pdf?
-        path = unit.path_to_task_pdf(task_def)
+      if task_def.has_task_sheet?
+        path = task_def.task_sheet
         filename = "#{task_def.unit.code}-#{task_def.abbreviation}.pdf"
       else
         path = Rails.root.join('public', 'resources', 'FileNotFound.pdf')
@@ -337,7 +376,7 @@ module Api
       end
 
       if task_def.has_task_resources?
-        path = unit.path_to_task_resources(task_def)
+        path = task_def.task_resources
         content_type 'application/octet-stream'
         header['Content-Disposition'] = "attachment; filename=#{task_def.abbreviation}-resources.zip"
       else
