@@ -1,3 +1,5 @@
+require 'tempfile'
+
 class TaskComment < ActiveRecord::Base
   include MimeCheckHelpers
 
@@ -57,14 +59,18 @@ class TaskComment < ActiveRecord::Base
   def add_attachment(file_upload)
     if content_type == "audio"
       # On upload all audio comments are converted to wav
+      temp = Tempfile.new(['comment','.wav'])
+      return false unless system 'ffmpeg', '-y', '-i', "#{file_upload.tempfile.path}", "#{temp.path}"
       self.attachment_extension = ".wav"
-      return false unless system 'ffmpeg', '-i', "#{file_upload.tempfile.path}", "#{attachment_path}"
       save
+      FileUtils.mv temp.path, attachment_path  
     else
       self.attachment_extension = File.extname(file_upload.filename)
       save
       FileUtils.mv file_upload.tempfile.path, attachment_path  
     end
+
+    file_upload.tempfile.unlink
 
     true
   end
