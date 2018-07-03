@@ -27,6 +27,8 @@ module Api
       text_comment = params[:comment]
       attached_file = params[:attachment]
 
+      error!({error: "Attachment exceeds the maximum attachment size of 10MB."}) unless File.size?(attached_file.tempfile.path) < 10_000_000
+
       task = project.task_for_task_definition(task_definition)
       type_string = content_type.to_s
 
