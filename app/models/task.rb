@@ -587,7 +587,7 @@ class Task < ActiveRecord::Base
     comment.user = user
     comment.content_type = type
     comment.recipient = user == project.student ? project.main_tutor : project.student
-    comment.add_attachment(tempfile)
+    raise "Error attaching uploaded file." unless comment.add_attachment(tempfile)
     comment.save!
     comment
   end

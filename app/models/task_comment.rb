@@ -55,9 +55,18 @@ class TaskComment < ActiveRecord::Base
   end
 
   def add_attachment(file_upload)
-    self.attachment_extension = File.extname(file_upload.filename)
-    save
-    FileUtils.mv file_upload.tempfile.path, attachment_path
+    if content_type == "audio"
+      # On upload all audio comments are converted to wav
+      self.attachment_extension = ".wav"
+      return false unless system 'ffmpeg', '-i', "#{file_upload.tempfile.path}", "#{attachment_path}"
+      save
+    else
+      self.attachment_extension = File.extname(file_upload.filename)
+      save
+      FileUtils.mv file_upload.tempfile.path, attachment_path  
+    end
+
+    true
   end
 
   def attachment_mime_type
