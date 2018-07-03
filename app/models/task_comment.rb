@@ -1,4 +1,6 @@
 class TaskComment < ActiveRecord::Base
+  include MimeCheckHelpers
+
   belongs_to :task # Foreign key
   belongs_to :user
 
@@ -10,11 +12,6 @@ class TaskComment < ActiveRecord::Base
   validates :user, presence: true
   validates :recipient, presence: true
   validates :comment, length: { minimum: 0, maximum: 4095, allow_blank: true }
-  has_attached_file :attachment, :styles => {
-    :medium => { :geometry => "640x480", :format => 'flv' },
-    :thumb => { :geometry => "100x100#", :format => 'jpg', :time => 10 }
-  }, :processors => [:transcoder], :path => proc { |attachment| FileHelper.comment_attachment_path(attachment.instance, attachment) }
-  do_not_validate_attachment_file_type :attachment
 
   def new_for?(user)
     CommentsReadReceipts.where(user: user, task_comment_id: self).empty?
@@ -31,9 +28,9 @@ class TaskComment < ActiveRecord::Base
     {
       id: self.id,
       comment: self.comment,
-      has_attachment: self.attachment.exists?,
+      has_attachment: ["audio", "image"].include?(self.content_type),
       type: self.content_type,
-      is_new: self.new_for?(  user),
+      is_new: self.new_for?(user),
       author: {
         id: self.user.id,
         name: self.user.name,
@@ -49,14 +46,22 @@ class TaskComment < ActiveRecord::Base
     }
   end
 
-  def add_attachment(tempfile)
-    attachmenttodisplay = {
-      :filename => tempfile[:filename],
-      :type => tempfile[:type],
-      :headers => tempfile[:head],
-      :tempfile => tempfile[:tempfile]
-    }
-    self.attachment = ActionDispatch::Http::UploadedFile.new(attachmenttodisplay)
+  def attachment_path
+    FileHelper.comment_attachment_path(self, self.attachment_extension)
+  end
+
+  def attachment_file_name
+    "comment-#{id}#{attachment_extension}"
+  end
+
+  def add_attachment(file_upload)
+    self.attachment_extension = File.extname(file_upload.filename)
+    save
+    FileUtils.mv file_upload.tempfile.path, attachment_path
+  end
+
+  def attachment_mime_type
+    mime_type(attachment_path)
   end
 
   def remove_comment_read_entry(user)

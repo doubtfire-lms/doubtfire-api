@@ -11,7 +11,7 @@ module Api
 
     desc 'Add a new comment to a task'
     params do
-      requires :type, type: Symbol, default: :text, values: [:text, :image, :audio, :video], desc: 'The type of comment to add to the task'
+      optional :type, type: Symbol, default: :text, values: [:text, :image, :audio, :video], desc: 'The type of comment to add to the task'
       optional :comment, type: String, desc: 'The comment text to add to the task'
       optional :attachment, type: Rack::Multipart::UploadedFile, desc: 'Image, sound, or video comment file'
     end
@@ -23,27 +23,26 @@ module Api
         error!({ error: 'Not authorised to create a comment for this task' }, 403)
       end
 
-      content_type = params[:type]
+      content_type = params[:type].present? ? params[:type] : :text
       text_comment = params[:comment]
-      attachment_comment = params[:attachment]
+      attached_file = params[:attachment]
 
       task = project.task_for_task_definition(task_definition)
       type_string = content_type.to_s
 
+      logger.info("#{current_user.username} - added comment - #{content_type} - for task #{task.id} (#{task_definition.abbreviation})")
+
       if content_type == :text
-        if text_comment.nil?
-          error!({ error: "text field is empty"}, 403)
-        end
+        error!({ error: "Comment text is empty, unable to add new comment"}, 403) unless text_comment.present?
+        
         result = task.add_text_comment(current_user, text_comment, content_type)
       else
-        if attachment_comment.nil?
-          error!({ error: "No file attached"}, 403)
-        else
-          unless FileHelper.accept_file(attachment_comment, "comment attachment - TaskComment", type_string)
-            error!({ error: "File #{attachment_comment[:type]} attached is not a valid #{type_string} file" }, 403)
-          end
+        error!({ error: "No file attached for this comment"}, 403) unless attached_file.present?
+        unless FileHelper.accept_file(attached_file, "comment attachment - TaskComment", type_string)
+          error!({ error: "File #{attached_file[:type]} attached is not a valid #{type_string} file" }, 403)
         end
-        result = task.add_comment_with_attachment(current_user, attachment_comment, content_type)
+
+        result = task.add_comment_with_attachment(current_user, attached_file, content_type)
       end
 
       if result.nil?
@@ -71,12 +70,16 @@ module Api
 
         comment = task.comments.find(params[:id])
 
-        content_type comment.attachment.content_type
+        error!({error: 'No attachment for this comment.'}, 404) unless ["audio", "image"].include? comment.content_type
+
+        mime_type = comment.attachment_mime_type
+        # content_type comment.attachment.content_type
+        content_type mime_type
         env['api.format'] = :binary
         if params[:as_attachment]
           header['Content-Disposition'] = "attachment; filename=#{comment.attachment_file_name}"
         end
-        File.read(comment.attachment.path)
+        File.read(comment.attachment_path)
       end
     end
 

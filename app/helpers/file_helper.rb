@@ -27,7 +27,7 @@ module FileHelper
       ]
       valid = pdf_valid? file.tempfile.path
     when 'audio'
-      accept = ['application/octet-stream', 'audio/mpeg', 'audio/x-mpeg', 'audio/mp3', 'audio/x-mp3', 'audio/mpeg3', 'audio/x-mpeg3', 'audio/mpg', 'audio/x-mpg', 'audio/x-mpegaudio', 'text/plain', 'audio/wav', 'video/webm; charset=binary']
+      accept = ['application/octet-stream', 'audio/mpeg', 'audio/x-mpeg', 'audio/mp3', 'audio/x-mp3', 'audio/mpeg3', 'audio/x-mpeg3', 'audio/mpg', 'audio/x-mpg', 'audio/x-mpegaudio', 'audio/wav', 'video/webm; charset=binary']
 
     when 'video'
       accept = ['video/mp4']
@@ -158,8 +158,8 @@ module FileHelper
     dst
   end
 
-  def comment_attachment_path(task_comment, attachment)
-    "#{File.join( student_work_dir(:comment, task_comment.task), task_comment.id.to_s)}-:filename"
+  def comment_attachment_path(task_comment, attachment_extension)
+    "#{File.join( student_work_dir(:comment, task_comment.task), "#{task_comment.id.to_s}#{attachment_extension}")}"
   end
 
   def compress_image(path)

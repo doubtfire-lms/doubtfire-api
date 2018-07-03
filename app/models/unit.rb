@@ -1917,8 +1917,6 @@ class Unit < ActiveRecord::Base
 
     type = mime_type(file.tempfile.path)
 
-    puts "type #{type}"
-
     # check mime is correct before uploading
     accept = ['text/', 'text/plain', 'text/csv', 'application/zip', 'multipart/x-gzip', 'multipart/x-zip', 'application/x-gzip', 'application/octet-stream']
     unless mime_in_list?(file.tempfile.path, accept)
