@@ -9,7 +9,12 @@ class TaskComment < ActiveRecord::Base
   validates :task, presence: true
   validates :user, presence: true
   validates :recipient, presence: true
-  validates :comment, length: { minimum: 1, maximum: 4095, allow_blank: false }
+  validates :comment, length: { minimum: 0, maximum: 4095, allow_blank: true }
+  has_attached_file :attachment, :styles => {
+    :medium => { :geometry => "640x480", :format => 'flv' },
+    :thumb => { :geometry => "100x100#", :format => 'jpg', :time => 10 }
+  }, :processors => [:transcoder], :path => proc { |attachment| FileHelper.comment_attachment_path(attachment.instance, attachment) }
+  do_not_validate_attachment_file_type :attachment
 
   def new_for?(user)
     CommentsReadReceipts.where(user: user, task_comment_id: self).empty?
@@ -20,6 +25,38 @@ class TaskComment < ActiveRecord::Base
     comment_read_receipt.user = user
     comment_read_receipt.task_comment = self
     comment_read_receipt.save!
+  end
+
+  def serialize(user)
+    {
+      id: self.id,
+      comment: self.comment,
+      has_attachment: self.attachment.exists?,
+      type: self.content_type,
+      is_new: self.new_for?(  user),
+      author: {
+        id: self.user.id,
+        name: self.user.name,
+        email: self.user.email
+      },
+      recipient: {
+        id: self.recipient.id,
+        name: self.recipient.name,
+        email: self.user.email
+      },
+      created_at: self.created_at,
+      recipient_read_time: self.time_read_by(self.recipient),
+    }
+  end
+
+  def add_attachment(tempfile)
+    attachmenttodisplay = {
+      :filename => tempfile[:filename],
+      :type => tempfile[:type],
+      :headers => tempfile[:head],
+      :tempfile => tempfile[:tempfile]
+    }
+    self.attachment = ActionDispatch::Http::UploadedFile.new(attachmenttodisplay)
   end
 
   def remove_comment_read_entry(user)

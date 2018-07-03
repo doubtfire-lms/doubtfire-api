@@ -560,7 +560,7 @@ class Task < ActiveRecord::Base
     task_definition.weighting.to_f
   end
 
-  def add_comment(user, text)
+  def add_text_comment(user, text, type)
     text.strip!
     return nil if user.nil? || text.nil? || text.empty?
 
@@ -573,7 +573,21 @@ class Task < ActiveRecord::Base
     comment.task = self
     comment.user = user
     comment.comment = text
+    comment.content_type = type
     comment.recipient = user == project.student ? project.main_tutor : project.student
+    comment.save!
+    comment    
+  end
+
+  def add_comment_with_attachment(user, tempfile, type)
+    ensured_group_submission if group_task?
+
+    comment = TaskComment.create
+    comment.task = self
+    comment.user = user
+    comment.content_type = type
+    comment.recipient = user == project.student ? project.main_tutor : project.student
+    comment.add_attachment(tempfile)
     comment.save!
     comment
   end
