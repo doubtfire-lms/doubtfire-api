@@ -74,9 +74,6 @@ gem 'terminator'
 gem 'require_all', '1.3.3'
 gem 'dotenv-rails'
 
-# File Uploading
-gem 'paperclip'
-gem 'paperclip-av-transcoder'
 # Excel support
 gem "roo", "~> 2.7.0"
 gem 'roo-xls'
