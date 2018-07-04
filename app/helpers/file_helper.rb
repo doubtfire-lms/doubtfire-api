@@ -27,7 +27,7 @@ module FileHelper
       ]
       valid = pdf_valid? file.tempfile.path
     when 'audio'
-      accept = ['video/webm', 'application/octet-stream', 'audio/ogg', 'audio/mpeg', 'audio/x-mpeg', 'audio/mp3', 'audio/x-mp3', 'audio/mpeg3', 'audio/x-mpeg3', 'audio/mpg', 'audio/x-mpg', 'audio/x-mpegaudio', 'audio/wav']
+      accept = ['audio/']
 
     when 'video'
       accept = ['video/mp4']
