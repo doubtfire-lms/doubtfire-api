@@ -77,7 +77,11 @@ class TaskComment < ActiveRecord::Base
   end
 
   def attachment_mime_type
-    mime_type(attachment_path)
+    if attachment_extension == ".wav"
+      "audio/wav; charset:binary"
+    else
+      mime_type(attachment_path)
+    end
   end
 
   def remove_comment_read_entry(user)
