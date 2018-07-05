@@ -86,10 +86,14 @@ class Task < ActiveRecord::Base
 
   validate :must_have_quality_pts, if: :for_task_with_quality?
 
-  validate :extensions_must_end_with_due_date
+  validate :extensions_must_end_with_due_date, if: :has_requested_extension?
 
   def for_task_with_quality?
     task_definition.max_quality_pts.positive?
+  end
+
+  def has_requested_extension?
+    extensions > extensions_was && extensions > 0
   end
 
   def must_have_quality_pts
