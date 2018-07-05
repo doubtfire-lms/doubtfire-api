@@ -710,7 +710,6 @@ class Task < ActiveRecord::Base
       # compress image files
       image_files = Dir.entries(task_dir).select { |f| (f =~ /^\d{3}.(image)/) == 0 }
       image_files.each do |img|
-        puts "here!"
         if File.extname(img) == ".png"
           raise 'Failed to compress an image. Ensure all images are valid.' unless FileHelper.compress_image("#{task_dir}#{img}")
         else
