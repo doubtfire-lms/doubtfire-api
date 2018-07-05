@@ -163,7 +163,7 @@ module FileHelper
   end
 
   def compress_image(path)
-    return true if File.size?(path) < 1_000_000
+    return true if File.size?(path) < 500_000
 
     compress_folder = File.join(Dir.tmpdir, 'doubtfire', 'compress')
 
@@ -173,9 +173,8 @@ module FileHelper
     logger.debug "File helper has started compressing #{path} to #{tmp_file}..."
 
     begin
-      exec = "convert \
+      exec = "convert -quiet -strip -density 72 -interlace Plane -gaussian-blur 0.05 -quality 85% -resize 2048x2048\\> \
               \"#{path}\" \
-              -resize 1024x1024 \
               \"#{tmp_file}\" >>/dev/null 2>>/dev/null"
 
       did_compress = system_try_within 40, 'compressing image using convert', exec
@@ -185,8 +184,15 @@ module FileHelper
       FileUtils.rm tmp_file if File.exist? tmp_file
     end
 
-    raise 'Failed to compress an image. Ensure all images are smaller than 1MB.' unless did_compress
-    true
+    did_compress
+  end
+
+  def compress_image_to_dest(source, dest)
+    exec = "convert -quiet -strip -density 72 -interlace Plane -gaussian-blur 0.05 -quality 85% -resize 2048x2048\\> \
+            \"#{source}\" \
+            \"#{dest}\" >>/dev/null 2>>/dev/null"
+
+    did_compress = system_try_within 40, 'compressing image using convert', exec
   end
 
   def compress_pdf(path, max_size = 2_500_000)
@@ -441,6 +447,7 @@ module FileHelper
   module_function :student_portfolio_dir
   module_function :comment_attachment_path
   module_function :compress_image
+  module_function :compress_image_to_dest
   module_function :compress_pdf
   module_function :move_files
   module_function :pdf_valid?
