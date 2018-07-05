@@ -66,7 +66,7 @@ class TaskComment < ActiveRecord::Base
       save
       FileUtils.mv temp.path, attachment_path
     else
-      self.attachment_extension = ".png"
+      self.attachment_extension = ".jpg"
       save
       FileHelper.compress_image_to_dest(file_upload.tempfile.path, self.attachment_path)
     end
