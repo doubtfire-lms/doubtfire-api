@@ -173,7 +173,7 @@ module FileHelper
     logger.debug "File helper has started compressing #{path} to #{tmp_file}..."
 
     begin
-      exec = "convert -delete 1--1 -quiet -strip -density 72 -interlace Plane -gaussian-blur 0.05 -quality 85% -resize 2048x2048\\> \
+      exec = "convert -delete 1--1 -quiet -strip -density 72 -quality 85% -resize 2048x2048\\> \
               \"#{path}\" \
               \"#{tmp_file}\" >>/dev/null 2>>/dev/null"
 
@@ -188,7 +188,7 @@ module FileHelper
   end
 
   def compress_image_to_dest(source, dest)
-    exec = "convert -delete 1--1 -quiet -strip -density 72 -interlace Plane -gaussian-blur 0.05 -quality 85% -resize 2048x2048\\> \
+    exec = "convert -delete 1--1 -quiet -strip -density 72 -quality 85% -resize 2048x2048\\> \
             \"#{source}\" \
             \"#{dest}\" >>/dev/null 2>>/dev/null"
 
