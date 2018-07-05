@@ -28,7 +28,7 @@ module Api
       attached_file = params[:attachment]
 
       if attached_file.present?
-        error!({error: "Attachment exceeds the maximum attachment size of 10MB."}) unless File.size?(attached_file.tempfile.path) < 10_000_000
+        error!({error: "Attachment exceeds the maximum attachment size of 30MB."}) unless File.size?(attached_file.tempfile.path) < 30_000_000
       end
 
       task = project.task_for_task_definition(task_definition)
@@ -75,6 +75,8 @@ module Api
         comment = task.comments.find(params[:id])
 
         error!({error: 'No attachment for this comment.'}, 404) unless ["audio", "image"].include? comment.content_type
+
+        error!({error: 'Image missing'}, 404) unless File.exists? comment.attachment_path
 
         # Set return content type
         content_type comment.attachment_mime_type
