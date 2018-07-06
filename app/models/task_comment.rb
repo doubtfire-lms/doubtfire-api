@@ -32,7 +32,7 @@ class TaskComment < ActiveRecord::Base
       id: self.id,
       comment: self.comment,
       has_attachment: ["audio", "image"].include?(self.content_type),
-      type: self.content_type,
+      type: self.content_type || "text",
       is_new: self.new_for?(user),
       author: {
         id: self.user.id,
