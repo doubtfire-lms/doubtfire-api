@@ -371,8 +371,10 @@ class TaskDefinition < ActiveRecord::Base
     result.plagiarism_checks           = row[:plagiarism_checks]
     
 
-    row[:group_set] = nil if row[:group_set].empty?
-    result.group_set                   = unit.group_sets.where(name: row[:group_set]).first
+    row[:group_set] = nil if not row[:group_set].empty?
+    unless row[:group_set].present? 
+      result.group_set                   = unit.group_sets.where(name: row[:group_set]).first
+    end
 
     if result.valid? && (row[:group_set].nil? || !result.group_set.nil?)
       begin
