@@ -39,7 +39,7 @@ class PortfolioEvidence
         logger.error "Failed to process folder_id = #{folder_id}. #{message}"
 
         if task
-          task.add_comment task.project.main_tutor, "**Automated Comment**: Something went wrong with your submission. Check the files and resubmit this task. #{message}"
+          task.add_text_comment task.project.main_tutor, "**Automated Comment**: Something went wrong with your submission. Check the files and resubmit this task. #{message}"
           task.trigger_transition trigger: 'fix', by_user: task.project.main_tutor
 
           errors[task.project] = [] if errors[task.project].nil?
