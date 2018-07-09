@@ -564,7 +564,7 @@ class Task < ActiveRecord::Base
     task_definition.weighting.to_f
   end
 
-  def add_text_comment(user, text, type)
+  def add_text_comment(user, text)
     text.strip!
     return nil if user.nil? || text.nil? || text.empty?
 
@@ -577,7 +577,7 @@ class Task < ActiveRecord::Base
     comment.task = self
     comment.user = user
     comment.comment = text
-    comment.content_type = type
+    comment.content_type = :text
     comment.recipient = user == project.student ? project.main_tutor : project.student
     comment.save!
     comment    

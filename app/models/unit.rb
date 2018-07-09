@@ -1873,7 +1873,7 @@ class Unit < ActiveRecord::Base
         task.grade_task(task_entry['new grade']) # try to grade task if need be
 
         if !(task_entry['new comment'].nil? || task_entry['new comment'].empty?)
-          task.add_comment user, task_entry['new comment']
+          task.add_text_comment user, task_entry['new comment']
           success << { row: task_entry, message: "Updated task #{task.task_definition.abbreviation} for #{owner_text}" }
           success << { row: {}, message: "Added comment to #{task.task_definition.abbreviation} for #{owner_text}" }
         else

@@ -39,7 +39,7 @@ module Api
       if content_type == :text
         error!({ error: "Comment text is empty, unable to add new comment"}, 403) unless text_comment.present?
         
-        result = task.add_text_comment(current_user, text_comment, content_type)
+        result = task.add_text_comment(current_user, text_comment)
       else
         error!({ error: "No file attached for this comment"}, 403) unless attached_file.present?
         unless FileHelper.accept_file(attached_file, "comment attachment - TaskComment", type_string)
