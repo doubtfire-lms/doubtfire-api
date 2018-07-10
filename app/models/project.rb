@@ -266,7 +266,14 @@ class Project < ActiveRecord::Base
   def task_definitions_and_status(target)
     assigned_task_defs_for_grade(target).
       order("start_date ASC, abbreviation ASC").
-      map { |td| {task_definition: td, status: status_for_task_definition(td) } }.
+      map { |td|
+          if has_task_for_task_definition? td 
+            task = task_for_task_definition(td)
+            {task_definition: td, task: task, status: task.status } 
+          else
+            {task_definition: td, task: nil, status: :not_started } 
+          end
+        }.
       select { |r| [:not_started, :redo, :need_help, :working_on_it, :fix_and_resubmit, :demonstrate, :discuss].include? r[:status] }
   end
 
@@ -277,6 +284,8 @@ class Project < ActiveRecord::Base
   def top_tasks
     result = []
 
+    to_target = lambda { |ts| ts[:task].nil? ? ts[:task_definition].target_date : ts[:task].due_date }
+
     #
     # Get list of tasks that could be top tasks...
     #
@@ -285,7 +294,7 @@ class Project < ActiveRecord::Base
     #
     # Start with overdue...
     #
-    overdue_tasks = task_states.select { |ts| ts[:task_definition].target_date < Time.zone.today }
+    overdue_tasks = task_states.select { |ts| to_target.call(ts) < Time.zone.today }
 
     grades = [ "Pass", "Credit", "Distinction", "High Distinction" ]
 
@@ -302,7 +311,7 @@ class Project < ActiveRecord::Base
     #
     # Add in soon tasks...
     #
-    soon_tasks = task_states.select { |ts| ts[:task_definition].target_date >= Time.zone.today && ts[:task_definition].target_date < Time.zone.today + 7.days }
+    soon_tasks = task_states.select { |ts| to_target.call(ts) >= Time.zone.today && to_target.call(ts) < Time.zone.today + 7.days }
 
     for i in 0..3
       graded_tasks = soon_tasks.select { |ts| ts[:task_definition].target_grade == i  }
@@ -317,7 +326,7 @@ class Project < ActiveRecord::Base
     #
     # Add in ahead tasks...
     #
-    ahead_tasks = task_states.select { |ts| ts[:task_definition].target_date >= Time.zone.today + 7.days }
+    ahead_tasks = task_states.select { |ts| to_target.call(ts) >= Time.zone.today + 7.days }
 
     for i in 0..3
       graded_tasks = ahead_tasks.select { |ts| ts[:task_definition].target_grade == i  }
@@ -335,14 +344,16 @@ class Project < ActiveRecord::Base
   def should_revert_to_pass
     return false unless self.target_grade > 0
 
+    to_target = lambda { |ts| ts[:task].nil? ? ts[:task_definition].target_date.to_date : ts[:task].due_date }
+
     task_states = task_definitions_and_status(0)
-    overdue_tasks = task_states.select { |ts| ts[:task_definition].target_date < Time.zone.today }
+    overdue_tasks = task_states.select { |ts| to_target.call(ts) < Time.zone.today }
 
     # More than 2 pass tasks overdue
     return false unless overdue_tasks.count > 2    
 
     # Oldest is more than 2 weeks past target
-    return false unless (Time.zone.today - overdue_tasks.first[:task_definition].target_date.to_date).to_i >= 14
+    return false unless (Time.zone.today - to_target.call(overdue_tasks.first)).to_i >= 14
 
     return true
   end
