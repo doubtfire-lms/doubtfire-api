@@ -310,7 +310,7 @@ module Api
         error!({ error: "Students from the tutorial '#{grp.tutorial.abbreviation}' can only be added to this group." }, 403)
       end
 
-      if grp.group_memberships.find_by(project: prj, active: true)
+      if grp.active_group_members.find_by(project: prj, active: true)
         error!({ error: "#{prj.student.name} is already a member of this group" }, 403)
       end
 
@@ -340,7 +340,7 @@ module Api
         error!({ error: 'Not authorised to manage this student' }, 403)
       end
 
-      if grp.group_memberships.find_by(project: prj).nil?
+      if grp.active_group_members.find_by(project: prj).nil?
         error!({ error: "#{prj.student.name} is not a member of this group" }, 403)
       end
 
