@@ -11,7 +11,7 @@ namespace :db do
     end
   end
 
-  def assess_task(current_user, task, tutor, status, complete_date)
+  def assess_task(proj, task, tutor, status, complete_date)
     alignments = []
     sum_ratings = 0
     task.unit.learning_outcomes.each do |lo|
@@ -31,7 +31,7 @@ namespace :db do
     trigger = 
 
     task.create_alignments_from_submission(alignments) unless alignments.nil?
-    task.create_submission_and_trigger_state_change(current_user) #, propagate = true, contributions = contributions, trigger = trigger)
+    task.create_submission_and_trigger_state_change(proj.student) #, propagate = true, contributions = contributions, trigger = trigger)
     task.assess status, tutor, complete_date
 
     pdf_path = task.final_pdf_path
