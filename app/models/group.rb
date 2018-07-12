@@ -24,6 +24,14 @@ class Group < ActiveRecord::Base
 
   before_destroy :ensure_no_submissions
 
+  def active_group_members
+    group_memberships.where(active: true)
+  end
+
+  def has_active_group_members?
+    active_group_members.present?
+  end
+
   #
   # Permissions around group data
   #

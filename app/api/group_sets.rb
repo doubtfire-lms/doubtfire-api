@@ -229,17 +229,17 @@ module Api
         error!({ error: 'Not authorised to update this group' }, 403)
       end
 
-      # Switching tutorials will violate any existing group members
-      if !grp.group_memberships.empty? && params[:tutorial_id] != grp.tutorial.id && gs.keep_groups_in_same_class
-        error!({ error: 'Cannot modify group tutorial as members already exist and they must be in the same tutorial. Clear all members first.' }, 403)
-      end
-
       group_params = ActionController::Parameters.new(params)
                                                  .require(:group)
                                                  .permit(
                                                    :name,
                                                    :tutorial_id
                                                  )
+
+      # Switching tutorials will violate any existing group members
+      if group_params[:tutorial_id] != grp.tutorial.id && gs.keep_groups_in_same_class && grp.has_active_group_members?
+        error!({ error: 'Cannot modify group tutorial as members already exist and they must be in the same tutorial. Clear all members first.' }, 403)
+      end
 
       grp.update!(group_params)
       grp
