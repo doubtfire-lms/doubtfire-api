@@ -61,10 +61,13 @@ module Api
         optional :name
         optional :code
         optional :description
+        optional :active
         optional :teaching_period_id
         optional :start_date
         optional :end_date
-        optional :active
+
+        mutually_exclusive :teaching_period_id,:start_date
+        all_or_none_of :start_date, :end_date
       end
     end
     put '/units/:id' do
@@ -77,24 +80,13 @@ module Api
                                                     .permit(:name,
                                                             :code,
                                                             :description,
-                                                            :teaching_period_id,
                                                             :start_date,
                                                             :end_date,
-                                                            :active)
-                                                            
-      teaching_period_id = unit_parameters[:teaching_period_id]
-      if teaching_period_id.present?
-        if unit_parameters[:start_date].nil? && unit_parameters[:end_date].nil?
-          teaching_period = TeachingPeriod.find(teaching_period_id)
-          unit_parameters[:start_date] =  teaching_period.start_date
-          unit_parameters[:end_date] =  teaching_period.end_date          
-        else
-          error!({ error: 'Cannot specify dates as teaching period is selected' }, 403)          
-        end
-      else
-        if unit_parameters[:start_date].present? || unit_parameters[:end_date].present?
-          unit_parameters[:teaching_period_id] = nil
-        end
+                                                            :teaching_period_id,
+                                                            :active)      
+      
+      if unit.teaching_period_id.present? && unit_parameters.key?(:start_date)
+        unit.teaching_period_id = nil
       end
 
       unit.update!(unit_parameters)
@@ -110,6 +102,9 @@ module Api
         optional :description
         optional :start_date
         optional :end_date
+
+        mutually_exclusive :teaching_period_id,:start_date
+        mutually_exclusive :teaching_period_id,:end_date
       end
     end
     post '/units' do
@@ -137,35 +132,19 @@ module Api
         if unit_parameters[:start_date].nil?
           start_date = Date.parse('Monday')
           delta = start_date > Date.today ? 0 : 7
-          unit_parameters[:start_date] = start_date + delta                 
+          unit_parameters[:start_date] = start_date + delta
         end
-      else
-        if unit_parameters[:start_date].nil?
-          teaching_period = TeachingPeriod.find(teaching_period_id)
-          unit_parameters[:start_date] =  teaching_period.start_date          
-        else
-          error!({ error: 'Cannot specify start date as teaching period is selected' }, 403)          
-        end        
-      end
 
-      if teaching_period_id.blank?
         if unit_parameters[:end_date].nil?
           unit_parameters[:end_date] = unit_parameters[:start_date] + 16.weeks          
-        end
+        end        
       else
-        if unit_parameters[:end_date].nil?
-          teaching_period = TeachingPeriod.find(teaching_period_id)          
-          unit_parameters[:end_date] =  teaching_period.end_date          
-        else
-          error!({ error: 'Cannot specify end date as teaching period is selected' }, 403)          
-        end                      
+        if unit_parameters[:start_date].present? || unit_parameters[:end_date].present?
+          error!({ error: 'Cannot specify dates as teaching period is selected' }, 403)         
+        end
       end
 
-      if unit_parameters[:end_date] > unit_parameters[:start_date]
-        unit = Unit.create!(unit_parameters)        
-      else
-        error!({ error: 'End date should be after the start date' }, 403)        
-      end      
+      unit = Unit.create!(unit_parameters)
 
       # Employ current user as convenor
       unit.employ_staff(current_user, Role.convenor)

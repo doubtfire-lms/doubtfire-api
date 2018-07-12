@@ -93,6 +93,11 @@ class Unit < ActiveRecord::Base
 
   # Unit has a teaching period
   belongs_to :teaching_period
+  validates :start_date, presence: true
+  validates :end_date, presence: true
+
+  validate :validate_end_date_after_start_date
+  validate :ensure_teaching_period_dates_match, if: :has_teaching_period?
 
   scope :current,               -> { current_for_date(Time.zone.now) }
   scope :current_for_date,      ->(date) { where('start_date <= ? AND end_date >= ?', date, date) }
@@ -100,6 +105,34 @@ class Unit < ActiveRecord::Base
   scope :not_current_for_date,  ->(date) { where('start_date > ? OR end_date < ?', date, date) }
   scope :set_active,            -> { where('active = ?', true) }
   scope :set_inactive,          -> { where('active = ?', false) }
+
+  def teaching_period_id=(teaching_period_id)
+    if teaching_period_id.present?
+      tp = TeachingPeriod.find(teaching_period_id)
+      write_attribute(:start_date, tp.start_date)
+      write_attribute(:end_date, tp.end_date)      
+    end
+    super(teaching_period_id)
+  end
+
+  def has_teaching_period?
+    self.teaching_period.present?
+  end
+
+  def ensure_teaching_period_dates_match
+    if read_attribute(:start_date) != teaching_period.start_date
+      errors.add(:start_date, "should match teaching period date")
+    end
+    if read_attribute(:end_date) != teaching_period.end_date
+      errors.add(:end_date, "should match teaching period date")
+    end
+  end
+
+  def validate_end_date_after_start_date
+    if end_date < start_date
+      errors.add(:end_date, "should be after the Start date")
+    end
+  end
 
   def ordered_ilos
     learning_outcomes.order(:ilo_number)
@@ -363,7 +396,7 @@ class Unit < ActiveRecord::Base
     CSV.foreach(file, headers: true,
                       header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
                       converters: [->(i) { i.nil? ? '' : i }, ->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]) do |row|
-      
+
       missing = import_settings[:missing_headers_lambda].call(row)
       if missing.count > 0
         errors << { row: row, message: "Missing headers: #{missing.join(', ')}" }
@@ -408,7 +441,7 @@ class Unit < ActiveRecord::Base
         unless row_data[:enrolled]
           # Find the user
           project_participant = User.where(username: username)
-          
+
           # If they dont exist... ignore
           if project_participant.nil? || project_participant.count == 0
             ignored << { row: row, message: "Ignoring student to withdraw, as not enrolled" }
@@ -421,7 +454,7 @@ class Unit < ActiveRecord::Base
               ignored << { row: row, message: "Ignoring student to withdraw, as not enrolled" }
             else
               # Withdraw...
-              user_project.enrolled = false 
+              user_project.enrolled = false
               user_project.save
               success << { row: row, message: "Student was withdrawn" }
             end
@@ -467,7 +500,7 @@ class Unit < ActiveRecord::Base
           # Add the user to the project (if not already in there)
           if user_project.nil?
             # Need to enrol user... can always set tutorial as does not already exist...
-            if (!tutorial.nil?) 
+            if (!tutorial.nil?)
               # Use tutorial if we have it :)
               enrol_student(project_participant, tutorial)
               success << { row: row, message: 'Enrolled student with tutorial.' }
