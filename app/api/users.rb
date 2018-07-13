@@ -65,6 +65,10 @@ module Api
     put '/users/:id' do
       change_self = (params[:id] == current_user.id)
 
+      params[:receive_portfolio_notifications] = true if params.key?(:receive_portfolio_notifications) && params[:receive_portfolio_notifications].nil?
+      params[:receive_portfolio_notifications] = true if params.key?(:receive_feedback_notifications) && params[:receive_feedback_notifications].nil?
+      params[:receive_portfolio_notifications] = true if params.key?(:receive_task_notifications) && params[:receive_task_notifications].nil?
+
       # can only modify if current_user.id is same as :id provided
       # (i.e., user wants to update their own data) or if update_user token
       if change_self || (authorise? current_user, User, :update_user)
