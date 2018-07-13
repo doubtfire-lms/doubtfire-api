@@ -503,14 +503,6 @@ class Project < ActiveRecord::Base
     completed_tasks_weight / weeks.to_f
   end
 
-  def required_task_completion_rate
-    remaining_tasks_weight / remaining_days
-  end
-
-  def recommended_completed_tasks
-    assigned_tasks.select { |task| task.task_definition.target_date < reference_date }
-  end
-
   def completed_tasks
     assigned_tasks.select(&:complete?)
   end
@@ -645,24 +637,6 @@ class Project < ActiveRecord::Base
 
   def total_task_weight
     assigned_task_defs.map(&:weighting).inject(:+)
-  end
-
-  #
-  # Tasks currently due - but not complete
-  #
-  def currently_due_tasks
-    assigned_tasks.select(&:currently_due?)
-  end
-
-  #
-  # All tasks currently due
-  #
-  def due_tasks
-    assigned_tasks.select { |task| task.target_date < reference_date }
-  end
-
-  def overdue_tasks
-    assigned_tasks.select(&:overdue?)
   end
 
   def remaining_days
@@ -811,87 +785,6 @@ class Project < ActiveRecord::Base
       FileUtils.rm rm_file if File.exist? rm_file
     rescue
     end
-  end
-
-  #
-  # Make file coverpage
-  #
-  def create_task_cover_page(dest_dir)
-    #
-    # check later -- not working at the moment fa not rendering in pdfkit
-    # @acain: this won't work as we haven't imported font-awesome on the server
-    #
-    # status_icons = {
-    #   ready_to_mark: 'fa fa-thumbs-o-up',
-    #   not_started: 'fa fa-times',
-    #   working_on_it: 'fa fa-bolt',
-    #   need_help: 'fa fa-question-circle',
-    #   redo: 'fa fa-refresh',
-    #   do_not_resubmit: 'fa fa-stop',
-    #   fix_and_resubmit: 'fa fa-wrench',
-    #   discuss: 'fa fa-check',
-    #   complete: 'fa fa-check-circle-o'
-    # }
-
-    grade_descs = [
-      'Pass',
-      'Credit',
-      'Distinction',
-      'High Distinction'
-    ]
-
-    ordered_tasks = tasks.joins(:task_definition).order('task_definitions.target_date, task_definitions.abbreviation').select { |task| task.task_definition.target_grade <= target_grade }
-    host = Doubtfire::Application.config.institution[:host]
-    coverpage_html = <<EOF
-<html>
-  <head>
-    <link rel='stylesheet' type='text/css' href='https://#{host}/assets/doubtfire.css'>
-  </head>
-  <body>
-    <h2>
-      #{unit.name} <small>#{unit.code}</small>
-      <p class="lead">#{student.name} <small>#{student.username}</small></p>
-    </h2>
-    <h1>Tasks for #{student.name}</h1>
-    <table class='table table-striped'>
-      <thead>
-        <th>Task</th>
-        <th colspan='2'>Status</th>
-        <th>Included</th>
-        <th>Grade</th>
-      </thead>
-      <tbody>
-EOF
-
-    ordered_tasks.each do |task|
-      task_row_html = <<EOF
-<tr>
-  <td>#{task.task_definition.name}</td>
-  <td>#{task.task_status.name}</td>
-  <td><button type='button' class='col-xs-12 btn btn-default task-status #{task.status.to_s.dasherize}'>#{task.task_definition.abbreviation}</button></td>
-  <td><i class="glyphicon glyphicon-#{(task.include_in_portfolio && task.has_pdf ? 'checked' : 'unchecked')}"></i></td>
-  <td>#{task.grade.nil? ? 'N/A' : grade_descs[task.grade]}</td>
-</tr>
-EOF
-      coverpage_html << task_row_html
-    end
-
-    coverpage_html << '</tbody></table></body></html>'
-
-    cover_filename = File.join(dest_dir, 'task.cover.html')
-
-    logger.debug("Generating cover page #{cover_filename} - #{log_details}")
-
-    #
-    # Create cover page for the submitted file (<taskid>/file0.cover.html etc.)
-    #
-    logger.debug "Generating cover page #{cover_filename} - #{log_details}"
-
-    coverp_file = File.new(cover_filename, 'w')
-    coverp_file.write(coverpage_html)
-    coverp_file.close
-
-    cover_filename
   end
 
   def portfolio_path
