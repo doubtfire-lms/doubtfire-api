@@ -217,7 +217,11 @@ class Task < ActiveRecord::Base
   end
 
   def ready_or_complete?
-    status == :complete || status == :discuss || status == :demonstrate || status == :ready_to_mark
+    [:complete, :discuss, :demonstrate, :ready_to_mark].include? status
+  end
+
+  def submitted_status?
+    ! [:working_on_it, :not_started, :fix_and_resubmit, :redo, :need_help].include? status
   end
 
   def fix_and_resubmit?

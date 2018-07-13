@@ -408,7 +408,7 @@ class Project < ActiveRecord::Base
     my_tasks = tasks
 
     # Get the tasks currently marked as done (or ready to mark)
-    done_tasks = ready_or_complete_tasks
+    done_tasks = tasks_in_submitted_status
 
     # use weekly completion rate to determine projected progress
     completion_rate = weekly_completion_rate
@@ -513,6 +513,10 @@ class Project < ActiveRecord::Base
 
   def ready_or_complete_tasks
     assigned_tasks.select(&:ready_or_complete?)
+  end
+
+  def tasks_in_submitted_status
+    assigned_tasks.select(&:submitted_status?)
   end
 
   def discuss_and_demonstrate_tasks
