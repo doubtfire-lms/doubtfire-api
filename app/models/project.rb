@@ -426,7 +426,7 @@ class Project < ActiveRecord::Base
                      target_tasks.select { |task_def| (tasks.where(task_definition: task_def).empty? ? task_def.target_date : tasks.where(task_definition: task_def).first.due_date ) > date }.map { |task_def| task_def.weighting.to_f }.inject(:+)]
       # get the done values - those done up to today, or the end of the unit
       done_val = [ date.to_datetime.to_i,
-                   done_tasks.select { |task| !task.completion_date.nil? && task.completion_date <= date }.map { |task| task.task_definition.weighting.to_f }.inject(:+)]
+                   done_tasks.select { |task| task.submission_date.present? && task.submission_date <= date }.map { |task| task.task_definition.weighting.to_f }.inject(:+)]
       # get the completed values - those signed off
       complete_val = [ date.to_datetime.to_i,
                        completed_tasks.select { |task| task.completion_date <= date }.map { |task| task.task_definition.weighting.to_f }.inject(:+)]
