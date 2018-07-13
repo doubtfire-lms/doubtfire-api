@@ -157,75 +157,6 @@ class Task < ActiveRecord::Base
     # portfolio_evidence == nil && ready_to_mark?
   end
 
-  def overdue?
-    # A task cannot be overdue if it is marked complete
-    return false if complete?
-
-    # Compare the recommended date with the date given to determine
-    # if the task is overdue
-    recommended_date = task_definition.target_date
-    project.reference_date > recommended_date && weeks_overdue >= 1
-  end
-
-  def long_overdue?
-    # A task cannot be overdue if it is marked complete
-    return false if complete?
-
-    # Compare the recommended date with the date given to determine
-    # if the task is overdue
-    recommended_date = task_definition.target_date
-    project.reference_date > recommended_date && weeks_overdue > 2
-  end
-
-  def currently_due?
-    # A task is currently due if it is not complete and over/under the due date by less than
-    # 7 days
-    !complete? && days_overdue.between?(-7, 7)
-  end
-
-  def weeks_until_due
-    days_until_due / 7
-  end
-
-  def days_until_due
-    (task_definition.target_date - project.reference_date).to_i / 1.day
-  end
-
-  def weeks_overdue
-    days_overdue / 7
-  end
-
-  def days_since_completion
-    (project.reference_date - completion_date.to_datetime).to_i / 1.day
-  end
-
-  def weeks_since_completion
-    days_since_completion / 7
-  end
-
-  def days_overdue
-    (project.reference_date - task_definition.target_date).to_i / 1.day
-  end
-
-  # Action date defines the last time a task has been "actioned", either the
-  # submission date or latest student comment -- whichever is newer
-  def action_date
-    return nil if last_student_comment.nil? || submission_date.nil?
-    return last_student_comment.created_at if !last_student_comment.nil? && submission_date.nil?
-    return submission_date.created_at      if !submission_date.nil? && last_student_comment.nil?
-    last_student_comment.created_at > submission_date ? last_student_comment.created_at : submission_date
-  end
-
-  # Returns the last student comment for this task
-  def last_student_comment
-    comments.where(user: project.user).order(:created_at).last
-  end
-
-  # Returns the last tutor comment for this task
-  def last_tutor_comment
-    comments.where(user: project.tutorial.tutor).order(:created_at).last
-  end
-
   # Get the raw extension date - with extensions representing weeks
   def raw_extension_date
     target_date + extensions.weeks
@@ -281,10 +212,6 @@ class Task < ActiveRecord::Base
     complete? || discuss_or_demonstrate? || do_not_resubmit? || fail?
   end
 
-  def ok_to_submit?
-    status != :complete && status != :discuss && status != :demonstrate
-  end
-
   def ready_to_mark?
     status == :ready_to_mark
   end
@@ -326,7 +253,7 @@ class Task < ActiveRecord::Base
   end
 
   def log_details
-    "#{id} - #{project.student.username}, #{project.unit.code}"
+    "#{id} - #{project.student.username}, #{project.unit.code}, #{task_definition.abbreviation}"
   end
 
   def group_task?
