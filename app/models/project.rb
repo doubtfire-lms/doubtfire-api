@@ -796,7 +796,7 @@ class Project < ActiveRecord::Base
   end
 
   def has_portfolio
-    !portfolio_production_date.nil?
+    (!portfolio_production_date.nil?) && portfolio_available
   end
 
   def portfolio_status
