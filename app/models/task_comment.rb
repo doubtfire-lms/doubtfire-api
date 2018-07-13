@@ -61,7 +61,7 @@ class TaskComment < ActiveRecord::Base
     if content_type == "audio"
       # On upload all audio comments are converted to wav
       temp = Tempfile.new(['comment','.wav'])
-      return false unless system_try_within 3, "Failed to process audio submission - timeout", "ffmpeg -loglevel quiet -y -i #{file_upload.tempfile.path} -ac 1 -ar 16000 -sample_fmt s16 #{temp.path}"
+      return false unless system_try_within 20, "Failed to process audio submission - timeout", "ffmpeg -loglevel quiet -y -i #{file_upload.tempfile.path} -ac 1 -ar 16000 -sample_fmt s16 #{temp.path}"
       self.attachment_extension = ".wav"
       save
       FileUtils.mv temp.path, attachment_path
