@@ -398,7 +398,7 @@ class Project < ActiveRecord::Base
     if ready_or_complete_tasks.empty?
       last_target_date = unit.start_date
     else
-      last_target_date = ready_or_complete_tasks.sort { |a, b| a.task_definition.target_date <=> b.task_definition.target_date }.last.task_definition.target_date
+      last_target_date = ready_or_complete_tasks.sort { |a, b| a.due_date <=> b.due_date }.last.due_date
     end
 
     # today is used to determine when to stop adding done tasks
