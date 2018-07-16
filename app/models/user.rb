@@ -295,7 +295,7 @@ class User < ActiveRecord::Base
       :act_tutor,
       :convene_units,
       :download_stats,
-      :get_teaching_periods      
+      :get_teaching_periods
     ]
 
     # What can tutors do with users?
