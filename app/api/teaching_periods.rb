@@ -80,7 +80,7 @@ module Api
           id: c.id,
           period: c.period,
           start_date: c.start_date,
-          end_date: c.end_date,
+          end_date: c.end_date
         }
       end
       result
