@@ -15,5 +15,7 @@ class TeachingPeriod < ActiveRecord::Base
 
   def roll_over(unit_id)
     new_unit = Unit.find(unit_id).dup
+    new_unit.save!
+    new_unit
   end
 end
