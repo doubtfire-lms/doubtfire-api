@@ -12,4 +12,8 @@ class TeachingPeriod < ActiveRecord::Base
       errors.add(:end_date, "should be after the Start date")
     end
   end
+
+  def roll_over(unit_id)
+    new_unit = Unit.find(unit_id).dup
+  end
 end

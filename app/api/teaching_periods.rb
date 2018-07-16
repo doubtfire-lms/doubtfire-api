@@ -95,5 +95,19 @@ module Api
       teaching_period_id = params[:teaching_period_id]
       TeachingPeriod.find(teaching_period_id).destroy
     end
+
+    desc 'Rollover unit'
+    params do
+      requires :unit_id
+    end
+    post '/teaching_periods/:teaching_period_id' do
+      unless authorise? current_user, User, :handle_teaching_period
+        error!({ error: 'Not authorised to delete a teaching period' }, 403)
+      end
+
+      teaching_period_id = params[:teaching_period_id]
+      unit_id = params[:unit_id]
+      TeachingPeriod.find(teaching_period_id).roll_over(unit_id)
+    end
   end
 end
