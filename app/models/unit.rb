@@ -110,7 +110,7 @@ class Unit < ActiveRecord::Base
     if teaching_period_id.present?
       tp = TeachingPeriod.find(teaching_period_id)
       write_attribute(:start_date, tp.start_date)
-      write_attribute(:end_date, tp.end_date)      
+      write_attribute(:end_date, tp.end_date)
     end
     super(teaching_period_id)
   end

@@ -126,8 +126,8 @@ module Api
       if unit_parameters[:description].nil?
         unit_parameters[:description] = unit_parameters[:name]
       end
-      
-      teaching_period_id = unit_parameters[:teaching_period_id]      
+
+      teaching_period_id = unit_parameters[:teaching_period_id]
       if teaching_period_id.blank?
         if unit_parameters[:start_date].nil?
           start_date = Date.parse('Monday')
@@ -136,11 +136,11 @@ module Api
         end
 
         if unit_parameters[:end_date].nil?
-          unit_parameters[:end_date] = unit_parameters[:start_date] + 16.weeks          
-        end        
+          unit_parameters[:end_date] = unit_parameters[:start_date] + 16.weeks
+        end
       else
         if unit_parameters[:start_date].present? || unit_parameters[:end_date].present?
-          error!({ error: 'Cannot specify dates as teaching period is selected' }, 403)         
+          error!({ error: 'Cannot specify dates as teaching period is selected' }, 403)
         end
       end
 
