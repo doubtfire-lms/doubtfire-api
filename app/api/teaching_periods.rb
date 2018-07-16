@@ -4,11 +4,11 @@ module Api
   class TeachingPeriods < Grape::API
     helpers AuthenticationHelpers
     helpers AuthorisationHelpers
-  
+
     before do
       authenticated?
     end
-    
+
     desc 'Add a Teaching Period'
     params do
       requires :teaching_period, type: Hash do
@@ -35,7 +35,7 @@ module Api
         result
       end
     end
-    
+
     desc "Get a teaching period's details"
     get '/teaching_periods/:id' do
       teaching_period = TeachingPeriod.find(params[:id])
@@ -73,17 +73,17 @@ module Api
     get '/teaching_periods' do
       unless authorise? current_user, User, :get_teaching_periods
         error!({ error: 'Not authorised to get teaching periods' }, 403)
-      end            
+      end
       teaching_periods = TeachingPeriod.all
       result = teaching_periods.map do |c|
         {
           id: c.id,
           period: c.period,
           start_date: c.start_date,
-          end_date: c.end_date,                    
+          end_date: c.end_date,
         }
       end
-      result        
+      result
     end
 
     desc 'Delete a teaching period'
@@ -93,7 +93,7 @@ module Api
       end
 
       teaching_period_id = params[:teaching_period_id]
-      TeachingPeriod.find(teaching_period_id).destroy            
+      TeachingPeriod.find(teaching_period_id).destroy
     end
-  end    
+  end
 end
