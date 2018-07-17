@@ -939,11 +939,43 @@ class Unit < ActiveRecord::Base
   end
 
   #
+  # Create a temp zip file with all submission PDFs for a task
+  #
+  def get_task_submissions_pdf_zip(current_user, td)
+    # Get a temp file path
+    filename = FileHelper.sanitized_filename("submissions-#{code}-#{td.abbreviation}-#{current_user.username}-pdfs")
+    result = Tempfile.new([filename, '.zip'])
+
+    tasks_with_files = td.related_tasks_with_files
+
+    # Create a new zip
+    Zip::File.open(result.path, Zip::File::CREATE) do |zip|
+      Dir.mktmpdir do |dir|
+        # Extract all of the files...
+        tasks_with_files.each do |task|
+          path_part = if td.is_group_task? && task.group
+                        task.group.name.to_s
+                      else
+                        task.student.username.to_s
+                      end
+
+          FileUtils.cp task.portfolio_evidence, File.join(dir, path_part.to_s) + '.pdf'
+        end # each task
+
+        # Copy files into zip
+        zip_root_path = "#{td.abbreviation}-pdfs"
+        FileHelper.recursively_add_dir_to_zip(zip, dir, zip_root_path)
+      end # mktmpdir
+    end # zip
+    result
+  end
+
+  #
   # Create a temp zip file with all submissions for a task
   #
   def get_task_submissions_zip(current_user, td)
     # Get a temp file path
-    filename = FileHelper.sanitized_filename("submissions-#{code}-#{td.abbreviation}-#{current_user.username}.zip")
+    filename = FileHelper.sanitized_filename("submissions-#{code}-#{td.abbreviation}-#{current_user.username}-files.zip")
     result = Tempfile.new(filename)
 
     tasks_with_files = td.related_tasks_with_files
