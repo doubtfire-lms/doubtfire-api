@@ -963,7 +963,7 @@ class Unit < ActiveRecord::Base
                                       ->(_task, to_path, name) { File.join(to_path.to_s, path_part, name.to_s) }) # call
 
           FileUtils.mv Dir.glob("#{dir}/#{path_part}/#{task.id}/*"), File.join(dir, path_part.to_s)
-          FileUtils.rm_r "#{dir}/#{path_part}/#{task.id}"
+          FileUtils.rm_r "#{dir}/#{path_part}/#{task.id}" if File.directory?("#{dir}/#{path_part}/#{task.id}")
         end # each task
 
         # Copy files into zip
