@@ -1,4 +1,3 @@
-require 'terminator'
 module TimeoutHelper
   extend LogHelper
 
@@ -11,12 +10,10 @@ module TimeoutHelper
   #   end
   #
   def try_within(sec, timeout_message = 'operation')
-    Terminator.terminate sec do
-      begin
-        yield
-      rescue
-        logger.error "Timeout when #{timeout_message} after #{sec}s"
-      end
+    begin
+      Timeout::timeout(sec) { yield }
+    rescue
+      logger.error "Timeout when #{timeout_message} after #{sec}s"
     end
   end
 
