@@ -163,6 +163,18 @@ namespace :db do
             end
           end
 
+          if rand(1..100) < 20
+            c = task.add_text_comment(p.student, "Test comment text")
+            c.created_at = complete_date
+            c.save
+          end
+
+          if rand(1..100) < 20
+            c = task.add_text_comment(tutor, "Looks good")
+            c.created_at = complete_date
+            c.save
+          end
+
           i += 1
         end
 
