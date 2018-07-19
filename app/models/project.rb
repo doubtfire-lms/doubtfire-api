@@ -344,13 +344,13 @@ class Project < ActiveRecord::Base
   def should_revert_to_pass
     return false unless self.target_grade > 0
 
-    to_target = lambda { |ts| ts[:task].nil? ? ts[:task_definition].target_date.to_date : ts[:task].due_date }
+    to_target = lambda { |ts| ts[:task].nil? ? ts[:task_definition].target_date.to_date : ts[:task].due_date.to_date }
 
     task_states = task_definitions_and_status(0)
     overdue_tasks = task_states.select { |ts| to_target.call(ts) < Time.zone.today }
 
     # More than 2 pass tasks overdue
-    return false unless overdue_tasks.count > 2    
+    return false unless overdue_tasks.count > 2
 
     # Oldest is more than 2 weeks past target
     return false unless (Time.zone.today - to_target.call(overdue_tasks.first)).to_i >= 14
