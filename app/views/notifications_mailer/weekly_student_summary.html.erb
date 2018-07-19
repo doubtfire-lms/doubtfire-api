@@ -98,6 +98,16 @@
     <p>Its almost party time... You have completed all of the tasks, now make sure you login and prepare your portfolio.</p>
 <%  end %>
     <p>
+      <ul>
+        <li>In total, there <%= were_was(@summary_stats[:unit_week_comments]) %> <%= @summary_stats[:unit_week_comments] %> comment<%= "s" if @summary_stats[:unit_week_comments] != 1 %> made in this unit.</li>
+        <li>You posted a total of <%= @sent_comments %> comment<%= "s" if @sent_comments != 1 %>, and received back <%= @received_comments %> comment<%= "s" if @received_comments != 1 %> <%= "- try posting some comments this week" if @sent_comments == 0 %></li>
+        <li>Tasks changed state <%= @summary_stats[:unit_week_engagements] %> time<%= "s" unless @summary_stats[:unit_week_engagements] == 1 %> in this unit.</li>
+        <li>Your tasks changed state <%= @engagements_count %> time<%= "s" unless @engagements_count == 1 %> <%= "- looks like you need to be more active" if @student_engagements == 0%></li>
+      </ul>
+      We hope your studies are going well, and look forward to your submissions over the next week!
+    </p>
+
+    <p>
         Cheers, <br />
         The <%= @doubtfire_product_name %> Team on behalf of <%= @tutor.name %>
     </p>
