@@ -277,7 +277,9 @@ class User < ActiveRecord::Base
       :admin_units,
       :admin_users,
       :convene_units,
-      :download_stats
+      :download_stats,
+      :handle_teaching_period,
+      :get_teaching_periods
     ]
 
     # What can convenors do with users?
@@ -292,7 +294,8 @@ class User < ActiveRecord::Base
       :create_unit,
       :act_tutor,
       :convene_units,
-      :download_stats
+      :download_stats,
+      :get_teaching_periods
     ]
 
     # What can tutors do with users?
