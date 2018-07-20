@@ -13,6 +13,7 @@ module Api
     params do
       requires :teaching_period, type: Hash do
         optional :period, type: String, desc: 'The name of the teaching period'
+        optional :year, type: Integer, desc: 'The year of the teaching period'
         optional :start_date, type: Date, desc: 'The start date of the teaching period'
         optional :end_date, type: Date, desc: 'The end date of the teaching period'
       end
@@ -24,6 +25,7 @@ module Api
       teaching_period_parameters = ActionController::Parameters.new(params)
                                                                .require(:teaching_period)
                                                                .permit(:period,
+                                                                       :year,
                                                                        :start_date,
                                                                        :end_date)
 
