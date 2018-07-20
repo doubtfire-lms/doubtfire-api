@@ -83,6 +83,7 @@ module Api
         {
           id: c.id,
           period: c.period,
+          year: c.year,
           start_date: c.start_date,
           end_date: c.end_date
         }
