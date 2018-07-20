@@ -61,9 +61,13 @@ module Api
         optional :name
         optional :code
         optional :description
+        optional :active
+        optional :teaching_period_id
         optional :start_date
         optional :end_date
-        optional :active
+
+        mutually_exclusive :teaching_period_id,:start_date
+        all_or_none_of :start_date, :end_date
       end
     end
     put '/units/:id' do
@@ -78,7 +82,12 @@ module Api
                                                             :description,
                                                             :start_date,
                                                             :end_date,
+                                                            :teaching_period_id,
                                                             :active)
+
+      if unit.teaching_period_id.present? && unit_parameters.key?(:start_date)
+        unit.teaching_period_id = nil
+      end
 
       unit.update!(unit_parameters)
       unit_parameters
@@ -89,9 +98,13 @@ module Api
       requires :unit, type: Hash do
         requires :name
         requires :code
+        optional :teaching_period_id
         optional :description
         optional :start_date
         optional :end_date
+
+        mutually_exclusive :teaching_period_id,:start_date
+        mutually_exclusive :teaching_period_id,:end_date
       end
     end
     post '/units' do
@@ -104,6 +117,7 @@ module Api
                                                     .permit(
                                                       :name,
                                                       :code,
+                                                      :teaching_period_id,
                                                       :description,
                                                       :start_date,
                                                       :end_date
@@ -112,13 +126,22 @@ module Api
       if unit_parameters[:description].nil?
         unit_parameters[:description] = unit_parameters[:name]
       end
-      if unit_parameters[:start_date].nil?
-        start_date = Date.parse('Monday')
-        delta = start_date > Date.today ? 0 : 7
-        unit_parameters[:start_date] = start_date + delta
-      end
-      if unit_parameters[:end_date].nil?
-        unit_parameters[:end_date] = unit_parameters[:start_date] + 16.weeks
+
+      teaching_period_id = unit_parameters[:teaching_period_id]
+      if teaching_period_id.blank?
+        if unit_parameters[:start_date].nil?
+          start_date = Date.parse('Monday')
+          delta = start_date > Date.today ? 0 : 7
+          unit_parameters[:start_date] = start_date + delta
+        end
+
+        if unit_parameters[:end_date].nil?
+          unit_parameters[:end_date] = unit_parameters[:start_date] + 16.weeks
+        end
+      else
+        if unit_parameters[:start_date].present? || unit_parameters[:end_date].present?
+          error!({ error: 'Cannot specify dates as teaching period is selected' }, 403)
+        end
       end
 
       unit = Unit.create!(unit_parameters)
