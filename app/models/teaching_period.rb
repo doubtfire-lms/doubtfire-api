@@ -36,4 +36,10 @@ class TeachingPeriod < ActiveRecord::Base
       new_unit.learning_outcomes << learning_outcomes.dup
     end
   end
+
+  def add_group_sets(current_unit, new_unit)
+    current_unit.group_sets.each do |group_sets|
+      new_unit.group_sets << group_sets.dup
+    end
+  end
 end
