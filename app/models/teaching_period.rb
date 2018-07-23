@@ -21,12 +21,19 @@ class TeachingPeriod < ActiveRecord::Base
     new_unit.save!
 
     add_task_definitions(current_unit, new_unit)
+    add_learning_outcomes(current_unit, new_unit)
     new_unit
   end
 
   def add_task_definitions(current_unit, new_unit)
     current_unit.task_definitions.each do |task_definitions|
       new_unit.task_definitions << task_definitions.dup
+    end
+  end
+
+  def add_learning_outcomes(current_unit, new_unit)
+    current_unit.learning_outcomes.each do |learning_outcomes|
+      new_unit.learning_outcomes << learning_outcomes.dup
     end
   end
 end
