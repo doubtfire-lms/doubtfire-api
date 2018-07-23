@@ -25,8 +25,7 @@ class TeachingPeriod < ActiveRecord::Base
   end
 
   def add_task_definitions(current_unit, new_unit)
-    current_task_definitions = current_unit.task_definitions
-    current_task_definitions.each do |task_definitions|
+    current_unit.task_definitions.each do |task_definitions|
       new_unit.task_definitions << task_definitions.dup
     end
   end
