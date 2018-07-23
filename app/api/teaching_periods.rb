@@ -129,6 +129,7 @@ module Api
           period_name: TeachingPeriod.find(unit.teaching_period_id).period
         }
       end
+      result
     end
   end
 end
