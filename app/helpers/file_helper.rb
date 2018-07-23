@@ -11,8 +11,6 @@ module FileHelper
   # - file is passed the file uploaded to Doubtfire (a hash with all relevant data about the file)
   #
   def accept_file(file, name, kind)
-    logger.debug "FileHelper is accepting file: filename=#{file.filename}, name=#{name}, kind=#{kind}"
-
     valid = true
 
     case kind
@@ -28,12 +26,16 @@ module FileHelper
         'application/pdf'
       ]
       valid = pdf_valid? file.tempfile.path
+    when 'audio'
+      accept = ['audio/', 'video/webm', 'application/ogg']
+
+    when 'video'
+      accept = ['video/mp4']
     else
       logger.error "Unknown type '#{kind}' provided for '#{name}'"
       return false
     end
 
-    # result is true when...
     mime_in_list?(file.tempfile.path, accept) && valid
   end
 
@@ -121,6 +123,8 @@ module FileHelper
           dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}", task.project.student.username.to_s, type.to_s, task.id.to_s) << '/'
         elsif type == :plagarism
           dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}", task.project.student.username.to_s, type.to_s, task.id.to_s) << '/'
+        elsif type == :comment
+          dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}", task.project.student.username.to_s, type.to_s) << '/'
         else # new and in_process -- just have task id
           # Add task id to dst if we want task
           dst << "#{type}/#{task.id}/"
@@ -154,8 +158,12 @@ module FileHelper
     dst
   end
 
+  def comment_attachment_path(task_comment, attachment_extension)
+    "#{File.join( student_work_dir(:comment, task_comment.task), "#{task_comment.id.to_s}#{attachment_extension}")}"
+  end
+
   def compress_image(path)
-    return true if File.size?(path) < 1_000_000
+    return true if File.size?(path) < 500_000
 
     compress_folder = File.join(Dir.tmpdir, 'doubtfire', 'compress')
 
@@ -165,9 +173,8 @@ module FileHelper
     logger.debug "File helper has started compressing #{path} to #{tmp_file}..."
 
     begin
-      exec = "convert \
+      exec = "convert -delete 1--1 -quiet -strip -density 72 -quality 85% -resize 2048x2048\\> \
               \"#{path}\" \
-              -resize 1024x1024 \
               \"#{tmp_file}\" >>/dev/null 2>>/dev/null"
 
       did_compress = system_try_within 40, 'compressing image using convert', exec
@@ -177,8 +184,15 @@ module FileHelper
       FileUtils.rm tmp_file if File.exist? tmp_file
     end
 
-    raise 'Failed to compress an image. Ensure all images are smaller than 1MB.' unless did_compress
-    true
+    did_compress
+  end
+
+  def compress_image_to_dest(source, dest)
+    exec = "convert -delete 1--1 -quiet -strip -density 72 -quality 85% -resize 2048x2048\\> \
+            \"#{source}\" \
+            \"#{dest}\" >>/dev/null 2>>/dev/null"
+
+    did_compress = system_try_within 40, 'compressing image using convert', exec
   end
 
   def compress_pdf(path, max_size = 2_500_000)
@@ -431,7 +445,9 @@ module FileHelper
   module_function :student_group_work_dir
   module_function :student_work_dir
   module_function :student_portfolio_dir
+  module_function :comment_attachment_path
   module_function :compress_image
+  module_function :compress_image_to_dest
   module_function :compress_pdf
   module_function :move_files
   module_function :pdf_valid?

@@ -2,6 +2,8 @@
 require 'filemagic'
 
 module MimeCheckHelpers
+  extend LogHelper
+
   def mime_type(file_path)
     fm = FileMagic.new(FileMagic::MAGIC_MIME)
     fm.file(file_path)

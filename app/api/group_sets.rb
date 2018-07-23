@@ -1,5 +1,6 @@
 require 'grape'
 require 'mime-check-helpers'
+require 'group_serializer'
 
 module Api
   #
@@ -124,6 +125,17 @@ module Api
       group_set.groups
     end
 
+    desc 'Get all groups in a unit'
+    get '/units/:unit_id/groups' do
+      unit = Unit.find(params[:unit_id])
+
+      unless authorise? current_user, unit, :get_students
+        error!({ error: 'Not authorised to get groups for this unit' }, 403)
+      end
+
+      ActiveModel::ArraySerializer.new(unit.groups, each_serializer: DeepGroupSerializer)
+    end
+
     desc 'Download a CSV of groups in a group set'
     get '/units/:unit_id/group_sets/:group_set_id/groups/csv' do
       unit = Unit.find(params[:unit_id])
@@ -217,17 +229,17 @@ module Api
         error!({ error: 'Not authorised to update this group' }, 403)
       end
 
-      # Switching tutorials will violate any existing group members
-      if !grp.group_memberships.empty? && params[:tutorial_id] != grp.tutorial.id && gs.keep_groups_in_same_class
-        error!({ error: 'Cannot modify group tutorial as members already exist and they must be in the same tutorial. Clear all members first.' }, 403)
-      end
-
       group_params = ActionController::Parameters.new(params)
                                                  .require(:group)
                                                  .permit(
                                                    :name,
                                                    :tutorial_id
                                                  )
+
+      # Switching tutorials will violate any existing group members
+      if group_params[:tutorial_id] != grp.tutorial.id && gs.keep_groups_in_same_class && grp.has_active_group_members?
+        error!({ error: 'Cannot modify group tutorial as members already exist and they must be in the same tutorial. Clear all members first.' }, 403)
+      end
 
       grp.update!(group_params)
       grp
@@ -298,7 +310,7 @@ module Api
         error!({ error: "Students from the tutorial '#{grp.tutorial.abbreviation}' can only be added to this group." }, 403)
       end
 
-      if grp.group_memberships.find_by(project: prj, active: true)
+      if grp.active_group_members.find_by(project: prj, active: true)
         error!({ error: "#{prj.student.name} is already a member of this group" }, 403)
       end
 
@@ -328,7 +340,7 @@ module Api
         error!({ error: 'Not authorised to manage this student' }, 403)
       end
 
-      if grp.group_memberships.find_by(project: prj).nil?
+      if grp.active_group_members.find_by(project: prj).nil?
         error!({ error: "#{prj.student.name} is not a member of this group" }, 403)
       end
 

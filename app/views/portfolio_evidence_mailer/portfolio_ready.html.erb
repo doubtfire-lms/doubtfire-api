@@ -11,7 +11,7 @@
       font-size: 0.9em;
     }
     main {
-      background-image: url('http://<%= @doubtfire_host %>/assets/images/logo.png');
+      background-image: url('https://<%= @doubtfire_host %>/assets/images/logo.svg');
       background-size: 3.5em;
       background-repeat: no-repeat;
       background-position: 30px 45px;
@@ -45,10 +45,10 @@
 </head>
 <body>
   <main>
-    <h1> Doubtfire Notification </h1>
-    <p>Hi <%= @student.first_name %>,<p/>
+    <h1> <%= @doubtfire_product_name %> Notification </h1>
+    <p>Hi <%= @student.first_name %>,</p>
     <p>
-        Your portfolio has been compiled and can now be viewed and downloaded from <a href="http://<%= @doubtfire_host %>">Doubtfire</a>.
+        Your portfolio has been compiled and can now be viewed and downloaded from <a href="https://<%= @doubtfire_host %>"><%= @doubtfire_product_name %></a>.
     </p>
     <p>
         Cheers, <br />

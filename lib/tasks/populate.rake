@@ -11,7 +11,7 @@ namespace :db do
     end
   end
 
-  def assess_task(current_user, task, tutor, status, complete_date)
+  def assess_task(proj, task, tutor, status, complete_date)
     alignments = []
     sum_ratings = 0
     task.unit.learning_outcomes.each do |lo|
@@ -31,7 +31,7 @@ namespace :db do
     trigger = 
 
     task.create_alignments_from_submission(alignments) unless alignments.nil?
-    task.create_submission_and_trigger_state_change(current_user) #, propagate = true, contributions = contributions, trigger = trigger)
+    task.create_submission_and_trigger_state_change(proj.student) #, propagate = true, contributions = contributions, trigger = trigger)
     task.assess status, tutor, complete_date
 
     pdf_path = task.final_pdf_path
@@ -161,6 +161,18 @@ namespace :db do
             else
               assess_task(proj, task, tutor, TaskStatus.ready_to_mark, complete_date)
             end
+          end
+
+          if rand(1..100) < 20
+            c = task.add_text_comment(p.student, "Test comment text")
+            c.created_at = complete_date
+            c.save
+          end
+
+          if rand(1..100) < 20
+            c = task.add_text_comment(tutor, "Looks good")
+            c.created_at = complete_date
+            c.save
           end
 
           i += 1

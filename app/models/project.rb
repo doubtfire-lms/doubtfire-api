@@ -42,6 +42,7 @@ class Project < ActiveRecord::Base
       :change_tutorial,
       :make_submission,
       :get_submission,
+      :apply_extension,
       :change
     ]
     # What can tutors do with projects?
@@ -51,12 +52,13 @@ class Project < ActiveRecord::Base
       :change_tutorial,
       :make_submission,
       :get_submission,
+      :apply_extension,
       :change,
       :assess
     ]
     # What can convenors do with projects?
     convenor_role_permissions = [
-
+      :apply_extension
     ]
     # What can nil users do with projects?
     nil_role_permissions = [
@@ -170,6 +172,7 @@ class Project < ActiveRecord::Base
     elsif user == main_tutor then :tutor
     elsif user.nil? then nil
     elsif unit.tutors.where(id: user.id).count != 0 then :tutor
+    else nil
     end
   end
 
@@ -229,7 +232,9 @@ class Project < ActiveRecord::Base
           times_assessed: r.times_assessed,
           grade: r.grade,
           quality_pts: r.quality_pts,
-          num_new_comments: r.number_unread
+          num_new_comments: r.number_unread,
+          extensions: t.extensions,
+          due_date: t.due_date
         }
       end
   end
@@ -261,7 +266,14 @@ class Project < ActiveRecord::Base
   def task_definitions_and_status(target)
     assigned_task_defs_for_grade(target).
       order("start_date ASC, abbreviation ASC").
-      map { |td| {task_definition: td, status: status_for_task_definition(td) } }.
+      map { |td|
+          if has_task_for_task_definition? td 
+            task = task_for_task_definition(td)
+            {task_definition: td, task: task, status: task.status } 
+          else
+            {task_definition: td, task: nil, status: :not_started } 
+          end
+        }.
       select { |r| [:not_started, :redo, :need_help, :working_on_it, :fix_and_resubmit, :demonstrate, :discuss].include? r[:status] }
   end
 
@@ -272,6 +284,8 @@ class Project < ActiveRecord::Base
   def top_tasks
     result = []
 
+    to_target = lambda { |ts| ts[:task].nil? ? ts[:task_definition].target_date : ts[:task].due_date }
+
     #
     # Get list of tasks that could be top tasks...
     #
@@ -280,7 +294,7 @@ class Project < ActiveRecord::Base
     #
     # Start with overdue...
     #
-    overdue_tasks = task_states.select { |ts| ts[:task_definition].target_date < Time.zone.today }
+    overdue_tasks = task_states.select { |ts| to_target.call(ts) < Time.zone.today }
 
     grades = [ "Pass", "Credit", "Distinction", "High Distinction" ]
 
@@ -297,7 +311,7 @@ class Project < ActiveRecord::Base
     #
     # Add in soon tasks...
     #
-    soon_tasks = task_states.select { |ts| ts[:task_definition].target_date >= Time.zone.today && ts[:task_definition].target_date < Time.zone.today + 7.days }
+    soon_tasks = task_states.select { |ts| to_target.call(ts) >= Time.zone.today && to_target.call(ts) < Time.zone.today + 7.days }
 
     for i in 0..3
       graded_tasks = soon_tasks.select { |ts| ts[:task_definition].target_grade == i  }
@@ -312,7 +326,7 @@ class Project < ActiveRecord::Base
     #
     # Add in ahead tasks...
     #
-    ahead_tasks = task_states.select { |ts| ts[:task_definition].target_date >= Time.zone.today + 7.days }
+    ahead_tasks = task_states.select { |ts| to_target.call(ts) >= Time.zone.today + 7.days }
 
     for i in 0..3
       graded_tasks = ahead_tasks.select { |ts| ts[:task_definition].target_grade == i  }
@@ -330,14 +344,16 @@ class Project < ActiveRecord::Base
   def should_revert_to_pass
     return false unless self.target_grade > 0
 
+    to_target = lambda { |ts| ts[:task].nil? ? ts[:task_definition].target_date.to_date : ts[:task].due_date.to_date }
+
     task_states = task_definitions_and_status(0)
-    overdue_tasks = task_states.select { |ts| ts[:task_definition].target_date < Time.zone.today }
+    overdue_tasks = task_states.select { |ts| to_target.call(ts) < Time.zone.today }
 
     # More than 2 pass tasks overdue
-    return false unless overdue_tasks.count > 2    
+    return false unless overdue_tasks.count > 2
 
     # Oldest is more than 2 weeks past target
-    return false unless (Time.zone.today - overdue_tasks.first[:task_definition].target_date.to_date).to_i >= 14
+    return false unless (Time.zone.today - to_target.call(overdue_tasks.first)).to_i >= 14
 
     return true
   end
@@ -382,14 +398,17 @@ class Project < ActiveRecord::Base
     if ready_or_complete_tasks.empty?
       last_target_date = unit.start_date
     else
-      last_target_date = ready_or_complete_tasks.sort { |a, b| a.task_definition.target_date <=> b.task_definition.target_date }.last.task_definition.target_date
+      last_target_date = ready_or_complete_tasks.sort { |a, b| a.due_date <=> b.due_date }.last.due_date
     end
 
     # today is used to determine when to stop adding done tasks
     today = reference_date
 
+    # Actual tasks
+    my_tasks = tasks
+
     # Get the tasks currently marked as done (or ready to mark)
-    done_tasks = ready_or_complete_tasks
+    done_tasks = tasks_in_submitted_status
 
     # use weekly completion rate to determine projected progress
     completion_rate = weekly_completion_rate
@@ -404,10 +423,10 @@ class Project < ActiveRecord::Base
     dates.each do |date|
       # get the target values - those from the task definitions
       target_val = [ date.to_datetime.to_i,
-                     target_tasks.select { |task_def| task_def.target_date > date }.map { |task_def| task_def.weighting.to_f }.inject(:+)]
+                     target_tasks.select { |task_def| (tasks.where(task_definition: task_def).empty? ? task_def.target_date : tasks.where(task_definition: task_def).first.due_date ) > date }.map { |task_def| task_def.weighting.to_f }.inject(:+)]
       # get the done values - those done up to today, or the end of the unit
       done_val = [ date.to_datetime.to_i,
-                   done_tasks.select { |task| !task.completion_date.nil? && task.completion_date <= date }.map { |task| task.task_definition.weighting.to_f }.inject(:+)]
+                   done_tasks.select { |task| task.submission_date.present? && task.submission_date <= date }.map { |task| task.task_definition.weighting.to_f }.inject(:+)]
       # get the completed values - those signed off
       complete_val = [ date.to_datetime.to_i,
                        completed_tasks.select { |task| task.completion_date <= date }.map { |task| task.task_definition.weighting.to_f }.inject(:+)]
@@ -484,14 +503,6 @@ class Project < ActiveRecord::Base
     completed_tasks_weight / weeks.to_f
   end
 
-  def required_task_completion_rate
-    remaining_tasks_weight / remaining_days
-  end
-
-  def recommended_completed_tasks
-    assigned_tasks.select { |task| task.task_definition.target_date < reference_date }
-  end
-
   def completed_tasks
     assigned_tasks.select(&:complete?)
   end
@@ -502,6 +513,10 @@ class Project < ActiveRecord::Base
 
   def ready_or_complete_tasks
     assigned_tasks.select(&:ready_or_complete?)
+  end
+
+  def tasks_in_submitted_status
+    assigned_tasks.select(&:submitted_status?)
   end
 
   def discuss_and_demonstrate_tasks
@@ -566,29 +581,51 @@ class Project < ActiveRecord::Base
     end
   end
 
-  def task_stats
-    task_count = unit.task_definitions.where("target_grade <= #{target_grade}").count + 0.0
-    task_count = 1.0 unless task_count > 1.0
-    result = assigned_tasks
-             .group('project_id')
-             .select(
-               'project_id',
-               *TaskStatus.all.map { |s| "SUM(CASE WHEN tasks.task_status_id = #{s.id} THEN 1 ELSE 0 END) AS #{s.status_key}_count" }
-             )
-             .map do |t|
-      # puts "#{t.project_id} #{t.first_name} #{t.fail_count} Grade:#{t.grade} Count:#{task_count[t.grade]}"
-      
-      red_pct = ((t.fail_count + t.do_not_resubmit_count + t.time_exceeded_count)/ task_count).signif(2)
-      orange_pct = ((t.redo_count + t.need_help_count + t.fix_and_resubmit_count) / task_count).signif(2)
-      green_pct = ((t.discuss_count + t.demonstrate_count + t.complete_count) / task_count).signif(2)
-      blue_pct = (t.ready_to_mark_count / task_count).signif(2)
-      grey_pct = (1 - red_pct - orange_pct - green_pct - blue_pct).signif(2)
+  # Calculate the task stats text to send progress data back to the client
+  # Total task counts must contain an array of the cummulative task counts (with none being 0)
+  # Project task counts is an object with fail_count, complete_count etc for each status
+  def self.create_task_stats_from(total_task_counts, project_task_counts, target_grade)
+    red_pct = ((project_task_counts.fail_count + project_task_counts.do_not_resubmit_count + project_task_counts.time_exceeded_count) / total_task_counts[target_grade]).signif(2)
+    orange_pct = ((project_task_counts.redo_count + project_task_counts.need_help_count + project_task_counts.fix_and_resubmit_count) / total_task_counts[target_grade]).signif(2)
+    green_pct = ((project_task_counts.discuss_count + project_task_counts.demonstrate_count + project_task_counts.complete_count) / total_task_counts[target_grade]).signif(2)
+    blue_pct = (project_task_counts.ready_to_mark_count / total_task_counts[target_grade]).signif(2)
+    grey_pct = (1 - red_pct - orange_pct - green_pct - blue_pct).signif(2)
 
-      "#{red_pct}|#{grey_pct}|#{orange_pct}|#{blue_pct}|#{green_pct}"
-    end.first
+    order_scale = green_pct * 100 + blue_pct * 100 + orange_pct * 10 - red_pct
+
+    {
+      red_pct: red_pct,
+      grey_pct: grey_pct,
+      orange_pct: orange_pct,
+      blue_pct: blue_pct,
+      green_pct: green_pct,
+      order_scale: order_scale
+    }
+  end
+
+  def task_stats
+    task_count = [0, 1, 2, 3].map do |e|
+      unit.task_definitions.where("target_grade <= #{e}").count + 0.0
+    end.map { |e| e == 0 ? 1 : e }
+
+    result = assigned_tasks
+        .group('project_id')
+        .select(
+          'project_id',
+          *TaskStatus.all.map { |s| "SUM(CASE WHEN tasks.task_status_id = #{s.id} THEN 1 ELSE 0 END) AS #{s.status_key}_count" }
+        )
+        .map do |t| Project.create_task_stats_from(task_count, t, target_grade) end
+        .first
 
     if result.nil?
-      '0|1|0|0|0'
+      {
+        red_pct: 0,
+        grey_pct: 1,
+        orange_pct: 0,
+        blue_pct: 0,
+        green_pct: 0,
+        order_scale: 0
+      }
     else
       result
     end
@@ -604,24 +641,6 @@ class Project < ActiveRecord::Base
 
   def total_task_weight
     assigned_task_defs.map(&:weighting).inject(:+)
-  end
-
-  #
-  # Tasks currently due - but not complete
-  #
-  def currently_due_tasks
-    assigned_tasks.select(&:currently_due?)
-  end
-
-  #
-  # All tasks currently due
-  #
-  def due_tasks
-    assigned_tasks.select { |task| task.target_date < reference_date }
-  end
-
-  def overdue_tasks
-    assigned_tasks.select(&:overdue?)
   end
 
   def remaining_days
@@ -772,93 +791,12 @@ class Project < ActiveRecord::Base
     end
   end
 
-  #
-  # Make file coverpage
-  #
-  def create_task_cover_page(dest_dir)
-    #
-    # check later -- not working at the moment fa not rendering in pdfkit
-    # @acain: this won't work as we haven't imported font-awesome on the server
-    #
-    # status_icons = {
-    #   ready_to_mark: 'fa fa-thumbs-o-up',
-    #   not_started: 'fa fa-times',
-    #   working_on_it: 'fa fa-bolt',
-    #   need_help: 'fa fa-question-circle',
-    #   redo: 'fa fa-refresh',
-    #   do_not_resubmit: 'fa fa-stop',
-    #   fix_and_resubmit: 'fa fa-wrench',
-    #   discuss: 'fa fa-check',
-    #   complete: 'fa fa-check-circle-o'
-    # }
-
-    grade_descs = [
-      'Pass',
-      'Credit',
-      'Distinction',
-      'High Distinction'
-    ]
-
-    ordered_tasks = tasks.joins(:task_definition).order('task_definitions.target_date, task_definitions.abbreviation').select { |task| task.task_definition.target_grade <= target_grade }
-    host = Doubtfire::Application.config.institution[:host]
-    coverpage_html = <<EOF
-<html>
-  <head>
-    <link rel='stylesheet' type='text/css' href='https://#{host}/assets/doubtfire.css'>
-  </head>
-  <body>
-    <h2>
-      #{unit.name} <small>#{unit.code}</small>
-      <p class="lead">#{student.name} <small>#{student.username}</small></p>
-    </h2>
-    <h1>Tasks for #{student.name}</h1>
-    <table class='table table-striped'>
-      <thead>
-        <th>Task</th>
-        <th colspan='2'>Status</th>
-        <th>Included</th>
-        <th>Grade</th>
-      </thead>
-      <tbody>
-EOF
-
-    ordered_tasks.each do |task|
-      task_row_html = <<EOF
-<tr>
-  <td>#{task.task_definition.name}</td>
-  <td>#{task.task_status.name}</td>
-  <td><button type='button' class='col-xs-12 btn btn-default task-status #{task.status.to_s.dasherize}'>#{task.task_definition.abbreviation}</button></td>
-  <td><i class="glyphicon glyphicon-#{(task.include_in_portfolio && task.has_pdf ? 'checked' : 'unchecked')}"></i></td>
-  <td>#{task.grade.nil? ? 'N/A' : grade_descs[task.grade]}</td>
-</tr>
-EOF
-      coverpage_html << task_row_html
-    end
-
-    coverpage_html << '</tbody></table></body></html>'
-
-    cover_filename = File.join(dest_dir, 'task.cover.html')
-
-    logger.debug("Generating cover page #{cover_filename} - #{log_details}")
-
-    #
-    # Create cover page for the submitted file (<taskid>/file0.cover.html etc.)
-    #
-    logger.debug "Generating cover page #{cover_filename} - #{log_details}"
-
-    coverp_file = File.new(cover_filename, 'w')
-    coverp_file.write(coverpage_html)
-    coverp_file.close
-
-    cover_filename
-  end
-
   def portfolio_path
     File.join(FileHelper.student_portfolio_dir(self, true), FileHelper.sanitized_filename("#{student.username}-portfolio.pdf"))
   end
 
   def has_portfolio
-    !portfolio_production_date.nil?
+    (!portfolio_production_date.nil?) && portfolio_available
   end
 
   def portfolio_status
