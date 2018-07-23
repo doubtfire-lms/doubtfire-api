@@ -43,16 +43,22 @@ class UnitSerializer < ActiveModel::Serializer
   has_many :group_sets, serializer: GroupSetSerializer
   has_many :ilos, serializer: LearningOutcomeSerializer
   has_many :task_outcome_alignments, serializer: LearningOutcomeTaskLinkSerializer
+  has_many :groups, serializer: DeepGroupSerializer
 
   def include_convenors?
     ([ Role.convenor, :convenor ].include? my_role_obj) || (my_user_role == Role.admin)
   end
 
   def include_staff?
-    ([ Role.convenor, :convenor ].include? my_role_obj) || (my_user_role == Role.admin)
+    ([ Role.convenor, :convenor, Role.tutor, :tutor ].include? my_role_obj) || (my_user_role == Role.admin)
+  end
+
+  def include_groups?
+    ([ Role.convenor, :convenor, Role.tutor, :tutor ].include? my_role_obj) || (my_user_role == Role.admin)
   end
 
   def filter(keys)
+    keys.delete :groups unless include_groups?
     keys.delete :convenors unless include_convenors?
     keys.delete :staff unless include_staff?
     keys

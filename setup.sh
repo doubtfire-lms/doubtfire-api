@@ -189,7 +189,7 @@ install_postgres () {
 install_native_tools () {
     msg "Installing native tools..."
     if is_mac; then
-        brew install imagemagick@6 libmagic ghostscript
+        brew install imagemagick@6 libmagic ghostscript ffmpeg
         brew link --force imagemagick@6
         msg "Trying to install pygments with easy_install, please enter your password"
         sudo easy_install Pygments
@@ -198,7 +198,8 @@ install_native_tools () {
                        imagemagick \
                        libmagickwand-dev \
                        libmagic-dev \
-                       python-pygments
+                       python-pygments \
+                       ffmpeg
     fi
     if [ $? -ne 0 ]; then
         error "Could not install native tools, please review the terminal window for details."

@@ -11,7 +11,7 @@
       font-size: 0.9em;
     }
     main {
-      background-image: url('http://<%= @doubtfire_host %>/assets/images/logo.png');
+      background-image: url('https://<%= @doubtfire_host %>/assets/images/logo.svg');
       background-size: 3.5em;
       background-repeat: no-repeat;
       background-position: 30px 45px;
@@ -46,9 +46,9 @@
 <body>
   <main>
     <h1> <%= @doubtfire_product_name %> Notification </h1>
-    <p>Hi <%= @student.first_name %>,<p/>
+    <p>Hi <%= @student.first_name %>,</p>
     <p>
-        There was an error compiling your portfolio. This usually means that one of your task PDFs is corrupt. Login to <a href="http://<%= @doubtfire_host %>">Doubtfire</a> and check each of your task PDFs. Once you have checked that all of the PDFs are valid you can schedule your portfolio to compile again.
+        There was an error compiling your portfolio. This usually means that one of your task PDFs is corrupt. Login to <a href="https://<%= @doubtfire_host %>"><%= @doubtfire_product_name %></a> and check each of your task PDFs. Once you have checked that all of the PDFs are valid you can schedule your portfolio to compile again.
     </p>
     <p>
         Cheers, <br />

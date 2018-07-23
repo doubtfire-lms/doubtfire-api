@@ -11,7 +11,9 @@ module Api
 
     desc 'Add a new comment to a task'
     params do
-      requires :comment, type: String, desc: 'The comment text to add to the task'
+      optional :type, type: Symbol, default: :text, values: [:text, :image, :audio, :video], desc: 'The type of comment to add to the task'
+      optional :comment, type: String, desc: 'The comment text to add to the task'
+      optional :attachment, type: Rack::Multipart::UploadedFile, desc: 'Image, sound, or video comment file'
     end
     post '/projects/:project_id/task_def_id/:task_definition_id/comments' do
       project = Project.find(params[:project_id])
@@ -21,14 +23,97 @@ module Api
         error!({ error: 'Not authorised to create a comment for this task' }, 403)
       end
 
+      content_type = params[:type].present? ? params[:type] : :text
+      text_comment = params[:comment]
+      attached_file = params[:attachment]
+
+      if attached_file.present?
+        error!({error: "Attachment exceeds the maximum attachment size of 30MB."}) unless File.size?(attached_file.tempfile.path) < 30_000_000
+      end
+
       task = project.task_for_task_definition(task_definition)
-      result = task.add_comment current_user, params[:comment]
+      type_string = content_type.to_s
+
+      logger.info("#{current_user.username} - added comment - #{content_type} - for task #{task.id} (#{task_definition.abbreviation})")
+
+      if content_type == :text
+        error!({ error: "Comment text is empty, unable to add new comment"}, 403) unless text_comment.present?
+        
+        result = task.add_text_comment(current_user, text_comment)
+      else
+        error!({ error: "No file attached for this comment"}, 403) unless attached_file.present?
+        unless FileHelper.accept_file(attached_file, "comment attachment - TaskComment", type_string)
+          error!({ error: "File #{attached_file[:type]} attached is not a valid #{type_string} file" }, 403)
+        end
+
+        result = task.add_comment_with_attachment(current_user, attached_file, content_type)
+      end
 
       if result.nil?
         error!({ error: 'No comment added. Comment duplicates last comment, so ignored.' }, 403)
       else
         result.mark_as_read(current_user, project.unit)
-        result
+        result.serialize(current_user)
+      end
+    end
+
+    desc 'Get an attachment related to a task comment'
+    params do
+      optional :as_attachment, type: Boolean, desc: 'Whether or not to download file as attachment. Default is false.'
+    end
+    get '/projects/:project_id/task_def_id/:task_definition_id/comments/:id' do
+      project = Project.find(params[:project_id])
+      task_definition = project.unit.task_definitions.find(params[:task_definition_id])
+
+      unless authorise? current_user, project, :get
+        error!({ error: 'You cannot read the comments for this task' }, 403)
+      end
+
+      if project.has_task_for_task_definition? task_definition
+        task = project.task_for_task_definition(task_definition)
+
+        comment = task.comments.find(params[:id])
+
+        error!({error: 'No attachment for this comment.'}, 404) unless ["audio", "image"].include? comment.content_type
+
+        error!({error: 'Image missing'}, 404) unless File.exists? comment.attachment_path
+
+        # Set return content type
+        content_type comment.attachment_mime_type
+        env['api.format'] = :binary
+
+        # mark as attachment
+        if params[:as_attachment]
+          header['Content-Disposition'] = "attachment; filename=#{comment.attachment_file_name}"
+        end
+
+        # Work out what part to return
+        file_size = File.size(comment.attachment_path)
+        begin_point = 0
+        end_point = file_size - 1
+
+        # Was it asked for just a part of the file?
+        if request.headers['Range']
+          # indicate partial content
+          status 206
+
+          # extract part desired from the content
+          if request.headers['Range'] =~ /bytes\=(\d+)\-(\d*)/
+            begin_point = $1.to_i
+            end_point = $2.to_i if $2.present?
+          end
+
+          end_point = file_size - 1 unless end_point < file_size - 1
+        end
+
+        # Return the requested content
+        content_length = end_point - begin_point + 1
+        header['Content-Range'] = "bytes #{begin_point}-#{end_point}/#{file_size}"
+        header['Content-Length'] = content_length.to_s
+        header['Accept-Ranges'] = 'bytes'
+
+        # Read the binary data and return
+        IO.binread(comment.attachment_path, content_length, begin_point)
       end
     end
 
@@ -45,25 +130,7 @@ module Api
         task = project.task_for_task_definition(task_definition)
 
         comments = task.all_comments.order('created_at ASC')
-        result = comments.map do |c|
-          {
-            id: c.id,
-            comment: c.comment,
-            is_new: c.new_for?(current_user),
-            author: {
-              id: c.user.id,
-              name: c.user.name,
-              email: c.user.email
-            },
-            recipient: {
-              id: c.recipient.id,
-              name: c.recipient.name,
-              email: c.user.email
-            },
-            created_at: c.created_at,
-            recipient_read_time: c.time_read_by(c.recipient),
-          }
-        end
+        result = comments.map { |c| c.serialize(current_user) }          
         task.mark_comments_as_read(current_user, comments)
       else
         result = []
