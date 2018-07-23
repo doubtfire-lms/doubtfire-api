@@ -19,10 +19,14 @@ class TeachingPeriod < ActiveRecord::Base
     current_unit = Unit.find(unit_id)
     new_unit = current_unit.dup
     new_unit.save!
+    add_unit_associations(current_unit,new_unit)
+    new_unit
+  end
 
+  def add_unit_associations(current_unit, new_unit)
     add_task_definitions(current_unit, new_unit)
     add_learning_outcomes(current_unit, new_unit)
-    new_unit
+    add_group_sets(current_unit, new_unit)
   end
 
   def add_task_definitions(current_unit, new_unit)
