@@ -1,6 +1,6 @@
 require 'grape'
 
-class TaskDownloadsController < ApplicationController
+class TaskSubmissionPdfsController < ApplicationController
   include AuthenticationHelpers
   include AuthorisationHelpers
   include LogHelper
@@ -17,27 +17,27 @@ class TaskDownloadsController < ApplicationController
     raise MyException.new(status), message
   end
 
-  # desc "Retrieve tasks for a unit"
+  # desc "Retrieve student PDFs for a unit"
   def index
     unless authenticated?
-      error!({ error: "Not authorised to download tasks for unit '#{params[:id]}'" }, 401)
+      error!({ error: "Not authorised to download student PDFs for unit '#{params[:id]}'" }, 401)
     end
 
     unit = Unit.find(params[:id])
 
     unless authorise? current_user, unit, :provide_feedback
-      error!({ error: "Not authorised to download tasks for unit '#{params[:id]}'" }, 401)
+      error!({ error: "Not authorised to download  student PDFs for unit '#{params[:id]}'" }, 401)
     end
 
     td = unit.task_definitions.find(params[:task_def_id])
 
-    output_zip = unit.get_task_submissions_zip(current_user, td)
+    output_zip = unit.get_task_submissions_pdf_zip(current_user, td)
 
     error!({ error: 'No files to download' }, 403) if output_zip.nil?
 
     # Set download headers...
     # content_type "application/octet-stream"
-    download_id = "#{Time.new.strftime('%Y-%m-%d %H:%m:%S')}-#{unit.code}-#{td.abbreviation}-#{current_user.username}-files"
+    download_id = "#{Time.new.strftime('%Y-%m-%d %H:%m:%S')}-#{unit.code}-#{td.abbreviation}-#{current_user.username}-pdfs"
     download_id.gsub! /[\\\/]/, '-'
     download_id = FileHelper.sanitized_filename(download_id)
     # header['Content-Disposition'] = "attachment; filename=#{download_id}.zip"
