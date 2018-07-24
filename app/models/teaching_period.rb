@@ -19,8 +19,13 @@ class TeachingPeriod < ActiveRecord::Base
     current_unit = Unit.find(unit_id)
     new_unit = current_unit.dup
     new_unit.save!
+    add_teaching_period(new_unit)
     add_unit_associations(current_unit,new_unit)
     new_unit
+  end
+
+  def add_teaching_period(new_unit)
+    new_unit.teaching_period_id = self.id
   end
 
   def add_unit_associations(current_unit, new_unit)
