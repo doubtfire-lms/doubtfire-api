@@ -27,6 +27,7 @@ class TeachingPeriod < ActiveRecord::Base
     add_task_definitions(current_unit, new_unit)
     add_learning_outcomes(current_unit, new_unit)
     add_group_sets(current_unit, new_unit)
+    add_convenors(current_unit, new_unit)
   end
 
   def add_task_definitions(current_unit, new_unit)
@@ -44,6 +45,12 @@ class TeachingPeriod < ActiveRecord::Base
   def add_group_sets(current_unit, new_unit)
     current_unit.group_sets.each do |group_sets|
       new_unit.group_sets << group_sets.dup
+    end
+  end
+
+  def add_convenors(current_unit, new_unit)
+    current_unit.convenors.each do |convenors|
+      new_unit.convenors << convenors.dup
     end
   end
 end
