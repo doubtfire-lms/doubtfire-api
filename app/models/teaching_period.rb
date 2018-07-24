@@ -18,8 +18,8 @@ class TeachingPeriod < ActiveRecord::Base
   def roll_over(unit_id)
     current_unit = Unit.find(unit_id)
     new_unit = current_unit.dup
-    new_unit.save!
     add_teaching_period(new_unit)
+    new_unit.save!
     add_unit_associations(current_unit,new_unit)
     new_unit
   end
