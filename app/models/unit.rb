@@ -351,6 +351,10 @@ class Unit < ActiveRecord::Base
       }
     end
 
+    # Record changes ready to process - map on username to ensure only one option per user
+    # enrol will override withdraw
+    changes = {}
+
     # Determine kind of file to process
     CSV.foreach(file, headers: true,
                       header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
@@ -365,13 +369,47 @@ class Unit < ActiveRecord::Base
       begin
         row_data = import_settings[:fetch_row_data_lambda].call(row, self)
 
+        row_data[:row] = row
+
         if row_data[:username].nil?
           ignored << { row: row, message: "Skipping row with missing username" }
           next
         end
 
         unit_code = row_data[:unit_code]
+
+        if unit_code != code
+          ignored << { row: row, message: "Invalid unit code. #{unit_code} does not match #{code}" }
+          next
+        end
+
+        # now record changes...
         username = row_data[:username].downcase
+
+        # do we already have this user?
+        if changes.key? username
+          if row_data[:enrolled] # they should be enrolled - record that... overriding anything else
+            # record previous row as ignored
+            ignored << { row: changes[username][:row], message: "Skipping withdraw as also includes enrol" }
+            changes[username] = row_data
+          else
+            # record this row as skipped
+            ignored << { row: row, message: "Skipping withdraw as also includes enrol" }
+          end
+        else #dont have the user so record them - will add to result when processed
+          changes[username] = row_data
+        end
+      rescue Exception => e
+        errors << { row: row, message: e.message }
+      end 
+    end # for each csv row
+
+    # now apply the changes...
+    changes.each do |key, row_data|
+      begin
+        row = row_data[:row]
+        username = row_data[:username].downcase
+        unit_code = row_data[:unit_code]
         student_id = row_data[:student_id]
         first_name = row_data[:first_name].nil? ? nil : row_data[:first_name].titleize
         last_name = row_data[:last_name].nil? ? nil : row_data[:last_name].titleize
@@ -384,17 +422,10 @@ class Unit < ActiveRecord::Base
         last_name = last_name || first_name
         nickname = nickname || first_name
 
-        if unit_code != code
-          ignored << { row: row, message: "Invalid unit code. #{unit_code} does not match #{code}" }
-          next
-        end
-
         if !email =~ /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\z/i
           errors << { row: row, message: "Invalid email address (#{email})" }
           next
         end
-
-        username = username.downcase
 
         # Perform withdraw if needed...
         unless row_data[:enrolled]
