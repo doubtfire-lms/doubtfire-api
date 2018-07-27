@@ -151,6 +151,30 @@ module Api
       ShallowUnitSerializer.new(unit)
     end
 
+    desc 'Rollover unit'
+    params do
+      optional :teaching_period_id
+      optional :start_date
+      optional :end_date
+
+      mutually_exclusive :teaching_period_id,:start_date
+      all_or_none_of :start_date, :end_date
+    end
+    post '/units/:id/rollover' do
+      unless authorise? current_user, User, :create_unit
+        error!({ error: 'Not authorised to create a unit' }, 403)
+      end
+
+      unit = Unit.find(params[:id])
+      teaching_period_id = params[:teaching_period_id]
+
+      if teaching_period_id.present?
+        unit.roll_over(teaching_period_id, nil, nil)
+      else
+        unit.roll_over(nil, params[:start_date], params[:end_date])
+      end
+    end
+
     desc 'Add a tutorial with the provided details to this unit'
     params do
       # day, time, location, tutor_username, abbrev
