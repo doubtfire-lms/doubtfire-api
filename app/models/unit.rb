@@ -142,6 +142,7 @@ class Unit < ActiveRecord::Base
     else
       new_unit.set_custom_dates(start_date, end_date)
     end
+    new_unit
   end
 
   def set_teaching_period(teaching_period_id)
