@@ -157,7 +157,7 @@ module Api
       optional :start_date
       optional :end_date
 
-      mutually_exclusive :teaching_period_id,:start_date
+      exactly_one_of :teaching_period_id, :start_date
       all_or_none_of :start_date, :end_date
     end
     post '/units/:id/rollover' do
