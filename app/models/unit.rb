@@ -135,6 +135,15 @@ class Unit < ActiveRecord::Base
     end
   end
 
+  def roll_over(teaching_period_id, start_date, end_date)
+    new_unit = self.dup
+    if teaching_period_id.present?
+      new_unit.add_teaching_period(teaching_period_id)
+    else
+      new_unit.set_custom_dates(start_date, end_date)
+    end
+  end
+
   def ordered_ilos
     learning_outcomes.order(:ilo_number)
   end
