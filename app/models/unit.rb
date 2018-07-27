@@ -146,6 +146,7 @@ class Unit < ActiveRecord::Base
 
   def set_teaching_period(teaching_period_id)
     self.teaching_period_id = teaching_period_id
+    self.save!
   end
 
   def ordered_ilos
