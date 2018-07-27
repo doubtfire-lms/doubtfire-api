@@ -305,6 +305,10 @@ class TaskDefinition < ActiveRecord::Base
   def adjust_dates(diff_in_sec)
     self.target_date = self.target_date + diff_in_sec
     self.start_date = self.start_date + diff_in_sec
+
+    if self.due_date < unit.end_date
+      self.due_date = self.due_date + diff_in_sec
+    end
   end
 
   def to_csv_row
