@@ -15,10 +15,6 @@ class TeachingPeriod < ActiveRecord::Base
     end
   end
 
-  def add_teaching_period(new_unit)
-    new_unit.teaching_period_id = self.id
-  end
-
   def add_unit_associations(current_unit, new_unit)
     add_task_definitions(current_unit, new_unit)
     add_learning_outcomes(current_unit, new_unit)
