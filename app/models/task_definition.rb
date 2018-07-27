@@ -302,6 +302,11 @@ class TaskDefinition < ActiveRecord::Base
     end
   end
 
+  def adjust_dates(diff_in_sec)
+    self.target_date = self.target_date + diff_in_sec
+    self.start_date = self.start_date + diff_in_sec
+  end
+
   def to_csv_row
     TaskDefinition.csv_columns
                   .reject { |col| [:start_week, :start_day, :target_week, :target_day, :due_week, :due_day, :upload_requirements, :plagiarism_checks, :group_set].include? col }
