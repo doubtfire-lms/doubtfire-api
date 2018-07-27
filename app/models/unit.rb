@@ -150,6 +150,12 @@ class Unit < ActiveRecord::Base
     self.save!
   end
 
+  def set_custom_dates(start_date, end_date)
+    self.start_date = start_date
+    self.end_date = end_date
+    self.save!
+  end
+
   def ordered_ilos
     learning_outcomes.order(:ilo_number)
   end
