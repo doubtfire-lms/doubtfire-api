@@ -152,6 +152,16 @@ class Unit < ActiveRecord::Base
   end
 
   def add_associations(unit)
+    self.duplicate_task_definitions(unit)
+  end
+
+  def duplicate_task_definitions(unit)
+    diff_in_sec = (self.start_date - unit.start_date).to_i
+    unit.task_definitions.each do |task_definitions|
+      new_task_definitions = task_definitions.dup
+      new_task_definitions.adjust_dates(diff_in_sec)
+      self.task_definitions << new_task_definitions
+    end
   end
 
   def set_custom_dates(start_date, end_date)
