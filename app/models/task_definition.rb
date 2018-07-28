@@ -306,6 +306,7 @@ class TaskDefinition < ActiveRecord::Base
     self.target_date = self.target_date + diff_in_sec
     self.start_date = self.start_date + diff_in_sec
 
+    # Check to make sure that self.due_date is not returning the end date of the unit
     if self.due_date < unit.end_date
       self.due_date = self.due_date + diff_in_sec
     end
