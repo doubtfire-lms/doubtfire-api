@@ -14,35 +14,4 @@ class TeachingPeriod < ActiveRecord::Base
       errors.add(:end_date, "should be after the Start date")
     end
   end
-
-  def add_unit_associations(current_unit, new_unit)
-    add_task_definitions(current_unit, new_unit)
-    add_learning_outcomes(current_unit, new_unit)
-    add_group_sets(current_unit, new_unit)
-    add_convenors(current_unit, new_unit)
-  end
-
-  def add_task_definitions(current_unit, new_unit)
-    current_unit.task_definitions.each do |task_definitions|
-      new_unit.task_definitions << task_definitions.dup
-    end
-  end
-
-  def add_learning_outcomes(current_unit, new_unit)
-    current_unit.learning_outcomes.each do |learning_outcomes|
-      new_unit.learning_outcomes << learning_outcomes.dup
-    end
-  end
-
-  def add_group_sets(current_unit, new_unit)
-    current_unit.group_sets.each do |group_sets|
-      new_unit.group_sets << group_sets.dup
-    end
-  end
-
-  def add_convenors(current_unit, new_unit)
-    current_unit.convenors.each do |convenors|
-      new_unit.convenors << convenors.dup
-    end
-  end
 end
