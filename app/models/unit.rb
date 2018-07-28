@@ -154,6 +154,7 @@ class Unit < ActiveRecord::Base
   def add_associations(unit)
     self.duplicate_task_definitions_from_existing_unit(unit)
     self.duplicate_learning_outcomes_from_existing_unit(unit)
+    self.duplicate_group_sets_from_existing_unit(unit)
   end
 
   def duplicate_task_definitions_from_existing_unit(unit)
@@ -168,6 +169,12 @@ class Unit < ActiveRecord::Base
   def duplicate_learning_outcomes_from_existing_unit(unit)
     unit.learning_outcomes.each do |learning_outcomes|
       self.learning_outcomes << learning_outcomes.dup
+    end
+  end
+
+  def duplicate_group_sets_from_existing_unit(unit)
+    unit.group_sets.each do |group_sets|
+      self.group_sets << group_sets.dup
     end
   end
 
