@@ -155,6 +155,7 @@ class Unit < ActiveRecord::Base
     self.duplicate_task_definitions_from_existing_unit(unit)
     self.duplicate_learning_outcomes_from_existing_unit(unit)
     self.duplicate_group_sets_from_existing_unit(unit)
+    self.duplicate_convenors_from_existing_unit(unit)
   end
 
   def duplicate_task_definitions_from_existing_unit(unit)
@@ -175,6 +176,12 @@ class Unit < ActiveRecord::Base
   def duplicate_group_sets_from_existing_unit(unit)
     unit.group_sets.each do |group_sets|
       self.group_sets << group_sets.dup
+    end
+  end
+
+  def duplicate_convenors_from_existing_unit(unit)
+    unit.convenors.each do |convenors|
+      self.convenors << convenors.dup
     end
   end
 
