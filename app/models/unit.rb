@@ -152,11 +152,11 @@ class Unit < ActiveRecord::Base
   end
 
   def add_associations(unit)
-    self.duplicate_task_definitions(unit)
+    self.duplicate_task_definitions_from_existing_unit(unit)
     self.duplicate_learning_outcomes_from_existing_unit(unit)
   end
 
-  def duplicate_task_definitions(unit)
+  def duplicate_task_definitions_from_existing_unit(unit)
     diff_in_sec = (self.start_date - unit.start_date).to_i
     unit.task_definitions.each do |task_definitions|
       new_task_definitions = task_definitions.dup
