@@ -1403,7 +1403,7 @@ class Unit < ActiveRecord::Base
   def tasks_for_task_inbox(user)
     get_all_tasks_for(user)
       .having('task_statuses.id IN (:ids) OR SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) > 0', ids: [ TaskStatus.ready_to_mark, TaskStatus.need_help ])
-      .order('start_date ASC, task_definition_id ASC, submission_date ASC, MAX(task_comments.created_at) ASC')
+      .order('submission_date ASC, MAX(task_comments.created_at) ASC, task_definition_id ASC')
   end
 
   #
