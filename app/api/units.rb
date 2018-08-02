@@ -161,11 +161,12 @@ module Api
       all_or_none_of :start_date, :end_date
     end
     post '/units/:id/rollover' do
-      unless authorise? current_user, User, :create_unit
-        error!({ error: 'Not authorised to create a unit' }, 403)
+      unit = Unit.find(params[:id])
+
+      if !(authorise?( current_user, User, :rollover) || authorise?( current_user, unit, :rollover_unit))
+        error!({ error: 'Not authorised to rollover a unit' }, 403)
       end
 
-      unit = Unit.find(params[:id])
       teaching_period_id = params[:teaching_period_id]
 
       if teaching_period_id.present?
