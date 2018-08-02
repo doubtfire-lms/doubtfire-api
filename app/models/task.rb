@@ -511,7 +511,7 @@ class Task < ActiveRecord::Base
     comment.content_type = :text
     comment.recipient = user == project.student ? project.main_tutor : project.student
     comment.save!
-    comment    
+    comment
   end
 
   def add_comment_with_attachment(user, tempfile)
@@ -527,7 +527,7 @@ class Task < ActiveRecord::Base
     else
       raise "Unknown comment attachment type"
     end
-    
+
     comment.recipient = user == project.student ? project.main_tutor : project.student
     raise "Error attaching uploaded file." unless comment.add_attachment(tempfile)
     comment.save!
@@ -643,7 +643,7 @@ class Task < ActiveRecord::Base
       # Ensure that this task is the submitter task for a  group_task... otherwise
       # remove this submission
       raise "Multiple team member submissions received at the same time. Please ensure that only one member submits the task." if group_task? && self != group_submission.submitter_task
-      
+
       zip_file = zip_file_path_for_done_task
       return false if zip_file.nil? || (!Dir.exist? task_dir)
 
