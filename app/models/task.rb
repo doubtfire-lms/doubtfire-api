@@ -514,13 +514,20 @@ class Task < ActiveRecord::Base
     comment    
   end
 
-  def add_comment_with_attachment(user, tempfile, type)
+  def add_comment_with_attachment(user, tempfile)
     ensured_group_submission if group_task?
 
     comment = TaskComment.create
     comment.task = self
     comment.user = user
-    comment.content_type = type
+    if FileHelper.accept_file(tempfile, "comment attachment audio test", "audio")
+      comment.content_type = :audio
+    elsif FileHelper.accept_file(tempfile, "comment attachment image test", "image")
+      comment.content_type = :image
+    else
+      raise "Unknown comment attachment type"
+    end
+    
     comment.recipient = user == project.student ? project.main_tutor : project.student
     raise "Error attaching uploaded file." unless comment.add_attachment(tempfile)
     comment.save!
