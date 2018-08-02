@@ -11,7 +11,6 @@ module Api
 
     desc 'Add a new comment to a task'
     params do
-      optional :type, type: Symbol, default: :text, values: [:text, :image, :audio, :video], desc: 'The type of comment to add to the task'
       optional :comment, type: String, desc: 'The comment text to add to the task'
       optional :attachment, type: Rack::Multipart::UploadedFile, desc: 'Image, sound, or video comment file'
     end
@@ -23,7 +22,6 @@ module Api
         error!({ error: 'Not authorised to create a comment for this task' }, 403)
       end
 
-      content_type = params[:type].present? ? params[:type] : :text
       text_comment = params[:comment]
       attached_file = params[:attachment]
 
@@ -34,19 +32,17 @@ module Api
       task = project.task_for_task_definition(task_definition)
       type_string = content_type.to_s
 
-      logger.info("#{current_user.username} - added comment - #{content_type} - for task #{task.id} (#{task_definition.abbreviation})")
+      logger.info("#{current_user.username} - added comment for task #{task.id} (#{task_definition.abbreviation})")
 
-      if content_type == :text
+      if attached_file.empty?
         error!({ error: "Comment text is empty, unable to add new comment"}, 403) unless text_comment.present?
-        
         result = task.add_text_comment(current_user, text_comment)
       else
-        error!({ error: "No file attached for this comment"}, 403) unless attached_file.present?
-        unless FileHelper.accept_file(attached_file, "comment attachment - TaskComment", type_string)
-          error!({ error: "File #{attached_file[:type]} attached is not a valid #{type_string} file" }, 403)
+        unless FileHelper.accept_file(attached_file, "comment attachment - TaskComment", "comment_attachment")
+          error!({ error: "Please upload only images and audio" }, 403)
         end
 
-        result = task.add_comment_with_attachment(current_user, attached_file, content_type)
+        result = task.add_comment_with_attachment(current_user, attached_file)
       end
 
       if result.nil?
