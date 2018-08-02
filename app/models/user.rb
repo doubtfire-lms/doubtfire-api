@@ -279,7 +279,8 @@ class User < ActiveRecord::Base
       :convene_units,
       :download_stats,
       :handle_teaching_period,
-      :get_teaching_periods
+      :get_teaching_periods,
+      :rollover
     ]
 
     # What can convenors do with users?
