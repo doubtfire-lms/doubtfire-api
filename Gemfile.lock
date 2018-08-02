@@ -91,7 +91,6 @@ GEM
       railties (>= 3.0.0)
     faker (1.6.3)
       i18n (~> 0.5)
-    fattr (2.3.0)
     globalid (0.3.6)
       activesupport (>= 4.1.0)
     grape (0.16.2)
@@ -234,8 +233,6 @@ GEM
       activesupport (>= 4.0)
       sprockets (>= 3.0.0)
     terminal-notifier (1.6.3)
-    terminator (1.0.0)
-      fattr (>= 2.2)
     thin (1.7.0)
       daemons (~> 1.0, >= 1.0.9)
       eventmachine (~> 1.0, >= 1.0.4)
@@ -294,7 +291,6 @@ DEPENDENCIES
   rubocop (= 0.46.0)
   ruby-filemagic
   rubyzip
-  terminator
   thin
 
 RUBY VERSION
