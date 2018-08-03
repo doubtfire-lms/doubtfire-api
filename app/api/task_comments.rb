@@ -34,7 +34,7 @@ module Api
 
       logger.info("#{current_user.username} - added comment for task #{task.id} (#{task_definition.abbreviation})")
 
-      if attached_file.empty?
+      if attached_file.nil? || attached_file.empty?
         error!({ error: "Comment text is empty, unable to add new comment"}, 403) unless text_comment.present?
         result = task.add_text_comment(current_user, text_comment)
       else
