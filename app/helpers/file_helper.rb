@@ -280,7 +280,7 @@ module FileHelper
     # Scan last 1024 bytes for the EOF mark
     return false unless File.exist? filename
     File.open(filename) do |f|
-      f.seek -2048, IO::SEEK_END
+      f.seek -4096, IO::SEEK_END unless f.size <= 4096
       f.read.include? '%%EOF'
     end
   end
