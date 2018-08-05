@@ -1,11 +1,13 @@
 language: ruby
 rvm:
   - 2.3.1
+sudo: true
 install:
   - sudo apt-get install libmagic-dev
   - sudo service postgresql stop
   - sudo apt-get install -y postgresql postgresql-contrib libpq-dev
   - sudo service postgresql start
+  - chmod 777 /home/travis/build/doubtfire-764-team1/doubtfire-api
   - sudo -u postgres createuser --superuser $USER
   - sudo -u postgres createdb $USER
   - psql -c "DO \$body\$ BEGIN IF NOT EXISTS (SELECT * FROM pg_catalog.pg_user WHERE  usename = 'itig') THEN CREATE ROLE itig WITH CREATEDB PASSWORD 'd872\$dh' LOGIN; END IF; END \$body\$;"
@@ -13,5 +15,3 @@ install:
 script:
   - bundle exec rake db:create
   - bundle exec rake test
-sudo: true
-dist: trusty
