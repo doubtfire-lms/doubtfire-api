@@ -3,6 +3,7 @@ rvm:
   - 2.3.1
 install:
   - sudo apt-get install libmagic-dev
+  - sudo service postgresql stop
   - sudo apt-get install -y postgresql postgresql-contrib libpq-dev
   - sudo -u postgres createuser --superuser $USER
   - sudo -u postgres createdb $USER
