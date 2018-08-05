@@ -5,6 +5,7 @@ install:
   - sudo apt-get install libmagic-dev
   - sudo service postgresql stop
   - sudo apt-get install -y postgresql postgresql-contrib libpq-dev
+  - sudo service postgresql start
   - sudo -u postgres createuser --superuser $USER
   - sudo -u postgres createdb $USER
   - psql -c "DO \$body\$ BEGIN IF NOT EXISTS (SELECT * FROM pg_catalog.pg_user WHERE  usename = 'itig') THEN CREATE ROLE itig WITH CREATEDB PASSWORD 'd872\$dh' LOGIN; END IF; END \$body\$;"
