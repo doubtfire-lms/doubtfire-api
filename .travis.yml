@@ -17,8 +17,6 @@ install:
 
 before_script:
   - sudo service postgresql start
-  - psql -c "create database $USER;" -U postgres
-  - psql -c "create user $USER"
   - psql -c "DO BEGIN IF NOT EXISTS (SELECT * FROM pg_catalog.pg_user WHERE  usename = 'itig') THEN CREATE ROLE itig WITH CREATEDB PASSWORD 'd872\$dh' LOGIN; END IF; END;"
 
 script:
