@@ -9,14 +9,14 @@ services:
   - postgresql
   
 addons:
-  postgresql: "10.0"
+  postgresql: "9.6"
   
 install:
   - sudo apt-get install libmagic-dev
   - bundle install --without production staging
 
 before_script:
-  - service postgresql start
+  - sudo service postgresql start
   - psql -c "create database $USER;" -U postgres
   - psql -c "create user $USER"
   - psql -c "DO BEGIN IF NOT EXISTS (SELECT * FROM pg_catalog.pg_user WHERE  usename = 'itig') THEN CREATE ROLE itig WITH CREATEDB PASSWORD 'd872\$dh' LOGIN; END IF; END;"
