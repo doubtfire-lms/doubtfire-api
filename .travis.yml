@@ -1,6 +1,9 @@
 language: ruby
 rvm:
   - 2.3.1
+install:
+  - sudo apt-get install libmagic-dev
+  - bundle install --without production staging
 script:
   - bundle exec rake db:create
   - bundle exec rake test
