@@ -19,7 +19,7 @@ before_script:
   - sudo service postgresql start
   - psql -c "CREATE ROLE itig WITH CREATEDB PASSWORD 'd872\$dh' LOGIN;"
   - bundle exec rake db:create
-  - bundle exec rake db:migrate RAILS_ENV=test --trace
+  - bundle exec rake db:populate --trace
 
 script:
   - bundle exec rake test
