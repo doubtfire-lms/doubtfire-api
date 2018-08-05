@@ -13,3 +13,5 @@ install:
 script:
   - bundle exec rake db:create
   - bundle exec rake test
+sudo: true
+dist: trusty
