@@ -3,9 +3,6 @@ language: ruby
 rvm:
   - 2.3.1
 
-env:
-  - EXTENDED="true"
-
 sudo: true
 
 services:
@@ -15,7 +12,7 @@ addons:
   postgresql: "9.6"
   
 install:
-  - sudo apt-get install -y ghostscript imagemagick libmagic-dev libmagickwand-dev libmagic-dev python-pygments ffmpeg
+  - sudo apt-get install -y ghostscript imagemagick libmagic-dev libmagickwand-dev libmagic-dev python-pygments libav-tools
   - sudo apt-get install texlive-full
   - bundle install --without production staging
   - rbenv rehash
