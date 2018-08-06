@@ -3,9 +3,6 @@ language: ruby
 rvm:
   - 2.3.1
 
-git:
-  - depth: 3
-
 sudo: true
 
 services:
@@ -15,6 +12,9 @@ addons:
   postgresql: "9.6"
   apt:
     update: true
+
+git:
+  depth: 3
   
 install:
   - sudo apt-get install -y ghostscript imagemagick libmagic-dev libmagickwand-dev libmagic-dev python-pygments libav-tools
