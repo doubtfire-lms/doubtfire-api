@@ -3,6 +3,9 @@ language: ruby
 rvm:
   - 2.3.1
 
+git:
+  - depth: 3
+
 sudo: true
 
 services:
