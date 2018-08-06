@@ -10,6 +10,8 @@ services:
   
 addons:
   postgresql: "9.6"
+  apt:
+    update: true
   
 install:
   - sudo apt-get install -y ghostscript imagemagick libmagic-dev libmagickwand-dev libmagic-dev python-pygments libav-tools
