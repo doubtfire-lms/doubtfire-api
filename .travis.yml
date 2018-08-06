@@ -15,8 +15,10 @@ addons:
   postgresql: "9.6"
   
 install:
-  - sudo apt-get install libmagic-dev
+  - sudo apt-get install -y ghostscript imagemagick libmagic-dev libmagickwand-dev libmagic-dev python-pygments ffmpeg
+  - sudo apt-get install texlive-full
   - bundle install --without production staging
+  - rbenv rehash
 
 before_script:
   - sudo service postgresql start
