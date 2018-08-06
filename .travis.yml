@@ -1,0 +1,27 @@
+language: ruby
+
+rvm:
+  - 2.3.1
+
+sudo: true
+
+services:
+  - postgresql
+  
+addons:
+  postgresql: "9.6"
+  
+install:
+  - sudo apt-get install -y ghostscript imagemagick libmagic-dev libmagickwand-dev libmagic-dev python-pygments libav-tools
+  - sudo apt-get install texlive-full
+  - bundle install --without production staging
+  - rbenv rehash
+
+before_script:
+  - sudo service postgresql start
+  - psql -c "CREATE ROLE itig WITH CREATEDB PASSWORD 'd872\$dh' LOGIN;"
+  - bundle exec rake db:create
+  - echo "n" | bundle exec rake db:populate
+
+script:
+  - bundle exec rake test
