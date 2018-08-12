@@ -1,7 +1,8 @@
 class TeachingPeriod < ActiveRecord::Base
   has_many :units
 
-  validates :period, length: { minimum: 1, maximum: 20, allow_blank: false }, uniqueness: true
+  validates :period, length: { minimum: 1, maximum: 20, allow_blank: false }, uniqueness: { scope: :year,
+    message: "%{value} already exists in this year" }
   validates :year, length: { is: 4, allow_blank: false }, presence: true, numericality: { only_integer: true },
     inclusion: { in: 2000..2999, message: "%{value} is not a valid year" }
   validates :start_date, presence: true
