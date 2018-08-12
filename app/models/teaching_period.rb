@@ -3,7 +3,7 @@ class TeachingPeriod < ActiveRecord::Base
 
   validates :period, length: { minimum: 1, maximum: 20, allow_blank: false }, uniqueness: true
   validates :year, length: { is: 4, allow_blank: false }, presence: true, numericality: { only_integer: true },
-    inclusion: { in: 2000..2099, message: "%{value} is not a valid year" }
+    inclusion: { in: 2000..2999, message: "%{value} is not a valid year" }
   validates :start_date, presence: true
   validates :end_date, presence: true
 
