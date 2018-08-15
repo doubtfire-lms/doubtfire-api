@@ -10,14 +10,14 @@ class TaskDefinitionTest < ActiveSupport::TestCase
   end
 
   def test_post_invalid_file_tasksheet
-    test_unit = Unit.order('RANDOM()').first
+    test_unit = Unit.first
     test_task_definition_id = test_unit.task_definitions.order('RANDOM()').first.id
 
     data_to_post = {
       file: 'rubbish_path',
       auth_token: auth_token
     }
-    post_json "/api/units/#{test_unit.id}/task_definitions/#{test_task_definition_id}/task_sheet", data_to_post
+    post_json with_auth_token("/api/units/#{test_unit.id}/task_definitions/#{test_task_definition_id}/task_sheet"), data_to_post
 
     assert last_response_body.key?('error')
   end
