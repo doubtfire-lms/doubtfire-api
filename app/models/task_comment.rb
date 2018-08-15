@@ -49,6 +49,12 @@ class TaskComment < ActiveRecord::Base
     }
   end
 
+  def comment
+    return "audio comment" if content_type == "audio"
+    return "image comment" if content_type == "image"
+    super
+  end
+
   def attachment_path
     FileHelper.comment_attachment_path(self, self.attachment_extension)
   end
