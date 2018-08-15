@@ -32,6 +32,8 @@ class TaskStatus < ActiveRecord::Base
     when 'complete'         then TaskStatus.complete
     when 'fix_and_resubmit' then TaskStatus.fix_and_resubmit
     when 'fix and resubmit' then TaskStatus.fix_and_resubmit
+    when 'fix'              then TaskStatus.fix_and_resubmit
+    when 'f'                then TaskStatus.fix
     when 'do_not_resubmit'  then TaskStatus.do_not_resubmit
     when 'do not resubmit'  then TaskStatus.do_not_resubmit
     when 'redo'             then TaskStatus.redo
@@ -41,11 +43,11 @@ class TaskStatus < ActiveRecord::Base
     when 'working on it'    then TaskStatus.working_on_it
     when 'discuss', 'd'     then TaskStatus.discuss
     when 'demonstrate'      then TaskStatus.demonstrate
+    when 'demo'             then TaskStatus.demonstrate
     when 'ready to mark'    then TaskStatus.ready_to_mark
     when 'ready_to_mark'    then TaskStatus.ready_to_mark
     when 'rtm'              then TaskStatus.ready_to_mark
     when 'fail'             then TaskStatus.fail
-    when 'f'                then TaskStatus.fail
     when 'not_started'      then TaskStatus.not_started
     when 'not started'      then TaskStatus.not_started
     when 'ns'               then TaskStatus.not_started
