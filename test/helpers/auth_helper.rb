@@ -24,7 +24,7 @@ module TestHelpers
       elsif data.is_a? String
         # If we have a question mark, we need to add a query paramater using &
         # otherwise use ?
-        data << (data.include?('?') ? '&' : '?') << "auth_token=#{auth_token}"
+        data << (data.include?('?') ? '&' : '?') << "auth_token=#{auth_token user}"
       end
       data
     end
