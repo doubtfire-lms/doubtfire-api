@@ -16,6 +16,18 @@ class UnitsTest < ActiveSupport::TestCase
     assert_json_matches_model(actual_user, expected_user, keys)
   end
 
+  def create_user
+    user = {
+        first_name: 'Akash',
+        last_name: 'Agarwal',
+        email: 'blah@blah.com',
+        username: 'akash',
+        nickname: 'akash',
+        system_role: 'Admin'
+    }
+    user
+  end
+
   # GET tests
 
   def test_get_users
@@ -70,20 +82,11 @@ class UnitsTest < ActiveSupport::TestCase
 
   # POST tests
 
-  def test_post_users
+  def test_post_create_user
     pre_count = User.all.length
 
-    user = {
-        first_name: 'Akash',
-        last_name: 'Agarwal',
-        email: 'blah@blah.com',
-        username: 'akash',
-        nickname: 'akash',
-        system_role: 'Admin'
-    }
-
     data_to_post = {
-        user: user,
+        user: create_user,
         auth_token: auth_token
     }
 
