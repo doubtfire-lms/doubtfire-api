@@ -16,6 +16,8 @@ class UnitsTest < ActiveSupport::TestCase
     assert_json_matches_model(actual_user, expected_user, keys)
   end
 
+  # GET tests
+
   def test_get_users
     get with_auth_token '/api/users'
     actual_user = last_response_body[0]
@@ -48,7 +50,25 @@ class UnitsTest < ActiveSupport::TestCase
     assert_users_model_response actual_user, expected_user
   end
 
-  
+  def test_get_no_token
+    models = %w(users users/tutors users/convenors)
+
+    models.each do |m|
+      get "/api/#{m}"
+      assert_equal 419, last_response.status
+    end
+  end
+
+  def test_get_invalid_token
+    models = %w(users users/tutors users/convenors)
+
+    models.each { |m|
+      get "/api/#{m}?auth_token=1234"
+      assert_equal 419, last_response.status
+    }
+  end
+
+  # POST tests
 
   def test_post_users
     pre_count = User.all.length
