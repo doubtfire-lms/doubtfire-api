@@ -115,6 +115,10 @@ module Api
           end
           action = new_role.id > old_role.id ? :promote_user : :demote_user
 
+          unless user_parameters[:email] =~ /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\z/i
+            error!({ error: "Invalid email format #{user_parameters[:email]}" }, 400)
+          end
+
           # current user not authorised to peform action with new role?
           unless authorise? current_user, User, action, User.get_change_role_perm_fn, [ old_role.to_sym, new_role.to_sym ]
             error!({ error: "Not authorised to #{action} user with id=#{params[:id]} to #{new_role.name}" }, 403)
@@ -165,7 +169,10 @@ module Api
 
       # have to translate the system_role -> role
       user_parameters[:role] = params[:user][:system_role]
-      user_parameters[:role] = params[:user][:system_role]
+
+      unless user_parameters[:email] =~ /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\z/i
+        error!({ error: "Invalid email format #{user_parameters[:email]}" }, 400)
+      end
 
       #
       # Give new user their new role
