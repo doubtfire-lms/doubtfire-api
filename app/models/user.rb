@@ -442,7 +442,7 @@ class User < ActiveRecord::Base
 
         next unless pass_checks
 
-        if !email =~ /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\z/i
+        unless email =~ /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\z/i
           errors << { row: row, message: "Invalid email address (#{email})" }
           next
         end
