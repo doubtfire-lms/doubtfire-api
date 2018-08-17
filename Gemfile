@@ -29,6 +29,7 @@ group :development, :test do
   gem 'minitest-hyper'
   gem 'minitest-osx'
   gem 'minitest-rails'
+  gem 'byebug'
 end
 
 group :production do
