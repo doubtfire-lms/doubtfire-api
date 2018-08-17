@@ -92,9 +92,93 @@ class UnitsTest < ActiveSupport::TestCase
 
     post_json '/api/users', data_to_post
 
-    assert_equal User.all.length, pre_count + 1
+    assert_equal pre_count + 1, User.all.length
     assert_users_model_response last_response_body, User.last
 
+  end
+
+  def test_post_create_same_user_again
+    pre_count = User.all.length
+
+    data_to_post = {
+        user: create_user,
+        auth_token: auth_token
+    }
+
+    post_json '/api/users', data_to_post
+    assert_equal pre_count + 1, User.all.length
+    assert_users_model_response last_response_body, User.last
+
+    post_json '/api/users', data_to_post
+    # Successful assertion of same length again means no record was created
+    assert_equal pre_count + 1, User.all.length
+  end
+
+  def test_post_create_same_user_different_email
+    pre_count = User.all.length
+    user = create_user
+
+    data_to_post = {
+        user: user,
+        auth_token: auth_token
+    }
+
+    post_json '/api/users', data_to_post
+    assert_equal pre_count + 1, User.all.length
+
+    # Changes email of user in data_to_post automatically
+    user[:email] = 'different@email.com'
+
+    post_json '/api/users', data_to_post
+    # Successful assertion of same length again means no record was created
+    assert_equal pre_count + 1, User.all.length
+    assert_equal 500, last_response.status
+  end
+
+  def test_post_create_same_user_different_username
+    pre_count = User.all.length
+    user = create_user
+
+    data_to_post = {
+        user: user,
+        auth_token: auth_token
+    }
+
+    post_json '/api/users', data_to_post
+    # p "Users length: #{User.all.length}"
+    assert_equal pre_count + 1, User.all.length
+
+    # Changes username of user in data_to_post automatically
+    user[:username] = 'akash2'
+
+    #p "Data to post user: #{data_to_post[:user]}"
+
+    post_json '/api/users', data_to_post
+    # Successful assertion of same length again means no record was created
+    assert_equal pre_count + 1, User.all.length
+    assert_equal 500, last_response.status
+  end
+
+  def test_post_create_user_invalid_email
+    pre_count = User.all.length
+    user = create_user
+
+    invalid_emails = %w(qwertyuiop qwertyuiop@qwe qwertyuiop@.com qwertyuiop@blah..com)
+
+    invalid_emails.each do |email|
+      # Assign invalid email
+      user[:email] = email
+
+      data_to_post = {
+          user: user,
+          auth_token: auth_token
+      }
+
+      post_json '/api/users', data_to_post
+      # Successful assertion of same length again means no record was created
+      assert_equal pre_count, User.all.length
+      assert_equal 500, last_response.status
+    end
   end
 
 end
