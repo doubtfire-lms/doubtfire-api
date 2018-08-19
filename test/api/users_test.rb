@@ -28,7 +28,9 @@ class UnitsTest < ActiveSupport::TestCase
     user
   end
 
+  # ========================================================================
   # GET tests
+  # ========================================================================
 
   def test_get_users
     get with_auth_token '/api/users'
@@ -80,7 +82,9 @@ class UnitsTest < ActiveSupport::TestCase
     }
   end
 
+  # ========================================================================
   # POST tests
+  # ========================================================================
 
   def test_post_create_user
     pre_count = User.all.length
@@ -159,26 +163,108 @@ class UnitsTest < ActiveSupport::TestCase
     assert_equal 500, last_response.status
   end
 
-  def test_post_create_user_invalid_email
+  # def test_post_create_user_invalid_email
+  #   pre_count = User.all.length
+  #   user = create_user
+  #
+  #   invalid_emails = %w(qwertyuiop qwertyuiop@qwe qwertyuiop@.com qwertyuiop@blah..com)
+  #
+  #   invalid_emails.each do |email|
+  #     # Assign invalid email
+  #     user[:email] = email
+  #
+  #     data_to_post = {
+  #         user: user,
+  #         auth_token: auth_token
+  #     }
+  #
+  #     post_json '/api/users', data_to_post
+  #     # Successful assertion of same length again means no record was created
+  #     assert_equal pre_count, User.all.length
+  #     assert_equal 500, last_response.status
+  #   end
+  # end
+
+  # def test_post_create_user_empty_required_fields
+  #   pre_count = User.all.length
+  #   user = create_user
+  #   user2 = create_user
+  #
+  #   user.collect do |key, value|
+  #     # p "Key under consideration: #{key}"
+  #     user2[key] = ''
+  #     # byebug
+  #
+  #     data_to_post = {
+  #         user: user2,
+  #         auth_token: auth_token
+  #     }
+  #
+  #     post_json '/api/users', data_to_post
+  #     # Successful assertion of same length again means no record was created
+  #     assert_equal pre_count, User.all.length
+  #
+  #     user2[key] = value
+  #
+  #   end
+  # end
+
+  def test_post_create_user_custom_role(role='asdasd')
     pre_count = User.all.length
     user = create_user
 
-    invalid_emails = %w(qwertyuiop qwertyuiop@qwe qwertyuiop@.com qwertyuiop@blah..com)
+    user[:system_role] = role
 
-    invalid_emails.each do |email|
-      # Assign invalid email
-      user[:email] = email
+    data_to_post = {
+        user: user,
+        auth_token: auth_token
+    }
 
-      data_to_post = {
-          user: user,
-          auth_token: auth_token
-      }
+    post_json '/api/users', data_to_post
+    # Successful assertion of same length again means no record was created
+    assert_equal pre_count, User.all.length
+    assert_equal 403, last_response.status
+  end
 
-      post_json '/api/users', data_to_post
-      # Successful assertion of same length again means no record was created
-      assert_equal pre_count, User.all.length
-      assert_equal 500, last_response.status
-    end
+  def test_post_create_user_role_root
+    test_post_create_user_custom_role 'root'
+  end
+
+  def test_post_create_user_custom_token(token='asdasd')
+    pre_count = User.all.length
+    user = create_user
+
+    data_to_post = {
+        user: user,
+        auth_token: token
+    }
+
+    post_json '/api/users', data_to_post
+    # Successful assertion of same length again means no record was created
+    assert_equal pre_count, User.all.length
+    assert_equal 419, last_response.status
+  end
+
+  def test_post_create_user_empty_token
+    test_post_create_user_custom_token ''
+  end
+
+  # ========================================================================
+  # PUT tests
+  # ========================================================================
+
+  def test_put_update_user_valid_email
+    user = User.second
+    user[:email] = 'different@email.com'
+
+    data_to_post = {
+        user: user,
+        auth_token: auth_token
+    }
+
+    put_json '/api/users/2', data_to_post
+    assert_users_model_response User.find_by(email: 'different@email.com').as_json, user.as_json
+    assert_equal 200, last_response.status
   end
 
 end
