@@ -9,7 +9,7 @@ class ShallowUnitRoleSerializer < ActiveModel::Serializer
 end
 
 class UnitRoleSerializer < ActiveModel::Serializer
-  attributes :id, :role, :user_id, :unit_id, :unit_name, :name, :unit_code, :start_date, :active
+  attributes :id, :role, :user_id, :unit_id, :unit_name, :name, :unit_code, :start_date, :teaching_period, :active
 
   # has_one :user, serializer: ShallowUserSerializer
   # has_one :unit, serializer: ShallowUnitSerializer
@@ -37,6 +37,13 @@ class UnitRoleSerializer < ActiveModel::Serializer
 
   def active
     object.unit.active
+  end
+
+  def teaching_period
+    if object.unit.teaching_period_id.present?
+      teachingPeriod = TeachingPeriod.find(object.unit.teaching_period_id)
+      ::TeachingPeriodSerializer.new(teachingPeriod).attributes
+    end
   end
 
   def include_start_date?
