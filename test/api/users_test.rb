@@ -164,27 +164,27 @@ class UnitsTest < ActiveSupport::TestCase
   end
 
   #TODO: Waiting for PR
-  # def test_post_create_user_invalid_email
-  #   pre_count = User.all.length
-  #   user = create_user
-  #
-  #   invalid_emails = %w(qwertyuiop qwertyuiop@qwe qwertyuiop@.com qwertyuiop@blah..com)
-  #
-  #   invalid_emails.each do |email|
-  #     # Assign invalid email
-  #     user[:email] = email
-  #
-  #     data_to_post = {
-  #         user: user,
-  #         auth_token: auth_token
-  #     }
-  #
-  #     post_json '/api/users', data_to_post
-  #     # Successful assertion of same length again means no record was created
-  #     assert_equal pre_count, User.all.length
-  #     assert_equal 500, last_response.status
-  #   end
-  # end
+  def test_post_create_user_invalid_email
+    pre_count = User.all.length
+    user = create_user
+
+    invalid_emails = %w(qwertyuiop qwertyuiop@qwe qwertyuiop@.com qwertyuiop@blah..com)
+
+    invalid_emails.each do |email|
+      # Assign invalid email
+      user[:email] = email
+
+      data_to_post = {
+          user: user,
+          auth_token: auth_token
+      }
+
+      post_json '/api/users', data_to_post
+      # Successful assertion of same length again means no record was created
+      assert_equal pre_count, User.all.length
+      assert_equal 500, last_response.status
+    end
+  end
 
   def test_post_create_user_empty_required_fields
     pre_count = User.all.length
@@ -193,7 +193,7 @@ class UnitsTest < ActiveSupport::TestCase
 
     user.collect do |key, value|
       next if key == :nickname # Nickname can be empty
-      p "Key under consideration: #{key}"
+      # p "Key under consideration: #{key}"
       user2[key] = ''
       data_to_post = {
           user: user2,
@@ -282,24 +282,24 @@ class UnitsTest < ActiveSupport::TestCase
   end
 
   #TODO: Waiting for PR
-  # def test_put_update_user_invalid_email
-  #   user = User.second
-  #
-  #   invalid_emails = %w(qwertyuiop qwertyuiop@qwe qwertyuiop@.com qwertyuiop@blah..com)
-  #
-  #   invalid_emails.each do |email|
-  #     # Assign invalid email
-  #     user[:email] = email
-  #
-  #     data_to_put = {
-  #         user: user,
-  #         auth_token: auth_token
-  #     }
-  #
-  #     put_json '/api/users/2', data_to_put
-  #     assert_equal 500, last_response.status
-  #   end
-  # end
+  def test_put_update_user_invalid_email
+    user = User.second
+
+    invalid_emails = %w(qwertyuiop qwertyuiop@qwe qwertyuiop@.com qwertyuiop@blah..com)
+
+    invalid_emails.each do |email|
+      # Assign invalid email
+      user[:email] = email
+
+      data_to_put = {
+          user: user,
+          auth_token: auth_token
+      }
+
+      put_json '/api/users/2', data_to_put
+      assert_equal 500, last_response.status
+    end
+  end
 
   def test_put_update_user_empty_email
     user = User.second
