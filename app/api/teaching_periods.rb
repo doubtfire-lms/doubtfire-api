@@ -12,10 +12,10 @@ module Api
     desc 'Add a Teaching Period'
     params do
       requires :teaching_period, type: Hash do
-        optional :period, type: String, desc: 'The name of the teaching period'
-        optional :year, type: Integer, desc: 'The year of the teaching period'
-        optional :start_date, type: Date, desc: 'The start date of the teaching period'
-        optional :end_date, type: Date, desc: 'The end date of the teaching period'
+        requires :period, type: String, desc: 'The name of the teaching period'
+        requires :year, type: Integer, desc: 'The year of the teaching period'
+        requires :start_date, type: Date, desc: 'The start date of the teaching period'
+        requires :end_date, type: Date, desc: 'The end date of the teaching period'
       end
     end
     post '/teaching_periods' do
