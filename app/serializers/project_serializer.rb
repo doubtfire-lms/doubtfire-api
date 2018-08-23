@@ -5,10 +5,17 @@ class ShallowProjectSerializer < ActiveModel::Serializer
   attributes :unit_id, :unit_code, :unit_name,
              :project_id, :student_name,
              :tutor_name, :target_grade,
-             :has_portfolio, :start_date
+             :has_portfolio, :start_date, :teaching_period
 
   def project_id
     object.id
+  end
+
+  def teaching_period
+    if object.unit.teaching_period_id.present?
+      teachingPeriod = TeachingPeriod.find(object.unit.teaching_period_id)
+      ::TeachingPeriodSerializer.new(teachingPeriod).attributes
+    end
   end
 end
 
