@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20180720051403) do
+ActiveRecord::Schema.define(version: 20180812105323) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -317,6 +317,8 @@ ActiveRecord::Schema.define(version: 20180720051403) do
     t.datetime "end_date",   null: false
     t.integer  "year",       null: false
   end
+
+  add_index "teaching_periods", ["period", "year"], name: "index_teaching_periods_on_period_and_year", unique: true, using: :btree
 
   create_table "teams", force: :cascade do |t|
     t.integer  "unit_id"
