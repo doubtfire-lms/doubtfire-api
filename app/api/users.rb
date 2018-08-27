@@ -165,7 +165,6 @@ module Api
 
       # have to translate the system_role -> role
       user_parameters[:role] = params[:user][:system_role]
-      user_parameters[:role] = params[:user][:system_role]
 
       #
       # Give new user their new role
