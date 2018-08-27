@@ -164,7 +164,7 @@ class User < ActiveRecord::Base
   validates :last_name,   presence: true
   validates :role_id,     presence: true
   validates :username,    presence: true, uniqueness: { case_sensitive: false }
-  validates :email,       presence: true, uniqueness: { case_sensitive: false }
+  validates :email,       presence: true, uniqueness: { case_sensitive: false }, format: {with: /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\z/i}
   validates :student_id,  uniqueness: true, allow_nil: true
 
   # Queries
@@ -442,7 +442,7 @@ class User < ActiveRecord::Base
 
         next unless pass_checks
 
-        if !email =~ /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\z/i
+        unless email =~ /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\z/i
           errors << { row: row, message: "Invalid email address (#{email})" }
           next
         end
