@@ -11,7 +11,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
   def test_post_invalid_file_tasksheet
     test_unit = Unit.first
-    test_task_definition_id = test_unit.task_definitions.order('RANDOM()').first.id
+    test_task_definition_id = test_unit.task_definitions.first.id
 
     data_to_post = {
       file: 'rubbish_path',
