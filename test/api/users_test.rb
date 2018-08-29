@@ -17,7 +17,7 @@ class UnitsTest < ActiveSupport::TestCase
   end
 
   def create_user
-    user = {
+    {
         first_name: 'Akash',
         last_name: 'Agarwal',
         email: 'blah@blah.com',
@@ -25,7 +25,6 @@ class UnitsTest < ActiveSupport::TestCase
         nickname: 'akash',
         system_role: 'Admin'
     }
-    user
   end
 
   # ========================================================================
@@ -38,14 +37,6 @@ class UnitsTest < ActiveSupport::TestCase
     expected_user = User.second
 
     assert_users_model_response actual_user, expected_user
-
-    # assert_equal expected_user['id'], actual_user['id']
-    # assert_equal expected_user.email, actual_user['email']
-    # assert_equal expected_user.name, actual_user['name']
-    # assert_equal expected_user.first_name, actual_user['first_name']
-    # assert_equal expected_user.last_name, actual_user['last_name']
-    # assert_equal expected_user.username, actual_user['username']
-    # assert_equal expected_user.nickname, actual_user['nickname']
   end
 
   def test_get_convenors
@@ -98,7 +89,6 @@ class UnitsTest < ActiveSupport::TestCase
 
     assert_equal pre_count + 1, User.all.length
     assert_users_model_response last_response_body, User.last
-
   end
 
   def test_post_create_same_user_again
@@ -149,13 +139,10 @@ class UnitsTest < ActiveSupport::TestCase
     }
 
     post_json '/api/users', data_to_post
-    # p "Users length: #{User.all.length}"
     assert_equal pre_count + 1, User.all.length
 
     # Changes username of user in data_to_post automatically
     user[:username] = 'akash2'
-
-    #p "Data to post user: #{data_to_post[:user]}"
 
     post_json '/api/users', data_to_post
     # Successful assertion of same length again means no record was created
@@ -193,7 +180,6 @@ class UnitsTest < ActiveSupport::TestCase
 
     user.collect do |key, value|
       next if key == :nickname # Nickname can be empty
-      # p "Key under consideration: #{key}"
       user2[key] = ''
       data_to_post = {
           user: user2,
@@ -205,7 +191,6 @@ class UnitsTest < ActiveSupport::TestCase
       assert_equal pre_count, User.all.length
 
       user2[key] = value
-
     end
   end
 
@@ -277,7 +262,6 @@ class UnitsTest < ActiveSupport::TestCase
     }
 
     put_json '/api/users/2', data_to_put
-    # assert_users_model_response User.find_by(email: 'different@email.com').as_json, user.as_json
     assert_equal 500, last_response.status
   end
 
@@ -311,7 +295,6 @@ class UnitsTest < ActiveSupport::TestCase
     }
 
     put_json '/api/users/2', data_to_put
-    # assert_users_model_response User.find_by(email: 'different@email.com').as_json, user.as_json
     assert_equal 500, last_response.status
   end
 
