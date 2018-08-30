@@ -90,8 +90,16 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     group_set = GroupSet.create!({name: 'test group set', unit: unit})
     group_set.save!
 
-    td.reload()
     td.group_set = group_set
     assert !td.save
+
+    task.reload()
+    task.task_definition = td
+    path = task.zip_file_path_for_done_task
+    assert path
+    assert File.exists? path
+
+    td.destroy
+    assert_not File.exists? path
   end
 end

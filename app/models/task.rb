@@ -606,7 +606,8 @@ class Task < ActiveRecord::Base
   def zip_file_path_for_done_task
     if group_task?
       if group_submission.nil?
-        nil
+        logger.warn("Missing group submission from task identified for task #{id}!")
+        "#{Doubtfire::Application.config.student_work_dir}/#{FileHelper.sanitized_path("#{project.unit.code}-#{project.unit.id}", project.student.username.to_s, 'done', id.to_s)[0..-1]}.zip"
       else
         "#{FileHelper.student_group_work_dir(:done, group_submission)[0..-2]}.zip"
       end
@@ -1052,7 +1053,7 @@ class Task < ActiveRecord::Base
         group_submission.destroy
       else
         zip_file = zip_file_path_for_done_task()
-        if File.exists? zip_file
+        if zip_file && File.exists?(zip_file)
           FileUtils.rm zip_file
         end
         if portfolio_evidence.present? && File.exists?(portfolio_evidence)
