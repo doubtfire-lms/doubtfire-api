@@ -50,6 +50,24 @@ class AuthTest < ActiveSupport::TestCase
     assert_equal expected_auth.auth_token, actual_auth['auth_token']
   end
 
+  # Test auth when username is invalid
+def test_fail_username_auth
+  data_to_post = {
+    username: 'acain123',
+    password: 'password'
+  }
+  # Get response back for logging in with username 'acain' password 'password'
+  post_json '/api/auth.json', data_to_post
+  actual_auth = JSON.parse(last_response.body)
+
+  refute actual_auth.key?('user'), 'User not expected if auth fails'
+  refute actual_auth.key?('auth_token'), 'Auth token not expected if auth fails'
+
+ # 401 response code means invalid username / password
+  assert_equal 401, last_response.status
+  assert actual_auth.key? 'error'
+end
+
   # Test auth when password is invalid
   def test_fail_password_auth
     data_to_post = {
@@ -66,42 +84,9 @@ class AuthTest < ActiveSupport::TestCase
     assert actual_auth.key? 'error'
   end
 
-  # Test auth when username is invalid
-  def test_fail_username_auth
-    data_to_post = {
-      username: 'acain123',
-      password: 'password'
-    }
-    # Get response back for logging in with username 'acain' password 'password'
-    post_json '/api/auth.json', data_to_post
-    actual_auth = JSON.parse(last_response.body)
+  
 
-    refute actual_auth.key?('user'), 'User not expected if auth fails'
-    refute actual_auth.key?('auth_token'), 'Auth token not expected if auth fails'
 
-   # 401 response code means invalid username / password
-    assert_equal 401, last_response.status
-    assert actual_auth.key? 'error'
-  end
-
-  # Test auth with extra field
-  # def test_fail_extra_field_post
-  #   data_to_post = {
-  #     username: 'acain',
-  #     password: 'password'
-  #     abc:'abc'
-  #   }
-  #   # Get response back for logging in with username 'acain' password 'password'
-  #   post_json '/api/auth.json', data_to_post
-  #   actual_auth = JSON.parse(last_response.body)
-
-  #   refute actual_auth.key?('user'), 'User not expected if auth fails'
-  #   refute actual_auth.key?('auth_token'), 'Auth token not expected if auth fails'
-
-  #  # 401 response code means invalid username / password
-  #   assert_equal 401, last_response.status
-  #   assert actual_auth.key? 'error'
-  # end
 
 # Test auth with empty request body
 def test_fail_empty_request
@@ -207,6 +192,32 @@ end
       assert actual_auth.key? 'error'
     end
 
+
+  # Test valid username for empty authentication token
+  def test_fail_empty_authKey_put
+    data_to_put = {
+      username: 'acain'
+    }
+    put_json "/api/auth/", data_to_put
+    actual_auth = JSON.parse(last_response.body)
+    expected_auth = User.first.auth_token
+    # repsonse code should be 500
+    assert_equal 500, last_response.status
+    # Check to see if the response is invalid
+    assert actual_auth.key? 'error'
+  end
+      # Test empty request
+  def test_fail_empty_body_put
+    data_to_put = {
+    }
+    put_json "/api/auth/#{auth_token}", data_to_put
+    actual_auth = JSON.parse(last_response.body)
+    expected_auth = User.first.auth_token
+    # repsonse code should be 500
+    assert_equal 500, last_response.status
+    # Check to see if the response is invalid
+    assert actual_auth.key? 'error'
+  end
   # End PUT tests
   # --------------------------------------------------------------------------- #
 
