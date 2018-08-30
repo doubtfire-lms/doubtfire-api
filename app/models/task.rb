@@ -1052,7 +1052,7 @@ class Task < ActiveRecord::Base
         group_submission.destroy
       else
         zip_file = zip_file_path_for_done_task()
-        if File.exists? zip_file
+        if !zip_file.nil? && File.exists? zip_file
           FileUtils.rm zip_file
         end
         if portfolio_evidence.present? && File.exists?(portfolio_evidence)
