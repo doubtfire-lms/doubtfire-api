@@ -200,6 +200,16 @@ module Api
     end
 
     #
+    # Returns the current auth signout URL
+    #
+    desc 'Authentication signout URL'
+    get '/auth/signout_url' do
+      response = {}
+      response[:auth_signout_url] = Doubtfire::Application.config.aaf[:auth_signout_url] if aaf_auth? && Doubtfire::Application.config.aaf[:auth_signout_url].present?
+      response
+    end
+
+    #
     # Update token
     #
     desc 'Allow tokens to be updated'
