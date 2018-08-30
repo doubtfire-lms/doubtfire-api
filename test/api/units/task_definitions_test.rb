@@ -11,7 +11,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
   def test_post_invalid_file_tasksheet
     test_unit = Unit.first
-    test_task_definition_id = test_unit.task_definitions.order('RANDOM()').first.id
+    test_task_definition_id = test_unit.task_definitions.first.id
 
     data_to_post = {
       file: 'rubbish_path',
@@ -50,5 +50,48 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     puts last_response_body if last_response.status == 403
 
     assert_equal 201, last_response.status
+  end
+
+  def test_change_to_group_after_submissions
+    unit = Unit.first
+    td = TaskDefinition.new({
+        unit_id: unit.id,
+        name: 'Task to switch from ind to group after submission',                    
+        description: 'test def',
+        weighting: 4,
+        target_grade: 0,
+        start_date: unit.start_date + 1.week,
+        target_date: unit.start_date + 2.weeks,
+        abbreviation: 'TaskSwitchIndGrp',
+        restrict_status_updates: false,
+        upload_requirements: [ { "key" => 'file0', "name" => 'Shape Class', "type" => 'code' } ],
+        plagiarism_warn_pct: 0.8,
+        is_graded: false,
+        max_quality_pts: 0
+      })
+    td.save!
+
+    data_to_post = {
+      file0: Rack::Test::UploadedFile.new('test_files/submissions/test.sql', 'text/plain'),
+      trigger: 'ready_to_mark'
+    }
+
+    project = unit.active_projects.first
+
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", with_auth_token(data_to_post)
+
+    assert_equal 201, last_response.status
+
+    task = project.task_for_task_definition(td)
+    task.convert_submission_to_pdf
+
+    # Change it to a group task
+
+    group_set = GroupSet.create!({name: 'test group set', unit: unit})
+    group_set.save!
+
+    td.reload()
+    td.group_set = group_set
+    assert !td.save
   end
 end
