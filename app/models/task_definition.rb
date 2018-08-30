@@ -31,6 +31,18 @@ class TaskDefinition < ActiveRecord::Base
   validate :plagiarism_checks, :check_plagiarism_format
   validates :description, length: { maximum: 4095, allow_blank: true }
 
+  validate :ensure_no_submissions, if: :has_change_group_status?
+
+  def has_change_group_status?
+    group_set_id != group_set_id_was
+  end
+
+  def ensure_no_submissions
+    if tasks.where("submission_date IS NOT NULL").count() > 0
+      errors.add( :group_set, "Unable to change group status of task as submissions exist" )
+    end
+  end
+
   def move_files_on_abbreviation_change
     if File.exists? task_sheet_with_abbreviation(abbreviation_was)
       FileUtils.mv(task_sheet_with_abbreviation(abbreviation_was), task_sheet())
