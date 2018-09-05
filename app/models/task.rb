@@ -97,7 +97,7 @@ class Task < ActiveRecord::Base
   end
 
   def must_have_quality_pts
-    if quality_pts.nil? || quality_pts.negative? || quality_pts > task_definition.max_quality_pts
+    if quality_pts.nil? || quality_pts < -1 || quality_pts > task_definition.max_quality_pts
       errors.add(:quality_pts, "must be between 0 and #{task_definition.max_quality_pts}")
     end
   end

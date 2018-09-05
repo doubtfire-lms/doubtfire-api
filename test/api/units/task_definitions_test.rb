@@ -1,6 +1,6 @@
 require 'test_helper'
 
-class TaskDefinitionTest < ActiveSupport::TestCase
+class TaskDefinitionsTest < ActiveSupport::TestCase
   include Rack::Test::Methods
   include TestHelpers::AuthHelper
   include TestHelpers::JsonHelper
