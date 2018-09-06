@@ -144,7 +144,6 @@ class UnitsTest < ActiveSupport::TestCase
     assert_equal 500, last_response.status
   end
 
-  #TODO: Waiting for PR
   def test_post_create_user_invalid_email
     pre_count = User.all.length
     user = create_user
@@ -259,7 +258,6 @@ class UnitsTest < ActiveSupport::TestCase
     assert_equal 500, last_response.status
   end
 
-  #TODO: Waiting for PR
   def test_put_update_user_invalid_email
     user = User.second
 
