@@ -33,26 +33,17 @@ class UnitsTest < ActiveSupport::TestCase
 
   def test_get_users
     get with_auth_token '/api/users'
-    actual_user = last_response_body[0]
-    expected_user = User.second
-
-    assert_users_model_response actual_user, expected_user
+    assert_equal 200, last_response.status
   end
 
   def test_get_convenors
     get with_auth_token '/api/users/convenors'
-    actual_user = last_response_body[0]
-    expected_user = User.find 6
-
-    assert_users_model_response actual_user, expected_user
+    assert_equal 200, last_response.status
   end
 
   def test_get_tutors
     get with_auth_token '/api/users/tutors'
-    actual_user = last_response_body[0]
-    expected_user = User.find 21
-
-    assert_users_model_response actual_user, expected_user
+    assert_equal 200, last_response.status
   end
 
   def test_get_no_token
