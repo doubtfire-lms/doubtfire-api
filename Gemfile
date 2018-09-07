@@ -13,15 +13,6 @@ ruby ruby_versions[(ENV['RAILS_ENV'] || 'development').to_sym]
 # The venerable, almighty Rails
 gem 'rails', '4.2.6'
 
-group :development do
-  gem 'pg'
-  gem 'hirb'
-  gem 'better_errors'
-  gem 'rails_best_practices'
-  gem 'thin'
-  gem 'rubocop', '0.46.0'
-end
-
 group :development, :test do
   gem 'database_cleaner'
   gem 'factory_girl_rails'
@@ -30,6 +21,12 @@ group :development, :test do
   gem 'minitest-osx'
   gem 'minitest-rails'
   gem 'byebug'
+  gem 'pg'
+  gem 'hirb'
+  gem 'better_errors'
+  gem 'rails_best_practices'
+  gem 'thin'
+  gem 'rubocop', '0.46.0'
 end
 
 group :production do
