@@ -74,5 +74,5 @@ gem 'require_all', '1.3.3'
 gem 'dotenv-rails'
 
 # Excel support
-gem "roo", "~> 2.7.0"
+gem 'roo', '~> 2.7.0'
 gem 'roo-xls'
