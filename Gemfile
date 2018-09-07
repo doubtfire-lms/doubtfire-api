@@ -29,6 +29,12 @@ group :development, :test do
   gem 'rubocop', '0.46.0'
 end
 
+group :development, :test, :staging, :replica do
+  # Generators for population
+  gem 'populator'
+  gem 'faker'
+end
+
 group :production do
   gem 'passenger', '= 4.0.42'
 end
@@ -41,10 +47,6 @@ end
 gem 'devise', '~> 4.1.1'
 gem 'devise_ldap_authenticatable'
 gem 'json-jwt', '1.7.0'
-
-# Generators for population
-gem 'populator'
-gem 'faker'
 
 # Student submission
 gem 'coderay'
