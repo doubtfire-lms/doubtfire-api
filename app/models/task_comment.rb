@@ -31,7 +31,7 @@ class TaskComment < ActiveRecord::Base
     {
       id: self.id,
       comment: self.comment,
-      has_attachment: ["audio", "image"].include?(self.content_type),
+      has_attachment: ["audio", "image", "pdf"].include?(self.content_type),
       type: self.content_type || "text",
       is_new: self.new_for?(user),
       author: {
@@ -52,6 +52,7 @@ class TaskComment < ActiveRecord::Base
   def comment
     return "audio comment" if content_type == "audio"
     return "image comment" if content_type == "image"
+    return "pdf document" if content_type == "pdf"
     super
   end
 
@@ -71,10 +72,15 @@ class TaskComment < ActiveRecord::Base
       self.attachment_extension = ".wav"
       save
       FileUtils.mv temp.path, attachment_path
-    else
+    elsif content_type == "image"
       self.attachment_extension = ".jpg"
       save
       FileHelper.compress_image_to_dest(file_upload.tempfile.path, self.attachment_path)
+    else
+      self.attachment_extension = ".pdf"
+      save
+      FileHelper.compress_pdf(file_upload.tempfile.path)
+      FileUtils.mv file_upload.tempfile.path, attachment_path
     end
 
     file_upload.tempfile.unlink

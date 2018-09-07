@@ -12,7 +12,7 @@ module Api
     desc 'Add a new comment to a task'
     params do
       optional :comment, type: String, desc: 'The comment text to add to the task'
-      optional :attachment, type: Rack::Multipart::UploadedFile, desc: 'Image, sound, or video comment file'
+      optional :attachment, type: Rack::Multipart::UploadedFile, desc: 'Image, sound, PDF or video comment file'
     end
     post '/projects/:project_id/task_def_id/:task_definition_id/comments' do
       project = Project.find(params[:project_id])
@@ -40,7 +40,7 @@ module Api
         result = task.add_text_comment(current_user, text_comment)
       else
         unless FileHelper.accept_file(attached_file, "comment attachment - TaskComment", "comment_attachment")
-          error!({ error: "Please upload only images and audio" }, 403)
+          error!({ error: "Please upload only images, audio or PDF documents" }, 403)
         end
 
         result = task.add_comment_with_attachment(current_user, attached_file)
@@ -71,12 +71,13 @@ module Api
 
         comment = task.comments.find(params[:id])
 
-        error!({error: 'No attachment for this comment.'}, 404) unless ["audio", "image"].include? comment.content_type
+        error!({error: 'No attachment for this comment.'}, 404) unless ["audio", "image", "pdf"].include? comment.content_type
 
-        error!({error: 'Image missing'}, 404) unless File.exists? comment.attachment_path
+        error!({error: 'File missing'}, 404) unless File.exists? comment.attachment_path
 
         # Set return content type
         content_type comment.attachment_mime_type
+
         env['api.format'] = :binary
 
         # mark as attachment
