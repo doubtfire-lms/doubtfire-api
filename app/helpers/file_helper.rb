@@ -29,7 +29,7 @@ module FileHelper
     when 'audio'
       accept = ['audio/', 'video/webm', 'application/ogg', 'application/octet-stream']
     when 'comment_attachment'
-      accept = ['audio/', 'video/webm', 'application/ogg', 'image/', 'application/octet-stream']
+      accept = ['audio/', 'video/webm', 'application/ogg', 'image/', 'application/pdf', 'application/octet-stream']
     when 'video'
       accept = ['video/mp4']
     else
