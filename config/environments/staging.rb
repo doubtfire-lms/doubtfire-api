@@ -5,4 +5,7 @@ Doubtfire::Application.configure do
   # levels for extra information
   config.log_level = :info
   config.force_ssl = false
+
+  # Set deterministic randomness, source: https://github.com/stympy/faker#deterministic-random
+  Faker::Config.random = Random.new(77)
 end
