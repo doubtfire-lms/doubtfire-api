@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20180830010529) do
+ActiveRecord::Schema.define(version: 20180913030346) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -25,6 +25,14 @@ ActiveRecord::Schema.define(version: 20180830010529) do
     t.datetime "created_at",                         null: false
     t.datetime "updated_at",                         null: false
   end
+
+  create_table "breaks", force: :cascade do |t|
+    t.datetime "start_date",         null: false
+    t.integer  "number_of_weeks",    null: false
+    t.integer  "teaching_period_id"
+  end
+
+  add_index "breaks", ["teaching_period_id"], name: "index_breaks_on_teaching_period_id", using: :btree
 
   create_table "comments_read_receipts", force: :cascade do |t|
     t.integer  "task_comment_id", null: false
@@ -422,6 +430,7 @@ ActiveRecord::Schema.define(version: 20180830010529) do
   add_index "users", ["authentication_token"], name: "index_users_on_authentication_token", unique: true, using: :btree
   add_index "users", ["login_id"], name: "index_users_on_login_id", unique: true, using: :btree
 
+  add_foreign_key "breaks", "teaching_periods"
   add_foreign_key "comments_read_receipts", "task_comments"
   add_foreign_key "comments_read_receipts", "users"
   add_foreign_key "task_comments", "users", column: "recipient_id"
