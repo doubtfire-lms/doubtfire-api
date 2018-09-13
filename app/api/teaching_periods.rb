@@ -16,6 +16,7 @@ module Api
         requires :year, type: Integer, desc: 'The year of the teaching period'
         requires :start_date, type: Date, desc: 'The start date of the teaching period'
         requires :end_date, type: Date, desc: 'The end date of the teaching period'
+        requires :active_until, type: Date, desc: 'The teaching period will be active until this date'
       end
     end
     post '/teaching_periods' do
@@ -27,7 +28,8 @@ module Api
                                                                .permit(:period,
                                                                        :year,
                                                                        :start_date,
-                                                                       :end_date)
+                                                                       :end_date,
+                                                                       :active_until)
 
       result = TeachingPeriod.create!(teaching_period_parameters)
 
@@ -55,6 +57,7 @@ module Api
         optional :year, type: Integer, desc: 'The year of the teaching period'
         optional :start_date, type: Date, desc: 'The start date of the teaching period'
         optional :end_date, type: Date, desc: 'The end date of the teaching period'
+        optional :active_until, type: Date, desc: 'The teaching period will be active until this date'
       end
     end
     put '/teaching_periods/:id' do
@@ -67,7 +70,8 @@ module Api
                                                                .permit(:period,
                                                                        :year,
                                                                        :start_date,
-                                                                       :end_date)
+                                                                       :end_date,
+                                                                       :active_until)
 
       teaching_period.update!(teaching_period_parameters)
       teaching_period
@@ -85,7 +89,8 @@ module Api
           period: c.period,
           year: c.year,
           start_date: c.start_date,
-          end_date: c.end_date
+          end_date: c.end_date,
+          active_until: c.active_until
         }
       end
       result
@@ -99,23 +104,6 @@ module Api
 
       teaching_period_id = params[:teaching_period_id]
       TeachingPeriod.find(teaching_period_id).destroy
-    end
-
-    # Returns the current units with teaching periods
-    # Return:
-    # Unit Name, unit ID, teaching period name, year
-    #
-    desc 'Return all the units teaching period information'
-    get '/teaching_periods/id/units' do
-      units_with_teaching_periods = Unit.where('teaching_period_id is not NULL').select([:id, :name, :code, :teaching_period_id])
-      result = units_with_teaching_periods.map do |unit|
-        {
-          unit_id: unit.id,
-          unit_code: unit.code,
-          period_name: TeachingPeriod.find(unit.teaching_period_id).period
-        }
-      end
-      result
     end
   end
 end

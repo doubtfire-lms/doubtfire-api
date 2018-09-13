@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20180812105323) do
+ActiveRecord::Schema.define(version: 20180830010529) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -312,10 +312,11 @@ ActiveRecord::Schema.define(version: 20180812105323) do
   add_index "tasks", ["task_status_id"], name: "index_tasks_on_task_status_id", using: :btree
 
   create_table "teaching_periods", force: :cascade do |t|
-    t.string   "period",     null: false
-    t.datetime "start_date", null: false
-    t.datetime "end_date",   null: false
-    t.integer  "year",       null: false
+    t.string   "period",       null: false
+    t.datetime "start_date",   null: false
+    t.datetime "end_date",     null: false
+    t.integer  "year",         null: false
+    t.datetime "active_until", null: false
   end
 
   add_index "teaching_periods", ["period", "year"], name: "index_teaching_periods_on_period_and_year", unique: true, using: :btree

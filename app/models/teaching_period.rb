@@ -7,12 +7,19 @@ class TeachingPeriod < ActiveRecord::Base
     inclusion: { in: 2000..2999, message: "%{value} is not a valid year" }
   validates :start_date, presence: true
   validates :end_date, presence: true
+  validates :active_until, presence: true
 
-  validate :validate_end_date_after_start_date
+  validate :validate_end_date_after_start_date, :validate_active_until_after_end_date
 
   def validate_end_date_after_start_date
     if end_date < start_date
       errors.add(:end_date, "should be after the Start date")
+    end
+  end
+
+  def validate_active_until_after_end_date
+    if active_until < end_date
+      errors.add(:active_until, "date should be after the End date")
     end
   end
 end
