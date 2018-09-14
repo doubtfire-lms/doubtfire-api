@@ -1,6 +1,6 @@
 module TestHelpers
 
-  module AccountHelpers
+  module AccountHelper
 
     ##################################################
     # Student user
