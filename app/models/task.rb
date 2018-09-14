@@ -525,6 +525,8 @@ class Task < ActiveRecord::Base
       comment.content_type = :audio
     elsif FileHelper.accept_file(tempfile, "comment attachment image test", "image")
       comment.content_type = :image
+    elsif FileHelper.accept_file(tempfile, "comment attachment pdf", "document")
+      comment.content_type = :pdf
     else
       raise "Unknown comment attachment type"
     end
