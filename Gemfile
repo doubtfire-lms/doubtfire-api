@@ -13,15 +13,6 @@ ruby ruby_versions[(ENV['RAILS_ENV'] || 'development').to_sym]
 # The venerable, almighty Rails
 gem 'rails', '4.2.6'
 
-group :development do
-  gem 'pg'
-  gem 'hirb'
-  gem 'better_errors'
-  gem 'rails_best_practices'
-  gem 'thin'
-  gem 'rubocop', '0.46.0'
-end
-
 group :development, :test do
   gem 'database_cleaner'
   gem 'factory_girl_rails'
@@ -30,6 +21,18 @@ group :development, :test do
   gem 'minitest-osx'
   gem 'minitest-rails'
   gem 'byebug'
+  gem 'pg'
+  gem 'hirb'
+  gem 'better_errors'
+  gem 'rails_best_practices'
+  gem 'thin'
+  gem 'rubocop', '0.46.0'
+end
+
+group :development, :test, :staging, :replica do
+  # Generators for population
+  gem 'populator'
+  gem 'faker'
 end
 
 group :production do
@@ -44,10 +47,6 @@ end
 gem 'devise', '~> 4.1.1'
 gem 'devise_ldap_authenticatable'
 gem 'json-jwt', '1.7.0'
-
-# Generators for population
-gem 'populator'
-gem 'faker'
 
 # Student submission
 gem 'coderay'
@@ -75,5 +74,5 @@ gem 'require_all', '1.3.3'
 gem 'dotenv-rails'
 
 # Excel support
-gem "roo", "~> 2.7.0"
+gem 'roo', '~> 2.7.0'
 gem 'roo-xls'
