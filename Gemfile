@@ -21,6 +21,7 @@ group :development, :test do
   gem 'minitest-osx'
   gem 'minitest-rails'
   gem 'byebug'
+  gem 'simplecov', require: false
   gem 'pg'
   gem 'hirb'
   gem 'better_errors'
