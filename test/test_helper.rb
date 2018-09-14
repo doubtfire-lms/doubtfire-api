@@ -1,3 +1,5 @@
+require 'simplecov'
+SimpleCov.start 'rails'
 # Setup RAILS_ENV as test and expand config for test environment
 ENV['RAILS_ENV'] = 'test'
 require File.expand_path('../../config/environment', __FILE__)
