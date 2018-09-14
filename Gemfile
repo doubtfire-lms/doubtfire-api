@@ -30,6 +30,7 @@ group :development, :test do
   gem 'minitest-osx'
   gem 'minitest-rails'
   gem 'byebug'
+  gem 'simplecov', require: false
 end
 
 group :production do
