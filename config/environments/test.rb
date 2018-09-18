@@ -30,4 +30,7 @@ Doubtfire::Application.configure do
 
   # Print deprecation notices to the stderr
   config.active_support.deprecation = :stderr
+
+  # Set deterministic randomness, source: https://github.com/stympy/faker#deterministic-random
+  Faker::Config.random = Random.new(77)
 end
