@@ -132,7 +132,7 @@ class DatabasePopulator
       unit = Unit.create!(
         code: unit_details[:code],
         name: unit_details[:name],
-        description: Populator.words(10..15),
+        description: faker_random_sentence(10, 15),
         start_date: Time.zone.now  - 6.weeks,
         end_date: 13.weeks.since(Time.zone.now - 6.weeks)
       )
@@ -210,7 +210,7 @@ class DatabasePopulator
           { user: :cliff, num: some_tutorials },
         ],
         num_tasks: some_tasks,
-        ilos: rand(0..3),
+        ilos: Faker::Number.between(0,3),
         students: [ ]
       },
       oop: {
@@ -224,7 +224,7 @@ class DatabasePopulator
           { user: :joostfunkekupper, num: few_tutorials },
         ],
         num_tasks: many_tasks,
-        ilos: rand(0..3),
+        ilos: Faker::Number.between(0,3),
         students: [ :cliff ]
       },
       ai4g: {
@@ -236,7 +236,7 @@ class DatabasePopulator
           { user: :cliff, num: few_tutorials },
         ],
         num_tasks: few_tasks,
-        ilos: rand(0..3),
+        ilos: Faker::Number.between(0,3),
         students: [ :acummaudo ]
       },
       gameprog: {
@@ -247,7 +247,7 @@ class DatabasePopulator
           { user: :aconvenor, num: few_tutorials },
         ],
         num_tasks: few_tasks,
-        ilos: rand(0..3),
+        ilos: Faker::Number.between(0,3),
         students: [ :acain, :aadmin ]
       },
     }
@@ -308,18 +308,18 @@ class DatabasePopulator
     print "----> Generating #{unit_details[:num_tasks]} tasks"
     unit_details[:num_tasks].times do |count|
       up_reqs = []
-      rand(1..4).times.each_with_index do | file, idx |
-        up_reqs[idx] = { :key => "file#{idx}", :name => Populator.words(1..3).capitalize, :type => ["code", "document", "image"].sample }
+      Faker::Number.between(1,4).times.each_with_index do | file, idx |
+        up_reqs[idx] = {:key => "file#{idx}", :name => faker_random_sentence(1, 3).capitalize, :type => ["code", "document", "image"].sample }
       end
       target_date = unit.start_date + ((count + 1) % 12).weeks # Assignment 6 due week 6, etc.
-      start_date = target_date - rand(1.0..2.0).weeks
+      start_date = target_date - Faker::Number.between(1.0,2.0).weeks
       # Make sure at least 30% of the tasks are pass
-      target_grade = @task_def_cache.length > (unit_details[:num_tasks] / 3) ? rand(0..3) : 0
+      target_grade = @task_def_cache.length > (unit_details[:num_tasks] / 3) ? Faker::Number.between(0,3) : 0
       task_def = TaskDefinition.create(
         name: "Assignment #{count + 1}",
         abbreviation: "A#{count + 1}",
         unit_id: unit.id,
-        description: Populator.words(5..10),
+        description: faker_random_sentence(5, 10),
         weighting: BigDecimal.new("2"),
         target_date: target_date,
         upload_requirements: up_reqs.to_json,
@@ -349,8 +349,8 @@ class DatabasePopulator
         unit_id: unit.id,
         ilo_number: ilo_number,
         abbreviation: "ILO#{ilo_number}",
-        name: Populator.words(1..4).capitalize,
-        description:  Populator.words(10..15)
+        name: faker_random_sentence(1, 4).capitalize,
+        description:  faker_random_sentence(10, 15)
       )
       ilo_cache[ilo.id] = ilo
       print "."
@@ -368,8 +368,8 @@ class DatabasePopulator
           learning_outcome_id: ilo_id,
           task_id: nil
         )
-        link.rating = rand(1..4)
-        link.description = Populator.words(5..10)
+        link.rating = Faker::Number.between(1,4)
+        link.description = faker_random_sentence(5, 10)
         link.save!
         print '.'
       end
@@ -406,14 +406,14 @@ class DatabasePopulator
         #day, time, location, tutor_username, abbrev
         tutorial = unit.add_tutorial(
           "#{weekdays.sample}",
-          "#{8 + rand(12)}:#{['00', '30'].sample}",    # Mon-Fri 8am-7:30pm
-          "#{['EN', 'BA'].sample}#{rand(7)}#{rand(1)}#{rand(9)}", # EN###/BA###
+          "#{8 + Faker::Number.between(0,11)}:#{['00', '30'].sample}",    # Mon-Fri 8am-7:30pm
+          "#{['EN', 'BA'].sample}#{Faker::Number.between(0,6)}0#{Faker::Number.between(0,8)}", # EN###/BA###
           tutor,
           "LA1-#{tutorial_count.to_s.rjust(2, '0')}"
         )
 
         # Add a random number of students to the tutorial
-        num_students_in_tutorial = (min_students + rand(delta_students))
+        num_students_in_tutorial = (min_students + Faker::Number.between(0,delta_students - 1))
         print "-----> Creating #{num_students_in_tutorial} projects under tutorial #{tutorial.abbreviation}"
         num_students_in_tutorial.times do
           student = find_or_create_student("student_#{student_count}")

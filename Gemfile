@@ -33,7 +33,7 @@ end
 group :development, :test, :staging, :replica do
   # Generators for population
   gem 'populator'
-  gem 'faker'
+  gem 'faker', '~>1.9.1'
 end
 
 group :production do
