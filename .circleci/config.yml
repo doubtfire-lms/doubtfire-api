@@ -11,14 +11,23 @@ jobs:
   build:
     docker:
       # specify the version you desire here
-       - image: circleci/ruby:2.3.1
+      - image: circleci/ruby:2.3.1-trusty
       
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
       # documented at https://circleci.com/docs/2.0/circleci-images/
-      # - image: circleci/postgres:9.4
+      - image: circleci/mysql
+    environment:
+      - DF_STAGING_DB_ADAPTER: mysql2
+      - DF_STAGING_DB_HOST: localhost
+      - DF_STAGING_DB_DATABASE: doubtfire_staging
+      - DF_STAGING_DB_USERNAME: root
+      - DF_STAGING_DB_PASSWORD: ""
+      - DF_SECRET_KEY_BASE: test_staging
+      - DF_SECRET_KEY_ATTR: test_staging
+      - DF_SECRET_KEY_DEVISE: test_staging
 
-    working_directory: ~/repo
+    working_directory: ~/doubtfire_api
 
     steps:
       - checkout
@@ -30,6 +39,10 @@ jobs:
           # fallback to using the latest cache if no exact match is found
           - v1-dependencies-
 
+      - run: |
+          apt-get update
+          sudo apt-get install -y ghostscript imagemagick libmagic-dev libmagickwand-dev libmagic-dev python-pygments libav-tools texlive-full
+              
       - run:
           name: install dependencies
           command: |
@@ -41,11 +54,11 @@ jobs:
           key: v1-dependencies-{{ checksum "Gemfile.lock" }}
         
       # Database setup
-      - run: bundle exec rake db:create
-      - run: echo "n" | bundle exec rake db:populate
+      - run: RAILS_ENV=staging bundle exec rake db:create
+      - run: echo "n" | RAILS_ENV=staging bundle exec rake db:populate
 
       # run tests!
       - run:
           name: run tests
-          command: bundle exec rake test
+          command: RAILS_ENV=staging bundle exec rake test
           
