@@ -447,8 +447,16 @@ class Task < ActiveRecord::Base
         submission_attributes[:submission_time] = assess_date
         submission = TaskSubmission.create! submission_attributes
       else
-        submission.update_attributes submission_attributes
-        submission.save
+        # we have an existing submission
+        if submission.assessment_time.nil?
+          # and it hasn't been assessed yet...
+          submission.update_attributes submission_attributes
+          submission.save
+        else
+          # it was assessed... so lets create a new assessment
+          submission_attributes[:submission_time] = submission.submission_time
+          submission = TaskSubmission.create! submission_attributes
+        end
       end
     end
   end
