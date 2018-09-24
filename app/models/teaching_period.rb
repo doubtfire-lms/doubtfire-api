@@ -1,5 +1,6 @@
 class TeachingPeriod < ActiveRecord::Base
   has_many :units
+  has_many :breaks
 
   validates :period, length: { minimum: 1, maximum: 20, allow_blank: false }, uniqueness: { scope: :year,
     message: "%{value} already exists in this year" }
@@ -21,5 +22,14 @@ class TeachingPeriod < ActiveRecord::Base
     if active_until < end_date
       errors.add(:active_until, "date should be after the End date")
     end
+  end
+
+  def add_break(start_date, number_of_weeks)
+    break_in_teaching_period = Break.create
+    break_in_teaching_period.start_date = start_date
+    break_in_teaching_period.number_of_weeks = number_of_weeks
+    break_in_teaching_period.teaching_period_id = self.id
+    break_in_teaching_period.save!
+    break_in_teaching_period
   end
 end
