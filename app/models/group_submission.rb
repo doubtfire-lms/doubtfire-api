@@ -32,6 +32,7 @@ class GroupSubmission < ActiveRecord::Base
     tasks.each do |task|
       next if [TaskStatus.complete.id, TaskStatus.do_not_resubmit.id, TaskStatus.fail.id].include? task.task_status_id
       if task != initial_task
+        task.extensions = initial_task.extensions unless initial_task.extensions < task.extensions
         task.trigger_transition(trigger: trigger, by_user: by_user, group_transition: true, quality: quality)
       end
     end
