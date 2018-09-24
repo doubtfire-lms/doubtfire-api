@@ -4,6 +4,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
   include Rack::Test::Methods
   include TestHelpers::AuthHelper
   include TestHelpers::JsonHelper
+  include TestHelpers::TestFileHelper
 
   def app
     Rails.application
@@ -72,9 +73,10 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     td.save!
 
     data_to_post = {
-      file0: Rack::Test::UploadedFile.new('test_files/submissions/test.sql', 'text/plain'),
       trigger: 'ready_to_mark'
     }
+
+    data_to_post = with_file('test_files/submissions/test.sql', 'text/plain', data_to_post)
 
     project = unit.active_projects.first
 
