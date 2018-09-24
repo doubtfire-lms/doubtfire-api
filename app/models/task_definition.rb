@@ -303,13 +303,60 @@ class TaskDefinition < ActiveRecord::Base
   end
 
   def adjust_dates(diff_in_sec)
+    # To remove the unnecessary breaks in the current teaching period
+    adjust_dates_for_breaks_in_previous_teaching_period
+    move_dates_to_current_teaching_period(diff_in_sec)
+  end
+
+  def move_dates_to_current_teaching_period(diff_in_sec)
     self.target_date = self.target_date + diff_in_sec
     self.start_date = self.start_date + diff_in_sec
 
     # Check to make sure that self.due_date is not returning the end date of the unit
-    if self.due_date < unit.end_date
+    if self.due_date != unit.end_date
       self.due_date = self.due_date + diff_in_sec
+    else
+      self.due_date = nil
     end
+  end
+
+  # The unit we rolled over from....
+  def adjust_dates_for_breaks_in_previous_teaching_period
+    if unit.teaching_period
+      for break_in_unit in unit.teaching_period.breaks do
+        if target_date >= break_in_unit.start_date
+          self.target_date = self.target_date - break_in_unit.number_of_weeks.weeks
+        end
+
+        if start_date >= break_in_unit.start_date
+          self.start_date = self.start_date - break_in_unit.number_of_weeks.weeks
+        end
+
+        if due_date >= break_in_unit.start_date && due_date != unit.end_date
+          self.due_date = self.due_date - break_in_unit.number_of_weeks.weeks
+        end
+      end
+    end
+  end
+
+  # The unit we rolled over to....
+  def adjust_dates_for_breaks_in_current_teaching_period
+    if unit.teaching_period
+      for break_in_unit in unit.teaching_period.breaks do
+        if self.target_date >= break_in_unit.start_date
+          self.target_date = self.target_date + break_in_unit.number_of_weeks.weeks
+        end
+
+        if self.start_date >= break_in_unit.start_date
+          self.start_date = self.start_date + break_in_unit.number_of_weeks.weeks
+        end
+
+        if self.due_date >= break_in_unit.start_date && due_date != unit.end_date
+          self.due_date = self.due_date + break_in_unit.number_of_weeks.weeks
+        end
+      end
+    end
+
   end
 
   def to_csv_row
