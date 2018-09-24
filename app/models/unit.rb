@@ -166,6 +166,9 @@ class Unit < ActiveRecord::Base
       new_task_definitions.adjust_dates(diff_in_sec)
       self.task_definitions << new_task_definitions
     end
+    self.task_definitions.each do |task_definitions|
+      task_definitions.adjust_dates_for_breaks_in_current_teaching_period
+    end
   end
 
   def duplicate_learning_outcomes_from_existing_unit(unit)
