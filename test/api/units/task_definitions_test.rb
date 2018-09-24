@@ -85,7 +85,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_equal 201, last_response.status
 
     task = project.task_for_task_definition(td)
-    task.convert_submission_to_pdf
+    assert task.convert_submission_to_pdf
     path = task.zip_file_path_for_done_task
     assert path
     assert File.exists? path
