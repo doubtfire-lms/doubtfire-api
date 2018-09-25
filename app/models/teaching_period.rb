@@ -33,21 +33,10 @@ class TeachingPeriod < ActiveRecord::Base
     break_in_teaching_period
   end
 
-  def rollover(period, year, start_date, end_date, active_until)
-    new_teaching_period = self.dup
-    new_teaching_period.set_details(period, year, start_date, end_date, active_until)
-    new_teaching_period.add_associations(self)
-    new_teaching_period.save!
-    new_teaching_period
-  end
-
-  def set_details(period, year, start_date, end_date, active_until)
-    self.period = period
-    self.year = year
-    self.start_date = start_date
-    self.end_date = end_date
-    self.active_until = active_until
-    save!
+  def rollover(rollover_to)
+    rollover_to.add_associations(self)
+    rollover_to.save!
+    rollover_to
   end
 
   def add_associations(existing_teaching_period)
