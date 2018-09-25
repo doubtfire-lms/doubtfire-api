@@ -341,7 +341,7 @@ class TaskDefinition < ActiveRecord::Base
 
   # The unit we rolled over to....
   def adjust_dates_for_breaks_in_current_teaching_period
-    if unit.teaching_period
+    if unit.teaching_period.present?
       for break_in_unit in unit.teaching_period.breaks do
         if self.target_date >= break_in_unit.start_date
           self.target_date = self.target_date + break_in_unit.number_of_weeks.weeks
