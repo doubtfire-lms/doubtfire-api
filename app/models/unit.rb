@@ -136,7 +136,7 @@ class Unit < ActiveRecord::Base
     end
   end
 
-  def roll_over(teaching_period_id, start_date, end_date)
+  def rollover(teaching_period_id, start_date, end_date)
     new_unit = self.dup
     if teaching_period_id.present?
       new_unit.set_teaching_period(teaching_period_id)
