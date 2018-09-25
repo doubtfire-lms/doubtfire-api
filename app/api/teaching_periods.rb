@@ -108,35 +108,18 @@ module Api
 
     desc 'Rollover a Teaching Period'
     params do
-      requires :teaching_period, type: Hash do
-        requires :period, type: String, desc: 'The name of the teaching period'
-        requires :year, type: Integer, desc: 'The year of the teaching period'
-        requires :start_date, type: Date, desc: 'The start date of the teaching period'
-        requires :end_date, type: Date, desc: 'The end date of the teaching period'
-        requires :active_until, type: Date, desc: 'The teaching period will be active until this date'
-      end
+      requires :new_teaching_period_id, type: Integer, desc: 'The id of the rolled over teaching period'
     end
-    post '/teaching_periods/:id/rollover' do
+    post '/teaching_periods/:existing_teaching_period_id/rollover' do
       unless authorise? current_user, User, :rollover
         error!({ error: 'Not authorised to rollover a teaching period' }, 403)
       end
-      teaching_period_parameters = ActionController::Parameters.new(params)
-                                                               .require(:teaching_period)
-                                                               .permit(:period,
-                                                                       :year,
-                                                                       :start_date,
-                                                                       :end_date,
-                                                                       :active_until)
 
+      new_teaching_period_id = params[:new_teaching_period_id]
+      new_teaching_period = TeachingPeriod.find(new_teaching_period_id)
 
-      period = teaching_period_parameters[:period]
-      year = teaching_period_parameters[:year]
-      start_date = teaching_period_parameters[:start_date]
-      end_date = teaching_period_parameters[:end_date]
-      active_until = teaching_period_parameters[:active_until]
-
-      teaching_period = TeachingPeriod.find(params[:id])
-      teaching_period.rollover(period, year, start_date, end_date, active_until)
+      existing_teaching_period = TeachingPeriod.find(params[:existing_teaching_period_id])
+      existing_teaching_period.rollover(new_teaching_period)
     end
   end
 end
