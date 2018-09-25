@@ -168,6 +168,7 @@ class Unit < ActiveRecord::Base
     end
     self.task_definitions.each do |task_definitions|
       task_definitions.adjust_dates_for_breaks_in_current_teaching_period
+      task_definitions.save!
     end
   end
 
