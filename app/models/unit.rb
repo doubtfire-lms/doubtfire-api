@@ -97,6 +97,7 @@ class Unit < ActiveRecord::Base
   belongs_to :teaching_period
   validates :start_date, presence: true
   validates :end_date, presence: true
+  validates :code, uniqueness: { scope: :teaching_period, message: "%{value} already exists in this teaching period" }, if: :has_teaching_period?
 
   validate :validate_end_date_after_start_date
   validate :ensure_teaching_period_dates_match, if: :has_teaching_period?
