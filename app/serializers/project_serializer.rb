@@ -11,13 +11,6 @@ class ShallowProjectSerializer < ActiveModel::Serializer
     object.id
   end
 
-  # def teaching_period
-  #   if object.unit.teaching_period_id.present?
-  #     teachingPeriod = TeachingPeriod.find(object.unit.teaching_period_id)
-  #     ::TeachingPeriodSerializer.new(teachingPeriod).attributes
-  #   end
-  # end
-
   def teaching_period_name
     if object.unit.teaching_period_id.present?
       teachingPeriod = TeachingPeriod.find(object.unit.teaching_period_id)
