@@ -52,10 +52,10 @@ module Api
       requires :tutorial, type: Hash do
         requires :unit_id, type: Integer, desc: 'Id of the unit'
         requires :tutor_id, type: Integer, desc: 'Id of the tutor'
-        requires :abbreviation, type: String, desc: 'The tutorials code'
-        requires :meeting_location, type: String, desc: 'The tutorials location'
-        requires :meeting_day, type: String, desc: 'Day of the tutorial'
-        requires :meeting_time, type: String, desc: 'Time of the tutorial'
+        requires :abbreviation, type: String, desc: 'The tutorials code', allow_blank: false
+        requires :meeting_location, type: String, desc: 'The tutorials location', allow_blank: false
+        requires :meeting_day, type: String, desc: 'Day of the tutorial', allow_blank: false
+        requires :meeting_time, type: String, desc: 'Time of the tutorial', allow_blank: false
       end
     end
     post '/tutorials' do
