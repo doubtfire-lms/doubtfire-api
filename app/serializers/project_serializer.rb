@@ -5,16 +5,37 @@ class ShallowProjectSerializer < ActiveModel::Serializer
   attributes :unit_id, :unit_code, :unit_name,
              :project_id, :student_name,
              :tutor_name, :target_grade,
-             :has_portfolio, :start_date, :teaching_period
+             :has_portfolio, :start_date, :teaching_period_name, :teaching_period_year, :teaching_period_active
 
   def project_id
     object.id
   end
 
-  def teaching_period
+  # def teaching_period
+  #   if object.unit.teaching_period_id.present?
+  #     teachingPeriod = TeachingPeriod.find(object.unit.teaching_period_id)
+  #     ::TeachingPeriodSerializer.new(teachingPeriod).attributes
+  #   end
+  # end
+
+  def teaching_period_name
     if object.unit.teaching_period_id.present?
       teachingPeriod = TeachingPeriod.find(object.unit.teaching_period_id)
-      ::TeachingPeriodSerializer.new(teachingPeriod).attributes
+      teachingPeriod.period
+    end
+  end
+
+  def teaching_period_year
+    if object.unit.teaching_period_id.present?
+      teachingPeriod = TeachingPeriod.find(object.unit.teaching_period_id)
+      teachingPeriod.year
+    end
+  end
+
+  def teaching_period_active
+    if object.unit.teaching_period_id.present?
+      teachingPeriod = TeachingPeriod.find(object.unit.teaching_period_id)
+      teachingPeriod.active_until > DateTime.now
     end
   end
 end
