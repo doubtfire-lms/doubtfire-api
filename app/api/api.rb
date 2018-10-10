@@ -14,7 +14,7 @@ module Api
     rescue_from :all do |e|
       case e
       when ActiveRecord::RecordInvalid
-        error!(e.message, 500)
+        error!(e.message, 400)
       when ActiveRecord::RecordNotFound
         error!("Unable to find requested #{e.message[/(Couldn't find )(.*)( with)/,2]}", 404)
       else
