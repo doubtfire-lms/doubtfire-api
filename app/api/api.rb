@@ -10,7 +10,19 @@ module Api
     prefix 'api'
     format :json
     formatter :json, Grape::Formatter::ActiveModelSerializers
-    rescue_from :all
+
+    rescue_from :all do |e|
+      case e
+      when ActiveRecord::RecordInvalid
+        error!(e.message, 500)
+      when ActiveRecord::RecordNotFound
+        error!("Unable to find requested #{e.message[/(Couldn't find )(.*)( with)/,2]}", 404)
+      else
+        logger.error "Unhandled exception: #{e.class}"
+        logger.info "#{e.inspect}"
+        error!("Sorry... something went wrong with your request.", 500)
+      end
+    end
 
     #
     # Mount the api modules
