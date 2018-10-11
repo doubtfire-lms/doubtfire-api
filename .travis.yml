@@ -7,6 +7,8 @@ cache:
   # Cache the following directories. RVM can be cached according to Travis's docs
   directories:
    - /home/travis/.rvm/
+   - /tmp/texlive
+   - $HOME/.texlive
 
 # Specify Ruby version for rvm
 rvm:
@@ -46,10 +48,10 @@ git:
 # Install following dependencies and rehash rbenv before setting the environment for script execution
 install:
   - sudo apt-get install -y ghostscript imagemagick libmagic-dev libmagickwand-dev libmagic-dev python-pygments libav-tools
-  - sudo apt-get install texlive-full
+  - source .ci-setup/texlive_install.sh
   - bundle install --without production replica
   - rbenv rehash
-
+    
 # Set the environment before running the tests
 before_script:
   # ======================================================================================
