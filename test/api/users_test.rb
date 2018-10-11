@@ -99,7 +99,7 @@ class UnitsTest < ActiveSupport::TestCase
     post_json '/api/users', data_to_post
     # Successful assertion of same length again means no record was created
     assert_equal pre_count + 1, User.all.length
-    assert_equal 500, last_response.status
+    assert_equal 400, last_response.status
   end
 
   def test_post_create_same_user_different_email
@@ -120,7 +120,7 @@ class UnitsTest < ActiveSupport::TestCase
     post_json '/api/users', data_to_post
     # Successful assertion of same length again means no record was created
     assert_equal pre_count + 1, User.all.length
-    assert_equal 500, last_response.status
+    assert_equal 400, last_response.status
   end
 
   def test_post_create_same_user_different_username
@@ -141,7 +141,7 @@ class UnitsTest < ActiveSupport::TestCase
     post_json '/api/users', data_to_post
     # Successful assertion of same length again means no record was created
     assert_equal pre_count + 1, User.all.length
-    assert_equal 500, last_response.status
+    assert_equal 400, last_response.status
   end
 
   def test_post_create_user_invalid_email
@@ -162,7 +162,7 @@ class UnitsTest < ActiveSupport::TestCase
       post_json '/api/users', data_to_post
       # Successful assertion of same length again means no record was created
       assert_equal pre_count, User.all.length
-      assert_equal 500, last_response.status
+      assert_equal 400, last_response.status
     end
   end
 
@@ -182,7 +182,7 @@ class UnitsTest < ActiveSupport::TestCase
       post_json '/api/users', data_to_post
       # Successful assertion of same length again means no record was created
       assert_equal pre_count, User.all.length
-      assert_equal (if key == :system_role then 403 else 500 end), last_response.status
+      assert_equal (if key == :system_role then 403 else 400 end), last_response.status
       user2[key] = value
     end
   end
@@ -255,7 +255,7 @@ class UnitsTest < ActiveSupport::TestCase
     }
 
     put_json '/api/users/2', data_to_put
-    assert_equal 500, last_response.status
+    assert_equal 400, last_response.status
   end
 
   def test_put_update_user_invalid_email
@@ -273,7 +273,7 @@ class UnitsTest < ActiveSupport::TestCase
       }
 
       put_json '/api/users/2', data_to_put
-      assert_equal 500, last_response.status
+      assert_equal 400, last_response.status
     end
   end
 
@@ -287,7 +287,7 @@ class UnitsTest < ActiveSupport::TestCase
     }
 
     put_json '/api/users/2', data_to_put
-    assert_equal 500, last_response.status
+    assert_equal 400, last_response.status
   end
 
   def test_put_update_user_custom_token(token='asdasd')
