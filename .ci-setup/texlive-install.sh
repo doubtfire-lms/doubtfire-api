@@ -28,18 +28,15 @@ tlmgr install   \
   amsfonts      \
   stmaryrd      \
   amsmath       \
-  fontenc       \
-  textcomp      \
-  shellesc      \
+  tools         \
   fontawesome   \
   luatextra     \
   minted        \
-  graphicx      \
+  graphics      \
   geometry      \
   fancyhdr      \
   pdfpages      \
   epstopdf      \
-  amssymb       \
   colortbl      \
   lastpage      \
   hyperref      \
