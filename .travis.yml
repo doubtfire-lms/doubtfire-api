@@ -48,7 +48,7 @@ git:
 # Install following dependencies and rehash rbenv before setting the environment for script execution
 install:
   - sudo apt-get install -y ghostscript imagemagick libmagic-dev libmagickwand-dev libmagic-dev python-pygments libav-tools
-  - source .ci-setup/texlive_install.sh
+  - ./.ci-setup/texlive-install.sh
   - bundle install --without production replica
   - rbenv rehash
     
