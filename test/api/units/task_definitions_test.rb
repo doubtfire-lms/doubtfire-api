@@ -65,7 +65,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
         target_date: unit.start_date + 2.weeks,
         abbreviation: 'TaskSwitchIndGrp',
         restrict_status_updates: false,
-        upload_requirements: [ { "key" => 'file0', "name" => 'Shape Class', "type" => 'code' } ],
+        upload_requirements: [ { "key" => 'file0', "name" => 'Shape Class', "type" => 'document' } ],
         plagiarism_warn_pct: 0.8,
         is_graded: false,
         max_quality_pts: 0
@@ -76,7 +76,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
       trigger: 'ready_to_mark'
     }
 
-    data_to_post = with_file('test_files/submissions/test.sql', 'text/plain', data_to_post)
+    data_to_post = with_file('test_files/submissions/00_question.pdf', 'application/pdf', data_to_post)
 
     project = unit.active_projects.first
 
