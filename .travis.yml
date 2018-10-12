@@ -51,6 +51,7 @@ install:
   - ./.ci-setup/texlive-install.sh
   - bundle install --without production replica
   - rbenv rehash
+  - export PATH=/tmp/texlive/bin/x86_64-linux:$PATH
     
 # Set the environment before running the tests
 before_script:
