@@ -99,8 +99,8 @@ class AuthTest < ActiveSupport::TestCase
     refute actual_auth.key?('user'), 'User not expected if auth fails'
     refute actual_auth.key?('auth_token'), 'Auth token not expected if auth fails'
     
-    # 500 response code means missing username and password
-    assert_equal 500, last_response.status
+    # 400 response code means missing username and password
+    assert_equal 400, last_response.status
     assert actual_auth.key? 'error'
   end
 
@@ -210,8 +210,8 @@ class AuthTest < ActiveSupport::TestCase
     actual_auth = JSON.parse(last_response.body)
     expected_auth = User.first.auth_token
     
-    # 500 response code means empty token
-    assert_equal 500, last_response.status
+    # 405 response code means empty token
+    assert_equal 405, last_response.status
     
     # Check to see if the response is invalid
     assert actual_auth.key? 'error'
@@ -226,8 +226,8 @@ class AuthTest < ActiveSupport::TestCase
     actual_auth = JSON.parse(last_response.body)
     expected_auth = User.first.auth_token
     
-    # 500 response code means empty body
-    assert_equal 500, last_response.status
+    # 400 response code means empty body
+    assert_equal 400, last_response.status
     
     # Check to see if the response is invalid
     assert actual_auth.key? 'error'
