@@ -25,22 +25,14 @@ fi
 # Other contrib packages: done as a block to avoid multiple calls to tlmgr
 # texlive-latex-base is needed to run pdflatex
 tlmgr install   \
-  exam          \
-  amsfonts      \
-  stmaryrd      \
-  amsmath       \
-  tools         \
   fontawesome   \
-  luatextra     \
   minted        \
-  graphics      \
-  geometry      \
-  fancyhdr      \
-  pdfpages      \
-  epstopdf      \
-  colortbl      \
-  lastpage      \
-  hyperref
+  fvextra       \
+  upquote       \
+  ifplatform    \
+  xstring       \
+  framed        \
+  lastpage
 
 # Keep no backups (not required, simply makes cache bigger)
 tlmgr option -- autobackup 0
