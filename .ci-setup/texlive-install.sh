@@ -11,6 +11,11 @@ if ! command -v lualatex > /dev/null; then
   tar -xzf install-tl-unx.tar.gz
   cd install-tl-20*
 
+  echo "Installing using profile:"
+  cat ${APP_PATH}/texlive.profile
+
+  echo
+
   # Install a minimal system
   ./install-tl --profile="${APP_PATH}/texlive.profile"
 
