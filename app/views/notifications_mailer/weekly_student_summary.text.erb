@@ -47,7 +47,7 @@ Its time to Party! You have completed all of the tasks and prepared your portfol
 Its almost party time... You have completed all of the tasks, now make sure you login and prepare your portfolio.
 <%  end %>
 
-So what has happened in the last week?
+What has happened in <%= @doubtfire_product_name %> this week:
 
 * In total, there <%= were_was(@summary_stats[:unit_week_comments]) %> <%= @summary_stats[:unit_week_comments] %> comment<%= "s" if @summary_stats[:unit_week_comments] != 1 %> made in this unit.
 * You posted a total of <%= @sent_comments %> comment<%= "s" if @sent_comments != 1 %>, and received back <%= @received_comments %> comment<%= "s" if @received_comments != 1 %> <%= "- try posting some comments this week" if @sent_comments == 0 %>

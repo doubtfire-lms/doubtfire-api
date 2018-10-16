@@ -25,3 +25,8 @@ student_work/
 .DS_Store
 .env
 .env*
+
+# RubyMine files
+.idea/
+.byebug_history
+coverage/

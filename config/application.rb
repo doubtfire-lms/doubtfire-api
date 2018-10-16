@@ -36,6 +36,8 @@ module Doubtfire
     config.institution[:email_domain] = ENV['DF_INSTITUTION_EMAIL_DOMAIN'] if ENV['DF_INSTITUTION_EMAIL_DOMAIN']
     config.institution[:host] = ENV['DF_INSTITUTION_HOST'] if ENV['DF_INSTITUTION_HOST']
     config.institution[:product_name] = ENV['DF_INSTITUTION_PRODUCT_NAME'] if ENV['DF_INSTITUTION_PRODUCT_NAME']
+    config.institution[:privacy] = ENV['DF_INSTITUTION_PRIVACY'] if ENV['DF_INSTITUTION_PRIVACY']
+    config.institution[:plagiarism] = ENV['DF_INSTITUTION_PLAGIARISM'] if ENV['DF_INSTITUTION_PLAGIARISM']
     # Institution host becomes localhost in all but prod
     config.institution[:host] = 'localhost:3000' if Rails.env.development?
     config.institution[:host_url] = Rails.env.development? ? "http://#{config.institution[:host]}/" : "https://#{config.institution[:host]}/"
@@ -59,6 +61,8 @@ module Doubtfire
       config.aaf[:redirect_url] = ENV['DF_AAF_UNIQUE_URL']
       # URL of the identity provider (e.g., https://unifoo.edu.au/idp/shibboleth)
       config.aaf[:identity_provider_url] = ENV['DF_AAF_IDENTITY_PROVIDER_URL']
+      # The URL to redirect to after a signout
+      config.aaf[:auth_signout_url] = ENV['DF_AAF_AUTH_SIGNOUT_URL']
       # Redirection URL to use on front-end
       config.aaf[:redirect_url] += "?entityID=#{config.aaf[:identity_provider_url]}"
       # Check we have all values

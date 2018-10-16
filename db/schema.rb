@@ -309,7 +309,7 @@ ActiveRecord::Schema.define(version: 20180913030346) do
     t.datetime "assessment_date"
     t.integer  "grade"
     t.integer  "contribution_pts",                 default: 3
-    t.integer  "quality_pts",                      default: 0
+    t.integer  "quality_pts",                      default: -1
     t.integer  "extensions",                       default: 0,    null: false
   end
 

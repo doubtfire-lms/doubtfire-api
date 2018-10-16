@@ -29,6 +29,13 @@ module Api
         }
       end
       result
+
+    desc 'Return privacy policy details'
+    get '/settings/privacy' do
+      {
+        privacy:    Doubtfire::Application.config.institution[:privacy],
+        plagiarism: Doubtfire::Application.config.institution[:plagiarism]
+      }
     end
   end
 end

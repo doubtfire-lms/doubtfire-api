@@ -1,6 +1,6 @@
 ![Doubtfire Logo](http://puu.sh/lyClF/fde5bfbbe7.png)
 
-# Doubtfire API
+# Doubtfire API  [![Build Status](https://travis-ci.org/doubtfire-lms/doubtfire-api.svg?branch=development)](https://travis-ci.org/doubtfire-lms/doubtfire-api)
 
 A modern, lightweight learning management system.
 
@@ -44,6 +44,9 @@ Doubtfire requires multiple environment variables that help define settings abou
 | `DF_SECRET_KEY_ATTR`          | The secret key to encrypt certain database fields.                                                                                                                                                                                                                            | Default key provided. |
 | `DF_SECRET_KEY_DEVISE`        | The secret key provided to Devise.                                                                                                                                                                                                                                            | Default key provided. |
 | `DF_SECRET_KEY_MOSS`          | The secret key provided to [Moss](http://theory.stanford.edu/~aiken/moss/) for plagiarism detection. This value will need to be set to run `rake submission:check_plagiarism` (otherwise you **won't** need it). You will need to register for a Moss account to use this.    | No default.           |
+| `DF_INSTITUTION_PRIVACY`      | A statement related to the need for students to submit their own work, and that this work may be uploaded to 3rd parties for the purpose of plagiarism detection.                                                                                                                                    | Default statement provided |
+| `DF_INSTITUTION_PLAGIARISM`      | A statement clarifying the terms plagiarism and collusion.                                                                                                                                    | Default statement provided |
+| `DF_INSTITUTION_SETTINGS_RB`      | The path of the institution specific settings rb code - used to map student imports from institutional exports to a format understood by Doubtfire.                                                                                                                | No default |
 
 If you have chosen to use AAF Rapid Connect authentication, then you will also need to provide the following:
 
@@ -54,6 +57,7 @@ If you have chosen to use AAF Rapid Connect authentication, then you will also n
 | `DF_AAF_CALLBACK_URL`          | The secure endpoint within your application that AAF Rapid Connect should POST responses to. It **must end with `/api/auth/jwt`** to access the Doubtfire JWT authentication endpoint. | No default - required           |
 | `DF_AAF_UNIQUE_URL`            | The unique URL provided by AAF Rapid Connect used for redirection out of Doubtfire.                                                                                                    | No default - required           |
 | `DF_AAF_IDENTITY_PROVIDER_URL` | The URL of the AAF-registered identity provider.                                                                                                                                       | No default - required           |
+| `DF_AAF_AUTH_SIGNOUT_URL`      | The URL to redirect to on sign out in order to log out of AAF Rapid Connect. | No default - required           |
 | `DF_SECRET_KEY_AAF`            | The secret used to register your application with AAF.                                                                                                                                 | `secretsecret12345`             |
 
 You may choose to keep your environment variables inside a `.env` file using key-value pairs:

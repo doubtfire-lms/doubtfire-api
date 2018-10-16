@@ -1,0 +1,88 @@
+# Specify language for project
+language: ruby
+# Enable caching
+cache:
+  # Cache bundler
+  bundler: true
+  # Cache the following directories. RVM can be cached according to Travis's docs
+  directories:
+   - /home/travis/.rvm/
+   - /tmp/texlive
+   - $HOME/.texlive
+
+# Specify Ruby version for rvm
+rvm:
+  - 2.3.1
+
+# Run processes as sudo
+sudo: true
+
+# Environment settings for staging testing
+env:
+  global:
+    - DF_STAGING_DB_ADAPTER=mysql2
+    - DF_STAGING_DB_HOST=localhost
+    - DF_STAGING_DB_DATABASE=doubtfire_staging
+    - DF_STAGING_DB_USERNAME=root
+    - DF_STAGING_DB_PASSWORD=""
+    - DF_SECRET_KEY_BASE=test_staging
+    - DF_SECRET_KEY_ATTR=test_staging
+    - DF_SECRET_KEY_DEVISE=test_staging
+
+# Enable postgresql and MySQL service
+services:
+  - postgresql
+  - mysql
+
+addons:
+  postgresql: "9.6"
+  # Update apt packages
+  apt:
+    update: true
+
+# Shallow clone git repository. Only the last branch with an update shall be cloned without the version history
+# This helps reduce server load
+git:
+  depth: 1
+
+# Install following dependencies and rehash rbenv before setting the environment for script execution
+install:
+  - sudo apt-get install -y ghostscript imagemagick libmagic-dev libmagickwand-dev libmagic-dev python-pygments libav-tools
+  - ./.ci-setup/texlive-install.sh
+  - bundle install --without production replica
+  - rbenv rehash
+  - export PATH=/tmp/texlive/bin/x86_64-linux:$PATH
+    
+# Set the environment before running the tests
+before_script:
+  # ======================================================================================
+  # Create the development environment and set it up
+  # ======================================================================================
+
+  # Restart postgresql service
+  - sudo service postgresql restart
+  # Create postgresql role
+  - psql -c "CREATE ROLE itig WITH CREATEDB PASSWORD 'd872\$dh' LOGIN;"
+  # Create the database of the project in the dev environment on postgresql
+  - bundle exec rake db:create
+  # Populate the database
+  - echo "n" | bundle exec rake db:populate
+
+  # ======================================================================================
+  # Create the staging environment and set it up
+  # ======================================================================================
+
+  # Restart mysql instance
+  - sudo service mysql restart
+  # Creating database in MySQL
+  - echo $(DF_STAGING_DB_PASSWORD) | mysql -e 'CREATE DATABASE IF NOT EXISTS doubtfire_staging;'
+  # Create the database of the project in the staging environment
+  - echo "test_staging" | RAILS_ENV=staging bundle exec rake db:create
+  # Populate the database
+  - echo "n" | RAILS_ENV=staging bundle exec rake db:populate
+
+# Run the tests
+script:
+  - which lualatex
+  - PATH=/tmp/texlive/bin/x86_64-linux:$PATH bundle exec rake test
+  - PATH=/tmp/texlive/bin/x86_64-linux:$PATH RAILS_ENV=staging bundle exec rake test
