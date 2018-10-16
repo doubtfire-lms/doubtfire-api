@@ -1048,7 +1048,7 @@ class Task < ActiveRecord::Base
     #
     # Now copy over the temp directory over to the enqueued directory
     #
-    enqueued_dir = student_work_dir(:new, false)[0..-2]
+    enqueued_dir = FileHelper.student_work_dir(:new, nil, true)[0..-2]
 
     logger.debug "Moving submission evidence from #{tmp_dir} to #{enqueued_dir}"
 
@@ -1069,6 +1069,11 @@ class Task < ActiveRecord::Base
         end
         if portfolio_evidence.present? && File.exists?(portfolio_evidence)
           FileUtils.rm portfolio_evidence
+        end
+
+        new_path = FileHelper.student_work_dir(:new, self, false)
+        if new_path.present? && File.directory?(new_path)
+          FileUtils.rm_rf new_path
         end
       end
     end

@@ -53,6 +53,56 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_equal 201, last_response.status
   end
 
+  def test_submission_creates_folders
+    unit = Unit.first
+    td = TaskDefinition.new({
+        unit_id: unit.id,
+        name: 'test_submission_creates_folders',
+        description: 'test def',
+        weighting: 4,
+        target_grade: 0,
+        start_date: unit.start_date + 1.week,
+        target_date: unit.start_date + 2.weeks,
+        abbreviation: 'test_submission_creates_folders',
+        restrict_status_updates: false,
+        upload_requirements: [ { "key" => 'file0', "name" => 'Shape Class', "type" => 'document' } ],
+        plagiarism_warn_pct: 0.8,
+        is_graded: false,
+        max_quality_pts: 0
+      })
+    td.save!
+
+    data_to_post = {
+      trigger: 'ready_to_mark'
+    }
+
+    data_to_post = with_file('test_files/submissions/00_question.pdf', 'application/pdf', data_to_post)
+
+    project = unit.active_projects.first
+
+    path = FileHelper.student_work_dir(:new, nil, false)
+    FileUtils.rm_rf path
+    
+    assert_not File.directory? path
+
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", with_auth_token(data_to_post)
+
+    assert_equal 201, last_response.status
+
+    assert File.directory? path
+
+    task = project.task_for_task_definition(td)
+
+    assert File.directory? FileHelper.student_work_dir(:new, task, false)
+    assert File.exists? File.join(FileHelper.student_work_dir(:new, task, false), '000-document.pdf')
+
+    task.destroy
+
+    assert_not File.directory? FileHelper.student_work_dir(:new, task, false)
+
+    td.destroy
+  end
+
   def test_change_to_group_after_submissions
     unit = Unit.first
     td = TaskDefinition.new({
