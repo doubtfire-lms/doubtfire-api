@@ -29,9 +29,13 @@ Doubtfire::Application.configure do
   # Expands the lines which load the assets
   config.assets.debug = true
 
+  # TODO: Remove the if check here
   # Use the doubtfire logger instead of the default one
   if Rails.env.development?
     require 'doubtfire_logger'
     config.logger = DoubtfireLogger.logger
   end
+
+  # Set deterministic randomness, source: https://github.com/stympy/faker#deterministic-random
+  Faker::Config.random = Random.new(77)
 end

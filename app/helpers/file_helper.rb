@@ -27,8 +27,9 @@ module FileHelper
       ]
       valid = pdf_valid? file.tempfile.path
     when 'audio'
-      accept = ['audio/', 'video/webm', 'application/ogg']
-
+      accept = ['audio/', 'video/webm', 'application/ogg', 'application/octet-stream']
+    when 'comment_attachment'
+      accept = ['audio/', 'video/webm', 'application/ogg', 'image/', 'application/pdf', 'application/octet-stream']
     when 'video'
       accept = ['video/mp4']
     else
@@ -279,7 +280,7 @@ module FileHelper
     # Scan last 1024 bytes for the EOF mark
     return false unless File.exist? filename
     File.open(filename) do |f|
-      f.seek -1024, IO::SEEK_END
+      f.seek -4096, IO::SEEK_END unless f.size <= 4096
       f.read.include? '%%EOF'
     end
   end

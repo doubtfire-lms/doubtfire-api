@@ -80,6 +80,7 @@ class Task < ActiveRecord::Base
   has_many :learning_outcome_task_links, dependent: :destroy # links to learning outcomes
   has_many :learning_outcomes, through: :learning_outcome_task_links
   has_many :task_engagements
+  has_many :task_submissions
 
   validates :task_definition_id, uniqueness: { scope: :project,
                                                message: 'must be unique within the project' }
@@ -97,7 +98,7 @@ class Task < ActiveRecord::Base
   end
 
   def must_have_quality_pts
-    if quality_pts.nil? || quality_pts.negative? || quality_pts > task_definition.max_quality_pts
+    if quality_pts.nil? || quality_pts < -1 || quality_pts > task_definition.max_quality_pts
       errors.add(:quality_pts, "must be between 0 and #{task_definition.max_quality_pts}")
     end
   end
@@ -446,8 +447,16 @@ class Task < ActiveRecord::Base
         submission_attributes[:submission_time] = assess_date
         submission = TaskSubmission.create! submission_attributes
       else
-        submission.update_attributes submission_attributes
-        submission.save
+        # we have an existing submission
+        if submission.assessment_time.nil?
+          # and it hasn't been assessed yet...
+          submission.update_attributes submission_attributes
+          submission.save
+        else
+          # it was assessed... so lets create a new assessment
+          submission_attributes[:submission_time] = submission.submission_time
+          submission = TaskSubmission.create! submission_attributes
+        end
       end
     end
   end
@@ -511,16 +520,25 @@ class Task < ActiveRecord::Base
     comment.content_type = :text
     comment.recipient = user == project.student ? project.main_tutor : project.student
     comment.save!
-    comment    
+    comment
   end
 
-  def add_comment_with_attachment(user, tempfile, type)
+  def add_comment_with_attachment(user, tempfile)
     ensured_group_submission if group_task?
 
     comment = TaskComment.create
     comment.task = self
     comment.user = user
-    comment.content_type = type
+    if FileHelper.accept_file(tempfile, "comment attachment audio test", "audio")
+      comment.content_type = :audio
+    elsif FileHelper.accept_file(tempfile, "comment attachment image test", "image")
+      comment.content_type = :image
+    elsif FileHelper.accept_file(tempfile, "comment attachment pdf", "document")
+      comment.content_type = :pdf
+    else
+      raise "Unknown comment attachment type"
+    end
+
     comment.recipient = user == project.student ? project.main_tutor : project.student
     raise "Error attaching uploaded file." unless comment.add_attachment(tempfile)
     comment.save!
@@ -599,7 +617,8 @@ class Task < ActiveRecord::Base
   def zip_file_path_for_done_task
     if group_task?
       if group_submission.nil?
-        nil
+        logger.warn("Missing group submission from task identified for task #{id}!")
+        "#{Doubtfire::Application.config.student_work_dir}/#{FileHelper.sanitized_path("#{project.unit.code}-#{project.unit.id}", project.student.username.to_s, 'done', id.to_s)[0..-1]}.zip"
       else
         "#{FileHelper.student_group_work_dir(:done, group_submission)[0..-2]}.zip"
       end
@@ -636,7 +655,7 @@ class Task < ActiveRecord::Base
       # Ensure that this task is the submitter task for a  group_task... otherwise
       # remove this submission
       raise "Multiple team member submissions received at the same time. Please ensure that only one member submits the task." if group_task? && self != group_submission.submitter_task
-      
+
       zip_file = zip_file_path_for_done_task
       return false if zip_file.nil? || (!Dir.exist? task_dir)
 
@@ -1029,7 +1048,7 @@ class Task < ActiveRecord::Base
     #
     # Now copy over the temp directory over to the enqueued directory
     #
-    enqueued_dir = student_work_dir(:new, false)[0..-2]
+    enqueued_dir = FileHelper.student_work_dir(:new, nil, true)[0..-2]
 
     logger.debug "Moving submission evidence from #{tmp_dir} to #{enqueued_dir}"
 
@@ -1045,11 +1064,16 @@ class Task < ActiveRecord::Base
         group_submission.destroy
       else
         zip_file = zip_file_path_for_done_task()
-        if File.exists? zip_file
+        if zip_file && File.exists?(zip_file)
           FileUtils.rm zip_file
         end
         if portfolio_evidence.present? && File.exists?(portfolio_evidence)
           FileUtils.rm portfolio_evidence
+        end
+
+        new_path = FileHelper.student_work_dir(:new, self, false)
+        if new_path.present? && File.directory?(new_path)
+          FileUtils.rm_rf new_path
         end
       end
     end
