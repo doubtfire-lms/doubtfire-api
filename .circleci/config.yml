@@ -11,7 +11,7 @@ jobs:
   build:
     docker:
       # specify the version you desire here
-      # - image: ruby:2.3.1
+      # - image: ruby:2.3.1 # Not needed since it's in akashagarwal7/doubtfire-api
       
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
@@ -25,7 +25,12 @@ jobs:
         - MYSQL_ROOT_HOST=%
         - MYSQL_HOST=127.0.0.1
 
-      # - image: circleci/postgres
+      - image: circleci/postgres
+        environment:
+          POSTGRES_USER: itig
+          POSTGRES_DB: doubtfire_dev_test
+          POSTGRES_PASSWORD: d872\$dh
+
     environment:
       MYSQL_ALLOW_EMPTY_PASSWORD: yes
       MYSQL_ROOT_PASSWORD: ''
@@ -39,7 +44,7 @@ jobs:
       DF_SECRET_KEY_BASE: test_staging
       DF_SECRET_KEY_ATTR: test_staging
       DF_SECRET_KEY_DEVISE: test_staging
-
+      BASH_ENV: /root/.bashrc
     working_directory: ~/doubtfire_api
 
     steps:
@@ -51,12 +56,16 @@ jobs:
           - v1-dependencies-{{ checksum "Gemfile.lock" }}
           # fallback to using the latest cache if no exact match is found
           - v1-dependencies-
-
-      # - run: |
-      #     apt-get update
-      #     apt-get install -y ghostscript imagemagick libmagic-dev libmagickwand-dev libmagic-dev python-pygments libav-tools texlive-full
       - run:
-          name: install dependencies
+          name: Add texlive path to PATH env variable
+          command: |
+            echo 'export PATH=/tmp/texlive/bin/x86_64-linux:$PATH' >> $BASH_ENV
+            source $BASH_ENV
+            echo $PATH
+            ln -s /tmp/texlive/bin/x86_64-linux/lualatex /usr/local/sbin
+
+      - run:
+          name: Install dependencies
           command: |
             bundle install --jobs=4 --retry=3 --path vendor/bundle --with staging
 
@@ -64,21 +73,16 @@ jobs:
           paths:
             - ./vendor/bundle
           key: v1-dependencies-{{ checksum "Gemfile.lock" }}
-        
-      - run: date && sleep 5 && date
-      # Database setup
-      - run: RAILS_ENV=staging bundle exec rake db:create
+
+    # ======================================================================================
+    # Test environment
+    # ======================================================================================
+      - run: echo "y" | RAILS_ENV=test bundle exec rake db:populate
+      - run: which lualatex && RAILS_ENV=test bundle exec rake test
+
+    # ======================================================================================
+    # Staging environment
+    # ======================================================================================
       - run: echo "n" | RAILS_ENV=staging bundle exec rake db:populate
-
-      - run: RAILS_ENV=staging bundle exec rake test
-
-  test:
-    docker:
-      - image: circleci/ruby:2.3.1
-    steps:
-      - checkout
-      - run:
-          name: run tests
-          command: RAILS_ENV=staging bundle exec rake test
-
+      - run: which lualatex && RAILS_ENV=staging bundle exec rake test
           
