@@ -240,7 +240,7 @@ class UnitsTest < ActiveSupport::TestCase
     }
 
     put_json '/api/units/1', data_to_put
-    assert_equal 500, last_response.status
+    assert_equal 400, last_response.status
   end
 
 #Test PUT for updating unit details with invalid id
@@ -252,13 +252,13 @@ def test_put_update_unit_invalid_id
   }
 
   put_json '/api/units/12', data_to_put
-  assert_equal 500, last_response.status
+  assert_equal 404, last_response.status
 end
    
   # Test GET for getting a specific unit by invalid id
   def test_fail_units_get_by_id
     get with_auth_token '/api/units/12'
-    assert_equal 500, last_response.status
+    assert_equal 404, last_response.status
   end
 
   def test_put_update_unit_custom_token(token='abcdef')
