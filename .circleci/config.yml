@@ -82,4 +82,3 @@ jobs:
     # ======================================================================================
       - run: echo "n" | RAILS_ENV=staging bundle exec rake db:populate
       - run: which lualatex && RAILS_ENV=staging bundle exec rake test
-          
