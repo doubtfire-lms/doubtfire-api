@@ -29,6 +29,7 @@ module Api
         }
       end
       result
+    end
 
     desc 'Return privacy policy details'
     get '/settings/privacy' do
