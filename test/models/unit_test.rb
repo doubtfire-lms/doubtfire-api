@@ -1,6 +1,7 @@
 require 'test_helper'
 
 class UnitTest < ActiveSupport::TestCase
+  
   test 'ensure valid response from unit ilo data' do
     unit = Unit.first
     details = unit.ilo_progress_class_details
