@@ -221,14 +221,6 @@ namespace :db do
     dbpop.generate_users
     dbpop.generate_units
 
-    # Run simulate signoff?
-    unless extended
-      puts '-> Would you like to simulate student progress? This may take a while... [y/n]'
-    end
-    if extended || STDIN.gets.chomp.casecmp('y').zero?
-      puts '-> Simulating signoff...'
-      Rake::Task['db:simulate_signoff'].execute
-    end
     puts '-> Done.'
   end
 end
