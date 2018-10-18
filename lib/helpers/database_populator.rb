@@ -58,6 +58,43 @@ class DatabasePopulator
     
     # Fixed data contains all fixed units and users created
     generate_fixed_data()
+
+    generate_teaching_periods()
+  end
+
+  def generate_teaching_periods
+    data = {
+      period: 'T1',
+      year: 2018,
+      start_date: Date.parse('2018-03-05'),
+      end_date: Date.parse('2018-05-25'),
+      active_until: Date.parse('2018-06-15')
+    }
+    tp = TeachingPeriod.create!(data)
+
+    tp.add_break Date.parse('2018-03-30'), 1
+
+    data = {
+      period: 'T2',
+      year: 2018,
+      start_date: Date.parse('2018-07-09'),
+      end_date: Date.parse('2018-09-28'),
+      active_until: Date.parse('2018-10-19')
+    }
+    tp = TeachingPeriod.create! data
+
+    tp.add_break Date.parse('2018-08-13'), 1
+
+    data = {
+      period: 'T3',
+      year: 2018,
+      start_date: Date.parse('2018-11-05'),
+      end_date: Date.parse('2019-02-01'),
+      active_until: Date.parse('2019-02-15')
+    }
+    tp = TeachingPeriod.create! data
+
+    tp.add_break Date.parse('2018-12-24'), 2
   end
 
   def generate_admin
