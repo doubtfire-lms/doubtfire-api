@@ -1446,7 +1446,7 @@ class Unit < ActiveRecord::Base
         project_id: t.project_id,
         task_definition_id: t.task_definition_id,
         tutorial_id: t.tutorial_id,
-        status: TaskStatus.find(t.status_id).status_key,
+        status: TaskStatus.id_to_key(t.status_id),
         completion_date: t.completion_date,
         submission_date: t.submission_date,
         times_assessed: t.times_assessed,
@@ -1523,7 +1523,7 @@ class Unit < ActiveRecord::Base
       {
         tutorial_id: r.tutorial_id,
         task_definition_id: r.task_definition_id,
-        status: TaskStatus.find(r.status_id).status_key,
+        status: TaskStatus.id_to_key(r.status_id),
         num: r.num_tasks
       }
     end
