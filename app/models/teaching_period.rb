@@ -13,13 +13,13 @@ class TeachingPeriod < ActiveRecord::Base
   validate :validate_end_date_after_start_date, :validate_active_until_after_end_date
 
   def validate_end_date_after_start_date
-    if end_date < start_date
+    if end_date.present? && start_date.present? && end_date < start_date
       errors.add(:end_date, "should be after the Start date")
     end
   end
 
   def validate_active_until_after_end_date
-    if active_until < end_date
+    if end_date.present? && active_until.present? && active_until < end_date
       errors.add(:active_until, "date should be after the End date")
     end
   end
