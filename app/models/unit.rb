@@ -1669,7 +1669,7 @@ class Unit < ActiveRecord::Base
         learning_outcome_id: r.learning_outcome_id,
         rating: r.rating,
         grade: r.target_grade,
-        status: TaskStatus.find(r.status_id).status_key,
+        status: TaskStatus.id_to_key(r.status_id),
         num: r.num
       }
     end
