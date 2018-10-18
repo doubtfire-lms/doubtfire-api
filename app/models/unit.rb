@@ -132,7 +132,7 @@ class Unit < ActiveRecord::Base
   end
 
   def validate_end_date_after_start_date
-    if end_date < start_date
+    if end_date.present? && start_date.present? && end_date < start_date
       errors.add(:end_date, "should be after the Start date")
     end
   end
