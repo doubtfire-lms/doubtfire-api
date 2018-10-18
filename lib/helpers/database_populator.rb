@@ -243,7 +243,6 @@ class DatabasePopulator
     some_tasks     = @scale[:some_tasks]
     many_tasks     = @scale[:many_tasks]
     few_tasks      = @scale[:few_tasks]
-    no_tasks       = @scale[:no_tasks]
     @unit_data = {
       intro_prog: {
         code: "COS10001",
