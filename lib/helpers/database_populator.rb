@@ -17,7 +17,6 @@ class DatabasePopulator
     scale ||= :small
     @user_cache = {}
     @unit_cache = {}
-    @task_def_cache = {}
     # Set up the scale
     scale_data = {
       small: {
@@ -166,12 +165,26 @@ class DatabasePopulator
     # Run through the unit_details and initialise their data
     @unit_data.each do | unit_key, unit_details |
       puts "---> Generating unit #{unit_details[:code]}"
-      unit = Unit.create!(
+
+      if unit_details[:teaching_period].present?
+        data = {
         code: unit_details[:code],
         name: unit_details[:name],
         description: faker_random_sentence(10, 15),
+          teaching_period_id: unit_details[:teaching_period].id
+        }
+      else
+        data = {
+          code: unit_details[:code],
+          name: unit_details[:name],
+          description: faker_random_sentence(10, 15),
         start_date: Time.zone.now  - 6.weeks,
         end_date: 13.weeks.since(Time.zone.now - 6.weeks)
+        }
+      end
+
+      unit = Unit.create!(
+        data
       )
       # Assign the convenors for this unit
       unit_details[:convenors].each do | user_key |
@@ -230,11 +243,13 @@ class DatabasePopulator
     some_tasks     = @scale[:some_tasks]
     many_tasks     = @scale[:many_tasks]
     few_tasks      = @scale[:few_tasks]
+    no_tasks       = @scale[:no_tasks]
     @unit_data = {
       intro_prog: {
         code: "COS10001",
         name: "Introduction to Programming",
         convenors: [ :acain, :aconvenor ],
+        teaching_period: TeachingPeriod.first,
         tutors: [
           { user: :acain, num: many_tutorials },
           { user: :aconvenor, num: many_tutorials },
@@ -246,8 +261,6 @@ class DatabasePopulator
           { user: :angusmorton, num: some_tutorials },
           { user: :cliff, num: some_tutorials },
         ],
-        num_tasks: some_tasks,
-        ilos: Faker::Number.between(0,3),
         students: [ ]
       },
       oop: {
@@ -343,6 +356,13 @@ class DatabasePopulator
   #
   def generate_tasks_for_unit(unit, unit_details)
     print "----> Generating #{unit_details[:num_tasks]} tasks"
+
+    if File.exists? Rails.root.join('test_files',"#{unit.code}-Tasks.csv")
+      unit.import_tasks_from_csv File.open(Rails.root.join('test_files',"#{unit.code}-Tasks.csv"))
+      unit.import_task_files_from_zip Rails.root.join('test_files',"#{unit.code}-Tasks.zip")
+      return
+    end
+
     unit_details[:num_tasks].times do |count|
       up_reqs = []
       Faker::Number.between(1,4).times.each_with_index do | file, idx |
@@ -351,7 +371,7 @@ class DatabasePopulator
       target_date = unit.start_date + ((count + 1) % 12).weeks # Assignment 6 due week 6, etc.
       start_date = target_date - Faker::Number.between(1.0,2.0).weeks
       # Make sure at least 30% of the tasks are pass
-      target_grade = @task_def_cache.length > (unit_details[:num_tasks] / 3) ? Faker::Number.between(0,3) : 0
+      target_grade = Faker::Number.between(0,3)
       task_def = TaskDefinition.create(
         name: "Assignment #{count + 1}",
         abbreviation: "A#{count + 1}",
@@ -363,7 +383,6 @@ class DatabasePopulator
         start_date: start_date,
         target_grade: target_grade
       )
-      @task_def_cache[task_def.id] = task_def
       print "."
     end
     puts "!"
@@ -373,12 +392,15 @@ class DatabasePopulator
   # Generates ILOs and aligns ILOs to tasks for unit
   #
   def generate_and_align_ilos_for_unit(unit, unit_details)
-    if @task_def_cache.empty?
-      throw "Task definition cache is empty. Call generate_tasks_for_unit unit_key, first before calling generate_and_align_ilos_for_unit"
-    end
-
     # Create the ILOs
     print "----> Adding #{unit_details[:ilos]} ILOs"
+
+    if File.exists? Rails.root.join('test_files',"#{unit.code}-Outcomes.csv")
+      unit.import_outcomes_from_csv File.open(Rails.root.join('test_files',"#{unit.code}-Outcomes.csv"))
+      unit.import_task_alignment_from_csv File.open(Rails.root.join('test_files',"#{unit.code}-Alignment.csv")), nil
+      return
+    end
+
     ilo_cache = {}
     unit_details[:ilos].times do |index|
       ilo_number = index + 1
