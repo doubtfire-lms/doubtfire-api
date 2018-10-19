@@ -17,7 +17,6 @@ group :development, :test do
   gem 'database_cleaner'
   gem 'factory_girl_rails'
   gem 'minitest-around'
-  gem 'minitest-hyper'
   gem 'minitest-osx'
   gem 'minitest-rails'
   gem 'byebug'
