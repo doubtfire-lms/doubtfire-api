@@ -33,6 +33,44 @@ class TeachingPeriod < ActiveRecord::Base
     break_in_teaching_period
   end
 
+  def week_no(date)
+    # Calcualte date offset, add 2 so 0-week offset is week 1 not week 0
+    result = ((date - start_date) / 1.week).floor + 1
+
+    for a_break in breaks.all do
+      if date >= a_break.start_date
+        # we are in or after the break, so calculated week needs to
+        # be reduced by this break
+        if date >= a_break.end_date
+          result -= a_break.number_of_weeks
+        elsif date == a_break.start_date
+          # cant use standard calculation as this give 0 for this exact moment...
+          result -= 1
+        else
+          # in break so partial reduction
+          result -= ((date - a_break.start_date) / 1.week).ceil
+        end
+      end
+    end
+
+    result
+  end
+
+  def date_for_week(num)
+    # start by switching from 1 based to 0 based
+    # week 1 is offset 0 weeks from the start
+    num -= 1
+    for a_break in breaks do
+      if num >= week_no(a_break.start_date)
+        # we are in or after the break, so calculated date is
+        # extended by the break period
+        num += a_break.number_of_weeks
+      end
+    end
+
+    result = start_date + num.weeks
+  end
+
   def rollover(rollover_to)
     rollover_to.add_associations(self)
     rollover_to.save!

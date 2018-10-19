@@ -18,4 +18,12 @@ class Break < ActiveRecord::Base
       errors.add(:number_of_weeks, "is exceeding Teaching Period end date")
     end
   end
+
+  def duration
+    number_of_weeks.weeks
+  end
+
+  def end_date
+    start_date + duration
+  end
 end
