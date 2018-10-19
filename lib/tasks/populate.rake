@@ -11,38 +11,6 @@ namespace :db do
     end
   end
 
-  def assess_task(proj, task, tutor, status, complete_date)
-    alignments = []
-    sum_ratings = 0
-    task.unit.learning_outcomes.each do |lo|
-      data = {
-        ilo_id: lo.id,
-        rating: rand(0..5),
-        rationale: "Simulated rationale text..."
-      }
-      sum_ratings += data[:rating]
-      alignments << data
-    end
-
-    if task.group_task?
-      raise "Cant support group tasks yet in simulation :("
-    end
-    contributions = nil
-    trigger = 
-
-    task.create_alignments_from_submission(alignments) unless alignments.nil?
-    task.create_submission_and_trigger_state_change(proj.student) #, propagate = true, contributions = contributions, trigger = trigger)
-    task.assess status, tutor, complete_date
-
-    pdf_path = task.final_pdf_path
-    if pdf_path
-      FileUtils.ln_s(Rails.root.join('test_files', 'unit_files', 'sample-student-submission.pdf'), pdf_path)
-    end
-
-    task.portfolio_evidence = pdf_path
-    task.save
-  end
-
   desc 'Mark off some of the due tasks'
   task simulate_signoff: [:skip_prod, :environment] do
     Unit.all.each do |unit|
@@ -106,7 +74,7 @@ namespace :db do
             elsif complete_date > Time.zone.now
               complete_date = Time.zone.now
             end
-            assess_task(proj, task, tutor, TaskStatus.complete, complete_date)
+            DatabasePopulator.assess_task(proj, task, tutor, TaskStatus.complete, complete_date)
           elsif kept_up_to_date >= task.target_date + 1.week
             complete_date = unit.start_date + i * time_to_complete_task + rand(7..14).days
             if complete_date < unit.start_date + 1.week
@@ -118,21 +86,21 @@ namespace :db do
             # 1 to 3
             case rand(1..100)
             when 0..50
-              assess_task(proj, task, tutor, TaskStatus.complete, complete_date)
+              DatabasePopulator.assess_task(proj, task, tutor, TaskStatus.complete, complete_date)
             when 51..75
-              assess_task(proj, task, tutor, TaskStatus.discuss, complete_date)
+              DatabasePopulator.assess_task(proj, task, tutor, TaskStatus.discuss, complete_date)
             when 76..90
-              assess_task(proj, task, tutor, TaskStatus.demonstrate, complete_date)
+              DatabasePopulator.assess_task(proj, task, tutor, TaskStatus.demonstrate, complete_date)
             when 91..95
-              assess_task(proj, task, tutor, TaskStatus.fix_and_resubmit, complete_date)
+              DatabasePopulator.assess_task(proj, task, tutor, TaskStatus.fix_and_resubmit, complete_date)
             when 96..97
-              assess_task(proj, task, tutor, TaskStatus.working_on_it, complete_date)
+              DatabasePopulator.assess_task(proj, task, tutor, TaskStatus.working_on_it, complete_date)
             when 97
-              assess_task(proj, task, tutor, TaskStatus.do_not_resubmit, complete_date)
+              DatabasePopulator.assess_task(proj, task, tutor, TaskStatus.do_not_resubmit, complete_date)
             when 98..99
-              assess_task(proj, task, tutor, TaskStatus.redo, complete_date)
+              DatabasePopulator.assess_task(proj, task, tutor, TaskStatus.redo, complete_date)
             else
-              assess_task(proj, task, tutor, TaskStatus.ready_to_mark, complete_date)
+              DatabasePopulator.assess_task(proj, task, tutor, TaskStatus.ready_to_mark, complete_date)
             end
           else
             complete_date = unit.start_date + i * time_to_complete_task + rand(7..10).days
@@ -145,21 +113,21 @@ namespace :db do
             # 1 to 3
             case rand(1..100)
             when 0..3
-              assess_task(proj, task, tutor, TaskStatus.complete, complete_date)
+              DatabasePopulator.assess_task(proj, task, tutor, TaskStatus.complete, complete_date)
             when 4..60
-              assess_task(proj, task, tutor, TaskStatus.ready_to_mark, complete_date)
+              DatabasePopulator.assess_task(proj, task, tutor, TaskStatus.ready_to_mark, complete_date)
             when 61..70
-              assess_task(proj, task, tutor, TaskStatus.discuss, complete_date)
+              DatabasePopulator.assess_task(proj, task, tutor, TaskStatus.discuss, complete_date)
             when 71..80
-              assess_task(proj, task, tutor, TaskStatus.demonstrate, complete_date)
+              DatabasePopulator.assess_task(proj, task, tutor, TaskStatus.demonstrate, complete_date)
             when 81..90
-              assess_task(proj, task, tutor, TaskStatus.fix_and_resubmit, complete_date)
+              DatabasePopulator.assess_task(proj, task, tutor, TaskStatus.fix_and_resubmit, complete_date)
             when 91..98
-              assess_task(proj, task, tutor, TaskStatus.working_on_it, complete_date)
+              DatabasePopulator.assess_task(proj, task, tutor, TaskStatus.working_on_it, complete_date)
             when 99
-              assess_task(proj, task, tutor, TaskStatus.redo, complete_date)
+              DatabasePopulator.assess_task(proj, task, tutor, TaskStatus.redo, complete_date)
             else
-              assess_task(proj, task, tutor, TaskStatus.ready_to_mark, complete_date)
+              DatabasePopulator.assess_task(proj, task, tutor, TaskStatus.ready_to_mark, complete_date)
             end
           end
 
