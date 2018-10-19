@@ -15,7 +15,8 @@ class DatabasePopulator
   def initialize(scale = :small)
     # Set up our caches
     scale ||= :small
-    @user_cache = {}
+    @user_cache = nil
+    @echo = false
     @unit_cache = {}
     # Set up the scale
     scale_data = {
@@ -47,11 +48,16 @@ class DatabasePopulator
     accepted_scale_types = scale_data.keys
     unless accepted_scale_types.include?(scale)
       throw "Invalid scale value '#{scale}'. Acceptable values are: #{accepted_scale_types.join(", ")}"
-    else
-      puts "-> Scale is set to #{scale}"
     end
     @scale = scale_data[scale]
     
+    return if Role.count > 0
+
+    echo_line "-> Scale is set to #{scale}"
+
+    @user_cache = {}
+    @echo = true
+
     generate_user_roles
     generate_task_statuses
     
@@ -118,12 +124,12 @@ class DatabasePopulator
       throw "Unaccepted filter for generate_users, should be one of #{accepted_to_str}"
     end
 
-    print "--> Generating users with role(s) #{filter.pluck(:name).join(', ')}"
+    echo "--> Generating users with role(s) #{filter.pluck(:name).join(', ')}"
     users_to_generate = @user_data.select { | user_key, profile | filter.pluck(:id).include? profile[:role_id] }
 
     # Create each user
     users_to_generate.each do |user_key, profile|
-      print '.'
+      echo '.'
       username = user_key.to_s
 
       profile[:email]     ||= "#{username}@doubtfire.com"
@@ -141,18 +147,18 @@ class DatabasePopulator
 
       @user_cache[user_key] = user
     end
-    puts '!'
+    echo_line '!'
   end
 
   #
   # Generates some units
   #
   def generate_units
-    puts "--> Generating units"
+    echo_line "--> Generating units"
 
     if @user_cache.empty?
       # Must generate users first!
-      puts "---> No users generated. Generating users first..."
+      echo_line "---> No users generated. Generating users first..."
       generate_users()
     end
 
@@ -164,7 +170,7 @@ class DatabasePopulator
 
     # Run through the unit_details and initialise their data
     @unit_data.each do | unit_key, unit_details |
-      puts "---> Generating unit #{unit_details[:code]}"
+      echo_line "---> Generating unit #{unit_details[:code]}"
 
       if unit_details[:teaching_period].present?
         data = {
@@ -188,7 +194,7 @@ class DatabasePopulator
       )
       # Assign the convenors for this unit
       unit_details[:convenors].each do | user_key |
-        puts "----> Adding convenor #{user_key}"
+        echo_line "----> Adding convenor #{user_key}"
         unit.employ_staff(@user_cache[user_key], Role.convenor)
       end
       # Cache what we have
@@ -300,16 +306,85 @@ class DatabasePopulator
         students: [ :acain, :aadmin ]
       },
     }
-    puts "-> Defined #{@user_data.length} fixed users and #{@unit_data.length} units"
+    echo_line "-> Defined #{@user_data.length} fixed users and #{@unit_data.length} units"
+  end
+
+  #
+  # Generates tutorials for unit and enrols some students in them
+  #
+  def generate_tutorials_and_enrol_students_for_unit(unit, unit_details)
+    student_count  = 0
+    tutorial_count = 0
+
+    # Grab stuff from scale
+    max_tutorials  = @scale[:max_tutorials]
+    min_students   = @scale[:min_students]
+    delta_students = @scale[:delta_students]
+
+    # Collection of weekdays to be used
+    weekdays = %w[Monday Tuesday Wednesday Thursday Friday]
+
+    # Create tutorials and enrol students
+    unit_details[:tutors].each do | user_details |
+      # only up to 4 tutorials for small scale
+      if tutorial_count > max_tutorials then break end
+
+      if @user_cache.present?
+        tutor = @user_cache[user_details[:user]]
+      else
+        tutor = User.find_by_username(user_details[:user])
+      end
+
+      echo_line "----> Enrolling tutor #{tutor.name} with #{user_details[:num]} tutorials"
+      tutor_unit_role = unit.employ_staff(tutor, Role.tutor)
+
+      user_details[:num].times do | count |
+        tutorial_count += 1
+        #day, time, location, tutor_username, abbrev
+        tutorial = unit.add_tutorial(
+          "#{weekdays.sample}",
+          "#{8 + Faker::Number.between(0,11)}:#{['00', '30'].sample}",    # Mon-Fri 8am-7:30pm
+          "#{['EN', 'BA'].sample}#{Faker::Number.between(0,6)}0#{Faker::Number.between(0,8)}", # EN###/BA###
+          tutor,
+          "LA1-#{tutorial_count.to_s.rjust(2, '0')}"
+        )
+
+        # Add a random number of students to the tutorial
+        num_students_in_tutorial = (min_students + Faker::Number.between(0,delta_students - 1))
+        echo "-----> Creating #{num_students_in_tutorial} projects under tutorial #{tutorial.abbreviation}"
+        num_students_in_tutorial.times do
+          student = find_or_create_student("student_#{student_count}")
+          project = unit.enrol_student(student, tutorial.id)
+          student_count += 1
+          echo '.'
+        end
+        # Add fixed students to first tutorial
+        if count == 0
+          unit_details[:students].each do | student_key |
+            unit.enrol_student(@user_cache[student_key], tutorial.id)
+          end
+        end
+        echo_line "!"
+      end
+    end
   end
 
   private
+
+  # Output
+  def echo *args
+    print(*args) if @echo
+  end
+
+  def echo_line *args
+    puts(*args) if @echo
+  end
 
   #
   # Generate roles
   #
   def generate_user_roles
-    print "-> Generating user roles"
+    echo "-> Generating user roles"
     roles = [
       { name: 'Student', description: "Students are able to be enrolled into units, and to submit progress for their unit projects." },
       { name: 'Tutor', description: "Tutors are able to supervise tutorial classes and provide feedback to students, they may also be students in other units" },
@@ -319,16 +394,16 @@ class DatabasePopulator
 
     roles.each do |role|
       Role.create!(name: role[:name], description: role[:description])
-      print "."
+      echo "."
     end
-    puts "!"
+    echo_line "!"
   end
 
   #
   # Generate tasks statuses
   #
   def generate_task_statuses
-    print "-> Generating task statuses"
+    echo "-> Generating task statuses"
     statuses = {
       "Not Started": "You have not yet started this task.",
       "Complete": "This task has been signed off by your tutor.",
@@ -344,17 +419,17 @@ class DatabasePopulator
       "Time Exceeded": "You did not submit or complete the task before the appropriate deadline."
     }
     statuses.each do | name, desc |
-      print "."
+      echo "."
       TaskStatus.create(name: name, description: desc)
     end
-    puts "!"
+    echo_line "!"
   end
 
   #
   # Generates tasks for the given unit
   #
   def generate_tasks_for_unit(unit, unit_details)
-    print "----> Generating #{unit_details[:num_tasks]} tasks"
+    echo "----> Generating #{unit_details[:num_tasks]} tasks"
 
     if File.exists? Rails.root.join('test_files',"#{unit.code}-Tasks.csv")
       unit.import_tasks_from_csv File.open(Rails.root.join('test_files',"#{unit.code}-Tasks.csv"))
@@ -382,9 +457,9 @@ class DatabasePopulator
         start_date: start_date,
         target_grade: target_grade
       )
-      print "."
+      echo "."
     end
-    puts "!"
+    echo_line "!"
   end
 
   #
@@ -392,7 +467,7 @@ class DatabasePopulator
   #
   def generate_and_align_ilos_for_unit(unit, unit_details)
     # Create the ILOs
-    print "----> Adding #{unit_details[:ilos]} ILOs"
+    echo "----> Adding #{unit_details[:ilos]} ILOs"
 
     if File.exists? Rails.root.join('test_files',"#{unit.code}-Outcomes.csv")
       unit.import_outcomes_from_csv File.open(Rails.root.join('test_files',"#{unit.code}-Outcomes.csv"))
@@ -411,13 +486,13 @@ class DatabasePopulator
         description:  faker_random_sentence(10, 15)
       )
       ilo_cache[ilo.id] = ilo
-      print "."
+      echo "."
     end
-    puts "!"
+    echo_line "!"
 
     # Align each of the ILOs to a task
     if unit_details[:ilos] > 0
-      print "----> Aligning tasks to ILOs"
+      echo "----> Aligning tasks to ILOs"
       20.times do
         ilo_id = unit.learning_outcomes.pluck('id').sample
         task_def_id = unit.task_definition_ids.sample
@@ -429,64 +504,9 @@ class DatabasePopulator
         link.rating = Faker::Number.between(1,4)
         link.description = faker_random_sentence(5, 10)
         link.save!
-        print '.'
+        echo '.'
       end
-      puts '!'
-    end
-  end
-
-  #
-  # Generates tutorials for unit and enrols some students in them
-  #
-  def generate_tutorials_and_enrol_students_for_unit(unit, unit_details)
-    student_count  = 0
-    tutorial_count = 0
-
-    # Grab stuff from scale
-    max_tutorials  = @scale[:max_tutorials]
-    min_students   = @scale[:min_students]
-    delta_students = @scale[:delta_students]
-
-    # Collection of weekdays to be used
-    weekdays = %w[Monday Tuesday Wednesday Thursday Friday]
-
-    # Create tutorials and enrol students
-    unit_details[:tutors].each do | user_details |
-      # only up to 4 tutorials for small scale
-      if tutorial_count > max_tutorials then break end
-
-      tutor = @user_cache[user_details[:user]]
-      puts "----> Enrolling tutor #{tutor.name} with #{user_details[:num]} tutorials"
-      tutor_unit_role = unit.employ_staff(tutor, Role.tutor)
-
-      user_details[:num].times do | count |
-        tutorial_count += 1
-        #day, time, location, tutor_username, abbrev
-        tutorial = unit.add_tutorial(
-          "#{weekdays.sample}",
-          "#{8 + Faker::Number.between(0,11)}:#{['00', '30'].sample}",    # Mon-Fri 8am-7:30pm
-          "#{['EN', 'BA'].sample}#{Faker::Number.between(0,6)}0#{Faker::Number.between(0,8)}", # EN###/BA###
-          tutor,
-          "LA1-#{tutorial_count.to_s.rjust(2, '0')}"
-        )
-
-        # Add a random number of students to the tutorial
-        num_students_in_tutorial = (min_students + Faker::Number.between(0,delta_students - 1))
-        print "-----> Creating #{num_students_in_tutorial} projects under tutorial #{tutorial.abbreviation}"
-        num_students_in_tutorial.times do
-          student = find_or_create_student("student_#{student_count}")
-          project = unit.enrol_student(student, tutorial.id)
-          student_count += 1
-          print '.'
-        end
-        # Add fixed students to first tutorial
-        if count == 0
-          unit_details[:students].each do | student_key |
-            unit.enrol_student(@user_cache[student_key], tutorial.id)
-          end
-        end
-        puts "!"
-      end
+      echo_line '!'
     end
   end
 end
