@@ -327,7 +327,7 @@ class DatabasePopulator
     # Create tutorials and enrol students
     unit_details[:tutors].each do | user_details |
       # only up to 4 tutorials for small scale
-      if tutorial_count > max_tutorials then break end
+      break if tutorial_count > max_tutorials
 
       if @user_cache.present?
         tutor = @user_cache[user_details[:user]]
@@ -367,6 +367,37 @@ class DatabasePopulator
         echo_line "!"
       end
     end
+  end
+
+  def self.assess_task(proj, task, tutor, status, complete_date)
+    alignments = []
+    sum_ratings = 0
+    task.unit.learning_outcomes.each do |lo|
+      data = {
+        ilo_id: lo.id,
+        rating: rand(0..5),
+        rationale: "Simulated rationale text..."
+      }
+      sum_ratings += data[:rating]
+      alignments << data
+    end
+
+    if task.group_task?
+      raise "Cant support group tasks yet in simulation :("
+    end
+    contributions = nil
+
+    task.create_alignments_from_submission(alignments) unless alignments.nil?
+    task.create_submission_and_trigger_state_change(proj.student) #, propagate = true, contributions = contributions, trigger = trigger)
+    task.assess status, tutor, complete_date
+
+    pdf_path = task.final_pdf_path
+    if pdf_path
+      FileUtils.ln_s(Rails.root.join('test_files', 'unit_files', 'sample-student-submission.pdf'), pdf_path)
+    end
+
+    task.portfolio_evidence = pdf_path
+    task.save
   end
 
   private
