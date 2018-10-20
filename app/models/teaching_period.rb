@@ -41,14 +41,22 @@ class TeachingPeriod < ActiveRecord::Base
       if date >= a_break.start_date
         # we are in or after the break, so calculated week needs to
         # be reduced by this break
+        
         if date >= a_break.end_date
+          # past the end of the break...
           result -= a_break.number_of_weeks
         elsif date == a_break.start_date
           # cant use standard calculation as this give 0 for this exact moment...
-          result -= 1
-        else
+          result -= 1 if date >= a_break.first_monday
+        elsif date >= a_break.first_monday
           # in break so partial reduction
-          result -= ((date - a_break.start_date) / 1.week).ceil
+          result -= ((date - a_break.first_monday) / 1.week).ceil
+        end
+
+        # for times just past the break but before start of next week...
+        if date >= a_break.end_date && date < a_break.monday_after_break
+          # Need to add 1 as we are now in a new week!
+          result += 1
         end
       end
     end
@@ -57,18 +65,24 @@ class TeachingPeriod < ActiveRecord::Base
   end
 
   def date_for_week(num)
+    num = num.floor
+
     # start by switching from 1 based to 0 based
     # week 1 is offset 0 weeks from the start
     num -= 1
+
+    result = start_date + num.weeks
+
+    # check breaks
     for a_break in breaks do
-      if num >= week_no(a_break.start_date)
+      if result >= a_break.start_date
         # we are in or after the break, so calculated date is
         # extended by the break period
-        num += a_break.number_of_weeks
+        result += a_break.number_of_weeks.weeks
       end
     end
 
-    result = start_date + num.weeks
+    result
   end
 
   def date_for_week_and_day(week, day)
@@ -81,7 +95,17 @@ class TeachingPeriod < ActiveRecord::Base
 
     start_day_num = start_date.wday
 
-    week_start + (day_num - start_day_num).days
+    result = week_start + (day_num - start_day_num).days
+    
+    for a_break in breaks do
+      if result >= a_break.start_date && result < a_break.end_date
+        # we are in or after the break, so calculated date is
+        # extended by the break period
+        result += a_break.number_of_weeks.weeks
+      end
+    end
+
+    result
   end
 
   def rollover(rollover_to)
