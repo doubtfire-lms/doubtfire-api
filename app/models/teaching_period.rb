@@ -71,6 +71,19 @@ class TeachingPeriod < ActiveRecord::Base
     result = start_date + num.weeks
   end
 
+  def date_for_week_and_day(week, day)
+    return nil if week.nil? || day.nil?
+
+    week_start = date_for_week(week)
+
+    day_num = Date::ABBR_DAYNAMES.index day.titlecase
+    return nil if day_num.nil?
+
+    start_day_num = start_date.wday
+
+    week_start + (day_num - start_day_num).days
+  end
+
   def rollover(rollover_to)
     rollover_to.add_associations(self)
     rollover_to.save!
