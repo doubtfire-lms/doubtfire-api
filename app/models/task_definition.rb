@@ -394,6 +394,8 @@ class TaskDefinition < ActiveRecord::Base
         return [nil, false, 'Failed to save definition due to data error.']
       end
     else
+      # delete the task if it was new
+      result.destroy if new_task
       if result.group_set.nil? && row[:group_set].present?
         return [nil, false, "Unable to find groupset with name #{row[:group_set]} in unit."]
       else
