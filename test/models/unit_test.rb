@@ -6,7 +6,7 @@ class UnitTest < ActiveSupport::TestCase
     data = {
         code: 'COS10001',
         name: 'Testing in Unit Tests',
-        description: faker_random_sentence(10, 15),
+        description: 'Test unit',
         teaching_period_id: TeachingPeriod.find(3).id
       }
     @unit = Unit.create(data)
@@ -21,7 +21,10 @@ class UnitTest < ActiveSupport::TestCase
     @unit.import_tasks_from_csv File.open(Rails.root.join('test_files',"#{@unit.code}-Tasks.csv"))
     @unit.import_task_files_from_zip Rails.root.join('test_files',"#{@unit.code}-Tasks.zip")
 
-    assert File.exists? @unit.task_definitions.first.task_sheet
+    @unit.task_definitions.each do |td|
+      assert File.exists?(td.task_sheet), "#{td.abbreviation} task sheet missing"
+    end
+
     assert File.exists? @unit.task_definitions.first.task_resources
   end
 
@@ -31,22 +34,53 @@ class UnitTest < ActiveSupport::TestCase
 
     unit2 = @unit.rollover TeachingPeriod.find(2), nil, nil
 
-    assert File.exists?(unit2.task_definitions.first.task_sheet), 'task sheet is absent'
+    unit2.task_definitions.each do |td|
+      assert File.exists?(td.task_sheet), 'task sheet is absent'
+    end
+
     assert File.exists?(unit2.task_definitions.first.task_resources), 'task resource is absent'
   end
 
-  test 'rollover of tasks' do
+  test 'rollover of tasks have same start week and day' do
     @unit.import_tasks_from_csv File.open(Rails.root.join('test_files',"#{@unit.code}-Tasks.csv"))
-    @unit.import_task_files_from_zip Rails.root.join('test_files',"#{@unit.code}-Tasks.zip")
+
+    unit2 = @unit.rollover TeachingPeriod.find(2), nil, nil
+
+    assert_equal 3, @unit.teaching_period_id
+    assert_equal 2, unit2.teaching_period_id
+
+    @unit.task_definitions.each do |td|
+      td2 = unit2.task_definitions.find_by_abbreviation(td.abbreviation)
+
+      assert_equal td.start_day, td2.start_day, "#{td.abbreviation} not on same day"
+      assert_equal td.start_week, td2.start_week, "#{td.abbreviation} not in same week"
+    end
+  end
+
+  test 'rollover of tasks have same target week and day' do
+    @unit.import_tasks_from_csv File.open(Rails.root.join('test_files',"#{@unit.code}-Tasks.csv"))
 
     unit2 = @unit.rollover TeachingPeriod.find(2), nil, nil
 
     @unit.task_definitions.each do |td|
       td2 = unit2.task_definitions.find_by_abbreviation(td.abbreviation)
-      assert_equal td.start_day, td2.start_day, "#{td.abbreviation} not on same day"
-      assert_equal td.start_week, td2.start_week, "#{td.abbreviation} not in same week"
+      assert_equal td.target_day, td2.target_day, "#{td.abbreviation} not on same day"
+      assert_equal td.target_week, td2.target_week, "#{td.abbreviation} not targetting same week"
     end
   end
+
+  test 'rollover of tasks have same due week and day' do
+    @unit.import_tasks_from_csv File.open(Rails.root.join('test_files',"#{@unit.code}-Tasks.csv"))
+
+    unit2 = @unit.rollover TeachingPeriod.find(2), nil, nil
+
+    @unit.task_definitions.each do |td|
+      td2 = unit2.task_definitions.find_by_abbreviation(td.abbreviation)
+      assert_equal td.due_day, td2.due_day, "#{td.abbreviation} not on same day"
+      assert_equal td.due_week, td2.due_week, "#{td.abbreviation} not due same week"
+    end
+  end
+
 
   test 'ensure valid response from unit ilo data' do
     @unit.import_tasks_from_csv File.open(Rails.root.join('test_files',"#{@unit.code}-Tasks.csv"))
