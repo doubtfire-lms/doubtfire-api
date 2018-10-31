@@ -139,21 +139,22 @@ class Unit < ActiveRecord::Base
 
   def rollover(teaching_period_id, start_date, end_date)
     new_unit = self.dup
+    
     if teaching_period_id.present?
-      new_unit.set_teaching_period(teaching_period_id)
+      new_unit.teaching_period_id = teaching_period_id
+      new_unit.teaching_period = TeachingPeriod.find(teaching_period_id)
     else
-      new_unit.set_custom_dates(start_date, end_date)
+      new_unit.start_date = start_date
+      new_unit.end_date = end_date
     end
-    new_unit.add_associations(self)
+    
+    new_unit.save!
+
+    new_unit.duplicate_details(self)
     new_unit
   end
 
-  def set_teaching_period(teaching_period_id)
-    self.teaching_period_id = teaching_period_id
-    self.save!
-  end
-
-  def add_associations(unit)
+  def duplicate_details(unit)
     self.duplicate_task_definitions_from_existing_unit(unit)
     self.duplicate_learning_outcomes_from_existing_unit(unit)
     self.duplicate_group_sets_from_existing_unit(unit)
@@ -161,15 +162,8 @@ class Unit < ActiveRecord::Base
   end
 
   def duplicate_task_definitions_from_existing_unit(unit)
-    diff_in_sec = (self.start_date - unit.start_date).to_i
-    unit.task_definitions.each do |task_definitions|
-      new_task_definitions = task_definitions.dup
-      new_task_definitions.adjust_dates(diff_in_sec)
-      self.task_definitions << new_task_definitions
-    end
-    self.task_definitions.each do |task_definitions|
-      task_definitions.adjust_dates_for_breaks_in_current_teaching_period
-      task_definitions.save!
+    unit.task_definitions.each do |td|
+      td.copy_to(self)
     end
   end
 
@@ -189,12 +183,6 @@ class Unit < ActiveRecord::Base
     unit.convenors.each do |convenors|
       self.convenors << convenors.dup
     end
-  end
-
-  def set_custom_dates(start_date, end_date)
-    self.start_date = start_date
-    self.end_date = end_date
-    self.save!
   end
 
   def ordered_ilos
@@ -933,13 +921,27 @@ class Unit < ActiveRecord::Base
     end
   end
 
+  # First day of the week is sunday...
   def date_for_week_and_day(week, day)
     return nil if week.nil? || day.nil?
-    day_num = Date::ABBR_DAYNAMES.index day.titlecase
-    return nil if day_num.nil?
-    start_day_num = start_date.wday
 
-    start_date + week.weeks + (day_num - start_day_num).days
+    if teaching_period.present?
+      teaching_period.date_for_week_and_day(week, day)
+    else
+      day_num = Date::ABBR_DAYNAMES.index day.titlecase
+      return nil if day_num.nil?
+      start_day_num = start_date.wday
+
+      start_date + week.weeks + (day_num - start_day_num).days
+    end
+  end
+
+  def week_number(date)
+    if teaching_period.present?
+      teaching_period.week_number(date)
+    else
+      ((date - start_date) / 1.week).floor
+    end
   end
 
   def import_tasks_from_csv(file)

@@ -5,20 +5,20 @@ class TeachingPeriodTest < ActiveSupport::TestCase
   test 'week 1 is first week of teaching period' do
     tp = TeachingPeriod.first
     
-    assert_equal 1, tp.week_no(tp.start_date)
+    assert_equal 1, tp.week_number(tp.start_date)
   end
 
   test 'weeks advance with calendar weeks' do
     tp = TeachingPeriod.first
     
-    assert_equal 2, tp.week_no(tp.start_date + 1.week)
+    assert_equal 2, tp.week_number(tp.start_date + 1.week)
   end
 
   test 'weeks advance with breaks' do
     tp = TeachingPeriod.find(1)
     
-    assert_equal tp.week_no(tp.breaks.first.start_date) + 1, tp.week_no(tp.breaks.first.end_date)
-    assert_equal tp.week_no(tp.breaks.first.start_date), tp.week_no(tp.breaks.first.start_date + 1.day)
+    assert_equal tp.week_number(tp.breaks.first.start_date) + 1, tp.week_number(tp.breaks.first.end_date)
+    assert_equal tp.week_number(tp.breaks.first.start_date), tp.week_number(tp.breaks.first.start_date + 1.day)
   end
 
   test 'can map week number to date' do
@@ -78,7 +78,7 @@ class TeachingPeriodTest < ActiveSupport::TestCase
   test 'week number works with mult-week breaks' do
     tp = TeachingPeriod.find(3)
     
-    assert_equal tp.week_no(tp.breaks.first.start_date) + 1, tp.week_no(tp.breaks.first.end_date)
+    assert_equal tp.week_number(tp.breaks.first.start_date) + 1, tp.week_number(tp.breaks.first.end_date)
     assert_equal 2, tp.breaks.first.number_of_weeks
   end
 

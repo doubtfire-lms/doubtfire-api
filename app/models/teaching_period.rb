@@ -33,7 +33,7 @@ class TeachingPeriod < ActiveRecord::Base
     break_in_teaching_period
   end
 
-  def week_no(date)
+  def week_number(date)
     # Calcualte date offset, add 2 so 0-week offset is week 1 not week 0
     result = ((date - start_date) / 1.week).floor + 1
 

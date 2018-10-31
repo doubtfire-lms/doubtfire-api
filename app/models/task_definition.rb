@@ -33,6 +33,27 @@ class TaskDefinition < ActiveRecord::Base
 
   validate :ensure_no_submissions, if: :has_change_group_status?
 
+  def copy_to(other_unit)
+    new_td = self.dup
+
+    # change the unit...
+    new_td.unit_id = other_unit.id          # for database
+    new_td.unit = other_unit                # for other operations
+    other_unit.task_definitions << new_td   # so we can see it in unit elsewhere
+
+    # Adjust dates
+    new_td.start_week_and_day = start_week, start_day
+    new_td.target_week_and_day = target_week, target_day
+
+    if self['due_date'].present?
+      new_td.due_week_and_day = due_week, due_day
+    end
+
+    new_td.save
+
+    new_td
+  end
+
   def has_change_group_status?
     group_set_id != group_set_id_was
   end
@@ -277,19 +298,29 @@ class TaskDefinition < ActiveRecord::Base
   end
 
   def start_week
-    ((start_date - unit.start_date) / 1.week).floor
+    unit.week_number(start_date)
   end
 
   def start_day
     Date::ABBR_DAYNAMES[start_date.wday]
   end
 
+  def start_week_and_day= value
+    week, day = value
+    self.start_date = unit.date_for_week_and_day(week, day)
+  end
+
   def target_week
-    ((target_date - unit.start_date) / 1.week).floor
+    unit.week_number(target_date)
   end
 
   def target_day
     Date::ABBR_DAYNAMES[target_date.wday]
+  end
+
+  def target_week_and_day= value
+    week, day = value
+    self.target_date = unit.date_for_week_and_day(week, day)
   end
 
   # Override due date to return either the final date of the unit, or the set due date
@@ -299,11 +330,16 @@ class TaskDefinition < ActiveRecord::Base
   end
 
   def due_week
-    if due_date
-      ((due_date - unit.start_date) / 1.week).floor
+    if due_date.present?
+      unit.week_number(due_date)
     else
       ''
     end
+  end
+
+  def due_week_and_day= value
+    week, day = value
+    self.due_date = unit.date_for_week_and_day(week, day)
   end
 
   def due_day
