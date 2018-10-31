@@ -475,11 +475,11 @@ class TaskDefinition < ActiveRecord::Base
     result.plagiarism_warn_pct         = row[:plagiarism_warn_pct]
     result.plagiarism_checks           = row[:plagiarism_checks]
     
-    unless row[:group_set].present? 
-      result.group_set                   = unit.group_sets.where(name: row[:group_set]).first
+    if row[:group_set].present? 
+      result.group_set                 = unit.group_sets.where(name: row[:group_set]).first
     end
 
-    if result.valid? && (row[:group_set].nil? || !result.group_set.nil?)
+    if result.valid? && (row[:group_set].blank? || result.group_set.present?)
       begin
         result.save
       rescue
@@ -487,7 +487,9 @@ class TaskDefinition < ActiveRecord::Base
         return [nil, false, 'Failed to save definition due to data error.']
       end
     else
-      if result.group_set.nil? && !row[:group_set].nil?
+      # delete the task if it was new
+      result.destroy if new_task
+      if result.group_set.nil? && row[:group_set].present?
         return [nil, false, "Unable to find groupset with name #{row[:group_set]} in unit."]
       else
         return [nil, false, result.errors.full_messages.join('. ')]
