@@ -49,6 +49,17 @@ class TaskDefinition < ActiveRecord::Base
       new_td.due_week_and_day = due_week, due_day
     end
 
+    # Ensure we have the dir for the destination task sheet
+    FileHelper.task_file_dir_for_unit(other_unit, create = true)
+
+    if has_task_sheet?
+      FileUtils.cp(task_sheet, new_td.task_sheet())
+    end
+
+    if has_task_resources?
+      FileUtils.cp(task_resources, new_td.task_resources)
+    end
+
     new_td.save
 
     new_td
