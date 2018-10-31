@@ -41,6 +41,24 @@ class UnitTest < ActiveSupport::TestCase
     assert File.exists?(unit2.task_definitions.first.task_resources), 'task resource is absent'
   end
 
+  test 'rollover of task ilo links' do
+    @unit.import_tasks_from_csv File.open(Rails.root.join('test_files',"#{@unit.code}-Tasks.csv"))
+    @unit.import_outcomes_from_csv File.open(Rails.root.join('test_files',"#{@unit.code}-Outcomes.csv"))
+    @unit.import_task_alignment_from_csv File.open(Rails.root.join('test_files',"#{@unit.code}-Alignment.csv")), nil
+
+    unit2 = @unit.rollover TeachingPeriod.find(2), nil, nil
+
+    assert @unit.task_outcome_alignments.count > 0
+    assert_equal @unit.task_outcome_alignments.count, unit2.task_outcome_alignments.count
+    
+    @unit.task_outcome_alignments.each do |link|
+      other = unit2.task_outcome_alignments.where(task_definition_id: link.task_definition_id, learning_outcome_id: link.learning_outcome.id).first
+
+      assert other
+      assert_equal link.rating, other.rating, "rating does not match for #{link.task_definition.abbreviation} - #{link.learning_outcome.abbreviation}"
+    end
+  end
+
   test 'rollover of tasks have same start week and day' do
     @unit.import_tasks_from_csv File.open(Rails.root.join('test_files',"#{@unit.code}-Tasks.csv"))
 
