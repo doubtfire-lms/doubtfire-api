@@ -150,39 +150,27 @@ class Unit < ActiveRecord::Base
     
     new_unit.save!
 
-    new_unit.duplicate_details(self)
+    # Duplicate task definitions
+    task_definitions.each do |td|
+      td.copy_to(new_unit)
+    end
+
+    # Duplicate unit learning outcomes
+    learning_outcomes.each do |learning_outcomes|
+      new_unit.learning_outcomes << learning_outcomes.dup
+    end
+
+    # Duplicate group sets
+    group_sets.each do |group_sets|
+      new_unit.group_sets << group_sets.dup
+    end
+
+    # Duplicate convenors
+    convenors.each do |convenors|
+      new_unit.convenors << convenors.dup
+    end
+    
     new_unit
-  end
-
-  def duplicate_details(unit)
-    self.duplicate_task_definitions_from_existing_unit(unit)
-    self.duplicate_learning_outcomes_from_existing_unit(unit)
-    self.duplicate_group_sets_from_existing_unit(unit)
-    self.duplicate_convenors_from_existing_unit(unit)
-  end
-
-  def duplicate_task_definitions_from_existing_unit(unit)
-    unit.task_definitions.each do |td|
-      td.copy_to(self)
-    end
-  end
-
-  def duplicate_learning_outcomes_from_existing_unit(unit)
-    unit.learning_outcomes.each do |learning_outcomes|
-      self.learning_outcomes << learning_outcomes.dup
-    end
-  end
-
-  def duplicate_group_sets_from_existing_unit(unit)
-    unit.group_sets.each do |group_sets|
-      self.group_sets << group_sets.dup
-    end
-  end
-
-  def duplicate_convenors_from_existing_unit(unit)
-    unit.convenors.each do |convenors|
-      self.convenors << convenors.dup
-    end
   end
 
   def ordered_ilos
