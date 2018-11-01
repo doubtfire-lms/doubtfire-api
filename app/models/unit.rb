@@ -780,7 +780,7 @@ class Unit < ActiveRecord::Base
               'Monday',
               '8:00am',
               'TBA',
-              unit.main_convenor,
+              main_convenor,
               tutorial
             )
           end
