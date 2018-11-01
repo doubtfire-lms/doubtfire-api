@@ -771,13 +771,21 @@ class Unit < ActiveRecord::Base
         change = ''
 
         if grp.new_record?
+          change = 'Created new group. '
+
           tutorial = tutorial_with_abbr(tutorial)
           if tutorial.nil?
-            errors << { row: row, message: "Tutorial #{tutorial} not found" }
-            next
+            change += 'Created new tutorial. '
+            tutorial = add_tutorial(
+              'Monday',
+              '8:00am',
+              'TBA',
+              unit.main_convenor,
+              tutorial
+            )
           end
 
-          change = 'Created new group. '
+          
           grp.tutorial = tutorial
           grp.number = group_number
           grp.save!
