@@ -750,7 +750,7 @@ class Unit < ActiveRecord::Base
         username = row['username'].downcase.strip unless row['username'].nil?
         group_name = row['group_name'].strip unless row['group_name'].nil?
         group_number = row['group_number'].strip unless row['group_number'].nil?
-        tutorial = row['tutorial'].strip unless row['tutorial'].nil?
+        tutorial_abbr = row['tutorial'].strip unless row['tutorial'].nil?
 
         user = User.where(username: username).first
 
@@ -773,7 +773,7 @@ class Unit < ActiveRecord::Base
         if grp.new_record?
           change = 'Created new group. '
 
-          tutorial = tutorial_with_abbr(tutorial)
+          tutorial = tutorial_with_abbr(tutorial_abbr)
           if tutorial.nil?
             change += 'Created new tutorial. '
             tutorial = add_tutorial(
@@ -781,10 +781,9 @@ class Unit < ActiveRecord::Base
               '8:00am',
               'TBA',
               main_convenor,
-              tutorial
+              tutorial_abbr
             )
           end
-
           
           grp.tutorial = tutorial
           grp.number = group_number
