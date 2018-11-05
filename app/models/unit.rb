@@ -132,69 +132,45 @@ class Unit < ActiveRecord::Base
   end
 
   def validate_end_date_after_start_date
-    if end_date < start_date
+    if end_date.present? && start_date.present? && end_date < start_date
       errors.add(:end_date, "should be after the Start date")
     end
   end
 
   def rollover(teaching_period_id, start_date, end_date)
     new_unit = self.dup
+    
     if teaching_period_id.present?
-      new_unit.set_teaching_period(teaching_period_id)
+      new_unit.teaching_period_id = teaching_period_id
+      new_unit.teaching_period = TeachingPeriod.find(teaching_period_id)
     else
-      new_unit.set_custom_dates(start_date, end_date)
+      new_unit.start_date = start_date
+      new_unit.end_date = end_date
     end
-    new_unit.add_associations(self)
+    
+    new_unit.save!
+
+    # Duplicate task definitions
+    task_definitions.each do |td|
+      td.copy_to(new_unit)
+    end
+
+    # Duplicate unit learning outcomes
+    learning_outcomes.each do |learning_outcomes|
+      new_unit.learning_outcomes << learning_outcomes.dup
+    end
+
+    # Duplicate group sets
+    group_sets.each do |group_sets|
+      new_unit.group_sets << group_sets.dup
+    end
+
+    # Duplicate convenors
+    convenors.each do |convenors|
+      new_unit.convenors << convenors.dup
+    end
+    
     new_unit
-  end
-
-  def set_teaching_period(teaching_period_id)
-    self.teaching_period_id = teaching_period_id
-    self.save!
-  end
-
-  def add_associations(unit)
-    self.duplicate_task_definitions_from_existing_unit(unit)
-    self.duplicate_learning_outcomes_from_existing_unit(unit)
-    self.duplicate_group_sets_from_existing_unit(unit)
-    self.duplicate_convenors_from_existing_unit(unit)
-  end
-
-  def duplicate_task_definitions_from_existing_unit(unit)
-    diff_in_sec = (self.start_date - unit.start_date).to_i
-    unit.task_definitions.each do |task_definitions|
-      new_task_definitions = task_definitions.dup
-      new_task_definitions.adjust_dates(diff_in_sec)
-      self.task_definitions << new_task_definitions
-    end
-    self.task_definitions.each do |task_definitions|
-      task_definitions.adjust_dates_for_breaks_in_current_teaching_period
-      task_definitions.save!
-    end
-  end
-
-  def duplicate_learning_outcomes_from_existing_unit(unit)
-    unit.learning_outcomes.each do |learning_outcomes|
-      self.learning_outcomes << learning_outcomes.dup
-    end
-  end
-
-  def duplicate_group_sets_from_existing_unit(unit)
-    unit.group_sets.each do |group_sets|
-      self.group_sets << group_sets.dup
-    end
-  end
-
-  def duplicate_convenors_from_existing_unit(unit)
-    unit.convenors.each do |convenors|
-      self.convenors << convenors.dup
-    end
-  end
-
-  def set_custom_dates(start_date, end_date)
-    self.start_date = start_date
-    self.end_date = end_date
-    self.save!
   end
 
   def ordered_ilos
@@ -933,13 +909,27 @@ class Unit < ActiveRecord::Base
     end
   end
 
+  # First day of the week is sunday...
   def date_for_week_and_day(week, day)
     return nil if week.nil? || day.nil?
-    day_num = Date::ABBR_DAYNAMES.index day.titlecase
-    return nil if day_num.nil?
-    start_day_num = start_date.wday
 
-    start_date + week.weeks + (day_num - start_day_num).days
+    if teaching_period.present?
+      teaching_period.date_for_week_and_day(week, day)
+    else
+      day_num = Date::ABBR_DAYNAMES.index day.titlecase
+      return nil if day_num.nil?
+      start_day_num = start_date.wday
+
+      start_date + week.weeks + (day_num - start_day_num).days
+    end
+  end
+
+  def week_number(date)
+    if teaching_period.present?
+      teaching_period.week_number(date)
+    else
+      ((date - start_date) / 1.week).floor
+    end
   end
 
   def import_tasks_from_csv(file)
@@ -1446,7 +1436,7 @@ class Unit < ActiveRecord::Base
         project_id: t.project_id,
         task_definition_id: t.task_definition_id,
         tutorial_id: t.tutorial_id,
-        status: TaskStatus.find(t.status_id).status_key,
+        status: TaskStatus.id_to_key(t.status_id),
         completion_date: t.completion_date,
         submission_date: t.submission_date,
         times_assessed: t.times_assessed,
@@ -1523,7 +1513,7 @@ class Unit < ActiveRecord::Base
       {
         tutorial_id: r.tutorial_id,
         task_definition_id: r.task_definition_id,
-        status: TaskStatus.find(r.status_id).status_key,
+        status: TaskStatus.id_to_key(r.status_id),
         num: r.num_tasks
       }
     end
@@ -1669,7 +1659,7 @@ class Unit < ActiveRecord::Base
         learning_outcome_id: r.learning_outcome_id,
         rating: r.rating,
         grade: r.target_grade,
-        status: TaskStatus.find(r.status_id).status_key,
+        status: TaskStatus.id_to_key(r.status_id),
         num: r.num
       }
     end
@@ -1683,7 +1673,8 @@ class Unit < ActiveRecord::Base
       redo:               0.1,
       do_not_resubmit:    0.1,
       fix_and_resubmit:   0.3,
-      ready_to_mark:      0.5,
+      time_exceeded:      0.5,
+      ready_to_mark:      0.7,
       discuss:            0.8,
       demonstrate:        0.8,
       complete:           1.0

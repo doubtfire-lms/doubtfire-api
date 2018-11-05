@@ -1,5 +1,6 @@
 class GroupSet < ActiveRecord::Base
   belongs_to :unit
+  has_many :task_definitions
   has_many :groups, dependent: :destroy
 
   validates_associated :groups
