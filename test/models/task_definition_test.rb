@@ -36,4 +36,27 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     td.destroy
   end
+
+  def test_default_quality_points
+    u = Unit.first
+
+    group_params = {
+      name: 'Group Work',
+      allow_students_to_create_groups: true,
+      allow_students_to_manage_groups: true,
+      keep_groups_in_same_class: true
+    }
+
+    initial_count = u.task_definitions.count
+
+    group_set = GroupSet.create!(group_params)
+    group_set.unit = u
+    group_set.save!
+
+    path = Rails.root.join('test_files', 'unit_csv_imports', 'import_group_tasks.csv')
+    u.import_tasks_from_csv File.new(path)
+
+    assert_equal 1, group_set.task_definitions.count
+    assert_equal initial_count + 1, u.task_definitions.count
+  end
 end

@@ -13,13 +13,13 @@ class TeachingPeriod < ActiveRecord::Base
   validate :validate_end_date_after_start_date, :validate_active_until_after_end_date
 
   def validate_end_date_after_start_date
-    if end_date < start_date
+    if end_date.present? && start_date.present? && end_date < start_date
       errors.add(:end_date, "should be after the Start date")
     end
   end
 
   def validate_active_until_after_end_date
-    if active_until < end_date
+    if end_date.present? && active_until.present? && active_until < end_date
       errors.add(:active_until, "date should be after the End date")
     end
   end
@@ -31,6 +31,81 @@ class TeachingPeriod < ActiveRecord::Base
     break_in_teaching_period.teaching_period_id = self.id
     break_in_teaching_period.save!
     break_in_teaching_period
+  end
+
+  def week_number(date)
+    # Calcualte date offset, add 2 so 0-week offset is week 1 not week 0
+    result = ((date - start_date) / 1.week).floor + 1
+
+    for a_break in breaks.all do
+      if date >= a_break.start_date
+        # we are in or after the break, so calculated week needs to
+        # be reduced by this break
+        
+        if date >= a_break.end_date
+          # past the end of the break...
+          result -= a_break.number_of_weeks
+        elsif date == a_break.start_date
+          # cant use standard calculation as this give 0 for this exact moment...
+          result -= 1 if date >= a_break.first_monday
+        elsif date >= a_break.first_monday
+          # in break so partial reduction
+          result -= ((date - a_break.first_monday) / 1.week).ceil
+        end
+
+        # for times just past the break but before start of next week...
+        if date >= a_break.end_date && date < a_break.monday_after_break
+          # Need to add 1 as we are now in a new week!
+          result += 1
+        end
+      end
+    end
+
+    result
+  end
+
+  def date_for_week(num)
+    num = num.floor
+
+    # start by switching from 1 based to 0 based
+    # week 1 is offset 0 weeks from the start
+    num -= 1
+
+    result = start_date + num.weeks
+
+    # check breaks
+    for a_break in breaks do
+      if result >= a_break.start_date
+        # we are in or after the break, so calculated date is
+        # extended by the break period
+        result += a_break.number_of_weeks.weeks
+      end
+    end
+
+    result
+  end
+
+  def date_for_week_and_day(week, day)
+    return nil if week.nil? || day.nil?
+
+    week_start = date_for_week(week)
+
+    day_num = Date::ABBR_DAYNAMES.index day.titlecase
+    return nil if day_num.nil?
+
+    start_day_num = start_date.wday
+
+    result = week_start + (day_num - start_day_num).days
+    
+    for a_break in breaks do
+      if result >= a_break.start_date && result < a_break.end_date
+        # we are in or after the break, so calculated date is
+        # extended by the break period
+        result += a_break.number_of_weeks.weeks
+      end
+    end
+
+    result
   end
 
   def rollover(rollover_to)
