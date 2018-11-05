@@ -3,11 +3,8 @@ services:
   api:
     container_name: doubtfire-api
     build: .
-    command: bash -c "if [ -f /doubtfire-api/tmp/pids/server.pid ]; then rm /doubtfire-api/tmp/pids/server.pid; fi && rails server -b 0.0.0.0"
     ports:
       - "3000:3000"
-    volumes:
-      - ../doubtfire-api:/doubtfire-api
     links:
       - web
     depends_on:
@@ -34,5 +31,3 @@ services:
     ports:
       - "8000:8000"
       - "8080:8080"
-    volumes:
-      - ../doubtfire-web:/doubtfire-web
