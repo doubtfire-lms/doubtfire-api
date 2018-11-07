@@ -1,0 +1,84 @@
+# Ruby CircleCI 2.0 configuration file
+#
+# Check https://circleci.com/docs/2.0/language-ruby/ for more details
+#
+version: 2
+
+jobs:
+  build:
+    docker:
+      # specify the version you desire here
+      # - image: ruby:2.3.1 # Not needed since it's in akashagarwal7/doubtfire-api
+      
+      # Specify service dependencies here if necessary
+      # CircleCI maintains a library of pre-built images
+      # documented at https://circleci.com/docs/2.0/circleci-images/
+      - image: akashagarwal7/doubtfire-api
+      - image: circleci/mysql:5.7
+        environment:
+        - MYSQL_ALLOW_EMPTY_PASSWORD=yes
+        - MYSQL_DATABASE=doubtfire_staging
+        - MYSQL_ALLOW_EMPTY_PASSWORD=true
+        - MYSQL_ROOT_HOST=%
+        - MYSQL_HOST=127.0.0.1
+
+      - image: circleci/postgres:9.6
+        environment:
+          POSTGRES_USER: itig
+          POSTGRES_DB: doubtfire_dev_test
+          POSTGRES_PASSWORD: d872\$dh
+
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: yes
+      MYSQL_ROOT_PASSWORD: ''
+      MYSQL_DATABASE: doubtfire_staging
+      DF_STAGING_DB_ADAPTER: mysql2
+      DF_STAGING_DB_HOST: 127.0.0.1
+      DF_STAGING_DB_PORT: 3306
+      DF_STAGING_DB_DATABASE: doubtfire_staging
+      DF_STAGING_DB_USERNAME: root
+      DF_STAGING_DB_PASSWORD: ''
+      DF_SECRET_KEY_BASE: test_staging
+      DF_SECRET_KEY_ATTR: test_staging
+      DF_SECRET_KEY_DEVISE: test_staging
+      BASH_ENV: /root/.bashrc
+    working_directory: ~/doubtfire_api
+
+    steps:
+      - checkout
+
+      # Download and cache dependencies
+      - restore_cache:
+          keys:
+          - v1-dependencies-{{ checksum "Gemfile.lock" }}
+          # fallback to using the latest cache if no exact match is found
+          - v1-dependencies-
+      - run:
+          name: Add texlive path to PATH env variable
+          command: |
+            echo 'export PATH=/tmp/texlive/bin/x86_64-linux:$PATH' >> $BASH_ENV
+            source $BASH_ENV
+            echo $PATH
+            ln -s /tmp/texlive/bin/x86_64-linux/lualatex /usr/local/sbin
+
+      - run:
+          name: Install dependencies
+          command: |
+            bundle install --jobs=4 --retry=3 --path vendor/bundle --with staging
+
+      - save_cache:
+          paths:
+            - ./vendor/bundle
+          key: v1-dependencies-{{ checksum "Gemfile.lock" }}
+
+    # ======================================================================================
+    # Test environment
+    # ======================================================================================
+      - run: echo "y" | RAILS_ENV=test bundle exec rake db:populate
+      - run: which lualatex && RAILS_ENV=test bundle exec rake test
+
+    # ======================================================================================
+    # Staging environment
+    # ======================================================================================
+      - run: echo "n" | RAILS_ENV=staging bundle exec rake db:populate
+      - run: which lualatex && RAILS_ENV=staging bundle exec rake test
