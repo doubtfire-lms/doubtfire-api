@@ -18,7 +18,6 @@ RUN apt-get update && apt-get install -y \
   imagemagick \
   libmagic-dev \
   libmagickwand-dev \
-  libmagic-dev \
   libmysqlclient-dev \
   libpq-dev \
   python-pygments \
