@@ -668,7 +668,7 @@ class Task < ActiveRecord::Base
           raise 'Failed to compress an image. Ensure all images are valid.' unless FileHelper.compress_image("#{task_dir}#{img}")
         else
           dest_file = "#{task_dir}#{File.basename(img, ".*")}.jpg"
-          raise 'Failed to compress an image. Ensure all images are valid.' unless FileHelper.compress_image_to_dest("#{task_dir}#{img}", dest_file)
+          raise 'Failed to compress an image. Ensure all images are valid.' unless FileHelper.compress_image_to_dest("#{task_dir}#{img}", dest_file, true)
           FileUtils.rm("#{task_dir}#{img}")
         end
       end
