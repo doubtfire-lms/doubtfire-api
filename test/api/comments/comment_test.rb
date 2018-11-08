@@ -63,6 +63,29 @@ class CommentTest < ActiveSupport::TestCase
     assert File.exists?(new_comment.attachment_path)
   end
 
+  def test_student_post_gif_comment
+    project = Project.first
+    user = project.student
+    unit = project.unit
+    task_definition = unit.task_definitions.first
+
+    pre_count = TaskComment.count
+
+    comment_data = { attachment: Rack::Test::UploadedFile.new('test_files/submissions/unbelievable.gif', 'image/gif') }
+
+    post with_auth_token("/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", user), comment_data
+
+    assert_equal 201, last_response.status
+
+    assert_equal pre_count + 1, TaskComment.count, "one comment added"
+
+    new_comment = TaskComment.last
+
+    assert_equal "image comment", new_comment.comment, "last comment has message"
+    assert File.exists?(new_comment.attachment_path)
+    assert_equal '.gif', new_comment.attachment_extension, 'attachment is a gif'
+  end
+
   def test_post_comment_empty_attachment
     project = Project.first
     user = project.student
