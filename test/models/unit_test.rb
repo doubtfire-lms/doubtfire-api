@@ -52,7 +52,9 @@ class UnitTest < ActiveSupport::TestCase
     assert_equal @unit.task_outcome_alignments.count, unit2.task_outcome_alignments.count
     
     @unit.task_outcome_alignments.each do |link|
-      other = unit2.task_outcome_alignments.where(task_definition_id: link.task_definition_id, learning_outcome_id: link.learning_outcome.id).first
+      ilo = unit2.learning_outcomes.find_by(abbreviation: link.learning_outcome.abbreviation)
+      task_def = unit2.task_definitions.find_by(abbreviation: link.task_definition.abbreviation)
+      other = unit2.task_outcome_alignments.where(task_definition_id: task_def.id, learning_outcome_id: ilo.id).first
 
       assert other
       assert_equal link.rating, other.rating, "rating does not match for #{link.task_definition.abbreviation} - #{link.learning_outcome.abbreviation}"
