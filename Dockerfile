@@ -34,9 +34,6 @@ ENV PATH /tmp/texlive/bin/x86_64-linux:$PATH
 COPY Gemfile Gemfile.lock /doubtfire-api/
 RUN bundle install --without production replica
 
-# To rebuild Docker image faster, copy application code after installing TeX and Ruby gems
-COPY . /doubtfire-api
-
 CMD bundle exec rails s
 
 EXPOSE 3000
