@@ -511,7 +511,7 @@ class Task < ActiveRecord::Base
     lc = comments.last
     return if lc && lc.user == user && lc.comment == text
 
-    ensured_group_submission if group_task?
+    ensured_group_submission if group_task? && group
 
     comment = TaskComment.create
     comment.task = self
@@ -524,7 +524,7 @@ class Task < ActiveRecord::Base
   end
 
   def add_comment_with_attachment(user, tempfile)
-    ensured_group_submission if group_task?
+    ensured_group_submission if group_task? && group
 
     comment = TaskComment.create
     comment.task = self
