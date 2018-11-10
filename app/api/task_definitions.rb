@@ -135,11 +135,11 @@ module Api
           gs = GroupSet.find(params[:task_def][:group_set_id])
           if gs.unit == task_def.unit
             task_def.group_set = gs
-            task_def.save
+            task_def.save!
           end
         else
           task_def.group_set = nil
-          task_def.save
+          task_def.save!
         end
       end
 
