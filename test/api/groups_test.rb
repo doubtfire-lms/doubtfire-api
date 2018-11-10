@@ -71,4 +71,41 @@ class GroupsTest < ActiveSupport::TestCase
     group_set.destroy
   end
 
+  def test_comment_on_group_task_without_group
+    unit = Unit.first
+
+    group_set = GroupSet.create!({name: 'test_comment_without_group', unit: unit})
+    group_set.save!
+
+    td = TaskDefinition.new({
+        unit_id: unit.id,
+        name: 'Task to switch from ind to group after submission',                    
+        description: 'test def',
+        weighting: 4,
+        target_grade: 0,
+        start_date: Time.zone.now - 1.week,
+        target_date: Time.zone.now - 1.day,
+        due_date: Time.zone.now + 1.week,
+        abbreviation: 'TaskSwitchIndGrp',
+        restrict_status_updates: false,
+        upload_requirements: [ { "key" => 'file0', "name" => 'Shape Class', "type" => 'code' } ],
+        plagiarism_warn_pct: 0.8,
+        is_graded: false,
+        max_quality_pts: 0,
+        group_set: group_set
+      })
+    assert td.save!
+
+    project = unit.projects.first
+
+    comment_data = { comment: "Hello World" }
+
+    post_json with_auth_token("/api/projects/#{project.id}/task_def_id/#{td.id}/comments", project.student), comment_data
+
+    assert_equal 201, last_response.status
+
+    td.destroy
+    group_set.destroy
+  end
+
 end
