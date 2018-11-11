@@ -111,7 +111,7 @@ module FileHelper
   # type = [:new, :in_process, :done, :pdf, :plagarism]
   #
   def student_work_dir(type = nil, task = nil, create = true)
-    if task && task.group_task?
+    if task && task.group_task? && type != :comment
       dst = student_group_work_dir type, task.group_submission, task
     else
       file_server = Doubtfire::Application.config.student_work_dir
