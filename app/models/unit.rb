@@ -160,6 +160,11 @@ class Unit < ActiveRecord::Base
       new_unit.learning_outcomes << learning_outcomes.dup
     end
 
+    # Duplicate alignments
+    task_outcome_alignments.each do |align|
+      align.duplicate_to(new_unit)
+    end
+
     # Duplicate group sets
     group_sets.each do |group_sets|
       new_unit.group_sets << group_sets.dup
