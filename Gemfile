@@ -18,7 +18,6 @@ group :development, :test do
   gem 'factory_girl_rails'
   gem 'minitest-around'
   gem 'minitest-hyper'
-  gem 'minitest-osx'
   gem 'minitest-rails'
   gem 'byebug'
   gem 'simplecov', require: false
