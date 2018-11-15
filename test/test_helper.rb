@@ -19,7 +19,6 @@ end
 # Require minitest extensions
 require 'minitest/rails'
 require 'minitest/pride'
-require 'minitest/osx'
 require 'minitest/around'
 
 # Require all test helpers
