@@ -29,9 +29,15 @@ services:
   web:
     container_name: doubtfire-web
     build: ../doubtfire-web
-    command: npm start
     environment:
       DF_DOCKER_MACHINE_IP: $DF_DOCKER_MACHINE_IP
     ports:
-      - "8000:8000"
-      - "8080:8080"
+      - "4200:4200" # Angular 6
+      - "8000:8000" # Angular 1
+      - "8080:8080" # Angular 1
+    volumes:
+      - ../doubtfire-web:/doubtfire-web
+      - /doubtfire-web/bin
+      - /doubtfire-web/build
+      - /doubtfire-web/node_modules
+      - /doubtfire-web/vendor
