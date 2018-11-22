@@ -22,7 +22,7 @@ module Api
         unit_roles = unit_roles.where(unit_id: params[:unit_id])
       end
 
-      ActiveModel::ArraySerializer.new(unit_roles.joins(:unit).select('unit_roles.*', 'units.start_date'), each_serializer: UnitRoleSerializer)
+      ActiveModel::ArraySerializer.new(unit_roles.joins(:unit).select('unit_roles.*', 'units.start_date', 'units.end_date'), each_serializer: UnitRoleSerializer)
     end
 
     desc 'Delete a unit role'
