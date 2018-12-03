@@ -55,5 +55,15 @@ module Api
       result = Break.all
       result
     end
+
+    desc 'Delete a break'
+    delete '/breaks/:id' do
+      unless authorise? current_user, User, :handle_teaching_period
+        error!({ error: 'Not authorised to delete a break' }, 403)
+      end
+
+      break_id = params[:id]
+      Break.find(break_id).destroy
+    end
   end
 end
