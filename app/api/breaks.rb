@@ -16,7 +16,7 @@ module Api
     end
     post '/teaching_periods/:teaching_period_id/breaks' do
       unless authorise? current_user, User, :handle_teaching_period
-        error!({ error: 'Not authorised to create a teaching period' }, 403)
+        error!({ error: 'Not authorised to add a break' }, 403)
       end
 
       # Find the Teaching Period to add break
