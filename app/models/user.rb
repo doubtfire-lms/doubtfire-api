@@ -302,11 +302,13 @@ class User < ActiveRecord::Base
     # What can tutors do with users?
     tutor_role_permissions = [
       :act_tutor,
-      :download_unit_csv
+      :download_unit_csv,
+      :get_teaching_periods
     ]
 
     # What can students do with users?
     student_role_permissions = [
+      :get_teaching_periods
 
     ]
 
