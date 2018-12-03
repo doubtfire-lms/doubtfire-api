@@ -38,6 +38,15 @@ module Api
       teaching_period.breaks
     end
 
+    desc "Get a break's details"
+    get '/breaks/:id' do
+      break_details = Break.find(params[:id])
+      unless authorise? current_user, User, :get_teaching_periods
+        error!({ error: "Couldn't find Break with id=#{params[:id]}" }, 403)
+      end
+      break_details
+    end
+
     desc 'Get all the breaks'
     get '/breaks' do
       unless authorise? current_user, User, :get_teaching_periods
