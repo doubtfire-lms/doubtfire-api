@@ -27,5 +27,14 @@ module Api
 
       teaching_period.add_break(start_date, number_of_weeks)
     end
+
+    desc 'Get all the breaks'
+    get '/breaks' do
+      unless authorise? current_user, User, :get_teaching_periods
+        error!({ error: 'Not authorised to get breaks' }, 403)
+      end
+      result = Break.all
+      result
+    end
   end
 end
