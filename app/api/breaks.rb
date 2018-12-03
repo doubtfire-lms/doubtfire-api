@@ -28,6 +28,16 @@ module Api
       teaching_period.add_break(start_date, number_of_weeks)
     end
 
+    desc 'Get all the breaks in the Teaching Period'
+    get '/teaching_periods/:teaching_period_id/breaks' do
+      unless authorise? current_user, User, :get_teaching_periods
+        error!({ error: 'Not authorised to get breaks' }, 403)
+      end
+
+      teaching_period = TeachingPeriod.find(params[:teaching_period_id])
+      teaching_period.breaks
+    end
+
     desc 'Get all the breaks'
     get '/breaks' do
       unless authorise? current_user, User, :get_teaching_periods
