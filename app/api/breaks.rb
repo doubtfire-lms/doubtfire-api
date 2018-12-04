@@ -28,6 +28,26 @@ module Api
       teaching_period.add_break(start_date, number_of_weeks)
     end
 
+    desc 'Update a break in the teaching period'
+    params do
+      optional :start_date, type: Date, desc: 'The start date of the break'
+      optional :number_of_weeks, type: Integer, desc: 'Break duration'
+    end
+    put '/teaching_periods/:teaching_period_id/breaks/:id' do
+      unless authorise? current_user, User, :handle_teaching_period
+        error!({ error: 'Not authorised to update a break' }, 403)
+      end
+
+      # Find the Teaching Period to update break
+      teaching_period = TeachingPeriod.find(params[:teaching_period_id])
+
+      id = params[:id]
+      start_date = params[:start_date]
+      number_of_weeks = params[:number_of_weeks]
+
+      teaching_period.update_break(id, start_date, number_of_weeks)
+    end
+
     desc 'Get all the breaks in the Teaching Period'
     get '/teaching_periods/:teaching_period_id/breaks' do
       unless authorise? current_user, User, :get_teaching_periods

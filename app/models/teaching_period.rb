@@ -33,6 +33,21 @@ class TeachingPeriod < ActiveRecord::Base
     break_in_teaching_period
   end
 
+  def update_break(id, start_date, number_of_weeks)
+    break_in_teaching_period = Break.find(id)
+
+    if start_date.present?
+      break_in_teaching_period.start_date = start_date
+    end
+
+    if number_of_weeks.present?
+      break_in_teaching_period.number_of_weeks = number_of_weeks
+    end
+
+    break_in_teaching_period.save!
+    break_in_teaching_period
+  end
+
   def week_number(date)
     # Calcualte date offset, add 2 so 0-week offset is week 1 not week 0
     result = ((date - start_date) / 1.week).floor + 1
