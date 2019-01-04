@@ -21,6 +21,7 @@ module Api
         error!("Unable to find requested #{e.message[/(Couldn't find )(.*)( with)/,2]}", 404)
       else
         logger.error "Unhandled exception: #{e.class}"
+        logger.error e.inspect
         logger.error e.backtrace.join("\n")
         error!("Sorry... something went wrong with your request.", 500)
       end
