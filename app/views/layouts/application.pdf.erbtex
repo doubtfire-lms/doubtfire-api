@@ -28,7 +28,7 @@
 \AppendGraphicsExtensions{.tif}
 \epstopdfDeclareGraphicsRule{.tiff}{png}{.png}{convert #1 \OutputFile}
 \AppendGraphicsExtensions{.tiff}
-\epstopdfDeclareGraphicsRule{.gif}{png}{.png}{convert #1 \OutputFile}
+\epstopdfDeclareGraphicsRule{.gif}{png}{.png}{convert -delete 1--1 #1 \OutputFile}
 \AppendGraphicsExtensions{.gif}
 \epstopdfDeclareGraphicsRule{.bmp}{png}{.png}{convert #1 \OutputFile}
 \AppendGraphicsExtensions{.bmp}

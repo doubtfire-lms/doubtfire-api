@@ -511,7 +511,7 @@ class Task < ActiveRecord::Base
     lc = comments.last
     return if lc && lc.user == user && lc.comment == text
 
-    ensured_group_submission if group_task?
+    ensured_group_submission if group_task? && group
 
     comment = TaskComment.create
     comment.task = self
@@ -524,7 +524,7 @@ class Task < ActiveRecord::Base
   end
 
   def add_comment_with_attachment(user, tempfile)
-    ensured_group_submission if group_task?
+    ensured_group_submission if group_task? && group
 
     comment = TaskComment.create
     comment.task = self
@@ -668,7 +668,7 @@ class Task < ActiveRecord::Base
           raise 'Failed to compress an image. Ensure all images are valid.' unless FileHelper.compress_image("#{task_dir}#{img}")
         else
           dest_file = "#{task_dir}#{File.basename(img, ".*")}.jpg"
-          raise 'Failed to compress an image. Ensure all images are valid.' unless FileHelper.compress_image_to_dest("#{task_dir}#{img}", dest_file)
+          raise 'Failed to compress an image. Ensure all images are valid.' unless FileHelper.compress_image_to_dest("#{task_dir}#{img}", dest_file, true)
           FileUtils.rm("#{task_dir}#{img}")
         end
       end
