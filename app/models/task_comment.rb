@@ -15,9 +15,16 @@ class TaskComment < ActiveRecord::Base
   validates :user, presence: true
   validates :recipient, presence: true
   validates :comment, length: { minimum: 0, maximum: 4095, allow_blank: true }
+  
+  # Delete action - before dependent association
+  before_destroy :delete_associated_files
 
   def new_for?(user)
     CommentsReadReceipts.where(user: user, task_comment_id: self).empty?
+  end
+
+  def delete_associated_files
+    FileUtils.rm attachment_path if File.exists? attachment_path
   end
 
   def create_comment_read_receipt_entry(user)
@@ -73,7 +80,11 @@ class TaskComment < ActiveRecord::Base
       save
       FileUtils.mv temp.path, attachment_path
     elsif content_type == "image"
-      self.attachment_extension = ".jpg"
+      if mime_type(file_upload.tempfile.path).starts_with?('image/gif')
+        self.attachment_extension = ".gif"
+      else
+        self.attachment_extension = ".jpg"
+      end
       save
       FileHelper.compress_image_to_dest(file_upload.tempfile.path, self.attachment_path)
     else
