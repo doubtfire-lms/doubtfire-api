@@ -1592,6 +1592,7 @@ class Unit < ActiveRecord::Base
       redo:               0.1,
       do_not_resubmit:    0.1,
       fix_and_resubmit:   0.3,
+      time_exceeded:      0.5,
       ready_to_mark:      0.5,
       discuss:            0.8,
       demonstrate:        0.8,
