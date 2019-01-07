@@ -49,7 +49,7 @@ git:
 install:
   - sudo apt-get install -y ghostscript imagemagick libmagic-dev libmagickwand-dev libmagic-dev python-pygments libav-tools
   - ./.ci-setup/texlive-install.sh
-  - bundle install --without production replica
+  - bundle install --without production
   - rbenv rehash
   - export PATH=/tmp/texlive/bin/x86_64-linux:$PATH
     
