@@ -34,7 +34,7 @@ class TeachingPeriod < ActiveRecord::Base
   end
 
   def update_break(id, start_date, number_of_weeks)
-    break_in_teaching_period = Break.find(id)
+    break_in_teaching_period = breaks.find(id)
 
     if start_date.present?
       break_in_teaching_period.start_date = start_date

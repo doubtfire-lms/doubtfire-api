@@ -9,87 +9,47 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     Rails.application
   end
 
-  def test_check_periods_are_created
-    # Ensure that at the start there are 3 teaching periods
-    assert_equal 3, TeachingPeriod.count, 'There are 3 teaching periods initially' 
+  def test_get_teaching_periods
+    # The GET we are testing
+    get '/api/teaching_periods'
+    expected_data = TeachingPeriod.all
+
+    assert_equal expected_data.count, last_response_body.count
+
+    # What are the keys we expect in the data that match the model - so we can check these
+    response_keys = %w(start_date year period end_date active_until)
+
+    # Loop through all of the responses
+    last_response_body.each do | data |
+      # Find the matching teaching period, by id from response
+      tp = TeachingPeriod.find(data['id'])
+      # Match json with object
+      assert_json_matches_model(data, tp, response_keys)
+    end
   end
 
-  # Check that units cannot be created with both TP and custom dates
-  def test_create_unit_with_tp_and_dates
+  def test_update_break_from_teaching_period
     tp = TeachingPeriod.first
+    to_update = tp.breaks.first
 
-    data = {
-        name: 'Unit with error',
-        code: 'TEST111',
-        teaching_period_id: tp.id,
-        description: 'Unit with both TP and start date',
-        start_date: Date.parse('2018-01-01'),
-        end_date: Date.parse('2018-02-01')
-    }
+    # The api call we are testing
+    put_json with_auth_token("/api/teaching_periods/#{tp.id}/breaks/#{to_update.id}"), { number_of_weeks: 5 }
 
-    unit = Unit.create(data)
-    refute unit.valid?
+    to_update.reload
+    assert_equal 5, to_update.number_of_weeks
   end
 
-  # Check that you can create a teaching period
-  def test_create_teaching_period
-    data = {
-        year: 2019,
-        period: 'T1',
-        start_date: Date.parse('2018-01-01'),
-        end_date: Date.parse('2018-02-01'),
-        active_until: Date.parse('2018-03-01')
-    }
+  def test_update_break_must_be_from_teaching_period
+    tp = TeachingPeriod.first
+    to_update = TeachingPeriod.last.breaks.first
+    num_weeks = to_update.number_of_weeks
+    # The api call we are testing
+    put_json with_auth_token("/api/teaching_periods/#{tp.id}/breaks/#{to_update.id}"), { number_of_weeks: num_weeks + 1 }
 
-    tp = TeachingPeriod.create(data)
-    assert tp.valid?
-  end
+    assert_equal 404, last_response.status
 
-  # Test invalid dates
-  def test_create_teaching_period_with_invalid_dates
-    data = {
-        year: 2019,
-        period: 'T1',
-        start_date: Date.parse('2018-01-01'),
-        end_date: Date.parse('2018-02-01'),
-        active_until: Date.parse('2017-03-01')
-    }
-
-    tp = TeachingPeriod.create(data)
-    refute tp.valid?
-
-    data = {
-        year: 2019,
-        period: 'T1',
-        start_date: Date.parse('2018-01-01'),
-        end_date: Date.parse('2017-02-01'),
-        active_until: Date.parse('2018-03-01')
-    }
-
-    tp = TeachingPeriod.create(data)
-    refute tp.valid?
-
-    # Check that unit requires both start and end dates
-    data = {
-        year: 2019,
-        period: 'T1',
-        start_date: Date.parse('2018-01-01'),
-        active_until: Date.parse('2018-03-01')
-    }
-
-    tp = TeachingPeriod.create(data)
-    refute tp.valid?
-
-    data = {
-        year: 2019,
-        period: 'T1',
-        end_date: Date.parse('2018-01-01'),
-        active_until: Date.parse('2018-03-01')
-    }
-
-    tp = TeachingPeriod.create(data)
-    refute tp.valid?
-
+    to_update.reload
+    assert_equal num_weeks, to_update.number_of_weeks
   end
 
 end

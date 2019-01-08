@@ -1,7 +1,7 @@
 require 'grape'
 
 module Api
-  class TeachingPeriods < Grape::API
+  class TeachingPeriodsAuthenticatedApi < Grape::API
     helpers AuthenticationHelpers
     helpers AuthorisationHelpers
 
@@ -40,15 +40,6 @@ module Api
       end
     end
 
-    desc "Get a teaching period's details"
-    get '/teaching_periods/:id' do
-      teaching_period = TeachingPeriod.find(params[:id])
-      unless (authorise? current_user, User, :get_teaching_periods) || (authorise? current_user, User, :handle_teaching_period)
-        error!({ error: "Couldn't find Teaching Period with id=#{params[:id]}" }, 403)
-      end
-      teaching_period
-    end
-
     desc 'Update teaching period'
     params do
       requires :id, type: Integer, desc: 'The teaching period id to update'
@@ -75,25 +66,6 @@ module Api
 
       teaching_period.update!(teaching_period_parameters)
       teaching_period
-    end
-
-    desc 'Get all the Teaching Periods'
-    get '/teaching_periods' do
-      unless authorise? current_user, User, :get_teaching_periods
-        error!({ error: 'Not authorised to get teaching periods' }, 403)
-      end
-      teaching_periods = TeachingPeriod.all
-      result = teaching_periods.map do |c|
-        {
-          id: c.id,
-          period: c.period,
-          year: c.year,
-          start_date: c.start_date,
-          end_date: c.end_date,
-          active_until: c.active_until
-        }
-      end
-      result
     end
 
     desc 'Delete a teaching period'
