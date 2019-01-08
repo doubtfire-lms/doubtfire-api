@@ -400,17 +400,6 @@ class DatabasePopulator
     task.save
   end
 
-  private
-
-  # Output
-  def echo *args
-    print(*args) if @echo
-  end
-
-  def echo_line *args
-    puts(*args) if @echo
-  end
-
   #
   # Generate roles
   #
@@ -454,6 +443,17 @@ class DatabasePopulator
       TaskStatus.create(name: name, description: desc)
     end
     echo_line "!"
+  end
+
+  private
+
+  # Output
+  def echo *args
+    print(*args) if @echo
+  end
+
+  def echo_line *args
+    puts(*args) if @echo
   end
 
   #

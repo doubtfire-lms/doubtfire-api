@@ -47,7 +47,8 @@ module Api
     mount Api::Submission::PortfolioEvidenceApi
     mount Api::Submission::BatchTask
     mount Api::Settings
-    mount Api::TeachingPeriods
+    mount Api::TeachingPeriodsPublicApi
+    mount Api::TeachingPeriodsAuthenticatedApi
     mount Api::Breaks
 
     #
@@ -68,7 +69,7 @@ module Api
     AuthenticationHelpers.add_auth_to Api::Submission::PortfolioApi
     AuthenticationHelpers.add_auth_to Api::Submission::PortfolioEvidenceApi
     AuthenticationHelpers.add_auth_to Api::Submission::BatchTask
-    AuthenticationHelpers.add_auth_to Api::TeachingPeriods
+    AuthenticationHelpers.add_auth_to Api::TeachingPeriodsAuthenticatedApi
     AuthenticationHelpers.add_auth_to Api::Breaks
 
     add_swagger_documentation \
