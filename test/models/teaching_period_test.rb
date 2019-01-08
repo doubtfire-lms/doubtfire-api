@@ -176,8 +176,32 @@ class TeachingPeriodTest < ActiveSupport::TestCase
 
     assert_equal tp.date_for_week(5), tp.breaks.first.monday_after_break
   end
+  
+  test 'cannot destroy teaching period with units' do
+    data = {
+      year: 2019,
+      period: 'T1',
+      start_date: Date.parse('2018-01-01'),
+      end_date: Date.parse('2018-02-01'),
+      active_until: Date.parse('2018-03-01')
+    }
 
-  test 'week date works for initial weeks' do
+    tp = TeachingPeriod.create(data)
+
+    data = {
+      name: 'Unit with TP',
+      code: 'TEST112',
+      teaching_period_id: tp.id,
+      description: 'Unit in TP to stop destroy',
+    }
+
+    unit = Unit.create(data)
+
+    assert tp.units.count > 0
+
+    tp.destroy
+
+    assert_not tp.destroyed?
   end
 
 end
