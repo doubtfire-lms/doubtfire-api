@@ -14,7 +14,7 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     data = {
         name: 'Unit with error',
         code: 'TEST111',
-        teaching_period_id: tp.id,
+        teaching_period: tp,
         description: 'Unit with both TP and start date',
         start_date: Date.parse('2018-01-01'),
         end_date: Date.parse('2018-02-01')
@@ -191,7 +191,7 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     data = {
       name: 'Unit with TP',
       code: 'TEST112',
-      teaching_period_id: tp.id,
+      teaching_period: tp,
       description: 'Unit in TP to stop destroy',
     }
 
@@ -235,13 +235,13 @@ class TeachingPeriodTest < ActiveSupport::TestCase
 
     data = {
       year: 2019,
-      period: 'T1',
+      period: 'TN',
       start_date: Time.zone.now + 1.week,
       end_date: Time.zone.now + 13.week,
       active_until: Time.zone.now + 15.week
     }
 
-    tp2 = TeachingPeriod.create(data)
+    tp2 = TeachingPeriod.create!(data)
 
     assert tp.rollover(tp2)
     assert_equal 0, tp.errors.count
