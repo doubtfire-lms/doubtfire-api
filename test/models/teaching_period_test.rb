@@ -221,4 +221,29 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     tp.destroy
     assert tp.destroyed?
   end
+
+  test 'cannot roll over to past teaching periods' do
+    tp = TeachingPeriod.first
+    tp2 = TeachingPeriod.last
+
+    assert_not tp.rollover(tp2)
+    assert_equal 1, tp.errors.count
+  end
+
+  test 'can roll over to future teaching periods' do
+    tp = TeachingPeriod.first
+
+    data = {
+      year: 2019,
+      period: 'T1',
+      start_date: Time.zone.now + 1.week,
+      end_date: Time.zone.now + 13.week,
+      active_until: Time.zone.now + 15.week
+    }
+
+    tp2 = TeachingPeriod.create(data)
+
+    assert tp.rollover(tp2)
+    assert_equal 0, tp.errors.count
+  end
 end
