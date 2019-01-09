@@ -204,4 +204,21 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     assert_not tp.destroyed?
   end
 
+  test 'can destroy teaching period with breaks' do
+    data = {
+      year: 2019,
+      period: 'T1',
+      start_date: Date.parse('2018-01-01'),
+      end_date: Date.parse('2018-02-01'),
+      active_until: Date.parse('2018-03-01')
+    }
+
+    tp = TeachingPeriod.create(data)
+
+    tp.add_break(tp.date_for_week(3), 1)
+
+    assert tp.breaks.count > 0
+    tp.destroy
+    assert tp.destroyed?
+  end
 end
