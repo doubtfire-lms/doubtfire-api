@@ -10,13 +10,7 @@ module Api
     end
 
     desc 'Get all the Teaching Periods'
-    params do
-      optional :auth_token, type: String, desc: 'Authentication token'
-    end
     get '/teaching_periods' do
-      unless authorise? current_user, User, :get_teaching_periods
-        error!({ error: 'Not authorised to get teaching periods' }, 403)
-      end
       teaching_periods = TeachingPeriod.all
       result = teaching_periods.map do |c|
         {
