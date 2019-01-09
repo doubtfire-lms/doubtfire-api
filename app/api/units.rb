@@ -86,7 +86,7 @@ module Api
                                                             :active)
 
       if unit.teaching_period_id.present? && unit_parameters.key?(:start_date)
-        unit.teaching_period_id = nil
+        unit.teaching_period = nil
       end
 
       unit.update!(unit_parameters)
