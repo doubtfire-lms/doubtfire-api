@@ -170,7 +170,8 @@ module Api
       teaching_period_id = params[:teaching_period_id]
 
       if teaching_period_id.present?
-        unit.rollover(teaching_period_id, nil, nil)
+        tp = TeachingPeriod.find(teaching_period_id)
+        unit.rollover(tp, nil, nil)
       else
         unit.rollover(nil, params[:start_date], params[:end_date])
       end

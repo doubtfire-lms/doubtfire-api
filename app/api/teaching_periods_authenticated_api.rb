@@ -91,7 +91,7 @@ module Api
       new_teaching_period = TeachingPeriod.find(new_teaching_period_id)
 
       existing_teaching_period = TeachingPeriod.find(params[:existing_teaching_period_id])
-      existing_teaching_period.rollover(new_teaching_period)
+      error!({error: existing_teaching_period.errors.full_messages.first}, 403) unless existing_teaching_period.rollover(new_teaching_period)
     end
   end
 end

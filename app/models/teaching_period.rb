@@ -119,9 +119,17 @@ class TeachingPeriod < ActiveRecord::Base
   end
 
   def rollover(rollover_to)
-    rollover_to.add_associations(self)
-    rollover_to.save!
-    rollover_to
+    if rollover_to.start_date < Time.zone.now || rollover_to.start_date <= start_date
+      self.errors.add(:base, "Units can only be rolled over to future teaching periods")
+      
+      false
+    else
+      for unit in units do
+        unit.rollover(rollover_to, nil, nil)
+      end
+
+      true
+    end
   end
 
   private
@@ -141,16 +149,6 @@ class TeachingPeriod < ActiveRecord::Base
   def validate_end_date_after_start_date
     if end_date.present? && start_date.present? && end_date < start_date
       errors.add(:end_date, "should be after the Start date")
-    end
-  end
-
-  def add_associations(existing_teaching_period)
-    duplicate_units_from_existing_teaching_period(existing_teaching_period)
-  end
-
-  def duplicate_units_from_existing_teaching_period(existing_teaching_period)
-    for unit in existing_teaching_period.units do
-      unit.rollover(self.id, nil, nil)
     end
   end
 end
