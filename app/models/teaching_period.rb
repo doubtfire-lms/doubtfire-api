@@ -127,7 +127,6 @@ class TeachingPeriod < ActiveRecord::Base
   private
 
   def can_destroy?
-    puts "here #{units.count}"
     return true if units.count == 0
     errors.add :base, "Cannot delete teaching period with units"
     false
