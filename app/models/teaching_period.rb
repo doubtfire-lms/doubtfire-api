@@ -1,7 +1,7 @@
 class TeachingPeriod < ActiveRecord::Base
   # Relationships
   has_many :units
-  has_many :breaks, dependent: :destroy
+  has_many :breaks, dependent: :delete_all
 
   # Callbacks - methods called are private
   before_destroy :can_destroy?
