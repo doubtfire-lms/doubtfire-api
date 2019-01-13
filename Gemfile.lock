@@ -133,9 +133,6 @@ GEM
     minitest-around (0.4.0)
       minitest (~> 5.0)
     minitest-hyper (0.2.0)
-    minitest-osx (0.1.0)
-      minitest (~> 5.4)
-      terminal-notifier (~> 1.6)
     minitest-rails (2.2.1)
       minitest (~> 5.7)
       railties (~> 4.1)
@@ -239,7 +236,6 @@ GEM
       actionpack (>= 4.0)
       activesupport (>= 4.0)
       sprockets (>= 3.0.0)
-    terminal-notifier (1.6.3)
     thin (1.7.0)
       daemons (~> 1.0, >= 1.0.9)
       eventmachine (~> 1.0, >= 1.0.4)
@@ -281,7 +277,6 @@ DEPENDENCIES
   json-jwt (= 1.7.0)
   minitest-around
   minitest-hyper
-  minitest-osx
   minitest-rails
   moss_ruby (= 1.1.2)
   mysql2
