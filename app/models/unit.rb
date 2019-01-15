@@ -109,13 +109,18 @@ class Unit < ActiveRecord::Base
   scope :set_active,            -> { where('active = ?', true) }
   scope :set_inactive,          -> { where('active = ?', false) }
 
-  def teaching_period_id=(teaching_period_id)
-    if teaching_period_id.present?
-      tp = TeachingPeriod.find(teaching_period_id)
+  def teaching_period_id=(tp_id)
+    self.teaching_period = TeachingPeriod.find(tp_id)
+    super(tp_id)
+  end
+
+  def teaching_period=(tp)
+    if tp.present?
       write_attribute(:start_date, tp.start_date)
       write_attribute(:end_date, tp.end_date)
+      write_attribute(:teaching_period_id, tp.id)
     end
-    super(teaching_period_id)
+    super(tp)
   end
 
   def has_teaching_period?
@@ -137,12 +142,11 @@ class Unit < ActiveRecord::Base
     end
   end
 
-  def rollover(teaching_period_id, start_date, end_date)
+  def rollover(teaching_period, start_date, end_date)
     new_unit = self.dup
     
-    if teaching_period_id.present?
-      new_unit.teaching_period_id = teaching_period_id
-      new_unit.teaching_period = TeachingPeriod.find(teaching_period_id)
+    if teaching_period.present?
+      new_unit.teaching_period = teaching_period
     else
       new_unit.start_date = start_date
       new_unit.end_date = end_date

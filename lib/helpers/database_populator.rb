@@ -174,10 +174,10 @@ class DatabasePopulator
 
       if unit_details[:teaching_period].present?
         data = {
-        code: unit_details[:code],
-        name: unit_details[:name],
-        description: faker_random_sentence(10, 15),
-          teaching_period_id: unit_details[:teaching_period].id
+          code: unit_details[:code],
+          name: unit_details[:name],
+          description: faker_random_sentence(10, 15),
+          teaching_period: unit_details[:teaching_period]
         }
       else
         data = {

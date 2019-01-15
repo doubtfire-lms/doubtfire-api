@@ -15,4 +15,4 @@ WORKDIR /doubtfire-api
 
 EXPOSE 3000
 
-RUN bundle install --without production replica
+RUN bundle install --without production
