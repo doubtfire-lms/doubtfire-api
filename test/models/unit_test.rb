@@ -7,7 +7,7 @@ class UnitTest < ActiveSupport::TestCase
         code: 'COS10001',
         name: 'Testing in Unit Tests',
         description: 'Test unit',
-        teaching_period_id: TeachingPeriod.find(3).id
+        teaching_period: TeachingPeriod.find(3)
       }
     @unit = Unit.create(data)
   end

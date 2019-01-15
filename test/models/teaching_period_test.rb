@@ -14,7 +14,7 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     data = {
         name: 'Unit with error',
         code: 'TEST111',
-        teaching_period_id: tp.id,
+        teaching_period: tp,
         description: 'Unit with both TP and start date',
         start_date: Date.parse('2018-01-01'),
         end_date: Date.parse('2018-02-01')
@@ -176,8 +176,74 @@ class TeachingPeriodTest < ActiveSupport::TestCase
 
     assert_equal tp.date_for_week(5), tp.breaks.first.monday_after_break
   end
+  
+  test 'cannot destroy teaching period with units' do
+    data = {
+      year: 2019,
+      period: 'T1',
+      start_date: Date.parse('2018-01-01'),
+      end_date: Date.parse('2018-02-01'),
+      active_until: Date.parse('2018-03-01')
+    }
 
-  test 'week date works for initial weeks' do
+    tp = TeachingPeriod.create(data)
+
+    data = {
+      name: 'Unit with TP',
+      code: 'TEST112',
+      teaching_period: tp,
+      description: 'Unit in TP to stop destroy',
+    }
+
+    unit = Unit.create(data)
+
+    assert tp.units.count > 0
+
+    tp.destroy
+
+    assert_not tp.destroyed?
   end
 
+  test 'can destroy teaching period with breaks' do
+    data = {
+      year: 2019,
+      period: 'T1',
+      start_date: Date.parse('2018-01-01'),
+      end_date: Date.parse('2018-02-01'),
+      active_until: Date.parse('2018-03-01')
+    }
+
+    tp = TeachingPeriod.create(data)
+
+    tp.add_break(tp.date_for_week(3), 1)
+
+    assert tp.breaks.count > 0
+    tp.destroy
+    assert tp.destroyed?
+  end
+
+  test 'cannot roll over to past teaching periods' do
+    tp = TeachingPeriod.first
+    tp2 = TeachingPeriod.last
+
+    assert_not tp.rollover(tp2)
+    assert_equal 1, tp.errors.count
+  end
+
+  test 'can roll over to future teaching periods' do
+    tp = TeachingPeriod.first
+
+    data = {
+      year: 2019,
+      period: 'TN',
+      start_date: Time.zone.now + 1.week,
+      end_date: Time.zone.now + 13.week,
+      active_until: Time.zone.now + 15.week
+    }
+
+    tp2 = TeachingPeriod.create!(data)
+
+    assert tp.rollover(tp2)
+    assert_equal 0, tp.errors.count
+  end
 end

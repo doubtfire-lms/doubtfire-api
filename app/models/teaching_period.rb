@@ -1,7 +1,12 @@
 class TeachingPeriod < ActiveRecord::Base
+  # Relationships
   has_many :units
-  has_many :breaks
+  has_many :breaks, dependent: :delete_all
 
+  # Callbacks - methods called are private
+  before_destroy :can_destroy?
+
+  # Validations - methods called are private
   validates :period, length: { minimum: 1, maximum: 20, allow_blank: false }, uniqueness: { scope: :year,
     message: "%{value} already exists in this year" }
   validates :year, length: { is: 4, allow_blank: false }, presence: true, numericality: { only_integer: true },
@@ -12,23 +17,13 @@ class TeachingPeriod < ActiveRecord::Base
 
   validate :validate_end_date_after_start_date, :validate_active_until_after_end_date
 
-  def validate_end_date_after_start_date
-    if end_date.present? && start_date.present? && end_date < start_date
-      errors.add(:end_date, "should be after the Start date")
-    end
-  end
-
-  def validate_active_until_after_end_date
-    if end_date.present? && active_until.present? && active_until < end_date
-      errors.add(:active_until, "date should be after the End date")
-    end
-  end
+  # Public methods
 
   def add_break(start_date, number_of_weeks)
     break_in_teaching_period = Break.new
     break_in_teaching_period.start_date = start_date
     break_in_teaching_period.number_of_weeks = number_of_weeks
-    break_in_teaching_period.teaching_period_id = self.id
+    break_in_teaching_period.teaching_period = self
     break_in_teaching_period.save!
     break_in_teaching_period
   end
@@ -124,18 +119,36 @@ class TeachingPeriod < ActiveRecord::Base
   end
 
   def rollover(rollover_to)
-    rollover_to.add_associations(self)
-    rollover_to.save!
-    rollover_to
+    if rollover_to.start_date < Time.zone.now || rollover_to.start_date <= start_date
+      self.errors.add(:base, "Units can only be rolled over to future teaching periods")
+      
+      false
+    else
+      for unit in units do
+        unit.rollover(rollover_to, nil, nil)
+      end
+
+      true
+    end
   end
 
-  def add_associations(existing_teaching_period)
-    duplicate_units_from_existing_teaching_period(existing_teaching_period)
+  private
+
+  def can_destroy?
+    return true if units.count == 0
+    errors.add :base, "Cannot delete teaching period with units"
+    false
   end
 
-  def duplicate_units_from_existing_teaching_period(existing_teaching_period)
-    for unit in existing_teaching_period.units do
-      unit.rollover(self.id, nil, nil)
+  def validate_active_until_after_end_date
+    if end_date.present? && active_until.present? && active_until < end_date
+      errors.add(:active_until, "date should be after the End date")
+    end
+  end
+
+  def validate_end_date_after_start_date
+    if end_date.present? && start_date.present? && end_date < start_date
+      errors.add(:end_date, "should be after the Start date")
     end
   end
 end
