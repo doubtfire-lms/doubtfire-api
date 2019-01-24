@@ -5,7 +5,7 @@ class Break < ActiveRecord::Base
   validates :number_of_weeks, presence: true
   validates :teaching_period_id, presence: true
 
-  validate :ensure_start_date_is_within_teaching_period, :ensure_break_end_is_within_teaching_period
+  validate :ensure_start_date_is_within_teaching_period, :ensure_break_end_is_within_teaching_period, :ensure_break_is_not_colliding
 
   def ensure_start_date_is_within_teaching_period
     if start_date < teaching_period.start_date
@@ -16,6 +16,15 @@ class Break < ActiveRecord::Base
   def ensure_break_end_is_within_teaching_period
     if start_date + number_of_weeks.weeks > teaching_period.end_date
       errors.add(:number_of_weeks, "is exceeding Teaching Period end date")
+    end
+  end
+
+  def ensure_break_is_not_colliding
+    for break_in_teaching_period in teaching_period.breaks do
+      if break_in_teaching_period.id != id && break_in_teaching_period.end_date >= start_date && break_in_teaching_period.start_date <= end_date
+        errors.add(:base, "overlaps another break")
+        break
+      end
     end
   end
 
