@@ -14,7 +14,7 @@ module Api
 
       desc 'Upload and generate doubtfire-task-specific submission document'
       params do
-        requires :file0, type: Rack::Multipart::UploadedFile, desc: 'file 0.'
+        optional :file0, type: Rack::Multipart::UploadedFile, desc: 'file 0.'
         optional :file1, type: Rack::Multipart::UploadedFile, desc: 'file 1.'
         optional :contributions, type: JSON, desc: "Contribution details JSON, eg: [ { project_id: 1, pct:'0.44', pts: 4 }, ... ]"
         optional :alignment_data, type: JSON, desc: "Data for task alignment, eg: [ { ilo_id: 1, rating: 5, rationale: 'Hello' }, ... ]"
