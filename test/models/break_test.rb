@@ -15,9 +15,9 @@ class BreakTest < ActiveSupport::TestCase
     b1 = tp.add_break('2018-01-02', 1)
     b2 = tp.add_break('2018-01-03', 1)
 
-    assert b1.valid?
-    assert_not b2.valid?
+    assert b1.valid?, "b1 not valid"
+    assert_not b2.valid?, "b2 is valid"
     assert_equal 1, tp.breaks.count
-    assert_equal 1, tp.errors.count
+    assert_equal 1, b2.errors.count
   end
 end
