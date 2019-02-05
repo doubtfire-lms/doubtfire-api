@@ -31,7 +31,7 @@ module Api
                  .joins('LEFT OUTER JOIN tutorials ON projects.tutorial_id = tutorials.id')
                  .joins('LEFT OUTER JOIN unit_roles AS tutor_role ON tutorials.unit_role_id = tutor_role.id')
                  .joins('LEFT OUTER JOIN users AS tutor ON tutor.id = tutor_role.user_id')
-                 .select('projects.*', 'units.name AS unit_name', 'units.id AS unit_id', 'units.code AS unit_code', 'units.start_date AS start_date', "#{student_name} AS student_name", "#{tutor_name} AS tutor_name")
+                 .select('projects.*', 'units.name AS unit_name', 'units.id AS unit_id', 'units.code AS unit_code', 'units.start_date AS start_date', 'units.end_date AS end_date', "#{student_name} AS student_name", "#{tutor_name} AS tutor_name")
 
       ActiveModel::ArraySerializer.new(projects, each_serializer: ShallowProjectSerializer)
     end

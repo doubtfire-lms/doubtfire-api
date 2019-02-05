@@ -312,6 +312,7 @@ class Task < ActiveRecord::Base
 
       if due_date < Time.zone.now
         assess TaskStatus.time_exceeded, by_user
+        grade_task -1 if task_definition.is_graded? && self.grade.nil?
       end
     when TaskStatus.not_started, TaskStatus.need_help, TaskStatus.working_on_it
       engage status
@@ -386,11 +387,11 @@ class Task < ActiveRecord::Base
             # convert string representation to integer representation
             new_grade = grade_map[new_grade]
           else
-            raise_error.call("New grade supplied to task is not an invalid string - expects one of {p|c|d|hd} (task id #{id})")
+            raise_error.call("New grade supplied to task is not a valid string - expects one of {f|p|c|d|hd} (task id #{id})")
           end
         end
         unless new_grade.is_a?(Integer) && grade_map.values.include?(new_grade.to_i)
-          raise_error.call("New grade supplied to task is not an invalid integer - expects one of {0|1|2|3} (task id #{id})")
+          raise_error.call("New grade supplied to task is not a valid integer - expects one of {-1|0|1|2|3} (task id #{id})")
         end
         # propagate new grade to all OTHER group members
         if group_task? && !grading_group

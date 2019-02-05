@@ -29,7 +29,7 @@ group :development, :test do
   gem 'rubocop', '0.46.0'
 end
 
-group :development, :test, :staging, :replica do
+group :development, :test, :staging do
   # Generators for population
   gem 'populator'
   gem 'faker', '~>1.9.1'
