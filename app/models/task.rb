@@ -387,11 +387,11 @@ class Task < ActiveRecord::Base
             # convert string representation to integer representation
             new_grade = grade_map[new_grade]
           else
-            raise_error.call("New grade supplied to task is not an invalid string - expects one of {f|p|c|d|hd} (task id #{id})")
+            raise_error.call("New grade supplied to task is not a valid string - expects one of {f|p|c|d|hd} (task id #{id})")
           end
         end
         unless new_grade.is_a?(Integer) && grade_map.values.include?(new_grade.to_i)
-          raise_error.call("New grade supplied to task is not an invalid integer - expects one of {-1|0|1|2|3} (task id #{id})")
+          raise_error.call("New grade supplied to task is not a valid integer - expects one of {-1|0|1|2|3} (task id #{id})")
         end
         # propagate new grade to all OTHER group members
         if group_task? && !grading_group
