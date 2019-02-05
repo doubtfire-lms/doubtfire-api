@@ -61,6 +61,24 @@ class TaskStatus < ActiveRecord::Base
     TaskStatus.where('id > 4')
   end
 
+  def self.id_to_key(id)
+    case id
+      when 1 then :not_started
+      when 2 then :complete
+      when 3 then :need_help
+      when 4 then :working_on_it
+      when 5 then :fix_and_resubmit
+      when 6 then :do_not_resubmit
+      when 7 then :redo
+      when 8 then :discuss
+      when 9 then :ready_to_mark
+      when 10 then :demonstrate
+      when 11 then :fail
+      when 12 then :time_exceeded
+      else :not_started
+    end
+  end
+
   def status_key
     return :complete if self == TaskStatus.complete
     return :not_started if self == TaskStatus.not_started

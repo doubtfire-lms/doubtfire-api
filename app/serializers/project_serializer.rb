@@ -5,10 +5,19 @@ class ShallowProjectSerializer < ActiveModel::Serializer
   attributes :unit_id, :unit_code, :unit_name,
              :project_id, :student_name,
              :tutor_name, :target_grade,
-             :has_portfolio, :start_date
+             :has_portfolio, :start_date, :end_date,
+             :teaching_period_id, :active
 
   def project_id
     object.id
+  end
+
+  def teaching_period_id
+    object.unit.teaching_period_id
+  end
+
+  def active
+    object.unit.active
   end
 end
 

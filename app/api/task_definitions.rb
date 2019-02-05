@@ -321,7 +321,7 @@ module Api
           id: t.id,
           task_definition_id: t.task_definition_id,
           tutorial_id: t.tutorial_id,
-          status: TaskStatus.find(t.status_id).status_key,
+          status: TaskStatus.id_to_key(t.status_id),
           completion_date: t.completion_date,
           submission_date: t.submission_date,
           times_assessed: t.times_assessed,

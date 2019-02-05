@@ -38,7 +38,7 @@ module Api
               id: r.id,
               tutorial_id: r.tutorial_id,
               task_definition_id: r.task_definition_id,
-              status: TaskStatus.find(r.status_id).status_key
+              status: TaskStatus.id_to_key(r.status_id)
             }
           end
     end

@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20180815045338) do
+ActiveRecord::Schema.define(version: 20180913030346) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -25,6 +25,14 @@ ActiveRecord::Schema.define(version: 20180815045338) do
     t.datetime "created_at",                         null: false
     t.datetime "updated_at",                         null: false
   end
+
+  create_table "breaks", force: :cascade do |t|
+    t.datetime "start_date",         null: false
+    t.integer  "number_of_weeks",    null: false
+    t.integer  "teaching_period_id"
+  end
+
+  add_index "breaks", ["teaching_period_id"], name: "index_breaks_on_teaching_period_id", using: :btree
 
   create_table "comments_read_receipts", force: :cascade do |t|
     t.integer  "task_comment_id", null: false
@@ -311,6 +319,16 @@ ActiveRecord::Schema.define(version: 20180815045338) do
   add_index "tasks", ["task_definition_id"], name: "index_tasks_on_task_definition_id", using: :btree
   add_index "tasks", ["task_status_id"], name: "index_tasks_on_task_status_id", using: :btree
 
+  create_table "teaching_periods", force: :cascade do |t|
+    t.string   "period",       null: false
+    t.datetime "start_date",   null: false
+    t.datetime "end_date",     null: false
+    t.integer  "year",         null: false
+    t.datetime "active_until", null: false
+  end
+
+  add_index "teaching_periods", ["period", "year"], name: "index_teaching_periods_on_period_and_year", unique: true, using: :btree
+
   create_table "teams", force: :cascade do |t|
     t.integer  "unit_id"
     t.integer  "user_id"
@@ -364,7 +382,10 @@ ActiveRecord::Schema.define(version: 20180815045338) do
     t.string   "code",                limit: 255
     t.boolean  "active",                           default: true
     t.datetime "last_plagarism_scan"
+    t.integer  "teaching_period_id"
   end
+
+  add_index "units", ["teaching_period_id"], name: "index_units_on_teaching_period_id", using: :btree
 
   create_table "user_roles", force: :cascade do |t|
     t.integer  "user_id"
@@ -409,7 +430,9 @@ ActiveRecord::Schema.define(version: 20180815045338) do
   add_index "users", ["authentication_token"], name: "index_users_on_authentication_token", unique: true, using: :btree
   add_index "users", ["login_id"], name: "index_users_on_login_id", unique: true, using: :btree
 
+  add_foreign_key "breaks", "teaching_periods"
   add_foreign_key "comments_read_receipts", "task_comments"
   add_foreign_key "comments_read_receipts", "users"
   add_foreign_key "task_comments", "users", column: "recipient_id"
+  add_foreign_key "units", "teaching_periods"
 end

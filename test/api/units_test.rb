@@ -214,7 +214,7 @@ class UnitsTest < ActiveSupport::TestCase
 
   #Test PUT for updating unit details with valid id
   def test_units_put
-      unit=Unit.first
+      unit={}
       unit[:name] = 'Intro to python'
       unit[:code] = 'JRSW40004'
       unit[:description] = 'new language'
@@ -245,9 +245,8 @@ class UnitsTest < ActiveSupport::TestCase
 
 #Test PUT for updating unit details with invalid id
 def test_put_update_unit_invalid_id
-  unit= Unit.first
   data_to_put = {
-      unit:unit,
+      unit: { name: 'test'},
       auth_token: auth_token
   }
 

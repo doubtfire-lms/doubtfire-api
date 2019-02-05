@@ -102,8 +102,6 @@ To run unit tests, execute:
 $ rake test
 ```
 
-A report will be generated under `spec/reports/hyper/index.html`.
-
 Unit tests are located in the `test` directory, where **model** tests are under
 the `model` subdirectory and **API** tests are under the `api` subdirectory.
 
