@@ -13,10 +13,9 @@ class BreakTest < ActiveSupport::TestCase
     tp = TeachingPeriod.create(data)
 
     b1 = tp.add_break('2023-01-02', 1)
-    b2 = tp.add_break('2023-01-03', 1)
-
+    exception = assert_raise(Exception) {tp.add_break('2023-01-03', 1)}
+    assert_equal( "overlaps another break", exception.message )
     assert b1.valid?, "b1 not valid"
-    assert_equal b2, nil
     assert_equal 1, tp.breaks.count
   end
 end
