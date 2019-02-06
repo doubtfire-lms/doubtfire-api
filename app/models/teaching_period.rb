@@ -25,10 +25,8 @@ class TeachingPeriod < ActiveRecord::Base
     break_in_teaching_period.number_of_weeks = number_of_weeks
     break_in_teaching_period.teaching_period = self
 
-    if break_in_teaching_period.valid?
-      self.breaks << break_in_teaching_period
-      break_in_teaching_period.save!
-    end
+    self.breaks << break_in_teaching_period
+    break_in_teaching_period.save!
     break_in_teaching_period
   end
 
