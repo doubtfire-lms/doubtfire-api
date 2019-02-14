@@ -21,7 +21,6 @@ module Api
         error!("Unable to find requested #{e.message[/(Couldn't find )(.*)( with)/,2]}", 404)
       else
         logger.error "Unhandled exception: #{e.class}"
-        logger.error e.inspect
         logger.error e.backtrace.join("\n")
         error!("Sorry... something went wrong with your request.", 500)
       end
@@ -48,9 +47,7 @@ module Api
     mount Api::Submission::PortfolioEvidenceApi
     mount Api::Submission::BatchTask
     mount Api::Settings
-    mount Api::TeachingPeriodsPublicApi
-    mount Api::TeachingPeriodsAuthenticatedApi
-    mount Api::Breaks
+    mount Api::UnitRequests
 
     #
     # Add auth details to all end points
@@ -63,6 +60,7 @@ module Api
     AuthenticationHelpers.add_auth_to Api::TaskComments
     AuthenticationHelpers.add_auth_to Api::TaskDefinitions
     AuthenticationHelpers.add_auth_to Api::Tutorials
+    AuthenticationHelpers.add_auth_to Api::UnitRequests
     AuthenticationHelpers.add_auth_to Api::Users
     AuthenticationHelpers.add_auth_to Api::UnitRoles
     AuthenticationHelpers.add_auth_to Api::LearningOutcomes
@@ -70,8 +68,6 @@ module Api
     AuthenticationHelpers.add_auth_to Api::Submission::PortfolioApi
     AuthenticationHelpers.add_auth_to Api::Submission::PortfolioEvidenceApi
     AuthenticationHelpers.add_auth_to Api::Submission::BatchTask
-    AuthenticationHelpers.add_auth_to Api::TeachingPeriodsAuthenticatedApi
-    AuthenticationHelpers.add_auth_to Api::Breaks
 
     add_swagger_documentation \
       base_path: nil,

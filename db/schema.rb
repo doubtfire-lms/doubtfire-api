@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20180913030346) do
+ActiveRecord::Schema.define(version: 20190117132734) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -25,14 +25,6 @@ ActiveRecord::Schema.define(version: 20180913030346) do
     t.datetime "created_at",                         null: false
     t.datetime "updated_at",                         null: false
   end
-
-  create_table "breaks", force: :cascade do |t|
-    t.datetime "start_date",         null: false
-    t.integer  "number_of_weeks",    null: false
-    t.integer  "teaching_period_id"
-  end
-
-  add_index "breaks", ["teaching_period_id"], name: "index_breaks_on_teaching_period_id", using: :btree
 
   create_table "comments_read_receipts", force: :cascade do |t|
     t.integer  "task_comment_id", null: false
@@ -295,8 +287,8 @@ ActiveRecord::Schema.define(version: 20180913030346) do
     t.integer  "task_definition_id"
     t.integer  "project_id"
     t.integer  "task_status_id"
-    t.datetime "created_at",                                      null: false
-    t.datetime "updated_at",                                      null: false
+    t.datetime "created_at",                                       null: false
+    t.datetime "updated_at",                                       null: false
     t.date     "completion_date"
     t.string   "portfolio_evidence",   limit: 255
     t.boolean  "include_in_portfolio",             default: true
@@ -310,7 +302,8 @@ ActiveRecord::Schema.define(version: 20180913030346) do
     t.integer  "grade"
     t.integer  "contribution_pts",                 default: 3
     t.integer  "quality_pts",                      default: -1
-    t.integer  "extensions",                       default: 0,    null: false
+    t.integer  "extensions",                       default: 0,     null: false
+    t.boolean  "pin_status",                       default: false
   end
 
   add_index "tasks", ["group_submission_id"], name: "index_tasks_on_group_submission_id", using: :btree
@@ -318,16 +311,6 @@ ActiveRecord::Schema.define(version: 20180913030346) do
   add_index "tasks", ["project_id"], name: "index_tasks_on_project_id", using: :btree
   add_index "tasks", ["task_definition_id"], name: "index_tasks_on_task_definition_id", using: :btree
   add_index "tasks", ["task_status_id"], name: "index_tasks_on_task_status_id", using: :btree
-
-  create_table "teaching_periods", force: :cascade do |t|
-    t.string   "period",       null: false
-    t.datetime "start_date",   null: false
-    t.datetime "end_date",     null: false
-    t.integer  "year",         null: false
-    t.datetime "active_until", null: false
-  end
-
-  add_index "teaching_periods", ["period", "year"], name: "index_teaching_periods_on_period_and_year", unique: true, using: :btree
 
   create_table "teams", force: :cascade do |t|
     t.integer  "unit_id"
@@ -358,6 +341,18 @@ ActiveRecord::Schema.define(version: 20180913030346) do
   add_index "tutorials", ["unit_id"], name: "index_tutorials_on_unit_id", using: :btree
   add_index "tutorials", ["unit_role_id"], name: "index_tutorials_on_unit_role_id", using: :btree
 
+  create_table "unit_requests", force: :cascade do |t|
+    t.integer  "unit_id",                null: false
+    t.integer  "user_id",                null: false
+    t.string   "status",     limit: 255
+    t.datetime "request_at",             null: false
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  add_index "unit_requests", ["unit_id"], name: "index_unit_requests_on_unit_id", using: :btree
+  add_index "unit_requests", ["user_id"], name: "index_unit_requests_on_user_id", using: :btree
+
   create_table "unit_roles", force: :cascade do |t|
     t.integer  "user_id"
     t.integer  "tutorial_id"
@@ -382,10 +377,7 @@ ActiveRecord::Schema.define(version: 20180913030346) do
     t.string   "code",                limit: 255
     t.boolean  "active",                           default: true
     t.datetime "last_plagarism_scan"
-    t.integer  "teaching_period_id"
   end
-
-  add_index "units", ["teaching_period_id"], name: "index_units_on_teaching_period_id", using: :btree
 
   create_table "user_roles", force: :cascade do |t|
     t.integer  "user_id"
@@ -430,9 +422,7 @@ ActiveRecord::Schema.define(version: 20180913030346) do
   add_index "users", ["authentication_token"], name: "index_users_on_authentication_token", unique: true, using: :btree
   add_index "users", ["login_id"], name: "index_users_on_login_id", unique: true, using: :btree
 
-  add_foreign_key "breaks", "teaching_periods"
   add_foreign_key "comments_read_receipts", "task_comments"
   add_foreign_key "comments_read_receipts", "users"
   add_foreign_key "task_comments", "users", column: "recipient_id"
-  add_foreign_key "units", "teaching_periods"
 end
