@@ -45,8 +45,7 @@ class Unit < ActiveRecord::Base
       :provide_feedback,
       :change_project_enrolment,
       :download_stats,
-      :download_grades,
-      :rollover_unit
+      :download_grades
     ]
 
     # What can other users do with units?
@@ -93,94 +92,12 @@ class Unit < ActiveRecord::Base
   has_many :convenors, -> { joins(:role).where('roles.name = :role', role: 'Convenor') }, class_name: 'UnitRole'
   has_many :staff, ->     { joins(:role).where('roles.name = :role_convenor or roles.name = :role_tutor', role_convenor: 'Convenor', role_tutor: 'Tutor') }, class_name: 'UnitRole'
 
-  # Unit has a teaching period
-  belongs_to :teaching_period
-  validates :start_date, presence: true
-  validates :end_date, presence: true
-  validates :code, uniqueness: { scope: :teaching_period, message: "%{value} already exists in this teaching period" }, if: :has_teaching_period?
-
-  validate :validate_end_date_after_start_date
-  validate :ensure_teaching_period_dates_match, if: :has_teaching_period?
-
   scope :current,               -> { current_for_date(Time.zone.now) }
   scope :current_for_date,      ->(date) { where('start_date <= ? AND end_date >= ?', date, date) }
   scope :not_current,           -> { not_current_for_date(Time.zone.now) }
   scope :not_current_for_date,  ->(date) { where('start_date > ? OR end_date < ?', date, date) }
   scope :set_active,            -> { where('active = ?', true) }
   scope :set_inactive,          -> { where('active = ?', false) }
-
-  def teaching_period_id=(tp_id)
-    self.teaching_period = TeachingPeriod.find(tp_id)
-    super(tp_id)
-  end
-
-  def teaching_period=(tp)
-    if tp.present?
-      write_attribute(:start_date, tp.start_date)
-      write_attribute(:end_date, tp.end_date)
-      write_attribute(:teaching_period_id, tp.id)
-    end
-    super(tp)
-  end
-
-  def has_teaching_period?
-    self.teaching_period.present?
-  end
-
-  def ensure_teaching_period_dates_match
-    if read_attribute(:start_date) != teaching_period.start_date
-      errors.add(:start_date, "should match teaching period date")
-    end
-    if read_attribute(:end_date) != teaching_period.end_date
-      errors.add(:end_date, "should match teaching period date")
-    end
-  end
-
-  def validate_end_date_after_start_date
-    if end_date.present? && start_date.present? && end_date < start_date
-      errors.add(:end_date, "should be after the Start date")
-    end
-  end
-
-  def rollover(teaching_period, start_date, end_date)
-    new_unit = self.dup
-    
-    if teaching_period.present?
-      new_unit.teaching_period = teaching_period
-    else
-      new_unit.start_date = start_date
-      new_unit.end_date = end_date
-    end
-    
-    new_unit.save!
-
-    # Duplicate task definitions
-    task_definitions.each do |td|
-      td.copy_to(new_unit)
-    end
-
-    # Duplicate unit learning outcomes
-    learning_outcomes.each do |learning_outcomes|
-      new_unit.learning_outcomes << learning_outcomes.dup
-    end
-
-    # Duplicate alignments
-    task_outcome_alignments.each do |align|
-      align.duplicate_to(new_unit)
-    end
-
-    # Duplicate group sets
-    group_sets.each do |group_sets|
-      new_unit.group_sets << group_sets.dup
-    end
-
-    # Duplicate convenors
-    convenors.each do |convenors|
-      new_unit.convenors << convenors.dup
-    end
-    
-    new_unit
-  end
 
   def ordered_ilos
     learning_outcomes.order(:ilo_number)
@@ -227,8 +144,8 @@ class Unit < ActiveRecord::Base
   def students
     projects
   end
-
-  def student_query(limit_to_enrolled)
+ 
+def student_query(limit_to_enrolled)
     # Get the number of tasks for each grade... with 1 as minimum to avoid / 0
     task_count = [0, 1, 2, 3].map do |e|
       task_definitions.where("target_grade <= #{e}").count + 0.0
@@ -246,6 +163,7 @@ class Unit < ActiveRecord::Base
           'users.first_name',
           'users.last_name',
           'users.username',
+          'users.student_id',
           'users.email',
           'projects.tutorial_id',
           'projects.portfolio_production_date',
@@ -260,6 +178,7 @@ class Unit < ActiveRecord::Base
           'users.last_name AS last_name',
           'users.username AS student_id',
           'users.email AS student_email',
+          'users.student_id AS student_num',
           'projects.target_grade AS target_grade',
           'projects.tutorial_id AS tutorial_id',
           'projects.compile_portfolio AS compile_portfolio',
@@ -283,6 +202,7 @@ class Unit < ActiveRecord::Base
         first_name: t.first_name,
         last_name: t.last_name,
         student_id: t.student_id,
+        student_num: t.student_num,
         student_email: t.student_email,
         student_name: "#{t.first_name} #{t.last_name}",
         target_grade: t.target_grade,
@@ -442,7 +362,7 @@ class Unit < ActiveRecord::Base
     CSV.foreach(file, headers: true,
                       header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
                       converters: [->(i) { i.nil? ? '' : i }, ->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]) do |row|
-
+      
       missing = import_settings[:missing_headers_lambda].call(row)
       if missing.count > 0
         errors << { row: row, message: "Missing headers: #{missing.join(', ')}" }
@@ -514,7 +434,7 @@ class Unit < ActiveRecord::Base
         unless row_data[:enrolled]
           # Find the user
           project_participant = User.where(username: username)
-
+          
           # If they dont exist... ignore
           if project_participant.nil? || project_participant.count == 0
             ignored << { row: row, message: "Ignoring student to withdraw, as not enrolled" }
@@ -527,7 +447,7 @@ class Unit < ActiveRecord::Base
               ignored << { row: row, message: "Ignoring student to withdraw, as not enrolled" }
             else
               # Withdraw...
-              user_project.enrolled = false
+              user_project.enrolled = false 
               user_project.save
               success << { row: row, message: "Student was withdrawn" }
             end
@@ -573,7 +493,7 @@ class Unit < ActiveRecord::Base
           # Add the user to the project (if not already in there)
           if user_project.nil?
             # Need to enrol user... can always set tutorial as does not already exist...
-            if (!tutorial.nil?)
+            if (!tutorial.nil?) 
               # Use tutorial if we have it :)
               enrol_student(project_participant, tutorial)
               success << { row: row, message: 'Enrolled student with tutorial.' }
@@ -925,27 +845,13 @@ class Unit < ActiveRecord::Base
     end
   end
 
-  # First day of the week is sunday...
   def date_for_week_and_day(week, day)
     return nil if week.nil? || day.nil?
+    day_num = Date::ABBR_DAYNAMES.index day.titlecase
+    return nil if day_num.nil?
+    start_day_num = start_date.wday
 
-    if teaching_period.present?
-      teaching_period.date_for_week_and_day(week, day)
-    else
-      day_num = Date::ABBR_DAYNAMES.index day.titlecase
-      return nil if day_num.nil?
-      start_day_num = start_date.wday
-
-      start_date + week.weeks + (day_num - start_day_num).days
-    end
-  end
-
-  def week_number(date)
-    if teaching_period.present?
-      teaching_period.week_number(date)
-    else
-      ((date - start_date) / 1.week).floor
-    end
+    start_date + week.weeks + (day_num - start_day_num).days
   end
 
   def import_tasks_from_csv(file)
@@ -1452,7 +1358,7 @@ class Unit < ActiveRecord::Base
         project_id: t.project_id,
         task_definition_id: t.task_definition_id,
         tutorial_id: t.tutorial_id,
-        status: TaskStatus.id_to_key(t.status_id),
+        status: TaskStatus.find(t.status_id).status_key,
         completion_date: t.completion_date,
         submission_date: t.submission_date,
         times_assessed: t.times_assessed,
@@ -1529,7 +1435,7 @@ class Unit < ActiveRecord::Base
       {
         tutorial_id: r.tutorial_id,
         task_definition_id: r.task_definition_id,
-        status: TaskStatus.id_to_key(r.status_id),
+        status: TaskStatus.find(r.status_id).status_key,
         num: r.num_tasks
       }
     end
@@ -1675,7 +1581,7 @@ class Unit < ActiveRecord::Base
         learning_outcome_id: r.learning_outcome_id,
         rating: r.rating,
         grade: r.target_grade,
-        status: TaskStatus.id_to_key(r.status_id),
+        status: TaskStatus.find(r.status_id).status_key,
         num: r.num
       }
     end
@@ -1689,8 +1595,7 @@ class Unit < ActiveRecord::Base
       redo:               0.1,
       do_not_resubmit:    0.1,
       fix_and_resubmit:   0.3,
-      time_exceeded:      0.5,
-      ready_to_mark:      0.7,
+      ready_to_mark:      0.5,
       discuss:            0.8,
       demonstrate:        0.8,
       complete:           1.0
