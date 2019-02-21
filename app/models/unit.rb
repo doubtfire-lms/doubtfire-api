@@ -49,6 +49,23 @@ class Unit < ActiveRecord::Base
       :rollover_unit
     ]
 
+    # What can admin do with units?
+    admin_role_permissions = [
+      :get_unit,
+      :get_students,
+      :enrol_student,
+      :upload_csv,
+      :rollover_unit,
+      :change_project_enrolment,
+      :update,
+      :employ_staff,
+      :add_tutorial,
+      :add_task_def,
+      :download_stats,
+      :download_unit_csv,
+      :download_grades,
+    ]
+
     # What can other users do with units?
     nil_role_permissions = [
 
@@ -59,6 +76,7 @@ class Unit < ActiveRecord::Base
       student: student_role_permissions,
       tutor: tutor_role_permissions,
       convenor: convenor_role_permissions,
+      admin: admin_role_permissions,
       nil: nil_role_permissions
     }
   end
@@ -70,6 +88,10 @@ class Unit < ActiveRecord::Base
       Role.tutor
     elsif active_projects.where('projects.user_id=:id', id: user.id).count == 1
       Role.student
+    elsif user.has_admin_capability?
+      Role.admin
+    else
+      nil
     end
   end
 
