@@ -101,6 +101,7 @@ module Api
         error!({ error: 'This URL must be referered by AAF.' }, 500) unless referer
         request_idp = referer.split('entityID=').last
         unless request_idp == Doubtfire::Application.config.aaf[:identity_provider_url]
+          logger.error "Rejecting authentication from #{referer} idp #{request_idp}"
           error!({ error: 'This request was not verified by the correct identity provider.' }, 500)
         end
 
