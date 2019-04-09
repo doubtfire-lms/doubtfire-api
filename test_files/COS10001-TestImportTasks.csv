@@ -1,0 +1,4 @@
+name,abbreviation,description,weighting,target_grade,restrict_status_updates,max_quality_pts,is_graded,upload_requirements,start_week,start_day,target_week,target_day,due_week,due_day
+Imported Task 1,TEST_TASK1,Imported!,4,0,true,10,true,"[{""key"":""file0"",""name"":""Imported Code"",""type"":""code""}]",9,Mon,9,Mon,9,Wed
+Imported Task 2,TEST_TASK2,Imported!,4,0,true,10,true,"[{""key"":""file0"",""name"":""Imported Code"",""type"":""code""}]",9,Mon,9,Mon,9,Wed
+Imported Task 3,TEST_TASK3,Imported!,4,0,true,10,true,"[{""key"":""file0"",""name"":""Imported Code"",""type"":""code""}]",9,Mon,9,Mon,9,Wed

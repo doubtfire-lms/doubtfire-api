@@ -6,21 +6,6 @@ development:
   host:  localhost
   min_messages: warning
 
-experimental:
-  adapter: postgresql
-  database: doubtfire_dev
-  username: itig
-  password: d872$dh
-  host:  localhost
-  min_messages: warning
-
-replica:
-  adapter: mysql2
-  host: localhost
-  database: www_gamification_db1
-  username: www_gamification
-  password: d872$dh
-
 test:
   adapter: postgresql
   database: doubtfire_dev_test
@@ -28,3 +13,17 @@ test:
   password: d872$dh
   host: localhost
   min_messages: warning
+
+staging:
+  adapter:  <%= ENV['DF_STAGING_DB_ADAPTER']  %>
+  host:     <%= ENV['DF_STAGING_DB_HOST']     %>
+  database: <%= ENV['DF_STAGING_DB_DATABASE'] %>
+  username: <%= ENV['DF_STAGING_DB_USERNAME'] %>
+  password: <%= ENV['DF_STAGING_DB_PASSWORD'] %>
+
+production:
+  adapter:  <%= ENV['DF_PRODUCTION_DB_ADAPTER']  %>
+  host:     <%= ENV['DF_PRODUCTION_DB_HOST']     %>
+  database: <%= ENV['DF_PRODUCTION_DB_DATABASE'] %>
+  username: <%= ENV['DF_PRODUCTION_DB_USERNAME'] %>
+  password: <%= ENV['DF_PRODUCTION_DB_PASSWORD'] %>

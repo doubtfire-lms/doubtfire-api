@@ -5,7 +5,7 @@ class TutorialSerializer < ActiveModel::Serializer
 
   def meeting_time
     object.meeting_time.to_time
-    #DateTime.parse("#{object.meeting_time}")
+    # DateTime.parse("#{object.meeting_time}")
   end
 
   def tutor_name
@@ -26,5 +26,11 @@ class TutorialSerializer < ActiveModel::Serializer
       my_role = object.unit.role_for(Thread.current[:user])
       [ Role.convenor, Role.tutor, Role.admin ].include? my_role
     end
+  end
+
+  def filter(keys)
+    keys.delete :tutor unless include_tutor?
+    keys.delete :num_students unless include_num_students?
+    keys
   end
 end

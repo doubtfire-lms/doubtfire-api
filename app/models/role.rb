@@ -1,5 +1,15 @@
 class Role < ActiveRecord::Base
 
+  #
+  # Override find to ensure that role objects are cached - these do not change
+  #
+  def self.find(id)
+    Rails.cache.fetch("roles/#{id}", expires_in: 12.hours) do
+      super
+    end
+  end
+
+
   def self.student
     Role.find(student_id)
   end
@@ -18,6 +28,16 @@ class Role < ActiveRecord::Base
 
   def to_sym
     name.downcase.to_sym
+  end
+
+  #
+  # Checks to see if the role returned by aaf is tutor, returns student if
+  # it is anything else.
+  #
+  if AuthenticationHelpers.aaf_auth?
+    def self.aaf_affiliation_to_role_id(affiliation)
+      affiliation.include?('staff') ? Role.tutor.id : Role.student.id
+    end
   end
 
   #
@@ -42,15 +62,14 @@ class Role < ActiveRecord::Base
 
   def self.with_name(name)
     case name
-      when /[Aa]dmin/
-        self.admin
-      when /[Cc]onvenor/
-        self.convenor
-      when /[Tt]utor/
-        self.tutor
-      when /[Ss]tudent/
-        self.student
+    when /[Aa]dmin/
+      admin
+    when /[Cc]onvenor/
+      convenor
+    when /[Tt]utor/
+      tutor
+    when /[Ss]tudent/
+      student
     end
   end
-
 end

@@ -2,78 +2,79 @@ source 'https://rubygems.org'
 
 # Ruby versions for various enviornments
 ruby_versions = {
-  experimental: '2.1.2',
-  development:  '2.0.0',
-  test:         '2.0.0',
-  replica:      '2.0.0',
-  production:   '2.0.0'
+  development:  '~>2.3.1',
+  test:         '~>2.3.1',
+  staging:      '~>2.3.1',
+  production:   '~>2.3.1'
 }
 # Get the ruby version for the current enviornment
-ruby ruby_versions[(ENV["RAILS_ENV"] || 'development').to_sym]
+ruby ruby_versions[(ENV['RAILS_ENV'] || 'development').to_sym]
 
 # The venerable, almighty Rails
-gem 'rails', '4.0.3'
+gem 'rails', '4.2.6'
 
-# This is how we get creative
-gem 'populator'
-gem 'faker'
-
-# Auth
-gem 'devise', '~> 3.1.2'
-gem 'devise_ldap_authenticatable'
-# gem 'cancan'
-gem 'attr_encrypted', '~> 1.3.2'
-
-gem 'grape', '0.6.1'
-gem 'grape-active_model_serializers', '~> 1.0.0'
-gem 'grape-swagger'
-
-gem 'rack-cors', require: 'rack/cors'
-
-gem 'ci_reporter'
-
-gem 'terminator'
-
-group :development, :replica do
+group :development, :test do
+  gem 'database_cleaner'
+  gem 'factory_girl_rails'
+  gem 'minitest-around'
+  gem 'minitest-hyper'
+  gem 'minitest-rails'
+  gem 'byebug'
+  gem 'simplecov', require: false
   gem 'pg'
   gem 'hirb'
   gem 'better_errors'
   gem 'rails_best_practices'
   gem 'thin'
+  gem 'rubocop', '0.46.0'
 end
 
-group :test do
-  gem 'simplecov'
-  gem 'capybara'
-  gem 'launchy'
+group :development, :test, :staging do
+  # Generators for population
+  gem 'populator'
+  gem 'faker', '~>1.9.1'
 end
 
 group :production do
   gem 'passenger', '= 4.0.42'
 end
 
-group :production, :test, :replica do
+group :production, :staging do
   gem 'mysql2'
 end
 
-group :development, :test, :replica do
-  gem 'rspec-rails', '~> 3'
-  gem 'factory_girl_rails'
-  gem 'minitest-rails'
-  gem 'database_cleaner'
-end
+# Authentication
+gem 'devise', '~> 4.1.1'
+gem 'devise_ldap_authenticatable'
+gem 'json-jwt', '1.7.0'
 
 # Student submission
 gem 'coderay'
 gem 'ruby-filemagic'
-gem 'rmagick', '~> 2.15' #require: false #already included in other gems - remove to avoid duplicate errors
-gem 'pdfkit'
-gem 'wkhtmltopdf-binary-11' #too old!
-gem 'pdftk'
+gem 'rmagick', '~> 2.15' # require: false #already included in other gems - remove to avoid duplicate errors
 gem 'rubyzip'
 
 # Plagarism detection
 gem 'moss_ruby', '= 1.1.2'
 
 # Latex
-gem 'rails-latex', '=1.0.13'
+gem 'rails-latex', '=2.0.1'
+
+# API
+gem 'grape', '0.16.2'
+gem 'active_model_serializers', '~> 0.9.0'
+gem 'grape-active_model_serializers', '~> 1.3.2'
+gem 'grape-swagger'
+
+# Miscellaneous
+gem 'attr_encrypted', '~> 1.3.2'
+gem 'rack-cors', require: 'rack/cors'
+gem 'ci_reporter'
+gem 'require_all', '1.3.3'
+gem 'dotenv-rails'
+
+# Excel support
+gem 'roo', '~> 2.7.0'
+gem 'roo-xls'
+
+gem 'rest-client', '~> 2.0'

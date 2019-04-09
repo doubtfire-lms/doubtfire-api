@@ -1,30 +1,26 @@
 require 'unit_role_serializer'
 
 class ShallowUnitSerializer < ActiveModel::Serializer
-  attributes :code, :id, :name, :start_date, :end_date, :active
+  attributes :code, :id, :name, :teaching_period_id, :start_date, :end_date, :active
 end
 
 class UnitSerializer < ActiveModel::Serializer
-  attributes :code, :id, :name, :my_role, :description, :start_date, :end_date, :active, :convenors, :ilos
+  attributes :code, :id, :name, :my_role, :description, :teaching_period_id, :start_date, :end_date, :active, :convenors, :ilos
 
   def start_date
     object.start_date.to_date
   end
 
-  def end_date 
+  def end_date
     object.end_date.to_date
   end
 
   def my_role_obj
-    if Thread.current[:user]
-      object.role_for(Thread.current[:user])
-    end
+    object.role_for(Thread.current[:user]) if Thread.current[:user]
   end
 
   def my_user_role
-    if Thread.current[:user]
-      Thread.current[:user].role
-    end
+    Thread.current[:user].role if Thread.current[:user]
   end
 
   def role
@@ -40,7 +36,6 @@ class UnitSerializer < ActiveModel::Serializer
     object.learning_outcomes
   end
 
-
   has_many :tutorials
   has_many :task_definitions
   has_many :convenors, serializer: UserUnitRoleSerializer
@@ -48,12 +43,24 @@ class UnitSerializer < ActiveModel::Serializer
   has_many :group_sets, serializer: GroupSetSerializer
   has_many :ilos, serializer: LearningOutcomeSerializer
   has_many :task_outcome_alignments, serializer: LearningOutcomeTaskLinkSerializer
+  has_many :groups, serializer: DeepGroupSerializer
 
   def include_convenors?
     ([ Role.convenor, :convenor ].include? my_role_obj) || (my_user_role == Role.admin)
   end
 
   def include_staff?
-    ([ Role.convenor, :convenor ].include? my_role_obj) || (my_user_role == Role.admin)
+    ([ Role.convenor, :convenor, Role.tutor, :tutor ].include? my_role_obj) || (my_user_role == Role.admin)
+  end
+
+  def include_groups?
+    ([ Role.convenor, :convenor, Role.tutor, :tutor ].include? my_role_obj) || (my_user_role == Role.admin)
+  end
+
+  def filter(keys)
+    keys.delete :groups unless include_groups?
+    keys.delete :convenors unless include_convenors?
+    keys.delete :staff unless include_staff?
+    keys
   end
 end
