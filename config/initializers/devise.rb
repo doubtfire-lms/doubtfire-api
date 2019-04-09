@@ -4,7 +4,7 @@ Devise.setup do |config|
   # ==> Mailer Configuration
   # Configure the e-mail address which will be shown in Devise::Mailer,
   # note that it will be overwritten if you use your own mailer class with default "from" parameter.
-  config.mailer_sender = "please-change-me-at-config-initializers-devise@example.com"
+  config.mailer_sender = 'please-change-me-at-config-initializers-devise@example.com'
 
   # Configure the class responsible to send e-mails.
   # config.mailer = "Devise::Mailer"
@@ -87,7 +87,7 @@ Devise.setup do |config|
   config.stretches = Rails.env.test? ? 1 : 10
 
   # Setup a pepper to generate the encrypted password.
-  # config.pepper = "225fdd7cfd4f6ec8d6f668118010a2a0632a38ef93697590bba15ca91e68d8d9c21c6cf4fec497cd6da7e03a56c95e2d61aef6151118cb6c7ada099de980332b"
+  # config.pepper = "pepper"
 
   # ==> Configuration for :confirmable
   # A period that the user is allowed to access the website even without
@@ -212,7 +212,7 @@ Devise.setup do |config|
   # should add them to the navigational formats lists.
   #
   # The "*/*" below is required to match Internet Explorer requests.
-  config.navigational_formats = ["*/*", :json]
+  config.navigational_formats = ['*/*', :json]
 
   # The default HTTP method used to sign out a resource. Default is :delete.
   config.sign_out_via = :delete
@@ -235,8 +235,6 @@ Devise.setup do |config|
   #   manager.failure_app = CustomAuthFailure
   # end
 
-  config.secret_key = '1f4f89e09275ca687c9652b61ae8e2c310332d2a198f394747139a3ae29ee3912f7224d655b6c64a8fef4dce9e873203a2a86e812a049aaf5bc354f7188d8580'
-
   # ==> Mountable engine configurations
   # When using Devise inside an engine, let's call it `MyEngine`, and this engine
   # is mountable, there are some extra configurations to be taken into account.
@@ -250,4 +248,25 @@ Devise.setup do |config|
   # When using omniauth, Devise cannot automatically set Omniauth path,
   # so you need to do it manually. For the users scope, it would be:
   # config.omniauth_path_prefix = "/my_engine/users/auth"
+
+  # ==> AAF via JWT OmniAuth
+  # Devise method for JWT
+  # if Doubtfire::Application.config.auth_method == :jwt
+  #   aaf_secret = Doubtfire::Application.secrets.secret_key_aaf
+  #   aaf_config = Doubtfire::Application.config.aaf
+  #   config.omniauth :jwt,
+  #                   aaf_secret,
+  #                   auth_url: aaf_config.audience_url,
+  #                   required_claims: %w(iss jti nbf exp typ aud sub),
+  #                   info_map: { email: 'mail', name: 'cn' },
+  #                   uid_claim: 'mail',
+  #                   valid_within: 60,
+  #                   params_key: 'assertion',
+  #                   # user_claims_key: 'your_providers_super_custom_user_claims_key',
+  #                   required_user_claims: %w(mail cn)
+  # end
+
+  # ==> Devise secret key
+  # Secret key to be used by devise in prod.
+  config.secret_key = Doubtfire::Application.secrets.secret_key_devise if Rails.env.production?
 end

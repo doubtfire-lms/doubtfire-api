@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style type="text/css">
+    body {
+      font-family: "Lucida Grande", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      color: #333;
+      font-size: 14px;
+      width: 800px;
+      margin: 100px auto 0px auto;
+      font-size: 0.9em;
+    }
+    main {
+      background-image: url('https://<%= @doubtfire_host %>/assets/images/logo.svg');
+      background-size: 3.5em;
+      background-repeat: no-repeat;
+      background-position: 30px 45px;
+      padding: 30px 40px;
+      padding-left: 100px;
+      border: solid 1px #aaa;
+      border-radius: 7px;
+      line-height: 200%;
+      text-align: justify;
+    }
+    .subtext {
+        color: #aaa;
+        font-size: 0.7em;
+        margin-bottom: 10px;
+        margin-top: -10px;
+    }
+    table {
+        overflow: scroll;
+    }
+    footer {
+      text-align: right;
+      margin-top: 10px;
+      color: #aaa;
+      font-size: 0.7em;
+    }
+    a, a:visited {
+      color: #6a97d2;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    h1 {
+      font-size: 1.1em;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1><%= @summary_stats[:unit].name %> - Weekly Summary</h1>
+    <p class="subtext"><%= "#{@summary_stats[:week_start].day.ordinalize} #{@summary_stats[:week_start].strftime("%B %Y")}" %> to <%= "#{@summary_stats[:week_end].day.ordinalize} #{@summary_stats[:week_end].strftime("%B %Y")}" %></p>
+    
+    <p>Hi <%= @staff.first_name %>,</p>
+    <p>
+        Hope you had a good week! Here's a summary of what has happened in this unit over the last week.
+    </p>
+<% if @unit_role.has_students? %>
+    <p>
+        <ul>
+            <li>In total, there <%= were_was(@summary_stats[:unit_week_comments]) %> <%= @summary_stats[:unit_week_comments] %> comment<%= "s" if @summary_stats[:unit_week_comments] != 1 %> made this unit.</li>
+            <li>You received <%= @data[:received_comments] %> comment<%= "s" if @data[:received_comments] != 1 %> and posted a total of <%= @data[:sent_comments] %> comment<%= "s" if @data[:sent_comments] != 1 %>.</li>
+            <li>Tasks changed state <%= @summary_stats[:unit_week_engagements] %> time<%= "s" unless @summary_stats[:unit_week_engagements] == 1 %> in this unit.</li>
+            <li>Your student's tasks changed state <%= @data[:weekly_engagements_count] %> time<%= "s" unless @data[:weekly_engagements_count] == 1 %>.</li>
+            <li>You assigned a new status to <%= @data[:staff_engagements] %> task<%= "s" unless @data[:staff_engagements] == 1 %>.</li>
+            <li>You have <%= @data[:tasks_awaiting_feedback_count] %> task<%= "s" unless @data[:tasks_awaiting_feedback_count] == 1 %> waiting for feedback.</li>
+<%  if @data[:tasks_awaiting_feedback_count] > 0 %>
+            <li>The oldest of these tasks was submitted <%= @data[:oldest_task_days] %> day<%= "s" unless @data[:oldest_task_days] == 1 %> ago.</li>
+<%  end %>
+        </ul>
+    </p>
+<%  if @summary_stats[:revert][@staff].count > 0 %>
+    <p>
+        The following students in your tutorials have been advised to revert their grade to Pass as they are falling behind with their pass tasks:
+        <ul>
+<%      @summary_stats[:revert][@staff].each do |p|%>
+            <li><%= p.student.name %></li>
+<%      end %>
+        </ul>
+    </p>
+<%  end %>
+<% else %>
+    <p>
+        <ul>
+            <li>In total, there <%= were_was(@summary_stats[:unit_week_comments]) %> <%= @summary_stats[:unit_week_comments] %> comment<%= "s" if @summary_stats[:unit_week_comments] != 1 %> made in this unit.</li>
+            <li>Tasks changed state <%= @summary_stats[:unit_week_engagements] %> time<%= "s" unless @summary_stats[:unit_week_engagements] == 1 %> in this unit.</li>
+        </ul>    
+    </p>
+<% end %>
+<% if @unit_role.is_convenor? %>
+    <table>
+        <thead>
+            <tr>
+                <th rowspan="2" style="width:15%">Name</th>
+                <th rowspan="2" style="width:15%"># Stud</th>
+                <th colspan="2" style="width:20%">Assessments</th>
+                <th colspan="2" style="width:20%">Comments</th>
+                <th rowspan="2" style="width:15%">Awaiting Feedback</th>
+                <th rowspan="2" style="width:15%">Oldest Task</th>
+            </tr>
+            <tr>
+                <th>Total</th>
+                <th>Week</th>
+                <th>Total</th>
+                <th>Week</th>
+            </tr>
+        </thead>
+        <tbody>
+<%  @summary_stats[:staff].each do | user, data | %>
+<%    next unless data[:number_of_students] > 0%>
+            <tr>
+                    <td><%= '%-12s' % data[:staff].name.truncate(12) %></td>
+                    <td><%= '%8i'   % data[:number_of_students] %></td>
+                    <td><%= '%7i'   % data[:total_staff_engagements] %></td>
+                    <td><%= '%6i'   % data[:staff_engagements] %></td>
+                    <td><%= '%5i'   % data[:total_comments] %></td>
+                    <td><%= '%5i'   % data[:sent_comments] %></td>
+                    <td><%= '%8i'   % data[:tasks_awaiting_feedback_count] %></td>
+                    <td<%= ' style="background: red"' unless data[:oldest_task_days] < 10%>><%= '%6i'   % data[:oldest_task_days] %> days</td>
+            </tr>
+<%  end %>
+        </tbody>
+    </table>
+<% if @summary_stats[:num_students_without_tutors] > 0 %>
+    <p>
+        Please note that <%=@summary_stats[:num_students_without_tutors]%> student<%= "s" unless @summary_stats[:num_students_without_tutors] == 1 %> <%= are_is(@summary_stats[:num_students_without_tutors]) %> not allocated to a tutorial. Work submitted by <%= this_these(@summary_stats[:num_students_without_tutors]) %> student<%= "s" unless @summary_stats[:num_students_without_tutors] == 1 %> will not appear in any of the tutor inboxes!
+    </p>
+<% end %>
+<% end %>
+    <p>
+        Cheers, <br />
+        The <%= @doubtfire_product_name %> Team on behalf of <%= @convenor.name %>
+    </p>
+  </main>
+  <footer>
+    <a href="<%= @unsubscribe_url %>">Unsubscribe</a> | Generated with <%= @doubtfire_product_name %>
+  </footer>
+</body>
+</html>

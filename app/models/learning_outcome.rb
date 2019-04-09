@@ -4,16 +4,16 @@ class LearningOutcome < ActiveRecord::Base
   belongs_to :unit
 
   has_many :learning_outcome_task_links, dependent: :destroy # links to learning outcomes
-  has_many :related_task_definitions, -> { where("learning_outcome_task_links.task_id is NULL") },  through: :learning_outcome_task_links, source: :task_definition # only link staff relations
+  has_many :related_task_definitions, -> { where('learning_outcome_task_links.task_id is NULL') }, through: :learning_outcome_task_links, source: :task_definition # only link staff relations
 
-  validates_uniqueness_of :abbreviation, scope:  :unit_id   # outcome names within a unit must be unique
-  validates_length_of :description, :maximum => 4095, :allow_blank => true
+  validates :abbreviation, uniqueness: { scope: :unit_id } # outcome names within a unit must be unique
+  validates :description, length: { maximum: 4095, allow_blank: true }
 
   def self.csv_header
-    ["unit_code", "ilo_number", "abbreviation", "name", "description"]
+    %w(unit_code ilo_number abbreviation name description)
   end
 
-  def add_csv_row (row)
+  def add_csv_row(row)
     row << [unit.code, ilo_number, abbreviation, name, description]
   end
 
@@ -25,39 +25,38 @@ class LearningOutcome < ActiveRecord::Base
       return
     end
 
-  ilo_number = row['ilo_number'].to_i
+    ilo_number = row['ilo_number'].to_i
 
     abbr = row['abbreviation']
     if abbr.nil?
-      result[:errors] << { row: row, message: "Missing abbreviation" }
+      result[:errors] << { row: row, message: 'Missing abbreviation' }
       return
     end
 
-  name = row['name']
+    name = row['name']
     if name.nil?
-      result[:errors] << { row: row, message: "Missing name" }
+      result[:errors] << { row: row, message: 'Missing name' }
       return
     end
 
     description = row['description']
     if description.nil?
-      result[:errors] << { row: row, message: "Missing description" }
+      result[:errors] << { row: row, message: 'Missing description' }
       return
     end
 
-    outcome = LearningOutcome.find_or_create_by(unit_id: unit.id, abbreviation: abbr) { |outcome|
-        outcome.name = name
-        outcome.description = description
-        outcome.ilo_number = ilo_number
-      }
+    outcome = LearningOutcome.find_or_create_by(unit_id: unit.id, abbreviation: abbr) do |outcome|
+      outcome.name = name
+      outcome.description = description
+      outcome.ilo_number = ilo_number
+    end
 
     outcome.save!
 
-    if outcome.new_record?
-      result[:success] << { row:row, message: "Outcome #{abbr} created for unit" }
-    else
-      result[:success] << { row:row, message: "Outcome #{abbr} updated for unit" }
-    end
+    result[:success] << if outcome.new_record?
+                          { row: row, message: "Outcome #{abbr} created for unit" }
+                        else
+                          { row: row, message: "Outcome #{abbr} updated for unit" }
+                        end
   end
-
 end

@@ -424,8 +424,8 @@ it "should know its members" do
     t0 = grp0.projects[0].task_for_task_definition(unit.task_definitions[0])
     t1 = grp0.projects[0].task_for_task_definition(unit.task_definitions[1])
 
-    comment = t0.add_comment t0.student, "Comment 1"
-    comment1 = t1.add_comment t1.student, "Comment 2"
+    comment = t0.add_text_comment t0.student, "Comment 1"
+    comment1 = t1.add_text_comment t1.student, "Comment 2"
 
     t0.reload
     t1.reload

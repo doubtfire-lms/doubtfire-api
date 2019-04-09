@@ -1,0 +1,42 @@
+AllCops:
+  Exclude:
+    - db/**/*
+    - vendor/**/*
+    - spec/**/*
+
+Rails:
+  Enabled: true
+
+Rails/HttpPositionalArguments:
+  Exclude:
+    - test/**/*
+
+Rails/DynamicFindBy:
+  Whitelist:
+    - find_by_auth_token
+    - find_by_user
+
+Metrics/LineLength:
+  Max: 120
+  # To make it possible to copy or click on URIs in the code, we allow lines
+  # containing a URI to be longer than Max.
+  AllowHeredoc: true
+  AllowURI: true
+  URISchemes:
+    - http
+    - https
+
+Metrics/MethodLength:
+  Exclude:
+    - db/migrate/**/*
+
+Style/BlockComments:
+  Exclude:
+    - spec/spec_helper.rb
+
+Style/Documentation:
+  Description: 'Document classes and non-namespace modules.'
+  Enabled: false
+
+Style/SpaceInsideBrackets:
+  Enabled: false

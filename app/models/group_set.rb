@@ -1,5 +1,6 @@
 class GroupSet < ActiveRecord::Base
   belongs_to :unit
+  has_many :task_definitions
   has_many :groups, dependent: :destroy
 
   validates_associated :groups
@@ -32,34 +33,28 @@ class GroupSet < ActiveRecord::Base
 
     # Return permissions hash
     {
-      :convenor => convenor_role_permissions,
-      :tutor    => tutor_role_permissions,
-      :student  => student_role_permissions,
-      :nil      => nil_role_permissions
+      convenor: convenor_role_permissions,
+      tutor: tutor_role_permissions,
+      student: student_role_permissions,
+      nil: nil_role_permissions
     }
   end
 
-  def specific_permission_hash(role, perm_hash, other)
+  def specific_permission_hash(role, perm_hash, _other)
     result = perm_hash[role] unless perm_hash.nil?
     if result && role == :student
-      if allow_students_to_create_groups
-        result << :create_group
-      end
-      if allow_students_to_manage_groups
-        result << :join_group
-      end
+      result << :create_group if allow_students_to_create_groups
+      result << :join_group if allow_students_to_manage_groups
     end
     result
   end
 
-  def role_for(user)
-    unit.role_for(user)
-  end
+  delegate :role_for, to: :unit
 
   def must_be_in_same_tutorial
     if keep_groups_in_same_class
-      groups.each do | grp |
-        if not grp.all_members_in_tutorial?
+      groups.each do |grp|
+        unless grp.all_members_in_tutorial?
           errors.add(:groups, "exist where some members are not in the group's tutorial")
         end
       end

@@ -1,5 +1,5 @@
 namespace :submission do
-  desc "Check active units for task plagiarism"
+  desc 'Check active units for task plagiarism'
 
   def logger
     Rails.logger
@@ -25,7 +25,37 @@ namespace :submission do
     FileUtils.rm(rake_executing_marker_file)
   end
 
-  task check_plagiarism:  :environment do
+  task :simulate_plagiarism, [:num_links] => [:skip_prod, :environment] do |t, args|
+    if is_executing?
+      puts 'Skip plagiarism check -- already executing'
+      logger.info 'Skip plagiarism check -- already executing'
+    else
+      match_template = {
+        url: 'http://moss.stanford.edu/results/375180531/match0-top.html',
+        pct: Random.rand(70..100),
+        html: File.open('test_files/link_template.html').read()
+      }
+      match = [match_template, match_template]
+      # Give me two random distinct students with the same TD
+      unit = Unit.active_units.first
+      num_links = (args[:num_links] || 1).to_i
+      puts "Simulating #{num_links} plagiarism links for #{unit.code}..."
+      num_links.times do
+        td = unit.task_definitions.first
+        t1 = unit.tasks.where(task_definition: td).sample()
+        t2 = unit.tasks.where(task_definition: td).where.not(project_id: t1.project.id).sample()
+        if t1.nil? || t2.nil?
+          puts "Can't find any tasks to simulate. Have you run submission:simulate_signoff?'"
+          return
+        end
+        puts "Plagiarism link for #{td.abbreviation} between #{t1.project.student.name} (project_id=#{t1.project.id}) <-> #{t2.project.student.name} (project_id=#{t2.project.id}) created!"
+        unit.create_plagiarism_link(t1, t2, match)
+        unit.create_plagiarism_link(t2, t1, match)
+      end
+    end
+  end
+
+  task check_plagiarism: :environment do
     if is_executing?
       puts 'Skip plagiarism check -- already executing'
       logger.info 'Skip plagiarism check -- already executing'
@@ -35,20 +65,18 @@ namespace :submission do
       begin
         logger.info 'Starting plagiarism check'
 
-        active_units = Unit.where(active: true)
-
-        active_units.each do | unit |
-          puts " ------------------------------------------------------------ "
+        Unit.active_units.each do |unit|
+          puts ' ------------------------------------------------------------ '
           puts "  Starting Plagiarism Check for #{unit.name}"
-          puts " ------------------------------------------------------------ "
+          puts ' ------------------------------------------------------------ '
           unit.check_plagiarism
           unit.update_plagiarism_stats
         end
-        puts " ------------------------------------------------------------ "
-        puts " done."
+        puts ' ------------------------------------------------------------ '
+        puts ' done.'
       rescue => e
-        puts "Failed with error"
-        puts "#{e.message}"
+        puts 'Failed with error'
+        puts e.message.to_s
       ensure
         end_executing
       end

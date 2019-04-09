@@ -7,9 +7,9 @@ class Progress
     :behind,
     :danger,
     :doomed
-  ]
+  ].freeze
 
-  attr :progress, :weight
+  attr_reader :progress, :weight
 
   def <=>(other)
     weight <=> other.weight
@@ -17,20 +17,20 @@ class Progress
 
   def initialize(progress_sym)
     @progress = progress_sym
-    case progress
-    when :doomed
-      @weight = 0
-    when :danger
-      @weight = 1
-    when :behind
-      @weight = 2
-    when :on_track
-      @weight = 3
-    when :ahead
-      @weight = 4
-    else
-      @weight = -1
-    end
+    @weight = case progress
+              when :doomed
+                0
+              when :danger
+                1
+              when :behind
+                2
+              when :on_track
+                3
+              when :ahead
+                4
+              else
+                -1
+              end
   end
 
   def self.types
