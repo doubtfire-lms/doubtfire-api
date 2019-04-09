@@ -76,3 +76,5 @@ gem 'dotenv-rails'
 # Excel support
 gem 'roo', '~> 2.7.0'
 gem 'roo-xls'
+
+gem 'rest-client', '~> 2.0'
