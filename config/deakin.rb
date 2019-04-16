@@ -169,7 +169,13 @@ class DeakinInstitutionSettings
 
             location['enrolments'].each do |enrolment|
               if enrolment['Email'].nil?
-                result[:errors] << { row: enrolment, message: 'Missing email and username!' }
+                # Only error if they were enrolled
+                if ['ENROLLED', 'COMPLETED'].include?(enrolment['Status'].upcase)
+                  result[:errors] << { row: enrolment, message: 'Missing email and username!' }
+                else
+                  result[:ignored] << { row: enrolment, message: 'Not enrolled, but no email/username' }
+                end
+
                 next
               end
 

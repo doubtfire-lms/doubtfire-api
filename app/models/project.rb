@@ -81,12 +81,16 @@ class Project < ActiveRecord::Base
     where(progress: progress_types) unless progress_types.blank?
   }
 
+  # Get all of the projects for the indicated user - with or without inactive units
   def self.for_user(user, include_inactive)
-    if include_inactive
-      where('projects.user_id = :user_id', user_id: user.id)
-    else
-      active_projects.where('projects.user_id = :user_id', user_id: user.id)
-    end
+    # Limit to enrolled units... for this user
+    result = where(enrolled: true).where('projects.user_id = :user_id', user_id: user.id)
+    
+    # Return the result if we include inactive units...
+    return result if include_inactive
+    
+    # Otherwise link in units and only get active units
+    result.joins(:unit).where('units.active = TRUE')
   end
 
   def self.active_projects
