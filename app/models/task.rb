@@ -12,7 +12,8 @@ class Task < ActiveRecord::Base
       :put,
       :get_submission,
       :make_submission,
-      :delete_own_comment
+      :delete_own_comment,
+      :reply_to_discussion
     ]
     # What can tutors do with tasks?
     tutor_role_permissions = [
@@ -23,7 +24,9 @@ class Task < ActiveRecord::Base
       :delete_other_comment,
       :delete_own_comment,
       :view_plagiarism,
-      :delete_plagiarism
+      :delete_plagiarism,
+      :create_discussion,
+      :delete_discussion
     ]
     # What can convenors do with tasks?
     convenor_role_permissions = [
@@ -520,6 +523,23 @@ class Task < ActiveRecord::Base
     comment.comment = text
     comment.content_type = :text
     comment.recipient = user == project.student ? project.main_tutor : project.student
+    comment.save!
+    comment
+  end
+
+  def add_discussion_comment(user, prompts)
+    # don't allow if group task.
+    comment = DiscussionComment.create
+    comment.task = self
+    comment.user = user
+    comment.content_type = :discussion
+    comment.recipient = project.student
+
+    for prompt in prompts do
+      raise "Unknown comment attachment type" unless FileHelper.accept_file(prompt, "comment attachment discussion audio", "audio")
+      raise "Error attaching uploaded file." unless comment.add_attachment(prompt)
+    end
+
     comment.save!
     comment
   end

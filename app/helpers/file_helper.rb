@@ -11,6 +11,7 @@ module FileHelper
   # - file is passed the file uploaded to Doubtfire (a hash with all relevant data about the file)
   #
   def accept_file(file, name, kind)
+    logger.error "here"
     valid = true
 
     case kind
