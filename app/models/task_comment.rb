@@ -60,6 +60,7 @@ class TaskComment < ActiveRecord::Base
     return "audio comment" if content_type == "audio"
     return "image comment" if content_type == "image"
     return "pdf document" if content_type == "pdf"
+    return "discussion comment" if content_type == "discussion"
     super
   end
 
@@ -69,6 +70,9 @@ class TaskComment < ActiveRecord::Base
 
   def attachment_file_name
     "comment-#{id}#{attachment_extension}"
+  end
+
+  def add_discussion_comment()
   end
 
   def add_attachment(file_upload)
