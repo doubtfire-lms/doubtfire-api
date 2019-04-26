@@ -3,6 +3,7 @@ require 'tempfile'
 class TaskComment < ActiveRecord::Base
   include MimeCheckHelpers
   include TimeoutHelper
+  include FileHelper
 
   belongs_to :task # Foreign key
   belongs_to :user
@@ -72,14 +73,11 @@ class TaskComment < ActiveRecord::Base
     "comment-#{id}#{attachment_extension}"
   end
 
-  def add_discussion_comment()
-  end
-
   def add_attachment(file_upload)
     if content_type == "audio"
       # On upload all audio comments are converted to wav
       temp = Tempfile.new(['comment','.wav'])
-      return false unless system_try_within 20, "Failed to process audio submission - timeout", "ffmpeg -loglevel quiet -y -i #{file_upload.tempfile.path} -ac 1 -ar 16000 -sample_fmt s16 #{temp.path}"
+      return false unless process_audio(file_upload.tempfile.path, temp.path)
       self.attachment_extension = ".wav"
       save
       FileUtils.mv temp.path, attachment_path
