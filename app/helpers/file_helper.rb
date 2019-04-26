@@ -11,7 +11,6 @@ module FileHelper
   # - file is passed the file uploaded to Doubtfire (a hash with all relevant data about the file)
   #
   def accept_file(file, name, kind)
-    logger.error "here"
     valid = true
 
     case kind
@@ -162,6 +161,10 @@ module FileHelper
 
   def comment_attachment_path(task_comment, attachment_extension)
     "#{File.join( student_work_dir(:comment, task_comment.task), "#{task_comment.id.to_s}#{attachment_extension}")}"
+  end
+
+  def comment_prompt_path(task_comment, attachment_extension, count)
+    "#{File.join( student_work_dir(:comment, task_comment.task), "#{task_comment.id.to_s}_#{count.to_s}#{attachment_extension}")}"
   end
 
   def compress_image(path)
@@ -439,6 +442,11 @@ module FileHelper
     FileUtils.mv(tmp_filename, output_filename)
   end
 
+  def process_audio(input_path, output_path)
+    logger.info("Trying to process audio in FileHelper")
+    return system_try_within 20, "Failed to process audio submission - timeout", "ffmpeg -loglevel quiet -y -i #{input_path} -ac 1 -ar 16000 -sample_fmt s16 #{output_path}"
+  end
+
   # Export functions as module functions
   module_function :accept_file
   module_function :sanitized_path
@@ -466,4 +474,5 @@ module FileHelper
   module_function :recursively_add_dir_to_zip
   module_function :write_entries_to_zip
   module_function :ensure_utf8_code
+  module_function :process_audio
 end
