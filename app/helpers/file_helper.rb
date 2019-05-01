@@ -164,7 +164,7 @@ module FileHelper
   end
 
   def comment_prompt_path(task_comment, attachment_extension, count)
-    "#{File.join( student_work_dir(:comment, task_comment.task), "#{task_comment.id.to_s}_#{count.to_s}#{attachment_extension}")}"
+    "#{File.join( student_work_dir(:discussion, task_comment.task), "#{task_comment.id.to_s}_#{count.to_s}#{attachment_extension}")}"
   end
 
   def compress_image(path)
@@ -444,7 +444,7 @@ module FileHelper
 
   def process_audio(input_path, output_path)
     logger.info("Trying to process audio in FileHelper")
-    return system_try_within 20, "Failed to process audio submission - timeout", "ffmpeg -loglevel quiet -y -i #{input_path} -ac 1 -ar 16000 -sample_fmt s16 #{output_path}"
+    TimeoutHelper.system_try_within 20, "Failed to process audio submission - timeout", "ffmpeg -loglevel quiet -y -i #{input_path} -ac 1 -ar 16000 -sample_fmt s16 #{output_path}"
   end
 
   # Export functions as module functions
@@ -456,6 +456,7 @@ module FileHelper
   module_function :student_work_dir
   module_function :student_portfolio_dir
   module_function :comment_attachment_path
+  module_function :comment_prompt_path
   module_function :compress_image
   module_function :compress_image_to_dest
   module_function :compress_pdf
