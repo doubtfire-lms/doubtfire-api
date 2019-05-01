@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20180913030346) do
+ActiveRecord::Schema.define(version: 20190501110644) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -44,6 +44,19 @@ ActiveRecord::Schema.define(version: 20180913030346) do
   add_index "comments_read_receipts", ["task_comment_id", "user_id"], name: "index_comments_read_receipts_on_task_comment_id_and_user_id", unique: true, using: :btree
   add_index "comments_read_receipts", ["task_comment_id"], name: "index_comments_read_receipts_on_task_comment_id", using: :btree
   add_index "comments_read_receipts", ["user_id"], name: "index_comments_read_receipts_on_user_id", using: :btree
+
+  create_table "discussion_comments", force: :cascade do |t|
+    t.integer  "task_comment_id"
+    t.datetime "time_created"
+    t.datetime "due_date"
+    t.datetime "time_completed"
+    t.boolean  "started"
+    t.boolean  "completed"
+    t.datetime "created_at",      null: false
+    t.datetime "updated_at",      null: false
+  end
+
+  add_index "discussion_comments", ["task_comment_id"], name: "index_discussion_comments_on_task_comment_id", using: :btree
 
   create_table "group_memberships", force: :cascade do |t|
     t.integer  "group_id"
@@ -225,16 +238,18 @@ ActiveRecord::Schema.define(version: 20180913030346) do
   end
 
   create_table "task_comments", force: :cascade do |t|
-    t.integer  "task_id",                                          null: false
-    t.integer  "user_id",                                          null: false
-    t.string   "comment",              limit: 4096
-    t.datetime "created_at",                                       null: false
-    t.boolean  "is_new",                            default: true
+    t.integer  "task_id",                                           null: false
+    t.integer  "user_id",                                           null: false
+    t.string   "comment",               limit: 4096
+    t.datetime "created_at",                                        null: false
+    t.boolean  "is_new",                             default: true
     t.integer  "recipient_id"
     t.string   "content_type"
     t.string   "attachment_extension"
+    t.integer  "discussion_comment_id"
   end
 
+  add_index "task_comments", ["discussion_comment_id"], name: "index_task_comments_on_discussion_comment_id", using: :btree
   add_index "task_comments", ["task_id"], name: "index_task_comments_on_task_id", using: :btree
 
   create_table "task_definitions", force: :cascade do |t|

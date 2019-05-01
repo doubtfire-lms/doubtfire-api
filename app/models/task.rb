@@ -13,7 +13,7 @@ class Task < ActiveRecord::Base
       :get_submission,
       :make_submission,
       :delete_own_comment,
-      :reply_to_discussion
+      :start_discussion
     ]
     # What can tutors do with tasks?
     tutor_role_permissions = [
@@ -513,6 +513,8 @@ class Task < ActiveRecord::Base
     return nil if user.nil? || text.nil? || text.empty?
 
     lc = comments.last
+
+    # don't add if duplicate comment
     return if lc && lc.user == user && lc.comment == text
 
     ensured_group_submission if group_task? && group
@@ -529,19 +531,30 @@ class Task < ActiveRecord::Base
 
   def add_discussion_comment(user, prompts)
     # don't allow if group task.
-    comment = DiscussionComment.create
+    discussion = DiscussionComment.create
+    discussion.time_created = DateTime.now
+    discussion.due_date = discussion.time_created + 10.days
+    discussion.started = false
+    discussion.completed = false
+
+    comment = TaskComment.create
     comment.task = self
     comment.user = user
     comment.content_type = :discussion
+    comment.discussion_comment = discussion
     comment.recipient = project.student
+    comment.save!
 
-    for prompt in prompts do
+    discussion.task_comment = comment
+    discussion.save!
+
+    prompts.each_with_index do |prompt, index |
       raise "Unknown comment attachment type" unless FileHelper.accept_file(prompt, "comment attachment discussion audio", "audio")
-      raise "Error attaching uploaded file." unless comment.add_attachment(prompt)
+      raise "Error attaching uploaded file." unless discussion.add_prompt(prompt, index)
     end
 
-    comment.save!
-    comment
+    logger.info(comment)
+    return comment
   end
 
   def add_comment_with_attachment(user, tempfile)

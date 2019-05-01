@@ -10,6 +10,8 @@ class TaskComment < ActiveRecord::Base
 
   belongs_to :recipient, class_name: 'User'
 
+  has_one :discussion_comment, class_name: 'DiscussionComment', required: false;
+
   has_many :comments_read_receipts, class_name: 'CommentsReadReceipts', dependent: :destroy, inverse_of: :task_comment
 
   validates :task, presence: true
@@ -130,5 +132,9 @@ class TaskComment < ActiveRecord::Base
   def time_read_by(user)
     read_reciept = CommentsReadReceipts.find_by(user: user, task_comment: self)
     read_reciept.created_at unless read_reciept.nil?
+  end
+
+  def get_discussion_comment()
+    DiscussionComment.where('discussion_comments.group_submission_id = :id', id: group_submission.id)
   end
 end
