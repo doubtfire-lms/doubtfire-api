@@ -40,7 +40,7 @@ GEM
       tzinfo (~> 1.1)
     arel (6.0.3)
     ast (2.3.0)
-    attr_encrypted (1.3.5)
+    attr_encrypted (1.4.0)
       encryptor (~> 1.3.0)
     axiom-types (0.1.1)
       descendants_tracker (~> 0.0.4)
@@ -136,7 +136,7 @@ GEM
     minitest-rails (2.2.1)
       minitest (~> 5.7)
       railties (~> 4.1)
-    moss_ruby (1.1.2)
+    moss_ruby (1.1.3)
     multi_json (1.12.1)
     multi_xml (0.5.5)
     mustermann19 (0.4.4)
@@ -259,7 +259,7 @@ PLATFORMS
 
 DEPENDENCIES
   active_model_serializers (~> 0.9.0)
-  attr_encrypted (~> 1.3.2)
+  attr_encrypted (~> 1.4.0)
   better_errors
   byebug
   ci_reporter
@@ -278,7 +278,7 @@ DEPENDENCIES
   minitest-around
   minitest-hyper
   minitest-rails
-  moss_ruby (= 1.1.2)
+  moss_ruby (>= 1.1.2)
   mysql2
   passenger (= 4.0.42)
   pg
