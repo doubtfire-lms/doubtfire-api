@@ -70,7 +70,7 @@ gem 'grape-swagger'
 gem 'attr_encrypted', '~> 1.4.0'
 gem 'rack-cors', require: 'rack/cors'
 gem 'ci_reporter'
-gem 'require_all', '1.3.3'
+gem 'require_all', '>=1.3.3'
 gem 'dotenv-rails'
 
 # Excel support
