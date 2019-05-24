@@ -1,6 +1,6 @@
 require 'grape'
 require 'task_serializer'
-
+#http://localhost:3000/api/units/5/task_definitions/68/task_pdf.json?auth_token=NoeZ7eJPwCsbfAt3mCmj&as_attachment=true
 module Api
   class Tasks < Grape::API
     helpers AuthenticationHelpers
@@ -221,6 +221,23 @@ module Api
         task = project.task_for_task_definition(task_definition)
 
         task.apply_for_extension
+        task.save!
+
+        TaskUpdateSerializer.new(task)
+      else
+        error!({ error: "You do not have permission to apply for an extension for this task." }, 403)
+      end
+    end
+    desc 'update the user count'
+    post '/projects/:id/task_def_id/:task_definition_id/updatecount' do
+      project = Project.find(params[:id])
+      task_definition = project.unit.task_definitions.find(params[:task_definition_id])
+
+      # check the user can put this task
+      if authorise? current_user, project, :apply_extension
+        task = project.task_for_task_definition(task_definition)
+
+        task.increment_user_count
         task.save!
 
         TaskUpdateSerializer.new(task)

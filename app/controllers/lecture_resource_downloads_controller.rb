@@ -35,7 +35,7 @@ class LectureResourceDownloadsController < ApplicationController
     download_id = "#{Time.new.strftime('%Y-%m-%d %H:%m:%S')}-resources-#{unit.code}"
     download_id.gsub! /[\\\/]/, '-'
     download_id = FileHelper.sanitized_filename(download_id)
-
+    
     send_file output_zip.path, content_type: 'application/octet-stream', disposition: "attachment; filename=#{download_id}.zip"
   rescue MyException => e
     render json: e.message, status: e.status

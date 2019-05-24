@@ -180,6 +180,10 @@ class Task < ActiveRecord::Base
   def apply_for_extension
     self.extensions = self.extensions + 1
   end
+  
+  def increment_user_count
+    self.viewcount = self.viewcount + 1
+  end
 
   # delegate :due_date, to: :task_definition
   def due_date

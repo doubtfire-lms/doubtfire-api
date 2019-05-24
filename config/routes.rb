@@ -5,4 +5,5 @@ Doubtfire::Application.routes.draw do
   get 'api/submission/unit/:id/task_definitions/:task_def_id/download_submissions', to: 'task_downloads#index'
   get 'api/submission/unit/:id/task_definitions/:task_def_id/student_pdfs', to: 'task_submission_pdfs#index'
   get 'api/units/:id/all_resources', to: 'lecture_resource_downloads#index'
+#  get 'api/units/:id/all_resources', to: 'count_increment#index'
 end

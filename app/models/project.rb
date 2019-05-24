@@ -238,6 +238,7 @@ class Project < ActiveRecord::Base
           quality_pts: r.quality_pts,
           num_new_comments: r.number_unread,
           extensions: t.extensions,
+          viewcount: t.viewcount,
           due_date: t.due_date
         }
       end

@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20180913030346) do
+ActiveRecord::Schema.define(version: 20190521153106) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -311,6 +311,7 @@ ActiveRecord::Schema.define(version: 20180913030346) do
     t.integer  "contribution_pts",                 default: 3
     t.integer  "quality_pts",                      default: -1
     t.integer  "extensions",                       default: 0,    null: false
+    t.integer  "viewcount",                        default: 0,    null: false
   end
 
   add_index "tasks", ["group_submission_id"], name: "index_tasks_on_group_submission_id", using: :btree
