@@ -1,184 +1,112 @@
-require 'grape'
-require 'project_serializer'
+require 'test_helper'
 
-module Api
-  class Projects < Grape::API
-    helpers AuthenticationHelpers
-    helpers AuthorisationHelpers
-    helpers DbHelpers
+class ProjectsTest < ActiveSupport::TestCase
+  include Rack::Test::Methods
+  include TestHelpers::AuthHelper
+  include TestHelpers::JsonHelper
 
-    before do
-      authenticated?
-    end
-
-    desc "Fetches all of the current user's projects"
-    params do
-      optional :include_inactive, type: Boolean, desc: 'Include projects for units that are no longer active?'
-    end
-
-    get '/projects' do
-      include_inactive = params[:include_inactive] || false
-
-      projects = Project.for_user current_user, include_inactive
-
-      student_name = db_concat('users.first_name', "' '", 'users.last_name')
-      tutor_name = db_concat('tutor.first_name', "' '", 'tutor.last_name')
-
-      # join in other tables to fetch data
-      projects = projects
-                 .joins(:unit)
-                 .joins(:user)
-                 .joins('LEFT OUTER JOIN tutorials ON projects.tutorial_id = tutorials.id')
-                 .joins('LEFT OUTER JOIN unit_roles AS tutor_role ON tutorials.unit_role_id = tutor_role.id')
-                 .joins('LEFT OUTER JOIN users AS tutor ON tutor.id = tutor_role.user_id')
-                 .select('projects.*', 'units.name AS unit_name', 'units.id AS unit_id', 'units.code AS unit_code', 'units.start_date AS start_date', 'units.end_date AS end_date', "#{student_name} AS student_name", "#{tutor_name} AS tutor_name")
-
-      ActiveModel::ArraySerializer.new(projects, each_serializer: ShallowProjectSerializer)
-    end
-
-    desc 'Get project'
-    params do
-      requires :id, type: Integer, desc: 'The id of the project to get'
-    end
-    get '/projects/:id' do
-      project = Project.find(params[:id])
-
-      if authorise? current_user, project, :get
-        project
-      else
-        error!({ error: "Couldn't find Project with id=#{params[:id]}" }, 403)
-      end
-
-      Thread.current[:user] = current_user
-      project
-    end
-
-    desc 'Update a project'
-    params do
-      optional :trigger,            type: String,  desc: 'The update trigger'
-      optional :tutorial_id,        type: Integer, desc: 'Switch tutorial'
-      optional :enrolled,           type: Boolean, desc: 'Enrol or withdraw this project'
-      optional :target_grade,       type: Integer, desc: 'New target grade'
-      optional :compile_portfolio,  type: Boolean, desc: 'Schedule a construction of the portfolio'
-      optional :grade,              type: Integer, desc: 'New grade'
-      optional :old_grade,          type: Integer, desc: 'Old grade to check it has not changed...'
-      optional :grade_rationale,    type: String,  desc: 'New grade rationale'
-    end
-    put '/projects/:id' do
-      project = Project.find(params[:id])
-
-      if params[:trigger].nil? == false
-        if params[:trigger] == 'trigger_week_end'
-          if authorise? current_user, project, :trigger_week_end
-            project.trigger_week_end(current_user)
-          else
-            error!({ error: "You are not authorised to perform this action for Project with id=#{params[:id]}" }, 403)
-          end
-        else
-          error!({ error: "Invalid trigger - #{params[:trigger]} unknown" }, 403)
-        end
-      elsif !params[:tutorial_id].nil?
-        unless authorise? current_user, project, :change_tutorial
-          error!({ error: "Couldn't find Project with id=#{params[:id]}" }, 403)
-        end
-
-        tutorial_id = params[:tutorial_id]
-        if project.unit.tutorials.where('tutorials.id = :tutorial_id', tutorial_id: tutorial_id).count == 1
-          project.tutorial_id = tutorial_id
-          project.save!
-        elsif tutorial_id == -1
-          project.tutorial = nil
-          project.save!
-        else
-          error!({ error: "Couldn't find Tutorial with id=#{params[:tutorial_id]}" }, 403)
-        end
-      elsif !params[:enrolled].nil?
-        unless authorise? current_user, project.unit, :change_project_enrolment
-          error!({ error: "You cannot change the enrolment for project #{params[:id]}" }, 403)
-        end
-        project.enrolled = params[:enrolled]
-        project.save
-      elsif !params[:target_grade].nil?
-        unless authorise? current_user, project, :change
-          error!({ error: "You do not have permissions to change Project with id=#{params[:id]}" }, 403)
-        end
-
-        project.target_grade = params[:target_grade]
-        project.save
-      elsif !params[:grade].nil?
-        unless authorise? current_user, project, :assess
-          error!({ error: "You do not have permissions to assess Project with id=#{params[:id]}" }, 403)
-        end
-
-        if params[:grade_rationale].nil?
-          error!({ error: 'Grade rationale required to perform assessment.' }, 403)
-        end
-
-        if params[:old_grade].nil?
-          error!({ error: 'Existing project grade is required to perform assessment.' }, 403)
-        end
-
-        if params[:old_grade] != project.grade
-          error!({ error: 'Existing project grade does not match current grade. Refresh project and try again.' }, 403)
-        end
-
-        project.grade = params[:grade]
-        project.grade_rationale = params[:grade_rationale]
-        project.save!
-      elsif !params[:compile_portfolio].nil?
-        unless authorise? current_user, project, :change
-          error!({ error: "You do not have permissions to change Project with id=#{params[:id]}" }, 403)
-        end
-
-        project.compile_portfolio = params[:compile_portfolio]
-        project.save
-      end
-
-      Thread.current[:user] = current_user
-      project
-    end # put
-
-    desc 'Enrol a student in a unit, creating them a project'
-    params do
-      requires :unit_id, type: Integer, desc: 'Unit Id'
-      requires :student_num, type: String,   desc: 'Student Number 7 digit code'
-      optional :tutorial_id, type: Integer,  desc: 'Tutorial Id'
-    end
-    post '/projects' do
-      unit = Unit.find(params[:unit_id])
-      student = User.find_by(username: params[:student_num])
-      student = User.find_by(student_id: params[:student_num]) if student.nil?
-      student = User.find_by(email: params[:student_num]) if student.nil?
-
-      if student.nil?
-        error!({ error: "Couldn't find Student with username=#{params[:student_num]}" }, 403)
-      end
-
-      if authorise? current_user, unit, :enrol_student
-        proj = unit.enrol_student(student, params[:tutorial_id])
-        if proj.nil?
-          error!({ error: 'Error adding student to unit' }, 403)
-        else
-          {
-            project_id: proj.id,
-            enrolled: proj.enrolled,
-            first_name: proj.student.first_name,
-            last_name: proj.student.last_name,
-            student_id: proj.student.username,
-            student_email: proj.student.email,
-            target_grade: proj.target_grade,
-            tutorial_id: proj.tutorial_id,
-            compile_portfolio: false,
-            grade: proj.grade,
-            grade_rationale: proj.grade_rationale,
-            max_pct_copy: 0,
-            has_portfolio: false,
-            stats: '0|1|0|0|0|0|0|0|0|0|0'
-          }
-        end
-      else
-        error!({ error: "Couldn't find Unit with id=#{params[:unit_id]}" }, current_user.id)
-      end
-    end
+  def app
+    Rails.application
   end
+
+  def test_projects_get_by_id
+    # Test getting the first unit with id of 1
+    get with_auth_token '/api/projects/1'
+
+    actual_project = last_response_body
+    expected_project = Project.find(1)
+
+    # Check to see if the first project match
+    assert_equal actual_project['enrolled'], expected_project.enrolled
+    assert_equal actual_project['tutorial_id'], expected_project.tutorial_id
+    assert_equal actual_project['unit_id'], expected_project.unit_id
+
+  end
+
+  # POST /api/projects{id}/projects.json
+  def test_project_post
+    number_of_projects = Project.all.length
+
+    data_to_post = {
+      unit_id: 4,
+      student_num: 'student_6@doubtfire.com' #use email insted of number
+      #auth_token: auth_token
+    }
+
+    # perform the post
+    post_json '/api/projects', with_auth_token(data_to_post)
+
+    # Check there is a new project
+    assert_equal Project.all.length, number_of_projects+1
+  end
+
+  def test_project_post_invalid_token()
+    number_of_projects = Project.all.length
+
+    data_to_post = {
+      unit_id: '4',
+      student_num: 'student_6@doubtfire.com',
+      auth_token: 'abvedg'
+    }
+
+    post_json '/api/projects', data_to_post
+    # Successful assertion of same length again means no record was created
+    #assert_equal number_of_projects, Project.all.length
+    assert_equal 419, last_response.status
+  end
+
+  def test_project_post_empty_token()
+     number_of_projects = Project.all.length
+
+    data_to_post = {
+      unit_id: '4',
+      student_num: 'student_6@doubtfire.com',
+      auth_token: ''
+    }
+
+    post_json '/api/projects', data_to_post
+    # Successful assertion of same length again means no record was created
+    assert_equal number_of_projects, Project.all.length
+    assert_equal 419, last_response.status
+  end
+
+  # test project with valid id
+  def test_project_put
+    number_of_projects = Project.all.length
+
+    project_old = Project.find(7)
+
+    data_to_post = {
+      old_grade: 0,
+      grade_rationale: 'Grade Rationale',
+      grade: 80,
+      auth_token: auth_token
+    }
+    # perform the post
+    put_json '/api/projects/7', data_to_post
+
+    project_new = last_response_body
+
+    # Check there is a new project
+    assert_equal project_new['grade'], 80
+    assert_equal Project.all.length, number_of_projects
+  end
+
+  # test project with invalid old_grade
+  def test_project_put_same_grade
+    number_of_projects = Project.all.length
+
+    project_old = Project.find(7)
+
+    data_to_post = {
+      old_grade: 80,
+      grade_rationale: 'Grade Rationale',
+      grade: 80,
+      auth_token: auth_token
+    }
+    # perform the post
+    put_json '/api/projects/7', data_to_post
+    assert_equal 403, last_response.status
+  end
+
 end
