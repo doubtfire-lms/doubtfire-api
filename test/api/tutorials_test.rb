@@ -167,6 +167,6 @@ class TutorialsTest < ActiveSupport::TestCase
     delete_json with_auth_token "/api/tutorials/13"
 
     # Check reposnse with invalid tutorial id
-    assert_equal last_response.status, 200
+    assert_equal last_response.status, 404
   end
 end
