@@ -16,7 +16,9 @@ class TasksTest < ActiveSupport::TestCase
     expected_data = Unit.first.student_tasks.where('task_status_id > ?', 1)
 
     last_response_body.each_with_index do |r, i|
-      #   assert_json_matches_model r, expected_data[i].as_json, ['id', 'tutorial_id', 'task_definition_id', 'status']
+    assert_json_matches_model r, expected_data[i].as_json, ['id', 'task_definition_id']
+
+     # getting nulls:  tutorial_id', 'status']
     end
   end
 
@@ -24,7 +26,7 @@ class TasksTest < ActiveSupport::TestCase
     unit = Unit.first
     td = TaskDefinition.new({
         unit_id: unit.id,
-        name: 'Task past due',  
+        name: 'Task past due',
         description: 'Task past due',
         weighting: 4,
         target_grade: 0,
@@ -52,8 +54,25 @@ class TasksTest < ActiveSupport::TestCase
     task = project.task_for_task_definition(td)
     assert_equal -1, task.grade
     assert_equal TaskStatus.time_exceeded, task.task_status
-    
+
     td.destroy
+  end
+
+  def test_update_using_task_definition
+   task_old = Task.first
+
+    data_to_post = {
+      include_in_portfolio: true,
+      trigger: 'complete',
+      auth_token: auth_token
+    }
+   put_json '/api/projects/4/task_def_id/1', data_to_post
+
+   task_new = Task.first
+
+    # Check there is a new project
+    assert_equal task_new['include_in_portfolio'], true
+    assert_equal task_new['task_status_id'], 2
   end
 
 end

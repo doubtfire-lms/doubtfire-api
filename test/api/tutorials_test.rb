@@ -46,6 +46,58 @@ class TutorialsTest < ActiveSupport::TestCase
     assert_tutorial_model_response last_response_body, tutorial
   end
 
+  def test_tutorials_duplicate_time_location_post
+    number_of_tutorials = Tutorial.all.length
+
+    tutorial = {
+      unit_id: '1',
+      tutor_id: User.first.id,
+      abbreviation: 'LA011',
+      meeting_location: 'EN608',
+      meeting_day: 'Tuesday',
+      meeting_time: '12:00'
+    }
+
+    data_to_post = {
+      tutorial: tutorial,
+      id: '1',
+      auth_token: auth_token
+    }
+
+    # perform the post
+    post_json '/api/tutorials', data_to_post
+
+    post_json '/api/tutorials', data_to_post
+
+    # Check no duplicate
+    assert_equal Tutorial.all.length, number_of_tutorials + 1
+    #assert_tutorial_model_response last_response_body, tutorial
+  end
+  def test_tutorials_invalid_token_post
+    number_of_tutorials = Tutorial.all.length
+
+    tutorial = {
+      unit_id: '1',
+      tutor_id: User.first.id,
+      abbreviation: 'LA011',
+      meeting_location: 'EN608',
+      meeting_day: 'Tuesday',
+      meeting_time: '12:00'
+    }
+
+    data_to_post = {
+      tutorial: tutorial,
+      id: '1',
+      auth_token: ''
+    }
+
+    # perform the post
+    post_json '/api/tutorials', data_to_post
+
+    # Check response
+   assert_equal 419, last_response.status
+  end
+
   # POST /api/units{id}/tutorials.json
   def test_tutorials_unit_post
     number_of_tutorials = Tutorial.all.length
@@ -108,5 +160,13 @@ class TutorialsTest < ActiveSupport::TestCase
     # Check that you can't find the deleted id
     refute Tutorial.exists?(id_of_tutorial_to_delete)
     assert_equal last_response.status, 200
+  end
+  def test_tutorials_delete_invalid_tutorial_id
+    number_of_tutorials = Tutorial.all.length
+    # perform the post
+    delete_json with_auth_token "/api/tutorials/13"
+
+    # Check reposnse with invalid tutorial id
+    assert_equal 404, 200
   end
 end

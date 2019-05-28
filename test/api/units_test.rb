@@ -229,6 +229,17 @@ class UnitsTest < ActiveSupport::TestCase
       assert_equal 200, last_response.status
   end
 
+  #Test PUT for updating unit details with teaching roll over
+  def test_units_put_rollver
+
+      data_to_post = {
+        teaching_period_id: 2,
+        auth_token: auth_token
+  }
+      post_json 'api/units/2/rollover', data_to_post
+      assert_equal 201, last_response.status
+  end
+
   #Test PUT for updating unit details with empty name
   def test_put_update_unit_empty_name
     unit = Unit.first
@@ -253,7 +264,7 @@ def test_put_update_unit_invalid_id
   put_json '/api/units/12', data_to_put
   assert_equal 404, last_response.status
 end
-   
+
   # Test GET for getting a specific unit by invalid id
   def test_fail_units_get_by_id
     get with_auth_token '/api/units/12'
@@ -308,7 +319,7 @@ end
   end
 
   end
-  
+
   # End GET tests
   # --------------------------------------------------------------------------- #
 

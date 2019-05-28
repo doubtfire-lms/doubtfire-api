@@ -46,4 +46,26 @@ class UnitRolesTest < ActiveSupport::TestCase
     assert_equal to_post[:unit_id], last_response_body['unit_id']
     assert_equal to_post[:user_id], last_response_body['user_id']
   end
+
+  def test_employ_student_as_teaching_role
+    num_of_unit_roles = UnitRole.all.count
+    data_to_post = {
+      unit_id: 1,
+      user_id: 25,
+      role: 'student'
+    }
+    post '/api/unit_roles', with_auth_token(data_to_post)
+
+    assert_equal last_response.status, 403
+  end
+
+  def test_delete_role
+    num_of_unit_roles = UnitRole.all.count
+    data_to_post = {
+      auth_token: auth_token
+    }
+    delete '/api/unit_roles/2', data_to_post
+
+    assert_equal last_response.status, 200
+  end
 end
