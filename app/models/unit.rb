@@ -1131,7 +1131,7 @@ class Unit < ActiveRecord::Base
     filename = FileHelper.sanitized_filename("portfolios-#{code}-#{current_user.username}")
     result = "#{FileHelper.tmp_file(filename)}.zip"
 
-    File.unlink(result) if File.exists?(result)
+    return result if File.exists?(result)
     # Create a new zip
     Zip::File.open(result, Zip::File::CREATE) do |zip|
       active_projects.each do |project|
@@ -1160,7 +1160,7 @@ class Unit < ActiveRecord::Base
     # Get a temp file path
     result = FileHelper.tmp_file("task-resources-#{code}.zip")
 
-    File.unlink(result) if File.exists?(result)
+    return result if File.exists?(result)
 
     # Create a new zip
     Zip::File.open(result, Zip::File::CREATE) do |zip|
@@ -1188,7 +1188,7 @@ class Unit < ActiveRecord::Base
 
     tasks_with_files = td.related_tasks_with_files
 
-    File.unlink(result) if File.exists?(result)
+    return result if File.exists?(result)
 
     # Create a new zip
     Zip::File.open(result, Zip::File::CREATE) do |zip|
@@ -1221,7 +1221,7 @@ class Unit < ActiveRecord::Base
 
     tasks_with_files = td.related_tasks_with_files
 
-    File.unlink(result) if File.exists?(result)
+    return result if File.exists?(result)
 
     # Create a new zip
     Zip::File.open(result, Zip::File::CREATE) do |zip|
@@ -1984,9 +1984,9 @@ class Unit < ActiveRecord::Base
     # Reject all tasks not for this unit...
     tasks = tasks.reject { |task| task.project.unit.id != id }
 
-    output_zip = FileHelper.tmp_file("batch_ready_to_mark_#{user.username}.zip")
+    output_zip = FileHelper.tmp_file("batch_ready_to_mark_#{code}_#{user.username}.zip")
 
-    File.unlink(output_zip) if File.exists?(output_zip)
+    return result if File.exists?(output_zip)
 
     # Create a new zip
     Zip::File.open(output_zip, Zip::File::CREATE) do |zip|
