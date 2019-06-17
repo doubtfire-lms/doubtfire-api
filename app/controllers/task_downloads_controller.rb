@@ -43,10 +43,9 @@ class TaskDownloadsController < ApplicationController
     # header['Content-Disposition'] = "attachment; filename=#{download_id}.zip"
     # env['api.format'] = :binary
 
-    logger.debug "Downloading task for #{td.abbreviation} from #{output_zip.path}"
+    logger.debug "Downloading task for #{td.abbreviation} from #{output_zip}"
 
-    send_file output_zip.path, content_type: 'application/octet-stream', disposition: "attachment; filename=#{download_id}.zip"
-    output_zip.close
+    send_file output_zip, content_type: 'application/octet-stream', disposition: "attachment; filename=#{download_id}.zip"
   rescue MyException => e
     render json: e.message, status: e.status
   end

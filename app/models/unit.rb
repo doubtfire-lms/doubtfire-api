@@ -1128,10 +1128,12 @@ class Unit < ActiveRecord::Base
   #
   def get_portfolio_zip(current_user)
     # Get a temp file path
-    filename = FileHelper.sanitized_filename("portfolios-#{code}-#{current_user.username}.zip")
-    result = Tempfile.new(filename)
+    filename = FileHelper.sanitized_filename("portfolios-#{code}-#{current_user.username}")
+    result = "#{FileHelper.tmp_file(filename)}.zip"
+
+    File.unlink(result) if File.exists?(result)
     # Create a new zip
-    Zip::File.open(result.path, Zip::File::CREATE) do |zip|
+    Zip::File.open(result, Zip::File::CREATE) do |zip|
       active_projects.each do |project|
         # Skip if no portfolio at this time...
         next unless project.portfolio_available
@@ -1156,10 +1158,12 @@ class Unit < ActiveRecord::Base
   #
   def get_task_resources_zip
     # Get a temp file path
-    filename = FileHelper.sanitized_filename("task-resources-#{code}.zip")
-    result = Tempfile.new(filename)
+    result = FileHelper.tmp_file("task-resources-#{code}.zip")
+
+    File.unlink(result) if File.exists?(result)
+
     # Create a new zip
-    Zip::File.open(result.path, Zip::File::CREATE) do |zip|
+    Zip::File.open(result, Zip::File::CREATE) do |zip|
       task_definitions.each do |td|
         if td.has_task_sheet?
           dst_path = FileHelper.sanitized_filename(td.abbreviation.to_s) + '.pdf'
@@ -1180,13 +1184,14 @@ class Unit < ActiveRecord::Base
   #
   def get_task_submissions_pdf_zip(current_user, td)
     # Get a temp file path
-    filename = FileHelper.sanitized_filename("submissions-#{code}-#{td.abbreviation}-#{current_user.username}-pdfs")
-    result = Tempfile.new([filename, '.zip'])
+    result = FileHelper.tmp_file("submissions-#{code}-#{td.abbreviation}-#{current_user.username}-pdfs.zip")
 
     tasks_with_files = td.related_tasks_with_files
 
+    File.unlink(result) if File.exists?(result)
+
     # Create a new zip
-    Zip::File.open(result.path, Zip::File::CREATE) do |zip|
+    Zip::File.open(result, Zip::File::CREATE) do |zip|
       Dir.mktmpdir do |dir|
         # Extract all of the files...
         tasks_with_files.each do |task|
@@ -1212,13 +1217,14 @@ class Unit < ActiveRecord::Base
   #
   def get_task_submissions_zip(current_user, td)
     # Get a temp file path
-    filename = FileHelper.sanitized_filename("submissions-#{code}-#{td.abbreviation}-#{current_user.username}-files.zip")
-    result = Tempfile.new(filename)
+    result = FileHelper.tmp_file("submissions-#{code}-#{td.abbreviation}-#{current_user.username}-files.zip")
 
     tasks_with_files = td.related_tasks_with_files
 
+    File.unlink(result) if File.exists?(result)
+
     # Create a new zip
-    Zip::File.open(result.path, Zip::File::CREATE) do |zip|
+    Zip::File.open(result, Zip::File::CREATE) do |zip|
       Dir.mktmpdir do |dir|
         # Extract all of the files...
         tasks_with_files.each do |task|
@@ -1978,12 +1984,12 @@ class Unit < ActiveRecord::Base
     # Reject all tasks not for this unit...
     tasks = tasks.reject { |task| task.project.unit.id != id }
 
-    download_id = "#{Time.new.strftime('%Y-%m-%d')}-#{code}-#{user.username}"
-    filename = FileHelper.sanitized_filename("batch_ready_to_mark_#{user.username}.zip")
-    output_zip = Tempfile.new(filename)
+    output_zip = FileHelper.tmp_file("batch_ready_to_mark_#{user.username}.zip")
+
+    File.unlink(output_zip) if File.exists?(output_zip)
 
     # Create a new zip
-    Zip::File.open(output_zip.path, Zip::File::CREATE) do |zip|
+    Zip::File.open(output_zip, Zip::File::CREATE) do |zip|
       csv_str = mark_csv_headers
 
       # Add individual tasks...
