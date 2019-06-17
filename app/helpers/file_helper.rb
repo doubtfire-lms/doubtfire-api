@@ -80,6 +80,18 @@ module FileHelper
     dst
   end
 
+  def tmp_file_dir()
+    file_server = Doubtfire::Application.config.student_work_dir
+    dst = "#{file_server}/tmp/" # trust the server config and passed in type for paths
+    FileUtils.mkdir_p dst if !Dir.exist? dst
+
+    dst
+  end
+
+  def tmp_file(filename)
+    tmp_file_dir << sanitized_filename(filename)
+  end
+
   def student_group_work_dir(type, group_submission, task = nil, create = false)
     return nil unless group_submission
 
@@ -443,6 +455,8 @@ module FileHelper
   module_function :sanitized_path
   module_function :sanitized_filename
   module_function :task_file_dir_for_unit
+  module_function :tmp_file_dir
+  module_function :tmp_file
   module_function :student_group_work_dir
   module_function :student_work_dir
   module_function :student_portfolio_dir
