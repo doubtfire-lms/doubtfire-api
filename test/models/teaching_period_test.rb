@@ -246,4 +246,40 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     assert tp.rollover(tp2)
     assert_equal 0, tp.errors.count
   end
+
+  test 'can update teaching period dates' do
+    data = {
+        year: 2019,
+        period: 'T1',
+        start_date: Date.parse('2018-01-01'),
+        end_date: Date.parse('2018-02-01'),
+        active_until: Date.parse('2018-03-01')
+    }
+
+    tp = TeachingPeriod.create(data)
+    assert tp.valid?
+
+    data = {
+      name: 'Unit with TP - to update',
+      code: 'TEST113',
+      teaching_period: tp,
+      description: 'Unit in TP to update dates',
+    }
+
+    unit = Unit.create(data)
+
+    assert unit.valid?
+
+    tp.update(start_date: Date.parse('2018-01-02'))
+
+    assert tp.valid?
+    unit.reload
+    assert unit.valid?
+
+    tp.update(end_date: Date.parse('2018-02-02'))
+
+    assert tp.valid?
+    unit.reload
+    assert unit.valid?
+  end
 end
