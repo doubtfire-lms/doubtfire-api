@@ -41,45 +41,24 @@ module Api
       if attached_files.nil? || attached_files.empty?
         error!({ error: 'Audio prompts are empty, unable to add new discussion comment' }, 403)
       end
-      
+
       result = task.add_discussion_comment(current_user, attached_files)
       result.mark_as_read(current_user, project.unit)
       result.serialize(current_user)
     end
 
-
-    get '/projects/:project_id/task_def_id/:task_definition_id/comments' do
-      project = Project.find(params[:project_id])
-      task_definition = project.unit.task_definitions.find(params[:task_definition_id])
-
-      unless authorise? current_user, project, :get
-        error!({ error: 'You cannot read the comments for this task' }, 403)
-      end
-
-      if project.has_task_for_task_definition? task_definition
-        task = project.task_for_task_definition(task_definition)
-
-        comments = task.all_comments.order('created_at ASC')
-        result = comments.map { |c| c.serialize(current_user) }          
-        task.mark_comments_as_read(current_user, comments)
-      else
-        result = []
-      end
-      result
-    end
-
-    desc 'Get a discussion comment to a task'
+    desc 'Get a discussion comment on a task comment'
     get '/projects/:project_id/task_def_id/:task_definition_id/comments/:task_comment_id/discussion_comment' do
       project = Project.find(params[:project_id])
       task_definition = project.unit.task_definitions.find(params[:task_definition_id])
 
-      unless authorise? current_user, project, :start_discussion
-        error!({ error: 'You cannot Start this discussion' }, 403)
-      end
+      # unless authorise? current_user, project, :get_discussion
+      #   error!({ error: 'You cannot get this discussion' }, 403)
+      # end
 
       task = project.task_for_task_definition(task_definition)
       task_comment = task.all_comments.find(params[:id])
-      # get task's discussion data
+      task_comment.discussion_comment
     end
   end
 end
