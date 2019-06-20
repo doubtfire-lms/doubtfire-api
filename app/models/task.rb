@@ -26,7 +26,8 @@ class Task < ActiveRecord::Base
       :view_plagiarism,
       :delete_plagiarism,
       :create_discussion,
-      :delete_discussion
+      :delete_discussion,
+      :get_discussion
     ]
     # What can convenors do with tasks?
     convenor_role_permissions = [
@@ -36,7 +37,8 @@ class Task < ActiveRecord::Base
       :delete_other_comment,
       :delete_own_comment,
       :view_plagiarism,
-      :delete_plagiarism
+      :delete_plagiarism,
+      :get_discussion
     ]
     # What can nil users do with tasks?
     nil_role_permissions = [
@@ -315,7 +317,7 @@ class Task < ActiveRecord::Base
 
       if due_date < Time.zone.now
         assess TaskStatus.time_exceeded, by_user
-        grade_task -1 if task_definition.is_graded? && self.grade.nil?
+        grade_task -2 if task_definition.is_graded? && self.grade.nil?
       end
     when TaskStatus.not_started, TaskStatus.need_help, TaskStatus.working_on_it
       engage status
