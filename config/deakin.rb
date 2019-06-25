@@ -146,8 +146,8 @@ class DeakinInstitutionSettings
 
           enrolmentData = jsonData["unitEnrolments"].first
           # Make sure units match
-          unless enrolmentData['UnitCode'] == unit.code
-            logger.error "Failed to sync #{unit.code} - response had unit code #{enrolmentData['UnitCode']}"  
+          unless enrolmentData['unitCode'] == unit.code
+            logger.error "Failed to sync #{unit.code} - response had unit code #{enrolmentData['unitCode']}"  
             return
           end
 
@@ -168,9 +168,9 @@ class DeakinInstitutionSettings
             logger.info " - Syncing #{location['name']}"
 
             location['enrolments'].each do |enrolment|
-              if enrolment['Email'].nil?
+              if enrolment['email'].nil?
                 # Only error if they were enrolled
-                if ['ENROLLED', 'COMPLETED'].include?(enrolment['Status'].upcase)
+                if ['ENROLLED', 'COMPLETED'].include?(enrolment['status'].upcase)
                   result[:errors] << { row: enrolment, message: 'Missing email and username!' }
                 else
                   result[:ignored] << { row: enrolment, message: 'Not enrolled, but no email/username' }
@@ -180,15 +180,15 @@ class DeakinInstitutionSettings
               end
 
               row_data = {
-                unit_code:      enrolmentData['UnitCode'],
-                username:       enrolment['Email'][/[^@]+/],
-                student_id:     enrolment['StudentId'],
-                first_name:     enrolment['GivenNames'],
-                last_name:      enrolment['Surname'],
-                nickname:       enrolment['PreferredName'],
-                email:          enrolment['Email'],
-                enrolled:       ['ENROLLED', 'COMPLETED'].include?(enrolment['Status'].upcase),
-                tutorial_code:  location['name'].upcase == 'CLOUD' ? "Cloud" : timetable_data[enrolment['StudentId']],
+                unit_code:      enrolmentData['unitCode'],
+                username:       enrolment['email'][/[^@]+/],
+                student_id:     enrolment['studentId'],
+                first_name:     enrolment['givenNames'],
+                last_name:      enrolment['surname'],
+                nickname:       enrolment['preferredName'],
+                email:          enrolment['email'],
+                enrolled:       ['ENROLLED', 'COMPLETED'].include?(enrolment['status'].upcase),
+                tutorial_code:  location['name'].upcase == 'CLOUD (ONLINE)' ? "Cloud" : timetable_data[enrolment['StudentId']],
                 row:            enrolment
               }
               
