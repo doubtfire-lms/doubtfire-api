@@ -57,8 +57,10 @@ module Api
       # end
 
       task = project.task_for_task_definition(task_definition)
-      task_comment = task.all_comments.find(params[:id])
-      task_comment.discussion_comment
+      task_comment = task.all_comments.find(params[:task_comment_id])
+      discussionComment = task_comment.discussion_comment
+      discussionComment.startDiscussion()
+      discussionComment
     end
   end
 end

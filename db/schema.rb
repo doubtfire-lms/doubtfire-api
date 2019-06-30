@@ -47,11 +47,8 @@ ActiveRecord::Schema.define(version: 20190501110644) do
 
   create_table "discussion_comments", force: :cascade do |t|
     t.integer  "task_comment_id"
-    t.datetime "time_created"
-    t.datetime "due_date"
+    t.datetime "time_started"
     t.datetime "time_completed"
-    t.boolean  "started"
-    t.boolean  "completed"
     t.datetime "created_at",      null: false
     t.datetime "updated_at",      null: false
   end
