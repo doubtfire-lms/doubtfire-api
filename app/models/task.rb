@@ -534,10 +534,9 @@ class Task < ActiveRecord::Base
   def add_discussion_comment(user, prompts)
     # don't allow if group task.
     discussion = DiscussionComment.create
-    discussion.time_created = DateTime.now
-    discussion.due_date = discussion.time_created + 10.days
-    discussion.started = false
-    discussion.completed = false
+    # discussion.due_date = discussion.created_at + 10.days
+    # discussion.started = false
+    # discussion.completed = false
 
     comment = TaskComment.create
     comment.task = self

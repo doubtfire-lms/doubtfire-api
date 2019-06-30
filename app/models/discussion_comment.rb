@@ -9,8 +9,25 @@ class DiscussionComment < ActiveRecord::Base
     FileHelper.comment_prompt_path(self.task_comment, ".wav", _count)
   end
 
+  def startDiscussion()
+    self.time_started = DateTime.now
+    self.save!
+  end
+
+  def dueDate
+    created_at + 10.days
+  end
+
+  def started
+    not time_started.nil?
+  end
+
+  def completed
+    not time_completed.nil?
+  end
+
   def add_prompt(file_upload, _count)
-    temp = Tempfile.new(['comment', '.wav'])
+    temp = Tempfile.new(['discussion_comment', '.wav'])
     return false unless process_audio(file_upload.tempfile.path, temp.path)
     save
     logger.info("Saving audio prompt to #{attachment_path(_count)}")
