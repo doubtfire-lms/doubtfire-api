@@ -5,6 +5,12 @@ class DiscussionComment < ActiveRecord::Base
   belongs_to :task_comment
   validates :task_comment, presence: true
 
+  def status
+    return "not started" if started and completed
+    return "opened" if started and not completed
+    return "complete"
+  end
+
   def attachment_path(_count)
     FileHelper.comment_prompt_path(self.task_comment, ".wav", _count)
   end
