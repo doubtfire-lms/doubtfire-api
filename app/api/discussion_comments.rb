@@ -60,7 +60,7 @@ module Api
       task_comment = task.all_comments.find(params[:task_comment_id])
       discussionComment = task_comment.discussion_comment
       discussionComment.startDiscussion()
-      discussionComment
+      DiscussionCommentSerializer.new(discussionComment)
     end
   end
 end
