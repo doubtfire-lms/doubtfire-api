@@ -167,6 +167,10 @@ module FileHelper
     "#{File.join( student_work_dir(:discussion, task_comment.task), "#{task_comment.id.to_s}_#{count.to_s}#{attachment_extension}")}"
   end
 
+  def comment_reply_prompt_path(task_comment, discussion_comment_id, attachment_extension)
+    "#{File.join( student_work_dir(:discussion, task_comment.task), "#{task_comment.id.to_s}_#{discussion_comment_id.to_s}_reply#{attachment_extension}")}"
+  end
+
   def compress_image(path)
     return true if File.size?(path) < 500_000
 
