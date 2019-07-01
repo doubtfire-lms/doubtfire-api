@@ -65,6 +65,11 @@ module Api
       DiscussionCommentSerializer.new(discussionComment)
 
       logger.info("#{current_user.username} - get discussion comment for task #{task.id} (#{task_definition.abbreviation})")
+
+      zip_file, zip_file_path = discussionComment.get_prompt_files()
+      header['Content-Disposition'] = "attachment; filename=#{zip_file_path}"
+
+      result = zip_file
     end
 
     desc 'Reply to a discussion comment of a task'

@@ -1,4 +1,4 @@
-# frozen_string_literal: true
+require 'zip'
 class DiscussionComment < ActiveRecord::Base
   include FileHelper
 
@@ -39,6 +39,31 @@ class DiscussionComment < ActiveRecord::Base
 
   def completed
     not time_completed.nil?
+  end
+
+  def get_prompt_files
+    i_path = FileHelper.student_work_dir(:discussion, self.task_comment.task, false)
+    i_path << self.task_comment.id
+
+    files = Array.new
+
+    i = 0
+    while true
+      break unless File.exists? "#{i_path}_#{i}"
+      files.push(File.read("#{i_path}_#{i}"))
+    end
+
+    zip_file_path = FileHelper.zip_file_path_for_discussion_prompts
+
+    zip_file = Zip::File.open(zip_file_path, Zip::File::CREATE) do |zip|
+      zip.mkdir task.id.to_s
+      input_files.each do |in_file|
+        zip.add "#{task.id}/#{in_file}", "#{task_dir}#{in_file}"
+      end
+    end
+
+    return zip_file, zip_file_path
+
   end
 
   def add_prompt(file_upload, _count)
