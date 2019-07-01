@@ -188,10 +188,20 @@ class DeakinInstitutionSettings
                 nickname:       enrolment['preferredName'],
                 email:          enrolment['email'],
                 enrolled:       ['ENROLLED', 'COMPLETED'].include?(enrolment['status'].upcase),
-                tutorial_code:  location['name'].upcase == 'CLOUD (ONLINE)' ? "Cloud" : timetable_data[enrolment['studentId']],
+                tutorial_code:  location['name'].upcase == 'CLOUD (ONLINE)' ? 'Cloud' : timetable_data[enrolment['studentId']],
                 row:            enrolment
               }
               
+              if row_data[:tutorial_code] == 'Cloud' && unit.week_number(Time.zone.now) < 4
+                unit.add_tutorial(
+                  'Asynchronous',
+                  '9:00',
+                  'Online',
+                  unit.main_convenor,
+                  'Cloud'
+                )
+              end
+
               student_list << row_data
             end
           end
