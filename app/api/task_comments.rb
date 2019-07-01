@@ -128,7 +128,7 @@ module Api
         task = project.task_for_task_definition(task_definition)
 
         comments = task.all_comments.order('created_at ASC')
-        result = comments.map { |c| c.serialize(current_user) }          
+        result = comments.map { |c| c.serialize(current_user) }
         task.mark_comments_as_read(current_user, comments)
       else
         result = []

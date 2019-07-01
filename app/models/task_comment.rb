@@ -18,7 +18,7 @@ class TaskComment < ActiveRecord::Base
   validates :user, presence: true
   validates :recipient, presence: true
   validates :comment, length: { minimum: 0, maximum: 4095, allow_blank: true }
-  
+
   # Delete action - before dependent association
   before_destroy :delete_associated_files
 
@@ -38,7 +38,7 @@ class TaskComment < ActiveRecord::Base
   end
 
   def serialize(user)
-    {
+    comment = {
       id: self.id,
       comment: self.comment,
       has_attachment: ["audio", "image", "pdf"].include?(self.content_type),
@@ -57,6 +57,11 @@ class TaskComment < ActiveRecord::Base
       created_at: self.created_at,
       recipient_read_time: self.time_read_by(self.recipient),
     }
+    if self.content_type == "discussion" and not self.discussion_comment.nil?
+      comment[:discussion_comment] = DiscussionCommentSerializer.new(self.discussion_comment)
+    end
+
+    comment
   end
 
   def comment
