@@ -55,7 +55,7 @@ class DeakinInstitutionSettings
     end
     
     def day_abbr_to_name(day)
-        case day
+        case day.downcase
             when 'mon'
                 'Monday'
             when 'tue'
