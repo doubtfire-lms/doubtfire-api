@@ -188,7 +188,7 @@ class DeakinInstitutionSettings
                 nickname:       enrolment['preferredName'],
                 email:          enrolment['email'],
                 enrolled:       ['ENROLLED', 'COMPLETED'].include?(enrolment['status'].upcase),
-                tutorial_code:  location['name'].upcase == 'CLOUD (ONLINE)' ? "Cloud" : timetable_data[enrolment['StudentId']],
+                tutorial_code:  location['name'].upcase == 'CLOUD (ONLINE)' ? "Cloud" : timetable_data[enrolment['studentId']],
                 row:            enrolment
               }
               
