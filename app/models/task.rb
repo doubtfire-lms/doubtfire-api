@@ -13,7 +13,9 @@ class Task < ActiveRecord::Base
       :get_submission,
       :make_submission,
       :delete_own_comment,
-      :start_discussion
+      :start_discussion,
+      :get_discussion,
+      :make_discussion_reply
     ]
     # What can tutors do with tasks?
     tutor_role_permissions = [
