@@ -192,7 +192,7 @@ class DeakinInstitutionSettings
                 row:            enrolment
               }
               
-              if row_data[:tutorial_code] == 'Cloud' && unit.week_number(Time.zone.now) < 4
+              if row_data[:tutorial_code] == 'Cloud' && unit.week_number(Time.zone.now) < 4 && unit.tutorials.where(abbreviation: 'Cloud').count == 0
                 unit.add_tutorial(
                   'Asynchronous',
                   '9:00',
