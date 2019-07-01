@@ -43,22 +43,29 @@ class DiscussionComment < ActiveRecord::Base
 
   def get_prompt_files
     i_path = FileHelper.student_work_dir(:discussion, self.task_comment.task, false)
-    i_path << self.task_comment.id
+    i_path = i_path + self.task_comment.id.to_s
 
     files = Array.new
 
     i = 0
-    while true
-      break unless File.exists? "#{i_path}_#{i}"
-      files.push(File.read("#{i_path}_#{i}"))
+    flag = true
+    while flag
+      temp_path = "#{i_path}_#{i}.wav"
+      
+      if not File.exists? temp_path
+        flag = false
+        break
+      end
+
+      files.push temp_path
+      i = i + 1
     end
 
-    zip_file_path = FileHelper.zip_file_path_for_discussion_prompts
+    zip_file_path = FileHelper.zip_file_path_for_discussion_prompts(self.task_comment.task)
 
     zip_file = Zip::File.open(zip_file_path, Zip::File::CREATE) do |zip|
-      zip.mkdir task.id.to_s
-      input_files.each do |in_file|
-        zip.add "#{task.id}/#{in_file}", "#{task_dir}#{in_file}"
+      files.each_with_index do |in_file, index|
+        zip.add "#{index}.wav", "#{in_file}"
       end
     end
 
