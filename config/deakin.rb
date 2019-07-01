@@ -95,15 +95,15 @@ class DeakinInstitutionSettings
     def fetch_callista_row(row, unit)
         if unit.tutorials.where(abbreviation: 'Cloud').count == 0
             unit.add_tutorial(
-                'Monday',
-                '8:00am',
+                'Asynchronous',
+                '9:00',
                 'Cloud',
                 unit.main_convenor,
                 'Cloud'
             )
         end
 
-        {
+        result = {
             unit_code:      row["unit code"],
             username:       row["email"],
             student_id:     row["person id"],
@@ -114,6 +114,38 @@ class DeakinInstitutionSettings
             enrolled:       row["student attempt status"] == 'ENROLLED',
             tutorial_code:  row["unit mode"] == 'OFF' ? "Cloud" : nil
         }
+
+        sync_student_user_from_callista(result)
+        result
+    end
+
+    #
+    # Ensure that changes in email are propagated to users with matching ids
+    #
+    def sync_student_user_from_callista(row_data)
+      username_user = User.find_by(username: row_data[:username])
+      student_id_user = User.find_by(student_id: row_data[:student_id])
+
+      return if username_user.present? && student_id_user.present? && username_user.id == student_id_user.id
+      return if username_user.nil? && student_id_user.nil?
+
+      if username_user.nil? && student_id_user.present?
+        student_id_user.email = row_data[:email]        # update to new emails and...
+        student_id_user.username = row_data[:username]  # switch username - its the same person as the id is the same
+        student_id_user.login_id = row_data[:username]  # reset to make sure not caching old data
+
+        if student_id_user.valid?
+          student_id_user.save
+        else
+          logger.error("Unable to fix user #{row_data} - record invalid!")
+        end
+      elsif username_user.present? && student_id_user.present?
+        logger.error("Unable to fix user #{row_data} - both username and student id users present. Need manual fix.")
+      elsif username_user.present?
+        logger.error("Unable to fix user #{row_data} - both username users present, but different student id. Need manual fix.")
+      else
+        logger.error("Unable to fix user #{row_data} - Need manual fix.")
+      end
     end
 
     def sync_enrolments(unit)
@@ -201,6 +233,8 @@ class DeakinInstitutionSettings
                   'Cloud'
                 )
               end
+
+              sync_student_user_from_callista(row_data)
 
               student_list << row_data
             end
