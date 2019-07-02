@@ -540,6 +540,7 @@ class Task < ActiveRecord::Base
     discussion.user = user
     discussion.content_type = :discussion
     discussion.recipient = project.student
+    discussion.number_of_prompts = prompts.count
     discussion.save!
 
     prompts.each_with_index do |prompt, index |

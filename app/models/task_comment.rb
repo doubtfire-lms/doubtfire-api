@@ -113,7 +113,7 @@ class TaskComment < ActiveRecord::Base
     read_reciept&.created_at
   end
 
-  def get_discussion_comment
-    DiscussionComment.where('discussion_comments.group_submission_id = :id', id: group_submission.id)
-  end
+  # def get_discussion_comment
+  #   DiscussionComment.where('discussion_comments.group_submission_id = :id', id: group_submission.id)
+  # end
 end
