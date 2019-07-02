@@ -536,19 +536,10 @@ class Task < ActiveRecord::Base
   def add_discussion_comment(user, prompts)
     # don't allow if group task.
     discussion = DiscussionComment.create
-    # discussion.due_date = discussion.created_at + 10.days
-    # discussion.started = false
-    # discussion.completed = false
-
-    comment = TaskComment.create
-    comment.task = self
-    comment.user = user
-    comment.content_type = :discussion
-    comment.discussion_comment = discussion
-    comment.recipient = project.student
-    comment.save!
-
-    discussion.task_comment = comment
+    discussion.task = self
+    discussion.user = user
+    discussion.content_type = :discussion
+    discussion.recipient = project.student
     discussion.save!
 
     prompts.each_with_index do |prompt, index |
@@ -556,8 +547,8 @@ class Task < ActiveRecord::Base
       raise "Error attaching uploaded file." unless discussion.add_prompt(prompt, index)
     end
 
-    logger.info(comment)
-    return comment
+    logger.info(discussion)
+    return discussion
   end
 
   def add_comment_with_attachment(user, tempfile)

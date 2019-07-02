@@ -1,5 +1,5 @@
-class DiscussionCommentSerializer < ActiveModel::Serializer
-  attributes :id, :task_comment_id, :status, :time_completed, :time_started, :updated_at
+class DiscussionCommentSerializer < TaskCommentSerializer
+  attributes :id, :status, :time_discussion_completed, :time_discussion_started
   def status
     object.status
   end

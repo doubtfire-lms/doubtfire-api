@@ -1,9 +1,6 @@
 require 'zip'
-class DiscussionComment < ActiveRecord::Base
+class DiscussionComment < TaskComment
   include FileHelper
-
-  belongs_to :task_comment
-  validates :task_comment, presence: true
 
   def status
     return "not started" if not started and not completed
@@ -11,22 +8,12 @@ class DiscussionComment < ActiveRecord::Base
     return "complete"
   end
 
-  def attachment_path(_count)
-    FileHelper.comment_prompt_path(self.task_comment, ".wav", _count)
+  def attachment_path(_count = number_of_prompts)
+    FileHelper.comment_prompt_path(self, ".wav", _count)
   end
 
   def reply_attachment_path
-    FileHelper.comment_reply_prompt_path(self.task_comment, self.id, ".wav")
-  end
-
-  def startDiscussion()
-    self.time_started = DateTime.now
-    self.save!
-  end
-
-  def finishDiscussion()
-    self.time_completed = DateTime.now
-    self.save!
+    FileHelper.comment_reply_prompt_path(self, self.id, ".wav")
   end
 
   def dueDate
@@ -34,11 +21,11 @@ class DiscussionComment < ActiveRecord::Base
   end
 
   def started
-    not time_started.nil?
+    not self.time_discussion_started.nil?
   end
 
   def completed
-    not time_completed.nil?
+    not self.time_discussion_completed.nil?
   end
 
   def get_prompt_files
@@ -51,7 +38,7 @@ class DiscussionComment < ActiveRecord::Base
     flag = true
     while flag
       temp_path = "#{i_path}_#{i}.wav"
-      
+
       if not File.exists? temp_path
         flag = false
         break
