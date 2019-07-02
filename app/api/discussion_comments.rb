@@ -44,7 +44,7 @@ module Api
 
       result = task.add_discussion_comment(current_user, attached_files)
       result.mark_as_read(current_user, project.unit)
-      result.serialize(current_user)
+      DiscussionCommentSerializer.new(result)
     end
 
     desc 'Get a discussion comment on a task comment and start the discussion'
@@ -53,10 +53,10 @@ module Api
       task_definition = project.unit.task_definitions.find(params[:task_definition_id])
 
       task = project.task_for_task_definition(task_definition)
-      
-      # unless authorise? current_user, project, :get_discussion
-      #   error!({ error: 'You cannot get this discussion' }, 403)
-      # end
+
+      unless authorise? current_user, project, :get_discussion
+        error!({ error: 'You cannot get this discussion' }, 403)
+      end
 
       task = project.task_for_task_definition(task_definition)
       task_comment = task.all_comments.find(params[:task_comment_id])
