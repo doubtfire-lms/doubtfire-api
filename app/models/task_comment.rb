@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'tempfile'
 
 class TaskComment < ActiveRecord::Base
@@ -10,7 +11,7 @@ class TaskComment < ActiveRecord::Base
 
   belongs_to :recipient, class_name: 'User'
 
-  has_one :discussion_comment, class_name: 'DiscussionComment', required: false;
+  has_one :discussion_comment, class_name: 'DiscussionComment', required: false
 
   has_many :comments_read_receipts, class_name: 'CommentsReadReceipts', dependent: :destroy, inverse_of: :task_comment
 
@@ -27,7 +28,7 @@ class TaskComment < ActiveRecord::Base
   end
 
   def delete_associated_files
-    FileUtils.rm attachment_path if File.exists? attachment_path
+    FileUtils.rm attachment_path if File.exist? attachment_path
   end
 
   def create_comment_read_receipt_entry(user)
@@ -37,43 +38,16 @@ class TaskComment < ActiveRecord::Base
     comment_read_receipt.save!
   end
 
-  def serialize(user)
-    comment = {
-      id: self.id,
-      comment: self.comment,
-      has_attachment: ["audio", "image", "pdf"].include?(self.content_type),
-      type: self.content_type || "text",
-      is_new: self.new_for?(user),
-      author: {
-        id: self.user.id,
-        name: self.user.name,
-        email: self.user.email
-      },
-      recipient: {
-        id: self.recipient.id,
-        name: self.recipient.name,
-        email: self.user.email
-      },
-      created_at: self.created_at,
-      recipient_read_time: self.time_read_by(self.recipient),
-    }
-    if self.content_type == "discussion" and not self.discussion_comment.nil?
-      comment[:discussion_comment] = DiscussionCommentSerializer.new(self.discussion_comment)
-    end
-
-    comment
-  end
-
   def comment
-    return "audio comment" if content_type == "audio"
-    return "image comment" if content_type == "image"
-    return "pdf document" if content_type == "pdf"
-    return "discussion comment" if content_type == "discussion"
+    return 'audio comment' if content_type == 'audio'
+    return 'image comment' if content_type == 'image'
+    return 'pdf document' if content_type == 'pdf'
+    return 'discussion comment' if content_type == 'discussion'
     super
   end
 
   def attachment_path
-    FileHelper.comment_attachment_path(self, self.attachment_extension)
+    FileHelper.comment_attachment_path(self, attachment_extension)
   end
 
   def attachment_file_name
@@ -81,23 +55,23 @@ class TaskComment < ActiveRecord::Base
   end
 
   def add_attachment(file_upload)
-    if content_type == "audio"
+    if content_type == 'audio'
       # On upload all audio comments are converted to wav
-      temp = Tempfile.new(['comment','.wav'])
+      temp = Tempfile.new(['comment', '.wav'])
       return false unless process_audio(file_upload.tempfile.path, temp.path)
-      self.attachment_extension = ".wav"
+      self.attachment_extension = '.wav'
       save
       FileUtils.mv temp.path, attachment_path
-    elsif content_type == "image"
-      if mime_type(file_upload.tempfile.path).starts_with?('image/gif')
-        self.attachment_extension = ".gif"
-      else
-        self.attachment_extension = ".jpg"
-      end
+    elsif content_type == 'image'
+      self.attachment_extension = if mime_type(file_upload.tempfile.path).starts_with?('image/gif')
+                                    '.gif'
+                                  else
+                                    '.jpg'
+                                  end
       save
-      FileHelper.compress_image_to_dest(file_upload.tempfile.path, self.attachment_path)
+      FileHelper.compress_image_to_dest(file_upload.tempfile.path, attachment_path)
     else
-      self.attachment_extension = ".pdf"
+      self.attachment_extension = '.pdf'
       save
       FileHelper.compress_pdf(file_upload.tempfile.path)
       FileUtils.mv file_upload.tempfile.path, attachment_path
@@ -109,8 +83,8 @@ class TaskComment < ActiveRecord::Base
   end
 
   def attachment_mime_type
-    if attachment_extension == ".wav"
-      "audio/wav; charset:binary"
+    if attachment_extension == '.wav'
+      'audio/wav; charset:binary'
     else
       mime_type(attachment_path)
     end
@@ -136,10 +110,10 @@ class TaskComment < ActiveRecord::Base
 
   def time_read_by(user)
     read_reciept = CommentsReadReceipts.find_by(user: user, task_comment: self)
-    read_reciept.created_at unless read_reciept.nil?
+    read_reciept&.created_at
   end
 
-  def get_discussion_comment()
+  def get_discussion_comment
     DiscussionComment.where('discussion_comments.group_submission_id = :id', id: group_submission.id)
   end
 end
