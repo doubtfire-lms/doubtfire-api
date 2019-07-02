@@ -12,6 +12,10 @@ class DiscussionComment < TaskComment
     FileHelper.comment_prompt_path(self, ".wav", _count)
   end
 
+  def attachment_file_name(number)
+    "discussion-#{id}-#{number}-#{attachment_extension}"
+  end
+
   def reply_attachment_path
     FileHelper.comment_reply_prompt_path(self, self.id, ".wav")
   end
@@ -28,36 +32,9 @@ class DiscussionComment < TaskComment
     not self.time_discussion_completed.nil?
   end
 
-  def get_prompt_files
-    i_path = FileHelper.student_work_dir(:discussion, self.task_comment.task, false)
-    i_path = i_path + self.task_comment.id.to_s
-
-    files = Array.new
-
-    i = 0
-    flag = true
-    while flag
-      temp_path = "#{i_path}_#{i}.wav"
-
-      if not File.exists? temp_path
-        flag = false
-        break
-      end
-
-      files.push temp_path
-      i = i + 1
-    end
-
-    zip_file_path = FileHelper.zip_file_path_for_discussion_prompts(self.task_comment.task)
-
-    zip_file = Zip::File.open(zip_file_path, Zip::File::CREATE) do |zip|
-      files.each_with_index do |in_file, index|
-        zip.add "#{index}.wav", "#{in_file}"
-      end
-    end
-
-    return zip_file, zip_file_path
-
+  def mark_discussion_started
+    self.time_discussion_started = Time.zone.now
+    self.save!
   end
 
   def add_prompt(file_upload, _count)
