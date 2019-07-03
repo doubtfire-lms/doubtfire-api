@@ -1,17 +1,5 @@
 require 'date'
 
-#
-# Extend the DateTime class to add the ability to get the last moment for a
-# given day anywhere on earth
-#
-class DateTime
-  # Use the current DateTime to calculate a new DateTime for the last moment of the same
-  # day anywhere on earth
-  def same_day_anywhere_on_earth
-    DateTime.new(self.year, self.month, self.day, 23, 59, 59, '-12:00')
-  end
-end
-
 class Task < ActiveRecord::Base
   include ApplicationHelper
   include LogHelper
@@ -324,7 +312,7 @@ class Task < ActiveRecord::Base
     when TaskStatus.ready_to_mark
       submit
 
-      if due_date.same_day_anywhere_on_earth < Time.zone.now
+      if to_same_day_anywhere_on_earth(due_date) < Time.zone.now
         assess TaskStatus.time_exceeded, by_user
         grade_task -1 if task_definition.is_graded? && self.grade.nil?
       end
@@ -1091,5 +1079,11 @@ class Task < ActiveRecord::Base
           FileUtils.rm_rf new_path
         end
       end
+    end
+
+    # Use the current DateTime to calculate a new DateTime for the last moment of the same
+    # day anywhere on earth
+    def to_same_day_anywhere_on_earth(date)
+      DateTime.new(date.year, date.month, date.day, 23, 59, 59, '-12:00')
     end
 end
