@@ -36,7 +36,7 @@ module Api
     mount Api::Students
     mount Api::Tasks
     mount Api::TaskComments
-    mount Api::DiscussionComments
+    mount Api::DiscussionCommentApi
     mount Api::TaskDefinitions
     mount Api::Tutorials
     mount Api::UnitRoles
@@ -62,7 +62,7 @@ module Api
     AuthenticationHelpers.add_auth_to Api::Students
     AuthenticationHelpers.add_auth_to Api::Tasks
     AuthenticationHelpers.add_auth_to Api::TaskComments
-    AuthenticationHelpers.add_auth_to Api::DiscussionComments
+    AuthenticationHelpers.add_auth_to Api::DiscussionCommentApi
     AuthenticationHelpers.add_auth_to Api::TaskDefinitions
     AuthenticationHelpers.add_auth_to Api::Tutorials
     AuthenticationHelpers.add_auth_to Api::Users
