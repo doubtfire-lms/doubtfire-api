@@ -128,7 +128,7 @@ module Api
         task = project.task_for_task_definition(task_definition)
 
         comments = task.all_comments.order('created_at ASC')
-        result = comments.map { |c| ActiveModel::Serializer.serializer_for(c).new(c) }
+        result = comments.map { |c| c.serialize(current_user) }
 
         # mark every comment type except for DiscussionComments so we don't mark it as read.
         comments_to_mark_as_read = comments.where("TYPE is null OR TYPE != 'DiscussionComment'")

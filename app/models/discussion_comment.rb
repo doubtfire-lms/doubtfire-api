@@ -17,7 +17,7 @@ class DiscussionComment < TaskComment
   end
 
   def reply_attachment_path
-    FileHelper.comment_reply_prompt_path(self.id, ".wav")
+    FileHelper.comment_reply_prompt_path(self, ".wav")
   end
 
   def serialize(user)
