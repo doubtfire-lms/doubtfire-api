@@ -180,6 +180,7 @@ module Api
     post '/projects/:project_id/task_def_id/:task_definition_id/comments/:task_comment_id/discussion_comment/reply' do
       project = Project.find(params[:project_id])
       task_definition = project.unit.task_definitions.find(params[:task_definition_id])
+      task = project.task_for_task_definition(task_definition)
 
       unless authorise? current_user, task, :make_discussion_reply
         error!({ error: 'Not authorised to reply to this discussion comment' }, 403)
@@ -191,8 +192,6 @@ module Api
         error!(error: 'Attachment is empty.') unless File.size?(attached_file.tempfile.path).present?
         error!(error: 'Attachment exceeds the maximum attachment size of 30MB.') unless File.size?(attached_file.tempfile.path) < 30_000_000
       end
-
-      task = project.task_for_task_definition(task_definition)
 
       logger.info("#{current_user.username} - added a reply to the discussion comment #{params[:discussion_comment_id]} for task #{task.id} (#{task_definition.abbreviation})")
 
