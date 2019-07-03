@@ -31,6 +31,28 @@ class TaskComment < ActiveRecord::Base
     FileUtils.rm attachment_path if File.exist? attachment_path
   end
 
+  def serialize(user)
+    {
+      id: self.id,
+      comment: self.comment,
+      has_attachment: ["audio", "image", "pdf"].include?(self.content_type),
+      type: self.content_type || "text",
+      is_new: self.new_for?(user),
+      author: {
+        id: self.user.id,
+        name: self.user.name,
+        email: self.user.email
+      },
+      recipient: {
+        id: self.recipient.id,
+        name: self.recipient.name,
+        email: self.user.email
+      },
+      created_at: self.created_at,
+      recipient_read_time: self.time_read_by(self.recipient),
+    }
+  end
+
   def create_comment_read_receipt_entry(user)
     comment_read_receipt = CommentsReadReceipts.find_or_create_by(user: user, task_comment: self)
     comment_read_receipt.user = user
@@ -113,7 +135,4 @@ class TaskComment < ActiveRecord::Base
     read_reciept&.created_at
   end
 
-  # def get_discussion_comment
-  #   DiscussionComment.where('discussion_comments.group_submission_id = :id', id: group_submission.id)
-  # end
 end

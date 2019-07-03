@@ -50,7 +50,7 @@ module Api
         error!({ error: 'No comment added. Comment duplicates last comment, so ignored.' }, 403)
       else
         result.mark_as_read(current_user, project.unit)
-        TaskCommentSerializer.new(result)
+        result.serialize(current_user)
       end
     end
 

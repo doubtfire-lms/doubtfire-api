@@ -17,7 +17,16 @@ class DiscussionComment < TaskComment
   end
 
   def reply_attachment_path
-    FileHelper.comment_reply_prompt_path(self, self.id, ".wav")
+    FileHelper.comment_reply_prompt_path(self.id, ".wav")
+  end
+
+  def serialize(user)
+    json = super(user)
+    json[:status] = status
+    json[:time_discussion_completed] = time_discussion_completed
+    json[:time_discussion_started] = time_discussion_started
+    json[:number_of_prompts] = number_of_prompts
+    json
   end
 
   def dueDate
@@ -45,11 +54,12 @@ class DiscussionComment < TaskComment
     FileUtils.mv temp.path, attachment_path(_count)
   end
 
-  def add_reply(current_user, reply_attachment)
+  def add_reply(reply_attachment)
     temp = Tempfile.new(['discussion_comment_reply', '.wav'])
-    return false unless process_audio(file_upload.tempfile.path, temp.path)
+    return false unless process_audio(reply_attachment.tempfile.path, temp.path)
+    self.time_discussion_completed = Time.zone.now
     save
     logger.info("Saving discussion comment reply to #{reply_attachment_path()}")
-    FileUtils.mv temp.path, reply_attachment_path()
+    FileUtils.mv temp.path, reply_attachment_path
   end
 end
