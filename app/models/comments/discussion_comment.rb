@@ -1,4 +1,3 @@
-require 'zip'
 class DiscussionComment < TaskComment
   include FileHelper
 

@@ -17,7 +17,8 @@ class Task < ActiveRecord::Base
       :delete_own_comment,
       :start_discussion,
       :get_discussion,
-      :make_discussion_reply
+      :make_discussion_reply,
+      :request_extension
     ]
     # What can tutors do with tasks?
     tutor_role_permissions = [
@@ -31,7 +32,8 @@ class Task < ActiveRecord::Base
       :delete_plagiarism,
       :create_discussion,
       :delete_discussion,
-      :get_discussion
+      :get_discussion,
+      :assess_extension
     ]
     # What can convenors do with tasks?
     convenor_role_permissions = [
@@ -42,7 +44,8 @@ class Task < ActiveRecord::Base
       :delete_own_comment,
       :view_plagiarism,
       :delete_plagiarism,
-      :get_discussion
+      :get_discussion,
+      :assess_extension
     ]
     # What can nil users do with tasks?
     nil_role_permissions = [
@@ -185,8 +188,20 @@ class Task < ActiveRecord::Base
     raw_extension_date < task_definition.due_date
   end
 
-  # Applying for an extension will 
-  def apply_for_extension
+  # Applying for an extension will create an extension comment
+  def apply_for_extension(user, text)
+    extension = ExtensionComment.create
+    extension.task = self
+    extension.user = user
+    extension.content_type = :extension
+    extension.comment = text
+    extension.recipient = project.main_tutor
+    extension.save!
+    extension
+  end
+
+  # Add an extension to the task
+  def grant_extension()
     self.extensions = self.extensions + 1
   end
 

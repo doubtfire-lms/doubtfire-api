@@ -212,6 +212,9 @@ module Api
     end
 
     desc 'Request an extension - adds a week to the due date if extensions are available for the task'
+    params do
+      requires :comment, type: String, desc: 'Provide the reason for the extension'
+    end
     post '/projects/:id/task_def_id/:task_definition_id/extension' do
       project = Project.find(params[:id])
       task_definition = project.unit.task_definitions.find(params[:task_definition_id])
@@ -220,7 +223,11 @@ module Api
       if authorise? current_user, project, :apply_extension
         task = project.task_for_task_definition(task_definition)
 
-        task.apply_for_extension
+        unless task.can_apply_for_extension?
+          error!({ error: 'This task has reached the task deadline, no additional extensions can be granted.' }, 403)
+        end
+
+        task.apply_for_extension(params[:comment])
         task.save!
 
         TaskUpdateSerializer.new(task)
