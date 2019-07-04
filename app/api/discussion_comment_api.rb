@@ -200,6 +200,9 @@ module Api
       end
 
       discussion_comment = task.all_comments.find(params[:task_comment_id])
+      # discussion_comment.mark_discussion_completed
+      # mark comment read
+      discussion_comment.mark_as_read(current_user, project.unit)
 
       error!({ error: 'No discussion comment found for the given task' }, 403) if discussion_comment.nil?
 

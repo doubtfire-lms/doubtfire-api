@@ -46,6 +46,11 @@ class DiscussionComment < TaskComment
     self.save!
   end
 
+  def mark_discussion_completed
+    self.time_discussion_completed = Time.zone.now
+    self.save!
+  end
+
   def add_prompt(file_upload, _count)
     temp = Tempfile.new(['discussion_comment', '.wav'])
     return false unless process_audio(file_upload.tempfile.path, temp.path)
@@ -57,7 +62,7 @@ class DiscussionComment < TaskComment
   def add_reply(reply_attachment)
     temp = Tempfile.new(['discussion_comment_reply', '.wav'])
     return false unless process_audio(reply_attachment.tempfile.path, temp.path)
-    self.time_discussion_completed = Time.zone.now
+    mark_discussion_completed
     save
     logger.info("Saving discussion comment reply to #{reply_attachment_path()}")
     FileUtils.mv temp.path, reply_attachment_path
