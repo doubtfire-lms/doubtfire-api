@@ -333,6 +333,11 @@ class Task < ActiveRecord::Base
       return nil
     when TaskStatus.ready_to_mark
       submit
+      
+      if !group_transition || !group_task?
+        # Add submit status for student submission - avoid duplicate for groups
+        add_status_comment(by_user, status)
+      end
 
       if to_same_day_anywhere_on_earth(due_date) < Time.zone.now
         assess TaskStatus.time_exceeded, by_user
@@ -350,6 +355,11 @@ class Task < ActiveRecord::Base
           end
         end
         assess status, by_user
+
+        if !group_transition || !group_task?
+          # Add a status comment for new assessments (avoid duplicates on group submission)
+          add_status_comment(by_user, status)
+        end
       else
         # Attempt to move to tutor state by non-tutor
         return nil
@@ -545,6 +555,19 @@ class Task < ActiveRecord::Base
     comment.user = user
     comment.comment = text
     comment.content_type = :text
+    comment.recipient = user == project.student ? project.main_tutor : project.student
+    comment.save!
+    comment
+  end
+
+  def add_status_comment(user, status)
+    ensured_group_submission if group_task? && group
+
+    comment = TaskStatusComment.create
+    comment.task = self
+    comment.user = user
+    comment.comment = "Task updated to #{status.name}"
+    comment.task_status = status
     comment.recipient = user == project.student ? project.main_tutor : project.student
     comment.save!
     comment
