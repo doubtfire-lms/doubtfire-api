@@ -3,7 +3,7 @@ require 'task_serializer'
 require 'mime-check-helpers'
 
 module Api
-  class TaskDefinitions < Grape::API
+  class TaskDefinitionsApi < Grape::API
     helpers AuthenticationHelpers
     helpers AuthorisationHelpers
     helpers FileHelper

@@ -1,7 +1,7 @@
 require 'grape'
 
 module Api
-  class TaskComments < Grape::API
+  class TaskCommentsApi < Grape::API
     helpers AuthenticationHelpers
     helpers AuthorisationHelpers
 

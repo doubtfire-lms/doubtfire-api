@@ -1,7 +1,7 @@
 require 'grape'
 
 module Api
-  class LearningOutcomes < Grape::API
+  class LearningOutcomesApi < Grape::API
     helpers AuthenticationHelpers
     helpers AuthorisationHelpers
     helpers MimeCheckHelpers
