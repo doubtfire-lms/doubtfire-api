@@ -462,6 +462,14 @@ class Task < ActiveRecord::Base
       self.completion_date = assess_date if completion_date.nil?
     else
       self.completion_date = nil
+
+      # Grant an extension on fix if 
+      case task_status
+      when TaskStatus.fix_and_resubmit, TaskStatus.discuss, TaskStatus.demonstrate
+        if to_same_day_anywhere_on_earth(due_date) < Time.zone.now + 7.days && can_apply_for_extension?
+          grant_extension()
+        end
+      end
     end
 
     # Save the task
