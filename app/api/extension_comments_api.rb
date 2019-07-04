@@ -9,7 +9,7 @@ module Api
     params do
       requires :comment, type: String, desc: 'The details of the request'
     end
-    post '/projects/:project_id/task_def_id/:task_definition_id/request_extension' do
+    post '/projects/:project_id/task_def_id/:task_definition_id/extension' do
       project = Project.find(params[:project_id])
       task_definition = project.unit.task_definitions.find(params[:task_definition_id])
       task = project.task_for_task_definition(task_definition)
