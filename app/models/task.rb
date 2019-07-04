@@ -202,7 +202,7 @@ class Task < ActiveRecord::Base
 
   # Add an extension to the task
   def grant_extension()
-    self.extensions = self.extensions + 1
+    update(extensions: self.extensions + 1)
   end
 
   # delegate :due_date, to: :task_definition
