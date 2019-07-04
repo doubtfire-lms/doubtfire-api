@@ -202,7 +202,7 @@ class Task < ActiveRecord::Base
 
   # Add an extension to the task
   def grant_extension()
-    self.extensions = self.extensions + 1
+    update(extensions: self.extensions + 1)
   end
 
   # delegate :due_date, to: :task_definition
@@ -341,7 +341,7 @@ class Task < ActiveRecord::Base
 
       if to_same_day_anywhere_on_earth(due_date) < Time.zone.now
         assess TaskStatus.time_exceeded, by_user
-        grade_task -2 if task_definition.is_graded? && self.grade.nil?
+        grade_task -1 if task_definition.is_graded? && self.grade.nil?
       end
     when TaskStatus.not_started, TaskStatus.need_help, TaskStatus.working_on_it
       engage status
@@ -462,6 +462,14 @@ class Task < ActiveRecord::Base
       self.completion_date = assess_date if completion_date.nil?
     else
       self.completion_date = nil
+
+      # Grant an extension on fix if 
+      case task_status
+      when TaskStatus.fix_and_resubmit, TaskStatus.discuss, TaskStatus.demonstrate
+        if to_same_day_anywhere_on_earth(due_date) < Time.zone.now + 7.days && can_apply_for_extension?
+          grant_extension()
+        end
+      end
     end
 
     # Save the task
