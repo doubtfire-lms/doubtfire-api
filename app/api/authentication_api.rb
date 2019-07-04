@@ -8,7 +8,7 @@ module Api
   # Users can sign in via email and password and receive an auth token
   # that can be used with other API calls.
   #
-  class Authentication < Grape::API
+  class AuthenticationApi < Grape::API
     helpers LogHelper
     helpers AuthenticationHelpers
 

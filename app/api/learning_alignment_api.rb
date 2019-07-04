@@ -1,7 +1,7 @@
 require 'grape'
 
 module Api
-  class LearningAlignment < Grape::API
+  class LearningAlignmentApi < Grape::API
     helpers AuthenticationHelpers
     helpers AuthorisationHelpers
     helpers MimeCheckHelpers

@@ -2,7 +2,7 @@ require 'grape'
 require 'project_serializer'
 
 module Api
-  class Settings < Grape::API
+  class SettingsApi < Grape::API
 
     #
     # Returns the current auth method
