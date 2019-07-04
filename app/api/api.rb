@@ -30,50 +30,51 @@ module Api
     #
     # Mount the api modules
     #
-    mount Api::Authentication
-    mount Api::GroupSets
-    mount Api::Projects
-    mount Api::Students
-    mount Api::Tasks
-    mount Api::TaskComments
+    mount Api::AuthenticationApi
+    mount Api::BreaksApi
     mount Api::DiscussionCommentApi
-    mount Api::TaskDefinitions
-    mount Api::Tutorials
-    mount Api::UnitRoles
-    mount Api::Units
-    mount Api::Users
-    mount Api::LearningOutcomes
-    mount Api::LearningAlignment
-    mount Api::Submission::Generate
+    mount Api::ExtensionCommentsApi
+    mount Api::GroupSetsApi
+    mount Api::LearningOutcomesApi
+    mount Api::LearningAlignmentApi
+    mount Api::ProjectsApi
+    mount Api::SettingsApi
+    mount Api::StudentsApi
     mount Api::Submission::PortfolioApi
     mount Api::Submission::PortfolioEvidenceApi
-    mount Api::Submission::BatchTask
-    mount Api::Settings
+    mount Api::Submission::BatchTaskApi
+    mount Api::TaskCommentsApi
+    mount Api::TaskDefinitionsApi
+    mount Api::TasksApi
     mount Api::TeachingPeriodsPublicApi
     mount Api::TeachingPeriodsAuthenticatedApi
-    mount Api::Breaks
+    mount Api::TutorialsApi
+    mount Api::UnitRolesApi
+    mount Api::UnitsApi
+    mount Api::UsersApi
 
     #
     # Add auth details to all end points
     #
-    AuthenticationHelpers.add_auth_to Api::GroupSets
-    AuthenticationHelpers.add_auth_to Api::Units
-    AuthenticationHelpers.add_auth_to Api::Projects
-    AuthenticationHelpers.add_auth_to Api::Students
-    AuthenticationHelpers.add_auth_to Api::Tasks
-    AuthenticationHelpers.add_auth_to Api::TaskComments
+    AuthenticationHelpers.add_auth_to Api::BreaksApi
     AuthenticationHelpers.add_auth_to Api::DiscussionCommentApi
-    AuthenticationHelpers.add_auth_to Api::TaskDefinitions
-    AuthenticationHelpers.add_auth_to Api::Tutorials
-    AuthenticationHelpers.add_auth_to Api::Users
-    AuthenticationHelpers.add_auth_to Api::UnitRoles
-    AuthenticationHelpers.add_auth_to Api::LearningOutcomes
-    AuthenticationHelpers.add_auth_to Api::LearningAlignment
+    AuthenticationHelpers.add_auth_to Api::ExtensionCommentsApi
+    AuthenticationHelpers.add_auth_to Api::GroupSetsApi
+    AuthenticationHelpers.add_auth_to Api::LearningOutcomesApi
+    AuthenticationHelpers.add_auth_to Api::LearningAlignmentApi
+    AuthenticationHelpers.add_auth_to Api::ProjectsApi
+    AuthenticationHelpers.add_auth_to Api::StudentsApi
     AuthenticationHelpers.add_auth_to Api::Submission::PortfolioApi
     AuthenticationHelpers.add_auth_to Api::Submission::PortfolioEvidenceApi
-    AuthenticationHelpers.add_auth_to Api::Submission::BatchTask
+    AuthenticationHelpers.add_auth_to Api::Submission::BatchTaskApi
+    AuthenticationHelpers.add_auth_to Api::TasksApi
+    AuthenticationHelpers.add_auth_to Api::TaskCommentsApi
+    AuthenticationHelpers.add_auth_to Api::TaskDefinitionsApi
     AuthenticationHelpers.add_auth_to Api::TeachingPeriodsAuthenticatedApi
-    AuthenticationHelpers.add_auth_to Api::Breaks
+    AuthenticationHelpers.add_auth_to Api::TutorialsApi
+    AuthenticationHelpers.add_auth_to Api::UsersApi
+    AuthenticationHelpers.add_auth_to Api::UnitRolesApi
+    AuthenticationHelpers.add_auth_to Api::UnitsApi
 
     add_swagger_documentation \
       base_path: nil,

@@ -403,16 +403,38 @@ class Unit < ActiveRecord::Base
     tutorials.where(abbreviation: abbr).first
   end
 
+  # Use institution settings to sync student enrolments
+  def sync_enrolments
+    result = Doubtfire::Application.config.institution_settings.sync_enrolments(self)
+
+    return if result.nil?
+
+    puts "Import success for #{result[:success].count} students" unless result[:success].count == 0
+    puts "Skipped #{result[:ignored].count} students" unless result[:ignored].count == 0
+    puts "Errors #{result[:errors].count} students" unless result[:errors].count == 0
+    result[:errors].each do |err|
+      puts "#{err[:message]} --> #{err[:row]}"
+    end
+    puts "---" unless result[:errors].count == 0
+
+    result
+  end
+
   #
   # Imports users into a project from CSV file.
   # Format: Unit Code, Student ID,First Name, Surname, email, tutorial
   # Expected columns: unit_code, username, first_name, last_name, email, tutorial
   #
   def import_users_from_csv(file)
-    tutorial_cache = {}
     success = []
     errors = []
     ignored = []
+
+    result = {
+      success: success,
+      ignored: ignored,
+      errors:  errors
+    }
 
     csv = CSV.new(File.read(file), headers: true,
         header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
@@ -455,27 +477,61 @@ class Unit < ActiveRecord::Base
         replace_existing_tutorial: true
       }
     end
+  
+    student_list = []
 
-    # Record changes ready to process - map on username to ensure only one option per user
-    # enrol will override withdraw
-    changes = {}
-
-    # Determine kind of file to process
+    # Loop over csv rows converting to hash values
     CSV.foreach(file, headers: true,
                       header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
                       converters: [->(i) { i.nil? ? '' : i }, ->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]) do |row|
-
+      # Check data has headers
       missing = import_settings[:missing_headers_lambda].call(row)
       if missing.count > 0
         errors << { row: row, message: "Missing headers: #{missing.join(', ')}" }
         next
       end
-
+      
       begin
+        # Convert to hash...
         row_data = import_settings[:fetch_row_data_lambda].call(row, self)
-
         row_data[:row] = row
+        # Store in list...
+        student_list << row_data
+      rescue Exception => e
+        errors << { row: row, message: e.message }
+      end 
+    end # for each csv row
 
+    # Now process the listt
+    sync_enrolment_with(student_list, import_settings, result)
+  end
+
+  # Sync the unit enrolment details eith the list of enrolment data. The enrolment data
+  # is a list to hashes. Each hash contains the following:
+  #     -:row the string data associated with the change
+  #     -:username the student username
+  #     -:student_id
+  #     -:first_name
+  #     -:last_name
+  #     -:nickname
+  #     -:email
+  #     -:tutorial_code
+  #     -:enrolled (boolean)
+  # This will ensure that there is only one listing per student in the data that
+  # is then used to update the student enrolments.
+  def sync_enrolment_with(enrolment_data, import_settings, result)
+    # Get lists for reporting results
+    success = result[:success]
+    errors = result[:errors]
+    ignored = result[:ignored]
+
+    # Record changes ready to process - map on username to ensure only one option per user
+    # enrol will override withdraw
+    changes = {}
+
+    # For each row
+    enrolment_data.each do |row_data|
+      begin
         if row_data[:username].nil?
           ignored << { row: row, message: "Skipping row with missing username" }
           next
@@ -484,7 +540,7 @@ class Unit < ActiveRecord::Base
         unit_code = row_data[:unit_code]
 
         if unit_code != code
-          ignored << { row: row, message: "Invalid unit code. #{unit_code} does not match #{code}" }
+          ignored << { row: row_data[:row], message: "Invalid unit code. #{unit_code} does not match #{code}" }
           next
         end
 
@@ -499,15 +555,43 @@ class Unit < ActiveRecord::Base
             changes[username] = row_data
           else
             # record this row as skipped
-            ignored << { row: row, message: "Skipping withdraw as also includes enrol" }
+            ignored << { row: row_data[:row], message: "Skipping withdraw as also includes enrol" }
           end
         else #dont have the user so record them - will add to result when processed
           changes[username] = row_data
         end
       rescue Exception => e
-        errors << { row: row, message: e.message }
+        errors << { row: row_data[:row], message: e.message }
       end 
     end # for each csv row
+
+    update_student_enrolments(changes, import_settings, result)
+  end # csv import
+
+  # Apply enrolment changes. The changes parameter should be:
+  # - A hash
+  # - Key = student username
+  # - Value = hash of
+  #     -:row the string data associated with the change
+  #     -:username the student username (also the key to this data)
+  #     -:student_id
+  #     -:first_name
+  #     -:last_name
+  #     -:nickname
+  #     -:email
+  #     -:tutorial_code
+  #     -:enrolled
+  # Import settings is:
+  # - A hash
+  # - :replace_existing_tutorial boolean
+  #
+  # Returns hash with :success, :ignored, :errors
+  def update_student_enrolments(changes, import_settings, result)
+    tutorial_cache = {}
+    # Get lists for reporting results
+    success = result[:success]
+    errors = result[:errors]
+    ignored = result[:ignored]
 
     # now apply the changes...
     changes.each do |key, row_data|
@@ -559,7 +643,7 @@ class Unit < ActiveRecord::Base
           next
         end
 
-        # Is an enrolment... so first find the user
+        # It is an enrolment... so first find the user
         project_participant = User.find_or_create_by(username: username) do |new_user|
           new_user.first_name         = first_name
           new_user.last_name          = last_name
@@ -637,11 +721,7 @@ class Unit < ActiveRecord::Base
       end
     end
 
-    {
-      success: success,
-      ignored: ignored,
-      errors:  errors
-    }
+    result    
   end
 
   # Use the values in the CSV to set the enrolment of these
@@ -1048,10 +1128,12 @@ class Unit < ActiveRecord::Base
   #
   def get_portfolio_zip(current_user)
     # Get a temp file path
-    filename = FileHelper.sanitized_filename("portfolios-#{code}-#{current_user.username}.zip")
-    result = Tempfile.new(filename)
+    filename = FileHelper.sanitized_filename("portfolios-#{code}-#{current_user.username}")
+    result = "#{FileHelper.tmp_file(filename)}.zip"
+
+    return result if File.exists?(result)
     # Create a new zip
-    Zip::File.open(result.path, Zip::File::CREATE) do |zip|
+    Zip::File.open(result, Zip::File::CREATE) do |zip|
       active_projects.each do |project|
         # Skip if no portfolio at this time...
         next unless project.portfolio_available
@@ -1076,10 +1158,12 @@ class Unit < ActiveRecord::Base
   #
   def get_task_resources_zip
     # Get a temp file path
-    filename = FileHelper.sanitized_filename("task-resources-#{code}.zip")
-    result = Tempfile.new(filename)
+    result = FileHelper.tmp_file("task-resources-#{code}.zip")
+
+    return result if File.exists?(result)
+
     # Create a new zip
-    Zip::File.open(result.path, Zip::File::CREATE) do |zip|
+    Zip::File.open(result, Zip::File::CREATE) do |zip|
       task_definitions.each do |td|
         if td.has_task_sheet?
           dst_path = FileHelper.sanitized_filename(td.abbreviation.to_s) + '.pdf'
@@ -1100,13 +1184,14 @@ class Unit < ActiveRecord::Base
   #
   def get_task_submissions_pdf_zip(current_user, td)
     # Get a temp file path
-    filename = FileHelper.sanitized_filename("submissions-#{code}-#{td.abbreviation}-#{current_user.username}-pdfs")
-    result = Tempfile.new([filename, '.zip'])
+    result = FileHelper.tmp_file("submissions-#{code}-#{td.abbreviation}-#{current_user.username}-pdfs.zip")
 
     tasks_with_files = td.related_tasks_with_files
 
+    return result if File.exists?(result)
+
     # Create a new zip
-    Zip::File.open(result.path, Zip::File::CREATE) do |zip|
+    Zip::File.open(result, Zip::File::CREATE) do |zip|
       Dir.mktmpdir do |dir|
         # Extract all of the files...
         tasks_with_files.each do |task|
@@ -1132,13 +1217,14 @@ class Unit < ActiveRecord::Base
   #
   def get_task_submissions_zip(current_user, td)
     # Get a temp file path
-    filename = FileHelper.sanitized_filename("submissions-#{code}-#{td.abbreviation}-#{current_user.username}-files.zip")
-    result = Tempfile.new(filename)
+    result = FileHelper.tmp_file("submissions-#{code}-#{td.abbreviation}-#{current_user.username}-files.zip")
 
     tasks_with_files = td.related_tasks_with_files
 
+    return result if File.exists?(result)
+
     # Create a new zip
-    Zip::File.open(result.path, Zip::File::CREATE) do |zip|
+    Zip::File.open(result, Zip::File::CREATE) do |zip|
       Dir.mktmpdir do |dir|
         # Extract all of the files...
         tasks_with_files.each do |task|
@@ -1898,12 +1984,12 @@ class Unit < ActiveRecord::Base
     # Reject all tasks not for this unit...
     tasks = tasks.reject { |task| task.project.unit.id != id }
 
-    download_id = "#{Time.new.strftime('%Y-%m-%d')}-#{code}-#{user.username}"
-    filename = FileHelper.sanitized_filename("batch_ready_to_mark_#{user.username}.zip")
-    output_zip = Tempfile.new(filename)
+    output_zip = FileHelper.tmp_file("batch_ready_to_mark_#{code}_#{user.username}.zip")
+
+    return result if File.exists?(output_zip)
 
     # Create a new zip
-    Zip::File.open(output_zip.path, Zip::File::CREATE) do |zip|
+    Zip::File.open(output_zip, Zip::File::CREATE) do |zip|
       csv_str = mark_csv_headers
 
       # Add individual tasks...

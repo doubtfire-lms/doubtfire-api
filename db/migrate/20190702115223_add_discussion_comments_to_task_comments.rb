@@ -4,8 +4,4 @@ class AddDiscussionCommentsToTaskComments < ActiveRecord::Migration
     add_column :task_comments, :time_discussion_completed, :datetime
     add_column :task_comments, :number_of_prompts, :integer
   end
-
-  def down
-    drop_table :discussion_comments
-  end
 end

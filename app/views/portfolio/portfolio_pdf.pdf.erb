@@ -212,7 +212,7 @@ No Tutor
     \begin{tabular}{p{3cm}|p{3cm}|p{9cm}}
       \textbf{Date} & \textbf{Author} & \textbf{Comment} \\ \hline
       <% task.comments.each do |comment| %>
-        <%= lesc comment.created_at.localtime.strftime("%Y/%m/%d %H:%M") %> & <%= lesc comment.user.name %> & <%= lesc comment.comment %> \\
+        <%= lesc comment.created_at.localtime.strftime("%Y/%m/%d %H:%M") %> & <%= lesc comment.user.name %> & <%= lesc comment.comment.gsub(/[^[:print:]]/,'') %> \\
       <% end %>
     \end{tabular}
   <% end %>

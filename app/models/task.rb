@@ -1,3 +1,5 @@
+require 'date'
+
 class Task < ActiveRecord::Base
   include ApplicationHelper
   include LogHelper
@@ -15,7 +17,8 @@ class Task < ActiveRecord::Base
       :delete_own_comment,
       :start_discussion,
       :get_discussion,
-      :make_discussion_reply
+      :make_discussion_reply,
+      :request_extension
     ]
     # What can tutors do with tasks?
     tutor_role_permissions = [
@@ -29,7 +32,8 @@ class Task < ActiveRecord::Base
       :delete_plagiarism,
       :create_discussion,
       :delete_discussion,
-      :get_discussion
+      :get_discussion,
+      :assess_extension
     ]
     # What can convenors do with tasks?
     convenor_role_permissions = [
@@ -40,7 +44,8 @@ class Task < ActiveRecord::Base
       :delete_own_comment,
       :view_plagiarism,
       :delete_plagiarism,
-      :get_discussion
+      :get_discussion,
+      :assess_extension
     ]
     # What can nil users do with tasks?
     nil_role_permissions = [
@@ -183,8 +188,20 @@ class Task < ActiveRecord::Base
     raw_extension_date < task_definition.due_date
   end
 
-  # Applying for an extension will 
-  def apply_for_extension
+  # Applying for an extension will create an extension comment
+  def apply_for_extension(user, text)
+    extension = ExtensionComment.create
+    extension.task = self
+    extension.user = user
+    extension.content_type = :extension
+    extension.comment = text
+    extension.recipient = project.main_tutor
+    extension.save!
+    extension
+  end
+
+  # Add an extension to the task
+  def grant_extension()
     self.extensions = self.extensions + 1
   end
 
@@ -316,8 +333,13 @@ class Task < ActiveRecord::Base
       return nil
     when TaskStatus.ready_to_mark
       submit
+      
+      if !group_transition || !group_task?
+        # Add submit status for student submission - avoid duplicate for groups
+        add_status_comment(by_user, status)
+      end
 
-      if due_date < Time.zone.now
+      if to_same_day_anywhere_on_earth(due_date) < Time.zone.now
         assess TaskStatus.time_exceeded, by_user
         grade_task -2 if task_definition.is_graded? && self.grade.nil?
       end
@@ -333,6 +355,11 @@ class Task < ActiveRecord::Base
           end
         end
         assess status, by_user
+
+        if !group_transition || !group_task?
+          # Add a status comment for new assessments (avoid duplicates on group submission)
+          add_status_comment(by_user, status)
+        end
       else
         # Attempt to move to tutor state by non-tutor
         return nil
@@ -528,6 +555,19 @@ class Task < ActiveRecord::Base
     comment.user = user
     comment.comment = text
     comment.content_type = :text
+    comment.recipient = user == project.student ? project.main_tutor : project.student
+    comment.save!
+    comment
+  end
+
+  def add_status_comment(user, status)
+    ensured_group_submission if group_task? && group
+
+    comment = TaskStatusComment.create
+    comment.task = self
+    comment.user = user
+    comment.comment = "Task updated to #{status.name}"
+    comment.task_status = status
     comment.recipient = user == project.student ? project.main_tutor : project.student
     comment.save!
     comment
@@ -1105,5 +1145,11 @@ class Task < ActiveRecord::Base
           FileUtils.rm_rf new_path
         end
       end
+    end
+
+    # Use the current DateTime to calculate a new DateTime for the last moment of the same
+    # day anywhere on earth
+    def to_same_day_anywhere_on_earth(date)
+      DateTime.new(date.year, date.month, date.day, 23, 59, 59, '-12:00')
     end
 end
