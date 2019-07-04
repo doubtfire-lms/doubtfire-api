@@ -33,6 +33,7 @@ module Api
     mount Api::AuthenticationApi
     mount Api::BreaksApi
     mount Api::DiscussionCommentApi
+    mount Api::ExtensionCommentsApi
     mount Api::GroupSetsApi
     mount Api::LearningOutcomesApi
     mount Api::LearningAlignmentApi
@@ -57,6 +58,7 @@ module Api
     #
     AuthenticationHelpers.add_auth_to Api::BreaksApi
     AuthenticationHelpers.add_auth_to Api::DiscussionCommentApi
+    AuthenticationHelpers.add_auth_to Api::ExtensionCommentsApi
     AuthenticationHelpers.add_auth_to Api::GroupSetsApi
     AuthenticationHelpers.add_auth_to Api::LearningOutcomesApi
     AuthenticationHelpers.add_auth_to Api::LearningAlignmentApi

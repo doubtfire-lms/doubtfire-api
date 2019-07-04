@@ -42,7 +42,6 @@ class Project < ActiveRecord::Base
       :change_tutorial,
       :make_submission,
       :get_submission,
-      :apply_extension,
       :change
     ]
     # What can tutors do with projects?
@@ -52,17 +51,14 @@ class Project < ActiveRecord::Base
       :change_tutorial,
       :make_submission,
       :get_submission,
-      :apply_extension,
       :change,
       :assess
     ]
     # What can convenors do with projects?
     convenor_role_permissions = [
-      :apply_extension
     ]
     # What can nil users do with projects?
     nil_role_permissions = [
-
     ]
 
     # Return permissions hash
