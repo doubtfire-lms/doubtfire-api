@@ -14,7 +14,10 @@ class Task < ActiveRecord::Base
       :put,
       :get_submission,
       :make_submission,
-      :delete_own_comment
+      :delete_own_comment,
+      :start_discussion,
+      :get_discussion,
+      :make_discussion_reply
     ]
     # What can tutors do with tasks?
     tutor_role_permissions = [
@@ -25,7 +28,10 @@ class Task < ActiveRecord::Base
       :delete_other_comment,
       :delete_own_comment,
       :view_plagiarism,
-      :delete_plagiarism
+      :delete_plagiarism,
+      :create_discussion,
+      :delete_discussion,
+      :get_discussion
     ]
     # What can convenors do with tasks?
     convenor_role_permissions = [
@@ -35,7 +41,8 @@ class Task < ActiveRecord::Base
       :delete_other_comment,
       :delete_own_comment,
       :view_plagiarism,
-      :delete_plagiarism
+      :delete_plagiarism,
+      :get_discussion
     ]
     # What can nil users do with tasks?
     nil_role_permissions = [
@@ -314,7 +321,7 @@ class Task < ActiveRecord::Base
 
       if to_same_day_anywhere_on_earth(due_date) < Time.zone.now
         assess TaskStatus.time_exceeded, by_user
-        grade_task -1 if task_definition.is_graded? && self.grade.nil?
+        grade_task -2 if task_definition.is_graded? && self.grade.nil?
       end
     when TaskStatus.not_started, TaskStatus.need_help, TaskStatus.working_on_it
       engage status
@@ -512,6 +519,8 @@ class Task < ActiveRecord::Base
     return nil if user.nil? || text.nil? || text.empty?
 
     lc = comments.last
+
+    # don't add if duplicate comment
     return if lc && lc.user == user && lc.comment == text
 
     ensured_group_submission if group_task? && group
@@ -524,6 +533,25 @@ class Task < ActiveRecord::Base
     comment.recipient = user == project.student ? project.main_tutor : project.student
     comment.save!
     comment
+  end
+
+  def add_discussion_comment(user, prompts)
+    # don't allow if group task.
+    discussion = DiscussionComment.create
+    discussion.task = self
+    discussion.user = user
+    discussion.content_type = :discussion
+    discussion.recipient = project.student
+    discussion.number_of_prompts = prompts.count
+    discussion.save!
+
+    prompts.each_with_index do |prompt, index |
+      raise "Unknown comment attachment type" unless FileHelper.accept_file(prompt, "comment attachment discussion audio", "audio")
+      raise "Error attaching uploaded file." unless discussion.add_prompt(prompt, index)
+    end
+
+    logger.info(discussion)
+    return discussion
   end
 
   def add_comment_with_attachment(user, tempfile)

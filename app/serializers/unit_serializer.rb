@@ -1,3 +1,6 @@
+# Doubtfire will deprecate ActiveModelSerializer in the future.
+# Instead, write a serialize method on the model.
+
 require 'unit_role_serializer'
 
 class ShallowUnitSerializer < ActiveModel::Serializer
