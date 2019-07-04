@@ -184,8 +184,8 @@ class DatabasePopulator
           code: unit_details[:code],
           name: unit_details[:name],
           description: faker_random_sentence(10, 15),
-        start_date: Time.zone.now  - 6.weeks,
-        end_date: 13.weeks.since(Time.zone.now - 6.weeks)
+          start_date: Time.zone.now  - 6.weeks,
+          end_date: 13.weeks.since(Time.zone.now - 6.weeks)
         }
       end
 

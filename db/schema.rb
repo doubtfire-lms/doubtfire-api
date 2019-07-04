@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20190702115223) do
+ActiveRecord::Schema.define(version: 20190704123700) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -44,14 +44,6 @@ ActiveRecord::Schema.define(version: 20190702115223) do
   add_index "comments_read_receipts", ["task_comment_id", "user_id"], name: "index_comments_read_receipts_on_task_comment_id_and_user_id", unique: true, using: :btree
   add_index "comments_read_receipts", ["task_comment_id"], name: "index_comments_read_receipts_on_task_comment_id", using: :btree
   add_index "comments_read_receipts", ["user_id"], name: "index_comments_read_receipts_on_user_id", using: :btree
-
-  create_table "discussion_comments", force: :cascade do |t|
-    t.datetime "time_started"
-    t.datetime "time_completed"
-    t.integer  "number_of_prompts"
-    t.datetime "created_at",        null: false
-    t.datetime "updated_at",        null: false
-  end
 
   create_table "group_memberships", force: :cascade do |t|
     t.integer  "group_id"
@@ -241,14 +233,16 @@ ActiveRecord::Schema.define(version: 20190702115223) do
     t.integer  "recipient_id"
     t.string   "content_type"
     t.string   "attachment_extension"
-    t.integer  "discussion_comment_id"
     t.string   "type"
     t.datetime "time_discussion_started"
     t.datetime "time_discussion_completed"
     t.integer  "number_of_prompts"
+    t.datetime "date_extension_assessed"
+    t.boolean  "extension_granted"
+    t.integer  "assessor_id"
+    t.integer  "task_status_id"
   end
 
-  add_index "task_comments", ["discussion_comment_id"], name: "index_task_comments_on_discussion_comment_id", using: :btree
   add_index "task_comments", ["task_id"], name: "index_task_comments_on_task_id", using: :btree
 
   create_table "task_definitions", force: :cascade do |t|

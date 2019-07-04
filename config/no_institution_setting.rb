@@ -15,6 +15,10 @@ class InstitutionSettings
             tutorial_code:  nil
         }
     end
+
+    def sync_enrolments(unit)
+      puts 'Unit sync not enabled'
+    end
 end
 
 Doubtfire::Application.config.institution_settings = InstitutionSettings.new
