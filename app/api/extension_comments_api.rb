@@ -8,8 +8,9 @@ module Api
     desc 'Request an extension for a task'
     params do
       requires :comment, type: String, desc: 'The details of the request'
+      requires :weeks_requested, type: Integer, desc: 'The details of the request'
     end
-    post '/projects/:project_id/task_def_id/:task_definition_id/extension' do
+    post '/projects/:project_id/task_def_id/:task_definition_id/request_extension' do
       project = Project.find(params[:project_id])
       task_definition = project.unit.task_definitions.find(params[:task_definition_id])
       task = project.task_for_task_definition(task_definition)
@@ -18,7 +19,9 @@ module Api
         error!({ error: 'Not authorised to request an extension for this task' }, 403)
       end
 
-      result = task.apply_for_extension(current_user, params[:comment])
+      error!({error:'Extension weeks exceed task deadline.'}, 403) unless params[:weeks_requested] <= task.weeks_can_extend
+
+      result = task.apply_for_extension(current_user, params[:comment], params[:weeks_requested])
       result.serialize(current_user)
     end
 
