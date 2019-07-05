@@ -4,7 +4,7 @@ module Api
   class ExtensionCommentsApi < Grape::API
     helpers AuthenticationHelpers
     helpers AuthorisationHelpers
-    
+
     desc 'Request an extension for a task'
     params do
       requires :comment, type: String, desc: 'The details of the request'

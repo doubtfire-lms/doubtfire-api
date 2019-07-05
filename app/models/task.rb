@@ -574,7 +574,7 @@ class Task < ActiveRecord::Base
     comment = TaskStatusComment.create
     comment.task = self
     comment.user = user
-    comment.comment = "Task updated to #{status.name}"
+    comment.comment = status.name
     comment.task_status = status
     comment.recipient = user == project.student ? project.main_tutor : project.student
     comment.save!
