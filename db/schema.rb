@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20190704123700) do
+ActiveRecord::Schema.define(version: 20190705045015) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -241,6 +241,8 @@ ActiveRecord::Schema.define(version: 20190704123700) do
     t.boolean  "extension_granted"
     t.integer  "assessor_id"
     t.integer  "task_status_id"
+    t.integer  "extension_weeks"
+    t.string   "extension_response"
   end
 
   add_index "task_comments", ["task_id"], name: "index_task_comments_on_task_id", using: :btree
