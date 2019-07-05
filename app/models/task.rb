@@ -185,13 +185,14 @@ class Task < ActiveRecord::Base
   # The student can apply for an extension if the current extension date is
   # before the task's due date
   def can_apply_for_extension?
-    raw_extension_date < task_definition.due_date
+    raw_extension_date.to_date < task_definition.due_date.to_date
   end
 
   # Applying for an extension will create an extension comment
-  def apply_for_extension(user, text)
+  def apply_for_extension(user, text, weeks)
     extension = ExtensionComment.create
     extension.task = self
+    extension.extension_weeks = weeks
     extension.user = user
     extension.content_type = :extension
     extension.comment = text
@@ -200,9 +201,19 @@ class Task < ActiveRecord::Base
     extension
   end
 
+  def weeks_can_extend
+    deadline = task_definition.due_date.to_date
+    current_due = raw_extension_date.to_date
+
+    diff = deadline - current_due
+    (diff.to_i / 7).ceil
+  end
+
   # Add an extension to the task
-  def grant_extension()
-    update(extensions: self.extensions + 1)
+  def grant_extension(weeks)
+    weeks_to_extend = weeks <= weeks_can_extend ? weeks : weeks_can_extend
+    return false unless weeks_to_extend > 0
+    return update(extensions: self.extensions + weeks_to_extend)
   end
 
   # delegate :due_date, to: :task_definition
