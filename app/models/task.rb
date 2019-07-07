@@ -210,10 +210,21 @@ class Task < ActiveRecord::Base
   end
 
   # Add an extension to the task
-  def grant_extension(weeks)
+  def grant_extension(by_user, weeks)
     weeks_to_extend = weeks <= weeks_can_extend ? weeks : weeks_can_extend
     return false unless weeks_to_extend > 0
-    return update(extensions: self.extensions + weeks_to_extend)
+
+    if update(extensions: self.extensions + weeks_to_extend)
+      # Was the task previously assessed as time exceeded? ... with the extension should this change?
+      if self.task_status == TaskStatus.time_exceeded && submitted_before_due?
+        update(task_status: TaskStatus.ready_to_mark)
+        add_status_comment(by_user, self.task_status)
+      end
+
+      return true
+    else
+      return false
+    end
   end
 
   # delegate :due_date, to: :task_definition
@@ -343,17 +354,7 @@ class Task < ActiveRecord::Base
     when nil
       return nil
     when TaskStatus.ready_to_mark
-      submit
-      
-      if !group_transition || !group_task?
-        # Add submit status for student submission - avoid duplicate for groups
-        add_status_comment(by_user, status)
-      end
-
-      if to_same_day_anywhere_on_earth(due_date) < Time.zone.now
-        assess TaskStatus.time_exceeded, by_user
-        grade_task -1 if task_definition.is_graded? && self.grade.nil?
-      end
+      submit by_user
     when TaskStatus.not_started, TaskStatus.need_help, TaskStatus.working_on_it
       engage status
     else
@@ -478,7 +479,7 @@ class Task < ActiveRecord::Base
       case task_status
       when TaskStatus.fix_and_resubmit, TaskStatus.discuss, TaskStatus.demonstrate
         if to_same_day_anywhere_on_earth(due_date) < Time.zone.now + 7.days && can_apply_for_extension?
-          grant_extension(1)
+          grant_extension(assessor, 1)
         end
       end
     end
@@ -523,9 +524,26 @@ class Task < ActiveRecord::Base
     end
   end
 
-  def submit(submit_date = Time.zone.now)
-    self.task_status      = TaskStatus.ready_to_mark
+  def submitted_before_due?
+    to_same_day_anywhere_on_earth(due_date) >= self.submission_date
+  end
+
+  #
+  # A task has been submitted - update the status and record the submission
+  # Default submission time to current time.
+  #
+  def submit(by_user, submit_date = Time.zone.now)
     self.submission_date  = submit_date
+
+    # If it is submitted before the due date...
+    if submitted_before_due?
+      self.task_status = TaskStatus.ready_to_mark
+    else
+      assess TaskStatus.time_exceeded, by_user
+      grade_task -1 if task_definition.is_graded? && self.grade.nil?
+    end
+
+    add_status_comment(by_user, self.task_status)
 
     if save!
       project.start
@@ -579,8 +597,15 @@ class Task < ActiveRecord::Base
     comment
   end
 
+  def individual_task_or_submitter_of_group_task?
+    return true if !group_task?
+    return true unless group.present?
+
+    ensured_group_submission.submitted_by? self.project
+  end
+
   def add_status_comment(user, status)
-    ensured_group_submission if group_task? && group
+    return nil unless individual_task_or_submitter_of_group_task?
 
     comment = TaskStatusComment.create
     comment.task = self

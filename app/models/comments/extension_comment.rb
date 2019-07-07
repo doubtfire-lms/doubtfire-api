@@ -27,11 +27,13 @@ class ExtensionComment < TaskComment
     self.extension_granted = granted && self.task.can_apply_for_extension?
 
     if self.extension_granted
-      self.task.grant_extension(extension_weeks)
+      self.task.grant_extension(user, extension_weeks)
       self.extension_response = "Extension granted to #{self.task.due_date.strftime('%a %b %e')}"
     elsif ! self.task.can_apply_for_extension? && granted
       self.extension_response = "Extension cannot be granted as deadline has been reached"
       errors[:extension] << 'cannot be granted as deadline has been reached'
+    else
+      self.extension_response = "Extension rejected"
     end
 
     save!
