@@ -102,6 +102,8 @@ module Doubtfire
     config.paths.add 'app/api', glob: '**/*.rb'
     config.autoload_paths += Dir["#{Rails.root}/app"]
     config.autoload_paths += Dir["#{Rails.root}/app/serializers"]
+    config.autoload_paths += Dir[Rails.root.join("app", "models", "{*/}")]
+    
     # CORS config
     config.middleware.insert_before Warden::Manager, Rack::Cors do
       allow do

@@ -14,7 +14,11 @@ class Task < ActiveRecord::Base
       :put,
       :get_submission,
       :make_submission,
-      :delete_own_comment
+      :delete_own_comment,
+      :start_discussion,
+      :get_discussion,
+      :make_discussion_reply,
+      :request_extension
     ]
     # What can tutors do with tasks?
     tutor_role_permissions = [
@@ -25,7 +29,11 @@ class Task < ActiveRecord::Base
       :delete_other_comment,
       :delete_own_comment,
       :view_plagiarism,
-      :delete_plagiarism
+      :delete_plagiarism,
+      :create_discussion,
+      :delete_discussion,
+      :get_discussion,
+      :assess_extension
     ]
     # What can convenors do with tasks?
     convenor_role_permissions = [
@@ -35,7 +43,9 @@ class Task < ActiveRecord::Base
       :delete_other_comment,
       :delete_own_comment,
       :view_plagiarism,
-      :delete_plagiarism
+      :delete_plagiarism,
+      :get_discussion,
+      :assess_extension
     ]
     # What can nil users do with tasks?
     nil_role_permissions = [
@@ -175,12 +185,46 @@ class Task < ActiveRecord::Base
   # The student can apply for an extension if the current extension date is
   # before the task's due date
   def can_apply_for_extension?
-    raw_extension_date < task_definition.due_date
+    raw_extension_date.to_date < task_definition.due_date.to_date
   end
 
-  # Applying for an extension will 
-  def apply_for_extension
-    self.extensions = self.extensions + 1
+  # Applying for an extension will create an extension comment
+  def apply_for_extension(user, text, weeks)
+    extension = ExtensionComment.create
+    extension.task = self
+    extension.extension_weeks = weeks
+    extension.user = user
+    extension.content_type = :extension
+    extension.comment = text
+    extension.recipient = project.main_tutor
+    extension.save!
+    extension
+  end
+
+  def weeks_can_extend
+    deadline = task_definition.due_date.to_date
+    current_due = raw_extension_date.to_date
+
+    diff = deadline - current_due
+    (diff.to_i / 7).ceil
+  end
+
+  # Add an extension to the task
+  def grant_extension(by_user, weeks)
+    weeks_to_extend = weeks <= weeks_can_extend ? weeks : weeks_can_extend
+    return false unless weeks_to_extend > 0
+
+    if update(extensions: self.extensions + weeks_to_extend)
+      # Was the task previously assessed as time exceeded? ... with the extension should this change?
+      if self.task_status == TaskStatus.time_exceeded && submitted_before_due?
+        update(task_status: TaskStatus.ready_to_mark)
+        add_status_comment(by_user, self.task_status)
+      end
+
+      return true
+    else
+      return false
+    end
   end
 
   # delegate :due_date, to: :task_definition
@@ -310,12 +354,7 @@ class Task < ActiveRecord::Base
     when nil
       return nil
     when TaskStatus.ready_to_mark
-      submit
-
-      if to_same_day_anywhere_on_earth(due_date) < Time.zone.now
-        assess TaskStatus.time_exceeded, by_user
-        grade_task -1 if task_definition.is_graded? && self.grade.nil?
-      end
+      submit by_user
     when TaskStatus.not_started, TaskStatus.need_help, TaskStatus.working_on_it
       engage status
     else
@@ -328,6 +367,11 @@ class Task < ActiveRecord::Base
           end
         end
         assess status, by_user
+
+        if !group_transition || !group_task?
+          # Add a status comment for new assessments (avoid duplicates on group submission)
+          add_status_comment(by_user, status)
+        end
       else
         # Attempt to move to tutor state by non-tutor
         return nil
@@ -430,6 +474,14 @@ class Task < ActiveRecord::Base
       self.completion_date = assess_date if completion_date.nil?
     else
       self.completion_date = nil
+
+      # Grant an extension on fix if due date is within 1 week
+      case task_status
+      when TaskStatus.fix_and_resubmit, TaskStatus.discuss, TaskStatus.demonstrate
+        if to_same_day_anywhere_on_earth(due_date) < Time.zone.now + 7.days && can_apply_for_extension?
+          grant_extension(assessor, 1)
+        end
+      end
     end
 
     # Save the task
@@ -472,9 +524,26 @@ class Task < ActiveRecord::Base
     end
   end
 
-  def submit(submit_date = Time.zone.now)
-    self.task_status      = TaskStatus.ready_to_mark
+  def submitted_before_due?
+    to_same_day_anywhere_on_earth(due_date) >= self.submission_date
+  end
+
+  #
+  # A task has been submitted - update the status and record the submission
+  # Default submission time to current time.
+  #
+  def submit(by_user, submit_date = Time.zone.now)
     self.submission_date  = submit_date
+
+    # If it is submitted before the due date...
+    if submitted_before_due?
+      self.task_status = TaskStatus.ready_to_mark
+    else
+      assess TaskStatus.time_exceeded, by_user
+      grade_task -1 if task_definition.is_graded? && self.grade.nil?
+    end
+
+    add_status_comment(by_user, self.task_status)
 
     if save!
       project.start
@@ -512,6 +581,8 @@ class Task < ActiveRecord::Base
     return nil if user.nil? || text.nil? || text.empty?
 
     lc = comments.last
+
+    # don't add if duplicate comment
     return if lc && lc.user == user && lc.comment == text
 
     ensured_group_submission if group_task? && group
@@ -524,6 +595,45 @@ class Task < ActiveRecord::Base
     comment.recipient = user == project.student ? project.main_tutor : project.student
     comment.save!
     comment
+  end
+
+  def individual_task_or_submitter_of_group_task?
+    return true if !group_task?
+    return true unless group.present?
+
+    ensured_group_submission.submitted_by? self.project
+  end
+
+  def add_status_comment(user, status)
+    return nil unless individual_task_or_submitter_of_group_task?
+
+    comment = TaskStatusComment.create
+    comment.task = self
+    comment.user = user
+    comment.comment = status.name
+    comment.task_status = status
+    comment.recipient = user == project.student ? project.main_tutor : project.student
+    comment.save!
+    comment
+  end
+
+  def add_discussion_comment(user, prompts)
+    # don't allow if group task.
+    discussion = DiscussionComment.create
+    discussion.task = self
+    discussion.user = user
+    discussion.content_type = :discussion
+    discussion.recipient = project.student
+    discussion.number_of_prompts = prompts.count
+    discussion.save!
+
+    prompts.each_with_index do |prompt, index |
+      raise "Unknown comment attachment type" unless FileHelper.accept_file(prompt, "comment attachment discussion audio", "audio")
+      raise "Error attaching uploaded file." unless discussion.add_prompt(prompt, index)
+    end
+
+    logger.info(discussion)
+    return discussion
   end
 
   def add_comment_with_attachment(user, tempfile)

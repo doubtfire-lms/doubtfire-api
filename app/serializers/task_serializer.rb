@@ -1,3 +1,6 @@
+# Doubtfire will deprecate ActiveModelSerializer in the future.
+# Instead, write a serialize method on the model.
+
 class TaskUpdateSerializer < ActiveModel::Serializer
   attributes :id, :status, :project_id, :new_stats, :include_in_portfolio, :other_projects, :times_assessed, :grade, :quality_pts, :due_date, :extensions
 

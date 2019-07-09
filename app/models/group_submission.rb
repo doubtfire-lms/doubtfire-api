@@ -59,5 +59,9 @@ class GroupSubmission < ActiveRecord::Base
     tasks.first
   end
 
+  def submitted_by? project
+    project == submitted_by_project
+  end
+
   delegate :processing_pdf?, to: :submitter_task
 end
