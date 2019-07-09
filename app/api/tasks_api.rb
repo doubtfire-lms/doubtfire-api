@@ -2,7 +2,7 @@ require 'grape'
 require 'task_serializer'
 
 module Api
-  class Tasks < Grape::API
+  class TasksApi < Grape::API
     helpers AuthenticationHelpers
     helpers AuthorisationHelpers
 

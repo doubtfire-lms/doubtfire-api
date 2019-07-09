@@ -4,7 +4,7 @@ require 'mime-check-helpers'
 require 'csv_helper'
 
 module Api
-  class Units < Grape::API
+  class UnitsApi < Grape::API
     helpers AuthenticationHelpers
     helpers AuthorisationHelpers
     helpers MimeCheckHelpers

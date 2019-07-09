@@ -3,7 +3,7 @@ require 'project_serializer'
 
 module Api
   module Submission
-    class BatchTask < Grape::API
+    class BatchTaskApi < Grape::API
       helpers GenerateHelpers
       helpers AuthenticationHelpers
       helpers AuthorisationHelpers

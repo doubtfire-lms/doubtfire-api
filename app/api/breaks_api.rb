@@ -1,7 +1,7 @@
 require 'grape'
 
 module Api
-  class Breaks < Grape::API
+  class BreaksApi < Grape::API
     helpers AuthenticationHelpers
     helpers AuthorisationHelpers
 

@@ -2,7 +2,7 @@ require 'grape'
 require 'project_serializer'
 
 module Api
-  class Students < Grape::API
+  class StudentsApi < Grape::API
     helpers AuthenticationHelpers
     helpers AuthorisationHelpers
 
