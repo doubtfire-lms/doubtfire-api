@@ -211,24 +211,6 @@ module Api
       end
     end
 
-    desc 'Request an extension - adds a week to the due date if extensions are available for the task'
-    post '/projects/:id/task_def_id/:task_definition_id/extension' do
-      project = Project.find(params[:id])
-      task_definition = project.unit.task_definitions.find(params[:task_definition_id])
-
-      # check the user can put this task
-      if authorise? current_user, project, :apply_extension
-        task = project.task_for_task_definition(task_definition)
-
-        task.apply_for_extension
-        task.save!
-
-        TaskUpdateSerializer.new(task)
-      else
-        error!({ error: "You do not have permission to apply for an extension for this task." }, 403)
-      end
-    end
-
     desc 'Get the submission details of a task, indicating if it has a pdf to view'
     params do
       requires :id, type: Integer, desc: 'The project id to locate'

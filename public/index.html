@@ -36,6 +36,7 @@
 
     <!-- bootstrap for ngx -->
     <link href="/assets/mat-style.min.css" type="text/css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
     <!-- Google Analytics -->
     <script>
@@ -50,5 +51,5 @@
     <div ui-view="header"></div>
     <div ui-view="main" class="container-fluid"></div>
     <alert-list> </alert-list>
-  <script type="text/javascript" src="runtime.js"></script><script type="text/javascript" src="polyfills.js"></script><script type="text/javascript" src="scripts.js"></script><script type="text/javascript" src="main.js"></script></body>
+  <script src="runtime.js"></script><script src="polyfills-es5.js" nomodule></script><script src="polyfills.js"></script><script src="scripts.js"></script><script src="main.js"></script></body>
 </html>

@@ -428,8 +428,8 @@ class TaskDefinition < ActiveRecord::Base
 
     result.plagiarism_warn_pct         = row[:plagiarism_warn_pct]
     result.plagiarism_checks           = row[:plagiarism_checks]
-    
-    if row[:group_set].present? 
+
+    if row[:group_set].present?
       result.group_set                 = unit.group_sets.where(name: row[:group_set]).first
     end
 
@@ -476,7 +476,7 @@ class TaskDefinition < ActiveRecord::Base
   def add_task_sheet(file)
     FileUtils.mv file, task_sheet
   end
-  
+
   def remove_task_sheet()
     if has_task_sheet?
       FileUtils.rm task_sheet

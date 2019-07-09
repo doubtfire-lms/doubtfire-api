@@ -55,8 +55,12 @@ class GroupsTest < ActiveSupport::TestCase
 
     project = group.projects.first
 
-    post with_auth_token "/api/projects/#{project.id}/task_def_id/#{td.id}/extension", project.student
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/request_extension", with_auth_token({comment: 'I need time!', weeks_requested: 1}, project.student)
+    comment_id = last_response_body["id"]
     assert_equal 201, last_response.status
+
+    comment = TaskComment.find(comment_id)
+    comment.assess_extension(project.main_tutor, true)
 
     post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", with_auth_token(data_to_post, project.student)
     assert_equal 201, last_response.status
