@@ -6,7 +6,7 @@ module Api
   #
   # Allow GroupSets to be managed via the API
   #
-  class GroupSets < Grape::API
+  class GroupSetsApi < Grape::API
     helpers AuthenticationHelpers
     helpers AuthorisationHelpers
     helpers MimeCheckHelpers

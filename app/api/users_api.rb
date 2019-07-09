@@ -2,7 +2,7 @@ require 'grape'
 require 'mime-check-helpers'
 
 module Api
-  class Users < Grape::API
+  class UsersApi < Grape::API
     helpers AuthenticationHelpers
     helpers AuthorisationHelpers
     helpers MimeCheckHelpers

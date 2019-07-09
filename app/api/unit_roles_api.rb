@@ -1,7 +1,7 @@
 require 'grape'
 
 module Api
-  class UnitRoles < Grape::API
+  class UnitRolesApi < Grape::API
     helpers AuthenticationHelpers
     helpers AuthorisationHelpers
 
