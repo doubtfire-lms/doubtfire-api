@@ -18979,14 +18979,15 @@ task-comments-viewer .comment-submitter .markdown-editor {
 .task-ilo-alignment-rater .rating-area {
   width: 100%;
   text-align: center;
-  display: inline-block; }
+  display: flex;
+  flex-wrap: nowrap; }
 /* line 26, ../../src/app/tasks/task-ilo-alignment/task-ilo-alignment-rater/task-ilo-alignment-rater.scss */
 .task-ilo-alignment-rater .rating-area + *:not(.ng-hide) {
     margin-top: 10px; }
-/* line 32, ../../src/app/tasks/task-ilo-alignment/task-ilo-alignment-rater/task-ilo-alignment-rater.scss */
+/* line 33, ../../src/app/tasks/task-ilo-alignment/task-ilo-alignment-rater/task-ilo-alignment-rater.scss */
 .task-ilo-alignment-rater .rating-area:focus {
     outline: none; }
-/* line 35, ../../src/app/tasks/task-ilo-alignment/task-ilo-alignment-rater/task-ilo-alignment-rater.scss */
+/* line 36, ../../src/app/tasks/task-ilo-alignment/task-ilo-alignment-rater/task-ilo-alignment-rater.scss */
 .task-ilo-alignment-rater .rating-area i {
     cursor: pointer;
     padding: 0 10px; }
