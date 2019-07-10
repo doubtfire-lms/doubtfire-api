@@ -56,6 +56,9 @@ class DiscussionComment < TaskComment
     save
     logger.info("Saving audio prompt to #{attachment_path(_count)}")
     FileUtils.mv temp.path, attachment_path(_count)
+
+    file_upload.tempfile.unlink
+    true
   end
 
   def add_reply(reply_attachment)
@@ -65,5 +68,8 @@ class DiscussionComment < TaskComment
     save
     logger.info("Saving discussion comment reply to #{reply_attachment_path()}")
     FileUtils.mv temp.path, reply_attachment_path
+
+    reply_attachment.tempfile.unlink
+    true
   end
 end
