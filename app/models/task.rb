@@ -94,6 +94,12 @@ class Task < ActiveRecord::Base
   has_many :task_engagements
   has_many :task_submissions
 
+  delegate :unit, to: :project
+  delegate :student, to: :project
+  delegate :upload_requirements, to: :task_definition
+  delegate :name, to: :task_definition
+  delegate :target_date, to: :task_definition
+
   validates :task_definition_id, uniqueness: { scope: :project,
                                                message: 'must be unique within the project' }
 
@@ -154,12 +160,6 @@ class Task < ActiveRecord::Base
   def self.for_user(user)
     Task.joins(:project).where('projects.user_id = ?', user.id)
   end
-
-  delegate :unit, to: :project
-
-  delegate :student, to: :project
-
-  delegate :upload_requirements, to: :task_definition
 
   def processing_pdf?
     if group_task? && group_submission
@@ -227,13 +227,10 @@ class Task < ActiveRecord::Base
     end
   end
 
-  # delegate :due_date, to: :task_definition
   def due_date
     return target_date if extensions == 0
     return extension_date
   end
-
-  delegate :target_date, to: :task_definition
 
   def complete?
     status == :complete
@@ -594,6 +591,8 @@ class Task < ActiveRecord::Base
     comment.content_type = :text
     comment.recipient = user == project.student ? project.main_tutor : project.student
     comment.save!
+
+    comment.mark_as_read(user, unit)
     comment
   end
 
@@ -604,16 +603,19 @@ class Task < ActiveRecord::Base
     ensured_group_submission.submitted_by? self.project
   end
 
-  def add_status_comment(user, status)
+  def add_status_comment(current_user, status)
     return nil unless individual_task_or_submitter_of_group_task?
 
     comment = TaskStatusComment.create
     comment.task = self
-    comment.user = user
+    comment.user = current_user
     comment.comment = status.name
     comment.task_status = status
-    comment.recipient = user == project.student ? project.main_tutor : project.student
+    comment.recipient = current_user == project.student ? project.main_tutor : project.student
     comment.save!
+
+    comment.mark_as_read(comment.recipient, unit)
+    comment.mark_as_read(current_user, unit)
     comment
   end
 
@@ -632,10 +634,13 @@ class Task < ActiveRecord::Base
       raise "Error attaching uploaded file." unless discussion.add_prompt(prompt, index)
     end
 
+    discussion.mark_as_read(user, unit)
+
     logger.info(discussion)
     return discussion
   end
 
+  # TODO: Refgactor to attachment comment (with inheritance on model)
   def add_comment_with_attachment(user, tempfile)
     ensured_group_submission if group_task? && group
 
@@ -654,6 +659,8 @@ class Task < ActiveRecord::Base
 
     comment.recipient = user == project.student ? project.main_tutor : project.student
     raise "Error attaching uploaded file." unless comment.add_attachment(tempfile)
+
+    comment.mark_as_read(user, unit)
     comment.save!
     comment
   end
@@ -711,8 +718,6 @@ class Task < ActiveRecord::Base
     #
     # project.recalculate_max_similar_pct()
   end
-
-  delegate :name, to: :task_definition
 
   def student_work_dir(type, create = true)
     if group_task?

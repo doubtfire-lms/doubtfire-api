@@ -43,7 +43,6 @@ module Api
       end
 
       result = task.add_discussion_comment(current_user, attached_files)
-      result.mark_as_read(current_user, project.unit)
       result.serialize(current_user)
     end
 
@@ -68,7 +67,6 @@ module Api
         discussion_comment.mark_discussion_started
 
         prompt_path = discussion_comment.attachment_path(prompt_number)
-        puts prompt_path
 
         error!({ error: 'File missing' }, 404) unless File.exist? prompt_path
         logger.info("#{current_user.username} - get discussion comment for task #{task.id} (#{task_definition.abbreviation})")
@@ -202,7 +200,7 @@ module Api
 
       discussion_comment = task.all_comments.find(params[:task_comment_id])
       # discussion_comment.mark_discussion_completed
-      # mark comment read
+      # mark comment read for student
       discussion_comment.mark_as_read(current_user, project.unit)
 
       error!({ error: 'No discussion comment found for the given task' }, 403) if discussion_comment.nil?
