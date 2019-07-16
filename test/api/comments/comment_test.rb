@@ -157,5 +157,51 @@ class CommentTest < ActiveSupport::TestCase
     assert_equal "Attachment is empty.", last_response_body["error"]
   end
 
+  def test_read_receipts_for_task_status_comments
+    project = Project.first
+    user = project.student
+    unit = project.unit
+
+    td = TaskDefinition.new({
+        unit_id: unit.id,
+        name: 'status task change',
+        description: 'status task change test',
+        weighting: 4,
+        target_grade: 0,
+        start_date: Time.zone.now - 2.weeks,
+        target_date: Time.zone.now + 1.week,
+        due_date: Time.zone.now + 2.week,
+        abbreviation: 'TASKSTATUSCHANGE',
+        restrict_status_updates: false,
+        upload_requirements: [ ],
+        plagiarism_warn_pct: 0.8,
+        is_graded: false,
+        max_quality_pts: 0
+      })
+    td.save!
+
+    data_to_post = {
+      trigger: 'ready_to_mark'
+    }
+
+    # Make a submission for this student
+    post_json with_auth_token("/api/projects/#{project.id}/task_def_id/#{td.id}/submission", user), data_to_post
+    assert_equal 201, last_response.status
+
+    task = project.task_for_task_definition(td)
+    assert_equal TaskStatus.ready_to_mark, task.task_status
+
+    tutor = project.main_tutor
+
+    tc = task.comments.last
+    assert tc.comments_read_receipts.count >= 2, 'Error: expected multiple read receipts.'
+    assert tc.comments_read_receipts.where(user: tutor).count == 1, 'Error: tutor has not read the comment'
+
+    td.destroy!
+
+    # read_reciept = CommentsReadReceipts.find_by(user: tutor, task_comment: tc)
+
+  end
+
 
 end
