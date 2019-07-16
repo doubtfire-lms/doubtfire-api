@@ -73,6 +73,7 @@ module Api
         error!({ error: 'File missing' }, 404) unless File.exist? prompt_path
         logger.info("#{current_user.username} - get discussion comment for task #{task.id} (#{task_definition.abbreviation})")
 
+        content_type('audio/wav; charset:binary')
         env['api.format'] = :binary
 
         # mark as attachment
@@ -130,11 +131,11 @@ module Api
         discussion_comment = task.all_comments.find(params[:task_comment_id]).becomes(DiscussionComment)
 
         response_path = discussion_comment.reply_attachment_path
-        puts response_path
 
         error!({ error: 'File missing' }, 404) unless File.exist? response_path
         logger.info("#{current_user.username} - get discussion comment for task #{task.id} (#{task_definition.abbreviation})")
 
+        content_type('audio/wav; charset:binary')
         env['api.format'] = :binary
 
         # mark as attachment
