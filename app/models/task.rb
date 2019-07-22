@@ -206,7 +206,7 @@ class Task < ActiveRecord::Base
     current_due = raw_extension_date.to_date
 
     diff = deadline - current_due
-    (diff.to_i / 7).ceil
+    (diff.to_f / 7).ceil
   end
 
   # Add an extension to the task
