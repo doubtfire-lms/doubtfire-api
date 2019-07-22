@@ -19,6 +19,7 @@ module Api
         error!({ error: 'Not authorised to request an extension for this task' }, 403)
       end
 
+      error!({error:'Extension weeks can not be 0.'}, 403) if params[:weeks_requested] == 0
       error!({error:'Extension weeks exceed task deadline.'}, 403) unless params[:weeks_requested] <= task.weeks_can_extend
 
       result = task.apply_for_extension(current_user, params[:comment], params[:weeks_requested])
