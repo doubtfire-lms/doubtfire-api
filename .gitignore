@@ -30,3 +30,4 @@ student_work/
 .idea/
 .byebug_history
 coverage/
+.vscode
