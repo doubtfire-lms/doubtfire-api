@@ -85,6 +85,8 @@ class Task < ActiveRecord::Base
   belongs_to :task_status           # Foreign key
   belongs_to :group_submission
 
+  has_one :unit, through: :project
+
   has_many :sub_tasks, dependent: :destroy
   has_many :comments, class_name: 'TaskComment', dependent: :destroy, inverse_of: :task
   has_many :plagiarism_match_links, class_name: 'PlagiarismMatchLink', dependent: :destroy, inverse_of: :task
@@ -532,15 +534,16 @@ class Task < ActiveRecord::Base
   def submit(by_user, submit_date = Time.zone.now)
     self.submission_date  = submit_date
 
+    add_status_comment(by_user, TaskStatus.ready_to_mark)
+
     # If it is submitted before the due date...
     if submitted_before_due?
       self.task_status = TaskStatus.ready_to_mark
     else
       assess TaskStatus.time_exceeded, by_user
+      add_status_comment(project.main_tutor, self.task_status)
       grade_task -1 if task_definition.is_graded? && self.grade.nil?
     end
-
-    add_status_comment(by_user, self.task_status)
 
     if save!
       project.start
@@ -592,7 +595,6 @@ class Task < ActiveRecord::Base
     comment.recipient = user == project.student ? project.main_tutor : project.student
     comment.save!
 
-    comment.mark_as_read(user, unit)
     comment
   end
 
@@ -614,8 +616,6 @@ class Task < ActiveRecord::Base
     comment.recipient = current_user == project.student ? project.main_tutor : project.student
     comment.save!
 
-    comment.mark_as_read(comment.recipient, unit)
-    comment.mark_as_read(current_user, unit)
     comment
   end
 
@@ -660,7 +660,6 @@ class Task < ActiveRecord::Base
     comment.recipient = user == project.student ? project.main_tutor : project.student
     raise "Error attaching uploaded file." unless comment.add_attachment(tempfile)
 
-    comment.mark_as_read(user, unit)
     comment.save!
     comment
   end
