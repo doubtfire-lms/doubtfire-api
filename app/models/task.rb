@@ -85,6 +85,8 @@ class Task < ActiveRecord::Base
   belongs_to :task_status           # Foreign key
   belongs_to :group_submission
 
+  has_one :unit, through: :project
+
   has_many :sub_tasks, dependent: :destroy
   has_many :comments, class_name: 'TaskComment', dependent: :destroy, inverse_of: :task
   has_many :plagiarism_match_links, class_name: 'PlagiarismMatchLink', dependent: :destroy, inverse_of: :task
