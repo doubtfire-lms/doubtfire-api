@@ -22,6 +22,11 @@ class TaskComment < ActiveRecord::Base
   validates :recipient, presence: true
   validates :comment, length: { minimum: 0, maximum: 4095, allow_blank: true }
 
+  # After create, mark as read by user creating
+  after_create do
+    mark_as_read(self.user)
+  end
+
   # Delete action - before dependent association
   before_destroy :delete_associated_files
 
@@ -116,7 +121,7 @@ class TaskComment < ActiveRecord::Base
   end
 
   def mark_as_read(user, unit = self.unit)
-    return if read_by(user) # avoid propagating if not needed
+    return if read_by?(user) # avoid propagating if not needed
 
     if user == project.main_tutor
       unit.staff.each do |staff_member|
@@ -131,7 +136,7 @@ class TaskComment < ActiveRecord::Base
     remove_comment_read_entry(user)
   end
 
-  def read_by(user)
+  def read_by?(user)
     CommentsReadReceipts.find_by(user: user, task_comment: self).present?
   end
 
