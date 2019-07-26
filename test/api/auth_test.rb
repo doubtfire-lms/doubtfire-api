@@ -58,7 +58,7 @@ class AuthTest < ActiveSupport::TestCase
     }
     # Get response back for logging in with username 'acain' password 'password'
     post_json '/api/auth.json', data_to_post
-    actual_auth = JSON.parse(last_response.body)
+    actual_auth = last_response_body
     
     # Check response body doesn't return 'user' and 'auth_token' values
     refute actual_auth.key?('user'), 'User not expected if auth fails'
@@ -78,7 +78,7 @@ class AuthTest < ActiveSupport::TestCase
     
     # Get response back for logging in with username 'acain' password 'password'
     post_json '/api/auth.json', data_to_post
-    actual_auth = JSON.parse(last_response.body)
+    actual_auth = last_response_body
 
     # Check response body doesn't return 'user' and 'auth_token' values
     refute actual_auth.key?('user'), 'User not expected if auth fails'
@@ -93,7 +93,7 @@ class AuthTest < ActiveSupport::TestCase
   
     # Get response back for logging in with username 'acain' password 'password'
     post_json '/api/auth.json', data_to_post
-    actual_auth = JSON.parse(last_response.body)
+    actual_auth = last_response_body
     
     # Check response body doesn't return 'user' and 'auth_token' values
     refute actual_auth.key?('user'), 'User not expected if auth fails'
@@ -140,7 +140,7 @@ class AuthTest < ActiveSupport::TestCase
     post_tests.each do |test_data|
       # Get response back for logging in with username 'acain' password 'password'
       post_json '/api/auth.json', test_data[:post]
-      actual_auth = JSON.parse(last_response.body)
+      actual_auth = last_response_body
 
       assert_equal test_data[:expect].name, actual_auth['user']['system_role'], 'Roles match expected role'
     end
@@ -159,7 +159,7 @@ class AuthTest < ActiveSupport::TestCase
       password: 'password'
     }
     put_json "/api/auth/#{auth_token}", data_to_put
-    actual_auth = JSON.parse(last_response.body)['auth_token']
+    actual_auth = last_response_body['auth_token']
     expected_auth = User.first.auth_token
     # Check to see if the response auth token matches the auth token that was sent through in put
     assert_equal expected_auth, actual_auth
@@ -172,7 +172,7 @@ class AuthTest < ActiveSupport::TestCase
     }
     
     put_json "/api/auth/1234", data_to_put
-    actual_auth = JSON.parse(last_response.body)
+    actual_auth = last_response_body
     expected_auth = User.first.auth_token
     
     # 404 response code means invalid token
@@ -189,7 +189,7 @@ class AuthTest < ActiveSupport::TestCase
     }
     
     put_json "/api/auth/#{auth_token}", data_to_put
-    actual_auth = JSON.parse(last_response.body)
+    actual_auth = last_response_body
     expected_auth = User.first.auth_token
     
     # 404 response code means invalid token
@@ -207,7 +207,7 @@ class AuthTest < ActiveSupport::TestCase
     }
     
     put_json "/api/auth/", data_to_put
-    actual_auth = JSON.parse(last_response.body)
+    actual_auth = last_response_body
     expected_auth = User.first.auth_token
     
     # 405 response code means empty token
@@ -223,7 +223,7 @@ class AuthTest < ActiveSupport::TestCase
     }
 
     put_json "/api/auth/#{auth_token}", data_to_put
-    actual_auth = JSON.parse(last_response.body)
+    actual_auth = last_response_body
     expected_auth = User.first.auth_token
     
     # 400 response code means empty body

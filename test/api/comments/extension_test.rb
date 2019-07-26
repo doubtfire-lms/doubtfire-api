@@ -1,6 +1,6 @@
 require 'test_helper'
 
-class CommentTest < ActiveSupport::TestCase
+class ExtensionTest < ActiveSupport::TestCase
   include Rack::Test::Methods
   include TestHelpers::AuthHelper
   include TestHelpers::JsonHelper
@@ -38,7 +38,7 @@ class CommentTest < ActiveSupport::TestCase
 
     # Request a 2 day extension
     post_json with_auth_token("/api/projects/#{project.id}/task_def_id/#{td.id}/request_extension", user), data_to_post
-    response = JSON.parse(last_response.body)
+    response = last_response_body
     assert_equal 201, last_response.status
     assert response["weeks_requested"] == 1, "Error: Deadline less than a week, requested weeks should be 1, found #{response["weeks_requested"]}."
 
@@ -48,20 +48,20 @@ class CommentTest < ActiveSupport::TestCase
     data_to_post["weeks_requested"] = '2'
 
     post_json with_auth_token("/api/projects/#{project.id}/task_def_id/#{td.id}/request_extension", user), data_to_post
-    response = JSON.parse(last_response.body)
+    response = last_response_body
     assert_equal 201, last_response.status
     assert response["weeks_requested"] == 2, "Error: Weeks requested weeks should be 2, found #{response["weeks_requested"]}."
 
     # Ask for too long an extension
     data_to_post["weeks_requested"] = '5'
     post_json with_auth_token("/api/projects/#{project.id}/task_def_id/#{td.id}/request_extension", user), data_to_post
-    response = JSON.parse(last_response.body)
+    response = last_response_body
     assert_equal 403, last_response.status, "Error: Allowed too long of a request to be applied."
 
     # Ask for 0 week extension
     data_to_post["weeks_requested"] = '0'
     post_json with_auth_token("/api/projects/#{project.id}/task_def_id/#{td.id}/request_extension", user), data_to_post
-    response = JSON.parse(last_response.body)
+    response = last_response_body
     assert_equal 403, last_response.status, "Error: Should not allow 0 week extension requests"
 
     td.destroy!
