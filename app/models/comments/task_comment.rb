@@ -8,6 +8,8 @@ class TaskComment < ActiveRecord::Base
 
   belongs_to :task # Foreign key
   belongs_to :user
+  has_one :unit, through: :task
+  has_one :project, through: :task
 
   belongs_to :recipient, class_name: 'User'
 
@@ -19,6 +21,11 @@ class TaskComment < ActiveRecord::Base
   validates :user, presence: true
   validates :recipient, presence: true
   validates :comment, length: { minimum: 0, maximum: 4095, allow_blank: true }
+
+  # After create, mark as read by user creating
+  after_create do
+    mark_as_read(self.user)
+  end
 
   # Delete action - before dependent association
   before_destroy :delete_associated_files
@@ -55,9 +62,6 @@ class TaskComment < ActiveRecord::Base
 
   def create_comment_read_receipt_entry(user)
     comment_read_receipt = CommentsReadReceipts.find_or_create_by(user: user, task_comment: self)
-    comment_read_receipt.user = user
-    comment_read_receipt.task_comment = self
-    comment_read_receipt.save!
   end
 
   def comment
@@ -116,8 +120,10 @@ class TaskComment < ActiveRecord::Base
     CommentsReadReceipts.delete_all(user: user, task_comment: self)
   end
 
-  def mark_as_read(user, unit)
-    if user == task.project.main_tutor
+  def mark_as_read(user, unit = self.unit)
+    return if read_by?(user) # avoid propagating if not needed
+
+    if user == project.main_tutor
       unit.staff.each do |staff_member|
         create_comment_read_receipt_entry(staff_member.user)
       end
@@ -128,6 +134,10 @@ class TaskComment < ActiveRecord::Base
 
   def mark_as_unread(user)
     remove_comment_read_entry(user)
+  end
+
+  def read_by?(user)
+    CommentsReadReceipts.find_by(user: user, task_comment: self).present?
   end
 
   def time_read_by(user)

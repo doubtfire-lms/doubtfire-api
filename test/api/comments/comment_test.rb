@@ -164,14 +164,14 @@ class CommentTest < ActiveSupport::TestCase
 
     td = TaskDefinition.new({
         unit_id: unit.id,
-        name: 'status task change',
-        description: 'status task change test',
+        name: 'test_read_receipts_for_task_status_comments',
+        description: 'test_read_receipts_for_task_status_comments',
         weighting: 4,
         target_grade: 0,
         start_date: Time.zone.now - 2.weeks,
         target_date: Time.zone.now + 1.week,
         due_date: Time.zone.now + 2.week,
-        abbreviation: 'TASKSTATUSCHANGE',
+        abbreviation: 'test_read_receipts_for_task_status_comments',
         restrict_status_updates: false,
         upload_requirements: [ ],
         plagiarism_warn_pct: 0.8,

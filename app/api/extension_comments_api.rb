@@ -20,9 +20,14 @@ module Api
       end
 
       error!({error:'Extension weeks can not be 0.'}, 403) if params[:weeks_requested] == 0
-      error!({error:'Extension weeks exceed task deadline.'}, 403) unless params[:weeks_requested] <= task.weeks_can_extend
 
-      result = task.apply_for_extension(current_user, params[:comment], params[:weeks_requested])
+      max_duration = task.weeks_can_extend
+      duration = params[:weeks_requested]
+      duration = max_duration unless params[:weeks_requested] <= max_duration
+
+      error!({error:'Extensions cannot be granted beyond task deadline.'}, 403) if duration <= 0
+
+      result = task.apply_for_extension(current_user, params[:comment], duration)
       result.serialize(current_user)
     end
 

@@ -9,11 +9,23 @@ class ExtensionComment < TaskComment
     json[:date_assessed] = date_extension_assessed
     json[:weeks_requested] = extension_weeks
     json[:extension_response] = extension_response
+    json[:task_status] = task.status
     json
   end
 
   def assessed?
     self.date_extension_assessed.present?
+  end
+
+  # Make sure we can access super's version of mark_as_read for assess extension
+  alias :super_mark_as_read :mark_as_read
+
+  # Allow individual staff and the student to read this... but stop
+  # the main tutor reading without assessing. As only the main tutor
+  # propagates reads, this will work as required - other staff cant
+  # make it read for the main tutor.
+  def mark_as_read(user, unit = self.unit)
+    super if assessed? || user != project.main_tutor
   end
 
   def assess_extension(user, granted)
@@ -36,6 +48,8 @@ class ExtensionComment < TaskComment
       self.extension_response = "Extension rejected"
     end
 
+    # Now make sure to read it by the main tutor - even if assessed by someone else
+    super_mark_as_read(project.main_tutor)
     save!
   end
 end
