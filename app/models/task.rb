@@ -534,7 +534,7 @@ class Task < ActiveRecord::Base
   def submit(by_user, submit_date = Time.zone.now)
     self.submission_date  = submit_date
 
-    add_status_comment(by_user, self.task_status)
+    add_status_comment(by_user, TaskStatus.ready_to_mark)
 
     # If it is submitted before the due date...
     if submitted_before_due?
