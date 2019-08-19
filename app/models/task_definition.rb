@@ -91,6 +91,10 @@ class TaskDefinition < ActiveRecord::Base
     if File.exists? task_resources_with_abbreviation(abbreviation_was)
       FileUtils.mv(task_resources_with_abbreviation(abbreviation_was), task_resources())
     end
+
+    if File.exists? task_assessment_resources_with_abbreviation(abbreviation_was)
+      FileUtils.mv(task_assessment_resources_with_abbreviation(abbreviation_was), task_assessment_resources())
+    end
   end
 
   def plagiarism_checks
@@ -469,6 +473,10 @@ class TaskDefinition < ActiveRecord::Base
     File.exist? task_resources
   end
 
+  def has_task_assessment_resources?
+    File.exist? task_assessment_resources
+  end
+
   def has_task_sheet?
     File.exist? task_sheet
   end
@@ -501,6 +509,16 @@ class TaskDefinition < ActiveRecord::Base
     end
   end
 
+  def add_task_assessment_resources(file)
+    FileUtils.mv file, task_assessment_resources
+  end
+
+  def remove_task_assessment_resources()
+    if has_task_assessment_resources?
+      FileUtils.rm task_assessment_resources
+    end
+  end
+
   # Get the path to the task sheet - using the current abbreviation
   def task_sheet
     task_sheet_with_abbreviation(abbreviation)
@@ -508,6 +526,10 @@ class TaskDefinition < ActiveRecord::Base
 
   def task_resources
     task_resources_with_abbreviation(abbreviation)
+  end
+
+  def task_assessment_resources
+    task_assessment_resources_with_abbreviation(abbreviation)
   end
 
   def related_tasks_with_files(consolidate_groups = true)
@@ -536,6 +558,7 @@ class TaskDefinition < ActiveRecord::Base
     def delete_associated_files()
       remove_task_sheet()
       remove_task_resources()
+      remove_task_assessment_resources()
     end
 
     # Calculate the path to the task sheet using the provided abbreviation
@@ -562,6 +585,25 @@ class TaskDefinition < ActiveRecord::Base
 
       result_with_sanitised_path = "#{task_path}#{FileHelper.sanitized_path(abbr)}.zip"
       result_with_sanitised_file = "#{task_path}#{FileHelper.sanitized_filename(abbr)}.zip"
+
+      puts result_with_sanitised_path
+      puts result_with_sanitised_file
+
+      if File.exist? result_with_sanitised_path
+        result_with_sanitised_path
+      else
+        result_with_sanitised_file
+      end
+    end
+
+    def task_assessment_resources_with_abbreviation(abbr)
+      task_path = FileHelper.task_file_dir_for_unit unit, create = true
+
+      result_with_sanitised_path = "#{task_path}#{FileHelper.sanitized_path(abbr)}-assessment.zip"
+      result_with_sanitised_file = "#{task_path}#{FileHelper.sanitized_filename(abbr)}-assessment.zip"
+
+      puts result_with_sanitised_path
+      puts result_with_sanitised_file
 
       if File.exist? result_with_sanitised_path
         result_with_sanitised_path
