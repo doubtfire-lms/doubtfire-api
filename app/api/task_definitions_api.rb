@@ -279,6 +279,48 @@ module Api
       task_def
     end
 
+    desc 'Upload the task assessment resources for a given task'
+    params do
+      requires :unit_id, type: Integer, desc: 'The related unit'
+      requires :task_def_id, type: Integer, desc: 'The related task definition'
+      requires :file, type: Rack::Multipart::UploadedFile, desc: 'The task assessment resources zip'
+    end
+    post '/units/:unit_id/task_definitions/:task_def_id/task_assessment_resources' do
+      unit = Unit.find(params[:unit_id])
+
+      unless authorise? current_user, unit, :add_task_def
+        error!({ error: 'Not authorised to upload task assessment resources of unit' }, 403)
+      end
+
+      task_def = unit.task_definitions.find(params[:task_def_id])
+
+      file_path = params[:file][:tempfile].path
+
+      check_mime_against_list! file_path, 'zip', ['application/zip', 'multipart/x-gzip', 'multipart/x-zip', 'application/x-gzip', 'application/octet-stream']
+
+      # Actually import...
+      task_def.add_task_assessment_resources(file_path)
+    end
+
+    desc 'Remove the task assessment resources for a given task'
+    params do
+      requires :unit_id, type: Integer, desc: 'The related unit'
+      requires :task_def_id, type: Integer, desc: 'The related task definition'
+    end
+    delete '/units/:unit_id/task_definitions/:task_def_id/task_assessment_resources' do
+      unit = Unit.find(params[:unit_id])
+
+      unless authorise? current_user, unit, :add_task_def
+        error!({ error: 'Not authorised to remove task assessment resources of unit' }, 403)
+      end
+
+      task_def = unit.task_definitions.find(params[:task_def_id])
+
+      # Actually remove...
+      task_def.remove_task_assessment_resources
+      task_def
+    end
+
     desc 'Upload a zip file containing the task pdfs for a given task'
     params do
       requires :unit_id, type: Integer, desc: 'The unit to upload tasks for'
@@ -379,6 +421,33 @@ module Api
         path = task_def.task_resources
         content_type 'application/octet-stream'
         header['Content-Disposition'] = "attachment; filename=#{task_def.abbreviation}-resources.zip"
+      else
+        path = Rails.root.join('public', 'resources', 'FileNotFound.pdf')
+        content_type 'application/pdf'
+        header['Content-Disposition'] = 'attachment; filename=FileNotFound.pdf'
+      end
+
+      env['api.format'] = :binary
+      File.read(path)
+    end
+
+    desc 'Download the task assessment resources'
+    params do
+      requires :unit_id, type: Integer, desc: 'The unit to upload tasks for'
+      requires :task_def_id, type: Integer, desc: 'The task definition to get the assessment resources of'
+    end
+    get '/units/:unit_id/task_definitions/:task_def_id/task_assessment_resources' do
+      unit = Unit.find(params[:unit_id])
+      task_def = unit.task_definitions.find(params[:task_def_id])
+
+      unless authorise? current_user, unit, :get_unit
+        error!({ error: 'Not authorised to download task details of unit' }, 403)
+      end
+
+      if task_def.has_task_assessment_resources?
+        path = task_def.task_assessment_resources
+        content_type 'application/octet-stream'
+        header['Content-Disposition'] = "attachment; filename=#{task_def.abbreviation}-assessment-resources.zip"
       else
         path = Rails.root.join('public', 'resources', 'FileNotFound.pdf')
         content_type 'application/pdf'

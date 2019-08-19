@@ -21,6 +21,9 @@ module Api
         optional :trigger, type: String, desc: 'Can be need_help to indicate upload is not a ready to mark submission'
       end
       post '/projects/:id/task_def_id/:task_definition_id/submission' do
+        puts 'testing'
+        puts params
+
         project = Project.find(params[:id])
         task_definition = project.unit.task_definitions.find(params[:task_definition_id])
 
@@ -48,6 +51,15 @@ module Api
 
         # Copy files to be PDFed
         task.accept_submission(current_user, scoop_files(params, upload_reqs), student, self, params[:contributions], trigger, alignments)
+
+        if not task_definition.has_task_assessment_resources?
+          puts 'Task def doesn\'t has task assessment resources'
+        else
+          puts 'Task def has task assessment resources'
+          # TODO: Continue the upload thingy to aafs.
+          # TODO: Upload some task assessment resources zip and see if it's actually uploaded. May have to first find out where are the other files uploaded. DONE -- student work folder/unit
+          
+        end
 
         TaskUpdateSerializer.new(task)
       end # post
