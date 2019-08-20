@@ -1,3 +1,5 @@
+require 'rest-client'
+
 class PortfolioEvidence
   include FileHelper
   include LogHelper
@@ -52,6 +54,7 @@ class PortfolioEvidence
         success = task.convert_submission_to_pdf
 
         if success
+          perform_aafs_submission task
           done[task.project] = [] if done[task.project].nil?
           done[task.project] << task
         else
@@ -77,6 +80,35 @@ class PortfolioEvidence
         logger.info "emailing task notification to #{project.student.name}"
         PortfolioEvidenceMailer.task_pdf_failed(project, tasks).deliver
       end
+    end
+  end
+
+  def self.perform_aafs_submission(task)
+    task_definition = task.task_definition
+
+    unless task_definition.has_task_assessment_resources?
+      # TODO: Remove the following puts statement.
+      puts 'Task def doesn\'t has task assessment resources'
+    else
+      assessment_resources_path = task_definition.task_assessment_resources
+      puts assessment_resources_path
+
+      # TODO: Remove the following puts statement.
+      puts 'Task def has task assessment resources'
+      submission_path = FileHelper.zip_file_path_for_done_task(task)
+      puts submission_path
+      
+      unless File.exists? submission_path
+        puts "student submission zip file doesnt exist #{submission_path}"
+        return
+      end
+
+      aafs_response = RestClient.post "http://localhost:9292/submit", {'project_id' => task.project.id, 'submission' => File.new(submission_path, 'rb'), 'assessment' => File.new(assessment_resources_path, 'rb')}
+
+      pdf_file = aafs_response
+
+      # TODO: Create an pdf.erb for displaying the result and adding it as a task comment.
+      # task.add_comment_with_attachment task.project.main_tutor, pdf_file
     end
   end
 

@@ -586,9 +586,6 @@ class TaskDefinition < ActiveRecord::Base
       result_with_sanitised_path = "#{task_path}#{FileHelper.sanitized_path(abbr)}.zip"
       result_with_sanitised_file = "#{task_path}#{FileHelper.sanitized_filename(abbr)}.zip"
 
-      puts result_with_sanitised_path
-      puts result_with_sanitised_file
-
       if File.exist? result_with_sanitised_path
         result_with_sanitised_path
       else
@@ -601,9 +598,6 @@ class TaskDefinition < ActiveRecord::Base
 
       result_with_sanitised_path = "#{task_path}#{FileHelper.sanitized_path(abbr)}-assessment.zip"
       result_with_sanitised_file = "#{task_path}#{FileHelper.sanitized_filename(abbr)}-assessment.zip"
-
-      puts result_with_sanitised_path
-      puts result_with_sanitised_file
 
       if File.exist? result_with_sanitised_path
         result_with_sanitised_path
