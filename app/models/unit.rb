@@ -1106,6 +1106,8 @@ class Unit < ActiveRecord::Base
         'Target Grade',
         'Email',
         'Portfolio',
+        'Grade',
+        'Rationale',
         'Tutorial',
         'Tutor'
       ] +
