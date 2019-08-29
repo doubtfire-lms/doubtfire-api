@@ -37,7 +37,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     td.destroy
   end
 
-  def test_default_quality_points
+  def test_group_tasks
     u = Unit.first
 
     group_params = {
