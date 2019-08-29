@@ -176,14 +176,19 @@ class Unit < ActiveRecord::Base
     
     new_unit.save!
 
+    # Duplicate group sets - before tasks as some tasks are group tasks
+    group_sets.each do |group_set|
+      new_unit.group_sets << group_set.dup
+    end
+
     # Duplicate task definitions
     task_definitions.each do |td|
       td.copy_to(new_unit)
     end
 
     # Duplicate unit learning outcomes
-    learning_outcomes.each do |learning_outcomes|
-      new_unit.learning_outcomes << learning_outcomes.dup
+    learning_outcomes.each do |learning_outcome|
+      new_unit.learning_outcomes << learning_outcome.dup
     end
 
     # Duplicate alignments
@@ -191,14 +196,9 @@ class Unit < ActiveRecord::Base
       align.duplicate_to(new_unit)
     end
 
-    # Duplicate group sets
-    group_sets.each do |group_sets|
-      new_unit.group_sets << group_sets.dup
-    end
-
     # Duplicate convenors
-    convenors.each do |convenors|
-      new_unit.convenors << convenors.dup
+    convenors.each do |convenor|
+      new_unit.convenors << convenor.dup
     end
     
     new_unit

@@ -4,7 +4,8 @@ FactoryGirl.define do
   factory :group do
     group_set
 
-    sequence(:name)   { |n| "Group #{n}" }
+    sequence(:number)       { |n| n }
+    name                    { Populator.words(1..3) }
 
     after(:build) do |group, eval|
       if group.tutorial.nil?

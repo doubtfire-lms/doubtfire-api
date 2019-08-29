@@ -2,7 +2,7 @@ require 'test_helper'
 
 class UnitTest < ActiveSupport::TestCase
   
-  def setup
+  setup do
     data = {
         code: 'COS10001',
         name: 'Testing in Unit Tests',
@@ -10,6 +10,10 @@ class UnitTest < ActiveSupport::TestCase
         teaching_period: TeachingPeriod.find(3)
       }
     @unit = Unit.create(data)
+  end
+
+  teardown do
+    @unit.destroy
   end
 
   test 'import tasks worked' do
@@ -39,6 +43,27 @@ class UnitTest < ActiveSupport::TestCase
     end
 
     assert File.exists?(unit2.task_definitions.first.task_resources), 'task resource is absent'
+
+    unit2.destroy
+  end
+
+  test 'rollover of group tasks' do
+    unit = FactoryGirl.create(:unit,
+      code: 'SIT102',
+      teaching_period: TeachingPeriod.find(3),
+      group_sets: 1,
+      student_count: 2,
+      groups: [ { gs: 0, students: 2} ],
+      group_tasks: [ { idx: 0, gs: 0 }] )
+
+    unit2 = unit.rollover TeachingPeriod.find(2), nil, nil
+
+    assert_equal 1, unit2.group_sets.count
+    assert_not_equal unit2.group_sets.first, unit.group_sets.first
+    assert unit2.task_definitions.first.is_group_task?
+
+    unit.destroy
+    unit2.destroy
   end
 
   test 'rollover of task ilo links' do
@@ -50,7 +75,7 @@ class UnitTest < ActiveSupport::TestCase
 
     assert @unit.task_outcome_alignments.count > 0
     assert_equal @unit.task_outcome_alignments.count, unit2.task_outcome_alignments.count
-    
+
     @unit.task_outcome_alignments.each do |link|
       ilo = unit2.learning_outcomes.find_by(abbreviation: link.learning_outcome.abbreviation)
       task_def = unit2.task_definitions.find_by(abbreviation: link.task_definition.abbreviation)
