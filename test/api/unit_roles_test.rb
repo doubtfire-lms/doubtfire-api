@@ -9,9 +9,10 @@ class UnitRolesTest < ActiveSupport::TestCase
     Rails.application
   end
 
-  # GET /api/units_roles
+  # Get unit_roles
   def test_get_unit_roles
-    get '/api/unit_roles'
+    get with_auth_token'/api/unit_roles'
+	  assert_equal 200, last_response.status
     # UnitRole.joins(:role, :unit).where("user_id = :user_id and roles.name <> 'Student'", user_id: user.id)
 
     # asserts
@@ -46,4 +47,23 @@ class UnitRolesTest < ActiveSupport::TestCase
     assert_equal to_post[:unit_id], last_response_body['unit_id']
     assert_equal to_post[:user_id], last_response_body['user_id']
   end
+
+  # Delete unit role
+  def test_unit_roles_delete
+    number_of_unit_roles = UnitRole.all.count
+
+    test_unit_role = UnitRole.all.first
+    id_of_unit_role_to_delete = test_unit_role.id
+
+    # perform the delete
+    delete_json with_auth_token "/api/unit_roles/#{id_of_unit_role_to_delete}"
+
+    # Check there is one less unit_roles
+    assert_equal number_of_unit_roles - 1, UnitRole.all.count
+
+    # Check that you can't find the deleted id
+    refute UnitRole.exists?(id_of_unit_role_to_delete)
+    assert_equal last_response.status, 200
+  end
+  
 end
