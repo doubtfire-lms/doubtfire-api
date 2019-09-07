@@ -31,20 +31,8 @@ class UnitsTest < ActiveSupport::TestCase
   # GET tests
   # ========================================================================
 
-  def test_get_the_list_of_users
+  def test_get_users
     get with_auth_token '/api/users'
-    assert_equal 200, last_response.status
-  end
-
-  def test_get_user
-    get with_auth_token '/api/users/:id'
-    assert_equal 500, last_response.status
-  end
-
-  def test_get_existing_user
-    test_user = User.all.first
-    id_of_test_user = test_user.id
-    get with_auth_token "/api/users/#{id_of_test_user}"
     assert_equal 200, last_response.status
   end
 
@@ -74,11 +62,6 @@ class UnitsTest < ActiveSupport::TestCase
       get "/api/#{m}?auth_token=1234"
       assert_equal 419, last_response.status
     }
-  end
-
-  def test_get_download_csv_of_user
-    get with_auth_token '/csv/users'
-    assert_equal 404, last_response.status
   end
 
   # ========================================================================
