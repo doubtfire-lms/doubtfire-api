@@ -18,6 +18,15 @@ class UnitRolesTest < ActiveSupport::TestCase
     # asserts
   end
 
+  # Get unit_roles_details
+  def test_get_unit_roles_details
+    ur = UnitRole.second
+    id_of_ur = ur.id
+
+    get with_auth_token "/api/unit_roles/#{ur.id}"
+    assert_equal 200, last_response.status
+  end
+
   def test_post_bad_unit_roles
     num_of_unit_roles = UnitRole.all.count
 
