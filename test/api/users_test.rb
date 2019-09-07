@@ -31,8 +31,17 @@ class UnitsTest < ActiveSupport::TestCase
   # GET tests
   # ========================================================================
 
-  def test_get_users
+  def test_get_list_users
     get with_auth_token '/api/users'
+    assert_equal 200, last_response.status
+  end
+
+  # Get users details
+  def test_get_users_details
+    user = User.third
+    id_of_user = user.id
+
+    get with_auth_token "/api/users/#{user.id}"
     assert_equal 200, last_response.status
   end
 
