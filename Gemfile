@@ -15,9 +15,6 @@ gem 'rails', '4.2.6'
 
 group :development, :test do
   gem 'database_cleaner'
-  gem 'factory_girl_rails'
-  gem 'minitest-around'
-  gem 'minitest-rails'
   gem 'byebug'
   gem 'simplecov', require: false
   gem 'pg'
@@ -31,7 +28,10 @@ end
 group :development, :test, :staging do
   # Generators for population
   gem 'populator'
+  gem 'factory_girl_rails'
   gem 'faker', '~>1.9.1'
+  gem 'minitest-rails'
+  gem 'minitest-around'
 end
 
 group :production do
