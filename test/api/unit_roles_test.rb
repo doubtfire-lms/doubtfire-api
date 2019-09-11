@@ -75,4 +75,20 @@ class UnitRolesTest < ActiveSupport::TestCase
     assert_equal last_response.status, 200
   end
   
+
+  def test_student_delete_unit_role
+    project = Project.first
+    user = project.student
+    
+    number_of_unit_roles = UnitRole.all.count
+
+    test_unit_role = UnitRole.all.first
+    id_of_unit_role_to_delete = test_unit_role.id
+
+    # perform the delete
+    delete_json with_auth_token("/api/unit_roles/#{id_of_unit_role_to_delete}", user)
+
+    assert_equal 403, last_response.status
+  end
+
 end
