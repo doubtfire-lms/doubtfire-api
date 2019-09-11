@@ -13,15 +13,17 @@ FactoryGirl.define do
   factory :task_definition do
     unit
     name                      { Populator.words(1..3) }
-    sequence(:abbreviation)   { |n| "P01.#{n}" }
+    sequence(:abbreviation)   { |n| "P1.#{n}" }
     weighting                 { rand(1..5) }
-    target_date               { rand(1..12).weeks.from_now }
-    target_grade              { rand(0..4) }
+    start_date                { unit.start_date + rand(1..12).weeks }
+    target_date               { start_date + rand(1..2).weeks }
+    target_grade              { rand(0..3) }
   end
 
   factory :learning_outcome do
     unit
     name                      { Populator.words(1..3) }
+    sequence(:abbreviation)   { |n| "ULO-#{n}" }
     sequence(:ilo_number)     { |n| n }
     description               { "description" }
   end
@@ -33,16 +35,17 @@ FactoryGirl.define do
       tutorials 1
       group_sets 0
       groups [ ] #[ { gs: 0, students:0 } ]
-      group_tasks [ ]
+      group_tasks [ ] #[ {idx: 0, gs: gs }] - index of task, and index of group set
       outcome_count 2
     end
 
-    name          "A"
-    description   "Description"
-    start_date    Time.zone.now
-    end_date      Time.zone.now + 14.weeks
-    code          "COS10001"
-    active        true
+    name            { Populator.words(1..2) }
+    description     "Description"
+    start_date      Time.zone.now
+    end_date        Time.zone.now + 14.weeks
+    teaching_period nil
+    code            "COS10001"
+    active          true
 
     after(:create) do | unit, eval |
       create_list(:tutorial, eval.tutorials, unit: unit)
@@ -52,7 +55,7 @@ FactoryGirl.define do
 
       unit.employ_staff( FactoryGirl.create(:user, :convenor), Role.convenor)
       eval.student_count.times do |i|
-       unit.enrol_student( FactoryGirl.create(:user, :student), unit.tutorials[i % unit.tutorials.count])
+        unit.enrol_student( FactoryGirl.create(:user, :student), unit.tutorials[i % unit.tutorials.count])
       end
 
       stud = 0
