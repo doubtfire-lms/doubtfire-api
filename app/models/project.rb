@@ -671,6 +671,8 @@ class Project < ActiveRecord::Base
       target_grade_desc,
       student.email,
       portfolio_status,
+      grade > 0 ? grade : '',
+      grade_rationale,
       tutorial ? tutorial.abbreviation : '',
       main_tutor.name
     ] +
