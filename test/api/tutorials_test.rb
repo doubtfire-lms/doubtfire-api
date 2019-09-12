@@ -73,24 +73,48 @@ class TutorialsTest < ActiveSupport::TestCase
   end
 
   def test_tutorials_put
-    number_of_tutorials = Tutorial.all.length
+        tutorial={}
+      tutorial[:abbreviation] = 'LAB03'
+      tutorial[:meeting_location] = 'AB Building'
+      tutorial[:meeting_day] = 'Tuesday'
+      tutorial[:meeting_time] = '11:30'
 
-    tutorial_old = Tutorial.first
-    tutorial_new = tutorial_old
+      data_to_put = {
+        tutorial:tutorial,
+        auth_token: auth_token
+  }
+      put_json '/api/tutorials/1', data_to_put
+      assert_equal 200, last_response.status
 
-    tutorial_new[:meeting_time] = '11:30'
-    tutorial_new[:meeting_location] = 'AB Building'
-    tutorial_new[:meeting_day] = 'Tuesday'
-    tutorial_new[:abbreviation] = 'LAB03'
 
-    # perform the post
-    put_json '/api/tutorials/1', tutorial_new
 
-    # Check there is a new tutorial
-    assert_equal Tutorial.all.length, number_of_tutorials
-
-    assert_tutorial_model_response last_response_body, tutorial_new
   end
+
+  #Test PUT for updating tutorial details with empty abbreviation
+  def test_put_update_tutorial_empty_name
+    tutorial = Tutorial.first
+    tutorial[:abbreviation] = ''
+
+    data_to_put = {
+        tutorial: tutorial,
+        auth_token: auth_token
+    }
+
+    put_json '/api/tutorials/1', data_to_put
+    assert_equal 200, last_response.status
+  end
+
+  #Test PUT for updating tutorial details with invalid abbreviation
+  def test_put_update_tutorial_invalid_abbreviation
+  data_to_put = {
+      tutorial: { abbreviation: 'test'},
+      auth_token: auth_token
+  }
+
+  put_json '/api/tutorials/12', data_to_put
+  assert_equal 403, last_response.status
+  end
+
 
   def test_tutorials_delete
     number_of_tutorials = Tutorial.all.length
