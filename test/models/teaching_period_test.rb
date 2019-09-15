@@ -282,4 +282,11 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     unit.reload
     assert unit.valid?
   end
+  
+  def test_add_break
+    tp = TeachingPeriod.first
+    break_count = tp.breaks.count
+    tp.add_break(tp.date_for_week(3), 1)
+    assert_equal tp.breaks.count , break_count+1    
+  end
 end
