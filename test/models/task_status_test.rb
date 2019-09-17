@@ -5,7 +5,8 @@ class TaskStatusTest < ActiveSupport::TestCase
     TaskStatus.all.each do |ts|
       assert_equal TaskStatus.id_to_key(ts.id), ts.status_key 
     end
-  end 
+  end
+  def test_status_chanaged_with_extenssion     
 	unit = Unit.first
     td = TaskDefinition.new({
         unit_id: unit.id,
@@ -38,5 +39,5 @@ class TaskStatusTest < ActiveSupport::TestCase
     # Get the task... check it is now time exceeded
     task = project.task_for_task_definition(td)
     assert_equal TaskStatus.time_exceeded, task.task_status
-end
+	end
 end
