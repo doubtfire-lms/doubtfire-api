@@ -5,8 +5,7 @@ class TaskStatusTest < ActiveSupport::TestCase
     TaskStatus.all.each do |ts|
       assert_equal TaskStatus.id_to_key(ts.id), ts.status_key 
     end
-  end
-  def test_status_chanaged_with_extenssion     
+  end 
 	unit = Unit.first
     td = TaskDefinition.new({
         unit_id: unit.id,
