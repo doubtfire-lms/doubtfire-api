@@ -1,13 +1,22 @@
 require 'test_helper'
 
 class TaskStatusTest < ActiveSupport::TestCase
+  include Rack::Test::Methods
+  include TestHelpers::TestFileHelper
+  include TestHelpers::AuthHelper
+
+  def app
+    Rails.application
+  end
+  
   test 'ensure status matches id' do
     TaskStatus.all.each do |ts|
       assert_equal TaskStatus.id_to_key(ts.id), ts.status_key 
-    end
   end
+  end
+   
   def test_status_chanaged_with_extenssion     
-	unit = Unit.first
+  unit = Unit.first
     td = TaskDefinition.new({
         unit_id: unit.id,
         name: 'Task past due - for revert',
@@ -25,19 +34,19 @@ class TaskStatusTest < ActiveSupport::TestCase
         max_quality_pts: 0
       })
     td.save! 
-	
-	# Get the first student - who now has this task
+  
+  # Get the first student - who now has this task
     project = unit.active_projects.first
-	
-	data_to_post = {
+  
+  data_to_post = {
       trigger: 'ready_to_mark'
     }
-	
+  
     # Make a submission for this student
     post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", with_auth_token(data_to_post)
 
     # Get the task... check it is now time exceeded
     task = project.task_for_task_definition(td)
     assert_equal TaskStatus.time_exceeded, task.task_status
-	end
+end
 end

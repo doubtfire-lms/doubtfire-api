@@ -18,6 +18,7 @@ class BreakTest < ActiveSupport::TestCase
     assert b1.valid?, "b1 not valid"
     assert_equal 1, tp.breaks.count
   end
+
   def test_start_date_is_within_teaching_period
     data = {
       year: 2023,
@@ -45,7 +46,7 @@ class BreakTest < ActiveSupport::TestCase
 
     tp = TeachingPeriod.create(data)
     assert_raises ActiveRecord::RecordInvalid do
-    b1 = tp.add_break('2023-01-02', 5)
- end 
+      b1 = tp.add_break('2023-01-02', 5)
+    end 
  end
 end
