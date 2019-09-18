@@ -9,14 +9,6 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     Rails.application
   end
 
-  def test_get_teaching_periods_details
-    tp = TeachingPeriod.second
-    id_of_tp = tp.id
-
-    get with_auth_token "/api/teaching_periods/#{tp.id}"
-    assert_equal 200, last_response.status
-  end
-  
   def test_get_teaching_periods
     # The GET we are testing
     get '/api/teaching_periods'
