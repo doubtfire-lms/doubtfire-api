@@ -27,7 +27,18 @@ class TeachingPeriodTest < ActiveSupport::TestCase
       assert_json_matches_model(data, tp, response_keys)
     end
   end
+  
+  def test_get_teaching_periods_details
+    tp = TeachingPeriod.second
+    id_of_tp = tp.id
+    teaching_period = TeachingPeriod.find_by_id(tp.id)
+    get with_auth_token "/api/teaching_periods/#{tp.id}"
+    assert last_response.ok?
+    assert_equal 200, last_response.status
+    assert_equal TeachingPeriodSerializer.new(teaching_period).to_json, last_response.body
 
+  end
+  
   def test_update_break_from_teaching_period
     tp = TeachingPeriod.first
     to_update = tp.breaks.first
