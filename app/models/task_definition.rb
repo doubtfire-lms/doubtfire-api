@@ -33,6 +33,8 @@ class TaskDefinition < ActiveRecord::Base
 
   validate :ensure_no_submissions, if: :has_change_group_status?
 
+  # In the rollover process, copy this definition into another unit
+  # Copy this task into the other unit
   def copy_to(other_unit)
     new_td = self.dup
 
@@ -40,6 +42,12 @@ class TaskDefinition < ActiveRecord::Base
     new_td.unit_id = other_unit.id          # for database
     new_td.unit = other_unit                # for other operations
     other_unit.task_definitions << new_td   # so we can see it in unit elsewhere
+
+    # change group set
+    if is_group_task?
+      # Find based upon the group set in the new unit
+      new_td.group_set = other_unit.group_sets.find_by(name: self.group_set.name)
+    end
 
     # Adjust dates
     new_td.start_week_and_day = start_week, start_day
