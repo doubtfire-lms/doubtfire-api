@@ -31,6 +31,7 @@ class ExtensionTest < ActiveSupport::TestCase
         max_quality_pts: 0
       })
     td.save!
+
     data_to_post = {
       weeks_requested: '1',
       comment: "I need a lot of help"
@@ -63,6 +64,7 @@ class ExtensionTest < ActiveSupport::TestCase
     post_json with_auth_token("/api/projects/#{project.id}/task_def_id/#{td.id}/request_extension", user), data_to_post
     response = last_response_body
     assert_equal 403, last_response.status, "Error: Should not allow 0 week extension requests"
+
 
     td.destroy!
   end
@@ -117,7 +119,99 @@ class ExtensionTest < ActiveSupport::TestCase
     tc.assess_extension other_tutor, true
     assert tc.read_by?(main_tutor), "Error: Should be read by main tutor after assess"
 
+#Check if the student is  eligible for extension
+	# test assess extension
+    data_to_post = {
+      granted: true
+    }
+
+	put with_auth_token("/api/projects/#{project.id}/task_def_id/#{td.id}/assess_extension/#{tc.id}", main_tutor), data_to_post
+	response = last_response_body
+	assert_equal 403, last_response.status
+	assert_equal "Extension has already been assessed", last_response_body["error"]
+
+	put with_auth_token("/api/projects/#{project.id}/task_def_id/#{td.id}/assess_extension/#{tc.id}", user), data_to_post
+	response = last_response_body
+	assert_equal 403, last_response.status
+	assert_equal "Not authorised to assess an extension for this task", last_response_body["error"]
+
     td.destroy!
   end
+
+#Check if there is any negative extension
+	def test_negative_extension
+		project = Project.first
+		user = project.student
+		unit = project.unit
+
+		td = TaskDefinition.new({
+		    unit_id: unit.id,
+		    name: 'status task change',
+		    description: 'status task change test',
+		    weighting: 4,
+		    target_grade: 0,
+		    start_date: Time.zone.now - 2.weeks,
+		    target_date: Time.zone.now - 1.day,
+		    due_date: Time.zone.now + 1.day,
+		    abbreviation: 'LESS1WEEKEXTTEST',
+		    restrict_status_updates: false,
+		    upload_requirements: [ ],
+		    plagiarism_warn_pct: 0.8,
+		    is_graded: false,
+		    max_quality_pts: 0
+		  })
+		td.save!
+
+		data_to_post = {
+		  weeks_requested: '-1',
+		  comment: "too long to submit the task"
+		}
+
+		# Request a negative extension
+		post_json with_auth_token("/api/projects/#{project.id}/task_def_id/#{td.id}/request_extension", user), data_to_post
+		response = last_response_body
+		assert_equal 403, last_response.status, "Error: Extension request cannot be negative"
+
+		td.destroy!
+	end
+
+	# testing to extend after the submission due date
+	def test_extension_after_due_date
+		project = Project.first
+		user = project.student
+		unit = project.unit
+
+		# the task definition to new submission date
+		td = TaskDefinition.new({
+		    unit_id: unit.id,
+		    name: 'status task change',
+		    description: 'status task change test',
+		    weighting: 4,
+		    target_grade: 0,
+		    start_date: Time.zone.now - 2.weeks,
+		    target_date: Time.zone.now,
+		    due_date: Time.zone.now - 1.day,
+		    abbreviation: 'TESTEXTAFTERDUEDATE',
+		    restrict_status_updates: false,
+		    upload_requirements: [ ],
+		    plagiarism_warn_pct: 0.8,
+		    is_graded: false,
+		    max_quality_pts: 0
+		  })
+		td.save!
+
+		data_to_post = {
+		  weeks_requested: '1',
+		  comment: "sorry for late request"
+		}
+
+		# Request for extension after due date
+		post_json with_auth_token("/api/projects/#{project.id}/task_def_id/#{td.id}/request_extension", user), data_to_post
+		response = last_response_body
+		assert_equal 403, last_response.status, "Error: extension not allowed after due date"
+		assert_equal "Extensions cannot be granted beyond task deadline.", last_response_body["error"]
+
+		td.destroy!
+	  end
 
 end
