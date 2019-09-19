@@ -82,7 +82,7 @@ class UnitsTest < ActiveSupport::TestCase
 
     post_json '/api/units', data_to_post
     assert_equal count + 1, Unit.all.length
-  
+
     assert_equal 201, last_response.status
 
     post_json '/api/units', data_to_post
@@ -210,7 +210,7 @@ class UnitsTest < ActiveSupport::TestCase
     get with_auth_token '/api/units'
     assert_equal 200, last_response.status
   end
-  
+
 
   #Test PUT for updating unit details with valid id
   def test_units_put
@@ -224,7 +224,7 @@ class UnitsTest < ActiveSupport::TestCase
       data_to_put = {
         unit:unit,
         auth_token: auth_token
-  }          
+  }
       put_json '/api/units/1', data_to_put
       assert_equal 200, last_response.status
   end
@@ -253,7 +253,7 @@ def test_put_update_unit_invalid_id
   put_json '/api/units/12', data_to_put
   assert_equal 404, last_response.status
 end
-   
+
   # Test GET for getting a specific unit by invalid id
   def test_fail_units_get_by_id
     get with_auth_token '/api/units/12'
@@ -270,6 +270,28 @@ end
     put_json '/api/units/1', data_to_put
     assert_equal 419, last_response.status
   end
+
+  def test_get_project
+    get with_auth_token '/api/projects'
+    assert_equal 200, last_response.status
+  end
+
+  def test_project_put
+        project={}
+      project[:id] = '1'
+      project[:project_role] = 'nil'
+      project[:created_at] = '2019-09-03 13:53:06'
+      project[:updated_at] = '2019-09-03 13:53:06'
+
+      data_to_put = {
+        project:project,
+        auth_token: auth_token
+  }
+      put_json '/api/projects/1', data_to_put
+      assert_equal 200, last_response.status
+
+  end
+
 
   def test_put_update_unit_empty_token
     test_put_update_unit_custom_token ''
@@ -308,7 +330,7 @@ end
   end
 
   end
-  
+
   # End GET tests
   # --------------------------------------------------------------------------- #
 
@@ -391,7 +413,3 @@ end
   # End PUT tests
   # --------------------------------------------------------------------------- #
  #end
-
-
-
-  
