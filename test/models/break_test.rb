@@ -19,3 +19,4 @@ class BreakTest < ActiveSupport::TestCase
     assert_equal 1, tp.breaks.count
   end
 end
+
