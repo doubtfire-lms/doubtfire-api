@@ -51,6 +51,19 @@ class UnitsTest < ActiveSupport::TestCase
 
   end
 
+  def test_student_get_users_details
+    project = Project.first
+    student = project.student
+    
+    usr = User.third
+    id_of_user = usr.id
+    user = User.find_by_id(usr.id)
+
+    get with_auth_token("/api/users/#{usr.id}",student)
+
+    assert_equal 403, last_response.status
+  end
+
   def test_get_convenors
     get with_auth_token '/api/users/convenors'
     assert_equal 200, last_response.status
