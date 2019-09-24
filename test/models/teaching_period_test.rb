@@ -281,5 +281,37 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     assert tp.valid?
     unit.reload
     assert unit.valid?
+
+    tp.add_break(tp.date_for_week(3), 1)
+    br = tp.breaks.first 
+  end
+  test 'can update break with missing values' do
+    data = {
+        year: 2019,
+        period: 'T1',
+        start_date: Date.parse('2018-01-01'),
+        end_date: Date.parse('2018-02-01'),
+        active_until: Date.parse('2018-03-01')
+    }
+
+    tp = TeachingPeriod.create(data)   
+    tp.add_break(tp.date_for_week(3), 1)
+    br = tp.breaks.first 
+    assert_equal tp.update_break(br.id,'2018-01-10',1), br
+  end
+
+  test 'week number of first break' do
+    data = {
+        year: 2019,
+        period: 'T1',
+        start_date: Date.parse('2018-01-01'),
+        end_date: Date.parse('2018-02-01'),
+        active_until: Date.parse('2018-03-01')
+    }
+
+    tp = TeachingPeriod.create(data)   
+    tp.add_break(tp.date_for_week(3), 1)
+    br = tp.breaks.first     
+    assert_equal tp.week_number(br.start_date + 2.days), 2
   end
 end
