@@ -40,11 +40,15 @@ class UnitsTest < ActiveSupport::TestCase
 
   # Get users details
   def test_get_users_details
-    user = User.third
-    id_of_user = user.id
+    usr = User.third
+    id_of_user = usr.id
+    user = User.find_by_id(usr.id)
 
-    get with_auth_token "/api/users/#{user.id}"
+    get with_auth_token "/api/users/#{usr.id}"
+    assert last_response.ok?
     assert_equal 200, last_response.status
+    assert_equal UserSerializer.new(user).to_json, last_response.body
+
   end
 
   def test_get_convenors
