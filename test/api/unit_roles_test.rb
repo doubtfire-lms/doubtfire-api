@@ -22,9 +22,25 @@ class UnitRolesTest < ActiveSupport::TestCase
   def test_get_unit_roles_details
     ur = UnitRole.second
     id_of_ur = ur.id
-
+    unit_role = UnitRole.find_by_id(ur.id)
     get with_auth_token "/api/unit_roles/#{ur.id}"
+    assert last_response.ok?
     assert_equal 200, last_response.status
+    assert_equal UnitRoleSerializer.new(unit_role).to_json, last_response.body
+  end
+
+  def test_student_get_unit_role_details
+    project = Project.first
+    user = project.student
+    
+    ur = UnitRole.second
+    id_of_ur = ur.id
+    unit_role = UnitRole.find_by_id(ur.id)
+
+    #perform the get
+    get with_auth_token("/api/unit_roles/#{ur.id}",user)
+
+    assert_equal 403, last_response.status
   end
 
   def test_post_bad_unit_roles
