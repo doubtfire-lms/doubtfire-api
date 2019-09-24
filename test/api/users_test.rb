@@ -33,7 +33,9 @@ class UnitsTest < ActiveSupport::TestCase
 
   def test_get_list_users
     get with_auth_token '/api/users'
-    assert_equal 200, last_response.status
+    expected_data = User.all
+
+    assert_equal expected_data.count, last_response_body.count
   end
 
   # Get users details
