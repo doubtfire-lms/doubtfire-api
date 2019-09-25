@@ -38,6 +38,15 @@ class UnitsTest < ActiveSupport::TestCase
     assert_equal expected_data.count, last_response_body.count
   end
 
+  def test_student_get_users_list
+    project = Project.first
+    student = project.student
+    
+    get with_auth_token('/api/users',student)
+
+    assert_equal 403, last_response.status
+  end
+
   # Get users details
   def test_get_users_details
     usr = User.third
@@ -69,9 +78,27 @@ class UnitsTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status
   end
 
+  def test_student_get_convenors
+    project = Project.first
+    student = project.student
+    
+    get with_auth_token('/api/users/convenors',student)
+
+    assert_equal 403, last_response.status
+  end
+  
   def test_get_tutors
     get with_auth_token '/api/users/tutors'
     assert_equal 200, last_response.status
+  end
+
+  def test_student_get_tutors
+    project = Project.first
+    student = project.student
+    
+    get with_auth_token('/api/users/tutors',student)
+
+    assert_equal 403, last_response.status
   end
 
   def test_get_no_token
