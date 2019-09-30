@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20190705045015) do
+ActiveRecord::Schema.define(version: 20190930031610) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -33,6 +33,11 @@ ActiveRecord::Schema.define(version: 20190705045015) do
   end
 
   add_index "breaks", ["teaching_period_id"], name: "index_breaks_on_teaching_period_id", using: :btree
+
+  create_table "campuses", force: :cascade do |t|
+    t.string  "name", null: false
+    t.integer "mode", null: false
+  end
 
   create_table "comments_read_receipts", force: :cascade do |t|
     t.integer  "task_comment_id", null: false
@@ -198,8 +203,10 @@ ActiveRecord::Schema.define(version: 20190705045015) do
     t.integer  "user_id"
     t.integer  "grade",                                  default: 0
     t.string   "grade_rationale",           limit: 4096
+    t.integer  "campus_id"
   end
 
+  add_index "projects", ["campus_id"], name: "index_projects_on_campus_id", using: :btree
   add_index "projects", ["enrolled"], name: "index_projects_on_enrolled", using: :btree
   add_index "projects", ["tutorial_id"], name: "index_projects_on_tutorial_id", using: :btree
   add_index "projects", ["unit_id"], name: "index_projects_on_unit_id", using: :btree
@@ -373,8 +380,11 @@ ActiveRecord::Schema.define(version: 20190705045015) do
     t.string   "code",             limit: 255
     t.integer  "unit_role_id"
     t.string   "abbreviation",     limit: 255
+    t.integer  "capacity"
+    t.integer  "campus_id"
   end
 
+  add_index "tutorials", ["campus_id"], name: "index_tutorials_on_campus_id", using: :btree
   add_index "tutorials", ["unit_id"], name: "index_tutorials_on_unit_id", using: :btree
   add_index "tutorials", ["unit_role_id"], name: "index_tutorials_on_unit_role_id", using: :btree
 
@@ -453,6 +463,8 @@ ActiveRecord::Schema.define(version: 20190705045015) do
   add_foreign_key "breaks", "teaching_periods"
   add_foreign_key "comments_read_receipts", "task_comments"
   add_foreign_key "comments_read_receipts", "users"
+  add_foreign_key "projects", "campuses"
   add_foreign_key "task_comments", "users", column: "recipient_id"
+  add_foreign_key "tutorials", "campuses"
   add_foreign_key "units", "teaching_periods"
 end
