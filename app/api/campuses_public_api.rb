@@ -8,5 +8,18 @@ module Api
       campus = Campus.find(params[:id])
       campus
     end
+
+    desc 'Get all the Campuses'
+    get '/campuses' do
+      campuses = Campus.all
+      result = campuses.map do |c|
+        {
+          id: c.id,
+          name: c.name,
+          mode: c.mode
+        }
+      end
+      result
+    end
   end
 end
