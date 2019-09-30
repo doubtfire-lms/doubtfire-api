@@ -16,7 +16,7 @@ module Api
         requires :mode, type: String, desc: 'This will determine the campus mode'
       end
     end
-    post '/campus' do
+    post '/campuses' do
       unless authorise? current_user, User, :handle_campuses
         error!({ error: 'Not authorised to create a campus' }, 403)
       end
@@ -32,6 +32,27 @@ module Api
       else
         result
       end
+    end
+
+    desc 'Update Campus'
+    params do
+      requires :campus, type: Hash do
+        optional :name, type: String, desc: 'The name of the campus'
+        optional :mode, type: String, desc: 'This will determine the campus mode'
+      end
+    end
+    put '/campuses/:id' do
+      campus = Campus.find(params[:id])
+      unless authorise? current_user, User, :handle_campuses
+        error!({ error: 'Not authorised to update a campus' }, 403)
+      end
+      campus_parameters = ActionController::Parameters.new(params)
+                                                               .require(:campus)
+                                                               .permit(:name,
+                                                                       :mode)
+
+      campus.update!(campus_parameters)
+      campus
     end
   end
 end
