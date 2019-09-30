@@ -48,6 +48,7 @@ module Api
     mount Api::TasksApi
     mount Api::TeachingPeriodsPublicApi
     mount Api::TeachingPeriodsAuthenticatedApi
+    mount Api::CampusesPublicApi
     mount Api::CampusesAuthenticatedApi
     mount Api::TutorialsApi
     mount Api::UnitRolesApi
