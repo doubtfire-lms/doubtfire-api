@@ -48,6 +48,7 @@ module Api
     mount Api::TasksApi
     mount Api::TeachingPeriodsPublicApi
     mount Api::TeachingPeriodsAuthenticatedApi
+    mount Api::CampusesAuthenticatedApi
     mount Api::TutorialsApi
     mount Api::UnitRolesApi
     mount Api::UnitsApi
@@ -71,6 +72,7 @@ module Api
     AuthenticationHelpers.add_auth_to Api::TaskCommentsApi
     AuthenticationHelpers.add_auth_to Api::TaskDefinitionsApi
     AuthenticationHelpers.add_auth_to Api::TeachingPeriodsAuthenticatedApi
+    AuthenticationHelpers.add_auth_to Api::CampusesAuthenticatedApi
     AuthenticationHelpers.add_auth_to Api::TutorialsApi
     AuthenticationHelpers.add_auth_to Api::UsersApi
     AuthenticationHelpers.add_auth_to Api::UnitRolesApi
