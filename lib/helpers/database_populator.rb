@@ -109,6 +109,18 @@ class DatabasePopulator
       mode: 'online'
     }
     Campus.create! data
+
+    data = {
+      name: 'Burwood',
+      mode: 'physical'
+    }
+    Campus.create! data
+
+    data = {
+      name: 'Geelong',
+      mode: 'physical'
+    }
+    Campus.create! data
   end
 
   def generate_admin
