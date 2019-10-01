@@ -50,7 +50,7 @@ class DatabasePopulator
       throw "Invalid scale value '#{scale}'. Acceptable values are: #{accepted_scale_types.join(", ")}"
     end
     @scale = scale_data[scale]
-    
+
     return if Role.count > 0
 
     echo_line "-> Scale is set to #{scale}"
@@ -60,11 +60,12 @@ class DatabasePopulator
 
     generate_user_roles
     generate_task_statuses
-    
+
     # Fixed data contains all fixed units and users created
     generate_fixed_data()
 
     generate_teaching_periods()
+    generate_campuses
   end
 
   def generate_teaching_periods
@@ -100,6 +101,14 @@ class DatabasePopulator
     tp = TeachingPeriod.create! data
 
     tp.add_break Date.parse('2018-12-24'), 2
+  end
+
+  def generate_campuses
+    data = {
+      name: 'Cloud',
+      mode: 'online'
+    }
+    Campus.create! data
   end
 
   def generate_admin
