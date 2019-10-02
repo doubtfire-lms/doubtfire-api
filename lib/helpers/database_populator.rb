@@ -236,6 +236,14 @@ class DatabasePopulator
   end
 
   #
+  # Random campus helper
+  #
+  def random_campus
+    id = Campus.pluck(:id).sample
+    Campus.find(id)
+  end
+
+  #
   # Generated fixed data here for students and units
   #
   def generate_fixed_data
@@ -367,6 +375,7 @@ class DatabasePopulator
           "#{8 + Faker::Number.between(0,11)}:#{['00', '30'].sample}",    # Mon-Fri 8am-7:30pm
           "#{['EN', 'BA'].sample}#{Faker::Number.between(0,6)}0#{Faker::Number.between(0,8)}", # EN###/BA###
           tutor,
+          random_campus.id,
           "LA1-#{tutorial_count.to_s.rjust(2, '0')}"
         )
 
