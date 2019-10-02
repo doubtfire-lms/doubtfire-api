@@ -17,6 +17,7 @@ module Api
         optional :meeting_location, type: String,   desc: 'The tutorials location'
         optional :meeting_day, type: String, desc: 'Day of the tutorial'
         optional :tutor_id, type: Integer, desc: 'Id of the tutor'
+        optional :campus_id, type: Integer, desc: 'Id of the campus'
         optional :meeting_time, type: String, desc: 'Time of the tutorial'
       end
     end
@@ -35,7 +36,8 @@ module Api
                                                           :abbreviation,
                                                           :meeting_location,
                                                           :meeting_day,
-                                                          :meeting_time
+                                                          :meeting_time,
+                                                          :campus_id
                                                         )
 
       if tut_params[:tutor_id]
