@@ -6,7 +6,7 @@ require 'task_serializer'
 # Shallow serialization is used for student...
 class ShallowProjectSerializer < ActiveModel::Serializer
   attributes :unit_id, :unit_code, :unit_name,
-             :project_id, :student_name,
+             :project_id, :campus_id, :student_name,
              :tutor_name, :target_grade,
              :has_portfolio, :start_date, :end_date,
              :teaching_period_id, :active
@@ -28,6 +28,7 @@ class ProjectSerializer < ActiveModel::Serializer
   attributes :unit_id,
              :project_id,
              :student_id,
+             :campus_id,
              :started,
              :stats,
              :student_name,

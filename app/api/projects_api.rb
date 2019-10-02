@@ -142,6 +142,7 @@ module Api
     params do
       requires :unit_id, type: Integer, desc: 'Unit Id'
       requires :student_num, type: String,   desc: 'Student Number 7 digit code'
+      requires :campus_id, type: Integer, desc: 'Campus this project is part of'
       optional :tutorial_id, type: Integer,  desc: 'Tutorial Id'
     end
     post '/projects' do
@@ -155,7 +156,7 @@ module Api
       end
 
       if authorise? current_user, unit, :enrol_student
-        proj = unit.enrol_student(student, params[:tutorial_id])
+        proj = unit.enrol_student(student, params[:campus_id], params[:tutorial_id])
         if proj.nil?
           error!({ error: 'Error adding student to unit' }, 403)
         else
@@ -168,6 +169,7 @@ module Api
             student_email: proj.student.email,
             target_grade: proj.target_grade,
             tutorial_id: proj.tutorial_id,
+            campus_id: proj.campus_id,
             compile_portfolio: false,
             grade: proj.grade,
             grade_rationale: proj.grade_rationale,
