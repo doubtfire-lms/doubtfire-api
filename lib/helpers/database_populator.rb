@@ -384,14 +384,14 @@ class DatabasePopulator
         echo "-----> Creating #{num_students_in_tutorial} projects under tutorial #{tutorial.abbreviation}"
         num_students_in_tutorial.times do
           student = find_or_create_student("student_#{student_count}")
-          project = unit.enrol_student(student, tutorial.id)
+          project = unit.enrol_student(student, random_campus.id, tutorial.id)
           student_count += 1
           echo '.'
         end
         # Add fixed students to first tutorial
         if count == 0
           unit_details[:students].each do | student_key |
-            unit.enrol_student(@user_cache[student_key], tutorial.id)
+            unit.enrol_student(@user_cache[student_key], random_campus.id, tutorial.id)
           end
         end
         echo_line "!"
