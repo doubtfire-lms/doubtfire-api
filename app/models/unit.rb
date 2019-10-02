@@ -1016,10 +1016,10 @@ class Unit < ActiveRecord::Base
   #   end
   # end
 
-  def add_tutorial(day, time, location, tutor, abbrev)
+  def add_tutorial(day, time, location, tutor, campus_id, abbrev)
     tutor_role = unit_roles.where('user_id=:user_id', user_id: tutor.id).first
     return nil if tutor_role.nil? || tutor_role.role == Role.student
-    Tutorial.create!(unit_id: id, abbreviation: abbrev) do |tutorial|
+    Tutorial.create!(unit_id: id, campus_id: campus_id, abbreviation: abbrev) do |tutorial|
       tutorial.meeting_day      = day
       tutorial.meeting_time     = time
       tutorial.meeting_location = location

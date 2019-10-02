@@ -3,6 +3,7 @@ class Tutorial < ActiveRecord::Base
   belongs_to :unit # Foreign key
   belongs_to :unit_role # Foreign key
   has_one    :tutor, through: :unit_role, source: :user
+  has_one    :campus
 
   has_many   :projects, dependent: :nullify # Students
   has_many   :groups, dependent: :nullify
