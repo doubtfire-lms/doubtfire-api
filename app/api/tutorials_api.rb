@@ -52,6 +52,7 @@ module Api
       requires :tutorial, type: Hash do
         requires :unit_id, type: Integer, desc: 'Id of the unit'
         requires :tutor_id, type: Integer, desc: 'Id of the tutor'
+        requires :campus_id, type: Integer, desc: 'Id of the campus', allow_blank: false
         requires :abbreviation, type: String, desc: 'The tutorials code', allow_blank: false
         requires :meeting_location, type: String, desc: 'The tutorials location', allow_blank: false
         requires :meeting_day, type: String, desc: 'Day of the tutorial', allow_blank: false
@@ -68,7 +69,7 @@ module Api
 
       tutor = User.find(tut_params[:tutor_id])
 
-      tutorial = unit.add_tutorial(tut_params[:meeting_day], tut_params[:meeting_time], tut_params[:meeting_location], tutor, tut_params[:abbreviation])
+      tutorial = unit.add_tutorial(tut_params[:meeting_day], tut_params[:meeting_time], tut_params[:meeting_location], tutor, tut_params[:campus_id], tut_params[:abbreviation])
       tutorial
     end
 
