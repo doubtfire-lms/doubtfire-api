@@ -18,6 +18,7 @@ module Api
         optional :meeting_day, type: String, desc: 'Day of the tutorial'
         optional :tutor_id, type: Integer, desc: 'Id of the tutor'
         optional :campus_id, type: Integer, desc: 'Id of the campus'
+        optional :capacity, type: Integer, desc: 'Capacity of the tutorial'
         optional :meeting_time, type: String, desc: 'Time of the tutorial'
       end
     end
@@ -55,6 +56,7 @@ module Api
         requires :unit_id,          type: Integer,  desc: 'Id of the unit'
         requires :tutor_id,         type: Integer,  desc: 'Id of the tutor'
         requires :campus_id,        type: Integer,  desc: 'Id of the campus',           allow_blank: false
+        requires :capacity,         type: Integer,  desc: 'Capacity of the tutorial',   allow_blank: false
         requires :abbreviation,     type: String,   desc: 'The tutorials code',         allow_blank: false
         requires :meeting_location, type: String,   desc: 'The tutorials location',     allow_blank: false
         requires :meeting_day,      type: String,   desc: 'Day of the tutorial',        allow_blank: false
