@@ -187,6 +187,7 @@ module Api
         requires :tutor_username
         requires :abbrev
         requires :campus_id
+        requires :capacity
       end
     end
     post '/units/:id/tutorials' do
@@ -201,7 +202,7 @@ module Api
         error!({ error: "Couldn't find User with username=#{new_tutorial[:tutor_username]}" }, 403)
       end
 
-      result = unit.add_tutorial(new_tutorial[:day], new_tutorial[:time], new_tutorial[:location], tutor, new_tutorial[:campus_id], new_tutorial[:abbrev])
+      result = unit.add_tutorial(new_tutorial[:day], new_tutorial[:time], new_tutorial[:location], tutor, new_tutorial[:campus_id], new_tutorial[:capacity], new_tutorial[:abbrev])
       if result.nil?
         error!({ error: 'Tutor username invalid (not a tutor for this unit)' }, 403)
       end

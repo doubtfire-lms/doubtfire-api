@@ -38,7 +38,8 @@ module Api
                                                           :meeting_location,
                                                           :meeting_day,
                                                           :meeting_time,
-                                                          :campus_id
+                                                          :campus_id,
+                                                          :capacity
                                                         )
 
       if tut_params[:tutor_id]
@@ -73,7 +74,7 @@ module Api
 
       tutor = User.find(tut_params[:tutor_id])
 
-      tutorial = unit.add_tutorial(tut_params[:meeting_day], tut_params[:meeting_time], tut_params[:meeting_location], tutor, tut_params[:campus_id], tut_params[:abbreviation])
+      tutorial = unit.add_tutorial(tut_params[:meeting_day], tut_params[:meeting_time], tut_params[:meeting_location], tutor, tut_params[:campus_id], tut_params[:capacity], tut_params[:abbreviation])
       tutorial
     end
 
