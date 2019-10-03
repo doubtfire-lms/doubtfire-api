@@ -57,6 +57,7 @@ module Api
     params do
       optional :trigger,            type: String,  desc: 'The update trigger'
       optional :tutorial_id,        type: Integer, desc: 'Switch tutorial'
+      optional :campus_id,          type: Integer, desc: 'Campus this project is part of'
       optional :enrolled,           type: Boolean, desc: 'Enrol or withdraw this project'
       optional :target_grade,       type: Integer, desc: 'New target grade'
       optional :compile_portfolio,  type: Boolean, desc: 'Schedule a construction of the portfolio'
@@ -92,6 +93,12 @@ module Api
         else
           error!({ error: "Couldn't find Tutorial with id=#{params[:tutorial_id]}" }, 403)
         end
+      elsif !params[:campus_id].nil?
+        unless authorise? current_user, project, :change_campus
+          error!({ error: "You cannot change the campus for project #{params[:id]}" }, 403)
+        end
+        project.campus_id = params[:campus_id]
+        project.save!
       elsif !params[:enrolled].nil?
         unless authorise? current_user, project.unit, :change_project_enrolment
           error!({ error: "You cannot change the enrolment for project #{params[:id]}" }, 403)
