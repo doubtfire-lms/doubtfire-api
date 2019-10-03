@@ -937,6 +937,8 @@ class Unit < ActiveRecord::Base
         username = row['username'].downcase.strip unless row['username'].nil?
         group_name = row['group_name'].strip unless row['group_name'].nil?
         group_number = row['group_number'].strip unless row['group_number'].nil?
+        campus_id = row['campus_id'].strip unless row['campus_id'].nil?
+        capacity = row['capacity'].strip unless row['capacity'].nil?
         tutorial_abbr = row['tutorial'].strip unless row['tutorial'].nil?
 
         user = User.where(username: username).first
@@ -968,10 +970,12 @@ class Unit < ActiveRecord::Base
               '8:00am',
               'TBA',
               main_convenor,
+              campus_id,
+              capacity,
               tutorial_abbr
             )
           end
-          
+
           grp.tutorial = tutorial
           grp.number = group_number
           grp.save!
