@@ -52,13 +52,13 @@ module Api
     desc 'Create tutorial'
     params do
       requires :tutorial, type: Hash do
-        requires :unit_id, type: Integer, desc: 'Id of the unit'
-        requires :tutor_id, type: Integer, desc: 'Id of the tutor'
-        requires :campus_id, type: Integer, desc: 'Id of the campus', allow_blank: false
-        requires :abbreviation, type: String, desc: 'The tutorials code', allow_blank: false
-        requires :meeting_location, type: String, desc: 'The tutorials location', allow_blank: false
-        requires :meeting_day, type: String, desc: 'Day of the tutorial', allow_blank: false
-        requires :meeting_time, type: String, desc: 'Time of the tutorial', allow_blank: false
+        requires :unit_id,          type: Integer,  desc: 'Id of the unit'
+        requires :tutor_id,         type: Integer,  desc: 'Id of the tutor'
+        requires :campus_id,        type: Integer,  desc: 'Id of the campus',           allow_blank: false
+        requires :abbreviation,     type: String,   desc: 'The tutorials code',         allow_blank: false
+        requires :meeting_location, type: String,   desc: 'The tutorials location',     allow_blank: false
+        requires :meeting_day,      type: String,   desc: 'Day of the tutorial',        allow_blank: false
+        requires :meeting_time,     type: String,   desc: 'Time of the tutorial',       allow_blank: false
       end
     end
     post '/tutorials' do
