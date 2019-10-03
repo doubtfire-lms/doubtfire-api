@@ -424,8 +424,8 @@ class Unit < ActiveRecord::Base
 
   #
   # Imports users into a project from CSV file.
-  # Format: Unit Code, Student ID,First Name, Surname, email, tutorial
-  # Expected columns: unit_code, username, first_name, last_name, email, tutorial
+  # Format: Unit Code, Student ID,First Name, Surname, email, tutorial, campus_id
+  # Expected columns: unit_code, username, first_name, last_name, email, tutorial, campus_id
   #
   def import_users_from_csv(file)
     success = []
@@ -473,13 +473,14 @@ class Unit < ActiveRecord::Base
               last_name:      row['last_name'],
               email:          row['email'],
               enrolled:       true,
-              tutorial_code:  row['tutorial']
+              tutorial_code:  row['tutorial'],
+              campus_id:      row['campus_id']
           }
         },
         replace_existing_tutorial: true
       }
     end
-  
+
     student_list = []
 
     # Loop over csv rows converting to hash values
@@ -492,7 +493,7 @@ class Unit < ActiveRecord::Base
         errors << { row: row, message: "Missing headers: #{missing.join(', ')}" }
         next
       end
-      
+
       begin
         # Convert to hash...
         row_data = import_settings[:fetch_row_data_lambda].call(row, self)
@@ -501,7 +502,7 @@ class Unit < ActiveRecord::Base
         student_list << row_data
       rescue Exception => e
         errors << { row: row, message: e.message }
-      end 
+      end
     end # for each csv row
 
     # Now process the listt
@@ -607,6 +608,7 @@ class Unit < ActiveRecord::Base
         nickname = row_data[:nickname].nil? ? nil : row_data[:nickname].titleize
         email = row_data[:email]
         tutorial_code = row_data[:tutorial_code]
+        campus_id = row_data[:campus_id]
 
         # If either first or last name is nil... copy over the other component
         first_name = first_name || last_name
@@ -683,10 +685,10 @@ class Unit < ActiveRecord::Base
             # Need to enrol user... can always set tutorial as does not already exist...
             if (!tutorial.nil?)
               # Use tutorial if we have it :)
-              enrol_student(project_participant, tutorial)
+              enrol_student(project_participant, campus_id, tutorial)
               success << { row: row, message: 'Enrolled student with tutorial.' }
             else
-              enrol_student(project_participant)
+              enrol_student(project_participant, campus_id)
               success << { row: row, message: 'Enrolled student without tutorial.' }
             end
           else
@@ -723,7 +725,7 @@ class Unit < ActiveRecord::Base
       end
     end
 
-    result    
+    result
   end
 
   # Use the values in the CSV to set the enrolment of these
