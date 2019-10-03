@@ -17,8 +17,8 @@ class Project < ActiveRecord::Base
   belongs_to :unit
   belongs_to :tutorial
   belongs_to :user
+  belongs_to :campus
 
-  has_one  :campus
   # has_one :user, through: :student
   has_many :tasks, dependent: :destroy # Destroying a project will also nuke all of its tasks
 
