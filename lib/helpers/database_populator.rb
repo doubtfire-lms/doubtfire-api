@@ -376,6 +376,7 @@ class DatabasePopulator
           "#{['EN', 'BA'].sample}#{Faker::Number.between(0,6)}0#{Faker::Number.between(0,8)}", # EN###/BA###
           tutor,
           random_campus.id,
+          rand(10...20),
           "LA1-#{tutorial_count.to_s.rjust(2, '0')}"
         )
 
