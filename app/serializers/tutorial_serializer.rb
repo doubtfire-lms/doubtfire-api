@@ -4,7 +4,7 @@
 require 'user_serializer'
 
 class TutorialSerializer < ActiveModel::Serializer
-  attributes :id, :meeting_day, :meeting_time, :meeting_location, :abbreviation, :campus_id, :tutor_name, :num_students
+  attributes :id, :meeting_day, :meeting_time, :meeting_location, :abbreviation, :campus_id, :capacity, :tutor_name, :num_students
 
   def meeting_time
     object.meeting_time.to_time
