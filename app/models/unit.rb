@@ -968,12 +968,13 @@ class Unit < ActiveRecord::Base
           tutorial = tutorial_with_abbr(tutorial_abbr)
           if tutorial.nil?
             change += 'Created new tutorial. '
+            campus = Campus.find_by(name: campus_name)
             tutorial = add_tutorial(
               'Monday',
               '8:00am',
               'TBA',
               main_convenor,
-              campus_id,
+              campus,
               capacity,
               tutorial_abbr
             )
@@ -1025,10 +1026,10 @@ class Unit < ActiveRecord::Base
   #   end
   # end
 
-  def add_tutorial(day, time, location, tutor, campus_id, capacity, abbrev)
+  def add_tutorial(day, time, location, tutor, campus, capacity, abbrev)
     tutor_role = unit_roles.where('user_id=:user_id', user_id: tutor.id).first
     return nil if tutor_role.nil? || tutor_role.role == Role.student
-    Tutorial.create!(unit_id: id, campus_id: campus_id, capacity: capacity, abbreviation: abbrev) do |tutorial|
+    Tutorial.create!(unit_id: id, campus: campus, capacity: capacity, abbreviation: abbrev) do |tutorial|
       tutorial.meeting_day      = day
       tutorial.meeting_time     = time
       tutorial.meeting_location = location

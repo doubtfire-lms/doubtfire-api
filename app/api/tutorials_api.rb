@@ -73,8 +73,9 @@ module Api
       end
 
       tutor = User.find(tut_params[:tutor_id])
+      campus = Campus.find(tut_params[:campus_id])
 
-      tutorial = unit.add_tutorial(tut_params[:meeting_day], tut_params[:meeting_time], tut_params[:meeting_location], tutor, tut_params[:campus_id], tut_params[:capacity], tut_params[:abbreviation])
+      tutorial = unit.add_tutorial(tut_params[:meeting_day], tut_params[:meeting_time], tut_params[:meeting_location], tutor, campus, tut_params[:capacity], tut_params[:abbreviation])
       tutorial
     end
 
