@@ -67,7 +67,56 @@ class UnitsTest < ActiveSupport::TestCase
     assert_equal count, Unit.all.length
     assert_equal 419, last_response.status
   end
+    # testing whether a student can create an unit
+    post_json '/api/units', with_auth_token(data_to_post, Project.first.student)
+    assert_equal 403, last_response.status
+    assert_equal "Not authorised to create a unit", last_response_body["error"]
 
+    # testing to create an unit with only start date
+    unit = create_unit_with_start_date
+
+    data_to_post = {
+      unit: unit
+    }
+    post_json '/api/units', with_auth_token(data_to_post)
+    assert_equal 201, last_response.status
+
+
+    # testing to create an unit with only end date
+    unit = create_unit_with_end_date
+
+    data_to_post = {
+      unit: unit
+    }
+    post_json '/api/units', with_auth_token(data_to_post)
+    assert_equal 201, last_response.status
+
+    # testing for roll over
+    unit = Unit.last
+
+    data_to_post = {
+      teaching_period_id: 16
+    }
+    post "/api/units/#{unit.id}/rollover", with_auth_token(data_to_post)
+    # verifying whether roll over is accepted or not
+    assert last_response_body.key?('error')
+
+    # testing whether any student is  authorised to roll over
+    post "/api/units/#{unit.id}/rollover", with_auth_token(data_to_post, Project.first.student)
+    # verifying whether roll over is accepted or not
+    # assert last_response_body.key?('error')
+    assert_equal "Not authorised to rollover a unit", last_response_body["error"]
+
+    # testing to roll over using start and end dates
+    data_to_post = {
+      start_date:'2016-05-14T00:00:00.000Z',
+      end_date:'2017-05-14T00:00:00.000Z'
+    }
+    post "/api/units/#{unit.id}/rollover", with_auth_token(data_to_post)
+    # verifying whether roll over is accepted or not
+    assert_equal 201, last_response.status
+  
+  
   def test_post_create_unit_empty_token
     test_post_create_unit_custom_token ''
   end
