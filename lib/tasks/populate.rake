@@ -7,7 +7,7 @@ namespace :db do
     tutes = unit.tutorials
     for student_count in 0..2000
       student = find_or_create_student("student_#{student_count}")
-      proj = unit.enrol_student(student, Campus.first.id, tutes[student_count % tutes.count])
+      proj = unit.enrol_student(student, Campus.first, tutes[student_count % tutes.count])
     end
   end
 

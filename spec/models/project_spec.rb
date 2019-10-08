@@ -41,6 +41,7 @@ RSpec.describe Project do
     u1 = unit.students[0]
     u2 = unit.students[1]
 
+    # Get the campus here?
     p1 = unit.enrol_student u1
     p2 = unit.enrol_student u2
 
