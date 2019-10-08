@@ -13,7 +13,7 @@ module Api
     params do
       requires :campus, type: Hash do
         requires :name, type: String, desc: 'The name of the campus'
-        requires :mode, type: String, values: ['physical', 'online'], desc: 'This will determine the campus mode'
+        requires :mode, type: String, values: ['timetable', 'automatic', 'manual'], desc: 'This will determine the campus mode'
       end
     end
     post '/campuses' do
