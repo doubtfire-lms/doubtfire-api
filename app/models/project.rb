@@ -31,6 +31,7 @@ class Project < ActiveRecord::Base
   has_many :learning_outcome_task_links, through: :tasks
 
   validate :must_be_in_group_tutorials
+  validate :campus_must_be_same
   validates :grade_rationale, length: { maximum: 4095, allow_blank: true }
 
   #
@@ -83,10 +84,10 @@ class Project < ActiveRecord::Base
   def self.for_user(user, include_inactive)
     # Limit to enrolled units... for this user
     result = where(enrolled: true).where('projects.user_id = :user_id', user_id: user.id)
-    
+
     # Return the result if we include inactive units...
     return result if include_inactive
-    
+
     # Otherwise link in units and only get active units
     result.joins(:unit).where('units.active = TRUE')
   end
@@ -97,6 +98,12 @@ class Project < ActiveRecord::Base
 
   def self.for_unit_role(unit_role)
     active_projects.where(unit_id: unit_role.unit_id) if unit_role.is_teacher?
+  end
+
+  def campus_must_be_same
+    if campus.present? and tutorial.present? and tutorial.campus.present? and not campus.eql? tutorial.campus
+      errors.add(:campus, "should be same as the campus in the associated tutorial")
+    end
   end
 
   #
