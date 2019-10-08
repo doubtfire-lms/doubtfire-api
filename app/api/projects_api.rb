@@ -86,13 +86,22 @@ module Api
         tutorial_id = params[:tutorial_id]
         if project.unit.tutorials.where('tutorials.id = :tutorial_id', tutorial_id: tutorial_id).count == 1
           project.tutorial_id = tutorial_id
-          project.save!
+          # Required if we are updating both campus and tutorial at the same time.
+          # Updating both tutorial and campus should happen at the same time because of the campus_must_be_same validation
+          if !params[:campus_id].nil?
+            unless authorise? current_user, project, :change_campus
+              error!({ error: "You cannot change the campus for project #{params[:id]}" }, 403)
+            end
+            project.campus_id = params[:campus_id]
+          end
         elsif tutorial_id == -1
           project.tutorial = nil
-          project.save!
         else
           error!({ error: "Couldn't find Tutorial with id=#{params[:tutorial_id]}" }, 403)
         end
+        project.save!
+
+        # If we are only updating the campus
       elsif !params[:campus_id].nil?
         unless authorise? current_user, project, :change_campus
           error!({ error: "You cannot change the campus for project #{params[:id]}" }, 403)
