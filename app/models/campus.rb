@@ -7,4 +7,16 @@ class Campus < ActiveRecord::Base
   validates :mode, presence: true
 
   enum mode: { timetable: 0, automatic: 1, manual: 2 }
+
+  def self.find(id)
+    Rails.cache.fetch("campuses/#{id}", expires_in: 12.hours) do
+      super
+    end
+  end
+
+  def self.find_by(name: name)
+    Rails.cache.fetch("campuses/#{name}", expires_in: 12.hours) do
+      super
+    end
+  end
 end
