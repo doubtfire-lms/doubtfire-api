@@ -171,8 +171,10 @@ module Api
         error!({ error: "Couldn't find Student with username=#{params[:student_num]}" }, 403)
       end
 
+      campus = Campus.find(params[:campus_id])
+
       if authorise? current_user, unit, :enrol_student
-        proj = unit.enrol_student(student, params[:campus_id], params[:tutorial_id])
+        proj = unit.enrol_student(student, campus, params[:tutorial_id])
         if proj.nil?
           error!({ error: 'Error adding student to unit' }, 403)
         else

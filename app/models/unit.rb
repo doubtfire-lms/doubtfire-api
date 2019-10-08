@@ -363,7 +363,7 @@ class Unit < ActiveRecord::Base
   end
 
   # Adds a user to this project.
-  def enrol_student(user, campus_id, tutorial = nil)
+  def enrol_student(user, campus, tutorial = nil)
     tutorial_id = if tutorial.is_a?(Tutorial)
                     tutorial.id
                   else
@@ -377,7 +377,7 @@ class Unit < ActiveRecord::Base
         existing_project.enrolled = true
         # If they are part of the unit, update their tutorial if supplied
         existing_project.tutorial_id = tutorial_id unless tutorial_id.nil?
-        existing_project.campus_id = campus_id
+        existing_project.campus = campus
         existing_project.save
       end
 
@@ -396,7 +396,7 @@ class Unit < ActiveRecord::Base
     )
 
     project.tutorial_id = tutorial_id unless tutorial_id.nil?
-    project.campus_id = campus_id
+    project.campus = campus
     project.save
     project
   end
