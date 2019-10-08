@@ -55,6 +55,7 @@ FactoryGirl.define do
 
       unit.employ_staff( FactoryGirl.create(:user, :convenor), Role.convenor)
       eval.student_count.times do |i|
+        # Get the campus here?
         unit.enrol_student( FactoryGirl.create(:user, :student), unit.tutorials[i % unit.tutorials.count])
       end
 
