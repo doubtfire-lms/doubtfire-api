@@ -149,6 +149,27 @@ class AuthTest < ActiveSupport::TestCase
   # End POST tests
   # --------------------------------------------------------------------------- #
 
+  # GET tests
+  #------------------------------------------------------------------------------
+  # Test get authentication method configuration
+  def test_auth_method_config
+
+    get '/api/auth/method'
+    actual_auth = last_response_body
+
+    assert_equal 200, last_response.status
+
+  end
+
+  #Test authentication signout url
+  def test_auth_signout_url
+
+    get '/api/auth/signout_url'
+
+    assert_equal 200, last_response.status
+
+  end
+  
   # --------------------------------------------------------------------------- #
   # PUT tests
 
