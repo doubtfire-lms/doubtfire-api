@@ -377,7 +377,7 @@ class DatabasePopulator
           "#{8 + Faker::Number.between(0,11)}:#{['00', '30'].sample}",    # Mon-Fri 8am-7:30pm
           "#{['EN', 'BA'].sample}#{Faker::Number.between(0,6)}0#{Faker::Number.between(0,8)}", # EN###/BA###
           tutor,
-          campus.id,
+          campus,
           rand(10...20),
           "LA1-#{tutorial_count.to_s.rjust(2, '0')}"
         )
