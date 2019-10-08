@@ -367,6 +367,8 @@ class DatabasePopulator
       echo_line "----> Enrolling tutor #{tutor.name} with #{user_details[:num]} tutorials"
       tutor_unit_role = unit.employ_staff(tutor, Role.tutor)
 
+      campus = random_campus
+
       user_details[:num].times do | count |
         tutorial_count += 1
         #day, time, location, tutor_username, abbrev
@@ -375,7 +377,7 @@ class DatabasePopulator
           "#{8 + Faker::Number.between(0,11)}:#{['00', '30'].sample}",    # Mon-Fri 8am-7:30pm
           "#{['EN', 'BA'].sample}#{Faker::Number.between(0,6)}0#{Faker::Number.between(0,8)}", # EN###/BA###
           tutor,
-          random_campus.id,
+          campus.id,
           rand(10...20),
           "LA1-#{tutorial_count.to_s.rjust(2, '0')}"
         )
@@ -385,14 +387,14 @@ class DatabasePopulator
         echo "-----> Creating #{num_students_in_tutorial} projects under tutorial #{tutorial.abbreviation}"
         num_students_in_tutorial.times do
           student = find_or_create_student("student_#{student_count}")
-          project = unit.enrol_student(student, random_campus.id, tutorial.id)
+          project = unit.enrol_student(student, campus, tutorial.id)
           student_count += 1
           echo '.'
         end
         # Add fixed students to first tutorial
         if count == 0
           unit_details[:students].each do | student_key |
-            unit.enrol_student(@user_cache[student_key], random_campus.id, tutorial.id)
+            unit.enrol_student(@user_cache[student_key], campus, tutorial.id)
           end
         end
         echo_line "!"

@@ -378,7 +378,7 @@ class Unit < ActiveRecord::Base
         # If they are part of the unit, update their tutorial if supplied
         existing_project.tutorial_id = tutorial_id unless tutorial_id.nil?
         existing_project.campus = campus
-        existing_project.save
+        existing_project.save!
       end
 
       return existing_project
@@ -389,7 +389,7 @@ class Unit < ActiveRecord::Base
       return nil
     end
 
-    project = Project.create!(
+    project = Project.new(
       user_id: user.id,
       unit_id: id,
       task_stats: '0.0|1.0|0.0|0.0|0.0'
@@ -397,7 +397,7 @@ class Unit < ActiveRecord::Base
 
     project.tutorial_id = tutorial_id unless tutorial_id.nil?
     project.campus = campus
-    project.save
+    project.save!
     project
   end
 
