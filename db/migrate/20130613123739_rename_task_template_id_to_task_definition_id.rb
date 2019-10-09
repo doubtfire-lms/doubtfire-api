@@ -1,4 +1,4 @@
-class RenameTaskTemplateIdToTaskDefinitionId < ActiveRecord::Migration
+class RenameTaskTemplateIdToTaskDefinitionId < ActiveRecord::Migration[4.2]
   def change
     rename_column :tasks, :task_template_id, :task_definition_id
 

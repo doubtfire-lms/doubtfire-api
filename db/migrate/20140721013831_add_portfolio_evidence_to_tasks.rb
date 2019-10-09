@@ -1,4 +1,4 @@
-class AddPortfolioEvidenceToTasks < ActiveRecord::Migration
+class AddPortfolioEvidenceToTasks < ActiveRecord::Migration[4.2]
   def up
     add_column :tasks, :portfolio_evidence, :string
   end

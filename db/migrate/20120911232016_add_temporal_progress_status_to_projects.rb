@@ -1,4 +1,4 @@
-class AddTemporalProgressStatusToProjects < ActiveRecord::Migration
+class AddTemporalProgressStatusToProjects < ActiveRecord::Migration[4.2]
   def change
     add_column :projects, :progress, :string
     add_column :projects, :status, :string

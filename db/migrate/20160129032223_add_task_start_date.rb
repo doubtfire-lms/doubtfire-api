@@ -1,4 +1,4 @@
-class AddTaskStartDate < ActiveRecord::Migration
+class AddTaskStartDate < ActiveRecord::Migration[4.2]
   def change
     add_column :task_definitions, :start_date, :datetime
 

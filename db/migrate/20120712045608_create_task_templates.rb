@@ -1,4 +1,4 @@
-class CreateTaskTemplates < ActiveRecord::Migration
+class CreateTaskTemplates < ActiveRecord::Migration[4.2]
   def change
     create_table :task_templates do |t|
       t.references :project_template

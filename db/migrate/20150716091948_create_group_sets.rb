@@ -1,4 +1,4 @@
-class CreateGroupSets < ActiveRecord::Migration
+class CreateGroupSets < ActiveRecord::Migration[4.2]
   def change
     create_table :group_sets do |t|
       t.references :unit

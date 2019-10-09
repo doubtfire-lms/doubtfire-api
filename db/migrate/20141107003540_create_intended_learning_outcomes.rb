@@ -1,4 +1,4 @@
-class CreateIntendedLearningOutcomes < ActiveRecord::Migration
+class CreateIntendedLearningOutcomes < ActiveRecord::Migration[4.2]
   def change
     create_table :intended_learning_outcomes do |t|
       t.references :unit
