@@ -22,6 +22,13 @@ class CampusesTest < ActiveSupport::TestCase
     expected_data = Campus.all
 
     assert_equal expected_data.count, last_response_body.count
+
+    response_keys = %w(name abbreviation)
+
+    last_response_body.each do | data |
+      c = Campus.find(data['id'])
+      assert_json_matches_model(data, c, response_keys)
+    end
   end
 
   def test_post_campuses
