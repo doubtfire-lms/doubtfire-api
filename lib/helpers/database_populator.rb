@@ -482,7 +482,7 @@ class DatabasePopulator
         abbreviation: "A#{count + 1}",
         unit_id: unit.id,
         description: faker_random_sentence(5, 10),
-        weighting: BigDecimal.new("2"),
+        weighting: BigDecimal("2"),
         target_date: target_date,
         upload_requirements: up_reqs.to_json,
         start_date: start_date,
