@@ -17,7 +17,7 @@ class Campus < ActiveRecord::Base
     end
   end
 
-  def self.find_by(name: name)
+  def self.find_by(name)
     Rails.cache.fetch("campuses/#{name}", expires_in: 12.hours) do
       super
     end
