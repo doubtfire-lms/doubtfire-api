@@ -9,10 +9,11 @@ class CampusesTest < ActiveSupport::TestCase
     Rails.application
   end
 
-  def create_campus
+  def campus
     {
       name: 'Cloud',
-      mode: 'online'
+      mode: 'timetable',
+      abbreviation: 'C'
     }
   end
 
@@ -25,11 +26,16 @@ class CampusesTest < ActiveSupport::TestCase
 
   def test_post_campuses
     data_to_post = {
-      campus: create_campus,
+      campus: campus,
       auth_token: auth_token
     }
     post_json '/api/campuses', data_to_post
     assert_equal 201, last_response.status
+
+    response_keys = %w(name abbreviation)
+    campus = Campus.find(last_response_body['id'])
+    assert_json_matches_model(last_response_body, campus, response_keys)
+    assert_equal 0, campus[:mode]
   end
 
   def test_put_campuses
