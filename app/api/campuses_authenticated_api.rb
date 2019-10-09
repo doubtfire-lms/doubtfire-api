@@ -12,8 +12,9 @@ module Api
     desc 'Add a Campus'
     params do
       requires :campus, type: Hash do
-        requires :name, type: String, desc: 'The name of the campus'
-        requires :mode, type: String, values: ['timetable', 'automatic', 'manual'], desc: 'This will determine the campus mode'
+        requires :name,         type: String, desc: 'The name of the campus'
+        requires :mode,         type: String, desc: 'This will determine the campus mode', values: ['timetable', 'automatic', 'manual']
+        requires :abbreviation, type: String, desc: 'The abbreviation for the campus'
       end
     end
     post '/campuses' do
@@ -23,7 +24,8 @@ module Api
       campus_parameters = ActionController::Parameters.new(params)
                                                                .require(:campus)
                                                                .permit(:name,
-                                                                       :mode)
+                                                                      :mode,
+                                                                      :abbreviation)
 
       result = Campus.create!(campus_parameters)
 
