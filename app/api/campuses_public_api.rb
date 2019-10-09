@@ -16,7 +16,8 @@ module Api
         {
           id: c.id,
           name: c.name,
-          mode: c.mode
+          mode: c.mode,
+          abbreviation: c.abbreviation
         }
       end
       result
