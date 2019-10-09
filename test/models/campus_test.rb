@@ -1,11 +1,14 @@
 require "test_helper"
 
 class CampusTest < ActiveSupport::TestCase
-  def campus
-    @campus ||= Campus.new
-  end
+  def test_create_campus
+    data = {
+      name: 'Burwood',
+      mode: 'automatic',
+      abbreviation: 'B'
+    }
 
-  def test_valid
+    campus = Campus.create!(data)
     assert campus.valid?
   end
 end
