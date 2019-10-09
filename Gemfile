@@ -2,8 +2,8 @@ source 'https://rubygems.org'
 
 # Ruby versions for various enviornments
 ruby_versions = {
-  development:  '~>2.3.1',
-  test:         '~>2.3.1',
+  development:  '~>2.6',
+  test:         '~>2.6',
   staging:      '~>2.3.1',
   production:   '~>2.3.1'
 }
@@ -11,7 +11,7 @@ ruby_versions = {
 ruby ruby_versions[(ENV['RAILS_ENV'] || 'development').to_sym]
 
 # The venerable, almighty Rails
-gem 'rails', '4.2.6'
+gem 'rails', '6.0.0'
 
 group :development, :test do
   gem 'database_cleaner'
@@ -30,8 +30,7 @@ group :development, :test, :staging do
   gem 'populator'
   gem 'factory_girl_rails'
   gem 'faker', '~>1.9.1'
-  gem 'minitest-rails'
-  gem 'minitest-around'
+  gem "minitest-rails", github: "blowmage/minitest-rails"
 end
 
 group :production do
@@ -43,7 +42,7 @@ group :production, :staging do
 end
 
 # Authentication
-gem 'devise', '~> 4.1.1'
+gem 'devise', '~> 4.7.1'
 gem 'devise_ldap_authenticatable'
 gem 'json-jwt', '1.7.0'
 
@@ -57,16 +56,16 @@ gem 'rubyzip'
 gem 'moss_ruby', '= 1.1.2'
 
 # Latex
-gem 'rails-latex', '=2.0.1'
+gem 'rails-latex', '>2.3'
 
 # API
-gem 'grape', '0.16.2'
-gem 'active_model_serializers', '~> 0.9.0'
+gem 'grape', '1.2.4'
+gem 'active_model_serializers', '~> 0.10.0'
 gem 'grape-active_model_serializers', '~> 1.3.2'
 gem 'grape-swagger'
 
 # Miscellaneous
-gem 'attr_encrypted', '~> 1.3.2'
+gem 'attr_encrypted', '~> 3.1.0'
 gem 'rack-cors', require: 'rack/cors'
 gem 'ci_reporter'
 gem 'require_all', '1.3.3'

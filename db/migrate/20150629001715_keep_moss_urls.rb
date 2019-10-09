@@ -1,4 +1,4 @@
-class KeepMossUrls < ActiveRecord::Migration
+class KeepMossUrls < ActiveRecord::Migration[4.2]
   def change
   	add_column :task_definitions, :plagiarism_report_url, :string
   	add_column :task_definitions, :plagiarism_updated, :boolean, :default => false

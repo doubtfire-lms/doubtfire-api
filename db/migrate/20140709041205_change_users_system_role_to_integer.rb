@@ -1,4 +1,4 @@
-class ChangeUsersSystemRoleToInteger < ActiveRecord::Migration
+class ChangeUsersSystemRoleToInteger < ActiveRecord::Migration[4.2]
   def change
   	# Change column won't work because a string would need to be cast to an int
   	remove_column 	:users, :system_role

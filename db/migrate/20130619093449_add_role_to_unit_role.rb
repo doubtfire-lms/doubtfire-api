@@ -1,4 +1,4 @@
-class AddRoleToUnitRole < ActiveRecord::Migration
+class AddRoleToUnitRole < ActiveRecord::Migration[4.2]
   def up
     add_column :unit_roles, :role_id, :integer
     add_index :unit_roles, :role_id

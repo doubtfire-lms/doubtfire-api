@@ -1,4 +1,4 @@
-class CreateTaskEngagements < ActiveRecord::Migration
+class CreateTaskEngagements < ActiveRecord::Migration[4.2]
   def change
     create_table :task_engagements do |t|
       t.datetime :engagement_time

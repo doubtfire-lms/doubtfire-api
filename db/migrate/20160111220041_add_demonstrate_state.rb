@@ -1,4 +1,4 @@
-class AddDemonstrateState < ActiveRecord::Migration
+class AddDemonstrateState < ActiveRecord::Migration[4.2]
   def change
     # if the other status are there...
     if TaskStatus.complete && TaskStatus.all.count == 9

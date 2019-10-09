@@ -1,4 +1,4 @@
-class RenameIloToOutcome < ActiveRecord::Migration
+class RenameIloToOutcome < ActiveRecord::Migration[4.2]
   def change
   	rename_table :intended_learning_outcomes, :learning_outcomes
   	

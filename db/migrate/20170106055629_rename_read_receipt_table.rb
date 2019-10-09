@@ -1,4 +1,4 @@
-class RenameReadReceiptTable < ActiveRecord::Migration
+class RenameReadReceiptTable < ActiveRecord::Migration[4.2]
   def change
     # unique rows
     create_table :comments_read_receipts, id: false do |t|
