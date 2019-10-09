@@ -10,6 +10,12 @@ FactoryGirl.define do
     unit
   end
 
+  factory :campus do
+    name "Melbourne"
+    abbreviation "melb"
+    mode "automatic"
+  end
+
   factory :task_definition do
     unit
     name                      { Populator.words(1..3) }
@@ -56,7 +62,7 @@ FactoryGirl.define do
       unit.employ_staff( FactoryGirl.create(:user, :convenor), Role.convenor)
       eval.student_count.times do |i|
         # Get the campus here?
-        unit.enrol_student( FactoryGirl.create(:user, :student), unit.tutorials[i % unit.tutorials.count])
+        unit.enrol_student( FactoryGirl.create(:user, :student), :campus, unit.tutorials[i % unit.tutorials.count])
       end
 
       stud = 0
