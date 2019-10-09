@@ -318,8 +318,6 @@ class DeakinInstitutionSettings
       if unit.tutorials.where(abbreviation: tutorial_code).count == 0 && star_data['subject_code'].starts_with?(unit.code)
 
         if unit.week_number(Time.zone.now) < 4
-          campus_name = star_data['']
-          campus = Campus.find_by(name: campus_name)
           unit.add_tutorial(
             day_abbr_to_name(star_data["day_of_week"]),
             star_data["start_time"],
