@@ -11,16 +11,7 @@ module Api
 
     desc 'Get all the Campuses'
     get '/campuses' do
-      campuses = Campus.all
-      result = campuses.map do |c|
-        {
-          id: c.id,
-          name: c.name,
-          mode: c.mode,
-          abbreviation: c.abbreviation
-        }
-      end
-      result
+      Campus.all
     end
   end
 end
