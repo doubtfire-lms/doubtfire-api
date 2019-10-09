@@ -39,8 +39,9 @@ module Api
     desc 'Update Campus'
     params do
       requires :campus, type: Hash do
-        optional :name, type: String, desc: 'The name of the campus'
-        optional :mode, type: String, values: ['timetable', 'automatic', 'manual'], desc: 'This will determine the campus mode'
+        optional :name,         type: String, desc: 'The name of the campus'
+        optional :mode,         type: String, desc: 'This will determine the campus mode', values: ['timetable', 'automatic', 'manual']
+        optional :abbreviation, type: String, desc: 'The abbreviation for the campus'
       end
     end
     put '/campuses/:id' do
@@ -51,7 +52,8 @@ module Api
       campus_parameters = ActionController::Parameters.new(params)
                                                                .require(:campus)
                                                                .permit(:name,
-                                                                       :mode)
+                                                                      :mode,
+                                                                      :abbreviation)
 
       campus.update!(campus_parameters)
       campus
