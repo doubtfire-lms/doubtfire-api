@@ -1128,8 +1128,8 @@ class Task < ApplicationRecord
         ui.error!({ 'error' => "'#{file.name}' is not a valid #{file.type} file" }, 403)
       end
 
-      if File.size(file["tempfile"].path) > 5_000_000
-        ui.error!({ 'error' => "'#{file.name}' exceeds the 5MB file limit. Try compressing or reformat and submit again." }, 403)
+      if File.size(file["tempfile"].path) > 10_000_000
+        ui.error!({ 'error' => "'#{file.name}' exceeds the 10MB file limit. Try compressing or reformat and submit again." }, 403)
       end
     end
 
