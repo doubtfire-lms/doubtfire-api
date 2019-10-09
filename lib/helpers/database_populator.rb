@@ -106,19 +106,22 @@ class DatabasePopulator
   def generate_campuses
     data = {
       name: 'Cloud',
-      mode: 'timetable'
+      mode: 'timetable',
+      abbreviation: 'C'
     }
     Campus.create! data
 
     data = {
       name: 'Burwood',
-      mode: 'automatic'
+      mode: 'automatic',
+      abbreviation: 'B'
     }
     Campus.create! data
 
     data = {
       name: 'Geelong',
-      mode: 'manual'
+      mode: 'manual',
+      abbreviation: 'G'
     }
     Campus.create! data
   end

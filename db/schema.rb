@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20190930031610) do
+ActiveRecord::Schema.define(version: 20191009005448) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -35,8 +35,9 @@ ActiveRecord::Schema.define(version: 20190930031610) do
   add_index "breaks", ["teaching_period_id"], name: "index_breaks_on_teaching_period_id", using: :btree
 
   create_table "campuses", force: :cascade do |t|
-    t.string  "name", null: false
-    t.integer "mode", null: false
+    t.string  "name",         null: false
+    t.integer "mode",         null: false
+    t.string  "abbreviation", null: false
   end
 
   create_table "comments_read_receipts", force: :cascade do |t|
