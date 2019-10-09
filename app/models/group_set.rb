@@ -1,4 +1,4 @@
-class GroupSet < ActiveRecord::Base
+class GroupSet < ApplicationRecord
   belongs_to :unit
   has_many :task_definitions
   has_many :groups, dependent: :destroy

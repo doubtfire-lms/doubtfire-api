@@ -4,13 +4,7 @@ class Float
   end
 end
 
-class Fixnum
-  def signif(signs)
-    Float("%.#{signs}f" % self)
-  end
-end
-
-class Project < ActiveRecord::Base
+class Project < ApplicationRecord
   include ApplicationHelper
   include LogHelper
 
@@ -748,7 +742,7 @@ class Project < ActiveRecord::Base
     end
 
     dest_file = portfolio_tmp_file_name(result)
-    FileUtils.cp file.tempfile.path, File.join(portfolio_tmp_dir, dest_file)
+    FileUtils.cp file["tempfile"].path, File.join(portfolio_tmp_dir, dest_file)
     result
   end
 
