@@ -26,6 +26,8 @@ class TutorialsTest < ActiveSupport::TestCase
     tutorial = {
       unit_id: '1',
       tutor_id: User.first.id,
+      campus_id: Campus.first.id,
+      capacity: 10,
       abbreviation: 'LA011',
       meeting_location: 'LAB34',
       meeting_day: 'Tuesday',
@@ -55,7 +57,9 @@ class TutorialsTest < ActiveSupport::TestCase
       time: '12:30',
       location: 'Room B',
       tutor_username: 'acain',
-      abbrev: 'LA01'
+      abbrev: 'LA01',
+      campus_id: Campus.first.id,
+      capacity: 10
     }
 
     data_to_post = {
