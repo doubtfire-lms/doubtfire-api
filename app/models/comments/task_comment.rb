@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 require 'tempfile'
 
-class TaskComment < ActiveRecord::Base
+class TaskComment < ApplicationRecord
   include MimeCheckHelpers
   include TimeoutHelper
   include FileHelper
@@ -84,26 +84,26 @@ class TaskComment < ActiveRecord::Base
     if content_type == 'audio'
       # On upload all audio comments are converted to wav
       temp = Tempfile.new(['comment', '.wav'])
-      return false unless process_audio(file_upload.tempfile.path, temp.path)
+      return false unless process_audio(file_upload["tempfile"].path, temp.path)
       self.attachment_extension = '.wav'
       save
       FileUtils.mv temp.path, attachment_path
     elsif content_type == 'image'
-      self.attachment_extension = if mime_type(file_upload.tempfile.path).starts_with?('image/gif')
+      self.attachment_extension = if mime_type(file_upload["tempfile"].path).starts_with?('image/gif')
                                     '.gif'
                                   else
                                     '.jpg'
                                   end
       save
-      FileHelper.compress_image_to_dest(file_upload.tempfile.path, attachment_path)
+      FileHelper.compress_image_to_dest(file_upload["tempfile"].path, attachment_path)
     else
       self.attachment_extension = '.pdf'
       save
-      FileHelper.compress_pdf(file_upload.tempfile.path)
-      FileUtils.mv file_upload.tempfile.path, attachment_path
+      FileHelper.compress_pdf(file_upload["tempfile"].path)
+      FileUtils.mv file_upload["tempfile"].path, attachment_path
     end
 
-    file_upload.tempfile.unlink
+    file_upload["tempfile"].unlink
 
     true
   end

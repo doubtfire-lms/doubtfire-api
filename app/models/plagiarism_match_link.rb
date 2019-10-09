@@ -1,4 +1,4 @@
-class PlagiarismMatchLink < ActiveRecord::Base
+class PlagiarismMatchLink < ApplicationRecord
   include LogHelper
 
   belongs_to :task

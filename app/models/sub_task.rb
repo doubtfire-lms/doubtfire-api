@@ -1,4 +1,4 @@
-class SubTask < ActiveRecord::Base
+class SubTask < ApplicationRecord
   include ApplicationHelper
 
   # Model associations

@@ -1,4 +1,4 @@
-class Tutorial < ActiveRecord::Base
+class Tutorial < ApplicationRecord
   # Model associations
   belongs_to :unit # Foreign key
   belongs_to :unit_role # Foreign key
