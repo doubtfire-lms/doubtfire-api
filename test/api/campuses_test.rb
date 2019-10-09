@@ -46,12 +46,18 @@ class CampusesTest < ActiveSupport::TestCase
   end
 
   def test_put_campuses
-    campus = Campus.first
     data_to_put = {
       campus: campus,
       auth_token: auth_token
     }
+
+    # Update campus with id = 1
     put_json '/api/campuses/1', data_to_put
     assert_equal 200, last_response.status
+
+    response_keys = %w(name abbreviation)
+    first_campus = Campus.first
+    assert_json_matches_model(last_response_body, first_campus, response_keys)
+    assert_equal 0, first_campus[:mode]
   end
 end
