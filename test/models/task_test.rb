@@ -7,7 +7,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
   include Rack::Test::Methods
   include TestHelpers::TestFileHelper
   include TestHelpers::AuthHelper
-  
+
   def app
     Rails.application
   end
@@ -16,7 +16,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     unit = Unit.first
     td = TaskDefinition.new({
         unit_id: unit.id,
-        name: 'Task with image',  
+        name: 'Task with image',
         description: 'img task',
         weighting: 4,
         target_grade: 0,
@@ -49,7 +49,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     assert path
     assert File.exists? path
     assert File.exists? task.final_pdf_path
-    
+
     td.destroy
     assert_not File.exists? path
   end
@@ -58,7 +58,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     unit = Unit.first
     td = TaskDefinition.new({
         unit_id: unit.id,
-        name: 'Task with image',  
+        name: 'Task with image',
         description: 'img task',
         weighting: 4,
         target_grade: 0,
@@ -91,7 +91,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     assert path
     assert File.exists? path
     assert File.exists? task.final_pdf_path
-    
+
     td.destroy
     assert_not File.exists? path
   end
