@@ -196,8 +196,9 @@ module FileHelper
     logger.debug "File helper has started compressing #{path} to #{tmp_file}..."
 
     begin
-      exec = "convert -quiet -strip -density 72 -quality 85% -resize 2048x2048\\> -resize 48x48\\< \
+      exec = "convert -quiet \
               \"#{path}\" \
+              -strip -density 72 -quality 85% -resize 2048x2048\\> -resize 48x48\\< \
               \"#{tmp_file}\" >>/dev/null 2>>/dev/null"
 
       did_compress = system_try_within 40, 'compressing image using convert', exec
