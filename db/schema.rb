@@ -410,9 +410,9 @@ ActiveRecord::Schema.define(version: 20191011035719) do
   add_index "tutorials", ["unit_role_id"], name: "index_tutorials_on_unit_role_id", using: :btree
 
   create_table "unit_activity_sets", force: :cascade do |t|
-    t.string   "type",       null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.string   "activity_type", null: false
+    t.datetime "created_at",    null: false
+    t.datetime "updated_at",    null: false
     t.integer  "unit_id"
   end
 
