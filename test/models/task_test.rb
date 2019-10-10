@@ -54,6 +54,45 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     assert_not File.exists? path
   end
 
+  def test_image_upload
+    unit = Unit.first
+    td = TaskDefinition.new({
+        unit_id: unit.id,
+        name: 'Task with image2',
+        description: 'img task2',
+        weighting: 4,
+        target_grade: 0,
+        start_date: unit.start_date + 1.week,
+        target_date: unit.start_date + 2.weeks,
+        abbreviation: 'TaskPdfWithGif2',
+        restrict_status_updates: false,
+        upload_requirements: [ { "key" => 'file0', "name" => 'An Image', "type" => 'image' } ],
+        plagiarism_warn_pct: 0.8,
+        is_graded: false,
+        max_quality_pts: 0
+      })
+    td.save!
+
+    data_to_post = {
+      trigger: 'ready_to_mark'
+    }
+
+    data_to_post = with_file('test_files/submissions/unbelievable.gif', 'image/gif', data_to_post)
+
+    project = unit.active_projects.first
+
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", with_auth_token(data_to_post)
+
+    assert_equal 201, last_response.status
+
+    task = project.task_for_task_definition(td)
+    task.move_files_to_in_process
+
+    assert File.exists? "student_work/in_process/#{task.id}/000-image.jpg"
+
+    td.destroy
+  end
+
   def test_pdf_creation_with_jpg
     unit = Unit.first
     td = TaskDefinition.new({

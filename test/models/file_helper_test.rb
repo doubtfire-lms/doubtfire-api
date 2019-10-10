@@ -9,6 +9,5 @@ class FileHelperTest < ActiveSupport::TestCase
       assert FileHelper.compress_image_to_dest(in_file, dest_file, true)
       assert File.exists? dest_file
     end
-    puts "here"
   end
 end
