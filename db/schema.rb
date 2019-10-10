@@ -34,6 +34,13 @@ ActiveRecord::Schema.define(version: 20191011035719) do
 
   add_index "breaks", ["teaching_period_id"], name: "index_breaks_on_teaching_period_id", using: :btree
 
+  create_table "campus_activity_sets", force: :cascade do |t|
+    t.datetime "created_at",           null: false
+    t.datetime "updated_at",           null: false
+    t.integer  "campus_id",            null: false
+    t.integer  "unit_activity_set_id", null: false
+  end
+
   create_table "campuses", force: :cascade do |t|
     t.string  "name",         null: false
     t.integer "mode",         null: false
@@ -474,6 +481,8 @@ ActiveRecord::Schema.define(version: 20191011035719) do
   add_index "users", ["login_id"], name: "index_users_on_login_id", unique: true, using: :btree
 
   add_foreign_key "breaks", "teaching_periods"
+  add_foreign_key "campus_activity_sets", "campuses"
+  add_foreign_key "campus_activity_sets", "unit_activity_sets"
   add_foreign_key "comments_read_receipts", "task_comments"
   add_foreign_key "comments_read_receipts", "users"
   add_foreign_key "projects", "campuses"
