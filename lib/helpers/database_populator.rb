@@ -373,9 +373,10 @@ class DatabasePopulator
     alignments = []
     sum_ratings = 0
     task.unit.learning_outcomes.each do |lo|
+      next if rand(0..10) < 7
       data = {
         ilo_id: lo.id,
-        rating: rand(0..5),
+        rating: rand(1..5),
         rationale: "Simulated rationale text..."
       }
       sum_ratings += data[:rating]
