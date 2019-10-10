@@ -392,6 +392,15 @@ ActiveRecord::Schema.define(version: 20191011035719) do
   add_index "tutorials", ["unit_id"], name: "index_tutorials_on_unit_id", using: :btree
   add_index "tutorials", ["unit_role_id"], name: "index_tutorials_on_unit_role_id", using: :btree
 
+  create_table "unit_activity_sets", force: :cascade do |t|
+    t.string   "type",       null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer  "unit_id"
+  end
+
+  add_index "unit_activity_sets", ["unit_id"], name: "index_unit_activity_sets_on_unit_id", using: :btree
+
   create_table "unit_roles", force: :cascade do |t|
     t.integer  "user_id"
     t.integer  "tutorial_id"
@@ -470,5 +479,6 @@ ActiveRecord::Schema.define(version: 20191011035719) do
   add_foreign_key "projects", "campuses"
   add_foreign_key "task_comments", "users", column: "recipient_id"
   add_foreign_key "tutorials", "campuses"
+  add_foreign_key "unit_activity_sets", "units"
   add_foreign_key "units", "teaching_periods"
 end
