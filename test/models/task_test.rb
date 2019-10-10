@@ -53,4 +53,46 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     td.destroy
     assert_not File.exists? path
   end
+
+  def test_pdf_creation_with_jpg
+    unit = Unit.first
+    td = TaskDefinition.new({
+        unit_id: unit.id,
+        name: 'Task with image',  
+        description: 'img task',
+        weighting: 4,
+        target_grade: 0,
+        start_date: unit.start_date + 1.week,
+        target_date: unit.start_date + 2.weeks,
+        abbreviation: 'TaskPdfWithJpg',
+        restrict_status_updates: false,
+        upload_requirements: [ { "key" => 'file0', "name" => 'An Image', "type" => 'image' } ],
+        plagiarism_warn_pct: 0.8,
+        is_graded: false,
+        max_quality_pts: 0
+      })
+    td.save!
+
+    data_to_post = {
+      trigger: 'ready_to_mark'
+    }
+
+    data_to_post = with_file('test_files/submissions/Swinburne.jpg', 'image/jpg', data_to_post)
+
+    project = unit.active_projects.first
+
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", with_auth_token(data_to_post)
+
+    assert_equal 201, last_response.status
+
+    task = project.task_for_task_definition(td)
+    assert task.convert_submission_to_pdf
+    path = task.zip_file_path_for_done_task
+    assert path
+    assert File.exists? path
+    assert File.exists? task.final_pdf_path
+    
+    td.destroy
+    assert_not File.exists? path
+  end
 end
