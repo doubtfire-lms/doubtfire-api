@@ -69,6 +69,16 @@ ActiveRecord::Schema.define(version: 20191011035719) do
     t.datetime "updated_at",        null: false
   end
 
+  create_table "enrolments", force: :cascade do |t|
+    t.datetime "created_at",  null: false
+    t.datetime "updated_at",  null: false
+    t.integer  "project_id",  null: false
+    t.integer  "tutorial_id", null: false
+  end
+
+  add_index "enrolments", ["project_id"], name: "index_enrolments_on_project_id", using: :btree
+  add_index "enrolments", ["tutorial_id"], name: "index_enrolments_on_tutorial_id", using: :btree
+
   create_table "group_memberships", force: :cascade do |t|
     t.integer  "group_id"
     t.integer  "project_id"
@@ -485,6 +495,8 @@ ActiveRecord::Schema.define(version: 20191011035719) do
   add_foreign_key "campus_activity_sets", "unit_activity_sets"
   add_foreign_key "comments_read_receipts", "task_comments"
   add_foreign_key "comments_read_receipts", "users"
+  add_foreign_key "enrolments", "projects"
+  add_foreign_key "enrolments", "tutorials"
   add_foreign_key "projects", "campuses"
   add_foreign_key "task_comments", "users", column: "recipient_id"
   add_foreign_key "tutorials", "campuses"
