@@ -58,5 +58,14 @@ module Api
       campus.update!(campus_parameters)
       campus
     end
+
+    desc 'Delete a campus'
+    delete '/campuses/:id' do
+      unless authorise? current_user, User, :handle_campuses
+        error!({ error: 'Not authorised to delete a campus' }, 403)
+      end
+
+      Campus.find(params[:id]).destroy
+    end
   end
 end
