@@ -11,10 +11,16 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20190705045015) do
+ActiveRecord::Schema.define(version: 20191010055541) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
+
+  create_table "ar_internal_metadata", primary_key: "key", force: :cascade do |t|
+    t.string   "value"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+  end
 
   create_table "badges", force: :cascade do |t|
     t.string   "name",                   limit: 255
@@ -241,7 +247,6 @@ ActiveRecord::Schema.define(version: 20190705045015) do
     t.integer  "recipient_id"
     t.string   "content_type"
     t.string   "attachment_extension"
-    t.integer  "discussion_comment_id"
     t.string   "type"
     t.datetime "time_discussion_started"
     t.datetime "time_discussion_completed"
@@ -254,7 +259,6 @@ ActiveRecord::Schema.define(version: 20190705045015) do
     t.string   "extension_response"
   end
 
-  add_index "task_comments", ["discussion_comment_id"], name: "index_task_comments_on_discussion_comment_id", using: :btree
   add_index "task_comments", ["task_id"], name: "index_task_comments_on_task_id", using: :btree
 
   create_table "task_definitions", force: :cascade do |t|
