@@ -937,6 +937,8 @@ class Task < ActiveRecord::Base
       @image_path = Rails.root.join('public', 'assets', 'images')
       @institution_name = Doubtfire::Application.config.institution[:name]
       @doubtfire_product_name = Doubtfire::Application.config.institution[:product_name]
+
+      puts "Base path #{@base_path}"
     end
 
     def make_pdf
