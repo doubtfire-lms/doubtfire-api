@@ -102,10 +102,6 @@ No Tutor % Supervisor's Name
   \fancyhead[R]{ <%= lesc @task.upload_requirements[idx]['name'] %>  }
 
   <% if file[:type] == 'image' %>
-    <% 
-      puts "From tex: #{@base_path}"
-      puts file[:path]
-    %>
     \graphicspath{ {<%= @base_path %>} }
     \includegraphics[width=\textwidth]{<%= File.basename(file[:path]) %>}
   <% end %>
