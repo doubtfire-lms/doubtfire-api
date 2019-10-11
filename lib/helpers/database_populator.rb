@@ -107,21 +107,24 @@ class DatabasePopulator
     data = {
       name: 'Cloud',
       mode: 'timetable',
-      abbreviation: 'C'
+      abbreviation: 'C',
+      active: true
     }
     Campus.create! data
 
     data = {
       name: 'Burwood',
       mode: 'automatic',
-      abbreviation: 'B'
+      abbreviation: 'B',
+      active: true
     }
     Campus.create! data
 
     data = {
       name: 'Geelong',
       mode: 'manual',
-      abbreviation: 'G'
+      abbreviation: 'G',
+      active: true
     }
     Campus.create! data
   end
