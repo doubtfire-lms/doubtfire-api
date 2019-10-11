@@ -12,9 +12,10 @@ module Api
     desc 'Add a Campus'
     params do
       requires :campus, type: Hash do
-        requires :name,         type: String, desc: 'The name of the campus'
-        requires :mode,         type: String, desc: 'This will determine the campus mode', values: ['timetable', 'automatic', 'manual']
-        requires :abbreviation, type: String, desc: 'The abbreviation for the campus'
+        requires :name,         type: String,  desc: 'The name of the campus'
+        requires :mode,         type: String,  desc: 'This will determine the campus mode', values: ['timetable', 'automatic', 'manual']
+        requires :abbreviation, type: String,  desc: 'The abbreviation for the campus'
+        requires :active,       type: Boolean, desc: 'Determines whether campus is active'
       end
     end
     post '/campuses' do
@@ -25,7 +26,8 @@ module Api
                                                                .require(:campus)
                                                                .permit(:name,
                                                                       :mode,
-                                                                      :abbreviation)
+                                                                      :abbreviation,
+                                                                      :active)
 
       result = Campus.create!(campus_parameters)
 
@@ -39,9 +41,10 @@ module Api
     desc 'Update Campus'
     params do
       requires :campus, type: Hash do
-        optional :name,         type: String, desc: 'The name of the campus'
-        optional :mode,         type: String, desc: 'This will determine the campus mode', values: ['timetable', 'automatic', 'manual']
-        optional :abbreviation, type: String, desc: 'The abbreviation for the campus'
+        optional :name,         type: String,  desc: 'The name of the campus'
+        optional :mode,         type: String,  desc: 'This will determine the campus mode', values: ['timetable', 'automatic', 'manual']
+        optional :abbreviation, type: String,  desc: 'The abbreviation for the campus'
+        optional :active,       type: Boolean, desc: 'Determines whether campus is active'
       end
     end
     put '/campuses/:id' do
@@ -53,7 +56,8 @@ module Api
                                                                .require(:campus)
                                                                .permit(:name,
                                                                       :mode,
-                                                                      :abbreviation)
+                                                                      :abbreviation,
+                                                                      :active)
 
       campus.update!(campus_parameters)
       campus
