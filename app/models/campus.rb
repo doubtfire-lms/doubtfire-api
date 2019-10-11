@@ -1,12 +1,16 @@
 class Campus < ActiveRecord::Base
   # Relationships
-  has_many    :tutorials, dependent: :delete_all
-  has_many    :projects,  dependent: :delete_all
+  has_many    :tutorials
+  has_many    :projects
+
+  # Callbacks - methods called are private
+  before_destroy :can_destroy?
 
   validates :name, presence: true
   validates :mode, presence: true
   validates :abbreviation, presence: true
 
+  after_destroy :invalidate_cache
   after_save :invalidate_cache
 
   enum mode: { timetable: 0, automatic: 1, manual: 2 }
@@ -27,5 +31,11 @@ class Campus < ActiveRecord::Base
   def invalidate_cache
     Rails.cache.delete("campuses/#{id}")
     Rails.cache.delete("campuses/#{name}")
+  end
+
+  def can_destroy?
+    return true if projects.count == 0 and tutorials.count == 0
+    errors.add :base, "Cannot delete campus with projects and tutorials"
+    false
   end
 end
