@@ -9,6 +9,7 @@ class Campus < ActiveRecord::Base
   validates :name,         presence: true, uniqueness: true
   validates :mode,         presence: true
   validates :abbreviation, presence: true, uniqueness: true
+  validates :active,       presence: true
 
   after_destroy :invalidate_cache
   after_save :invalidate_cache
