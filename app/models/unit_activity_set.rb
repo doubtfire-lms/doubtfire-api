@@ -3,6 +3,7 @@ class UnitActivitySet < ActiveRecord::Base
   belongs_to :activity_type
 
   has_many :campus_activity_sets
+  has_many :tutorials, dependent: :destroy
 
   # Always check for presence of whole model instead of id
   # So validate presence of unit not unit_id
