@@ -137,18 +137,6 @@ class Unit < ActiveRecord::Base
     super(tp_id)
   end
 
-  def add_activity_set(activity_type)
-    unit_activity_set = UnitActivitySet.new
-    unit_activity_set.activity_type = activity_type
-    unit_activity_set.unit = self
-    unit_activity_set.save!
-
-    # add after save to ensure valid activity set
-    self.unit_activity_sets << unit_activity_set
-
-    unit_activity_set
-  end
-
   def teaching_period=(tp)
     if tp.present?
       write_attribute(:start_date, tp.start_date)
