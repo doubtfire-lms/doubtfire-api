@@ -9,6 +9,7 @@ class Tutorial < ActiveRecord::Base
 
   has_many   :projects, dependent: :nullify # Students
   has_many   :groups, dependent: :nullify
+  has_many   :enrolments, dependent: :destroy
 
   validates :abbreviation, uniqueness: { scope: :unit,
                                          message: 'must be unique within the unit' }
