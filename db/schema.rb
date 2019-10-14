@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20191014001737) do
+ActiveRecord::Schema.define(version: 20191014032927) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -400,19 +400,21 @@ ActiveRecord::Schema.define(version: 20191014001737) do
 
   create_table "tutorials", force: :cascade do |t|
     t.integer  "unit_id"
-    t.string   "meeting_day",      limit: 255
-    t.string   "meeting_time",     limit: 255
-    t.string   "meeting_location", limit: 255
-    t.datetime "created_at",                   null: false
-    t.datetime "updated_at",                   null: false
-    t.string   "code",             limit: 255
+    t.string   "meeting_day",          limit: 255
+    t.string   "meeting_time",         limit: 255
+    t.string   "meeting_location",     limit: 255
+    t.datetime "created_at",                       null: false
+    t.datetime "updated_at",                       null: false
+    t.string   "code",                 limit: 255
     t.integer  "unit_role_id"
-    t.string   "abbreviation",     limit: 255
+    t.string   "abbreviation",         limit: 255
     t.integer  "capacity"
     t.integer  "campus_id"
+    t.integer  "unit_activity_set_id"
   end
 
   add_index "tutorials", ["campus_id"], name: "index_tutorials_on_campus_id", using: :btree
+  add_index "tutorials", ["unit_activity_set_id"], name: "index_tutorials_on_unit_activity_set_id", using: :btree
   add_index "tutorials", ["unit_id"], name: "index_tutorials_on_unit_id", using: :btree
   add_index "tutorials", ["unit_role_id"], name: "index_tutorials_on_unit_role_id", using: :btree
 
@@ -507,6 +509,7 @@ ActiveRecord::Schema.define(version: 20191014001737) do
   add_foreign_key "projects", "campuses"
   add_foreign_key "task_comments", "users", column: "recipient_id"
   add_foreign_key "tutorials", "campuses"
+  add_foreign_key "tutorials", "unit_activity_sets"
   add_foreign_key "unit_activity_sets", "activity_types"
   add_foreign_key "unit_activity_sets", "units"
   add_foreign_key "units", "teaching_periods"
