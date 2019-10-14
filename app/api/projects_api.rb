@@ -102,7 +102,7 @@ module Api
         project.save!
 
         # If we are only updating the campus
-      elsif !params[:campus_id].nil?
+      elsif params[:campus_id].present?
         unless authorise? current_user, project, :change_campus
           error!({ error: "You cannot change the campus for project #{params[:id]}" }, 403)
         end
