@@ -3,9 +3,9 @@ require "test_helper"
 class CampusTest < ActiveSupport::TestCase
   def test_create_campus
     data = {
-      name: 'Burwood',
+      name: 'Sydney',
       mode: 'automatic',
-      abbreviation: 'B'
+      abbreviation: 'Syd'
     }
 
     campus = Campus.create!(data)
