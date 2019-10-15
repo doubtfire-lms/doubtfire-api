@@ -9,14 +9,6 @@ class CampusesTest < ActiveSupport::TestCase
     Rails.application
   end
 
-  def campus
-    {
-      name: 'Online',
-      mode: 'timetable',
-      abbreviation: 'O'
-    }
-  end
-
   def test_get_all_campuses
     get '/api/campuses'
     expected_data = Campus.all
@@ -33,7 +25,7 @@ class CampusesTest < ActiveSupport::TestCase
 
   def test_post_campuses
     data_to_post = {
-      campus: campus,
+      campus: FactoryGirl.build(:campus, mode: 'timetable'),
       auth_token: auth_token
     }
     post_json '/api/campuses', data_to_post
@@ -47,7 +39,7 @@ class CampusesTest < ActiveSupport::TestCase
 
   def test_put_campuses
     data_to_put = {
-      campus: campus,
+      campus: FactoryGirl.build(:campus, mode: 'timetable'),
       auth_token: auth_token
     }
 
