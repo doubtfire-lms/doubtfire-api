@@ -6,9 +6,9 @@ class Campus < ActiveRecord::Base
   # Callbacks - methods called are private
   before_destroy :can_destroy?
 
-  validates :name, presence: true
-  validates :mode, presence: true
-  validates :abbreviation, presence: true
+  validates :name,         presence: true, uniqueness: true
+  validates :mode,         presence: true
+  validates :abbreviation, presence: true, uniqueness: true
 
   after_destroy :invalidate_cache
   after_save :invalidate_cache
