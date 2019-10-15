@@ -27,6 +27,10 @@ class Campus < ActiveRecord::Base
     end
   end
 
+  def self.find_by_abbr_or_name(data)
+    Campus.find_by(abbreviation: data) || Campus.find_by(name: data)
+  end
+
   private
   def invalidate_cache
     Rails.cache.delete("campuses/#{id}")
