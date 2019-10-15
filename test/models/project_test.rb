@@ -3,9 +3,9 @@ require "test_helper"
 class ProjectTest < ActiveSupport::TestCase
   def get_campus
     data = {
-      name: 'Burwood',
+      name: 'Melbourne',
       mode: 'automatic',
-      abbreviation: 'B'
+      abbreviation: 'Melb'
     }
 
     Campus.create!(data)
