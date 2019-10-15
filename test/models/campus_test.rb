@@ -16,4 +16,10 @@ class CampusTest < ActiveSupport::TestCase
     assert_equal campus.abbreviation, 'Aus'
     assert campus.valid?
   end
+
+  def test_duplicate_campus_is_not_allowed
+    campus = FactoryGirl.create(:campus, name: 'Australia', abbreviation: 'Aus')
+    campus = FactoryGirl.build(:campus, name: 'Australia', abbreviation: 'Aus')
+    assert campus.invalid?
+  end
 end
