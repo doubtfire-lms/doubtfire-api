@@ -9,4 +9,11 @@ class CampusTest < ActiveSupport::TestCase
     campus = FactoryGirl.create(:campus)
     assert campus.valid?
   end
+
+  def test_specific_create
+    campus = FactoryGirl.create(:campus, name: 'Australia', abbreviation: 'Aus')
+    assert_equal(campus.name, 'Australia')
+    assert_equal campus.abbreviation, 'Aus'
+    assert campus.valid?
+  end
 end
