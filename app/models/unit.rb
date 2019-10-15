@@ -474,7 +474,7 @@ class Unit < ActiveRecord::Base
               email:          row['email'],
               enrolled:       true,
               tutorial_code:  row['tutorial'],
-              campus_name:      row['campus']
+              campus_data:    row['campus']
           }
         },
         replace_existing_tutorial: true
@@ -608,7 +608,7 @@ class Unit < ActiveRecord::Base
         nickname = row_data[:nickname].nil? ? nil : row_data[:nickname].titleize
         email = row_data[:email]
         tutorial_code = row_data[:tutorial_code]
-        campus_name = row_data[:campus]
+        campus_data = row_data[:campus]
 
         # If either first or last name is nil... copy over the other component
         first_name = first_name || last_name
@@ -682,7 +682,7 @@ class Unit < ActiveRecord::Base
 
           # Add the user to the project (if not already in there)
           if user_project.nil?
-            campus = Campus.find_by(name: campus_name)
+            campus = Campus.find_by_abbr_or_name(campus_data)
             # Need to enrol user... can always set tutorial as does not already exist...
             if (!tutorial.nil?)
               # Use tutorial if we have it :)
@@ -940,7 +940,7 @@ class Unit < ActiveRecord::Base
         username = row['username'].downcase.strip unless row['username'].nil?
         group_name = row['group_name'].strip unless row['group_name'].nil?
         group_number = row['group_number'].strip unless row['group_number'].nil?
-        campus_name = row['campus'].strip unless row['campus'].nil?
+        campus_data = row['campus'].strip unless row['campus'].nil?
         capacity = row['capacity'].strip unless row['capacity'].nil?
         tutorial_abbr = row['tutorial'].strip unless row['tutorial'].nil?
 
@@ -968,7 +968,7 @@ class Unit < ActiveRecord::Base
           tutorial = tutorial_with_abbr(tutorial_abbr)
           if tutorial.nil?
             change += 'Created new tutorial. '
-            campus = Campus.find_by(name: campus_name)
+            campus = Campus.find_by_abbr_or_name(campus_data)
             tutorial = add_tutorial(
               'Monday',
               '8:00am',
