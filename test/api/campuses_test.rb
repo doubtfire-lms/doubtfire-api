@@ -11,9 +11,9 @@ class CampusesTest < ActiveSupport::TestCase
 
   def campus
     {
-      name: 'Cloud',
+      name: 'Online',
       mode: 'timetable',
-      abbreviation: 'C'
+      abbreviation: 'O'
     }
   end
 
