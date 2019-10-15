@@ -10,12 +10,6 @@ FactoryGirl.define do
     unit
   end
 
-  factory :campus do
-    name "Melbourne"
-    abbreviation "melb"
-    mode "automatic"
-  end
-
   factory :task_definition do
     unit
     name                      { Populator.words(1..3) }
