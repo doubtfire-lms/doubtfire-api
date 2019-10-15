@@ -392,11 +392,11 @@ class Unit < ActiveRecord::Base
     project = Project.new(
       user_id: user.id,
       unit_id: id,
-      task_stats: '0.0|1.0|0.0|0.0|0.0'
+      task_stats: '0.0|1.0|0.0|0.0|0.0',
+      campus: campus
     )
 
     project.tutorial_id = tutorial_id unless tutorial_id.nil?
-    project.campus = campus
     project.save!
     project
   end
