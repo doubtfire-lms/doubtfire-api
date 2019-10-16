@@ -6,5 +6,6 @@ FactoryGirl.define do
     name          campus_name
     abbreviation  campus_abbreviation
     mode          { ['timetable', 'automatic', 'manual'].sample }
+    active        true
   end
 end
