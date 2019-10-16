@@ -217,6 +217,17 @@ class Unit < ActiveRecord::Base
     unit_activity_set
   end
 
+  def update_activity_set(id, activity_type)
+    unit_activity_set = unit_activity_sets.find(id)
+
+    if activity_type.present?
+      unit_activity_set.activity_type = activity_type
+    end
+
+    unit_activity_set.save!
+    unit_activity_set
+  end
+
   def ordered_ilos
     learning_outcomes.order(:ilo_number)
   end
