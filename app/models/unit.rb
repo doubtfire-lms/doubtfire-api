@@ -205,6 +205,18 @@ class Unit < ActiveRecord::Base
     new_unit
   end
 
+  def add_activity_set(activity_type)
+    unit_activity_set = UnitActivitySet.new
+    unit_activity_set.activity_type = activity_type
+    unit_activity_set.unit = self
+    unit_activity_set.save!
+
+    # add after save to ensure valid activity set
+    self.unit_activity_sets << unit_activity_set
+
+    unit_activity_set
+  end
+
   def ordered_ilos
     learning_outcomes.order(:ilo_number)
   end
