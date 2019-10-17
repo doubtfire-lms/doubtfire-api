@@ -40,5 +40,13 @@ module Api
 
       unit.update_activity_set(params[:id], activity_type)
     end
+
+    desc "Get an unit activity set details"
+    get '/unit_activity_sets/:id' do
+      unless authorise? current_user, unit, :get_unit
+        error!({ error: "Couldn't find UnitActivitySet with id=#{params[:id]}" }, 403)
+      end
+      UnitActivitySet.find(params[:id])
+    end
   end
 end
