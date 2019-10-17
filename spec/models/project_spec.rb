@@ -38,11 +38,13 @@ RSpec.describe Project do
 
   it "can locate a matching task from another project" do
     unit = FactoryGirl.create(:unit, student_count:2)
+    campus = FactoryGirl.create(:campus)
+
     u1 = unit.students[0]
     u2 = unit.students[1]
 
-    p1 = unit.enrol_student u1
-    p2 = unit.enrol_student u2
+    p1 = unit.enrol_student u1, campus
+    p2 = unit.enrol_student u2, campus
 
     t2 = p2.tasks.first
     t1 = p1.matching_task t2

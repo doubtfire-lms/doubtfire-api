@@ -54,8 +54,9 @@ FactoryGirl.define do
       create_list(:learning_outcome, eval.outcome_count, unit: unit)
 
       unit.employ_staff( FactoryGirl.create(:user, :convenor), Role.convenor)
+      campus = FactoryGirl.create(:campus)
       eval.student_count.times do |i|
-        unit.enrol_student( FactoryGirl.create(:user, :student), unit.tutorials[i % unit.tutorials.count])
+        unit.enrol_student( FactoryGirl.create(:user, :student), campus, unit.tutorials[i % unit.tutorials.count])
       end
 
       stud = 0

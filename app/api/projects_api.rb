@@ -57,6 +57,7 @@ module Api
     params do
       optional :trigger,            type: String,  desc: 'The update trigger'
       optional :tutorial_id,        type: Integer, desc: 'Switch tutorial'
+      optional :campus_id,          type: Integer, desc: 'Campus this project is part of'
       optional :enrolled,           type: Boolean, desc: 'Enrol or withdraw this project'
       optional :target_grade,       type: Integer, desc: 'New target grade'
       optional :compile_portfolio,  type: Boolean, desc: 'Schedule a construction of the portfolio'
@@ -85,13 +86,28 @@ module Api
         tutorial_id = params[:tutorial_id]
         if project.unit.tutorials.where('tutorials.id = :tutorial_id', tutorial_id: tutorial_id).count == 1
           project.tutorial_id = tutorial_id
-          project.save!
+          # Required if we are updating both campus and tutorial at the same time.
+          # Updating both tutorial and campus should happen at the same time because of the campus_must_be_same validation
+          if !params[:campus_id].nil?
+            unless authorise? current_user, project, :change_campus
+              error!({ error: "You cannot change the campus for project #{params[:id]}" }, 403)
+            end
+            project.campus_id = params[:campus_id]
+          end
         elsif tutorial_id == -1
           project.tutorial = nil
-          project.save!
         else
           error!({ error: "Couldn't find Tutorial with id=#{params[:tutorial_id]}" }, 403)
         end
+        project.save!
+
+        # If we are only updating the campus
+      elsif params[:campus_id].present?
+        unless authorise? current_user, project, :change_campus
+          error!({ error: "You cannot change the campus for project #{params[:id]}" }, 403)
+        end
+        project.campus_id = params[:campus_id]
+        project.save!
       elsif !params[:enrolled].nil?
         unless authorise? current_user, project.unit, :change_project_enrolment
           error!({ error: "You cannot change the enrolment for project #{params[:id]}" }, 403)
@@ -142,6 +158,7 @@ module Api
     params do
       requires :unit_id, type: Integer, desc: 'Unit Id'
       requires :student_num, type: String,   desc: 'Student Number 7 digit code'
+      requires :campus_id, type: Integer, desc: 'Campus this project is part of'
       optional :tutorial_id, type: Integer,  desc: 'Tutorial Id'
     end
     post '/projects' do
@@ -154,8 +171,10 @@ module Api
         error!({ error: "Couldn't find Student with username=#{params[:student_num]}" }, 403)
       end
 
+      campus = Campus.find(params[:campus_id])
+
       if authorise? current_user, unit, :enrol_student
-        proj = unit.enrol_student(student, params[:tutorial_id])
+        proj = unit.enrol_student(student, campus, params[:tutorial_id])
         if proj.nil?
           error!({ error: 'Error adding student to unit' }, 403)
         else
@@ -168,6 +187,7 @@ module Api
             student_email: proj.student.email,
             target_grade: proj.target_grade,
             tutorial_id: proj.tutorial_id,
+            campus_id: proj.campus_id,
             compile_portfolio: false,
             grade: proj.grade,
             grade_rationale: proj.grade_rationale,

@@ -50,7 +50,7 @@ class DatabasePopulator
       throw "Invalid scale value '#{scale}'. Acceptable values are: #{accepted_scale_types.join(", ")}"
     end
     @scale = scale_data[scale]
-    
+
     return if Role.count > 0
 
     echo_line "-> Scale is set to #{scale}"
@@ -60,11 +60,12 @@ class DatabasePopulator
 
     generate_user_roles
     generate_task_statuses
-    
+
     # Fixed data contains all fixed units and users created
     generate_fixed_data()
 
     generate_teaching_periods()
+    generate_campuses
   end
 
   def generate_teaching_periods
@@ -100,6 +101,29 @@ class DatabasePopulator
     tp = TeachingPeriod.create! data
 
     tp.add_break Date.parse('2018-12-24'), 2
+  end
+
+  def generate_campuses
+    data = {
+      name: 'Cloud',
+      mode: 'timetable',
+      abbreviation: 'C'
+    }
+    Campus.create! data
+
+    data = {
+      name: 'Burwood',
+      mode: 'automatic',
+      abbreviation: 'B'
+    }
+    Campus.create! data
+
+    data = {
+      name: 'Geelong',
+      mode: 'manual',
+      abbreviation: 'G'
+    }
+    Campus.create! data
   end
 
   def generate_admin
@@ -212,6 +236,14 @@ class DatabasePopulator
   def random_project
     id = Project.pluck(:id).sample
     Project.find(id)
+  end
+
+  #
+  # Random campus helper
+  #
+  def random_campus
+    id = Campus.pluck(:id).sample
+    Campus.find(id)
   end
 
   #
@@ -338,6 +370,8 @@ class DatabasePopulator
       echo_line "----> Enrolling tutor #{tutor.name} with #{user_details[:num]} tutorials"
       tutor_unit_role = unit.employ_staff(tutor, Role.tutor)
 
+      campus = random_campus
+
       user_details[:num].times do | count |
         tutorial_count += 1
         #day, time, location, tutor_username, abbrev
@@ -346,6 +380,8 @@ class DatabasePopulator
           "#{8 + Faker::Number.between(0,11)}:#{['00', '30'].sample}",    # Mon-Fri 8am-7:30pm
           "#{['EN', 'BA'].sample}#{Faker::Number.between(0,6)}0#{Faker::Number.between(0,8)}", # EN###/BA###
           tutor,
+          campus,
+          rand(10...20),
           "LA1-#{tutorial_count.to_s.rjust(2, '0')}"
         )
 
@@ -354,14 +390,14 @@ class DatabasePopulator
         echo "-----> Creating #{num_students_in_tutorial} projects under tutorial #{tutorial.abbreviation}"
         num_students_in_tutorial.times do
           student = find_or_create_student("student_#{student_count}")
-          project = unit.enrol_student(student, tutorial.id)
+          project = unit.enrol_student(student, campus, tutorial.id)
           student_count += 1
           echo '.'
         end
         # Add fixed students to first tutorial
         if count == 0
           unit_details[:students].each do | student_key |
-            unit.enrol_student(@user_cache[student_key], tutorial.id)
+            unit.enrol_student(@user_cache[student_key], campus, tutorial.id)
           end
         end
         echo_line "!"
