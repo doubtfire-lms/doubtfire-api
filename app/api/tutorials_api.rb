@@ -17,6 +17,8 @@ module Api
         optional :meeting_location, type: String,   desc: 'The tutorials location'
         optional :meeting_day, type: String, desc: 'Day of the tutorial'
         optional :tutor_id, type: Integer, desc: 'Id of the tutor'
+        optional :campus_id, type: Integer, desc: 'Id of the campus'
+        optional :capacity, type: Integer, desc: 'Capacity of the tutorial'
         optional :meeting_time, type: String, desc: 'Time of the tutorial'
       end
     end
@@ -35,7 +37,9 @@ module Api
                                                           :abbreviation,
                                                           :meeting_location,
                                                           :meeting_day,
-                                                          :meeting_time
+                                                          :meeting_time,
+                                                          :campus_id,
+                                                          :capacity
                                                         )
 
       if tut_params[:tutor_id]
@@ -50,12 +54,14 @@ module Api
     desc 'Create tutorial'
     params do
       requires :tutorial, type: Hash do
-        requires :unit_id, type: Integer, desc: 'Id of the unit'
-        requires :tutor_id, type: Integer, desc: 'Id of the tutor'
-        requires :abbreviation, type: String, desc: 'The tutorials code', allow_blank: false
-        requires :meeting_location, type: String, desc: 'The tutorials location', allow_blank: false
-        requires :meeting_day, type: String, desc: 'Day of the tutorial', allow_blank: false
-        requires :meeting_time, type: String, desc: 'Time of the tutorial', allow_blank: false
+        requires :unit_id,          type: Integer,  desc: 'Id of the unit'
+        requires :tutor_id,         type: Integer,  desc: 'Id of the tutor'
+        requires :campus_id,        type: Integer,  desc: 'Id of the campus',           allow_blank: false
+        requires :capacity,         type: Integer,  desc: 'Capacity of the tutorial',   allow_blank: false
+        requires :abbreviation,     type: String,   desc: 'The tutorials code',         allow_blank: false
+        requires :meeting_location, type: String,   desc: 'The tutorials location',     allow_blank: false
+        requires :meeting_day,      type: String,   desc: 'Day of the tutorial',        allow_blank: false
+        requires :meeting_time,     type: String,   desc: 'Time of the tutorial',       allow_blank: false
       end
     end
     post '/tutorials' do
@@ -67,8 +73,9 @@ module Api
       end
 
       tutor = User.find(tut_params[:tutor_id])
+      campus = Campus.find(tut_params[:campus_id])
 
-      tutorial = unit.add_tutorial(tut_params[:meeting_day], tut_params[:meeting_time], tut_params[:meeting_location], tutor, tut_params[:abbreviation])
+      tutorial = unit.add_tutorial(tut_params[:meeting_day], tut_params[:meeting_time], tut_params[:meeting_location], tutor, campus, tut_params[:capacity], tut_params[:abbreviation])
       tutorial
     end
 

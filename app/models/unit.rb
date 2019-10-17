@@ -363,7 +363,7 @@ class Unit < ActiveRecord::Base
   end
 
   # Adds a user to this project.
-  def enrol_student(user, tutorial = nil)
+  def enrol_student(user, campus, tutorial = nil)
     tutorial_id = if tutorial.is_a?(Tutorial)
                     tutorial.id
                   else
@@ -377,7 +377,8 @@ class Unit < ActiveRecord::Base
         existing_project.enrolled = true
         # If they are part of the unit, update their tutorial if supplied
         existing_project.tutorial_id = tutorial_id unless tutorial_id.nil?
-        existing_project.save
+        existing_project.campus = campus
+        existing_project.save!
       end
 
       return existing_project
@@ -388,14 +389,15 @@ class Unit < ActiveRecord::Base
       return nil
     end
 
-    project = Project.create!(
+    project = Project.new(
       user_id: user.id,
       unit_id: id,
-      task_stats: '0.0|1.0|0.0|0.0|0.0'
+      task_stats: '0.0|1.0|0.0|0.0|0.0',
+      campus: campus
     )
 
     project.tutorial_id = tutorial_id unless tutorial_id.nil?
-    project.save
+    project.save!
     project
   end
 
@@ -422,8 +424,8 @@ class Unit < ActiveRecord::Base
 
   #
   # Imports users into a project from CSV file.
-  # Format: Unit Code, Student ID,First Name, Surname, email, tutorial
-  # Expected columns: unit_code, username, first_name, last_name, email, tutorial
+  # Format: Unit Code, Student ID,First Name, Surname, email, tutorial, campus
+  # Expected columns: unit_code, username, first_name, last_name, email, tutorial, campus
   #
   def import_users_from_csv(file)
     success = []
@@ -471,13 +473,14 @@ class Unit < ActiveRecord::Base
               last_name:      row['last_name'],
               email:          row['email'],
               enrolled:       true,
-              tutorial_code:  row['tutorial']
+              tutorial_code:  row['tutorial'],
+              campus_data:    row['campus']
           }
         },
         replace_existing_tutorial: true
       }
     end
-  
+
     student_list = []
 
     # Loop over csv rows converting to hash values
@@ -490,7 +493,7 @@ class Unit < ActiveRecord::Base
         errors << { row: row, message: "Missing headers: #{missing.join(', ')}" }
         next
       end
-      
+
       begin
         # Convert to hash...
         row_data = import_settings[:fetch_row_data_lambda].call(row, self)
@@ -499,7 +502,7 @@ class Unit < ActiveRecord::Base
         student_list << row_data
       rescue Exception => e
         errors << { row: row, message: e.message }
-      end 
+      end
     end # for each csv row
 
     # Now process the listt
@@ -605,6 +608,7 @@ class Unit < ActiveRecord::Base
         nickname = row_data[:nickname].nil? ? nil : row_data[:nickname].titleize
         email = row_data[:email]
         tutorial_code = row_data[:tutorial_code]
+        campus_data = row_data[:campus]
 
         # If either first or last name is nil... copy over the other component
         first_name = first_name || last_name
@@ -678,13 +682,14 @@ class Unit < ActiveRecord::Base
 
           # Add the user to the project (if not already in there)
           if user_project.nil?
+            campus = Campus.find_by_abbr_or_name(campus_data)
             # Need to enrol user... can always set tutorial as does not already exist...
             if (!tutorial.nil?)
               # Use tutorial if we have it :)
-              enrol_student(project_participant, tutorial)
+              enrol_student(project_participant, campus, tutorial)
               success << { row: row, message: 'Enrolled student with tutorial.' }
             else
-              enrol_student(project_participant)
+              enrol_student(project_participant, campus)
               success << { row: row, message: 'Enrolled student without tutorial.' }
             end
           else
@@ -721,7 +726,7 @@ class Unit < ActiveRecord::Base
       end
     end
 
-    result    
+    result
   end
 
   # Use the values in the CSV to set the enrolment of these
@@ -935,6 +940,8 @@ class Unit < ActiveRecord::Base
         username = row['username'].downcase.strip unless row['username'].nil?
         group_name = row['group_name'].strip unless row['group_name'].nil?
         group_number = row['group_number'].strip unless row['group_number'].nil?
+        campus_data = row['campus'].strip unless row['campus'].nil?
+        capacity = row['capacity'].strip unless row['capacity'].nil?
         tutorial_abbr = row['tutorial'].strip unless row['tutorial'].nil?
 
         user = User.where(username: username).first
@@ -961,15 +968,18 @@ class Unit < ActiveRecord::Base
           tutorial = tutorial_with_abbr(tutorial_abbr)
           if tutorial.nil?
             change += 'Created new tutorial. '
+            campus = Campus.find_by_abbr_or_name(campus_data)
             tutorial = add_tutorial(
               'Monday',
               '8:00am',
               'TBA',
               main_convenor,
+              campus,
+              capacity,
               tutorial_abbr
             )
           end
-          
+
           grp.tutorial = tutorial
           grp.number = group_number
           grp.save!
@@ -1016,10 +1026,10 @@ class Unit < ActiveRecord::Base
   #   end
   # end
 
-  def add_tutorial(day, time, location, tutor, abbrev)
+  def add_tutorial(day, time, location, tutor, campus, capacity, abbrev)
     tutor_role = unit_roles.where('user_id=:user_id', user_id: tutor.id).first
     return nil if tutor_role.nil? || tutor_role.role == Role.student
-    Tutorial.create!(unit_id: id, abbreviation: abbrev) do |tutorial|
+    Tutorial.create!(unit_id: id, campus: campus, capacity: capacity, abbreviation: abbrev) do |tutorial|
       tutorial.meeting_day      = day
       tutorial.meeting_time     = time
       tutorial.meeting_location = location

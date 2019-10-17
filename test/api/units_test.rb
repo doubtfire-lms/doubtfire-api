@@ -132,7 +132,9 @@ class UnitsTest < ActiveSupport::TestCase
       time: '2:30',
       location: 'HE12',
       tutor_username: 'acain',
-      abbrev: 'BC43'
+      abbrev: 'BC43',
+      campus_id: Campus.first.id,
+      capacity: 10
     }
 
     data_to_post = {
