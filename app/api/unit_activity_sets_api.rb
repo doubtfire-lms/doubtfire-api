@@ -48,5 +48,15 @@ module Api
       end
       UnitActivitySet.find(params[:id])
     end
+
+    desc 'Get all the unit activity sets in the Unit'
+    get '/units/:unit_id/unit_activity_sets' do
+      unit = Unit.find(params[:unit_id])
+      unless authorise? current_user, unit, :get_unit
+        error!({ error: "Couldn't find Unit with id=#{params[:unit_id]}" }, 403)
+      end
+
+      unit.unit_activity_sets
+    end
   end
 end
