@@ -294,7 +294,8 @@ class User < ActiveRecord::Base
       :handle_campuses,
       :handle_activity_types,
       :get_teaching_periods,
-      :rollover
+      :rollover,
+      :get_unit_activity_sets
     ]
 
     # What can convenors do with users?
@@ -323,7 +324,6 @@ class User < ActiveRecord::Base
     # What can students do with users?
     student_role_permissions = [
       :get_teaching_periods
-
     ]
 
     # Return the permissions hash

@@ -43,7 +43,7 @@ module Api
 
     desc "Get an unit activity set details"
     get '/unit_activity_sets/:id' do
-      unless authorise? current_user, unit, :get_unit
+      unless authorise? current_user, User, :get_unit_activity_sets
         error!({ error: "Couldn't find UnitActivitySet with id=#{params[:id]}" }, 403)
       end
       UnitActivitySet.find(params[:id])
