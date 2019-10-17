@@ -41,6 +41,16 @@ module Api
       unit.update_activity_set(params[:id], activity_type)
     end
 
+    desc 'Delete an unit activity set inside a unit'
+    delete '/units/:unit_id/activity_sets/:id' do
+      unit = Unit.find(params[:unit_id])
+      unless authorise? current_user, unit, :update
+        error!({ error: 'Not authorised to update this unit' }, 403)
+      end
+
+      unit.unit_activity_sets.find(params[:id]).destroy
+    end
+
     desc "Get an unit activity set details"
     get '/unit_activity_sets/:id' do
       unless authorise? current_user, User, :get_unit_activity_sets
