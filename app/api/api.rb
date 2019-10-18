@@ -34,6 +34,7 @@ module Api
     mount Api::ActivityTypesPublicApi
     mount Api::AuthenticationApi
     mount Api::BreaksApi
+    mount Api::CampusActivitySetsApi
     mount Api::DiscussionCommentApi
     mount Api::ExtensionCommentsApi
     mount Api::GroupSetsApi
@@ -63,6 +64,7 @@ module Api
     #
     AuthenticationHelpers.add_auth_to Api::ActivityTypesAuthenticatedApi
     AuthenticationHelpers.add_auth_to Api::BreaksApi
+    AuthenticationHelpers.add_auth_to Api::CampusActivitySetsApi
     AuthenticationHelpers.add_auth_to Api::DiscussionCommentApi
     AuthenticationHelpers.add_auth_to Api::ExtensionCommentsApi
     AuthenticationHelpers.add_auth_to Api::GroupSetsApi
