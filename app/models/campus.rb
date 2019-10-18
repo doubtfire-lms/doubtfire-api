@@ -34,6 +34,18 @@ class Campus < ActiveRecord::Base
     Campus.find_by(abbreviation: data) || Campus.find_by(name: data)
   end
 
+  def add_activity_set(unit_activity_set)
+    campus_activity_set = CampusActivitySet.new
+    campus_activity_set.unit_activity_set = unit_activity_set
+    campus_activity_set.campus = self
+    campus_activity_set.save!
+
+    # add after save to ensure valid activity set
+    self.campus_activity_sets << campus_activity_set
+
+    campus_activity_set
+  end
+
   private
   def invalidate_cache
     Rails.cache.delete("campuses/#{id}")
