@@ -47,7 +47,7 @@ class UnitSerializer < ActiveModel::Serializer
   has_many :ilos, serializer: LearningOutcomeSerializer
   has_many :task_outcome_alignments, serializer: LearningOutcomeTaskLinkSerializer
   has_many :groups, serializer: DeepGroupSerializer
-  has_many :unit_activity_sets
+  has_many :unit_activity_sets, serializer: UnitActivitySetSerializer
 
   def include_convenors?
     ([ Role.convenor, :convenor ].include? my_role_obj) || (my_user_role == Role.admin)
