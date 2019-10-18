@@ -46,6 +46,17 @@ class Campus < ActiveRecord::Base
     campus_activity_set
   end
 
+  def update_activity_set(id, unit_activity_set)
+    campus_activity_set = campus_activity_sets.find(id)
+
+    if unit_activity_set.present?
+      campus_activity_set.unit_activity_set = unit_activity_set
+    end
+
+    campus_activity_set.save!
+    campus_activity_set
+  end
+
   private
   def invalidate_cache
     Rails.cache.delete("campuses/#{id}")
