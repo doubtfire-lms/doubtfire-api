@@ -40,5 +40,15 @@ module Api
       campus = Campus.find(params[:campus_id])
       campus.update_activity_set(params[:id], unit_activity_set)
     end
+
+    desc 'Delete a campus activity set inside a campus'
+    delete '/campuses/:campus_id/activity_sets/:id' do
+      campus = Campus.find(params[:campus_id])
+      unless authorise? current_user, User, :handle_campus_activity_sets
+        error!({ error: 'Not authorised to delete a campus activity set' }, 403)
+      end
+
+      campus.campus_activity_sets.find(params[:id]).destroy
+    end
   end
 end
