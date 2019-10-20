@@ -56,7 +56,8 @@ class Project < ActiveRecord::Base
       :get_submission,
       :change,
       :assess,
-      :change_campus
+      :change_campus,
+      :enrol
     ]
     # What can convenors do with projects?
     convenor_role_permissions = [

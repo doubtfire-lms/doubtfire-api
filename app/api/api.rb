@@ -36,6 +36,7 @@ module Api
     mount Api::BreaksApi
     mount Api::CampusActivitySetsApi
     mount Api::DiscussionCommentApi
+    mount Api::EnrolmentsApi
     mount Api::ExtensionCommentsApi
     mount Api::GroupSetsApi
     mount Api::LearningOutcomesApi
@@ -66,6 +67,7 @@ module Api
     AuthenticationHelpers.add_auth_to Api::BreaksApi
     AuthenticationHelpers.add_auth_to Api::CampusActivitySetsApi
     AuthenticationHelpers.add_auth_to Api::DiscussionCommentApi
+    AuthenticationHelpers.add_auth_to Api::EnrolmentsApi
     AuthenticationHelpers.add_auth_to Api::ExtensionCommentsApi
     AuthenticationHelpers.add_auth_to Api::GroupSetsApi
     AuthenticationHelpers.add_auth_to Api::LearningOutcomesApi
