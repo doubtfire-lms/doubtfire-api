@@ -25,7 +25,7 @@ module Api
       project_id = enrolment_parameters['project_id']
       project = Project.find(project_id)
 
-      unless authorise? current_user, project, :enrol
+      unless authorise? current_user, project, :handle_enrolments
         error!({ error: 'Not authorised to enrol student in tutorial' }, 403)
       end
 
@@ -36,6 +36,16 @@ module Api
       else
         result
       end
+    end
+
+    desc 'Delete enrolment of a student'
+    delete '/enrolments/:id' do
+      enrolment = Enrolment.find(params[:id])
+      unless authorise? current_user, enrolment.project, :handle_enrolments
+        error!({ error: 'Not authorised to delete enrolment for this student' }, 403)
+      end
+
+      enrolment.destroy!
     end
   end
 end
