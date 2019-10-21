@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20191014032927) do
+ActiveRecord::Schema.define(version: 20191021013336) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -425,6 +425,7 @@ ActiveRecord::Schema.define(version: 20191014032927) do
     t.integer  "activity_type_id", null: false
   end
 
+  add_index "unit_activity_sets", ["activity_type_id", "unit_id"], name: "index_unit_activity_sets_on_activity_type_id_and_unit_id", unique: true, using: :btree
   add_index "unit_activity_sets", ["unit_id"], name: "index_unit_activity_sets_on_unit_id", using: :btree
 
   create_table "unit_roles", force: :cascade do |t|
