@@ -11,5 +11,5 @@ class UnitActivitySet < ActiveRecord::Base
   validates :activity_type, presence: true
   validates :unit,          presence: true
 
-  validates_uniqueness_of :activity_type, :scope => :unit
+  validates_uniqueness_of :activity_type, :scope => :unit, message: 'already exists for the unit'
 end
