@@ -14,4 +14,27 @@ class UnitActivitySet < ActiveRecord::Base
   # Always add a unique index to the DB to prevent new records from passing the validations when checked at the same time before being written
   # For reference, see unique index migrations of unit activity sets
   validates_uniqueness_of :activity_type, :scope => :unit, message: 'already exists for the unit'
+
+  def add_tutorial(day, time, location, tutor, campus, capacity, abbrev)
+    tutor_role = unit.unit_roles.where('user_id=:user_id', user_id: tutor.id).first
+    return nil if tutor_role.nil? || tutor_role.role == Role.student
+
+    tutorial = Tutorial.new
+    tutorial.unit = unit
+    tutorial.unit_activity_set = self
+    tutorial.campus = campus
+    tutorial.capacity = capacity
+    tutorial.abbreviation = abbrev
+    tutorial.meeting_day = day
+    tutorial.meeting_time = time
+    tutorial.meeting_location = location
+    tutorial.unit_role_id = tutor_role.id
+
+    tutorial.save!
+
+    # add after save to ensure valid tutorials
+    self.tutorials << tutorial
+
+    tutorial
+  end
 end
