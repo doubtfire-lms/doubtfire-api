@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20191021022530) do
+ActiveRecord::Schema.define(version: 20191021024416) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -47,6 +47,8 @@ ActiveRecord::Schema.define(version: 20191021022530) do
     t.integer  "campus_id",            null: false
     t.integer  "unit_activity_set_id", null: false
   end
+
+  add_index "campus_activity_sets", ["unit_activity_set_id", "campus_id"], name: "unique_index_on_campus_and_unit_activity_sets", unique: true, using: :btree
 
   create_table "campuses", force: :cascade do |t|
     t.string  "name",         null: false
