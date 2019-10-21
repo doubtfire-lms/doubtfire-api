@@ -70,6 +70,7 @@ class ProjectSerializer < ActiveModel::Serializer
 
   has_many :groups, serializer: GroupSerializer
   has_many :task_outcome_alignments, serializer: LearningOutcomeTaskLinkSerializer
+  has_many :enrolments, serializer: EnrolmentSerializer
 
   def my_role_obj
     object.role_for(Thread.current[:user]) if Thread.current[:user]
