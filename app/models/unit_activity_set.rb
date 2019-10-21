@@ -10,4 +10,6 @@ class UnitActivitySet < ActiveRecord::Base
   # This ensures that id provided is also valid, so there exists an unit with that id
   validates :activity_type, presence: true
   validates :unit,          presence: true
+
+  validates_uniqueness_of :activity_type, :scope => :unit
 end
