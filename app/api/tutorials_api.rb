@@ -9,6 +9,8 @@ module Api
       authenticated?
     end
 
+    ## --- Deprecated ---
+    # Use new endpoints that use unit activity sets
     desc 'Update a tutorial'
     params do
       requires :id, type: Integer, desc: 'The user id to update'
@@ -51,6 +53,8 @@ module Api
       tutorial
     end
 
+    ## --- Deprecated ---
+    # Use new endpoints that use unit activity sets
     desc 'Create tutorial'
     params do
       requires :tutorial, type: Hash do
@@ -79,6 +83,8 @@ module Api
       tutorial
     end
 
+    ## --- Deprecated ---
+    # Use new endpoints that use unit activity sets
     desc 'Delete a tutorial'
     params do
       requires :id, type: Integer, desc: 'The tutorial id to delete'
@@ -92,6 +98,34 @@ module Api
 
       tutorial.destroy!
       tutorial
+    end
+
+    # New tutorial endpoints to incorporate unit activity sets
+    # These will eventually replace old endpoints
+    desc 'Create tutorial'
+    params do
+      requires :tutorial, type: Hash do
+        requires :tutor_id,         type: Integer,  desc: 'Id of the tutor'
+        requires :campus_id,        type: Integer,  desc: 'Id of the campus',           allow_blank: false
+        requires :capacity,         type: Integer,  desc: 'Capacity of the tutorial',   allow_blank: false
+        requires :abbreviation,     type: String,   desc: 'The tutorials code',         allow_blank: false
+        requires :meeting_location, type: String,   desc: 'The tutorials location',     allow_blank: false
+        requires :meeting_day,      type: String,   desc: 'Day of the tutorial',        allow_blank: false
+        requires :meeting_time,     type: String,   desc: 'Time of the tutorial',       allow_blank: false
+      end
+    end
+    post '/unit_activity_sets/:unit_activity_set_id/tutorials' do
+      unit_activity_set = UnitActivitySet.find(params[:unit_activity_set_id])
+      tut_params = params[:tutorial]
+
+      unless authorise? current_user, unit_activity_set.unit, :add_tutorial
+        error!({ error: 'Not authorised to create new tutorials' }, 403)
+      end
+
+      tutor = User.find(tut_params[:tutor_id])
+      campus = Campus.find(tut_params[:campus_id])
+
+      unit_activity_set.add_tutorial(tut_params[:meeting_day], tut_params[:meeting_time], tut_params[:meeting_location], tutor, campus, tut_params[:capacity], tut_params[:abbreviation])
     end
   end
 end
