@@ -37,4 +37,22 @@ class UnitActivitySet < ActiveRecord::Base
 
     tutorial
   end
+
+  def update_tutorial(id, day, time, location, tutor, campus, capacity, abbrev)
+    tutorial = tutorials.find(id)
+
+    if tutor.present?
+      tutorial.assign_tutor(tutor)
+    end
+
+    tutorial.campus = campus if campus.present?
+    tutorial.capacity = capacity if capacity.present?
+    tutorial.abbreviation = abbrev if abbrev.present?
+    tutorial.meeting_day = day if day.present?
+    tutorial.meeting_time = time if time.present?
+    tutorial.meeting_location = location if location.present?
+
+    tutorial.save!
+    tutorial
+  end
 end
