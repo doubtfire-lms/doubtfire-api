@@ -20,7 +20,6 @@ class UnitActivitySet < ActiveRecord::Base
     return nil if tutor_role.nil? || tutor_role.role == Role.student
 
     tutorial = Tutorial.new
-    tutorial.unit = unit
     tutorial.unit_activity_set = self
     tutorial.campus = campus
     tutorial.capacity = capacity

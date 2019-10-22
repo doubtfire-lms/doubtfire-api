@@ -1,9 +1,9 @@
 class Tutorial < ActiveRecord::Base
   # Model associations
-  belongs_to :unit # Foreign key
   belongs_to :unit_role # Foreign key
   belongs_to :campus
   belongs_to :unit_activity_set
+  has_one    :unit, through: :unit_activity_set
 
   has_one    :tutor, through: :unit_role, source: :user
 
@@ -11,8 +11,8 @@ class Tutorial < ActiveRecord::Base
   has_many   :groups, dependent: :nullify
   has_many   :enrolments, dependent: :destroy
 
-  validates :abbreviation, uniqueness: { scope: :unit,
-                                         message: 'must be unique within the unit' }
+  validates :abbreviation, uniqueness: { scope: :unit_activity_set,
+                                         message: 'must be unique within the unit activity set' }
 
   def self.default
     tutorial = new
@@ -49,7 +49,7 @@ class Tutorial < ActiveRecord::Base
     # Create a role for the user if they're not already a tutor
     # TODO: Move creation to UnitRole and pass it approriate params
     tutor_unit_role = UnitRole.find_by(
-      unit_id: unit_id,
+      unit_id: unit_activity_set.unit_id,
       user_id: tutor_user.id
     )
 

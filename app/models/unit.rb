@@ -101,7 +101,6 @@ class Unit < ActiveRecord::Base
   # When a Unit is destroyed, any TaskDefinitions, Tutorials, and ProjectConvenor instances will also be destroyed.
   has_many :task_definitions, -> { order 'start_date ASC, abbreviation ASC' }, dependent: :destroy
   has_many :projects, dependent: :destroy
-  has_many :tutorials, dependent: :destroy
   has_many :unit_roles, dependent: :destroy
   has_many :learning_outcomes, dependent: :destroy
   has_many :tasks, through: :projects
@@ -110,6 +109,7 @@ class Unit < ActiveRecord::Base
   has_many :comments, through: :projects
   has_many :groups, through: :group_sets
   has_many :unit_activity_sets, dependent: :destroy
+  has_many :tutorials, through: :unit_activity_sets
 
   has_many :learning_outcome_task_links, through: :task_definitions
 
@@ -409,8 +409,10 @@ class Unit < ActiveRecord::Base
     end
 
     # Validates that the tutorial exists for the unit
-    if !tutorial_id.nil? && tutorials.where('id=:id', id: tutorial_id).count == 0
-      return nil
+    if tutorial_id.present?
+      tutorial = Tutorial.find(tutorial_id)
+      unit_activity_set = tutorial.unit_activity_set
+      return nil unless unit_activity_set.present? && unit_activity_sets.exists?(unit_activity_set.id)
     end
 
     project = Project.new(
