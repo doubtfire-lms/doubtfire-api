@@ -100,6 +100,8 @@ module Api
       tutorial
     end
 
+
+    ## ---- New Endpoints ----
     # New tutorial endpoints to incorporate unit activity sets
     # These will eventually replace old endpoints
     desc 'Create tutorial'
@@ -126,6 +128,38 @@ module Api
       campus = Campus.find(tut_params[:campus_id])
 
       unit_activity_set.add_tutorial(tut_params[:meeting_day], tut_params[:meeting_time], tut_params[:meeting_location], tutor, campus, tut_params[:capacity], tut_params[:abbreviation])
+    end
+
+    desc 'Update a tutorial'
+    params do
+      requires :tutorial, type: Hash do
+        optional :abbreviation,     type: String,  allow_blank: false, desc: 'The tutorials code'
+        optional :meeting_location, type: String,  allow_blank: false, desc: 'The tutorials location'
+        optional :meeting_day,      type: String,  allow_blank: false, desc: 'Day of the tutorial'
+        optional :tutor_id,         type: Integer, allow_blank: false, desc: 'Id of the tutor'
+        optional :campus_id,        type: Integer, allow_blank: false, desc: 'Id of the campus'
+        optional :capacity,         type: Integer, allow_blank: false, desc: 'Capacity of the tutorial'
+        optional :meeting_time,     type: String,  allow_blank: false, desc: 'Time of the tutorial'
+      end
+    end
+    put '/unit_activity_sets/:unit_activity_set_id/tutorials/:id' do
+      unit_activity_set = UnitActivitySet.find(params[:unit_activity_set_id])
+      tut_params = params[:tutorial]
+      unless authorise? current_user, unit_activity_set.unit, :add_tutorial
+        error!({ error: "Cannot update tutorial with id=#{params[:id]} - not authorised" }, 403)
+      end
+
+      tutor_id = tut_params[:tutor_id]
+      if tutor_id.present?
+        tutor = User.find(tut_params[:tutor_id])
+      end
+
+      campus_id = tut_params[:campus_id]
+      if campus_id.present?
+        campus = Campus.find(campus_id)
+      end
+
+      unit_activity_set.update_tutorial(params[:id], tut_params[:meeting_day], tut_params[:meeting_time], tut_params[:meeting_location], tutor, campus, tut_params[:capacity], tut_params[:abbreviation])
     end
   end
 end
