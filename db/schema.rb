@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20191021024416) do
+ActiveRecord::Schema.define(version: 20191022042547) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -402,7 +402,6 @@ ActiveRecord::Schema.define(version: 20191021024416) do
   add_index "teams", ["user_id"], name: "index_teams_on_user_id", using: :btree
 
   create_table "tutorials", force: :cascade do |t|
-    t.integer  "unit_id"
     t.string   "meeting_day",          limit: 255
     t.string   "meeting_time",         limit: 255
     t.string   "meeting_location",     limit: 255
@@ -418,7 +417,6 @@ ActiveRecord::Schema.define(version: 20191021024416) do
 
   add_index "tutorials", ["campus_id"], name: "index_tutorials_on_campus_id", using: :btree
   add_index "tutorials", ["unit_activity_set_id"], name: "index_tutorials_on_unit_activity_set_id", using: :btree
-  add_index "tutorials", ["unit_id"], name: "index_tutorials_on_unit_id", using: :btree
   add_index "tutorials", ["unit_role_id"], name: "index_tutorials_on_unit_role_id", using: :btree
 
   create_table "unit_activity_sets", force: :cascade do |t|
