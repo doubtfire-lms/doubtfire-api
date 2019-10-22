@@ -967,6 +967,7 @@ class Unit < ActiveRecord::Base
         campus_data = row['campus'].strip unless row['campus'].nil?
         capacity = row['capacity'].strip unless row['capacity'].nil?
         tutorial_abbr = row['tutorial'].strip unless row['tutorial'].nil?
+        tutorial_type = row['type'].strip unless row['type'].nil?
 
         user = User.where(username: username).first
 
@@ -993,7 +994,9 @@ class Unit < ActiveRecord::Base
           if tutorial.nil?
             change += 'Created new tutorial. '
             campus = Campus.find_by_abbr_or_name(campus_data)
-            tutorial = add_tutorial(
+            activity_type = ActivityType.find_by_abbr_or_name(tutorial_type)
+            unit_activity_set = unit_activity_sets.find_by(activity_type: activity_type)
+            tutorial = unit_activity_set.add_tutorial(
               'Monday',
               '8:00am',
               'TBA',
