@@ -104,7 +104,7 @@ module Api
     ## ---- New Endpoints ----
     # New tutorial endpoints to incorporate unit activity sets
     # These will eventually replace old endpoints
-    desc 'Create tutorial'
+    desc 'Add tutorial to a unit activity set'
     params do
       requires :tutorial, type: Hash do
         requires :tutor_id,         type: Integer,  desc: 'Id of the tutor'
@@ -130,7 +130,7 @@ module Api
       unit_activity_set.add_tutorial(tut_params[:meeting_day], tut_params[:meeting_time], tut_params[:meeting_location], tutor, campus, tut_params[:capacity], tut_params[:abbreviation])
     end
 
-    desc 'Update a tutorial'
+    desc 'Update a tutorial inside the unit activity set'
     params do
       requires :tutorial, type: Hash do
         optional :abbreviation,     type: String,  allow_blank: false, desc: 'The tutorials code'
@@ -160,6 +160,16 @@ module Api
       end
 
       unit_activity_set.update_tutorial(params[:id], tut_params[:meeting_day], tut_params[:meeting_time], tut_params[:meeting_location], tutor, campus, tut_params[:capacity], tut_params[:abbreviation])
+    end
+
+    desc 'Delete a tutorial inside the unit activity set'
+    delete '/unit_activity_sets/:unit_activity_set_id/tutorials/:id' do
+      unit_activity_set = UnitActivitySet.find(params[:unit_activity_set_id])
+      unless authorise? current_user, unit_activity_set.unit, :add_tutorial
+        error!({ error: 'Cannot delete tutorial - not authorised' }, 403)
+      end
+
+      unit_activity_set.tutorials.find(params[:id]).destroy
     end
   end
 end
