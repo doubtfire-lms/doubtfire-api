@@ -167,14 +167,14 @@ class Unit < ActiveRecord::Base
 
   def rollover(teaching_period, start_date, end_date)
     new_unit = self.dup
-    
+
     if teaching_period.present?
       new_unit.teaching_period = teaching_period
     else
       new_unit.start_date = start_date
       new_unit.end_date = end_date
     end
-    
+
     new_unit.save!
 
     # Duplicate group sets - before tasks as some tasks are group tasks
@@ -201,7 +201,7 @@ class Unit < ActiveRecord::Base
     convenors.each do |convenor|
       new_unit.convenors << convenor.dup
     end
-    
+
     new_unit
   end
 

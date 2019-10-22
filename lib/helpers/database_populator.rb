@@ -250,8 +250,15 @@ class DatabasePopulator
       # Generate other unit-related stuff
       generate_tasks_for_unit(unit, unit_details)
       generate_and_align_ilos_for_unit(unit, unit_details)
+      add_unit_activity_sets(unit)
       generate_tutorials_and_enrol_students_for_unit(unit, unit_details)
     end
+  end
+
+  def add_unit_activity_sets(unit)
+    unit.add_activity_set(ActivityType.first)
+    unit.add_activity_set(ActivityType.second)
+    unit.add_activity_set(ActivityType.third)
   end
 
   #
@@ -268,6 +275,11 @@ class DatabasePopulator
   def random_campus
     id = Campus.pluck(:id).sample
     Campus.find(id)
+  end
+
+  def random_activity_set_in_unit(unit)
+    id = unit.unit_activity_sets.pluck(:id).sample
+    unit.unit_activity_sets.find(id)
   end
 
   #
@@ -398,8 +410,9 @@ class DatabasePopulator
 
       user_details[:num].times do | count |
         tutorial_count += 1
+        unit_activity_set = random_activity_set_in_unit(unit)
         #day, time, location, tutor_username, abbrev
-        tutorial = unit.add_tutorial(
+        tutorial = unit_activity_set.add_tutorial(
           "#{weekdays.sample}",
           "#{8 + Faker::Number.between(0,11)}:#{['00', '30'].sample}",    # Mon-Fri 8am-7:30pm
           "#{['EN', 'BA'].sample}#{Faker::Number.between(0,6)}0#{Faker::Number.between(0,8)}", # EN###/BA###
