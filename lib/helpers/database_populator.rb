@@ -434,6 +434,7 @@ class DatabasePopulator
         num_students_in_tutorial.times do
           student = find_or_create_student("student_#{student_count}")
           project = unit.enrol_student(student, campus, tutorial.id)
+          generate_enrolments(project, tutorial)
           student_count += 1
           echo '.'
         end
@@ -446,6 +447,13 @@ class DatabasePopulator
         echo_line "!"
       end
     end
+  end
+
+  def generate_enrolments(project, tutorial)
+    enrolment = Enrolment.new
+    enrolment.project = project
+    enrolment.tutorial = tutorial
+    enrolment.save!
   end
 
   def self.assess_task(proj, task, tutor, status, complete_date)
