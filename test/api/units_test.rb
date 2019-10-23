@@ -124,33 +124,6 @@ class UnitsTest < ActiveSupport::TestCase
   end
 
 
-  def test_addtutorial_to_unit
-    count_tutorials = Tutorial.all.length
-
-    tutorial = {
-      day: 'Wednesday',
-      time: '2:30',
-      location: 'HE12',
-      tutor_username: 'acain',
-      abbrev: 'BC43',
-      campus_id: Campus.first.id,
-      capacity: 10
-    }
-
-    data_to_post = {
-      tutorial: tutorial,
-      id: '1',
-      auth_token: auth_token
-    }
-
-    # perform the post
-    post_json '/api/units/1/tutorials', data_to_post
-
-    # Check there is a new tutorial
-    assert_equal Tutorial.all.length, count_tutorials + 1
-    assert_tutorial_model_response last_response_body, tutorial
-  end
-
   # End POST tests
   # --------------------------------------------------------------------------- #
 
