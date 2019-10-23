@@ -251,6 +251,7 @@ class DatabasePopulator
       generate_tasks_for_unit(unit, unit_details)
       generate_and_align_ilos_for_unit(unit, unit_details)
       add_unit_activity_sets(unit)
+      add_campus_activity_sets(unit)
       generate_tutorials_and_enrol_students_for_unit(unit, unit_details)
     end
   end
@@ -259,6 +260,11 @@ class DatabasePopulator
     unit.add_activity_set(ActivityType.first)
     unit.add_activity_set(ActivityType.second)
     unit.add_activity_set(ActivityType.third)
+  end
+
+  def add_campus_activity_sets(unit)
+    random_campus.add_activity_set(unit.unit_activity_sets.first)
+    random_campus.add_activity_set(unit.unit_activity_sets.second)
   end
 
   #
