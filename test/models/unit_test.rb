@@ -1,7 +1,7 @@
 require 'test_helper'
 
 class UnitTest < ActiveSupport::TestCase
-  
+
   setup do
     data = {
         code: 'COS10001',
@@ -132,6 +132,7 @@ class UnitTest < ActiveSupport::TestCase
     @unit.import_outcomes_from_csv File.open(Rails.root.join('test_files',"#{@unit.code}-Outcomes.csv"))
     @unit.import_task_alignment_from_csv File.open(Rails.root.join('test_files',"#{@unit.code}-Alignment.csv")), nil
 
+    DatabasePopulator.new.add_unit_activity_sets @unit
     DatabasePopulator.new.generate_tutorials_and_enrol_students_for_unit @unit, {
       tutors: [
         { user: :acain, num: 1 },
@@ -145,12 +146,12 @@ class UnitTest < ActiveSupport::TestCase
     @unit.students.each do |student|
       @unit.task_definitions.each do |td|
         task = student.task_for_task_definition(td)
-        
+
         case rand(1..100)
-        when 1..20 
-          DatabasePopulator.assess_task(student, task, student.main_tutor, TaskStatus.complete, td.due_date + 1.week)  
+        when 1..20
+          DatabasePopulator.assess_task(student, task, student.main_tutor, TaskStatus.complete, td.due_date + 1.week)
         when 21..40
-          DatabasePopulator.assess_task(student, task, student.main_tutor, TaskStatus.ready_to_mark, td.due_date + 1.week)  
+          DatabasePopulator.assess_task(student, task, student.main_tutor, TaskStatus.ready_to_mark, td.due_date + 1.week)
         when 41..50
           DatabasePopulator.assess_task(student, task, student.main_tutor, TaskStatus.time_exceeded, td.due_date + 1.week)
         when 51..60
