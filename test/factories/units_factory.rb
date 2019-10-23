@@ -7,7 +7,16 @@ FactoryGirl.define do
     meeting_time      "17:30"
     meeting_location  "ATC101"
     sequence(:abbreviation) { |n| "LA1-#{n}" }
+    unit_activity_set
+  end
+
+  factory :unit_activity_set do
     unit
+    activity_type
+
+    after(:create) do | unit_activity_set |
+      create_list(:tutorial, 3, unit_activity_set: unit_activity_set)
+    end
   end
 
   factory :task_definition do
@@ -30,9 +39,9 @@ FactoryGirl.define do
 
   factory :unit do
     transient do
+      activity_sets 1
       student_count 0
       task_count 2
-      tutorials 1
       group_sets 0
       groups [ ] #[ { gs: 0, students:0 } ]
       group_tasks [ ] #[ {idx: 0, gs: gs }] - index of task, and index of group set
@@ -48,7 +57,7 @@ FactoryGirl.define do
     active          true
 
     after(:create) do | unit, eval |
-      create_list(:tutorial, eval.tutorials, unit: unit)
+      create_list(:unit_activity_set, eval.activity_sets, unit: unit)
       create_list(:task_definition, eval.task_count, unit: unit)
       create_list(:group_set, eval.group_sets, unit: unit)
       create_list(:learning_outcome, eval.outcome_count, unit: unit)
