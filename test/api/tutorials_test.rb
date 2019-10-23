@@ -21,10 +21,10 @@ class TutorialsTest < ActiveSupport::TestCase
 
   # POST /api/units{id}/tutorials.json
   def test_tutorials_post
+    unit_activity_set = UnitActivitySet.first
     number_of_tutorials = Tutorial.all.length
 
     tutorial = {
-      unit_id: '1',
       tutor_id: User.first.id,
       campus_id: Campus.first.id,
       capacity: 10,
@@ -36,40 +36,11 @@ class TutorialsTest < ActiveSupport::TestCase
 
     data_to_post = {
       tutorial: tutorial,
-      id: '1',
       auth_token: auth_token
     }
 
     # perform the post
-    post_json '/api/tutorials', data_to_post
-
-    # Check there is a new tutorial
-    assert_equal Tutorial.all.length, number_of_tutorials + 1
-    assert_tutorial_model_response last_response_body, tutorial
-  end
-
-  # POST /api/units{id}/tutorials.json
-  def test_tutorials_unit_post
-    number_of_tutorials = Tutorial.all.length
-
-    tutorial = {
-      day: 'Monday',
-      time: '12:30',
-      location: 'Room B',
-      tutor_username: 'acain',
-      abbrev: 'LA01',
-      campus_id: Campus.first.id,
-      capacity: 10
-    }
-
-    data_to_post = {
-      tutorial: tutorial,
-      id: '1',
-      auth_token: auth_token
-    }
-
-    # perform the post
-    post_json '/api/units/1/tutorials', data_to_post
+    post_json "/api/unit_activity_sets/#{unit_activity_set.id}/tutorials", data_to_post
 
     # Check there is a new tutorial
     assert_equal Tutorial.all.length, number_of_tutorials + 1
@@ -77,9 +48,10 @@ class TutorialsTest < ActiveSupport::TestCase
   end
 
   def test_tutorials_put
-    number_of_tutorials = Tutorial.all.length
+    unit_activity_set = UnitActivitySet.first
+    number_of_tutorials = unit_activity_set.tutorials.all.length
 
-    tutorial_old = Tutorial.first
+    tutorial_old = unit_activity_set.tutorials.first
     tutorial_new = tutorial_old
 
     tutorial_new[:meeting_time] = '11:30'
@@ -88,26 +60,27 @@ class TutorialsTest < ActiveSupport::TestCase
     tutorial_new[:abbreviation] = 'LAB03'
 
     # perform the post
-    put_json '/api/tutorials/1', tutorial_new
+    put_json "/api/unit_activity_sets/#{unit_activity_set.id}/tutorials/#{tutorial_old.id}", tutorial_new
 
     # Check there is a new tutorial
-    assert_equal Tutorial.all.length, number_of_tutorials
+    assert_equal unit_activity_set.tutorials.all.length, number_of_tutorials
 
     assert_tutorial_model_response last_response_body, tutorial_new
   end
 
   def test_tutorials_delete
-    number_of_tutorials = Tutorial.all.length
+    unit_activity_set = UnitActivitySet.first
+    number_of_tutorials = unit_activity_set.tutorials.all.length
     # Should be random unit where convenor is User.first
     # test_tutorial = Tutorial.where(:convenors == User.first).order('RANDOM()').first
-    test_tutorial = Tutorial.all.first
+    test_tutorial = unit_activity_set.tutorials.all.first
     id_of_tutorial_to_delete = test_tutorial.id
 
     # perform the post
-    delete_json with_auth_token "/api/tutorials/#{id_of_tutorial_to_delete}"
+    delete_json with_auth_token "/api/unit_activity_sets/#{unit_activity_set.id}/tutorials/#{id_of_tutorial_to_delete}"
 
     # Check there is one less tutorial
-    assert_equal number_of_tutorials - 1, Tutorial.all.length
+    assert_equal number_of_tutorials - 1, unit_activity_set.tutorials.all.length
 
     # Check that you can't find the deleted id
     refute Tutorial.exists?(id_of_tutorial_to_delete)
