@@ -2,7 +2,6 @@ class Campus < ActiveRecord::Base
   # Relationships
   has_many    :tutorials
   has_many    :projects
-  has_many    :campus_activity_sets, dependent: :destroy
 
   # Callbacks - methods called are private
   before_destroy :can_destroy?
