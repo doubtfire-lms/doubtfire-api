@@ -11,10 +11,17 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20191011035719) do
+ActiveRecord::Schema.define(version: 20191024222811) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
+
+  create_table "activity_types", force: :cascade do |t|
+    t.string   "name",         null: false
+    t.string   "abbreviation", null: false
+    t.datetime "created_at",   null: false
+    t.datetime "updated_at",   null: false
+  end
 
   create_table "badges", force: :cascade do |t|
     t.string   "name",                   limit: 255
