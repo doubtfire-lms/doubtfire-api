@@ -4,8 +4,8 @@ class ActivityType < ActiveRecord::Base
 
   before_destroy :can_destroy?
 
-  validates :name,         presence: true, uniqueness: true
-  validates :abbreviation, presence: true, uniqueness: true
+  validates :name,         presence: true, unique: true
+  validates :abbreviation, presence: true, unique: true
 
   def can_destroy?
     return true if unit_activity_sets.count == 0
