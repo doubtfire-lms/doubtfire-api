@@ -30,8 +30,6 @@ module Api
     #
     # Mount the api modules
     #
-    mount Api::ActivityTypesAuthenticatedApi
-    mount Api::ActivityTypesPublicApi
     mount Api::AuthenticationApi
     mount Api::BreaksApi
     mount Api::DiscussionCommentApi
@@ -60,7 +58,6 @@ module Api
     #
     # Add auth details to all end points
     #
-    AuthenticationHelpers.add_auth_to Api::ActivityTypesAuthenticatedApi
     AuthenticationHelpers.add_auth_to Api::BreaksApi
     AuthenticationHelpers.add_auth_to Api::DiscussionCommentApi
     AuthenticationHelpers.add_auth_to Api::ExtensionCommentsApi
