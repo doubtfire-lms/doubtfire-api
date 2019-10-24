@@ -11,17 +11,10 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20191014032927) do
+ActiveRecord::Schema.define(version: 20191011035719) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
-
-  create_table "activity_types", force: :cascade do |t|
-    t.string   "name",         null: false
-    t.string   "abbreviation", null: false
-    t.datetime "created_at",   null: false
-    t.datetime "updated_at",   null: false
-  end
 
   create_table "badges", force: :cascade do |t|
     t.string   "name",                   limit: 255
@@ -40,13 +33,6 @@ ActiveRecord::Schema.define(version: 20191014032927) do
   end
 
   add_index "breaks", ["teaching_period_id"], name: "index_breaks_on_teaching_period_id", using: :btree
-
-  create_table "campus_activity_sets", force: :cascade do |t|
-    t.datetime "created_at",           null: false
-    t.datetime "updated_at",           null: false
-    t.integer  "campus_id",            null: false
-    t.integer  "unit_activity_set_id", null: false
-  end
 
   create_table "campuses", force: :cascade do |t|
     t.string  "name",         null: false
@@ -75,16 +61,6 @@ ActiveRecord::Schema.define(version: 20191014032927) do
     t.datetime "created_at",        null: false
     t.datetime "updated_at",        null: false
   end
-
-  create_table "enrolments", force: :cascade do |t|
-    t.datetime "created_at",  null: false
-    t.datetime "updated_at",  null: false
-    t.integer  "project_id",  null: false
-    t.integer  "tutorial_id", null: false
-  end
-
-  add_index "enrolments", ["project_id"], name: "index_enrolments_on_project_id", using: :btree
-  add_index "enrolments", ["tutorial_id"], name: "index_enrolments_on_tutorial_id", using: :btree
 
   create_table "group_memberships", force: :cascade do |t|
     t.integer  "group_id"
@@ -400,32 +376,21 @@ ActiveRecord::Schema.define(version: 20191014032927) do
 
   create_table "tutorials", force: :cascade do |t|
     t.integer  "unit_id"
-    t.string   "meeting_day",          limit: 255
-    t.string   "meeting_time",         limit: 255
-    t.string   "meeting_location",     limit: 255
-    t.datetime "created_at",                       null: false
-    t.datetime "updated_at",                       null: false
-    t.string   "code",                 limit: 255
+    t.string   "meeting_day",      limit: 255
+    t.string   "meeting_time",     limit: 255
+    t.string   "meeting_location", limit: 255
+    t.datetime "created_at",                   null: false
+    t.datetime "updated_at",                   null: false
+    t.string   "code",             limit: 255
     t.integer  "unit_role_id"
-    t.string   "abbreviation",         limit: 255
+    t.string   "abbreviation",     limit: 255
     t.integer  "capacity"
     t.integer  "campus_id"
-    t.integer  "unit_activity_set_id"
   end
 
   add_index "tutorials", ["campus_id"], name: "index_tutorials_on_campus_id", using: :btree
-  add_index "tutorials", ["unit_activity_set_id"], name: "index_tutorials_on_unit_activity_set_id", using: :btree
   add_index "tutorials", ["unit_id"], name: "index_tutorials_on_unit_id", using: :btree
   add_index "tutorials", ["unit_role_id"], name: "index_tutorials_on_unit_role_id", using: :btree
-
-  create_table "unit_activity_sets", force: :cascade do |t|
-    t.datetime "created_at",       null: false
-    t.datetime "updated_at",       null: false
-    t.integer  "unit_id"
-    t.integer  "activity_type_id", null: false
-  end
-
-  add_index "unit_activity_sets", ["unit_id"], name: "index_unit_activity_sets_on_unit_id", using: :btree
 
   create_table "unit_roles", force: :cascade do |t|
     t.integer  "user_id"
@@ -500,17 +465,10 @@ ActiveRecord::Schema.define(version: 20191014032927) do
   add_index "users", ["login_id"], name: "index_users_on_login_id", unique: true, using: :btree
 
   add_foreign_key "breaks", "teaching_periods"
-  add_foreign_key "campus_activity_sets", "campuses"
-  add_foreign_key "campus_activity_sets", "unit_activity_sets"
   add_foreign_key "comments_read_receipts", "task_comments"
   add_foreign_key "comments_read_receipts", "users"
-  add_foreign_key "enrolments", "projects"
-  add_foreign_key "enrolments", "tutorials"
   add_foreign_key "projects", "campuses"
   add_foreign_key "task_comments", "users", column: "recipient_id"
   add_foreign_key "tutorials", "campuses"
-  add_foreign_key "tutorials", "unit_activity_sets"
-  add_foreign_key "unit_activity_sets", "activity_types"
-  add_foreign_key "unit_activity_sets", "units"
   add_foreign_key "units", "teaching_periods"
 end
