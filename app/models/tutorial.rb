@@ -3,13 +3,10 @@ class Tutorial < ActiveRecord::Base
   belongs_to :unit # Foreign key
   belongs_to :unit_role # Foreign key
   belongs_to :campus
-  belongs_to :unit_activity_set
-
   has_one    :tutor, through: :unit_role, source: :user
 
   has_many   :projects, dependent: :nullify # Students
   has_many   :groups, dependent: :nullify
-  has_many   :enrolments, dependent: :destroy
 
   validates :abbreviation, uniqueness: { scope: :unit,
                                          message: 'must be unique within the unit' }
