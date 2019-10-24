@@ -103,7 +103,7 @@ No Tutor % Supervisor's Name
 
   <% if file[:type] == 'image' %>
     \graphicspath{ {<%= @base_path %>} }
-    \includegraphics[width=\textwidth]{{<%= File.basename(file[:path], File.extname(file[:path])) %>}<%= File.extname(file[:path]) %>}
+    \includegraphics[width=\textwidth]{<%= File.basename(file[:path]) %>}
   <% end %>
 
   <% if file[:type] == 'code' %>
