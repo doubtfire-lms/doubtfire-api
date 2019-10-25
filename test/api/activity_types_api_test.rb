@@ -1,6 +1,6 @@
 require 'test_helper'
 
-class ActivityTypesTest < ActiveSupport::TestCase
+class ActivityTypesApiTest < ActiveSupport::TestCase
   include Rack::Test::Methods
   include TestHelpers::AuthHelper
   include TestHelpers::JsonHelper
