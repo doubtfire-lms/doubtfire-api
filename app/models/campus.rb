@@ -23,14 +23,16 @@ class Campus < ActiveRecord::Base
     end
   end
 
-  def self.find_by(name)
-    Rails.cache.fetch("campuses/#{name}", expires_in: 12.hours) do
-      super
-    end
-  end
+  def self.find_by(*args)
+    key = args.map { |arg|
+      if arg.instance_of? Hash
+        arg.map{|k,v| "#{k}=#{v}"}.join('/')
+      else
+        arg
+      end
+    }.join('/')
 
-  def self.find_by(abbreviation)
-    Rails.cache.fetch("campuses/#{abbreviation}", expires_in: 12.hours) do
+    Rails.cache.fetch("campuses/#{key}", expires_in: 12.hours) do
       super
     end
   end
@@ -42,7 +44,8 @@ class Campus < ActiveRecord::Base
   private
   def invalidate_cache
     Rails.cache.delete("campuses/#{id}")
-    Rails.cache.delete("campuses/#{name}")
+    Rails.cache.delete("campuses/name=#{name}")
+    Rails.cache.delete("campuses/abbreviation=#{abbreviation}")
   end
 
   def can_destroy?
