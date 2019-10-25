@@ -29,6 +29,12 @@ class Campus < ActiveRecord::Base
     end
   end
 
+  def self.find_by(abbreviation)
+    Rails.cache.fetch("campuses/#{abbreviation}", expires_in: 12.hours) do
+      super
+    end
+  end
+
   def self.find_by_abbr_or_name(data)
     Campus.find_by(abbreviation: data) || Campus.find_by(name: data)
   end
