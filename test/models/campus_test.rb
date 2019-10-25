@@ -22,4 +22,25 @@ class CampusTest < ActiveSupport::TestCase
     campus = FactoryGirl.build(:campus, name: 'Australia', abbreviation: 'Aus')
     assert campus.invalid?
   end
+
+  def test_find_cached
+    id = Campus.first.id
+    Rails.cache.clear
+    activity_type = Campus.find(id)
+    assert Rails.cache.exist?("campuses/#{id}")
+  end
+
+  def test_find_by_name_cached
+    name = Campus.first.name
+    Rails.cache.clear
+    activity_type = Campus.find_by(name: name)
+    assert Rails.cache.exist?("campuses/name=#{name}")
+  end
+
+  def test_find_by_abbreviation_cached
+    abbreviation = Campus.first.abbreviation
+    Rails.cache.clear
+    activity_type = Campus.find_by(abbreviation: abbreviation)
+    assert Rails.cache.exist?("campuses/abbreviation=#{abbreviation}")
+  end
 end
