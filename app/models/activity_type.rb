@@ -12,14 +12,16 @@ class ActivityType < ActiveRecord::Base
     end
   end
 
-  def self.find_by(name)
-    Rails.cache.fetch("activity_types/#{name}", expires_in: 12.hours) do
-      super
-    end
-  end
+  def self.find_by(*args)
+    key = args.map { |arg|
+      if arg.instance_of? Hash
+        arg.map{|k,v| "#{k}=#{v}"}.join('/')
+      else
+        arg
+      end
+    }.join('/')
 
-  def self.find_by(abbreviation)
-    Rails.cache.fetch("activity_types/#{abbreviation}", expires_in: 12.hours) do
+    Rails.cache.fetch("activity_types/#{key}", expires_in: 12.hours) do
       super
     end
   end
@@ -31,7 +33,7 @@ class ActivityType < ActiveRecord::Base
   private
   def invalidate_cache
     Rails.cache.delete("activity_types/#{id}")
-    Rails.cache.delete("activity_types/#{name}")
-    Rails.cache.delete("activity_types/#{abbreviation}")
+    Rails.cache.delete("activity_types/name=#{name}")
+    Rails.cache.delete("activity_types/abbreviation=#{abbreviation}")
   end
 end
