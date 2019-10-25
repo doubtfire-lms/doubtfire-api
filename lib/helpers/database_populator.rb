@@ -66,6 +66,7 @@ class DatabasePopulator
 
     generate_teaching_periods()
     generate_campuses
+    generate_activity_types
   end
 
   def generate_teaching_periods
@@ -127,6 +128,26 @@ class DatabasePopulator
       active: true
     }
     Campus.create! data
+  end
+
+  def generate_activity_types
+    data = {
+      name: 'Practical',
+      abbreviation: 'prac',
+    }
+    ActivityType.create! data
+
+    data = {
+      name: 'Workshop',
+      abbreviation: 'wrkshop',
+    }
+    ActivityType.create! data
+
+    data = {
+      name: 'Class',
+      abbreviation: 'cls',
+    }
+    ActivityType.create! data
   end
 
   def generate_admin
