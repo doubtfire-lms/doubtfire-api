@@ -1,6 +1,6 @@
 require "test_helper"
 
-class ActivityTypeTest < ActiveSupport::TestCase
+class ActivityTypeModelTest < ActiveSupport::TestCase
   def test_default_create
     activity_type = FactoryGirl.create(:activity_type)
     assert activity_type.valid?
@@ -29,5 +29,26 @@ class ActivityTypeTest < ActiveSupport::TestCase
     activity_type = FactoryGirl.create(:activity_type, abbreviation: 'sem')
     activity_type = FactoryGirl.build(:activity_type, abbreviation: 'sem')
     assert activity_type.invalid?
+  end
+
+  def test_find_cached
+    id = ActivityType.first.id
+    Rails.cache.clear
+    activity_type = ActivityType.find(id)
+    assert Rails.cache.exist?("activity_types/#{id}")
+  end
+
+  def test_find_by_name_cached
+    name = ActivityType.first.name
+    Rails.cache.clear
+    activity_type = ActivityType.find_by(name: name)
+    assert Rails.cache.exist?("activity_types/name=#{name}")
+  end
+
+  def test_find_by_abbreviation_cached
+    abbreviation = ActivityType.first.abbreviation
+    Rails.cache.clear
+    activity_type = ActivityType.find_by(abbreviation: abbreviation)
+    assert Rails.cache.exist?("activity_types/abbreviation=#{abbreviation}")
   end
 end
