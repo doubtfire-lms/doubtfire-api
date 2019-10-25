@@ -31,6 +31,7 @@ module Api
     # Mount the api modules
     #
     mount Api::ActivityTypesAuthenticatedApi
+    mount Api::ActivityTypesPublicApi
     mount Api::AuthenticationApi
     mount Api::BreaksApi
     mount Api::DiscussionCommentApi
