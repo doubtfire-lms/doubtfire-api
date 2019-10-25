@@ -22,4 +22,17 @@ class ActivityTypesTest < ActiveSupport::TestCase
       assert_json_matches_model(data, activity_type, response_keys)
     end
   end
+
+  def test_post_activity_types
+    data_to_post = {
+      activity_type: FactoryGirl.build(:activity_type),
+      auth_token: auth_token
+    }
+    post_json '/api/activity_types', data_to_post
+    assert_equal 201, last_response.status
+
+    response_keys = %w(name abbreviation)
+    activity_type = ActivityType.find(last_response_body['id'])
+    assert_json_matches_model(last_response_body, activity_type, response_keys)
+  end
 end
