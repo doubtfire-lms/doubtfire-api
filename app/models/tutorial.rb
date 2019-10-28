@@ -7,6 +7,7 @@ class Tutorial < ActiveRecord::Base
 
   has_many   :projects, dependent: :nullify # Students
   has_many   :groups, dependent: :nullify
+  has_many   :tutorial_enrolments
 
   validates :abbreviation, uniqueness: { scope: :unit,
                                          message: 'must be unique within the unit' }
@@ -59,5 +60,17 @@ class Tutorial < ActiveRecord::Base
 
   def num_students
     projects.where('enrolled = true').count
+  end
+
+  def add_enrolment(project)
+    tutorial_enrolment = TutorialEnrolment.new
+    tutorial_enrolment.tutorial = self
+    tutorial_enrolment.project = project
+    tutorial_enrolment.save!
+
+    # add after save to ensure valid tutorial_enrolments
+    self.tutorial_enrolments << tutorial_enrolment
+
+    tutorial_enrolment
   end
 end
