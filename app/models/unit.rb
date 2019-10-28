@@ -286,8 +286,8 @@ class Unit < ActiveRecord::Base
       task_definitions.where("target_grade <= #{e}").count + 0.0
     end.map { |e| e == 0 ? 1 : e }
 
-    # TODO: Return tutorial stream
-    # TODO: Return tutorial enrolments
+    # TODO (stream) Return tutorial stream
+    # TODO (stream) Return tutorial enrolments
     q = projects
         .joins(:user)
         .joins('LEFT OUTER JOIN tasks ON projects.id = tasks.project_id')
