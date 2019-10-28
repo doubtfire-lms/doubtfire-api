@@ -1,6 +1,6 @@
 require "test_helper"
 
-class TutorialEnrolmentTest < ActiveSupport::TestCase
+class TutorialEnrolmentModelTest < ActiveSupport::TestCase
   def test_default_create
     tutorial_enrolment = FactoryGirl.create(:tutorial_enrolment)
     assert tutorial_enrolment.valid?
