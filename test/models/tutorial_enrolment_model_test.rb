@@ -14,4 +14,12 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
     assert_equal tutorial_enrolment.tutorial, tutorial
     assert tutorial_enrolment.valid?
   end
+
+  def test_project_plus_tutorial_is_unique
+    project = FactoryGirl.create(:project)
+    tutorial = FactoryGirl.create(:tutorial)
+    tutorial_enrolment = FactoryGirl.create(:tutorial_enrolment, project: project, tutorial: tutorial)
+    tutorial_enrolment = FactoryGirl.build(:tutorial_enrolment, project: project, tutorial: tutorial)
+    assert tutorial_enrolment.invalid?
+  end
 end
