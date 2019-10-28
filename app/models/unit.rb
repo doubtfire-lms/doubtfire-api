@@ -286,6 +286,8 @@ class Unit < ActiveRecord::Base
       task_definitions.where("target_grade <= #{e}").count + 0.0
     end.map { |e| e == 0 ? 1 : e }
 
+    # TODO: Return tutorial stream
+    # TODO: Return tutorial enrolments
     q = projects
         .joins(:user)
         .joins('LEFT OUTER JOIN tasks ON projects.id = tasks.project_id')
@@ -299,7 +301,6 @@ class Unit < ActiveRecord::Base
           'users.last_name',
           'users.username',
           'users.email',
-          'projects.tutorial_id',
           'projects.portfolio_production_date',
           'projects.compile_portfolio',
           'projects.grade',
@@ -313,7 +314,6 @@ class Unit < ActiveRecord::Base
           'users.username AS student_id',
           'users.email AS student_email',
           'projects.target_grade AS target_grade',
-          'projects.tutorial_id AS tutorial_id',
           'projects.compile_portfolio AS compile_portfolio',
           'projects.grade AS grade',
           'projects.grade_rationale AS grade_rationale',
@@ -338,7 +338,6 @@ class Unit < ActiveRecord::Base
         student_email: t.student_email,
         student_name: "#{t.first_name} #{t.last_name}",
         target_grade: t.target_grade,
-        tutorial_id: t.tutorial_id,
         compile_portfolio: t.compile_portfolio,
         grade: t.grade,
         grade_rationale: t.grade_rationale,
