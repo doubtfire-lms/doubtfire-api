@@ -9,6 +9,9 @@ class Tutorial < ActiveRecord::Base
   has_many   :groups, dependent: :nullify
   has_many   :tutorial_enrolments
 
+  # Callbacks - methods called are private
+  before_destroy :can_destroy?
+
   validates :abbreviation, uniqueness: { scope: :unit,
                                          message: 'must be unique within the unit' }
 
@@ -72,5 +75,12 @@ class Tutorial < ActiveRecord::Base
     self.tutorial_enrolments << tutorial_enrolment
 
     tutorial_enrolment
+  end
+
+  private
+  def can_destroy?
+    return true if tutorial_enrolments.count == 0
+    errors.add :base, "Cannot delete tutorial with enrolments"
+    false
   end
 end

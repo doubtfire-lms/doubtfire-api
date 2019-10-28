@@ -31,6 +31,9 @@ class Project < ActiveRecord::Base
 
   has_many :learning_outcome_task_links, through: :tasks
 
+  # Callbacks - methods called are private
+  before_destroy :can_destroy?
+
   validate :must_be_in_group_tutorials
   validate :campus_must_be_same
   validates :grade_rationale, length: { maximum: 4095, allow_blank: true }
@@ -994,5 +997,12 @@ class Project < ActiveRecord::Base
     return unless student.receive_feedback_notifications
     return if has_portfolio && ! middle_of_unit
     NotificationsMailer.weekly_student_summary(self, summary_stats, did_revert_to_pass).deliver_now
+  end
+
+  private
+  def can_destroy?
+    return true if tutorial_enrolments.count == 0
+    errors.add :base, "Cannot delete project with enrolments"
+    false
   end
 end
