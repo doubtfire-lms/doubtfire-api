@@ -54,6 +54,7 @@ module Api
     mount Api::CampusesAuthenticatedApi
     mount Api::TutorialsApi
     mount Api::TutorialStreamsApi
+    mount Api::TutorialEnrolmentsApi
     mount Api::UnitRolesApi
     mount Api::UnitsApi
     mount Api::UsersApi
@@ -80,6 +81,7 @@ module Api
     AuthenticationHelpers.add_auth_to Api::CampusesAuthenticatedApi
     AuthenticationHelpers.add_auth_to Api::TutorialsApi
     AuthenticationHelpers.add_auth_to Api::TutorialStreamsApi
+    AuthenticationHelpers.add_auth_to Api::TutorialEnrolmentsApi
     AuthenticationHelpers.add_auth_to Api::UsersApi
     AuthenticationHelpers.add_auth_to Api::UnitRolesApi
     AuthenticationHelpers.add_auth_to Api::UnitsApi
