@@ -48,5 +48,15 @@ module Api
 
       tutorial.tutorial_enrolments.find(params[:id])
     end
+
+    desc 'Delete an enrolment in the tutorial'
+    delete '/tutorials/:tutorial_id/enrolments/:id' do
+      tutorial = Tutorial.find(params[:tutorial_id])
+      unless authorise? current_user, tutorial.unit, :enrol_student
+        error!({ error: 'Not authorised to delete tutorial enrolments' }, 403)
+      end
+
+      tutorial.tutorial_enrolments.find(params[:id]).destroy
+    end
   end
 end
