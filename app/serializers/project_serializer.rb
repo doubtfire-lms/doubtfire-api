@@ -44,6 +44,8 @@ class ProjectSerializer < ActiveModel::Serializer
              :grade_rationale,
              :tasks
 
+  has_many :tutorial_enrolments
+
   def project_id
     object.id
   end
