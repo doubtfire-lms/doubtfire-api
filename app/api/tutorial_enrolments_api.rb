@@ -38,5 +38,15 @@ module Api
 
       tutorial.tutorial_enrolments
     end
+
+    desc 'Get specific enrolment in the tutorial'
+    get '/tutorials/:tutorial_id/enrolments/:id' do
+      tutorial = Tutorial.find(params[:tutorial_id])
+      unless authorise? current_user, tutorial.unit, :get_students
+        error!({ error: 'Not authorised to get enrolments for the selected tutorial' }, 403)
+      end
+
+      tutorial.tutorial_enrolments.find(params[:id])
+    end
   end
 end
