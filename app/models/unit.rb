@@ -103,6 +103,7 @@ class Unit < ActiveRecord::Base
   has_many :task_definitions, -> { order 'start_date ASC, abbreviation ASC' }, dependent: :destroy
   has_many :projects, dependent: :destroy
   has_many :tutorials, dependent: :destroy
+  has_many :tutorial_enrolments, through: :tutorials
   has_many :unit_roles, dependent: :destroy
   has_many :learning_outcomes, dependent: :destroy
   has_many :tasks, through: :projects
