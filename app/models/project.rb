@@ -35,7 +35,6 @@ class Project < ActiveRecord::Base
   before_destroy :can_destroy?
 
   validate :must_be_in_group_tutorials
-  validate :campus_must_be_same
   validates :grade_rationale, length: { maximum: 4095, allow_blank: true }
 
   #
@@ -102,12 +101,6 @@ class Project < ActiveRecord::Base
 
   def self.for_unit_role(unit_role)
     active_projects.where(unit_id: unit_role.unit_id) if unit_role.is_teacher?
-  end
-
-  def campus_must_be_same
-    if campus.present? and tutorial.present? and tutorial.campus.present? and not campus.eql? tutorial.campus
-      errors.add(:campus, "should be same as the campus in the associated tutorial")
-    end
   end
 
   def enrol_in(tutorial)
