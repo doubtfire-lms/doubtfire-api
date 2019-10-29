@@ -1,5 +1,6 @@
 class TutorialStream < ActiveRecord::Base
   belongs_to :activity_type
+  belongs_to :unit
 
   validates :name,         presence: true, uniqueness: true
   validates :abbreviation, presence: true, uniqueness: true
