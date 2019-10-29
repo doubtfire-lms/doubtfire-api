@@ -53,7 +53,7 @@
   <main>
     <h1><%= @summary_stats[:unit].name %> - Weekly Summary</h1>
     <p class="subtext"><%= "#{@summary_stats[:week_start].day.ordinalize} #{@summary_stats[:week_start].strftime("%B %Y")}" %> to <%= "#{@summary_stats[:week_end].day.ordinalize} #{@summary_stats[:week_end].strftime("%B %Y")}" %></p>
-    
+
     <p>Hi <%= @student.first_name %>,</p>
 <% if @did_revert_to_pass %>
     <p>Hope you had a good week!</p>
@@ -62,6 +62,8 @@
 <% else %>
     <p>Hope you had a good week! Here's a summary of what has happened in this unit over the last week and some notes on what you should do next.</p>
 <% end %>
+
+<%-# TODO (stream) Do it for all tutorials  -%>
 <% if @project.tutorial.nil? %>
     <p>Firstly... it looks like you are not assigned a tutor! Please login and make sure your tutorial is correctly set. You should be able to do that on the <a href="https://<%= @doubtfire_host%>/#/projects/<%= @project.id%>/tutorials">tutorials page</a>.</p>
 <% end %>
