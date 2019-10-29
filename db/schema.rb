@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20191029220230) do
+ActiveRecord::Schema.define(version: 20191029232414) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -388,10 +388,12 @@ ActiveRecord::Schema.define(version: 20191029220230) do
     t.datetime "created_at",                        null: false
     t.datetime "updated_at",                        null: false
     t.integer  "activity_type_id",                  null: false
+    t.integer  "unit_id",                           null: false
   end
 
   add_index "tutorial_streams", ["abbreviation"], name: "index_tutorial_streams_on_abbreviation", using: :btree
   add_index "tutorial_streams", ["combine_all_tasks"], name: "index_tutorial_streams_on_combine_all_tasks", where: "combine_all_tasks", using: :btree
+  add_index "tutorial_streams", ["unit_id"], name: "index_tutorial_streams_on_unit_id", using: :btree
 
   create_table "tutorials", force: :cascade do |t|
     t.integer  "unit_id"
@@ -489,6 +491,7 @@ ActiveRecord::Schema.define(version: 20191029220230) do
   add_foreign_key "projects", "campuses"
   add_foreign_key "task_comments", "users", column: "recipient_id"
   add_foreign_key "tutorial_streams", "activity_types"
+  add_foreign_key "tutorial_streams", "units"
   add_foreign_key "tutorials", "campuses"
   add_foreign_key "units", "teaching_periods"
 end
