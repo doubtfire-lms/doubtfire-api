@@ -99,6 +99,7 @@ class Unit < ActiveRecord::Base
 
   # Model associations.
   # When a Unit is destroyed, any TaskDefinitions, Tutorials, and ProjectConvenor instances will also be destroyed.
+  has_many :tutorial_streams, dependent: :destroy
   has_many :task_definitions, -> { order 'start_date ASC, abbreviation ASC' }, dependent: :destroy
   has_many :projects, dependent: :destroy
   has_many :tutorials, dependent: :destroy
@@ -117,6 +118,7 @@ class Unit < ActiveRecord::Base
 
   # Unit has a teaching period
   belongs_to :teaching_period
+
   validates :start_date, presence: true
   validates :end_date, presence: true
   validates :code, uniqueness: { scope: :teaching_period, message: "%{value} already exists in this teaching period" }, if: :has_teaching_period?
