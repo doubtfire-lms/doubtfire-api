@@ -20,7 +20,6 @@ module Api
       end
 
       project = Project.find(params[:project_id])
-      result = tutorial.add_enrolment(project)
 
       if result.nil?
         error!({ error: 'No enrolment added' }, 403)
