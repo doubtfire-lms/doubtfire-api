@@ -30,13 +30,18 @@ module Api
     end
 
     desc 'Delete an enrolment in the tutorial'
-    delete '/tutorials/:tutorial_id/enrolments/:id' do
-      tutorial = Tutorial.find(params[:tutorial_id])
-      unless authorise? current_user, tutorial.unit, :enrol_student
+    delete '/units/:unit_id/tutorials/:tutorial_abbr/enrolments/:project_id' do
+      unit = Unit.find(params[:unit_id])
+      unless authorise? current_user, unit, :enrol_student
         error!({ error: 'Not authorised to delete tutorial enrolments' }, 403)
       end
 
-      tutorial.tutorial_enrolments.find(params[:id]).destroy
+      tutorial = unit.tutorials.find_by(abbreviation: params[:tutorial_abbr])
+      error!({ error: "No tutorial with abbreviation #{params[:tutorial_abbr]} exists for the unit" }, 403) unless tutorial.present?
+
+      tutorial_enrolment = tutorial.tutorial_enrolments.find_by(project_id: params[:project_id])
+      error!({ error: "Project not enrolled in the selected tutorial" }, 403) unless tutorial_enrolment.present?
+      tutorial_enrolment.destroy
     end
   end
 end
