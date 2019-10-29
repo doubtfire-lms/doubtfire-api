@@ -25,10 +25,10 @@ module Api
       tutor_name = db_concat('tutor.first_name', "' '", 'tutor.last_name')
 
       # join in other tables to fetch data
+      # TODO (stream) Remove dependence on tutorial
       projects = projects
                  .joins(:unit)
                  .joins(:user)
-                  # TODO (stream) Remove dependence on tutorial
                  .joins('LEFT OUTER JOIN tutorials ON projects.tutorial_id = tutorials.id')
                  .joins('LEFT OUTER JOIN unit_roles AS tutor_role ON tutorials.unit_role_id = tutor_role.id')
                  .joins('LEFT OUTER JOIN users AS tutor ON tutor.id = tutor_role.user_id')
