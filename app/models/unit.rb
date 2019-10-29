@@ -392,20 +392,12 @@ class Unit < ActiveRecord::Base
   end
 
   # Adds a user to this project.
-  def enrol_student(user, campus, tutorial = nil)
-    tutorial_id = if tutorial.is_a?(Tutorial)
-                    tutorial.id
-                  else
-                    tutorial
-                  end
-
+  def enrol_student(user, campus)
     # Validates that a student is not already assigned to the unit
     existing_project = projects.where('user_id=:user_id', user_id: user.id).first
     if existing_project
       if existing_project.enrolled == false
         existing_project.enrolled = true
-        # If they are part of the unit, update their tutorial if supplied
-        existing_project.tutorial_id = tutorial_id unless tutorial_id.nil?
         existing_project.campus = campus
         existing_project.save!
       end
@@ -413,21 +405,12 @@ class Unit < ActiveRecord::Base
       return existing_project
     end
 
-    # Validates that the tutorial exists for the unit
-    if !tutorial_id.nil? && tutorials.where('id=:id', id: tutorial_id).count == 0
-      return nil
-    end
-
-    project = Project.new(
+    Project.create!(
       user_id: user.id,
       unit_id: id,
       task_stats: '0.0|1.0|0.0|0.0|0.0',
       campus: campus
     )
-
-    project.tutorial_id = tutorial_id unless tutorial_id.nil?
-    project.save!
-    project
   end
 
   def tutorial_with_abbr(abbr)

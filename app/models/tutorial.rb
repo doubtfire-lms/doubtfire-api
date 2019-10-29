@@ -5,9 +5,9 @@ class Tutorial < ActiveRecord::Base
   belongs_to :campus
   has_one    :tutor, through: :unit_role, source: :user
 
-  has_many   :projects, dependent: :nullify # Students
   has_many   :groups, dependent: :nullify
   has_many   :tutorial_enrolments
+  has_many   :projects, through: :tutorial_enrolments
 
   # Callbacks - methods called are private
   before_destroy :can_destroy?
