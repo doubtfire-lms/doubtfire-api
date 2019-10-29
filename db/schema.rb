@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20191029232414) do
+ActiveRecord::Schema.define(version: 20191029233709) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -296,8 +296,10 @@ ActiveRecord::Schema.define(version: 20191029232414) do
     t.datetime "start_date",                                                          null: false
     t.boolean  "is_graded",                                           default: false
     t.integer  "max_quality_pts",                                     default: 0
+    t.integer  "tutorial_stream_id"
   end
 
+  add_index "task_definitions", ["tutorial_stream_id"], name: "index_task_definitions_on_tutorial_stream_id", using: :btree
   add_index "task_definitions", ["unit_id"], name: "index_task_definitions_on_unit_id", using: :btree
 
   create_table "task_engagements", force: :cascade do |t|
@@ -490,6 +492,7 @@ ActiveRecord::Schema.define(version: 20191029232414) do
   add_foreign_key "comments_read_receipts", "users"
   add_foreign_key "projects", "campuses"
   add_foreign_key "task_comments", "users", column: "recipient_id"
+  add_foreign_key "task_definitions", "tutorial_streams"
   add_foreign_key "tutorial_streams", "activity_types"
   add_foreign_key "tutorial_streams", "units"
   add_foreign_key "tutorials", "campuses"
