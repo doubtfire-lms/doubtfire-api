@@ -110,6 +110,21 @@ class Project < ActiveRecord::Base
     end
   end
 
+  def enrol_in(tutorial)
+    # TODO (stream) https://github.com/doubtfire-lms/doubtfire-api/pull/220#discussion_r339478840
+    # Check if there is already an enrolment for this student in this tutorial stream - and then update this rather than always adding.
+
+    tutorial_enrolment = TutorialEnrolment.new
+    tutorial_enrolment.tutorial = tutorial
+    tutorial_enrolment.project = self
+    tutorial_enrolment.save!
+
+    # add after save to ensure valid tutorial_enrolments
+    self.tutorial_enrolments << tutorial_enrolment
+
+    tutorial_enrolment
+  end
+
   #
   # Check to see if the student has a valid tutorial
   #
