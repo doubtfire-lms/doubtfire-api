@@ -4,8 +4,8 @@ FactoryGirl.define do
     campus
     user
 
-    after(:build) do |project|
-      project.tutorial = FactoryGirl.create(:tutorial, campus: project.campus, unit: project.unit)
+    after(:create) do |project|
+      create_list(:tutorial_enrolment, 3, project: project)
     end
   end
 end
