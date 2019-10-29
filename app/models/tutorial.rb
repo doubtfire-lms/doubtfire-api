@@ -65,18 +65,6 @@ class Tutorial < ActiveRecord::Base
     projects.where('enrolled = true').count
   end
 
-  def add_enrolment(project)
-    tutorial_enrolment = TutorialEnrolment.new
-    tutorial_enrolment.tutorial = self
-    tutorial_enrolment.project = project
-    tutorial_enrolment.save!
-
-    # add after save to ensure valid tutorial_enrolments
-    self.tutorial_enrolments << tutorial_enrolment
-
-    tutorial_enrolment
-  end
-
   private
   def can_destroy?
     return true if tutorial_enrolments.count == 0
