@@ -148,10 +148,9 @@ class Unit < ActiveRecord::Base
     tutorial_stream
   end
 
-  def update_tutorial_stream(existing_tutorial_stream, name, abbreviation, activity_type, combine_all_tasks)
+  def update_tutorial_stream(existing_tutorial_stream, name, abbreviation, combine_all_tasks)
     existing_tutorial_stream.name = name if name.present?
     existing_tutorial_stream.abbreviation = abbreviation if abbreviation.present?
-    existing_tutorial_stream.activity_type = activity_type if activity_type.present?
     existing_tutorial_stream.combine_all_tasks = combine_all_tasks if combine_all_tasks.present?
     existing_tutorial_stream.save!
     existing_tutorial_stream
