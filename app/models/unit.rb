@@ -133,6 +133,21 @@ class Unit < ActiveRecord::Base
   scope :set_active,            -> { where('active = ?', true) }
   scope :set_inactive,          -> { where('active = ?', false) }
 
+  def add_tutorial_stream(name, abbreviation, activity_type, combine_all_tasks=nil)
+    tutorial_stream = TutorialStream.new
+    tutorial_stream.name = name
+    tutorial_stream.abbreviation = abbreviation
+    tutorial_stream.combine_all_tasks = combine_all_tasks if combine_all_tasks.present?
+    tutorial_stream.unit = self
+    tutorial_stream.activity_type = activity_type
+    tutorial_stream.save!
+
+    # add after save to ensure valid tutorial stream
+    self.tutorial_streams << tutorial_stream
+
+    tutorial_stream
+  end
+
   def teaching_period_id=(tp_id)
     self.teaching_period = TeachingPeriod.find(tp_id)
     super(tp_id)
