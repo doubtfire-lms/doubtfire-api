@@ -1,6 +1,6 @@
 FactoryGirl.define do
   factory :activity_type do
-    name          { Populator.words(1..2) }
-    abbreviation  { Populator.words(1) }
+    sequence(:name)      { |n| "Act#{n}-#{Faker::Name.name}" }
+    abbreviation         { name[0...8] }
   end
 end
