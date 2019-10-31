@@ -69,7 +69,10 @@ module Api
         error!({ error: 'Not authorised to delete a campus' }, 403)
       end
 
-      Campus.find(params[:id]).destroy
+      campus = Campus.find(params[:id])
+      campus.destroy
+      error!({ error: campus.errors.full_messages.last }, 403) unless campus.destroyed?
+      campus.destroyed?
     end
   end
 end
