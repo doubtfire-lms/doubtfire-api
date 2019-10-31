@@ -21,7 +21,7 @@ module Api
         error!({ error: 'Not authorised to add tutorial stream to this unit' }, 403)
       end
 
-      activity_type = ActivityType.find_by(abbreviation: params[:activity_type_abbr])
+      activity_type = ActivityType.find_by!(abbreviation: params[:activity_type_abbr])
       tutorial_stream = unit.add_tutorial_stream(params[:name], params[:abbreviation], activity_type, params[:combine_all_tasks])
 
       if tutorial_stream.nil?
@@ -48,6 +48,19 @@ module Api
       error!({ error: "Tutorial stream with abbreviation #{params[:tutorial_stream_abbr]} does not exist for the activity type #{params[:activity_type_abbr]}" }, 403) unless tutorial_stream.activity_type.eql? activity_type
 
       unit.update_tutorial_stream(tutorial_stream, params[:name], params[:abbreviation], params[:combine_all_tasks])
+    end
+
+    desc 'Delete a tutorial stream in the unit'
+    delete '/units/:unit_id/activity_types/:activity_type_abbr/tutorial_streams/:tutorial_stream_abbr' do
+      unit = Unit.find(params[:unit_id])
+      unless authorise? current_user, unit, :add_tutorial
+        error!({ error: 'Not authorised to delete tutorial stream in this unit' }, 403)
+      end
+
+      tutorial_stream = unit.tutorial_streams.find_by!(abbreviation: params[:tutorial_stream_abbr])
+      activity_type = ActivityType.find_by!(abbreviation: params[:activity_type_abbr])
+      error!({ error: "Tutorial stream with abbreviation #{params[:tutorial_stream_abbr]} does not exist for the activity type #{params[:activity_type_abbr]}" }, 403) unless tutorial_stream.activity_type.eql? activity_type
+      tutorial_stream.destroy
     end
   end
 end
