@@ -61,6 +61,8 @@ module Api
       activity_type = ActivityType.find_by!(abbreviation: params[:activity_type_abbr])
       error!({ error: "Tutorial stream with abbreviation #{params[:tutorial_stream_abbr]} does not exist for the activity type #{params[:activity_type_abbr]}" }, 403) unless tutorial_stream.activity_type.eql? activity_type
       tutorial_stream.destroy
+      error!({ error: 'Failed to delete tutorial stream' }, 403) unless tutorial_stream.destroyed?
+      tutorial_stream.destroyed?
     end
   end
 end
