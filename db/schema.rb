@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20191031235109) do
+ActiveRecord::Schema.define(version: 20191031235849) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -51,7 +51,9 @@ ActiveRecord::Schema.define(version: 20191031235109) do
     t.boolean "active",       null: false
   end
 
+  add_index "campuses", ["abbreviation"], name: "index_campuses_on_abbreviation", unique: true, using: :btree
   add_index "campuses", ["active"], name: "index_campuses_on_active", using: :btree
+  add_index "campuses", ["name"], name: "index_campuses_on_name", unique: true, using: :btree
 
   create_table "comments_read_receipts", force: :cascade do |t|
     t.integer  "task_comment_id", null: false
