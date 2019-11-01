@@ -6,6 +6,8 @@ class Campus < ActiveRecord::Base
   # Callbacks - methods called are private
   before_destroy :can_destroy?
 
+  # Always add a unique index with uniqueness constraint
+  # This is to prevent new records from passing the validations when checked at the same time before being written
   validates :name,         presence: true, uniqueness: true
   validates :mode,         presence: true
   validates :abbreviation, presence: true, uniqueness: true
