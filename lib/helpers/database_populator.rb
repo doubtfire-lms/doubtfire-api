@@ -250,8 +250,18 @@ class DatabasePopulator
       # Generate other unit-related stuff
       generate_tasks_for_unit(unit, unit_details)
       generate_and_align_ilos_for_unit(unit, unit_details)
+      generate_tutorial_streams_for(unit)
       generate_tutorials_and_enrol_students_for_unit(unit, unit_details)
     end
+  end
+
+  def generate_tutorial_streams_for(unit)
+    rand(1...5).times {
+      activity_type = random_activity_type
+      name = "#{activity_type.name}-#{unit.tutorial_streams.where(activity_type: activity_type).count + 1}"
+      abbreviation = "#{activity_type.abbreviation}-#{unit.tutorial_streams.where(activity_type: activity_type).count + 1}"
+      unit.add_tutorial_stream(name, abbreviation, activity_type)
+    }
   end
 
   #
@@ -268,6 +278,14 @@ class DatabasePopulator
   def random_campus
     id = Campus.pluck(:id).sample
     Campus.find(id)
+  end
+
+  #
+  # Random activity type helper
+  #
+  def random_activity_type
+    id = ActivityType.pluck(:id).sample
+    ActivityType.find(id)
   end
 
   #
