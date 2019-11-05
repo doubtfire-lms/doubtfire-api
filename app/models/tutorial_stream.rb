@@ -3,6 +3,7 @@ class TutorialStream < ActiveRecord::Base
   belongs_to :unit
 
   # Callbacks - methods called are private
+  after_create :handle_associated_task_defs
   before_destroy :can_destroy?
 
   has_many :task_definitions, -> { order 'start_date ASC, abbreviation ASC' }
@@ -32,6 +33,16 @@ class TutorialStream < ActiveRecord::Base
     elsif unit.tutorial_streams.count.eql? 1
       task_definitions.clear
       true
+    end
+  end
+
+  def handle_associated_task_defs
+    return if unit.task_definitions.empty? or unit.tutorial_streams.count > 1
+    if unit.task_definitions.exists? and unit.tutorial_streams.count.eql? 1
+      unit.task_definitions.each do |task_definition|
+        task_definition.tutorial_stream = self
+        task_definition.save!
+      end
     end
   end
 end
