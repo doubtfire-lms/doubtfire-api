@@ -59,7 +59,7 @@ module Api
 
       tutorial_stream = unit.tutorial_streams.find_by!(abbreviation: params[:tutorial_stream_abbr])
       tutorial_stream.destroy
-      error!({ error: 'Failed to delete tutorial stream' }, 403) unless tutorial_stream.destroyed?
+      error!({ error: tutorial_stream.errors.full_messages.last }, 403) unless tutorial_stream.destroyed?
       tutorial_stream.destroyed?
     end
   end
