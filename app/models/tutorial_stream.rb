@@ -7,6 +7,9 @@ class TutorialStream < ActiveRecord::Base
 
   has_many :task_definitions, -> { order 'start_date ASC, abbreviation ASC' }
 
+  validates :unit, presence: true
+  validates :activity_type, presence: true
+
   # Always add a unique index with uniqueness constraint
   # This is to prevent new records from passing the validations when checked at the same time before being written
   validates :name,         presence: true, uniqueness: { scope: :unit, message: "%{value} already exists in this unit"}
