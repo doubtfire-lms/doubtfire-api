@@ -27,7 +27,7 @@ class TutorialStreamModelTest < ActiveSupport::TestCase
     assert_equal tutorial_stream, last_tutorial_stream
   end
 
-  def test_delete_when_two_tutorial_streams
+  def test_delete_when_two_tutorial_streams_in_unit
     unit = FactoryGirl.create(:unit)
     activity_type = FactoryGirl.create(:activity_type)
     tutorial_stream_first = unit.add_tutorial_stream('Practical-01', 'prac-01', activity_type)
@@ -51,13 +51,16 @@ class TutorialStreamModelTest < ActiveSupport::TestCase
     tutorial_stream_first.destroy
     assert tutorial_stream_first.destroyed?
 
+    # Reload unit object to fetch from database
+    unit.reload
+
     assert_equal 1, unit.tutorial_streams.count
     assert_equal 2, unit.tutorial_streams.first.task_definitions.count
     assert_equal task_def_first, unit.tutorial_streams.first.task_definitions.first
     assert_equal task_def_second, unit.tutorial_streams.first.task_definitions.second
   end
 
-  def test_delete_when_three_tutorial_streams
+  def test_delete_when_three_tutorial_streams_in_unit
     unit = FactoryGirl.create(:unit)
     activity_type = FactoryGirl.create(:activity_type)
     tutorial_stream_first = unit.add_tutorial_stream('Practical-01', 'prac-01', activity_type)
@@ -79,7 +82,7 @@ class TutorialStreamModelTest < ActiveSupport::TestCase
     assert_equal 'cannot be deleted as it has task definitions associated with it, and it is not the last (or second last) tutorial stream', tutorial_stream_first.errors.full_messages.last
   end
 
-  def test_delete_when_one_tutorial_stream
+  def test_delete_when_one_tutorial_stream_in_unit
     unit = FactoryGirl.create(:unit)
     activity_type = FactoryGirl.create(:activity_type)
     tutorial_stream_first = unit.add_tutorial_stream('Practical-01', 'prac-01', activity_type)
@@ -100,11 +103,20 @@ class TutorialStreamModelTest < ActiveSupport::TestCase
     assert tutorial_stream_first.destroyed?
 
     # Check whether task definition is still present
+    unit.reload
     assert_not_nil unit.task_definitions.first
     assert_not_nil unit.task_definitions.second
 
     # Check task definitions' tutorial stream is nil
-    assert_nil unit.task_definitions.first.tutorial_stream
-    assert_nil unit.task_definitions.second.tutorial_stream
+    assert_nil task_def_first.reload.tutorial_stream
+    assert_nil task_def_second.reload.tutorial_stream
+  end
+
+  def test_creating_first_tutorial_stream_in_unit
+    unit = FactoryGirl.create(:unit)
+    activity_type = FactoryGirl.create(:activity_type)
+    tutorial_stream_first = unit.add_tutorial_stream('Practical-01', 'prac-01', activity_type)
+
+    assert_equal unit.task_definitions.count, tutorial_stream_first.task_definitions.count
   end
 end
