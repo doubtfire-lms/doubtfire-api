@@ -117,6 +117,19 @@ class TutorialStreamModelTest < ActiveSupport::TestCase
     activity_type = FactoryGirl.create(:activity_type)
     tutorial_stream_first = unit.add_tutorial_stream('Practical-01', 'prac-01', activity_type)
 
+    assert_equal 1, unit.tutorial_streams.count
     assert_equal unit.task_definitions.count, tutorial_stream_first.task_definitions.count
   end
+
+  def test_creating_second_tutorial_stream_in_unit
+    unit = FactoryGirl.create(:unit)
+    activity_type = FactoryGirl.create(:activity_type)
+    tutorial_stream_first = unit.add_tutorial_stream('Practical-01', 'prac-01', activity_type)
+    tutorial_stream_second = unit.add_tutorial_stream('Practical-02', 'prac-02', activity_type)
+
+    assert_equal 2, unit.tutorial_streams.count
+    assert_equal unit.task_definitions.count, tutorial_stream_first.task_definitions.count
+    assert_empty tutorial_stream_second.task_definitions
+  end
+
 end
