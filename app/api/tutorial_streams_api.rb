@@ -13,7 +13,6 @@ module Api
     params do
       requires :name,               type: String,   desc: 'The name of the tutorial stream'
       requires :abbreviation,       type: String,   desc: 'The abbreviation for the tutorial stream'
-      optional :combine_all_tasks,  type: Boolean,  desc: 'Special property that defines whether tutorial stream combines all tasks'
       requires :activity_type_abbr, type: String,   desc: 'Abbreviation of the activity type'
     end
     post '/units/:unit_id/tutorial_streams' do
@@ -23,7 +22,7 @@ module Api
       end
 
       activity_type = ActivityType.find_by!(abbreviation: params[:activity_type_abbr])
-      tutorial_stream = unit.add_tutorial_stream(params[:name], params[:abbreviation], activity_type, params[:combine_all_tasks])
+      tutorial_stream = unit.add_tutorial_stream(params[:name], params[:abbreviation], activity_type)
 
       if tutorial_stream.nil?
         error!({ error: 'No tutorial stream added' }, 403)
@@ -36,7 +35,6 @@ module Api
     params do
       optional :name,               type: String,   desc: 'The name of the tutorial stream'
       optional :abbreviation,       type: String,   desc: 'The abbreviation for the tutorial stream'
-      optional :combine_all_tasks,  type: Boolean,  desc: 'Special property that defines whether tutorial stream combines all tasks'
       optional :activity_type_abbr, type: String,   desc: 'Abbreviation of the activity type'
     end
     put '/units/:unit_id/tutorial_streams/:tutorial_stream_abbr' do
@@ -47,7 +45,7 @@ module Api
 
       tutorial_stream = unit.tutorial_streams.find_by!(abbreviation: params[:tutorial_stream_abbr])
       activity_type = ActivityType.find_by!(abbreviation: params[:activity_type_abbr]) if params[:activity_type_abbr].present?
-      unit.update_tutorial_stream(tutorial_stream, params[:name], params[:abbreviation], activity_type, params[:combine_all_tasks])
+      unit.update_tutorial_stream(tutorial_stream, params[:name], params[:abbreviation], activity_type)
     end
 
     desc 'Delete a tutorial stream in the unit'
