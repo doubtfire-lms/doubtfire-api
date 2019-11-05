@@ -33,6 +33,13 @@ class TaskDefinition < ActiveRecord::Base
   validates :description, length: { maximum: 4095, allow_blank: true }
 
   validate :ensure_no_submissions, if: :has_change_group_status?
+  validate :unit_must_be_same
+
+  def unit_must_be_same
+    if unit.present? and tutorial_stream.present? and not unit.eql? tutorial_stream.unit
+      errors.add(:unit, "should be same as the unit in the associated tutorial stream")
+    end
+  end
 
   # In the rollover process, copy this definition into another unit
   # Copy this task into the other unit
