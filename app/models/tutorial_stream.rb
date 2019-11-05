@@ -25,12 +25,10 @@ class TutorialStream < ActiveRecord::Base
         task_definition.tutorial_stream = other_tutorial_stream
         task_definition.save!
       end
+      task_definitions.clear
       true
     elsif unit.tutorial_streams.count.eql? 1
-      task_definitions.each do |task_definition|
-        task_definition.tutorial_stream = nil
-        task_definition.save!
-      end
+      task_definitions.clear
       true
     end
   end

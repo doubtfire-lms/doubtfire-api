@@ -78,4 +78,33 @@ class TutorialStreamModelTest < ActiveSupport::TestCase
     assert_not tutorial_stream_first.destroyed?
     assert_equal 'cannot be deleted as it has task definitions associated with it, and it is not the last (or second last) tutorial stream', tutorial_stream_first.errors.full_messages.last
   end
+
+  def test_delete_when_one_tutorial_stream
+    unit = FactoryGirl.create(:unit)
+    activity_type = FactoryGirl.create(:activity_type)
+    tutorial_stream_first = unit.add_tutorial_stream('Practical-01', 'prac-01', activity_type)
+
+    # Add task definition to first tutorial stream
+    task_def_first = unit.task_definitions.first
+    task_def_first.tutorial_stream = tutorial_stream_first
+    task_def_first.save!
+
+    # Add task definition to second tutorial stream
+    task_def_second = unit.task_definitions.second
+    task_def_second.tutorial_stream = tutorial_stream_first
+    task_def_second.save!
+
+    tutorial_stream_first.destroy
+
+    # Check whether object is destroyed
+    assert tutorial_stream_first.destroyed?
+
+    # Check whether task definition is still present
+    assert_not_nil unit.task_definitions.first
+    assert_not_nil unit.task_definitions.second
+
+    # Check task definitions' tutorial stream is nil
+    assert_nil unit.task_definitions.first.tutorial_stream
+    assert_nil unit.task_definitions.second.tutorial_stream
+  end
 end
