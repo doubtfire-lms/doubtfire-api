@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20191031235849) do
+ActiveRecord::Schema.define(version: 20191105043802) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -389,18 +389,16 @@ ActiveRecord::Schema.define(version: 20191031235849) do
   add_index "teams", ["user_id"], name: "index_teams_on_user_id", using: :btree
 
   create_table "tutorial_streams", force: :cascade do |t|
-    t.string   "name",                              null: false
-    t.string   "abbreviation",                      null: false
-    t.boolean  "combine_all_tasks", default: false, null: false
-    t.datetime "created_at",                        null: false
-    t.datetime "updated_at",                        null: false
-    t.integer  "activity_type_id",                  null: false
-    t.integer  "unit_id",                           null: false
+    t.string   "name",             null: false
+    t.string   "abbreviation",     null: false
+    t.datetime "created_at",       null: false
+    t.datetime "updated_at",       null: false
+    t.integer  "activity_type_id", null: false
+    t.integer  "unit_id",          null: false
   end
 
   add_index "tutorial_streams", ["abbreviation", "unit_id"], name: "index_tutorial_streams_on_abbreviation_and_unit_id", unique: true, using: :btree
   add_index "tutorial_streams", ["abbreviation"], name: "index_tutorial_streams_on_abbreviation", using: :btree
-  add_index "tutorial_streams", ["combine_all_tasks"], name: "index_tutorial_streams_on_combine_all_tasks", where: "combine_all_tasks", using: :btree
   add_index "tutorial_streams", ["name", "unit_id"], name: "index_tutorial_streams_on_name_and_unit_id", unique: true, using: :btree
   add_index "tutorial_streams", ["unit_id"], name: "index_tutorial_streams_on_unit_id", using: :btree
 
