@@ -34,10 +34,17 @@ class TaskDefinition < ActiveRecord::Base
 
   validate :ensure_no_submissions, if: :has_change_group_status?
   validate :unit_must_be_same
+  validate :tutorial_stream_present?
 
   def unit_must_be_same
     if unit.present? and tutorial_stream.present? and not unit.eql? tutorial_stream.unit
       errors.add(:unit, "should be same as the unit in the associated tutorial stream")
+    end
+  end
+
+  def tutorial_stream_present?
+    if tutorial_stream.nil? and unit.tutorial_streams.exists?
+      errors.add(:tutorial_stream, "cannot be nil if they exist for the unit")
     end
   end
 
