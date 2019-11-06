@@ -17,7 +17,7 @@ module Api
     params do
       requires :task_def, type: Hash do
         requires :unit_id,                  type: Integer,  desc: 'The unit to create the new task def for'
-        optional :tutorial_stream_id,       type: Integer,   desc: 'The id of tutorial stream'
+        optional :tutorial_stream_abbr,     type: String,   desc: 'The abbreviation of tutorial stream'
         requires :name,                     type: String,   desc: 'The name of this task def'
         requires :description,              type: String,   desc: 'The description of this task def'
         requires :weighting,                type: Integer,  desc: 'The weighting of this task'
@@ -48,7 +48,6 @@ module Api
                                                 .require(:task_def)
                                                 .permit(
                                                   :unit_id,
-                                                  :tutorial_stream_id,
                                                   :name,
                                                   :description,
                                                   :weighting,
@@ -67,6 +66,13 @@ module Api
 
       task_def = TaskDefinition.new(task_params)
 
+      # Set the tutorial stream
+      tutorial_stream_abbr = params[:task_def][:tutorial_stream_abbr]
+      unless tutorial_stream_abbr.nil?
+        tutorial_stream = unit.tutorial_streams.find_by!(abbreviation: tutorial_stream_abbr)
+        task_def.tutorial_stream = tutorial_stream
+      end
+
       #
       # Link in group set if specified
       #
@@ -84,7 +90,7 @@ module Api
       requires :id, type: Integer, desc: 'The task id to edit'
       requires :task_def, type: Hash do
         optional :unit_id,                  type: Integer,  desc: 'The unit to create the new task def for'
-        optional :tutorial_stream_id,       type: Integer,   desc: 'The id of the tutorial stream'
+        optional :tutorial_stream_abbr,     type: String,   desc: 'The abbreviation of the tutorial stream'
         optional :name,                     type: String,   desc: 'The name of this task def'
         optional :description,              type: String,   desc: 'The description of this task def'
         optional :weighting,                type: Integer,  desc: 'The weighting of this task'
@@ -113,7 +119,6 @@ module Api
                                                 .require(:task_def)
                                                 .permit(
                                                   :unit_id,
-                                                  :tutorial_stream_id,
                                                   :name,
                                                   :description,
                                                   :weighting,
@@ -131,6 +136,15 @@ module Api
                                                 )
 
       task_def.update!(task_params)
+
+      # Set the tutorial stream
+      tutorial_stream_abbr = params[:task_def][:tutorial_stream_abbr]
+      unless tutorial_stream_abbr.nil?
+        tutorial_stream = task_def.unit.tutorial_streams.find_by!(abbreviation: tutorial_stream_abbr)
+        task_def.tutorial_stream = tutorial_stream
+        task_def.save!
+      end
+
       #
       # Link in group set if specified
       #
