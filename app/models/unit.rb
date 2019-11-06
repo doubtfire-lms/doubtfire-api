@@ -190,15 +190,20 @@ class Unit < ActiveRecord::Base
 
   def rollover(teaching_period, start_date, end_date)
     new_unit = self.dup
-    
+
     if teaching_period.present?
       new_unit.teaching_period = teaching_period
     else
       new_unit.start_date = start_date
       new_unit.end_date = end_date
     end
-    
+
     new_unit.save!
+
+    # Duplicate tutorial streams
+    tutorial_streams.each do |tutorial_stream|
+      new_unit.tutorial_streams << tutorial_stream.dup
+    end
 
     # Duplicate group sets - before tasks as some tasks are group tasks
     group_sets.each do |group_set|
@@ -224,7 +229,7 @@ class Unit < ActiveRecord::Base
     convenors.each do |convenor|
       new_unit.convenors << convenor.dup
     end
-    
+
     new_unit
   end
 
@@ -589,7 +594,7 @@ class Unit < ActiveRecord::Base
         end
       rescue Exception => e
         errors << { row: row_data[:row], message: e.message }
-      end 
+      end
     end # for each csv row
 
     update_student_enrolments(changes, import_settings, result)

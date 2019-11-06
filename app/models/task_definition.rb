@@ -58,6 +58,9 @@ class TaskDefinition < ActiveRecord::Base
     new_td.unit = other_unit                # for other operations
     other_unit.task_definitions << new_td   # so we can see it in unit elsewhere
 
+    # Change tutorial stream
+    new_td.tutorial_stream = other_unit.tutorial_streams.find_by(abbreviation: tutorial_stream.abbreviation) unless tutorial_stream.nil?
+
     # change group set
     if is_group_task?
       # Find based upon the group set in the new unit
@@ -83,7 +86,7 @@ class TaskDefinition < ActiveRecord::Base
       FileUtils.cp(task_resources, new_td.task_resources)
     end
 
-    new_td.save
+    new_td.save!
 
     new_td
   end
@@ -126,7 +129,7 @@ class TaskDefinition < ActiveRecord::Base
 
   def check_plagiarism_format()
     json_data = self.plagiarism_checks
-    
+
     # ensure we have a structure that is : [ { "key": "...", "type": "...", "pattern": "..."}, { ... } ]
     unless json_data.class == Array
       errors.add(:plagiarism_checks, 'is not in a valid format! Should be [ { "key": "...", "type": "...", "pattern": "..."}, { ... } ]. Did not contain array.')
@@ -180,7 +183,7 @@ class TaskDefinition < ActiveRecord::Base
       self['plagiarism_checks'] = req
       return
     end
-    
+
     # Cant process unless it is an array...
     unless json_data.class == Array
       # Save what we have - validation should raise an error
@@ -229,7 +232,7 @@ class TaskDefinition < ActiveRecord::Base
   # Validate the format of the upload requirements
   def check_upload_requirements_format()
     json_data = self.upload_requirements
-    
+
     # ensure we have a structure that is : [ { "key": "...", "name": "...", "type": "..."}, { ... } ]
     unless json_data.class == Array
       errors.add(:upload_requirements, 'is not in a valid format! Should be [ { "key": "...", "name": "...", "type": "..."}, { ... } ]. Did not contain array.')
@@ -388,16 +391,16 @@ class TaskDefinition < ActiveRecord::Base
     TaskDefinition.csv_columns
                   .reject { |col| [:start_week, :start_day, :target_week, :target_day, :due_week, :due_day, :upload_requirements, :plagiarism_checks, :group_set].include? col }
                   .map { |column| attributes[column.to_s] } +
-      [ 
+      [
         plagiarism_checks.to_json,
-        group_set.nil? ? "" : group_set.name, 
+        group_set.nil? ? "" : group_set.name,
         upload_requirements.to_json,
-        start_week, 
-        start_day, 
-        target_week, 
-        target_day, 
-        due_week, 
-        due_day 
+        start_week,
+        start_day,
+        target_week,
+        target_day,
+        due_week,
+        due_day
       ]
     # [target_date.strftime('%d-%m-%Y')] +
     # [ self['due_date'].nil? ? '' : due_date.strftime('%d-%m-%Y')]
@@ -413,6 +416,7 @@ class TaskDefinition < ActiveRecord::Base
     new_task = false
     abbreviation = row[:abbreviation].strip
     name = row[:name].strip
+    tutorial_stream = unit.tutorial_streams.find_by_abbr_or_name(row[:tutorial_stream])
     target_date = unit.date_for_week_and_day row[:target_week].to_i, row[:target_day]
     return [nil, false, "Unable to determine target date for #{abbreviation} -- need week number, and day short text eg. 'Wed'"] if target_date.nil?
 
@@ -427,7 +431,7 @@ class TaskDefinition < ActiveRecord::Base
 
     if result.nil?
       # Remember creation triggers project task updates... so need correct weight
-      result = TaskDefinition.find_or_create_by(unit_id: unit.id, name: name, abbreviation: abbreviation) do |td|
+      result = TaskDefinition.find_or_create_by(unit_id: unit.id, tutorial_stream: tutorial_stream, name: name, abbreviation: abbreviation) do |td|
         td.target_date = target_date
         td.start_date = start_date
         td.weighting = row[:weighting].to_i
