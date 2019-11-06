@@ -17,6 +17,7 @@ class StatusTest < ActiveSupport::TestCase
 
     td = TaskDefinition.new({
         unit_id: unit.id,
+        tutorial_stream: unit.tutorial_streams.first,
         abbreviation: 'test_status_comments',
         name: 'test_status_comments',
         description: 'test_status_comments',

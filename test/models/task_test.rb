@@ -16,6 +16,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     unit = Unit.first
     td = TaskDefinition.new({
         unit_id: unit.id,
+        tutorial_stream: unit.tutorial_streams.first,
         name: 'Task with image',
         description: 'img task',
         weighting: 4,
@@ -58,6 +59,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     unit = Unit.first
     td = TaskDefinition.new({
         unit_id: unit.id,
+        tutorial_stream: unit.tutorial_streams.first,
         name: 'Task with image2',
         description: 'img task2',
         weighting: 4,
@@ -97,6 +99,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     unit = Unit.first
     td = TaskDefinition.new({
         unit_id: unit.id,
+        tutorial_stream: unit.tutorial_streams.first,
         name: 'Task with image',
         description: 'img task',
         weighting: 4,

@@ -16,6 +16,7 @@ class ExtensionTest < ActiveSupport::TestCase
 
     td = TaskDefinition.new({
         unit_id: unit.id,
+        tutorial_stream: unit.tutorial_streams.first,
         name: 'status task change',
         description: 'status task change test',
         weighting: 4,
@@ -77,6 +78,7 @@ class ExtensionTest < ActiveSupport::TestCase
 
     td = TaskDefinition.new({
         unit_id: unit.id,
+        tutorial_stream: unit.tutorial_streams.first,
         name: 'status task change',
         description: 'status task change test',
         weighting: 4,

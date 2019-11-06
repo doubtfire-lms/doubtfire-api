@@ -164,6 +164,7 @@ class CommentTest < ActiveSupport::TestCase
 
     td = TaskDefinition.new({
         unit_id: unit.id,
+        tutorial_stream: unit.tutorial_streams.first,
         name: 'test_read_receipts_for_task_status_comments',
         description: 'test_read_receipts_for_task_status_comments',
         weighting: 4,

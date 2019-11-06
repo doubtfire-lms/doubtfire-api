@@ -30,7 +30,8 @@ class GroupsTest < ActiveSupport::TestCase
 
     td = TaskDefinition.new({
         unit_id: unit.id,
-        name: 'Task to switch from ind to group after submission',                    
+        tutorial_stream: unit.tutorial_streams.first,
+        name: 'Task to switch from ind to group after submission',
         description: 'test def',
         weighting: 4,
         target_grade: 0,
@@ -83,7 +84,8 @@ class GroupsTest < ActiveSupport::TestCase
 
     td = TaskDefinition.new({
         unit_id: unit.id,
-        name: 'Task to switch from ind to group after submission',                    
+        tutorial_stream: unit.tutorial_streams.first,
+        name: 'Task to switch from ind to group after submission',
         description: 'test def',
         weighting: 4,
         target_grade: 0,
@@ -126,7 +128,8 @@ class GroupsTest < ActiveSupport::TestCase
 
     td = TaskDefinition.new({
         unit_id: unit.id,
-        name: 'Task to switch from ind to group after submission',                    
+        tutorial_stream: unit.tutorial_streams.first,
+        name: 'Task to switch from ind to group after submission',
         description: 'test def',
         weighting: 4,
         target_grade: 0,
@@ -165,7 +168,8 @@ class GroupsTest < ActiveSupport::TestCase
 
     td = TaskDefinition.new({
         unit_id: unit.id,
-        name: 'Task to switch from ind to group after submission',                    
+        tutorial_stream: unit.tutorial_streams.first,
+        name: 'Task to switch from ind to group after submission',
         description: 'test def',
         weighting: 4,
         target_grade: 0,

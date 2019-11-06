@@ -57,6 +57,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     unit = Unit.first
     td = TaskDefinition.new({
         unit_id: unit.id,
+        tutorial_stream: unit.tutorial_streams.first,
         name: 'test_submission_creates_folders',
         description: 'test def',
         weighting: 4,
@@ -107,7 +108,8 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     unit = Unit.first
     td = TaskDefinition.new({
         unit_id: unit.id,
-        name: 'Task to switch from ind to group after submission',                    
+        tutorial_stream: unit.tutorial_streams.first,
+        name: 'Task to switch from ind to group after submission',
         description: 'test def',
         weighting: 4,
         target_grade: 0,
