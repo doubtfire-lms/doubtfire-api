@@ -16,6 +16,10 @@ class TutorialStream < ActiveRecord::Base
   validates :name,         presence: true, uniqueness: { scope: :unit, message: "%{value} already exists in this unit"}
   validates :abbreviation, presence: true, uniqueness: { scope: :unit, message: "%{value} already exists in this unit"}
 
+  def self.find_by_abbr_or_name(data)
+    TutorialStream.find_by(abbreviation: data) || TutorialStream.find_by(name: data)
+  end
+
   private
   def can_destroy?
     return true if task_definitions.empty?

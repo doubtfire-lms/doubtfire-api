@@ -24,7 +24,8 @@ class TasksTest < ActiveSupport::TestCase
     unit = Unit.first
     td = TaskDefinition.new({
         unit_id: unit.id,
-        name: 'Task past due',  
+        tutorial_stream: unit.tutorial_streams.first,
+        name: 'Task past due',
         description: 'Task past due',
         weighting: 4,
         target_grade: 0,
@@ -60,6 +61,7 @@ class TasksTest < ActiveSupport::TestCase
     unit = Unit.first
     td = TaskDefinition.new({
         unit_id: unit.id,
+        tutorial_stream: unit.tutorial_streams.first,
         name: 'Task past due - for revert',
         description: 'Task past due',
         weighting: 4,

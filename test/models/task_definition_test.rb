@@ -12,6 +12,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     test_unit = Unit.first
     td = TaskDefinition.new({
       unit_id: test_unit.id,
+      tutorial_stream: test_unit.tutorial_streams.first,
       name: 'Test quality points',
       description: 'test def',
       weighting: 4,
@@ -39,6 +40,8 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
   def test_group_tasks
     u = Unit.first
+    activity_type = FactoryGirl.create(:activity_type)
+    u.add_tutorial_stream('Group-Tasks-Test', 'group-tasks-test', activity_type)
 
     group_params = {
       name: 'Group Work',
