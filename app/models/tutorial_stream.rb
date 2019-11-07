@@ -28,10 +28,7 @@ class TutorialStream < ActiveRecord::Base
       false
     elsif unit.tutorial_streams.count.eql? 2
       other_tutorial_stream = (self.eql? unit.tutorial_streams.first) ? unit.tutorial_streams.second : unit.tutorial_streams.first
-      task_definitions.each do |task_definition|
-        task_definition.tutorial_stream = other_tutorial_stream
-        task_definition.save!
-      end
+      task_definitions.update_all(tutorial_stream_id: other_tutorial_stream.id)
       task_definitions.clear
       true
     elsif unit.tutorial_streams.count.eql? 1
