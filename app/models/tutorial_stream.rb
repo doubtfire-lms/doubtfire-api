@@ -32,6 +32,7 @@ class TutorialStream < ActiveRecord::Base
       task_definitions.clear
       true
     elsif unit.tutorial_streams.count.eql? 1
+      # Removes all objects from the collection by removing their associations from the join table
       task_definitions.clear
       true
     end
