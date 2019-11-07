@@ -54,5 +54,22 @@ module Api
       error!({ error: tutorial_stream.errors.full_messages.last }, 403) unless tutorial_stream.destroyed?
       tutorial_stream.destroyed?
     end
+
+    desc 'Get the name and abbreviation for the next tutorial stream'
+    get '/units/:unit_id/activity_types/:activity_type_abbr/tutorial_streams/next' do
+      unit = Unit.find(params[:unit_id])
+      unless authorise? current_user, unit, :add_tutorial
+        error!({ error: 'Not authorised to get tutorial stream name for this unit' }, 403)
+      end
+
+      activity_type = ActivityType.find_by(abbreviation: params[:activity_type_abbr])
+      institution_settings = Doubtfire::Application.config.institution_settings
+
+      {
+        name: institution_settings.name_for_next_tutorial_stream(unit, activity_type),
+        abbreviation: institution_settings.abbreviation_for_next_tutorial_stream(unit, activity_type)
+      }
+    end
+
   end
 end
