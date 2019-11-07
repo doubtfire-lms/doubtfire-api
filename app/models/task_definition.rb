@@ -44,7 +44,7 @@ class TaskDefinition < ActiveRecord::Base
 
   def tutorial_stream_present?
     if tutorial_stream.nil? and unit.tutorial_streams.exists?
-      errors.add(:tutorial_stream, "cannot be nil if they exist for the unit")
+      errors.add(:tutorial_stream, "must be one of the tutorial streams in the unit")
     end
   end
 
