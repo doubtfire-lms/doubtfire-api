@@ -45,7 +45,7 @@ end
 # Authentication
 gem 'devise', '~> 4.1.1'
 gem 'devise_ldap_authenticatable'
-gem 'json-jwt', '1.7.0'
+gem 'json-jwt', '1.9.4'
 
 # Student submission
 gem 'coderay'
