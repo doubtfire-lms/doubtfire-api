@@ -22,13 +22,7 @@ module Api
       end
 
       activity_type = ActivityType.find_by!(abbreviation: params[:activity_type_abbr])
-      tutorial_stream = unit.add_tutorial_stream(params[:name], params[:abbreviation], activity_type)
-
-      if tutorial_stream.nil?
-        error!({ error: 'No tutorial stream added' }, 403)
-      else
-        tutorial_stream
-      end
+      unit.add_tutorial_stream(params[:name], params[:abbreviation], activity_type)
     end
 
     desc 'Update a tutorial stream in the unit'
