@@ -41,10 +41,7 @@ class TutorialStream < ActiveRecord::Base
   def handle_associated_task_defs
     return if unit.task_definitions.empty? or unit.tutorial_streams.count > 1
     if unit.task_definitions.exists? and unit.tutorial_streams.count.eql? 1
-      unit.task_definitions.each do |task_definition|
-        task_definition.tutorial_stream = self
-        task_definition.save!
-      end
+      unit.task_definitions.update_all(tutorial_stream_id: id)
     end
   end
 end
