@@ -62,4 +62,25 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     assert_equal 1, group_set.task_definitions.count
     assert_equal initial_count + 1, u.task_definitions.count
   end
+
+  def test_export_task_definitions_csv
+    unit = Unit.first
+    task_defs_csv = CSV.parse unit.task_definitions_csv, headers: true
+    task_defs_csv.each do |task_def_csv|
+      task_def = unit.task_definitions.find_by(abbreviation: task_def_csv['abbreviation'])
+      keys_to_ignore = ['tutorial_stream', 'plagiarism_checks', 'start_week', 'start_day', 'target_week', 'target_day', 'due_week', 'due_day']
+      task_def_csv.each do |key, value|
+        unless keys_to_ignore.include?(key)
+          assert_equal(task_def[key].to_s, value)
+        end
+      end
+      assert_equal task_def.start_week.to_s, task_def_csv['start_week']
+      assert_equal task_def.start_day.to_s, task_def_csv['start_day']
+      assert_equal task_def.target_week.to_s, task_def_csv['target_week']
+      assert_equal task_def.target_day.to_s, task_def_csv['target_day']
+      assert_equal task_def.due_week.to_s, task_def_csv['due_week']
+      assert_equal task_def.due_day.to_s, task_def_csv['due_day']
+      assert_equal task_def.tutorial_stream.abbreviation, task_def_csv['tutorial_stream']
+    end
+  end
 end
