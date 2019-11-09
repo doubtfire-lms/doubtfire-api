@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20191109034031) do
+ActiveRecord::Schema.define(version: 20191109052233) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -413,19 +413,21 @@ ActiveRecord::Schema.define(version: 20191109034031) do
 
   create_table "tutorials", force: :cascade do |t|
     t.integer  "unit_id"
-    t.string   "meeting_day",      limit: 255
-    t.string   "meeting_time",     limit: 255
-    t.string   "meeting_location", limit: 255
-    t.datetime "created_at",                   null: false
-    t.datetime "updated_at",                   null: false
-    t.string   "code",             limit: 255
+    t.string   "meeting_day",        limit: 255
+    t.string   "meeting_time",       limit: 255
+    t.string   "meeting_location",   limit: 255
+    t.datetime "created_at",                     null: false
+    t.datetime "updated_at",                     null: false
+    t.string   "code",               limit: 255
     t.integer  "unit_role_id"
-    t.string   "abbreviation",     limit: 255
+    t.string   "abbreviation",       limit: 255
     t.integer  "capacity"
     t.integer  "campus_id"
+    t.integer  "tutorial_stream_id"
   end
 
   add_index "tutorials", ["campus_id"], name: "index_tutorials_on_campus_id", using: :btree
+  add_index "tutorials", ["tutorial_stream_id"], name: "index_tutorials_on_tutorial_stream_id", using: :btree
   add_index "tutorials", ["unit_id"], name: "index_tutorials_on_unit_id", using: :btree
   add_index "tutorials", ["unit_role_id"], name: "index_tutorials_on_unit_role_id", using: :btree
 
@@ -512,5 +514,6 @@ ActiveRecord::Schema.define(version: 20191109034031) do
   add_foreign_key "tutorial_streams", "activity_types"
   add_foreign_key "tutorial_streams", "units"
   add_foreign_key "tutorials", "campuses"
+  add_foreign_key "tutorials", "tutorial_streams"
   add_foreign_key "units", "teaching_periods"
 end
