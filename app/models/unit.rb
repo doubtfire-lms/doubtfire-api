@@ -1038,7 +1038,7 @@ class Unit < ActiveRecord::Base
   #   end
   # end
 
-  def add_tutorial(day, time, location, tutor, campus, capacity, abbrev)
+  def add_tutorial(day, time, location, tutor, campus, capacity, abbrev, tutorial_stream=nil)
     tutor_role = unit_roles.where('user_id=:user_id', user_id: tutor.id).first
     return nil if tutor_role.nil? || tutor_role.role == Role.student
     Tutorial.create!(unit_id: id, campus: campus, capacity: capacity, abbreviation: abbrev) do |tutorial|
@@ -1046,6 +1046,7 @@ class Unit < ActiveRecord::Base
       tutorial.meeting_time     = time
       tutorial.meeting_location = location
       tutorial.unit_role_id     = tutor_role.id
+      tutorial.tutorial_stream  = tutorial_stream unless tutorial_stream.nil?
     end
   end
 
