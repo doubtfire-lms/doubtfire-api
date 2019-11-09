@@ -188,6 +188,7 @@ module Api
         requires :abbrev
         requires :campus_id
         requires :capacity
+        optional :tutorial_stream_abbr
       end
     end
     post '/units/:id/tutorials' do
@@ -203,8 +204,9 @@ module Api
       end
 
       campus = Campus.find(new_tutorial[:campus_id])
+      tutorial_stream = unit.tutorial_streams.find_by!(abbreviation: new_tutorial[:tutorial_stream_abbr]) unless new_tutorial[:tutorial_stream_abbr].nil?
 
-      result = unit.add_tutorial(new_tutorial[:day], new_tutorial[:time], new_tutorial[:location], tutor, campus, new_tutorial[:capacity], new_tutorial[:abbrev])
+      result = unit.add_tutorial(new_tutorial[:day], new_tutorial[:time], new_tutorial[:location], tutor, campus, new_tutorial[:capacity], new_tutorial[:abbrev], tutorial_stream)
       if result.nil?
         error!({ error: 'Tutor username invalid (not a tutor for this unit)' }, 403)
       end
