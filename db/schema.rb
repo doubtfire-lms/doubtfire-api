@@ -215,6 +215,7 @@ ActiveRecord::Schema.define(version: 20191031235849) do
     t.boolean  "compile_portfolio",                      default: false
     t.date     "portfolio_production_date"
     t.integer  "max_pct_similar",                        default: 0
+    t.integer  "tutorial_id"
     t.integer  "user_id"
     t.integer  "grade",                                  default: 0
     t.string   "grade_rationale",           limit: 4096
@@ -223,6 +224,7 @@ ActiveRecord::Schema.define(version: 20191031235849) do
 
   add_index "projects", ["campus_id"], name: "index_projects_on_campus_id", using: :btree
   add_index "projects", ["enrolled"], name: "index_projects_on_enrolled", using: :btree
+  add_index "projects", ["tutorial_id"], name: "index_projects_on_tutorial_id", using: :btree
   add_index "projects", ["unit_id"], name: "index_projects_on_unit_id", using: :btree
   add_index "projects", ["user_id"], name: "index_projects_on_user_id", using: :btree
 
