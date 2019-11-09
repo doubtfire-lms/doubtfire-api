@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20191031235849) do
+ActiveRecord::Schema.define(version: 20191109034031) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -215,7 +215,6 @@ ActiveRecord::Schema.define(version: 20191031235849) do
     t.boolean  "compile_portfolio",                      default: false
     t.date     "portfolio_production_date"
     t.integer  "max_pct_similar",                        default: 0
-    t.integer  "tutorial_id"
     t.integer  "user_id"
     t.integer  "grade",                                  default: 0
     t.string   "grade_rationale",           limit: 4096
@@ -224,7 +223,6 @@ ActiveRecord::Schema.define(version: 20191031235849) do
 
   add_index "projects", ["campus_id"], name: "index_projects_on_campus_id", using: :btree
   add_index "projects", ["enrolled"], name: "index_projects_on_enrolled", using: :btree
-  add_index "projects", ["tutorial_id"], name: "index_projects_on_tutorial_id", using: :btree
   add_index "projects", ["unit_id"], name: "index_projects_on_unit_id", using: :btree
   add_index "projects", ["user_id"], name: "index_projects_on_user_id", using: :btree
 
@@ -388,6 +386,17 @@ ActiveRecord::Schema.define(version: 20191031235849) do
   add_index "teams", ["unit_id"], name: "index_teams_on_unit_id", using: :btree
   add_index "teams", ["user_id"], name: "index_teams_on_user_id", using: :btree
 
+  create_table "tutorial_enrolments", force: :cascade do |t|
+    t.datetime "created_at",  null: false
+    t.datetime "updated_at",  null: false
+    t.integer  "project_id",  null: false
+    t.integer  "tutorial_id", null: false
+  end
+
+  add_index "tutorial_enrolments", ["project_id"], name: "index_tutorial_enrolments_on_project_id", using: :btree
+  add_index "tutorial_enrolments", ["tutorial_id", "project_id"], name: "index_tutorial_enrolments_on_tutorial_id_and_project_id", unique: true, using: :btree
+  add_index "tutorial_enrolments", ["tutorial_id"], name: "index_tutorial_enrolments_on_tutorial_id", using: :btree
+
   create_table "tutorial_streams", force: :cascade do |t|
     t.string   "name",             null: false
     t.string   "abbreviation",     null: false
@@ -498,6 +507,8 @@ ActiveRecord::Schema.define(version: 20191031235849) do
   add_foreign_key "projects", "campuses"
   add_foreign_key "task_comments", "users", column: "recipient_id"
   add_foreign_key "task_definitions", "tutorial_streams"
+  add_foreign_key "tutorial_enrolments", "projects"
+  add_foreign_key "tutorial_enrolments", "tutorials"
   add_foreign_key "tutorial_streams", "activity_types"
   add_foreign_key "tutorial_streams", "units"
   add_foreign_key "tutorials", "campuses"
