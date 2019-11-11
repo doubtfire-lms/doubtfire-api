@@ -15,7 +15,6 @@ class Project < ActiveRecord::Base
   include LogHelper
 
   belongs_to :unit
-  belongs_to :tutorial
   belongs_to :user
   belongs_to :campus
 
