@@ -83,4 +83,45 @@ class TaskDefinitionTest < ActiveSupport::TestCase
       assert_equal task_def.tutorial_stream.abbreviation, task_def_csv['tutorial_stream']
     end
   end
+
+  def test_import_without_tutorial_stream
+    data = {
+      code: 'COS10001',
+      name: 'Testing in Unit Tests',
+      description: 'Test unit',
+      teaching_period: TeachingPeriod.find(3)
+    }
+
+    unit = Unit.create(data)
+    assert_empty unit.task_definitions
+    unit.import_tasks_from_csv File.open(Rails.root.join('test_files',"#{unit.code}-ImportTasksWithoutTutorialStream.csv"))
+    assert_equal 36, unit.task_definitions.count, 'imported all task definitions'
+
+    unit.task_definitions.each do |task_definition|
+      assert_nil task_definition.tutorial_stream
+    end
+  end
+
+  def test_import_with_tutorial_stream
+    data = {
+      code: 'COS10001',
+      name: 'Testing in Unit Tests',
+      description: 'Test unit',
+      teaching_period: TeachingPeriod.find(3)
+    }
+
+    unit = Unit.create(data)
+    assert_empty unit.tutorial_streams
+    assert_empty unit.task_definitions
+
+    activity_type = FactoryGirl.create(:activity_type)
+    tutorial_stream = unit.add_tutorial_stream('Import-Tasks', 'import-tasks', activity_type)
+    unit.import_tasks_from_csv File.open(Rails.root.join('test_files',"#{unit.code}-ImportTasksWithTutorialStream.csv"))
+    assert_equal 36, unit.task_definitions.count, 'imported all task definitions'
+
+    unit.task_definitions.each do |task_definition|
+      assert_equal tutorial_stream, task_definition.tutorial_stream
+    end
+  end
+
 end
