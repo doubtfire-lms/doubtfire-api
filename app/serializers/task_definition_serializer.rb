@@ -16,6 +16,6 @@ class TaskDefinitionSerializer < ActiveModel::Serializer
   end
 
   def tutorial_stream
-    object.tutorial_stream.abbreviation
+    object.tutorial_stream.abbreviation unless object.tutorial_stream.nil?
   end
 end
