@@ -84,6 +84,25 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     end
   end
 
+  def test_export_without_tutorial_stream
+    data = {
+      code: 'COS10001',
+      name: 'Testing in Unit Tests',
+      description: 'Test unit',
+      teaching_period: TeachingPeriod.find(3)
+    }
+
+    unit = Unit.create(data)
+    assert_empty unit.task_definitions
+    unit.import_tasks_from_csv File.open(Rails.root.join('test_files',"#{unit.code}-ImportTasksWithoutTutorialStream.csv"))
+    assert_not_empty unit.task_definitions
+
+    task_defs_csv = CSV.parse unit.task_definitions_csv, headers: true
+    task_defs_csv.each do |task_def_csv|
+      assert_equal '', task_def_csv['tutorial_stream']
+    end
+  end
+
   def test_import_without_tutorial_stream
     data = {
       code: 'COS10001',
