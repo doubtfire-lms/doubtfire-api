@@ -434,6 +434,7 @@ class DatabasePopulator
           student = find_or_create_student("student_#{student_count}")
           project = unit.enrol_student(student, campus)
           student_count += 1
+          project.enrol_in(tutorial)
           echo '.'
         end
         # Add fixed students to first tutorial
