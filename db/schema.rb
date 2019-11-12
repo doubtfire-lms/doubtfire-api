@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20191024222811) do
+ActiveRecord::Schema.define(version: 20191031235849) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -22,6 +22,9 @@ ActiveRecord::Schema.define(version: 20191024222811) do
     t.datetime "created_at",   null: false
     t.datetime "updated_at",   null: false
   end
+
+  add_index "activity_types", ["abbreviation"], name: "index_activity_types_on_abbreviation", unique: true, using: :btree
+  add_index "activity_types", ["name"], name: "index_activity_types_on_name", unique: true, using: :btree
 
   create_table "badges", force: :cascade do |t|
     t.string   "name",                   limit: 255
@@ -48,7 +51,9 @@ ActiveRecord::Schema.define(version: 20191024222811) do
     t.boolean "active",       null: false
   end
 
+  add_index "campuses", ["abbreviation"], name: "index_campuses_on_abbreviation", unique: true, using: :btree
   add_index "campuses", ["active"], name: "index_campuses_on_active", using: :btree
+  add_index "campuses", ["name"], name: "index_campuses_on_name", unique: true, using: :btree
 
   create_table "comments_read_receipts", force: :cascade do |t|
     t.integer  "task_comment_id", null: false
@@ -296,8 +301,10 @@ ActiveRecord::Schema.define(version: 20191024222811) do
     t.datetime "start_date",                                                          null: false
     t.boolean  "is_graded",                                           default: false
     t.integer  "max_quality_pts",                                     default: 0
+    t.integer  "tutorial_stream_id"
   end
 
+  add_index "task_definitions", ["tutorial_stream_id"], name: "index_task_definitions_on_tutorial_stream_id", using: :btree
   add_index "task_definitions", ["unit_id"], name: "index_task_definitions_on_unit_id", using: :btree
 
   create_table "task_engagements", force: :cascade do |t|
@@ -380,6 +387,20 @@ ActiveRecord::Schema.define(version: 20191024222811) do
 
   add_index "teams", ["unit_id"], name: "index_teams_on_unit_id", using: :btree
   add_index "teams", ["user_id"], name: "index_teams_on_user_id", using: :btree
+
+  create_table "tutorial_streams", force: :cascade do |t|
+    t.string   "name",             null: false
+    t.string   "abbreviation",     null: false
+    t.datetime "created_at",       null: false
+    t.datetime "updated_at",       null: false
+    t.integer  "activity_type_id", null: false
+    t.integer  "unit_id",          null: false
+  end
+
+  add_index "tutorial_streams", ["abbreviation", "unit_id"], name: "index_tutorial_streams_on_abbreviation_and_unit_id", unique: true, using: :btree
+  add_index "tutorial_streams", ["abbreviation"], name: "index_tutorial_streams_on_abbreviation", using: :btree
+  add_index "tutorial_streams", ["name", "unit_id"], name: "index_tutorial_streams_on_name_and_unit_id", unique: true, using: :btree
+  add_index "tutorial_streams", ["unit_id"], name: "index_tutorial_streams_on_unit_id", using: :btree
 
   create_table "tutorials", force: :cascade do |t|
     t.integer  "unit_id"
@@ -476,6 +497,9 @@ ActiveRecord::Schema.define(version: 20191024222811) do
   add_foreign_key "comments_read_receipts", "users"
   add_foreign_key "projects", "campuses"
   add_foreign_key "task_comments", "users", column: "recipient_id"
+  add_foreign_key "task_definitions", "tutorial_streams"
+  add_foreign_key "tutorial_streams", "activity_types"
+  add_foreign_key "tutorial_streams", "units"
   add_foreign_key "tutorials", "campuses"
   add_foreign_key "units", "teaching_periods"
 end
