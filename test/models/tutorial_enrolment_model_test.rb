@@ -31,4 +31,15 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
     assert_equal tutorial_enrolment.project, project
     assert_equal tutorial_enrolment.tutorial, tutorial
   end
+
+  def test_cannot_enrol_in_tutorial_stream_twice
+    project = FactoryGirl.create(:project)
+    tutorial_first = FactoryGirl.create(:tutorial)
+    tutorial_second = FactoryGirl.create(:tutorial, tutorial_stream: tutorial_first.tutorial_stream)
+
+    tutorial_enrolment_first = project.enrol_in(tutorial_first)
+    tutorial_enrolment_second = project.enrol_in(tutorial_second)
+    assert tutorial_enrolment_first.valid?
+    assert tutorial_enrolment_second.valid?
+  end
 end
