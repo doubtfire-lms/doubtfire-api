@@ -12,9 +12,10 @@ class TaskDefinition < ActiveRecord::Base
   # Model associations
   belongs_to :unit # Foreign key
   belongs_to :group_set
+  belongs_to :tutorial_stream
+
   has_many :tasks, dependent:  :destroy # Destroying a task definition will also nuke any instances
   has_many :group_submissions, dependent: :destroy # Destroying a task definition will also nuke any group submissions
-
   has_many :learning_outcome_task_links, dependent: :destroy # links to learning outcomes
   has_many :learning_outcomes, -> { where('learning_outcome_task_links.task_id is NULL') }, through: :learning_outcome_task_links # only link staff relations
 
@@ -32,6 +33,20 @@ class TaskDefinition < ActiveRecord::Base
   validates :description, length: { maximum: 4095, allow_blank: true }
 
   validate :ensure_no_submissions, if: :has_change_group_status?
+  validate :unit_must_be_same
+  validate :tutorial_stream_present?
+
+  def unit_must_be_same
+    if unit.present? and tutorial_stream.present? and not unit.eql? tutorial_stream.unit
+      errors.add(:unit, "should be same as the unit in the associated tutorial stream")
+    end
+  end
+
+  def tutorial_stream_present?
+    if tutorial_stream.nil? and unit.tutorial_streams.exists?
+      errors.add(:tutorial_stream, "must be one of the tutorial streams in the unit")
+    end
+  end
 
   # In the rollover process, copy this definition into another unit
   # Copy this task into the other unit
@@ -42,6 +57,9 @@ class TaskDefinition < ActiveRecord::Base
     new_td.unit_id = other_unit.id          # for database
     new_td.unit = other_unit                # for other operations
     other_unit.task_definitions << new_td   # so we can see it in unit elsewhere
+
+    # Change tutorial stream
+    new_td.tutorial_stream = other_unit.tutorial_streams.find_by(abbreviation: tutorial_stream.abbreviation) unless tutorial_stream.nil?
 
     # change group set
     if is_group_task?
@@ -68,7 +86,7 @@ class TaskDefinition < ActiveRecord::Base
       FileUtils.cp(task_resources, new_td.task_resources)
     end
 
-    new_td.save
+    new_td.save!
 
     new_td
   end
@@ -111,7 +129,7 @@ class TaskDefinition < ActiveRecord::Base
 
   def check_plagiarism_format()
     json_data = self.plagiarism_checks
-    
+
     # ensure we have a structure that is : [ { "key": "...", "type": "...", "pattern": "..."}, { ... } ]
     unless json_data.class == Array
       errors.add(:plagiarism_checks, 'is not in a valid format! Should be [ { "key": "...", "type": "...", "pattern": "..."}, { ... } ]. Did not contain array.')
@@ -165,7 +183,7 @@ class TaskDefinition < ActiveRecord::Base
       self['plagiarism_checks'] = req
       return
     end
-    
+
     # Cant process unless it is an array...
     unless json_data.class == Array
       # Save what we have - validation should raise an error
@@ -214,7 +232,7 @@ class TaskDefinition < ActiveRecord::Base
   # Validate the format of the upload requirements
   def check_upload_requirements_format()
     json_data = self.upload_requirements
-    
+
     # ensure we have a structure that is : [ { "key": "...", "name": "...", "type": "..."}, { ... } ]
     unless json_data.class == Array
       errors.add(:upload_requirements, 'is not in a valid format! Should be [ { "key": "...", "name": "...", "type": "..."}, { ... } ]. Did not contain array.')
@@ -371,25 +389,26 @@ class TaskDefinition < ActiveRecord::Base
 
   def to_csv_row
     TaskDefinition.csv_columns
-                  .reject { |col| [:start_week, :start_day, :target_week, :target_day, :due_week, :due_day, :upload_requirements, :plagiarism_checks, :group_set].include? col }
+                  .reject { |col| [:start_week, :start_day, :target_week, :target_day, :due_week, :due_day, :upload_requirements, :plagiarism_checks, :group_set, :tutorial_stream].include? col }
                   .map { |column| attributes[column.to_s] } +
-      [ 
+      [
         plagiarism_checks.to_json,
-        group_set.nil? ? "" : group_set.name, 
+        group_set.nil? ? "" : group_set.name,
         upload_requirements.to_json,
-        start_week, 
-        start_day, 
-        target_week, 
-        target_day, 
-        due_week, 
-        due_day 
+        start_week,
+        start_day,
+        target_week,
+        target_day,
+        due_week,
+        due_day,
+        tutorial_stream.present? ? tutorial_stream.abbreviation : ''
       ]
     # [target_date.strftime('%d-%m-%Y')] +
     # [ self['due_date'].nil? ? '' : due_date.strftime('%d-%m-%Y')]
   end
 
   def self.csv_columns
-    [:name, :abbreviation, :description, :weighting, :target_grade, :restrict_status_updates, :max_quality_pts, :is_graded, :plagiarism_warn_pct, :plagiarism_checks, :group_set, :upload_requirements, :start_week, :start_day, :target_week, :target_day, :due_week, :due_day]
+    [:name, :abbreviation, :description, :weighting, :target_grade, :restrict_status_updates, :max_quality_pts, :is_graded, :plagiarism_warn_pct, :plagiarism_checks, :group_set, :upload_requirements, :start_week, :start_day, :target_week, :target_day, :due_week, :due_day, :tutorial_stream]
   end
 
   def self.task_def_for_csv_row(unit, row)
@@ -398,6 +417,7 @@ class TaskDefinition < ActiveRecord::Base
     new_task = false
     abbreviation = row[:abbreviation].strip
     name = row[:name].strip
+    tutorial_stream = unit.tutorial_streams.find_by_abbr_or_name(row[:tutorial_stream])
     target_date = unit.date_for_week_and_day row[:target_week].to_i, row[:target_day]
     return [nil, false, "Unable to determine target date for #{abbreviation} -- need week number, and day short text eg. 'Wed'"] if target_date.nil?
 
@@ -412,7 +432,7 @@ class TaskDefinition < ActiveRecord::Base
 
     if result.nil?
       # Remember creation triggers project task updates... so need correct weight
-      result = TaskDefinition.find_or_create_by(unit_id: unit.id, name: name, abbreviation: abbreviation) do |td|
+      result = TaskDefinition.find_or_create_by(unit_id: unit.id, tutorial_stream: tutorial_stream, name: name, abbreviation: abbreviation) do |td|
         td.target_date = target_date
         td.start_date = start_date
         td.weighting = row[:weighting].to_i

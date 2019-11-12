@@ -99,6 +99,7 @@ class Unit < ActiveRecord::Base
 
   # Model associations.
   # When a Unit is destroyed, any TaskDefinitions, Tutorials, and ProjectConvenor instances will also be destroyed.
+  has_many :tutorial_streams, dependent: :destroy
   has_many :task_definitions, -> { order 'start_date ASC, abbreviation ASC' }, dependent: :destroy
   has_many :projects, dependent: :destroy
   has_many :tutorials, dependent: :destroy
@@ -117,6 +118,7 @@ class Unit < ActiveRecord::Base
 
   # Unit has a teaching period
   belongs_to :teaching_period
+
   validates :start_date, presence: true
   validates :end_date, presence: true
   validates :code, uniqueness: { scope: :teaching_period, message: "%{value} already exists in this teaching period" }, if: :has_teaching_period?
@@ -130,6 +132,28 @@ class Unit < ActiveRecord::Base
   scope :not_current_for_date,  ->(date) { where('start_date > ? OR end_date < ?', date, date) }
   scope :set_active,            -> { where('active = ?', true) }
   scope :set_inactive,          -> { where('active = ?', false) }
+
+  def add_tutorial_stream(name, abbreviation, activity_type)
+    tutorial_stream = TutorialStream.new
+    tutorial_stream.name = name
+    tutorial_stream.abbreviation = abbreviation
+    tutorial_stream.unit = self
+    tutorial_stream.activity_type = activity_type
+    tutorial_stream.save!
+
+    # add after save to ensure valid tutorial stream
+    self.tutorial_streams << tutorial_stream
+
+    tutorial_stream
+  end
+
+  def update_tutorial_stream(existing_tutorial_stream, name, abbreviation, activity_type)
+    existing_tutorial_stream.name = name if name.present?
+    existing_tutorial_stream.abbreviation = abbreviation if abbreviation.present?
+    existing_tutorial_stream.activity_type = activity_type if activity_type.present?
+    existing_tutorial_stream.save!
+    existing_tutorial_stream
+  end
 
   def teaching_period_id=(tp_id)
     self.teaching_period = TeachingPeriod.find(tp_id)
@@ -166,15 +190,20 @@ class Unit < ActiveRecord::Base
 
   def rollover(teaching_period, start_date, end_date)
     new_unit = self.dup
-    
+
     if teaching_period.present?
       new_unit.teaching_period = teaching_period
     else
       new_unit.start_date = start_date
       new_unit.end_date = end_date
     end
-    
+
     new_unit.save!
+
+    # Duplicate tutorial streams
+    tutorial_streams.each do |tutorial_stream|
+      new_unit.tutorial_streams << tutorial_stream.dup
+    end
 
     # Duplicate group sets - before tasks as some tasks are group tasks
     group_sets.each do |group_set|
@@ -200,7 +229,7 @@ class Unit < ActiveRecord::Base
     convenors.each do |convenor|
       new_unit.convenors << convenor.dup
     end
-    
+
     new_unit
   end
 
@@ -565,7 +594,7 @@ class Unit < ActiveRecord::Base
         end
       rescue Exception => e
         errors << { row: row_data[:row], message: e.message }
-      end 
+      end
     end # for each csv row
 
     update_student_enrolments(changes, import_settings, result)

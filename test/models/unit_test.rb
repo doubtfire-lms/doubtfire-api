@@ -10,6 +10,9 @@ class UnitTest < ActiveSupport::TestCase
         teaching_period: TeachingPeriod.find(3)
       }
     @unit = Unit.create(data)
+
+    activity_type = FactoryGirl.create(:activity_type)
+    @unit.add_tutorial_stream('Import-Tasks', 'import-tasks', activity_type)
   end
 
   teardown do
