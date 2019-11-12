@@ -52,6 +52,30 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
     assert_equal tutorial_enrolment_first.id, tutorial_enrolment_second.id
   end
 
+  def test_changing_from_no_stream_to_stream
+    project = FactoryGirl.create(:project)
+
+    # Create tutorial with no tutorial stream
+    tutorial_first = FactoryGirl.create(:tutorial)
+    assert_nil tutorial_first.tutorial_stream
+
+    # Create tutorial with tutorial stream
+    tutorial_stream = FactoryGirl.create(:tutorial_stream)
+    tutorial_second = FactoryGirl.create(:tutorial, tutorial_stream: tutorial_stream)
+    assert_not_nil tutorial_second.tutorial_stream
+
+    # Enrol project in tutorial first
+    tutorial_enrolment_first = project.enrol_in(tutorial_first)
+    assert_equal tutorial_first, tutorial_enrolment_first.tutorial
+
+    # Enrol same project in tutorial second
+    tutorial_enrolment_second = project.enrol_in(tutorial_second)
+    assert_equal tutorial_second, tutorial_enrolment_second.tutorial
+
+    # Updates rather than creating a new instance
+    assert_equal tutorial_enrolment_first.id, tutorial_enrolment_second.id
+  end
+
   def test_cannot_enrol_in_tutorial_stream_twice
     project = FactoryGirl.create(:project)
     tutorial_first = FactoryGirl.create(:tutorial)
