@@ -34,8 +34,12 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
 
   def test_enrolling_twice_in_same_tutorial_stream_updates_enrolment
     project = FactoryGirl.create(:project)
-    tutorial_first = FactoryGirl.create(:tutorial)
-    tutorial_second = FactoryGirl.create(:tutorial, tutorial_stream: tutorial_first.tutorial_stream)
+    tutorial_stream = FactoryGirl.create(:tutorial_stream)
+    tutorial_first = FactoryGirl.create(:tutorial, tutorial_stream: tutorial_stream)
+    tutorial_second = FactoryGirl.create(:tutorial, tutorial_stream: tutorial_stream)
+
+    assert_equal tutorial_stream, tutorial_first.tutorial_stream
+    assert_equal tutorial_stream, tutorial_second.tutorial_stream
 
     # Enrol project in tutorial first
     tutorial_enrolment_first = project.enrol_in(tutorial_first)
