@@ -106,15 +106,32 @@ class Project < ActiveRecord::Base
     # TODO (stream) https://github.com/doubtfire-lms/doubtfire-api/pull/220#discussion_r339478840
     # Check if there is already an enrolment for this student in this tutorial stream - and then update this rather than always adding.
 
-    tutorial_enrolment = TutorialEnrolment.new
-    tutorial_enrolment.tutorial = tutorial
-    tutorial_enrolment.project = self
-    tutorial_enrolment.save!
+    tutorial_enrolment = existing_enrolment(tutorial)
+    if tutorial_enrolment.nil?
+      tutorial_enrolment = TutorialEnrolment.new
+      tutorial_enrolment.tutorial = tutorial
+      tutorial_enrolment.project = self
+      tutorial_enrolment.save!
 
-    # add after save to ensure valid tutorial_enrolments
-    self.tutorial_enrolments << tutorial_enrolment
+      # add after save to ensure valid tutorial_enrolments
+      self.tutorial_enrolments << tutorial_enrolment
 
-    tutorial_enrolment
+      tutorial_enrolment
+    else
+      tutorial_enrolment.tutorial = tutorial
+      tutorial_enrolment.save!
+      tutorial_enrolment
+    end
+  end
+
+  # Find enrolment in same tutorial stream
+  def existing_enrolment(tutorial)
+    tutorial_enrolments.each do |tutorial_enrolment|
+      if tutorial.tutorial_stream.eql? tutorial_enrolment.tutorial.tutorial_stream or tutorial_enrolment.tutorial.tutorial_stream.nil?
+        return tutorial_enrolment
+      end
+    end
+    nil
   end
 
   #
@@ -177,6 +194,12 @@ class Project < ActiveRecord::Base
     else
       main_convenor
     end
+  end
+
+  def tutor_for(task)
+    task_definition = task.task_definition
+    errors.add :base, "Task is not a part of task definition" if task_definition.nil?
+    tutorial_stream = task_definition.tutorial_stream
   end
 
   def main_convenor
