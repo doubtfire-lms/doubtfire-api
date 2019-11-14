@@ -416,6 +416,7 @@ class DatabasePopulator
 
       user_details[:num].times do | count |
         tutorial_count += 1
+        tutorial_stream = unit.tutorial_streams.sample
         #day, time, location, tutor_username, abbrev
         tutorial = unit.add_tutorial(
           "#{weekdays.sample}",
@@ -424,7 +425,8 @@ class DatabasePopulator
           tutor,
           campus,
           rand(10...20),
-          "LA1-#{tutorial_count.to_s.rjust(2, '0')}"
+          "LA1-#{tutorial_count.to_s.rjust(2, '0')}",
+          tutorial_stream
         )
 
         # Add a random number of students to the tutorial
