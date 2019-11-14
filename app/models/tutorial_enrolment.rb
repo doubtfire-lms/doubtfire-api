@@ -20,7 +20,7 @@ class TutorialEnrolment < ActiveRecord::Base
     project.tutorial_enrolments.each do |tutorial_enrolment|
       # If tutorial stream matches, check whether we are updating the current enrolment
       if tutorial.tutorial_stream.eql? tutorial_enrolment.tutorial.tutorial_stream and tutorial.id != tutorial_enrolment.tutorial.id
-        errors.add :project, "already enrolled in a tutorial with same tutorial stream"
+        errors.add :project, 'already enrolled in a tutorial with same tutorial stream'
       end
     end
   end

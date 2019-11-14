@@ -38,6 +38,7 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
     tutorial_first = FactoryGirl.create(:tutorial, tutorial_stream: tutorial_stream)
     tutorial_second = FactoryGirl.create(:tutorial, tutorial_stream: tutorial_stream)
 
+    # Confirm that both tutorials have same tutorial stream
     assert_equal tutorial_stream, tutorial_first.tutorial_stream
     assert_equal tutorial_stream, tutorial_second.tutorial_stream
 
@@ -78,12 +79,22 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
 
   def test_cannot_enrol_in_tutorial_stream_twice
     project = FactoryGirl.create(:project)
-    tutorial_first = FactoryGirl.create(:tutorial)
-    tutorial_second = FactoryGirl.create(:tutorial, tutorial_stream: tutorial_first.tutorial_stream)
+    tutorial_stream = FactoryGirl.create(:tutorial_stream)
+    tutorial_first = FactoryGirl.create(:tutorial, tutorial_stream: tutorial_stream)
+    tutorial_second = FactoryGirl.create(:tutorial, tutorial_stream: tutorial_stream)
 
+    # Confirm that both tutorials have same tutorial stream
+    assert_equal tutorial_stream, tutorial_first.tutorial_stream
+    assert_equal tutorial_stream, tutorial_second.tutorial_stream
+
+    # Enrol project in tutorial first
     tutorial_enrolment_first = project.enrol_in(tutorial_first)
-    tutorial_enrolment_second = project.enrol_in(tutorial_second)
-    assert tutorial_enrolment_first.valid?
-    assert tutorial_enrolment_second.valid?
+    assert_equal tutorial_first, tutorial_enrolment_first.tutorial
+    assert_equal project, tutorial_enrolment_first.project
+
+    # Create tutorial enrolment for the second tutorial
+    tutorial_enrolment_second = FactoryGirl.build(:tutorial_enrolment, project: project, tutorial: tutorial_second)
+    assert tutorial_enrolment_second.invalid?
+    assert_equal 'Project already enrolled in a tutorial with same tutorial stream', tutorial_enrolment_second.errors.full_messages.last
   end
 end
