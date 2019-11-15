@@ -21,7 +21,7 @@ class TutorialEnrolment < ActiveRecord::Base
     if project.tutorial_enrolments
         .joins(:tutorial)
         .where("tutorials.tutorial_stream_id = :sid #{ self.id.present? ? 'AND (tutorial_enrolments.id <> :id)' : ''}", sid: tutorial.tutorial_stream_id, id: self.id )
-        .count <> 0
+        .count > 0
       errors.add(:project, 'already enrolled in a tutorial with same tutorial stream')
     end
   end
