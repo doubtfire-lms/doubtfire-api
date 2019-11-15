@@ -9,19 +9,20 @@ class TutorialEnrolment < ActiveRecord::Base
   validates_uniqueness_of :tutorial, :scope => :project, message: 'already exists for the selected student'
 
   # Only one tutorial enrolment per stream for each project
-  validate :already_enrolled_in_tutorial_stream
+  validate :ensure_max_one_tutorial_enrolment_per_stream
 
   # Ensure that student cannot enrol in tutorial of different campus
   # TODO (stream)
   # validate :campus_must_be_same
 
 
-  def already_enrolled_in_tutorial_stream
-    project.tutorial_enrolments.each do |tutorial_enrolment|
-      # If tutorial stream matches, check whether we are updating the current enrolment
-      if tutorial.tutorial_stream.eql? tutorial_enrolment.tutorial.tutorial_stream and tutorial.id != tutorial_enrolment.tutorial.id
-        errors.add :project, 'already enrolled in a tutorial with same tutorial stream'
-      end
+  def ensure_max_one_tutorial_enrolment_per_stream
+    # It is valid, unless there is a tutorial enrolment record in the DB that is for the same tutorial stream
+    if project.tutorial_enrolments
+        .joins(:tutorial)
+        .where("tutorials.tutorial_stream_id = :sid #{ self.id.present? ? 'AND (tutorial_enrolments.id <> :id)' : ''}", sid: tutorial.tutorial_stream_id, id: self.id )
+        .count <> 0
+      errors.add(:project, 'already enrolled in a tutorial with same tutorial stream')
     end
   end
 end
