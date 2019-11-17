@@ -7,8 +7,9 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
   end
 
   def test_specific_create
-    project = FactoryGirl.create(:project)
-    tutorial = FactoryGirl.create(:tutorial)
+    campus = FactoryGirl.create(:campus)
+    project = FactoryGirl.create(:project, campus: campus)
+    tutorial = FactoryGirl.create(:tutorial, campus: campus)
     tutorial_enrolment = FactoryGirl.create(:tutorial_enrolment, project: project, tutorial: tutorial)
     assert_equal tutorial_enrolment.project, project
     assert_equal tutorial_enrolment.tutorial, tutorial
