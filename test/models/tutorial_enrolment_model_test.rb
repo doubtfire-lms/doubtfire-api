@@ -17,16 +17,18 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
   end
 
   def test_project_plus_tutorial_is_unique
-    project = FactoryGirl.create(:project)
-    tutorial = FactoryGirl.create(:tutorial)
+    campus = FactoryGirl.create(:campus)
+    project = FactoryGirl.create(:project, campus: campus)
+    tutorial = FactoryGirl.create(:tutorial, campus: campus)
     tutorial_enrolment = FactoryGirl.create(:tutorial_enrolment, project: project, tutorial: tutorial)
     tutorial_enrolment = FactoryGirl.build(:tutorial_enrolment, project: project, tutorial: tutorial)
     assert tutorial_enrolment.invalid?
   end
 
   def test_enrol_in_tutorial
-    project = FactoryGirl.create(:project)
-    tutorial = FactoryGirl.create(:tutorial)
+    campus = FactoryGirl.create(:campus)
+    project = FactoryGirl.create(:project, campus: campus)
+    tutorial = FactoryGirl.create(:tutorial, campus: campus)
     tutorial_enrolment = project.enrol_in(tutorial)
     assert tutorial_enrolment.valid?
     assert_equal tutorial_enrolment.project, project
@@ -34,10 +36,11 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
   end
 
   def test_enrolling_twice_in_same_tutorial_stream_updates_enrolment
-    project = FactoryGirl.create(:project)
+    campus = FactoryGirl.create(:campus)
+    project = FactoryGirl.create(:project, campus: campus)
     tutorial_stream = FactoryGirl.create(:tutorial_stream)
-    tutorial_first = FactoryGirl.create(:tutorial, tutorial_stream: tutorial_stream)
-    tutorial_second = FactoryGirl.create(:tutorial, tutorial_stream: tutorial_stream)
+    tutorial_first = FactoryGirl.create(:tutorial, tutorial_stream: tutorial_stream, campus: campus)
+    tutorial_second = FactoryGirl.create(:tutorial, tutorial_stream: tutorial_stream, campus: campus)
 
     # Confirm that both tutorials have same tutorial stream
     assert_equal tutorial_stream, tutorial_first.tutorial_stream
@@ -55,15 +58,16 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
   end
 
   def test_changing_from_no_stream_to_stream
-    project = FactoryGirl.create(:project)
+    campus = FactoryGirl.create(:campus)
+    project = FactoryGirl.create(:project, campus: campus)
 
     # Create tutorial with no tutorial stream
-    tutorial_first = FactoryGirl.create(:tutorial)
+    tutorial_first = FactoryGirl.create(:tutorial, campus: campus)
     assert_nil tutorial_first.tutorial_stream
 
     # Create tutorial with tutorial stream
     tutorial_stream = FactoryGirl.create(:tutorial_stream)
-    tutorial_second = FactoryGirl.create(:tutorial, tutorial_stream: tutorial_stream)
+    tutorial_second = FactoryGirl.create(:tutorial, tutorial_stream: tutorial_stream, campus: campus)
     assert_not_nil tutorial_second.tutorial_stream
 
     # Enrol project in tutorial first
@@ -79,10 +83,11 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
   end
 
   def test_cannot_enrol_in_tutorial_stream_twice
-    project = FactoryGirl.create(:project)
+    campus = FactoryGirl.create(:campus)
+    project = FactoryGirl.create(:project, campus: campus)
     tutorial_stream = FactoryGirl.create(:tutorial_stream)
-    tutorial_first = FactoryGirl.create(:tutorial, tutorial_stream: tutorial_stream)
-    tutorial_second = FactoryGirl.create(:tutorial, tutorial_stream: tutorial_stream)
+    tutorial_first = FactoryGirl.create(:tutorial, tutorial_stream: tutorial_stream, campus: campus)
+    tutorial_second = FactoryGirl.create(:tutorial, tutorial_stream: tutorial_stream, campus: campus)
 
     # Confirm that both tutorials have same tutorial stream
     assert_equal tutorial_stream, tutorial_first.tutorial_stream
