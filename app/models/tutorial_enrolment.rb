@@ -12,9 +12,13 @@ class TutorialEnrolment < ActiveRecord::Base
   validate :ensure_max_one_tutorial_enrolment_per_stream
 
   # Ensure that student cannot enrol in tutorial of different campus
-  # TODO (stream)
-  # validate :campus_must_be_same
+  validate :campus_must_be_same
 
+  def campus_must_be_same
+    if project.campus.present? and tutorial.campus.present? and not project.campus.eql? tutorial.campus
+      errors.add(:campus, 'should be same as the campus in the associated tutorial')
+    end
+  end
 
   def ensure_max_one_tutorial_enrolment_per_stream
     # It is valid, unless there is a tutorial enrolment record in the DB that is for the same tutorial stream
