@@ -51,4 +51,12 @@ class ActivityTypeModelTest < ActiveSupport::TestCase
     activity_type = ActivityType.find_by(abbreviation: abbreviation)
     assert Rails.cache.exist?("activity_types/abbreviation=#{abbreviation}")
   end
+
+  def test_find_by_name_exclamation_cached
+    name = ActivityType.first.name
+    Rails.cache.clear
+    assert_not Rails.cache.exist?("activity_types/name=#{name}")
+    activity_type = ActivityType.find_by!(name: name)
+    assert Rails.cache.exist?("activity_types/name=#{name}")
+  end
 end
