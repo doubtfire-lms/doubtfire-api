@@ -117,4 +117,18 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
     assert_equal project, tutorial_enrolment.project
     assert_equal tutorial, tutorial_enrolment.tutorial
   end
+
+  def test_campus_inconsistency_raises_error
+    campus_first = FactoryGirl.create(:campus)
+    campus_second = FactoryGirl.create(:campus)
+    project = FactoryGirl.create(:project, campus: campus_first)
+    tutorial = FactoryGirl.create(:tutorial, campus: campus_second)
+
+    # Make sure that campus is different in project and tutorial
+    assert_not_equal project.campus, tutorial.campus
+
+    tutorial_enrolment = FactoryGirl.build(:tutorial_enrolment, project: project, tutorial: tutorial)
+    assert tutorial_enrolment.invalid?
+    assert_equal 'Campus should be same as the campus in the associated tutorial', tutorial_enrolment.errors.full_messages.last
+  end
 end
