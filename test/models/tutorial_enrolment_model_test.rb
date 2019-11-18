@@ -9,6 +9,10 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
   def test_specific_create
     campus = FactoryGirl.create(:campus)
     project = FactoryGirl.create(:project, campus: campus)
+
+    # Make sure there are no enrolments for the project
+    assert_empty project.tutorial_enrolments
+
     tutorial = FactoryGirl.create(:tutorial, campus: campus)
     tutorial_enrolment = FactoryGirl.create(:tutorial_enrolment, project: project, tutorial: tutorial)
     assert_equal tutorial_enrolment.project, project
@@ -19,15 +23,27 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
   def test_project_plus_tutorial_is_unique
     campus = FactoryGirl.create(:campus)
     project = FactoryGirl.create(:project, campus: campus)
+
+    # Make sure there are no enrolments for the project
+    assert_empty project.tutorial_enrolments
+
     tutorial = FactoryGirl.create(:tutorial, campus: campus)
     tutorial_enrolment = FactoryGirl.create(:tutorial_enrolment, project: project, tutorial: tutorial)
     tutorial_enrolment = FactoryGirl.build(:tutorial_enrolment, project: project, tutorial: tutorial)
     assert tutorial_enrolment.invalid?
+
+    # Both unique and max one validation will fail
+    assert_equal 'Tutorial already exists for the selected student', tutorial_enrolment.errors.full_messages.first
+    assert_equal 'Project already enrolled in a tutorial with same tutorial stream', tutorial_enrolment.errors.full_messages.second
   end
 
   def test_enrol_in_tutorial
     campus = FactoryGirl.create(:campus)
     project = FactoryGirl.create(:project, campus: campus)
+
+    # Make sure there are no enrolments for the project
+    assert_empty project.tutorial_enrolments
+
     tutorial = FactoryGirl.create(:tutorial, campus: campus)
     tutorial_enrolment = project.enrol_in(tutorial)
     assert tutorial_enrolment.valid?
@@ -38,6 +54,10 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
   def test_enrolling_twice_in_same_tutorial_stream_updates_enrolment
     campus = FactoryGirl.create(:campus)
     project = FactoryGirl.create(:project, campus: campus)
+
+    # Make sure there are no enrolments for the project
+    assert_empty project.tutorial_enrolments
+
     tutorial_stream = FactoryGirl.create(:tutorial_stream)
     tutorial_first = FactoryGirl.create(:tutorial, tutorial_stream: tutorial_stream, campus: campus)
     tutorial_second = FactoryGirl.create(:tutorial, tutorial_stream: tutorial_stream, campus: campus)
@@ -60,6 +80,9 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
   def test_changing_from_no_stream_to_stream
     campus = FactoryGirl.create(:campus)
     project = FactoryGirl.create(:project, campus: campus)
+
+    # Make sure there are no enrolments for the project
+    assert_empty project.tutorial_enrolments
 
     # Create tutorial with no tutorial stream
     tutorial_first = FactoryGirl.create(:tutorial, campus: campus)
@@ -85,6 +108,10 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
   def test_cannot_enrol_in_tutorial_stream_twice
     campus = FactoryGirl.create(:campus)
     project = FactoryGirl.create(:project, campus: campus)
+
+    # Make sure there are no enrolments for the project
+    assert_empty project.tutorial_enrolments
+
     tutorial_stream = FactoryGirl.create(:tutorial_stream)
     tutorial_first = FactoryGirl.create(:tutorial, tutorial_stream: tutorial_stream, campus: campus)
     tutorial_second = FactoryGirl.create(:tutorial, tutorial_stream: tutorial_stream, campus: campus)
@@ -107,6 +134,11 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
   def test_consistent_campus_is_allowed
     campus = FactoryGirl.create(:campus)
     project = FactoryGirl.create(:project, campus: campus)
+
+    # Make sure there are no enrolments for the project
+    assert_empty project.tutorial_enrolments
+
+    # Create tutorial in the same campus
     tutorial = FactoryGirl.create(:tutorial, campus: campus)
 
     # Make sure campus is same in project and tutorial
@@ -122,6 +154,11 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
     campus_first = FactoryGirl.create(:campus)
     campus_second = FactoryGirl.create(:campus)
     project = FactoryGirl.create(:project, campus: campus_first)
+
+    # Make sure there are no enrolments for the project
+    assert_empty project.tutorial_enrolments
+
+    # Create tutorial in a different campus
     tutorial = FactoryGirl.create(:tutorial, campus: campus_second)
 
     # Make sure that campus is different in project and tutorial
