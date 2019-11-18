@@ -441,13 +441,13 @@ ActiveRecord::Schema.define(version: 20191118044818) do
     t.string   "description",         limit: 4096
     t.datetime "start_date"
     t.datetime "end_date"
-    t.datetime "created_at",                                       null: false
-    t.datetime "updated_at",                                       null: false
+    t.datetime "created_at",                                      null: false
+    t.datetime "updated_at",                                      null: false
     t.string   "code",                limit: 255
     t.boolean  "active",                           default: true
     t.datetime "last_plagarism_scan"
     t.integer  "teaching_period_id"
-    t.boolean  "assessment_enabled",               default: false
+    t.boolean  "assessment_enabled",               default: true
     t.string   "routing_key"
   end
 
