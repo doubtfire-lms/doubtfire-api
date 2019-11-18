@@ -24,7 +24,7 @@ class TutorialEnrolment < ActiveRecord::Base
     # It is valid, unless there is a tutorial enrolment record in the DB that is for the same tutorial stream
     if project.tutorial_enrolments
         .joins(:tutorial)
-        .where("tutorials.tutorial_stream_id = :sid #{ self.id.present? ? 'AND (tutorial_enrolments.id <> :id)' : ''}", sid: tutorial.tutorial_stream_id, id: self.id )
+        .where("(tutorials.tutorial_stream_id is null AND :id is null) OR (tutorials.tutorial_stream_id = :sid #{ self.id.present? ? 'AND (tutorial_enrolments.id <> :id)' : ''})", sid: tutorial.tutorial_stream_id, id: self.id )
         .count > 0
       errors.add(:project, 'already enrolled in a tutorial with same tutorial stream')
     end
