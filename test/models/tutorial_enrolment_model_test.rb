@@ -77,6 +77,38 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
     assert_equal tutorial_enrolment_first.id, tutorial_enrolment_second.id
   end
 
+  def test_enrolling_twice_when_tutorial_stream_is_null
+    campus = FactoryGirl.create(:campus)
+    project = FactoryGirl.create(:project, campus: campus)
+
+    # Make sure there are no enrolments for the project
+    assert_empty project.tutorial_enrolments
+
+    tutorial_stream = nil
+    tutorial_first = FactoryGirl.create(:tutorial, tutorial_stream: tutorial_stream, campus: campus)
+    tutorial_second = FactoryGirl.create(:tutorial, tutorial_stream: tutorial_stream, campus: campus)
+    tutorial_third = FactoryGirl.create(:tutorial, tutorial_stream: tutorial_stream, campus: campus)
+
+    # Confirm that tutorial stream is nil
+    assert_nil tutorial_first.tutorial_stream
+    assert_nil tutorial_second.tutorial_stream
+
+    # Enrol project in tutorial first
+    tutorial_enrolment_first = project.enrol_in(tutorial_first)
+    assert_equal tutorial_first, tutorial_enrolment_first.tutorial
+    assert_equal project, tutorial_enrolment_first.project
+
+    # Enrol again in tutorial stream and check that it updates the tutorial enrolment rather than creating a new one
+    tutorial_enrolment_second = project.enrol_in(tutorial_second)
+    assert_equal tutorial_second, tutorial_enrolment_second.tutorial
+    assert_equal tutorial_enrolment_first.id, tutorial_enrolment_second.id
+
+    # Manually create a tutorial enrolment
+    tutorial_enrolment_third = FactoryGirl.build(:tutorial_enrolment, project: project, tutorial: tutorial_third)
+    assert tutorial_enrolment_third.invalid?
+    assert_equal 'Project already enrolled in a tutorial with same tutorial stream', tutorial_enrolment_third.errors.full_messages.last
+  end
+
   def test_changing_from_no_stream_to_stream
     campus = FactoryGirl.create(:campus)
     project = FactoryGirl.create(:project, campus: campus)
