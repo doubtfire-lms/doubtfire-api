@@ -61,7 +61,10 @@ module Api
         error!({ error: 'Not authorised to delete an activity type' }, 403)
       end
 
-      ActivityType.find(params[:id]).destroy
+      activity_type = ActivityType.find(params[:id])
+      activity_type.destroy
+      error!({ error: activity_type.errors.full_messages.last }, 403) unless activity_type.destroyed?
+      activity_type.destroyed?
     end
   end
 end

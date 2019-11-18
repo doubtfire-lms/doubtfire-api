@@ -53,6 +53,7 @@ module Api
     mount Api::CampusesPublicApi
     mount Api::CampusesAuthenticatedApi
     mount Api::TutorialsApi
+    mount Api::TutorialStreamsApi
     mount Api::UnitRolesApi
     mount Api::UnitsApi
     mount Api::UsersApi
@@ -78,6 +79,7 @@ module Api
     AuthenticationHelpers.add_auth_to Api::TeachingPeriodsAuthenticatedApi
     AuthenticationHelpers.add_auth_to Api::CampusesAuthenticatedApi
     AuthenticationHelpers.add_auth_to Api::TutorialsApi
+    AuthenticationHelpers.add_auth_to Api::TutorialStreamsApi
     AuthenticationHelpers.add_auth_to Api::UsersApi
     AuthenticationHelpers.add_auth_to Api::UnitRolesApi
     AuthenticationHelpers.add_auth_to Api::UnitsApi
