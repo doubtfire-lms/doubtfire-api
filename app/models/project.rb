@@ -26,7 +26,7 @@ class Project < ActiveRecord::Base
   has_many :past_groups, -> { where('group_memberships.active = :value', value: false) }, through: :group_memberships, source: 'group'
   has_many :task_engagements, through: :tasks
   has_many :comments, through: :tasks
-  has_many :tutorial_enrolments
+  has_many :tutorial_enrolments, dependent: :destroy
 
   has_many :learning_outcome_task_links, through: :tasks
 
