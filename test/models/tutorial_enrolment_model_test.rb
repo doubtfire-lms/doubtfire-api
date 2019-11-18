@@ -103,4 +103,18 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
     assert tutorial_enrolment_second.invalid?
     assert_equal 'Project already enrolled in a tutorial with same tutorial stream', tutorial_enrolment_second.errors.full_messages.last
   end
+
+  def test_consistent_campus_is_allowed
+    campus = FactoryGirl.create(:campus)
+    project = FactoryGirl.create(:project, campus: campus)
+    tutorial = FactoryGirl.create(:tutorial, campus: campus)
+
+    # Make sure campus is same in project and tutorial
+    assert_equal project.campus, tutorial.campus
+
+    tutorial_enrolment = project.enrol_in(tutorial)
+    assert tutorial_enrolment.valid?
+    assert_equal project, tutorial_enrolment.project
+    assert_equal tutorial, tutorial_enrolment.tutorial
+  end
 end
