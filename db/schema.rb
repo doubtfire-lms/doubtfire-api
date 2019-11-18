@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20191031235849) do
+ActiveRecord::Schema.define(version: 20191118044818) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -302,6 +302,8 @@ ActiveRecord::Schema.define(version: 20191031235849) do
     t.boolean  "is_graded",                                           default: false
     t.integer  "max_quality_pts",                                     default: 0
     t.integer  "tutorial_stream_id"
+    t.boolean  "assessment_enabled",                                  default: false
+    t.string   "routing_key"
   end
 
   add_index "task_definitions", ["tutorial_stream_id"], name: "index_task_definitions_on_tutorial_stream_id", using: :btree
@@ -439,12 +441,14 @@ ActiveRecord::Schema.define(version: 20191031235849) do
     t.string   "description",         limit: 4096
     t.datetime "start_date"
     t.datetime "end_date"
-    t.datetime "created_at",                                      null: false
-    t.datetime "updated_at",                                      null: false
+    t.datetime "created_at",                                       null: false
+    t.datetime "updated_at",                                       null: false
     t.string   "code",                limit: 255
     t.boolean  "active",                           default: true
     t.datetime "last_plagarism_scan"
     t.integer  "teaching_period_id"
+    t.boolean  "assessment_enabled",               default: false
+    t.string   "routing_key"
   end
 
   add_index "units", ["teaching_period_id"], name: "index_units_on_teaching_period_id", using: :btree
