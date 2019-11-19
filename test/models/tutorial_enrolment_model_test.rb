@@ -32,9 +32,9 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
     tutorial_enrolment = FactoryGirl.build(:tutorial_enrolment, project: project, tutorial: tutorial)
     assert tutorial_enrolment.invalid?
 
-    # Both unique and max one validation will fail
+    # Unique, multiple tutorials (with no stream) and max one validation will fail
     assert_equal 'Tutorial already exists for the selected student', tutorial_enrolment.errors.full_messages.first
-    assert_equal 'Project already enrolled in a tutorial with same tutorial stream', tutorial_enrolment.errors.full_messages.second
+    assert_equal 'Project cannot have more than one enrolment when it is enrolled in tutorial with no stream', tutorial_enrolment.errors.full_messages.second
   end
 
   def test_enrol_in_tutorial
@@ -106,7 +106,7 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
     # Manually create a tutorial enrolment
     tutorial_enrolment_third = FactoryGirl.build(:tutorial_enrolment, project: project, tutorial: tutorial_third)
     assert tutorial_enrolment_third.invalid?
-    assert_equal 'Project already enrolled in a tutorial with same tutorial stream', tutorial_enrolment_third.errors.full_messages.last
+    assert_equal 'Project cannot have more than one enrolment when it is enrolled in tutorial with no stream', tutorial_enrolment_third.errors.full_messages.last
   end
 
   def test_changing_from_no_stream_to_stream
