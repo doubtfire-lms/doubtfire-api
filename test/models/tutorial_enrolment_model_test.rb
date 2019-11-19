@@ -109,6 +109,31 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
     assert_equal 'Project cannot have more than one enrolment when it is enrolled in tutorial with no stream', tutorial_enrolment_third.errors.full_messages.last
   end
 
+  def test_creating_both_no_stream_and_stream
+    campus = FactoryGirl.create(:campus)
+    project = FactoryGirl.create(:project, campus: campus)
+
+    # Make sure there are no enrolments for the project
+    assert_empty project.tutorial_enrolments
+
+    # Create tutorial with no tutorial stream
+    tutorial_first = FactoryGirl.create(:tutorial, campus: campus)
+    assert_nil tutorial_first.tutorial_stream
+
+    # Create tutorial with tutorial stream
+    tutorial_stream = FactoryGirl.create(:tutorial_stream)
+    tutorial_second = FactoryGirl.create(:tutorial, tutorial_stream: tutorial_stream, campus: campus)
+    assert_not_nil tutorial_second.tutorial_stream
+
+    # Enrol project in tutorial first
+    tutorial_enrolment_first = project.enrol_in(tutorial_first)
+    assert_equal tutorial_first, tutorial_enrolment_first.tutorial
+    assert_equal 1, project.tutorial_enrolments.count
+
+    exception = assert_raises(Exception) { FactoryGirl.create(:tutorial_enrolment, project: project, tutorial: tutorial_second) }
+    assert_equal 'Validation failed: Project cannot have more than one enrolment when it is enrolled in tutorial with no stream', exception.message
+  end
+
   def test_changing_from_no_stream_to_stream
     campus = FactoryGirl.create(:campus)
     project = FactoryGirl.create(:project, campus: campus)
