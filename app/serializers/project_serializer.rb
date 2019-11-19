@@ -33,7 +33,6 @@ class ProjectSerializer < ActiveModel::Serializer
              :stats,
              :student_name,
              :tutor_name,
-             :tutorial_id,
              :burndown_chart_data,
              :enrolled,
              :target_grade,
