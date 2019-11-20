@@ -1,9 +1,9 @@
 FactoryGirl.define do
   factory :tutorial_enrolment do
-    # Get the campus to make sure it is same
-    campus = FactoryGirl.build(:campus)
+    project
 
-    association :tutorial, factory: :tutorial, campus: campus, strategy: :build
-    association :project, factory: :project, campus: campus, strategy: :build
+    after(:build) do |tutorial_enrolment|
+      tutorial_enrolment.tutorial = FactoryGirl.create(:tutorial, unit: tutorial_enrolment.project.unit, campus: tutorial_enrolment.project.campus)
+    end
   end
 end
