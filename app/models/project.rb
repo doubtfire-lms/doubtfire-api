@@ -183,6 +183,17 @@ class Project < ActiveRecord::Base
     user
   end
 
+  def tutor_for(task_definition)
+    tutorial_enrolments.each do |tutorial_enrolment|
+      tutorial = tutorial_enrolment.tutorial
+      if tutorial.tutorial_stream.nil?
+        return tutorial.tutor
+      else
+        return tutorial.tutor if tutorial.tutorial_stream.eql? task_definition.tutorial_stream
+      end
+    end
+  end
+
   def main_tutor
     if tutorial
       result = tutorial.tutor
