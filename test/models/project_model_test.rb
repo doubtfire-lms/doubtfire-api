@@ -95,7 +95,8 @@ class ProjectModelTest < ActiveSupport::TestCase
     assert_equal tutorial_all.tutor, tutor_for_task_def_all_first
     assert_equal tutorial_all.tutor, tutor_for_task_def_all_second
 
-    # TODO (stream)
-    check = project_first.tutor_for(task_definition_second)
+    # Try to get tutor for task def for which given project is not enrolled
+    tutor = project_first.tutor_for(task_definition_second)
+    assert_nil tutor
   end
 end
