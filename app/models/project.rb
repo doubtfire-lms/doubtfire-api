@@ -192,6 +192,7 @@ class Project < ActiveRecord::Base
         return tutorial.tutor if tutorial.tutorial_stream.eql? task_definition.tutorial_stream
       end
     end
+    return nil
   end
 
   def main_tutor
@@ -204,11 +205,6 @@ class Project < ActiveRecord::Base
     end
   end
 
-  def tutor_for(task)
-    task_definition = task.task_definition
-    errors.add :base, "Task is not a part of task definition" if task_definition.nil?
-    tutorial_stream = task_definition.tutorial_stream
-  end
 
   def main_convenor
     unit.main_convenor
