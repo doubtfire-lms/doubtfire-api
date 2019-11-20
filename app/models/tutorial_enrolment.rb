@@ -8,6 +8,9 @@ class TutorialEnrolment < ActiveRecord::Base
   # Always add a unique index to the DB to prevent new records from passing the validations when checked at the same time before being written
   validates_uniqueness_of :tutorial, :scope => :project, message: 'already exists for the selected student'
 
+  # Ensure that student cannot enrol in tutorial of different units
+  validate :unit_must_be_same
+
   # Ensure that student cannot enrol in tutorial of different campus
   validate :campus_must_be_same
 
@@ -19,6 +22,12 @@ class TutorialEnrolment < ActiveRecord::Base
 
   # Switch from stream to no stream is not allowed
   validate :ensure_cannot_enrol_in_tutorial_with_no_stream_when_enrolled_in_stream
+
+  def unit_must_be_same
+    if project.unit.present? and tutorial.unit.present? and not project.unit.eql? tutorial.unit
+      errors.add(:unit, 'should be same as the unit in the associated tutorial')
+    end
+  end
 
   def campus_must_be_same
     if project.campus.present? and tutorial.campus.present? and not project.campus.eql? tutorial.campus
