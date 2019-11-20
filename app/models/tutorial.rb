@@ -17,6 +17,15 @@ class Tutorial < ActiveRecord::Base
   validates :abbreviation, uniqueness: { scope: :unit,
                                          message: 'must be unique within the unit' }
 
+  # Make sure that unit in tutorial and tutorial stream are consistent
+  validate :unit_must_be_same
+
+  def unit_must_be_same
+    if unit.present? and tutorial_stream.present? and not unit.eql? tutorial_stream.unit
+      errors.add(:unit, "should be same as the unit in the associated tutorial stream")
+    end
+  end
+
   def self.default
     tutorial = new
 
