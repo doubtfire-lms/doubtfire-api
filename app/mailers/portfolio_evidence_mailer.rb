@@ -13,7 +13,7 @@ class PortfolioEvidenceMailer < ActionMailer::Base
     @student = project.student
     @project = project
     @tasks = tasks.sort_by { |t| t.task_definition.abbreviation }
-    @tutor = project.main_tutor
+    @tutor = project.main_convenor
     @convenor = project.main_convenor
 
     email_with_name = %("#{@student.name}" <#{@student.email}>)
@@ -29,7 +29,7 @@ class PortfolioEvidenceMailer < ActionMailer::Base
     @student = project.student
     @project = project
     @tasks = tasks.sort_by { |t| t.task_definition.abbreviation }
-    @tutor = project.main_tutor
+    @tutor = project.main_convenor
     @convenor = project.main_convenor
 
     email_with_name = %("#{@student.name}" <#{@student.email}>)
@@ -45,7 +45,7 @@ class PortfolioEvidenceMailer < ActionMailer::Base
     @student = project.student
     @project = project
     @tasks = tasks.sort_by { |t| t.task_definition.abbreviation }
-    @tutor = project.main_tutor
+    @tutor = project.main_convenor
     @has_comments = !@tasks.select { |t| t.is_last_comment_by?(@tutor) }.empty?
     return nil if @tutor.nil? || @student.nil?
 

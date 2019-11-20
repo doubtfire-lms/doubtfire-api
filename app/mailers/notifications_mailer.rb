@@ -32,7 +32,7 @@ class NotificationsMailer < ActionMailer::Base
     
     @student = project.student
     @project = project
-    @tutor = project.main_tutor
+    @tutor = project.main_convenor
     @summary_stats = summary_stats
     @did_revert_to_pass = did_revert_to_pass
 
