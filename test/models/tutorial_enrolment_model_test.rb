@@ -286,4 +286,22 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
     assert tutorial_enrolment.invalid?
     assert_equal 'Project and tutorial belong to different campus', tutorial_enrolment.errors.full_messages.last
   end
+
+  def test_unit_inconsistency_raises_error
+    campus = FactoryGirl.create(:campus)
+    unit_first = FactoryGirl.create(:unit)
+    unit_second = FactoryGirl.create(:unit)
+
+    project = FactoryGirl.create(:project, unit: unit_first, campus: campus)
+    tutorial = FactoryGirl.create(:tutorial, unit: unit_second, campus: campus)
+
+    # Make sure that project and tutorial have different units
+    assert_not_equal project.unit, tutorial.unit
+
+    tutorial_enrolment = FactoryGirl.build(:tutorial_enrolment, project: project)
+    tutorial_enrolment.tutorial = tutorial
+    assert tutorial_enrolment.invalid?
+    assert_equal 1, tutorial_enrolment.errors.full_messages.count
+    assert_equal 'Project and tutorial belong to different unit', tutorial_enrolment.errors.full_messages.last
+  end
 end
