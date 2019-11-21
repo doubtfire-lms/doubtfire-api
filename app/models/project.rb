@@ -178,16 +178,21 @@ class Project < ActiveRecord::Base
     user
   end
 
-  def tutor_for(task_definition)
+  def tutorial_for(task_definition)
     tutorial_enrolments.each do |tutorial_enrolment|
       tutorial = tutorial_enrolment.tutorial
       if tutorial.tutorial_stream.nil?
-        return tutorial.tutor
+        return tutorial
       else
-        return tutorial.tutor if tutorial.tutorial_stream.eql? task_definition.tutorial_stream
+        return tutorial if tutorial.tutorial_stream.eql? task_definition.tutorial_stream
       end
     end
     return nil
+  end
+
+  def tutor_for(task_definition)
+    tutorial = tutorial_for(task_definition)
+    tutorial.tutor unless tutorial.nil?
   end
 
   def main_convenor
