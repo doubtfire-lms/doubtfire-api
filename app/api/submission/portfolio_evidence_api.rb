@@ -16,6 +16,7 @@ module Api
       params do
         optional :file0, type: Rack::Multipart::UploadedFile, desc: 'file 0.'
         optional :file1, type: Rack::Multipart::UploadedFile, desc: 'file 1.'
+        # This API accepts more than 2 files, file0 and file1 were probably just used by Alex to test the API 3 years ago on swagger, according to Jake. Naughty Alex.
         optional :contributions, type: JSON, desc: "Contribution details JSON, eg: [ { project_id: 1, pct:'0.44', pts: 4 }, ... ]"
         optional :alignment_data, type: JSON, desc: "Data for task alignment, eg: [ { ilo_id: 1, rating: 5, rationale: 'Hello' }, ... ]"
         optional :trigger, type: String, desc: 'Can be need_help to indicate upload is not a ready to mark submission'
