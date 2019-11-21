@@ -29,7 +29,7 @@ class NotificationsMailer < ActionMailer::Base
     return nil if project.nil?
 
     add_general
-    
+
     @student = project.student
     @project = project
     @tutor = project.main_convenor
@@ -66,29 +66,29 @@ class NotificationsMailer < ActionMailer::Base
   end
 
   def were_was(num)
-    if num == 1 
+    if num == 1
         "was"
-    else 
+    else
         "were"
     end
   end
 
   def are_is(num)
-    if num == 1 
+    if num == 1
         "is"
-    else 
+    else
         "are"
     end
   end
-  
+
   def this_these(num)
-    if num == 1 
+    if num == 1
         "this"
-    else 
+    else
         "these"
     end
   end
-  
+
   helper_method :top_task_desc
   helper_method :were_was
   helper_method :are_is
