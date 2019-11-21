@@ -1131,8 +1131,6 @@ class Unit < ActiveRecord::Base
         'Portfolio',
         'Grade',
         'Rationale',
-        'Tutorial',
-        'Tutor'
       ] +
              group_sets.map(&:name) +
              task_definitions_by_grade.map do |task_definition|
