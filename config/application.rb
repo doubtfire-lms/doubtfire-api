@@ -3,6 +3,7 @@ require 'rails/all'
 require 'csv'
 require 'yaml'
 require 'grape-active_model_serializers'
+require 'bunny-pub-sub/services_manager'
 
 # Precompile assets before deploying to production
 if defined?(Bundler)
@@ -42,7 +43,7 @@ module Doubtfire
     config.institution[:host] = 'localhost:3000' if Rails.env.development?
     config.institution[:host_url] = Rails.env.development? ? "http://#{config.institution[:host]}/" : "https://#{config.institution[:host]}/"
     config.institution[:settings] = ENV['DF_INSTITUTION_SETTINGS_RB'] if ENV['DF_INSTITUTION_SETTINGS_RB']
-    
+
     require "#{Rails.root}/config/#{config.institution[:settings]}" unless config.institution[:settings].nil?
 
     # ==> AAF authentication
@@ -103,7 +104,7 @@ module Doubtfire
     config.autoload_paths += Dir["#{Rails.root}/app"]
     config.autoload_paths += Dir["#{Rails.root}/app/serializers"]
     config.autoload_paths += Dir[Rails.root.join("app", "models", "{*/}")]
-    
+
     # CORS config
     config.middleware.insert_before Warden::Manager, Rack::Cors do
       allow do
@@ -123,5 +124,37 @@ module Doubtfire
                          request_specs: true
       end
     end
+
+    publisher_config = {
+      RABBITMQ_HOSTNAME: ENV['RABBITMQ_HOSTNAME'],
+      RABBITMQ_USERNAME: ENV['RABBITMQ_USERNAME'],
+      RABBITMQ_PASSWORD: ENV['RABBITMQ_PASSWORD'],
+      EXCHANGE_NAME: ENV['EXCHANGE_NAME'],
+      DURABLE_QUEUE_NAME: ENV['DURABLE_QUEUE_NAME'],
+      BINDING_KEYS: ENV['BINDING_KEYS'],
+      DEFAULT_BINDING_KEY: ENV['DEFAULT_BINDING_KEY'],
+      # Publisher specific key
+      ROUTING_KEY: 'csharp'
+    }
+
+    subscriber_config = {
+      RABBITMQ_HOSTNAME: ENV['RABBITMQ_HOSTNAME'],
+      RABBITMQ_USERNAME: ENV['RABBITMQ_USERNAME'],
+      RABBITMQ_PASSWORD: ENV['RABBITMQ_PASSWORD'],
+      EXCHANGE_NAME: ENV['EXCHANGE_NAME'],
+      DURABLE_QUEUE_NAME: 'q_assessment_results',
+      # No need to define BINDING_KEYS for now!
+      # In future, OnTrack will listen to
+      # topics related to PDF generation too.
+      # That is when we should have BINDING_KEYS defined.
+      # BINDING_KEYS: ENV['BINDING_KEYS'],
+
+      # This is enough for now:
+      DEFAULT_BINDING_KEY: '*.result'
+    }
+
+    config.sm_instance = ServicesManager.instance
+    config.sm_instance.register_client(:ontrack, publisher_config, subscriber_config)
+
   end
 end

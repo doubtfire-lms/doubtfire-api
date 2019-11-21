@@ -16,6 +16,7 @@ gem 'rails', '4.2.6'
 group :development, :test do
   gem 'database_cleaner'
   gem 'byebug'
+  gem 'bunny-pub-sub', '0.0.7', git: 'https://github.com/doubtfire-overseer/bunny-pub-sub'
   gem 'simplecov', require: false
   gem 'pg'
   gem 'hirb'
