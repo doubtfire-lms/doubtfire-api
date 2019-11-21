@@ -195,17 +195,6 @@ class Project < ActiveRecord::Base
     return nil
   end
 
-  def main_tutor
-    if tutorial
-      result = tutorial.tutor
-      result = main_convenor if result.nil?
-      result
-    else
-      main_convenor
-    end
-  end
-
-
   def main_convenor
     unit.main_convenor
   end
