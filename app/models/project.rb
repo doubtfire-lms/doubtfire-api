@@ -157,15 +157,10 @@ class Project < ActiveRecord::Base
   end
 
   #
-  # Returns the email of the tutor, or the convenor if there is no tutor
+  # Returns the email of the convenor
   #
   def tutor_email
-    tutor = main_tutor
-    if tutor
-      tutor.email
-    else
-      unit.convenor_email
-    end
+    unit.convenor_email
   end
 
   #
@@ -708,8 +703,6 @@ class Project < ActiveRecord::Base
       portfolio_status,
       grade > 0 ? grade : '',
       grade_rationale,
-      tutorial ? tutorial.abbreviation : '',
-      main_tutor.name
     ] +
       unit.group_sets.map do |gs|
         grp = group_for_groupset(gs)
@@ -1013,7 +1006,7 @@ class Project < ActiveRecord::Base
       did_revert_to_pass = true
 
       summary_stats[:revert_count] = summary_stats[:revert_count] + 1
-      summary_stats[:revert][main_tutor] << self
+      summary_stats[:revert][main_convenor] << self
     end
 
     return unless student.receive_feedback_notifications
