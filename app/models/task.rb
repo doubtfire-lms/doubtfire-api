@@ -198,7 +198,7 @@ class Task < ActiveRecord::Base
     extension.user = user
     extension.content_type = :extension
     extension.comment = text
-    extension.recipient = project.main_tutor
+    extension.recipient = project.tutor_for(task_definition)
     extension.save!
     extension
   end
