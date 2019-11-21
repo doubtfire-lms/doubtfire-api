@@ -28,7 +28,7 @@ module Api
       projects = projects
                  .joins(:unit)
                  .joins(:user)
-                 .joins(:tutorial_enrolments)
+                 .joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id')
                  .joins('LEFT OUTER JOIN tutorials ON tutorial_enrolments.tutorial_id = tutorials.id')
                  .joins('LEFT OUTER JOIN unit_roles AS tutor_role ON tutorials.unit_role_id = tutor_role.id')
                  .joins('LEFT OUTER JOIN users AS tutor ON tutor.id = tutor_role.user_id')
