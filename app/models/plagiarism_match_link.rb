@@ -59,11 +59,11 @@ class PlagiarismMatchLink < ActiveRecord::Base
 
   def tutorial
     tute = task.project.tutorial_for(task.task_definition)
-    tute.nil? 'None' : tute.abbreviation
+    tute.nil? ? 'None' : tute.abbreviation
   end
 
   def other_tutorial
     tute = other_task.project.tutorial_for(other_task.task_definition)
-    tute.nil? 'None' : tute.abbreviation
+    tute.nil? ? 'None' : tute.abbreviation
   end
 end
