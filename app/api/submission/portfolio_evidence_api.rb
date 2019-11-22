@@ -50,7 +50,7 @@ module Api
 
         # Copy files to be PDFed
         task.accept_submission(current_user, scoop_files(params, upload_reqs), student, self, params[:contributions], trigger, alignments)
-
+        PortfolioEvidence.perform_overseer_submission task
         TaskUpdateSerializer.new(task)
       end # post
 
