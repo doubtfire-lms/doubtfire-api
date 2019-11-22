@@ -766,14 +766,14 @@ class Task < ActiveRecord::Base
   #
   # Compress the done files for a student - includes cover page and work uploaded
   #
-  def compress_new_to_done
+  def compress_new_to_done(zip_file_path = nil, rm_task_dir = true)
     task_dir = student_work_dir(:new, false)
     begin
       # Ensure that this task is the submitter task for a  group_task... otherwise
       # remove this submission
       raise "Multiple team member submissions received at the same time. Please ensure that only one member submits the task." if group_task? && self != group_submission.submitter_task
 
-      zip_file = zip_file_path_for_done_task
+      zip_file = zip_file_path || zip_file_path_for_done_task
       return false if zip_file.nil? || (!Dir.exist? task_dir)
 
       FileUtils.rm(zip_file) if File.exist? zip_file
@@ -801,7 +801,7 @@ class Task < ActiveRecord::Base
         end
       end
     ensure
-      FileUtils.rm_rf(task_dir)
+      FileUtils.rm_rf(task_dir) if rm_task_dir
     end
 
     true
