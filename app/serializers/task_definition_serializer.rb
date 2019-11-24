@@ -9,7 +9,8 @@ class TaskDefinitionSerializer < ActiveModel::Serializer
              :plagiarism_checks, :plagiarism_report_url, :plagiarism_warn_pct,
              :restrict_status_updates,
              :group_set_id, :has_task_sheet?, :has_task_resources?,
-             :due_date, :start_date, :is_graded, :max_quality_pts
+             :due_date, :start_date, :is_graded, :max_quality_pts,
+             :routing_key, :assessment_enabled
 
   def weight
     object.weighting
