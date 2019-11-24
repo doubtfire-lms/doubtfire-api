@@ -328,11 +328,14 @@ module Api
         error!({ error: 'Not authorised to access tasks for this unit' }, 403)
       end
 
+      # TODO (stream)
       unit.student_tasks
           .joins(:project)
           .joins(:task_status)
-          .select('projects.tutorial_id as tutorial_id', 'project_id', 'tasks.id as id', 'task_definition_id', 'task_statuses.id as status_id', 'completion_date', 'times_assessed', 'submission_date', 'grade')
-          .where('task_definition_id = :id', id: params[:task_def_id])
+          .joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id')
+          .joins('LEFT OUTER JOIN tutorials ON tutorial_enrolments.tutorial_id = tutorials.id')
+          .select('tutorials.id as tutorial_id', 'project_id', 'tasks.id as id', 'task_definition_id', 'task_statuses.id as status_id', 'completion_date', 'times_assessed', 'submission_date', 'grade')
+          .where('task_definition_id = :id AND (tutorials.tutorial_stream_id = task_definitions.tutorial_stream_id OR tutorial_id is null)', id: params[:task_def_id])
           .map do |t|
         {
           project_id: t.project_id,
