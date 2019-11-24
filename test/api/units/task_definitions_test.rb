@@ -230,6 +230,50 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_equal task_second.id, last_response_body.first['id']
   end
 
+  def test_task_related_to_task_def_when_multiple_tasks_but_project_is_enrolled_for_one
+    unit = FactoryGirl.create(:unit)
+    unit.employ_staff(User.first, Role.convenor)
+
+    campus = FactoryGirl.create(:campus)
+    project = FactoryGirl.create(:project, unit: unit, campus: campus)
+
+    # Make sure there are no enrolments for the project
+    assert_empty project.tutorial_enrolments
+
+    tutorial_stream_first = FactoryGirl.create(:tutorial_stream, unit: unit)
+    tutorial_first = FactoryGirl.create(:tutorial, unit: unit, tutorial_stream: tutorial_stream_first, campus: campus)
+    tutorial_enrolment_first = project.enrol_in(tutorial_first)
+    task_def_first = FactoryGirl.create(:task_definition, unit: unit, tutorial_stream: tutorial_stream_first, target_grade: project.target_grade)
+    task_first = project.task_for_task_definition(task_def_first)
+
+    tutorial_stream_second = FactoryGirl.create(:tutorial_stream, unit: unit)
+    task_def_second = FactoryGirl.create(:task_definition, unit: unit, tutorial_stream: tutorial_stream_second, target_grade: project.target_grade)
+    task_second = project.task_for_task_definition(task_def_second)
+
+    # Reload the unit
+    unit.reload
+
+    assert_equal 2, unit.student_tasks.count
+    assert_equal task_first, unit.student_tasks.first
+    assert_equal task_second, unit.student_tasks.second
+
+    # Get the tasks for the first task definition
+    get with_auth_token "/api/units/#{unit.id}/task_definitions/#{task_def_first.id}/tasks"
+
+    assert_equal 1, last_response_body.count
+    assert_equal project.id, last_response_body.first['project_id']
+    assert_equal tutorial_first.id, last_response_body.first['tutorial_id']
+    assert_equal task_first.id, last_response_body.first['id']
+
+    # Get the tasks for the first task definition
+    get with_auth_token "/api/units/#{unit.id}/task_definitions/#{task_def_second.id}/tasks"
+
+    assert_equal 1, last_response_body.count
+    assert_equal project.id, last_response_body.first['project_id']
+    assert_nil last_response_body.first['tutorial_id']
+    assert_equal task_second.id, last_response_body.first['id']
+  end
+
   def test_task_related_to_task_def_when_project_is_enrolled
     unit = FactoryGirl.create(:unit)
     unit.employ_staff(User.first, Role.convenor)
