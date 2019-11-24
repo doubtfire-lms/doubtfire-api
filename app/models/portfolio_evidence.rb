@@ -101,6 +101,7 @@ class PortfolioEvidence
   def self.perform_overseer_submission(task)
     sm_instance = Doubtfire::Application.config.sm_instance
     return if sm_instance.nil?
+
     # TODO: Add all the checks:
     # if unit's assessment is enabled &&
     # if task's assessment is enabled &&
@@ -109,42 +110,37 @@ class PortfolioEvidence
 
     task_definition = task.task_definition
 
-    unless task_definition.has_task_assessment_resources?
-      # TODO: Remove the following puts statement.
-      puts 'Task def doesn\'t has task assessment resources'
-    else
-      assessment_resources_path = task_definition.task_assessment_resources
-      puts assessment_resources_path
+    return unless task_definition.has_task_assessment_resources?
 
-      # TODO: Remove the following puts statement.
-      puts 'Task def has task assessment resources'
-      zip_file_path = submission_history_zip_file_path(task)
-      puts zip_file_path
+    assessment_resources_path = task_definition.task_assessment_resources
+    puts assessment_resources_path
 
-      create_submission_history_zip_from_new task, zip_file_path
-      unless File.exists? zip_file_path
-        puts "Student submission history zip file doesn't exist #{zip_file_path}"
-        return
-      end
+    zip_file_path = submission_history_zip_file_path(task)
+    puts zip_file_path
 
-      message = {
-        submission: zip_file_path,
-        assessment: assessment_resources_path,
-        task_id: task.id,
-        zip_file: 1
-      }
-
-      sm_instance = Doubtfire::Application.config.sm_instance
-      sm_instance.clients[:ontrack].publisher.connect_publisher
-      sm_instance.clients[:ontrack].publisher.publish_message(message)
-      sm_instance.clients[:ontrack].publisher.disconnect_publisher
-
-      # overseer_response = RestClient.post "http://localhost:9292/submit", {'project_id' => task.project.id, 'submission' => File.new(submission_path, 'rb'), 'assessment' => File.new(assessment_resources_path, 'rb')}
-      # pdf_file = overseer_response
-
-      # TODO: Create an pdf.erb for displaying the result and adding it as a task comment.
-      # task.add_comment_with_attachment task.project.main_tutor, pdf_file
+    create_submission_history_zip_from_new task, zip_file_path
+    unless File.exists? zip_file_path
+      puts "Student submission history zip file doesn't exist #{zip_file_path}"
+      return
     end
+
+    message = {
+      submission: zip_file_path,
+      assessment: assessment_resources_path,
+      task_id: task.id,
+      zip_file: 1
+    }
+
+    sm_instance = Doubtfire::Application.config.sm_instance
+    sm_instance.clients[:ontrack].publisher.connect_publisher
+    sm_instance.clients[:ontrack].publisher.publish_message(message)
+    sm_instance.clients[:ontrack].publisher.disconnect_publisher
+
+    # overseer_response = RestClient.post "http://localhost:9292/submit", {'project_id' => task.project.id, 'submission' => File.new(submission_path, 'rb'), 'assessment' => File.new(assessment_resources_path, 'rb')}
+    # pdf_file = overseer_response
+
+    # TODO: Create an pdf.erb for displaying the result and adding it as a task comment.
+    # task.add_comment_with_attachment task.project.main_tutor, pdf_file
   end
 
   def self.final_pdf_path_for_group_submission(group_submission)
