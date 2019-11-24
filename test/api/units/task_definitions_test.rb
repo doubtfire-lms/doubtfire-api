@@ -160,6 +160,35 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_not File.exists? path
   end
 
+  def test_task_related_to_task_def
+    unit = FactoryGirl.create(:unit)
+    unit.employ_staff(User.first, Role.convenor)
+
+    campus = FactoryGirl.create(:campus)
+    project = FactoryGirl.create(:project, unit: unit, campus: campus)
+
+    # Make sure there are no enrolments for the project
+    assert_empty project.tutorial_enrolments
+
+    tutorial_stream = FactoryGirl.create(:tutorial_stream, unit: unit)
+    task_def = FactoryGirl.create(:task_definition, unit: unit, tutorial_stream: tutorial_stream, target_grade: project.target_grade)
+    task = project.task_for_task_definition(task_def)
+
+    # Reload the unit
+    unit.reload
+
+    assert_equal 1, unit.student_tasks.count
+    assert_equal task, unit.student_tasks.first
+
+    # Get the tasks for the first task definition
+    get with_auth_token "/api/units/#{unit.id}/task_definitions/#{task_def.id}/tasks"
+
+    assert_equal 1, last_response_body.count
+    assert_equal project.id, last_response_body.first['project_id']
+    assert_nil last_response_body.first['tutorial_id']
+    assert_equal task.id, last_response_body.first['id']
+  end
+
   def test_task_related_to_task_def_when_project_is_enrolled
     unit = FactoryGirl.create(:unit)
     unit.employ_staff(User.first, Role.convenor)
@@ -221,4 +250,4 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_equal tutorial_second.id, last_response_body.first['tutorial_id']
     assert_equal task_second.id, last_response_body.first['id']
   end
-end
+ end
