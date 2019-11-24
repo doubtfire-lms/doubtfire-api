@@ -99,6 +99,8 @@ class PortfolioEvidence
   end
 
   def self.perform_overseer_submission(task)
+    sm_instance = Doubtfire::Application.config.sm_instance
+    return if sm_instance.nil?
     # TODO: Add all the checks:
     # if unit's assessment is enabled &&
     # if task's assessment is enabled &&

@@ -125,36 +125,38 @@ module Doubtfire
       end
     end
 
-    publisher_config = {
-      RABBITMQ_HOSTNAME: ENV['RABBITMQ_HOSTNAME'],
-      RABBITMQ_USERNAME: ENV['RABBITMQ_USERNAME'],
-      RABBITMQ_PASSWORD: ENV['RABBITMQ_PASSWORD'],
-      EXCHANGE_NAME: ENV['EXCHANGE_NAME'],
-      DURABLE_QUEUE_NAME: ENV['DURABLE_QUEUE_NAME'],
-      BINDING_KEYS: ENV['BINDING_KEYS'],
-      DEFAULT_BINDING_KEY: ENV['DEFAULT_BINDING_KEY'],
-      # Publisher specific key
-      ROUTING_KEY: 'csharp'
-    }
+    if (!ENV[‘OVERSEER_ENABLED’].nil? && ENV[‘OVERSEER_ENABLED’] == ‘true’)
+      publisher_config = {
+        RABBITMQ_HOSTNAME: ENV['RABBITMQ_HOSTNAME'],
+        RABBITMQ_USERNAME: ENV['RABBITMQ_USERNAME'],
+        RABBITMQ_PASSWORD: ENV['RABBITMQ_PASSWORD'],
+        EXCHANGE_NAME: ENV['EXCHANGE_NAME'],
+        DURABLE_QUEUE_NAME: ENV['DURABLE_QUEUE_NAME'],
+        BINDING_KEYS: ENV['BINDING_KEYS'],
+        DEFAULT_BINDING_KEY: ENV['DEFAULT_BINDING_KEY'],
+        # Publisher specific key
+        ROUTING_KEY: 'csharp'
+      }
 
-    subscriber_config = {
-      RABBITMQ_HOSTNAME: ENV['RABBITMQ_HOSTNAME'],
-      RABBITMQ_USERNAME: ENV['RABBITMQ_USERNAME'],
-      RABBITMQ_PASSWORD: ENV['RABBITMQ_PASSWORD'],
-      EXCHANGE_NAME: ENV['EXCHANGE_NAME'],
-      DURABLE_QUEUE_NAME: 'q_assessment_results',
-      # No need to define BINDING_KEYS for now!
-      # In future, OnTrack will listen to
-      # topics related to PDF generation too.
-      # That is when we should have BINDING_KEYS defined.
-      # BINDING_KEYS: ENV['BINDING_KEYS'],
+      subscriber_config = {
+        RABBITMQ_HOSTNAME: ENV['RABBITMQ_HOSTNAME'],
+        RABBITMQ_USERNAME: ENV['RABBITMQ_USERNAME'],
+        RABBITMQ_PASSWORD: ENV['RABBITMQ_PASSWORD'],
+        EXCHANGE_NAME: ENV['EXCHANGE_NAME'],
+        DURABLE_QUEUE_NAME: 'q_assessment_results',
+        # No need to define BINDING_KEYS for now!
+        # In future, OnTrack will listen to
+        # topics related to PDF generation too.
+        # That is when we should have BINDING_KEYS defined.
+        # BINDING_KEYS: ENV['BINDING_KEYS'],
 
-      # This is enough for now:
-      DEFAULT_BINDING_KEY: '*.result'
-    }
+        # This is enough for now:
+        DEFAULT_BINDING_KEY: '*.result'
+      }
 
-    config.sm_instance = ServicesManager.instance
-    config.sm_instance.register_client(:ontrack, publisher_config, subscriber_config)
+      config.sm_instance = ServicesManager.instance
+      config.sm_instance.register_client(:ontrack, publisher_config, subscriber_config)
+    end
 
   end
 end
