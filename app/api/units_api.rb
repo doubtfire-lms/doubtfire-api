@@ -65,6 +65,8 @@ module Api
         optional :teaching_period_id
         optional :start_date
         optional :end_date
+        optional :routing_key
+        optional :assessment_enabled
 
         mutually_exclusive :teaching_period_id,:start_date
         all_or_none_of :start_date, :end_date
@@ -83,7 +85,10 @@ module Api
                                                             :start_date,
                                                             :end_date,
                                                             :teaching_period_id,
-                                                            :active)
+                                                            :active,
+                                                            :routing_key,
+                                                            :assessment_enabled
+                                                          )
 
       if unit.teaching_period_id.present? && unit_parameters.key?(:start_date)
         unit.teaching_period = nil
@@ -102,6 +107,8 @@ module Api
         optional :description
         optional :start_date
         optional :end_date
+        optional :routing_key
+        optional :assessment_enabled
 
         mutually_exclusive :teaching_period_id,:start_date
         mutually_exclusive :teaching_period_id,:end_date
@@ -120,7 +127,9 @@ module Api
                                                       :teaching_period_id,
                                                       :description,
                                                       :start_date,
-                                                      :end_date
+                                                      :end_date,
+                                                      :routing_key,
+                                                      :assessment_enabled
                                                     )
 
       if unit_parameters[:description].nil?
