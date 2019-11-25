@@ -1599,17 +1599,18 @@ class Unit < ActiveRecord::Base
   # Return all tasks from the database for this unit and given user
   #
   def get_all_tasks_for(user)
+    # TODO (stream) Do we need tutorial here?
     student_tasks
       .joins(:task_status)
       .joins("LEFT JOIN task_comments ON task_comments.task_id = tasks.id")
       .joins("LEFT JOIN comments_read_receipts crr ON crr.task_comment_id = task_comments.id AND crr.user_id = #{user.id}")
       .select(
         'tasks.id', 'SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) as number_unread', 'project_id', 'tasks.id as task_id',
-        'task_definition_id', 'task_definitions.start_date as start_date', 'projects.tutorial_id as tutorial_id', 'task_statuses.id as status_id',
+        'task_definition_id', 'task_definitions.start_date as start_date', 'task_statuses.id as status_id',
         'completion_date', 'times_assessed', 'submission_date', 'portfolio_evidence', 'tasks.grade as grade', 'quality_pts'
       )
       .group(
-        'task_statuses.id', 'project_id', 'tutorial_id', 'tasks.id', 'task_definition_id', 'task_definitions.start_date', 'status_id',
+        'task_statuses.id', 'project_id', 'tasks.id', 'task_definition_id', 'task_definitions.start_date', 'status_id',
         'completion_date', 'times_assessed', 'submission_date', 'portfolio_evidence', 'grade', 'quality_pts'
       )
   end
@@ -1651,11 +1652,12 @@ class Unit < ActiveRecord::Base
   #   task_def_id => { ... }
   #
   def task_status_stats
+    # TODO (stream) Do we need tutorial here?
     data = student_tasks
            .joins(:task_status)
-           .select('projects.tutorial_id as tutorial_id', 'task_definition_id', 'task_statuses.id as status_id', 'COUNT(tasks.id) as num_tasks')
+           .select('task_definition_id', 'task_statuses.id as status_id', 'COUNT(tasks.id) as num_tasks')
            .where('task_status_id > 1')
-           .group('projects.tutorial_id', 'tasks.task_definition_id', 'status_id')
+           .group('tasks.task_definition_id', 'status_id')
            .map do |r|
       {
         tutorial_id: r.tutorial_id,
