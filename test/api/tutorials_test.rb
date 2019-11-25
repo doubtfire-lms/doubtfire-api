@@ -103,6 +103,10 @@ class TutorialsTest < ActiveSupport::TestCase
     test_tutorial = Tutorial.all.first
     id_of_tutorial_to_delete = test_tutorial.id
 
+    test_tutorial.tutorial_enrolments.each do |tutorial_enrolment|
+      tutorial_enrolment.delete
+    end
+
     # perform the post
     delete_json with_auth_token "/api/tutorials/#{id_of_tutorial_to_delete}"
 
