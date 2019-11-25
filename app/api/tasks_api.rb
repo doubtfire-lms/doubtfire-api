@@ -24,19 +24,18 @@ module Api
         error!({ error: 'You do not have permission to read these task details' }, 403)
       end
 
+      # TODO (stream) Do we need tutorial here?
       unit.student_tasks
           .joins(:task_status)
           .select(
             'tasks.id',
-            'projects.tutorial_id as tutorial_id',
             'task_statuses.id as status_id',
             'task_definition_id'
           )
-          .where('tasks.task_status_id > 1 and projects.tutorial_id is not null')
+          .where('tasks.task_status_id > 1')
           .map do |r|
             {
               id: r.id,
-              tutorial_id: r.tutorial_id,
               task_definition_id: r.task_definition_id,
               status: TaskStatus.id_to_key(r.status_id)
             }
