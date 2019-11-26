@@ -112,6 +112,87 @@ module Api
           { result: 'false' }
         end
       end # put
+
+      desc 'Get the timestamps of the last 10 submissions of a task'
+      get '/projects/:id/task_def_id/:task_definition_id/submissions/timestamps' do
+        project = Project.find(params[:id])
+        task_definition = project.unit.task_definitions.find(params[:task_definition_id])
+
+        unless authorise? current_user, project, :get_submission
+          error!({ error: "Not authorised to get task '#{task_definition.name}'" }, 401)
+        end
+
+        task = project.task_for_task_definition(task_definition)
+
+        unless task
+          error!({ error: "A submission for this task definition have never been created" }, 401)
+        end
+
+        path = PortfolioEvidence.task_submission_identifier_path(:done, task)
+        unless File.exist? path
+          error!({ error: "No submissions found for project: '#{params[:id]}' task: '#{params[:task_def_id]}'" }, 401)
+        end
+
+        { result: FileHelper.sorted_timestamp_entries_in_dir(path) }
+      end
+
+      desc 'Get the result of the submission of a task made at the given timestamp'
+      get '/projects/:id/task_def_id/:task_definition_id/submissions/timestamps/:timestamp' do
+        project = Project.find(params[:id])
+        task_definition = project.unit.task_definitions.find(params[:task_definition_id])
+
+        unless authorise? current_user, project, :get_submission
+          error!({ error: "Not authorised to get task '#{task_definition.name}'" }, 401)
+        end
+
+        task = project.task_for_task_definition(task_definition)
+
+        unless task
+          error!({ error: "A submission for this task definition have never been created" }, 401)
+        end
+
+        timestamp = params[:timestamp]
+
+        path = PortfolioEvidence.task_submission_identifier_path_with_timestamp(:done, task, timestamp)
+        unless File.exist? path
+          error!({ error: "No submissions found for project: '#{params[:id]}' task: '#{params[:task_def_id]}' and timestamp: '#{timestamp}'" }, 401)
+        end
+
+        unless File.exist? "#{path}/output.txt"
+          error!({ error: "Either the assessment didn't finish or an output wasn't generated. Please contact your unit chair" }, 401)
+        end
+
+        { result: File.read("#{path}/output.txt") }
+      end
+
+      desc 'Get the result of the submission of a task made last'
+      get '/projects/:id/task_def_id/:task_definition_id/submissions/latest' do
+        project = Project.find(params[:id])
+        task_definition = project.unit.task_definitions.find(params[:task_definition_id])
+
+        unless authorise? current_user, project, :get_submission
+          error!({ error: "Not authorised to get task '#{task_definition.name}'" }, 401)
+        end
+
+        task = project.task_for_task_definition(task_definition)
+
+        unless task
+          error!({ error: "A submission for this task definition have never been created" }, 401)
+        end
+
+        path = PortfolioEvidence.task_submission_identifier_path(:done, task)
+        unless File.exist? path
+          error!({ error: "No submissions found for project: '#{params[:id]}' task: '#{params[:task_def_id]}'" }, 401)
+        end
+
+        path = "#{path}/#{FileHelper.sorted_timestamp_entries_in_dir(path)[0]}"
+
+        unless File.exist? "#{path}/output.txt"
+          error!({ error: "Either the assessment didn't finish or an output wasn't generated. Please contact your unit chair" }, 401)
+        end
+
+        { result: File.read("#{path}/output.txt") }
+      end
     end
   end
 end
