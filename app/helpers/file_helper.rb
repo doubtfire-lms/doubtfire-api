@@ -445,6 +445,10 @@ module FileHelper
     TimeoutHelper.system_try_within 20, "Failed to process audio submission - timeout", "ffmpeg -loglevel quiet -y -i #{input_path} -ac 1 -ar 16000 -sample_fmt s16 #{output_path}"
   end
 
+  def sorted_timestamp_entries_in_dir(path)
+    Dir.entries(path).reject{|entry| entry !~ /\d+/}.sort_by { |x| File.basename(x) }.reverse
+  end
+
   # Export functions as module functions
   module_function :accept_file
   module_function :sanitized_path
@@ -477,4 +481,5 @@ module FileHelper
   module_function :write_entries_to_zip
   module_function :ensure_utf8_code
   module_function :process_audio
+  module_function :sorted_timestamp_entries_in_dir
 end
