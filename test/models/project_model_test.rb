@@ -97,6 +97,6 @@ class ProjectModelTest < ActiveSupport::TestCase
 
     # Try to get tutor for task def for which given project is not enrolled
     tutor = project_first.tutor_for(task_definition_second)
-    assert_nil tutor
+    assert_equal project_first.main_convenor, tutor
   end
 end

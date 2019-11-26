@@ -192,7 +192,7 @@ class Project < ActiveRecord::Base
 
   def tutor_for(task_definition)
     tutorial = tutorial_for(task_definition)
-    tutorial.tutor unless tutorial.nil?
+    (tutorial.present? and tutorial.tutor.present?) ? tutorial.tutor : main_convenor
   end
 
   def main_convenor
