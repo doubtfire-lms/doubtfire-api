@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20191109052233) do
+ActiveRecord::Schema.define(version: 20191126230531) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -387,15 +387,18 @@ ActiveRecord::Schema.define(version: 20191109052233) do
   add_index "teams", ["user_id"], name: "index_teams_on_user_id", using: :btree
 
   create_table "tutorial_enrolments", force: :cascade do |t|
-    t.datetime "created_at",  null: false
-    t.datetime "updated_at",  null: false
-    t.integer  "project_id",  null: false
-    t.integer  "tutorial_id", null: false
+    t.datetime "created_at",         null: false
+    t.datetime "updated_at",         null: false
+    t.integer  "project_id",         null: false
+    t.integer  "tutorial_id",        null: false
+    t.integer  "tutorial_stream_id"
   end
 
   add_index "tutorial_enrolments", ["project_id"], name: "index_tutorial_enrolments_on_project_id", using: :btree
   add_index "tutorial_enrolments", ["tutorial_id", "project_id"], name: "index_tutorial_enrolments_on_tutorial_id_and_project_id", unique: true, using: :btree
   add_index "tutorial_enrolments", ["tutorial_id"], name: "index_tutorial_enrolments_on_tutorial_id", using: :btree
+  add_index "tutorial_enrolments", ["tutorial_stream_id", "project_id"], name: "index_tutorial_enrolments_on_tutorial_stream_id_and_project_id", unique: true, using: :btree
+  add_index "tutorial_enrolments", ["tutorial_stream_id"], name: "index_tutorial_enrolments_on_tutorial_stream_id", using: :btree
 
   create_table "tutorial_streams", force: :cascade do |t|
     t.string   "name",             null: false
@@ -510,6 +513,7 @@ ActiveRecord::Schema.define(version: 20191109052233) do
   add_foreign_key "task_comments", "users", column: "recipient_id"
   add_foreign_key "task_definitions", "tutorial_streams"
   add_foreign_key "tutorial_enrolments", "projects"
+  add_foreign_key "tutorial_enrolments", "tutorial_streams"
   add_foreign_key "tutorial_enrolments", "tutorials"
   add_foreign_key "tutorial_streams", "activity_types"
   add_foreign_key "tutorial_streams", "units"
