@@ -52,7 +52,8 @@ class PortfolioEvidence
         success = task.convert_submission_to_pdf
 
         if success
-          perform_overseer_submission task
+          # TODO: Verify if we want this enabled.
+          # perform_overseer_submission task
           done[task.project] = [] if done[task.project].nil?
           done[task.project] << task
         else
@@ -81,19 +82,22 @@ class PortfolioEvidence
     end
   end
 
-  def self.required_zip_file_path(file_server, type, task)
-    sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}", task.project.student.username.to_s, type.to_s, task.id.to_s)
+  def self.task_submission_identifier_path(type, task)
+    file_server = Doubtfire::Application.config.student_work_dir
+    "#{file_server}/submission_history/#{sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}", task.project.student.username.to_s, type.to_s, task.id.to_s)}"
   end
 
-  def self.submission_history_zip_file_path(task)
+  def self.task_submission_identifier_path_with_timestamp(type, task, timestamp)
     file_server = Doubtfire::Application.config.student_work_dir
-    temp_path = required_zip_file_path(file_server, :done, task)
-    "#{file_server}/submission_history/#{temp_path}/#{Time.now.utc.to_i}.zip"
+    "#{file_server}/submission_history/#{sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}", task.project.student.username.to_s, type.to_s, task.id.to_s, timestamp.to_s)}"
+  end
+
+  def self.submission_history_zip_file_path(task, timestamp)
+    submission_identifier_path = task_submission_identifier_path_with_timestamp(:done, task, timestamp)
+    "#{submission_identifier_path}/submission.zip"
   end
 
   def self.create_submission_history_zip_from_new(task, zip_file_path)
-    # read_path = "#{file_server}/new/#{task.id}"
-
     # Generate a zip file for this particular submission with timestamp value and put it here
     task.compress_new_to_done zip_file_path, false
   end
@@ -102,20 +106,36 @@ class PortfolioEvidence
     sm_instance = Doubtfire::Application.config.sm_instance
     return if sm_instance.nil?
 
-    # TODO: Add all the checks:
-    # if unit's assessment is enabled &&
-    # if task's assessment is enabled &&
-    # if task definition has assessment resources zip file &&
-    # if task has submission zip file, then publish
+    # Proceed only if:
+    # unit's assessment is enabled &&
+    # task's assessment is enabled &&
+    # task definition has an assessment resources zip file &&
+    # task has a student submission
 
     task_definition = task.task_definition
+    unit = task_definition.unit
+
+    return unless unit.assessment_enabled
+    return unless task_definition.assessment_enabled
+
+    routing_key = task_definition.routing_key || unit.routing_key
+    # if routing_key.nil?, default routing_key that was used
+    # to configure the publisher from the .env file will be used automagically.
+    # If a default routing_key doesn't exist either, publisher will throw an error.
+
+    # I suppose I also need to add the same checks for routing keys on the PUT/POST
+    # apis for task definition, only if assessment_enabled flag is true.
+    # Won’t do it for unit’s APIs because a unit may not necessarily have a common
+    # routing key for all tasks.. Then again, this isn't the best way to go about this.
+    # Best thing is to check it here itself.
+    # TODO: Add regex check for routing_key.
 
     return unless task_definition.has_task_assessment_resources?
 
     assessment_resources_path = task_definition.task_assessment_resources
-    puts assessment_resources_path
 
-    zip_file_path = submission_history_zip_file_path(task)
+    timestamp = Time.now.utc.to_i
+    zip_file_path = submission_history_zip_file_path(task, timestamp)
     puts zip_file_path
 
     create_submission_history_zip_from_new task, zip_file_path
@@ -125,19 +145,17 @@ class PortfolioEvidence
     end
 
     message = {
+      output_path: task_submission_identifier_path_with_timestamp(:done, task, timestamp),
       submission: zip_file_path,
       assessment: assessment_resources_path,
+      timestamp: timestamp,
       task_id: task.id,
       zip_file: 1
     }
 
-    sm_instance = Doubtfire::Application.config.sm_instance
     sm_instance.clients[:ontrack].publisher.connect_publisher
-    sm_instance.clients[:ontrack].publisher.publish_message(message)
+    sm_instance.clients[:ontrack].publisher.publish_message(message, routing_key)
     sm_instance.clients[:ontrack].publisher.disconnect_publisher
-
-    # overseer_response = RestClient.post "http://localhost:9292/submit", {'project_id' => task.project.id, 'submission' => File.new(submission_path, 'rb'), 'assessment' => File.new(assessment_resources_path, 'rb')}
-    # pdf_file = overseer_response
 
     # TODO: Create an pdf.erb for displaying the result and adding it as a task comment.
     # task.add_comment_with_attachment task.project.main_tutor, pdf_file
