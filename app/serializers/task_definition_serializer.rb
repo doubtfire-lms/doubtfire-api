@@ -10,7 +10,7 @@ class TaskDefinitionSerializer < ActiveModel::Serializer
              :restrict_status_updates,
              :group_set_id, :has_task_sheet?, :has_task_resources?,
              :due_date, :start_date, :is_graded, :max_quality_pts,
-             :routing_key, :assessment_enabled
+             :routing_key, :assessment_enabled, :has_task_assessment_resources?
 
   def weight
     object.weighting
