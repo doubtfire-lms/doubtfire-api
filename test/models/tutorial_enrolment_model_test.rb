@@ -24,6 +24,7 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
     tutorial = FactoryGirl.create(:tutorial, unit: unit, campus: campus)
     tutorial_enrolment = FactoryGirl.build(:tutorial_enrolment, project: project)
     tutorial_enrolment.tutorial = tutorial
+    tutorial_enrolment.tutorial_stream = tutorial.tutorial_stream
     tutorial_enrolment.save!
 
     assert_equal tutorial_enrolment.project, project
@@ -43,15 +44,18 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
 
     tutorial_enrolment = FactoryGirl.build(:tutorial_enrolment, project: project)
     tutorial_enrolment.tutorial = tutorial
+    tutorial_enrolment.tutorial_stream = tutorial.tutorial_stream
     tutorial_enrolment.save!
 
     tutorial_enrolment = FactoryGirl.build(:tutorial_enrolment, project: project)
     tutorial_enrolment.tutorial = tutorial
+    tutorial_enrolment.tutorial_stream = tutorial.tutorial_stream
     assert tutorial_enrolment.invalid?
 
     # Unique, multiple tutorials (with no stream) and max one validation will fail
     assert_equal 'Tutorial already exists for the selected student', tutorial_enrolment.errors.full_messages.first
-    assert_equal 'Project cannot have more than one enrolment when it is enrolled in tutorial with no stream', tutorial_enrolment.errors.full_messages.second
+    assert_equal 'Tutorial stream already exists for the selected student', tutorial_enrolment.errors.full_messages.second
+    assert_equal 'Project cannot have more than one enrolment when it is enrolled in tutorial with no stream', tutorial_enrolment.errors.full_messages.third
   end
 
   def test_enrol_in_tutorial
@@ -154,6 +158,7 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
 
     tutorial_enrolment = FactoryGirl.build(:tutorial_enrolment, project: project)
     tutorial_enrolment.tutorial = tutorial_second
+    tutorial_enrolment.tutorial_stream = tutorial_second.tutorial_stream
     exception = assert_raises(Exception) { tutorial_enrolment.save! }
     assert_equal 'Validation failed: Project cannot have more than one enrolment when it is enrolled in tutorial with no stream', exception.message
   end
@@ -283,6 +288,7 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
 
     tutorial_enrolment = FactoryGirl.build(:tutorial_enrolment, project: project)
     tutorial_enrolment.tutorial = tutorial
+    tutorial_enrolment.tutorial_stream = tutorial.tutorial_stream
     assert tutorial_enrolment.invalid?
     assert_equal 'Project and tutorial belong to different campus', tutorial_enrolment.errors.full_messages.last
   end
@@ -300,6 +306,7 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
 
     tutorial_enrolment = FactoryGirl.build(:tutorial_enrolment, project: project)
     tutorial_enrolment.tutorial = tutorial
+    tutorial_enrolment.tutorial_stream = tutorial.tutorial_stream
     assert tutorial_enrolment.invalid?
     assert_equal 1, tutorial_enrolment.errors.full_messages.count
     assert_equal 'Project and tutorial belong to different unit', tutorial_enrolment.errors.full_messages.last
