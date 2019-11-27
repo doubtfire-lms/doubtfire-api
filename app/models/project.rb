@@ -107,6 +107,7 @@ class Project < ActiveRecord::Base
     if tutorial_enrolment.nil?
       tutorial_enrolment = TutorialEnrolment.new
       tutorial_enrolment.tutorial = tutorial
+      tutorial_enrolment.tutorial_stream = tutorial.tutorial_stream
       tutorial_enrolment.project = self
       tutorial_enrolment.save!
 
@@ -116,6 +117,7 @@ class Project < ActiveRecord::Base
       tutorial_enrolment
     else
       tutorial_enrolment.tutorial = tutorial
+      tutorial_enrolment.tutorial_stream = tutorial.tutorial_stream
       tutorial_enrolment.save!
       tutorial_enrolment
     end
