@@ -598,6 +598,28 @@ class Task < ActiveRecord::Base
     comment
   end
 
+  def add_assessment_comment(text)
+    text.strip!
+    return nil if user.nil? || text.nil? || text.empty?
+
+    lc = comments.last
+    user = project.main_tutor
+    # don't add if duplicate comment
+    return if lc && lc.user == user && lc.comment == text
+
+    ensured_group_submission if group_task? && group
+
+    comment = TaskComment.create
+    comment.task = self
+    comment.user = user
+    comment.comment = text
+    comment.content_type = :assessment
+    comment.recipient = project.student
+    comment.save!
+
+    comment
+  end
+
   def individual_task_or_submitter_of_group_task?
     return true if !group_task?
     return true unless group.present?
