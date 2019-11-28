@@ -4,7 +4,7 @@
 require 'user_serializer'
 
 class TutorialSerializer < ActiveModel::Serializer
-  attributes :id, :meeting_day, :meeting_time, :meeting_location, :abbreviation, :campus_id, :capacity, :tutor_name, :num_students,
+  attributes :id, :meeting_day, :meeting_time, :meeting_location, :abbreviation, :campus_id, :capacity, :num_students,
              :tutorial_stream
 
   def tutorial_stream
@@ -14,10 +14,6 @@ class TutorialSerializer < ActiveModel::Serializer
   def meeting_time
     object.meeting_time.to_time
     # DateTime.parse("#{object.meeting_time}")
-  end
-
-  def tutor_name
-    object.tutor.name unless object.tutor.nil?
   end
 
   has_one :tutor, serializer: ShallowUserSerializer
