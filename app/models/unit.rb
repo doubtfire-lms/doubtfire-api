@@ -1726,11 +1726,12 @@ class Unit < ActiveRecord::Base
   #
   def _student_task_completion_data_base
     data = student_tasks
-           .select('projects.tutorial_id as tutorial_id', 'projects.target_grade as target_grade', 'tasks.project_id', 'Count(tasks.id) as num')
+           .joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = tasks.project_id AND (tutorial_enrolments.tutorial_stream_id = task_definitions.tutorial_stream_id OR tutorial_enrolments.tutorial_stream_id IS NULL)')
+           .select('tutorial_enrolments.tutorial_stream_id as tutorial_stream_id', 'tutorial_enrolments.tutorial_id as tutorial_id', 'projects.target_grade as target_grade', 'tasks.project_id', 'Count(tasks.id) as num')
            .where('task_status_id = :complete', complete: TaskStatus.complete.id)
-           .group('projects.tutorial_id', 'projects.target_grade', 'tasks.project_id')
-           .order('projects.tutorial_id')
-    data.map { |r| { tutorial_id: r.tutorial_id, grade: r.target_grade, project: r.project_id, num: r.num } }
+           .group('tutorial_enrolments.tutorial_id', 'tutorial_enrolments.tutorial_stream_id', 'projects.target_grade', 'tasks.project_id')
+           .order('tutorial_enrolments.tutorial_id')
+    data.map { |r| { tutorial_id: r.tutorial_id, tutorial_stream_id: r.tutorial_stream_id, grade: r.target_grade, project: r.project_id, num: r.num } }
   end
 
   def _calculate_task_completion_stats(data)
