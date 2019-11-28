@@ -332,7 +332,7 @@ module Api
         joins(:project).
         joins(:task_status).
         joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id AND (tutorial_enrolments.tutorial_stream_id = task_definitions.tutorial_stream_id OR tutorial_enrolments.tutorial_stream_id IS NULL)').
-        select('tutorial_enrolments.tutorial_id as tutorial_id', 'project_id', 'tasks.id as id', 'task_definition_id', 'task_statuses.id as status_id', 'completion_date', 'times_assessed', 'submission_date', 'grade').
+        select('tutorial_enrolments.tutorial_stream_id as tutorial_stream_id', 'tutorial_enrolments.tutorial_id as tutorial_id', 'project_id', 'tasks.id as id', 'task_definition_id', 'task_statuses.id as status_id', 'completion_date', 'times_assessed', 'submission_date', 'grade').
         where('task_definition_id = :id', id: params[:task_def_id])
         .map do |t|
         {
@@ -340,6 +340,7 @@ module Api
           id: t.id,
           task_definition_id: t.task_definition_id,
           tutorial_id: t.tutorial_id,
+          tutorial_stream_id: t.tutorial_stream_id,
           status: TaskStatus.id_to_key(t.status_id),
           completion_date: t.completion_date,
           submission_date: t.submission_date,
