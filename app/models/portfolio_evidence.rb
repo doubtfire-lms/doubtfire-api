@@ -115,9 +115,12 @@ class PortfolioEvidence
     task_definition = task.task_definition
     unit = task_definition.unit
 
-    return unless unit.assessment_enabled
+    # return unless unit.assessment_enabled
     return unless task_definition.assessment_enabled
+    return unless task_definition.has_task_assessment_resources?
+    assessment_resources_path = task_definition.task_assessment_resources
 
+    # TODO: Probably get rid of it because we may wanna keep things constant
     routing_key = task_definition.routing_key || unit.routing_key
     # if routing_key.nil?, default routing_key that was used
     # to configure the publisher from the .env file will be used automagically.
@@ -129,10 +132,6 @@ class PortfolioEvidence
     # routing key for all tasks.. Then again, this isn't the best way to go about this.
     # Best thing is to check it here itself.
     # TODO: Add regex check for routing_key.
-
-    return unless task_definition.has_task_assessment_resources?
-
-    assessment_resources_path = task_definition.task_assessment_resources
 
     timestamp = Time.now.utc.to_i
     zip_file_path = submission_history_zip_file_path(task, timestamp)
@@ -154,7 +153,7 @@ class PortfolioEvidence
     }
 
     sm_instance.clients[:ontrack].publisher.connect_publisher
-    sm_instance.clients[:ontrack].publisher.publish_message(message, routing_key)
+    sm_instance.clients[:ontrack].publisher.publish_message(message)
     sm_instance.clients[:ontrack].publisher.disconnect_publisher
 
     # TODO: Create an pdf.erb for displaying the result and adding it as a task comment.

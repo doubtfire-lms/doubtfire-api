@@ -598,14 +598,25 @@ class Task < ActiveRecord::Base
     comment
   end
 
-  def add_assessment_comment(text)
+  def add_or_update_assessment_comment(text)
     text.strip!
-    return nil if user.nil? || text.nil? || text.empty?
+    return nil if text.nil? || text.empty?
 
-    lc = comments.last
     user = project.main_tutor
-    # don't add if duplicate comment
-    return if lc && lc.user == user && lc.comment == text
+
+    assessment_comment = TaskComment.find_by(
+      task: self,
+      content_type: :assessment
+    )
+
+    # Don't add if there is already a task assessment comment for this task
+    if assessment_comment
+      # In case the main tutor changes
+      assessment_comment.user = user if assessment_comment.user != user
+      assessment_comment.comment = text
+      assessment_comment.created_at = Time.now
+      return assessment_comment
+    end
 
     ensured_group_submission if group_task? && group
 
