@@ -2035,7 +2035,7 @@ class Unit < ActiveRecord::Base
                      'rtm'
                    end
 
-        csv_str << "\n#{student.username.tr(',', '_')},#{student.name.tr(',', '_')},#{task.project.tutorial.abbreviation},#{task.task_definition.abbreviation.tr(',', '_')},\"#{task.last_comment_by(task.project.student).gsub(/"/, '""')}\",\"#{task.last_comment_by(user).gsub(/"/, '""')}\",#{mark_col},,,#{task.task_definition.max_quality_pts},"
+        csv_str << "\n#{student.username.tr(',', '_')},#{student.name.tr(',', '_')},#{task.project.tutorial_for(task.task_definition).abbreviation},#{task.task_definition.abbreviation.tr(',', '_')},\"#{task.last_comment_by(task.project.student).gsub(/"/, '""')}\",\"#{task.last_comment_by(user).gsub(/"/, '""')}\",#{mark_col},,,#{task.task_definition.max_quality_pts},"
 
         src_path = task.portfolio_evidence
 
