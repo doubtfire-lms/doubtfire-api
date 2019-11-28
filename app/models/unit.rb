@@ -1708,7 +1708,9 @@ class Unit < ActiveRecord::Base
   # aiming for a grade in this indicated unit.
   #
   def student_target_grade_stats
-    data = active_projects.select('projects.tutorial_id, projects.target_grade, COUNT(projects.id) as num').group('projects.tutorial_id, projects.target_grade').order('projects.tutorial_id, projects.target_grade').map { |r| { tutorial_id: r.tutorial_id, grade: r.target_grade, num: r.num } }
+    data = active_projects
+            .joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id')
+            .select('tutorial_enrolments.tutorial_stream_id as tutorial_stream_id, tutorial_enrolments.tutorial_id as tutorial_id, projects.target_grade, COUNT(projects.id) as num').group('tutorial_enrolments.tutorial_id, tutorial_enrolments.tutorial_stream_id, projects.target_grade').order('tutorial_enrolments.tutorial_id, projects.target_grade').map { |r| { tutorial_id: r.tutorial_id, tutorial_stream_id: r.tutorial_stream_id, grade: r.target_grade, num: r.num } }
   end
 
   #
