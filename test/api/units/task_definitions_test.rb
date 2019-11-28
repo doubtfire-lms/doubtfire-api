@@ -459,4 +459,141 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_equal tutorial_second.id, last_response_body.first['tutorial_id']
     assert_equal task_second.id, last_response_body.first['id']
   end
+
+  def test_task_related_to_task_def_when_multiple_projects_tasks_and_tutorials
+    unit = FactoryGirl.create(:unit)
+
+    assert_empty unit.projects
+    assert_equal 1, unit.tutorials.count
+    assert_equal 2, unit.task_definitions.count
+    assert_empty unit.tasks
+    assert_empty unit.student_tasks
+    assert_empty unit.tutorial_streams
+
+    unit.tutorials.clear
+    unit.task_definitions.clear
+
+    # Reload the unit
+    unit.reload
+
+    assert_empty unit.tutorials
+    assert_empty unit.task_definitions
+
+    unit.employ_staff(User.first, Role.convenor)
+
+    campus_first = FactoryGirl.create(:campus)
+    campus_second = FactoryGirl.create(:campus)
+    campus_third = FactoryGirl.create(:campus)
+
+    # Create students for both campuses
+    project_first = FactoryGirl.create(:project, unit: unit, campus: campus_first)
+    project_second = FactoryGirl.create(:project, unit: unit, campus: campus_second)
+    project_third = FactoryGirl.create(:project, unit: unit, campus: campus_third)
+
+    assert_equal 3, unit.projects.count
+
+    # Make sure no existing enrolments
+    assert_empty project_first.tutorial_enrolments
+    assert_empty project_second.tutorial_enrolments
+
+    tutorial_stream_first = FactoryGirl.create(:tutorial_stream, unit: unit)
+    tutorial_stream_second = FactoryGirl.create(:tutorial_stream, unit: unit)
+
+    assert_equal 2, unit.tutorial_streams.count
+
+    task_def_first = FactoryGirl.create(:task_definition, unit: unit, tutorial_stream: tutorial_stream_first, target_grade: project_first.target_grade)
+    task_def_second = FactoryGirl.create(:task_definition, unit: unit, tutorial_stream: tutorial_stream_first, target_grade: project_first.target_grade)
+    task_def_third = FactoryGirl.create(:task_definition, unit: unit, tutorial_stream: tutorial_stream_second, target_grade: project_second.target_grade)
+    task_def_fourth = FactoryGirl.create(:task_definition, unit: unit, tutorial_stream: tutorial_stream_second, target_grade: project_second.target_grade)
+
+    assert_equal 4, unit.task_definitions.count
+    assert_equal 2, tutorial_stream_first.task_definitions.count
+    assert_equal 2, tutorial_stream_second.task_definitions.count
+
+    task_first = project_first.task_for_task_definition(task_def_first)
+    task_second = project_first.task_for_task_definition(task_def_second)
+
+    task_third = project_second.task_for_task_definition(task_def_first)
+    task_fourth = project_second.task_for_task_definition(task_def_third)
+
+    task_fifth = project_third.task_for_task_definition(task_def_first)
+    task_sixth = project_third.task_for_task_definition(task_def_fourth)
+
+    # Reload the unit
+    unit.reload
+
+    assert_equal 6, unit.tasks.count
+    assert_equal 6, unit.student_tasks.count
+    assert_equal 2, project_first.tasks.count
+    assert_equal 2, project_second.tasks.count
+    assert_equal 2, project_third.tasks.count
+
+    # Get the tasks for the first task definition
+    get with_auth_token "/api/units/#{unit.id}/task_definitions/#{task_def_first.id}/tasks"
+
+    assert_equal 3, last_response_body.count
+    assert_includes [project_first.id, project_second.id, project_third.id], last_response_body.first['project_id']
+    assert_includes [project_first.id, project_second.id, project_third.id], last_response_body.second['project_id']
+    assert_includes [project_first.id, project_second.id, project_third.id], last_response_body.third['project_id']
+
+    assert_includes [task_first.id, task_third.id, task_fifth.id], last_response_body.first['id']
+    assert_includes [task_first.id, task_third.id, task_fifth.id], last_response_body.second['id']
+    assert_includes [task_first.id, task_third.id, task_fifth.id], last_response_body.third['id']
+
+    assert_nil last_response_body.first['tutorial_id']
+    assert_nil last_response_body.first['tutorial_stream_id']
+
+    assert_nil last_response_body.second['tutorial_id']
+    assert_nil last_response_body.second['tutorial_stream_id']
+
+    assert_nil last_response_body.third['tutorial_id']
+    assert_nil last_response_body.third['tutorial_stream_id']
+
+    # Get the tasks for the first task definition
+    get with_auth_token "/api/units/#{unit.id}/task_definitions/#{task_def_second.id}/tasks"
+
+    assert_equal 1, last_response_body.count
+    assert_equal project_first.id, last_response_body.first['project_id']
+    assert_nil last_response_body.first['tutorial_id']
+    assert_nil last_response_body.first['tutorial_stream_id']
+    assert_equal task_second.id, last_response_body.first['id']
+
+    # Create tutorials
+    tutorial_first = FactoryGirl.create(:tutorial, unit: unit, tutorial_stream: tutorial_stream_first, campus: campus_first)
+    tutorial_second = FactoryGirl.create(:tutorial, unit: unit, tutorial_stream: tutorial_stream_second, campus: campus_second)
+    tutorial_third = FactoryGirl.create(:tutorial, unit: unit, tutorial_stream: nil, campus: campus_third)
+
+    # Enrol projects
+    tutorial_enrolment_first = project_first.enrol_in(tutorial_first)
+    tutorial_enrolment_second = project_second.enrol_in(tutorial_second)
+    tutorial_enrolment_third = project_third.enrol_in(tutorial_third)
+
+    # Get the tasks for the first task definition
+    get with_auth_token "/api/units/#{unit.id}/task_definitions/#{task_def_first.id}/tasks"
+
+    assert_equal 3, last_response_body.count
+
+    assert_includes [tutorial_first.id, nil, tutorial_third.id], last_response_body.first['tutorial_id']
+    assert_includes [tutorial_first.id, nil, tutorial_third.id], last_response_body.second['tutorial_id']
+    assert_includes [tutorial_first.id, nil, tutorial_third.id], last_response_body.third['tutorial_id']
+
+    # Tutorial second should not be returned since it is for a different stream
+    assert_not_equal tutorial_second.id, last_response_body.first['tutorial_id']
+    assert_not_equal tutorial_second.id, last_response_body.second['tutorial_id']
+    assert_not_equal tutorial_second.id, last_response_body.third['tutorial_id']
+
+    # task def first belongs to tutorial stream first, so either enrolled in that or match all
+    assert_includes [tutorial_stream_first.id, nil], last_response_body.first['tutorial_stream_id']
+    assert_includes [tutorial_stream_first.id, nil], last_response_body.second['tutorial_stream_id']
+    assert_includes [tutorial_stream_first.id, nil], last_response_body.third['tutorial_stream_id']
+
+    # Get the tasks for the first task definition
+    get with_auth_token "/api/units/#{unit.id}/task_definitions/#{task_def_third.id}/tasks"
+
+    assert_equal 1, last_response_body.count
+    assert_equal project_second.id, last_response_body.first['project_id']
+    assert_equal tutorial_second.id, last_response_body.first['tutorial_id']
+    assert_equal tutorial_stream_second.id, last_response_body.first['tutorial_stream_id']
+    assert_equal task_fourth.id, last_response_body.first['id']
+  end
  end
