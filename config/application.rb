@@ -132,8 +132,6 @@ module Doubtfire
         RABBITMQ_PASSWORD: ENV['RABBITMQ_PASSWORD'],
         EXCHANGE_NAME: ENV['EXCHANGE_NAME'],
         DURABLE_QUEUE_NAME: ENV['DURABLE_QUEUE_NAME'],
-        BINDING_KEYS: ENV['BINDING_KEYS'],
-        DEFAULT_BINDING_KEY: ENV['DEFAULT_BINDING_KEY'],
         # Publisher specific key
         ROUTING_KEY: 'csharp'
       }

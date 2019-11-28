@@ -51,6 +51,11 @@ module Api
         # Copy files to be PDFed
         task.accept_submission(current_user, scoop_files(params, upload_reqs), student, self, params[:contributions], trigger, alignments)
         PortfolioEvidence.perform_overseer_submission task
+
+        if task_definition.assessment_enabled? && unit.assessment_enabled?
+          return { serialized_task_update: TaskUpdateSerializer.new(task), comment: task.add_or_update_assessment_comment('Assessment started') }
+        end
+
         TaskUpdateSerializer.new(task)
       end # post
 
