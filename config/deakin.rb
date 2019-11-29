@@ -279,17 +279,11 @@ class DeakinInstitutionSettings
 
     tp = unit.teaching_period
 
-    activity_types = [
-      'Wrk',
-      'Prc',
-      'Sem'
-    ]
-
     url = "#{@star_url}/star-#{tp.year}/rest/students/allocated"
 
-    activity_types.each do |activity_type|
-      logger.info("Fetching #{activity_type} from #{url}")
-      response = RestClient.post(url, {username: @star_user, password: @star_secret, where_clause:"subject_code LIKE '#{unit.code}%' AND activity_group_code LIKE '#{activity_type}01'"})
+    unit.tutorial_streams.each do |tutorial_stream|
+      logger.info("Fetching #{tutorial_stream} from #{url}")
+      response = RestClient.post(url, {username: @star_user, password: @star_secret, where_clause:"subject_code LIKE '#{unit.code}%' AND activity_group_code LIKE '#{tutorial_stream.abbreviation}'"})
 
       if response.code == 200
         jsonData = JSON.parse(response.body)
