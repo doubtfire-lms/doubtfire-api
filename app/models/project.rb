@@ -180,6 +180,18 @@ class Project < ActiveRecord::Base
     user
   end
 
+  def tutorial_by_tutorial_stream
+    tutorial_enrolments
+      .joins(:tutorial)
+      .joins(:tutorial_stream)
+      .select('tutorial_streams.abbreviation as tutorial_stream_abbr, tutorials.abbreviation as tutorial_abbr')
+      .map do |t|
+        {
+          t.tutorial_stream_abbr => t.tutorial_abbr
+        }
+      end
+  end
+
   def tutorial_for(task_definition)
     tutorial_enrolments.each do |tutorial_enrolment|
       tutorial = tutorial_enrolment.tutorial
