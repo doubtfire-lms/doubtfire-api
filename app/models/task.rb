@@ -615,6 +615,8 @@ class Task < ActiveRecord::Base
       assessment_comment.user = user if assessment_comment.user != user
       assessment_comment.comment = text
       assessment_comment.created_at = Time.now
+      assessment_comment.save!
+
       return assessment_comment
     end
 

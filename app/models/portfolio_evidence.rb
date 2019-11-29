@@ -52,8 +52,6 @@ class PortfolioEvidence
         success = task.convert_submission_to_pdf
 
         if success
-          # TODO: Verify if we want this enabled.
-          # perform_overseer_submission task
           done[task.project] = [] if done[task.project].nil?
           done[task.project] << task
         else
@@ -104,7 +102,7 @@ class PortfolioEvidence
 
   def self.perform_overseer_submission(task)
     sm_instance = Doubtfire::Application.config.sm_instance
-    return if sm_instance.nil?
+    return false if sm_instance.nil?
 
     # Proceed only if:
     # unit's assessment is enabled &&
@@ -115,13 +113,13 @@ class PortfolioEvidence
     task_definition = task.task_definition
     unit = task_definition.unit
 
-    # return unless unit.assessment_enabled
-    return unless task_definition.assessment_enabled
-    return unless task_definition.has_task_assessment_resources?
+    return false unless unit.assessment_enabled
+    return false unless task_definition.assessment_enabled
+    return false unless task_definition.has_task_assessment_resources?
     assessment_resources_path = task_definition.task_assessment_resources
 
-    # TODO: Probably get rid of it because we may wanna keep things constant
-    routing_key = task_definition.routing_key || unit.routing_key
+    # TODO: Probably get rid of it because we may wanna keep routing_key constant [29/nov/2019]
+    # routing_key = task_definition.routing_key || unit.routing_key
     # if routing_key.nil?, default routing_key that was used
     # to configure the publisher from the .env file will be used automagically.
     # If a default routing_key doesn't exist either, publisher will throw an error.
@@ -131,16 +129,15 @@ class PortfolioEvidence
     # Won’t do it for unit’s APIs because a unit may not necessarily have a common
     # routing key for all tasks.. Then again, this isn't the best way to go about this.
     # Best thing is to check it here itself.
-    # TODO: Add regex check for routing_key.
+    # Old TODO: Add regex check for routing_key.
 
     timestamp = Time.now.utc.to_i
     zip_file_path = submission_history_zip_file_path(task, timestamp)
-    puts zip_file_path
 
     create_submission_history_zip_from_new task, zip_file_path
     unless File.exists? zip_file_path
-      puts "Student submission history zip file doesn't exist #{zip_file_path}"
-      return
+      logger.error "Student submission history zip file doesn't exist #{zip_file_path}"
+      return false
     end
 
     message = {
@@ -152,12 +149,17 @@ class PortfolioEvidence
       zip_file: 1
     }
 
-    sm_instance.clients[:ontrack].publisher.connect_publisher
-    sm_instance.clients[:ontrack].publisher.publish_message(message)
-    sm_instance.clients[:ontrack].publisher.disconnect_publisher
+    begin
+      sm_instance.clients[:ontrack].publisher.connect_publisher
+      sm_instance.clients[:ontrack].publisher.publish_message(message)
+    rescue RuntimeError => e
+      logger.error e
+      return false
+    ensure
+      sm_instance.clients[:ontrack].publisher.disconnect_publisher
+    end
 
-    # TODO: Create an pdf.erb for displaying the result and adding it as a task comment.
-    # task.add_comment_with_attachment task.project.main_tutor, pdf_file
+    true
   end
 
   def self.final_pdf_path_for_group_submission(group_submission)

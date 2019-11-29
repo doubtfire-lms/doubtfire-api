@@ -449,6 +449,10 @@ module FileHelper
     Dir.entries(path).reject{|entry| entry !~ /\d+/}.sort_by { |x| File.basename(x) }.reverse
   end
 
+  def latest_submission_timestamp_entry_in_dir(path)
+    sorted_timestamp_entries_in_dir(path)[0]
+  end
+
   # Export functions as module functions
   module_function :accept_file
   module_function :sanitized_path
@@ -482,4 +486,5 @@ module FileHelper
   module_function :ensure_utf8_code
   module_function :process_audio
   module_function :sorted_timestamp_entries_in_dir
+  module_function :latest_submission_timestamp_entry_in_dir
 end
