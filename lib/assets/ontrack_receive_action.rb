@@ -41,6 +41,7 @@ def receive(_subscriber_instance, channel, _results_publisher, delivery_info, _p
 
   yaml_file = YAML.load_file(yaml_path).with_indifferent_access
   if !yaml_file['message'].nil? && !yaml_file['message'].strip.empty?
+    # TODO: if this submission is latest and no other submission exists, then:
     # Create task comment
     comment = task.add_or_update_assessment_comment(yaml_file['message'])
     unless comment.nil?
@@ -48,6 +49,8 @@ def receive(_subscriber_instance, channel, _results_publisher, delivery_info, _p
     else
       puts 'Task assessment_comment failed to be created or updated'
     end
+  else
+    puts 'YAML file doesn\'t contain field `message`'
   end
 
   # TODO: Work with Andrew to figure the protocol for this.
@@ -67,6 +70,8 @@ def receive(_subscriber_instance, channel, _results_publisher, delivery_info, _p
   #   else
   #     puts "Invalid status message #{yaml_file['new_status']}"
   #   end
+  # else
+  #   puts 'YAML file doesn\'t contain field `new_status`'
   # end
 
   channel.ack(delivery_info.delivery_tag)
