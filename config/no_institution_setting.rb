@@ -25,7 +25,9 @@ class InstitutionSettings
     end
 
     def abbreviation_for_next_tutorial_stream(unit, activity_type)
-        "#{activity_type.abbreviation} #{unit.tutorial_streams.where(activity_type: activity_type).count + 1}"
+        abbreviation = activity_type.abbreviation
+        count = format('%02d', unit.tutorial_streams.where(activity_type: activity_type).count + 1)
+        [abbreviation, count].join('')
     end
 end
 
