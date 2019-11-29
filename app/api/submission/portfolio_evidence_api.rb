@@ -7,6 +7,11 @@ module Api
       helpers GenerateHelpers
       helpers AuthenticationHelpers
       helpers AuthorisationHelpers
+      include LogHelper
+
+      def self.logger
+        LogHelper.logger
+      end
 
       before do
         authenticated?
@@ -50,10 +55,12 @@ module Api
 
         # Copy files to be PDFed
         task.accept_submission(current_user, scoop_files(params, upload_reqs), student, self, params[:contributions], trigger, alignments)
-        PortfolioEvidence.perform_overseer_submission task
 
-        if task_definition.assessment_enabled? && unit.assessment_enabled?
-          return { serialized_task_update: TaskUpdateSerializer.new(task), comment: task.add_or_update_assessment_comment('Assessment started') }
+        if PortfolioEvidence.perform_overseer_submission(task)
+          logger.info "Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id} was performed"
+          return { updated_task: TaskUpdateSerializer.new(task), comment: task.add_or_update_assessment_comment('Assessment started') }
+        else
+          logger.info "Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id} was not performed"
         end
 
         TaskUpdateSerializer.new(task)
@@ -190,7 +197,7 @@ module Api
           error!({ error: "No submissions found for project: '#{params[:id]}' task: '#{params[:task_def_id]}'" }, 401)
         end
 
-        path = "#{path}/#{FileHelper.sorted_timestamp_entries_in_dir(path)[0]}"
+        path = "#{path}/#{FileHelper.latest_submission_timestamp_entry_in_dir(path)}"
 
         unless File.exist? "#{path}/output.txt"
           error!({ error: "Either the assessment didn't finish or an output wasn't generated. Please contact your unit chair" }, 401)

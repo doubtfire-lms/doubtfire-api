@@ -7,22 +7,8 @@ def receive(_subscriber_instance, channel, _results_publisher, delivery_info, _p
   params = JSON.parse(params)
   puts params
   # Params will contain:
-  # output_path
   # task_id
   # timestamp
-  # new_status: String. Can be any of the following:
-  #   discuss or d	The student has completed work to a satisfactory standard and you will discuss the work with them at the next tutorial.
-  #   demonstrate or demo	The same as discuss, but a reminder for you to ask the student to show you the work in class (i.e., prove to you that the code works).
-  #   fix	The student has made some errors and you will want them to make fixes to their submission, and resubmit their work for re-correction at a later date.
-  #   do_not_resubmit	The student has consistently submitted the same work without making required fixes. This indicates that the student should fix the work themselves and include it in their portfolio where staff will reassess it.
-  #   redo	The student has completely misunderstood what the task asked of them, or have completed unrelated files to Doubtfire. You want them to start the task again from scratch.
-  #   fail	The student has failed this task and will no longer have any more attempts at uploading further work. Use this sparingly.
-  #   comp Complete
-
-  if params['output_path'].nil?
-    puts 'PARAM `output_path` is required'
-    return channel.ack(delivery_info.delivery_tag)
-  end
 
   if params['timestamp'].nil?
     puts 'PARAM `timestamp` is required'
@@ -34,7 +20,6 @@ def receive(_subscriber_instance, channel, _results_publisher, delivery_info, _p
     return channel.ack(delivery_info.delivery_tag)
   end
 
-  output_path = params['output_path']
   timestamp = params['timestamp']
   task_id = params['task_id']
 
@@ -65,9 +50,24 @@ def receive(_subscriber_instance, channel, _results_publisher, delivery_info, _p
     end
   end
 
-  if !yaml_file['new_status'].nil? && !yaml_file['new_status'].strip.empty?
-    # if this submission is latest and no other submission exists, then:
-    # Change task status
-  end
+  # TODO: Work with Andrew to figure the protocol for this.
+  # if !yaml_file['new_status'].nil? && !yaml_file['new_status'].strip.empty?
+  #   # if this submission is latest and no other submission exists, then:
+  #   # Change task status
+
+  #   latest_timestamp = FileHelper.latest_submission_timestamp_entry_in_dir
+
+  #   if timestamp < latest_timestamp
+
+  #   end
+
+  #   new_status = TaskStatus.status_for_name(yaml_file['new_status'])
+  #   if new_status
+  #     task.task_status = new_status
+  #   else
+  #     puts "Invalid status message #{yaml_file['new_status']}"
+  #   end
+  # end
+
   channel.ack(delivery_info.delivery_tag)
 end
