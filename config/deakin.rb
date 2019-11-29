@@ -100,7 +100,7 @@ class DeakinInstitutionSettings
 
   def fetch_callista_row(row, unit)
     campus = map_callista_to_campus(row)
-    if unit.tutorials.where(abbreviation: 'Cloud').count == 0
+    if unit.tutorials.where(campus_id: campus.id).count == 0
       unit.add_tutorial(
         'Asynchronous',
         '9:00',
