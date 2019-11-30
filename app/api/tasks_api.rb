@@ -24,20 +24,24 @@ module Api
         error!({ error: 'You do not have permission to read these task details' }, 403)
       end
 
-      # TODO (stream) Do we need tutorial here?
-      unit.student_tasks
-          .joins(:task_status)
-          .select(
+      unit.student_tasks.
+          joins(:task_status).
+          joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id AND (tutorial_enrolments.tutorial_stream_id = task_definitions.tutorial_stream_id OR tutorial_enrolments.tutorial_stream_id IS NULL)').
+          select(
             'tasks.id',
             'task_statuses.id as status_id',
-            'task_definition_id'
-          )
-          .where('tasks.task_status_id > 1')
-          .map do |r|
+            'task_definition_id',
+            'tutorial_enrolments.tutorial_id AS tutorial_id',
+            'tutorial_enrolments.tutorial_stream_id AS tutorial_stream_id'
+          ).
+          where('tasks.task_status_id > 1').
+          map do |r|
             {
               id: r.id,
               task_definition_id: r.task_definition_id,
-              status: TaskStatus.id_to_key(r.status_id)
+              status: TaskStatus.id_to_key(r.status_id),
+              tutorial_id: r.tutorial_id,
+              tutorial_stream_id: r.tutorial_stream_id
             }
           end
     end
