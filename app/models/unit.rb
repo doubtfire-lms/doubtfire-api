@@ -1598,17 +1598,19 @@ class Unit < ActiveRecord::Base
   # Return all tasks from the database for this unit and given user
   #
   def get_all_tasks_for(user)
-    # TODO (stream) Do we need tutorial here?
-    student_tasks
-      .joins(:task_status)
-      .joins("LEFT JOIN task_comments ON task_comments.task_id = tasks.id")
-      .joins("LEFT JOIN comments_read_receipts crr ON crr.task_comment_id = task_comments.id AND crr.user_id = #{user.id}")
-      .select(
+    student_tasks.
+      joins(:task_status).
+      joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id AND (tutorial_enrolments.tutorial_stream_id = task_definitions.tutorial_stream_id OR tutorial_enrolments.tutorial_stream_id IS NULL)').
+      joins("LEFT JOIN task_comments ON task_comments.task_id = tasks.id").
+      joins("LEFT JOIN comments_read_receipts crr ON crr.task_comment_id = task_comments.id AND crr.user_id = #{user.id}").
+      select(
+        'tutorial_enrolments.tutorial_id AS tutorial_id', 'tutorial_enrolments.tutorial_stream_id AS tutorial_stream_id',
         'tasks.id', 'SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) as number_unread', 'project_id', 'tasks.id as task_id',
         'task_definition_id', 'task_definitions.start_date as start_date', 'task_statuses.id as status_id',
         'completion_date', 'times_assessed', 'submission_date', 'portfolio_evidence', 'tasks.grade as grade', 'quality_pts'
-      )
-      .group(
+      ).
+      group(
+        'tutorial_enrolments.tutorial_id', 'tutorial_enrolments.tutorial_stream_id',
         'task_statuses.id', 'project_id', 'tasks.id', 'task_definition_id', 'task_definitions.start_date', 'status_id',
         'completion_date', 'times_assessed', 'submission_date', 'portfolio_evidence', 'grade', 'quality_pts'
       )
