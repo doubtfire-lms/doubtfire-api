@@ -1653,14 +1653,15 @@ class Unit < ActiveRecord::Base
   #   task_def_id => { ... }
   #
   def task_status_stats
-    # TODO (stream) Do we need tutorial here?
-    data = student_tasks
-           .joins(:task_status)
-           .select('task_definition_id', 'task_statuses.id as status_id', 'COUNT(tasks.id) as num_tasks')
-           .where('task_status_id > 1')
-           .group('tasks.task_definition_id', 'status_id')
-           .map do |r|
+    data = student_tasks.
+           joins(:task_status).
+           joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id AND (tutorial_enrolments.tutorial_stream_id = task_definitions.tutorial_stream_id OR tutorial_enrolments.tutorial_stream_id IS NULL)').
+           select('tutorial_enrolments.tutorial_stream_id AS stream_id', 'tutorial_enrolments.tutorial_id AS tutorial_id', 'task_definition_id', 'task_statuses.id as status_id', 'COUNT(tasks.id) as num_tasks').
+           where('task_status_id > 1').
+           group('stream_id', 'tutorial_id', 'tasks.task_definition_id', 'status_id').
+           map do |r|
       {
+        tutorial_stream_id: r.stream_id,
         tutorial_id: r.tutorial_id,
         task_definition_id: r.task_definition_id,
         status: TaskStatus.id_to_key(r.status_id),
@@ -1679,6 +1680,7 @@ class Unit < ActiveRecord::Base
 
         next unless num - count > 0
         data << {
+          tutorial_stream_id: t.tutorial_stream_id,
           tutorial_id: t.id,
           task_definition_id: td.id,
           status: :not_started,
@@ -1698,7 +1700,7 @@ class Unit < ActiveRecord::Base
         result[e[:task_definition_id] ] [e[:tutorial_id]] = []
       end
 
-      result[e[:task_definition_id]][e[:tutorial_id]] << { status: e[:status], num: e[:num] }
+      result[e[:task_definition_id]][e[:tutorial_id]] << { tutorial_stream_id: e[:tutorial_stream_id], status: e[:status], num: e[:num] }
     end
 
     result
