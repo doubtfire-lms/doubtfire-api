@@ -18,7 +18,8 @@ class GroupsTest < ActiveSupport::TestCase
 
   def test_group_submission_with_extensions
     unit = Unit.first
-
+# print("display:",unit)
+#   end
     group_set = GroupSet.create!({name: 'test_group_submission_with_extensions', unit: unit})
     group_set.save!
 

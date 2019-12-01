@@ -228,16 +228,6 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
     t.integer "recipient_id"
     t.string "content_type"
     t.string "attachment_extension"
-    t.string "type"
-    t.datetime "time_discussion_started"
-    t.datetime "time_discussion_completed"
-    t.integer "number_of_prompts"
-    t.datetime "date_extension_assessed"
-    t.boolean "extension_granted"
-    t.integer "assessor_id"
-    t.integer "task_status_id"
-    t.integer "extension_weeks"
-    t.string "extension_response"
     t.index ["task_id"], name: "index_task_comments_on_task_id"
   end
 

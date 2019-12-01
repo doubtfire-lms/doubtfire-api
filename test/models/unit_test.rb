@@ -48,7 +48,7 @@ class UnitTest < ActiveSupport::TestCase
   end
 
   test 'rollover of group tasks' do
-    unit = FactoryGirl.create(:unit,
+    unit = FactoryBot.create(:unit,
       code: 'SIT102',
       teaching_period: TeachingPeriod.find(3),
       group_sets: 1,
