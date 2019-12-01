@@ -125,6 +125,8 @@ module Doubtfire
       end
     end
 
+    config.sm_instance = nil
+
     if (!ENV['OVERSEER_ENABLED'].nil? && ENV['OVERSEER_ENABLED'] == 'true')
       publisher_config = {
         RABBITMQ_HOSTNAME: ENV['RABBITMQ_HOSTNAME'],
