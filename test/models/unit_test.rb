@@ -228,12 +228,49 @@ class UnitTest < ActiveSupport::TestCase
     assert_equal 2, unit.student_tasks.count
 
     projects = unit.student_query(false)
+
     assert_equal unit.projects.count, projects.count
     assert_equal 1, projects.count
 
     # Check returned project
     assert_equal project.id, projects.first[:project_id]
     assert_equal project.enrolled, projects.first[:enrolled]
-    assert_equal project.tutorial_enrolments.count, projects.first[:tutorials].count
+
+    # Ensure there are matching number of streams
+    assert_equal unit.tutorial_streams.count, projects.first[:tutorial_streams].count
+
+    # Now test with project without tutorial enrolments
+    project2 = FactoryGirl.create(:project, unit: unit, campus: campus)
+    assert_equal 2, unit.projects.count
+
+    project2.tutorial_enrolments.destroy
+
+    projects = unit.student_query(false)
+
+    assert_equal unit.projects.count, projects.count
+    assert_equal 2, projects.count
+
+    # Check returned project
+    assert_equal project2.id, projects.last[:project_id]
+    assert_equal project2.enrolled, projects.last[:enrolled]
+
+    # Ensure there are matching number of streams
+    assert_equal unit.tutorial_streams.count, projects.last[:tutorial_streams].count
+
+    unit.tutorial_streams.each do |s|
+      unit.projects.each do |p|
+        proj_tute_enrolment = p.tutorial_enrolments.where(tutorial_stream_id: s.id).first
+        data_tute_enrolment = projects.select{|ps| ps[:project_id] == p.id}.first[:tutorial_streams].select{|te| te[:stream] == s.abbreviation}.map{|te| te[:tutorial]}.first
+
+        # if there is a enrolment for this project...
+        if proj_tute_enrolment.present?
+          # check that it matches the data returned
+          assert_equal proj_tute_enrolment.tutorial_id, data_tute_enrolment
+        else
+          # check that the data returned nil for this stream
+          assert_nil data_tute_enrolment
+        end
+      end
+    end
   end
 end
