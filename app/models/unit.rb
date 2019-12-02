@@ -291,6 +291,9 @@ class Unit < ActiveRecord::Base
         .joins('LEFT OUTER JOIN tasks ON projects.id = tasks.project_id')
         .joins('LEFT JOIN task_definitions ON tasks.task_definition_id = task_definitions.id')
         .joins('LEFT OUTER JOIN plagiarism_match_links ON tasks.id = plagiarism_match_links.task_id')
+        .joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id')
+        .joins('LEFT OUTER JOIN tutorials ON tutorials.id = tutorial_enrolments.tutorial_id')
+        .joins('LEFT OUTER JOIN tutorial_streams ON tutorial_enrolments.tutorial_stream_id = tutorial_streams.id')
         .group(
           'projects.id',
           'projects.target_grade',
@@ -317,7 +320,11 @@ class Unit < ActiveRecord::Base
           'projects.grade_rationale AS grade_rationale',
           'projects.portfolio_production_date AS portfolio_production_date',
           'MAX(CASE WHEN plagiarism_match_links.dismissed = FALSE THEN plagiarism_match_links.pct ELSE 0 END) AS plagiarism_match_links_max_pct',
-          *TaskStatus.all.map { |s| "SUM(CASE WHEN tasks.task_status_id = #{s.id} THEN 1 ELSE 0 END) AS #{s.status_key}_count" }
+          *TaskStatus.all.map { |s| "SUM(CASE WHEN tasks.task_status_id = #{s.id} THEN 1 ELSE 0 END) AS #{s.status_key}_count" },
+          # Get tutorial for each stream in unit
+          *tutorial_streams.map { |s| "MAX(CASE WHEN tutorial_enrolments.tutorial_stream_id = #{s.id} OR tutorial_enrolments.id IS NULL THEN tutorials.id ELSE NULL END) AS tutorial_#{s.id}" },
+          # Get tutorial for each stream in unit
+          "MAX(CASE WHEN tutorial_streams.id IS NULL THEN tutorials.abbreviation ELSE NULL END) AS tutorial"
         )
         .where(
           'projects.target_grade >= task_definitions.target_grade OR (task_definitions.target_grade IS NULL)'
@@ -327,7 +334,7 @@ class Unit < ActiveRecord::Base
     q = q.where('projects.enrolled = TRUE') if limit_to_enrolled
 
     q.map do |t|
-      {
+      result = {
         project_id: t.project_id,
         enrolled: t.enrolled,
         first_name: t.first_name,
@@ -342,8 +349,18 @@ class Unit < ActiveRecord::Base
         max_pct_copy: t.plagiarism_match_links_max_pct,
         has_portfolio: !t.portfolio_production_date.nil?,
         stats: Project.create_task_stats_from(task_count, t, t.target_grade),
-        tutorials: projects.find(t.project_id).tutorial_by_tutorial_stream
+        tutorial_streams: tutorial_streams.map do |s|
+          {
+            stream: s.abbreviation,
+            tutorial: t["tutorial_#{s.id}"]
+          }
+        end
       }
+
+      if tutorial_streams.empty?
+        result[:tutorial_streams] = [{tutorial: t['tutorial']}]
+      end
+      result
     end
   end
 
