@@ -251,8 +251,7 @@ class UnitTest < ActiveSupport::TestCase
     assert_equal 2, projects.count
 
     # Check returned project
-    assert_equal project2.id, projects.last[:project_id]
-    assert_equal project2.enrolled, projects.last[:enrolled]
+    assert projects.select{|p| p[:project_id] == project2.id}.first.present?
 
     # Ensure there are matching number of streams
     assert_equal unit.tutorial_streams.count, projects.last[:tutorial_streams].count
