@@ -3,7 +3,6 @@
 require 'yaml'
 
 def receive(_subscriber_instance, channel, _results_publisher, delivery_info, _properties, params)
-  # Do something meaningful here :)
   params = JSON.parse(params)
   puts params
   # Params will contain:
@@ -40,17 +39,25 @@ def receive(_subscriber_instance, channel, _results_publisher, delivery_info, _p
   end
 
   yaml_file = YAML.load_file(yaml_path).with_indifferent_access
-  if !yaml_file['message'].nil? && !yaml_file['message'].strip.empty?
+  comment_txt = ''
+  if !yaml_file['build_message'].nil? && !yaml_file['build_message'].strip.empty?
+    comment_txt += yaml_file['build_message']
+  end
+  if !yaml_file['run_message'].nil? && !yaml_file['run_message'].strip.empty?
+    comment_txt += '\n'
+    comment_txt += yaml_file['run_message']
+  end
+  if !comment_txt.strip.empty?
     # TODO: if this submission is latest and no other submission exists, then:
     # Create task comment
-    comment = task.add_or_update_assessment_comment(yaml_file['message'])
+    comment = task.add_or_update_assessment_comment(comment_txt)
     unless comment.nil?
       puts 'Created or updated task assessment_comment'
     else
       puts 'Task assessment_comment failed to be created or updated'
     end
   else
-    puts 'YAML file doesn\'t contain field `message`'
+    puts 'YAML file doesn\'t contain field `build_message` or `run_message`'
   end
 
   # TODO: Work with Andrew to figure the protocol for this.
