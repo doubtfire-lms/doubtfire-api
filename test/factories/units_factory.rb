@@ -5,6 +5,8 @@ FactoryGirl.define do
   factory :task_definition do
     unit
     name                      { Populator.words(1..3) }
+    description               { Populator.words(1..3) }
+    upload_requirements       { [{'key' => 'file0','name' => 'Imported Code','type' => 'code'}] }
     sequence(:abbreviation)   { |n| "P1.#{n}" }
     weighting                 { rand(1..5) }
     start_date                { unit.start_date + rand(1..12).weeks }
