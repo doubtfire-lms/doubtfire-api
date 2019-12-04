@@ -205,6 +205,20 @@ module Api
 
         { result: File.read("#{path}/output.txt") }
       end
+
+      # TODO: Remove the dependency on units - figure out how to authorise
+      desc 'Get the list of supported overseer images'
+      get '/units/:unit_id/overseer/docker/images' do
+        unit = Unit.find(params[:unit_id])
+
+        unless authorise? current_user, unit, :add_task_def
+          error!({ error: 'Not authorised to download task details of unit' }, 403)
+        end
+
+        {
+          result: Doubtfire::Application.config.overseer_images
+        }
+      end
     end
   end
 end
