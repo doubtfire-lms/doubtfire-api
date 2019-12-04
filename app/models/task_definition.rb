@@ -35,6 +35,7 @@ class TaskDefinition < ActiveRecord::Base
   validate :ensure_no_submissions, if: :has_change_group_status?
   validate :unit_must_be_same
   validate :tutorial_stream_present?
+  validates :docker_image_name_tag, inclusion: { in: Doubtfire::Application.config.overseer_images, message: '%{value} is not an Overseer supported Docker image' }
 
   def unit_must_be_same
     if unit.present? and tutorial_stream.present? and not unit.eql? tutorial_stream.unit
