@@ -65,7 +65,7 @@ module Api
         optional :teaching_period_id
         optional :start_date
         optional :end_date
-        optional :routing_key
+        optional :docker_image_name_tag
         optional :assessment_enabled
 
         mutually_exclusive :teaching_period_id,:start_date
@@ -86,7 +86,7 @@ module Api
                                                             :end_date,
                                                             :teaching_period_id,
                                                             :active,
-                                                            :routing_key,
+                                                            :docker_image_name_tag,
                                                             :assessment_enabled
                                                           )
 
@@ -107,7 +107,7 @@ module Api
         optional :description
         optional :start_date
         optional :end_date
-        optional :routing_key
+        optional :docker_image_name_tag
         optional :assessment_enabled
 
         mutually_exclusive :teaching_period_id,:start_date
@@ -128,7 +128,7 @@ module Api
                                                       :description,
                                                       :start_date,
                                                       :end_date,
-                                                      :routing_key,
+                                                      :docker_image_name_tag,
                                                       :assessment_enabled
                                                     )
 

@@ -34,7 +34,7 @@ module Api
         requires :is_graded,                type: Boolean,  desc: 'Whether or not this task definition is a graded task'
         requires :max_quality_pts,          type: Integer,  desc: 'A range for quality points when quality is assessed'
         optional :assessment_enabled,       type: Boolean,  desc: 'Enable or disable assessment'
-        optional :routing_key,              type: String,   desc: 'Routing key for overseer'
+        optional :docker_image_name_tag,    type: String,   desc: 'Routing key for overseer'
       end
     end
     post '/task_definitions/' do
@@ -65,7 +65,7 @@ module Api
                                                   :is_graded,
                                                   :max_quality_pts,
                                                   :assessment_enabled,
-                                                  :routing_key
+                                                  :docker_image_name_tag
                                                 )
 
       task_def = TaskDefinition.new(task_params)
@@ -111,7 +111,7 @@ module Api
         optional :is_graded,                type: Boolean,  desc: 'Whether or not this task definition is a graded task'
         optional :max_quality_pts,          type: Integer,  desc: 'A range for quality points when quality is assessed'
         optional :assessment_enabled,       type: Boolean,  desc: 'Enable or disable assessment'
-        optional :routing_key,              type: String,   desc: 'Routing key for overseer'
+        optional :docker_image_name_tag,    type: String,   desc: 'Routing key for overseer'
       end
     end
     put '/task_definitions/:id' do
@@ -140,7 +140,7 @@ module Api
                                                   :is_graded,
                                                   :max_quality_pts,
                                                   :assessment_enabled,
-                                                  :routing_key
+                                                  :docker_image_name_tag
                                                 )
 
       task_def.update!(task_params)

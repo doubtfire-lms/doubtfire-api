@@ -4,11 +4,11 @@
 require 'unit_role_serializer'
 
 class ShallowUnitSerializer < ActiveModel::Serializer
-  attributes :code, :id, :name, :teaching_period_id, :start_date, :end_date, :active, :routing_key, :assessment_enabled
+  attributes :code, :id, :name, :teaching_period_id, :start_date, :end_date, :active, :docker_image_name_tag, :assessment_enabled
 end
 
 class UnitSerializer < ActiveModel::Serializer
-  attributes :code, :id, :name, :my_role, :description, :teaching_period_id, :start_date, :end_date, :active, :convenors, :ilos, :routing_key, :assessment_enabled
+  attributes :code, :id, :name, :my_role, :description, :teaching_period_id, :start_date, :end_date, :active, :convenors, :ilos, :docker_image_name_tag, :assessment_enabled
 
   def start_date
     object.start_date.to_date
