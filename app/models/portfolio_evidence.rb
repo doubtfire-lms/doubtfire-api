@@ -118,8 +118,10 @@ class PortfolioEvidence
     return false unless task_definition.has_task_assessment_resources?
     assessment_resources_path = task_definition.task_assessment_resources
 
+    docker_image_name_tag = task_definition.docker_image_name_tag || unit.docker_image_name_tag
+    return false if docker_image_name_tag.nil? || docker_image_name_tag.strip.empty?
+
     # TODO: Probably get rid of it because we may wanna keep routing_key constant [29/nov/2019]
-    # routing_key = task_definition.routing_key || unit.routing_key
     # if routing_key.nil?, default routing_key that was used
     # to configure the publisher from the .env file will be used automagically.
     # If a default routing_key doesn't exist either, publisher will throw an error.
@@ -142,6 +144,7 @@ class PortfolioEvidence
 
     message = {
       output_path: task_submission_identifier_path_with_timestamp(:done, task, timestamp),
+      docker_image_name_tag: docker_image_name_tag,
       submission: zip_file_path,
       assessment: assessment_resources_path,
       timestamp: timestamp,
