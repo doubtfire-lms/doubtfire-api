@@ -126,6 +126,7 @@ module Doubtfire
     end
 
     config.sm_instance = nil
+    config.overseer_images = nil
 
     if (!ENV['OVERSEER_ENABLED'].nil? && ENV['OVERSEER_ENABLED'] == 'true')
       publisher_config = {
@@ -156,6 +157,11 @@ module Doubtfire
 
       config.sm_instance = ServicesManager.instance
       config.sm_instance.register_client(:ontrack, publisher_config, subscriber_config)
+
+      # TODO: Get rid of this from here and query docker-hub in future.
+      config.overseer_images = [
+        'overseer/dotnet:2.2'
+      ]
     end
 
   end
