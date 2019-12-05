@@ -214,9 +214,8 @@ module Api
         unless authorise? current_user, unit, :add_task_def
           error!({ error: 'Not authorised to download task details of unit' }, 403)
         end
-
         {
-          result: Doubtfire::Application.config.overseer_images
+          result: YAML.load_file('config/overseer-images.yml').with_indifferent_access
         }
       end
     end

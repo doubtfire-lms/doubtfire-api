@@ -125,7 +125,7 @@ class Unit < ActiveRecord::Base
 
   validate :validate_end_date_after_start_date
   validate :ensure_teaching_period_dates_match, if: :has_teaching_period?
-  validates :docker_image_name_tag, inclusion: { in: Doubtfire::Application.config.overseer_images, message: '%{value} is not an Overseer supported Docker image' }
+  validates :docker_image_name_tag, inclusion: { in: YAML.load_file('config/overseer-images.yml').with_indifferent_access['images'].map { |i| i['name'] }, message: '%{value} is not an Overseer supported Docker image' }
 
   scope :current,               -> { current_for_date(Time.zone.now) }
   scope :current_for_date,      ->(date) { where('start_date <= ? AND end_date >= ?', date, date) }
