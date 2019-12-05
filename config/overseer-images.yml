@@ -1,5 +1,5 @@
 images:
-  - name: dotnet:2.2
+  - name: overseer/dotnet:2.2
     packages:
       - dotnet
     doc_links:
@@ -9,16 +9,16 @@ images:
       - dotnet
       - microsoft
     info: Dotnet is beautiful and ugly at the same time.
-  - name: dotnet-splashkit:1.0
-    packages:
-      - dotnet
-      - splashkit
-    doc_links:
-      - hub.docker.com
-      - splashkit.io
-    tags:
-      - c#
-      - dotnet
-      - splashkit
-      - microsoft
-    info: Dotnet is more beautiful with splashkit, yet ugly at the same time.
+  # - name: overseer/dotnet-splashkit:1.0
+  #   packages:
+  #     - dotnet
+  #     - splashkit
+  #   doc_links:
+  #     - hub.docker.com
+  #     - splashkit.io
+  #   tags:
+  #     - c#
+  #     - dotnet
+  #     - splashkit
+  #     - microsoft
+  #   info: Dotnet is more beautiful with splashkit, yet ugly at the same time.
