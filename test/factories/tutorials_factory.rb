@@ -8,5 +8,6 @@ FactoryGirl.define do
     sequence(:abbreviation)   { |n| "T#{n}" }
     unit
     campus
+    tutorial_stream           nil
   end
 end
