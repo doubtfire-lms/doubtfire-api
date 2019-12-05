@@ -26,11 +26,14 @@ FactoryGirl.define do
     transient do
       student_count 0
       task_count 2
-      tutorials 1
+      tutorials 1  #per campus
+      tutorial_config [] #[ {stream: 0, campus: 0} ]
       group_sets 0
       groups [ ] #[ { gs: 0, students:0 } ]
       group_tasks [ ] #[ {idx: 0, gs: gs }] - index of task, and index of group set
       outcome_count 2
+      stream_count 0
+      campus_count 1
     end
 
     name            { Populator.words(1..2) }
@@ -42,15 +45,42 @@ FactoryGirl.define do
     active          true
 
     after(:create) do | unit, eval |
-      create_list(:tutorial, eval.tutorials, unit: unit)
+      campuses = create_list(:campus, eval.campus_count)
+
       create_list(:task_definition, eval.task_count, unit: unit)
       create_list(:group_set, eval.group_sets, unit: unit)
       create_list(:learning_outcome, eval.outcome_count, unit: unit)
+      tutorial_streams = create_list(:tutorial_stream, eval.stream_count, unit: unit)
+
+      campuses.each do |c|
+        # loop to 2nd last, unless there are no streams... then loop for all
+        break if (c == campuses.last) && tutorial_streams.count > 0
+
+        if tutorial_streams.count > 0
+          tutorial_streams.each { |ts| create_list(:tutorial, eval.tutorials, unit: unit, campus: c, tutorial_stream: ts ) }
+        else
+          create_list(:tutorial, eval.tutorials, unit: unit, campus: c )
+        end
+      end
+
+      # Now update last campus - give it tutorials with no tutorial streams to mimic "cloud"
+      if tutorial_streams.count > 0
+        create_list(:tutorial, eval.tutorials, unit: unit, campus: campuses.last )
+      end
 
       unit.employ_staff( FactoryGirl.create(:user, :convenor), Role.convenor)
-      campus = FactoryGirl.create(:campus)
-      eval.student_count.times do |i|
-        unit.enrol_student( FactoryGirl.create(:user, :student), campus)
+
+      campuses.each do |c|
+        eval.student_count.times do |i|
+          p = unit.enrol_student( FactoryGirl.create(:user, :student), c )
+          if c.tutorials.first.tutorial_stream.present?
+            tutorial_streams.each do |ts|
+              p.enrol_in ts.tutorials.where(campus_id: c.id).sample
+            end
+          else
+            p.enrol_in c.tutorials[i % c.tutorials.count]
+          end
+        end
       end
 
       stud = 0

@@ -272,4 +272,9 @@ class UnitTest < ActiveSupport::TestCase
       end
     end
   end
+
+  def test_task_completion_csv
+    unit = FactoryGirl.create :unit, campus_count: 2, tutorials:2, stream_count:2, student_count:10
+
+  end
 end
