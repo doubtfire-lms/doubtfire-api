@@ -1,8 +1,19 @@
+#require: rubocop-rspec
+
 AllCops:
   Exclude:
     - db/**/*
     - vendor/**/*
     - spec/**/*
+  RSpec:
+    Patterns:
+    - _spec.rb
+    - "(?:^|/)spec/"
+  RSpec/FactoryBot:
+    Patterns:
+    - spec/factories.rb
+    - spec/factories/**/*.rb
+    - features/support/factories/**/*.rb
 
 Rails:
   Enabled: true
