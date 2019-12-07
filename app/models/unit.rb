@@ -1148,8 +1148,14 @@ class Unit < ActiveRecord::Base
         'Grade',
         'Rationale',
       ] +
-             group_sets.map(&:name) +
-             task_definitions_by_grade.map do |task_definition|
+            projects.
+              joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id').
+              joins('LEFT OUTER JOIN tutorial_streams ON tutorial_enrolments.tutorial_stream_id = tutorial_streams.id').
+              select(
+                'distinct(tutorial_streams.abbreviation) as abbreviation'
+              ).map{ |t| t.abbreviation } +
+              group_sets.map(&:name) +
+              task_definitions_by_grade.map do |task_definition|
                result = [ task_definition.abbreviation ]
                result << "#{task_definition.abbreviation} grade" if task_definition.is_graded?
                result << "#{task_definition.abbreviation} stars" if task_definition.has_stars?
