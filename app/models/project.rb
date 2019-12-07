@@ -213,10 +213,6 @@ class Project < ActiveRecord::Base
     unit.main_convenor
   end
 
-  def tutorial_abbr
-    tutorial.abbreviation unless tutorial.nil?
-  end
-
   def user_role(user)
     if user == student then :student
     elsif user.nil? then nil
@@ -712,6 +708,15 @@ class Project < ActiveRecord::Base
     completed_tasks.sort_by(&:completion_date).last
   end
 
+  def tutorial_abbr
+    tutorial_enrolments.
+      joins('LEFT OUTER JOIN tutorials ON tutorials.id = tutorial_enrolments.tutorial_id').
+      joins('LEFT OUTER JOIN tutorial_streams ON tutorial_enrolments.tutorial_stream_id = tutorial_streams.id').
+      select(
+        'tutorials.abbreviation as abbr'
+      ).map{ |t| t.abbr }
+  end
+
   def task_completion_csv
     all_tasks = unit.task_definitions_by_grade
     [
@@ -723,6 +728,7 @@ class Project < ActiveRecord::Base
       grade > 0 ? grade : '',
       grade_rationale,
     ] +
+      tutorial_abbr +
       unit.group_sets.map do |gs|
         grp = group_for_groupset(gs)
         grp ? grp.name : nil
