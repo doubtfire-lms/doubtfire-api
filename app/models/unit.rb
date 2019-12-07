@@ -824,9 +824,11 @@ class Unit < ActiveRecord::Base
 
   def export_users_to_csv
     CSV.generate do |row|
-      row << %w(unit_code username student_id first_name last_name email tutorial)
+      row << %w(unit_code username student_id first_name last_name email) +
+                tutorial_stream_abbr
       active_projects.each do |project|
-        row << [project.unit.code, project.student.username, project.student.student_id, project.student.first_name, project.student.last_name, project.student.email, project.tutorial_abbr]
+        row << [project.unit.code, project.student.username, project.student.student_id, project.student.first_name, project.student.last_name, project.student.email] +
+                project.tutorial_abbr
       end
     end
   end
@@ -1135,6 +1137,15 @@ class Unit < ActiveRecord::Base
   def task_definitions_by_grade
     # Need to search as relation is already ordered
     TaskDefinition.where(unit_id: id).order('target_grade ASC, start_date ASC, abbreviation ASC')
+  end
+
+  def tutorial_stream_abbr
+    projects.
+      joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id').
+      joins('LEFT OUTER JOIN tutorial_streams ON tutorial_enrolments.tutorial_stream_id = tutorial_streams.id').
+      select(
+        'distinct(tutorial_streams.abbreviation) as abbreviation'
+      ).map{ |t| t.abbreviation }
   end
 
   def task_completion_csv(options = {})
