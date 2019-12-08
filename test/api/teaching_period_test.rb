@@ -28,6 +28,23 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     end
   end
 
+  def test_get_teaching_periods_details
+    expected_tp = TeachingPeriod.second
+
+    # perform the GET 
+    get with_auth_token "/api/teaching_periods/#{expected_tp.id}"
+    actual_tp = last_response_body
+    assert_equal 200, last_response.status
+    
+    # Check the returned details match as expected 
+    assert_equal actual_tp['period'], expected_tp.period
+    assert_equal actual_tp['year'], expected_tp.year
+    assert_equal actual_tp['start_date'].to_date, expected_tp.start_date.to_date
+    assert_equal actual_tp['end_date'].to_date, expected_tp.end_date.to_date
+    assert_equal actual_tp['active_until'].to_date, expected_tp.active_until.to_date
+   # assert_equal TeachingPeriodSerializer.new(teaching_period).to_json, last_response.body
+  end
+
   def test_update_break_from_teaching_period
     tp = TeachingPeriod.first
     to_update = tp.breaks.first
