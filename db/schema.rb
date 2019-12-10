@@ -26,6 +26,12 @@ ActiveRecord::Schema.define(version: 20191031235849) do
   add_index "activity_types", ["abbreviation"], name: "index_activity_types_on_abbreviation", unique: true, using: :btree
   add_index "activity_types", ["name"], name: "index_activity_types_on_name", unique: true, using: :btree
 
+  create_table "ar_internal_metadata", primary_key: "key", force: :cascade do |t|
+    t.string   "value"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+  end
+
   create_table "badges", force: :cascade do |t|
     t.string   "name",                   limit: 255
     t.text     "description"
