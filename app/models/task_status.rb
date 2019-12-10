@@ -1,7 +1,7 @@
 #
 # The status
 # - has a name and a description
-class TaskStatus < ActiveRecord::Base
+class TaskStatus < ApplicationRecord
   # Model associations
   has_many :tasks
 

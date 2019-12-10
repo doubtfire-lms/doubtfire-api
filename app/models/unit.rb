@@ -4,7 +4,7 @@ require 'json'
 require 'moss_ruby'
 require 'csv_helper'
 
-class Unit < ActiveRecord::Base
+class Unit < ApplicationRecord
   include ApplicationHelper
   include FileHelper
   include LogHelper
@@ -2192,11 +2192,11 @@ class Unit < ActiveRecord::Base
     errors = []
     ignored = []
 
-    type = mime_type(file.tempfile.path)
+    type = mime_type(file["tempfile"].path)
 
     # check mime is correct before uploading
     accept = ['text/', 'text/plain', 'text/csv', 'application/zip', 'multipart/x-gzip', 'multipart/x-zip', 'application/x-gzip', 'application/octet-stream']
-    unless mime_in_list?(file.tempfile.path, accept)
+    unless mime_in_list?(file["tempfile"].path, accept)
       errors << { row: {}, message: "File given is not a zip or csv file - detected #{type}" }
       return {
         success:  success,
@@ -2206,7 +2206,7 @@ class Unit < ActiveRecord::Base
     end
 
     if type.start_with?('text/', 'text/plain', 'text/csv')
-      update_task_status_from_csv(user, File.open(file.tempfile.path).read, success, ignored, errors)
+      update_task_status_from_csv(user, File.open(file["tempfile"].path).read, success, ignored, errors)
     else
       # files are extracted to a temp dir first
       i = 0
@@ -2222,7 +2222,7 @@ class Unit < ActiveRecord::Base
       FileUtils.mkdir_p(tmp_dir)
 
       begin
-        Zip::File.open(file.tempfile.path) do |zip|
+        Zip::File.open(file["tempfile"].path) do |zip|
           # Find the marking file within the directory tree
           marking_file = zip.glob('**/marks.csv').first
 
@@ -2321,7 +2321,7 @@ class Unit < ActiveRecord::Base
           end
         end
       rescue
-        # FileUtils.cp(file.tempfile.path, Doubtfire::Application.config.student_work_dir)
+        # FileUtils.cp(file["tempfile"].path, Doubtfire::Application.config.student_work_dir)
         raise
       end
 

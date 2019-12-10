@@ -1,4 +1,4 @@
-class Break < ActiveRecord::Base
+class Break < ApplicationRecord
   belongs_to :teaching_period
 
   validates :start_date, presence: true

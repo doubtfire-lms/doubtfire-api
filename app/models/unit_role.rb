@@ -1,4 +1,4 @@
-class UnitRole < ActiveRecord::Base
+class UnitRole < ApplicationRecord
   # Model associations
   belongs_to :unit    # Foreign key
   belongs_to :user    # Foreign key

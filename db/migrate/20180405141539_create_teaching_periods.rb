@@ -1,4 +1,4 @@
-class CreateTeachingPeriods < ActiveRecord::Migration
+class CreateTeachingPeriods < ActiveRecord::Migration[4.2]
   def change
     create_table :teaching_periods do |t|
       t.string          :period,          null: false

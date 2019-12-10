@@ -1,6 +1,6 @@
 require 'date'
 
-class Task < ActiveRecord::Base
+class Task < ApplicationRecord
   include ApplicationHelper
   include LogHelper
 
@@ -1102,7 +1102,7 @@ class Task < ActiveRecord::Base
     # id, name, filename, type, tempfile
     #
     files.each do |file|
-      ui.error!({ 'error' => "Missing file data for '#{file.name}'" }, 403) if file.id.nil? || file.name.nil? || file.filename.nil? || file.type.nil? || file.tempfile.nil?
+      ui.error!({ 'error' => "Missing file data for '#{file.name}'" }, 403) if file.id.nil? || file.name.nil? || file.filename.nil? || file.type.nil? || file["tempfile"].nil?
     end
 
     # Ensure group if group task
@@ -1116,19 +1116,19 @@ class Task < ActiveRecord::Base
     end
     # file.key            = "file0"
     # file.name           = front end name for file
-    # file.tempfile.path  = actual file dir
+    # file["tempfile"].path  = actual file dir
     # file.filename       = their name for the file
 
     #
     # Confirm subtype categories using filemagic
     #
     files.each_with_index do |file, index|
-      logger.debug "Accepting submission (file #{index + 1} of #{files.length}) - checking file type for #{file.tempfile.path}"
+      logger.debug "Accepting submission (file #{index + 1} of #{files.length}) - checking file type for #{file["tempfile"].path}"
       unless FileHelper.accept_file(file, file.name, file.type)
         ui.error!({ 'error' => "'#{file.name}' is not a valid #{file.type} file" }, 403)
       end
 
-      if File.size(file.tempfile.path) > 10_000_000
+      if File.size(file["tempfile"].path) > 10_000_000
         ui.error!({ 'error' => "'#{file.name}' exceeds the 10MB file limit. Try compressing or reformat and submit again." }, 403)
       end
     end
@@ -1159,7 +1159,7 @@ class Task < ActiveRecord::Base
 
     files.each_with_index.map do |file, idx|
       output_filename = File.join(tmp_dir, "#{idx.to_s.rjust(3, '0')}-#{file.type}#{File.extname(file.filename).downcase}")
-      FileUtils.cp file.tempfile.path, output_filename
+      FileUtils.cp file["tempfile"].path, output_filename
     end
 
     #

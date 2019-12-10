@@ -7,7 +7,7 @@ class ShallowUnitRoleSerializer < ActiveModel::Serializer
   attributes :id, :role
 
   def role
-    object.role.name
+    object.object.role.name
   end
 end
 
@@ -19,39 +19,39 @@ class UnitRoleSerializer < ActiveModel::Serializer
   # has_one :role
 
   def role
-    object.role.name
+    object.object.role.name
   end
 
   def unit_id
-    object.unit.id
+    object.object.unit.id
   end
 
   def unit_code
-    object.unit.code
+    object.object.unit.code
   end
 
   def unit_name
-    object.unit.name
+    object.object.unit.name
   end
 
   def teaching_period_id
-    object.unit.teaching_period_id
+    object.object.unit.teaching_period_id
   end
 
   def name
-    object.user.name
+    object.object.user.name
   end
 
   def active
-    object.unit.active
+    object.object.unit.active
   end
 
   def include_start_date?
-    object.has_attribute? :start_date
+    object.object.has_attribute? :start_date
   end
 
   def include_end_date?
-    object.has_attribute? :end_date
+    object.object.has_attribute? :end_date
   end
 
   def filter(keys)
@@ -65,14 +65,14 @@ class UserUnitRoleSerializer < ActiveModel::Serializer
   attributes :id, :user_id, :name, :role #:user_name?
 
   def role
-    object.role.name
+    object.object.role.name
   end
 
   def name
-    object.user.name
+    object.object.user.name
   end
 
   def user_name
-    object.user.name
+    object.object.user.name
   end
 end

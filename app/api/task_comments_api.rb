@@ -26,8 +26,8 @@ module Api
       attached_file = params[:attachment]
 
       if attached_file.present?
-        error!({error: "Attachment is empty."}) unless File.size?(attached_file.tempfile.path).present?
-        error!({error: "Attachment exceeds the maximum attachment size of 30MB."}) unless File.size?(attached_file.tempfile.path) < 30_000_000
+        error!({error: "Attachment is empty."}) unless File.size?(attached_file["tempfile"].path).present?
+        error!({error: "Attachment exceeds the maximum attachment size of 30MB."}) unless File.size?(attached_file["tempfile"].path) < 30_000_000
       end
 
       task = project.task_for_task_definition(task_definition)

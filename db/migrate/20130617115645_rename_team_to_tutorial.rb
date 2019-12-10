@@ -1,4 +1,4 @@
-class RenameTeamToTutorial < ActiveRecord::Migration
+class RenameTeamToTutorial < ActiveRecord::Migration[4.2]
   def change
     rename_table :teams, :tutorials
 

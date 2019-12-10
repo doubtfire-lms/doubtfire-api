@@ -1,4 +1,4 @@
-class CreateTaskSubmissions < ActiveRecord::Migration
+class CreateTaskSubmissions < ActiveRecord::Migration[4.2]
   def change
     create_table :task_submissions do |t|
       t.datetime :submission_time
