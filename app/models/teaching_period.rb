@@ -1,4 +1,4 @@
-class TeachingPeriod < ActiveRecord::Base
+class TeachingPeriod < ApplicationRecord
   # Relationships
   has_many :units
   has_many :breaks, dependent: :delete_all

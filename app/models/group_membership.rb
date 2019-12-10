@@ -1,7 +1,7 @@
 #
 # Records which students are in this group... used to determine the related students on submission
 #
-class GroupMembership < ActiveRecord::Base
+class GroupMembership < ApplicationRecord
   include LogHelper
 
   belongs_to :group

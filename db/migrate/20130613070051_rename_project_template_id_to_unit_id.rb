@@ -1,4 +1,4 @@
-class RenameProjectTemplateIdToUnitId < ActiveRecord::Migration
+class RenameProjectTemplateIdToUnitId < ActiveRecord::Migration[4.2]
   def change
     rename_column :teams, :project_template_id, :unit_id
     rename_column :task_templates, :project_template_id, :unit_id

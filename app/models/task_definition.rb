@@ -1,6 +1,6 @@
 require 'json'
 
-class TaskDefinition < ActiveRecord::Base
+class TaskDefinition < ApplicationRecord
   # Record triggers - before associations
   after_update do |_td|
     clear_related_plagiarism if plagiarism_checks.empty? && has_plagiarism?
