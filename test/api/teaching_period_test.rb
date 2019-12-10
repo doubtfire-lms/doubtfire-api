@@ -9,6 +9,8 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     Rails.application
   end
 
+  # GET tests
+  # Get teaching period
   def test_get_teaching_periods
     # The GET we are testing
     get '/api/teaching_periods'
@@ -28,21 +30,20 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     end
   end
 
+  # Get a teaching period's details
   def test_get_teaching_periods_details
     expected_tp = TeachingPeriod.second
 
     # perform the GET 
-    get with_auth_token "/api/teaching_periods/#{expected_tp.id}"
-    actual_tp = last_response_body
+    get "/api/teaching_periods/#{expected_tp.id}"
+    returned_tp = last_response_body
+
+    # Check if the call succeeds
     assert_equal 200, last_response.status
     
-    # Check the returned details match as expected 
-    assert_equal actual_tp['period'], expected_tp.period
-    assert_equal actual_tp['year'], expected_tp.year
-    assert_equal actual_tp['start_date'].to_date, expected_tp.start_date.to_date
-    assert_equal actual_tp['end_date'].to_date, expected_tp.end_date.to_date
-    assert_equal actual_tp['active_until'].to_date, expected_tp.active_until.to_date
-   # assert_equal TeachingPeriodSerializer.new(teaching_period).to_json, last_response.body
+    # Check the returned details match as expected
+    response_keys = %w(period year start_date end_date active_until)
+    assert_json_matches_model(returned_tp, expected_tp, response_keys)
   end
 
   def test_update_break_from_teaching_period
