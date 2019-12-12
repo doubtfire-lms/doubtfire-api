@@ -140,15 +140,14 @@ class UnitsTest < ActiveSupport::TestCase
 
     data_to_post = {
       tutorial: tutorial,
-      id: '1',
       auth_token: auth_token
     }
 
     # perform the post
     post_json '/api/tutorials', data_to_post
-
+    assert_equal 201, last_response.status, last_response_body
     # Check there is a new tutorial
-    assert_equal Tutorial.all.length, count_tutorials + 1
+    assert_equal count_tutorials + 1, Tutorial.all.length, last_response_body
     assert_tutorial_model_response last_response_body, tutorial
   end
 
