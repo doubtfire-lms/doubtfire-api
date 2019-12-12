@@ -54,6 +54,22 @@ class UnitsTest < ActiveSupport::TestCase
     end
   end
 
+  # Get a user's details
+  def test_get_a_users_details
+    expected_user = User.second
+
+    # perform the GET 
+    get with_auth_token"/api/users/#{expected_user.id}"
+    returned_user = last_response_body
+
+    # Check if the call succeeds
+    assert_equal 200, last_response.status
+    
+    # Check the returned details match as expected
+    response_keys = %w(first_name last_name email student_id nickname receive_task_notifications receive_portfolio_notifications receive_feedback_notifications opt_in_to_research has_run_first_time_setup)
+    assert_json_matches_model(returned_user, expected_user, response_keys)
+  end
+  
   def test_get_convenors
     get with_auth_token '/api/users/convenors'
     assert_equal 200, last_response.status
