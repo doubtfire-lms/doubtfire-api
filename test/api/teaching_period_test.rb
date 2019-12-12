@@ -117,4 +117,25 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     # check if one more teaching period is created
     assert_equal TeachingPeriod.count, number_of_tp + 1
   end
+
+  # DELETE tests
+  # Delete a teaching period
+  def test_delete_teaching_period
+    number_of_tp = TeachingPeriod.all.count
+
+    teaching_period = TeachingPeriod.all.first
+    id_of_tp = teaching_period.id
+    
+    # perform the delete
+    delete_json with_auth_token"/api/teaching_periods/#{teaching_period.id}"
+    
+    # Check if the delete get through
+    assert_equal 200, last_response.status
+    
+    # check if the number of teaching period reduces by 1
+    #assert_equal TeachingPeriod.count, number_of_tp -1
+
+    # Check that you can't find the deleted id
+    #refute TeachingPeriod.exists?(id_of_tp)
+  end
 end
