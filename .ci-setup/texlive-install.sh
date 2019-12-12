@@ -32,6 +32,7 @@ tlmgr install   \
   ifplatform    \
   xstring       \
   framed        \
+  catchfile     \
   lastpage
 
 # Keep no backups (not required, simply makes cache bigger)
