@@ -83,4 +83,25 @@ class UnitRolesTest < ActiveSupport::TestCase
     first_unit_role = UnitRole.first
     assert_json_matches_model(last_response_body, first_unit_role, response_keys)
   end
+
+  # DELETE tests
+  # Delete a unit role
+  def test_delete_unit_role
+    number_of_ur = UnitRole.all.count
+
+    unit_role = TeachingPeriod.all.first
+    id_of_ur = unit_role.id
+    
+    # perform the delete
+    delete_json with_auth_token"/api/unit_roles/#{unit_role.id}"
+    
+    # Check if the delete get through
+    assert_equal 200, last_response.status
+    
+    # check if the number of unit roles reduces by 1
+    assert_equal UnitRole.count, number_of_ur -1
+
+    # Check that you can't find the deleted id
+    refute UnitRole.exists?(id_of_ur)
+  end
 end
