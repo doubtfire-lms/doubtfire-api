@@ -17,6 +17,22 @@ class UnitRolesTest < ActiveSupport::TestCase
     # asserts
   end
 
+  # Get a unit role's details
+  def test_get_a_unit_roles_details
+    expected_ur = UnitRole.second
+
+    # perform the GET 
+    get with_auth_token"/api/unit_roles/#{expected_ur.id}"
+    returned_ur = last_response_body
+
+    # Check if the call succeeds
+    assert_equal 200, last_response.status
+    
+    # Check the returned details match as expected
+    response_keys = %w(unit_id user_id)
+    assert_json_matches_model(returned_ur, expected_ur, response_keys)
+  end
+  
   def test_post_bad_unit_roles
     num_of_unit_roles = UnitRole.all.count
 
