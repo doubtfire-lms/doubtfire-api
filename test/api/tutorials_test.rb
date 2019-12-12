@@ -106,6 +106,8 @@ class TutorialsTest < ActiveSupport::TestCase
     assert_json_matches_model(last_response_body, first_tutorial, response_keys)
   end
 
+  # DELETE tests
+  # Delete a tutorial
   def test_tutorials_delete
     number_of_tutorials = Tutorial.all.length
     # Should be random unit where convenor is User.first
@@ -122,5 +124,30 @@ class TutorialsTest < ActiveSupport::TestCase
     # Check that you can't find the deleted id
     refute Tutorial.exists?(id_of_tutorial_to_delete)
     assert_equal last_response.status, 200
+  end
+
+  # Delete a tutorial using unauthorised account
+  def test_student_delete_tutorial
+    # Generate a user with student role which does not have permission to delete a tutorial
+    user = FactoryGirl.build(:user, :student)
+
+     # Number of tutorial before deletion
+    number_of_tutorial = Tutorial.count
+
+     # Pick the tutorial to delete
+    tutorial = Tutorial.second
+    id_of_tutorial = tutorial.id
+
+     # Perform the delete
+    delete_json with_auth_token("/api/tutorials/#{id_of_tutorial}", user)
+
+     # Check if the delete does not get through
+    assert_equal 403, last_response.status
+
+     # Check if the number of tutorial is still the same
+    assert_equal Tutorial.count, number_of_tutorial
+
+     # Check that you still can find the deleted id
+    assert Tutorial.exists?(id_of_tutorial)
   end
 end
