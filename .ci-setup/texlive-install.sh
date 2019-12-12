@@ -33,6 +33,7 @@ tlmgr install   \
   xstring       \
   framed        \
   catchfile     \
+  letltxmacro   \
   lastpage
 
 # Keep no backups (not required, simply makes cache bigger)
