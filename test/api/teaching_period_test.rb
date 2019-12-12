@@ -90,4 +90,31 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     first_teaching_period = TeachingPeriod.first
     assert_json_matches_model(last_response_body, first_teaching_period, response_keys)
   end
+
+  # POST tests
+  # Post teaching period
+  def test_post_teaching_period
+    # the number of teaching period before post
+    number_of_tp = TeachingPeriod.count
+
+    # the dummy teaching period that we want to post/create
+    data_to_post = {
+      teaching_period: FactoryGirl.build(:teaching_period),
+      auth_token: auth_token
+    }
+    
+    # perform the POST
+    post_json '/api/teaching_periods', data_to_post
+    
+    # check if the POST get through
+    assert_equal 201, last_response.status
+
+    # check if the details posted match as expected
+    response_keys = %w(period year start_date end_date active_until)
+    teaching_period = TeachingPeriod.find(last_response_body['id'])
+    assert_json_matches_model(last_response_body, teaching_period, response_keys)
+
+    # check if one more teaching period is created
+    assert_equal TeachingPeriod.count, number_of_tp + 1
+  end
 end
