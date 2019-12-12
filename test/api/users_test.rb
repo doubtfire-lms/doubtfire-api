@@ -70,6 +70,12 @@ class UnitsTest < ActiveSupport::TestCase
     assert_json_matches_model(returned_user, expected_user, response_keys)
   end
   
+  # Get CSV of all users
+  def test_get_csv
+    get with_auth_token '/api/csv/users'
+    assert_equal 200, last_response.status
+  end
+  
   def test_get_convenors
     get with_auth_token '/api/users/convenors'
     assert_equal 200, last_response.status
