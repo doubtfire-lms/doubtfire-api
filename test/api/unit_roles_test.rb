@@ -104,4 +104,26 @@ class UnitRolesTest < ActiveSupport::TestCase
     # Check that you can't find the deleted id
     refute UnitRole.exists?(id_of_ur)
   end
+
+  # Delete a teaching period using unauthorised account
+  def test_student_delete_unit_role
+    user = FactoryGirl.build(:user, :student)
+
+    number_of_ur = UnitRole.count
+
+    unit_role = TeachingPeriod.second
+    id_of_ur = unit_role.id
+
+    # perform the delete
+    delete_json with_auth_token("/api/unit_roles/#{id_of_ur}", user)
+
+    # check if the delete does not get through
+    assert_equal 403, last_response.status
+
+    # check if the number of unit roles is still the same
+    assert_equal UnitRole.count, number_of_ur
+
+    # Check that you still can find the deleted id
+    assert UnitRole.exists?(id_of_ur)
+  end
 end
