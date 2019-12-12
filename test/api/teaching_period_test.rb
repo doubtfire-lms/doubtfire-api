@@ -138,4 +138,29 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     # Check that you can't find the deleted id
     #refute TeachingPeriod.exists?(id_of_tp)
   end
+
+  # Delete a teaching period using unauthorised account
+  def test_student_delete_teaching_period
+    # A user with student role which does not have permision to delete a teaching period
+    user = FactoryGirl.build(:user, :student)
+
+    # Number of teaching periods before deletion
+    number_of_tp = TeachingPeriod.count
+
+    # Teaching period to delete
+    teaching_period = TeachingPeriod.second
+    id_of_tp = teaching_period.id
+
+    # perform the delete
+    delete_json with_auth_token("/api/teaching_periods/#{id_of_tp}", user)
+
+    # check if the delete does not get through
+    assert_equal 403, last_response.status
+
+    # check if the number of teaching period is still the same
+    assert_equal TeachingPeriod.count, number_of_tp
+
+    # Check that you still can find the deleted id
+    assert TeachingPeriod.exists?(id_of_tp)
+  end
 end
