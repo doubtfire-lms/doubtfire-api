@@ -34,6 +34,7 @@ tlmgr install   \
   framed        \
   catchfile     \
   letltxmacro   \
+  kvoptions     \
   lastpage
 
 # Keep no backups (not required, simply makes cache bigger)
