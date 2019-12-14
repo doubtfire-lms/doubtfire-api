@@ -11,6 +11,6 @@ class TaskDefinitionSerializer < ActiveModel::Serializer
              :due_date, :start_date, :is_graded, :max_quality_pts
 
   def weight
-    object.object.weighting
+    object.weighting
   end
 end
