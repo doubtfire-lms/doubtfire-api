@@ -11,15 +11,15 @@ class UnitSerializer < ActiveModel::Serializer
   attributes :code, :id, :name, :my_role, :description, :teaching_period_id, :start_date, :end_date, :active, :convenors, :ilos
 
   def start_date
-    object.object.start_date.to_date
+    object.start_date.to_date
   end
 
   def end_date
-    object.object.end_date.to_date
+    object.end_date.to_date
   end
 
   def my_role_obj
-    object.object.role_for(Thread.current[:user]) if Thread.current[:user]
+    object.role_for(Thread.current[:user]) if Thread.current[:user]
   end
 
   def my_user_role
@@ -36,7 +36,7 @@ class UnitSerializer < ActiveModel::Serializer
   end
 
   def ilos
-    object.object.learning_outcomes
+    object.learning_outcomes
   end
 
   has_many :tutorials
