@@ -2,7 +2,7 @@ GIT
   remote: https://github.com/doubtfire-overseer/bunny-pub-sub
   revision: 3e7ec98c5eb04d0440ae80bd06eeb8b1bd0720d0
   specs:
-    bunny-pub-sub (0.0.8)
+    bunny-pub-sub (0.0.9)
       bunny (~> 2.14)
 
 GEM
