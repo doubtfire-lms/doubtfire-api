@@ -16,7 +16,6 @@ gem 'rails', '4.2.6'
 group :development, :test do
   gem 'database_cleaner'
   gem 'byebug'
-  gem 'bunny-pub-sub', '0.0.9', git: 'https://github.com/doubtfire-overseer/bunny-pub-sub'
   gem 'simplecov', require: false
   gem 'pg'
   gem 'hirb'
@@ -72,6 +71,7 @@ gem 'rack-cors', require: 'rack/cors'
 gem 'ci_reporter'
 gem 'require_all', '1.3.3'
 gem 'dotenv-rails'
+gem 'bunny-pub-sub', '0.0.9', git: 'https://github.com/doubtfire-overseer/bunny-pub-sub'
 
 # Excel support
 gem 'roo', '~> 2.7.0'
