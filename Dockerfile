@@ -32,7 +32,7 @@ RUN ./.ci-setup/texlive-install.sh
 ENV PATH /tmp/texlive/bin/x86_64-linux:$PATH
 
 COPY Gemfile Gemfile.lock /doubtfire-api/
-RUN bundle install --without production && bundle exec rake db:setup
+RUN bundle install --without production
 
 CMD bundle exec rails s
 
