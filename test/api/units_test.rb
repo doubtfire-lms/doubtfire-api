@@ -44,6 +44,30 @@ class UnitsTest < ActiveSupport::TestCase
     assert_equal expected_unit[:name], Unit.last.name
   end
 
+  # Test POST for creating new unit should success when missing start_date, end_date
+  def test_units_post_missing_start_date_end_date
+    data_to_post = add_auth_token(unit: {
+                                    name: 'Intro to Social Skills',
+                                    code: 'JRRW40003',
+                                  })
+    expected_unit = data_to_post[:unit]
+    unit_count = Unit.all.length
+
+    # The post that we will be testing.
+    post_json '/api/units.json', data_to_post
+
+    # Check to see if the unit's name matches what was expected
+    actual_unit = last_response_body
+
+    assert_equal expected_unit[:name], actual_unit['name']
+    assert_equal expected_unit[:code], actual_unit['code']
+    assert_not_nil actual_unit['start_date']
+    assert_not_nil actual_unit['end_date']
+
+    assert_equal unit_count + 1, Unit.all.count
+    assert_equal expected_unit[:name], Unit.last.name
+  end
+
   def create_unit
     {
       name:'Intro to Social Skills',
@@ -147,6 +171,125 @@ class UnitsTest < ActiveSupport::TestCase
     # Check there is a new tutorial
     assert_equal Tutorial.all.length, count_tutorials + 1
     assert_tutorial_model_response last_response_body, tutorial
+  end
+
+  # Test POST for tutorials unit should fail with error: Tutor username invalid (not a tutor for this unit)
+  # when tutor_username invalid
+  def test_addtutorial_to_unit_fail_with_error_not_exist_tutor_username_invalid
+    count_tutorials = Tutorial.all.length
+    tutorial = {
+      day: 'Wednesday',
+      time: '2:30',
+      location: 'HE12',
+      tutor_username: '123456x',
+      abbrev: 'BC43',
+      role: Role.student,
+    }
+
+    data_to_post = {
+      tutorial: tutorial,
+      id: '1',
+      auth_token: auth_token
+    }
+
+    # perform the post
+    post_json '/api/units/1/tutorials', data_to_post
+
+    # Check there is a new tutorial
+    assert_equal Tutorial.all.length, count_tutorials
+    assert_equal 'Tutor username invalid (not a tutor for this unit)', last_response_body['error']
+    assert_equal 403, last_response.status
+  end
+
+  # Test POST for tutorials unit should fail with error: Couldn't find User with username
+  # when tutor_username not exist
+  def test_addtutorial_to_unit_fail_with_error_not_exist_tutor_username
+    count_tutorials = Tutorial.all.length
+
+    tutorial = {
+      day: 'Wednesday',
+      time: '2:30',
+      location: 'HE12',
+      tutor_username: 'testing',
+      abbrev: 'BC43'
+    }
+
+    data_to_post = {
+      tutorial: tutorial,
+      id: '1',
+      auth_token: auth_token
+    }
+
+    # perform the post
+    post_json '/api/units/1/tutorials', data_to_post
+
+    # Check there is a new tutorial
+    assert_equal Tutorial.all.length, count_tutorials
+    assert_equal "Couldn't find User with username=testing", last_response_body['error']
+    assert_equal 403, last_response.status
+  end
+
+  # Test POST for rollover unit should success when missing teaching_period_id
+  def test_rollover_unit_post_success_missing_teaching_period_id
+    unit = Unit.create!(
+      code: "COS10001_TEST",
+      name: "Introduction to Programming",
+      start_date: '2016-05-14T00:00:00.000Z',
+      end_date: '2017-05-14T00:00:00.000Z',
+      description: 'testing'
+    )
+    data_to_post = add_auth_token(
+      start_date: '2016-05-14T00:00:00.000Z',
+      end_date: '2017-05-14T00:00:00.000Z'
+    )
+
+    post_json "/api/units/#{unit.id}/rollover.json", data_to_post
+
+    assert_equal unit.code, last_response_body['code']
+    assert_equal unit.name, last_response_body['name']
+    assert_equal unit.description, last_response_body['description']
+  end
+
+  # Test POST for rollover unit should success when exist teaching_period_id
+  def test_rollover_unit_post_success_exist_teaching_period_id
+    unit = Unit.create!(
+      code: "COS10002_TEST",
+      name: "Introduction to Programming",
+      start_date: '2016-05-14T00:00:00.000Z',
+      end_date: '2017-05-14T00:00:00.000Z',
+      description: 'testing'
+    )
+    data_to_post = add_auth_token(
+      teaching_period_id: 1,
+    )
+
+    post_json "/api/units/#{unit.id}/rollover.json", data_to_post
+
+    assert_equal unit.code, last_response_body['code']
+    assert_equal unit.name, last_response_body['name']
+    assert_equal unit.description, last_response_body['description']
+  end
+
+  # Test POST for Upload CSV of all the students in a unit
+  def test_upload_csv_unit_post_success
+    data_to_post = add_auth_token(
+      file: Rack::Test::UploadedFile.new('test_files/COS10001-Outcomes.csv', 'application/csv'),
+    )
+
+    post "/api/csv/units/1", data_to_post
+
+    assert_equal 201, last_response.status
+  end
+
+  # Test POST for Upload CSV with the students to un-enrol from the unit
+  def test_upload_csv_un_enrol_unit_post_success
+    data_to_post = add_auth_token(
+      file: Rack::Test::UploadedFile.new('test_files/COS10001-Outcomes.csv', 'application/csv'),
+    )
+
+    post "/api/csv/units/1/withdraw", data_to_post
+
+    assert_equal 201, last_response.status
   end
 
   # End POST tests
@@ -291,20 +434,83 @@ end
     end
   end
 
-  def test_get_awaiting_feedback
+  def test_download_grades_for_unit
     user = User.first
-    unit = Unit.first
 
-    expected_response = unit.tasks_awaiting_feedback(user)
-
-    get with_auth_token "/api/units/#{unit.id}/feedback", user
+    get with_auth_token "/api/units/1/grades", user
 
     assert_equal 200, last_response.status
+  end
 
-    # check each is the same
-    last_response_body.zip(expected_response).each do |response, expected|
-      assert_json_matches_model response, expected, ['id']
-    end
+  def test_download_grades_for_unit
+    user = User.first
+
+    get with_auth_token "/api/units/1/grades", user
+
+    assert_equal 200, last_response.status
+  end
+
+  # Test Download CSV of all students in this unit
+  def test_download_csv_all_students_in_unit
+    user = User.first
+
+    get with_auth_token '/api/csv/units/1', user
+
+    assert_equal 200, last_response.status
+  end
+
+  # Test Download the stats related to the number of students aiming for each grade
+  def test_download_csv_stats
+    user = User.first
+
+    get with_auth_token '/api/units/1/stats/student_target_grade', user
+
+    assert_equal 200, last_response.status
+  end
+
+  # Test Download CSV of all student tasks in this unit
+  def test_download_csv_student_tasks
+    user = User.first
+
+    get with_auth_token '/api/csv/units/1/task_completion', user
+
+    assert_equal 200, last_response.status
+  end
+
+  # Test Download stats related to the number of completed tasks
+  def test_download_csv_stats_status_of_students
+    user = User.first
+
+    get with_auth_token '/api/units/1/stats/task_completion_stats', user
+
+    assert_equal 200, last_response.status
+  end
+
+  # Test Download stats related to the number of tasks assessed by each tutor
+  def test_download_csv_tutor_assessments_unit
+    user = User.first
+
+    get with_auth_token '/api/csv/units/1/tutor_assessments', user
+
+    assert_equal 200, last_response.status
+  end
+
+  # Test Download stats related to the status of students with tasks
+  def test_download_csv_task_status_pct_unit
+    user = User.first
+
+    get with_auth_token '/api/units/1/stats/task_status_pct', user
+
+    assert_equal 200, last_response.status
+  end
+
+  # Test Download the tasks that are awaiting feedback for a unit
+  def test_download_csv_feedback_unit
+    user = User.first
+
+    get with_auth_token '/api/units/1/feedback', user
+
+    assert_equal 200, last_response.status
   end
 
   end
