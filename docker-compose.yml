@@ -14,7 +14,7 @@ services:
     depends_on:
       - db
     environment:
-      DATABASE_URL: 'postgresql://itig:d872$dh@db:5432/doubtfire_dev'
+      DATABASE_URL: 'postgresql://itig:d872$$dh@db:5432/doubtfire_dev'
       RAILS_ENV: 'development'
 
   db:
