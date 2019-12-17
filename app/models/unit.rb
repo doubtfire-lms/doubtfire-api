@@ -125,7 +125,8 @@ class Unit < ActiveRecord::Base
 
   validate :validate_end_date_after_start_date
   validate :ensure_teaching_period_dates_match, if: :has_teaching_period?
-  validates :docker_image_name_tag, inclusion: { in: YAML.load_file('config/overseer-images.yml').with_indifferent_access['images'].map { |i| i['name'] }, message: '%{value} is not an Overseer supported Docker image' }
+  validate :validate_docker_image_name_tag
+  # validates :docker_image_name_tag, inclusion: { in: YAML.load_file('config/overseer-images.yml').with_indifferent_access['images'].map { |i| i['name'] }, message: '%{value} is not an Overseer supported Docker image' }
 
   scope :current,               -> { current_for_date(Time.zone.now) }
   scope :current_for_date,      ->(date) { where('start_date <= ? AND end_date >= ?', date, date) }
@@ -133,6 +134,12 @@ class Unit < ActiveRecord::Base
   scope :not_current_for_date,  ->(date) { where('start_date > ? OR end_date < ?', date, date) }
   scope :set_active,            -> { where('active = ?', true) }
   scope :set_inactive,          -> { where('active = ?', false) }
+
+  def validate_docker_image_name_tag
+    if docker_image_name_tag.present? && !YAML.load_file('config/overseer-images.yml').with_indifferent_access.any? { |image| image['name'] == docker_image_name_tag }
+      errors.add(:docker_image_name_tag, 'is not an Overseer supported Docker image')
+    end
+  end
 
   def add_tutorial_stream(name, abbreviation, activity_type)
     tutorial_stream = TutorialStream.new
