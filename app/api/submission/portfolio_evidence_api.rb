@@ -174,7 +174,22 @@ module Api
           error!({ error: "Either the assessment didn't finish or an output wasn't generated. Please contact your unit chair" }, 401)
         end
 
-        { result: File.read("#{path}/output.txt") }
+        result = []
+        result << { label: 'output', result: File.read("#{path}/output.txt") }
+
+        if project.role_for(current_user) == :student
+          return result
+        end
+
+        if File.exist? "#{path}/build-diff.txt"
+          result << { label: 'build-diff', result: File.read("#{path}/build-diff.txt") }
+        end
+
+        if File.exist? "#{path}/run-diff.txt"
+          result << { label: 'run-diff', result: File.read("#{path}/run-diff.txt") }
+        end
+
+        result
       end
 
       desc 'Get the result of the submission of a task made last'
@@ -203,7 +218,22 @@ module Api
           error!({ error: "Either the assessment didn't finish or an output wasn't generated. Please contact your unit chair" }, 401)
         end
 
-        { result: File.read("#{path}/output.txt") }
+        result = []
+        result << { label: 'output', result: File.read("#{path}/output.txt") }
+
+        if project.role_for(current_user) == :student
+          return result
+        end
+
+        if File.exist? "#{path}/build-diff.txt"
+          result << { label: 'build-diff', result: File.read("#{path}/build-diff.txt") }
+        end
+
+        if File.exist? "#{path}/run-diff.txt"
+          result << { label: 'run-diff', result: File.read("#{path}/run-diff.txt") }
+        end
+
+        result
       end
 
       # TODO: Remove the dependency on units - figure out how to authorise
