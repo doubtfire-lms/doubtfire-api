@@ -47,6 +47,7 @@ class Unit < ActiveRecord::Base
       :download_stats,
       :download_grades,
       :rollover_unit
+      :perform_overseer_assessment_test
     ]
 
     # What can admin do with units?

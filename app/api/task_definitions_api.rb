@@ -244,6 +244,46 @@ module Api
       task_def.add_task_sheet(file[:tempfile].path)
     end
 
+    desc 'Test overseer assessment for a given task'
+    params do
+      requires :unit_id, type: Integer, desc: 'The related unit'
+      requires :task_def_id, type: Integer, desc: 'The related task definition'
+      optional :file0, type: Rack::Multipart::UploadedFile, desc: 'file 0.'
+      optional :file1, type: Rack::Multipart::UploadedFile, desc: 'file 1.'
+      # This API accepts more than 2 files, file0 and file1 are just examples.
+    end
+    post '/units/:unit_id/task_definitions/:task_def_id/test_overseer_assessment' do
+      unit = Unit.find(params[:unit_id])
+
+      unless authorise? current_user, unit, :perform_overseer_assessment_test
+        error!({ error: 'Not authorised to test overseer assessment of tasks of this unit' }, 403)
+      end
+
+      task_def = unit.task_definitions.find(params[:task_def_id])
+
+      project = Project.where(unit: unit, user: current_user).first
+
+      if project.nil?
+        # Create a project for the unit chair
+        project = unit.enrol_student(current_user, nil)
+      end
+
+      task = project.task_for_task_definition(task_definition)
+
+      upload_reqs = task.upload_requirements
+
+      # Copy files to be PDFed
+      task.accept_submission(current_user, scoop_files(params, upload_reqs), current_user, self, nil, nil, nil)
+
+      if PortfolioEvidence.perform_overseer_submission(task)
+        logger.info "Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id} was performed"
+        return { updated_task: TaskUpdateSerializer.new(task), comment: task.add_or_update_assessment_comment('Assessment started') }
+      end
+
+      logger.info "Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id} was not performed"
+      TaskUpdateSerializer.new(task)
+    end
+
     desc 'Remove the task sheet for a given task'
     params do
       requires :unit_id, type: Integer, desc: 'The related unit'
