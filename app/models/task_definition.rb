@@ -35,7 +35,14 @@ class TaskDefinition < ActiveRecord::Base
   validate :ensure_no_submissions, if: :has_change_group_status?
   validate :unit_must_be_same
   validate :tutorial_stream_present?
-  validates :docker_image_name_tag, inclusion: { in: YAML.load_file('config/overseer-images.yml').with_indifferent_access['images'].map { |i| i['name'] }, message: '%{value} is not an Overseer supported Docker image' }
+  validate :validate_docker_image_name_tag
+  # validates :docker_image_name_tag, inclusion: { in: YAML.load_file('config/overseer-images.yml').with_indifferent_access['images'].map { |i| i['name'] }, message: '%{value} is not an Overseer supported Docker image' }
+
+  def validate_docker_image_name_tag
+    if docker_image_name_tag.present? && !YAML.load_file('config/overseer-images.yml').with_indifferent_access.any? { |image| image['name'] == docker_image_name_tag }
+      errors.add(:docker_image_name_tag, 'is not an Overseer supported Docker image')
+    end
+  end
 
   def unit_must_be_same
     if unit.present? and tutorial_stream.present? and not unit.eql? tutorial_stream.unit
