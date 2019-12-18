@@ -717,44 +717,6 @@ class Project < ActiveRecord::Base
       ).map{ |t| t.abbr }
   end
 
-  def task_completion_csv
-    all_tasks = unit.task_definitions_by_grade
-    [
-      student.username,
-      student.name,
-      target_grade_desc,
-      student.email,
-      portfolio_status,
-      grade > 0 ? grade : '',
-      grade_rationale,
-    ] +
-      tutorial_abbr +
-      unit.group_sets.map do |gs|
-        grp = group_for_groupset(gs)
-        grp ? grp.name : nil
-      end +
-      all_tasks.map do |td|
-        task = tasks.where(task_definition_id: td.id).first
-        if task
-          status = task.task_status.name
-          grade = task.grade_desc
-          stars = task.quality_pts
-          people = task.contribution_pts
-        else
-          status = TaskStatus.not_started.name
-          grade = nil
-          stars = nil
-          people = nil
-        end
-
-        result = [status]
-        result << grade if td.is_graded?
-        result << stars if td.has_stars?
-        result << people if td.is_group_task?
-        result
-      end.flatten
-  end
-
   #
   # Portfolio production code
   #
