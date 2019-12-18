@@ -36,10 +36,10 @@ class TaskDefinition < ActiveRecord::Base
   validate :unit_must_be_same
   validate :tutorial_stream_present?
   validate :validate_docker_image_name_tag
-  # validates :docker_image_name_tag, inclusion: { in: YAML.load_file('config/overseer-images.yml').with_indifferent_access['images'].map { |i| i['name'] }, message: '%{value} is not an Overseer supported Docker image' }
 
   def validate_docker_image_name_tag
-    if docker_image_name_tag.present? && !YAML.load_file('config/overseer-images.yml').with_indifferent_access.any? { |image| image['name'] == docker_image_name_tag }
+    yaml_file = YAML.load_file(Rails.root.join('config/overseer-images.yml')).with_indifferent_access
+    if docker_image_name_tag.present? && !yaml_file['images'].any? { |img| img[:name] == docker_image_name_tag }
       errors.add(:docker_image_name_tag, 'is not an Overseer supported Docker image')
     end
   end
