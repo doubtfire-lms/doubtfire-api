@@ -3,7 +3,7 @@ require 'rails_helper'
 RSpec.describe LearningOutcomeTaskLink, type: :model do
   
   it "should allow you to create a link between task_def and lo" do
-    unit = FactoryGirl.create(:unit)
+    unit = FactoryBot.create(:unit)
 
     task_def = unit.task_definitions.first
     lo = unit.learning_outcomes.first
@@ -25,7 +25,7 @@ RSpec.describe LearningOutcomeTaskLink, type: :model do
   end
 
   it "should ensure the link between task_def, lo, task is unique" do
-    unit = FactoryGirl.create(:unit)
+    unit = FactoryBot.create(:unit)
 
     task_def = unit.task_definitions.first
     lo = unit.learning_outcomes.first
@@ -45,7 +45,7 @@ RSpec.describe LearningOutcomeTaskLink, type: :model do
   end
 
   it "should allow multiple lo - td links when tasks included" do
-    unit = FactoryGirl.create(:unit, student_count: 1)
+    unit = FactoryBot.create(:unit, student_count: 1)
 
     task = unit.projects.first.tasks.first
     task_def = task.task_definition
