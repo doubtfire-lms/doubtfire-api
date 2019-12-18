@@ -3,6 +3,7 @@ require 'date'
 class Task < ActiveRecord::Base
   include ApplicationHelper
   include LogHelper
+  include GradeHelper
 
   #
   # Permissions around task data
@@ -389,18 +390,7 @@ class Task < ActiveRecord::Base
   end
 
   def grade_desc
-    case grade
-    when -1
-      'Fail'
-    when 0
-      'Pass'
-    when 1
-      'Credit'
-    when 2
-      'Distinction'
-    when 3
-      'High Distinction'
-    end
+    grade_for(grade)
   end
 
   #
