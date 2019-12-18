@@ -1,7 +1,8 @@
 require 'test_helper'
+require 'grade_helper'
 
 class UnitTest < ActiveSupport::TestCase
-  
+
   setup do
     data = {
         code: 'COS10001',
@@ -274,7 +275,45 @@ class UnitTest < ActiveSupport::TestCase
   end
 
   def test_task_completion_csv
-    unit = FactoryGirl.create :unit, campus_count: 2, tutorials:2, stream_count:2, student_count:10
+    unit = FactoryGirl.create :unit, campus_count: 2, tutorials:2, stream_count:2, task_count:3, student_count:8, set_one_of_each_task: true
 
+    unit.task_definitions.each do |td|
+      unit.projects.each do |student|
+        task = student.task_for_task_definition(td)
+        tutor = student.tutor_for(td)
+
+        DatabasePopulator.assess_task(student, task, tutor, TaskStatus.all.sample, td.due_date + 1.week)
+      end
+    end
+
+    csv_str = unit.task_completion_csv
+
+    CSV.parse(csv_str, headers: true, return_headers: false,
+      header_converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '').downcase unless body.nil? }],
+      converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |entry|
+
+        # 17 = 8 general + 2 streams + 3 task defs + 1 group details + 1 stars + 1 grade + 1 contrib
+        assert_equal 17, entry.length, entry.inspect
+
+        user = User.find_by(username: entry['username'])
+        assert user.present?, entry.inspect
+
+        project = unit.active_projects.find_by(user_id: user.id)
+
+        # Test basic details
+        assert_equal project.student.username, entry['username'], entry.inspect
+        assert_equal project.student.student_id, entry['student_id'], entry.inspect
+        assert_equal project.student.email, entry['email'], entry.inspect
+
+        # Test task status
+        unit.task_definitions.each do |td|
+          task = project.task_for_task_definition(td)
+          assert_equal task.task_status.name, entry[td.abbreviation.downcase], "#{td.abbreviation} --> #{entry.inspect}"
+
+          assert_equal("#{task.quality_pts}", entry["#{td.abbreviation.downcase} stars"], "#{td.abbreviation} --> #{entry.inspect}") if td.has_stars? && task.quality_pts != -1
+          assert_equal(GradeHelper.short_grade_for(task.grade), entry["#{td.abbreviation.downcase} grade"], "#{td.abbreviation} --> #{entry.inspect}") if td.is_graded?
+          assert_equal(task.contribution_pts, Integer(entry["#{td.abbreviation.downcase} contribution"]), "#{td.abbreviation} --> #{entry.inspect}") if td.is_group_task?
+        end
+    end
   end
 end
