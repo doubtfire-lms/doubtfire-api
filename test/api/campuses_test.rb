@@ -88,15 +88,15 @@ class CampusesTest < ActiveSupport::TestCase
 
   #This method required to test campus delete methods
   def remove_property(prop)
-      arr = prop.all  
-      n = arr.length
+      prop_array = prop.all  
+      n = prop_array.length
     
       for i in 0..n-1 do
-        id1 = arr[i].campus.id
+        campus_id = prop_array[i].campus.id
 
-        if id1 == 1
-          idp = arr[i].id
-          prop.find(idp).delete 
+        if campus_id == 1
+          prop_id = prop_array[i].id
+          prop.find(prop_id).delete 
         end   
       end
   end
