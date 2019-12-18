@@ -106,12 +106,12 @@ class Task < ActiveRecord::Base
   validates :task_definition_id, uniqueness: { scope: :project,
                                                message: 'must be unique within the project' }
 
-  validate :must_have_quality_pts, if: :for_task_with_quality?
+  validate :must_have_quality_pts, if: :for_definition_with_quality?
 
   validate :extensions_must_end_with_due_date, if: :has_requested_extension?
 
-  def for_task_with_quality?
-    task_definition.max_quality_pts.positive?
+  def for_definition_with_quality?
+    task_definition.has_stars?
   end
 
   def has_requested_extension?
