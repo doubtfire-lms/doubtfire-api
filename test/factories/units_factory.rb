@@ -1,6 +1,6 @@
-# Read about factories at https://github.com/thoughtbot/factory_girl
+# Read about factories at https://github.com/thoughtbot/factory_bot
 
-FactoryGirl.define do
+FactoryBot.define do
 
   factory :tutorial do
     meeting_day       "Monday"
@@ -53,15 +53,15 @@ FactoryGirl.define do
       create_list(:group_set, eval.group_sets, unit: unit)
       create_list(:learning_outcome, eval.outcome_count, unit: unit)
 
-      unit.employ_staff( FactoryGirl.create(:user, :convenor), Role.convenor)
+      unit.employ_staff( FactoryBot.create(:user, :convenor), Role.convenor)
       eval.student_count.times do |i|
-        unit.enrol_student( FactoryGirl.create(:user, :student), unit.tutorials[i % unit.tutorials.count])
+        unit.enrol_student( FactoryBot.create(:user, :student), unit.tutorials[i % unit.tutorials.count])
       end
 
       stud = 0
       eval.groups.each do |group_details|
         gs = unit.group_sets[group_details[:gs]]
-        grp = FactoryGirl.create(:group, group_set: gs)
+        grp = FactoryBot.create(:group, group_set: gs)
         group_details[:students].times do
           grp.add_member unit.projects[stud % eval.student_count]
           stud += 1
