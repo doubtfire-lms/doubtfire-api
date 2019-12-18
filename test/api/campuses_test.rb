@@ -52,4 +52,52 @@ class CampusesTest < ActiveSupport::TestCase
     assert_json_matches_model(last_response_body, first_campus, response_keys)
     assert_equal 0, first_campus[:mode]
   end
+    
+  def test_delete_campuses    
+    initial_num_of_campus = Campus.all.count
+    user = User.admins.first
+
+    remove_property(Project)
+    remove_property(Tutorial)
+    ####################################################
+
+    #delete the stuff
+    delete_json with_auth_token("/api/campuses/1",user)
+    #check the request went through
+    assert_equal 200, last_response.status
+
+    get '/api/campuses' #get number of campuses
+    # check if current number of campuses = original number of campuses 
+    assert_equal initial_num_of_campus - 1, last_response_body.count
+  end
+
+  def test_student_delete_campus
+    project = Project.first
+    user = project.student
+    number_of_campuses = Campus.all.count
+    campus_id = Campus.all.first.id
+
+    remove_property(Project)
+    remove_property(Tutorial)
+
+    # perform the delete
+    delete_json with_auth_token("/api/campuses/#{campus_id}", user)
+
+    assert_equal 403, last_response.status
+  end
+
+  #This method required to test campus delete methods
+  def remove_property(prop)
+      arr = prop.all  
+      n = arr.length
+    
+      for i in 0..n-1 do
+        id1 = arr[i].campus.id
+
+        if id1 == 1
+          idp = arr[i].id
+          prop.find(idp).delete 
+        end   
+      end
+  end
 end
