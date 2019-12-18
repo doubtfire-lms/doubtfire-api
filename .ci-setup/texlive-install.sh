@@ -25,19 +25,20 @@ fi
 # Other contrib packages: done as a block to avoid multiple calls to tlmgr
 # texlive-latex-base is needed to run pdflatex
 tlmgr install   \
-  fontawesome   \
-  minted        \
-  fvextra       \
-  upquote       \
-  ifplatform    \
-  xstring       \
-  framed        \
   catchfile     \
-  letltxmacro   \
+  fontawesome   \
+  framed        \
+  fvextra       \
+  ifplatform    \
   kvoptions     \
   kvsetkeys     \
+  lastpage      \
+  letltxmacro   \
   ltxcmds       \
-  lastpage
+  minted        \
+  pdftexcmds    \
+  upquote       \
+  xstring
 
 # Keep no backups (not required, simply makes cache bigger)
 tlmgr option -- autobackup 0
