@@ -8,6 +8,7 @@ module Api
     helpers AuthorisationHelpers
     helpers FileHelper
     helpers MimeCheckHelpers
+    helpers Submission::GenerateHelpers
 
     before do
       authenticated?
@@ -259,7 +260,7 @@ module Api
         error!({ error: 'Not authorised to test overseer assessment of tasks of this unit' }, 403)
       end
 
-      task_def = unit.task_definitions.find(params[:task_def_id])
+      task_definition = unit.task_definitions.find(params[:task_def_id])
 
       project = Project.where(unit: unit, user: current_user).first
 
@@ -273,7 +274,7 @@ module Api
       upload_reqs = task.upload_requirements
 
       # Copy files to be PDFed
-      task.accept_submission(current_user, scoop_files(params, upload_reqs), current_user, self, nil, nil, nil)
+      task.accept_submission(current_user, scoop_files(params, upload_reqs), current_user, self, nil, 'ready_to_mark', nil)
 
       if PortfolioEvidence.perform_overseer_submission(task)
         logger.info "Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id} was performed"
