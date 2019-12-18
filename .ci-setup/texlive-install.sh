@@ -35,6 +35,7 @@ tlmgr install   \
   catchfile     \
   letltxmacro   \
   kvoptions     \
+  kvsetkeys     \
   ltxcmds       \
   lastpage
 
