@@ -12,6 +12,8 @@ FactoryGirl.define do
     start_date                { unit.start_date + rand(1..12).weeks }
     target_date               { start_date + rand(1..2).weeks }
     target_grade              { rand(0..3) }
+    group_set                 nil
+    tutorial_stream           { unit.tutorial_streams.sample }
   end
 
   factory :learning_outcome do
@@ -30,10 +32,11 @@ FactoryGirl.define do
       tutorial_config [] #[ {stream: 0, campus: 0} ]
       group_sets 0
       groups [ ] #[ { gs: 0, students:0 } ]
-      group_tasks [ ] #[ {idx: 0, gs: gs }] - index of task, and index of group set
+      group_tasks [ ] #[ {idx: 0, gs: 0 }] - index of task, and index of group set
       outcome_count 2
       stream_count 0
       campus_count 1
+      set_one_of_each_task false  # In addition to the standard tasks, also add one of each different think of task - group, quality, graded, etc.
     end
 
     name            { Populator.words(1..2) }
@@ -45,12 +48,33 @@ FactoryGirl.define do
     active          true
 
     after(:create) do | unit, eval |
+      group_sets = eval.group_sets
+      task_count = eval.task_count
+      group_tasks = eval.group_tasks
+      groups = eval.groups
+
+      if eval.set_one_of_each_task
+        group_sets = 1 unless group_sets > 0
+        task_count = 3 if task_count < 3
+        group_tasks << {idx: 0, gs: group_sets - 1}
+        group_sets.times do |gs|
+          (eval.student_count / 4).times do
+            groups << { gs: gs, students: 4}
+          end
+        end
+      end
+
       campuses = create_list(:campus, eval.campus_count)
 
-      create_list(:task_definition, eval.task_count, unit: unit)
-      create_list(:group_set, eval.group_sets, unit: unit)
+      create_list(:group_set, group_sets, unit: unit)
       create_list(:learning_outcome, eval.outcome_count, unit: unit)
       tutorial_streams = create_list(:tutorial_stream, eval.stream_count, unit: unit)
+      create_list(:task_definition, task_count, unit: unit)
+
+      if eval.set_one_of_each_task
+        unit.task_definitions[1].update(max_quality_pts: 5)
+        unit.task_definitions[2].update(is_graded: true)
+      end
 
       campuses.each do |c|
         # loop to 2nd last, unless there are no streams... then loop for all
@@ -84,7 +108,7 @@ FactoryGirl.define do
       end
 
       stud = 0
-      eval.groups.each do |group_details|
+      groups.each do |group_details|
         gs = unit.group_sets[group_details[:gs]]
         grp = FactoryGirl.create(:group, group_set: gs)
         group_details[:students].times do
@@ -93,11 +117,11 @@ FactoryGirl.define do
         end
       end
 
-      eval.group_tasks.each do |task_details|
+      group_tasks.each do |task_details|
         td = unit.task_definitions[task_details[:idx]]
         td.group_set = unit.group_sets[task_details[:gs]]
-        # puts "Group task #{td.abbreviation} #{td.group_set}"
-        td.save
+        # puts "Group task #{td.abbreviation} #{td.group_set} = #{td.is_group_task?} #{td.valid?}"
+        td.save!
       end
     end
   end
