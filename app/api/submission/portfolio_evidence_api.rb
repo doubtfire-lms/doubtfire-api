@@ -59,10 +59,9 @@ module Api
         if PortfolioEvidence.perform_overseer_submission(task)
           logger.info "Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id} was performed"
           return { updated_task: TaskUpdateSerializer.new(task), comment: task.add_or_update_assessment_comment('Assessment started') }
-        else
-          logger.info "Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id} was not performed"
         end
 
+        logger.info "Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id} was not performed"
         TaskUpdateSerializer.new(task)
       end # post
 
@@ -245,7 +244,7 @@ module Api
           error!({ error: 'Not authorised to download task details of unit' }, 403)
         end
         {
-          result: YAML.load_file('config/overseer-images.yml').with_indifferent_access
+          result: YAML.load_file(Rails.root.join('config/overseer-images.yml')).with_indifferent_access
         }
       end
     end
