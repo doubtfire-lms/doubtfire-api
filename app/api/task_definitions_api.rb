@@ -278,11 +278,11 @@ module Api
 
       if PortfolioEvidence.perform_overseer_submission(task)
         logger.info "Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id} was performed"
-        return { updated_task: TaskUpdateSerializer.new(task), comment: task.add_or_update_assessment_comment('Assessment started') }
+        return { updated_task: TaskUpdateSerializer.new(task), comment: task.add_or_update_assessment_comment('Assessment started'), project_id: project.id }
       end
 
       logger.info "Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id} was not performed"
-      TaskUpdateSerializer.new(task)
+      { updated_task: TaskUpdateSerializer.new(task), project_id: project.id }
     end
 
     desc 'Remove the task sheet for a given task'

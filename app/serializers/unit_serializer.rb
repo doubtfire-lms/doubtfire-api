@@ -8,7 +8,7 @@ class ShallowUnitSerializer < ActiveModel::Serializer
 end
 
 class UnitSerializer < ActiveModel::Serializer
-  attributes :code, :id, :name, :my_role, :description, :teaching_period_id, :start_date, :end_date, :active, :convenors, :ilos, :docker_image_name_tag, :assessment_enabled
+  attributes :code, :id, :name, :my_role, :description, :teaching_period_id, :start_date, :end_date, :active, :convenors, :ilos, :docker_image_name_tag, :assessment_enabled, :project_id
 
   def start_date
     object.start_date.to_date
@@ -37,6 +37,11 @@ class UnitSerializer < ActiveModel::Serializer
 
   def ilos
     object.learning_outcomes
+  end
+
+  def project_id
+    project = Project.where(unit: object.id, user: Thread.current[:user]).first if Thread.current[:user]
+    return project.id unless project.nil?
   end
 
   has_many :tutorials
