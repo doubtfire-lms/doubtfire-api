@@ -50,8 +50,8 @@ FactoryGirl.define do
     after(:create) do | unit, eval |
       group_sets = eval.group_sets
       task_count = eval.task_count
-      group_tasks = eval.group_tasks
-      groups = eval.groups
+      group_tasks = eval.group_tasks.clone
+      groups = eval.groups.clone
 
       if eval.set_one_of_each_task
         group_sets = 1 unless group_sets > 0
