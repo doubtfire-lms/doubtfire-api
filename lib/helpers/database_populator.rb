@@ -475,6 +475,10 @@ class DatabasePopulator
       task.grade_task rand(-1..3)
     end
 
+    if task.for_definition_with_quality?
+      task.update(quality_pts: rand(0.. task.task_definition.max_quality_pts ))
+    end
+
     pdf_path = task.final_pdf_path
     if pdf_path && !File.exists?(pdf_path)
       FileUtils.ln_s(Rails.root.join('test_files', 'unit_files', 'sample-student-submission.pdf'), pdf_path)
