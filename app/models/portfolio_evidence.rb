@@ -141,6 +141,8 @@ class PortfolioEvidence
       logger.error "Student submission history zip file doesn't exist #{zip_file_path}"
       return false
     end
+    # TODO: Use FACL instead in future.
+    `chmod o+w #{task_submission_identifier_path_with_timestamp(:done, task, timestamp)}`
 
     message = {
       output_path: task_submission_identifier_path_with_timestamp(:done, task, timestamp),
