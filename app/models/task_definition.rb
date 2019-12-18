@@ -539,6 +539,8 @@ class TaskDefinition < ActiveRecord::Base
 
   def add_task_assessment_resources(file)
     FileUtils.mv file, task_assessment_resources
+    # TODO: Use FACL instead in future.
+    `chmod 755 #{task_assessment_resources}`
   end
 
   def remove_task_assessment_resources()
