@@ -46,7 +46,7 @@ class Unit < ActiveRecord::Base
       :change_project_enrolment,
       :download_stats,
       :download_grades,
-      :rollover_unit
+      :rollover_unit,
       :perform_overseer_assessment_test
     ]
 
