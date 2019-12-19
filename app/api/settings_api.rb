@@ -11,7 +11,7 @@ module Api
     get '/settings' do
       {
         externalName: Doubtfire::Application.config.institution[:product_name],
-        overseer_enabled: ENV['OVERSEER_ENABLED'].present? && ENV['OVERSEER_ENABLED'].to_s.downcase == "true" ? true : false
+        overseer_enabled: Doubtfire::Application.config.overseer_enabled
       }
     end
 

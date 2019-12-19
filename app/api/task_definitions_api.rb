@@ -254,6 +254,8 @@ module Api
       # This API accepts more than 2 files, file0 and file1 are just examples.
     end
     post '/units/:unit_id/task_definitions/:task_def_id/test_overseer_assessment' do
+      return 'Overseer is not enabled' if !Doubtfire::Application.config.overseer_enabled
+
       unit = Unit.find(params[:unit_id])
 
       unless authorise? current_user, unit, :perform_overseer_assessment_test
