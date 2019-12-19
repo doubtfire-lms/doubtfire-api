@@ -38,9 +38,8 @@ def receive(_subscriber_instance, channel, _results_publisher, delivery_info, _p
 
   overseer_assessment = OverseerAssessment.where(task_id: task_id, submission_timestamp: timestamp).first
   if !overseer_assessment.present?
-    overseer_assessment = OverseerAssessment.create
-    overseer_assessment.task = task
-    overseer_assessment.submission_timestamp = timestamp
+    puts "No such assessment with task_id: #{task_id} and timestamp: #{timestamp} found"
+    return channel.ack(delivery_info.delivery_tag)
   end
 
   overseer_assessment.status = 3
