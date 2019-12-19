@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20191204024146) do
+ActiveRecord::Schema.define(version: 20191219002608) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -180,6 +180,18 @@ ActiveRecord::Schema.define(version: 20191204024146) do
   end
 
   add_index "logins", ["user_id"], name: "index_logins_on_user_id", using: :btree
+
+  create_table "overseer_assessments", force: :cascade do |t|
+    t.integer  "task_id",                          null: false
+    t.string   "submission_timestamp",             null: false
+    t.string   "result_task_status"
+    t.integer  "status",               default: 0, null: false
+    t.datetime "created_at",                       null: false
+    t.datetime "updated_at",                       null: false
+  end
+
+  add_index "overseer_assessments", ["task_id", "submission_timestamp"], name: "index_overseer_assessments_on_task_id_and_submission_timestamp", unique: true, using: :btree
+  add_index "overseer_assessments", ["task_id"], name: "index_overseer_assessments_on_task_id", using: :btree
 
   create_table "plagiarism_match_links", force: :cascade do |t|
     t.integer  "task_id"
@@ -499,6 +511,7 @@ ActiveRecord::Schema.define(version: 20191204024146) do
   add_foreign_key "breaks", "teaching_periods"
   add_foreign_key "comments_read_receipts", "task_comments"
   add_foreign_key "comments_read_receipts", "users"
+  add_foreign_key "overseer_assessments", "tasks"
   add_foreign_key "projects", "campuses"
   add_foreign_key "task_comments", "users", column: "recipient_id"
   add_foreign_key "task_definitions", "tutorial_streams"
