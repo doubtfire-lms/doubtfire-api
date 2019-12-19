@@ -7,5 +7,5 @@ class OverseerAssessment < ActiveRecord::Base
 
   validates_uniqueness_of :submission_timestamp, scope: :task_id
 
-  enum mode: { not_queued: 0, queued: 1, queue_failed: 2, done: 3 }
+  enum status: { not_queued: 0, queued: 1, queue_failed: 2, done: 3 }
 end
