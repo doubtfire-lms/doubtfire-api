@@ -268,7 +268,7 @@ module Api
 
       if project.nil?
         # Create a project for the unit chair
-        project = unit.enrol_student(current_user, nil)
+        project = unit.enrol_student(current_user, Campus.first)
       end
 
       task = project.task_for_task_definition(task_definition)
