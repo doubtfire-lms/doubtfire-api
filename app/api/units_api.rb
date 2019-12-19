@@ -186,41 +186,6 @@ module Api
       end
     end
 
-    desc 'Add a tutorial with the provided details to this unit'
-    params do
-      # day, time, location, tutor_username, abbrev
-      requires :tutorial, type: Hash do
-        requires :day
-        requires :time
-        requires :location
-        requires :tutor_username
-        requires :abbrev
-        requires :campus_id
-        requires :capacity
-      end
-    end
-    post '/units/:id/tutorials' do
-      unit = Unit.find(params[:id])
-      unless authorise? current_user, unit, :add_tutorial
-        error!({ error: 'Not authorised to create a tutorial' }, 403)
-      end
-
-      new_tutorial = params[:tutorial]
-      tutor = User.find_by(username: new_tutorial[:tutor_username])
-      if tutor.nil?
-        error!({ error: "Couldn't find User with username=#{new_tutorial[:tutor_username]}" }, 403)
-      end
-
-      campus = Campus.find(new_tutorial[:campus_id])
-
-      result = unit.add_tutorial(new_tutorial[:day], new_tutorial[:time], new_tutorial[:location], tutor, campus, new_tutorial[:capacity], new_tutorial[:abbrev])
-      if result.nil?
-        error!({ error: 'Tutor username invalid (not a tutor for this unit)' }, 403)
-      end
-
-      result
-    end
-
     desc 'Download the tasks that are awaiting feedback for a unit'
     get '/units/:id/feedback' do
       unit = Unit.find(params[:id])
