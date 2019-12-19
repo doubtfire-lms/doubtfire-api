@@ -154,14 +154,21 @@ class PortfolioEvidence
       zip_file: 1
     }
 
+    overseer_assessment = OverseerAssessment.create
+    overseer_assessment.task = task
+    overseer_assessment.submission_timestamp = timestamp
+    overseer_assessment.status = 1
+
     begin
       sm_instance.clients[:ontrack].publisher.connect_publisher
       sm_instance.clients[:ontrack].publisher.publish_message(message)
     rescue RuntimeError => e
       logger.error e
+      overseer_assessment.status = 2
       return false
     ensure
       sm_instance.clients[:ontrack].publisher.disconnect_publisher
+      overseer_assessment.save!
     end
 
     true

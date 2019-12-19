@@ -144,7 +144,7 @@ module Api
           error!({ error: "No submissions found for project: '#{params[:id]}' task: '#{params[:task_def_id]}'" }, 401)
         end
 
-        { result: FileHelper.sorted_timestamp_entries_in_dir(path).first(10) }
+        { result: OverseerAssessment.where(task_id: task.id).order(:submission_timestamp).limit(10) }
       end
 
       desc 'Get the result of the submission of a task made at the given timestamp'
