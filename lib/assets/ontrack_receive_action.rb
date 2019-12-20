@@ -96,6 +96,9 @@ def receive(_subscriber_instance, channel, _results_publisher, delivery_info, _p
     puts 'YAML file doesn\'t contain field `new_status`'
   end
 
+rescue StandardError => e
+  puts e
+ensure
   overseer_assessment.save!
   channel.ack(delivery_info.delivery_tag)
 end
