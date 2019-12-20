@@ -1181,6 +1181,7 @@ class Task < ActiveRecord::Base
     #
     tmp_dir = File.join(Dir.tmpdir, 'doubtfire', 'new', id.to_s)
     logger.debug "Creating temporary directory for new submission at #{tmp_dir}"
+    puts "Creating temporary directory for new submission at #{tmp_dir}"
 
     # ensure the dir exists
     FileUtils.mkdir_p(tmp_dir)
@@ -1202,6 +1203,9 @@ class Task < ActiveRecord::Base
 
     logger.debug "Moving submission evidence from #{tmp_dir} to #{enqueued_dir}"
 
+    # Delete existing dir if it exists so that new content takes precedence, if any.
+    logger.debug "rm -rf'ing: #{enqueued_dir}/#{id.to_s}"
+    FileUtils.rm_rf "#{enqueued_dir}/#{id.to_s}"
     # Move files into place
     FileUtils.mv tmp_dir, enqueued_dir, :force => true
 
