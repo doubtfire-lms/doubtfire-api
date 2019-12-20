@@ -46,4 +46,22 @@ class SettingTest < ActiveSupport::TestCase
         assert_equal expected_plagiarism, returned_plagiarism
     end
 
+    # Get all unit teaching periods info
+    def test_get_all_unit_teaching_periods_info
+        # The GET we are testing
+        get '/api/teaching_periods/id/units'
+        
+        expected_data = Unit.where('teaching_period_id is not NULL').all
+        
+        assert_equal expected_data.count, last_response_body.count
+        
+        # Loop through all of the responses
+        # Check responses match as expected 
+        last_response_body.each do |unit|
+          expected = Unit.find(unit['unit_id'])
+          assert_equal expected[:code], unit['unit_code']
+          assert_equal TeachingPeriod.find(expected[:teaching_period_id]).period, unit['period_name']
+        end
+    end    
+
 end
