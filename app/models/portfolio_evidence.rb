@@ -100,6 +100,11 @@ class PortfolioEvidence
     task.compress_new_to_done zip_file_path, false
   end
 
+  def strip_till_submission_history(str)
+    substr = 'submission_history'
+    str[str.index(substr) + substr.length..str.length]
+  end
+
   def self.perform_overseer_submission(task)
     sm_instance = Doubtfire::Application.config.sm_instance
     return false if sm_instance.nil?
@@ -145,10 +150,10 @@ class PortfolioEvidence
     `chmod o+w #{task_submission_identifier_path_with_timestamp(:done, task, timestamp)}`
 
     message = {
-      output_path: task_submission_identifier_path_with_timestamp(:done, task, timestamp),
+      output_path: strip_till_submission_history(task_submission_identifier_path_with_timestamp(:done, task, timestamp)),
       docker_image_name_tag: docker_image_name_tag,
-      submission: zip_file_path,
-      assessment: assessment_resources_path,
+      submission: strip_till_submission_history(zip_file_path),
+      assessment: strip_till_submission_history(assessment_resources_path),
       timestamp: timestamp,
       task_id: task.id,
       zip_file: 1
