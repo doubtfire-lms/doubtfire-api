@@ -101,8 +101,8 @@ class PortfolioEvidence
   end
 
   def strip_till_submission_history(str)
-    substr = 'submission_history'
-    str[str.index(substr) + substr.length..str.length]
+    substr = '/doubtfire_api'
+    str[str.index(substr)..str.length]
   end
 
   def self.perform_overseer_submission(task)
