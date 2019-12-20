@@ -81,8 +81,8 @@ def receive(_subscriber_instance, channel, _results_publisher, delivery_info, _p
   end
 
   if yaml_file['new_status'].present?
-    new_status = TaskStatus.status_for_name(yaml_file['new_status']).status_key
-    overseer_assessment.result_task_status = new_status ? new_status : 'invalid_status'
+    new_status = TaskStatus.status_for_name(yaml_file['new_status'])
+    overseer_assessment.result_task_status = new_status ? new_status.status_key : 'invalid_status'
 
     # If no later submission with `status = done` exists, then change task status
     if i_latest_done_timestamp.nil? || i_timestamp > i_latest_done_timestamp
