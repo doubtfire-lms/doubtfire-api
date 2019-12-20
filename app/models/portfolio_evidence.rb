@@ -100,7 +100,7 @@ class PortfolioEvidence
     task.compress_new_to_done zip_file_path, false
   end
 
-  def strip_till_submission_history(str)
+  def self.strip_till_submission_history(str)
     substr = '/doubtfire_api'
     str[str.index(substr)..str.length]
   end
