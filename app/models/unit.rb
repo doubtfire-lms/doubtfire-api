@@ -2076,7 +2076,7 @@ class Unit < ActiveRecord::Base
       ]
 
       tasks
-        .joins(project: [ {tutorial_enrolment: { tutorial: { unit_role: :user } } } ])
+        .joins(project: [ {tutorial_enrolments: { tutorial: { unit_role: :user } } } ])
         .select('users.username', 'users.first_name', 'users.last_name', 'SUM(times_assessed) AS total')
         .group('users.username', 'users.first_name', 'users.last_name')
         .each do |r|
