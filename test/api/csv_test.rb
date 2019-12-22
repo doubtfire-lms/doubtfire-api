@@ -46,7 +46,7 @@ class CsvTest < ActiveSupport::TestCase
     get "/api/csv/task_definitions?unit_id=#{unit_id_to_test}&auth_token=#{auth_token_to_test}"
 
     # Check for response
-    assert_equal 500, last_response.status
+    assert_equal 404, last_response.status
   end
 
   #3: Testing for unit ID error with incorrect user ID
@@ -60,7 +60,7 @@ class CsvTest < ActiveSupport::TestCase
     get "/api/csv/task_definitions?unit_id=#{unit_id_to_test}&auth_token=#{auth_token_to_test}"
 
     # Check for response
-    assert_equal 500, last_response.status
+    assert_equal 404, last_response.status
   end
 
   #4: Testing for unit ID error with string user ID
@@ -74,7 +74,7 @@ class CsvTest < ActiveSupport::TestCase
     get "/api/csv/task_definitions?unit_id=#{unit_id_to_test}&auth_token=#{auth_token_to_test}"
 
     # Check for response
-    assert_equal 500, last_response.status
+    assert_equal 400, last_response.status
   end
 
   #5: Testing for authentication failure with incorrect token
@@ -121,7 +121,7 @@ class CsvTest < ActiveSupport::TestCase
     post "/api/csv/task_definitions", data_to_post
 
     assert_equal 201, last_response.status
-    assert_equal 'Assignment 12', TaskDefinition.last.name
+    assert_equal 'Assignment 12', TaskDefinition.where(abbreviation: 'A12').first.name
   end
   
   #8: Testing for CSV upload failure due to incorrect auth token
@@ -169,7 +169,7 @@ class CsvTest < ActiveSupport::TestCase
     # perform the POST
     post "/api/csv/task_definitions", data_to_post
 
-    assert_equal 500, last_response.status
+    assert_equal 400, last_response.status
   end
   
   #11: Testing for CSV upload failure due to empty unit ID
@@ -185,23 +185,31 @@ class CsvTest < ActiveSupport::TestCase
     # perform the POST
     post "/api/csv/task_definitions", data_to_post
 
-    assert_equal 500, last_response.status
+    assert_equal 404, last_response.status
   end
   
-  #12: Testing for CSV upload failure due to incorrect file type (XLSX)
+  #12: Testing for CSV upload of xlsx file type
   #POST /api/csv/task_definitions
-  def test_csv_upload_all_task_definitions_unit_incorrect_file_xlsx
+  def test_csv_upload_all_task_definitions_unit_xlsx
+
+    unit = FactoryGirl.create(:unit)
 
     data_to_post = {
-      unit_id: '1',
+      unit_id: unit.id,
       file: Rack::Test::UploadedFile.new('test_files/csv_test_files/COS10001-Tasks.xlsx'),
       auth_token: auth_token
     }
     
+    tdc = unit.task_definitions.count
+
     # perform the POST
     post "/api/csv/task_definitions", data_to_post
 
-    assert_equal 500, last_response.status
+    unit.reload
+
+    assert_equal 201, last_response.status
+    assert_equal 1, last_response_body['success'].count, last_response.body
+    assert_equal tdc + 1, unit.task_definitions.count
   end
 
   #13: Testing for CSV upload failure due to incorrect file type (PDF)
@@ -249,7 +257,7 @@ class CsvTest < ActiveSupport::TestCase
     # perform the POST
     post "/api/csv/task_definitions", data_to_post
 
-    assert_equal 500, last_response.status
+    assert_equal 404, last_response.status
   end
 
   #####--------------GET tests - Download CSV of all students in this unit------------######
@@ -282,7 +290,7 @@ class CsvTest < ActiveSupport::TestCase
     get "/api/csv/units/#{unit_id_to_test}?auth_token=#{auth_token_to_test}"
 
     # Check for response
-    assert_equal 500, last_response.status
+    assert_equal 404, last_response.status
   end
 
   #19: Testing for unit ID error with incorrect (non-existant) user ID
@@ -296,7 +304,7 @@ class CsvTest < ActiveSupport::TestCase
     get "/api/csv/units/#{unit_id_to_test}?auth_token=#{auth_token_to_test}"
 
     # Check for response
-    assert_equal 500, last_response.status
+    assert_equal 404, last_response.status
   end
 
   #20: Testing for authentication failure with incorrect token
@@ -397,7 +405,7 @@ class CsvTest < ActiveSupport::TestCase
     post "/api/csv/units/#{unit_id_to_test}", data_to_post
     
 
-    assert_equal 500, last_response.status
+    assert_equal 404, last_response.status
   end
 
   #28: Testing for CSV upload failure due to incorrect file type (PDF)
@@ -431,7 +439,7 @@ class CsvTest < ActiveSupport::TestCase
     post "/api/csv/units/#{unit_id_to_test}", data_to_post
     
 
-    assert_equal 500, last_response.status
+    assert_equal 403, last_response.status
   end
 
   #30: Testing for CSV upload failure due to non-existant unit id
@@ -448,7 +456,7 @@ class CsvTest < ActiveSupport::TestCase
     post "/api/csv/units/#{unit_id_to_test}", data_to_post
     
 
-    assert_equal 500, last_response.status
+    assert_equal 404, last_response.status
   end
 
   #####--------------POST tests - Upload CSV with the students to un-enrol from the unit------------######
@@ -707,7 +715,7 @@ class CsvTest < ActiveSupport::TestCase
     get "/api/csv/units/#{unit_id_to_test}/task_completion?auth_token=#{auth_token_to_test}"
 
     # Check for response
-    assert_equal 500, last_response.status
+    assert_equal 404, last_response.status
   end
 
   #42: Testing for unit ID error with string user ID
@@ -721,7 +729,7 @@ class CsvTest < ActiveSupport::TestCase
     get "/api/csv/units/#{unit_id_to_test}/task_completion?auth_token=#{auth_token_to_test}"
 
     # Check for response
-    assert_equal 500, last_response.status
+    assert_equal 404, last_response.status
   end
 
   #43: Testing for unit ID error with incorrect (non-existant) user ID
@@ -735,7 +743,7 @@ class CsvTest < ActiveSupport::TestCase
     get "/api/csv/units/#{unit_id_to_test}/task_completion?auth_token=#{auth_token_to_test}"
 
     # Check for response
-    assert_equal 500, last_response.status
+    assert_equal 404, last_response.status
   end
 
   #44: Testing for authentication failure with incorrect token
@@ -796,7 +804,7 @@ class CsvTest < ActiveSupport::TestCase
     get "/api/csv/units/#{unit_id_to_test}/tutor_assessments?auth_token=#{auth_token_to_test}"
 
     # Check for response
-    assert_equal 500, last_response.status
+    assert_equal 404, last_response.status
   end
 
   #48: Testing for unit ID error with string user ID
@@ -810,7 +818,7 @@ class CsvTest < ActiveSupport::TestCase
     get "/api/csv/units/#{unit_id_to_test}/tutor_assessments?auth_token=#{auth_token_to_test}"
 
     # Check for response
-    assert_equal 500, last_response.status
+    assert_equal 404, last_response.status
   end
 
   #49: Testing for unit ID error with incorrect (non-existant) user ID
@@ -824,7 +832,7 @@ class CsvTest < ActiveSupport::TestCase
     get "/api/csv/units/#{unit_id_to_test}/tutor_assessments?auth_token=#{auth_token_to_test}"
 
     # Check for response
-    assert_equal 500, last_response.status
+    assert_equal 404, last_response.status
   end
 
   #50: Testing for authentication failure with incorrect token
