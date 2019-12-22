@@ -203,11 +203,13 @@ module Api
         error!({ error: "No file uploaded" }, 403)
       end
 
+      path = params[:file][:tempfile].path
+
       # check mime is correct before uploading
-      ensure_csv!(params[:file][:tempfile])
+      ensure_csv!(path)
 
       # Actually import...
-      User.import_from_csv(current_user, params[:file][:tempfile])
+      User.import_from_csv(current_user, File.new(path))
     end
 
     desc 'Download CSV of all users'
