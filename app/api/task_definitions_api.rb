@@ -176,6 +176,10 @@ module Api
         error!({ error: 'Not authorised to upload CSV of tasks' }, 403)
       end
 
+      unless params[:file].present?
+        error!({ error: "No file uploaded" }, 403)
+      end
+
       path = params[:file][:tempfile].path
 
       # check mime is correct before uploading
@@ -272,6 +276,10 @@ module Api
 
       task_def = unit.task_definitions.find(params[:task_def_id])
 
+      unless params[:file].present?
+        error!({ error: "No file uploaded" }, 403)
+      end
+
       file_path = params[:file][:tempfile].path
 
       check_mime_against_list! file_path, 'zip', ['application/zip', 'multipart/x-gzip', 'multipart/x-zip', 'application/x-gzip', 'application/octet-stream']
@@ -309,6 +317,10 @@ module Api
 
       unless authorise? current_user, unit, :add_task_def
         error!({ error: 'Not authorised to upload tasks of unit' }, 403)
+      end
+
+      unless params[:file].present?
+        error!({ error: "No file uploaded" }, 403)
       end
 
       file = params[:file][:tempfile].path
