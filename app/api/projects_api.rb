@@ -28,7 +28,8 @@ module Api
       projects = projects
                  .joins(:unit)
                  .joins(:user)
-                 .joins('LEFT OUTER JOIN tutorials ON projects.tutorial_id = tutorials.id')
+                 .joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id')
+                 .joins('LEFT OUTER JOIN tutorials ON tutorial_enrolments.tutorial_id = tutorials.id')
                  .joins('LEFT OUTER JOIN unit_roles AS tutor_role ON tutorials.unit_role_id = tutor_role.id')
                  .joins('LEFT OUTER JOIN users AS tutor ON tutor.id = tutor_role.user_id')
                  .select('projects.*', 'units.name AS unit_name', 'units.id AS unit_id', 'units.code AS unit_code', 'units.start_date AS start_date', 'units.end_date AS end_date', "#{student_name} AS student_name", "#{tutor_name} AS tutor_name")
@@ -56,7 +57,6 @@ module Api
     desc 'Update a project'
     params do
       optional :trigger,            type: String,  desc: 'The update trigger'
-      optional :tutorial_id,        type: Integer, desc: 'Switch tutorial'
       optional :campus_id,          type: Integer, desc: 'Campus this project is part of'
       optional :enrolled,           type: Boolean, desc: 'Enrol or withdraw this project'
       optional :target_grade,       type: Integer, desc: 'New target grade'
@@ -78,30 +78,7 @@ module Api
         else
           error!({ error: "Invalid trigger - #{params[:trigger]} unknown" }, 403)
         end
-      elsif !params[:tutorial_id].nil?
-        unless authorise? current_user, project, :change_tutorial
-          error!({ error: "Couldn't find Project with id=#{params[:id]}" }, 403)
-        end
-
-        tutorial_id = params[:tutorial_id]
-        if project.unit.tutorials.where('tutorials.id = :tutorial_id', tutorial_id: tutorial_id).count == 1
-          project.tutorial_id = tutorial_id
-          # Required if we are updating both campus and tutorial at the same time.
-          # Updating both tutorial and campus should happen at the same time because of the campus_must_be_same validation
-          if !params[:campus_id].nil?
-            unless authorise? current_user, project, :change_campus
-              error!({ error: "You cannot change the campus for project #{params[:id]}" }, 403)
-            end
-            project.campus_id = params[:campus_id]
-          end
-        elsif tutorial_id == -1
-          project.tutorial = nil
-        else
-          error!({ error: "Couldn't find Tutorial with id=#{params[:tutorial_id]}" }, 403)
-        end
-        project.save!
-
-        # If we are only updating the campus
+      # If we are only updating the campus
       elsif params[:campus_id].present?
         unless authorise? current_user, project, :change_campus
           error!({ error: "You cannot change the campus for project #{params[:id]}" }, 403)
@@ -159,7 +136,6 @@ module Api
       requires :unit_id, type: Integer, desc: 'Unit Id'
       requires :student_num, type: String,   desc: 'Student Number 7 digit code'
       requires :campus_id, type: Integer, desc: 'Campus this project is part of'
-      optional :tutorial_id, type: Integer,  desc: 'Tutorial Id'
     end
     post '/projects' do
       unit = Unit.find(params[:unit_id])
@@ -174,7 +150,7 @@ module Api
       campus = Campus.find(params[:campus_id])
 
       if authorise? current_user, unit, :enrol_student
-        proj = unit.enrol_student(student, campus, params[:tutorial_id])
+        proj = unit.enrol_student(student, campus)
         if proj.nil?
           error!({ error: 'Error adding student to unit' }, 403)
         else
@@ -186,7 +162,6 @@ module Api
             student_id: proj.student.username,
             student_email: proj.student.email,
             target_grade: proj.target_grade,
-            tutorial_id: proj.tutorial_id,
             campus_id: proj.campus_id,
             compile_portfolio: false,
             grade: proj.grade,

@@ -25,9 +25,6 @@ namespace :db do
         p.tasks.destroy_all
         p.remove_portfolio
 
-        # Determine who is assessing their work...
-        tutor = p.main_tutor
-
         p.target_grade = rand(0..3)
 
         case rand(1..100)
@@ -67,6 +64,7 @@ namespace :db do
         i = 0
         assigned_task_defs.order('target_date').each do |at|
           task = p.task_for_task_definition(at)
+          tutor = p.tutor_for(at)
           # if its more than three week past kept up to date...
           if kept_up_to_date >= task.target_date + 2.weeks
             complete_date = unit.start_date + i * time_to_complete_task + rand(7..14).days
@@ -151,13 +149,15 @@ namespace :db do
 
         next_assigned_tasks.each do |at|
           task = p.task_for_task_definition(at)
+          tutor = p.tutor_for(at)
+
           # 1 to 3
           case rand(1..100)
           when 0..60
             task.assess tatus.working_on_it, tutor, Time.zone.now
           when 60..75
             task.assess TaskStatus.need_help, tutor, Time.zone.now
-            
+
             pdf_path = task.final_pdf_path
             if pdf_path
               FileUtils.ln_s(Rails.root.join('test_files', 'unit_files', 'sample-student-submission.pdf'), pdf_path)

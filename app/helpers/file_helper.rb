@@ -162,15 +162,19 @@ module FileHelper
   #
   # Generates a path for storing student portfolios
   #
-  def student_portfolio_dir(project, create = true)
+  def student_portfolio_dir(unit, username, create = true)
     file_server = Doubtfire::Application.config.student_work_dir
     dst = "#{file_server}/portfolio/" # trust the server config and passed in type for paths
 
-    dst << sanitized_path("#{project.unit.code}-#{project.unit.id}", project.student.username.to_s)
+    dst << sanitized_path("#{unit.code}-#{unit.id}", username.to_s)
 
     # Create current dst directory should it not exist
     FileUtils.mkdir_p(dst) if create
     dst
+  end
+
+  def student_portfolio_path(unit, username, create = true)
+    File.join(student_portfolio_dir(unit, username, create), FileHelper.sanitized_filename("#{username}-portfolio.pdf"))
   end
 
   def comment_attachment_path(task_comment, attachment_extension)
@@ -455,6 +459,7 @@ module FileHelper
   module_function :student_group_work_dir
   module_function :student_work_dir
   module_function :student_portfolio_dir
+  module_function :student_portfolio_path
   module_function :comment_attachment_path
   module_function :comment_prompt_path
   module_function :comment_reply_prompt_path

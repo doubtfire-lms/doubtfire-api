@@ -48,28 +48,22 @@ class PlagiarismMatchLink < ActiveRecord::Base
   end
 
   def other_tutor
-    other_task.project.main_tutor
+    other_task.project.tutor_for(other_task.task_definition)
   end
 
   delegate :student, to: :task
 
   def tutor
-    task.project.main_tutor
+    task.project.tutor_for(task.task_definition)
   end
 
   def tutorial
-    if task.project.tutorial.nil?
-      'None'
-    else
-      task.project.tutorial.abbreviation
-    end
+    tute = task.project.tutorial_for(task.task_definition)
+    tute.nil? ? 'None' : tute.abbreviation
   end
 
   def other_tutorial
-    if other_task.project.tutorial.nil?
-      'None'
-    else
-      other_task.project.tutorial.abbreviation
-    end
+    tute = other_task.project.tutorial_for(other_task.task_definition)
+    tute.nil? ? 'None' : tute.abbreviation
   end
 end

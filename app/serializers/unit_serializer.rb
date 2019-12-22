@@ -40,6 +40,7 @@ class UnitSerializer < ActiveModel::Serializer
   end
 
   has_many :tutorials
+  has_many :tutorial_enrolments
   has_many :task_definitions
   has_many :convenors, serializer: UserUnitRoleSerializer
   has_many :staff, serializer: UserUnitRoleSerializer
@@ -60,10 +61,15 @@ class UnitSerializer < ActiveModel::Serializer
     ([ Role.convenor, :convenor, Role.tutor, :tutor ].include? my_role_obj) || (my_user_role == Role.admin)
   end
 
+  def include_enrolments?
+    ([ Role.convenor, :convenor, Role.tutor, :tutor ].include? my_role_obj) || (my_user_role == Role.admin)
+  end
+
   def filter(keys)
     keys.delete :groups unless include_groups?
     keys.delete :convenors unless include_convenors?
     keys.delete :staff unless include_staff?
+    keys.delete :tutorial_enrolments unless include_enrolments?
     keys
   end
 end

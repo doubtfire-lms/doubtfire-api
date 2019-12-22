@@ -47,6 +47,8 @@ git:
 
 # Install following dependencies and rehash rbenv before setting the environment for script execution
 install:
+  - gem uninstall bundler
+  - gem install bundler --version '1.16.6'
   - sudo apt-get install -y ghostscript imagemagick libmagic-dev libmagickwand-dev python-pygments libav-tools
   - ./.ci-setup/texlive-install.sh
   - bundle install --without production
