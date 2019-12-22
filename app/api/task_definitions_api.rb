@@ -170,17 +170,19 @@ module Api
       requires :unit_id, type: Integer, desc: 'The unit to upload tasks to'
     end
     post '/csv/task_definitions' do
-      # check mime is correct before uploading
-      ensure_csv!(params[:file][:tempfile])
-
       unit = Unit.find(params[:unit_id])
 
       unless authorise? current_user, unit, :upload_csv
         error!({ error: 'Not authorised to upload CSV of tasks' }, 403)
       end
 
+      path = params[:file][:tempfile].path
+
+      # check mime is correct before uploading
+      ensure_csv!(path)
+
       # Actually import...
-      unit.import_tasks_from_csv(params[:file][:tempfile])
+      unit.import_tasks_from_csv(File.new(path))
     end
 
     desc 'Download CSV of all task definitions for the given unit'
