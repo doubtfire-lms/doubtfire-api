@@ -16,7 +16,7 @@ class ExtensionTest < ActiveSupport::TestCase
 
     td = TaskDefinition.new({
         unit_id: unit.id,
-        tutorial_stream: unit.tutorial_streams.first,
+        tutorial_stream: project.tutorial_enrolments.first.tutorial.tutorial_stream,
         name: 'status task change',
         description: 'status task change test',
         weighting: 4,
@@ -73,7 +73,6 @@ class ExtensionTest < ActiveSupport::TestCase
     project = Project.first
     user = project.student
     unit = project.unit
-    main_tutor = project.main_tutor
     other_tutor = unit.main_convenor
 
     td = TaskDefinition.new({
@@ -94,6 +93,8 @@ class ExtensionTest < ActiveSupport::TestCase
         max_quality_pts: 0
       })
     td.save!
+
+    main_tutor = project.tutor_for(td)
     data_to_post = {
       weeks_requested: '1',
       comment: "I need a lot of help"

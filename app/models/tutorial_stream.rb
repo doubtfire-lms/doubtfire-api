@@ -6,6 +6,7 @@ class TutorialStream < ActiveRecord::Base
   after_create :handle_associated_task_defs
   before_destroy :can_destroy?
 
+  has_many :tutorials
   has_many :task_definitions, -> { order 'start_date ASC, abbreviation ASC' }
 
   validates :unit, presence: true

@@ -64,7 +64,9 @@ class TaskDefinitionTest < ActiveSupport::TestCase
   end
 
   def test_export_task_definitions_csv
-    unit = Unit.first
+    unit = FactoryGirl.create(:unit)
+    stream_1 = FactoryGirl.create(:tutorial_stream, unit: unit)
+
     task_defs_csv = CSV.parse unit.task_definitions_csv, headers: true
     task_defs_csv.each do |task_def_csv|
       task_def = unit.task_definitions.find_by(abbreviation: task_def_csv['abbreviation'])
@@ -74,13 +76,14 @@ class TaskDefinitionTest < ActiveSupport::TestCase
           assert_equal(task_def[key].to_s, value)
         end
       end
+
       assert_equal task_def.start_week.to_s, task_def_csv['start_week']
       assert_equal task_def.start_day.to_s, task_def_csv['start_day']
       assert_equal task_def.target_week.to_s, task_def_csv['target_week']
       assert_equal task_def.target_day.to_s, task_def_csv['target_day']
       assert_equal task_def.due_week.to_s, task_def_csv['due_week']
       assert_equal task_def.due_day.to_s, task_def_csv['due_day']
-      assert_equal task_def.tutorial_stream.abbreviation, task_def_csv['tutorial_stream']
+      assert_equal task_def.tutorial_stream.present? ? task_def.tutorial_stream.abbreviation : nil, task_def_csv['tutorial_stream']
     end
   end
 
@@ -99,7 +102,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     task_defs_csv = CSV.parse unit.task_definitions_csv, headers: true
     task_defs_csv.each do |task_def_csv|
-      assert_equal '', task_def_csv['tutorial_stream']
+      assert_nil task_def_csv['tutorial_stream']
     end
   end
 
