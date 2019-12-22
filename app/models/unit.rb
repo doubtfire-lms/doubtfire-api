@@ -611,7 +611,7 @@ class Unit < ActiveRecord::Base
   #     -:last_name
   #     -:nickname
   #     -:email
-  #     -:tutorial_code
+  #     -:tutorials array of [tutorial_code, ...]
   #     -:enrolled
   # Import settings is:
   # - A hash
@@ -636,7 +636,7 @@ class Unit < ActiveRecord::Base
         last_name = row_data[:last_name].nil? ? nil : row_data[:last_name].titleize
         nickname = row_data[:nickname].nil? ? nil : row_data[:nickname].titleize
         email = row_data[:email]
-        tutorial_code = row_data[:tutorial_code]
+        tutorials = row_data[:tutorials]
         campus_data = row_data[:campus]
 
         # If either first or last name is nil... copy over the other component
@@ -697,55 +697,55 @@ class Unit < ActiveRecord::Base
         #
         if project_participant.persisted?
           # Add in the student id if it was supplied...
-          if (project_participant.student_id.nil? || project_participant.student_id.empty?) && student_id
+          if (project_participant.student_id.nil? || project_participant.student_id.empty? || project_participant.student_id != student_id) && student_id.present?
             project_participant.student_id = student_id
             project_participant.save!
           end
 
+          # Clear success message...
+          success_message = ''
+
           # Now find the project for the user
           user_project = projects.where(user_id: project_participant.id).first
-
-          # And find the tutorial for the user
-          tutorial = tutorial_cache[tutorial_code] || tutorial_with_abbr(tutorial_code)
-          tutorial_cache[tutorial_code] ||= tutorial
 
           # Add the user to the project (if not already in there)
           if user_project.nil?
             campus = Campus.find_by_abbr_or_name(campus_data)
-            # Need to enrol user... can always set tutorial as does not already exist...
-            if (!tutorial.nil?)
-              # Use tutorial if we have it :)
-              enrol_student(project_participant, campus, tutorial)
-              success << { row: row, message: 'Enrolled student with tutorial.' }
-            else
-              enrol_student(project_participant, campus)
-              success << { row: row, message: 'Enrolled student without tutorial.' }
-            end
+            # Enrol user...
+            user_project = enrol_student(project_participant, campus)
+            success_message = 'Enrolled student'
+            new_project = true
           else
+            new_project = false # We are updating existing project
             # update enrolment... if currently not enrolled
-            changes = ''
             unless user_project.enrolled
               user_project.enrolled = true
               user_project.save
-              changes << 'Changed enrolment.'
+              success_message << 'Changed enrolment.'
             end
+          end
 
-            # replace tutorial if we are allowed... and it has changed
-            if import_settings[:replace_existing_tutorial] || user_project.tutorial.nil?
-              # check it has changed first...
-              if user_project.tutorial != tutorial
-                user_project.tutorial = tutorial
-                user_project.save
-                changes << 'Changed tutorial. '
+          # Only run if we will change tutorial enrolments...
+          if import_settings[:replace_existing_tutorial] || new_project || user_project.tutorial_enrolments.count == 0
+
+            # Now loop through the tutorials and enrol the student...
+            tutorials.each do |tutorial_code|
+              # find the tutorial for the user
+              tutorial = tutorial_cache[tutorial_code] || tutorial_with_abbr(tutorial_code)
+              tutorial_cache[tutorial_code] ||= tutorial
+
+              if tutorial.present?
+                # Use tutorial as we have it :)
+                user_project.enrol_in tutorial
+                success_message << ' Enrolled in ' << tutorial.abbreviation
               end
             end
+          end
 
-            # Get back to user with changes... if any
-            if changes.empty?
-              ignored << { row: row, message: 'No change.' }
-            else
-              success << { row: row, message: changes }
-            end
+          if ! success_message.empty?
+            success << { row: row, message: success_message }
+          else
+            ignored << { row: row, message: 'No change.' }
           end
         else
           errors << { row: row, message: "Student record is invalid. #{project_participant.errors.full_messages.first}" }
