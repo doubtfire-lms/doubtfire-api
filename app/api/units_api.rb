@@ -237,6 +237,10 @@ module Api
         error!({ error: "Not authorised to upload CSV of students to #{unit.code}" }, 403)
       end
 
+      unless params[:file].present?
+        error!({ error: "No file uploaded" }, 403)
+      end
+
       ensure_csv!(params[:file][:tempfile])
 
       # Actually import...
