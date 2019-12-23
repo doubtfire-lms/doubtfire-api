@@ -238,13 +238,18 @@ module Api
       # TODO: Remove the dependency on units - figure out how to authorise
       desc 'Get the list of supported overseer images'
       get '/units/:unit_id/overseer/docker/images' do
+        unless Doubtfire::Application.config.overseer_enabled
+          error!({ error: 'Overseer is not enabled' }, 403)
+          return
+        end
+
         unit = Unit.find(params[:unit_id])
 
         unless authorise? current_user, unit, :add_task_def
           error!({ error: 'Not authorised to download task details of unit' }, 403)
         end
         {
-          result: YAML.load_file(Rails.root.join('config/overseer-images.yml')).with_indifferent_access
+          result: Doubtfire::Application.config.overseer_images
         }
       end
     end
