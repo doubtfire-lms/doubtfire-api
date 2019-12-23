@@ -127,18 +127,6 @@ class PortfolioEvidence
     docker_image_name_tag = task_definition.docker_image_name_tag || unit.docker_image_name_tag
     return false if docker_image_name_tag.nil? || docker_image_name_tag.strip.empty?
 
-    # TODO: Probably get rid of it because we may wanna keep routing_key constant [29/nov/2019]
-    # if routing_key.nil?, default routing_key that was used
-    # to configure the publisher from the .env file will be used automagically.
-    # If a default routing_key doesn't exist either, publisher will throw an error.
-
-    # I suppose I also need to add the same checks for routing keys on the PUT/POST
-    # apis for task definition, only if assessment_enabled flag is true.
-    # Won’t do it for unit’s APIs because a unit may not necessarily have a common
-    # routing key for all tasks.. Then again, this isn't the best way to go about this.
-    # Best thing is to check it here itself.
-    # Old TODO: Add regex check for routing_key.
-
     timestamp = Time.now.utc.to_i
     zip_file_path = submission_history_zip_file_path(task, timestamp)
 
