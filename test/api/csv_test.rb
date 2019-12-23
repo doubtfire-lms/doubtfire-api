@@ -241,7 +241,7 @@ class CsvTest < ActiveSupport::TestCase
     # perform the POST
     post "/api/csv/task_definitions", data_to_post
 
-    assert_equal 500, last_response.status
+    assert_equal 403, last_response.status
   end
 
   #15: Testing for CSV upload failure due to non-existant unit id
@@ -554,7 +554,7 @@ class CsvTest < ActiveSupport::TestCase
     post "/api/csv/units/#{unit_id_to_test}/withdraw", data_to_post
     
     # Check for response
-    assert_equal 500, last_response.status
+    assert_equal 404, last_response.status
     # Check student was not withdrawn
     assert_equal 'test_csv_student', User.where(id: user_id_check).last.username
     assert_equal true, Project.where(user_id: user_id_check).last.enrolled
@@ -579,35 +579,34 @@ class CsvTest < ActiveSupport::TestCase
     post "/api/csv/units/#{unit_id_to_test}/withdraw", data_to_post
     
     # Check for response
-    assert_equal 500, last_response.status
+    assert_equal 404, last_response.status
     # Check student was not withdrawn
     assert_equal 'test_csv_student', User.where(id: user_id_check).last.username
     assert_equal true, Project.where(user_id: user_id_check).last.enrolled
   end
   
-  #36: Testing for CSV upload failure due to incorrect file type (XLSX)
+  #36: Testing for CSV uploadof XLSX
   #POST /api/csv/units/{id}/withdraw
-  def test_csv_upload_students_un_enroll_in_unit_incorrect_file_xlsx
+  def test_csv_upload_students_un_enroll_in_unit_xlsx
 
     # Adding user to withdraw from unit
     test_csv_upload_all_students_in_unit
-    
+
     unit_id_to_test = '1'
     data_to_post = {
       file: Rack::Test::UploadedFile.new('test_files/csv_test_files/COS10001-Students.xlsx'),
       auth_token: auth_token
     }
-    
+
     user_id_check = Project.where(unit_id:1).last.user_id
 
     # perform the POST to withdraw user from the unit
     post "/api/csv/units/#{unit_id_to_test}/withdraw", data_to_post
-    
+
     # Check for response
-    assert_equal 500, last_response.status
-    # Check student was not withdrawn
-    assert_equal 'test_csv_student', User.where(id: user_id_check).last.username
-    assert_equal true, Project.where(user_id: user_id_check).last.enrolled
+    assert_equal 201, last_response.status
+    # Check success
+    assert_equal 1, last_response_body['success'].count
   end
 
   #37: Testing for CSV upload failure due to incorrect file type (PDF)
@@ -654,7 +653,7 @@ class CsvTest < ActiveSupport::TestCase
     post "/api/csv/units/#{unit_id_to_test}/withdraw", data_to_post
     
     # Check for response
-    assert_equal 500, last_response.status
+    assert_equal 403, last_response.status
     # Check student was not withdrawn
     assert_equal 'test_csv_student', User.where(id: user_id_check).last.username
     assert_equal true, Project.where(user_id: user_id_check).last.enrolled
@@ -679,7 +678,7 @@ class CsvTest < ActiveSupport::TestCase
     post "/api/csv/units/#{unit_id_to_test}/withdraw", data_to_post
     
     # Check for response
-    assert_equal 500, last_response.status
+    assert_equal 404, last_response.status
     # Check student was not withdrawn
     assert_equal 'test_csv_student', User.where(id: user_id_check).last.username
     assert_equal true, Project.where(user_id: user_id_check).last.enrolled
@@ -958,9 +957,9 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 419, last_response.status
   end
 
-  #58: Testing for CSV upload failure due to incorrect file type (XLSX)
+  #58: Testing for CSV upload of XLSX
   #POST /api/csv/units/{id}/withdraw
-  def test_csv_upload_users_incorrect_file_xlsx
+  def test_csv_upload_users_xlsx
 
     data_to_post = {
       file: Rack::Test::UploadedFile.new('test_files/csv_test_files/doubtfire_users.xlsx'),
@@ -969,9 +968,10 @@ class CsvTest < ActiveSupport::TestCase
 
     # perform the POST to withdraw user from the unit
     post "/api/csv/users", data_to_post
-    
+
     # Check for response
-    assert_equal 500, last_response.status
+    assert_equal 201, last_response.status
+    assert_equal 1, last_response_body['ignored'].count, last_response_body
   end
 
   #59: Testing for CSV upload failure due to incorrect file type (PDF)
@@ -1003,6 +1003,6 @@ class CsvTest < ActiveSupport::TestCase
     post "/api/csv/users", data_to_post
     
     # Check for response
-    assert_equal 500, last_response.status
+    assert_equal 403, last_response.status
   end
 end
