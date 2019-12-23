@@ -453,6 +453,15 @@ module FileHelper
     sorted_timestamp_entries_in_dir(path)[0]
   end
 
+  def task_submission_identifier_path(type, task)
+    file_server = Doubtfire::Application.config.student_work_dir
+    "#{file_server}/submission_history/#{sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}", task.project.student.username.to_s, type.to_s, task.id.to_s)}"
+  end
+
+  def task_submission_identifier_path_with_timestamp(type, task, timestamp)
+    "#{task_submission_identifier_path(type, task)}/#{timestamp.to_s}"
+  end
+
   # Export functions as module functions
   module_function :accept_file
   module_function :sanitized_path
@@ -487,4 +496,6 @@ module FileHelper
   module_function :process_audio
   module_function :sorted_timestamp_entries_in_dir
   module_function :latest_submission_timestamp_entry_in_dir
+  module_function :task_submission_identifier_path
+  module_function :task_submission_identifier_path_with_timestamp
 end

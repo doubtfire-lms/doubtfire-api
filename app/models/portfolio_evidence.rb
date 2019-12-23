@@ -80,26 +80,6 @@ class PortfolioEvidence
     end
   end
 
-  def self.task_submission_identifier_path(type, task)
-    file_server = Doubtfire::Application.config.student_work_dir
-    "#{file_server}/submission_history/#{sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}", task.project.student.username.to_s, type.to_s, task.id.to_s)}"
-  end
-
-  def self.task_submission_identifier_path_with_timestamp(type, task, timestamp)
-    file_server = Doubtfire::Application.config.student_work_dir
-    "#{file_server}/submission_history/#{sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}", task.project.student.username.to_s, type.to_s, task.id.to_s, timestamp.to_s)}"
-  end
-
-  def self.submission_history_zip_file_path(task, timestamp)
-    submission_identifier_path = task_submission_identifier_path_with_timestamp(:done, task, timestamp)
-    "#{submission_identifier_path}/submission.zip"
-  end
-
-  def self.create_submission_history_zip_from_new(task, zip_file_path)
-    # Generate a zip file for this particular submission with timestamp value and put it here
-    task.compress_new_to_done zip_file_path, false
-  end
-
   def self.strip_till_submission_history(str)
     substr = '/doubtfire-api'
     starting_len = str.index(substr)
@@ -128,18 +108,25 @@ class PortfolioEvidence
     return false if docker_image_name_tag.nil? || docker_image_name_tag.strip.empty?
 
     timestamp = Time.now.utc.to_i
-    zip_file_path = submission_history_zip_file_path(task, timestamp)
 
-    create_submission_history_zip_from_new task, zip_file_path
+    task_submission_with_timestamp_path = FileHelper.task_submission_identifier_path_with_timestamp(:done, task, timestamp)
+    puts "task_submission_with_timestamp_path: #{task_submission_with_timestamp_path}"
+
+    zip_file_path = "#{task_submission_with_timestamp_path}/submission.zip"
+
+    # Generate a zip file for this particular submission with timestamp value and put it here
+    task.compress_new_to_done zip_file_path, false
+
     unless File.exists? zip_file_path
       logger.error "Student submission history zip file doesn't exist #{zip_file_path}"
       return false
     end
+
     # TODO: Use FACL instead in future.
-    `chmod o+w #{task_submission_identifier_path_with_timestamp(:done, task, timestamp)}`
+    `chmod o+w #{task_submission_with_timestamp_path}`
 
     message = {
-      output_path: strip_till_submission_history(task_submission_identifier_path_with_timestamp(:done, task, timestamp)),
+      output_path: strip_till_submission_history(task_submission_with_timestamp_path),
       docker_image_name_tag: docker_image_name_tag,
       submission: strip_till_submission_history(zip_file_path),
       assessment: strip_till_submission_history(assessment_resources_path),

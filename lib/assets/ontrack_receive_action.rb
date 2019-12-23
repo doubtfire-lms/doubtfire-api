@@ -44,7 +44,7 @@ def receive(_subscriber_instance, channel, _results_publisher, delivery_info, _p
 
   overseer_assessment.status = 3
 
-  output_path = PortfolioEvidence.task_submission_identifier_path_with_timestamp(:done, task, timestamp)
+  output_path = FileHelper.task_submission_identifier_path_with_timestamp(:done, task, timestamp)
   yaml_path = "#{output_path}/output.yaml"
 
   unless File.exist? yaml_path
