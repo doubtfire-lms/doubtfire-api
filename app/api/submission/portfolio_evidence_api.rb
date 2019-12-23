@@ -139,7 +139,7 @@ module Api
           error!({ error: "A submission for this task definition have never been created" }, 401)
         end
 
-        path = PortfolioEvidence.task_submission_identifier_path(:done, task)
+        path = FileHelper.task_submission_identifier_path(:done, task)
         unless File.exist? path
           error!({ error: "No submissions found for project: '#{params[:id]}' task: '#{params[:task_def_id]}'" }, 401)
         end
@@ -164,7 +164,7 @@ module Api
 
         timestamp = params[:timestamp]
 
-        path = PortfolioEvidence.task_submission_identifier_path_with_timestamp(:done, task, timestamp)
+        path = FileHelper.task_submission_identifier_path_with_timestamp(:done, task, timestamp)
         unless File.exist? path
           error!({ error: "No submissions found for project: '#{params[:id]}' task: '#{params[:task_def_id]}' and timestamp: '#{timestamp}'" }, 401)
         end
@@ -206,7 +206,7 @@ module Api
           error!({ error: "A submission for this task definition have never been created" }, 401)
         end
 
-        path = PortfolioEvidence.task_submission_identifier_path(:done, task)
+        path = FileHelper.task_submission_identifier_path(:done, task)
         unless File.exist? path
           error!({ error: "No submissions found for project: '#{params[:id]}' task: '#{params[:task_def_id]}'" }, 401)
         end
