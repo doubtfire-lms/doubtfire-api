@@ -136,7 +136,12 @@ class Unit < ActiveRecord::Base
   scope :set_inactive,          -> { where('active = ?', false) }
 
   def validate_docker_image_name_tag
-    yaml_file = YAML.load_file(Rails.root.join('config/overseer-images.yml')).with_indifferent_access
+    unless Doubtfire::Application.config.overseer_enabled
+      errors.add('Overseer is not enabled')
+      return
+    end
+
+    yaml_file = Doubtfire::Application.config.overseer_images
     if docker_image_name_tag.present? && !yaml_file['images'].any? { |img| img[:name] == docker_image_name_tag }
       errors.add(:docker_image_name_tag, 'is not an Overseer supported Docker image')
     end
