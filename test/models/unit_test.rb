@@ -274,26 +274,14 @@ class UnitTest < ActiveSupport::TestCase
     end
   end
 
-  def test_task_completion_csv
-    unit = FactoryGirl.create :unit, campus_count: 2, tutorials:2, stream_count:2, task_count:3, student_count:8, unenrolled_student_count: 1, part_enrolled_student_count: 2, set_one_of_each_task: true
-
-    unit.task_definitions.each do |td|
-      unit.projects.each do |student|
-        task = student.task_for_task_definition(td)
-        tutor = student.tutor_for(td)
-
-        DatabasePopulator.assess_task(student, task, tutor, TaskStatus.all.sample, td.due_date + 1.week)
-      end
-    end
-
+  def check_task_completion_csv unit, col_count = nil
     csv_str = unit.task_completion_csv
 
     CSV.parse(csv_str, headers: true, return_headers: false,
       header_converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '').downcase unless body.nil? }],
       converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |entry|
 
-        # 17 = 8 general + 2 streams + 3 task defs + 1 group details + 1 stars + 1 grade + 1 contrib
-        assert_equal 17, entry.length, entry.inspect
+        assert_equal(col_count, entry.length, entry.inspect) unless col_count.nil?
 
         user = User.find_by(username: entry['username'])
         assert user.present?, entry.inspect
@@ -310,15 +298,51 @@ class UnitTest < ActiveSupport::TestCase
           task = project.task_for_task_definition(td)
           assert_equal task.task_status.name, entry[td.abbreviation.downcase], "#{td.abbreviation} --> #{entry.inspect}"
 
-          assert_equal("#{task.quality_pts}", entry["#{td.abbreviation.downcase} stars"], "#{td.abbreviation} --> #{entry.inspect}") if td.has_stars? && task.quality_pts != -1
+          assert_equal("#{task.quality_pts}", entry["#{td.abbreviation.downcase} stars"], "#{td.abbreviation} stars --> #{entry.inspect}") if td.has_stars? && task.quality_pts != -1
           assert_equal(GradeHelper.short_grade_for(task.grade), entry["#{td.abbreviation.downcase} grade"], "#{td.abbreviation} --> #{entry.inspect}") if td.is_graded?
-          assert_equal(task.contribution_pts, Integer(entry["#{td.abbreviation.downcase} contribution"]), "#{td.abbreviation} --> #{entry.inspect}") if td.is_group_task?
+          assert_equal(task.contribution_pts, (entry["#{td.abbreviation.downcase} contribution"].nil? ? 3 : Integer(entry["#{td.abbreviation.downcase} contribution"])), "#{td.abbreviation} contrib --> #{entry.inspect}") if td.is_group_task?
         end
 
         # Test tutorial streams
         unit.tutorial_streams.each do |ts|
-          assert_equal (project.tutorial_for_stream(ts).present? ? project.tutorial_for_stream(ts).abbreviation : nil), entry[ts.abbreviation.downcase], entry.inspect
+          assert_equal (project.tutorial_for_stream(ts).present? ? project.tutorial_for_stream(ts).abbreviation : nil), entry[ts.abbreviation.downcase], {entry: entry.inspect, stream: ts.abbreviation, proj_tut: project.tutorial_for_stream(ts)}
         end
     end
+  end
+
+  def test_task_completion_csv
+    unit = FactoryGirl.create :unit, campus_count: 2, tutorials:2, stream_count:2, task_count:3, student_count:8, unenrolled_student_count: 1, part_enrolled_student_count: 2, set_one_of_each_task: true
+
+    unit.task_definitions.each do |td|
+      unit.projects.each do |student|
+        task = student.task_for_task_definition(td)
+        tutor = student.tutor_for(td)
+
+        DatabasePopulator.assess_task(student, task, tutor, TaskStatus.all.sample, td.start_date + 1.week)
+      end
+    end
+
+    # 17 = 8 general + 2 streams + 3 task defs + 1 group details + 1 stars + 1 grade + 1 contrib
+    check_task_completion_csv unit, 17
+  end
+
+  def test_task_completion_csv_no_task_data
+    unit = FactoryGirl.create :unit, campus_count: 2, tutorials:2, stream_count:2, task_count:3, student_count:8, unenrolled_student_count: 1, part_enrolled_student_count: 2, set_one_of_each_task: true
+
+    check_task_completion_csv unit
+  end
+
+  def test_task_completion_csv_all_td_in_one_stream
+    unit = FactoryGirl.create :unit, campus_count: 2, tutorials:1, stream_count:1, task_count:1, student_count:3, unenrolled_student_count: 0, part_enrolled_student_count: 0
+
+    unit.tutorial_streams << FactoryGirl.create(:tutorial_stream, unit: unit)
+    tutorial = FactoryGirl.create(:tutorial, unit: unit, tutorial_stream: unit.tutorial_streams.last, campus: Campus.last )
+
+    unit.projects.where(campus: tutorial.campus).first.enrol_in(tutorial)
+
+    assert unit.task_definitions.first.tutorial_stream.present?
+    assert_equal 2, unit.tutorial_streams.count
+
+    check_task_completion_csv unit
   end
 end
