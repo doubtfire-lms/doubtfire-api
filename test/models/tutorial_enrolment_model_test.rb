@@ -14,7 +14,7 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
   end
 
   def test_specific_create
-    unit = FactoryGirl.create(:unit)
+    unit = FactoryGirl.create(:unit, with_students: false)
     campus = FactoryGirl.create(:campus)
     project = FactoryGirl.create(:project, unit: unit, campus: campus)
 
@@ -33,7 +33,7 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
   end
 
   def test_project_plus_tutorial_is_unique
-    unit = FactoryGirl.create(:unit)
+    unit = FactoryGirl.create(:unit, with_students: false)
     campus = FactoryGirl.create(:campus)
     project = FactoryGirl.create(:project, unit: unit, campus: campus)
 
@@ -59,7 +59,7 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
   end
 
   def test_enrol_in_tutorial
-    unit = FactoryGirl.create(:unit)
+    unit = FactoryGirl.create(:unit, with_students: false)
     campus = FactoryGirl.create(:campus)
     project = FactoryGirl.create(:project, unit: unit, campus: campus)
 
@@ -74,7 +74,7 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
   end
 
   def test_enrolling_twice_in_same_tutorial_stream_updates_enrolment
-    unit = FactoryGirl.create(:unit)
+    unit = FactoryGirl.create(:unit, with_students: false)
     campus = FactoryGirl.create(:campus)
     project = FactoryGirl.create(:project, unit: unit, campus: campus)
 
@@ -101,7 +101,7 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
   end
 
   def test_enrolling_twice_when_tutorial_stream_is_null
-    unit = FactoryGirl.create(:unit)
+    unit = FactoryGirl.create(:unit, with_students: false)
     campus = FactoryGirl.create(:campus)
     project = FactoryGirl.create(:project, unit: unit, campus: campus)
 
@@ -135,7 +135,7 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
   end
 
   def test_creating_both_no_stream_and_stream
-    unit = FactoryGirl.create(:unit)
+    unit = FactoryGirl.create(:unit, with_students: false)
     campus = FactoryGirl.create(:campus)
     project = FactoryGirl.create(:project, unit: unit, campus: campus)
 
@@ -164,7 +164,7 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
   end
 
   def test_changing_from_no_stream_to_stream
-    unit = FactoryGirl.create(:unit)
+    unit = FactoryGirl.create(:unit, with_students: false)
     campus = FactoryGirl.create(:campus)
     project = FactoryGirl.create(:project, unit: unit, campus: campus)
 
@@ -193,7 +193,7 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
   end
 
   def test_changing_from_stream_to_no_stream
-    unit = FactoryGirl.create(:unit)
+    unit = FactoryGirl.create(:unit, with_students: false)
     campus = FactoryGirl.create(:campus)
     project = FactoryGirl.create(:project, unit: unit, campus: campus)
 
@@ -224,7 +224,7 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
   end
 
   def test_cannot_enrol_in_tutorial_stream_twice
-    unit = FactoryGirl.create(:unit)
+    unit = FactoryGirl.create(:unit, with_students: false)
     campus = FactoryGirl.create(:campus)
     project = FactoryGirl.create(:project, unit: unit, campus: campus)
 
@@ -252,7 +252,7 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
   end
 
   def test_consistent_campus_is_allowed
-    unit = FactoryGirl.create(:unit)
+    unit = FactoryGirl.create(:unit, with_students: false)
     campus = FactoryGirl.create(:campus)
     project = FactoryGirl.create(:project, unit: unit, campus: campus)
 
@@ -272,7 +272,7 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
   end
 
   def test_campus_inconsistency_raises_error
-    unit = FactoryGirl.create(:unit)
+    unit = FactoryGirl.create(:unit, with_students: false)
     campus_first = FactoryGirl.create(:campus)
     campus_second = FactoryGirl.create(:campus)
     project = FactoryGirl.create(:project, unit: unit, campus: campus_first)
@@ -295,8 +295,8 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
 
   def test_unit_inconsistency_raises_error
     campus = FactoryGirl.create(:campus)
-    unit_first = FactoryGirl.create(:unit)
-    unit_second = FactoryGirl.create(:unit)
+    unit_first = FactoryGirl.create(:unit, with_students: false)
+    unit_second = FactoryGirl.create(:unit, with_students: false)
 
     project = FactoryGirl.create(:project, unit: unit_first, campus: campus)
     tutorial = FactoryGirl.create(:tutorial, unit: unit_second, campus: campus)

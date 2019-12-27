@@ -182,7 +182,7 @@ class UnitTest < ActiveSupport::TestCase
   end
 
   def test_student_query
-    unit = FactoryGirl.create(:unit)
+    unit = FactoryGirl.create(:unit, with_students: false)
     unit.employ_staff(User.first, Role.convenor)
 
     campus = FactoryGirl.create(:campus)

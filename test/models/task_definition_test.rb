@@ -64,7 +64,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
   end
 
   def test_export_task_definitions_csv
-    unit = FactoryGirl.create(:unit)
+    unit = FactoryGirl.create(:unit, with_students: false)
     stream_1 = FactoryGirl.create(:tutorial_stream, unit: unit)
 
     task_defs_csv = CSV.parse unit.task_definitions_csv, headers: true

@@ -6,7 +6,7 @@ require 'test_helper'
 class LearningOutcomeTaskLinkTest < ActiveSupport::TestCase
 
   def test_should_create_link_between_task_def_and_outcome
-    unit = FactoryGirl.create(:unit)
+    unit = FactoryGirl.create(:unit, with_students: false)
 
     task_def = unit.task_definitions.first
     lo = unit.learning_outcomes.first
@@ -28,7 +28,7 @@ class LearningOutcomeTaskLinkTest < ActiveSupport::TestCase
   end
 
   def test_should_ensure_link_between_task_def_outcome_and_task_is_unique
-    unit = FactoryGirl.create(:unit)
+    unit = FactoryGirl.create(:unit, with_students: false)
 
     task_def = unit.task_definitions.first
     lo = unit.learning_outcomes.first

@@ -3,7 +3,7 @@ require "test_helper"
 class ProjectModelTest < ActiveSupport::TestCase
 
   def test_tutor_for_task_def_when_tutorial_stream_is_present
-    unit = FactoryGirl.create(:unit)
+    unit = FactoryGirl.create(:unit, with_students: false)
     campus = FactoryGirl.create(:campus)
     tutorial_stream = FactoryGirl.create(:tutorial_stream, unit: unit)
     task_definition = FactoryGirl.create(:task_definition, unit: unit, tutorial_stream: tutorial_stream)
@@ -21,7 +21,7 @@ class ProjectModelTest < ActiveSupport::TestCase
   end
 
   def test_tutor_for_task_def_when_tutorial_stream_is_null
-    unit = FactoryGirl.create(:unit)
+    unit = FactoryGirl.create(:unit, with_students: false)
     campus = FactoryGirl.create(:campus)
     task_definition = FactoryGirl.create(:task_definition, unit: unit)
     project = FactoryGirl.create(:project, unit: unit, campus: campus)
@@ -38,7 +38,7 @@ class ProjectModelTest < ActiveSupport::TestCase
   end
 
   def test_tutor_for_task_def_for_match_all
-    unit = FactoryGirl.create(:unit)
+    unit = FactoryGirl.create(:unit, with_students: false)
     campus = FactoryGirl.create(:campus)
 
     # Create different projects
