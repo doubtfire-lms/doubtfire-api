@@ -30,7 +30,7 @@ class CsvTest < ActiveSupport::TestCase
 
     # Check for response
     assert_equal 200, last_response.status
-    
+
     # Check for file
     assert_equal "attachment; filename=COS10001-Tasks.csv ",last_response.header["content-disposition"]
   end
@@ -38,7 +38,7 @@ class CsvTest < ActiveSupport::TestCase
   #2: Testing for unit ID error with empty user ID
   #GET /api/csv/task_definitions
   def test_download_csv_all_task_definitions_unit_with_empty_unit_id
-  
+
     unit_id_to_test = ''
     auth_token_to_test = auth_token
 
@@ -52,7 +52,7 @@ class CsvTest < ActiveSupport::TestCase
   #3: Testing for unit ID error with incorrect user ID
   #GET /api/csv/task_definitions
   def test_download_csv_all_task_definitions_unit_with_incorrect_unit_id
-  
+
     unit_id_to_test = '999'
     auth_token_to_test = auth_token
 
@@ -66,7 +66,7 @@ class CsvTest < ActiveSupport::TestCase
   #4: Testing for unit ID error with string user ID
   #GET /api/csv/task_definitions
   def test_download_csv_all_task_definitions_unit_with_string_unit_id
-    
+
     unit_id_to_test = 'string'
     auth_token_to_test = auth_token
 
@@ -80,13 +80,13 @@ class CsvTest < ActiveSupport::TestCase
   #5: Testing for authentication failure with incorrect token
   #GET /api/csv/task_definitions
   def test_download_csv_all_task_definitions_unit_with_incorrect_auth_token
-    
+
     unit_id_to_test = 'string'
     auth_token_to_test = 'incorrect_auth_token'
 
     # perform the get
     get "/api/csv/task_definitions?unit_id=#{unit_id_to_test}&auth_token=#{auth_token_to_test}"
-    
+
     # Check for response
     assert_equal 419, last_response.status
   end
@@ -94,17 +94,17 @@ class CsvTest < ActiveSupport::TestCase
   #6: Testing for authentication failure with empty token
   #GET /api/csv/task_definitions
   def test_download_csv_all_task_definitions_unit_with_empty_auth_token
-    
+
     unit_id_to_test = 'string'
     auth_token_to_test = ''
 
     # perform the get
     get "/api/csv/task_definitions?unit_id=#{unit_id_to_test}&auth_token=#{auth_token_to_test}"
-    
+
     # Check for response
     assert_equal 419, last_response.status
   end
-  
+
   #####--------------POST tests - Upload CSV of task definitions to the provided unit------------######
 
   #7: Testing for CSV upload all task definitions for the given unit
@@ -116,14 +116,14 @@ class CsvTest < ActiveSupport::TestCase
       file: Rack::Test::UploadedFile.new('test_files/csv_test_files/COS10001-Tasks.csv'),
       auth_token: auth_token
     }
-    
+
     # perform the POST
     post "/api/csv/task_definitions", data_to_post
 
     assert_equal 201, last_response.status
     assert_equal 'Assignment 12', TaskDefinition.where(abbreviation: 'A12').first.name
   end
-  
+
   #8: Testing for CSV upload failure due to incorrect auth token
   #POST /api/csv/task_definitions
   def test_csv_upload_all_task_definitions_unit_incorrect_auth_token
@@ -133,13 +133,13 @@ class CsvTest < ActiveSupport::TestCase
       file: Rack::Test::UploadedFile.new('test_files/csv_test_files/COS10001-Tasks.csv'),
       auth_token: 'incorrect_auth_token'
     }
-    
+
     # perform the POST
     post "/api/csv/task_definitions", data_to_post
 
     assert_equal 419, last_response.status
   end
-  
+
   #9: Testing for CSV upload failure due to empty auth token
   #POST /api/csv/task_definitions
   def test_csv_upload_all_task_definitions_unit_empty_auth_token
@@ -149,7 +149,7 @@ class CsvTest < ActiveSupport::TestCase
       file: Rack::Test::UploadedFile.new('test_files/csv_test_files/COS10001-Tasks.csv'),
       auth_token: ''
     }
-    
+
     # perform the POST
     post "/api/csv/task_definitions", data_to_post
 
@@ -165,13 +165,13 @@ class CsvTest < ActiveSupport::TestCase
       file: Rack::Test::UploadedFile.new('test_files/csv_test_files/COS10001-Tasks.csv'),
       auth_token: auth_token
     }
-    
+
     # perform the POST
     post "/api/csv/task_definitions", data_to_post
 
     assert_equal 400, last_response.status
   end
-  
+
   #11: Testing for CSV upload failure due to empty unit ID
   #POST /api/csv/task_definitions
   def test_csv_upload_all_task_definitions_unit_empty_unit_id
@@ -181,13 +181,13 @@ class CsvTest < ActiveSupport::TestCase
       file: Rack::Test::UploadedFile.new('test_files/csv_test_files/COS10001-Tasks.csv'),
       auth_token: auth_token
     }
-    
+
     # perform the POST
     post "/api/csv/task_definitions", data_to_post
 
     assert_equal 404, last_response.status
   end
-  
+
   #12: Testing for CSV upload of xlsx file type
   #POST /api/csv/task_definitions
   def test_csv_upload_all_task_definitions_unit_xlsx
@@ -199,7 +199,7 @@ class CsvTest < ActiveSupport::TestCase
       file: Rack::Test::UploadedFile.new('test_files/csv_test_files/COS10001-Tasks.xlsx'),
       auth_token: auth_token
     }
-    
+
     tdc = unit.task_definitions.count
 
     # perform the POST
@@ -221,7 +221,7 @@ class CsvTest < ActiveSupport::TestCase
       file: Rack::Test::UploadedFile.new('test_files/csv_test_files/COS10001-Tasks.pdf'),
       auth_token: auth_token
     }
-    
+
     # perform the POST
     post "/api/csv/task_definitions", data_to_post
 
@@ -237,7 +237,7 @@ class CsvTest < ActiveSupport::TestCase
       file: '',
       auth_token: auth_token
     }
-    
+
     # perform the POST
     post "/api/csv/task_definitions", data_to_post
 
@@ -253,7 +253,7 @@ class CsvTest < ActiveSupport::TestCase
       file: Rack::Test::UploadedFile.new('test_files/csv_test_files/COS10001-Tasks.csv'),
       auth_token: auth_token
     }
-    
+
     # perform the POST
     post "/api/csv/task_definitions", data_to_post
 
@@ -274,15 +274,15 @@ class CsvTest < ActiveSupport::TestCase
 
     # Check for response
     assert_equal 200, last_response.status
-    
+
     # Check for file
     assert_equal "attachment; filename=COS10001-Students.csv ",last_response.header["content-disposition"]
   end
-  
+
   #18: Testing for unit ID error with string unit ID
   #GET /api/csv/units/{id}
   def test_download_csv_all_students_in_unit_with_string_unit_id
-    
+
     unit_id_to_test = 'string'
     auth_token_to_test = auth_token
 
@@ -296,7 +296,7 @@ class CsvTest < ActiveSupport::TestCase
   #19: Testing for unit ID error with incorrect (non-existant) user ID
   #GET /api/csv/units/{id}
   def test_download_csv_all_students_in_unit_with_incorrect_unit_id
-    
+
     unit_id_to_test = '999'
     auth_token_to_test = auth_token
 
@@ -310,13 +310,13 @@ class CsvTest < ActiveSupport::TestCase
   #20: Testing for authentication failure with incorrect token
   #GET /api/csv/units/{id}
   def test_download_csv_all_students_in_unit_with_incorrect_auth_token
-    
+
     unit_id_to_test = '1'
     auth_token_to_test = 'incorrect_auth_token'
 
     # perform the get
     get "/api/csv/units/#{unit_id_to_test}?auth_token=#{auth_token_to_test}"
-    
+
     # Check for response
     assert_equal 419, last_response.status
   end
@@ -324,13 +324,13 @@ class CsvTest < ActiveSupport::TestCase
   #21: Testing for authentication failure with empty token
   #GET /api/csv/units/{id}
   def test_download_csv_all_students_in_unit_with_empty_auth_token
-    
+
     unit_id_to_test = '1'
     auth_token_to_test = ''
 
     # perform the get
     get "/api/csv/units/#{unit_id_to_test}?auth_token=#{auth_token_to_test}"
-    
+
     # Check for response
     assert_equal 419, last_response.status
   end
@@ -346,12 +346,12 @@ class CsvTest < ActiveSupport::TestCase
       file: Rack::Test::UploadedFile.new('test_files/csv_test_files/COS10001-Students.csv'),
       auth_token: auth_token
     }
-    
+
     # perform the POST
     post "/api/csv/units/#{unit_id_to_test}", data_to_post
-    
+
     user_id_check = Project.where(unit_id:1).last.user_id
-    
+
     # Check for response
     assert_equal 201, last_response.status
     assert_equal 'test_csv_student', User.where(id: user_id_check).last.username
@@ -366,14 +366,14 @@ class CsvTest < ActiveSupport::TestCase
       file: Rack::Test::UploadedFile.new('test_files/csv_test_files/COS10001-Students.csv'),
       auth_token: "incorrect_auth_code"
     }
-    
+
     # perform the POST
     post "/api/csv/units/#{unit_id_to_test}", data_to_post
-    
+
 
     assert_equal 419, last_response.status
   end
-  
+
   #24: Testing for CSV upload failure due to empty auth token
   #POST /api/csv/units/{id}
   def test_csv_upload_all_students_in_unit_empty_auth_token
@@ -383,10 +383,10 @@ class CsvTest < ActiveSupport::TestCase
       file: Rack::Test::UploadedFile.new('test_files/csv_test_files/COS10001-Students.csv'),
       auth_token: ''
     }
-    
+
     # perform the POST
     post "/api/csv/units/#{unit_id_to_test}", data_to_post
-    
+
 
     assert_equal 419, last_response.status
   end
@@ -400,10 +400,10 @@ class CsvTest < ActiveSupport::TestCase
       file: Rack::Test::UploadedFile.new('test_files/csv_test_files/COS10001-Students.csv'),
       auth_token: auth_token
     }
-    
+
     # perform the POST
     post "/api/csv/units/#{unit_id_to_test}", data_to_post
-    
+
 
     assert_equal 404, last_response.status
   end
@@ -417,10 +417,10 @@ class CsvTest < ActiveSupport::TestCase
       file: Rack::Test::UploadedFile.new('test_files/csv_test_files/COS10001-Students.pdf'),
       auth_token: auth_token
     }
-    
+
     # perform the POST
     post "/api/csv/units/#{unit_id_to_test}", data_to_post
-    
+
 
     assert_equal 403, last_response.status
   end
@@ -434,10 +434,10 @@ class CsvTest < ActiveSupport::TestCase
       file: '',
       auth_token: auth_token
     }
-    
+
     # perform the POST
     post "/api/csv/units/#{unit_id_to_test}", data_to_post
-    
+
 
     assert_equal 403, last_response.status
   end
@@ -445,16 +445,16 @@ class CsvTest < ActiveSupport::TestCase
   #30: Testing for CSV upload failure due to non-existant unit id
   #POST /api/csv/units/{id}
   def test_csv_upload_all_students_in_unit_incorrect_unit_id
-    
+
     unit_id_to_test = '999'
     data_to_post = {
       file: Rack::Test::UploadedFile.new('test_files/csv_test_files/COS10001-Students.csv'),
       auth_token: auth_token
     }
-    
+
     # perform the POST
     post "/api/csv/units/#{unit_id_to_test}", data_to_post
-    
+
 
     assert_equal 404, last_response.status
   end
@@ -464,21 +464,21 @@ class CsvTest < ActiveSupport::TestCase
   #31: Testing for CSV upload of all the students in a unit
   #POST /api/csv/units/{id}/withdraw
   def test_csv_upload_students_un_enroll_in_unit
-    
+
     # Adding user to withdraw from unit
     test_csv_upload_all_students_in_unit
-    
+
     unit_id_to_test = '1'
     data_to_post = {
       file: Rack::Test::UploadedFile.new('test_files/csv_test_files/COS10001-Students.csv'),
       auth_token: auth_token
     }
-    
+
     user_id_check = Project.where(unit_id:1).last.user_id
 
     # perform the POST to withdraw user from the unit
     post "/api/csv/units/#{unit_id_to_test}/withdraw", data_to_post
-    
+
     # Check for response
     assert_equal 201, last_response.status
     assert_equal 'test_csv_student', User.where(id: user_id_check).last.username
@@ -488,46 +488,46 @@ class CsvTest < ActiveSupport::TestCase
   #32: Testing for CSV upload failure due to incorrect auth token
   #POST /api/csv/units/{id}/withdraw
   def test_csv_upload_students_un_enroll_in_unit_incorrect_auth_token
-   
+
     # Adding user to withdraw from unit
     test_csv_upload_all_students_in_unit
-    
+
     unit_id_to_test = '1'
     data_to_post = {
       file: Rack::Test::UploadedFile.new('test_files/csv_test_files/COS10001-Students.csv'),
       auth_token: 'incorrect_auth_token'
     }
-    
+
     user_id_check = Project.where(unit_id:1).last.user_id
 
     # perform the POST to withdraw user from the unit
     post "/api/csv/units/#{unit_id_to_test}/withdraw", data_to_post
-    
+
     # Check for response
     assert_equal 419, last_response.status
     # Check student was not withdrawn
     assert_equal 'test_csv_student', User.where(id: user_id_check).last.username
     assert_equal true, Project.where(user_id: user_id_check).last.enrolled
   end
-  
+
   #33: Testing for CSV upload failure due to empty auth token
   #POST /api/csv/units/{id}/withdraw
   def test_csv_upload_students_un_enroll_in_unit_empty_auth_token
-    
+
     # Adding user to withdraw from unit
     test_csv_upload_all_students_in_unit
-    
+
     unit_id_to_test = '1'
     data_to_post = {
       file: Rack::Test::UploadedFile.new('test_files/csv_test_files/COS10001-Students.csv'),
       auth_token: ''
     }
-    
+
     user_id_check = Project.where(unit_id:1).last.user_id
 
     # perform the POST to withdraw user from the unit
     post "/api/csv/units/#{unit_id_to_test}/withdraw", data_to_post
-    
+
     # Check for response
     assert_equal 419, last_response.status
     # Check student was not withdrawn
@@ -541,50 +541,50 @@ class CsvTest < ActiveSupport::TestCase
 
     # Adding user to withdraw from unit
     test_csv_upload_all_students_in_unit
-    
+
     unit_id_to_test = 'string'
     data_to_post = {
       file: Rack::Test::UploadedFile.new('test_files/csv_test_files/COS10001-Students.csv'),
       auth_token: auth_token
     }
-    
+
     user_id_check = Project.where(unit_id:1).last.user_id
 
     # perform the POST to withdraw user from the unit
     post "/api/csv/units/#{unit_id_to_test}/withdraw", data_to_post
-    
+
     # Check for response
     assert_equal 404, last_response.status
     # Check student was not withdrawn
     assert_equal 'test_csv_student', User.where(id: user_id_check).last.username
     assert_equal true, Project.where(user_id: user_id_check).last.enrolled
   end
-  
+
   #35: Testing for CSV upload failure due to empty unit ID
   #POST /api/csv/units/{id}/withdraw
   def test_csv_upload_students_un_enroll_in_unit_empty_unit_id
 
     # Adding user to withdraw from unit
     test_csv_upload_all_students_in_unit
-    
+
     unit_id_to_test = ''
     data_to_post = {
       file: Rack::Test::UploadedFile.new('test_files/csv_test_files/COS10001-Students.csv'),
       auth_token: auth_token
     }
-    
+
     user_id_check = Project.where(unit_id:1).last.user_id
 
     # perform the POST to withdraw user from the unit
     post "/api/csv/units/#{unit_id_to_test}/withdraw", data_to_post
-    
+
     # Check for response
     assert_equal 404, last_response.status
     # Check student was not withdrawn
     assert_equal 'test_csv_student', User.where(id: user_id_check).last.username
     assert_equal true, Project.where(user_id: user_id_check).last.enrolled
   end
-  
+
   #36: Testing for CSV uploadof XLSX
   #POST /api/csv/units/{id}/withdraw
   def test_csv_upload_students_un_enroll_in_unit_xlsx
@@ -615,18 +615,18 @@ class CsvTest < ActiveSupport::TestCase
 
     # Adding user to withdraw from unit
     test_csv_upload_all_students_in_unit
-    
+
     unit_id_to_test = '1'
     data_to_post = {
       file: Rack::Test::UploadedFile.new('test_files/csv_test_files/COS10001-Students.pdf'),
       auth_token: auth_token
     }
-    
+
     user_id_check = Project.where(unit_id:1).last.user_id
 
     # perform the POST to withdraw user from the unit
     post "/api/csv/units/#{unit_id_to_test}/withdraw", data_to_post
-    
+
     # Check for response
     assert_equal 403, last_response.status
     # Check student was not withdrawn
@@ -640,18 +640,18 @@ class CsvTest < ActiveSupport::TestCase
 
     # Adding user to withdraw from unit
     test_csv_upload_all_students_in_unit
-    
+
     unit_id_to_test = '1'
     data_to_post = {
       file: '',
       auth_token: auth_token
     }
-    
+
     user_id_check = Project.where(unit_id:1).last.user_id
 
     # perform the POST to withdraw user from the unit
     post "/api/csv/units/#{unit_id_to_test}/withdraw", data_to_post
-    
+
     # Check for response
     assert_equal 403, last_response.status
     # Check student was not withdrawn
@@ -665,25 +665,25 @@ class CsvTest < ActiveSupport::TestCase
 
     # Adding user to withdraw from unit
     test_csv_upload_all_students_in_unit
-    
+
     unit_id_to_test = '999'
     data_to_post = {
       file: Rack::Test::UploadedFile.new('test_files/csv_test_files/COS10001-Students.csv'),
       auth_token: auth_token
     }
-    
+
     user_id_check = Project.where(unit_id:1).last.user_id
 
     # perform the POST to withdraw user from the unit
     post "/api/csv/units/#{unit_id_to_test}/withdraw", data_to_post
-    
+
     # Check for response
     assert_equal 404, last_response.status
     # Check student was not withdrawn
     assert_equal 'test_csv_student', User.where(id: user_id_check).last.username
     assert_equal true, Project.where(user_id: user_id_check).last.enrolled
   end
-    
+
   #####--------------GET tests - Download CSV of all student tasks in this unit------------######
 
   #40: Testing for CSV download of all  students tasks in a unit
@@ -698,7 +698,7 @@ class CsvTest < ActiveSupport::TestCase
 
     # Check for response
     assert_equal 200, last_response.status
-    
+
     # Check for file
     assert_equal "attachment; filename=COS10001-TaskCompletion.csv ",last_response.header["content-disposition"]
   end
@@ -706,7 +706,7 @@ class CsvTest < ActiveSupport::TestCase
   #41: Testing for unit ID error with empty user ID
   #GET /api/csv/units/{id}/task_completion
   def test_download_csv_all_student_tasks_in_unit_with_empty_unit_id
-  
+
     unit_id_to_test = ''
     auth_token_to_test = auth_token
 
@@ -720,7 +720,7 @@ class CsvTest < ActiveSupport::TestCase
   #42: Testing for unit ID error with string user ID
   #GET /api/csv/units/{id}/task_completion
   def test_download_csv_all_student_tasks_in_unit_with_string_unit_id
-    
+
     unit_id_to_test = 'string'
     auth_token_to_test = auth_token
 
@@ -734,7 +734,7 @@ class CsvTest < ActiveSupport::TestCase
   #43: Testing for unit ID error with incorrect (non-existant) user ID
   #GET /api/csv/units/{id}/task_completion
   def test_download_csv_all_student_tasks_in_unit_with_incorrect_unit_id
-    
+
     unit_id_to_test = '999'
     auth_token_to_test = auth_token
 
@@ -748,13 +748,13 @@ class CsvTest < ActiveSupport::TestCase
   #44: Testing for authentication failure with incorrect token
   #GET /api/csv/units/{id}/task_completion
   def test_download_csv_all_student_tasks_in_unit_with_incorrect_auth_token
-    
+
     unit_id_to_test = '1'
     auth_token_to_test = 'incorrect_auth_token'
 
     # perform the get
     get "/api/csv/units/#{unit_id_to_test}/task_completion?auth_token=#{auth_token_to_test}"
-    
+
     # Check for response
     assert_equal 419, last_response.status
   end
@@ -762,13 +762,13 @@ class CsvTest < ActiveSupport::TestCase
   #45: Testing for authentication failure with empty token
   #GET /api/csv/units/{id}/task_completion
   def test_download_csv_all_student_tasks_in_unit_with_empty_auth_token
-    
+
     unit_id_to_test = '1'
     auth_token_to_test = ''
 
     # perform the get
     get "/api/csv/units/#{unit_id_to_test}/task_completion?auth_token=#{auth_token_to_test}"
-    
+
     # Check for response
     assert_equal 419, last_response.status
   end
@@ -787,7 +787,7 @@ class CsvTest < ActiveSupport::TestCase
 
     # Check for response
     assert_equal 200, last_response.status
-    
+
     # Check for file
     assert_equal "attachment; filename=COS10001-TutorAssessments.csv ",last_response.header["content-disposition"]
   end
@@ -795,7 +795,7 @@ class CsvTest < ActiveSupport::TestCase
   #47: Testing for unit ID error with empty user ID
   #GET /api/csv/units/{id}/tutor_assessments
   def test_download_csv_stats_tutor_assessed_with_empty_unit_id
-  
+
     unit_id_to_test = ''
     auth_token_to_test = auth_token
 
@@ -809,7 +809,7 @@ class CsvTest < ActiveSupport::TestCase
   #48: Testing for unit ID error with string user ID
   #GET /api/csv/units/{id}/tutor_assessments
   def test_download_csv_stats_tutor_assessed_with_string_unit_id
-    
+
     unit_id_to_test = 'string'
     auth_token_to_test = auth_token
 
@@ -823,7 +823,7 @@ class CsvTest < ActiveSupport::TestCase
   #49: Testing for unit ID error with incorrect (non-existant) user ID
   #GET /api/csv/units/{id}/tutor_assessments
   def test_download_csv_stats_tutor_assessed_with_incorrect_unit_id
-    
+
     unit_id_to_test = '999'
     auth_token_to_test = auth_token
 
@@ -837,13 +837,13 @@ class CsvTest < ActiveSupport::TestCase
   #50: Testing for authentication failure with incorrect token
   #GET /api/csv/units/{id}/tutor_assessments
   def test_download_csv_stats_tutor_assessed_with_incorrect_auth_token
-    
+
     unit_id_to_test = '1'
     auth_token_to_test = 'incorrect_auth_token'
 
     # perform the get
     get "/api/csv/units/#{unit_id_to_test}/tutor_assessments?auth_token=#{auth_token_to_test}"
-    
+
     # Check for response
     assert_equal 419, last_response.status
   end
@@ -851,13 +851,13 @@ class CsvTest < ActiveSupport::TestCase
   #51: Testing for authentication failure with empty token
   #GET /api/csv/units/{id}/tutor_assessments
   def test_download_csv_stats_tutor_assessed_with_empty_auth_token
-    
+
     unit_id_to_test = '1'
     auth_token_to_test = ''
 
     # perform the get
     get "/api/csv/units/#{unit_id_to_test}/tutor_assessments?auth_token=#{auth_token_to_test}"
-    
+
     # Check for response
     assert_equal 419, last_response.status
   end
@@ -875,7 +875,7 @@ class CsvTest < ActiveSupport::TestCase
 
     # Check for response
     assert_equal 200, last_response.status
-    
+
     # Check for file
     assert_equal "attachment; filename=doubtfire_users.csv ",last_response.header["content-disposition"]
   end
@@ -883,12 +883,12 @@ class CsvTest < ActiveSupport::TestCase
   #53: Testing for authentication failure with incorrect token
   #GET /api/csv/users
   def test_download_csv_all_users_with_incorrect_auth_token
-    
+
     auth_token_to_test = 'incorrect_auth_token'
 
     # perform the get
     get "/api/csv/users?auth_token=#{auth_token_to_test}"
-    
+
     # Check for response
     assert_equal 419, last_response.status
   end
@@ -896,12 +896,12 @@ class CsvTest < ActiveSupport::TestCase
   #54: Testing for authentication failure with empty token
   #GET /api/csv/users
   def test_download_csv_all_users_with_empty_auth_token
-    
+
     auth_token_to_test = ''
 
     # perform the get
     get "/api/csv/users?auth_token=#{auth_token_to_test}"
-    
+
     # Check for response
     assert_equal 419, last_response.status
   end
@@ -911,7 +911,7 @@ class CsvTest < ActiveSupport::TestCase
   #55: Testing for CSV upload of users
   #POST /api/csv/users
   def test_csv_upload_users
-    
+
     data_to_post = {
       file: Rack::Test::UploadedFile.new('test_files/csv_test_files/doubtfire_users.csv'),
       auth_token: auth_token
@@ -919,7 +919,7 @@ class CsvTest < ActiveSupport::TestCase
 
     # perform the POST to withdraw user from the unit
     post "/api/csv/users", data_to_post
-    
+
     # Check for response
     assert_equal 201, last_response.status
     assert_equal 'test.case@doubtfire.com', User.last.email
@@ -928,7 +928,7 @@ class CsvTest < ActiveSupport::TestCase
   #56: Testing for CSV upload failure due to incorrect auth token
   #POST /api/csv/units/{id}/withdraw
   def test_csv_upload_users_incorrect_auth_token
-    
+
     data_to_post = {
       file: Rack::Test::UploadedFile.new('test_files/csv_test_files/doubtfire_users.csv'),
       auth_token: 'incorrect_auth_token'
@@ -936,15 +936,15 @@ class CsvTest < ActiveSupport::TestCase
 
     # perform the POST to withdraw user from the unit
     post "/api/csv/users", data_to_post
-    
+
     # Check for response
     assert_equal 419, last_response.status
   end
-  
+
   #57: Testing for CSV upload failure due to empty auth token
   #POST /api/csv/units/{id}/withdraw
   def test_csv_upload_users_empty_auth_token
-     
+
     data_to_post = {
       file: Rack::Test::UploadedFile.new('test_files/csv_test_files/doubtfire_users.csv'),
       auth_token: ''
@@ -952,7 +952,7 @@ class CsvTest < ActiveSupport::TestCase
 
     # perform the POST to withdraw user from the unit
     post "/api/csv/users", data_to_post
-    
+
     # Check for response
     assert_equal 419, last_response.status
   end
@@ -985,7 +985,7 @@ class CsvTest < ActiveSupport::TestCase
 
     # perform the POST to withdraw user from the unit
     post "/api/csv/users", data_to_post
-    
+
     # Check for response
     assert_equal 403, last_response.status
   end
@@ -1001,7 +1001,7 @@ class CsvTest < ActiveSupport::TestCase
 
     # perform the POST to withdraw user from the unit
     post "/api/csv/users", data_to_post
-    
+
     # Check for response
     assert_equal 403, last_response.status
   end
