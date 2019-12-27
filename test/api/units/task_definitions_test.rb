@@ -161,7 +161,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
   end
 
   def test_task_related_to_task_def
-    unit = FactoryGirl.create(:unit)
+    unit = FactoryGirl.create(:unit, with_students: false)
     unit.employ_staff(User.first, Role.convenor)
 
     campus = FactoryGirl.create(:campus)
@@ -190,7 +190,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
   end
 
   def test_task_related_to_task_def_when_its_stream_is_null
-    unit = FactoryGirl.create(:unit)
+    unit = FactoryGirl.create(:unit, with_students: false)
     unit.employ_staff(User.first, Role.convenor)
 
     campus = FactoryGirl.create(:campus)
@@ -249,7 +249,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
   end
 
   def test_task_related_to_task_def_when_project_is_in_match_all
-    unit = FactoryGirl.create(:unit)
+    unit = FactoryGirl.create(:unit, with_students: false)
     unit.employ_staff(User.first, Role.convenor)
 
     campus = FactoryGirl.create(:campus)
@@ -314,7 +314,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
   end
 
   def test_task_related_to_task_def_when_multiple_tasks_but_project_is_not_enrolled
-    unit = FactoryGirl.create(:unit)
+    unit = FactoryGirl.create(:unit, with_students: false)
     unit.employ_staff(User.first, Role.convenor)
 
     campus = FactoryGirl.create(:campus)
@@ -355,7 +355,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
   end
 
   def test_task_related_to_task_def_when_multiple_tasks_but_project_is_enrolled_for_one
-    unit = FactoryGirl.create(:unit)
+    unit = FactoryGirl.create(:unit, with_students: false)
     unit.employ_staff(User.first, Role.convenor)
 
     campus = FactoryGirl.create(:campus)
@@ -399,7 +399,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
   end
 
   def test_task_related_to_task_def_when_project_is_enrolled
-    unit = FactoryGirl.create(:unit)
+    unit = FactoryGirl.create(:unit, with_students: false)
     unit.employ_staff(User.first, Role.convenor)
 
     campus = FactoryGirl.create(:campus)
@@ -461,7 +461,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
   end
 
   def test_task_related_to_task_def_when_multiple_projects_tasks_and_tutorials
-    unit = FactoryGirl.create(:unit)
+    unit = FactoryGirl.create(:unit, with_students: false)
 
     assert_empty unit.projects
     assert_equal 1, unit.tutorials.count

@@ -26,9 +26,10 @@ FactoryGirl.define do
 
   factory :unit do
     transient do
-      student_count 0
-      unenrolled_student_count 0
-      part_enrolled_student_count 0
+      with_students true
+      student_count 8
+      unenrolled_student_count 1
+      part_enrolled_student_count 2
       task_count 2
       tutorials 1  #per campus
       tutorial_config [] #[ {stream: 0, campus: 0} ]
@@ -96,6 +97,15 @@ FactoryGirl.define do
 
       unit.employ_staff( FactoryGirl.create(:user, :convenor), Role.convenor)
 
+      # Setup group tasks
+      group_tasks.each do |task_details|
+        td = unit.task_definitions[task_details[:idx]]
+        td.group_set = unit.group_sets[task_details[:gs]]
+        td.save!
+      end
+
+      next unless eval.with_students
+      # Enrol students
       campuses.each do |c|
         (eval.unenrolled_student_count + eval.student_count + eval.part_enrolled_student_count).times do |i|
           p = unit.enrol_student( FactoryGirl.create(:user, :student), c )
@@ -123,13 +133,6 @@ FactoryGirl.define do
           grp.add_member unit.projects[stud % eval.student_count]
           stud += 1
         end
-      end
-
-      group_tasks.each do |task_details|
-        td = unit.task_definitions[task_details[:idx]]
-        td.group_set = unit.group_sets[task_details[:gs]]
-        # puts "Group task #{td.abbreviation} #{td.group_set} = #{td.is_group_task?} #{td.valid?}"
-        td.save!
       end
     end
   end
