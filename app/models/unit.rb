@@ -1193,11 +1193,11 @@ class Unit < ActiveRecord::Base
           :unit,
           'INNER JOIN users ON projects.user_id = users.id',
           'INNER JOIN task_definitions ON task_definitions.unit_id = units.id',
+          'LEFT OUTER JOIN tutorial_streams ON tutorial_streams.unit_id = units.id',
+          'LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id AND (tutorial_enrolments.tutorial_stream_id = tutorial_streams.id OR tutorial_enrolments.tutorial_stream_id IS NULL)',
+          'LEFT OUTER JOIN tutorials ON tutorials.id = tutorial_enrolments.tutorial_id',
           'LEFT OUTER JOIN tasks ON tasks.task_definition_id = task_definitions.id AND projects.id = tasks.project_id',
           'LEFT OUTER JOIN task_statuses ON tasks.task_status_id = task_statuses.id',
-          'LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id AND (tutorial_enrolments.tutorial_stream_id = task_definitions.tutorial_stream_id OR tutorial_enrolments.tutorial_stream_id IS NULL)',
-          'LEFT OUTER JOIN tutorials ON tutorials.id = tutorial_enrolments.tutorial_id',
-          'LEFT OUTER JOIN tutorial_streams ON tutorial_enrolments.tutorial_stream_id = tutorial_streams.id AND (tutorial_streams.id = task_definitions.tutorial_stream_id OR tutorial_streams.id IS NULL)',
           'LEFT OUTER JOIN group_memberships ON group_memberships.project_id = projects.id AND group_memberships.active = TRUE',
           'LEFT OUTER JOIN groups ON groups.id = group_memberships.group_id'
         ).select(
