@@ -1228,7 +1228,7 @@ class Unit < ActiveRecord::Base
               streams.map { |ts| row["tutorial_#{ts.id}"] }
             end
           end.flatten + grp_sets.map do |gs|
-            row["grg_#{gs.id}"]
+            row["grp_#{gs.id}"]
           end + task_def_by_grade.map do |td|
             result = [ row["status_#{td.id}"].nil? ? TaskStatus.not_started.name : row["status_#{td.id}"] ]
             result << GradeHelper.short_grade_for(row["grade_#{td.id}"]) if td.is_graded?
