@@ -1205,7 +1205,7 @@ class Unit < ActiveRecord::Base
           'users.last_name as last_name', 'projects.target_grade', 'users.email as email', 'compile_portfolio', 'portfolio_production_date', 'grade', 'grade_rationale',
           *td_select,
           # Get tutorial for each stream in unit
-          *streams.map { |s| "MAX(CASE WHEN tutorial_enrolments.tutorial_stream_id = #{s.id} OR tutorial_enrolments.id IS NULL THEN tutorials.abbreviation ELSE NULL END) AS tutorial_#{s.id}" },
+          *streams.map { |s| "MAX(CASE WHEN tutorial_enrolments.tutorial_stream_id = #{s.id} OR tutorial_enrolments.tutorial_stream_id IS NULL THEN tutorials.abbreviation ELSE NULL END) AS tutorial_#{s.id}" },
           # Get tutorial for case when no stream
           "MAX(CASE WHEN tutorial_streams.id IS NULL THEN tutorials.abbreviation ELSE NULL END) AS tutorial",
           *grp_sets.map { |gs| "MAX(CASE WHEN groups.group_set_id = #{gs.id} THEN groups.name ELSE NULL END) AS grp_#{gs.id}" }
