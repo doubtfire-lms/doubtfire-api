@@ -275,7 +275,7 @@ class UnitTest < ActiveSupport::TestCase
   end
 
   def test_task_completion_csv
-    unit = FactoryGirl.create :unit, campus_count: 2, tutorials:2, stream_count:2, task_count:3, student_count:8, set_one_of_each_task: true
+    unit = FactoryGirl.create :unit, campus_count: 2, tutorials:2, stream_count:2, task_count:3, student_count:8, unenrolled_student_count: 2, set_one_of_each_task: true
 
     unit.task_definitions.each do |td|
       unit.projects.each do |student|
