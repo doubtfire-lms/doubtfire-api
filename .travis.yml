@@ -12,7 +12,7 @@ cache:
 
 # Specify Ruby version for rvm
 rvm:
-  - 2.3.1
+  - 2.3
 
 # Run processes as sudo
 sudo: true
