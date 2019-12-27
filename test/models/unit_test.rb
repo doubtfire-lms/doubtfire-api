@@ -314,6 +314,11 @@ class UnitTest < ActiveSupport::TestCase
           assert_equal(GradeHelper.short_grade_for(task.grade), entry["#{td.abbreviation.downcase} grade"], "#{td.abbreviation} --> #{entry.inspect}") if td.is_graded?
           assert_equal(task.contribution_pts, Integer(entry["#{td.abbreviation.downcase} contribution"]), "#{td.abbreviation} --> #{entry.inspect}") if td.is_group_task?
         end
+
+        # Test tutorial streams
+        unit.tutorial_streams.each do |ts|
+          assert_equal (project.tutorial_for_stream(ts).present? ? project.tutorial_for_stream(ts).abbreviation : nil), entry[ts.abbreviation.downcase], entry.inspect
+        end
     end
   end
 end
