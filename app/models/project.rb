@@ -192,16 +192,17 @@ class Project < ActiveRecord::Base
       end
   end
 
+  def tutorial_enrolment_for_stream(tutorial_stream)
+    tutorial_enrolments.where(tutorial_stream: tutorial_stream).first || tutorial_enrolments.where(tutorial_stream_id: nil).first
+  end
+
+  def tutorial_for_stream(tutorial_stream)
+    enrolment = tutorial_enrolment_for_stream(tutorial_stream)
+    enrolment.tutorial unless enrolment.nil?
+  end
+
   def tutorial_for(task_definition)
-    tutorial_enrolments.each do |tutorial_enrolment|
-      tutorial = tutorial_enrolment.tutorial
-      if tutorial.tutorial_stream.nil?
-        return tutorial
-      else
-        return tutorial if tutorial.tutorial_stream.eql? task_definition.tutorial_stream
-      end
-    end
-    return nil
+    tutorial_for_stream(task_definition.tutorial_stream) unless task_definition.nil?
   end
 
   def tutor_for(task_definition)
