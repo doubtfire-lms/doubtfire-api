@@ -27,6 +27,7 @@ FactoryGirl.define do
   factory :unit do
     transient do
       student_count 0
+      unenrolled_student_count 0
       task_count 2
       tutorials 1  #per campus
       tutorial_config [] #[ {stream: 0, campus: 0} ]
@@ -95,8 +96,10 @@ FactoryGirl.define do
       unit.employ_staff( FactoryGirl.create(:user, :convenor), Role.convenor)
 
       campuses.each do |c|
-        eval.student_count.times do |i|
+        (eval.unenrolled_student_count + eval.student_count).times do |i|
           p = unit.enrol_student( FactoryGirl.create(:user, :student), c )
+          next if i < eval.unenrolled_student_count
+
           if c.tutorials.first.tutorial_stream.present?
             tutorial_streams.each do |ts|
               p.enrol_in ts.tutorials.where(campus_id: c.id).sample
