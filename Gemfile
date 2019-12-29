@@ -27,7 +27,6 @@ end
 
 group :development, :test, :staging do
   # Generators for population
-  gem 'populator'
   gem 'factory_girl_rails'
   gem 'faker', '~>1.9.1'
   gem 'minitest-rails'

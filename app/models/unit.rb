@@ -3,6 +3,7 @@ require 'bcrypt'
 require 'json'
 require 'moss_ruby'
 require 'csv_helper'
+require 'grade_helper'
 
 class Unit < ActiveRecord::Base
   include ApplicationHelper
@@ -103,6 +104,7 @@ class Unit < ActiveRecord::Base
   has_many :task_definitions, -> { order 'start_date ASC, abbreviation ASC' }, dependent: :destroy
   has_many :projects, dependent: :destroy
   has_many :tutorials, dependent: :destroy
+  has_many :tutorial_enrolments, through: :tutorials
   has_many :unit_roles, dependent: :destroy
   has_many :learning_outcomes, dependent: :destroy
   has_many :tasks, through: :projects
@@ -290,6 +292,9 @@ class Unit < ActiveRecord::Base
         .joins('LEFT OUTER JOIN tasks ON projects.id = tasks.project_id')
         .joins('LEFT JOIN task_definitions ON tasks.task_definition_id = task_definitions.id')
         .joins('LEFT OUTER JOIN plagiarism_match_links ON tasks.id = plagiarism_match_links.task_id')
+        .joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id')
+        .joins('LEFT OUTER JOIN tutorials ON tutorials.id = tutorial_enrolments.tutorial_id')
+        .joins('LEFT OUTER JOIN tutorial_streams ON tutorial_enrolments.tutorial_stream_id = tutorial_streams.id')
         .group(
           'projects.id',
           'projects.target_grade',
@@ -298,7 +303,6 @@ class Unit < ActiveRecord::Base
           'users.last_name',
           'users.username',
           'users.email',
-          'projects.tutorial_id',
           'projects.portfolio_production_date',
           'projects.compile_portfolio',
           'projects.grade',
@@ -312,13 +316,16 @@ class Unit < ActiveRecord::Base
           'users.username AS student_id',
           'users.email AS student_email',
           'projects.target_grade AS target_grade',
-          'projects.tutorial_id AS tutorial_id',
           'projects.compile_portfolio AS compile_portfolio',
           'projects.grade AS grade',
           'projects.grade_rationale AS grade_rationale',
           'projects.portfolio_production_date AS portfolio_production_date',
           'MAX(CASE WHEN plagiarism_match_links.dismissed = FALSE THEN plagiarism_match_links.pct ELSE 0 END) AS plagiarism_match_links_max_pct',
-          *TaskStatus.all.map { |s| "SUM(CASE WHEN tasks.task_status_id = #{s.id} THEN 1 ELSE 0 END) AS #{s.status_key}_count" }
+          *TaskStatus.all.map { |s| "SUM(CASE WHEN tasks.task_status_id = #{s.id} THEN 1 ELSE 0 END) AS #{s.status_key}_count" },
+          # Get tutorial for each stream in unit
+          *tutorial_streams.map { |s| "MAX(CASE WHEN tutorial_enrolments.tutorial_stream_id = #{s.id} OR tutorial_enrolments.id IS NULL THEN tutorials.id ELSE NULL END) AS tutorial_#{s.id}" },
+          # Get tutorial for case when no stream
+          "MAX(CASE WHEN tutorial_streams.id IS NULL THEN tutorials.abbreviation ELSE NULL END) AS tutorial"
         )
         .where(
           'projects.target_grade >= task_definitions.target_grade OR (task_definitions.target_grade IS NULL)'
@@ -328,7 +335,7 @@ class Unit < ActiveRecord::Base
     q = q.where('projects.enrolled = TRUE') if limit_to_enrolled
 
     q.map do |t|
-      {
+      result = {
         project_id: t.project_id,
         enrolled: t.enrolled,
         first_name: t.first_name,
@@ -337,14 +344,24 @@ class Unit < ActiveRecord::Base
         student_email: t.student_email,
         student_name: "#{t.first_name} #{t.last_name}",
         target_grade: t.target_grade,
-        tutorial_id: t.tutorial_id,
         compile_portfolio: t.compile_portfolio,
         grade: t.grade,
         grade_rationale: t.grade_rationale,
         max_pct_copy: t.plagiarism_match_links_max_pct,
         has_portfolio: !t.portfolio_production_date.nil?,
-        stats: Project.create_task_stats_from(task_count, t, t.target_grade)
+        stats: Project.create_task_stats_from(task_count, t, t.target_grade),
+        tutorial_streams: tutorial_streams.map do |s|
+          {
+            stream: s.abbreviation,
+            tutorial: t["tutorial_#{s.id}"]
+          }
+        end
       }
+
+      if tutorial_streams.empty?
+        result[:tutorial_streams] = [{tutorial: t['tutorial']}]
+      end
+      result
     end
   end
 
@@ -392,20 +409,12 @@ class Unit < ActiveRecord::Base
   end
 
   # Adds a user to this project.
-  def enrol_student(user, campus, tutorial = nil)
-    tutorial_id = if tutorial.is_a?(Tutorial)
-                    tutorial.id
-                  else
-                    tutorial
-                  end
-
+  def enrol_student(user, campus)
     # Validates that a student is not already assigned to the unit
     existing_project = projects.where('user_id=:user_id', user_id: user.id).first
     if existing_project
       if existing_project.enrolled == false
         existing_project.enrolled = true
-        # If they are part of the unit, update their tutorial if supplied
-        existing_project.tutorial_id = tutorial_id unless tutorial_id.nil?
         existing_project.campus = campus
         existing_project.save!
       end
@@ -413,21 +422,12 @@ class Unit < ActiveRecord::Base
       return existing_project
     end
 
-    # Validates that the tutorial exists for the unit
-    if !tutorial_id.nil? && tutorials.where('id=:id', id: tutorial_id).count == 0
-      return nil
-    end
-
-    project = Project.new(
+    Project.create!(
       user_id: user.id,
       unit_id: id,
       task_stats: '0.0|1.0|0.0|0.0|0.0',
       campus: campus
     )
-
-    project.tutorial_id = tutorial_id unless tutorial_id.nil?
-    project.save!
-    project
   end
 
   def tutorial_with_abbr(abbr)
@@ -611,7 +611,7 @@ class Unit < ActiveRecord::Base
   #     -:last_name
   #     -:nickname
   #     -:email
-  #     -:tutorial_code
+  #     -:tutorials array of [tutorial_code, ...]
   #     -:enrolled
   # Import settings is:
   # - A hash
@@ -636,7 +636,7 @@ class Unit < ActiveRecord::Base
         last_name = row_data[:last_name].nil? ? nil : row_data[:last_name].titleize
         nickname = row_data[:nickname].nil? ? nil : row_data[:nickname].titleize
         email = row_data[:email]
-        tutorial_code = row_data[:tutorial_code]
+        tutorials = row_data[:tutorials]
         campus_data = row_data[:campus]
 
         # If either first or last name is nil... copy over the other component
@@ -697,55 +697,55 @@ class Unit < ActiveRecord::Base
         #
         if project_participant.persisted?
           # Add in the student id if it was supplied...
-          if (project_participant.student_id.nil? || project_participant.student_id.empty?) && student_id
+          if (project_participant.student_id.nil? || project_participant.student_id.empty? || project_participant.student_id != student_id) && student_id.present?
             project_participant.student_id = student_id
             project_participant.save!
           end
 
+          # Clear success message...
+          success_message = ''
+
           # Now find the project for the user
           user_project = projects.where(user_id: project_participant.id).first
-
-          # And find the tutorial for the user
-          tutorial = tutorial_cache[tutorial_code] || tutorial_with_abbr(tutorial_code)
-          tutorial_cache[tutorial_code] ||= tutorial
 
           # Add the user to the project (if not already in there)
           if user_project.nil?
             campus = Campus.find_by_abbr_or_name(campus_data)
-            # Need to enrol user... can always set tutorial as does not already exist...
-            if (!tutorial.nil?)
-              # Use tutorial if we have it :)
-              enrol_student(project_participant, campus, tutorial)
-              success << { row: row, message: 'Enrolled student with tutorial.' }
-            else
-              enrol_student(project_participant, campus)
-              success << { row: row, message: 'Enrolled student without tutorial.' }
-            end
+            # Enrol user...
+            user_project = enrol_student(project_participant, campus)
+            success_message = 'Enrolled student'
+            new_project = true
           else
+            new_project = false # We are updating existing project
             # update enrolment... if currently not enrolled
-            changes = ''
             unless user_project.enrolled
               user_project.enrolled = true
               user_project.save
-              changes << 'Changed enrolment.'
+              success_message << 'Changed enrolment.'
             end
+          end
 
-            # replace tutorial if we are allowed... and it has changed
-            if import_settings[:replace_existing_tutorial] || user_project.tutorial.nil?
-              # check it has changed first...
-              if user_project.tutorial != tutorial
-                user_project.tutorial = tutorial
-                user_project.save
-                changes << 'Changed tutorial. '
+          # Only run if we will change tutorial enrolments...
+          if import_settings[:replace_existing_tutorial] || new_project || user_project.tutorial_enrolments.count == 0
+
+            # Now loop through the tutorials and enrol the student...
+            tutorials.each do |tutorial_code|
+              # find the tutorial for the user
+              tutorial = tutorial_cache[tutorial_code] || tutorial_with_abbr(tutorial_code)
+              tutorial_cache[tutorial_code] ||= tutorial
+
+              if tutorial.present?
+                # Use tutorial as we have it :)
+                user_project.enrol_in tutorial
+                success_message << ' Enrolled in ' << tutorial.abbreviation
               end
             end
+          end
 
-            # Get back to user with changes... if any
-            if changes.empty?
-              ignored << { row: row, message: 'No change.' }
-            else
-              success << { row: row, message: changes }
-            end
+          if ! success_message.empty?
+            success << { row: row, message: success_message }
+          else
+            ignored << { row: row, message: 'No change.' }
           end
         else
           errors << { row: row, message: "Student record is invalid. #{project_participant.errors.full_messages.first}" }
@@ -825,9 +825,11 @@ class Unit < ActiveRecord::Base
 
   def export_users_to_csv
     CSV.generate do |row|
-      row << %w(unit_code username student_id first_name last_name email tutorial)
+      row << %w(unit_code username student_id first_name last_name email) +
+                tutorial_stream_abbr
       active_projects.each do |project|
-        row << [project.unit.code, project.student.username, project.student.student_id, project.student.first_name, project.student.last_name, project.student.email, project.tutorial_abbr]
+        row << [project.unit.code, project.student.username, project.student.student_id, project.student.first_name, project.student.last_name, project.student.email] +
+                project.tutorial_abbr
       end
     end
   end
@@ -1055,7 +1057,7 @@ class Unit < ActiveRecord::Base
   #   end
   # end
 
-  def add_tutorial(day, time, location, tutor, campus, capacity, abbrev)
+  def add_tutorial(day, time, location, tutor, campus, capacity, abbrev, tutorial_stream=nil)
     tutor_role = unit_roles.where('user_id=:user_id', user_id: tutor.id).first
     return nil if tutor_role.nil? || tutor_role.role == Role.student
     Tutorial.create!(unit_id: id, campus: campus, capacity: capacity, abbreviation: abbrev) do |tutorial|
@@ -1063,6 +1065,7 @@ class Unit < ActiveRecord::Base
       tutorial.meeting_time     = time
       tutorial.meeting_location = location
       tutorial.unit_role_id     = tutor_role.id
+      tutorial.tutorial_stream  = tutorial_stream unless tutorial_stream.nil?
     end
   end
 
@@ -1137,30 +1140,103 @@ class Unit < ActiveRecord::Base
     TaskDefinition.where(unit_id: id).order('target_grade ASC, start_date ASC, abbreviation ASC')
   end
 
+  def tutorial_stream_abbr
+    projects.
+      joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id').
+      joins('LEFT OUTER JOIN tutorial_streams ON tutorial_enrolments.tutorial_stream_id = tutorial_streams.id').
+      select(
+        'distinct(tutorial_streams.abbreviation) as abbreviation'
+      ).map{ |t| t.abbreviation }
+  end
+
   def task_completion_csv(options = {})
+    task_def_by_grade = task_definitions_by_grade
+    streams = tutorial_streams
+    grp_sets = group_sets
+
     CSV.generate(options) do |csv|
+      # Add header row
       csv << [
         'Student ID',
+        'Username',
         'Student Name',
         'Target Grade',
         'Email',
         'Portfolio',
         'Grade',
         'Rationale',
-        'Tutorial',
-        'Tutor'
       ] +
-             group_sets.map(&:name) +
-             task_definitions_by_grade.map do |task_definition|
-               result = [ task_definition.abbreviation ]
-               result << "#{task_definition.abbreviation} grade" if task_definition.is_graded?
-               result << "#{task_definition.abbreviation} stars" if task_definition.has_stars?
-               result << "#{task_definition.abbreviation} contribution" if task_definition.is_group_task?
-               result
-             end.flatten
-      active_projects.each do |project|
-        csv << project.task_completion_csv
-      end
+        (streams.count > 0 ? streams.map{ |t| t.abbreviation } : ['Tutorial']) +
+        grp_sets.map(&:name) +
+        task_def_by_grade.map do |task_definition|
+          result = [ task_definition.abbreviation ]
+          result << "#{task_definition.abbreviation} grade" if task_definition.is_graded?
+          result << "#{task_definition.abbreviation} stars" if task_definition.has_stars?
+          result << "#{task_definition.abbreviation} contribution" if task_definition.is_group_task?
+          result
+        end.flatten
+
+      # Add projects data
+      # Get the details to fetch for each task definition...
+      td_select = task_def_by_grade.map do |td|
+        result = []
+        result << "MAX(CASE WHEN tasks.task_definition_id = #{td.id} THEN (CASE WHEN task_statuses.name IS NULL THEN 'Not Started' ELSE task_statuses.name END) ELSE NULL END) AS status_#{td.id}"
+        result << "MAX(CASE WHEN tasks.task_definition_id = #{td.id} THEN tasks.grade ELSE NULL END) AS grade_#{td.id}" if td.is_graded?
+        result << "MAX(CASE WHEN tasks.task_definition_id = #{td.id} THEN tasks.quality_pts ELSE NULL END) AS stars_#{td.id}" if td.has_stars?
+        result << "MAX(CASE WHEN tasks.task_definition_id = #{td.id} THEN tasks.contribution_pts ELSE NULL END) AS people_#{td.id}" if td.is_group_task?
+        result
+      end.flatten
+
+      # Query across all projects, joined to task's via definitions to ensure all definitions are covered
+      active_projects.
+        joins(
+          :unit,
+          'INNER JOIN users ON projects.user_id = users.id',
+          'INNER JOIN task_definitions ON task_definitions.unit_id = units.id',
+          'LEFT OUTER JOIN tutorial_streams ON tutorial_streams.unit_id = units.id',
+          'LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id AND (tutorial_enrolments.tutorial_stream_id = tutorial_streams.id OR tutorial_enrolments.tutorial_stream_id IS NULL)',
+          'LEFT OUTER JOIN tutorials ON tutorials.id = tutorial_enrolments.tutorial_id',
+          'LEFT OUTER JOIN tasks ON tasks.task_definition_id = task_definitions.id AND projects.id = tasks.project_id',
+          'LEFT OUTER JOIN task_statuses ON tasks.task_status_id = task_statuses.id',
+          'LEFT OUTER JOIN group_memberships ON group_memberships.project_id = projects.id AND group_memberships.active = TRUE',
+          'LEFT OUTER JOIN groups ON groups.id = group_memberships.group_id'
+        ).select(
+          'projects.id as project_id', 'users.student_id as student_id', 'users.username as username', 'users.first_name as first_name',
+          'users.last_name as last_name', 'projects.target_grade', 'users.email as email', 'compile_portfolio', 'portfolio_production_date', 'grade', 'grade_rationale',
+          *td_select,
+          # Get tutorial for each stream in unit
+          *streams.map { |s| "MAX(CASE WHEN tutorial_enrolments.tutorial_stream_id = #{s.id} OR tutorial_enrolments.tutorial_stream_id IS NULL THEN tutorials.abbreviation ELSE NULL END) AS tutorial_#{s.id}" },
+          # Get tutorial for case when no stream
+          "MAX(CASE WHEN tutorial_streams.id IS NULL THEN tutorials.abbreviation ELSE NULL END) AS tutorial",
+          *grp_sets.map { |gs| "MAX(CASE WHEN groups.group_set_id = #{gs.id} THEN groups.name ELSE NULL END) AS grp_#{gs.id}" }
+        ).group(
+          'projects.id', 'student_id', 'username', 'first_name', 'last_name', 'target_grade', 'email', 'compile_portfolio', 'portfolio_production_date', 'grade', 'grade_rationale'
+        ).each do |row|
+          csv << [
+            row['student_id'],
+            row['username'],
+            "#{row['first_name']} #{row['last_name']}",
+            GradeHelper.grade_for(row['target_grade']),
+            row['email'],
+            row['portfolio_production_date'].present? && !row['compile_portfolio'] && File.exists?(FileHelper.student_portfolio_path(self, row['username'], true)),
+            row['grade'] > 0 ? row['grade'] : nil,
+            row['grade_rationale']
+          ] + [1].map do
+            if streams.empty?
+              [ row['tutorial'] ]
+            else
+              streams.map { |ts| row["tutorial_#{ts.id}"] }
+            end
+          end.flatten + grp_sets.map do |gs|
+            row["grp_#{gs.id}"]
+          end + task_def_by_grade.map do |td|
+            result = [ row["status_#{td.id}"].nil? ? TaskStatus.not_started.name : row["status_#{td.id}"] ]
+            result << GradeHelper.short_grade_for(row["grade_#{td.id}"]) if td.is_graded?
+            result << row["stars_#{td.id}"] if td.has_stars?
+            result << row["people_#{td.id}"] if td.is_group_task?
+            result
+          end.flatten
+        end
     end
   end
 
@@ -1181,8 +1257,8 @@ class Unit < ActiveRecord::Base
 
         # Add file to zip in grade folder
         src_path = project.portfolio_path
-        if project.main_tutor
-          dst_path = FileHelper.sanitized_path(project.target_grade_desc.to_s, "#{project.student.username}-portfolio (#{project.main_tutor.name})") + '.pdf'
+        if project.main_convenor
+          dst_path = FileHelper.sanitized_path(project.target_grade_desc.to_s, "#{project.student.username}-portfolio (#{project.main_convenor.name})") + '.pdf'
         else
           dst_path = FileHelper.sanitized_path(project.target_grade_desc.to_s, "#{project.student.username}-portfolio (no tutor)") + '.pdf'
         end
@@ -1617,17 +1693,20 @@ class Unit < ActiveRecord::Base
   # Return all tasks from the database for this unit and given user
   #
   def get_all_tasks_for(user)
-    student_tasks
-      .joins(:task_status)
-      .joins("LEFT JOIN task_comments ON task_comments.task_id = tasks.id")
-      .joins("LEFT JOIN comments_read_receipts crr ON crr.task_comment_id = task_comments.id AND crr.user_id = #{user.id}")
-      .select(
+    student_tasks.
+      joins(:task_status).
+      joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id AND (tutorial_enrolments.tutorial_stream_id = task_definitions.tutorial_stream_id OR tutorial_enrolments.tutorial_stream_id IS NULL)').
+      joins("LEFT JOIN task_comments ON task_comments.task_id = tasks.id").
+      joins("LEFT JOIN comments_read_receipts crr ON crr.task_comment_id = task_comments.id AND crr.user_id = #{user.id}").
+      select(
+        'tutorial_enrolments.tutorial_id AS tutorial_id', 'tutorial_enrolments.tutorial_stream_id AS tutorial_stream_id',
         'tasks.id', 'SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) as number_unread', 'project_id', 'tasks.id as task_id',
-        'task_definition_id', 'task_definitions.start_date as start_date', 'projects.tutorial_id as tutorial_id', 'task_statuses.id as status_id',
+        'task_definition_id', 'task_definitions.start_date as start_date', 'task_statuses.id as status_id',
         'completion_date', 'times_assessed', 'submission_date', 'portfolio_evidence', 'tasks.grade as grade', 'quality_pts'
-      )
-      .group(
-        'task_statuses.id', 'project_id', 'tutorial_id', 'tasks.id', 'task_definition_id', 'task_definitions.start_date', 'status_id',
+      ).
+      group(
+        'tutorial_enrolments.tutorial_id', 'tutorial_enrolments.tutorial_stream_id',
+        'task_statuses.id', 'project_id', 'tasks.id', 'task_definition_id', 'task_definitions.start_date', 'status_id',
         'completion_date', 'times_assessed', 'submission_date', 'portfolio_evidence', 'grade', 'quality_pts'
       )
   end
@@ -1669,13 +1748,15 @@ class Unit < ActiveRecord::Base
   #   task_def_id => { ... }
   #
   def task_status_stats
-    data = student_tasks
-           .joins(:task_status)
-           .select('projects.tutorial_id as tutorial_id', 'task_definition_id', 'task_statuses.id as status_id', 'COUNT(tasks.id) as num_tasks')
-           .where('task_status_id > 1')
-           .group('projects.tutorial_id', 'tasks.task_definition_id', 'status_id')
-           .map do |r|
+    data = student_tasks.
+           joins(:task_status).
+           joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id AND (tutorial_enrolments.tutorial_stream_id = task_definitions.tutorial_stream_id OR tutorial_enrolments.tutorial_stream_id IS NULL)').
+           select('tutorial_enrolments.tutorial_stream_id AS stream_id', 'tutorial_enrolments.tutorial_id AS tutorial_id', 'task_definition_id', 'task_statuses.id as status_id', 'COUNT(tasks.id) as num_tasks').
+           where('task_status_id > 1').
+           group('stream_id', 'tutorial_id', 'tasks.task_definition_id', 'status_id').
+           map do |r|
       {
+        tutorial_stream_id: r.stream_id,
         tutorial_id: r.tutorial_id,
         task_definition_id: r.task_definition_id,
         status: TaskStatus.id_to_key(r.status_id),
@@ -1694,6 +1775,7 @@ class Unit < ActiveRecord::Base
 
         next unless num - count > 0
         data << {
+          tutorial_stream_id: t.tutorial_stream_id,
           tutorial_id: t.id,
           task_definition_id: td.id,
           status: :not_started,
@@ -1713,7 +1795,7 @@ class Unit < ActiveRecord::Base
         result[e[:task_definition_id] ] [e[:tutorial_id]] = []
       end
 
-      result[e[:task_definition_id]][e[:tutorial_id]] << { status: e[:status], num: e[:num] }
+      result[e[:task_definition_id]][e[:tutorial_id]] << { tutorial_stream_id: e[:tutorial_stream_id], status: e[:status], num: e[:num] }
     end
 
     result
@@ -1724,7 +1806,9 @@ class Unit < ActiveRecord::Base
   # aiming for a grade in this indicated unit.
   #
   def student_target_grade_stats
-    data = active_projects.select('projects.tutorial_id, projects.target_grade, COUNT(projects.id) as num').group('projects.tutorial_id, projects.target_grade').order('projects.tutorial_id, projects.target_grade').map { |r| { tutorial_id: r.tutorial_id, grade: r.target_grade, num: r.num } }
+    data = active_projects
+            .joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id')
+            .select('tutorial_enrolments.tutorial_stream_id as tutorial_stream_id, tutorial_enrolments.tutorial_id as tutorial_id, projects.target_grade, COUNT(projects.id) as num').group('tutorial_enrolments.tutorial_id, tutorial_enrolments.tutorial_stream_id, projects.target_grade').order('tutorial_enrolments.tutorial_id, projects.target_grade').map { |r| { tutorial_id: r.tutorial_id, tutorial_stream_id: r.tutorial_stream_id, grade: r.target_grade, num: r.num } }
   end
 
   #
@@ -1740,11 +1824,12 @@ class Unit < ActiveRecord::Base
   #
   def _student_task_completion_data_base
     data = student_tasks
-           .select('projects.tutorial_id as tutorial_id', 'projects.target_grade as target_grade', 'tasks.project_id', 'Count(tasks.id) as num')
+           .joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = tasks.project_id AND (tutorial_enrolments.tutorial_stream_id = task_definitions.tutorial_stream_id OR tutorial_enrolments.tutorial_stream_id IS NULL)')
+           .select('tutorial_enrolments.tutorial_stream_id as tutorial_stream_id', 'tutorial_enrolments.tutorial_id as tutorial_id', 'projects.target_grade as target_grade', 'tasks.project_id', 'Count(tasks.id) as num')
            .where('task_status_id = :complete', complete: TaskStatus.complete.id)
-           .group('projects.tutorial_id', 'projects.target_grade', 'tasks.project_id')
-           .order('projects.tutorial_id')
-    data.map { |r| { tutorial_id: r.tutorial_id, grade: r.target_grade, project: r.project_id, num: r.num } }
+           .group('tutorial_enrolments.tutorial_id', 'tutorial_enrolments.tutorial_stream_id', 'projects.target_grade', 'tasks.project_id')
+           .order('tutorial_enrolments.tutorial_id')
+    data.map { |r| { tutorial_id: r.tutorial_id, tutorial_stream_id: r.tutorial_stream_id, grade: r.target_grade, project: r.project_id, num: r.num } }
   end
 
   def _calculate_task_completion_stats(data)
@@ -1813,14 +1898,16 @@ class Unit < ActiveRecord::Base
     data = student_tasks
            .joins(task_definition: :learning_outcome_task_links)
            .joins(:task_status)
-           .select('projects.tutorial_id, projects.id as project_id, task_statuses.id as status_id, task_definitions.target_grade, learning_outcome_task_links.learning_outcome_id, learning_outcome_task_links.rating, COUNT(tasks.id) as num')
+           .joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id AND (tutorial_enrolments.tutorial_stream_id = task_definitions.tutorial_stream_id OR tutorial_enrolments.tutorial_stream_id IS NULL)')
+           .select('tutorial_enrolments.tutorial_stream_id as tutorial_stream_id, tutorial_enrolments.tutorial_id as tutorial_id, projects.id as project_id, task_statuses.id as status_id, task_definitions.target_grade, learning_outcome_task_links.learning_outcome_id, learning_outcome_task_links.rating, COUNT(tasks.id) as num')
            .where('projects.started = TRUE AND learning_outcome_task_links.task_id is NULL')
-           .group('projects.tutorial_id, projects.id, task_statuses.id, task_definitions.target_grade, learning_outcome_task_links.learning_outcome_id, learning_outcome_task_links.rating')
-           .order('projects.tutorial_id, projects.id')
+           .group('tutorial_enrolments.tutorial_id, tutorial_enrolments.tutorial_stream_id, projects.id, task_statuses.id, task_definitions.target_grade, learning_outcome_task_links.learning_outcome_id, learning_outcome_task_links.rating')
+           .order('tutorial_enrolments.tutorial_id, projects.id')
            .map do |r|
       {
         project_id: r.project_id,
         tutorial_id: r.tutorial_id,
+        tutorial_stream_id: r.tutorial_stream_id,
         learning_outcome_id: r.learning_outcome_id,
         rating: r.rating,
         grade: r.target_grade,
@@ -1989,7 +2076,7 @@ class Unit < ActiveRecord::Base
       ]
 
       tasks
-        .joins(project: [ { tutorial: { unit_role: :user } } ])
+        .joins(project: [ {tutorial_enrolments: { tutorial: { unit_role: :user } } } ])
         .select('users.username', 'users.first_name', 'users.last_name', 'SUM(times_assessed) AS total')
         .group('users.username', 'users.first_name', 'users.last_name')
         .each do |r|
@@ -2046,7 +2133,7 @@ class Unit < ActiveRecord::Base
                      'rtm'
                    end
 
-        csv_str << "\n#{student.username.tr(',', '_')},#{student.name.tr(',', '_')},#{task.project.tutorial.abbreviation},#{task.task_definition.abbreviation.tr(',', '_')},\"#{task.last_comment_by(task.project.student).gsub(/"/, '""')}\",\"#{task.last_comment_by(user).gsub(/"/, '""')}\",#{mark_col},,,#{task.task_definition.max_quality_pts},"
+        csv_str << "\n#{student.username.tr(',', '_')},#{student.name.tr(',', '_')},#{task.project.tutorial_for(task.task_definition).abbreviation},#{task.task_definition.abbreviation.tr(',', '_')},\"#{task.last_comment_by(task.project.student).gsub(/"/, '""')}\",\"#{task.last_comment_by(user).gsub(/"/, '""')}\",#{mark_col},,,#{task.task_definition.max_quality_pts},"
 
         src_path = task.portfolio_evidence
 
