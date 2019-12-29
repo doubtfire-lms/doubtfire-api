@@ -32,7 +32,7 @@ module Api
                  joins('LEFT OUTER JOIN unit_roles AS tutor_role ON tutorials.unit_role_id = tutor_role.id').
                  joins('LEFT OUTER JOIN users AS tutor ON tutor.id = tutor_role.user_id').
                  select( 'projects.*',
-                          'units.name AS unit_name', 'units.id AS unit_id', 'units.code AS unit_code', 'units.start_date AS start_date', 'units.end_date AS end_date', 'units.teaching_period_id AS teaching_period_id', 'NOT NOT units.active AS active',
+                          'units.name AS unit_name', 'units.id AS unit_id', 'units.code AS unit_code', 'units.start_date AS start_date', 'units.end_date AS end_date', 'units.teaching_period_id AS teaching_period_id', 'units.active AS active',
                           "#{student_name} AS student_name"
                         )
 
@@ -50,7 +50,7 @@ module Api
           start_date: row['start_date'],
           end_date: row['end_date'],
           teaching_period_id: row['teaching_period_id'],
-          active: row['active']
+          active: row['active'].is_a?(Numeric) ? row['active'] != 0 : row['active']
         }
       end
     end
