@@ -1,7 +1,7 @@
 require 'test_helper'
 require 'date'
 
-class UnitsTest < ActiveSupport::TestCase
+class UnitsApiTest < ActiveSupport::TestCase
   include Rack::Test::Methods
   include TestHelpers::AuthHelper
   include TestHelpers::JsonHelper
@@ -205,6 +205,38 @@ class UnitsTest < ActiveSupport::TestCase
     assert_equal actual_unit['code'], expected_unit.code
     assert_equal actual_unit['start_date'].to_date, expected_unit.start_date.to_date
     assert_equal actual_unit['end_date'].to_date, expected_unit.end_date.to_date
+  end
+
+  def test_units_get_has_streams
+    expected_unit = FactoryGirl.create(:unit, with_students: false, stream_count: 2)
+
+    # Get the unit...
+    get with_auth_token "/api/units/#{expected_unit.id}"
+
+    actual_unit = last_response_body
+
+    # Check to see if the first unit's match
+    assert_equal actual_unit['name'], expected_unit.name
+    assert_equal actual_unit['code'], expected_unit.code
+    assert_equal actual_unit['start_date'].to_date, expected_unit.start_date.to_date
+    assert_equal actual_unit['end_date'].to_date, expected_unit.end_date.to_date
+
+    assert_equal 2, actual_unit['tutorial_streams'].count
+
+    expected_unit = FactoryGirl.create(:unit, with_students: false, stream_count: 3)
+
+    # Get the unit...
+    get with_auth_token "/api/units/#{expected_unit.id}"
+
+    actual_unit = last_response_body
+
+    # Check to see if the first unit's match
+    assert_equal actual_unit['name'], expected_unit.name
+    assert_equal actual_unit['code'], expected_unit.code
+    assert_equal actual_unit['start_date'].to_date, expected_unit.start_date.to_date
+    assert_equal actual_unit['end_date'].to_date, expected_unit.end_date.to_date
+
+    assert_equal 3, actual_unit['tutorial_streams'].count
   end
 
   #Test GET for getting the unit details of current user
