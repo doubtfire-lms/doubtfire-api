@@ -20,6 +20,7 @@ module Api
         optional :campus_id, type: Integer, desc: 'Id of the campus'
         optional :capacity, type: Integer, desc: 'Capacity of the tutorial'
         optional :meeting_time, type: String, desc: 'Time of the tutorial'
+        optional :tutorial_stream_abbr, type: String, desc: 'Abbreviation of the tutorial stream'
       end
     end
     put '/tutorials/:id' do
@@ -30,6 +31,12 @@ module Api
       unless authorise? current_user, tutorial.unit, :add_tutorial
         error!({ error: "Cannot update tutorial with id=#{params[:id]} - not authorised" }, 403)
       end
+
+      # Update Tutorial Stream
+      tutorial_stream_abbr = tut_params[:tutorial_stream_abbr]
+      tutorial_stream = tutorial.unit.tutorial_streams.find_by!(abbreviation: tutorial_stream_abbr) unless tutorial_stream_abbr.nil?
+      tutorial.tutorial_stream = tutorial_stream
+      tutorial.save!
 
       tutorial_parameters = ActionController::Parameters.new(params)
                                                         .require(:tutorial)
@@ -54,14 +61,15 @@ module Api
     desc 'Create tutorial'
     params do
       requires :tutorial, type: Hash do
-        requires :unit_id,          type: Integer,  desc: 'Id of the unit'
-        requires :tutor_id,         type: Integer,  desc: 'Id of the tutor'
-        requires :campus_id,        type: Integer,  desc: 'Id of the campus',           allow_blank: false
-        requires :capacity,         type: Integer,  desc: 'Capacity of the tutorial',   allow_blank: false
-        requires :abbreviation,     type: String,   desc: 'The tutorials code',         allow_blank: false
-        requires :meeting_location, type: String,   desc: 'The tutorials location',     allow_blank: false
-        requires :meeting_day,      type: String,   desc: 'Day of the tutorial',        allow_blank: false
-        requires :meeting_time,     type: String,   desc: 'Time of the tutorial',       allow_blank: false
+        requires :unit_id,              type: Integer,  desc: 'Id of the unit'
+        requires :tutor_id,             type: Integer,  desc: 'Id of the tutor'
+        requires :campus_id,            type: Integer,  desc: 'Id of the campus',                               allow_blank: false
+        requires :capacity,             type: Integer,  desc: 'Capacity of the tutorial',                       allow_blank: false
+        requires :abbreviation,         type: String,   desc: 'The tutorials code',                             allow_blank: false
+        requires :meeting_location,     type: String,   desc: 'The tutorials location',                         allow_blank: false
+        requires :meeting_day,          type: String,   desc: 'Day of the tutorial',                            allow_blank: false
+        requires :meeting_time,         type: String,   desc: 'Time of the tutorial',                           allow_blank: false
+        optional :tutorial_stream_abbr, type: String,   desc: 'Abbreviation of the associated tutorial stream', allow_blank: false
       end
     end
     post '/tutorials' do
@@ -75,7 +83,11 @@ module Api
       tutor = User.find(tut_params[:tutor_id])
       campus = Campus.find(tut_params[:campus_id])
 
-      tutorial = unit.add_tutorial(tut_params[:meeting_day], tut_params[:meeting_time], tut_params[:meeting_location], tutor, campus, tut_params[:capacity], tut_params[:abbreviation])
+      # Set Tutorial Stream if available
+      tutorial_stream_abbr = tut_params[:tutorial_stream_abbr]
+      tutorial_stream = unit.tutorial_streams.find_by!(abbreviation: tutorial_stream_abbr) unless tutorial_stream_abbr.nil?
+
+      tutorial = unit.add_tutorial(tut_params[:meeting_day], tut_params[:meeting_time], tut_params[:meeting_location], tutor, campus, tut_params[:capacity], tut_params[:abbreviation], tutorial_stream)
       tutorial
     end
 

@@ -123,7 +123,7 @@ class TaskComment < ActiveRecord::Base
   def mark_as_read(user, unit = self.unit)
     return if read_by?(user) # avoid propagating if not needed
 
-    if user == project.main_tutor
+    if user == project.tutor_for(task.task_definition)
       unit.staff.each do |staff_member|
         create_comment_read_receipt_entry(staff_member.user)
       end

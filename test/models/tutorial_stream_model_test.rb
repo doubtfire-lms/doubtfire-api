@@ -18,7 +18,7 @@ class TutorialStreamModelTest < ActiveSupport::TestCase
   end
 
   def test_add_tutorial_stream
-    unit = FactoryGirl.create(:unit)
+    unit = FactoryGirl.create(:unit, with_students: false)
     activity_type = FactoryGirl.create(:activity_type)
     tutorial_stream = unit.add_tutorial_stream('Practical-01', 'prac-01', activity_type)
     last_tutorial_stream = unit.tutorial_streams.last
@@ -28,7 +28,7 @@ class TutorialStreamModelTest < ActiveSupport::TestCase
   end
 
   def test_delete_when_two_tutorial_streams_in_unit
-    unit = FactoryGirl.create(:unit)
+    unit = FactoryGirl.create(:unit, with_students: false)
     activity_type = FactoryGirl.create(:activity_type)
     tutorial_stream_first = unit.add_tutorial_stream('Practical-01', 'prac-01', activity_type)
     tutorial_stream_second = unit.add_tutorial_stream('Practical-02', 'prac-02', activity_type)
@@ -61,7 +61,7 @@ class TutorialStreamModelTest < ActiveSupport::TestCase
   end
 
   def test_delete_when_three_tutorial_streams_in_unit
-    unit = FactoryGirl.create(:unit)
+    unit = FactoryGirl.create(:unit, with_students: false)
     activity_type = FactoryGirl.create(:activity_type)
     tutorial_stream_first = unit.add_tutorial_stream('Practical-01', 'prac-01', activity_type)
     tutorial_stream_second = unit.add_tutorial_stream('Practical-02', 'prac-02', activity_type)
@@ -83,7 +83,7 @@ class TutorialStreamModelTest < ActiveSupport::TestCase
   end
 
   def test_delete_when_one_tutorial_stream_in_unit
-    unit = FactoryGirl.create(:unit)
+    unit = FactoryGirl.create(:unit, with_students: false)
     activity_type = FactoryGirl.create(:activity_type)
     tutorial_stream_first = unit.add_tutorial_stream('Practical-01', 'prac-01', activity_type)
 
@@ -113,7 +113,7 @@ class TutorialStreamModelTest < ActiveSupport::TestCase
   end
 
   def test_creating_first_tutorial_stream_in_unit
-    unit = FactoryGirl.create(:unit)
+    unit = FactoryGirl.create(:unit, with_students: false)
     activity_type = FactoryGirl.create(:activity_type)
     tutorial_stream_first = unit.add_tutorial_stream('Practical-01', 'prac-01', activity_type)
 
@@ -122,7 +122,7 @@ class TutorialStreamModelTest < ActiveSupport::TestCase
   end
 
   def test_creating_second_tutorial_stream_in_unit
-    unit = FactoryGirl.create(:unit)
+    unit = FactoryGirl.create(:unit, with_students: false)
     activity_type = FactoryGirl.create(:activity_type)
     tutorial_stream_first = unit.add_tutorial_stream('Practical-01', 'prac-01', activity_type)
     tutorial_stream_second = unit.add_tutorial_stream('Practical-02', 'prac-02', activity_type)

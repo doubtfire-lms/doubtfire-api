@@ -5,7 +5,7 @@ FactoryGirl.define do
     group_set
 
     sequence(:number)       { |n| n }
-    name                    { Populator.words(1..3) }
+    sequence(:name)         { |n| "Group-#{n}" }
 
     after(:build) do |group, eval|
       if group.tutorial.nil?
