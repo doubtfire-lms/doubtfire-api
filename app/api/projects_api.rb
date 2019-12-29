@@ -44,7 +44,7 @@ module Api
           unit_name: row['unit_name'],
           project_id: row['id'],
           campus_id: row['campus_id'],
-          student_name: row['student_name'],
+          student_name: row['student_name'], #TODO: REMOVE
           target_grade: row['target_grade'],
           has_portfolio: row['has_portfolio'],
           start_date: row['start_date'],
