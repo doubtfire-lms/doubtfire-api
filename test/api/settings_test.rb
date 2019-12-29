@@ -59,6 +59,7 @@ class SettingTest < ActiveSupport::TestCase
         # Check responses match as expected 
         last_response_body.each do |unit|
           expected = Unit.find(unit['unit_id'])
+          assert_equal expected[:id], unit['unit_id']
           assert_equal expected[:code], unit['unit_code']
           assert_equal TeachingPeriod.find(expected[:teaching_period_id]).period, unit['period_name']
         end
