@@ -11,7 +11,29 @@ class ProjectsApiTest < ActiveSupport::TestCase
   end
 
   def test_can_get_projects
-    get with_auth_token '/api/projects'
+    user = FactoryGirl.create(:user, :student, enrol_in: 0)
+    get with_auth_token('/api/projects', user)
     assert_equal 200, last_response.status
+  end
+
+  def test_projects_returns_correct_number_of_projects
+    user = FactoryGirl.create(:user, :student, enrol_in: 2)
+    get with_auth_token('/api/projects', user)
+    assert_equal 2, last_response_body.count
+  end
+
+  def test_projects_returns_correct_data
+    user = FactoryGirl.create(:user, :student, enrol_in: 2)
+    get with_auth_token('/api/projects', user)
+    last_response_body.each do |row|
+      project = user.projects.find(row['project_id'])
+      assert project.present?, row.inspect
+
+      assert_json_matches_model(data, project, %w(campus_id has_portfolio target_grade campus_id))
+      assert_equal project.unit.name, data['unit_name'], data.inspect
+      assert_equal project.unit.id, data['unit_id'], data.inspect
+      assert_equal project.unit.code, data['unit_code'], data.inspect
+      assert_json_matches_model(data, project.unit, %w(start_date end_date teaching_period_id acive))
+    end
   end
 end
