@@ -90,7 +90,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     task = project.task_for_task_definition(td)
     task.move_files_to_in_process
 
-    assert File.exists? "student_work/in_process/#{task.id}/000-image.jpg"
+    assert File.exists? "#{Doubtfire::Application.config.student_work_dir}/in_process/#{task.id}/000-image.jpg"
 
     td.destroy
   end
