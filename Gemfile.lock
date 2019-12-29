@@ -159,7 +159,6 @@ GEM
       rack
       rake (>= 0.8.1)
     pg (0.18.4)
-    populator (1.0.0)
     powerpack (0.1.1)
     rack (1.6.4)
     rack-accept (0.4.5)
@@ -292,7 +291,6 @@ DEPENDENCIES
   mysql2
   passenger (= 4.0.42)
   pg
-  populator
   rack-cors
   rails (= 4.2.6)
   rails-latex (= 2.0.1)
