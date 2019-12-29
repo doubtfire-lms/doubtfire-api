@@ -39,6 +39,7 @@ class UnitSerializer < ActiveModel::Serializer
     object.learning_outcomes
   end
 
+  has_many :tutorial_streams
   has_many :tutorials
   has_many :tutorial_enrolments
   has_many :task_definitions
