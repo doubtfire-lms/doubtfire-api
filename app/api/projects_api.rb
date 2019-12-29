@@ -50,7 +50,7 @@ module Api
           start_date: row['start_date'],
           end_date: row['end_date'],
           teaching_period_id: row['teaching_period_id'],
-          active: row['active']
+          active: row['active'] == true
         }
       end
     end
