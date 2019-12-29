@@ -1,4 +1,3 @@
-require 'populator'
 require 'faker'
 require 'bcrypt'
 require 'json'
