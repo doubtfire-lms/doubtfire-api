@@ -4,24 +4,24 @@ FactoryGirl.define do
 
   factory :task_definition do
     unit
-    name                      { Populator.words(1..3) }
-    description               { Populator.words(1..3) }
-    upload_requirements       { [{'key' => 'file0','name' => 'Imported Code','type' => 'code'}] }
-    sequence(:abbreviation)   { |n| "P1.#{n}" }
-    weighting                 { rand(1..5) }
-    start_date                { unit.start_date + rand(1..12).weeks }
-    target_date               { start_date + rand(1..2).weeks }
+    name                      { Faker::Lorem.unique.word }
+    description               { Faker::Lorem.sentence }
     target_grade              { rand(0..3) }
+    upload_requirements       { [{'key' => 'file0','name' => 'Imported Code','type' => 'code'}] }
+    start_date                { unit.start_date + rand(1..12).weeks }
+    sequence(:abbreviation)   { |n| "#{GradeHelper.short_grade_for target_grade}#{((unit.start_date - start_date) / 1.week).floor + 1}.#{n}" }
+    weighting                 { rand(1..5) }
+    target_date               { start_date + rand(1..2).weeks }
     group_set                 nil
     tutorial_stream           { unit.tutorial_streams.sample }
   end
 
   factory :learning_outcome do
     unit
-    name                      { Populator.words(1..3) }
+    name                      { Faker::Lorem.unique.words(3).join(' ') }
     sequence(:abbreviation)   { |n| "ULO-#{n}" }
     sequence(:ilo_number)     { |n| n }
-    description               { "description" }
+    description               { Faker::Lorem.sentence }
   end
 
   factory :unit do
@@ -42,12 +42,12 @@ FactoryGirl.define do
       set_one_of_each_task false  # In addition to the standard tasks, also add one of each different think of task - group, quality, graded, etc.
     end
 
-    name            { Populator.words(1..2) }
-    description     "Description"
+    name            { Faker::Lorem.unique.words(2).join(' ') }
+    description     { Faker::Lorem.sentence }
     start_date      Time.zone.now
     end_date        Time.zone.now + 14.weeks
     teaching_period nil
-    code            "COS10001"
+    code            { "SIT#{Faker::Number.unique.number(3)}" }
     active          true
 
     after(:create) do | unit, eval |
