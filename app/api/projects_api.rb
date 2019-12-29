@@ -22,19 +22,37 @@ module Api
       projects = Project.for_user current_user, include_inactive
 
       student_name = db_concat('users.first_name', "' '", 'users.last_name')
-      tutor_name = db_concat('tutor.first_name', "' '", 'tutor.last_name')
 
       # join in other tables to fetch data
-      projects = projects
-                 .joins(:unit)
-                 .joins(:user)
-                 .joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id')
-                 .joins('LEFT OUTER JOIN tutorials ON tutorial_enrolments.tutorial_id = tutorials.id')
-                 .joins('LEFT OUTER JOIN unit_roles AS tutor_role ON tutorials.unit_role_id = tutor_role.id')
-                 .joins('LEFT OUTER JOIN users AS tutor ON tutor.id = tutor_role.user_id')
-                 .select('projects.*', 'units.name AS unit_name', 'units.id AS unit_id', 'units.code AS unit_code', 'units.start_date AS start_date', 'units.end_date AS end_date', "#{student_name} AS student_name", "#{tutor_name} AS tutor_name")
+      data = projects.
+                 joins(:unit).
+                 joins(:user).
+                 joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id').
+                 joins('LEFT OUTER JOIN tutorials ON tutorial_enrolments.tutorial_id = tutorials.id').
+                 joins('LEFT OUTER JOIN unit_roles AS tutor_role ON tutorials.unit_role_id = tutor_role.id').
+                 joins('LEFT OUTER JOIN users AS tutor ON tutor.id = tutor_role.user_id').
+                 select( 'projects.*',
+                          'units.name AS unit_name', 'units.id AS unit_id', 'units.code AS unit_code', 'units.start_date AS start_date', 'units.end_date AS end_date', 'units.teaching_period_id AS teaching_period_id', 'units.active AS active',
+                          "#{student_name} AS student_name"
+                        )
 
-      ActiveModel::ArraySerializer.new(projects, each_serializer: ShallowProjectSerializer)
+      # Now map the data to structure for json to return
+      data.map do |row|
+        {
+          unit_id: row['unit_id'],
+          unit_code: row['unit_code'],
+          unit_name: row['unit_name'],
+          project_id: row['id'],
+          campus_id: row['campus_id'],
+          student_name: row['student_name'],
+          target_grade: row['target_grade'],
+          has_portfolio: row['has_portfolio'],
+          start_date: row['start_date'],
+          end_date: row['end_date'],
+          teaching_period_id: row['teaching_period_id'],
+          active: row['active']
+        }
+      end
     end
 
     desc 'Get project'
