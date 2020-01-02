@@ -57,6 +57,7 @@ class UnitTest < ActiveSupport::TestCase
       teaching_period: TeachingPeriod.find(3),
       group_sets: 1,
       student_count: 2,
+      task_count: 1,
       groups: [ { gs: 0, students: 2} ],
       group_tasks: [ { idx: 0, gs: 0 }] )
 
@@ -64,7 +65,7 @@ class UnitTest < ActiveSupport::TestCase
 
     assert_equal 1, unit2.group_sets.count
     assert_not_equal unit2.group_sets.first, unit.group_sets.first
-    assert unit2.task_definitions.first.is_group_task?
+    assert unit2.task_definitions.first.is_group_task?, unit2.task_definitions.inspect
 
     unit.destroy
     unit2.destroy
