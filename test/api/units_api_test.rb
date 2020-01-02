@@ -391,7 +391,4 @@ class UnitsApiTest < ActiveSupport::TestCase
   # End PUT tests
   # --------------------------------------------------------------------------- #
  #end
-
-
-
-  
+end

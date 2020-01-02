@@ -245,7 +245,7 @@ class Unit < ActiveRecord::Base
   end
 
   def student_tasks
-    tasks.joins(:task_definition).where('projects.enrolled = TRUE AND projects.target_grade >= task_definitions.target_grade')
+    tasks.joins(:task_definition).where('projects.enrolled = TRUE')
   end
 
   def self.for_user_admin(user)
