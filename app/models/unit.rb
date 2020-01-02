@@ -106,6 +106,7 @@ class Unit < ActiveRecord::Base
   has_many :tutorials, dependent: :destroy
   has_many :tutorial_enrolments, through: :tutorials
   has_many :unit_roles, dependent: :destroy
+  has_many :teaching_staff, through: :unit_roles, class_name: 'User', source: 'user'
   has_many :learning_outcomes, dependent: :destroy
   has_many :tasks, through: :projects
   has_many :group_sets, dependent: :destroy
