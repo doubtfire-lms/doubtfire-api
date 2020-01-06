@@ -161,7 +161,7 @@ GEM
       rake (>= 0.8.1)
     pg (0.18.4)
     powerpack (0.1.1)
-    rack (1.6.4)
+    rack (1.6.12)
     rack-accept (0.4.5)
       rack (>= 0.4)
     rack-cors (1.0.3)
