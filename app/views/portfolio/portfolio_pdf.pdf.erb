@@ -68,8 +68,8 @@ end
 \begin{minipage}{0.4\textwidth}
 \begin{flushright} \large
 \emph{Tutor:} \\
-<%  if not @project.main_convenor.nil? %>
-<%=   lesc @project.main_convenor.first_name %> \textsc{<%= lesc @project.main_convenor.last_name %>}
+<%  if not @project.main_convenor_user_user.nil? %>
+<%=   lesc @project.main_convenor_user_user.first_name %> \textsc{<%= lesc @project.main_convenor_user_user.last_name %>}
 <%  else %>
 No Tutor
 <%  end %>

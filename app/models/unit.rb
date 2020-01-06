@@ -122,6 +122,9 @@ class Unit < ActiveRecord::Base
   # Unit has a teaching period
   belongs_to :teaching_period
 
+  belongs_to :main_convenor, class_name: 'UnitRole'
+
+  validates :name, :description, :start_date, :end_date, presence: true
   validates :start_date, presence: true
   validates :end_date, presence: true
   validates :code, uniqueness: { scope: :teaching_period, message: "%{value} already exists in this teaching period" }, if: :has_teaching_period?
@@ -274,8 +277,8 @@ class Unit < ActiveRecord::Base
     User.teaching(self)
   end
 
-  def main_convenor
-    convenors.first.user
+  def main_convenor_user
+    main_convenor.user
   end
 
   def students
@@ -405,6 +408,11 @@ class Unit < ActiveRecord::Base
       new_staff.unit_id = id
       new_staff.role_id = role.id
       new_staff.save!
+
+      if main_convenor.nil?
+        update!(main_convenor_id: new_staff.id)
+      end
+
       new_staff
     end
   end
@@ -1005,7 +1013,7 @@ class Unit < ActiveRecord::Base
               'Monday',
               '8:00am',
               'TBA',
-              main_convenor,
+              main_convenor_user,
               campus,
               capacity,
               tutorial_abbr

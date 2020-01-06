@@ -207,11 +207,11 @@ class Project < ActiveRecord::Base
 
   def tutor_for(task_definition)
     tutorial = tutorial_for(task_definition)
-    (tutorial.present? and tutorial.tutor.present?) ? tutorial.tutor : main_convenor
+    (tutorial.present? and tutorial.tutor.present?) ? tutorial.tutor : main_convenor_user
   end
 
-  def main_convenor
-    unit.main_convenor
+  def main_convenor_user
+    unit.main_convenor_user
   end
 
   def user_role(user)
@@ -994,7 +994,7 @@ class Project < ActiveRecord::Base
       did_revert_to_pass = true
 
       summary_stats[:revert_count] = summary_stats[:revert_count] + 1
-      summary_stats[:revert][main_convenor] << self
+      summary_stats[:revert][main_convenor_user] << self
     end
 
     return unless student.receive_feedback_notifications
