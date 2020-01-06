@@ -709,15 +709,6 @@ class Project < ActiveRecord::Base
     completed_tasks.sort_by(&:completion_date).last
   end
 
-  def tutorial_abbr
-    tutorial_enrolments.
-      joins('LEFT OUTER JOIN tutorials ON tutorials.id = tutorial_enrolments.tutorial_id').
-      joins('LEFT OUTER JOIN tutorial_streams ON tutorial_enrolments.tutorial_stream_id = tutorial_streams.id').
-      select(
-        'tutorials.abbreviation as abbr'
-      ).map{ |t| t.abbr }
-  end
-
   #
   # Portfolio production code
   #

@@ -834,13 +834,46 @@ class Unit < ActiveRecord::Base
   end
 
   def export_users_to_csv
-    CSV.generate do |row|
-      row << %w(unit_code username student_id first_name last_name email) +
-                tutorial_stream_abbr
-      active_projects.each do |project|
-        row << [project.unit.code, project.student.username, project.student.student_id, project.student.first_name, project.student.last_name, project.student.email] +
-                project.tutorial_abbr
-      end
+    streams = tutorial_streams
+    grp_sets = group_sets
+
+    CSV.generate do |csv|
+      csv <<  %w(unit_code username student_id preferred_name first_name last_name email) +
+              (streams.count > 0 ? streams.map{ |t| t.abbreviation } : ['Tutorial'])
+
+      active_projects.
+        joins(
+          :unit,
+          'INNER JOIN users ON projects.user_id = users.id',
+          'LEFT OUTER JOIN tutorial_streams ON tutorial_streams.unit_id = units.id',
+          'LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id AND (tutorial_enrolments.tutorial_stream_id = tutorial_streams.id OR tutorial_enrolments.tutorial_stream_id IS NULL)',
+          'LEFT OUTER JOIN tutorials ON tutorials.id = tutorial_enrolments.tutorial_id'
+        ).select(
+          'projects.id as project_id', 'users.student_id as student_id', 'users.username as username', 'users.first_name as first_name',
+          'users.last_name as last_name', 'users.email as email', 'users.nickname as nickname',
+          # Get tutorial for each stream in unit
+          *streams.map { |s| "MAX(CASE WHEN tutorial_enrolments.tutorial_stream_id = #{s.id} OR tutorial_enrolments.tutorial_stream_id IS NULL THEN tutorials.abbreviation ELSE NULL END) AS tutorial_#{s.id}" },
+          # Get tutorial for case when no stream
+          "MAX(CASE WHEN tutorial_streams.id IS NULL THEN tutorials.abbreviation ELSE NULL END) AS tutorial"
+        ).group(
+          'projects.id', 'student_id', 'username', 'first_name', 'nickname', 'last_name', 'email'
+        ).each do |row|
+          csv << [
+              code,
+              row['username'],
+              row['student_id'],
+              row['nickname'],
+              row['first_name'],
+              row['last_name'],
+              row['email']
+            ] + [1].map do
+              if streams.empty?
+                [ row['tutorial'] ]
+              else
+                streams.map { |ts| row["tutorial_#{ts.id}"] }
+              end
+            end.flatten
+        end
     end
   end
 
@@ -1151,12 +1184,7 @@ class Unit < ActiveRecord::Base
   end
 
   def tutorial_stream_abbr
-    projects.
-      joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id').
-      joins('LEFT OUTER JOIN tutorial_streams ON tutorial_enrolments.tutorial_stream_id = tutorial_streams.id').
-      select(
-        'distinct(tutorial_streams.abbreviation) as abbreviation'
-      ).map{ |t| t.abbreviation }
+    tutorial_streams.map{|ts| ts.abbreviation }
   end
 
   def task_completion_csv(options = {})
@@ -1267,7 +1295,7 @@ class Unit < ActiveRecord::Base
 
         # Add file to zip in grade folder
         src_path = project.portfolio_path
-        if project.main_convenor
+        if project.main_convenor_user
           dst_path = FileHelper.sanitized_path(project.target_grade_desc.to_s, "#{project.student.username}-portfolio (#{project.main_convenor.name})") + '.pdf'
         else
           dst_path = FileHelper.sanitized_path(project.target_grade_desc.to_s, "#{project.student.username}-portfolio (no tutor)") + '.pdf'
