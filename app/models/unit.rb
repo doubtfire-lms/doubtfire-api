@@ -838,28 +838,30 @@ class Unit < ActiveRecord::Base
     grp_sets = group_sets
 
     CSV.generate do |csv|
-      csv <<  %w(unit_code username student_id preferred_name first_name last_name email) +
+      csv <<  %w(unit_code campus username student_id preferred_name first_name last_name email) +
               (streams.count > 0 ? streams.map{ |t| t.abbreviation } : ['Tutorial'])
 
       active_projects.
         joins(
           :unit,
+          :campus,
           'INNER JOIN users ON projects.user_id = users.id',
           'LEFT OUTER JOIN tutorial_streams ON tutorial_streams.unit_id = units.id',
           'LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id AND (tutorial_enrolments.tutorial_stream_id = tutorial_streams.id OR tutorial_enrolments.tutorial_stream_id IS NULL)',
           'LEFT OUTER JOIN tutorials ON tutorials.id = tutorial_enrolments.tutorial_id'
         ).select(
           'projects.id as project_id', 'users.student_id as student_id', 'users.username as username', 'users.first_name as first_name',
-          'users.last_name as last_name', 'users.email as email', 'users.nickname as nickname',
+          'users.last_name as last_name', 'users.email as email', 'users.nickname as nickname', 'campuses.abbreviation as campus_abbreviation',
           # Get tutorial for each stream in unit
           *streams.map { |s| "MAX(CASE WHEN tutorial_enrolments.tutorial_stream_id = #{s.id} OR tutorial_enrolments.tutorial_stream_id IS NULL THEN tutorials.abbreviation ELSE NULL END) AS tutorial_#{s.id}" },
           # Get tutorial for case when no stream
           "MAX(CASE WHEN tutorial_streams.id IS NULL THEN tutorials.abbreviation ELSE NULL END) AS tutorial"
         ).group(
-          'projects.id', 'student_id', 'username', 'first_name', 'nickname', 'last_name', 'email'
+          'projects.id', 'student_id', 'username', 'first_name', 'nickname', 'last_name', 'email', 'campus_abbreviation'
         ).each do |row|
           csv << [
               code,
+              row['campus_abbreviation'],
               row['username'],
               row['student_id'],
               row['nickname'],
