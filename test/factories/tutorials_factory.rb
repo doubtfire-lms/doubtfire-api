@@ -9,5 +9,6 @@ FactoryGirl.define do
     unit
     campus
     tutorial_stream           nil
+    unit_role                 { unit.staff.sample }
   end
 end
