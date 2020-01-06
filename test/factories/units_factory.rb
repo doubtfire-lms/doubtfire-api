@@ -36,6 +36,7 @@ FactoryGirl.define do
       student_count 8
       unenrolled_student_count 1
       part_enrolled_student_count 2
+      inactive_student_count 1
       task_count 2
       tutorials 1  #per campus
       tutorial_config [] #[ {stream: 0, campus: 0} ]
@@ -119,9 +120,13 @@ FactoryGirl.define do
 
       # Enrol students
       campuses.each do |c|
-        (eval.unenrolled_student_count + eval.student_count + eval.part_enrolled_student_count).times do |i|
+        (eval.unenrolled_student_count + eval.student_count + eval.part_enrolled_student_count + eval.inactive_student_count).times do |i|
           p = unit.enrol_student( FactoryGirl.create(:user, :student), c )
           next if i < eval.unenrolled_student_count
+          if i < eval.unenrolled_student_count + eval.inactive_student_count
+            p.update(enrolled: false)
+            next
+          end
 
           if c.tutorials.first.tutorial_stream.present?
             tutorial_streams.each_with_index do |ts, i|

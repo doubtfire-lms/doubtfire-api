@@ -1,7 +1,8 @@
 require 'test_helper'
 require 'grade_helper'
 
-class UnitTest < ActiveSupport::TestCase
+class UnitModelTest < ActiveSupport::TestCase
+  include TestHelpers::JsonHelper
 
   setup do
     data = {
@@ -345,5 +346,39 @@ class UnitTest < ActiveSupport::TestCase
     assert_equal 2, unit.tutorial_streams.count
 
     check_task_completion_csv unit
+  end
+
+  def test_export_users
+    unit = FactoryGirl.create :unit, campus_count: 2, tutorials:2, stream_count:0, task_count:3, student_count:8, unenrolled_student_count: 0, part_enrolled_student_count: 0, set_one_of_each_task: true
+
+    csv_str = unit.export_users_to_csv
+
+    rows = 0
+    CSV.parse(csv_str, headers: true, return_headers: false,
+      header_converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '').downcase unless body.nil? }],
+      converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |entry|
+        assert_equal 9, entry.count, entry
+        user = User.find_by(username: entry['username'])
+        assert user.present?, "Unable to find user from #{entry}"
+
+        project = unit.projects.find_by(user_id: user.id)
+        assert project.present?, entry
+
+        assert_json_matches_model(entry, user, %w( username student_id first_name last_name email))
+
+        campus = Campus.find_by_abbr_or_name entry['campus']
+        assert campus.present?, entry
+        assert_equal project.campus, campus, entry
+
+        assert_equal user.nickname, entry['preferred_name'], entry
+
+        tutorial = unit.tutorials.find_by(abbreviation: entry['tutorial'])
+        assert tutorial.present?, entry['tutorial']
+        assert_equal project.tutorial_enrolments.first.tutorial, tutorial, entry
+
+        rows += 1
+    end
+
+    assert_equal unit.active_projects.count, rows, "Expected number or rows in csv - #{csv_str}"
   end
 end
