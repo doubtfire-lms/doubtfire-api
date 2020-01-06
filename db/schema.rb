@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20191126230531) do
+ActiveRecord::Schema.define(version: 20200106003146) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -459,6 +459,7 @@ ActiveRecord::Schema.define(version: 20191126230531) do
     t.boolean  "active",                           default: true
     t.datetime "last_plagarism_scan"
     t.integer  "teaching_period_id"
+    t.integer  "main_convenor_id"
   end
 
   add_index "units", ["teaching_period_id"], name: "index_units_on_teaching_period_id", using: :btree
