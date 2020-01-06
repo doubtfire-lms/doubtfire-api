@@ -38,7 +38,7 @@ class ProjectModelTest < ActiveSupport::TestCase
   end
 
   def test_tutor_for_task_def_for_match_all
-    unit = FactoryGirl.create(:unit, with_students: false)
+    unit = FactoryGirl.create(:unit, with_students: false, staff_count: 0)
     campus = FactoryGirl.create(:campus)
 
     # Create different projects

@@ -24,6 +24,12 @@ FactoryGirl.define do
     description               { Faker::Lorem.sentence }
   end
 
+  factory :unit_role do
+    unit
+    user
+    role                      { Role.convenor }
+  end
+
   factory :unit do
     transient do
       with_students true
@@ -40,6 +46,8 @@ FactoryGirl.define do
       stream_count 0
       campus_count 1
       set_one_of_each_task false  # In addition to the standard tasks, also add one of each different think of task - group, quality, graded, etc.
+      perform_submissions false
+      staff_count 1
     end
 
     name            { Faker::Lorem.unique.words(2).join(' ') }
@@ -55,6 +63,8 @@ FactoryGirl.define do
       task_count = eval.task_count
       group_tasks = eval.group_tasks.clone
       groups = eval.groups.clone
+
+      create_list(:unit_role, eval.staff_count, unit: unit)
 
       if eval.set_one_of_each_task
         group_sets = 1 unless group_sets > 0
@@ -72,11 +82,11 @@ FactoryGirl.define do
       create_list(:group_set, group_sets, unit: unit)
       create_list(:learning_outcome, eval.outcome_count, unit: unit)
       tutorial_streams = create_list(:tutorial_stream, eval.stream_count, unit: unit)
-      create_list(:task_definition, task_count, unit: unit)
+      task_definitions = create_list(:task_definition, task_count, unit: unit)
 
       if eval.set_one_of_each_task
-        unit.task_definitions[1].update(max_quality_pts: 5)
-        unit.task_definitions[2].update(is_graded: true)
+        task_definitions[1].update(max_quality_pts: 5)
+        task_definitions[2].update(is_graded: true)
       end
 
       campuses.each do |c|
@@ -99,12 +109,14 @@ FactoryGirl.define do
 
       # Setup group tasks
       group_tasks.each do |task_details|
-        td = unit.task_definitions[task_details[:idx]]
+        td = task_definitions[task_details[:idx]]
         td.group_set = unit.group_sets[task_details[:gs]]
         td.save!
       end
 
+      # Skip to next if not enrolling students...
       next unless eval.with_students
+
       # Enrol students
       campuses.each do |c|
         (eval.unenrolled_student_count + eval.student_count + eval.part_enrolled_student_count).times do |i|
@@ -125,6 +137,7 @@ FactoryGirl.define do
         end
       end
 
+      # Setup groups
       stud = 0
       groups.each do |group_details|
         gs = unit.group_sets[group_details[:gs]]
@@ -132,6 +145,29 @@ FactoryGirl.define do
         group_details[:students].times do
           grp.add_member unit.projects[stud % eval.student_count]
           stud += 1
+        end
+      end
+
+      # Set target grades
+      unit.active_projects.each_with_index do |p, i|
+        p.update(target_grade: i % 4)
+      end
+
+      # Sign off tasks...
+      if eval.perform_submissions
+        task_definitions.each_with_index do |td, i|
+          unit.active_projects.each_with_index do |p, j|
+            ts = TaskStatus.all[(i + j) % TaskStatus.count]
+            next if ts == TaskStatus.not_started
+            task = p.task_for_task_definition td
+            tutor = p.tutor_for(td)
+
+            unless [TaskStatus.ready_to_mark, TaskStatus.need_help, TaskStatus.working_on_it].include? ts
+              DatabasePopulator.assess_task(p, task, tutor, ts,  td.start_date + 1.week)
+            else
+              DatabasePopulator.assess_task(p, task, p.student, ts,  td.start_date + 1.week)
+            end
+          end
         end
       end
     end
