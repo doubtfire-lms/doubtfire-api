@@ -12,7 +12,6 @@ class Unit < ActiveRecord::Base
   include MimeCheckHelpers
   include CsvHelper
 
-  validates :description, length: { maximum: 4095, allow_blank: true }
   #
   # Permissions around unit data
   #
@@ -96,8 +95,6 @@ class Unit < ActiveRecord::Base
     end
   end
 
-  validates :name, :description, :start_date, :end_date, presence: true
-
   # Model associations.
   # When a Unit is destroyed, any TaskDefinitions, Tutorials, and ProjectConvenor instances will also be destroyed.
   has_many :tutorial_streams, dependent: :destroy
@@ -125,8 +122,12 @@ class Unit < ActiveRecord::Base
   belongs_to :main_convenor, class_name: 'UnitRole'
 
   validates :name, :description, :start_date, :end_date, presence: true
+
+  validates :description, length: { maximum: 4095, allow_blank: true }
+
   validates :start_date, presence: true
   validates :end_date, presence: true
+
   validates :code, uniqueness: { scope: :teaching_period, message: "%{value} already exists in this teaching period" }, if: :has_teaching_period?
 
   validate :validate_end_date_after_start_date
