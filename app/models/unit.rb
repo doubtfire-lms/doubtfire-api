@@ -95,6 +95,11 @@ class Unit < ActiveRecord::Base
     end
   end
 
+  # Ensure before destroy is above relations - as this needs to clear main convenor before unit roles are deleted
+  before_destroy do
+    update(main_convenor_id: nil)
+  end
+
   # Model associations.
   # When a Unit is destroyed, any TaskDefinitions, Tutorials, and ProjectConvenor instances will also be destroyed.
   has_many :tutorial_streams, dependent: :destroy
