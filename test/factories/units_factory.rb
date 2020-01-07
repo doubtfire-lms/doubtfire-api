@@ -106,7 +106,7 @@ FactoryGirl.define do
         create_list(:tutorial, eval.tutorials, unit: unit, campus: campuses.last )
       end
 
-      unit.employ_staff FactoryGirl.create(:user, :convenor), Role.convenor
+      unit.employ_staff(FactoryGirl.create(:user, :convenor), Role.convenor)
 
       # Setup group tasks
       group_tasks.each do |task_details|
