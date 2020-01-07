@@ -159,21 +159,10 @@ class Project < ActiveRecord::Base
   end
 
   #
-  # Returns the email of the convenor
-  #
-  def tutor_email
-    unit.convenor_email
-  end
-
-  #
   # All "discuss" and "demonstrate" become complete
   #
   def trigger_week_end(by_user)
     discuss_and_demonstrate_tasks.each { |task| task.trigger_transition(trigger: 'complete', by_user: by_user, bulk: true, quality: task.quality_pts) }
-  end
-
-  def start
-    update_attribute(:started, true)
   end
 
   def student
@@ -507,11 +496,6 @@ class Project < ActiveRecord::Base
     result
   end
 
-  def projected_end_date
-    return unit.end_date if rate_of_completion == 0.0
-    (remaining_tasks_weight / rate_of_completion).ceil.days.since reference_date
-  end
-
   def weeks_elapsed(date = nil)
     (days_elapsed(date) / 7.0).ceil
   end
@@ -519,22 +503,6 @@ class Project < ActiveRecord::Base
   def days_elapsed(date = nil)
     date ||= reference_date
     (date - unit.start_date).to_i / 1.day
-  end
-
-  def rate_of_completion(date = nil)
-    # Return a completion rate of 0.0 if the project is yet to have commenced
-    return 0.0 if !commenced? || completed_tasks.empty?
-    date ||= reference_date
-
-    # TODO: Might make sense to take in the resolution (i.e. days, weeks), rather
-    # than just assuming days
-
-    # If on the first day (i.e. a day has not yet passed, but the project
-    # has commenced), force days elapsed to be 1 to avoid divide by zero
-    days = days_elapsed(date)
-    days = 1 if days_elapsed(date) < 1
-
-    completed_tasks_weight / days.to_f
   end
 
   def weekly_completion_rate(date = nil)
@@ -553,10 +521,6 @@ class Project < ActiveRecord::Base
     assigned_tasks.select(&:complete?)
   end
 
-  def ready_to_mark_tasks
-    assigned_tasks.select(&:ready_to_mark?)
-  end
-
   def ready_or_complete_tasks
     assigned_tasks.select(&:ready_or_complete?)
   end
@@ -569,45 +533,11 @@ class Project < ActiveRecord::Base
     tasks.select(&:discuss_or_demonstrate?)
   end
 
-  def partially_completed_tasks
-    # TODO: Should probably have a better definition
-    # of partially complete than just 'fix' tasks
-    assigned_tasks.select { |task| task.fix_and_resubmit? || task.do_not_resubmit? }
-  end
-
-  def completed?
-    # TODO: Have a status flag on the project instead
-    assigned_tasks.all?(&:complete?)
-  end
-
-  def incomplete_tasks
-    assigned_tasks.select { |task| !task.complete? }
-  end
-
-  def percentage_complete
-    completed_tasks.empty? ? 0.0 : (completed_tasks_weight / total_task_weight) * 100
-  end
-
-  def remaining_tasks_weight
-    incomplete_tasks.empty? ? 0.0 : incomplete_tasks.map { |task| task.task_definition.weighting }.inject(:+)
-  end
-
   #
   # get the weight of all tasks completed or marked as ready to assess
   #
   def completed_tasks_weight
     ready_or_complete_tasks.empty? ? 0.0 : ready_or_complete_tasks.map { |task| task.task_definition.weighting }.inject(:+)
-  end
-
-  def partially_completed_tasks_weight
-    # Award half for partially completed tasks
-    # TODO: Should probably make this a project-by-project option
-    partially_complete = partially_completed_tasks
-    partially_complete.empty? ? 0.0 : partially_complete.map { |task| task.task_definition.weighting / 2.to_f }.inject(:+)
-  end
-
-  def task_units_completed
-    completed_tasks_weight + partially_completed_tasks_weight
   end
 
   def convert_hash_to_pct(hash, total)
@@ -825,11 +755,6 @@ class Project < ActiveRecord::Base
   def remove_portfolio
     portfolio = portfolio_path
     FileUtils.mv portfolio, "#{portfolio}.old" if File.exist?(portfolio)
-  end
-
-  def recalculate_max_similar_pct
-    # self.max_pct_similar = tasks.sort { |t1, t2|  t1.max_pct_similar <=> t2.max_pct_similar }.last.max_pct_similar
-    # self.save
   end
 
   def matching_task(other_task)

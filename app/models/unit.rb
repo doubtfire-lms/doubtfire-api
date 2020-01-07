@@ -1458,17 +1458,6 @@ class Unit < ActiveRecord::Base
     tasks.where(task_definition_id: task_def.id)
   end
 
-  #
-  # Update the student's max_pct_similar for all of their tasks
-  #
-  def update_student_max_pct_similar
-    # TODO: Remove once max_pct_similar is deleted
-    # projects.each do | p |
-    #   p.max_pct_similar = p.tasks.maximum(:max_pct_similar)
-    #   p.save
-    # end
-  end
-
   def create_plagiarism_link(t1, t2, match)
     plk1 = PlagiarismMatchLink.where(task_id: t1.id, other_task_id: t2.id).first
     plk2 = PlagiarismMatchLink.where(task_id: t2.id, other_task_id: t1.id).first
@@ -1559,9 +1548,6 @@ class Unit < ActiveRecord::Base
         end
       end # end of each result
     end # for each task definition where it needs to be updated
-
-    # TODO: Remove once max_pct_similar is deleted
-    # update_student_max_pct_similar()
 
     self.last_plagarism_scan = Time.zone.now
     save!
