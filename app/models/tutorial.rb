@@ -47,8 +47,6 @@ class Tutorial < ActiveRecord::Base
   end
 
   def name
-    # TODO: Will probably need to make this more flexible when
-    # a tutorial is representing something other than a tutorial
     "#{meeting_day} #{meeting_time} (#{meeting_location})"
   end
 
