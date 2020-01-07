@@ -133,6 +133,8 @@ class Unit < ActiveRecord::Base
   validate :validate_end_date_after_start_date
   validate :ensure_teaching_period_dates_match, if: :has_teaching_period?
 
+  validate :ensure_main_convenor_is_appropriate
+
   scope :current,               -> { current_for_date(Time.zone.now) }
   scope :current_for_date,      ->(date) { where('start_date <= ? AND end_date >= ?', date, date) }
   scope :not_current,           -> { not_current_for_date(Time.zone.now) }
@@ -189,6 +191,14 @@ class Unit < ActiveRecord::Base
     end
   end
 
+  def ensure_main_convenor_is_appropriate
+    return if main_convenor_id.nil?
+
+    errors.add(:main_convenor, "must be a staff member from unit") unless id == main_convenor.unit_id
+    errors.add(:main_convenor, "must be configured to administer unit") unless main_convenor.is_convenor?
+    errors.add(:main_convenor, "must be capable of administering units - ensure user has appropriate permissions (contact admin staff to update)") unless main_convenor_user.has_convenor_capability?
+  end
+
   def validate_end_date_after_start_date
     if end_date.present? && start_date.present? && end_date < start_date
       errors.add(:end_date, "should be after the Start date")
@@ -205,7 +215,13 @@ class Unit < ActiveRecord::Base
       new_unit.end_date = end_date
     end
 
+    # Clear main convenor - do not use old role id
+    new_unit.main_convenor_id = nil
+
     new_unit.save!
+
+    # Only employ the main convenor... they can add additional staff
+    new_unit.employ_staff main_convenor_user, Role.convenor
 
     # Duplicate tutorial streams
     tutorial_streams.each do |tutorial_stream|
@@ -230,11 +246,6 @@ class Unit < ActiveRecord::Base
     # Duplicate alignments
     task_outcome_alignments.each do |align|
       align.duplicate_to(new_unit)
-    end
-
-    # Duplicate convenors
-    convenors.each do |convenor|
-      new_unit.convenors << convenor.dup
     end
 
     new_unit
