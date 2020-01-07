@@ -5,16 +5,8 @@ class UnitModelTest < ActiveSupport::TestCase
   include TestHelpers::JsonHelper
 
   setup do
-    data = {
-        code: 'COS10001',
-        name: 'Testing in Unit Tests',
-        description: 'Test unit',
-        teaching_period: TeachingPeriod.find(3)
-      }
-    @unit = Unit.create(data)
-
-    activity_type = FactoryGirl.create(:activity_type)
-    @unit.add_tutorial_stream('Import-Tasks', 'import-tasks', activity_type)
+    @unit = FactoryGirl.create :unit, code: 'COS10001', with_students: false, task_count: 0, tutorials: 0, outcome_count: 0, staff_count: 0, campus_count: 0, teaching_period: TeachingPeriod.find(3)
+    @unit.add_tutorial_stream('Import-Tasks', 'import-tasks', ActivityType.first)
   end
 
   teardown do
@@ -381,4 +373,76 @@ class UnitModelTest < ActiveSupport::TestCase
 
     assert_equal unit.active_projects.count, rows, "Expected number or rows in csv - #{csv_str}"
   end
+
+  def test_change_main_convenor_success
+    unit = FactoryGirl.create :unit, campus_count: 1, tutorials:0, stream_count:0, task_count:0, with_students:false
+
+    admin_user = FactoryGirl.create :user, :admin
+    convenor_user = FactoryGirl.create :user, :convenor
+
+    admin_user_role = unit.employ_staff admin_user, Role.convenor
+    convenor_user_role = unit.employ_staff convenor_user, Role.convenor
+
+    unit.main_convenor_id = admin_user_role.id
+    assert unit.valid?, 'It should be ok to change to the admin user'
+
+    unit.main_convenor_id = convenor_user_role.id
+    assert unit.valid?, 'It should be ok to change to the convenor user'
+  end
+
+  def test_change_main_convenor_does_not_allow_roles_from_other_units
+    unit = FactoryGirl.create :unit, campus_count: 1, tutorials:0, stream_count:0, task_count:0, with_students:false
+    other_unit = FactoryGirl.create :unit, campus_count: 1, tutorials:0, stream_count:0, task_count:0, with_students:false
+
+    admin_user = FactoryGirl.create :user, :admin
+    convenor_user = FactoryGirl.create :user, :convenor
+
+    admin_user_role = other_unit.employ_staff admin_user, Role.convenor
+    convenor_user_role = other_unit.employ_staff convenor_user, Role.convenor
+
+    assert unit.valid?, 'Should be valid before changes... check factory girl!'
+
+    unit.main_convenor_id = admin_user_role.id
+    refute unit.valid?, 'It should not be ok to change to the admin user from other unit'
+
+    unit.main_convenor_id = convenor_user_role.id
+    refute unit.valid?, 'It should not be ok to change to the convenor user from other unit'
+  end
+
+  def test_change_main_convenor_does_not_allow_non_convneor_roles
+    unit = FactoryGirl.create :unit, campus_count: 1, tutorials:0, stream_count:0, task_count:0, with_students:false
+
+    admin_user = FactoryGirl.create :user, :admin
+    convenor_user = FactoryGirl.create :user, :convenor
+
+    admin_user_role = unit.employ_staff admin_user, Role.tutor
+    convenor_user_role = unit.employ_staff convenor_user, Role.tutor
+
+    unit.main_convenor_id = admin_user_role.id
+    refute unit.valid?, 'It should not be ok to change to the admin user with no convenor access to unit'
+
+    unit.main_convenor_id = convenor_user_role.id
+    refute unit.valid?, 'It should not be ok to change to the convenor user with no convenor access to unit'
+  end
+
+  def test_change_main_convenor_does_not_allow_students_to_be_epmployed
+    unit = FactoryGirl.create :unit, campus_count: 1, tutorials:0, stream_count:0, task_count:0, with_students:false
+
+    convenor_user = FactoryGirl.create :user, :convenor
+    student_user = FactoryGirl.create :user, :student
+
+    student_user_role = unit.employ_staff student_user, Role.tutor
+    assert student_user_role.nil?
+
+    #force this test... work around validations
+    student_user_role = unit.employ_staff convenor_user, Role.convenor
+    student_user_role.user = student_user
+
+    refute student_user_role.valid?, 'You should not be able to change a unit role to have a student!'
+
+    unit.main_convenor = student_user_role
+    refute unit.valid?, 'Even if the above validation fails, the student user role should not be able to admin unit'
+  end
+
+
 end
