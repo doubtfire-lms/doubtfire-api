@@ -18,9 +18,18 @@ class UnitRole < ActiveRecord::Base
   validate :ensure_valid_user_for_role
   validate :ensure_convenor, if: :is_main_convenor?
 
+  before_destroy do
+    if is_main_convenor?
+      errors.add :base, 'Cannot delete this role as the user is the main contact for the unit'
+      # throw(:abort) #TODO: When updating to rails 6
+      false
+    else
+      true
+    end
+  end
+
   scope :tutors,    -> { joins(:role).where('roles.name = :role', role: 'Tutor') }
   scope :convenors, -> { joins(:role).where('roles.name = :role', role: 'Convenor') }
-  # scope :staff,     -> { where('role_id != ?', 1) }
 
   def self.for_user(user)
     UnitRole.joins(:role, :unit).where("user_id = :user_id and roles.name <> 'Student'", user_id: user.id)
