@@ -56,18 +56,19 @@ class CampusesTest < ActiveSupport::TestCase
   def test_delete_campuses    
     initial_num_of_campus = Campus.all.count
     user = User.admins.first
+    campus_id = Campus.all.first.id
+    #Remove all porjects and tutorials from target campus, as
+    #cannot be deleted if has active projects or tutorials
+    remove_associated_campus_property(Project,campus_id)
+    remove_associated_campus_property(Tutorial,campus_id)
 
-    remove_property(Project)
-    remove_property(Tutorial)
-    ####################################################
-
-    #delete the stuff
-    delete_json with_auth_token("/api/campuses/1",user)
+    #Perform the delete
+    delete_json with_auth_token("/api/campuses/#{campus_id}",user)
     #check the request went through
     assert_equal 200, last_response.status
 
     get '/api/campuses' #get number of campuses
-    # check if current number of campuses = original number of campuses 
+    # check if current number of campuses = original number of campuses
     assert_equal initial_num_of_campus - 1, last_response_body.count
   end
 
@@ -76,28 +77,32 @@ class CampusesTest < ActiveSupport::TestCase
     user = project.student
     number_of_campuses = Campus.all.count
     campus_id = Campus.all.first.id
-
-    remove_property(Project)
-    remove_property(Tutorial)
+    
+    #Remove all porjects and tutorials from target campus, as
+    #cannot be deleted if has active projects or tutorials
+    remove_associated_campus_property(Project,campus_id)
+    remove_associated_campus_property(Tutorial,campus_id)
 
     # perform the delete
     delete_json with_auth_token("/api/campuses/#{campus_id}", user)
-
+    # check that request failed
     assert_equal 403, last_response.status
   end
 
-  #This method required to test campus delete methods
-  def remove_property(prop)
-      prop_array = prop.all  
-      n = prop_array.length
-    
-      for i in 0..n-1 do
-        campus_id = prop_array[i].campus.id
+  #This method removes all properties associated with campuses
+  #required to delete the campus
 
-        if campus_id == 1
-          prop_id = prop_array[i].id
-          prop.find(prop_id).delete 
-        end   
+  def remove_associated_campus_property(property,target_campus_id)
+      property_array = property.all  
+      n_campuses = property_array.length
+
+      for i in 0..n_campuses-1 do
+        current_campus_id = property_array[i].campus.id
+
+        if current_campus_id == target_campus_id
+          property.find(property_array[i].id).delete
+        end  
+
       end
   end
 end
