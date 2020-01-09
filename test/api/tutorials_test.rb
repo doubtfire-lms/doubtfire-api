@@ -663,4 +663,30 @@ class TutorialsTest < ActiveSupport::TestCase
     # Check authentication error
     assert_equal 419, last_response.status
   end
+
+#25: Testing for failure due to unauthorised account
+  # Delete a tutorial using unauthorised account
+  def test_student_cannot_delete_tutorial
+    # A user with student role which does not have permision to delete a tutorial
+    user = FactoryGirl.build(:user, :student)
+
+    # Number of tutorials before deletion
+    number_of_tutorials = Tutorial.count
+
+    # Tutorial to delete
+    tutorial_to_del = Tutorial.second
+    id_of_tutorial = tutorial_to_del.id
+
+    # perform the delete
+    delete_json with_auth_token("/api/tutorials/#{id_of_tutorial}", user)
+
+    # check if the delete does not get through
+    assert_equal 403, last_response.status
+
+    # check if the number of tutorials is still the same
+    assert_equal Tutorial.count, number_of_tutorials
+
+    # Check that you still can find the deleted id
+    assert Tutorial.exists?(id_of_tutorial)
+  end
 end
