@@ -140,7 +140,7 @@ class TeachingPeriodTest < ActiveSupport::TestCase
   end
 
   # Delete a teaching period using unauthorised account
-  def test_student_delete_teaching_period
+  def test_student_cannot_delete_teaching_period
     # A user with student role which does not have permision to delete a teaching period
     user = FactoryGirl.build(:user, :student)
 

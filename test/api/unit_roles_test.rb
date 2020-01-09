@@ -63,7 +63,7 @@ class UnitRolesTest < ActiveSupport::TestCase
     assert_equal to_post[:user_id], last_response_body['user_id']
   end
 
-  # PUT tests
+  PUT tests
   # Replace a unit role
   def test_put_unit_role
     # Details to replace
@@ -106,7 +106,7 @@ class UnitRolesTest < ActiveSupport::TestCase
   end
 
   # Delete a teaching period using unauthorised account
-  def test_student_delete_unit_role
+  def test_student_cannot_delete_unit_role
     user = FactoryGirl.build(:user, :student)
 
     number_of_ur = UnitRole.count
