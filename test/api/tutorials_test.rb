@@ -670,12 +670,12 @@ class TutorialsTest < ActiveSupport::TestCase
     # A user with student role which does not have permision to delete a tutorial
     user = FactoryGirl.build(:user, :student)
 
+    # Tutorial to delete
+    tutorial_to_del = FactoryGirl.create (:tutorial)
+    id_of_tutorial = tutorial_to_del.id
+    
     # Number of tutorials before deletion
     number_of_tutorials = Tutorial.count
-
-    # Tutorial to delete
-    tutorial_to_del = Tutorial.second
-    id_of_tutorial = tutorial_to_del.id
 
     # perform the delete
     delete_json with_auth_token("/api/tutorials/#{id_of_tutorial}", user)
