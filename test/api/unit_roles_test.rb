@@ -63,27 +63,6 @@ class UnitRolesTest < ActiveSupport::TestCase
     assert_equal to_post[:user_id], last_response_body['user_id']
   end
 
-  PUT tests
-  # Replace a unit role
-  def test_put_unit_role
-    # Details to replace
-    data_to_put = {
-      unit_role: FactoryGirl.build(:unit_role),
-      auth_token: auth_token
-    }
-
-    # Update unit_role with id = 1
-    put_json '/api/unit_roles/1', data_to_put
-    
-    # Check if the PUT get through
-    assert_equal 200, last_response.status
-    
-    # Check if the details replaced match as expected
-    response_keys = %w(unit_id user_id)
-    first_unit_role = UnitRole.first
-    assert_json_matches_model(last_response_body, first_unit_role, response_keys)
-  end
-
   # DELETE tests
   # Delete a unit role
   def test_delete_unit_role
