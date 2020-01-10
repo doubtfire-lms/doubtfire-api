@@ -72,11 +72,13 @@ class UnitRolesTest < ActiveSupport::TestCase
   # DELETE tests
   # Delete a unit role
   def test_delete_unit_role
-    number_of_ur = UnitRole.all.count
-
-    unit_role = TeachingPeriod.all.first
+    unit = FactoryGirl.create :unit, with_students: false, task_count: 0, tutorials: 0, outcome_count: 0, staff_count: 0, campus_count: 0
+    user = FactoryGirl.create :user, :convenor
+    unit_role = unit.employ_staff user, Role.convenor
     id_of_ur = unit_role.id
     
+    number_of_ur = UnitRole.count
+
     # perform the delete
     delete_json with_auth_token"/api/unit_roles/#{unit_role.id}"
     
@@ -92,15 +94,16 @@ class UnitRolesTest < ActiveSupport::TestCase
 
   # Delete a teaching period using unauthorised account
   def test_student_cannot_delete_unit_role
-    user = FactoryGirl.build(:user, :student)
-
+    student = FactoryGirl.build(:user, :student)
+    unit = FactoryGirl.create :unit, with_students: false, task_count: 0, tutorials: 0, outcome_count: 0, staff_count: 0, campus_count: 0
+    convenor = FactoryGirl.create :user, :convenor
+    unit_role = unit.employ_staff convenor, Role.convenor
+    id_of_ur = unit_role.id
+    
     number_of_ur = UnitRole.count
 
-    unit_role = TeachingPeriod.second
-    id_of_ur = unit_role.id
-
     # perform the delete
-    delete_json with_auth_token("/api/unit_roles/#{id_of_ur}", user)
+    delete_json with_auth_token("/api/unit_roles/#{id_of_ur}", student)
 
     # check if the delete does not get through
     assert_equal 403, last_response.status
