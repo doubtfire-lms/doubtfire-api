@@ -74,21 +74,25 @@ class TeachingPeriodTest < ActiveSupport::TestCase
 
   # Replace a teaching period
   def test_put_teaching_period
+    # a dummy teaching period
+    tp = FactoryGirl.create (:teaching_period)
+
+    # data to replace
     data_to_put = {
       teaching_period: FactoryGirl.build(:teaching_period),
       auth_token: auth_token
     }
 
     # Update teaching period with id = 1
-    put_json '/api/teaching_periods/1', data_to_put
+    put_json "/api/teaching_periods/#{tp.id}", data_to_put
     
     # check if the POST get through
     assert_equal 200, last_response.status
 
     # check if the details posted match as expected
     response_keys = %w(period year start_date end_date active_until)
-    first_teaching_period = TeachingPeriod.first
-    assert_json_matches_model(last_response_body, first_teaching_period, response_keys)
+    tp_reload = tp.reload
+    assert_json_matches_model(last_response_body, tp_reload, response_keys)
   end
 
   # POST tests
