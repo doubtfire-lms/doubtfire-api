@@ -125,10 +125,12 @@ class TeachingPeriodTest < ActiveSupport::TestCase
   # DELETE tests
   # Delete a teaching period
   def test_delete_teaching_period
-    number_of_tp = TeachingPeriod.all.count
-
-    teaching_period = TeachingPeriod.all.first
+    # create a dummy teaching period
+    teaching_period = FactoryGirl.create (:teaching_period)
     id_of_tp = teaching_period.id
+    
+    # number of teaching periods before delete
+    number_of_tp = TeachingPeriod.count
     
     # perform the delete
     delete_json with_auth_token"/api/teaching_periods/#{teaching_period.id}"
@@ -136,11 +138,11 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     # Check if the delete get through
     assert_equal 200, last_response.status
     
-    # check if the number of teaching period reduces by 1
-    #assert_equal TeachingPeriod.count, number_of_tp -1
+    # Check if the number of teaching period reduces by 1
+    assert_equal TeachingPeriod.count, number_of_tp -1
 
     # Check that you can't find the deleted id
-    #refute TeachingPeriod.exists?(id_of_tp)
+    refute TeachingPeriod.exists?(id_of_tp)
   end
 
   # Delete a teaching period using unauthorised account
