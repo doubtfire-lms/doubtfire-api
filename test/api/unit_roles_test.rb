@@ -19,10 +19,16 @@ class UnitRolesTest < ActiveSupport::TestCase
 
   # Get a unit role's details
   def test_get_a_unit_roles_details
-    expected_ur = UnitRole.second
+    # create a unit
+    unit = FactoryGirl.create :unit, with_students: false, task_count: 0, tutorials: 0, outcome_count: 0, staff_count: 0, campus_count: 0
+    user = FactoryGirl.create :user, :convenor
+    expected_ur = unit.employ_staff user, Role.convenor
+    
+    # # newly created unit's main convenor
+    # expected_ur = unit.employ_staff, Role.convenor
 
     # perform the GET 
-    get with_auth_token"/api/unit_roles/#{expected_ur.id}"
+    get (with_auth_token"/api/unit_roles/#{expected_ur.id}", unit.main_convenor)
     returned_ur = last_response_body
 
     # Check if the call succeeds
