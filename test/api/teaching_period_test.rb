@@ -150,12 +150,12 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     # A user with student role which does not have permision to delete a teaching period
     user = FactoryGirl.build(:user, :student)
 
+    # Teaching period to delete
+    teaching_period = FactoryGirl.create (:teaching_period)
+    id_of_tp = teaching_period.id
+    
     # Number of teaching periods before deletion
     number_of_tp = TeachingPeriod.count
-
-    # Teaching period to delete
-    teaching_period = TeachingPeriod.second
-    id_of_tp = teaching_period.id
 
     # perform the delete
     delete_json with_auth_token("/api/teaching_periods/#{id_of_tp}", user)
