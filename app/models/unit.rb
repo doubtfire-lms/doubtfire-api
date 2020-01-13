@@ -1313,11 +1313,7 @@ class Unit < ActiveRecord::Base
 
         # Add file to zip in grade folder
         src_path = project.portfolio_path
-        if project.main_convenor_user
-          dst_path = FileHelper.sanitized_path(project.target_grade_desc.to_s, "#{project.student.username}-portfolio (#{project.main_convenor.name})") + '.pdf'
-        else
-          dst_path = FileHelper.sanitized_path(project.target_grade_desc.to_s, "#{project.student.username}-portfolio (no tutor)") + '.pdf'
-        end
+        dst_path = FileHelper.sanitized_path(project.target_grade_desc.to_s, "#{project.student.username}-portfolio (#{project.tutors_and_tutorial})") + '.pdf'
 
         # copy into zip
         zip.add(dst_path, src_path)
