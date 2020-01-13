@@ -94,14 +94,6 @@ class Project < ActiveRecord::Base
     result.joins(:unit).where('units.active = TRUE')
   end
 
-  def self.active_projects
-    joins(:unit).where(enrolled: true).where('units.active = TRUE')
-  end
-
-  def self.for_unit_role(unit_role)
-    active_projects.where(unit_id: unit_role.unit_id) if unit_role.is_teacher?
-  end
-
   def enrol_in(tutorial)
     tutorial_enrolment = existing_enrolment(tutorial)
     if tutorial_enrolment.nil?
