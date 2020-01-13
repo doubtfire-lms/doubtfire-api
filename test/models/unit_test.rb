@@ -1,7 +1,8 @@
 require 'test_helper'
+require 'grade_helper'
 
 class UnitTest < ActiveSupport::TestCase
-  
+
   setup do
     data = {
         code: 'COS10001',
@@ -56,6 +57,7 @@ class UnitTest < ActiveSupport::TestCase
       teaching_period: TeachingPeriod.find(3),
       group_sets: 1,
       student_count: 2,
+      task_count: 1,
       groups: [ { gs: 0, students: 2} ],
       group_tasks: [ { idx: 0, gs: 0 }] )
 
@@ -63,7 +65,7 @@ class UnitTest < ActiveSupport::TestCase
 
     assert_equal 1, unit2.group_sets.count
     assert_not_equal unit2.group_sets.first, unit.group_sets.first
-    assert unit2.task_definitions.first.is_group_task?
+    assert unit2.task_definitions.first.is_group_task?, unit2.task_definitions.inspect
 
     unit.destroy
     unit2.destroy
@@ -148,22 +150,23 @@ class UnitTest < ActiveSupport::TestCase
     @unit.students.each do |student|
       @unit.task_definitions.each do |td|
         task = student.task_for_task_definition(td)
-        
+        tutor = student.tutor_for(td)
+
         case rand(1..100)
-        when 1..20 
-          DatabasePopulator.assess_task(student, task, student.main_tutor, TaskStatus.complete, td.due_date + 1.week)  
+        when 1..20
+          DatabasePopulator.assess_task(student, task, tutor, TaskStatus.complete, td.due_date + 1.week)
         when 21..40
-          DatabasePopulator.assess_task(student, task, student.main_tutor, TaskStatus.ready_to_mark, td.due_date + 1.week)  
+          DatabasePopulator.assess_task(student, task, tutor, TaskStatus.ready_to_mark, td.due_date + 1.week)
         when 41..50
-          DatabasePopulator.assess_task(student, task, student.main_tutor, TaskStatus.time_exceeded, td.due_date + 1.week)
+          DatabasePopulator.assess_task(student, task, tutor, TaskStatus.time_exceeded, td.due_date + 1.week)
         when 51..60
-          DatabasePopulator.assess_task(student, task, student.main_tutor, TaskStatus.not_started, td.due_date + 1.week)
+          DatabasePopulator.assess_task(student, task, tutor, TaskStatus.not_started, td.due_date + 1.week)
         when 61..70
-          DatabasePopulator.assess_task(student, task, student.main_tutor, TaskStatus.working_on_it, td.due_date + 1.week)
+          DatabasePopulator.assess_task(student, task, tutor, TaskStatus.working_on_it, td.due_date + 1.week)
         when 71..80
-          DatabasePopulator.assess_task(student, task, student.main_tutor, TaskStatus.discuss, td.due_date + 1.week)
+          DatabasePopulator.assess_task(student, task, tutor, TaskStatus.discuss, td.due_date + 1.week)
         else
-          DatabasePopulator.assess_task(student, task, student.main_tutor, TaskStatus.fix_and_resubmit, td.due_date + 1.week)
+          DatabasePopulator.assess_task(student, task, tutor, TaskStatus.fix_and_resubmit, td.due_date + 1.week)
         end
 
         break if rand(1..100) > 80
@@ -177,5 +180,170 @@ class UnitTest < ActiveSupport::TestCase
     @unit.tutorials.each do |tute|
       assert details.key?(tute.id), 'contains tutorial keys'
     end
+  end
+
+  def test_student_query
+    unit = FactoryGirl.create(:unit, with_students: false)
+    unit.employ_staff(User.first, Role.convenor)
+
+    campus = FactoryGirl.create(:campus)
+
+    assert_empty unit.projects
+    project = FactoryGirl.create(:project, unit: unit, campus: campus)
+    assert_equal 1, unit.projects.count
+
+
+    # Make sure there are no enrolments for the project
+    assert_empty project.tutorial_enrolments
+
+    tutorial_stream_first = FactoryGirl.create(:tutorial_stream, unit: unit)
+    tutorial_stream_second = FactoryGirl.create(:tutorial_stream, unit: unit)
+
+    tutorial_first = FactoryGirl.create(:tutorial, unit: unit, tutorial_stream: tutorial_stream_first, campus: campus)
+    tutorial_second = FactoryGirl.create(:tutorial, unit: unit, tutorial_stream: tutorial_stream_second, campus: campus)
+
+    assert_not_nil tutorial_first.tutorial_stream
+    assert_not_nil tutorial_second.tutorial_stream
+
+    assert_equal tutorial_stream_first, tutorial_first.tutorial_stream
+    assert_equal tutorial_stream_second, tutorial_second.tutorial_stream
+
+    # Enrol project in tutorial first and second
+    tutorial_enrolment_first = project.enrol_in(tutorial_first)
+    tutorial_enrolment_second = project.enrol_in(tutorial_second)
+
+    assert_equal tutorial_first, tutorial_enrolment_first.tutorial
+    assert_equal project, tutorial_enrolment_first.project
+
+    assert_equal tutorial_second, tutorial_enrolment_second.tutorial
+    assert_equal project, tutorial_enrolment_second.project
+
+    task_def_first = FactoryGirl.create(:task_definition, unit: unit, tutorial_stream: tutorial_stream_first, target_grade: project.target_grade)
+    task_def_second = FactoryGirl.create(:task_definition, unit: unit, tutorial_stream: tutorial_stream_second, target_grade: project.target_grade)
+
+    task_first = project.task_for_task_definition(task_def_first)
+    task_second = project.task_for_task_definition(task_def_second)
+
+    # Reload the unit
+    unit.reload
+
+    assert_equal 2, unit.student_tasks.count
+
+    projects = unit.student_query(false)
+
+    assert_equal unit.projects.count, projects.count
+    assert_equal 1, projects.count
+
+    # Check returned project
+    assert_equal project.id, projects.first[:project_id]
+    assert_equal project.enrolled, projects.first[:enrolled]
+
+    # Ensure there are matching number of streams
+    assert_equal unit.tutorial_streams.count, projects.first[:tutorial_streams].count
+
+    # Now test with project without tutorial enrolments
+    project2 = FactoryGirl.create(:project, unit: unit, campus: campus)
+    assert_equal 2, unit.projects.count
+
+    project2.tutorial_enrolments.destroy
+
+    projects = unit.student_query(false)
+
+    assert_equal unit.projects.count, projects.count
+    assert_equal 2, projects.count
+
+    # Check returned project
+    assert projects.select{|p| p[:project_id] == project2.id}.first.present?
+
+    # Ensure there are matching number of streams
+    assert_equal unit.tutorial_streams.count, projects.last[:tutorial_streams].count
+
+    unit.tutorial_streams.each do |s|
+      unit.projects.each do |p|
+        proj_tute_enrolment = p.tutorial_enrolments.where(tutorial_stream_id: s.id).first
+        data_tute_enrolment = projects.select{|ps| ps[:project_id] == p.id}.first[:tutorial_streams].select{|te| te[:stream] == s.abbreviation}.map{|te| te[:tutorial]}.first
+
+        # if there is a enrolment for this project...
+        if proj_tute_enrolment.present?
+          # check that it matches the data returned
+          assert_equal proj_tute_enrolment.tutorial_id, data_tute_enrolment
+        else
+          # check that the data returned nil for this stream
+          assert_nil data_tute_enrolment
+        end
+      end
+    end
+  end
+
+  def check_task_completion_csv unit, col_count = nil
+    csv_str = unit.task_completion_csv
+
+    CSV.parse(csv_str, headers: true, return_headers: false,
+      header_converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '').downcase unless body.nil? }],
+      converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |entry|
+
+        assert_equal(col_count, entry.length, entry.inspect) unless col_count.nil?
+
+        user = User.find_by(username: entry['username'])
+        assert user.present?, entry.inspect
+
+        project = unit.active_projects.find_by(user_id: user.id)
+
+        # Test basic details
+        assert_equal project.student.username, entry['username'], entry.inspect
+        assert_equal project.student.student_id, entry['student_id'], entry.inspect
+        assert_equal project.student.email, entry['email'], entry.inspect
+
+        # Test task status
+        unit.task_definitions.each do |td|
+          task = project.task_for_task_definition(td)
+          assert_equal task.task_status.name, entry[td.abbreviation.downcase], "#{td.abbreviation} --> #{entry.inspect}"
+
+          assert_equal("#{task.quality_pts}", entry["#{td.abbreviation.downcase} stars"], "#{td.abbreviation} stars --> #{entry.inspect}") if td.has_stars? && task.quality_pts != -1
+          assert_equal(GradeHelper.short_grade_for(task.grade), entry["#{td.abbreviation.downcase} grade"], "#{td.abbreviation} --> #{entry.inspect}") if td.is_graded?
+          assert_equal(task.contribution_pts, (entry["#{td.abbreviation.downcase} contribution"].nil? ? 3 : Integer(entry["#{td.abbreviation.downcase} contribution"])), "#{td.abbreviation} contrib --> #{entry.inspect}") if td.is_group_task?
+        end
+
+        # Test tutorial streams
+        unit.tutorial_streams.each do |ts|
+          assert_equal (project.tutorial_for_stream(ts).present? ? project.tutorial_for_stream(ts).abbreviation : nil), entry[ts.abbreviation.downcase], {entry: entry.inspect, stream: ts.abbreviation, proj_tut: project.tutorial_for_stream(ts)}
+        end
+    end
+  end
+
+  def test_task_completion_csv
+    unit = FactoryGirl.create :unit, campus_count: 2, tutorials:2, stream_count:2, task_count:3, student_count:8, unenrolled_student_count: 1, part_enrolled_student_count: 2, set_one_of_each_task: true
+
+    unit.task_definitions.each do |td|
+      unit.projects.each do |student|
+        task = student.task_for_task_definition(td)
+        tutor = student.tutor_for(td)
+
+        DatabasePopulator.assess_task(student, task, tutor, TaskStatus.all.sample, td.start_date + 1.week)
+      end
+    end
+
+    # 17 = 8 general + 2 streams + 3 task defs + 1 group details + 1 stars + 1 grade + 1 contrib
+    check_task_completion_csv unit, 17
+  end
+
+  def test_task_completion_csv_no_task_data
+    unit = FactoryGirl.create :unit, campus_count: 2, tutorials:2, stream_count:2, task_count:3, student_count:8, unenrolled_student_count: 1, part_enrolled_student_count: 2, set_one_of_each_task: true
+
+    check_task_completion_csv unit
+  end
+
+  def test_task_completion_csv_all_td_in_one_stream
+    unit = FactoryGirl.create :unit, campus_count: 2, tutorials:1, stream_count:1, task_count:1, student_count:3, unenrolled_student_count: 0, part_enrolled_student_count: 0
+
+    unit.tutorial_streams << FactoryGirl.create(:tutorial_stream, unit: unit)
+    tutorial = FactoryGirl.create(:tutorial, unit: unit, tutorial_stream: unit.tutorial_streams.last, campus: Campus.last )
+
+    unit.projects.where(campus: tutorial.campus).first.enrol_in(tutorial)
+
+    assert unit.task_definitions.first.tutorial_stream.present?
+    assert_equal 2, unit.tutorial_streams.count
+
+    check_task_completion_csv unit
   end
 end

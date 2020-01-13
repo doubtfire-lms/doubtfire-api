@@ -401,7 +401,7 @@ class TaskDefinition < ActiveRecord::Base
         target_day,
         due_week,
         due_day,
-        tutorial_stream.present? ? tutorial_stream.abbreviation : ''
+        tutorial_stream.present? ? tutorial_stream.abbreviation : nil
       ]
     # [target_date.strftime('%d-%m-%Y')] +
     # [ self['due_date'].nil? ? '' : due_date.strftime('%d-%m-%Y')]

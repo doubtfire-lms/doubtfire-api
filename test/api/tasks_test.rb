@@ -84,6 +84,7 @@ class TasksTest < ActiveSupport::TestCase
 
     # Get the first student - who now has this task
     project = unit.active_projects.first
+    tutor = project.tutor_for(td)
 
     # Make a submission for this student
     post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", with_auth_token(data_to_post)
@@ -114,7 +115,7 @@ class TasksTest < ActiveSupport::TestCase
     # Grant extension
     comment_id = last_response_body["id"]
     comment = TaskComment.find(comment_id)
-    comment.assess_extension(project.main_tutor, true)
+    comment.assess_extension(tutor, true)
 
     # After extension... no more extensions are possible
     task.reload
