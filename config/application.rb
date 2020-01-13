@@ -22,6 +22,7 @@ module Doubtfire
     # are: database, ldap, aaf. It can be overridden using the DF_AUTH_METHOD
     # environment variable.
     config.auth_method = (ENV['DF_AUTH_METHOD'] || :database).to_sym
+    config.factory_bot.definition_file_paths = ["custom/factories"]
 
     # ==> Student work directory
     # File server location for storing student's work. Defaults to `student_work`
