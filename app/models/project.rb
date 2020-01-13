@@ -79,10 +79,6 @@ class Project < ActiveRecord::Base
     user_role(user)
   end
 
-  scope :with_progress, lambda { |progress_types|
-    where(progress: progress_types) unless progress_types.blank?
-  }
-
   # Get all of the projects for the indicated user - with or without inactive units
   def self.for_user(user, include_inactive)
     # Limit to enrolled units... for this user
