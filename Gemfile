@@ -27,7 +27,6 @@ end
 
 group :development, :test, :staging do
   # Generators for population
-  gem 'populator'
   gem 'factory_girl_rails'
   gem 'faker', '~>1.9.1'
   gem 'minitest-rails'
@@ -54,7 +53,7 @@ gem 'rmagick', '~> 2.15' # require: false #already included in other gems - remo
 gem 'rubyzip'
 
 # Plagarism detection
-gem 'moss_ruby', '= 1.1.2'
+gem 'moss_ruby', '>= 1.1.2'
 
 # Latex
 gem 'rails-latex', '=2.0.1'
@@ -66,10 +65,10 @@ gem 'grape-active_model_serializers', '~> 1.3.2'
 gem 'grape-swagger'
 
 # Miscellaneous
-gem 'attr_encrypted', '~> 1.3.2'
+gem 'attr_encrypted', '~> 1.4.0'
 gem 'rack-cors', require: 'rack/cors'
 gem 'ci_reporter'
-gem 'require_all', '1.3.3'
+gem 'require_all', '>=1.3.3'
 gem 'dotenv-rails'
 
 # Excel support
