@@ -8,7 +8,7 @@ class Tutorial < ActiveRecord::Base
   has_one    :tutor, through: :unit_role, source: :user
 
   has_many   :groups, dependent: :nullify
-  has_many   :tutorial_enrolments
+  has_many   :tutorial_enrolments, dependent: :destroy
   has_many   :projects, through: :tutorial_enrolments
 
   # Callbacks - methods called are private
