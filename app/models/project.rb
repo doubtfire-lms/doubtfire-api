@@ -13,6 +13,7 @@ end
 class Project < ActiveRecord::Base
   include ApplicationHelper
   include LogHelper
+  include DbHelpers
 
   belongs_to :unit
   belongs_to :user
@@ -161,16 +162,20 @@ class Project < ActiveRecord::Base
     user
   end
 
-  def tutorial_by_tutorial_stream
-    tutorial_enrolments
-      .joins(:tutorial)
-      .joins(:tutorial_stream)
-      .select('tutorial_streams.abbreviation as tutorial_stream_abbr, tutorials.abbreviation as tutorial_abbr')
-      .map do |t|
-        {
-          t.tutorial_stream_abbr => t.tutorial_abbr
-        }
-      end
+  def tutors_and_tutorial
+    current_tutor = nil
+    first_tutor = true
+
+    tutorial_enrolments.
+      joins(tutorial: {unit_role: :user}).
+      order('tutor').
+      select("tutorials.abbreviation as tutorial_abbr, #{db_concat('users.first_name', "' '", 'users.last_name')} as tutor").
+      map do |t|
+        result = "#{t.tutor == current_tutor ? (first_tutor ? '' : ') ' ) : "#{t.tutor} ("}#{t.tutorial_abbr}"
+        current_tutor = t.tutor
+        first_tutor = false
+        result
+      end.join(' ') + ( !first_tutor ? ')' : '')
   end
 
   def tutorial_enrolment_for_stream(tutorial_stream)
