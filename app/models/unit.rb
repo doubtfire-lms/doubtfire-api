@@ -98,6 +98,7 @@ class Unit < ActiveRecord::Base
   # Ensure before destroy is above relations - as this needs to clear main convenor before unit roles are deleted
   before_destroy do
     update(main_convenor_id: nil)
+    delete_associated_files
   end
 
   # Model associations.
@@ -2533,6 +2534,12 @@ class Unit < ActiveRecord::Base
     end
 
     summary_stats[:staff] = {}
+  end
 
+private
+  def delete_associated_files
+    FileUtils.rm_rf FileHelper.unit_dir(self)
+    FileUtils.rm_rf FileHelper.unit_portfolio_dir(self)
+    FileUtils.cd FileHelper.student_work_dir
   end
 end
