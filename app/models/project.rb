@@ -636,7 +636,7 @@ class Project < ActiveRecord::Base
   # Portfolio production code
   #
   def portfolio_temp_path
-    portfolio_dir = FileHelper.student_portfolio_dir(self.unit, self.username, false)
+    portfolio_dir = FileHelper.student_portfolio_dir(self.unit, self.student.username, false)
     portfolio_tmp_dir = File.join(portfolio_dir, 'tmp')
   end
 
@@ -724,7 +724,7 @@ class Project < ActiveRecord::Base
   end
 
   def portfolio_path
-    FileHelper.student_portfolio_path(self.unit, username, true)
+    FileHelper.student_portfolio_path(self.unit, self.student.username, true)
   end
 
   def has_portfolio
