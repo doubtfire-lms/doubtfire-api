@@ -1,6 +1,6 @@
 require 'faker'
 
-FactoryGirl.define do
+FactoryBot.define do
   factory :user do
     first_name  { Faker::Name.first_name }
     last_name   { Faker::Name.last_name }
@@ -16,7 +16,7 @@ FactoryGirl.define do
 
       after(:create) do |user, eval|
         eval.enrol_in.times do
-          unit = FactoryGirl.create(:unit, with_students: false)
+          unit = FactoryBot.create(:unit, with_students: false)
           campus = unit.tutorials.first.campus
           unit.enrol_student(user, campus)
         end

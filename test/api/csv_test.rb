@@ -192,7 +192,7 @@ class CsvTest < ActiveSupport::TestCase
   #POST /api/csv/task_definitions
   def test_csv_upload_all_task_definitions_unit_xlsx
 
-    unit = FactoryGirl.create(:unit, with_students: false)
+    unit = FactoryBot.create(:unit, with_students: false)
 
     data_to_post = {
       unit_id: unit.id,

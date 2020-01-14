@@ -1,6 +1,6 @@
 require 'faker'
 
-FactoryGirl.define do
+FactoryBot.define do
   factory :tutorial do
     meeting_day               "Monday"
     meeting_time              "17:30"
