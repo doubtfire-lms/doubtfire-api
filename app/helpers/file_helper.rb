@@ -159,14 +159,34 @@ module FileHelper
     dst
   end
 
+  def unit_dir(unit, create = true)
+    file_server = Doubtfire::Application.config.student_work_dir
+    dst = "#{file_server}/" # trust the server config and passed in type for paths
+    dst << sanitized_path("#{unit.code}-#{unit.id}") << '/'
+
+    FileUtils.mkdir_p dst if create && (!Dir.exist? dst)
+
+    dst
+  end
+
+  def unit_portfolio_dir(unit, create = true)
+    file_server = Doubtfire::Application.config.student_work_dir
+    dst = "#{file_server}/portfolio/" # trust the server config and passed in type for paths
+
+    dst << sanitized_path("#{unit.code}-#{unit.id}") << '/'
+
+    # Create current dst directory should it not exist
+    FileUtils.mkdir_p(dst) if create
+    dst
+  end
+
   #
   # Generates a path for storing student portfolios
   #
   def student_portfolio_dir(unit, username, create = true)
-    file_server = Doubtfire::Application.config.student_work_dir
-    dst = "#{file_server}/portfolio/" # trust the server config and passed in type for paths
+    dst = unit_portfolio_dir(unit, create)
 
-    dst << sanitized_path("#{unit.code}-#{unit.id}", username.to_s)
+    dst << sanitized_path(username.to_s)
 
     # Create current dst directory should it not exist
     FileUtils.mkdir_p(dst) if create
@@ -458,6 +478,8 @@ module FileHelper
   module_function :tmp_file
   module_function :student_group_work_dir
   module_function :student_work_dir
+  module_function :unit_dir
+  module_function :unit_portfolio_dir
   module_function :student_portfolio_dir
   module_function :student_portfolio_path
   module_function :comment_attachment_path
