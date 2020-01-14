@@ -17,6 +17,7 @@ module Api
     params do
       requires :task_def, type: Hash do
         requires :unit_id,                  type: Integer,  desc: 'The unit to create the new task def for'
+        optional :tutorial_stream_abbr,     type: String,   desc: 'The abbreviation of tutorial stream'
         requires :name,                     type: String,   desc: 'The name of this task def'
         requires :description,              type: String,   desc: 'The description of this task def'
         requires :weighting,                type: Integer,  desc: 'The weighting of this task'
@@ -65,6 +66,13 @@ module Api
 
       task_def = TaskDefinition.new(task_params)
 
+      # Set the tutorial stream
+      tutorial_stream_abbr = params[:task_def][:tutorial_stream_abbr]
+      unless tutorial_stream_abbr.nil?
+        tutorial_stream = unit.tutorial_streams.find_by!(abbreviation: tutorial_stream_abbr)
+        task_def.tutorial_stream = tutorial_stream
+      end
+
       #
       # Link in group set if specified
       #
@@ -82,6 +90,7 @@ module Api
       requires :id, type: Integer, desc: 'The task id to edit'
       requires :task_def, type: Hash do
         optional :unit_id,                  type: Integer,  desc: 'The unit to create the new task def for'
+        optional :tutorial_stream_abbr,     type: String,   desc: 'The abbreviation of the tutorial stream'
         optional :name,                     type: String,   desc: 'The name of this task def'
         optional :description,              type: String,   desc: 'The description of this task def'
         optional :weighting,                type: Integer,  desc: 'The weighting of this task'
@@ -127,6 +136,15 @@ module Api
                                                 )
 
       task_def.update!(task_params)
+
+      # Set the tutorial stream
+      tutorial_stream_abbr = params[:task_def][:tutorial_stream_abbr]
+      unless tutorial_stream_abbr.nil?
+        tutorial_stream = task_def.unit.tutorial_streams.find_by!(abbreviation: tutorial_stream_abbr)
+        task_def.tutorial_stream = tutorial_stream
+        task_def.save!
+      end
+
       #
       # Link in group set if specified
       #
@@ -152,17 +170,23 @@ module Api
       requires :unit_id, type: Integer, desc: 'The unit to upload tasks to'
     end
     post '/csv/task_definitions' do
-      # check mime is correct before uploading
-      ensure_csv!(params[:file][:tempfile])
-
       unit = Unit.find(params[:unit_id])
 
       unless authorise? current_user, unit, :upload_csv
         error!({ error: 'Not authorised to upload CSV of tasks' }, 403)
       end
 
+      unless params[:file].present?
+        error!({ error: "No file uploaded" }, 403)
+      end
+
+      path = params[:file][:tempfile].path
+
+      # check mime is correct before uploading
+      ensure_csv!(path)
+
       # Actually import...
-      unit.import_tasks_from_csv(params[:file][:tempfile])
+      unit.import_tasks_from_csv(File.new(path))
     end
 
     desc 'Download CSV of all task definitions for the given unit'
@@ -252,6 +276,10 @@ module Api
 
       task_def = unit.task_definitions.find(params[:task_def_id])
 
+      unless params[:file].present?
+        error!({ error: "No file uploaded" }, 403)
+      end
+
       file_path = params[:file][:tempfile].path
 
       check_mime_against_list! file_path, 'zip', ['application/zip', 'multipart/x-gzip', 'multipart/x-zip', 'application/x-gzip', 'application/octet-stream']
@@ -291,6 +319,10 @@ module Api
         error!({ error: 'Not authorised to upload tasks of unit' }, 403)
       end
 
+      unless params[:file].present?
+        error!({ error: "No file uploaded" }, 403)
+      end
+
       file = params[:file][:tempfile].path
 
       check_mime_against_list! file, 'zip', ['application/zip', 'multipart/x-gzip', 'multipart/x-zip', 'application/x-gzip', 'application/octet-stream']
@@ -310,17 +342,19 @@ module Api
         error!({ error: 'Not authorised to access tasks for this unit' }, 403)
       end
 
-      unit.student_tasks
-          .joins(:project)
-          .joins(:task_status)
-          .select('projects.tutorial_id as tutorial_id', 'project_id', 'tasks.id as id', 'task_definition_id', 'task_statuses.id as status_id', 'completion_date', 'times_assessed', 'submission_date', 'grade')
-          .where('task_definition_id = :id', id: params[:task_def_id])
-          .map do |t|
+      unit.student_tasks.
+        joins(:project).
+        joins(:task_status).
+        joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id AND (tutorial_enrolments.tutorial_stream_id = task_definitions.tutorial_stream_id OR tutorial_enrolments.tutorial_stream_id IS NULL)').
+        select('tutorial_enrolments.tutorial_stream_id as tutorial_stream_id', 'tutorial_enrolments.tutorial_id as tutorial_id', 'project_id', 'tasks.id as id', 'task_definition_id', 'task_statuses.id as status_id', 'completion_date', 'times_assessed', 'submission_date', 'grade').
+        where('task_definition_id = :id', id: params[:task_def_id])
+        .map do |t|
         {
           project_id: t.project_id,
           id: t.id,
           task_definition_id: t.task_definition_id,
           tutorial_id: t.tutorial_id,
+          tutorial_stream_id: t.tutorial_stream_id,
           status: TaskStatus.id_to_key(t.status_id),
           completion_date: t.completion_date,
           submission_date: t.submission_date,

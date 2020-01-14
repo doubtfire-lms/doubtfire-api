@@ -30,7 +30,7 @@ class GroupsTest < ActiveSupport::TestCase
 
     td = TaskDefinition.new({
         unit_id: unit.id,
-        #tutorial_stream: unit.tutorial_streams.first,
+        tutorial_stream: unit.tutorial_streams.first,
         name: 'Task to switch from ind to group after submission',
         description: 'test def',
         weighting: 4,
@@ -57,13 +57,14 @@ class GroupsTest < ActiveSupport::TestCase
     data_to_post = with_file('test_files/submissions/test.sql', 'text/plain', data_to_post)
 
     project = group.projects.first
+    tutor = project.tutor_for(td)
 
     post "/api/projects/#{project.id}/task_def_id/#{td.id}/request_extension", with_auth_token(data_to_post)
     comment_id = last_response_body["id"]
     assert_equal 201, last_response.status
 
     comment = TaskComment.find(comment_id)
-    comment.assess_extension(project.main_tutor, true)
+    comment.assess_extension(tutor, true)
 
     post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", with_auth_token(data_to_post, project.student)
     assert_equal 201, last_response.status
@@ -86,7 +87,7 @@ class GroupsTest < ActiveSupport::TestCase
 
     td = TaskDefinition.new({
         unit_id: unit.id,
-        #tutorial_stream: unit.tutorial_streams.first,
+        tutorial_stream: unit.tutorial_streams.first,
         name: 'Task to switch from ind to group after submission',
         description: 'test def',
         weighting: 4,
@@ -130,7 +131,7 @@ class GroupsTest < ActiveSupport::TestCase
 
     td = TaskDefinition.new({
         unit_id: unit.id,
-        #tutorial_stream: unit.tutorial_streams.first,
+        tutorial_stream: unit.tutorial_streams.first,
         name: 'Task to switch from ind to group after submission',
         description: 'test def',
         weighting: 4,
@@ -170,7 +171,7 @@ class GroupsTest < ActiveSupport::TestCase
 
     td = TaskDefinition.new({
         unit_id: unit.id,
-        #tutorial_stream: unit.tutorial_streams.first,
+        tutorial_stream: unit.tutorial_streams.first,
         name: 'Task to switch from ind to group after submission',
         description: 'test def',
         weighting: 4,

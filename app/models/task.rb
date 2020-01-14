@@ -3,6 +3,7 @@ require 'date'
 class Task < ActiveRecord::Base
   include ApplicationHelper
   include LogHelper
+  include GradeHelper
 
   #
   # Permissions around task data
@@ -105,12 +106,12 @@ class Task < ActiveRecord::Base
   validates :task_definition_id, uniqueness: { scope: :project,
                                                message: 'must be unique within the project' }
 
-  validate :must_have_quality_pts, if: :for_task_with_quality?
+  validate :must_have_quality_pts, if: :for_definition_with_quality?
 
   validate :extensions_must_end_with_due_date, if: :has_requested_extension?
 
-  def for_task_with_quality?
-    task_definition.max_quality_pts.positive?
+  def for_definition_with_quality?
+    task_definition.has_stars?
   end
 
   def has_requested_extension?
@@ -198,7 +199,7 @@ class Task < ActiveRecord::Base
     extension.user = user
     extension.content_type = :extension
     extension.comment = text
-    extension.recipient = project.main_tutor
+    extension.recipient = project.tutor_for(task_definition)
     extension.save!
     extension
   end
@@ -389,18 +390,7 @@ class Task < ActiveRecord::Base
   end
 
   def grade_desc
-    case grade
-    when -1
-      'Fail'
-    when 0
-      'Pass'
-    when 1
-      'Credit'
-    when 2
-      'Distinction'
-    when 3
-      'High Distinction'
-    end
+    grade_for(grade)
   end
 
   #
@@ -541,7 +531,7 @@ class Task < ActiveRecord::Base
       self.task_status = TaskStatus.ready_to_mark
     else
       assess TaskStatus.time_exceeded, by_user
-      add_status_comment(project.main_tutor, self.task_status)
+      add_status_comment(project.tutor_for(task_definition), self.task_status)
       grade_task -1 if task_definition.is_graded? && self.grade.nil?
     end
 
@@ -592,7 +582,7 @@ class Task < ActiveRecord::Base
     comment.user = user
     comment.comment = text
     comment.content_type = :text
-    comment.recipient = user == project.student ? project.main_tutor : project.student
+    comment.recipient = user == project.student ? project.tutor_for(task_definition) : project.student
     comment.save!
 
     comment
@@ -613,7 +603,7 @@ class Task < ActiveRecord::Base
     comment.user = current_user
     comment.comment = status.name
     comment.task_status = status
-    comment.recipient = current_user == project.student ? project.main_tutor : project.student
+    comment.recipient = current_user == project.student ? project.tutor_for(task_definition) : project.student
     comment.save!
 
     comment
@@ -657,7 +647,7 @@ class Task < ActiveRecord::Base
       raise "Unknown comment attachment type"
     end
 
-    comment.recipient = user == project.student ? project.main_tutor : project.student
+    comment.recipient = user == project.student ? project.tutor_for(task_definition) : project.student
     raise "Error attaching uploaded file." unless comment.add_attachment(tempfile)
 
     comment.save!
@@ -781,13 +771,11 @@ class Task < ActiveRecord::Base
       # compress image files
       image_files = Dir.entries(task_dir).select { |f| (f =~ /^\d{3}.(image)/) == 0 }
       image_files.each do |img|
-        if File.extname(img) == ".jpg"
-          raise 'Failed to compress an image. Ensure all images are valid.' unless FileHelper.compress_image("#{task_dir}#{img}")
-        else
-          dest_file = "#{task_dir}#{File.basename(img, ".*")}.jpg"
-          raise 'Failed to compress an image. Ensure all images are valid.' unless FileHelper.compress_image_to_dest("#{task_dir}#{img}", dest_file, true)
-          FileUtils.rm("#{task_dir}#{img}")
-        end
+        # Ensure all images in submissions are not jpg
+        dest_file = "#{task_dir}#{File.basename(img, ".*")}.jpg"
+        raise 'Failed to compress an image. Ensure all images are valid.' unless FileHelper.compress_image_to_dest("#{task_dir}#{img}", dest_file, true)
+        # Cleanup unless the output was the same as the input
+        FileUtils.rm("#{task_dir}#{img}") unless dest_file == "#{task_dir}#{img}"
       end
 
       # copy all files into zip
@@ -1040,7 +1028,7 @@ class Task < ActiveRecord::Base
     rescue => e
       clear_in_process
 
-      trigger_transition trigger: 'fix', by_user: project.main_tutor
+      trigger_transition trigger: 'fix', by_user: project.tutor_for(task_definition)
       raise e
     end
   end
@@ -1128,8 +1116,8 @@ class Task < ActiveRecord::Base
         ui.error!({ 'error' => "'#{file.name}' is not a valid #{file.type} file" }, 403)
       end
 
-      if File.size(file.tempfile.path) > 5_000_000
-        ui.error!({ 'error' => "'#{file.name}' exceeds the 5MB file limit. Try compressing or reformat and submit again." }, 403)
+      if File.size(file.tempfile.path) > 10_000_000
+        ui.error!({ 'error' => "'#{file.name}' exceeds the 10MB file limit. Try compressing or reformat and submit again." }, 403)
       end
     end
 

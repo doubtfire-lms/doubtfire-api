@@ -2,13 +2,29 @@ class Tutorial < ActiveRecord::Base
   # Model associations
   belongs_to :unit # Foreign key
   belongs_to :unit_role # Foreign key
+  belongs_to :campus
+  belongs_to :tutorial_stream
+
   has_one    :tutor, through: :unit_role, source: :user
 
-  has_many   :projects, dependent: :nullify # Students
   has_many   :groups, dependent: :nullify
+  has_many   :tutorial_enrolments
+  has_many   :projects, through: :tutorial_enrolments
+
+  # Callbacks - methods called are private
+  before_destroy :can_destroy?
 
   validates :abbreviation, uniqueness: { scope: :unit,
                                          message: 'must be unique within the unit' }
+
+  # Make sure that unit in tutorial and tutorial stream are consistent
+  validate :unit_must_be_same
+
+  def unit_must_be_same
+    if unit.present? and tutorial_stream.present? and not unit.eql? tutorial_stream.unit
+      errors.add(:unit, "should be same as the unit in the associated tutorial stream")
+    end
+  end
 
   def self.default
     tutorial = new
@@ -58,5 +74,12 @@ class Tutorial < ActiveRecord::Base
 
   def num_students
     projects.where('enrolled = true').count
+  end
+
+  private
+  def can_destroy?
+    return true if tutorial_enrolments.count == 0
+    errors.add :base, "Cannot delete tutorial with enrolments"
+    false
   end
 end

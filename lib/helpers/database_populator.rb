@@ -1,4 +1,3 @@
-require 'populator'
 require 'faker'
 require 'bcrypt'
 require 'json'
@@ -50,7 +49,7 @@ class DatabasePopulator
       throw "Invalid scale value '#{scale}'. Acceptable values are: #{accepted_scale_types.join(", ")}"
     end
     @scale = scale_data[scale]
-    
+
     return if Role.count > 0
 
     echo_line "-> Scale is set to #{scale}"
@@ -60,11 +59,13 @@ class DatabasePopulator
 
     generate_user_roles
     generate_task_statuses
-    
+
     # Fixed data contains all fixed units and users created
     generate_fixed_data()
 
     generate_teaching_periods()
+    generate_campuses
+    generate_activity_types
   end
 
   def generate_teaching_periods
@@ -100,6 +101,52 @@ class DatabasePopulator
     tp = TeachingPeriod.create! data
 
     tp.add_break Date.parse('2018-12-24'), 2
+  end
+
+  def generate_campuses
+    data = {
+      name: 'Cloud',
+      mode: 'timetable',
+      abbreviation: 'C',
+      active: true
+    }
+    Campus.create! data
+
+    data = {
+      name: 'Burwood',
+      mode: 'automatic',
+      abbreviation: 'B',
+      active: true
+    }
+    Campus.create! data
+
+    data = {
+      name: 'Geelong',
+      mode: 'manual',
+      abbreviation: 'G',
+      active: true
+    }
+    Campus.create! data
+  end
+
+  def generate_activity_types
+    data = {
+      name: 'Practical',
+      abbreviation: 'prac',
+    }
+    ActivityType.create! data
+
+    data = {
+      name: 'Workshop',
+      abbreviation: 'wrkshop',
+    }
+    ActivityType.create! data
+
+    data = {
+      name: 'Class',
+      abbreviation: 'cls',
+    }
+    ActivityType.create! data
   end
 
   def generate_admin
@@ -202,8 +249,18 @@ class DatabasePopulator
       # Generate other unit-related stuff
       generate_tasks_for_unit(unit, unit_details)
       generate_and_align_ilos_for_unit(unit, unit_details)
+      generate_tutorial_streams_for(unit)
       generate_tutorials_and_enrol_students_for_unit(unit, unit_details)
     end
+  end
+
+  def generate_tutorial_streams_for(unit)
+    rand(1...5).times {
+      activity_type = random_activity_type
+      name = "#{activity_type.name}-#{unit.tutorial_streams.where(activity_type: activity_type).count + 1}"
+      abbreviation = "#{activity_type.abbreviation}-#{unit.tutorial_streams.where(activity_type: activity_type).count + 1}"
+      unit.add_tutorial_stream(name, abbreviation, activity_type)
+    }
   end
 
   #
@@ -212,6 +269,22 @@ class DatabasePopulator
   def random_project
     id = Project.pluck(:id).sample
     Project.find(id)
+  end
+
+  #
+  # Random campus helper
+  #
+  def random_campus
+    id = Campus.pluck(:id).sample
+    Campus.find(id)
+  end
+
+  #
+  # Random activity type helper
+  #
+  def random_activity_type
+    id = ActivityType.pluck(:id).sample
+    ActivityType.find(id)
   end
 
   #
@@ -338,15 +411,21 @@ class DatabasePopulator
       echo_line "----> Enrolling tutor #{tutor.name} with #{user_details[:num]} tutorials"
       tutor_unit_role = unit.employ_staff(tutor, Role.tutor)
 
+      campus = random_campus
+
       user_details[:num].times do | count |
         tutorial_count += 1
+        tutorial_stream = unit.tutorial_streams.sample
         #day, time, location, tutor_username, abbrev
         tutorial = unit.add_tutorial(
           "#{weekdays.sample}",
           "#{8 + Faker::Number.between(0,11)}:#{['00', '30'].sample}",    # Mon-Fri 8am-7:30pm
           "#{['EN', 'BA'].sample}#{Faker::Number.between(0,6)}0#{Faker::Number.between(0,8)}", # EN###/BA###
           tutor,
-          "LA1-#{tutorial_count.to_s.rjust(2, '0')}"
+          campus,
+          rand(10...20),
+          "LA1-#{tutorial_count.to_s.rjust(2, '0')}",
+          tutorial_stream
         )
 
         # Add a random number of students to the tutorial
@@ -354,14 +433,15 @@ class DatabasePopulator
         echo "-----> Creating #{num_students_in_tutorial} projects under tutorial #{tutorial.abbreviation}"
         num_students_in_tutorial.times do
           student = find_or_create_student("student_#{student_count}")
-          project = unit.enrol_student(student, tutorial.id)
+          project = unit.enrol_student(student, campus)
           student_count += 1
+          project.enrol_in(tutorial)
           echo '.'
         end
         # Add fixed students to first tutorial
         if count == 0
           unit_details[:students].each do | student_key |
-            unit.enrol_student(@user_cache[student_key], tutorial.id)
+            unit.enrol_student(@user_cache[student_key], campus)
           end
         end
         echo_line "!"
@@ -371,19 +451,18 @@ class DatabasePopulator
 
   def self.assess_task(proj, task, tutor, status, complete_date)
     alignments = []
-    sum_ratings = 0
     task.unit.learning_outcomes.each do |lo|
+      next if rand(0..10) < 7
       data = {
         ilo_id: lo.id,
-        rating: rand(0..5),
+        rating: rand(1..5),
         rationale: "Simulated rationale text..."
       }
-      sum_ratings += data[:rating]
       alignments << data
     end
 
-    if task.group_task?
-      raise "Cant support group tasks yet in simulation :("
+    if task.group_task? && task.group.nil?
+      return
     end
     contributions = nil
 
@@ -391,8 +470,16 @@ class DatabasePopulator
     task.create_submission_and_trigger_state_change(proj.student) #, propagate = true, contributions = contributions, trigger = trigger)
     task.assess status, tutor, complete_date
 
+    if task.task_definition.is_graded?
+      task.grade_task rand(-1..3)
+    end
+
+    if task.for_definition_with_quality?
+      task.update(quality_pts: rand(0.. task.task_definition.max_quality_pts ))
+    end
+
     pdf_path = task.final_pdf_path
-    if pdf_path
+    if pdf_path && !File.exists?(pdf_path)
       FileUtils.ln_s(Rails.root.join('test_files', 'unit_files', 'sample-student-submission.pdf'), pdf_path)
     end
 

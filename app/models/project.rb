@@ -15,8 +15,8 @@ class Project < ActiveRecord::Base
   include LogHelper
 
   belongs_to :unit
-  belongs_to :tutorial
   belongs_to :user
+  belongs_to :campus
 
   # has_one :user, through: :student
   has_many :tasks, dependent: :destroy # Destroying a project will also nuke all of its tasks
@@ -26,8 +26,12 @@ class Project < ActiveRecord::Base
   has_many :past_groups, -> { where('group_memberships.active = :value', value: false) }, through: :group_memberships, source: 'group'
   has_many :task_engagements, through: :tasks
   has_many :comments, through: :tasks
+  has_many :tutorial_enrolments, dependent: :destroy
 
   has_many :learning_outcome_task_links, through: :tasks
+
+  # Callbacks - methods called are private
+  before_destroy :can_destroy?
 
   validate :must_be_in_group_tutorials
   validates :grade_rationale, length: { maximum: 4095, allow_blank: true }
@@ -52,7 +56,8 @@ class Project < ActiveRecord::Base
       :make_submission,
       :get_submission,
       :change,
-      :assess
+      :assess,
+      :change_campus
     ]
     # What can convenors do with projects?
     convenor_role_permissions = [
@@ -81,10 +86,10 @@ class Project < ActiveRecord::Base
   def self.for_user(user, include_inactive)
     # Limit to enrolled units... for this user
     result = where(enrolled: true).where('projects.user_id = :user_id', user_id: user.id)
-    
+
     # Return the result if we include inactive units...
     return result if include_inactive
-    
+
     # Otherwise link in units and only get active units
     result.joins(:unit).where('units.active = TRUE')
   end
@@ -95,6 +100,37 @@ class Project < ActiveRecord::Base
 
   def self.for_unit_role(unit_role)
     active_projects.where(unit_id: unit_role.unit_id) if unit_role.is_teacher?
+  end
+
+  def enrol_in(tutorial)
+    tutorial_enrolment = existing_enrolment(tutorial)
+    if tutorial_enrolment.nil?
+      tutorial_enrolment = TutorialEnrolment.new
+      tutorial_enrolment.tutorial = tutorial
+      tutorial_enrolment.tutorial_stream = tutorial.tutorial_stream
+      tutorial_enrolment.project = self
+      tutorial_enrolment.save!
+
+      # add after save to ensure valid tutorial_enrolments
+      self.tutorial_enrolments << tutorial_enrolment
+
+      tutorial_enrolment
+    else
+      tutorial_enrolment.tutorial = tutorial
+      tutorial_enrolment.tutorial_stream = tutorial.tutorial_stream
+      tutorial_enrolment.save!
+      tutorial_enrolment
+    end
+  end
+
+  # Find enrolment in same tutorial stream
+  def existing_enrolment(tutorial)
+    tutorial_enrolments.each do |tutorial_enrolment|
+      if tutorial.tutorial_stream.eql? tutorial_enrolment.tutorial.tutorial_stream or tutorial_enrolment.tutorial.tutorial_stream.nil?
+        return tutorial_enrolment
+      end
+    end
+    nil
   end
 
   #
@@ -123,15 +159,10 @@ class Project < ActiveRecord::Base
   end
 
   #
-  # Returns the email of the tutor, or the convenor if there is no tutor
+  # Returns the email of the convenor
   #
   def tutor_email
-    tutor = main_tutor
-    if tutor
-      tutor.email
-    else
-      unit.convenor_email
-    end
+    unit.convenor_email
   end
 
   #
@@ -149,27 +180,42 @@ class Project < ActiveRecord::Base
     user
   end
 
-  def main_tutor
-    if tutorial
-      result = tutorial.tutor
-      result = main_convenor if result.nil?
-      result
-    else
-      main_convenor
-    end
+  def tutorial_by_tutorial_stream
+    tutorial_enrolments
+      .joins(:tutorial)
+      .joins(:tutorial_stream)
+      .select('tutorial_streams.abbreviation as tutorial_stream_abbr, tutorials.abbreviation as tutorial_abbr')
+      .map do |t|
+        {
+          t.tutorial_stream_abbr => t.tutorial_abbr
+        }
+      end
+  end
+
+  def tutorial_enrolment_for_stream(tutorial_stream)
+    tutorial_enrolments.where(tutorial_stream: tutorial_stream).first || tutorial_enrolments.where(tutorial_stream_id: nil).first
+  end
+
+  def tutorial_for_stream(tutorial_stream)
+    enrolment = tutorial_enrolment_for_stream(tutorial_stream)
+    enrolment.tutorial unless enrolment.nil?
+  end
+
+  def tutorial_for(task_definition)
+    tutorial_for_stream(task_definition.tutorial_stream) unless task_definition.nil?
+  end
+
+  def tutor_for(task_definition)
+    tutorial = tutorial_for(task_definition)
+    (tutorial.present? and tutorial.tutor.present?) ? tutorial.tutor : main_convenor
   end
 
   def main_convenor
     unit.main_convenor
   end
 
-  def tutorial_abbr
-    tutorial.abbreviation unless tutorial.nil?
-  end
-
   def user_role(user)
     if user == student then :student
-    elsif user == main_tutor then :tutor
     elsif user.nil? then nil
     elsif unit.tutors.where(id: user.id).count != 0 then :tutor
     else nil
@@ -663,48 +709,20 @@ class Project < ActiveRecord::Base
     completed_tasks.sort_by(&:completion_date).last
   end
 
-  def task_completion_csv
-    all_tasks = unit.task_definitions_by_grade
-    [
-      student.username,
-      student.name,
-      target_grade_desc,
-      student.email,
-      portfolio_status,
-      tutorial ? tutorial.abbreviation : '',
-      main_tutor.name
-    ] +
-      unit.group_sets.map do |gs|
-        grp = group_for_groupset(gs)
-        grp ? grp.name : nil
-      end +
-      all_tasks.map do |td|
-        task = tasks.where(task_definition_id: td.id).first
-        if task
-          status = task.task_status.name
-          grade = task.grade_desc
-          stars = task.quality_pts
-          people = task.contribution_pts
-        else
-          status = TaskStatus.not_started.name
-          grade = nil
-          stars = nil
-          people = nil
-        end
-
-        result = [status]
-        result << grade if td.is_graded?
-        result << stars if td.has_stars?
-        result << people if td.is_group_task?
-        result
-      end.flatten
+  def tutorial_abbr
+    tutorial_enrolments.
+      joins('LEFT OUTER JOIN tutorials ON tutorials.id = tutorial_enrolments.tutorial_id').
+      joins('LEFT OUTER JOIN tutorial_streams ON tutorial_enrolments.tutorial_stream_id = tutorial_streams.id').
+      select(
+        'tutorials.abbreviation as abbr'
+      ).map{ |t| t.abbr }
   end
 
   #
   # Portfolio production code
   #
   def portfolio_temp_path
-    portfolio_dir = FileHelper.student_portfolio_dir(self, false)
+    portfolio_dir = FileHelper.student_portfolio_dir(self.unit, self.username, false)
     portfolio_tmp_dir = File.join(portfolio_dir, 'tmp')
   end
 
@@ -792,7 +810,7 @@ class Project < ActiveRecord::Base
   end
 
   def portfolio_path
-    File.join(FileHelper.student_portfolio_dir(self, true), FileHelper.sanitized_filename("#{student.username}-portfolio.pdf"))
+    FileHelper.student_portfolio_path(self.unit, username, true)
   end
 
   def has_portfolio
@@ -976,11 +994,18 @@ class Project < ActiveRecord::Base
       did_revert_to_pass = true
 
       summary_stats[:revert_count] = summary_stats[:revert_count] + 1
-      summary_stats[:revert][main_tutor] << self
+      summary_stats[:revert][main_convenor] << self
     end
 
     return unless student.receive_feedback_notifications
     return if has_portfolio && ! middle_of_unit
     NotificationsMailer.weekly_student_summary(self, summary_stats, did_revert_to_pass).deliver_now
+  end
+
+  private
+  def can_destroy?
+    return true if tutorial_enrolments.count == 0
+    errors.add :base, "Cannot delete project with enrolments"
+    false
   end
 end
