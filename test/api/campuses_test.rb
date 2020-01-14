@@ -25,13 +25,10 @@ class CampusesTest < ActiveSupport::TestCase
   end
   
   def test_get_campuses_by_id
-    campus_id = Campus.all.first.id
-    get "/api/campuses/#{campus_id}"
-    expected_data = Campus.all.first
+    campus = FactoryGirl.create(:campus, mode: 'timetable')
+    get "/api/campuses/#{campus.id}"
     response_keys = %w(name abbreviation)
-    assert_json_matches_model(last_response_body,expected_data,response_keys)
-    
-  
+    assert_json_matches_model(last_response_body,campus,response_keys) 
   end
 
   def test_post_campuses
@@ -47,19 +44,16 @@ class CampusesTest < ActiveSupport::TestCase
     assert_json_matches_model(last_response_body, campus, response_keys)
     assert_equal 0, campus[:mode]
   end
-###############################################################################  
-  def test_student_post_campuses
-    project = Project.first
-    user = project.student
-    data_to_post = {
-      campus: FactoryGirl.build(:campus, mode: 'timetable')
-    }
 
-    post_json  with_auth_token("/api/campuses", user), data_to_post
+  def test_student_post_campuses
+    user_student = FactoryGirl.create(:user, :student)
+    data_to_post = { campus: FactoryGirl.build(:campus, mode: 'timetable') }
+
+    post_json  with_auth_token("/api/campuses", user_student), data_to_post
     assert_equal 403, last_response.status
  
   end
-###############################################################################
+
   def test_put_campuses
     data_to_put = {
       campus: FactoryGirl.build(:campus, mode: 'timetable'),
@@ -75,33 +69,24 @@ class CampusesTest < ActiveSupport::TestCase
     assert_json_matches_model(last_response_body, first_campus, response_keys)
     assert_equal 0, first_campus[:mode]
   end
-  ##############################################################################
-  def test_student_put_campuses
-    project = Project.first
-    user = project.student
-    campus_id = Campus.all.first.id
-    data_to_put = {
-      campus: FactoryGirl.build(:campus, mode: 'timetable')
-    }
 
-    put_json  with_auth_token("/api/campuses/#{campus_id}", user), data_to_put
+  def test_student_put_campuses
+    user_student = FactoryGirl.create(:user, :student)
+    data_to_put ={ campus: FactoryGirl.build(:campus, mode: 'timetable') }
+
+    # Update campus with id = 1
+    put_json with_auth_token("/api/campuses/1", user_student), data_to_put
     assert_equal 403, last_response.status
  
   end
     
-  def test_delete_campuses    
+  def test_delete_campuses        
+    campus = FactoryGirl.create(:campus, mode: 'timetable')
     initial_num_of_campus = Campus.all.count
-    user = User.admins.first
-    campus_id = Campus.all.first.id
-    #Remove all porjects and tutorials from target campus, as
-    #cannot be deleted if has active projects or tutorials
-
-    remove_associated_campus_property(Tutorial,campus_id)
-    remove_associated_campus_property(Project,campus_id)
 
 
     #Perform the delete
-    delete_json with_auth_token("/api/campuses/#{campus_id}",user)
+    delete_json with_auth_token("/api/campuses/#{campus.id}")
     #check the request went through
     assert_equal 200, last_response.status
 
@@ -111,30 +96,13 @@ class CampusesTest < ActiveSupport::TestCase
   end
 
   def test_student_delete_campus
-    project = Project.first
-    user = project.student
-    campus_id = Campus.all.first.id
+    user_student = FactoryGirl.create(:user, :student)
+    campus = FactoryGirl.create(:campus, mode: 'timetable')
+
 
     # perform the delete
-    delete_json with_auth_token("/api/campuses/#{campus_id}", user)
+    delete_json with_auth_token("/api/campuses/#{campus.id}", user_student)
     # check that request failed
     assert_equal 403, last_response.status
-  end
-
-  #This method removes all properties associated with campuses
-  #required to delete the campus
-
-  def remove_associated_campus_property(property,target_campus_id)
-      property_array = property.all  
-      n_campuses = property_array.length
-
-      for i in 0..n_campuses-1 do
-        current_campus_id = property_array[i].campus.id
-
-        if current_campus_id == target_campus_id
-          property.find(property_array[i].id).delete
-        end  
-
-      end
   end
 end
