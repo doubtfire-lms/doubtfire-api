@@ -208,7 +208,7 @@ class UnitsApiTest < ActiveSupport::TestCase
   end
 
   def test_units_get_has_streams
-    expected_unit = FactoryGirl.create(:unit, with_students: false, stream_count: 2)
+    expected_unit = FactoryBot.create(:unit, with_students: false, stream_count: 2)
 
     # Get the unit...
     get with_auth_token "/api/units/#{expected_unit.id}"
@@ -223,7 +223,7 @@ class UnitsApiTest < ActiveSupport::TestCase
 
     assert_equal 2, actual_unit['tutorial_streams'].count
 
-    expected_unit = FactoryGirl.create(:unit, with_students: false, stream_count: 3)
+    expected_unit = FactoryBot.create(:unit, with_students: false, stream_count: 3)
 
     # Get the unit...
     get with_auth_token "/api/units/#{expected_unit.id}"

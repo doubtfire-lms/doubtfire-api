@@ -1,6 +1,6 @@
-# Read about factories at https://github.com/thoughtbot/factory_girl
+# Read about factories at https://github.com/thoughtbot/factory_bot
 
-FactoryGirl.define do
+FactoryBot.define do
 
   factory :task_definition do
     unit
@@ -105,7 +105,7 @@ FactoryGirl.define do
         create_list(:tutorial, eval.tutorials, unit: unit, campus: campuses.last )
       end
 
-      unit.employ_staff( FactoryGirl.create(:user, :convenor), Role.convenor)
+      unit.employ_staff( FactoryBot.create(:user, :convenor), Role.convenor)
 
       # Setup group tasks
       group_tasks.each do |task_details|
@@ -120,7 +120,7 @@ FactoryGirl.define do
       # Enrol students
       campuses.each do |c|
         (eval.unenrolled_student_count + eval.student_count + eval.part_enrolled_student_count).times do |i|
-          p = unit.enrol_student( FactoryGirl.create(:user, :student), c )
+          p = unit.enrol_student( FactoryBot.create(:user, :student), c )
           next if i < eval.unenrolled_student_count
 
           if c.tutorials.first.tutorial_stream.present?
@@ -141,7 +141,7 @@ FactoryGirl.define do
       stud = 0
       groups.each do |group_details|
         gs = unit.group_sets[group_details[:gs]]
-        grp = FactoryGirl.create(:group, group_set: gs)
+        grp = FactoryBot.create(:group, group_set: gs)
         group_details[:students].times do
           grp.add_member unit.projects[stud % eval.student_count]
           stud += 1

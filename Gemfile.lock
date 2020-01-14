@@ -279,8 +279,8 @@ DEPENDENCIES
   devise (~> 4.1.1)
   devise_ldap_authenticatable
   dotenv-rails
-  factory_bot
   factory_bot_rails
+  factory_bot
   faker (~> 1.9.1)
   grape (= 0.16.2)
   grape-active_model_serializers (~> 1.3.2)

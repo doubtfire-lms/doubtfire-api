@@ -12,7 +12,7 @@ class UnitTest < ActiveSupport::TestCase
       }
     @unit = Unit.create(data)
 
-    activity_type = FactoryGirl.create(:activity_type)
+    activity_type = FactoryBot.create(:activity_type)
     @unit.add_tutorial_stream('Import-Tasks', 'import-tasks', activity_type)
   end
 
@@ -52,7 +52,7 @@ class UnitTest < ActiveSupport::TestCase
   end
 
   test 'rollover of group tasks' do
-    unit = FactoryGirl.create(:unit,
+    unit = FactoryBot.create(:unit,
       code: 'SIT102',
       teaching_period: TeachingPeriod.find(3),
       group_sets: 1,
@@ -183,24 +183,24 @@ class UnitTest < ActiveSupport::TestCase
   end
 
   def test_student_query
-    unit = FactoryGirl.create(:unit, with_students: false)
+    unit = FactoryBot.create(:unit, with_students: false)
     unit.employ_staff(User.first, Role.convenor)
 
-    campus = FactoryGirl.create(:campus)
+    campus = FactoryBot.create(:campus)
 
     assert_empty unit.projects
-    project = FactoryGirl.create(:project, unit: unit, campus: campus)
+    project = FactoryBot.create(:project, unit: unit, campus: campus)
     assert_equal 1, unit.projects.count
 
 
     # Make sure there are no enrolments for the project
     assert_empty project.tutorial_enrolments
 
-    tutorial_stream_first = FactoryGirl.create(:tutorial_stream, unit: unit)
-    tutorial_stream_second = FactoryGirl.create(:tutorial_stream, unit: unit)
+    tutorial_stream_first = FactoryBot.create(:tutorial_stream, unit: unit)
+    tutorial_stream_second = FactoryBot.create(:tutorial_stream, unit: unit)
 
-    tutorial_first = FactoryGirl.create(:tutorial, unit: unit, tutorial_stream: tutorial_stream_first, campus: campus)
-    tutorial_second = FactoryGirl.create(:tutorial, unit: unit, tutorial_stream: tutorial_stream_second, campus: campus)
+    tutorial_first = FactoryBot.create(:tutorial, unit: unit, tutorial_stream: tutorial_stream_first, campus: campus)
+    tutorial_second = FactoryBot.create(:tutorial, unit: unit, tutorial_stream: tutorial_stream_second, campus: campus)
 
     assert_not_nil tutorial_first.tutorial_stream
     assert_not_nil tutorial_second.tutorial_stream
@@ -218,8 +218,8 @@ class UnitTest < ActiveSupport::TestCase
     assert_equal tutorial_second, tutorial_enrolment_second.tutorial
     assert_equal project, tutorial_enrolment_second.project
 
-    task_def_first = FactoryGirl.create(:task_definition, unit: unit, tutorial_stream: tutorial_stream_first, target_grade: project.target_grade)
-    task_def_second = FactoryGirl.create(:task_definition, unit: unit, tutorial_stream: tutorial_stream_second, target_grade: project.target_grade)
+    task_def_first = FactoryBot.create(:task_definition, unit: unit, tutorial_stream: tutorial_stream_first, target_grade: project.target_grade)
+    task_def_second = FactoryBot.create(:task_definition, unit: unit, tutorial_stream: tutorial_stream_second, target_grade: project.target_grade)
 
     task_first = project.task_for_task_definition(task_def_first)
     task_second = project.task_for_task_definition(task_def_second)
@@ -242,7 +242,7 @@ class UnitTest < ActiveSupport::TestCase
     assert_equal unit.tutorial_streams.count, projects.first[:tutorial_streams].count
 
     # Now test with project without tutorial enrolments
-    project2 = FactoryGirl.create(:project, unit: unit, campus: campus)
+    project2 = FactoryBot.create(:project, unit: unit, campus: campus)
     assert_equal 2, unit.projects.count
 
     project2.tutorial_enrolments.destroy
@@ -312,7 +312,7 @@ class UnitTest < ActiveSupport::TestCase
   end
 
   def test_task_completion_csv
-    unit = FactoryGirl.create :unit, campus_count: 2, tutorials:2, stream_count:2, task_count:3, student_count:8, unenrolled_student_count: 1, part_enrolled_student_count: 2, set_one_of_each_task: true
+    unit = FactoryBot.create :unit, campus_count: 2, tutorials:2, stream_count:2, task_count:3, student_count:8, unenrolled_student_count: 1, part_enrolled_student_count: 2, set_one_of_each_task: true
 
     unit.task_definitions.each do |td|
       unit.projects.each do |student|
@@ -328,16 +328,16 @@ class UnitTest < ActiveSupport::TestCase
   end
 
   def test_task_completion_csv_no_task_data
-    unit = FactoryGirl.create :unit, campus_count: 2, tutorials:2, stream_count:2, task_count:3, student_count:8, unenrolled_student_count: 1, part_enrolled_student_count: 2, set_one_of_each_task: true
+    unit = FactoryBot.create :unit, campus_count: 2, tutorials:2, stream_count:2, task_count:3, student_count:8, unenrolled_student_count: 1, part_enrolled_student_count: 2, set_one_of_each_task: true
 
     check_task_completion_csv unit
   end
 
   def test_task_completion_csv_all_td_in_one_stream
-    unit = FactoryGirl.create :unit, campus_count: 2, tutorials:1, stream_count:1, task_count:1, student_count:3, unenrolled_student_count: 0, part_enrolled_student_count: 0
+    unit = FactoryBot.create :unit, campus_count: 2, tutorials:1, stream_count:1, task_count:1, student_count:3, unenrolled_student_count: 0, part_enrolled_student_count: 0
 
-    unit.tutorial_streams << FactoryGirl.create(:tutorial_stream, unit: unit)
-    tutorial = FactoryGirl.create(:tutorial, unit: unit, tutorial_stream: unit.tutorial_streams.last, campus: Campus.last )
+    unit.tutorial_streams << FactoryBot.create(:tutorial_stream, unit: unit)
+    tutorial = FactoryBot.create(:tutorial, unit: unit, tutorial_stream: unit.tutorial_streams.last, campus: Campus.last )
 
     unit.projects.where(campus: tutorial.campus).first.enrol_in(tutorial)
 
