@@ -1,5 +1,5 @@
 require 'test_helper'
-require 'pry'
+
 
 class CampusesTest < ActiveSupport::TestCase
   include Rack::Test::Methods
