@@ -49,7 +49,7 @@ module FileHelper
       path_name.strip.tap do |name|
         # Finally, replace all non alphanumeric, underscore
         # or periods with underscore
-        name.gsub! /[^\w\-]/, '_'
+        name.gsub! /[^\w\-()]/, '_'
       end
     end
 
