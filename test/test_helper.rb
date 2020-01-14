@@ -43,6 +43,7 @@ class ActiveSupport::TestCase
 
   def setup
     DatabaseCleaner.start
+    Faker::UniqueGenerator.clear
   end
 
   def teardown

@@ -41,8 +41,8 @@
 \emph{Tutor:} \\
 <%  if @task.group_task? and not @task.group.tutor.nil? %>
 <%=   lesc @task.group.tutor.first_name %> \textsc{<%= lesc @task.group.tutor.last_name %>} % Supervisor's Name
-<%  elsif not @task.project.main_tutor.nil? %>
-<%=   lesc @task.project.main_tutor.first_name %> \textsc{<%= lesc @task.project.main_tutor.last_name %>} % Supervisor's Name
+<%  elsif not @task.project.tutor_for(@task.task_definition).nil? %>
+<%=   lesc @task.project.tutor_for(@task.task_definition).first_name %> \textsc{<%= lesc @task.project.tutor_for(@task.task_definition).last_name %>} % Supervisor's Name
 <%  else %>
 No Tutor % Supervisor's Name
 <%  end %>
@@ -103,7 +103,7 @@ No Tutor % Supervisor's Name
 
   <% if file[:type] == 'image' %>
     \graphicspath{ {<%= @base_path %>} }
-    \includegraphics[width=\textwidth]{{<%= File.basename(file[:path], File.extname(file[:path])) %>}<%= File.extname(file[:path]) %>}
+    \includegraphics[width=\textwidth]{<%= File.basename(file[:path]) %>}
   <% end %>
 
   <% if file[:type] == 'code' %>

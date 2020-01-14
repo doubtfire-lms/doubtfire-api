@@ -14,6 +14,7 @@ class CommentTest < ActiveSupport::TestCase
     user = project.student
     unit = project.unit
     task_definition = unit.task_definitions.first
+    tutor = project.tutor_for(task_definition)
 
     pre_count = TaskComment.count
 
@@ -26,13 +27,13 @@ class CommentTest < ActiveSupport::TestCase
     assert_equal "Hello World", TaskComment.last.comment, "last comment has message"
     assert_equal pre_count + 1, TaskComment.count, "one comment added"
 
-    expected_response = { 
-        "comment" => "Hello World", 
-        "has_attachment" => false, 
-        "type" => "text", 
-        "is_new" => false, 
-        author: {"id" => user.id}, 
-        recipient: {"id" => project.main_tutor.id}
+    expected_response = {
+        "comment" => "Hello World",
+        "has_attachment" => false,
+        "type" => "text",
+        "is_new" => false,
+        author: {"id" => user.id},
+        recipient: {"id" => tutor.id}
     }
 
     # check each is the same
@@ -164,6 +165,7 @@ class CommentTest < ActiveSupport::TestCase
 
     td = TaskDefinition.new({
         unit_id: unit.id,
+        tutorial_stream: unit.tutorial_streams.first,
         name: 'test_read_receipts_for_task_status_comments',
         description: 'test_read_receipts_for_task_status_comments',
         weighting: 4,
@@ -191,7 +193,7 @@ class CommentTest < ActiveSupport::TestCase
     task = project.task_for_task_definition(td)
     assert_equal TaskStatus.ready_to_mark, task.task_status
 
-    tutor = project.main_tutor
+    tutor = project.tutor_for(td)
 
     tc = task.comments.last
     assert tc.comments_read_receipts.count >= 2, 'Error: expected multiple read receipts.'
