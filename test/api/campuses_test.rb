@@ -1,4 +1,5 @@
 require 'test_helper'
+require 'pry'
 
 class CampusesTest < ActiveSupport::TestCase
   include Rack::Test::Methods
@@ -22,6 +23,16 @@ class CampusesTest < ActiveSupport::TestCase
       assert_json_matches_model(data, c, response_keys)
     end
   end
+  
+  def test_get_campuses_by_id
+    campus_id = Campus.all.first.id
+    get "/api/campuses/#{campus_id}"
+    expected_data = Campus.all.first
+    response_keys = %w(name abbreviation)
+    assert_json_matches_model(last_response_body,expected_data,response_keys)
+    
+  
+  end
 
   def test_post_campuses
     data_to_post = {
@@ -36,7 +47,19 @@ class CampusesTest < ActiveSupport::TestCase
     assert_json_matches_model(last_response_body, campus, response_keys)
     assert_equal 0, campus[:mode]
   end
+###############################################################################  
+  def test_student_post_campuses
+    project = Project.first
+    user = project.student
+    data_to_post = {
+      campus: FactoryGirl.build(:campus, mode: 'timetable')
+    }
 
+    post_json  with_auth_token("/api/campuses", user), data_to_post
+    assert_equal 403, last_response.status
+ 
+  end
+###############################################################################
   def test_put_campuses
     data_to_put = {
       campus: FactoryGirl.build(:campus, mode: 'timetable'),
@@ -52,6 +75,19 @@ class CampusesTest < ActiveSupport::TestCase
     assert_json_matches_model(last_response_body, first_campus, response_keys)
     assert_equal 0, first_campus[:mode]
   end
+  ##############################################################################
+  def test_student_put_campuses
+    project = Project.first
+    user = project.student
+    campus_id = Campus.all.first.id
+    data_to_put = {
+      campus: FactoryGirl.build(:campus, mode: 'timetable')
+    }
+
+    put_json  with_auth_token("/api/campuses/#{campus_id}", user), data_to_put
+    assert_equal 403, last_response.status
+ 
+  end
     
   def test_delete_campuses    
     initial_num_of_campus = Campus.all.count
@@ -59,8 +95,10 @@ class CampusesTest < ActiveSupport::TestCase
     campus_id = Campus.all.first.id
     #Remove all porjects and tutorials from target campus, as
     #cannot be deleted if has active projects or tutorials
-    remove_associated_campus_property(Project,campus_id)
+
     remove_associated_campus_property(Tutorial,campus_id)
+    remove_associated_campus_property(Project,campus_id)
+
 
     #Perform the delete
     delete_json with_auth_token("/api/campuses/#{campus_id}",user)
@@ -75,13 +113,7 @@ class CampusesTest < ActiveSupport::TestCase
   def test_student_delete_campus
     project = Project.first
     user = project.student
-    number_of_campuses = Campus.all.count
     campus_id = Campus.all.first.id
-    
-    #Remove all porjects and tutorials from target campus, as
-    #cannot be deleted if has active projects or tutorials
-    remove_associated_campus_property(Project,campus_id)
-    remove_associated_campus_property(Tutorial,campus_id)
 
     # perform the delete
     delete_json with_auth_token("/api/campuses/#{campus_id}", user)
