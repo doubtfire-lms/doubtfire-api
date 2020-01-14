@@ -444,5 +444,30 @@ class UnitModelTest < ActiveSupport::TestCase
     refute unit.valid?, 'Even if the above validation fails, the student user role should not be able to admin unit'
   end
 
+  def test_portfolio_zip
+    unit = FactoryGirl.create :unit, campus_count: 2, tutorials:2, stream_count:2, task_count:1, student_count:1, unenrolled_student_count: 0, part_enrolled_student_count: 1
+
+    paths = []
+
+    unit.active_projects.each do |p|
+      DatabasePopulator.generate_portfolio(p)
+      assert p.has_portfolio
+      assert File.exists?(p.portfolio_path)
+      paths << p.portfolio_path
+    end
+
+    filename = unit.get_portfolio_zip(unit.main_convenor_user)
+    assert File.exists? filename
+    Zip::File.open(filename) do |zip_file|
+      assert_equal unit.active_projects.count, zip_file.count
+    end
+    FileUtils.rm filename
+
+    unit.destroy!
+
+    paths.each do |path|
+      refute File.exists?(path)
+    end
+  end
 
 end

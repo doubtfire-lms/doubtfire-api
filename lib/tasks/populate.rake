@@ -166,13 +166,7 @@ namespace :db do
         end
 
         if rand(0..99) > 70
-          portfolio_tmp_dir = p.portfolio_temp_path
-          FileUtils.mkdir_p(portfolio_tmp_dir)
-
-          lsr_path = File.join(portfolio_tmp_dir, "000-document-LearningSummaryReport.pdf")
-          FileUtils.ln_s(Rails.root.join('test_files', 'unit_files', 'sample-learning-summary.pdf'), lsr_path) unless File.exists? lsr_path
-          p.compile_portfolio = true
-          p.create_portfolio
+          DatabasePopulator.generate_portfolio p
         end
 
         p.save
