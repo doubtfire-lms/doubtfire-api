@@ -167,7 +167,7 @@ class Project < ActiveRecord::Base
       order('tutor').
       select("tutorials.abbreviation as tutorial_abbr, #{db_concat('users.first_name', "' '", 'users.last_name')} as tutor").
       map do |t|
-        result = "#{t.tutor == current_tutor ? (first_tutor ? '' : ') ' ) : "#{t.tutor} ("}#{t.tutorial_abbr}"
+        result = "#{t.tutor == current_tutor ? '' : "#{first_tutor ? '' : ') '}#{t.tutor} ("}#{t.tutorial_abbr}"
         current_tutor = t.tutor
         first_tutor = false
         result
