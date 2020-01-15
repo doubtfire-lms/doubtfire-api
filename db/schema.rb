@@ -15,7 +15,7 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
-  create_table "badges", id: :serial, force: :cascade do |t|
+  create_table "badges", id: :bigint, force: :cascade do |t|
     t.string "name", limit: 255
     t.text "description"
     t.string "large_image_url", limit: 255
@@ -25,14 +25,14 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
     t.datetime "updated_at", null: false
   end
 
-  create_table "breaks", id: :serial, force: :cascade do |t|
+  create_table "breaks", id: :bigint, force: :cascade do |t|
     t.datetime "start_date", null: false
     t.integer "number_of_weeks", null: false
     t.integer "teaching_period_id"
     t.index ["teaching_period_id"], name: "index_breaks_on_teaching_period_id"
   end
 
-  create_table "comments_read_receipts", id: :serial, force: :cascade do |t|
+  create_table "comments_read_receipts", id: :bigint, force: :cascade do |t|
     t.integer "task_comment_id", null: false
     t.integer "user_id", null: false
     t.datetime "created_at", null: false
@@ -42,7 +42,7 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
     t.index ["user_id"], name: "index_comments_read_receipts_on_user_id"
   end
 
-  create_table "discussion_comments", id: :serial, force: :cascade do |t|
+  create_table "discussion_comments", id: :bigint, force: :cascade do |t|
     t.datetime "time_started"
     t.datetime "time_completed"
     t.integer "number_of_prompts"
@@ -50,7 +50,7 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
     t.datetime "updated_at", null: false
   end
 
-  create_table "group_memberships", id: :serial, force: :cascade do |t|
+  create_table "group_memberships", id: :bigint, force: :cascade do |t|
     t.integer "group_id"
     t.integer "project_id"
     t.boolean "active", default: true
@@ -58,7 +58,7 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
     t.datetime "updated_at"
   end
 
-  create_table "group_sets", id: :serial, force: :cascade do |t|
+  create_table "group_sets", id: :bigint, force: :cascade do |t|
     t.integer "unit_id"
     t.string "name", limit: 255
     t.boolean "allow_students_to_create_groups", default: true
@@ -69,7 +69,7 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
     t.index ["unit_id"], name: "index_group_sets_on_unit_id"
   end
 
-  create_table "group_submissions", id: :serial, force: :cascade do |t|
+  create_table "group_submissions", id: :bigint, force: :cascade do |t|
     t.integer "group_id"
     t.string "notes", limit: 255
     t.integer "submitted_by_project_id"
@@ -78,7 +78,7 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
     t.integer "task_definition_id"
   end
 
-  create_table "groups", id: :serial, force: :cascade do |t|
+  create_table "groups", id: :bigint, force: :cascade do |t|
     t.integer "group_set_id"
     t.integer "tutorial_id"
     t.string "name", limit: 255
@@ -87,7 +87,7 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
     t.integer "number", null: false
   end
 
-  create_table "helpdesk_schedules", id: :serial, force: :cascade do |t|
+  create_table "helpdesk_schedules", id: :bigint, force: :cascade do |t|
     t.datetime "start_time"
     t.integer "duration"
     t.integer "day"
@@ -97,7 +97,7 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
     t.index ["user_id"], name: "index_helpdesk_schedules_on_user_id"
   end
 
-  create_table "helpdesk_sessions", id: :serial, force: :cascade do |t|
+  create_table "helpdesk_sessions", id: :bigint, force: :cascade do |t|
     t.integer "user_id", null: false
     t.datetime "clock_on_time", null: false
     t.datetime "clock_off_time", null: false
@@ -106,7 +106,7 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
     t.index ["user_id"], name: "index_helpdesk_sessions_on_user_id"
   end
 
-  create_table "helpdesk_tickets", id: :serial, force: :cascade do |t|
+  create_table "helpdesk_tickets", id: :bigint, force: :cascade do |t|
     t.integer "project_id", null: false
     t.integer "task_id"
     t.string "description", limit: 2048
@@ -120,7 +120,7 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
     t.index ["task_id"], name: "index_helpdesk_tickets_on_task_id"
   end
 
-  create_table "learning_outcome_task_links", id: :serial, force: :cascade do |t|
+  create_table "learning_outcome_task_links", id: :bigint, force: :cascade do |t|
     t.text "description"
     t.integer "rating"
     t.integer "task_definition_id"
@@ -133,7 +133,7 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
     t.index ["task_id"], name: "index_learning_outcome_task_links_on_task_id"
   end
 
-  create_table "learning_outcomes", id: :serial, force: :cascade do |t|
+  create_table "learning_outcomes", id: :bigint, force: :cascade do |t|
     t.integer "unit_id"
     t.integer "ilo_number"
     t.string "name", limit: 255
@@ -142,7 +142,7 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
     t.index ["unit_id"], name: "index_learning_outcomes_on_unit_id"
   end
 
-  create_table "logins", id: :serial, force: :cascade do |t|
+  create_table "logins", id: :bigint, force: :cascade do |t|
     t.datetime "timestamp"
     t.integer "user_id"
     t.datetime "created_at", null: false
@@ -150,7 +150,7 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
     t.index ["user_id"], name: "index_logins_on_user_id"
   end
 
-  create_table "plagiarism_match_links", id: :serial, force: :cascade do |t|
+  create_table "plagiarism_match_links", id: :bigint, force: :cascade do |t|
     t.integer "task_id"
     t.integer "other_task_id"
     t.integer "pct"
@@ -162,14 +162,14 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
     t.index ["task_id"], name: "index_plagiarism_match_links_on_task_id"
   end
 
-  create_table "project_convenors", id: :serial, force: :cascade do |t|
+  create_table "project_convenors", id: :bigint, force: :cascade do |t|
     t.integer "unit_id"
     t.integer "user_id"
     t.datetime "created_at"
     t.datetime "updated_at"
   end
 
-  create_table "projects", id: :serial, force: :cascade do |t|
+  create_table "projects", id: :bigint, force: :cascade do |t|
     t.integer "unit_id"
     t.string "project_role", limit: 255
     t.datetime "created_at", null: false
@@ -193,14 +193,14 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
     t.index ["user_id"], name: "index_projects_on_user_id"
   end
 
-  create_table "roles", id: :serial, force: :cascade do |t|
+  create_table "roles", id: :bigint, force: :cascade do |t|
     t.string "name", limit: 255
     t.text "description"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
 
-  create_table "sub_task_definitions", id: :serial, force: :cascade do |t|
+  create_table "sub_task_definitions", id: :bigint, force: :cascade do |t|
     t.string "name", limit: 255
     t.text "description"
     t.integer "badges_id"
@@ -211,7 +211,7 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
     t.index ["badges_id"], name: "index_sub_task_definitions_on_badges_id"
   end
 
-  create_table "sub_tasks", id: :serial, force: :cascade do |t|
+  create_table "sub_tasks", id: :bigint, force: :cascade do |t|
     t.datetime "completion_date"
     t.integer "sub_task_definition_id"
     t.integer "task_id"
@@ -219,7 +219,7 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
     t.datetime "updated_at", null: false
   end
 
-  create_table "task_comments", id: :serial, force: :cascade do |t|
+  create_table "task_comments", id: :bigint, force: :cascade do |t|
     t.integer "task_id", null: false
     t.integer "user_id", null: false
     t.string "comment", limit: 4096
@@ -241,7 +241,7 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
     t.index ["task_id"], name: "index_task_comments_on_task_id"
   end
 
-  create_table "task_definitions", id: :serial, force: :cascade do |t|
+  create_table "task_definitions", id: :bigint, force: :cascade do |t|
     t.integer "unit_id"
     t.string "name", limit: 255
     t.string "description", limit: 4096
@@ -265,7 +265,7 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
     t.index ["unit_id"], name: "index_task_definitions_on_unit_id"
   end
 
-  create_table "task_engagements", id: :serial, force: :cascade do |t|
+  create_table "task_engagements", id: :bigint, force: :cascade do |t|
     t.datetime "engagement_time"
     t.string "engagement", limit: 255
     t.integer "task_id"
@@ -274,14 +274,14 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
     t.index ["task_id"], name: "index_task_engagements_on_task_id"
   end
 
-  create_table "task_statuses", id: :serial, force: :cascade do |t|
+  create_table "task_statuses", id: :bigint, force: :cascade do |t|
     t.string "name", limit: 255
     t.string "description", limit: 255
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
 
-  create_table "task_submissions", id: :serial, force: :cascade do |t|
+  create_table "task_submissions", id: :bigint, force: :cascade do |t|
     t.datetime "submission_time"
     t.datetime "assessment_time"
     t.string "outcome", limit: 255
@@ -292,7 +292,7 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
     t.index ["task_id"], name: "index_task_submissions_on_task_id"
   end
 
-  create_table "tasks", id: :serial, force: :cascade do |t|
+  create_table "tasks", id: :bigint, force: :cascade do |t|
     t.integer "task_definition_id"
     t.integer "project_id"
     t.integer "task_status_id"
@@ -319,7 +319,7 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
     t.index ["task_status_id"], name: "index_tasks_on_task_status_id"
   end
 
-  create_table "teaching_periods", id: :serial, force: :cascade do |t|
+  create_table "teaching_periods", id: :bigint, force: :cascade do |t|
     t.string "period", null: false
     t.datetime "start_date", null: false
     t.datetime "end_date", null: false
@@ -328,7 +328,7 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
     t.index ["period", "year"], name: "index_teaching_periods_on_period_and_year", unique: true
   end
 
-  create_table "teams", id: :serial, force: :cascade do |t|
+  create_table "teams", id: :bigint, force: :cascade do |t|
     t.integer "unit_id"
     t.integer "user_id"
     t.string "meeting_day", limit: 255
@@ -341,7 +341,7 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
     t.index ["user_id"], name: "index_teams_on_user_id"
   end
 
-  create_table "tutorials", id: :serial, force: :cascade do |t|
+  create_table "tutorials", id: :bigint, force: :cascade do |t|
     t.integer "unit_id"
     t.string "meeting_day", limit: 255
     t.string "meeting_time", limit: 255
@@ -355,7 +355,7 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
     t.index ["unit_role_id"], name: "index_tutorials_on_unit_role_id"
   end
 
-  create_table "unit_roles", id: :serial, force: :cascade do |t|
+  create_table "unit_roles", id: :bigint, force: :cascade do |t|
     t.integer "user_id"
     t.integer "tutorial_id"
     t.datetime "created_at", null: false
@@ -368,7 +368,7 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
     t.index ["user_id"], name: "index_unit_roles_on_user_id"
   end
 
-  create_table "units", id: :serial, force: :cascade do |t|
+  create_table "units", id: :bigint, force: :cascade do |t|
     t.string "name", limit: 255
     t.string "description", limit: 4096
     t.datetime "start_date"
@@ -382,7 +382,7 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
     t.index ["teaching_period_id"], name: "index_units_on_teaching_period_id"
   end
 
-  create_table "user_roles", id: :serial, force: :cascade do |t|
+  create_table "user_roles", id: :bigint, force: :cascade do |t|
     t.integer "user_id"
     t.integer "role_id"
     t.datetime "created_at", null: false
@@ -391,7 +391,7 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
     t.index ["user_id"], name: "index_user_roles_on_user_id"
   end
 
-  create_table "users", id: :serial, force: :cascade do |t|
+  create_table "users", id: :bigint, force: :cascade do |t|
     t.string "email", limit: 255, default: "", null: false
     t.string "encrypted_password", limit: 255, default: "", null: false
     t.string "reset_password_token", limit: 255
