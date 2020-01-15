@@ -20,7 +20,7 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
     t.text "description"
     t.string "large_image_url", limit: 255
     t.string "small_image_url", limit: 255
-    t.bigint "sub_task_definition_id"
+    t.integer "sub_task_definition_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
@@ -28,13 +28,13 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
   create_table "breaks", id: :serial, force: :cascade do |t|
     t.datetime "start_date", null: false
     t.integer "number_of_weeks", null: false
-    t.bigint "teaching_period_id"
+    t.integer "teaching_period_id"
     t.index ["teaching_period_id"], name: "index_breaks_on_teaching_period_id"
   end
 
   create_table "comments_read_receipts", id: :serial, force: :cascade do |t|
-    t.bigint "task_comment_id", null: false
-    t.bigint "user_id", null: false
+    t.integer "task_comment_id", null: false
+    t.integer "user_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["task_comment_id", "user_id"], name: "index_comments_read_receipts_on_task_comment_id_and_user_id", unique: true
@@ -51,15 +51,15 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
   end
 
   create_table "group_memberships", id: :serial, force: :cascade do |t|
-    t.bigint "group_id"
-    t.bigint "project_id"
+    t.integer "group_id"
+    t.integer "project_id"
     t.boolean "active", default: true
     t.datetime "created_at"
     t.datetime "updated_at"
   end
 
   create_table "group_sets", id: :serial, force: :cascade do |t|
-    t.bigint "unit_id"
+    t.integer "unit_id"
     t.string "name", limit: 255
     t.boolean "allow_students_to_create_groups", default: true
     t.boolean "allow_students_to_manage_groups", default: true
@@ -70,17 +70,17 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
   end
 
   create_table "group_submissions", id: :serial, force: :cascade do |t|
-    t.bigint "group_id"
+    t.integer "group_id"
     t.string "notes", limit: 255
-    t.bigint "submitted_by_project_id"
+    t.integer "submitted_by_project_id"
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.bigint "task_definition_id"
+    t.integer "task_definition_id"
   end
 
   create_table "groups", id: :serial, force: :cascade do |t|
-    t.bigint "group_set_id"
-    t.bigint "tutorial_id"
+    t.integer "group_set_id"
+    t.integer "tutorial_id"
     t.string "name", limit: 255
     t.datetime "created_at"
     t.datetime "updated_at"
@@ -91,14 +91,14 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
     t.datetime "start_time"
     t.integer "duration"
     t.integer "day"
-    t.bigint "user_id"
+    t.integer "user_id"
     t.datetime "created_at"
     t.datetime "updated_at"
     t.index ["user_id"], name: "index_helpdesk_schedules_on_user_id"
   end
 
   create_table "helpdesk_sessions", id: :serial, force: :cascade do |t|
-    t.bigint "user_id", null: false
+    t.integer "user_id", null: false
     t.datetime "clock_on_time", null: false
     t.datetime "clock_off_time", null: false
     t.datetime "created_at"
@@ -107,8 +107,8 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
   end
 
   create_table "helpdesk_tickets", id: :serial, force: :cascade do |t|
-    t.bigint "project_id", null: false
-    t.bigint "task_id"
+    t.integer "project_id", null: false
+    t.integer "task_id"
     t.string "description", limit: 2048
     t.boolean "is_resolved", default: false, null: false
     t.datetime "created_at"
@@ -123,9 +123,9 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
   create_table "learning_outcome_task_links", id: :serial, force: :cascade do |t|
     t.text "description"
     t.integer "rating"
-    t.bigint "task_definition_id"
-    t.bigint "task_id"
-    t.bigint "learning_outcome_id"
+    t.integer "task_definition_id"
+    t.integer "task_id"
+    t.integer "learning_outcome_id"
     t.datetime "created_at"
     t.datetime "updated_at"
     t.index ["learning_outcome_id"], name: "learning_outcome_task_links_lo_index"
@@ -134,7 +134,7 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
   end
 
   create_table "learning_outcomes", id: :serial, force: :cascade do |t|
-    t.bigint "unit_id"
+    t.integer "unit_id"
     t.integer "ilo_number"
     t.string "name", limit: 255
     t.string "description", limit: 4096
@@ -144,15 +144,15 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
 
   create_table "logins", id: :serial, force: :cascade do |t|
     t.datetime "timestamp"
-    t.bigint "user_id"
+    t.integer "user_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["user_id"], name: "index_logins_on_user_id"
   end
 
   create_table "plagiarism_match_links", id: :serial, force: :cascade do |t|
-    t.bigint "task_id"
-    t.bigint "other_task_id"
+    t.integer "task_id"
+    t.integer "other_task_id"
     t.integer "pct"
     t.datetime "created_at"
     t.datetime "updated_at"
@@ -163,14 +163,14 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
   end
 
   create_table "project_convenors", id: :serial, force: :cascade do |t|
-    t.bigint "unit_id"
-    t.bigint "user_id"
+    t.integer "unit_id"
+    t.integer "user_id"
     t.datetime "created_at"
     t.datetime "updated_at"
   end
 
   create_table "projects", id: :serial, force: :cascade do |t|
-    t.bigint "unit_id"
+    t.integer "unit_id"
     t.string "project_role", limit: 255
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -183,8 +183,8 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
     t.boolean "compile_portfolio", default: false
     t.date "portfolio_production_date"
     t.integer "max_pct_similar", default: 0
-    t.bigint "tutorial_id"
-    t.bigint "user_id"
+    t.integer "tutorial_id"
+    t.integer "user_id"
     t.integer "grade", default: 0
     t.string "grade_rationale", limit: 4096
     t.index ["enrolled"], name: "index_projects_on_enrolled"
@@ -203,8 +203,8 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
   create_table "sub_task_definitions", id: :serial, force: :cascade do |t|
     t.string "name", limit: 255
     t.text "description"
-    t.bigint "badges_id"
-    t.bigint "task_definitions_id"
+    t.integer "badges_id"
+    t.integer "task_definitions_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.boolean "required", default: false, null: false
@@ -213,19 +213,19 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
 
   create_table "sub_tasks", id: :serial, force: :cascade do |t|
     t.datetime "completion_date"
-    t.bigint "sub_task_definition_id"
-    t.bigint "task_id"
+    t.integer "sub_task_definition_id"
+    t.integer "task_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
 
   create_table "task_comments", id: :serial, force: :cascade do |t|
-    t.bigint "task_id", null: false
-    t.bigint "user_id", null: false
+    t.integer "task_id", null: false
+    t.integer "user_id", null: false
     t.string "comment", limit: 4096
     t.datetime "created_at", null: false
     t.boolean "is_new", default: true
-    t.bigint "recipient_id"
+    t.integer "recipient_id"
     t.string "content_type"
     t.string "attachment_extension"
     t.string "type"
@@ -234,15 +234,15 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
     t.integer "number_of_prompts"
     t.datetime "date_extension_assessed"
     t.boolean "extension_granted"
-    t.bigint "assessor_id"
-    t.bigint "task_status_id"
+    t.integer "assessor_id"
+    t.integer "task_status_id"
     t.integer "extension_weeks"
     t.string "extension_response"
     t.index ["task_id"], name: "index_task_comments_on_task_id"
   end
 
   create_table "task_definitions", id: :serial, force: :cascade do |t|
-    t.bigint "unit_id"
+    t.integer "unit_id"
     t.string "name", limit: 255
     t.string "description", limit: 4096
     t.decimal "weighting", precision: 10
@@ -257,7 +257,7 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
     t.string "plagiarism_report_url", limit: 255
     t.boolean "plagiarism_updated", default: false
     t.integer "plagiarism_warn_pct", default: 50
-    t.bigint "group_set_id"
+    t.integer "group_set_id"
     t.datetime "due_date"
     t.datetime "start_date", null: false
     t.boolean "is_graded", default: false
@@ -268,7 +268,7 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
   create_table "task_engagements", id: :serial, force: :cascade do |t|
     t.datetime "engagement_time"
     t.string "engagement", limit: 255
-    t.bigint "task_id"
+    t.integer "task_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["task_id"], name: "index_task_engagements_on_task_id"
@@ -285,17 +285,17 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
     t.datetime "submission_time"
     t.datetime "assessment_time"
     t.string "outcome", limit: 255
-    t.bigint "task_id"
+    t.integer "task_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.bigint "assessor_id"
+    t.integer "assessor_id"
     t.index ["task_id"], name: "index_task_submissions_on_task_id"
   end
 
   create_table "tasks", id: :serial, force: :cascade do |t|
-    t.bigint "task_definition_id"
-    t.bigint "project_id"
-    t.bigint "task_status_id"
+    t.integer "task_definition_id"
+    t.integer "project_id"
+    t.integer "task_status_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.date "completion_date"
@@ -303,7 +303,7 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
     t.boolean "include_in_portfolio", default: true
     t.datetime "file_uploaded_at"
     t.integer "max_pct_similar", default: 0
-    t.bigint "group_submission_id"
+    t.integer "group_submission_id"
     t.integer "contribution_pct", default: 100
     t.integer "times_assessed", default: 0
     t.datetime "submission_date"
@@ -329,8 +329,8 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
   end
 
   create_table "teams", id: :serial, force: :cascade do |t|
-    t.bigint "unit_id"
-    t.bigint "user_id"
+    t.integer "unit_id"
+    t.integer "user_id"
     t.string "meeting_day", limit: 255
     t.string "meeting_time", limit: 255
     t.string "meeting_location", limit: 255
@@ -342,26 +342,26 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
   end
 
   create_table "tutorials", id: :serial, force: :cascade do |t|
-    t.bigint "unit_id"
+    t.integer "unit_id"
     t.string "meeting_day", limit: 255
     t.string "meeting_time", limit: 255
     t.string "meeting_location", limit: 255
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "code", limit: 255
-    t.bigint "unit_role_id"
+    t.integer "unit_role_id"
     t.string "abbreviation", limit: 255
     t.index ["unit_id"], name: "index_tutorials_on_unit_id"
     t.index ["unit_role_id"], name: "index_tutorials_on_unit_role_id"
   end
 
   create_table "unit_roles", id: :serial, force: :cascade do |t|
-    t.bigint "user_id"
+    t.integer "user_id"
     t.integer "tutorial_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.bigint "role_id"
-    t.bigint "unit_id"
+    t.integer "role_id"
+    t.integer "unit_id"
     t.index ["role_id"], name: "index_unit_roles_on_role_id"
     t.index ["tutorial_id"], name: "index_unit_roles_on_tutorial_id"
     t.index ["unit_id"], name: "index_unit_roles_on_unit_id"
@@ -378,13 +378,13 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
     t.string "code", limit: 255
     t.boolean "active", default: true
     t.datetime "last_plagarism_scan"
-    t.bigint "teaching_period_id"
+    t.integer "teaching_period_id"
     t.index ["teaching_period_id"], name: "index_units_on_teaching_period_id"
   end
 
   create_table "user_roles", id: :serial, force: :cascade do |t|
-    t.bigint "user_id"
-    t.bigint "role_id"
+    t.integer "user_id"
+    t.integer "role_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["role_id"], name: "index_user_roles_on_role_id"
@@ -411,7 +411,7 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
     t.string "authentication_token", limit: 255
     t.string "unlock_token", limit: 255
     t.datetime "auth_token_expiry"
-    t.bigint "role_id", default: 0
+    t.integer "role_id", default: 0
     t.boolean "receive_task_notifications", default: true
     t.boolean "receive_feedback_notifications", default: true
     t.boolean "receive_portfolio_notifications", default: true
