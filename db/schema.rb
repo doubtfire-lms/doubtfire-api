@@ -28,7 +28,7 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
   create_table "breaks", id: :serial, force: :cascade do |t|
     t.datetime "start_date", null: false
     t.integer "number_of_weeks", null: false
-    t.integer "teaching_period_id"
+    t.bigint "teaching_period_id"
     t.index ["teaching_period_id"], name: "index_breaks_on_teaching_period_id"
   end
 
