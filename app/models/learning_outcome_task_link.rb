@@ -13,9 +13,9 @@ class LearningOutcomeTaskLink < ApplicationRecord
     return if learning_outcome.nil? || task_definition.nil?
 
     if id.nil?
-      related_links = LearningOutcomeTaskLink.where('task_definition_id = :task_definition_id AND learning_outcome_id = :learning_outcome_id', my_id: id, task_definition_id: task_definition.id, learning_outcome_id: learning_outcome.id)
+      related_links = self.where('task_definition_id = :task_definition_id AND learning_outcome_id = :learning_outcome_id', my_id: id, task_definition_id: task_definition.id, learning_outcome_id: learning_outcome.id)
     else
-      related_links = LearningOutcomeTaskLink.where('id != :my_id AND task_definition_id = :task_definition_id AND learning_outcome_id = :learning_outcome_id', my_id: id, task_definition_id: task_definition.id, learning_outcome_id: learning_outcome.id)
+      related_links = self.where('id != :my_id AND task_definition_id = :task_definition_id AND learning_outcome_id = :learning_outcome_id', my_id: id, task_definition_id: task_definition.id, learning_outcome_id: learning_outcome.id)
     end
 
     if task.nil?
