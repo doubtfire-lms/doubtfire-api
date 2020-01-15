@@ -25,10 +25,10 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
     t.datetime "updated_at", null: false
   end
 
-  create_table "breaks", id: :bigint, force: :cascade do |t|
+  create_table "breaks", id: :serial, force: :cascade do |t|
     t.datetime "start_date", null: false
     t.integer "number_of_weeks", null: false
-    t.bigint "teaching_period_id"
+    t.integer "teaching_period_id"
     t.index ["teaching_period_id"], name: "index_breaks_on_teaching_period_id"
   end
 
