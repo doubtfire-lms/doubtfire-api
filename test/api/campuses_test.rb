@@ -45,7 +45,7 @@ class CampusesTest < ActiveSupport::TestCase
     assert_equal 0, campus[:mode]
   end
 
-  def test_student_post_campuses
+  def test_student_cannot_post_campuses
     user_student = FactoryGirl.create(:user, :student)
     data_to_post = { campus: FactoryGirl.build(:campus, mode: 'timetable') }
 
@@ -70,12 +70,11 @@ class CampusesTest < ActiveSupport::TestCase
     assert_equal 0, first_campus[:mode]
   end
 
-  def test_student_put_campuses
-    user_student = FactoryGirl.create(:user, :student)
-    data_to_put ={ campus: FactoryGirl.build(:campus, mode: 'timetable') }
+  def test_student_cannot_put_campuses
+    user_student = FactoryGirl.build(:user, :student)
+    data_to_put ={ campus: FactoryGirl.create(:campus, mode: 'timetable')}
 
-    # Update campus with id = 1
-    put_json with_auth_token("/api/campuses/1", user_student), data_to_put
+    put_json with_auth_token("/api/campuses/#{data_to_put[:campus].id}", user_student), data_to_put
     assert_equal 403, last_response.status
  
   end
@@ -93,16 +92,19 @@ class CampusesTest < ActiveSupport::TestCase
     get '/api/campuses' #get number of campuses
     # check if current number of campuses = original number of campuses
     assert_equal initial_num_of_campus - 1, last_response_body.count
+    # check campus no longer exists
+    refute Campus.exists?(campus.id)
   end
 
   def test_student_delete_campus
-    user_student = FactoryGirl.create(:user, :student)
+    user_student = FactoryGirl.build(:user, :student)
     campus = FactoryGirl.create(:campus, mode: 'timetable')
-
-
+    
     # perform the delete
     delete_json with_auth_token("/api/campuses/#{campus.id}", user_student)
     # check that request failed
     assert_equal 403, last_response.status
+    # check campus still exists
+    assert Campus.exists?(campus.id)
   end
 end
