@@ -7,4 +7,9 @@ class CreateBreak < ActiveRecord::Migration[4.2]
     add_reference :breaks, :teaching_period, index: true
     add_foreign_key :breaks, :teaching_periods
   end
+  
+  def up
+    add_column :teaching_periods, :teaching_period_id, :BIGINT
+    end
+
 end
