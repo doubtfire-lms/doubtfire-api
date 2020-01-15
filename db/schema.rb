@@ -10,10 +10,19 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2019_07_05_045015) do
+ActiveRecord::Schema.define(version: 2019_11_26_230531) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
+
+  create_table "activity_types", id: :serial, force: :cascade do |t|
+    t.string "name", null: false
+    t.string "abbreviation", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["abbreviation"], name: "index_activity_types_on_abbreviation", unique: true
+    t.index ["name"], name: "index_activity_types_on_name", unique: true
+  end
 
   create_table "badges", id: :serial, force: :cascade do |t|
     t.string "name", limit: 255
@@ -30,6 +39,16 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
     t.integer "number_of_weeks", null: false
     t.integer "teaching_period_id"
     t.index ["teaching_period_id"], name: "index_breaks_on_teaching_period_id"
+  end
+
+  create_table "campuses", id: :serial, force: :cascade do |t|
+    t.string "name", null: false
+    t.integer "mode", null: false
+    t.string "abbreviation", null: false
+    t.boolean "active", null: false
+    t.index ["abbreviation"], name: "index_campuses_on_abbreviation", unique: true
+    t.index ["active"], name: "index_campuses_on_active"
+    t.index ["name"], name: "index_campuses_on_name", unique: true
   end
 
   create_table "comments_read_receipts", id: :serial, force: :cascade do |t|
@@ -183,12 +202,12 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
     t.boolean "compile_portfolio", default: false
     t.date "portfolio_production_date"
     t.integer "max_pct_similar", default: 0
-    t.integer "tutorial_id"
     t.integer "user_id"
     t.integer "grade", default: 0
     t.string "grade_rationale", limit: 4096
+    t.integer "campus_id"
+    t.index ["campus_id"], name: "index_projects_on_campus_id"
     t.index ["enrolled"], name: "index_projects_on_enrolled"
-    t.index ["tutorial_id"], name: "index_projects_on_tutorial_id"
     t.index ["unit_id"], name: "index_projects_on_unit_id"
     t.index ["user_id"], name: "index_projects_on_user_id"
   end
@@ -228,6 +247,7 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
     t.integer "recipient_id"
     t.string "content_type"
     t.string "attachment_extension"
+    t.integer "discussion_comment_id"
     t.string "type"
     t.datetime "time_discussion_started"
     t.datetime "time_discussion_completed"
@@ -238,6 +258,7 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
     t.integer "task_status_id"
     t.integer "extension_weeks"
     t.string "extension_response"
+    t.index ["discussion_comment_id"], name: "index_task_comments_on_discussion_comment_id"
     t.index ["task_id"], name: "index_task_comments_on_task_id"
   end
 
@@ -262,6 +283,8 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
     t.datetime "start_date", null: false
     t.boolean "is_graded", default: false
     t.integer "max_quality_pts", default: 0
+    t.integer "tutorial_stream_id"
+    t.index ["tutorial_stream_id"], name: "index_task_definitions_on_tutorial_stream_id"
     t.index ["unit_id"], name: "index_task_definitions_on_unit_id"
   end
 
@@ -341,6 +364,32 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
     t.index ["user_id"], name: "index_teams_on_user_id"
   end
 
+  create_table "tutorial_enrolments", id: :serial, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "project_id", null: false
+    t.integer "tutorial_id", null: false
+    t.integer "tutorial_stream_id"
+    t.index ["project_id"], name: "index_tutorial_enrolments_on_project_id"
+    t.index ["tutorial_id", "project_id"], name: "index_tutorial_enrolments_on_tutorial_id_and_project_id", unique: true
+    t.index ["tutorial_id"], name: "index_tutorial_enrolments_on_tutorial_id"
+    t.index ["tutorial_stream_id", "project_id"], name: "index_tutorial_enrolments_on_tutorial_stream_id_and_project_id", unique: true
+    t.index ["tutorial_stream_id"], name: "index_tutorial_enrolments_on_tutorial_stream_id"
+  end
+
+  create_table "tutorial_streams", id: :serial, force: :cascade do |t|
+    t.string "name", null: false
+    t.string "abbreviation", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "activity_type_id", null: false
+    t.integer "unit_id", null: false
+    t.index ["abbreviation", "unit_id"], name: "index_tutorial_streams_on_abbreviation_and_unit_id", unique: true
+    t.index ["abbreviation"], name: "index_tutorial_streams_on_abbreviation"
+    t.index ["name", "unit_id"], name: "index_tutorial_streams_on_name_and_unit_id", unique: true
+    t.index ["unit_id"], name: "index_tutorial_streams_on_unit_id"
+  end
+
   create_table "tutorials", id: :serial, force: :cascade do |t|
     t.integer "unit_id"
     t.string "meeting_day", limit: 255
@@ -351,6 +400,11 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
     t.string "code", limit: 255
     t.integer "unit_role_id"
     t.string "abbreviation", limit: 255
+    t.integer "capacity"
+    t.integer "campus_id"
+    t.integer "tutorial_stream_id"
+    t.index ["campus_id"], name: "index_tutorials_on_campus_id"
+    t.index ["tutorial_stream_id"], name: "index_tutorials_on_tutorial_stream_id"
     t.index ["unit_id"], name: "index_tutorials_on_unit_id"
     t.index ["unit_role_id"], name: "index_tutorials_on_unit_role_id"
   end
@@ -426,6 +480,15 @@ ActiveRecord::Schema.define(version: 2019_07_05_045015) do
   add_foreign_key "breaks", "teaching_periods"
   add_foreign_key "comments_read_receipts", "task_comments"
   add_foreign_key "comments_read_receipts", "users"
+  add_foreign_key "projects", "campuses", column: "campus_id"
   add_foreign_key "task_comments", "users", column: "recipient_id"
+  add_foreign_key "task_definitions", "tutorial_streams"
+  add_foreign_key "tutorial_enrolments", "projects"
+  add_foreign_key "tutorial_enrolments", "tutorial_streams"
+  add_foreign_key "tutorial_enrolments", "tutorials"
+  add_foreign_key "tutorial_streams", "activity_types"
+  add_foreign_key "tutorial_streams", "units"
+  add_foreign_key "tutorials", "campuses", column: "campus_id"
+  add_foreign_key "tutorials", "tutorial_streams"
   add_foreign_key "units", "teaching_periods"
 end
