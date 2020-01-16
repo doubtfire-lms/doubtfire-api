@@ -4,6 +4,7 @@ class CsvTest < ActiveSupport::TestCase
   include Rack::Test::Methods
   include TestHelpers::AuthHelper
   include TestHelpers::JsonHelper
+  include TestHelpers::TestFileHelper
 
   def app
     Rails.application
@@ -113,7 +114,7 @@ class CsvTest < ActiveSupport::TestCase
 
     data_to_post = {
       unit_id: '1',
-      file: Rack::Test::UploadedFile.new('test_files/csv_test_files/COS10001-Tasks.csv'),
+      file: upload_file_csv('test_files/csv_test_files/COS10001-Tasks.csv'),
       auth_token: auth_token
     }
 
@@ -130,7 +131,7 @@ class CsvTest < ActiveSupport::TestCase
 
     data_to_post = {
       unit_id: '1',
-      file: Rack::Test::UploadedFile.new('test_files/csv_test_files/COS10001-Tasks.csv'),
+      file: upload_file_csv('test_files/csv_test_files/COS10001-Tasks.csv'),
       auth_token: 'incorrect_auth_token'
     }
 
@@ -146,7 +147,7 @@ class CsvTest < ActiveSupport::TestCase
 
     data_to_post = {
       unit_id: '1',
-      file: Rack::Test::UploadedFile.new('test_files/csv_test_files/COS10001-Tasks.csv'),
+      file: upload_file_csv('test_files/csv_test_files/COS10001-Tasks.csv'),
       auth_token: ''
     }
 
@@ -162,7 +163,7 @@ class CsvTest < ActiveSupport::TestCase
 
     data_to_post = {
       unit_id: 'string',
-      file: Rack::Test::UploadedFile.new('test_files/csv_test_files/COS10001-Tasks.csv'),
+      file: upload_file_csv('test_files/csv_test_files/COS10001-Tasks.csv'),
       auth_token: auth_token
     }
 
@@ -178,7 +179,7 @@ class CsvTest < ActiveSupport::TestCase
 
     data_to_post = {
       unit_id: '',
-      file: Rack::Test::UploadedFile.new('test_files/csv_test_files/COS10001-Tasks.csv'),
+      file: upload_file_csv('test_files/csv_test_files/COS10001-Tasks.csv'),
       auth_token: auth_token
     }
 
@@ -196,7 +197,7 @@ class CsvTest < ActiveSupport::TestCase
 
     data_to_post = {
       unit_id: unit.id,
-      file: Rack::Test::UploadedFile.new('test_files/csv_test_files/COS10001-Tasks.xlsx'),
+      file: upload_file_csv('test_files/csv_test_files/COS10001-Tasks.xlsx'),
       auth_token: auth_token
     }
 
@@ -218,7 +219,7 @@ class CsvTest < ActiveSupport::TestCase
 
     data_to_post = {
       unit_id: '1',
-      file: Rack::Test::UploadedFile.new('test_files/csv_test_files/COS10001-Tasks.pdf'),
+      file: upload_file_csv('test_files/csv_test_files/COS10001-Tasks.pdf'),
       auth_token: auth_token
     }
 
@@ -250,7 +251,7 @@ class CsvTest < ActiveSupport::TestCase
 
     data_to_post = {
       unit_id: '9999',
-      file: Rack::Test::UploadedFile.new('test_files/csv_test_files/COS10001-Tasks.csv'),
+      file: upload_file_csv('test_files/csv_test_files/COS10001-Tasks.csv'),
       auth_token: auth_token
     }
 
@@ -343,7 +344,7 @@ class CsvTest < ActiveSupport::TestCase
 
     unit_id_to_test = '1'
     data_to_post = {
-      file: Rack::Test::UploadedFile.new('test_files/csv_test_files/COS10001-Students.csv'),
+      file: upload_file_csv('test_files/csv_test_files/COS10001-Students.csv'),
       auth_token: auth_token
     }
 
@@ -363,7 +364,7 @@ class CsvTest < ActiveSupport::TestCase
 
     unit_id_to_test = '1'
     data_to_post = {
-      file: Rack::Test::UploadedFile.new('test_files/csv_test_files/COS10001-Students.csv'),
+      file: upload_file_csv('test_files/csv_test_files/COS10001-Students.csv'),
       auth_token: "incorrect_auth_code"
     }
 
@@ -380,7 +381,7 @@ class CsvTest < ActiveSupport::TestCase
 
     unit_id_to_test = '1'
     data_to_post = {
-      file: Rack::Test::UploadedFile.new('test_files/csv_test_files/COS10001-Students.csv'),
+      file: upload_file_csv('test_files/csv_test_files/COS10001-Students.csv'),
       auth_token: ''
     }
 
@@ -397,7 +398,7 @@ class CsvTest < ActiveSupport::TestCase
 
     unit_id_to_test = 'string'
     data_to_post = {
-      file: Rack::Test::UploadedFile.new('test_files/csv_test_files/COS10001-Students.csv'),
+      file: upload_file_csv('test_files/csv_test_files/COS10001-Students.csv'),
       auth_token: auth_token
     }
 
@@ -414,7 +415,7 @@ class CsvTest < ActiveSupport::TestCase
 
     unit_id_to_test = '1'
     data_to_post = {
-      file: Rack::Test::UploadedFile.new('test_files/csv_test_files/COS10001-Students.pdf'),
+      file: upload_file_csv('test_files/csv_test_files/COS10001-Students.pdf'),
       auth_token: auth_token
     }
 
@@ -448,7 +449,7 @@ class CsvTest < ActiveSupport::TestCase
 
     unit_id_to_test = '999'
     data_to_post = {
-      file: Rack::Test::UploadedFile.new('test_files/csv_test_files/COS10001-Students.csv'),
+      file: upload_file_csv('test_files/csv_test_files/COS10001-Students.csv'),
       auth_token: auth_token
     }
 
@@ -470,7 +471,7 @@ class CsvTest < ActiveSupport::TestCase
 
     unit_id_to_test = '1'
     data_to_post = {
-      file: Rack::Test::UploadedFile.new('test_files/csv_test_files/COS10001-Students.csv'),
+      file: upload_file_csv('test_files/csv_test_files/COS10001-Students.csv'),
       auth_token: auth_token
     }
 
@@ -494,7 +495,7 @@ class CsvTest < ActiveSupport::TestCase
 
     unit_id_to_test = '1'
     data_to_post = {
-      file: Rack::Test::UploadedFile.new('test_files/csv_test_files/COS10001-Students.csv'),
+      file: upload_file_csv('test_files/csv_test_files/COS10001-Students.csv'),
       auth_token: 'incorrect_auth_token'
     }
 
@@ -519,7 +520,7 @@ class CsvTest < ActiveSupport::TestCase
 
     unit_id_to_test = '1'
     data_to_post = {
-      file: Rack::Test::UploadedFile.new('test_files/csv_test_files/COS10001-Students.csv'),
+      file: upload_file_csv('test_files/csv_test_files/COS10001-Students.csv'),
       auth_token: ''
     }
 
@@ -544,7 +545,7 @@ class CsvTest < ActiveSupport::TestCase
 
     unit_id_to_test = 'string'
     data_to_post = {
-      file: Rack::Test::UploadedFile.new('test_files/csv_test_files/COS10001-Students.csv'),
+      file: upload_file_csv('test_files/csv_test_files/COS10001-Students.csv'),
       auth_token: auth_token
     }
 
@@ -569,7 +570,7 @@ class CsvTest < ActiveSupport::TestCase
 
     unit_id_to_test = ''
     data_to_post = {
-      file: Rack::Test::UploadedFile.new('test_files/csv_test_files/COS10001-Students.csv'),
+      file: upload_file_csv('test_files/csv_test_files/COS10001-Students.csv'),
       auth_token: auth_token
     }
 
@@ -594,7 +595,7 @@ class CsvTest < ActiveSupport::TestCase
 
     unit_id_to_test = '1'
     data_to_post = {
-      file: Rack::Test::UploadedFile.new('test_files/csv_test_files/COS10001-Students.xlsx'),
+      file: upload_file_csv('test_files/csv_test_files/COS10001-Students.xlsx'),
       auth_token: auth_token
     }
 
@@ -618,7 +619,7 @@ class CsvTest < ActiveSupport::TestCase
 
     unit_id_to_test = '1'
     data_to_post = {
-      file: Rack::Test::UploadedFile.new('test_files/csv_test_files/COS10001-Students.pdf'),
+      file: upload_file_csv('test_files/csv_test_files/COS10001-Students.pdf'),
       auth_token: auth_token
     }
 
@@ -668,7 +669,7 @@ class CsvTest < ActiveSupport::TestCase
 
     unit_id_to_test = '999'
     data_to_post = {
-      file: Rack::Test::UploadedFile.new('test_files/csv_test_files/COS10001-Students.csv'),
+      file: upload_file_csv('test_files/csv_test_files/COS10001-Students.csv'),
       auth_token: auth_token
     }
 
@@ -913,7 +914,7 @@ class CsvTest < ActiveSupport::TestCase
   def test_csv_upload_users
 
     data_to_post = {
-      file: Rack::Test::UploadedFile.new('test_files/csv_test_files/doubtfire_users.csv'),
+      file: upload_file_csv('test_files/csv_test_files/doubtfire_users.csv'),
       auth_token: auth_token
   }
 
@@ -930,7 +931,7 @@ class CsvTest < ActiveSupport::TestCase
   def test_csv_upload_users_incorrect_auth_token
 
     data_to_post = {
-      file: Rack::Test::UploadedFile.new('test_files/csv_test_files/doubtfire_users.csv'),
+      file: upload_file_csv('test_files/csv_test_files/doubtfire_users.csv'),
       auth_token: 'incorrect_auth_token'
   }
 
@@ -946,7 +947,7 @@ class CsvTest < ActiveSupport::TestCase
   def test_csv_upload_users_empty_auth_token
 
     data_to_post = {
-      file: Rack::Test::UploadedFile.new('test_files/csv_test_files/doubtfire_users.csv'),
+      file: upload_file_csv('test_files/csv_test_files/doubtfire_users.csv'),
       auth_token: ''
   }
 
@@ -962,7 +963,7 @@ class CsvTest < ActiveSupport::TestCase
   def test_csv_upload_users_xlsx
 
     data_to_post = {
-      file: Rack::Test::UploadedFile.new('test_files/csv_test_files/doubtfire_users.xlsx'),
+      file: upload_file_csv('test_files/csv_test_files/doubtfire_users.xlsx'),
       auth_token: auth_token
   }
 
@@ -979,7 +980,7 @@ class CsvTest < ActiveSupport::TestCase
   def test_csv_upload_users_incorrect_file_pdf
 
     data_to_post = {
-      file: Rack::Test::UploadedFile.new('test_files/csv_test_files/doubtfire_users.pdf'),
+      file: upload_file_csv('test_files/csv_test_files/doubtfire_users.pdf'),
       auth_token: auth_token
   }
 
