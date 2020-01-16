@@ -94,8 +94,14 @@ class TeachingPeriodTest < ActiveSupport::TestCase
 
     # check if the details posted match as expected
     response_keys = %w(period year start_date end_date active_until)
-    tp_reload = tp.reload
-    assert_json_matches_model(last_response_body, tp_reload, response_keys)
+    tp_updated = tp.reload
+    assert_json_matches_model(last_response_body, tp_updated, response_keys)
+
+    # check if the details in the replaced teaching period match as data set to replace 
+    assert_equal data_to_put[:teaching_period]['period'], tp_updated.period
+    assert_equal data_to_put[:teaching_period]['active_until'].to_date, tp_updated.active_until.to_date
+    assert_equal data_to_put[:teaching_period]['start_date'].to_date, tp_updated.start_date.to_date
+    assert_equal data_to_put[:teaching_period]['end_date'].to_date, tp_updated.end_date.to_date
   end
 
   # POST tests
@@ -120,6 +126,12 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     response_keys = %w(period year start_date end_date active_until)
     teaching_period = TeachingPeriod.find(last_response_body['id'])
     assert_json_matches_model(last_response_body, teaching_period, response_keys)
+
+    # check if the details in the newly created teaching period match as the pre-set data 
+    assert_equal data_to_post[:teaching_period]['period'], teaching_period.period
+    assert_equal data_to_post[:teaching_period]['active_until'].to_date, teaching_period.active_until.to_date
+    assert_equal data_to_post[:teaching_period]['start_date'].to_date, teaching_period.start_date.to_date
+    assert_equal data_to_post[:teaching_period]['end_date'].to_date, teaching_period.end_date.to_date
 
     # check if one more teaching period is created
     assert_equal TeachingPeriod.count, number_of_tp + 1
