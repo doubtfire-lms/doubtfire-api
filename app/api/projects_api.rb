@@ -84,7 +84,7 @@ module Api
 
         tutorial_id = params[:tutorial_id]
         if project.unit.tutorials.where('tutorials.id = :tutorial_id', tutorial_id: tutorial_id).count == 1
-          project.tutorial_id = tutorial_id
+          project.tutorial_id = tutorial_id.firts
           project.save!
         elsif tutorial_id == -1
           project.tutorial = nil
