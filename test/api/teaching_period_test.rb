@@ -32,18 +32,21 @@ class TeachingPeriodTest < ActiveSupport::TestCase
 
   # Get a teaching period's details
   def test_get_a_teaching_periods_details
-    expected_tp = TeachingPeriod.second
+    #create a dummy variable
+    expected_tp = FactoryGirl.create(:teaching_period)
 
     # perform the GET 
     get "/api/teaching_periods/#{expected_tp.id}"
-    returned_tp = last_response_body
+    actual_tp = last_response_body
 
     # Check if the call succeeds
     assert_equal 200, last_response.status
     
     # Check the returned details match as expected
-    response_keys = %w(period year start_date end_date active_until)
-    assert_json_matches_model(returned_tp, expected_tp, response_keys)
+    assert_equal actual_tp['period'], expected_tp.period
+    assert_equal actual_tp['active_until'].to_date, expected_tp.active_until.to_date
+    assert_equal actual_tp['start_date'].to_date, expected_tp.start_date.to_date
+    assert_equal actual_tp['end_date'].to_date, expected_tp.end_date.to_date
   end
 
   # PUT tests
@@ -75,7 +78,7 @@ class TeachingPeriodTest < ActiveSupport::TestCase
   # Replace a teaching period
   def test_put_teaching_period
     # a dummy teaching period
-    tp = FactoryGirl.create (:teaching_period)
+    tp = FactoryGirl.create(:teaching_period)
 
     # data to replace
     data_to_put = {
