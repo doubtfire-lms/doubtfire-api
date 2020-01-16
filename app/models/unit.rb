@@ -394,7 +394,7 @@ class Unit < ApplicationRecord
       task_stats: '0.0|1.0|0.0|0.0|0.0'
     )
 
-    project.tutorial_id = tutorial_id unless tutorial_id.nil?
+    project.tutorial_id = tutorial_id.first unless tutorial_id.nil?
     project.save
     project
   end
