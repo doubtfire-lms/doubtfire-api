@@ -82,9 +82,9 @@ module Api
           error!({ error: "Couldn't find Project with id=#{params[:id]}" }, 403)
         end
 
-        tutorial_id = params[:tutorial_id]
+        tutorial_id = params[:tutorial_id].firts
         if project.unit.tutorials.where('tutorials.id = :tutorial_id', tutorial_id: tutorial_id).count == 1
-          project.tutorial_id = tutorial_id.firts
+          project.tutorial_id = tutorial_id
           project.save!
         elsif tutorial_id == -1
           project.tutorial = nil
