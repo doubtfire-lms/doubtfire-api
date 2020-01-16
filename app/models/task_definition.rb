@@ -315,14 +315,6 @@ class TaskDefinition < ActiveRecord::Base
       rescue
       end
     end
-
-    # TODO: Remove once max_pct_similar is deleted
-    # # Reset the tasks % similar
-    # logger.debug "Clearing old task percent similar"
-    # tasks.where("tasks.max_pct_similar > 0").each do |t|
-    #   t.max_pct_similar = 0
-    #   t.save
-    # end
   end
 
   def self.to_csv(task_definitions, options = {})

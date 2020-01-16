@@ -15,7 +15,6 @@ module Api
     params do
       optional :include_inactive, type: Boolean, desc: 'Include projects for units that are no longer active?'
     end
-
     get '/projects' do
       include_inactive = params[:include_inactive] || false
 
@@ -44,7 +43,6 @@ module Api
           unit_name: row['unit_name'],
           project_id: row['id'],
           campus_id: row['campus_id'],
-          student_name: row['student_name'], #TODO: REMOVE
           target_grade: row['target_grade'],
           has_portfolio: row['has_portfolio'],
           start_date: row['start_date'],
