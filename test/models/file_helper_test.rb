@@ -2,7 +2,7 @@ require "test_helper"
 
 class FileHelperTest < ActiveSupport::TestCase
   def test_convert_use_with_gif
-    in_file = 'test_files/submissions/unbelievable.gif'
+    in_file = "#{Rails.root}/test_files/submissions/unbelievable.gif"
 
     Dir.mktmpdir do |dir|
       dest_file = "#{dir}#{File.basename(in_file, ".*")}.jpg"
