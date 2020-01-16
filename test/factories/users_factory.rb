@@ -11,7 +11,7 @@ FactoryBot.define do
 
     trait :student do
       transient do
-        enrol_in 0     # Number of units to enrol into
+        enrol_in    { 0 }     # Number of units to enrol into
       end
 
       after(:create) do |user, eval|
