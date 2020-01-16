@@ -532,6 +532,16 @@ class DatabasePopulator
     echo_line "!"
   end
 
+  def self.generate_portfolio(project)
+    portfolio_tmp_dir = project.portfolio_temp_path
+    FileUtils.mkdir_p(portfolio_tmp_dir)
+
+    lsr_path = File.join(portfolio_tmp_dir, "000-document-LearningSummaryReport.pdf")
+    FileUtils.ln_s(Rails.root.join('test_files', 'unit_files', 'sample-learning-summary.pdf'), lsr_path) unless File.exists? lsr_path
+    project.compile_portfolio = true
+    project.create_portfolio
+  end
+
   private
 
   # Output
