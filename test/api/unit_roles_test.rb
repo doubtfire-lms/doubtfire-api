@@ -29,7 +29,7 @@ class UnitRolesTest < ActiveSupport::TestCase
     # expected_ur = unit.employ_staff, Role.convenor
 
     # perform the GET 
-    get (with_auth_token"/api/unit_roles/#{expected_ur.id}", unit.main_convenor)
+    get (with_auth_token"/api/unit_roles/#{expected_ur.id}", unit.main_convenor_user)
     returned_ur = last_response_body
 
     # Check if the call succeeds
@@ -115,7 +115,7 @@ class UnitRolesTest < ActiveSupport::TestCase
     # Check that you still can find the deleted id
     assert UnitRole.exists?(id_of_ur)
   end 
-  
+
   def test_delete_main_convenor
     unit = FactoryGirl.create :unit, with_students: false, task_count: 0, tutorials: 0, outcome_count: 0, staff_count: 0, campus_count: 0
 
