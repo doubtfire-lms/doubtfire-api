@@ -59,9 +59,9 @@ class GroupsTest < ActiveSupport::TestCase
     project = group.projects.first
     tutor = project.tutor_for(td)
 
-    post "/api/projects/#{project.id}/task_def_id/#{td.id}/request_extension", with_auth_token(data_to_post)
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/request_extension", with_auth_token(data_to_post, project.student)
     comment_id = last_response_body["id"]
-    assert_equal 201, last_response.status
+    assert_equal 201, last_response.status, last_response_body
 
     comment = TaskComment.find(comment_id)
     comment.assess_extension(tutor, true)
