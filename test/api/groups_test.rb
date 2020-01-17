@@ -46,12 +46,10 @@ class GroupsTest < ActiveSupport::TestCase
         max_quality_pts: 0,
         group_set: group_set
       })
-    td.save!
+    assert td.save!
 
     data_to_post = {
-      trigger: 'ready_to_mark',
-      weeks_requested: 1,
-      comment: "I need a lot of help",
+      trigger: 'ready_to_mark'
     }
 
     data_to_post = with_file('test_files/submissions/test.sql', 'text/plain', data_to_post)
@@ -200,66 +198,6 @@ class GroupsTest < ActiveSupport::TestCase
     td.destroy
     group_set.destroy
   end
-# new test cases starts
 
-	# test to groups
-	def test_groups
-
-		unit = Unit.first
-		unit_id = unit.id
-
-	  # creating a group set and attaching it to the unit
-    group_set = GroupSet.create!({name: 'test_comment_without_group', unit: unit})
-    group_set.save!
-
-    group = Group.create!({group_set: group_set, name: 'test_group_submission_with_extensions', tutorial: unit.tutorials.first, number: 0})
-
-    group.add_member(unit.active_projects[0])
-    group.add_member(unit.active_projects[1])
-    group.add_member(unit.active_projects[2])
-
-    group_set = unit.group_sets[0]
-    group = unit.group_sets[0].groups[0]
-    project = group.projects.first
-
-    # test to get groups under a group set
-    get with_auth_token("/api/units/#{unit.id}/group_sets/#{group_set.id}/groups")
-    assert_equal 200, last_response.status
-
-    # test to delete the group members
-    delete with_auth_token("/api/units/#{unit.id}/group_sets/#{group_set.id}/groups/#{group.id}/members/#{project.id}")
-    assert_equal 200, last_response.status
-
-    # test to post the group members
-    data_to_post = {
-      project_id: project.id
-    }
-    post "/api/units/#{unit.id}/group_sets/#{group_set.id}/groups/#{group.id}/members/", with_auth_token(data_to_post)
-    assert_equal 201, last_response.status
-
-    # test to get the group get_members
-    get with_auth_token("/api/units/#{unit.id}/group_sets/#{group_set.id}/groups/#{group.id}/members/")
-    assert_equal 200, last_response.status
-
-    # delete a group
-    delete with_auth_token("/api/units/#{unit.id}/group_sets/#{group_set.id}/groups/#{group.id}")
-    assert_equal 200, last_response.status
-
-    # test to get a group csv
-    get with_auth_token("/api/units/#{unit.id}/group_sets/#{group_set.id}/groups/csv")
-    assert_equal 200, last_response.status
-
-    # test to get all goups in a unit
-    get with_auth_token("/api/units/#{unit.id}/groups/")
-    assert_equal 200, last_response.status
-
-    # test to delete a group set
-    delete with_auth_token("/api/units/#{unit.id}/group_sets/#{group_set.id}")
-    assert_equal 200, last_response.status
-
-    group_set.destroy
-	end
-
-# test cases ends
 
 end

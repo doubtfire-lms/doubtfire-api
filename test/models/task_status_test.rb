@@ -1,14 +1,6 @@
 require 'test_helper'
 
 class TaskStatusTest < ActiveSupport::TestCase
-  include Rack::Test::Methods
-  include TestHelpers::TestFileHelper
-  include TestHelpers::AuthHelper
-
-  def app
-    Rails.application
-  end
-
   test 'ensure status matches id' do
     TaskStatus.all.each do |ts|
       assert_equal TaskStatus.id_to_key(ts.id), ts.status_key
@@ -101,4 +93,3 @@ class TaskStatusTest < ActiveSupport::TestCase
   end
 
 end
-
