@@ -17,5 +17,14 @@ module TestHelpers
     def with_file(path, type, hash)
       with_files( [ {path: path, type: type} ], hash)
     end
+
+    def upload_file_csv(path)
+      Rack::Test::UploadedFile.new(Rails.root.join(path))
+    end
+
+    def upload_file(path, type)
+      Rack::Test::UploadedFile.new(Rails.root.join(path), type)
+    end
+
   end
 end
