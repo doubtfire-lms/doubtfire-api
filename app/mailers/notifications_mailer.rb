@@ -15,7 +15,7 @@ class NotificationsMailer < ActionMailer::Base
     @unit_role = unit_role
     @unit = summary_stats[:unit]
     @data = summary_stats[:staff][unit_role]
-    @convenor = @unit.main_convenor
+    @convenor = @unit.main_convenor_user
     @summary_stats = summary_stats
 
     email_with_name = %("#{@staff.name}" <#{@staff.email}>)
@@ -32,7 +32,7 @@ class NotificationsMailer < ActionMailer::Base
 
     @student = project.student
     @project = project
-    @tutor = project.main_convenor
+    @tutor = project.main_convenor_user
     @summary_stats = summary_stats
     @did_revert_to_pass = did_revert_to_pass
 

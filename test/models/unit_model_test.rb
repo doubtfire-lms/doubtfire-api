@@ -1,19 +1,12 @@
 require 'test_helper'
 require 'grade_helper'
 
-class UnitTest < ActiveSupport::TestCase
+class UnitModelTest < ActiveSupport::TestCase
+  include TestHelpers::JsonHelper
 
   setup do
-    data = {
-        code: 'COS10001',
-        name: 'Testing in Unit Tests',
-        description: 'Test unit',
-        teaching_period: TeachingPeriod.find(3)
-      }
-    @unit = Unit.create(data)
-
-    activity_type = FactoryBot.create(:activity_type)
-    @unit.add_tutorial_stream('Import-Tasks', 'import-tasks', activity_type)
+    @unit = FactoryBot.create :unit, code: 'COS10001', with_students: false, task_count: 0, tutorials: 0, outcome_count: 0, staff_count: 0, campus_count: 0, teaching_period: TeachingPeriod.find(3)
+    @unit.add_tutorial_stream('Import-Tasks', 'import-tasks', ActivityType.first)
   end
 
   teardown do
@@ -346,4 +339,135 @@ class UnitTest < ActiveSupport::TestCase
 
     check_task_completion_csv unit
   end
+
+  def test_export_users
+    unit = FactoryBot.create :unit, campus_count: 2, tutorials:2, stream_count:0, task_count:3, student_count:8, unenrolled_student_count: 0, part_enrolled_student_count: 0, set_one_of_each_task: true
+
+    csv_str = unit.export_users_to_csv
+
+    rows = 0
+    CSV.parse(csv_str, headers: true, return_headers: false,
+      header_converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '').downcase unless body.nil? }],
+      converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |entry|
+        assert_equal 9, entry.count, entry
+        user = User.find_by(username: entry['username'])
+        assert user.present?, "Unable to find user from #{entry}"
+
+        project = unit.projects.find_by(user_id: user.id)
+        assert project.present?, entry
+
+        assert_json_matches_model(entry, user, %w( username student_id first_name last_name email))
+
+        campus = Campus.find_by_abbr_or_name entry['campus']
+        assert campus.present?, entry
+        assert_equal project.campus, campus, entry
+
+        assert_equal user.nickname, entry['preferred_name'], entry
+
+        tutorial = unit.tutorials.find_by(abbreviation: entry['tutorial'])
+        assert tutorial.present?, entry['tutorial']
+        assert_equal project.tutorial_enrolments.first.tutorial, tutorial, entry
+
+        rows += 1
+    end
+
+    assert_equal unit.active_projects.count, rows, "Expected number or rows in csv - #{csv_str}"
+  end
+
+  def test_change_main_convenor_success
+    unit = FactoryBot.create :unit, campus_count: 1, tutorials:0, stream_count:0, task_count:0, with_students:false
+
+    admin_user = FactoryBot.create :user, :admin
+    convenor_user = FactoryBot.create :user, :convenor
+
+    admin_user_role = unit.employ_staff admin_user, Role.convenor
+    convenor_user_role = unit.employ_staff convenor_user, Role.convenor
+
+    unit.main_convenor_id = admin_user_role.id
+    assert unit.valid?, 'It should be ok to change to the admin user'
+
+    unit.main_convenor_id = convenor_user_role.id
+    assert unit.valid?, 'It should be ok to change to the convenor user'
+  end
+
+  def test_change_main_convenor_does_not_allow_roles_from_other_units
+    unit = FactoryBot.create :unit, campus_count: 1, tutorials:0, stream_count:0, task_count:0, with_students:false
+    other_unit = FactoryBot.create :unit, campus_count: 1, tutorials:0, stream_count:0, task_count:0, with_students:false
+
+    admin_user = FactoryBot.create :user, :admin
+    convenor_user = FactoryBot.create :user, :convenor
+
+    admin_user_role = other_unit.employ_staff admin_user, Role.convenor
+    convenor_user_role = other_unit.employ_staff convenor_user, Role.convenor
+
+    assert unit.valid?, 'Should be valid before changes... check factory girl!'
+
+    unit.main_convenor_id = admin_user_role.id
+    refute unit.valid?, 'It should not be ok to change to the admin user from other unit'
+
+    unit.main_convenor_id = convenor_user_role.id
+    refute unit.valid?, 'It should not be ok to change to the convenor user from other unit'
+  end
+
+  def test_change_main_convenor_does_not_allow_non_convneor_roles
+    unit = FactoryBot.create :unit, campus_count: 1, tutorials:0, stream_count:0, task_count:0, with_students:false
+
+    admin_user = FactoryBot.create :user, :admin
+    convenor_user = FactoryBot.create :user, :convenor
+
+    admin_user_role = unit.employ_staff admin_user, Role.tutor
+    convenor_user_role = unit.employ_staff convenor_user, Role.tutor
+
+    unit.main_convenor_id = admin_user_role.id
+    refute unit.valid?, 'It should not be ok to change to the admin user with no convenor access to unit'
+
+    unit.main_convenor_id = convenor_user_role.id
+    refute unit.valid?, 'It should not be ok to change to the convenor user with no convenor access to unit'
+  end
+
+  def test_change_main_convenor_does_not_allow_students_to_be_epmployed
+    unit = FactoryBot.create :unit, campus_count: 1, tutorials:0, stream_count:0, task_count:0, with_students:false
+
+    convenor_user = FactoryBot.create :user, :convenor
+    student_user = FactoryBot.create :user, :student
+
+    student_user_role = unit.employ_staff student_user, Role.tutor
+    assert student_user_role.nil?
+
+    #force this test... work around validations
+    student_user_role = unit.employ_staff convenor_user, Role.convenor
+    student_user_role.user = student_user
+
+    refute student_user_role.valid?, 'You should not be able to change a unit role to have a student!'
+
+    unit.main_convenor = student_user_role
+    refute unit.valid?, 'Even if the above validation fails, the student user role should not be able to admin unit'
+  end
+
+  def test_portfolio_zip
+    unit = FactoryBot.create :unit, campus_count: 2, tutorials:2, stream_count:2, task_count:1, student_count:1, unenrolled_student_count: 0, part_enrolled_student_count: 1
+
+    paths = []
+
+    unit.active_projects.each do |p|
+      DatabasePopulator.generate_portfolio(p)
+      assert p.has_portfolio
+      assert File.exists?(p.portfolio_path)
+      paths << p.portfolio_path
+    end
+
+    filename = unit.get_portfolio_zip(unit.main_convenor_user)
+    assert File.exists? filename
+    Zip::File.open(filename) do |zip_file|
+      assert_equal unit.active_projects.count, zip_file.count
+    end
+    FileUtils.rm filename
+
+    unit.destroy!
+
+    paths.each do |path|
+      refute File.exists?(path)
+    end
+  end
+
 end

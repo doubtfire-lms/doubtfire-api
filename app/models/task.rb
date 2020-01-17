@@ -88,7 +88,6 @@ class Task < ActiveRecord::Base
 
   has_one :unit, through: :project
 
-  has_many :sub_tasks, dependent: :destroy
   has_many :comments, class_name: 'TaskComment', dependent: :destroy, inverse_of: :task
   has_many :plagiarism_match_links, class_name: 'PlagiarismMatchLink', dependent: :destroy, inverse_of: :task
   has_many :reverse_plagiarism_match_links, class_name: 'PlagiarismMatchLink', dependent: :destroy, inverse_of: :other_task, foreign_key: 'other_task_id'
@@ -475,10 +474,6 @@ class Task < ActiveRecord::Base
 
     # Save the task
     if save!
-      # If a task has been completed, that means the project
-      # has definitely started
-      project.start
-
       TaskEngagement.create!(task: self, engagement_time: Time.zone.now, engagement: task_status.name)
 
       # Grab the submission for the task if the user made one
@@ -536,7 +531,6 @@ class Task < ActiveRecord::Base
     end
 
     if save!
-      project.start
       TaskEngagement.create!(task: self, engagement_time: Time.zone.now, engagement: task_status.name)
       submission = TaskSubmission.where(task_id: id).order(:submission_time).reverse_order.first
 
@@ -698,14 +692,6 @@ class Task < ActiveRecord::Base
 
   def similar_to_dismissed_count
     plagiarism_match_links.where('dismissed = TRUE').count
-  end
-
-  def recalculate_max_similar_pct
-    # TODO: Remove once max_pct_similar is deleted
-    # self.max_pct_similar = pct_similar()
-    # self.save
-    #
-    # project.recalculate_max_similar_pct()
   end
 
   def student_work_dir(type, create = true)
