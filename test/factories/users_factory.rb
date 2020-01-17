@@ -16,7 +16,7 @@ FactoryBot.define do
 
       after(:create) do |user, eval|
         eval.enrol_in.times do
-          unit = FactoryBot.create(:unit, with_students: false)
+          unit = FactoryBot.create(:unit, with_students: false, campus_count: 1, tutorials: 1, stream_count: 0, task_count: 0)
           campus = unit.tutorials.first.campus
           unit.enrol_student(user, campus)
         end

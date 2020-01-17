@@ -26,7 +26,7 @@ FactoryBot.define do
 
   factory :unit_role do
     unit
-    user
+    user                      { FactoryBot.create :user, :convenor }
     role                      { Role.convenor }
   end
 
@@ -36,6 +36,7 @@ FactoryBot.define do
       student_count 8
       unenrolled_student_count 1
       part_enrolled_student_count 2
+      inactive_student_count 1
       task_count 2
       tutorials 1  #per campus
       tutorial_config [] #[ {stream: 0, campus: 0} ]
@@ -105,7 +106,7 @@ FactoryBot.define do
         create_list(:tutorial, eval.tutorials, unit: unit, campus: campuses.last )
       end
 
-      unit.employ_staff( FactoryBot.create(:user, :convenor), Role.convenor)
+      unit.employ_staff(FactoryBot.create(:user, :convenor), Role.convenor)
 
       # Setup group tasks
       group_tasks.each do |task_details|
@@ -119,9 +120,13 @@ FactoryBot.define do
 
       # Enrol students
       campuses.each do |c|
-        (eval.unenrolled_student_count + eval.student_count + eval.part_enrolled_student_count).times do |i|
+        (eval.unenrolled_student_count + eval.student_count + eval.part_enrolled_student_count + eval.inactive_student_count).times do |i|
           p = unit.enrol_student( FactoryBot.create(:user, :student), c )
           next if i < eval.unenrolled_student_count
+          if i < eval.unenrolled_student_count + eval.inactive_student_count
+            p.update(enrolled: false)
+            next
+          end
 
           if c.tutorials.first.tutorial_stream.present?
             tutorial_streams.each_with_index do |ts, i|
