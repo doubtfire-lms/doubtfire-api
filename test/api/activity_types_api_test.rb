@@ -51,18 +51,30 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
     assert_equal data_to_post[:activity_type]['abbreviation'], activity_type.abbreviation
   end
 
+  # PUT tests
+  # Replace an activity type
   def test_put_activity_types
+    # a dummy activity type
+    activity_type = FactoryGirl.create(:activity_type)
+    
     data_to_put = {
       activity_type: FactoryGirl.build(:activity_type),
       auth_token: auth_token
     }
 
-    # Update activity_type with id = 1
-    put_json '/api/activity_types/1', data_to_put
+    # Update activity_type with data_to_put
+    put_json "/api/activity_types/#{activity_type.id}", data_to_put
+    
+    #check if the request get through
     assert_equal 200, last_response.status
 
+    # check if the details posted match as expected
     response_keys = %w(name abbreviation)
-    first_activity_type = ActivityType.first
-    assert_json_matches_model(last_response_body, first_activity_type, response_keys)
+    activity_type_updated = activity_type.reload
+    assert_json_matches_model(last_response_body, activity_type_updated, response_keys)
+
+    # check if the details in the replaced teaching period match as data set to replace 
+    assert_equal data_to_put[:activity_type]['name'], activity_type_updated.name
+    assert_equal data_to_put[:activity_type]['abbreviation'], activity_type_updated.abbreviation
   end
 end
