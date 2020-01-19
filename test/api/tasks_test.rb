@@ -21,7 +21,7 @@ class TasksTest < ActiveSupport::TestCase
   end
 
   def test_time_exceeded_grade
-    unit = Unit.first
+    unit = FactoryGirl.create(:unit)
     td = TaskDefinition.new({
         unit_id: unit.id,
         tutorial_stream: unit.tutorial_streams.first,
@@ -46,7 +46,7 @@ class TasksTest < ActiveSupport::TestCase
 
     project = unit.active_projects.first
 
-    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", with_auth_token(data_to_post)
+    post_json with_auth_token("/api/projects/#{project.id}/task_def_id/#{td.id}/submission", unit.tutors.first), data_to_post
 
     assert_equal 201, last_response.status
 
@@ -58,7 +58,7 @@ class TasksTest < ActiveSupport::TestCase
   end
 
   def test_extension_reverts_time_exceeded
-    unit = Unit.first
+    unit = FactoryGirl.create(:unit)
     td = TaskDefinition.new({
         unit_id: unit.id,
         tutorial_stream: unit.tutorial_streams.first,
@@ -87,7 +87,7 @@ class TasksTest < ActiveSupport::TestCase
     tutor = project.tutor_for(td)
 
     # Make a submission for this student
-    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", with_auth_token(data_to_post)
+    post with_auth_token("/api/projects/#{project.id}/task_def_id/#{td.id}/submission", tutor), data_to_post    
     assert_equal 201, last_response.status
 
     # Get the task... check it is now time exceeded
