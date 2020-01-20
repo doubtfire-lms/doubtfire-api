@@ -17,7 +17,7 @@ class GroupsTest < ActiveSupport::TestCase
 #   end
 
   def test_group_submission_with_extensions
-    unit = Unit.first
+    unit = FactoryGirl.create :unit
 
     group_set = GroupSet.create!({name: 'test_group_submission_with_extensions', unit: unit})
     group_set.save!
@@ -78,7 +78,7 @@ class GroupsTest < ActiveSupport::TestCase
   end
 
   def test_comment_on_group_task_without_group
-    unit = Unit.first
+    unit = FactoryGirl.create :unit
 
     group_set = GroupSet.create!({name: 'test_comment_without_group', unit: unit})
     group_set.save!
@@ -116,7 +116,7 @@ class GroupsTest < ActiveSupport::TestCase
   end
 
   def test_pdf_comment_on_group_task
-    unit = Unit.first
+    unit = FactoryGirl.create :unit
 
     group_set = GroupSet.create!({name: 'test_comment_without_group', unit: unit})
     group_set.save!
@@ -162,7 +162,7 @@ class GroupsTest < ActiveSupport::TestCase
   end
 
   def test_pdf_comment_on_group_task_without_group
-    unit = Unit.first
+    unit = FactoryGirl.create :unit
 
     group_set = GroupSet.create!({name: 'test_comment_without_group', unit: unit})
     group_set.save!
