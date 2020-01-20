@@ -101,7 +101,7 @@ install_rbenv_linux() {
     elif [ -n "$BASH_VERSION" ]; then
         echo 'export PATH="$HOME/.rbenv/bin:$PATH"' >> ~/.bashrc
         echo 'export PATH="$HOME/.rbenv/plugins/ruby-build/bin:$PATH"' >> ~/.bashrc
-        exec $SHELL
+        source ~/.bashrc
     fi
 }
 
