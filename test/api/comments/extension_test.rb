@@ -73,7 +73,7 @@ class ExtensionTest < ActiveSupport::TestCase
     project = Project.first
     user = project.student
     unit = project.unit
-    other_tutor = unit.main_convenor
+    other_tutor = unit.main_convenor_user
 
     td = TaskDefinition.new({
         unit_id: unit.id,
