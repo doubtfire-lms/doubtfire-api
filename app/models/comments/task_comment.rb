@@ -45,6 +45,7 @@ class TaskComment < ActiveRecord::Base
       has_attachment: ["audio", "image", "pdf"].include?(self.content_type),
       type: self.content_type || "text",
       is_new: self.new_for?(user),
+      reply_to: self.reply_to,
       author: {
         id: self.user.id,
         name: self.user.name,
