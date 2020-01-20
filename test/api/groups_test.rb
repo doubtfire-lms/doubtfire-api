@@ -17,7 +17,7 @@ class GroupsTest < ActiveSupport::TestCase
 #   end
 
   def test_group_submission_with_extensions
-    unit = Unit.first
+    unit = FactoryBot.create :unit
 
     group_set = GroupSet.create!({name: 'test_group_submission_with_extensions', unit: unit})
     group_set.save!
@@ -49,10 +49,9 @@ class GroupsTest < ActiveSupport::TestCase
     assert td.save!
 
     data_to_post = {
-      trigger: 'ready_to_mark'
+      comment: 'I need more time',
+      weeks_requested: 2
     }
-
-    data_to_post = with_file('test_files/submissions/test.sql', 'text/plain', data_to_post)
 
     project = group.projects.first
     tutor = project.tutor_for(td)
@@ -63,6 +62,12 @@ class GroupsTest < ActiveSupport::TestCase
 
     comment = TaskComment.find(comment_id)
     comment.assess_extension(tutor, true)
+
+    data_to_post = {
+      trigger: 'ready_to_mark'
+    }
+
+    data_to_post = with_file('test_files/submissions/test.sql', 'text/plain', data_to_post)
 
     post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", with_auth_token(data_to_post, project.student)
     assert_equal 201, last_response.status
