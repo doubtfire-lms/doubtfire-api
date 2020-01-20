@@ -315,6 +315,25 @@ class UnitsApiTest < ActiveSupport::TestCase
   # --------------------------------------------------------------------------- #
   # PUT tests
 
+  def test_update_main_convenor
+    unit = FactoryGirl.create :unit, with_students: false, task_count: 0, tutorials: 0, outcome_count: 0, staff_count: 0, campus_count: 0
+
+    convenor_user = FactoryGirl.create :user, :convenor
+    convenor_user_role = unit.employ_staff convenor_user, Role.convenor
+
+    data_to_put = {
+      unit: {
+        main_convenor_id: convenor_user_role.id
+      }
+    }
+
+    put_json with_auth_token("/api/units/#{unit.id}", unit.main_convenor_user), data_to_put
+
+    unit.reload
+    assert_equal 200, last_response.status
+    assert_equal convenor_user_role.id, unit.main_convenor_id
+  end
+
   #def test_units_put
     # users = {
     #   acain:              {first_name: "Andrew",         last_name: "Cain",                 nickname: "Macite",         role_id: Role.admin_id},

@@ -8,7 +8,7 @@ class Tutorial < ActiveRecord::Base
   has_one    :tutor, through: :unit_role, source: :user
 
   has_many   :groups, dependent: :nullify
-  has_many   :tutorial_enrolments
+  has_many   :tutorial_enrolments, dependent: :destroy
   has_many   :projects, through: :tutorial_enrolments
 
   # Callbacks - methods called are private
@@ -47,8 +47,6 @@ class Tutorial < ActiveRecord::Base
   end
 
   def name
-    # TODO: Will probably need to make this more flexible when
-    # a tutorial is representing something other than a tutorial
     "#{meeting_day} #{meeting_time} (#{meeting_location})"
   end
 

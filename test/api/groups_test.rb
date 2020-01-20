@@ -149,7 +149,7 @@ class GroupsTest < ActiveSupport::TestCase
 
     project = unit.projects.first
 
-    comment_data = { attachment: Rack::Test::UploadedFile.new('test_files/submissions/00_question.pdf', 'application/pdf') }
+    comment_data = { attachment: upload_file('test_files/submissions/00_question.pdf', 'application/pdf') }
 
     post with_auth_token("/api/projects/#{project.id}/task_def_id/#{td.id}/comments", project.student), comment_data
 
@@ -189,7 +189,7 @@ class GroupsTest < ActiveSupport::TestCase
 
     project = unit.projects.first
 
-    comment_data = { attachment: Rack::Test::UploadedFile.new('test_files/submissions/00_question.pdf', 'application/pdf') }
+    comment_data = { attachment: upload_file('test_files/submissions/00_question.pdf', 'application/pdf') }
 
     post with_auth_token("/api/projects/#{project.id}/task_def_id/#{td.id}/comments", project.student), comment_data
 

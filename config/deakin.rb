@@ -105,7 +105,7 @@ class DeakinInstitutionSettings
         'Asynchronous',
         '9:00',
         'Cloud',
-        unit.main_convenor,
+        unit.main_convenor_user,
         campus,
         -1,
         'Cloud'
@@ -243,7 +243,7 @@ class DeakinInstitutionSettings
                 'Asynchronous',
                 '9:00',
                 'Online',
-                unit.main_convenor,
+                unit.main_convenor_user,
                 campus
                 -1,
                 'Cloud'
@@ -322,7 +322,7 @@ class DeakinInstitutionSettings
             day_abbr_to_name(star_data["day_of_week"]),
             star_data["start_time"],
             star_data["location"],
-            unit.main_convenor,
+            unit.main_convenor_user,
             campus,
             -1,
             tutorial_code
