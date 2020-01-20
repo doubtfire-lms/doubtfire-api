@@ -101,7 +101,11 @@ install_rbenv_linux() {
     elif [ -n "$BASH_VERSION" ]; then
         echo 'export PATH="$HOME/.rbenv/bin:$PATH"' >> ~/.bashrc
         echo 'export PATH="$HOME/.rbenv/plugins/ruby-build/bin:$PATH"' >> ~/.bashrc
-        source ~/.bashrc
+        
+        # source ~/.bashrc # On Ubuntu, this does not update the shell environment variable in a non-interactive session
+        
+        export PATH="$HOME/.rbenv/bin:$PATH"
+        export PATH="$HOME/.rbenv/plugins/ruby-build/bin:$PATH"
     fi
 }
 
