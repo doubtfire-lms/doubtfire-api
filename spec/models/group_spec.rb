@@ -4,7 +4,7 @@ RSpec.describe Group do
 
   it "should have group members" do
     p = Project.create
-    g1 = FactoryGirl.create(:group)
+    g1 = FactoryBot.create(:group)
     expect(g1).to be_valid
 
     g1.add_member p
@@ -14,7 +14,7 @@ RSpec.describe Group do
 
   it "should not show inactive members" do
     p = Project.create
-    g1 = FactoryGirl.create(:group)
+    g1 = FactoryBot.create(:group)
     expect(g1).to be_valid
 
     g1.add_member p
@@ -25,7 +25,7 @@ RSpec.describe Group do
 
   it "should allow students to rejoin groups" do
     p = Project.create
-    g1 = FactoryGirl.create(:group)
+    g1 = FactoryBot.create(:group)
     expect(g1).to be_valid
 
     g1.add_member p
@@ -41,7 +41,7 @@ RSpec.describe Group do
     p = Project.create
     p2 = Project.create
 
-    g1 = FactoryGirl.create(:group)
+    g1 = FactoryBot.create(:group)
 
     g1.add_member p
     g1.add_member p2
@@ -55,14 +55,14 @@ RSpec.describe Group do
   end
 
   it "should exist from unit factory" do
-    unit = FactoryGirl.create(:unit, group_sets: 1, student_count: 2, :groups => [ { gs: 0, students: 2} ])
+    unit = FactoryBot.create(:unit, group_sets: 1, student_count: 2, :groups => [ { gs: 0, students: 2} ])
     expect(unit).to be_valid
     expect(unit.group_sets[0].groups.count).to eq(1)
     expect(unit.group_sets[0].groups[0].projects.count).to eq(2)
   end
 
   it "should allow multiple group creations in factory" do
-    unit = FactoryGirl.create(:unit, group_sets: 1, student_count: 4, :groups => [ { gs: 0, students: 2}, { gs: 0, students: 2} ])
+    unit = FactoryBot.create(:unit, group_sets: 1, student_count: 4, :groups => [ { gs: 0, students: 2}, { gs: 0, students: 2} ])
 
     expect(unit).to be_valid
     expect(unit.group_sets[0].groups.count).to eq(2)
@@ -81,7 +81,7 @@ RSpec.describe Group do
   end
 
 it "should know its members" do
-    unit = FactoryGirl.create(:unit, group_sets: 1, student_count: 2, :groups => [ { gs: 0, students: 2} ])
+    unit = FactoryBot.create(:unit, group_sets: 1, student_count: 2, :groups => [ { gs: 0, students: 2} ])
 
     grp = unit.group_sets[0].groups.first
 
@@ -94,7 +94,7 @@ it "should know its members" do
   end
 
   it "should accept group submissions" do
-    unit = FactoryGirl.create(:unit, group_sets: 1, task_count: 1, student_count: 4, :groups => [ { gs: 0, students: 2}, { gs: 0, students: 2} ], :group_tasks => [ { gs: 0, idx: 0 } ])
+    unit = FactoryBot.create(:unit, group_sets: 1, task_count: 1, student_count: 4, :groups => [ { gs: 0, students: 2}, { gs: 0, students: 2} ], :group_tasks => [ { gs: 0, idx: 0 } ])
 
     grp = unit.group_sets[0].groups.first
 
@@ -115,7 +115,7 @@ it "should know its members" do
   end
 
   it "should fail if not all projects are in the group" do
-    unit = FactoryGirl.create(:unit, group_sets: 1, task_count: 1, student_count: 4, :groups => [ { gs: 0, students: 2}, { gs: 0, students: 2} ], :group_tasks => [ { gs: 0, idx: 0 } ])
+    unit = FactoryBot.create(:unit, group_sets: 1, task_count: 1, student_count: 4, :groups => [ { gs: 0, students: 2}, { gs: 0, students: 2} ], :group_tasks => [ { gs: 0, idx: 0 } ])
 
     grp = unit.group_sets[0].groups.first
 
@@ -133,7 +133,7 @@ it "should know its members" do
   end
 
   it "should fail on submission if this is not a group task" do
-    unit = FactoryGirl.create(:unit, group_sets: 1, task_count: 2, student_count: 4, :groups => [ { gs: 0, students: 2}, { gs: 0, students: 2} ], :group_tasks => [ { gs: 0, idx: 0 } ])
+    unit = FactoryBot.create(:unit, group_sets: 1, task_count: 2, student_count: 4, :groups => [ { gs: 0, students: 2}, { gs: 0, students: 2} ], :group_tasks => [ { gs: 0, idx: 0 } ])
 
     grp = unit.group_sets[0].groups[0]
 
@@ -156,7 +156,7 @@ it "should know its members" do
   end
 
   it "should fail on submission if submitted to wrong group" do
-    unit = FactoryGirl.create(:unit, group_sets: 2, task_count: 2, student_count: 4,
+    unit = FactoryBot.create(:unit, group_sets: 2, task_count: 2, student_count: 4,
         :groups => [ { gs: 0, students: 2}, { gs: 0, students: 2}, {gs: 1, students: 2}, {gs: 1, students: 2} ],
         :group_tasks => [ { gs: 0, idx: 0 }, { gs: 1, idx: 1} ])
 
@@ -185,7 +185,7 @@ it "should know its members" do
   end
 
   it "should fail if total pct is out of range 100 +/- 10" do
-    unit = FactoryGirl.create(:unit, group_sets: 1, task_count: 1, student_count: 4, :groups => [ { gs: 0, students: 2}, { gs: 0, students: 2} ], :group_tasks => [ { gs: 0, idx: 0 } ])
+    unit = FactoryBot.create(:unit, group_sets: 1, task_count: 1, student_count: 4, :groups => [ { gs: 0, students: 2}, { gs: 0, students: 2} ], :group_tasks => [ { gs: 0, idx: 0 } ])
 
     grp = unit.group_sets[0].groups.first
 
@@ -207,7 +207,7 @@ it "should know its members" do
   end
 
   it "should trigger submission state across tasks in the group" do
-    unit = FactoryGirl.create(:unit, group_sets: 1, task_count: 1, student_count: 4, :groups => [ { gs: 0, students: 2}, { gs: 0, students: 2} ], :group_tasks => [ { gs: 0, idx: 0 } ])
+    unit = FactoryBot.create(:unit, group_sets: 1, task_count: 1, student_count: 4, :groups => [ { gs: 0, students: 2}, { gs: 0, students: 2} ], :group_tasks => [ { gs: 0, idx: 0 } ])
 
     grp = unit.group_sets[0].groups.first
 
@@ -227,7 +227,7 @@ it "should know its members" do
   end
 
   it "should allow students to trigger submission state across tasks in the group" do
-    unit = FactoryGirl.create(:unit, group_sets: 1, task_count: 1,
+    unit = FactoryBot.create(:unit, group_sets: 1, task_count: 1,
       student_count: 2,
       :groups => [ { gs: 0, students: 2} ],
       :group_tasks => [ { gs: 0, idx: 0 } ] )
@@ -250,7 +250,7 @@ it "should know its members" do
   end
 
   it "should allow not trigger working and help state across tasks in the group" do
-    unit = FactoryGirl.create(:unit, group_sets: 1, task_count: 1, student_count: 4, :groups => [ { gs: 0, students: 2}, { gs: 0, students: 2} ], :group_tasks => [ { gs: 0, idx: 0 } ])
+    unit = FactoryBot.create(:unit, group_sets: 1, task_count: 1, student_count: 4, :groups => [ { gs: 0, students: 2}, { gs: 0, students: 2} ], :group_tasks => [ { gs: 0, idx: 0 } ])
 
     grp = unit.group_sets[0].groups.first
 
@@ -270,7 +270,7 @@ it "should know its members" do
   end
 
   it "should trigger events even without a group submission" do
-    unit = FactoryGirl.create(:unit, group_sets: 1, task_count: 1, student_count: 2, :groups => [ { gs: 0, students: 2} ], :group_tasks => [ { gs: 0, idx: 0 } ])
+    unit = FactoryBot.create(:unit, group_sets: 1, task_count: 1, student_count: 2, :groups => [ { gs: 0, students: 2} ], :group_tasks => [ { gs: 0, idx: 0 } ])
 
     grp = unit.group_sets[0].groups.first
 
@@ -288,7 +288,7 @@ it "should know its members" do
   end
 
   it "should ensure that group submissions are not duplicated" do
-    unit = FactoryGirl.create(:unit, group_sets: 1, task_count: 1, student_count: 4, :groups => [ { gs: 0, students: 2}, { gs: 0, students: 2} ], :group_tasks => [ { gs: 0, idx: 0 } ])
+    unit = FactoryBot.create(:unit, group_sets: 1, task_count: 1, student_count: 4, :groups => [ { gs: 0, students: 2}, { gs: 0, students: 2} ], :group_tasks => [ { gs: 0, idx: 0 } ])
 
     grp = unit.group_sets[0].groups.first
 
@@ -306,7 +306,7 @@ it "should know its members" do
   end
 
   it "should ensure that group submissions are duplicated if group membership has changed" do
-    unit = FactoryGirl.create(:unit, group_sets: 1, task_count: 1, student_count: 2, :groups => [ { gs: 0, students: 2} ], :group_tasks => [ { gs: 0, idx: 0 } ])
+    unit = FactoryBot.create(:unit, group_sets: 1, task_count: 1, student_count: 2, :groups => [ { gs: 0, students: 2} ], :group_tasks => [ { gs: 0, idx: 0 } ])
 
     grp = unit.group_sets[0].groups.first
 
@@ -326,7 +326,7 @@ it "should know its members" do
   end
 
   it "should allow new submissions for members who change groups" do
-    unit = FactoryGirl.create(:unit, group_sets: 1, task_count: 1, student_count: 4, :groups => [ { gs: 0, students: 2}, {gs: 0, students: 2} ], :group_tasks => [ { gs: 0, idx: 0 } ])
+    unit = FactoryBot.create(:unit, group_sets: 1, task_count: 1, student_count: 4, :groups => [ { gs: 0, students: 2}, {gs: 0, students: 2} ], :group_tasks => [ { gs: 0, idx: 0 } ])
 
     grp = unit.group_sets[0].groups[0]
     other_grp = unit.group_sets[0].groups[1]
@@ -347,7 +347,7 @@ it "should know its members" do
   end
 
   it "should change group even when there is an existing submission" do
-    unit = FactoryGirl.create(:unit, group_sets: 1, task_count: 1, student_count: 4, :groups => [ { gs: 0, students: 2}, {gs: 0, students: 2} ], :group_tasks => [ { gs: 0, idx: 0 } ])
+    unit = FactoryBot.create(:unit, group_sets: 1, task_count: 1, student_count: 4, :groups => [ { gs: 0, students: 2}, {gs: 0, students: 2} ], :group_tasks => [ { gs: 0, idx: 0 } ])
 
     grp = unit.group_sets[0].groups[0]
     other_grp = unit.group_sets[0].groups[1]
@@ -369,7 +369,7 @@ it "should know its members" do
 
 
   it "should ensure that group submissions have all group members" do
-    unit = FactoryGirl.create(:unit, group_sets: 1, task_count: 1, student_count: 4, :groups => [ { gs: 0, students: 2}, { gs: 0, students: 2} ], :group_tasks => [ { gs: 0, idx: 0 } ])
+    unit = FactoryBot.create(:unit, group_sets: 1, task_count: 1, student_count: 4, :groups => [ { gs: 0, students: 2}, { gs: 0, students: 2} ], :group_tasks => [ { gs: 0, idx: 0 } ])
 
     grp = unit.group_sets[0].groups.first
 
@@ -380,7 +380,7 @@ it "should know its members" do
   end
 
   it "should delete old group submissions, when new group submits work" do
-    unit = FactoryGirl.create(:unit, group_sets: 1, task_count: 1,
+    unit = FactoryBot.create(:unit, group_sets: 1, task_count: 1,
       student_count: 3,
       :groups => [ { gs: 0, students: 2}, {gs: 0, students: 1} ],
       :group_tasks => [ { gs: 0, idx: 0 } ]
@@ -413,7 +413,7 @@ it "should know its members" do
   end
 
   it "should allow comments to be viewed across all related tasks" do
-    unit = FactoryGirl.create(:unit, group_sets: 1, task_count: 2,
+    unit = FactoryBot.create(:unit, group_sets: 1, task_count: 2,
       student_count: 3,
       :groups => [ { gs: 0, students: 2}, {gs: 0, students: 1} ],
       :group_tasks => [ { gs: 0, idx: 0 } ]
@@ -438,19 +438,19 @@ it "should know its members" do
   end
 
   it "should ensure that names are unique within a groupset" do
-    gs = FactoryGirl.create(:group_set)
-    g = FactoryGirl.create(:group, group_set: gs, name: "G1")
-    expect {g2 = FactoryGirl.create(:group, group_set: gs, name: "G1")}.to raise_exception ActiveRecord::RecordInvalid
-    g2 = FactoryGirl.create(:group, group_set: gs, name: "G2")
+    gs = FactoryBot.create(:group_set)
+    g = FactoryBot.create(:group, group_set: gs, name: "G1")
+    expect {g2 = FactoryBot.create(:group, group_set: gs, name: "G1")}.to raise_exception ActiveRecord::RecordInvalid
+    g2 = FactoryBot.create(:group, group_set: gs, name: "G2")
     g2.name = "G1"
     expect {g2.save!}.to raise_exception ActiveRecord::RecordInvalid
   end
 
   it "should ensure that projects are restricted to the same tutorial as the group -- if required" do
-    unit = FactoryGirl.create(:unit, tutorials:2, student_count:4)
-    gs = FactoryGirl.create(:group_set, unit: unit)
-    t0_g1 = FactoryGirl.create(:group, group_set: gs, name: "G1 T0", tutorial:unit.tutorials[0])
-    t1_g1 = FactoryGirl.create(:group, group_set: gs, name: "G1 T1", tutorial:unit.tutorials[1])
+    unit = FactoryBot.create(:unit, tutorials:2, student_count:4)
+    gs = FactoryBot.create(:group_set, unit: unit)
+    t0_g1 = FactoryBot.create(:group, group_set: gs, name: "G1 T0", tutorial:unit.tutorials[0])
+    t1_g1 = FactoryBot.create(:group, group_set: gs, name: "G1 T1", tutorial:unit.tutorials[1])
 
     t0_p0 = unit.tutorials[0].projects[0]
     t0_p1 = unit.tutorials[0].projects[1]

@@ -6,7 +6,7 @@ require 'test_helper'
 class LearningOutcomeTaskLinkTest < ActiveSupport::TestCase
 
   def test_should_create_link_between_task_def_and_outcome
-    unit = FactoryGirl.create(:unit, with_students: false)
+    unit = FactoryBot.create(:unit, with_students: false)
 
     task_def = unit.task_definitions.first
     lo = unit.learning_outcomes.first
@@ -28,7 +28,7 @@ class LearningOutcomeTaskLinkTest < ActiveSupport::TestCase
   end
 
   def test_should_ensure_link_between_task_def_outcome_and_task_is_unique
-    unit = FactoryGirl.create(:unit, with_students: false)
+    unit = FactoryBot.create(:unit, with_students: false)
 
     task_def = unit.task_definitions.first
     lo = unit.learning_outcomes.first
@@ -48,7 +48,7 @@ class LearningOutcomeTaskLinkTest < ActiveSupport::TestCase
   end
 
   def test_should_allow_multiple_outcome_td_links_when_tasks_included
-    unit = FactoryGirl.create(:unit, student_count: 1)
+    unit = FactoryBot.create(:unit, student_count: 1)
 
     task = unit.projects.first.task_for_task_definition(unit.task_definitions.first)
     task_def = task.task_definition
@@ -77,7 +77,7 @@ class LearningOutcomeTaskLinkTest < ActiveSupport::TestCase
   end
 
   def test_rating_should_be_1_to_5
-    unit = FactoryGirl.create(:unit, student_count: 1)
+    unit = FactoryBot.create(:unit, student_count: 1)
 
     task_def = unit.task_definitions.first
     lo = unit.learning_outcomes.first

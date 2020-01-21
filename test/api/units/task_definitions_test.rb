@@ -161,17 +161,17 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
   end
 
   def test_task_related_to_task_def
-    unit = FactoryGirl.create(:unit, with_students: false)
+    unit = FactoryBot.create(:unit, with_students: false)
     unit.employ_staff(User.first, Role.convenor)
 
-    campus = FactoryGirl.create(:campus)
-    project = FactoryGirl.create(:project, unit: unit, campus: campus)
+    campus = FactoryBot.create(:campus)
+    project = FactoryBot.create(:project, unit: unit, campus: campus)
 
     # Make sure there are no enrolments for the project
     assert_empty project.tutorial_enrolments
 
-    tutorial_stream = FactoryGirl.create(:tutorial_stream, unit: unit)
-    task_def = FactoryGirl.create(:task_definition, unit: unit, tutorial_stream: tutorial_stream, target_grade: project.target_grade)
+    tutorial_stream = FactoryBot.create(:tutorial_stream, unit: unit)
+    task_def = FactoryBot.create(:task_definition, unit: unit, tutorial_stream: tutorial_stream, target_grade: project.target_grade)
     task = project.task_for_task_definition(task_def)
 
     # Reload the unit
@@ -190,18 +190,18 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
   end
 
   def test_task_related_to_task_def_when_its_stream_is_null
-    unit = FactoryGirl.create(:unit, with_students: false)
+    unit = FactoryBot.create(:unit, with_students: false)
     unit.employ_staff(User.first, Role.convenor)
 
-    campus = FactoryGirl.create(:campus)
-    project = FactoryGirl.create(:project, unit: unit, campus: campus)
+    campus = FactoryBot.create(:campus)
+    project = FactoryBot.create(:project, unit: unit, campus: campus)
 
     # Make sure there are no enrolments for the project
     assert_empty project.tutorial_enrolments
 
     tutorial_stream = nil
-    task_def_first = FactoryGirl.create(:task_definition, unit: unit, tutorial_stream: tutorial_stream, target_grade: project.target_grade)
-    task_def_second = FactoryGirl.create(:task_definition, unit: unit, tutorial_stream: tutorial_stream, target_grade: project.target_grade)
+    task_def_first = FactoryBot.create(:task_definition, unit: unit, tutorial_stream: tutorial_stream, target_grade: project.target_grade)
+    task_def_second = FactoryBot.create(:task_definition, unit: unit, tutorial_stream: tutorial_stream, target_grade: project.target_grade)
     task_first = project.task_for_task_definition(task_def_first)
     task_second = project.task_for_task_definition(task_def_second)
 
@@ -228,7 +228,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_nil last_response_body.first['tutorial_id']
     assert_equal task_second.id, last_response_body.first['id']
 
-    tutorial = FactoryGirl.create(:tutorial, unit: unit, tutorial_stream: tutorial_stream, campus: campus)
+    tutorial = FactoryBot.create(:tutorial, unit: unit, tutorial_stream: tutorial_stream, campus: campus)
     tutorial_enrolment = project.enrol_in(tutorial)
 
     # Get the tasks for the first task definition
@@ -249,18 +249,18 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
   end
 
   def test_task_related_to_task_def_when_project_is_in_match_all
-    unit = FactoryGirl.create(:unit, with_students: false)
+    unit = FactoryBot.create(:unit, with_students: false)
     unit.employ_staff(User.first, Role.convenor)
 
-    campus = FactoryGirl.create(:campus)
-    project = FactoryGirl.create(:project, unit: unit, campus: campus)
+    campus = FactoryBot.create(:campus)
+    project = FactoryBot.create(:project, unit: unit, campus: campus)
 
     # Make sure there are no enrolments for the project
     assert_empty project.tutorial_enrolments
 
-    tutorial_stream = FactoryGirl.create(:tutorial_stream, unit: unit)
-    task_def_first = FactoryGirl.create(:task_definition, unit: unit, tutorial_stream: tutorial_stream, target_grade: project.target_grade)
-    task_def_second = FactoryGirl.create(:task_definition, unit: unit, tutorial_stream: tutorial_stream, target_grade: project.target_grade)
+    tutorial_stream = FactoryBot.create(:tutorial_stream, unit: unit)
+    task_def_first = FactoryBot.create(:task_definition, unit: unit, tutorial_stream: tutorial_stream, target_grade: project.target_grade)
+    task_def_second = FactoryBot.create(:task_definition, unit: unit, tutorial_stream: tutorial_stream, target_grade: project.target_grade)
     task_first = project.task_for_task_definition(task_def_first)
     task_second = project.task_for_task_definition(task_def_second)
 
@@ -290,7 +290,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_equal task_second.id, last_response_body.first['id']
 
     tutorial_stream = nil
-    tutorial = FactoryGirl.create(:tutorial, unit: unit, tutorial_stream: tutorial_stream, campus: campus)
+    tutorial = FactoryBot.create(:tutorial, unit: unit, tutorial_stream: tutorial_stream, campus: campus)
     tutorial_enrolment = project.enrol_in(tutorial)
 
     # Make sure project is in match all
@@ -314,21 +314,21 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
   end
 
   def test_task_related_to_task_def_when_multiple_tasks_but_project_is_not_enrolled
-    unit = FactoryGirl.create(:unit, with_students: false)
+    unit = FactoryBot.create(:unit, with_students: false)
     unit.employ_staff(User.first, Role.convenor)
 
-    campus = FactoryGirl.create(:campus)
-    project = FactoryGirl.create(:project, unit: unit, campus: campus)
+    campus = FactoryBot.create(:campus)
+    project = FactoryBot.create(:project, unit: unit, campus: campus)
 
     # Make sure there are no enrolments for the project
     assert_empty project.tutorial_enrolments
 
-    tutorial_stream_first = FactoryGirl.create(:tutorial_stream, unit: unit)
-    task_def_first = FactoryGirl.create(:task_definition, unit: unit, tutorial_stream: tutorial_stream_first, target_grade: project.target_grade)
+    tutorial_stream_first = FactoryBot.create(:tutorial_stream, unit: unit)
+    task_def_first = FactoryBot.create(:task_definition, unit: unit, tutorial_stream: tutorial_stream_first, target_grade: project.target_grade)
     task_first = project.task_for_task_definition(task_def_first)
 
-    tutorial_stream_second = FactoryGirl.create(:tutorial_stream, unit: unit)
-    task_def_second = FactoryGirl.create(:task_definition, unit: unit, tutorial_stream: tutorial_stream_second, target_grade: project.target_grade)
+    tutorial_stream_second = FactoryBot.create(:tutorial_stream, unit: unit)
+    task_def_second = FactoryBot.create(:task_definition, unit: unit, tutorial_stream: tutorial_stream_second, target_grade: project.target_grade)
     task_second = project.task_for_task_definition(task_def_second)
 
     # Reload the unit
@@ -355,23 +355,23 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
   end
 
   def test_task_related_to_task_def_when_multiple_tasks_but_project_is_enrolled_for_one
-    unit = FactoryGirl.create(:unit, with_students: false)
+    unit = FactoryBot.create(:unit, with_students: false)
     unit.employ_staff(User.first, Role.convenor)
 
-    campus = FactoryGirl.create(:campus)
-    project = FactoryGirl.create(:project, unit: unit, campus: campus)
+    campus = FactoryBot.create(:campus)
+    project = FactoryBot.create(:project, unit: unit, campus: campus)
 
     # Make sure there are no enrolments for the project
     assert_empty project.tutorial_enrolments
 
-    tutorial_stream_first = FactoryGirl.create(:tutorial_stream, unit: unit)
-    tutorial_first = FactoryGirl.create(:tutorial, unit: unit, tutorial_stream: tutorial_stream_first, campus: campus)
+    tutorial_stream_first = FactoryBot.create(:tutorial_stream, unit: unit)
+    tutorial_first = FactoryBot.create(:tutorial, unit: unit, tutorial_stream: tutorial_stream_first, campus: campus)
     tutorial_enrolment_first = project.enrol_in(tutorial_first)
-    task_def_first = FactoryGirl.create(:task_definition, unit: unit, tutorial_stream: tutorial_stream_first, target_grade: project.target_grade)
+    task_def_first = FactoryBot.create(:task_definition, unit: unit, tutorial_stream: tutorial_stream_first, target_grade: project.target_grade)
     task_first = project.task_for_task_definition(task_def_first)
 
-    tutorial_stream_second = FactoryGirl.create(:tutorial_stream, unit: unit)
-    task_def_second = FactoryGirl.create(:task_definition, unit: unit, tutorial_stream: tutorial_stream_second, target_grade: project.target_grade)
+    tutorial_stream_second = FactoryBot.create(:tutorial_stream, unit: unit)
+    task_def_second = FactoryBot.create(:task_definition, unit: unit, tutorial_stream: tutorial_stream_second, target_grade: project.target_grade)
     task_second = project.task_for_task_definition(task_def_second)
 
     # Reload the unit
@@ -399,20 +399,20 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
   end
 
   def test_task_related_to_task_def_when_project_is_enrolled
-    unit = FactoryGirl.create(:unit, with_students: false)
+    unit = FactoryBot.create(:unit, with_students: false)
     unit.employ_staff(User.first, Role.convenor)
 
-    campus = FactoryGirl.create(:campus)
-    project = FactoryGirl.create(:project, unit: unit, campus: campus)
+    campus = FactoryBot.create(:campus)
+    project = FactoryBot.create(:project, unit: unit, campus: campus)
 
     # Make sure there are no enrolments for the project
     assert_empty project.tutorial_enrolments
 
-    tutorial_stream_first = FactoryGirl.create(:tutorial_stream, unit: unit)
-    tutorial_stream_second = FactoryGirl.create(:tutorial_stream, unit: unit)
+    tutorial_stream_first = FactoryBot.create(:tutorial_stream, unit: unit)
+    tutorial_stream_second = FactoryBot.create(:tutorial_stream, unit: unit)
 
-    tutorial_first = FactoryGirl.create(:tutorial, unit: unit, tutorial_stream: tutorial_stream_first, campus: campus)
-    tutorial_second = FactoryGirl.create(:tutorial, unit: unit, tutorial_stream: tutorial_stream_second, campus: campus)
+    tutorial_first = FactoryBot.create(:tutorial, unit: unit, tutorial_stream: tutorial_stream_first, campus: campus)
+    tutorial_second = FactoryBot.create(:tutorial, unit: unit, tutorial_stream: tutorial_stream_second, campus: campus)
 
     assert_not_nil tutorial_first.tutorial_stream
     assert_not_nil tutorial_second.tutorial_stream
@@ -430,8 +430,8 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_equal tutorial_second, tutorial_enrolment_second.tutorial
     assert_equal project, tutorial_enrolment_second.project
 
-    task_def_first = FactoryGirl.create(:task_definition, unit: unit, tutorial_stream: tutorial_stream_first, target_grade: project.target_grade)
-    task_def_second = FactoryGirl.create(:task_definition, unit: unit, tutorial_stream: tutorial_stream_second, target_grade: project.target_grade)
+    task_def_first = FactoryBot.create(:task_definition, unit: unit, tutorial_stream: tutorial_stream_first, target_grade: project.target_grade)
+    task_def_second = FactoryBot.create(:task_definition, unit: unit, tutorial_stream: tutorial_stream_second, target_grade: project.target_grade)
 
     task_first = project.task_for_task_definition(task_def_first)
     task_second = project.task_for_task_definition(task_def_second)
@@ -461,7 +461,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
   end
 
   def test_task_related_to_task_def_when_multiple_projects_tasks_and_tutorials
-    unit = FactoryGirl.create(:unit, with_students: false)
+    unit = FactoryBot.create(:unit, with_students: false)
 
     assert_empty unit.projects
     assert_equal 1, unit.tutorials.count
@@ -481,14 +481,14 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
 
     unit.employ_staff(User.first, Role.convenor)
 
-    campus_first = FactoryGirl.create(:campus)
-    campus_second = FactoryGirl.create(:campus)
-    campus_third = FactoryGirl.create(:campus)
+    campus_first = FactoryBot.create(:campus)
+    campus_second = FactoryBot.create(:campus)
+    campus_third = FactoryBot.create(:campus)
 
     # Create students for both campuses
-    project_first = FactoryGirl.create(:project, unit: unit, campus: campus_first)
-    project_second = FactoryGirl.create(:project, unit: unit, campus: campus_second)
-    project_third = FactoryGirl.create(:project, unit: unit, campus: campus_third)
+    project_first = FactoryBot.create(:project, unit: unit, campus: campus_first)
+    project_second = FactoryBot.create(:project, unit: unit, campus: campus_second)
+    project_third = FactoryBot.create(:project, unit: unit, campus: campus_third)
 
     assert_equal 3, unit.projects.count
 
@@ -496,15 +496,15 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_empty project_first.tutorial_enrolments
     assert_empty project_second.tutorial_enrolments
 
-    tutorial_stream_first = FactoryGirl.create(:tutorial_stream, unit: unit)
-    tutorial_stream_second = FactoryGirl.create(:tutorial_stream, unit: unit)
+    tutorial_stream_first = FactoryBot.create(:tutorial_stream, unit: unit)
+    tutorial_stream_second = FactoryBot.create(:tutorial_stream, unit: unit)
 
     assert_equal 2, unit.tutorial_streams.count
 
-    task_def_first = FactoryGirl.create(:task_definition, unit: unit, tutorial_stream: tutorial_stream_first, target_grade: project_first.target_grade)
-    task_def_second = FactoryGirl.create(:task_definition, unit: unit, tutorial_stream: tutorial_stream_first, target_grade: project_first.target_grade)
-    task_def_third = FactoryGirl.create(:task_definition, unit: unit, tutorial_stream: tutorial_stream_second, target_grade: project_second.target_grade)
-    task_def_fourth = FactoryGirl.create(:task_definition, unit: unit, tutorial_stream: tutorial_stream_second, target_grade: project_second.target_grade)
+    task_def_first = FactoryBot.create(:task_definition, unit: unit, tutorial_stream: tutorial_stream_first, target_grade: project_first.target_grade)
+    task_def_second = FactoryBot.create(:task_definition, unit: unit, tutorial_stream: tutorial_stream_first, target_grade: project_first.target_grade)
+    task_def_third = FactoryBot.create(:task_definition, unit: unit, tutorial_stream: tutorial_stream_second, target_grade: project_second.target_grade)
+    task_def_fourth = FactoryBot.create(:task_definition, unit: unit, tutorial_stream: tutorial_stream_second, target_grade: project_second.target_grade)
 
     assert_equal 4, unit.task_definitions.count
     assert_equal 2, tutorial_stream_first.task_definitions.count
@@ -559,9 +559,9 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_equal task_second.id, last_response_body.first['id']
 
     # Create tutorials
-    tutorial_first = FactoryGirl.create(:tutorial, unit: unit, tutorial_stream: tutorial_stream_first, campus: campus_first)
-    tutorial_second = FactoryGirl.create(:tutorial, unit: unit, tutorial_stream: tutorial_stream_second, campus: campus_second)
-    tutorial_third = FactoryGirl.create(:tutorial, unit: unit, tutorial_stream: nil, campus: campus_third)
+    tutorial_first = FactoryBot.create(:tutorial, unit: unit, tutorial_stream: tutorial_stream_first, campus: campus_first)
+    tutorial_second = FactoryBot.create(:tutorial, unit: unit, tutorial_stream: tutorial_stream_second, campus: campus_second)
+    tutorial_third = FactoryBot.create(:tutorial, unit: unit, tutorial_stream: nil, campus: campus_third)
 
     # Enrol projects
     tutorial_enrolment_first = project_first.enrol_in(tutorial_first)

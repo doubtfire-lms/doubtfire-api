@@ -29,6 +29,9 @@ require 'database_cleaner'
 class ActiveSupport::TestCase
   ActiveRecord::Migration.check_pending!
 
+  # Inclide FactoryBot
+  include FactoryBot::Syntax::Methods
+
   # Setup all fixtures in test/fixtures/*.(yml|csv) for all tests in alphabetical order.
   #
   # Note: You'll currently still have to declare fixtures explicitly in integration tests
@@ -42,8 +45,8 @@ class ActiveSupport::TestCase
   DatabaseCleaner.strategy = :transaction
 
   def setup
-    DatabaseCleaner.start
     Faker::UniqueGenerator.clear
+    DatabaseCleaner.start
   end
 
   def teardown
