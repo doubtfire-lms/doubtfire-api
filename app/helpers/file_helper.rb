@@ -49,7 +49,7 @@ module FileHelper
       path_name.strip.tap do |name|
         # Finally, replace all non alphanumeric, underscore
         # or periods with underscore
-        name.gsub! /[^\w\-]/, '_'
+        name.gsub! /[^\w\-()]/, '_'
       end
     end
 
@@ -159,18 +159,42 @@ module FileHelper
     dst
   end
 
-  #
-  # Generates a path for storing student portfolios
-  #
-  def student_portfolio_dir(project, create = true)
+  def unit_dir(unit, create = true)
+    file_server = Doubtfire::Application.config.student_work_dir
+    dst = "#{file_server}/" # trust the server config and passed in type for paths
+    dst << sanitized_path("#{unit.code}-#{unit.id}") << '/'
+
+    FileUtils.mkdir_p dst if create && (!Dir.exist? dst)
+
+    dst
+  end
+
+  def unit_portfolio_dir(unit, create = true)
     file_server = Doubtfire::Application.config.student_work_dir
     dst = "#{file_server}/portfolio/" # trust the server config and passed in type for paths
 
-    dst << sanitized_path("#{project.unit.code}-#{project.unit.id}", project.student.username.to_s)
+    dst << sanitized_path("#{unit.code}-#{unit.id}") << '/'
 
     # Create current dst directory should it not exist
     FileUtils.mkdir_p(dst) if create
     dst
+  end
+
+  #
+  # Generates a path for storing student portfolios
+  #
+  def student_portfolio_dir(unit, username, create = true)
+    dst = unit_portfolio_dir(unit, create)
+
+    dst << sanitized_path(username.to_s)
+
+    # Create current dst directory should it not exist
+    FileUtils.mkdir_p(dst) if create
+    dst
+  end
+
+  def student_portfolio_path(unit, username, create = true)
+    File.join(student_portfolio_dir(unit, username, create), FileHelper.sanitized_filename("#{username}-portfolio.pdf"))
   end
 
   def comment_attachment_path(task_comment, attachment_extension)
@@ -454,7 +478,10 @@ module FileHelper
   module_function :tmp_file
   module_function :student_group_work_dir
   module_function :student_work_dir
+  module_function :unit_dir
+  module_function :unit_portfolio_dir
   module_function :student_portfolio_dir
+  module_function :student_portfolio_path
   module_function :comment_attachment_path
   module_function :comment_prompt_path
   module_function :comment_reply_prompt_path

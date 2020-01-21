@@ -1,8 +1,8 @@
-FactoryGirl.define do
+FactoryBot.define do
   factory :campus do
-    sequence(:name)     { |n| "C#{n}-#{Faker::Educator.campus}" }
+    name                { Faker::Educator.unique.campus }
     abbreviation        { name[0...9] }
     mode                { ['timetable', 'automatic', 'manual'].sample }
-    active              true
+    active              { true }
   end
 end

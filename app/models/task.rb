@@ -3,6 +3,7 @@ require 'date'
 class Task < ActiveRecord::Base
   include ApplicationHelper
   include LogHelper
+  include GradeHelper
 
   #
   # Permissions around task data
@@ -87,7 +88,6 @@ class Task < ActiveRecord::Base
 
   has_one :unit, through: :project
 
-  has_many :sub_tasks, dependent: :destroy
   has_many :comments, class_name: 'TaskComment', dependent: :destroy, inverse_of: :task
   has_many :plagiarism_match_links, class_name: 'PlagiarismMatchLink', dependent: :destroy, inverse_of: :task
   has_many :reverse_plagiarism_match_links, class_name: 'PlagiarismMatchLink', dependent: :destroy, inverse_of: :other_task, foreign_key: 'other_task_id'
@@ -105,12 +105,12 @@ class Task < ActiveRecord::Base
   validates :task_definition_id, uniqueness: { scope: :project,
                                                message: 'must be unique within the project' }
 
-  validate :must_have_quality_pts, if: :for_task_with_quality?
+  validate :must_have_quality_pts, if: :for_definition_with_quality?
 
   validate :extensions_must_end_with_due_date, if: :has_requested_extension?
 
-  def for_task_with_quality?
-    task_definition.max_quality_pts.positive?
+  def for_definition_with_quality?
+    task_definition.has_stars?
   end
 
   def has_requested_extension?
@@ -198,7 +198,7 @@ class Task < ActiveRecord::Base
     extension.user = user
     extension.content_type = :extension
     extension.comment = text
-    extension.recipient = project.main_tutor
+    extension.recipient = project.tutor_for(task_definition)
     extension.save!
     extension
   end
@@ -389,18 +389,7 @@ class Task < ActiveRecord::Base
   end
 
   def grade_desc
-    case grade
-    when -1
-      'Fail'
-    when 0
-      'Pass'
-    when 1
-      'Credit'
-    when 2
-      'Distinction'
-    when 3
-      'High Distinction'
-    end
+    grade_for(grade)
   end
 
   #
@@ -485,10 +474,6 @@ class Task < ActiveRecord::Base
 
     # Save the task
     if save!
-      # If a task has been completed, that means the project
-      # has definitely started
-      project.start
-
       TaskEngagement.create!(task: self, engagement_time: Time.zone.now, engagement: task_status.name)
 
       # Grab the submission for the task if the user made one
@@ -541,12 +526,11 @@ class Task < ActiveRecord::Base
       self.task_status = TaskStatus.ready_to_mark
     else
       assess TaskStatus.time_exceeded, by_user
-      add_status_comment(project.main_tutor, self.task_status)
+      add_status_comment(project.tutor_for(task_definition), self.task_status)
       grade_task -1 if task_definition.is_graded? && self.grade.nil?
     end
 
     if save!
-      project.start
       TaskEngagement.create!(task: self, engagement_time: Time.zone.now, engagement: task_status.name)
       submission = TaskSubmission.where(task_id: id).order(:submission_time).reverse_order.first
 
@@ -592,7 +576,7 @@ class Task < ActiveRecord::Base
     comment.user = user
     comment.comment = text
     comment.content_type = :text
-    comment.recipient = user == project.student ? project.main_tutor : project.student
+    comment.recipient = user == project.student ? project.tutor_for(task_definition) : project.student
     comment.save!
 
     comment
@@ -613,7 +597,7 @@ class Task < ActiveRecord::Base
     comment.user = current_user
     comment.comment = status.name
     comment.task_status = status
-    comment.recipient = current_user == project.student ? project.main_tutor : project.student
+    comment.recipient = current_user == project.student ? project.tutor_for(task_definition) : project.student
     comment.save!
 
     comment
@@ -657,7 +641,7 @@ class Task < ActiveRecord::Base
       raise "Unknown comment attachment type"
     end
 
-    comment.recipient = user == project.student ? project.main_tutor : project.student
+    comment.recipient = user == project.student ? project.tutor_for(task_definition) : project.student
     raise "Error attaching uploaded file." unless comment.add_attachment(tempfile)
 
     comment.save!
@@ -708,14 +692,6 @@ class Task < ActiveRecord::Base
 
   def similar_to_dismissed_count
     plagiarism_match_links.where('dismissed = TRUE').count
-  end
-
-  def recalculate_max_similar_pct
-    # TODO: Remove once max_pct_similar is deleted
-    # self.max_pct_similar = pct_similar()
-    # self.save
-    #
-    # project.recalculate_max_similar_pct()
   end
 
   def student_work_dir(type, create = true)
@@ -1038,7 +1014,7 @@ class Task < ActiveRecord::Base
     rescue => e
       clear_in_process
 
-      trigger_transition trigger: 'fix', by_user: project.main_tutor
+      trigger_transition trigger: 'fix', by_user: project.tutor_for(task_definition)
       raise e
     end
   end

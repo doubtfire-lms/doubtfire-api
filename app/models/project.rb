@@ -13,9 +13,9 @@ end
 class Project < ActiveRecord::Base
   include ApplicationHelper
   include LogHelper
+  include DbHelpers
 
   belongs_to :unit
-  belongs_to :tutorial
   belongs_to :user
   belongs_to :campus
 
@@ -27,11 +27,14 @@ class Project < ActiveRecord::Base
   has_many :past_groups, -> { where('group_memberships.active = :value', value: false) }, through: :group_memberships, source: 'group'
   has_many :task_engagements, through: :tasks
   has_many :comments, through: :tasks
+  has_many :tutorial_enrolments, dependent: :destroy
 
   has_many :learning_outcome_task_links, through: :tasks
 
+  # Callbacks - methods called are private
+  before_destroy :can_destroy?
+
   validate :must_be_in_group_tutorials
-  validate :campus_must_be_same
   validates :grade_rationale, length: { maximum: 4095, allow_blank: true }
 
   #
@@ -76,10 +79,6 @@ class Project < ActiveRecord::Base
     user_role(user)
   end
 
-  scope :with_progress, lambda { |progress_types|
-    where(progress: progress_types) unless progress_types.blank?
-  }
-
   # Get all of the projects for the indicated user - with or without inactive units
   def self.for_user(user, include_inactive)
     # Limit to enrolled units... for this user
@@ -92,18 +91,35 @@ class Project < ActiveRecord::Base
     result.joins(:unit).where('units.active = TRUE')
   end
 
-  def self.active_projects
-    joins(:unit).where(enrolled: true).where('units.active = TRUE')
-  end
+  def enrol_in(tutorial)
+    tutorial_enrolment = existing_enrolment(tutorial)
+    if tutorial_enrolment.nil?
+      tutorial_enrolment = TutorialEnrolment.new
+      tutorial_enrolment.tutorial = tutorial
+      tutorial_enrolment.tutorial_stream = tutorial.tutorial_stream
+      tutorial_enrolment.project = self
+      tutorial_enrolment.save!
 
-  def self.for_unit_role(unit_role)
-    active_projects.where(unit_id: unit_role.unit_id) if unit_role.is_teacher?
-  end
+      # add after save to ensure valid tutorial_enrolments
+      self.tutorial_enrolments << tutorial_enrolment
 
-  def campus_must_be_same
-    if campus.present? and tutorial.present? and tutorial.campus.present? and not campus.eql? tutorial.campus
-      errors.add(:campus, "should be same as the campus in the associated tutorial")
+      tutorial_enrolment
+    else
+      tutorial_enrolment.tutorial = tutorial
+      tutorial_enrolment.tutorial_stream = tutorial.tutorial_stream
+      tutorial_enrolment.save!
+      tutorial_enrolment
     end
+  end
+
+  # Find enrolment in same tutorial stream
+  def existing_enrolment(tutorial)
+    tutorial_enrolments.each do |tutorial_enrolment|
+      if tutorial.tutorial_stream.eql? tutorial_enrolment.tutorial.tutorial_stream or tutorial_enrolment.tutorial.tutorial_stream.nil?
+        return tutorial_enrolment
+      end
+    end
+    nil
   end
 
   #
@@ -132,53 +148,56 @@ class Project < ActiveRecord::Base
   end
 
   #
-  # Returns the email of the tutor, or the convenor if there is no tutor
-  #
-  def tutor_email
-    tutor = main_tutor
-    if tutor
-      tutor.email
-    else
-      unit.convenor_email
-    end
-  end
-
-  #
   # All "discuss" and "demonstrate" become complete
   #
   def trigger_week_end(by_user)
     discuss_and_demonstrate_tasks.each { |task| task.trigger_transition(trigger: 'complete', by_user: by_user, bulk: true, quality: task.quality_pts) }
   end
 
-  def start
-    update_attribute(:started, true)
-  end
-
   def student
     user
   end
 
-  def main_tutor
-    if tutorial
-      result = tutorial.tutor
-      result = main_convenor if result.nil?
-      result
-    else
-      main_convenor
-    end
+  def tutors_and_tutorial
+    current_tutor = nil
+    first_tutor = true
+
+    tutorial_enrolments.
+      joins(tutorial: {unit_role: :user}).
+      order('tutor').
+      select("tutorials.abbreviation as tutorial_abbr, #{db_concat('users.first_name', "' '", 'users.last_name')} as tutor").
+      map do |t|
+        result = "#{t.tutor == current_tutor ? '' : "#{first_tutor ? '' : ') '}#{t.tutor} ("}#{t.tutorial_abbr}"
+        current_tutor = t.tutor
+        first_tutor = false
+        result
+      end.join(' ') + ( !first_tutor ? ')' : '')
   end
 
-  def main_convenor
-    unit.main_convenor
+  def tutorial_enrolment_for_stream(tutorial_stream)
+    tutorial_enrolments.where(tutorial_stream: tutorial_stream).first || tutorial_enrolments.where(tutorial_stream_id: nil).first
   end
 
-  def tutorial_abbr
-    tutorial.abbreviation unless tutorial.nil?
+  def tutorial_for_stream(tutorial_stream)
+    enrolment = tutorial_enrolment_for_stream(tutorial_stream)
+    enrolment.tutorial unless enrolment.nil?
+  end
+
+  def tutorial_for(task_definition)
+    tutorial_for_stream(task_definition.tutorial_stream) unless task_definition.nil?
+  end
+
+  def tutor_for(task_definition)
+    tutorial = tutorial_for(task_definition)
+    (tutorial.present? and tutorial.tutor.present?) ? tutorial.tutor : main_convenor_user
+  end
+
+  def main_convenor_user
+    unit.main_convenor_user
   end
 
   def user_role(user)
     if user == student then :student
-    elsif user == main_tutor then :tutor
     elsif user.nil? then nil
     elsif unit.tutors.where(id: user.id).count != 0 then :tutor
     else nil
@@ -470,11 +489,6 @@ class Project < ActiveRecord::Base
     result
   end
 
-  def projected_end_date
-    return unit.end_date if rate_of_completion == 0.0
-    (remaining_tasks_weight / rate_of_completion).ceil.days.since reference_date
-  end
-
   def weeks_elapsed(date = nil)
     (days_elapsed(date) / 7.0).ceil
   end
@@ -482,22 +496,6 @@ class Project < ActiveRecord::Base
   def days_elapsed(date = nil)
     date ||= reference_date
     (date - unit.start_date).to_i / 1.day
-  end
-
-  def rate_of_completion(date = nil)
-    # Return a completion rate of 0.0 if the project is yet to have commenced
-    return 0.0 if !commenced? || completed_tasks.empty?
-    date ||= reference_date
-
-    # TODO: Might make sense to take in the resolution (i.e. days, weeks), rather
-    # than just assuming days
-
-    # If on the first day (i.e. a day has not yet passed, but the project
-    # has commenced), force days elapsed to be 1 to avoid divide by zero
-    days = days_elapsed(date)
-    days = 1 if days_elapsed(date) < 1
-
-    completed_tasks_weight / days.to_f
   end
 
   def weekly_completion_rate(date = nil)
@@ -516,10 +514,6 @@ class Project < ActiveRecord::Base
     assigned_tasks.select(&:complete?)
   end
 
-  def ready_to_mark_tasks
-    assigned_tasks.select(&:ready_to_mark?)
-  end
-
   def ready_or_complete_tasks
     assigned_tasks.select(&:ready_or_complete?)
   end
@@ -532,45 +526,11 @@ class Project < ActiveRecord::Base
     tasks.select(&:discuss_or_demonstrate?)
   end
 
-  def partially_completed_tasks
-    # TODO: Should probably have a better definition
-    # of partially complete than just 'fix' tasks
-    assigned_tasks.select { |task| task.fix_and_resubmit? || task.do_not_resubmit? }
-  end
-
-  def completed?
-    # TODO: Have a status flag on the project instead
-    assigned_tasks.all?(&:complete?)
-  end
-
-  def incomplete_tasks
-    assigned_tasks.select { |task| !task.complete? }
-  end
-
-  def percentage_complete
-    completed_tasks.empty? ? 0.0 : (completed_tasks_weight / total_task_weight) * 100
-  end
-
-  def remaining_tasks_weight
-    incomplete_tasks.empty? ? 0.0 : incomplete_tasks.map { |task| task.task_definition.weighting }.inject(:+)
-  end
-
   #
   # get the weight of all tasks completed or marked as ready to assess
   #
   def completed_tasks_weight
     ready_or_complete_tasks.empty? ? 0.0 : ready_or_complete_tasks.map { |task| task.task_definition.weighting }.inject(:+)
-  end
-
-  def partially_completed_tasks_weight
-    # Award half for partially completed tasks
-    # TODO: Should probably make this a project-by-project option
-    partially_complete = partially_completed_tasks
-    partially_complete.empty? ? 0.0 : partially_complete.map { |task| task.task_definition.weighting / 2.to_f }.inject(:+)
-  end
-
-  def task_units_completed
-    completed_tasks_weight + partially_completed_tasks_weight
   end
 
   def convert_hash_to_pct(hash, total)
@@ -672,50 +632,11 @@ class Project < ActiveRecord::Base
     completed_tasks.sort_by(&:completion_date).last
   end
 
-  def task_completion_csv
-    all_tasks = unit.task_definitions_by_grade
-    [
-      student.username,
-      student.name,
-      target_grade_desc,
-      student.email,
-      portfolio_status,
-      grade > 0 ? grade : '',
-      grade_rationale,
-      tutorial ? tutorial.abbreviation : '',
-      main_tutor.name
-    ] +
-      unit.group_sets.map do |gs|
-        grp = group_for_groupset(gs)
-        grp ? grp.name : nil
-      end +
-      all_tasks.map do |td|
-        task = tasks.where(task_definition_id: td.id).first
-        if task
-          status = task.task_status.name
-          grade = task.grade_desc
-          stars = task.quality_pts
-          people = task.contribution_pts
-        else
-          status = TaskStatus.not_started.name
-          grade = nil
-          stars = nil
-          people = nil
-        end
-
-        result = [status]
-        result << grade if td.is_graded?
-        result << stars if td.has_stars?
-        result << people if td.is_group_task?
-        result
-      end.flatten
-  end
-
   #
   # Portfolio production code
   #
   def portfolio_temp_path
-    portfolio_dir = FileHelper.student_portfolio_dir(self, false)
+    portfolio_dir = FileHelper.student_portfolio_dir(self.unit, self.student.username, false)
     portfolio_tmp_dir = File.join(portfolio_dir, 'tmp')
   end
 
@@ -803,7 +724,7 @@ class Project < ActiveRecord::Base
   end
 
   def portfolio_path
-    File.join(FileHelper.student_portfolio_dir(self, true), FileHelper.sanitized_filename("#{student.username}-portfolio.pdf"))
+    FileHelper.student_portfolio_path(self.unit, self.student.username, true)
   end
 
   def has_portfolio
@@ -827,11 +748,6 @@ class Project < ActiveRecord::Base
   def remove_portfolio
     portfolio = portfolio_path
     FileUtils.mv portfolio, "#{portfolio}.old" if File.exist?(portfolio)
-  end
-
-  def recalculate_max_similar_pct
-    # self.max_pct_similar = tasks.sort { |t1, t2|  t1.max_pct_similar <=> t2.max_pct_similar }.last.max_pct_similar
-    # self.save
   end
 
   def matching_task(other_task)
@@ -987,11 +903,18 @@ class Project < ActiveRecord::Base
       did_revert_to_pass = true
 
       summary_stats[:revert_count] = summary_stats[:revert_count] + 1
-      summary_stats[:revert][main_tutor] << self
+      summary_stats[:revert][main_convenor_user] << self
     end
 
     return unless student.receive_feedback_notifications
     return if has_portfolio && ! middle_of_unit
     NotificationsMailer.weekly_student_summary(self, summary_stats, did_revert_to_pass).deliver_now
+  end
+
+  private
+  def can_destroy?
+    return true if tutorial_enrolments.count == 0
+    errors.add :base, "Cannot delete project with enrolments"
+    false
   end
 end

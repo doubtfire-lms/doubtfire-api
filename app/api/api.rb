@@ -17,6 +17,8 @@ module Api
         error!(e.message, 400)
       when Grape::Exceptions::MethodNotAllowed
         error!(e.message, 405)
+      when ActiveRecord::RecordNotDestroyed
+        error!(e.message, 400)
       when ActiveRecord::RecordNotFound
         error!("Unable to find requested #{e.message[/(Couldn't find )(.*)( with)/,2]}", 404)
       else
@@ -54,6 +56,7 @@ module Api
     mount Api::CampusesAuthenticatedApi
     mount Api::TutorialsApi
     mount Api::TutorialStreamsApi
+    mount Api::TutorialEnrolmentsApi
     mount Api::UnitRolesApi
     mount Api::UnitsApi
     mount Api::UsersApi
@@ -80,6 +83,7 @@ module Api
     AuthenticationHelpers.add_auth_to Api::CampusesAuthenticatedApi
     AuthenticationHelpers.add_auth_to Api::TutorialsApi
     AuthenticationHelpers.add_auth_to Api::TutorialStreamsApi
+    AuthenticationHelpers.add_auth_to Api::TutorialEnrolmentsApi
     AuthenticationHelpers.add_auth_to Api::UsersApi
     AuthenticationHelpers.add_auth_to Api::UnitRolesApi
     AuthenticationHelpers.add_auth_to Api::UnitsApi
