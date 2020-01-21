@@ -33,19 +33,8 @@ class TutorialsTest < ActiveSupport::TestCase
   def test_tutorials_post
     number_of_tutorials = Tutorial.all.length
 
-    tutorial = {
-      unit_id: '1',
-      tutor_id: User.first.id,
-      campus_id: Campus.first.id,
-      capacity: 10,
-      abbreviation: 'LA011',
-      meeting_location: 'LAB34',
-      meeting_day: 'Tuesday',
-      meeting_time: '18:00'
-    }
-
     data_to_post = {
-      tutorial: tutorial,
+      tutorial: FactoryGirl.build(:tutorial),
       auth_token: auth_token
     }
 
@@ -54,26 +43,15 @@ class TutorialsTest < ActiveSupport::TestCase
 
     # Check there is a new tutorial
     assert_equal Tutorial.all.length, number_of_tutorials + 1
-    assert_tutorial_model_response last_response_body, tutorial
+    assert_tutorial_model_response last_response_body, data_to_post[:tutorial]
   end
 
   #2: Testing for failure due to incorrect auth token
   # POST /api/tutorials
   def test_tutorial_post_incorrect_auth_token
 
-    tutorial = {
-      unit_id: '1',
-      tutor_id: User.first.id,
-      campus_id: Campus.first.id,
-      capacity: 10,
-      abbreviation: 'LA011',
-      meeting_location: 'LAB34',
-      meeting_day: 'Tuesday',
-      meeting_time: '18:00'
-    }
-
     data_to_post = {
-      tutorial: tutorial,
+      tutorial: FactoryGirl.build(:tutorial),
       auth_token: 'Incorrect_Auth_Token'
     }
     # perform the post
@@ -87,19 +65,8 @@ class TutorialsTest < ActiveSupport::TestCase
   # POST /api/tutorials
   def test_tutorial_post_empty_auth_token
 
-    tutorial = {
-      unit_id: '1',
-      tutor_id: User.first.id,
-      campus_id: Campus.first.id,
-      capacity: 10,
-      abbreviation: 'LA011',
-      meeting_location: 'LAB34',
-      meeting_day: 'Tuesday',
-      meeting_time: '18:00'
-    }
-
     data_to_post = {
-      tutorial: tutorial,
+      tutorial: FactoryGirl.build(:tutorial),
       auth_token: ''
     }
     # perform the post
@@ -112,11 +79,13 @@ class TutorialsTest < ActiveSupport::TestCase
   #4: Testing for failure due to string as Unit ID
   # POST /api/tutorials
   def test_tutorial_post_string_unit_id
-
+    tutor = FactoryGirl.create(:user, :tutor)
+    campus = FactoryGirl.create(:campus)
+    
     tutorial = {
       unit_id: 'string',
-      tutor_id: User.first.id,
-      campus_id: Campus.first.id,
+      tutor_id: tutor.id,
+      campus_id: campus.id,
       capacity: 10,
       abbreviation: 'LA011',
       meeting_location: 'LAB34',
@@ -140,11 +109,13 @@ class TutorialsTest < ActiveSupport::TestCase
   #5: Testing for failure due to string as Tutor ID
   # POST /api/tutorials
   def test_tutorial_post_string_tutor_id
+    unit = FactoryGirl.create(:unit)
+    campus = FactoryGirl.create(:campus)
 
     tutorial = {
-      unit_id: '1',
+      unit_id: unit.id,
       tutor_id: 'string',
-      campus_id: Campus.first.id,
+      campus_id: campus.id,
       capacity: 10,
       abbreviation: 'LA011',
       meeting_location: 'LAB34',
@@ -168,11 +139,14 @@ class TutorialsTest < ActiveSupport::TestCase
   #6: Testing for failure due POST of already existing task
   # POST /api/tutorials
   def test_tutorials_post_existing_task_error_test
+    campus = FactoryGirl.create(:campus)
+    unit = FactoryGirl.create(:unit)
+    tutor = unit.tutors.first
 
     tutorial = {
-      unit_id: '1',
-      tutor_id: User.first.id,
-      campus_id: Campus.first.id,
+      unit_id: unit.id,
+      tutor_id: tutor.id,
+      campus_id: campus.id,
       capacity: 10,
       abbreviation: 'LA011',
       meeting_location: 'LAB34',
@@ -182,20 +156,17 @@ class TutorialsTest < ActiveSupport::TestCase
 
     data_to_post = {
       tutorial: tutorial,
-      id: '1',
+      unit_id: unit.id,
       auth_token: auth_token
     }
-    data_to_post_second = {
-      tutorial: tutorial,
-      auth_token: auth_token
-    }
+  
     #perform the post test
     post_json '/api/tutorials', data_to_post
 
     assert_equal 201, last_response.status
 
     #perform the post test for second data set with duplicate values
-    post_json '/api/tutorials', data_to_post_second
+    post_json '/api/tutorials', data_to_post
 
     #Check for error
     assert_equal 400, last_response.status
@@ -205,11 +176,13 @@ class TutorialsTest < ActiveSupport::TestCase
   #7: Testing for failure due to empty Unit ID
   # POST /api/tutorials
   def test_tutorial_post_empty_unit_id
+    tutor = FactoryGirl.create(:user, :tutor)
+    campus = FactoryGirl.create(:campus)
 
     tutorial = {
       unit_id: '',
-      tutor_id: User.first.id,
-      campus_id: Campus.first.id,
+      tutor_id: tutor.id,
+      campus_id: campus.id,
       capacity: 10,
       abbreviation: 'LA011',
       meeting_location: 'LAB34',
@@ -233,11 +206,13 @@ class TutorialsTest < ActiveSupport::TestCase
   #8: Testing for failure due to empty Tutor ID
   # POST /api/tutorials
   def test_tutorial_post_empty_tutor_id
+    campus = FactoryGirl.create(:campus)
+    unit = FactoryGirl.create(:unit)
 
     tutorial = {
-      unit_id: '1',
+      unit_id: unit.id,
       tutor_id: '',
-      campus_id: Campus.first.id,
+      campus_id: campus.id,
       capacity: 10,
       abbreviation: 'LA011',
       meeting_location: 'LAB34',
@@ -261,11 +236,14 @@ class TutorialsTest < ActiveSupport::TestCase
   #9: Testing for failure due to empty abbreviation
   # POST /api/tutorials
   def test_tutorial_post_empty_abbreviation
+    campus = FactoryGirl.create(:campus)
+    unit = FactoryGirl.create(:unit)
+    tutor = unit.tutors.first
 
     tutorial = {
-      unit_id: '1',
-      tutor_id: User.first.id,
-      campus_id: Campus.first.id,
+      unit_id: unit.id,
+      tutor_id: tutor.id,
+      campus_id: campus.id,
       capacity: 10,
       abbreviation: '',
       meeting_location: 'LAB34',
@@ -289,11 +267,14 @@ class TutorialsTest < ActiveSupport::TestCase
   #10: Testing for failure due to empty meeting location
   # POST /api/tutorials
   def test_tutorial_post_empty_meeting_location
+    campus = FactoryGirl.create(:campus)
+    unit = FactoryGirl.create(:unit)
+    tutor = unit.tutors.first
 
     tutorial = {
-      unit_id: '1',
-      tutor_id: User.first.id,
-      campus_id: Campus.first.id,
+      unit_id: unit.id,
+      tutor_id: tutor.id,
+      campus_id: campus.id,
       capacity: 10,
       abbreviation: 'LA011',
       meeting_location: '',
@@ -317,11 +298,14 @@ class TutorialsTest < ActiveSupport::TestCase
   #11: Testing for failure due to empty meeting day
   # POST /api/tutorials
   def test_tutorial_post_empty_meeting_day
+    campus = FactoryGirl.create(:campus)
+    unit = FactoryGirl.create(:unit)
+    tutor = unit.tutors.first
 
     tutorial = {
-      unit_id: '1',
-      tutor_id: User.first.id,
-      campus_id: Campus.first.id,
+      unit_id: unit.id,
+      tutor_id: tutor.id,
+      campus_id: campus.id,
       capacity: 10,
       abbreviation: 'LA011',
       meeting_location: 'LAB34',
@@ -345,11 +329,14 @@ class TutorialsTest < ActiveSupport::TestCase
   #12: Testing for failure due to empty meeting time
   # POST /api/tutorials
   def test_tutorial_post_empty_meeting_time
+    campus = FactoryGirl.create(:campus)
+    unit = FactoryGirl.create(:unit)
+    tutor = unit.tutors.first
 
     tutorial = {
-      unit_id: '1',
-      tutor_id: User.first.id,
-      campus_id: Campus.first.id,
+      unit_id: unit.id,
+      tutor_id: tutor.id,
+      campus_id: campus.id,
       capacity: 10,
       abbreviation: 'LA011',
       meeting_location: 'LAB34',
@@ -373,12 +360,14 @@ class TutorialsTest < ActiveSupport::TestCase
   #13: Testing for empty meeting time due to string meeting time, other than 3pm
   # POST /api/tutorials
   def test_tutorial_post_string_meeting_time #Other than time string like 3pm
-    number_of_tutorials = Tutorial.all.length
+    campus = FactoryGirl.create(:campus)
+    unit = FactoryGirl.create(:unit)
+    tutor = unit.tutors.second
 
     tutorial = {
-      unit_id: '1',
-      tutor_id: User.first.id,
-      campus_id: Campus.first.id,
+      unit_id: unit.id,
+      tutor_id: tutor.id,
+      campus_id: campus.id,
       capacity: 10,
       abbreviation: 'La011',
       meeting_location: 'LAB34',
@@ -394,6 +383,8 @@ class TutorialsTest < ActiveSupport::TestCase
       tutorial: tutorial,
       auth_token: auth_token
     }
+    # number of tutorials before POST
+    number_of_tutorials = Tutorial.all.length
 
     # perform the post
     post_json '/api/tutorials', data_to_post
@@ -407,49 +398,37 @@ class TutorialsTest < ActiveSupport::TestCase
   #####----------PUT tests - Update a tutorial----------#####
 
   #14: Testing for successful operation
-  # POST /api/tutorials/{id}
+  # PUT /api/tutorials/{id}
   def test_tutorials_put
-    number_of_tutorials = Tutorial.all.length
-
-    tutorial_old = Tutorial.first
-    tutorial_new = tutorial_old
-
-    tutorial_new[:meeting_time] = '11:30'
-    tutorial_new[:meeting_location] = 'AB Building'
-    tutorial_new[:meeting_day] = 'Tuesday'
-    tutorial_new[:abbreviation] = 'LAB03'
+    tutorial_old = FactoryGirl.create(:tutorial)
 
     data_to_put = {
-      tutorial: tutorial_new,
+      tutorial: FactoryGirl.build(:tutorial),
       auth_token: auth_token
     }
-    # perform the post
-    put_json '/api/tutorials/1', data_to_put
 
-    # Check there is a new tutorial
-    assert_equal Tutorial.all.length, number_of_tutorials
+    number_of_tutorials = Tutorial.all.length
+
+    # perform the post
+    put_json "/api/tutorials/#{tutorial_old.id}", data_to_put
+
+    # Check the tutorial is updated
+    assert_equal number_of_tutorials, Tutorial.all.length
     assert_equal 200, last_response.status 
-    assert_tutorial_model_response last_response_body, tutorial_new
+    assert_tutorial_model_response last_response_body, data_to_put[:tutorial]
   end
 
   #15: Testing for failure due to empty auth token
-  # POST /api/tutorials/{id}
+  # PUT /api/tutorials/{id}
   def test_tutorials_put_empty_auth_token
-
-    tutorial_old = Tutorial.first
-    tutorial_new = tutorial_old
-
-    tutorial_new[:meeting_time] = '11:30'
-    tutorial_new[:meeting_location] = 'AB Building'
-    tutorial_new[:meeting_day] = 'Tuesday'
-    tutorial_new[:abbreviation] = 'LAB03'
+    tutorial_old = FactoryGirl.create(:tutorial)
 
     data_to_put = {
-      tutorial: tutorial_new,
+      tutorial: FactoryGirl.build(:tutorial),
       auth_token: ''
     }
-    # perform the post
-    put_json '/api/tutorials/1', data_to_put
+    # perform the put
+    put_json "/api/tutorials/#{tutorial_old.id}", data_to_put
 
     # Check there is a new tutorial
     assert_equal 419, last_response.status 
@@ -458,21 +437,14 @@ class TutorialsTest < ActiveSupport::TestCase
   #16: Testing for failure due to incorrect auth token
   # POST /api/tutorials/{id}
   def test_tutorials_put_incorrect_auth_token
-
-    tutorial_old = Tutorial.first
-    tutorial_new = tutorial_old
-
-    tutorial_new[:meeting_time] = '11:30'
-    tutorial_new[:meeting_location] = 'AB Building'
-    tutorial_new[:meeting_day] = 'Tuesday'
-    tutorial_new[:abbreviation] = 'LAB03'
+    tutorial_old = FactoryGirl.create(:tutorial)
 
     data_to_put = {
-      tutorial: tutorial_new,
+      tutorial: FactoryGirl.build(:tutorial),
       auth_token: 'incorrect_auth_token'
     }
     # perform the post
-    put_json '/api/tutorials/1', data_to_put
+    put_json "/api/tutorials/#{tutorial_old.id}", data_to_put
 
     # Check there is a new tutorial
     assert_equal 419, last_response.status 
@@ -481,21 +453,14 @@ class TutorialsTest < ActiveSupport::TestCase
   #17: Testing for successful operation with empty abbreviation
   # POST /api/tutorials/{id}
   def test_tutorials_put_empty_abbreviation
-
-    tutorial_old = Tutorial.first
-    tutorial_new = tutorial_old
-
-    tutorial_new[:meeting_time] = '11:30'
-    tutorial_new[:meeting_location] = 'AB Building'
-    tutorial_new[:meeting_day] = 'Tuesday'
-    tutorial_new[:abbreviation] = ''
+    tutorial_old = FactoryGirl.create(:tutorial)
 
     data_to_put = {
-      tutorial: tutorial_new,
+      tutorial: FactoryGirl.build(:tutorial, abbreviation:''),
       auth_token: auth_token
     }
     # perform the post
-    put_json '/api/tutorials/1', data_to_put
+    put_json "/api/tutorials/#{tutorial_old.id}", data_to_put
 
     # Check there is a new tutorial
     assert_equal 200, last_response.status 
@@ -504,44 +469,30 @@ class TutorialsTest < ActiveSupport::TestCase
   #18: Testing for successful operation with empty meeting location
   # POST /api/tutorials/{id}
   def test_tutorials_put_empty_meeting_location
-
-    tutorial_old = Tutorial.first
-    tutorial_new = tutorial_old
-
-    tutorial_new[:meeting_time] = '11:30'
-    tutorial_new[:meeting_location] = ''
-    tutorial_new[:meeting_day] = 'Tuesday'
-    tutorial_new[:abbreviation] = 'LAB03'
+    tutorial_old = FactoryGirl.create(:tutorial)
 
     data_to_put = {
-      tutorial: tutorial_new,
+      tutorial: FactoryGirl.build(:tutorial, meeting_location:''),
       auth_token: auth_token
     }
-    # perform the post
-    put_json '/api/tutorials/1', data_to_put
+    # perform the put
+    put_json "/api/tutorials/#{tutorial_old.id}", data_to_put
 
     # Check there is a new tutorial
     assert_equal 200, last_response.status
   end
 
-  #19: Testing for successful operation with empty meeting location
+  #19: Testing for successful operation with empty meeting day
   # POST /api/tutorials/{id}
   def test_tutorials_put_empty_meeting_day
-
-    tutorial_old = Tutorial.first
-    tutorial_new = tutorial_old
-
-    tutorial_new[:meeting_time] = '11:30'
-    tutorial_new[:meeting_location] = 'AB Building'
-    tutorial_new[:meeting_day] = ''
-    tutorial_new[:abbreviation] = 'LAB03'
+    tutorial_old = FactoryGirl.create(:tutorial)
 
     data_to_put = {
-      tutorial: tutorial_new,
+      tutorial: FactoryGirl.build(:tutorial, meeting_day:''),
       auth_token: auth_token
     }
     # perform the post
-    put_json '/api/tutorials/1', data_to_put
+    put_json "/api/tutorials/#{tutorial_old.id}", data_to_put
 
     # Check there is a new tutorial
     assert_equal 200, last_response.status 
@@ -550,21 +501,14 @@ class TutorialsTest < ActiveSupport::TestCase
   #20: Testing for successful operation with empty meeting time
   # POST /api/tutorials/{id}
   def test_tutorials_put_empty_meeting_time
-
-    tutorial_old = Tutorial.first
-    tutorial_new = tutorial_old
-
-    tutorial_new[:meeting_time] = ''
-    tutorial_new[:meeting_location] = 'AB Building'
-    tutorial_new[:meeting_day] = 'Tuesday'
-    tutorial_new[:abbreviation] = 'LAB03'
+    tutorial_old = FactoryGirl.create(:tutorial)
 
     data_to_put = {
-      tutorial: tutorial_new,
+      tutorial: FactoryGirl.build(:tutorial, meeting_time:''),
       auth_token: auth_token
     }
     # perform the post
-    put_json '/api/tutorials/1', data_to_put
+    put_json "/api/tutorials/#{tutorial_old.id}", data_to_put
 
     # Check there is a new tutorial
     assert_equal 200, last_response.status
@@ -579,11 +523,12 @@ class TutorialsTest < ActiveSupport::TestCase
   #21: Testing for successful operation
   # DELETE /api/tutorials/{id}
   def test_tutorials_delete
-    number_of_tutorials = Tutorial.all.length
     # Should be random unit where convenor is User.first
     # test_tutorial = Tutorial.where(:convenors == User.first).order('RANDOM()').first
-    test_tutorial = Tutorial.all.first
+    test_tutorial = FactoryGirl.create(:tutorial)
     id_of_tutorial_to_delete = test_tutorial.id
+
+    number_of_tutorials = Tutorial.all.length
 
     # Ensure there are no enrolments to enable tutorial to be deleted...
     test_tutorial.tutorial_enrolments.each do |tutorial_enrolment|
@@ -627,11 +572,13 @@ class TutorialsTest < ActiveSupport::TestCase
   #23: Testing for failure due to empty auth token
   # DELETE /api/tutorials/{id}
   def test_tutorials_delete_empty_auth_token
-    number_of_tutorials = Tutorial.all.length
+    
     # Should be random unit where convenor is User.first
     # test_tutorial = Tutorial.where(:convenors == User.first).order('RANDOM()').first
-    test_tutorial = Tutorial.all.first
+    test_tutorial = FactoryGirl.create(:tutorial)
     id_of_tutorial_to_delete = test_tutorial.id
+
+    number_of_tutorials = Tutorial.all.length
 
     data_to_send = {
       auth_token: ''
@@ -647,18 +594,18 @@ class TutorialsTest < ActiveSupport::TestCase
   #24: Testing for failure due to incorrect auth token
   # DELETE /api/tutorials/{id}
   def test_tutorials_delete_incorrect_auth_token
-    number_of_tutorials = Tutorial.all.length
     # Should be random unit where convenor is User.first
     # test_tutorial = Tutorial.where(:convenors == User.first).order('RANDOM()').first
-    test_tutorial = Tutorial.all.first
+    test_tutorial = FactoryGirl.create(:tutorial)
     id_of_tutorial_to_delete = test_tutorial.id
+
+    number_of_tutorials = Tutorial.all.length
 
     data_to_send = {
       auth_token: 'incorrect_auth_token'
     }
     # perform the post
     delete_json_custom "/api/tutorials/#{id_of_tutorial_to_delete}", data_to_send
-
 
     # Check authentication error
     assert_equal 419, last_response.status
