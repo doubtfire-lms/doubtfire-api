@@ -31,12 +31,26 @@ class TutorialsTest < ActiveSupport::TestCase
   #1: Testing for successful operation
   # POST /api/tutorials
   def test_tutorials_post
-    number_of_tutorials = Tutorial.all.length
+    campus = FactoryBot.create(:campus)
+    unit = FactoryBot.create(:unit)
+    tutor = unit.tutors.first
+
+    tutorial = {
+      unit_id: unit.id,
+      tutor_id: tutor.id,
+      campus_id: campus.id,
+      capacity: 10,
+      abbreviation: 'LA011',
+      meeting_location: 'LAB34',
+      meeting_day: 'Tuesday',
+      meeting_time: '18:00'
+    }
 
     data_to_post = {
-      tutorial: FactoryBot.build(:tutorial),
+      tutorial: tutorial,
       auth_token: auth_token
     }
+    number_of_tutorials = Tutorial.all.length
 
     # perform the post
     post_json '/api/tutorials', data_to_post
@@ -49,9 +63,23 @@ class TutorialsTest < ActiveSupport::TestCase
   #2: Testing for failure due to incorrect auth token
   # POST /api/tutorials
   def test_tutorial_post_incorrect_auth_token
+    campus = FactoryBot.create(:campus)
+    unit = FactoryBot.create(:unit)
+    tutor = unit.tutors.first
+
+    tutorial = {
+      unit_id: unit.id,
+      tutor_id: tutor.id,
+      campus_id: campus.id,
+      capacity: 10,
+      abbreviation: 'LA011',
+      meeting_location: 'LAB34',
+      meeting_day: 'Tuesday',
+      meeting_time: '18:00'
+    }
 
     data_to_post = {
-      tutorial: FactoryBot.build(:tutorial),
+      tutorial: tutorial,
       auth_token: 'Incorrect_Auth_Token'
     }
     # perform the post
@@ -64,9 +92,23 @@ class TutorialsTest < ActiveSupport::TestCase
   #3: Testing for failure due to empty auth token
   # POST /api/tutorials
   def test_tutorial_post_empty_auth_token
+    campus = FactoryBot.create(:campus)
+    unit = FactoryBot.create(:unit)
+    tutor = unit.tutors.first
+
+    tutorial = {
+      unit_id: unit.id,
+      tutor_id: tutor.id,
+      campus_id: campus.id,
+      capacity: 10,
+      abbreviation: 'LA011',
+      meeting_location: 'LAB34',
+      meeting_day: 'Tuesday',
+      meeting_time: '18:00'
+    }
 
     data_to_post = {
-      tutorial: FactoryBot.build(:tutorial),
+      tutorial: tutorial,
       auth_token: ''
     }
     # perform the post
@@ -415,7 +457,7 @@ class TutorialsTest < ActiveSupport::TestCase
     # Check there is a new tutorial
     assert_equal Tutorial.all.length, number_of_tutorials
     assert_equal 200, last_response.status
-    assert_tutorial_model_response last_response_body, tutorial_new
+    assert_tutorial_model_response last_response_body, data_to_put[:tutorial]
   end
 
   #15: Testing for failure due to empty auth token
