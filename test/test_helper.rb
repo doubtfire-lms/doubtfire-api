@@ -25,6 +25,7 @@ require 'minitest/around'
 require_all 'test/helpers'
 require 'rails/test_help'
 require 'database_cleaner'
+require 'mocha/minitest'
 
 class ActiveSupport::TestCase
   ActiveRecord::Migration.check_pending!
