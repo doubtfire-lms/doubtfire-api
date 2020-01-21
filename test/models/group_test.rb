@@ -54,12 +54,4 @@ class GroupModelTest < ActiveSupport::TestCase
     refute_includes(group1.past_projects,project2)
     assert_equal group1.group_memberships.count, 2
   end
-
-  def test_exist_in_unit_factory
-    unit = FactoryGirl.create(:unit, group_sets: 1, student_count: 2, :groups => [ { gs: 0, students: 2} ])
-    assert unit.valid?
-    assert_equal unit.group_sets[0].groups.count ,1
-    assert_equal unit.group_sets[0].groups[0].projects.count ,2
-  end
-
 end
