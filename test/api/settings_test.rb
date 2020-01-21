@@ -12,7 +12,7 @@ class SettingTest < ActiveSupport::TestCase
 
     # Get config details
     def test_get_config_details        
-        expected_ProductName =  Doubtfire::Application.config.institution[:product_name]
+        expected_product_name =  Doubtfire::Application.config.institution[:product_name]
         
         # Perform the GET
         get '/api/settings'
@@ -23,7 +23,7 @@ class SettingTest < ActiveSupport::TestCase
         # Check if the call succeeds
         assert_equal 200, last_response.status
         # Check returned details match as expected 
-        assert_equal expected_ProductName, returned_mes
+        assert_equal expected_product_name, returned_mes
     end     
 
     # Get privacy policy details
