@@ -11,32 +11,50 @@ class StudentsApiTest < ActiveSupport::TestCase
   end
 
   def test_get_students_with_authentication
-    # Build admin user
-    adminUser = FactoryGirl.build(:user, :admin)
+
+    # Create unit
+    newUnit = FactoryGirl.create(:unit)
+
+    #Create campus
+    newCampus = FactoryGirl.create(:campus)
+
+    # Create student
+    studentUser = FactoryGirl.create(:user, :student)
+
+    # Assign student to the unit
+    newUnit.enrol_student(studentUser, newCampus)
 
     # The get that we will be testing.
-    get with_auth_token '/api/students/?unit_id=1',adminUser
-    response = last_response_body
+    get with_auth_token "/api/students/?unit_id=#{newUnit.id}"
+    response_received = last_response_body
 
+    # check return value
+    assert_equal response_received[0]['first_name'],studentUser.first_name
     assert_equal 200, last_response.status
   end
 
   def test_get_students_without_authentication
-    # Build student user
-    studentUser = FactoryGirl.build(:user, :student)
+    # Create student user
+    studentUser = FactoryGirl.create(:user, :student)
+
+    # Create unit
+    newUnit = FactoryGirl.create(:unit)
+
+    #Create campus
+    newCampus = FactoryGirl.create(:campus)
+
+    # Assign student to the unit
+    newUnit.enrol_student(studentUser, newCampus)
 
     # The get that we will be testing.
-    get with_auth_token '/api/students/?unit_id=1', studentUser
+    get with_auth_token "/api/students/?unit_id=#{newUnit.id}", studentUser
     assert_equal 403, last_response.status
   end
 
   def test_get_students_without_parameters
-    # Build admin user
-    adminUser = FactoryGirl.build(:user, :admin)
 
-
-    # The get that we will be testing.
-    get with_auth_token '/api/students/',adminUser
+    # The get that we will be testing without parameters.
+    get with_auth_token '/api/students/'
     assert_equal 400, last_response.status
   end
 end
