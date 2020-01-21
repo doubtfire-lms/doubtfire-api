@@ -208,7 +208,7 @@ class UnitsApiTest < ActiveSupport::TestCase
   end
 
   def test_units_get_has_streams
-    expected_unit = FactoryGirl.create(:unit, with_students: false, stream_count: 2)
+    expected_unit = FactoryBot.create(:unit, with_students: false, stream_count: 2)
 
     # Get the unit...
     get with_auth_token "/api/units/#{expected_unit.id}"
@@ -223,7 +223,7 @@ class UnitsApiTest < ActiveSupport::TestCase
 
     assert_equal 2, actual_unit['tutorial_streams'].count
 
-    expected_unit = FactoryGirl.create(:unit, with_students: false, stream_count: 3)
+    expected_unit = FactoryBot.create(:unit, with_students: false, stream_count: 3)
 
     # Get the unit...
     get with_auth_token "/api/units/#{expected_unit.id}"
@@ -316,9 +316,9 @@ class UnitsApiTest < ActiveSupport::TestCase
   # PUT tests
 
   def test_update_main_convenor
-    unit = FactoryGirl.create :unit, with_students: false, task_count: 0, tutorials: 0, outcome_count: 0, staff_count: 0, campus_count: 0
+    unit = FactoryBot.create :unit, with_students: false, task_count: 0, tutorials: 0, outcome_count: 0, staff_count: 0, campus_count: 0
 
-    convenor_user = FactoryGirl.create :user, :convenor
+    convenor_user = FactoryBot.create :user, :convenor
     convenor_user_role = unit.employ_staff convenor_user, Role.convenor
 
     data_to_put = {

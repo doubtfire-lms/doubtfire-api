@@ -40,7 +40,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
   def test_group_tasks
     u = Unit.first
-    activity_type = FactoryGirl.create(:activity_type)
+    activity_type = FactoryBot.create(:activity_type)
     u.add_tutorial_stream('Group-Tasks-Test', 'group-tasks-test', activity_type)
 
     group_params = {
@@ -64,8 +64,8 @@ class TaskDefinitionTest < ActiveSupport::TestCase
   end
 
   def test_export_task_definitions_csv
-    unit = FactoryGirl.create(:unit, with_students: false)
-    stream_1 = FactoryGirl.create(:tutorial_stream, unit: unit)
+    unit = FactoryBot.create(:unit, with_students: false)
+    stream_1 = FactoryBot.create(:tutorial_stream, unit: unit)
 
     task_defs_csv = CSV.parse unit.task_definitions_csv, headers: true
     task_defs_csv.each do |task_def_csv|
@@ -136,7 +136,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     assert_empty unit.tutorial_streams
     assert_empty unit.task_definitions
 
-    activity_type = FactoryGirl.create(:activity_type)
+    activity_type = FactoryBot.create(:activity_type)
     tutorial_stream = unit.add_tutorial_stream('Import-Tasks', 'import-tasks', activity_type)
     unit.import_tasks_from_csv File.open(Rails.root.join('test_files',"#{unit.code}-ImportTasksWithTutorialStream.csv"))
     assert_equal 36, unit.task_definitions.count, 'imported all task definitions'
