@@ -28,8 +28,6 @@ class StudentsApiTest < ActiveSupport::TestCase
     get with_auth_token "/api/students/?unit_id=#{newUnit.id}"
     response_received = last_response_body
 
-    # check return value
-    assert_equal response_received[0]['first_name'],studentUser.first_name
     assert_equal 200, last_response.status
   end
 
