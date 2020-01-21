@@ -1,4 +1,3 @@
-require 'populator'
 require 'faker'
 require 'bcrypt'
 require 'json'
@@ -416,6 +415,7 @@ class DatabasePopulator
 
       user_details[:num].times do | count |
         tutorial_count += 1
+        tutorial_stream = unit.tutorial_streams.sample
         #day, time, location, tutor_username, abbrev
         tutorial = unit.add_tutorial(
           "#{weekdays.sample}",
@@ -424,7 +424,8 @@ class DatabasePopulator
           tutor,
           campus,
           rand(10...20),
-          "LA1-#{tutorial_count.to_s.rjust(2, '0')}"
+          "LA1-#{tutorial_count.to_s.rjust(2, '0')}",
+          tutorial_stream
         )
 
         # Add a random number of students to the tutorial
@@ -432,14 +433,15 @@ class DatabasePopulator
         echo "-----> Creating #{num_students_in_tutorial} projects under tutorial #{tutorial.abbreviation}"
         num_students_in_tutorial.times do
           student = find_or_create_student("student_#{student_count}")
-          project = unit.enrol_student(student, campus, tutorial.id)
+          project = unit.enrol_student(student, campus)
           student_count += 1
+          project.enrol_in(tutorial)
           echo '.'
         end
         # Add fixed students to first tutorial
         if count == 0
           unit_details[:students].each do | student_key |
-            unit.enrol_student(@user_cache[student_key], campus, tutorial.id)
+            unit.enrol_student(@user_cache[student_key], campus)
           end
         end
         echo_line "!"
@@ -449,7 +451,6 @@ class DatabasePopulator
 
   def self.assess_task(proj, task, tutor, status, complete_date)
     alignments = []
-    sum_ratings = 0
     task.unit.learning_outcomes.each do |lo|
       next if rand(0..10) < 7
       data = {
@@ -457,12 +458,11 @@ class DatabasePopulator
         rating: rand(1..5),
         rationale: "Simulated rationale text..."
       }
-      sum_ratings += data[:rating]
       alignments << data
     end
 
-    if task.group_task?
-      raise "Cant support group tasks yet in simulation :("
+    if task.group_task? && task.group.nil?
+      return
     end
     contributions = nil
 
@@ -470,8 +470,16 @@ class DatabasePopulator
     task.create_submission_and_trigger_state_change(proj.student) #, propagate = true, contributions = contributions, trigger = trigger)
     task.assess status, tutor, complete_date
 
+    if task.task_definition.is_graded?
+      task.grade_task rand(-1..3)
+    end
+
+    if task.for_definition_with_quality?
+      task.update(quality_pts: rand(0.. task.task_definition.max_quality_pts ))
+    end
+
     pdf_path = task.final_pdf_path
-    if pdf_path
+    if pdf_path && !File.exists?(pdf_path)
       FileUtils.ln_s(Rails.root.join('test_files', 'unit_files', 'sample-student-submission.pdf'), pdf_path)
     end
 
@@ -522,6 +530,16 @@ class DatabasePopulator
       TaskStatus.create(name: name, description: desc)
     end
     echo_line "!"
+  end
+
+  def self.generate_portfolio(project)
+    portfolio_tmp_dir = project.portfolio_temp_path
+    FileUtils.mkdir_p(portfolio_tmp_dir)
+
+    lsr_path = File.join(portfolio_tmp_dir, "000-document-LearningSummaryReport.pdf")
+    FileUtils.ln_s(Rails.root.join('test_files', 'unit_files', 'sample-learning-summary.pdf'), lsr_path) unless File.exists? lsr_path
+    project.compile_portfolio = true
+    project.create_portfolio
   end
 
   private
