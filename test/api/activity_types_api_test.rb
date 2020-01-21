@@ -25,7 +25,7 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
 
   def test_post_activity_types
     data_to_post = {
-      activity_type: FactoryGirl.build(:activity_type),
+      activity_type: FactoryBot.build(:activity_type),
       auth_token: auth_token
     }
     post_json '/api/activity_types', data_to_post
@@ -38,7 +38,7 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
 
   def test_put_activity_types
     data_to_put = {
-      activity_type: FactoryGirl.build(:activity_type),
+      activity_type: FactoryBot.build(:activity_type),
       auth_token: auth_token
     }
 

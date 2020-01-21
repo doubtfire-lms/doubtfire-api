@@ -1,7 +1,7 @@
 require 'test_helper'
 require 'date'
 
-class UnitsTest < ActiveSupport::TestCase
+class UnitsApiTest < ActiveSupport::TestCase
   include Rack::Test::Methods
   include TestHelpers::AuthHelper
   include TestHelpers::JsonHelper
@@ -128,26 +128,26 @@ class UnitsTest < ActiveSupport::TestCase
     count_tutorials = Tutorial.all.length
 
     tutorial = {
-      day: 'Wednesday',
-      time: '2:30',
-      location: 'HE12',
-      tutor_username: 'acain',
-      abbrev: 'BC43',
+      unit_id: '1',
+      tutor_id: User.first.id,
       campus_id: Campus.first.id,
-      capacity: 10
+      capacity: 10,
+      abbreviation: 'LA011',
+      meeting_location: 'LAB34',
+      meeting_day: 'Tuesday',
+      meeting_time: '18:00'
     }
 
     data_to_post = {
       tutorial: tutorial,
-      id: '1',
       auth_token: auth_token
     }
 
     # perform the post
-    post_json '/api/units/1/tutorials', data_to_post
-
+    post_json '/api/tutorials', data_to_post
+    assert_equal 201, last_response.status, last_response_body
     # Check there is a new tutorial
-    assert_equal Tutorial.all.length, count_tutorials + 1
+    assert_equal count_tutorials + 1, Tutorial.all.length, last_response_body
     assert_tutorial_model_response last_response_body, tutorial
   end
 
@@ -207,6 +207,38 @@ class UnitsTest < ActiveSupport::TestCase
     assert_equal actual_unit['end_date'].to_date, expected_unit.end_date.to_date
   end
 
+  def test_units_get_has_streams
+    expected_unit = FactoryBot.create(:unit, with_students: false, stream_count: 2)
+
+    # Get the unit...
+    get with_auth_token "/api/units/#{expected_unit.id}"
+
+    actual_unit = last_response_body
+
+    # Check to see if the first unit's match
+    assert_equal actual_unit['name'], expected_unit.name
+    assert_equal actual_unit['code'], expected_unit.code
+    assert_equal actual_unit['start_date'].to_date, expected_unit.start_date.to_date
+    assert_equal actual_unit['end_date'].to_date, expected_unit.end_date.to_date
+
+    assert_equal 2, actual_unit['tutorial_streams'].count
+
+    expected_unit = FactoryBot.create(:unit, with_students: false, stream_count: 3)
+
+    # Get the unit...
+    get with_auth_token "/api/units/#{expected_unit.id}"
+
+    actual_unit = last_response_body
+
+    # Check to see if the first unit's match
+    assert_equal actual_unit['name'], expected_unit.name
+    assert_equal actual_unit['code'], expected_unit.code
+    assert_equal actual_unit['start_date'].to_date, expected_unit.start_date.to_date
+    assert_equal actual_unit['end_date'].to_date, expected_unit.end_date.to_date
+
+    assert_equal 3, actual_unit['tutorial_streams'].count
+  end
+
   #Test GET for getting the unit details of current user
   def test_units_current
     get with_auth_token '/api/units'
@@ -245,17 +277,17 @@ class UnitsTest < ActiveSupport::TestCase
     assert_equal 400, last_response.status
   end
 
-#Test PUT for updating unit details with invalid id
-def test_put_update_unit_invalid_id
-  data_to_put = {
-      unit: { name: 'test'},
-      auth_token: auth_token
-  }
+  #Test PUT for updating unit details with invalid id
+  def test_put_update_unit_invalid_id
+    data_to_put = {
+        unit: { name: 'test'},
+        auth_token: auth_token
+    }
 
-  put_json '/api/units/12', data_to_put
-  assert_equal 404, last_response.status
-end
-   
+    put_json '/api/units/12', data_to_put
+    assert_equal 404, last_response.status
+  end
+
   # Test GET for getting a specific unit by invalid id
   def test_fail_units_get_by_id
     get with_auth_token '/api/units/12'
@@ -277,45 +309,30 @@ end
     test_put_update_unit_custom_token ''
   end
 
-  def test_tasks_for_task_inbox
-    user = User.first
-    unit = Unit.first
-
-    expected_response = unit.tasks_for_task_inbox(user)
-
-    get with_auth_token "/api/units/#{unit.id}/tasks/inbox", user
-
-    assert_equal 200, last_response.status
-
-    # check each is the same
-    last_response_body.zip(expected_response).each do |response, expected|
-      assert_json_matches_model response, expected, ['id']
-    end
-  end
-
-  def test_get_awaiting_feedback
-    user = User.first
-    unit = Unit.first
-
-    expected_response = unit.tasks_awaiting_feedback(user)
-
-    get with_auth_token "/api/units/#{unit.id}/feedback", user
-
-    assert_equal 200, last_response.status
-
-    # check each is the same
-    last_response_body.zip(expected_response).each do |response, expected|
-      assert_json_matches_model response, expected, ['id']
-    end
-  end
-
-  end
-  
   # End GET tests
   # --------------------------------------------------------------------------- #
 
   # --------------------------------------------------------------------------- #
   # PUT tests
+
+  def test_update_main_convenor
+    unit = FactoryBot.create :unit, with_students: false, task_count: 0, tutorials: 0, outcome_count: 0, staff_count: 0, campus_count: 0
+
+    convenor_user = FactoryBot.create :user, :convenor
+    convenor_user_role = unit.employ_staff convenor_user, Role.convenor
+
+    data_to_put = {
+      unit: {
+        main_convenor_id: convenor_user_role.id
+      }
+    }
+
+    put_json with_auth_token("/api/units/#{unit.id}", unit.main_convenor_user), data_to_put
+
+    unit.reload
+    assert_equal 200, last_response.status
+    assert_equal convenor_user_role.id, unit.main_convenor_id
+  end
 
   #def test_units_put
     # users = {
@@ -393,7 +410,4 @@ end
   # End PUT tests
   # --------------------------------------------------------------------------- #
  #end
-
-
-
-  
+end
