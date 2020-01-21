@@ -16,26 +16,11 @@ if ! command -v lualatex > /dev/null; then
 
   echo
 
-  # Install a minimal system
+  # Install a full texlive system
   ./install-tl --profile="${APP_PATH}/texlive.profile"
 
   cd ..
+
+  # Keep no backups (not required, simply makes cache bigger)
+  tlmgr option -- autobackup 0
 fi
-
-# Other contrib packages: done as a block to avoid multiple calls to tlmgr
-# texlive-latex-base is needed to run pdflatex
-tlmgr install   \
-  fontawesome   \
-  minted        \
-  fvextra       \
-  upquote       \
-  ifplatform    \
-  xstring       \
-  framed        \
-  lastpage
-
-# Keep no backups (not required, simply makes cache bigger)
-tlmgr option -- autobackup 0
-
-# Update the TL install but add nothing new
-tlmgr update --self --all --no-auto-install
