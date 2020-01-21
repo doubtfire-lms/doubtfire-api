@@ -32,8 +32,8 @@ module TestHelpers
     # Assert that a JSON response matches the model and keys provided
     #
     def assert_json_matches_model(response_json, model, keys)
-      keys.each { |k| assert response_json.key?(k), "Response has key #{k}" }
-      keys.each { |k| assert_equal model[k], response_json[k], "Values for key #{k} match" }
+      keys.each { |k| assert response_json.key?(k), "Response missing key #{k} - #{response_json}" }
+      keys.each { |k| assert_equal model[k], response_json[k], "Values for key #{k} do not match - #{response_json}" }
     end
 
     #

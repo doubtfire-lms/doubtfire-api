@@ -24,20 +24,7 @@ class PlagiarismMatchLink < ActiveRecord::Base
 
   after_destroy do |match_link|
     match_link.other_party.destroy if match_link.other_party
-    match_link.task.recalculate_max_similar_pct
   end
-
-  # TODO: Remove once max_pct_similar is deleted
-  # #
-  # # Update task's cache of pct similar
-  # #
-  # after_save do | match_link |
-  #   task = match_link.task
-  #   if (not match_link.dismissed) && task.max_pct_similar < match_link.pct
-  #     task.max_pct_similar = match_link.pct
-  #     task.save
-  #   end
-  # end
 
   def other_party
     PlagiarismMatchLink.where(task_id: other_task.id, other_task_id: task.id).first
@@ -48,28 +35,22 @@ class PlagiarismMatchLink < ActiveRecord::Base
   end
 
   def other_tutor
-    other_task.project.main_tutor
+    other_task.project.tutor_for(other_task.task_definition)
   end
 
   delegate :student, to: :task
 
   def tutor
-    task.project.main_tutor
+    task.project.tutor_for(task.task_definition)
   end
 
   def tutorial
-    if task.project.tutorial.nil?
-      'None'
-    else
-      task.project.tutorial.abbreviation
-    end
+    tute = task.project.tutorial_for(task.task_definition)
+    tute.nil? ? 'None' : tute.abbreviation
   end
 
   def other_tutorial
-    if other_task.project.tutorial.nil?
-      'None'
-    else
-      other_task.project.tutorial.abbreviation
-    end
+    tute = other_task.project.tutorial_for(other_task.task_definition)
+    tute.nil? ? 'None' : tute.abbreviation
   end
 end

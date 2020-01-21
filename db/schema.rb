@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20191031235849) do
+ActiveRecord::Schema.define(version: 20200107041946) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -25,16 +25,6 @@ ActiveRecord::Schema.define(version: 20191031235849) do
 
   add_index "activity_types", ["abbreviation"], name: "index_activity_types_on_abbreviation", unique: true, using: :btree
   add_index "activity_types", ["name"], name: "index_activity_types_on_name", unique: true, using: :btree
-
-  create_table "badges", force: :cascade do |t|
-    t.string   "name",                   limit: 255
-    t.text     "description"
-    t.string   "large_image_url",        limit: 255
-    t.string   "small_image_url",        limit: 255
-    t.integer  "sub_task_definition_id"
-    t.datetime "created_at",                         null: false
-    t.datetime "updated_at",                         null: false
-  end
 
   create_table "breaks", force: :cascade do |t|
     t.datetime "start_date",         null: false
@@ -112,42 +102,6 @@ ActiveRecord::Schema.define(version: 20191031235849) do
     t.integer  "number",                   null: false
   end
 
-  create_table "helpdesk_schedules", force: :cascade do |t|
-    t.datetime "start_time"
-    t.integer  "duration"
-    t.integer  "day"
-    t.integer  "user_id"
-    t.datetime "created_at"
-    t.datetime "updated_at"
-  end
-
-  add_index "helpdesk_schedules", ["user_id"], name: "index_helpdesk_schedules_on_user_id", using: :btree
-
-  create_table "helpdesk_sessions", force: :cascade do |t|
-    t.integer  "user_id",        null: false
-    t.datetime "clock_on_time",  null: false
-    t.datetime "clock_off_time", null: false
-    t.datetime "created_at"
-    t.datetime "updated_at"
-  end
-
-  add_index "helpdesk_sessions", ["user_id"], name: "index_helpdesk_sessions_on_user_id", using: :btree
-
-  create_table "helpdesk_tickets", force: :cascade do |t|
-    t.integer  "project_id",                                      null: false
-    t.integer  "task_id"
-    t.string   "description",        limit: 2048
-    t.boolean  "is_resolved",                     default: false, null: false
-    t.datetime "created_at"
-    t.datetime "updated_at"
-    t.datetime "closed_at"
-    t.float    "minutes_to_resolve"
-    t.boolean  "is_closed",                       default: false
-  end
-
-  add_index "helpdesk_tickets", ["project_id"], name: "index_helpdesk_tickets_on_project_id", using: :btree
-  add_index "helpdesk_tickets", ["task_id"], name: "index_helpdesk_tickets_on_task_id", using: :btree
-
   create_table "learning_outcome_task_links", force: :cascade do |t|
     t.text     "description"
     t.integer  "rating"
@@ -194,13 +148,6 @@ ActiveRecord::Schema.define(version: 20191031235849) do
   add_index "plagiarism_match_links", ["other_task_id"], name: "index_plagiarism_match_links_on_other_task_id", using: :btree
   add_index "plagiarism_match_links", ["task_id"], name: "index_plagiarism_match_links_on_task_id", using: :btree
 
-  create_table "project_convenors", force: :cascade do |t|
-    t.integer  "unit_id"
-    t.integer  "user_id"
-    t.datetime "created_at"
-    t.datetime "updated_at"
-  end
-
   create_table "projects", force: :cascade do |t|
     t.integer  "unit_id"
     t.string   "project_role",              limit: 255
@@ -215,7 +162,6 @@ ActiveRecord::Schema.define(version: 20191031235849) do
     t.boolean  "compile_portfolio",                      default: false
     t.date     "portfolio_production_date"
     t.integer  "max_pct_similar",                        default: 0
-    t.integer  "tutorial_id"
     t.integer  "user_id"
     t.integer  "grade",                                  default: 0
     t.string   "grade_rationale",           limit: 4096
@@ -224,7 +170,6 @@ ActiveRecord::Schema.define(version: 20191031235849) do
 
   add_index "projects", ["campus_id"], name: "index_projects_on_campus_id", using: :btree
   add_index "projects", ["enrolled"], name: "index_projects_on_enrolled", using: :btree
-  add_index "projects", ["tutorial_id"], name: "index_projects_on_tutorial_id", using: :btree
   add_index "projects", ["unit_id"], name: "index_projects_on_unit_id", using: :btree
   add_index "projects", ["user_id"], name: "index_projects_on_user_id", using: :btree
 
@@ -233,26 +178,6 @@ ActiveRecord::Schema.define(version: 20191031235849) do
     t.text     "description"
     t.datetime "created_at",              null: false
     t.datetime "updated_at",              null: false
-  end
-
-  create_table "sub_task_definitions", force: :cascade do |t|
-    t.string   "name",                limit: 255
-    t.text     "description"
-    t.integer  "badges_id"
-    t.integer  "task_definitions_id"
-    t.datetime "created_at",                                      null: false
-    t.datetime "updated_at",                                      null: false
-    t.boolean  "required",                        default: false, null: false
-  end
-
-  add_index "sub_task_definitions", ["badges_id"], name: "index_sub_task_definitions_on_badges_id", using: :btree
-
-  create_table "sub_tasks", force: :cascade do |t|
-    t.datetime "completion_date"
-    t.integer  "sub_task_definition_id"
-    t.integer  "task_id"
-    t.datetime "created_at",             null: false
-    t.datetime "updated_at",             null: false
   end
 
   create_table "task_comments", force: :cascade do |t|
@@ -374,19 +299,19 @@ ActiveRecord::Schema.define(version: 20191031235849) do
 
   add_index "teaching_periods", ["period", "year"], name: "index_teaching_periods_on_period_and_year", unique: true, using: :btree
 
-  create_table "teams", force: :cascade do |t|
-    t.integer  "unit_id"
-    t.integer  "user_id"
-    t.string   "meeting_day",      limit: 255
-    t.string   "meeting_time",     limit: 255
-    t.string   "meeting_location", limit: 255
-    t.datetime "created_at"
-    t.datetime "updated_at"
-    t.string   "official_name",    limit: 255
+  create_table "tutorial_enrolments", force: :cascade do |t|
+    t.datetime "created_at",         null: false
+    t.datetime "updated_at",         null: false
+    t.integer  "project_id",         null: false
+    t.integer  "tutorial_id",        null: false
+    t.integer  "tutorial_stream_id"
   end
 
-  add_index "teams", ["unit_id"], name: "index_teams_on_unit_id", using: :btree
-  add_index "teams", ["user_id"], name: "index_teams_on_user_id", using: :btree
+  add_index "tutorial_enrolments", ["project_id"], name: "index_tutorial_enrolments_on_project_id", using: :btree
+  add_index "tutorial_enrolments", ["tutorial_id", "project_id"], name: "index_tutorial_enrolments_on_tutorial_id_and_project_id", unique: true, using: :btree
+  add_index "tutorial_enrolments", ["tutorial_id"], name: "index_tutorial_enrolments_on_tutorial_id", using: :btree
+  add_index "tutorial_enrolments", ["tutorial_stream_id", "project_id"], name: "index_tutorial_enrolments_on_tutorial_stream_id_and_project_id", unique: true, using: :btree
+  add_index "tutorial_enrolments", ["tutorial_stream_id"], name: "index_tutorial_enrolments_on_tutorial_stream_id", using: :btree
 
   create_table "tutorial_streams", force: :cascade do |t|
     t.string   "name",             null: false
@@ -404,19 +329,21 @@ ActiveRecord::Schema.define(version: 20191031235849) do
 
   create_table "tutorials", force: :cascade do |t|
     t.integer  "unit_id"
-    t.string   "meeting_day",      limit: 255
-    t.string   "meeting_time",     limit: 255
-    t.string   "meeting_location", limit: 255
-    t.datetime "created_at",                   null: false
-    t.datetime "updated_at",                   null: false
-    t.string   "code",             limit: 255
+    t.string   "meeting_day",        limit: 255
+    t.string   "meeting_time",       limit: 255
+    t.string   "meeting_location",   limit: 255
+    t.datetime "created_at",                     null: false
+    t.datetime "updated_at",                     null: false
+    t.string   "code",               limit: 255
     t.integer  "unit_role_id"
-    t.string   "abbreviation",     limit: 255
+    t.string   "abbreviation",       limit: 255
     t.integer  "capacity"
     t.integer  "campus_id"
+    t.integer  "tutorial_stream_id"
   end
 
   add_index "tutorials", ["campus_id"], name: "index_tutorials_on_campus_id", using: :btree
+  add_index "tutorials", ["tutorial_stream_id"], name: "index_tutorials_on_tutorial_stream_id", using: :btree
   add_index "tutorials", ["unit_id"], name: "index_tutorials_on_unit_id", using: :btree
   add_index "tutorials", ["unit_role_id"], name: "index_tutorials_on_unit_role_id", using: :btree
 
@@ -445,19 +372,10 @@ ActiveRecord::Schema.define(version: 20191031235849) do
     t.boolean  "active",                           default: true
     t.datetime "last_plagarism_scan"
     t.integer  "teaching_period_id"
+    t.integer  "main_convenor_id"
   end
 
   add_index "units", ["teaching_period_id"], name: "index_units_on_teaching_period_id", using: :btree
-
-  create_table "user_roles", force: :cascade do |t|
-    t.integer  "user_id"
-    t.integer  "role_id"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-  end
-
-  add_index "user_roles", ["role_id"], name: "index_user_roles_on_role_id", using: :btree
-  add_index "user_roles", ["user_id"], name: "index_user_roles_on_user_id", using: :btree
 
   create_table "users", force: :cascade do |t|
     t.string   "email",                           limit: 255, default: "",    null: false
@@ -498,8 +416,12 @@ ActiveRecord::Schema.define(version: 20191031235849) do
   add_foreign_key "projects", "campuses"
   add_foreign_key "task_comments", "users", column: "recipient_id"
   add_foreign_key "task_definitions", "tutorial_streams"
+  add_foreign_key "tutorial_enrolments", "projects"
+  add_foreign_key "tutorial_enrolments", "tutorial_streams"
+  add_foreign_key "tutorial_enrolments", "tutorials"
   add_foreign_key "tutorial_streams", "activity_types"
   add_foreign_key "tutorial_streams", "units"
   add_foreign_key "tutorials", "campuses"
+  add_foreign_key "tutorials", "tutorial_streams"
   add_foreign_key "units", "teaching_periods"
 end
