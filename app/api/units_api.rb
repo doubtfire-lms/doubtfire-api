@@ -65,6 +65,7 @@ module Api
         optional :teaching_period_id
         optional :start_date
         optional :end_date
+        optional :main_convenor_id
 
         mutually_exclusive :teaching_period_id,:start_date
         all_or_none_of :start_date, :end_date
@@ -73,7 +74,7 @@ module Api
     put '/units/:id' do
       unit = Unit.find(params[:id])
       unless authorise? current_user, unit, :update
-        error!({ error: 'Not authorised to update a unit' }, 403)
+        error!({ error: 'Not authorised to update this unit' }, 403)
       end
       unit_parameters = ActionController::Parameters.new(params)
                                                     .require(:unit)
@@ -83,7 +84,9 @@ module Api
                                                             :start_date,
                                                             :end_date,
                                                             :teaching_period_id,
-                                                            :active)
+                                                            :active,
+                                                            :main_convenor_id
+                                                          )
 
       if unit.teaching_period_id.present? && unit_parameters.key?(:start_date)
         unit.teaching_period = nil
@@ -177,41 +180,6 @@ module Api
       end
     end
 
-    desc 'Add a tutorial with the provided details to this unit'
-    params do
-      # day, time, location, tutor_username, abbrev
-      requires :tutorial, type: Hash do
-        requires :day
-        requires :time
-        requires :location
-        requires :tutor_username
-        requires :abbrev
-        requires :campus_id
-        requires :capacity
-      end
-    end
-    post '/units/:id/tutorials' do
-      unit = Unit.find(params[:id])
-      unless authorise? current_user, unit, :add_tutorial
-        error!({ error: 'Not authorised to create a tutorial' }, 403)
-      end
-
-      new_tutorial = params[:tutorial]
-      tutor = User.find_by(username: new_tutorial[:tutor_username])
-      if tutor.nil?
-        error!({ error: "Couldn't find User with username=#{new_tutorial[:tutor_username]}" }, 403)
-      end
-
-      campus = Campus.find(new_tutorial[:campus_id])
-
-      result = unit.add_tutorial(new_tutorial[:day], new_tutorial[:time], new_tutorial[:location], tutor, campus, new_tutorial[:capacity], new_tutorial[:abbrev])
-      if result.nil?
-        error!({ error: 'Tutor username invalid (not a tutor for this unit)' }, 403)
-      end
-
-      result
-    end
-
     desc 'Download the tasks that are awaiting feedback for a unit'
     get '/units/:id/feedback' do
       unit = Unit.find(params[:id])
@@ -272,6 +240,10 @@ module Api
         error!({ error: "Not authorised to upload CSV of students to #{unit.code}" }, 403)
       end
 
+      unless params[:file].present?
+        error!({ error: "No file uploaded" }, 403)
+      end
+
       ensure_csv!(params[:file][:tempfile])
 
       # Actually import...
@@ -283,16 +255,21 @@ module Api
       requires :file, type: Rack::Multipart::UploadedFile, desc: 'CSV upload file.'
     end
     post '/csv/units/:id/withdraw' do
-      # check mime is correct before uploading
-      ensure_csv!(params[:file][:tempfile])
-
       unit = Unit.find(params[:id])
       unless authorise? current_user, unit, :upload_csv
         error!({ error: "Not authorised to upload CSV of students to #{unit.code}" }, 403)
       end
 
+      unless params[:file].present?
+        error!({ error: "No file uploaded" }, 403)
+      end
+
+      path = params[:file][:tempfile].path
+
+      ensure_csv! path
+
       # Actually withdraw...
-      unit.unenrol_users_from_csv(params[:file][:tempfile])
+      unit.unenrol_users_from_csv(File.new(path))
     end
 
     desc 'Download CSV of all students in this unit'

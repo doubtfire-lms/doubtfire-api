@@ -315,14 +315,6 @@ class TaskDefinition < ActiveRecord::Base
       rescue
       end
     end
-
-    # TODO: Remove once max_pct_similar is deleted
-    # # Reset the tasks % similar
-    # logger.debug "Clearing old task percent similar"
-    # tasks.where("tasks.max_pct_similar > 0").each do |t|
-    #   t.max_pct_similar = 0
-    #   t.save
-    # end
   end
 
   def self.to_csv(task_definitions, options = {})
@@ -401,7 +393,7 @@ class TaskDefinition < ActiveRecord::Base
         target_day,
         due_week,
         due_day,
-        tutorial_stream.present? ? tutorial_stream.abbreviation : ''
+        tutorial_stream.present? ? tutorial_stream.abbreviation : nil
       ]
     # [target_date.strftime('%d-%m-%Y')] +
     # [ self['due_date'].nil? ? '' : due_date.strftime('%d-%m-%Y')]
