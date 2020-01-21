@@ -13,13 +13,13 @@ class StudentsApiTest < ActiveSupport::TestCase
   def test_get_students_with_authentication
 
     # Create unit
-    newUnit = FactoryGirl.create(:unit)
+    newUnit = FactoryBot.create(:unit)
 
     #Create campus
-    newCampus = FactoryGirl.create(:campus)
+    newCampus = FactoryBot.create(:campus)
 
     # Create student
-    studentUser = FactoryGirl.create(:user, :student)
+    studentUser = FactoryBot.create(:user, :student)
 
     # Assign student to the unit
     newUnit.enrol_student(studentUser, newCampus)
@@ -33,13 +33,13 @@ class StudentsApiTest < ActiveSupport::TestCase
 
   def test_get_students_without_authentication
     # Create student user
-    studentUser = FactoryGirl.create(:user, :student)
+    studentUser = FactoryBot.create(:user, :student)
 
     # Create unit
-    newUnit = FactoryGirl.create(:unit)
+    newUnit = FactoryBot.create(:unit)
 
     #Create campus
-    newCampus = FactoryGirl.create(:campus)
+    newCampus = FactoryBot.create(:campus)
 
     # Assign student to the unit
     newUnit.enrol_student(studentUser, newCampus)
