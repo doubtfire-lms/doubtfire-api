@@ -31,7 +31,7 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
 
     # the data that we want to post/create
     data_to_post = {
-      activity_type: FactoryGirl.build(:activity_type),
+      activity_type: FactoryBot.build(:activity_type),
       auth_token: auth_token
     }
     
@@ -58,7 +58,7 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
     activity_type = FactoryGirl.create(:activity_type)
     
     data_to_put = {
-      activity_type: FactoryGirl.build(:activity_type),
+      activity_type: FactoryBot.build(:activity_type),
       auth_token: auth_token
     }
 

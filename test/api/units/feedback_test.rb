@@ -10,7 +10,7 @@ class FeedbackTest < ActiveSupport::TestCase
   end
 
   def test_get_awaiting_feedback
-    unit = FactoryGirl.create(:unit, perform_submissions: true, unenrolled_student_count: 0, part_enrolled_student_count: 0)
+    unit = FactoryBot.create(:unit, perform_submissions: true, unenrolled_student_count: 0, part_enrolled_student_count: 0)
 
     unit.teaching_staff.each do |user|
       expected_response = unit.tasks_awaiting_feedback(user)
@@ -27,7 +27,7 @@ class FeedbackTest < ActiveSupport::TestCase
   end
 
   def test_tasks_for_task_inbox
-    unit = FactoryGirl.create(:unit, perform_submissions: true, unenrolled_student_count: 0, part_enrolled_student_count: 0, tutorials: 2, staff_count: 2)
+    unit = FactoryBot.create(:unit, perform_submissions: true, unenrolled_student_count: 0, part_enrolled_student_count: 0, tutorials: 2, staff_count: 2)
 
     expected_count = unit.tasks.where(task_status: [ TaskStatus.ready_to_mark, TaskStatus.need_help ]).count
 

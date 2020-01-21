@@ -1,4 +1,4 @@
-FactoryGirl.define do
+FactoryBot.define do
   factory :tutorial_stream do
     unit
     activity_type                  { ActivityType.all.sample }

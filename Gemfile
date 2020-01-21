@@ -23,11 +23,13 @@ group :development, :test do
   gem 'rails_best_practices'
   gem 'thin'
   gem 'rubocop', '0.46.0'
+  gem 'factory_bot_rails'
 end
 
 group :development, :test, :staging do
   # Generators for population
-  gem 'factory_girl_rails'
+  gem 'factory_bot_rails'
+  gem 'factory_bot'
   gem 'faker', '~>1.9.1'
   gem 'minitest-rails'
   gem 'minitest-around'

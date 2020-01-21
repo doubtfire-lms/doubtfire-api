@@ -11,19 +11,19 @@ class ProjectsApiTest < ActiveSupport::TestCase
   end
 
   def test_can_get_projects
-    user = FactoryGirl.create(:user, :student, enrol_in: 0)
+    user = FactoryBot.create(:user, :student, enrol_in: 0)
     get with_auth_token('/api/projects', user)
     assert_equal 200, last_response.status
   end
 
   def test_projects_returns_correct_number_of_projects
-    user = FactoryGirl.create(:user, :student, enrol_in: 2)
+    user = FactoryBot.create(:user, :student, enrol_in: 2)
     get with_auth_token('/api/projects', user)
     assert_equal 2, last_response_body.count
   end
 
   def test_projects_returns_correct_data
-    user = FactoryGirl.create(:user, :student, enrol_in: 2)
+    user = FactoryBot.create(:user, :student, enrol_in: 2)
     get with_auth_token('/api/projects', user)
     last_response_body.each do |data|
       project = user.projects.find(data['project_id'])
@@ -38,7 +38,7 @@ class ProjectsApiTest < ActiveSupport::TestCase
   end
 
   def test_projects_works_with_inactive_units
-    user = FactoryGirl.create(:user, :student, enrol_in: 2)
+    user = FactoryBot.create(:user, :student, enrol_in: 2)
     Unit.last.update(active: false)
 
     get with_auth_token('/api/projects', user)

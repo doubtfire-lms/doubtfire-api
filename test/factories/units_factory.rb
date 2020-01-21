@@ -1,6 +1,6 @@
-# Read about factories at https://github.com/thoughtbot/factory_girl
+# Read about factories at https://github.com/thoughtbot/factory_bot
 
-FactoryGirl.define do
+FactoryBot.define do
 
   factory :task_definition do
     unit
@@ -12,7 +12,7 @@ FactoryGirl.define do
     sequence(:abbreviation)   { |n| "#{GradeHelper.short_grade_for target_grade}#{((unit.start_date - start_date) / 1.week).floor + 1}.#{n}" }
     weighting                 { rand(1..5) }
     target_date               { start_date + rand(1..2).weeks }
-    group_set                 nil
+    group_set                 { nil }
     tutorial_stream           { unit.tutorial_streams.sample }
   end
 
@@ -26,38 +26,38 @@ FactoryGirl.define do
 
   factory :unit_role do
     unit
-    user                      { FactoryGirl.create :user, :convenor }
+    user                      { FactoryBot.create :user, :convenor }
     role                      { Role.convenor }
   end
 
   factory :unit do
     transient do
-      with_students true
-      student_count 8
-      unenrolled_student_count 1
-      part_enrolled_student_count 2
-      inactive_student_count 1
-      task_count 2
-      tutorials 1  #per campus
-      tutorial_config [] #[ {stream: 0, campus: 0} ]
-      group_sets 0
-      groups [ ] #[ { gs: 0, students:0 } ]
-      group_tasks [ ] #[ {idx: 0, gs: 0 }] - index of task, and index of group set
-      outcome_count 2
-      stream_count 0
-      campus_count 1
-      set_one_of_each_task false  # In addition to the standard tasks, also add one of each different think of task - group, quality, graded, etc.
-      perform_submissions false
-      staff_count 1
+      with_students               { true }
+      student_count               { 8 }
+      unenrolled_student_count    { 1 }
+      part_enrolled_student_count { 2 }
+      task_count                  { 2 }
+      tutorials                   { 1 }  #per campus
+      tutorial_config             { [] } #[ {stream: 0, campus: 0} ]
+      group_sets                  { 0 }
+      groups                      { [] } #[ { gs: 0, students:0 } ]
+      group_tasks                 { [] } #[ {idx: 0, gs: 0 }] - index of task, and index of group set
+      outcome_count               { 2 }
+      stream_count                { 0 }
+      campus_count                { 1 }
+      set_one_of_each_task        { false }  # In addition to the standard tasks, also add one of each different think of task - group, quality, graded, etc.
+      perform_submissions         { false }
+      staff_count                 { 1 }
+      inactive_student_count      { 1 }
     end
 
     name            { Faker::Lorem.unique.words(2).join(' ') }
     description     { Faker::Lorem.sentence }
-    start_date      Time.zone.now
-    end_date        Time.zone.now + 14.weeks
-    teaching_period nil
+    start_date      { Time.zone.now }
+    end_date        { Time.zone.now + 14.weeks }
+    teaching_period { nil }
     code            { "SIT#{Faker::Number.unique.number(3)}" }
-    active          true
+    active          { true }
 
     after(:create) do | unit, eval |
       group_sets = eval.group_sets
@@ -79,7 +79,6 @@ FactoryGirl.define do
       end
 
       campuses = create_list(:campus, eval.campus_count)
-
       create_list(:group_set, group_sets, unit: unit)
       create_list(:learning_outcome, eval.outcome_count, unit: unit)
       tutorial_streams = create_list(:tutorial_stream, eval.stream_count, unit: unit)
@@ -106,7 +105,7 @@ FactoryGirl.define do
         create_list(:tutorial, eval.tutorials, unit: unit, campus: campuses.last )
       end
 
-      unit.employ_staff(FactoryGirl.create(:user, :convenor), Role.convenor)
+      unit.employ_staff(FactoryBot.create(:user, :convenor), Role.convenor)
 
       # Setup group tasks
       group_tasks.each do |task_details|
@@ -121,7 +120,7 @@ FactoryGirl.define do
       # Enrol students
       campuses.each do |c|
         (eval.unenrolled_student_count + eval.student_count + eval.part_enrolled_student_count + eval.inactive_student_count).times do |i|
-          p = unit.enrol_student( FactoryGirl.create(:user, :student), c )
+          p = unit.enrol_student( FactoryBot.create(:user, :student), c )
           next if i < eval.unenrolled_student_count
           if i < eval.unenrolled_student_count + eval.inactive_student_count
             p.update(enrolled: false)
@@ -146,7 +145,7 @@ FactoryGirl.define do
       stud = 0
       groups.each do |group_details|
         gs = unit.group_sets[group_details[:gs]]
-        grp = FactoryGirl.create(:group, group_set: gs)
+        grp = FactoryBot.create(:group, group_set: gs)
         group_details[:students].times do
           grp.add_member unit.projects[stud % eval.student_count]
           stud += 1
