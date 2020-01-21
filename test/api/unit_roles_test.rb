@@ -49,9 +49,9 @@ class UnitRolesTest < ActiveSupport::TestCase
   end
 
   def test_delete_main_convenor
-    unit = FactoryGirl.create :unit, with_students: false, task_count: 0, tutorials: 0, outcome_count: 0, staff_count: 0, campus_count: 0
+    unit = FactoryBot.create :unit, with_students: false, task_count: 0, tutorials: 0, outcome_count: 0, staff_count: 0, campus_count: 0
 
-    convenor_user = FactoryGirl.create :user, :convenor
+    convenor_user = FactoryBot.create :user, :convenor
     convenor_user_role = unit.employ_staff convenor_user, Role.convenor
 
     initial_id = unit.main_convenor_id

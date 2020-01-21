@@ -91,3 +91,6 @@ script:
   - which lualatex
   - PATH=/tmp/texlive/bin/x86_64-linux:$PATH bundle exec rake test
   - PATH=/tmp/texlive/bin/x86_64-linux:$PATH RAILS_ENV=staging bundle exec rake test
+
+before_install:
+  - gem install bundler
