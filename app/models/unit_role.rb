@@ -15,18 +15,24 @@ class UnitRole < ActiveRecord::Base
   validates :user_id, presence: true
   validates :role_id, presence: true
 
+  validate :ensure_valid_user_for_role
+  validate :ensure_convenor, if: :is_main_convenor?
+
+  before_destroy do
+    if is_main_convenor?
+      errors.add :base, 'Cannot delete this role as the user is the main contact for the unit'
+      # throw(:abort) #TODO: When updating to rails 6
+      false
+    else
+      true
+    end
+  end
+
   scope :tutors,    -> { joins(:role).where('roles.name = :role', role: 'Tutor') }
   scope :convenors, -> { joins(:role).where('roles.name = :role', role: 'Convenor') }
-  # scope :staff,     -> { where('role_id != ?', 1) }
 
   def self.for_user(user)
     UnitRole.joins(:role, :unit).where("user_id = :user_id and roles.name <> 'Student'", user_id: user.id)
-  end
-
-  # unit roles are now unique for users in units
-  # TODO: check this usage
-  def other_roles
-    []
   end
 
   def tasks_awaiting_feedback
@@ -149,5 +155,21 @@ class UnitRole < ActiveRecord::Base
     return unless user.receive_feedback_notifications
 
     NotificationsMailer.weekly_staff_summary(self, summary_stats).deliver_now
+  end
+
+  def ensure_valid_user_for_role
+    if is_convenor?
+      errors.add :user, 'must have a role that id able to administer units (request admin to adjust user role)' unless user.has_convenor_capability?
+    else
+      errors.add :user, 'must have a role that id able to teach units (request admin to adjust user role)' unless user.has_tutor_capability?
+    end
+  end
+
+  def is_main_convenor?
+    unit.main_convenor_id == id
+  end
+
+  def ensure_convenor
+    errors.add :user, 'must retain current role to administer units as they are currently the main contact for the unit' unless is_convenor?
   end
 end

@@ -40,7 +40,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
   def test_group_tasks
     u = Unit.first
-    activity_type = FactoryGirl.create(:activity_type)
+    activity_type = FactoryBot.create(:activity_type)
     u.add_tutorial_stream('Group-Tasks-Test', 'group-tasks-test', activity_type)
 
     group_params = {
@@ -64,7 +64,9 @@ class TaskDefinitionTest < ActiveSupport::TestCase
   end
 
   def test_export_task_definitions_csv
-    unit = Unit.first
+    unit = FactoryBot.create(:unit, with_students: false)
+    stream_1 = FactoryBot.create(:tutorial_stream, unit: unit)
+
     task_defs_csv = CSV.parse unit.task_definitions_csv, headers: true
     task_defs_csv.each do |task_def_csv|
       task_def = unit.task_definitions.find_by(abbreviation: task_def_csv['abbreviation'])
@@ -74,13 +76,14 @@ class TaskDefinitionTest < ActiveSupport::TestCase
           assert_equal(task_def[key].to_s, value)
         end
       end
+
       assert_equal task_def.start_week.to_s, task_def_csv['start_week']
       assert_equal task_def.start_day.to_s, task_def_csv['start_day']
       assert_equal task_def.target_week.to_s, task_def_csv['target_week']
       assert_equal task_def.target_day.to_s, task_def_csv['target_day']
       assert_equal task_def.due_week.to_s, task_def_csv['due_week']
       assert_equal task_def.due_day.to_s, task_def_csv['due_day']
-      assert_equal task_def.tutorial_stream.abbreviation, task_def_csv['tutorial_stream']
+      assert_equal task_def.tutorial_stream.present? ? task_def.tutorial_stream.abbreviation : nil, task_def_csv['tutorial_stream']
     end
   end
 
@@ -99,7 +102,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     task_defs_csv = CSV.parse unit.task_definitions_csv, headers: true
     task_defs_csv.each do |task_def_csv|
-      assert_equal '', task_def_csv['tutorial_stream']
+      assert_nil task_def_csv['tutorial_stream']
     end
   end
 
@@ -133,7 +136,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     assert_empty unit.tutorial_streams
     assert_empty unit.task_definitions
 
-    activity_type = FactoryGirl.create(:activity_type)
+    activity_type = FactoryBot.create(:activity_type)
     tutorial_stream = unit.add_tutorial_stream('Import-Tasks', 'import-tasks', activity_type)
     unit.import_tasks_from_csv File.open(Rails.root.join('test_files',"#{unit.code}-ImportTasksWithTutorialStream.csv"))
     assert_equal 36, unit.task_definitions.count, 'imported all task definitions'

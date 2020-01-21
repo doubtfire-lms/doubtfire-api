@@ -4,6 +4,7 @@ class CommentTest < ActiveSupport::TestCase
   include Rack::Test::Methods
   include TestHelpers::AuthHelper
   include TestHelpers::JsonHelper
+  include TestHelpers::TestFileHelper
 
   def app
     Rails.application
@@ -14,6 +15,7 @@ class CommentTest < ActiveSupport::TestCase
     user = project.student
     unit = project.unit
     task_definition = unit.task_definitions.first
+    tutor = project.tutor_for(task_definition)
 
     pre_count = TaskComment.count
 
@@ -26,13 +28,13 @@ class CommentTest < ActiveSupport::TestCase
     assert_equal "Hello World", TaskComment.last.comment, "last comment has message"
     assert_equal pre_count + 1, TaskComment.count, "one comment added"
 
-    expected_response = { 
-        "comment" => "Hello World", 
-        "has_attachment" => false, 
-        "type" => "text", 
-        "is_new" => false, 
-        author: {"id" => user.id}, 
-        recipient: {"id" => project.main_tutor.id}
+    expected_response = {
+        "comment" => "Hello World",
+        "has_attachment" => false,
+        "type" => "text",
+        "is_new" => false,
+        author: {"id" => user.id},
+        recipient: {"id" => tutor.id}
     }
 
     # check each is the same
@@ -49,7 +51,7 @@ class CommentTest < ActiveSupport::TestCase
 
     pre_count = TaskComment.count
 
-    comment_data = { attachment: Rack::Test::UploadedFile.new('test_files/submissions/Deakin_Logo.jpeg', 'image/jpeg') }
+    comment_data = { attachment: upload_file('test_files/submissions/Deakin_Logo.jpeg', 'image/jpeg') }
 
     post with_auth_token("/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", user), comment_data
 
@@ -73,7 +75,7 @@ class CommentTest < ActiveSupport::TestCase
 
     pre_count = TaskComment.count
 
-    comment_data = { attachment: Rack::Test::UploadedFile.new('test_files/submissions/unbelievable.gif', 'image/gif') }
+    comment_data = { attachment: upload_file('test_files/submissions/unbelievable.gif', 'image/gif') }
 
     post with_auth_token("/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", user), comment_data
 
@@ -98,7 +100,7 @@ class CommentTest < ActiveSupport::TestCase
 
     pre_count = TaskComment.count
 
-    comment_data = { attachment: Rack::Test::UploadedFile.new('test_files/submissions/00_question.pdf', 'application/pdf') }
+    comment_data = { attachment: upload_file('test_files/submissions/00_question.pdf', 'application/pdf') }
 
     post with_auth_token("/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", user), comment_data
 
@@ -123,7 +125,7 @@ class CommentTest < ActiveSupport::TestCase
 
     pre_count = TaskComment.count
 
-    comment_data = { attachment: Rack::Test::UploadedFile.new('test_files/submissions/00_question.pdf', 'application/pdf') }
+    comment_data = { attachment: upload_file('test_files/submissions/00_question.pdf', 'application/pdf') }
 
     post with_auth_token("/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", user), comment_data
 
@@ -147,7 +149,7 @@ class CommentTest < ActiveSupport::TestCase
 
     pre_count = TaskComment.count
 
-    comment_data = { attachment: Rack::Test::UploadedFile.new('test_files/submissions/boo.png', 'image/png') }
+    comment_data = { attachment: upload_file('test_files/submissions/boo.png', 'image/png') }
 
     post with_auth_token("/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", user), comment_data
 
@@ -192,7 +194,7 @@ class CommentTest < ActiveSupport::TestCase
     task = project.task_for_task_definition(td)
     assert_equal TaskStatus.ready_to_mark, task.task_status
 
-    tutor = project.main_tutor
+    tutor = project.tutor_for(td)
 
     tc = task.comments.last
     assert tc.comments_read_receipts.count >= 2, 'Error: expected multiple read receipts.'
