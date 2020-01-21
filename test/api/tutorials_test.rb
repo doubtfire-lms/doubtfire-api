@@ -34,7 +34,7 @@ class TutorialsTest < ActiveSupport::TestCase
     number_of_tutorials = Tutorial.all.length
 
     data_to_post = {
-      tutorial: FactoryGirl.build(:tutorial),
+      tutorial: FactoryBot.build(:tutorial),
       auth_token: auth_token
     }
 
@@ -51,7 +51,7 @@ class TutorialsTest < ActiveSupport::TestCase
   def test_tutorial_post_incorrect_auth_token
 
     data_to_post = {
-      tutorial: FactoryGirl.build(:tutorial),
+      tutorial: FactoryBot.build(:tutorial),
       auth_token: 'Incorrect_Auth_Token'
     }
     # perform the post
@@ -66,7 +66,7 @@ class TutorialsTest < ActiveSupport::TestCase
   def test_tutorial_post_empty_auth_token
 
     data_to_post = {
-      tutorial: FactoryGirl.build(:tutorial),
+      tutorial: FactoryBot.build(:tutorial),
       auth_token: ''
     }
     # perform the post
@@ -79,8 +79,8 @@ class TutorialsTest < ActiveSupport::TestCase
   #4: Testing for failure due to string as Unit ID
   # POST /api/tutorials
   def test_tutorial_post_string_unit_id
-    tutor = FactoryGirl.create(:user, :tutor)
-    campus = FactoryGirl.create(:campus)
+    tutor = FactoryBot.create(:user, :tutor)
+    campus = FactoryBot.create(:campus)
     
     tutorial = {
       unit_id: 'string',
@@ -109,8 +109,8 @@ class TutorialsTest < ActiveSupport::TestCase
   #5: Testing for failure due to string as Tutor ID
   # POST /api/tutorials
   def test_tutorial_post_string_tutor_id
-    unit = FactoryGirl.create(:unit)
-    campus = FactoryGirl.create(:campus)
+    unit = FactoryBot.create(:unit)
+    campus = FactoryBot.create(:campus)
 
     tutorial = {
       unit_id: unit.id,
@@ -139,8 +139,8 @@ class TutorialsTest < ActiveSupport::TestCase
   #6: Testing for failure due POST of already existing task
   # POST /api/tutorials
   def test_tutorials_post_existing_task_error_test
-    campus = FactoryGirl.create(:campus)
-    unit = FactoryGirl.create(:unit)
+    campus = FactoryBot.create(:campus)
+    unit = FactoryBot.create(:unit)
     tutor = unit.tutors.first
 
     tutorial = {
@@ -176,8 +176,8 @@ class TutorialsTest < ActiveSupport::TestCase
   #7: Testing for failure due to empty Unit ID
   # POST /api/tutorials
   def test_tutorial_post_empty_unit_id
-    tutor = FactoryGirl.create(:user, :tutor)
-    campus = FactoryGirl.create(:campus)
+    tutor = FactoryBot.create(:user, :tutor)
+    campus = FactoryBot.create(:campus)
 
     tutorial = {
       unit_id: '',
@@ -206,8 +206,8 @@ class TutorialsTest < ActiveSupport::TestCase
   #8: Testing for failure due to empty Tutor ID
   # POST /api/tutorials
   def test_tutorial_post_empty_tutor_id
-    campus = FactoryGirl.create(:campus)
-    unit = FactoryGirl.create(:unit)
+    campus = FactoryBot.create(:campus)
+    unit = FactoryBot.create(:unit)
 
     tutorial = {
       unit_id: unit.id,
@@ -236,8 +236,8 @@ class TutorialsTest < ActiveSupport::TestCase
   #9: Testing for failure due to empty abbreviation
   # POST /api/tutorials
   def test_tutorial_post_empty_abbreviation
-    campus = FactoryGirl.create(:campus)
-    unit = FactoryGirl.create(:unit)
+    campus = FactoryBot.create(:campus)
+    unit = FactoryBot.create(:unit)
     tutor = unit.tutors.first
 
     tutorial = {
@@ -267,8 +267,8 @@ class TutorialsTest < ActiveSupport::TestCase
   #10: Testing for failure due to empty meeting location
   # POST /api/tutorials
   def test_tutorial_post_empty_meeting_location
-    campus = FactoryGirl.create(:campus)
-    unit = FactoryGirl.create(:unit)
+    campus = FactoryBot.create(:campus)
+    unit = FactoryBot.create(:unit)
     tutor = unit.tutors.first
 
     tutorial = {
@@ -298,8 +298,8 @@ class TutorialsTest < ActiveSupport::TestCase
   #11: Testing for failure due to empty meeting day
   # POST /api/tutorials
   def test_tutorial_post_empty_meeting_day
-    campus = FactoryGirl.create(:campus)
-    unit = FactoryGirl.create(:unit)
+    campus = FactoryBot.create(:campus)
+    unit = FactoryBot.create(:unit)
     tutor = unit.tutors.first
 
     tutorial = {
@@ -329,8 +329,8 @@ class TutorialsTest < ActiveSupport::TestCase
   #12: Testing for failure due to empty meeting time
   # POST /api/tutorials
   def test_tutorial_post_empty_meeting_time
-    campus = FactoryGirl.create(:campus)
-    unit = FactoryGirl.create(:unit)
+    campus = FactoryBot.create(:campus)
+    unit = FactoryBot.create(:unit)
     tutor = unit.tutors.first
 
     tutorial = {
@@ -360,8 +360,8 @@ class TutorialsTest < ActiveSupport::TestCase
   #13: Testing for empty meeting time due to string meeting time, other than 3pm
   # POST /api/tutorials
   def test_tutorial_post_string_meeting_time #Other than time string like 3pm
-    campus = FactoryGirl.create(:campus)
-    unit = FactoryGirl.create(:unit)
+    campus = FactoryBot.create(:campus)
+    unit = FactoryBot.create(:unit)
     tutor = unit.tutors.second
 
     tutorial = {
@@ -400,10 +400,10 @@ class TutorialsTest < ActiveSupport::TestCase
   #14: Testing for successful operation
   # PUT /api/tutorials/{id}
   def test_tutorials_put
-    tutorial_old = FactoryGirl.create(:tutorial)
+    tutorial_old = FactoryBot.create(:tutorial)
 
     data_to_put = {
-      tutorial: FactoryGirl.build(:tutorial),
+      tutorial: FactoryBot.build(:tutorial),
       auth_token: auth_token
     }
 
@@ -421,10 +421,10 @@ class TutorialsTest < ActiveSupport::TestCase
   #15: Testing for failure due to empty auth token
   # PUT /api/tutorials/{id}
   def test_tutorials_put_empty_auth_token
-    tutorial_old = FactoryGirl.create(:tutorial)
+    tutorial_old = FactoryBot.create(:tutorial)
 
     data_to_put = {
-      tutorial: FactoryGirl.build(:tutorial),
+      tutorial: FactoryBot.build(:tutorial),
       auth_token: ''
     }
     # perform the put
@@ -437,10 +437,10 @@ class TutorialsTest < ActiveSupport::TestCase
   #16: Testing for failure due to incorrect auth token
   # POST /api/tutorials/{id}
   def test_tutorials_put_incorrect_auth_token
-    tutorial_old = FactoryGirl.create(:tutorial)
+    tutorial_old = FactoryBot.create(:tutorial)
 
     data_to_put = {
-      tutorial: FactoryGirl.build(:tutorial),
+      tutorial: FactoryBot.build(:tutorial),
       auth_token: 'incorrect_auth_token'
     }
     # perform the post
@@ -453,10 +453,10 @@ class TutorialsTest < ActiveSupport::TestCase
   #17: Testing for successful operation with empty abbreviation
   # POST /api/tutorials/{id}
   def test_tutorials_put_empty_abbreviation
-    tutorial_old = FactoryGirl.create(:tutorial)
+    tutorial_old = FactoryBot.create(:tutorial)
 
     data_to_put = {
-      tutorial: FactoryGirl.build(:tutorial, abbreviation:''),
+      tutorial: FactoryBot.build(:tutorial, abbreviation:''),
       auth_token: auth_token
     }
     # perform the post
@@ -469,10 +469,10 @@ class TutorialsTest < ActiveSupport::TestCase
   #18: Testing for successful operation with empty meeting location
   # POST /api/tutorials/{id}
   def test_tutorials_put_empty_meeting_location
-    tutorial_old = FactoryGirl.create(:tutorial)
+    tutorial_old = FactoryBot.create(:tutorial)
 
     data_to_put = {
-      tutorial: FactoryGirl.build(:tutorial, meeting_location:''),
+      tutorial: FactoryBot.build(:tutorial, meeting_location:''),
       auth_token: auth_token
     }
     # perform the put
@@ -485,10 +485,10 @@ class TutorialsTest < ActiveSupport::TestCase
   #19: Testing for successful operation with empty meeting day
   # POST /api/tutorials/{id}
   def test_tutorials_put_empty_meeting_day
-    tutorial_old = FactoryGirl.create(:tutorial)
+    tutorial_old = FactoryBot.create(:tutorial)
 
     data_to_put = {
-      tutorial: FactoryGirl.build(:tutorial, meeting_day:''),
+      tutorial: FactoryBot.build(:tutorial, meeting_day:''),
       auth_token: auth_token
     }
     # perform the post
@@ -501,10 +501,10 @@ class TutorialsTest < ActiveSupport::TestCase
   #20: Testing for successful operation with empty meeting time
   # POST /api/tutorials/{id}
   def test_tutorials_put_empty_meeting_time
-    tutorial_old = FactoryGirl.create(:tutorial)
+    tutorial_old = FactoryBot.create(:tutorial)
 
     data_to_put = {
-      tutorial: FactoryGirl.build(:tutorial, meeting_time:''),
+      tutorial: FactoryBot.build(:tutorial, meeting_time:''),
       auth_token: auth_token
     }
     # perform the post
@@ -525,7 +525,7 @@ class TutorialsTest < ActiveSupport::TestCase
   def test_tutorials_delete
     # Should be random unit where convenor is User.first
     # test_tutorial = Tutorial.where(:convenors == User.first).order('RANDOM()').first
-    test_tutorial = FactoryGirl.create(:tutorial)
+    test_tutorial = FactoryBot.create(:tutorial)
     id_of_tutorial_to_delete = test_tutorial.id
 
     number_of_tutorials = Tutorial.all.length
@@ -575,7 +575,7 @@ class TutorialsTest < ActiveSupport::TestCase
     
     # Should be random unit where convenor is User.first
     # test_tutorial = Tutorial.where(:convenors == User.first).order('RANDOM()').first
-    test_tutorial = FactoryGirl.create(:tutorial)
+    test_tutorial = FactoryBot.create(:tutorial)
     id_of_tutorial_to_delete = test_tutorial.id
 
     number_of_tutorials = Tutorial.all.length
@@ -596,7 +596,7 @@ class TutorialsTest < ActiveSupport::TestCase
   def test_tutorials_delete_incorrect_auth_token
     # Should be random unit where convenor is User.first
     # test_tutorial = Tutorial.where(:convenors == User.first).order('RANDOM()').first
-    test_tutorial = FactoryGirl.create(:tutorial)
+    test_tutorial = FactoryBot.create(:tutorial)
     id_of_tutorial_to_delete = test_tutorial.id
 
     number_of_tutorials = Tutorial.all.length
