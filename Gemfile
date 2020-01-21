@@ -27,6 +27,7 @@ group :development, :test do
   gem 'rails_best_practices'
   gem 'thin'
   gem 'rubocop', '0.46.0'
+  gem 'mocha'
 end
 
 group :development, :test, :staging do
