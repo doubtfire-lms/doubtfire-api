@@ -45,8 +45,8 @@ class ActiveSupport::TestCase
   DatabaseCleaner.strategy = :transaction
 
   def setup
-    DatabaseCleaner.start
     Faker::UniqueGenerator.clear
+    DatabaseCleaner.start
   end
 
   def teardown
