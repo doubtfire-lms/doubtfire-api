@@ -33,15 +33,15 @@ class TeachingPeriodTest < ActiveSupport::TestCase
   # Get a teaching period's details
   def test_get_a_teaching_periods_details
     #create a dummy variable
-    expected_tp = FactoryGirl.create(:teaching_period)
+    expected_tp = FactoryBot.create(:teaching_period)
 
-    # perform the GET 
+    # perform the GET
     get "/api/teaching_periods/#{expected_tp.id}"
     actual_tp = last_response_body
 
     # Check if the call succeeds
     assert_equal 200, last_response.status
-    
+
     # Check the returned details match as expected
     assert_equal actual_tp['period'], expected_tp.period
     assert_equal actual_tp['active_until'].to_date, expected_tp.active_until.to_date
@@ -78,17 +78,17 @@ class TeachingPeriodTest < ActiveSupport::TestCase
   # Replace a teaching period
   def test_put_teaching_period
     # a dummy teaching period
-    tp = FactoryGirl.create(:teaching_period)
+    tp = FactoryBot.create(:teaching_period)
 
     # data to replace
     data_to_put = {
-      teaching_period: FactoryGirl.build(:teaching_period),
+      teaching_period: FactoryBot.build(:teaching_period),
       auth_token: auth_token
     }
 
     # Update teaching period with id = 1
     put_json "/api/teaching_periods/#{tp.id}", data_to_put
-    
+
     # check if the POST get through
     assert_equal 200, last_response.status
 
@@ -97,7 +97,7 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     tp_updated = tp.reload
     assert_json_matches_model(last_response_body, tp_updated, response_keys)
 
-    # check if the details in the replaced teaching period match as data set to replace 
+    # check if the details in the replaced teaching period match as data set to replace
     assert_equal data_to_put[:teaching_period]['period'], tp_updated.period
     assert_equal data_to_put[:teaching_period]['active_until'].to_date, tp_updated.active_until.to_date
     assert_equal data_to_put[:teaching_period]['start_date'].to_date, tp_updated.start_date.to_date
@@ -112,13 +112,13 @@ class TeachingPeriodTest < ActiveSupport::TestCase
 
     # the dummy teaching period that we want to post/create
     data_to_post = {
-      teaching_period: FactoryGirl.build(:teaching_period),
+      teaching_period: FactoryBot.build(:teaching_period),
       auth_token: auth_token
     }
-    
+
     # perform the POST
     post_json '/api/teaching_periods', data_to_post
-    
+
     # check if the POST get through
     assert_equal 201, last_response.status
 
@@ -127,7 +127,7 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     teaching_period = TeachingPeriod.find(last_response_body['id'])
     assert_json_matches_model(last_response_body, teaching_period, response_keys)
 
-    # check if the details in the newly created teaching period match as the pre-set data 
+    # check if the details in the newly created teaching period match as the pre-set data
     assert_equal data_to_post[:teaching_period]['period'], teaching_period.period
     assert_equal data_to_post[:teaching_period]['active_until'].to_date, teaching_period.active_until.to_date
     assert_equal data_to_post[:teaching_period]['start_date'].to_date, teaching_period.start_date.to_date
@@ -141,18 +141,18 @@ class TeachingPeriodTest < ActiveSupport::TestCase
   # Delete a teaching period
   def test_delete_teaching_period
     # create a dummy teaching period
-    teaching_period = FactoryGirl.create (:teaching_period)
+    teaching_period = FactoryBot.create (:teaching_period)
     id_of_tp = teaching_period.id
-    
+
     # number of teaching periods before delete
     number_of_tp = TeachingPeriod.count
-    
+
     # perform the delete
     delete_json with_auth_token"/api/teaching_periods/#{teaching_period.id}"
-    
+
     # Check if the delete get through
     assert_equal 200, last_response.status
-    
+
     # Check if the number of teaching period reduces by 1
     assert_equal TeachingPeriod.count, number_of_tp -1
 
@@ -163,12 +163,12 @@ class TeachingPeriodTest < ActiveSupport::TestCase
   # Delete a teaching period using unauthorised account
   def test_student_cannot_delete_teaching_period
     # A user with student role which does not have permision to delete a teaching period
-    user = FactoryGirl.build(:user, :student)
+    user = FactoryBot.build(:user, :student)
 
     # Teaching period to delete
-    teaching_period = FactoryGirl.create (:teaching_period)
+    teaching_period = FactoryBot.create (:teaching_period)
     id_of_tp = teaching_period.id
-    
+
     # Number of teaching periods before deletion
     number_of_tp = TeachingPeriod.count
 

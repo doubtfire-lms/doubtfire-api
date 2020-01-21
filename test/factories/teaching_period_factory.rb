@@ -1,5 +1,5 @@
 require 'date'
-FactoryGirl.define do
+FactoryBot.define do
   factory :teaching_period do
     sequence(:period, (1..3).cycle)        { |n| "T#{n}" }
     sequence(:start_date, (1..3).cycle)    { |n| Time.zone.now + n * 15.weeks }
