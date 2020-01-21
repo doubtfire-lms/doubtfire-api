@@ -55,7 +55,7 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
   # Replace an activity type
   def test_put_activity_types
     # a dummy activity type
-    activity_type = FactoryGirl.create(:activity_type)
+    activity_type = FactoryBot.create(:activity_type)
     
     data_to_put = {
       activity_type: FactoryBot.build(:activity_type),

@@ -21,7 +21,7 @@ class TasksTest < ActiveSupport::TestCase
   end
 
   def test_time_exceeded_grade
-    unit = FactoryGirl.create(:unit)
+    unit = FactoryBot.create(:unit)
     td = TaskDefinition.new({
         unit_id: unit.id,
         tutorial_stream: unit.tutorial_streams.first,
@@ -58,7 +58,7 @@ class TasksTest < ActiveSupport::TestCase
   end
 
   def test_extension_reverts_time_exceeded
-    unit = FactoryGirl.create(:unit)
+    unit = FactoryBot.create(:unit)
     td = TaskDefinition.new({
         unit_id: unit.id,
         tutorial_stream: unit.tutorial_streams.first,
