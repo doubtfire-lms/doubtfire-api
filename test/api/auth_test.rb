@@ -50,6 +50,17 @@ class AuthTest < ActiveSupport::TestCase
     assert_equal expected_auth.auth_token, actual_auth['auth_token']
   end
 
+  # Test POST for new authentication token should return error missing username and password
+  def test_auth_post_missing_username_and_password
+    data_to_post = {}
+    # Get response back for logging in with username 'acain' password 'password'
+    post_json '/api/auth.json', data_to_post
+    actual_auth = last_response_body
+
+    assert_equal 400, last_response.status
+    assert_equal 'username is missing, password is missing', actual_auth['error']
+  end
+
   # Test auth when username is invalid
   def test_fail_username_auth
     data_to_post = {
@@ -164,6 +175,23 @@ class AuthTest < ActiveSupport::TestCase
     # Check to see if the response auth token matches the auth token that was sent through in put
     assert_equal expected_auth, actual_auth
   end
+
+  # Test put for authentication token should reset_authentication_token
+  def test_auth_put_reset_authentication_token
+    data_to_put = {
+      username: 'acain',
+      password: 'password'
+    }
+    user = User.first
+    user.generate_authentication_token!(false)
+    user.auth_token_expiry = Time.zone.now + 40.minutes
+    user.save!
+    put_json "/api/auth/#{user.auth_token}", data_to_put
+    actual_auth = last_response_body['auth_token']
+
+    # Check to see if the response auth token matches the auth token that was sent through in put
+    assert_equal 200, last_response.status
+  end
   
   # Test invalid authentication token
   def test_fail_auth_put
@@ -246,5 +274,28 @@ class AuthTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status
   end
   # End DELETE tests
+  # --------------------------------------------------------------------------- #
+
+  # --------------------------------------------------------------------------- #
+  # GET tests
+
+  # Test for getting Authentication signout URL
+  def test_auth_signout_url
+    # Get the auth token needed for delete test
+    get "/api/auth/signout_url.json", 'CONTENT_TYPE' => 'application/json'
+    # 200 response code means success!
+    assert_equal 200, last_response.status
+  end
+
+  # Test for getting Authentication method configuration
+  def test_auth_method
+    # Get the auth token needed for delete test
+    get "/api/auth/method.json", 'CONTENT_TYPE' => 'application/json'
+    # 200 response code means success!
+    assert_equal 200, last_response.status
+    assert_equal 'database', last_response_body['method']
+  end
+
+  # End GET tests
   # --------------------------------------------------------------------------- #
 end
