@@ -11,6 +11,8 @@ class StudentsApiTest < ActiveSupport::TestCase
   end
 
   def test_get_students_with_authentication
+    # Create admin
+    adminUser = FactoryBot.create(:user, :admin) 
 
     # Create unit
     newUnit = FactoryBot.create(:unit)
@@ -25,9 +27,13 @@ class StudentsApiTest < ActiveSupport::TestCase
     newUnit.enrol_student(studentUser, newCampus)
 
     # The get that we will be testing.
-    get with_auth_token "/api/students/?unit_id=#{newUnit.id}"
-    response_received = last_response_body
+    get with_auth_token "/api/students/?unit_id=#{newUnit.id}",adminUser
 
+    response_keys = %w(first_name last_name student_id project_id)
+    last_response_body.each do | data |
+      userRes = User.find(data['student_id'])
+      assert_json_matches_model(data, userRes, response_keys)
+    end 
     assert_equal 200, last_response.status
   end
 
@@ -45,14 +51,16 @@ class StudentsApiTest < ActiveSupport::TestCase
     newUnit.enrol_student(studentUser, newCampus)
 
     # The get that we will be testing.
-    get with_auth_token "/api/students/?unit_id=#{newUnit.id}", studentUser
+    get with_auth_token "/api/students/?unit_id=#{newUnit.id}",studentUser
     assert_equal 403, last_response.status
   end
 
   def test_get_students_without_parameters
+    # Create admin
+    adminUser = FactoryBot.create(:user, :admin) 
 
     # The get that we will be testing without parameters.
-    get with_auth_token '/api/students/'
+    get with_auth_token '/api/students/',adminUser
     assert_equal 400, last_response.status
   end
 end
