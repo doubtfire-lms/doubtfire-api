@@ -43,6 +43,41 @@ class CommentTest < ActiveSupport::TestCase
     assert_json_matches_model last_response_body["recipient"], expected_response[:recipient], ["id"]
   end
 
+  def test_student_post_reply_to_comment
+    project = Project.first
+    user = project.student
+    unit = project.unit
+    task_definition = unit.task_definitions.first
+    tutor = project.tutor_for(task_definition)
+
+    pre_count = TaskComment.count
+
+    comment_data = { comment: "Hello World" }
+
+    # Post original comment and check that it was successful
+    post_json with_auth_token("/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", user), comment_data
+    assert_equal 201, last_response.status
+
+    expected_response = {
+        "comment" => "Responding!",
+        "has_attachment" => false,
+        "type" => "text",
+        "is_new" => false,
+        "reply_to" => TaskComment.last.id,
+        author: {"id" => user.id},
+        recipient: {"id" => tutor.id}
+    }
+
+    comment_data = { comment: "Responding!", reply_to: TaskComment.last.id}
+
+    post_json with_auth_token("/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", user), comment_data
+
+    assert_equal 201, last_response.status
+
+    # check each is the same
+    assert_json_matches_model last_response_body, expected_response, ["comment", "has_attachment", "type", "is_new", "reply_to"]
+  end
+
   def test_student_post_image_comment
     project = Project.first
     user = project.student
