@@ -33,7 +33,7 @@ module Api
         error!({ error: "Couldn't find UnitRole with id=#{params[:id]}" }, 403)
       end
 
-      unit_role.destroy
+      unit_role.destroy!
     end
 
     desc "Get a unit_role's details"

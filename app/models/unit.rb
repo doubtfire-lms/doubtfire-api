@@ -12,7 +12,6 @@ class Unit < ActiveRecord::Base
   include MimeCheckHelpers
   include CsvHelper
 
-  validates :description, length: { maximum: 4095, allow_blank: true }
   #
   # Permissions around unit data
   #
@@ -96,15 +95,19 @@ class Unit < ActiveRecord::Base
     end
   end
 
-  validates :name, :description, :start_date, :end_date, presence: true
+  # Ensure before destroy is above relations - as this needs to clear main convenor before unit roles are deleted
+  before_destroy do
+    update(main_convenor_id: nil)
+    delete_associated_files
+  end
 
   # Model associations.
   # When a Unit is destroyed, any TaskDefinitions, Tutorials, and ProjectConvenor instances will also be destroyed.
+  has_many :tutorials, dependent: :destroy
+  has_many :tutorial_enrolments, through: :tutorials
   has_many :tutorial_streams, dependent: :destroy
   has_many :task_definitions, -> { order 'start_date ASC, abbreviation ASC' }, dependent: :destroy
   has_many :projects, dependent: :destroy
-  has_many :tutorials, dependent: :destroy
-  has_many :tutorial_enrolments, through: :tutorials
   has_many :unit_roles, dependent: :destroy
   has_many :teaching_staff, through: :unit_roles, class_name: 'User', source: 'user'
   has_many :learning_outcomes, dependent: :destroy
@@ -122,12 +125,21 @@ class Unit < ActiveRecord::Base
   # Unit has a teaching period
   belongs_to :teaching_period
 
+  belongs_to :main_convenor, class_name: 'UnitRole'
+
+  validates :name, :description, :start_date, :end_date, presence: true
+
+  validates :description, length: { maximum: 4095, allow_blank: true }
+
   validates :start_date, presence: true
   validates :end_date, presence: true
+
   validates :code, uniqueness: { scope: :teaching_period, message: "%{value} already exists in this teaching period" }, if: :has_teaching_period?
 
   validate :validate_end_date_after_start_date
   validate :ensure_teaching_period_dates_match, if: :has_teaching_period?
+
+  validate :ensure_main_convenor_is_appropriate
 
   scope :current,               -> { current_for_date(Time.zone.now) }
   scope :current_for_date,      ->(date) { where('start_date <= ? AND end_date >= ?', date, date) }
@@ -185,6 +197,14 @@ class Unit < ActiveRecord::Base
     end
   end
 
+  def ensure_main_convenor_is_appropriate
+    return if main_convenor_id.nil?
+
+    errors.add(:main_convenor, "must be a staff member from unit") unless id == main_convenor.unit_id
+    errors.add(:main_convenor, "must be configured to administer unit") unless main_convenor.is_convenor?
+    errors.add(:main_convenor, "must be capable of administering units - ensure user has appropriate permissions (contact admin staff to update)") unless main_convenor_user.has_convenor_capability?
+  end
+
   def validate_end_date_after_start_date
     if end_date.present? && start_date.present? && end_date < start_date
       errors.add(:end_date, "should be after the Start date")
@@ -201,7 +221,13 @@ class Unit < ActiveRecord::Base
       new_unit.end_date = end_date
     end
 
+    # Clear main convenor - do not use old role id
+    new_unit.main_convenor_id = nil
+
     new_unit.save!
+
+    # Only employ the main convenor... they can add additional staff
+    new_unit.employ_staff main_convenor_user, Role.convenor
 
     # Duplicate tutorial streams
     tutorial_streams.each do |tutorial_stream|
@@ -226,11 +252,6 @@ class Unit < ActiveRecord::Base
     # Duplicate alignments
     task_outcome_alignments.each do |align|
       align.duplicate_to(new_unit)
-    end
-
-    # Duplicate convenors
-    convenors.each do |convenor|
-      new_unit.convenors << convenor.dup
     end
 
     new_unit
@@ -274,8 +295,8 @@ class Unit < ActiveRecord::Base
     User.teaching(self)
   end
 
-  def main_convenor
-    convenors.first.user
+  def main_convenor_user
+    main_convenor.user
   end
 
   def students
@@ -405,6 +426,11 @@ class Unit < ActiveRecord::Base
       new_staff.unit_id = id
       new_staff.role_id = role.id
       new_staff.save!
+
+      if main_convenor.nil?
+        update!(main_convenor_id: new_staff.id)
+      end
+
       new_staff
     end
   end
@@ -825,13 +851,48 @@ class Unit < ActiveRecord::Base
   end
 
   def export_users_to_csv
-    CSV.generate do |row|
-      row << %w(unit_code username student_id first_name last_name email) +
-                tutorial_stream_abbr
-      active_projects.each do |project|
-        row << [project.unit.code, project.student.username, project.student.student_id, project.student.first_name, project.student.last_name, project.student.email] +
-                project.tutorial_abbr
-      end
+    streams = tutorial_streams
+    grp_sets = group_sets
+
+    CSV.generate do |csv|
+      csv <<  %w(unit_code campus username student_id preferred_name first_name last_name email) +
+              (streams.count > 0 ? streams.map{ |t| t.abbreviation } : ['Tutorial'])
+
+      active_projects.
+        joins(
+          :unit,
+          :campus,
+          'INNER JOIN users ON projects.user_id = users.id',
+          'LEFT OUTER JOIN tutorial_streams ON tutorial_streams.unit_id = units.id',
+          'LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id AND (tutorial_enrolments.tutorial_stream_id = tutorial_streams.id OR tutorial_enrolments.tutorial_stream_id IS NULL)',
+          'LEFT OUTER JOIN tutorials ON tutorials.id = tutorial_enrolments.tutorial_id'
+        ).select(
+          'projects.id as project_id', 'users.student_id as student_id', 'users.username as username', 'users.first_name as first_name',
+          'users.last_name as last_name', 'users.email as email', 'users.nickname as nickname', 'campuses.abbreviation as campus_abbreviation',
+          # Get tutorial for each stream in unit
+          *streams.map { |s| "MAX(CASE WHEN tutorial_enrolments.tutorial_stream_id = #{s.id} OR tutorial_enrolments.tutorial_stream_id IS NULL THEN tutorials.abbreviation ELSE NULL END) AS tutorial_#{s.id}" },
+          # Get tutorial for case when no stream
+          "MAX(CASE WHEN tutorial_streams.id IS NULL THEN tutorials.abbreviation ELSE NULL END) AS tutorial"
+        ).group(
+          'projects.id', 'student_id', 'username', 'first_name', 'nickname', 'last_name', 'email', 'campus_abbreviation'
+        ).each do |row|
+          csv << [
+              code,
+              row['campus_abbreviation'],
+              row['username'],
+              row['student_id'],
+              row['nickname'],
+              row['first_name'],
+              row['last_name'],
+              row['email']
+            ] + [1].map do
+              if streams.empty?
+                [ row['tutorial'] ]
+              else
+                streams.map { |ts| row["tutorial_#{ts.id}"] }
+              end
+            end.flatten
+        end
     end
   end
 
@@ -1005,7 +1066,7 @@ class Unit < ActiveRecord::Base
               'Monday',
               '8:00am',
               'TBA',
-              main_convenor,
+              main_convenor_user,
               campus,
               capacity,
               tutorial_abbr
@@ -1142,12 +1203,7 @@ class Unit < ActiveRecord::Base
   end
 
   def tutorial_stream_abbr
-    projects.
-      joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id').
-      joins('LEFT OUTER JOIN tutorial_streams ON tutorial_enrolments.tutorial_stream_id = tutorial_streams.id').
-      select(
-        'distinct(tutorial_streams.abbreviation) as abbreviation'
-      ).map{ |t| t.abbreviation }
+    tutorial_streams.map{|ts| ts.abbreviation }
   end
 
   def task_completion_csv(options = {})
@@ -1258,11 +1314,7 @@ class Unit < ActiveRecord::Base
 
         # Add file to zip in grade folder
         src_path = project.portfolio_path
-        if project.main_convenor
-          dst_path = FileHelper.sanitized_path(project.target_grade_desc.to_s, "#{project.student.username}-portfolio (#{project.main_convenor.name})") + '.pdf'
-        else
-          dst_path = FileHelper.sanitized_path(project.target_grade_desc.to_s, "#{project.student.username}-portfolio (no tutor)") + '.pdf'
-        end
+        dst_path = FileHelper.sanitized_path(project.target_grade_desc.to_s, "#{project.student.username}-portfolio (#{project.tutors_and_tutorial})") + '.pdf'
 
         # copy into zip
         zip.add(dst_path, src_path)
@@ -1403,17 +1455,6 @@ class Unit < ActiveRecord::Base
     tasks.where(task_definition_id: task_def.id)
   end
 
-  #
-  # Update the student's max_pct_similar for all of their tasks
-  #
-  def update_student_max_pct_similar
-    # TODO: Remove once max_pct_similar is deleted
-    # projects.each do | p |
-    #   p.max_pct_similar = p.tasks.maximum(:max_pct_similar)
-    #   p.save
-    # end
-  end
-
   def create_plagiarism_link(t1, t2, match)
     plk1 = PlagiarismMatchLink.where(task_id: t1.id, other_task_id: t2.id).first
     plk2 = PlagiarismMatchLink.where(task_id: t2.id, other_task_id: t1.id).first
@@ -1504,9 +1545,6 @@ class Unit < ActiveRecord::Base
         end
       end # end of each result
     end # for each task definition where it needs to be updated
-
-    # TODO: Remove once max_pct_similar is deleted
-    # update_student_max_pct_similar()
 
     self.last_plagarism_scan = Time.zone.now
     save!
@@ -2496,6 +2534,12 @@ class Unit < ActiveRecord::Base
     end
 
     summary_stats[:staff] = {}
+  end
 
+private
+  def delete_associated_files
+    FileUtils.rm_rf FileHelper.unit_dir(self)
+    FileUtils.rm_rf FileHelper.unit_portfolio_dir(self)
+    FileUtils.cd FileHelper.student_work_dir
   end
 end

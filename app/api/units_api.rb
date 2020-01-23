@@ -65,6 +65,7 @@ module Api
         optional :teaching_period_id
         optional :start_date
         optional :end_date
+        optional :main_convenor_id
 
         mutually_exclusive :teaching_period_id,:start_date
         all_or_none_of :start_date, :end_date
@@ -73,7 +74,7 @@ module Api
     put '/units/:id' do
       unit = Unit.find(params[:id])
       unless authorise? current_user, unit, :update
-        error!({ error: 'Not authorised to update a unit' }, 403)
+        error!({ error: 'Not authorised to update this unit' }, 403)
       end
       unit_parameters = ActionController::Parameters.new(params)
                                                     .require(:unit)
@@ -83,7 +84,9 @@ module Api
                                                             :start_date,
                                                             :end_date,
                                                             :teaching_period_id,
-                                                            :active)
+                                                            :active,
+                                                            :main_convenor_id
+                                                          )
 
       if unit.teaching_period_id.present? && unit_parameters.key?(:start_date)
         unit.teaching_period = nil

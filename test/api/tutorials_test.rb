@@ -428,7 +428,7 @@ class TutorialsTest < ActiveSupport::TestCase
 
     # Check there is a new tutorial
     assert_equal Tutorial.all.length, number_of_tutorials
-    assert_equal 200, last_response.status 
+    assert_equal 200, last_response.status
     assert_tutorial_model_response last_response_body, tutorial_new
   end
 
@@ -452,7 +452,7 @@ class TutorialsTest < ActiveSupport::TestCase
     put_json '/api/tutorials/1', data_to_put
 
     # Check there is a new tutorial
-    assert_equal 419, last_response.status 
+    assert_equal 419, last_response.status
   end
 
   #16: Testing for failure due to incorrect auth token
@@ -475,7 +475,7 @@ class TutorialsTest < ActiveSupport::TestCase
     put_json '/api/tutorials/1', data_to_put
 
     # Check there is a new tutorial
-    assert_equal 419, last_response.status 
+    assert_equal 419, last_response.status
   end
 
   #17: Testing for successful operation with empty abbreviation
@@ -498,7 +498,7 @@ class TutorialsTest < ActiveSupport::TestCase
     put_json '/api/tutorials/1', data_to_put
 
     # Check there is a new tutorial
-    assert_equal 200, last_response.status 
+    assert_equal 200, last_response.status
   end
 
   #18: Testing for successful operation with empty meeting location
@@ -544,7 +544,7 @@ class TutorialsTest < ActiveSupport::TestCase
     put_json '/api/tutorials/1', data_to_put
 
     # Check there is a new tutorial
-    assert_equal 200, last_response.status 
+    assert_equal 200, last_response.status
   end
 
   #20: Testing for successful operation with empty meeting time
@@ -662,5 +662,31 @@ class TutorialsTest < ActiveSupport::TestCase
 
     # Check authentication error
     assert_equal 419, last_response.status
+  end
+
+#25: Testing for failure due to unauthorised account
+  # Delete a tutorial using unauthorised account
+  def test_student_cannot_delete_tutorial
+    # A user with student role which does not have permision to delete a tutorial
+    user = FactoryBot.build(:user, :student)
+
+    # Tutorial to delete
+    tutorial_to_del = FactoryBot.create (:tutorial)
+    id_of_tutorial = tutorial_to_del.id
+
+    # Number of tutorials before deletion
+    number_of_tutorials = Tutorial.count
+
+    # perform the delete
+    delete_json with_auth_token("/api/tutorials/#{id_of_tutorial}", user)
+
+    # check if the delete does not get through
+    assert_equal 403, last_response.status
+
+    # check if the number of tutorials is still the same
+    assert_equal Tutorial.count, number_of_tutorials
+
+    # Check that you still can find the deleted id
+    assert Tutorial.exists?(id_of_tutorial)
   end
 end
