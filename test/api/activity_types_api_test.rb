@@ -9,7 +9,7 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
     Rails.application
   end
 
-  def test_get_all_activity_types
+    def test_get_all_activity_types
     get '/api/activity_types'
     expected_data = ActivityType.all
 
@@ -49,5 +49,25 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
     response_keys = %w(name abbreviation)
     first_activity_type = ActivityType.first
     assert_json_matches_model(last_response_body, first_activity_type, response_keys)
+  end
+
+  def test_delete_activity_type
+    # Create a activity type
+    activity_type = FactoryBot.create(:activity_type)
+    id_activity_type= activity_type.id
+    # number of activity type before delete
+    number_of_ativity_type = ActivityType.count
+    
+    # perform the delete
+    delete_json with_auth_token "/api/activity_types/#{activity_type.id}"
+    
+    # Check if the delete get through
+    assert_equal 200, last_response.status
+
+    # Check delete if success
+    assert_equal ActivityType.count, number_of_ativity_type-1
+
+    # Check that you can't find the deleted id
+    refute ActivityType.exists?(id_activity_type)
   end
 end
