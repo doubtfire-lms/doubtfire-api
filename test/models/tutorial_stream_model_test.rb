@@ -2,14 +2,14 @@ require "test_helper"
 
 class TutorialStreamModelTest < ActiveSupport::TestCase
   def test_default_create
-    tutorial_stream = FactoryGirl.create(:tutorial_stream)
+    tutorial_stream = FactoryBot.create(:tutorial_stream)
     last_tutorial_stream = TutorialStream.last
     assert tutorial_stream.valid?
     assert_equal tutorial_stream, last_tutorial_stream
   end
 
   def test_specific_create
-    tutorial_stream = FactoryGirl.create(:tutorial_stream, name: 'Seminar-01', abbreviation: 'sem-01')
+    tutorial_stream = FactoryBot.create(:tutorial_stream, name: 'Seminar-01', abbreviation: 'sem-01')
     last_tutorial_stream = TutorialStream.last
     assert_equal(tutorial_stream.name, 'Seminar-01')
     assert_equal tutorial_stream.abbreviation, 'sem-01'
@@ -18,8 +18,8 @@ class TutorialStreamModelTest < ActiveSupport::TestCase
   end
 
   def test_add_tutorial_stream
-    unit = FactoryGirl.create(:unit, with_students: false)
-    activity_type = FactoryGirl.create(:activity_type)
+    unit = FactoryBot.create(:unit, with_students: false)
+    activity_type = FactoryBot.create(:activity_type)
     tutorial_stream = unit.add_tutorial_stream('Practical-01', 'prac-01', activity_type)
     last_tutorial_stream = unit.tutorial_streams.last
     assert tutorial_stream.valid?
@@ -28,8 +28,8 @@ class TutorialStreamModelTest < ActiveSupport::TestCase
   end
 
   def test_delete_when_two_tutorial_streams_in_unit
-    unit = FactoryGirl.create(:unit, with_students: false)
-    activity_type = FactoryGirl.create(:activity_type)
+    unit = FactoryBot.create(:unit, with_students: false)
+    activity_type = FactoryBot.create(:activity_type)
     tutorial_stream_first = unit.add_tutorial_stream('Practical-01', 'prac-01', activity_type)
     tutorial_stream_second = unit.add_tutorial_stream('Practical-02', 'prac-02', activity_type)
 
@@ -61,8 +61,8 @@ class TutorialStreamModelTest < ActiveSupport::TestCase
   end
 
   def test_delete_when_three_tutorial_streams_in_unit
-    unit = FactoryGirl.create(:unit, with_students: false)
-    activity_type = FactoryGirl.create(:activity_type)
+    unit = FactoryBot.create(:unit, with_students: false)
+    activity_type = FactoryBot.create(:activity_type)
     tutorial_stream_first = unit.add_tutorial_stream('Practical-01', 'prac-01', activity_type)
     tutorial_stream_second = unit.add_tutorial_stream('Practical-02', 'prac-02', activity_type)
     tutorial_stream_third = unit.add_tutorial_stream('Practical-03', 'prac-03', activity_type)
@@ -83,8 +83,8 @@ class TutorialStreamModelTest < ActiveSupport::TestCase
   end
 
   def test_delete_when_one_tutorial_stream_in_unit
-    unit = FactoryGirl.create(:unit, with_students: false)
-    activity_type = FactoryGirl.create(:activity_type)
+    unit = FactoryBot.create(:unit, with_students: false)
+    activity_type = FactoryBot.create(:activity_type)
     tutorial_stream_first = unit.add_tutorial_stream('Practical-01', 'prac-01', activity_type)
 
     # Add task definition to first tutorial stream
@@ -113,8 +113,8 @@ class TutorialStreamModelTest < ActiveSupport::TestCase
   end
 
   def test_creating_first_tutorial_stream_in_unit
-    unit = FactoryGirl.create(:unit, with_students: false)
-    activity_type = FactoryGirl.create(:activity_type)
+    unit = FactoryBot.create(:unit, with_students: false)
+    activity_type = FactoryBot.create(:activity_type)
     tutorial_stream_first = unit.add_tutorial_stream('Practical-01', 'prac-01', activity_type)
 
     assert_equal 1, unit.tutorial_streams.count
@@ -122,8 +122,8 @@ class TutorialStreamModelTest < ActiveSupport::TestCase
   end
 
   def test_creating_second_tutorial_stream_in_unit
-    unit = FactoryGirl.create(:unit, with_students: false)
-    activity_type = FactoryGirl.create(:activity_type)
+    unit = FactoryBot.create(:unit, with_students: false)
+    activity_type = FactoryBot.create(:activity_type)
     tutorial_stream_first = unit.add_tutorial_stream('Practical-01', 'prac-01', activity_type)
     tutorial_stream_second = unit.add_tutorial_stream('Practical-02', 'prac-02', activity_type)
 

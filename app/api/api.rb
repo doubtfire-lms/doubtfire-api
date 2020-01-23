@@ -17,6 +17,8 @@ module Api
         error!(e.message, 400)
       when Grape::Exceptions::MethodNotAllowed
         error!(e.message, 405)
+      when ActiveRecord::RecordNotDestroyed
+        error!(e.message, 400)
       when ActiveRecord::RecordNotFound
         error!("Unable to find requested #{e.message[/(Couldn't find )(.*)( with)/,2]}", 404)
       else

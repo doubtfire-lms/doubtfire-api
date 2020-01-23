@@ -4,6 +4,7 @@ class CommentTest < ActiveSupport::TestCase
   include Rack::Test::Methods
   include TestHelpers::AuthHelper
   include TestHelpers::JsonHelper
+  include TestHelpers::TestFileHelper
 
   def app
     Rails.application
@@ -50,7 +51,7 @@ class CommentTest < ActiveSupport::TestCase
 
     pre_count = TaskComment.count
 
-    comment_data = { attachment: Rack::Test::UploadedFile.new('test_files/submissions/Deakin_Logo.jpeg', 'image/jpeg') }
+    comment_data = { attachment: upload_file('test_files/submissions/Deakin_Logo.jpeg', 'image/jpeg') }
 
     post with_auth_token("/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", user), comment_data
 
@@ -74,7 +75,7 @@ class CommentTest < ActiveSupport::TestCase
 
     pre_count = TaskComment.count
 
-    comment_data = { attachment: Rack::Test::UploadedFile.new('test_files/submissions/unbelievable.gif', 'image/gif') }
+    comment_data = { attachment: upload_file('test_files/submissions/unbelievable.gif', 'image/gif') }
 
     post with_auth_token("/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", user), comment_data
 
@@ -99,7 +100,7 @@ class CommentTest < ActiveSupport::TestCase
 
     pre_count = TaskComment.count
 
-    comment_data = { attachment: Rack::Test::UploadedFile.new('test_files/submissions/00_question.pdf', 'application/pdf') }
+    comment_data = { attachment: upload_file('test_files/submissions/00_question.pdf', 'application/pdf') }
 
     post with_auth_token("/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", user), comment_data
 
@@ -124,7 +125,7 @@ class CommentTest < ActiveSupport::TestCase
 
     pre_count = TaskComment.count
 
-    comment_data = { attachment: Rack::Test::UploadedFile.new('test_files/submissions/00_question.pdf', 'application/pdf') }
+    comment_data = { attachment: upload_file('test_files/submissions/00_question.pdf', 'application/pdf') }
 
     post with_auth_token("/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", user), comment_data
 
@@ -148,7 +149,7 @@ class CommentTest < ActiveSupport::TestCase
 
     pre_count = TaskComment.count
 
-    comment_data = { attachment: Rack::Test::UploadedFile.new('test_files/submissions/boo.png', 'image/png') }
+    comment_data = { attachment: upload_file('test_files/submissions/boo.png', 'image/png') }
 
     post with_auth_token("/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", user), comment_data
 
