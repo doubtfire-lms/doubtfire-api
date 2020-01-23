@@ -25,7 +25,7 @@ class CampusesTest < ActiveSupport::TestCase
   end
   
   def test_get_campuses_by_id
-    campus = FactoryGirl.create(:campus, mode: 'timetable')
+    campus = FactoryBot.create(:campus, mode: 'timetable')
     get "/api/campuses/#{campus.id}"
     response_keys = %w(name abbreviation)
     assert_json_matches_model(last_response_body,campus,response_keys) 
@@ -46,8 +46,8 @@ class CampusesTest < ActiveSupport::TestCase
   end
 
   def test_student_cannot_post_campuses
-    user_student = FactoryGirl.create(:user, :student)
-    data_to_post = { campus: FactoryGirl.build(:campus, mode: 'timetable') }
+    user_student = FactoryBot.create(:user, :student)
+    data_to_post = { campus: FactoryBot.build(:campus, mode: 'timetable') }
 
     post_json  with_auth_token("/api/campuses", user_student), data_to_post
     assert_equal 403, last_response.status
@@ -71,8 +71,8 @@ class CampusesTest < ActiveSupport::TestCase
   end
 
   def test_student_cannot_put_campuses
-    user_student = FactoryGirl.build(:user, :student)
-    data_to_put ={ campus: FactoryGirl.create(:campus, mode: 'timetable')}
+    user_student = FactoryBot.build(:user, :student)
+    data_to_put ={ campus: FactoryBot.create(:campus, mode: 'timetable')}
 
     put_json with_auth_token("/api/campuses/#{data_to_put[:campus].id}", user_student), data_to_put
     assert_equal 403, last_response.status
@@ -80,7 +80,7 @@ class CampusesTest < ActiveSupport::TestCase
   end
     
   def test_delete_campuses        
-    campus = FactoryGirl.create(:campus, mode: 'timetable')
+    campus = FactoryBot.create(:campus, mode: 'timetable')
     initial_num_of_campus = Campus.all.count
 
 
@@ -97,8 +97,8 @@ class CampusesTest < ActiveSupport::TestCase
   end
 
   def test_student_delete_campus
-    user_student = FactoryGirl.build(:user, :student)
-    campus = FactoryGirl.create(:campus, mode: 'timetable')
+    user_student = FactoryBot.build(:user, :student)
+    campus = FactoryBot.create(:campus, mode: 'timetable')
     
     # perform the delete
     delete_json with_auth_token("/api/campuses/#{campus.id}", user_student)
