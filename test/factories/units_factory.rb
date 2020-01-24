@@ -8,6 +8,9 @@ FactoryBot.define do
     meeting_location  { "ATC101" }
     sequence(:abbreviation) { |n| "LA1-#{n}" }
     unit
+    campus
+    tutorial_stream           { nil }
+    unit_role                 { unit.staff.sample }
   end
 
   factory :task_definition do
