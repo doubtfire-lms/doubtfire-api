@@ -11,12 +11,22 @@ class GroupSetsApiTest < ActiveSupport::TestCase
     Rails.application
   end
 
-  def test_get_all_groups_in_unit
+  def test_get_all_groups_in_unit_with_authorization
     # Create unit
     newUnit = FactoryBot.create(:unit)
-    # Create admin
-    adminUser = FactoryBot.create(:user, :admin)  
-    get with_auth_token "/unit/#{newUnit.id}/groups",adminUser
+  
+    get with_auth_token "/api/units/#{newUnit.id}/groups",newUnit.main_convenor_user
+    assert_equal 200, last_response.status
+  end  
+
+  def test_get_all_groups_in_unit_without_authorization
+    # Create unit
+    newUnit = FactoryBot.create(:unit)
+    # Create student
+    studentUser = FactoryBot.create(:user, :student)
+
+    get with_auth_token "/api/units/#{newUnit.id}/groups",studentUser
+    assert_equal 403, last_response.status
   end  
 
 end
