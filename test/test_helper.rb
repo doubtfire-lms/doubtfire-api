@@ -26,6 +26,9 @@ require 'minitest/pride'
 class ActiveSupport::TestCase
   ActiveRecord::Migration.check_pending!
 
+  # Inclide FactoryBot
+  include FactoryBot::Syntax::Methods
+
   # Run tests in parallel with specified workers
   # parallelize(workers: :number_of_processors)
 
@@ -39,6 +42,7 @@ class ActiveSupport::TestCase
   DatabaseCleaner.strategy = :transaction
 
   def setup
+    Faker::UniqueGenerator.clear
     DatabaseCleaner.start
   end
 
