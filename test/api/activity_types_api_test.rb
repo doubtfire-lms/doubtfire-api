@@ -18,8 +18,8 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
     response_keys = %w(name abbreviation)
 
     last_response_body.each do | data |
-      expected_data = ActivityType.find(data['id'])
-      assert_json_matches_model(data, expected_data, response_keys)
+    expected_data = ActivityType.find(data['id'])
+    assert_json_matches_model(data, expected_data, response_keys)
     end
   end
 
@@ -54,8 +54,9 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
   def test_delete_activity_type
     # Create a activity type
     activity_type = FactoryBot.create(:activity_type)
-    id_activity_type= activity_type.id
-    # number of activity type before delete
+    # id_activity_type= activity_type.id
+       
+    #number of activity type before delete
     number_of_ativity_type = ActivityType.count
     
     # perform the delete
@@ -68,23 +69,35 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
     assert_equal ActivityType.count, number_of_ativity_type-1
 
     # Check that you can't find the deleted id
-    refute ActivityType.exists?(id_activity_type)
+    refute ActivityType.exists?(activity_type.id)
   end
 
 
-  def test_delete_activity_type_not_auth
+  def test_student_cannot_delete_activity_type
 
-     # A user with student role which does not have permision to delete a activity type
+
+    # A user with student role which does not have permision to delete a activity type
     user = FactoryBot.build(:user, :student)
-        
-     # create a activity type to delete
-    activity_type = FactoryBot.create(:activity_type)
+    
+    # create a activity type to delete
+    activity_type = FactoryBot.create (:activity_type)
+    id_of_tp = activity_type.id
+
+
+    # number of activity type before delete
+    number_of_ativity_type = ActivityType.count
 
     # perform the delete
     delete_json with_auth_token("/api/activity_types/#{activity_type.id}", user)
-    
+   
     # check if the delete does not get through
     assert_equal 403, last_response.status
+
+    # check if the number of ativity_type is still the same
+    assert_equal ActivityType.count, number_of_ativity_type
+
+    # # Check that you still can find the deleted id
+   assert ActivityType.exists?(activity_type.id)
 
     end
     
