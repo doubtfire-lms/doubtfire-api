@@ -12,27 +12,31 @@ class StudentsApiTest < ActiveSupport::TestCase
 
   def test_get_students_with_authentication
     # Create admin
-    adminUser = FactoryBot.create(:user, :admin) 
+    #adminUser = FactoryBot.create(:user, :admin) 
 
     # Create unit
     newUnit = FactoryBot.create(:unit)
 
     #Create campus
-    newCampus = FactoryBot.create(:campus)
+    #newCampus = FactoryBot.create(:campus)
 
+  #  expectedStudents = newUnit.projects.all
+ #   expectedStudents each do | data |
+ #     puts(data)
+  #  end  
     # Create student
-    studentUser = FactoryBot.create(:user, :student)
+   # studentUser = FactoryBot.create(:user, :student)
 
     # Assign student to the unit
-    newUnit.enrol_student(studentUser, newCampus)
+    #newUnit.enrol_student(studentUser, newCampus)
 
     # The get that we will be testing.
-    get with_auth_token "/api/students/?unit_id=#{newUnit.id}",adminUser
-
+    get with_auth_token "/api/students/?unit_id=#{newUnit.id}", newUnit.main_convenor_user
+    #assert_equal expectedStudents.count, last_response_body.count
     response_keys = %w(first_name last_name student_id project_id)
     last_response_body.each do | data |
-      userRes = User.find(data['student_id'])
-      assert_json_matches_model(data, userRes, response_keys)
+      #pro = Project.find(data['project_id'])
+      assert_json_matches_model(data, pro, response_keys)
     end 
     assert_equal 200, last_response.status
   end
