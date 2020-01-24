@@ -3,6 +3,7 @@
 FactoryBot.define do
 
   factory :tutorial do
+    id                { 1 }
     meeting_day       { "Monday" }
     meeting_time      { "17:30" }
     meeting_location  { "ATC101" }
