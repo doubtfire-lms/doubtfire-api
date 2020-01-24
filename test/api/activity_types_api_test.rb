@@ -75,20 +75,23 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
   end  
 
   def test_student_cannot_put_activity_type
-    # Number of Activity type before put new activity type
-    number_of_activity_type = ActivityType.count
-
     # A user with student role which does not have premision to put a activity type
-    user = FactoryBot.build(:user, :student)
+    user = FactoryBot.create(:user, :student)
+
+    #Create a new activity type
+    activity_type = FactoryBot.create(:activity_type)
+
+    # Number of Activity type before put new activity type
+    number_of_activity_type = ActivityType.count    
 
     # Create a dummy activity type
     data_to_put = {
-      activity_type: FactoryBot.build(:activity_type),
+      activity_type: FactoryBot.build(:activity_type), 
       auth_token: auth_token
     }
 
-    # Update activity_type with id = 1, but the student user does not have permissions to put it.
-    put_json '/api/activity_types/1', with_auth_token(data_to_put, user)
+    # Perform PUT, but the student user does not have permissions to put it.
+    put_json "/api/activity_types/#{activity_type.id}", with_auth_token(data_to_put, user)
     
     # Check if the put does not get through
     assert_equal 403, last_response.status  
