@@ -365,7 +365,7 @@ class Unit < ApplicationRecord
   # Adds a user to this project.
   def enrol_student(user, tutorial = nil)
     tutorial_id = if tutorial.is_a?(Tutorial)
-                    tutorial.id
+                    tutorial.id.first
                   else
                     tutorial
                   end
@@ -394,7 +394,7 @@ class Unit < ApplicationRecord
       task_stats: '0.0|1.0|0.0|0.0|0.0'
     )
 
-    project.tutorial_id = tutorial_id unless tutorial_id.nil?
+    project.tutorial_id = tutorial_id.first unless tutorial_id.nil?
     project.save
     project
   end

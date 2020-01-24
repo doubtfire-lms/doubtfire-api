@@ -261,6 +261,8 @@ GEM
       rainbow (>= 1.99.1, < 3.0)
       ruby-progressbar (~> 1.7)
       unicode-display_width (~> 1.0, >= 1.0.1)
+    rubocop-rspec (1.15.1)
+      rubocop (>= 0.42.0)
     ruby-filemagic (0.7.2)
     ruby-ole (1.2.12.2)
     ruby-progressbar (1.10.1)
@@ -344,6 +346,7 @@ DEPENDENCIES
   roo (~> 2.7.0)
   roo-xls
   rubocop (= 0.46.0)
+  rubocop-rspec
   ruby-filemagic
   rubyzip
   simplecov

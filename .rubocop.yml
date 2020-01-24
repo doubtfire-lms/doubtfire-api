@@ -1,6 +1,7 @@
-#require: rubocop-rspec
-
 AllCops:
+  Include:
+    - rubocop-rspec
+
   Exclude:
     - db/**/*
     - vendor/**/*
