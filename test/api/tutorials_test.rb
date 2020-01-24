@@ -756,6 +756,103 @@ class TutorialsTest < ActiveSupport::TestCase
     assert_tutorial_model_response last_response_body, tutorial
   end
 
+  # Testing for failing requests due to no authorisation
+  # Testing convenor cannot replace a tutorial
+  def test_main_convenor_cannot_replace_tutorials
+    tutorial_old = FactoryBot.create(:tutorial)
+
+    campus = FactoryBot.create(:campus)
+    unit = FactoryBot.create(:unit)
+    tutor = unit.tutors.first
+
+    tutorial = {
+      unit_id: unit.id,
+      tutor_id: tutor.id,
+      campus_id: campus.id,
+      capacity: 10,
+      abbreviation: 'LA011',
+      meeting_location: 'LAB34',
+      meeting_day: 'Tuesday',
+      meeting_time: '18:00'
+    }
+
+    data_to_put = {
+      tutorial: tutorial,
+    }
+
+    number_of_tutorials = Tutorial.all.length
+
+    # perform the post with the unit main convenor auth token
+    put_json "/api/tutorials/#{tutorial_old.id}", with_auth_token(data_to_put, unit.main_convenor_user)
+
+    # Check there is a new tutorial
+    assert_equal 403, last_response.status
+  end
+
+  # Testing tutor cannot replace a tutorial
+  def test_tutor_cannot_replace_tutorial
+    tutorial_old = FactoryBot.create(:tutorial)
+
+    campus = FactoryBot.create(:campus)
+    unit = FactoryBot.create(:unit)
+    tutor = unit.tutors.first
+
+    tutorial = {
+      unit_id: unit.id,
+      tutor_id: tutor.id,
+      campus_id: campus.id,
+      capacity: 10,
+      abbreviation: 'LA011',
+      meeting_location: 'LAB34',
+      meeting_day: 'Tuesday',
+      meeting_time: '18:00'
+    }
+
+    data_to_put = {
+      tutorial: tutorial,
+    }
+
+    number_of_tutorials = Tutorial.all.length
+
+    # perform the post with a tutor auth token
+    put_json "/api/tutorials/#{tutorial_old.id}", with_auth_token(data_to_put, tutor)
+
+    # Check there is a new tutorial
+    assert_equal 403, last_response.status
+  end
+
+  # Testing student cannot replace a tutorial
+  def test_student_cannot_replace_tutorials
+    tutorial_old = FactoryBot.create(:tutorial)
+
+    campus = FactoryBot.create(:campus)
+    unit = FactoryBot.create(:unit)
+    tutor = unit.tutors.first
+
+    tutorial = {
+      unit_id: unit.id,
+      tutor_id: tutor.id,
+      campus_id: campus.id,
+      capacity: 10,
+      abbreviation: 'LA011',
+      meeting_location: 'LAB34',
+      meeting_day: 'Tuesday',
+      meeting_time: '18:00'
+    }
+
+    data_to_put = {
+      tutorial: tutorial,
+    }
+
+    number_of_tutorials = Tutorial.all.length
+
+    # perform the post with a student auth token
+    put_json "/api/tutorials/#{tutorial_old.id}", with_auth_token(data_to_put, first_student_user)
+
+    # Check there is a new tutorial
+    assert_equal 403, last_response.status
+  end
+
   def delete_json_custom(endpoint, data)
     delete endpoint, data.to_json, 'CONTENT_TYPE' => 'application/json'
   end
@@ -764,9 +861,9 @@ class TutorialsTest < ActiveSupport::TestCase
 
   #21: Testing for successful operation with unit main convenor auth token
   # DELETE /api/tutorials/{id}
-  def test_tutorials_delete
+  # Delete a tutorial using admin account
+  def test_admin_delete_tutorial
     test_tutorial = FactoryBot.create(:tutorial)
-    id_of_tutorial_to_delete = test_tutorial.id
 
     number_of_tutorials = Tutorial.all.length
 
@@ -775,15 +872,66 @@ class TutorialsTest < ActiveSupport::TestCase
       tutorial_enrolment.delete
     end
 
-    # perform the post
-    delete_json with_auth_token("/api/tutorials/#{id_of_tutorial_to_delete}", test_tutorial.unit.main_convenor_user)
+    # perform the delete with an admin auth token
+    delete_json with_auth_token("/api/tutorials/#{test_tutorial.id}", first_admin_user)
+    
+    # Check that the request succeeds
+    assert_equal 200, last_response.status
 
     # Check there is one less tutorial
     assert_equal number_of_tutorials - 1, Tutorial.all.length
 
     # Check that you can't find the deleted id
-    refute Tutorial.exists?(id_of_tutorial_to_delete)
+    refute Tutorial.exists?(test_tutorial.id)
+  end
+
+  # Delete a tutorial using convenor account
+  def test_convenor_delete_tutorial
+    test_tutorial = FactoryBot.create(:tutorial)
+
+    number_of_tutorials = Tutorial.all.length
+
+    # Ensure there are no enrolments to enable tutorial to be deleted...
+    test_tutorial.tutorial_enrolments.each do |tutorial_enrolment|
+      tutorial_enrolment.delete
+    end
+
+    # perform the delete with the unit main convenor user auth token
+    delete_json with_auth_token("/api/tutorials/#{test_tutorial.id}", test_tutorial.unit.main_convenor_user)
+    
+    # Check that the request succeeds
     assert_equal 200, last_response.status
+
+    # Check there is one less tutorial
+    assert_equal number_of_tutorials - 1, Tutorial.all.length
+
+    # Check that you can't find the deleted id
+    refute Tutorial.exists?(test_tutorial.id)
+    
+  end
+
+  # Delete a tutorial using tutor account
+  def test_tutor_cannot_delete_tutorial
+    test_tutorial = FactoryBot.create(:tutorial)
+
+    number_of_tutorials = Tutorial.all.length
+
+    # Ensure there are no enrolments to enable tutorial to be deleted...
+    test_tutorial.tutorial_enrolments.each do |tutorial_enrolment|
+      tutorial_enrolment.delete
+    end
+
+    # perform the delete with the unit main convenor user auth token
+    delete_json with_auth_token("/api/tutorials/#{test_tutorial.id}", test_tutorial.unit.tutors.first)
+    
+    # Check that the request succeeds
+    assert_equal 200, last_response.status
+
+    # Check there is one less tutorial
+    assert_equal number_of_tutorials - 1, Tutorial.all.length
+
+    # Check that you can't find the deleted id
+    refute Tutorial.exists?(test_tutorial.id)
   end
 
   #22: Testing for failure due to string as Tutorial ID
@@ -846,10 +994,9 @@ class TutorialsTest < ActiveSupport::TestCase
     assert_equal 419, last_response.status
   end
 
-#25: Testing for failure due to unauthorised account
-  # Delete a tutorial using unauthorised account
+#25: Testing for failure due to unauthorised account  
+  # Delete a tutorial using student account
   def test_student_cannot_delete_tutorial
-
     # Tutorial to delete
     tutorial_to_del = FactoryBot.create (:tutorial)
     id_of_tutorial = tutorial_to_del.id
