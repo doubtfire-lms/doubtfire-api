@@ -4,6 +4,7 @@ class TutorialsTest < ActiveSupport::TestCase
   include Rack::Test::Methods
   include TestHelpers::AuthHelper
   include TestHelpers::JsonHelper
+  include TestHelpers::AccountHelper
 
   def app
     Rails.application
@@ -30,7 +31,40 @@ class TutorialsTest < ActiveSupport::TestCase
 
   #1: Testing for successful operation
   # POST /api/tutorials
-  def test_tutorials_post
+  
+  def test_tutorials_post_by_tutor
+    campus = FactoryBot.create(:campus)
+    unit = FactoryBot.create(:unit)
+    tutor = unit.tutors.first
+
+    tutorial = {
+      unit_id: unit.id,
+      tutor_id: tutor.id,
+      campus_id: campus.id,
+      capacity: 10,
+      abbreviation: 'LA011',
+      meeting_location: 'LAB34',
+      meeting_day: 'Tuesday',
+      meeting_time: '18:00'
+    }
+
+    data_to_post = {
+      tutorial: tutorial,
+    }
+    number_of_tutorials = Tutorial.all.length
+
+    # perform the post with the unit first tutor auth token
+    post_json '/api/tutorials', with_auth_token(data_to_post, tutor)
+
+    # Check for successful request
+    assert_equal 201, last_response.status
+
+    # Check there is a new tutorial
+    assert_equal Tutorial.all.length, number_of_tutorials + 1
+    assert_tutorial_model_response last_response_body, tutorial
+  end
+
+  def test_tutorials_post_by_main_convenor
     campus = FactoryBot.create(:campus)
     unit = FactoryBot.create(:unit)
     tutor = unit.tutors.first
@@ -53,6 +87,38 @@ class TutorialsTest < ActiveSupport::TestCase
 
     # perform the post with the unit main convenor auth token
     post_json '/api/tutorials', with_auth_token(data_to_post, unit.main_convenor_user)
+
+    # Check for successful request
+    assert_equal 201, last_response.status
+
+    # Check there is a new tutorial
+    assert_equal Tutorial.all.length, number_of_tutorials + 1
+    assert_tutorial_model_response last_response_body, tutorial
+  end
+
+  def test_tutorials_post_by_admin
+    campus = FactoryBot.create(:campus)
+    unit = FactoryBot.create(:unit)
+    tutor = unit.tutors.first
+
+    tutorial = {
+      unit_id: unit.id,
+      tutor_id: tutor.id,
+      campus_id: campus.id,
+      capacity: 10,
+      abbreviation: 'LA011',
+      meeting_location: 'LAB34',
+      meeting_day: 'Tuesday',
+      meeting_time: '18:00'
+    }
+
+    data_to_post = {
+      tutorial: tutorial,
+    }
+    number_of_tutorials = Tutorial.all.length
+
+    # perform the post with an admin auth token
+    post_json '/api/tutorials', with_auth_token(data_to_post, first_admin_user)
 
     # Check for successful request
     assert_equal 201, last_response.status
@@ -431,6 +497,39 @@ class TutorialsTest < ActiveSupport::TestCase
     assert_equal number_of_tutorials + 1, Tutorial.all.length
     assert_equal 201, last_response.status
     assert_tutorial_model_response outcome_expected, last_response_body
+  end
+
+  #14: Testing student cannot create a tutorial
+  # POST /api/tutorials
+  def test_student_cannot_post_tutorials
+    campus = FactoryBot.create(:campus)
+    unit = FactoryBot.create(:unit)
+    tutor = unit.tutors.first
+
+    tutorial = {
+      unit_id: unit.id,
+      tutor_id: tutor.id,
+      campus_id: campus.id,
+      capacity: 10,
+      abbreviation: 'LA011',
+      meeting_location: 'LAB34',
+      meeting_day: 'Tuesday',
+      meeting_time: '18:00'
+    }
+
+    data_to_post = {
+      tutorial: tutorial,
+    }
+    number_of_tutorials = Tutorial.all.length
+
+    # perform the post with a student auth token
+    post_json '/api/tutorials', with_auth_token(data_to_post, first_student_user)
+
+    # Check for successful request
+    assert_equal 403, last_response.status
+
+    # Check there is no new tutorial
+    assert_equal Tutorial.all.length, number_of_tutorials
   end
 
   #####----------PUT tests - Update a tutorial----------#####
