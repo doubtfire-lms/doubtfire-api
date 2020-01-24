@@ -71,10 +71,7 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
     refute ActivityType.exists?(activity_type.id)
   end
 
-
   def test_student_cannot_delete_activity_type
-
-
     # A user with student role which does not have permision to delete a activity type
     user = FactoryBot.build(:user, :student)
     
@@ -97,5 +94,4 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
    assert ActivityType.exists?(activity_type.id)
 
     end
-    
-end
+  end
