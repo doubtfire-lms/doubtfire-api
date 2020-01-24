@@ -54,8 +54,7 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
   def test_delete_activity_type
     # Create a activity type
     activity_type = FactoryBot.create(:activity_type)
-    # id_activity_type= activity_type.id
-       
+          
     #number of activity type before delete
     number_of_ativity_type = ActivityType.count
     
@@ -81,9 +80,7 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
     
     # create a activity type to delete
     activity_type = FactoryBot.create (:activity_type)
-    id_of_tp = activity_type.id
-
-
+    
     # number of activity type before delete
     number_of_ativity_type = ActivityType.count
 
