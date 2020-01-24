@@ -51,7 +51,7 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
     assert_json_matches_model(last_response_body, first_activity_type, response_keys)
   end
 
-  def test_post_activity_types_cannot_auth
+  def test_student_cannot_post_activity_type
     # Number of Activity type before post new activity type
     number_of_activity_type = ActivityType.count
 
@@ -74,7 +74,7 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
     assert_equal ActivityType.count, number_of_activity_type
   end  
 
-  def test_put_activity_types_cannot_auth
+  def test_student_cannot_put_activity_type
     # Number of Activity type before put new activity type
     number_of_activity_type = ActivityType.count
 
