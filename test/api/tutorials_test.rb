@@ -534,25 +534,42 @@ class TutorialsTest < ActiveSupport::TestCase
 
   #####----------PUT tests - Update a tutorial----------#####
 
-  #14: Testing for successful operation
+  # Testing for successful operation with admin auth token
   # PUT /api/tutorials/{id}
-  def test_tutorials_put
+  def test_tutorials_put_by_admin
     tutorial_old = FactoryBot.create(:tutorial)
 
+    campus = FactoryBot.create(:campus)
+    unit = FactoryBot.create(:unit)
+    tutor = unit.tutors.first
+
+    tutorial = {
+      unit_id: unit.id,
+      tutor_id: tutor.id,
+      campus_id: campus.id,
+      capacity: 10,
+      abbreviation: 'LA011',
+      meeting_location: 'LAB34',
+      meeting_day: 'Tuesday',
+      meeting_time: '18:00'
+    }
+
     data_to_put = {
-      tutorial: FactoryBot.build(:tutorial),
-      auth_token: auth_token
+      tutorial: tutorial
     }
 
     number_of_tutorials = Tutorial.all.length
 
-    # perform the post
-    put_json "/api/tutorials/#{tutorial_old.id}", data_to_put
-
-    # Check there is a new tutorial
-    assert_equal Tutorial.all.length, number_of_tutorials
+    # perform the post with an admin auth token
+    put_json "/api/tutorials/#{tutorial_old.id}", with_auth_token(data_to_put, first_admin_user)
+    
+    # Check for successful request
     assert_equal 200, last_response.status
-    assert_tutorial_model_response last_response_body, data_to_put[:tutorial]
+    
+    # Check details match as expected
+    tutorial_old.reload
+    assert_tutorial_model_response last_response_body, tutorial_old
+    assert_tutorial_model_response last_response_body, tutorial
   end
 
   #15: Testing for failure due to empty auth token
@@ -587,20 +604,42 @@ class TutorialsTest < ActiveSupport::TestCase
     assert_equal 419, last_response.status
   end
 
-  #17: Testing for successful operation with empty abbreviation
+  # Testing for successful operation with empty abbreviation
   # POST /api/tutorials/{id}
   def test_tutorials_put_empty_abbreviation
     tutorial_old = FactoryBot.create(:tutorial)
 
-    data_to_put = {
-      tutorial: FactoryBot.build(:tutorial, abbreviation:''),
-      auth_token: auth_token
-    }
-    # perform the post
-    put_json "/api/tutorials/#{tutorial_old.id}", data_to_put
+    campus = FactoryBot.create(:campus)
+    unit = FactoryBot.create(:unit)
+    tutor = unit.tutors.first
 
-    # Check there is a new tutorial
+    tutorial = {
+      unit_id: unit.id,
+      tutor_id: tutor.id,
+      campus_id: campus.id,
+      capacity: 10,
+      abbreviation: '',
+      meeting_location: 'LAB34',
+      meeting_day: 'Tuesday',
+      meeting_time: '18:00'
+    }
+
+    data_to_put = {
+      tutorial: tutorial
+    }
+
+    number_of_tutorials = Tutorial.all.length
+
+    # perform the post with an admin auth token
+    put_json "/api/tutorials/#{tutorial_old.id}", with_auth_token(data_to_put, first_admin_user)
+    
+    # Check for successful request
     assert_equal 200, last_response.status
+    
+    # Check details match as expected
+    tutorial_old.reload
+    assert_tutorial_model_response last_response_body, tutorial_old
+    assert_tutorial_model_response last_response_body, tutorial
   end
 
   #18: Testing for successful operation with empty meeting location
@@ -608,15 +647,37 @@ class TutorialsTest < ActiveSupport::TestCase
   def test_tutorials_put_empty_meeting_location
     tutorial_old = FactoryBot.create(:tutorial)
 
-    data_to_put = {
-      tutorial: FactoryBot.build(:tutorial, meeting_location:''),
-      auth_token: auth_token
-    }
-    # perform the put
-    put_json "/api/tutorials/#{tutorial_old.id}", data_to_put
+    campus = FactoryBot.create(:campus)
+    unit = FactoryBot.create(:unit)
+    tutor = unit.tutors.first
 
-    # Check there is a new tutorial
+    tutorial = {
+      unit_id: unit.id,
+      tutor_id: tutor.id,
+      campus_id: campus.id,
+      capacity: 10,
+      abbreviation: 'LA011',
+      meeting_location: '',
+      meeting_day: 'Tuesday',
+      meeting_time: '18:00'
+    }
+
+    data_to_put = {
+      tutorial: tutorial
+    }
+
+    number_of_tutorials = Tutorial.all.length
+
+    # perform the post with an admin auth token
+    put_json "/api/tutorials/#{tutorial_old.id}", with_auth_token(data_to_put, first_admin_user)
+    
+    # Check for successful request
     assert_equal 200, last_response.status
+    
+    # Check details match as expected
+    tutorial_old.reload
+    assert_tutorial_model_response last_response_body, tutorial_old
+    assert_tutorial_model_response last_response_body, tutorial
   end
 
   #19: Testing for successful operation with empty meeting day
@@ -624,15 +685,37 @@ class TutorialsTest < ActiveSupport::TestCase
   def test_tutorials_put_empty_meeting_day
     tutorial_old = FactoryBot.create(:tutorial)
 
-    data_to_put = {
-      tutorial: FactoryBot.build(:tutorial, meeting_day:''),
-      auth_token: auth_token
-    }
-    # perform the post
-    put_json "/api/tutorials/#{tutorial_old.id}", data_to_put
+    campus = FactoryBot.create(:campus)
+    unit = FactoryBot.create(:unit)
+    tutor = unit.tutors.first
 
-    # Check there is a new tutorial
+    tutorial = {
+      unit_id: unit.id,
+      tutor_id: tutor.id,
+      campus_id: campus.id,
+      capacity: 10,
+      abbreviation: 'LA011',
+      meeting_location: '',
+      meeting_day: '',
+      meeting_time: '18:00'
+    }
+
+    data_to_put = {
+      tutorial: tutorial
+    }
+
+    number_of_tutorials = Tutorial.all.length
+
+    # perform the post with an admin auth token
+    put_json "/api/tutorials/#{tutorial_old.id}", with_auth_token(data_to_put, first_admin_user)
+    
+    # Check for successful request
     assert_equal 200, last_response.status
+    
+    # Check details match as expected
+    tutorial_old.reload
+    assert_tutorial_model_response last_response_body, tutorial_old
+    assert_tutorial_model_response last_response_body, tutorial
   end
 
   #20: Testing for successful operation with empty meeting time
@@ -640,15 +723,37 @@ class TutorialsTest < ActiveSupport::TestCase
   def test_tutorials_put_empty_meeting_time
     tutorial_old = FactoryBot.create(:tutorial)
 
-    data_to_put = {
-      tutorial: FactoryBot.build(:tutorial, meeting_time:''),
-      auth_token: auth_token
-    }
-    # perform the post
-    put_json "/api/tutorials/#{tutorial_old.id}", data_to_put
+    campus = FactoryBot.create(:campus)
+    unit = FactoryBot.create(:unit)
+    tutor = unit.tutors.first
 
-    # Check there is a new tutorial
+    tutorial = {
+      unit_id: unit.id,
+      tutor_id: tutor.id,
+      campus_id: campus.id,
+      capacity: 10,
+      abbreviation: 'LA011',
+      meeting_location: '',
+      meeting_day: 'Tuesday',
+      meeting_time: ''
+    }
+
+    data_to_put = {
+      tutorial: tutorial
+    }
+
+    number_of_tutorials = Tutorial.all.length
+
+    # perform the post with an admin auth token
+    put_json "/api/tutorials/#{tutorial_old.id}", with_auth_token(data_to_put, first_admin_user)
+    
+    # Check for successful request
     assert_equal 200, last_response.status
+    
+    # Check details match as expected
+    tutorial_old.reload
+    assert_tutorial_model_response last_response_body, tutorial_old
+    assert_tutorial_model_response last_response_body, tutorial
   end
 
   def delete_json_custom(endpoint, data)
@@ -657,11 +762,9 @@ class TutorialsTest < ActiveSupport::TestCase
 
   #####----------DELETE tests - Delete a tutorial----------#####
 
-  #21: Testing for successful operation
+  #21: Testing for successful operation with unit main convenor auth token
   # DELETE /api/tutorials/{id}
   def test_tutorials_delete
-    # Should be random unit where convenor is User.first
-    # test_tutorial = Tutorial.where(:convenors == User.first).order('RANDOM()').first
     test_tutorial = FactoryBot.create(:tutorial)
     id_of_tutorial_to_delete = test_tutorial.id
 
@@ -672,11 +775,8 @@ class TutorialsTest < ActiveSupport::TestCase
       tutorial_enrolment.delete
     end
 
-    data_to_send = {
-      auth_token: auth_token
-    }
     # perform the post
-    delete_json_custom "/api/tutorials/#{id_of_tutorial_to_delete}", data_to_send
+    delete_json with_auth_token("/api/tutorials/#{id_of_tutorial_to_delete}", test_tutorial.unit.main_convenor_user)
 
     # Check there is one less tutorial
     assert_equal number_of_tutorials - 1, Tutorial.all.length
@@ -731,8 +831,6 @@ class TutorialsTest < ActiveSupport::TestCase
   #24: Testing for failure due to incorrect auth token
   # DELETE /api/tutorials/{id}
   def test_tutorials_delete_incorrect_auth_token
-    # Should be random unit where convenor is User.first
-    # test_tutorial = Tutorial.where(:convenors == User.first).order('RANDOM()').first
     test_tutorial = FactoryBot.create(:tutorial)
     id_of_tutorial_to_delete = test_tutorial.id
 
@@ -751,8 +849,6 @@ class TutorialsTest < ActiveSupport::TestCase
 #25: Testing for failure due to unauthorised account
   # Delete a tutorial using unauthorised account
   def test_student_cannot_delete_tutorial
-    # A user with student role which does not have permision to delete a tutorial
-    user = FactoryBot.build(:user, :student)
 
     # Tutorial to delete
     tutorial_to_del = FactoryBot.create (:tutorial)
@@ -762,7 +858,7 @@ class TutorialsTest < ActiveSupport::TestCase
     number_of_tutorials = Tutorial.count
 
     # perform the delete
-    delete_json with_auth_token("/api/tutorials/#{id_of_tutorial}", user)
+    delete_json with_auth_token("/api/tutorials/#{id_of_tutorial}", first_student_user)
 
     # check if the delete does not get through
     assert_equal 403, last_response.status
