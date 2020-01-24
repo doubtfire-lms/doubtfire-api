@@ -33,11 +33,11 @@ class StudentsApiTest < ActiveSupport::TestCase
     # The get that we will be testing.
     get with_auth_token "/api/students/?unit_id=#{newUnit.id}", newUnit.main_convenor_user
     #assert_equal expectedStudents.count, last_response_body.count
-    response_keys = %w(first_name last_name student_id project_id)
-    last_response_body.each do | data |
+    #response_keys = %w(first_name last_name student_id project_id)
+    #last_response_body.each do | data |
       #pro = Project.find(data['project_id'])
       #assert_json_matches_model(data, pro, response_keys)
-    end
+    #end
     assert_equal 200, last_response.status
   end
 
