@@ -24,6 +24,20 @@ class ProjectsApiTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status
   end
 
+  def test_cannot_get_projects
+    # A user with student role
+    user = FactoryBot.create(:user, :student)
+
+    # Create a dummy project
+    project = FactoryBot.create(:project)
+  
+    # Perform Get, but cannot find Project with id=project.id
+    get with_auth_token "/api/projects/#{project.id}", user
+
+    # Check if couldn't find Project with id = project.id
+    assert_equal 403, last_response.status
+  end
+
   def test_projects_returns_correct_number_of_projects
     user = FactoryBot.create(:user, :student, enrol_in: 2)
     get with_auth_token('/api/projects', user)
