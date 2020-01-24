@@ -48,16 +48,18 @@ class TutorialsTest < ActiveSupport::TestCase
 
     data_to_post = {
       tutorial: tutorial,
-      auth_token: auth_token
     }
     number_of_tutorials = Tutorial.all.length
 
-    # perform the post
-    post_json '/api/tutorials', data_to_post
+    # perform the post with the unit main convenor auth token
+    post_json '/api/tutorials', with_auth_token(data_to_post, unit.main_convenor_user)
+
+    # Check for successful request
+    assert_equal 201, last_response.status
 
     # Check there is a new tutorial
     assert_equal Tutorial.all.length, number_of_tutorials + 1
-    assert_tutorial_model_response last_response_body, data_to_post[:tutorial]
+    assert_tutorial_model_response last_response_body, tutorial
   end
 
   #2: Testing for failure due to incorrect auth token
@@ -82,7 +84,8 @@ class TutorialsTest < ActiveSupport::TestCase
       tutorial: tutorial,
       auth_token: 'Incorrect_Auth_Token'
     }
-    # perform the post
+
+    # perform the post with the unit main convenor auth token
     post_json '/api/tutorials', data_to_post
 
     # Check for authentication failure
@@ -111,7 +114,7 @@ class TutorialsTest < ActiveSupport::TestCase
       tutorial: tutorial,
       auth_token: ''
     }
-    # perform the post
+    # perform the post with the unit main convenor auth token
     post_json '/api/tutorials', data_to_post
 
     # Check for authentication failure
@@ -121,8 +124,9 @@ class TutorialsTest < ActiveSupport::TestCase
   #4: Testing for failure due to string as Unit ID
   # POST /api/tutorials
   def test_tutorial_post_string_unit_id
-    tutor = FactoryBot.create(:user, :tutor)
     campus = FactoryBot.create(:campus)
+    unit = FactoryBot.create(:unit)
+    tutor = unit.tutors.first
     
     tutorial = {
       unit_id: 'string',
@@ -137,11 +141,10 @@ class TutorialsTest < ActiveSupport::TestCase
 
     data_to_post = {
       tutorial: tutorial,
-      auth_token: auth_token
     }
 
-    # perform the post
-    post_json '/api/tutorials', data_to_post
+    # perform the post with the unit main convenor auth token
+    post_json '/api/tutorials', with_auth_token(data_to_post, unit.main_convenor_user)
 
     # Check for error in creation
     assert_equal 400, last_response.status
@@ -151,8 +154,9 @@ class TutorialsTest < ActiveSupport::TestCase
   #5: Testing for failure due to string as Tutor ID
   # POST /api/tutorials
   def test_tutorial_post_string_tutor_id
-    unit = FactoryBot.create(:unit)
     campus = FactoryBot.create(:campus)
+    unit = FactoryBot.create(:unit)
+    tutor = unit.tutors.first
 
     tutorial = {
       unit_id: unit.id,
@@ -167,11 +171,10 @@ class TutorialsTest < ActiveSupport::TestCase
 
     data_to_post = {
       tutorial: tutorial,
-      auth_token: auth_token
     }
 
-    # perform the post
-    post_json '/api/tutorials', data_to_post
+    # perform the post with the unit main convenor auth token
+    post_json '/api/tutorials', with_auth_token(data_to_post, unit.main_convenor_user)
 
     # Check for error in creation
     assert_equal 400, last_response.status
@@ -198,12 +201,10 @@ class TutorialsTest < ActiveSupport::TestCase
 
     data_to_post = {
       tutorial: tutorial,
-      unit_id: unit.id,
-      auth_token: auth_token
     }
   
-    #perform the post test
-    post_json '/api/tutorials', data_to_post
+    # perform the post with the unit main convenor auth token
+    post_json '/api/tutorials', with_auth_token(data_to_post, unit.main_convenor_user)
 
     assert_equal 201, last_response.status
 
@@ -218,8 +219,9 @@ class TutorialsTest < ActiveSupport::TestCase
   #7: Testing for failure due to empty Unit ID
   # POST /api/tutorials
   def test_tutorial_post_empty_unit_id
-    tutor = FactoryBot.create(:user, :tutor)
     campus = FactoryBot.create(:campus)
+    unit = FactoryBot.create(:unit)
+    tutor = unit.tutors.first
 
     tutorial = {
       unit_id: '',
@@ -234,11 +236,10 @@ class TutorialsTest < ActiveSupport::TestCase
 
     data_to_post = {
       tutorial: tutorial,
-      auth_token: auth_token
     }
 
-    # perform the post
-    post_json '/api/tutorials', data_to_post
+    # perform the post with the unit main convenor auth token
+    post_json '/api/tutorials', with_auth_token(data_to_post, unit.main_convenor_user)
 
     # Check for error in creation
     assert_equal 404, last_response.status
@@ -250,6 +251,7 @@ class TutorialsTest < ActiveSupport::TestCase
   def test_tutorial_post_empty_tutor_id
     campus = FactoryBot.create(:campus)
     unit = FactoryBot.create(:unit)
+    tutor = unit.tutors.first
 
     tutorial = {
       unit_id: unit.id,
@@ -264,11 +266,10 @@ class TutorialsTest < ActiveSupport::TestCase
 
     data_to_post = {
       tutorial: tutorial,
-      auth_token: auth_token
     }
 
-    # perform the post
-    post_json '/api/tutorials', data_to_post
+    # perform the post with the unit main convenor auth token
+    post_json '/api/tutorials', with_auth_token(data_to_post, unit.main_convenor_user)
 
     # Check for error in creation
     assert_equal 404, last_response.status
@@ -295,11 +296,10 @@ class TutorialsTest < ActiveSupport::TestCase
 
     data_to_post = {
       tutorial: tutorial,
-      auth_token: auth_token
     }
 
-    # perform the post
-    post_json '/api/tutorials', data_to_post
+    # perform the post with the unit main convenor auth token
+    post_json '/api/tutorials', with_auth_token(data_to_post, unit.main_convenor_user)
 
     # Check for error in creation
     assert_equal 400, last_response.status
@@ -326,11 +326,10 @@ class TutorialsTest < ActiveSupport::TestCase
 
     data_to_post = {
       tutorial: tutorial,
-      auth_token: auth_token
     }
 
-    # perform the post
-    post_json '/api/tutorials', data_to_post
+    # perform the post with the unit main convenor auth token
+    post_json '/api/tutorials', with_auth_token(data_to_post, unit.main_convenor_user)
 
     # Check for error in creation
     assert_equal 400, last_response.status
@@ -357,11 +356,10 @@ class TutorialsTest < ActiveSupport::TestCase
 
     data_to_post = {
       tutorial: tutorial,
-      auth_token: auth_token
     }
 
-    # perform the post
-    post_json '/api/tutorials', data_to_post
+    # perform the post with the unit main convenor auth token
+    post_json '/api/tutorials', with_auth_token(data_to_post, unit.main_convenor_user)
 
     # Check for error in creation
     assert_equal 400, last_response.status
@@ -388,11 +386,10 @@ class TutorialsTest < ActiveSupport::TestCase
 
     data_to_post = {
       tutorial: tutorial,
-      auth_token: auth_token
     }
 
-    # perform the post
-    post_json '/api/tutorials', data_to_post
+    # perform the post with the unit main convenor auth token
+    post_json '/api/tutorials', with_auth_token(data_to_post, unit.main_convenor_user)
 
     # Check for error in creation
     assert_equal 400, last_response.status
@@ -423,13 +420,12 @@ class TutorialsTest < ActiveSupport::TestCase
 
     data_to_post = {
       tutorial: tutorial,
-      auth_token: auth_token
     }
     # number of tutorials before POST
     number_of_tutorials = Tutorial.all.length
 
-    # perform the post
-    post_json '/api/tutorials', data_to_post
+    # perform the post with the unit main convenor auth token
+    post_json '/api/tutorials', with_auth_token(data_to_post, unit.main_convenor_user)
 
     # Check for error in creation
     assert_equal number_of_tutorials + 1, Tutorial.all.length
