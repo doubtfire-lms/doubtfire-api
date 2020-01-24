@@ -11,8 +11,16 @@ class ProjectsApiTest < ActiveSupport::TestCase
   end
 
   def test_can_get_projects
-    user = FactoryBot.create(:user, :student, enrol_in: 0)
-    get with_auth_token('/api/projects', user)
+    # Create new student user
+    user = FactoryBot.create(:user, :admin)
+
+    # Create a dummy project
+    new_project = FactoryBot.create(:project)
+
+    # Perform Get
+    get with_auth_token "/api/projects/#{new_project.id}", new_project.user
+
+    # Check if the call success
     assert_equal 200, last_response.status
   end
 
