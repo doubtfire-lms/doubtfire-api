@@ -76,6 +76,9 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
     
     # check if the request get through 
     assert_equal 403, last_response.status
+
+    # check if no more activity type is created
+    assert_equal no_activity_type, ActivityType.count
   end
 
   # 3: Tutor cannot create a new activity type
