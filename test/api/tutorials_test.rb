@@ -4,7 +4,6 @@ class TutorialsTest < ActiveSupport::TestCase
   include Rack::Test::Methods
   include TestHelpers::AuthHelper
   include TestHelpers::JsonHelper
-  include TestHelpers::AccountHelper
 
   def app
     Rails.application
@@ -29,10 +28,9 @@ class TutorialsTest < ActiveSupport::TestCase
     assert_equal response[:abbrev], expected[:abbrev]
   end
 
-  #1: Testing for successful operation
-  # POST /api/tutorials
-  
-  def test_tutorials_post_by_tutor
+  # Testing for successful POST creations
+  def test_unit_main_convenor_can_post_tutorials
+    # Create dummy attributes for the tutorial
     campus = FactoryBot.create(:campus)
     unit = FactoryBot.create(:unit)
     tutor = unit.tutors.first
@@ -49,392 +47,27 @@ class TutorialsTest < ActiveSupport::TestCase
     }
 
     data_to_post = {
-      tutorial: tutorial,
+      tutorial: tutorial
     }
-    number_of_tutorials = Tutorial.all.length
-
-    # perform the post with the unit first tutor auth token
-    post_json '/api/tutorials', with_auth_token(data_to_post, tutor)
-
-    # Check for successful request
-    assert_equal 201, last_response.status
-
-    # Check there is a new tutorial
-    assert_equal Tutorial.all.length, number_of_tutorials + 1
-    assert_tutorial_model_response last_response_body, tutorial
-  end
-
-  def test_tutorials_post_by_main_convenor
-    campus = FactoryBot.create(:campus)
-    unit = FactoryBot.create(:unit)
-    tutor = unit.tutors.first
-
-    tutorial = {
-      unit_id: unit.id,
-      tutor_id: tutor.id,
-      campus_id: campus.id,
-      capacity: 10,
-      abbreviation: 'LA011',
-      meeting_location: 'LAB34',
-      meeting_day: 'Tuesday',
-      meeting_time: '18:00'
-    }
-
-    data_to_post = {
-      tutorial: tutorial,
-    }
-    number_of_tutorials = Tutorial.all.length
-
-    # perform the post with the unit main convenor auth token
-    post_json '/api/tutorials', with_auth_token(data_to_post, unit.main_convenor_user)
-
-    # Check for successful request
-    assert_equal 201, last_response.status
-
-    # Check there is a new tutorial
-    assert_equal Tutorial.all.length, number_of_tutorials + 1
-    assert_tutorial_model_response last_response_body, tutorial
-  end
-
-  def test_tutorials_post_by_admin
-    campus = FactoryBot.create(:campus)
-    unit = FactoryBot.create(:unit)
-    tutor = unit.tutors.first
-
-    tutorial = {
-      unit_id: unit.id,
-      tutor_id: tutor.id,
-      campus_id: campus.id,
-      capacity: 10,
-      abbreviation: 'LA011',
-      meeting_location: 'LAB34',
-      meeting_day: 'Tuesday',
-      meeting_time: '18:00'
-    }
-
-    data_to_post = {
-      tutorial: tutorial,
-    }
-    number_of_tutorials = Tutorial.all.length
-
-    # perform the post with an admin auth token
-    post_json '/api/tutorials', with_auth_token(data_to_post, first_admin_user)
-
-    # Check for successful request
-    assert_equal 201, last_response.status
-
-    # Check there is a new tutorial
-    assert_equal Tutorial.all.length, number_of_tutorials + 1
-    assert_tutorial_model_response last_response_body, tutorial
-  end
-
-  #2: Testing for failure due to incorrect auth token
-  # POST /api/tutorials
-  def test_tutorial_post_incorrect_auth_token
-    campus = FactoryBot.create(:campus)
-    unit = FactoryBot.create(:unit)
-    tutor = unit.tutors.first
-
-    tutorial = {
-      unit_id: unit.id,
-      tutor_id: tutor.id,
-      campus_id: campus.id,
-      capacity: 10,
-      abbreviation: 'LA011',
-      meeting_location: 'LAB34',
-      meeting_day: 'Tuesday',
-      meeting_time: '18:00'
-    }
-
-    data_to_post = {
-      tutorial: tutorial,
-      auth_token: 'Incorrect_Auth_Token'
-    }
-
-    # perform the post with the unit main convenor auth token
-    post_json '/api/tutorials', data_to_post
-
-    # Check for authentication failure
-    assert_equal 419, last_response.status
-  end
-
-  #3: Testing for failure due to empty auth token
-  # POST /api/tutorials
-  def test_tutorial_post_empty_auth_token
-    campus = FactoryBot.create(:campus)
-    unit = FactoryBot.create(:unit)
-    tutor = unit.tutors.first
-
-    tutorial = {
-      unit_id: unit.id,
-      tutor_id: tutor.id,
-      campus_id: campus.id,
-      capacity: 10,
-      abbreviation: 'LA011',
-      meeting_location: 'LAB34',
-      meeting_day: 'Tuesday',
-      meeting_time: '18:00'
-    }
-
-    data_to_post = {
-      tutorial: tutorial,
-      auth_token: ''
-    }
-    # perform the post with the unit main convenor auth token
-    post_json '/api/tutorials', data_to_post
-
-    # Check for authentication failure
-    assert_equal 419, last_response.status
-  end
-
-  #4: Testing for failure due to string as Unit ID
-  # POST /api/tutorials
-  def test_tutorial_post_string_unit_id
-    campus = FactoryBot.create(:campus)
-    unit = FactoryBot.create(:unit)
-    tutor = unit.tutors.first
     
-    tutorial = {
-      unit_id: 'string',
-      tutor_id: tutor.id,
-      campus_id: campus.id,
-      capacity: 10,
-      abbreviation: 'LA011',
-      meeting_location: 'LAB34',
-      meeting_day: 'Tuesday',
-      meeting_time: '18:00'
-    }
+    # Number of tutorials before POST
+    number_of_tutorials = Tutorial.all.length
 
-    data_to_post = {
-      tutorial: tutorial,
-    }
-
-    # perform the post with the unit main convenor auth token
+    # perform the POST with the unit main convenor auth token
     post_json '/api/tutorials', with_auth_token(data_to_post, unit.main_convenor_user)
 
-    # Check for error in creation
-    assert_equal 400, last_response.status
-    assert_equal 'tutorial[unit_id] is invalid', last_response_body['error']
-  end
-
-  #5: Testing for failure due to string as Tutor ID
-  # POST /api/tutorials
-  def test_tutorial_post_string_tutor_id
-    campus = FactoryBot.create(:campus)
-    unit = FactoryBot.create(:unit)
-    tutor = unit.tutors.first
-
-    tutorial = {
-      unit_id: unit.id,
-      tutor_id: 'string',
-      campus_id: campus.id,
-      capacity: 10,
-      abbreviation: 'LA011',
-      meeting_location: 'LAB34',
-      meeting_day: 'Tuesday',
-      meeting_time: '18:00'
-    }
-
-    data_to_post = {
-      tutorial: tutorial,
-    }
-
-    # perform the post with the unit main convenor auth token
-    post_json '/api/tutorials', with_auth_token(data_to_post, unit.main_convenor_user)
-
-    # Check for error in creation
-    assert_equal 400, last_response.status
-    assert_equal 'tutorial[tutor_id] is invalid', last_response_body['error']
-  end
-
-  #6: Testing for failure due POST of already existing task
-  # POST /api/tutorials
-  def test_tutorials_post_existing_task_error_test
-    campus = FactoryBot.create(:campus)
-    unit = FactoryBot.create(:unit)
-    tutor = unit.tutors.first
-
-    tutorial = {
-      unit_id: unit.id,
-      tutor_id: tutor.id,
-      campus_id: campus.id,
-      capacity: 10,
-      abbreviation: 'LA011',
-      meeting_location: 'LAB34',
-      meeting_day: 'Tuesday',
-      meeting_time: '18:00'
-    }
-
-    data_to_post = {
-      tutorial: tutorial,
-    }
-  
-    # perform the post with the unit main convenor auth token
-    post_json '/api/tutorials', with_auth_token(data_to_post, unit.main_convenor_user)
-
+    # Check for successful request
     assert_equal 201, last_response.status
 
-    #perform the post test for second data set with duplicate values
-    post_json '/api/tutorials', data_to_post
+    # Check if there is a new tutorial
+    assert_equal Tutorial.all.length, number_of_tutorials + 1
 
-    #Check for error
-    assert_equal 400, last_response.status
-    assert last_response_body['error'].include? 'Validation failed'
+    # Check returned details match as expected
+    assert_tutorial_model_response last_response_body, tutorial
   end
 
-  #7: Testing for failure due to empty Unit ID
-  # POST /api/tutorials
-  def test_tutorial_post_empty_unit_id
-    campus = FactoryBot.create(:campus)
-    unit = FactoryBot.create(:unit)
-    tutor = unit.tutors.first
-
-    tutorial = {
-      unit_id: '',
-      tutor_id: tutor.id,
-      campus_id: campus.id,
-      capacity: 10,
-      abbreviation: 'LA011',
-      meeting_location: 'LAB34',
-      meeting_day: 'Tuesday',
-      meeting_time: '18:00'
-    }
-
-    data_to_post = {
-      tutorial: tutorial,
-    }
-
-    # perform the post with the unit main convenor auth token
-    post_json '/api/tutorials', with_auth_token(data_to_post, unit.main_convenor_user)
-
-    # Check for error in creation
-    assert_equal 404, last_response.status
-    assert_equal 'Unable to find requested Unit', last_response_body['error']
-  end
-
-  #8: Testing for failure due to empty Tutor ID
-  # POST /api/tutorials
-  def test_tutorial_post_empty_tutor_id
-    campus = FactoryBot.create(:campus)
-    unit = FactoryBot.create(:unit)
-    tutor = unit.tutors.first
-
-    tutorial = {
-      unit_id: unit.id,
-      tutor_id: '',
-      campus_id: campus.id,
-      capacity: 10,
-      abbreviation: 'LA011',
-      meeting_location: 'LAB34',
-      meeting_day: 'Tuesday',
-      meeting_time: '18:00'
-    }
-
-    data_to_post = {
-      tutorial: tutorial,
-    }
-
-    # perform the post with the unit main convenor auth token
-    post_json '/api/tutorials', with_auth_token(data_to_post, unit.main_convenor_user)
-
-    # Check for error in creation
-    assert_equal 404, last_response.status
-    assert_equal 'Unable to find requested User', last_response_body['error']
-  end
-
-  #9: Testing for failure due to empty abbreviation
-  # POST /api/tutorials
-  def test_tutorial_post_empty_abbreviation
-    campus = FactoryBot.create(:campus)
-    unit = FactoryBot.create(:unit)
-    tutor = unit.tutors.first
-
-    tutorial = {
-      unit_id: unit.id,
-      tutor_id: tutor.id,
-      campus_id: campus.id,
-      capacity: 10,
-      abbreviation: '',
-      meeting_location: 'LAB34',
-      meeting_day: 'Tuesday',
-      meeting_time: '18:00'
-    }
-
-    data_to_post = {
-      tutorial: tutorial,
-    }
-
-    # perform the post with the unit main convenor auth token
-    post_json '/api/tutorials', with_auth_token(data_to_post, unit.main_convenor_user)
-
-    # Check for error in creation
-    assert_equal 400, last_response.status
-    assert last_response_body['error'].include? 'tutorial[abbreviation] is empty'
-  end
-
-  #10: Testing for failure due to empty meeting location
-  # POST /api/tutorials
-  def test_tutorial_post_empty_meeting_location
-    campus = FactoryBot.create(:campus)
-    unit = FactoryBot.create(:unit)
-    tutor = unit.tutors.first
-
-    tutorial = {
-      unit_id: unit.id,
-      tutor_id: tutor.id,
-      campus_id: campus.id,
-      capacity: 10,
-      abbreviation: 'LA011',
-      meeting_location: '',
-      meeting_day: 'Tuesday',
-      meeting_time: '18:00'
-    }
-
-    data_to_post = {
-      tutorial: tutorial,
-    }
-
-    # perform the post with the unit main convenor auth token
-    post_json '/api/tutorials', with_auth_token(data_to_post, unit.main_convenor_user)
-
-    # Check for error in creation
-    assert_equal 400, last_response.status
-    assert last_response_body['error'].include? 'meeting_location] is empty'
-  end
-
-  #11: Testing for failure due to empty meeting day
-  # POST /api/tutorials
-  def test_tutorial_post_empty_meeting_day
-    campus = FactoryBot.create(:campus)
-    unit = FactoryBot.create(:unit)
-    tutor = unit.tutors.first
-
-    tutorial = {
-      unit_id: unit.id,
-      tutor_id: tutor.id,
-      campus_id: campus.id,
-      capacity: 10,
-      abbreviation: 'LA011',
-      meeting_location: 'LAB34',
-      meeting_day: '',
-      meeting_time: '18:00'
-    }
-
-    data_to_post = {
-      tutorial: tutorial,
-    }
-
-    # perform the post with the unit main convenor auth token
-    post_json '/api/tutorials', with_auth_token(data_to_post, unit.main_convenor_user)
-
-    # Check for error in creation
-    assert_equal 400, last_response.status
-    assert last_response_body['error'].include? 'meeting_day] is empty'
-  end
-
-  #12: Testing for failure due to empty meeting time
-  # POST /api/tutorials
-  def test_tutorial_post_empty_meeting_time
+  def test_unit_admin_can_post_tutorials
+    # Create dummy attributes for the tutorial
     campus = FactoryBot.create(:campus)
     unit = FactoryBot.create(:unit)
     tutor = unit.tutors.first
@@ -447,24 +80,36 @@ class TutorialsTest < ActiveSupport::TestCase
       abbreviation: 'LA011',
       meeting_location: 'LAB34',
       meeting_day: 'Tuesday',
-      meeting_time: ''
+      meeting_time: '18:00'
     }
 
     data_to_post = {
-      tutorial: tutorial,
+      tutorial: tutorial
     }
 
-    # perform the post with the unit main convenor auth token
-    post_json '/api/tutorials', with_auth_token(data_to_post, unit.main_convenor_user)
+    # Create and add an admin into the unit
+    admin = FactoryBot.create(:user, :admin)
+    unit.employ_staff admin, Role.admin
+    admin.reload
 
-    # Check for error in creation
-    assert_equal 400, last_response.status
-    assert last_response_body['error'].include? 'meeting_time] is empty'
+    # Number of tutorials before POST
+    number_of_tutorials = Tutorial.all.length
+
+    # perform the post with the admin auth token
+    post_json '/api/tutorials', with_auth_token(data_to_post, admin)
+
+    # Check for successful request
+    assert_equal 201, last_response.status
+
+    # Check if there is a new tutorial
+    assert_equal Tutorial.all.length, number_of_tutorials + 1
+
+    # Check if the returned details match as expected
+    assert_tutorial_model_response last_response_body, tutorial
   end
 
-  #13: Testing for empty meeting time due to string meeting time, other than 3pm
-  # POST /api/tutorials
-  def test_tutorial_post_string_meeting_time #Other than time string like 3pm
+  def test_post_tutorial_with_string_meeting_time
+    # Create dummy attributes for the tutorial
     campus = FactoryBot.create(:campus)
     unit = FactoryBot.create(:unit)
     tutor = unit.tutors.second
@@ -485,23 +130,468 @@ class TutorialsTest < ActiveSupport::TestCase
     }
 
     data_to_post = {
-      tutorial: tutorial,
+      tutorial: tutorial
     }
-    # number of tutorials before POST
+    # Number of tutorials before POST
+    number_of_tutorials = Tutorial.all.length
+
+    # perform the post with the unit main convenor auth token
+    post_json '/api/tutorials', with_auth_token(data_to_post, unit.main_convenor_user)
+
+    # Check if the POST get through
+    assert_equal 201, last_response.status
+
+    # Check if the returned details match as expected
+    assert_tutorial_model_response outcome_expected, last_response_body
+
+    # Check if there is a new creation
+    assert_equal number_of_tutorials + 1, Tutorial.all.length
+  end
+
+  # Testing for POST failures
+  def test_post_tutorial_with_incorrect_auth_token
+    # Create dummy attributes for the tutorial
+    campus = FactoryBot.create(:campus)
+    unit = FactoryBot.create(:unit)
+    tutor = unit.tutors.first
+
+    tutorial = {
+      unit_id: unit.id,
+      tutor_id: tutor.id,
+      campus_id: campus.id,
+      capacity: 10,
+      abbreviation: 'LA011',
+      meeting_location: 'LAB34',
+      meeting_day: 'Tuesday',
+      meeting_time: '18:00'
+    }
+
+    data_to_post = {
+      tutorial: tutorial,
+      auth_token: 'Incorrect_Auth_Token'
+    }
+
+    # Number of tutorials before POST
+    number_of_tutorials = Tutorial.all.length
+
+    # perform the POST with incorrect auth token
+    post_json '/api/tutorials', data_to_post
+
+    # Check for authentication failure
+    assert_equal 419, last_response.status
+
+    # Check if there is no new tutorial
+    assert_equal Tutorial.all.length, number_of_tutorials
+  end
+
+  def test_post_tutorial_with_empty_auth_token
+    # Create dummy attributes for the tutorial
+    campus = FactoryBot.create(:campus)
+    unit = FactoryBot.create(:unit)
+    tutor = unit.tutors.first
+
+    tutorial = {
+      unit_id: unit.id,
+      tutor_id: tutor.id,
+      campus_id: campus.id,
+      capacity: 10,
+      abbreviation: 'LA011',
+      meeting_location: 'LAB34',
+      meeting_day: 'Tuesday',
+      meeting_time: '18:00'
+    }
+
+    data_to_post = {
+      tutorial: tutorial,
+      auth_token: ''
+    }
+
+    # Number of tutorials before POST
+    number_of_tutorials = Tutorial.all.length
+
+    # perform the POST with empty auth token
+    post_json '/api/tutorials', data_to_post
+
+    # Check for authentication failure
+    assert_equal 419, last_response.status
+
+    # Check if there is no new tutorial
+    assert_equal Tutorial.all.length, number_of_tutorials
+  end
+
+  def test_post_tutorial_with_string_unit_id
+    # Create dummy attributes for the tutorial
+    campus = FactoryBot.create(:campus)
+    unit = FactoryBot.create(:unit)
+    tutor = unit.tutors.first
+    
+    tutorial = {
+      unit_id: 'string',
+      tutor_id: tutor.id,
+      campus_id: campus.id,
+      capacity: 10,
+      abbreviation: 'LA011',
+      meeting_location: 'LAB34',
+      meeting_day: 'Tuesday',
+      meeting_time: '18:00'
+    }
+
+    data_to_post = {
+      tutorial: tutorial
+    }
+
+    # Number of tutorials before POST
+    number_of_tutorials = Tutorial.all.length
+
+    # perform the POST with the unit main convenor auth token
+    post_json '/api/tutorials', with_auth_token(data_to_post, unit.main_convenor_user)
+
+    # Check for error in creation
+    assert_equal 400, last_response.status
+    assert_equal 'tutorial[unit_id] is invalid', last_response_body['error']
+
+    # Check if there is no new tutorial
+    assert_equal Tutorial.all.length, number_of_tutorials
+  end
+
+  def test_post_tutorial_with_string_tutor_id
+    # Create dummy attributes for the tutorial
+    campus = FactoryBot.create(:campus)
+    unit = FactoryBot.create(:unit)
+    tutor = unit.tutors.first
+
+    tutorial = {
+      unit_id: unit.id,
+      tutor_id: 'string',
+      campus_id: campus.id,
+      capacity: 10,
+      abbreviation: 'LA011',
+      meeting_location: 'LAB34',
+      meeting_day: 'Tuesday',
+      meeting_time: '18:00'
+    }
+
+    data_to_post = {
+      tutorial: tutorial
+    }
+
+    # Number of tutorials before POST
     number_of_tutorials = Tutorial.all.length
 
     # perform the post with the unit main convenor auth token
     post_json '/api/tutorials', with_auth_token(data_to_post, unit.main_convenor_user)
 
     # Check for error in creation
-    assert_equal number_of_tutorials + 1, Tutorial.all.length
-    assert_equal 201, last_response.status
-    assert_tutorial_model_response outcome_expected, last_response_body
+    assert_equal 400, last_response.status
+    assert_equal 'tutorial[tutor_id] is invalid', last_response_body['error']
+
+    # Check if there is no new tutorial
+    assert_equal Tutorial.all.length, number_of_tutorials
   end
 
-  #14: Testing student cannot create a tutorial
-  # POST /api/tutorials
+  def test_post_existing_values
+    # Create dummy attributes for the tutorial
+    campus = FactoryBot.create(:campus)
+    unit = FactoryBot.create(:unit)
+    tutor = unit.tutors.first
+
+    tutorial = {
+      unit_id: unit.id,
+      tutor_id: tutor.id,
+      campus_id: campus.id,
+      capacity: 10,
+      abbreviation: 'LA011',
+      meeting_location: 'LAB34',
+      meeting_day: 'Tuesday',
+      meeting_time: '18:00'
+    }
+
+    data_to_post = {
+      tutorial: tutorial
+    }
+  
+    # Number of tutorials before the first POST
+    number_of_tutorials = Tutorial.all.length
+
+    # perform the first POST with the unit main convenor auth token
+    post_json '/api/tutorials', with_auth_token(data_to_post, unit.main_convenor_user)
+
+    # Check if the POST get through
+    assert_equal 201, last_response.status
+
+    # Check if there is a new tutorial after the first POST
+    assert_equal Tutorial.all.length, number_of_tutorials + 1
+    
+    # Number of tutorials before the second POST
+    number_of_tutorials = Tutorial.all.length
+
+    # Create and add an admin into the unit
+    admin = FactoryBot.create(:user, :admin)
+    unit.employ_staff admin, Role.admin
+    admin.reload
+
+    # perform the second POST of duplicate values with an admin auth token
+    post_json '/api/tutorials', with_auth_token(data_to_post, admin)
+
+    # Check for error
+    assert_equal 400, last_response.status
+    assert last_response_body['error'].include? 'Validation failed'
+
+    # Check if there is no new tutorial after the second POST
+    assert_equal Tutorial.all.length, number_of_tutorials
+  end
+
+  def test_post_tutorial_with_empty_unit_id
+    # Create dummy attributes for the tutorial
+    campus = FactoryBot.create(:campus)
+    unit = FactoryBot.create(:unit)
+    tutor = unit.tutors.first
+
+    tutorial = {
+      unit_id: '',
+      tutor_id: tutor.id,
+      campus_id: campus.id,
+      capacity: 10,
+      abbreviation: 'LA011',
+      meeting_location: 'LAB34',
+      meeting_day: 'Tuesday',
+      meeting_time: '18:00'
+    }
+
+    data_to_post = {
+      tutorial: tutorial
+    }
+
+    # Number of tutorials before POST
+    number_of_tutorials = Tutorial.all.length
+
+    # perform the POST with the unit main convenor auth token
+    post_json '/api/tutorials', with_auth_token(data_to_post, unit.main_convenor_user)
+
+    # Check for error in creation
+    assert_equal 404, last_response.status
+    assert_equal 'Unable to find requested Unit', last_response_body['error']
+
+    # Check if there is no new tutorial
+    assert_equal Tutorial.all.length, number_of_tutorials
+  end
+
+  def test_post_tutorial_with_empty_tutor_id
+    # Create dummy attributes for the tutorial
+    campus = FactoryBot.create(:campus)
+    unit = FactoryBot.create(:unit)
+    tutor = unit.tutors.first
+
+    tutorial = {
+      unit_id: unit.id,
+      tutor_id: '',
+      campus_id: campus.id,
+      capacity: 10,
+      abbreviation: 'LA011',
+      meeting_location: 'LAB34',
+      meeting_day: 'Tuesday',
+      meeting_time: '18:00'
+    }
+
+    data_to_post = {
+      tutorial: tutorial
+    }
+
+    # Number of tutorials before POST
+    number_of_tutorials = Tutorial.all.length
+
+    # perform the POST with the unit main convenor auth token
+    post_json '/api/tutorials', with_auth_token(data_to_post, unit.main_convenor_user)
+
+    # Check for error in creation
+    assert_equal 404, last_response.status
+    assert_equal 'Unable to find requested User', last_response_body['error']
+
+    # Check if there is no new tutorial
+    assert_equal Tutorial.all.length, number_of_tutorials
+  end
+
+  def test_post_tutorial_with_empty_abbreviation
+    # Create dummy attributes for the tutorial
+    campus = FactoryBot.create(:campus)
+    unit = FactoryBot.create(:unit)
+    tutor = unit.tutors.first
+
+    tutorial = {
+      unit_id: unit.id,
+      tutor_id: tutor.id,
+      campus_id: campus.id,
+      capacity: 10,
+      abbreviation: '',
+      meeting_location: 'LAB34',
+      meeting_day: 'Tuesday',
+      meeting_time: '18:00'
+    }
+
+    data_to_post = {
+      tutorial: tutorial
+    }
+
+    # Number of tutorials before POST
+    number_of_tutorials = Tutorial.all.length
+
+    # perform the post with the unit main convenor auth token
+    post_json '/api/tutorials', with_auth_token(data_to_post, unit.main_convenor_user)
+
+    # Check for error in creation
+    assert_equal 400, last_response.status
+    assert last_response_body['error'].include? 'tutorial[abbreviation] is empty'
+
+    # Check if there is no new tutorial
+    assert_equal Tutorial.all.length, number_of_tutorials
+  end
+
+  def test_post_tutorial_with_empty_meeting_location
+    # Create dummy attributes for the tutorial
+    campus = FactoryBot.create(:campus)
+    unit = FactoryBot.create(:unit)
+    tutor = unit.tutors.first
+
+    tutorial = {
+      unit_id: unit.id,
+      tutor_id: tutor.id,
+      campus_id: campus.id,
+      capacity: 10,
+      abbreviation: 'LA011',
+      meeting_location: '',
+      meeting_day: 'Tuesday',
+      meeting_time: '18:00'
+    }
+
+    data_to_post = {
+      tutorial: tutorial
+    }
+
+    # Number of tutorials before POST
+    number_of_tutorials = Tutorial.all.length
+
+    # perform the POST with the unit main convenor auth token
+    post_json '/api/tutorials', with_auth_token(data_to_post, unit.main_convenor_user)
+
+    # Check for error in creation
+    assert_equal 400, last_response.status
+    assert last_response_body['error'].include? 'meeting_location] is empty'
+
+    # Check if there is no new tutorial
+    assert_equal Tutorial.all.length, number_of_tutorials
+  end
+
+  def test_post_tutorial_with_empty_meeting_day
+    # Create dummy attributes for the tutorial
+    campus = FactoryBot.create(:campus)
+    unit = FactoryBot.create(:unit)
+    tutor = unit.tutors.first
+
+    tutorial = {
+      unit_id: unit.id,
+      tutor_id: tutor.id,
+      campus_id: campus.id,
+      capacity: 10,
+      abbreviation: 'LA011',
+      meeting_location: 'LAB34',
+      meeting_day: '',
+      meeting_time: '18:00'
+    }
+
+    data_to_post = {
+      tutorial: tutorial
+    }
+
+    # Number of tutorials before POST
+    number_of_tutorials = Tutorial.all.length
+
+    # perform the POST with the unit main convenor auth token
+    post_json '/api/tutorials', with_auth_token(data_to_post, unit.main_convenor_user)
+
+    # Check for error in creation
+    assert_equal 400, last_response.status
+    assert last_response_body['error'].include? 'meeting_day] is empty'
+
+    # Check if there is no new tutorial
+    assert_equal Tutorial.all.length, number_of_tutorials
+  end
+
+  def test_post_tutorial_with_empty_meeting_time
+    # Create dummy attributes for the tutorial
+    campus = FactoryBot.create(:campus)
+    unit = FactoryBot.create(:unit)
+    tutor = unit.tutors.first
+
+    tutorial = {
+      unit_id: unit.id,
+      tutor_id: tutor.id,
+      campus_id: campus.id,
+      capacity: 10,
+      abbreviation: 'LA011',
+      meeting_location: 'LAB34',
+      meeting_day: 'Tuesday',
+      meeting_time: ''
+    }
+
+    data_to_post = {
+      tutorial: tutorial
+    }
+
+    # Number of tutorials before POST
+    number_of_tutorials = Tutorial.all.length
+
+    # perform the post with the unit main convenor auth token
+    post_json '/api/tutorials', with_auth_token(data_to_post, unit.main_convenor_user)
+
+    # Check for error in creation
+    assert_equal 400, last_response.status
+    assert last_response_body['error'].include? 'meeting_time] is empty'
+
+    # Check if there is no new tutorial
+    assert_equal Tutorial.all.length, number_of_tutorials
+  end
+
+  def test_tutor_cannot_post_tutorials
+    # Create dummy attributes for a tutorial to post
+    campus = FactoryBot.create(:campus)
+    unit = FactoryBot.create(:unit)
+    tutor = unit.tutors.first
+
+    tutorial = {
+      unit_id: unit.id,
+      tutor_id: tutor.id,
+      campus_id: campus.id,
+      capacity: 10,
+      abbreviation: 'LA011',
+      meeting_location: 'LAB34',
+      meeting_day: 'Tuesday',
+      meeting_time: '18:00'
+    }
+
+    data_to_post = {
+      tutorial: tutorial,
+    }
+    
+    # Create and add a dedicated tutor into the unit
+    dedicated_tutor = FactoryBot.create(:user, :tutor)
+    unit.employ_staff dedicated_tutor, Role.tutor
+    dedicated_tutor.reload
+
+    # Number of tutorials before POST
+    number_of_tutorials = Tutorial.all.length
+
+    # perform the POST with the unit dedicated tutor auth token
+    post_json '/api/tutorials', with_auth_token(data_to_post, dedicated_tutor)
+
+    # Check for failing due to no authorisation
+    assert_equal 403, last_response.status
+
+    # Check there is no new tutorial
+    assert_equal Tutorial.all.length, number_of_tutorials
+  end
+
   def test_student_cannot_post_tutorials
+    # Create dummy attributes for a tutorial to post
     campus = FactoryBot.create(:campus)
     unit = FactoryBot.create(:unit)
     tutor = unit.tutors.first
@@ -522,10 +612,13 @@ class TutorialsTest < ActiveSupport::TestCase
     }
     number_of_tutorials = Tutorial.all.length
 
-    # perform the post with a student auth token
-    post_json '/api/tutorials', with_auth_token(data_to_post, first_student_user)
+    # The student user to perform the POST
+    student = unit.active_projects.first.student
 
-    # Check for successful request
+    # perform the POST with a student auth token
+    post_json '/api/tutorials', with_auth_token(data_to_post, student)
+
+    # Check for failing due to no authorisation
     assert_equal 403, last_response.status
 
     # Check there is no new tutorial
@@ -534,11 +627,12 @@ class TutorialsTest < ActiveSupport::TestCase
 
   #####----------PUT tests - Update a tutorial----------#####
 
-  # Testing for successful operation with admin auth token
-  # PUT /api/tutorials/{id}
-  def test_tutorials_put_by_admin
+  # Testing for successful PUT operations
+  def test_admin_can_put_tutorials
+    # Create a dummy tutorial
     tutorial_old = FactoryBot.create(:tutorial)
 
+    # Create dummy attributes for a new tutorial
     campus = FactoryBot.create(:campus)
     unit = FactoryBot.create(:unit)
     tutor = unit.tutors.first
@@ -558,10 +652,13 @@ class TutorialsTest < ActiveSupport::TestCase
       tutorial: tutorial
     }
 
-    number_of_tutorials = Tutorial.all.length
+    # Create and add an admin into the unit
+    admin = FactoryBot.create(:user, :admin)
+    unit.employ_staff admin, Role.admin
+    admin.reload
 
-    # perform the post with an admin auth token
-    put_json "/api/tutorials/#{tutorial_old.id}", with_auth_token(data_to_put, first_admin_user)
+    # perform the PUT with a unit admin auth token
+    put_json "/api/tutorials/#{tutorial_old.id}", with_auth_token(data_to_put, admin)
     
     # Check for successful request
     assert_equal 200, last_response.status
@@ -572,43 +669,11 @@ class TutorialsTest < ActiveSupport::TestCase
     assert_tutorial_model_response last_response_body, tutorial
   end
 
-  #15: Testing for failure due to empty auth token
-  # PUT /api/tutorials/{id}
-  def test_tutorials_put_empty_auth_token
+  def test_put_tutorials_with_empty_abbreviation
+    # Create a dummy tutorial
     tutorial_old = FactoryBot.create(:tutorial)
 
-    data_to_put = {
-      tutorial: FactoryBot.build(:tutorial),
-      auth_token: ''
-    }
-    # perform the put
-    put_json "/api/tutorials/#{tutorial_old.id}", data_to_put
-
-    # Check there is a new tutorial
-    assert_equal 419, last_response.status
-  end
-
-  #16: Testing for failure due to incorrect auth token
-  # POST /api/tutorials/{id}
-  def test_tutorials_put_incorrect_auth_token
-    tutorial_old = FactoryBot.create(:tutorial)
-
-    data_to_put = {
-      tutorial: FactoryBot.build(:tutorial),
-      auth_token: 'incorrect_auth_token'
-    }
-    # perform the post
-    put_json "/api/tutorials/#{tutorial_old.id}", data_to_put
-
-    # Check there is a new tutorial
-    assert_equal 419, last_response.status
-  end
-
-  # Testing for successful operation with empty abbreviation
-  # POST /api/tutorials/{id}
-  def test_tutorials_put_empty_abbreviation
-    tutorial_old = FactoryBot.create(:tutorial)
-
+    # Create dummy attributes for a new tutorial
     campus = FactoryBot.create(:campus)
     unit = FactoryBot.create(:unit)
     tutor = unit.tutors.first
@@ -628,10 +693,13 @@ class TutorialsTest < ActiveSupport::TestCase
       tutorial: tutorial
     }
 
-    number_of_tutorials = Tutorial.all.length
+    # Create and add an admin into the unit
+    admin = FactoryBot.create(:user, :admin)
+    unit.employ_staff admin, Role.admin
+    admin.reload
 
-    # perform the post with an admin auth token
-    put_json "/api/tutorials/#{tutorial_old.id}", with_auth_token(data_to_put, first_admin_user)
+    # perform the put with an admin auth token
+    put_json "/api/tutorials/#{tutorial_old.id}", with_auth_token(data_to_put, admin)
     
     # Check for successful request
     assert_equal 200, last_response.status
@@ -642,11 +710,11 @@ class TutorialsTest < ActiveSupport::TestCase
     assert_tutorial_model_response last_response_body, tutorial
   end
 
-  #18: Testing for successful operation with empty meeting location
-  # POST /api/tutorials/{id}
   def test_tutorials_put_empty_meeting_location
+    # Create a dummy tutorial
     tutorial_old = FactoryBot.create(:tutorial)
 
+    # Create dummy attributes for a new tutorial
     campus = FactoryBot.create(:campus)
     unit = FactoryBot.create(:unit)
     tutor = unit.tutors.first
@@ -666,10 +734,13 @@ class TutorialsTest < ActiveSupport::TestCase
       tutorial: tutorial
     }
 
-    number_of_tutorials = Tutorial.all.length
+    # Create and add an admin into the unit
+    admin = FactoryBot.create(:user, :admin)
+    unit.employ_staff admin, Role.admin
+    admin.reload
 
-    # perform the post with an admin auth token
-    put_json "/api/tutorials/#{tutorial_old.id}", with_auth_token(data_to_put, first_admin_user)
+    # perform the put with an admin auth token
+    put_json "/api/tutorials/#{tutorial_old.id}", with_auth_token(data_to_put, admin)
     
     # Check for successful request
     assert_equal 200, last_response.status
@@ -680,11 +751,11 @@ class TutorialsTest < ActiveSupport::TestCase
     assert_tutorial_model_response last_response_body, tutorial
   end
 
-  #19: Testing for successful operation with empty meeting day
-  # POST /api/tutorials/{id}
-  def test_tutorials_put_empty_meeting_day
+  def test_put_tutorials_with_empty_meeting_day
+    # Create a dummy tutorial
     tutorial_old = FactoryBot.create(:tutorial)
 
+    # Create dummy attributes for a new tutorial
     campus = FactoryBot.create(:campus)
     unit = FactoryBot.create(:unit)
     tutor = unit.tutors.first
@@ -695,7 +766,7 @@ class TutorialsTest < ActiveSupport::TestCase
       campus_id: campus.id,
       capacity: 10,
       abbreviation: 'LA011',
-      meeting_location: '',
+      meeting_location: 'LAB34',
       meeting_day: '',
       meeting_time: '18:00'
     }
@@ -704,10 +775,13 @@ class TutorialsTest < ActiveSupport::TestCase
       tutorial: tutorial
     }
 
-    number_of_tutorials = Tutorial.all.length
+    # Create and add an admin into the unit
+    admin = FactoryBot.create(:user, :admin)
+    unit.employ_staff admin, Role.admin
+    admin.reload
 
-    # perform the post with an admin auth token
-    put_json "/api/tutorials/#{tutorial_old.id}", with_auth_token(data_to_put, first_admin_user)
+    # perform the put with an admin auth token
+    put_json "/api/tutorials/#{tutorial_old.id}", with_auth_token(data_to_put, admin)
     
     # Check for successful request
     assert_equal 200, last_response.status
@@ -718,11 +792,11 @@ class TutorialsTest < ActiveSupport::TestCase
     assert_tutorial_model_response last_response_body, tutorial
   end
 
-  #20: Testing for successful operation with empty meeting time
-  # POST /api/tutorials/{id}
   def test_tutorials_put_empty_meeting_time
+    # Create a dummy tutorial
     tutorial_old = FactoryBot.create(:tutorial)
 
+    # Create dummy attributes for a new tutorial
     campus = FactoryBot.create(:campus)
     unit = FactoryBot.create(:unit)
     tutor = unit.tutors.first
@@ -733,7 +807,7 @@ class TutorialsTest < ActiveSupport::TestCase
       campus_id: campus.id,
       capacity: 10,
       abbreviation: 'LA011',
-      meeting_location: '',
+      meeting_location: 'LAB34',
       meeting_day: 'Tuesday',
       meeting_time: ''
     }
@@ -742,10 +816,13 @@ class TutorialsTest < ActiveSupport::TestCase
       tutorial: tutorial
     }
 
-    number_of_tutorials = Tutorial.all.length
+    # Create and add an admin into the unit
+    admin = FactoryBot.create(:user, :admin)
+    unit.employ_staff admin, Role.admin
+    admin.reload
 
-    # perform the post with an admin auth token
-    put_json "/api/tutorials/#{tutorial_old.id}", with_auth_token(data_to_put, first_admin_user)
+    # perform the PUT with a unit admin auth token
+    put_json "/api/tutorials/#{tutorial_old.id}", with_auth_token(data_to_put, admin)
     
     # Check for successful request
     assert_equal 200, last_response.status
@@ -756,11 +833,12 @@ class TutorialsTest < ActiveSupport::TestCase
     assert_tutorial_model_response last_response_body, tutorial
   end
 
-  # Testing for failing requests due to no authorisation
-  # Testing convenor cannot replace a tutorial
-  def test_main_convenor_cannot_replace_tutorials
+  # Testing for PUT failures
+  def test_put_tutorials_with_empty_auth_token
+    # Create a dummy tutorial
     tutorial_old = FactoryBot.create(:tutorial)
 
+    # Create dummy attributes for the tutorial
     campus = FactoryBot.create(:campus)
     unit = FactoryBot.create(:unit)
     tutor = unit.tutors.first
@@ -778,24 +856,87 @@ class TutorialsTest < ActiveSupport::TestCase
 
     data_to_put = {
       tutorial: tutorial,
+      auth_token: ''
     }
 
-    number_of_tutorials = Tutorial.all.length
+    # perform the PUT with empty auth token
+    put_json "/api/tutorials/#{tutorial_old.id}", data_to_put
 
-    # perform the post with the unit main convenor auth token
+    # Check the request fails
+    assert_equal 419, last_response.status
+  end
+
+  def test_put_tutorials_with_incorrect_auth_token
+    # Create a dummy tutorial
+    tutorial_old = FactoryBot.create(:tutorial)
+
+    # Create dummy attributes for the tutorial
+    campus = FactoryBot.create(:campus)
+    unit = FactoryBot.create(:unit)
+    tutor = unit.tutors.first
+
+    tutorial = {
+      unit_id: unit.id,
+      tutor_id: tutor.id,
+      campus_id: campus.id,
+      capacity: 10,
+      abbreviation: 'LA011',
+      meeting_location: 'LAB34',
+      meeting_day: 'Tuesday',
+      meeting_time: '18:00'
+    }
+
+    data_to_put = {
+      tutorial: tutorial,
+      auth_token: 'Incorrect auth token'
+    }
+
+    # perform the PUT with incorrect auth token
+    put_json "/api/tutorials/#{tutorial_old.id}", data_to_put
+
+    # Check the request fails
+    assert_equal 419, last_response.status
+  end
+
+  def test_main_convenor_cannot_replace_tutorials
+    # Create a dummy tutorial
+    tutorial_old = FactoryBot.create(:tutorial)
+
+    # Create dummy attributes for the tutorial
+    campus = FactoryBot.create(:campus)
+    unit = FactoryBot.create(:unit)
+    tutor = unit.tutors.first
+
+    tutorial = {
+      unit_id: unit.id,
+      tutor_id: tutor.id,
+      campus_id: campus.id,
+      capacity: 10,
+      abbreviation: 'LA011',
+      meeting_location: 'LAB34',
+      meeting_day: 'Tuesday',
+      meeting_time: '18:00'
+    }
+
+    data_to_put = {
+      tutorial: tutorial
+    }
+
+    # perform the put with the unit main convenor auth token
     put_json "/api/tutorials/#{tutorial_old.id}", with_auth_token(data_to_put, unit.main_convenor_user)
 
-    # Check there is a new tutorial
+    # Check the request fails
     assert_equal 403, last_response.status
   end
 
-  # Testing tutor cannot replace a tutorial
   def test_tutor_cannot_replace_tutorial
-    tutorial_old = FactoryBot.create(:tutorial)
+     # Create a dummy tutorial
+     tutorial_old = FactoryBot.create(:tutorial)
 
-    campus = FactoryBot.create(:campus)
-    unit = FactoryBot.create(:unit)
-    tutor = unit.tutors.first
+     # Create dummy attributes for the tutorial
+     campus = FactoryBot.create(:campus)
+     unit = FactoryBot.create(:unit)
+     tutor = unit.tutors.first
 
     tutorial = {
       unit_id: unit.id,
@@ -809,22 +950,26 @@ class TutorialsTest < ActiveSupport::TestCase
     }
 
     data_to_put = {
-      tutorial: tutorial,
+      tutorial: tutorial
     }
 
-    number_of_tutorials = Tutorial.all.length
+    # Create and add a dedicated tutor into the unit
+    dedicated_tutor = FactoryBot.create(:user, :tutor)
+    unit.employ_staff dedicated_tutor, Role.tutor
+    dedicated_tutor.reload
 
-    # perform the post with a tutor auth token
-    put_json "/api/tutorials/#{tutorial_old.id}", with_auth_token(data_to_put, tutor)
+    # perform the put with the dedicated tutor auth token
+    put_json "/api/tutorials/#{tutorial_old.id}", with_auth_token(data_to_put, dedicated_tutor)
 
-    # Check there is a new tutorial
+    # Check there is no new tutorial
     assert_equal 403, last_response.status
   end
 
-  # Testing student cannot replace a tutorial
   def test_student_cannot_replace_tutorials
+    # Create a dummy tutorial
     tutorial_old = FactoryBot.create(:tutorial)
 
+    # Create dummy attributes for the tutorial
     campus = FactoryBot.create(:campus)
     unit = FactoryBot.create(:unit)
     tutor = unit.tutors.first
@@ -841,15 +986,16 @@ class TutorialsTest < ActiveSupport::TestCase
     }
 
     data_to_put = {
-      tutorial: tutorial,
+      tutorial: tutorial
     }
 
-    number_of_tutorials = Tutorial.all.length
+    # The student user to perform the PUT
+    student = unit.active_projects.first.student
 
-    # perform the post with a student auth token
-    put_json "/api/tutorials/#{tutorial_old.id}", with_auth_token(data_to_put, first_student_user)
+    # perform the put with a unit student auth token
+    put_json "/api/tutorials/#{tutorial_old.id}", with_auth_token(data_to_put, student)
 
-    # Check there is a new tutorial
+    # Check there is no new tutorial
     assert_equal 403, last_response.status
   end
 
@@ -859,21 +1005,27 @@ class TutorialsTest < ActiveSupport::TestCase
 
   #####----------DELETE tests - Delete a tutorial----------#####
 
-  #21: Testing for successful operation with unit main convenor auth token
-  # DELETE /api/tutorials/{id}
-  # Delete a tutorial using admin account
+  # Testing for successful DELETEs
   def test_admin_delete_tutorial
-    test_tutorial = FactoryBot.create(:tutorial)
-
-    number_of_tutorials = Tutorial.all.length
+    # Create a dummy tutorial
+    tutorial = FactoryBot.create(:tutorial)
+    unit = tutorial.unit
 
     # Ensure there are no enrolments to enable tutorial to be deleted...
-    test_tutorial.tutorial_enrolments.each do |tutorial_enrolment|
+    tutorial.tutorial_enrolments.each do |tutorial_enrolment|
       tutorial_enrolment.delete
     end
+
+    # Number of tutorials before DELETE
+    number_of_tutorials = Tutorial.all.length
+
+    # Create and add an admin into the unit
+    admin = FactoryBot.create(:user, :admin)
+    unit.employ_staff admin, Role.admin
+    admin.reload
 
     # perform the delete with an admin auth token
-    delete_json with_auth_token("/api/tutorials/#{test_tutorial.id}", first_admin_user)
+    delete_json with_auth_token("/api/tutorials/#{tutorial.id}", admin)
     
     # Check that the request succeeds
     assert_equal 200, last_response.status
@@ -882,22 +1034,24 @@ class TutorialsTest < ActiveSupport::TestCase
     assert_equal number_of_tutorials - 1, Tutorial.all.length
 
     # Check that you can't find the deleted id
-    refute Tutorial.exists?(test_tutorial.id)
+    refute Tutorial.exists?(tutorial.id)
   end
 
-  # Delete a tutorial using convenor account
   def test_convenor_delete_tutorial
-    test_tutorial = FactoryBot.create(:tutorial)
-
-    number_of_tutorials = Tutorial.all.length
+    # Create a dummy tutorial
+    tutorial = FactoryBot.create(:tutorial)
+    unit = tutorial.unit
 
     # Ensure there are no enrolments to enable tutorial to be deleted...
-    test_tutorial.tutorial_enrolments.each do |tutorial_enrolment|
+    tutorial.tutorial_enrolments.each do |tutorial_enrolment|
       tutorial_enrolment.delete
     end
 
-    # perform the delete with the unit main convenor user auth token
-    delete_json with_auth_token("/api/tutorials/#{test_tutorial.id}", test_tutorial.unit.main_convenor_user)
+    # Number of tutorials before DELETE
+    number_of_tutorials = Tutorial.all.length
+
+    # perform the delete with an admin auth token
+    delete_json with_auth_token("/api/tutorials/#{tutorial.id}", unit.main_convenor_user)
     
     # Check that the request succeeds
     assert_equal 200, last_response.status
@@ -906,106 +1060,123 @@ class TutorialsTest < ActiveSupport::TestCase
     assert_equal number_of_tutorials - 1, Tutorial.all.length
 
     # Check that you can't find the deleted id
-    refute Tutorial.exists?(test_tutorial.id)
-    
+    refute Tutorial.exists?(tutorial.id)
   end
 
-  # Delete a tutorial using tutor account
+  # Testing for DELELTE failures
   def test_tutor_cannot_delete_tutorial
-    test_tutorial = FactoryBot.create(:tutorial)
-
-    number_of_tutorials = Tutorial.all.length
+    # Create a dummy tutorial
+    tutorial = FactoryBot.create(:tutorial)
+    unit = tutorial.unit
 
     # Ensure there are no enrolments to enable tutorial to be deleted...
-    test_tutorial.tutorial_enrolments.each do |tutorial_enrolment|
+    tutorial.tutorial_enrolments.each do |tutorial_enrolment|
       tutorial_enrolment.delete
     end
 
-    # perform the delete with the unit main convenor user auth token
-    delete_json with_auth_token("/api/tutorials/#{test_tutorial.id}", test_tutorial.unit.tutors.first)
+    # Number of tutorials before DELETE
+    number_of_tutorials = Tutorial.all.length
+
+    # Create and add an admin into the unit
+    tutor = FactoryBot.create(:user, :tutor)
+    unit.employ_staff tutor, Role.tutor
+    tutor.reload
+
+    # perform the delete with an admin auth token
+    delete_json with_auth_token("/api/tutorials/#{tutorial.id}", tutor)
     
     # Check that the request succeeds
-    assert_equal 200, last_response.status
+    assert_equal 403, last_response.status
 
-    # Check there is one less tutorial
-    assert_equal number_of_tutorials - 1, Tutorial.all.length
+    # Check there is no less tutorial
+    assert_equal number_of_tutorials, Tutorial.all.length
 
-    # Check that you can't find the deleted id
-    refute Tutorial.exists?(test_tutorial.id)
+    # Check that you can still find the deleted id
+    assert Tutorial.exists?(tutorial.id)
   end
 
-  #22: Testing for failure due to string as Tutorial ID
-  # DELETE /api/tutorials/{id}
-  def test_tutorials_delete_string_tutorial_id
-    number_of_tutorials = Tutorial.all.length
-    id_of_tutorial_to_delete = 'string'
+  def test_delete_tutorials_with_string_tutorial_id
+    # Set a string tutorial id
+    tutorial_id = 'string'
 
     data_to_send = {
       auth_token: auth_token
     }
+
+    # Number of tutorials before DELETE
+    number_of_tutorials = Tutorial.all.length
+    
     # perform the post
-    delete_json_custom "/api/tutorials/#{id_of_tutorial_to_delete}", data_to_send
+    delete_json_custom "/api/tutorials/#{tutorial_id}", data_to_send
 
     # Check number of tutorials does not change
     assert_equal number_of_tutorials , Tutorial.all.length
 
-    #Check on error of incorrect tutorial ID
+    # Check on error of incorrect tutorial ID
     assert_equal 400, last_response.status
     assert_equal 'id is invalid', last_response_body['error']
   end
 
-  #23: Testing for failure due to empty auth token
-  # DELETE /api/tutorials/{id}
-  def test_tutorials_delete_empty_auth_token
-    
-    # Should be random unit where convenor is User.first
-    # test_tutorial = Tutorial.where(:convenors == User.first).order('RANDOM()').first
-    test_tutorial = FactoryBot.create(:tutorial)
-    id_of_tutorial_to_delete = test_tutorial.id
-
-    number_of_tutorials = Tutorial.all.length
+  def test_delete_tutorials_with_empty_auth_token
+    # Create a dummy tutorial
+    tutorial = FactoryBot.create(:tutorial)
 
     data_to_send = {
       auth_token: ''
     }
-    # perform the post
-    delete_json_custom "/api/tutorials/#{id_of_tutorial_to_delete}", data_to_send
+    
+    # Number of tutorials before DELETE
+    number_of_tutorials = Tutorial.all.length
 
+    # perform the delete with empty auth token
+    delete_json_custom "/api/tutorials/#{tutorial.id}", data_to_send
 
     # Check authentication error
     assert_equal 419, last_response.status
+
+    # Check number of tutorials does not change
+    assert_equal number_of_tutorials , Tutorial.all.length
+
+    # Check that you still can find the deleted id
+    assert Tutorial.exists?(tutorial.id)
   end
 
-  #24: Testing for failure due to incorrect auth token
-  # DELETE /api/tutorials/{id}
-  def test_tutorials_delete_incorrect_auth_token
-    test_tutorial = FactoryBot.create(:tutorial)
-    id_of_tutorial_to_delete = test_tutorial.id
-
-    number_of_tutorials = Tutorial.all.length
+  def test_delete_tutorials_with_incorrect_auth_token
+    # Create a dummy tutorial
+    tutorial = FactoryBot.create(:tutorial)
 
     data_to_send = {
       auth_token: 'incorrect_auth_token'
     }
-    # perform the post
-    delete_json_custom "/api/tutorials/#{id_of_tutorial_to_delete}", data_to_send
+
+     # Number of tutorials before DELETE
+     number_of_tutorials = Tutorial.all.length
+
+    # perform the delete with incorrect auth token
+    delete_json_custom "/api/tutorials/#{tutorial.id}", data_to_send
 
     # Check authentication error
     assert_equal 419, last_response.status
+
+    # Check number of tutorials does not change
+    assert_equal number_of_tutorials , Tutorial.all.length
+
+    # Check that you still can find the deleted id
+    assert Tutorial.exists?(tutorial.id)
   end
 
-#25: Testing for failure due to unauthorised account  
-  # Delete a tutorial using student account
   def test_student_cannot_delete_tutorial
     # Tutorial to delete
-    tutorial_to_del = FactoryBot.create (:tutorial)
-    id_of_tutorial = tutorial_to_del.id
+    tutorial = FactoryBot.create (:tutorial)
 
     # Number of tutorials before deletion
     number_of_tutorials = Tutorial.count
 
-    # perform the delete
-    delete_json with_auth_token("/api/tutorials/#{id_of_tutorial}", first_student_user)
+    # Student in the tutorial unit to perform the DELETE
+    student = tutorial.unit.active_projects.first.student
+
+    # perform the delete with a unit student auth token
+    delete_json with_auth_token("/api/tutorials/#{tutorial.id}", student)
 
     # check if the delete does not get through
     assert_equal 403, last_response.status
@@ -1014,6 +1185,6 @@ class TutorialsTest < ActiveSupport::TestCase
     assert_equal Tutorial.count, number_of_tutorials
 
     # Check that you still can find the deleted id
-    assert Tutorial.exists?(id_of_tutorial)
+    assert Tutorial.exists?(tutorial.id)
   end
 end
