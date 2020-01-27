@@ -11,33 +11,22 @@ class StudentsApiTest < ActiveSupport::TestCase
   end
 
   def test_get_students_with_authentication
-    # Create admin
-    #adminUser = FactoryBot.create(:user, :admin)
-
+  
     # Create unit
     newUnit = FactoryBot.create(:unit)
 
-    #Create campus
-    #newCampus = FactoryBot.create(:campus)
-
-  #  expectedStudents = newUnit.projects.all
- #   expectedStudents each do | data |
- #     puts(data)
-  #  end
-    # Create student
-   # studentUser = FactoryBot.create(:user, :student)
-
-    # Assign student to the unit
-    #newUnit.enrol_student(studentUser, newCampus)
-
     # The get that we will be testing.
     get with_auth_token "/api/students/?unit_id=#{newUnit.id}", newUnit.main_convenor_user
-    #assert_equal expectedStudents.count, last_response_body.count
-    #response_keys = %w(first_name last_name student_id project_id)
-    #last_response_body.each do | data |
-      #pro = Project.find(data['project_id'])
-      #assert_json_matches_model(data, pro, response_keys)
-    #end
+
+    response_keys = %w(first_name last_name)
+
+    # check the response
+    last_response_body.each do | data |
+      pro = Project.find(data['project_id'])
+      std = pro.student
+      assert_json_matches_model(data, std, response_keys)
+      assert_equal data['student_email'],std['email']
+    end
     assert_equal 200, last_response.status
   end
 
@@ -48,23 +37,19 @@ class StudentsApiTest < ActiveSupport::TestCase
     # Create unit
     newUnit = FactoryBot.create(:unit)
 
-    #Create campus
-    newCampus = FactoryBot.create(:campus)
-
-    # Assign student to the unit
-    newUnit.enrol_student(studentUser, newCampus)
-
     # The get that we will be testing.
     get with_auth_token "/api/students/?unit_id=#{newUnit.id}",studentUser
+    # check error code when an unauthorized user tries to get students' details
     assert_equal 403, last_response.status
   end
 
   def test_get_students_without_parameters
-    # Create admin
-    adminUser = FactoryBot.create(:user, :admin)
+    # Create unit
+    newUnit = FactoryBot.create(:unit)
 
     # The get that we will be testing without parameters.
-    get with_auth_token '/api/students/',adminUser
+    get with_auth_token '/api/students/', newUnit.main_convenor_user
+    # check error code
     assert_equal 400, last_response.status
   end
 end
