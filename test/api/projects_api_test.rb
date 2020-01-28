@@ -20,13 +20,22 @@ class ProjectsApiTest < ActiveSupport::TestCase
 
     # Perform Get   new_project.main_convenor_user
     get with_auth_token "/api/projects/#{new_project.id}", new_project.student
-    actual_project = last_response_body
     
     # Check if the call success
     assert_equal 200, last_response.status
 
     # Check the returned details match as new_project
-    assert_equal actual_project['project_id'], new_project.id
+    assert_equal new_project.id, last_response_body['project_id']
+
+    # check if the details posted match as new_project    
+    response_keys = %w(unit_id campus_id enrolled) 
+    project = Project.find(last_response_body['project_id'])
+    assert_json_matches_model(last_response_body, project, response_keys)
+
+    # Check if the details in the newly created project match as the new_project    
+    assert_equal project['unit_id'], new_project.unit_id
+    assert_equal project['campus_id'], new_project.campus_id
+    assert_equal project['enrolled'], new_project.enrolled
   end 
 
   def test_projects_returns_correct_number_of_projects
