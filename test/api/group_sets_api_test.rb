@@ -23,7 +23,6 @@ class GroupSetsApiTest < ActiveSupport::TestCase
     last_response_body.each do | data |
       grp = Group.find(data['id'])
       assert_json_matches_model(data, grp, response_keys)
-      assert_equal data['name'],grp['name']
     end
     assert_equal 200, last_response.status
   end  
@@ -33,9 +32,9 @@ class GroupSetsApiTest < ActiveSupport::TestCase
     newGroup = FactoryBot.create(:group)
     # Obtain the unit of the group
     newUnit = newGroup.group_set.unit
-    # Create student
-    studentUser = FactoryBot.create(:user, :student)
 
+    # Obtain a student object from the unit
+    studentUser = newUnit.active_projects.first.student
     get with_auth_token "/api/units/#{newUnit.id}/groups",studentUser
     # Check error code when an unauthorized user tries to get groups in a unit
     assert_equal 403, last_response.status
