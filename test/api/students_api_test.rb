@@ -10,8 +10,7 @@ class StudentsApiTest < ActiveSupport::TestCase
     Rails.application
   end
 
-  def test_get_students_with_authentication
-  
+  def test_get_students_with_authorization
     # Create unit
     newUnit = FactoryBot.create(:unit)
 
@@ -30,12 +29,12 @@ class StudentsApiTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status
   end
 
-  def test_get_students_without_authentication
-    # Create student user
-    studentUser = FactoryBot.create(:user, :student)
-
+  def test_get_students_without_authorization
     # Create unit
     newUnit = FactoryBot.create(:unit)
+
+    # Obtain student from unit
+    studentUser = newUnit.active_projects.first.student
 
     # The get that we will be testing.
     get with_auth_token "/api/students/?unit_id=#{newUnit.id}",studentUser
