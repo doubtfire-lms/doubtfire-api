@@ -16,6 +16,8 @@ class ProjectsApiTest < ActiveSupport::TestCase
 
     # Get a new project from unit
     new_project = unit.active_projects.first
+    
+    # A student enroll to new_project
     student = new_project.student
 
     # Perform Get   new_project.main_convenor_user
