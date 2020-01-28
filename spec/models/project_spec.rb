@@ -4,7 +4,7 @@ RSpec.describe Project do
 
   it "should know its groups" do
   	p = Project.create
-  	g1 = FactoryGirl.create(:group)
+  	g1 = FactoryBot.create(:group)
   	g1.add_member p
 
   	expect(p.groups).to include(g1)
@@ -12,8 +12,8 @@ RSpec.describe Project do
 
   it "should only see active groups" do
     p = Project.create
-    g1 = FactoryGirl.create(:group)
-    g2 = FactoryGirl.create(:group)
+    g1 = FactoryBot.create(:group)
+    g2 = FactoryBot.create(:group)
 
     g1.add_member p
     g2.add_member p
@@ -25,8 +25,8 @@ RSpec.describe Project do
 
   it "should know its past groups" do
     p = Project.create
-    g1 = FactoryGirl.create(:group)
-    g2 = FactoryGirl.create(:group)
+    g1 = FactoryBot.create(:group)
+    g2 = FactoryBot.create(:group)
 
     g1.add_member p
     g2.add_member p
@@ -37,12 +37,14 @@ RSpec.describe Project do
   end
 
   it "can locate a matching task from another project" do
-    unit = FactoryGirl.create(:unit, student_count:2)
+    unit = FactoryBot.create(:unit, student_count:2)
+    campus = FactoryBot.create(:campus)
+
     u1 = unit.students[0]
     u2 = unit.students[1]
 
-    p1 = unit.enrol_student u1
-    p2 = unit.enrol_student u2
+    p1 = unit.enrol_student u1, campus
+    p2 = unit.enrol_student u2, campus
 
     t2 = p2.tasks.first
     t1 = p1.matching_task t2

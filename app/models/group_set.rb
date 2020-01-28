@@ -3,6 +3,11 @@ class GroupSet < ActiveRecord::Base
   has_many :task_definitions
   has_many :groups, dependent: :destroy
 
+  validates :name, uniqueness: {
+    scope: :unit,
+    message: "should be unique within a unit"
+  }
+
   validates_associated :groups
   validate :must_be_in_same_tutorial, if: :keep_groups_in_same_class
 
