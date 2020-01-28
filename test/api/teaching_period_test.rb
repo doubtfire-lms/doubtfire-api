@@ -103,6 +103,33 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     assert_equal data_to_put[:teaching_period]['start_date'].to_date, tp_updated.start_date.to_date
     assert_equal data_to_put[:teaching_period]['end_date'].to_date, tp_updated.end_date.to_date
   end
+  
+  # Put teaching period using unauthorised account
+  def test_student_cannot_put_teaching_period
+    # A user with student role which does not have permission to put a teaching period
+    user = FactoryBot.create(:user, :student)
+
+    # Create a new teaching period
+    teaching_period = FactoryBot.create(:teaching_period)
+
+    # Number of teaching period before put new teaching period
+    number_of_tp = TeachingPeriod.count
+
+    # Create a dummy teaching period 
+    data_to_put = {
+      teaching_period: FactoryBot.build(:teaching_period),
+      auth_token: auth_token
+    }
+
+    # Perform PUT, but the student user does not have permissions to put it
+    put_json "/api/teaching_periods/#{teaching_period.id}", with_auth_token(data_to_put, user)
+
+    # Check if the put does not get through
+    assert_equal 403, last_response.status
+
+    # Check if the number of teaching period is same as initially
+    assert_equal TeachingPeriod.count, number_of_tp
+  end
 
   # POST tests
   # Post teaching period
