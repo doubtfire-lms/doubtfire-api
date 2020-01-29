@@ -4,7 +4,7 @@ source 'https://rubygems.org'
 ruby_versions = {
   development:  '~>2.6',
   test:         '~>2.6',
-  staging:      '~>2.3.1',
+  staging:      '~>2.6',
   production:   '~>2.3.1'
 }
 # Get the ruby version for the current enviornment
@@ -23,7 +23,6 @@ group :development, :test do
   gem 'rails_best_practices'
   gem 'thin'
   gem 'rubocop', '0.46.0'
-  gem 'factory_bot_rails'
 end
 
 group :development, :test, :staging do

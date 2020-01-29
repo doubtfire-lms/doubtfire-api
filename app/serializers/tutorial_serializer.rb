@@ -12,22 +12,22 @@ class TutorialSerializer < ActiveModel::Serializer
   end
 
   def meeting_time
-    object.object.meeting_time.to_time
-    # DateTime.parse("#{object.object.meeting_time}")
+    object.meeting_time.to_time
+    # DateTime.parse("#{object.meeting_time}")
   end
 
   has_one :tutor, serializer: ShallowUserSerializer
 
   def include_tutor?
     if Thread.current[:user]
-      my_role = object.object.unit.role_for(Thread.current[:user])
+      my_role = object.unit.role_for(Thread.current[:user])
       [ Role.convenor, Role.admin ].include? my_role
     end
   end
 
   def include_num_students?
     if Thread.current[:user]
-      my_role = object.object.unit.role_for(Thread.current[:user])
+      my_role = object.unit.role_for(Thread.current[:user])
       [ Role.convenor, Role.tutor, Role.admin ].include? my_role
     end
   end

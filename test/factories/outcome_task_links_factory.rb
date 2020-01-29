@@ -2,9 +2,9 @@
 
 FactoryBot.define do
   factory :outcome_task_link do
-    description   { "MyText" }
-    rating        { 1 }
+    description     { "MyText" }
+    rating          { 1 }
     task_definition { nil }
-    task          { nil }
+    task            { nil }
   end
 end

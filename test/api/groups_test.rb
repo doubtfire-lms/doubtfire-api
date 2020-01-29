@@ -69,6 +69,12 @@ class GroupsTest < ActiveSupport::TestCase
 
     data_to_post = with_file('test_files/submissions/test.sql', 'text/plain', data_to_post)
 
+    data_to_post = {
+      trigger: 'ready_to_mark'
+    }
+
+    data_to_post = with_file('test_files/submissions/test.sql', 'text/plain', data_to_post)
+
     post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", with_auth_token(data_to_post, project.student)
     assert_equal 201, last_response.status
 
