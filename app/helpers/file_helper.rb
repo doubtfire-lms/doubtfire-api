@@ -49,7 +49,7 @@ module FileHelper
       path_name.strip.tap do |name|
         # Finally, replace all non alphanumeric, underscore
         # or periods with underscore
-        name.gsub! /[^\w\-]/, '_'
+        name.gsub! /[^\w\-()]/, '_'
       end
     end
 
@@ -159,18 +159,42 @@ module FileHelper
     dst
   end
 
-  #
-  # Generates a path for storing student portfolios
-  #
-  def student_portfolio_dir(project, create = true)
+  def unit_dir(unit, create = true)
+    file_server = Doubtfire::Application.config.student_work_dir
+    dst = "#{file_server}/" # trust the server config and passed in type for paths
+    dst << sanitized_path("#{unit.code}-#{unit.id}") << '/'
+
+    FileUtils.mkdir_p dst if create && (!Dir.exist? dst)
+
+    dst
+  end
+
+  def unit_portfolio_dir(unit, create = true)
     file_server = Doubtfire::Application.config.student_work_dir
     dst = "#{file_server}/portfolio/" # trust the server config and passed in type for paths
 
-    dst << sanitized_path("#{project.unit.code}-#{project.unit.id}", project.student.username.to_s)
+    dst << sanitized_path("#{unit.code}-#{unit.id}") << '/'
 
     # Create current dst directory should it not exist
     FileUtils.mkdir_p(dst) if create
     dst
+  end
+
+  #
+  # Generates a path for storing student portfolios
+  #
+  def student_portfolio_dir(unit, username, create = true)
+    dst = unit_portfolio_dir(unit, create)
+
+    dst << sanitized_path(username.to_s)
+
+    # Create current dst directory should it not exist
+    FileUtils.mkdir_p(dst) if create
+    dst
+  end
+
+  def student_portfolio_path(unit, username, create = true)
+    File.join(student_portfolio_dir(unit, username, create), FileHelper.sanitized_filename("#{username}-portfolio.pdf"))
   end
 
   def comment_attachment_path(task_comment, attachment_extension)
@@ -185,34 +209,10 @@ module FileHelper
     "#{File.join( student_work_dir(:discussion, discussion_comment.task), "#{discussion_comment.id.to_s}_reply#{attachment_extension}")}"
   end
 
-  def compress_image(path)
-    return true if File.size?(path) < 500_000
-
-    compress_folder = File.join(Dir.tmpdir, 'doubtfire', 'compress')
-
-    FileUtils.mkdir compress_folder unless File.directory? compress_folder
-
-    tmp_file = File.join(compress_folder, "#{File.dirname(path).split(File::Separator).last}-file#{File.extname(path)}")
-    logger.debug "File helper has started compressing #{path} to #{tmp_file}..."
-
-    begin
-      exec = "convert -quiet -strip -density 72 -quality 85% -resize 2048x2048\\> -resize 48x48\\< \
-              \"#{path}\" \
-              \"#{tmp_file}\" >>/dev/null 2>>/dev/null"
-
-      did_compress = system_try_within 40, 'compressing image using convert', exec
-
-      FileUtils.mv tmp_file, path if did_compress
-    ensure
-      FileUtils.rm tmp_file if File.exist? tmp_file
-    end
-
-    did_compress
-  end
-
   def compress_image_to_dest(source, dest, delete_frames = false)
-    exec = "convert -quiet #{ delete_frames ? '-delete 1--1' : ''} -strip -density 72 -quality 85% -resize 2048x2048\\> -resize 48x48\\< \
+    exec = "convert -quiet \
             \"#{source}\" \
+            #{ delete_frames ? '-delete 1--1' : ''} -strip -density 72 -quality 85% -resize 2048x2048\\> -resize 48x48\\< \
             \"#{dest}\" >>/dev/null 2>>/dev/null"
 
     did_compress = system_try_within 40, 'compressing image using convert', exec
@@ -478,11 +478,13 @@ module FileHelper
   module_function :tmp_file
   module_function :student_group_work_dir
   module_function :student_work_dir
+  module_function :unit_dir
+  module_function :unit_portfolio_dir
   module_function :student_portfolio_dir
+  module_function :student_portfolio_path
   module_function :comment_attachment_path
   module_function :comment_prompt_path
   module_function :comment_reply_prompt_path
-  module_function :compress_image
   module_function :compress_image_to_dest
   module_function :compress_pdf
   module_function :move_files
