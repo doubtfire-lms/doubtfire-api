@@ -33,7 +33,7 @@ class StudentsApiTest < ActiveSupport::TestCase
     # Create unit
     newUnit = FactoryBot.create(:unit)
 
-    # Obtain student from unit
+    # Obtain a student from unit
     studentUser = newUnit.active_projects.first.student
 
     # The get that we will be testing.
