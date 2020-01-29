@@ -29,6 +29,9 @@ class ActiveSupport::TestCase
   # Inclide FactoryBot
   include FactoryBot::Syntax::Methods
 
+  # Run tests in parallel with specified workers
+  # parallelize(workers: :number_of_processors)
+
   # Setup all fixtures in test/fixtures/*.(yml|csv) for all tests in alphabetical order.
   #
   # Note: You'll currently still have to declare fixtures explicitly in integration tests

@@ -40,7 +40,6 @@ class TaskStatusTest < ActiveSupport::TestCase
       task_definition_id: td.id,
       task_status_id: 12
     )
-
     # Get the first student - who now has this task
     project = unit.active_projects.first
 
@@ -49,7 +48,6 @@ class TaskStatusTest < ActiveSupport::TestCase
     }
     # Make a submission for this student
     post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", with_auth_token(data_to_post)
-
     # Get the exceeded exceeded task and check it is now time exceeded
     #task = project.task_for_task_definition(td)
     assert_equal TaskStatus.time_exceeded, tc.task_status
