@@ -23,12 +23,13 @@ group :development, :test do
   gem 'rails_best_practices'
   gem 'thin'
   gem 'rubocop', '0.46.0'
+  gem 'factory_bot_rails'
 end
 
 group :development, :test, :staging do
   # Generators for population
-  gem 'populator'
-  gem 'factory_girl_rails'
+  gem 'factory_bot_rails'
+  gem 'factory_bot'
   gem 'faker', '~>1.9.1'
   gem "minitest-rails", github: "blowmage/minitest-rails"
 end
@@ -53,7 +54,7 @@ gem 'rmagick', '~> 2.15' # require: false #already included in other gems - remo
 gem 'rubyzip'
 
 # Plagarism detection
-gem 'moss_ruby', '= 1.1.2'
+gem 'moss_ruby', '>= 1.1.2'
 
 # Latex
 gem 'rails-latex', '>2.3'
@@ -68,7 +69,7 @@ gem 'grape-swagger'
 gem 'attr_encrypted', '~> 3.1.0'
 gem 'rack-cors', require: 'rack/cors'
 gem 'ci_reporter'
-gem 'require_all', '1.3.3'
+gem 'require_all', '>=1.3.3'
 gem 'dotenv-rails'
 
 # Excel support

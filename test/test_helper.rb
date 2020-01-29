@@ -26,10 +26,13 @@ require 'minitest/pride'
 class ActiveSupport::TestCase
   ActiveRecord::Migration.check_pending!
 
-  # Run tests in parallel with specified workers
-  # parallelize(workers: :number_of_processors)
+  # Inclide FactoryBot
+  include FactoryBot::Syntax::Methods
 
-  # Setup all fixtures in test/fixtures/*.yml for all tests in alphabetical order.
+  # Setup all fixtures in test/fixtures/*.(yml|csv) for all tests in alphabetical order.
+  #
+  # Note: You'll currently still have to declare fixtures explicitly in integration tests
+  # -- they do not yet inherit this setting
   fixtures :all
 
   # Silence deprecation warnings
@@ -39,6 +42,7 @@ class ActiveSupport::TestCase
   DatabaseCleaner.strategy = :transaction
 
   def setup
+    Faker::UniqueGenerator.clear
     DatabaseCleaner.start
   end
 

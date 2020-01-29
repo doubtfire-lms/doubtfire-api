@@ -12,7 +12,7 @@ cache:
 
 # Specify Ruby version for rvm
 rvm:
-  - 2.3.1
+  - 2.3
 
 # Run processes as sudo
 sudo: true
@@ -44,6 +44,11 @@ addons:
 # This helps reduce server load
 git:
   depth: 1
+
+# Ensure we stay with bundler 1.x
+before_install:
+  - gem uninstall -v '>= 2' -i $(rvm gemdir)@global -ax bundler || true
+  - gem install bundler --version '1.16.6'
 
 # Install following dependencies and rehash rbenv before setting the environment for script execution
 install:
@@ -86,3 +91,6 @@ script:
   - which lualatex
   - PATH=/tmp/texlive/bin/x86_64-linux:$PATH bundle exec rake test
   - PATH=/tmp/texlive/bin/x86_64-linux:$PATH RAILS_ENV=staging bundle exec rake test
+
+before_install:
+  - gem install bundler

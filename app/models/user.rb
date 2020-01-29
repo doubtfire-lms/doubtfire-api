@@ -294,6 +294,8 @@ class User < ApplicationRecord
       :convene_units,
       :download_stats,
       :handle_teaching_period,
+      :handle_campuses,
+      :handle_activity_types,
       :get_teaching_periods,
       :rollover
     ]
