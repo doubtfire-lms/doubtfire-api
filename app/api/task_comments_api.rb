@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'grape'
 
 module Api
@@ -28,21 +29,25 @@ module Api
       reply_to = params[:reply_to]
 
       if attached_file.present?
-        error!({error: "Attachment is empty."}) unless File.size?(attached_file.tempfile.path).present?
-        error!({error: "Attachment exceeds the maximum attachment size of 30MB."}) unless File.size?(attached_file.tempfile.path) < 30_000_000
+        error!(error: 'Attachment is empty.') unless File.size?(attached_file.tempfile.path).present?
+        error!(error: 'Attachment exceeds the maximum attachment size of 30MB.') unless File.size?(attached_file.tempfile.path) < 30_000_000
       end
 
       task = project.task_for_task_definition(task_definition)
       type_string = content_type.to_s
 
+      if reply_to.present?
+        error!(error: 'Original comment is invalid.') unless task.all_comments.find(reply_to).present?
+      end
+
       logger.info("#{current_user.username} - added comment for task #{task.id} (#{task_definition.abbreviation})")
 
       if attached_file.nil? || attached_file.empty?
-        error!({ error: "Comment text is empty, unable to add new comment"}, 403) unless text_comment.present?
+        error!({ error: 'Comment text is empty, unable to add new comment' }, 403) unless text_comment.present?
         result = task.add_text_comment(current_user, text_comment, reply_to)
       else
-        unless FileHelper.accept_file(attached_file, "comment attachment - TaskComment", "comment_attachment")
-          error!({ error: "Please upload only images, audio or PDF documents" }, 403)
+        unless FileHelper.accept_file(attached_file, 'comment attachment - TaskComment', 'comment_attachment')
+          error!({ error: 'Please upload only images, audio or PDF documents' }, 403)
         end
 
         result = task.add_comment_with_attachment(current_user, attached_file, reply_to)
@@ -72,9 +77,9 @@ module Api
 
         comment = task.comments.find(params[:id])
 
-        error!({error: 'No attachment for this comment.'}, 404) unless ["audio", "image", "pdf"].include? comment.content_type
+        error!({ error: 'No attachment for this comment.' }, 404) unless %w(audio image pdf).include? comment.content_type
 
-        error!({error: 'File missing'}, 404) unless File.exists? comment.attachment_path
+        error!({ error: 'File missing' }, 404) unless File.exist? comment.attachment_path
 
         # Set return content type
         content_type comment.attachment_mime_type
@@ -98,8 +103,8 @@ module Api
 
           # extract part desired from the content
           if request.headers['Range'] =~ /bytes\=(\d+)\-(\d*)/
-            begin_point = $1.to_i
-            end_point = $2.to_i if $2.present?
+            begin_point = Regexp.last_match(1).to_i
+            end_point = Regexp.last_match(2).to_i if Regexp.last_match(2).present?
           end
 
           end_point = file_size - 1 unless end_point < file_size - 1
