@@ -23,19 +23,6 @@ RSpec.describe Project do
     expect(p.groups).to include(g2)
   end
 
-  it "should know its past groups" do
-    p = Project.create
-    g1 = FactoryBot.create(:group)
-    g2 = FactoryBot.create(:group)
-
-    g1.add_member p
-    g2.add_member p
-    g1.remove_member p
-
-    expect(p.past_groups).to include(g1)
-    expect(p.past_groups).not_to include(g2)
-  end
-
   it "can locate a matching task from another project" do
     unit = FactoryBot.create(:unit, student_count:2)
     campus = FactoryBot.create(:campus)
