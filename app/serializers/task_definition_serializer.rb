@@ -1,7 +1,7 @@
 # Doubtfire will deprecate ActiveModelSerializer in the future.
 # Instead, write a serialize method on the model.
 
-class TaskDefinitionSerializer < ActiveModel::Serializer
+class TaskDefinitionSerializer < DoubtfireSerializer
   attributes :id, :abbreviation, :name, :description,
              :weight, :target_grade, :target_date,
              :upload_requirements,

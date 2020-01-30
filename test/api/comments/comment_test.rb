@@ -189,7 +189,7 @@ class CommentTest < ActiveSupport::TestCase
 
     # Make a submission for this student
     post_json with_auth_token("/api/projects/#{project.id}/task_def_id/#{td.id}/submission", user), data_to_post
-    assert_equal 201, last_response.status
+    assert_equal 201, last_response.status, last_response.inspect
 
     task = project.task_for_task_definition(td)
     assert_equal TaskStatus.ready_to_mark, task.task_status

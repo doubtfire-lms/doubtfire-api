@@ -3,7 +3,21 @@
 
 require 'task_serializer'
 
-class ProjectSerializer < ActiveModel::Serializer
+class ShallowProjectSerializer < HashSerializer
+  attributes  :unit_id,
+              :unit_code,
+              :unit_name,
+              :project_id,
+              :campus_id,
+              :target_grade,
+              :has_portfolio,
+              :start_date,
+              :end_date,
+              :teaching_period_id,
+              :active
+end
+
+class ProjectSerializer < DoubtfireSerializer
   attributes :unit_id,
              :project_id,
              :student_id,
@@ -65,7 +79,7 @@ class ProjectSerializer < ActiveModel::Serializer
   end
 end
 
-class GroupMemberProjectSerializer < ActiveModel::Serializer
+class GroupMemberProjectSerializer < DoubtfireSerializer
   attributes :student_id, :project_id, :student_name, :target_grade
 
   def project_id

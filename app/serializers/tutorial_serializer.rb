@@ -3,7 +3,7 @@
 
 require 'user_serializer'
 
-class TutorialSerializer < ActiveModel::Serializer
+class TutorialSerializer < DoubtfireSerializer
   attributes :id, :meeting_day, :meeting_time, :meeting_location, :abbreviation, :campus_id, :capacity, :num_students,
              :tutorial_stream
 
