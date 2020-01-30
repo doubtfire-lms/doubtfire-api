@@ -38,7 +38,7 @@ module Api
 
       units = units.where('active = true') unless params[:include_in_active]
 
-      ActiveModel::ArraySerializer.new(units, each_serializer: ShallowUnitSerializer)
+      ActiveModel::Serializer::CollectionSerializer.new(units, each_serializer: ShallowUnitSerializer)
     end
 
     desc "Get a unit's details"

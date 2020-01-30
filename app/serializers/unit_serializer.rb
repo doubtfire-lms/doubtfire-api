@@ -3,11 +3,11 @@
 
 require 'unit_role_serializer'
 
-class ShallowUnitSerializer < ActiveModel::Serializer
+class ShallowUnitSerializer < DoubtfireSerializer
   attributes :code, :id, :name, :teaching_period_id, :start_date, :end_date, :active
 end
 
-class UnitSerializer < ActiveModel::Serializer
+class UnitSerializer < DoubtfireSerializer
   attributes :code, :id, :name, :my_role, :description, :teaching_period_id, :start_date, :end_date, :active, :convenors, :ilos
 
   def start_date

@@ -133,7 +133,7 @@ module Api
         error!({ error: 'Not authorised to get groups for this unit' }, 403)
       end
 
-      ActiveModel::ArraySerializer.new(unit.groups, each_serializer: DeepGroupSerializer)
+      ActiveModel::Serializer::CollectionSerializer.new(unit.groups, each_serializer: DeepGroupSerializer)
     end
 
     desc 'Download a CSV of groups in a group set'
@@ -281,7 +281,7 @@ module Api
       end
 
       Thread.current[:user] = current_user
-      ActiveModel::ArraySerializer.new(grp.projects, each_serializer: GroupMemberProjectSerializer)
+      ActiveModel::Serializer::CollectionSerializer.new(grp.projects, each_serializer: GroupMemberProjectSerializer)
     end
 
     desc 'Add a group member'

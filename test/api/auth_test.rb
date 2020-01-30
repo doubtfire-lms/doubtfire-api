@@ -243,7 +243,7 @@ class AuthTest < ActiveSupport::TestCase
     # Get the auth token needed for delete test
     delete "/api/auth/#{auth_token}.json", 'CONTENT_TYPE' => 'application/json'
     # 200 response code means success!
-    assert_equal 200, last_response.status
+    assert_equal 204, last_response.status
   end
   # End DELETE tests
   # --------------------------------------------------------------------------- #

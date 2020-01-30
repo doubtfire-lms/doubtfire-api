@@ -25,6 +25,7 @@ class ProjectsApiTest < ActiveSupport::TestCase
   def test_projects_returns_correct_data
     user = FactoryBot.create(:user, :student, enrol_in: 2)
     get with_auth_token('/api/projects', user)
+    # puts last_response_body.inspect
     last_response_body.each do |data|
       project = user.projects.find(data['project_id'])
       assert project.present?, data.inspect
