@@ -137,6 +137,31 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     assert_equal TeachingPeriod.count, number_of_tp + 1
   end
 
+  #post a teaching period using unauthorised account
+  def test_student_cannot_post_teaching_period
+    
+    #number of teaching period before post new teahing period
+    number_of_tp = TeachingPeriod.count
+
+    #a user with student role which does not have permission to post a teaching period
+    user = FactoryBot.create(:user, :student)
+
+    #create a dummy teaching period
+    data_to_post = {
+    teaching_period: FactoryBot.build(:teaching_period),
+    auth_token: auth_token
+    }
+
+    #perform post, but the student user does not have permisson to post it
+    post_json '/api/teaching_periods', with_auth_token(data_to_post,user)
+
+    #check if the post does not get through
+    assert_equal 403, last_response.status
+
+    # check if the number of teaching period is the same as initially
+    assert_equal TeachingPeriod.count, number_of_tp
+  end
+
   # DELETE tests
   # Delete a teaching period
   def test_delete_teaching_period
