@@ -93,5 +93,5 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
     # # Check that you still can find the deleted id
    assert ActivityType.exists?(activity_type.id)
 
-    end
   end
+end
