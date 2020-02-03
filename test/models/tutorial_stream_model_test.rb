@@ -132,4 +132,16 @@ class TutorialStreamModelTest < ActiveSupport::TestCase
     assert_empty tutorial_stream_second.task_definitions
   end
 
+  def test_delete_with_tutorials
+    unit = FactoryBot.create(:unit, with_students: false, stream_count: 1, campus_count: 2)
+
+    assert_equal 1, unit.tutorial_streams.count
+    assert_equal 1, unit.tutorial_streams.last.tutorials.count
+    assert_equal 2, unit.tutorials.count
+    
+    unit.tutorial_streams.last.destroy!
+
+    assert_equal 0, unit.tutorial_streams.count
+    assert_equal 1, unit.tutorials.count
+  end
 end
