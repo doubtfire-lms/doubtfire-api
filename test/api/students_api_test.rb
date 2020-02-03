@@ -17,12 +17,13 @@ class StudentsApiTest < ActiveSupport::TestCase
     # The get that we will be testing.
     get with_auth_token "/api/students/?unit_id=#{newUnit.id}", newUnit.main_convenor_user
 
-    response_keys = %w(first_name last_name)
+    # check returning number of students
+    assert_equal newUnit.active_projects.all.count,last_response_body.count
 
-    #assert_equal newUnit.students.all.count,last_response_body.count 
     # check the response
+    response_keys = %w(first_name last_name)   
     last_response_body.each do | data |
-      pro = newUnit.projects.find(data['project_id'])
+      pro = newUnit.active_projects.find(data['project_id'])
       std = pro.student
       assert_json_matches_model(data, std, response_keys)
       assert_equal data['student_email'],std['email']
