@@ -10,7 +10,7 @@ class StudentsApiTest < ActiveSupport::TestCase
   end
 
   def test_get_students_with_authorization
-    # Create unit
+    # Create a unit
     newUnit = FactoryBot.create(:unit)
 
     # The get that we will be testing.
@@ -20,7 +20,7 @@ class StudentsApiTest < ActiveSupport::TestCase
     assert_equal newUnit.active_projects.all.count,last_response_body.count
 
     # check the response
-    response_keys = %w(first_name last_name)   
+    response_keys = %w(first_name last_name)
     last_response_body.each do | data |
       pro = newUnit.active_projects.find(data['project_id'])
       std = pro.student
