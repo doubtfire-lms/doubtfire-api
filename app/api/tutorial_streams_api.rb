@@ -22,7 +22,7 @@ module Api
       activity_type = ActivityType.find_by(abbreviation: params[:activity_type_abbr])
       institution_settings = Doubtfire::Application.config.institution_settings
 
-      name = institution_settings.name_for_next_tutorial_stream(unit, activity_type),
+      name = institution_settings.name_for_next_tutorial_stream(unit, activity_type)
       abbreviation = institution_settings.abbreviation_for_next_tutorial_stream(unit, activity_type)
 
       unit.add_tutorial_stream(name, abbreviation, activity_type)
