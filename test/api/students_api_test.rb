@@ -1,5 +1,4 @@
 require 'test_helper'
-require 'user'
 
 class StudentsApiTest < ActiveSupport::TestCase
   include Rack::Test::Methods
