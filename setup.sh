@@ -287,7 +287,7 @@ install_dstil_overcommit
 install_dfire_dependencies
 install_latex
 
-msg "You should now be able to launch the server with rails s"
+msg "You should now be able to launch the server with bundle exec rails s"
 verbose "Doubtfire should be successfuly Installed!"
 
 exec $SHELL
