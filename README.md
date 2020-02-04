@@ -19,9 +19,22 @@ A modern, lightweight learning management system.
 
 ## Getting started
 
+### Clone Repository
+
+First, clone the `doubtfire-api` repository to your local machine:
+
+```
+$ git clone https://github.com/doubtfire-lms/doubtfire-api
+```
+
 ### Install script
 
-The install script will try to setup the development environment for either macOS or Linux, and can be found in the root of the project as `setup.sh`.
+The install script will try to setup the development environment for either macOS or Linux, and can be found in the root of the project as `setup.sh`. Execute it as follows:
+
+```
+$ cd ./doubtfire-api
+$ ./setup.sh
+```
 
 ### Manual install
 
@@ -75,7 +88,7 @@ You can also keep multiple `.env` files for different environments, e.g.: `.env.
 Once you've installed using either in install script or the manual install steps.
 
 ```
-$ rails s
+$ bundle exec rails s
 ```
 
 You should see all the Doubtfire endpoints at **[http://localhost:3000/api/docs/](http://localhost:3000/api/docs/)**, which means the API is running.
