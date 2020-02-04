@@ -101,29 +101,11 @@ install_rbenv_linux() {
     elif [ -n "$BASH_VERSION" ]; then
         echo 'export PATH="$HOME/.rbenv/bin:$PATH"' >> ~/.bashrc
         echo 'export PATH="$HOME/.rbenv/plugins/ruby-build/bin:$PATH"' >> ~/.bashrc
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> e5245659... Update setup.sh
         
         # source ~/.bashrc # On Ubuntu, this does not update the shell environment variable in a non-interactive session
         
         export PATH="$HOME/.rbenv/bin:$PATH"
         export PATH="$HOME/.rbenv/plugins/ruby-build/bin:$PATH"
-<<<<<<< HEAD
-=======
-        exec ~/.bashrc
->>>>>>> b90dfc73... Updated setup.sh
-=======
-        exec $SHELL
->>>>>>> 9cae15f6... Update setup.sh
-=======
-        source ~/.bashrc
->>>>>>> c8b201af... Update setup.sh
-=======
->>>>>>> e5245659... Update setup.sh
     fi
 }
 
@@ -305,7 +287,7 @@ install_dstil_overcommit
 install_dfire_dependencies
 install_latex
 
-msg "You should now be able to launch the server with bundle exec rails s"
+msg "You should now be able to launch the server with rails s"
 verbose "Doubtfire should be successfuly Installed!"
 
 exec $SHELL
