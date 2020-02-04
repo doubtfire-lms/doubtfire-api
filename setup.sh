@@ -89,8 +89,8 @@ install_homebrew () {
 install_rbenv_linux() {
     msg "Installing Ruby..."
     sudo apt update
-    git clone git://github.com/rbenv/rbenv ~/.rbenv/
-    git clone git://github.com/rbenv/ruby-build ~/.rbenv/plugins/ruby-build
+    git clone https://github.com/rbenv/rbenv ~/.rbenv/
+    git clone https://github.com/rbenv/ruby-build ~/.rbenv/plugins/ruby-build
 
     verbose "Git repos cloned"
 
