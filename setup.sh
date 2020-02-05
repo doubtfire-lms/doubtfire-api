@@ -89,10 +89,8 @@ install_homebrew () {
 install_rbenv_linux() {
     msg "Installing Ruby..."
     sudo apt update
-    git clone git://github.com/sstephenson/rbenv.git ~/.rbenv
-    git clone git://github.com/sstephenson/ruby-build.git ~/.rbenv/plugins/ruby-build
-
-    sudo apt-get install -y libreadline-dev
+    git clone https://github.com/rbenv/rbenv ~/.rbenv/
+    git clone https://github.com/rbenv/ruby-build ~/.rbenv/plugins/ruby-build
 
     verbose "Git repos cloned"
 
@@ -103,7 +101,11 @@ install_rbenv_linux() {
     elif [ -n "$BASH_VERSION" ]; then
         echo 'export PATH="$HOME/.rbenv/bin:$PATH"' >> ~/.bashrc
         echo 'export PATH="$HOME/.rbenv/plugins/ruby-build/bin:$PATH"' >> ~/.bashrc
-        source ~/.bashrc
+        
+        # source ~/.bashrc # On Ubuntu, this does not update the shell environment variable in a non-interactive session
+        
+        export PATH="$HOME/.rbenv/bin:$PATH"
+        export PATH="$HOME/.rbenv/plugins/ruby-build/bin:$PATH"
     fi
 }
 
@@ -199,7 +201,13 @@ install_native_tools () {
                        libmagickwand-dev \
                        libmagic-dev \
                        python-pygments \
-                       ffmpeg
+                       ffmpeg \
+                       curl \
+		       libreadline-dev \
+		       gcc \
+		       make \
+		       libssl1.0-dev \
+		       zlib1g-dev
     fi
     if [ $? -ne 0 ]; then
         error "Could not install native tools, please review the terminal window for details."
@@ -214,14 +222,14 @@ install_native_tools () {
 #
 install_dfire_dependencies () {
     msg "Installing Doubtfire dependencies..."
-    gem install bundler
-    bundler install --without production staging
+    gem install bundler -v 1.17.3
+    bundler install --without production replica staging
     rbenv rehash
     source ~/.bashrc
 
     msg "Populating database"
-    rake db:create
-    rake db:populate
+    bundle exec rake db:create
+    bundle exec rake db:populate
 
     if [ $? -ne 0 ]; then
         error "Could not populate database."
@@ -235,15 +243,12 @@ install_dfire_dependencies () {
 # Install Overcommit and DSTIL hooks.
 #
 install_dstil_overcommit () {
-    msg "Installing DSTIL hooks..."
-    curl -s https://raw.githubusercontent.com/dstil/dotfiles/master/bootstrap | bash
 
-    gem install overcommit
+    gem install overcommit -v 0.47.0
     rbenv rehash
     overcommit --install
-    dstil --sign
 
-    verbose "Installed DSTIL hooks."
+    verbose "Installed overcommit hooks."
 }
 
 #
@@ -275,14 +280,14 @@ if is_mac; then
     install_homebrew
 fi
 
+install_native_tools
 install_rbenv
 install_postgres
-install_native_tools
-install_dfire_dependencies
 install_dstil_overcommit
+install_dfire_dependencies
 install_latex
 
-msg "You should now be able to launch the server with rails s"
+msg "You should now be able to launch the server with bundle exec rails s"
 verbose "Doubtfire should be successfuly Installed!"
 
 exec $SHELL
