@@ -18,8 +18,8 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
     response_keys = %w(name abbreviation)
 
     last_response_body.each do | data |
-      activity_type = ActivityType.find(data['id'])
-      assert_json_matches_model(data, activity_type, response_keys)
+    expected_data = ActivityType.find(data['id'])
+    assert_json_matches_model(data, expected_data, response_keys)
     end
   end
 
@@ -225,5 +225,49 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
 
     # Check if the number of activity type is the same as initially
     assert_equal ActivityType.count, number_of_activity_type
+  end
+
+  def test_delete_activity_type
+    # Create a activity type
+    activity_type = FactoryBot.create(:activity_type)
+          
+    #number of activity type before delete
+    number_of_ativity_type = ActivityType.count
+    
+    # perform the delete
+    delete_json with_auth_token "/api/activity_types/#{activity_type.id}"
+    
+    # Check if the delete get through
+    assert_equal 200, last_response.status
+
+    # Check delete if success
+    assert_equal ActivityType.count, number_of_ativity_type-1
+
+    # Check that you can't find the deleted id
+    refute ActivityType.exists?(activity_type.id)
+  end
+
+  def test_student_cannot_delete_activity_type
+    # A user with student role which does not have permision to delete a activity type
+    user = FactoryBot.build(:user, :student)
+    
+    # create a activity type to delete
+    activity_type = FactoryBot.create (:activity_type)
+    
+    # number of activity type before delete
+    number_of_ativity_type = ActivityType.count
+
+    # perform the delete
+    delete_json with_auth_token("/api/activity_types/#{activity_type.id}", user)
+   
+    # check if the delete does not get through
+    assert_equal 403, last_response.status
+
+    # check if the number of ativity_type is still the same
+    assert_equal ActivityType.count, number_of_ativity_type
+
+    # # Check that you still can find the deleted id
+   assert ActivityType.exists?(activity_type.id)
+
   end
 end
