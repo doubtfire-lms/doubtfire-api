@@ -1,5 +1,4 @@
 require 'test_helper'
-require 'user'
 
 class GroupSetsApiTest < ActiveSupport::TestCase
   include Rack::Test::Methods
@@ -14,10 +13,14 @@ class GroupSetsApiTest < ActiveSupport::TestCase
   def test_get_all_groups_in_unit_with_authorization
     # Create a group
     newGroup = FactoryBot.create(:group)
-    # Obtain the unit of the group
+    
+    # Obtain the unit from the group
     newUnit = newGroup.group_set.unit
     get with_auth_token "/api/units/#{newUnit.id}/groups",newUnit.main_convenor_user
 
+    #check returning number of groups
+    assert_equal newUnit.groups.all.count, last_response_body.count
+    
     #Check response
     response_keys = %w(id name)
     last_response_body.each do | data |
