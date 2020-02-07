@@ -17,7 +17,7 @@ class GroupSetsApiTest < ActiveSupport::TestCase
     # Create a unit
     newUnit = FactoryBot.create(:unit)
     
-    # Obtain a student from unit
+    # Obtain a student from the unit
     studentUser = newUnit.active_projects.first.student
 
     # Data that we want to post
