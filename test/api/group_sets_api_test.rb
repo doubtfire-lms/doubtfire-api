@@ -44,11 +44,10 @@ class GroupSetsApiTest < ActiveSupport::TestCase
     data_to_post = {
       unit_id: newUnit.id,
       group_set: newGroupSet,
-      auth_token: auth_token
     }
 
     # perform the POST
-    post_json "/api/units/#{newUnit.id}/group_sets", data_to_post
+    post_json with_auth_token("/api/units/#{newUnit.id}/group_sets", newUnit.main_convenor_user), data_to_post
 
     # check if the POST get through
     assert_equal 201, last_response.status
