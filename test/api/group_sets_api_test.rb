@@ -10,6 +10,38 @@ class GroupSetsApiTest < ActiveSupport::TestCase
     Rails.application
   end
 
+  def test_post_add_a_group_to_a_group_set_of_a_unit
+    # A dummy group
+    newGroup = FactoryBot.build(:group)
+    newTutorial = FactoryBot.create(:tutorial)
+    newGroup.tutorial = newTutorial
+    # Create a groupSet
+    newGroupSet = FactoryBot.create(:group_set)
+
+    # Obtain the unit from the groupSet
+   # newUnit = newGroupSet.unit
+
+    # Create a unit
+    newUnit = FactoryBot.create(:unit)
+    
+    # the dummy group that we want to post/create
+    data_to_post = {
+      unit_id: 1,
+      group_set_id: 1,
+      group: {
+        name:"abcde",
+        tutorial_id:1
+      },
+      auth_token: auth_token
+    }
+
+    # perform the POST
+    post_json "/api/units/1/group_sets/1/groups", data_to_post
+
+    # check if the POST get through
+    assert_equal 201, last_response.status
+  end
+
   def test_get_all_groups_in_unit_with_authorization
     # Create a group
     newGroup = FactoryBot.create(:group)
