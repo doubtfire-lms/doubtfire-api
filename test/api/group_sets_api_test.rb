@@ -10,36 +10,52 @@ class GroupSetsApiTest < ActiveSupport::TestCase
     Rails.application
   end
 
-  def test_post_add_a_group_to_a_group_set_of_a_unit
-    # A dummy group
-    newGroup = FactoryBot.build(:group)
-    newTutorial = FactoryBot.create(:tutorial)
-    newGroup.tutorial = newTutorial
-    # Create a groupSet
-    newGroupSet = FactoryBot.create(:group_set)
-
-    # Obtain the unit from the groupSet
-   # newUnit = newGroupSet.unit
+  def test_post_add_a_new_groupset_to_a_unit_without_authorization
+    # A dummy groupSet
+    newGroupSet = FactoryBot.build(:group_set)
 
     # Create a unit
     newUnit = FactoryBot.create(:unit)
     
-    # the dummy group that we want to post/create
+    # Obtain a student from unit
+    studentUser = newUnit.active_projects.first.student
+
+    # Data that we want to post
     data_to_post = {
-      unit_id: 1,
-      group_set_id: 1,
-      group: {
-        name:"abcde",
-        tutorial_id:1
-      },
+      unit_id: newUnit.id,
+      group_set: newGroupSet
+    }
+
+    # Perform the POST
+    post_json with_auth_token("/api/units/#{newUnit.id}/group_sets", studentUser), data_to_post
+
+    # Check error code
+    assert_equal 403, last_response.status
+  end
+
+  def test_post_add_a_new_groupset_to_a_unit_with_authorization
+    # A dummy groupSet
+    newGroupSet = FactoryBot.build(:group_set)
+
+    # Create a unit
+    newUnit = FactoryBot.create(:unit)
+    
+    # Data that we want to post
+    data_to_post = {
+      unit_id: newUnit.id,
+      group_set: newGroupSet,
       auth_token: auth_token
     }
 
     # perform the POST
-    post_json "/api/units/1/group_sets/1/groups", data_to_post
+    post_json "/api/units/#{newUnit.id}/group_sets", data_to_post
 
     # check if the POST get through
     assert_equal 201, last_response.status
+    #check response
+    response_keys = %w(name allow_students_to_create_groups)
+    responseGroupSet = GroupSet.find(last_response_body['id'])
+    assert_json_matches_model(last_response_body,responseGroupSet,response_keys)
   end
 
   def test_get_all_groups_in_unit_with_authorization
