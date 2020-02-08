@@ -55,6 +55,10 @@ class GroupSetsApiTest < ActiveSupport::TestCase
     responseGroupSet = GroupSet.find(last_response_body['id'])
     assert_json_matches_model(last_response_body,responseGroupSet,response_keys)
     assert_equal newUnit.id,responseGroupSet.unit.id
+    assert_equal newGroupSet.name,responseGroupSet.name
+    assert_equal newGroupSet.allow_students_to_create_groups,responseGroupSet.allow_students_to_create_groups
+    assert_equal newGroupSet.allow_students_to_manage_groups,responseGroupSet.allow_students_to_manage_groups
+    assert_equal newGroupSet.keep_groups_in_same_class,responseGroupSet.keep_groups_in_same_class
   end
 
   def test_post_add_a_group_to_a_group_set_of_a_unit_without_authorization
@@ -121,6 +125,9 @@ class GroupSetsApiTest < ActiveSupport::TestCase
     responseGroup = Group.find(last_response_body['id'])
     assert_json_matches_model(last_response_body,responseGroup,response_keys)
     assert_equal newUnit.id, responseGroup.group_set.unit.id
+    assert_equal newGroup.name, responseGroup.name
+    assert_equal newGroupSet.id,responseGroup.group_set.id
+    assert_equal newTutorial.id,responseGroup.group_set.unit.tutorials.first.id
   end
 
   def test_get_all_groups_in_unit_with_authorization
