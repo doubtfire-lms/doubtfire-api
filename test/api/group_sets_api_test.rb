@@ -54,7 +54,7 @@ class GroupSetsApiTest < ActiveSupport::TestCase
     response_keys = %w(name allow_students_to_create_groups allow_students_to_manage_groups keep_groups_in_same_class)
     responseGroupSet = GroupSet.find(last_response_body['id'])
     assert_json_matches_model(last_response_body,responseGroupSet,response_keys)
-    assert_equal responseGroupSet.unit.id,newUnit.id
+    assert_equal newUnit.id,responseGroupSet.unit.id
   end
 
   def test_post_add_a_group_to_a_group_set_of_a_unit_without_authorization
