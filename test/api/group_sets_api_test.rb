@@ -56,6 +56,71 @@ class GroupSetsApiTest < ActiveSupport::TestCase
     assert_json_matches_model(last_response_body,responseGroupSet,response_keys)
   end
 
+  def test_post_add_a_group_to_a_group_set_of_a_unit_without_authorization
+    # Create a groupSet
+    newGroupSet = FactoryBot.create(:group_set)
+
+    # Obtain a unit from group_set
+    newUnit = newGroupSet.unit
+
+    # A group that we want to save
+    newGroup = FactoryBot.build(:group)
+    
+    # Obtain a tutorial from unit
+    newTutorial = newUnit.tutorials.first
+    
+    # Data to post
+    data_to_post = {
+      unit_id: newUnit.id,
+      group_set_id: newGroupSet.id,
+      group: {
+        name:newGroup.name,
+        tutorial_id:newTutorial.id
+      },
+      auth_token: auth_token
+    }
+
+    # perform the POST
+    post_json "/api/units/#{newUnit.id}/group_sets/#{newGroupSet.id}/groups", data_to_post
+
+    # Check error code
+    assert_equal 403, last_response.status
+  end
+
+  def test_post_add_a_group_to_a_group_set_of_a_unit_with_authorization
+    # Create a groupSet
+    newGroupSet = FactoryBot.create(:group_set)
+
+    # Obtain a unit from group_set
+    newUnit = newGroupSet.unit
+
+    # A group that we want to save
+    newGroup = FactoryBot.build(:group)
+    
+    # Obtain a tutorial from unit
+    newTutorial = newUnit.tutorials.first
+    
+    # Data to post
+    data_to_post = {
+      unit_id: newUnit.id,
+      group_set_id: newGroupSet.id,
+      group: {
+        name:newGroup.name,
+        tutorial_id:newTutorial.id
+      }
+    }
+
+    # perform the POST
+    post_json with_auth_token("/api/units/#{newUnit.id}/group_sets/#{newGroupSet.id}/groups",newUnit.main_convenor_user), data_to_post
+
+    # check if the POST get through
+    assert_equal 201, last_response.status
+    #check response
+    response_keys = %w(name tutorial_id group_set_id number)
+    responseGroup = Group.find(last_response_body['id'])
+    assert_json_matches_model(last_response_body,responseGroup,response_keys)
+  end
+
   def test_get_all_groups_in_unit_with_authorization
     # Create a group
     newGroup = FactoryBot.create(:group)
