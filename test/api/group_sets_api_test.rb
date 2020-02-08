@@ -33,7 +33,7 @@ class GroupSetsApiTest < ActiveSupport::TestCase
   end
 
   def test_post_add_a_new_groupset_to_a_unit_with_authorization
-    # A dummy groupSet
+    # A groupSet we want to save
     newGroupSet = FactoryBot.build(:group_set)
 
     # Create a unit
@@ -51,9 +51,10 @@ class GroupSetsApiTest < ActiveSupport::TestCase
     # check if the POST get through
     assert_equal 201, last_response.status
     #check response
-    response_keys = %w(name allow_students_to_create_groups)
+    response_keys = %w(name allow_students_to_create_groups allow_students_to_manage_groups keep_groups_in_same_class)
     responseGroupSet = GroupSet.find(last_response_body['id'])
     assert_json_matches_model(last_response_body,responseGroupSet,response_keys)
+    assert_equal responseGroupSet.unit.id,newUnit.id
   end
 
   def test_post_add_a_group_to_a_group_set_of_a_unit_without_authorization
@@ -119,6 +120,7 @@ class GroupSetsApiTest < ActiveSupport::TestCase
     response_keys = %w(name tutorial_id group_set_id number)
     responseGroup = Group.find(last_response_body['id'])
     assert_json_matches_model(last_response_body,responseGroup,response_keys)
+    assert_equal newUnit.id, responseGroup.group_set.unit.id
   end
 
   def test_get_all_groups_in_unit_with_authorization
