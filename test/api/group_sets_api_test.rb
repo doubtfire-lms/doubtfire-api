@@ -130,12 +130,27 @@ class GroupSetsApiTest < ActiveSupport::TestCase
     assert_equal newTutorial.id,responseGroup.group_set.unit.tutorials.first.id
   end
 
+  def test_get_all_groups_in_unit_without_authorization
+    # Create a group
+    newGroup = FactoryBot.create(:group)
+    # Obtain the unit of the group
+    newUnit = newGroup.group_set.unit
+
+    # Obtain student object from the unit
+    studentUser = newUnit.active_projects.first.student
+
+    get with_auth_token "/api/units/#{newUnit.id}/groups",studentUser
+    # Check error code when an unauthorized user tries to get groups in a unit
+    assert_equal 403, last_response.status
+  end
+
   def test_get_all_groups_in_unit_with_authorization
     # Create a group
     newGroup = FactoryBot.create(:group)
     
     # Obtain the unit from the group
     newUnit = newGroup.group_set.unit
+
     get with_auth_token "/api/units/#{newUnit.id}/groups",newUnit.main_convenor_user
 
     #check returning number of groups
@@ -150,17 +165,43 @@ class GroupSetsApiTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status
   end
 
-  def test_get_all_groups_in_unit_without_authorization
+  def test_get_groups_in_a_group_set_without_authorization
     # Create a group
     newGroup = FactoryBot.create(:group)
-    # Obtain the unit of the group
+    
+    # Obtain the group_set from group
+    newGroupSet = newGroup.group_set
+
+    # Obtain the unit from the group
     newUnit = newGroup.group_set.unit
 
-    # Obtain student object from the unit
-    studentUser = newUnit.active_projects.first.student
-    get with_auth_token "/api/units/#{newUnit.id}/groups",studentUser
-    # Check error code when an unauthorized user tries to get groups in a unit
+    get with_auth_token "/api/units/#{newUnit.id}/group_sets/#{newGroupSet.id}/groups"
+    # Check error code 
     assert_equal 403, last_response.status
-  end
+  end 
+
+  def test_get_groups_in_a_group_set_with_authorization
+    # Create a group
+    newGroup = FactoryBot.create(:group)
+    
+    # Obtain the group_set from group
+    newGroupSet = newGroup.group_set
+
+    # Obtain the unit from the group
+    newUnit = newGroup.group_set.unit
+
+    get with_auth_token "/api/units/#{newUnit.id}/group_sets/#{newGroupSet.id}/groups",newUnit.main_convenor_user
+    
+    # Check returning number of groups
+    assert_equal newGroupSet.groups.all.count,last_response_body.count
+
+    # Check response
+    response_keys = %w(id name)
+    last_response_body.each do | data |
+      grp = Group.find(data['id'])
+      assert_json_matches_model(data, grp, response_keys)
+    end
+    assert_equal 200, last_response.status
+  end 
 
 end
