@@ -15,7 +15,7 @@ class GroupSetsApiTest < ActiveSupport::TestCase
 
     # Create a unit
     newUnit = FactoryBot.create(:unit)
-    
+
     # Obtain a student from the unit
     studentUser = newUnit.active_projects.first.student
 
@@ -36,9 +36,9 @@ class GroupSetsApiTest < ActiveSupport::TestCase
     # A groupSet we want to save
     newGroupSet = FactoryBot.build(:group_set)
 
-    # Create a unit
+    # Create a unit 
     newUnit = FactoryBot.create(:unit)
-    
+
     # Data that we want to post
     data_to_post = {
       unit_id: newUnit.id,
@@ -70,10 +70,10 @@ class GroupSetsApiTest < ActiveSupport::TestCase
 
     # A group that we want to save
     newGroup = FactoryBot.build(:group)
-    
+
     # Obtain a tutorial from unit
     newTutorial = newUnit.tutorials.first
-    
+
     # Data to post
     data_to_post = {
       unit_id: newUnit.id,
@@ -101,10 +101,10 @@ class GroupSetsApiTest < ActiveSupport::TestCase
 
     # A group that we want to save
     newGroup = FactoryBot.build(:group)
-    
+
     # Obtain a tutorial from unit
     newTutorial = newUnit.tutorials.first
-    
+
     # Data to post
     data_to_post = {
       unit_id: newUnit.id,
@@ -147,7 +147,7 @@ class GroupSetsApiTest < ActiveSupport::TestCase
   def test_get_all_groups_in_unit_with_authorization
     # Create a group
     newGroup = FactoryBot.create(:group)
-    
+
     # Obtain the unit from the group
     newUnit = newGroup.group_set.unit
 
@@ -155,7 +155,7 @@ class GroupSetsApiTest < ActiveSupport::TestCase
 
     #check returning number of groups
     assert_equal newUnit.groups.all.count, last_response_body.count
-    
+
     #Check response
     response_keys = %w(id name)
     last_response_body.each do | data |
@@ -168,7 +168,7 @@ class GroupSetsApiTest < ActiveSupport::TestCase
   def test_get_groups_in_a_group_set_without_authorization
     # Create a group
     newGroup = FactoryBot.create(:group)
-    
+
     # Obtain the group_set from group
     newGroupSet = newGroup.group_set
 
@@ -176,14 +176,14 @@ class GroupSetsApiTest < ActiveSupport::TestCase
     newUnit = newGroup.group_set.unit
 
     get with_auth_token "/api/units/#{newUnit.id}/group_sets/#{newGroupSet.id}/groups"
-    # Check error code 
+    # Check error code
     assert_equal 403, last_response.status
-  end 
+  end
 
   def test_get_groups_in_a_group_set_with_authorization
     # Create a group
     newGroup = FactoryBot.create(:group)
-    
+
     # Obtain the group_set from group
     newGroupSet = newGroup.group_set
 
@@ -191,7 +191,7 @@ class GroupSetsApiTest < ActiveSupport::TestCase
     newUnit = newGroup.group_set.unit
 
     get with_auth_token "/api/units/#{newUnit.id}/group_sets/#{newGroupSet.id}/groups",newUnit.main_convenor_user
-    
+
     # Check returning number of groups
     assert_equal newGroupSet.groups.all.count,last_response_body.count
 
@@ -202,6 +202,6 @@ class GroupSetsApiTest < ActiveSupport::TestCase
       assert_json_matches_model(data, grp, response_keys)
     end
     assert_equal 200, last_response.status
-  end 
+  end
 
 end
