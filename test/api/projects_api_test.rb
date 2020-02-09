@@ -33,11 +33,6 @@ class ProjectsApiTest < ActiveSupport::TestCase
     response_keys = %w(unit_id campus_id enrolled) 
     project = Project.find(last_response_body['project_id'])
     assert_json_matches_model(last_response_body, project, response_keys)
-
-    # Check if the details in the newly created project match as the new_project    
-    assert_equal project['unit_id'], new_project.unit_id
-    assert_equal project['campus_id'], new_project.campus_id
-    assert_equal project['enrolled'], new_project.enrolled
   end 
 
   # PUT test
@@ -95,7 +90,6 @@ class ProjectsApiTest < ActiveSupport::TestCase
   def test_change_project_compile_portfolio
     project = Project.first
     to_update = project
-    puts project.to_json
 
     # Perform update, change project compile portfolio
     put_json with_auth_token("/api/projects/#{project.id}"), { compile_portfolio: true }
