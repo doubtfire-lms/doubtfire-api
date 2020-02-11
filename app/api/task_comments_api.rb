@@ -14,7 +14,7 @@ module Api
       optional :comment, type: String, desc: 'The comment text to add to the task'
       optional :attachment, type: Rack::Multipart::UploadedFile, desc: 'Image, sound, PDF or video comment file'
     end
-    post '/projects/:project_id/task_def_id/:task_definition_id/comments' do
+    post '/projects/:project_id/task_def_id/:task_definition_id/comments', serializer: TaskCommentSerializer do
       project = Project.find(params[:project_id])
       task_definition = project.unit.task_definitions.find(params[:task_definition_id])
 

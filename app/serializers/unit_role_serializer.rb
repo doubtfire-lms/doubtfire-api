@@ -3,15 +3,15 @@
 
 require 'user_serializer'
 
-class ShallowUnitRoleSerializer < ActiveModel::Serializer
+class ShallowUnitRoleSerializer < DoubtfireSerializer
   attributes :id, :role
 
   def role
-    object.object.role.name
+    object.role.name
   end
 end
 
-class UnitRoleSerializer < ActiveModel::Serializer
+class UnitRoleSerializer < DoubtfireSerializer
   attributes :id, :role, :user_id, :unit_id, :unit_name, :name, :unit_code, :start_date, :end_date, :teaching_period_id, :active
 
   # has_one :user, serializer: ShallowUserSerializer
@@ -19,39 +19,39 @@ class UnitRoleSerializer < ActiveModel::Serializer
   # has_one :role
 
   def role
-    object.object.role.name
+    object.role.name
   end
 
   def unit_id
-    object.object.unit.id
+    object.unit.id
   end
 
   def unit_code
-    object.object.unit.code
+    object.unit.code
   end
 
   def unit_name
-    object.object.unit.name
+    object.unit.name
   end
 
   def teaching_period_id
-    object.object.unit.teaching_period_id
+    object.unit.teaching_period_id
   end
 
   def name
-    object.object.user.name
+    object.user.name
   end
 
   def active
-    object.object.unit.active
+    object.unit.active
   end
 
   def include_start_date?
-    object.object.has_attribute? :start_date
+    object.has_attribute? :start_date
   end
 
   def include_end_date?
-    object.object.has_attribute? :end_date
+    object.has_attribute? :end_date
   end
 
   def filter(keys)
@@ -61,18 +61,18 @@ class UnitRoleSerializer < ActiveModel::Serializer
   end
 end
 
-class UserUnitRoleSerializer < ActiveModel::Serializer
+class UserUnitRoleSerializer < DoubtfireSerializer
   attributes :id, :user_id, :name, :role #:user_name?
 
   def role
-    object.object.role.name
+    object.role.name
   end
 
   def name
-    object.object.user.name
+    object.user.name
   end
 
   def user_name
-    object.object.user.name
+    object.user.name
   end
 end

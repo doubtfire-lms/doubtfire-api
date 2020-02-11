@@ -2,12 +2,12 @@
 
 # Add new inflection rules using the following format
 # (all these examples are active by default):
-# ActiveSupport::Inflector.inflections do |inflect|
-#   inflect.plural /^(ox)$/i, '\1en'
+ActiveSupport::Inflector.inflections do |inflect|
+    inflect.irregular 'campus', 'campuses'
+    #   inflect.plural /^(ox)$/i, '\1en'
 #   inflect.singular /^(ox)en/i, '\1'
-#   inflect.irregular 'person', 'people'
 #   inflect.uncountable %w( fish sheep )
-# end
+end
 #
 # These inflection rules are supported but not enabled by default:
 # ActiveSupport::Inflector.inflections do |inflect|
