@@ -321,6 +321,7 @@ class Unit < ActiveRecord::Base
           'projects.id',
           'projects.target_grade',
           'projects.enrolled',
+          'projects.campus_id',
           'users.first_name',
           'users.last_name',
           'users.username',
@@ -333,6 +334,7 @@ class Unit < ActiveRecord::Base
         .select(
           'projects.id AS project_id',
           'projects.enrolled AS enrolled',
+          'projects.campus_id AS campus_id',
           'users.first_name AS first_name',
           'users.last_name AS last_name',
           'users.username AS student_id',
@@ -360,6 +362,7 @@ class Unit < ActiveRecord::Base
       result = {
         project_id: t.project_id,
         enrolled: t.enrolled,
+        campus_id: t.campus_id,
         first_name: t.first_name,
         last_name: t.last_name,
         student_id: t.student_id,
