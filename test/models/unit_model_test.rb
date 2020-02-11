@@ -253,7 +253,7 @@ class UnitModelTest < ActiveSupport::TestCase
 
     unit.tutorial_streams.each do |s|
       unit.projects.each do |p|
-        proj_tute_enrolment = p.tutorial_enrolments.where(tutorial_stream_id: s.id).first
+        proj_tute_enrolment = p.tutorial_enrolment_for_stream(s)
         data_tute_enrolment = projects.select{|ps| ps[:project_id] == p.id}.first[:tutorial_streams].select{|te| te[:stream] == s.abbreviation}.map{|te| te[:tutorial]}.first
 
         # if there is a enrolment for this project...
