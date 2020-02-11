@@ -342,13 +342,25 @@ module Api
         error!({ error: 'Not authorised to access tasks for this unit' }, 403)
       end
 
+      # Which task definition is this for
+      task_def = unit.task_definitions.find(params[:task_def_id])
+
+      # What stream does this relate to?
+      stream = task_def.tutorial_stream
+
+      subquery = unit.
+        tutorial_enrolments.
+        joins(:tutorial).
+        where('tutorials.tutorial_stream_id = :sid OR tutorials.tutorial_stream_id IS NULL', sid: (stream.present? ? stream.id : nil)).
+        select('tutorials.tutorial_stream_id as tutorial_stream_id', 'tutorials.id as tutorial_id', 'project_id').to_sql
+
       unit.student_tasks.
         joins(:project).
         joins(:task_status).
-        joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id AND (tutorial_enrolments.tutorial_stream_id = task_definitions.tutorial_stream_id OR tutorial_enrolments.tutorial_stream_id IS NULL)').
-        select('tutorial_enrolments.tutorial_stream_id as tutorial_stream_id', 'tutorial_enrolments.tutorial_id as tutorial_id', 'project_id', 'tasks.id as id', 'task_definition_id', 'task_statuses.id as status_id', 'completion_date', 'times_assessed', 'submission_date', 'grade').
-        where('task_definition_id = :id', id: params[:task_def_id])
-        .map do |t|
+        joins("LEFT OUTER JOIN (#{subquery}) as sq ON sq.project_id = projects.id").
+        select('sq.tutorial_stream_id as tutorial_stream_id', 'sq.tutorial_id as tutorial_id', 'project_id', 'tasks.id as id', 'task_definition_id', 'task_statuses.id as status_id', 'completion_date', 'times_assessed', 'submission_date', 'grade').
+        where('task_definition_id = :id', id: params[:task_def_id]).
+        map do |t|
         {
           project_id: t.project_id,
           id: t.id,

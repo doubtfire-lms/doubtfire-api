@@ -26,13 +26,14 @@ module Api
 
       unit.student_tasks.
           joins(:task_status).
-          joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id AND (tutorial_enrolments.tutorial_stream_id = task_definitions.tutorial_stream_id OR tutorial_enrolments.tutorial_stream_id IS NULL)').
+          joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id').
+          joins('LEFT OUTER JOIN tutorials ON tutorial_enrolments.tutorial_id = tutorials.id AND (tutorials.tutorial_stream_id = task_definitions.tutorial_stream_id OR tutorials.tutorial_stream_id IS NULL)').
           select(
             'tasks.id',
             'task_statuses.id as status_id',
             'task_definition_id',
-            'tutorial_enrolments.tutorial_id AS tutorial_id',
-            'tutorial_enrolments.tutorial_stream_id AS tutorial_stream_id'
+            'tutorials.id AS tutorial_id',
+            'tutorials.tutorial_stream_id AS tutorial_stream_id'
           ).
           where('tasks.task_status_id > 1').
           map do |r|
