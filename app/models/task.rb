@@ -198,8 +198,17 @@ class Task < ActiveRecord::Base
     extension.user = user
     extension.content_type = :extension
     extension.comment = text
-    extension.recipient = project.tutor_for(task_definition)
+    if weeks <= weeks_can_extend
+      extension.recipient = project.tutor_for(task_definition)
+    else
+      extension.recipient = unit.main_convenor_user
+    end
     extension.save!
+
+    if unit.auto_apply_extension_before_deadline && weeks <= weeks_can_extend
+      extension.assess_extension unit.main_convenor_user, true, true
+    end
+
     extension
   end
 
