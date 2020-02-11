@@ -63,6 +63,7 @@ gem 'grape', '1.2.4'
 gem 'active_model_serializers', '~> 0.10.0'
 gem 'grape-active_model_serializers', '~> 1.3.2'
 gem 'grape-swagger'
+gem 'grape-swagger-rails'
 
 # Miscellaneous
 gem 'attr_encrypted', '~> 3.1.0'
