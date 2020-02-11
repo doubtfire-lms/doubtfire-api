@@ -25,7 +25,7 @@ class ExtensionComment < TaskComment
   # propagates reads, this will work as required - other staff cant
   # make it read for the main tutor.
   def mark_as_read(user, unit = self.unit)
-    super if assessed? || user != project.main_tutor
+    super if assessed? || user != project.tutor_for(task.task_definition)
   end
 
   def assess_extension(user, granted)
@@ -49,7 +49,7 @@ class ExtensionComment < TaskComment
     end
 
     # Now make sure to read it by the main tutor - even if assessed by someone else
-    super_mark_as_read(project.main_tutor)
+    super_mark_as_read(project.tutor_for(task.task_definition))
     save!
   end
 end

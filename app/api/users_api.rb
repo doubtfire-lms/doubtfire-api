@@ -195,15 +195,21 @@ module Api
       requires :file, type: Rack::Multipart::UploadedFile, desc: 'CSV upload file.'
     end
     post '/csv/users' do
-      # check mime is correct before uploading
-      ensure_csv!(params[:file][:tempfile])
-
       unless authorise? current_user, User, :upload_csv
         error!({ error: 'Not authorised to upload CSV of users' }, 403)
       end
 
+      unless params[:file].present?
+        error!({ error: "No file uploaded" }, 403)
+      end
+
+      path = params[:file][:tempfile].path
+
+      # check mime is correct before uploading
+      ensure_csv!(path)
+
       # Actually import...
-      User.import_from_csv(current_user, params[:file][:tempfile])
+      User.import_from_csv(current_user, File.new(path))
     end
 
     desc 'Download CSV of all users'

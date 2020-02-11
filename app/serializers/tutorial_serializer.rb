@@ -3,30 +3,31 @@
 
 require 'user_serializer'
 
-class TutorialSerializer < ActiveModel::Serializer
-  attributes :id, :meeting_day, :meeting_time, :meeting_location, :abbreviation, :tutor_name, :num_students
+class TutorialSerializer < DoubtfireSerializer
+  attributes :id, :meeting_day, :meeting_time, :meeting_location, :abbreviation, :campus_id, :capacity, :num_students,
+             :tutorial_stream
 
-  def meeting_time
-    object.object.meeting_time.to_time
-    # DateTime.parse("#{object.object.meeting_time}")
+  def tutorial_stream
+    object.tutorial_stream.abbreviation unless object.tutorial_stream.nil?
   end
 
-  def tutor_name
-    object.object.tutor.name unless object.object.tutor.nil?
+  def meeting_time
+    object.meeting_time.to_time
+    # DateTime.parse("#{object.meeting_time}")
   end
 
   has_one :tutor, serializer: ShallowUserSerializer
 
   def include_tutor?
     if Thread.current[:user]
-      my_role = object.object.unit.role_for(Thread.current[:user])
+      my_role = object.unit.role_for(Thread.current[:user])
       [ Role.convenor, Role.admin ].include? my_role
     end
   end
 
   def include_num_students?
     if Thread.current[:user]
-      my_role = object.object.unit.role_for(Thread.current[:user])
+      my_role = object.unit.role_for(Thread.current[:user])
       [ Role.convenor, Role.tutor, Role.admin ].include? my_role
     end
   end

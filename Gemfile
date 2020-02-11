@@ -4,7 +4,7 @@ source 'https://rubygems.org'
 ruby_versions = {
   development:  '~>2.6',
   test:         '~>2.6',
-  staging:      '~>2.3.1',
+  staging:      '~>2.6',
   production:   '~>2.3.1'
 }
 # Get the ruby version for the current enviornment
@@ -27,8 +27,8 @@ end
 
 group :development, :test, :staging do
   # Generators for population
-  gem 'populator'
-  gem 'factory_girl_rails'
+  gem 'factory_bot_rails'
+  gem 'factory_bot'
   gem 'faker', '~>1.9.1'
   gem "minitest-rails", github: "blowmage/minitest-rails"
 end
@@ -53,7 +53,7 @@ gem 'rmagick', '~> 2.15' # require: false #already included in other gems - remo
 gem 'rubyzip'
 
 # Plagarism detection
-gem 'moss_ruby', '= 1.1.2'
+gem 'moss_ruby', '>= 1.1.2'
 
 # Latex
 gem 'rails-latex', '>2.3'
@@ -63,12 +63,13 @@ gem 'grape', '1.2.4'
 gem 'active_model_serializers', '~> 0.10.0'
 gem 'grape-active_model_serializers', '~> 1.3.2'
 gem 'grape-swagger'
+gem 'grape-swagger-rails'
 
 # Miscellaneous
 gem 'attr_encrypted', '~> 3.1.0'
 gem 'rack-cors', require: 'rack/cors'
 gem 'ci_reporter'
-gem 'require_all', '1.3.3'
+gem 'require_all', '>=1.3.3'
 gem 'dotenv-rails'
 
 # Excel support

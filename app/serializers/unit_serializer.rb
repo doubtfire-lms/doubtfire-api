@@ -3,23 +3,23 @@
 
 require 'unit_role_serializer'
 
-class ShallowUnitSerializer < ActiveModel::Serializer
+class ShallowUnitSerializer < DoubtfireSerializer
   attributes :code, :id, :name, :teaching_period_id, :start_date, :end_date, :active
 end
 
-class UnitSerializer < ActiveModel::Serializer
+class UnitSerializer < DoubtfireSerializer
   attributes :code, :id, :name, :my_role, :description, :teaching_period_id, :start_date, :end_date, :active, :convenors, :ilos
 
   def start_date
-    object.object.start_date.to_date
+    object.start_date.to_date
   end
 
   def end_date
-    object.object.end_date.to_date
+    object.end_date.to_date
   end
 
   def my_role_obj
-    object.object.role_for(Thread.current[:user]) if Thread.current[:user]
+    object.role_for(Thread.current[:user]) if Thread.current[:user]
   end
 
   def my_user_role
@@ -36,10 +36,12 @@ class UnitSerializer < ActiveModel::Serializer
   end
 
   def ilos
-    object.object.learning_outcomes
+    object.learning_outcomes
   end
 
+  has_many :tutorial_streams
   has_many :tutorials
+  has_many :tutorial_enrolments
   has_many :task_definitions
   has_many :convenors, serializer: UserUnitRoleSerializer
   has_many :staff, serializer: UserUnitRoleSerializer
@@ -60,10 +62,15 @@ class UnitSerializer < ActiveModel::Serializer
     ([ Role.convenor, :convenor, Role.tutor, :tutor ].include? my_role_obj) || (my_user_role == Role.admin)
   end
 
+  def include_enrolments?
+    ([ Role.convenor, :convenor, Role.tutor, :tutor ].include? my_role_obj) || (my_user_role == Role.admin)
+  end
+
   def filter(keys)
     keys.delete :groups unless include_groups?
     keys.delete :convenors unless include_convenors?
     keys.delete :staff unless include_staff?
+    keys.delete :tutorial_enrolments unless include_enrolments?
     keys
   end
 end

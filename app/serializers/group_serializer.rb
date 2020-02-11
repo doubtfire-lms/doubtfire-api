@@ -1,15 +1,15 @@
 # Doubtfire will deprecate ActiveModelSerializer in the future.
 # Instead, write a serialize method on the
 
-class GroupSerializer < ActiveModel::Serializer
+class GroupSerializer < DoubtfireSerializer
   attributes :id, :name, :tutorial_id, :group_set_id, :number
 end
 
-class DeepGroupSerializer < ActiveModel::Serializer
+class DeepGroupSerializer < DoubtfireSerializer
   attributes :id, :name, :tutorial_id, :group_set_id, :number, :projects
 
   def projects
-    object.object.projects.map { |p| p.id }
+    object.projects.map { |p| p.id }
   end
 
 end
