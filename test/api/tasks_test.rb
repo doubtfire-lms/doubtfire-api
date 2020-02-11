@@ -9,16 +9,54 @@ class TasksTest < ActiveSupport::TestCase
     Rails.application
   end
 
-  # WIP
   def test_task_get
     # The GET we are testing
-    get with_auth_token '/api/tasks?unit_id=1'
-    expected_data = Unit.first.student_tasks.where('task_status_id > ?', 1)
+    unit = FactoryBot.create(:unit, perform_submissions: true)
+
+    get with_auth_token "/api/tasks?unit_id=#{unit.id}", unit.main_convenor_user
+    expected_data = unit.student_tasks.where('task_status_id > ?', 1)
+
+    assert_equal expected_data.count, last_response_body.count
 
     last_response_body.each_with_index do |r, i|
-      #   assert_json_matches_model r, expected_data[i].as_json, ['id', 'tutorial_id', 'task_definition_id', 'status']
+      t = Task.find(r['id'])
+      assert_json_matches_model r, t, ['id', 'task_definition_id']
+      assert_equal t.status.to_s, r['status']
+      tutorial = t.project.tutorial_for(t.task_definition)
+      if tutorial.present?
+        assert_equal tutorial.id, r['tutorial_id']
+        assert_equal tutorial.tutorial_stream_id, r['tutorial_stream_id']
+      else
+        assert_nil r['tutorial_id']
+        assert_nil r['tutorial_stream_id']
+      end
     end
   end
+
+  def test_task_get_with_streams
+    # The GET we are testing
+    unit = FactoryBot.create(:unit, perform_submissions: true, stream_count: 1, campus_count: 2)
+
+    get with_auth_token "/api/tasks?unit_id=#{unit.id}", unit.main_convenor_user
+    expected_data = unit.student_tasks.where('task_status_id > ?', 1)
+
+    assert_equal expected_data.count, last_response_body.count
+
+    last_response_body.each_with_index do |r, i|
+      t = Task.find(r['id'])
+      assert_json_matches_model r, t, ['id', 'task_definition_id']
+      assert_equal t.status.to_s, r['status']
+      tutorial = t.project.tutorial_for(t.task_definition)
+      if tutorial.present?
+        assert_equal tutorial.id, r['tutorial_id']
+        assert_equal tutorial.tutorial_stream_id, r['tutorial_stream_id']
+      else
+        assert_nil r['tutorial_id']
+        assert_nil r['tutorial_stream_id']
+      end
+    end
+  end
+
 
   def test_time_exceeded_grade
     unit = FactoryBot.create(:unit)

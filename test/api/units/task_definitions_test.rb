@@ -394,7 +394,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
 
     assert_equal 1, last_response_body.count
     assert_equal project.id, last_response_body.first['project_id']
-    assert_nil last_response_body.first['tutorial_id']
+    assert_nil last_response_body.first['tutorial_id'], last_response_body
     assert_equal task_second.id, last_response_body.first['id']
   end
 
@@ -446,7 +446,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     # Get the tasks for the first task definition
     get with_auth_token "/api/units/#{unit.id}/task_definitions/#{task_def_first.id}/tasks"
 
-    assert_equal 1, last_response_body.count
+    assert_equal 1, last_response_body.count, last_response_body
     assert_equal project.id, last_response_body.first['project_id']
     assert_equal tutorial_first.id, last_response_body.first['tutorial_id']
     assert_equal task_first.id, last_response_body.first['id']
