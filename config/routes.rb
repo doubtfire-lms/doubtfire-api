@@ -7,5 +7,5 @@ Doubtfire::Application.routes.draw do
   get 'api/units/:id/all_resources', to: 'lecture_resource_downloads#index'
 
   mount Api::Root => '/'
-  mount GrapeSwaggerRails::Engine => '/api-ui'
+  mount GrapeSwaggerRails::Engine => '/api/docs'
 end
