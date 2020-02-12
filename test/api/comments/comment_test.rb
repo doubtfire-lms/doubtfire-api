@@ -45,7 +45,7 @@ class CommentTest < ActiveSupport::TestCase
 
   def test_replying_to_comments
     campus = FactoryBot.create(:campus)
-    unit = FactoryBot.create(:unit, with_students: true)
+    unit = FactoryBot.create(:unit, student_count: 2)
     unit.employ_staff(User.first, Role.convenor)
     project = FactoryBot.create(:project, unit: unit, campus: campus)
     user = project.student
@@ -94,7 +94,7 @@ class CommentTest < ActiveSupport::TestCase
 
   def test_student_post_reply_to_invalid_comment
     campus = FactoryBot.create(:campus)
-    unit = FactoryBot.create(:unit, with_students: true)
+    unit = FactoryBot.create(:unit, student_count: 2)
     unit.employ_staff(User.first, Role.convenor)
     project = FactoryBot.create(:project, unit: unit, campus: campus)
     user = project.student
@@ -108,43 +108,143 @@ class CommentTest < ActiveSupport::TestCase
     assert_equal 404, last_response.status
   end
 
-  def student_reply_to_student
+  def test_student_reply_to_student_in_same_unit
     campus = FactoryBot.create(:campus)
-    unit = FactoryBot.create(:unit, with_students: true)
-    project = FactoryBot.create(:project, unit: unit, campus: campus)
-    student_1 = unit.students.first
-    student_2 = unit.students.second
+    unit = FactoryBot.create(:unit, student_count: 2)
+    project_1 = FactoryBot.create(:project, unit: unit, campus: campus)
+    project_2 = FactoryBot.create(:project, unit: unit, campus: campus)
+    student_1 = project_1.student
+    student_2 = project_2.student
 
     task_definition = unit.task_definitions.first
-    tutor = project1.tutor_for(task_definition)
 
-    post_json with_auth_token("/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", student_1), comment: 'Hello World'
+    post_json with_auth_token("/api/projects/#{project_1.id}/task_def_id/#{task_definition.id}/comments", student_1), comment: 'Hello World'
     assert_equal 201, last_response.status
-    id = last_response.id
+    id = last_response_body['id']
 
-    post_json with_auth_token("/api/projects/#{project1.id}/task_def_id/#{task_definition.id}/comments", student_2), { comment: 'Hello World', reply_to_id: id }
+    post_json with_auth_token("/api/projects/#{project_1.id}/task_def_id/#{task_definition.id}/comments", student_2), comment: 'Hello World', reply_to_id: id
+    assert_equal 403, last_response.status
+  end
+
+  def test_student_reply_to_themselve_in_different_task_same_project
+    campus = FactoryBot.create(:campus)
+    unit = FactoryBot.create(:unit, student_count: 2)
+    project_1 = FactoryBot.create(:project, unit: unit, campus: campus)
+    student_1 = project_1.student
+
+    task_definition_1 = unit.task_definitions.first
+    task_definition_2 = unit.task_definitions.second
+
+    post_json with_auth_token("/api/projects/#{project_1.id}/task_def_id/#{task_definition_1.id}/comments", student_1), comment: 'Hello World'
+    assert_equal 201, last_response.status
+    id = last_response_body['id']
+
+    post_json with_auth_token("/api/projects/#{project_1.id}/task_def_id/#{task_definition_2.id}/comments", student_1), comment: 'Hello World', reply_to_id: id
     assert_equal 404, last_response.status
   end
 
-  def reply_in_other_unit
+  def test_student_reply_to_other_student_in_same_group
     campus = FactoryBot.create(:campus)
-    unit1 = FactoryBot.create(:unit, with_students: true)
-    unit1.employ_staff(User.first, Role.convenor)
-    project1 = FactoryBot.create(:project, unit: unit1, campus: campus)
-    student1 = project1.student
-    task_definition1 = unit1.task_definitions.first
-    tutor = project1.tutor_for(task_definition)
+    unit = FactoryBot.create :unit
+    # project_1 = FactoryBot.create(:project, unit: unit, campus: campus)
 
-    post_json with_auth_token("/api/projects/#{project1.id}/task_def_id/#{task_definition.id}/comments", student1), { comment: 'Hello World' }
+    group_set = GroupSet.create!(name: 'test_student_reply_to_other_student_in_same_group', unit: unit)
+    group_set.save!
+
+    group = Group.create!(group_set: group_set, name: 'test_student_reply_to_other_student_in_same_group', tutorial: unit.tutorials.first, number: 0)
+
+    group.add_member(unit.active_projects[0])
+    group.add_member(unit.active_projects[1])
+    group.add_member(unit.active_projects[2])
+    group.save!
+
+    project = group.projects.first
+
+    # td = FactoryBot.create(:task_definition, unit: unit, group_set: group_set)
+    td = TaskDefinition.new(unit_id: unit.id,
+                            tutorial_stream: unit.tutorial_streams.first,
+                            name: 'Task to switch from ind to group after submission',
+                            description: 'test def',
+                            weighting: 4,
+                            target_grade: 0,
+                            start_date: Time.zone.now - 1.week,
+                            target_date: Time.zone.now - 1.day,
+                            due_date: Time.zone.now + 1.week,
+                            abbreviation: 'TaskSwitchIndGrp',
+                            restrict_status_updates: false,
+                            upload_requirements: [ { 'key' => 'file0', 'name' => 'Shape Class', 'type' => 'code' } ],
+                            plagiarism_warn_pct: 0.8,
+                            is_graded: false,
+                            max_quality_pts: 0,
+                            group_set: group_set)
+    td.save!
+
+    # Student 1 in group post first comment
+    # post_json with_auth_token("/api/projects/#{project.id}/task_def_id/#{td.id}/comments", unit.active_projects[0].student), comment: 'Hello World'
+    # assert_equal last_response, "test"
+    # assert_equal 201, last_response.status
+    # id = last_response_body['id']
+
+    # Student 2 in group replies
+    # post_json with_auth_token("/api/projects/#{project.id}/task_def_id/#{td.id}/comments", unit.active_projects[1].student), comment: 'Hello World 2', reply_to_id: id
+    # assert_equal last_response, "test"
+    # assert_equal 201, last_response.status
+  end
+
+  def test_student_reply_to_other_student_in_different_group
+    campus = FactoryBot.create(:campus)
+    unit = FactoryBot.create :unit
+    # project_1 = FactoryBot.create(:project, unit: unit, campus: campus)
+
+    group_set = GroupSet.create!(name: 'test_student_reply_to_other_student_in_same_group', unit: unit)
+    group_set.save!
+
+    group_1 = Group.create!(group_set: group_set, name: 'test_1', tutorial: unit.tutorials.first, number: 0)
+
+    group_1.add_member(unit.active_projects[0])
+    group_1.save!
+
+    group_2 = Group.create!(group_set: group_set, name: 'test_2', tutorial: unit.tutorials.first, number: 1)
+
+    group_2.add_member(unit.active_projects[1])
+    group_2.save!
+
+    project = group_1.projects.first
+
+    td = FactoryBot.create(:task_definition, unit: unit, group_set: group_set)
+
+    # Student 1 in group post first comment
+    post_json with_auth_token("/api/projects/#{project.id}/task_def_id/#{td.id}/comments", unit.active_projects[0].student), comment: 'Hello World'
+    # assert_equal last_response, "test"
     assert_equal 201, last_response.status
-    id = last_response.id
+    id = last_response_body['id']
 
-    unit2 = FactoryBot.create(:unit, with_students: true)
-    project2 = FactoryBot.create(:project, unit: unit2, campus: campus)
-    task_definition2 = unit2.task_definitions.first
-    unit1.employ_staff(User.first, Role.convenor)
+    # Student 2 in group 2 replies
+    post_json with_auth_token("/api/projects/#{project.id}/task_def_id/#{td.id}/comments", unit.active_projects[1].student), comment: 'Hello World 2', reply_to_id: id
+    # assert_equal last_response, "test"
+    assert_equal 403, last_response.status
+  end
 
-    post_json with_auth_token("/api/projects/#{project2.id}/task_def_id/#{task_definition.id}/comments", User.first), { comment: 'Hello World', reply_to_id: id }
+  def test_convenor_reply_in_wrong_unit
+    campus = FactoryBot.create(:campus)
+    unit_1 = FactoryBot.create(:unit, student_count: 2)
+    unit_1.employ_staff(User.first, Role.convenor)
+    project_1 = FactoryBot.create(:project, unit: unit_1, campus: campus)
+    student_1 = project_1.student
+    task_definition_1 = unit_1.task_definitions.first
+
+    # Student makes a comment on task 1 in unit 1
+    post_json with_auth_token("/api/projects/#{project_1.id}/task_def_id/#{task_definition_1.id}/comments", student_1), comment: 'Hello World'
+    assert_equal 201, last_response.status
+    id = last_response_body['id']
+
+    unit_2 = FactoryBot.create(:unit, student_count: 2)
+    project_2 = FactoryBot.create(:project, unit: unit_2, campus: campus)
+    task_definition_2 = unit_2.task_definitions.first
+    unit_2.employ_staff(User.first, Role.convenor)
+
+    # Convenor replies to that comment in a different unit/projet
+    post_json with_auth_token("/api/projects/#{project_2.id}/task_def_id/#{task_definition_2.id}/comments", User.first), comment: 'Hello World', reply_to_id: id
     assert_equal 404, last_response.status
   end
 
