@@ -44,9 +44,11 @@ class CommentTest < ActiveSupport::TestCase
   end
 
   def test_replying_to_comments
-    project = Project.first
+    campus = FactoryBot.create(:campus)
+    unit = FactoryBot.create(:unit, with_students: true)
+    unit.employ_staff(User.first, Role.convenor)
+    project = FactoryBot.create(:project, unit: unit, campus: campus)
     user = project.student
-    unit = project.unit
     task_definition = unit.task_definitions.first
     tutor = project.tutor_for(task_definition)
 
@@ -91,15 +93,39 @@ class CommentTest < ActiveSupport::TestCase
   end
 
   def test_student_post_reply_to_invalid_comment
-    project = Project.first
+    campus = FactoryBot.create(:campus)
+    unit = FactoryBot.create(:unit, with_students: true)
+    unit.employ_staff(User.first, Role.convenor)
+    project = FactoryBot.create(:project, unit: unit, campus: campus)
     user = project.student
-    unit = project.unit
     task_definition = unit.task_definitions.first
+    tutor = project.tutor_for(task_definition)
 
     comment_data = { comment: "Responding!", reply_to: -1 }
 
     post_json with_auth_token("/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", user), comment_data
 
+    assert_equal 404, last_response.status
+  end
+
+  def test_student_post_reply_to_comment_from_other_unit
+    campus = FactoryBot.create(:campus)
+    unit1 = FactoryBot.create(:unit, with_students: true)
+    unit1.employ_staff(User.first, Role.convenor)
+    project1 = FactoryBot.create(:project, unit: unit1, campus: campus)
+    user = project1.student
+    task_definition = unit1.task_definitions.first
+    tutor = project1.tutor_for(task_definition)
+
+    unit2 = FactoryBot.create(:unit, with_students: true)
+    project2 = FactoryBot.create(:project, unit: unit2, campus: campus)
+    user2 = project2.main_convenor_user
+
+    post_json with_auth_token("/api/projects/#{project1.id}/task_def_id/#{task_definition.id}/comments", user), { comment: "Hello World"}
+    assert_equal 201, last_response.status
+    id = last_response.id
+
+    post_json with_auth_token("/api/projects/#{project1.id}/task_def_id/#{task_definition.id}/comments", user2), { comment: "Hello World", reply_to: id}
     assert_equal 404, last_response.status
   end
 

@@ -13,7 +13,7 @@ module Api
     params do
       optional :comment, type: String, desc: 'The comment text to add to the task'
       optional :attachment, type: Rack::Multipart::UploadedFile, desc: 'Image, sound, PDF or video comment file'
-      optional :reply_to, type: String, desc: 'The comment to which this comment is replying'
+      optional :reply_to_id, type: Integer, desc: 'The comment to which this comment is replying'
     end
     post '/projects/:project_id/task_def_id/:task_definition_id/comments' do
       project = Project.find(params[:project_id])
@@ -25,7 +25,7 @@ module Api
 
       text_comment = params[:comment]
       attached_file = params[:attachment]
-      reply_to = params[:reply_to]
+      reply_to_id = params[:reply_to_id]
 
       if attached_file.present?
         error!(error: 'Attachment is empty.') unless File.size?(attached_file.tempfile.path).present?
@@ -35,21 +35,23 @@ module Api
       task = project.task_for_task_definition(task_definition)
       type_string = content_type.to_s
 
-      if reply_to.present?
-        error!(error: 'Original comment is invalid.') unless task.all_comments.find(reply_to).present?
+      if reply_to_id.present?
+        originalTaskComment = TaskComment.find(reply_to_id)
+        error!(error: 'You do not have permission to read the replied comment') unless authorise? current_user, originalTaskComment.project, :get
+        error!(error: 'Original comment is not in this task.') unless task.all_comments.find(reply_to_id).present?
       end
 
       logger.info("#{current_user.username} - added comment for task #{task.id} (#{task_definition.abbreviation})")
 
       if attached_file.nil? || attached_file.empty?
         error!({ error: 'Comment text is empty, unable to add new comment' }, 403) unless text_comment.present?
-        result = task.add_text_comment(current_user, text_comment, reply_to)
+        result = task.add_text_comment(current_user, text_comment, reply_to_id)
       else
         unless FileHelper.accept_file(attached_file, 'comment attachment - TaskComment', 'comment_attachment')
           error!({ error: 'Please upload only images, audio or PDF documents' }, 403)
         end
 
-        result = task.add_comment_with_attachment(current_user, attached_file, reply_to)
+        result = task.add_comment_with_attachment(current_user, attached_file, reply_to_id)
       end
 
       if result.nil?
