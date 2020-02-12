@@ -8,7 +8,7 @@ class ShallowUnitSerializer < ActiveModel::Serializer
 end
 
 class UnitSerializer < ActiveModel::Serializer
-  attributes :code, :id, :name, :my_role, :description, :teaching_period_id, :start_date, :end_date, :active, :convenors, :ilos
+  attributes :code, :id, :name, :my_role, :main_convenor_id, :description, :teaching_period_id, :start_date, :end_date, :active, :convenors, :ilos
 
   def start_date
     object.start_date.to_date
@@ -37,6 +37,10 @@ class UnitSerializer < ActiveModel::Serializer
 
   def ilos
     object.learning_outcomes
+  end
+
+  def main_convenor_id
+    object.main_convenor.id
   end
 
   has_many :tutorial_streams
