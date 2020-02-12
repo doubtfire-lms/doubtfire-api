@@ -52,4 +52,35 @@ class StudentsApiTest < ActiveSupport::TestCase
     # check error code
     assert_equal 400, last_response.status
   end
+
+  def test_students_tutorial_enrolments
+    # Create unit
+    unit = FactoryBot.create(:unit, stream_count: 2, campus_count: 2)
+
+    # The get that we will be testing without parameters.
+    get with_auth_token "/api/students/?unit_id=#{unit.id}", unit.main_convenor_user
+    
+    assert_equal 200, last_response.status
+    assert_equal unit.active_projects.count, last_response_body.count
+
+    last_response_body.each do |data|
+      assert_equal 2, data['tutorial_streams'].count, data.inspect
+      data['tutorial_streams'].each do |data_ts|
+        project = unit.active_projects.find(data['project_id'])
+        stream_abbr = data_ts['stream']
+        tutorial_id = data_ts['tutorial']
+
+        stream = unit.tutorial_streams.find_by!(abbreviation: stream_abbr)
+
+        tutorial = project.tutorial_for_stream(stream)
+
+        if tutorial.present?
+          assert tutorial_id.present?
+          assert_equal unit.tutorials.find(tutorial_id), project.tutorial_for_stream(stream), data_ts.inspect
+        else
+          assert_nil tutorial_id
+        end
+      end
+    end
+  end
 end
