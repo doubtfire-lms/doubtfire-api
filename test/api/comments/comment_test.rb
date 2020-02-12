@@ -19,28 +19,28 @@ class CommentTest < ActiveSupport::TestCase
 
     pre_count = TaskComment.count
 
-    comment_data = { comment: "Hello World" }
+    comment_data = { comment: 'Hello World' }
 
     post_json with_auth_token("/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", user), comment_data
 
     assert_equal 201, last_response.status
 
-    assert_equal "Hello World", TaskComment.last.comment, "last comment has message"
-    assert_equal pre_count + 1, TaskComment.count, "one comment added"
+    assert_equal 'Hello World', TaskComment.last.comment, 'last comment has message'
+    assert_equal pre_count + 1, TaskComment.count, 'one comment added'
 
     expected_response = {
-      "comment" => "Hello World",
-      "has_attachment" => false,
-      "type" => "text",
-      "is_new" => false,
-      author: { "id" => user.id },
-      recipient: { "id" => tutor.id }
+      'comment' => 'Hello World',
+      'has_attachment' => false,
+      'type' => 'text',
+      'is_new' => false,
+      author: { 'id' => user.id },
+      recipient: { 'id' => tutor.id }
     }
 
     # check each is the same
     assert_json_matches_model last_response_body, expected_response, %w(comment has_attachment type is_new)
-    assert_json_matches_model last_response_body["author"], expected_response[:author], ["id"]
-    assert_json_matches_model last_response_body["recipient"], expected_response[:recipient], ["id"]
+    assert_json_matches_model last_response_body['author'], expected_response[:author], ['id']
+    assert_json_matches_model last_response_body['recipient'], expected_response[:recipient], ['id']
   end
 
   def test_replying_to_comments
@@ -52,44 +52,44 @@ class CommentTest < ActiveSupport::TestCase
     task_definition = unit.task_definitions.first
     tutor = project.tutor_for(task_definition)
 
-    comment_data = { comment: "Hello World" }
+    comment_data = { comment: 'Hello World' }
 
     # Post original comment and check that it was successful
     post_json with_auth_token("/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", user), comment_data
     assert_equal 201, last_response.status
 
     expected_response = {
-      "comment" => "Responding!",
-      "has_attachment" => false,
-      "type" => "text",
-      "is_new" => false,
-      "reply_to" => TaskComment.last.id,
-      author: { "id" => user.id },
-      recipient: { "id" => tutor.id }
+      'comment' => 'Responding!',
+      'has_attachment' => false,
+      'type' => 'text',
+      'is_new' => false,
+      'reply_to_id' => TaskComment.last.id,
+      author: { 'id' => user.id },
+      recipient: { 'id' => tutor.id }
     }
 
     # Student responding to self
-    comment_data = { comment: "Responding!", reply_to: TaskComment.last.id }
+    comment_data = { comment: 'Responding!', reply_to_id: TaskComment.last.id }
     post_json with_auth_token("/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", user), comment_data
     assert_equal 201, last_response.status
-    assert_json_matches_model last_response_body, expected_response, %w(comment type is_new reply_to)
+    assert_json_matches_model last_response_body, expected_response, %w(comment type is_new reply_to_id)
 
     expected_response = {
-      "comment" => "Responding again!",
-      "has_attachment" => false,
-      "type" => "text",
-      "is_new" => false,
-      "reply_to" => TaskComment.last.id,
-      author: { "id" => user.id },
-      recipient: { "id" => tutor.id }
+      'comment' => 'Responding again!',
+      'has_attachment' => false,
+      'type' => 'text',
+      'is_new' => false,
+      'reply_to_id' => TaskComment.last.id,
+      author: { 'id' => user.id },
+      recipient: { 'id' => tutor.id }
     }
     # Tutor responding to student
-    comment_data = { comment: "Responding again!", reply_to: TaskComment.last.id }
+    comment_data = { comment: 'Responding again!', reply_to_id: TaskComment.last.id }
     post_json with_auth_token("/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", tutor), comment_data
     assert_equal 201, last_response.status
 
     # check each is the same
-    assert_json_matches_model last_response_body, expected_response, %w(comment type is_new reply_to)
+    assert_json_matches_model last_response_body, expected_response, %w(comment type is_new reply_to_id)
   end
 
   def test_student_post_reply_to_invalid_comment
@@ -101,31 +101,50 @@ class CommentTest < ActiveSupport::TestCase
     task_definition = unit.task_definitions.first
     tutor = project.tutor_for(task_definition)
 
-    comment_data = { comment: "Responding!", reply_to: -1 }
+    comment_data = { comment: 'Responding!', reply_to_id: -1 }
 
     post_json with_auth_token("/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", user), comment_data
 
     assert_equal 404, last_response.status
   end
 
-  def test_student_post_reply_to_comment_from_other_unit
+  def student_reply_to_student
+    campus = FactoryBot.create(:campus)
+    unit = FactoryBot.create(:unit, with_students: true)
+    project = FactoryBot.create(:project, unit: unit, campus: campus)
+    student_1 = unit.students.first
+    student_2 = unit.students.second
+
+    task_definition = unit.task_definitions.first
+    tutor = project1.tutor_for(task_definition)
+
+    post_json with_auth_token("/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", student_1), comment: 'Hello World'
+    assert_equal 201, last_response.status
+    id = last_response.id
+
+    post_json with_auth_token("/api/projects/#{project1.id}/task_def_id/#{task_definition.id}/comments", student_2), { comment: 'Hello World', reply_to_id: id }
+    assert_equal 404, last_response.status
+  end
+
+  def reply_in_other_unit
     campus = FactoryBot.create(:campus)
     unit1 = FactoryBot.create(:unit, with_students: true)
     unit1.employ_staff(User.first, Role.convenor)
     project1 = FactoryBot.create(:project, unit: unit1, campus: campus)
-    user = project1.student
-    task_definition = unit1.task_definitions.first
+    student1 = project1.student
+    task_definition1 = unit1.task_definitions.first
     tutor = project1.tutor_for(task_definition)
 
-    unit2 = FactoryBot.create(:unit, with_students: true)
-    project2 = FactoryBot.create(:project, unit: unit2, campus: campus)
-    user2 = project2.main_convenor_user
-
-    post_json with_auth_token("/api/projects/#{project1.id}/task_def_id/#{task_definition.id}/comments", user), { comment: "Hello World"}
+    post_json with_auth_token("/api/projects/#{project1.id}/task_def_id/#{task_definition.id}/comments", student1), { comment: 'Hello World' }
     assert_equal 201, last_response.status
     id = last_response.id
 
-    post_json with_auth_token("/api/projects/#{project1.id}/task_def_id/#{task_definition.id}/comments", user2), { comment: "Hello World", reply_to: id}
+    unit2 = FactoryBot.create(:unit, with_students: true)
+    project2 = FactoryBot.create(:project, unit: unit2, campus: campus)
+    task_definition2 = unit2.task_definitions.first
+    unit1.employ_staff(User.first, Role.convenor)
+
+    post_json with_auth_token("/api/projects/#{project2.id}/task_def_id/#{task_definition.id}/comments", User.first), { comment: 'Hello World', reply_to_id: id }
     assert_equal 404, last_response.status
   end
 
@@ -137,17 +156,17 @@ class CommentTest < ActiveSupport::TestCase
 
     pre_count = TaskComment.count
 
-    comment_data = { attachment: upload_file("test_files/submissions/Deakin_Logo.jpeg", "image/jpeg") }
+    comment_data = { attachment: upload_file('test_files/submissions/Deakin_Logo.jpeg', 'image/jpeg') }
 
     post with_auth_token("/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", user), comment_data
 
     assert_equal 201, last_response.status
 
-    assert_equal pre_count + 1, TaskComment.count, "one comment added"
+    assert_equal pre_count + 1, TaskComment.count, 'one comment added'
 
     new_comment = TaskComment.last
 
-    assert_equal "image comment", new_comment.comment, "last comment has message"
+    assert_equal 'image comment', new_comment.comment, 'last comment has message'
     assert File.exist?(new_comment.attachment_path)
 
     new_comment.destroy
@@ -161,19 +180,19 @@ class CommentTest < ActiveSupport::TestCase
 
     pre_count = TaskComment.count
 
-    comment_data = { attachment: upload_file("test_files/submissions/unbelievable.gif", "image/gif") }
+    comment_data = { attachment: upload_file('test_files/submissions/unbelievable.gif', 'image/gif') }
 
     post with_auth_token("/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", user), comment_data
 
     assert_equal 201, last_response.status
 
-    assert_equal pre_count + 1, TaskComment.count, "one comment added"
+    assert_equal pre_count + 1, TaskComment.count, 'one comment added'
 
     new_comment = TaskComment.last
 
-    assert_equal "image comment", new_comment.comment, "last comment has message"
+    assert_equal 'image comment', new_comment.comment, 'last comment has message'
     assert File.exist?(new_comment.attachment_path)
-    assert_equal ".gif", new_comment.attachment_extension, "attachment is a gif"
+    assert_equal '.gif', new_comment.attachment_extension, 'attachment is a gif'
 
     new_comment.destroy
   end
@@ -186,19 +205,19 @@ class CommentTest < ActiveSupport::TestCase
 
     pre_count = TaskComment.count
 
-    comment_data = { attachment: upload_file("test_files/submissions/00_question.pdf", "application/pdf") }
+    comment_data = { attachment: upload_file('test_files/submissions/00_question.pdf', 'application/pdf') }
 
     post with_auth_token("/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", user), comment_data
 
     assert_equal 201, last_response.status
 
-    assert_equal pre_count + 1, TaskComment.count, "one comment added"
+    assert_equal pre_count + 1, TaskComment.count, 'one comment added'
 
     new_comment = TaskComment.last
 
-    assert_equal "pdf document", new_comment.comment, "last comment has message"
+    assert_equal 'pdf document', new_comment.comment, 'last comment has message'
     assert File.exist?(new_comment.attachment_path)
-    assert_equal ".pdf", new_comment.attachment_extension, "attachment is a pdf"
+    assert_equal '.pdf', new_comment.attachment_extension, 'attachment is a pdf'
 
     new_comment.destroy
   end
@@ -211,13 +230,13 @@ class CommentTest < ActiveSupport::TestCase
 
     pre_count = TaskComment.count
 
-    comment_data = { attachment: upload_file("test_files/submissions/00_question.pdf", "application/pdf") }
+    comment_data = { attachment: upload_file('test_files/submissions/00_question.pdf', 'application/pdf') }
 
     post with_auth_token("/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", user), comment_data
 
     assert_equal 201, last_response.status
 
-    assert_equal pre_count + 1, TaskComment.count, "one comment added"
+    assert_equal pre_count + 1, TaskComment.count, 'one comment added'
 
     new_comment = TaskComment.last
 
@@ -235,14 +254,14 @@ class CommentTest < ActiveSupport::TestCase
 
     pre_count = TaskComment.count
 
-    comment_data = { attachment: upload_file("test_files/submissions/boo.png", "image/png") }
+    comment_data = { attachment: upload_file('test_files/submissions/boo.png', 'image/png') }
 
     post with_auth_token("/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", user), comment_data
 
     assert_equal 500, last_response.status
 
-    assert_equal pre_count, TaskComment.count, "No comment should be created"
-    assert_equal "Attachment is empty.", last_response_body["error"]
+    assert_equal pre_count, TaskComment.count, 'No comment should be created'
+    assert_equal 'Attachment is empty.', last_response_body['error']
   end
 
   def test_read_receipts_for_task_status_comments
@@ -252,14 +271,14 @@ class CommentTest < ActiveSupport::TestCase
 
     td = TaskDefinition.new(unit_id: unit.id,
                             tutorial_stream: unit.tutorial_streams.first,
-                            name: "test_read_receipts_for_task_status_comments",
-                            description: "test_read_receipts_for_task_status_comments",
+                            name: 'test_read_receipts_for_task_status_comments',
+                            description: 'test_read_receipts_for_task_status_comments',
                             weighting: 4,
                             target_grade: 0,
                             start_date: Time.zone.now - 2.weeks,
                             target_date: Time.zone.now + 1.week,
                             due_date: Time.zone.now + 2.weeks,
-                            abbreviation: "test_read_receipts_for_task_status_comments",
+                            abbreviation: 'test_read_receipts_for_task_status_comments',
                             restrict_status_updates: false,
                             upload_requirements: [ ],
                             plagiarism_warn_pct: 0.8,
@@ -268,7 +287,7 @@ class CommentTest < ActiveSupport::TestCase
     td.save!
 
     data_to_post = {
-      trigger: "ready_to_mark"
+      trigger: 'ready_to_mark'
     }
 
     # Make a submission for this student
@@ -281,8 +300,8 @@ class CommentTest < ActiveSupport::TestCase
     tutor = project.tutor_for(td)
 
     tc = task.comments.last
-    assert tc.comments_read_receipts.count >= 2, "Error: expected multiple read receipts."
-    assert tc.comments_read_receipts.where(user: tutor).count == 1, "Error: tutor has not read the comment"
+    assert tc.comments_read_receipts.count >= 2, 'Error: expected multiple read receipts.'
+    assert tc.comments_read_receipts.where(user: tutor).count == 1, 'Error: tutor has not read the comment'
 
     td.destroy!
 
