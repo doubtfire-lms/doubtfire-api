@@ -43,14 +43,13 @@ class BreaksApiTest < ActiveSupport::TestCase
   # GET TEST
   # Get breaks in a teaching period
   def test_get_breaks
-    # Create a dummy unit and set teaching period for the unit
-    unit = FactoryBot.create(:unit, teaching_period: FactoryBot.create(:teaching_period))
-    teaching_period = unit.teaching_period
-    
-    # Perform the GET with unit main convenor user
-    get with_auth_token("/api/teaching_periods/#{teaching_period.id}/breaks", unit.main_convenor_user)
+    # Create teaching period
+    teaching_period  = FactoryBot.create(:teaching_period)
+  
+    # Perform the GET 
+    get with_auth_token("/api/teaching_periods/#{teaching_period.id}/breaks")
     expected_data = teaching_period.breaks
-    
+
     # Check if the actual data match as expected
     assert_equal expected_data.count, last_response_body.count
     
