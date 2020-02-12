@@ -200,10 +200,11 @@ ActiveRecord::Schema.define(version: 20200120043523) do
     t.integer  "task_status_id"
     t.integer  "extension_weeks"
     t.string   "extension_response"
-    t.integer  "reply_to"
+    t.integer  "reply_to_id"
   end
 
   add_index "task_comments", ["discussion_comment_id"], name: "index_task_comments_on_discussion_comment_id", using: :btree
+  add_index "task_comments", ["reply_to_id"], name: "index_task_comments_on_reply_to_id", using: :btree
   add_index "task_comments", ["task_id"], name: "index_task_comments_on_task_id", using: :btree
 
   create_table "task_definitions", force: :cascade do |t|
