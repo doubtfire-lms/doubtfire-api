@@ -64,11 +64,11 @@ class StudentsApiTest < ActiveSupport::TestCase
     assert_equal unit.active_projects.count, last_response_body.count
 
     last_response_body.each do |data|
-      assert_equal 2, data['tutorial_streams'].count, data.inspect
-      data['tutorial_streams'].each do |data_ts|
+      assert_equal 2, data['tutorial_enrolments'].count, data.inspect
+      data['tutorial_enrolments'].each do |data_ts|
         project = unit.active_projects.find(data['project_id'])
-        stream_abbr = data_ts['stream']
-        tutorial_id = data_ts['tutorial']
+        stream_abbr = data_ts['stream_abbr']
+        tutorial_id = data_ts['tutorial_id']
 
         stream = unit.tutorial_streams.find_by!(abbreviation: stream_abbr)
 
