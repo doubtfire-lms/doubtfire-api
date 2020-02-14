@@ -27,6 +27,8 @@ module Api
       else
         result
       end
+
+      project.tutorial_enrolments
     end
 
     desc 'Delete an enrolment in the tutorial'
@@ -42,6 +44,8 @@ module Api
       tutorial_enrolment = tutorial.tutorial_enrolments.find_by(project_id: params[:project_id])
       error!({ error: "Project not enrolled in the selected tutorial" }, 403) unless tutorial_enrolment.present?
       tutorial_enrolment.destroy
+
+      Project.find(params[:project_id]).tutorial_enrolments
     end
   end
 end
