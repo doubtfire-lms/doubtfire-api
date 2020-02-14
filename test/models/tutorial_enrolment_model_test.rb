@@ -209,14 +209,12 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
     tutorial_enrolment_first = project.enrol_in(tutorial_first)
     assert_equal tutorial_first, tutorial_enrolment_first.tutorial
 
-    # Enrol same project in tutorial second
-    tutorial_enrolment_second = FactoryBot.build(:tutorial_enrolment, project: project)
-    tutorial_enrolment_second.tutorial = tutorial_second
-    assert tutorial_enrolment_second.invalid?
-    assert_equal 'Project cannot enrol in tutorial with no stream when enrolled in stream', tutorial_enrolment_second.errors.full_messages.last
+    # Enrol same project in tutorial second - will switch enrolment
+    assert_equal tutorial_enrolment_first, project.matching_enrolment(tutorial_first)
 
-    exception = assert_raises(Exception) { tutorial_enrolment_second = project.enrol_in(tutorial_second) }
-    assert_equal 'Validation failed: Project cannot enrol in tutorial with no stream when enrolled in stream', exception.message
+    tutorial_enrolment_second = project.enrol_in(tutorial_second)
+    assert_equal 1, project.tutorial_enrolments.count
+    assert_equal tutorial_second, tutorial_enrolment_second.tutorial
   end
 
   def test_cannot_enrol_in_tutorial_stream_twice
