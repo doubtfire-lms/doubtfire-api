@@ -375,10 +375,10 @@ class Unit < ActiveRecord::Base
         max_pct_copy: t.plagiarism_match_links_max_pct,
         has_portfolio: !t.portfolio_production_date.nil?,
         stats: Project.create_task_stats_from(task_count, t, t.target_grade),
-        tutorial_streams: tutorial_streams.map do |s|
+        tutorial_enrolments: tutorial_streams.map do |s|
           {
-            stream: s.abbreviation,
-            tutorial: t["tutorial_#{s.id}"]
+            stream_abbr: s.abbreviation,
+            tutorial_id: t["tutorial_#{s.id}"]
           }
         end
       }
