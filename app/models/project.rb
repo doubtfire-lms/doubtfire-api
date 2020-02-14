@@ -104,8 +104,13 @@ class Project < ActiveRecord::Base
 
       tutorial_enrolment
     else
-      tutorial_enrolment.tutorial = tutorial
-      tutorial_enrolment.save!
+      unless tutorial.tutorial_stream.present?
+        tutorial_enrolments.update(tutorial_id: tutorial.id)
+        tutorial_enrolment.reload
+      else
+        tutorial_enrolment.tutorial = tutorial
+        tutorial_enrolment.save!
+      end
       tutorial_enrolment
     end
   end
