@@ -50,15 +50,22 @@ class Group < ActiveRecord::Base
     # What can convenors do with groups?
     convenor_role_permissions = [
       :get_members,
-      :manage_group
+      :manage_group,
+      :can_exceed_capacity
     ]
+    # What can admin do with groups?
+    admin_role_permissions = [
+      :get_members,
+      :manage_group,
+      :can_exceed_capacity
+    ]    
     # What can nil users do with groups?
     nil_role_permissions = [
-
     ]
 
     # Return permissions hash
     {
+      admin: admin_role_permissions,
       convenor: convenor_role_permissions,
       tutor: tutor_role_permissions,
       student: student_role_permissions,
