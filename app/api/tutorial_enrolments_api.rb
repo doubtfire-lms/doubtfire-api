@@ -28,7 +28,10 @@ module Api
         result
       end
 
-      project.tutorial_enrolments
+      {
+        enrolments: ActiveModel::ArraySerializer.new(project.tutorial_enrolments,
+          each_serializer: TutorialEnrolmentSerializer)
+      }
     end
 
     desc 'Delete an enrolment in the tutorial'
@@ -45,7 +48,10 @@ module Api
       error!({ error: "Project not enrolled in the selected tutorial" }, 403) unless tutorial_enrolment.present?
       tutorial_enrolment.destroy
 
-      Project.find(params[:project_id]).tutorial_enrolments
+      {
+        enrolments: ActiveModel::ArraySerializer.new(Project.find(params[:project_id]).tutorial_enrolments,
+          each_serializer: TutorialEnrolmentSerializer)
+      }
     end
   end
 end
