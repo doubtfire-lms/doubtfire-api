@@ -318,6 +318,10 @@ module Api
         error!({ error: "#{prj.student.name} is already a member of this group" }, 403)
       end
 
+      if grp.at_capacity? && ! authorise?(current_user, grp, :can_exceed_capacity)
+        error!({ error: 'Group is at capacity, no additional members can be added'}, 403)
+      end
+
       gm = grp.add_member(prj)
       Thread.current[:user] = current_user
       GroupMemberProjectSerializer.new(prj)
