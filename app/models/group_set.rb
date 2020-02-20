@@ -7,6 +7,7 @@ class GroupSet < ActiveRecord::Base
     scope: :unit,
     message: "should be unique within a unit"
   }
+  validates :capacity, numericality: { greater_than_or_equal_to: 2 }, unless: -> { capacity.nil? }
 
   validates_associated :groups
   validate :must_be_in_same_tutorial, if: :keep_groups_in_same_class
