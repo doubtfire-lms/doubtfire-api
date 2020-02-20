@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20200210021949) do
+ActiveRecord::Schema.define(version: 20200220100901) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -80,6 +80,7 @@ ActiveRecord::Schema.define(version: 20200210021949) do
     t.boolean  "keep_groups_in_same_class",                   default: false
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.integer  "capacity"
   end
 
   add_index "group_sets", ["unit_id"], name: "index_group_sets_on_unit_id", using: :btree
@@ -265,8 +266,8 @@ ActiveRecord::Schema.define(version: 20200210021949) do
     t.integer  "task_definition_id"
     t.integer  "project_id"
     t.integer  "task_status_id"
-    t.datetime "created_at",                                      null: false
-    t.datetime "updated_at",                                      null: false
+    t.datetime "created_at",                                       null: false
+    t.datetime "updated_at",                                       null: false
     t.date     "completion_date"
     t.string   "portfolio_evidence",   limit: 255
     t.boolean  "include_in_portfolio",             default: true
@@ -280,7 +281,8 @@ ActiveRecord::Schema.define(version: 20200210021949) do
     t.integer  "grade"
     t.integer  "contribution_pts",                 default: 3
     t.integer  "quality_pts",                      default: -1
-    t.integer  "extensions",                       default: 0,    null: false
+    t.integer  "extensions",                       default: 0,     null: false
+    t.boolean  "has_spc",                          default: false, null: false
   end
 
   add_index "tasks", ["group_submission_id"], name: "index_tasks_on_group_submission_id", using: :btree
@@ -359,17 +361,18 @@ ActiveRecord::Schema.define(version: 20200210021949) do
   add_index "unit_roles", ["user_id"], name: "index_unit_roles_on_user_id", using: :btree
 
   create_table "units", force: :cascade do |t|
-    t.string   "name",                limit: 255
-    t.string   "description",         limit: 4096
+    t.string   "name",                                 limit: 255
+    t.string   "description",                          limit: 4096
     t.datetime "start_date"
     t.datetime "end_date"
-    t.datetime "created_at",                                      null: false
-    t.datetime "updated_at",                                      null: false
-    t.string   "code",                limit: 255
-    t.boolean  "active",                           default: true
+    t.datetime "created_at",                                                       null: false
+    t.datetime "updated_at",                                                       null: false
+    t.string   "code",                                 limit: 255
+    t.boolean  "active",                                            default: true
     t.datetime "last_plagarism_scan"
     t.integer  "teaching_period_id"
     t.integer  "main_convenor_id"
+    t.boolean  "auto_apply_extension_before_deadline",              default: true, null: false
   end
 
   add_index "units", ["teaching_period_id"], name: "index_units_on_teaching_period_id", using: :btree
