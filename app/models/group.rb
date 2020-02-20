@@ -24,6 +24,8 @@ class Group < ActiveRecord::Base
 
   before_destroy :ensure_no_submissions
 
+  delegate :capacity, to: :group_set
+
   def active_group_members
     group_memberships.where(active: true)
   end
@@ -89,6 +91,10 @@ class Group < ActiveRecord::Base
 
   def has_user(user)
     projects.where('user_id = :user_id', user_id: user.id).count == 1
+  end
+
+  def at_capacity?
+    capacity.present? && group_memberships.where(active: true).count >= capacity
   end
 
   def add_member(project)
