@@ -560,7 +560,7 @@ class Task < ActiveRecord::Base
     task_definition.weighting.to_f
   end
 
-  def add_text_comment(user, text)
+  def add_text_comment(user, text, reply_to_id = nil)
     text.strip!
     return nil if user.nil? || text.nil? || text.empty?
 
@@ -577,6 +577,7 @@ class Task < ActiveRecord::Base
     comment.comment = text
     comment.content_type = :text
     comment.recipient = user == project.student ? project.tutor_for(task_definition) : project.student
+    comment.reply_to_id = reply_to_id
     comment.save!
 
     comment
@@ -624,13 +625,14 @@ class Task < ActiveRecord::Base
     return discussion
   end
 
-  # TODO: Refgactor to attachment comment (with inheritance on model)
-  def add_comment_with_attachment(user, tempfile)
+  # TODO: Refactor to attachment comment (with inheritance on model)
+  def add_comment_with_attachment(user, tempfile, reply_to_id = nil)
     ensured_group_submission if group_task? && group
 
     comment = TaskComment.create
     comment.task = self
     comment.user = user
+    comment.reply_to_id = reply_to_id
     if FileHelper.accept_file(tempfile, "comment attachment audio test", "audio")
       comment.content_type = :audio
     elsif FileHelper.accept_file(tempfile, "comment attachment image test", "image")
