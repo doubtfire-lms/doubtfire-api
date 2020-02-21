@@ -126,7 +126,25 @@ module Api
         error!({ error: 'Not authorised to get groups for this unit' }, 403)
       end
 
-      group_set.groups
+      group_set.
+        groups.
+        joins(:group_memberships).
+        where('group_memberships.active = TRUE').
+        group(
+          'groups.id',
+          'groups.name',
+          'groups.tutorial_id',
+          'groups.group_set_id',
+          'groups.number',
+        ).
+        select(
+          'groups.id as id',
+          'groups.name as name',
+          'groups.tutorial_id as tutorial_id',
+          'groups.group_set_id as group_set_id',
+          'groups.number as number',
+          'COUNT(group_memberships.id) as student_count'
+        )
     end
 
     desc 'Get all groups in a unit'
