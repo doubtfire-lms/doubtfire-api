@@ -201,9 +201,11 @@ ActiveRecord::Schema.define(version: 20200220100901) do
     t.integer  "task_status_id"
     t.integer  "extension_weeks"
     t.string   "extension_response"
+    t.integer  "reply_to_id"
   end
 
   add_index "task_comments", ["discussion_comment_id"], name: "index_task_comments_on_discussion_comment_id", using: :btree
+  add_index "task_comments", ["reply_to_id"], name: "index_task_comments_on_reply_to_id", using: :btree
   add_index "task_comments", ["task_id"], name: "index_task_comments_on_task_id", using: :btree
 
   create_table "task_definitions", force: :cascade do |t|
@@ -266,8 +268,8 @@ ActiveRecord::Schema.define(version: 20200220100901) do
     t.integer  "task_definition_id"
     t.integer  "project_id"
     t.integer  "task_status_id"
-    t.datetime "created_at",                                       null: false
-    t.datetime "updated_at",                                       null: false
+    t.datetime "created_at",                                      null: false
+    t.datetime "updated_at",                                      null: false
     t.date     "completion_date"
     t.string   "portfolio_evidence",   limit: 255
     t.boolean  "include_in_portfolio",             default: true
@@ -281,8 +283,7 @@ ActiveRecord::Schema.define(version: 20200220100901) do
     t.integer  "grade"
     t.integer  "contribution_pts",                 default: 3
     t.integer  "quality_pts",                      default: -1
-    t.integer  "extensions",                       default: 0,     null: false
-    t.boolean  "has_spc",                          default: false, null: false
+    t.integer  "extensions",                       default: 0,    null: false
   end
 
   add_index "tasks", ["group_submission_id"], name: "index_tasks_on_group_submission_id", using: :btree
@@ -361,18 +362,17 @@ ActiveRecord::Schema.define(version: 20200220100901) do
   add_index "unit_roles", ["user_id"], name: "index_unit_roles_on_user_id", using: :btree
 
   create_table "units", force: :cascade do |t|
-    t.string   "name",                                 limit: 255
-    t.string   "description",                          limit: 4096
+    t.string   "name",                limit: 255
+    t.string   "description",         limit: 4096
     t.datetime "start_date"
     t.datetime "end_date"
-    t.datetime "created_at",                                                       null: false
-    t.datetime "updated_at",                                                       null: false
-    t.string   "code",                                 limit: 255
-    t.boolean  "active",                                            default: true
+    t.datetime "created_at",                                      null: false
+    t.datetime "updated_at",                                      null: false
+    t.string   "code",                limit: 255
+    t.boolean  "active",                           default: true
     t.datetime "last_plagarism_scan"
     t.integer  "teaching_period_id"
     t.integer  "main_convenor_id"
-    t.boolean  "auto_apply_extension_before_deadline",              default: true, null: false
   end
 
   add_index "units", ["teaching_period_id"], name: "index_units_on_teaching_period_id", using: :btree
