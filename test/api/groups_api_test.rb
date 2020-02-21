@@ -276,4 +276,14 @@ class GroupsApiTest < ActiveSupport::TestCase
     assert_equal 3, unit.group_sets.first.groups.first.group_memberships.count
   end
 
+  def test_group_student_count
+    unit = FactoryBot.create :unit, group_sets: 1, groups: [{ gs: 0, students: 2}]
+    assert_equal 2, unit.groups.first.group_memberships.count
+
+    # Get the groups for the first group set
+    get with_auth_token("/api/units/#{unit.id}/group_sets/#{unit.group_sets.first.id}/groups", unit.main_convenor_user)
+    assert_equal 200, last_response.status
+    assert_equal 2, last_response_body.first['student_count'], last_response_body
+  end
+
 end
