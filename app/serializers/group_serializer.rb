@@ -2,7 +2,7 @@
 # Instead, write a serialize method on the
 
 class GroupSerializer < ActiveModel::Serializer
-  attributes :id, :name, :tutorial_id, :group_set_id, :number
+  attributes :id, :name, :tutorial_id, :group_set_id, :number, :student_count
 end
 
 class DeepGroupSerializer < ActiveModel::Serializer
