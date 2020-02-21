@@ -128,8 +128,7 @@ module Api
 
       group_set.
         groups.
-        joins(:group_memberships).
-        where('group_memberships.active = TRUE').
+        joins('LEFT OUTER JOIN group_memberships ON group_memberships.group_id = groups.id AND group_memberships.active = TRUE').
         group(
           'groups.id',
           'groups.name',
@@ -147,16 +146,16 @@ module Api
         )
     end
 
-    desc 'Get all groups in a unit'
-    get '/units/:unit_id/groups' do
-      unit = Unit.find(params[:unit_id])
+    # desc 'Get all groups in a unit'
+    # get '/units/:unit_id/groups' do
+    #   unit = Unit.find(params[:unit_id])
 
-      unless authorise? current_user, unit, :get_students
-        error!({ error: 'Not authorised to get groups for this unit' }, 403)
-      end
+    #   unless authorise? current_user, unit, :get_students
+    #     error!({ error: 'Not authorised to get groups for this unit' }, 403)
+    #   end
 
-      ActiveModel::ArraySerializer.new(unit.groups, each_serializer: DeepGroupSerializer)
-    end
+    #   ActiveModel::ArraySerializer.new(unit.groups, each_serializer: DeepGroupSerializer)
+    # end
 
     desc 'Download a CSV of groups in a group set'
     get '/units/:unit_id/group_sets/:group_set_id/groups/csv' do
