@@ -12,14 +12,14 @@ module Api
     desc 'Enrol project in a tutorial'
     post '/units/:unit_id/tutorials/:tutorial_abbr/enrolments/:project_id' do
       unit = Unit.find(params[:unit_id])
-      unless authorise? current_user, unit, :enrol_student
-        error!({ error: 'Not authorised to enrol student' }, 403)
+      project = unit.active_projects.find(params[:project_id])
+      unless authorise? current_user, project, :change_tutorial
+        error!({ error: 'Not authorised to change tutorial' }, 403)
       end
 
       tutorial = unit.tutorials.find_by(abbreviation: params[:tutorial_abbr])
       error!({ error: "No tutorial with abbreviation #{params[:tutorial_abbr]} exists for the unit" }, 403) unless tutorial.present?
 
-      project = Project.find(params[:project_id])
       result = project.enrol_in(tutorial)
 
       if result.nil?
@@ -37,8 +37,9 @@ module Api
     desc 'Delete an enrolment in the tutorial'
     delete '/units/:unit_id/tutorials/:tutorial_abbr/enrolments/:project_id' do
       unit = Unit.find(params[:unit_id])
-      unless authorise? current_user, unit, :enrol_student
-        error!({ error: 'Not authorised to delete tutorial enrolments' }, 403)
+      project = unit.active_projects.find(params[:project_id])
+      unless authorise? current_user, project, :change_tutorial
+        error!({ error: 'Not authorised to change tutorials' }, 403)
       end
 
       tutorial = unit.tutorials.find_by(abbreviation: params[:tutorial_abbr])
