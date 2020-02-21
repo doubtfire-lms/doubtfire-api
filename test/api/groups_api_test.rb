@@ -1,6 +1,6 @@
 require 'test_helper'
 
-class GroupsTest < ActiveSupport::TestCase
+class GroupsApiTest < ActiveSupport::TestCase
   include Rack::Test::Methods
   include TestHelpers::AuthHelper
   include TestHelpers::JsonHelper
