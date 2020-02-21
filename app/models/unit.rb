@@ -1731,24 +1731,29 @@ class Unit < ActiveRecord::Base
     end
   end
 
+  def tutorial_enrolment_subquery
+    tutorial_enrolments.
+      joins(:tutorial).
+      select('tutorials.tutorial_stream_id as tutorial_stream_id', 'tutorials.id as tutorial_id', 'project_id').to_sql
+  end
+
   #
   # Return all tasks from the database for this unit and given user
   #
   def get_all_tasks_for(user)
     student_tasks.
       joins(:task_status).
-      joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id').
-      joins('LEFT OUTER JOIN tutorials ON tutorials.id = tutorial_enrolments.tutorial_id AND (tutorials.tutorial_stream_id = task_definitions.tutorial_stream_id OR tutorials.tutorial_stream_id IS NULL)').
+      joins("LEFT OUTER JOIN (#{tutorial_enrolment_subquery}) as sq ON sq.project_id = projects.id AND (sq.tutorial_stream_id = task_definitions.tutorial_stream_id OR sq.tutorial_stream_id IS NULL)").
       joins("LEFT JOIN task_comments ON task_comments.task_id = tasks.id").
       joins("LEFT JOIN comments_read_receipts crr ON crr.task_comment_id = task_comments.id AND crr.user_id = #{user.id}").
       select(
-        'tutorial_enrolments.tutorial_id AS tutorial_id', 'tutorials.tutorial_stream_id AS tutorial_stream_id',
+        'sq.tutorial_id AS tutorial_id', 'sq.tutorial_stream_id AS tutorial_stream_id',
         'tasks.id', 'SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) as number_unread', 'project_id', 'tasks.id as task_id',
         'task_definition_id', 'task_definitions.start_date as start_date', 'task_statuses.id as status_id',
         'completion_date', 'times_assessed', 'submission_date', 'portfolio_evidence', 'tasks.grade as grade', 'quality_pts'
       ).
       group(
-        'tutorial_enrolments.tutorial_id', 'tutorials.tutorial_stream_id',
+        'sq.tutorial_id', 'sq.tutorial_stream_id',
         'task_statuses.id', 'project_id', 'tasks.id', 'task_definition_id', 'task_definitions.start_date', 'status_id',
         'completion_date', 'times_assessed', 'submission_date', 'portfolio_evidence', 'grade', 'quality_pts'
       )
@@ -1850,9 +1855,12 @@ class Unit < ActiveRecord::Base
   # aiming for a grade in this indicated unit.
   #
   def student_target_grade_stats
-    data = active_projects
-            .joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id')
-            .select('tutorials.tutorial_stream_id as tutorial_stream_id, tutorial_enrolments.tutorial_id as tutorial_id, projects.target_grade, COUNT(projects.id) as num').group('tutorial_enrolments.tutorial_id, tutorials.tutorial_stream_id, projects.target_grade').order('tutorial_enrolments.tutorial_id, projects.target_grade').map { |r| { tutorial_id: r.tutorial_id, tutorial_stream_id: r.tutorial_stream_id, grade: r.target_grade, num: r.num } }
+    data = active_projects.
+      joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id').
+      joins('LEFT OUTER JOIN tutorials ON tutorials.id = tutorial_enrolments.tutorial_id').
+      select('tutorials.tutorial_stream_id as tutorial_stream_id, tutorial_enrolments.tutorial_id as tutorial_id, projects.target_grade, COUNT(projects.id) as num').group('tutorial_enrolments.tutorial_id, tutorials.tutorial_stream_id, projects.target_grade').
+      order('tutorial_enrolments.tutorial_id, projects.target_grade').
+      map { |r| { tutorial_id: r.tutorial_id, tutorial_stream_id: r.tutorial_stream_id, grade: r.target_grade, num: r.num } }
   end
 
   #
