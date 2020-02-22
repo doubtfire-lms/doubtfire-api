@@ -200,6 +200,14 @@ module Api
       unless group_set.groups.where(name: group_params[:name]).empty?
         error!({ error: "This group name is not unique to the #{group_set.name} group set." }, 403)
       end
+    
+      # Now check if they are a student...
+      project = nil
+      if unit.role_for(current_user) == Role.student
+        project = unit.active_projects.find_by(user_id: current_user.id)
+        # They cannot already be in a group for this group set
+        error!({error: "You are already in a group for #{group_set.name}"}, 403) unless project.group_for_groupset(group_set).nil?
+      end
 
       last = group_set.groups.last
       num = last.nil? ? 1 : last.number + 1
@@ -208,6 +216,12 @@ module Api
       end
       grp = Group.create(name: group_params[:name], group_set: group_set, tutorial: tutorial, number: num)
       grp.save!
+
+      # If they are a student, then add them to the group they created
+      if project.present?
+        grp.add_member(project)
+      end
+
       grp
     end
 
