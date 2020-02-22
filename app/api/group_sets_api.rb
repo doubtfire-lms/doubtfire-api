@@ -28,6 +28,7 @@ module Api
         optional :allow_students_to_create_groups,  type: Boolean,  desc: 'Are students allowed to create groups'
         optional :allow_students_to_manage_groups,  type: Boolean,  desc: 'Are students allowed to manage their group memberships'
         optional :keep_groups_in_same_class,        type: Boolean,  desc: 'Must groups be kept in the one class'
+        optional :capacity,                         type: Integer,  desc: 'Capacity for each group'
       end
     end
     post '/units/:unit_id/group_sets' do
@@ -44,7 +45,8 @@ module Api
                                                    :name,
                                                    :allow_students_to_create_groups,
                                                    :allow_students_to_manage_groups,
-                                                   :keep_groups_in_same_class
+                                                   :keep_groups_in_same_class,
+                                                   :capacity
                                                  )
 
       group_set = GroupSet.create!(group_params)
@@ -61,6 +63,7 @@ module Api
         optional :allow_students_to_create_groups,  type: Boolean,  desc: 'Are students allowed to create groups'
         optional :allow_students_to_manage_groups,  type: Boolean,  desc: 'Are students allowed to manage their group memberships'
         optional :keep_groups_in_same_class,        type: Boolean,  desc: 'Must groups be kept in the one class'
+        optional :capacity,                         type: Integer,  desc: 'Capacity for each group'
       end
     end
     put '/units/:unit_id/group_sets/:id' do
@@ -83,7 +86,8 @@ module Api
                                                    :name,
                                                    :allow_students_to_create_groups,
                                                    :allow_students_to_manage_groups,
-                                                   :keep_groups_in_same_class
+                                                   :keep_groups_in_same_class,
+                                                   :capacity
                                                  )
 
       group_set.update!(group_params)
@@ -122,19 +126,36 @@ module Api
         error!({ error: 'Not authorised to get groups for this unit' }, 403)
       end
 
-      group_set.groups
+      group_set.
+        groups.
+        joins('LEFT OUTER JOIN group_memberships ON group_memberships.group_id = groups.id AND group_memberships.active = TRUE').
+        group(
+          'groups.id',
+          'groups.name',
+          'groups.tutorial_id',
+          'groups.group_set_id',
+          'groups.number',
+        ).
+        select(
+          'groups.id as id',
+          'groups.name as name',
+          'groups.tutorial_id as tutorial_id',
+          'groups.group_set_id as group_set_id',
+          'groups.number as number',
+          'COUNT(group_memberships.id) as student_count'
+        )
     end
 
-    desc 'Get all groups in a unit'
-    get '/units/:unit_id/groups' do
-      unit = Unit.find(params[:unit_id])
+    # desc 'Get all groups in a unit'
+    # get '/units/:unit_id/groups' do
+    #   unit = Unit.find(params[:unit_id])
 
-      unless authorise? current_user, unit, :get_students
-        error!({ error: 'Not authorised to get groups for this unit' }, 403)
-      end
+    #   unless authorise? current_user, unit, :get_students
+    #     error!({ error: 'Not authorised to get groups for this unit' }, 403)
+    #   end
 
-      ActiveModel::ArraySerializer.new(unit.groups, each_serializer: DeepGroupSerializer)
-    end
+    #   ActiveModel::ArraySerializer.new(unit.groups, each_serializer: DeepGroupSerializer)
+    # end
 
     desc 'Download a CSV of groups in a group set'
     get '/units/:unit_id/group_sets/:group_set_id/groups/csv' do
@@ -179,6 +200,14 @@ module Api
       unless group_set.groups.where(name: group_params[:name]).empty?
         error!({ error: "This group name is not unique to the #{group_set.name} group set." }, 403)
       end
+    
+      # Now check if they are a student...
+      project = nil
+      if unit.role_for(current_user) == Role.student
+        project = unit.active_projects.find_by(user_id: current_user.id)
+        # They cannot already be in a group for this group set
+        error!({error: "You are already in a group for #{group_set.name}"}, 403) unless project.group_for_groupset(group_set).nil?
+      end
 
       last = group_set.groups.last
       num = last.nil? ? 1 : last.number + 1
@@ -187,6 +216,12 @@ module Api
       end
       grp = Group.create(name: group_params[:name], group_set: group_set, tutorial: tutorial, number: num)
       grp.save!
+
+      # If they are a student, then add them to the group they created
+      if project.present?
+        grp.add_member(project)
+      end
+
       grp
     end
 
@@ -312,6 +347,10 @@ module Api
 
       if grp.active_group_members.find_by(project: prj, active: true)
         error!({ error: "#{prj.student.name} is already a member of this group" }, 403)
+      end
+
+      if grp.at_capacity? && ! authorise?(current_user, grp, :can_exceed_capacity)
+        error!({ error: 'Group is at capacity, no additional members can be added'}, 403)
       end
 
       gm = grp.add_member(prj)

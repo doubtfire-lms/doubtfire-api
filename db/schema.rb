@@ -80,6 +80,7 @@ ActiveRecord::Schema.define(version: 20200220100901) do
     t.boolean  "keep_groups_in_same_class",                   default: false
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.integer  "capacity"
   end
 
   add_index "group_sets", ["unit_id"], name: "index_group_sets_on_unit_id", using: :btree

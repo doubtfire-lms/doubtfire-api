@@ -1,6 +1,6 @@
 require 'test_helper'
 
-class GroupsTest < ActiveSupport::TestCase
+class GroupsApiTest < ActiveSupport::TestCase
   include Rack::Test::Methods
   include TestHelpers::AuthHelper
   include TestHelpers::JsonHelper
@@ -204,5 +204,86 @@ class GroupsTest < ActiveSupport::TestCase
     group_set.destroy
   end
 
+  def test_create_group
+    unit = FactoryBot.create :unit
+
+    gs_data = {
+      group_set: {
+        name: 'GroupSet Name',
+        allow_students_to_create_groups: false,
+        allow_students_to_manage_groups: true,
+        keep_groups_in_same_class: false,
+        capacity: 2
+      }
+    }
+
+    group_data = {
+      group: {
+        name: 'Group 1',
+        tutorial_id: unit.tutorials.first.id
+      }
+    }
+
+    # Create group set
+    post with_auth_token("/api/units/#{unit.id}/group_sets", unit.main_convenor_user), gs_data
+    assert_equal 201, last_response.status, last_response_body
+    gs_response = last_response_body
+    assert_equal 1, unit.group_sets.count
+
+    # Create group
+    post with_auth_token("/api/units/#{unit.id}/group_sets/#{gs_response['id']}/groups", unit.main_convenor_user), group_data
+    assert_equal 201, last_response.status, last_response_body
+    group_response = last_response_body
+    assert_equal 1, unit.group_sets.first.groups.count
+
+    # Add a group member (the student does it...)
+    project = unit.active_projects.first
+
+    post with_auth_token("/api/units/#{unit.id}/group_sets/#{gs_response['id']}/groups/#{group_response['id']}/members", project.student), {project_id: project.id}
+
+    assert_equal 201, last_response.status
+    assert_equal 1, unit.group_sets.first.groups.first.group_memberships.count
+
+    # Add another group member (the student does it...)
+    project = unit.active_projects.second
+
+    post with_auth_token("/api/units/#{unit.id}/group_sets/#{gs_response['id']}/groups/#{group_response['id']}/members", project.student), {project_id: project.id}
+
+    assert_equal 201, last_response.status, last_response_body
+    assert_equal 2, unit.group_sets.first.groups.first.group_memberships.count
+
+    # Exceed capacity (the student does it...)
+    project = unit.active_projects.last
+
+    post with_auth_token("/api/units/#{unit.id}/group_sets/#{gs_response['id']}/groups/#{group_response['id']}/members", project.student), {project_id: project.id}
+
+    assert_equal 403, last_response.status, last_response_body
+    assert_equal 2, unit.group_sets.first.groups.first.group_memberships.count
+
+    # Try again as tutor
+    tutor = FactoryBot.create(:user, :tutor)
+    unit.employ_staff tutor, Role.tutor
+
+    post with_auth_token("/api/units/#{unit.id}/group_sets/#{gs_response['id']}/groups/#{group_response['id']}/members", tutor), {project_id: project.id}
+
+    assert_equal 403, last_response.status, last_response_body
+    assert_equal 2, unit.group_sets.first.groups.first.group_memberships.count
+    
+    # Try again as convenor
+    post with_auth_token("/api/units/#{unit.id}/group_sets/#{gs_response['id']}/groups/#{group_response['id']}/members", unit.main_convenor_user), {project_id: project.id}
+
+    assert_equal 201, last_response.status, last_response_body
+    assert_equal 3, unit.group_sets.first.groups.first.group_memberships.count
+  end
+
+  def test_group_student_count
+    unit = FactoryBot.create :unit, group_sets: 1, groups: [{ gs: 0, students: 2}]
+    assert_equal 2, unit.groups.first.group_memberships.count
+
+    # Get the groups for the first group set
+    get with_auth_token("/api/units/#{unit.id}/group_sets/#{unit.group_sets.first.id}/groups", unit.main_convenor_user)
+    assert_equal 200, last_response.status
+    assert_equal 2, last_response_body.first['student_count'], last_response_body
+  end
 
 end

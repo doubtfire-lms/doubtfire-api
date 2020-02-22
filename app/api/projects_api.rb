@@ -26,10 +26,6 @@ module Api
       data = projects.
                  joins(:unit).
                  joins(:user).
-                 joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id').
-                 joins('LEFT OUTER JOIN tutorials ON tutorial_enrolments.tutorial_id = tutorials.id').
-                 joins('LEFT OUTER JOIN unit_roles AS tutor_role ON tutorials.unit_role_id = tutor_role.id').
-                 joins('LEFT OUTER JOIN users AS tutor ON tutor.id = tutor_role.user_id').
                  select( 'projects.*',
                           'units.name AS unit_name', 'units.id AS unit_id', 'units.code AS unit_code', 'units.start_date AS start_date', 'units.end_date AS end_date', 'units.teaching_period_id AS teaching_period_id', 'units.active AS active',
                           "#{student_name} AS student_name"
