@@ -6,7 +6,7 @@ class GroupSerializer < ActiveModel::Serializer
 
   def student_count
     return object.student_count if object.has_attribute?(:student_count)
-    return object[:student_count] if object.has_key(:student_count)
+    return object[:student_count] if object.has_attribute?(:has_key?) && object.has_key?(:student_count)
     return 0
   end
 end
