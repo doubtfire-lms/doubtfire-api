@@ -16,6 +16,17 @@ class ProjectsApiTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status
   end
 
+  def test_get_projects_with_streams_match
+    unit = FactoryBot.create :unit, stream_count: 2, campus_count: 2, tutorials: 2, unenrolled_student_count: 0, part_enrolled_student_count: 0, inactive_student_count: 0
+    project = unit.projects.first
+    assert_equal 2, project.tutorial_enrolments.count
+
+    get with_auth_token('/api/projects', project.student)
+    assert_equal 200, last_response.status
+    assert_equal 1, last_response_body.count, last_response_body
+  end
+
+
   def test_projects_returns_correct_number_of_projects
     user = FactoryBot.create(:user, :student, enrol_in: 2)
     get with_auth_token('/api/projects', user)
