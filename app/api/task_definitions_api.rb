@@ -33,7 +33,7 @@ module Api
         requires :plagiarism_warn_pct,      type: Integer,  desc: 'The percent at which to record and warn about plagiarism'
         requires :is_graded,                type: Boolean,  desc: 'Whether or not this task definition is a graded task'
         requires :max_quality_pts,          type: Integer,  desc: 'A range for quality points when quality is assessed'
-        optional :auto_apply_extension_before_deadline type: Boolean, desc: 'Indicates if extensions before the deadline should be automatically applied', default: true
+        optional :auto_apply_extension_before_deadline, type: Boolean, desc: 'Indicates if extensions before the deadline should be automatically applied', default: true
       end
     end
     post '/task_definitions/' do
@@ -108,7 +108,7 @@ module Api
         optional :plagiarism_warn_pct,      type: Integer,  desc: 'The percent at which to record and warn about plagiarism'
         optional :is_graded,                type: Boolean,  desc: 'Whether or not this task definition is a graded task'
         optional :max_quality_pts,          type: Integer,  desc: 'A range for quality points when quality is assessed'
-        optional :auto_apply_extension_before_deadline type: Boolean, desc: 'Indicates if extensions before the deadline should be automatically applied'
+        optional :auto_apply_extension_before_deadline, type: Boolean, desc: 'Indicates if extensions before the deadline should be automatically applied'
       end
     end
     put '/task_definitions/:id' do
