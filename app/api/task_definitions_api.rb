@@ -16,7 +16,6 @@ module Api
     desc 'Add a new task definition to the given unit'
     params do
       requires :task_def, type: Hash do
-        requires :unit_id,                  type: Integer,  desc: 'The unit to create the new task def for'
         optional :tutorial_stream_abbr,     type: String,   desc: 'The abbreviation of tutorial stream'
         requires :name,                     type: String,   desc: 'The name of this task def'
         requires :description,              type: String,   desc: 'The description of this task def'
@@ -35,8 +34,8 @@ module Api
         requires :max_quality_pts,          type: Integer,  desc: 'A range for quality points when quality is assessed'
       end
     end
-    post '/task_definitions/' do
-      unit = Unit.find(params[:task_def][:unit_id])
+    post '/units/:unit_id/task_definitions/' do
+      unit = Unit.find(params[:unit_id])
 
       unless authorise? current_user, unit, :add_task_def
         error!({ error: 'Not authorised to create a task definition of this unit' }, 403)
@@ -47,7 +46,6 @@ module Api
       task_params = ActionController::Parameters.new(params)
                                                 .require(:task_def)
                                                 .permit(
-                                                  :unit_id,
                                                   :name,
                                                   :description,
                                                   :weighting,
@@ -63,6 +61,8 @@ module Api
                                                   :is_graded,
                                                   :max_quality_pts
                                                 )
+
+      task_params[:unit_id] = unit.id
 
       task_def = TaskDefinition.new(task_params)
 
@@ -89,7 +89,6 @@ module Api
     params do
       requires :id, type: Integer, desc: 'The task id to edit'
       requires :task_def, type: Hash do
-        optional :unit_id,                  type: Integer,  desc: 'The unit to create the new task def for'
         optional :tutorial_stream_abbr,     type: String,   desc: 'The abbreviation of the tutorial stream'
         optional :name,                     type: String,   desc: 'The name of this task def'
         optional :description,              type: String,   desc: 'The description of this task def'
@@ -108,8 +107,9 @@ module Api
         optional :max_quality_pts,          type: Integer,  desc: 'A range for quality points when quality is assessed'
       end
     end
-    put '/task_definitions/:id' do
-      task_def = TaskDefinition.find(params[:id])
+    put '/units/:unit_id/task_definitions/:id' do
+      unit = Unit.find(params[:unit_id])
+      task_def = unit.task_definitions.find(params[:id])
 
       unless authorise? current_user, task_def.unit, :add_task_def
         error!({ error: 'Not authorised to create a task definition of this unit' }, 403)
@@ -118,7 +118,6 @@ module Api
       task_params = ActionController::Parameters.new(params)
                                                 .require(:task_def)
                                                 .permit(
-                                                  :unit_id,
                                                   :name,
                                                   :description,
                                                   :weighting,
@@ -207,7 +206,7 @@ module Api
     end
 
     desc 'Delete a task definition'
-    delete '/task_definitions/:id' do
+    delete '/units/:unit_id/task_definitions/:id' do
       task_def = TaskDefinition.find(params[:id])
 
       unless authorise? current_user, task_def.unit, :add_task_def

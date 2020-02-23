@@ -58,6 +58,7 @@ FactoryBot.define do
     teaching_period { nil }
     code            { "SIT#{Faker::Number.unique.number(3)}" }
     active          { true }
+    auto_apply_extension_before_deadline { true }
 
     after(:create) do | unit, eval |
       group_sets = eval.group_sets

@@ -24,7 +24,7 @@ class StudentsApiTest < ActiveSupport::TestCase
     last_response_body.each do | data |
       pro = newUnit.active_projects.find(data['project_id'])
       std = pro.student
-      assert_json_matches_model(data, std, response_keys)
+      assert_json_matches_model(std, data, response_keys)
       assert_equal data['student_email'],std['email']
     end
     assert_equal 200, last_response.status

@@ -40,11 +40,11 @@ class ProjectsApiTest < ActiveSupport::TestCase
       project = user.projects.find(data['project_id'])
       assert project.present?, data.inspect
 
-      assert_json_matches_model(data, project, %w(campus_id has_portfolio target_grade campus_id))
+      assert_json_matches_model(project, data, %w(campus_id has_portfolio target_grade campus_id))
       assert_equal project.unit.name, data['unit_name'], data.inspect
       assert_equal project.unit.id, data['unit_id'], data.inspect
       assert_equal project.unit.code, data['unit_code'], data.inspect
-      assert_json_matches_model(data, project.unit, %w(teaching_period_id active))
+      assert_json_matches_model(project.unit, data, %w(teaching_period_id active))
     end
   end
 
@@ -66,11 +66,11 @@ class ProjectsApiTest < ActiveSupport::TestCase
       project = user.projects.find(data['project_id'])
       assert project.present?, data.inspect
 
-      assert_json_matches_model(data, project, %w(campus_id has_portfolio target_grade campus_id))
+      assert_json_matches_model(project, data, %w(campus_id has_portfolio target_grade campus_id))
       assert_equal project.unit.name, data['unit_name'], data.inspect
       assert_equal project.unit.id, data['unit_id'], data.inspect
       assert_equal project.unit.code, data['unit_code'], data.inspect
-      assert_json_matches_model(data, project.unit, %w(teaching_period_id active))
+      assert_json_matches_model(project.unit, data, %w(teaching_period_id active))
     end
   end
 end
