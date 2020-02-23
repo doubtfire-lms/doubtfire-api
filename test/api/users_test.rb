@@ -13,7 +13,7 @@ class UnitsTest < ActiveSupport::TestCase
     keys = %w(id student_id email first_name last_name username nickname receive_task_notifications
            receive_portfolio_notifications receive_feedback_notifications opt_in_to_research has_run_first_time_setup)
 
-    assert_json_matches_model(actual_user, expected_user, keys)
+    assert_json_matches_model(expected_user, actual_user, keys)
   end
 
   def create_user
@@ -50,7 +50,7 @@ class UnitsTest < ActiveSupport::TestCase
       # Find the matching user, by id from response
       user = User.find(data['id'])
       # Match json with object
-      assert_json_matches_model(data, user, response_keys)
+      assert_json_matches_model(user, data, response_keys)
     end
   end
 
@@ -67,7 +67,7 @@ class UnitsTest < ActiveSupport::TestCase
     
     # Check the returned details match as expected
     response_keys = %w(first_name last_name email student_id nickname receive_task_notifications receive_portfolio_notifications receive_feedback_notifications opt_in_to_research has_run_first_time_setup)
-    assert_json_matches_model(returned_user, expected_user, response_keys)
+    assert_json_matches_model(expected_user, returned_user, response_keys)
   end
   
   def test_get_convenors

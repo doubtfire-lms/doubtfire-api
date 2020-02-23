@@ -37,7 +37,7 @@ class UnitRolesTest < ActiveSupport::TestCase
 
     # Check the returned details match as expected
     response_keys = %w(unit_id user_id)
-    assert_json_matches_model(returned_ur, expected_ur, response_keys)
+    assert_json_matches_model(expected_ur, returned_ur, response_keys)
   end
 
   def test_post_bad_unit_roles

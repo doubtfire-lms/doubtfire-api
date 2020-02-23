@@ -20,7 +20,7 @@ class TasksTest < ActiveSupport::TestCase
 
     last_response_body.each_with_index do |r, i|
       t = Task.find(r['id'])
-      assert_json_matches_model r, t, ['id', 'task_definition_id']
+      assert_json_matches_model t, r, ['id', 'task_definition_id']
       assert_equal t.status.to_s, r['status']
       tutorial = t.project.tutorial_for(t.task_definition)
       if tutorial.present?
@@ -44,7 +44,7 @@ class TasksTest < ActiveSupport::TestCase
 
     last_response_body.each_with_index do |r, i|
       t = Task.find(r['id'])
-      assert_json_matches_model r, t, ['id', 'task_definition_id']
+      assert_json_matches_model t, r, ['id', 'task_definition_id']
       assert_equal t.status.to_s, r['status']
       tutorial = t.project.tutorial_for(t.task_definition)
       if tutorial.present?
