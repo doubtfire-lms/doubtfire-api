@@ -10,15 +10,46 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     Rails.application
   end
 
+  def test_create_task_definition
+    unit = FactoryBot.create(:unit, task_count: 0, group_sets: 1)
+
+    assert_equal 0, unit.task_definitions.count
+
+    data_to_post = {
+      tutorial_stream_abbr:     unit.tutorial_streams.first.abbreviation,
+      name:                     'New Task Def',
+      description:              'First task def',
+      weighting:                4,
+      target_grade:             1,
+      group_set_id:             unit.group_sets.first.id,
+      start_date:               unit.start_date,
+      target_date:              unit.start_date + 7.days,
+      due_date:                 unit.start_date + 21.days,
+      abbreviation:             'P1.1',
+      restrict_status_updates:  false,
+      upload_requirements:      [ { "key" => 'file0', "name" => 'Shape Class', "type" => 'document' } ],
+      plagiarism_checks:        '[]',
+      plagiarism_warn_pct:      80,
+      is_graded:                false,
+      max_quality_pts:          0,
+      auto_apply_extension_before_deadline: false
+    }
+
+    post_json with_auth_token("/api/units/#{unit.id}/task_definitions/", unit.main_convenor_user), data_to_post
+    assert_equal 201, last_response.status
+    assert_equal 1, unit.task_definitions.count
+
+    assert_json_matches_model()
+  end
+
   def test_post_invalid_file_tasksheet
-    test_unit = Unit.first
+    test_unit = FactoryBot.create(:unit, task_count: 1)
     test_task_definition_id = test_unit.task_definitions.first.id
 
     data_to_post = {
-      file: 'rubbish_path',
-      auth_token: auth_token
+      file: 'rubbish_path'
     }
-    post_json with_auth_token("/api/units/#{test_unit.id}/task_definitions/#{test_task_definition_id}/task_sheet"), data_to_post
+    post_json with_auth_token("/api/units/#{test_unit.id}/task_definitions/#{test_task_definition_id}/task_sheet", unit.main_convenor_user), data_to_post
 
     assert last_response_body.key?('error')
   end
