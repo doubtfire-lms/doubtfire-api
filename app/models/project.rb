@@ -92,7 +92,14 @@ class Project < ActiveRecord::Base
   end
 
   def enrol_in(tutorial)
-    tutorial_enrolment = existing_enrolment(tutorial)
+    # Check if multiple enrolments changing to a single enrolment - due to no stream.
+    # No need to delete if only 1, as that would be updated as well.
+    if tutorial_enrolments.count > 1 && tutorial.tutorial_stream.nil?
+      # So remove current enrolments
+      tutorial_enrolments.delete_all()
+    end
+
+    tutorial_enrolment = matching_enrolment(tutorial)
     if tutorial_enrolment.nil?
       tutorial_enrolment = TutorialEnrolment.new
       tutorial_enrolment.tutorial = tutorial
@@ -101,23 +108,19 @@ class Project < ActiveRecord::Base
 
       # add after save to ensure valid tutorial_enrolments
       self.tutorial_enrolments << tutorial_enrolment
-
-      tutorial_enrolment
-    else
+    else # there is an existing enrolment...
       tutorial_enrolment.tutorial = tutorial
-      tutorial_enrolment.save!
-      tutorial_enrolment
+      tutorial_enrolment.update!(tutorial_id: tutorial.id)
     end
+    tutorial_enrolment
   end
 
   # Find enrolment in same tutorial stream
-  def existing_enrolment(tutorial)
-    tutorial_enrolments.each do |tutorial_enrolment|
-      if tutorial.tutorial_stream.eql? tutorial_enrolment.tutorial.tutorial_stream or tutorial_enrolment.tutorial.tutorial_stream.nil?
-        return tutorial_enrolment
-      end
-    end
-    nil
+  def matching_enrolment(tutorial)
+    tutorial_enrolments.
+      joins(:tutorial).
+      where('tutorials.tutorial_stream_id = :sid OR tutorials.tutorial_stream_id IS NULL OR :sid IS NULL', sid: tutorial.tutorial_stream_id).
+      first
   end
 
   #

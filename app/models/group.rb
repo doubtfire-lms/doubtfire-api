@@ -24,6 +24,8 @@ class Group < ActiveRecord::Base
 
   before_destroy :ensure_no_submissions
 
+  delegate :capacity, to: :group_set
+
   def active_group_members
     group_memberships.where(active: true)
   end
@@ -48,15 +50,22 @@ class Group < ActiveRecord::Base
     # What can convenors do with groups?
     convenor_role_permissions = [
       :get_members,
-      :manage_group
+      :manage_group,
+      :can_exceed_capacity
     ]
+    # What can admin do with groups?
+    admin_role_permissions = [
+      :get_members,
+      :manage_group,
+      :can_exceed_capacity
+    ]    
     # What can nil users do with groups?
     nil_role_permissions = [
-
     ]
 
     # Return permissions hash
     {
+      admin: admin_role_permissions,
       convenor: convenor_role_permissions,
       tutor: tutor_role_permissions,
       student: student_role_permissions,
@@ -89,6 +98,10 @@ class Group < ActiveRecord::Base
 
   def has_user(user)
     projects.where('user_id = :user_id', user_id: user.id).count == 1
+  end
+
+  def at_capacity?
+    capacity.present? && group_memberships.where(active: true).count >= capacity
   end
 
   def add_member(project)

@@ -62,7 +62,7 @@ class TutorialEnrolment < ActiveRecord::Base
   def ensure_cannot_enrol_in_tutorial_with_no_stream_when_enrolled_in_stream
     if project.tutorial_enrolments
         .joins(:tutorial)
-        .where("tutorials.tutorial_stream_id is not null AND :tutorial_stream_id is null", tutorial_stream_id: tutorial.tutorial_stream_id)
+        .where("tutorials.tutorial_stream_id is not null AND :tutorial_stream_id is null AND tutorial_enrolments.id <> :id", tutorial_stream_id: tutorial.tutorial_stream_id, id: id)
         .count > 0
       errors.add(:project, 'cannot enrol in tutorial with no stream when enrolled in stream')
     end

@@ -321,6 +321,7 @@ class Unit < ActiveRecord::Base
           'projects.id',
           'projects.target_grade',
           'projects.enrolled',
+          'projects.campus_id',
           'users.first_name',
           'users.last_name',
           'users.username',
@@ -333,6 +334,7 @@ class Unit < ActiveRecord::Base
         .select(
           'projects.id AS project_id',
           'projects.enrolled AS enrolled',
+          'projects.campus_id AS campus_id',
           'users.first_name AS first_name',
           'users.last_name AS last_name',
           'users.username AS student_id',
@@ -345,7 +347,7 @@ class Unit < ActiveRecord::Base
           'MAX(CASE WHEN plagiarism_match_links.dismissed = FALSE THEN plagiarism_match_links.pct ELSE 0 END) AS plagiarism_match_links_max_pct',
           *TaskStatus.all.map { |s| "SUM(CASE WHEN tasks.task_status_id = #{s.id} THEN 1 ELSE 0 END) AS #{s.status_key}_count" },
           # Get tutorial for each stream in unit
-          *tutorial_streams.map { |s| "MAX(CASE WHEN tutorials.tutorial_stream_id = #{s.id} OR tutorial_enrolments.id IS NULL THEN tutorials.id ELSE NULL END) AS tutorial_#{s.id}" },
+          *tutorial_streams.map { |s| "MAX(CASE WHEN tutorials.tutorial_stream_id = #{s.id} OR tutorials.tutorial_stream_id IS NULL THEN tutorials.id ELSE NULL END) AS tutorial_#{s.id}" },
           # Get tutorial for case when no stream
           "MAX(CASE WHEN tutorial_streams.id IS NULL THEN tutorials.abbreviation ELSE NULL END) AS tutorial"
         )
@@ -360,6 +362,7 @@ class Unit < ActiveRecord::Base
       result = {
         project_id: t.project_id,
         enrolled: t.enrolled,
+        campus_id: t.campus_id,
         first_name: t.first_name,
         last_name: t.last_name,
         student_id: t.student_id,
@@ -372,10 +375,10 @@ class Unit < ActiveRecord::Base
         max_pct_copy: t.plagiarism_match_links_max_pct,
         has_portfolio: !t.portfolio_production_date.nil?,
         stats: Project.create_task_stats_from(task_count, t, t.target_grade),
-        tutorial_streams: tutorial_streams.map do |s|
+        tutorial_enrolments: tutorial_streams.map do |s|
           {
-            stream: s.abbreviation,
-            tutorial: t["tutorial_#{s.id}"]
+            stream_abbr: s.abbreviation,
+            tutorial_id: t["tutorial_#{s.id}"]
           }
         end
       }
@@ -1728,24 +1731,29 @@ class Unit < ActiveRecord::Base
     end
   end
 
+  def tutorial_enrolment_subquery
+    tutorial_enrolments.
+      joins(:tutorial).
+      select('tutorials.tutorial_stream_id as tutorial_stream_id', 'tutorials.id as tutorial_id', 'project_id').to_sql
+  end
+
   #
   # Return all tasks from the database for this unit and given user
   #
   def get_all_tasks_for(user)
     student_tasks.
       joins(:task_status).
-      joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id').
-      joins('LEFT OUTER JOIN tutorials ON tutorials.id = tutorial_enrolments.tutorial_id AND (tutorials.tutorial_stream_id = task_definitions.tutorial_stream_id OR tutorials.tutorial_stream_id IS NULL)').
+      joins("LEFT OUTER JOIN (#{tutorial_enrolment_subquery}) as sq ON sq.project_id = projects.id AND (sq.tutorial_stream_id = task_definitions.tutorial_stream_id OR sq.tutorial_stream_id IS NULL)").
       joins("LEFT JOIN task_comments ON task_comments.task_id = tasks.id").
       joins("LEFT JOIN comments_read_receipts crr ON crr.task_comment_id = task_comments.id AND crr.user_id = #{user.id}").
       select(
-        'tutorial_enrolments.tutorial_id AS tutorial_id', 'tutorials.tutorial_stream_id AS tutorial_stream_id',
+        'sq.tutorial_id AS tutorial_id', 'sq.tutorial_stream_id AS tutorial_stream_id',
         'tasks.id', 'SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) as number_unread', 'project_id', 'tasks.id as task_id',
         'task_definition_id', 'task_definitions.start_date as start_date', 'task_statuses.id as status_id',
         'completion_date', 'times_assessed', 'submission_date', 'portfolio_evidence', 'tasks.grade as grade', 'quality_pts'
       ).
       group(
-        'tutorial_enrolments.tutorial_id', 'tutorials.tutorial_stream_id',
+        'sq.tutorial_id', 'sq.tutorial_stream_id',
         'task_statuses.id', 'project_id', 'tasks.id', 'task_definition_id', 'task_definitions.start_date', 'status_id',
         'completion_date', 'times_assessed', 'submission_date', 'portfolio_evidence', 'grade', 'quality_pts'
       )
@@ -1847,9 +1855,12 @@ class Unit < ActiveRecord::Base
   # aiming for a grade in this indicated unit.
   #
   def student_target_grade_stats
-    data = active_projects
-            .joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id')
-            .select('tutorials.tutorial_stream_id as tutorial_stream_id, tutorial_enrolments.tutorial_id as tutorial_id, projects.target_grade, COUNT(projects.id) as num').group('tutorial_enrolments.tutorial_id, tutorials.tutorial_stream_id, projects.target_grade').order('tutorial_enrolments.tutorial_id, projects.target_grade').map { |r| { tutorial_id: r.tutorial_id, tutorial_stream_id: r.tutorial_stream_id, grade: r.target_grade, num: r.num } }
+    data = active_projects.
+      joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id').
+      joins('LEFT OUTER JOIN tutorials ON tutorials.id = tutorial_enrolments.tutorial_id').
+      select('tutorials.tutorial_stream_id as tutorial_stream_id, tutorial_enrolments.tutorial_id as tutorial_id, projects.target_grade, COUNT(projects.id) as num').group('tutorial_enrolments.tutorial_id, tutorials.tutorial_stream_id, projects.target_grade').
+      order('tutorial_enrolments.tutorial_id, projects.target_grade').
+      map { |r| { tutorial_id: r.tutorial_id, tutorial_stream_id: r.tutorial_stream_id, grade: r.target_grade, num: r.num } }
   end
 
   #
