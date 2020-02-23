@@ -100,7 +100,8 @@ class DeakinInstitutionSettings
 
   def fetch_callista_row(row, unit)
     campus = map_callista_to_campus(row)
-    if unit.tutorials.where(abbreviation: 'Cloud').count == 0
+    tutorials_in_campus = unit.tutorials.where(campus_id: campus.id)
+    if tutorials_in_campus.count == 0 or tutorials_in_campus.joins(:tutorial_enrolments).group('tutorials.id').having('COUNT(tutorial_enrolments.id) <= tutorials.capacity OR tutorials.capacity = -1').empty?
       unit.add_tutorial(
         'Asynchronous',
         '9:00',
@@ -108,7 +109,7 @@ class DeakinInstitutionSettings
         unit.main_convenor_user,
         campus,
         -1,
-        'Cloud'
+        row["unit mode"] == 'OFF' ? "Cloud" : nil
       )
     end
 
@@ -223,6 +224,7 @@ class DeakinInstitutionSettings
 
             campus_name = location['name']
             campus = Campus.find_by(name: campus_name)
+            tutorials_in_campus = unit.tutorials.where(campus_id: campus.id)
 
             row_data = {
               unit_code:      enrolmentData['unitCode'],
@@ -238,7 +240,7 @@ class DeakinInstitutionSettings
               row:            enrolment
             }
 
-            if row_data[:tutorial_code] == 'Cloud' && unit.week_number(Time.zone.now) < 4 && unit.tutorials.where(abbreviation: 'Cloud').count == 0
+            if unit.week_number(Time.zone.now) < 4 && (tutorials_in_campus.count == 0 or tutorials_in_campus.joins(:tutorial_enrolments).group('tutorials.id').having('COUNT(tutorial_enrolments.id) <= tutorials.capacity OR tutorials.capacity = -1').empty?)
               unit.add_tutorial(
                 'Asynchronous',
                 '9:00',
@@ -246,7 +248,7 @@ class DeakinInstitutionSettings
                 unit.main_convenor_user,
                 campus
                 -1,
-                'Cloud'
+                row_data[:tutorial_code]
               )
             end
 
@@ -279,17 +281,11 @@ class DeakinInstitutionSettings
 
     tp = unit.teaching_period
 
-    activity_types = [
-      'Wrk',
-      'Prc',
-      'Sem'
-    ]
-
     url = "#{@star_url}/star-#{tp.year}/rest/students/allocated"
 
-    activity_types.each do |activity_type|
-      logger.info("Fetching #{activity_type} from #{url}")
-      response = RestClient.post(url, {username: @star_user, password: @star_secret, where_clause:"subject_code LIKE '#{unit.code}%' AND activity_group_code LIKE '#{activity_type}01'"})
+    unit.tutorial_streams.each do |tutorial_stream|
+      logger.info("Fetching #{tutorial_stream} from #{url}")
+      response = RestClient.post(url, {username: @star_user, password: @star_secret, where_clause:"subject_code LIKE '#{unit.code}%' AND activity_group_code LIKE '#{tutorial_stream.abbreviation}'"})
 
       if response.code == 200
         jsonData = JSON.parse(response.body)
