@@ -58,14 +58,15 @@ module Api
     params do
       requires :id, type: Integer, desc: 'The unit id to update'
       requires :unit, type: Hash do
-        optional :name
-        optional :code
-        optional :description
-        optional :active
-        optional :teaching_period_id
-        optional :start_date
-        optional :end_date
-        optional :main_convenor_id
+        optional :name, type: String
+        optional :code, type: String
+        optional :description, type: String
+        optional :active, type: Boolean
+        optional :teaching_period_id, type: Integer
+        optional :start_date, type: Date
+        optional :end_date, type: Date
+        optional :main_convenor_id, type: Integer
+        optional :auto_apply_extension_before_deadline, type: Boolean, desc: 'Indicates if extensions before the deadline should be automatically applied', default: true
 
         mutually_exclusive :teaching_period_id,:start_date
         all_or_none_of :start_date, :end_date
@@ -85,7 +86,8 @@ module Api
                                                             :end_date,
                                                             :teaching_period_id,
                                                             :active,
-                                                            :main_convenor_id
+                                                            :main_convenor_id,
+                                                            :auto_apply_extension_before_deadline
                                                           )
 
       if unit.teaching_period_id.present? && unit_parameters.key?(:start_date)
@@ -99,12 +101,15 @@ module Api
     desc 'Create unit'
     params do
       requires :unit, type: Hash do
-        requires :name
-        requires :code
-        optional :teaching_period_id
-        optional :description
-        optional :start_date
-        optional :end_date
+        requires :name, type: String
+        requires :code, type: String
+        optional :description, type: String
+        optional :active, type: Boolean
+        optional :teaching_period_id, type: Integer
+        optional :start_date, type: Date
+        optional :end_date, type: Date
+        optional :main_convenor_id, type: Integer
+        optional :auto_apply_extension_before_deadline, type: Boolean, desc: 'Indicates if extensions before the deadline should be automatically applied', default: true
 
         mutually_exclusive :teaching_period_id,:start_date
         mutually_exclusive :teaching_period_id,:end_date
