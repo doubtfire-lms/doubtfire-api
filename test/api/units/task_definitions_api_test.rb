@@ -100,7 +100,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     data_to_post = {
       file: 'rubbish_path'
     }
-    post_json with_auth_token("/api/units/#{test_unit.id}/task_definitions/#{test_task_definition_id}/task_sheet", unit.main_convenor_user), data_to_post
+    post_json with_auth_token("/api/units/#{test_unit.id}/task_definitions/#{test_task_definition_id}/task_sheet", test_unit.main_convenor_user), data_to_post
 
     assert last_response_body.key?('error')
   end
