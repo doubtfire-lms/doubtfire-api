@@ -2,9 +2,11 @@
 require 'tempfile'
 
 class TaskComment < ActiveRecord::Base
+
   include MimeCheckHelpers
   include TimeoutHelper
   include FileHelper
+  include AuthorisationHelpers
 
   belongs_to :task # Foreign key
   belongs_to :user
@@ -17,10 +19,14 @@ class TaskComment < ActiveRecord::Base
 
   has_many :comments_read_receipts, class_name: 'CommentsReadReceipts', dependent: :destroy, inverse_of: :task_comment
 
+  # Can optionally be a reply to a comment
+  belongs_to :task_comment
+
   validates :task, presence: true
   validates :user, presence: true
   validates :recipient, presence: true
   validates :comment, length: { minimum: 0, maximum: 4095, allow_blank: true }
+  validate :valid_reply_to?, on: :create
 
   # After create, mark as read by user creating
   after_create do
@@ -29,6 +35,16 @@ class TaskComment < ActiveRecord::Base
 
   # Delete action - before dependent association
   before_destroy :delete_associated_files
+
+  def valid_reply_to?
+    if reply_to_id.present?
+      originalTaskComment = TaskComment.find(reply_to_id)
+      replyProject = originalTaskComment.project
+      errors.add(:task_comment, "Not a reply to a valid task comment") unless originalTaskComment.present?
+      errors.add(:task_comment, "Original comment is not in this task") unless task.all_comments.find(reply_to_id).present?
+      errors.add(:task_comment, "Not authorised to reply to comment") unless authorise? user, originalTaskComment.project, :get
+    end
+  end
 
   def new_for?(user)
     CommentsReadReceipts.where(user: user, task_comment_id: self).empty?
@@ -45,6 +61,7 @@ class TaskComment < ActiveRecord::Base
       has_attachment: ["audio", "image", "pdf"].include?(self.content_type),
       type: self.content_type || "text",
       is_new: self.new_for?(user),
+      reply_to_id: self.reply_to_id,
       author: {
         id: self.user.id,
         name: self.user.name,

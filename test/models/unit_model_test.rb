@@ -232,7 +232,7 @@ class UnitModelTest < ActiveSupport::TestCase
     assert_equal project.enrolled, projects.first[:enrolled]
 
     # Ensure there are matching number of streams
-    assert_equal unit.tutorial_streams.count, projects.first[:tutorial_streams].count
+    assert_equal unit.tutorial_streams.count, projects.first[:tutorial_enrolments].count
 
     # Now test with project without tutorial enrolments
     project2 = FactoryBot.create(:project, unit: unit, campus: campus)
@@ -249,12 +249,12 @@ class UnitModelTest < ActiveSupport::TestCase
     assert projects.select{|p| p[:project_id] == project2.id}.first.present?
 
     # Ensure there are matching number of streams
-    assert_equal unit.tutorial_streams.count, projects.last[:tutorial_streams].count
+    assert_equal unit.tutorial_streams.count, projects.last[:tutorial_enrolments].count
 
     unit.tutorial_streams.each do |s|
       unit.projects.each do |p|
         proj_tute_enrolment = p.tutorial_enrolment_for_stream(s)
-        data_tute_enrolment = projects.select{|ps| ps[:project_id] == p.id}.first[:tutorial_streams].select{|te| te[:stream] == s.abbreviation}.map{|te| te[:tutorial]}.first
+        data_tute_enrolment = projects.select{|ps| ps[:project_id] == p.id}.first[:tutorial_enrolments].select{|te| te[:stream_abbr] == s.abbreviation}.map{|te| te[:tutorial_id]}.first
 
         # if there is a enrolment for this project...
         if proj_tute_enrolment.present?
