@@ -10,36 +10,87 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     Rails.application
   end
 
-  def test_create_task_definition
-    unit = FactoryBot.create(:unit, task_count: 0, group_sets: 1)
+  def all_task_def_keys 
+    [ 
+      'name',
+      'description',
+      'target_grade',
+      'group_set_id',
+      'start_date',
+      'target_date',
+      'due_date',
+      'abbreviation',
+      'restrict_status_updates',
+      'plagiarism_warn_pct',
+      'is_graded',
+      'max_quality_pts'
+    ]
+  end
+
+  def test_task_definition_cud
+    unit = FactoryBot.create(:unit, task_count: 0, group_sets: 1, stream_count: 1)
 
     assert_equal 0, unit.task_definitions.count
 
     data_to_post = {
-      tutorial_stream_abbr:     unit.tutorial_streams.first.abbreviation,
-      name:                     'New Task Def',
-      description:              'First task def',
-      weighting:                4,
-      target_grade:             1,
-      group_set_id:             unit.group_sets.first.id,
-      start_date:               unit.start_date,
-      target_date:              unit.start_date + 7.days,
-      due_date:                 unit.start_date + 21.days,
-      abbreviation:             'P1.1',
-      restrict_status_updates:  false,
-      upload_requirements:      [ { "key" => 'file0', "name" => 'Shape Class', "type" => 'document' } ],
-      plagiarism_checks:        '[]',
-      plagiarism_warn_pct:      80,
-      is_graded:                false,
-      max_quality_pts:          0,
-      auto_apply_extension_before_deadline: false
+      task_def: {
+        tutorial_stream_abbr:     unit.tutorial_streams.first.abbreviation,
+        name:                     'New Task Def',
+        description:              'First task def',
+        weighting:                4,
+        target_grade:             1,
+        group_set_id:             unit.group_sets.first.id,
+        start_date:               unit.start_date,
+        target_date:              unit.start_date + 7.days,
+        due_date:                 unit.start_date + 21.days,
+        abbreviation:             'P1.1',
+        restrict_status_updates:  false,
+        upload_requirements:      '[ { "key": "file0", "name": "Shape Class", "type": "document" } ]',
+        plagiarism_checks:        '[]',
+        plagiarism_warn_pct:      80,
+        is_graded:                false,
+        max_quality_pts:          0
+      }
     }
 
-    post_json with_auth_token("/api/units/#{unit.id}/task_definitions/", unit.main_convenor_user), data_to_post
-    assert_equal 201, last_response.status
+    post_json with_auth_token("/api/units/#{unit.id}/task_definitions", unit.main_convenor_user), data_to_post
+    assert_equal 201, last_response.status, last_response.inspect
     assert_equal 1, unit.task_definitions.count
 
-    assert_json_matches_model()
+    assert_json_matches_model unit.task_definitions.first, last_response_body, all_task_def_keys
+    assert_equal unit.tutorial_streams.first.id, unit.task_definitions.first.tutorial_stream_id
+    assert_equal 4, unit.task_definitions.first.weighting
+
+
+    data_to_put = {
+      task_def: {
+        tutorial_stream_abbr:     unit.tutorial_streams.last.abbreviation,
+        name:                     'New Task Def 1',
+        description:              'First task def 1',
+        weighting:                2,
+        target_grade:             2,
+        group_set_id:             nil,
+        start_date:               unit.start_date + 2.days,
+        target_date:              unit.start_date + 9.days,
+        due_date:                 unit.start_date + 23.days,
+        abbreviation:             'P1.2',
+        restrict_status_updates:  true, 
+        upload_requirements:      '[ { "key": "file0", "name": "Other Class", "type": "document" } ]',
+        plagiarism_checks:        '[]',
+        plagiarism_warn_pct:      80,
+        is_graded:                false,
+        max_quality_pts:          0
+      }
+    }
+
+    put_json "/api/units/#{unit.id}/task_definitions/#{unit.task_definitions.first.id}", with_auth_token(data_to_put, unit.main_convenor_user)
+    assert_equal 200, last_response.status, last_response.inspect
+
+    unit.reload
+
+    assert_json_matches_model unit.task_definitions.first, last_response_body, all_task_def_keys
+    assert_equal unit.tutorial_streams.last.id, unit.task_definitions.first.tutorial_stream_id
+    assert_equal 2, unit.task_definitions.first.weighting
   end
 
   def test_post_invalid_file_tasksheet
