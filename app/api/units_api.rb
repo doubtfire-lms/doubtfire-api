@@ -128,7 +128,8 @@ module Api
                                                       :teaching_period_id,
                                                       :description,
                                                       :start_date,
-                                                      :end_date
+                                                      :end_date,
+                                                      :auto_apply_extension_before_deadline
                                                     )
 
       if unit_parameters[:description].nil?
