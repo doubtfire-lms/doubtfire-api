@@ -362,17 +362,18 @@ ActiveRecord::Schema.define(version: 20200220100901) do
   add_index "unit_roles", ["user_id"], name: "index_unit_roles_on_user_id", using: :btree
 
   create_table "units", force: :cascade do |t|
-    t.string   "name",                limit: 255
-    t.string   "description",         limit: 4096
+    t.string   "name",                                 limit: 255
+    t.string   "description",                          limit: 4096
     t.datetime "start_date"
     t.datetime "end_date"
-    t.datetime "created_at",                                      null: false
-    t.datetime "updated_at",                                      null: false
-    t.string   "code",                limit: 255
-    t.boolean  "active",                           default: true
+    t.datetime "created_at",                                                       null: false
+    t.datetime "updated_at",                                                       null: false
+    t.string   "code",                                 limit: 255
+    t.boolean  "active",                                            default: true
     t.datetime "last_plagarism_scan"
     t.integer  "teaching_period_id"
     t.integer  "main_convenor_id"
+    t.boolean  "auto_apply_extension_before_deadline",              default: true, null: false
   end
 
   add_index "units", ["teaching_period_id"], name: "index_units_on_teaching_period_id", using: :btree

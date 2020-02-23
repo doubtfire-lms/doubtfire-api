@@ -16,7 +16,7 @@ class CampusesTest < ActiveSupport::TestCase
     response_keys = %w(name abbreviation)
     last_response_body.each do | data |
       c = Campus.find(data['id'])
-      assert_json_matches_model(data, c, response_keys)
+      assert_json_matches_model(c, data, response_keys)
     end
   end
   
@@ -24,7 +24,7 @@ class CampusesTest < ActiveSupport::TestCase
     campus = FactoryBot.create(:campus, mode: 'timetable')
     get "/api/campuses/#{campus.id}"
     response_keys = %w(name abbreviation)
-    assert_json_matches_model(last_response_body,campus,response_keys) 
+    assert_json_matches_model(campus, last_response_body, response_keys) 
   end
 
   def test_post_campuses
@@ -36,7 +36,7 @@ class CampusesTest < ActiveSupport::TestCase
     assert_equal 201, last_response.status
     response_keys = %w(name abbreviation)
     campus = Campus.find(last_response_body['id'])
-    assert_json_matches_model(last_response_body, campus, response_keys)
+    assert_json_matches_model(campus, last_response_body, response_keys)
     assert_equal 0, campus[:mode]
   end
 
@@ -57,7 +57,7 @@ class CampusesTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status
     response_keys = %w(name abbreviation)
     first_campus = Campus.first
-    assert_json_matches_model(last_response_body, first_campus, response_keys)
+    assert_json_matches_model(first_campus, last_response_body, response_keys)
     assert_equal 0, first_campus[:mode]
   end
 

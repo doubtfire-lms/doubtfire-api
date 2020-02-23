@@ -10,9 +10,9 @@ class ExtensionTest < ActiveSupport::TestCase
   end
 
   def test_extension_application
-    project = Project.first
+    unit = FactoryBot.create(:unit)
+    project = unit.projects.first
     user = project.student
-    unit = project.unit
 
     td = TaskDefinition.new({
         unit_id: unit.id,
@@ -70,9 +70,9 @@ class ExtensionTest < ActiveSupport::TestCase
 
   # Test that extension requests are not read by main tutor until they are assessed
   def test_extension_application
-    project = Project.first
+    unit = FactoryBot.create(:unit, auto_apply_extension_before_deadline: false)
+    project = unit.projects.first
     user = project.student
-    unit = project.unit
     other_tutor = unit.main_convenor_user
 
     td = TaskDefinition.new({
