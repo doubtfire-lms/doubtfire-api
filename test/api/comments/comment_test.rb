@@ -38,9 +38,9 @@ class CommentTest < ActiveSupport::TestCase
     }
 
     # check each is the same
-    assert_json_matches_model last_response_body, expected_response, %w(comment has_attachment type is_new)
-    assert_json_matches_model last_response_body['author'], expected_response[:author], ['id']
-    assert_json_matches_model last_response_body['recipient'], expected_response[:recipient], ['id']
+    assert_json_matches_model expected_response, last_response_body, %w(comment has_attachment type is_new)
+    assert_json_matches_model expected_response[:author], last_response_body['author'], ['id']
+    assert_json_matches_model expected_response[:recipient], last_response_body['recipient'], ['id']
   end
 
   def test_replying_to_comments
@@ -72,7 +72,7 @@ class CommentTest < ActiveSupport::TestCase
     comment_data = { comment: 'Responding!', reply_to_id: TaskComment.last.id }
     post_json with_auth_token("/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", user), comment_data
     assert_equal 201, last_response.status
-    assert_json_matches_model last_response_body, expected_response, %w(comment type is_new reply_to_id)
+    assert_json_matches_model expected_response, last_response_body, %w(comment type is_new reply_to_id)
 
     expected_response = {
       'comment' => 'Responding again!',
@@ -89,7 +89,7 @@ class CommentTest < ActiveSupport::TestCase
     assert_equal 201, last_response.status
 
     # check each is the same
-    assert_json_matches_model last_response_body, expected_response, %w(comment type is_new reply_to_id)
+    assert_json_matches_model expected_response, last_response_body, %w(comment type is_new reply_to_id)
   end
 
   def test_student_post_reply_to_invalid_comment

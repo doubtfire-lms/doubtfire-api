@@ -26,7 +26,7 @@ class TeachingPeriodTest < ActiveSupport::TestCase
       # Find the matching teaching period, by id from response
       tp = TeachingPeriod.find(data['id'])
       # Match json with object
-      assert_json_matches_model(data, tp, response_keys)
+      assert_json_matches_model(tp, data, response_keys)
     end
   end
 
@@ -95,7 +95,7 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     # check if the details posted match as expected
     response_keys = %w(period year start_date end_date active_until)
     tp_updated = tp.reload
-    assert_json_matches_model(last_response_body, tp_updated, response_keys)
+    assert_json_matches_model(tp_updated, last_response_body, response_keys)
 
     # check if the details in the replaced teaching period match as data set to replace
     assert_equal data_to_put[:teaching_period]['period'], tp_updated.period
@@ -152,7 +152,7 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     # check if the details posted match as expected
     response_keys = %w(period year start_date end_date active_until)
     teaching_period = TeachingPeriod.find(last_response_body['id'])
-    assert_json_matches_model(last_response_body, teaching_period, response_keys)
+    assert_json_matches_model(teaching_period, last_response_body, response_keys)
 
     # check if the details in the newly created teaching period match as the pre-set data
     assert_equal data_to_post[:teaching_period]['period'], teaching_period.period

@@ -356,7 +356,7 @@ class UnitModelTest < ActiveSupport::TestCase
         project = unit.projects.find_by(user_id: user.id)
         assert project.present?, entry
 
-        assert_json_matches_model(entry, user, %w( username student_id first_name last_name email))
+        assert_json_matches_model(user, entry, %w( username student_id first_name last_name email))
 
         campus = Campus.find_by_abbr_or_name entry['campus']
         assert campus.present?, entry
