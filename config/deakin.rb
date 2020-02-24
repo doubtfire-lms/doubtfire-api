@@ -71,6 +71,71 @@ class DeakinInstitutionSettings
     end
   end
 
+  def activity_type_for_group_code (activity_group_code, description)
+    result = ActivityType.where('lower(abbreviation) = :abbr', abbr: activity_group_code[0...-2].downcase).first
+
+    if result.nil?
+      name = description[0...-2]
+      abbr = activity_group_code[0...-2]
+
+      result = ActivityType.create!(name: name, abbreviation: abbr)
+    end
+
+    result
+  end
+
+  # Doubtfire::Application.config.institution_settings.sync_streams_from_star(Unit.last)
+  def sync_streams_from_star(unit)
+    result = {}
+
+    tp = unit.teaching_period
+
+    url = "#{@star_url}/star-#{tp.year}/rest/activities"
+
+    logger.info("Fetching #{unit.name} timetable from #{url}")
+    response = RestClient.post(url, {username: @star_user, password: @star_secret, where_clause:"subject_code LIKE '#{unit.code}%'"})
+
+    if response.code == 200
+      jsonData = JSON.parse(response.body)
+      if jsonData["activities"].nil?
+        logger.error "Failed to sync #{unit.code} - No response from #{url}"  
+        return
+      end
+
+      activityData = jsonData["activities"]
+
+      activityData.each do |activity|
+        # Make sure units match
+        subject_match = /.*?(?=_)/.match( activity["subject_code"] )
+        unit_code = subject_match.nil? ? nil : subject_match[0]
+        unless unit_code == unit.code
+          logger.error "Failed to sync #{unit.code} - response had unit code #{enrolmentData['unitCode']}"  
+          return
+        end
+
+        stream = unit.tutorial_streams.where(abbreviation: activity['activity_group_code']).first
+        if stream.nil?
+          unit.add_tutorial_stream activity['description'], activity['activity_group_code'], activity_type_for_group_code(activity['activity_group_code'], activity['description'])
+        end
+
+        abbr = "#{activity['activity_group_code']}-#{activity['activity_code']}"
+        tutorial = unit.tutorials.where(abbreviation: abbr).first
+        if tutorial.nil?
+          unit.add_tutorial(
+            activity['day_of_week'], #day
+            activity['start_time'], #time
+            activity['location'], #location
+            unit.main_convenor_user, #tutor
+            Campus.find_by(abbreviation: activity['campus']), #campus
+            20, #capacity
+            abbr, #abbrev
+            stream #tutorial_stream=nil
+          )
+        end
+      end
+    end
+  end
+
   def fetch_star_row(row, unit)
     email_match = /(.*)(?=@)/.match( row["email_address"] )
     subject_match = /.*?(?=_)/.match( row["subject_code"] )
@@ -122,7 +187,7 @@ class DeakinInstitutionSettings
       nickname:       row["preferred given name"] == "-" ? nil : row["preferred given name"],
       email:          "#{row["email"]}@deakin.edu.au",
       enrolled:       row["student attempt status"] == 'ENROLLED',
-      campus:         campus.name
+      campus:         campus.name,
       tutorial_code:  row["unit mode"] == 'OFF' ? "Cloud" : nil
     }
 
@@ -236,7 +301,7 @@ class DeakinInstitutionSettings
               email:          enrolment['email'],
               enrolled:       ['ENROLLED', 'COMPLETED'].include?(enrolment['status'].upcase),
               tutorial_code:  location['name'].upcase == 'CLOUD (ONLINE)' ? 'Cloud' : timetable_data[enrolment['studentId']],
-              campus:         campus_name
+              campus:         campus_name,
               row:            enrolment
             }
 
@@ -246,7 +311,7 @@ class DeakinInstitutionSettings
                 '9:00',
                 'Online',
                 unit.main_convenor_user,
-                campus
+                campus,
                 -1,
                 row_data[:tutorial_code]
               )
