@@ -71,6 +71,80 @@ class DeakinInstitutionSettings
     end
   end
 
+  def activity_type_for_group_code (activity_group_code, description)
+    result = ActivityType.where('lower(abbreviation) = :abbr', abbr: activity_group_code[0...-2].downcase).first
+
+    if result.nil?
+      name = description[0...-2]
+      abbr = activity_group_code[0...-2]
+
+      result = ActivityType.create!(name: name, abbreviation: abbr)
+    end
+
+    result
+  end
+
+  def default_cloud_campus_abbr
+    'Cloud-01'
+  end
+
+  # Doubtfire::Application.config.institution_settings.sync_streams_from_star(Unit.last)
+  def sync_streams_from_star(unit)
+    result = {}
+
+    tp = unit.teaching_period
+
+    url = "#{@star_url}/star-#{tp.year}/rest/activities"
+
+    logger.info("Fetching #{unit.name} timetable from #{url}")
+    response = RestClient.post(url, {username: @star_user, password: @star_secret, where_clause:"subject_code LIKE '#{unit.code}%'"})
+
+    if response.code == 200
+      jsonData = JSON.parse(response.body)
+      if jsonData["activities"].nil?
+        logger.error "Failed to sync #{unit.code} - No response from #{url}"
+        return
+      end
+
+      activityData = jsonData["activities"]
+
+      activityData.each do |activity|
+        # Make sure units match
+        subject_match = /.*?(?=_)/.match( activity["subject_code"] )
+        unit_code = subject_match.nil? ? nil : subject_match[0]
+        unless unit_code == unit.code
+          logger.error "Failed to sync #{unit.code} - response had unit code #{enrolmentData['unitCode']}"
+          return
+        end
+
+        # Skip classes
+        next if activity_type_for_group_code(activity['activity_group_code'], activity['description']).abbreviation == 'Cls'
+
+        stream = unit.tutorial_streams.where(abbreviation: activity['activity_group_code']).first
+        if stream.nil?
+          stream = unit.add_tutorial_stream activity['description'], activity['activity_group_code'], activity_type_for_group_code(activity['activity_group_code'], activity['description'])
+        end
+
+        campus = Campus.find_by(abbreviation: activity['campus'])
+
+        abbr = tutorial_abbr_for_star(activity)
+        tutorial = unit.tutorials.where(abbreviation: abbr, campus_id: campus.id).first
+        if tutorial.nil?
+          unit.add_tutorial(
+            activity['day_of_week'], #day
+            activity['start_time'], #time
+            activity['location'], #location
+            unit.main_convenor_user, #tutor
+            campus, #campus
+            -1, #capacity
+            abbr, #abbrev
+            stream #tutorial_stream=nil
+          )
+        end
+      end
+    end
+  end
+
   def fetch_star_row(row, unit)
     email_match = /(.*)(?=@)/.match( row["email_address"] )
     subject_match = /.*?(?=_)/.match( row["subject_code"] )
@@ -88,7 +162,7 @@ class DeakinInstitutionSettings
       nickname:       row["preferred_name"] == '-' ? nil : row["preferred_name"],
       email:          row["email_address"],
       enrolled:       true,
-      tutorial_code:  tutorial_code,
+      tutorials:      tutorial_code.present? ? [ tutorial_code ] : [],
       campus:         row["campus"]
     }
   end
@@ -98,19 +172,12 @@ class DeakinInstitutionSettings
     Campus.find_by(abbreviation: key)
   end
 
+  def cloud_campus
+    Campus.find_by(abbreviation: 'C')
+  end
+
   def fetch_callista_row(row, unit)
     campus = map_callista_to_campus(row)
-    if unit.tutorials.where(abbreviation: 'Cloud').count == 0
-      unit.add_tutorial(
-        'Asynchronous',
-        '9:00',
-        'Cloud',
-        unit.main_convenor_user,
-        campus,
-        -1,
-        'Cloud'
-      )
-    end
 
     result = {
       unit_code:      row["unit code"],
@@ -121,8 +188,8 @@ class DeakinInstitutionSettings
       nickname:       row["preferred given name"] == "-" ? nil : row["preferred given name"],
       email:          "#{row["email"]}@deakin.edu.au",
       enrolled:       row["student attempt status"] == 'ENROLLED',
-      campus:         campus.name
-      tutorial_code:  row["unit mode"] == 'OFF' ? "Cloud" : nil
+      campus:         campus.name,
+      tutorials:      []
     }
 
     sync_student_user_from_callista(result)
@@ -136,8 +203,8 @@ class DeakinInstitutionSettings
     username_user = User.find_by(username: row_data[:username])
     student_id_user = User.find_by(student_id: row_data[:student_id])
 
-    return if username_user.present? && student_id_user.present? && username_user.id == student_id_user.id
-    return if username_user.nil? && student_id_user.nil?
+    return username_user if username_user.present? && student_id_user.present? && username_user.id == student_id_user.id
+    return nil if username_user.nil? && student_id_user.nil?
 
     if username_user.nil? && student_id_user.present?
       student_id_user.email = row_data[:email]        # update to new emails and...
@@ -149,15 +216,40 @@ class DeakinInstitutionSettings
       else
         logger.error("Unable to fix user #{row_data} - record invalid!")
       end
+
+      student_id_user
     elsif username_user.present? && student_id_user.present?
       logger.error("Unable to fix user #{row_data} - both username and student id users present. Need manual fix.")
+      nil
     elsif username_user.present?
       logger.error("Unable to fix user #{row_data} - both username users present, but different student id. Need manual fix.")
+      nil
     else
       logger.error("Unable to fix user #{row_data} - Need manual fix.")
+      nil
     end
   end
 
+  def find_cloud_tutorial(unit, tutorial_stats)
+    if tutorial_stats.count == 1
+      # There is only one... so return it!
+      return tutorial_stats.first[:abbreviation]
+    end
+
+    # Sort the tutorials by fill %
+    # Get the first one
+    # Return its abbreviation
+    list = tutorial_stats.sort_by { |r| 
+      capacity = r[:capacity].present? ? r[:capacity] : 0
+      capacity = 10000 if capacity <= 0
+      (r[:enrolment_count] + r[:added]) / capacity
+      }
+    result = list.first
+    result[:added] += 1
+    result[:abbreviation]
+  end
+
+  # Doubtfire::Application.config.institution_settings.sync_enrolments(Unit.last)
   def sync_enrolments(unit)
     logger.info("Starting sync for #{unit.code}")
     result = {
@@ -182,20 +274,20 @@ class DeakinInstitutionSettings
       if response.code == 200
         jsonData = JSON.parse(response.body)
         if jsonData["unitEnrolments"].nil?
-          logger.error "Failed to sync #{unit.code} - No response from #{url}"  
+          logger.error "Failed to sync #{unit.code} - No response from #{url}"
           return
         end
 
         enrolmentData = jsonData["unitEnrolments"].first
         # Make sure units match
         unless enrolmentData['unitCode'] == unit.code
-          logger.error "Failed to sync #{unit.code} - response had unit code #{enrolmentData['unitCode']}"  
+          logger.error "Failed to sync #{unit.code} - response had unit code #{enrolmentData['unitCode']}"
           return
         end
 
         # Make sure correct trimester
         unless enrolmentData['teachingPeriod']['year'].to_i == tp.year && "#{enrolmentData['teachingPeriod']['type'][0].upcase}#{enrolmentData['teachingPeriod']['period']}" == tp.period
-          logger.error "Failed to sync #{unit.code} - response had trimester #{enrolmentData['teachingPeriod']}"  
+          logger.error "Failed to sync #{unit.code} - response had trimester #{enrolmentData['teachingPeriod']}"
           return
         end
 
@@ -209,6 +301,49 @@ class DeakinInstitutionSettings
         enrolmentData['locations'].each do |location|
           logger.info " - Syncing #{location['name']}"
 
+          campus_name = location['name']
+          campus = Campus.find_by(name: campus_name)
+
+          if campus.nil?
+            logger.error "Unable to find location #{location['name']}"
+            next
+          end
+
+          is_cloud = (campus == cloud_campus)
+
+          if is_cloud
+            if unit.tutorials.where(campus_id: campus.id).count == 0
+              unit.add_tutorial(
+                'Asyncronous', #day
+                '', #time
+                'Cloud', #location
+                unit.main_convenor_user, #tutor
+                cloud_campus, #campus
+                -1, #capacity
+                default_cloud_campus_abbr, #abbrev
+                nil #tutorial_stream=nil
+              )                        
+            end
+
+            tutorial_stats = unit.tutorials.
+              joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.tutorial_id = tutorials.id').
+              where(campus_id: campus.id).
+              select(
+                'tutorials.abbreviation AS abbreviation',
+                'capacity',
+                'COUNT(tutorial_enrolments.id) AS enrolment_count'
+                ).
+              group('tutorials.abbreviation', 'capacity').
+              map { |row|
+                {
+                  abbreviation: row.abbreviation,
+                  enrolment_count: row.enrolment_count,
+                  added: 0.0, # float to force float division in % full calc
+                  capacity: row.capacity
+                }
+              }
+          end
+
           location['enrolments'].each do |enrolment|
             if enrolment['email'].nil?
               # Only error if they were enrolled
@@ -220,9 +355,10 @@ class DeakinInstitutionSettings
 
               next
             end
-
-            campus_name = location['name']
-            campus = Campus.find_by(name: campus_name)
+            
+            # Make sure tutorials is not nil - use empty list
+            tutorials = timetable_data[enrolment['studentId']]
+            tutorials = [] if tutorials.nil?
 
             row_data = {
               unit_code:      enrolmentData['unitCode'],
@@ -233,24 +369,23 @@ class DeakinInstitutionSettings
               nickname:       enrolment['preferredName'],
               email:          enrolment['email'],
               enrolled:       ['ENROLLED', 'COMPLETED'].include?(enrolment['status'].upcase),
-              tutorial_code:  location['name'].upcase == 'CLOUD (ONLINE)' ? 'Cloud' : timetable_data[enrolment['studentId']],
-              campus:         campus_name
+              tutorials:      tutorials,
+              campus:         campus_name,
               row:            enrolment
             }
 
-            if row_data[:tutorial_code] == 'Cloud' && unit.week_number(Time.zone.now) < 4 && unit.tutorials.where(abbreviation: 'Cloud').count == 0
-              unit.add_tutorial(
-                'Asynchronous',
-                '9:00',
-                'Online',
-                unit.main_convenor_user,
-                campus
-                -1,
-                'Cloud'
-              )
-            end
+            user = sync_student_user_from_callista(row_data)
 
-            sync_student_user_from_callista(row_data)
+            # if they are enrolled, but not timetabled and cloud...
+            if row_data[:enrolled] && timetable_data[enrolment['studentId']].nil? && is_cloud # Is this a cloud user that we have the user data for?
+              # try to get their exising data
+              project = unit.projects.where(user_id: user.id).first unless user.nil?
+              unless project.present? && project.tutorial_enrolments.count > 0
+                # not present (so new), or has no enrolment...
+                tutorial = find_cloud_tutorial(unit, tutorial_stats)
+                row_data[:tutorials] = [ tutorial ] unless tutorial.nil?
+              end
+            end
 
             student_list << row_data
           end
@@ -272,24 +407,21 @@ class DeakinInstitutionSettings
     result
   end
 
+  # Doubtfire::Application.config.institution_settings.fetch_timetable_data(Unit.last)
   def fetch_timetable_data(unit)
     logger.info("Fetching STAR data for #{unit.code}")
+
+    sync_streams_from_star(unit)
 
     result = {}
 
     tp = unit.teaching_period
 
-    activity_types = [
-      'Wrk',
-      'Prc',
-      'Sem'
-    ]
-
     url = "#{@star_url}/star-#{tp.year}/rest/students/allocated"
 
-    activity_types.each do |activity_type|
-      logger.info("Fetching #{activity_type} from #{url}")
-      response = RestClient.post(url, {username: @star_user, password: @star_secret, where_clause:"subject_code LIKE '#{unit.code}%' AND activity_group_code LIKE '#{activity_type}01'"})
+    unit.tutorial_streams.each do |tutorial_stream|
+      logger.info("Fetching #{tutorial_stream} from #{url}")
+      response = RestClient.post(url, {username: @star_user, password: @star_secret, where_clause:"subject_code LIKE '#{unit.code}%' AND activity_group_code LIKE '#{tutorial_stream.abbreviation}'"})
 
       if response.code == 200
         jsonData = JSON.parse(response.body)
@@ -298,39 +430,29 @@ class DeakinInstitutionSettings
         next if jsonData['allocations'].count == 0
 
         jsonData['allocations'].each do |allocation|
-          result[allocation['student_code'].to_i] = fetch_tutorial(unit, allocation) unless allocation['student_code'].nil?
-        end
+          if result[allocation['student_code'].to_i].nil?
+            result[allocation['student_code'].to_i] = []
+          end
 
-        # Quit now... we have the matching activity
-        return result
+          tutorial = fetch_tutorial(unit, allocation) unless allocation['student_code'].nil?
+          result[allocation['student_code'].to_i] << tutorial unless tutorial.nil?
+        end
       end
     end
 
     result
   end
 
+  def tutorial_abbr_for_star(star_data)
+    "#{star_data['campus']}-#{star_data['activity_group_code']}-#{star_data['activity_code']}"
+  end
+
+  # Returns the tutorial abbr to enrol in for this activity (one in a stream)
   def fetch_tutorial(unit, star_data)
-    tutorial_code = star_data["campus"].strip() == "" ? nil : "#{star_data["campus"]}-#{star_data["activity_code"]}"
-    campus_name = star_data["campus"]
-    campus = Campus.find_by(name: campus_name)
+    tutorial_code = star_data["activity_group_code"].strip() == "" ? nil : tutorial_abbr_for_star(star_data)
 
     unless tutorial_code.nil?
-      if unit.tutorials.where(abbreviation: tutorial_code).count == 0 && star_data['subject_code'].starts_with?(unit.code)
-
-        if unit.week_number(Time.zone.now) < 4
-          unit.add_tutorial(
-            day_abbr_to_name(star_data["day_of_week"]),
-            star_data["start_time"],
-            star_data["location"],
-            unit.main_convenor_user,
-            campus,
-            -1,
-            tutorial_code
-          )
-        else
-          tutorial_code = nil
-        end
-      end
+      tutorial_code = nil if unit.tutorials.where(abbreviation: tutorial_code).count == 0
     end
 
     tutorial_code
