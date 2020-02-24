@@ -342,6 +342,8 @@ class DeakinInstitutionSettings
   def fetch_timetable_data(unit)
     logger.info("Fetching STAR data for #{unit.code}")
 
+    sync_streams_from_star(unit)
+
     result = {}
 
     tp = unit.teaching_period
