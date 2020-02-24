@@ -28,7 +28,8 @@ class Unit < ActiveRecord::Base
       :provide_feedback,
       :download_stats,
       :download_unit_csv,
-      :download_grades
+      :download_grades,
+      :exceed_capacity
     ]
 
     # What can convenors do with units?
@@ -46,7 +47,8 @@ class Unit < ActiveRecord::Base
       :change_project_enrolment,
       :download_stats,
       :download_grades,
-      :rollover_unit
+      :rollover_unit,
+      :exceed_capacity
     ]
 
     # What can admin do with units?
@@ -64,6 +66,7 @@ class Unit < ActiveRecord::Base
       :download_stats,
       :download_unit_csv,
       :download_grades,
+      :exceed_capacity
     ]
 
     # What can other users do with units?
