@@ -12,7 +12,7 @@ class InstitutionSettings
             first_name:     nil,
             last_name:      nil,
             email:          nil,
-            tutorial_code:  nil
+            tutorials:      nil
         }
     end
 
