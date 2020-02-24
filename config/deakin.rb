@@ -373,27 +373,10 @@ class DeakinInstitutionSettings
   end
 
   def fetch_tutorial(unit, star_data)
-    tutorial_code = star_data["campus"].strip() == "" ? nil : "#{star_data["campus"]}-#{star_data["activity_code"]}"
-    campus_name = star_data["campus"]
-    campus = Campus.find_by(name: campus_name)
+    tutorial_code = star_data["activity_group_code"].strip() == "" ? nil : "#{star_data["activity_group_code"]}-#{star_data["activity_code"]}"
 
     unless tutorial_code.nil?
-      if unit.tutorials.where(abbreviation: tutorial_code).count == 0 && star_data['subject_code'].starts_with?(unit.code)
-
-        if unit.week_number(Time.zone.now) < 4
-          unit.add_tutorial(
-            day_abbr_to_name(star_data["day_of_week"]),
-            star_data["start_time"],
-            star_data["location"],
-            unit.main_convenor_user,
-            campus,
-            -1,
-            tutorial_code
-          )
-        else
-          tutorial_code = nil
-        end
-      end
+      tutorial_code = nil if unit.tutorials.where(abbreviation: tutorial_code).count == 0
     end
 
     tutorial_code
