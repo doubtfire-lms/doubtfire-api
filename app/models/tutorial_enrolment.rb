@@ -35,7 +35,7 @@ class TutorialEnrolment < ActiveRecord::Base
   end
 
   def campus_must_be_same
-    if project.campus.present? and tutorial.campus.present? and not project.campus.eql? tutorial.campus
+    if project.campus.present? and tutorial.campus.present? and ! project.campus.eql? tutorial.campus
       errors.add(:project, 'and tutorial belong to different campus')
     end
   end

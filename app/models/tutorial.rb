@@ -21,7 +21,7 @@ class Tutorial < ActiveRecord::Base
   validate :unit_must_be_same
 
   def unit_must_be_same
-    if unit.present? and tutorial_stream.present? and not unit.eql? tutorial_stream.unit
+    if unit.present? and tutorial_stream.present? and ! unit.eql? tutorial_stream.unit
       errors.add(:unit, "should be same as the unit in the associated tutorial stream")
     end
   end
