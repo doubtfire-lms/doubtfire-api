@@ -352,7 +352,7 @@ class Unit < ActiveRecord::Base
           # Get tutorial for each stream in unit
           *tutorial_streams.map { |s| "MAX(CASE WHEN tutorials.tutorial_stream_id = #{s.id} OR tutorials.tutorial_stream_id IS NULL THEN tutorials.id ELSE NULL END) AS tutorial_#{s.id}" },
           # Get tutorial for case when no stream
-          "MAX(CASE WHEN tutorial_streams.id IS NULL THEN tutorials.abbreviation ELSE NULL END) AS tutorial"
+          "MAX(CASE WHEN tutorial_streams.id IS NULL THEN tutorials.id ELSE NULL END) AS tutorial"
         )
         .where(
           'projects.target_grade >= task_definitions.target_grade OR (task_definitions.target_grade IS NULL)'
@@ -387,7 +387,7 @@ class Unit < ActiveRecord::Base
       }
 
       if tutorial_streams.empty?
-        result[:tutorial_enrolments] = [{tutorial: t['tutorial']}]
+        result[:tutorial_enrolments] = [{tutorial_id: t['tutorial']}]
       end
       result
     end
