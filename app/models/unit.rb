@@ -740,10 +740,10 @@ class Unit < ActiveRecord::Base
 
           # Now find the project for the user
           user_project = projects.where(user_id: project_participant.id).first
+          campus = Campus.find_by_abbr_or_name(campus_data)
 
           # Add the user to the project (if not already in there)
           if user_project.nil?
-            campus = Campus.find_by_abbr_or_name(campus_data)
             # Enrol user...
             user_project = enrol_student(project_participant, campus)
             success_message = 'Enrolled student'
@@ -756,7 +756,12 @@ class Unit < ActiveRecord::Base
               user_project.save
               success_message << 'Changed enrolment.'
             end
-          end
+            # update campus if not provided and available
+            if user_project.campus_id.nil? && campus.present?
+              user_project.campus_id = campus.id
+              user_project.save
+              success_message << 'Campus updated.'
+            end
 
           # Now loop through the tutorials and enrol the student...
           tutorials.each do |tutorial_code|
