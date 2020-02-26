@@ -387,7 +387,7 @@ class Unit < ActiveRecord::Base
       }
 
       if tutorial_streams.empty?
-        result[:tutorial_streams] = [{tutorial: t['tutorial']}]
+        result[:tutorial_enrolments] = [{tutorial: t['tutorial']}]
       end
       result
     end
