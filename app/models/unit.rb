@@ -762,6 +762,7 @@ class Unit < ActiveRecord::Base
               user_project.save
               success_message << 'Campus updated.'
             end
+          end
 
           # Now loop through the tutorials and enrol the student...
           tutorials.each do |tutorial_code|
