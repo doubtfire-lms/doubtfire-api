@@ -341,7 +341,7 @@ module Api
         error!({ error: 'Not authorised to manage this student' }, 403)
       end
 
-      if gs.keep_groups_in_same_class && prj.tutorial != grp.tutorial
+      if gs.keep_groups_in_same_class && prj.tutorial_enrolments.where(tutorial_id: grp.tutorial) != 1
         error!({ error: "Students from the tutorial '#{grp.tutorial.abbreviation}' can only be added to this group." }, 403)
       end
 
