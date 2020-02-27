@@ -117,6 +117,10 @@ class Project < ActiveRecord::Base
     tutorial_enrolment
   end
 
+  def enrolled_in?(tutorial)
+    tutorial_enrolments.where(tutorial_id: tutorial.id).count > 0
+  end
+
   # Find enrolment in same tutorial stream
   def matching_enrolment(tutorial)
     tutorial_enrolments.
