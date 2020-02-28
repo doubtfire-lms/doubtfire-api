@@ -20,7 +20,6 @@ module Api
         optional :campus_id, type: Integer, desc: 'Id of the campus'
         optional :capacity, type: Integer, desc: 'Capacity of the tutorial'
         optional :meeting_time, type: String, desc: 'Time of the tutorial'
-        optional :tutorial_stream_abbr, type: String, desc: 'Abbreviation of the tutorial stream'
       end
     end
     put '/tutorials/:id' do
@@ -31,12 +30,6 @@ module Api
       unless authorise? current_user, tutorial.unit, :add_tutorial
         error!({ error: "Cannot update tutorial with id=#{params[:id]} - not authorised" }, 403)
       end
-
-      # Update Tutorial Stream
-      tutorial_stream_abbr = tut_params[:tutorial_stream_abbr]
-      tutorial_stream = tutorial.unit.tutorial_streams.find_by!(abbreviation: tutorial_stream_abbr) unless tutorial_stream_abbr.nil?
-      tutorial.tutorial_stream = tutorial_stream
-      tutorial.save!
 
       tutorial_parameters = ActionController::Parameters.new(params)
                                                         .require(:tutorial)
