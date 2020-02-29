@@ -1,6 +1,6 @@
 {
   "configVersion": 1,
-  "timestamp": 1582974100385,
+  "timestamp": 1582974795041,
   "index": "/index.html",
   "assetGroups": [
     {
@@ -9,7 +9,7 @@
       "updateMode": "prefetch",
       "urls": [
         "/index.html",
-        "/main.03ac711db3c5aebf247b.js",
+        "/main.0899b465ec322ca965c8.js",
         "/manifest.webmanifest",
         "/ngsw-worker.js",
         "/polyfills-es5.8b500cc25eeafb461711.js",
@@ -206,13 +206,9 @@
     "/glyphicons-halflings-regular.ttf": "44bc1850f570972267b169ae18f1cb06b611ffa2",
     "/glyphicons-halflings-regular.woff": "278e49a86e634da6f2a02f3b47dd9d2a8f26210f",
     "/glyphicons-halflings-regular.woff2": "ca35b697d99cae4d1b60f2d60fcd37771987eb07",
-    "/index.html": "39ba922e735020eaa9d1c14c8bd1a0c8a5c7f3ce",
-    "/main.03ac711db3c5aebf247b.js": "7504a003b212fb7f29a9ef0f8f38924787696dcb",
-<<<<<<< HEAD
+    "/index.html": "3068e4632737ce4dea57478a720e7728796be59e",
+    "/main.0899b465ec322ca965c8.js": "7504a003b212fb7f29a9ef0f8f38924787696dcb",
     "/manifest.webmanifest": "426b0a654168b3b27cb071744d32515edd35e6b0",
-=======
-    "/manifest.webmanifest": "8b02595ac9191d7417e2159cc01f2ee38dc7548c",
->>>>>>> ba3c39b5f1d2c96d604c70a6e4cbc943c14135f5
     "/ngsw-worker.js": "3798e7f10ebdd6f55cacf4010af1fe5085cf6c16",
     "/polyfills-es5.8b500cc25eeafb461711.js": "049fa392495eed500d959dbf84d34ebcf409d444",
     "/polyfills.658169e597e002d65141.js": "753bb81c574d9dbc62fd5c4c135830394d988370",
