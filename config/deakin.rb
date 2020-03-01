@@ -117,10 +117,11 @@ class DeakinInstitutionSettings
           return
         end
 
-        # Skip classes
-        next if activity_type_for_group_code(activity['activity_group_code'], activity['description']).abbreviation == 'Cls'
-
         stream = unit.tutorial_streams.where(abbreviation: activity['activity_group_code']).first
+
+        # Skip classes - unless it is in the unit's current streams
+        next if stream.nil? && activity_type_for_group_code(activity['activity_group_code'], activity['description']).abbreviation == 'Cls'
+
         if stream.nil?
           stream = unit.add_tutorial_stream activity['description'], activity['activity_group_code'], activity_type_for_group_code(activity['activity_group_code'], activity['description'])
         end
