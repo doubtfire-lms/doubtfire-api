@@ -939,7 +939,7 @@ class Task < ActiveRecord::Base
     elsif ['cpp', 'hpp', 'c++', 'h++', 'cc', 'cxx', 'cp'].include?(extn) then 'cpp'
     elsif ['java'].include?(extn) then 'java'
     elsif %w(js json ts).include?(extn) then 'js'
-    elsif ['html'].include?(extn) then 'html'
+    elsif ['html', 'rhtml'].include?(extn) then 'html'
     elsif %w(css scss).include?(extn) then 'css'
     elsif ['rb'].include?(extn) then 'ruby'
     elsif ['coffee'].include?(extn) then 'coffeescript'
@@ -947,8 +947,10 @@ class Task < ActiveRecord::Base
     elsif ['xml'].include?(extn) then 'xml'
     elsif ['sql'].include?(extn) then 'sql'
     elsif ['vb'].include?(extn) then 'vbnet'
-    elsif ['txt'].include?(extn) then 'text'
+    elsif ['txt', 'md', 'rmd', 'rpres'].include?(extn) then 'text'
+    elsif ['tex'].include?(extn) then 'tex'
     elsif ['py'].include?(extn) then 'python'
+    elsif ['r'].include?(extn) then 'r'
     else extn
     end
   end
