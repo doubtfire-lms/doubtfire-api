@@ -315,7 +315,7 @@ class DeakinInstitutionSettings
           if is_cloud
             if unit.tutorials.where(campus_id: campus.id).count == 0
               unit.add_tutorial(
-                'Asyncronous', #day
+                'Asynchronous', #day
                 '', #time
                 'Cloud', #location
                 unit.main_convenor_user, #tutor
