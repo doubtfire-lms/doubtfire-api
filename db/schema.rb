@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20200220100901) do
+ActiveRecord::Schema.define(version: 20200226194206) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -332,12 +332,12 @@ ActiveRecord::Schema.define(version: 20200220100901) do
     t.string   "meeting_day",        limit: 255
     t.string   "meeting_time",       limit: 255
     t.string   "meeting_location",   limit: 255
-    t.datetime "created_at",                     null: false
-    t.datetime "updated_at",                     null: false
+    t.datetime "created_at",                                  null: false
+    t.datetime "updated_at",                                  null: false
     t.string   "code",               limit: 255
     t.integer  "unit_role_id"
     t.string   "abbreviation",       limit: 255
-    t.integer  "capacity"
+    t.integer  "capacity",                       default: -1
     t.integer  "campus_id"
     t.integer  "tutorial_stream_id"
   end
