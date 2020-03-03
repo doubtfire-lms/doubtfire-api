@@ -948,7 +948,7 @@ class Task < ActiveRecord::Base
     elsif ['sql'].include?(extn) then 'sql'
     elsif ['vb'].include?(extn) then 'vbnet'
     elsif ['txt', 'md', 'rmd', 'rpres'].include?(extn) then 'text'
-    elsif ['tex'].include?(extn) then 'tex'
+    elsif ['tex', 'rnw'].include?(extn) then 'tex'
     elsif ['py'].include?(extn) then 'python'
     elsif ['r'].include?(extn) then 'r'
     else extn
