@@ -21,7 +21,7 @@ module MimeCheckHelpers
     type = mime_type(file_path)
 
     # check mime is correct before uploading
-    accept = ['text/', 'text/plain', 'text/csv', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']
+    accept = ['text/', 'text/plain', 'text/csv',  'application/csv', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']
     unless type.start_with?(*accept)
       error!({ error: "File given is not a csv file - detected #{type}" }, 403)
     end
