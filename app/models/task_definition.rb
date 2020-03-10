@@ -36,6 +36,8 @@ class TaskDefinition < ActiveRecord::Base
   validate :unit_must_be_same
   validate :tutorial_stream_present?
 
+  validates :weighting, presence: true
+
   def unit_must_be_same
     if unit.present? and tutorial_stream.present? and not unit.eql? tutorial_stream.unit
       errors.add(:unit, "should be same as the unit in the associated tutorial stream")
