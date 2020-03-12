@@ -3,6 +3,7 @@ require 'grade_helper'
 
 class UnitModelTest < ActiveSupport::TestCase
   include TestHelpers::JsonHelper
+  include TestHelpers::TestFileHelper
 
   setup do
     @unit = FactoryBot.create :unit, code: 'COS10001', with_students: false, task_count: 0, tutorials: 0, outcome_count: 0, staff_count: 0, campus_count: 0, teaching_period: TeachingPeriod.find(3)
@@ -372,6 +373,91 @@ class UnitModelTest < ActiveSupport::TestCase
     end
 
     assert_equal unit.active_projects.count, rows, "Expected number or rows in csv - #{csv_str}"
+  end
+
+  def test_import_users
+    unit = FactoryBot.create(:unit, code: 'SIT101', stream_count: 0, with_students: false)
+    t1 = unit.add_tutorial(
+      'Monday',
+      '8:00am',
+      'TBA',
+      unit.main_convenor_user,
+      Campus.find_by(abbreviation: 'B'),
+      10,
+      'LA1-01'
+    )
+    t2 = unit.add_tutorial(
+      'Monday',
+      '8:00am',
+      'TBA',
+      unit.main_convenor_user,
+      Campus.find_by(abbreviation: 'C'),
+      10,
+      'LA1-03'
+    )
+    assert_equal 0, unit.projects.count
+
+    result = unit.import_users_from_csv test_file_path('SIT101-Enrol-Students.csv')
+    unit.reload
+    assert_equal 3, result[:errors].count, result.inspect
+    assert_equal 1, result[:ignored].count, result.inspect
+    assert_equal 10, unit.projects.count, result.inspect
+
+    assert_equal 3, t1.projects.count
+    assert_equal 3, t2.projects.count
+    
+    unit.destroy!
+  end
+
+  def test_import_users_streamed
+    unit = FactoryBot.create(:unit, code: 'SIT101', stream_count: 0, with_students: false)
+    s1 = unit.add_tutorial_stream('Stream 1', 'Prc01', ActivityType.first)
+    s2 = unit.add_tutorial_stream('Stream 2', 'Stu01', ActivityType.first)
+
+    t1 = unit.add_tutorial(
+      'Monday',
+      '8:00am',
+      'TBA',
+      unit.main_convenor_user,
+      Campus.find_by(abbreviation: 'B'),
+      10,
+      'LA1-01',
+      s1
+    )
+    t2 = unit.add_tutorial(
+      'Monday',
+      '8:00am',
+      'TBA',
+      unit.main_convenor_user,
+      Campus.find_by(abbreviation: 'C'),
+      10,
+      'LA1-03',
+      s1
+    )
+    t3 = unit.add_tutorial(
+      'Monday',
+      '8:00am',
+      'TBA',
+      unit.main_convenor_user,
+      nil,
+      10,
+      'LA1-02',
+      s2
+    )
+
+    assert_equal 0, unit.projects.count
+
+    result = unit.import_users_from_csv test_file_path('SIT101-Enrol-Students-Stream.csv')
+    unit.reload
+    assert_equal 0, result[:errors].count, result.inspect
+    assert_equal 0, result[:ignored].count, result.inspect
+    assert_equal 8, unit.projects.count, result.inspect
+
+    assert_equal 4, t1.projects.count
+    assert_equal 4, t2.projects.count
+    assert_equal 8, t3.projects.count
+    
+    unit.destroy!
   end
 
   def test_change_main_convenor_success
