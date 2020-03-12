@@ -341,36 +341,37 @@ class CsvTest < ActiveSupport::TestCase
   #22: Testing for CSV upload of all the students in a unit
   #POST /api/csv/units/{id}
   def test_csv_upload_all_students_in_unit
+    unit = FactoryBot.create(:unit, code: 'COS10001', with_students: false, stream_count: 0)
 
-    unit_id_to_test = '1'
     data_to_post = {
       file: upload_file_csv('test_files/csv_test_files/COS10001-Students.csv'),
-      auth_token: auth_token
+      auth_token: auth_token(unit.main_convenor_user)
     }
 
     # perform the POST
-    post "/api/csv/units/#{unit_id_to_test}", data_to_post
+    post "/api/csv/units/#{unit.id}", data_to_post
 
-    user_id_check = Project.where(unit_id:1).last.user_id
+    user_id_check = unit.projects.last.user_id
 
     # Check for response
     assert_equal 201, last_response.status
-    assert_equal 'test_csv_student', User.where(id: user_id_check).last.username
+    assert_equal 'test_csv_student', User.where(id: user_id_check).last.username, last_response_body
+    
+    unit.destroy
   end
 
   #23: Testing for CSV upload failure due to incorrect auth token
   #POST /api/csv/units/{id}
   def test_csv_upload_all_students_in_unit_incorrect_auth_token
+    unit = FactoryBot.create(:unit, code: 'COS10001', with_students: false, stream_count: 0)
 
-    unit_id_to_test = '1'
     data_to_post = {
       file: upload_file_csv('test_files/csv_test_files/COS10001-Students.csv'),
       auth_token: "incorrect_auth_code"
     }
 
     # perform the POST
-    post "/api/csv/units/#{unit_id_to_test}", data_to_post
-
+    post "/api/csv/units/#{unit.id}", data_to_post
 
     assert_equal 419, last_response.status
   end
@@ -378,16 +379,14 @@ class CsvTest < ActiveSupport::TestCase
   #24: Testing for CSV upload failure due to empty auth token
   #POST /api/csv/units/{id}
   def test_csv_upload_all_students_in_unit_empty_auth_token
-
-    unit_id_to_test = '1'
+    unit = FactoryBot.create(:unit, code: 'COS10001', with_students: false, stream_count: 0)
     data_to_post = {
       file: upload_file_csv('test_files/csv_test_files/COS10001-Students.csv'),
       auth_token: ''
     }
 
     # perform the POST
-    post "/api/csv/units/#{unit_id_to_test}", data_to_post
-
+    post "/api/csv/units/#{unit.id}", data_to_post
 
     assert_equal 419, last_response.status
   end
@@ -395,16 +394,13 @@ class CsvTest < ActiveSupport::TestCase
   #25: Testing for CSV upload failure due to string unit ID
   #POST /api/csv/units/{id}
   def test_csv_upload_all_students_in_unit_string_unit_id
-
-    unit_id_to_test = 'string'
     data_to_post = {
       file: upload_file_csv('test_files/csv_test_files/COS10001-Students.csv'),
       auth_token: auth_token
     }
 
     # perform the POST
-    post "/api/csv/units/#{unit_id_to_test}", data_to_post
-
+    post "/api/csv/units/test", data_to_post
 
     assert_equal 404, last_response.status
   end
@@ -412,16 +408,15 @@ class CsvTest < ActiveSupport::TestCase
   #28: Testing for CSV upload failure due to incorrect file type (PDF)
   #POST /api/csv/units/{id}
   def test_csv_upload_all_students_in_unit_incorrect_file_pdf
+    unit = FactoryBot.create(:unit, code: 'COS10001', with_students: false, stream_count: 0)
 
-    unit_id_to_test = '1'
     data_to_post = {
       file: upload_file_csv('test_files/csv_test_files/COS10001-Students.pdf'),
-      auth_token: auth_token
+      auth_token: auth_token(unit.main_convenor_user)
     }
 
     # perform the POST
-    post "/api/csv/units/#{unit_id_to_test}", data_to_post
-
+    post "/api/csv/units/#{unit.id}", data_to_post
 
     assert_equal 403, last_response.status
   end
@@ -429,15 +424,15 @@ class CsvTest < ActiveSupport::TestCase
   #29: Testing for CSV upload failure due to no file
   #POST /api/csv/units/{id}
   def test_csv_upload_all_students_in_unit_no_file
-
-    unit_id_to_test = '1'
+    unit = FactoryBot.create(:unit, code: 'COS10001', with_students: false, stream_count: 0)
+    
     data_to_post = {
       file: '',
-      auth_token: auth_token
+      auth_token: auth_token(unit.main_convenor_user)
     }
 
     # perform the POST
-    post "/api/csv/units/#{unit_id_to_test}", data_to_post
+    post "/api/csv/units/#{unit.id}", data_to_post
 
 
     assert_equal 403, last_response.status
@@ -456,7 +451,6 @@ class CsvTest < ActiveSupport::TestCase
     # perform the POST
     post "/api/csv/units/#{unit_id_to_test}", data_to_post
 
-
     assert_equal 404, last_response.status
   end
 
@@ -465,20 +459,20 @@ class CsvTest < ActiveSupport::TestCase
   #31: Testing for CSV upload of all the students in a unit
   #POST /api/csv/units/{id}/withdraw
   def test_csv_upload_students_un_enroll_in_unit
+    unit = FactoryBot.create(:unit, code: 'COS10001', with_students: false, stream_count: 0)
 
     # Adding user to withdraw from unit
-    test_csv_upload_all_students_in_unit
+    unit.import_users_from_csv test_file_path 'csv_test_files/COS10001-Students.csv'
 
-    unit_id_to_test = '1'
     data_to_post = {
       file: upload_file_csv('test_files/csv_test_files/COS10001-Students.csv'),
-      auth_token: auth_token
+      auth_token: auth_token(unit.main_convenor_user)
     }
 
-    user_id_check = Project.where(unit_id:1).last.user_id
+    user_id_check = unit.projects.last.user_id
 
     # perform the POST to withdraw user from the unit
-    post "/api/csv/units/#{unit_id_to_test}/withdraw", data_to_post
+    post "/api/csv/units/#{unit.id}/withdraw", data_to_post
 
     # Check for response
     assert_equal 201, last_response.status
@@ -489,34 +483,35 @@ class CsvTest < ActiveSupport::TestCase
   #32: Testing for CSV upload failure due to incorrect auth token
   #POST /api/csv/units/{id}/withdraw
   def test_csv_upload_students_un_enroll_in_unit_incorrect_auth_token
+    unit = FactoryBot.create(:unit, code: 'COS10001', with_students: false, stream_count: 0)
 
     # Adding user to withdraw from unit
-    test_csv_upload_all_students_in_unit
+    unit.import_users_from_csv test_file_path 'csv_test_files/COS10001-Students.csv'
 
-    unit_id_to_test = '1'
     data_to_post = {
       file: upload_file_csv('test_files/csv_test_files/COS10001-Students.csv'),
       auth_token: 'incorrect_auth_token'
     }
 
-    user_id_check = Project.where(unit_id:1).last.user_id
-
     # perform the POST to withdraw user from the unit
-    post "/api/csv/units/#{unit_id_to_test}/withdraw", data_to_post
+    post "/api/csv/units/#{unit.id}/withdraw", data_to_post
+
+    user_id_check = unit.projects.last.user_id
 
     # Check for response
     assert_equal 419, last_response.status
     # Check student was not withdrawn
     assert_equal 'test_csv_student', User.where(id: user_id_check).last.username
-    assert_equal true, Project.where(user_id: user_id_check).last.enrolled
+    assert_equal true, unit.projects.last.enrolled
   end
 
   #33: Testing for CSV upload failure due to empty auth token
   #POST /api/csv/units/{id}/withdraw
   def test_csv_upload_students_un_enroll_in_unit_empty_auth_token
 
-    # Adding user to withdraw from unit
-    test_csv_upload_all_students_in_unit
+        unit = FactoryBot.create(:unit, code: 'COS10001', with_students: false, stream_count: 0)
+    unit.import_users_from_csv test_file_path 'csv_test_files/COS10001-Students.csv'
+
 
     unit_id_to_test = '1'
     data_to_post = {
@@ -524,7 +519,7 @@ class CsvTest < ActiveSupport::TestCase
       auth_token: ''
     }
 
-    user_id_check = Project.where(unit_id:1).last.user_id
+    user_id_check = unit.projects.last.user_id
 
     # perform the POST to withdraw user from the unit
     post "/api/csv/units/#{unit_id_to_test}/withdraw", data_to_post
@@ -533,7 +528,7 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 419, last_response.status
     # Check student was not withdrawn
     assert_equal 'test_csv_student', User.where(id: user_id_check).last.username
-    assert_equal true, Project.where(user_id: user_id_check).last.enrolled
+    assert_equal true, unit.projects.last.enrolled
   end
 
   #34: Testing for CSV upload failure due to string unit ID
@@ -541,32 +536,34 @@ class CsvTest < ActiveSupport::TestCase
   def test_csv_upload_students_un_enroll_in_unit_string_unit_id
 
     # Adding user to withdraw from unit
-    test_csv_upload_all_students_in_unit
+    unit = FactoryBot.create(:unit, code: 'COS10001', with_students: false, stream_count: 0)
+    unit.import_users_from_csv test_file_path 'csv_test_files/COS10001-Students.csv'
 
-    unit_id_to_test = 'string'
+    user_id_check = unit.projects.last.user_id
+
     data_to_post = {
       file: upload_file_csv('test_files/csv_test_files/COS10001-Students.csv'),
       auth_token: auth_token
     }
 
-    user_id_check = Project.where(unit_id:1).last.user_id
-
     # perform the POST to withdraw user from the unit
-    post "/api/csv/units/#{unit_id_to_test}/withdraw", data_to_post
+    post "/api/csv/units/test/withdraw", data_to_post
 
     # Check for response
     assert_equal 404, last_response.status
     # Check student was not withdrawn
     assert_equal 'test_csv_student', User.where(id: user_id_check).last.username
     assert_equal true, Project.where(user_id: user_id_check).last.enrolled
+
+    unit.destroy
   end
 
   #35: Testing for CSV upload failure due to empty unit ID
   #POST /api/csv/units/{id}/withdraw
   def test_csv_upload_students_un_enroll_in_unit_empty_unit_id
 
-    # Adding user to withdraw from unit
-    test_csv_upload_all_students_in_unit
+    unit = FactoryBot.create(:unit, code: 'COS10001', with_students: false, stream_count: 0)
+    unit.import_users_from_csv test_file_path 'csv_test_files/COS10001-Students.csv'
 
     unit_id_to_test = ''
     data_to_post = {
@@ -574,7 +571,7 @@ class CsvTest < ActiveSupport::TestCase
       auth_token: auth_token
     }
 
-    user_id_check = Project.where(unit_id:1).last.user_id
+    user_id_check = unit.projects.last.user_id
 
     # perform the POST to withdraw user from the unit
     post "/api/csv/units/#{unit_id_to_test}/withdraw", data_to_post
@@ -590,16 +587,16 @@ class CsvTest < ActiveSupport::TestCase
   #POST /api/csv/units/{id}/withdraw
   def test_csv_upload_students_un_enroll_in_unit_xlsx
 
-    # Adding user to withdraw from unit
-    test_csv_upload_all_students_in_unit
+    unit = FactoryBot.create(:unit, code: 'COS10001', with_students: false, stream_count: 0)
+    unit.import_users_from_csv test_file_path 'csv_test_files/COS10001-Students.csv'
 
-    unit_id_to_test = '1'
+    unit_id_to_test = unit.id
     data_to_post = {
       file: upload_file_csv('test_files/csv_test_files/COS10001-Students.xlsx'),
       auth_token: auth_token
     }
 
-    user_id_check = Project.where(unit_id:1).last.user_id
+    user_id_check = unit.projects.last.user_id
 
     # perform the POST to withdraw user from the unit
     post "/api/csv/units/#{unit_id_to_test}/withdraw", data_to_post
@@ -607,23 +604,24 @@ class CsvTest < ActiveSupport::TestCase
     # Check for response
     assert_equal 201, last_response.status
     # Check success
-    assert_equal 1, last_response_body['success'].count
+    assert_equal 1, last_response_body['success'].count, last_response_body
   end
 
   #37: Testing for CSV upload failure due to incorrect file type (PDF)
   #POST /api/csv/units/{id}/withdraw
   def test_csv_upload_students_un_enroll_in_unit_incorrect_file_pdf
 
-    # Adding user to withdraw from unit
-    test_csv_upload_all_students_in_unit
+    unit = FactoryBot.create(:unit, code: 'COS10001', with_students: false, stream_count: 0)
+    unit.import_users_from_csv test_file_path 'csv_test_files/COS10001-Students.csv'
 
-    unit_id_to_test = '1'
+
+    unit_id_to_test = unit.id
     data_to_post = {
       file: upload_file_csv('test_files/csv_test_files/COS10001-Students.pdf'),
       auth_token: auth_token
     }
 
-    user_id_check = Project.where(unit_id:1).last.user_id
+    user_id_check = unit.projects.last.user_id
 
     # perform the POST to withdraw user from the unit
     post "/api/csv/units/#{unit_id_to_test}/withdraw", data_to_post
@@ -639,8 +637,9 @@ class CsvTest < ActiveSupport::TestCase
   #POST /api/csv/units/{id}/withdraw
   def test_csv_upload_students_un_enroll_in_unit_no_file
 
-    # Adding user to withdraw from unit
-    test_csv_upload_all_students_in_unit
+    unit = FactoryBot.create(:unit, code: 'COS10001', with_students: false, stream_count: 0)
+    unit.import_users_from_csv test_file_path 'csv_test_files/COS10001-Students.csv'
+
 
     unit_id_to_test = '1'
     data_to_post = {
@@ -648,7 +647,7 @@ class CsvTest < ActiveSupport::TestCase
       auth_token: auth_token
     }
 
-    user_id_check = Project.where(unit_id:1).last.user_id
+    user_id_check = unit.projects.last.user_id
 
     # perform the POST to withdraw user from the unit
     post "/api/csv/units/#{unit_id_to_test}/withdraw", data_to_post
@@ -664,8 +663,9 @@ class CsvTest < ActiveSupport::TestCase
   #POST /api/csv/units/{id}/withdraw
   def test_csv_upload_students_un_enroll_in_unit_incorrect_unit_id
 
-    # Adding user to withdraw from unit
-    test_csv_upload_all_students_in_unit
+    unit = FactoryBot.create(:unit, code: 'COS10001', with_students: false, stream_count: 0)
+    unit.import_users_from_csv test_file_path 'csv_test_files/COS10001-Students.csv'
+
 
     unit_id_to_test = '999'
     data_to_post = {
@@ -673,7 +673,7 @@ class CsvTest < ActiveSupport::TestCase
       auth_token: auth_token
     }
 
-    user_id_check = Project.where(unit_id:1).last.user_id
+    user_id_check = unit.projects.last.user_id
 
     # perform the POST to withdraw user from the unit
     post "/api/csv/units/#{unit_id_to_test}/withdraw", data_to_post
