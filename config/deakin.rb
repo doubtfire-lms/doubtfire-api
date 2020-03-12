@@ -208,6 +208,7 @@ class DeakinInstitutionSettings
     return nil if username_user.nil? && student_id_user.nil?
 
     if username_user.nil? && student_id_user.present?
+      # Have with stidemt_id but not username
       student_id_user.email = row_data[:email]        # update to new emails and...
       student_id_user.username = row_data[:username]  # switch username - its the same person as the id is the same
       student_id_user.login_id = row_data[:username]  # reset to make sure not caching old data
@@ -219,11 +220,21 @@ class DeakinInstitutionSettings
       end
 
       student_id_user
+    elsif username_user.present? && student_id_user.nil?
+      # Have with username but not student id
+      username_user.student_id = row_data[:student_id] # should just need the student id
+
+      if username_user.valid?
+        username_user.save
+      else
+        logger.error("Unable to fix user #{row_data} - record invalid!")
+      end
+
+      username_user
     elsif username_user.present? && student_id_user.present?
+      # Both present, but different
+      
       logger.error("Unable to fix user #{row_data} - both username and student id users present. Need manual fix.")
-      nil
-    elsif username_user.present?
-      logger.error("Unable to fix user #{row_data} - both username users present, but different student id. Need manual fix.")
       nil
     else
       logger.error("Unable to fix user #{row_data} - Need manual fix.")
