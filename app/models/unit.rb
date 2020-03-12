@@ -517,15 +517,28 @@ class Unit < ActiveRecord::Base
     if Doubtfire::Application.config.institution_settings.are_headers_institution_users? csv.headers
       import_settings = Doubtfire::Application.config.institution_settings.user_import_settings_for(csv.headers)
     else
+      if tutorial_streams.count > 0
+        stream_names = tutorial_stream_abbr.map{|abbr| abbr.downcase }
+      else
+        stream_names = ['tutorial']
+      end
+
       # Settings include:
       #   missing_headers_lambda - lambda to check if row is missing key data
       #   fetch_row_data_lambda - lambda to convert row from csv to required import data
       #   replace_existing_tutorial - boolean to indicate if tutorials in csv override ones in doubtfire
       import_settings = {
         missing_headers_lambda: ->(row) {
-          missing_headers(row, %w(unit_code username student_id first_name last_name email tutorial))
+          missing_headers(row, %w(unit_code username student_id first_name last_name email campus))
+          missing_headers(row, stream_names)
         },
         fetch_row_data_lambda: ->(row, unit) {
+          tutorials = []
+
+          stream_names.each do |stream|
+            tutorials << row[stream] if row[stream].present?
+          end
+
           {
               unit_code:      row['unit_code'],
               username:       row['username'],
@@ -535,7 +548,7 @@ class Unit < ActiveRecord::Base
               last_name:      row['last_name'],
               email:          row['email'],
               enrolled:       true,
-              tutorials:      row['tutorial'],
+              tutorials:      tutorials,
               campus_data:    row['campus']
           }
         },
@@ -616,11 +629,11 @@ class Unit < ActiveRecord::Base
         if changes.key? username
           if row_data[:enrolled] # they should be enrolled - record that... overriding anything else
             # record previous row as ignored
-            ignored << { row: changes[username][:row], message: "Skipping withdraw as also includes enrol" }
+            ignored << { row: changes[username][:row], message: "Skipping duplicate role - ensuring enrolled" }
             changes[username] = row_data
           else
             # record this row as skipped
-            ignored << { row: row_data[:row], message: "Skipping withdraw as also includes enrol" }
+            ignored << { row: row_data[:row], message: "Skipping duplicate role" }
           end
         else #dont have the user so record them - will add to result when processed
           changes[username] = row_data
@@ -670,7 +683,7 @@ class Unit < ActiveRecord::Base
         nickname = row_data[:nickname].nil? ? nil : row_data[:nickname].titleize
         email = row_data[:email]
         tutorials = row_data[:tutorials]
-        campus_data = row_data[:campus]
+        campus_data = row_data[:campus_data]
 
         # If either first or last name is nil... copy over the other component
         first_name = first_name || last_name
