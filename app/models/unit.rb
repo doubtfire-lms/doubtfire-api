@@ -787,8 +787,12 @@ class Unit < ActiveRecord::Base
             if import_settings[:replace_existing_tutorial] || new_project || user_project.tutorial_for_stream(tutorial.tutorial_stream).nil?
               if tutorial.present?
                   # Use tutorial as we have it :)
-                  user_project.enrol_in tutorial
-                  success_message << ' Enrolled in ' << tutorial.abbreviation
+                  begin
+                    user_project.enrol_in tutorial
+                    success_message << ' Enrolled in ' << tutorial.abbreviation
+                  rescue Exception => e
+                    success_message << " UNABLE TO enroll in #{tutorial.abbreviation} #{e.message}"
+                  end
               end
             end
           end
