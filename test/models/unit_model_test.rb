@@ -399,7 +399,7 @@ class UnitModelTest < ActiveSupport::TestCase
 
     result = unit.import_users_from_csv test_file_path('SIT101-Enrol-Students.csv')
     unit.reload
-    assert_equal 3, result[:errors].count, result.inspect
+    assert_equal 1, result[:errors].count, result.inspect
     assert_equal 1, result[:ignored].count, result.inspect
     assert_equal 10, unit.projects.count, result.inspect
 
