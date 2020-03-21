@@ -106,21 +106,21 @@ class Unit < ActiveRecord::Base
 
   # Model associations.
   # When a Unit is destroyed, any TaskDefinitions, Tutorials, and ProjectConvenor instances will also be destroyed.
-  has_many :tutorials, dependent: :destroy
-  has_many :tutorial_enrolments, through: :tutorials
-  has_many :tutorial_streams, dependent: :destroy
+  has_many :projects, dependent: :destroy # projects first to remove tasks
+  has_many :group_sets, dependent: :destroy # group sets next to remove groups
   has_many :task_definitions, -> { order 'start_date ASC, abbreviation ASC' }, dependent: :destroy
-  has_many :projects, dependent: :destroy
+  has_many :tutorials, dependent: :destroy # tutorials need groups and tasks deleted before it...
+  has_many :tutorial_streams, dependent: :destroy
   has_many :unit_roles, dependent: :destroy
-  has_many :teaching_staff, through: :unit_roles, class_name: 'User', source: 'user'
   has_many :learning_outcomes, dependent: :destroy
-  has_many :tasks, through: :projects
-  has_many :group_sets, dependent: :destroy
-  has_many :task_engagements, through: :projects
   has_many :comments, through: :projects
-  has_many :groups, through: :group_sets
 
+  has_many :tasks, through: :projects
+  has_many :groups, through: :group_sets
+  has_many :tutorial_enrolments, through: :tutorials
+  has_many :teaching_staff, through: :unit_roles, class_name: 'User', source: 'user'
   has_many :learning_outcome_task_links, through: :task_definitions
+  has_many :task_engagements, through: :projects
 
   has_many :convenors, -> { joins(:role).where('roles.name = :role', role: 'Convenor') }, class_name: 'UnitRole'
   has_many :staff, ->     { joins(:role).where('roles.name = :role_convenor or roles.name = :role_tutor', role_convenor: 'Convenor', role_tutor: 'Tutor') }, class_name: 'UnitRole'
