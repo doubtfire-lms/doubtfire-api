@@ -43,7 +43,7 @@ module MimeCheckHelpers
 
   def check_mime_against_list!(file, expect, type_list)
     unless mime_in_list?(file, type_list)
-      error!({ error: "File given is not a #{expect} file - detected #{mime_type}" }, 403)
+      error!({ error: "File given is not a #{expect} file - detected #{mime_type(file)}" }, 403)
     end
   end
 
