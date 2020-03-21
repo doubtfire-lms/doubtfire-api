@@ -272,7 +272,7 @@ module Api
                                                  )
 
       # Switching tutorials will violate any existing group members
-      if group_params[:tutorial_id] != grp.tutorial.id && gs.keep_groups_in_same_class && grp.has_active_group_members?
+      if group_params[:tutorial_id] != grp.tutorial_id && gs.keep_groups_in_same_class && grp.has_active_group_members?
         error!({ error: 'Cannot modify group tutorial as members already exist and they must be in the same tutorial. Clear all members first.' }, 403)
       end
 
