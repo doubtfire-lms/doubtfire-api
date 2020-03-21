@@ -1053,17 +1053,50 @@ class Unit < ActiveRecord::Base
           next
         end
 
+        change = ''
+
+        # Get name from csv
+        group_name = row['group_name'].strip unless row['group_name'].nil?
+
+        # Find or create the group object
+        grp = group_set.groups.find_or_create_by(name: group_name)
+
+        # If it is new we need to load details from the csv
+        if grp.new_record?
+          # Get group details
+          group_number = row['group_number'].strip unless row['group_number'].nil?
+          campus_data = row['campus'].strip unless row['campus'].nil?
+          # capacity = row['capacity'].strip unless row['capacity'].nil?
+          tutorial_abbr = row['tutorial'].strip unless row['tutorial'].nil?  
+
+          tutorial = tutorial_with_abbr(tutorial_abbr)
+          if tutorial.nil?
+            change += 'Created new tutorial. '
+            campus = Campus.find_by_abbr_or_name(campus_data)
+            tutorial = add_tutorial(
+              'Monday',
+              '8:00am',
+              'TBA',
+              main_convenor_user,
+              campus,
+              nil, #capacity
+              tutorial_abbr
+            )
+          end
+
+          grp.tutorial = tutorial
+          grp.number = group_number
+          grp.save!
+
+          change = 'Created new group. '
+        end
+
         if row['username'].nil?
-          ignored << { row: row, message: "Skipping row with missing username" }
+          ignored << { row: row, message: "#{change}Skipping row with missing username" }
           next
         end
 
         username = row['username'].downcase.strip unless row['username'].nil?
-        group_name = row['group_name'].strip unless row['group_name'].nil?
-        group_number = row['group_number'].strip unless row['group_number'].nil?
-        campus_data = row['campus'].strip unless row['campus'].nil?
-        capacity = row['capacity'].strip unless row['capacity'].nil?
-        tutorial_abbr = row['tutorial'].strip unless row['tutorial'].nil?
 
         user = User.where(username: username).first
 
@@ -1079,39 +1112,8 @@ class Unit < ActiveRecord::Base
           next
         end
 
-        grp = group_set.groups.find_or_create_by(name: group_name)
+        grp.add_member(project)
 
-        change = ''
-
-        if grp.new_record?
-          change = 'Created new group. '
-
-          tutorial = tutorial_with_abbr(tutorial_abbr)
-          if tutorial.nil?
-            change += 'Created new tutorial. '
-            campus = Campus.find_by_abbr_or_name(campus_data)
-            tutorial = add_tutorial(
-              'Monday',
-              '8:00am',
-              'TBA',
-              main_convenor_user,
-              campus,
-              capacity,
-              tutorial_abbr
-            )
-          end
-
-          grp.tutorial = tutorial
-          grp.number = group_number
-          grp.save!
-        end
-
-        begin
-          grp.add_member(project)
-        rescue Exception => e
-          errors << { row: row, message: e.message }
-          next
-        end
         success << { row: row, message: "#{change}Added #{username} to #{grp.name}." }
       rescue Exception => e
         errors << { row: row, message: e.message }
