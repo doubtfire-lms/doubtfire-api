@@ -2565,7 +2565,7 @@ class Unit < ActiveRecord::Base
       project.send_weekly_status_email(summary_stats, days_from_start_of_unit > 28 && days_to_end_of_unit > 14 )
     end
 
-    summary_stats[:num_students_without_tutors] = active_projects.where(tutorial_id: nil).count
+    summary_stats[:num_students_without_tutors] = active_projects.joins('LEFT OUTER JOIN tutorial_enrolments on tutorial_enrolments.project_id = projects.id').where('tutorial_enrolments.tutorial_id' => nil).count
 
     staff.each do |ur|
       ur.populate_summary_stats(summary_stats)
