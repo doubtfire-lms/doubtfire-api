@@ -1112,6 +1112,10 @@ class Unit < ActiveRecord::Base
           next
         end
 
+        if group_set.keep_groups_in_same_class && !project.enrolled_in?(grp.tutorial)
+          project.enrol_in(grp.tutorial)
+        end
+
         grp.add_member(project)
 
         success << { row: row, message: "#{change}Added #{username} to #{grp.name}." }
