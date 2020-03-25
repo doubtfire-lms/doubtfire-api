@@ -151,7 +151,7 @@ class CommentTest < ActiveSupport::TestCase
     group_set = GroupSet.create!(name: 'test_student_reply_to_other_student_in_same_group', unit: unit)
     group_set.save!
 
-    group = Group.create!(group_set: group_set, name: 'test_student_reply_to_other_student_in_same_group', tutorial: unit.tutorials.first, number: 0)
+    group = Group.create!(group_set: group_set, name: 'test_student_reply_to_other_student_in_same_group', tutorial: unit.tutorials.first)
 
     group.add_member(unit.active_projects[0])
     group.add_member(unit.active_projects[1])
@@ -199,12 +199,12 @@ class CommentTest < ActiveSupport::TestCase
     group_set = GroupSet.create!(name: 'test_student_reply_to_other_student_in_same_group', unit: unit)
     group_set.save!
 
-    group_1 = Group.create!(group_set: group_set, name: 'test_1', tutorial: unit.tutorials.first, number: 0)
+    group_1 = Group.create!(group_set: group_set, name: 'test_1', tutorial: unit.tutorials.first)
 
     group_1.add_member(unit.active_projects[0])
     group_1.save!
 
-    group_2 = Group.create!(group_set: group_set, name: 'test_2', tutorial: unit.tutorials.first, number: 1)
+    group_2 = Group.create!(group_set: group_set, name: 'test_2', tutorial: unit.tutorials.first)
 
     group_2.add_member(unit.active_projects[1])
     group_2.save!

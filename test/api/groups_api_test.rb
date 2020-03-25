@@ -22,7 +22,7 @@ class GroupsApiTest < ActiveSupport::TestCase
     group_set = GroupSet.create!({name: 'test_group_submission_with_extensions', unit: unit})
     group_set.save!
 
-    group = Group.create!({group_set: group_set, name: 'test_group_submission_with_extensions', tutorial: unit.tutorials.first, number: 0})
+    group = Group.create!({group_set: group_set, name: 'test_group_submission_with_extensions', tutorial: unit.tutorials.first})
 
     group.add_member(unit.active_projects[0])
     group.add_member(unit.active_projects[1])
@@ -126,7 +126,7 @@ class GroupsApiTest < ActiveSupport::TestCase
     group_set = GroupSet.create!({name: 'test_comment_without_group', unit: unit})
     group_set.save!
 
-    group = Group.create!({group_set: group_set, name: 'test_group_submission_with_extensions', tutorial: unit.tutorials.first, number: 0})
+    group = Group.create!({group_set: group_set, name: 'test_group_submission_with_extensions', tutorial: unit.tutorials.first})
 
     group.add_member(unit.active_projects[0])
     group.add_member(unit.active_projects[1])
