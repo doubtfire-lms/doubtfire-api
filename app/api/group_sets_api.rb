@@ -209,8 +209,7 @@ module Api
         error!({error: "You are already in a group for #{group_set.name}"}, 403) unless project.group_for_groupset(group_set).nil?
       end
 
-      last = group_set.groups.last
-      num = last.nil? ? 1 : last.number + 1
+      num = group_set.groups.any? ? group_set.groups.max_by {|g| g.number}.number + 1 : 1
       if group_params[:name].nil? || group_params[:name].empty?
         group_params[:name] = "Group #{num}"
       end
