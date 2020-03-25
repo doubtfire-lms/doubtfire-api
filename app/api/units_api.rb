@@ -67,6 +67,7 @@ module Api
         optional :end_date, type: Date
         optional :main_convenor_id, type: Integer
         optional :auto_apply_extension_before_deadline, type: Boolean, desc: 'Indicates if extensions before the deadline should be automatically applied', default: true
+        optional :send_notifications, type: Boolean, desc: 'Indicates if emails should be sent on updates each week', default: true
 
         mutually_exclusive :teaching_period_id,:start_date
         all_or_none_of :start_date, :end_date
@@ -87,7 +88,8 @@ module Api
                                                             :teaching_period_id,
                                                             :active,
                                                             :main_convenor_id,
-                                                            :auto_apply_extension_before_deadline
+                                                            :auto_apply_extension_before_deadline,
+                                                            :send_notifications
                                                           )
 
       if unit.teaching_period_id.present? && unit_parameters.key?(:start_date)
@@ -110,6 +112,7 @@ module Api
         optional :end_date, type: Date
         optional :main_convenor_id, type: Integer
         optional :auto_apply_extension_before_deadline, type: Boolean, desc: 'Indicates if extensions before the deadline should be automatically applied', default: true
+        optional :send_notifications, type: Boolean, desc: 'Indicates if emails should be sent on updates each week', default: true
 
         mutually_exclusive :teaching_period_id,:start_date
         mutually_exclusive :teaching_period_id,:end_date
@@ -129,7 +132,8 @@ module Api
                                                       :description,
                                                       :start_date,
                                                       :end_date,
-                                                      :auto_apply_extension_before_deadline
+                                                      :auto_apply_extension_before_deadline,
+                                                      :send_notifications
                                                     )
 
       if unit_parameters[:description].nil?
