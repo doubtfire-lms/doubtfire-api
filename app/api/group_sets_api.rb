@@ -133,15 +133,13 @@ module Api
           'groups.id',
           'groups.name',
           'groups.tutorial_id',
-          'groups.group_set_id',
-          'groups.number',
+          'groups.group_set_id'
         ).
         select(
           'groups.id as id',
           'groups.name as name',
           'groups.tutorial_id as tutorial_id',
           'groups.group_set_id as group_set_id',
-          'groups.number as number',
           'COUNT(group_memberships.id) as student_count'
         )
     end
@@ -209,12 +207,12 @@ module Api
         error!({error: "You are already in a group for #{group_set.name}"}, 403) unless project.group_for_groupset(group_set).nil?
       end
 
-      last = group_set.groups.last
-      num = last.nil? ? 1 : last.number + 1
-      if group_params[:name].nil? || group_params[:name].empty?
+      num = group_set.groups.count + 1
+      while group_params[:name].nil? || group_params[:name].empty? || group_set.groups.where(name: group_params[:name]).count > 0
         group_params[:name] = "Group #{num}"
+        num += 1
       end
-      grp = Group.create(name: group_params[:name], group_set: group_set, tutorial: tutorial, number: num)
+      grp = Group.create(name: group_params[:name], group_set: group_set, tutorial: tutorial)
       grp.save!
 
       # If they are a student, then add them to the group they created

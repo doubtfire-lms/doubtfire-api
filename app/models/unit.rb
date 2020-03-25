@@ -1085,7 +1085,6 @@ class Unit < ActiveRecord::Base
           end
 
           grp.tutorial = tutorial
-          grp.number = group_number
           grp.save!
 
           change = 'Created new group. '
@@ -1133,10 +1132,10 @@ class Unit < ActiveRecord::Base
 
   def export_groups_to_csv(group_set)
     CSV.generate do |row|
-      row << %w(group_name group_number username tutorial)
+      row << %w(group_name username tutorial)
       group_set.groups.each do |grp|
         grp.projects.each do |project|
-          row << [grp.name, grp.number, project.student.username, grp.tutorial.abbreviation]
+          row << [grp.name, project.student.username, grp.tutorial.abbreviation]
         end
       end
     end
