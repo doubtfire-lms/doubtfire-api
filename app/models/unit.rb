@@ -2547,6 +2547,7 @@ class Unit < ActiveRecord::Base
   end
 
   def send_weekly_status_emails(summary_stats)
+    return unless send_notifications
 
     summary_stats[:unit] = self
     summary_stats[:unit_week_comments] = comments.where("task_comments.created_at > :start AND task_comments.created_at < :end", start: summary_stats[:week_start], end: summary_stats[:week_end]).count

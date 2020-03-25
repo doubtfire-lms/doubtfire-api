@@ -59,6 +59,7 @@ FactoryBot.define do
     code            { "SIT#{Faker::Number.unique.number(3)}" }
     active          { true }
     auto_apply_extension_before_deadline { true }
+    send_notifications { true }
 
     after(:create) do | unit, eval |
       group_sets = eval.group_sets

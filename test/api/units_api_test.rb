@@ -39,7 +39,6 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert_equal expected_unit[:code], actual_unit['code']
     assert_equal expected_unit[:start_date], actual_unit['start_date']
     assert_equal expected_unit[:end_date], actual_unit['end_date']
-    assert_equal true, actual_unit['auto_apply_extension_before_deadline']
 
     assert_equal unit_count + 1, Unit.all.count
     assert_equal expected_unit[:name], Unit.last.name
@@ -258,6 +257,7 @@ class UnitsApiTest < ActiveSupport::TestCase
     unit['end_date']='2019-05-14T00:00:00.000Z'
     unit['active'] = false
     unit['auto_apply_extension_before_deadline'] = false
+    unit['send_notifications'] = false
     data_to_put = {
       unit:unit,
       auth_token: auth_token
@@ -265,7 +265,7 @@ class UnitsApiTest < ActiveSupport::TestCase
     put_json '/api/units/1', data_to_put
     assert_equal 200, last_response.status
 
-    assert_json_matches_model Unit.first, unit, %w( name code description start_date end_date active auto_apply_extension_before_deadline )
+    assert_json_matches_model Unit.first, unit, %w( name code description start_date end_date active auto_apply_extension_before_deadline send_notifications )
   end
 
   #Test PUT for updating unit details with empty name
