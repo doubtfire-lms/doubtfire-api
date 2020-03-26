@@ -28,6 +28,9 @@ class TutorialEnrolment < ActiveRecord::Base
   # Switch from stream to no stream is not allowed
   validate :ensure_cannot_enrol_in_tutorial_with_no_stream_when_enrolled_in_stream
 
+  # Ensure that changes to tutorial enrolments does not invalidate the project
+  validates_associated :project
+
   def unit_must_be_same
     if project.unit.present? and tutorial.unit.present? and not project.unit.eql? tutorial.unit
       errors.add(:project, 'and tutorial belong to different unit')
