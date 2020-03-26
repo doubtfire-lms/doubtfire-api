@@ -89,4 +89,28 @@ class GroupModelTest < ActiveSupport::TestCase
     gs.update(capacity: nil)
     refute group1.at_capacity?
   end
+
+  def test_switch_tutorial
+    unit = FactoryBot.create :unit, group_sets: 1, groups: [{gs: 0, students: 0}]
+    
+    gs = unit.group_sets.first
+    gs.update keep_groups_in_same_class: true, allow_students_to_manage_groups: true
+    group1 = gs.groups.first
+
+    p1 = group1.tutorial.projects.first
+    p2 = group1.tutorial.projects.last
+
+    group1.add_member p1
+    group1.add_member p2
+
+    tutorial = FactoryBot.create :tutorial, unit: unit, campus: nil
+    
+    refute p1.enrolled_in? tutorial
+    refute p2.enrolled_in? tutorial
+    
+    group1.switch_to_tutorial tutorial
+    
+    assert p1.enrolled_in? tutorial
+    assert p2.enrolled_in? tutorial
+  end
 end

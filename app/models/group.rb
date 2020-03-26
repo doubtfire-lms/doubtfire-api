@@ -101,6 +101,18 @@ class Group < ActiveRecord::Base
     capacity.present? && group_memberships.where(active: true).count >= capacity
   end
 
+  def switch_to_tutorial tutorial
+    return if tutorial_id == tutorial.id
+    
+    tutorial_id = tutorial.id
+    self.tutorial = tutorial
+    if group_set.keep_groups_in_same_class && has_active_group_members?
+      projects.each do |proj|
+        proj.enrol_in tutorial
+      end
+    end
+  end
+
   def add_member(project)
     gm = project.group_membership_for_groupset(group_set)
 
