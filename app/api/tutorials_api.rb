@@ -47,6 +47,10 @@ module Api
         tutorial.assign_tutor(tutor)
       end
 
+      if tutorial_parameters[:campus_id] == -1
+        tutorial_parameters[:campus_id] = nil
+      end
+
       tutorial.update!(tutorial_parameters)
       tutorial
     end
@@ -74,7 +78,7 @@ module Api
       end
 
       tutor = User.find(tut_params[:tutor_id])
-      campus = Campus.find(tut_params[:campus_id])
+      campus = tut_params[:campus_id] == -1 ? nil : Campus.find(tut_params[:campus_id])
 
       # Set Tutorial Stream if available
       tutorial_stream_abbr = tut_params[:tutorial_stream_abbr]
