@@ -1047,7 +1047,7 @@ class Unit < ActiveRecord::Base
       next if row[0] =~ /^(group_name)|(name)/ # Skip header
 
       begin
-        missing = missing_headers(row, %w(group_name group_number username tutorial))
+        missing = missing_headers(row, %w(group_name username tutorial))
         if missing.count > 0
           errors << { row: row, message: "Missing headers: #{missing.join(', ')}" }
           next
@@ -1064,7 +1064,6 @@ class Unit < ActiveRecord::Base
         # If it is new we need to load details from the csv
         if grp.new_record?
           # Get group details
-          group_number = row['group_number'].strip unless row['group_number'].nil?
           campus_data = row['campus'].strip unless row['campus'].nil?
           # capacity = row['capacity'].strip unless row['capacity'].nil?
           tutorial_abbr = row['tutorial'].strip unless row['tutorial'].nil?  
