@@ -271,8 +271,12 @@ module Api
 
       # Switching tutorials will violate any existing group members
       if group_params[:tutorial_id] != grp.tutorial_id
-        tutorial = unit.tutorials.find_by(id: group_params[:tutorial_id])
-        grp.switch_to_tutorial tutorial
+        if authorise? current_user, grp, :move_tutorial
+          tutorial = unit.tutorials.find_by(id: group_params[:tutorial_id])
+          grp.switch_to_tutorial tutorial
+        else
+          error!({ error: 'You are not authorised to change the tutorial of this group' }, 403)
+        end
       end
 
       grp.update!(group_params)

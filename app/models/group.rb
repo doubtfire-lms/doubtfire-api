@@ -42,19 +42,22 @@ class Group < ActiveRecord::Base
     # What can tutors do with groups?
     tutor_role_permissions = [
       :get_members,
-      :manage_group
+      :manage_group,
+      :move_tutorial
     ]
     # What can convenors do with groups?
     convenor_role_permissions = [
       :get_members,
       :manage_group,
-      :can_exceed_capacity
+      :can_exceed_capacity,
+      :move_tutorial
     ]
     # What can admin do with groups?
     admin_role_permissions = [
       :get_members,
       :manage_group,
-      :can_exceed_capacity
+      :can_exceed_capacity,
+      :move_tutorial
     ]    
     # What can nil users do with groups?
     nil_role_permissions = [
