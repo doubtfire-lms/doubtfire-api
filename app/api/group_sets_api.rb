@@ -133,13 +133,15 @@ module Api
           'groups.id',
           'groups.name',
           'groups.tutorial_id',
-          'groups.group_set_id'
+          'groups.group_set_id',
+          'groups.capacity_adjustment'
         ).
         select(
           'groups.id as id',
           'groups.name as name',
           'groups.tutorial_id as tutorial_id',
           'groups.group_set_id as group_set_id',
+          'groups.capacity_adjustment',
           'COUNT(group_memberships.id) as student_count'
         )
     end
@@ -155,6 +157,21 @@ module Api
     #   ActiveModel::ArraySerializer.new(unit.groups, each_serializer: DeepGroupSerializer)
     # end
 
+    desc 'Download a CSV of groups and their students in a group set'
+    get '/units/:unit_id/group_sets/:group_set_id/groups/student_csv' do
+      unit = Unit.find(params[:unit_id])
+      group_set = unit.group_sets.find(params[:group_set_id])
+
+      unless authorise? current_user, unit, :update
+        error!({ error: 'Not authorised to download csv of groups for this unit' }, 403)
+      end
+
+      content_type 'application/octet-stream'
+      header['Content-Disposition'] = "attachment; filename=#{unit.code}-#{group_set.name}-student-groups.csv "
+      env['api.format'] = :binary
+      unit.export_student_groups_to_csv(group_set)
+    end
+
     desc 'Download a CSV of groups in a group set'
     get '/units/:unit_id/group_sets/:group_set_id/groups/csv' do
       unit = Unit.find(params[:unit_id])
@@ -165,7 +182,7 @@ module Api
       end
 
       content_type 'application/octet-stream'
-      header['Content-Disposition'] = "attachment; filename=#{unit.code}-groups.csv "
+      header['Content-Disposition'] = "attachment; filename=#{unit.code}-#{group_set.name}-groups.csv "
       env['api.format'] = :binary
       unit.export_groups_to_csv(group_set)
     end
@@ -177,6 +194,7 @@ module Api
       requires :group, type: Hash do
         optional :name,                             type: String,   desc: 'The name of this group'
         requires :tutorial_id,                      type: Integer,  desc: 'The id of the tutorial for the group'
+        optional :capacity_adjustment,              type: Integer,  desc: 'How capacity for group is adjusted', default: 0
       end
     end
     post '/units/:unit_id/group_sets/:group_set_id/groups' do
@@ -191,7 +209,8 @@ module Api
       group_params = ActionController::Parameters.new(params)
                                                  .require(:group)
                                                  .permit(
-                                                   :name
+                                                   :name,
+                                                   :capacity_adjustment
                                                  )
 
       # Group with the same name
@@ -243,6 +262,26 @@ module Api
       unit.import_groups_from_csv(group_set, params[:file][:tempfile])
     end
 
+    desc 'Upload a CSV for students in groups in a group set'
+    params do
+      requires :unit_id,                            type: Integer,  desc: 'The unit for the new group'
+      requires :group_set_id,                       type: Integer,  desc: 'The id of the group set'
+      requires :file, type: Rack::Multipart::UploadedFile, desc: 'CSV upload file.'
+    end
+    post '/units/:unit_id/group_sets/:group_set_id/groups/student_csv' do
+      # check mime is correct before uploading
+      ensure_csv!(params[:file][:tempfile])
+
+      unit = Unit.find(params[:unit_id])
+      group_set = unit.group_sets.find(params[:group_set_id])
+
+      unless authorise? current_user, unit, :update
+        error!({ error: 'Not authorised to upload csv of groups for this unit' }, 403)
+      end
+
+      unit.import_student_groups_from_csv(group_set, params[:file][:tempfile])
+    end
+
     desc 'Edits the given group'
     params do
       requires :unit_id,                            type: Integer,  desc: 'The unit for the new group'
@@ -251,6 +290,7 @@ module Api
       requires :group, type: Hash do
         optional :name,                             type: String,   desc: 'The name of this group set'
         optional :tutorial_id,                      type: Integer,  desc: 'Tutorial of the group'
+        optional :capacity_adjustment,              type: Integer,  desc: 'How capacity for group is adjusted'
       end
     end
     put '/units/:unit_id/group_sets/:group_set_id/groups/:group_id' do
@@ -265,17 +305,24 @@ module Api
       group_params = ActionController::Parameters.new(params)
                                                  .require(:group)
                                                  .permit(
-                                                   :name,
-                                                   :tutorial_id
+                                                   :name
                                                  )
 
       # Switching tutorials will violate any existing group members
-      if group_params[:tutorial_id] != grp.tutorial_id
+      if params[:group][:tutorial_id] != grp.tutorial_id
         if authorise? current_user, grp, :move_tutorial
           tutorial = unit.tutorials.find_by(id: group_params[:tutorial_id])
           grp.switch_to_tutorial tutorial
         else
           error!({ error: 'You are not authorised to change the tutorial of this group' }, 403)
+        end
+      end
+
+      if params[:group][:capacity_adjustment].present? && params[:group][:capacity_adjustment] != grp.capacity_adjustment
+        if authorise? current_user, grp, :move_tutorial
+          group_params[:capacity_adjustment] = params[:group][:capacity_adjustment]
+        else
+          error!({ error: 'You are not authorised to change the capacity of this group' }, 403)
         end
       end
 

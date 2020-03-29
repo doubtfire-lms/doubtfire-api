@@ -1034,6 +1034,7 @@ class Unit < ActiveRecord::Base
     }
   end
 
+  # Import the actual groups from a csv - no students...
   def import_groups_from_csv(group_set, file)
     success = []
     errors = []
@@ -1047,7 +1048,7 @@ class Unit < ActiveRecord::Base
       next if row[0] =~ /^(group_name)|(name)/ # Skip header
 
       begin
-        missing = missing_headers(row, %w(group_name username tutorial))
+        missing = missing_headers(row, %w(group_name tutorial capacity_adjustment))
         if missing.count > 0
           errors << { row: row, message: "Missing headers: #{missing.join(', ')}" }
           next
@@ -1070,7 +1071,7 @@ class Unit < ActiveRecord::Base
 
           tutorial = tutorial_with_abbr(tutorial_abbr)
           if tutorial.nil?
-            change += 'Created new tutorial. '
+            change += ' Created new tutorial.'
             campus = Campus.find_by_abbr_or_name(campus_data)
             tutorial = add_tutorial(
               'Monday',
@@ -1084,10 +1085,49 @@ class Unit < ActiveRecord::Base
           end
 
           grp.tutorial = tutorial
+          grp.capacity_adjustment = row['campus'].strip.to_i unless row['campus'].nil?
           grp.save!
 
-          change = 'Created new group. '
+          change += ' Created new group.'
         end
+
+        success << { row: row, message: "Setup #{grp.name}.#{change}" }
+      rescue Exception => e
+        errors << { row: row, message: e.message }
+      end
+    end
+
+    {
+      success: success,
+      ignored: ignored,
+      errors:  errors
+    }
+  end
+
+  def import_student_groups_from_csv(group_set, file)
+    success = []
+    errors = []
+    ignored = []
+
+    logger.info "Starting import of group for #{group_set.name} for #{code}"
+
+    CSV.parse(file,                 headers: true,
+                                    header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
+                                    converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
+      next if row[0] =~ /^(group_name)|(name)/ # Skip header
+
+      begin
+        missing = missing_headers(row, %w(group_name username))
+        if missing.count > 0
+          errors << { row: row, message: "Missing headers: #{missing.join(', ')}" }
+          next
+        end
+
+        # Get name from csv
+        group_name = row['group_name'].strip unless row['group_name'].nil?
+
+        # Find or create the group object
+        grp = group_set.groups.find_by(name: group_name)
 
         if row['username'].nil?
           ignored << { row: row, message: "#{change}Skipping row with missing username" }
@@ -1106,7 +1146,7 @@ class Unit < ActiveRecord::Base
         project = students.where('user_id = :id', id: user.id).first
 
         if project.nil?
-          errors << { row: row, message: "Student #{username} not found in unit" }
+          errors << { row: row, message: "Student #{username} is not enrolled in #{code}" }
           next
         end
 
@@ -1116,7 +1156,7 @@ class Unit < ActiveRecord::Base
 
         grp.add_member(project)
 
-        success << { row: row, message: "#{change}Added #{username} to #{grp.name}." }
+        success << { row: row, message: "Added #{username} to #{grp.name}." }
       rescue Exception => e
         errors << { row: row, message: e.message }
       end
@@ -1129,16 +1169,28 @@ class Unit < ActiveRecord::Base
     }
   end
 
+  # Export all groups in the group set
   def export_groups_to_csv(group_set)
     CSV.generate do |row|
-      row << %w(group_name username tutorial)
+      row << %w(group_name capacity_adjustment tutorial campus)
+      group_set.groups.each do |grp|
+        row << [grp.name, grp.capacity_adjustment, grp.tutorial.abbreviation, grp.tutorial.campus.present? ? grp.tutorial.campus.abbreviation : '']
+      end
+    end
+  end
+
+  # Export all students in groups
+  def export_student_groups_to_csv(group_set)
+    CSV.generate do |row|
+      row << %w(group_name username)
       group_set.groups.each do |grp|
         grp.projects.each do |project|
-          row << [grp.name, project.student.username, grp.tutorial.abbreviation]
+          row << [grp.name, project.student.username]
         end
       end
     end
   end
+
 
   # def import_tutorials_from_csv(file)
   #   CSV.foreach(file) do |row|
