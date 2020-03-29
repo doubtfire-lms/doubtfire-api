@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20200325101201) do
+ActiveRecord::Schema.define(version: 20200327052250) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -97,9 +97,10 @@ ActiveRecord::Schema.define(version: 20200325101201) do
   create_table "groups", force: :cascade do |t|
     t.integer  "group_set_id"
     t.integer  "tutorial_id"
-    t.string   "name",         limit: 255
+    t.string   "name",                limit: 255
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.integer  "capacity_adjustment",             default: 0, null: false
   end
 
   create_table "learning_outcome_task_links", force: :cascade do |t|
