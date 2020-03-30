@@ -397,13 +397,18 @@ class UnitModelTest < ActiveSupport::TestCase
     )
     assert_equal 0, unit.projects.count
 
+    assert_not_nil t1.campus
+    assert_not_nil t2.campus
+
     result = unit.import_users_from_csv test_file_path('SIT101-Enrol-Students.csv')
     unit.reload
     assert_equal 1, result[:errors].count, result.inspect
     assert_equal 1, result[:ignored].count, result.inspect
     assert_equal 10, unit.projects.count, result.inspect
 
-    assert_equal 3, t1.projects.count
+    assert_equal Campus.find_by(abbreviation: 'C'), User.find_by(username: 'import_8').projects.find_by(unit_id: unit.id).campus
+
+    assert_equal 3, t1.projects.count, result.inspect
     assert_equal 3, t2.projects.count
     
     unit.destroy!
