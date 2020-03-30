@@ -135,7 +135,7 @@ class Project < ActiveRecord::Base
   def must_be_in_group_tutorials
     groups.each do |g|
       next unless g.limit_members_to_tutorial?
-      next unless enrolled_in? g.tutorial
+      next if enrolled_in? g.tutorial
       if g.group_set.allow_students_to_manage_groups
         # leave group
         g.remove_member(self)
