@@ -149,6 +149,7 @@ class Project < ActiveRecord::Base
   # Check tutorial membership if 
   def tutorial_enrolment_same_campus
     return unless campus_id.present? && campus_id_changed?
+    return unless enrolled
     if tutorial_enrolments.joins(:tutorial).where('tutorials.campus_id <> :cid', cid: campus_id).count > 0
       errors.add(:campus, "does not match with tutorial enrolments.")
     end
