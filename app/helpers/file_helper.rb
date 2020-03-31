@@ -229,9 +229,8 @@ module FileHelper
       FileUtils.mkdir_p(File.join(Dir.tmpdir, 'doubtfire', 'compress'))
 
       exec = "gs -sDEVICE=pdfwrite \
-                 -dCompatibilityLevel=1.3 \
                  -dDetectDuplicateImages=true \
-                 -dPDFSETTINGS=/screen \
+                 -dPDFSETTINGS=/printer \
                  -dNOPAUSE \
                  -dBATCH \
                  -dQUIET \
