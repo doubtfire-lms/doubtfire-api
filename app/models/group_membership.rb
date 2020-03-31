@@ -21,9 +21,6 @@ class GroupMembership < ActiveRecord::Base
   end
 
   def in_group_tutorial?(tutorial)
-    project.tutorial_enrolments.
-            joins(:tutorial).
-            where('tutorial_enrolments.tutorial_id = :id', id: tutorial.id).
-            count > 0
+    project.enrolled_in? tutorial
   end
 end
