@@ -120,6 +120,7 @@ class Group < ActiveRecord::Base
         proj.enrol_in tutorial
       end
     end
+    self.save!
   end
 
   def add_member(project)
