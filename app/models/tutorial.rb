@@ -8,7 +8,7 @@ class Tutorial < ActiveRecord::Base
   has_one    :tutor, through: :unit_role, source: :user
 
   has_many   :groups
-  has_many   :tutorial_enrolments
+  has_many   :tutorial_enrolments, dependent: :destroy
   has_many   :projects, through: :tutorial_enrolments
 
   # Callbacks - methods called are private
@@ -76,8 +76,9 @@ class Tutorial < ActiveRecord::Base
 
   private
   def can_destroy?
-    return true if tutorial_enrolments.count == 0 && groups.count == 0
-    errors.add :base, "Cannot delete tutorial with enrolments" if tutorial_enrolments.count > 0
+    active_enrolment_count = num_students
+    return true if active_enrolment_count == 0 && groups.count == 0
+    errors.add :base, "Cannot delete tutorial with enrolments" if active_enrolment_count > 0
     errors.add :base, "Cannot delete tutorial with groups" if groups.count > 0
     false
   end
