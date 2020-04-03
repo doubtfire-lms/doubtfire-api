@@ -42,7 +42,7 @@ module Api
     desc 'Delete an enrolment in the tutorial'
     delete '/units/:unit_id/tutorials/:tutorial_abbr/enrolments/:project_id' do
       unit = Unit.find(params[:unit_id])
-      project = unit.active_projects.find(params[:project_id])
+      project = unit.projects.find(params[:project_id])
       unless authorise? current_user, project, :change_tutorial
         error!({ error: 'Not authorised to change tutorials' }, 403)
       end
