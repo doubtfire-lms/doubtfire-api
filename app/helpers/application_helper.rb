@@ -10,7 +10,7 @@ module ApplicationHelper
 
   # Escape text for inclusion in Latex documents
   def lesc(text)
-    # Use gsub to remove any characters that are not printable
-    LatexToPdf.escape_latex(text.gsub(/[^[:print:]]/,''))
+    # Convert to latex text, then use gsub to remove any characters that are not printable
+    LatexToPdf.escape_latex(text).gsub(/[^[:print:]]/,'')
   end
 end
