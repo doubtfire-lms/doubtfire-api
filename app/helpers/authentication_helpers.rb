@@ -21,6 +21,7 @@ module AuthenticationHelpers
 
     if params.present? && params[:auth_token].present?
       token = AuthToken.find_by_auth_token(params[:auth_token])
+      error!({ error: 'Authentication token expired.' }, 419) if token.nil?
       user_by_token = token.user
     end
 
