@@ -23,6 +23,13 @@ class AuthToken < ActiveRecord::Base
     result
   end
 
+  # Find that matching token and get the associated user
+  def self.user_for_token auth_token
+    token = AuthToken.find_by_auth_token(auth_token)
+    return nil unless token.present?
+    return token.user
+  end
+
   #
   # Extends an existing auth_token if needed
   #
