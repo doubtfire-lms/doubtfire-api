@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20200327052250) do
+ActiveRecord::Schema.define(version: 20200409000741) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -25,6 +25,15 @@ ActiveRecord::Schema.define(version: 20200327052250) do
 
   add_index "activity_types", ["abbreviation"], name: "index_activity_types_on_abbreviation", unique: true, using: :btree
   add_index "activity_types", ["name"], name: "index_activity_types_on_name", unique: true, using: :btree
+
+  create_table "auth_tokens", force: :cascade do |t|
+    t.string   "authentication_token", limit: 255, null: false
+    t.datetime "auth_token_expiry",                null: false
+    t.integer  "user_id",                          null: false
+    t.integer  "users_id"
+  end
+
+  add_index "auth_tokens", ["users_id"], name: "index_auth_tokens_on_users_id", using: :btree
 
   create_table "breaks", force: :cascade do |t|
     t.datetime "start_date",         null: false
@@ -396,9 +405,7 @@ ActiveRecord::Schema.define(version: 20200327052250) do
     t.string   "last_name",                       limit: 255
     t.string   "username",                        limit: 255
     t.string   "nickname",                        limit: 255
-    t.string   "authentication_token",            limit: 255
     t.string   "unlock_token",                    limit: 255
-    t.datetime "auth_token_expiry"
     t.integer  "role_id",                                     default: 0
     t.boolean  "receive_task_notifications",                  default: true
     t.boolean  "receive_feedback_notifications",              default: true
@@ -409,9 +416,9 @@ ActiveRecord::Schema.define(version: 20200327052250) do
     t.string   "student_id"
   end
 
-  add_index "users", ["authentication_token"], name: "index_users_on_authentication_token", unique: true, using: :btree
   add_index "users", ["login_id"], name: "index_users_on_login_id", unique: true, using: :btree
 
+  add_foreign_key "auth_tokens", "users"
   add_foreign_key "breaks", "teaching_periods"
   add_foreign_key "comments_read_receipts", "task_comments"
   add_foreign_key "comments_read_receipts", "users"

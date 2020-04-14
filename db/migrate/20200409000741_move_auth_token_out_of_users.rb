@@ -1,6 +1,4 @@
 class MoveAuthTokenOutOfUsers < ActiveRecord::Migration
-  #TODO: Fix down... add index to authentication token, also ensure token is copied back to user
-
   def up
     create_table :auth_tokens do |t|
       t.string          :authentication_token,  null: false,  limit: 255
@@ -25,14 +23,13 @@ class MoveAuthTokenOutOfUsers < ActiveRecord::Migration
     add_column :users, :authentication_token, :string,    limit: 255
     add_column :users, :auth_token_expiry,    :datetime
 
-    byebug
-
     AuthToken.where("auth_token_expiry > :time", time: Time.zone.now).
       each do |token| 
-        u = User.find(token.user_id)
-        u.authentication_token = token.authentication_token
-        u.auth_token_expiry = token.auth_token_expiry
-        u.save!
+        User.connection.exec_query(
+          "UPDATE users SET authentication_token = $1, auth_token_expiry = $2 WHERE id=$3", 
+          "--Update Auth Token for #{token.user_id}--",
+          [[nil, token.authentication_token], [nil, token.auth_token_expiry], [nil, token.user_id]]
+        )
       end
 
     drop_table :auth_tokens
