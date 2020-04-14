@@ -247,10 +247,10 @@ module Api
     #
     desc 'Sign out'
     delete '/auth/:auth_token' do
-      token = AuthToke.find_by_auth_token(params[:auth_token])
+      token = AuthToken.find_by_auth_token(params[:auth_token])
 
       if token.present?
-        logger.info "Sign out #{user.username} from #{request.ip}"
+        logger.info "Sign out #{token.user.username} from #{request.ip}"
         token.destroy!
       end
 
