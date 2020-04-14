@@ -38,16 +38,15 @@ class AuthTest < ActiveSupport::TestCase
     # These match the model object... so can compare in loops
     user_keys = %w(id email first_name last_name username nickname receive_task_notifications receive_portfolio_notifications receive_feedback_notifications opt_in_to_research has_run_first_time_setup)
 
+    # Check the returned user matches the expected database value
     assert_json_matches_model(expected_auth, response_user_data, user_keys)
-
-    user_keys.each { |k| assert response_user_data.key?(k), "Response has key #{k}" }
-    user_keys.each { |k| assert_equal expected_auth[k], response_user_data[k], "Values for key #{k} match" }
 
     # Check other values returned
     assert_equal expected_auth.name, response_user_data['name'], 'Names match'
     assert_equal expected_auth.role.name, response_user_data['system_role'], 'Roles match'
 
-    assert_equal expected_auth.auth_token, actual_auth['auth_token']
+    # User has the token - count of matching tokens for that user is 1
+    assert_equal 1, expected_auth.auth_tokens.select{|t| t.auth_token == actual_auth['auth_token']}.count
   end
 
   # Test auth when username is invalid
