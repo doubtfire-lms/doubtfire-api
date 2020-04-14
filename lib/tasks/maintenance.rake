@@ -22,5 +22,7 @@ namespace :maintenance do
         end
       end 
     end
+
+    AuthToken.destroy_old_tokens
   end
 end
