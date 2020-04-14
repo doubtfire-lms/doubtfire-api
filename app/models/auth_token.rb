@@ -8,7 +8,7 @@ class AuthToken < ActiveRecord::Base
     encode: true,
     attribute: 'authentication_token'
 
-  def self.generate(user, remember)
+  def self.generate(user, remember, expiry_time = Time.zone.now + 2.hours)
     # Loop until new unique auth token is found
     token = loop do
       token = Devise.friendly_token
@@ -18,7 +18,7 @@ class AuthToken < ActiveRecord::Base
     # Create a new AuthToken with this value
     result = AuthToken.new(user_id: user.id)
     result.auth_token = token
-    result.extend_token(remember, false)
+    result.extend_token(remember, expiry_time, false)
     result.save!
     result
   end
@@ -26,10 +26,7 @@ class AuthToken < ActiveRecord::Base
   #
   # Extends an existing auth_token if needed
   #
-  def extend_token(remember, save = true)
-    # Default expire time
-    expiry_time = Time.zone.now + 2.hours
-
+  def extend_token(remember, expiry_time = Time.zone.now + 2.hours, save = true)
     # Extended expiry times only apply to students and convenors
     if remember
       student_expiry_time = Time.zone.now + 2.weeks
