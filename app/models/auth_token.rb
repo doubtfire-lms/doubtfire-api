@@ -32,6 +32,11 @@ class AuthToken < ActiveRecord::Base
     return token.user
   end
 
+  # Destroy all old tokens
+  def self.destroy_old_tokens
+    AuthToken.where("auth_token_expiry < :now", now: Time.zone.now).destroy_all
+  end
+
   #
   # Extends an existing auth_token if needed
   #
