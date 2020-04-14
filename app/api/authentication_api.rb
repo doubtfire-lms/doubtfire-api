@@ -71,7 +71,7 @@ module Api
         # Return user details
         { 
           user: UserSerializer.new(user),
-          auth_token: user.generate_authentication_token! 
+          auth_token: user.generate_authentication_token!(remember).auth_token
         }
       end
     end
