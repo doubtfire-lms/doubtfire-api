@@ -5,7 +5,7 @@ class MoveAuthTokenOutOfUsers < ActiveRecord::Migration
       t.datetime        :auth_token_expiry,     null: false
       t.integer         :user_id,               null: false
     end
-    add_reference   :auth_tokens, :users, index: true
+    add_reference   :auth_tokens, :user, index: true
     add_foreign_key :auth_tokens, :users
 
     User.all.
