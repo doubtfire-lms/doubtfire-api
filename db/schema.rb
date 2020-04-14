@@ -29,11 +29,10 @@ ActiveRecord::Schema.define(version: 20200409000741) do
   create_table "auth_tokens", force: :cascade do |t|
     t.string   "authentication_token", limit: 255, null: false
     t.datetime "auth_token_expiry",                null: false
-    t.integer  "user_id",                          null: false
-    t.integer  "users_id"
+    t.integer  "user_id"
   end
 
-  add_index "auth_tokens", ["users_id"], name: "index_auth_tokens_on_users_id", using: :btree
+  add_index "auth_tokens", ["user_id"], name: "index_auth_tokens_on_user_id", using: :btree
 
   create_table "breaks", force: :cascade do |t|
     t.datetime "start_date",         null: false
