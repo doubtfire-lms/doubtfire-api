@@ -19,14 +19,15 @@ module AuthenticationHelpers
     # Check warden -- authenticate using DB or LDAP etc.
     return true if warden.authenticated?
 
+    # Check for auth token parameter
     if params.present? && params[:auth_token].present?
+      # Get the token and the user - if there is a token
       token = AuthToken.find_by_auth_token(params[:auth_token])
-      error!({ error: 'Authentication token expired.' }, 419) if token.nil?
-      user_by_token = token.user
+      user_by_token = token.user unless token.nil?
     end
 
     # Check user by token
-    if params[:auth_token] && user_by_token && token.auth_token_expiry
+    if user_by_token.present?
       # Non-expired token
       return true if token.auth_token_expiry > Time.zone.now
       # Token is timed out - destroy it
