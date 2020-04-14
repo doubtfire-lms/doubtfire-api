@@ -7,8 +7,10 @@ module TestHelpers
     # Gets an auth token for the provided user
     #
     def auth_token(user = User.first)
-      user.extend_authentication_token(true)
-      user.auth_token
+      token = user.valid_auth_tokens().first
+      return token.auth_token unless token.nil?
+
+      return user.generate_authentication_token!().auth_token
     end
 
     #
