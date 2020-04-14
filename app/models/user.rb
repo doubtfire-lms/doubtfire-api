@@ -94,7 +94,7 @@ class User < ActiveRecord::Base
   # Force-generates a new authentication token, regardless of whether or not
   # it is actually expired
   #
-  def generate_authentication_token!(remember)
+  def generate_authentication_token!(remember = false)
     AuthToken.generate(self, remember)
   end
 
@@ -102,7 +102,7 @@ class User < ActiveRecord::Base
   # Generate an authentication token that will expire in 30 seconds
   #
   def generate_temporary_authentication_token!
-    AuthToken.generate(self, remember, Time.zone.now + 30.seconds)
+    AuthToken.generate(self, false, Time.zone.now + 30.seconds)
   end
 
   #
@@ -329,6 +329,11 @@ class User < ActiveRecord::Base
 
   def email_required?
     false
+  end
+
+  # Get all of the currently valid auth tokens
+  def valid_auth_tokens
+    auth_tokens.where("auth_token_expiry > :now", now: Time.zone.now)
   end
 
   def name
