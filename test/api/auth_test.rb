@@ -244,6 +244,21 @@ class AuthTest < ActiveSupport::TestCase
     # 200 response code means success!
     assert_equal 200, last_response.status
   end
+
+  def test_token_signout_works_with_multiple
+    user = FactoryBot.create(:user)
+    # Create 2 auth tokens
+    t1 = user.generate_authentication_token!
+    t2 = user.generate_authentication_token!
+    
+    # Sign out one
+    delete "/api/auth/#{t1.auth_token}.json", 'CONTENT_TYPE' => 'application/json'
+    
+    t2.reload
+    refute t2.destroyed?
+
+    assert_raises(ActiveRecord::RecordNotFound) {|| t1.reload }
+  end
   # End DELETE tests
   # --------------------------------------------------------------------------- #
 end
