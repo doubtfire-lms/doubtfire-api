@@ -11,4 +11,17 @@ class AuthTokenTest < ActiveSupport::TestCase
 
     refute t1.valid?
   end
+
+  def test_clean_up
+    # Create a token...
+    user = FactoryBot.create(:user)
+    token = user.generate_authentication_token!
+
+    token.auth_token_expiry = Time.zone.now - 1.second
+    token.save
+
+    AuthToken.destroy_old_tokens
+
+    assert_raises(ActiveRecord::RecordNotFound) { token.reload }
+  end
 end

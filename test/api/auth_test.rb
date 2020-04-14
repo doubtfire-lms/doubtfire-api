@@ -257,7 +257,7 @@ class AuthTest < ActiveSupport::TestCase
     t2.reload
     refute t2.destroyed?
 
-    assert_raises(ActiveRecord::RecordNotFound) {|| t1.reload }
+    assert_raises(ActiveRecord::RecordNotFound) { t1.reload }
   end
   # End DELETE tests
   # --------------------------------------------------------------------------- #
