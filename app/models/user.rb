@@ -95,6 +95,8 @@ class User < ActiveRecord::Base
   # it is actually expired
   #
   def generate_authentication_token!(remember = false)
+    # Ensure this user is saved... so it has an id
+    self.save unless self.persisted?
     AuthToken.generate(self, remember)
   end
 
@@ -102,6 +104,8 @@ class User < ActiveRecord::Base
   # Generate an authentication token that will expire in 30 seconds
   #
   def generate_temporary_authentication_token!
+    # Ensure this user is saved... so it has an id
+    self.save unless self.persisted?
     AuthToken.generate(self, false, Time.zone.now + 30.seconds)
   end
 
