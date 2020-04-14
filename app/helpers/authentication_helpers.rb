@@ -16,13 +16,20 @@ module AuthenticationHelpers
   # Reads details from the params fetched from the caller context.
   #
   def authenticated?
-    user_by_token = User.find_by_auth_token(params[:auth_token]) if params && params[:auth_token]
     # Check warden -- authenticate using DB or LDAP etc.
     return true if warden.authenticated?
+
+    if params.present? && params[:auth_token].present?
+      token = AuthToken.find_by_auth_token(params[:auth_token])
+      user_by_token = token.user
+    end
+
     # Check user by token
-    if params[:auth_token] && user_by_token && user_by_token.auth_token_expiry
+    if params[:auth_token] && user_by_token && token.auth_token_expiry
       # Non-expired token
-      return true if user_by_token.auth_token_expiry > Time.zone.now
+      return true if token.auth_token_expiry > Time.zone.now
+      # Token is timed out - destroy it
+      token.destroy!
       # Time out this token
       error!({ error: 'Authentication token expired.' }, 419)
     else
@@ -36,7 +43,7 @@ module AuthenticationHelpers
   # Get the current user either from warden or from the token
   #
   def current_user
-    warden.user || User.find_by_auth_token(params[:auth_token])
+    warden.user || AuthToken.user_for_token(params[:auth_token])
   end
 
   #
