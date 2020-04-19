@@ -1085,7 +1085,7 @@ class Unit < ActiveRecord::Base
           end
 
           grp.tutorial = tutorial
-          grp.capacity_adjustment = row['campus'].strip.to_i unless row['campus'].nil?
+          grp.capacity_adjustment = row['capacity_adjustment'].strip.to_i unless row['capacity_adjustment'].nil?
           grp.save!
 
           change += ' Created new group.'
