@@ -433,7 +433,7 @@ class User < ActiveRecord::Base
     errors = []
     ignored = []
 
-    data = read_file_to_str(file)
+    data = FileHelper.read_file_to_str(file)
 
     CSV.parse(data,
               headers: true,
