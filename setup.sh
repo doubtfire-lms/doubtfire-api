@@ -166,6 +166,8 @@ install_postgres () {
                         postgresql-contrib \
                         libpq-dev
 
+        sudo service postgresql restart
+
         msg "Ensure pg_config is on the PATH, and then login to Postgres. You will need to locate where `apt-get` has Installed your Postgres binary and add this to your PATH. You can use: whereis psql for that, but ensure you add the directory and not the executable to the path"
         read -p "Press enter to continue"
 
