@@ -122,7 +122,7 @@ class Project < ActiveRecord::Base
   end
 
   def enrolled_in?(tutorial)
-    tutorial_enrolments.select{|e| e.tutorial_id == t.id}.count > 0 || tutorial_enrolments.where(tutorial_id: tutorial.id).count > 0
+    tutorial_enrolments.select{|e| e.tutorial_id == tutorial.id}.count > 0 || tutorial_enrolments.where(tutorial_id: tutorial.id).count > 0
   end
 
   # Find enrolment in same tutorial stream
