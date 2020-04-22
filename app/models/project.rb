@@ -106,6 +106,10 @@ class Project < ActiveRecord::Base
       tutorial_enrolment = TutorialEnrolment.new
       tutorial_enrolment.tutorial = tutorial
       tutorial_enrolment.project = self
+
+      # Add this enrolment to aid and check project validation
+      tutorial_enrolments << tutorial_enrolment
+
       tutorial_enrolment.save!
 
       # add after save to ensure valid tutorial_enrolments
@@ -118,7 +122,7 @@ class Project < ActiveRecord::Base
   end
 
   def enrolled_in?(tutorial)
-    tutorial_enrolments.where(tutorial_id: tutorial.id).count > 0
+    tutorial_enrolments.select{|e| e.tutorial_id == t.id}.count > 0 || tutorial_enrolments.where(tutorial_id: tutorial.id).count > 0
   end
 
   # Find enrolment in same tutorial stream
