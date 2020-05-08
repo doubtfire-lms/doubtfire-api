@@ -113,4 +113,92 @@ class GroupModelTest < ActiveSupport::TestCase
     assert p1.enrolled_in? tutorial
     assert p2.enrolled_in? tutorial
   end
+
+  def test_submit_with_others_having_extensions
+    unit = FactoryBot.create :unit
+
+    group_set = GroupSet.create!({name: 'test_group_submission_with_extensions', unit: unit})
+    group_set.save!
+
+    group = Group.create!({group_set: group_set, name: 'test_group_submission_with_extensions', tutorial: unit.tutorials.first})
+
+    group.add_member(unit.active_projects[0])
+    group.add_member(unit.active_projects[1])
+    group.add_member(unit.active_projects[2])
+
+    td = TaskDefinition.new({
+        unit_id: unit.id,
+        tutorial_stream: unit.tutorial_streams.first,
+        name: 'Task for test',
+        description: 'test def',
+        weighting: 4,
+        target_grade: 0,
+        start_date: Time.zone.now + 3.days,
+        target_date: Time.zone.now + 1.week,
+        due_date: Time.zone.now + 3.weeks,
+        abbreviation: 'GrpSubm',
+        restrict_status_updates: false,
+        upload_requirements: [ ],
+        plagiarism_warn_pct: 0.8,
+        is_graded: false,
+        max_quality_pts: 0,
+        group_set: group_set
+      })
+    assert td.save!
+
+    p1 = group.projects.first
+    tutor = p1.tutor_for(td)
+
+    p2 = group.projects.second
+    p3 = group.projects.last
+    
+    t1 = p1.task_for_task_definition(td)
+    t2 = p2.task_for_task_definition(td)
+    t3 = p3.task_for_task_definition(td)
+
+    duration = t1.weeks_can_extend
+
+    t1.apply_for_extension(p1.student, "Test comment", duration)
+    t1.reload
+
+    assert_equal 1, t1.comments.count
+    assert_equal 0, t2.comments.count, t2.comments.map {|c| c.comment }
+    assert_equal duration, t1.extensions
+
+    assert_equal 0, t2.extensions
+
+    t2.create_submission_and_trigger_state_change(t2.student, propagate = true, contributions = nil, trigger = 'ready_to_mark')
+
+    t2.reload
+    t1.reload
+    t3.reload
+
+    assert t2.valid?
+    assert_equal 2, t1.extensions
+    assert_equal 0, t2.extensions
+    assert_equal :ready_to_mark, t1.status
+    assert_equal :ready_to_mark, t2.status
+    assert_equal 1, t1.comments.count, t1.comments.map {|c| c.comment }
+    assert_equal 1, t2.comments.count, t2.comments.map {|c| c.comment }
+    assert_equal 0, t3.comments.count, t3.comments.map {|c| c.comment }
+
+    t2.trigger_transition trigger: 'complete', by_user: tutor
+
+    t2.reload
+    t1.reload
+    t3.reload
+
+    puts t3.comments.map {|c| c.comment }
+
+    assert t2.valid?
+    assert_equal :complete, t1.status
+    assert_equal :complete, t2.status
+    assert_equal 2, t1.extensions
+    assert_equal 0, t2.extensions
+    assert_equal 1, t1.comments.count
+    assert_equal 2, t2.comments.count
+    assert_equal 0, t3.comments.count, t3.comments.map {|c| c.comment }
+
+    unit.destroy
+  end
 end
