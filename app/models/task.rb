@@ -594,14 +594,14 @@ class Task < ActiveRecord::Base
   end
 
   def individual_task_or_submitter_of_group_task?
-    return true if !group_task?
-    return true unless group.present?
+    return true if !group_task? # its individual
+    return true unless group.present? # no group yet... so individual
 
-    ensured_group_submission.submitted_by? self.project
+    ensured_group_submission.submitted_by? self.project # return true if submitted by this project
   end
 
   def add_status_comment(current_user, status)
-    return nil unless individual_task_or_submitter_of_group_task?
+    return nil unless individual_task_or_submitter_of_group_task? # only record status comments on submitter task
 
     comment = TaskStatusComment.create
     comment.task = self
@@ -1036,7 +1036,7 @@ class Task < ActiveRecord::Base
   #
   # The student has uploaded new work...
   #
-  def create_submission_and_trigger_state_change(user, propagate = true, contributions = nil, trigger = 'ready_to_mark')
+  def create_submission_and_trigger_state_change(user, propagate = true, contributions = nil, trigger = 'ready_to_mark', initial_task = nil)
     if group_task? && propagate
       if contributions.nil? # even distribution
         contribs = group.projects.map { |proj| { project: proj, pct: 100 / group.projects.count, pts: 3 } }
@@ -1044,15 +1044,15 @@ class Task < ActiveRecord::Base
         contribs = contributions.map { |data| { project: Project.find(data[:project_id]), pct: data[:pct].to_i, pts: data[:pts].to_i } }
       end
       group_submission = group.create_submission self, "#{user.name} has submitted work", contribs
-      group_submission.tasks.each { |t| t.create_submission_and_trigger_state_change(user, propagate = false) }
+      group_submission.tasks.each { |t| t.create_submission_and_trigger_state_change(user, false, contributions, trigger, self) }
       reload
     else
       self.file_uploaded_at = Time.zone.now
       self.submission_date = Time.zone.now
 
-      # This task is now ready to submit
+      # This task is now ready to submit - trigger a transition if not in final state
       unless discuss_or_demonstrate? || complete? || do_not_resubmit? || fail?
-        trigger_transition trigger: trigger, by_user: user, group_transition: false
+        trigger_transition trigger: trigger, by_user: user, group_transition: group_task? && initial_task != self
       end
 
       # Destroy the links to ensure we test new files
