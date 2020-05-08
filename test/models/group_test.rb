@@ -167,7 +167,7 @@ class GroupModelTest < ActiveSupport::TestCase
 
     assert_equal 0, t2.extensions
 
-    t2.create_submission_and_trigger_state_change(t2.student, propagate = true, contributions = nil, trigger = 'ready_to_mark')
+    t2.create_submission_and_trigger_state_change(t2.student, true, nil, 'ready_to_mark')
 
     t2.reload
     t1.reload

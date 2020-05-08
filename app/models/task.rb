@@ -1121,7 +1121,7 @@ class Task < ActiveRecord::Base
       end
     end
 
-    create_submission_and_trigger_state_change(current_user, propagate = true, contributions = contributions, trigger = trigger)
+    create_submission_and_trigger_state_change(current_user, true, contributions, trigger, self)
 
     unless alignments.nil?
       if group_task?
