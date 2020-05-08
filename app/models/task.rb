@@ -518,6 +518,7 @@ class Task < ActiveRecord::Base
   end
 
   def submitted_before_due?
+    return true unless due_date.present?
     to_same_day_anywhere_on_earth(due_date) >= self.submission_date
   end
 
