@@ -40,6 +40,7 @@ module Api
           project_id: row['id'],
           campus_id: row['campus_id'],
           target_grade: row['target_grade'],
+          submitted_grade: row['submitted_grade'],
           has_portfolio: row['has_portfolio'],
           start_date: row['start_date'],
           end_date: row['end_date'],
@@ -72,6 +73,7 @@ module Api
       optional :campus_id,          type: Integer, desc: 'Campus this project is part of, or -1 for no campus'
       optional :enrolled,           type: Boolean, desc: 'Enrol or withdraw this project'
       optional :target_grade,       type: Integer, desc: 'New target grade'
+      optional :submitted_grade,    type: Integer, desc: 'New submitted grade'
       optional :compile_portfolio,  type: Boolean, desc: 'Schedule a construction of the portfolio'
       optional :grade,              type: Integer, desc: 'New grade'
       optional :old_grade,          type: Integer, desc: 'Old grade to check it has not changed...'
@@ -109,6 +111,13 @@ module Api
         end
 
         project.target_grade = params[:target_grade]
+        project.save
+      elsif !params[:submitted_grade].nil?
+        unless authorise? current_user, project, :change
+          error!({ error: "You do not have permissions to change Project with id=#{params[:id]}" }, 403)
+        end
+
+        project.submitted_grade = params[:submitted_grade]
         project.save
       elsif !params[:grade].nil?
         unless authorise? current_user, project, :assess
