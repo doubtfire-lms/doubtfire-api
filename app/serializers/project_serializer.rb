@@ -28,10 +28,6 @@ class ProjectSerializer < ActiveModel::Serializer
     object.id
   end
 
-  def submitted_grade
-    object.submitted_grade
-  end
-
   def student_name
     "#{object.student.name}#{object.student.nickname.nil? ? '' : ' (' << object.student.nickname << ')'}"
   end
