@@ -311,6 +311,10 @@ class Project < ActiveRecord::Base
     self[:target_grade] = value
   end
 
+  def submitted_grade=(value)
+    self[:submitted_grade] = value
+  end
+
   #
   # Get task_definitions and status for the current student for all tasks that are <= the target
   #

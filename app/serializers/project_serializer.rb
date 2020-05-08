@@ -14,6 +14,7 @@ class ProjectSerializer < ActiveModel::Serializer
              :burndown_chart_data,
              :enrolled,
              :target_grade,
+             :submitted_grade,
              :portfolio_files,
              :compile_portfolio,
              :portfolio_available,
@@ -25,6 +26,10 @@ class ProjectSerializer < ActiveModel::Serializer
 
   def project_id
     object.id
+  end
+
+  def submitted_grade
+    object.submitted_grade
   end
 
   def student_name
