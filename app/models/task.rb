@@ -364,6 +364,7 @@ class Task < ActiveRecord::Base
     when TaskStatus.ready_to_mark
       submit by_user
     when TaskStatus.not_started, TaskStatus.need_help, TaskStatus.working_on_it
+      add_status_comment(by_user, status)
       engage status
     else
       # Only tutors can perform these actions
@@ -376,10 +377,8 @@ class Task < ActiveRecord::Base
         end
         assess status, by_user
 
-        if !group_transition || !group_task?
-          # Add a status comment for new assessments (avoid duplicates on group submission)
-          add_status_comment(by_user, status)
-        end
+        # Add a status comment for new assessments - only recorded on submitter's task in groups
+        add_status_comment(by_user, status)
       else
         # Attempt to move to tutor state by non-tutor
         return nil
