@@ -134,14 +134,16 @@ module Api
           'groups.name',
           'groups.tutorial_id',
           'groups.group_set_id',
-          'groups.capacity_adjustment'
+          'groups.capacity_adjustment',
+          'groups.locked',
         ).
         select(
           'groups.id as id',
           'groups.name as name',
           'groups.tutorial_id as tutorial_id',
           'groups.group_set_id as group_set_id',
-          'groups.capacity_adjustment',
+          'groups.capacity_adjustment as capacity_adjustment',
+          'groups.locked as locked',
           'COUNT(group_memberships.id) as student_count'
         )
     end
@@ -291,6 +293,7 @@ module Api
         optional :name,                             type: String,   desc: 'The name of this group set'
         optional :tutorial_id,                      type: Integer,  desc: 'Tutorial of the group'
         optional :capacity_adjustment,              type: Integer,  desc: 'How capacity for group is adjusted'
+        optional :locked,                           type: Boolean,  desc: 'Is the group locked'
       end
     end
     put '/units/:unit_id/group_sets/:group_set_id/groups/:group_id' do
@@ -308,6 +311,7 @@ module Api
                                                    :name,
                                                    :tutorial_id,
                                                    :capacity_adjustment,
+                                                   :locked,
                                                  )
 
       # Switching tutorials will violate any existing group members
@@ -399,6 +403,10 @@ module Api
 
       if grp.active_group_members.find_by(project: prj, active: true)
         error!({ error: "#{prj.student.name} is already a member of this group" }, 403)
+      end
+
+      if grp.locked
+        error!({ error: 'Group is locked, no additional members can be added'}, 403)
       end
 
       if grp.at_capacity? && ! authorise?(current_user, grp, :can_exceed_capacity)
