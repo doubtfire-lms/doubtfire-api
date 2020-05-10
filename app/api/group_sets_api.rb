@@ -305,7 +305,9 @@ module Api
       group_params = ActionController::Parameters.new(params)
                                                  .require(:group)
                                                  .permit(
-                                                   :name
+                                                   :name,
+                                                   :tutorial_id,
+                                                   :capacity_adjustment,
                                                  )
 
       # Switching tutorials will violate any existing group members
