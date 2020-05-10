@@ -309,7 +309,7 @@ module Api
                                                  )
 
       # Switching tutorials will violate any existing group members
-      if params[:group][:tutorial_id] != grp.tutorial_id
+      if params[:group][:tutorial_id].present? && params[:group][:tutorial_id] != grp.tutorial_id
         if authorise? current_user, grp, :move_tutorial
           tutorial = unit.tutorials.find_by(id: params[:group][:tutorial_id])
           grp.switch_to_tutorial tutorial
