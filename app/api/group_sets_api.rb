@@ -314,6 +314,13 @@ module Api
                                                    :locked,
                                                  )
 
+      # Allow locking only if the current user has permission to do so
+      if params[:group][:locked].present? && params[:group][:locked] != grp.locked
+        unless authorise? current_user, grp, :lock_group
+          error!({ error: "Not authorised to #{grp.locked ? 'unlock' : 'lock'} this group" }, 403)
+        end
+      end
+
       # Switching tutorials will violate any existing group members
       if params[:group][:tutorial_id].present? && params[:group][:tutorial_id] != grp.tutorial_id
         if authorise? current_user, grp, :move_tutorial
