@@ -41,12 +41,14 @@ class Group < ActiveRecord::Base
     tutor_role_permissions = [
       :get_members,
       :manage_group,
+      :lock_group,
       :move_tutorial
     ]
     # What can convenors do with groups?
     convenor_role_permissions = [
       :get_members,
       :manage_group,
+      :lock_group,
       :can_exceed_capacity,
       :move_tutorial
     ]
@@ -54,6 +56,7 @@ class Group < ActiveRecord::Base
     admin_role_permissions = [
       :get_members,
       :manage_group,
+      :lock_group,
       :can_exceed_capacity,
       :move_tutorial
     ]    
