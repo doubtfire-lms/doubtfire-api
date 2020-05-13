@@ -202,6 +202,30 @@ module Api
       unit.tasks_as_hash(tasks)
     end
 
+    desc 'Pin a task within the task inbox'
+    put '/units/:unit_id/tasks/:task_id/pin' do
+      unit = Unit.find(params[:unit_id])
+      task = Task.find(params[:task_id])
+
+      unless authorise? current_user, unit, :provide_feedback
+        error!({ error: 'Not authorised to pin task' }, 403) 
+      end
+
+      TaskPin.find_or_create_by(task: task, user: current_user)
+    end
+
+    desc 'Unpin a task within the task inbox'
+    delete '/units/:unit_id/tasks/:task_id/pin' do
+      unit = Unit.find(params[:unit_id])
+      task = Task.find(params[:task_id])
+      
+      unless authorise? current_user, unit, :provide_feedback
+        error!({ error: 'Not authorised to unpin task' }, 403) 
+      end
+
+      TaskPin.find_by(task: task, user: current_user).try(:destroy)
+    end
+
     desc 'Download the tasks that should be listed under the task inbox'
     get '/units/:id/tasks/inbox' do
       unit = Unit.find(params[:id])
