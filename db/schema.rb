@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20200327052250) do
+ActiveRecord::Schema.define(version: 20200512143828) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -245,6 +245,13 @@ ActiveRecord::Schema.define(version: 20200327052250) do
 
   add_index "task_engagements", ["task_id"], name: "index_task_engagements_on_task_id", using: :btree
 
+  create_table "task_pins", force: :cascade do |t|
+    t.integer  "task_id"
+    t.integer  "user_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
   create_table "task_statuses", force: :cascade do |t|
     t.string   "name",        limit: 255
     t.string   "description", limit: 255
@@ -396,9 +403,7 @@ ActiveRecord::Schema.define(version: 20200327052250) do
     t.string   "last_name",                       limit: 255
     t.string   "username",                        limit: 255
     t.string   "nickname",                        limit: 255
-    t.string   "authentication_token",            limit: 255
     t.string   "unlock_token",                    limit: 255
-    t.datetime "auth_token_expiry"
     t.integer  "role_id",                                     default: 0
     t.boolean  "receive_task_notifications",                  default: true
     t.boolean  "receive_feedback_notifications",              default: true
@@ -407,9 +412,10 @@ ActiveRecord::Schema.define(version: 20200327052250) do
     t.boolean  "has_run_first_time_setup",                    default: false
     t.string   "login_id"
     t.string   "student_id"
+    t.string   "authentication_token",            limit: 255
+    t.datetime "auth_token_expiry"
   end
 
-  add_index "users", ["authentication_token"], name: "index_users_on_authentication_token", unique: true, using: :btree
   add_index "users", ["login_id"], name: "index_users_on_login_id", unique: true, using: :btree
 
   add_foreign_key "breaks", "teaching_periods"
