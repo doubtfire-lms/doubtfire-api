@@ -64,6 +64,7 @@ module Api
         optional :allow_students_to_manage_groups,  type: Boolean,  desc: 'Are students allowed to manage their group memberships'
         optional :keep_groups_in_same_class,        type: Boolean,  desc: 'Must groups be kept in the one class'
         optional :capacity,                         type: Integer,  desc: 'Capacity for each group'
+        optional :locked,                           type: Boolean,  desc: 'Are all groups within this set, locked'
       end
     end
     put '/units/:unit_id/group_sets/:id' do
@@ -87,8 +88,14 @@ module Api
                                                    :allow_students_to_create_groups,
                                                    :allow_students_to_manage_groups,
                                                    :keep_groups_in_same_class,
-                                                   :capacity
+                                                   :capacity,
+                                                   :locked,
                                                  )
+
+      if group_params.key?(:locked) then
+        group_set.groups.update_all(locked: group_params[:locked])
+        group_params.delete(:locked)
+      end
 
       group_set.update!(group_params)
       group_set
