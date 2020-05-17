@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20200327052250) do
+ActiveRecord::Schema.define(version: 20200702063910) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -62,6 +62,14 @@ ActiveRecord::Schema.define(version: 20200327052250) do
     t.integer  "number_of_prompts"
     t.datetime "created_at",        null: false
     t.datetime "updated_at",        null: false
+  end
+
+  create_table "group_member_evaluations", force: :cascade do |t|
+    t.integer  "group_membership_id"
+    t.integer  "project_id"
+    t.float    "evaluation",          null: false
+    t.datetime "created_at"
+    t.datetime "updated_at"
   end
 
   create_table "group_memberships", force: :cascade do |t|
@@ -135,6 +143,12 @@ ActiveRecord::Schema.define(version: 20200327052250) do
   end
 
   add_index "logins", ["user_id"], name: "index_logins_on_user_id", using: :btree
+
+  create_table "peer_task_evaluation_questions", force: :cascade do |t|
+    t.text     "description", null: false
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
 
   create_table "plagiarism_match_links", force: :cascade do |t|
     t.integer  "task_id"
@@ -244,6 +258,21 @@ ActiveRecord::Schema.define(version: 20200327052250) do
   end
 
   add_index "task_engagements", ["task_id"], name: "index_task_engagements_on_task_id", using: :btree
+
+  create_table "task_evaluation_questions", force: :cascade do |t|
+    t.integer  "peer_task_evaluation_question_id"
+    t.integer  "task_definition_id"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  create_table "task_peer_evaluations", force: :cascade do |t|
+    t.integer  "task_evaluation_question_id"
+    t.integer  "project_id"
+    t.integer  "evaluation",                  null: false
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
 
   create_table "task_statuses", force: :cascade do |t|
     t.string   "name",        limit: 255

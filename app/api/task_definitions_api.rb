@@ -433,5 +433,21 @@ module Api
       env['api.format'] = :binary
       File.read(path)
     end
+    get '/units/:unit_id/task_definitions/:task_def_id/task_peer_assessment' do
+      unit = Unit.find(params[:unit_id])
+      task_def = unit.task_definitions.find(params[:task_def_id])
+      qid = 1
+      questions = TaskEvaluationQuestion.all
+      evalquestions = PeerTaskEvaluationQuestion.all 
+
+      unless authorise? current_user, unit, :get_unit
+        error!({ error: 'Not authorised to download task details of unit' }, 403)
+      end
+
+      if task_def.is_group_task?
+          evalquestions                
+      end
+      #evalquestions
+    end
   end
 end
