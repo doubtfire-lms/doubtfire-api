@@ -67,7 +67,7 @@ gem 'grape-active_model_serializers', '~> 1.3.2'
 gem 'grape-swagger'
 
 # Miscellaneous
-gem 'attr_encrypted', '~> 1.4.0'
+gem 'attr_encrypted', '~> 3.1.0'
 gem 'rack-cors', require: 'rack/cors'
 gem 'ci_reporter'
 gem 'require_all', '>=1.3.3'
