@@ -2,42 +2,10 @@ version: '2'
 services:
   api:
     container_name: doubtfire-api
-    build: .
+    build: . 
     ports:
       - "3000:3000"
     volumes:
       - ./:/doubtfire-api
       - /doubtfire-api/.bundle
       - /doubtfire-api/tmp
-    links:
-      - web
-    depends_on:
-      - db
-    environment:
-      DATABASE_URL: 'postgresql://itig:d872$$dh@db:5432/doubtfire_dev'
-      RAILS_ENV: 'development'
-
-  db:
-    container_name: doubtfire-db
-    image: postgres
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_PASSWORD: d872$$dh
-      POSTGRES_USER: itig
-
-  web:
-    container_name: doubtfire-web
-    build: ../doubtfire-web
-    environment:
-      DF_DOCKER_MACHINE_IP: api
-    ports:
-      - "4200:4200" # Angular 6
-      - "8000:8000" # Angular 1
-      - "8080:8080" # Angular 1
-    volumes:
-      - ../doubtfire-web:/doubtfire-web
-      - /doubtfire-web/bin
-      - /doubtfire-web/build
-      - /doubtfire-web/node_modules
-      - /doubtfire-web/vendor
