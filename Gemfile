@@ -13,12 +13,13 @@ ruby ruby_versions[(ENV['RAILS_ENV'] || 'development').to_sym]
 # The venerable, almighty Rails
 gem 'rails', '4.2.6'
 
+
 group :development, :test do
   gem 'database_cleaner'
   gem 'byebug'
   gem 'simplecov', require: false
-  gem 'pg'
   gem 'hirb'
+  gem 'sqlite3', '~> 1.3.11'
   gem 'better_errors'
   gem 'rails_best_practices'
   gem 'thin'
@@ -40,7 +41,7 @@ group :production do
 end
 
 group :production, :staging do
-  gem 'mysql2'
+  gem 'pg'
 end
 
 # Authentication
