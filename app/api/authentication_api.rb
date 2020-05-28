@@ -1,7 +1,7 @@
 require 'grape'
 require 'user_serializer'
 require 'json/jwt'
-
+ 
 module Api
   #
   # Provides the authentication API for Doubtfire.
@@ -162,15 +162,16 @@ module Api
       #
       desc 'Get user details from an authentication token'
       params do
-        requires :auth_token, type: String, desc: 'The user\'s temporary auth token'
+        requires :username, type: String, in: header, desc: 'The user\'s username'
+        requires :auth_token, type: String, in: header, desc: 'The user\'s temporary auth token'
       end
       post '/auth' do
-        error!({ error: 'Invalid token.' }, 404) if params[:auth_token].nil?
+        error!({ error: 'Invalid token.' }, 404) if headers['Auth-Token'].nil?
         logger.info "Get user via auth_token from #{request.ip}"
 
         # Authenticate that the token is okay
         if authenticated?
-          token = AuthToken.find_by_auth_token(params[:auth_token])
+          token = AuthToken.find_by_auth_token(headers['Auth-Token'])
           error!({ error: 'Invalid token.' }, 404) if token.nil?
           
           user = token.user
