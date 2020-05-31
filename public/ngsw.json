@@ -1,6 +1,6 @@
 {
   "configVersion": 1,
-  "timestamp": 1587616794435,
+  "timestamp": 1589876493406,
   "index": "/index.html",
   "assetGroups": [
     {
@@ -9,7 +9,7 @@
       "updateMode": "prefetch",
       "urls": [
         "/index.html",
-        "/main.96fafdfd848a6020fd4b.js",
+        "/main.d88ce537f6ec55ff9cab.js",
         "/manifest.webmanifest",
         "/ngsw-worker.js",
         "/polyfills-es5.8b500cc25eeafb461711.js",
@@ -17,7 +17,7 @@
         "/runtime.689ba4fd6cadb82c1ac2.js",
         "/safety-worker.js",
         "/scripts.fc6186d1c449440a7a2f.js",
-        "/styles.a2af91f117220517778a.css",
+        "/styles.694f2ce7e031ba9786d1.css",
         "/worker-basic.min.js"
       ],
       "patterns": []
@@ -32,6 +32,7 @@
         "/Roboto-Light.woff",
         "/Roboto-Medium.woff",
         "/Roboto-Regular.woff",
+        "/assets/.DS_Store",
         "/assets/fonts/FontAwesome.otf",
         "/assets/fonts/bootstrap/glyphicons-halflings-regular.eot",
         "/assets/fonts/bootstrap/glyphicons-halflings-regular.svg",
@@ -141,6 +142,7 @@
     "/Roboto-Light.woff": "987731626feefc140cf17fff41bd3213312d6f99",
     "/Roboto-Medium.woff": "3087b20015925170e65cf2b6c1fdbf0cd4ec3b3b",
     "/Roboto-Regular.woff": "4932a1b55bd4f3a3dcc95db33ec07ba729e86c61",
+    "/assets/.DS_Store": "4bc95635b7ea696548211630e4d815fb0e293bab",
     "/assets/fonts/FontAwesome.otf": "42c179eef588854b5ec151bcf6a3f58aa8b79b11",
     "/assets/fonts/bootstrap/glyphicons-halflings-regular.eot": "86b6f62b7853e67d3e635f6512a5a5efc58ea3c3",
     "/assets/fonts/bootstrap/glyphicons-halflings-regular.svg": "de51a8494180a6db074af2dee2383f0a363c5b08",
@@ -217,8 +219,8 @@
     "/glyphicons-halflings-regular.ttf": "44bc1850f570972267b169ae18f1cb06b611ffa2",
     "/glyphicons-halflings-regular.woff": "278e49a86e634da6f2a02f3b47dd9d2a8f26210f",
     "/glyphicons-halflings-regular.woff2": "ca35b697d99cae4d1b60f2d60fcd37771987eb07",
-    "/index.html": "d75396836e8798891f5d14bcf1502c1075c10e39",
-    "/main.96fafdfd848a6020fd4b.js": "7239736555b2c0e7dd90bba9e72ee084e60fad04",
+    "/index.html": "9656b02bd431abd03238d1499268aa644df0f6f6",
+    "/main.d88ce537f6ec55ff9cab.js": "6c075a8c0957c91e6c5228596b99e6980db65635",
     "/manifest.webmanifest": "426b0a654168b3b27cb071744d32515edd35e6b0",
     "/ngsw-worker.js": "3798e7f10ebdd6f55cacf4010af1fe5085cf6c16",
     "/polyfills-es5.8b500cc25eeafb461711.js": "049fa392495eed500d959dbf84d34ebcf409d444",
@@ -226,7 +228,7 @@
     "/runtime.689ba4fd6cadb82c1ac2.js": "a9aafcf49f49145093fc831efd9b8e2f6c71bb9c",
     "/safety-worker.js": "ae5c8be3955e38edeeec09ed94b63d1e57f003c9",
     "/scripts.fc6186d1c449440a7a2f.js": "41945bc3f2ac33759467dca638d794bafa1e9c68",
-    "/styles.a2af91f117220517778a.css": "97d2d1a48fd917cbfcf78ed1d7a600dd0321f4f5",
+    "/styles.694f2ce7e031ba9786d1.css": "da444f3bbea68df188bb49e12206350d4c12bd52",
     "/worker-basic.min.js": "ae5c8be3955e38edeeec09ed94b63d1e57f003c9"
   },
   "navigationUrls": [

@@ -118,6 +118,7 @@ class Unit < ActiveRecord::Base
   has_many :tasks, through: :projects
   has_many :groups, through: :group_sets
   has_many :tutorial_enrolments, through: :tutorials
+  has_many :group_memberships, through: :groups
   has_many :teaching_staff, through: :unit_roles, class_name: 'User', source: 'user'
   has_many :learning_outcome_task_links, through: :task_definitions
   has_many :task_engagements, through: :projects
