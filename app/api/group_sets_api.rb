@@ -146,17 +146,6 @@ module Api
         )
     end
 
-    # desc 'Get all groups in a unit'
-    # get '/units/:unit_id/groups' do
-    #   unit = Unit.find(params[:unit_id])
-
-    #   unless authorise? current_user, unit, :get_students
-    #     error!({ error: 'Not authorised to get groups for this unit' }, 403)
-    #   end
-
-    #   ActiveModel::ArraySerializer.new(unit.groups, each_serializer: DeepGroupSerializer)
-    # end
-
     desc 'Download a CSV of groups and their students in a group set'
     get '/units/:unit_id/group_sets/:group_set_id/groups/student_csv' do
       unit = Unit.find(params[:unit_id])
