@@ -50,7 +50,6 @@ module Api
           new_user.login_id   = username
         end
 
-        logger.info "before authenticate"
         # Try to authenticate
         unless user.authenticate?(password)
           error!({ error: 'Invalid email or password.' }, 401)
