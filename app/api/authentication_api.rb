@@ -50,6 +50,7 @@ module Api
           new_user.login_id   = username
         end
 
+        logger.info "before authenticate"
         # Try to authenticate
         unless user.authenticate?(password)
           error!({ error: 'Invalid email or password.' }, 401)
@@ -67,11 +68,11 @@ module Api
           end
           user.save
         end
-
+                
         # Return user details
         { 
           user: UserSerializer.new(user),
-          auth_token: user.generate_authentication_token!(remember).auth_token
+          auth_token: user.generate_authentication_token!(remember).encrypted_authentication_token
         }
       end
     end
@@ -171,7 +172,7 @@ module Api
 
         # Authenticate that the token is okay
         if authenticated?
-          token = AuthToken.find_by_auth_token(headers['Auth-Token'])
+          token = AuthToken.find_by_encrypted_authentication_token(headers['Auth-Token'])
           error!({ error: 'Invalid token.' }, 404) if token.nil?
           
           user = token.user
@@ -224,7 +225,7 @@ module Api
       logger.info "Update token #{params[:username]} from #{request.ip}"
 
       # Find user
-      token = AuthToken.find_by_auth_token(params[:auth_token])
+      token = AuthToken.find_by_encrypted_authentication_token(params[:auth_token])
       user = token.user unless token.nil?
       remember = params[:remember] || false
 
@@ -248,7 +249,7 @@ module Api
     #
     desc 'Sign out'
     delete '/auth/:auth_token' do
-      token = AuthToken.find_by_auth_token(params[:auth_token])
+      token = AuthToken.find_by_encrypted_authentication_token(params[:auth_token])
 
       if token.present?
         logger.info "Sign out #{token.user.username} from #{request.ip}"

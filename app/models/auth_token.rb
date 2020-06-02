@@ -2,27 +2,25 @@ class AuthToken < ActiveRecord::Base
 
   belongs_to :user
 
-  validates :authentication_token, presence: true, uniqueness: true
+  validates :encrypted_authentication_token, presence: true, uniqueness: true
 
   # Auth token encryption settings
   attr_encrypted :auth_token,
     key: Doubtfire::Application.secrets.secret_key_attr,
-    encode: true,
-    algorithm: 'aes-256-cbc', 
-    mode: :single_iv_and_salt, 
-    insecure_mode: true,
+    mode: :per_attribute_iv,
+    algorithm: 'aes-256-gcm',
     attribute: 'authentication_token'
 
   def self.generate(user, remember, expiry_time = Time.zone.now + 2.hours)
     # Loop until new unique auth token is found
     token = loop do
       token = Devise.friendly_token
-      break token unless AuthToken.find_by_auth_token(token)
+      break token unless AuthToken.find_by_encrypted_authentication_token(token)
     end
 
     # Create a new AuthToken with this value
     result = AuthToken.new(user_id: user.id)
-    result.auth_token = token
+    result.encrypted_authentication_token = token
     result.extend_token(remember, expiry_time, false)
     result.save!
     result
@@ -30,7 +28,7 @@ class AuthToken < ActiveRecord::Base
 
   # Find that matching token and get the associated user
   def self.user_for_token auth_token
-    token = AuthToken.find_by_auth_token(auth_token)
+    token = AuthToken.find_by_encrypted_authentication_token(auth_token)
     return nil unless token.present?
     return token.user
   end

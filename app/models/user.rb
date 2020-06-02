@@ -20,15 +20,6 @@ class User < ActiveRecord::Base
   # Authentication
   ###
 
-  # Auth token encryption settings
-  attr_encrypted :auth_token,
-                 key: Doubtfire::Application.secrets.secret_key_attr,
-                 encode: true,
-                 algorithm: 'aes-256-cbc', 
-                 mode: :single_iv_and_salt, 
-                 insecure_mode: true,
-                 attribute: 'authentication_token'
-
   # User authentication config
   if AuthenticationHelpers.aaf_auth?
     #
