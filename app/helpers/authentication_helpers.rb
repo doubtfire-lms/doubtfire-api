@@ -16,18 +16,28 @@ module AuthenticationHelpers
   # Reads details from the params fetched from the caller context.
   #
   def authenticated?
+    # Variable to store auth_token if available
+    token = nil
     # Check warden -- authenticate using DB or LDAP etc.
     return true if warden.authenticated?
-    logger.info "username: #{headers['Username']} auth_token: #{headers['Auth-Token']}"
     # Check for auth token parameter
-    if headers.present? && headers['Auth-Token'].present?
-      # Get the token and the user - if there is a token
-      token = AuthToken.find_by_auth_token(headers['Auth-Token'])
-      user_by_token = token.user unless token.nil?
+    if headers.present? && headers['Auth-Token'].present? && headers['Username'].present? #one word change
+      # Get the list of tokens for a user 
+      check_user = User.find_by_username(headers['Username']) #user_by_token
+      tokens_by_user = AuthToken.where(user_id: check_user.id) #token
+      if tokens_by_user.present?
+        # Check if token matches corresponding user
+        tokens_by_user.each do |tokens_by_user|
+          if tokens_by_user.encrypted_authentication_token == headers['Auth-Token']
+            token = tokens_by_user
+            break
+          end
+        end
+      end 
     end
-
+    
     # Check user by token
-    if user_by_token.present?
+    if check_user.present? && token.present?
       # Non-expired token
       return true if token.auth_token_expiry > Time.zone.now
       # Token is timed out - destroy it
