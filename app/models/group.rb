@@ -214,6 +214,8 @@ class Group < ActiveRecord::Base
       project = contrib[:project]
       task = project.matching_task submitter_task
 
+      next if task.task_submission_closed?
+
       if contrib[:pct].to_i > 0
         task.group_submission = gs
         task.contribution_pct = contrib[:pct]
