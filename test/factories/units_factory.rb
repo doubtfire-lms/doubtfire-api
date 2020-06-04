@@ -149,7 +149,7 @@ FactoryBot.define do
         gs = unit.group_sets[group_details[:gs]]
         grp = FactoryBot.create(:group, group_set: gs)
         group_details[:students].times do
-          grp.add_member unit.projects[stud % eval.student_count]
+          grp.add_member unit.projects[(eval.unenrolled_student_count + eval.inactive_student_count + stud) % eval.student_count]
           stud += 1
         end
       end
