@@ -201,4 +201,137 @@ class GroupModelTest < ActiveSupport::TestCase
 
     unit.destroy
   end
+
+  def test_late_submission_does_not_override_complete_tasks
+    test_unit = FactoryBot.create :unit, group_sets: 1, groups: [{gs: 0, students: 3}], task_count: 0
+
+    td = FactoryBot.create :task_definition, unit: test_unit, group_set: test_unit.group_sets.first, upload_requirements: [ ], start_date: Time.zone.now + 1.day
+
+    group = test_unit.groups.first
+
+    p1 = group.projects.first
+    p2 = group.projects.second
+    p3 = group.projects.last
+
+    tutor = p1.tutor_for(td)
+
+    t1 = p1.task_for_task_definition(td)
+    t2 = p2.task_for_task_definition(td)
+    t3 = p3.task_for_task_definition(td)
+
+    contributions = [
+      { project_id: p1.id, pct: 50, pts: 3 },
+      { project_id: p2.id, pct: 50, pts: 3 },
+      { project_id: p3.id, pct: 0, pts: 3 }
+    ]
+
+    t2.create_submission_and_trigger_state_change(t2.student, true, contributions, 'ready_to_mark')
+
+    t1.reload
+    t2.reload
+    t3.reload
+
+    assert_equal :ready_to_mark, t1.status
+    assert_equal :ready_to_mark, t2.status
+    assert_equal :not_started, t3.status
+
+    assert_equal 2, t1.group_submission.projects.count
+
+    t1.trigger_transition trigger: 'complete', by_user: tutor
+
+    t1.reload
+    t2.reload
+    t3.reload
+
+    assert_equal :complete, t1.status
+    assert_equal :complete, t2.status
+    assert_equal :not_started, t3.status
+
+    contributions = [
+      { project_id: p1.id, pct: 33, pts: 3 },
+      { project_id: p2.id, pct: 33, pts: 3 },
+      { project_id: p3.id, pct: 34, pts: 3 }
+    ]
+
+    t3.create_submission_and_trigger_state_change(t3.student, true, contributions, 'ready_to_mark')
+
+    t1.reload
+    t2.reload
+    t3.reload
+
+    assert_equal :complete, t1.status
+    assert_equal :complete, t2.status
+    assert_equal :ready_to_mark, t3.status
+
+    assert_equal 1, t3.group_submission.projects.count
+  end
+
+  def test_new_member_late_submission_does_not_override_complete_tasks
+    test_unit = FactoryBot.create :unit, group_sets: 1, groups: [{gs: 0, students: 3}], task_count: 0
+
+    td = FactoryBot.create :task_definition, unit: test_unit, group_set: test_unit.group_sets.first, upload_requirements: [ ]
+
+    group = test_unit.groups.first
+
+    p1 = group.projects.first
+    p2 = group.projects.second
+    p3 = group.projects.last
+    p4 = test_unit.active_projects.last
+
+    tutor = p1.tutor_for(td)
+
+    t1 = p1.task_for_task_definition(td)
+    t2 = p2.task_for_task_definition(td)
+    t3 = p3.task_for_task_definition(td)
+    t4 = p4.task_for_task_definition(td)
+
+    contributions = [
+      { project_id: p1.id, pct: 33, pts: 3 },
+      { project_id: p2.id, pct: 33, pts: 3 },
+      { project_id: p3.id, pct: 34, pts: 3 }
+    ]
+
+    t3.create_submission_and_trigger_state_change(t3.student, true, contributions, 'ready_to_mark')
+
+    t1.reload
+    t2.reload
+    t3.reload
+
+    assert_equal :ready_to_mark, t1.status
+    assert_equal :ready_to_mark, t2.status
+    assert_equal :ready_to_mark, t3.status
+
+    t1.trigger_transition trigger: 'complete', by_user: tutor
+
+    t1.reload
+    t2.reload
+    t3.reload
+
+    assert_equal :complete, t1.status
+    assert_equal :complete, t2.status
+    assert_equal :complete, t3.status
+
+    group.add_member p4
+
+    contributions = [
+      { project_id: p1.id, pct: 25, pts: 3 },
+      { project_id: p2.id, pct: 25, pts: 3 },
+      { project_id: p3.id, pct: 25, pts: 3 },
+      { project_id: p4.id, pct: 25, pts: 3 }
+    ]
+
+    t4.create_submission_and_trigger_state_change(t4.student, true, contributions, 'ready_to_mark')
+
+    t1.reload
+    t2.reload
+    t3.reload
+    t4.reload
+
+    assert_equal :complete, t1.status
+    assert_equal :complete, t2.status
+    assert_equal :complete, t3.status
+    assert_equal :ready_to_mark, t4.status
+
+    assert_equal 1, t4.group_submission.projects.count
+  end
 end
