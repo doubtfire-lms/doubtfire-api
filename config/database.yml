@@ -1,18 +1,22 @@
-development:
+default: &default
   adapter: postgresql
+  encoding: unicode
+  pool: 5
+  timeout: 5000
   database: doubtfire_dev
   username: itig
   password: d872$dh
-  host:  localhost
+  host:  db
   min_messages: warning
 
+development:
+  <<: *default
+
+
 test:
-  adapter: postgresql
+  <<: *default
   database: doubtfire_dev_test
-  username: itig
-  password: d872$dh
-  host: localhost
-  min_messages: warning
+ 
 
 staging:
   adapter:  <%= ENV['DF_STAGING_DB_ADAPTER']  %>
