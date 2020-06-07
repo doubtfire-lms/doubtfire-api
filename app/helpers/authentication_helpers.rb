@@ -20,24 +20,23 @@ module AuthenticationHelpers
     token = nil
     # Check warden -- authenticate using DB or LDAP etc.
     return true if warden.authenticated?
-    # Check for auth token parameter
-    if headers.present? && headers['Auth-Token'].present? && headers['Username'].present? #one word change
+    # Check for valid auth token  and username in request header 
+    if headers.present? && headers['Auth-Token'].present? && headers['Username'].present? && User.find_by_username(headers['Username']).present?
       # Get the list of tokens for a user 
-      check_user = User.find_by_username(headers['Username']) #user_by_token
-      tokens_by_user = AuthToken.where(user_id: check_user.id) #token
+      valid_user = User.find_by_username(headers['Username']) #user_by_token
+      tokens_by_user = AuthToken.where(user_id: valid_user.id) #token
       if tokens_by_user.present?
         # Check if token matches corresponding user
         tokens_by_user.each do |tokens_by_user|
-          if tokens_by_user.encrypted_authentication_token == headers['Auth-Token']
+          if tokens_by_user.authentication_token == headers['Auth-Token']  
             token = tokens_by_user
             break
           end
         end
       end 
     end
-    
     # Check user by token
-    if check_user.present? && token.present?
+    if valid_user.present? && token.present?
       # Non-expired token
       return true if token.auth_token_expiry > Time.zone.now
       # Token is timed out - destroy it
@@ -47,7 +46,7 @@ module AuthenticationHelpers
     else
       # Add random delay then fail
       sleep((200 + rand(200)) / 1000.0)
-      error!({ error: 'Could not authenticate with token. Token invalid.' }, 419)
+      error!({ error: 'Could not authenticate with token. Username or Token invalid.' }, 419)
     end
   end
 
@@ -55,7 +54,7 @@ module AuthenticationHelpers
   # Get the current user either from warden or from the token
   #
   def current_user
-    warden.user || AuthToken.user_for_token(headers['Auth-Token'])
+    warden.user || User.find_by_username(headers['Username'])
   end
 
   #

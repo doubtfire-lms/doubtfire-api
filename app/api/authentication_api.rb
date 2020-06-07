@@ -71,7 +71,7 @@ module Api
         # Return user details
         { 
           user: UserSerializer.new(user),
-          auth_token: user.generate_authentication_token!(remember).encrypted_authentication_token
+          auth_token: user.generate_authentication_token!(remember).authentication_token
         }
       end
     end
@@ -171,7 +171,7 @@ module Api
 
         # Authenticate that the token is okay
         if authenticated?
-          token = AuthToken.find_by_encrypted_authentication_token(headers['Auth-Token'])
+          token = AuthToken.find_by_authentication_token(headers['Auth-Token'])
           error!({ error: 'Invalid token.' }, 404) if token.nil?
           
           user = token.user
