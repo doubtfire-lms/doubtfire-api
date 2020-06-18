@@ -325,4 +325,41 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     refute_equal u1.task_definitions.first.name, u3.task_definitions.first.name
   end
 
+  def  test_rollover_active_only
+    tp1 = FactoryBot.create :teaching_period, start_date: Time.zone.now
+    tp2 = FactoryBot.create :teaching_period, start_date: Time.zone.now + 20.weeks
+
+    u1 = FactoryBot.create :unit, with_students: false, code: 'SIT111', task_count: 0, teaching_period: tp1
+    u2 = FactoryBot.create :unit, with_students: false, code: 'SIT112', task_count: 0, teaching_period: tp1
+
+    u1.active = false
+    u1.save
+    
+    assert_equal 2, tp1.units.count
+    assert_equal 0, tp2.units.count
+
+    tp1.rollover tp2, false
+
+    assert_equal 1, tp2.units.count
+  end
+
+  def  test_can_opt_to_rollover_inactive
+    tp1 = FactoryBot.create :teaching_period, start_date: Time.zone.now
+    tp2 = FactoryBot.create :teaching_period, start_date: Time.zone.now + 20.weeks
+
+    u1 = FactoryBot.create :unit, with_students: false, code: 'SIT111', task_count: 0, teaching_period: tp1
+    u2 = FactoryBot.create :unit, with_students: false, code: 'SIT112', task_count: 0, teaching_period: tp1
+
+    u1.active = false
+    u1.save
+    
+    assert_equal 2, tp1.units.count
+    assert_equal 0, tp2.units.count
+
+    tp1.rollover tp2, false, true
+
+    assert_equal 2, tp2.units.count
+  end
+
+
 end
