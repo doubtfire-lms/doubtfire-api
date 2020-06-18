@@ -282,4 +282,47 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     unit.reload
     assert unit.valid?
   end
+
+  def  test_search_forward_occurs_in_rollover
+    tp1 = FactoryBot.create :teaching_period, start_date: Time.zone.now
+    tp2 = FactoryBot.create :teaching_period, start_date: Time.zone.now + 20.weeks
+    tp3 = FactoryBot.create :teaching_period, start_date: Time.zone.now + 40.weeks
+
+    u1 = FactoryBot.create :unit, with_students: false, code: 'SIT111', task_count: 1, teaching_period: tp1
+
+    assert_equal 1, tp1.units.count
+    assert_equal 0, tp2.units.count
+
+    tp1.rollover tp2, false
+
+    assert_equal 1, tp2.units.count
+    assert_equal 0, tp3.units.count
+
+    u1.reload
+
+    u2 = tp2.units.first
+    u2.reload
+    u2.task_definitions.first.update(name: u2.task_definitions.first.name + "A")
+    u1.reload
+
+    refute_equal u1.task_definitions.first.name, u2.task_definitions.first.name
+
+    tp1.rollover tp3, true
+
+    assert_equal 1, tp3.units.count
+
+    u3 = tp3.units.first
+    
+    u1.reload
+    u2.reload
+    u3.reload
+
+    u1.task_definitions.reload
+    u2.task_definitions.reload
+    u3.task_definitions.reload
+
+    assert_equal u2.task_definitions.first.name, u3.task_definitions.first.name
+    refute_equal u1.task_definitions.first.name, u3.task_definitions.first.name
+  end
+
 end
