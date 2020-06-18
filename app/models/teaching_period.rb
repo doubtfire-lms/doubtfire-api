@@ -128,13 +128,17 @@ class TeachingPeriod < ActiveRecord::Base
     TeachingPeriod.where("start_date > :end_date", end_date: end_date)
   end
 
-  def rollover(rollover_to, search_forward=true)
+  def rollover(rollover_to, search_forward=true,rollover_inactive=false)
     if rollover_to.start_date < Time.zone.now || rollover_to.start_date <= start_date
       self.errors.add(:base, "Units can only be rolled over to future teaching periods")
       
       false
     else
       units_to_rollover = units
+
+      unless rollover_inactive
+        units_to_rollover = units_to_rollover.where(active: true) 
+      end 
 
       if search_forward
         ftp = future_teaching_periods.where("start_date < :date", date: rollover_to.start_date).order(start_date: "desc")
