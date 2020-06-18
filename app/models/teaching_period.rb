@@ -149,6 +149,9 @@ class TeachingPeriod < ActiveRecord::Base
       end
 
       for unit in units_to_rollover do
+        #skip if the unit already exists in the teaching period
+        next if rollover_to.units.where(code: unit.code).count > 0
+
         unit.rollover(rollover_to, nil, nil)
       end
 
