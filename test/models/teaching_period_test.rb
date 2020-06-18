@@ -361,5 +361,19 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     assert_equal 2, tp2.units.count
   end
 
+  def  test_rollover_detects_existing_units
+    tp1 = FactoryBot.create :teaching_period, start_date: Time.zone.now
+    tp2 = FactoryBot.create :teaching_period, start_date: Time.zone.now + 20.weeks
+
+    u1 = FactoryBot.create :unit, with_students: false, code: 'SIT111', task_count: 0, teaching_period: tp1
+    u2 = FactoryBot.create :unit, with_students: false, code: 'SIT111', task_count: 0, teaching_period: tp2
+
+    assert_equal 1, tp1.units.count
+    assert_equal 1, tp2.units.count
+
+    tp1.rollover tp2
+
+    assert_equal 1, tp2.units.count
+  end
 
 end
