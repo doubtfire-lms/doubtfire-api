@@ -464,18 +464,17 @@ class DeakinInstitutionSettings
               student_list << row_data
             end
           end
-        end
 
-        import_settings = {
-          replace_existing_tutorial: false
-        }
+          import_settings = {
+            replace_existing_tutorial: false
+          }
 
-        # Now get unit to sync
-        unit.sync_enrolment_with(student_list, import_settings, result)
-      else
-        logger.error "Failed to sync #{unit.code} - #{response}"
-      end
-
+          # Now get unit to sync
+          unit.sync_enrolment_with(student_list, import_settings, result)
+        else
+          logger.error "Failed to sync #{unit.code} - #{response}"
+        end # if response 200
+      end # for each code
     rescue Exception => e
       logger.error "Failed to sync unit: #{e.message}"
     end
