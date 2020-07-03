@@ -618,7 +618,8 @@ class Unit < ActiveRecord::Base
 
         unit_code = row_data[:unit_code]
 
-        if unit_code != code
+        # Check it is one of the unit codes
+        unless code.split('/').include? unit_code
           ignored << { row: row_data[:row], message: "Invalid unit code. #{unit_code} does not match #{code}" }
           next
         end
