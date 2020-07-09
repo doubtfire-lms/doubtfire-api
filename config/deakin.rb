@@ -128,7 +128,8 @@ class DeakinInstitutionSettings
   def sync_streams_from_star(unit)
     tp = unit.teaching_period
 
-    url = "#{@star_url}/star-#{tp.year}/rest/activities"
+    # url = "#{@star_url}/star-#{tp.year}/rest/activities"
+    url = "#{@star_url}/even/rest/activities"
 
     logger.info("Fetching #{unit.name} timetable from #{url}")
     response = RestClient.post(url, {username: @star_user, password: @star_secret, where_clause:"subject_code LIKE '#{unit.code}%'"})
@@ -491,7 +492,8 @@ class DeakinInstitutionSettings
 
     tp = unit.teaching_period
 
-    url = "#{@star_url}/star-#{tp.year}/rest/students/allocated"
+    # url = "#{@star_url}/star-#{tp.year}/rest/students/allocated"
+    url = "#{@star_url}/even/rest/students/allocated"
 
     unit.tutorial_streams.each do |tutorial_stream|
       logger.info("Fetching #{tutorial_stream} from #{url}")
