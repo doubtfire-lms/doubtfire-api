@@ -156,10 +156,8 @@ class DeakinInstitutionSettings
         stream = find_or_add_stream unit, activity['activity_group_code'], activity['description']
         next if stream.nil?
 
-        campus = Campus.find_by(abbreviation: activity['campus'])
-
         abbr = tutorial_abbr_for_star(activity)
-        tutorial = unit.tutorials.where(abbreviation: abbr, campus_id: campus.id).first
+        tutorial = unit.tutorials.where(abbreviation: abbr).first
         if tutorial.nil?
           unit.add_tutorial(
             activity['day_of_week'], #day
