@@ -302,6 +302,12 @@ class DeakinInstitutionSettings
 
     tp = unit.teaching_period
 
+    # in this process we need to keep track of those students already enrolled for
+    # cases where multi-unit enrolments "enrol" a user in unit 1 and "withdraw" them in unit 2
+    # this will keep a list of the enrolled students from earlier units to ensure they are not
+    # subsequently withdrawn
+    already_enrolled = {}
+
     unless tp.present?
       logger.error "Failing to sync unit #{unit.code} as not in teaching period"
       return
@@ -448,6 +454,14 @@ class DeakinInstitutionSettings
                 campus:         campus_name,
                 row:            enrolment
               }
+
+              # Record details for students already enrolled to work with multi-units
+              if row_data[:enrolled]
+                already_enrolled[row_data[:username]] = true
+              elsif already_enrolled[row_data[:username]]
+                # skip to the next enrolment... this person was enrolled in an earlier unit nested within this unit... so skip this row as it would result in withdrawal
+                next
+              end
 
               user = sync_student_user_from_callista(row_data)
 
