@@ -685,7 +685,7 @@ class Unit < ActiveRecord::Base
         nickname = row_data[:nickname].nil? ? nil : row_data[:nickname].titleize
         email = row_data[:email]
         tutorials = row_data[:tutorials]
-        campus_data = row_data[:campus_data]
+        campus_data = row_data[:campus]
 
         # If either first or last name is nil... copy over the other component
         first_name = first_name || last_name
