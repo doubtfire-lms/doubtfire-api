@@ -73,4 +73,28 @@ class ProjectsApiTest < ActiveSupport::TestCase
       assert_json_matches_model(project.unit, data, %w(teaching_period_id active))
     end
   end
+
+  def test_submitted_grade_cant_change_after_submission
+    user = FactoryBot.create(:user, :student, enrol_in: 1)
+    project = user.projects.first
+
+    data_to_put = {
+      id: project.id,
+      submitted_grade: 2
+    }
+
+    put_json with_auth_token("/api/projects/#{project.id}", user), data_to_put
+
+    assert_equal 200, last_response.status
+    assert_equal user.projects.find(project.id).submitted_grade, 2
+
+    DatabasePopulator.generate_portfolio(project)
+    
+    data_to_put['submitted_grade'] = 1
+
+    put_json with_auth_token("/api/projects/#{project.id}", user), data_to_put
+
+    assert_not_equal user.projects.find(project.id).submitted_grade, 1
+    assert_equal 403, last_response.status
+  end
 end
