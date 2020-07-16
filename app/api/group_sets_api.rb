@@ -388,7 +388,11 @@ module Api
       prj = unit.projects.find(params[:project_id])
 
       unless authorise? current_user, gs, :join_group, ->(role, perm_hash, other) { gs.specific_permission_hash(role, perm_hash, other) }
-        error!({ error: 'Not authorised to manage this group' }, 403)
+        if gs.locked
+          error!({ error: 'All of these groups are now locked' }, 403)
+        else
+          error!({ error: 'Not authorised to manage this group' }, 403)
+        end
       end
 
       unless authorise? current_user, prj, :get
@@ -430,7 +434,11 @@ module Api
       prj = grp.projects.find(params[:id])
 
       unless authorise? current_user, grp, :manage_group, ->(role, perm_hash, other) { grp.specific_permission_hash(role, perm_hash, other) }
-        error!({ error: 'Not authorised to manage this group' }, 403)
+        if grp.locked || gs.locked
+          error!({ error: 'This group is locked' }, 403)
+        else
+          error!({ error: 'Not authorised to manage this group' }, 403)
+        end
       end
 
       unless authorise? current_user, prj, :get
