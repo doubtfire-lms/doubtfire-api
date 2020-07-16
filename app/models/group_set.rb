@@ -66,9 +66,4 @@ class GroupSet < ActiveRecord::Base
       end
     end
   end
-
-  # Returns whether all groups within this group set are locked.
-  def locked
-    groups.any? && groups.select(:locked).all? { |g| g.locked }
-  end
 end
