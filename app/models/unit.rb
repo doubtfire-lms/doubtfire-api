@@ -324,6 +324,7 @@ class Unit < ActiveRecord::Base
         .group(
           'projects.id',
           'projects.target_grade',
+          'projects.submitted_grade',
           'projects.enrolled',
           'projects.campus_id',
           'users.first_name',
@@ -344,6 +345,7 @@ class Unit < ActiveRecord::Base
           'users.username AS student_id',
           'users.email AS student_email',
           'projects.target_grade AS target_grade',
+          'projects.submitted_grade AS submitted_grade',
           'projects.compile_portfolio AS compile_portfolio',
           'projects.grade AS grade',
           'projects.grade_rationale AS grade_rationale',
@@ -373,6 +375,7 @@ class Unit < ActiveRecord::Base
         student_email: t.student_email,
         student_name: "#{t.first_name} #{t.last_name}",
         target_grade: t.target_grade,
+        submitted_grade: t.submitted_grade,
         compile_portfolio: t.compile_portfolio,
         grade: t.grade,
         grade_rationale: t.grade_rationale,
