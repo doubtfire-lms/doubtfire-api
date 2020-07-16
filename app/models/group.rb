@@ -41,12 +41,14 @@ class Group < ActiveRecord::Base
     tutor_role_permissions = [
       :get_members,
       :manage_group,
+      :lock_group,
       :move_tutorial
     ]
     # What can convenors do with groups?
     convenor_role_permissions = [
       :get_members,
       :manage_group,
+      :lock_group,
       :can_exceed_capacity,
       :move_tutorial
     ]
@@ -54,6 +56,7 @@ class Group < ActiveRecord::Base
     admin_role_permissions = [
       :get_members,
       :manage_group,
+      :lock_group,
       :can_exceed_capacity,
       :move_tutorial
     ]    
@@ -80,8 +83,8 @@ class Group < ActiveRecord::Base
   def specific_permission_hash(role, perm_hash, _other)
     result = perm_hash[role] unless perm_hash.nil?
     if result && role == :student
-      result << :manage_group if group_set.allow_students_to_manage_groups
-      end
+      result << :manage_group if (!locked && !group_set.locked && group_set.allow_students_to_manage_groups)
+    end
     result
   end
 

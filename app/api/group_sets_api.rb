@@ -64,6 +64,7 @@ module Api
         optional :allow_students_to_manage_groups,  type: Boolean,  desc: 'Are students allowed to manage their group memberships'
         optional :keep_groups_in_same_class,        type: Boolean,  desc: 'Must groups be kept in the one class'
         optional :capacity,                         type: Integer,  desc: 'Capacity for each group'
+        optional :locked,                           type: Boolean,  desc: 'Is this group set locked'
       end
     end
     put '/units/:unit_id/group_sets/:id' do
@@ -87,7 +88,8 @@ module Api
                                                    :allow_students_to_create_groups,
                                                    :allow_students_to_manage_groups,
                                                    :keep_groups_in_same_class,
-                                                   :capacity
+                                                   :capacity,
+                                                   :locked,
                                                  )
 
       group_set.update!(group_params)
@@ -134,14 +136,16 @@ module Api
           'groups.name',
           'groups.tutorial_id',
           'groups.group_set_id',
-          'groups.capacity_adjustment'
+          'groups.capacity_adjustment',
+          'groups.locked',
         ).
         select(
           'groups.id as id',
           'groups.name as name',
           'groups.tutorial_id as tutorial_id',
           'groups.group_set_id as group_set_id',
-          'groups.capacity_adjustment',
+          'groups.capacity_adjustment as capacity_adjustment',
+          'groups.locked as locked',
           'COUNT(group_memberships.id) as student_count'
         )
     end
@@ -280,6 +284,7 @@ module Api
         optional :name,                             type: String,   desc: 'The name of this group set'
         optional :tutorial_id,                      type: Integer,  desc: 'Tutorial of the group'
         optional :capacity_adjustment,              type: Integer,  desc: 'How capacity for group is adjusted'
+        optional :locked,                           type: Boolean,  desc: 'Is the group locked'
       end
     end
     put '/units/:unit_id/group_sets/:group_set_id/groups/:group_id' do
@@ -294,11 +299,21 @@ module Api
       group_params = ActionController::Parameters.new(params)
                                                  .require(:group)
                                                  .permit(
-                                                   :name
+                                                   :name,
+                                                   :tutorial_id,
+                                                   :capacity_adjustment,
+                                                   :locked,
                                                  )
 
+      # Allow locking only if the current user has permission to do so
+      if params[:group][:locked].present? && params[:group][:locked] != grp.locked
+        unless authorise? current_user, grp, :lock_group
+          error!({ error: "Not authorised to #{grp.locked ? 'unlock' : 'lock'} this group" }, 403)
+        end
+      end
+
       # Switching tutorials will violate any existing group members
-      if params[:group][:tutorial_id] != grp.tutorial_id
+      if params[:group][:tutorial_id].present? && params[:group][:tutorial_id] != grp.tutorial_id
         if authorise? current_user, grp, :move_tutorial
           tutorial = unit.tutorials.find_by(id: params[:group][:tutorial_id])
           grp.switch_to_tutorial tutorial
@@ -386,6 +401,10 @@ module Api
 
       if grp.active_group_members.find_by(project: prj, active: true)
         error!({ error: "#{prj.student.name} is already a member of this group" }, 403)
+      end
+
+      if grp.locked
+        error!({ error: 'Group is locked, no additional members can be added'}, 403)
       end
 
       if grp.at_capacity? && ! authorise?(current_user, grp, :can_exceed_capacity)
