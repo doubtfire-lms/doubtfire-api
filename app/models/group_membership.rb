@@ -16,7 +16,7 @@ class GroupMembership < ActiveRecord::Base
 
   def must_be_in_same_tutorial
     if active && !in_group_tutorial?(group.tutorial)
-      errors.add(:group, "requires all students to be in the #{group.tutorial.abbreviation} tutorial")
+      errors.add(:group, "requires all students to be in the #{group.tutorial.abbreviation} tutorial which is not the case for #{project.student.name}.")
     end
   end
 

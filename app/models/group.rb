@@ -14,7 +14,10 @@ class Group < ActiveRecord::Base
   validates :name, presence: true, allow_nil: false
   validates :group_set, presence: true, allow_nil: false
   validates :tutorial, presence: true, allow_nil: false
-  validates_associated :group_memberships
+
+  # Check group members are ok with the change of tutorial... but only if the tutorial changed
+  validates_associated :group_memberships, if: :has_change_group_tutorial?
+
   validates :name, uniqueness: { scope: :group_set,
                                  message: 'must be unique within the set of groups' }
   validate :must_be_in_same_tutorial, if: :limit_members_to_tutorial?
@@ -115,15 +118,25 @@ class Group < ActiveRecord::Base
 
   def switch_to_tutorial tutorial
     return if tutorial_id == tutorial.id
-    
-    tutorial_id = tutorial.id
-    self.tutorial = tutorial
-    if group_set.keep_groups_in_same_class && has_active_group_members?
-      projects.each do |proj|
-        proj.enrol_in tutorial
+
+    Group.transaction do
+      tutorial_id = tutorial.id
+      self.tutorial = tutorial
+      if group_set.keep_groups_in_same_class && has_active_group_members?
+        projects.each do |proj|
+          # We need to remove members to break the circular dependency and switch tutorial
+          remove_member(proj)
+
+          te = proj.enrol_in tutorial
+          unless te.valid?
+            raise "Unable to move group as #{proj.student.name} could not switch tutorial."
+          end
+
+          add_member(proj)
+        end
       end
+      self.save!
     end
-    self.save!
   end
 
   def add_member(project)
@@ -235,6 +248,10 @@ class Group < ActiveRecord::Base
     # ensure that original task is reloaded... update will have effected a different object
     submitter_task.reload
     gs
+  end
+
+  def has_change_group_tutorial?
+    tutorial_id != tutorial_id_was
   end
 
   def limit_members_to_tutorial?

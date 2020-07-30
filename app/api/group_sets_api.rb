@@ -316,7 +316,11 @@ module Api
       if params[:group][:tutorial_id].present? && params[:group][:tutorial_id] != grp.tutorial_id
         if authorise? current_user, grp, :move_tutorial
           tutorial = unit.tutorials.find_by(id: params[:group][:tutorial_id])
-          grp.switch_to_tutorial tutorial
+          begin
+            grp.switch_to_tutorial tutorial
+          rescue StandardError => e
+            error!({ error: e.message }, 403)
+          end
         else
           error!({ error: 'You are not authorised to change the tutorial of this group' }, 403)
         end
