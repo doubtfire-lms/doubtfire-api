@@ -553,7 +553,7 @@ class Unit < ActiveRecord::Base
               email:          row['email'],
               enrolled:       true,
               tutorials:      tutorials,
-              campus_data:    row['campus']
+              campus:         row['campus']
           }
         },
         replace_existing_tutorial: true
