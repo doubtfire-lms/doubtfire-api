@@ -38,6 +38,8 @@ class Project < ActiveRecord::Base
 
   validate :tutorial_enrolment_same_campus, if: :campus_id_changed?
 
+  after_update :check_withdraw_from_groups, if: :enrolled_changed?
+
   #
   # Permissions around project data
   #
@@ -920,5 +922,12 @@ class Project < ActiveRecord::Base
     return true if tutorial_enrolments.count == 0
     errors.add :base, "Cannot delete project with enrolments"
     false
+  end
+
+  # If someone withdraws from a unit, make sure they are removed from groups
+  def check_withdraw_from_groups
+    return if enrolled
+
+    groups.each{|g| g.remove_member(self)}
   end
 end
