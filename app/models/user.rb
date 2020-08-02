@@ -1,6 +1,7 @@
 require 'bcrypt'
 require 'authorisation_helpers'
 
+ 
 # Modify the string class to fix the titilize issue where
 # names could be stripped on import. Eg a blank name entered as "-"
 #
@@ -108,6 +109,17 @@ class User < ActiveRecord::Base
   #
   def authentication_token_expired?
     auth_token_expiry.nil? || auth_token_expiry <= Time.zone.now
+  end
+
+  #
+  # Returns authentication of the user
+  #
+  def token_by_user?(a_token)
+    list_tokens = []
+    self.auth_tokens.each do |token|
+      list_tokens << token.authentication_token
+    end
+    a_token if list_tokens.include?(a_token)
   end
 
   ###
