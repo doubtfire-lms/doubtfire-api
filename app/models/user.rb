@@ -1,7 +1,6 @@
 require 'bcrypt'
 require 'authorisation_helpers'
 
- 
 # Modify the string class to fix the titilize issue where
 # names could be stripped on import. Eg a blank name entered as "-"
 #

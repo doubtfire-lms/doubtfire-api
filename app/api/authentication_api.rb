@@ -1,6 +1,7 @@
 require 'grape'
 require 'user_serializer'
 require 'json/jwt'
+
 module Api
   #
   # Provides the authentication API for Doubtfire.
@@ -65,7 +66,8 @@ module Api
                           'Doubtfire administrators.')
           end
           user.save
-        end                
+        end      
+
         # Return user details
         { 
           user: UserSerializer.new(user),
@@ -170,10 +172,9 @@ module Api
         # Authenticate that the token is okay
         if authenticated?
           user = User.find_by_username(headers['Username'])
-          token = user.token_by_user?(headers['Auth-Token']) unless user.nil?
+          token_with_value = user.auth_tokens 
+          token = token_with_value.select { |token| token.authentication_token == headers['Auth-Token'] }.first
           error!({ error: 'Invalid token.' }, 404) if token.nil?
-          
-          # user = token.user
 
           # Invalidate the token and regenrate a new one
           token.destroy!
@@ -182,7 +183,7 @@ module Api
           # Respond user details with new auth token
           {
             user: UserSerializer.new(user),
-            auth_token: token.auth_token
+            auth_token: token.authentication_token
           }
         end
       end
@@ -227,11 +228,10 @@ module Api
       token_with_value = user.auth_tokens 
       token = token_with_value.select { |token| token.authentication_token == params[:auth_token] }.first
       remember = params[:remember] || false
-      logger.info "token #{token} user #{user} username #{user.username} params #{params[:username]}"
-
+      
       # Token does not match user
       if token.nil? || user.nil? || user.username != params[:username]
-        error!({ error: '2Invalid token.' }, 404)
+        error!({ error: 'Invalid token.' }, 404)
       else
         if token.auth_token_expiry > Time.zone.now
           token.extend_token remember
@@ -260,6 +260,8 @@ module Api
         logger.info "Sign out #{user.username} from #{request.ip}"
         token.destroy!
       end
+
+      nil
     end
   end
 end
