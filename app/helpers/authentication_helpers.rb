@@ -17,26 +17,18 @@ module AuthenticationHelpers
   #
   def authenticated?
     # Variable to store auth_token if available
-    token = nil
+    token_with_value = nil
     # Check warden -- authenticate using DB or LDAP etc.
     return true if warden.authenticated?
     # Check for valid auth token  and username in request header 
-    if headers.present? && headers['Auth-Token'].present? && headers['Username'].present? && User.find_by_username(headers['Username']).present?
+    user = current_user
+    if headers.present? && headers['Auth-Token'].present? && headers['Username'].present? && user.present?
       # Get the list of tokens for a user 
-      valid_user = User.find_by_username(headers['Username']) #user_by_token
-      tokens_by_user = AuthToken.where(user_id: valid_user.id) #token
-      if tokens_by_user.present?
-        # Check if token matches corresponding user
-        tokens_by_user.each do |tokens_by_user|
-          if tokens_by_user.authentication_token == headers['Auth-Token']  
-            token = tokens_by_user
-            break
-          end
-        end
-      end 
+      token_with_value = user.auth_tokens 
+      token = token_with_value.select { |token| token.authentication_token == headers['Auth-Token'] }.first
     end
     # Check user by token
-    if valid_user.present? && token.present?
+    if user.present? && token.present?
       # Non-expired token
       return true if token.auth_token_expiry > Time.zone.now
       # Token is timed out - destroy it
@@ -51,7 +43,7 @@ module AuthenticationHelpers
   end
 
   #
-  # Get the current user either from warden or from the token
+  # Get the current user either from warden or from the header
   #
   def current_user
     warden.user || User.find_by_username(headers['Username'])
