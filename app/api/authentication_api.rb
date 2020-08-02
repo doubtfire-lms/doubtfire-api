@@ -66,7 +66,7 @@ module Api
                           'Doubtfire administrators.')
           end
           user.save
-        end      
+        end
 
         # Return user details
         { 
@@ -168,7 +168,7 @@ module Api
       post '/auth' do
         error!({ error: 'Invalid token.' }, 404) if headers['Auth-Token'].nil?
         logger.info "Get user via auth_token from #{request.ip}"
-        
+
         # Authenticate that the token is okay
         if authenticated?
           user = User.find_by_username(headers['Username'])
@@ -228,7 +228,7 @@ module Api
       token_with_value = user.auth_tokens 
       token = token_with_value.select { |token| token.authentication_token == params[:auth_token] }.first
       remember = params[:remember] || false
-      
+
       # Token does not match user
       if token.nil? || user.nil? || user.username != params[:username]
         error!({ error: 'Invalid token.' }, 404)
