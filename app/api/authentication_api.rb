@@ -250,8 +250,9 @@ module Api
     desc 'Sign out'
     params do
       requires :username, type: String,  desc: 'User username'
+      requires :auth_token, type: String, desc: 'The user\'s temporary auth token'
     end
-    delete '/auth/:auth_token' do
+    delete '/auth' do
       user = User.find_by_username(params[:username])
       token_with_value = user.auth_tokens 
       token = token_with_value.select { |token| token.authentication_token == params[:auth_token] }.first
