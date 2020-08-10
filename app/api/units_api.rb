@@ -68,6 +68,7 @@ module Api
         optional :main_convenor_id, type: Integer
         optional :auto_apply_extension_before_deadline, type: Boolean, desc: 'Indicates if extensions before the deadline should be automatically applied', default: true
         optional :send_notifications, type: Boolean, desc: 'Indicates if emails should be sent on updates each week', default: true
+        optional :draft_task_id, type: Integer
 
         mutually_exclusive :teaching_period_id,:start_date
         all_or_none_of :start_date, :end_date
@@ -89,7 +90,8 @@ module Api
                                                             :active,
                                                             :main_convenor_id,
                                                             :auto_apply_extension_before_deadline,
-                                                            :send_notifications
+                                                            :send_notifications,
+                                                            :draft_task_id
                                                           )
 
       if unit.teaching_period_id.present? && unit_parameters.key?(:start_date)
