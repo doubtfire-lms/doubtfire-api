@@ -113,12 +113,14 @@ class User < ActiveRecord::Base
   #
   # Returns authentication of the user
   #
-  def token_by_user?(a_token)
+  def token_for_text?(a_token)
     list_tokens = []
     self.auth_tokens.each do |token|
-      list_tokens << token.authentication_token
+      if a_token == token.authentication_token
+          return token
+      end
     end
-    a_token if list_tokens.include?(a_token)
+    return nil
   end
 
   ###

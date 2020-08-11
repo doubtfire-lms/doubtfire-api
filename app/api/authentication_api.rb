@@ -162,8 +162,8 @@ module Api
       #
       desc 'Get user details from an authentication token'
       params do
-        requires :username, type: String, in: header, desc: 'The user\'s username'
-        requires :auth_token, type: String, in: header, desc: 'The user\'s temporary auth token'
+        requires :username, type: String, desc: 'The user\'s username'
+        requires :auth_token, type: String, desc: 'The user\'s temporary auth token'
       end
       post '/auth' do
         error!({ error: 'Invalid token.' }, 404) if headers['Auth-Token'].nil?
@@ -172,8 +172,7 @@ module Api
         # Authenticate that the token is okay
         if authenticated?
           user = User.find_by_username(headers['Username'])
-          token_with_value = user.auth_tokens 
-          token = token_with_value.select { |token| token.authentication_token == headers['Auth-Token'] }.first
+          token = user.token_for_text?(headers['Auth-Token']) unless user.nil?
           error!({ error: 'Invalid token.' }, 404) if token.nil?
 
           # Invalidate the token and regenrate a new one
@@ -214,23 +213,36 @@ module Api
     #
     # Update the expiry of an existing authentication token
     #
-    desc 'Allow tokens to be updated'
+    desc 'Allow tokens to be updated',
+    {
+      headers: 
+      {
+        "username" => 
+        {
+          description: "User username",
+          required: true
+        },
+        "auth_token" => 
+        {
+          description: "The user\'s temporary auth token",
+          required: true
+        }
+      }
+    }
     params do
-      requires :username, type: String,  desc: 'User username'
       optional :remember, type: Boolean, desc: 'User has requested to remember login', default: false
     end
-    put '/auth/:auth_token' do
-      error!({ error: 'Invalid token.' }, 404) if params[:auth_token].nil?
-      logger.info "Update token #{params[:username]} from #{request.ip}"
+    put '/auth' do
+      error!({ error: 'Invalid token.' }, 404) if headers['Auth-Token'].nil?
+      logger.info "Update token #{headers['Auth-Token']} from #{request.ip}"
 
       # Find user
-      user = User.find_by_username(params[:username])
-      token_with_value = user.auth_tokens 
-      token = token_with_value.select { |token| token.authentication_token == params[:auth_token] }.first
+      user = User.find_by_username(headers['Username'])
+      token = user.token_for_text?(headers['Auth-Token']) unless user.nil?
       remember = params[:remember] || false
 
       # Token does not match user
-      if token.nil? || user.nil? || user.username != params[:username]
+      if token.nil? || user.nil? || user.username != headers['Username']
         error!({ error: 'Invalid token.' }, 404)
       else
         if token.auth_token_expiry > Time.zone.now
@@ -247,15 +259,25 @@ module Api
     #
     # Sign out
     #
-    desc 'Sign out'
-    params do
-      requires :username, type: String,  desc: 'User username'
-      requires :auth_token, type: String, desc: 'The user\'s temporary auth token'
-    end
+    desc 'Sign out',
+    {
+      headers: 
+      {
+        "username" => 
+        {
+          description: "User username",
+          required: true
+        },
+        "auth_token" => 
+        {
+          description: "The user\'s temporary auth token",
+          required: true
+        }
+      }
+    }
     delete '/auth' do
-      user = User.find_by_username(params[:username])
-      token_with_value = user.auth_tokens 
-      token = token_with_value.select { |token| token.authentication_token == params[:auth_token] }.first
+      user = User.find_by_username(headers['Username'])
+      token = user.token_for_text?(headers['Auth-Token']) unless user.nil?
 
       if token.present?
         logger.info "Sign out #{user.username} from #{request.ip}"

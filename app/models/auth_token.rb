@@ -15,7 +15,7 @@ class AuthToken < ActiveRecord::Base
     # Loop until new unique auth token is found
     token = loop do
       token = Devise.friendly_token
-      break token unless user.token_by_user?(token)
+      break token unless user.token_for_text?(token)
     end
 
     # Create a new AuthToken with this value
