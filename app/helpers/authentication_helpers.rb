@@ -24,9 +24,8 @@ module AuthenticationHelpers
     # Check for valid auth token  and username in request header 
     user = current_user
     if headers.present? && headers['Auth-Token'].present? && headers['Username'].present? && user.present?
-      # Get the list of tokens for a user 
-      token_with_value = user.auth_tokens 
-      token = token_with_value.select { |token| token.authentication_token == headers['Auth-Token'] }.first
+      # Get the list of tokens for a user
+      token = user.token_for_text?(headers['Auth-Token']) 
     end
 
     # Check user by token
