@@ -166,13 +166,13 @@ module Api
         requires :auth_token, type: String, desc: 'The user\'s temporary auth token'
       end
       post '/auth' do
-        error!({ error: 'Invalid token.' }, 404) if headers['Auth-Token'].nil?
+        error!({ error: 'Invalid token.' }, 404) if params[:auth_token].nil?
         logger.info "Get user via auth_token from #{request.ip}"
 
         # Authenticate that the token is okay
         if authenticated?
-          user = User.find_by_username(headers['Username'])
-          token = user.token_for_text?(headers['Auth-Token']) unless user.nil?
+          user = User.find_by_username(params[:username])
+          token = user.token_for_text?(params[:auth_token]) unless user.nil?
           error!({ error: 'Invalid token.' }, 404) if token.nil?
 
           # Invalidate the token and regenrate a new one
