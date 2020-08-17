@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20200716054137) do
+ActiveRecord::Schema.define(version: 20200817020024) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -415,6 +415,13 @@ ActiveRecord::Schema.define(version: 20200716054137) do
   add_index "users", ["authentication_token"], name: "index_users_on_authentication_token", unique: true, using: :btree
   add_index "users", ["login_id"], name: "index_users_on_login_id", unique: true, using: :btree
 
+  create_table "webcals", force: :cascade do |t|
+    t.boolean "include_start_dates", default: false, null: false
+    t.integer "user_id"
+  end
+
+  add_index "webcals", ["user_id"], name: "index_webcals_on_user_id", unique: true, using: :btree
+
   add_foreign_key "breaks", "teaching_periods"
   add_foreign_key "comments_read_receipts", "task_comments"
   add_foreign_key "comments_read_receipts", "users"
@@ -428,4 +435,5 @@ ActiveRecord::Schema.define(version: 20200716054137) do
   add_foreign_key "tutorials", "campuses"
   add_foreign_key "tutorials", "tutorial_streams"
   add_foreign_key "units", "teaching_periods"
+  add_foreign_key "webcals", "users"
 end
