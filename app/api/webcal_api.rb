@@ -71,6 +71,15 @@ module Api
       webcal = Webcal.find(params[:id])
       ical = Icalendar::Calendar.new
 
+      # Specify refresh interval.
+      refresh_interval = Icalendar::Values::Duration.new('1D')
+
+      # https://docs.microsoft.com/en-us/openspecs/exchange_server_protocols/ms-oxcical/1fc7b244-ecd1-4d28-ac0c-2bb4df855a1f
+      ical.append_custom_property('X-PUBLISHED-TTL', refresh_interval)
+
+      # https://tools.ietf.org/html/rfc7986#section-5.7
+      ical.append_custom_property('REFRESH-INTERVAL', refresh_interval)
+
       # Retrieve task definitions and tasks of the user's active units.
       TaskDefinition
           .eager_load(:tasks)
@@ -95,7 +104,7 @@ module Api
             # Add event for target/extended date.
             # TODO: Use extension date if available.
             ical.event do |ev|
-              ev.summary = "#{webcal.include_start_dates ? "End:" : ""}#{ev_name}"
+              ev.summary = "#{webcal.include_start_dates ? 'End:' : ''}#{ev_name}"
               ev.dtstart = ev.dtend = Icalendar::Values::Date.new(td.target_date.strftime('%Y%m%d'))
             end
 
