@@ -4,8 +4,9 @@ require 'icalendar'
 module Api
 
   class WebcalApi < Grape::API
+    content_type :txt, 'text/calendar'
 
-    desc 'Serves web calendars ("webcals") that include the target/extension dates of all tasks of students\' active units.'
+    desc 'Serves web calendars ("webcals") that include selected dates of tasks of students\' active units.'
     params do
       requires :id, type: String, desc: 'The ID of the webcal'
     end
@@ -16,22 +17,33 @@ module Api
       ical = Icalendar::Calendar.new
 
       # Retrieve task definitions and tasks of the user's active units.
-      # TODO: Can this be reduced to 1 query instead of 1 + # of projects?
-      webcal.user.projects
-        .joins(:unit)
-        .where(units: { active: true })
-        .each do |prj|
-          prj.unit.task_definitions.includes(:tasks).where(tasks: { project_id: [prj.id, nil] }).each do |td|
+      TaskDefinition
+          .eager_load(:tasks)
+          .joins(unit: :projects)
+          .where(
+            projects: { user_id: 7 },
+            units: { active: true }
+          )
+          .each do |td|
+            # Note: Start and end dates of events are equal because the calendar event is expected to be an "all-day" event.
 
-            # Add the task to the iCalendar.
-            ical.event do |ev|
-              ev.summary = "#{td.unit.code}: #{td.abbreviation}: #{td.name}"
-              # The start and end dates should be equal because the calendar event is expected to be an "all-day" event.
-              ev.dtstart = Icalendar::Values::Date.new(td.target_date.strftime('%Y%m%d'))
-              ev.dtend = Icalendar::Values::Date.new(td.target_date.strftime('%Y%m%d'))
+            ev_name = "#{td.unit.code}: #{td.abbreviation}: #{td.name}"
+
+            # Add event for start date, if the user opted in.
+            if webcal.include_start_dates
+              ical.event do |ev|
+                ev.summary = "Start: #{ev_name}"
+                ev.dtstart = ev.dtend = Icalendar::Values::Date.new(td.start_date.strftime('%Y%m%d'))
+              end
             end
 
-          end
+            # Add event for target/extended date.
+            # TODO: Use extension date if available.
+            ical.event do |ev|
+              ev.summary = "#{webcal.include_start_dates ? "End:" : ""}#{ev_name}"
+              ev.dtstart = ev.dtend = Icalendar::Values::Date.new(td.target_date.strftime('%Y%m%d'))
+            end
+
       end
 
       # Serve the iCalendar with the correct MIME type.
