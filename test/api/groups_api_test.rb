@@ -395,9 +395,7 @@ class GroupsApiTest < ActiveSupport::TestCase
     # check we can reenrol the student
     refute group1.at_capacity?
     assert p2.update(enrolled: true)
-    refute group1.at_capacity?
+    refute group1.at_capacity? # they are not in the right tutorial
     assert_equal 1, group1.projects.count
   end
-
-
 end
