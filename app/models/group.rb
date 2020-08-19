@@ -113,6 +113,10 @@ class Group < ActiveRecord::Base
     capacity.present? && group_memberships.joins(:project).where(active: true, 'projects.enrolled' => true).count >= capacity
   end
 
+  def beyond_capacity?
+    capacity.present? && group_memberships.joins(:project).where(active: true, 'projects.enrolled' => true).count > capacity
+  end
+
   def switch_to_tutorial tutorial
     return if tutorial_id == tutorial.id
 
