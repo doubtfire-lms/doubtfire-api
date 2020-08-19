@@ -354,7 +354,7 @@ class GroupsApiTest < ActiveSupport::TestCase
     unit = FactoryBot.create :unit, group_sets: 1, groups: [{gs: 0, students: 0}]
     
     gs = unit.group_sets.first
-    gs.update keep_groups_in_same_class: true, allow_students_to_manage_groups: false
+    gs.update keep_groups_in_same_class: true, allow_students_to_manage_groups: false, capacity: 2
     group1 = gs.groups.first
 
     p1 = group1.tutorial.projects.first
@@ -363,6 +363,8 @@ class GroupsApiTest < ActiveSupport::TestCase
     group1.add_member p1
     group1.add_member p2
 
+    assert group1.at_capacity?
+
     tutorial = FactoryBot.create :tutorial, unit: unit, campus: nil
     
     refute p1.enrolled_in? tutorial
@@ -370,6 +372,8 @@ class GroupsApiTest < ActiveSupport::TestCase
 
     p2.update(enrolled: false)
     p2.reload
+
+    refute group1.at_capacity?
 
     put "/api/units/#{unit.id}/group_sets/#{gs.id}/groups/#{group1.id}", with_auth_token({ group: {tutorial_id: tutorial.id} }, unit.main_convenor_user)
 
@@ -389,7 +393,10 @@ class GroupsApiTest < ActiveSupport::TestCase
     refute p2.enrolled_in? tutorial
 
     # check we can reenrol the student
+    refute group1.at_capacity?
     assert p2.update(enrolled: true)
+    refute group1.at_capacity?
+    assert_equal 1, group1.projects.count
   end
 
 

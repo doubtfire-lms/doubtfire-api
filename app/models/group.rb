@@ -110,7 +110,7 @@ class Group < ActiveRecord::Base
   end
 
   def at_capacity?
-    capacity.present? && group_memberships.where(active: true).count >= capacity
+    capacity.present? && group_memberships.joins(:project).where(active: true, 'projects.enrolled' => true).count >= capacity
   end
 
   def switch_to_tutorial tutorial
