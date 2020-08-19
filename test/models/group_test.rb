@@ -334,4 +334,30 @@ class GroupModelTest < ActiveSupport::TestCase
 
     assert_equal 1, t4.group_submission.projects.count
   end
+
+  def test_group_toggle_enrolment
+    unit = FactoryBot.create :unit, group_sets: 1, groups: [{gs: 0, students: 0}]
+    
+    gs = unit.group_sets.first
+    gs.update keep_groups_in_same_class: true, allow_students_to_manage_groups: false, capacity: 2
+
+    group1 = gs.groups.first
+
+    p1 = group1.tutorial.projects.first
+    p2 = group1.tutorial.projects.last
+
+    group1.add_member p1
+    group1.add_member p2
+
+    assert group1.at_capacity?
+
+    p2.update(enrolled: false)
+
+    refute group1.at_capacity?
+
+    # check we can reenrol the student
+    assert p2.update(enrolled: true)
+    
+    assert group1.at_capacity? # they are in the right tutorial
+  end
 end
