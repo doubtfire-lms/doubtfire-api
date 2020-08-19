@@ -931,7 +931,7 @@ class Project < ActiveRecord::Base
     group_memberships.each do |gm|
       next unless gm.active
       
-      if ! gm.valid? || gm.group.at_capacity?
+      if ! gm.valid? || gm.group.beyond_capacity?
         gm.update(active: false)
       end
     end
