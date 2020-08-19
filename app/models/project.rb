@@ -926,8 +926,12 @@ class Project < ActiveRecord::Base
 
   # If someone withdraws from a unit, make sure they are removed from groups
   def check_withdraw_from_groups
-    return if enrolled
+    return unless enrolled && ! enrolled_was
 
-    groups.each{|g| g.remove_member(self)}
+    group_memberships.each do |gm| 
+      if ! gm.valid?
+        gm.update(active: false)
+      end
+    end
   end
 end

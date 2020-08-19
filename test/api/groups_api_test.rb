@@ -369,10 +369,13 @@ class GroupsApiTest < ActiveSupport::TestCase
     refute p2.enrolled_in? tutorial
 
     p2.update(enrolled: false)
-    
+    p2.reload
+
     put "/api/units/#{unit.id}/group_sets/#{gs.id}/groups/#{group1.id}", with_auth_token({ group: {tutorial_id: tutorial.id} }, unit.main_convenor_user)
 
     assert 201, last_response.status
+
+    group1.reload
 
     p1.reload
     p2.reload
@@ -380,10 +383,13 @@ class GroupsApiTest < ActiveSupport::TestCase
     assert p1.valid?
     assert p2.valid?
 
-    assert group1.valid?
+    assert group1.valid?, group1.errors.full_messages
 
     assert p1.enrolled_in? tutorial
     refute p2.enrolled_in? tutorial
+
+    # check we can reenrol the student
+    assert p2.update(enrolled: true)
   end
 
 

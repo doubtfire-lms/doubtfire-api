@@ -15,9 +15,6 @@ class Group < ActiveRecord::Base
   validates :group_set, presence: true, allow_nil: false
   validates :tutorial, presence: true, allow_nil: false
 
-  # Check group members are ok with the change of tutorial... but only if the tutorial changed
-  validates_associated :group_memberships, if: :has_change_group_tutorial?
-
   validates :name, uniqueness: { scope: :group_set,
                                  message: 'must be unique within the set of groups' }
   validate :must_be_in_same_tutorial, if: :limit_members_to_tutorial?
@@ -122,6 +119,7 @@ class Group < ActiveRecord::Base
     Group.transaction do
       tutorial_id = tutorial.id
       self.tutorial = tutorial
+
       if group_set.keep_groups_in_same_class && has_active_group_members?
         projects.each do |proj|
           # We need to remove members to break the circular dependency and switch tutorial
@@ -144,6 +142,7 @@ class Group < ActiveRecord::Base
 
     if gm.nil?
       gm = GroupMembership.create(group: self, project: project)
+      group_memberships << gm
     else
       gm = GroupMembership.find(gm.id)
       gm.group = self
@@ -271,7 +270,7 @@ class Group < ActiveRecord::Base
   #
   def all_members_in_tutorial?
     group_memberships.each do |member|
-      return false unless !member.active || member.in_group_tutorial?(tutorial)
+      return false if member.project.enrolled && member.active && ! member.in_group_tutorial?(tutorial)
     end
     true
   end
