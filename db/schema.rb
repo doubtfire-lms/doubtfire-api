@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20200716054137) do
+ActiveRecord::Schema.define(version: 20200819010213) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -378,6 +378,8 @@ ActiveRecord::Schema.define(version: 20200716054137) do
     t.integer  "main_convenor_id"
     t.boolean  "auto_apply_extension_before_deadline",              default: true, null: false
     t.boolean  "send_notifications",                                default: true, null: false
+    t.boolean  "enable_sync_timetable",                             default: true, null: false
+    t.boolean  "enable_sync_enrolments",                            default: true, null: false
   end
 
   add_index "units", ["teaching_period_id"], name: "index_units_on_teaching_period_id", using: :btree
