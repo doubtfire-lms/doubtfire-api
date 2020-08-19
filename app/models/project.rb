@@ -928,8 +928,10 @@ class Project < ActiveRecord::Base
   def check_withdraw_from_groups
     return unless enrolled && ! enrolled_was
 
-    group_memberships.each do |gm| 
-      if ! gm.valid?
+    group_memberships.each do |gm|
+      next unless gm.active
+      
+      if ! gm.valid? || gm.group.at_capacity?
         gm.update(active: false)
       end
     end
