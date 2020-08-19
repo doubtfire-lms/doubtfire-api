@@ -360,4 +360,35 @@ class GroupModelTest < ActiveSupport::TestCase
     
     assert group1.at_capacity? # they are in the right tutorial
   end
+
+  def test_group_toggle_enrolment_at_capacity
+    unit = FactoryBot.create :unit, group_sets: 1, groups: [{gs: 0, students: 0}]
+    
+    gs = unit.group_sets.first
+    gs.update capacity: 2
+
+    group1 = gs.groups.first
+
+    p1 = group1.tutorial.projects[0]
+    p2 = group1.tutorial.projects[1]
+    p3 = group1.tutorial.projects[2]
+
+    group1.add_member p1
+    group1.add_member p2
+
+    assert group1.at_capacity?
+
+    p2.update(enrolled: false)
+
+    refute group1.at_capacity?
+
+    group1.add_member p3
+
+    assert group1.at_capacity?
+
+    # check we can reenrol the student
+    assert p2.update(enrolled: true)
+    
+    assert_equal 2, group1.projects.count # they are in the right tutorial
+  end
 end
