@@ -36,14 +36,14 @@ module Api
 
       # Create or destroy the user's webcal, according to the `enabled` parameter.
       if webcal_params.key?(:enabled)
-        if webcal_params[:enabled] and cal == nil
+        if webcal_params[:enabled] and cal.nil?
           cal = user.create_webcal(id: SecureRandom.uuid)
-        elsif (not webcal_params[:enabled]) and cal != nil
+        elsif !webcal_params[:enabled] and cal.present?
           cal.destroy
         end
       end
 
-      return if cal == nil or cal.destroyed?
+      return if cal.nil? or cal.destroyed?
       webcal_update_params = {}
 
       # Change the ID if requested.
@@ -69,46 +69,26 @@ module Api
 
       # Retrieve the specified webcal.
       webcal = Webcal.find(params[:id])
-      ical = Icalendar::Calendar.new
+
+      # Generate iCalendar.
+      ical = webcal.to_ical_with_task_definitions(
+        # Retrieve task definitions and tasks of the user's active units.
+        TaskDefinition
+          .joins(:unit, unit: :projects)
+          .eager_load(:tasks)
+          .includes(:unit, :tasks, unit: :projects)
+          .where(
+            projects: { user_id: webcal.user_id },
+            units: { active: true }
+          )
+      )
 
       # Specify refresh interval.
       refresh_interval = Icalendar::Values::Duration.new('1D')
-
       # https://docs.microsoft.com/en-us/openspecs/exchange_server_protocols/ms-oxcical/1fc7b244-ecd1-4d28-ac0c-2bb4df855a1f
       ical.append_custom_property('X-PUBLISHED-TTL', refresh_interval)
-
       # https://tools.ietf.org/html/rfc7986#section-5.7
       ical.append_custom_property('REFRESH-INTERVAL', refresh_interval)
-
-      # Retrieve task definitions and tasks of the user's active units.
-      TaskDefinition
-          .eager_load(:tasks)
-          .joins(unit: :projects)
-          .where(
-            projects: { user_id: 7 },
-            units: { active: true }
-          )
-          .each do |td|
-            # Note: Start and end dates of events are equal because the calendar event is expected to be an "all-day" event.
-
-            ev_name = "#{td.unit.code}: #{td.abbreviation}: #{td.name}"
-
-            # Add event for start date, if the user opted in.
-            if webcal.include_start_dates
-              ical.event do |ev|
-                ev.summary = "Start: #{ev_name}"
-                ev.dtstart = ev.dtend = Icalendar::Values::Date.new(td.start_date.strftime('%Y%m%d'))
-              end
-            end
-
-            # Add event for target/extended date.
-            # TODO: Use extension date if available.
-            ical.event do |ev|
-              ev.summary = "#{webcal.include_start_dates ? 'End:' : ''}#{ev_name}"
-              ev.dtstart = ev.dtend = Icalendar::Values::Date.new(td.target_date.strftime('%Y%m%d'))
-            end
-
-      end
 
       # Serve the iCalendar with the correct MIME type.
       content_type 'text/calendar'
