@@ -72,7 +72,7 @@ module Api
 
       # Generate iCalendar.
       ical = webcal.to_ical_with_task_definitions(
-        # Retrieve task definitions and tasks of the user's active units.
+        # Retrieve task definitions and tasks of the user's current active units.
         TaskDefinition
           .joins(:unit, unit: :projects)
           .eager_load(:tasks)
@@ -81,6 +81,7 @@ module Api
             projects: { user_id: webcal.user_id },
             units: { active: true }
           )
+          .where('? BETWEEN units.start_date AND units.end_date', Time.zone.now)
       )
 
       # Specify refresh interval.
