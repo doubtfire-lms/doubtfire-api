@@ -16,6 +16,7 @@ class ProjectSerializer < ActiveModel::Serializer
              :target_grade,
              :submitted_grade,
              :portfolio_files,
+             :has_draft_summary_task,
              :compile_portfolio,
              :portfolio_available,
              :grade,
@@ -58,6 +59,11 @@ class ProjectSerializer < ActiveModel::Serializer
   def include_grade_rationale?
     ([ Role.convenor, :convenor, Role.tutor, :tutor ].include? my_role_obj)
   end
+
+  def has_draft_summary_task
+    object.has_draft_summary_task?
+  end
+
 
   def filter(keys)
     keys.delete :grade unless include_grade?
