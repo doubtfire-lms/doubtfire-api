@@ -655,6 +655,13 @@ class Project < ActiveRecord::Base
     completed_tasks.sort_by(&:completion_date).last
   end
 
+  # Determines whether the student has submitted a draft learning summary task
+  def has_draft_summary_task?
+    task = tasks.where(task_definition: unit.draft_task_id).first
+    return false if task.nil?
+    task.task_submissions.any?
+  end
+
   #
   # Portfolio production code
   #
@@ -709,6 +716,12 @@ class Project < ActiveRecord::Base
     # get path to portfolio dir
     portfolio_tmp_dir = portfolio_temp_path
     return [] unless Dir.exist? portfolio_tmp_dir
+
+    # if draft_task.task_submission not nil
+    #   #.any?
+    # end
+
+    # TODO: or if draft learning summary exists at units draft_task_id
 
     result = []
 
