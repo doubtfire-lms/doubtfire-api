@@ -712,6 +712,34 @@ class Project < ActiveRecord::Base
     result
   end
 
+  def move_draft_to_portfolio
+    portfolio_tmp_dir = portfolio_temp_path
+    FileUtils.mkdir_p(portfolio_tmp_dir)
+
+    # get draft learning summary portfolio if has_pdf
+    if has_draft_summary_task?
+      task = tasks.where(task_definition: unit.draft_task_id).first
+      return false unless task.has_pdf
+
+      zip_file = task.zip_file_path_for_done_task
+      if zip_file && File.exist?(zip_file)
+        Zip::File.open(zip_file) do |zip|
+          zip.glob("**/*").each do |entry|
+            next if entry.name_is_directory?
+            name = File.basename(entry.name, ".pdf")
+            logger.debug "Extracting file from draft task: #{name}"
+
+            entry.extract("#{portfolio_tmp_dir}/#{name}-DraftLearningSummaryReport.pdf") { true }
+            
+            return File.exist?("#{portfolio_tmp_dir}/#{name}-DraftLearningSummaryReport.pdf")
+          end
+        end
+      end
+    end
+  end
+
+
+
   def portfolio_files(ensure_valid = false, force_ascii = false)
     # get path to portfolio dir
     portfolio_tmp_dir = portfolio_temp_path

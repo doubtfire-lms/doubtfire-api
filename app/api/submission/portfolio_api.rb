@@ -95,6 +95,18 @@ module Api
         File.read(evidence_loc)
       end # get
 
+
+      desc "Use draft learning summary upload as portfolio learning summary"
+      post '/submission/project/:id/portfolio/draft_summary' do
+        project = Project.find(params[:id])
+
+        unless authorise? current_user, project
+          error!({ error: "Not authorised to alter portfolio for project '#{params[:id]}'" }, 401)
+        end
+
+        project.move_draft_to_portfolio
+      end
+
       # "Retrieve portfolios for a unit" done using controller
     end
   end
