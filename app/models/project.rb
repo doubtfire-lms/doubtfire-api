@@ -745,12 +745,6 @@ class Project < ActiveRecord::Base
     portfolio_tmp_dir = portfolio_temp_path
     return [] unless Dir.exist? portfolio_tmp_dir
 
-    # if draft_task.task_submission not nil
-    #   #.any?
-    # end
-
-    # TODO: or if draft learning summary exists at units draft_task_id
-
     result = []
 
     Dir.chdir(portfolio_tmp_dir)
