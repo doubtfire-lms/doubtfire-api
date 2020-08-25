@@ -235,8 +235,7 @@ module Api
     end
     put '/auth' do
       #UPDATE - Following print statements to check for headers
-      puts "token: #{request.headers['Auth-Token']} username: #{request.env['Username']}"
-      puts "token: #{request.headers['AUTH_TOKEN']} username: #{request.env['USERNAME']}"
+      puts request.headers.inspect
       puts "Parameters: Username: #{params[:username]} Password: #{params[:password]}"
       
       error!({ error: 'Invalid token' }, 404) if headers['Auth-Token'].nil?

@@ -164,8 +164,8 @@ class AuthTest < ActiveSupport::TestCase
 
     logger = Logger.new(Rails.root.to_s + '/log/my_test1.log' )
     
-
-    put_json "/api/auth", data_to_put   
+    header 'username', 'acain'
+    put_json "/api/auth", data_to_put
 
     # UPDATE
     # data_to_put = {}
