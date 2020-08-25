@@ -35,9 +35,10 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
     # the data that we want to post/create
     data_to_post = {
       activity_type: FactoryBot.build(:activity_type),
-      auth_token: auth_token
+      auth_token: auth_token,
+      username: admin.username
     }
-    
+
     # perform the POST
     post_json '/api/activity_types', with_auth_token(data_to_post, admin)
     
@@ -68,7 +69,8 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
     # the data that we want to post/create
     data_to_post = {
       activity_type: FactoryBot.build(:activity_type),
-      auth_token: auth_token
+      auth_token: auth_token,
+      username: convenor.username
     }
     
     # perform the POST
@@ -92,7 +94,8 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
     # the data that we want to post/create
     data_to_post = {
       activity_type: FactoryBot.build(:activity_type),
-      auth_token: auth_token
+      auth_token: auth_token,
+      username: tutor.username
     }
     
     # perform the POST
@@ -117,7 +120,8 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
     # Data to replace 
     data_to_put = {
       activity_type: FactoryBot.build(:activity_type),
-      auth_token: auth_token
+      auth_token: auth_token,
+      username: admin.username
     }
 
     # Update activity_type with data_to_put
@@ -147,7 +151,8 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
     # Data to replace 
     data_to_put = {
       activity_type: FactoryBot.build(:activity_type),
-      auth_token: auth_token
+      auth_token: auth_token,
+      username: convenor.username
     }
 
     # Update activity_type with data_to_put
@@ -168,7 +173,8 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
     # Data to replace 
     data_to_put = {
       activity_type: FactoryBot.build(:activity_type),
-      auth_token: auth_token
+      auth_token: auth_token,
+      username: tutor.username
     }
 
     # Update activity_type with data_to_put
@@ -188,7 +194,8 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
     # Create a dummy activity type
     data_to_post = {
       activity_type: FactoryBot.build(:activity_type),
-      auth_token: auth_token
+      auth_token: auth_token,
+      username: user.username
     }
 
     # Perform POST, but the student user does not have permissions to post it.
@@ -214,7 +221,8 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
     # Create a dummy activity type
     data_to_put = {
       activity_type: FactoryBot.build(:activity_type), 
-      auth_token: auth_token
+      auth_token: auth_token,
+      username: user.username
     }
 
     # Perform PUT, but the student user does not have permissions to put it.
@@ -227,15 +235,16 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
     assert_equal ActivityType.count, number_of_activity_type
   end
 
+  # THIS TEST NEEDS FIX
   def test_delete_activity_type
     # Create a activity type
     activity_type = FactoryBot.create(:activity_type)
           
     #number of activity type before delete
     number_of_ativity_type = ActivityType.count
-    
+        
     # perform the delete
-    delete_json with_auth_token "/api/activity_types/#{activity_type.id}"
+    delete_json with_auth_token "/api/activity_types/#{activity_type.id}" 
     
     # Check if the delete get through
     assert_equal 200, last_response.status
@@ -257,9 +266,17 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
     # number of activity type before delete
     number_of_ativity_type = ActivityType.count
 
+    data_to_header = {
+      username: user.username,
+      auth_token: auth_token(user)
+    }
+
+    # Add auth_token to header
+    add_auth_token(data_to_header, user)
+
     # perform the delete
-    delete_json with_auth_token("/api/activity_types/#{activity_type.id}", user)
-   
+    delete_json "/api/activity_types/#{activity_type.id}" 
+
     # check if the delete does not get through
     assert_equal 403, last_response.status
 
@@ -268,6 +285,5 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
 
     # # Check that you still can find the deleted id
    assert ActivityType.exists?(activity_type.id)
-
   end
 end
