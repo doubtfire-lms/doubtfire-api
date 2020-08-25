@@ -81,7 +81,8 @@ module Api
             projects: { user_id: webcal.user_id },
             units: { active: true }
           )
-          .where('? BETWEEN units.start_date AND units.end_date', Time.zone.now)
+          .where('tasks.project_id is null or tasks.project_id = projects.id')   # eager_load(:tasks) only tasks of :projects
+          .where('? BETWEEN units.start_date AND units.end_date', Time.zone.now) # Current units
       )
 
       # Specify refresh interval.
