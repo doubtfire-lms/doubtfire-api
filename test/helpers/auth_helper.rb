@@ -8,9 +8,9 @@ module TestHelpers
     #
     def auth_token(user = User.first)
       token = user.valid_auth_tokens().first
-      return token.auth_token unless token.nil?
+      return token.authentication_token unless token.nil?
 
-      return user.generate_authentication_token!().auth_token
+      return user.generate_authentication_token!().authentication_token
     end
 
     #
