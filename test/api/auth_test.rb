@@ -1,13 +1,9 @@
 require 'test_helper'
-require 'logger'
 
 class AuthTest < ActiveSupport::TestCase
-# class AuthTest <  ActionDispatch::IntegrationTest
   include Rack::Test::Methods
   include TestHelpers::AuthHelper
   include TestHelpers::JsonHelper
-
-  logger = Logger.new(Rails.root.to_s + '/log/my_test.log')
 
   def app
     Rails.application
@@ -50,7 +46,7 @@ class AuthTest < ActiveSupport::TestCase
     assert_equal expected_auth.role.name, response_user_data['system_role'], 'Roles match'
 
     # User has the token - count of matching tokens for that user is 1
-    assert_equal 1, expected_auth.auth_tokens.select{|t| t.authentication_token == actual_auth['auth_token']}.count
+    assert_equal 1, expected_auth.auth_tokens.select{|t| t.auth_token == actual_auth['auth_token']}.count
   end
 
   # Test auth when username is invalid
@@ -155,32 +151,15 @@ class AuthTest < ActiveSupport::TestCase
   # --------------------------------------------------------------------------- #
   # PUT tests
 
-  # # Test put for authentication token
+  # Test put for authentication token
   def test_auth_put
     data_to_put = {
       username: 'acain',
       password: 'password'
     }
-
-    logger = Logger.new(Rails.root.to_s + '/log/my_test1.log' )
-    
-
-    put_json "/api/auth", data_to_put   
-
-    # UPDATE
-    # data_to_put = {}
-    # header_to_put = {
-    #   'Username' => 'acain',
-    #   'Auth-Token' => auth_token,
-    #   'CONTENT_TYPE' => 'application/json'
-    # }
-    # puts header_to_put
-    # actual_auth = put_json_new "/api/auth", data_to_put, header_to_put
-    
-    logger.info "request: #{@request}"
+    put_json "/api/auth/#{auth_token}", data_to_put
     actual_auth = last_response_body['auth_token']
-    actual_auth = last_response_body
-    expected_auth = auth_token
+    expected_auth = User.first.auth_token
     # Check to see if the response auth token matches the auth token that was sent through in put
     assert_equal expected_auth, actual_auth
   end
@@ -190,14 +169,7 @@ class AuthTest < ActiveSupport::TestCase
     data_to_put = {
       username: 'acain',
     }
-    # UPDATE - Check passing headers
-    # process(put, "/api/auth", params: nil, headers: {username: 'acain', auth_token: '1234'}, env: nil, xhr: false, as: nil)
-    # data_to_put = nil
-    # header_to_put = {
-    #   'username' => 'acain',
-    #   'auth_token' => '1234'
-    # }
-    # put_json "/api/auth", data_to_put, header_to_put
+    
     put_json "/api/auth/1234", data_to_put
     actual_auth = last_response_body
     expected_auth = User.first.auth_token
