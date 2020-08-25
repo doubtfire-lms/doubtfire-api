@@ -21,6 +21,8 @@ require 'minitest/rails'
 require 'minitest/pride'
 require 'minitest/around'
 
+require 'webmock/minitest'
+
 # Require all test helpers
 require_all 'test/helpers'
 require 'rails/test_help'
