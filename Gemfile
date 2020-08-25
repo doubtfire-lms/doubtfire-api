@@ -62,7 +62,7 @@ gem 'moss_ruby', '>= 1.1.2'
 gem 'rails-latex', '=2.0.1'
 
 # API
-gem 'grape', '0.16.2'
+gem 'grape', '1.1.0'
 gem 'active_model_serializers', '~> 0.9.0'
 gem 'grape-active_model_serializers', '~> 1.3.2'
 gem 'grape-swagger'
