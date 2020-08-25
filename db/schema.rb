@@ -378,7 +378,7 @@ ActiveRecord::Schema.define(version: 20200809035825) do
     t.integer  "main_convenor_id"
     t.boolean  "auto_apply_extension_before_deadline",              default: true, null: false
     t.boolean  "send_notifications",                                default: true, null: false
-    t.integer  "draft_task_id"
+    t.integer  "draft_task_definition_id"
   end
 
   add_index "units", ["teaching_period_id"], name: "index_units_on_teaching_period_id", using: :btree
