@@ -28,8 +28,8 @@ module TestHelpers
         # otherwise use ?
         data << (data.include?('?') ? '&' : '?') << "auth_token=#{auth_token user}"
       end
-      header 'username',data[:username]
-      header 'auth_token', data[:auth_token]
+      header 'username',data[:username] if data[:username].present?
+      header 'auth_token', data[:auth_token] if data[:auth_token].present?
       data
     end
 
