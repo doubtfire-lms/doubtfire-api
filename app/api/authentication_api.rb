@@ -233,7 +233,7 @@ module Api
       optional :remember, type: Boolean, desc: 'User has requested to remember login', default: false
     end
     put '/auth' do
-      error!({ error: 'Invalid token.' }, 404) if headers['Auth-Token'].nil?
+      error!({ error: 'Invalid token/username .' }, 404) if headers['Auth-Token'].nil? || headers['Username'].nil?
       logger.info "Update token #{headers['Auth-Token']} from #{request.ip}"
 
       # Find user

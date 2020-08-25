@@ -18,7 +18,7 @@ module TestHelpers
     # PUTs a hash data as JSON with content-type "application/json"
     #
     def put_json(endpoint, data)
-      put URI.encode(endpoint), data.to_json, 'CONTENT_TYPE' => 'application/json'
+      put URI.encode(endpoint), data.to_json
     end
 
     #
