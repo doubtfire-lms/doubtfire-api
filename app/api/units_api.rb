@@ -98,6 +98,13 @@ module Api
         unit.teaching_period = nil
       end
 
+      if unit_parameters.key?(:draft_task_definition_id)
+        unless unit.task_definitions.exists?(unit_parameters[:draft_task_definition_id])
+          unit_parameters.delete(:draft_task_definition_id)
+          error!({ error: 'Draft task definition ID does not belong to unit' }, 403)
+        end
+      end
+              
       unit.update!(unit_parameters)
       unit_parameters
     end
