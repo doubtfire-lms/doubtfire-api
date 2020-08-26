@@ -17,16 +17,21 @@ class Webcal < ActiveRecord::Base
   #
   def to_ical_with_task_definitions(defs = [])
     ical = Icalendar::Calendar.new
+    ical.prodid = Doubtfire::Application.config.institution[:product_name]
 
     # Add iCalendar events for the specified definition.
-    defs.each  do |td|
-      # Note: Start and end dates of events are equal because the calendar event is expected to be an "all-day" event.
+    defs.each do |td|
+      # Notes:
+      # - Start and end dates of events are equal because the calendar event is expected to be an "all-day" event.
+      # - iCalendar clients identify events across syncs by their UID property, which is currently the task definition
+      #   ID prefixed with S- or E- based on whether it is a start or end event.
 
       ev_name = "#{td.unit.code}: #{td.abbreviation}: #{td.name}"
 
       # Add event for start date, if the user opted in.
       if include_start_dates
         ical.event do |ev|
+          ev.uid = "S-#{td.id}"
           ev.summary = "Start: #{ev_name}"
           ev.dtstart = ev.dtend = Icalendar::Values::Date.new(td.start_date.strftime('%Y%m%d'))
         end
@@ -35,6 +40,7 @@ class Webcal < ActiveRecord::Base
       # Add event for target/extended date.
       # TODO: Use extension date if available.
       ical.event do |ev|
+        ev.uid = "E-#{td.id}"
         ev.summary = "#{include_start_dates ? 'End:' : ''}#{ev_name}"
         ev.dtstart = ev.dtend = Icalendar::Values::Date.new(td.target_date.strftime('%Y%m%d'))
       end
