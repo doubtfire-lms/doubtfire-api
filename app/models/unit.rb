@@ -131,6 +131,8 @@ class Unit < ActiveRecord::Base
 
   belongs_to :main_convenor, class_name: 'UnitRole'
 
+  belongs_to :draft_task_definition, class_name: 'TaskDefinition'
+
   validates :name, :description, :start_date, :end_date, presence: true
 
   validates :description, length: { maximum: 4095, allow_blank: true }
