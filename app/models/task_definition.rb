@@ -15,6 +15,8 @@ class TaskDefinition < ActiveRecord::Base
   belongs_to :group_set
   belongs_to :tutorial_stream
 
+  has_one :draft_task_definition_unit, foreign_key: 'draft_task_definition_id', class_name: 'Unit', dependent: :nullify
+
   has_many :tasks, dependent:  :destroy # Destroying a task definition will also nuke any instances
   has_many :group_submissions, dependent: :destroy # Destroying a task definition will also nuke any group submissions
   has_many :learning_outcome_task_links, dependent: :destroy # links to learning outcomes
