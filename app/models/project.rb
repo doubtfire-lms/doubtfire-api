@@ -688,6 +688,9 @@ class Project < ActiveRecord::Base
     if name == 'LearningSummaryReport' && kind == 'document'
       result[:idx] = 0
       result[:name] = 'LearningSummaryReport.pdf'
+
+      # delete the draft learning summary report if it has previously been copied over
+      Dir.glob("#{portfolio_tmp_dir}/*-DraftLearningSummaryReport.pdf").each { |file| File.delete(file) }
     else
       Dir.chdir(portfolio_tmp_dir)
       files = Dir.glob('*')
