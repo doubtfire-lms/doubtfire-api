@@ -655,13 +655,6 @@ class Project < ActiveRecord::Base
     completed_tasks.sort_by(&:completion_date).last
   end
 
-  # Determines whether the student has submitted a draft learning summary task
-  def has_draft_summary_task?
-    task = tasks.where(task_definition: unit.draft_task_id).first
-    return false if task.nil?
-    task.task_submissions.any?
-  end
-
   #
   # Portfolio production code
   #
@@ -715,27 +708,32 @@ class Project < ActiveRecord::Base
   def move_draft_to_portfolio
     portfolio_tmp_dir = portfolio_temp_path
     FileUtils.mkdir_p(portfolio_tmp_dir)
+    result = {}
 
-    # get draft learning summary portfolio if has_pdf
-    if has_draft_summary_task?
-      task = tasks.where(task_definition: unit.draft_task_id).first
-      return false unless task.has_pdf
+    # get draft learning summary task and continue if has_pdf
+    task = tasks.where(task_definition: unit.draft_task_definition_id).first
+    return false if task.nil?
+    return false if !task.has_pdf
 
-      zip_file = task.zip_file_path_for_done_task
-      if zip_file && File.exist?(zip_file)
-        Zip::File.open(zip_file) do |zip|
-          zip.glob("**/*").each do |entry|
-            next if entry.name_is_directory?
-            name = File.basename(entry.name, ".pdf")
-            logger.debug "Extracting file from draft task: #{name}"
+    # Extract to porfolio temp directory
+    zip_file = task.zip_file_path_for_done_task
+    if zip_file && File.exist?(zip_file)
+      Zip::File.open(zip_file) do |zip|
+        zip.glob("**/*").each do |entry|
+          next if entry.name_is_directory?
+          result[:name] = "DraftLearningSummaryReport.pdf"
+          result[:kind] = "document"
+          result[:idx] = 0
 
-            entry.extract("#{portfolio_tmp_dir}/#{name}-DraftLearningSummaryReport.pdf") { true }
-            
-            return File.exist?("#{portfolio_tmp_dir}/#{name}-DraftLearningSummaryReport.pdf")
-          end
+          dest_file = portfolio_tmp_file_path(result)
+          entry.extract(dest_file) { true }
+          
+          return false unless File.exist?(dest_file)
         end
       end
     end
+
+    result
   end
 
 

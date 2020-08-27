@@ -100,12 +100,18 @@ module Api
       post '/submission/project/:id/portfolio/draft_summary' do
         project = Project.find(params[:id])
 
-        unless authorise? current_user, project
+        unless authorise? current_user, project, :make_submission
           error!({ error: "Not authorised to alter portfolio for project '#{params[:id]}'" }, 401)
         end
 
-        project.move_draft_to_portfolio
-      end
+        result = project.move_draft_to_portfolio
+
+        if result == false
+          error!({ error: "Moving draft learning summary to portfolio failed for project '#{params[:id]}'" }, 401)
+        end
+
+        result
+      end # post
 
       # "Retrieve portfolios for a unit" done using controller
     end
