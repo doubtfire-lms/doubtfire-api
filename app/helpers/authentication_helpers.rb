@@ -27,7 +27,7 @@ module AuthenticationHelpers
       # Get the list of tokens for a user
       token = user.token_for_text?(headers['Auth-Token']) 
     end
-
+    puts "username: #{headers['Username']} and token: #{headers['Auth-Token']}"
     # Check user by token
     if user.present? && token.present?
       # Non-expired token
@@ -39,6 +39,7 @@ module AuthenticationHelpers
     else
       # Add random delay then fail
       sleep((200 + rand(200)) / 1000.0)
+      puts "Username or token invalid"
       error!({ error: 'Could not authenticate with token. Username or Token invalid.' }, 419)
     end
   end

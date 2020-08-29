@@ -28,17 +28,34 @@ module TestHelpers
         # otherwise use ?
         data << (data.include?('?') ? '&' : '?') << "auth_token=#{auth_token user}"
       end
-      header 'username',data[:username] if data[:username].present?
-      header 'auth_token', data[:auth_token] if data[:auth_token].present?
       data
     end
 
     #
     # Alias for above for nicer usage (e.g., get with_auth_token "http://")
     #
-    def with_auth_token(data, user = User.first)
+    def with_auth_token(data, user=User.first)
       add_auth_token data, user
     end
+
+    # 
+    # Adds an authentication token and Username to the header
+    # This prevents us from having to keep adding the :auth_token
+    # key to any GET/POST/PUT etc. data that is needed 
+    #
+    def add_auth_header_for(auth_data={}, user=User.first)
+      if auth_data[:username].present?
+        header 'username', auth_data[:username] 
+      else
+        header 'username', user.username
+      end 
+      if auth_data[:auth_token].present?
+        header 'auth_token', auth_data[:auth_token] 
+      else
+        header 'auth_token', auth_token(user)
+      end
+    end
+
 
     module_function :auth_token
     module_function :add_auth_token
