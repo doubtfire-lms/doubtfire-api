@@ -27,13 +27,14 @@ class Webcal < ActiveRecord::Base
       #   ID prefixed with S- or E- based on whether it is a start or end event.
 
       ev_name = "#{td.unit.code}: #{td.abbreviation}: #{td.name}"
+      ev_date_format = '%Y%m%d'
 
       # Add event for start date, if the user opted in.
       if include_start_dates
         ical.event do |ev|
           ev.uid = "S-#{td.id}"
           ev.summary = "Start: #{ev_name}"
-          ev.dtstart = ev.dtend = Icalendar::Values::Date.new(td.start_date.strftime('%Y%m%d'))
+          ev.dtstart = ev.dtend = Icalendar::Values::Date.new(td.start_date.strftime(ev_date_format))
         end
       end
 
@@ -44,7 +45,7 @@ class Webcal < ActiveRecord::Base
 
         ev_date = td.target_date
         ev_date += (td.tasks.first.extensions * 7).day if td.tasks.present?
-        ev.dtstart = ev.dtend = Icalendar::Values::Date.new(ev_date.strftime('%Y%m%d'))
+        ev.dtstart = ev.dtend = Icalendar::Values::Date.new(ev_date.strftime(ev_date_format))
       end
     end
 
