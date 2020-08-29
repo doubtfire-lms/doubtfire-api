@@ -81,8 +81,9 @@ module Api
             projects: { user_id: webcal.user_id },
             units: { active: true }
           )
-          .where('tasks.project_id is null or tasks.project_id = projects.id')   # eager_load(:tasks) only tasks of :projects
+          .where('tasks.project_id is null or tasks.project_id = projects.id')   # eager_load only :tasks of :projects
           .where('? BETWEEN units.start_date AND units.end_date', Time.zone.now) # Current units
+          .where('task_definitions.target_grade <= projects.target_grade')       # only :tasks of the targeted_grade or lower
       )
 
       # Specify refresh interval.
