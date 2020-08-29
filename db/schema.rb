@@ -415,11 +415,13 @@ ActiveRecord::Schema.define(version: 20200817020024) do
   add_index "users", ["authentication_token"], name: "index_users_on_authentication_token", unique: true, using: :btree
   add_index "users", ["login_id"], name: "index_users_on_login_id", unique: true, using: :btree
 
-  create_table "webcals", force: :cascade do |t|
-    t.boolean "include_start_dates", default: false, null: false
+  create_table "webcals", id: false, force: :cascade do |t|
+    t.string  "id",                  limit: 36,                 null: false
+    t.boolean "include_start_dates",            default: false, null: false
     t.integer "user_id"
   end
 
+  add_index "webcals", ["id"], name: "index_webcals_on_id", unique: true, using: :btree
   add_index "webcals", ["user_id"], name: "index_webcals_on_user_id", unique: true, using: :btree
 
   add_foreign_key "breaks", "teaching_periods"
