@@ -1,6 +1,11 @@
 require 'icalendar'
 
 class Webcal < ActiveRecord::Base
+
+  # Explicitly define the primary key here because it isn't defined in the Rails migration.
+  # Refer to the migration 20200817020024_create_webcals.rb for more information.
+  self.primary_key = :id
+
   belongs_to :user
 
   #
