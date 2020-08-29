@@ -38,11 +38,13 @@ class Webcal < ActiveRecord::Base
       end
 
       # Add event for target/extended date.
-      # TODO: Use extension date if available.
       ical.event do |ev|
         ev.uid = "E-#{td.id}"
         ev.summary = "#{include_start_dates ? 'End:' : ''}#{ev_name}"
-        ev.dtstart = ev.dtend = Icalendar::Values::Date.new(td.target_date.strftime('%Y%m%d'))
+
+        ev_date = td.target_date
+        ev_date += (td.tasks.first.extensions * 7).day if td.tasks.present?
+        ev.dtstart = ev.dtend = Icalendar::Values::Date.new(ev_date.strftime('%Y%m%d'))
       end
     end
 
