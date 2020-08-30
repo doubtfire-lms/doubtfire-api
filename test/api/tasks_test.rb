@@ -13,7 +13,10 @@ class TasksTest < ActiveSupport::TestCase
     # The GET we are testing
     unit = FactoryBot.create(:unit, perform_submissions: true)
 
-    get with_auth_token "/api/tasks?unit_id=#{unit.id}", unit.main_convenor_user
+    # Add username and auth_token to Header
+    add_auth_header_for({}, unit.main_convenor_user)
+
+    get "/api/tasks?unit_id=#{unit.id}"
     expected_data = unit.student_tasks.where('task_status_id > ?', 1)
 
     assert_equal expected_data.count, last_response_body.count
@@ -37,7 +40,10 @@ class TasksTest < ActiveSupport::TestCase
     # The GET we are testing
     unit = FactoryBot.create(:unit, perform_submissions: true, stream_count: 1, campus_count: 2)
 
-    get with_auth_token "/api/tasks?unit_id=#{unit.id}", unit.main_convenor_user
+    # Add username and auth_token to Header
+    add_auth_header_for({}, unit.main_convenor_user)
+
+    get "/api/tasks?unit_id=#{unit.id}"
     expected_data = unit.student_tasks.where('task_status_id > ?', 1)
 
     assert_equal expected_data.count, last_response_body.count
@@ -84,7 +90,10 @@ class TasksTest < ActiveSupport::TestCase
 
     project = unit.active_projects.first
 
-    post_json with_auth_token("/api/projects/#{project.id}/task_def_id/#{td.id}/submission", unit.tutors.first), data_to_post
+    # Add username and auth_token to Header
+    add_auth_header_for({}, unit.tutors.first)
+
+    post_json "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
 
     assert_equal 201, last_response.status
 
@@ -124,8 +133,11 @@ class TasksTest < ActiveSupport::TestCase
     project = unit.active_projects.first
     tutor = project.tutor_for(td)
 
+    # Add username and auth_token to Header
+    add_auth_header_for({}, tutor)
+
     # Make a submission for this student
-    post with_auth_token("/api/projects/#{project.id}/task_def_id/#{td.id}/submission", tutor), data_to_post    
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post    
     assert_equal 201, last_response.status
 
     # Get the task... check it is now time exceeded
@@ -140,8 +152,11 @@ class TasksTest < ActiveSupport::TestCase
       weeks_requested: 2
     }
 
+    # Add username and auth_token to Header
+    add_auth_header_for({}, project.student)
+
     # Apply for an extension
-    post "/api/projects/#{project.id}/task_def_id/#{td.id}/request_extension", with_auth_token(data_to_post, project.student)
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/request_extension", data_to_post
     assert_equal 201, last_response.status
 
     # Reload to get new details
@@ -196,8 +211,11 @@ class TasksTest < ActiveSupport::TestCase
     project = unit.active_projects.first
     tutor = project.tutor_for(td)
 
+    # Add username and auth_token to Header
+    add_auth_header_for({}, tutor)
+
     # Make a submission for this student
-    post with_auth_token("/api/projects/#{project.id}/task_def_id/#{td.id}/submission", tutor), data_to_post    
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
     assert_equal 201, last_response.status
 
     # Get the task... check it is now time exceeded
@@ -212,8 +230,11 @@ class TasksTest < ActiveSupport::TestCase
       weeks_requested: 2
     }
 
+    # Add username and auth_token to Header
+    add_auth_header_for({}, project.student)
+
     # Apply for an extension
-    post "/api/projects/#{project.id}/task_def_id/#{td.id}/request_extension", with_auth_token(data_to_post, project.student)
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/request_extension", data_to_post
     assert_equal 201, last_response.status
 
     # After extension... no more extensions are possible
