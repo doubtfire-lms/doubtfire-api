@@ -53,8 +53,11 @@ class TutorialsTest < ActiveSupport::TestCase
     # Number of tutorials before POST
     number_of_tutorials = Tutorial.all.length
 
+    # Add username and auth_token to Header
+    add_auth_header_for({}, unit.main_convenor_user)
+
     # perform the POST with the unit main convenor auth token
-    post_json '/api/tutorials', with_auth_token(data_to_post, unit.main_convenor_user)
+    post_json '/api/tutorials', data_to_post
 
     # Check for successful request
     assert_equal 201, last_response.status
@@ -95,8 +98,11 @@ class TutorialsTest < ActiveSupport::TestCase
     # Number of tutorials before POST
     number_of_tutorials = Tutorial.all.length
 
+    # Add username and auth_token to Header
+    add_auth_header_for({}, admin)
+
     # perform the post with the admin auth token
-    post_json '/api/tutorials', with_auth_token(data_to_post, admin)
+    post_json '/api/tutorials', data_to_post
 
     # Check for successful request
     assert_equal 201, last_response.status
@@ -135,8 +141,11 @@ class TutorialsTest < ActiveSupport::TestCase
     # Number of tutorials before POST
     number_of_tutorials = Tutorial.all.length
 
+    # Add username and auth_token to Header
+    add_auth_header_for({}, unit.main_convenor_user)
+
     # perform the post with the unit main convenor auth token
-    post_json '/api/tutorials', with_auth_token(data_to_post, unit.main_convenor_user)
+    post_json '/api/tutorials', data_to_post
 
     # Check if the POST get through
     assert_equal 201, last_response.status
@@ -167,9 +176,15 @@ class TutorialsTest < ActiveSupport::TestCase
     }
 
     data_to_post = {
-      tutorial: tutorial,
+      tutorial: tutorial
+    }
+    
+    auth_data_to_header = {
       auth_token: 'Incorrect_Auth_Token'
     }
+
+    # Add username and auth_token to Header
+    add_auth_header_for(auth_data_to_header)
 
     # Number of tutorials before POST
     number_of_tutorials = Tutorial.all.length
@@ -202,9 +217,14 @@ class TutorialsTest < ActiveSupport::TestCase
     }
 
     data_to_post = {
-      tutorial: tutorial,
-      auth_token: ''
+      tutorial: tutorial
     }
+
+    # Add username and auth_token to Header
+    add_auth_header_for()
+
+    #Override header for empty auth_token
+    header 'auth_token',''
 
     # Number of tutorials before POST
     number_of_tutorials = Tutorial.all.length
@@ -243,8 +263,11 @@ class TutorialsTest < ActiveSupport::TestCase
     # Number of tutorials before POST
     number_of_tutorials = Tutorial.all.length
 
+    # Add username and auth_token to Header
+    add_auth_header_for({}, unit.main_convenor_user)
+
     # perform the POST with the unit main convenor auth token
-    post_json '/api/tutorials', with_auth_token(data_to_post, unit.main_convenor_user)
+    post_json '/api/tutorials', data_to_post
 
     # Check for error in creation
     assert_equal 400, last_response.status
@@ -278,8 +301,11 @@ class TutorialsTest < ActiveSupport::TestCase
     # Number of tutorials before POST
     number_of_tutorials = Tutorial.all.length
 
+    # Add username and auth_token to Header
+    add_auth_header_for({}, unit.main_convenor_user)
+
     # perform the post with the unit main convenor auth token
-    post_json '/api/tutorials', with_auth_token(data_to_post, unit.main_convenor_user)
+    post_json '/api/tutorials', data_to_post
 
     # Check for error in creation
     assert_equal 400, last_response.status
@@ -313,8 +339,11 @@ class TutorialsTest < ActiveSupport::TestCase
     # Number of tutorials before the first POST
     number_of_tutorials = Tutorial.all.length
 
+    # Add username and auth_token to Header
+    add_auth_header_for({}, unit.main_convenor_user)
+
     # perform the first POST with the unit main convenor auth token
-    post_json '/api/tutorials', with_auth_token(data_to_post, unit.main_convenor_user)
+    post_json '/api/tutorials', data_to_post
 
     # Check if the POST get through
     assert_equal 201, last_response.status
@@ -330,8 +359,11 @@ class TutorialsTest < ActiveSupport::TestCase
     unit.employ_staff admin, Role.admin
     admin.reload
 
+    # Add username and auth_token to Header
+    add_auth_header_for({}, admin)
+
     # perform the second POST of duplicate values with an admin auth token
-    post_json '/api/tutorials', with_auth_token(data_to_post, admin)
+    post_json '/api/tutorials', data_to_post
 
     # Check for error
     assert_equal 400, last_response.status
@@ -365,8 +397,11 @@ class TutorialsTest < ActiveSupport::TestCase
     # Number of tutorials before POST
     number_of_tutorials = Tutorial.all.length
 
+    # Add username and auth_token to Header
+    add_auth_header_for({}, unit.main_convenor_user)
+
     # perform the POST with the unit main convenor auth token
-    post_json '/api/tutorials', with_auth_token(data_to_post, unit.main_convenor_user)
+    post_json '/api/tutorials', data_to_post
 
     # Check for error in creation
     assert_equal 404, last_response.status
@@ -400,8 +435,11 @@ class TutorialsTest < ActiveSupport::TestCase
     # Number of tutorials before POST
     number_of_tutorials = Tutorial.all.length
 
+    # Add username and auth_token to Header
+    add_auth_header_for({}, unit.main_convenor_user)
+
     # perform the POST with the unit main convenor auth token
-    post_json '/api/tutorials', with_auth_token(data_to_post, unit.main_convenor_user)
+    post_json '/api/tutorials', data_to_post
 
     # Check for error in creation
     assert_equal 404, last_response.status
@@ -435,8 +473,11 @@ class TutorialsTest < ActiveSupport::TestCase
     # Number of tutorials before POST
     number_of_tutorials = Tutorial.all.length
 
+    # Add username and auth_token to Header
+    add_auth_header_for({}, unit.main_convenor_user)
+
     # perform the post with the unit main convenor auth token
-    post_json '/api/tutorials', with_auth_token(data_to_post, unit.main_convenor_user)
+    post_json '/api/tutorials', data_to_post
 
     # Check for error in creation
     assert_equal 400, last_response.status
@@ -470,8 +511,11 @@ class TutorialsTest < ActiveSupport::TestCase
     # Number of tutorials before POST
     number_of_tutorials = Tutorial.all.length
 
+    # Add username and auth_token to Header
+    add_auth_header_for({}, unit.main_convenor_user)
+
     # perform the POST with the unit main convenor auth token
-    post_json '/api/tutorials', with_auth_token(data_to_post, unit.main_convenor_user)
+    post_json '/api/tutorials', data_to_post
 
     # Check for error in creation
     assert_equal 400, last_response.status
@@ -505,8 +549,11 @@ class TutorialsTest < ActiveSupport::TestCase
     # Number of tutorials before POST
     number_of_tutorials = Tutorial.all.length
 
+    # Add username and auth_token to Header
+    add_auth_header_for({}, unit.main_convenor_user)
+
     # perform the POST with the unit main convenor auth token
-    post_json '/api/tutorials', with_auth_token(data_to_post, unit.main_convenor_user)
+    post_json '/api/tutorials', data_to_post
 
     # Check for error in creation
     assert_equal 400, last_response.status
@@ -540,8 +587,11 @@ class TutorialsTest < ActiveSupport::TestCase
     # Number of tutorials before POST
     number_of_tutorials = Tutorial.all.length
 
+    # Add username and auth_token to Header
+    add_auth_header_for({}, unit.main_convenor_user)
+
     # perform the post with the unit main convenor auth token
-    post_json '/api/tutorials', with_auth_token(data_to_post, unit.main_convenor_user)
+    post_json '/api/tutorials', data_to_post
 
     # Check for error in creation
     assert_equal 400, last_response.status
@@ -580,8 +630,11 @@ class TutorialsTest < ActiveSupport::TestCase
     # Number of tutorials before POST
     number_of_tutorials = Tutorial.all.length
 
+    # Add username and auth_token to Header
+    add_auth_header_for({}, dedicated_tutor)
+
     # perform the POST with the unit dedicated tutor auth token
-    post_json '/api/tutorials', with_auth_token(data_to_post, dedicated_tutor)
+    post_json '/api/tutorials', data_to_post
 
     # Check for failing due to no authorisation
     assert_equal 403, last_response.status
@@ -615,8 +668,11 @@ class TutorialsTest < ActiveSupport::TestCase
     # The student user to perform the POST
     student = unit.active_projects.first.student
 
+    # Add username and auth_token to Header
+    add_auth_header_for({}, student)
+
     # perform the POST with a student auth token
-    post_json '/api/tutorials', with_auth_token(data_to_post, student)
+    post_json '/api/tutorials', data_to_post
 
     # Check for failing due to no authorisation
     assert_equal 403, last_response.status
@@ -657,8 +713,11 @@ class TutorialsTest < ActiveSupport::TestCase
     unit.employ_staff admin, Role.admin
     admin.reload
 
+    # Add username and auth_token to Header
+    add_auth_header_for({}, admin)
+
     # perform the PUT with a unit admin auth token
-    put_json "/api/tutorials/#{tutorial_old.id}", with_auth_token(data_to_put, admin)
+    put_json "/api/tutorials/#{tutorial_old.id}", data_to_put
     
     # Check for successful request
     assert_equal 200, last_response.status
@@ -698,8 +757,11 @@ class TutorialsTest < ActiveSupport::TestCase
     unit.employ_staff admin, Role.admin
     admin.reload
 
+    # Add username and auth_token to Header
+    add_auth_header_for({}, admin)
+
     # perform the put with an admin auth token
-    put_json "/api/tutorials/#{tutorial_old.id}", with_auth_token(data_to_put, admin)
+    put_json "/api/tutorials/#{tutorial_old.id}", data_to_put
     
     # Check for successful request
     assert_equal 200, last_response.status
@@ -739,8 +801,11 @@ class TutorialsTest < ActiveSupport::TestCase
     unit.employ_staff admin, Role.admin
     admin.reload
 
+    # Add username and auth_token to Header
+    add_auth_header_for({}, admin)
+
     # perform the put with an admin auth token
-    put_json "/api/tutorials/#{tutorial_old.id}", with_auth_token(data_to_put, admin)
+    put_json "/api/tutorials/#{tutorial_old.id}", data_to_put
     
     # Check for successful request
     assert_equal 200, last_response.status
@@ -780,8 +845,11 @@ class TutorialsTest < ActiveSupport::TestCase
     unit.employ_staff admin, Role.admin
     admin.reload
 
+    # Add username and auth_token to Header
+    add_auth_header_for({}, admin)
+
     # perform the put with an admin auth token
-    put_json "/api/tutorials/#{tutorial_old.id}", with_auth_token(data_to_put, admin)
+    put_json "/api/tutorials/#{tutorial_old.id}", data_to_put
     
     # Check for successful request
     assert_equal 200, last_response.status
@@ -821,8 +889,11 @@ class TutorialsTest < ActiveSupport::TestCase
     unit.employ_staff admin, Role.admin
     admin.reload
 
+    # Add username and auth_token to Header
+    add_auth_header_for({}, admin)
+
     # perform the PUT with a unit admin auth token
-    put_json "/api/tutorials/#{tutorial_old.id}", with_auth_token(data_to_put, admin)
+    put_json "/api/tutorials/#{tutorial_old.id}", data_to_put
     
     # Check for successful request
     assert_equal 200, last_response.status
@@ -855,9 +926,14 @@ class TutorialsTest < ActiveSupport::TestCase
     }
 
     data_to_put = {
-      tutorial: tutorial,
-      auth_token: ''
+      tutorial: tutorial
     }
+
+    # Add username and auth_token to Header
+    add_auth_header_for()
+
+    #Override header for empty auth_token
+    header 'auth_token',''
 
     # perform the PUT with empty auth token
     put_json "/api/tutorials/#{tutorial_old.id}", data_to_put
@@ -887,9 +963,15 @@ class TutorialsTest < ActiveSupport::TestCase
     }
 
     data_to_put = {
-      tutorial: tutorial,
+      tutorial: tutorial
+    }
+
+    auth_data_to_header = {
       auth_token: 'Incorrect auth token'
     }
+
+    # Add username and auth_token to Header
+    add_auth_header_for(auth_data_to_header)
 
     # perform the PUT with incorrect auth token
     put_json "/api/tutorials/#{tutorial_old.id}", data_to_put
@@ -922,8 +1004,11 @@ class TutorialsTest < ActiveSupport::TestCase
       tutorial: tutorial
     }
 
+    # Add username and auth_token to Header
+    add_auth_header_for({}, unit.main_convenor_user)
+
     # perform the put with the unit main convenor auth token
-    put_json "/api/tutorials/#{tutorial_old.id}", with_auth_token(data_to_put, unit.main_convenor_user)
+    put_json "/api/tutorials/#{tutorial_old.id}", data_to_put
 
     # Check the request fails
     assert_equal 403, last_response.status
@@ -958,8 +1043,11 @@ class TutorialsTest < ActiveSupport::TestCase
     unit.employ_staff dedicated_tutor, Role.tutor
     dedicated_tutor.reload
 
+    # Add username and auth_token to Header
+    add_auth_header_for({}, dedicated_tutor)
+
     # perform the put with the dedicated tutor auth token
-    put_json "/api/tutorials/#{tutorial_old.id}", with_auth_token(data_to_put, dedicated_tutor)
+    put_json "/api/tutorials/#{tutorial_old.id}", data_to_put
 
     # Check there is no new tutorial
     assert_equal 403, last_response.status
@@ -992,15 +1080,14 @@ class TutorialsTest < ActiveSupport::TestCase
     # The student user to perform the PUT
     student = unit.active_projects.first.student
 
+    # Add username and auth_token to Header
+    add_auth_header_for({}, student)
+
     # perform the put with a unit student auth token
-    put_json "/api/tutorials/#{tutorial_old.id}", with_auth_token(data_to_put, student)
+    put_json "/api/tutorials/#{tutorial_old.id}", data_to_put
 
     # Check there is no new tutorial
     assert_equal 403, last_response.status
-  end
-
-  def delete_json_custom(endpoint, data)
-    delete endpoint, data.to_json, 'CONTENT_TYPE' => 'application/json'
   end
 
   #####----------DELETE tests - Delete a tutorial----------#####
@@ -1024,8 +1111,11 @@ class TutorialsTest < ActiveSupport::TestCase
     unit.employ_staff admin, Role.admin
     admin.reload
 
+    # Add username and auth_token to Header
+    add_auth_header_for({}, admin)
+
     # perform the delete with an admin auth token
-    delete_json with_auth_token("/api/tutorials/#{tutorial.id}", admin)
+    delete_json "/api/tutorials/#{tutorial.id}"
     
     # Check that the request succeeds
     assert_equal 200, last_response.status
@@ -1050,8 +1140,11 @@ class TutorialsTest < ActiveSupport::TestCase
     # Number of tutorials before DELETE
     number_of_tutorials = Tutorial.all.length
 
+    # Add username and auth_token to Header
+    add_auth_header_for({}, unit.main_convenor_user)
+
     # perform the delete with an admin auth token
-    delete_json with_auth_token("/api/tutorials/#{tutorial.id}", unit.main_convenor_user)
+    delete_json "/api/tutorials/#{tutorial.id}"
     
     # Check that the request succeeds
     assert_equal 200, last_response.status
@@ -1082,8 +1175,11 @@ class TutorialsTest < ActiveSupport::TestCase
     unit.employ_staff tutor, Role.tutor
     tutor.reload
 
+    # Add username and auth_token to Header
+    add_auth_header_for({}, tutor)
+
     # perform the delete with an admin auth token
-    delete_json with_auth_token("/api/tutorials/#{tutorial.id}", tutor)
+    delete_json "/api/tutorials/#{tutorial.id}"
     
     # Check that the request succeeds
     assert_equal 403, last_response.status
@@ -1099,15 +1195,14 @@ class TutorialsTest < ActiveSupport::TestCase
     # Set a string tutorial id
     tutorial_id = 'string'
 
-    data_to_send = {
-      auth_token: auth_token
-    }
-
     # Number of tutorials before DELETE
     number_of_tutorials = Tutorial.all.length
+
+    # Add username and auth_token to Header
+    add_auth_header_for()
     
     # perform the post
-    delete_json_custom "/api/tutorials/#{tutorial_id}", data_to_send
+    delete_json "/api/tutorials/#{tutorial_id}" 
 
     # Check number of tutorials does not change
     assert_equal number_of_tutorials , Tutorial.all.length
@@ -1121,15 +1216,17 @@ class TutorialsTest < ActiveSupport::TestCase
     # Create a dummy tutorial
     tutorial = FactoryBot.create(:tutorial)
 
-    data_to_send = {
-      auth_token: ''
-    }
-    
     # Number of tutorials before DELETE
     number_of_tutorials = Tutorial.all.length
 
+    # Add username and auth_token to Header
+    add_auth_header_for()
+
+    #Override header for empty auth_token
+    header 'auth_token',''
+
     # perform the delete with empty auth token
-    delete_json_custom "/api/tutorials/#{tutorial.id}", data_to_send
+    delete_json "/api/tutorials/#{tutorial.id}"
 
     # Check authentication error
     assert_equal 419, last_response.status
@@ -1145,15 +1242,18 @@ class TutorialsTest < ActiveSupport::TestCase
     # Create a dummy tutorial
     tutorial = FactoryBot.create(:tutorial)
 
-    data_to_send = {
+    auth_data_to_header = {
       auth_token: 'incorrect_auth_token'
     }
+
+    # Add username and auth_token to Header
+    add_auth_header_for(auth_data_to_header)
 
      # Number of tutorials before DELETE
      number_of_tutorials = Tutorial.all.length
 
     # perform the delete with incorrect auth token
-    delete_json_custom "/api/tutorials/#{tutorial.id}", data_to_send
+    delete_json "/api/tutorials/#{tutorial.id}"
 
     # Check authentication error
     assert_equal 419, last_response.status
@@ -1175,8 +1275,11 @@ class TutorialsTest < ActiveSupport::TestCase
     # Student in the tutorial unit to perform the DELETE
     student = tutorial.unit.active_projects.first.student
 
+    # Add username and auth_token to Header
+    add_auth_header_for({}, student)
+
     # perform the delete with a unit student auth token
-    delete_json with_auth_token("/api/tutorials/#{tutorial.id}", student)
+    delete_json "/api/tutorials/#{tutorial.id}"
 
     # check if the delete does not get through
     assert_equal 403, last_response.status

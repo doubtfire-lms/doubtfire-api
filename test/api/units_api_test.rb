@@ -20,14 +20,19 @@ class UnitsApiTest < ActiveSupport::TestCase
 
   # Test POST for creating new unit
   def test_units_post
-    data_to_post = add_auth_token(unit: {
-                                    name: 'Intro to Social Skills',
-                                    code: 'JRRW40003',
-                                    start_date: '2016-05-14T00:00:00.000Z',
-                                    end_date: '2017-05-14T00:00:00.000Z'
-                                  })
+    data_to_post = {
+      unit: {
+        name: 'Intro to Social Skills',
+        code: 'JRRW40003',
+        start_date: '2016-05-14T00:00:00.000Z',
+        end_date: '2017-05-14T00:00:00.000Z'
+      }
+    }
     expected_unit = data_to_post[:unit]
     unit_count = Unit.all.length
+
+    # Add username and auth_token to Header
+    add_auth_header_for()
 
     # The post that we will be testing.
     post_json '/api/units.json', data_to_post
@@ -58,9 +63,16 @@ class UnitsApiTest < ActiveSupport::TestCase
     unit = create_unit
 
     data_to_post = {
-        unit: unit,
-        auth_token: token
+        unit: unit
     }
+
+    # Add username and auth_token to Header
+    add_auth_header_for({auth_token: token})
+
+    # Override the header for empty auth_token
+    if token == ''
+      header 'auth_token',''
+    end
 
     post_json '/api/units', data_to_post
     # Successful assertion of same length again means no record was created
@@ -76,9 +88,11 @@ class UnitsApiTest < ActiveSupport::TestCase
     count = Unit.all.length
 
     data_to_post = {
-        unit: create_unit,
-        auth_token: auth_token
+        unit: create_unit
     }
+
+    # Add username and auth_token to Header
+    add_auth_header_for()
 
     post_json '/api/units', data_to_post
     assert_equal count + 1, Unit.all.length
@@ -96,9 +110,11 @@ class UnitsApiTest < ActiveSupport::TestCase
     unit = create_unit
 
     data_to_post = {
-        unit: unit,
-        auth_token: auth_token
+        unit: unit
     }
+
+    # Add username and auth_token to Header
+    add_auth_header_for()
 
     post_json '/api/units', data_to_post
     assert_equal count + 1, Unit.all.length
@@ -139,9 +155,11 @@ class UnitsApiTest < ActiveSupport::TestCase
     }
 
     data_to_post = {
-      tutorial: tutorial,
-      auth_token: auth_token
+      tutorial: tutorial
     }
+
+    # Add username and auth_token to Header
+    add_auth_header_for()
 
     # perform the post
     post_json '/api/tutorials', data_to_post
@@ -158,31 +176,38 @@ class UnitsApiTest < ActiveSupport::TestCase
   # GET tests
 
   # Test GET for getting all units
-  #def test_units_get
-    # The GET we are testing
-   # get with_auth_token '/api/units'
+  def test_units_get
 
-   # actual_unit = last_response_body[0]
-    #expected_unit = Unit.first
-   # assert_equal expected_unit.name, actual_unit['name']
-   # assert_equal expected_unit.code, actual_unit['code']
-   # assert_equal expected_unit.start_date.to_date, actual_unit['start_date'].to_date
-    #assert_equal expected_unit.end_date.to_date, actual_unit['end_date'].to_date.to_date
+    # Add username and auth_token to Header
+    add_auth_header_for()
+
+    get '/api/units'
+
+    actual_unit = last_response_body[0]
+    expected_unit = Unit.first
+    assert_equal expected_unit.name, actual_unit['name']
+    assert_equal expected_unit.code, actual_unit['code']
+    assert_equal expected_unit.start_date.to_date, actual_unit['start_date'].to_date
+    assert_equal expected_unit.end_date.to_date, actual_unit['end_date'].to_date.to_date
 
     # Check last unit in Units (created in seed.db)
-   # actual_unit = last_response_body[1]
-    #expected_unit = Unit.find(2)
+    actual_unit = last_response_body[1]
+    expected_unit = Unit.find(2)
 
-    #assert_equal expected_unit.name, actual_unit['name']
-    #assert_equal expected_unit.code, actual_unit['code']
-    #assert_equal expected_unit.start_date.to_date, actual_unit['start_date'].to_date
-    #assert_equal expected_unit.end_date.to_date, actual_unit['end_date'].to_date.to_date
-  #end
+    assert_equal expected_unit.name, actual_unit['name']
+    assert_equal expected_unit.code, actual_unit['code']
+    assert_equal expected_unit.start_date.to_date, actual_unit['start_date'].to_date
+    assert_equal expected_unit.end_date.to_date, actual_unit['end_date'].to_date.to_date
+  end
 
   # Test GET for getting a specific unit by id
   def test_units_get_by_id
+
+    # Add username and auth_token to Header
+    add_auth_header_for()
+
     # Test getting the first unit with id of 1
-    get with_auth_token '/api/units/1'
+    get '/api/units/1'
 
     actual_unit = last_response_body
     expected_unit = Unit.find(1)
@@ -195,7 +220,7 @@ class UnitsApiTest < ActiveSupport::TestCase
 
     # Get response back from getting a unit by id
     # Test getting the first unit with id of 2
-    get with_auth_token '/api/units/2'
+    get '/api/units/2'
 
     actual_unit = last_response_body
     expected_unit = Unit.find(2)
@@ -210,8 +235,11 @@ class UnitsApiTest < ActiveSupport::TestCase
   def test_units_get_has_streams
     expected_unit = FactoryBot.create(:unit, with_students: false, stream_count: 2)
 
+    # Add username and auth_token to Header
+    add_auth_header_for()
+
     # Get the unit...
-    get with_auth_token "/api/units/#{expected_unit.id}"
+    get "/api/units/#{expected_unit.id}"
 
     actual_unit = last_response_body
 
@@ -226,7 +254,7 @@ class UnitsApiTest < ActiveSupport::TestCase
     expected_unit = FactoryBot.create(:unit, with_students: false, stream_count: 3)
 
     # Get the unit...
-    get with_auth_token "/api/units/#{expected_unit.id}"
+    get "/api/units/#{expected_unit.id}"
 
     actual_unit = last_response_body
 
@@ -241,7 +269,11 @@ class UnitsApiTest < ActiveSupport::TestCase
 
   #Test GET for getting the unit details of current user
   def test_units_current
-    get with_auth_token '/api/units'
+    
+    # Add username and auth_token to Header
+    add_auth_header_for()
+
+    get '/api/units'
     assert_equal 200, last_response.status
   end
   
@@ -259,9 +291,12 @@ class UnitsApiTest < ActiveSupport::TestCase
     unit['auto_apply_extension_before_deadline'] = false
     unit['send_notifications'] = false
     data_to_put = {
-      unit:unit,
-      auth_token: auth_token
+      unit:unit
     }
+
+    # Add username and auth_token to Header
+    add_auth_header_for()
+
     put_json '/api/units/1', data_to_put
     assert_equal 200, last_response.status
 
@@ -274,9 +309,11 @@ class UnitsApiTest < ActiveSupport::TestCase
     unit[:name] = ''
 
     data_to_put = {
-        unit: unit,
-        auth_token: auth_token
+        unit: unit
     }
+
+    # Add username and auth_token to Header
+    add_auth_header_for()
 
     put_json '/api/units/1', data_to_put
     assert_equal 400, last_response.status
@@ -285,9 +322,11 @@ class UnitsApiTest < ActiveSupport::TestCase
   #Test PUT for updating unit details with invalid id
   def test_put_update_unit_invalid_id
     data_to_put = {
-        unit: { name: 'test'},
-        auth_token: auth_token
+        unit: { name: 'test'}
     }
+
+    # Add username and auth_token to Header
+    add_auth_header_for()
 
     put_json '/api/units/12', data_to_put
     assert_equal 404, last_response.status
@@ -295,23 +334,45 @@ class UnitsApiTest < ActiveSupport::TestCase
 
   # Test GET for getting a specific unit by invalid id
   def test_fail_units_get_by_id
-    get with_auth_token '/api/units/12'
+
+    # Add username and auth_token to Header
+    add_auth_header_for()
+    
+    get '/api/units/12'
     assert_equal 404, last_response.status
   end
 
   def test_put_update_unit_custom_token(token='abcdef')
     unit= Unit.first
     data_to_put = {
-        unit: unit,
-        auth_token:token
+        unit: unit
     }
+
+    auth_data_to_header = {
+      auth_token: token
+    }
+
+    # Add username and auth_token to Header
+    add_auth_header_for(auth_data_to_header)
 
     put_json '/api/units/1', data_to_put
     assert_equal 419, last_response.status
   end
 
   def test_put_update_unit_empty_token
-    test_put_update_unit_custom_token ''
+    unit= Unit.first
+    data_to_put = {
+        unit: unit
+    }
+
+    # Add username and auth_token to Header
+    add_auth_header_for()
+
+    # Override header for empty string
+    header 'auth_token',''
+
+    put_json '/api/units/1', data_to_put
+    assert_equal 419, last_response.status
   end
 
   # End GET tests
@@ -332,86 +393,93 @@ class UnitsApiTest < ActiveSupport::TestCase
       }
     }
 
-    put_json with_auth_token("/api/units/#{unit.id}", unit.main_convenor_user), data_to_put
+    # Add username and auth_token to Header
+    add_auth_header_for({}, unit.main_convenor_user)
+
+    put_json "/api/units/#{unit.id}", data_to_put
 
     unit.reload
     assert_equal 200, last_response.status
     assert_equal convenor_user_role.id, unit.main_convenor_id
   end
 
-  #def test_units_put
-    # users = {
-    #   acain:              {first_name: "Andrew",         last_name: "Cain",                 nickname: "Macite",         role_id: Role.admin_id},
-    #   jrenzella:          {first_name: "Jake",           last_name: "Renzella",             nickname: "FactoryBoy<3",   role_id: Role.convenor_id},
-    #   rwilson:            {first_name: "Reuben",         last_name: "Wilson",               nickname: "FactoryGurl</3", role_id: Role.tutor_id},
-    #   acummaudo:          {first_name: "Alex",           last_name: "Cummaudo",             nickname: "Doubtfire Dude", role_id: Role.student_id},
-    # }
-    #
-    # some_tasks = 5
-    # many_tasks = 10
-    # some_tutorials = 2
-    # many_tutorials = 4
-    #
-    # unit_data = {
-    #   intro_prog: {
-    #     code: "COS10001",
-    #     name: "Introduction to Programming",
-    #     convenors: [ :acain ],
-    #     tutors: [
-    #       { user: :acain, num: many_tutorials},
-    #       { user: :rwilson, num: many_tutorials},
-    #       { user: :acummaudo, num: some_tutorials},
-    #       { user: :jrenzella, num: some_tutorials}
-    #     ],
-    #     num_tasks: some_tasks,
-    #     ilos: rand(0..3),
-    #     students: [ ]
-    #   }
-    # }
-    #
-    # puts unit_data[:intro_prog][:code]
-    #
-    # unit = Unit.create!(
-    #   code: unit_data[:intro_prog][:code],
-    #   name: unit_data[:intro_prog][:name],
-    #   description: Populator.words(10..15),
-    #   start_date: Time.zone.now  - 6.weeks,
-    #   end_date: 13.weeks.since(Time.zone.now - 6.weeks)
-    # )
+  # def test_units_put
+  #   users = {
+  #     acain:              {first_name: "Andrew",         last_name: "Cain",                 nickname: "Macite",         role_id: Role.admin_id},
+  #     jrenzella:          {first_name: "Jake",           last_name: "Renzella",             nickname: "FactoryBoy<3",   role_id: Role.convenor_id},
+  #     rwilson:            {first_name: "Reuben",         last_name: "Wilson",               nickname: "FactoryGurl</3", role_id: Role.tutor_id},
+  #     acummaudo:          {first_name: "Alex",           last_name: "Cummaudo",             nickname: "Doubtfire Dude", role_id: Role.student_id},
+  #   }
+    
+  #   some_tasks = 5
+  #   many_tasks = 10
+  #   some_tutorials = 2
+  #   many_tutorials = 4
+    
+  #   unit_data = {
+  #     intro_prog: {
+  #       code: "COS10001",
+  #       name: "Introduction to Programming",
+  #       convenors: [ :acain ],
+  #       tutors: [
+  #         { user: :acain, num: many_tutorials},
+  #         { user: :rwilson, num: many_tutorials},
+  #         { user: :acummaudo, num: some_tutorials},
+  #         { user: :jrenzella, num: some_tutorials}
+  #       ],
+  #       num_tasks: some_tasks,
+  #       ilos: rand(0..3),
+  #       students: [ ]
+  #     }
+  #   }
+    
+  #   # puts unit_data[:intro_prog][:code]
+    
+  #   unit = Unit.create!(
+  #     code: unit_data[:intro_prog][:code],
+  #     name: unit_data[:intro_prog][:name],
+  #     description: Populator.words(10..15),
+  #     start_date: Time.zone.now  - 6.weeks,
+  #     end_date: 13.weeks.since(Time.zone.now - 6.weeks)
+  #   )
 
-    # unit.employ_staff(users[:acain], Role.convenor)
-    # unit.save!
+  #   unit.employ_staff(users[:acain], Role.convenor)
+  #   unit.save!
 
-    # actual_unit = unit_to_update
-    # expected_unit = Unit.last
-    # unit_id = unit_to_update.id
-    #
-    # assert_equal expected_unit.name, actual_unit['name']
-    # assert_equal expected_unit.code, actual_unit['code']
-    # assert_equal expected_unit.start_date.to_date, actual_unit['start_date'].to_date
-    # assert_equal expected_unit.end_date.to_date, actual_unit['end_date'].to_date
-    #
-    # data_to_put = add_auth_token({
-    #   unit: {
-    #     name: "Intro to Pizza Crafting",
-    #     code: "PZA1011",
-    #     start_date: "2017-05-14T00:00:00.000Z",
-    #     end_date: "2018-05-14T00:00:00.000Z",
-    #     description: "pizza lyf"
-    #   },
-    # })
-    # put "/api/units/#{unit_id}.json", data_to_put.to_json, "CONTENT_TYPE" => 'application/json'
-    #
-    # actual_unit = last_response_body
-    # expected_unit = data_to_put
-    #
-    # puts actual_unit
-    #
-    # assert_equal expected_unit.name, actual_unit['name']
-    # assert_equal expected_unit.code, actual_unit['code']
-    # assert_equal expected_unit['start_date'].to_date, actual_unit['start_date'].to_date
-    # assert_equal expected_unit['end_date'].to_date, actual_unit['end_date'].to_date
-  #end
+  #   actual_unit = unit_to_update
+  #   expected_unit = Unit.last
+  #   unit_id = unit_to_update.id
+    
+  #   assert_equal expected_unit.name, actual_unit['name']
+  #   assert_equal expected_unit.code, actual_unit['code']
+  #   assert_equal expected_unit.start_date.to_date, actual_unit['start_date'].to_date
+  #   assert_equal expected_unit.end_date.to_date, actual_unit['end_date'].to_date
+    
+  #   data_to_put = {
+  #     unit: {
+  #       name: "Intro to Pizza Crafting",
+  #       code: "PZA1011",
+  #       start_date: "2017-05-14T00:00:00.000Z",
+  #       end_date: "2018-05-14T00:00:00.000Z",
+  #       description: "pizza lyf"
+  #     },
+  #   }
+
+  #   # Add username and auth_token to Header
+  #   add_auth_header_for()
+
+  #   put "/api/units/#{unit_id}.json", data_to_put.to_json, "CONTENT_TYPE" => 'application/json'
+    
+  #   actual_unit = last_response_body
+  #   expected_unit = data_to_put
+    
+  #   puts actual_unit
+    
+  #   assert_equal expected_unit.name, actual_unit['name']
+  #   assert_equal expected_unit.code, actual_unit['code']
+  #   assert_equal expected_unit['start_date'].to_date, actual_unit['start_date'].to_date
+  #   assert_equal expected_unit['end_date'].to_date, actual_unit['end_date'].to_date
+  # end
   # End PUT tests
   # --------------------------------------------------------------------------- #
  #end
