@@ -1020,6 +1020,21 @@ class Task < ActiveRecord::Base
 
       FileHelper.compress_pdf(portfolio_evidence)
 
+      # if the task is the draft learning summary task
+      if task_definition_id == unit.draft_task_definition_id
+        # if there is a learning summary, execute, if there isn't and a learning summary exists, don't execute
+        if project.uses_draft_learning_summary || project.portfolio_files.select {|f| f[:name] == "LearningSummaryReport.pdf"}.empty?
+          puts "Copying to portfolio"
+          file_name = {
+            kind: 'document',
+            name: 'LearningSummaryReport.pdf',
+            idx: 0
+          }
+          FileUtils.cp portfolio_evidence, project.portfolio_tmp_file_path(file_name)
+          project.uses_draft_learning_summary = true
+        end
+      end
+
       save
 
       clear_in_process
