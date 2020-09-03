@@ -14,8 +14,11 @@ class FeedbackTest < ActiveSupport::TestCase
 
     unit.teaching_staff.each do |user|
       expected_response = unit.tasks_awaiting_feedback(user)
+      
+      # Add auth_token and username to header
+      add_auth_header_for({}, user)
 
-      get with_auth_token "/api/units/#{unit.id}/feedback", user
+      get "/api/units/#{unit.id}/feedback"
 
       assert_equal 200, last_response.status
 
@@ -34,7 +37,10 @@ class FeedbackTest < ActiveSupport::TestCase
     unit.teaching_staff.each do |user|
       expected_response = unit.tasks_for_task_inbox(user)
 
-      get with_auth_token "/api/units/#{unit.id}/tasks/inbox", user
+      # Add auth_token and username to header
+      add_auth_header_for({}, user)
+
+      get "/api/units/#{unit.id}/tasks/inbox"
 
       assert_equal 200, last_response.status
 
