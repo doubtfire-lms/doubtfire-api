@@ -117,7 +117,7 @@ class DeakinInstitutionSettings
     stream = unit.tutorial_streams.where(abbreviation: abbr).first
 
     # Create the stream ... but skip classes - unless it is in the unit's current streams
-    if stream.nil? && activity_type_for_group_code(abbr, desc).abbreviation != 'Cls'
+    if stream.nil? && activity_type_for_group_code(abbr, desc).abbreviation.casecmp('Cls') != 0
       stream = unit.add_tutorial_stream desc, abbr, activity_type_for_group_code(abbr, desc)
     end
 
@@ -387,6 +387,7 @@ class DeakinInstitutionSettings
             # Cloud tutorials are allocated to the tutorial with the smallest pct full
             # We need to determine the stats here before the enrolments.
             # This is not needed for multi unit as we do not setup the tutorials for multi units
+            
             if is_cloud && ! multi_unit && unit.enable_sync_timetable
               if unit.tutorials.where(campus_id: campus.id).count == 0
                 unit.add_tutorial(
