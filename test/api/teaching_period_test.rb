@@ -56,7 +56,7 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     to_update = tp.breaks.first
 
     # Add username and auth_token to Header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # The api call we are testing
     put_json "/api/teaching_periods/#{tp.id}/breaks/#{to_update.id}", { number_of_weeks: 5 }
@@ -71,7 +71,7 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     num_weeks = to_update.number_of_weeks
 
     # Add username and auth_token to Header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # The api call we are testing
     put_json "/api/teaching_periods/#{tp.id}/breaks/#{to_update.id}", { number_of_weeks: num_weeks + 1 }
@@ -93,7 +93,7 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     }
 
     # Add username and auth_token to Header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # Update teaching period with id = 1
     put_json "/api/teaching_periods/#{tp.id}", data_to_put
@@ -154,7 +154,7 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     }
 
     # Add username and auth_token to Header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # perform the POST
     post_json '/api/teaching_periods', data_to_post
@@ -188,7 +188,7 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     number_of_tp = TeachingPeriod.count
 
     # Add username and auth_token to Header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # perform the delete
     delete_json "/api/teaching_periods/#{teaching_period.id}"

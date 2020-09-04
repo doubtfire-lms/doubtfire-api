@@ -13,7 +13,7 @@ class UnitRolesTest < ActiveSupport::TestCase
   def test_get_unit_roles
 
     # Add username and auth_token to Header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     get '/api/unit_roles'
     # UnitRole.joins(:role, :unit).where("user_id = :user_id and roles.name <> 'Student'", user_id: user.id)
@@ -57,7 +57,7 @@ class UnitRolesTest < ActiveSupport::TestCase
     }
 
     # Add username and auth_token to Header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     post '/api/unit_roles', to_post
     assert_equal last_response.status, 403
@@ -73,7 +73,7 @@ class UnitRolesTest < ActiveSupport::TestCase
     }
 
     # Add username and auth_token to Header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     post '/api/unit_roles', to_post
 
@@ -95,7 +95,7 @@ class UnitRolesTest < ActiveSupport::TestCase
     number_of_ur = UnitRole.count
 
     # Add username and auth_token to Header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # perform the delete
     delete_json "/api/unit_roles/#{unit_role.id}"

@@ -32,7 +32,7 @@ class UnitsApiTest < ActiveSupport::TestCase
     unit_count = Unit.all.length
 
     # Add username and auth_token to Header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # The post that we will be testing.
     post_json '/api/units.json', data_to_post
@@ -92,7 +92,7 @@ class UnitsApiTest < ActiveSupport::TestCase
     }
 
     # Add username and auth_token to Header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     post_json '/api/units', data_to_post
     assert_equal count + 1, Unit.all.length
@@ -114,7 +114,7 @@ class UnitsApiTest < ActiveSupport::TestCase
     }
 
     # Add username and auth_token to Header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     post_json '/api/units', data_to_post
     assert_equal count + 1, Unit.all.length
@@ -159,7 +159,7 @@ class UnitsApiTest < ActiveSupport::TestCase
     }
 
     # Add username and auth_token to Header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # perform the post
     post_json '/api/tutorials', data_to_post
@@ -179,7 +179,7 @@ class UnitsApiTest < ActiveSupport::TestCase
   def test_units_get
 
     # Add username and auth_token to Header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     get '/api/units'
 
@@ -204,7 +204,7 @@ class UnitsApiTest < ActiveSupport::TestCase
   def test_units_get_by_id
 
     # Add username and auth_token to Header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # Test getting the first unit with id of 1
     get '/api/units/1'
@@ -236,7 +236,7 @@ class UnitsApiTest < ActiveSupport::TestCase
     expected_unit = FactoryBot.create(:unit, with_students: false, stream_count: 2)
 
     # Add username and auth_token to Header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # Get the unit...
     get "/api/units/#{expected_unit.id}"
@@ -271,7 +271,7 @@ class UnitsApiTest < ActiveSupport::TestCase
   def test_units_current
     
     # Add username and auth_token to Header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     get '/api/units'
     assert_equal 200, last_response.status
@@ -295,7 +295,7 @@ class UnitsApiTest < ActiveSupport::TestCase
     }
 
     # Add username and auth_token to Header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     put_json '/api/units/1', data_to_put
     assert_equal 200, last_response.status
@@ -313,7 +313,7 @@ class UnitsApiTest < ActiveSupport::TestCase
     }
 
     # Add username and auth_token to Header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     put_json '/api/units/1', data_to_put
     assert_equal 400, last_response.status
@@ -326,7 +326,7 @@ class UnitsApiTest < ActiveSupport::TestCase
     }
 
     # Add username and auth_token to Header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     put_json '/api/units/12', data_to_put
     assert_equal 404, last_response.status
@@ -336,7 +336,7 @@ class UnitsApiTest < ActiveSupport::TestCase
   def test_fail_units_get_by_id
 
     # Add username and auth_token to Header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
     
     get '/api/units/12'
     assert_equal 404, last_response.status
@@ -366,7 +366,7 @@ class UnitsApiTest < ActiveSupport::TestCase
     }
 
     # Add username and auth_token to Header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # Override header for empty string
     header 'auth_token',''
@@ -466,7 +466,7 @@ class UnitsApiTest < ActiveSupport::TestCase
   #   }
 
   #   # Add username and auth_token to Header
-  #   add_auth_header_for()
+  #   add_auth_header_for(user: User.first)
 
   #   put "/api/units/#{unit_id}.json", data_to_put.to_json, "CONTENT_TYPE" => 'application/json'
     

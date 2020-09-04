@@ -221,7 +221,7 @@ class TutorialsTest < ActiveSupport::TestCase
     }
 
     # Add username and auth_token to Header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     #Override header for empty auth_token
     header 'auth_token',''
@@ -930,7 +930,7 @@ class TutorialsTest < ActiveSupport::TestCase
     }
 
     # Add username and auth_token to Header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     #Override header for empty auth_token
     header 'auth_token',''
@@ -1199,7 +1199,7 @@ class TutorialsTest < ActiveSupport::TestCase
     number_of_tutorials = Tutorial.all.length
 
     # Add username and auth_token to Header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
     
     # perform the post
     delete_json "/api/tutorials/#{tutorial_id}" 
@@ -1220,7 +1220,7 @@ class TutorialsTest < ActiveSupport::TestCase
     number_of_tutorials = Tutorial.all.length
 
     # Add username and auth_token to Header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     #Override header for empty auth_token
     header 'auth_token',''

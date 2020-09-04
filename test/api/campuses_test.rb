@@ -33,7 +33,7 @@ class CampusesTest < ActiveSupport::TestCase
     }
 
     # auth_token and username added to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     post_json '/api/campuses', data_to_post
     assert_equal 201, last_response.status
@@ -67,7 +67,7 @@ class CampusesTest < ActiveSupport::TestCase
     }
 
     # auth_token and username added to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # Update campus with id = 1
     put_json '/api/campuses/1', data_to_put
@@ -101,7 +101,7 @@ class CampusesTest < ActiveSupport::TestCase
     initial_num_of_campus = Campus.all.count
 
     # auth_token and username added to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     #Perform the delete
     delete_json "/api/campuses/#{campus.id}"
