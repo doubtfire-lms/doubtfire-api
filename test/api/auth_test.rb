@@ -153,7 +153,7 @@ class AuthTest < ActiveSupport::TestCase
 
   # Test put for authentication token
   def test_auth_put
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
     put_json "/api/auth", nil
     actual_auth = last_response_body['auth_token']
     expected_auth = auth_token
@@ -164,11 +164,8 @@ class AuthTest < ActiveSupport::TestCase
   # Test invalid authentication token
   def test_fail_auth_put
     # Override data to set custom username or token in header
-    auth_data_to_header = {
-      auth_token: '1234'
-    }
     # Add authentication token to header
-    add_auth_header_for(auth_data_to_header)
+    add_auth_header_for(user: User.first, auth_token: '1234')
     put_json "/api/auth", nil
     actual_auth = last_response_body
     expected_auth = auth_token
@@ -182,12 +179,8 @@ class AuthTest < ActiveSupport::TestCase
     
   # Test invalid username for valid authentication token
   def test_fail_username_put
-    auth_data_to_header = {
-      username: 'acain123'
-    }
-
     # Add authentication token to header
-    add_auth_header_for(auth_data_to_header)
+    add_auth_header_for(user: User.first, username: 'acain123')
     put_json "/api/auth", nil
     actual_auth = last_response_body
     expected_auth = auth_token
@@ -202,7 +195,7 @@ class AuthTest < ActiveSupport::TestCase
   # Test valid username for empty authentication token
   def test_fail_empty_authKey_put
     # Add authentication token to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # Overwrite header for empty auth_token
     header 'auth_token',''
@@ -239,7 +232,7 @@ class AuthTest < ActiveSupport::TestCase
   # Test for deleting authentication token
   def test_auth_delete
     # Add authentication token to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     delete "/api/auth", nil 
     # 200 response code means success!
@@ -253,13 +246,8 @@ class AuthTest < ActiveSupport::TestCase
     t2 = user.generate_authentication_token!
     
     # Set custom headers for request
-    auth_data_to_header = {
-      username: user.username,
-      auth_token: t1.authentication_token
-    }
-    
     # Add authentication token to header
-    add_auth_header_for(auth_data_to_header)
+    add_auth_header_for(username: user.username, auth_token: t1.authentication_token)
     
     # Sign out one
     delete "/api/auth.json"
