@@ -57,7 +57,7 @@ class GroupsApiTest < ActiveSupport::TestCase
     tutor = project.tutor_for(td)
 
     # Add username and auth_token to Header
-    add_auth_header_for({}, project.student)
+    add_auth_header_for(user: project.student)
 
     post "/api/projects/#{project.id}/task_def_id/#{td.id}/request_extension", data_to_post
     comment_id = last_response_body["id"]
@@ -116,7 +116,7 @@ class GroupsApiTest < ActiveSupport::TestCase
     comment_data = { comment: "Hello World" }
 
      # Add username and auth_token to Header
-    add_auth_header_for({}, project.student)
+    add_auth_header_for(user: project.student)
 
     post_json "/api/projects/#{project.id}/task_def_id/#{td.id}/comments", comment_data
 
@@ -163,7 +163,7 @@ class GroupsApiTest < ActiveSupport::TestCase
     comment_data = { attachment: upload_file('test_files/submissions/00_question.pdf', 'application/pdf') }
 
     # Add username and auth_token to Header
-    add_auth_header_for({}, project.student)
+    add_auth_header_for(user: project.student)
 
     post "/api/projects/#{project.id}/task_def_id/#{td.id}/comments", comment_data
 
@@ -206,7 +206,7 @@ class GroupsApiTest < ActiveSupport::TestCase
     comment_data = { attachment: upload_file('test_files/submissions/00_question.pdf', 'application/pdf') }
 
     # Add username and auth_token to Header
-    add_auth_header_for({}, project.student)
+    add_auth_header_for(user: project.student)
 
     post "/api/projects/#{project.id}/task_def_id/#{td.id}/comments", comment_data
 
@@ -237,7 +237,7 @@ class GroupsApiTest < ActiveSupport::TestCase
     }
 
     # Add username and auth_token to Header
-    add_auth_header_for({}, unit.main_convenor_user)
+    add_auth_header_for(user: unit.main_convenor_user)
 
     # Create group set
     post "/api/units/#{unit.id}/group_sets", gs_data
@@ -266,7 +266,7 @@ class GroupsApiTest < ActiveSupport::TestCase
     project = unit.active_projects.second
 
     # Add username and auth_token to Header
-    add_auth_header_for({}, project.student)
+    add_auth_header_for(user: project.student)
 
     post "/api/units/#{unit.id}/group_sets/#{gs_response['id']}/groups/#{group_response['id']}/members", {project_id: project.id}
 
@@ -286,7 +286,7 @@ class GroupsApiTest < ActiveSupport::TestCase
     unit.employ_staff tutor, Role.tutor
 
     # Add username and auth_token to Header
-    add_auth_header_for({}, tutor)
+    add_auth_header_for(user: tutor)
 
     post "/api/units/#{unit.id}/group_sets/#{gs_response['id']}/groups/#{group_response['id']}/members", {project_id: project.id}
 

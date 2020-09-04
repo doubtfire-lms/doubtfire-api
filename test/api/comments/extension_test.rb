@@ -38,7 +38,7 @@ class ExtensionTest < ActiveSupport::TestCase
     }
 
     # Add auth_token and username to header
-    add_auth_header_for({}, user)
+    add_auth_header_for(user: user)
 
     # Request a 2 day extension
     post_json "/api/projects/#{project.id}/task_def_id/#{td.id}/request_extension", data_to_post
@@ -52,7 +52,7 @@ class ExtensionTest < ActiveSupport::TestCase
     data_to_post["weeks_requested"] = '2'
 
     # Add auth_token and username to header
-    add_auth_header_for({}, user)
+    add_auth_header_for(user: user)
 
     post_json "/api/projects/#{project.id}/task_def_id/#{td.id}/request_extension", data_to_post
     response = last_response_body
@@ -60,7 +60,7 @@ class ExtensionTest < ActiveSupport::TestCase
     assert response["weeks_requested"] == 2, "Error: Weeks requested weeks should be 2, found #{response["weeks_requested"]}."
 
     # Add auth_token and username to header
-    add_auth_header_for({}, user)
+    add_auth_header_for(user: user)
 
     # Ask for too long an extension
     data_to_post["weeks_requested"] = '5'
@@ -70,7 +70,7 @@ class ExtensionTest < ActiveSupport::TestCase
 
 
     # Add auth_token and username to header
-    add_auth_header_for({}, user)
+    add_auth_header_for(user: user)
 
     # Ask for 0 week extension
     data_to_post["weeks_requested"] = '0'
@@ -114,7 +114,7 @@ class ExtensionTest < ActiveSupport::TestCase
     }
 
     # Add auth_token and username to header
-    add_auth_header_for({}, user)
+    add_auth_header_for(user: user)
 
     # Request a 2 day extension
     post_json "/api/projects/#{project.id}/task_def_id/#{td.id}/request_extension", data_to_post
