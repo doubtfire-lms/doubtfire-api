@@ -67,7 +67,7 @@ class UnitsApiTest < ActiveSupport::TestCase
     }
 
     # Add username and auth_token to Header
-    add_auth_header_for({auth_token: token})
+    add_auth_header_for(user: User.first, auth_token: token)
 
     # Override the header for empty auth_token
     if token == ''
