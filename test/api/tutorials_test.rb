@@ -54,7 +54,7 @@ class TutorialsTest < ActiveSupport::TestCase
     number_of_tutorials = Tutorial.all.length
 
     # Add username and auth_token to Header
-    add_auth_header_for({}, unit.main_convenor_user)
+    add_auth_header_for(user: unit.main_convenor_user)
 
     # perform the POST with the unit main convenor auth token
     post_json '/api/tutorials', data_to_post
@@ -99,7 +99,7 @@ class TutorialsTest < ActiveSupport::TestCase
     number_of_tutorials = Tutorial.all.length
 
     # Add username and auth_token to Header
-    add_auth_header_for({}, admin)
+    add_auth_header_for(user: admin)
 
     # perform the post with the admin auth token
     post_json '/api/tutorials', data_to_post
@@ -142,7 +142,7 @@ class TutorialsTest < ActiveSupport::TestCase
     number_of_tutorials = Tutorial.all.length
 
     # Add username and auth_token to Header
-    add_auth_header_for({}, unit.main_convenor_user)
+    add_auth_header_for(user: unit.main_convenor_user)
 
     # perform the post with the unit main convenor auth token
     post_json '/api/tutorials', data_to_post
@@ -264,7 +264,7 @@ class TutorialsTest < ActiveSupport::TestCase
     number_of_tutorials = Tutorial.all.length
 
     # Add username and auth_token to Header
-    add_auth_header_for({}, unit.main_convenor_user)
+    add_auth_header_for(user: unit.main_convenor_user)
 
     # perform the POST with the unit main convenor auth token
     post_json '/api/tutorials', data_to_post
@@ -302,7 +302,7 @@ class TutorialsTest < ActiveSupport::TestCase
     number_of_tutorials = Tutorial.all.length
 
     # Add username and auth_token to Header
-    add_auth_header_for({}, unit.main_convenor_user)
+    add_auth_header_for(user: unit.main_convenor_user)
 
     # perform the post with the unit main convenor auth token
     post_json '/api/tutorials', data_to_post
@@ -340,7 +340,7 @@ class TutorialsTest < ActiveSupport::TestCase
     number_of_tutorials = Tutorial.all.length
 
     # Add username and auth_token to Header
-    add_auth_header_for({}, unit.main_convenor_user)
+    add_auth_header_for(user: unit.main_convenor_user)
 
     # perform the first POST with the unit main convenor auth token
     post_json '/api/tutorials', data_to_post
@@ -360,7 +360,7 @@ class TutorialsTest < ActiveSupport::TestCase
     admin.reload
 
     # Add username and auth_token to Header
-    add_auth_header_for({}, admin)
+    add_auth_header_for(user: admin)
 
     # perform the second POST of duplicate values with an admin auth token
     post_json '/api/tutorials', data_to_post
@@ -398,7 +398,7 @@ class TutorialsTest < ActiveSupport::TestCase
     number_of_tutorials = Tutorial.all.length
 
     # Add username and auth_token to Header
-    add_auth_header_for({}, unit.main_convenor_user)
+    add_auth_header_for(user: unit.main_convenor_user)
 
     # perform the POST with the unit main convenor auth token
     post_json '/api/tutorials', data_to_post
@@ -436,7 +436,7 @@ class TutorialsTest < ActiveSupport::TestCase
     number_of_tutorials = Tutorial.all.length
 
     # Add username and auth_token to Header
-    add_auth_header_for({}, unit.main_convenor_user)
+    add_auth_header_for(user: unit.main_convenor_user)
 
     # perform the POST with the unit main convenor auth token
     post_json '/api/tutorials', data_to_post
@@ -474,7 +474,7 @@ class TutorialsTest < ActiveSupport::TestCase
     number_of_tutorials = Tutorial.all.length
 
     # Add username and auth_token to Header
-    add_auth_header_for({}, unit.main_convenor_user)
+    add_auth_header_for(user: unit.main_convenor_user)
 
     # perform the post with the unit main convenor auth token
     post_json '/api/tutorials', data_to_post
@@ -512,7 +512,7 @@ class TutorialsTest < ActiveSupport::TestCase
     number_of_tutorials = Tutorial.all.length
 
     # Add username and auth_token to Header
-    add_auth_header_for({}, unit.main_convenor_user)
+    add_auth_header_for(user: unit.main_convenor_user)
 
     # perform the POST with the unit main convenor auth token
     post_json '/api/tutorials', data_to_post
@@ -550,7 +550,7 @@ class TutorialsTest < ActiveSupport::TestCase
     number_of_tutorials = Tutorial.all.length
 
     # Add username and auth_token to Header
-    add_auth_header_for({}, unit.main_convenor_user)
+    add_auth_header_for(user: unit.main_convenor_user)
 
     # perform the POST with the unit main convenor auth token
     post_json '/api/tutorials', data_to_post
@@ -588,7 +588,7 @@ class TutorialsTest < ActiveSupport::TestCase
     number_of_tutorials = Tutorial.all.length
 
     # Add username and auth_token to Header
-    add_auth_header_for({}, unit.main_convenor_user)
+    add_auth_header_for(user: unit.main_convenor_user)
 
     # perform the post with the unit main convenor auth token
     post_json '/api/tutorials', data_to_post
@@ -631,7 +631,7 @@ class TutorialsTest < ActiveSupport::TestCase
     number_of_tutorials = Tutorial.all.length
 
     # Add username and auth_token to Header
-    add_auth_header_for({}, dedicated_tutor)
+    add_auth_header_for(user: dedicated_tutor)
 
     # perform the POST with the unit dedicated tutor auth token
     post_json '/api/tutorials', data_to_post
@@ -669,7 +669,7 @@ class TutorialsTest < ActiveSupport::TestCase
     student = unit.active_projects.first.student
 
     # Add username and auth_token to Header
-    add_auth_header_for({}, student)
+    add_auth_header_for(user: student)
 
     # perform the POST with a student auth token
     post_json '/api/tutorials', data_to_post
@@ -714,7 +714,7 @@ class TutorialsTest < ActiveSupport::TestCase
     admin.reload
 
     # Add username and auth_token to Header
-    add_auth_header_for({}, admin)
+    add_auth_header_for(user: admin)
 
     # perform the PUT with a unit admin auth token
     put_json "/api/tutorials/#{tutorial_old.id}", data_to_put
@@ -758,7 +758,7 @@ class TutorialsTest < ActiveSupport::TestCase
     admin.reload
 
     # Add username and auth_token to Header
-    add_auth_header_for({}, admin)
+    add_auth_header_for(user: admin)
 
     # perform the put with an admin auth token
     put_json "/api/tutorials/#{tutorial_old.id}", data_to_put
@@ -802,7 +802,7 @@ class TutorialsTest < ActiveSupport::TestCase
     admin.reload
 
     # Add username and auth_token to Header
-    add_auth_header_for({}, admin)
+    add_auth_header_for(user: admin)
 
     # perform the put with an admin auth token
     put_json "/api/tutorials/#{tutorial_old.id}", data_to_put
@@ -846,7 +846,7 @@ class TutorialsTest < ActiveSupport::TestCase
     admin.reload
 
     # Add username and auth_token to Header
-    add_auth_header_for({}, admin)
+    add_auth_header_for(user: admin)
 
     # perform the put with an admin auth token
     put_json "/api/tutorials/#{tutorial_old.id}", data_to_put
@@ -890,7 +890,7 @@ class TutorialsTest < ActiveSupport::TestCase
     admin.reload
 
     # Add username and auth_token to Header
-    add_auth_header_for({}, admin)
+    add_auth_header_for(user: admin)
 
     # perform the PUT with a unit admin auth token
     put_json "/api/tutorials/#{tutorial_old.id}", data_to_put
@@ -1005,7 +1005,7 @@ class TutorialsTest < ActiveSupport::TestCase
     }
 
     # Add username and auth_token to Header
-    add_auth_header_for({}, unit.main_convenor_user)
+    add_auth_header_for(user: unit.main_convenor_user)
 
     # perform the put with the unit main convenor auth token
     put_json "/api/tutorials/#{tutorial_old.id}", data_to_put
@@ -1044,7 +1044,7 @@ class TutorialsTest < ActiveSupport::TestCase
     dedicated_tutor.reload
 
     # Add username and auth_token to Header
-    add_auth_header_for({}, dedicated_tutor)
+    add_auth_header_for(user: dedicated_tutor)
 
     # perform the put with the dedicated tutor auth token
     put_json "/api/tutorials/#{tutorial_old.id}", data_to_put
@@ -1081,7 +1081,7 @@ class TutorialsTest < ActiveSupport::TestCase
     student = unit.active_projects.first.student
 
     # Add username and auth_token to Header
-    add_auth_header_for({}, student)
+    add_auth_header_for(user: student)
 
     # perform the put with a unit student auth token
     put_json "/api/tutorials/#{tutorial_old.id}", data_to_put
@@ -1112,7 +1112,7 @@ class TutorialsTest < ActiveSupport::TestCase
     admin.reload
 
     # Add username and auth_token to Header
-    add_auth_header_for({}, admin)
+    add_auth_header_for(user: admin)
 
     # perform the delete with an admin auth token
     delete_json "/api/tutorials/#{tutorial.id}"
@@ -1141,7 +1141,7 @@ class TutorialsTest < ActiveSupport::TestCase
     number_of_tutorials = Tutorial.all.length
 
     # Add username and auth_token to Header
-    add_auth_header_for({}, unit.main_convenor_user)
+    add_auth_header_for(user: unit.main_convenor_user)
 
     # perform the delete with an admin auth token
     delete_json "/api/tutorials/#{tutorial.id}"
@@ -1176,7 +1176,7 @@ class TutorialsTest < ActiveSupport::TestCase
     tutor.reload
 
     # Add username and auth_token to Header
-    add_auth_header_for({}, tutor)
+    add_auth_header_for(user: tutor)
 
     # perform the delete with an admin auth token
     delete_json "/api/tutorials/#{tutorial.id}"
@@ -1276,7 +1276,7 @@ class TutorialsTest < ActiveSupport::TestCase
     student = tutorial.unit.active_projects.first.student
 
     # Add username and auth_token to Header
-    add_auth_header_for({}, student)
+    add_auth_header_for(user: student)
 
     # perform the delete with a unit student auth token
     delete_json "/api/tutorials/#{tutorial.id}"

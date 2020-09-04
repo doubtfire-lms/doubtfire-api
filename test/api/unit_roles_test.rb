@@ -33,7 +33,7 @@ class UnitRolesTest < ActiveSupport::TestCase
     # expected_ur = unit.employ_staff, Role.convenor
 
     # Add username and auth_token to Header
-    add_auth_header_for({}, unit.main_convenor_user)
+    add_auth_header_for(user: unit.main_convenor_user)
 
     # perform the GET
     get "/api/unit_roles/#{expected_ur.id}"
@@ -121,7 +121,7 @@ class UnitRolesTest < ActiveSupport::TestCase
     number_of_ur = UnitRole.count
 
     # Add username and auth_token to Header
-    add_auth_header_for({}, student)
+    add_auth_header_for(user: student)
 
     # perform the delete
     delete_json "/api/unit_roles/#{id_of_ur}"
@@ -145,7 +145,7 @@ class UnitRolesTest < ActiveSupport::TestCase
     initial_id = unit.main_convenor_id
 
     # Add username and auth_token to Header
-    add_auth_header_for({}, unit.main_convenor_user)
+    add_auth_header_for(user: unit.main_convenor_user)
 
     # Test delete... of main convenor role
     delete "/api/unit_roles/#{initial_id}"

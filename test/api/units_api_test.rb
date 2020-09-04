@@ -394,7 +394,7 @@ class UnitsApiTest < ActiveSupport::TestCase
     }
 
     # Add username and auth_token to Header
-    add_auth_header_for({}, unit.main_convenor_user)
+    add_auth_header_for(user: unit.main_convenor_user)
 
     put_json "/api/units/#{unit.id}", data_to_put
 

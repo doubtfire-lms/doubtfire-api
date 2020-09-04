@@ -14,7 +14,7 @@ class TasksTest < ActiveSupport::TestCase
     unit = FactoryBot.create(:unit, perform_submissions: true)
 
     # Add username and auth_token to Header
-    add_auth_header_for({}, unit.main_convenor_user)
+    add_auth_header_for(user: unit.main_convenor_user)
 
     get "/api/tasks?unit_id=#{unit.id}"
     expected_data = unit.student_tasks.where('task_status_id > ?', 1)
@@ -41,7 +41,7 @@ class TasksTest < ActiveSupport::TestCase
     unit = FactoryBot.create(:unit, perform_submissions: true, stream_count: 1, campus_count: 2)
 
     # Add username and auth_token to Header
-    add_auth_header_for({}, unit.main_convenor_user)
+    add_auth_header_for(user: unit.main_convenor_user)
 
     get "/api/tasks?unit_id=#{unit.id}"
     expected_data = unit.student_tasks.where('task_status_id > ?', 1)
@@ -91,7 +91,7 @@ class TasksTest < ActiveSupport::TestCase
     project = unit.active_projects.first
 
     # Add username and auth_token to Header
-    add_auth_header_for({}, unit.tutors.first)
+    add_auth_header_for(user: unit.tutors.first)
 
     post_json "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
 
@@ -134,7 +134,7 @@ class TasksTest < ActiveSupport::TestCase
     tutor = project.tutor_for(td)
 
     # Add username and auth_token to Header
-    add_auth_header_for({}, tutor)
+    add_auth_header_for(user: tutor)
 
     # Make a submission for this student
     post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post    
@@ -153,7 +153,7 @@ class TasksTest < ActiveSupport::TestCase
     }
 
     # Add username and auth_token to Header
-    add_auth_header_for({}, project.student)
+    add_auth_header_for(user: project.student)
 
     # Apply for an extension
     post "/api/projects/#{project.id}/task_def_id/#{td.id}/request_extension", data_to_post
@@ -212,7 +212,7 @@ class TasksTest < ActiveSupport::TestCase
     tutor = project.tutor_for(td)
 
     # Add username and auth_token to Header
-    add_auth_header_for({}, tutor)
+    add_auth_header_for(user: tutor)
 
     # Make a submission for this student
     post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
@@ -231,7 +231,7 @@ class TasksTest < ActiveSupport::TestCase
     }
 
     # Add username and auth_token to Header
-    add_auth_header_for({}, project.student)
+    add_auth_header_for(user: project.student)
 
     # Apply for an extension
     post "/api/projects/#{project.id}/task_def_id/#{td.id}/request_extension", data_to_post

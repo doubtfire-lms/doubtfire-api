@@ -130,7 +130,7 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     }
 
     # Add username and auth_token to Header
-    add_auth_header_for({}, user)
+    add_auth_header_for(user: user)
 
     # Perform PUT, but the student user does not have permissions to put it
     put_json "/api/teaching_periods/#{teaching_period.id}", data_to_put
@@ -216,7 +216,7 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     number_of_tp = TeachingPeriod.count
 
     # Add username and auth_token to Header
-    add_auth_header_for({}, user)
+    add_auth_header_for(user: user)
 
     # perform the delete
     delete_json "/api/teaching_periods/#{id_of_tp}"

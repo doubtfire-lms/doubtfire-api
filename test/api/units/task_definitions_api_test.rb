@@ -54,7 +54,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     }
 
     # Add auth_token and username to header
-    add_auth_header_for({}, unit.main_convenor_user)
+    add_auth_header_for(user: unit.main_convenor_user)
     
     post_json "/api/units/#{unit.id}/task_definitions", data_to_post
     assert_equal 201, last_response.status, last_response.inspect
@@ -87,7 +87,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     }
 
     # Add auth_token and username to header
-    add_auth_header_for({}, unit.main_convenor_user)
+    add_auth_header_for(user: unit.main_convenor_user)
 
     put_json "/api/units/#{unit.id}/task_definitions/#{unit.task_definitions.first.id}", data_to_put
     assert_equal 200, last_response.status, last_response.inspect
@@ -108,7 +108,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     }
 
     # Add auth_token and username to header
-    add_auth_header_for({}, test_unit.main_convenor_user)
+    add_auth_header_for(user: test_unit.main_convenor_user)
 
     post_json "/api/units/#{test_unit.id}/task_definitions/#{test_task_definition_id}/task_sheet", data_to_post
 

@@ -40,7 +40,7 @@ class StatusTest < ActiveSupport::TestCase
     }
 
     # Add auth_token and username to header
-    add_auth_header_for({}, user)
+    add_auth_header_for(user: user)
 
     # Submit
     post_json "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post

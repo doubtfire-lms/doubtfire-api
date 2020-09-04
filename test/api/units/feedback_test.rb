@@ -16,7 +16,7 @@ class FeedbackTest < ActiveSupport::TestCase
       expected_response = unit.tasks_awaiting_feedback(user)
       
       # Add auth_token and username to header
-      add_auth_header_for({}, user)
+      add_auth_header_for(user: user)
 
       get "/api/units/#{unit.id}/feedback"
 
@@ -38,7 +38,7 @@ class FeedbackTest < ActiveSupport::TestCase
       expected_response = unit.tasks_for_task_inbox(user)
 
       # Add auth_token and username to header
-      add_auth_header_for({}, user)
+      add_auth_header_for(user: user)
 
       get "/api/units/#{unit.id}/tasks/inbox"
 

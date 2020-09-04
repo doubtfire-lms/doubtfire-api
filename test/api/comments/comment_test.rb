@@ -22,7 +22,7 @@ class CommentTest < ActiveSupport::TestCase
     comment_data = { comment: 'Hello World' }
 
     # Add auth_token and username to header
-    add_auth_header_for({}, user)
+    add_auth_header_for(user: user)
 
     post_json "/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", comment_data
 
@@ -58,7 +58,7 @@ class CommentTest < ActiveSupport::TestCase
     comment_data = { comment: 'Hello World' }
 
     # Add auth_token and username to header
-    add_auth_header_for({}, user)
+    add_auth_header_for(user: user)
 
     # Post original comment and check that it was successful
     post_json "/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", comment_data
@@ -75,7 +75,7 @@ class CommentTest < ActiveSupport::TestCase
     }
 
     # Add auth_token and username to header
-    add_auth_header_for({}, user)
+    add_auth_header_for(user: user)
 
     # Student responding to self
     comment_data = { comment: 'Responding!', reply_to_id: TaskComment.last.id }
@@ -94,7 +94,7 @@ class CommentTest < ActiveSupport::TestCase
     }
 
     # Add auth_token and username to header
-    add_auth_header_for({}, user)
+    add_auth_header_for(user: user)
 
     # Tutor responding to student
     comment_data = { comment: 'Responding again!', reply_to_id: TaskComment.last.id }
@@ -115,7 +115,7 @@ class CommentTest < ActiveSupport::TestCase
     tutor = project.tutor_for(task_definition)
 
     # Add auth_token and username to header
-    add_auth_header_for({}, user)
+    add_auth_header_for(user: user)
 
     comment_data = { comment: 'Responding!', reply_to_id: -1 }
 
@@ -135,14 +135,14 @@ class CommentTest < ActiveSupport::TestCase
     task_definition = unit.task_definitions.first
 
     # Add auth_token and username to header
-    add_auth_header_for({}, student_1)
+    add_auth_header_for(user: student_1)
 
     post_json "/api/projects/#{project_1.id}/task_def_id/#{task_definition.id}/comments", comment: 'Hello World'
     assert_equal 201, last_response.status
     id = last_response_body['id']
 
     # Add auth_token and username to header
-    add_auth_header_for({}, student_2)
+    add_auth_header_for(user: student_2)
 
     post_json "/api/projects/#{project_1.id}/task_def_id/#{task_definition.id}/comments", comment: 'Hello World', reply_to_id: id
     assert_equal 403, last_response.status
@@ -158,14 +158,14 @@ class CommentTest < ActiveSupport::TestCase
     task_definition_2 = unit.task_definitions.second
 
     # Add auth_token and username to header
-    add_auth_header_for({}, student_1)
+    add_auth_header_for(user: student_1)
 
     post_json "/api/projects/#{project_1.id}/task_def_id/#{task_definition_1.id}/comments", comment: 'Hello World'
     assert_equal 201, last_response.status
     id = last_response_body['id']
 
     # Add auth_token and username to header
-    add_auth_header_for({}, student_1)
+    add_auth_header_for(user: student_1)
 
     post_json "/api/projects/#{project_1.id}/task_def_id/#{task_definition_2.id}/comments", comment: 'Hello World', reply_to_id: id
     assert_equal 404, last_response.status
@@ -208,7 +208,7 @@ class CommentTest < ActiveSupport::TestCase
     td.save!
 
     # Add auth_token and username to header
-    add_auth_header_for({}, unit.active_projects[0].student)
+    add_auth_header_for(user: unit.active_projects[0].student)
 
     # Student 1 in group post first comment
     post_json "/api/projects/#{project.id}/task_def_id/#{td.id}/comments", comment: 'Hello World'
@@ -218,7 +218,7 @@ class CommentTest < ActiveSupport::TestCase
     id = last_response_body['id']
 
     # Add auth_token and username to header
-    add_auth_header_for({}, unit.active_projects[1].student)
+    add_auth_header_for(user: unit.active_projects[1].student)
 
     # Student 2 in group replies
     post_json "/api/projects/#{project.id}/task_def_id/#{td.id}/comments", comment: 'Hello World 2', reply_to_id: id
@@ -249,7 +249,7 @@ class CommentTest < ActiveSupport::TestCase
     td = FactoryBot.create(:task_definition, unit: unit, group_set: group_set)
 
     # Add auth_token and username to header
-    add_auth_header_for({}, unit.active_projects[0].student)
+    add_auth_header_for(user: unit.active_projects[0].student)
 
     # Student 1 in group post first comment
     post_json "/api/projects/#{project.id}/task_def_id/#{td.id}/comments", comment: 'Hello World'
@@ -258,7 +258,7 @@ class CommentTest < ActiveSupport::TestCase
     id = last_response_body['id']
 
     # Add auth_token and username to header
-    add_auth_header_for({}, unit.active_projects[1].student)
+    add_auth_header_for(user: unit.active_projects[1].student)
 
     # Student 2 in group 2 replies
     post_json "/api/projects/#{project.id}/task_def_id/#{td.id}/comments", comment: 'Hello World 2', reply_to_id: id
@@ -275,7 +275,7 @@ class CommentTest < ActiveSupport::TestCase
     task_definition_1 = unit_1.task_definitions.first
 
     # Add auth_token and username to header
-    add_auth_header_for({}, student_1)
+    add_auth_header_for(user: student_1)
 
     # Student makes a comment on task 1 in unit 1
     post_json "/api/projects/#{project_1.id}/task_def_id/#{task_definition_1.id}/comments", comment: 'Hello World'
@@ -304,7 +304,7 @@ class CommentTest < ActiveSupport::TestCase
     pre_count = TaskComment.count
 
     # Add auth_token and username to header
-    add_auth_header_for({}, user)
+    add_auth_header_for(user: user)
 
     comment_data = { attachment: upload_file('test_files/submissions/Deakin_Logo.jpeg', 'image/jpeg') }
 
@@ -331,7 +331,7 @@ class CommentTest < ActiveSupport::TestCase
     pre_count = TaskComment.count
 
     # Add auth_token and username to header
-    add_auth_header_for({}, user)
+    add_auth_header_for(user: user)
 
     comment_data = { attachment: upload_file('test_files/submissions/unbelievable.gif', 'image/gif') }
 
@@ -387,7 +387,7 @@ class CommentTest < ActiveSupport::TestCase
     pre_count = TaskComment.count
 
     # Add auth_token and username to header
-    add_auth_header_for({}, user)
+    add_auth_header_for(user: user)
 
     comment_data = { attachment: upload_file('test_files/submissions/00_question.pdf', 'application/pdf') }
 
@@ -414,7 +414,7 @@ class CommentTest < ActiveSupport::TestCase
     pre_count = TaskComment.count
 
     # Add auth_token and username to header
-    add_auth_header_for({}, user)
+    add_auth_header_for(user: user)
 
     comment_data = { attachment: upload_file('test_files/submissions/boo.png', 'image/png') }
 
@@ -453,7 +453,7 @@ class CommentTest < ActiveSupport::TestCase
     }
 
     # Add auth_token and username to header
-    add_auth_header_for({}, user)
+    add_auth_header_for(user: user)
 
     # Make a submission for this student
     post_json "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
