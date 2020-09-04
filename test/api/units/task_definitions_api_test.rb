@@ -124,7 +124,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     }
 
     # Add auth_token and username to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     post "/api/units/#{test_unit.id}/task_definitions/#{test_task_definition.id}/task_sheet", data_to_post
 
@@ -143,7 +143,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     }
 
     # Add auth_token and username to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     post "/api/units/#{test_unit_id}/task_definitions/#{test_task_definition_id}/task_resources", data_to_post
 
@@ -186,7 +186,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_not File.directory? path
 
     # Add auth_token and username to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
 
@@ -235,7 +235,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     project = unit.active_projects.first
 
     # Add auth_token and username to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
 
@@ -286,7 +286,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_equal task, unit.student_tasks.first
 
     # Add auth_token and username to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # Get the tasks for the first task definition
     get "/api/units/#{unit.id}/task_definitions/#{task_def.id}/tasks"
@@ -321,7 +321,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_equal task_second, unit.student_tasks.second
 
     # Add auth_token and username to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # Get the tasks for the first task definition
     get "/api/units/#{unit.id}/task_definitions/#{task_def_first.id}/tasks"
@@ -332,7 +332,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_equal task_first.id, last_response_body.first['id']
 
     # Add auth_token and username to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # Get the tasks for the second task definition
     get "/api/units/#{unit.id}/task_definitions/#{task_def_second.id}/tasks"
@@ -346,7 +346,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     tutorial_enrolment = project.enrol_in(tutorial)
 
     # Add auth_token and username to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # Get the tasks for the first task definition
     get "/api/units/#{unit.id}/task_definitions/#{task_def_first.id}/tasks"
@@ -357,7 +357,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_equal task_first.id, last_response_body.first['id']
 
     # Add auth_token and username to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # Get the tasks for the second task definition
     get "/api/units/#{unit.id}/task_definitions/#{task_def_second.id}/tasks"
@@ -394,7 +394,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_equal task_second, unit.student_tasks.second
 
     # Add auth_token and username to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # Get the tasks for the first task definition
     get "/api/units/#{unit.id}/task_definitions/#{task_def_first.id}/tasks"
@@ -405,7 +405,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_equal task_first.id, last_response_body.first['id']
 
     # Add auth_token and username to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # Get the tasks for the second task definition
     get "/api/units/#{unit.id}/task_definitions/#{task_def_second.id}/tasks"
@@ -423,7 +423,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_nil tutorial.tutorial_stream
 
     # Add auth_token and username to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # Get the tasks for the first task definition
     get "/api/units/#{unit.id}/task_definitions/#{task_def_first.id}/tasks"
@@ -434,7 +434,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_equal task_first.id, last_response_body.first['id']
 
     # Add auth_token and username to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # Get the tasks for the second task definition
     get "/api/units/#{unit.id}/task_definitions/#{task_def_second.id}/tasks"
@@ -470,7 +470,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_equal task_first, unit.student_tasks.first
 
     # Add auth_token and username to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # Get the tasks for the first task definition
     get "/api/units/#{unit.id}/task_definitions/#{task_def_first.id}/tasks"
@@ -481,7 +481,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_equal task_first.id, last_response_body.first['id']
 
     # Add auth_token and username to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # Get the tasks for the first task definition
     get "/api/units/#{unit.id}/task_definitions/#{task_def_second.id}/tasks"
@@ -520,7 +520,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_equal task_second, unit.student_tasks.second
 
     # Add auth_token and username to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # Get the tasks for the first task definition
     get "/api/units/#{unit.id}/task_definitions/#{task_def_first.id}/tasks"
@@ -531,7 +531,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_equal task_first.id, last_response_body.first['id']
 
     # Add auth_token and username to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # Get the tasks for the first task definition
     get "/api/units/#{unit.id}/task_definitions/#{task_def_second.id}/tasks"
@@ -588,7 +588,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_equal task_second, unit.student_tasks.second
 
     # Add auth_token and username to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # Get the tasks for the first task definition
     get "/api/units/#{unit.id}/task_definitions/#{task_def_first.id}/tasks"
@@ -676,7 +676,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_equal 2, project_third.tasks.count
 
     # Add auth_token and username to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # Get the tasks for the first task definition
     get "/api/units/#{unit.id}/task_definitions/#{task_def_first.id}/tasks"
@@ -700,7 +700,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_nil last_response_body.third['tutorial_stream_id']
 
     # Add auth_token and username to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # Get the tasks for the first task definition
     get "/api/units/#{unit.id}/task_definitions/#{task_def_second.id}/tasks"
@@ -722,7 +722,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     tutorial_enrolment_third = project_third.enrol_in(tutorial_third)
 
     # Add auth_token and username to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # Get the tasks for the first task definition
     get "/api/units/#{unit.id}/task_definitions/#{task_def_first.id}/tasks"
@@ -744,7 +744,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_includes [tutorial_stream_first.id, nil], last_response_body.third['tutorial_stream_id']
 
     # Add auth_token and username to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # Get the tasks for the first task definition
     get "/api/units/#{unit.id}/task_definitions/#{task_def_third.id}/tasks"

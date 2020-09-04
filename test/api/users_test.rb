@@ -35,7 +35,7 @@ class UnitsTest < ActiveSupport::TestCase
   def test_get_users
 
     # Add username and auth_token to Header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     get '/api/users'
     expected_data = User.all
@@ -63,7 +63,7 @@ class UnitsTest < ActiveSupport::TestCase
     expected_user = User.second
 
     # Add username and auth_token to Header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # perform the GET 
     get "/api/users/#{expected_user.id}"
@@ -80,7 +80,7 @@ class UnitsTest < ActiveSupport::TestCase
   def test_get_convenors
 
     # Add username and auth_token to Header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     get '/api/users/convenors'
     assert_equal 200, last_response.status
@@ -89,7 +89,7 @@ class UnitsTest < ActiveSupport::TestCase
   def test_get_tutors
 
     # Add username and auth_token to Header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     get '/api/users/tutors'
     assert_equal 200, last_response.status
@@ -125,7 +125,7 @@ class UnitsTest < ActiveSupport::TestCase
     }
 
     # Add username and auth_token to Header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     post_json '/api/users', data_to_post
 
@@ -142,7 +142,7 @@ class UnitsTest < ActiveSupport::TestCase
     }
 
     # Add username and auth_token to Header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     post_json '/api/users', data_to_post
     assert_equal pre_count + 1, User.all.length
@@ -164,7 +164,7 @@ class UnitsTest < ActiveSupport::TestCase
     }
 
     # Add username and auth_token to Header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     post_json '/api/users', data_to_post
     assert_equal pre_count + 1, User.all.length
@@ -187,7 +187,7 @@ class UnitsTest < ActiveSupport::TestCase
     }
 
     # Add username and auth_token to Header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     post_json '/api/users', data_to_post
     assert_equal pre_count + 1, User.all.length
@@ -216,7 +216,7 @@ class UnitsTest < ActiveSupport::TestCase
       }
 
       # Add username and auth_token to Header
-      add_auth_header_for()
+      add_auth_header_for(user: User.first)
 
       post_json '/api/users', data_to_post
       # Successful assertion of same length again means no record was created
@@ -238,7 +238,7 @@ class UnitsTest < ActiveSupport::TestCase
       }
 
       # Add username and auth_token to Header
-      add_auth_header_for()
+      add_auth_header_for(user: User.first)
 
       post_json '/api/users', data_to_post
       # Successful assertion of same length again means no record was created
@@ -259,7 +259,7 @@ class UnitsTest < ActiveSupport::TestCase
     }
 
     # Add username and auth_token to Header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     post_json '/api/users', data_to_post
     # Successful assertion of same length again means no record was created
@@ -310,7 +310,7 @@ class UnitsTest < ActiveSupport::TestCase
     }
 
     # Add username and auth_token to Header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     put_json '/api/users/2', data_to_put
     assert_users_model_response User.find_by(email: 'different@email.com').as_json, user.as_json
@@ -326,7 +326,7 @@ class UnitsTest < ActiveSupport::TestCase
     }
 
     # Add username and auth_token to Header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     put_json '/api/users/2', data_to_put
     assert_equal 400, last_response.status
@@ -346,7 +346,7 @@ class UnitsTest < ActiveSupport::TestCase
       }
 
       # Add username and auth_token to Header
-      add_auth_header_for()
+      add_auth_header_for(user: User.first)
 
       put_json '/api/users/2', data_to_put
       assert_equal 400, last_response.status
@@ -362,7 +362,7 @@ class UnitsTest < ActiveSupport::TestCase
     }
 
     # Add username and auth_token to Header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     put_json '/api/users/2', data_to_put
     assert_equal 400, last_response.status

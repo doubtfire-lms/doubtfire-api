@@ -288,7 +288,7 @@ class CommentTest < ActiveSupport::TestCase
     unit_2.employ_staff(User.first, Role.convenor)
 
     # Add auth_token and username to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # Convenor replies to that comment in a different unit/projet
     post_json "/api/projects/#{project_2.id}/task_def_id/#{task_definition_2.id}/comments", comment: 'Hello World', reply_to_id: id
@@ -359,7 +359,7 @@ class CommentTest < ActiveSupport::TestCase
     pre_count = TaskComment.count
 
     # Add auth_token and username to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     comment_data = { attachment: upload_file('test_files/submissions/00_question.pdf', 'application/pdf') }
 

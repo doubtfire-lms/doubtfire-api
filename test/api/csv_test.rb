@@ -27,7 +27,7 @@ class CsvTest < ActiveSupport::TestCase
     
 
     # auth_token and username added to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # perform the get
     get "/api/csv/task_definitions?unit_id=#{unit_id_to_test}"
@@ -46,7 +46,7 @@ class CsvTest < ActiveSupport::TestCase
     unit_id_to_test = ''
     
     # auth_token and username added to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # perform the get
     get "/api/csv/task_definitions?unit_id=#{unit_id_to_test}"
@@ -62,7 +62,7 @@ class CsvTest < ActiveSupport::TestCase
     unit_id_to_test = '999'
     
     # auth_token and username added to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # perform the get
     get "/api/csv/task_definitions?unit_id=#{unit_id_to_test}"
@@ -78,7 +78,7 @@ class CsvTest < ActiveSupport::TestCase
     unit_id_to_test = 'string'
 
     # auth_token and username added to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # perform the get
     get "/api/csv/task_definitions?unit_id=#{unit_id_to_test}"
@@ -114,7 +114,7 @@ class CsvTest < ActiveSupport::TestCase
     unit_id_to_test = 'string'
     
     # auth_token and username added to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # Overwrite header for empty auth_token
     header 'auth_token',''
@@ -138,7 +138,7 @@ class CsvTest < ActiveSupport::TestCase
     }
 
     # auth_token and username added to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # perform the POST
     post "/api/csv/task_definitions", data_to_post
@@ -179,7 +179,7 @@ class CsvTest < ActiveSupport::TestCase
     }
 
     # auth_token and username added to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # Overwrite header for empty auth_token
     header 'auth_token',''
@@ -200,7 +200,7 @@ class CsvTest < ActiveSupport::TestCase
     }
 
     # auth_token and username added to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # perform the POST
     post "/api/csv/task_definitions", data_to_post
@@ -218,7 +218,7 @@ class CsvTest < ActiveSupport::TestCase
     }
 
     # auth_token and username added to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # perform the POST
     post "/api/csv/task_definitions", data_to_post
@@ -238,7 +238,7 @@ class CsvTest < ActiveSupport::TestCase
     }
 
     # auth_token and username added to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     tdc = unit.task_definitions.count
 
@@ -262,7 +262,7 @@ class CsvTest < ActiveSupport::TestCase
     }
 
     # auth_token and username added to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # perform the POST
     post "/api/csv/task_definitions", data_to_post
@@ -280,7 +280,7 @@ class CsvTest < ActiveSupport::TestCase
     }
 
     # auth_token and username added to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # perform the POST
     post "/api/csv/task_definitions", data_to_post
@@ -298,7 +298,7 @@ class CsvTest < ActiveSupport::TestCase
     }
 
     # auth_token and username added to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # perform the POST
     post "/api/csv/task_definitions", data_to_post
@@ -315,7 +315,7 @@ class CsvTest < ActiveSupport::TestCase
     unit_id_to_test = '1'
 
     # auth_token and username added to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # perform the get
     get "/api/csv/units/#{unit_id_to_test}"
@@ -334,7 +334,7 @@ class CsvTest < ActiveSupport::TestCase
     unit_id_to_test = 'string'
 
     # auth_token and username added to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # perform the get
     get "/api/csv/units/#{unit_id_to_test}"
@@ -350,7 +350,7 @@ class CsvTest < ActiveSupport::TestCase
     unit_id_to_test = '999'
 
     # auth_token and username added to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # perform the get
     get "/api/csv/units/#{unit_id_to_test}"
@@ -387,7 +387,7 @@ class CsvTest < ActiveSupport::TestCase
     unit_id_to_test = '1'
 
     # auth_token and username added to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     #Override header for empty auth_token
     header 'auth_token',''
@@ -462,7 +462,7 @@ class CsvTest < ActiveSupport::TestCase
     }
 
     # auth_token and username added to header    
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # Override the header for empty auth_token
     header 'auth_token',''
@@ -481,7 +481,7 @@ class CsvTest < ActiveSupport::TestCase
     }
 
     # auth_token and username added to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # perform the POST
     post "/api/csv/units/test", data_to_post
@@ -545,7 +545,7 @@ class CsvTest < ActiveSupport::TestCase
     }
 
     # auth_token and username added to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
     # perform the POST
     post "/api/csv/units/#{unit_id_to_test}", data_to_post
 
@@ -630,7 +630,7 @@ class CsvTest < ActiveSupport::TestCase
     }
     
     # auth_token and username added to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     #Override header for empty auth_token
     header 'auth_token',''
@@ -662,7 +662,7 @@ class CsvTest < ActiveSupport::TestCase
     }
 
     # auth_token and username added to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # perform the POST to withdraw user from the unit
     post "/api/csv/units/test/withdraw", data_to_post
@@ -689,7 +689,7 @@ class CsvTest < ActiveSupport::TestCase
     }
 
     # auth_token and username added to header
-    add_auth_header_for()    
+    add_auth_header_for(user: User.first)    
 
     user_id_check = unit.projects.last.user_id
 
@@ -716,7 +716,7 @@ class CsvTest < ActiveSupport::TestCase
     }
 
     # auth_token and username added to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     user_id_check = unit.projects.last.user_id
 
@@ -743,7 +743,7 @@ class CsvTest < ActiveSupport::TestCase
     }
 
     # auth_token and username added to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     user_id_check = unit.projects.last.user_id
 
@@ -770,7 +770,7 @@ class CsvTest < ActiveSupport::TestCase
     }
 
     # auth_token and username added to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     user_id_check = unit.projects.last.user_id
 
@@ -792,7 +792,7 @@ class CsvTest < ActiveSupport::TestCase
     unit.import_users_from_csv test_file_path 'csv_test_files/COS10001-Students.csv'
 
    # auth_token and username added to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     unit_id_to_test = '999'
     data_to_post = {
@@ -820,7 +820,7 @@ class CsvTest < ActiveSupport::TestCase
     unit_id_to_test = '1'
 
    # auth_token and username added to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # perform the get
     get "/api/csv/units/#{unit_id_to_test}/task_completion"
@@ -839,7 +839,7 @@ class CsvTest < ActiveSupport::TestCase
     unit_id_to_test = ''
 
    # auth_token and username added to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # perform the get
     get "/api/csv/units/#{unit_id_to_test}/task_completion"
@@ -855,7 +855,7 @@ class CsvTest < ActiveSupport::TestCase
     unit_id_to_test = 'string'
 
     # auth_token and username added to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # perform the get
     get "/api/csv/units/#{unit_id_to_test}/task_completion"
@@ -871,7 +871,7 @@ class CsvTest < ActiveSupport::TestCase
     unit_id_to_test = '999'
 
     # auth_token and username added to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # perform the get
     get "/api/csv/units/#{unit_id_to_test}/task_completion"
@@ -907,7 +907,7 @@ class CsvTest < ActiveSupport::TestCase
     unit_id_to_test = '1'
     
     # Add authentication token to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     #Override header for empty auth_token
     header 'auth_token',''    
@@ -928,7 +928,7 @@ class CsvTest < ActiveSupport::TestCase
     unit_id_to_test = '1'
 
     # Add authentication token to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # perform the get
     get "/api/csv/units/#{unit_id_to_test}/tutor_assessments"
@@ -947,7 +947,7 @@ class CsvTest < ActiveSupport::TestCase
     unit_id_to_test = ''
     
     # Add authentication token to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # perform the get
     get "/api/csv/units/#{unit_id_to_test}/tutor_assessments"
@@ -963,7 +963,7 @@ class CsvTest < ActiveSupport::TestCase
     unit_id_to_test = 'string'
 
     # Add authentication token to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
     # perform the get
     get "/api/csv/units/#{unit_id_to_test}/tutor_assessments"
 
@@ -978,7 +978,7 @@ class CsvTest < ActiveSupport::TestCase
     unit_id_to_test = '999'
   
     # Add authentication token to header
-    add_auth_header_for()    
+    add_auth_header_for(user: User.first)    
 
     # perform the get
     get "/api/csv/units/#{unit_id_to_test}/tutor_assessments"
@@ -1014,7 +1014,7 @@ class CsvTest < ActiveSupport::TestCase
     unit_id_to_test = '1'
    
     # Add authentication token to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     #Override header for empty auth_token
     header 'auth_token',''
@@ -1033,7 +1033,7 @@ class CsvTest < ActiveSupport::TestCase
   def test_download_csv_all_users
 
     # Add authentication token to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # perform the get
     get "/api/csv/users"
@@ -1068,7 +1068,7 @@ class CsvTest < ActiveSupport::TestCase
   def test_download_csv_all_users_with_empty_auth_token
    
     # Add authentication token to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     #Override header for empty auth_token
     header 'auth_token',''
@@ -1091,7 +1091,7 @@ class CsvTest < ActiveSupport::TestCase
     }
    
     # Add authentication token to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
     
     # perform the POST to withdraw user from the unit
     post "/api/csv/users", data_to_post
@@ -1132,7 +1132,7 @@ class CsvTest < ActiveSupport::TestCase
     }
 
     # Add authentication token to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     #Override header for empty auth_token
     header 'auth_token',''
@@ -1153,7 +1153,7 @@ class CsvTest < ActiveSupport::TestCase
   }
 
     # Add authentication token to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
     # perform the POST to withdraw user from the unit
     post "/api/csv/users", data_to_post
 
@@ -1171,7 +1171,7 @@ class CsvTest < ActiveSupport::TestCase
     }
 
     # Add authentication token to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
 
     # perform the POST to withdraw user from the unit
     post "/api/csv/users", data_to_post
@@ -1189,7 +1189,7 @@ class CsvTest < ActiveSupport::TestCase
     }
 
     # Add authentication token to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
    
     # perform the POST to withdraw user from the unit
     post "/api/csv/users", data_to_post
