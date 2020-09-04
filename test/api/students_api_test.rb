@@ -14,7 +14,7 @@ class StudentsApiTest < ActiveSupport::TestCase
     newUnit = FactoryBot.create(:unit)
 
     # Add username and auth_token to Header
-    add_auth_header_for({},newUnit.main_convenor_user)
+    add_auth_header_for(user: newUnit.main_convenor_user)
 
     # The get that we will be testing.
     get "/api/students/?unit_id=#{newUnit.id}"
@@ -41,7 +41,7 @@ class StudentsApiTest < ActiveSupport::TestCase
     studentUser = newUnit.active_projects.first.student
 
     # Add username and auth_token to Header
-    add_auth_header_for({},studentUser)
+    add_auth_header_for(user: studentUser)
 
     # The get that we will be testing.
     get "/api/students/?unit_id=#{newUnit.id}"
@@ -54,7 +54,7 @@ class StudentsApiTest < ActiveSupport::TestCase
     newUnit = FactoryBot.create(:unit)
 
     # Add username and auth_token to Header
-    add_auth_header_for({},newUnit.main_convenor_user)
+    add_auth_header_for(user: newUnit.main_convenor_user)
 
     # The get that we will be testing without parameters.
     get '/api/students/'
@@ -68,7 +68,7 @@ class StudentsApiTest < ActiveSupport::TestCase
     unit = FactoryBot.create(:unit, stream_count: 2, campus_count: 2)
 
     # Add username and auth_token to Header
-    add_auth_header_for({},unit.main_convenor_user)
+    add_auth_header_for(user: unit.main_convenor_user)
 
     # The get that we will be testing without parameters.
     get "/api/students/?unit_id=#{unit.id}"

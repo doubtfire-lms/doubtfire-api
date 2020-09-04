@@ -255,7 +255,7 @@ class GroupsApiTest < ActiveSupport::TestCase
     project = unit.active_projects.first
 
     # Add username and auth_token to Header
-    add_auth_header_for({},project.student)
+    add_auth_header_for(user: project.student)
 
     post "/api/units/#{unit.id}/group_sets/#{gs_response['id']}/groups/#{group_response['id']}/members", {project_id: project.id}
 
@@ -294,7 +294,7 @@ class GroupsApiTest < ActiveSupport::TestCase
     assert_equal 2, unit.group_sets.first.groups.first.group_memberships.count
 
     # Add username and auth_token to Header
-    add_auth_header_for({},unit.main_convenor_user)
+    add_auth_header_for(user: unit.main_convenor_user)
     
     # Try again as convenor
     post "/api/units/#{unit.id}/group_sets/#{gs_response['id']}/groups/#{group_response['id']}/members", {project_id: project.id}
@@ -308,7 +308,7 @@ class GroupsApiTest < ActiveSupport::TestCase
     assert_equal 2, unit.groups.first.group_memberships.count
 
     # Add username and auth_token to Header
-    add_auth_header_for({},unit.main_convenor_user)
+    add_auth_header_for(user: unit.main_convenor_user)
 
     # Get the groups for the first group set
     get "/api/units/#{unit.id}/group_sets/#{unit.group_sets.first.id}/groups"
@@ -335,7 +335,7 @@ class GroupsApiTest < ActiveSupport::TestCase
     refute p2.enrolled_in? tutorial
 
     # Add username and auth_token to Header
-    add_auth_header_for({},unit.main_convenor_user)
+    add_auth_header_for(user: unit.main_convenor_user)
     
     put "/api/units/#{unit.id}/group_sets/#{gs.id}/groups/#{group1.id}", { group: {tutorial_id: tutorial.id} }
     

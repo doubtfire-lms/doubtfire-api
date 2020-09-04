@@ -14,7 +14,7 @@ class ProjectsApiTest < ActiveSupport::TestCase
     user = FactoryBot.create(:user, :student, enrol_in: 0)
 
     # Add username and auth_token to Header
-    add_auth_header_for({},user)
+    add_auth_header_for(user: user)
 
     get '/api/projects'
     assert_equal 200, last_response.status
@@ -26,7 +26,7 @@ class ProjectsApiTest < ActiveSupport::TestCase
     assert_equal 2, project.tutorial_enrolments.count
 
     # Add username and auth_token to Header
-    add_auth_header_for({},project.student)
+    add_auth_header_for(user: project.student)
 
     get '/api/projects'
     assert_equal 200, last_response.status
@@ -38,7 +38,7 @@ class ProjectsApiTest < ActiveSupport::TestCase
     user = FactoryBot.create(:user, :student, enrol_in: 2)
 
     # Add username and auth_token to Header
-    add_auth_header_for({},user)
+    add_auth_header_for(user: user)
     
     get '/api/projects'
     assert_equal 2, last_response_body.count
@@ -48,7 +48,7 @@ class ProjectsApiTest < ActiveSupport::TestCase
     user = FactoryBot.create(:user, :student, enrol_in: 2)
 
     # Add username and auth_token to Header
-    add_auth_header_for({},user)
+    add_auth_header_for(user: user)
 
     get '/api/projects'
     last_response_body.each do |data|
@@ -68,7 +68,7 @@ class ProjectsApiTest < ActiveSupport::TestCase
     Unit.last.update(active: false)
 
     # Add username and auth_token to Header
-    add_auth_header_for({},user)
+    add_auth_header_for(user: user)
 
     get '/api/projects'
     assert_equal 1, last_response_body.count
