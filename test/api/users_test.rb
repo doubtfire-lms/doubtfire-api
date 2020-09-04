@@ -280,7 +280,7 @@ class UnitsTest < ActiveSupport::TestCase
     }
 
     # Add username and auth_token to Header
-    add_auth_header_for({auth_token: token})
+    add_auth_header_for(user: User.first, auth_token: token)
 
     # Override header to empty auth_token
     if token == ''
@@ -377,7 +377,7 @@ class UnitsTest < ActiveSupport::TestCase
     }
 
     # Add username and auth_token to Header
-    add_auth_header_for({auth_token: token})
+    add_auth_header_for(user: User.first, auth_token: token)
 
     if token == ''
       header 'auth_token',token
