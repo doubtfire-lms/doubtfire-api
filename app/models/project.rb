@@ -689,8 +689,9 @@ class Project < ActiveRecord::Base
       result[:idx] = 0
       result[:name] = 'LearningSummaryReport.pdf'
 
-      # delete the draft learning summary report if it has previously been copied over
-      Dir.glob("#{portfolio_tmp_dir}/*-DraftLearningSummaryReport.pdf").each { |file| File.delete(file) }
+      # set uses_draft_learning_summary to false, since we uploaded a new learning summary
+      self.uses_draft_learning_summary = false
+      save
     else
       Dir.chdir(portfolio_tmp_dir)
       files = Dir.glob('*')
