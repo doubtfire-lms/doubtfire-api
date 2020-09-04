@@ -38,12 +38,7 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
     }
 
     # auth_token and username added to header
-    auth_data_to_header = {
-      auth_token: auth_token(admin),
-      username: admin.username
-    }
-
-    add_auth_header_for(auth_data_to_header)
+    add_auth_header_for(user: admin)
 
     # perform the POST
     post_json '/api/activity_types', data_to_post
@@ -78,12 +73,7 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
     }
 
     # auth_token and username added to header
-    auth_data_to_header = { 
-      auth_token: auth_token(convenor),
-      username: convenor.username
-    }
-
-    add_auth_header_for(auth_data_to_header)
+    add_auth_header_for(user: convenor)
     
     # perform the POST
     post_json '/api/activity_types', data_to_post
@@ -109,12 +99,7 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
     }
 
     # auth_token and username added to header
-    auth_data_to_header = { 
-      auth_token: auth_token(tutor),
-      username: tutor.username
-    }
-
-    add_auth_header_for(auth_data_to_header)
+    add_auth_header_for(user: tutor)
   
     # perform the POST
     post_json '/api/activity_types', data_to_post
@@ -141,12 +126,7 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
     }
 
     # auth_token and username added to header
-    auth_data_to_header = {
-      auth_token: auth_token(admin),
-      username: admin.username
-    }
-
-    add_auth_header_for(auth_data_to_header)
+    add_auth_header_for(user:admin)
 
     # Update activity_type with data_to_put
     put_json "/api/activity_types/#{activity_type.id}", data_to_put
@@ -178,12 +158,7 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
     }
 
     # auth_token and username added to header
-    auth_data_to_header = {
-      auth_token: auth_token(convenor),
-      username: convenor.username
-    }
-
-    add_auth_header_for(auth_data_to_header)
+    add_auth_header_for(user: convenor)
 
     # Update activity_type with data_to_put
     put_json "/api/activity_types/#{activity_type.id}", data_to_put
@@ -206,12 +181,7 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
     }
 
     # auth_token and username added to header
-    auth_data_to_header = {
-      auth_token: auth_token(tutor),
-      username: tutor.username
-    }
-
-    add_auth_header_for(auth_data_to_header)
+    add_auth_header_for(user: tutor)
 
     # Update activity_type with data_to_put
     put_json "/api/activity_types/#{activity_type.id}", data_to_put
@@ -233,12 +203,7 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
     }
 
     # auth_token and username added to header
-    auth_data_to_header = {
-      auth_token: auth_token(user),
-      username: user.username
-    }
-
-    add_auth_header_for(auth_data_to_header)
+    add_auth_header_for(user: user)
 
     # Perform POST, but the student user does not have permissions to post it.
     post_json '/api/activity_types', data_to_post
@@ -266,12 +231,7 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
     }
 
     # auth_token and username added to header
-    auth_data_to_header = {
-      auth_token: auth_token(user),
-      username: user.username
-    }
-
-    add_auth_header_for(auth_data_to_header)
+    add_auth_header_for(user: user)
 
     # Perform PUT, but the student user does not have permissions to put it.
     put_json "/api/activity_types/#{activity_type.id}", data_to_put
@@ -292,7 +252,7 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
         
 
     # auth_token and username added to header
-    add_auth_header_for()
+    add_auth_header_for(user: User.first)
     
     # perform the delete
     delete_json "/api/activity_types/#{activity_type.id}" 
@@ -318,12 +278,7 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
     number_of_ativity_type = ActivityType.count
     
     # auth_token and username added to header
-    auth_data_to_header = {
-      auth_token: auth_token(user),
-      username: user.username
-    }
-
-    add_auth_header_for(auth_data_to_header)
+    add_auth_header_for(user: user)
 
     # perform the delete
     delete_json "/api/activity_types/#{activity_type.id}" 
