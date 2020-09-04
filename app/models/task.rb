@@ -1032,6 +1032,7 @@ class Task < ActiveRecord::Base
           }
           FileUtils.cp portfolio_evidence, project.portfolio_tmp_file_path(file_name)
           project.uses_draft_learning_summary = true
+          project.save
         end
       end
 
