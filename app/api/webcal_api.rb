@@ -22,7 +22,7 @@ module Api
     params do
       requires :webcal, type: Hash do
         optional :enabled,             type: Boolean, desc: 'Is the webcal enabled?'
-        optional :should_change_id,    type: Boolean, desc: 'Should the ID of the webcal be changed?'
+        optional :should_change_guid,  type: Boolean, desc: 'Should the GUID of the webcal be changed?'
         optional :include_start_dates, type: Boolean, desc: 'Should events for start dates be included?'
       end
       requires :auth_token, type: String, desc: 'Authentication token'
@@ -37,7 +37,7 @@ module Api
       # Create or destroy the user's webcal, according to the `enabled` parameter.
       if webcal_params.key?(:enabled)
         if webcal_params[:enabled] and cal.nil?
-          cal = user.create_webcal(id: SecureRandom.uuid)
+          cal = user.create_webcal(guid: SecureRandom.uuid)
         elsif !webcal_params[:enabled] and cal.present?
           cal.destroy
         end
@@ -46,9 +46,9 @@ module Api
       return if cal.nil? or cal.destroyed?
       webcal_update_params = {}
 
-      # Change the ID if requested.
-      if webcal_params.key?(:should_change_id)
-        webcal_update_params[:id] = SecureRandom.uuid
+      # Change the GUID if requested.
+      if webcal_params.key?(:should_change_guid)
+        webcal_update_params[:guid] = SecureRandom.uuid
       end
 
       # Set any other properties that have to be updated verbatim.
@@ -61,14 +61,15 @@ module Api
       cal
     end
 
-    desc 'Serve webcal with the specified ID'
+    desc 'Serve webcal with the specified GUID'
     params do
-      requires :id, type: String, desc: 'The ID of the webcal'
+      requires :guid, type: String, desc: 'The GUID of the webcal'
     end
-    get '/webcal/:id' do
+    get '/webcal/:guid' do
 
       # Retrieve the specified webcal.
-      webcal = Webcal.find(params[:id])
+      webcal = Webcal.where(guid: params[:guid]).first
+      return error!({ error: 'Unable to find the requested webcal.' }, 404) if webcal.nil?
 
       # Generate iCalendar.
       ical = webcal.to_ical_with_task_definitions(

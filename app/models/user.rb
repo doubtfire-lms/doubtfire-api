@@ -170,7 +170,7 @@ class User < ActiveRecord::Base
   belongs_to  :role # Foreign Key
   has_many    :unit_roles, dependent: :destroy
   has_many    :projects
-  has_one     :webcal
+  has_one     :webcal, dependent: :destroy
 
   # Model validations/constraints
   validates :first_name,  presence: true
