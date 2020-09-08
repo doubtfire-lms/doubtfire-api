@@ -379,6 +379,8 @@ ActiveRecord::Schema.define(version: 20200901044853) do
     t.integer  "main_convenor_id"
     t.boolean  "auto_apply_extension_before_deadline",              default: true, null: false
     t.boolean  "send_notifications",                                default: true, null: false
+    t.boolean  "enable_sync_timetable",                             default: true, null: false
+    t.boolean  "enable_sync_enrolments",                            default: true, null: false
     t.integer  "draft_task_definition_id"
   end
 

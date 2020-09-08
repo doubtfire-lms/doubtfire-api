@@ -555,7 +555,7 @@ class Unit < ActiveRecord::Base
               email:          row['email'],
               enrolled:       true,
               tutorials:      tutorials,
-              campus_data:    row['campus']
+              campus:         row['campus']
           }
         },
         replace_existing_tutorial: true
@@ -784,14 +784,15 @@ class Unit < ActiveRecord::Base
             end
           end
 
-          # Now loop through the tutorials and enrol the student...
-          tutorials.each do |tutorial_code|
-            # find the tutorial for the user
-            tutorial = tutorial_cache[tutorial_code] || tutorial_with_abbr(tutorial_code)
-            tutorial_cache[tutorial_code] ||= tutorial
+          # Only update if we will change tutorial enrolments... or no enrolment
+          if import_settings[:replace_existing_tutorial] || new_project || user_project.tutorial_enrolments.count == 0
 
-            # Only update if we will change tutorial enrolments... or no enrolment for this stream
-            if import_settings[:replace_existing_tutorial] || new_project || user_project.tutorial_for_stream(tutorial.tutorial_stream).nil?
+            # Now loop through the tutorials and enrol the student...
+            tutorials.each do |tutorial_code|
+              # find the tutorial for the user
+              tutorial = tutorial_cache[tutorial_code] || tutorial_with_abbr(tutorial_code)
+              tutorial_cache[tutorial_code] ||= tutorial
+
               if tutorial.present?
                   # Use tutorial as we have it :)
                   begin

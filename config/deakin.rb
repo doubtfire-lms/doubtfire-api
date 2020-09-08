@@ -126,10 +126,12 @@ class DeakinInstitutionSettings
 
   # Doubtfire::Application.config.institution_settings.sync_streams_from_star(Unit.last)
   def sync_streams_from_star(unit)
+    return unless unit.enable_sync_timetable
     tp = unit.teaching_period
 
     # url = "#{@star_url}/star-#{tp.year}/rest/activities"
-    url = "#{@star_url}/even/rest/activities"
+    server = unit.start_date.year % 2 == 0 ? 'even' : 'odd'
+    url = "#{@star_url}/#{server}/rest/activities"
 
     logger.info("Fetching #{unit.name} timetable from #{url}")
     response = RestClient.post(url, {username: @star_user, password: @star_secret, where_clause:"subject_code LIKE '#{unit.code}%'"})
@@ -293,6 +295,8 @@ class DeakinInstitutionSettings
 
   # Doubtfire::Application.config.institution_settings.sync_enrolments(Unit.last)
   def sync_enrolments(unit)
+    return unless unit.enable_sync_enrolments
+
     logger.info("Starting sync for #{unit.code}")
     result = {
       success: [],
@@ -383,7 +387,7 @@ class DeakinInstitutionSettings
             # Cloud tutorials are allocated to the tutorial with the smallest pct full
             # We need to determine the stats here before the enrolments.
             # This is not needed for multi unit as we do not setup the tutorials for multi units
-            if is_cloud && ! multi_unit
+            if is_cloud && ! multi_unit && unit.enable_sync_timetable
               if unit.tutorials.where(campus_id: campus.id).count == 0
                 unit.add_tutorial(
                   'Asynchronous', #day
@@ -397,6 +401,7 @@ class DeakinInstitutionSettings
                 )                        
               end
 
+              # Get stats for distribution of students across tutorials - for enrolment of cloud students
               tutorial_stats = unit.tutorials.
                 joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.tutorial_id = tutorials.id').
                 where(campus_id: campus.id).
@@ -432,11 +437,8 @@ class DeakinInstitutionSettings
               end
               
               # Get the list of tutorials for the student
-              unless multi_unit
+              unless multi_unit || !unit.enable_sync_timetable
                 tutorials = timetable_data[enrolment['studentId']]
-                # Make sure tutorials is not nil - use empty list
-                tutorials = [] if tutorials.nil?
-
                 # multi unit tutorials is already setup with the unit code
               end
 
@@ -450,7 +452,7 @@ class DeakinInstitutionSettings
                 nickname:       enrolment['preferredName'],
                 email:          enrolment['email'],
                 enrolled:       ['ENROLLED', 'COMPLETED'].include?(enrolment['status'].upcase),
-                tutorials:      tutorials,
+                tutorials:      tutorials || [], # tutorials unless they are not present
                 campus:         campus_name,
                 row:            enrolment
               }
@@ -466,11 +468,12 @@ class DeakinInstitutionSettings
               user = sync_student_user_from_callista(row_data)
 
               # if they are enrolled, but not timetabled and cloud...
-              if is_cloud && row_data[:enrolled] && !multi_unit && timetable_data[enrolment['studentId']].nil? # Is this a cloud user that we have the user data for?
+              if is_cloud && row_data[:enrolled] && !multi_unit && unit.enable_sync_timetable && timetable_data[enrolment['studentId']].nil? # Is this a cloud user that we have the user data for?
                 # try to get their exising data
                 project = unit.projects.where(user_id: user.id).first unless user.nil?
-                unless project.present? && project.tutorial_enrolments.count > 0
-                  # not present (so new), or has no enrolment...
+
+                if project.nil? || project.tutorial_enrolments.count == 0
+                  # not present (so new), or has no enrolment... so we can enrol it into the cloud tutorial
                   tutorial = find_cloud_tutorial(unit, tutorial_stats)
                   row_data[:tutorials] = [ tutorial ] unless tutorial.nil?
                 end
@@ -498,6 +501,8 @@ class DeakinInstitutionSettings
 
   # Doubtfire::Application.config.institution_settings.fetch_timetable_data(Unit.last)
   def fetch_timetable_data(unit)
+    return {} unless unit.enable_sync_timetable
+
     logger.info("Fetching STAR data for #{unit.code}")
 
     sync_streams_from_star(unit)

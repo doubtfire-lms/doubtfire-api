@@ -28,8 +28,8 @@ class TutorialEnrolment < ActiveRecord::Base
   # Switch from stream to no stream is not allowed
   validate :ensure_cannot_enrol_in_tutorial_with_no_stream_when_enrolled_in_stream
 
-  # Ensure that changes to tutorial enrolments does not invalidate the project
-  validates_associated :project
+  # Ensure in the same tutorial as a group if needed
+  validate :must_be_in_group_tutorials
 
   def unit_must_be_same
     if project.unit.present? and tutorial.unit.present? and not project.unit.eql? tutorial.unit
@@ -79,4 +79,23 @@ class TutorialEnrolment < ActiveRecord::Base
       errors.add(:tutorial_stream, 'already exists for the selected student')
     end
   end
+
+  #
+  # Check to see if the student has a valid tutorial
+  #
+  def must_be_in_group_tutorials
+    project.groups.each do |g|
+      next unless g.limit_members_to_tutorial?
+      next if tutorial_id == g.tutorial_id
+
+      if g.group_set.allow_students_to_manage_groups
+        # leave group
+        g.remove_member(project)
+      else
+        errors.add(:groups, "require #{project.student.name} to be in tutorial #{g.tutorial.abbreviation}")
+        break
+      end
+    end
+  end
+
 end

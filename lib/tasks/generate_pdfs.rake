@@ -24,6 +24,7 @@ namespace :submission do
   task generate_pdfs: :environment do
     if is_executing?
       logger.error 'Skip generate pdf -- already executing'
+      puts 'Skip generate pdf -- already executing'
     else
       start_executing
 
