@@ -20,12 +20,6 @@ class User < ActiveRecord::Base
   # Authentication
   ###
 
-  # Auth token encryption settings
-  attr_encrypted :auth_token,
-                 key: Doubtfire::Application.secrets.secret_key_attr,
-                 encode: true,
-                 attribute: 'authentication_token'
-
   # User authentication config
   if AuthenticationHelpers.aaf_auth?
     #
@@ -114,6 +108,19 @@ class User < ActiveRecord::Base
   #
   def authentication_token_expired?
     auth_token_expiry.nil? || auth_token_expiry <= Time.zone.now
+  end
+
+  #
+  # Returns authentication of the user
+  #
+  def token_for_text?(a_token)
+    list_tokens = []
+    self.auth_tokens.each do |token|
+      if a_token == token.authentication_token
+          return token
+      end
+    end
+    return nil
   end
 
   ###

@@ -71,7 +71,7 @@ module Api
         # Return user details
         { 
           user: UserSerializer.new(user),
-          auth_token: user.generate_authentication_token!(remember).auth_token
+          auth_token: user.generate_authentication_token!(remember).authentication_token
         }
       end
     end
@@ -162,6 +162,7 @@ module Api
       #
       desc 'Get user details from an authentication token'
       params do
+        requires :username, type: String, desc: 'The user\'s username'
         requires :auth_token, type: String, desc: 'The user\'s temporary auth token'
       end
       post '/auth' do
@@ -170,10 +171,9 @@ module Api
 
         # Authenticate that the token is okay
         if authenticated?
-          token = AuthToken.find_by_auth_token(params[:auth_token])
+          user = User.find_by_username(params[:username])
+          token = user.token_for_text?(params[:auth_token]) unless user.nil?
           error!({ error: 'Invalid token.' }, 404) if token.nil?
-          
-          user = token.user
 
           # Invalidate the token and regenrate a new one
           token.destroy!
@@ -182,7 +182,7 @@ module Api
           # Respond user details with new auth token
           {
             user: UserSerializer.new(user),
-            auth_token: token.auth_token
+            auth_token: token.authentication_token
           }
         end
       end
@@ -213,22 +213,36 @@ module Api
     #
     # Update the expiry of an existing authentication token
     #
-    desc 'Allow tokens to be updated'
+    desc 'Allow tokens to be updated',
+    {
+      headers: 
+      {
+        "username" => 
+        {
+          description: "User username",
+          required: true
+        },
+        "auth_token" => 
+        {
+          description: "The user\'s temporary auth token",
+          required: true
+        }
+      }
+    }
     params do
-      requires :username, type: String,  desc: 'User username'
       optional :remember, type: Boolean, desc: 'User has requested to remember login', default: false
     end
-    put '/auth/:auth_token' do
-      error!({ error: 'Invalid token.' }, 404) if params[:auth_token].nil?
-      logger.info "Update token #{params[:username]} from #{request.ip}"
+    put '/auth' do
+      error!({ error: 'Invalid token/username .' }, 404) if headers['Auth-Token'].nil? || headers['Username'].nil?
+      logger.info "Update token #{headers['Auth-Token']} from #{request.ip}"
 
       # Find user
-      token = AuthToken.find_by_auth_token(params[:auth_token])
-      user = token.user unless token.nil?
+      user = User.find_by_username(headers['Username'])
+      token = user.token_for_text?(headers['Auth-Token']) unless user.nil?
       remember = params[:remember] || false
 
       # Token does not match user
-      if token.nil? || user.nil? || user.username != params[:username]
+      if token.nil? || user.nil? || user.username != headers['Username']
         error!({ error: 'Invalid token.' }, 404)
       else
         if token.auth_token_expiry > Time.zone.now
@@ -237,7 +251,7 @@ module Api
         
         # Return extended auth token
         { 
-          auth_token: user.auth_token 
+          auth_token: token.authentication_token 
         }
       end
     end
@@ -245,12 +259,28 @@ module Api
     #
     # Sign out
     #
-    desc 'Sign out'
-    delete '/auth/:auth_token' do
-      token = AuthToken.find_by_auth_token(params[:auth_token])
+    desc 'Sign out',
+    {
+      headers: 
+      {
+        "username" => 
+        {
+          description: "User username",
+          required: true
+        },
+        "auth_token" => 
+        {
+          description: "The user\'s temporary auth token",
+          required: true
+        }
+      }
+    }
+    delete '/auth' do
+      user = User.find_by_username(headers['Username'])
+      token = user.token_for_text?(headers['Auth-Token']) unless user.nil?
 
       if token.present?
-        logger.info "Sign out #{token.user.username} from #{request.ip}"
+        logger.info "Sign out #{user.username} from #{request.ip}"
         token.destroy!
       end
 
