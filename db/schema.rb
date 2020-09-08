@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20200901044853) do
+ActiveRecord::Schema.define(version: 20200908015241) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -344,6 +344,7 @@ ActiveRecord::Schema.define(version: 20200901044853) do
     t.integer  "capacity",                       default: -1
     t.integer  "campus_id"
     t.integer  "tutorial_stream_id"
+    t.integer  "meeting_duration",               default: 60, null: false
   end
 
   add_index "tutorials", ["campus_id"], name: "index_tutorials_on_campus_id", using: :btree
@@ -379,9 +380,10 @@ ActiveRecord::Schema.define(version: 20200901044853) do
     t.integer  "main_convenor_id"
     t.boolean  "auto_apply_extension_before_deadline",              default: true, null: false
     t.boolean  "send_notifications",                                default: true, null: false
+    t.integer  "draft_task_definition_id"
     t.boolean  "enable_sync_timetable",                             default: true, null: false
     t.boolean  "enable_sync_enrolments",                            default: true, null: false
-    t.integer  "draft_task_definition_id"
+    t.datetime "portfolio_auto_generation_date"
   end
 
   add_index "units", ["teaching_period_id"], name: "index_units_on_teaching_period_id", using: :btree
