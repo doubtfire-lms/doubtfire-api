@@ -16,18 +16,19 @@ module AuthenticationHelpers
   # Reads details from the params fetched from the caller context.
   #
   def authenticated?
+    # Variable to store auth_token if available
+    token_with_value = nil
     # Check warden -- authenticate using DB or LDAP etc.
     return true if warden.authenticated?
-
-    # Check for auth token parameter
-    if params.present? && params[:auth_token].present?
-      # Get the token and the user - if there is a token
-      token = AuthToken.find_by_auth_token(params[:auth_token])
-      user_by_token = token.user unless token.nil?
+    
+    # Check for valid auth token  and username in request header 
+    user = current_user
+    if headers.present? && headers['Auth-Token'].present? && headers['Username'].present? && user.present?
+      # Get the list of tokens for a user
+      token = user.token_for_text?(headers['Auth-Token']) 
     end
-
     # Check user by token
-    if user_by_token.present?
+    if user.present? && token.present?
       # Non-expired token
       return true if token.auth_token_expiry > Time.zone.now
       # Token is timed out - destroy it
@@ -37,15 +38,15 @@ module AuthenticationHelpers
     else
       # Add random delay then fail
       sleep((200 + rand(200)) / 1000.0)
-      error!({ error: 'Could not authenticate with token. Token invalid.' }, 419)
+      error!({ error: 'Could not authenticate with token. Username or Token invalid.' }, 419)
     end
   end
 
   #
-  # Get the current user either from warden or from the token
+  # Get the current user either from warden or from the header
   #
   def current_user
-    warden.user || AuthToken.user_for_token(params[:auth_token])
+    warden.user || User.find_by_username(headers['Username'])
   end
 
   #
@@ -56,9 +57,16 @@ module AuthenticationHelpers
     service.routes.each do |route|
       options = route.instance_variable_get('@options')
       next if options[:params]['auth_token']
+      options[:params]['username'] = {
+        required: true,
+        type:     'String',
+        in:       'header',
+        desc:     'Username'
+      }
       options[:params]['auth_token'] = {
         required: true,
         type:     'String',
+        in:       'header',
         desc:     'Authentication token'
       }
     end

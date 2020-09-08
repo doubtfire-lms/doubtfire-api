@@ -12,7 +12,11 @@ class ProjectsApiTest < ActiveSupport::TestCase
 
   def test_can_get_projects
     user = FactoryBot.create(:user, :student, enrol_in: 0)
-    get with_auth_token('/api/projects', user)
+
+    # Add username and auth_token to Header
+    add_auth_header_for(user: user)
+
+    get '/api/projects'
     assert_equal 200, last_response.status
   end
 
@@ -21,7 +25,10 @@ class ProjectsApiTest < ActiveSupport::TestCase
     project = unit.projects.first
     assert_equal 2, project.tutorial_enrolments.count
 
-    get with_auth_token('/api/projects', project.student)
+    # Add username and auth_token to Header
+    add_auth_header_for(user: project.student)
+
+    get '/api/projects'
     assert_equal 200, last_response.status
     assert_equal 1, last_response_body.count, last_response_body
   end
@@ -29,13 +36,21 @@ class ProjectsApiTest < ActiveSupport::TestCase
 
   def test_projects_returns_correct_number_of_projects
     user = FactoryBot.create(:user, :student, enrol_in: 2)
-    get with_auth_token('/api/projects', user)
+
+    # Add username and auth_token to Header
+    add_auth_header_for(user: user)
+    
+    get '/api/projects'
     assert_equal 2, last_response_body.count
   end
 
   def test_projects_returns_correct_data
     user = FactoryBot.create(:user, :student, enrol_in: 2)
-    get with_auth_token('/api/projects', user)
+
+    # Add username and auth_token to Header
+    add_auth_header_for(user: user)
+
+    get '/api/projects'
     last_response_body.each do |data|
       project = user.projects.find(data['project_id'])
       assert project.present?, data.inspect
@@ -52,13 +67,16 @@ class ProjectsApiTest < ActiveSupport::TestCase
     user = FactoryBot.create(:user, :student, enrol_in: 2)
     Unit.last.update(active: false)
 
-    get with_auth_token('/api/projects', user)
+    # Add username and auth_token to Header
+    add_auth_header_for(user: user)
+
+    get '/api/projects'
     assert_equal 1, last_response_body.count
 
-    get with_auth_token('/api/projects?include_inactive=false', user)
+    get '/api/projects?include_inactive=false'
     assert_equal 1, last_response_body.count
 
-    get with_auth_token('/api/projects?include_inactive=true', user)
+    get '/api/projects?include_inactive=true'
 
     assert_equal 2, last_response_body.count
 

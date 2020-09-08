@@ -33,7 +33,11 @@ class UnitsTest < ActiveSupport::TestCase
 
   # Get users' details
   def test_get_users
-    get with_auth_token '/api/users'
+
+    # Add username and auth_token to Header
+    add_auth_header_for(user: User.first)
+
+    get '/api/users'
     expected_data = User.all
 
     # Check if the request get through
@@ -58,8 +62,11 @@ class UnitsTest < ActiveSupport::TestCase
   def test_get_a_users_details
     expected_user = User.second
 
+    # Add username and auth_token to Header
+    add_auth_header_for(user: User.first)
+
     # perform the GET 
-    get with_auth_token"/api/users/#{expected_user.id}"
+    get "/api/users/#{expected_user.id}"
     returned_user = last_response_body
 
     # Check if the call succeeds
@@ -71,12 +78,20 @@ class UnitsTest < ActiveSupport::TestCase
   end
   
   def test_get_convenors
-    get with_auth_token '/api/users/convenors'
+
+    # Add username and auth_token to Header
+    add_auth_header_for(user: User.first)
+
+    get '/api/users/convenors'
     assert_equal 200, last_response.status
   end
 
   def test_get_tutors
-    get with_auth_token '/api/users/tutors'
+
+    # Add username and auth_token to Header
+    add_auth_header_for(user: User.first)
+
+    get '/api/users/tutors'
     assert_equal 200, last_response.status
   end
 
@@ -106,9 +121,11 @@ class UnitsTest < ActiveSupport::TestCase
     pre_count = User.all.length
 
     data_to_post = {
-        user: create_user,
-        auth_token: auth_token
+        user: create_user
     }
+
+    # Add username and auth_token to Header
+    add_auth_header_for(user: User.first)
 
     post_json '/api/users', data_to_post
 
@@ -121,9 +138,11 @@ class UnitsTest < ActiveSupport::TestCase
     pre_count = User.all.length
 
     data_to_post = {
-        user: create_user,
-        auth_token: auth_token
+        user: create_user
     }
+
+    # Add username and auth_token to Header
+    add_auth_header_for(user: User.first)
 
     post_json '/api/users', data_to_post
     assert_equal pre_count + 1, User.all.length
@@ -141,9 +160,11 @@ class UnitsTest < ActiveSupport::TestCase
     user = create_user
 
     data_to_post = {
-        user: user,
-        auth_token: auth_token
+        user: user
     }
+
+    # Add username and auth_token to Header
+    add_auth_header_for(user: User.first)
 
     post_json '/api/users', data_to_post
     assert_equal pre_count + 1, User.all.length
@@ -162,9 +183,11 @@ class UnitsTest < ActiveSupport::TestCase
     user = create_user
 
     data_to_post = {
-        user: user,
-        auth_token: auth_token
+        user: user
     }
+
+    # Add username and auth_token to Header
+    add_auth_header_for(user: User.first)
 
     post_json '/api/users', data_to_post
     assert_equal pre_count + 1, User.all.length
@@ -189,9 +212,11 @@ class UnitsTest < ActiveSupport::TestCase
       user[:email] = email
 
       data_to_post = {
-          user: user,
-          auth_token: auth_token
+          user: user
       }
+
+      # Add username and auth_token to Header
+      add_auth_header_for(user: User.first)
 
       post_json '/api/users', data_to_post
       # Successful assertion of same length again means no record was created
@@ -209,9 +234,11 @@ class UnitsTest < ActiveSupport::TestCase
       next if key == :nickname # Nickname can be empty
       user2[key] = ''
       data_to_post = {
-          user: user2,
-          auth_token: auth_token
+          user: user2
       }
+
+      # Add username and auth_token to Header
+      add_auth_header_for(user: User.first)
 
       post_json '/api/users', data_to_post
       # Successful assertion of same length again means no record was created
@@ -228,9 +255,11 @@ class UnitsTest < ActiveSupport::TestCase
     user[:system_role] = role
 
     data_to_post = {
-        user: user,
-        auth_token: auth_token
+        user: user
     }
+
+    # Add username and auth_token to Header
+    add_auth_header_for(user: User.first)
 
     post_json '/api/users', data_to_post
     # Successful assertion of same length again means no record was created
@@ -247,9 +276,16 @@ class UnitsTest < ActiveSupport::TestCase
     user = create_user
 
     data_to_post = {
-        user: user,
-        auth_token: token
+        user: user
     }
+
+    # Add username and auth_token to Header
+    add_auth_header_for(user: User.first, auth_token: token)
+
+    # Override header to empty auth_token
+    if token == ''
+      header 'auth_token',''
+    end
 
     post_json '/api/users', data_to_post
     # Successful assertion of same length again means no record was created
@@ -270,9 +306,11 @@ class UnitsTest < ActiveSupport::TestCase
     user[:email] = 'different@email.com'
 
     data_to_put = {
-        user: user,
-        auth_token: auth_token
+        user: user
     }
+
+    # Add username and auth_token to Header
+    add_auth_header_for(user: User.first)
 
     put_json '/api/users/2', data_to_put
     assert_users_model_response User.find_by(email: 'different@email.com').as_json, user.as_json
@@ -284,9 +322,11 @@ class UnitsTest < ActiveSupport::TestCase
     user[:email] = User.third.email
 
     data_to_put = {
-        user: user,
-        auth_token: auth_token
+        user: user
     }
+
+    # Add username and auth_token to Header
+    add_auth_header_for(user: User.first)
 
     put_json '/api/users/2', data_to_put
     assert_equal 400, last_response.status
@@ -302,9 +342,11 @@ class UnitsTest < ActiveSupport::TestCase
       user[:email] = email
 
       data_to_put = {
-          user: user,
-          auth_token: auth_token
+          user: user
       }
+
+      # Add username and auth_token to Header
+      add_auth_header_for(user: User.first)
 
       put_json '/api/users/2', data_to_put
       assert_equal 400, last_response.status
@@ -316,9 +358,11 @@ class UnitsTest < ActiveSupport::TestCase
     user[:email] = ''
 
     data_to_put = {
-        user: user,
-        auth_token: auth_token
+        user: user
     }
+
+    # Add username and auth_token to Header
+    add_auth_header_for(user: User.first)
 
     put_json '/api/users/2', data_to_put
     assert_equal 400, last_response.status
@@ -329,9 +373,15 @@ class UnitsTest < ActiveSupport::TestCase
     user[:email] = ''
 
     data_to_put = {
-        user: user,
-        auth_token: token
+        user: user
     }
+
+    # Add username and auth_token to Header
+    add_auth_header_for(user: User.first, auth_token: token)
+
+    if token == ''
+      header 'auth_token',token
+    end
 
     put_json '/api/users/2', data_to_put
     assert_equal 419, last_response.status

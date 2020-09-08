@@ -13,8 +13,11 @@ class StudentsApiTest < ActiveSupport::TestCase
     # Create a unit
     newUnit = FactoryBot.create(:unit)
 
+    # Add username and auth_token to Header
+    add_auth_header_for(user: newUnit.main_convenor_user)
+
     # The get that we will be testing.
-    get with_auth_token "/api/students/?unit_id=#{newUnit.id}", newUnit.main_convenor_user
+    get "/api/students/?unit_id=#{newUnit.id}"
 
     # check returning number of students
     assert_equal newUnit.active_projects.all.count,last_response_body.count
@@ -37,8 +40,11 @@ class StudentsApiTest < ActiveSupport::TestCase
     # Obtain a student from unit
     studentUser = newUnit.active_projects.first.student
 
+    # Add username and auth_token to Header
+    add_auth_header_for(user: studentUser)
+
     # The get that we will be testing.
-    get with_auth_token "/api/students/?unit_id=#{newUnit.id}",studentUser
+    get "/api/students/?unit_id=#{newUnit.id}"
     # check error code when an unauthorized user tries to get students' details
     assert_equal 403, last_response.status
   end
@@ -47,8 +53,12 @@ class StudentsApiTest < ActiveSupport::TestCase
     # Create unit
     newUnit = FactoryBot.create(:unit)
 
+    # Add username and auth_token to Header
+    add_auth_header_for(user: newUnit.main_convenor_user)
+
     # The get that we will be testing without parameters.
-    get with_auth_token '/api/students/', newUnit.main_convenor_user
+    get '/api/students/'
+
     # check error code
     assert_equal 400, last_response.status
   end
@@ -57,8 +67,11 @@ class StudentsApiTest < ActiveSupport::TestCase
     # Create unit
     unit = FactoryBot.create(:unit, stream_count: 2, campus_count: 2)
 
+    # Add username and auth_token to Header
+    add_auth_header_for(user: unit.main_convenor_user)
+
     # The get that we will be testing without parameters.
-    get with_auth_token "/api/students/?unit_id=#{unit.id}", unit.main_convenor_user
+    get "/api/students/?unit_id=#{unit.id}"
     
     assert_equal 200, last_response.status
     assert_equal unit.active_projects.count, last_response_body.count
