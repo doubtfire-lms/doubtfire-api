@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20200817020024) do
+ActiveRecord::Schema.define(version: 20200908115109) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -415,6 +415,13 @@ ActiveRecord::Schema.define(version: 20200817020024) do
   add_index "users", ["authentication_token"], name: "index_users_on_authentication_token", unique: true, using: :btree
   add_index "users", ["login_id"], name: "index_users_on_login_id", unique: true, using: :btree
 
+  create_table "webcal_unit_exclusions", id: false, force: :cascade do |t|
+    t.integer "webcal_id", null: false
+    t.integer "unit_id",   null: false
+  end
+
+  add_index "webcal_unit_exclusions", ["unit_id", "webcal_id"], name: "index_webcal_unit_exclusions_on_unit_id_and_webcal_id", unique: true, using: :btree
+
   create_table "webcals", force: :cascade do |t|
     t.string  "guid",                limit: 36,                 null: false
     t.boolean "include_start_dates",            default: false, null: false
@@ -437,5 +444,7 @@ ActiveRecord::Schema.define(version: 20200817020024) do
   add_foreign_key "tutorials", "campuses"
   add_foreign_key "tutorials", "tutorial_streams"
   add_foreign_key "units", "teaching_periods"
+  add_foreign_key "webcal_unit_exclusions", "units"
+  add_foreign_key "webcal_unit_exclusions", "webcals"
   add_foreign_key "webcals", "users"
 end

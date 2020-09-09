@@ -4,6 +4,8 @@ class Webcal < ActiveRecord::Base
 
   belongs_to :user
 
+  has_many :webcal_unit_exclusions, dependent: :destroy
+
   #
   # Generates a single `Icalendar::Calendar` object from this `Webcal` including calendar events for the specified
   # collection of `TaskDefinition`s.
