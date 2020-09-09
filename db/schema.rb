@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20200908115109) do
+ActiveRecord::Schema.define(version: 20200909074930) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -426,6 +426,8 @@ ActiveRecord::Schema.define(version: 20200908115109) do
     t.string  "guid",                limit: 36,                 null: false
     t.boolean "include_start_dates",            default: false, null: false
     t.integer "user_id"
+    t.integer "reminder_time"
+    t.string  "reminder_unit"
   end
 
   add_index "webcals", ["guid"], name: "index_webcals_on_guid", unique: true, using: :btree

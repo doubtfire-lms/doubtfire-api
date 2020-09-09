@@ -21,10 +21,17 @@ module Api
     desc 'Update webcal details of the authenticated user'
     params do
       requires :webcal, type: Hash do
-        optional :enabled,             type: Boolean,        desc: 'Is the webcal enabled?'
-        optional :should_change_guid,  type: Boolean,        desc: 'Should the GUID of the webcal be changed?'
-        optional :include_start_dates, type: Boolean,        desc: 'Should events for start dates be included?'
-        optional :unit_exclusions,     type: Array[Integer], desc: 'IDs of units that must be excluded from the webcal'
+        optional :enabled,             type: Boolean,                                 desc: 'Is the webcal enabled?'
+        optional :should_change_guid,  type: Boolean,                                 desc: 'Should the GUID of the webcal be changed?'
+        optional :include_start_dates, type: Boolean,                                 desc: 'Should events for start dates be included?'
+        optional :unit_exclusions,     type: Array[Integer],                          desc: 'IDs of units that must be excluded from the webcal'
+
+        # `all_or_none_of` is used here instead of 2 `requires` parameters to allow `reminder` to be set to `null`.
+        optional :reminder,            type: Hash do
+          optional :time,              type: Integer
+          optional :unit,              type: String, values: Webcal.valid_time_units, desc: 'w: weeks, d: days, h: hours, m: minutes'
+          all_or_none_of :time, :unit
+        end
       end
       requires :auth_token, type: String, desc: 'Authentication token'
     end
@@ -57,9 +64,21 @@ module Api
         webcal_update_params[:guid] = SecureRandom.uuid
       end
 
+      # Change the reminder if requested.
+      if webcal_params.key?(:reminder)
+        if webcal_params[:reminder].nil?
+          webcal_update_params[:reminder_time] = webcal_update_params[:reminder_unit] = nil
+        else
+          webcal_update_params[:reminder_time] = webcal_params[:reminder][:time]
+          webcal_update_params[:reminder_unit] = webcal_params[:reminder][:unit]
+        end
+      end
+
       # Set any other properties that have to be updated verbatim.
       webcal_update_params.merge! ActionController::Parameters.new(webcal_params).permit(
-        :include_start_dates
+        :include_start_dates,
+        :reminder_time,
+        :reminder_unit
       )
 
       # Update calendar.
@@ -69,7 +88,7 @@ module Api
       if webcal_params.key?(:unit_exclusions)
 
         # Delete existing exclusions.
-        cal.webcal_unit_exclusions.delete_all
+        cal.webcal_unit_exclusions.destroy_all
 
         # Add exclusions with valid unit IDs.
         if webcal_params[:unit_exclusions].any?
