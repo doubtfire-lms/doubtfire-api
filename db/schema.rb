@@ -415,7 +415,7 @@ ActiveRecord::Schema.define(version: 20200908115109) do
   add_index "users", ["authentication_token"], name: "index_users_on_authentication_token", unique: true, using: :btree
   add_index "users", ["login_id"], name: "index_users_on_login_id", unique: true, using: :btree
 
-  create_table "webcal_unit_exclusions", id: false, force: :cascade do |t|
+  create_table "webcal_unit_exclusions", force: :cascade do |t|
     t.integer "webcal_id", null: false
     t.integer "unit_id",   null: false
   end
