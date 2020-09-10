@@ -20,7 +20,8 @@ class ProjectSerializer < ActiveModel::Serializer
              :portfolio_available,
              :grade,
              :grade_rationale,
-             :tasks
+             :tasks,
+             :uses_draft_learning_summary
 
   has_many :tutorial_enrolments
 
