@@ -71,6 +71,7 @@ module Api
         optional :enable_sync_timetable, type: Boolean, desc: 'Sync to timetable automatically if supported by deployment'
         optional :enable_sync_enrolments, type: Boolean, desc: 'Sync student enrolments automatically if supported by deployment'
         optional :draft_task_definition_id, type: Integer, desc: 'Indicates the ID of the task definition used as the "draft learning summary task"'
+        optional :portfolio_auto_generation_date, type: Date, desc: 'Indicates a date where student portfolio will automatically compile'
 
         mutually_exclusive :teaching_period_id,:start_date
         all_or_none_of :start_date, :end_date
@@ -95,7 +96,8 @@ module Api
                                                             :send_notifications,
                                                             :enable_sync_timetable,
                                                             :enable_sync_enrolments,
-                                                            :draft_task_definition_id
+                                                            :draft_task_definition_id,
+                                                            :portfolio_auto_generation_date
                                                           )
 
       if unit.teaching_period_id.present? && unit_parameters.key?(:start_date)
@@ -116,7 +118,17 @@ module Api
           error!({ error: 'Task definition should contain only a single document upload' }, 403)
         end
       end
-              
+      
+      if unit_parameters.key?(:portfolio_auto_generation_date)
+        # Ensure that porfolio generation date is within the teaching period
+        gen_date = unit_parameters[:portfolio_auto_generation_date]
+        unless gen_date > unit.teaching_period.start_date && gen_date < unit.teaching_period.end_date
+          unit_parameters.delete(:portfolio_auto_generation_date)
+          error!({ error: 'Portfolio auto generation date is not within the teaching period'}, 403)
+        end
+      end
+      
+
       unit.update!(unit_parameters)
       unit_parameters
     end
