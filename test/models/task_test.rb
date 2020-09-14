@@ -178,4 +178,40 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     td.destroy
     assert_not File.exists? path
   end
+
+  def test_copy_draft_learning_summary
+    unit = FactoryBot.create :unit, student_count:1, task_count:0
+    task_def = FactoryBot.create(:task_definition, unit: unit, upload_requirements: [{'key' => 'file0','name' => 'Draft learning summary','type' => 'document'}])
+
+    # Maybe make this call API to set
+    unit.draft_task_definition = task_def
+
+    data_to_post = {
+      trigger: 'ready_to_mark'
+    }
+
+    data_to_post = with_file('test_files/unit_files/sample-learning-summary.pdf', 'application/pdf', data_to_post)
+
+    project = unit.active_projects.first
+    
+    post "/api/projects/#{project.id}/task_def_id/#{task_def.id}/submission", with_auth_token(data_to_post, user=project.user)
+
+    assert_equal 201, last_response.status
+
+    project_task = project.task_for_task_definition(task_def)
+
+    # Check if file exists in :new
+    assert project_task.processing_pdf?
+
+    # Generate pdf for task
+    assert project_task.convert_submission_to_pdf
+
+    # Check if pdf was copied over
+    path = File.join(project.portfolio_temp_path, '000-document-LearningSummaryReport.pdf')
+    assert File.exists? path
+    assert project.uses_draft_learning_summary
+
+    unit.destroy
+    assert_not File.exists? path
+  end
 end
