@@ -1024,12 +1024,15 @@ class Task < ActiveRecord::Base
       if task_definition_id == unit.draft_task_definition_id
         # if there is a learning summary, execute, if there isn't and a learning summary exists, don't execute
         if project.uses_draft_learning_summary || project.portfolio_files.select {|f| f[:name] == "LearningSummaryReport.pdf"}.empty?
-          puts "Copying to portfolio"
           file_name = {
             kind: 'document',
             name: 'LearningSummaryReport.pdf',
             idx: 0
           }
+          # Creates tmp portfolio path (if it doesn't exist)
+          portfolio_tmp_dir = project.portfolio_temp_path
+          FileUtils.mkdir_p(portfolio_tmp_dir)
+
           FileUtils.cp portfolio_evidence, project.portfolio_tmp_file_path(file_name)
           project.uses_draft_learning_summary = true
           project.save
