@@ -14,6 +14,7 @@ class ProjectSerializer < ActiveModel::Serializer
              :burndown_chart_data,
              :enrolled,
              :target_grade,
+             :submitted_grade,
              :portfolio_files,
              :compile_portfolio,
              :portfolio_available,

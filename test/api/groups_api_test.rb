@@ -344,8 +344,93 @@ class GroupsApiTest < ActiveSupport::TestCase
     p1.reload
     p2.reload
 
+    assert p1.valid?
+    assert p2.valid?
+
     assert p1.enrolled_in? tutorial
     assert p2.enrolled_in? tutorial
+  end
 
+  def test_group_switch_tutorial_no_student_management
+    unit = FactoryBot.create :unit, group_sets: 1, groups: [{gs: 0, students: 0}]
+    
+    gs = unit.group_sets.first
+    gs.update keep_groups_in_same_class: true, allow_students_to_manage_groups: false
+    group1 = gs.groups.first
+
+    p1 = group1.tutorial.projects.first
+    p2 = group1.tutorial.projects.last
+
+    group1.add_member p1
+    group1.add_member p2
+
+    tutorial = FactoryBot.create :tutorial, unit: unit, campus: nil
+    
+    refute p1.enrolled_in? tutorial
+    refute p2.enrolled_in? tutorial
+    
+    add_auth_header_for(user: unit.main_convenor_user)
+    put "/api/units/#{unit.id}/group_sets/#{gs.id}/groups/#{group1.id}", { group: {tutorial_id: tutorial.id} }
+
+    assert 201, last_response.status
+
+    p1.reload
+    p2.reload
+
+    assert p1.valid?
+    assert p2.valid?
+
+    assert p1.enrolled_in? tutorial
+    assert p2.enrolled_in? tutorial
+  end
+
+  def test_group_switch_tutorial_unenrolled_students
+    unit = FactoryBot.create :unit, group_sets: 1, groups: [{gs: 0, students: 0}]
+    
+    gs = unit.group_sets.first
+    gs.update keep_groups_in_same_class: true, allow_students_to_manage_groups: false, capacity: 2
+    group1 = gs.groups.first
+
+    p1 = group1.tutorial.projects.first
+    p2 = group1.tutorial.projects.last
+
+    group1.add_member p1
+    group1.add_member p2
+
+    assert group1.at_capacity?
+
+    tutorial = FactoryBot.create :tutorial, unit: unit, campus: nil
+    
+    refute p1.enrolled_in? tutorial
+    refute p2.enrolled_in? tutorial
+
+    p2.update(enrolled: false)
+    p2.reload
+
+    refute group1.at_capacity?
+
+    add_auth_header_for(user: unit.main_convenor_user)
+    put "/api/units/#{unit.id}/group_sets/#{gs.id}/groups/#{group1.id}", { group: {tutorial_id: tutorial.id} }
+
+    assert 201, last_response.status
+
+    group1.reload
+
+    p1.reload
+    p2.reload
+
+    assert p1.valid?
+    assert p2.valid?
+
+    assert group1.valid?, group1.errors.full_messages
+
+    assert p1.enrolled_in? tutorial
+    refute p2.enrolled_in? tutorial
+
+    # check we can reenrol the student
+    refute group1.at_capacity?
+    assert p2.update(enrolled: true)
+    refute group1.at_capacity? # they are not in the right tutorial
+    assert_equal 1, group1.projects.count
   end
 end
