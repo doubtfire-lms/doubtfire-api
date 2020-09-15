@@ -105,14 +105,12 @@ module Api
       if unit_parameters.key?(:draft_task_definition_id)
         # Ensure the task definition belongs to unit
         unless unit.task_definitions.exists?(unit_parameters[:draft_task_definition_id])
-          unit_parameters.delete(:draft_task_definition_id)
           error!({ error: 'Draft task definition ID does not belong to unit' }, 403)
         end
 
         # Validate that the task only has 1 upload requirement and it is a document
         task = Task.find(unit_parameters[:draft_task_definition_id])
         if task.upload_requirements.length != 1 || task.upload_requirements.first['type'] != "document"
-          unit_parameters.delete(:draft_task_definition_id)
           error!({ error: 'Task definition should contain only a single document upload' }, 403)
         end
       end
