@@ -34,10 +34,11 @@ class Project < ActiveRecord::Base
   # Callbacks - methods called are private
   before_destroy :can_destroy?
 
-  validate :must_be_in_group_tutorials
   validates :grade_rationale, length: { maximum: 4095, allow_blank: true }
 
-  validate :tutorial_enrolment_same_campus
+  validate :tutorial_enrolment_same_campus, if: :campus_id_changed?
+
+  after_update :check_withdraw_from_groups, if: :enrolled_changed?
 
   #
   # Permissions around project data
@@ -106,6 +107,10 @@ class Project < ActiveRecord::Base
       tutorial_enrolment = TutorialEnrolment.new
       tutorial_enrolment.tutorial = tutorial
       tutorial_enrolment.project = self
+
+      # Add this enrolment to aid and check project validation
+      tutorial_enrolments << tutorial_enrolment
+
       tutorial_enrolment.save!
 
       # add after save to ensure valid tutorial_enrolments
@@ -118,7 +123,7 @@ class Project < ActiveRecord::Base
   end
 
   def enrolled_in?(tutorial)
-    tutorial_enrolments.where(tutorial_id: tutorial.id).count > 0
+    tutorial_enrolments.select{|e| e.tutorial_id == tutorial.id}.count > 0 || tutorial_enrolments.where(tutorial_id: tutorial.id).count > 0
   end
 
   # Find enrolment in same tutorial stream
@@ -129,27 +134,9 @@ class Project < ActiveRecord::Base
       first
   end
 
-  #
-  # Check to see if the student has a valid tutorial
-  #
-  def must_be_in_group_tutorials
-    groups.each do |g|
-      next unless g.limit_members_to_tutorial?
-      next if enrolled_in? g.tutorial
-      if g.group_set.allow_students_to_manage_groups
-        # leave group
-        g.remove_member(self)
-      else
-        errors.add(:groups, "require you to be in tutorial #{g.tutorial.abbreviation}")
-        break
-      end
-    end
-  end
-
-  # Check tutorial membership if 
+  # Check tutorial membership if there is a campus change 
   def tutorial_enrolment_same_campus
-    return unless campus_id.present? && campus_id_changed?
-    return unless enrolled
+    return unless enrolled && campus_id.present? && campus_id_changed?
     if tutorial_enrolments.joins(:tutorial).where('tutorials.campus_id <> :cid', cid: campus_id).count > 0
       errors.add(:campus, "does not match with tutorial enrolments.")
     end
@@ -935,5 +922,18 @@ class Project < ActiveRecord::Base
     return true if tutorial_enrolments.count == 0
     errors.add :base, "Cannot delete project with enrolments"
     false
+  end
+
+  # If someone withdraws from a unit, make sure they are removed from groups
+  def check_withdraw_from_groups
+    return unless enrolled && ! enrolled_was
+
+    group_memberships.each do |gm|
+      next unless gm.active
+      
+      if ! gm.valid? || gm.group.beyond_capacity?
+        gm.update(active: false)
+      end
+    end
   end
 end

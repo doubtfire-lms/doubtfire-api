@@ -38,6 +38,8 @@ GEM
       minitest (~> 5.1)
       thread_safe (~> 0.3, >= 0.3.4)
       tzinfo (~> 1.1)
+    addressable (2.7.0)
+      public_suffix (>= 2.0.2, < 5.0)
     arel (6.0.3)
     ast (2.3.0)
     attr_encrypted (3.1.0)
@@ -62,6 +64,8 @@ GEM
     coercible (1.0.0)
       descendants_tracker (~> 0.0.1)
     concurrent-ruby (1.0.2)
+    crack (0.4.3)
+      safe_yaml (~> 1.0.0)
     crass (1.0.5)
     daemon_controller (1.2.0)
     daemons (1.2.3)
@@ -114,6 +118,7 @@ GEM
       grape
     grape-swagger (0.21.0)
       grape (>= 0.12.0)
+    hashdiff (1.0.1)
     hashie (3.4.4)
     hirb (0.7.3)
     http-cookie (1.0.3)
@@ -161,6 +166,7 @@ GEM
       rake (>= 0.8.1)
     pg (0.18.4)
     powerpack (0.1.1)
+    public_suffix (4.0.5)
     rack (1.6.4)
     rack-accept (0.4.5)
       rack (>= 0.4)
@@ -228,6 +234,7 @@ GEM
     ruby-ole (1.2.12.1)
     ruby-progressbar (1.8.1)
     rubyzip (1.2.2)
+    safe_yaml (1.0.5)
     securecompare (1.0.0)
     sexp_processor (4.12.0)
     simplecov (0.16.1)
@@ -264,6 +271,10 @@ GEM
       equalizer (~> 0.0, >= 0.0.9)
     warden (1.2.6)
       rack (>= 1.0)
+    webmock (3.8.3)
+      addressable (>= 2.3.6)
+      crack (>= 0.3.2)
+      hashdiff (>= 0.4.0, < 2.0.0)
 
 PLATFORMS
   ruby
@@ -307,6 +318,7 @@ DEPENDENCIES
   rubyzip
   simplecov
   thin
+  webmock
 
 RUBY VERSION
    ruby 2.3.1p112

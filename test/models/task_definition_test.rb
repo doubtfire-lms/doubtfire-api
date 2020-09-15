@@ -146,4 +146,52 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     end
   end
 
+  def test_cannot_change_group_set_with_submissions
+    unit = FactoryBot.create :unit, group_sets: 1, groups: [{gs: 0, students: 3}], task_count: 0
+
+    td = FactoryBot.create :task_definition, unit: unit, group_set: unit.group_sets.first, upload_requirements: [ ], start_date: Time.zone.now + 1.day
+
+    group = unit.groups.first
+
+    p1 = group.projects.first
+    t1 = p1.task_for_task_definition(td)
+
+    t1.create_submission_and_trigger_state_change(t1.student, true)
+
+    assert t1.group_submission
+
+    td.group_set = nil
+
+    refute td.valid?
+  end
+
+  def test_delete_unneeded_group_submission_on_group_set_change
+    # When we change the group setting, and there is some old task interactions
+    # make sure group submission details are removed
+
+    unit = FactoryBot.create :unit, group_sets: 1, groups: [{gs: 0, students: 3}], task_count: 0
+
+    td = FactoryBot.create :task_definition, unit: unit, group_set: unit.group_sets.first, upload_requirements: [ ], start_date: Time.zone.now + 1.day
+
+    group = unit.groups.first
+
+    p1 = group.projects.first
+    t1 = p1.task_for_task_definition(td)
+
+    t1.trigger_transition trigger: 'working_on_it', by_user: p1.student
+
+    assert t1.group_submission
+
+    td.group_set = nil
+
+    assert td.valid?
+    assert td.save!
+
+    t1.reload
+
+    assert_nil t1.group_submission
+
+    unit.destroy
+  end
+
 end

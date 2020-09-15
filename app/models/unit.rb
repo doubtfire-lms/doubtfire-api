@@ -118,6 +118,7 @@ class Unit < ActiveRecord::Base
   has_many :tasks, through: :projects
   has_many :groups, through: :group_sets
   has_many :tutorial_enrolments, through: :tutorials
+  has_many :group_memberships, through: :groups
   has_many :teaching_staff, through: :unit_roles, class_name: 'User', source: 'user'
   has_many :learning_outcome_task_links, through: :task_definitions
   has_many :task_engagements, through: :projects
@@ -323,6 +324,7 @@ class Unit < ActiveRecord::Base
         .group(
           'projects.id',
           'projects.target_grade',
+          'projects.submitted_grade',
           'projects.enrolled',
           'projects.campus_id',
           'users.first_name',
@@ -343,6 +345,7 @@ class Unit < ActiveRecord::Base
           'users.username AS student_id',
           'users.email AS student_email',
           'projects.target_grade AS target_grade',
+          'projects.submitted_grade AS submitted_grade',
           'projects.compile_portfolio AS compile_portfolio',
           'projects.grade AS grade',
           'projects.grade_rationale AS grade_rationale',
@@ -372,6 +375,7 @@ class Unit < ActiveRecord::Base
         student_email: t.student_email,
         student_name: "#{t.first_name} #{t.last_name}",
         target_grade: t.target_grade,
+        submitted_grade: t.submitted_grade,
         compile_portfolio: t.compile_portfolio,
         grade: t.grade,
         grade_rationale: t.grade_rationale,
@@ -549,7 +553,7 @@ class Unit < ActiveRecord::Base
               email:          row['email'],
               enrolled:       true,
               tutorials:      tutorials,
-              campus_data:    row['campus']
+              campus:         row['campus']
           }
         },
         replace_existing_tutorial: true
@@ -617,7 +621,8 @@ class Unit < ActiveRecord::Base
 
         unit_code = row_data[:unit_code]
 
-        if unit_code != code
+        # Check it is one of the unit codes
+        unless code.split('/').include? unit_code
           ignored << { row: row_data[:row], message: "Invalid unit code. #{unit_code} does not match #{code}" }
           next
         end
@@ -683,7 +688,7 @@ class Unit < ActiveRecord::Base
         nickname = row_data[:nickname].nil? ? nil : row_data[:nickname].titleize
         email = row_data[:email]
         tutorials = row_data[:tutorials]
-        campus_data = row_data[:campus_data]
+        campus_data = row_data[:campus]
 
         # If either first or last name is nil... copy over the other component
         first_name = first_name || last_name
@@ -777,14 +782,15 @@ class Unit < ActiveRecord::Base
             end
           end
 
-          # Now loop through the tutorials and enrol the student...
-          tutorials.each do |tutorial_code|
-            # find the tutorial for the user
-            tutorial = tutorial_cache[tutorial_code] || tutorial_with_abbr(tutorial_code)
-            tutorial_cache[tutorial_code] ||= tutorial
+          # Only update if we will change tutorial enrolments... or no enrolment
+          if import_settings[:replace_existing_tutorial] || new_project || user_project.tutorial_enrolments.count == 0
 
-            # Only update if we will change tutorial enrolments... or no enrolment for this stream
-            if import_settings[:replace_existing_tutorial] || new_project || user_project.tutorial_for_stream(tutorial.tutorial_stream).nil?
+            # Now loop through the tutorials and enrol the student...
+            tutorials.each do |tutorial_code|
+              # find the tutorial for the user
+              tutorial = tutorial_cache[tutorial_code] || tutorial_with_abbr(tutorial_code)
+              tutorial_cache[tutorial_code] ||= tutorial
+
               if tutorial.present?
                   # Use tutorial as we have it :)
                   begin
@@ -823,9 +829,12 @@ class Unit < ActiveRecord::Base
     errors = []
     ignored = []
 
-    CSV.parse(file,                 headers: true,
-                                    header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
-                                    converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
+    data = read_file_to_str(file)
+
+    CSV.parse(data,
+              headers: true,
+              header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
+              converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
       # Make sure we're not looking at the header or an empty line
       next if row[0] =~ /(username)|(((unit)|(subject))_code)/
       # next if row[5] !~ /^LA\d/
@@ -940,9 +949,12 @@ class Unit < ActiveRecord::Base
       ignored: []
     }
 
-    CSV.parse(file,                 headers: true,
-                                    header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
-                                    converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
+    data = read_file_to_str(file)
+
+    CSV.parse(data,
+              headers: true,
+              header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
+              converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
       # Make sure we're not looking at the header or an empty line
       next if row[0] =~ /unit_code/
 
@@ -966,9 +978,12 @@ class Unit < ActiveRecord::Base
     errors = []
     ignored = []
 
-    CSV.parse(file,                 headers: true,
-                                    header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
-                                    converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
+    data = read_file_to_str(file)
+
+    CSV.parse(data,
+              headers: true,
+              header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
+              converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
       # Make sure we're not looking at the header or an empty line
       next if row[0] =~ /unit_code/
 
@@ -1042,9 +1057,12 @@ class Unit < ActiveRecord::Base
 
     logger.info "Starting import of group for #{group_set.name} for #{code}"
 
-    CSV.parse(file,                 headers: true,
-                                    header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
-                                    converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
+    data = read_file_to_str(file)
+
+    CSV.parse(data,
+              headers: true,
+              header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
+              converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
       next if row[0] =~ /^(group_name)|(name)/ # Skip header
 
       begin
@@ -1062,34 +1080,37 @@ class Unit < ActiveRecord::Base
         # Find or create the group object
         grp = group_set.groups.find_or_create_by(name: group_name)
 
+        # Find the tutorial
+        tutorial_abbr = row['tutorial'].strip unless row['tutorial'].nil?  
+        tutorial = tutorial_with_abbr(tutorial_abbr)
+
+        if tutorial.nil?
+          change += ' Created new tutorial.'
+
+          campus_data = row['campus'].strip unless row['campus'].nil?
+          campus = Campus.find_by_abbr_or_name(campus_data)
+
+          tutorial = add_tutorial(
+            'Monday',
+            '8:00am',
+            'TBA',
+            main_convenor_user,
+            campus,
+            nil, #capacity
+            tutorial_abbr
+          )
+        end
+
         # If it is new we need to load details from the csv
         if grp.new_record?
           # Get group details
-          campus_data = row['campus'].strip unless row['campus'].nil?
-          # capacity = row['capacity'].strip unless row['capacity'].nil?
-          tutorial_abbr = row['tutorial'].strip unless row['tutorial'].nil?  
-
-          tutorial = tutorial_with_abbr(tutorial_abbr)
-          if tutorial.nil?
-            change += ' Created new tutorial.'
-            campus = Campus.find_by_abbr_or_name(campus_data)
-            tutorial = add_tutorial(
-              'Monday',
-              '8:00am',
-              'TBA',
-              main_convenor_user,
-              campus,
-              nil, #capacity
-              tutorial_abbr
-            )
-          end
-
-          grp.tutorial = tutorial
-          grp.capacity_adjustment = row['campus'].strip.to_i unless row['campus'].nil?
-          grp.save!
-
           change += ' Created new group.'
         end
+
+        # Update group details
+        grp.tutorial = tutorial
+        grp.capacity_adjustment = row['capacity_adjustment'].strip.to_i unless row['capacity_adjustment'].nil?
+        grp.save!
 
         success << { row: row, message: "Setup #{grp.name}.#{change}" }
       rescue Exception => e
@@ -1111,9 +1132,12 @@ class Unit < ActiveRecord::Base
 
     logger.info "Starting import of group for #{group_set.name} for #{code}"
 
-    CSV.parse(file,                 headers: true,
-                                    header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
-                                    converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
+    data = read_file_to_str(file)
+
+    CSV.parse(data,
+              headers: true,
+              header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
+              converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
       next if row[0] =~ /^(group_name)|(name)/ # Skip header
 
       begin
@@ -1243,7 +1267,9 @@ class Unit < ActiveRecord::Base
     errors = []
     ignored = []
 
-    CSV.parse(file,
+    data = read_file_to_str(file)
+
+    CSV.parse(data,
               headers: true,
               header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip.tr(' ', '_').to_sym unless hdr.nil? }],
               converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]
