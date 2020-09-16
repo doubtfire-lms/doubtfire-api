@@ -84,7 +84,7 @@ before_script:
   # Create the database of the project in the staging environment
   - echo "test_staging" | RAILS_ENV=staging bundle exec rake db:create
   # Populate the database
-  - echo "n" | RAILS_ENV=staging bundle exec rake db:populate
+  - echo "n" | USE_MYSQL=true RAILS_ENV=staging bundle exec rake db:populate
 
 # Run the tests
 script:
