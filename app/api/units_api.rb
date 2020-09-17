@@ -109,7 +109,7 @@ module Api
         end
 
         # Validate that the task only has 1 upload requirement and it is a document
-        task = Task.find(unit_parameters[:draft_task_definition_id])
+        task = TaskDefinition.find(unit_parameters[:draft_task_definition_id])
         if task.upload_requirements.length != 1 || task.upload_requirements.first['type'] != "document"
           error!({ error: 'Task definition should contain only a single document upload' }, 403)
         end
