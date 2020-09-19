@@ -122,9 +122,8 @@ module Api
       if unit_parameters.key?(:portfolio_auto_generation_date)
         # Ensure that porfolio generation date is within the teaching period
         gen_date = unit_parameters[:portfolio_auto_generation_date]
-        unless gen_date > unit.teaching_period.start_date && gen_date < unit.teaching_period.end_date
-          unit_parameters.delete(:portfolio_auto_generation_date)
-          error!({ error: 'Portfolio auto generation date is not within the teaching period'}, 403)
+        unless gen_date > unit.start_date && gen_date <= unit.end_date
+          error!({ error: 'Portfolio auto generation date must be within the teaching period'}, 403)
         end
       end
       
@@ -148,6 +147,7 @@ module Api
         optional :send_notifications, type: Boolean, desc: 'Indicates if emails should be sent on updates each week', default: true
         optional :enable_sync_timetable, type: Boolean, desc: 'Sync to timetable automatically if supported by deployment', default: true
         optional :enable_sync_enrolments, type: Boolean, desc: 'Sync student enrolments automatically if supported by deployment', default: true
+        optional :portfolio_auto_generation_date, type: Date, desc: 'Indicates a date where student portfolio will automatically compile'
 
         mutually_exclusive :teaching_period_id,:start_date
         mutually_exclusive :teaching_period_id,:end_date
@@ -170,7 +170,8 @@ module Api
                                                       :auto_apply_extension_before_deadline,
                                                       :send_notifications,
                                                       :enable_sync_timetable,
-                                                      :enable_sync_enrolments
+                                                      :enable_sync_enrolments,
+                                                      :portfolio_auto_generation_date
                                                     )
 
       if unit_parameters[:description].nil?
@@ -194,6 +195,20 @@ module Api
         end
       end
 
+      if unit_parameters.key?(:portfolio_auto_generation_date)
+        start_date = unit_parameters[:start_date]
+        end_date = unit_parameters[:end_date]
+        
+        if unit_parameters.key?(:teaching_period_id)
+          teaching_period = TeachingPeriod.find(unit_parameters[:teaching_period_id])
+          start_date = teaching_period.start_date
+          end_date = teaching_period.end_date
+        end
+           
+        unless unit_parameters[:portfolio_auto_generation_date] > start_date && unit_parameters[:portfolio_auto_generation_date] <= end_date
+          error!({ error: 'Portfolio auto generation date must be within the unit start and end date'}, 403)
+        end
+      end  
       unit = Unit.create!(unit_parameters)
 
       # Employ current user as convenor
