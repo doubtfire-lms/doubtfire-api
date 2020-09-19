@@ -35,6 +35,7 @@ class Webcal < ActiveRecord::Base
   #
   def to_ical_with_task_definitions(defs = [])
     ical = Icalendar::Calendar.new
+    ical.publish
     ical.prodid = Doubtfire::Application.config.institution[:product_name]
 
     # Add iCalendar events for the specified definition.
@@ -56,6 +57,7 @@ class Webcal < ActiveRecord::Base
 
           ev.uid = "S-#{td.id}"
           ev.summary = ev_summary
+          ev.status = 'CONFIRMED'
           ev.dtstart = ev.dtend = Icalendar::Values::Date.new(td.start_date.strftime(ev_date_format))
 
           if ev_reminders
@@ -84,6 +86,7 @@ class Webcal < ActiveRecord::Base
           ev.alarm do |a|
             a.action = 'DISPLAY'
             a.description = ev_summary
+            ev.status = 'CONFIRMED'
             a.trigger = ev_reminder_trigger
           end
         end
