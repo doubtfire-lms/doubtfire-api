@@ -9,13 +9,23 @@ module Api
     # Declare content types
     content_type :txt, 'text/calendar'
 
+    helpers do
+      #
+      # Wraps the specified value (expected to be either `nil` or a `Webcal`) in a hash `{ enabled: true | false }` used
+      # to prevent the API returning `null`.
+      #
+      def wrap_webcal(webcal)
+        { enabled: webcal.present? }.merge(webcal.present? ? WebcalSerializer.new(webcal).as_json : {})
+      end
+    end
+
     desc 'Get webcal details of the authenticated user'
     params do
       requires :auth_token, type: String, desc: 'Authentication token'
     end
     get '/webcal' do
       authenticated?
-      current_user.webcal
+      wrap_webcal current_user.webcal
     end
 
     desc 'Update webcal details of the authenticated user'
@@ -56,7 +66,8 @@ module Api
         end
       end
 
-      return if cal.nil? or cal.destroyed?
+      return wrap_webcal(nil) if cal.nil? or cal.destroyed?
+
       webcal_update_params = {}
 
       # Change the GUID if requested.
@@ -105,7 +116,7 @@ module Api
         end
       end
 
-      cal
+      wrap_webcal cal
     end
 
     desc 'Serve webcal with the specified GUID'
