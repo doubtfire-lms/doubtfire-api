@@ -134,6 +134,16 @@ module Api
                                                   :max_quality_pts
                                                 )
 
+      # Ensure changes to a TD defined as a "draft task definition" are validated
+      if unit.draft_task_definition_id == params[:id]
+        if params[:task_def][:upload_requirements]
+          requirements = JSON.parse(params[:task_def][:upload_requirements])
+          if requirements.length != 1 || requirements[0]["type"] != "document"
+            error!({ error: 'Task is marked as the draft learning summary task definition. A draft learning summary task can only contain a single document upload.' }, 403)
+          end
+        end
+      end
+
       task_def.update!(task_params)
 
       # Set the tutorial stream
@@ -157,16 +167,6 @@ module Api
         else
           task_def.group_set = nil
           task_def.save!
-        end
-      end
-
-      # Ensure changes to a TD defined as a "draft task definition" are validated
-      if unit.draft_task_definition_id == params[:id]
-        if params[:task_def][:upload_requirements]
-          requirements = JSON.parse(params[:task_def][:upload_requirements])
-          if requirements.length != 1 || requirements[0]["type"] != "document"
-            error!({ error: 'Task is marked as the draft learning summary task definition. A draft learning summary task can only contain a single document upload.' }, 403)
-          end
         end
       end
 
