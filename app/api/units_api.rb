@@ -215,13 +215,7 @@ module Api
 
     desc 'Unpin a task within the task inbox'
     delete '/units/:unit_id/tasks/:task_id/pin' do
-      task = Task.find(params[:task_id])
-
-      unless authorise? current_user, task.unit, :provide_feedback
-        error!({ error: 'Not authorised to unpin task' }, 403)
-      end
-
-      TaskPin.find_by(task: task, user: current_user).try(:destroy)
+      TaskPin.find_by!(user: current_user, task_id: params[:task_id]).destroy
     end
 
     desc 'Download the tasks that should be listed under the task inbox'
