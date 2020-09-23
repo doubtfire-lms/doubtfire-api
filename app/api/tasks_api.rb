@@ -195,6 +195,28 @@ module Api
       match_link.dismissed
     end
 
+    desc 'Pin a task to the user\'s task inbox'
+    params do
+      requires :id, type: Integer, desc: 'The ID of the task to be pinned'
+    end
+    post '/tasks/:id/pin' do
+      task = Task.find(params[:id])
+
+      unless authorise? current_user, task.unit, :provide_feedback
+        error!({ error: 'Not authorised to pin task' }, 403)
+      end
+
+      TaskPin.find_or_create_by(task: task, user: current_user)
+    end
+
+    desc 'Unpin a task from the user\'s task inbox'
+    params do
+      requires :id, type: Integer, desc: 'The ID of the task to be unpinned'
+    end
+    delete '/tasks/:id/pin' do
+      TaskPin.find_by!(user: current_user, task_id: params[:id]).destroy
+    end
+
     desc 'Update a task using its related project and task definition'
     params do
       # requires :id, type: Integer, desc: 'The project id to locate'
