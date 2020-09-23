@@ -22,6 +22,28 @@ class Webcal < ActiveRecord::Base
   end
 
   #
+  # Retrieves `TaskDefinition`s that must be included in the generation of this webcal.
+  # Eager loads all associations used by the `Webcal.to_ical` method.
+  # Currently executes in just 1 SQL query!
+  #
+  def task_definitions
+    TaskDefinition
+      .joins(:unit, unit: :projects)
+      .eager_load(:tasks)
+      .includes(:unit, :tasks, unit: :projects)
+      .where(
+        projects: { user_id: user_id },
+        units: { active: true }
+      )
+      .where.not(
+        units: { id: WebcalUnitExclusion.where(webcal_id: id).select(:unit_id) } # exclude :webcal_unit_exclusions
+      )
+      .where('tasks.project_id is null or tasks.project_id = projects.id')   # eager_load only :tasks of :projects
+      .where('? BETWEEN units.start_date AND units.end_date', Time.zone.now) # Current units
+      .where('task_definitions.target_grade <= projects.target_grade')       # only :tasks of the targeted_grade or lower
+  end
+
+  #
   # Generates a single `Icalendar::Calendar` object from this `Webcal` including calendar events for the specified
   # collection of `TaskDefinition`s.
   #
@@ -33,7 +55,7 @@ class Webcal < ActiveRecord::Base
   #       .includes(:unit)
   #   )
   #
-  def to_ical_with_task_definitions(defs = [])
+  def to_ical(defs = task_definitions)
     ical = Icalendar::Calendar.new
     ical.publish
     ical.prodid = Doubtfire::Application.config.institution[:product_name]
@@ -92,6 +114,13 @@ class Webcal < ActiveRecord::Base
         end
       end
     end
+
+    # Specify refresh interval.
+    refresh_interval = Icalendar::Values::Duration.new('1D')
+    # https://docs.microsoft.com/en-us/openspecs/exchange_server_protocols/ms-oxcical/1fc7b244-ecd1-4d28-ac0c-2bb4df855a1f
+    ical.append_custom_property('X-PUBLISHED-TTL', refresh_interval)
+    # https://tools.ietf.org/html/rfc7986#section-5.7
+    ical.append_custom_property('REFRESH-INTERVAL', refresh_interval)
 
     ical
   end
