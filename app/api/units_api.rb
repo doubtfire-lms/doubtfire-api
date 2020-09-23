@@ -204,11 +204,10 @@ module Api
 
     desc 'Pin a task within the task inbox'
     put '/units/:unit_id/tasks/:task_id/pin' do
-      unit = Unit.find(params[:unit_id])
       task = Task.find(params[:task_id])
 
-      unless authorise? current_user, unit, :provide_feedback
-        error!({ error: 'Not authorised to pin task' }, 403) 
+      unless authorise? current_user, task.unit, :provide_feedback
+        error!({ error: 'Not authorised to pin task' }, 403)
       end
 
       TaskPin.find_or_create_by(task: task, user: current_user)
@@ -216,11 +215,10 @@ module Api
 
     desc 'Unpin a task within the task inbox'
     delete '/units/:unit_id/tasks/:task_id/pin' do
-      unit = Unit.find(params[:unit_id])
       task = Task.find(params[:task_id])
-      
-      unless authorise? current_user, unit, :provide_feedback
-        error!({ error: 'Not authorised to unpin task' }, 403) 
+
+      unless authorise? current_user, task.unit, :provide_feedback
+        error!({ error: 'Not authorised to unpin task' }, 403)
       end
 
       TaskPin.find_by(task: task, user: current_user).try(:destroy)
