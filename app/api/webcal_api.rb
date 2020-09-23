@@ -126,37 +126,13 @@ module Api
     get '/webcal/:guid' do
 
       # Retrieve the specified webcal.
-      webcal = Webcal.where(guid: params[:guid]).first!
-
-      # Generate iCalendar.
-      ical = webcal.to_ical_with_task_definitions(
-        # Retrieve task definitions and tasks of the user's current active units.
-        TaskDefinition
-          .joins(:unit, unit: :projects)
-          .eager_load(:tasks)
-          .includes(:unit, :tasks, unit: :projects)
-          .where(
-            projects: { user_id: webcal.user_id },
-            units: { active: true }
-          )
-          .where.not(
-            units: { id: WebcalUnitExclusion.where(webcal_id: webcal.id).select(:unit_id) } # exclude :webcal_unit_exclusions
-          )
-          .where('tasks.project_id is null or tasks.project_id = projects.id')   # eager_load only :tasks of :projects
-          .where('? BETWEEN units.start_date AND units.end_date', Time.zone.now) # Current units
-          .where('task_definitions.target_grade <= projects.target_grade')       # only :tasks of the targeted_grade or lower
-      )
-
-      # Specify refresh interval.
-      refresh_interval = Icalendar::Values::Duration.new('1D')
-      # https://docs.microsoft.com/en-us/openspecs/exchange_server_protocols/ms-oxcical/1fc7b244-ecd1-4d28-ac0c-2bb4df855a1f
-      ical.append_custom_property('X-PUBLISHED-TTL', refresh_interval)
-      # https://tools.ietf.org/html/rfc7986#section-5.7
-      ical.append_custom_property('REFRESH-INTERVAL', refresh_interval)
+      webcal = Webcal.find_by!(guid: params[:guid])
 
       # Serve the iCalendar with the correct MIME type.
       content_type 'text/calendar'
-      ical.to_ical
+
+      # Seve ical.
+      webcal.to_ical.to_ical
     end
 
   end
