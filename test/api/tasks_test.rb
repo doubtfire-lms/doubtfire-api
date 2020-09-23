@@ -243,27 +243,27 @@ class TasksTest < ActiveSupport::TestCase
 
     # Convenor tries to pin task
     post with_auth_token("/api/tasks/#{task.id}/pin", convenor)
-    assert last_response.status, 201
+    assert_equal last_response.status, 201
 
     # Convenor tries to unpin task
     delete with_auth_token("/api/tasks/#{task.id}/pin", convenor)
-    assert last_response.status, 200
+    assert_equal last_response.status, 200
 
     # Tutor tries to pin task
     post with_auth_token("/api/tasks/#{task.id}/pin", tutor)
-    assert last_response.status, 201
+    assert_equal last_response.status, 201
 
     # Tutor tries to unpin task
     delete with_auth_token("/api/tasks/#{task.id}/pin", tutor)
-    assert last_response.status, 200
+    assert_equal last_response.status, 200
 
     # Student tries to pin task
     post with_auth_token("/api/tasks/#{task.id}/pin", student)
-    assert last_response.status, 403
+    assert_equal last_response.status, 403
 
     # Admin tries to pin task
     post with_auth_token("/api/tasks/#{task.id}/pin", admin)
-    assert last_response.status, 403
+    assert_equal last_response.status, 403
   end
 
   def test_convenors_tutors_can_pin_tasks_of_their_units_only
@@ -281,19 +281,19 @@ class TasksTest < ActiveSupport::TestCase
 
     # Convenor tries to pin task of unit that they are assigned to
     post with_auth_token("/api/tasks/#{task.id}/pin", convenor)
-    assert last_response.status, 201
+    assert_equal last_response.status, 201
 
     # Tutor tries to pin task of unit that they are assigned to
     post with_auth_token("/api/tasks/#{task.id}/pin", tutor)
-    assert last_response.status, 201
+    assert_equal last_response.status, 201
 
     # Convenor tries to pin task of unit that they are not assigned to
     post with_auth_token("/api/tasks/#{other_task.id}/pin", convenor)
-    assert last_response.status, 403
+    assert_equal last_response.status, 403
 
     # Tutor tries to pin task of unit that they are not assigned to
     post with_auth_token("/api/tasks/#{other_task.id}/pin", tutor)
-    assert last_response.status, 403
+    assert_equal last_response.status, 403
   end
 
   def test_tasks_for_inbox_include_pinned_status
