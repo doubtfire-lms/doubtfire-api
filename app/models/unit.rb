@@ -1855,7 +1855,7 @@ class Unit < ActiveRecord::Base
         'sq.tutorial_stream_id AS tutorial_stream_id',
         'tasks.id', 
         'SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) as number_unread',
-        'COUNT(distinct task_pins.task_id) as pinned', 
+        'COUNT(distinct task_pins.task_id) != 0 as pinned',
         'project_id', 
         'tasks.id as task_id',
         'task_definition_id', 
