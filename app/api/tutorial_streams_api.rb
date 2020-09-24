@@ -11,8 +11,6 @@ module Api
 
     desc 'Add a tutorial stream to the unit'
     params do
-      requires :name,               type: String,   desc: 'The name of the tutorial stream'
-      requires :abbreviation,       type: String,   desc: 'The abbreviation for the tutorial stream'
       requires :activity_type_abbr, type: String,   desc: 'Abbreviation of the activity type'
     end
     post '/units/:unit_id/tutorial_streams' do
@@ -21,8 +19,12 @@ module Api
         error!({ error: 'Not authorised to add tutorial stream to this unit' }, 403)
       end
 
-      activity_type = ActivityType.find_by!(abbreviation: params[:activity_type_abbr])
-      unit.add_tutorial_stream(params[:name], params[:abbreviation], activity_type)
+      activity_type = ActivityType.find_by(abbreviation: params[:activity_type_abbr])
+      institution_settings = Doubtfire::Application.config.institution_settings
+
+      name,abbreviation = institution_settings.details_for_next_tutorial_stream(unit, activity_type)
+
+      unit.add_tutorial_stream(name, abbreviation, activity_type)
     end
 
     desc 'Update a tutorial stream in the unit'
@@ -53,22 +55,6 @@ module Api
       tutorial_stream.destroy
       error!({ error: tutorial_stream.errors.full_messages.last }, 403) unless tutorial_stream.destroyed?
       tutorial_stream.destroyed?
-    end
-
-    desc 'Get the name and abbreviation for the next tutorial stream'
-    get '/units/:unit_id/activity_types/:activity_type_abbr/tutorial_streams/next' do
-      unit = Unit.find(params[:unit_id])
-      unless authorise? current_user, unit, :add_tutorial
-        error!({ error: 'Not authorised to get tutorial stream name for this unit' }, 403)
-      end
-
-      activity_type = ActivityType.find_by(abbreviation: params[:activity_type_abbr])
-      institution_settings = Doubtfire::Application.config.institution_settings
-
-      {
-        name: institution_settings.name_for_next_tutorial_stream(unit, activity_type),
-        abbreviation: institution_settings.abbreviation_for_next_tutorial_stream(unit, activity_type)
-      }
     end
 
   end

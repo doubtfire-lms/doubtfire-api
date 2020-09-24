@@ -25,10 +25,10 @@ class ExtensionComment < TaskComment
   # propagates reads, this will work as required - other staff cant
   # make it read for the main tutor.
   def mark_as_read(user, unit = self.unit)
-    super if assessed? || user != project.tutor_for(task.task_definition)
+    super if assessed? || user == project.student || user != recipient
   end
 
-  def assess_extension(user, granted)
+  def assess_extension(user, granted, automatic = false)
     if self.assessed?
       self.errors[:extension] << 'has already been assessed'
       return false
@@ -40,7 +40,11 @@ class ExtensionComment < TaskComment
 
     if self.extension_granted
       self.task.grant_extension(user, extension_weeks)
-      self.extension_response = "Extension granted to #{self.task.due_date.strftime('%a %b %e')}"
+      if automatic
+        self.extension_response = "Time extended to #{self.task.due_date.strftime('%a %b %e')}"
+      else
+        self.extension_response = "Extension granted to #{self.task.due_date.strftime('%a %b %e')}"
+      end
     elsif ! self.task.can_apply_for_extension? && granted
       self.extension_response = "Extension cannot be granted as deadline has been reached"
       errors[:extension] << 'cannot be granted as deadline has been reached'

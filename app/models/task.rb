@@ -198,8 +198,17 @@ class Task < ActiveRecord::Base
     extension.user = user
     extension.content_type = :extension
     extension.comment = text
-    extension.recipient = project.tutor_for(task_definition)
+    if weeks <= weeks_can_extend
+      extension.recipient = project.tutor_for(task_definition)
+    else
+      extension.recipient = unit.main_convenor_user
+    end
     extension.save!
+
+    if unit.auto_apply_extension_before_deadline && weeks <= weeks_can_extend
+      extension.assess_extension unit.main_convenor_user, true, true
+    end
+
     extension
   end
 
@@ -355,6 +364,7 @@ class Task < ActiveRecord::Base
     when TaskStatus.ready_to_mark
       submit by_user
     when TaskStatus.not_started, TaskStatus.need_help, TaskStatus.working_on_it
+      add_status_comment(by_user, status)
       engage status
     else
       # Only tutors can perform these actions
@@ -367,10 +377,8 @@ class Task < ActiveRecord::Base
         end
         assess status, by_user
 
-        if !group_transition || !group_task?
-          # Add a status comment for new assessments (avoid duplicates on group submission)
-          add_status_comment(by_user, status)
-        end
+        # Add a status comment for new assessments - only recorded on submitter's task in groups
+        add_status_comment(by_user, status)
       else
         # Attempt to move to tutor state by non-tutor
         return nil
@@ -509,6 +517,7 @@ class Task < ActiveRecord::Base
   end
 
   def submitted_before_due?
+    return true unless due_date.present?
     to_same_day_anywhere_on_earth(due_date) >= self.submission_date
   end
 
@@ -560,7 +569,7 @@ class Task < ActiveRecord::Base
     task_definition.weighting.to_f
   end
 
-  def add_text_comment(user, text)
+  def add_text_comment(user, text, reply_to_id = nil)
     text.strip!
     return nil if user.nil? || text.nil? || text.empty?
 
@@ -577,20 +586,21 @@ class Task < ActiveRecord::Base
     comment.comment = text
     comment.content_type = :text
     comment.recipient = user == project.student ? project.tutor_for(task_definition) : project.student
+    comment.reply_to_id = reply_to_id
     comment.save!
 
     comment
   end
 
   def individual_task_or_submitter_of_group_task?
-    return true if !group_task?
-    return true unless group.present?
+    return true if !group_task? # its individual
+    return true unless group.present? # no group yet... so individual
 
-    ensured_group_submission.submitted_by? self.project
+    ensured_group_submission.submitted_by? self.project # return true if submitted by this project
   end
 
   def add_status_comment(current_user, status)
-    return nil unless individual_task_or_submitter_of_group_task?
+    return nil unless individual_task_or_submitter_of_group_task? # only record status comments on submitter task
 
     comment = TaskStatusComment.create
     comment.task = self
@@ -624,13 +634,14 @@ class Task < ActiveRecord::Base
     return discussion
   end
 
-  # TODO: Refgactor to attachment comment (with inheritance on model)
-  def add_comment_with_attachment(user, tempfile)
+  # TODO: Refactor to attachment comment (with inheritance on model)
+  def add_comment_with_attachment(user, tempfile, reply_to_id = nil)
     ensured_group_submission if group_task? && group
 
     comment = TaskComment.create
     comment.task = self
     comment.user = user
+    comment.reply_to_id = reply_to_id
     if FileHelper.accept_file(tempfile, "comment attachment audio test", "audio")
       comment.content_type = :audio
     elsif FileHelper.accept_file(tempfile, "comment attachment image test", "image")
@@ -928,7 +939,7 @@ class Task < ActiveRecord::Base
     elsif ['cpp', 'hpp', 'c++', 'h++', 'cc', 'cxx', 'cp'].include?(extn) then 'cpp'
     elsif ['java'].include?(extn) then 'java'
     elsif %w(js json ts).include?(extn) then 'js'
-    elsif ['html'].include?(extn) then 'html'
+    elsif ['html', 'rhtml'].include?(extn) then 'html'
     elsif %w(css scss).include?(extn) then 'css'
     elsif ['rb'].include?(extn) then 'ruby'
     elsif ['coffee'].include?(extn) then 'coffeescript'
@@ -936,8 +947,10 @@ class Task < ActiveRecord::Base
     elsif ['xml'].include?(extn) then 'xml'
     elsif ['sql'].include?(extn) then 'sql'
     elsif ['vb'].include?(extn) then 'vbnet'
-    elsif ['txt'].include?(extn) then 'text'
+    elsif ['txt', 'md', 'rmd', 'rpres'].include?(extn) then 'text'
+    elsif ['tex', 'rnw'].include?(extn) then 'tex'
     elsif ['py'].include?(extn) then 'python'
+    elsif ['r'].include?(extn) then 'r'
     else extn
     end
   end
@@ -1022,7 +1035,7 @@ class Task < ActiveRecord::Base
   #
   # The student has uploaded new work...
   #
-  def create_submission_and_trigger_state_change(user, propagate = true, contributions = nil, trigger = 'ready_to_mark')
+  def create_submission_and_trigger_state_change(user, propagate = true, contributions = nil, trigger = 'ready_to_mark', initial_task = nil)
     if group_task? && propagate
       if contributions.nil? # even distribution
         contribs = group.projects.map { |proj| { project: proj, pct: 100 / group.projects.count, pts: 3 } }
@@ -1030,15 +1043,15 @@ class Task < ActiveRecord::Base
         contribs = contributions.map { |data| { project: Project.find(data[:project_id]), pct: data[:pct].to_i, pts: data[:pts].to_i } }
       end
       group_submission = group.create_submission self, "#{user.name} has submitted work", contribs
-      group_submission.tasks.each { |t| t.create_submission_and_trigger_state_change(user, propagate = false) }
+      group_submission.tasks.each { |t| t.create_submission_and_trigger_state_change(user, false, contributions, trigger, self) }
       reload
     else
       self.file_uploaded_at = Time.zone.now
       self.submission_date = Time.zone.now
 
-      # This task is now ready to submit
+      # This task is now ready to submit - trigger a transition if not in final state
       unless discuss_or_demonstrate? || complete? || do_not_resubmit? || fail?
-        trigger_transition trigger: trigger, by_user: user, group_transition: false
+        trigger_transition trigger: trigger, by_user: user, group_transition: group_task? && initial_task != self
       end
 
       # Destroy the links to ensure we test new files
@@ -1107,7 +1120,7 @@ class Task < ActiveRecord::Base
       end
     end
 
-    create_submission_and_trigger_state_change(current_user, propagate = true, contributions = contributions, trigger = trigger)
+    create_submission_and_trigger_state_change(current_user, true, contributions, trigger, self)
 
     unless alignments.nil?
       if group_task?

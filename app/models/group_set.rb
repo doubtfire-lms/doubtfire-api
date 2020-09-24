@@ -7,6 +7,7 @@ class GroupSet < ActiveRecord::Base
     scope: :unit,
     message: "should be unique within a unit"
   }
+  validates :capacity, numericality: { greater_than_or_equal_to: 2 }, unless: -> { capacity.nil? }
 
   validates_associated :groups
   validate :must_be_in_same_tutorial, if: :keep_groups_in_same_class
@@ -47,7 +48,7 @@ class GroupSet < ActiveRecord::Base
 
   def specific_permission_hash(role, perm_hash, _other)
     result = perm_hash[role] unless perm_hash.nil?
-    if result && role == :student
+    if result && role == :student && !locked
       result << :create_group if allow_students_to_create_groups
       result << :join_group if allow_students_to_manage_groups
     end

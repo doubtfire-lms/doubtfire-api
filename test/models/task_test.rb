@@ -137,4 +137,45 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     td.destroy
     assert_not File.exists? path
   end
+
+  def test_pdf_with_quotes_in_task_title
+    unit = Unit.first
+    td = TaskDefinition.new({
+        unit_id: unit.id,
+        tutorial_stream: unit.tutorial_streams.first,
+        name: '"Quoted Task"',
+        description: 'Task with quotes in name',
+        weighting: 4,
+        target_grade: 0,
+        start_date: unit.start_date + 1.week,
+        target_date: unit.start_date + 2.weeks,
+        abbreviation: 'TaskQuoted',
+        restrict_status_updates: false,
+        upload_requirements: [ { "key" => 'file0', "name" => 'An Image', "type" => 'image' } ],
+        plagiarism_warn_pct: 0.8,
+        is_graded: false,
+        max_quality_pts: 0
+      })
+    td.save!
+
+    data_to_post = {
+      trigger: 'ready_to_mark'
+    }
+
+    data_to_post = with_file('test_files/submissions/Swinburne.jpg', 'image/jpg', data_to_post)
+
+    project = unit.active_projects.first
+    
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", with_auth_token(data_to_post)
+
+    task = project.task_for_task_definition(td)
+    
+    task.convert_submission_to_pdf
+
+    path = task.final_pdf_path
+    assert File.exists? path
+
+    td.destroy
+    assert_not File.exists? path
+  end
 end

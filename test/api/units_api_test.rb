@@ -248,19 +248,24 @@ class UnitsApiTest < ActiveSupport::TestCase
 
   #Test PUT for updating unit details with valid id
   def test_units_put
-      unit={}
-      unit[:name] = 'Intro to python'
-      unit[:code] = 'JRSW40004'
-      unit[:description] = 'new language'
-      unit[:start_date] = '2018-12-14T00:00:00.000Z'
-      unit[:end_date]='2019-05-14T00:00:00.000Z'
-      unit[:active]='true'
-      data_to_put = {
-        unit:unit,
-        auth_token: auth_token
-  }          
-      put_json '/api/units/1', data_to_put
-      assert_equal 200, last_response.status
+    original = FactoryBot.create(:unit, with_students: false)
+    unit={}
+    unit['name'] = 'Intro to python'
+    unit['code'] = 'JRSW40004'
+    unit['description'] = 'new language'
+    unit['start_date'] = '2018-12-14T00:00:00.000Z'
+    unit['end_date']='2019-05-14T00:00:00.000Z'
+    unit['active'] = false
+    unit['auto_apply_extension_before_deadline'] = false
+    unit['send_notifications'] = false
+    data_to_put = {
+      unit:unit,
+      auth_token: auth_token
+    }
+    put_json '/api/units/1', data_to_put
+    assert_equal 200, last_response.status
+
+    assert_json_matches_model Unit.first, unit, %w( name code description start_date end_date active auto_apply_extension_before_deadline send_notifications )
   end
 
   #Test PUT for updating unit details with empty name

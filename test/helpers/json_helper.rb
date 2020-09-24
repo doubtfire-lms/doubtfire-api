@@ -11,27 +11,27 @@ module TestHelpers
     # POSTs a hash data as JSON with content-type "application/json"
     #
     def post_json(endpoint, data)
-      post endpoint, data.to_json, 'CONTENT_TYPE' => 'application/json'
+      post URI.encode(endpoint), data.to_json, 'CONTENT_TYPE' => 'application/json'
     end
 
     #
     # PUTs a hash data as JSON with content-type "application/json"
     #
     def put_json(endpoint, data)
-      put endpoint, data.to_json, 'CONTENT_TYPE' => 'application/json'
+      put URI.encode(endpoint), data.to_json, 'CONTENT_TYPE' => 'application/json'
     end
 
     #
     # PUTs a hash data as JSON with content-type "application/json"
     #
     def delete_json(endpoint)
-      delete endpoint, 'CONTENT_TYPE' => 'application/json'
+      delete URI.encode(endpoint), 'CONTENT_TYPE' => 'application/json'
     end
 
     #
     # Assert that a JSON response matches the model and keys provided
     #
-    def assert_json_matches_model(response_json, model, keys)
+    def assert_json_matches_model(model, response_json, keys)
       keys.each { |k| assert response_json.key?(k), "Response missing key #{k} - #{response_json}" }
       keys.each { |k| assert_equal model[k], response_json[k], "Values for key #{k} do not match - #{response_json}" }
     end

@@ -58,14 +58,18 @@ module Api
     params do
       requires :id, type: Integer, desc: 'The unit id to update'
       requires :unit, type: Hash do
-        optional :name
-        optional :code
-        optional :description
-        optional :active
-        optional :teaching_period_id
-        optional :start_date
-        optional :end_date
-        optional :main_convenor_id
+        optional :name, type: String
+        optional :code, type: String
+        optional :description, type: String
+        optional :active, type: Boolean
+        optional :teaching_period_id, type: Integer
+        optional :start_date, type: Date
+        optional :end_date, type: Date
+        optional :main_convenor_id, type: Integer
+        optional :auto_apply_extension_before_deadline, type: Boolean, desc: 'Indicates if extensions before the deadline should be automatically applied'
+        optional :send_notifications, type: Boolean, desc: 'Indicates if emails should be sent on updates each week'
+        optional :enable_sync_timetable, type: Boolean, desc: 'Sync to timetable automatically if supported by deployment'
+        optional :enable_sync_enrolments, type: Boolean, desc: 'Sync student enrolments automatically if supported by deployment'
 
         mutually_exclusive :teaching_period_id,:start_date
         all_or_none_of :start_date, :end_date
@@ -85,7 +89,11 @@ module Api
                                                             :end_date,
                                                             :teaching_period_id,
                                                             :active,
-                                                            :main_convenor_id
+                                                            :main_convenor_id,
+                                                            :auto_apply_extension_before_deadline,
+                                                            :send_notifications,
+                                                            :enable_sync_timetable,
+                                                            :enable_sync_enrolments
                                                           )
 
       if unit.teaching_period_id.present? && unit_parameters.key?(:start_date)
@@ -99,12 +107,18 @@ module Api
     desc 'Create unit'
     params do
       requires :unit, type: Hash do
-        requires :name
-        requires :code
-        optional :teaching_period_id
-        optional :description
-        optional :start_date
-        optional :end_date
+        requires :name, type: String
+        requires :code, type: String
+        optional :description, type: String
+        optional :active, type: Boolean
+        optional :teaching_period_id, type: Integer
+        optional :start_date, type: Date
+        optional :end_date, type: Date
+        optional :main_convenor_id, type: Integer
+        optional :auto_apply_extension_before_deadline, type: Boolean, desc: 'Indicates if extensions before the deadline should be automatically applied', default: true
+        optional :send_notifications, type: Boolean, desc: 'Indicates if emails should be sent on updates each week', default: true
+        optional :enable_sync_timetable, type: Boolean, desc: 'Sync to timetable automatically if supported by deployment', default: true
+        optional :enable_sync_enrolments, type: Boolean, desc: 'Sync student enrolments automatically if supported by deployment', default: true
 
         mutually_exclusive :teaching_period_id,:start_date
         mutually_exclusive :teaching_period_id,:end_date
@@ -123,7 +137,11 @@ module Api
                                                       :teaching_period_id,
                                                       :description,
                                                       :start_date,
-                                                      :end_date
+                                                      :end_date,
+                                                      :auto_apply_extension_before_deadline,
+                                                      :send_notifications,
+                                                      :enable_sync_timetable,
+                                                      :enable_sync_enrolments
                                                     )
 
       if unit_parameters[:description].nil?
@@ -201,18 +219,6 @@ module Api
       end
 
       tasks = unit.tasks_for_task_inbox(current_user)
-      unit.tasks_as_hash(tasks)
-    end
-
-    desc 'Download the tasks that should be listed under the task inbox'
-    get '/units/:id/tasks/inbox' do
-      unit = Unit.find(params[:id])
-
-      unless authorise? current_user, unit, :provide_feedback
-        error!({ error: 'Not authorised to provide feedback for this unit' }, 403)
-      end
-
-      tasks = unit.tasks_for_task_inbox
       unit.tasks_as_hash(tasks)
     end
 
