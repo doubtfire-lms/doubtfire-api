@@ -38,7 +38,7 @@ class AuthTest < ActiveSupport::TestCase
     # These match the model object... so can compare in loops
     user_keys = %w(id email first_name last_name username nickname receive_task_notifications receive_portfolio_notifications receive_feedback_notifications opt_in_to_research has_run_first_time_setup)
 
-    assert_json_matches_model(response_user_data, expected_auth, user_keys)
+    assert_json_matches_model(expected_auth, response_user_data, user_keys)
 
     user_keys.each { |k| assert response_user_data.key?(k), "Response has key #{k}" }
     user_keys.each { |k| assert_equal expected_auth[k], response_user_data[k], "Values for key #{k} match" }

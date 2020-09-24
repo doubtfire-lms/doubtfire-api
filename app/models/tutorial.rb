@@ -7,7 +7,7 @@ class Tutorial < ActiveRecord::Base
 
   has_one    :tutor, through: :unit_role, source: :user
 
-  has_many   :groups, dependent: :nullify
+  has_many   :groups
   has_many   :tutorial_enrolments, dependent: :destroy
   has_many   :projects, through: :tutorial_enrolments
 
@@ -21,7 +21,7 @@ class Tutorial < ActiveRecord::Base
   validate :unit_must_be_same
 
   def unit_must_be_same
-    if unit.present? and tutorial_stream.present? and not unit.eql? tutorial_stream.unit
+    if unit.present? and tutorial_stream.present? and ! unit.eql? tutorial_stream.unit
       errors.add(:unit, "should be same as the unit in the associated tutorial stream")
     end
   end
@@ -76,8 +76,10 @@ class Tutorial < ActiveRecord::Base
 
   private
   def can_destroy?
-    return true if tutorial_enrolments.count == 0
-    errors.add :base, "Cannot delete tutorial with enrolments"
+    active_enrolment_count = num_students
+    return true if active_enrolment_count == 0 && groups.count == 0
+    errors.add :base, "Cannot delete tutorial with enrolments" if active_enrolment_count > 0
+    errors.add :base, "Cannot delete tutorial with groups" if groups.count > 0
     false
   end
 end

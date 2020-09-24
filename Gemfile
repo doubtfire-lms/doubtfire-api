@@ -33,6 +33,7 @@ group :development, :test, :staging do
   gem 'faker', '~>1.9.1'
   gem 'minitest-rails'
   gem 'minitest-around'
+  gem 'webmock'
 end
 
 group :production do

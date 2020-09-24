@@ -26,13 +26,14 @@ module Api
 
       unit.student_tasks.
           joins(:task_status).
-          joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id AND (tutorial_enrolments.tutorial_stream_id = task_definitions.tutorial_stream_id OR tutorial_enrolments.tutorial_stream_id IS NULL)').
+          joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id').
+          joins('LEFT OUTER JOIN tutorials ON tutorial_enrolments.tutorial_id = tutorials.id AND (tutorials.tutorial_stream_id = task_definitions.tutorial_stream_id OR tutorials.tutorial_stream_id IS NULL)').
           select(
             'tasks.id',
             'task_statuses.id as status_id',
             'task_definition_id',
-            'tutorial_enrolments.tutorial_id AS tutorial_id',
-            'tutorial_enrolments.tutorial_stream_id AS tutorial_stream_id'
+            'tutorials.id AS tutorial_id',
+            'tutorials.tutorial_stream_id AS tutorial_stream_id'
           ).
           where('tasks.task_status_id > 1').
           map do |r|
@@ -44,6 +45,41 @@ module Api
               tutorial_stream_id: r.tutorial_stream_id
             }
           end
+    end
+
+    desc 'Refresh the most frequently changed task details for a project - allowing easy refresh of student details'
+    params do
+      requires :project_id, type: Integer, desc: 'The id of the project with the task, or tasks to get'
+      requires :task_definition_id, type: Integer, desc: 'The id of the task definition to get, when not provided all tasks are returned'
+    end
+    get '/projects/:project_id/refresh_tasks/:task_definition_id' do
+      project = Project.find(params[:project_id])
+
+      unless authorise? current_user, project, :get
+        error!({ error: 'You do not have permission to access this project' }, 403)
+      end
+
+      base = project.tasks
+
+      if params[:task_definition_id].present?
+        base = base.where('tasks.task_definition_id = :task_definition_id', task_definition_id: params[:task_definition_id])
+      end
+
+      result = base.
+        map do |task|
+          {
+            task_definition_id: task.task_definition_id,
+            status: TaskStatus.id_to_key(task.task_status_id),
+            due_date: task.due_date,
+            extensions: task.extensions
+          }
+        end
+
+      if params[:task_definition_id].present?
+        result = result.first
+      end
+      
+      result
     end
 
     desc 'Get a similarity match for a given task'

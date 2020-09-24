@@ -71,6 +71,113 @@ class DeakinInstitutionSettings
     end
   end
 
+  def activity_type_for_group_code (activity_group_code, description)
+    result = ActivityType.where('lower(abbreviation) = :abbr', abbr: activity_group_code[0...-2].downcase).first
+
+    if result.nil?
+      name = description[0...-2]
+      abbr = activity_group_code[0...-2]
+
+      result = ActivityType.create!(name: name, abbreviation: abbr)
+    end
+
+    result
+  end
+
+  def default_cloud_campus_abbr
+    'Cloud-01'
+  end
+
+  # Multi code units have a stream for unit - and do not sync with star
+  def setup_multi_code_streams unit
+    logger.info("Setting up multi unit for #{unit.code}")
+
+    codes = unit.code.split '/'
+
+    stream = find_or_add_stream unit, "Cohort", "Enrolment"
+
+    for code in codes do
+      tutorial = stream.tutorials.where(abbreviation: code, campus_id: nil).first
+        if tutorial.nil?
+          unit.add_tutorial(
+            'NA', #day
+            'NA', #time
+            'NA', #location
+            unit.main_convenor_user, #tutor
+            nil, #campus
+            -1, #capacity
+            code, #abbrev
+            stream #tutorial_stream
+          )
+        end
+    end
+  end
+
+  def find_or_add_stream unit, abbr, desc
+    stream = unit.tutorial_streams.where(abbreviation: abbr).first
+
+    # Create the stream ... but skip classes - unless it is in the unit's current streams
+    if stream.nil? && activity_type_for_group_code(abbr, desc).abbreviation.casecmp('Cls') != 0
+      stream = unit.add_tutorial_stream desc, abbr, activity_type_for_group_code(abbr, desc)
+    end
+
+    stream
+  end
+
+  # Doubtfire::Application.config.institution_settings.sync_streams_from_star(Unit.last)
+  def sync_streams_from_star(unit)
+    return unless unit.enable_sync_timetable
+    tp = unit.teaching_period
+
+    # url = "#{@star_url}/star-#{tp.year}/rest/activities"
+    server = unit.start_date.year % 2 == 0 ? 'even' : 'odd'
+    url = "#{@star_url}/#{server}/rest/activities"
+
+    logger.info("Fetching #{unit.name} timetable from #{url}")
+    response = RestClient.post(url, {username: @star_user, password: @star_secret, where_clause:"subject_code LIKE '#{unit.code}%'"})
+
+    if response.code == 200
+      jsonData = JSON.parse(response.body)
+      if jsonData["activities"].nil?
+        logger.error "Failed to sync #{unit.code} - No response from #{url}"
+        return
+      end
+
+      activityData = jsonData["activities"]
+
+      activityData.each do |activity|
+        # Make sure units match
+        subject_match = /.*?(?=_)/.match( activity["subject_code"] )
+        unit_code = subject_match.nil? ? nil : subject_match[0]
+        unless unit_code == unit.code
+          logger.error "Failed to sync #{unit.code} - response had unit code #{enrolmentData['unitCode']}"
+          return
+        end
+
+        # Get the stream or create it...
+        stream = find_or_add_stream unit, activity['activity_group_code'], activity['description']
+        next if stream.nil?
+
+        campus = Campus.find_by(abbreviation: activity['campus'])
+
+        abbr = tutorial_abbr_for_star(activity)
+        tutorial = unit.tutorials.where(abbreviation: abbr).first
+        if tutorial.nil?
+          unit.add_tutorial(
+            activity['day_of_week'], #day
+            activity['start_time'], #time
+            activity['location'], #location
+            unit.main_convenor_user, #tutor
+            campus, #campus
+            -1, #capacity
+            abbr, #abbrev
+            stream #tutorial_stream=nil
+          )
+        end
+      end
+    end
+  end
+
   def fetch_star_row(row, unit)
     email_match = /(.*)(?=@)/.match( row["email_address"] )
     subject_match = /.*?(?=_)/.match( row["subject_code"] )
@@ -88,7 +195,7 @@ class DeakinInstitutionSettings
       nickname:       row["preferred_name"] == '-' ? nil : row["preferred_name"],
       email:          row["email_address"],
       enrolled:       true,
-      tutorial_code:  tutorial_code,
+      tutorials:      tutorial_code.present? ? [ tutorial_code ] : [],
       campus:         row["campus"]
     }
   end
@@ -98,19 +205,12 @@ class DeakinInstitutionSettings
     Campus.find_by(abbreviation: key)
   end
 
+  def cloud_campus
+    Campus.find_by(abbreviation: 'C')
+  end
+
   def fetch_callista_row(row, unit)
     campus = map_callista_to_campus(row)
-    if unit.tutorials.where(abbreviation: 'Cloud').count == 0
-      unit.add_tutorial(
-        'Asynchronous',
-        '9:00',
-        'Cloud',
-        unit.main_convenor_user,
-        campus,
-        -1,
-        'Cloud'
-      )
-    end
 
     result = {
       unit_code:      row["unit code"],
@@ -121,8 +221,8 @@ class DeakinInstitutionSettings
       nickname:       row["preferred given name"] == "-" ? nil : row["preferred given name"],
       email:          "#{row["email"]}@deakin.edu.au",
       enrolled:       row["student attempt status"] == 'ENROLLED',
-      campus:         campus.name
-      tutorial_code:  row["unit mode"] == 'OFF' ? "Cloud" : nil
+      campus:         campus.name,
+      tutorials:      []
     }
 
     sync_student_user_from_callista(result)
@@ -136,10 +236,11 @@ class DeakinInstitutionSettings
     username_user = User.find_by(username: row_data[:username])
     student_id_user = User.find_by(student_id: row_data[:student_id])
 
-    return if username_user.present? && student_id_user.present? && username_user.id == student_id_user.id
-    return if username_user.nil? && student_id_user.nil?
+    return username_user if username_user.present? && student_id_user.present? && username_user.id == student_id_user.id
+    return nil if username_user.nil? && student_id_user.nil?
 
     if username_user.nil? && student_id_user.present?
+      # Have with stident_id but not username
       student_id_user.email = row_data[:email]        # update to new emails and...
       student_id_user.username = row_data[:username]  # switch username - its the same person as the id is the same
       student_id_user.login_id = row_data[:username]  # reset to make sure not caching old data
@@ -149,16 +250,53 @@ class DeakinInstitutionSettings
       else
         logger.error("Unable to fix user #{row_data} - record invalid!")
       end
+
+      student_id_user
+    elsif username_user.present? && student_id_user.nil?
+      # Have with username but not student id
+      username_user.student_id = row_data[:student_id] # should just need the student id
+
+      if username_user.valid?
+        username_user.save
+      else
+        logger.error("Unable to fix user #{row_data} - record invalid!")
+      end
+
+      username_user
     elsif username_user.present? && student_id_user.present?
+      # Both present, but different
+      
       logger.error("Unable to fix user #{row_data} - both username and student id users present. Need manual fix.")
-    elsif username_user.present?
-      logger.error("Unable to fix user #{row_data} - both username users present, but different student id. Need manual fix.")
+      nil
     else
       logger.error("Unable to fix user #{row_data} - Need manual fix.")
+      nil
     end
   end
 
+  def find_cloud_tutorial(unit, tutorial_stats)
+    if tutorial_stats.count == 1
+      # There is only one... so return it!
+      return tutorial_stats.first[:abbreviation]
+    end
+
+    # Sort the tutorials by fill %
+    # Get the first one
+    # Return its abbreviation
+    list = tutorial_stats.sort_by { |r| 
+      capacity = r[:capacity].present? ? r[:capacity] : 0
+      capacity = 10000 if capacity <= 0
+      (r[:enrolment_count] + r[:added]) / capacity
+      }
+    result = list.first
+    result[:added] += 1
+    result[:abbreviation]
+  end
+
+  # Doubtfire::Application.config.institution_settings.sync_enrolments(Unit.last)
   def sync_enrolments(unit)
+    return unless unit.enable_sync_enrolments
+
     logger.info("Starting sync for #{unit.code}")
     result = {
       success: [],
@@ -168,128 +306,218 @@ class DeakinInstitutionSettings
 
     tp = unit.teaching_period
 
+    # in this process we need to keep track of those students already enrolled for
+    # cases where multi-unit enrolments "enrol" a user in unit 1 and "withdraw" them in unit 2
+    # this will keep a list of the enrolled students from earlier units to ensure they are not
+    # subsequently withdrawn
+    already_enrolled = {}
+
     unless tp.present?
       logger.error "Failing to sync unit #{unit.code} as not in teaching period"
       return
     end
 
     begin
-      url = "#{@base_url}?academicYear=#{tp.year}&periodType=trimester&period=#{tp.period.last}&unitCode=#{unit.code}"
-      logger.info("Requesting #{url}")
+      codes = unit.code.split('/')
+      multi_unit = codes.length > 1
 
-      response = RestClient.get(url, headers={ "client_id" => @client_id, "client_secret" => @client_secret})
+      if multi_unit
+        setup_multi_code_streams(unit)
+        timetable_data = {}
+      end
 
-      if response.code == 200
-        jsonData = JSON.parse(response.body)
-        if jsonData["unitEnrolments"].nil?
-          logger.error "Failed to sync #{unit.code} - No response from #{url}"  
-          return
-        end
+      for code in codes do
+        # Get URL to enrolment data for this code
+        url = "#{@base_url}?academicYear=#{tp.year}&periodType=trimester&period=#{tp.period.last}&unitCode=#{code}"
+        logger.info("Requesting #{url}")
 
-        enrolmentData = jsonData["unitEnrolments"].first
-        # Make sure units match
-        unless enrolmentData['unitCode'] == unit.code
-          logger.error "Failed to sync #{unit.code} - response had unit code #{enrolmentData['unitCode']}"  
-          return
-        end
+        # Get json from enrolment server
+        response = RestClient.get(url, headers={ "client_id" => @client_id, "client_secret" => @client_secret})
 
-        # Make sure correct trimester
-        unless enrolmentData['teachingPeriod']['year'].to_i == tp.year && "#{enrolmentData['teachingPeriod']['type'][0].upcase}#{enrolmentData['teachingPeriod']['period']}" == tp.period
-          logger.error "Failed to sync #{unit.code} - response had trimester #{enrolmentData['teachingPeriod']}"  
-          return
-        end
+        # Check we get a valid response
+        if response.code == 200
+          jsonData = JSON.parse(response.body)
+          if jsonData["unitEnrolments"].nil?
+            logger.error "Failed to sync #{code} - No response from #{url}"
+            next
+          end
 
-        logger.info "Syncing enrolment for #{unit.code} - #{tp.year} #{tp.period}"
+          enrolmentData = jsonData["unitEnrolments"].first
+          # Make sure units match
+          unless enrolmentData['unitCode'] == code
+            logger.error "Failed to sync #{code} - response had unit code #{enrolmentData['unitCode']}"
+            next
+          end
 
-        # Get the list of students
-        student_list = []
+          # Make sure correct trimester
+          unless enrolmentData['teachingPeriod']['year'].to_i == tp.year && "#{enrolmentData['teachingPeriod']['type'][0].upcase}#{enrolmentData['teachingPeriod']['period']}" == tp.period
+            logger.error "Failed to sync #{code} - response had trimester #{enrolmentData['teachingPeriod']}"
+            next
+          end
 
-        timetable_data = fetch_timetable_data(unit)
+          logger.info "Syncing enrolment for #{code} - #{tp.year} #{tp.period}"
 
-        enrolmentData['locations'].each do |location|
-          logger.info " - Syncing #{location['name']}"
+          # Get the list of students
+          student_list = []
 
-          location['enrolments'].each do |enrolment|
-            if enrolment['email'].nil?
-              # Only error if they were enrolled
-              if ['ENROLLED', 'COMPLETED'].include?(enrolment['status'].upcase)
-                result[:errors] << { row: enrolment, message: 'Missing email and username!' }
-              else
-                result[:ignored] << { row: enrolment, message: 'Not enrolled, but no email/username' }
-              end
+          # Get the timetable data ()
+          if multi_unit
+            # We just enrol people in a "tutorial" associated with the unit code
+            tutorials = [ code ]
+          else
+            # Get timetable data for students - unless it is multi-unit... cant sync those timetables ATM
+            timetable_data = fetch_timetable_data(unit)
+          end
 
-              next
-            end
+          # For each location in the enrolment data...
+          enrolmentData['locations'].each do |location|
+            logger.info " - Syncing #{location['name']}"
 
+            # Get campus
             campus_name = location['name']
             campus = Campus.find_by(name: campus_name)
 
-            row_data = {
-              unit_code:      enrolmentData['unitCode'],
-              username:       enrolment['email'][/[^@]+/],
-              student_id:     enrolment['studentId'],
-              first_name:     enrolment['givenNames'],
-              last_name:      enrolment['surname'],
-              nickname:       enrolment['preferredName'],
-              email:          enrolment['email'],
-              enrolled:       ['ENROLLED', 'COMPLETED'].include?(enrolment['status'].upcase),
-              tutorial_code:  location['name'].upcase == 'CLOUD (ONLINE)' ? 'Cloud' : timetable_data[enrolment['studentId']],
-              campus:         campus_name
-              row:            enrolment
-            }
-
-            if row_data[:tutorial_code] == 'Cloud' && unit.week_number(Time.zone.now) < 4 && unit.tutorials.where(abbreviation: 'Cloud').count == 0
-              unit.add_tutorial(
-                'Asynchronous',
-                '9:00',
-                'Online',
-                unit.main_convenor_user,
-                campus
-                -1,
-                'Cloud'
-              )
+            if campus.nil?
+              logger.error "Unable to find location #{location['name']}"
+              next
             end
 
-            sync_student_user_from_callista(row_data)
+            is_cloud = (campus == cloud_campus)
 
-            student_list << row_data
+            # Cloud tutorials are allocated to the tutorial with the smallest pct full
+            # We need to determine the stats here before the enrolments.
+            # This is not needed for multi unit as we do not setup the tutorials for multi units
+            
+            if is_cloud && ! multi_unit && unit.enable_sync_timetable
+              if unit.tutorials.where(campus_id: campus.id).count == 0
+                unit.add_tutorial(
+                  'Asynchronous', #day
+                  '', #time
+                  'Cloud', #location
+                  unit.main_convenor_user, #tutor
+                  cloud_campus, #campus
+                  -1, #capacity
+                  default_cloud_campus_abbr, #abbrev
+                  nil #tutorial_stream=nil
+                )                        
+              end
+
+              # Get stats for distribution of students across tutorials - for enrolment of cloud students
+              tutorial_stats = unit.tutorials.
+                joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.tutorial_id = tutorials.id').
+                where(campus_id: campus.id).
+                select(
+                  'tutorials.abbreviation AS abbreviation',
+                  'capacity',
+                  'COUNT(tutorial_enrolments.id) AS enrolment_count'
+                  ).
+                group('tutorials.abbreviation', 'capacity').
+                map { |row|
+                  {
+                    abbreviation: row.abbreviation,
+                    enrolment_count: row.enrolment_count,
+                    added: 0.0, # float to force float division in % full calc
+                    capacity: row.capacity
+                  }
+                }
+            end # is cloud
+
+            # For each of the enrolments...
+            location['enrolments'].each do |enrolment|
+              
+              # Skip enrolments without an email
+              if enrolment['email'].nil?
+                # Only error if they were enrolled
+                if ['ENROLLED', 'COMPLETED'].include?(enrolment['status'].upcase)
+                  result[:errors] << { row: enrolment, message: 'Missing email and username!' }
+                else
+                  result[:ignored] << { row: enrolment, message: 'Not enrolled, but no email/username' }
+                end
+
+                next
+              end
+              
+              # Get the list of tutorials for the student
+              unless multi_unit || !unit.enable_sync_timetable
+                tutorials = timetable_data[enrolment['studentId']]
+                # multi unit tutorials is already setup with the unit code
+              end
+
+              # Record the data associated with the student record
+              row_data = {
+                unit_code:      enrolmentData['unitCode'],
+                username:       enrolment['email'][/[^@]+/],
+                student_id:     enrolment['studentId'],
+                first_name:     enrolment['givenNames'],
+                last_name:      enrolment['surname'],
+                nickname:       enrolment['preferredName'],
+                email:          enrolment['email'],
+                enrolled:       ['ENROLLED', 'COMPLETED'].include?(enrolment['status'].upcase),
+                tutorials:      tutorials || [], # tutorials unless they are not present
+                campus:         campus_name,
+                row:            enrolment
+              }
+
+              # Record details for students already enrolled to work with multi-units
+              if row_data[:enrolled]
+                already_enrolled[row_data[:username]] = true
+              elsif already_enrolled[row_data[:username]]
+                # skip to the next enrolment... this person was enrolled in an earlier unit nested within this unit... so skip this row as it would result in withdrawal
+                next
+              end
+
+              user = sync_student_user_from_callista(row_data)
+
+              # if they are enrolled, but not timetabled and cloud...
+              if is_cloud && row_data[:enrolled] && !multi_unit && unit.enable_sync_timetable && timetable_data[enrolment['studentId']].nil? # Is this a cloud user that we have the user data for?
+                # try to get their exising data
+                project = unit.projects.where(user_id: user.id).first unless user.nil?
+
+                if project.nil? || project.tutorial_enrolments.count == 0
+                  # not present (so new), or has no enrolment... so we can enrol it into the cloud tutorial
+                  tutorial = find_cloud_tutorial(unit, tutorial_stats)
+                  row_data[:tutorials] = [ tutorial ] unless tutorial.nil?
+                end
+              end
+
+              student_list << row_data
+            end
           end
-        end
 
-        import_settings = {
-          replace_existing_tutorial: false
-        }
+          import_settings = {
+            replace_existing_tutorial: false
+          }
 
-        # Now get unit to sync
-        unit.sync_enrolment_with(student_list, import_settings, result)
-      else
-        logger.error "Failed to sync #{unit.code} - #{response}"
-      end
-
+          # Now get unit to sync
+          unit.sync_enrolment_with(student_list, import_settings, result)
+        else
+          logger.error "Failed to sync #{unit.code} - #{response}"
+        end # if response 200
+      end # for each code
     rescue Exception => e
       logger.error "Failed to sync unit: #{e.message}"
     end
     result
   end
 
+  # Doubtfire::Application.config.institution_settings.fetch_timetable_data(Unit.last)
   def fetch_timetable_data(unit)
+    return {} unless unit.enable_sync_timetable
+
     logger.info("Fetching STAR data for #{unit.code}")
+
+    sync_streams_from_star(unit)
 
     result = {}
 
     tp = unit.teaching_period
 
-    activity_types = [
-      'Wrk',
-      'Prc',
-      'Sem'
-    ]
+    # url = "#{@star_url}/star-#{tp.year}/rest/students/allocated"
+    url = "#{@star_url}/even/rest/students/allocated"
 
-    url = "#{@star_url}/star-#{tp.year}/rest/students/allocated"
-
-    activity_types.each do |activity_type|
-      logger.info("Fetching #{activity_type} from #{url}")
-      response = RestClient.post(url, {username: @star_user, password: @star_secret, where_clause:"subject_code LIKE '#{unit.code}%' AND activity_group_code LIKE '#{activity_type}01'"})
+    unit.tutorial_streams.each do |tutorial_stream|
+      logger.info("Fetching #{tutorial_stream} from #{url}")
+      response = RestClient.post(url, {username: @star_user, password: @star_secret, where_clause:"subject_code LIKE '#{unit.code}%' AND activity_group_code LIKE '#{tutorial_stream.abbreviation}'"})
 
       if response.code == 200
         jsonData = JSON.parse(response.body)
@@ -298,50 +526,44 @@ class DeakinInstitutionSettings
         next if jsonData['allocations'].count == 0
 
         jsonData['allocations'].each do |allocation|
-          result[allocation['student_code'].to_i] = fetch_tutorial(unit, allocation) unless allocation['student_code'].nil?
-        end
+          if result[allocation['student_code'].to_i].nil?
+            result[allocation['student_code'].to_i] = []
+          end
 
-        # Quit now... we have the matching activity
-        return result
+          tutorial = fetch_tutorial(unit, allocation) unless allocation['student_code'].nil?
+          result[allocation['student_code'].to_i] << tutorial unless tutorial.nil?
+        end
       end
     end
 
     result
   end
 
+  def tutorial_abbr_for_star(star_data)
+    "#{star_data['campus']}-#{star_data['activity_group_code']}-#{star_data['activity_code']}"
+  end
+
+  # Returns the tutorial abbr to enrol in for this activity (one in a stream)
   def fetch_tutorial(unit, star_data)
-    tutorial_code = star_data["campus"].strip() == "" ? nil : "#{star_data["campus"]}-#{star_data["activity_code"]}"
-    campus_name = star_data["campus"]
-    campus = Campus.find_by(name: campus_name)
+    tutorial_code = star_data["activity_group_code"].strip() == "" ? nil : tutorial_abbr_for_star(star_data)
 
     unless tutorial_code.nil?
-      if unit.tutorials.where(abbreviation: tutorial_code).count == 0 && star_data['subject_code'].starts_with?(unit.code)
-
-        if unit.week_number(Time.zone.now) < 4
-          unit.add_tutorial(
-            day_abbr_to_name(star_data["day_of_week"]),
-            star_data["start_time"],
-            star_data["location"],
-            unit.main_convenor_user,
-            campus,
-            -1,
-            tutorial_code
-          )
-        else
-          tutorial_code = nil
-        end
-      end
+      tutorial_code = nil if unit.tutorials.where(abbreviation: tutorial_code).count == 0
     end
 
     tutorial_code
   end
 
-  def name_for_next_tutorial_stream(unit, activity_type)
-    "#{activity_type.name} #{unit.tutorial_streams.where(activity_type: activity_type).count + 1}"
-  end
+  def details_for_next_tutorial_stream(unit, activity_type)
+    counter = 1
 
-  def abbreviation_for_next_tutorial_stream(unit, activity_type)
-    "#{activity_type.abbreviation} #{unit.tutorial_streams.where(activity_type: activity_type).count + 1}"
+    begin
+        name = "#{activity_type.name} #{counter}"
+        abbreviation = "#{activity_type.abbreviation} #{counter}"
+        counter += 1
+    end while unit.tutorial_streams.where("abbreviation = :abbr OR name = :name", abbr: abbreviation, name: name).present?
+
+    [name, abbreviation]
   end
 end
 

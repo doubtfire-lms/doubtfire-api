@@ -53,11 +53,13 @@ FactoryBot.define do
 
     name            { Faker::Lorem.unique.words(2).join(' ') }
     description     { Faker::Lorem.sentence }
-    start_date      { Time.zone.now }
-    end_date        { Time.zone.now + 14.weeks }
     teaching_period { nil }
+    start_date      { teaching_period.present? ? teaching_period.start_date : Time.zone.now - 3.weeks }
+    end_date        { teaching_period.present? ? teaching_period.end_date : Time.zone.now + 14.weeks - 3.weeks }
     code            { "SIT#{Faker::Number.unique.number(3)}" }
     active          { true }
+    auto_apply_extension_before_deadline { true }
+    send_notifications { true }
 
     after(:create) do | unit, eval |
       group_sets = eval.group_sets
@@ -147,7 +149,7 @@ FactoryBot.define do
         gs = unit.group_sets[group_details[:gs]]
         grp = FactoryBot.create(:group, group_set: gs)
         group_details[:students].times do
-          grp.add_member unit.projects[stud % eval.student_count]
+          grp.add_member unit.projects[(eval.unenrolled_student_count + eval.inactive_student_count + stud) % eval.student_count]
           stud += 1
         end
       end

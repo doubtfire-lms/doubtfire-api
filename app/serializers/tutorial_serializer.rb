@@ -16,14 +16,7 @@ class TutorialSerializer < ActiveModel::Serializer
     # DateTime.parse("#{object.meeting_time}")
   end
 
-  has_one :tutor, serializer: ShallowUserSerializer
-
-  def include_tutor?
-    if Thread.current[:user]
-      my_role = object.unit.role_for(Thread.current[:user])
-      [ Role.convenor, Role.admin ].include? my_role
-    end
-  end
+  has_one :tutor, serializer: ShallowTutorSerializer
 
   def include_num_students?
     if Thread.current[:user]
@@ -33,7 +26,6 @@ class TutorialSerializer < ActiveModel::Serializer
   end
 
   def filter(keys)
-    keys.delete :tutor unless include_tutor?
     keys.delete :num_students unless include_num_students?
     keys
   end

@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20200107041946) do
+ActiveRecord::Schema.define(version: 20200819010213) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -80,6 +80,8 @@ ActiveRecord::Schema.define(version: 20200107041946) do
     t.boolean  "keep_groups_in_same_class",                   default: false
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.integer  "capacity"
+    t.boolean  "locked",                                      default: false, null: false
   end
 
   add_index "group_sets", ["unit_id"], name: "index_group_sets_on_unit_id", using: :btree
@@ -96,10 +98,11 @@ ActiveRecord::Schema.define(version: 20200107041946) do
   create_table "groups", force: :cascade do |t|
     t.integer  "group_set_id"
     t.integer  "tutorial_id"
-    t.string   "name",         limit: 255
+    t.string   "name",                limit: 255
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.integer  "number",                   null: false
+    t.integer  "capacity_adjustment",             default: 0,     null: false
+    t.boolean  "locked",                          default: false, null: false
   end
 
   create_table "learning_outcome_task_links", force: :cascade do |t|
@@ -166,6 +169,7 @@ ActiveRecord::Schema.define(version: 20200107041946) do
     t.integer  "grade",                                  default: 0
     t.string   "grade_rationale",           limit: 4096
     t.integer  "campus_id"
+    t.integer  "submitted_grade"
   end
 
   add_index "projects", ["campus_id"], name: "index_projects_on_campus_id", using: :btree
@@ -200,9 +204,11 @@ ActiveRecord::Schema.define(version: 20200107041946) do
     t.integer  "task_status_id"
     t.integer  "extension_weeks"
     t.string   "extension_response"
+    t.integer  "reply_to_id"
   end
 
   add_index "task_comments", ["discussion_comment_id"], name: "index_task_comments_on_discussion_comment_id", using: :btree
+  add_index "task_comments", ["reply_to_id"], name: "index_task_comments_on_reply_to_id", using: :btree
   add_index "task_comments", ["task_id"], name: "index_task_comments_on_task_id", using: :btree
 
   create_table "task_definitions", force: :cascade do |t|
@@ -300,18 +306,15 @@ ActiveRecord::Schema.define(version: 20200107041946) do
   add_index "teaching_periods", ["period", "year"], name: "index_teaching_periods_on_period_and_year", unique: true, using: :btree
 
   create_table "tutorial_enrolments", force: :cascade do |t|
-    t.datetime "created_at",         null: false
-    t.datetime "updated_at",         null: false
-    t.integer  "project_id",         null: false
-    t.integer  "tutorial_id",        null: false
-    t.integer  "tutorial_stream_id"
+    t.datetime "created_at",  null: false
+    t.datetime "updated_at",  null: false
+    t.integer  "project_id",  null: false
+    t.integer  "tutorial_id", null: false
   end
 
   add_index "tutorial_enrolments", ["project_id"], name: "index_tutorial_enrolments_on_project_id", using: :btree
   add_index "tutorial_enrolments", ["tutorial_id", "project_id"], name: "index_tutorial_enrolments_on_tutorial_id_and_project_id", unique: true, using: :btree
   add_index "tutorial_enrolments", ["tutorial_id"], name: "index_tutorial_enrolments_on_tutorial_id", using: :btree
-  add_index "tutorial_enrolments", ["tutorial_stream_id", "project_id"], name: "index_tutorial_enrolments_on_tutorial_stream_id_and_project_id", unique: true, using: :btree
-  add_index "tutorial_enrolments", ["tutorial_stream_id"], name: "index_tutorial_enrolments_on_tutorial_stream_id", using: :btree
 
   create_table "tutorial_streams", force: :cascade do |t|
     t.string   "name",             null: false
@@ -332,12 +335,12 @@ ActiveRecord::Schema.define(version: 20200107041946) do
     t.string   "meeting_day",        limit: 255
     t.string   "meeting_time",       limit: 255
     t.string   "meeting_location",   limit: 255
-    t.datetime "created_at",                     null: false
-    t.datetime "updated_at",                     null: false
+    t.datetime "created_at",                                  null: false
+    t.datetime "updated_at",                                  null: false
     t.string   "code",               limit: 255
     t.integer  "unit_role_id"
     t.string   "abbreviation",       limit: 255
-    t.integer  "capacity"
+    t.integer  "capacity",                       default: -1
     t.integer  "campus_id"
     t.integer  "tutorial_stream_id"
   end
@@ -362,17 +365,21 @@ ActiveRecord::Schema.define(version: 20200107041946) do
   add_index "unit_roles", ["user_id"], name: "index_unit_roles_on_user_id", using: :btree
 
   create_table "units", force: :cascade do |t|
-    t.string   "name",                limit: 255
-    t.string   "description",         limit: 4096
+    t.string   "name",                                 limit: 255
+    t.string   "description",                          limit: 4096
     t.datetime "start_date"
     t.datetime "end_date"
-    t.datetime "created_at",                                      null: false
-    t.datetime "updated_at",                                      null: false
-    t.string   "code",                limit: 255
-    t.boolean  "active",                           default: true
+    t.datetime "created_at",                                                       null: false
+    t.datetime "updated_at",                                                       null: false
+    t.string   "code",                                 limit: 255
+    t.boolean  "active",                                            default: true
     t.datetime "last_plagarism_scan"
     t.integer  "teaching_period_id"
     t.integer  "main_convenor_id"
+    t.boolean  "auto_apply_extension_before_deadline",              default: true, null: false
+    t.boolean  "send_notifications",                                default: true, null: false
+    t.boolean  "enable_sync_timetable",                             default: true, null: false
+    t.boolean  "enable_sync_enrolments",                            default: true, null: false
   end
 
   add_index "units", ["teaching_period_id"], name: "index_units_on_teaching_period_id", using: :btree
@@ -417,7 +424,6 @@ ActiveRecord::Schema.define(version: 20200107041946) do
   add_foreign_key "task_comments", "users", column: "recipient_id"
   add_foreign_key "task_definitions", "tutorial_streams"
   add_foreign_key "tutorial_enrolments", "projects"
-  add_foreign_key "tutorial_enrolments", "tutorial_streams"
   add_foreign_key "tutorial_enrolments", "tutorials"
   add_foreign_key "tutorial_streams", "activity_types"
   add_foreign_key "tutorial_streams", "units"

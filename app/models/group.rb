@@ -4,7 +4,7 @@ class Group < ActiveRecord::Base
   belongs_to :group_set
   belongs_to :tutorial
 
-  has_many :group_memberships
+  has_many :group_memberships, dependent: :destroy
   has_many :group_submissions
   has_many :projects, -> { where('group_memberships.active = :value and projects.enrolled = true', value: true) }, through: :group_memberships
   has_many :past_projects, -> { where('group_memberships.active = :value', value: false) }, through: :group_memberships, source: 'project'
@@ -12,12 +12,9 @@ class Group < ActiveRecord::Base
   has_one :tutor, through: :tutorial
 
   validates :name, presence: true, allow_nil: false
-  validates :number, presence: true, allow_nil: false
   validates :group_set, presence: true, allow_nil: false
   validates :tutorial, presence: true, allow_nil: false
-  validates_associated :group_memberships
-  validates :number, uniqueness: { scope: :group_set,
-                                 message: 'must be unique within the set of groups' }
+
   validates :name, uniqueness: { scope: :group_set,
                                  message: 'must be unique within the set of groups' }
   validate :must_be_in_same_tutorial, if: :limit_members_to_tutorial?
@@ -43,20 +40,33 @@ class Group < ActiveRecord::Base
     # What can tutors do with groups?
     tutor_role_permissions = [
       :get_members,
-      :manage_group
+      :manage_group,
+      :lock_group,
+      :move_tutorial
     ]
     # What can convenors do with groups?
     convenor_role_permissions = [
       :get_members,
-      :manage_group
+      :manage_group,
+      :lock_group,
+      :can_exceed_capacity,
+      :move_tutorial
     ]
+    # What can admin do with groups?
+    admin_role_permissions = [
+      :get_members,
+      :manage_group,
+      :lock_group,
+      :can_exceed_capacity,
+      :move_tutorial
+    ]    
     # What can nil users do with groups?
     nil_role_permissions = [
-
     ]
 
     # Return permissions hash
     {
+      admin: admin_role_permissions,
       convenor: convenor_role_permissions,
       tutor: tutor_role_permissions,
       student: student_role_permissions,
@@ -73,8 +83,8 @@ class Group < ActiveRecord::Base
   def specific_permission_hash(role, perm_hash, _other)
     result = perm_hash[role] unless perm_hash.nil?
     if result && role == :student
-      result << :manage_group if group_set.allow_students_to_manage_groups
-      end
+      result << :manage_group if (!locked && !group_set.locked && group_set.allow_students_to_manage_groups)
+    end
     result
   end
 
@@ -91,11 +101,52 @@ class Group < ActiveRecord::Base
     projects.where('user_id = :user_id', user_id: user.id).count == 1
   end
 
+  def capacity
+    result = group_set.capacity
+    if result.present?
+      result += capacity_adjustment
+    end
+    result
+  end
+
+  def at_capacity?
+    capacity.present? && group_memberships.joins(:project).where(active: true, 'projects.enrolled' => true).count >= capacity
+  end
+
+  def beyond_capacity?
+    capacity.present? && group_memberships.joins(:project).where(active: true, 'projects.enrolled' => true).count > capacity
+  end
+
+  def switch_to_tutorial tutorial
+    return if tutorial_id == tutorial.id
+
+    Group.transaction do
+      tutorial_id = tutorial.id
+      self.tutorial = tutorial
+
+      if group_set.keep_groups_in_same_class && has_active_group_members?
+        projects.each do |proj|
+          # We need to remove members to break the circular dependency and switch tutorial
+          remove_member(proj)
+
+          te = proj.enrol_in tutorial
+          unless te.valid?
+            raise "Unable to move group as #{proj.student.name} could not switch tutorial."
+          end
+
+          add_member(proj)
+        end
+      end
+      self.save!
+    end
+  end
+
   def add_member(project)
     gm = project.group_membership_for_groupset(group_set)
 
     if gm.nil?
       gm = GroupMembership.create(group: self, project: project)
+      group_memberships << gm
     else
       gm = GroupMembership.find(gm.id)
       gm.group = self
@@ -182,6 +233,8 @@ class Group < ActiveRecord::Base
       project = contrib[:project]
       task = project.matching_task submitter_task
 
+      next if task.task_submission_closed?
+
       if contrib[:pct].to_i > 0
         task.group_submission = gs
         task.contribution_pct = contrib[:pct]
@@ -198,6 +251,10 @@ class Group < ActiveRecord::Base
     # ensure that original task is reloaded... update will have effected a different object
     submitter_task.reload
     gs
+  end
+
+  def has_change_group_tutorial?
+    tutorial_id != tutorial_id_was
   end
 
   def limit_members_to_tutorial?
@@ -217,7 +274,7 @@ class Group < ActiveRecord::Base
   #
   def all_members_in_tutorial?
     group_memberships.each do |member|
-      return false unless !member.active || member.in_group_tutorial?(tutorial)
+      return false if member.project.enrolled && member.active && ! member.in_group_tutorial?(tutorial)
     end
     true
   end

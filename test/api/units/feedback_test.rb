@@ -21,7 +21,7 @@ class FeedbackTest < ActiveSupport::TestCase
 
       # check each is the same
       last_response_body.zip(expected_response).each do |response, expected|
-        assert_json_matches_model response, expected, ['id']
+        assert_json_matches_model expected, response, ['id']
       end
     end
   end
@@ -42,7 +42,7 @@ class FeedbackTest < ActiveSupport::TestCase
 
       # check each is the same
       last_response_body.zip(expected_response).each do |response, expected|
-        assert_json_matches_model response, expected, ['id']
+        assert_json_matches_model expected, response, ['id']
       end
     end
   end
