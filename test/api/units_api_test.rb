@@ -314,12 +314,6 @@ class UnitsApiTest < ActiveSupport::TestCase
     test_put_update_unit_custom_token ''
   end
 
-  # End GET tests
-  # --------------------------------------------------------------------------- #
-
-  # --------------------------------------------------------------------------- #
-  # PUT tests
-
   def test_update_main_convenor
     unit = FactoryBot.create :unit, with_students: false, task_count: 0, tutorials: 0, outcome_count: 0, staff_count: 0, campus_count: 0
 

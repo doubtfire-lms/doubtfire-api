@@ -1,5 +1,4 @@
 require 'test_helper'
-require 'json'
 
 class SettingTest < ActiveSupport::TestCase
     include Rack::Test::Methods
