@@ -4,8 +4,6 @@ module DbHelpers
     adapter = ActiveRecord::Base.configurations[env]['adapter'].to_sym
     args.map! { |arg| arg.class == Symbol ? arg.to_s : arg }
 
-    puts "Adapter is '#{adapter}'"
-
     case adapter
     when :mysql, :mysql2
       "CONCAT(#{args.join(',')})"
