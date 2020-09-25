@@ -30,7 +30,7 @@ class BreaksApiTest < ActiveSupport::TestCase
     # Check if the details posted match as expected
     response_keys = %w(start_date number_of_weeks)
     breaks = Break.find(last_response_body['id'])
-    assert_json_matches_model(last_response_body, breaks, response_keys)
+    assert_json_matches_model(breaks, last_response_body, response_keys)
     
     # check if the details in the newly created break match as the pre-set data
     assert_equal data_to_post[:start_date].to_date, breaks.start_date.to_date
