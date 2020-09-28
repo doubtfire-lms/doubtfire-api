@@ -671,6 +671,10 @@ class Project < ActiveRecord::Base
     if name == 'LearningSummaryReport' && kind == 'document'
       result[:idx] = 0
       result[:name] = 'LearningSummaryReport.pdf'
+
+      # set uses_draft_learning_summary to false, since we uploaded a new learning summary
+      self.uses_draft_learning_summary = false
+      save
     else
       Dir.chdir(portfolio_tmp_dir)
       files = Dir.glob('*')
