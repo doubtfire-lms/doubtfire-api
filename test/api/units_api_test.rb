@@ -339,6 +339,52 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert_equal convenor_user_role.id, unit.main_convenor_id
   end
 
+  def test_draft_learning_summary_upload_requirements
+    unit = FactoryBot.create :unit, student_count:1, task_count:0
+    task_def_code = FactoryBot.create(:task_definition, unit: unit, upload_requirements: [{'key' => 'file0','name' => 'Code file','type' => 'code'}])
+    task_def_doc = FactoryBot.create(:task_definition, unit: unit, upload_requirements: [{'key' => 'file0','name' => 'Draft learning summary','type' => 'document'}])
+    task_def_doc_code = FactoryBot.create(:task_definition, unit: unit, upload_requirements: [{'key' => 'file0','name' => 'Draft learning summary','type' => 'document'}, {'key' => 'file1','name' => 'Code file','type' => 'code'}])
+
+    # Test with a task containing non document upload requirement
+    data_to_put = {
+      unit: {
+        draft_task_definition_id: task_def_code.id
+      }
+    }
+
+    put_json with_auth_token("/api/units/#{unit.id}", unit.main_convenor_user), data_to_put
+
+    assert_equal 403, last_response.status
+    unit.reload
+    assert_equal unit.draft_task_definition_id, nil
+
+    # Test with task containing multiple upload requirements
+    data_to_put = {
+      unit: {
+        draft_task_definition_id: task_def_doc_code.id
+      }
+    }
+
+    put_json with_auth_token("/api/units/#{unit.id}", unit.main_convenor_user), data_to_put
+
+    assert_equal 403, last_response.status
+    unit.reload
+    assert_equal unit.draft_task_definition_id, nil
+
+    # Test with a singular document upload (valid draft learning summary task definition)
+    data_to_put = {
+      unit: {
+        draft_task_definition_id: task_def_doc.id
+      }
+    }
+
+    put_json with_auth_token("/api/units/#{unit.id}", unit.main_convenor_user), data_to_put
+
+    assert_equal 200, last_response.status
+    unit.reload
+    assert_equal task_def_doc.id, unit.draft_task_definition_id
+  end
+
   #def test_units_put
     # users = {
     #   acain:              {first_name: "Andrew",         last_name: "Cain",                 nickname: "Macite",         role_id: Role.admin_id},

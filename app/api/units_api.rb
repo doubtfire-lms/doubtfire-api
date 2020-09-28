@@ -70,6 +70,7 @@ module Api
         optional :send_notifications, type: Boolean, desc: 'Indicates if emails should be sent on updates each week'
         optional :enable_sync_timetable, type: Boolean, desc: 'Sync to timetable automatically if supported by deployment'
         optional :enable_sync_enrolments, type: Boolean, desc: 'Sync student enrolments automatically if supported by deployment'
+        optional :draft_task_definition_id, type: Integer, desc: 'Indicates the ID of the task definition used as the "draft learning summary task"'
 
         mutually_exclusive :teaching_period_id,:start_date
         all_or_none_of :start_date, :end_date
@@ -93,13 +94,27 @@ module Api
                                                             :auto_apply_extension_before_deadline,
                                                             :send_notifications,
                                                             :enable_sync_timetable,
-                                                            :enable_sync_enrolments
+                                                            :enable_sync_enrolments,
+                                                            :draft_task_definition_id
                                                           )
 
       if unit.teaching_period_id.present? && unit_parameters.key?(:start_date)
         unit.teaching_period = nil
       end
 
+      if unit_parameters.key?(:draft_task_definition_id)
+        # Ensure the task definition belongs to unit
+        unless unit.task_definitions.exists?(unit_parameters[:draft_task_definition_id])
+          error!({ error: 'Draft task definition ID does not belong to unit' }, 403)
+        end
+
+        # Validate that the task only has 1 upload requirement and it is a document
+        task = TaskDefinition.find(unit_parameters[:draft_task_definition_id])
+        if task.upload_requirements.length != 1 || task.upload_requirements.first['type'] != "document"
+          error!({ error: 'Task definition should contain only a single document upload' }, 403)
+        end
+      end
+              
       unit.update!(unit_parameters)
       unit_parameters
     end

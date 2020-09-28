@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20200819010213) do
+ActiveRecord::Schema.define(version: 20200901044853) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -153,23 +153,24 @@ ActiveRecord::Schema.define(version: 20200819010213) do
 
   create_table "projects", force: :cascade do |t|
     t.integer  "unit_id"
-    t.string   "project_role",              limit: 255
-    t.datetime "created_at",                                             null: false
-    t.datetime "updated_at",                                             null: false
+    t.string   "project_role",                limit: 255
+    t.datetime "created_at",                                               null: false
+    t.datetime "updated_at",                                               null: false
     t.boolean  "started"
-    t.string   "progress",                  limit: 255
-    t.string   "status",                    limit: 255
-    t.string   "task_stats",                limit: 255
-    t.boolean  "enrolled",                               default: true
-    t.integer  "target_grade",                           default: 0
-    t.boolean  "compile_portfolio",                      default: false
+    t.string   "progress",                    limit: 255
+    t.string   "status",                      limit: 255
+    t.string   "task_stats",                  limit: 255
+    t.boolean  "enrolled",                                 default: true
+    t.integer  "target_grade",                             default: 0
+    t.boolean  "compile_portfolio",                        default: false
     t.date     "portfolio_production_date"
-    t.integer  "max_pct_similar",                        default: 0
+    t.integer  "max_pct_similar",                          default: 0
     t.integer  "user_id"
-    t.integer  "grade",                                  default: 0
-    t.string   "grade_rationale",           limit: 4096
+    t.integer  "grade",                                    default: 0
+    t.string   "grade_rationale",             limit: 4096
     t.integer  "campus_id"
     t.integer  "submitted_grade"
+    t.boolean  "uses_draft_learning_summary",              default: false, null: false
   end
 
   add_index "projects", ["campus_id"], name: "index_projects_on_campus_id", using: :btree
@@ -380,6 +381,7 @@ ActiveRecord::Schema.define(version: 20200819010213) do
     t.boolean  "send_notifications",                                default: true, null: false
     t.boolean  "enable_sync_timetable",                             default: true, null: false
     t.boolean  "enable_sync_enrolments",                            default: true, null: false
+    t.integer  "draft_task_definition_id"
   end
 
   add_index "units", ["teaching_period_id"], name: "index_units_on_teaching_period_id", using: :btree
