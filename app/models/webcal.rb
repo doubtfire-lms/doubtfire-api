@@ -44,6 +44,20 @@ class Webcal < ActiveRecord::Base
   end
 
   #
+  # Retrieves the event name for the specified task definition in the calendar.
+  # Valid values for `variant` are,
+  #   - 'start' retrieves the name for the _start event_
+  #   - 'end' (default) retrieves the name for the _end event_
+  #
+  def event_name_for_task_definition(task_def, variant = 'end')
+    name = "#{task_def.unit.code}: #{task_def.abbreviation}: #{task_def.name}"
+    case variant
+      when 'start' then "Start: #{name}"
+      when 'end'   then (include_start_dates ? "End: #{name}" : name)
+    end
+  end
+
+  #
   # Generates a single `Icalendar::Calendar` object from this `Webcal` including calendar events for the specified
   # collection of `TaskDefinition`s.
   #
@@ -55,19 +69,18 @@ class Webcal < ActiveRecord::Base
   #       .includes(:unit)
   #   )
   #
-  def to_ical(defs = task_definitions)
+  def to_ical(task_defs = task_definitions)
     ical = Icalendar::Calendar.new
     ical.publish
     ical.prodid = Doubtfire::Application.config.institution[:product_name]
 
     # Add iCalendar events for the specified definition.
-    defs.each do |td|
+    task_defs.each do |td|
       # Notes:
       # - Start and end dates of events are equal because the calendar event is expected to be an "all-day" event.
       # - iCalendar clients identify events across syncs by their UID property, which is currently the task definition
       #   ID prefixed with S- or E- based on whether it is a start or end event.
 
-      ev_name = "#{td.unit.code}: #{td.abbreviation}: #{td.name}"
       ev_date_format = '%Y%m%d'
       ev_reminders = reminder?
       ev_reminder_trigger = "-PT#{reminder_time}#{reminder_unit}"
@@ -75,10 +88,8 @@ class Webcal < ActiveRecord::Base
       # Add event for start date, if the user opted in.
       if include_start_dates
         ical.event do |ev|
-          ev_summary = "Start: #{ev_name}"
-
           ev.uid = "S-#{td.id}"
-          ev.summary = ev_summary
+          ev.summary = event_name_for_task_definition(td, 'start')
           ev.status = 'CONFIRMED'
           ev.dtstart = ev.dtend = Icalendar::Values::Date.new(td.start_date.strftime(ev_date_format))
 
@@ -94,10 +105,8 @@ class Webcal < ActiveRecord::Base
 
       # Add event for target/extended date.
       ical.event do |ev|
-        ev_summary = "#{include_start_dates ? 'End:' : ''}#{ev_name}"
-
         ev.uid = "E-#{td.id}"
-        ev.summary = ev_summary
+        ev.summary = event_name_for_task_definition(td, 'end')
 
         # Use extended date if available.
         ev_date = td.target_date
