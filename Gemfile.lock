@@ -124,6 +124,9 @@ GEM
     http-cookie (1.0.3)
       domain_name (~> 0.5)
     i18n (0.7.0)
+    icalendar (2.5.3)
+      ice_cube (~> 0.16)
+    ice_cube (0.16.3)
     ice_nine (0.11.2)
     json (1.8.3)
     json-jwt (1.7.0)
@@ -297,6 +300,7 @@ DEPENDENCIES
   grape-active_model_serializers (~> 1.3.2)
   grape-swagger
   hirb
+  icalendar (~> 2.5, >= 2.5.3)
   json-jwt (= 1.7.0)
   minitest-around
   minitest-rails
