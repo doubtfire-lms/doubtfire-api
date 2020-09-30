@@ -249,6 +249,15 @@ ActiveRecord::Schema.define(version: 20200909074930) do
 
   add_index "task_engagements", ["task_id"], name: "index_task_engagements_on_task_id", using: :btree
 
+  create_table "task_pins", force: :cascade do |t|
+    t.integer  "task_id",    null: false
+    t.integer  "user_id",    null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  add_index "task_pins", ["task_id", "user_id"], name: "index_task_pins_on_task_id_and_user_id", unique: true, using: :btree
+
   create_table "task_statuses", force: :cascade do |t|
     t.string   "name",        limit: 255
     t.string   "description", limit: 255
@@ -443,6 +452,8 @@ ActiveRecord::Schema.define(version: 20200909074930) do
   add_foreign_key "projects", "campuses"
   add_foreign_key "task_comments", "users", column: "recipient_id"
   add_foreign_key "task_definitions", "tutorial_streams"
+  add_foreign_key "task_pins", "tasks"
+  add_foreign_key "task_pins", "users"
   add_foreign_key "tutorial_enrolments", "projects"
   add_foreign_key "tutorial_enrolments", "tutorials"
   add_foreign_key "tutorial_streams", "activity_types"
