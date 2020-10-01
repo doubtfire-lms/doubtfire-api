@@ -18,6 +18,10 @@ class UnitSerializer < ActiveModel::Serializer
     object.end_date.to_date
   end
 
+  def portfolio_auto_generation_date
+    object.portfolio_auto_generation_date.to_date unless object.portfolio_auto_generation_date.nil?
+  end
+
   def my_role_obj
     object.role_for(Thread.current[:user]) if Thread.current[:user]
   end
