@@ -678,4 +678,49 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_equal tutorial_stream_second.id, last_response_body.first['tutorial_stream_id']
     assert_equal task_fourth.id, last_response_body.first['id']
   end
+
+  def test_change_draft_learning_summary_upload_requirements
+    unit = FactoryBot.create :unit, student_count:1, task_count:0
+    upload_reqs = [{'key' => 'file0','name' => 'Draft learning summary','type' => 'document'}]
+    task_def = FactoryBot.create(:task_definition, unit: unit, upload_requirements: upload_reqs)
+
+    # Set draft learning summary task defintion
+    data_to_put = {
+      unit: {
+        draft_task_definition_id: task_def.id
+      }
+    }
+
+    put_json with_auth_token("/api/units/#{unit.id}", unit.main_convenor_user), data_to_put
+
+    assert_equal 200, last_response.status
+    unit.reload
+    assert_equal task_def.id, unit.draft_task_definition_id
+
+    # Test change upload requirements to a non-document upload
+    data_to_put = {
+      task_def: {
+        upload_requirements: '[{"key": "file0","name": "Code file","type": "code"}]'
+      }
+    }
+
+    put_json with_auth_token("/api/units/#{unit.id}/task_definitions/#{task_def.id}"), data_to_put
+
+    assert_equal 403, last_response.status
+    task_def.reload
+    assert_equal upload_reqs, task_def.upload_requirements
+
+    # Test change upload requirements to multiple files
+    data_to_put = {
+      task_def: {
+        upload_requirements: '[{"key": "file0","name": "Draft learning summary","type": "document"}, {"key": "file1","name": "Code file","type": "code"}]'
+      }
+    }
+
+    put_json with_auth_token("/api/units/#{unit.id}/task_definitions/#{task_def.id}"), data_to_put
+
+    assert_equal 403, last_response.status
+    task_def.reload
+    assert_equal upload_reqs, task_def.upload_requirements
+  end
  end
