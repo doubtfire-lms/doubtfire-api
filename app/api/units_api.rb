@@ -117,7 +117,7 @@ module Api
         end
       end
       
-      if unit_parameters.key?(:portfolio_auto_generation_date)
+      if unit_parameters[:portfolio_auto_generation_date]
         # Ensure that porfolio generation date is within the teaching period
         gen_date = unit_parameters[:portfolio_auto_generation_date]
         unless gen_date > unit.start_date && gen_date <= unit.end_date
@@ -193,11 +193,11 @@ module Api
         end
       end
 
-      if unit_parameters.key?(:portfolio_auto_generation_date)
+      if unit_parameters[:portfolio_auto_generation_date]
         start_date = unit_parameters[:start_date]
         end_date = unit_parameters[:end_date]
         
-        if unit_parameters.key?(:teaching_period_id)
+        if unit_parameters[:teaching_period_id]
           teaching_period = TeachingPeriod.find(unit_parameters[:teaching_period_id])
           start_date = teaching_period.start_date
           end_date = teaching_period.end_date
