@@ -391,4 +391,23 @@ class GroupModelTest < ActiveSupport::TestCase
     
     assert_equal 2, group1.projects.count # they are in the right tutorial
   end
+
+  def test_group_delete_clears_members
+    unit = FactoryBot.create :unit
+
+    group_set = GroupSet.create!({name: 'test group', unit: unit})
+    group_set.save!
+
+    group = Group.create!({group_set: group_set, name: 'test group', tutorial: unit.tutorials.first})
+
+    m1 = unit.active_projects.first
+
+    group.add_member(m1)
+
+    assert_equal 1, m1.group_memberships.count
+    
+    group.destroy
+
+    assert_equal 0, m1.group_memberships.count
+  end
 end
