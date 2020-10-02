@@ -78,4 +78,7 @@ gem 'dotenv-rails'
 gem 'roo', '~> 2.7.0'
 gem 'roo-xls'
 
+# webcal generation
+gem 'icalendar', '~> 2.5', '>= 2.5.3'
+
 gem 'rest-client', '~> 2.0'
