@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20200901044853) do
+ActiveRecord::Schema.define(version: 20200909074930) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -249,6 +249,15 @@ ActiveRecord::Schema.define(version: 20200901044853) do
 
   add_index "task_engagements", ["task_id"], name: "index_task_engagements_on_task_id", using: :btree
 
+  create_table "task_pins", force: :cascade do |t|
+    t.integer  "task_id",    null: false
+    t.integer  "user_id",    null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  add_index "task_pins", ["task_id", "user_id"], name: "index_task_pins_on_task_id_and_user_id", unique: true, using: :btree
+
   create_table "task_statuses", force: :cascade do |t|
     t.string   "name",        limit: 255
     t.string   "description", limit: 255
@@ -419,12 +428,32 @@ ActiveRecord::Schema.define(version: 20200901044853) do
   add_index "users", ["authentication_token"], name: "index_users_on_authentication_token", unique: true, using: :btree
   add_index "users", ["login_id"], name: "index_users_on_login_id", unique: true, using: :btree
 
+  create_table "webcal_unit_exclusions", force: :cascade do |t|
+    t.integer "webcal_id", null: false
+    t.integer "unit_id",   null: false
+  end
+
+  add_index "webcal_unit_exclusions", ["unit_id", "webcal_id"], name: "index_webcal_unit_exclusions_on_unit_id_and_webcal_id", unique: true, using: :btree
+
+  create_table "webcals", force: :cascade do |t|
+    t.string  "guid",                limit: 36,                 null: false
+    t.boolean "include_start_dates",            default: false, null: false
+    t.integer "user_id"
+    t.integer "reminder_time"
+    t.string  "reminder_unit"
+  end
+
+  add_index "webcals", ["guid"], name: "index_webcals_on_guid", unique: true, using: :btree
+  add_index "webcals", ["user_id"], name: "index_webcals_on_user_id", unique: true, using: :btree
+
   add_foreign_key "breaks", "teaching_periods"
   add_foreign_key "comments_read_receipts", "task_comments"
   add_foreign_key "comments_read_receipts", "users"
   add_foreign_key "projects", "campuses"
   add_foreign_key "task_comments", "users", column: "recipient_id"
   add_foreign_key "task_definitions", "tutorial_streams"
+  add_foreign_key "task_pins", "tasks"
+  add_foreign_key "task_pins", "users"
   add_foreign_key "tutorial_enrolments", "projects"
   add_foreign_key "tutorial_enrolments", "tutorials"
   add_foreign_key "tutorial_streams", "activity_types"
@@ -432,4 +461,7 @@ ActiveRecord::Schema.define(version: 20200901044853) do
   add_foreign_key "tutorials", "campuses"
   add_foreign_key "tutorials", "tutorial_streams"
   add_foreign_key "units", "teaching_periods"
+  add_foreign_key "webcal_unit_exclusions", "units"
+  add_foreign_key "webcal_unit_exclusions", "webcals"
+  add_foreign_key "webcals", "users"
 end

@@ -60,6 +60,7 @@ module Api
     mount Api::UnitRolesApi
     mount Api::UnitsApi
     mount Api::UsersApi
+    mount Api::WebcalApi
 
     #
     # Add auth details to all end points
