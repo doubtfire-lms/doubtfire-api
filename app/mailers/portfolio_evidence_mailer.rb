@@ -84,4 +84,19 @@ class PortfolioEvidenceMailer < ActionMailer::Base
     subject = "#{project.unit.name}: Portfolio failed to compile"
     mail(to: email_with_name, from: convenor_email, subject: subject)
   end
+
+  def portfolio_auto_ready(project)
+    return nil if project.nil?
+
+    add_general
+
+    @student = project.student
+    @project = project
+    @convenor = project.unit.convenors.first.user
+
+    email_with_name = %("#{@student.name}" <#{@student.email}>)
+    convenor_email = %("#{@convenor.name}" <#{@convenor.email}>)
+    subject = "#{project.unit.name}: Portfolio ready to review"
+    mail(to: email_with_name, from: convenor_email, subject: subject)
+  end
 end

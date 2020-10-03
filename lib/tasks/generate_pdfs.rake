@@ -78,4 +78,41 @@ namespace :submission do
       end
     end
   end
+
+  task auto_generate_portfolio: :environment do
+    begin
+      # Ensure task PDFs are all generated
+      PortfolioEvidence.process_new_to_pdf
+
+      # Selects projects who's unit's portfolio_auto_generation_date <= todays date, 
+      # has no portfolio created, and has a learning summary present
+      projects_to_compile = Project.joins(:unit)
+        .includes(:user, :unit)
+        .where(portfolio_production_date: nil)
+        .where('portfolio_auto_generation_date <= ?', Time.zone.now)
+        .select{|p| p.learning_summary_report_path != nil}
+
+      projects_to_compile.each do |project|
+        begin
+          project.update(compile_portfolio: true)
+          success = project.create_portfolio
+        rescue => exception
+          logger.error "Failed automatic portfolio generation for project #{project.id}!\n#{e.message}"
+          puts "Failed automatic portfolio generation for project #{project.id}!\n#{e.message}"
+          success = false
+        end
+
+        next unless project.student.receive_portfolio_notifications
+        logger.info "emailing portfolio notification to #{project.student.name}"
+
+        if success
+          PortfolioEvidenceMailer.portfolio_auto_ready(project).deliver_now
+        else
+          PortfolioEvidenceMailer.portfolio_failed(project).deliver_now
+        end
+      end
+    ensure
+      logger.info "Finished automatic portfolio generation"
+    end
+  end
 end
