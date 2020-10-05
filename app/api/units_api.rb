@@ -102,7 +102,7 @@ module Api
         unit.teaching_period = nil
       end
 
-      if unit_parameters[:draft_task_definition_id]
+      if unit_parameters[:draft_task_definition_id].present?
         # Ensure the task definition belongs to unit
         unless unit.task_definitions.exists?(unit_parameters[:draft_task_definition_id])
           error!({ error: 'Draft task definition ID does not belong to unit' }, 403)
