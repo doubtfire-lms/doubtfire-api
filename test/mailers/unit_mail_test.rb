@@ -18,4 +18,20 @@ class UnitMailTest < ActionMailer::TestCase
     assert_equal unit.active_projects.count + 1, ActionMailer::Base.deliveries.count
   end
 
+  def test_send_portfolio_ready_from_main_convenor
+    unit = FactoryBot.create :unit
+    convenor = FactoryBot.create :user, :convenor
+
+    ur = unit.employ_staff convenor, Role.convenor
+
+    unit.update main_convenor: ur
+
+    project = unit.active_projects.first
+
+    mail = PortfolioEvidenceMailer.portfolio_ready(project)
+
+    assert_equal 1, mail.from().count
+    assert_equal convenor.email, mail.from().first
+  end
+
 end
