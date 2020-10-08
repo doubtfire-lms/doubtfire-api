@@ -11,11 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-<<<<<<< HEAD
-ActiveRecord::Schema.define(version: 20200908015241) do
-=======
 ActiveRecord::Schema.define(version: 20200909074930) do
->>>>>>> feature/draft-learning-summary
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"

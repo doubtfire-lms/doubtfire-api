@@ -150,6 +150,83 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert_equal count_tutorials + 1, Tutorial.all.length, last_response_body
     assert_tutorial_model_response last_response_body, tutorial
   end
+  
+  # Test POST for creating unit with invalid portfolio automation date 
+  def test_post_valid_invalid_portfolio_auto_gen_date
+    
+    # Test creating auto-generation date greater than end date
+    data_to_post = {
+      unit: { 
+        name: 'test',
+        code: '1',
+        start_date:'2020-06-15',
+        end_date:'2020-10-15',
+        portfolio_auto_generation_date:'2020-11-05'
+      }
+    }
+
+    post_json with_auth_token('/api/units'), data_to_post
+    assert_equal 403, last_response.status
+    
+
+    # Test creating auto-generation date less than start date
+   
+    data_to_post = {
+      unit: { 
+        name: 'test_2',
+        code: '2',
+        start_date:'2020-06-15',
+        end_date:'2020-10-15',
+        portfolio_auto_generation_date:'2020-05-05'
+      }
+    }
+
+    post_json with_auth_token('/api/units'), data_to_post
+    assert_equal 403, last_response.status
+
+    # Test creating auto-generation date within start and end date
+    data_to_post = {
+      unit: { 
+        name: 'test_3',
+        code: '3',
+        start_date:'2020-06-15',
+        end_date:'2020-10-15',
+        portfolio_auto_generation_date:'2020-07-15'
+      }
+    }
+
+    post_json with_auth_token('/api/units'), data_to_post
+    assert_equal 201, last_response.status
+    Unit.last.destroy
+
+    # Test creating auto-generation date using teaching period id
+
+    tp = FactoryBot.create(:teaching_period)
+    data_to_post = {
+      unit: { 
+        name: 'test_4',
+        code: '4',
+        teaching_period_id: tp.id,
+        portfolio_auto_generation_date: tp.end_date + 1.weeks
+      }
+    }
+
+    post_json with_auth_token('/api/units'), data_to_post
+    assert_equal 403, last_response.status
+
+    data_to_post = {
+      unit: { 
+        name: 'test_5',
+        code: '5',
+        teaching_period_id: tp.id,
+        portfolio_auto_generation_date: tp.start_date + 1.weeks
+      }
+    }
+
+    post_json with_auth_token('/api/units'), data_to_post
+    assert_equal 201, last_response.status
+    Unit.last.destroy
+  end
 
   # End POST tests
   # --------------------------------------------------------------------------- #
@@ -383,6 +460,61 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status
     unit.reload
     assert_equal task_def_doc.id, unit.draft_task_definition_id
+  end
+
+  # Test PUT for creating unit with invalid portfolio automation date 
+  def test_put_valid_invalid_portfolio_auto_gen_date
+    # Test using portfolio auto generation date less than start date 
+    unit = FactoryBot.create (:unit)
+    data_to_put = {
+      unit: { 
+        portfolio_auto_generation_date: unit.start_date - 1.weeks 
+      }
+    }
+    put_json with_auth_token("/api/units/#{unit.id}"), data_to_put
+    assert_equal 403, last_response.status
+    
+
+    # Test using portfolio auto generation date greater than end date 
+    data_to_put = {
+      unit: { 
+        portfolio_auto_generation_date: unit.end_date + 1.weeks
+      }
+    }
+    put_json with_auth_token("/api/units/#{unit.id}"), data_to_put
+    assert_equal 403, last_response.status
+   
+
+    # Test using portfolio auto generation within start and end date 
+    data_to_put = {
+      unit: { 
+        portfolio_auto_generation_date: unit.start_date + 1.weeks
+      }
+    }
+    put_json with_auth_token("/api/units/#{unit.id}"), data_to_put
+    assert_equal 200, last_response.status
+   
+
+    # Test using portfolio auto generation date and teaching period id
+    tp = FactoryBot.create(:teaching_period)
+    unit.teaching_period = tp
+    unit.save
+    data_to_put = {
+      unit: { 
+        portfolio_auto_generation_date: tp.end_date + 1.weeks
+      }
+    }
+    put_json with_auth_token("/api/units/#{unit.id}"), data_to_put
+    assert_equal 403, last_response.status
+
+    # Test using portfolio auto generation date within teaching period
+    data_to_put = {
+      unit: { 
+        portfolio_auto_generation_date: tp.start_date + 1.weeks
+      }
+    }
+    put_json with_auth_token("/api/units/#{unit.id}"), data_to_put
+    assert_equal 200, last_response.status
   end
 
   #def test_units_put
