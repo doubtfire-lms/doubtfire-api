@@ -1171,12 +1171,19 @@ class Task < ActiveRecord::Base
     #
     # Now copy over the temp directory over to the enqueued directory
     #
-    enqueued_dir = FileHelper.student_work_dir(:new, nil, true)[0..-2]
+    enqueued_dir = File.join(FileHelper.student_work_dir(:new, nil, true), id.to_s)
 
-    logger.debug "Moving submission evidence from #{tmp_dir} to #{enqueued_dir}"
+    # Move files into place, deleting existing files if present.
+    if not File.exists? enqueued_dir
+      logger.debug "Creating student work new dir #{enqueued_dir}"
+      FileUtils.mkdir_p enqueued_dir
+    end
 
-    # Move files into place
-    FileUtils.mv tmp_dir, enqueued_dir, :force => true
+    logger.debug "Moving source files from #{tmp_dir} into #{enqueued_dir}"
+    FileUtils.mv Dir.glob(File.join(tmp_dir,'*.*')), enqueued_dir, force: true
+
+    logger.debug "Deleting student work dir: #{tmp_dir}"
+    FileUtils.rm_rf tmp_dir if File.exists? tmp_dir
 
     logger.debug "Submission accepted! Status for task #{id} is now #{trigger}"
   end
