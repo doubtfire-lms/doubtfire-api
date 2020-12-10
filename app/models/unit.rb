@@ -315,6 +315,20 @@ class Unit < ActiveRecord::Base
       task_definitions.where("target_grade <= #{e}").count + 0.0
     end.map { |e| e == 0 ? 1 : e }
 
+    # Get the task stats for a student as a subquery so that it is independent of the main query
+    # otherwise an attempt at a higher level task can exclude the student from the student list! 
+    subquery = projects.
+      joins('LEFT OUTER JOIN tasks ON projects.id = tasks.project_id').
+      joins('LEFT JOIN task_definitions ON tasks.task_definition_id = task_definitions.id').
+      where(
+        'projects.target_grade >= task_definitions.target_grade OR (task_definitions.target_grade IS NULL)'
+      ).
+      group('projects.id').
+      select(
+        "projects.id AS project_id",
+        *TaskStatus.all.map { |s| "SUM(CASE WHEN tasks.task_status_id = #{s.id} THEN 1 ELSE 0 END) AS #{s.status_key}_count" },
+      ).to_sql
+    
     q = projects
         .joins(:user)
         .joins('LEFT OUTER JOIN tasks ON projects.id = tasks.project_id')
@@ -323,6 +337,7 @@ class Unit < ActiveRecord::Base
         .joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id')
         .joins('LEFT OUTER JOIN tutorials ON tutorials.id = tutorial_enrolments.tutorial_id')
         .joins('LEFT OUTER JOIN tutorial_streams ON tutorials.tutorial_stream_id = tutorial_streams.id')
+        .joins("LEFT OUTER JOIN (#{subquery}) as sq ON sq.project_id = projects.id")
         .group(
           'projects.id',
           'projects.target_grade',
@@ -336,7 +351,8 @@ class Unit < ActiveRecord::Base
           'projects.portfolio_production_date',
           'projects.compile_portfolio',
           'projects.grade',
-          'projects.grade_rationale'
+          'projects.grade_rationale',
+          *TaskStatus.all.map { |s| "#{s.status_key}_count" },
         )
         .select(
           'projects.id AS project_id',
@@ -353,14 +369,11 @@ class Unit < ActiveRecord::Base
           'projects.grade_rationale AS grade_rationale',
           'projects.portfolio_production_date AS portfolio_production_date',
           'MAX(CASE WHEN plagiarism_match_links.dismissed = FALSE THEN plagiarism_match_links.pct ELSE 0 END) AS plagiarism_match_links_max_pct',
-          *TaskStatus.all.map { |s| "SUM(CASE WHEN tasks.task_status_id = #{s.id} THEN 1 ELSE 0 END) AS #{s.status_key}_count" },
+          *TaskStatus.all.map { |s| "sq.#{s.status_key}_count AS #{s.status_key}_count" },
           # Get tutorial for each stream in unit
           *tutorial_streams.map { |s| "MAX(CASE WHEN tutorials.tutorial_stream_id = #{s.id} OR tutorials.tutorial_stream_id IS NULL THEN tutorials.id ELSE NULL END) AS tutorial_#{s.id}" },
           # Get tutorial for case when no stream
           "MAX(CASE WHEN tutorial_streams.id IS NULL THEN tutorials.id ELSE NULL END) AS tutorial"
-        )
-        .where(
-          'projects.target_grade >= task_definitions.target_grade OR (task_definitions.target_grade IS NULL)'
         )
         .order('users.first_name')
 
