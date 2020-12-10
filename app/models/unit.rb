@@ -318,10 +318,9 @@ class Unit < ActiveRecord::Base
     # Get the task stats for a student as a subquery so that it is independent of the main query
     # otherwise an attempt at a higher level task can exclude the student from the student list! 
     subquery = projects.
-      joins('LEFT OUTER JOIN tasks ON projects.id = tasks.project_id').
-      joins('LEFT JOIN task_definitions ON tasks.task_definition_id = task_definitions.id').
+      joins(tasks: :task_definition).
       where(
-        'projects.target_grade >= task_definitions.target_grade OR (task_definitions.target_grade IS NULL)'
+        'projects.target_grade >= task_definitions.target_grade'
       ).
       group('projects.id').
       select(
