@@ -107,6 +107,7 @@ class Unit < ActiveRecord::Base
   # Model associations.
   # When a Unit is destroyed, any TaskDefinitions, Tutorials, and ProjectConvenor instances will also be destroyed.
   has_many :projects, dependent: :destroy # projects first to remove tasks
+  has_many :active_projects, -> { where enrolled: true }, class_name: 'Project'
   has_many :group_sets, dependent: :destroy # group sets next to remove groups
   has_many :task_definitions, -> { order 'start_date ASC, abbreviation ASC' }, dependent: :destroy
   has_many :tutorials, dependent: :destroy # tutorials need groups and tasks deleted before it...
@@ -433,10 +434,6 @@ class Unit < ActiveRecord::Base
     else
       User.admins.first.email
     end
-  end
-
-  def active_projects
-    projects.where('enrolled = true')
   end
 
   # Adds a staff member for a role in a unit
