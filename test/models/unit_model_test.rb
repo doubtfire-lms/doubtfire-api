@@ -376,7 +376,7 @@ class UnitModelTest < ActiveSupport::TestCase
   end
 
   def test_import_users
-    unit = FactoryBot.create(:unit, code: 'SIT101', stream_count: 0, with_students: false)
+    unit = FactoryBot.create(:unit, code: 'SIT101', stream_count: 0, with_students: false, tutorials: 0)
     t1 = unit.add_tutorial(
       'Monday',
       '8:00am',
@@ -415,7 +415,7 @@ class UnitModelTest < ActiveSupport::TestCase
   end
 
   def test_import_users_streamed
-    unit = FactoryBot.create(:unit, code: 'SIT101', stream_count: 0, with_students: false)
+    unit = FactoryBot.create(:unit, code: 'SIT101', stream_count: 0, with_students: false, tutorials: 0)
     s1 = unit.add_tutorial_stream('Stream 1', 'Prc01', ActivityType.first)
     s2 = unit.add_tutorial_stream('Stream 2', 'Stu01', ActivityType.first)
 
