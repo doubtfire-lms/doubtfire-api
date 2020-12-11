@@ -1866,14 +1866,14 @@ class Unit < ActiveRecord::Base
     student_tasks.
       joins(:task_status).
       joins("LEFT OUTER JOIN (#{tutorial_enrolment_subquery}) as sq ON sq.project_id = projects.id AND (sq.tutorial_stream_id = task_definitions.tutorial_stream_id OR sq.tutorial_stream_id IS NULL)").
-      joins("LEFT JOIN task_comments ON task_comments.task_id = tasks.id").
+      joins("LEFT JOIN task_comments ON task_comments.task_id = tasks.id AND (task_comments.type IS NULL OR task_comments.type <> 'TaskStatusComment')").
       joins("LEFT JOIN comments_read_receipts crr ON crr.task_comment_id = task_comments.id AND crr.user_id = #{user.id}").
       joins("LEFT JOIN task_pins ON task_pins.task_id = tasks.id AND task_pins.user_id = #{user.id}").
       select(
         'sq.tutorial_id AS tutorial_id', 
         'sq.tutorial_stream_id AS tutorial_stream_id',
         'tasks.id', 
-        'SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) as number_unread',
+        "SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) as number_unread",
         'COUNT(distinct task_pins.task_id) != 0 as pinned',
         'project_id', 
         'tasks.id as task_id',
