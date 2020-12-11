@@ -70,7 +70,7 @@ class TaskComment < ActiveRecord::Base
       recipient: {
         id: self.recipient.id,
         name: self.recipient.name,
-        email: self.user.email
+        email: self.recipient.email
       },
       created_at: self.created_at,
       recipient_read_time: self.time_read_by(self.recipient),
