@@ -297,21 +297,29 @@ class TasksTest < ActiveSupport::TestCase
   end
 
   def test_tasks_for_inbox_include_pinned_status
-    unit = FactoryBot.create(:unit, student_count: 1, task_count: 2, perform_submissions: true)
-    task1, task2 = unit.tasks.limit(2)
+    unit = FactoryBot.create(:unit, task_count: 2)
 
+    s = unit.active_projects.first
+    td1 = unit.task_definitions.first
+
+    task1 = s.task_for_task_definition td1
+    
     tutor = FactoryBot.create(:user, :tutor)
     unit.employ_staff(tutor, Role.tutor)
 
+    task1.add_text_comment s.student, "Message"
+
     # Tutor pins task 1
     post with_auth_token("/api/tasks/#{task1.id}/pin", tutor)
+
+    assert TaskPin.find_by user: tutor, task: task1
 
     # Tutor retrieves task inbox
     get with_auth_token("/api/units/#{unit.id}/tasks/inbox", tutor)
 
     # Assert that task1 is pinned, task2 isn't
-    assert last_response_body.detect { |t| t['id'] == task1.id }['pinned']
-    assert_not last_response_body.detect { |t| t['id'] == task2.id }['pinned']
+    assert last_response_body.count == 1
+    assert last_response_body[0]['pinned']
   end
 
 end
