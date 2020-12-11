@@ -46,10 +46,6 @@ class TaskComment < ActiveRecord::Base
     end
   end
 
-  def new_for?(user)
-    CommentsReadReceipts.where(user: user, task_comment_id: self).empty?
-  end
-
   def delete_associated_files
     FileUtils.rm attachment_path if File.exist? attachment_path
   end
@@ -151,6 +147,10 @@ class TaskComment < ActiveRecord::Base
 
   def mark_as_unread(user)
     remove_comment_read_entry(user)
+  end
+
+  def new_for?(user)
+    ! read_by? user
   end
 
   def read_by?(user)
