@@ -185,6 +185,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     # Maybe make this call API to set
     unit.draft_task_definition = task_def
+    unit.save
 
     data_to_post = {
       trigger: 'ready_to_mark'
@@ -207,9 +208,10 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     assert project_task.convert_submission_to_pdf
 
     # Check if pdf was copied over
+    project.reload
+    assert project.uses_draft_learning_summary
     path = File.join(project.portfolio_temp_path, '000-document-LearningSummaryReport.pdf')
     assert File.exists? path
-    assert project.uses_draft_learning_summary
 
     unit.destroy
     assert_not File.exists? path
