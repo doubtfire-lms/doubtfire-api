@@ -491,8 +491,8 @@ class Task < ActiveRecord::Base
       # Grant an extension on fix if due date is within 1 week
       case task_status
       when TaskStatus.redo, TaskStatus.fix_and_resubmit, TaskStatus.discuss, TaskStatus.demonstrate
-        if to_same_day_anywhere_on_earth(due_date) < Time.zone.now + 7.days && can_apply_for_extension?
-          grant_extension(assessor, 1)
+        if to_same_day_anywhere_on_earth(due_date) < Time.zone.now + 7.days && can_apply_for_extension? && unit.extension_weeks_on_resubmit_request > 0
+          grant_extension(assessor, unit.extension_weeks_on_resubmit_request)
         end
       end
     end
