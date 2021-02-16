@@ -66,6 +66,7 @@ class ExtensionTest < ActiveSupport::TestCase
     assert_equal 403, last_response.status, "Error: Should not allow 0 week extension requests"
 
     td.destroy!
+    unit.destroy!
   end
 
   # Test that extension requests are not read by main tutor until they are assessed
@@ -121,6 +122,58 @@ class ExtensionTest < ActiveSupport::TestCase
     assert tc.read_by?(main_tutor), "Error: Should be read by main tutor after assess"
 
     td.destroy!
+    unit.destroy!
+  end
+
+  def test_disallow_student_extensions
+    unit = FactoryBot.create(:unit, allow_student_extension_requests: false)
+    project = unit.projects.first
+    user = project.student
+    other_tutor = unit.main_convenor_user
+
+    td = TaskDefinition.new({
+        unit_id: unit.id,
+        tutorial_stream: unit.tutorial_streams.first,
+        name: 'status task change',
+        description: 'status task change test',
+        weighting: 4,
+        target_grade: 0,
+        start_date: Time.zone.now - 2.weeks,
+        target_date: Time.zone.now - 1.day,
+        due_date: Time.zone.now + 1.day,
+        abbreviation: 'LESS1WEEKEXTTEST',
+        restrict_status_updates: false,
+        upload_requirements: [ ],
+        plagiarism_warn_pct: 0.8,
+        is_graded: false,
+        max_quality_pts: 0
+      })
+    td.save!
+
+    main_tutor = project.tutor_for(td)
+    data_to_post = {
+      weeks_requested: '1',
+      comment: "I need a lot of help"
+    }
+
+    # Request a 2 day extension
+    post_json with_auth_token("/api/projects/#{project.id}/task_def_id/#{td.id}/request_extension", user), data_to_post
+    response = last_response_body
+    assert_equal 403, last_response.status
+
+    post_json with_auth_token("/api/projects/#{project.id}/task_def_id/#{td.id}/request_extension", main_tutor), data_to_post
+    response = last_response_body
+    assert_equal 201, last_response.status
+    assert response["weeks_requested"] == 1, "Error: Deadline less than a week, requested weeks should be 1, found #{response["weeks_requested"]}."
+
+    tc = ExtensionComment.find(response['id'])
+
+    # Check it is read after grant by another user - should be auto granted
+    assert tc.read_by?(main_tutor), "Error: Should be read by main tutor after assess"
+    assert tc.extension_granted, "Shoudl be granted"
+
+    td.destroy!
+    unit.destroy!
   end
 
 end
