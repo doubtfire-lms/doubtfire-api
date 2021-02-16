@@ -34,7 +34,8 @@ class Task < ActiveRecord::Base
       :create_discussion,
       :delete_discussion,
       :get_discussion,
-      :assess_extension
+      :assess_extension,
+      :request_extension
     ]
     # What can convenors do with tasks?
     convenor_role_permissions = [
@@ -46,7 +47,8 @@ class Task < ActiveRecord::Base
       :view_plagiarism,
       :delete_plagiarism,
       :get_discussion,
-      :assess_extension
+      :assess_extension,
+      :request_extension
     ]
     # What can nil users do with tasks?
     nil_role_permissions = [
