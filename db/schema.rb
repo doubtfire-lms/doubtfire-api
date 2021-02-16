@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20200909074930) do
+ActiveRecord::Schema.define(version: 20210216214046) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -391,6 +391,8 @@ ActiveRecord::Schema.define(version: 20200909074930) do
     t.boolean  "enable_sync_timetable",                             default: true, null: false
     t.boolean  "enable_sync_enrolments",                            default: true, null: false
     t.integer  "draft_task_definition_id"
+    t.boolean  "allow_student_extension_requests",                  default: true, null: false
+    t.integer  "extension_weeks_on_resubmit_request",               default: 1,    null: false
   end
 
   add_index "units", ["teaching_period_id"], name: "index_units_on_teaching_period_id", using: :btree

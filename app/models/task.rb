@@ -19,7 +19,7 @@ class Task < ActiveRecord::Base
       :start_discussion,
       :get_discussion,
       :make_discussion_reply,
-      :request_extension
+      # :request_extension -- depends on settings in unit. See specific_permission_hash method
     ]
     # What can tutors do with tasks?
     tutor_role_permissions = [
@@ -77,6 +77,16 @@ class Task < ActiveRecord::Base
         return nil
       end
     end
+  end
+
+  # Used to adjust the request extension permission in units that do not
+  # allow students to request extensions
+  def specific_permission_hash(role, perm_hash, _other)
+    result = perm_hash[role] unless perm_hash.nil?
+    if result && role == :student && unit.allow_student_extension_requests
+      result << :request_extension
+    end
+    result
   end
 
   # Delete action - before dependent association
@@ -480,7 +490,7 @@ class Task < ActiveRecord::Base
 
       # Grant an extension on fix if due date is within 1 week
       case task_status
-      when TaskStatus.fix_and_resubmit, TaskStatus.discuss, TaskStatus.demonstrate
+      when TaskStatus.redo, TaskStatus.fix_and_resubmit, TaskStatus.discuss, TaskStatus.demonstrate
         if to_same_day_anywhere_on_earth(due_date) < Time.zone.now + 7.days && can_apply_for_extension?
           grant_extension(assessor, 1)
         end
