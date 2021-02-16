@@ -207,8 +207,13 @@ class Task < ActiveRecord::Base
     end
     extension.save!
 
-    if unit.auto_apply_extension_before_deadline && weeks <= weeks_can_extend
-      extension.assess_extension unit.main_convenor_user, true, true
+    # Check and apply either auto extensions, or those requested by staff
+    if unit.auto_apply_extension_before_deadline && weeks <= weeks_can_extend || role_for(user) == :tutor
+      if role_for(user) == :tutor
+        extension.assess_extension user, true, true
+      else
+        extension.assess_extension unit.main_convenor_user, true, true
+      end
     end
 
     extension
