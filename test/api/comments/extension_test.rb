@@ -176,4 +176,52 @@ class ExtensionTest < ActiveSupport::TestCase
     unit.destroy!
   end
 
+  def test_extension_on_resubmit
+    unit = FactoryBot.create(:unit, extension_weeks_on_resubmit_request: 2)
+    td = TaskDefinition.new({
+        unit_id: unit.id,
+        tutorial_stream: unit.tutorial_streams.first,
+        name: 'Task past due - for revert',
+        description: 'Task past due',
+        weighting: 4,
+        target_grade: 0,
+        start_date: Time.zone.now - 2.weeks,
+        target_date: Time.zone.now + 1.day,
+        due_date: Time.zone.now + 1.day + 3.weeks,
+        abbreviation: 'TaskPastDueForRevert',
+        restrict_status_updates: false,
+        upload_requirements: [ ],
+        plagiarism_warn_pct: 0.8,
+        is_graded: false,
+        max_quality_pts: 0
+      })
+    td.save!
+
+    data_to_post = {
+      trigger: 'ready_to_mark'
+    }
+
+    # Get the first student - who now has this task
+    project = unit.active_projects.first
+    tutor = project.tutor_for(td)
+
+    # Make a submission for this student
+    post with_auth_token("/api/projects/#{project.id}/task_def_id/#{td.id}/submission", tutor), data_to_post    
+    assert_equal 201, last_response.status
+
+    # Get the task... check it is ready for feedback
+    task = project.task_for_task_definition(td)
+    assert_equal TaskStatus.ready_to_mark, task.task_status
+    assert_equal 3, task.weeks_can_extend
+    assert task.can_apply_for_extension?
+
+    # Ask for resubmit
+    task.assess TaskStatus.fix_and_resubmit, tutor
+
+    # Now check that the 2 weeks was added
+    assert_equal 1, task.weeks_can_extend
+
+    td.destroy
+    unit.destroy
+  end
 end
