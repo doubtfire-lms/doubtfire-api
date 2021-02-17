@@ -71,6 +71,8 @@ module Api
         optional :enable_sync_timetable, type: Boolean, desc: 'Sync to timetable automatically if supported by deployment'
         optional :enable_sync_enrolments, type: Boolean, desc: 'Sync student enrolments automatically if supported by deployment'
         optional :draft_task_definition_id, type: Integer, desc: 'Indicates the ID of the task definition used as the "draft learning summary task"'
+        optional :allow_student_extension_requests, type: Boolean, desc: 'Can turn on/off student extension requests', default: true
+        optional :extension_weeks_on_resubmit_request, type: Integer, desc: 'Determines the number of weeks extension on a resubmit request', default: 1
 
         mutually_exclusive :teaching_period_id,:start_date
         all_or_none_of :start_date, :end_date
@@ -95,7 +97,9 @@ module Api
                                                             :send_notifications,
                                                             :enable_sync_timetable,
                                                             :enable_sync_enrolments,
-                                                            :draft_task_definition_id
+                                                            :draft_task_definition_id,
+                                                            :allow_student_extension_requests,
+                                                            :extension_weeks_on_resubmit_request
                                                           )
 
       if unit.teaching_period_id.present? && unit_parameters.key?(:start_date)
@@ -134,6 +138,8 @@ module Api
         optional :send_notifications, type: Boolean, desc: 'Indicates if emails should be sent on updates each week', default: true
         optional :enable_sync_timetable, type: Boolean, desc: 'Sync to timetable automatically if supported by deployment', default: true
         optional :enable_sync_enrolments, type: Boolean, desc: 'Sync student enrolments automatically if supported by deployment', default: true
+        optional :allow_student_extension_requests, type: Boolean, desc: 'Can turn on/off student extension requests', default: true
+        optional :extension_weeks_on_resubmit_request, type: Integer, desc: 'Determines the number of weeks extension on a resubmit request', default: 1
 
         mutually_exclusive :teaching_period_id,:start_date
         mutually_exclusive :teaching_period_id,:end_date
@@ -156,7 +162,9 @@ module Api
                                                       :auto_apply_extension_before_deadline,
                                                       :send_notifications,
                                                       :enable_sync_timetable,
-                                                      :enable_sync_enrolments
+                                                      :enable_sync_enrolments,
+                                                      :allow_student_extension_requests,
+                                                      :extension_weeks_on_resubmit_request
                                                     )
 
       if unit_parameters[:description].nil?
