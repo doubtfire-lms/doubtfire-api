@@ -489,9 +489,9 @@ class Unit < ActiveRecord::Base
 
     return if result.nil?
 
-    puts "Import success for #{result[:success].count} students" unless result[:success].count == 0
-    puts "Skipped #{result[:ignored].count} students" unless result[:ignored].count == 0
-    puts "Errors #{result[:errors].count} students" unless result[:errors].count == 0
+    puts "#{code} - Import success for #{result[:success].count} students" unless result[:success].count == 0
+    puts "#{code} - Skipped #{result[:ignored].count} students" unless result[:ignored].count == 0
+    puts "#{code} - Errors #{result[:errors].count} students" unless result[:errors].count == 0
     result[:errors].each do |err|
       puts "#{err[:message]} --> #{err[:row]}"
     end
