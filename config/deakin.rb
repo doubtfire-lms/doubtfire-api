@@ -513,7 +513,8 @@ class DeakinInstitutionSettings
     tp = unit.teaching_period
 
     # url = "#{@star_url}/star-#{tp.year}/rest/students/allocated"
-    url = "#{@star_url}/even/rest/students/allocated"
+    server = unit.start_date.year % 2 == 0 ? 'even' : 'odd'
+    url = "#{@star_url}/#{server}/rest/students/allocated"
 
     unit.tutorial_streams.each do |tutorial_stream|
       logger.info("Fetching #{tutorial_stream} from #{url}")
