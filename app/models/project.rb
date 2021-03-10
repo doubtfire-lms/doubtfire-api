@@ -47,7 +47,6 @@ class Project < ActiveRecord::Base
     # What can students do with projects?
     student_role_permissions = [
       :get,
-      :change_tutorial,
       :make_submission,
       :get_submission,
       :change
@@ -92,6 +91,16 @@ class Project < ActiveRecord::Base
 
     # Otherwise link in units and only get active units
     result.joins(:unit).where('units.active = TRUE')
+  end
+
+  # Used to adjust the change tutorial permission in units that do not
+  # allow students to change tutorials
+  def specific_permission_hash(role, perm_hash, _other)
+    result = perm_hash[role] unless perm_hash.nil?
+    if result && role == :student && unit.allow_student_change_tutorial
+      result << :change_tutorial
+    end
+    result
   end
 
   def enrol_in(tutorial)

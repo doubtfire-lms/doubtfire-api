@@ -72,6 +72,7 @@ module Api
         optional :enable_sync_enrolments, type: Boolean, desc: 'Sync student enrolments automatically if supported by deployment'
         optional :draft_task_definition_id, type: Integer, desc: 'Indicates the ID of the task definition used as the "draft learning summary task"'
         optional :allow_student_extension_requests, type: Boolean, desc: 'Can turn on/off student extension requests', default: true
+        optional :allow_student_change_tutorial, type: Boolean, desc: 'Can turn on/off student ability to change tutorials', default: true
         optional :extension_weeks_on_resubmit_request, type: Integer, desc: 'Determines the number of weeks extension on a resubmit request', default: 1
 
         mutually_exclusive :teaching_period_id,:start_date
@@ -99,7 +100,8 @@ module Api
                                                             :enable_sync_enrolments,
                                                             :draft_task_definition_id,
                                                             :allow_student_extension_requests,
-                                                            :extension_weeks_on_resubmit_request
+                                                            :extension_weeks_on_resubmit_request,
+                                                            :allow_student_change_tutorial
                                                           )
 
       if unit.teaching_period_id.present? && unit_parameters.key?(:start_date)
@@ -140,6 +142,7 @@ module Api
         optional :enable_sync_enrolments, type: Boolean, desc: 'Sync student enrolments automatically if supported by deployment', default: true
         optional :allow_student_extension_requests, type: Boolean, desc: 'Can turn on/off student extension requests', default: true
         optional :extension_weeks_on_resubmit_request, type: Integer, desc: 'Determines the number of weeks extension on a resubmit request', default: 1
+        optional :allow_student_change_tutorial, type: Boolean, desc: 'Can turn on/off student ability to change tutorials', default: true
 
         mutually_exclusive :teaching_period_id,:start_date
         mutually_exclusive :teaching_period_id,:end_date
@@ -164,7 +167,8 @@ module Api
                                                       :enable_sync_timetable,
                                                       :enable_sync_enrolments,
                                                       :allow_student_extension_requests,
-                                                      :extension_weeks_on_resubmit_request
+                                                      :extension_weeks_on_resubmit_request,
+                                                      :allow_student_change_tutorial
                                                     )
 
       if unit_parameters[:description].nil?
