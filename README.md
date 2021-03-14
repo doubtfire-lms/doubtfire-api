@@ -60,6 +60,7 @@ Doubtfire requires multiple environment variables that help define settings abou
 | `DF_INSTITUTION_PRIVACY`      | A statement related to the need for students to submit their own work, and that this work may be uploaded to 3rd parties for the purpose of plagiarism detection.                                                                                                                                    | Default statement provided |
 | `DF_INSTITUTION_PLAGIARISM`      | A statement clarifying the terms plagiarism and collusion.                                                                                                                                    | Default statement provided |
 | `DF_INSTITUTION_SETTINGS_RB`      | The path of the institution specific settings rb code - used to map student imports from institutional exports to a format understood by Doubtfire.                                                                                                                | No default |
+| `DF_FFMPEG_PATH`      | The path of to the ffmpeg binary for audio processing.                                                                                                                | ffmpeg |
 
 If you have chosen to use AAF Rapid Connect authentication, then you will also need to provide the following:
 
