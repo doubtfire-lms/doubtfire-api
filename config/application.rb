@@ -42,6 +42,7 @@ module Doubtfire
     config.institution[:host] = 'localhost:3000' if Rails.env.development?
     config.institution[:host_url] = Rails.env.development? ? "http://#{config.institution[:host]}/" : "https://#{config.institution[:host]}/"
     config.institution[:settings] = ENV['DF_INSTITUTION_SETTINGS_RB'] if ENV['DF_INSTITUTION_SETTINGS_RB']
+    config.institution[:ffmpeg] = ENV['DF_FFMPEG_PATH'] || 'ffmpeg'
     
     require "#{Rails.root}/config/#{config.institution[:settings]}" unless config.institution[:settings].nil?
 

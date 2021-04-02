@@ -34,10 +34,11 @@ class Project < ActiveRecord::Base
   # Callbacks - methods called are private
   before_destroy :can_destroy?
 
-  validate :must_be_in_group_tutorials
   validates :grade_rationale, length: { maximum: 4095, allow_blank: true }
 
-  validate :tutorial_enrolment_same_campus
+  validate :tutorial_enrolment_same_campus, if: :campus_id_changed?
+
+  after_update :check_withdraw_from_groups, if: :enrolled_changed?
 
   #
   # Permissions around project data
@@ -46,7 +47,6 @@ class Project < ActiveRecord::Base
     # What can students do with projects?
     student_role_permissions = [
       :get,
-      :change_tutorial,
       :make_submission,
       :get_submission,
       :change
@@ -93,6 +93,16 @@ class Project < ActiveRecord::Base
     result.joins(:unit).where('units.active = TRUE')
   end
 
+  # Used to adjust the change tutorial permission in units that do not
+  # allow students to change tutorials
+  def specific_permission_hash(role, perm_hash, _other)
+    result = perm_hash[role] unless perm_hash.nil?
+    if result && role == :student && unit.allow_student_change_tutorial
+      result << :change_tutorial
+    end
+    result
+  end
+
   def enrol_in(tutorial)
     # Check if multiple enrolments changing to a single enrolment - due to no stream.
     # No need to delete if only 1, as that would be updated as well.
@@ -106,6 +116,10 @@ class Project < ActiveRecord::Base
       tutorial_enrolment = TutorialEnrolment.new
       tutorial_enrolment.tutorial = tutorial
       tutorial_enrolment.project = self
+
+      # Add this enrolment to aid and check project validation
+      tutorial_enrolments << tutorial_enrolment
+
       tutorial_enrolment.save!
 
       # add after save to ensure valid tutorial_enrolments
@@ -118,7 +132,7 @@ class Project < ActiveRecord::Base
   end
 
   def enrolled_in?(tutorial)
-    tutorial_enrolments.where(tutorial_id: tutorial.id).count > 0
+    tutorial_enrolments.select{|e| e.tutorial_id == tutorial.id}.count > 0 || tutorial_enrolments.where(tutorial_id: tutorial.id).count > 0
   end
 
   # Find enrolment in same tutorial stream
@@ -129,27 +143,9 @@ class Project < ActiveRecord::Base
       first
   end
 
-  #
-  # Check to see if the student has a valid tutorial
-  #
-  def must_be_in_group_tutorials
-    groups.each do |g|
-      next unless g.limit_members_to_tutorial?
-      next if enrolled_in? g.tutorial
-      if g.group_set.allow_students_to_manage_groups
-        # leave group
-        g.remove_member(self)
-      else
-        errors.add(:groups, "require you to be in tutorial #{g.tutorial.abbreviation}")
-        break
-      end
-    end
-  end
-
-  # Check tutorial membership if 
+  # Check tutorial membership if there is a campus change 
   def tutorial_enrolment_same_campus
-    return unless campus_id.present? && campus_id_changed?
-    return unless enrolled
+    return unless enrolled && campus_id.present? && campus_id_changed?
     if tutorial_enrolments.joins(:tutorial).where('tutorials.campus_id <> :cid', cid: campus_id).count > 0
       errors.add(:campus, "does not match with tutorial enrolments.")
     end
@@ -254,7 +250,7 @@ class Project < ActiveRecord::Base
   def task_details_for_shallow_serializer(user)
     tasks
       .joins(:task_status)
-      .joins("LEFT JOIN task_comments ON task_comments.task_id = tasks.id")
+      .joins("LEFT JOIN task_comments ON task_comments.task_id = tasks.id AND (task_comments.type IS NULL OR task_comments.type <> 'TaskStatusComment')")
       .joins("LEFT JOIN comments_read_receipts crr ON crr.task_comment_id = task_comments.id AND crr.user_id = #{user.id}")
       .select(
         'SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) as number_unread', 'project_id', 'tasks.id as id',
@@ -573,6 +569,11 @@ class Project < ActiveRecord::Base
   # Total task counts must contain an array of the cummulative task counts (with none being 0)
   # Project task counts is an object with fail_count, complete_count etc for each status
   def self.create_task_stats_from(total_task_counts, project_task_counts, target_grade)
+
+    TaskStatus.all.each  do |s|
+      project_task_counts["#{s.status_key}_count"] = 0 if project_task_counts["#{s.status_key}_count"].nil?
+    end
+
     red_pct = ((project_task_counts.fail_count + project_task_counts.do_not_resubmit_count + project_task_counts.time_exceeded_count) / total_task_counts[target_grade]).signif(2)
     orange_pct = ((project_task_counts.redo_count + project_task_counts.need_help_count + project_task_counts.fix_and_resubmit_count) / total_task_counts[target_grade]).signif(2)
     green_pct = ((project_task_counts.discuss_count + project_task_counts.demonstrate_count + project_task_counts.complete_count) / total_task_counts[target_grade]).signif(2)
@@ -684,6 +685,10 @@ class Project < ActiveRecord::Base
     if name == 'LearningSummaryReport' && kind == 'document'
       result[:idx] = 0
       result[:name] = 'LearningSummaryReport.pdf'
+
+      # set uses_draft_learning_summary to false, since we uploaded a new learning summary
+      self.uses_draft_learning_summary = false
+      save
     else
       Dir.chdir(portfolio_tmp_dir)
       files = Dir.glob('*')
@@ -935,5 +940,18 @@ class Project < ActiveRecord::Base
     return true if tutorial_enrolments.count == 0
     errors.add :base, "Cannot delete project with enrolments"
     false
+  end
+
+  # If someone withdraws from a unit, make sure they are removed from groups
+  def check_withdraw_from_groups
+    return unless enrolled && ! enrolled_was
+
+    group_memberships.each do |gm|
+      next unless gm.active
+      
+      if ! gm.valid? || gm.group.beyond_capacity?
+        gm.update(active: false)
+      end
+    end
   end
 end
