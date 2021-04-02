@@ -31,6 +31,8 @@ module MimeCheckHelpers
       excel_to_csv file_path, :xls
     elsif type.start_with? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
       excel_to_csv file_path, :xlsx
+    else
+      FileHelper.ensure_utf8_code file_path, true
     end
   end
 

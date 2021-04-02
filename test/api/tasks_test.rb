@@ -228,4 +228,98 @@ class TasksTest < ActiveSupport::TestCase
     td.destroy
   end
 
+  def test_convenors_tutors_can_pin_and_unpin_tasks_students_admins_cannot
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 1, perform_submissions: true)
+    task = unit.tasks.first
+
+    convenor = FactoryBot.create(:user, :convenor)
+    tutor = FactoryBot.create(:user, :tutor)
+    student = FactoryBot.create(:user, :student)
+    admin = FactoryBot.create(:user, :admin)
+
+    unit.employ_staff(convenor, Role.convenor)
+    unit.employ_staff(tutor, Role.tutor)
+    unit.enrol_student(student, FactoryBot.create(:campus))
+
+    # Convenor tries to pin task
+    post with_auth_token("/api/tasks/#{task.id}/pin", convenor)
+    assert_equal last_response.status, 201
+
+    # Convenor tries to unpin task
+    delete with_auth_token("/api/tasks/#{task.id}/pin", convenor)
+    assert_equal last_response.status, 200
+
+    # Tutor tries to pin task
+    post with_auth_token("/api/tasks/#{task.id}/pin", tutor)
+    assert_equal last_response.status, 201
+
+    # Tutor tries to unpin task
+    delete with_auth_token("/api/tasks/#{task.id}/pin", tutor)
+    assert_equal last_response.status, 200
+
+    # Student tries to pin task
+    post with_auth_token("/api/tasks/#{task.id}/pin", student)
+    assert_equal last_response.status, 403
+
+    # Admin tries to pin task
+    post with_auth_token("/api/tasks/#{task.id}/pin", admin)
+    assert_equal last_response.status, 403
+  end
+
+  def test_convenors_tutors_can_pin_tasks_of_their_units_only
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 1, perform_submissions: true)
+    task = unit.tasks.first
+
+    convenor = FactoryBot.create(:user, :convenor)
+    tutor = FactoryBot.create(:user, :tutor)
+
+    unit.employ_staff(convenor, Role.convenor)
+    unit.employ_staff(tutor, Role.tutor)
+
+    other_unit = FactoryBot.create(:unit, student_count: 1, task_count: 1, perform_submissions: true)
+    other_task = other_unit.tasks.first
+
+    # Convenor tries to pin task of unit that they are assigned to
+    post with_auth_token("/api/tasks/#{task.id}/pin", convenor)
+    assert_equal last_response.status, 201
+
+    # Tutor tries to pin task of unit that they are assigned to
+    post with_auth_token("/api/tasks/#{task.id}/pin", tutor)
+    assert_equal last_response.status, 201
+
+    # Convenor tries to pin task of unit that they are not assigned to
+    post with_auth_token("/api/tasks/#{other_task.id}/pin", convenor)
+    assert_equal last_response.status, 403
+
+    # Tutor tries to pin task of unit that they are not assigned to
+    post with_auth_token("/api/tasks/#{other_task.id}/pin", tutor)
+    assert_equal last_response.status, 403
+  end
+
+  def test_tasks_for_inbox_include_pinned_status
+    unit = FactoryBot.create(:unit, task_count: 2)
+
+    s = unit.active_projects.first
+    td1 = unit.task_definitions.first
+
+    task1 = s.task_for_task_definition td1
+    
+    tutor = FactoryBot.create(:user, :tutor)
+    unit.employ_staff(tutor, Role.tutor)
+
+    task1.add_text_comment s.student, "Message"
+
+    # Tutor pins task 1
+    post with_auth_token("/api/tasks/#{task1.id}/pin", tutor)
+
+    assert TaskPin.find_by user: tutor, task: task1
+
+    # Tutor retrieves task inbox
+    get with_auth_token("/api/units/#{unit.id}/tasks/inbox", tutor)
+
+    # Assert that task1 is pinned, task2 isn't
+    assert last_response_body.count == 1
+    assert last_response_body[0]['pinned']
+  end
+
 end

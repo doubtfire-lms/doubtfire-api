@@ -62,7 +62,7 @@ class PortfolioEvidenceMailer < ActionMailer::Base
 
     @student = project.student
     @project = project
-    @convenor = project.unit.convenors.first.user
+    @convenor = project.main_convenor_user
 
     email_with_name = %("#{@student.name}" <#{@student.email}>)
     convenor_email = %("#{@convenor.name}" <#{@convenor.email}>)
@@ -77,7 +77,7 @@ class PortfolioEvidenceMailer < ActionMailer::Base
     
     @student = project.student
     @project = project
-    @convenor = project.unit.convenors.first.user
+    @convenor = project.main_convenor_user
 
     email_with_name = %("#{@student.name}" <#{@student.email}>)
     convenor_email = %("#{@convenor.name}" <#{@convenor.email}>)

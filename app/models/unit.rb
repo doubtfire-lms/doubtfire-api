@@ -107,6 +107,7 @@ class Unit < ActiveRecord::Base
   # Model associations.
   # When a Unit is destroyed, any TaskDefinitions, Tutorials, and ProjectConvenor instances will also be destroyed.
   has_many :projects, dependent: :destroy # projects first to remove tasks
+  has_many :active_projects, -> { where enrolled: true }, class_name: 'Project'
   has_many :group_sets, dependent: :destroy # group sets next to remove groups
   has_many :task_definitions, -> { order 'start_date ASC, abbreviation ASC' }, dependent: :destroy
   has_many :tutorials, dependent: :destroy # tutorials need groups and tasks deleted before it...
@@ -118,6 +119,7 @@ class Unit < ActiveRecord::Base
   has_many :tasks, through: :projects
   has_many :groups, through: :group_sets
   has_many :tutorial_enrolments, through: :tutorials
+  has_many :group_memberships, through: :groups
   has_many :teaching_staff, through: :unit_roles, class_name: 'User', source: 'user'
   has_many :learning_outcome_task_links, through: :task_definitions
   has_many :task_engagements, through: :projects
@@ -130,6 +132,8 @@ class Unit < ActiveRecord::Base
 
   belongs_to :main_convenor, class_name: 'UnitRole'
 
+  belongs_to :draft_task_definition, class_name: 'TaskDefinition'
+
   validates :name, :description, :start_date, :end_date, presence: true
 
   validates :description, length: { maximum: 4095, allow_blank: true }
@@ -138,6 +142,7 @@ class Unit < ActiveRecord::Base
   validates :end_date, presence: true
 
   validates :code, uniqueness: { scope: :teaching_period, message: "%{value} already exists in this teaching period" }, if: :has_teaching_period?
+  validates :extension_weeks_on_resubmit_request, :numericality => { :greater_than_or_equal_to => 0 }
 
   validate :validate_end_date_after_start_date
   validate :ensure_teaching_period_dates_match, if: :has_teaching_period?
@@ -312,6 +317,19 @@ class Unit < ActiveRecord::Base
       task_definitions.where("target_grade <= #{e}").count + 0.0
     end.map { |e| e == 0 ? 1 : e }
 
+    # Get the task stats for a student as a subquery so that it is independent of the main query
+    # otherwise an attempt at a higher level task can exclude the student from the student list! 
+    subquery = projects.
+      joins(tasks: :task_definition).
+      where(
+        'projects.target_grade >= task_definitions.target_grade'
+      ).
+      group('projects.id').
+      select(
+        "projects.id AS project_id",
+        *TaskStatus.all.map { |s| "SUM(CASE WHEN tasks.task_status_id = #{s.id} THEN 1 ELSE 0 END) AS #{s.status_key}_count" },
+      ).to_sql
+    
     q = projects
         .joins(:user)
         .joins('LEFT OUTER JOIN tasks ON projects.id = tasks.project_id')
@@ -320,9 +338,11 @@ class Unit < ActiveRecord::Base
         .joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id')
         .joins('LEFT OUTER JOIN tutorials ON tutorials.id = tutorial_enrolments.tutorial_id')
         .joins('LEFT OUTER JOIN tutorial_streams ON tutorials.tutorial_stream_id = tutorial_streams.id')
+        .joins("LEFT OUTER JOIN (#{subquery}) as sq ON sq.project_id = projects.id")
         .group(
           'projects.id',
           'projects.target_grade',
+          'projects.submitted_grade',
           'projects.enrolled',
           'projects.campus_id',
           'users.first_name',
@@ -332,7 +352,8 @@ class Unit < ActiveRecord::Base
           'projects.portfolio_production_date',
           'projects.compile_portfolio',
           'projects.grade',
-          'projects.grade_rationale'
+          'projects.grade_rationale',
+          *TaskStatus.all.map { |s| "#{s.status_key}_count" },
         )
         .select(
           'projects.id AS project_id',
@@ -343,19 +364,17 @@ class Unit < ActiveRecord::Base
           'users.username AS student_id',
           'users.email AS student_email',
           'projects.target_grade AS target_grade',
+          'projects.submitted_grade AS submitted_grade',
           'projects.compile_portfolio AS compile_portfolio',
           'projects.grade AS grade',
           'projects.grade_rationale AS grade_rationale',
           'projects.portfolio_production_date AS portfolio_production_date',
           'MAX(CASE WHEN plagiarism_match_links.dismissed = FALSE THEN plagiarism_match_links.pct ELSE 0 END) AS plagiarism_match_links_max_pct',
-          *TaskStatus.all.map { |s| "SUM(CASE WHEN tasks.task_status_id = #{s.id} THEN 1 ELSE 0 END) AS #{s.status_key}_count" },
+          *TaskStatus.all.map { |s| "sq.#{s.status_key}_count AS #{s.status_key}_count" },
           # Get tutorial for each stream in unit
           *tutorial_streams.map { |s| "MAX(CASE WHEN tutorials.tutorial_stream_id = #{s.id} OR tutorials.tutorial_stream_id IS NULL THEN tutorials.id ELSE NULL END) AS tutorial_#{s.id}" },
           # Get tutorial for case when no stream
           "MAX(CASE WHEN tutorial_streams.id IS NULL THEN tutorials.id ELSE NULL END) AS tutorial"
-        )
-        .where(
-          'projects.target_grade >= task_definitions.target_grade OR (task_definitions.target_grade IS NULL)'
         )
         .order('users.first_name')
 
@@ -372,6 +391,7 @@ class Unit < ActiveRecord::Base
         student_email: t.student_email,
         student_name: "#{t.first_name} #{t.last_name}",
         target_grade: t.target_grade,
+        submitted_grade: t.submitted_grade,
         compile_portfolio: t.compile_portfolio,
         grade: t.grade,
         grade_rationale: t.grade_rationale,
@@ -415,10 +435,6 @@ class Unit < ActiveRecord::Base
     else
       User.admins.first.email
     end
-  end
-
-  def active_projects
-    projects.where('enrolled = true')
   end
 
   # Adds a staff member for a role in a unit
@@ -473,9 +489,9 @@ class Unit < ActiveRecord::Base
 
     return if result.nil?
 
-    puts "Import success for #{result[:success].count} students" unless result[:success].count == 0
-    puts "Skipped #{result[:ignored].count} students" unless result[:ignored].count == 0
-    puts "Errors #{result[:errors].count} students" unless result[:errors].count == 0
+    puts "#{code} - Import success for #{result[:success].count} students" unless result[:success].count == 0
+    puts "#{code} - Skipped #{result[:ignored].count} students" unless result[:ignored].count == 0
+    puts "#{code} - Errors #{result[:errors].count} students" unless result[:errors].count == 0
     result[:errors].each do |err|
       puts "#{err[:message]} --> #{err[:row]}"
     end
@@ -549,7 +565,7 @@ class Unit < ActiveRecord::Base
               email:          row['email'],
               enrolled:       true,
               tutorials:      tutorials,
-              campus_data:    row['campus']
+              campus:         row['campus']
           }
         },
         replace_existing_tutorial: true
@@ -617,7 +633,8 @@ class Unit < ActiveRecord::Base
 
         unit_code = row_data[:unit_code]
 
-        if unit_code != code
+        # Check it is one of the unit codes
+        unless code.split('/').include? unit_code
           ignored << { row: row_data[:row], message: "Invalid unit code. #{unit_code} does not match #{code}" }
           next
         end
@@ -683,7 +700,7 @@ class Unit < ActiveRecord::Base
         nickname = row_data[:nickname].nil? ? nil : row_data[:nickname].titleize
         email = row_data[:email]
         tutorials = row_data[:tutorials]
-        campus_data = row_data[:campus_data]
+        campus_data = row_data[:campus]
 
         # If either first or last name is nil... copy over the other component
         first_name = first_name || last_name
@@ -777,14 +794,15 @@ class Unit < ActiveRecord::Base
             end
           end
 
-          # Now loop through the tutorials and enrol the student...
-          tutorials.each do |tutorial_code|
-            # find the tutorial for the user
-            tutorial = tutorial_cache[tutorial_code] || tutorial_with_abbr(tutorial_code)
-            tutorial_cache[tutorial_code] ||= tutorial
+          # Only update if we will change tutorial enrolments... or no enrolment
+          if import_settings[:replace_existing_tutorial] || new_project || user_project.tutorial_enrolments.count == 0
 
-            # Only update if we will change tutorial enrolments... or no enrolment for this stream
-            if import_settings[:replace_existing_tutorial] || new_project || user_project.tutorial_for_stream(tutorial.tutorial_stream).nil?
+            # Now loop through the tutorials and enrol the student...
+            tutorials.each do |tutorial_code|
+              # find the tutorial for the user
+              tutorial = tutorial_cache[tutorial_code] || tutorial_with_abbr(tutorial_code)
+              tutorial_cache[tutorial_code] ||= tutorial
+
               if tutorial.present?
                   # Use tutorial as we have it :)
                   begin
@@ -823,9 +841,12 @@ class Unit < ActiveRecord::Base
     errors = []
     ignored = []
 
-    CSV.parse(file,                 headers: true,
-                                    header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
-                                    converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
+    data = read_file_to_str(file)
+
+    CSV.parse(data,
+              headers: true,
+              header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
+              converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
       # Make sure we're not looking at the header or an empty line
       next if row[0] =~ /(username)|(((unit)|(subject))_code)/
       # next if row[5] !~ /^LA\d/
@@ -940,9 +961,12 @@ class Unit < ActiveRecord::Base
       ignored: []
     }
 
-    CSV.parse(file,                 headers: true,
-                                    header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
-                                    converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
+    data = read_file_to_str(file)
+
+    CSV.parse(data,
+              headers: true,
+              header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
+              converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
       # Make sure we're not looking at the header or an empty line
       next if row[0] =~ /unit_code/
 
@@ -966,9 +990,12 @@ class Unit < ActiveRecord::Base
     errors = []
     ignored = []
 
-    CSV.parse(file,                 headers: true,
-                                    header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
-                                    converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
+    data = read_file_to_str(file)
+
+    CSV.parse(data,
+              headers: true,
+              header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
+              converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
       # Make sure we're not looking at the header or an empty line
       next if row[0] =~ /unit_code/
 
@@ -1042,9 +1069,12 @@ class Unit < ActiveRecord::Base
 
     logger.info "Starting import of group for #{group_set.name} for #{code}"
 
-    CSV.parse(file,                 headers: true,
-                                    header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
-                                    converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
+    data = read_file_to_str(file)
+
+    CSV.parse(data,
+              headers: true,
+              header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
+              converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
       next if row[0] =~ /^(group_name)|(name)/ # Skip header
 
       begin
@@ -1062,34 +1092,37 @@ class Unit < ActiveRecord::Base
         # Find or create the group object
         grp = group_set.groups.find_or_create_by(name: group_name)
 
+        # Find the tutorial
+        tutorial_abbr = row['tutorial'].strip unless row['tutorial'].nil?  
+        tutorial = tutorial_with_abbr(tutorial_abbr)
+
+        if tutorial.nil?
+          change += ' Created new tutorial.'
+
+          campus_data = row['campus'].strip unless row['campus'].nil?
+          campus = Campus.find_by_abbr_or_name(campus_data)
+
+          tutorial = add_tutorial(
+            'Monday',
+            '8:00am',
+            'TBA',
+            main_convenor_user,
+            campus,
+            nil, #capacity
+            tutorial_abbr
+          )
+        end
+
         # If it is new we need to load details from the csv
         if grp.new_record?
           # Get group details
-          campus_data = row['campus'].strip unless row['campus'].nil?
-          # capacity = row['capacity'].strip unless row['capacity'].nil?
-          tutorial_abbr = row['tutorial'].strip unless row['tutorial'].nil?  
-
-          tutorial = tutorial_with_abbr(tutorial_abbr)
-          if tutorial.nil?
-            change += ' Created new tutorial.'
-            campus = Campus.find_by_abbr_or_name(campus_data)
-            tutorial = add_tutorial(
-              'Monday',
-              '8:00am',
-              'TBA',
-              main_convenor_user,
-              campus,
-              nil, #capacity
-              tutorial_abbr
-            )
-          end
-
-          grp.tutorial = tutorial
-          grp.capacity_adjustment = row['campus'].strip.to_i unless row['campus'].nil?
-          grp.save!
-
           change += ' Created new group.'
         end
+
+        # Update group details
+        grp.tutorial = tutorial
+        grp.capacity_adjustment = row['capacity_adjustment'].strip.to_i unless row['capacity_adjustment'].nil?
+        grp.save!
 
         success << { row: row, message: "Setup #{grp.name}.#{change}" }
       rescue Exception => e
@@ -1111,9 +1144,12 @@ class Unit < ActiveRecord::Base
 
     logger.info "Starting import of group for #{group_set.name} for #{code}"
 
-    CSV.parse(file,                 headers: true,
-                                    header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
-                                    converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
+    data = read_file_to_str(file)
+
+    CSV.parse(data,
+              headers: true,
+              header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
+              converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
       next if row[0] =~ /^(group_name)|(name)/ # Skip header
 
       begin
@@ -1243,7 +1279,9 @@ class Unit < ActiveRecord::Base
     errors = []
     ignored = []
 
-    CSV.parse(file,
+    data = read_file_to_str(file)
+
+    CSV.parse(data,
               headers: true,
               header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip.tr(' ', '_').to_sym unless hdr.nil? }],
               converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]
@@ -1807,7 +1845,9 @@ class Unit < ActiveRecord::Base
         grade: t.grade,
         quality_pts: t.quality_pts,
         num_new_comments: t.number_unread,
-        similar_to_count: plagiarism_counts[t.task_id]
+        similar_to_count: plagiarism_counts[t.task_id],
+        pinned: t.pinned,
+        has_extensions: t.has_extensions
       }
     end
   end
@@ -1825,18 +1865,43 @@ class Unit < ActiveRecord::Base
     student_tasks.
       joins(:task_status).
       joins("LEFT OUTER JOIN (#{tutorial_enrolment_subquery}) as sq ON sq.project_id = projects.id AND (sq.tutorial_stream_id = task_definitions.tutorial_stream_id OR sq.tutorial_stream_id IS NULL)").
-      joins("LEFT JOIN task_comments ON task_comments.task_id = tasks.id").
+      joins("LEFT JOIN task_comments ON task_comments.task_id = tasks.id AND (task_comments.type IS NULL OR task_comments.type <> 'TaskStatusComment')").
       joins("LEFT JOIN comments_read_receipts crr ON crr.task_comment_id = task_comments.id AND crr.user_id = #{user.id}").
+      joins("LEFT JOIN task_pins ON task_pins.task_id = tasks.id AND task_pins.user_id = #{user.id}").
       select(
-        'sq.tutorial_id AS tutorial_id', 'sq.tutorial_stream_id AS tutorial_stream_id',
-        'tasks.id', 'SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) as number_unread', 'project_id', 'tasks.id as task_id',
-        'task_definition_id', 'task_definitions.start_date as start_date', 'task_statuses.id as status_id',
-        'completion_date', 'times_assessed', 'submission_date', 'portfolio_evidence', 'tasks.grade as grade', 'quality_pts'
+        'sq.tutorial_id AS tutorial_id', 
+        'sq.tutorial_stream_id AS tutorial_stream_id',
+        'tasks.id', 
+        "SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) as number_unread",
+        'COUNT(distinct task_pins.task_id) != 0 as pinned',
+        "SUM(case when task_comments.date_extension_assessed IS NULL AND task_comments.type = 'ExtensionComment' AND NOT task_comments.id IS NULL THEN 1 ELSE 0 END) > 0 as has_extensions",
+        'project_id', 
+        'tasks.id as task_id',
+        'task_definition_id', 
+        'task_definitions.start_date as start_date', 
+        'task_statuses.id as status_id',
+        'completion_date', 
+        'times_assessed', 
+        'submission_date', 
+        'portfolio_evidence', 
+        'tasks.grade as grade', 
+        'quality_pts'
       ).
       group(
-        'sq.tutorial_id', 'sq.tutorial_stream_id',
-        'task_statuses.id', 'project_id', 'tasks.id', 'task_definition_id', 'task_definitions.start_date', 'status_id',
-        'completion_date', 'times_assessed', 'submission_date', 'portfolio_evidence', 'grade', 'quality_pts'
+        'sq.tutorial_id', 
+        'sq.tutorial_stream_id',
+        'task_statuses.id', 
+        'project_id', 
+        'tasks.id', 
+        'task_definition_id', 
+        'task_definitions.start_date', 
+        'status_id',
+        'completion_date', 
+        'times_assessed', 
+        'submission_date', 
+        'portfolio_evidence', 
+        'grade', 
+        'quality_pts'
       )
   end
 
@@ -1862,8 +1927,8 @@ class Unit < ActiveRecord::Base
   #
   def tasks_for_task_inbox(user)
     get_all_tasks_for(user)
-      .having('task_statuses.id IN (:ids) OR SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) > 0', ids: [ TaskStatus.ready_to_mark, TaskStatus.need_help ])
-      .order('submission_date ASC, MAX(task_comments.created_at) ASC, task_definition_id ASC')
+      .having('task_statuses.id IN (:ids) OR COUNT(task_pins.task_id) > 0 OR SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) > 0', ids: [ TaskStatus.ready_to_mark, TaskStatus.need_help ])
+      .order('pinned DESC, submission_date ASC, MAX(task_comments.created_at) ASC, task_definition_id ASC')
   end
 
   #

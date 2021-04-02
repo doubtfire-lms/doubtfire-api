@@ -8,7 +8,8 @@ RUN curl -fsSL https://github.com/rbenv/rbenv-installer/raw/master/bin/rbenv-ins
 # Uses libssl 1.0 for old Ruby (https://github.com/rbenv/ruby-build/wiki#openssl-usrincludeopensslasn1_mach102-error-error-this-file-is-obsolete-please-update-your-software)
 RUN apt-get update && apt-get install -y autoconf bison build-essential libssl1.0-dev libyaml-dev libreadline6-dev zlib1g-dev libncurses5-dev libffi-dev libgdbm5 libgdbm-dev
 RUN rbenv install 2.3.1 && rbenv global 2.3.1
-RUN gem install bundler && rbenv rehash
+RUN gem update --system
+RUN gem install bundler:1.17.3 && rbenv rehash
 
 # DEBIAN_FRONTEND=noninteractive is required to install tzdata in non interactive way
 ENV DEBIAN_FRONTEND noninteractive

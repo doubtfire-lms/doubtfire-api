@@ -7,7 +7,7 @@ development:
   min_messages: warning
 
 test:
-  adapter: postgresql
+  adapter: <%= ENV['USE_MYSQL'].present? ? 'mysql2' : 'postgresql' %>
   database: doubtfire_dev_test
   username: itig
   password: d872$dh

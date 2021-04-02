@@ -1187,4 +1187,34 @@ class TutorialsTest < ActiveSupport::TestCase
     # Check that you still can find the deleted id
     assert Tutorial.exists?(tutorial.id)
   end
+
+  def test_student_change_tutorial
+    unit = FactoryBot.create :unit, student_count: 1, unenrolled_student_count: 0, part_enrolled_student_count: 0, tutorials: 2, inactive_student_count: 0
+
+    project = unit.projects.first
+
+    data_to_put = {
+      id: project.id,
+      submitted_grade: 2
+    }
+
+    user = project.student
+    tutorial = unit.tutorials.last
+
+    post_json with_auth_token("/api/units/#{unit.id}/tutorials/#{tutorial.abbreviation}/enrolments/#{project.id}", user), data_to_put
+
+    assert_equal 201, last_response.status
+    
+    assert project.enrolled_in? tutorial
+
+    tutorial = unit.tutorials.first
+    unit.allow_student_change_tutorial = false
+    unit.save
+
+    post_json with_auth_token("/api/units/#{unit.id}/tutorials/#{tutorial.abbreviation}/enrolments/#{project.id}", user), data_to_put
+
+    assert_equal 403, last_response.status
+    
+    refute project.enrolled_in? tutorial
+  end
 end

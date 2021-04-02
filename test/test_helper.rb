@@ -1,7 +1,8 @@
 require 'simplecov'
 SimpleCov.start 'rails'
 # Setup RAILS_ENV as test and expand config for test environment
-ENV['RAILS_ENV'] = 'test'
+ENV['RAILS_ENV'] ||= 'test'
+raise 'You cannot run this in production' if Rails.env.production?
 require File.expand_path('../../config/environment', __FILE__)
 
 # Check if we're connected to the test DB
@@ -20,6 +21,8 @@ end
 require 'minitest/rails'
 require 'minitest/pride'
 require 'minitest/around'
+
+require 'webmock/minitest'
 
 # Require all test helpers
 require_all 'test/helpers'
