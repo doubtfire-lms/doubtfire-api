@@ -224,4 +224,58 @@ class ExtensionTest < ActiveSupport::TestCase
     td.destroy
     unit.destroy
   end
+
+  def test_extension_in_inbox
+    unit = FactoryBot.create(:unit, auto_apply_extension_before_deadline: false, unenrolled_student_count: 0, part_enrolled_student_count: 0, inactive_student_count: 0, tutorials: 2, staff_count: 2)
+    project = unit.projects.first
+    user = project.student
+    tutor = unit.main_convenor_user
+
+    assert project.enrolled
+
+    td = TaskDefinition.new({
+        unit_id: unit.id,
+        tutorial_stream: unit.tutorial_streams.first,
+        name: 'status task change',
+        description: 'status task change test',
+        weighting: 4,
+        target_grade: 0,
+        start_date: Time.zone.now - 2.weeks,
+        target_date: Time.zone.now - 1.day,
+        due_date: Time.zone.now + 2.week,
+        abbreviation: 'LESS1WEEKEXTTEST',
+        restrict_status_updates: false,
+        upload_requirements: [ ],
+        plagiarism_warn_pct: 0.8,
+        is_graded: false,
+        max_quality_pts: 0
+      })
+    td.save!
+
+    data_to_post = {
+      weeks_requested: '1',
+      comment: "I need a lot of help"
+    }
+
+    inbox = unit.tasks_as_hash(unit.tasks_for_task_inbox(tutor))
+    assert_equal 0, inbox.count, inbox.inspect
+
+    # Request a 1 week extension
+    post_json with_auth_token("/api/projects/#{project.id}/task_def_id/#{td.id}/request_extension", user), data_to_post
+    response = last_response_body
+    assert_equal 201, last_response.status
+    assert response["weeks_requested"] == 1, "Error: Deadline less than a week, requested weeks should be 1, found #{response["weeks_requested"]}."
+
+    unit.reload
+    task = unit.tasks.last
+
+    inbox = unit.tasks_as_hash(unit.tasks_for_task_inbox(tutor))
+    assert_equal 1, inbox.count, inbox.inspect
+
+    assert inbox[0][:has_extensions], inbox.inspect
+
+    td.destroy!
+    unit.destroy!
+  end
+
 end
