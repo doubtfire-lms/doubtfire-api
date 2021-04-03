@@ -112,7 +112,7 @@ class ProjectsApiTest < ActiveSupport::TestCase
     
     data_to_put['submitted_grade'] = 1
 
-    put_json with_auth_token("/api/projects/#{project.id}", user), data_to_put
+    put_json "/api/projects/#{project.id}", data_to_put
 
     assert_not_equal user.projects.find(project.id).submitted_grade, 1
     assert_equal 403, last_response.status
