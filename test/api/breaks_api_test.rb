@@ -17,9 +17,10 @@ class BreaksApiTest < ActiveSupport::TestCase
 
     data_to_post = {
       start_date: start,
-      number_of_weeks: rand(1..3),
-      auth_token: auth_token 
+      number_of_weeks: rand(1..3)
     }
+
+    add_auth_header_for user: User.first
     
     # Perform the POST
     post "/api/teaching_periods/#{teaching_period.id}/breaks", data_to_post
@@ -46,8 +47,10 @@ class BreaksApiTest < ActiveSupport::TestCase
     # Create teaching period
     teaching_period  = FactoryBot.create(:teaching_period)
   
+    add_auth_header_for(user: User.first)
+
     # Perform the GET 
-    get with_auth_token("/api/teaching_periods/#{teaching_period.id}/breaks")
+    get "/api/teaching_periods/#{teaching_period.id}/breaks"
     expected_data = teaching_period.breaks
 
     # Check if the actual data match as expected
