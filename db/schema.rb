@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20210310000709) do
+ActiveRecord::Schema.define(version: 20210403000741) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -28,9 +28,9 @@ ActiveRecord::Schema.define(version: 20210310000709) do
 
   create_table "auth_tokens", force: :cascade do |t|
     t.string   "encrypted_authentication_token",    limit: 255, null: false
+    t.string   "encrypted_authentication_token_iv", limit: 255
     t.datetime "auth_token_expiry",                             null: false
     t.integer  "user_id"
-    t.string   "encrypted_authentication_token_iv", limit: 255
   end
 
   add_index "auth_tokens", ["user_id"], name: "index_auth_tokens_on_user_id", using: :btree
