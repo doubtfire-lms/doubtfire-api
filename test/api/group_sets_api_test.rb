@@ -217,7 +217,8 @@ class GroupSetsApiTest < ActiveSupport::TestCase
         capacity_adjustment: 0,
       },
     }
-    post "/api/units/#{unit.id}/group_sets/#{group_set.id}/groups", with_auth_token(data, unit.main_convenor_user)
+    add_auth_header_for(user: unit.main_convenor_user)
+    post "/api/units/#{unit.id}/group_sets/#{group_set.id}/groups", data
     assert_equal false, last_response_body['locked']
 
     Group.find(last_response_body['id']).destroy
@@ -238,24 +239,28 @@ class GroupSetsApiTest < ActiveSupport::TestCase
     lock_data = { group: { locked: true } }
     unlock_data = { group: { locked: false } }
 
+    add_auth_header_for(user: group.projects.first.student)
     # Students shouldn't be able to lock the (currently unlocked because it was just created) group, even though groups
     # within the group set are student-manageable.
-    put url, with_auth_token(lock_data, group.projects.first.student)
+    put url, lock_data
     assert_equal 403, last_response.status
     assert_equal false, Group.find(group.id).locked
 
+    add_auth_header_for(user: unit.main_convenor_user)
     # Main convenor should be able to lock the group.
-    put url, with_auth_token(lock_data, unit.main_convenor_user)
+    put url, lock_data
     assert_equal 200, last_response.status
     assert_equal true, Group.find(group.id).locked
 
+    add_auth_header_for(user: group.projects.first.student)
     # Students shouldn't be able to unlock the group either.
     put url, with_auth_token(unlock_data, group.projects.first.student)
     assert_equal 403, last_response.status
     assert_equal true, Group.find(group.id).locked
 
+    add_auth_header_for(user: unit.main_convenor_user)
     # Main convenor should be able to unlock the locked group.
-    put url, with_auth_token(unlock_data, unit.main_convenor_user)
+    put url, unlock_data
     assert_equal 200, last_response.status
     assert_equal false, Group.find(group.id).locked
 

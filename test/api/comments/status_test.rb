@@ -39,8 +39,11 @@ class StatusTest < ActiveSupport::TestCase
       trigger: 'ready_to_mark',
     }
 
+    # Add auth_token and username to header
+    add_auth_header_for(user: user)
+
     # Submit
-    post_json with_auth_token("/api/projects/#{project.id}/task_def_id/#{td.id}/submission", user), data_to_post
+    post_json "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
     response = last_response_body
     assert_equal 201, last_response.status
     assert response["status"] == 'time_exceeded', "Error: Submission after deadline... should be time exceeded"

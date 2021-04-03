@@ -27,7 +27,6 @@ module AuthenticationHelpers
       # Get the list of tokens for a user
       token = user.token_for_text?(headers['Auth-Token']) 
     end
-
     # Check user by token
     if user.present? && token.present?
       # Non-expired token

@@ -1,7 +1,6 @@
 require 'grape'
 require 'user_serializer'
 require 'json/jwt'
-require 'logger'
 
 module Api
   #
@@ -223,18 +222,9 @@ module Api
       optional :remember, type: Boolean, desc: 'User has requested to remember login', default: false
     end
     put '/auth' do
-      #UPDATE - Following print statements to check for headers
-      puts request.headers.inspect
-      puts "Parameters: Username: #{params[:username]} Password: #{params[:password]}"
-      
-      error!({ error: 'Invalid token' }, 404) if headers['Auth-Token'].nil?
+      error!({ error: 'Invalid token/username .' }, 404) if headers['Auth-Token'].nil? || headers['Username'].nil?
       logger.info "Update token #{headers['Auth-Token']} from #{request.ip}"
 
-# UPDATE
-      logger = Logger.new(Rails.root.to_s + '/log/AuthAPI.log' )
-      logger.info "Update token #{headers['Auth-Token']} username #{headers['Username']}"
-      
-      
       # Find user
       user = User.find_by_username(headers['Username'])
       token = user.token_for_text?(headers['Auth-Token']) unless user.nil?
