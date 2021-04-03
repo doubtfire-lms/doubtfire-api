@@ -47,8 +47,11 @@ class TaskStatusTest < ActiveSupport::TestCase
     data_to_post = {
       trigger: 'ready_to_mark'
     }
+    
+    add_auth_header_for(user: project.student)
+
     # Make a submission for this student
-    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", with_auth_token(data_to_post)
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
 
     # Get the exceeded exceeded task and check it is now time exceeded
     #task = project.task_for_task_definition(td)
