@@ -2,16 +2,11 @@ class MoveAuthTokenOutOfUsers < ActiveRecord::Migration
   def up
     create_table :auth_tokens do |t|
       t.string          :encrypted_authentication_token,  null: false,  limit: 255
-      t.datetime        :auth_token_expiry,     null: false
+      t.string	        :encrypted_authentication_token_iv, limit: 255
+      t.datetime        :auth_token_expiry,               null: false
     end
     add_reference   :auth_tokens, :user, index: true
     add_foreign_key :auth_tokens, :users
-
-    AuthToken.create!(
-      user_id: 1,
-      authentication_token: "test",
-      auth_token_expiry: Time.zone.now
-    )
 
     User.all.
       map { |u| { token: u.authentication_token, user: u.id, expiry: u.auth_token_expiry } }.
