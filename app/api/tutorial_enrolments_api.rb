@@ -13,7 +13,7 @@ module Api
     post '/units/:unit_id/tutorials/:tutorial_abbr/enrolments/:project_id' do
       unit = Unit.find(params[:unit_id])
       project = unit.active_projects.find(params[:project_id])
-      unless authorise? current_user, project, :change_tutorial
+      unless authorise? current_user, project, :change_tutorial, ->(role, perm_hash, other) { project.specific_permission_hash(role, perm_hash, other) }
         error!({ error: 'Not authorised to change tutorial' }, 403)
       end
 

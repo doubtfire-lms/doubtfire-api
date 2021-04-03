@@ -462,14 +462,6 @@ class CommentTest < ActiveSupport::TestCase
     task = project.task_for_task_definition(td)
     assert_equal TaskStatus.ready_to_mark, task.task_status
 
-    tutor = project.tutor_for(td)
-
-    tc = task.comments.last
-    assert tc.comments_read_receipts.count >= 2, 'Error: expected multiple read receipts.'
-    assert tc.comments_read_receipts.where(user: tutor).count == 1, 'Error: tutor has not read the comment'
-
     td.destroy!
-
-    # read_reciept = CommentsReadReceipts.find_by(user: tutor, task_comment: tc)
   end
 end

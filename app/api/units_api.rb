@@ -66,8 +66,14 @@ module Api
         optional :start_date, type: Date
         optional :end_date, type: Date
         optional :main_convenor_id, type: Integer
-        optional :auto_apply_extension_before_deadline, type: Boolean, desc: 'Indicates if extensions before the deadline should be automatically applied', default: true
-        optional :send_notifications, type: Boolean, desc: 'Indicates if emails should be sent on updates each week', default: true
+        optional :auto_apply_extension_before_deadline, type: Boolean, desc: 'Indicates if extensions before the deadline should be automatically applied'
+        optional :send_notifications, type: Boolean, desc: 'Indicates if emails should be sent on updates each week'
+        optional :enable_sync_timetable, type: Boolean, desc: 'Sync to timetable automatically if supported by deployment'
+        optional :enable_sync_enrolments, type: Boolean, desc: 'Sync student enrolments automatically if supported by deployment'
+        optional :draft_task_definition_id, type: Integer, desc: 'Indicates the ID of the task definition used as the "draft learning summary task"'
+        optional :allow_student_extension_requests, type: Boolean, desc: 'Can turn on/off student extension requests', default: true
+        optional :allow_student_change_tutorial, type: Boolean, desc: 'Can turn on/off student ability to change tutorials', default: true
+        optional :extension_weeks_on_resubmit_request, type: Integer, desc: 'Determines the number of weeks extension on a resubmit request', default: 1
 
         mutually_exclusive :teaching_period_id,:start_date
         all_or_none_of :start_date, :end_date
@@ -89,13 +95,32 @@ module Api
                                                             :active,
                                                             :main_convenor_id,
                                                             :auto_apply_extension_before_deadline,
-                                                            :send_notifications
+                                                            :send_notifications,
+                                                            :enable_sync_timetable,
+                                                            :enable_sync_enrolments,
+                                                            :draft_task_definition_id,
+                                                            :allow_student_extension_requests,
+                                                            :extension_weeks_on_resubmit_request,
+                                                            :allow_student_change_tutorial
                                                           )
 
       if unit.teaching_period_id.present? && unit_parameters.key?(:start_date)
         unit.teaching_period = nil
       end
 
+      if unit_parameters[:draft_task_definition_id].present?
+        # Ensure the task definition belongs to unit
+        unless unit.task_definitions.exists?(unit_parameters[:draft_task_definition_id])
+          error!({ error: 'Draft task definition ID does not belong to unit' }, 403)
+        end
+
+        # Validate that the task only has 1 upload requirement and it is a document
+        task = TaskDefinition.find(unit_parameters[:draft_task_definition_id])
+        if task.upload_requirements.length != 1 || task.upload_requirements.first['type'] != "document"
+          error!({ error: 'Task definition should contain only a single document upload' }, 403)
+        end
+      end
+              
       unit.update!(unit_parameters)
       unit_parameters
     end
@@ -113,6 +138,11 @@ module Api
         optional :main_convenor_id, type: Integer
         optional :auto_apply_extension_before_deadline, type: Boolean, desc: 'Indicates if extensions before the deadline should be automatically applied', default: true
         optional :send_notifications, type: Boolean, desc: 'Indicates if emails should be sent on updates each week', default: true
+        optional :enable_sync_timetable, type: Boolean, desc: 'Sync to timetable automatically if supported by deployment', default: true
+        optional :enable_sync_enrolments, type: Boolean, desc: 'Sync student enrolments automatically if supported by deployment', default: true
+        optional :allow_student_extension_requests, type: Boolean, desc: 'Can turn on/off student extension requests', default: true
+        optional :extension_weeks_on_resubmit_request, type: Integer, desc: 'Determines the number of weeks extension on a resubmit request', default: 1
+        optional :allow_student_change_tutorial, type: Boolean, desc: 'Can turn on/off student ability to change tutorials', default: true
 
         mutually_exclusive :teaching_period_id,:start_date
         mutually_exclusive :teaching_period_id,:end_date
@@ -133,7 +163,12 @@ module Api
                                                       :start_date,
                                                       :end_date,
                                                       :auto_apply_extension_before_deadline,
-                                                      :send_notifications
+                                                      :send_notifications,
+                                                      :enable_sync_timetable,
+                                                      :enable_sync_enrolments,
+                                                      :allow_student_extension_requests,
+                                                      :extension_weeks_on_resubmit_request,
+                                                      :allow_student_change_tutorial
                                                     )
 
       if unit_parameters[:description].nil?

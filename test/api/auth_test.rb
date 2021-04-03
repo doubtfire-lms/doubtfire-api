@@ -155,6 +155,7 @@ class AuthTest < ActiveSupport::TestCase
   def test_auth_put
     add_auth_header_for(user: User.first)
     put_json "/api/auth", nil
+
     actual_auth = last_response_body['auth_token']
     expected_auth = auth_token
     # Check to see if the response auth token matches the auth token that was sent through in put

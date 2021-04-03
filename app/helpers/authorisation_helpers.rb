@@ -6,6 +6,11 @@ module AuthorisationHelpers
   #
   # Authorises if the user can perform an action on the object
   #
+  # user - who
+  # object - context, what are we asking for permissions from
+  # action - what action
+  # perm_get_fn - which method do we call to get the permission hash. Can be used to get different hashes in different contexts. This returns hash of actions permitted
+  #
   def authorise?(user, object, action, perm_get_fn = method(:get_permission_hash), other = nil)
     # Can pass in instance or class
     obj_class = object.class == Class ? object : object.class

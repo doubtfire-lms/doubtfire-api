@@ -1,23 +1,26 @@
 {
   "configVersion": 1,
-  "timestamp": 1585696330877,
+  "timestamp": 1617354266531,
   "index": "/index.html",
   "assetGroups": [
     {
       "name": "app",
       "installMode": "prefetch",
       "updateMode": "prefetch",
+      "cacheQueryOptions": {
+        "ignoreVary": true
+      },
       "urls": [
         "/index.html",
-        "/main.28fdd8478db6ce8fe366.js",
+        "/main.82a8e66ba125f93e6cac.js",
         "/manifest.webmanifest",
         "/ngsw-worker.js",
-        "/polyfills-es5.8b500cc25eeafb461711.js",
-        "/polyfills.658169e597e002d65141.js",
-        "/runtime.689ba4fd6cadb82c1ac2.js",
+        "/polyfills-es5.7cfe7e87c7cabcd9ae82.js",
+        "/polyfills.49152936c6c346d15c55.js",
+        "/runtime.acf0dec4155e77772545.js",
         "/safety-worker.js",
-        "/scripts.fc6186d1c449440a7a2f.js",
-        "/styles.a2af91f117220517778a.css",
+        "/scripts.02fa82e76070b4930e02.js",
+        "/styles.7616ce256d1d095de1a9.css",
         "/worker-basic.min.js"
       ],
       "patterns": []
@@ -26,12 +29,16 @@
       "name": "assets",
       "installMode": "lazy",
       "updateMode": "prefetch",
+      "cacheQueryOptions": {
+        "ignoreVary": true
+      },
       "urls": [
         "/Roboto-Bold.woff",
         "/Roboto-Italic.woff",
         "/Roboto-Light.woff",
         "/Roboto-Medium.woff",
         "/Roboto-Regular.woff",
+        "/assets/.DS_Store",
         "/assets/fonts/FontAwesome.otf",
         "/assets/fonts/bootstrap/glyphicons-halflings-regular.eot",
         "/assets/fonts/bootstrap/glyphicons-halflings-regular.svg",
@@ -89,6 +96,7 @@
         "/assets/images/mrsdoubtfire.png",
         "/assets/images/person-unknown.gif",
         "/assets/mat-style.min.css",
+        "/assets/sounds/discussion-start-signal.wav",
         "/assets/vendor/angular-xeditable/dist/css/xeditable.css",
         "/assets/vendor/codemirror/lib/codemirror.css",
         "/assets/vendor/codemirror/theme/xq-light.css",
@@ -115,6 +123,9 @@
       "name": "external_assets",
       "installMode": "prefetch",
       "updateMode": "prefetch",
+      "cacheQueryOptions": {
+        "ignoreVary": true
+      },
       "urls": [],
       "patterns": [
         "https:\\/\\/maxcdn\\.bootstrapcdn\\.com\\/bootstrap\\/.*",
@@ -132,6 +143,9 @@
       "strategy": "freshness",
       "maxSize": 0,
       "maxAge": 0,
+      "cacheQueryOptions": {
+        "ignoreVary": true
+      },
       "version": 1
     }
   ],
@@ -141,6 +155,7 @@
     "/Roboto-Light.woff": "987731626feefc140cf17fff41bd3213312d6f99",
     "/Roboto-Medium.woff": "3087b20015925170e65cf2b6c1fdbf0cd4ec3b3b",
     "/Roboto-Regular.woff": "4932a1b55bd4f3a3dcc95db33ec07ba729e86c61",
+    "/assets/.DS_Store": "7b14d7ce35a78601980444f94162440b94499d46",
     "/assets/fonts/FontAwesome.otf": "42c179eef588854b5ec151bcf6a3f58aa8b79b11",
     "/assets/fonts/bootstrap/glyphicons-halflings-regular.eot": "86b6f62b7853e67d3e635f6512a5a5efc58ea3c3",
     "/assets/fonts/bootstrap/glyphicons-halflings-regular.svg": "de51a8494180a6db074af2dee2383f0a363c5b08",
@@ -198,6 +213,7 @@
     "/assets/images/mrsdoubtfire.png": "c698f3bbe501dc449d4e280f6887304c339d83bd",
     "/assets/images/person-unknown.gif": "9e5e25766856982b255adda368e6e900e1cb0954",
     "/assets/mat-style.min.css": "694ff87db761847a163f64c66dc7370b9eb8482a",
+    "/assets/sounds/discussion-start-signal.wav": "368d03e9522427729b9371ac54f3c910dfb5c23c",
     "/assets/vendor/angular-xeditable/dist/css/xeditable.css": "831b78c7b2cc10a90467d8630c2009b8b7f81229",
     "/assets/vendor/codemirror/lib/codemirror.css": "1daf789ecf9d739cfe8df295517dd4bd846dec3a",
     "/assets/vendor/codemirror/theme/xq-light.css": "69e577433ff679b252b5f6b547410f1b1b23c842",
@@ -217,17 +233,17 @@
     "/glyphicons-halflings-regular.ttf": "44bc1850f570972267b169ae18f1cb06b611ffa2",
     "/glyphicons-halflings-regular.woff": "278e49a86e634da6f2a02f3b47dd9d2a8f26210f",
     "/glyphicons-halflings-regular.woff2": "ca35b697d99cae4d1b60f2d60fcd37771987eb07",
-    "/index.html": "9c09a047653662d6f613422a19e3117f0ad21313",
-    "/main.28fdd8478db6ce8fe366.js": "7cdf9c81f15f3379b5ec9de6d9a75b5d71cab930",
+    "/index.html": "6445a6ebe566ff44be2e5d1276dd8a30dcbb5e8d",
+    "/main.82a8e66ba125f93e6cac.js": "8d3404a6e08fa3cecbbce89ede967b4db4342f4b",
     "/manifest.webmanifest": "426b0a654168b3b27cb071744d32515edd35e6b0",
-    "/ngsw-worker.js": "3798e7f10ebdd6f55cacf4010af1fe5085cf6c16",
-    "/polyfills-es5.8b500cc25eeafb461711.js": "049fa392495eed500d959dbf84d34ebcf409d444",
-    "/polyfills.658169e597e002d65141.js": "753bb81c574d9dbc62fd5c4c135830394d988370",
-    "/runtime.689ba4fd6cadb82c1ac2.js": "a9aafcf49f49145093fc831efd9b8e2f6c71bb9c",
-    "/safety-worker.js": "ae5c8be3955e38edeeec09ed94b63d1e57f003c9",
-    "/scripts.fc6186d1c449440a7a2f.js": "41945bc3f2ac33759467dca638d794bafa1e9c68",
-    "/styles.a2af91f117220517778a.css": "97d2d1a48fd917cbfcf78ed1d7a600dd0321f4f5",
-    "/worker-basic.min.js": "ae5c8be3955e38edeeec09ed94b63d1e57f003c9"
+    "/ngsw-worker.js": "68df23116694a51a91596b4cd639daa4791eed5e",
+    "/polyfills-es5.7cfe7e87c7cabcd9ae82.js": "4beabd5ce978f7ac4932d96677acf5b346477aa7",
+    "/polyfills.49152936c6c346d15c55.js": "09eda7fe44d0f5748705c280801b1308ea284f61",
+    "/runtime.acf0dec4155e77772545.js": "a9aafcf49f49145093fc831efd9b8e2f6c71bb9c",
+    "/safety-worker.js": "f532926317210be6e2679d21748dc44a35389807",
+    "/scripts.02fa82e76070b4930e02.js": "f48114f277c1dcb357e73660b1bdc628737ab798",
+    "/styles.7616ce256d1d095de1a9.css": "563edc24c3152ecff1d3b9a38b482957ccf85670",
+    "/worker-basic.min.js": "f532926317210be6e2679d21748dc44a35389807"
   },
   "navigationUrls": [
     {
@@ -246,5 +262,6 @@
       "positive": false,
       "regex": "^\\/(?:.+\\/)?[^/]*__[^/]*\\/.*$"
     }
-  ]
+  ],
+  "navigationRequestStrategy": "performance"
 }

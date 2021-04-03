@@ -33,6 +33,7 @@ group :development, :test, :staging do
   gem 'faker', '~>1.9.1'
   gem 'minitest-rails'
   gem 'minitest-around'
+  gem 'webmock'
 end
 
 group :production do
@@ -51,7 +52,7 @@ gem 'json-jwt', '1.7.0'
 # Student submission
 gem 'coderay'
 gem 'ruby-filemagic'
-gem 'rmagick', '~> 2.15' # require: false #already included in other gems - remove to avoid duplicate errors
+gem 'rmagick', '~> 4.1' # require: false #already included in other gems - remove to avoid duplicate errors
 gem 'rubyzip'
 
 # Plagarism detection
@@ -76,5 +77,8 @@ gem 'dotenv-rails'
 # Excel support
 gem 'roo', '~> 2.7.0'
 gem 'roo-xls'
+
+# webcal generation
+gem 'icalendar', '~> 2.5', '>= 2.5.3'
 
 gem 'rest-client', '~> 2.0'

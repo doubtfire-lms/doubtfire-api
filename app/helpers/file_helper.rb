@@ -465,7 +465,8 @@ module FileHelper
 
   def process_audio(input_path, output_path)
     logger.info("Trying to process audio in FileHelper")
-    TimeoutHelper.system_try_within 20, "Failed to process audio submission - timeout", "ffmpeg -loglevel quiet -y -i #{input_path} -ac 1 -ar 16000 -sample_fmt s16 #{output_path}"
+    path = Doubtfire::Application.config.institution[:ffmpeg]
+    TimeoutHelper.system_try_within 20, "Failed to process audio submission - timeout", "#{path} -loglevel quiet -y -i #{input_path} -ac 1 -ar 16000 -sample_fmt s16 #{output_path}"
   end
 
   # Export functions as module functions
