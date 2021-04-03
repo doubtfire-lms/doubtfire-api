@@ -1,5 +1,4 @@
 require 'test_helper'
-require 'logger'
 
 module TestHelpers
   #
@@ -19,20 +18,10 @@ module TestHelpers
     #
     # PUTs a hash data as JSON with content-type "application/json"
     #
-    # def put_json(endpoint, data)
-    #   put URI.encode(endpoint), data.to_json, 'CONTENT_TYPE' => 'application/json'
-    # end
-
-    # UPDATE - Checking different methods to pass hard-coded headers
     def put_json(endpoint, data)
-      # logger = Logger.new(Rails.root.to_s + '/log/jsonHelper.log' )
-      # headers = { :username => 'acain', :auth_token => 'sRXYZn39bHVds-GYUCXn', 'CONTENT_TYPE' => 'application/json' }
-      # request.headers["Username"] = "acain"
-      # put URI.encode(endpoint), data.to_json, 'CONTENT_TYPE' => 'application/json'
-      header 'CONTENT_TYPE', 'application/json'
-      put URI.encode(endpoint), data.to_json, headers
+      put URI.encode(endpoint), data.to_json, 'CONTENT_TYPE' => 'application/json'
     end
-    
+
     #
     # PUTs a hash data as JSON with content-type "application/json"
     #

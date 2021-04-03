@@ -34,12 +34,14 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
 
     # the data that we want to post/create
     data_to_post = {
-      activity_type: FactoryBot.build(:activity_type),
-      auth_token: auth_token
+      activity_type: FactoryBot.build(:activity_type)
     }
-    
+
+    # auth_token and username added to header
+    add_auth_header_for(user: admin)
+
     # perform the POST
-    post_json '/api/activity_types', with_auth_token(data_to_post, admin)
+    post_json '/api/activity_types', data_to_post
     
     # check if the request get through 
     assert_equal 201, last_response.status
@@ -67,12 +69,14 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
 
     # the data that we want to post/create
     data_to_post = {
-      activity_type: FactoryBot.build(:activity_type),
-      auth_token: auth_token
+      activity_type: FactoryBot.build(:activity_type)
     }
+
+    # auth_token and username added to header
+    add_auth_header_for(user: convenor)
     
     # perform the POST
-    post_json '/api/activity_types', with_auth_token(data_to_post, convenor)
+    post_json '/api/activity_types', data_to_post
     
     # check if the request get through 
     assert_equal 403, last_response.status
@@ -91,12 +95,14 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
 
     # the data that we want to post/create
     data_to_post = {
-      activity_type: FactoryBot.build(:activity_type),
-      auth_token: auth_token
+      activity_type: FactoryBot.build(:activity_type)
     }
-    
+
+    # auth_token and username added to header
+    add_auth_header_for(user: tutor)
+  
     # perform the POST
-    post_json '/api/activity_types', with_auth_token(data_to_post, tutor)
+    post_json '/api/activity_types', data_to_post
     
     # check if the request get through 
     assert_equal 403, last_response.status
@@ -116,12 +122,14 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
     
     # Data to replace 
     data_to_put = {
-      activity_type: FactoryBot.build(:activity_type),
-      auth_token: auth_token
+      activity_type: FactoryBot.build(:activity_type)
     }
 
+    # auth_token and username added to header
+    add_auth_header_for(user:admin)
+
     # Update activity_type with data_to_put
-    put_json "/api/activity_types/#{activity_type.id}", with_auth_token(data_to_put, admin)
+    put_json "/api/activity_types/#{activity_type.id}", data_to_put
     
     #check if the request get through
     assert_equal 200, last_response.status
@@ -146,12 +154,14 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
     
     # Data to replace 
     data_to_put = {
-      activity_type: FactoryBot.build(:activity_type),
-      auth_token: auth_token
+      activity_type: FactoryBot.build(:activity_type)
     }
 
+    # auth_token and username added to header
+    add_auth_header_for(user: convenor)
+
     # Update activity_type with data_to_put
-    put_json "/api/activity_types/#{activity_type.id}", with_auth_token(data_to_put, convenor)
+    put_json "/api/activity_types/#{activity_type.id}", data_to_put
     
     #check if the request get through
     assert_equal 403, last_response.status
@@ -167,12 +177,14 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
     
     # Data to replace 
     data_to_put = {
-      activity_type: FactoryBot.build(:activity_type),
-      auth_token: auth_token
+      activity_type: FactoryBot.build(:activity_type)
     }
 
+    # auth_token and username added to header
+    add_auth_header_for(user: tutor)
+
     # Update activity_type with data_to_put
-    put_json "/api/activity_types/#{activity_type.id}", with_auth_token(data_to_put, tutor)
+    put_json "/api/activity_types/#{activity_type.id}", data_to_put
     
     #check if the request get through
     assert_equal 403, last_response.status
@@ -187,12 +199,14 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
 
     # Create a dummy activity type
     data_to_post = {
-      activity_type: FactoryBot.build(:activity_type),
-      auth_token: auth_token
+      activity_type: FactoryBot.build(:activity_type)
     }
 
+    # auth_token and username added to header
+    add_auth_header_for(user: user)
+
     # Perform POST, but the student user does not have permissions to post it.
-    post_json '/api/activity_types', with_auth_token(data_to_post, user)
+    post_json '/api/activity_types', data_to_post
 
     # Check if the post does not get through
     assert_equal 403, last_response.status  
@@ -213,12 +227,14 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
 
     # Create a dummy activity type
     data_to_put = {
-      activity_type: FactoryBot.build(:activity_type), 
-      auth_token: auth_token
+      activity_type: FactoryBot.build(:activity_type)
     }
 
+    # auth_token and username added to header
+    add_auth_header_for(user: user)
+
     # Perform PUT, but the student user does not have permissions to put it.
-    put_json "/api/activity_types/#{activity_type.id}", with_auth_token(data_to_put, user)
+    put_json "/api/activity_types/#{activity_type.id}", data_to_put
     
     # Check if the put does not get through
     assert_equal 403, last_response.status  
@@ -233,9 +249,13 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
           
     #number of activity type before delete
     number_of_ativity_type = ActivityType.count
+        
+
+    # auth_token and username added to header
+    add_auth_header_for(user: User.first)
     
     # perform the delete
-    delete_json with_auth_token "/api/activity_types/#{activity_type.id}"
+    delete_json "/api/activity_types/#{activity_type.id}" 
     
     # Check if the delete get through
     assert_equal 200, last_response.status
@@ -256,10 +276,13 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
     
     # number of activity type before delete
     number_of_ativity_type = ActivityType.count
+    
+    # auth_token and username added to header
+    add_auth_header_for(user: user)
 
     # perform the delete
-    delete_json with_auth_token("/api/activity_types/#{activity_type.id}", user)
-   
+    delete_json "/api/activity_types/#{activity_type.id}" 
+
     # check if the delete does not get through
     assert_equal 403, last_response.status
 
@@ -268,6 +291,5 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
 
     # # Check that you still can find the deleted id
    assert ActivityType.exists?(activity_type.id)
-
   end
 end
