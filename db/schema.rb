@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20200528075434) do
+ActiveRecord::Schema.define(version: 20210403000741) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -28,9 +28,9 @@ ActiveRecord::Schema.define(version: 20200528075434) do
 
   create_table "auth_tokens", force: :cascade do |t|
     t.string   "encrypted_authentication_token",    limit: 255, null: false
+    t.string   "encrypted_authentication_token_iv", limit: 255
     t.datetime "auth_token_expiry",                             null: false
     t.integer  "user_id"
-    t.string   "encrypted_authentication_token_iv", limit: 255
   end
 
   add_index "auth_tokens", ["user_id"], name: "index_auth_tokens_on_user_id", using: :btree
@@ -90,6 +90,7 @@ ActiveRecord::Schema.define(version: 20200528075434) do
     t.datetime "created_at"
     t.datetime "updated_at"
     t.integer  "capacity"
+    t.boolean  "locked",                                      default: false, null: false
   end
 
   add_index "group_sets", ["unit_id"], name: "index_group_sets_on_unit_id", using: :btree
@@ -109,7 +110,8 @@ ActiveRecord::Schema.define(version: 20200528075434) do
     t.string   "name",                limit: 255
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.integer  "capacity_adjustment",             default: 0, null: false
+    t.integer  "capacity_adjustment",             default: 0,     null: false
+    t.boolean  "locked",                          default: false, null: false
   end
 
   create_table "learning_outcome_task_links", force: :cascade do |t|
@@ -160,22 +162,24 @@ ActiveRecord::Schema.define(version: 20200528075434) do
 
   create_table "projects", force: :cascade do |t|
     t.integer  "unit_id"
-    t.string   "project_role",              limit: 255
-    t.datetime "created_at",                                             null: false
-    t.datetime "updated_at",                                             null: false
+    t.string   "project_role",                limit: 255
+    t.datetime "created_at",                                               null: false
+    t.datetime "updated_at",                                               null: false
     t.boolean  "started"
-    t.string   "progress",                  limit: 255
-    t.string   "status",                    limit: 255
-    t.string   "task_stats",                limit: 255
-    t.boolean  "enrolled",                               default: true
-    t.integer  "target_grade",                           default: 0
-    t.boolean  "compile_portfolio",                      default: false
+    t.string   "progress",                    limit: 255
+    t.string   "status",                      limit: 255
+    t.string   "task_stats",                  limit: 255
+    t.boolean  "enrolled",                                 default: true
+    t.integer  "target_grade",                             default: 0
+    t.boolean  "compile_portfolio",                        default: false
     t.date     "portfolio_production_date"
-    t.integer  "max_pct_similar",                        default: 0
+    t.integer  "max_pct_similar",                          default: 0
     t.integer  "user_id"
-    t.integer  "grade",                                  default: 0
-    t.string   "grade_rationale",           limit: 4096
+    t.integer  "grade",                                    default: 0
+    t.string   "grade_rationale",             limit: 4096
     t.integer  "campus_id"
+    t.integer  "submitted_grade"
+    t.boolean  "uses_draft_learning_summary",              default: false, null: false
   end
 
   add_index "projects", ["campus_id"], name: "index_projects_on_campus_id", using: :btree
@@ -253,6 +257,15 @@ ActiveRecord::Schema.define(version: 20200528075434) do
   end
 
   add_index "task_engagements", ["task_id"], name: "index_task_engagements_on_task_id", using: :btree
+
+  create_table "task_pins", force: :cascade do |t|
+    t.integer  "task_id",    null: false
+    t.integer  "user_id",    null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  add_index "task_pins", ["task_id", "user_id"], name: "index_task_pins_on_task_id_and_user_id", unique: true, using: :btree
 
   create_table "task_statuses", force: :cascade do |t|
     t.string   "name",        limit: 255
@@ -384,6 +397,12 @@ ActiveRecord::Schema.define(version: 20200528075434) do
     t.integer  "main_convenor_id"
     t.boolean  "auto_apply_extension_before_deadline",              default: true, null: false
     t.boolean  "send_notifications",                                default: true, null: false
+    t.boolean  "enable_sync_timetable",                             default: true, null: false
+    t.boolean  "enable_sync_enrolments",                            default: true, null: false
+    t.integer  "draft_task_definition_id"
+    t.boolean  "allow_student_extension_requests",                  default: true, null: false
+    t.integer  "extension_weeks_on_resubmit_request",               default: 1,    null: false
+    t.boolean  "allow_student_change_tutorial",                     default: true, null: false
   end
 
   add_index "units", ["teaching_period_id"], name: "index_units_on_teaching_period_id", using: :btree
@@ -418,6 +437,24 @@ ActiveRecord::Schema.define(version: 20200528075434) do
 
   add_index "users", ["login_id"], name: "index_users_on_login_id", unique: true, using: :btree
 
+  create_table "webcal_unit_exclusions", force: :cascade do |t|
+    t.integer "webcal_id", null: false
+    t.integer "unit_id",   null: false
+  end
+
+  add_index "webcal_unit_exclusions", ["unit_id", "webcal_id"], name: "index_webcal_unit_exclusions_on_unit_id_and_webcal_id", unique: true, using: :btree
+
+  create_table "webcals", force: :cascade do |t|
+    t.string  "guid",                limit: 36,                 null: false
+    t.boolean "include_start_dates",            default: false, null: false
+    t.integer "user_id"
+    t.integer "reminder_time"
+    t.string  "reminder_unit"
+  end
+
+  add_index "webcals", ["guid"], name: "index_webcals_on_guid", unique: true, using: :btree
+  add_index "webcals", ["user_id"], name: "index_webcals_on_user_id", unique: true, using: :btree
+
   add_foreign_key "auth_tokens", "users"
   add_foreign_key "breaks", "teaching_periods"
   add_foreign_key "comments_read_receipts", "task_comments"
@@ -425,6 +462,8 @@ ActiveRecord::Schema.define(version: 20200528075434) do
   add_foreign_key "projects", "campuses"
   add_foreign_key "task_comments", "users", column: "recipient_id"
   add_foreign_key "task_definitions", "tutorial_streams"
+  add_foreign_key "task_pins", "tasks"
+  add_foreign_key "task_pins", "users"
   add_foreign_key "tutorial_enrolments", "projects"
   add_foreign_key "tutorial_enrolments", "tutorials"
   add_foreign_key "tutorial_streams", "activity_types"
@@ -432,4 +471,7 @@ ActiveRecord::Schema.define(version: 20200528075434) do
   add_foreign_key "tutorials", "campuses"
   add_foreign_key "tutorials", "tutorial_streams"
   add_foreign_key "units", "teaching_periods"
+  add_foreign_key "webcal_unit_exclusions", "units"
+  add_foreign_key "webcal_unit_exclusions", "webcals"
+  add_foreign_key "webcals", "users"
 end

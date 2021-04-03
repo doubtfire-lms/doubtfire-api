@@ -8,11 +8,14 @@ class TaskDefinition < ActiveRecord::Base
 
   before_destroy :delete_associated_files
   after_update :move_files_on_abbreviation_change, if: :abbreviation_changed?
+  after_update :remove_old_group_submissions, if: :has_removed_group?
 
   # Model associations
   belongs_to :unit # Foreign key
   belongs_to :group_set
   belongs_to :tutorial_stream
+
+  has_one :draft_task_definition_unit, foreign_key: 'draft_task_definition_id', class_name: 'Unit', dependent: :nullify
 
   has_many :tasks, dependent:  :destroy # Destroying a task definition will also nuke any instances
   has_many :group_submissions, dependent: :destroy # Destroying a task definition will also nuke any group submissions
@@ -97,9 +100,19 @@ class TaskDefinition < ActiveRecord::Base
     group_set_id != group_set_id_was
   end
 
+  def has_removed_group?
+    has_change_group_status? && group_set_id.nil?
+  end
+
   def ensure_no_submissions
     if tasks.where("submission_date IS NOT NULL").count() > 0
       errors.add( :group_set, "Unable to change group status of task as submissions exist" )
+    end
+  end
+
+  def remove_old_group_submissions
+    if group_set_id.nil? && group_submissions.count > 0
+      group_submissions.destroy_all
     end
   end
 

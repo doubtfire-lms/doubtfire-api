@@ -81,6 +81,8 @@ module Api
     desc 'Rollover a Teaching Period'
     params do
       requires :new_teaching_period_id, type: Integer, desc: 'The id of the rolled over teaching period'
+      optional :rollover_inactive, type: Boolean, default: false, desc: 'Are in active units included in the roll over'
+      optional :search_forward, type: Boolean, default: true, desc: 'When rolling over units, ensure that latest version is rolled over to new teaching period'
     end
     post '/teaching_periods/:existing_teaching_period_id/rollover' do
       unless authorise? current_user, User, :rollover
@@ -91,7 +93,7 @@ module Api
       new_teaching_period = TeachingPeriod.find(new_teaching_period_id)
 
       existing_teaching_period = TeachingPeriod.find(params[:existing_teaching_period_id])
-      error!({error: existing_teaching_period.errors.full_messages.first}, 403) unless existing_teaching_period.rollover(new_teaching_period)
+      error!({error: existing_teaching_period.errors.full_messages.first}, 403) unless existing_teaching_period.rollover(new_teaching_period, params[:search_forward], params[:rollover_inactive])
     end
   end
 end

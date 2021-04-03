@@ -403,84 +403,49 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert_equal convenor_user_role.id, unit.main_convenor_id
   end
 
-  # def test_units_put
-  #   users = {
-  #     acain:              {first_name: "Andrew",         last_name: "Cain",                 nickname: "Macite",         role_id: Role.admin_id},
-  #     jrenzella:          {first_name: "Jake",           last_name: "Renzella",             nickname: "FactoryBoy<3",   role_id: Role.convenor_id},
-  #     rwilson:            {first_name: "Reuben",         last_name: "Wilson",               nickname: "FactoryGurl</3", role_id: Role.tutor_id},
-  #     acummaudo:          {first_name: "Alex",           last_name: "Cummaudo",             nickname: "Doubtfire Dude", role_id: Role.student_id},
-  #   }
-    
-  #   some_tasks = 5
-  #   many_tasks = 10
-  #   some_tutorials = 2
-  #   many_tutorials = 4
-    
-  #   unit_data = {
-  #     intro_prog: {
-  #       code: "COS10001",
-  #       name: "Introduction to Programming",
-  #       convenors: [ :acain ],
-  #       tutors: [
-  #         { user: :acain, num: many_tutorials},
-  #         { user: :rwilson, num: many_tutorials},
-  #         { user: :acummaudo, num: some_tutorials},
-  #         { user: :jrenzella, num: some_tutorials}
-  #       ],
-  #       num_tasks: some_tasks,
-  #       ilos: rand(0..3),
-  #       students: [ ]
-  #     }
-  #   }
-    
-  #   # puts unit_data[:intro_prog][:code]
-    
-  #   unit = Unit.create!(
-  #     code: unit_data[:intro_prog][:code],
-  #     name: unit_data[:intro_prog][:name],
-  #     description: Populator.words(10..15),
-  #     start_date: Time.zone.now  - 6.weeks,
-  #     end_date: 13.weeks.since(Time.zone.now - 6.weeks)
-  #   )
+  def test_draft_learning_summary_upload_requirements
+    unit = FactoryBot.create :unit, student_count:1, task_count:0
+    task_def_code = FactoryBot.create(:task_definition, unit: unit, upload_requirements: [{'key' => 'file0','name' => 'Code file','type' => 'code'}])
+    task_def_doc = FactoryBot.create(:task_definition, unit: unit, upload_requirements: [{'key' => 'file0','name' => 'Draft learning summary','type' => 'document'}])
+    task_def_doc_code = FactoryBot.create(:task_definition, unit: unit, upload_requirements: [{'key' => 'file0','name' => 'Draft learning summary','type' => 'document'}, {'key' => 'file1','name' => 'Code file','type' => 'code'}])
 
-  #   unit.employ_staff(users[:acain], Role.convenor)
-  #   unit.save!
+    # Test with a task containing non document upload requirement
+    data_to_put = {
+      unit: {
+        draft_task_definition_id: task_def_code.id
+      }
+    }
 
-  #   actual_unit = unit_to_update
-  #   expected_unit = Unit.last
-  #   unit_id = unit_to_update.id
-    
-  #   assert_equal expected_unit.name, actual_unit['name']
-  #   assert_equal expected_unit.code, actual_unit['code']
-  #   assert_equal expected_unit.start_date.to_date, actual_unit['start_date'].to_date
-  #   assert_equal expected_unit.end_date.to_date, actual_unit['end_date'].to_date
-    
-  #   data_to_put = {
-  #     unit: {
-  #       name: "Intro to Pizza Crafting",
-  #       code: "PZA1011",
-  #       start_date: "2017-05-14T00:00:00.000Z",
-  #       end_date: "2018-05-14T00:00:00.000Z",
-  #       description: "pizza lyf"
-  #     },
-  #   }
+    put_json with_auth_token("/api/units/#{unit.id}", unit.main_convenor_user), data_to_put
 
-  #   # Add username and auth_token to Header
-  #   add_auth_header_for(user: User.first)
+    assert_equal 403, last_response.status
+    unit.reload
+    assert_equal unit.draft_task_definition_id, nil
 
-  #   put "/api/units/#{unit_id}.json", data_to_put.to_json, "CONTENT_TYPE" => 'application/json'
-    
-  #   actual_unit = last_response_body
-  #   expected_unit = data_to_put
-    
-  #   puts actual_unit
-    
-  #   assert_equal expected_unit.name, actual_unit['name']
-  #   assert_equal expected_unit.code, actual_unit['code']
-  #   assert_equal expected_unit['start_date'].to_date, actual_unit['start_date'].to_date
-  #   assert_equal expected_unit['end_date'].to_date, actual_unit['end_date'].to_date
-  # end
-  # End PUT tests
-  # --------------------------------------------------------------------------- #
- #end
+    # Test with task containing multiple upload requirements
+    data_to_put = {
+      unit: {
+        draft_task_definition_id: task_def_doc_code.id
+      }
+    }
+
+    put_json with_auth_token("/api/units/#{unit.id}", unit.main_convenor_user), data_to_put
+
+    assert_equal 403, last_response.status
+    unit.reload
+    assert_equal unit.draft_task_definition_id, nil
+
+    # Test with a singular document upload (valid draft learning summary task definition)
+    data_to_put = {
+      unit: {
+        draft_task_definition_id: task_def_doc.id
+      }
+    }
+
+    put_json with_auth_token("/api/units/#{unit.id}", unit.main_convenor_user), data_to_put
+
+    assert_equal 200, last_response.status
+    unit.reload
+    assert_equal task_def_doc.id, unit.draft_task_definition_id
+  end
 end

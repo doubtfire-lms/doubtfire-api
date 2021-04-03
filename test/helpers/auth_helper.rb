@@ -43,7 +43,7 @@ module TestHelpers
     # This prevents us from having to keep adding the :auth_token
     # key to any GET/POST/PUT etc. data that is needed 
     #
-    def add_auth_header_for(user: nil, username: nil, auth_token: nil)
+    def add_auth_header_for(user: User.first, username: nil, auth_token: nil)
       if username.present?
         header 'username', username
       else

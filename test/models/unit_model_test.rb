@@ -376,7 +376,7 @@ class UnitModelTest < ActiveSupport::TestCase
   end
 
   def test_import_users
-    unit = FactoryBot.create(:unit, code: 'SIT101', stream_count: 0, with_students: false)
+    unit = FactoryBot.create(:unit, code: 'SIT101', stream_count: 0, with_students: false, tutorials: 0)
     t1 = unit.add_tutorial(
       'Monday',
       '8:00am',
@@ -415,7 +415,7 @@ class UnitModelTest < ActiveSupport::TestCase
   end
 
   def test_import_users_streamed
-    unit = FactoryBot.create(:unit, code: 'SIT101', stream_count: 0, with_students: false)
+    unit = FactoryBot.create(:unit, code: 'SIT101', stream_count: 0, with_students: false, tutorials: 0)
     s1 = unit.add_tutorial_stream('Stream 1', 'Prc01', ActivityType.first)
     s2 = unit.add_tutorial_stream('Stream 2', 'Stu01', ActivityType.first)
 
@@ -559,19 +559,6 @@ class UnitModelTest < ActiveSupport::TestCase
     paths.each do |path|
       refute File.exists?(path)
     end
-  end
-
-  def test_send_summary_email
-    unit = FactoryBot.create :unit
-
-    summary_stats = {}
-
-    summary_stats[:week_end] = Date.today
-    summary_stats[:week_start] = summary_stats[:week_end] - 7.days
-    summary_stats[:weeks_comments] = TaskComment.where("created_at >= :start AND created_at < :end", start: summary_stats[:week_start], end: summary_stats[:week_end]).count
-    summary_stats[:weeks_engagements] = TaskEngagement.where("engagement_time >= :start AND engagement_time < :end", start: summary_stats[:week_start], end: summary_stats[:week_end]).count
-
-    unit.send_weekly_status_emails(summary_stats)
   end
 
 end

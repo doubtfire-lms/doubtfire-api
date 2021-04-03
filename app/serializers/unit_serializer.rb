@@ -8,7 +8,7 @@ class ShallowUnitSerializer < ActiveModel::Serializer
 end
 
 class UnitSerializer < ActiveModel::Serializer
-  attributes :code, :id, :name, :my_role, :main_convenor_id, :description, :teaching_period_id, :start_date, :end_date, :active, :convenors, :ilos, :auto_apply_extension_before_deadline, :send_notifications
+  attributes :code, :id, :name, :my_role, :main_convenor_id, :description, :teaching_period_id, :start_date, :end_date, :active, :convenors, :ilos, :auto_apply_extension_before_deadline, :send_notifications, :enable_sync_enrolments, :enable_sync_timetable, :group_memberships, :draft_task_definition_id, :allow_student_extension_requests, :extension_weeks_on_resubmit_request, :allow_student_change_tutorial
 
   def start_date
     object.start_date.to_date
@@ -52,7 +52,11 @@ class UnitSerializer < ActiveModel::Serializer
   has_many :group_sets, serializer: GroupSetSerializer
   has_many :ilos, serializer: LearningOutcomeSerializer
   has_many :task_outcome_alignments, serializer: LearningOutcomeTaskLinkSerializer
-  # has_many :groups, serializer: DeepGroupSerializer
+  has_many :groups, serializer: GroupSerializer
+  
+  def group_memberships
+    ActiveModel::ArraySerializer.new(object.group_memberships.where(active: true), each_serializer: GroupMembershipSerializer)
+  end
 
   def include_convenors?
     ([ Role.convenor, :convenor ].include? my_role_obj) || (my_user_role == Role.admin)

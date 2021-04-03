@@ -19,7 +19,7 @@ class Task < ActiveRecord::Base
       :start_discussion,
       :get_discussion,
       :make_discussion_reply,
-      :request_extension
+      # :request_extension -- depends on settings in unit. See specific_permission_hash method
     ]
     # What can tutors do with tasks?
     tutor_role_permissions = [
@@ -34,7 +34,8 @@ class Task < ActiveRecord::Base
       :create_discussion,
       :delete_discussion,
       :get_discussion,
-      :assess_extension
+      :assess_extension,
+      :request_extension
     ]
     # What can convenors do with tasks?
     convenor_role_permissions = [
@@ -46,7 +47,8 @@ class Task < ActiveRecord::Base
       :view_plagiarism,
       :delete_plagiarism,
       :get_discussion,
-      :assess_extension
+      :assess_extension,
+      :request_extension
     ]
     # What can nil users do with tasks?
     nil_role_permissions = [
@@ -75,6 +77,16 @@ class Task < ActiveRecord::Base
         return nil
       end
     end
+  end
+
+  # Used to adjust the request extension permission in units that do not
+  # allow students to request extensions
+  def specific_permission_hash(role, perm_hash, _other)
+    result = perm_hash[role] unless perm_hash.nil?
+    if result && role == :student && unit.allow_student_extension_requests
+      result << :request_extension
+    end
+    result
   end
 
   # Delete action - before dependent association
@@ -205,8 +217,13 @@ class Task < ActiveRecord::Base
     end
     extension.save!
 
-    if unit.auto_apply_extension_before_deadline && weeks <= weeks_can_extend
-      extension.assess_extension unit.main_convenor_user, true, true
+    # Check and apply either auto extensions, or those requested by staff
+    if unit.auto_apply_extension_before_deadline && weeks <= weeks_can_extend || role_for(user) == :tutor
+      if role_for(user) == :tutor
+        extension.assess_extension user, true, true
+      else
+        extension.assess_extension unit.main_convenor_user, true, true
+      end
     end
 
     extension
@@ -364,6 +381,7 @@ class Task < ActiveRecord::Base
     when TaskStatus.ready_to_mark
       submit by_user
     when TaskStatus.not_started, TaskStatus.need_help, TaskStatus.working_on_it
+      add_status_comment(by_user, status)
       engage status
     else
       # Only tutors can perform these actions
@@ -376,10 +394,8 @@ class Task < ActiveRecord::Base
         end
         assess status, by_user
 
-        if !group_transition || !group_task?
-          # Add a status comment for new assessments (avoid duplicates on group submission)
-          add_status_comment(by_user, status)
-        end
+        # Add a status comment for new assessments - only recorded on submitter's task in groups
+        add_status_comment(by_user, status)
       else
         # Attempt to move to tutor state by non-tutor
         return nil
@@ -474,9 +490,9 @@ class Task < ActiveRecord::Base
 
       # Grant an extension on fix if due date is within 1 week
       case task_status
-      when TaskStatus.fix_and_resubmit, TaskStatus.discuss, TaskStatus.demonstrate
-        if to_same_day_anywhere_on_earth(due_date) < Time.zone.now + 7.days && can_apply_for_extension?
-          grant_extension(assessor, 1)
+      when TaskStatus.redo, TaskStatus.fix_and_resubmit, TaskStatus.discuss, TaskStatus.demonstrate
+        if to_same_day_anywhere_on_earth(due_date) < Time.zone.now + 7.days && can_apply_for_extension? && unit.extension_weeks_on_resubmit_request > 0
+          grant_extension(assessor, unit.extension_weeks_on_resubmit_request)
         end
       end
     end
@@ -518,6 +534,7 @@ class Task < ActiveRecord::Base
   end
 
   def submitted_before_due?
+    return true unless due_date.present?
     to_same_day_anywhere_on_earth(due_date) >= self.submission_date
   end
 
@@ -593,14 +610,14 @@ class Task < ActiveRecord::Base
   end
 
   def individual_task_or_submitter_of_group_task?
-    return true if !group_task?
-    return true unless group.present?
+    return true if !group_task? # its individual
+    return true unless group.present? # no group yet... so individual
 
-    ensured_group_submission.submitted_by? self.project
+    ensured_group_submission.submitted_by? self.project # return true if submitted by this project
   end
 
   def add_status_comment(current_user, status)
-    return nil unless individual_task_or_submitter_of_group_task?
+    return nil unless individual_task_or_submitter_of_group_task? # only record status comments on submitter task
 
     comment = TaskStatusComment.create
     comment.task = self
@@ -1020,6 +1037,25 @@ class Task < ActiveRecord::Base
 
       FileHelper.compress_pdf(portfolio_evidence)
 
+      # if the task is the draft learning summary task
+      if task_definition_id == unit.draft_task_definition_id
+        # if there is a learning summary, execute, if there isn't and a learning summary exists, don't execute
+        if project.uses_draft_learning_summary || project.portfolio_files.select {|f| f[:name] == "LearningSummaryReport.pdf"}.empty?
+          file_name = {
+            kind: 'document',
+            name: 'LearningSummaryReport.pdf',
+            idx: 0
+          }
+          # Creates tmp portfolio path (if it doesn't exist)
+          portfolio_tmp_dir = project.portfolio_temp_path
+          FileUtils.mkdir_p(portfolio_tmp_dir)
+
+          FileUtils.cp portfolio_evidence, project.portfolio_tmp_file_path(file_name)
+          project.uses_draft_learning_summary = true
+          project.save
+        end
+      end
+
       save
 
       clear_in_process
@@ -1035,7 +1071,7 @@ class Task < ActiveRecord::Base
   #
   # The student has uploaded new work...
   #
-  def create_submission_and_trigger_state_change(user, propagate = true, contributions = nil, trigger = 'ready_to_mark')
+  def create_submission_and_trigger_state_change(user, propagate = true, contributions = nil, trigger = 'ready_to_mark', initial_task = nil)
     if group_task? && propagate
       if contributions.nil? # even distribution
         contribs = group.projects.map { |proj| { project: proj, pct: 100 / group.projects.count, pts: 3 } }
@@ -1043,15 +1079,15 @@ class Task < ActiveRecord::Base
         contribs = contributions.map { |data| { project: Project.find(data[:project_id]), pct: data[:pct].to_i, pts: data[:pts].to_i } }
       end
       group_submission = group.create_submission self, "#{user.name} has submitted work", contribs
-      group_submission.tasks.each { |t| t.create_submission_and_trigger_state_change(user, propagate = false) }
+      group_submission.tasks.each { |t| t.create_submission_and_trigger_state_change(user, false, contributions, trigger, self) }
       reload
     else
       self.file_uploaded_at = Time.zone.now
       self.submission_date = Time.zone.now
 
-      # This task is now ready to submit
+      # This task is now ready to submit - trigger a transition if not in final state
       unless discuss_or_demonstrate? || complete? || do_not_resubmit? || fail?
-        trigger_transition trigger: trigger, by_user: user, group_transition: false
+        trigger_transition trigger: trigger, by_user: user, group_transition: group_task? && initial_task != self
       end
 
       # Destroy the links to ensure we test new files
@@ -1120,7 +1156,7 @@ class Task < ActiveRecord::Base
       end
     end
 
-    create_submission_and_trigger_state_change(current_user, propagate = true, contributions = contributions, trigger = trigger)
+    create_submission_and_trigger_state_change(current_user, true, contributions, trigger, self)
 
     unless alignments.nil?
       if group_task?
@@ -1152,12 +1188,19 @@ class Task < ActiveRecord::Base
     #
     # Now copy over the temp directory over to the enqueued directory
     #
-    enqueued_dir = FileHelper.student_work_dir(:new, nil, true)[0..-2]
+    enqueued_dir = File.join(FileHelper.student_work_dir(:new, nil, true), id.to_s)
 
-    logger.debug "Moving submission evidence from #{tmp_dir} to #{enqueued_dir}"
+    # Move files into place, deleting existing files if present.
+    if not File.exists? enqueued_dir
+      logger.debug "Creating student work new dir #{enqueued_dir}"
+      FileUtils.mkdir_p enqueued_dir
+    end
 
-    # Move files into place
-    FileUtils.mv tmp_dir, enqueued_dir, :force => true
+    logger.debug "Moving source files from #{tmp_dir} into #{enqueued_dir}"
+    FileUtils.mv Dir.glob(File.join(tmp_dir,'*.*')), enqueued_dir, force: true
+
+    logger.debug "Deleting student work dir: #{tmp_dir}"
+    FileUtils.rm_rf tmp_dir if File.exists? tmp_dir
 
     logger.debug "Submission accepted! Status for task #{id} is now #{trigger}"
   end
