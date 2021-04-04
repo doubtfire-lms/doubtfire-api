@@ -45,6 +45,7 @@ class UnitsTest < ActiveSupport::TestCase
     # Enable webcal
     add_auth_header_for user: @student
     put_json '/api/webcal', { webcal: { enabled: true } }
+    assert_equal 200, last_response.status, last_response.inspect
 
     # Ensure sensible defaults in the database
     webcal = @student.webcal

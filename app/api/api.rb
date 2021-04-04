@@ -61,6 +61,7 @@ module Api
     mount Api::UnitsApi
     mount Api::UsersApi
     mount Api::WebcalApi
+    mount Api::WebcalPublicApi
 
     #
     # Add auth details to all end points
@@ -88,6 +89,7 @@ module Api
     AuthenticationHelpers.add_auth_to Api::UsersApi
     AuthenticationHelpers.add_auth_to Api::UnitRolesApi
     AuthenticationHelpers.add_auth_to Api::UnitsApi
+    AuthenticationHelpers.add_auth_to Api::WebcalApi
 
     add_swagger_documentation \
       base_path: nil,
