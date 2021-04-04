@@ -40,7 +40,9 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     project = unit.active_projects.first
 
-    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", with_auth_token(data_to_post)
+    add_auth_header_for user: unit.main_convenor_user
+
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
 
     assert_equal 201, last_response.status
 
@@ -83,7 +85,9 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     project = unit.active_projects.first
 
-    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", with_auth_token(data_to_post)
+    add_auth_header_for user: unit.main_convenor_user
+
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
 
     assert_equal 201, last_response.status
 
@@ -123,7 +127,9 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     project = unit.active_projects.first
 
-    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", with_auth_token(data_to_post)
+    add_auth_header_for user: unit.main_convenor_user
+
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
 
     assert_equal 201, last_response.status
 
@@ -165,8 +171,10 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     data_to_post = with_file('test_files/submissions/Swinburne.jpg', 'image/jpg', data_to_post)
 
     project = unit.active_projects.first
+
+    add_auth_header_for user: unit.main_convenor_user
     
-    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", with_auth_token(data_to_post)
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
 
     task = project.task_for_task_definition(td)
     
@@ -194,8 +202,10 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     data_to_post = with_file('test_files/unit_files/sample-learning-summary.pdf', 'application/pdf', data_to_post)
 
     project = unit.active_projects.first
+
+    add_auth_header_for user: project.user
     
-    post "/api/projects/#{project.id}/task_def_id/#{task_def.id}/submission", with_auth_token(data_to_post, user=project.user)
+    post "/api/projects/#{project.id}/task_def_id/#{task_def.id}/submission", data_to_post
 
     assert_equal 201, last_response.status
 
@@ -237,7 +247,9 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     data_to_post = with_file('test_files/unit_files/sample-learning-summary.pdf', 'application/pdf', data_to_post)
 
-    post "/api/projects/#{project.id}/task_def_id/#{task_def.id}/submission", with_auth_token(data_to_post, user=project.user)
+    add_auth_header_for user: project.user
+
+    post "/api/projects/#{project.id}/task_def_id/#{task_def.id}/submission", data_to_post
 
     project_task = project.task_for_task_definition(task_def)
 
