@@ -7,7 +7,7 @@ class AuthTokenTest < ActiveSupport::TestCase
     token = user.generate_authentication_token!
 
     # Try to duplicate
-    t1 = AuthToken.new(user_id: user.id, authentication_token: token.authentication_token, auth_token_expiry: token.authentication_token)
+    t1 = AuthToken.create(user_id: user.id, authentication_token: token.authentication_token, auth_token_expiry: token.authentication_token)
 
     refute t1.valid?
   end
