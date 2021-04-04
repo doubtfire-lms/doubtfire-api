@@ -1304,7 +1304,9 @@ class TutorialsTest < ActiveSupport::TestCase
     user = project.student
     tutorial = unit.tutorials.last
 
-    post_json with_auth_token("/api/units/#{unit.id}/tutorials/#{tutorial.abbreviation}/enrolments/#{project.id}", user), data_to_put
+    add_auth_header_for user: user
+
+    post_json "/api/units/#{unit.id}/tutorials/#{tutorial.abbreviation}/enrolments/#{project.id}", data_to_put
 
     assert_equal 201, last_response.status
     
@@ -1314,7 +1316,7 @@ class TutorialsTest < ActiveSupport::TestCase
     unit.allow_student_change_tutorial = false
     unit.save
 
-    post_json with_auth_token("/api/units/#{unit.id}/tutorials/#{tutorial.abbreviation}/enrolments/#{project.id}", user), data_to_put
+    post_json "/api/units/#{unit.id}/tutorials/#{tutorial.abbreviation}/enrolments/#{project.id}", data_to_put
 
     assert_equal 403, last_response.status
     
