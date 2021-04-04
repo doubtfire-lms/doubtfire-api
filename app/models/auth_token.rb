@@ -3,6 +3,7 @@ class AuthToken < ActiveRecord::Base
   belongs_to :user
 
   validates :encrypted_authentication_token, presence: true
+  validate :ensure_token_unique_for_user, on: :create
 
   # Auth token encryption settings
   attr_encrypted :authentication_token,
@@ -50,10 +51,16 @@ class AuthToken < ActiveRecord::Base
         end
     end
 
+    self.auth_token_expiry = expiry_time
+
     if save
-      self.update(auth_token_expiry: expiry_time)
-    else
-      self.auth_token_expiry = expiry_time
+      self.save
+    end
+  end
+
+  def ensure_token_unique_for_user
+    if user.token_for_text?(authentication_token)
+      errors.add(:authentication_token, 'already exists for the selected user')
     end
   end
 
