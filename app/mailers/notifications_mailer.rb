@@ -15,7 +15,7 @@ class NotificationsMailer < ActionMailer::Base
     @unit_role = unit_role
     @unit = summary_stats[:unit]
     @data = summary_stats[:staff][unit_role]
-    @convenor = @unit.main_convenor
+    @convenor = @unit.main_convenor_user
     @summary_stats = summary_stats
 
     email_with_name = %("#{@staff.name}" <#{@staff.email}>)
@@ -29,10 +29,10 @@ class NotificationsMailer < ActionMailer::Base
     return nil if project.nil?
 
     add_general
-    
+
     @student = project.student
     @project = project
-    @tutor = project.main_tutor
+    @tutor = project.main_convenor_user
     @summary_stats = summary_stats
     @did_revert_to_pass = did_revert_to_pass
 
@@ -66,29 +66,29 @@ class NotificationsMailer < ActionMailer::Base
   end
 
   def were_was(num)
-    if num == 1 
+    if num == 1
         "was"
-    else 
+    else
         "were"
     end
   end
 
   def are_is(num)
-    if num == 1 
+    if num == 1
         "is"
-    else 
+    else
         "are"
     end
   end
-  
+
   def this_these(num)
-    if num == 1 
+    if num == 1
         "this"
-    else 
+    else
         "these"
     end
   end
-  
+
   helper_method :top_task_desc
   helper_method :were_was
   helper_method :are_is

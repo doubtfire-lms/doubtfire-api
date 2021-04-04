@@ -5,6 +5,7 @@ class TaskComment < ApplicationRecord
   include MimeCheckHelpers
   include TimeoutHelper
   include FileHelper
+  include AuthorisationHelpers
 
   belongs_to :task # Foreign key
   belongs_to :user
@@ -17,10 +18,14 @@ class TaskComment < ApplicationRecord
 
   has_many :comments_read_receipts, class_name: 'CommentsReadReceipts', dependent: :destroy, inverse_of: :task_comment
 
+  # Can optionally be a reply to a comment
+  belongs_to :task_comment
+
   validates :task, presence: true
   validates :user, presence: true
   validates :recipient, presence: true
   validates :comment, length: { minimum: 0, maximum: 4095, allow_blank: true }
+  validate :valid_reply_to?, on: :create
 
   # After create, mark as read by user creating
   after_create do
@@ -30,8 +35,14 @@ class TaskComment < ApplicationRecord
   # Delete action - before dependent association
   before_destroy :delete_associated_files
 
-  def new_for?(user)
-    CommentsReadReceipts.where(user: user, task_comment_id: self).empty?
+  def valid_reply_to?
+    if reply_to_id.present?
+      originalTaskComment = TaskComment.find(reply_to_id)
+      replyProject = originalTaskComment.project
+      errors.add(:task_comment, "Not a reply to a valid task comment") unless originalTaskComment.present?
+      errors.add(:task_comment, "Original comment is not in this task") unless task.all_comments.find(reply_to_id).present?
+      errors.add(:task_comment, "Not authorised to reply to comment") unless authorise?(user, originalTaskComment.project, :get) || (task.group_task? && task.group.role_for(user) != nil)
+    end
   end
 
   def delete_associated_files
@@ -45,6 +56,7 @@ class TaskComment < ApplicationRecord
       has_attachment: ["audio", "image", "pdf"].include?(self.content_type),
       type: self.content_type || "text",
       is_new: self.new_for?(user),
+      reply_to_id: self.reply_to_id,
       author: {
         id: self.user.id,
         name: self.user.name,
@@ -53,7 +65,7 @@ class TaskComment < ApplicationRecord
       recipient: {
         id: self.recipient.id,
         name: self.recipient.name,
-        email: self.user.email
+        email: self.recipient.email
       },
       created_at: self.created_at,
       recipient_read_time: self.time_read_by(self.recipient),
@@ -123,7 +135,7 @@ class TaskComment < ApplicationRecord
   def mark_as_read(user, unit = self.unit)
     return if read_by?(user) # avoid propagating if not needed
 
-    if user == project.main_tutor
+    if user == project.tutor_for(task.task_definition)
       unit.staff.each do |staff_member|
         create_comment_read_receipt_entry(staff_member.user)
       end
@@ -134,6 +146,10 @@ class TaskComment < ApplicationRecord
 
   def mark_as_unread(user)
     remove_comment_read_entry(user)
+  end
+
+  def new_for?(user)
+    ! read_by? user
   end
 
   def read_by?(user)

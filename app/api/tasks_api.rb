@@ -24,23 +24,62 @@ module Api
         error!({ error: 'You do not have permission to read these task details' }, 403)
       end
 
-      unit.student_tasks
-          .joins(:task_status)
-          .select(
+      unit.student_tasks.
+          joins(:task_status).
+          joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id').
+          joins('LEFT OUTER JOIN tutorials ON tutorial_enrolments.tutorial_id = tutorials.id AND (tutorials.tutorial_stream_id = task_definitions.tutorial_stream_id OR tutorials.tutorial_stream_id IS NULL)').
+          select(
             'tasks.id',
-            'projects.tutorial_id as tutorial_id',
             'task_statuses.id as status_id',
-            'task_definition_id'
-          )
-          .where('tasks.task_status_id > 1 and projects.tutorial_id is not null')
-          .map do |r|
+            'task_definition_id',
+            'tutorials.id AS tutorial_id',
+            'tutorials.tutorial_stream_id AS tutorial_stream_id'
+          ).
+          where('tasks.task_status_id > 1').
+          map do |r|
             {
               id: r.id,
-              tutorial_id: r.tutorial_id,
               task_definition_id: r.task_definition_id,
-              status: TaskStatus.id_to_key(r.status_id)
+              status: TaskStatus.id_to_key(r.status_id),
+              tutorial_id: r.tutorial_id,
+              tutorial_stream_id: r.tutorial_stream_id
             }
           end
+    end
+
+    desc 'Refresh the most frequently changed task details for a project - allowing easy refresh of student details'
+    params do
+      requires :project_id, type: Integer, desc: 'The id of the project with the task, or tasks to get'
+      requires :task_definition_id, type: Integer, desc: 'The id of the task definition to get, when not provided all tasks are returned'
+    end
+    get '/projects/:project_id/refresh_tasks/:task_definition_id' do
+      project = Project.find(params[:project_id])
+
+      unless authorise? current_user, project, :get
+        error!({ error: 'You do not have permission to access this project' }, 403)
+      end
+
+      base = project.tasks
+
+      if params[:task_definition_id].present?
+        base = base.where('tasks.task_definition_id = :task_definition_id', task_definition_id: params[:task_definition_id])
+      end
+
+      result = base.
+        map do |task|
+          {
+            task_definition_id: task.task_definition_id,
+            status: TaskStatus.id_to_key(task.task_status_id),
+            due_date: task.due_date,
+            extensions: task.extensions
+          }
+        end
+
+      if params[:task_definition_id].present?
+        result = result.first
+      end
+      
+      result
     end
 
     desc 'Get a similarity match for a given task'
@@ -154,6 +193,28 @@ module Api
       match_link.dismissed = params[:dismissed]
       match_link.save!
       match_link.dismissed
+    end
+
+    desc 'Pin a task to the user\'s task inbox'
+    params do
+      requires :id, type: Integer, desc: 'The ID of the task to be pinned'
+    end
+    post '/tasks/:id/pin' do
+      task = Task.find(params[:id])
+
+      unless authorise? current_user, task.unit, :provide_feedback
+        error!({ error: 'Not authorised to pin task' }, 403)
+      end
+
+      TaskPin.find_or_create_by(task: task, user: current_user)
+    end
+
+    desc 'Unpin a task from the user\'s task inbox'
+    params do
+      requires :id, type: Integer, desc: 'The ID of the task to be unpinned'
+    end
+    delete '/tasks/:id/pin' do
+      TaskPin.find_by!(user: current_user, task_id: params[:id]).destroy
     end
 
     desc 'Update a task using its related project and task definition'

@@ -2,13 +2,29 @@ class Tutorial < ApplicationRecord
   # Model associations
   belongs_to :unit # Foreign key
   belongs_to :unit_role # Foreign key
+  belongs_to :campus
+  belongs_to :tutorial_stream
+
   has_one    :tutor, through: :unit_role, source: :user
 
-  has_many   :projects, dependent: :nullify # Students
-  has_many   :groups, dependent: :nullify
+  has_many   :groups
+  has_many   :tutorial_enrolments, dependent: :destroy
+  has_many   :projects, through: :tutorial_enrolments
+
+  # Callbacks - methods called are private
+  before_destroy :can_destroy?
 
   validates :abbreviation, uniqueness: { scope: :unit,
                                          message: 'must be unique within the unit' }
+
+  # Make sure that unit in tutorial and tutorial stream are consistent
+  validate :unit_must_be_same
+
+  def unit_must_be_same
+    if unit.present? and tutorial_stream.present? and ! unit.eql? tutorial_stream.unit
+      errors.add(:unit, "should be same as the unit in the associated tutorial stream")
+    end
+  end
 
   def self.default
     tutorial = new
@@ -31,8 +47,6 @@ class Tutorial < ApplicationRecord
   end
 
   def name
-    # TODO: Will probably need to make this more flexible when
-    # a tutorial is representing something other than a tutorial
     "#{meeting_day} #{meeting_time} (#{meeting_location})"
   end
 
@@ -58,5 +72,14 @@ class Tutorial < ApplicationRecord
 
   def num_students
     projects.where('enrolled = true').count
+  end
+
+  private
+  def can_destroy?
+    active_enrolment_count = num_students
+    return true if active_enrolment_count == 0 && groups.count == 0
+    errors.add :base, "Cannot delete tutorial with enrolments" if active_enrolment_count > 0
+    errors.add :base, "Cannot delete tutorial with groups" if groups.count > 0
+    false
   end
 end

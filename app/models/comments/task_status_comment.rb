@@ -6,16 +6,9 @@ class TaskStatusComment < TaskComment
     self.content_type = :status
   end
 
-  # Ensure status changes are not notified to staff - they get the task
-  # when it is ready for feedback
-  after_create do
-    if self.user == project.student
-      mark_as_read(self.recipient)
-    end
-  end
-
   def serialize(user)
     json = super(user)
+    json[:recipient_read_time] = nil
     json[:date] = self.created_at
     json[:status] = task_status.status_key
     json

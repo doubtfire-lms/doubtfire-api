@@ -12,3 +12,7 @@ end
 class ShallowUserSerializer < ActiveModel::Serializer
   attributes :id, :name, :email, :student_id
 end
+
+class ShallowTutorSerializer < ActiveModel::Serializer
+  attributes :id, :name, :email
+end

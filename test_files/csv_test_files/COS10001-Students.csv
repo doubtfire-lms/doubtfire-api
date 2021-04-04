@@ -1,0 +1,2 @@
+unit_code,username,student_id,first_name,last_name,email,tutorial,campus
+COS10001,test_csv_student,,Test,CSV,test_csv_student@doubtfire.com,LA1-01,B

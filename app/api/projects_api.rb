@@ -15,25 +15,39 @@ module Api
     params do
       optional :include_inactive, type: Boolean, desc: 'Include projects for units that are no longer active?'
     end
-
     get '/projects' do
       include_inactive = params[:include_inactive] || false
 
       projects = Project.for_user current_user, include_inactive
 
       student_name = db_concat('users.first_name', "' '", 'users.last_name')
-      tutor_name = db_concat('tutor.first_name', "' '", 'tutor.last_name')
 
       # join in other tables to fetch data
-      projects = projects
-                 .joins(:unit)
-                 .joins(:user)
-                 .joins('LEFT OUTER JOIN tutorials ON projects.tutorial_id = tutorials.id')
-                 .joins('LEFT OUTER JOIN unit_roles AS tutor_role ON tutorials.unit_role_id = tutor_role.id')
-                 .joins('LEFT OUTER JOIN users AS tutor ON tutor.id = tutor_role.user_id')
-                 .select('projects.*', 'units.name AS unit_name', 'units.id AS unit_id', 'units.code AS unit_code', 'units.start_date AS start_date', 'units.end_date AS end_date', "#{student_name} AS student_name", "#{tutor_name} AS tutor_name")
+      data = projects.
+                 joins(:unit).
+                 joins(:user).
+                 select( 'projects.*',
+                          'units.name AS unit_name', 'units.id AS unit_id', 'units.code AS unit_code', 'units.start_date AS start_date', 'units.end_date AS end_date', 'units.teaching_period_id AS teaching_period_id', 'units.active AS active',
+                          "#{student_name} AS student_name"
+                        )
 
-      ActiveModel::ArraySerializer.new(projects, each_serializer: ShallowProjectSerializer)
+      # Now map the data to structure for json to return
+      data.map do |row|
+        {
+          unit_id: row['unit_id'],
+          unit_code: row['unit_code'],
+          unit_name: row['unit_name'],
+          project_id: row['id'],
+          campus_id: row['campus_id'],
+          target_grade: row['target_grade'],
+          submitted_grade: row['submitted_grade'],
+          has_portfolio: row['has_portfolio'],
+          start_date: row['start_date'],
+          end_date: row['end_date'],
+          teaching_period_id: row['teaching_period_id'],
+          active: row['active'].is_a?(Numeric) ? row['active'] != 0 : row['active']
+        }
+      end
     end
 
     desc 'Get project'
@@ -56,9 +70,10 @@ module Api
     desc 'Update a project'
     params do
       optional :trigger,            type: String,  desc: 'The update trigger'
-      optional :tutorial_id,        type: Integer, desc: 'Switch tutorial'
+      optional :campus_id,          type: Integer, desc: 'Campus this project is part of, or -1 for no campus'
       optional :enrolled,           type: Boolean, desc: 'Enrol or withdraw this project'
       optional :target_grade,       type: Integer, desc: 'New target grade'
+      optional :submitted_grade,    type: Integer, desc: 'New submitted grade'
       optional :compile_portfolio,  type: Boolean, desc: 'Schedule a construction of the portfolio'
       optional :grade,              type: Integer, desc: 'New grade'
       optional :old_grade,          type: Integer, desc: 'Old grade to check it has not changed...'
@@ -77,21 +92,13 @@ module Api
         else
           error!({ error: "Invalid trigger - #{params[:trigger]} unknown" }, 403)
         end
-      elsif !params[:tutorial_id].nil?
-        unless authorise? current_user, project, :change_tutorial
-          error!({ error: "Couldn't find Project with id=#{params[:id]}" }, 403)
+      # If we are only updating the campus
+      elsif params[:campus_id].present?
+        unless authorise? current_user, project, :change_campus
+          error!({ error: "You cannot change the campus for project #{params[:id]}" }, 403)
         end
-
-        tutorial_id = params[:tutorial_id]
-        if project.unit.tutorials.where('tutorials.id = :tutorial_id', tutorial_id: tutorial_id).count == 1
-          project.tutorial_id = tutorial_id
-          project.save!
-        elsif tutorial_id == -1
-          project.tutorial = nil
-          project.save!
-        else
-          error!({ error: "Couldn't find Tutorial with id=#{params[:tutorial_id]}" }, 403)
-        end
+        project.campus_id = params[:campus_id] == -1 ? nil : params[:campus_id]
+        project.save!
       elsif !params[:enrolled].nil?
         unless authorise? current_user, project.unit, :change_project_enrolment
           error!({ error: "You cannot change the enrolment for project #{params[:id]}" }, 403)
@@ -104,6 +111,16 @@ module Api
         end
 
         project.target_grade = params[:target_grade]
+        project.save
+      elsif !params[:submitted_grade].nil?
+        unless authorise? current_user, project, :change
+          error!({ error: "You do not have permissions to change Project with id=#{params[:id]}" }, 403)
+        end
+        if project.has_portfolio
+          error!({ error: "You cannot change your submitted grade after portfolio submission"}, 403)
+        end
+
+        project.submitted_grade = params[:submitted_grade]
         project.save
       elsif !params[:grade].nil?
         unless authorise? current_user, project, :assess
@@ -142,7 +159,7 @@ module Api
     params do
       requires :unit_id, type: Integer, desc: 'Unit Id'
       requires :student_num, type: String,   desc: 'Student Number 7 digit code'
-      optional :tutorial_id, type: Integer,  desc: 'Tutorial Id'
+      requires :campus_id, type: Integer, desc: 'Campus this project is part of'
     end
     post '/projects' do
       unit = Unit.find(params[:unit_id])
@@ -154,8 +171,10 @@ module Api
         error!({ error: "Couldn't find Student with username=#{params[:student_num]}" }, 403)
       end
 
+      campus = Campus.find(params[:campus_id])
+
       if authorise? current_user, unit, :enrol_student
-        proj = unit.enrol_student(student, params[:tutorial_id])
+        proj = unit.enrol_student(student, campus)
         if proj.nil?
           error!({ error: 'Error adding student to unit' }, 403)
         else
@@ -167,7 +186,7 @@ module Api
             student_id: proj.student.username,
             student_email: proj.student.email,
             target_grade: proj.target_grade,
-            tutorial_id: proj.tutorial_id,
+            campus_id: proj.campus_id,
             compile_portfolio: false,
             grade: proj.grade,
             grade_rationale: proj.grade_rationale,

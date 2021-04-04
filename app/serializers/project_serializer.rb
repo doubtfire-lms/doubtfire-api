@@ -3,45 +3,27 @@
 
 require 'task_serializer'
 
-# Shallow serialization is used for student...
-class ShallowProjectSerializer < ActiveModel::Serializer
-  attributes :unit_id, :unit_code, :unit_name,
-             :project_id, :student_name,
-             :tutor_name, :target_grade,
-             :has_portfolio, :start_date, :end_date,
-             :teaching_period_id, :active
-
-  def project_id
-    object.object.id
-  end
-
-  def teaching_period_id
-    object.object.unit.teaching_period_id
-  end
-
-  def active
-    object.object.unit.active
-  end
-end
-
 class ProjectSerializer < ActiveModel::Serializer
   attributes :unit_id,
              :project_id,
              :student_id,
+             :campus_id,
              :started,
              :stats,
              :student_name,
-             :tutor_name,
-             :tutorial_id,
              :burndown_chart_data,
              :enrolled,
              :target_grade,
+             :submitted_grade,
              :portfolio_files,
              :compile_portfolio,
              :portfolio_available,
              :grade,
              :grade_rationale,
-             :tasks
+             :tasks,
+             :uses_draft_learning_summary
+
+  has_many :tutorial_enrolments
 
   def project_id
     object.object.id
@@ -53,10 +35,6 @@ class ProjectSerializer < ActiveModel::Serializer
 
   def student_id
     object.object.student.username
-  end
-
-  def tutor_name
-    object.object.main_tutor.first_name unless object.object.main_tutor.nil?
   end
 
   def stats

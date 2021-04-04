@@ -17,6 +17,8 @@ module Api
         error!(e.message, 400)
       when Grape::Exceptions::MethodNotAllowed
         error!(e.message, 405)
+      when ActiveRecord::RecordNotDestroyed
+        error!(e.message, 400)
       when ActiveRecord::RecordNotFound
         error!("Unable to find requested #{e.message[/(Couldn't find )(.*)( with)/,2]}", 404)
       else
@@ -30,6 +32,8 @@ module Api
     #
     # Mount the api modules
     #
+    mount Api::ActivityTypesAuthenticatedApi
+    mount Api::ActivityTypesPublicApi
     mount Api::AuthenticationApi
     mount Api::BreaksApi
     mount Api::DiscussionCommentApi
@@ -48,14 +52,21 @@ module Api
     mount Api::TasksApi
     mount Api::TeachingPeriodsPublicApi
     mount Api::TeachingPeriodsAuthenticatedApi
+    mount Api::CampusesPublicApi
+    mount Api::CampusesAuthenticatedApi
     mount Api::TutorialsApi
+    mount Api::TutorialStreamsApi
+    mount Api::TutorialEnrolmentsApi
     mount Api::UnitRolesApi
     mount Api::UnitsApi
     mount Api::UsersApi
+    mount Api::WebcalApi
+    mount Api::WebcalPublicApi
 
     #
     # Add auth details to all end points
     #
+    AuthenticationHelpers.add_auth_to Api::ActivityTypesAuthenticatedApi
     AuthenticationHelpers.add_auth_to Api::BreaksApi
     AuthenticationHelpers.add_auth_to Api::DiscussionCommentApi
     AuthenticationHelpers.add_auth_to Api::ExtensionCommentsApi
@@ -71,10 +82,14 @@ module Api
     AuthenticationHelpers.add_auth_to Api::TaskCommentsApi
     AuthenticationHelpers.add_auth_to Api::TaskDefinitionsApi
     AuthenticationHelpers.add_auth_to Api::TeachingPeriodsAuthenticatedApi
+    AuthenticationHelpers.add_auth_to Api::CampusesAuthenticatedApi
     AuthenticationHelpers.add_auth_to Api::TutorialsApi
+    AuthenticationHelpers.add_auth_to Api::TutorialStreamsApi
+    AuthenticationHelpers.add_auth_to Api::TutorialEnrolmentsApi
     AuthenticationHelpers.add_auth_to Api::UsersApi
     AuthenticationHelpers.add_auth_to Api::UnitRolesApi
     AuthenticationHelpers.add_auth_to Api::UnitsApi
+    AuthenticationHelpers.add_auth_to Api::WebcalApi
 
     add_swagger_documentation \
       base_path: nil,

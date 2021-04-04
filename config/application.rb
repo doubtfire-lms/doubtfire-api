@@ -22,7 +22,7 @@ module Doubtfire
     # are: database, ldap, aaf. It can be overridden using the DF_AUTH_METHOD
     # environment variable.
     config.auth_method = (ENV['DF_AUTH_METHOD'] || :database).to_sym
-
+    
     # ==> Student work directory
     # File server location for storing student's work. Defaults to `student_work`
     # directory under root but is overridden using DF_STUDENT_WORK_DIR environment
@@ -42,6 +42,7 @@ module Doubtfire
     config.institution[:host] = 'localhost:3000' if Rails.env.development?
     config.institution[:host_url] = Rails.env.development? ? "http://#{config.institution[:host]}/" : "https://#{config.institution[:host]}/"
     config.institution[:settings] = ENV['DF_INSTITUTION_SETTINGS_RB'] if ENV['DF_INSTITUTION_SETTINGS_RB']
+    config.institution[:ffmpeg] = ENV['DF_FFMPEG_PATH'] || 'ffmpeg'
     
     require "#{Rails.root}/config/#{config.institution[:settings]}" unless config.institution[:settings].nil?
 
