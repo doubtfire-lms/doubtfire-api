@@ -222,16 +222,20 @@ module Api
       optional :remember, type: Boolean, desc: 'User has requested to remember login', default: false
     end
     put '/auth' do
-      error!({ error: 'Invalid token/username .' }, 404) if headers['Auth-Token'].nil? || headers['Username'].nil?
-      logger.info "Update token #{headers['Auth-Token']} from #{request.ip}"
+      token_param = headers['Auth-Token'] || params['Auth-Token']
+      user_param = headers['Username'] || params['Username']
+
+      error!({ error: 'Invalid token/username.' }, 404) if token_param.nil? || user_param.nil?
+      
+      logger.info "Update token #{token_param} from #{request.ip} for #{user_param}"
 
       # Find user
-      user = User.find_by_username(headers['Username'])
-      token = user.token_for_text?(headers['Auth-Token']) unless user.nil?
+      user = User.find_by_username(user_param)
+      token = user.token_for_text?(token_param) unless user.nil?
       remember = params[:remember] || false
 
       # Token does not match user
-      if token.nil? || user.nil? || user.username != headers['Username']
+      if token.nil? || user.nil? || user.username != user_param
         error!({ error: 'Invalid token.' }, 404)
       else
         if token.auth_token_expiry > Time.zone.now
