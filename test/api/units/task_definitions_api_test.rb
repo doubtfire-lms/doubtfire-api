@@ -599,7 +599,8 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_equal task_first.id, last_response_body.first['id']
 
     # Get the tasks for the second task definition
-    get with_auth_token "/api/units/#{unit.id}/task_definitions/#{task_def_second.id}/tasks"
+    add_auth_header_for user: User.first
+    get "/api/units/#{unit.id}/task_definitions/#{task_def_second.id}/tasks"
 
     assert_equal 1, last_response_body.count
     assert_equal project.id, last_response_body.first['project_id']
@@ -768,7 +769,8 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
       }
     }
 
-    put_json with_auth_token("/api/units/#{unit.id}", unit.main_convenor_user), data_to_put
+    add_auth_header_for user: unit.main_convenor_user
+    put_json "/api/units/#{unit.id}", data_to_put
 
     assert_equal 200, last_response.status
     unit.reload
@@ -781,7 +783,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
       }
     }
 
-    put_json with_auth_token("/api/units/#{unit.id}/task_definitions/#{task_def.id}"), data_to_put
+    put_json "/api/units/#{unit.id}/task_definitions/#{task_def.id}", data_to_put
 
     assert_equal 403, last_response.status
     task_def.reload
@@ -794,7 +796,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
       }
     }
 
-    put_json with_auth_token("/api/units/#{unit.id}/task_definitions/#{task_def.id}"), data_to_put
+    put_json "/api/units/#{unit.id}/task_definitions/#{task_def.id}", data_to_put
 
     assert_equal 403, last_response.status
     task_def.reload
