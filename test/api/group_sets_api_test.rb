@@ -85,9 +85,10 @@ class GroupSetsApiTest < ActiveSupport::TestCase
       group: {
         name:new_group.name,
         tutorial_id:new_tutorial.id
-      },
-      auth_token: auth_token
+      }
     }
+
+    add_auth_header_for user: User.first
 
     # perform the POST
     post_json "/api/units/#{new_unit.id}/group_sets/#{new_group_set.id}/groups", data_to_post
