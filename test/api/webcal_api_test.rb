@@ -87,7 +87,7 @@ class UnitsTest < ActiveSupport::TestCase
     # Create webcal
     webcal = @student.create_webcal(guid: SecureRandom.uuid)
 
-    add_auth_header_for user: @stduent
+    add_auth_header_for user: @student
 
     # Specify only time
     put_json '/api/webcal', { webcal: { reminder: { time: 5 } } }
