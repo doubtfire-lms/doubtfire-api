@@ -25,8 +25,10 @@ class GroupSetsApiTest < ActiveSupport::TestCase
       group_set: new_group_set
     }
 
+    add_auth_header_for user: student_user
+
     # Perform the POST
-    post_json with_auth_token("/api/units/#{new_unit.id}/group_sets", student_user), data_to_post
+    post_json "/api/units/#{new_unit.id}/group_sets", data_to_post
 
     # Check error code
     assert_equal 403, last_response.status
@@ -45,8 +47,10 @@ class GroupSetsApiTest < ActiveSupport::TestCase
       group_set: new_group_set,
     }
 
+    add_auth_header_for user: new_unit.main_convenor_user
+
     # perform the POST
-    post_json with_auth_token("/api/units/#{new_unit.id}/group_sets", new_unit.main_convenor_user), data_to_post
+    post_json "/api/units/#{new_unit.id}/group_sets", data_to_post
 
     # check if the POST get through
     assert_equal 201, last_response.status
@@ -115,8 +119,10 @@ class GroupSetsApiTest < ActiveSupport::TestCase
       }
     }
 
+    add_auth_header_for user: new_unit.main_convenor_user
+
     # perform the POST
-    post_json with_auth_token("/api/units/#{new_unit.id}/group_sets/#{new_group_set.id}/groups",new_unit.main_convenor_user), data_to_post
+    post_json "/api/units/#{new_unit.id}/group_sets/#{new_group_set.id}/groups", data_to_post
 
     # check if the POST get through
     assert_equal 201, last_response.status
@@ -149,7 +155,9 @@ class GroupSetsApiTest < ActiveSupport::TestCase
     # Obtain the unit from the group
     new_unit = new_group.group_set.unit
 
-    get with_auth_token "/api/units/#{new_unit.id}/group_sets/#{new_group.group_set_id}/groups",new_unit.main_convenor_user
+    add_auth_header_for user: new_unit.main_convenor_user
+
+    get "/api/units/#{new_unit.id}/group_sets/#{new_group.group_set_id}/groups"
 
     #check returning number of groups
     assert_equal new_group.group_set.groups.count, last_response_body.count
@@ -173,7 +181,9 @@ class GroupSetsApiTest < ActiveSupport::TestCase
     # Obtain the unit from the group
     new_unit = new_group.group_set.unit
 
-    get with_auth_token "/api/units/#{new_unit.id}/group_sets/#{new_group_set.id}/groups"
+    add_auth_header_for user: User.first
+
+    get "/api/units/#{new_unit.id}/group_sets/#{new_group_set.id}/groups"
     # Check error code
     assert_equal 403, last_response.status
   end
@@ -188,7 +198,9 @@ class GroupSetsApiTest < ActiveSupport::TestCase
     # Obtain the unit from the group
     new_unit = new_group.group_set.unit
 
-    get with_auth_token "/api/units/#{new_unit.id}/group_sets/#{new_group_set.id}/groups",new_unit.main_convenor_user
+    add_auth_header_for user: new_unit.main_convenor_user
+
+    get "/api/units/#{new_unit.id}/group_sets/#{new_group_set.id}/groups"
 
     # Check returning number of groups
     assert_equal new_group_set.groups.all.count,last_response_body.count
@@ -254,7 +266,7 @@ class GroupSetsApiTest < ActiveSupport::TestCase
 
     add_auth_header_for(user: group.projects.first.student)
     # Students shouldn't be able to unlock the group either.
-    put url, with_auth_token(unlock_data, group.projects.first.student)
+    put url, unlock_data
     assert_equal 403, last_response.status
     assert_equal true, Group.find(group.id).locked
 
