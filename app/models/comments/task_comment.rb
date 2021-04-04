@@ -42,7 +42,7 @@ class TaskComment < ActiveRecord::Base
       replyProject = originalTaskComment.project
       errors.add(:task_comment, "Not a reply to a valid task comment") unless originalTaskComment.present?
       errors.add(:task_comment, "Original comment is not in this task") unless task.all_comments.find(reply_to_id).present?
-      errors.add(:task_comment, "Not authorised to reply to comment") unless authorise? user, originalTaskComment.project, :get
+      errors.add(:task_comment, "Not authorised to reply to comment") unless authorise?(user, originalTaskComment.project, :get) || (task.group_task? && task.group.role_for(user) != nil)
     end
   end
 

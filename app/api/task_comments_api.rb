@@ -37,7 +37,7 @@ module Api
 
       if reply_to_id.present?
         originalTaskComment = TaskComment.find(reply_to_id)
-        error!(error: 'You do not have permission to read the replied comment') unless authorise? current_user, originalTaskComment.project, :get
+        error!(error: 'You do not have permission to read the replied comment') unless authorise?(current_user, originalTaskComment.project, :get) || (task.group_task? && task.group.role_for(current_user) != nil)
         error!(error: 'Original comment is not in this task.') unless task.all_comments.find(reply_to_id).present?
       end
 

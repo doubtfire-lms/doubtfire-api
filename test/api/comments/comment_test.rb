@@ -172,9 +172,7 @@ class CommentTest < ActiveSupport::TestCase
   end
 
   def test_student_reply_to_other_student_in_same_group
-    campus = FactoryBot.create(:campus)
     unit = FactoryBot.create :unit
-    # project_1 = FactoryBot.create(:project, unit: unit, campus: campus)
 
     group_set = GroupSet.create!(name: 'test_student_reply_to_other_student_in_same_group', unit: unit)
     group_set.save!
@@ -208,21 +206,22 @@ class CommentTest < ActiveSupport::TestCase
     td.save!
 
     # Add auth_token and username to header
-    add_auth_header_for(user: unit.active_projects[0].student)
+    add_auth_header_for(user: group.projects.first.student)
 
     # Student 1 in group post first comment
     post_json "/api/projects/#{project.id}/task_def_id/#{td.id}/comments", comment: 'Hello World'
-    assert_equal last_response_body, "test"
+    assert_equal 'Hello World', last_response_body['comment']
 
     assert_equal 201, last_response.status
     id = last_response_body['id']
 
     # Add auth_token and username to header
-    add_auth_header_for(user: unit.active_projects[1].student)
+    project = group.projects.second
+    add_auth_header_for(user: project.student)
 
     # Student 2 in group replies
     post_json "/api/projects/#{project.id}/task_def_id/#{td.id}/comments", comment: 'Hello World 2', reply_to_id: id
-    assert_equal last_response, "test"
+    assert_equal 'Hello World 2', last_response_body['comment'], last_response_body.inspect
     assert_equal 201, last_response.status
   end
 
