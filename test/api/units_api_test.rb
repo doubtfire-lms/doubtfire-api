@@ -416,7 +416,8 @@ class UnitsApiTest < ActiveSupport::TestCase
       }
     }
 
-    put_json with_auth_token("/api/units/#{unit.id}", unit.main_convenor_user), data_to_put
+    add_auth_header_for user: unit.main_convenor_user
+    put_json "/api/units/#{unit.id}", data_to_put
 
     assert_equal 403, last_response.status
     unit.reload
@@ -429,7 +430,8 @@ class UnitsApiTest < ActiveSupport::TestCase
       }
     }
 
-    put_json with_auth_token("/api/units/#{unit.id}", unit.main_convenor_user), data_to_put
+    add_auth_header_for user: unit.main_convenor_user
+    put_json "/api/units/#{unit.id}", data_to_put
 
     assert_equal 403, last_response.status
     unit.reload
@@ -442,7 +444,8 @@ class UnitsApiTest < ActiveSupport::TestCase
       }
     }
 
-    put_json with_auth_token("/api/units/#{unit.id}", unit.main_convenor_user), data_to_put
+    add_auth_header_for user: unit.main_convenor_user
+    put_json "/api/units/#{unit.id}", data_to_put
 
     assert_equal 200, last_response.status
     unit.reload
