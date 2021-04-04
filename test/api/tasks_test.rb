@@ -262,28 +262,35 @@ class TasksTest < ActiveSupport::TestCase
     unit.employ_staff(tutor, Role.tutor)
     unit.enrol_student(student, FactoryBot.create(:campus))
 
+    add_auth_header_for user: convenor
+
     # Convenor tries to pin task
-    post with_auth_token("/api/tasks/#{task.id}/pin", convenor)
+    post "/api/tasks/#{task.id}/pin"
     assert_equal last_response.status, 201
 
     # Convenor tries to unpin task
-    delete with_auth_token("/api/tasks/#{task.id}/pin", convenor)
+    delete "/api/tasks/#{task.id}/pin"
     assert_equal last_response.status, 200
 
+    add_auth_header_for user: tutor
+
     # Tutor tries to pin task
-    post with_auth_token("/api/tasks/#{task.id}/pin", tutor)
+    post "/api/tasks/#{task.id}/pin"
     assert_equal last_response.status, 201
 
     # Tutor tries to unpin task
-    delete with_auth_token("/api/tasks/#{task.id}/pin", tutor)
+    delete "/api/tasks/#{task.id}/pin"
     assert_equal last_response.status, 200
 
+    add_auth_header_for user: student
+
     # Student tries to pin task
-    post with_auth_token("/api/tasks/#{task.id}/pin", student)
+    post "/api/tasks/#{task.id}/pin"
     assert_equal last_response.status, 403
 
+    add_auth_header_for user: admin
     # Admin tries to pin task
-    post with_auth_token("/api/tasks/#{task.id}/pin", admin)
+    post "/api/tasks/#{task.id}/pin"
     assert_equal last_response.status, 403
   end
 
@@ -300,20 +307,25 @@ class TasksTest < ActiveSupport::TestCase
     other_unit = FactoryBot.create(:unit, student_count: 1, task_count: 1, perform_submissions: true)
     other_task = other_unit.tasks.first
 
+    add_auth_header_for user: convenor
+
     # Convenor tries to pin task of unit that they are assigned to
-    post with_auth_token("/api/tasks/#{task.id}/pin", convenor)
+    post "/api/tasks/#{task.id}/pin"
     assert_equal last_response.status, 201
 
     # Tutor tries to pin task of unit that they are assigned to
-    post with_auth_token("/api/tasks/#{task.id}/pin", tutor)
+    add_auth_header_for user: tutor
+    post "/api/tasks/#{task.id}/pin"
     assert_equal last_response.status, 201
 
     # Convenor tries to pin task of unit that they are not assigned to
-    post with_auth_token("/api/tasks/#{other_task.id}/pin", convenor)
+    add_auth_header_for user: convenor
+    post "/api/tasks/#{other_task.id}/pin"
     assert_equal last_response.status, 403
 
     # Tutor tries to pin task of unit that they are not assigned to
-    post with_auth_token("/api/tasks/#{other_task.id}/pin", tutor)
+    add_auth_header_for user: tutor
+    post "/api/tasks/#{other_task.id}/pin"
     assert_equal last_response.status, 403
   end
 
@@ -331,12 +343,13 @@ class TasksTest < ActiveSupport::TestCase
     task1.add_text_comment s.student, "Message"
 
     # Tutor pins task 1
-    post with_auth_token("/api/tasks/#{task1.id}/pin", tutor)
+    add_auth_header_for user: tutor
+    post "/api/tasks/#{task1.id}/pin"
 
     assert TaskPin.find_by user: tutor, task: task1
 
     # Tutor retrieves task inbox
-    get with_auth_token("/api/units/#{unit.id}/tasks/inbox", tutor)
+    get "/api/units/#{unit.id}/tasks/inbox"
 
     # Assert that task1 is pinned, task2 isn't
     assert last_response_body.count == 1
