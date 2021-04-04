@@ -173,11 +173,13 @@ class ExtensionTest < ActiveSupport::TestCase
     }
 
     # Request a 2 day extension
-    post_json with_auth_token("/api/projects/#{project.id}/task_def_id/#{td.id}/request_extension", user), data_to_post
+    add_auth_header_for user: user
+    post_json "/api/projects/#{project.id}/task_def_id/#{td.id}/request_extension", data_to_post
     response = last_response_body
     assert_equal 403, last_response.status
 
-    post_json with_auth_token("/api/projects/#{project.id}/task_def_id/#{td.id}/request_extension", main_tutor), data_to_post
+    add_auth_header_for user: main_tutor
+    post_json "/api/projects/#{project.id}/task_def_id/#{td.id}/request_extension", data_to_post
     response = last_response_body
     assert_equal 201, last_response.status
     assert response["weeks_requested"] == 1, "Error: Deadline less than a week, requested weeks should be 1, found #{response["weeks_requested"]}."
@@ -222,7 +224,8 @@ class ExtensionTest < ActiveSupport::TestCase
     tutor = project.tutor_for(td)
 
     # Make a submission for this student
-    post with_auth_token("/api/projects/#{project.id}/task_def_id/#{td.id}/submission", tutor), data_to_post    
+    add_auth_header_for user: tutor
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post    
     assert_equal 201, last_response.status
 
     # Get the task... check it is ready for feedback
@@ -277,7 +280,8 @@ class ExtensionTest < ActiveSupport::TestCase
     assert_equal 0, inbox.count, inbox.inspect
 
     # Request a 1 week extension
-    post_json with_auth_token("/api/projects/#{project.id}/task_def_id/#{td.id}/request_extension", user), data_to_post
+    add_auth_header_for user: user
+    post_json "/api/projects/#{project.id}/task_def_id/#{td.id}/request_extension", data_to_post
     response = last_response_body
     assert_equal 201, last_response.status
     assert response["weeks_requested"] == 1, "Error: Deadline less than a week, requested weeks should be 1, found #{response["weeks_requested"]}."
