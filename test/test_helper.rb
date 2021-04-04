@@ -6,6 +6,13 @@ require "minitest/rails"
 # Consider setting MT_NO_EXPECTATIONS to not add expectations to Object.
 # ENV["MT_NO_EXPECTATIONS"] = true
 
+require 'simplecov'
+SimpleCov.start 'rails'
+# Setup RAILS_ENV as test and expand config for test environment
+
+raise 'You cannot run this in production' if Rails.env.production?
+require File.expand_path('../../config/environment', __FILE__)
+
 # Check if we're connected to the test DB
 begin
   ActiveRecord::Base.connection
@@ -21,6 +28,14 @@ end
 # Require minitest extensions
 require 'minitest/rails'
 require 'minitest/pride'
+require 'minitest/around'
+
+require 'webmock/minitest'
+
+# Require all test helpers
+require_all 'test/helpers'
+require 'rails/test_help'
+require 'database_cleaner'
 
 # require 'database_cleaner'
 class ActiveSupport::TestCase
@@ -29,7 +44,13 @@ class ActiveSupport::TestCase
   # Run tests in parallel with specified workers
   # parallelize(workers: :number_of_processors)
 
-  # Setup all fixtures in test/fixtures/*.yml for all tests in alphabetical order.
+  # Inclide FactoryBot
+  include FactoryBot::Syntax::Methods
+
+  # Setup all fixtures in test/fixtures/*.(yml|csv) for all tests in alphabetical order.
+  #
+  # Note: You'll currently still have to declare fixtures explicitly in integration tests
+  # -- they do not yet inherit this setting
   fixtures :all
 
   # Silence deprecation warnings
@@ -39,6 +60,7 @@ class ActiveSupport::TestCase
   DatabaseCleaner.strategy = :transaction
 
   def setup
+    Faker::UniqueGenerator.clear
     DatabaseCleaner.start
   end
 

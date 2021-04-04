@@ -12,6 +12,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     test_unit = Unit.first
     td = TaskDefinition.new({
       unit_id: test_unit.id,
+      tutorial_stream: test_unit.tutorial_streams.first,
       name: 'Test quality points',
       description: 'test def',
       weighting: 4,
@@ -39,6 +40,8 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
   def test_group_tasks
     u = Unit.first
+    activity_type = FactoryBot.create(:activity_type)
+    u.add_tutorial_stream('Group-Tasks-Test', 'group-tasks-test', activity_type)
 
     group_params = {
       name: 'Group Work',
@@ -59,4 +62,136 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     assert_equal 1, group_set.task_definitions.count
     assert_equal initial_count + 1, u.task_definitions.count
   end
+
+  def test_export_task_definitions_csv
+    unit = FactoryBot.create(:unit, with_students: false)
+    stream_1 = FactoryBot.create(:tutorial_stream, unit: unit)
+
+    task_defs_csv = CSV.parse unit.task_definitions_csv, headers: true
+    task_defs_csv.each do |task_def_csv|
+      task_def = unit.task_definitions.find_by(abbreviation: task_def_csv['abbreviation'])
+      keys_to_ignore = ['tutorial_stream', 'plagiarism_checks', 'start_week', 'start_day', 'target_week', 'target_day', 'due_week', 'due_day']
+      task_def_csv.each do |key, value|
+        unless keys_to_ignore.include?(key)
+          assert_equal(task_def[key].to_s, value)
+        end
+      end
+
+      assert_equal task_def.start_week.to_s, task_def_csv['start_week']
+      assert_equal task_def.start_day.to_s, task_def_csv['start_day']
+      assert_equal task_def.target_week.to_s, task_def_csv['target_week']
+      assert_equal task_def.target_day.to_s, task_def_csv['target_day']
+      assert_equal task_def.due_week.to_s, task_def_csv['due_week']
+      assert_equal task_def.due_day.to_s, task_def_csv['due_day']
+      assert_equal task_def.tutorial_stream.present? ? task_def.tutorial_stream.abbreviation : nil, task_def_csv['tutorial_stream']
+    end
+  end
+
+  def test_export_without_tutorial_stream
+    data = {
+      code: 'COS10001',
+      name: 'Testing in Unit Tests',
+      description: 'Test unit',
+      teaching_period: TeachingPeriod.find(3)
+    }
+
+    unit = Unit.create(data)
+    assert_empty unit.task_definitions
+    unit.import_tasks_from_csv File.open(Rails.root.join('test_files',"#{unit.code}-ImportTasksWithoutTutorialStream.csv"))
+    assert_not_empty unit.task_definitions
+
+    task_defs_csv = CSV.parse unit.task_definitions_csv, headers: true
+    task_defs_csv.each do |task_def_csv|
+      assert_nil task_def_csv['tutorial_stream']
+    end
+  end
+
+  def test_import_without_tutorial_stream
+    data = {
+      code: 'COS10001',
+      name: 'Testing in Unit Tests',
+      description: 'Test unit',
+      teaching_period: TeachingPeriod.find(3)
+    }
+
+    unit = Unit.create(data)
+    assert_empty unit.task_definitions
+    unit.import_tasks_from_csv File.open(Rails.root.join('test_files',"#{unit.code}-ImportTasksWithoutTutorialStream.csv"))
+    assert_equal 36, unit.task_definitions.count, 'imported all task definitions'
+
+    unit.task_definitions.each do |task_definition|
+      assert_nil task_definition.tutorial_stream
+    end
+  end
+
+  def test_import_with_tutorial_stream
+    data = {
+      code: 'COS10001',
+      name: 'Testing in Unit Tests',
+      description: 'Test unit',
+      teaching_period: TeachingPeriod.find(3)
+    }
+
+    unit = Unit.create(data)
+    assert_empty unit.tutorial_streams
+    assert_empty unit.task_definitions
+
+    activity_type = FactoryBot.create(:activity_type)
+    tutorial_stream = unit.add_tutorial_stream('Import-Tasks', 'import-tasks', activity_type)
+    unit.import_tasks_from_csv File.open(Rails.root.join('test_files',"#{unit.code}-ImportTasksWithTutorialStream.csv"))
+    assert_equal 36, unit.task_definitions.count, 'imported all task definitions'
+
+    unit.task_definitions.each do |task_definition|
+      assert_equal tutorial_stream, task_definition.tutorial_stream
+    end
+  end
+
+  def test_cannot_change_group_set_with_submissions
+    unit = FactoryBot.create :unit, group_sets: 1, groups: [{gs: 0, students: 3}], task_count: 0
+
+    td = FactoryBot.create :task_definition, unit: unit, group_set: unit.group_sets.first, upload_requirements: [ ], start_date: Time.zone.now + 1.day
+
+    group = unit.groups.first
+
+    p1 = group.projects.first
+    t1 = p1.task_for_task_definition(td)
+
+    t1.create_submission_and_trigger_state_change(t1.student, true)
+
+    assert t1.group_submission
+
+    td.group_set = nil
+
+    refute td.valid?
+  end
+
+  def test_delete_unneeded_group_submission_on_group_set_change
+    # When we change the group setting, and there is some old task interactions
+    # make sure group submission details are removed
+
+    unit = FactoryBot.create :unit, group_sets: 1, groups: [{gs: 0, students: 3}], task_count: 0
+
+    td = FactoryBot.create :task_definition, unit: unit, group_set: unit.group_sets.first, upload_requirements: [ ], start_date: Time.zone.now + 1.day
+
+    group = unit.groups.first
+
+    p1 = group.projects.first
+    t1 = p1.task_for_task_definition(td)
+
+    t1.trigger_transition trigger: 'working_on_it', by_user: p1.student
+
+    assert t1.group_submission
+
+    td.group_set = nil
+
+    assert td.valid?
+    assert td.save!
+
+    t1.reload
+
+    assert_nil t1.group_submission
+
+    unit.destroy
+  end
+
 end

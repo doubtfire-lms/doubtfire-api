@@ -7,10 +7,11 @@ end
 class Project < ApplicationRecord
   include ApplicationHelper
   include LogHelper
+  include DbHelpers
 
   belongs_to :unit
-  belongs_to :tutorial
   belongs_to :user
+  belongs_to :campus
 
   # has_one :user, through: :student
   has_many :tasks, dependent: :destroy # Destroying a project will also nuke all of its tasks
@@ -20,11 +21,18 @@ class Project < ApplicationRecord
   has_many :past_groups, -> { where('group_memberships.active = :value', value: false) }, through: :group_memberships, source: 'group'
   has_many :task_engagements, through: :tasks
   has_many :comments, through: :tasks
+  has_many :tutorial_enrolments, dependent: :destroy
 
   has_many :learning_outcome_task_links, through: :tasks
 
-  validate :must_be_in_group_tutorials
+  # Callbacks - methods called are private
+  before_destroy :can_destroy?
+
   validates :grade_rationale, length: { maximum: 4095, allow_blank: true }
+
+  validate :tutorial_enrolment_same_campus, if: :campus_id_changed?
+
+  after_update :check_withdraw_from_groups, if: :enrolled_changed?
 
   #
   # Permissions around project data
@@ -33,7 +41,6 @@ class Project < ApplicationRecord
     # What can students do with projects?
     student_role_permissions = [
       :get,
-      :change_tutorial,
       :make_submission,
       :get_submission,
       :change
@@ -46,7 +53,8 @@ class Project < ApplicationRecord
       :make_submission,
       :get_submission,
       :change,
-      :assess
+      :assess,
+      :change_campus
     ]
     # What can convenors do with projects?
     convenor_role_permissions = [
@@ -67,44 +75,73 @@ class Project < ApplicationRecord
     user_role(user)
   end
 
-  scope :with_progress, lambda { |progress_types|
-    where(progress: progress_types) unless progress_types.blank?
-  }
-
   # Get all of the projects for the indicated user - with or without inactive units
   def self.for_user(user, include_inactive)
     # Limit to enrolled units... for this user
     result = where(enrolled: true).where('projects.user_id = :user_id', user_id: user.id)
-    
+
     # Return the result if we include inactive units...
     return result if include_inactive
-    
+
     # Otherwise link in units and only get active units
     result.joins(:unit).where('units.active = TRUE')
   end
 
-  def self.active_projects
-    joins(:unit).where(enrolled: true).where('units.active = TRUE')
+  # Used to adjust the change tutorial permission in units that do not
+  # allow students to change tutorials
+  def specific_permission_hash(role, perm_hash, _other)
+    result = perm_hash[role] unless perm_hash.nil?
+    if result && role == :student && unit.allow_student_change_tutorial
+      result << :change_tutorial
+    end
+    result
   end
 
-  def self.for_unit_role(unit_role)
-    active_projects.where(unit_id: unit_role.unit_id) if unit_role.is_teacher?
+  def enrol_in(tutorial)
+    # Check if multiple enrolments changing to a single enrolment - due to no stream.
+    # No need to delete if only 1, as that would be updated as well.
+    if tutorial_enrolments.count > 1 && tutorial.tutorial_stream.nil?
+      # So remove current enrolments
+      tutorial_enrolments.delete_all()
+    end
+
+    tutorial_enrolment = matching_enrolment(tutorial)
+    if tutorial_enrolment.nil?
+      tutorial_enrolment = TutorialEnrolment.new
+      tutorial_enrolment.tutorial = tutorial
+      tutorial_enrolment.project = self
+
+      # Add this enrolment to aid and check project validation
+      tutorial_enrolments << tutorial_enrolment
+
+      tutorial_enrolment.save!
+
+      # add after save to ensure valid tutorial_enrolments
+      self.tutorial_enrolments << tutorial_enrolment
+    else # there is an existing enrolment...
+      tutorial_enrolment.tutorial = tutorial
+      tutorial_enrolment.update!(tutorial_id: tutorial.id)
+    end
+    tutorial_enrolment
   end
 
-  #
-  # Check to see if the student has a valid tutorial
-  #
-  def must_be_in_group_tutorials
-    groups.each do |g|
-      next unless g.limit_members_to_tutorial?
-      next unless tutorial != g.tutorial
-      if g.group_set.allow_students_to_manage_groups
-        # leave group
-        g.remove_member(self)
-      else
-        errors.add(:groups, "require you to be in tutorial #{g.tutorial.abbreviation}")
-        break
-      end
+  def enrolled_in?(tutorial)
+    tutorial_enrolments.select{|e| e.tutorial_id == tutorial.id}.count > 0 || tutorial_enrolments.where(tutorial_id: tutorial.id).count > 0
+  end
+
+  # Find enrolment in same tutorial stream
+  def matching_enrolment(tutorial)
+    tutorial_enrolments.
+      joins(:tutorial).
+      where('tutorials.tutorial_stream_id = :sid OR tutorials.tutorial_stream_id IS NULL OR :sid IS NULL', sid: tutorial.tutorial_stream_id).
+      first
+  end
+
+  # Check tutorial membership if there is a campus change 
+  def tutorial_enrolment_same_campus
+    return unless enrolled && campus_id.present? && campus_id_changed?
+    if tutorial_enrolments.joins(:tutorial).where('tutorials.campus_id <> :cid', cid: campus_id).count > 0
+      errors.add(:campus, "does not match with tutorial enrolments.")
     end
   end
 
@@ -117,53 +154,59 @@ class Project < ApplicationRecord
   end
 
   #
-  # Returns the email of the tutor, or the convenor if there is no tutor
-  #
-  def tutor_email
-    tutor = main_tutor
-    if tutor
-      tutor.email
-    else
-      unit.convenor_email
-    end
-  end
-
-  #
   # All "discuss" and "demonstrate" become complete
   #
   def trigger_week_end(by_user)
     discuss_and_demonstrate_tasks.each { |task| task.trigger_transition(trigger: 'complete', by_user: by_user, bulk: true, quality: task.quality_pts) }
   end
 
-  def start
-    update_attribute(:started, true)
-  end
-
   def student
     user
   end
 
-  def main_tutor
-    if tutorial
-      result = tutorial.tutor
-      result = main_convenor if result.nil?
-      result
-    else
-      main_convenor
-    end
+  def tutors_and_tutorial
+    current_tutor = nil
+    first_tutor = true
+
+    tutorial_enrolments.
+      joins(tutorial: {unit_role: :user}).
+      order('tutor').
+      select("tutorials.abbreviation as tutorial_abbr, #{db_concat('users.first_name', "' '", 'users.last_name')} as tutor").
+      map do |t|
+        result = "#{t.tutor == current_tutor ? '' : "#{first_tutor ? '' : ') '}#{t.tutor} ("}#{t.tutorial_abbr}"
+        current_tutor = t.tutor
+        first_tutor = false
+        result
+      end.join(' ') + ( !first_tutor ? ')' : '')
   end
 
-  def main_convenor
-    unit.main_convenor
+  def tutorial_enrolment_for_stream(tutorial_stream)
+    tutorial_enrolments.
+      joins(:tutorial).
+      where('tutorials.tutorial_stream_id = :sid OR tutorials.tutorial_stream_id IS NULL', sid: (tutorial_stream.present? ? tutorial_stream.id : nil)).
+      first
   end
 
-  def tutorial_abbr
-    tutorial.abbreviation unless tutorial.nil?
+  def tutorial_for_stream(tutorial_stream)
+    enrolment = tutorial_enrolment_for_stream(tutorial_stream)
+    enrolment.tutorial unless enrolment.nil?
+  end
+
+  def tutorial_for(task_definition)
+    tutorial_for_stream(task_definition.tutorial_stream) unless task_definition.nil?
+  end
+
+  def tutor_for(task_definition)
+    tutorial = tutorial_for(task_definition)
+    (tutorial.present? and tutorial.tutor.present?) ? tutorial.tutor : main_convenor_user
+  end
+
+  def main_convenor_user
+    unit.main_convenor_user
   end
 
   def user_role(user)
     if user == student then :student
-    elsif user == main_tutor then :tutor
     elsif user.nil? then nil
     elsif unit.tutors.where(id: user.id).count != 0 then :tutor
     else nil
@@ -201,7 +244,7 @@ class Project < ApplicationRecord
   def task_details_for_shallow_serializer(user)
     tasks
       .joins(:task_status)
-      .joins("LEFT JOIN task_comments ON task_comments.task_id = tasks.id")
+      .joins("LEFT JOIN task_comments ON task_comments.task_id = tasks.id AND (task_comments.type IS NULL OR task_comments.type <> 'TaskStatusComment')")
       .joins("LEFT JOIN comments_read_receipts crr ON crr.task_comment_id = task_comments.id AND crr.user_id = #{user.id}")
       .select(
         'SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) as number_unread', 'project_id', 'tasks.id as id',
@@ -455,11 +498,6 @@ class Project < ApplicationRecord
     result
   end
 
-  def projected_end_date
-    return unit.end_date if rate_of_completion == 0.0
-    (remaining_tasks_weight / rate_of_completion).ceil.days.since reference_date
-  end
-
   def weeks_elapsed(date = nil)
     (days_elapsed(date) / 7.0).ceil
   end
@@ -467,22 +505,6 @@ class Project < ApplicationRecord
   def days_elapsed(date = nil)
     date ||= reference_date
     (date - unit.start_date).to_i / 1.day
-  end
-
-  def rate_of_completion(date = nil)
-    # Return a completion rate of 0.0 if the project is yet to have commenced
-    return 0.0 if !commenced? || completed_tasks.empty?
-    date ||= reference_date
-
-    # TODO: Might make sense to take in the resolution (i.e. days, weeks), rather
-    # than just assuming days
-
-    # If on the first day (i.e. a day has not yet passed, but the project
-    # has commenced), force days elapsed to be 1 to avoid divide by zero
-    days = days_elapsed(date)
-    days = 1 if days_elapsed(date) < 1
-
-    completed_tasks_weight / days.to_f
   end
 
   def weekly_completion_rate(date = nil)
@@ -501,10 +523,6 @@ class Project < ApplicationRecord
     assigned_tasks.select(&:complete?)
   end
 
-  def ready_to_mark_tasks
-    assigned_tasks.select(&:ready_to_mark?)
-  end
-
   def ready_or_complete_tasks
     assigned_tasks.select(&:ready_or_complete?)
   end
@@ -517,45 +535,11 @@ class Project < ApplicationRecord
     tasks.select(&:discuss_or_demonstrate?)
   end
 
-  def partially_completed_tasks
-    # TODO: Should probably have a better definition
-    # of partially complete than just 'fix' tasks
-    assigned_tasks.select { |task| task.fix_and_resubmit? || task.do_not_resubmit? }
-  end
-
-  def completed?
-    # TODO: Have a status flag on the project instead
-    assigned_tasks.all?(&:complete?)
-  end
-
-  def incomplete_tasks
-    assigned_tasks.select { |task| !task.complete? }
-  end
-
-  def percentage_complete
-    completed_tasks.empty? ? 0.0 : (completed_tasks_weight / total_task_weight) * 100
-  end
-
-  def remaining_tasks_weight
-    incomplete_tasks.empty? ? 0.0 : incomplete_tasks.map { |task| task.task_definition.weighting }.inject(:+)
-  end
-
   #
   # get the weight of all tasks completed or marked as ready to assess
   #
   def completed_tasks_weight
     ready_or_complete_tasks.empty? ? 0.0 : ready_or_complete_tasks.map { |task| task.task_definition.weighting }.inject(:+)
-  end
-
-  def partially_completed_tasks_weight
-    # Award half for partially completed tasks
-    # TODO: Should probably make this a project-by-project option
-    partially_complete = partially_completed_tasks
-    partially_complete.empty? ? 0.0 : partially_complete.map { |task| task.task_definition.weighting / 2.to_f }.inject(:+)
-  end
-
-  def task_units_completed
-    completed_tasks_weight + partially_completed_tasks_weight
   end
 
   def convert_hash_to_pct(hash, total)
@@ -579,6 +563,11 @@ class Project < ApplicationRecord
   # Total task counts must contain an array of the cummulative task counts (with none being 0)
   # Project task counts is an object with fail_count, complete_count etc for each status
   def self.create_task_stats_from(total_task_counts, project_task_counts, target_grade)
+
+    TaskStatus.all.each  do |s|
+      project_task_counts["#{s.status_key}_count"] = 0 if project_task_counts["#{s.status_key}_count"].nil?
+    end
+
     red_pct = ((project_task_counts.fail_count + project_task_counts.do_not_resubmit_count + project_task_counts.time_exceeded_count) / total_task_counts[target_grade]).signif(2)
     orange_pct = ((project_task_counts.redo_count + project_task_counts.need_help_count + project_task_counts.fix_and_resubmit_count) / total_task_counts[target_grade]).signif(2)
     green_pct = ((project_task_counts.discuss_count + project_task_counts.demonstrate_count + project_task_counts.complete_count) / total_task_counts[target_grade]).signif(2)
@@ -657,50 +646,11 @@ class Project < ApplicationRecord
     completed_tasks.sort_by(&:completion_date).last
   end
 
-  def task_completion_csv
-    all_tasks = unit.task_definitions_by_grade
-    [
-      student.username,
-      student.name,
-      target_grade_desc,
-      student.email,
-      portfolio_status,
-      grade > 0 ? grade : '',
-      grade_rationale,
-      tutorial ? tutorial.abbreviation : '',
-      main_tutor.name
-    ] +
-      unit.group_sets.map do |gs|
-        grp = group_for_groupset(gs)
-        grp ? grp.name : nil
-      end +
-      all_tasks.map do |td|
-        task = tasks.where(task_definition_id: td.id).first
-        if task
-          status = task.task_status.name
-          grade = task.grade_desc
-          stars = task.quality_pts
-          people = task.contribution_pts
-        else
-          status = TaskStatus.not_started.name
-          grade = nil
-          stars = nil
-          people = nil
-        end
-
-        result = [status]
-        result << grade if td.is_graded?
-        result << stars if td.has_stars?
-        result << people if td.is_group_task?
-        result
-      end.flatten
-  end
-
   #
   # Portfolio production code
   #
   def portfolio_temp_path
-    portfolio_dir = FileHelper.student_portfolio_dir(self, false)
+    portfolio_dir = FileHelper.student_portfolio_dir(self.unit, self.student.username, false)
     portfolio_tmp_dir = File.join(portfolio_dir, 'tmp')
   end
 
@@ -729,6 +679,10 @@ class Project < ApplicationRecord
     if name == 'LearningSummaryReport' && kind == 'document'
       result[:idx] = 0
       result[:name] = 'LearningSummaryReport.pdf'
+
+      # set uses_draft_learning_summary to false, since we uploaded a new learning summary
+      self.uses_draft_learning_summary = false
+      save
     else
       Dir.chdir(portfolio_tmp_dir)
       files = Dir.glob('*')
@@ -788,7 +742,7 @@ class Project < ApplicationRecord
   end
 
   def portfolio_path
-    File.join(FileHelper.student_portfolio_dir(self, true), FileHelper.sanitized_filename("#{student.username}-portfolio.pdf"))
+    FileHelper.student_portfolio_path(self.unit, self.student.username, true)
   end
 
   def has_portfolio
@@ -812,11 +766,6 @@ class Project < ApplicationRecord
   def remove_portfolio
     portfolio = portfolio_path
     FileUtils.mv portfolio, "#{portfolio}.old" if File.exist?(portfolio)
-  end
-
-  def recalculate_max_similar_pct
-    # self.max_pct_similar = tasks.sort { |t1, t2|  t1.max_pct_similar <=> t2.max_pct_similar }.last.max_pct_similar
-    # self.save
   end
 
   def matching_task(other_task)
@@ -972,11 +921,31 @@ class Project < ApplicationRecord
       did_revert_to_pass = true
 
       summary_stats[:revert_count] = summary_stats[:revert_count] + 1
-      summary_stats[:revert][main_tutor] << self
+      summary_stats[:revert][main_convenor_user] << self
     end
 
     return unless student.receive_feedback_notifications
     return if has_portfolio && ! middle_of_unit
     NotificationsMailer.weekly_student_summary(self, summary_stats, did_revert_to_pass).deliver_now
+  end
+
+  private
+  def can_destroy?
+    return true if tutorial_enrolments.count == 0
+    errors.add :base, "Cannot delete project with enrolments"
+    false
+  end
+
+  # If someone withdraws from a unit, make sure they are removed from groups
+  def check_withdraw_from_groups
+    return unless enrolled && ! enrolled_was
+
+    group_memberships.each do |gm|
+      next unless gm.active
+      
+      if ! gm.valid? || gm.group.beyond_capacity?
+        gm.update(active: false)
+      end
+    end
   end
 end

@@ -4,25 +4,19 @@
 require 'user_serializer'
 
 class TutorialSerializer < ActiveModel::Serializer
-  attributes :id, :meeting_day, :meeting_time, :meeting_location, :abbreviation, :tutor_name, :num_students
+  attributes :id, :meeting_day, :meeting_time, :meeting_location, :abbreviation, :campus_id, :capacity, :num_students,
+             :tutorial_stream
+
+  def tutorial_stream
+    object.tutorial_stream.abbreviation unless object.tutorial_stream.nil?
+  end
 
   def meeting_time
     object.object.meeting_time.to_time
     # DateTime.parse("#{object.object.meeting_time}")
   end
 
-  def tutor_name
-    object.object.tutor.name unless object.object.tutor.nil?
-  end
-
-  has_one :tutor, serializer: ShallowUserSerializer
-
-  def include_tutor?
-    if Thread.current[:user]
-      my_role = object.object.unit.role_for(Thread.current[:user])
-      [ Role.convenor, Role.admin ].include? my_role
-    end
-  end
+  has_one :tutor, serializer: ShallowTutorSerializer
 
   def include_num_students?
     if Thread.current[:user]
@@ -32,7 +26,6 @@ class TutorialSerializer < ActiveModel::Serializer
   end
 
   def filter(keys)
-    keys.delete :tutor unless include_tutor?
     keys.delete :num_students unless include_num_students?
     keys
   end

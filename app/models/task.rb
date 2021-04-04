@@ -3,6 +3,7 @@ require 'date'
 class Task < ApplicationRecord
   include ApplicationHelper
   include LogHelper
+  include GradeHelper
 
   #
   # Permissions around task data
@@ -18,7 +19,7 @@ class Task < ApplicationRecord
       :start_discussion,
       :get_discussion,
       :make_discussion_reply,
-      :request_extension
+      # :request_extension -- depends on settings in unit. See specific_permission_hash method
     ]
     # What can tutors do with tasks?
     tutor_role_permissions = [
@@ -33,7 +34,8 @@ class Task < ApplicationRecord
       :create_discussion,
       :delete_discussion,
       :get_discussion,
-      :assess_extension
+      :assess_extension,
+      :request_extension
     ]
     # What can convenors do with tasks?
     convenor_role_permissions = [
@@ -45,7 +47,8 @@ class Task < ApplicationRecord
       :view_plagiarism,
       :delete_plagiarism,
       :get_discussion,
-      :assess_extension
+      :assess_extension,
+      :request_extension
     ]
     # What can nil users do with tasks?
     nil_role_permissions = [
@@ -76,6 +79,16 @@ class Task < ApplicationRecord
     end
   end
 
+  # Used to adjust the request extension permission in units that do not
+  # allow students to request extensions
+  def specific_permission_hash(role, perm_hash, _other)
+    result = perm_hash[role] unless perm_hash.nil?
+    if result && role == :student && unit.allow_student_extension_requests
+      result << :request_extension
+    end
+    result
+  end
+
   # Delete action - before dependent association
   before_destroy :delete_associated_files
 
@@ -87,7 +100,6 @@ class Task < ApplicationRecord
 
   has_one :unit, through: :project
 
-  has_many :sub_tasks, dependent: :destroy
   has_many :comments, class_name: 'TaskComment', dependent: :destroy, inverse_of: :task
   has_many :plagiarism_match_links, class_name: 'PlagiarismMatchLink', dependent: :destroy, inverse_of: :task
   has_many :reverse_plagiarism_match_links, class_name: 'PlagiarismMatchLink', dependent: :destroy, inverse_of: :other_task, foreign_key: 'other_task_id'
@@ -105,12 +117,12 @@ class Task < ApplicationRecord
   validates :task_definition_id, uniqueness: { scope: :project,
                                                message: 'must be unique within the project' }
 
-  validate :must_have_quality_pts, if: :for_task_with_quality?
+  validate :must_have_quality_pts, if: :for_definition_with_quality?
 
   validate :extensions_must_end_with_due_date, if: :has_requested_extension?
 
-  def for_task_with_quality?
-    task_definition.max_quality_pts.positive?
+  def for_definition_with_quality?
+    task_definition.has_stars?
   end
 
   def has_requested_extension?
@@ -198,8 +210,22 @@ class Task < ApplicationRecord
     extension.user = user
     extension.content_type = :extension
     extension.comment = text
-    extension.recipient = project.main_tutor
+    if weeks <= weeks_can_extend
+      extension.recipient = project.tutor_for(task_definition)
+    else
+      extension.recipient = unit.main_convenor_user
+    end
     extension.save!
+
+    # Check and apply either auto extensions, or those requested by staff
+    if unit.auto_apply_extension_before_deadline && weeks <= weeks_can_extend || role_for(user) == :tutor
+      if role_for(user) == :tutor
+        extension.assess_extension user, true, true
+      else
+        extension.assess_extension unit.main_convenor_user, true, true
+      end
+    end
+
     extension
   end
 
@@ -355,6 +381,7 @@ class Task < ApplicationRecord
     when TaskStatus.ready_to_mark
       submit by_user
     when TaskStatus.not_started, TaskStatus.need_help, TaskStatus.working_on_it
+      add_status_comment(by_user, status)
       engage status
     else
       # Only tutors can perform these actions
@@ -367,10 +394,8 @@ class Task < ApplicationRecord
         end
         assess status, by_user
 
-        if !group_transition || !group_task?
-          # Add a status comment for new assessments (avoid duplicates on group submission)
-          add_status_comment(by_user, status)
-        end
+        # Add a status comment for new assessments - only recorded on submitter's task in groups
+        add_status_comment(by_user, status)
       else
         # Attempt to move to tutor state by non-tutor
         return nil
@@ -389,18 +414,7 @@ class Task < ApplicationRecord
   end
 
   def grade_desc
-    case grade
-    when -1
-      'Fail'
-    when 0
-      'Pass'
-    when 1
-      'Credit'
-    when 2
-      'Distinction'
-    when 3
-      'High Distinction'
-    end
+    grade_for(grade)
   end
 
   #
@@ -476,19 +490,15 @@ class Task < ApplicationRecord
 
       # Grant an extension on fix if due date is within 1 week
       case task_status
-      when TaskStatus.fix_and_resubmit, TaskStatus.discuss, TaskStatus.demonstrate
-        if to_same_day_anywhere_on_earth(due_date) < Time.zone.now + 7.days && can_apply_for_extension?
-          grant_extension(assessor, 1)
+      when TaskStatus.redo, TaskStatus.fix_and_resubmit, TaskStatus.discuss, TaskStatus.demonstrate
+        if to_same_day_anywhere_on_earth(due_date) < Time.zone.now + 7.days && can_apply_for_extension? && unit.extension_weeks_on_resubmit_request > 0
+          grant_extension(assessor, unit.extension_weeks_on_resubmit_request)
         end
       end
     end
 
     # Save the task
     if save!
-      # If a task has been completed, that means the project
-      # has definitely started
-      project.start
-
       TaskEngagement.create!(task: self, engagement_time: Time.zone.now, engagement: task_status.name)
 
       # Grab the submission for the task if the user made one
@@ -524,6 +534,7 @@ class Task < ApplicationRecord
   end
 
   def submitted_before_due?
+    return true unless due_date.present?
     to_same_day_anywhere_on_earth(due_date) >= self.submission_date
   end
 
@@ -541,12 +552,11 @@ class Task < ApplicationRecord
       self.task_status = TaskStatus.ready_to_mark
     else
       assess TaskStatus.time_exceeded, by_user
-      add_status_comment(project.main_tutor, self.task_status)
+      add_status_comment(project.tutor_for(task_definition), self.task_status)
       grade_task -1 if task_definition.is_graded? && self.grade.nil?
     end
 
     if save!
-      project.start
       TaskEngagement.create!(task: self, engagement_time: Time.zone.now, engagement: task_status.name)
       submission = TaskSubmission.where(task_id: id).order(:submission_time).reverse_order.first
 
@@ -576,7 +586,7 @@ class Task < ApplicationRecord
     task_definition.weighting.to_f
   end
 
-  def add_text_comment(user, text)
+  def add_text_comment(user, text, reply_to_id = nil)
     text.strip!
     return nil if user.nil? || text.nil? || text.empty?
 
@@ -592,28 +602,29 @@ class Task < ApplicationRecord
     comment.user = user
     comment.comment = text
     comment.content_type = :text
-    comment.recipient = user == project.student ? project.main_tutor : project.student
+    comment.recipient = user == project.student ? project.tutor_for(task_definition) : project.student
+    comment.reply_to_id = reply_to_id
     comment.save!
 
     comment
   end
 
   def individual_task_or_submitter_of_group_task?
-    return true if !group_task?
-    return true unless group.present?
+    return true if !group_task? # its individual
+    return true unless group.present? # no group yet... so individual
 
-    ensured_group_submission.submitted_by? self.project
+    ensured_group_submission.submitted_by? self.project # return true if submitted by this project
   end
 
   def add_status_comment(current_user, status)
-    return nil unless individual_task_or_submitter_of_group_task?
+    return nil unless individual_task_or_submitter_of_group_task? # only record status comments on submitter task
 
     comment = TaskStatusComment.create
     comment.task = self
     comment.user = current_user
     comment.comment = status.name
     comment.task_status = status
-    comment.recipient = current_user == project.student ? project.main_tutor : project.student
+    comment.recipient = current_user == project.student ? project.tutor_for(task_definition) : project.student
     comment.save!
 
     comment
@@ -640,13 +651,14 @@ class Task < ApplicationRecord
     return discussion
   end
 
-  # TODO: Refgactor to attachment comment (with inheritance on model)
-  def add_comment_with_attachment(user, tempfile)
+  # TODO: Refactor to attachment comment (with inheritance on model)
+  def add_comment_with_attachment(user, tempfile, reply_to_id = nil)
     ensured_group_submission if group_task? && group
 
     comment = TaskComment.create
     comment.task = self
     comment.user = user
+    comment.reply_to_id = reply_to_id
     if FileHelper.accept_file(tempfile, "comment attachment audio test", "audio")
       comment.content_type = :audio
     elsif FileHelper.accept_file(tempfile, "comment attachment image test", "image")
@@ -657,7 +669,7 @@ class Task < ApplicationRecord
       raise "Unknown comment attachment type"
     end
 
-    comment.recipient = user == project.student ? project.main_tutor : project.student
+    comment.recipient = user == project.student ? project.tutor_for(task_definition) : project.student
     raise "Error attaching uploaded file." unless comment.add_attachment(tempfile)
 
     comment.save!
@@ -708,14 +720,6 @@ class Task < ApplicationRecord
 
   def similar_to_dismissed_count
     plagiarism_match_links.where('dismissed = TRUE').count
-  end
-
-  def recalculate_max_similar_pct
-    # TODO: Remove once max_pct_similar is deleted
-    # self.max_pct_similar = pct_similar()
-    # self.save
-    #
-    # project.recalculate_max_similar_pct()
   end
 
   def student_work_dir(type, create = true)
@@ -781,13 +785,11 @@ class Task < ApplicationRecord
       # compress image files
       image_files = Dir.entries(task_dir).select { |f| (f =~ /^\d{3}.(image)/) == 0 }
       image_files.each do |img|
-        if File.extname(img) == ".jpg"
-          raise 'Failed to compress an image. Ensure all images are valid.' unless FileHelper.compress_image("#{task_dir}#{img}")
-        else
-          dest_file = "#{task_dir}#{File.basename(img, ".*")}.jpg"
-          raise 'Failed to compress an image. Ensure all images are valid.' unless FileHelper.compress_image_to_dest("#{task_dir}#{img}", dest_file, true)
-          FileUtils.rm("#{task_dir}#{img}")
-        end
+        # Ensure all images in submissions are not jpg
+        dest_file = "#{task_dir}#{File.basename(img, ".*")}.jpg"
+        raise 'Failed to compress an image. Ensure all images are valid.' unless FileHelper.compress_image_to_dest("#{task_dir}#{img}", dest_file, true)
+        # Cleanup unless the output was the same as the input
+        FileUtils.rm("#{task_dir}#{img}") unless dest_file == "#{task_dir}#{img}"
       end
 
       # copy all files into zip
@@ -954,7 +956,7 @@ class Task < ApplicationRecord
     elsif ['cpp', 'hpp', 'c++', 'h++', 'cc', 'cxx', 'cp'].include?(extn) then 'cpp'
     elsif ['java'].include?(extn) then 'java'
     elsif %w(js json ts).include?(extn) then 'js'
-    elsif ['html'].include?(extn) then 'html'
+    elsif ['html', 'rhtml'].include?(extn) then 'html'
     elsif %w(css scss).include?(extn) then 'css'
     elsif ['rb'].include?(extn) then 'ruby'
     elsif ['coffee'].include?(extn) then 'coffeescript'
@@ -962,8 +964,10 @@ class Task < ApplicationRecord
     elsif ['xml'].include?(extn) then 'xml'
     elsif ['sql'].include?(extn) then 'sql'
     elsif ['vb'].include?(extn) then 'vbnet'
-    elsif ['txt'].include?(extn) then 'text'
+    elsif ['txt', 'md', 'rmd', 'rpres'].include?(extn) then 'text'
+    elsif ['tex', 'rnw'].include?(extn) then 'tex'
     elsif ['py'].include?(extn) then 'python'
+    elsif ['r'].include?(extn) then 'r'
     else extn
     end
   end
@@ -1033,6 +1037,25 @@ class Task < ApplicationRecord
 
       FileHelper.compress_pdf(portfolio_evidence)
 
+      # if the task is the draft learning summary task
+      if task_definition_id == unit.draft_task_definition_id
+        # if there is a learning summary, execute, if there isn't and a learning summary exists, don't execute
+        if project.uses_draft_learning_summary || project.portfolio_files.select {|f| f[:name] == "LearningSummaryReport.pdf"}.empty?
+          file_name = {
+            kind: 'document',
+            name: 'LearningSummaryReport.pdf',
+            idx: 0
+          }
+          # Creates tmp portfolio path (if it doesn't exist)
+          portfolio_tmp_dir = project.portfolio_temp_path
+          FileUtils.mkdir_p(portfolio_tmp_dir)
+
+          FileUtils.cp portfolio_evidence, project.portfolio_tmp_file_path(file_name)
+          project.uses_draft_learning_summary = true
+          project.save
+        end
+      end
+
       save
 
       clear_in_process
@@ -1040,7 +1063,7 @@ class Task < ApplicationRecord
     rescue => e
       clear_in_process
 
-      trigger_transition trigger: 'fix', by_user: project.main_tutor
+      trigger_transition trigger: 'fix', by_user: project.tutor_for(task_definition)
       raise e
     end
   end
@@ -1048,7 +1071,7 @@ class Task < ApplicationRecord
   #
   # The student has uploaded new work...
   #
-  def create_submission_and_trigger_state_change(user, propagate = true, contributions = nil, trigger = 'ready_to_mark')
+  def create_submission_and_trigger_state_change(user, propagate = true, contributions = nil, trigger = 'ready_to_mark', initial_task = nil)
     if group_task? && propagate
       if contributions.nil? # even distribution
         contribs = group.projects.map { |proj| { project: proj, pct: 100 / group.projects.count, pts: 3 } }
@@ -1056,15 +1079,15 @@ class Task < ApplicationRecord
         contribs = contributions.map { |data| { project: Project.find(data[:project_id]), pct: data[:pct].to_i, pts: data[:pts].to_i } }
       end
       group_submission = group.create_submission self, "#{user.name} has submitted work", contribs
-      group_submission.tasks.each { |t| t.create_submission_and_trigger_state_change(user, propagate = false) }
+      group_submission.tasks.each { |t| t.create_submission_and_trigger_state_change(user, false, contributions, trigger, self) }
       reload
     else
       self.file_uploaded_at = Time.zone.now
       self.submission_date = Time.zone.now
 
-      # This task is now ready to submit
+      # This task is now ready to submit - trigger a transition if not in final state
       unless discuss_or_demonstrate? || complete? || do_not_resubmit? || fail?
-        trigger_transition trigger: trigger, by_user: user, group_transition: false
+        trigger_transition trigger: trigger, by_user: user, group_transition: group_task? && initial_task != self
       end
 
       # Destroy the links to ensure we test new files
@@ -1133,7 +1156,7 @@ class Task < ApplicationRecord
       end
     end
 
-    create_submission_and_trigger_state_change(current_user, propagate = true, contributions = contributions, trigger = trigger)
+    create_submission_and_trigger_state_change(current_user, true, contributions, trigger, self)
 
     unless alignments.nil?
       if group_task?
@@ -1165,12 +1188,19 @@ class Task < ApplicationRecord
     #
     # Now copy over the temp directory over to the enqueued directory
     #
-    enqueued_dir = FileHelper.student_work_dir(:new, nil, true)[0..-2]
+    enqueued_dir = File.join(FileHelper.student_work_dir(:new, nil, true), id.to_s)
 
-    logger.debug "Moving submission evidence from #{tmp_dir} to #{enqueued_dir}"
+    # Move files into place, deleting existing files if present.
+    if not File.exists? enqueued_dir
+      logger.debug "Creating student work new dir #{enqueued_dir}"
+      FileUtils.mkdir_p enqueued_dir
+    end
 
-    # Move files into place
-    FileUtils.mv tmp_dir, enqueued_dir, :force => true
+    logger.debug "Moving source files from #{tmp_dir} into #{enqueued_dir}"
+    FileUtils.mv Dir.glob(File.join(tmp_dir,'*.*')), enqueued_dir, force: true
+
+    logger.debug "Deleting student work dir: #{tmp_dir}"
+    FileUtils.rm_rf tmp_dir if File.exists? tmp_dir
 
     logger.debug "Submission accepted! Status for task #{id} is now #{trigger}"
   end

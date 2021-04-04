@@ -19,9 +19,22 @@ A modern, lightweight learning management system.
 
 ## Getting started
 
+### Clone Repository
+
+First, clone the `doubtfire-api` repository to your local machine:
+
+```
+$ git clone https://github.com/doubtfire-lms/doubtfire-api
+```
+
 ### Install script
 
-The install script will try to setup the development environment for either macOS or Linux, and can be found in the root of the project as `setup.sh`.
+The install script will try to setup the development environment for either macOS or Linux, and can be found in the root of the project as `setup.sh`. Execute it as follows:
+
+```
+$ cd ./doubtfire-api
+$ ./setup.sh
+```
 
 ### Manual install
 
@@ -47,6 +60,7 @@ Doubtfire requires multiple environment variables that help define settings abou
 | `DF_INSTITUTION_PRIVACY`      | A statement related to the need for students to submit their own work, and that this work may be uploaded to 3rd parties for the purpose of plagiarism detection.                                                                                                                                    | Default statement provided |
 | `DF_INSTITUTION_PLAGIARISM`      | A statement clarifying the terms plagiarism and collusion.                                                                                                                                    | Default statement provided |
 | `DF_INSTITUTION_SETTINGS_RB`      | The path of the institution specific settings rb code - used to map student imports from institutional exports to a format understood by Doubtfire.                                                                                                                | No default |
+| `DF_FFMPEG_PATH`      | The path of to the ffmpeg binary for audio processing.                                                                                                                | ffmpeg |
 
 If you have chosen to use AAF Rapid Connect authentication, then you will also need to provide the following:
 
@@ -75,7 +89,7 @@ You can also keep multiple `.env` files for different environments, e.g.: `.env.
 Once you've installed using either in install script or the manual install steps.
 
 ```
-$ rails s
+$ bundle exec rails s
 ```
 
 You should see all the Doubtfire endpoints at **[http://localhost:3000/api/docs/](http://localhost:3000/api/docs/)**, which means the API is running.

@@ -28,6 +28,7 @@ module Api
         optional :allow_students_to_create_groups,  type: Boolean,  desc: 'Are students allowed to create groups'
         optional :allow_students_to_manage_groups,  type: Boolean,  desc: 'Are students allowed to manage their group memberships'
         optional :keep_groups_in_same_class,        type: Boolean,  desc: 'Must groups be kept in the one class'
+        optional :capacity,                         type: Integer,  desc: 'Capacity for each group'
       end
     end
     post '/units/:unit_id/group_sets' do
@@ -44,7 +45,8 @@ module Api
                                                    :name,
                                                    :allow_students_to_create_groups,
                                                    :allow_students_to_manage_groups,
-                                                   :keep_groups_in_same_class
+                                                   :keep_groups_in_same_class,
+                                                   :capacity
                                                  )
 
       group_set = GroupSet.create!(group_params)
@@ -61,6 +63,8 @@ module Api
         optional :allow_students_to_create_groups,  type: Boolean,  desc: 'Are students allowed to create groups'
         optional :allow_students_to_manage_groups,  type: Boolean,  desc: 'Are students allowed to manage their group memberships'
         optional :keep_groups_in_same_class,        type: Boolean,  desc: 'Must groups be kept in the one class'
+        optional :capacity,                         type: Integer,  desc: 'Capacity for each group'
+        optional :locked,                           type: Boolean,  desc: 'Is this group set locked'
       end
     end
     put '/units/:unit_id/group_sets/:id' do
@@ -83,7 +87,9 @@ module Api
                                                    :name,
                                                    :allow_students_to_create_groups,
                                                    :allow_students_to_manage_groups,
-                                                   :keep_groups_in_same_class
+                                                   :keep_groups_in_same_class,
+                                                   :capacity,
+                                                   :locked,
                                                  )
 
       group_set.update!(group_params)
@@ -122,18 +128,41 @@ module Api
         error!({ error: 'Not authorised to get groups for this unit' }, 403)
       end
 
-      group_set.groups
+      group_set.
+        groups.
+        joins('LEFT OUTER JOIN group_memberships ON group_memberships.group_id = groups.id AND group_memberships.active = TRUE').
+        group(
+          'groups.id',
+          'groups.name',
+          'groups.tutorial_id',
+          'groups.group_set_id',
+          'groups.capacity_adjustment',
+          'groups.locked',
+        ).
+        select(
+          'groups.id as id',
+          'groups.name as name',
+          'groups.tutorial_id as tutorial_id',
+          'groups.group_set_id as group_set_id',
+          'groups.capacity_adjustment as capacity_adjustment',
+          'groups.locked as locked',
+          'COUNT(group_memberships.id) as student_count'
+        )
     end
 
-    desc 'Get all groups in a unit'
-    get '/units/:unit_id/groups' do
+    desc 'Download a CSV of groups and their students in a group set'
+    get '/units/:unit_id/group_sets/:group_set_id/groups/student_csv' do
       unit = Unit.find(params[:unit_id])
+      group_set = unit.group_sets.find(params[:group_set_id])
 
-      unless authorise? current_user, unit, :get_students
-        error!({ error: 'Not authorised to get groups for this unit' }, 403)
+      unless authorise? current_user, unit, :update
+        error!({ error: 'Not authorised to download csv of groups for this unit' }, 403)
       end
 
-      ActiveModel::ArraySerializer.new(unit.groups, each_serializer: DeepGroupSerializer)
+      content_type 'application/octet-stream'
+      header['Content-Disposition'] = "attachment; filename=#{unit.code}-#{group_set.name}-student-groups.csv "
+      env['api.format'] = :binary
+      unit.export_student_groups_to_csv(group_set)
     end
 
     desc 'Download a CSV of groups in a group set'
@@ -146,7 +175,7 @@ module Api
       end
 
       content_type 'application/octet-stream'
-      header['Content-Disposition'] = "attachment; filename=#{unit.code}-groups.csv "
+      header['Content-Disposition'] = "attachment; filename=#{unit.code}-#{group_set.name}-groups.csv "
       env['api.format'] = :binary
       unit.export_groups_to_csv(group_set)
     end
@@ -158,6 +187,7 @@ module Api
       requires :group, type: Hash do
         optional :name,                             type: String,   desc: 'The name of this group'
         requires :tutorial_id,                      type: Integer,  desc: 'The id of the tutorial for the group'
+        optional :capacity_adjustment,              type: Integer,  desc: 'How capacity for group is adjusted', default: 0
       end
     end
     post '/units/:unit_id/group_sets/:group_set_id/groups' do
@@ -172,21 +202,36 @@ module Api
       group_params = ActionController::Parameters.new(params)
                                                  .require(:group)
                                                  .permit(
-                                                   :name
+                                                   :name,
+                                                   :capacity_adjustment
                                                  )
 
       # Group with the same name
       unless group_set.groups.where(name: group_params[:name]).empty?
         error!({ error: "This group name is not unique to the #{group_set.name} group set." }, 403)
       end
-
-      last = group_set.groups.last
-      num = last.nil? ? 1 : last.number + 1
-      if group_params[:name].nil? || group_params[:name].empty?
-        group_params[:name] = "Group #{num}"
+    
+      # Now check if they are a student...
+      project = nil
+      if unit.role_for(current_user) == Role.student
+        project = unit.active_projects.find_by(user_id: current_user.id)
+        # They cannot already be in a group for this group set
+        error!({error: "You are already in a group for #{group_set.name}"}, 403) unless project.group_for_groupset(group_set).nil?
       end
-      grp = Group.create(name: group_params[:name], group_set: group_set, tutorial: tutorial, number: num)
+
+      num = group_set.groups.count + 1
+      while group_params[:name].nil? || group_params[:name].empty? || group_set.groups.where(name: group_params[:name]).count > 0
+        group_params[:name] = "Group #{num}"
+        num += 1
+      end
+      grp = Group.create(name: group_params[:name], group_set: group_set, tutorial: tutorial)
       grp.save!
+
+      # If they are a student, then add them to the group they created
+      if project.present?
+        grp.add_member(project)
+      end
+
       grp
     end
 
@@ -210,6 +255,26 @@ module Api
       unit.import_groups_from_csv(group_set, params[:file][:tempfile])
     end
 
+    desc 'Upload a CSV for students in groups in a group set'
+    params do
+      requires :unit_id,                            type: Integer,  desc: 'The unit for the new group'
+      requires :group_set_id,                       type: Integer,  desc: 'The id of the group set'
+      requires :file, type: Rack::Multipart::UploadedFile, desc: 'CSV upload file.'
+    end
+    post '/units/:unit_id/group_sets/:group_set_id/groups/student_csv' do
+      # check mime is correct before uploading
+      ensure_csv!(params[:file][:tempfile])
+
+      unit = Unit.find(params[:unit_id])
+      group_set = unit.group_sets.find(params[:group_set_id])
+
+      unless authorise? current_user, unit, :update
+        error!({ error: 'Not authorised to upload csv of groups for this unit' }, 403)
+      end
+
+      unit.import_student_groups_from_csv(group_set, params[:file][:tempfile])
+    end
+
     desc 'Edits the given group'
     params do
       requires :unit_id,                            type: Integer,  desc: 'The unit for the new group'
@@ -218,6 +283,8 @@ module Api
       requires :group, type: Hash do
         optional :name,                             type: String,   desc: 'The name of this group set'
         optional :tutorial_id,                      type: Integer,  desc: 'Tutorial of the group'
+        optional :capacity_adjustment,              type: Integer,  desc: 'How capacity for group is adjusted'
+        optional :locked,                           type: Boolean,  desc: 'Is the group locked'
       end
     end
     put '/units/:unit_id/group_sets/:group_set_id/groups/:group_id' do
@@ -233,12 +300,38 @@ module Api
                                                  .require(:group)
                                                  .permit(
                                                    :name,
-                                                   :tutorial_id
+                                                   :tutorial_id,
+                                                   :capacity_adjustment,
+                                                   :locked,
                                                  )
 
+      # Allow locking only if the current user has permission to do so
+      if params[:group][:locked].present? && params[:group][:locked] != grp.locked
+        unless authorise? current_user, grp, :lock_group
+          error!({ error: "Not authorised to #{grp.locked ? 'unlock' : 'lock'} this group" }, 403)
+        end
+      end
+
       # Switching tutorials will violate any existing group members
-      if group_params[:tutorial_id] != grp.tutorial.id && gs.keep_groups_in_same_class && grp.has_active_group_members?
-        error!({ error: 'Cannot modify group tutorial as members already exist and they must be in the same tutorial. Clear all members first.' }, 403)
+      if params[:group][:tutorial_id].present? && params[:group][:tutorial_id] != grp.tutorial_id
+        if authorise? current_user, grp, :move_tutorial
+          tutorial = unit.tutorials.find_by(id: params[:group][:tutorial_id])
+          begin
+            grp.switch_to_tutorial tutorial
+          rescue StandardError => e
+            error!({ error: e.message }, 403)
+          end
+        else
+          error!({ error: 'You are not authorised to change the tutorial of this group' }, 403)
+        end
+      end
+
+      if params[:group][:capacity_adjustment].present? && params[:group][:capacity_adjustment] != grp.capacity_adjustment
+        if authorise? current_user, grp, :move_tutorial
+          group_params[:capacity_adjustment] = params[:group][:capacity_adjustment]
+        else
+          error!({ error: 'You are not authorised to change the capacity of this group' }, 403)
+        end
       end
 
       grp.update!(group_params)
@@ -299,19 +392,31 @@ module Api
       prj = unit.projects.find(params[:project_id])
 
       unless authorise? current_user, gs, :join_group, ->(role, perm_hash, other) { gs.specific_permission_hash(role, perm_hash, other) }
-        error!({ error: 'Not authorised to manage this group' }, 403)
+        if gs.locked
+          error!({ error: 'All of these groups are now locked' }, 403)
+        else
+          error!({ error: 'Not authorised to manage this group' }, 403)
+        end
       end
 
       unless authorise? current_user, prj, :get
         error!({ error: 'Not authorised to manage this student' }, 403)
       end
 
-      if gs.keep_groups_in_same_class && prj.tutorial != grp.tutorial
+      if gs.keep_groups_in_same_class && !prj.enrolled_in?(grp.tutorial)
         error!({ error: "Students from the tutorial '#{grp.tutorial.abbreviation}' can only be added to this group." }, 403)
       end
 
       if grp.active_group_members.find_by(project: prj, active: true)
         error!({ error: "#{prj.student.name} is already a member of this group" }, 403)
+      end
+
+      if grp.locked
+        error!({ error: 'Group is locked, no additional members can be added'}, 403)
+      end
+
+      if grp.at_capacity? && ! authorise?(current_user, grp, :can_exceed_capacity)
+        error!({ error: 'Group is at capacity, no additional members can be added'}, 403)
       end
 
       gm = grp.add_member(prj)
@@ -333,7 +438,11 @@ module Api
       prj = grp.projects.find(params[:id])
 
       unless authorise? current_user, grp, :manage_group, ->(role, perm_hash, other) { grp.specific_permission_hash(role, perm_hash, other) }
-        error!({ error: 'Not authorised to manage this group' }, 403)
+        if grp.locked || gs.locked
+          error!({ error: 'This group is locked' }, 403)
+        else
+          error!({ error: 'Not authorised to manage this group' }, 403)
+        end
       end
 
       unless authorise? current_user, prj, :get

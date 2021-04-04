@@ -12,12 +12,24 @@ class InstitutionSettings
             first_name:     nil,
             last_name:      nil,
             email:          nil,
-            tutorial_code:  nil
+            tutorials:      nil
         }
     end
 
     def sync_enrolments(unit)
       puts 'Unit sync not enabled'
+    end
+
+    def details_for_next_tutorial_stream(unit, activity_type)
+        counter = 1
+
+        begin
+            name = "#{activity_type.name} #{counter}"
+            abbreviation = "#{activity_type.abbreviation} #{counter}"
+            counter += 1
+        end while unit.tutorial_streams.where("abbreviation = :abbr OR name = :name", abbr: abbreviation, name: name).present?
+
+        [name, abbreviation]
     end
 end
 
