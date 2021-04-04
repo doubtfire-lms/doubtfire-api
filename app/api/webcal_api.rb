@@ -20,9 +20,6 @@ module Api
     end
 
     desc 'Get webcal details of the authenticated user'
-    params do
-      requires :auth_token, type: String, desc: 'Authentication token'
-    end
     get '/webcal' do
       authenticated?
       wrap_webcal current_user.webcal
@@ -43,7 +40,6 @@ module Api
           all_or_none_of :time, :unit
         end
       end
-      requires :auth_token, type: String, desc: 'Authentication token'
     end
     put '/webcal' do
       authenticated?
@@ -118,22 +114,5 @@ module Api
 
       wrap_webcal cal
     end
-
-    desc 'Serve webcal with the specified GUID'
-    params do
-      requires :guid, type: String, desc: 'The GUID of the webcal'
-    end
-    get '/webcal/:guid' do
-
-      # Retrieve the specified webcal.
-      webcal = Webcal.find_by!(guid: params[:guid])
-
-      # Serve the iCalendar with the correct MIME type.
-      content_type 'text/calendar'
-
-      # Seve ical.
-      webcal.to_ical.to_ical
-    end
-
   end
 end
