@@ -11,6 +11,7 @@ class GroupModelTest < ActiveSupport::TestCase
 
     assert_includes(group1.projects,project)
     assert_equal group1.group_memberships.count, 1
+    project.unit.destroy
   end
 
   def test_hides_inactive_members
@@ -23,6 +24,7 @@ class GroupModelTest < ActiveSupport::TestCase
     group1.remove_member project
     #test project removed correctly
     refute_includes(group1.projects,project)
+    project.unit.destroy
   end
 
   def test_allow_student_to_rejoin
@@ -37,6 +39,7 @@ class GroupModelTest < ActiveSupport::TestCase
 
     assert_includes(group1.projects,project)
     assert_equal group1.group_memberships.count, 1
+    project.unit.destroy
   end
 
   def test_knows_past_members
@@ -53,6 +56,8 @@ class GroupModelTest < ActiveSupport::TestCase
     assert_includes(group1.projects,project2)
     refute_includes(group1.past_projects,project2)
     assert_equal group1.group_memberships.count, 2
+
+    project1.unit.destroy
   end
 
   def test_capacity_ranges
@@ -64,6 +69,8 @@ class GroupModelTest < ActiveSupport::TestCase
     refute gs.valid?
     gs.capacity = 0
     refute gs.valid?
+
+    gs.unit.destroy
   end
 
   def test_at_capacity
@@ -88,6 +95,8 @@ class GroupModelTest < ActiveSupport::TestCase
     refute group1.at_capacity?
     gs.update(capacity: nil)
     refute group1.at_capacity?
+
+    unit.destroy
   end
 
   def test_switch_tutorial
@@ -112,6 +121,8 @@ class GroupModelTest < ActiveSupport::TestCase
     
     assert p1.enrolled_in? tutorial
     assert p2.enrolled_in? tutorial
+
+    unit.destroy
   end
 
   def test_submit_with_others_having_extensions
@@ -203,7 +214,7 @@ class GroupModelTest < ActiveSupport::TestCase
   end
 
   def test_late_submission_does_not_override_complete_tasks
-    test_unit = FactoryBot.create :unit, group_sets: 1, groups: [{gs: 0, students: 3}], task_count: 0
+    test_unit = FactoryBot.create :unit, group_sets: 1, groups: [{gs: 0, students: 3}], task_count: 0, unenrolled_student_count: 0, part_enrolled_student_count: 0
 
     td = FactoryBot.create :task_definition, unit: test_unit, group_set: test_unit.group_sets.first, upload_requirements: [ ], start_date: Time.zone.now + 1.day
 
@@ -224,6 +235,8 @@ class GroupModelTest < ActiveSupport::TestCase
       { project_id: p2.id, pct: 50, pts: 3 },
       { project_id: p3.id, pct: 0, pts: 3 }
     ]
+
+    puts group.projects.count
 
     t2.create_submission_and_trigger_state_change(t2.student, true, contributions, 'ready_to_mark')
 
@@ -264,6 +277,8 @@ class GroupModelTest < ActiveSupport::TestCase
     assert_equal :ready_to_mark, t3.status
 
     assert_equal 1, t3.group_submission.projects.count
+
+    test_unit.destroy
   end
 
   def test_new_member_late_submission_does_not_override_complete_tasks
@@ -333,6 +348,7 @@ class GroupModelTest < ActiveSupport::TestCase
     assert_equal :ready_to_mark, t4.status
 
     assert_equal 1, t4.group_submission.projects.count
+    test_unit.destroy
   end
 
   def test_group_toggle_enrolment
@@ -359,6 +375,7 @@ class GroupModelTest < ActiveSupport::TestCase
     assert p2.update(enrolled: true)
     
     assert group1.at_capacity? # they are in the right tutorial
+    unit.destroy
   end
 
   def test_group_toggle_enrolment_at_capacity
@@ -390,6 +407,7 @@ class GroupModelTest < ActiveSupport::TestCase
     assert p2.update(enrolled: true)
     
     assert_equal 2, group1.projects.count # they are in the right tutorial
+    unit.destroy
   end
 
   def test_group_delete_clears_members
@@ -409,5 +427,6 @@ class GroupModelTest < ActiveSupport::TestCase
     group.destroy
 
     assert_equal 0, m1.group_memberships.count
+    unit.destroy
   end
 end
