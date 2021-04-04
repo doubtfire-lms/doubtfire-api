@@ -12,7 +12,7 @@ module TestHelpers
     #
     def post_json(endpoint, data)
       header 'CONTENT_TYPE', 'application/json'
-      post URI.encode(endpoint), data.to_json,  headers
+      post URI.encode(endpoint), data.to_json
     end
 
     #
