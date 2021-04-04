@@ -236,8 +236,6 @@ class GroupModelTest < ActiveSupport::TestCase
       { project_id: p3.id, pct: 0, pts: 3 }
     ]
 
-    puts group.projects.count
-
     t2.create_submission_and_trigger_state_change(t2.student, true, contributions, 'ready_to_mark')
 
     t1.reload
