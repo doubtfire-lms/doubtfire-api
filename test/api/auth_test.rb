@@ -161,6 +161,11 @@ class AuthTest < ActiveSupport::TestCase
     # Check to see if the response auth token matches the auth token that was sent through in put
     assert_equal expected_auth, actual_auth
   end
+
+  def test_auth_using_query_string
+    put_json "/api/auth?Username=#{User.first.username}&Auth-Token=#{auth_token(User.first)}", nil
+    assert_equal 200, last_response.status, last_response_body
+  end
   
   # Test invalid authentication token
   def test_fail_auth_put
