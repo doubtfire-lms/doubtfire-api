@@ -31,7 +31,7 @@ module Api
         message = "Sorry... something went wrong with your request."
         status = 500
       end
-      Rack::Response.new( {message: message}.to_json, status, { 'Content-type' => 'text/error' } )
+      Rack::Response.new( {error: message}.to_json, status, { 'Content-type' => 'text/error' } )
     end
 
     #
