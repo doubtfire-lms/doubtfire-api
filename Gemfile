@@ -67,6 +67,7 @@ gem 'rails-latex', '>2.3'
 gem 'grape'
 gem 'active_model_serializers', '~> 0.10.0'
 gem 'grape-active_model_serializers', '~> 1.3.2'
+gem 'grape-entity'
 gem 'grape-swagger'
 
 # Miscellaneous
