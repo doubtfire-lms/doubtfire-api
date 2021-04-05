@@ -9,7 +9,6 @@ module Api
 
     prefix 'api'
     format :json
-    formatter :json, Grape::Formatter::ActiveModelSerializers
 
     rescue_from :all do |e|
       case e

@@ -2,7 +2,6 @@ require File.expand_path('../boot', __FILE__)
 require 'rails/all'
 require 'csv'
 require 'yaml'
-require 'grape-active_model_serializers'
 
 # Precompile assets before deploying to production
 if defined?(Bundler)
