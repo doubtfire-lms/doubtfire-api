@@ -1,6 +1,6 @@
 require 'grape'
-require 'user_serializer'
 require 'json/jwt'
+require 'entities/user_entity'
 
 module Api
   #
@@ -69,10 +69,8 @@ module Api
         end
 
         # Return user details
-        { 
-          user: UserSerializer.new(user),
-          auth_token: user.generate_authentication_token!(remember).authentication_token
-        }
+        present :user, user, with: Api::Entities::UserEntity
+        present :auth_token, user.generate_authentication_token!(remember).authentication_token
       end
     end
 
@@ -169,10 +167,8 @@ module Api
           token = user.generate_authentication_token! true
 
           # Respond user details with new auth token
-          {
-            user: UserSerializer.new(user),
-            auth_token: token.authentication_token
-          }
+          present :user, user, with: Api::Entities::UserEntity
+          present :auth_token, token.authentication_token
         end
       end
     end
@@ -186,7 +182,7 @@ module Api
         method: Doubtfire::Application.config.auth_method
       }
       response[:redirect_to] = Doubtfire::Application.config.aaf[:redirect_url] if aaf_auth?
-      response
+      present response, with: Grape::Presenters::Presenter
     end
 
     #
@@ -196,7 +192,7 @@ module Api
     get '/auth/signout_url' do
       response = {}
       response[:auth_signout_url] = Doubtfire::Application.config.aaf[:auth_signout_url] if aaf_auth? && Doubtfire::Application.config.aaf[:auth_signout_url].present?
-      response
+      present response, with: Grape::Presenters::Presenter
     end
 
     #
@@ -243,9 +239,7 @@ module Api
         end
         
         # Return extended auth token
-        { 
-          auth_token: token.authentication_token 
-        }
+        present :auth_token, token.authentication_token 
       end
     end
 
@@ -277,7 +271,7 @@ module Api
         token.destroy!
       end
 
-      nil
+      present nil
     end
   end
 end

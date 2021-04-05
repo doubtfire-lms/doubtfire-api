@@ -100,7 +100,7 @@ class AuthTest < ActiveSupport::TestCase
     
     # 400 response code means missing username and password
     assert_equal 400, last_response.status
-    assert actual_auth.key? 'error'
+    assert actual_auth.key?('error'), actual_auth.inspect
   end
 
   # Test auth with tutor role
@@ -241,8 +241,8 @@ class AuthTest < ActiveSupport::TestCase
     add_auth_header_for(user: User.first)
 
     delete "/api/auth", nil 
-    # 200 response code means success!
-    assert_equal 200, last_response.status
+    # 204 response code means success!
+    assert_equal 204, last_response.status
   end
 
   def test_token_signout_works_with_multiple
