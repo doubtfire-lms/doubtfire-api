@@ -1793,22 +1793,22 @@ class Unit < ApplicationRecord
     Zip::File.open(zip_file) do |zip|
       zip.each do |file|
         next unless file.file? # Skip folders
-        file_name = File.basename(file.name)
-        if (File.extname(file.name) == '.pdf') || (File.extname(file.name) == '.zip')
+        file_name = File.basename(file[:name])
+        if (File.extname(file[:name]) == '.pdf') || (File.extname(file[:name]) == '.zip')
           found = false
           task_definitions.each do |td|
             next unless /^#{td.abbreviation}/ =~ file_name
-            file.extract ("#{task_path}#{FileHelper.sanitized_filename(td.abbreviation)}#{File.extname(file.name)}") { true }
-            result[:success] << { row: file.name, message: "Added as task #{td.abbreviation}" }
+            file.extract ("#{task_path}#{FileHelper.sanitized_filename(td.abbreviation)}#{File.extname(file[:name])}") { true }
+            result[:success] << { row: file[:name], message: "Added as task #{td.abbreviation}" }
             found = true
             break
           end
 
           unless found
-            result[:errors] << { row: file.name, message: 'Unable to find a task with matching abbreviation.' }
+            result[:errors] << { row: file[:name], message: 'Unable to find a task with matching abbreviation.' }
           end
         else
-          result[:ignored] << { row: file.name, message: 'Unknown file type.' }
+          result[:ignored] << { row: file[:name], message: 'Unknown file type.' }
         end
       end
     end
@@ -2584,49 +2584,49 @@ class Unit < ApplicationRecord
           # Copy over the updated/marked files to the file system
           zip.each do |file|
             # Skip processing marking file
-            next if File.basename(file.name) == 'marks.csv' || File.basename(file.name) == 'readme.txt'
+            next if File.basename(file[:name]) == 'marks.csv' || File.basename(file[:name]) == 'readme.txt'
 
             # Test filename pattern
-            if (/.*-\d+.pdf/i =~ File.basename(file.name)) != 0
-              if file.name[-1] != '/'
-                ignored << { row: "File #{file.name}", message: 'Does not appear to be a task PDF.' }
+            if (/.*-\d+.pdf/i =~ File.basename(file[:name])) != 0
+              if file[:name][-1] != '/'
+                ignored << { row: "File #{file[:name]}", message: 'Does not appear to be a task PDF.' }
               end
               next
             end
-            if (/\._.*/ =~ File.basename(file.name)) == 0
-              ignored << { row: "File #{file.name}", message: 'Does not appear to be a task PDF.' }
+            if (/\._.*/ =~ File.basename(file[:name])) == 0
+              ignored << { row: "File #{file[:name]}", message: 'Does not appear to be a task PDF.' }
               next
             end
 
             # Extract the id from the filename
-            task_id_from_filename = File.basename(file.name, '.pdf').split('-').last
+            task_id_from_filename = File.basename(file[:name], '.pdf').split('-').last
             task = Task.find_by(id: task_id_from_filename)
             if task.nil?
-              ignored << { row: "File #{file.name}", message: 'Unable to find associated task.' }
+              ignored << { row: "File #{file[:name]}", message: 'Unable to find associated task.' }
               next
             end
 
             # Ensure that this task's id is inside entry_data
             task_entry = entry_data.select { |t| t['task'] == task.task_definition.abbreviation.tr(',', '_') && t['username'] == task.project.user.username }.first
             if task_entry.nil?
-              # error!({"error" => "File #{file.name} has a mismatch of task id ##{task.id} (this task id does not exist in marks.csv)"}, 403)
-              errors << { row: "File #{file.name}", message: "Task id #{task.id} not in marks.csv" }
+              # error!({"error" => "File #{file[:name]} has a mismatch of task id ##{task.id} (this task id does not exist in marks.csv)"}, 403)
+              errors << { row: "File #{file[:name]}", message: "Task id #{task.id} not in marks.csv" }
               next
             end
 
             if task.unit != self
-              errors << { row: "File #{file.name}", message: 'This task does not relate to this unit.' }
+              errors << { row: "File #{file[:name]}", message: 'This task does not relate to this unit.' }
               next
             end
 
             # Can the user assess this task?
             unless AuthorisationHelpers.authorise? user, task, :put
-              errors << { row: "File #{file.name}", error: "You do not have permission to assess task with id #{task.id}" }
+              errors << { row: "File #{file[:name]}", error: "You do not have permission to assess task with id #{task.id}" }
               next
             end
 
             # Read into the task's portfolio_evidence path the new file
-            tmp_file = File.join(tmp_dir, File.basename(file.name))
+            tmp_file = File.join(tmp_dir, File.basename(file[:name]))
             task.portfolio_evidence = task.final_pdf_path
 
             # get file out of zip... to tmp_file
@@ -2635,13 +2635,13 @@ class Unit < ApplicationRecord
             # copy tmp_file to dest
             if FileHelper.copy_pdf(tmp_file, task.portfolio_evidence)
               if task.group.nil?
-                success << { row: "File #{file.name}", message: "Replace PDF of task #{task.task_definition.abbreviation} for #{task.student.name}" }
+                success << { row: "File #{file[:name]}", message: "Replace PDF of task #{task.task_definition.abbreviation} for #{task.student.name}" }
               else
-                success << { row: "File #{file.name}", message: "Replace PDF of group task #{task.task_definition.abbreviation} for #{task.group.name}" }
+                success << { row: "File #{file[:name]}", message: "Replace PDF of group task #{task.task_definition.abbreviation} for #{task.group.name}" }
               end
               FileUtils.rm tmp_file
             else
-              errors << { row: "File #{file.name}", message: 'The file does not appear to be a valid PDF.' }
+              errors << { row: "File #{file[:name]}", message: 'The file does not appear to be a valid PDF.' }
               next
             end
           end

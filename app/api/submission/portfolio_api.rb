@@ -31,7 +31,7 @@ module Api
 
         # Check that the file is OK to accept
         unless FileHelper.accept_file(file, name, kind)
-          error!({ error: "'#{file.filename}' is not a valid #{kind} file" }, 403)
+          error!({ error: "'#{file[:filename]}' is not a valid #{kind} file" }, 403)
         end
 
         # Move file into place
