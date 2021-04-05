@@ -41,11 +41,11 @@ require 'database_cleaner'
 class ActiveSupport::TestCase
   ActiveRecord::Migration.check_pending!
 
-  # Run tests in parallel with specified workers
-  # parallelize(workers: :number_of_processors)
-
   # Inclide FactoryBot
   include FactoryBot::Syntax::Methods
+
+  # Run tests in parallel with specified workers
+  # parallelize(workers: :number_of_processors)
 
   # Setup all fixtures in test/fixtures/*.(yml|csv) for all tests in alphabetical order.
   #

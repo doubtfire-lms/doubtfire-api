@@ -10,6 +10,11 @@ module Api
     prefix 'api'
     format :json
 
+    before do
+      header['Access-Control-Allow-Origin'] = '*'
+      header['Access-Control-Request-Method'] = '*'
+    end
+
     rescue_from :all do |e|
       case e
       when ActiveRecord::RecordInvalid, Grape::Exceptions::ValidationErrors
@@ -32,6 +37,33 @@ module Api
         status = 500
       end
       Rack::Response.new( {error: message}.to_json, status, { 'Content-type' => 'text/error' } )
+    end
+
+    desc 'Returns your public timeline.' do
+      summary 'summary'
+      detail 'more details'
+      # params  API::Entities::Status.documentation
+      # success API::Entities::Entity
+      # failure [[401, 'Unauthorized', 'Entities::Error']]
+      named 'My named route'
+      headers XAuthToken: {
+                description: 'Validates your identity',
+                required: true
+              },
+              XOptionalHeader: {
+                description: 'Not really needed',
+                required: false
+              }
+      hidden false
+      deprecated false
+      is_array true
+      nickname 'nickname'
+      produces ['application/json']
+      consumes ['application/json']
+      tags ['tag1', 'tag2']
+    end
+    get :public_timeline do
+      "Hello"
     end
 
     #
@@ -96,15 +128,25 @@ module Api
     AuthenticationHelpers.add_auth_to Api::UnitsApi
     AuthenticationHelpers.add_auth_to Api::WebcalApi
 
+    # add_swagger_documentation format: :json,
+    #                           hide_documentation_path: false,
+    #                           api_version: 'v1',
+    #                           info: {
+    #                             title: "Horses and Hussars",
+    #                             description: "Demo app for dev of grape swagger 2.0"
+    #                           },
+    #                           mount_path: 'swagger_doc'
+
     add_swagger_documentation \
       base_path: nil,
-      add_version: false,
+      api_version: 'v1',
       hide_documentation_path: true,
       info: {
         title: 'Doubtfire API Documentaion',
         description: 'Doubtfire is a modern, lightweight learning management system.',
         license: 'AGPL v3.0',
         license_url: 'https://github.com/doubtfire-lms/doubtfire-api/blob/master/LICENSE'
-      }
+      },
+      mount_path: 'swagger_doc'
   end
 end

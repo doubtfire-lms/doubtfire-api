@@ -40,7 +40,6 @@ class TaskStatusTest < ActiveSupport::TestCase
       task_definition_id: td.id,
       task_status_id: 12
     )
-
     # Get the first student - who now has this task
     project = unit.active_projects.first
 

@@ -33,7 +33,7 @@ class AddRoleToUnitRole < ActiveRecord::Migration[4.2]
     Tutorial.all.each do |tutorial|
       tutor = tutorial.user_id
       unit = tutorial.unit_id
-      tutorial_id = tutorial.id
+      tutorial_id = tutorial.id.first
 
       tutorial_unit_map[tutorial_id] = unit
       tutorial_user_map[tutorial_id] = tutor

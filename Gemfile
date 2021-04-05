@@ -4,7 +4,7 @@ source 'https://rubygems.org'
 ruby_versions = {
   development:  '~>2.6',
   test:         '~>2.6',
-  staging:      '~>2.3.1',
+  staging:      '~>2.6',
   production:   '~>2.3.1'
 }
 # Get the ruby version for the current enviornment
@@ -69,6 +69,7 @@ gem 'active_model_serializers', '~> 0.10.0'
 gem 'grape-active_model_serializers', '~> 1.3.2'
 gem 'grape-entity'
 gem 'grape-swagger'
+gem 'grape-swagger-rails'
 
 # Miscellaneous
 gem 'attr_encrypted', '~> 3.1.0'

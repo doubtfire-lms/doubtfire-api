@@ -374,7 +374,7 @@ module Api
       end
 
       Thread.current[:user] = current_user
-      ActiveModel::ArraySerializer.new(grp.projects, each_serializer: GroupMemberProjectSerializer)
+      ActiveModel::Serializer::CollectionSerializer.new(grp.projects, each_serializer: GroupMemberProjectSerializer)
     end
 
     desc 'Add a group member'
