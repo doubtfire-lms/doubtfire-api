@@ -25,7 +25,7 @@ module FileHelper
         # --"application/msword",
         'application/pdf'
       ]
-      valid = pdf_valid? file.tempfile.path
+      valid = pdf_valid? file["tempfile"].path
     when 'audio'
       accept = ['audio/', 'video/webm', 'application/ogg', 'application/octet-stream']
     when 'comment_attachment'
@@ -37,7 +37,7 @@ module FileHelper
       return false
     end
 
-    mime_in_list?(file.tempfile.path, accept) && valid
+    mime_in_list?(file["tempfile"].path, accept) && valid
   end
 
   #
@@ -49,7 +49,7 @@ module FileHelper
       path_name.strip.tap do |name|
         # Finally, replace all non alphanumeric, underscore
         # or periods with underscore
-        name.gsub! /[^\w\-]/, '_'
+        name.gsub! /[^\w\-()]/, '_'
       end
     end
 
@@ -78,6 +78,18 @@ module FileHelper
     FileUtils.mkdir_p dst if create && (!Dir.exist? dst)
 
     dst
+  end
+
+  def tmp_file_dir()
+    file_server = Doubtfire::Application.config.student_work_dir
+    dst = "#{file_server}/tmp/" # trust the server config and passed in type for paths
+    FileUtils.mkdir_p dst if !Dir.exist? dst
+
+    dst
+  end
+
+  def tmp_file(filename)
+    tmp_file_dir << sanitized_filename(filename)
   end
 
   def student_group_work_dir(type, group_submission, task = nil, create = false)
@@ -118,7 +130,9 @@ module FileHelper
       dst = "#{file_server}/" # trust the server config and passed in type for paths
 
       if !(type.nil? || task.nil?)
-        if type == :pdf
+        if type == :discussion
+          dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}", task.project.student.username.to_s, type.to_s) << '/'
+        elsif type == :pdf
           dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}", task.project.student.username.to_s, type.to_s) << '/'
         elsif type == :done
           dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}", task.project.student.username.to_s, type.to_s, task.id.to_s) << '/'
@@ -145,52 +159,60 @@ module FileHelper
     dst
   end
 
-  #
-  # Generates a path for storing student portfolios
-  #
-  def student_portfolio_dir(project, create = true)
+  def unit_dir(unit, create = true)
+    file_server = Doubtfire::Application.config.student_work_dir
+    dst = "#{file_server}/" # trust the server config and passed in type for paths
+    dst << sanitized_path("#{unit.code}-#{unit.id}") << '/'
+
+    FileUtils.mkdir_p dst if create && (!Dir.exist? dst)
+
+    dst
+  end
+
+  def unit_portfolio_dir(unit, create = true)
     file_server = Doubtfire::Application.config.student_work_dir
     dst = "#{file_server}/portfolio/" # trust the server config and passed in type for paths
 
-    dst << sanitized_path("#{project.unit.code}-#{project.unit.id}", project.student.username.to_s)
+    dst << sanitized_path("#{unit.code}-#{unit.id}") << '/'
 
     # Create current dst directory should it not exist
     FileUtils.mkdir_p(dst) if create
     dst
   end
 
+  #
+  # Generates a path for storing student portfolios
+  #
+  def student_portfolio_dir(unit, username, create = true)
+    dst = unit_portfolio_dir(unit, create)
+
+    dst << sanitized_path(username.to_s)
+
+    # Create current dst directory should it not exist
+    FileUtils.mkdir_p(dst) if create
+    dst
+  end
+
+  def student_portfolio_path(unit, username, create = true)
+    File.join(student_portfolio_dir(unit, username, create), FileHelper.sanitized_filename("#{username}-portfolio.pdf"))
+  end
+
   def comment_attachment_path(task_comment, attachment_extension)
     "#{File.join( student_work_dir(:comment, task_comment.task), "#{task_comment.id.to_s}#{attachment_extension}")}"
   end
 
-  def compress_image(path)
-    return true if File.size?(path) < 500_000
+  def comment_prompt_path(task_comment, attachment_extension, count)
+    "#{File.join( student_work_dir(:discussion, task_comment.task), "#{task_comment.id.to_s}_#{count.to_s}#{attachment_extension}")}"
+  end
 
-    compress_folder = File.join(Dir.tmpdir, 'doubtfire', 'compress')
-
-    FileUtils.mkdir compress_folder unless File.directory? compress_folder
-
-    tmp_file = File.join(compress_folder, "#{File.dirname(path).split(File::Separator).last}-file#{File.extname(path)}")
-    logger.debug "File helper has started compressing #{path} to #{tmp_file}..."
-
-    begin
-      exec = "convert -quiet -strip -density 72 -quality 85% -resize 2048x2048\\> -resize 48x48\\< \
-              \"#{path}\" \
-              \"#{tmp_file}\" >>/dev/null 2>>/dev/null"
-
-      did_compress = system_try_within 40, 'compressing image using convert', exec
-
-      FileUtils.mv tmp_file, path if did_compress
-    ensure
-      FileUtils.rm tmp_file if File.exist? tmp_file
-    end
-
-    did_compress
+  def comment_reply_prompt_path(discussion_comment, attachment_extension)
+    "#{File.join( student_work_dir(:discussion, discussion_comment.task), "#{discussion_comment.id.to_s}_reply#{attachment_extension}")}"
   end
 
   def compress_image_to_dest(source, dest, delete_frames = false)
-    exec = "convert -quiet #{ delete_frames ? '-delete 1--1' : ''} -strip -density 72 -quality 85% -resize 2048x2048\\> -resize 48x48\\< \
+    exec = "convert -quiet \
             \"#{source}\" \
+            #{ delete_frames ? '-delete 1--1' : ''} -strip -density 72 -quality 85% -resize 2048x2048\\> -resize 48x48\\< \
             \"#{dest}\" >>/dev/null 2>>/dev/null"
 
     did_compress = system_try_within 40, 'compressing image using convert', exec
@@ -362,6 +384,10 @@ module FileHelper
     zip_file = "#{student_work_dir(:done, task, false)[0..-2]}.zip"
   end
 
+  def zip_file_path_for_discussion_prompts(task)
+    zip_file = "#{student_work_dir(:discussion, task, false)[0..-2]}.zip"
+  end
+
   #
   # Compress the done files for a student - includes cover page and work uploaded
   #
@@ -438,16 +464,27 @@ module FileHelper
     FileUtils.mv(tmp_filename, output_filename)
   end
 
+  def process_audio(input_path, output_path)
+    logger.info("Trying to process audio in FileHelper")
+    TimeoutHelper.system_try_within 20, "Failed to process audio submission - timeout", "ffmpeg -loglevel quiet -y -i #{input_path} -ac 1 -ar 16000 -sample_fmt s16 #{output_path}"
+  end
+
   # Export functions as module functions
   module_function :accept_file
   module_function :sanitized_path
   module_function :sanitized_filename
   module_function :task_file_dir_for_unit
+  module_function :tmp_file_dir
+  module_function :tmp_file
   module_function :student_group_work_dir
   module_function :student_work_dir
+  module_function :unit_dir
+  module_function :unit_portfolio_dir
   module_function :student_portfolio_dir
+  module_function :student_portfolio_path
   module_function :comment_attachment_path
-  module_function :compress_image
+  module_function :comment_prompt_path
+  module_function :comment_reply_prompt_path
   module_function :compress_image_to_dest
   module_function :compress_pdf
   module_function :move_files
@@ -460,9 +497,11 @@ module FileHelper
   module_function :delete_group_submission
   module_function :zip_file_path_for_group_done_task
   module_function :zip_file_path_for_done_task
+  module_function :zip_file_path_for_discussion_prompts
   module_function :compress_done_files
   module_function :move_compressed_task_to_new
   module_function :recursively_add_dir_to_zip
   module_function :write_entries_to_zip
   module_function :ensure_utf8_code
+  module_function :process_audio
 end

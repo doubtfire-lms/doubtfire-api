@@ -1,19 +1,15 @@
-class TaskCommentSerializer < ActiveModel::Serializer
-  attributes :id, :comment, :created_at, :author, :recipient
-
-  def author
-    {
-      id: object.user.id,
-      name: object.user.name,
-      email: object.user.email
-    }
+class TaskCommentSerializer < HashSerializer
+  class AuthorSerializer < HashSerializer
+    attributes :id, :name, :email
   end
 
-  def recipient
-    {
-      id: object.recipient.id,
-      name: object.recipient.name,
-      email: object.user.email
-    }
-  end
+  attributes :id, 
+    :comment,
+    :has_attachment,
+    :type,
+    :is_new,
+    :created_at,
+    :recipient_read_time
+  has_one :author, serializer: TaskCommentSerializer::AuthorSerializer
+  has_one :recipient, serializer: TaskCommentSerializer::AuthorSerializer
 end

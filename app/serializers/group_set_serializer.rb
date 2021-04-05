@@ -1,4 +1,7 @@
-class GroupSetSerializer < ActiveModel::Serializer
+# Doubtfire will deprecate ActiveModelSerializer in the future.
+# Instead, write a serialize method on the model.
+
+class GroupSetSerializer < DoubtfireSerializer
   attributes :id, :name,
              :allow_students_to_create_groups,
              :allow_students_to_manage_groups,

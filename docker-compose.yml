@@ -30,7 +30,7 @@ services:
     container_name: doubtfire-web
     build: ../doubtfire-web
     environment:
-      DF_DOCKER_MACHINE_IP: $DF_DOCKER_MACHINE_IP
+      DF_DOCKER_MACHINE_IP: api
     ports:
       - "4200:4200" # Angular 6
       - "8000:8000" # Angular 1

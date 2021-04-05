@@ -1,6 +1,9 @@
-class Task < ActiveRecord::Base
+require 'date'
+
+class Task < ApplicationRecord
   include ApplicationHelper
   include LogHelper
+  include GradeHelper
 
   #
   # Permissions around task data
@@ -12,7 +15,11 @@ class Task < ActiveRecord::Base
       :put,
       :get_submission,
       :make_submission,
-      :delete_own_comment
+      :delete_own_comment,
+      :start_discussion,
+      :get_discussion,
+      :make_discussion_reply,
+      :request_extension
     ]
     # What can tutors do with tasks?
     tutor_role_permissions = [
@@ -23,7 +30,11 @@ class Task < ActiveRecord::Base
       :delete_other_comment,
       :delete_own_comment,
       :view_plagiarism,
-      :delete_plagiarism
+      :delete_plagiarism,
+      :create_discussion,
+      :delete_discussion,
+      :get_discussion,
+      :assess_extension
     ]
     # What can convenors do with tasks?
     convenor_role_permissions = [
@@ -33,7 +44,9 @@ class Task < ActiveRecord::Base
       :delete_other_comment,
       :delete_own_comment,
       :view_plagiarism,
-      :delete_plagiarism
+      :delete_plagiarism,
+      :get_discussion,
+      :assess_extension
     ]
     # What can nil users do with tasks?
     nil_role_permissions = [
@@ -73,7 +86,8 @@ class Task < ActiveRecord::Base
   belongs_to :task_status           # Foreign key
   belongs_to :group_submission
 
-  has_many :sub_tasks, dependent: :destroy
+  has_one :unit, through: :project
+
   has_many :comments, class_name: 'TaskComment', dependent: :destroy, inverse_of: :task
   has_many :plagiarism_match_links, class_name: 'PlagiarismMatchLink', dependent: :destroy, inverse_of: :task
   has_many :reverse_plagiarism_match_links, class_name: 'PlagiarismMatchLink', dependent: :destroy, inverse_of: :other_task, foreign_key: 'other_task_id'
@@ -82,15 +96,21 @@ class Task < ActiveRecord::Base
   has_many :task_engagements
   has_many :task_submissions
 
+  delegate :unit, to: :project
+  delegate :student, to: :project
+  delegate :upload_requirements, to: :task_definition
+  delegate :name, to: :task_definition
+  delegate :target_date, to: :task_definition
+
   validates :task_definition_id, uniqueness: { scope: :project,
                                                message: 'must be unique within the project' }
 
-  validate :must_have_quality_pts, if: :for_task_with_quality?
+  validate :must_have_quality_pts, if: :for_definition_with_quality?
 
   validate :extensions_must_end_with_due_date, if: :has_requested_extension?
 
-  def for_task_with_quality?
-    task_definition.max_quality_pts.positive?
+  def for_definition_with_quality?
+    task_definition.has_stars?
   end
 
   def has_requested_extension?
@@ -143,12 +163,6 @@ class Task < ActiveRecord::Base
     Task.joins(:project).where('projects.user_id = ?', user.id)
   end
 
-  delegate :unit, to: :project
-
-  delegate :student, to: :project
-
-  delegate :upload_requirements, to: :task_definition
-
   def processing_pdf?
     if group_task? && group_submission
       File.exist? File.join(FileHelper.student_work_dir(:new), group_submission.submitter_task.id.to_s)
@@ -173,21 +187,52 @@ class Task < ActiveRecord::Base
   # The student can apply for an extension if the current extension date is
   # before the task's due date
   def can_apply_for_extension?
-    raw_extension_date < task_definition.due_date
+    raw_extension_date.to_date < task_definition.due_date.to_date
   end
 
-  # Applying for an extension will 
-  def apply_for_extension
-    self.extensions = self.extensions + 1
+  # Applying for an extension will create an extension comment
+  def apply_for_extension(user, text, weeks)
+    extension = ExtensionComment.create
+    extension.task = self
+    extension.extension_weeks = weeks
+    extension.user = user
+    extension.content_type = :extension
+    extension.comment = text
+    extension.recipient = project.tutor_for(task_definition)
+    extension.save!
+    extension
   end
 
-  # delegate :due_date, to: :task_definition
+  def weeks_can_extend
+    deadline = task_definition.due_date.to_date
+    current_due = raw_extension_date.to_date
+
+    diff = deadline - current_due
+    (diff.to_f / 7).ceil
+  end
+
+  # Add an extension to the task
+  def grant_extension(by_user, weeks)
+    weeks_to_extend = weeks <= weeks_can_extend ? weeks : weeks_can_extend
+    return false unless weeks_to_extend > 0
+
+    if update(extensions: self.extensions + weeks_to_extend)
+      # Was the task previously assessed as time exceeded? ... with the extension should this change?
+      if self.task_status == TaskStatus.time_exceeded && submitted_before_due?
+        update(task_status: TaskStatus.ready_to_mark)
+        add_status_comment(by_user, self.task_status)
+      end
+
+      return true
+    else
+      return false
+    end
+  end
+
   def due_date
     return target_date if extensions == 0
     return extension_date
   end
-
-  delegate :target_date, to: :task_definition
 
   def complete?
     status == :complete
@@ -308,12 +353,7 @@ class Task < ActiveRecord::Base
     when nil
       return nil
     when TaskStatus.ready_to_mark
-      submit
-
-      if due_date < Time.zone.now
-        assess TaskStatus.time_exceeded, by_user
-        grade_task -1 if task_definition.is_graded? && self.grade.nil?
-      end
+      submit by_user
     when TaskStatus.not_started, TaskStatus.need_help, TaskStatus.working_on_it
       engage status
     else
@@ -326,6 +366,11 @@ class Task < ActiveRecord::Base
           end
         end
         assess status, by_user
+
+        if !group_transition || !group_task?
+          # Add a status comment for new assessments (avoid duplicates on group submission)
+          add_status_comment(by_user, status)
+        end
       else
         # Attempt to move to tutor state by non-tutor
         return nil
@@ -344,18 +389,7 @@ class Task < ActiveRecord::Base
   end
 
   def grade_desc
-    case grade
-    when -1
-      'Fail'
-    when 0
-      'Pass'
-    when 1
-      'Credit'
-    when 2
-      'Distinction'
-    when 3
-      'High Distinction'
-    end
+    grade_for(grade)
   end
 
   #
@@ -428,14 +462,18 @@ class Task < ActiveRecord::Base
       self.completion_date = assess_date if completion_date.nil?
     else
       self.completion_date = nil
+
+      # Grant an extension on fix if due date is within 1 week
+      case task_status
+      when TaskStatus.fix_and_resubmit, TaskStatus.discuss, TaskStatus.demonstrate
+        if to_same_day_anywhere_on_earth(due_date) < Time.zone.now + 7.days && can_apply_for_extension?
+          grant_extension(assessor, 1)
+        end
+      end
     end
 
     # Save the task
     if save!
-      # If a task has been completed, that means the project
-      # has definitely started
-      project.start
-
       TaskEngagement.create!(task: self, engagement_time: Time.zone.now, engagement: task_status.name)
 
       # Grab the submission for the task if the user made one
@@ -470,12 +508,29 @@ class Task < ActiveRecord::Base
     end
   end
 
-  def submit(submit_date = Time.zone.now)
-    self.task_status      = TaskStatus.ready_to_mark
+  def submitted_before_due?
+    to_same_day_anywhere_on_earth(due_date) >= self.submission_date
+  end
+
+  #
+  # A task has been submitted - update the status and record the submission
+  # Default submission time to current time.
+  #
+  def submit(by_user, submit_date = Time.zone.now)
     self.submission_date  = submit_date
 
+    add_status_comment(by_user, TaskStatus.ready_to_mark)
+
+    # If it is submitted before the due date...
+    if submitted_before_due?
+      self.task_status = TaskStatus.ready_to_mark
+    else
+      assess TaskStatus.time_exceeded, by_user
+      add_status_comment(project.tutor_for(task_definition), self.task_status)
+      grade_task -1 if task_definition.is_graded? && self.grade.nil?
+    end
+
     if save!
-      project.start
       TaskEngagement.create!(task: self, engagement_time: Time.zone.now, engagement: task_status.name)
       submission = TaskSubmission.where(task_id: id).order(:submission_time).reverse_order.first
 
@@ -510,6 +565,8 @@ class Task < ActiveRecord::Base
     return nil if user.nil? || text.nil? || text.empty?
 
     lc = comments.last
+
+    # don't add if duplicate comment
     return if lc && lc.user == user && lc.comment == text
 
     ensured_group_submission if group_task? && group
@@ -519,11 +576,55 @@ class Task < ActiveRecord::Base
     comment.user = user
     comment.comment = text
     comment.content_type = :text
-    comment.recipient = user == project.student ? project.main_tutor : project.student
+    comment.recipient = user == project.student ? project.tutor_for(task_definition) : project.student
     comment.save!
+
     comment
   end
 
+  def individual_task_or_submitter_of_group_task?
+    return true if !group_task?
+    return true unless group.present?
+
+    ensured_group_submission.submitted_by? self.project
+  end
+
+  def add_status_comment(current_user, status)
+    return nil unless individual_task_or_submitter_of_group_task?
+
+    comment = TaskStatusComment.create
+    comment.task = self
+    comment.user = current_user
+    comment.comment = status.name
+    comment.task_status = status
+    comment.recipient = current_user == project.student ? project.tutor_for(task_definition) : project.student
+    comment.save!
+
+    comment
+  end
+
+  def add_discussion_comment(user, prompts)
+    # don't allow if group task.
+    discussion = DiscussionComment.create
+    discussion.task = self
+    discussion.user = user
+    discussion.content_type = :discussion
+    discussion.recipient = project.student
+    discussion.number_of_prompts = prompts.count
+    discussion.save!
+
+    prompts.each_with_index do |prompt, index |
+      raise "Unknown comment attachment type" unless FileHelper.accept_file(prompt, "comment attachment discussion audio", "audio")
+      raise "Error attaching uploaded file." unless discussion.add_prompt(prompt, index)
+    end
+
+    discussion.mark_as_read(user, unit)
+
+    logger.info(discussion)
+    return discussion
+  end
+
+  # TODO: Refgactor to attachment comment (with inheritance on model)
   def add_comment_with_attachment(user, tempfile)
     ensured_group_submission if group_task? && group
 
@@ -540,8 +641,9 @@ class Task < ActiveRecord::Base
       raise "Unknown comment attachment type"
     end
 
-    comment.recipient = user == project.student ? project.main_tutor : project.student
+    comment.recipient = user == project.student ? project.tutor_for(task_definition) : project.student
     raise "Error attaching uploaded file." unless comment.add_attachment(tempfile)
+
     comment.save!
     comment
   end
@@ -591,16 +693,6 @@ class Task < ActiveRecord::Base
   def similar_to_dismissed_count
     plagiarism_match_links.where('dismissed = TRUE').count
   end
-
-  def recalculate_max_similar_pct
-    # TODO: Remove once max_pct_similar is deleted
-    # self.max_pct_similar = pct_similar()
-    # self.save
-    #
-    # project.recalculate_max_similar_pct()
-  end
-
-  delegate :name, to: :task_definition
 
   def student_work_dir(type, create = true)
     if group_task?
@@ -665,13 +757,11 @@ class Task < ActiveRecord::Base
       # compress image files
       image_files = Dir.entries(task_dir).select { |f| (f =~ /^\d{3}.(image)/) == 0 }
       image_files.each do |img|
-        if File.extname(img) == ".jpg"
-          raise 'Failed to compress an image. Ensure all images are valid.' unless FileHelper.compress_image("#{task_dir}#{img}")
-        else
-          dest_file = "#{task_dir}#{File.basename(img, ".*")}.jpg"
-          raise 'Failed to compress an image. Ensure all images are valid.' unless FileHelper.compress_image_to_dest("#{task_dir}#{img}", dest_file, true)
-          FileUtils.rm("#{task_dir}#{img}")
-        end
+        # Ensure all images in submissions are not jpg
+        dest_file = "#{task_dir}#{File.basename(img, ".*")}.jpg"
+        raise 'Failed to compress an image. Ensure all images are valid.' unless FileHelper.compress_image_to_dest("#{task_dir}#{img}", dest_file, true)
+        # Cleanup unless the output was the same as the input
+        FileUtils.rm("#{task_dir}#{img}") unless dest_file == "#{task_dir}#{img}"
       end
 
       # copy all files into zip
@@ -924,7 +1014,7 @@ class Task < ActiveRecord::Base
     rescue => e
       clear_in_process
 
-      trigger_transition trigger: 'fix', by_user: project.main_tutor
+      trigger_transition trigger: 'fix', by_user: project.tutor_for(task_definition)
       raise e
     end
   end
@@ -986,7 +1076,7 @@ class Task < ActiveRecord::Base
     # id, name, filename, type, tempfile
     #
     files.each do |file|
-      ui.error!({ 'error' => "Missing file data for '#{file.name}'" }, 403) if file.id.nil? || file.name.nil? || file.filename.nil? || file.type.nil? || file.tempfile.nil?
+      ui.error!({ 'error' => "Missing file data for '#{file.name}'" }, 403) if file.id.nil? || file.name.nil? || file.filename.nil? || file.type.nil? || file["tempfile"].nil?
     end
 
     # Ensure group if group task
@@ -1000,20 +1090,20 @@ class Task < ActiveRecord::Base
     end
     # file.key            = "file0"
     # file.name           = front end name for file
-    # file.tempfile.path  = actual file dir
+    # file["tempfile"].path  = actual file dir
     # file.filename       = their name for the file
 
     #
     # Confirm subtype categories using filemagic
     #
     files.each_with_index do |file, index|
-      logger.debug "Accepting submission (file #{index + 1} of #{files.length}) - checking file type for #{file.tempfile.path}"
+      logger.debug "Accepting submission (file #{index + 1} of #{files.length}) - checking file type for #{file["tempfile"].path}"
       unless FileHelper.accept_file(file, file.name, file.type)
         ui.error!({ 'error' => "'#{file.name}' is not a valid #{file.type} file" }, 403)
       end
 
-      if File.size(file.tempfile.path) > 5_000_000
-        ui.error!({ 'error' => "'#{file.name}' exceeds the 5MB file limit. Try compressing or reformat and submit again." }, 403)
+      if File.size(file["tempfile"].path) > 10_000_000
+        ui.error!({ 'error' => "'#{file.name}' exceeds the 10MB file limit. Try compressing or reformat and submit again." }, 403)
       end
     end
 
@@ -1043,7 +1133,7 @@ class Task < ActiveRecord::Base
 
     files.each_with_index.map do |file, idx|
       output_filename = File.join(tmp_dir, "#{idx.to_s.rjust(3, '0')}-#{file.type}#{File.extname(file.filename).downcase}")
-      FileUtils.cp file.tempfile.path, output_filename
+      FileUtils.cp file["tempfile"].path, output_filename
     end
 
     #
@@ -1077,5 +1167,11 @@ class Task < ActiveRecord::Base
           FileUtils.rm_rf new_path
         end
       end
+    end
+
+    # Use the current DateTime to calculate a new DateTime for the last moment of the same
+    # day anywhere on earth
+    def to_same_day_anywhere_on_earth(date)
+      DateTime.new(date.year, date.month, date.day, 23, 59, 59, '-12:00')
     end
 end

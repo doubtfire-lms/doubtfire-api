@@ -1,7 +1,7 @@
 #
 # Tracks each group's submissions.
 #
-class GroupSubmission < ActiveRecord::Base
+class GroupSubmission < ApplicationRecord
   include LogHelper
 
   belongs_to :group
@@ -57,6 +57,10 @@ class GroupSubmission < ActiveRecord::Base
     return result unless result.nil?
 
     tasks.first
+  end
+
+  def submitted_by? project
+    project == submitted_by_project
   end
 
   delegate :processing_pdf?, to: :submitter_task

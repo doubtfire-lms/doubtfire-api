@@ -1,15 +1,19 @@
+# Doubtfire will deprecate ActiveModelSerializer in the future.
+# Instead, write a serialize method on the model.
+
 require 'user_serializer'
 
-class TutorialSerializer < ActiveModel::Serializer
-  attributes :id, :meeting_day, :meeting_time, :meeting_location, :abbreviation, :tutor_name, :num_students
+class TutorialSerializer < DoubtfireSerializer
+  attributes :id, :meeting_day, :meeting_time, :meeting_location, :abbreviation, :campus_id, :capacity, :num_students,
+             :tutorial_stream
+
+  def tutorial_stream
+    object.tutorial_stream.abbreviation unless object.tutorial_stream.nil?
+  end
 
   def meeting_time
     object.meeting_time.to_time
     # DateTime.parse("#{object.meeting_time}")
-  end
-
-  def tutor_name
-    object.tutor.name unless object.tutor.nil?
   end
 
   has_one :tutor, serializer: ShallowUserSerializer

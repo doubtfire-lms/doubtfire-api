@@ -1,4 +1,4 @@
-class AddMatchLinks < ActiveRecord::Migration
+class AddMatchLinks < ActiveRecord::Migration[4.2]
   def change
   	create_table :plagiarism_match_links do |t|
       t.belongs_to :task, index: true

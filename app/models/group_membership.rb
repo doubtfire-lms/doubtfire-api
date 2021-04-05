@@ -1,7 +1,7 @@
 #
 # Records which students are in this group... used to determine the related students on submission
 #
-class GroupMembership < ActiveRecord::Base
+class GroupMembership < ApplicationRecord
   include LogHelper
 
   belongs_to :group
@@ -21,6 +21,9 @@ class GroupMembership < ActiveRecord::Base
   end
 
   def in_group_tutorial?(tutorial)
-    project.tutorial == tutorial
+    project.tutorial_enrolments.
+            joins(:tutorial).
+            where('tutorial_enrolments.tutorial_id = :id', id: tutorial.id).
+            count > 0
   end
 end

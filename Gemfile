@@ -2,23 +2,19 @@ source 'https://rubygems.org'
 
 # Ruby versions for various enviornments
 ruby_versions = {
-  development:  '~>2.3.1',
-  test:         '~>2.3.1',
-  staging:      '~>2.3.1',
+  development:  '~>2.6',
+  test:         '~>2.6',
+  staging:      '~>2.6',
   production:   '~>2.3.1'
 }
 # Get the ruby version for the current enviornment
 ruby ruby_versions[(ENV['RAILS_ENV'] || 'development').to_sym]
 
 # The venerable, almighty Rails
-gem 'rails', '4.2.6'
+gem 'rails', '6.0.0'
 
 group :development, :test do
   gem 'database_cleaner'
-  gem 'factory_girl_rails'
-  gem 'minitest-around'
-  gem 'minitest-hyper'
-  gem 'minitest-rails'
   gem 'byebug'
   gem 'simplecov', require: false
   gem 'pg'
@@ -31,8 +27,10 @@ end
 
 group :development, :test, :staging do
   # Generators for population
-  gem 'populator'
+  gem 'factory_bot_rails'
+  gem 'factory_bot'
   gem 'faker', '~>1.9.1'
+  gem "minitest-rails", github: "blowmage/minitest-rails"
 end
 
 group :production do
@@ -44,7 +42,7 @@ group :production, :staging do
 end
 
 # Authentication
-gem 'devise', '~> 4.1.1'
+gem 'devise', '~> 4.7.1'
 gem 'devise_ldap_authenticatable'
 gem 'json-jwt', '1.7.0'
 
@@ -55,22 +53,23 @@ gem 'rmagick', '~> 2.15' # require: false #already included in other gems - remo
 gem 'rubyzip'
 
 # Plagarism detection
-gem 'moss_ruby', '= 1.1.2'
+gem 'moss_ruby', '>= 1.1.2'
 
 # Latex
-gem 'rails-latex', '=2.0.1'
+gem 'rails-latex', '>2.3'
 
 # API
-gem 'grape', '0.16.2'
-gem 'active_model_serializers', '~> 0.9.0'
+gem 'grape', '1.2.4'
+gem 'active_model_serializers', '~> 0.10.0'
 gem 'grape-active_model_serializers', '~> 1.3.2'
 gem 'grape-swagger'
+gem 'grape-swagger-rails'
 
 # Miscellaneous
-gem 'attr_encrypted', '~> 1.3.2'
+gem 'attr_encrypted', '~> 3.1.0'
 gem 'rack-cors', require: 'rack/cors'
 gem 'ci_reporter'
-gem 'require_all', '1.3.3'
+gem 'require_all', '>=1.3.3'
 gem 'dotenv-rails'
 
 # Excel support
