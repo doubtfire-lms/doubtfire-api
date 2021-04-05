@@ -514,7 +514,7 @@ class Task < ApplicationRecord
         # we have an existing submission
         if submission.assessment_time.nil?
           # and it hasn't been assessed yet...
-          submission.update_attributes submission_attributes
+          submission.update submission_attributes
           submission.save
         else
           # it was assessed... so lets create a new assessment
