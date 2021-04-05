@@ -36,7 +36,7 @@ module TestHelpers
     def assert_json_matches_model(model, response_json, keys)
       keys.each { |k| assert response_json.key?(k), "Response missing key #{k} - #{response_json}" }
       keys.each { |k| 
-        value = model.is_a?(Hash) ? model[k] : model.send(k)
+        value = model.is_a?(Hash) ? model[k] || model[k.to_sym] : model.send(k)
         if ! value.nil?
           assert_equal value, response_json[k], "Values for key #{k} do not match - #{response_json}"
         else
