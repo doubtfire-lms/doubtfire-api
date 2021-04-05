@@ -36,7 +36,7 @@ class LectureResourceDownloadsController < ApplicationController
     download_id.gsub! /[\\\/]/, '-'
     download_id = FileHelper.sanitized_filename(download_id)
 
-    send_file output_zip.path, content_type: 'application/octet-stream', disposition: "attachment; filename=#{download_id}.zip"
+    send_file output_zip, content_type: 'application/octet-stream', disposition: "attachment; filename=#{download_id}.zip"
   rescue MyException => e
     render json: e.message, status: e.status
   end

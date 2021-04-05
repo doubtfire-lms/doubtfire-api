@@ -41,15 +41,15 @@ class PortfolioDownloadsController < ApplicationController
     # header['Content-Disposition'] = "attachment; filename=#{download_id}.zip"
     # env['api.format'] = :binary
 
-    logger.debug "Downloading portfolios from #{output_zip.path}"
+    logger.debug "Downloading portfolios from #{output_zip}"
 
-    # out = File.open(output_zip.path, "rb")
+    # out = File.open(output_zip, "rb")
     # output_zip.unlink
     # response_body = out.read
-    # File.binread output_zip.path
+    # File.binread output_zip
     # sending_file = true
 
-    send_file output_zip.path, content_type: 'application/octet-stream', disposition: "attachment; filename=#{download_id}.zip"
+    send_file output_zip, content_type: 'application/octet-stream', disposition: "attachment; filename=#{download_id}.zip"
   rescue MyException => e
     render json: e.message, status: e.status
   end

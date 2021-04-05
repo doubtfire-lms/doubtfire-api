@@ -1,4 +1,4 @@
-class TeachingPeriod < ActiveRecord::Base
+class TeachingPeriod < ApplicationRecord
   # Relationships
   has_many :units
   has_many :breaks, dependent: :delete_all
@@ -16,6 +16,8 @@ class TeachingPeriod < ActiveRecord::Base
   validates :active_until, presence: true
 
   validate :validate_end_date_after_start_date, :validate_active_until_after_end_date
+
+  after_update :propogate_date_changes
 
   # Public methods
 
@@ -153,6 +155,14 @@ class TeachingPeriod < ActiveRecord::Base
   def validate_end_date_after_start_date
     if end_date.present? && start_date.present? && end_date < start_date
       errors.add(:end_date, "should be after the Start date")
+    end
+  end
+
+  def propogate_date_changes
+    return unless start_date_changed? || end_date_changed?
+    
+    units.each do |u|
+      u.update(start_date: self.start_date, end_date: self.end_date)
     end
   end
 end

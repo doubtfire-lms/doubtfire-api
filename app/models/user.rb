@@ -13,7 +13,7 @@ class String
   end
 end
 
-class User < ActiveRecord::Base
+class User < ApplicationRecord
   include AuthenticationHelpers
 
   ###
@@ -24,7 +24,10 @@ class User < ActiveRecord::Base
   attr_encrypted :auth_token,
                  key: Doubtfire::Application.secrets.secret_key_attr,
                  encode: true,
-                 attribute: 'authentication_token'
+                 attribute: 'authentication_token',
+                 algorithm: 'aes-256-cbc',
+                 mode: :single_iv_and_salt,
+                 insecure_mode: true
 
   # User authentication config
   if AuthenticationHelpers.aaf_auth?
@@ -291,6 +294,8 @@ class User < ActiveRecord::Base
       :convene_units,
       :download_stats,
       :handle_teaching_period,
+      :handle_campuses,
+      :handle_activity_types,
       :get_teaching_periods,
       :rollover
     ]

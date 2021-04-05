@@ -1,8 +1,10 @@
-require 'simplecov'
-SimpleCov.start 'rails'
-# Setup RAILS_ENV as test and expand config for test environment
-ENV['RAILS_ENV'] = 'test'
-require File.expand_path('../../config/environment', __FILE__)
+ENV["RAILS_ENV"] ||= "test"
+require_relative "../config/environment"
+require "rails/test_help"
+require "minitest/rails"
+
+# Consider setting MT_NO_EXPECTATIONS to not add expectations to Object.
+# ENV["MT_NO_EXPECTATIONS"] = true
 
 # Check if we're connected to the test DB
 begin
@@ -19,15 +21,16 @@ end
 # Require minitest extensions
 require 'minitest/rails'
 require 'minitest/pride'
-require 'minitest/around'
 
-# Require all test helpers
-require_all 'test/helpers'
-require 'rails/test_help'
-require 'database_cleaner'
-
+# require 'database_cleaner'
 class ActiveSupport::TestCase
   ActiveRecord::Migration.check_pending!
+
+  # Inclide FactoryBot
+  include FactoryBot::Syntax::Methods
+
+  # Run tests in parallel with specified workers
+  # parallelize(workers: :number_of_processors)
 
   # Setup all fixtures in test/fixtures/*.(yml|csv) for all tests in alphabetical order.
   #
@@ -42,6 +45,7 @@ class ActiveSupport::TestCase
   DatabaseCleaner.strategy = :transaction
 
   def setup
+    Faker::UniqueGenerator.clear
     DatabaseCleaner.start
   end
 
@@ -52,9 +56,9 @@ class ActiveSupport::TestCase
   # Add more helper methods to be used by all tests here...
   require_all 'test/helpers'
 
-  extend MiniTest::Spec::DSL
+  # extend MiniTest::Spec::DSL
 
-  register_spec_type self do |desc|
-    desc < ActiveRecord::Base if desc_is_a? Class
-  end
+  # register_spec_type self do |desc|
+  #   desc < ActiveRecord::Base if desc_is_a? Class
+  # end
 end

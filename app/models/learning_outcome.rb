@@ -1,4 +1,4 @@
-class LearningOutcome < ActiveRecord::Base
+class LearningOutcome < ApplicationRecord
   include ApplicationHelper
 
   belongs_to :unit

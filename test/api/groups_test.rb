@@ -17,7 +17,7 @@ class GroupsTest < ActiveSupport::TestCase
 #   end
 
   def test_group_submission_with_extensions
-    unit = Unit.first
+    unit = FactoryBot.create :unit
 
     group_set = GroupSet.create!({name: 'test_group_submission_with_extensions', unit: unit})
     group_set.save!
@@ -30,7 +30,8 @@ class GroupsTest < ActiveSupport::TestCase
 
     td = TaskDefinition.new({
         unit_id: unit.id,
-        name: 'Task to switch from ind to group after submission',                    
+        tutorial_stream: unit.tutorial_streams.first,
+        name: 'Task to switch from ind to group after submission',
         description: 'test def',
         weighting: 4,
         target_grade: 0,
@@ -48,15 +49,31 @@ class GroupsTest < ActiveSupport::TestCase
     assert td.save!
 
     data_to_post = {
+      comment: 'I need more time',
+      weeks_requested: 2
+    }
+
+    project = group.projects.first
+    tutor = project.tutor_for(td)
+
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/request_extension", with_auth_token(data_to_post, project.student)
+    comment_id = last_response_body["id"]
+    assert_equal 201, last_response.status, last_response_body
+
+    comment = TaskComment.find(comment_id)
+    comment.assess_extension(tutor, true)
+
+    data_to_post = {
       trigger: 'ready_to_mark'
     }
 
     data_to_post = with_file('test_files/submissions/test.sql', 'text/plain', data_to_post)
 
-    project = group.projects.first
+    data_to_post = {
+      trigger: 'ready_to_mark'
+    }
 
-    post with_auth_token "/api/projects/#{project.id}/task_def_id/#{td.id}/extension", project.student
-    assert_equal 201, last_response.status
+    data_to_post = with_file('test_files/submissions/test.sql', 'text/plain', data_to_post)
 
     post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", with_auth_token(data_to_post, project.student)
     assert_equal 201, last_response.status
@@ -79,7 +96,8 @@ class GroupsTest < ActiveSupport::TestCase
 
     td = TaskDefinition.new({
         unit_id: unit.id,
-        name: 'Task to switch from ind to group after submission',                    
+        tutorial_stream: unit.tutorial_streams.first,
+        name: 'Task to switch from ind to group after submission',
         description: 'test def',
         weighting: 4,
         target_grade: 0,
@@ -122,7 +140,8 @@ class GroupsTest < ActiveSupport::TestCase
 
     td = TaskDefinition.new({
         unit_id: unit.id,
-        name: 'Task to switch from ind to group after submission',                    
+        tutorial_stream: unit.tutorial_streams.first,
+        name: 'Task to switch from ind to group after submission',
         description: 'test def',
         weighting: 4,
         target_grade: 0,
@@ -141,7 +160,7 @@ class GroupsTest < ActiveSupport::TestCase
 
     project = unit.projects.first
 
-    comment_data = { attachment: Rack::Test::UploadedFile.new('test_files/submissions/00_question.pdf', 'application/pdf') }
+    comment_data = { attachment: upload_file('test_files/submissions/00_question.pdf', 'application/pdf') }
 
     post with_auth_token("/api/projects/#{project.id}/task_def_id/#{td.id}/comments", project.student), comment_data
 
@@ -161,7 +180,8 @@ class GroupsTest < ActiveSupport::TestCase
 
     td = TaskDefinition.new({
         unit_id: unit.id,
-        name: 'Task to switch from ind to group after submission',                    
+        tutorial_stream: unit.tutorial_streams.first,
+        name: 'Task to switch from ind to group after submission',
         description: 'test def',
         weighting: 4,
         target_grade: 0,
@@ -180,7 +200,7 @@ class GroupsTest < ActiveSupport::TestCase
 
     project = unit.projects.first
 
-    comment_data = { attachment: Rack::Test::UploadedFile.new('test_files/submissions/00_question.pdf', 'application/pdf') }
+    comment_data = { attachment: upload_file('test_files/submissions/00_question.pdf', 'application/pdf') }
 
     post with_auth_token("/api/projects/#{project.id}/task_def_id/#{td.id}/comments", project.student), comment_data
 

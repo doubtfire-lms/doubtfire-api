@@ -22,7 +22,7 @@ module Doubtfire
     # are: database, ldap, aaf. It can be overridden using the DF_AUTH_METHOD
     # environment variable.
     config.auth_method = (ENV['DF_AUTH_METHOD'] || :database).to_sym
-
+    
     # ==> Student work directory
     # File server location for storing student's work. Defaults to `student_work`
     # directory under root but is overridden using DF_STUDENT_WORK_DIR environment
@@ -102,6 +102,8 @@ module Doubtfire
     config.paths.add 'app/api', glob: '**/*.rb'
     config.autoload_paths += Dir["#{Rails.root}/app"]
     config.autoload_paths += Dir["#{Rails.root}/app/serializers"]
+    config.autoload_paths += Dir[Rails.root.join("app", "models", "{*/}")]
+    
     # CORS config
     config.middleware.insert_before Warden::Manager, Rack::Cors do
       allow do
