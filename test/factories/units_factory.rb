@@ -18,7 +18,7 @@ FactoryBot.define do
 
   factory :learning_outcome do
     unit
-    name                      { Faker::Lorem.unique.words(3).join(' ') }
+    name                      { Faker::Lorem.unique.words(number: 3).join(' ') }
     sequence(:abbreviation)   { |n| "ULO-#{n}" }
     sequence(:ilo_number)     { |n| n }
     description               { Faker::Lorem.sentence }
@@ -51,12 +51,12 @@ FactoryBot.define do
       inactive_student_count      { 1 }
     end
 
-    name            { Faker::Lorem.unique.words(2).join(' ') }
+    name            { Faker::Lorem.unique.words(number: 2).join(' ') }
     description     { Faker::Lorem.sentence }
     teaching_period { nil }
     start_date      { teaching_period.present? ? teaching_period.start_date : Time.zone.now - 3.weeks }
     end_date        { teaching_period.present? ? teaching_period.end_date : Time.zone.now + 14.weeks - 3.weeks }
-    code            { "SIT#{Faker::Number.unique.number(3)}" }
+    code            { "SIT#{Faker::Number.unique.number(digits: 3)}" }
     active          { true }
     auto_apply_extension_before_deadline { true }
     send_notifications { true }
