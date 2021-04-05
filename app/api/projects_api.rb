@@ -32,7 +32,7 @@ module Api
                         )
 
       # Now map the data to structure for json to return
-      data.map do |row|
+      result = data.map do |row|
         {
           unit_id: row['unit_id'],
           unit_code: row['unit_code'],
@@ -48,6 +48,8 @@ module Api
           active: row['active'].is_a?(Numeric) ? row['active'] != 0 : row['active']
         }
       end
+
+      ActiveModel::Serializer::CollectionSerializer.new(result, serializer: ShallowProjectSerializer)
     end
 
     desc 'Get project'

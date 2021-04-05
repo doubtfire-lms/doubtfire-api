@@ -15,7 +15,7 @@ module Api
       optional :attachment, type: Rack::Multipart::UploadedFile, desc: 'Image, sound, PDF or video comment file'
       optional :reply_to_id, type: Integer, desc: 'The comment to which this comment is replying'
     end
-    post '/projects/:project_id/task_def_id/:task_definition_id/comments' do
+    post '/projects/:project_id/task_def_id/:task_definition_id/comments', serializer: TaskCommentSerializer do
       project = Project.find(params[:project_id])
       task_definition = project.unit.task_definitions.find(params[:task_definition_id])
 

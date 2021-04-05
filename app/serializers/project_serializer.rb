@@ -3,7 +3,21 @@
 
 require 'task_serializer'
 
-class ProjectSerializer < ActiveModel::Serializer
+class ShallowProjectSerializer < HashSerializer
+  attributes  :unit_id,
+              :unit_code,
+              :unit_name,
+              :project_id,
+              :campus_id,
+              :target_grade,
+              :has_portfolio,
+              :start_date,
+              :end_date,
+              :teaching_period_id,
+              :active
+end
+
+class ProjectSerializer < DoubtfireSerializer
   attributes :unit_id,
              :project_id,
              :student_id,
@@ -26,30 +40,30 @@ class ProjectSerializer < ActiveModel::Serializer
   has_many :tutorial_enrolments
 
   def project_id
-    object.object.id
+    object.id
   end
 
   def student_name
-    "#{object.object.student.name}#{object.object.student.nickname.nil? ? '' : ' (' << object.object.student.nickname << ')'}"
+    "#{object.student.name}#{object.student.nickname.nil? ? '' : ' (' << object.student.nickname << ')'}"
   end
 
   def student_id
-    object.object.student.username
+    object.student.username
   end
 
   def stats
-    object.object.task_stats
+    object.task_stats
   end
 
   def tasks
-    object.object.task_details_for_shallow_serializer(Thread.current[:user])
+    object.task_details_for_shallow_serializer(Thread.current[:user])
   end
 
   has_many :groups, serializer: GroupSerializer
   has_many :task_outcome_alignments, serializer: LearningOutcomeTaskLinkSerializer
 
   def my_role_obj
-    object.object.role_for(Thread.current[:user]) if Thread.current[:user]
+    object.role_for(Thread.current[:user]) if Thread.current[:user]
   end
 
   def include_grade?
@@ -67,23 +81,23 @@ class ProjectSerializer < ActiveModel::Serializer
   end
 end
 
-class GroupMemberProjectSerializer < ActiveModel::Serializer
+class GroupMemberProjectSerializer < DoubtfireSerializer
   attributes :student_id, :project_id, :student_name, :target_grade
 
   def project_id
-    object.object.id
+    object.id
   end
 
   def student_id
-    object.object.student.username
+    object.student.username
   end
 
   def student_name
-    "#{object.object.student.name}#{object.object.student.nickname.nil? ? '' : ' (' << object.object.student.nickname << ')'}"
+    "#{object.student.name}#{object.student.nickname.nil? ? '' : ' (' << object.student.nickname << ')'}"
   end
 
   def my_role_obj
-    object.object.role_for(Thread.current[:user]) if Thread.current[:user]
+    object.role_for(Thread.current[:user]) if Thread.current[:user]
   end
 
   def include_student_id?
