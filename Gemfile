@@ -11,7 +11,7 @@ ruby_versions = {
 ruby ruby_versions[(ENV['RAILS_ENV'] || 'development').to_sym]
 
 # The venerable, almighty Rails
-gem 'rails', '6.0.0'
+gem 'rails', '~>6.1.0'
 
 group :development, :test do
   gem 'database_cleaner'
@@ -22,7 +22,9 @@ group :development, :test do
   gem 'better_errors'
   gem 'rails_best_practices'
   gem 'thin'
-  gem 'rubocop', '0.46.0'
+  gem 'rubocop'
+  gem 'rubocop-faker'
+  gem 'rubocop-rails'
   gem 'factory_bot_rails'
 end
 
@@ -30,7 +32,7 @@ group :development, :test, :staging do
   # Generators for population
   gem 'factory_bot_rails'
   gem 'factory_bot'
-  gem 'faker', '~>1.9.1'
+  gem 'faker'
   gem 'minitest-rails'
   gem 'minitest-around'
   gem 'webmock'
@@ -62,7 +64,7 @@ gem 'moss_ruby', '>= 1.1.2'
 gem 'rails-latex', '>2.3'
 
 # API
-gem 'grape', '1.2.4'
+gem 'grape'
 gem 'active_model_serializers', '~> 0.10.0'
 gem 'grape-active_model_serializers', '~> 1.3.2'
 gem 'grape-swagger'
