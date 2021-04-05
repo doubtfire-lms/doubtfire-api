@@ -7,7 +7,7 @@ class AuthToken < ActiveRecord::Base
 
   # Auth token encryption settings
   attr_encrypted :authentication_token,
-    key: Doubtfire::Application.secrets.secret_key_attr,
+    key: Doubtfire::Application.secrets.secret_key_attr[0,32],
     mode: :per_attribute_iv,
     algorithm: 'aes-256-gcm'
 
