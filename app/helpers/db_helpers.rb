@@ -1,7 +1,7 @@
 module DbHelpers
   def db_concat(*args)
     env = ENV['RAILS_ENV'] || 'development'
-    adapter = ActiveRecord::Base.configurations[env]['adapter'].to_sym
+    adapter = ActiveRecord::Base.configurations.configs_for(env_name:env)[:adapter].to_sym
     args.map! { |arg| arg.class == Symbol ? arg.to_s : arg }
 
     case adapter
