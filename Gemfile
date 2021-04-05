@@ -25,7 +25,6 @@ group :development, :test do
   gem 'rubocop'
   gem 'rubocop-faker'
   gem 'rubocop-rails'
-  gem 'factory_bot_rails'
 end
 
 group :development, :test, :staging do
