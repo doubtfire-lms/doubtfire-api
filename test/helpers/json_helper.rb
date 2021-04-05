@@ -35,7 +35,14 @@ module TestHelpers
     #
     def assert_json_matches_model(model, response_json, keys)
       keys.each { |k| assert response_json.key?(k), "Response missing key #{k} - #{response_json}" }
-      keys.each { |k| assert_equal model[k], response_json[k], "Values for key #{k} do not match - #{response_json}" }
+      keys.each { |k| 
+        value = model.send(k)
+        if ! value.nil?
+          assert_equal value, response_json[k], "Values for key #{k} do not match - #{response_json}"
+        else
+          assert_nil response_json[k], "Values for key #{k} is not nil - #{response_json}"
+        end
+      }
     end
 
     #
