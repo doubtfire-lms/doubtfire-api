@@ -14,19 +14,25 @@ module Api
     rescue_from :all do |e|
       case e
       when ActiveRecord::RecordInvalid, Grape::Exceptions::ValidationErrors
-        error!(e.message, 400)
+        message = e.message
+        status = 400
       when Grape::Exceptions::MethodNotAllowed
-        error!(e.message, 405)
+        message = e.message
+        status = 405
       when ActiveRecord::RecordNotDestroyed
-        error!(e.message, 400)
+        message = e.message
+        status = 400
       when ActiveRecord::RecordNotFound
-        error!("Unable to find requested #{e.message[/(Couldn't find )(.*)( with)/,2]}", 404)
+        message = "Unable to find requested #{e.message[/(Couldn't find )(.*)( with)/,2]}"
+        status = 404
       else
         logger.error "Unhandled exception: #{e.class}"
         logger.error e.inspect
         logger.error e.backtrace.join("\n")
-        error!("Sorry... something went wrong with your request.", 500)
+        message = "Sorry... something went wrong with your request."
+        status = 500
       end
+      Rack::Response.new( {message: message}.to_json, status, { 'Content-type' => 'text/error' } )
     end
 
     #
