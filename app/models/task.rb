@@ -1125,7 +1125,7 @@ class Task < ApplicationRecord
     # id, name, filename, type, tempfile
     #
     files.each do |file|
-      ui.error!({ 'error' => "Missing file data for '#{file.name}'" }, 403) if file.id.nil? || file.name.nil? || file.filename.nil? || file.type.nil? || file["tempfile"].nil?
+      ui.error!({ 'error' => "Missing file data for '#{file[:name]}'" }, 403) if file[:id].nil? || file[:name].nil? || file[:filename].nil? || file[:type].nil? || file["tempfile"].nil?
     end
 
     # Ensure group if group task
@@ -1137,22 +1137,22 @@ class Task < ApplicationRecord
     if group_task? && group_submission && group_submission.processing_pdf? && group_submission.submitter_task != self
       ui.error!({ 'error' => "#{group_submission.submitter_task.project.student.name} has just submitted this task. Only one team member needs to submit this task, so check back soon to see what was uploaded." }, 403)
     end
-    # file.key            = "file0"
-    # file.name           = front end name for file
+    # file[:key]            = "file0"
+    # file[:name]           = front end name for file
     # file["tempfile"].path  = actual file dir
-    # file.filename       = their name for the file
+    # file[:filename]       = their name for the file
 
     #
     # Confirm subtype categories using filemagic
     #
     files.each_with_index do |file, index|
       logger.debug "Accepting submission (file #{index + 1} of #{files.length}) - checking file type for #{file["tempfile"].path}"
-      unless FileHelper.accept_file(file, file.name, file.type)
-        ui.error!({ 'error' => "'#{file.name}' is not a valid #{file.type} file" }, 403)
+      unless FileHelper.accept_file(file, file[:name], file[:type])
+        ui.error!({ 'error' => "'#{file[:name]}' is not a valid #{file[:type]} file" }, 403)
       end
 
       if File.size(file["tempfile"].path) > 10_000_000
-        ui.error!({ 'error' => "'#{file.name}' exceeds the 10MB file limit. Try compressing or reformat and submit again." }, 403)
+        ui.error!({ 'error' => "'#{file[:name]}' exceeds the 10MB file limit. Try compressing or reformat and submit again." }, 403)
       end
     end
 
@@ -1181,7 +1181,7 @@ class Task < ApplicationRecord
     portfolio_evidence = nil
 
     files.each_with_index.map do |file, idx|
-      output_filename = File.join(tmp_dir, "#{idx.to_s.rjust(3, '0')}-#{file.type}#{File.extname(file.filename).downcase}")
+      output_filename = File.join(tmp_dir, "#{idx.to_s.rjust(3, '0')}-#{file[:type]}#{File.extname(file[:filename]).downcase}")
       FileUtils.cp file["tempfile"].path, output_filename
     end
 

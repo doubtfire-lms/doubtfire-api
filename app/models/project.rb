@@ -672,7 +672,7 @@ class Project < ApplicationRecord
     FileUtils.mkdir_p(portfolio_tmp_dir)
     result = {
       kind: kind,
-      name: file.filename
+      name: file[:filename]
     }
 
     # copy up the learning summary report as first -- otherwise use files to determine idx

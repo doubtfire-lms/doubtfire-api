@@ -244,7 +244,7 @@ module Api
       file = params[:file]
 
       unless FileHelper.accept_file(file, 'task sheet', 'document')
-        error!({ error: "'#{file.name}' is not a valid #{file.type} file" }, 403)
+        error!({ error: "'#{file[:name]}' is not a valid #{file[:type]} file" }, 403)
       end
 
       # Actually import...
