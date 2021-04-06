@@ -212,15 +212,27 @@ class UnitsApiTest < ActiveSupport::TestCase
 
     actual_unit = last_response_body
     expected_unit = Unit.find(2)
+  end
+
+  def test_unit_output()
+    expected_unit = FactoryBot.create :unit, group_sets: 1, groups: [{ gs: 0, students: 2}]
+
+    # Add username and auth_token to Header
+    add_auth_header_for(user: expected_unit.main_convenor_user)
+
+    # Get the unit...
+    get "/api/units/#{expected_unit.id}"
+
+    actual_unit = last_response_body
 
     # Check to see if the first unit's match
     assert_equal actual_unit['start_date'].to_date, expected_unit.start_date.to_date
     assert_equal actual_unit['end_date'].to_date, expected_unit.end_date.to_date
 
-    keys = ["code", "id", "name", "main_convenor_id", "description", "teaching_period_id", "active", "auto_apply_extension_before_deadline", "send_notifications", "enable_sync_enrolments", "enable_sync_timetable", "group_memberships", "draft_task_definition_id", "allow_student_extension_requests", "extension_weeks_on_resubmit_request", "allow_student_change_tutorial"]
+    keys = ["code", "id", "name", "main_convenor_id", "description", "teaching_period_id", "active", "auto_apply_extension_before_deadline", "send_notifications", "enable_sync_enrolments", "enable_sync_timetable", "draft_task_definition_id", "allow_student_extension_requests", "extension_weeks_on_resubmit_request", "allow_student_change_tutorial"]
 
     assert actual_unit.key?("my_role"), actual_unit.inspect
-    assert_equal expected_unit.role_for(User.first).name, actual_unit["my_role"]
+    assert_equal expected_unit.role_for(expected_unit.main_convenor_user).name, actual_unit["my_role"]
 
     assert_json_matches_model expected_unit, actual_unit, keys
 
@@ -232,14 +244,21 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert actual_unit.key?("staff"), actual_unit.inspect
     assert actual_unit.key?("group_sets"), actual_unit.inspect
     assert actual_unit.key?("ilos"), actual_unit.inspect
+
     assert actual_unit.key?("task_outcome_alignments"), actual_unit.inspect
+    assert_equal expected_unit.task_outcome_alignments.count, actual_unit["task_outcome_alignments"].count, actual_unit["task_outcome_alignments"].inspect
+    actual_unit["task_outcome_alignments"].each do |align|
+      keys = %w(id name tutorial_id group_set_id student_count capacity_adjustment locked)
+      assert_json_limit_keys_to_exactly keys, align
+      assert_json_matches_model LearningOutcomeTaskLinks.find(align.id), align, keys
+    end
 
     assert actual_unit.key?("groups"), actual_unit.inspect
     assert_equal expected_unit.groups.count, actual_unit["groups"].count, actual_unit["groups"].inspect
     actual_unit["groups"].each do |group|
       keys = %w(id name tutorial_id group_set_id student_count capacity_adjustment locked)
-      assert_json_limit_keys_to_exactly keys, actual_unit["groups"]
-      assert_json_matches_model Group.find(group.id), group, keys
+      assert_json_limit_keys_to_exactly keys, group
+      assert_json_matches_model Group.find(group['id']), group, keys
     end
   end
 
