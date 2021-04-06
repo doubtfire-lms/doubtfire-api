@@ -233,7 +233,14 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert actual_unit.key?("group_sets"), actual_unit.inspect
     assert actual_unit.key?("ilos"), actual_unit.inspect
     assert actual_unit.key?("task_outcome_alignments"), actual_unit.inspect
+
     assert actual_unit.key?("groups"), actual_unit.inspect
+    assert_equal expected_unit.groups.count, actual_unit["groups"].count, actual_unit["groups"].inspect
+    actual_unit["groups"].each do |group|
+      keys = %w(id name tutorial_id group_set_id student_count capacity_adjustment locked)
+      assert_json_limit_keys_to_exactly keys, actual_unit["groups"]
+      assert_json_matches_model Group.find(group.id), group, keys
+    end
   end
 
   def test_units_get_has_streams
