@@ -12,7 +12,7 @@ module Api
     desc 'Add a new comment to a task'
     params do
       optional :comment, type: String, desc: 'The comment text to add to the task'
-      optional :attachment, type: Rack::Multipart::UploadedFile, desc: 'Image, sound, PDF or video comment file'
+      optional :attachment, type: File, desc: 'Image, sound, PDF or video comment file'
       optional :reply_to_id, type: Integer, desc: 'The comment to which this comment is replying'
     end
     post '/projects/:project_id/task_def_id/:task_definition_id/comments', serializer: TaskCommentSerializer do

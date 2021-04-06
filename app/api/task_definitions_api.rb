@@ -175,7 +175,7 @@ module Api
 
     desc 'Upload CSV of task definitions to the provided unit'
     params do
-      requires :file, type: Rack::Multipart::UploadedFile, desc: 'CSV upload file.'
+      requires :file, type: File, desc: 'CSV upload file.'
       requires :unit_id, type: Integer, desc: 'The unit to upload tasks to'
     end
     post '/csv/task_definitions' do
@@ -230,7 +230,7 @@ module Api
     params do
       requires :unit_id, type: Integer, desc: 'The related unit'
       requires :task_def_id, type: Integer, desc: 'The related task definition'
-      requires :file, type: Rack::Multipart::UploadedFile, desc: 'The task sheet pdf'
+      requires :file, type: File, desc: 'The task sheet pdf'
     end
     post '/units/:unit_id/task_definitions/:task_def_id/task_sheet' do
       unit = Unit.find(params[:unit_id])
@@ -274,7 +274,7 @@ module Api
     params do
       requires :unit_id, type: Integer, desc: 'The related unit'
       requires :task_def_id, type: Integer, desc: 'The related task definition'
-      requires :file, type: Rack::Multipart::UploadedFile, desc: 'The task resources zip'
+      requires :file, type: File, desc: 'The task resources zip'
     end
     post '/units/:unit_id/task_definitions/:task_def_id/task_resources' do
       unit = Unit.find(params[:unit_id])
@@ -319,7 +319,7 @@ module Api
     desc 'Upload a zip file containing the task pdfs for a given task'
     params do
       requires :unit_id, type: Integer, desc: 'The unit to upload tasks for'
-      requires :file, type: Rack::Multipart::UploadedFile, desc: 'batch file upload'
+      requires :file, type: File, desc: 'batch file upload'
     end
     post '/units/:unit_id/task_definitions/task_pdfs' do
       unit = Unit.find(params[:unit_id])
