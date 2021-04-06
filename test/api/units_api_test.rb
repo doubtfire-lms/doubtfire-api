@@ -96,7 +96,7 @@ class UnitsApiTest < ActiveSupport::TestCase
 
     post_json '/api/units', data_to_post
     assert_equal count + 1, Unit.all.length
-  
+
     assert_equal 201, last_response.status
 
     post_json '/api/units', data_to_post
@@ -214,10 +214,26 @@ class UnitsApiTest < ActiveSupport::TestCase
     expected_unit = Unit.find(2)
 
     # Check to see if the first unit's match
-    assert_equal actual_unit['name'], expected_unit.name
-    assert_equal actual_unit['code'], expected_unit.code
     assert_equal actual_unit['start_date'].to_date, expected_unit.start_date.to_date
     assert_equal actual_unit['end_date'].to_date, expected_unit.end_date.to_date
+
+    keys = ["code", "id", "name", "main_convenor_id", "description", "teaching_period_id", "active", "auto_apply_extension_before_deadline", "send_notifications", "enable_sync_enrolments", "enable_sync_timetable", "group_memberships", "draft_task_definition_id", "allow_student_extension_requests", "extension_weeks_on_resubmit_request", "allow_student_change_tutorial"]
+
+    assert actual_unit.key?("my_role"), actual_unit.inspect
+    assert_equal expected_unit.role_for(User.first).name, actual_unit["my_role"]
+
+    assert_json_matches_model expected_unit, actual_unit, keys
+
+    assert actual_unit.key?("ilos"), actual_unit.inspect
+    assert actual_unit.key?("tutorial_streams"), actual_unit.inspect
+    assert actual_unit.key?("tutorials"), actual_unit.inspect
+    assert actual_unit.key?("tutorial_enrolments"), actual_unit.inspect
+    assert actual_unit.key?("task_definitions"), actual_unit.inspect
+    assert actual_unit.key?("staff"), actual_unit.inspect
+    assert actual_unit.key?("group_sets"), actual_unit.inspect
+    assert actual_unit.key?("ilos"), actual_unit.inspect
+    assert actual_unit.key?("task_outcome_alignments"), actual_unit.inspect
+    assert actual_unit.key?("groups"), actual_unit.inspect
   end
 
   def test_units_get_has_streams
@@ -257,14 +273,14 @@ class UnitsApiTest < ActiveSupport::TestCase
 
   #Test GET for getting the unit details of current user
   def test_units_current
-    
+
     # Add username and auth_token to Header
     add_auth_header_for(user: User.first)
 
     get '/api/units'
     assert_equal 200, last_response.status
   end
-  
+
 
   #Test PUT for updating unit details with valid id
   def test_units_put
@@ -325,7 +341,7 @@ class UnitsApiTest < ActiveSupport::TestCase
 
     # Add username and auth_token to Header
     add_auth_header_for(user: User.first)
-    
+
     get '/api/units/12'
     assert_equal 404, last_response.status
   end
