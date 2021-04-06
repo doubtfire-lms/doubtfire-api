@@ -128,19 +128,7 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert_equal 500, last_response.status
   end
 
-
-  def assert_tutorial_model_response(response, expected)
-    expected = expected.as_json
-
-    # Can't use assert_json_matches_model as keys differ
-    assert_equal response[:meeting_day], expected[:day]
-    assert_equal response[:meeting_time], expected[:time]
-    assert_equal response[:location], expected[:location]
-    assert_equal response[:abbrev], expected[:abbrev]
-  end
-
-
-  def test_addtutorial_to_unit
+  def test_add_tutorial_to_unit
     count_tutorials = Tutorial.all.length
 
     tutorial = {
@@ -166,7 +154,7 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert_equal 201, last_response.status, last_response_body
     # Check there is a new tutorial
     assert_equal count_tutorials + 1, Tutorial.all.length, last_response_body
-    assert_tutorial_model_response last_response_body, tutorial
+    assert_json_matches_model tutorial, last_response_body, ["abbreviation", "capacity", "meeting_location", "meeting_day", "meeting_time"]
   end
 
   # End POST tests
@@ -185,7 +173,7 @@ class UnitsApiTest < ActiveSupport::TestCase
 
     actual_unit = last_response_body[0]
     expected_unit = Unit.first
-    assert_equal expected_unit.name, actual_unit['name']
+    assert_equal expected_unit.name, actual_unit['name'], last_response_body
     assert_equal expected_unit.code, actual_unit['code']
     assert_equal expected_unit.start_date.to_date, actual_unit['start_date'].to_date
     assert_equal expected_unit.end_date.to_date, actual_unit['end_date'].to_date.to_date
@@ -249,7 +237,7 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert_equal actual_unit['start_date'].to_date, expected_unit.start_date.to_date
     assert_equal actual_unit['end_date'].to_date, expected_unit.end_date.to_date
 
-    assert_equal 2, actual_unit['tutorial_streams'].count
+    assert_equal 2, actual_unit['tutorial_streams'].count, actual_unit.inspect
 
     expected_unit = FactoryBot.create(:unit, with_students: false, stream_count: 3)
 
@@ -421,7 +409,7 @@ class UnitsApiTest < ActiveSupport::TestCase
 
     assert_equal 403, last_response.status
     unit.reload
-    assert_equal unit.draft_task_definition_id, nil
+    assert_nil unit.draft_task_definition_id
 
     # Test with task containing multiple upload requirements
     data_to_put = {
@@ -435,7 +423,7 @@ class UnitsApiTest < ActiveSupport::TestCase
 
     assert_equal 403, last_response.status
     unit.reload
-    assert_equal unit.draft_task_definition_id, nil
+    assert_nil unit.draft_task_definition_id
 
     # Test with a singular document upload (valid draft learning summary task definition)
     data_to_put = {
