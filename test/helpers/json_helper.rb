@@ -35,7 +35,7 @@ module TestHelpers
     #
     def assert_json_matches_model(model, response_json, keys)
       keys.each { |k| assert response_json.key?(k), "Response missing key #{k} - #{response_json}" }
-      keys.each { |k| 
+      keys.each { |k|
         value = model.is_a?(Hash) ? model[k] || model[k.to_sym] : model.send(k)
         if ! value.nil?
           assert_equal value, response_json[k], "Values for key #{k} do not match - #{response_json}"
@@ -43,6 +43,17 @@ module TestHelpers
           assert_nil response_json[k], "Values for key #{k} is not nil - #{response_json}"
         end
       }
+    end
+
+    def assert_json_limit_keys_to(keys, response_json)
+      response_json.keys.each do |k|
+        assert keys.include?(k), "Unexpected key in response: #{k} -- #{response_json.inspect}"
+      end
+    end
+
+    def assert_json_limit_keys_to_exactly(keys, response_json)
+      assert_equal keys.count, response_json.count, "Incorrect number of keys: #{response_json.inspect}"
+      assert_json_limit_keys_to keys, response_json
     end
 
     #
