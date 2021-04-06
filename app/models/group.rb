@@ -59,7 +59,7 @@ class Group < ApplicationRecord
       :lock_group,
       :can_exceed_capacity,
       :move_tutorial
-    ]    
+    ]
     # What can nil users do with groups?
     nil_role_permissions = [
     ]
@@ -109,12 +109,16 @@ class Group < ApplicationRecord
     result
   end
 
+  def student_count
+    group_memberships.joins(:project).where(active: true, 'projects.enrolled' => true).count
+  end
+
   def at_capacity?
-    capacity.present? && group_memberships.joins(:project).where(active: true, 'projects.enrolled' => true).count >= capacity
+    capacity.present? && student_count >= capacity
   end
 
   def beyond_capacity?
-    capacity.present? && group_memberships.joins(:project).where(active: true, 'projects.enrolled' => true).count > capacity
+    capacity.present? && student_count > capacity
   end
 
   def switch_to_tutorial tutorial
