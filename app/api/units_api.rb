@@ -266,7 +266,7 @@ module Api
 
     desc 'Upload CSV of all the students in a unit'
     params do
-      requires :file, type: Rack::Multipart::UploadedFile, desc: 'CSV upload file.'
+      requires :file, type: File, desc: 'CSV upload file.'
     end
     post '/csv/units/:id' do
       unit = Unit.find(params[:id])
@@ -286,7 +286,7 @@ module Api
 
     desc 'Upload CSV with the students to un-enrol from the unit'
     params do
-      requires :file, type: Rack::Multipart::UploadedFile, desc: 'CSV upload file.'
+      requires :file, type: File, desc: 'CSV upload file.'
     end
     post '/csv/units/:id/withdraw' do
       unit = Unit.find(params[:id])

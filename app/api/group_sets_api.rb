@@ -237,9 +237,9 @@ module Api
 
     desc 'Upload a CSV for groups in a group set'
     params do
-      requires :unit_id,                            type: Integer,  desc: 'The unit for the new group'
-      requires :group_set_id,                       type: Integer,  desc: 'The id of the group set'
-      requires :file, type: Rack::Multipart::UploadedFile, desc: 'CSV upload file.'
+      requires :unit_id,      type: Integer,  desc: 'The unit for the new group'
+      requires :group_set_id, type: Integer,  desc: 'The id of the group set'
+      requires :file,         type: File, desc: 'CSV upload file.'
     end
     post '/units/:unit_id/group_sets/:group_set_id/groups/csv' do
       # check mime is correct before uploading
@@ -257,9 +257,9 @@ module Api
 
     desc 'Upload a CSV for students in groups in a group set'
     params do
-      requires :unit_id,                            type: Integer,  desc: 'The unit for the new group'
-      requires :group_set_id,                       type: Integer,  desc: 'The id of the group set'
-      requires :file, type: Rack::Multipart::UploadedFile, desc: 'CSV upload file.'
+      requires :unit_id,      type: Integer,  desc: 'The unit for the new group'
+      requires :group_set_id, type: Integer,  desc: 'The id of the group set'
+      requires :file,         type: File, desc: 'CSV upload file.'
     end
     post '/units/:unit_id/group_sets/:group_set_id/groups/student_csv' do
       # check mime is correct before uploading
