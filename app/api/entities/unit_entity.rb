@@ -48,7 +48,7 @@
 #   has_many :ilos, serializer: LearningOutcomeSerializer
 #   has_many :task_outcome_alignments, serializer: LearningOutcomeTaskLinkSerializer
 #   has_many :groups, serializer: GroupSerializer
-  
+
 #   def group_memberships
 #     ActiveModel::ArraySerializer.new(object.group_memberships.where(active: true), each_serializer: GroupMembershipSerializer)
 #   end
@@ -82,33 +82,50 @@
 module Api
   module Entities
     class UnitEntity < Grape::Entity
+      format_with(:date_only) do |date|
+        date.strftime('%Y-%m-%d')
+      end
+
       expose :code
       expose :id
       expose :name
       expose :my_role do |unit, options|
-        unit.role_for(options[:user])
+        role = unit.role_for(options[:user])
+        role.name unless role.nil?
       end
       expose :main_convenor_id
       expose :description
       expose :teaching_period_id
-      expose :start_date
-      expose :end_date
-      expose :active
-      expose :convenors
-      expose :ilos do |unit, options|
-        Api::Entities::LearningOutcomeEntity.represent object.learning_outcomes, options
+
+      with_options(format_with: :date_only) do
+        expose :start_date
+        expose :end_date
       end
+
+      expose :active
       expose :auto_apply_extension_before_deadline
       expose :send_notifications
       expose :enable_sync_enrolments
       expose :enable_sync_timetable
-      expose :group_memberships
       expose :draft_task_definition_id
       expose :allow_student_extension_requests
       expose :extension_weeks_on_resubmit_request
       expose :allow_student_change_tutorial
 
+      expose :learning_outcomes, using: LearningOutcomeEntity, as: :ilos
       expose :tutorial_streams, using: TutorialStreamEntity
+      expose :tutorials, using: TutorialEntity
+      expose :tutorial_enrolments, using: TutorialEnrolmentEntity, if: lambda { |unit, options|
+        ([ Role.convenor, :convenor, Role.tutor, :tutor ].include? unit.role_for(options[:user])) || (user.role_id == Role.admin_id)
+      }
+      expose :task_definitions, using: TaskDefinitionEntity
+      expose :task_outcome_alignments, using: TaskOutcomeAlignmentEntity
+      expose :staff, using: UnitRoleEntity
+      expose :group_sets, using: GroupSetEntity
+      expose :groups, using: GroupEntity
+      expose :group_memberships, using: GroupMembershipEntity do |unit, options|
+        unit.group_memberships.where(active: true)
+      end
     end
   end
 end
