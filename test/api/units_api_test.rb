@@ -215,7 +215,7 @@ class UnitsApiTest < ActiveSupport::TestCase
   end
 
   def test_unit_output()
-    expected_unit = FactoryBot.create :unit, group_sets: 1, groups: [{ gs: 0, students: 2}]
+    expected_unit = FactoryBot.create :unit, group_sets: 1, groups: [{ gs: 0, students: 2}], task_alignment_links: 2
 
     # Add username and auth_token to Header
     add_auth_header_for(user: expected_unit.main_convenor_user)
@@ -248,9 +248,9 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert actual_unit.key?("task_outcome_alignments"), actual_unit.inspect
     assert_equal expected_unit.task_outcome_alignments.count, actual_unit["task_outcome_alignments"].count, actual_unit["task_outcome_alignments"].inspect
     actual_unit["task_outcome_alignments"].each do |align|
-      keys = %w(id name tutorial_id group_set_id student_count capacity_adjustment locked)
+      keys = %w(id description rating learning_outcome_id task_definition_id task_id)
       assert_json_limit_keys_to_exactly keys, align
-      assert_json_matches_model LearningOutcomeTaskLinks.find(align.id), align, keys
+      assert_json_matches_model LearningOutcomeTaskLink.find(align['id']), align, keys
     end
 
     assert actual_unit.key?("groups"), actual_unit.inspect
