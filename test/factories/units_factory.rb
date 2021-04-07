@@ -49,6 +49,7 @@ FactoryBot.define do
       perform_submissions         { false }
       staff_count                 { 1 }
       inactive_student_count      { 1 }
+      task_alignment_links        { 0 }
     end
 
     name            { Faker::Lorem.unique.words(number: 2).join(' ') }
@@ -82,13 +83,19 @@ FactoryBot.define do
 
       campuses = create_list(:campus, eval.campus_count)
       create_list(:group_set, group_sets, unit: unit)
-      create_list(:learning_outcome, eval.outcome_count, unit: unit)
+      outcomes = create_list(:learning_outcome, eval.outcome_count, unit: unit)
       tutorial_streams = create_list(:tutorial_stream, eval.stream_count, unit: unit)
       task_definitions = create_list(:task_definition, task_count, unit: unit)
 
       if eval.set_one_of_each_task
         task_definitions[1].update(max_quality_pts: 5)
         task_definitions[2].update(is_graded: true)
+      end
+
+      while unit.task_outcome_alignments.count < eval.task_alignment_links do
+        td = task_definitions.sample
+        o = outcomes.sample
+        LearningOutcomeTaskLink.create task_definition: td, learning_outcome: o, rating: (1..5).to_a.sample, description: "Justification"
       end
 
       campuses.each do |c|
