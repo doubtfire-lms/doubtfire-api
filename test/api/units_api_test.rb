@@ -243,7 +243,15 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert actual_unit.key?("task_definitions"), actual_unit.inspect
     assert actual_unit.key?("staff"), actual_unit.inspect
     assert actual_unit.key?("group_sets"), actual_unit.inspect
+
     assert actual_unit.key?("ilos"), actual_unit.inspect
+    assert_equal expected_unit.learning_outcomes.count, actual_unit["ilos"].count, actual_unit["ilos"].inspect
+    actual_unit["ilos"].each do |outcome|
+      keys = %w(id ilo_number abbreviation name description)
+      assert_json_limit_keys_to_exactly keys, outcome
+      assert_json_matches_model LearningOutcome.find(outcome['id']), outcome, keys
+    end
+
 
     assert actual_unit.key?("task_outcome_alignments"), actual_unit.inspect
     assert_equal expected_unit.task_outcome_alignments.count, actual_unit["task_outcome_alignments"].count, actual_unit["task_outcome_alignments"].inspect
