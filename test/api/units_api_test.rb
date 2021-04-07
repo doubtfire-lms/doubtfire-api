@@ -242,7 +242,14 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert actual_unit.key?("tutorial_enrolments"), actual_unit.inspect
     assert actual_unit.key?("task_definitions"), actual_unit.inspect
     assert actual_unit.key?("staff"), actual_unit.inspect
+
     assert actual_unit.key?("group_sets"), actual_unit.inspect
+    assert_equal expected_unit.group_sets.count, actual_unit["group_sets"].count, actual_unit["group_sets"].inspect
+    actual_unit["group_sets"].each do |gs|
+      keys = %w(id name allow_students_to_create_groups allow_students_to_manage_groups keep_groups_in_same_class capacity locked)
+      assert_json_limit_keys_to_exactly keys, gs
+      assert_json_matches_model GroupSet.find(gs['id']), gs, keys
+    end
 
     assert actual_unit.key?("ilos"), actual_unit.inspect
     assert_equal expected_unit.learning_outcomes.count, actual_unit["ilos"].count, actual_unit["ilos"].inspect
@@ -251,7 +258,6 @@ class UnitsApiTest < ActiveSupport::TestCase
       assert_json_limit_keys_to_exactly keys, outcome
       assert_json_matches_model LearningOutcome.find(outcome['id']), outcome, keys
     end
-
 
     assert actual_unit.key?("task_outcome_alignments"), actual_unit.inspect
     assert_equal expected_unit.task_outcome_alignments.count, actual_unit["task_outcome_alignments"].count, actual_unit["task_outcome_alignments"].inspect
