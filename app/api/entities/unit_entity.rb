@@ -116,7 +116,7 @@ module Api
       expose :tutorial_streams, using: TutorialStreamEntity
       expose :tutorials, using: TutorialEntity
       expose :tutorial_enrolments, using: TutorialEnrolmentEntity, if: lambda { |unit, options|
-        ([ Role.convenor, :convenor, Role.tutor, :tutor ].include? unit.role_for(options[:user])) || (user.role_id == Role.admin_id)
+        ([ Role.convenor, :convenor, Role.tutor, :tutor ].include? unit.role_for(options[:user])) || (options[:user].role_id == Role.admin_id)
       }
       expose :task_definitions, using: TaskDefinitionEntity
       expose :task_outcome_alignments, using: TaskOutcomeAlignmentEntity
