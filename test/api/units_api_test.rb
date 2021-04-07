@@ -24,8 +24,8 @@ class UnitsApiTest < ActiveSupport::TestCase
       unit: {
         name: 'Intro to Social Skills',
         code: 'JRRW40003',
-        start_date: '2016-05-14T00:00:00.000Z',
-        end_date: '2017-05-14T00:00:00.000Z'
+        start_date: '2016-05-14',
+        end_date: '2017-05-14'
       }
     }
     expected_unit = data_to_post[:unit]
@@ -240,6 +240,7 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert actual_unit.key?("tutorials"), actual_unit.inspect
     assert actual_unit.key?("tutorial_enrolments"), actual_unit.inspect
     assert actual_unit.key?("task_definitions"), actual_unit.inspect
+    #TODO: expand tests to check details returned
 
     assert actual_unit.key?("staff"), actual_unit.inspect
     assert_equal expected_unit.staff.count, actual_unit["staff"].count, actual_unit["staff"].inspect
