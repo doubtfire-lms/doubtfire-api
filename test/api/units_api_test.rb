@@ -236,7 +236,6 @@ class UnitsApiTest < ActiveSupport::TestCase
 
     assert_json_matches_model expected_unit, actual_unit, keys
 
-    assert actual_unit.key?("ilos"), actual_unit.inspect
     assert actual_unit.key?("tutorial_streams"), actual_unit.inspect
     assert actual_unit.key?("tutorials"), actual_unit.inspect
     assert actual_unit.key?("tutorial_enrolments"), actual_unit.inspect
