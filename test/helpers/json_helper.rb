@@ -52,7 +52,7 @@ module TestHelpers
     end
 
     def assert_json_limit_keys_to_exactly(keys, response_json)
-      assert_equal keys.count, response_json.count, "Incorrect number of keys: #{response_json.inspect}"
+      assert_equal keys.count, response_json.keys.count, "Incorrect number of keys: #{response_json.inspect}"
       assert_json_limit_keys_to keys, response_json
     end
 
