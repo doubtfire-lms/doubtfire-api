@@ -40,7 +40,6 @@ module Api
           project_id: row['id'],
           campus_id: row['campus_id'],
           target_grade: row['target_grade'],
-          submitted_grade: row['submitted_grade'],
           has_portfolio: !row['portfolio_production_date'].nil?,
           start_date: row['start_date'].strftime('%Y-%m-%d'),
           end_date: row['end_date'].strftime('%Y-%m-%d'),
@@ -65,7 +64,7 @@ module Api
         error!({ error: "Couldn't find Project with id=#{params[:id]}" }, 403)
       end
 
-      present project, with: Api::Entities::ProjectEntity
+      present project, with: Api::Entities::ProjectEntity, user: current_user
     end
 
     desc 'Update a project'
@@ -152,7 +151,7 @@ module Api
         project.save
       end
 
-      present project, with: Api::Entities::ProjectEntity
+      Api::Entities::ProjectEntity.represent(project, only: [ :campus_id, :enrolled, :target_grade, :submitted_grade, :compile_portfolio, :portfolio_available, :uses_draft_learning_summary, :stats, :burndown_chart_data ])
     end # put
 
     desc 'Enrol a student in a unit, creating them a project'

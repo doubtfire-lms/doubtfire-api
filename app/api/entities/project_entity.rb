@@ -21,10 +21,12 @@ module Api
       expose :task_stats, as: :stats
       expose :burndown_chart_data
 
-      expose :tasks
-      expose :tutorial_enrolments
-      expose :groups
-      expose :task_outcome_alignments
+      expose :tasks do | project, options |
+        project.task_details_for_shallow_serializer(options[:user])
+      end
+      expose :tutorial_enrolments, using: TutorialEnrolmentEntity
+      expose :groups, using: GroupEntity
+      expose :task_outcome_alignments, using: TaskOutcomeAlignmentEntity
     end
   end
 end
