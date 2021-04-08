@@ -39,33 +39,6 @@ module Api
       Rack::Response.new( {error: message}.to_json, status, { 'Content-type' => 'text/error' } )
     end
 
-    desc 'Returns your public timeline.' do
-      summary 'summary'
-      detail 'more details'
-      # params  API::Entities::Status.documentation
-      # success API::Entities::Entity
-      # failure [[401, 'Unauthorized', 'Entities::Error']]
-      named 'My named route'
-      headers XAuthToken: {
-                description: 'Validates your identity',
-                required: true
-              },
-              XOptionalHeader: {
-                description: 'Not really needed',
-                required: false
-              }
-      hidden false
-      deprecated false
-      is_array true
-      nickname 'nickname'
-      produces ['application/json']
-      consumes ['application/json']
-      tags ['tag1', 'tag2']
-    end
-    get :public_timeline do
-      "Hello"
-    end
-
     #
     # Mount the api modules
     #
