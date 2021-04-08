@@ -1,5 +1,6 @@
 require 'test_helper'
 require 'date'
+require './lib/helpers/database_populator'
 
 class ProjectsApiTest < ActiveSupport::TestCase
   include Rack::Test::Methods
@@ -39,7 +40,7 @@ class ProjectsApiTest < ActiveSupport::TestCase
 
     # Add username and auth_token to Header
     add_auth_header_for(user: user)
-    
+
     get '/api/projects'
     assert_equal 2, last_response_body.count
   end
@@ -105,11 +106,11 @@ class ProjectsApiTest < ActiveSupport::TestCase
 
     put_json "/api/projects/#{project.id}", data_to_put
 
-    assert_equal 200, last_response.status
+    assert_equal 200, last_response.status, last_response_body
     assert_equal user.projects.find(project.id).submitted_grade, 2
 
     DatabasePopulator.generate_portfolio(project)
-    
+
     data_to_put['submitted_grade'] = 1
 
     put_json "/api/projects/#{project.id}", data_to_put
