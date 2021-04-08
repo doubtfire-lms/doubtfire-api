@@ -21,10 +21,7 @@ class UnitRole < ApplicationRecord
   before_destroy do
     if is_main_convenor?
       errors.add :base, 'Cannot delete this role as the user is the main contact for the unit'
-      # throw(:abort) #TODO: When updating to rails 6
-      false
-    else
-      true
+      throw :abort
     end
   end
 
@@ -125,7 +122,7 @@ class UnitRole < ApplicationRecord
 
     data[:engagements] = task_engagements.
       where(
-        "task_engagements.engagement_time >= :start AND task_engagements.engagement_time < :end", 
+        "task_engagements.engagement_time >= :start AND task_engagements.engagement_time < :end",
         start: summary_stats[:week_start], end: summary_stats[:week_end])
 
     data[:total_engagements_count] = task_engagements.count
@@ -170,6 +167,6 @@ class UnitRole < ApplicationRecord
   end
 
   def ensure_convenor
-    errors.add :user, 'must retain current role to administer units as they are currently the main contact for the unit' unless is_convenor?
+    errors.add(:user, 'must retain current role to administer units as they are currently the main contact for the unit') unless is_convenor?
   end
 end
