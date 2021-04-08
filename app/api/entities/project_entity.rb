@@ -18,13 +18,6 @@ module Api
       expose :portfolio_available
       expose :uses_draft_learning_summary
 
-      expose :grade, if: lambda { |project, options|
-        ([ Role.convenor, :convenor, Role.tutor, :tutor ].include? project.role_for(options[:user])) || (options[:user].role_id == Role.admin_id)
-      }
-      expose :grade_rationale, if: lambda { |project, options|
-        ([ Role.convenor, :convenor, Role.tutor, :tutor ].include? project.role_for(options[:user])) || (options[:user].role_id == Role.admin_id)
-      }
-
       expose :task_stats, as: :stats
       expose :burndown_chart_data
 
