@@ -9,6 +9,10 @@ module Api
     # Declare content types
     content_type :txt, 'text/calendar'
 
+    before do
+      authenticated?
+    end
+
     helpers do
       #
       # Wraps the specified value (expected to be either `nil` or a `Webcal`) in a hash `{ enabled: true | false }` used
@@ -21,7 +25,6 @@ module Api
 
     desc 'Get webcal details of the authenticated user'
     get '/webcal' do
-      authenticated?
       wrap_webcal current_user.webcal
     end
 
@@ -42,7 +45,6 @@ module Api
       end
     end
     put '/webcal' do
-      authenticated?
       webcal_params = params[:webcal]
 
       user = current_user
