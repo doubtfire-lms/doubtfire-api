@@ -65,7 +65,7 @@ module Api
         error!({ error: "Couldn't find Project with id=#{params[:id]}" }, 403)
       end
 
-      present project, with: Api::Entities::ProjectEntity, user: current_user
+      present project, with: Api::Entities::ProjectEntity
     end
 
     desc 'Update a project'
@@ -152,7 +152,7 @@ module Api
         project.save
       end
 
-      present project, with: Api::Entities::ProjectEntity, user: current_user
+      present project, with: Api::Entities::ProjectEntity
     end # put
 
     desc 'Enrol a student in a unit, creating them a project'
