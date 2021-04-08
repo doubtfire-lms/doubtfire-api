@@ -318,7 +318,7 @@ class Unit < ApplicationRecord
     end.map { |e| e == 0 ? 1 : e }
 
     # Get the task stats for a student as a subquery so that it is independent of the main query
-    # otherwise an attempt at a higher level task can exclude the student from the student list! 
+    # otherwise an attempt at a higher level task can exclude the student from the student list!
     subquery = projects.
       joins(tasks: :task_definition).
       where(
@@ -329,7 +329,7 @@ class Unit < ApplicationRecord
         "projects.id AS project_id",
         *TaskStatus.all.map { |s| "SUM(CASE WHEN tasks.task_status_id = #{s.id} THEN 1 ELSE 0 END) AS #{s.status_key}_count" },
       ).to_sql
-    
+
     q = projects
         .joins(:user)
         .joins('LEFT OUTER JOIN tasks ON projects.id = tasks.project_id')
@@ -1093,7 +1093,7 @@ class Unit < ApplicationRecord
         grp = group_set.groups.find_or_create_by(name: group_name)
 
         # Find the tutorial
-        tutorial_abbr = row['tutorial'].strip unless row['tutorial'].nil?  
+        tutorial_abbr = row['tutorial'].strip unless row['tutorial'].nil?
         tutorial = tutorial_with_abbr(tutorial_abbr)
 
         if tutorial.nil?
@@ -1793,22 +1793,22 @@ class Unit < ApplicationRecord
     Zip::File.open(zip_file) do |zip|
       zip.each do |file|
         next unless file.file? # Skip folders
-        file_name = File.basename(file[:name])
-        if (File.extname(file[:name]) == '.pdf') || (File.extname(file[:name]) == '.zip')
+        file_name = File.basename(file.name)
+        if (File.extname(file.name) == '.pdf') || (File.extname(file.name) == '.zip')
           found = false
           task_definitions.each do |td|
             next unless /^#{td.abbreviation}/ =~ file_name
-            file.extract ("#{task_path}#{FileHelper.sanitized_filename(td.abbreviation)}#{File.extname(file[:name])}") { true }
-            result[:success] << { row: file[:name], message: "Added as task #{td.abbreviation}" }
+            file.extract ("#{task_path}#{FileHelper.sanitized_filename(td.abbreviation)}#{File.extname(file.name)}") { true }
+            result[:success] << { row: file.name, message: "Added as task #{td.abbreviation}" }
             found = true
             break
           end
 
           unless found
-            result[:errors] << { row: file[:name], message: 'Unable to find a task with matching abbreviation.' }
+            result[:errors] << { row: file.name, message: 'Unable to find a task with matching abbreviation.' }
           end
         else
-          result[:ignored] << { row: file[:name], message: 'Unknown file type.' }
+          result[:ignored] << { row: file.name, message: 'Unknown file type.' }
         end
       end
     end
@@ -1869,38 +1869,38 @@ class Unit < ApplicationRecord
       joins("LEFT JOIN comments_read_receipts crr ON crr.task_comment_id = task_comments.id AND crr.user_id = #{user.id}").
       joins("LEFT JOIN task_pins ON task_pins.task_id = tasks.id AND task_pins.user_id = #{user.id}").
       select(
-        'sq.tutorial_id AS tutorial_id', 
+        'sq.tutorial_id AS tutorial_id',
         'sq.tutorial_stream_id AS tutorial_stream_id',
-        'tasks.id', 
+        'tasks.id',
         "SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) as number_unread",
         'COUNT(distinct task_pins.task_id) != 0 as pinned',
         "SUM(case when task_comments.date_extension_assessed IS NULL AND task_comments.type = 'ExtensionComment' AND NOT task_comments.id IS NULL THEN 1 ELSE 0 END) > 0 as has_extensions",
-        'project_id', 
+        'project_id',
         'tasks.id as task_id',
-        'task_definition_id', 
-        'task_definitions.start_date as start_date', 
+        'task_definition_id',
+        'task_definitions.start_date as start_date',
         'task_statuses.id as status_id',
-        'completion_date', 
-        'times_assessed', 
-        'submission_date', 
-        'portfolio_evidence', 
-        'tasks.grade as grade', 
+        'completion_date',
+        'times_assessed',
+        'submission_date',
+        'portfolio_evidence',
+        'tasks.grade as grade',
         'quality_pts'
       ).
       group(
-        'sq.tutorial_id', 
+        'sq.tutorial_id',
         'sq.tutorial_stream_id',
-        'task_statuses.id', 
-        'project_id', 
-        'tasks.id', 
-        'task_definition_id', 
-        'task_definitions.start_date', 
+        'task_statuses.id',
+        'project_id',
+        'tasks.id',
+        'task_definition_id',
+        'task_definitions.start_date',
         'status_id',
-        'completion_date', 
-        'times_assessed', 
-        'submission_date', 
-        'portfolio_evidence', 
-        'grade', 
+        'completion_date',
+        'times_assessed',
+        'submission_date',
+        'portfolio_evidence',
+        'grade',
         'quality_pts'
       )
   end
