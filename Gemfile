@@ -2,7 +2,7 @@ source 'https://rubygems.org'
 
 # Ruby versions for various enviornments
 ruby_versions = {
-  development:  '~>2.3.1',
+  development:  '~>2.6.7',
   test:         '~>2.3.1',
   staging:      '~>2.3.1',
   production:   '~>2.3.1'
@@ -11,13 +11,13 @@ ruby_versions = {
 ruby ruby_versions[(ENV['RAILS_ENV'] || 'development').to_sym]
 
 # The venerable, almighty Rails
-gem 'rails', '4.2.6'
+gem 'rails', '4.2.8'
 
 group :development, :test do
   gem 'database_cleaner'
   gem 'byebug'
   gem 'simplecov', require: false
-  gem 'pg'
+  gem 'pg', '~>0.18'
   gem 'hirb'
   gem 'better_errors'
   gem 'rails_best_practices'
@@ -62,7 +62,7 @@ gem 'moss_ruby', '>= 1.1.2'
 gem 'rails-latex', '=2.0.1'
 
 # API
-gem 'grape', '0.16.2'
+gem 'grape', '~> 0.16.2'
 gem 'active_model_serializers', '~> 0.9.0'
 gem 'grape-active_model_serializers', '~> 1.3.2'
 gem 'grape-swagger'
