@@ -5,12 +5,12 @@ module Api
 
     desc "Get an activity type details"
     get '/activity_types/:id' do
-      ActivityType.find(params[:id])
+      present ActivityType.find(params[:id]), using: Api::Entities::ActivityTypeEntity
     end
 
     desc 'Get all the activity types'
     get '/activity_types' do
-      ActivityType.all
+      present ActivityType.all, using: Api::Entities::ActivityTypeEntity
     end
   end
 end
