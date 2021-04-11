@@ -6,12 +6,12 @@ module Api
     desc "Get a campus details"
     get '/campuses/:id' do
       campus = Campus.find(params[:id])
-      campus
+      present campus, using: Api::Entities::CampusEntity
     end
 
     desc 'Get all the Campuses'
     get '/campuses' do
-      Campus.all
+      present Campus.all, using: Api::Entities::CampusEntity
     end
   end
 end
