@@ -52,7 +52,7 @@ module Api
       group_set = GroupSet.create!(group_params)
       group_set.unit = unit
       group_set.save!
-      group_set
+      present group_set, using: Api::Entities::GroupSetEntity
     end
 
     desc 'Edits the given group set'
@@ -93,7 +93,7 @@ module Api
                                                  )
 
       group_set.update!(group_params)
-      group_set
+      present group_set, using: Api::Entities::GroupSetEntity
     end
 
     desc 'Delete a group set'
@@ -112,7 +112,7 @@ module Api
       end
 
       error!(error: group_set.errors[:base].last) unless group_set.destroy
-      nil
+      present true, with: Grape::Presenters::Presenter
     end
 
     # ------------------------------------------------------------------------
@@ -128,7 +128,7 @@ module Api
         error!({ error: 'Not authorised to get groups for this unit' }, 403)
       end
 
-      group_set.
+      result = group_set.
         groups.
         joins('LEFT OUTER JOIN group_memberships ON group_memberships.group_id = groups.id AND group_memberships.active = TRUE').
         group(
@@ -148,6 +148,7 @@ module Api
           'groups.locked as locked',
           'COUNT(group_memberships.id) as student_count'
         )
+      present result, with: Grape::Presenters::Presenter
     end
 
     desc 'Download a CSV of groups and their students in a group set'
@@ -210,7 +211,7 @@ module Api
       unless group_set.groups.where(name: group_params[:name]).empty?
         error!({ error: "This group name is not unique to the #{group_set.name} group set." }, 403)
       end
-    
+
       # Now check if they are a student...
       project = nil
       if unit.role_for(current_user) == Role.student
@@ -232,7 +233,7 @@ module Api
         grp.add_member(project)
       end
 
-      grp
+      present grp, using: Api::Entities::GroupEntity
     end
 
     desc 'Upload a CSV for groups in a group set'
@@ -252,7 +253,7 @@ module Api
         error!({ error: 'Not authorised to upload csv of groups for this unit' }, 403)
       end
 
-      unit.import_groups_from_csv(group_set, params[:file][:tempfile])
+      present unit.import_groups_from_csv(group_set, params[:file][:tempfile]), with: Grape.Presenters.Presenter
     end
 
     desc 'Upload a CSV for students in groups in a group set'
@@ -272,7 +273,7 @@ module Api
         error!({ error: 'Not authorised to upload csv of groups for this unit' }, 403)
       end
 
-      unit.import_student_groups_from_csv(group_set, params[:file][:tempfile])
+      present unit.import_student_groups_from_csv(group_set, params[:file][:tempfile]), with: Grape.Presenters.Presenter
     end
 
     desc 'Edits the given group'
@@ -335,7 +336,7 @@ module Api
       end
 
       grp.update!(group_params)
-      grp
+      present grp, using: Api::Entities::GroupEntity
     end
 
     desc 'Delete a group'
@@ -360,7 +361,7 @@ module Api
       end
 
       error!(error: grp.errors[:base].last) unless grp.destroy
-      nil
+      true
     end
 
     desc 'Get the members of a group'
@@ -373,8 +374,7 @@ module Api
         error!({ error: 'Not authorised to get groups for this unit' }, 403)
       end
 
-      Thread.current[:user] = current_user
-      ActiveModel::Serializer::CollectionSerializer.new(grp.projects, each_serializer: GroupMemberProjectSerializer)
+      present grp.projects, using: Api::Entities::ProjectEntity, only: [:student_id, :project_id, :student_name, :target_grade], user: current_user
     end
 
     desc 'Add a group member'
@@ -420,8 +420,8 @@ module Api
       end
 
       gm = grp.add_member(prj)
-      Thread.current[:user] = current_user
-      GroupMemberProjectSerializer.new(prj)
+
+      present prj, using: Api::Entities::ProjectEntity, only: [:student_id, :project_id, :student_name, :target_grade], user: current_user
     end
 
     desc 'Remove a group member'
@@ -454,7 +454,7 @@ module Api
       end
 
       grp.remove_member(prj)
-      nil
+      true
     end
   end
 end
