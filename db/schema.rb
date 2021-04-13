@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2021_04_03_000741) do
+ActiveRecord::Schema.define(version: 2021_04_12_124724) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -183,7 +183,6 @@ ActiveRecord::Schema.define(version: 2021_04_03_000741) do
     t.integer "user_id", null: false
     t.string "comment", limit: 4096
     t.datetime "created_at", null: false
-    t.boolean "is_new", default: true
     t.integer "recipient_id"
     t.string "content_type"
     t.string "attachment_extension"
