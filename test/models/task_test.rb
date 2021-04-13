@@ -12,6 +12,31 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     Rails.application
   end
 
+  def test_comments_for_user
+    project = FactoryBot.create(:project)
+    unit = project.unit
+    user = project.student
+    convenor = unit.main_convenor_user
+    task_definition = unit.task_definitions.first
+    task = project.task_for_task_definition(task_definition)
+
+    task.add_text_comment(convenor, 'Hello World')
+    task.add_text_comment(convenor, 'Message 2')
+    task.add_text_comment(convenor, 'Last message')
+
+    comments = task.comments_for_user(user)
+    comments.each do |data|
+      assert_equal 1, data.is_new
+    end
+
+    task.mark_comments_as_read user, task.comments
+
+    comments = task.comments_for_user(user)
+    comments.each do |data|
+      assert_equal 0, data.is_new
+    end
+  end
+
   def test_pdf_creation_with_gif
     unit = Unit.first
     td = TaskDefinition.new({
@@ -173,11 +198,11 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     project = unit.active_projects.first
 
     add_auth_header_for user: unit.main_convenor_user
-    
+
     post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
 
     task = project.task_for_task_definition(td)
-    
+
     task.convert_submission_to_pdf
 
     path = task.final_pdf_path
@@ -204,7 +229,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     project = unit.active_projects.first
 
     add_auth_header_for user: project.user
-    
+
     post "/api/projects/#{project.id}/task_def_id/#{task_def.id}/submission", data_to_post
 
     assert_equal 201, last_response.status
