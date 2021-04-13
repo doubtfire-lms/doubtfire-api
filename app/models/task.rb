@@ -163,6 +163,33 @@ class Task < ApplicationRecord
     end
   end
 
+  def comments_for_user(user)
+    TaskComment.
+      joins('JOIN users AS authors ON authors.id = task_comments.user_id').
+      joins('JOIN users AS recipients ON recipients.id = task_comments.recipient_id').
+      joins("LEFT JOIN comments_read_receipts u_crr ON u_crr.task_comment_id = task_comments.id AND u_crr.user_id = #{user.id}").
+      joins("LEFT JOIN comments_read_receipts r_crr ON r_crr.task_comment_id = task_comments.id AND r_crr.user_id = recipients.id").
+      where('task_comments.task_id = :task_id', task_id: self.id).
+      order('created_at ASC').
+      select(
+        'task_comments.id AS id',
+        'task_comments.comment AS comment',
+        'task_comments.content_type AS content_type',
+        "case when u_crr.created_at IS NULL then 1 else 0 end AS is_new",
+        'r_crr.created_at AS recipient_read_time',
+        'task_comments.created_at AS created_at',
+        'authors.id AS author_id',
+        'authors.first_name AS author_first_name',
+        'authors.last_name AS author_last_name',
+        'authors.email AS author_email',
+        'recipients.id AS recipient_id',
+        'recipients.first_name AS recipient_first_name',
+        'recipients.last_name AS recipient_last_name',
+        'recipients.email AS recipient_email',
+        'task_comments.reply_to_id AS reply_to_id'
+      )
+  end
+
   def current_plagiarism_match_links
     plagiarism_match_links.where(dismissed: false)
   end
