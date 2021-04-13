@@ -10,6 +10,58 @@ class CommentTest < ActiveSupport::TestCase
     Rails.application
   end
 
+  def test_get_comments
+    project = FactoryBot.create(:project)
+    unit = project.unit
+    user = project.student
+    convenor = unit.main_convenor_user
+    task_definition = unit.task_definitions.first
+    task = project.task_for_task_definition(task_definition)
+
+    add_auth_header_for user: user
+    get "/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments"
+
+    assert_equal 200, last_response.status, last_response_body
+    assert_equal 0, last_response_body.length, last_response_body.inspect
+
+    task.add_text_comment(convenor, 'Hello World')
+    task.add_text_comment(convenor, 'Message 2')
+    task.add_text_comment(convenor, 'Last message')
+
+    get "/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments"
+
+    assert_equal 200, last_response.status, last_response_body
+    assert_equal 3, last_response_body.length, last_response_body.inspect
+
+    keys = %w(id comment has_attachment type is_new reply_to_id author recipient created_at recipient_read_time)
+    keys_test = %w(id comment reply_to_id)
+
+    last_response_body.each do |resp|
+      assert_json_limit_keys_to_exactly keys, resp
+      comment = TaskComment.find(resp['id'])
+      assert_json_matches_model comment, resp, keys_test
+      assert resp['is_new'], resp.inspect
+    end
+
+    # Test they are now read...
+    get "/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments"
+
+    assert_equal 200, last_response.status, last_response_body
+    assert_equal 3, last_response_body.length, last_response_body.inspect
+
+    keys = %w(id comment has_attachment type is_new reply_to_id author recipient created_at recipient_read_time)
+    keys_test = %w(id comment reply_to_id)
+
+    last_response_body.each do |resp|
+      assert_json_limit_keys_to_exactly keys, resp
+      comment = TaskComment.find(resp['id'])
+      assert_json_matches_model comment, resp, keys_test
+      refute resp['is_new'], resp.inspect
+    end
+
+    task.add_text_comment(user, 'Response')
+  end
+
   def test_student_post_comment
     project = Project.first
     user = project.student
@@ -460,6 +512,9 @@ class CommentTest < ActiveSupport::TestCase
 
     task = project.task_for_task_definition(td)
     assert_equal TaskStatus.ready_to_mark, task.task_status
+
+    refute task.comments.last.new_for?(user)
+    refute task.comments.last.new_for?(project.tutor_for(td))
 
     td.destroy!
   end
