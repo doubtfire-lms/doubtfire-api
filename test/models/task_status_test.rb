@@ -64,8 +64,10 @@ class TaskStatusTest < ActiveSupport::TestCase
         assert_equal TaskStatus.status_for_name('f').name,TaskStatus.fix.name
       end
 
-      assert_equal TaskStatus.status_for_name('do_not_resubmit').name,TaskStatus.do_not_resubmit.name
-      assert_equal TaskStatus.status_for_name('do not resubmit').name,TaskStatus.do_not_resubmit.name
+      assert_equal TaskStatus.status_for_name('do_not_resubmit').name,TaskStatus.feedback_exceeded.name
+      assert_equal TaskStatus.status_for_name('do not resubmit').name,TaskStatus.feedback_exceeded.name
+      assert_equal TaskStatus.status_for_name('feedback_exceeded').name,TaskStatus.feedback_exceeded.name
+      assert_equal TaskStatus.status_for_name('feedback exceeded').name,TaskStatus.feedback_exceeded.name
       assert_equal TaskStatus.status_for_name('redo').name,TaskStatus.redo.name
 
       assert_equal TaskStatus.status_for_name('need_help').name,TaskStatus.need_help.name
