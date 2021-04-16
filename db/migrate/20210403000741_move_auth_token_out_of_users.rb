@@ -1,4 +1,4 @@
-class MoveAuthTokenOutOfUsers < ActiveRecord::Migration
+class MoveAuthTokenOutOfUsers < ActiveRecord::Migration[4.2]
   def up
     create_table :auth_tokens do |t|
       t.string          :encrypted_authentication_token,  null: false,  limit: 255
@@ -14,7 +14,7 @@ class MoveAuthTokenOutOfUsers < ActiveRecord::Migration
       each do |d|
         puts d[:token]
         AuthToken.create!(
-          authentication_token: d[:token], 
+          authentication_token: d[:token],
           auth_token_expiry: d[:expiry],
           user_id: d[:user]
         )
@@ -29,9 +29,9 @@ class MoveAuthTokenOutOfUsers < ActiveRecord::Migration
     add_column :users, :auth_token_expiry,    :datetime
 
     AuthToken.where("auth_token_expiry > :time", time: Time.zone.now).
-      each do |token| 
+      each do |token|
         User.connection.exec_query(
-          "UPDATE users SET authentication_token = $1, auth_token_expiry = $2 WHERE id=$3", 
+          "UPDATE users SET authentication_token = $1, auth_token_expiry = $2 WHERE id=$3",
           "--Update Auth Token for #{token.user_id}--",
           [[nil, token.authentication_token], [nil, token.auth_token_expiry], [nil, token.user_id]]
         )
