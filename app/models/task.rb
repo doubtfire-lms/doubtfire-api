@@ -308,7 +308,7 @@ class Task < ApplicationRecord
   end
 
   def task_submission_closed?
-    complete? || discuss_or_demonstrate? || do_not_resubmit? || fail?
+    complete? || discuss_or_demonstrate? || feedback_exceeded? || fail?
   end
 
   def ready_to_mark?
@@ -327,8 +327,8 @@ class Task < ApplicationRecord
     status == :fix_and_resubmit
   end
 
-  def do_not_resubmit?
-    status == :do_not_resubmit
+  def feedback_exceeded?
+    status == :feedback_exceeded
   end
 
   def redo?
@@ -604,7 +604,7 @@ class Task < ApplicationRecord
   def assessed?
     redo? ||
       fix_and_resubmit? ||
-      do_not_resubmit? ||
+      feedback_exceeded? ||
       fail? ||
       complete?
   end
@@ -1113,7 +1113,7 @@ class Task < ApplicationRecord
       self.submission_date = Time.zone.now
 
       # This task is now ready to submit - trigger a transition if not in final state
-      unless discuss_or_demonstrate? || complete? || do_not_resubmit? || fail?
+      unless discuss_or_demonstrate? || complete? || feedback_exceeded? || fail?
         trigger_transition trigger: trigger, by_user: user, group_transition: group_task? && initial_task != self
       end
 

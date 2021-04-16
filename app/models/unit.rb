@@ -2123,7 +2123,7 @@ class Unit < ApplicationRecord
       working_on_it:      0.0,
       need_help:          0.0,
       redo:               0.1,
-      do_not_resubmit:    0.1,
+      feedback_exceeded:    0.1,
       fix_and_resubmit:   0.3,
       time_exceeded:      0.5,
       ready_to_mark:      0.7,
