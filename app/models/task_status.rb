@@ -19,7 +19,7 @@ class TaskStatus < ActiveRecord::Base
   scope :need_help,         -> { TaskStatus.find(3) }
   scope :working_on_it,     -> { TaskStatus.find(4) }
   scope :fix_and_resubmit,  -> { TaskStatus.find(5) }
-  scope :do_not_resubmit,   -> { TaskStatus.find(6) }
+  scope :feedback_exceeded,   -> { TaskStatus.find(6) }
   scope :redo,              -> { TaskStatus.find(7) }
   scope :discuss,           -> { TaskStatus.find(8) }
   scope :ready_to_mark,     -> { TaskStatus.find(9) }
@@ -34,8 +34,10 @@ class TaskStatus < ActiveRecord::Base
     when 'fix and resubmit' then TaskStatus.fix_and_resubmit
     when 'fix'              then TaskStatus.fix_and_resubmit
     when 'f'                then TaskStatus.fix
-    when 'do_not_resubmit'  then TaskStatus.do_not_resubmit
-    when 'do not resubmit'  then TaskStatus.do_not_resubmit
+    when 'do_not_resubmit'  then TaskStatus.feedback_exceeded
+    when 'do not resubmit'  then TaskStatus.feedback_exceeded
+    when 'feedback_exceeded'  then TaskStatus.feedback_exceeded
+    when 'feedback exceeded'  then TaskStatus.feedback_exceeded
     when 'redo'             then TaskStatus.redo
     when 'need_help'        then TaskStatus.need_help
     when 'need help'        then TaskStatus.need_help
@@ -68,7 +70,7 @@ class TaskStatus < ActiveRecord::Base
       when 3 then :need_help
       when 4 then :working_on_it
       when 5 then :fix_and_resubmit
-      when 6 then :do_not_resubmit
+      when 6 then :feedback_exceeded
       when 7 then :redo
       when 8 then :discuss
       when 9 then :ready_to_mark
@@ -90,7 +92,7 @@ class TaskStatus < ActiveRecord::Base
     return :ready_to_mark if self == TaskStatus.ready_to_mark
     return :demonstrate if self == TaskStatus.demonstrate
     return :fail if self == TaskStatus.fail
-    return :do_not_resubmit if self == TaskStatus.do_not_resubmit
+    return :feedback_exceeded if self == TaskStatus.feedback_exceeded
     return :time_exceeded if self == TaskStatus.time_exceeded
     return :not_started
   end

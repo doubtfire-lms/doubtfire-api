@@ -517,7 +517,7 @@ class DatabasePopulator
       "Need Help": "Some help is required in order to complete this task.",
       "Working On It": "This task is currently being worked on.",
       "Fix and Resubmit": "This task must be resubmitted after fixing some issues.",
-      "Do Not Resubmit": "This task must be fixed and included in your portfolio, but should not be resubmitted.",
+      "Feedback Exceeded": "This task must be fixed and included in your portfolio, but no additional feedback will be provided.",
       "Redo": "This task needs to be redone.",
       "Discuss": "Your work looks good, discuss it with your tutor to complete.",
       "Ready to Mark": "This task is ready for the tutor to assess to provide feedback.",

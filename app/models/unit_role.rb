@@ -141,8 +141,8 @@ class UnitRole < ActiveRecord::Base
 
     data[:number_of_students] = number_of_students
 
-    data[:total_staff_engagements] = task_engagements.where(engagement: [TaskStatus.complete.name, TaskStatus.do_not_resubmit.name, TaskStatus.redo.name, TaskStatus.discuss.name, TaskStatus.demonstrate.name, TaskStatus.fail.name]).count
-    data[:staff_engagements] = data[:engagements].where(engagement: [TaskStatus.complete.name, TaskStatus.do_not_resubmit.name, TaskStatus.redo.name, TaskStatus.discuss.name, TaskStatus.demonstrate.name, TaskStatus.fail.name]).count
+    data[:total_staff_engagements] = task_engagements.where(engagement: [TaskStatus.complete.name, TaskStatus.feedback_exceeded.name, TaskStatus.redo.name, TaskStatus.discuss.name, TaskStatus.demonstrate.name, TaskStatus.fail.name]).count
+    data[:staff_engagements] = data[:engagements].where(engagement: [TaskStatus.complete.name, TaskStatus.feedback_exceeded.name, TaskStatus.redo.name, TaskStatus.discuss.name, TaskStatus.demonstrate.name, TaskStatus.fail.name]).count
 
     data[:received_comments] = comments.where("recipient_id = :staff_id AND task_comments.created_at > :start", staff_id: data[:staff].id, start: Time.zone.today - 7.days).count
     data[:sent_comments] = comments.where("task_comments.user_id = :staff_id AND task_comments.created_at > :start", staff_id: data[:staff].id, start: Time.zone.today - 7.days).count
