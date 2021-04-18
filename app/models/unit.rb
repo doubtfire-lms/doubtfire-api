@@ -905,7 +905,7 @@ class Unit < ApplicationRecord
 
     CSV.generate do |csv|
       csv <<  %w(unit_code campus username student_id preferred_name first_name last_name email) +
-              (streams.count > 0 ? streams.map{ |t| t.abbreviation } : ['Tutorial'])
+              (streams.count > 0 ? streams.map{ |t| t.abbreviation } : ['tutorial'])
 
       active_projects.
         joins(

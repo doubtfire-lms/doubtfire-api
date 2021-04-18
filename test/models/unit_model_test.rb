@@ -363,6 +363,7 @@ class UnitModelTest < ActiveSupport::TestCase
     CSV.parse(csv_str, headers: true, return_headers: false,
       header_converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '').downcase unless body.nil? }],
       converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |entry|
+        assert_json_limit_keys_to_exactly %w(unit_code campus username student_id preferred_name first_name last_name email tutorial), entry.to_hash
         assert_equal 9, entry.count, entry
         user = User.find_by(username: entry['username'])
         assert user.present?, "Unable to find user from #{entry}"
@@ -383,8 +384,14 @@ class UnitModelTest < ActiveSupport::TestCase
         end
 
         tutorial = unit.tutorials.find_by(abbreviation: entry['tutorial'])
-        assert tutorial.present?, entry['tutorial']
-        assert_equal project.tutorial_enrolments.first.tutorial, tutorial, entry
+        if entry['tutorial'].present?
+          assert tutorial.present?, entry.inspect
+          assert_equal project.tutorial_enrolments.first.tutorial, tutorial, entry
+        else
+          assert_nil tutorial
+          assert_nil project.tutorial_enrolments.first
+        end
+
 
         rows += 1
     end
@@ -427,7 +434,7 @@ class UnitModelTest < ActiveSupport::TestCase
 
     assert_equal 3, t1.projects.count, result.inspect
     assert_equal 3, t2.projects.count
-    
+
     unit.destroy!
   end
 
@@ -478,7 +485,7 @@ class UnitModelTest < ActiveSupport::TestCase
     assert_equal 4, t1.projects.count
     assert_equal 4, t2.projects.count
     assert_equal 8, t3.projects.count
-    
+
     unit.destroy!
   end
 
