@@ -66,6 +66,7 @@ class ActiveSupport::TestCase
 
   def teardown
     DatabaseCleaner.clean
+    Rails.cache.clear
   end
 
   # Add more helper methods to be used by all tests here...
