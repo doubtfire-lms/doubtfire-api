@@ -28,7 +28,11 @@ class TasksTest < ActiveSupport::TestCase
       tutorial = t.project.tutorial_for(t.task_definition)
       if tutorial.present?
         assert_equal tutorial.id, r['tutorial_id']
-        assert_equal tutorial.tutorial_stream_id, r['tutorial_stream_id']
+        if tutorial.tutorial_stream_id.nil?
+          assert_nil r['tutorial_stream_id']
+        else
+          assert_equal tutorial.tutorial_stream_id, r['tutorial_stream_id']
+        end
       else
         assert_nil r['tutorial_id']
         assert_nil r['tutorial_stream_id']
@@ -55,7 +59,11 @@ class TasksTest < ActiveSupport::TestCase
       tutorial = t.project.tutorial_for(t.task_definition)
       if tutorial.present?
         assert_equal tutorial.id, r['tutorial_id']
-        assert_equal tutorial.tutorial_stream_id, r['tutorial_stream_id']
+        if tutorial.tutorial_stream_id.nil?
+          assert_nil r['tutorial_stream_id']
+        else
+          assert_equal tutorial.tutorial_stream_id, r['tutorial_stream_id']
+        end
       else
         assert_nil r['tutorial_id']
         assert_nil r['tutorial_stream_id']
@@ -137,7 +145,7 @@ class TasksTest < ActiveSupport::TestCase
     add_auth_header_for(user: tutor)
 
     # Make a submission for this student
-    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post    
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
     assert_equal 201, last_response.status
 
     # Get the task... check it is now time exceeded
@@ -336,7 +344,7 @@ class TasksTest < ActiveSupport::TestCase
     td1 = unit.task_definitions.first
 
     task1 = s.task_for_task_definition td1
-    
+
     tutor = FactoryBot.create(:user, :tutor)
     unit.employ_staff(tutor, Role.tutor)
 
