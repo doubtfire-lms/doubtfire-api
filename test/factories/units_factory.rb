@@ -1,4 +1,5 @@
 # Read about factories at https://github.com/thoughtbot/factory_bot
+require './lib/helpers/database_populator'
 
 FactoryBot.define do
 

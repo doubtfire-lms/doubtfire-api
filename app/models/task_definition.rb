@@ -7,8 +7,8 @@ class TaskDefinition < ApplicationRecord
   end
 
   before_destroy :delete_associated_files
-  before_update :move_files_on_abbreviation_change, if: :abbreviation_changed?
-  after_update :remove_old_group_submissions, if: :has_removed_group?
+  around_update :move_files_on_abbreviation_change, if: :abbreviation_changed?
+  around_update :remove_old_group_submissions, if: :has_removed_group?
 
   # Model associations
   belongs_to :unit # Foreign key
@@ -450,7 +450,7 @@ class TaskDefinition < ApplicationRecord
     result.name                        = name
     result.unit_id                     = unit.id
     result.abbreviation                = abbreviation
-    result.description                 = "#{row[:description]}".strip 
+    result.description                 = "#{row[:description]}".strip
     result.weighting                   = row[:weighting].to_i
     result.target_grade                = row[:target_grade].to_i
     result.restrict_status_updates     = %w(Yes y Y yes true TRUE 1).include? "#{row[:restrict_status_updates]}".strip
