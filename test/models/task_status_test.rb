@@ -46,7 +46,7 @@ class TaskStatusTest < ActiveSupport::TestCase
     data_to_post = {
       trigger: 'ready_to_mark'
     }
-    
+
     add_auth_header_for(user: project.student)
 
     # Make a submission for this student
@@ -91,7 +91,7 @@ class TaskStatusTest < ActiveSupport::TestCase
       assert_equal TaskStatus.status_for_name('ns').name,TaskStatus.not_started.name
       assert_equal TaskStatus.status_for_name('time exceeded').name,TaskStatus.time_exceeded.name
       assert_equal TaskStatus.status_for_name('time_exceeded').name,TaskStatus.time_exceeded.name
-      assert_equal TaskStatus.status_for_name(''), nil
+      assert_nil TaskStatus.status_for_name('')
   end
 
   def test_staff_assigned_statuses
