@@ -17,7 +17,7 @@ class TeachingPeriod < ApplicationRecord
 
   validate :validate_end_date_after_start_date, :validate_active_until_after_end_date
 
-  after_update :propogate_date_changes
+  before_update :propogate_date_changes
 
   # Public methods
 

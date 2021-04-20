@@ -7,8 +7,8 @@ class TaskDefinition < ApplicationRecord
   end
 
   before_destroy :delete_associated_files
-  around_update :move_files_on_abbreviation_change, if: :abbreviation_changed?
-  around_update :remove_old_group_submissions, if: :has_removed_group?
+  before_update :move_files_on_abbreviation_change, if: :abbreviation_changed?
+  before_update :remove_old_group_submissions, if: :has_removed_group?
 
   # Model associations
   belongs_to :unit # Foreign key
