@@ -38,7 +38,7 @@ class Project < ApplicationRecord
 
   validate :tutorial_enrolment_same_campus, if: :campus_id_changed?
 
-  around_update :check_withdraw_from_groups, if: :enrolled_changed?
+  before_update :check_withdraw_from_groups, if: :enrolled_changed?
 
   #
   # Permissions around project data
