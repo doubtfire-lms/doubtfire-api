@@ -10,8 +10,8 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     Rails.application
   end
 
-  def all_task_def_keys 
-    [ 
+  def all_task_def_keys
+    [
       'name',
       'description',
       'target_grade',
@@ -55,14 +55,16 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
 
     # Add auth_token and username to header
     add_auth_header_for(user: unit.main_convenor_user)
-    
+
     post_json "/api/units/#{unit.id}/task_definitions", data_to_post
     assert_equal 201, last_response.status, last_response.inspect
     assert_equal 1, unit.task_definitions.count
 
-    assert_json_matches_model unit.task_definitions.first, last_response_body, all_task_def_keys
-    assert_equal unit.tutorial_streams.first.id, unit.task_definitions.first.tutorial_stream_id
-    assert_equal 4, unit.task_definitions.first.weighting
+    td = unit.task_definitions.first
+
+    assert_json_matches_model td, last_response_body, all_task_def_keys
+    assert_equal unit.tutorial_streams.first.id, td.tutorial_stream_id
+    assert_equal 4, td.weighting
 
 
     data_to_put = {
@@ -77,7 +79,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
         target_date:              unit.start_date + 9.days,
         due_date:                 unit.start_date + 23.days,
         abbreviation:             'P1.2',
-        restrict_status_updates:  true, 
+        restrict_status_updates:  true,
         upload_requirements:      '[ { "key": "file0", "name": "Other Class", "type": "document" } ]',
         plagiarism_checks:        '[]',
         plagiarism_warn_pct:      80,
@@ -89,14 +91,14 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     # Add auth_token and username to header
     add_auth_header_for(user: unit.main_convenor_user)
 
-    put_json "/api/units/#{unit.id}/task_definitions/#{unit.task_definitions.first.id}", data_to_put
+    put_json "/api/units/#{unit.id}/task_definitions/#{td.id}", data_to_put
     assert_equal 200, last_response.status, last_response.inspect
 
-    unit.reload
+    td.reload
 
-    assert_json_matches_model unit.task_definitions.first, last_response_body, all_task_def_keys
-    assert_equal unit.tutorial_streams.last.id, unit.task_definitions.first.tutorial_stream_id
-    assert_equal 2, unit.task_definitions.first.weighting
+    assert_json_matches_model td, last_response_body, all_task_def_keys
+    assert_equal unit.tutorial_streams.last.id, td.tutorial_stream_id
+    assert_equal 2, td.weighting
   end
 
   def test_post_invalid_file_tasksheet
@@ -182,7 +184,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
 
     path = FileHelper.student_work_dir(:new, nil, false)
     FileUtils.rm_rf path
-    
+
     assert_not File.directory? path
 
     # Add auth_token and username to header
@@ -246,7 +248,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     path = task.zip_file_path_for_done_task
     assert path
     assert File.exists? path
-    
+
     # Change it to a group task
 
     group_set = GroupSet.create!({name: 'test group set', unit: unit})
