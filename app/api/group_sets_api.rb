@@ -52,7 +52,7 @@ module Api
       group_set = GroupSet.create!(group_params)
       group_set.unit = unit
       group_set.save!
-      present group_set, using: Api::Entities::GroupSetEntity
+      present group_set, with: Api::Entities::GroupSetEntity
     end
 
     desc 'Edits the given group set'
@@ -93,7 +93,7 @@ module Api
                                                  )
 
       group_set.update!(group_params)
-      present group_set, using: Api::Entities::GroupSetEntity
+      present group_set, with: Api::Entities::GroupSetEntity
     end
 
     desc 'Delete a group set'
@@ -233,7 +233,7 @@ module Api
         grp.add_member(project)
       end
 
-      present grp, using: Api::Entities::GroupEntity
+      present grp, with: Api::Entities::GroupEntity
     end
 
     desc 'Upload a CSV for groups in a group set'
@@ -336,7 +336,7 @@ module Api
       end
 
       grp.update!(group_params)
-      present grp, using: Api::Entities::GroupEntity
+      present grp, with: Api::Entities::GroupEntity
     end
 
     desc 'Delete a group'
@@ -374,7 +374,7 @@ module Api
         error!({ error: 'Not authorised to get groups for this unit' }, 403)
       end
 
-      present grp.projects, using: Api::Entities::ProjectEntity, only: [:student_id, :project_id, :student_name, :target_grade], user: current_user
+      present grp.projects, with: Api::Entities::ProjectEntity, only: [:student_id, :project_id, :student_name, :target_grade], user: current_user
     end
 
     desc 'Add a group member'
@@ -421,7 +421,7 @@ module Api
 
       gm = grp.add_member(prj)
 
-      present prj, using: Api::Entities::ProjectEntity, only: [:student_id, :project_id, :student_name, :target_grade], user: current_user
+      present prj, with: Api::Entities::ProjectEntity, only: [:student_id, :project_id, :student_name, :target_grade], user: current_user
     end
 
     desc 'Remove a group member'
