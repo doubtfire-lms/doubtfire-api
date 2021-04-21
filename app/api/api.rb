@@ -20,6 +20,9 @@ module Api
       when ActiveRecord::RecordInvalid, Grape::Exceptions::ValidationErrors
         message = e.message
         status = 400
+      when ActiveRecord::InvalidForeignKey
+        message = "This operation has been rejected as it would break data integrity. Ensure that related values are deleted or updated before trying again."
+        status = 400
       when Grape::Exceptions::MethodNotAllowed
         message = e.message
         status = 405

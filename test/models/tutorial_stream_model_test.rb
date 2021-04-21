@@ -77,8 +77,10 @@ class TutorialStreamModelTest < ActiveSupport::TestCase
     task_def_second.tutorial_stream = tutorial_stream_second
     task_def_second.save!
 
-    tutorial_stream_first.destroy
-    assert_not tutorial_stream_first.destroyed?
+    assert_raises ActiveRecord::InvalidForeignKey do
+      tutorial_stream_first.destroy
+    end
+    refute tutorial_stream_first.destroyed?
     assert_equal 'cannot be deleted as it has task definitions associated with it, and it is not the last (or second last) tutorial stream', tutorial_stream_first.errors.full_messages.last
   end
 
@@ -138,7 +140,7 @@ class TutorialStreamModelTest < ActiveSupport::TestCase
     assert_equal 1, unit.tutorial_streams.count
     assert_equal 1, unit.tutorial_streams.last.tutorials.count
     assert_equal 2, unit.tutorials.count
-    
+
     unit.tutorial_streams.last.destroy!
 
     assert_equal 0, unit.tutorial_streams.count
