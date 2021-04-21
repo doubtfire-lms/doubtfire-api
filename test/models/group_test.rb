@@ -50,7 +50,7 @@ class GroupModelTest < ActiveSupport::TestCase
     group1.add_member project1
     group1.add_member project2
     group1.remove_member project1
-    
+
     refute_includes(group1.projects,project1)
     assert_includes(group1.past_projects,project1)
     assert_includes(group1.projects,project2)
@@ -83,17 +83,24 @@ class GroupModelTest < ActiveSupport::TestCase
 
     gs.update(capacity: 2)
 
+    group1.reload
     assert group1.at_capacity?
 
     project = FactoryBot.create :project, unit: unit
     group1.add_member project
 
     assert group1.at_capacity?
+
     gs.update(capacity: 3)
+    group1.reload
     assert group1.at_capacity?
+
     gs.update(capacity: 4)
+    group1.reload
     refute group1.at_capacity?
+
     gs.update(capacity: nil)
+    group1.reload
     refute group1.at_capacity?
 
     unit.destroy
@@ -101,7 +108,7 @@ class GroupModelTest < ActiveSupport::TestCase
 
   def test_switch_tutorial
     unit = FactoryBot.create :unit, group_sets: 1, groups: [{gs: 0, students: 0}]
-    
+
     gs = unit.group_sets.first
     gs.update keep_groups_in_same_class: true, allow_students_to_manage_groups: true
     group1 = gs.groups.first
@@ -113,12 +120,12 @@ class GroupModelTest < ActiveSupport::TestCase
     group1.add_member p2
 
     tutorial = FactoryBot.create :tutorial, unit: unit, campus: nil
-    
+
     refute p1.enrolled_in? tutorial
     refute p2.enrolled_in? tutorial
-    
+
     group1.switch_to_tutorial tutorial
-    
+
     assert p1.enrolled_in? tutorial
     assert p2.enrolled_in? tutorial
 
@@ -162,7 +169,7 @@ class GroupModelTest < ActiveSupport::TestCase
 
     p2 = group.projects.second
     p3 = group.projects.last
-    
+
     t1 = p1.task_for_task_definition(td)
     t2 = p2.task_for_task_definition(td)
     t3 = p3.task_for_task_definition(td)
@@ -351,7 +358,7 @@ class GroupModelTest < ActiveSupport::TestCase
 
   def test_group_toggle_enrolment
     unit = FactoryBot.create :unit, group_sets: 1, groups: [{gs: 0, students: 0}]
-    
+
     gs = unit.group_sets.first
     gs.update keep_groups_in_same_class: true, allow_students_to_manage_groups: false, capacity: 2
 
@@ -371,14 +378,14 @@ class GroupModelTest < ActiveSupport::TestCase
 
     # check we can reenrol the student
     assert p2.update(enrolled: true)
-    
+
     assert group1.at_capacity? # they are in the right tutorial
     unit.destroy
   end
 
   def test_group_toggle_enrolment_at_capacity
     unit = FactoryBot.create :unit, group_sets: 1, groups: [{gs: 0, students: 0}]
-    
+
     gs = unit.group_sets.first
     gs.update capacity: 2
 
@@ -403,7 +410,8 @@ class GroupModelTest < ActiveSupport::TestCase
 
     # check we can reenrol the student
     assert p2.update(enrolled: true)
-    
+
+    group1.reload
     assert_equal 2, group1.projects.count # they are in the right tutorial
     unit.destroy
   end
@@ -421,7 +429,7 @@ class GroupModelTest < ActiveSupport::TestCase
     group.add_member(m1)
 
     assert_equal 1, m1.group_memberships.count
-    
+
     group.destroy
 
     assert_equal 0, m1.group_memberships.count
