@@ -34,7 +34,7 @@ module Api
       if result.nil?
         error!({ error: 'No campus added.' }, 403)
       else
-        present result, using: Api::Entities::CampusEntity
+        present result, with: Api::Entities::CampusEntity
       end
     end
 
@@ -60,7 +60,7 @@ module Api
                                                                       :active)
 
       campus.update!(campus_parameters)
-      present campus, using: Api::Entities::CampusEntity
+      present campus, with: Api::Entities::CampusEntity
     end
 
     desc 'Delete a campus'

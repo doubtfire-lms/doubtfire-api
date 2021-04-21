@@ -30,7 +30,7 @@ module Api
       if result.nil?
         error!({ error: 'No activity type added' }, 403)
       else
-        present result, using: Api::Entities::ActivityTypeEntity
+        present result, with: Api::Entities::ActivityTypeEntity
       end
     end
 
@@ -52,7 +52,7 @@ module Api
                                                                       :abbreviation)
 
       activity_type.update!(activity_type_parameters)
-      present activity_type, using: Api::Entities::ActivityTypeEntity
+      present activity_type, with: Api::Entities::ActivityTypeEntity
     end
 
     desc 'Delete an activity type'
