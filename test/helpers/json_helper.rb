@@ -32,13 +32,21 @@ module TestHelpers
 
     #
     # Assert that a JSON response matches the model and keys provided
-    #
-    def assert_json_matches_model(model, response_json, keys)
-      keys.each { |k| assert response_json.key?(k), "Response missing key #{k} - #{response_json}" }
-      keys.each { |k|
-        value = model.is_a?(Hash) ? (model[k].nil? ? model[k.to_sym] : model[k]) : model.send(k)
+    # - key data is either a hash that maps response to model keys, or a list of keys to match
+    def assert_json_matches_model(model, response_json, keys_data)
+      if keys_data.instance_of? Hash
+        response_keys = keys_data.keys.map {|k| k.to_s }
+        keys = keys_data
+      else
+        response_keys = keys_data
+        keys = keys_data.map { |i| [i, i] }.to_h
+      end
+      response_keys.each { |k| assert response_json.key?(k), "Response missing key #{k} - #{response_json}" }
+      response_keys.each { |k|
+        mk = keys[k] || keys[k.to_sym]
+        value = model.is_a?(Hash) ? (model[mk].nil? ? model[mk.to_sym] : model[mk]) : model.send(mk)
         if ! value.nil?
-          assert_equal value, response_json[k], "Values for key #{k} do not match - #{response_json}"
+          assert_equal value, response_json[k], "Values for model key #{mk} does not matach value of response key #{k} - #{response_json}"
         else
           assert_nil response_json[k], "Values for key #{k} is not nil - #{response_json}"
         end
