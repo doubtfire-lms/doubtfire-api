@@ -49,7 +49,7 @@ module Api
       end
       expose :num_students
       expose :tutor do |tutorial, options|
-        Api::Entities::UserEntity.represent tutorial.tutor, only: [:id, :name, :email]
+        Api::Entities::UserEntity.represent tutorial.tutor, only: [:id, :name]
       end
     end
   end
