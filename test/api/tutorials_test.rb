@@ -19,13 +19,7 @@ class TutorialsTest < ActiveSupport::TestCase
   #####----------POST tests - Create tutorial----------#####
 
   def assert_tutorial_model_response(response, expected)
-    expected = expected.as_json
-
-    # Can't use assert_json_matches_model as keys differ
-    assert_equal response[:meeting_day], expected[:day]
-    assert_equal response[:meeting_time], expected[:time]
-    assert_equal response[:location], expected[:location]
-    assert_equal response[:abbrev], expected[:abbrev]
+    assert_json_matches_model expected, response, %w(id meeting_day meeting_time meeting_location abbreviation campus_id capacity)
   end
 
   # Testing for successful POST creations
@@ -49,7 +43,7 @@ class TutorialsTest < ActiveSupport::TestCase
     data_to_post = {
       tutorial: tutorial
     }
-    
+
     # Number of tutorials before POST
     number_of_tutorials = Tutorial.all.length
 
@@ -66,6 +60,7 @@ class TutorialsTest < ActiveSupport::TestCase
     assert_equal Tutorial.all.length, number_of_tutorials + 1
 
     # Check returned details match as expected
+    tutorial['id'] = Tutorial.last.id
     assert_tutorial_model_response last_response_body, tutorial
   end
 
@@ -111,6 +106,7 @@ class TutorialsTest < ActiveSupport::TestCase
     assert_equal Tutorial.all.length, number_of_tutorials + 1
 
     # Check if the returned details match as expected
+    tutorial['id'] = Tutorial.last.id
     assert_tutorial_model_response last_response_body, tutorial
   end
 
@@ -131,10 +127,6 @@ class TutorialsTest < ActiveSupport::TestCase
       meeting_time: 'string'
     }
 
-    outcome_expected = {
-    meeting_time: nil
-    }
-
     data_to_post = {
       tutorial: tutorial
     }
@@ -150,11 +142,11 @@ class TutorialsTest < ActiveSupport::TestCase
     # Check if the POST get through
     assert_equal 201, last_response.status
 
-    # Check if the returned details match as expected
-    assert_tutorial_model_response outcome_expected, last_response_body
-
     # Check if there is a new creation
     assert_equal number_of_tutorials + 1, Tutorial.all.length
+
+    # Check if the returned details match as expected
+    assert_tutorial_model_response last_response_body, Tutorial.last
   end
 
   # Testing for POST failures
@@ -178,7 +170,7 @@ class TutorialsTest < ActiveSupport::TestCase
     data_to_post = {
       tutorial: tutorial
     }
-    
+
     auth_data_to_header = {
       auth_token: 'Incorrect_Auth_Token'
     }
@@ -244,7 +236,7 @@ class TutorialsTest < ActiveSupport::TestCase
     campus = FactoryBot.create(:campus)
     unit = FactoryBot.create(:unit)
     tutor = unit.tutors.first
-    
+
     tutorial = {
       unit_id: 'string',
       tutor_id: tutor.id,
@@ -335,7 +327,7 @@ class TutorialsTest < ActiveSupport::TestCase
     data_to_post = {
       tutorial: tutorial
     }
-  
+
     # Number of tutorials before the first POST
     number_of_tutorials = Tutorial.all.length
 
@@ -350,7 +342,7 @@ class TutorialsTest < ActiveSupport::TestCase
 
     # Check if there is a new tutorial after the first POST
     assert_equal Tutorial.all.length, number_of_tutorials + 1
-    
+
     # Number of tutorials before the second POST
     number_of_tutorials = Tutorial.all.length
 
@@ -621,7 +613,7 @@ class TutorialsTest < ActiveSupport::TestCase
     data_to_post = {
       tutorial: tutorial,
     }
-    
+
     # Create and add a dedicated tutor into the unit
     dedicated_tutor = FactoryBot.create(:user, :tutor)
     unit.employ_staff dedicated_tutor, Role.tutor
@@ -694,6 +686,7 @@ class TutorialsTest < ActiveSupport::TestCase
     tutor = unit.tutors.first
 
     tutorial = {
+      id: tutorial_old.id,
       unit_id: unit.id,
       tutor_id: tutor.id,
       campus_id: campus.id,
@@ -718,10 +711,10 @@ class TutorialsTest < ActiveSupport::TestCase
 
     # perform the PUT with a unit admin auth token
     put_json "/api/tutorials/#{tutorial_old.id}", data_to_put
-    
+
     # Check for successful request
     assert_equal 200, last_response.status
-    
+
     # Check details match as expected
     tutorial_old.reload
     assert_tutorial_model_response last_response_body, tutorial_old
@@ -738,6 +731,7 @@ class TutorialsTest < ActiveSupport::TestCase
     tutor = unit.tutors.first
 
     tutorial = {
+      id: tutorial_old.id,
       unit_id: unit.id,
       tutor_id: tutor.id,
       campus_id: campus.id,
@@ -762,10 +756,10 @@ class TutorialsTest < ActiveSupport::TestCase
 
     # perform the put with an admin auth token
     put_json "/api/tutorials/#{tutorial_old.id}", data_to_put
-    
+
     # Check for successful request
     assert_equal 200, last_response.status
-    
+
     # Check details match as expected
     tutorial_old.reload
     assert_tutorial_model_response last_response_body, tutorial_old
@@ -782,6 +776,7 @@ class TutorialsTest < ActiveSupport::TestCase
     tutor = unit.tutors.first
 
     tutorial = {
+      id: tutorial_old.id,
       unit_id: unit.id,
       tutor_id: tutor.id,
       campus_id: campus.id,
@@ -806,10 +801,10 @@ class TutorialsTest < ActiveSupport::TestCase
 
     # perform the put with an admin auth token
     put_json "/api/tutorials/#{tutorial_old.id}", data_to_put
-    
+
     # Check for successful request
     assert_equal 200, last_response.status
-    
+
     # Check details match as expected
     tutorial_old.reload
     assert_tutorial_model_response last_response_body, tutorial_old
@@ -826,6 +821,7 @@ class TutorialsTest < ActiveSupport::TestCase
     tutor = unit.tutors.first
 
     tutorial = {
+      id: tutorial_old.id,
       unit_id: unit.id,
       tutor_id: tutor.id,
       campus_id: campus.id,
@@ -850,10 +846,10 @@ class TutorialsTest < ActiveSupport::TestCase
 
     # perform the put with an admin auth token
     put_json "/api/tutorials/#{tutorial_old.id}", data_to_put
-    
+
     # Check for successful request
     assert_equal 200, last_response.status
-    
+
     # Check details match as expected
     tutorial_old.reload
     assert_tutorial_model_response last_response_body, tutorial_old
@@ -870,6 +866,7 @@ class TutorialsTest < ActiveSupport::TestCase
     tutor = unit.tutors.first
 
     tutorial = {
+      id: tutorial_old.id,
       unit_id: unit.id,
       tutor_id: tutor.id,
       campus_id: campus.id,
@@ -894,10 +891,10 @@ class TutorialsTest < ActiveSupport::TestCase
 
     # perform the PUT with a unit admin auth token
     put_json "/api/tutorials/#{tutorial_old.id}", data_to_put
-    
+
     # Check for successful request
     assert_equal 200, last_response.status
-    
+
     # Check details match as expected
     tutorial_old.reload
     assert_tutorial_model_response last_response_body, tutorial_old
@@ -1116,7 +1113,7 @@ class TutorialsTest < ActiveSupport::TestCase
 
     # perform the delete with an admin auth token
     delete_json "/api/tutorials/#{tutorial.id}"
-    
+
     # Check that the request succeeds
     assert_equal 200, last_response.status
 
@@ -1145,7 +1142,7 @@ class TutorialsTest < ActiveSupport::TestCase
 
     # perform the delete with an admin auth token
     delete_json "/api/tutorials/#{tutorial.id}"
-    
+
     # Check that the request succeeds
     assert_equal 200, last_response.status
 
@@ -1180,7 +1177,7 @@ class TutorialsTest < ActiveSupport::TestCase
 
     # perform the delete with an admin auth token
     delete_json "/api/tutorials/#{tutorial.id}"
-    
+
     # Check that the request succeeds
     assert_equal 403, last_response.status
 
@@ -1200,9 +1197,9 @@ class TutorialsTest < ActiveSupport::TestCase
 
     # Add username and auth_token to Header
     add_auth_header_for(user: User.first)
-    
+
     # perform the post
-    delete_json "/api/tutorials/#{tutorial_id}" 
+    delete_json "/api/tutorials/#{tutorial_id}"
 
     # Check number of tutorials does not change
     assert_equal number_of_tutorials , Tutorial.all.length
@@ -1309,7 +1306,7 @@ class TutorialsTest < ActiveSupport::TestCase
     post_json "/api/units/#{unit.id}/tutorials/#{tutorial.abbreviation}/enrolments/#{project.id}", data_to_put
 
     assert_equal 201, last_response.status
-    
+
     assert project.enrolled_in? tutorial
 
     tutorial = unit.tutorials.first
@@ -1319,7 +1316,7 @@ class TutorialsTest < ActiveSupport::TestCase
     post_json "/api/units/#{unit.id}/tutorials/#{tutorial.abbreviation}/enrolments/#{project.id}", data_to_put
 
     assert_equal 403, last_response.status
-    
+
     refute project.enrolled_in? tutorial
   end
 end
