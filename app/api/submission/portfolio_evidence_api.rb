@@ -49,7 +49,7 @@ module Api
         # Copy files to be PDFed
         task.accept_submission(current_user, scoop_files(params, upload_reqs), student, self, params[:contributions], trigger, alignments)
 
-        present task, with: Api::Entities::TaskEntity, include_other_projects: false
+        present task, with: Api::Entities::TaskEntity, update_only: true
       end # post
 
       desc 'Retrieve submission document included for the task id'

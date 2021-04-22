@@ -7,6 +7,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
   include Rack::Test::Methods
   include TestHelpers::TestFileHelper
   include TestHelpers::AuthHelper
+  include TestHelpers::JsonHelper
 
   def app
     Rails.application
@@ -69,7 +70,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
 
-    assert_equal 201, last_response.status
+    assert_equal 201, last_response.status, last_response_body
 
     task = project.task_for_task_definition(td)
     assert task.convert_submission_to_pdf
