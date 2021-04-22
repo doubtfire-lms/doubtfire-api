@@ -176,7 +176,7 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert_equal expected_unit.name, actual_unit['name'], last_response_body
     assert_equal expected_unit.code, actual_unit['code']
     assert_equal expected_unit.start_date.to_date, actual_unit['start_date'].to_date
-    assert_equal expected_unit.end_date.to_date, actual_unit['end_date'].to_date.to_date
+    assert_equal expected_unit.end_date.to_date, actual_unit['end_date'].to_date
 
     # Check last unit in Units (created in seed.db)
     actual_unit = last_response_body[1]
@@ -185,7 +185,7 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert_equal expected_unit.name, actual_unit['name']
     assert_equal expected_unit.code, actual_unit['code']
     assert_equal expected_unit.start_date.to_date, actual_unit['start_date'].to_date
-    assert_equal expected_unit.end_date.to_date, actual_unit['end_date'].to_date.to_date
+    assert_equal expected_unit.end_date.to_date, actual_unit['end_date'].to_date
   end
 
   # Test GET for getting a specific unit by id
