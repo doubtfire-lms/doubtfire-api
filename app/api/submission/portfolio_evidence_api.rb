@@ -49,7 +49,7 @@ module Api
         # Copy files to be PDFed
         task.accept_submission(current_user, scoop_files(params, upload_reqs), student, self, params[:contributions], trigger, alignments)
 
-        TaskUpdateSerializer.new(task)
+        present task, with: Api::Entities::TaskEntity, include_other_projects: false
       end # post
 
       desc 'Retrieve submission document included for the task id'
@@ -105,10 +105,12 @@ module Api
         task = project.task_for_task_definition(task_definition)
 
         if task && PortfolioEvidence.recreate_task_pdf(task)
-          { result: 'done' }
+          result = 'done'
         else
-          { result: 'false' }
+          result = 'false'
         end
+
+        present :result, result, with: Grape::Presenters::Presenter
       end # put
     end
   end
