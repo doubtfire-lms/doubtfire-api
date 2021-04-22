@@ -59,5 +59,21 @@ module Api
       teaching_period = TeachingPeriod.find(params[:teaching_period_id])
       present teaching_period.breaks, with: Api::Entities::BreakEntity
     end
+
+    desc 'Remove a break from a teaching period'
+    delete '/teaching_periods/:teaching_period_id/breaks/:id' do
+      unless authorise? current_user, User, :handle_teaching_period
+        error!({ error: 'Not authorised to delete a break' }, 403)
+      end
+
+      # Find the Teaching Period to update break
+      teaching_period = TeachingPeriod.find(params[:teaching_period_id])
+
+      id = params[:id]
+      the_break = teaching_period.breaks.find(id)
+
+      the_break.destroy
+      present the_break.destroyed?, with: Grape::Presenters::Presenter
+    end
   end
 end
