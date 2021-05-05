@@ -274,7 +274,7 @@ module Api
           task.save
         end
 
-        present task, with: Api::Entities::TaskEntity, include_other_projects: true
+        present task, with: Api::Entities::TaskEntity, include_other_projects: true, update_only: true
       else
         error!({ error: "Couldn't find Task with id=#{params[:id]}" }, 403)
       end
