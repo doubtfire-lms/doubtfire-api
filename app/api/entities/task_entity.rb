@@ -26,9 +26,10 @@ module Api
       expose :num_new_comments, unless: :update_only
 
       expose :other_projects, if: :include_other_projects do |task, options|
-        return nil unless task.group_task? && !task.group.nil?
-        grp = task.group
-        grp.projects.select { |p| p.id != task.project_id }.map { |p| { id: p.id, new_stats: p.task_stats } }
+        if task.group_task? && !task.group.nil?
+          grp = task.group
+          grp.projects.select { |p| p.id != task.project_id }.map { |p| { id: p.id, new_stats: p.task_stats } }
+        end
       end
     end
   end
