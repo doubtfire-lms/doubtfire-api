@@ -84,6 +84,7 @@ module Api
 
         if params[:as_attachment]
           header['Content-Disposition'] = "attachment; filename=#{filename}"
+          header['Access-Control-Expose-Headers'] = 'Content-Disposition'
         end
 
         # Set download headers...
