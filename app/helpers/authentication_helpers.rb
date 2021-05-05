@@ -20,17 +20,17 @@ module AuthenticationHelpers
     token_with_value = nil
     # Check warden -- authenticate using DB or LDAP etc.
     return true if warden.authenticated?
-    
-    auth_param = headers['Auth-Token'] || params['Auth-Token'] || params['Auth_Token']
-    user_param = headers['Username'] || params['Username'] || params['username']
 
-    # Check for valid auth token  and username in request header 
+    auth_param = headers['Auth-Token'] || params['auth_token']
+    user_param = headers['Username'] || params['username']
+
+    # Check for valid auth token  and username in request header
     user = current_user
 
     # Authenticate from header or params
     if auth_param.present? && user_param.present? && user.present?
       # Get the list of tokens for a user
-      token = user.token_for_text?(headers['Auth-Token']) 
+      token = user.token_for_text?(auth_param)
     end
 
     # Check user by token
@@ -53,7 +53,7 @@ module AuthenticationHelpers
   # Get the current user either from warden or from the header
   #
   def current_user
-    warden.user || User.find_by_username(headers['Username']) || User.find_by_username(params['Username'])
+    warden.user || User.find_by_username(headers['Username']) || User.find_by_username(params['username'])
   end
 
   #
