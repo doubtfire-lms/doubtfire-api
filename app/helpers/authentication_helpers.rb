@@ -5,9 +5,10 @@
 # This is used by the grape api.
 #
 module AuthenticationHelpers
-  def warden
-    env['warden']
-  end
+  # def warden
+  #   puts ENV['warden'].inspect
+  #   env['warden']
+  # end
 
   module_function
 
@@ -19,8 +20,7 @@ module AuthenticationHelpers
     # Variable to store auth_token if available
     token_with_value = nil
     # Check warden -- authenticate using DB or LDAP etc.
-    return true if warden.authenticated?
-
+    # return true if warden.authenticated?
     auth_param = headers['Auth-Token'] || params['auth_token']
     user_param = headers['Username'] || params['username']
 
@@ -53,7 +53,7 @@ module AuthenticationHelpers
   # Get the current user either from warden or from the header
   #
   def current_user
-    warden.user || User.find_by_username(headers['Username']) || User.find_by_username(params['username'])
+    User.find_by_username(headers['Username']) || User.find_by_username(params['username'])
   end
 
   #
