@@ -9,12 +9,29 @@ namespace :submission do
   end
 
   def is_executing?
-    tmp_file = rake_executing_marker_file
-    File.exist?(tmp_file)
+    pid_file = rake_executing_marker_file
+    tmp_file = pid_file
+    return false unless File.exist?(tmp_file)
+
+    # Check that the pid matches something running...
+    begin
+      pid = File.read(pid_file).to_i
+      raise Errno::ESRCH if pid == 0
+      Process.getpgid( pid )
+      true
+    rescue Errno::ESRCH
+      # clean up old running file
+      end_executing
+      false
+    end
   end
 
   def start_executing
-    FileUtils.touch(rake_executing_marker_file)
+    pid_file = rake_executing_marker_file
+    FileUtils.touch(pid_file)
+    File.open pid_file, "w" do |f|
+      f.write Process.pid
+    end
   end
 
   def end_executing
