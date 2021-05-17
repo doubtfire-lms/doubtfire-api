@@ -18,22 +18,42 @@ class PortfolioEvidence
     FileHelper.student_work_dir(type, task, create)
   end
 
+  # Move all tasks to a folder with this process's id in "in_process"
+  def self.move_to_pid_folder
+
+    # Report old running processes...
+    Dir.entries(student_work_dir(:in_process)).select {|entry| entry.start_with?("pid_")}.each do |entry|
+      puts "Existing process still running or not cleaned up - #{entry}"
+    end
+
+    pid_folder = File.join(student_work_dir(:in_process), "pid_#{Process.pid}")
+    
+    # Move everything in "new" to "pid" folder but retain the old "new" folder
+    FileHelper.move_files(student_work_dir(:new), pid_folder, true)
+    pid_folder
+  end
+
   #
   # Process enqueued pdfs in each folder of the :new directory
   # into PDF files
   #
-  def self.process_new_to_pdf
+  def self.process_new_to_pdf(my_source)
     done = {}
     errors = {}
 
     # For each folder in new (i.e., queued folders to process) that matches appropriate name
-    new_root_dir = Dir.entries(student_work_dir(:new)).select do |f|
+    new_root_dir = Dir.entries(my_source).select do |f|
       # rubocop:disable Style/NumericPredicate
       (f =~ /^\d+$/) == 0
       # rubocop:enable Style/NumericPredicate
     end
     new_root_dir.each do |folder_id|
-      task = Task.find(folder_id)
+      begin
+        task = Task.find(folder_id)
+      rescue
+        logger.error("Failed to find task with id #{folder_id} during PDF generation")
+        next
+      end
 
       add_error = lambda do |message|
         logger.error "Failed to process folder_id = #{folder_id}. #{message}"
@@ -49,7 +69,7 @@ class PortfolioEvidence
 
       begin
         logger.info "creating pdf for task #{task.id}"
-        success = task.convert_submission_to_pdf
+        success = task.convert_submission_to_pdf(my_source)
 
         if success
           done[task.project] = [] if done[task.project].nil?
