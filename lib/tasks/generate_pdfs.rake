@@ -10,8 +10,7 @@ namespace :submission do
 
   def is_executing?
     pid_file = rake_executing_marker_file
-    tmp_file = pid_file
-    return false unless File.exist?(tmp_file)
+    return false unless File.exist?(pid_file)
 
     # Check that the pid matches something running...
     begin
@@ -44,11 +43,13 @@ namespace :submission do
       puts 'Skip generate pdf -- already executing'
     else
       start_executing
+      my_source = PortfolioEvidence.move_to_pid_folder
+      end_executing
 
       begin
-        logger.info 'Starting generate pdf'
+        logger.info "Starting generate pdf - #{Process.pid}"
 
-        PortfolioEvidence.process_new_to_pdf
+        PortfolioEvidence.process_new_to_pdf(my_source)
 
         projects_to_compile = Project.where(compile_portfolio: true)
         projects_to_compile.each do |project|
@@ -70,8 +71,10 @@ namespace :submission do
           end
         end
       ensure
-        logger.info 'Ending generate pdf'
-        end_executing
+        logger.info "Ending generate pdf - #{Process.pid}"
+        if Dir.entries(my_source).count == 2 # . and ..
+          FileUtils.rmdir my_source
+        end
       end
     end
   end

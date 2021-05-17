@@ -770,8 +770,7 @@ class Task < ActiveRecord::Base
   #
   # Compress the done files for a student - includes cover page and work uploaded
   #
-  def compress_new_to_done
-    task_dir = student_work_dir(:new, false)
+  def compress_new_to_done(task_dir = student_work_dir(:new, false))
     begin
       # Ensure that this task is the submitter task for a  group_task... otherwise
       # remove this submission
@@ -841,7 +840,7 @@ class Task < ActiveRecord::Base
   #
   # Move folder over from new or done -> in_process returns true on success
   #
-  def move_files_to_in_process
+  def move_files_to_in_process(source_folder)
     # find and clear out old dir
     in_process_dir = student_work_dir(:in_process, false)
 
@@ -855,25 +854,24 @@ class Task < ActiveRecord::Base
       Dir.chdir(pwd)
     end
 
-    from_dir = student_work_dir(:new, false)
+    # Zip new submission and store in done files (will remove from_dir) - ensure trailing /
+    from_dir = File.join(source_folder, id.to_s) + "/"
     if Dir.exist?(from_dir)
       # save new files in done folder
-      return false unless compress_new_to_done
+      return false unless compress_new_to_done(from_dir)
     end
 
+    # Get the zip file path...
     zip_file = zip_file_path_for_done_task
     if zip_file && File.exist?(zip_file)
-      extract_file_from_done FileHelper.student_work_dir(:new), '*', lambda { |_task, to_path, name|
+      # extract to root in process dir - as it contains the folder in the zip file
+      extract_file_from_done FileHelper.student_work_dir(:in_process), '*', lambda { |_task, to_path, name|
         "#{to_path}#{name}"
       }
-      return false unless Dir.exist?(from_dir)
+      return Dir.exist?(in_process_dir)
     else
       return false
     end
-
-    # Move files from new to in process
-    FileHelper.move_files(from_dir, in_process_dir)
-    true
   end
 
   def __output_filename__(in_dir, idx, type)
@@ -985,8 +983,8 @@ class Task < ActiveRecord::Base
     end
   end
 
-  def convert_submission_to_pdf
-    return false unless move_files_to_in_process
+  def convert_submission_to_pdf(source_folder = FileHelper.student_work_dir(:in_process))
+    return false unless move_files_to_in_process(source_folder)
 
     begin
       tac = TaskAppController.new
