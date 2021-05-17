@@ -269,7 +269,7 @@ module FileHelper
   #
   # Move files between stages - new -> in process -> done
   #
-  def move_files(from_path, to_path)
+  def move_files(from_path, to_path, retain_from = false)
     # move into the new dir - and mv files to the in_process_dir
     pwd = FileUtils.pwd
     begin
@@ -279,7 +279,8 @@ module FileHelper
       Dir.chdir(to_path)
       begin
         # remove from_path as files are now "in process"
-        FileUtils.rm_r(from_path)
+        # these can be retained when the old folder wants to be kept
+        FileUtils.rm_r(from_path) unless retain_from
       rescue
         logger.warn "failed to rm #{from_path}"
       end
