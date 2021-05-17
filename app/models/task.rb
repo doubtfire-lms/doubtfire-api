@@ -867,7 +867,7 @@ class Task < ApplicationRecord
   #
   # Move folder over from new or done -> in_process returns true on success
   #
-  def move_files_to_in_process(source_folder)
+  def move_files_to_in_process(source_folder = FileHelper.student_work_dir(:new))
     # find and clear out old dir
     in_process_dir = student_work_dir(:in_process, false)
 
@@ -1010,7 +1010,7 @@ class Task < ApplicationRecord
     end
   end
 
-  def convert_submission_to_pdf(source_folder = FileHelper.student_work_dir(:in_process))
+  def convert_submission_to_pdf(source_folder = FileHelper.student_work_dir(:new))
     return false unless move_files_to_in_process(source_folder)
 
     begin
