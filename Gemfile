@@ -3,9 +3,9 @@ source 'https://rubygems.org'
 # Ruby versions for various enviornments
 ruby_versions = {
   development:  '~>2.6.7',
-  test:         '~>2.3.1',
-  staging:      '~>2.3.1',
-  production:   '~>2.3.1'
+  test:         '~>2.6.7',
+  staging:      '~>2.6.7',
+  production:   '~>2.6.7'
 }
 # Get the ruby version for the current enviornment
 ruby ruby_versions[(ENV['RAILS_ENV'] || 'development').to_sym]
@@ -41,11 +41,11 @@ group :production do
 end
 
 group :production, :staging do
-  gem 'mysql2'
+  gem 'mysql2', '0.4.10'
 end
 
 # Authentication
-gem 'devise', '~> 4.1.1'
+gem 'devise', '~> 4.4.0'
 gem 'devise_ldap_authenticatable'
 gem 'json-jwt', '1.7.0'
 
