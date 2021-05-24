@@ -8,21 +8,21 @@ namespace :submission do
   #
   # Returns the file that indicates if this rake process is already executing...
   #
-  def rake_executing_marker_file
+  def rake_plagiarism_executing_marker_file
     File.join(Doubtfire::Application.config.student_work_dir, 'rake.plagiarism.running')
   end
 
   def is_executing?
-    tmp_file = rake_executing_marker_file
+    tmp_file = rake_plagiarism_executing_marker_file
     File.exist?(tmp_file)
   end
 
   def start_executing
-    FileUtils.touch(rake_executing_marker_file)
+    FileUtils.touch(rake_plagiarism_executing_marker_file)
   end
 
   def end_executing
-    FileUtils.rm(rake_executing_marker_file)
+    FileUtils.rm(rake_plagiarism_executing_marker_file)
   end
 
   task :simulate_plagiarism, [:num_links] => [:skip_prod, :environment] do |t, args|
