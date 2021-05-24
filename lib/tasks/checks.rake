@@ -12,21 +12,21 @@ namespace :submission do
     File.join(Doubtfire::Application.config.student_work_dir, 'rake.plagiarism.running')
   end
 
-  def is_executing?
+  def is_executing_plagiarism?
     tmp_file = rake_plagiarism_executing_marker_file
     File.exist?(tmp_file)
   end
 
-  def start_executing
+  def start_executing_plagiarism
     FileUtils.touch(rake_plagiarism_executing_marker_file)
   end
 
-  def end_executing
+  def end_executing_plagiarism
     FileUtils.rm(rake_plagiarism_executing_marker_file)
   end
 
   task :simulate_plagiarism, [:num_links] => [:skip_prod, :environment] do |t, args|
-    if is_executing?
+    if is_executing_plagiarism?
       puts 'Skip plagiarism check -- already executing'
       logger.info 'Skip plagiarism check -- already executing'
     else
@@ -56,11 +56,11 @@ namespace :submission do
   end
 
   task check_plagiarism: :environment do
-    if is_executing?
+    if is_executing_plagiarism?
       puts 'Skip plagiarism check -- already executing'
       logger.info 'Skip plagiarism check -- already executing'
     else
-      start_executing
+      start_executing_plagiarism
 
       begin
         logger.info 'Starting plagiarism check'
@@ -78,7 +78,7 @@ namespace :submission do
         puts 'Failed with error'
         puts e.message.to_s
       ensure
-        end_executing
+        end_executing_plagiarism
       end
     end
   end
