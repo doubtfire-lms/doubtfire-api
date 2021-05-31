@@ -1,6 +1,6 @@
 version: '3'
 services:
-  api:
+  doubtfire-api:
     container_name: doubtfire-api
     build: .
     ports:
@@ -66,14 +66,14 @@ services:
       MYSQL_USER: itig
       MYSQL_PASSWORD: d872$$dh
 
-  web:
+  doubtfire-web:
     container_name: doubtfire-web
     build: ../doubtfire-web
     ports:
       - "4200:4200"
     mem_limit: 5gb
     depends_on:
-      - api
+      - doubtfire-api
     volumes:
       - ../doubtfire-web:/doubtfire-web
       - /doubtfire-web/dist
