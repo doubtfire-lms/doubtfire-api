@@ -19,6 +19,8 @@ if ! command -v lualatex > /dev/null; then
   # Install a full texlive system
   ./install-tl --profile="${APP_PATH}/texlive.profile"
 
+  tlmgr install fontawesome luatextra luacode minted fvextra catchfile xstring framed lastpage
+
   cd ..
 
   # Keep no backups (not required, simply makes cache bigger)
