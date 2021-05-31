@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y \
   libmagickwand-dev \
   libmariadb-dev \
   libpq-dev \
-  python-pygments \
+  python3-pygments \
   tzdata \
   wget
 
