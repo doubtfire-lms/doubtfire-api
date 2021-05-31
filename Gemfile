@@ -17,13 +17,9 @@ group :development, :test do
   gem 'database_cleaner'
   gem 'byebug'
   gem 'simplecov', require: false
-  gem 'pg', '~>0.18'
-  gem 'hirb'
   gem 'better_errors'
   gem 'rails_best_practices'
-  gem 'thin'
   gem 'rubocop', '0.46.0'
-  gem 'factory_bot_rails'
 end
 
 group :development, :test, :staging do
@@ -36,13 +32,23 @@ group :development, :test, :staging do
   gem 'webmock'
 end
 
-group :production do
+# Optional passenger gem
+# usage: bundle --with-env=passenger
+group :passenger do
   gem 'passenger', '= 4.0.42'
 end
 
-group :production, :staging do
-  gem 'mysql2', '0.4.10'
+# Database
+gem 'mysql2', '0.4.10'
+
+# Webserver - included in development and test and optionally in production
+# usage: bundle --with-env=webserver
+group :development, :test, :webserver do
+  gem 'thin'
 end
+
+# Extend irb for better output
+gem 'hirb'
 
 # Authentication
 gem 'devise', '~> 4.4.0'
