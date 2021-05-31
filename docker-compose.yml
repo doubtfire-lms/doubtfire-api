@@ -1,4 +1,4 @@
-version: '2'
+version: '3'
 services:
   api:
     container_name: doubtfire-api
@@ -6,38 +6,74 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./:/doubtfire-api
-      - /doubtfire-api/.bundle
-      - /doubtfire-api/tmp
-    links:
-      - web
+      - ./:/doubtfire
+      - /doubtfire/.bundle
+      - /doubtfire/tmp
+      - ./student-work:/student-work
     depends_on:
-      - db
+      - dev-db
+      - test-db
     environment:
-      DATABASE_URL: 'postgresql://itig:d872$$dh@db:5432/doubtfire_dev'
       RAILS_ENV: 'development'
 
-  db:
-    container_name: doubtfire-db
-    image: postgres
-    ports:
-      - "5432:5432"
+      DF_STUDENT_WORK_DIR: /student-work
+      DF_INSTITUTION_HOST: http://localhost:3000
+      DF_INSTITUTION_PRODUCT_NAME: OnTrack
+
+      DF_SECRET_KEY_BASE: test-secret-key
+      DF_SECRET_KEY_ATTR: test-secret-key
+      DF_SECRET_KEY_DEVISE: test-secret-key
+
+      # Authentication method - can set to AAF or ldap
+      DF_AUTH_METHOD: database
+      DF_AAF_ISSUER_URL: https://rapid.test.aaf.edu.au
+      DF_AAF_AUDIENCE_URL: http://localhost:3000
+      DF_AAF_CALLBACK_URL: http://localhost:3000/api/auth/jwt
+      DF_AAF_IDENTITY_PROVIDER_URL: https://signon-uat.deakin.edu.au/idp/shibboleth
+      DF_AAF_UNIQUE_URL: https://rapid.test.aaf.edu.au/jwt/authnrequest/research/Ag4EJJhjf0zXHqlKvKZEbg
+      DF_AAF_AUTH_SIGNOUT_URL: https://sync-uat.deakin.edu.au/auth/logout
+      DF_SECRET_KEY_AAF: v4~LMFLzzwRGZdju\5QBa@FiHIN9
+
+      # Database settings - for development env
+      DF_DEV_DB_ADAPTER: mysql2
+      DF_DEV_DB_HOST: doubtfire-dev-db
+      DF_DEV_DB_DATABASE: doubtfire-dev
+      DF_DEV_DB_USERNAME: itig
+      DF_DEV_DB_PASSWORD: d872$$dh
+
+      # Database settings - for test env
+      DF_TEST_DB_ADAPTER: mysql2
+      DF_TEST_DB_HOST: doubtfire-test-db
+      DF_TEST_DB_DATABASE: doubtfire-test
+      DF_TEST_DB_USERNAME: itig
+      DF_TEST_DB_PASSWORD: d872$$dh
+
+  dev-db:
+    container_name: doubtfire-dev-db
+    image: mariadb
     environment:
-      POSTGRES_PASSWORD: d872$$dh
-      POSTGRES_USER: itig
+      MYSQL_ROOT_PASSWORD: db-root-password
+      MYSQL_DATABASE: doubtfire-dev
+      MYSQL_USER: itig
+      MYSQL_PASSWORD: d872$$dh
+
+  test-db:
+    container_name: doubtfire-test-db
+    image: mariadb
+    environment:
+      MYSQL_ROOT_PASSWORD: db-root-password
+      MYSQL_DATABASE: doubtfire-test
+      MYSQL_USER: itig
+      MYSQL_PASSWORD: d872$$dh
 
   web:
     container_name: doubtfire-web
     build: ../doubtfire-web
-    environment:
-      DF_DOCKER_MACHINE_IP: api
     ports:
-      - "4200:4200" # Angular 6
-      - "8000:8000" # Angular 1
-      - "8080:8080" # Angular 1
+      - "4200:4200"
+    mem_limit: 5gb
+    depends_on:
+      - api
     volumes:
       - ../doubtfire-web:/doubtfire-web
-      - /doubtfire-web/bin
-      - /doubtfire-web/build
-      - /doubtfire-web/node_modules
-      - /doubtfire-web/vendor
+      - /doubtfire-web/dist
