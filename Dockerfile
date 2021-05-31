@@ -25,7 +25,7 @@ ENV PATH /tmp/texlive/bin/x86_64-linux:$PATH
 
 # Install the Gems
 COPY ./Gemfile ./Gemfile.lock /doubtfire/
-RUN bundle install
+RUN bundle install --without passenger
 
 EXPOSE 3000
 
