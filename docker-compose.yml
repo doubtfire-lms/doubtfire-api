@@ -48,6 +48,13 @@ services:
       DF_TEST_DB_USERNAME: itig
       DF_TEST_DB_PASSWORD: d872$$dh
 
+      # Database settings - for test env
+      DF_PRODUCTION_DB_ADAPTER: mysql2
+      DF_PRODUCTION_DB_HOST: doubtfire-dev-db
+      DF_PRODUCTION_DB_DATABASE: doubtfire-dev
+      DF_PRODUCTION_DB_USERNAME: itig
+      DF_PRODUCTION_DB_PASSWORD: d872$$dh
+
   dev-db:
     container_name: doubtfire-dev-db
     image: mariadb
