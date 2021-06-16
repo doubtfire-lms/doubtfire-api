@@ -2,7 +2,7 @@ version: '2'
 services:
   api:
     container_name: doubtfire-api
-    build: .
+    image: akashagarwal7/doubtfire-api_api
     ports:
       - "3000:3000"
     volumes:
@@ -28,7 +28,7 @@ services:
 
   web:
     container_name: doubtfire-web
-    build: ../doubtfire-web
+    image: akashagarwal7/doubtfire-api_web
     environment:
       DF_DOCKER_MACHINE_IP: api
     ports:
