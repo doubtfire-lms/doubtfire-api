@@ -100,6 +100,81 @@ class PortfolioEvidence
     end
   end
 
+  def self.strip_till_submission_history(str)
+    substr = '/doubtfire-api'
+    starting_len = str.index(substr)
+    str[starting_len..str.length]
+  end
+
+  def self.perform_overseer_submission(task)
+    sm_instance = Doubtfire::Application.config.sm_instance
+    return false if sm_instance.nil?
+
+    # Proceed only if:
+    # unit's assessment is enabled &&
+    # task's assessment is enabled &&
+    # task definition has an assessment resources zip file &&
+    # task has a student submission
+
+    task_definition = task.task_definition
+    unit = task_definition.unit
+
+    return false unless unit.assessment_enabled
+    return false unless task_definition.assessment_enabled
+    return false unless task_definition.has_task_assessment_resources?
+    assessment_resources_path = task_definition.task_assessment_resources
+
+    docker_image_name_tag = task_definition.docker_image_name_tag || unit.docker_image_name_tag
+    return false if docker_image_name_tag.nil? || docker_image_name_tag.strip.empty?
+
+    timestamp = Time.now.utc.to_i
+
+    task_submission_with_timestamp_path = FileHelper.task_submission_identifier_path_with_timestamp(:done, task, timestamp)
+    puts "task_submission_with_timestamp_path: #{task_submission_with_timestamp_path}"
+
+    zip_file_path = "#{task_submission_with_timestamp_path}/submission.zip"
+
+    # Generate a zip file for this particular submission with timestamp value and put it here
+    task.compress_new_to_done zip_file_path: zip_file_path, rm_task_dir: false
+
+    unless File.exists? zip_file_path
+      logger.error "Student submission history zip file doesn't exist #{zip_file_path}"
+      return false
+    end
+
+    # TODO: Use FACL instead in future.
+    `chmod o+w #{task_submission_with_timestamp_path}`
+
+    message = {
+      output_path: strip_till_submission_history(task_submission_with_timestamp_path),
+      docker_image_name_tag: docker_image_name_tag,
+      submission: strip_till_submission_history(zip_file_path),
+      assessment: strip_till_submission_history(assessment_resources_path),
+      timestamp: timestamp,
+      task_id: task.id,
+      zip_file: 1
+    }
+
+    overseer_assessment = OverseerAssessment.create
+    overseer_assessment.task = task
+    overseer_assessment.submission_timestamp = timestamp
+    overseer_assessment.status = 1
+
+    begin
+      sm_instance.clients[:ontrack].publisher.connect_publisher
+      sm_instance.clients[:ontrack].publisher.publish_message(message)
+    rescue RuntimeError => e
+      logger.error e
+      overseer_assessment.status = 2
+      return false
+    ensure
+      sm_instance.clients[:ontrack].publisher.disconnect_publisher
+      overseer_assessment.save!
+    end
+
+    true
+  end
+
   def self.final_pdf_path_for_group_submission(group_submission)
     File.join(
       FileHelper.student_group_work_dir(:pdf, group_submission, task = nil, create = true),
