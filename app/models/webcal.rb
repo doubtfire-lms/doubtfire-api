@@ -98,7 +98,7 @@ class Webcal < ActiveRecord::Base
           if ev_reminders
             ev.alarm do |a|
               a.action = 'DISPLAY'
-              a.description = ev_summary
+              a.description = ev.summary
               a.trigger = ev_reminder_trigger
             end
           end
@@ -117,7 +117,7 @@ class Webcal < ActiveRecord::Base
         if ev_reminders
           ev.alarm do |a|
             a.action = 'DISPLAY'
-            a.description = ev_summary
+            a.description = ev.summary
             a.trigger = ev_reminder_trigger
           end
         end
