@@ -93,6 +93,8 @@ class Webcal < ActiveRecord::Base
           ev.status = 'CONFIRMED'
           ev.dtstart = ev.dtend = Icalendar::Values::Date.new(td.start_date.strftime(ev_date_format))
 
+          Webcal.add_metadata_to_ical_event(ev, td)
+
           if ev_reminders
             ev.alarm do |a|
               a.action = 'DISPLAY'
@@ -107,17 +109,15 @@ class Webcal < ActiveRecord::Base
       ical.event do |ev|
         ev.uid = "E-#{td.id}"
         ev.summary = event_name_for_task_definition(td, 'end')
+        ev.status = 'CONFIRMED'
+        ev.dtstart = ev.dtend = Icalendar::Values::Date.new(Webcal.end_date_for_task_definition(td).strftime(ev_date_format))
 
-        # Use extended date if available.
-        ev_date = td.target_date
-        ev_date += (td.tasks.first.extensions * 7).day if td.tasks.present?
-        ev.dtstart = ev.dtend = Icalendar::Values::Date.new(ev_date.strftime(ev_date_format))
+        Webcal.add_metadata_to_ical_event(ev, td)
 
         if ev_reminders
           ev.alarm do |a|
             a.action = 'DISPLAY'
             a.description = ev_summary
-            ev.status = 'CONFIRMED'
             a.trigger = ev_reminder_trigger
           end
         end
@@ -132,5 +132,32 @@ class Webcal < ActiveRecord::Base
     ical.append_custom_property('REFRESH-INTERVAL', refresh_interval)
 
     ical
+  end
+
+  #
+  # Returns the target/extended date for the specified task definition.
+  #
+  def self.end_date_for_task_definition(task_def)
+      ev_date = task_def.target_date
+      ev_date += (task_def.tasks.first.extensions * 7).day if task_def.tasks.present?
+      return ev_date
+  end
+
+  #
+  # Hydrates `Icalendar::Event`s with Doutbfire-specific metadata.
+  #
+  def self.add_metadata_to_ical_event(event, task_def)
+    event.append_custom_property('X-DOUBTFIRE-UNIT', task_def.unit.id.to_s)
+    event.append_custom_property('X-DOUBTFIRE-TASK', task_def.id.to_s)
+  end
+
+  #
+  # Retrieves Doubtfire-specific metadata from `Icalendar::Event`s previously hydrated via `add_metadata_to_ical_event`.
+  #
+  def self.get_metadata_for_ical_event(event)
+    return {
+      unit_id: event.custom_property('X-DOUBTFIRE-UNIT').first.to_i,
+      task_definition_id: event.custom_property('X-DOUBTFIRE-TASK').first.to_i,
+    }
   end
 end
