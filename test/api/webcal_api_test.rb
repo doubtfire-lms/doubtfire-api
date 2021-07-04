@@ -85,18 +85,22 @@ class UnitsTest < ActiveSupport::TestCase
 
     # Specify only time
     put_json '/api/webcal', with_auth_token({ webcal: { reminder: { time: 5 } } }, @student)
-    assert 400, last_response.status
+    assert_equal 400, last_response.status
 
     # Specify only unit
     put_json '/api/webcal', with_auth_token({ webcal: { reminder: { unit: 'D' } } }, @student)
-    assert 400, last_response.status
+    assert_equal 400, last_response.status
 
     # Specify both time & unit
-    put_json '/api/webcal', with_auth_token({ webcal: { reminder: { time: 5, unit: 'D' } } }, @student)
-    assert 200, last_response.status
+    Webcal.valid_time_units.each_with_index { |u, i|
+      t = i + 1
 
-    webcal.reload
-    assert_equal 5, webcal.reminder_time
-    assert_equal 'D', webcal.reminder_unit
+      put_json '/api/webcal', with_auth_token({ webcal: { reminder: { time: t, unit: u } } }, @student)
+      assert_equal 200, last_response.status
+
+      webcal.reload
+      assert_equal t, webcal.reminder_time
+      assert_equal u, webcal.reminder_unit
+    }
   end
 end
