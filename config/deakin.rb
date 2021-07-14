@@ -134,7 +134,7 @@ class DeakinInstitutionSettings
     url = "#{@star_url}/#{server}/rest/activities"
 
     logger.info("Fetching #{unit.name} timetable from #{url}")
-    response = RestClient.post(url, {username: @star_user, password: @star_secret, where_clause:"subject_code LIKE '#{unit.code}%'"})
+    response = RestClient.post(url, {username: @star_user, password: @star_secret, where_clause:"subject_code LIKE '#{unit.code}%_#{tp.period.last}'"})
 
     if response.code == 200
       jsonData = JSON.parse(response.body)
