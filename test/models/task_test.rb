@@ -88,7 +88,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     assert_equal 201, last_response.status
 
     task = project.task_for_task_definition(td)
-    task.move_files_to_in_process
+    task.move_files_to_in_process(FileHelper.student_work_dir(:in_process))
 
     assert File.exists? "#{Doubtfire::Application.config.student_work_dir}/in_process/#{task.id}/000-image.jpg"
 
