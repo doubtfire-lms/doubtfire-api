@@ -74,7 +74,7 @@ module Api
         optional :allow_student_extension_requests, type: Boolean, desc: 'Can turn on/off student extension requests', default: true
         optional :allow_student_change_tutorial, type: Boolean, desc: 'Can turn on/off student ability to change tutorials', default: true
         optional :extension_weeks_on_resubmit_request, type: Integer, desc: 'Determines the number of weeks extension on a resubmit request', default: 1
-        optional :docker_image_name_tag, type: String
+        optional :overseer_image_id, type: Integer, desc: 'The id of the docker image used with '
         optional :assessment_enabled, type: Boolean
 
         mutually_exclusive :teaching_period_id,:start_date
@@ -104,7 +104,7 @@ module Api
                                                             :allow_student_extension_requests,
                                                             :extension_weeks_on_resubmit_request,
                                                             :allow_student_change_tutorial,
-                                                            :docker_image_name_tag,
+                                                            :overseer_image_id,
                                                             :assessment_enabled
                                                           )
 
@@ -147,8 +147,6 @@ module Api
         optional :allow_student_extension_requests, type: Boolean, desc: 'Can turn on/off student extension requests', default: true
         optional :extension_weeks_on_resubmit_request, type: Integer, desc: 'Determines the number of weeks extension on a resubmit request', default: 1
         optional :allow_student_change_tutorial, type: Boolean, desc: 'Can turn on/off student ability to change tutorials', default: true
-        optional :docker_image_name_tag, type: String
-        optional :assessment_enabled, type: Boolean
 
         mutually_exclusive :teaching_period_id,:start_date
         mutually_exclusive :teaching_period_id,:end_date
@@ -175,8 +173,6 @@ module Api
                                                       :allow_student_extension_requests,
                                                       :extension_weeks_on_resubmit_request,
                                                       :allow_student_change_tutorial,
-                                                      :docker_image_name_tag,
-                                                      :assessment_enabled
                                                     )
 
       if unit_parameters[:description].nil?

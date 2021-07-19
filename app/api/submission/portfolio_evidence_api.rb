@@ -56,8 +56,10 @@ module Api
         # Copy files to be PDFed
         task.accept_submission(current_user, scoop_files(params, upload_reqs), student, self, params[:contributions], trigger, alignments)
 
-        if PortfolioEvidence.perform_overseer_submission(task)
+        overseer_assessment = OverseerAssessment.create_for(task)
+        if overseer_assessment.present?
           logger.info "Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id} was performed"
+          overseer_assessment.send_to_overseer
           return { updated_task: TaskUpdateSerializer.new(task), comment: task.add_or_update_assessment_comment('Assessment started') }
         end
 
@@ -144,7 +146,7 @@ module Api
           error!({ error: "No submissions found for project: '#{params[:id]}' task: '#{params[:task_def_id]}'" }, 401)
         end
 
-        { result: OverseerAssessment.where(task_id: task.id).order(submission_timestamp: :desc).limit(10) }
+        OverseerAssessment.where(task_id: task.id).order(submission_timestamp: :desc).limit(10)
       end
 
       desc 'Get the result of the submission of a task made at the given timestamp'
