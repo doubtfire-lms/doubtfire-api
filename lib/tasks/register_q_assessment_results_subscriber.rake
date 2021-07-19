@@ -3,7 +3,7 @@
 
 require_relative '../assets/ontrack_receive_action.rb'
 
-desc 'Register a subscriber bound to queue q_assessment_results'
+desc 'Start listening for responses from Overseer, and update associated tasks'
 task register_q_assessment_results_subscriber: [:environment] do
   sm_instance = Doubtfire::Application.config.sm_instance
 
@@ -14,5 +14,5 @@ task register_q_assessment_results_subscriber: [:environment] do
 
   sm_instance.clients[:ontrack].action = method(:receive)
   sm_instance.clients[:ontrack].start_subscriber
-
+  puts "Bye!"
 end
