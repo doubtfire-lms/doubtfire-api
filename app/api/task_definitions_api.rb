@@ -34,7 +34,7 @@ module Api
         requires :is_graded,                type: Boolean,  desc: 'Whether or not this task definition is a graded task'
         requires :max_quality_pts,          type: Integer,  desc: 'A range for quality points when quality is assessed'
         optional :assessment_enabled,       type: Boolean,  desc: 'Enable or disable assessment'
-        optional :docker_image_name_tag,    type: String,   desc: 'Docker image name for overseer'
+        optional :overseer_image_id,        type: Integer,  desc: 'The id of the Docker image for overseer'
       end
     end
     post '/units/:unit_id/task_definitions/' do
@@ -64,7 +64,7 @@ module Api
                                                   :is_graded,
                                                   :max_quality_pts,
                                                   :assessment_enabled,
-                                                  :docker_image_name_tag
+                                                  :overseer_image_id
                                                 )
 
       task_params[:unit_id] = unit.id
@@ -111,7 +111,7 @@ module Api
         optional :is_graded,                type: Boolean,  desc: 'Whether or not this task definition is a graded task'
         optional :max_quality_pts,          type: Integer,  desc: 'A range for quality points when quality is assessed'
         optional :assessment_enabled,       type: Boolean,  desc: 'Enable or disable assessment'
-        optional :docker_image_name_tag,    type: String,   desc: 'Docker image name for overseer'
+        optional :overseer_image_id,        type: Integer,  desc: 'The id of the Docker image name for overseer'
       end
     end
     put '/units/:unit_id/task_definitions/:id' do
@@ -140,7 +140,7 @@ module Api
                                                   :is_graded,
                                                   :max_quality_pts,
                                                   :assessment_enabled,
-                                                  :docker_image_name_tag
+                                                  :overseer_image_id
                                                 )
 
       # Ensure changes to a TD defined as a "draft task definition" are validated
@@ -269,6 +269,7 @@ module Api
       # This API accepts more than 2 files, file0 and file1 are just examples.
     end
     post '/units/:unit_id/task_definitions/:task_def_id/test_overseer_assessment' do
+      logger.info "********* - Starting overseer test"
       return 'Overseer is not enabled' if !Doubtfire::Application.config.overseer_enabled
 
       unit = Unit.find(params[:unit_id])
@@ -293,7 +294,10 @@ module Api
       # Copy files to be PDFed
       task.accept_submission(current_user, scoop_files(params, upload_reqs), current_user, self, nil, 'ready_to_mark', nil)
 
-      if PortfolioEvidence.perform_overseer_submission(task)
+      logger.info "********* - about to perform overseer submission"
+      overseer_assessment = OverseerAssessment.create_for(task)
+      if overseer_assessment.present?
+        overseer_assessment.send_to_overseer
         logger.info "Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id} was performed"
         return { updated_task: TaskUpdateSerializer.new(task), comment: task.add_or_update_assessment_comment('Assessment started'), project_id: project.id }
       end

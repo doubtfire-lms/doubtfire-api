@@ -613,7 +613,7 @@ class Task < ActiveRecord::Base
     text.strip!
     return nil if text.nil? || text.empty?
 
-    user = project.main_tutor
+    user = project.tutor_for(task_definition)
 
     assessment_comment = TaskComment.find_by(
       task: self,
@@ -802,11 +802,18 @@ class Task < ActiveRecord::Base
     end
   end
 
+  def has_new_files?
+    File.directory? student_work_dir(:new, false)
+  end
+
+  def has_done_file?
+    File.exists? zip_file_path_for_done_task
+  end
+
   #
   # Compress the done files for a student - includes cover page and work uploaded
   #
   def compress_new_to_done(task_dir: student_work_dir(:new, false), zip_file_path: nil, rm_task_dir: true)
-    task_dir = student_work_dir(:new, false)
     begin
       # Ensure that this task is the submitter task for a  group_task... otherwise
       # remove this submission
@@ -844,6 +851,10 @@ class Task < ActiveRecord::Base
     end
 
     true
+  end
+
+  def copy_done_to(path)
+    FileUtils.cp zip_file_path_for_done_task, path
   end
 
   def clear_in_process

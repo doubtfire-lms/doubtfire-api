@@ -135,6 +135,8 @@ class Unit < ActiveRecord::Base
 
   belongs_to :draft_task_definition, class_name: 'TaskDefinition'
 
+  belongs_to :overseer_image
+
   validates :name, :description, :start_date, :end_date, presence: true
 
   validates :description, length: { maximum: 4095, allow_blank: true }
@@ -147,7 +149,6 @@ class Unit < ActiveRecord::Base
 
   validate :validate_end_date_after_start_date
   validate :ensure_teaching_period_dates_match, if: :has_teaching_period?
-  validate :validate_docker_image_name_tag
 
   validate :ensure_main_convenor_is_appropriate
 
@@ -158,16 +159,9 @@ class Unit < ActiveRecord::Base
   scope :set_active,            -> { where('active = ?', true) }
   scope :set_inactive,          -> { where('active = ?', false) }
 
-  def validate_docker_image_name_tag
-    unless Doubtfire::Application.config.overseer_enabled
-      errors.add('Overseer is not enabled')
-      return
-    end
-
-    yaml_file = Doubtfire::Application.config.overseer_images
-    if docker_image_name_tag.present? && !yaml_file['images'].any? { |img| img[:name] == docker_image_name_tag }
-      errors.add(:docker_image_name_tag, 'is not an Overseer supported Docker image')
-    end
+  def docker_image_name_tag
+    return nil if overseer_image.nil?
+    overseer_image.tag
   end
 
   def add_tutorial_stream(name, abbreviation, activity_type)

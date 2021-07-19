@@ -14,6 +14,7 @@ class TaskDefinition < ActiveRecord::Base
   belongs_to :unit # Foreign key
   belongs_to :group_set
   belongs_to :tutorial_stream
+  belongs_to :overseer_image
 
   has_one :draft_task_definition_unit, foreign_key: 'draft_task_definition_id', class_name: 'Unit', dependent: :nullify
 
@@ -38,19 +39,6 @@ class TaskDefinition < ActiveRecord::Base
   validate :ensure_no_submissions, if: :has_change_group_status?
   validate :unit_must_be_same
   validate :tutorial_stream_present?
-  validate :validate_docker_image_name_tag
-
-  def validate_docker_image_name_tag
-    unless Doubtfire::Application.config.overseer_enabled
-      errors.add('Overseer is not enabled')
-      return
-    end
-
-    yaml_file = Doubtfire::Application.config.overseer_images
-    if docker_image_name_tag.present? && !yaml_file['images'].any? { |img| img[:name] == docker_image_name_tag }
-      errors.add(:docker_image_name_tag, 'is not an Overseer supported Docker image')
-    end
-  end
 
   validates :weighting, presence: true
 
@@ -141,6 +129,11 @@ class TaskDefinition < ActiveRecord::Base
     if File.exists? task_assessment_resources_with_abbreviation(abbreviation_was)
       FileUtils.mv(task_assessment_resources_with_abbreviation(abbreviation_was), task_assessment_resources())
     end
+  end
+
+  def docker_image_name_tag
+    return nil if overseer_image.nil?
+    overseer_image.tag
   end
 
   def plagiarism_checks
