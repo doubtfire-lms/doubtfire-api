@@ -127,27 +127,28 @@ module Doubtfire
     end
 
     config.sm_instance = nil
-    config.overseer_enabled = ENV['OVERSEER_ENABLED'].present? && ENV['OVERSEER_ENABLED'].to_s.downcase == "true" ? true : false
+    config.overseer_enabled = ENV['OVERSEER_ENABLED'].present? && ENV['OVERSEER_ENABLED'].to_s.downcase != "false" && ENV['OVERSEER_ENABLED'].to_i != 0 ? true : false
 
     if (config.overseer_enabled)
       config.overseer_images = YAML.load_file(Rails.root.join('config/overseer-images.yml')).with_indifferent_access
+      config.has_overseer_image = -> (key){ config.overseer_images['images'].any? { |img| img[:name] == key } }
 
       publisher_config = {
         RABBITMQ_HOSTNAME: ENV['RABBITMQ_HOSTNAME'],
         RABBITMQ_USERNAME: ENV['RABBITMQ_USERNAME'],
         RABBITMQ_PASSWORD: ENV['RABBITMQ_PASSWORD'],
-        EXCHANGE_NAME: ENV['EXCHANGE_NAME'],
-        DURABLE_QUEUE_NAME: ENV['DURABLE_QUEUE_NAME'],
-        # Publisher specific key
-        ROUTING_KEY: 'csharp'
+        EXCHANGE_NAME: 'ontrack',
+        DURABLE_QUEUE_NAME: 'q.tasks',
+        # Publisher specific key -- all publishers will post task submissions with this key
+        ROUTING_KEY: 'task.submission'
       }
 
       subscriber_config = {
         RABBITMQ_HOSTNAME: ENV['RABBITMQ_HOSTNAME'],
         RABBITMQ_USERNAME: ENV['RABBITMQ_USERNAME'],
         RABBITMQ_PASSWORD: ENV['RABBITMQ_PASSWORD'],
-        EXCHANGE_NAME: ENV['EXCHANGE_NAME'],
-        DURABLE_QUEUE_NAME: 'q_assessment_results',
+        EXCHANGE_NAME: 'ontrack',
+        DURABLE_QUEUE_NAME: 'q.overseer',
         # No need to define BINDING_KEYS for now!
         # In future, OnTrack will listen to
         # topics related to PDF generation too.
@@ -160,7 +161,6 @@ module Doubtfire
 
       config.sm_instance = ServicesManager.instance
       config.sm_instance.register_client(:ontrack, publisher_config, subscriber_config)
-
     end
 
   end
