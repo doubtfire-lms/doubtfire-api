@@ -18,7 +18,6 @@ class UnitsTest < ActiveSupport::TestCase
   end
 
   test 'Setting enabled creates or destroys webcal' do
-
     # Enable webcal
     put_json '/api/webcal', with_auth_token({ webcal: { enabled: true } }, @student)
 
@@ -41,6 +40,10 @@ class UnitsTest < ActiveSupport::TestCase
   end
 
   test 'Enabled with sensible defaults' do
+
+    # Ensure webcal disabled
+    put_json '/api/webcal', with_auth_token({ webcal: { enabled: false } }, @student)
+
     # Enable webcal
     put_json '/api/webcal', with_auth_token({ webcal: { enabled: true } }, @student)
 
@@ -53,26 +56,28 @@ class UnitsTest < ActiveSupport::TestCase
   end
 
   test 'should_change_guid changes guid' do
-
-    # Create webcal, get GUID
-    prev_guid = @student.create_webcal(guid: SecureRandom.uuid).guid
+    # Enable webcal, get GUID
+    put_json '/api/webcal', with_auth_token({ webcal: { enabled: true } }, @student)
+    prev_guid = last_response_body['guid']
 
     # Request GUID change
     put_json '/api/webcal', with_auth_token({ webcal: { should_change_guid: true } }, @student)
-    current_guid = @student.webcal.reload.guid
+    current_guid = last_response_body['guid']
 
     # Ensure GUID changed
     assert_not_equal prev_guid, current_guid
+
     get with_auth_token('/api/webcal', @student)
     assert_equal current_guid, last_response_body['guid']
   end
 
   test 'Ical endpoint is public and serves webcal with corect content type' do
-    # Create webcal
-    webcal = @student.create_webcal(guid: SecureRandom.uuid)
+    # Enable webcal, get GUID
+    put_json '/api/webcal', with_auth_token({ webcal: { enabled: true } }, @student)
+    guid = last_response_body['guid']
 
     # Retrieve ical _without auth_
-    get "/api/webcal/#{webcal.guid}"
+    get "/api/webcal/#{guid}"
 
     # Ensure correct content type
     assert_equal 200, last_response.status
@@ -80,8 +85,8 @@ class UnitsTest < ActiveSupport::TestCase
   end
 
   test 'Reminder must be specified with both time & unit' do
-    # Create webcal
-    webcal = @student.create_webcal(guid: SecureRandom.uuid)
+    # Enable webcal
+    put_json '/api/webcal', with_auth_token({ webcal: { enabled: true } }, @student)
 
     # Specify only time
     put_json '/api/webcal', with_auth_token({ webcal: { reminder: { time: 5 } } }, @student)
@@ -98,9 +103,9 @@ class UnitsTest < ActiveSupport::TestCase
       put_json '/api/webcal', with_auth_token({ webcal: { reminder: { time: t, unit: u } } }, @student)
       assert_equal 200, last_response.status
 
-      webcal.reload
-      assert_equal t, webcal.reminder_time
-      assert_equal u, webcal.reminder_unit
+      assert_not_nil last_response_body['reminder']
+      assert_equal t, last_response_body['reminder']['time']
+      assert_equal u, last_response_body['reminder']['unit']
     }
   end
 end
