@@ -10,7 +10,7 @@ class UnitsTest < ActiveSupport::TestCase
   end
 
   setup do
-    @student = FactoryBot.create(:user, :student)
+    @student = FactoryBot.create(:user, :student, enrol_in: 2)
   end
 
   teardown do
@@ -107,5 +107,29 @@ class UnitsTest < ActiveSupport::TestCase
       assert_equal t, last_response_body['reminder']['time']
       assert_equal u, last_response_body['reminder']['unit']
     }
+  end
+
+  test 'Can update unit exclusions' do
+    # Enable webcal, get webcal ID
+    put_json '/api/webcal', with_auth_token({ webcal: { enabled: true } }, @student)
+    id = last_response_body['id']
+
+    # Exclude all units
+    enrolled_units = @student.projects.joins(:unit).where(units: { active: true }).map(&:unit_id)
+    put_json '/api/webcal', with_auth_token({ webcal: { unit_exclusions: enrolled_units } }, @student)
+    assert_equal enrolled_units.sort, last_response_body['unit_exclusions'].sort
+
+    # Try exclude unit that student isn't enrolled in
+    other_units = Unit.where.not(id: enrolled_units).map(&:id)
+
+    put_json '/api/webcal', with_auth_token({ webcal: { unit_exclusions: other_units } }, @student)
+    assert_equal [], last_response_body['unit_exclusions']
+
+    put_json '/api/webcal', with_auth_token({ webcal: { unit_exclusions: enrolled_units + other_units } }, @student)
+    assert_equal enrolled_units.sort, last_response_body['unit_exclusions'].sort
+
+    # Include all units
+    put_json '/api/webcal', with_auth_token({ webcal: { unit_exclusions: [] } }, @student)
+    assert_equal [], last_response_body['unit_exclusions']
   end
 end
