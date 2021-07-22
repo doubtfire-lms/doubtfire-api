@@ -1030,7 +1030,8 @@ class Task < ActiveRecord::Base
     end
   end
 
-  def convert_submission_to_pdf(source_folder = FileHelper.student_work_dir(:in_process))
+  # Convert a submission to pdf - the source folder is the root folder in which the submission folder will be found (not the submission folder itself)
+  def convert_submission_to_pdf(source_folder = FileHelper.student_work_dir(:new))
     return false unless move_files_to_in_process(source_folder)
 
     begin
