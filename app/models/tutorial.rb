@@ -6,6 +6,7 @@ class Tutorial < ApplicationRecord
   belongs_to :tutorial_stream
 
   has_one    :tutor, through: :unit_role, source: :user
+  has_one    :room
 
   has_many   :groups
   has_many   :tutorial_enrolments, dependent: :destroy

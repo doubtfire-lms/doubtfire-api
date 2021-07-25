@@ -49,6 +49,7 @@ module Api
     mount Api::ActivityTypesPublicApi
     mount Api::AuthenticationApi
     mount Api::BreaksApi
+    mount Api::CheckinsApi
     mount Api::DiscussionCommentApi
     mount Api::ExtensionCommentsApi
     mount Api::GroupSetsApi

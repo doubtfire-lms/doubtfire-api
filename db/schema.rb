@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2021_04_13_044542) do
+ActiveRecord::Schema.define(version: 2021_07_25_051039) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -47,6 +47,18 @@ ActiveRecord::Schema.define(version: 2021_04_13_044542) do
     t.index ["abbreviation"], name: "index_campuses_on_abbreviation", unique: true
     t.index ["active"], name: "index_campuses_on_active"
     t.index ["name"], name: "index_campuses_on_name", unique: true
+  end
+
+  add_index "campuses", ["abbreviation"], name: "index_campuses_on_abbreviation", unique: true, using: :btree
+  add_index "campuses", ["active"], name: "index_campuses_on_active", using: :btree
+  add_index "campuses", ["name"], name: "index_campuses_on_name", unique: true, using: :btree
+
+  create_table "check_ins", force: :cascade do |t|
+    t.integer  "id_card_id",  null: false
+    t.integer  "room_id",     null: false
+    t.string   "seat"
+    t.datetime "checkin_at",  null: false
+    t.datetime "checkout_at"
   end
 
   create_table "comments_read_receipts", force: :cascade do |t|
@@ -101,6 +113,11 @@ ActiveRecord::Schema.define(version: 2021_04_13_044542) do
     t.datetime "updated_at"
     t.integer "capacity_adjustment", default: 0, null: false
     t.boolean "locked", default: false, null: false
+  end
+
+  create_table "id_cards", force: :cascade do |t|
+    t.integer "user_id"
+    t.string  "card_number", null: false
   end
 
   create_table "learning_outcome_task_links", force: :cascade do |t|
@@ -176,6 +193,10 @@ ActiveRecord::Schema.define(version: 2021_04_13_044542) do
     t.text "description"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "rooms", force: :cascade do |t|
+    t.string "room_number", null: false
   end
 
   create_table "task_comments", force: :cascade do |t|
@@ -336,6 +357,7 @@ ActiveRecord::Schema.define(version: 2021_04_13_044542) do
     t.integer "capacity", default: -1
     t.integer "campus_id"
     t.integer "tutorial_stream_id"
+    t.integer  "room_id"
     t.index ["campus_id"], name: "index_tutorials_on_campus_id"
     t.index ["tutorial_stream_id"], name: "index_tutorials_on_tutorial_stream_id"
     t.index ["unit_id"], name: "index_tutorials_on_unit_id"
