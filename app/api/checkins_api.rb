@@ -10,13 +10,8 @@ module Api
       requires :room_number, type: String, desc: 'The room number to check the student into'
     end
     post '/iotrack/check-in' do
-      id_card = IdCard.find_by card_number: params[:card_id]
+      id_card = IdCard.find_or_create_by card_number: params[:card_id]
       room = Room.find_by room_number: params[:room_number]
-
-      # TODO: create the id card record if it doesn't exist
-      unless id_card
-        error!({ error: "Couldn't find an ID Card with number #{params[:card_id]}" }, 403)
-      end
 
       unless room
         error!({ error: "Couldn't find a room with number #{params[:room_number]}" }, 403)
