@@ -61,8 +61,6 @@ services:
       RABBITMQ_HOSTNAME: doubtfire-mq
       RABBITMQ_USERNAME: secure_credentials
       RABBITMQ_PASSWORD: secure_credentials
-      EXCHANGE_NAME: tasks
-      DURABLE_QUEUE_NAME: overseer
 
   dev-db:
     container_name: doubtfire-dev-db
@@ -92,7 +90,7 @@ services:
       - doubtfire-api
     volumes:
       - ../doubtfire-web:/doubtfire-web
-      - /doubtfire-web/dist
+      - ../doubtfire-web/dist:/doubtfire-web/dist
 
   doubtfire-overseer:
     container_name: doubtfire-overseer
@@ -107,10 +105,6 @@ services:
       RABBITMQ_HOSTNAME: doubtfire-mq
       RABBITMQ_USERNAME: secure_credentials
       RABBITMQ_PASSWORD: secure_credentials
-      EXCHANGE_NAME: e.task.submission
-      DURABLE_QUEUE_NAME: q.overseer
-      BINDING_KEYS: csharp
-      DEFAULT_BINDING_KEY:  default_env
       CONTAINER_NAME: overseer-container
       HOST_XFS_VOLUME: /Users/caina/Documents/Code/GitHub/doubtfire-deploy/data/overseer-instances/1
 
