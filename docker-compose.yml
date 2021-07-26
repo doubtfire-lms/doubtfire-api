@@ -106,7 +106,7 @@ services:
       RABBITMQ_USERNAME: secure_credentials
       RABBITMQ_PASSWORD: secure_credentials
       CONTAINER_NAME: overseer-container
-      HOST_XFS_VOLUME: /Users/caina/Documents/Code/GitHub/doubtfire-deploy/data/overseer-instances/1
+      HOST_XFS_VOLUME: ${PWD}/../data/overseer-instances/1
 
     volumes:
       # App's code path - not required in final image
