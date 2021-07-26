@@ -148,7 +148,7 @@ module Api
 
         # Must redirect to the front-end after sign in
         protocol = Rails.env.development? ? 'http' : 'https'
-        host = Rails.env.development? ? '#{protocol}://localhost:3000' : Doubtfire::Application.config.institution[:host]
+        host = Rails.env.development? ? "#{protocol}://localhost:3000" : Doubtfire::Application.config.institution[:host]
         host = "#{protocol}://#{host}" unless host.starts_with?('http')
         redirect "#{host}/#sign_in?authToken=#{user.auth_token}"
       end
