@@ -65,7 +65,7 @@ def receive(_subscriber_instance, channel, _results_publisher, delivery_info, _p
       comment_txt += yaml_file['build_message']
     end
     if !yaml_file['run_message'].nil? && !yaml_file['run_message'].strip.empty?
-      comment_txt += '\n'
+      comment_txt += "\n\n" unless comment_txt.empty?
       comment_txt += yaml_file['run_message']
     end
     if comment_txt.present?
@@ -97,6 +97,7 @@ def receive(_subscriber_instance, channel, _results_publisher, delivery_info, _p
       end
     else
       puts 'YAML file doesn\'t contain field `new_status`'
+      overseer_assessment.result_task_status = task.status
     end
   else
     puts "File #{yaml_path} doesn't exist"
