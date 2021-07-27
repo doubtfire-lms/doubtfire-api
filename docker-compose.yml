@@ -39,22 +39,22 @@ services:
       DF_DEV_DB_ADAPTER: mysql2
       DF_DEV_DB_HOST: doubtfire-dev-db
       DF_DEV_DB_DATABASE: doubtfire-dev
-      DF_DEV_DB_USERNAME: itig
-      DF_DEV_DB_PASSWORD: d872$$dh
+      DF_DEV_DB_USERNAME: dfire
+      DF_DEV_DB_PASSWORD: pwd
 
       # Database settings - for test env
       DF_TEST_DB_ADAPTER: mysql2
       DF_TEST_DB_HOST: doubtfire-test-db
       DF_TEST_DB_DATABASE: doubtfire-test
-      DF_TEST_DB_USERNAME: itig
-      DF_TEST_DB_PASSWORD: d872$$dh
+      DF_TEST_DB_USERNAME: dfire
+      DF_TEST_DB_PASSWORD: pwd
 
       # Database settings - for test env
       DF_PRODUCTION_DB_ADAPTER: mysql2
       DF_PRODUCTION_DB_HOST: doubtfire-dev-db
       DF_PRODUCTION_DB_DATABASE: doubtfire-dev
-      DF_PRODUCTION_DB_USERNAME: itig
-      DF_PRODUCTION_DB_PASSWORD: d872$$dh
+      DF_PRODUCTION_DB_USERNAME: dfire
+      DF_PRODUCTION_DB_PASSWORD: pwd
 
       # Overseer
       OVERSEER_ENABLED: 1
@@ -68,8 +68,10 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: db-root-password
       MYSQL_DATABASE: doubtfire-dev
-      MYSQL_USER: itig
-      MYSQL_PASSWORD: d872$$dh
+      MYSQL_USER: dfire
+      MYSQL_PASSWORD: pwd
+    volumes:
+      - ../data/database:/var/lib/mysql
 
   test-db:
     container_name: doubtfire-test-db
@@ -77,8 +79,8 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: db-root-password
       MYSQL_DATABASE: doubtfire-test
-      MYSQL_USER: itig
-      MYSQL_PASSWORD: d872$$dh
+      MYSQL_USER: dfire
+      MYSQL_PASSWORD: pwd
 
   doubtfire-web:
     container_name: doubtfire-web
