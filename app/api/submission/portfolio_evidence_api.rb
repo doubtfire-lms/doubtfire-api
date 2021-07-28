@@ -45,7 +45,7 @@ module Api
         trigger = if params[:trigger] && params[:trigger].tr('"\'', '') == 'need_help'
                     'need_help'
                   else
-                    'ready_to_mark'
+                    'ready_for_feedback'
                   end
 
         alignments = params[:alignment_data]

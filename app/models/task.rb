@@ -182,7 +182,7 @@ class Task < ActiveRecord::Base
     else
       File.exist? File.join(FileHelper.student_work_dir(:new), id.to_s)
     end
-    # portfolio_evidence == nil && ready_to_mark?
+    # portfolio_evidence == nil && ready_for_feedback?
   end
 
   # Get the raw extension date - with extensions representing weeks
@@ -246,7 +246,7 @@ class Task < ActiveRecord::Base
     if update(extensions: self.extensions + weeks_to_extend)
       # Was the task previously assessed as time exceeded? ... with the extension should this change?
       if self.task_status == TaskStatus.time_exceeded && submitted_before_due?
-        update(task_status: TaskStatus.ready_to_mark)
+        update(task_status: TaskStatus.ready_for_feedback)
         add_status_comment(by_user, self.task_status)
       end
 
@@ -285,12 +285,12 @@ class Task < ActiveRecord::Base
     complete? || discuss_or_demonstrate? || feedback_exceeded? || fail?
   end
 
-  def ready_to_mark?
-    status == :ready_to_mark
+  def ready_for_feedback?
+    status == :ready_for_feedback
   end
 
   def ready_or_complete?
-    [:complete, :discuss, :demonstrate, :ready_to_mark].include? status
+    [:complete, :discuss, :demonstrate, :ready_for_feedback].include? status
   end
 
   def submitted_status?
@@ -318,7 +318,7 @@ class Task < ActiveRecord::Base
   end
 
   def reviewable?
-    has_pdf && (ready_to_mark? || need_help?)
+    has_pdf && (ready_for_feedback? || need_help?)
   end
 
   def status
@@ -379,7 +379,7 @@ class Task < ActiveRecord::Base
     case status
     when nil
       return nil
-    when TaskStatus.ready_to_mark
+    when TaskStatus.ready_for_feedback
       submit by_user
     when TaskStatus.not_started, TaskStatus.need_help, TaskStatus.working_on_it
       add_status_comment(by_user, status)
@@ -546,11 +546,11 @@ class Task < ActiveRecord::Base
   def submit(by_user, submit_date = Time.zone.now)
     self.submission_date  = submit_date
 
-    add_status_comment(by_user, TaskStatus.ready_to_mark)
+    add_status_comment(by_user, TaskStatus.ready_for_feedback)
 
     # If it is submitted before the due date...
     if submitted_before_due?
-      self.task_status = TaskStatus.ready_to_mark
+      self.task_status = TaskStatus.ready_for_feedback
     else
       assess TaskStatus.time_exceeded, by_user
       add_status_comment(project.tutor_for(task_definition), self.task_status)
@@ -1083,7 +1083,7 @@ class Task < ActiveRecord::Base
   #
   # The student has uploaded new work...
   #
-  def create_submission_and_trigger_state_change(user, propagate = true, contributions = nil, trigger = 'ready_to_mark', initial_task = nil)
+  def create_submission_and_trigger_state_change(user, propagate = true, contributions = nil, trigger = 'ready_for_feedback', initial_task = nil)
     if group_task? && propagate
       if contributions.nil? # even distribution
         contribs = group.projects.map { |proj| { project: proj, pct: 100 / group.projects.count, pts: 3 } }

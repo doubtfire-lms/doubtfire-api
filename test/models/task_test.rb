@@ -33,7 +33,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     td.save!
 
     data_to_post = {
-      trigger: 'ready_to_mark'
+      trigger: 'ready_for_feedback'
     }
 
     data_to_post = with_file('test_files/submissions/unbelievable.gif', 'image/gif', data_to_post)
@@ -76,7 +76,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     td.save!
 
     data_to_post = {
-      trigger: 'ready_to_mark'
+      trigger: 'ready_for_feedback'
     }
 
     data_to_post = with_file('test_files/submissions/unbelievable.gif', 'image/gif', data_to_post)
@@ -116,7 +116,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     td.save!
 
     data_to_post = {
-      trigger: 'ready_to_mark'
+      trigger: 'ready_for_feedback'
     }
 
     data_to_post = with_file('test_files/submissions/Swinburne.jpg', 'image/jpg', data_to_post)
@@ -159,7 +159,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     td.save!
 
     data_to_post = {
-      trigger: 'ready_to_mark'
+      trigger: 'ready_for_feedback'
     }
 
     data_to_post = with_file('test_files/submissions/Swinburne.jpg', 'image/jpg', data_to_post)
@@ -188,7 +188,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     unit.save
 
     data_to_post = {
-      trigger: 'ready_to_mark'
+      trigger: 'ready_for_feedback'
     }
 
     data_to_post = with_file('test_files/unit_files/sample-learning-summary.pdf', 'application/pdf', data_to_post)
@@ -232,7 +232,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     assert File.exists? path
 
     data_to_post = {
-      trigger: 'ready_to_mark'
+      trigger: 'ready_for_feedback'
     }
 
     data_to_post = with_file('test_files/unit_files/sample-learning-summary.pdf', 'application/pdf', data_to_post)
