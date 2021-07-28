@@ -2,7 +2,7 @@ class OverseerAssessment < ActiveRecord::Base
   belongs_to :task
 
   has_one :project, through: :task
-  has_many :assessment_comments
+  has_many :assessment_comments, dependent: :destroy
 
   validates :status,                  presence: true
   validates :task_id,                 presence: true
@@ -11,6 +11,8 @@ class OverseerAssessment < ActiveRecord::Base
   validates_uniqueness_of :submission_timestamp, scope: :task_id
 
   enum status: { not_queued: 0, queued: 1, queue_failed: 2, done: 3 }
+
+  after_destroy :delete_associated_files
 
   # Creates an OverseerAssessment object for a new submission
   def self.create_for(task)
@@ -255,5 +257,9 @@ class OverseerAssessment < ActiveRecord::Base
     puts ERROR: e
   ensure
     self.save!
+  end
+
+  def delete_associated_files
+    FileUtils.rm_rf output_path
   end
 end
