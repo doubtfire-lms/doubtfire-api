@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20210624023700) do
+ActiveRecord::Schema.define(version: 20210728004516) do
 
   create_table "activity_types", force: :cascade do |t|
     t.string   "name",         limit: 255, null: false
@@ -222,9 +222,11 @@ ActiveRecord::Schema.define(version: 20210624023700) do
     t.integer  "extension_weeks",           limit: 4
     t.string   "extension_response",        limit: 255
     t.integer  "reply_to_id",               limit: 4
+    t.integer  "overseer_assessment_id",    limit: 4
   end
 
   add_index "task_comments", ["discussion_comment_id"], name: "index_task_comments_on_discussion_comment_id", using: :btree
+  add_index "task_comments", ["overseer_assessment_id"], name: "index_task_comments_on_overseer_assessment_id", using: :btree
   add_index "task_comments", ["recipient_id"], name: "fk_rails_1dbb49165b", using: :btree
   add_index "task_comments", ["reply_to_id"], name: "index_task_comments_on_reply_to_id", using: :btree
   add_index "task_comments", ["task_id"], name: "index_task_comments_on_task_id", using: :btree

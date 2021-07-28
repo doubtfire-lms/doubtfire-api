@@ -107,6 +107,7 @@ class Task < ActiveRecord::Base
   has_many :learning_outcomes, through: :learning_outcome_task_links
   has_many :task_engagements
   has_many :task_submissions
+  has_many :overseer_assessments
 
   delegate :unit, to: :project
   delegate :student, to: :project
@@ -604,41 +605,6 @@ class Task < ActiveRecord::Base
     comment.content_type = :text
     comment.recipient = user == project.student ? project.tutor_for(task_definition) : project.student
     comment.reply_to_id = reply_to_id
-    comment.save!
-
-    comment
-  end
-
-  def add_or_update_assessment_comment(text)
-    text.strip!
-    return nil if text.nil? || text.empty?
-
-    user = project.tutor_for(task_definition)
-
-    assessment_comment = TaskComment.find_by(
-      task: self,
-      content_type: :assessment
-    )
-
-    # Don't add if there is already a task assessment comment for this task
-    if assessment_comment
-      # In case the main tutor changes
-      assessment_comment.user = user if assessment_comment.user != user
-      assessment_comment.comment = text
-      assessment_comment.created_at = Time.now
-      assessment_comment.save!
-
-      return assessment_comment
-    end
-
-    ensured_group_submission if group_task? && group
-
-    comment = TaskComment.create
-    comment.task = self
-    comment.user = user
-    comment.comment = text
-    comment.content_type = :assessment
-    comment.recipient = project.student
     comment.save!
 
     comment
