@@ -105,10 +105,7 @@ class OverseerAssessment < ActiveRecord::Base
     text.strip!
     return nil if text.nil? || text.empty?
 
-    assessment_comment = AssessmentComment.where(
-      overseer_assessment: self,
-      comment: 'Automated Assessment Started'
-    ).first
+    assessment_comment = assessment_comments.last
 
     # Don't add if there is already a task assessment comment for this task
     if assessment_comment.present?
@@ -209,7 +206,9 @@ class OverseerAssessment < ActiveRecord::Base
     if assessment_comments.count == 0
       add_assessment_comment()
     else
-      assessment_comments.last
+      result = assessment_comments.last
+      result.update created_at: Time.zone.now
+      result
     end
   end
 
