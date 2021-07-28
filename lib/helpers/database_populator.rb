@@ -510,6 +510,7 @@ class DatabasePopulator
   # Generate tasks statuses
   #
   def generate_task_statuses
+    return if TaskStatus.count > 0
     echo "-> Generating task statuses"
     statuses = {
       "Not Started": "You have not yet started this task.",
