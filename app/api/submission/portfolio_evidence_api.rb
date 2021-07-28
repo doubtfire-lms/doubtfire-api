@@ -59,8 +59,8 @@ module Api
         overseer_assessment = OverseerAssessment.create_for(task)
         if overseer_assessment.present?
           logger.info "Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id} was performed"
-          overseer_assessment.send_to_overseer
-          return { updated_task: TaskUpdateSerializer.new(task), comment: task.add_or_update_assessment_comment('Assessment started') }
+          comment = overseer_assessment.send_to_overseer
+          return { updated_task: TaskUpdateSerializer.new(task), comment: comment }
         end
 
         logger.info "Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id} was not performed"

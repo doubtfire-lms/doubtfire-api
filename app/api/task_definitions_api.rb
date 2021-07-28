@@ -297,9 +297,9 @@ module Api
       logger.info "********* - about to perform overseer submission"
       overseer_assessment = OverseerAssessment.create_for(task)
       if overseer_assessment.present?
-        overseer_assessment.send_to_overseer
+        comment = overseer_assessment.send_to_overseer
         logger.info "Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id} was performed"
-        return { updated_task: TaskUpdateSerializer.new(task), comment: task.add_or_update_assessment_comment('Assessment started'), project_id: project.id }
+        return { updated_task: TaskUpdateSerializer.new(task), comment: comment, project_id: project.id }
       end
 
       logger.info "Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id} was not performed"
