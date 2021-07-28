@@ -22,7 +22,7 @@ class TaskStatus < ActiveRecord::Base
   scope :feedback_exceeded,   -> { TaskStatus.find(6) }
   scope :redo,              -> { TaskStatus.find(7) }
   scope :discuss,           -> { TaskStatus.find(8) }
-  scope :ready_to_mark,     -> { TaskStatus.find(9) }
+  scope :ready_for_feedback,     -> { TaskStatus.find(9) }
   scope :demonstrate,       -> { TaskStatus.find(10) }
   scope :fail,              -> { TaskStatus.find(11) }
   scope :time_exceeded,     -> { TaskStatus.find(12) }
@@ -46,9 +46,12 @@ class TaskStatus < ActiveRecord::Base
     when 'discuss', 'd'     then TaskStatus.discuss
     when 'demonstrate'      then TaskStatus.demonstrate
     when 'demo'             then TaskStatus.demonstrate
-    when 'ready to mark'    then TaskStatus.ready_to_mark
-    when 'ready_to_mark'    then TaskStatus.ready_to_mark
-    when 'rtm'              then TaskStatus.ready_to_mark
+    when 'ready for feedback'    then TaskStatus.ready_for_feedback
+    when 'ready_for_feedback'    then TaskStatus.ready_for_feedback
+    when 'ready to mark'    then TaskStatus.ready_for_feedback
+    when 'ready_to_mark'    then TaskStatus.ready_for_feedback
+    when 'rtm'              then TaskStatus.ready_for_feedback
+    when 'rff'              then TaskStatus.ready_for_feedback
     when 'fail'             then TaskStatus.fail
     when 'not_started'      then TaskStatus.not_started
     when 'not started'      then TaskStatus.not_started
@@ -73,7 +76,7 @@ class TaskStatus < ActiveRecord::Base
       when 6 then :feedback_exceeded
       when 7 then :redo
       when 8 then :discuss
-      when 9 then :ready_to_mark
+      when 9 then :ready_for_feedback
       when 10 then :demonstrate
       when 11 then :fail
       when 12 then :time_exceeded
@@ -89,7 +92,7 @@ class TaskStatus < ActiveRecord::Base
     return :need_help if self == TaskStatus.need_help
     return :working_on_it if self == TaskStatus.working_on_it
     return :discuss if self == TaskStatus.discuss
-    return :ready_to_mark if self == TaskStatus.ready_to_mark
+    return :ready_for_feedback if self == TaskStatus.ready_for_feedback
     return :demonstrate if self == TaskStatus.demonstrate
     return :fail if self == TaskStatus.fail
     return :feedback_exceeded if self == TaskStatus.feedback_exceeded
