@@ -3,7 +3,12 @@
 
 desc 'Raises exception if used in production'
 task skip_prod: [:environment] do
-  raise 'You cannot run this in production' if Rails.env.production?
+  if Rails.env.production?
+    puts "Are you sure you want to run this on production? (Yes to confirm): "
+    response = STDIN.gets.chomp
+
+    raise 'You chose not to run this in production' unless response == 'Yes'
+  end
 end
 
 ['db:drop', 'db:reset', 'db:seed'].each do |t|

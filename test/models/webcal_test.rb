@@ -128,4 +128,50 @@ class WebcalTest < ActiveSupport::TestCase
     comment.destroy
     task.update(extensions: 0)
   end
+
+  test 'Includes webcal reminders correctly' do
+    cal = @webcal.to_ical
+    all_task_defs = @current_unit_1.task_definitions + @current_unit_2.task_definitions
+
+    # Calls `fn` per task definition in `all_task_defs` with 2 args---the `TaskDefinition`, and the corresponding
+    # `Icalendar::Event`.
+    per_task_def = -> (&fn) {
+      all_task_defs.each do |td|
+        # Find event for task definition, by metadata.
+        ev = cal.events.detect do |e|
+          metadata = Webcal.get_metadata_for_ical_event(e)
+          td.unit.id == metadata[:unit_id] && td.id == metadata[:task_definition_id]
+        end
+        fn.call td, ev
+      end
+    }
+
+    per_task_def.call { |td, ev| assert_not ev.alarms.any?, 'Error: Reminders must not be included by default.' }
+
+    time = 2
+    checks = [
+      { unit: 'W', trigger_symbol: :weeks },
+      { unit: 'D', trigger_symbol: :days },
+      { unit: 'H', trigger_symbol: :hours },
+      { unit: 'M', trigger_symbol: :minutes },
+    ]
+
+    checks.each do |check|
+      @webcal.update(reminder_time: time, reminder_unit: check[:unit])
+      cal = @webcal.to_ical
+  
+      per_task_def.call do |td, ev|
+
+        assert_equal 1, ev.alarms.count, 'Error: Specified alarm does not exist.'
+
+        assert_equal time, ev.alarms.first.trigger[check[:trigger_symbol]], 'Error: Unexpected reminder time for specified unit.'
+
+        (checks.map { |c| c[:trigger_symbol] } - [check[:trigger_symbol]]).each do |s|
+          assert_equal 0, ev.alarms.first.trigger[s], 'Error: Non-zero reminder time for units other than the specified unit.'
+        end
+      end
+    end
+
+    @webcal.update(reminder_time: nil, reminder_unit: nil)
+  end
 end

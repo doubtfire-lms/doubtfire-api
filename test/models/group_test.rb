@@ -167,7 +167,7 @@ class GroupModelTest < ActiveSupport::TestCase
 
     assert_equal 0, t2.extensions
 
-    t2.create_submission_and_trigger_state_change(t2.student, true, nil, 'ready_to_mark')
+    t2.create_submission_and_trigger_state_change(t2.student, true, nil, 'ready_for_feedback')
 
     t2.reload
     t1.reload
@@ -176,8 +176,8 @@ class GroupModelTest < ActiveSupport::TestCase
     assert t2.valid?
     assert_equal 2, t1.extensions
     assert_equal 0, t2.extensions
-    assert_equal :ready_to_mark, t1.status
-    assert_equal :ready_to_mark, t2.status
+    assert_equal :ready_for_feedback, t1.status
+    assert_equal :ready_for_feedback, t2.status
     assert_equal 1, t1.comments.count, t1.comments.map {|c| c.comment }
     assert_equal 1, t2.comments.count, t2.comments.map {|c| c.comment }
     assert_equal 0, t3.comments.count, t3.comments.map {|c| c.comment }
@@ -225,14 +225,14 @@ class GroupModelTest < ActiveSupport::TestCase
       { project_id: p3.id, pct: 0, pts: 3 }
     ]
 
-    t2.create_submission_and_trigger_state_change(t2.student, true, contributions, 'ready_to_mark')
+    t2.create_submission_and_trigger_state_change(t2.student, true, contributions, 'ready_for_feedback')
 
     t1.reload
     t2.reload
     t3.reload
 
-    assert_equal :ready_to_mark, t1.status
-    assert_equal :ready_to_mark, t2.status
+    assert_equal :ready_for_feedback, t1.status
+    assert_equal :ready_for_feedback, t2.status
     assert_equal :not_started, t3.status
 
     assert_equal 2, t1.group_submission.projects.count
@@ -253,7 +253,7 @@ class GroupModelTest < ActiveSupport::TestCase
       { project_id: p3.id, pct: 34, pts: 3 }
     ]
 
-    t3.create_submission_and_trigger_state_change(t3.student, true, contributions, 'ready_to_mark')
+    t3.create_submission_and_trigger_state_change(t3.student, true, contributions, 'ready_for_feedback')
 
     t1.reload
     t2.reload
@@ -261,7 +261,7 @@ class GroupModelTest < ActiveSupport::TestCase
 
     assert_equal :complete, t1.status
     assert_equal :complete, t2.status
-    assert_equal :ready_to_mark, t3.status
+    assert_equal :ready_for_feedback, t3.status
 
     assert_equal 1, t3.group_submission.projects.count
   end
@@ -291,15 +291,15 @@ class GroupModelTest < ActiveSupport::TestCase
       { project_id: p3.id, pct: 34, pts: 3 }
     ]
 
-    t3.create_submission_and_trigger_state_change(t3.student, true, contributions, 'ready_to_mark')
+    t3.create_submission_and_trigger_state_change(t3.student, true, contributions, 'ready_for_feedback')
 
     t1.reload
     t2.reload
     t3.reload
 
-    assert_equal :ready_to_mark, t1.status
-    assert_equal :ready_to_mark, t2.status
-    assert_equal :ready_to_mark, t3.status
+    assert_equal :ready_for_feedback, t1.status
+    assert_equal :ready_for_feedback, t2.status
+    assert_equal :ready_for_feedback, t3.status
 
     t1.trigger_transition trigger: 'complete', by_user: tutor
 
@@ -320,7 +320,7 @@ class GroupModelTest < ActiveSupport::TestCase
       { project_id: p4.id, pct: 25, pts: 3 }
     ]
 
-    t4.create_submission_and_trigger_state_change(t4.student, true, contributions, 'ready_to_mark')
+    t4.create_submission_and_trigger_state_change(t4.student, true, contributions, 'ready_for_feedback')
 
     t1.reload
     t2.reload
@@ -330,7 +330,7 @@ class GroupModelTest < ActiveSupport::TestCase
     assert_equal :complete, t1.status
     assert_equal :complete, t2.status
     assert_equal :complete, t3.status
-    assert_equal :ready_to_mark, t4.status
+    assert_equal :ready_for_feedback, t4.status
 
     assert_equal 1, t4.group_submission.projects.count
   end

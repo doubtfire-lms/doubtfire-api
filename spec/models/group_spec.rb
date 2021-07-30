@@ -166,12 +166,12 @@ it "should know its members" do
 
     submission = grp.create_submission p1_t1, "Group has submitted its awesome work", [ { project: p1, pct: 50}, { project: p2, pct: 50} ]
 
-    p1_t1.trigger_transition( trigger: "rtm", by_user:unit.convenors.first.user)
+    p1_t1.trigger_transition( trigger: "rff", by_user:unit.convenors.first.user)
 
     p2_t1 = p2.tasks.first
 
-    expect(p1_t1.task_status).to eq(TaskStatus.ready_to_mark)
-    expect(p2_t1.task_status).to eq(TaskStatus.ready_to_mark)
+    expect(p1_t1.task_status).to eq(TaskStatus.ready_for_feedback)
+    expect(p2_t1.task_status).to eq(TaskStatus.ready_for_feedback)
   end
 
   it "should allow students to trigger submission state across tasks in the group" do
@@ -189,12 +189,12 @@ it "should know its members" do
 
     submission = grp.create_submission p1_t1, "Group has submitted its awesome work", [ { project: p1, pct: 50}, { project: p2, pct: 50} ]
 
-    p1_t1.trigger_transition( trigger: "rtm", by_user: p1.student )
+    p1_t1.trigger_transition( trigger: "rff", by_user: p1.student )
 
     p2_t1 = p2.tasks.first
 
-    expect(p1_t1.task_status).to eq(TaskStatus.ready_to_mark)
-    expect(p2_t1.task_status).to eq(TaskStatus.ready_to_mark)
+    expect(p1_t1.task_status).to eq(TaskStatus.ready_for_feedback)
+    expect(p2_t1.task_status).to eq(TaskStatus.ready_for_feedback)
   end
 
   it "should allow not trigger working and help state across tasks in the group" do
@@ -227,12 +227,12 @@ it "should know its members" do
 
     p1_t1 = p1.tasks.first
 
-    p1_t1.trigger_transition( trigger: "rtm", by_user: p1.student )
+    p1_t1.trigger_transition( trigger: "rff", by_user: p1.student )
 
     p2_t1 = p2.tasks.first
 
-    expect(p1_t1.task_status).to eq(TaskStatus.ready_to_mark)
-    expect(p2_t1.task_status).to eq(TaskStatus.ready_to_mark)
+    expect(p1_t1.task_status).to eq(TaskStatus.ready_for_feedback)
+    expect(p2_t1.task_status).to eq(TaskStatus.ready_for_feedback)
   end
 
   it "should ensure that group submissions are not duplicated" do

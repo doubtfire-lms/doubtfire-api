@@ -48,7 +48,8 @@ class Unit < ActiveRecord::Base
       :download_stats,
       :download_grades,
       :rollover_unit,
-      :exceed_capacity
+      :exceed_capacity,
+      :perform_overseer_assessment_test
     ]
 
     # What can admin do with units?
@@ -134,6 +135,8 @@ class Unit < ActiveRecord::Base
 
   belongs_to :draft_task_definition, class_name: 'TaskDefinition'
 
+  belongs_to :overseer_image
+
   validates :name, :description, :start_date, :end_date, presence: true
 
   validates :description, length: { maximum: 4095, allow_blank: true }
@@ -155,6 +158,11 @@ class Unit < ActiveRecord::Base
   scope :not_current_for_date,  ->(date) { where('start_date > ? OR end_date < ?', date, date) }
   scope :set_active,            -> { where('active = ?', true) }
   scope :set_inactive,          -> { where('active = ?', false) }
+
+  def docker_image_name_tag
+    return nil if overseer_image.nil?
+    overseer_image.tag
+  end
 
   def add_tutorial_stream(name, abbreviation, activity_type)
     tutorial_stream = TutorialStream.new
@@ -1918,7 +1926,7 @@ class Unit < ActiveRecord::Base
   # Return the tasks that should be listed under a tutor's task inbox.
   #
   # Thses tasks are:
-  #   - those that have the ready for feedback (rtm) state, or
+  #   - those that have the ready for feedback (rff) state, or
   #   - where new student comments are > 0
   #
   # They are sorted by a task's "action_date". This defines the last
@@ -1927,7 +1935,7 @@ class Unit < ActiveRecord::Base
   #
   def tasks_for_task_inbox(user)
     get_all_tasks_for(user)
-      .having('task_statuses.id IN (:ids) OR COUNT(task_pins.task_id) > 0 OR SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) > 0', ids: [ TaskStatus.ready_to_mark, TaskStatus.need_help ])
+      .having('task_statuses.id IN (:ids) OR COUNT(task_pins.task_id) > 0 OR SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) > 0', ids: [ TaskStatus.ready_for_feedback, TaskStatus.need_help ])
       .order('pinned DESC, submission_date ASC, MAX(task_comments.created_at) ASC, task_definition_id ASC')
   end
 
@@ -2123,10 +2131,10 @@ class Unit < ActiveRecord::Base
       working_on_it:      0.0,
       need_help:          0.0,
       redo:               0.1,
-      do_not_resubmit:    0.1,
+      feedback_exceeded:    0.1,
       fix_and_resubmit:   0.3,
       time_exceeded:      0.5,
-      ready_to_mark:      0.7,
+      ready_for_feedback:      0.7,
       discuss:            0.8,
       demonstrate:        0.8,
       complete:           1.0
@@ -2312,7 +2320,7 @@ class Unit < ActiveRecord::Base
     # Reject all tasks not for this unit...
     tasks = tasks.reject { |task| task.project.unit.id != id }
 
-    output_zip = FileHelper.tmp_file("batch_ready_to_mark_#{code}_#{user.username}.zip")
+    output_zip = FileHelper.tmp_file("batch_ready_for_feedback_#{code}_#{user.username}.zip")
 
     return result if File.exists?(output_zip)
 
@@ -2330,7 +2338,7 @@ class Unit < ActiveRecord::Base
         mark_col = if task.status == :need_help
                      'need_help'
                    else
-                     'rtm'
+                     'rff'
                    end
 
         csv_str << "\n#{student.username.tr(',', '_')},#{student.name.tr(',', '_')},#{task.project.tutorial_for(task.task_definition).abbreviation},#{task.task_definition.abbreviation.tr(',', '_')},\"#{task.last_comment_by(task.project.student).gsub(/"/, '""')}\",\"#{task.last_comment_by(user).gsub(/"/, '""')}\",#{mark_col},,,#{task.task_definition.max_quality_pts},"
@@ -2355,7 +2363,7 @@ class Unit < ActiveRecord::Base
         # Add to the template entry string
         grp = task.group
         next if grp.nil?
-        csv_str << "\nGRP_#{grp.id}_#{subm.id},#{grp.name.tr(',', '_')},#{grp.tutorial.abbreviation},#{task.task_definition.abbreviation.tr(',', '_')},\"#{task.last_comment_not_by(user).gsub(/"/, '""')}\",\"#{task.last_comment_by(user).gsub(/"/, '""')}\",rtm,,#{task.task_definition.max_quality_pts},"
+        csv_str << "\nGRP_#{grp.id}_#{subm.id},#{grp.name.tr(',', '_')},#{grp.tutorial.abbreviation},#{task.task_definition.abbreviation.tr(',', '_')},\"#{task.last_comment_not_by(user).gsub(/"/, '""')}\",\"#{task.last_comment_by(user).gsub(/"/, '""')}\",rff,,#{task.task_definition.max_quality_pts},"
 
         src_path = task.portfolio_evidence
 
