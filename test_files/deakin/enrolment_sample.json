@@ -1,0 +1,78 @@
+{
+  "unitEnrolments": [
+    {
+      "unitCode": "SIT999",
+      "unitTitle": "Test Sync",
+      "teachingPeriod": {
+        "type": "trimester",
+        "period": "2",
+        "year": "2020"
+      },
+      "locations": [
+        {
+          "name": "Test Sync Campus",
+          "enrolments": [
+            {
+              "studentId": 123456,
+              "title": "MR",
+              "surname": "Sync 1",
+              "givenNames": "One",
+              "preferredName": "One",
+              "email": "one@deakin.edu.au",
+              "courseCode": "S464",
+              "unitClass": "D",
+              "status": "Discontinued"
+            },
+            {
+              "studentId": 654321,
+              "title": "MS",
+              "surname": "Sync 2",
+              "givenNames": "Two",
+              "preferredName": "Two",
+              "email": "two@deakin.edu.au",
+              "courseCode": "S306",
+              "unitClass": "D",
+              "status": "Enrolled"
+            }
+          ]
+        },
+        {
+          "name": "Cloud (online)",
+          "enrolments": [
+            {
+              "studentId": 234567,
+              "title": "MS",
+              "surname": "Sync 3",
+              "givenNames": "Three",
+              "email": "three@deakin.edu.au",
+              "courseCode": "S306",
+              "unitClass": "X",
+              "status": "Enrolled"
+            },
+            {
+              "studentId": 765432,
+              "title": "MR",
+              "surname": "Sync 4",
+              "givenNames": "Four",
+              "email": "four@deakin.edu.au",
+              "courseCode": "S306",
+              "unitClass": "X",
+              "status": "Enrolled"
+            },
+            {
+              "studentId": 345678,
+              "title": "MR",
+              "surname": "Sync 5",
+              "givenNames": "Five",
+              "preferredName": "Five",
+              "email": "five@deakin.edu.au",
+              "courseCode": "S306",
+              "unitClass": "X",
+              "status": "Invalid"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

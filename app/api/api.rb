@@ -9,7 +9,6 @@ module Api
 
     prefix 'api'
     format :json
-    # formatter :json, Grape::Formatter::ActiveModelSerializers
 
     before do
       header['Access-Control-Allow-Origin'] = '*'
@@ -19,46 +18,28 @@ module Api
     rescue_from :all do |e|
       case e
       when ActiveRecord::RecordInvalid, Grape::Exceptions::ValidationErrors
-        error!(e.message, 400)
+        message = e.message
+        status = 400
+      when ActiveRecord::InvalidForeignKey
+        message = "This operation has been rejected as it would break data integrity. Ensure that related values are deleted or updated before trying again."
+        status = 400
       when Grape::Exceptions::MethodNotAllowed
-        error!(e.message, 405)
+        message = e.message
+        status = 405
       when ActiveRecord::RecordNotDestroyed
-        error!(e.message, 400)
+        message = e.message
+        status = 400
       when ActiveRecord::RecordNotFound
-        error!("Unable to find requested #{e.message[/(Couldn't find )(.*)( with)/,2]}", 404)
+        message = "Unable to find requested #{e.message[/(Couldn't find )(.*)( with)/,2]}"
+        status = 404
       else
         logger.error "Unhandled exception: #{e.class}"
         logger.error e.inspect
         logger.error e.backtrace.join("\n")
-        error!("Sorry... something went wrong with your request.", 500)
+        message = "Sorry... something went wrong with your request."
+        status = 500
       end
-    end
-
-    desc 'Returns your public timeline.' do
-      summary 'summary'
-      detail 'more details'
-      # params  API::Entities::Status.documentation
-      # success API::Entities::Entity
-      # failure [[401, 'Unauthorized', 'Entities::Error']]
-      named 'My named route'
-      headers XAuthToken: {
-                description: 'Validates your identity',
-                required: true
-              },
-              XOptionalHeader: {
-                description: 'Not really needed',
-                required: false
-              }
-      hidden false
-      deprecated false
-      is_array true
-      nickname 'nickname'
-      produces ['application/json']
-      consumes ['application/json']
-      tags ['tag1', 'tag2']
-    end
-    get :public_timeline do
-      "Hello"
+      Rack::Response.new( {error: message}.to_json, status, { 'Content-type' => 'text/error' } )
     end
 
     #
@@ -92,6 +73,8 @@ module Api
     mount Api::UnitRolesApi
     mount Api::UnitsApi
     mount Api::UsersApi
+    mount Api::WebcalApi
+    mount Api::WebcalPublicApi
 
     #
     # Add auth details to all end points
@@ -119,6 +102,7 @@ module Api
     AuthenticationHelpers.add_auth_to Api::UsersApi
     AuthenticationHelpers.add_auth_to Api::UnitRolesApi
     AuthenticationHelpers.add_auth_to Api::UnitsApi
+    AuthenticationHelpers.add_auth_to Api::WebcalApi
 
     # add_swagger_documentation format: :json,
     #                           hide_documentation_path: false,

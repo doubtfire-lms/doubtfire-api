@@ -46,8 +46,12 @@ class TaskStatusTest < ActiveSupport::TestCase
     data_to_post = {
       trigger: 'ready_to_mark'
     }
+
+    add_auth_header_for(user: project.student)
+
     # Make a submission for this student
-    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", with_auth_token(data_to_post)
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
+
     # Get the exceeded exceeded task and check it is now time exceeded
     #task = project.task_for_task_definition(td)
     assert_equal TaskStatus.time_exceeded, tc.task_status
@@ -62,8 +66,10 @@ class TaskStatusTest < ActiveSupport::TestCase
         assert_equal TaskStatus.status_for_name('f').name,TaskStatus.fix.name
       end
 
-      assert_equal TaskStatus.status_for_name('do_not_resubmit').name,TaskStatus.do_not_resubmit.name
-      assert_equal TaskStatus.status_for_name('do not resubmit').name,TaskStatus.do_not_resubmit.name
+      assert_equal TaskStatus.status_for_name('do_not_resubmit').name,TaskStatus.feedback_exceeded.name
+      assert_equal TaskStatus.status_for_name('do not resubmit').name,TaskStatus.feedback_exceeded.name
+      assert_equal TaskStatus.status_for_name('feedback_exceeded').name,TaskStatus.feedback_exceeded.name
+      assert_equal TaskStatus.status_for_name('feedback exceeded').name,TaskStatus.feedback_exceeded.name
       assert_equal TaskStatus.status_for_name('redo').name,TaskStatus.redo.name
 
       assert_equal TaskStatus.status_for_name('need_help').name,TaskStatus.need_help.name
@@ -85,7 +91,7 @@ class TaskStatusTest < ActiveSupport::TestCase
       assert_equal TaskStatus.status_for_name('ns').name,TaskStatus.not_started.name
       assert_equal TaskStatus.status_for_name('time exceeded').name,TaskStatus.time_exceeded.name
       assert_equal TaskStatus.status_for_name('time_exceeded').name,TaskStatus.time_exceeded.name
-      assert_equal TaskStatus.status_for_name(''), nil
+      assert_nil TaskStatus.status_for_name('')
   end
 
   def test_staff_assigned_statuses

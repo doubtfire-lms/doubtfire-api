@@ -7,6 +7,10 @@ module TestHelpers
   module TestFileHelper
     module_function
 
+    def test_file_path(filename)
+      Rails.root.join('test_files', filename)
+    end
+
     def with_files( files, hash )
       files.each_with_index do | file, idx |
         hash[ "file#{idx}".to_sym ] = Rack::Test::UploadedFile.new(Rails.root.join(file[:path]), file[:type])

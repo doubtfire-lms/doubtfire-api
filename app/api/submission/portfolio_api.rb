@@ -16,7 +16,7 @@ module Api
       params do
         requires :name,  type: String,                        desc: 'Name of the part being uploaded'
         requires :kind,  type: String,                        desc: 'The kind of file being uploaded: document, code, or image'
-        requires :file0, type: Rack::Multipart::UploadedFile, desc: 'file 0.'
+        requires :file0, type: File, desc: 'file 0.'
       end
       post '/submission/project/:id/portfolio' do
         project = Project.find(params[:id])
@@ -31,7 +31,7 @@ module Api
 
         # Check that the file is OK to accept
         unless FileHelper.accept_file(file, name, kind)
-          error!({ error: "'#{file.filename}' is not a valid #{kind} file" }, 403)
+          error!({ error: "'#{file[:filename]}' is not a valid #{kind} file" }, 403)
         end
 
         # Move file into place

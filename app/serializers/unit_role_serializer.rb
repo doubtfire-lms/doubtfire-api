@@ -61,8 +61,8 @@ class UnitRoleSerializer < DoubtfireSerializer
   end
 end
 
-class UserUnitRoleSerializer < DoubtfireSerializer
-  attributes :id, :user_id, :name, :role #:user_name?
+class UserUnitRoleSerializer < ActiveModel::Serializer
+  attributes :id, :user_id, :name, :role, :email
 
   def role
     object.role.name
@@ -74,5 +74,9 @@ class UserUnitRoleSerializer < DoubtfireSerializer
 
   def user_name
     object.user.name
+  end
+
+  def email
+    object.user.email
   end
 end

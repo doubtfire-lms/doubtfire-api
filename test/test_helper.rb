@@ -6,6 +6,13 @@ require "minitest/rails"
 # Consider setting MT_NO_EXPECTATIONS to not add expectations to Object.
 # ENV["MT_NO_EXPECTATIONS"] = true
 
+require 'simplecov'
+SimpleCov.start 'rails'
+# Setup RAILS_ENV as test and expand config for test environment
+
+raise 'You cannot run this in production' if Rails.env.production?
+require File.expand_path('../../config/environment', __FILE__)
+
 # Check if we're connected to the test DB
 begin
   ActiveRecord::Base.connection
@@ -21,6 +28,14 @@ end
 # Require minitest extensions
 require 'minitest/rails'
 require 'minitest/pride'
+require 'minitest/around'
+
+require 'webmock/minitest'
+
+# Require all test helpers
+require_all 'test/helpers'
+require 'rails/test_help'
+require 'database_cleaner'
 
 # require 'database_cleaner'
 class ActiveSupport::TestCase
@@ -51,6 +66,7 @@ class ActiveSupport::TestCase
 
   def teardown
     DatabaseCleaner.clean
+    Rails.cache.clear
   end
 
   # Add more helper methods to be used by all tests here...

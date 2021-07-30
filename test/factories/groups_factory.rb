@@ -4,7 +4,6 @@ FactoryBot.define do
   factory :group do
     group_set
 
-    sequence(:number)       { |n| n }
     sequence(:name)         { |n| "Group-#{n}" }
 
     after(:build) do |group, eval|

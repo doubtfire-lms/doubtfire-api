@@ -229,9 +229,8 @@ module FileHelper
       FileUtils.mkdir_p(File.join(Dir.tmpdir, 'doubtfire', 'compress'))
 
       exec = "gs -sDEVICE=pdfwrite \
-                 -dCompatibilityLevel=1.3 \
                  -dDetectDuplicateImages=true \
-                 -dPDFSETTINGS=/screen \
+                 -dPDFSETTINGS=/printer \
                  -dNOPAUSE \
                  -dBATCH \
                  -dQUIET \
@@ -270,7 +269,7 @@ module FileHelper
   #
   # Move files between stages - new -> in process -> done
   #
-  def move_files(from_path, to_path)
+  def move_files(from_path, to_path, retain_from = false)
     # move into the new dir - and mv files to the in_process_dir
     pwd = FileUtils.pwd
     begin
@@ -280,7 +279,8 @@ module FileHelper
       Dir.chdir(to_path)
       begin
         # remove from_path as files are now "in process"
-        FileUtils.rm_r(from_path)
+        # these can be retained when the old folder wants to be kept
+        FileUtils.rm_r(from_path) unless retain_from
       rescue
         logger.warn "failed to rm #{from_path}"
       end
@@ -466,7 +466,8 @@ module FileHelper
 
   def process_audio(input_path, output_path)
     logger.info("Trying to process audio in FileHelper")
-    TimeoutHelper.system_try_within 20, "Failed to process audio submission - timeout", "ffmpeg -loglevel quiet -y -i #{input_path} -ac 1 -ar 16000 -sample_fmt s16 #{output_path}"
+    path = Doubtfire::Application.config.institution[:ffmpeg]
+    TimeoutHelper.system_try_within 20, "Failed to process audio submission - timeout", "#{path} -loglevel quiet -y -i #{input_path} -ac 1 -ar 16000 -sample_fmt s16 #{output_path}"
   end
 
   # Export functions as module functions

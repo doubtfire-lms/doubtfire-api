@@ -13,7 +13,7 @@ module Api
     desc 'Add a new discussion comment to a task'
     params do
       requires :attachments, type: Array do
-        requires type: Rack::Multipart::UploadedFile, desc: 'audio prompts.'
+        requires type: File, desc: 'audio prompts.'
       end
     end
     post '/projects/:project_id/task_def_id/:task_definition_id/discussion_comments' do
@@ -174,7 +174,7 @@ module Api
 
     desc 'Reply to a discussion comment of a task'
     params do
-      requires :attachment, type: Rack::Multipart::UploadedFile, desc: 'discussion reply.'
+      requires :attachment, type: File, desc: 'discussion reply.'
     end
     post '/projects/:project_id/task_def_id/:task_definition_id/comments/:task_comment_id/discussion_comment/reply' do
       project = Project.find(params[:project_id])

@@ -33,7 +33,6 @@ class TutorialSerializer < DoubtfireSerializer
   end
 
   def filter(keys)
-    keys.delete :tutor unless include_tutor?
     keys.delete :num_students unless include_num_students?
     keys
   end

@@ -17,7 +17,7 @@ class TeachingPeriod < ApplicationRecord
 
   validate :validate_end_date_after_start_date, :validate_active_until_after_end_date
 
-  after_update :propogate_date_changes
+  before_update :propogate_date_changes
 
   # Public methods
 
@@ -57,7 +57,7 @@ class TeachingPeriod < ApplicationRecord
       if date >= a_break.start_date
         # we are in or after the break, so calculated week needs to
         # be reduced by this break
-        
+
         if date >= a_break.end_date
           # past the end of the break...
           result -= a_break.number_of_weeks
@@ -112,7 +112,7 @@ class TeachingPeriod < ApplicationRecord
     start_day_num = start_date.wday
 
     result = week_start + (day_num - start_day_num).days
-    
+
     for a_break in breaks do
       if result >= a_break.start_date && result < a_break.end_date
         # we are in or after the break, so calculated date is
@@ -124,13 +124,34 @@ class TeachingPeriod < ApplicationRecord
     result
   end
 
-  def rollover(rollover_to)
+  def future_teaching_periods
+    TeachingPeriod.where("start_date > :end_date", end_date: end_date)
+  end
+
+  def rollover(rollover_to, search_forward=true,rollover_inactive=false)
     if rollover_to.start_date < Time.zone.now || rollover_to.start_date <= start_date
       self.errors.add(:base, "Units can only be rolled over to future teaching periods")
-      
+
       false
     else
-      for unit in units do
+      units_to_rollover = units
+
+      unless rollover_inactive
+        units_to_rollover = units_to_rollover.where(active: true)
+      end
+
+      if search_forward
+        ftp = future_teaching_periods.where("start_date < :date", date: rollover_to.start_date).order(start_date: "desc")
+
+        units_to_rollover = units_to_rollover.map do |u|
+          ftp.map{|tp| tp.units.where(code: u.code).first }.select{|u| u.present?}.first || u
+        end
+      end
+
+      for unit in units_to_rollover do
+        #skip if the unit already exists in the teaching period
+        next if rollover_to.units.where(code: unit.code).count > 0
+
         unit.rollover(rollover_to, nil, nil)
       end
 
@@ -160,7 +181,7 @@ class TeachingPeriod < ApplicationRecord
 
   def propogate_date_changes
     return unless start_date_changed? || end_date_changed?
-    
+
     units.each do |u|
       u.update(start_date: self.start_date, end_date: self.end_date)
     end

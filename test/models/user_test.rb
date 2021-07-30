@@ -29,4 +29,26 @@ class UserTest < ActiveSupport::TestCase
     User.create!(profile)
     assert User.last, profile
   end
+
+  def test_user_is_valid
+    user = FactoryBot.create(:user)
+    assert user.valid?
+  end
+  
+  def test_invalid_without_first_name
+    user = FactoryBot.build(:user, first_name: nil)
+    refute user.valid?
+  end
+  
+  def test_invalid_without_last_name
+    user = FactoryBot.build(:user, last_name: nil)
+    refute user.valid?
+  end
+
+  def test_can_create_multiple_auth_tokens
+    user = FactoryBot.create(:user)
+    t1 = user.generate_authentication_token!
+    t2 = user.generate_authentication_token!
+    assert_not_equal t1, t2 
+  end
 end

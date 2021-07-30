@@ -24,7 +24,6 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
     tutorial = FactoryBot.create(:tutorial, unit: unit, campus: campus)
     tutorial_enrolment = FactoryBot.build(:tutorial_enrolment, project: project)
     tutorial_enrolment.tutorial = tutorial
-    tutorial_enrolment.tutorial_stream = tutorial.tutorial_stream
     tutorial_enrolment.save!
 
     assert_equal tutorial_enrolment.project, project
@@ -44,12 +43,10 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
 
     tutorial_enrolment = FactoryBot.build(:tutorial_enrolment, project: project)
     tutorial_enrolment.tutorial = tutorial
-    tutorial_enrolment.tutorial_stream = tutorial.tutorial_stream
     tutorial_enrolment.save!
 
     tutorial_enrolment = FactoryBot.build(:tutorial_enrolment, project: project)
     tutorial_enrolment.tutorial = tutorial
-    tutorial_enrolment.tutorial_stream = tutorial.tutorial_stream
     assert tutorial_enrolment.invalid?
 
     # Unique, multiple tutorials (with no stream) and max one validation will fail
@@ -158,7 +155,6 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
 
     tutorial_enrolment = FactoryBot.build(:tutorial_enrolment, project: project)
     tutorial_enrolment.tutorial = tutorial_second
-    tutorial_enrolment.tutorial_stream = tutorial_second.tutorial_stream
     exception = assert_raises(Exception) { tutorial_enrolment.save! }
     assert_equal 'Validation failed: Project cannot have more than one enrolment when it is enrolled in tutorial with no stream', exception.message
   end
@@ -213,14 +209,12 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
     tutorial_enrolment_first = project.enrol_in(tutorial_first)
     assert_equal tutorial_first, tutorial_enrolment_first.tutorial
 
-    # Enrol same project in tutorial second
-    tutorial_enrolment_second = FactoryBot.build(:tutorial_enrolment, project: project)
-    tutorial_enrolment_second.tutorial = tutorial_second
-    assert tutorial_enrolment_second.invalid?
-    assert_equal 'Project cannot enrol in tutorial with no stream when enrolled in stream', tutorial_enrolment_second.errors.full_messages.last
+    # Enrol same project in tutorial second - will switch enrolment
+    assert_equal tutorial_enrolment_first, project.matching_enrolment(tutorial_first)
 
-    exception = assert_raises(Exception) { tutorial_enrolment_second = project.enrol_in(tutorial_second) }
-    assert_equal 'Validation failed: Project cannot enrol in tutorial with no stream when enrolled in stream', exception.message
+    tutorial_enrolment_second = project.enrol_in(tutorial_second)
+    assert_equal 1, project.tutorial_enrolments.count
+    assert_equal tutorial_second, tutorial_enrolment_second.tutorial
   end
 
   def test_cannot_enrol_in_tutorial_stream_twice
@@ -288,7 +282,6 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
 
     tutorial_enrolment = FactoryBot.build(:tutorial_enrolment, project: project)
     tutorial_enrolment.tutorial = tutorial
-    tutorial_enrolment.tutorial_stream = tutorial.tutorial_stream
     assert tutorial_enrolment.invalid?
     assert_equal 'Project and tutorial belong to different campus', tutorial_enrolment.errors.full_messages.last
   end
@@ -306,7 +299,6 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
 
     tutorial_enrolment = FactoryBot.build(:tutorial_enrolment, project: project)
     tutorial_enrolment.tutorial = tutorial
-    tutorial_enrolment.tutorial_stream = tutorial.tutorial_stream
     assert tutorial_enrolment.invalid?
     assert_equal 1, tutorial_enrolment.errors.full_messages.count
     assert_equal 'Project and tutorial belong to different unit', tutorial_enrolment.errors.full_messages.last
