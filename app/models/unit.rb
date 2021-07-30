@@ -28,7 +28,8 @@ class Unit < ApplicationRecord
       :provide_feedback,
       :download_stats,
       :download_unit_csv,
-      :download_grades
+      :download_grades,
+      :exceed_capacity
     ]
 
     # What can convenors do with units?
@@ -46,7 +47,8 @@ class Unit < ApplicationRecord
       :change_project_enrolment,
       :download_stats,
       :download_grades,
-      :rollover_unit
+      :rollover_unit,
+      :exceed_capacity
     ]
 
     # What can admin do with units?
@@ -64,6 +66,7 @@ class Unit < ApplicationRecord
       :download_stats,
       :download_unit_csv,
       :download_grades,
+      :exceed_capacity
     ]
 
     # What can other users do with units?
@@ -103,21 +106,23 @@ class Unit < ApplicationRecord
 
   # Model associations.
   # When a Unit is destroyed, any TaskDefinitions, Tutorials, and ProjectConvenor instances will also be destroyed.
-  has_many :tutorials, dependent: :destroy
-  has_many :tutorial_enrolments, through: :tutorials
-  has_many :tutorial_streams, dependent: :destroy
+  has_many :projects, dependent: :destroy # projects first to remove tasks
+  has_many :active_projects, -> { where enrolled: true }, class_name: 'Project'
+  has_many :group_sets, dependent: :destroy # group sets next to remove groups
   has_many :task_definitions, -> { order 'start_date ASC, abbreviation ASC' }, dependent: :destroy
-  has_many :projects, dependent: :destroy
+  has_many :tutorials, dependent: :destroy # tutorials need groups and tasks deleted before it...
+  has_many :tutorial_streams, dependent: :destroy
   has_many :unit_roles, dependent: :destroy
-  has_many :teaching_staff, through: :unit_roles, class_name: 'User', source: 'user'
   has_many :learning_outcomes, dependent: :destroy
-  has_many :tasks, through: :projects
-  has_many :group_sets, dependent: :destroy
-  has_many :task_engagements, through: :projects
   has_many :comments, through: :projects
-  has_many :groups, through: :group_sets
 
+  has_many :tasks, through: :projects
+  has_many :groups, through: :group_sets
+  has_many :tutorial_enrolments, through: :tutorials
+  has_many :group_memberships, through: :groups
+  has_many :teaching_staff, through: :unit_roles, class_name: 'User', source: 'user'
   has_many :learning_outcome_task_links, through: :task_definitions
+  has_many :task_engagements, through: :projects
 
   has_many :convenors, -> { joins(:role).where('roles.name = :role', role: 'Convenor') }, class_name: 'UnitRole'
   has_many :staff, ->     { joins(:role).where('roles.name = :role_convenor or roles.name = :role_tutor', role_convenor: 'Convenor', role_tutor: 'Tutor') }, class_name: 'UnitRole'
@@ -127,6 +132,8 @@ class Unit < ApplicationRecord
 
   belongs_to :main_convenor, class_name: 'UnitRole'
 
+  belongs_to :draft_task_definition, class_name: 'TaskDefinition'
+
   validates :name, :description, :start_date, :end_date, presence: true
 
   validates :description, length: { maximum: 4095, allow_blank: true }
@@ -135,6 +142,7 @@ class Unit < ApplicationRecord
   validates :end_date, presence: true
 
   validates :code, uniqueness: { scope: :teaching_period, message: "%{value} already exists in this teaching period" }, if: :has_teaching_period?
+  validates :extension_weeks_on_resubmit_request, :numericality => { :greater_than_or_equal_to => 0 }
 
   validate :validate_end_date_after_start_date
   validate :ensure_teaching_period_dates_match, if: :has_teaching_period?
@@ -309,6 +317,19 @@ class Unit < ApplicationRecord
       task_definitions.where("target_grade <= #{e}").count + 0.0
     end.map { |e| e == 0 ? 1 : e }
 
+    # Get the task stats for a student as a subquery so that it is independent of the main query
+    # otherwise an attempt at a higher level task can exclude the student from the student list!
+    subquery = projects.
+      joins(tasks: :task_definition).
+      where(
+        'projects.target_grade >= task_definitions.target_grade'
+      ).
+      group('projects.id').
+      select(
+        "projects.id AS project_id",
+        *TaskStatus.all.map { |s| "SUM(CASE WHEN tasks.task_status_id = #{s.id} THEN 1 ELSE 0 END) AS #{s.status_key}_count" },
+      ).to_sql
+
     q = projects
         .joins(:user)
         .joins('LEFT OUTER JOIN tasks ON projects.id = tasks.project_id')
@@ -316,11 +337,14 @@ class Unit < ApplicationRecord
         .joins('LEFT OUTER JOIN plagiarism_match_links ON tasks.id = plagiarism_match_links.task_id')
         .joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id')
         .joins('LEFT OUTER JOIN tutorials ON tutorials.id = tutorial_enrolments.tutorial_id')
-        .joins('LEFT OUTER JOIN tutorial_streams ON tutorial_enrolments.tutorial_stream_id = tutorial_streams.id')
+        .joins('LEFT OUTER JOIN tutorial_streams ON tutorials.tutorial_stream_id = tutorial_streams.id')
+        .joins("LEFT OUTER JOIN (#{subquery}) as sq ON sq.project_id = projects.id")
         .group(
           'projects.id',
           'projects.target_grade',
+          'projects.submitted_grade',
           'projects.enrolled',
+          'projects.campus_id',
           'users.first_name',
           'users.last_name',
           'users.username',
@@ -328,29 +352,29 @@ class Unit < ApplicationRecord
           'projects.portfolio_production_date',
           'projects.compile_portfolio',
           'projects.grade',
-          'projects.grade_rationale'
+          'projects.grade_rationale',
+          *TaskStatus.all.map { |s| "#{s.status_key}_count" },
         )
         .select(
           'projects.id AS project_id',
           'projects.enrolled AS enrolled',
+          'projects.campus_id AS campus_id',
           'users.first_name AS first_name',
           'users.last_name AS last_name',
           'users.username AS student_id',
           'users.email AS student_email',
           'projects.target_grade AS target_grade',
+          'projects.submitted_grade AS submitted_grade',
           'projects.compile_portfolio AS compile_portfolio',
           'projects.grade AS grade',
           'projects.grade_rationale AS grade_rationale',
           'projects.portfolio_production_date AS portfolio_production_date',
           'MAX(CASE WHEN plagiarism_match_links.dismissed = FALSE THEN plagiarism_match_links.pct ELSE 0 END) AS plagiarism_match_links_max_pct',
-          *TaskStatus.all.map { |s| "SUM(CASE WHEN tasks.task_status_id = #{s.id} THEN 1 ELSE 0 END) AS #{s.status_key}_count" },
+          *TaskStatus.all.map { |s| "sq.#{s.status_key}_count AS #{s.status_key}_count" },
           # Get tutorial for each stream in unit
-          *tutorial_streams.map { |s| "MAX(CASE WHEN tutorial_enrolments.tutorial_stream_id = #{s.id} OR tutorial_enrolments.id IS NULL THEN tutorials.id ELSE NULL END) AS tutorial_#{s.id}" },
+          *tutorial_streams.map { |s| "MAX(CASE WHEN tutorials.tutorial_stream_id = #{s.id} OR tutorials.tutorial_stream_id IS NULL THEN tutorials.id ELSE NULL END) AS tutorial_#{s.id}" },
           # Get tutorial for case when no stream
-          "MAX(CASE WHEN tutorial_streams.id IS NULL THEN tutorials.abbreviation ELSE NULL END) AS tutorial"
-        )
-        .where(
-          'projects.target_grade >= task_definitions.target_grade OR (task_definitions.target_grade IS NULL)'
+          "MAX(CASE WHEN tutorial_streams.id IS NULL THEN tutorials.id ELSE NULL END) AS tutorial"
         )
         .order('users.first_name')
 
@@ -360,28 +384,30 @@ class Unit < ApplicationRecord
       result = {
         project_id: t.project_id,
         enrolled: t.enrolled,
+        campus_id: t.campus_id,
         first_name: t.first_name,
         last_name: t.last_name,
         student_id: t.student_id,
         student_email: t.student_email,
         student_name: "#{t.first_name} #{t.last_name}",
         target_grade: t.target_grade,
+        submitted_grade: t.submitted_grade,
         compile_portfolio: t.compile_portfolio,
         grade: t.grade,
         grade_rationale: t.grade_rationale,
         max_pct_copy: t.plagiarism_match_links_max_pct,
         has_portfolio: !t.portfolio_production_date.nil?,
         stats: Project.create_task_stats_from(task_count, t, t.target_grade),
-        tutorial_streams: tutorial_streams.map do |s|
+        tutorial_enrolments: tutorial_streams.map do |s|
           {
-            stream: s.abbreviation,
-            tutorial: t["tutorial_#{s.id}"]
+            stream_abbr: s.abbreviation,
+            tutorial_id: t["tutorial_#{s.id}"]
           }
         end
       }
 
       if tutorial_streams.empty?
-        result[:tutorial_streams] = [{tutorial: t['tutorial']}]
+        result[:tutorial_enrolments] = [{tutorial_id: t['tutorial']}]
       end
       result
     end
@@ -409,10 +435,6 @@ class Unit < ApplicationRecord
     else
       User.admins.first.email
     end
-  end
-
-  def active_projects
-    projects.where('enrolled = true')
   end
 
   # Adds a staff member for a role in a unit
@@ -467,9 +489,9 @@ class Unit < ApplicationRecord
 
     return if result.nil?
 
-    puts "Import success for #{result[:success].count} students" unless result[:success].count == 0
-    puts "Skipped #{result[:ignored].count} students" unless result[:ignored].count == 0
-    puts "Errors #{result[:errors].count} students" unless result[:errors].count == 0
+    puts "#{code} - Import success for #{result[:success].count} students" unless result[:success].count == 0
+    puts "#{code} - Skipped #{result[:ignored].count} students" unless result[:ignored].count == 0
+    puts "#{code} - Errors #{result[:errors].count} students" unless result[:errors].count == 0
     result[:errors].each do |err|
       puts "#{err[:message]} --> #{err[:row]}"
     end
@@ -511,15 +533,28 @@ class Unit < ApplicationRecord
     if Doubtfire::Application.config.institution_settings.are_headers_institution_users? csv.headers
       import_settings = Doubtfire::Application.config.institution_settings.user_import_settings_for(csv.headers)
     else
+      if tutorial_streams.count > 0
+        stream_names = tutorial_stream_abbr.map{|abbr| abbr.downcase }
+      else
+        stream_names = ['tutorial']
+      end
+
       # Settings include:
       #   missing_headers_lambda - lambda to check if row is missing key data
       #   fetch_row_data_lambda - lambda to convert row from csv to required import data
       #   replace_existing_tutorial - boolean to indicate if tutorials in csv override ones in doubtfire
       import_settings = {
         missing_headers_lambda: ->(row) {
-          missing_headers(row, %w(unit_code username student_id first_name last_name email tutorial))
+          missing_headers(row, %w(unit_code username student_id first_name last_name email campus))
+          missing_headers(row, stream_names)
         },
         fetch_row_data_lambda: ->(row, unit) {
+          tutorials = []
+
+          stream_names.each do |stream|
+            tutorials << row[stream] if row[stream].present?
+          end
+
           {
               unit_code:      row['unit_code'],
               username:       row['username'],
@@ -529,8 +564,8 @@ class Unit < ApplicationRecord
               last_name:      row['last_name'],
               email:          row['email'],
               enrolled:       true,
-              tutorial_code:  row['tutorial'],
-              campus_data:    row['campus']
+              tutorials:      tutorials,
+              campus:         row['campus']
           }
         },
         replace_existing_tutorial: true
@@ -598,7 +633,8 @@ class Unit < ApplicationRecord
 
         unit_code = row_data[:unit_code]
 
-        if unit_code != code
+        # Check it is one of the unit codes
+        unless code.split('/').include? unit_code
           ignored << { row: row_data[:row], message: "Invalid unit code. #{unit_code} does not match #{code}" }
           next
         end
@@ -610,11 +646,11 @@ class Unit < ApplicationRecord
         if changes.key? username
           if row_data[:enrolled] # they should be enrolled - record that... overriding anything else
             # record previous row as ignored
-            ignored << { row: changes[username][:row], message: "Skipping withdraw as also includes enrol" }
+            ignored << { row: changes[username][:row], message: "Skipping duplicate role - ensuring enrolled" }
             changes[username] = row_data
           else
             # record this row as skipped
-            ignored << { row: row_data[:row], message: "Skipping withdraw as also includes enrol" }
+            ignored << { row: row_data[:row], message: "Skipping duplicate role" }
           end
         else #dont have the user so record them - will add to result when processed
           changes[username] = row_data
@@ -734,10 +770,10 @@ class Unit < ApplicationRecord
 
           # Now find the project for the user
           user_project = projects.where(user_id: project_participant.id).first
+          campus = Campus.find_by_abbr_or_name(campus_data)
 
           # Add the user to the project (if not already in there)
           if user_project.nil?
-            campus = Campus.find_by_abbr_or_name(campus_data)
             # Enrol user...
             user_project = enrol_student(project_participant, campus)
             success_message = 'Enrolled student'
@@ -750,9 +786,15 @@ class Unit < ApplicationRecord
               user_project.save
               success_message << 'Changed enrolment.'
             end
+            # update campus if not provided and available
+            if user_project.campus_id.nil? && campus.present?
+              user_project.campus_id = campus.id
+              user_project.save
+              success_message << 'Campus updated.'
+            end
           end
 
-          # Only run if we will change tutorial enrolments...
+          # Only update if we will change tutorial enrolments... or no enrolment
           if import_settings[:replace_existing_tutorial] || new_project || user_project.tutorial_enrolments.count == 0
 
             # Now loop through the tutorials and enrol the student...
@@ -762,9 +804,13 @@ class Unit < ApplicationRecord
               tutorial_cache[tutorial_code] ||= tutorial
 
               if tutorial.present?
-                # Use tutorial as we have it :)
-                user_project.enrol_in tutorial
-                success_message << ' Enrolled in ' << tutorial.abbreviation
+                  # Use tutorial as we have it :)
+                  begin
+                    user_project.enrol_in tutorial
+                    success_message << ' Enrolled in ' << tutorial.abbreviation
+                  rescue Exception => e
+                    success_message << " UNABLE TO enroll in #{tutorial.abbreviation} #{e.message}"
+                  end
               end
             end
           end
@@ -795,9 +841,12 @@ class Unit < ApplicationRecord
     errors = []
     ignored = []
 
-    CSV.parse(file,                 headers: true,
-                                    header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
-                                    converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
+    data = read_file_to_str(file)
+
+    CSV.parse(data,
+              headers: true,
+              header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
+              converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
       # Make sure we're not looking at the header or an empty line
       next if row[0] =~ /(username)|(((unit)|(subject))_code)/
       # next if row[5] !~ /^LA\d/
@@ -856,7 +905,7 @@ class Unit < ApplicationRecord
 
     CSV.generate do |csv|
       csv <<  %w(unit_code campus username student_id preferred_name first_name last_name email) +
-              (streams.count > 0 ? streams.map{ |t| t.abbreviation } : ['Tutorial'])
+              (streams.count > 0 ? streams.map{ |t| t.abbreviation } : ['tutorial'])
 
       active_projects.
         joins(
@@ -864,13 +913,13 @@ class Unit < ApplicationRecord
           :campus,
           'INNER JOIN users ON projects.user_id = users.id',
           'LEFT OUTER JOIN tutorial_streams ON tutorial_streams.unit_id = units.id',
-          'LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id AND (tutorial_enrolments.tutorial_stream_id = tutorial_streams.id OR tutorial_enrolments.tutorial_stream_id IS NULL)',
-          'LEFT OUTER JOIN tutorials ON tutorials.id = tutorial_enrolments.tutorial_id'
+          'LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id',
+          'LEFT OUTER JOIN tutorials ON tutorial_enrolments.tutorial_id = tutorials.id'
         ).select(
           'projects.id as project_id', 'users.student_id as student_id', 'users.username as username', 'users.first_name as first_name',
           'users.last_name as last_name', 'users.email as email', 'users.nickname as nickname', 'campuses.abbreviation as campus_abbreviation',
           # Get tutorial for each stream in unit
-          *streams.map { |s| "MAX(CASE WHEN tutorial_enrolments.tutorial_stream_id = #{s.id} OR tutorial_enrolments.tutorial_stream_id IS NULL THEN tutorials.abbreviation ELSE NULL END) AS tutorial_#{s.id}" },
+          *streams.map { |s| "MAX(CASE WHEN tutorials.tutorial_stream_id = #{s.id} OR tutorials.tutorial_stream_id IS NULL THEN tutorials.abbreviation ELSE NULL END) AS tutorial_#{s.id}" },
           # Get tutorial for case when no stream
           "MAX(CASE WHEN tutorial_streams.id IS NULL THEN tutorials.abbreviation ELSE NULL END) AS tutorial"
         ).group(
@@ -912,9 +961,12 @@ class Unit < ApplicationRecord
       ignored: []
     }
 
-    CSV.parse(file,                 headers: true,
-                                    header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
-                                    converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
+    data = read_file_to_str(file)
+
+    CSV.parse(data,
+              headers: true,
+              header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
+              converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
       # Make sure we're not looking at the header or an empty line
       next if row[0] =~ /unit_code/
 
@@ -938,9 +990,12 @@ class Unit < ApplicationRecord
     errors = []
     ignored = []
 
-    CSV.parse(file,                 headers: true,
-                                    header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
-                                    converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
+    data = read_file_to_str(file)
+
+    CSV.parse(data,
+              headers: true,
+              header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
+              converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
       # Make sure we're not looking at the header or an empty line
       next if row[0] =~ /unit_code/
 
@@ -1006,6 +1061,7 @@ class Unit < ApplicationRecord
     }
   end
 
+  # Import the actual groups from a csv - no students...
   def import_groups_from_csv(group_set, file)
     success = []
     errors = []
@@ -1013,78 +1069,62 @@ class Unit < ApplicationRecord
 
     logger.info "Starting import of group for #{group_set.name} for #{code}"
 
-    CSV.parse(file,                 headers: true,
-                                    header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
-                                    converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
+    data = read_file_to_str(file)
+
+    CSV.parse(data,
+              headers: true,
+              header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
+              converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
       next if row[0] =~ /^(group_name)|(name)/ # Skip header
 
       begin
-        missing = missing_headers(row, %w(group_name group_number username tutorial))
+        missing = missing_headers(row, %w(group_name tutorial capacity_adjustment))
         if missing.count > 0
           errors << { row: row, message: "Missing headers: #{missing.join(', ')}" }
           next
         end
 
-        if row['username'].nil?
-          ignored << { row: row, message: "Skipping row with missing username" }
-          next
-        end
-
-        username = row['username'].downcase.strip unless row['username'].nil?
-        group_name = row['group_name'].strip unless row['group_name'].nil?
-        group_number = row['group_number'].strip unless row['group_number'].nil?
-        campus_data = row['campus'].strip unless row['campus'].nil?
-        capacity = row['capacity'].strip unless row['capacity'].nil?
-        tutorial_abbr = row['tutorial'].strip unless row['tutorial'].nil?
-
-        user = User.where(username: username).first
-
-        if user.nil?
-          errors << { row: row, message: "Unable to find user #{username}" }
-          next
-        end
-
-        project = students.where('user_id = :id', id: user.id).first
-
-        if project.nil?
-          errors << { row: row, message: "Student #{username} not found in unit" }
-          next
-        end
-
-        grp = group_set.groups.find_or_create_by(name: group_name)
-
         change = ''
 
+        # Get name from csv
+        group_name = row['group_name'].strip unless row['group_name'].nil?
+
+        # Find or create the group object
+        grp = group_set.groups.find_or_create_by(name: group_name)
+
+        # Find the tutorial
+        tutorial_abbr = row['tutorial'].strip unless row['tutorial'].nil?
+        tutorial = tutorial_with_abbr(tutorial_abbr)
+
+        if tutorial.nil?
+          change += ' Created new tutorial.'
+
+          campus_data = row['campus'].strip unless row['campus'].nil?
+          campus = Campus.find_by_abbr_or_name(campus_data)
+
+          tutorial = add_tutorial(
+            'Monday',
+            '8:00am',
+            'TBA',
+            main_convenor_user,
+            campus,
+            nil, #capacity
+            tutorial_abbr
+          )
+        end
+
+        # If it is new we need to load details from the csv
         if grp.new_record?
-          change = 'Created new group. '
-
-          tutorial = tutorial_with_abbr(tutorial_abbr)
-          if tutorial.nil?
-            change += 'Created new tutorial. '
-            campus = Campus.find_by_abbr_or_name(campus_data)
-            tutorial = add_tutorial(
-              'Monday',
-              '8:00am',
-              'TBA',
-              main_convenor_user,
-              campus,
-              capacity,
-              tutorial_abbr
-            )
-          end
-
-          grp.tutorial = tutorial
-          grp.number = group_number
-          grp.save!
+          # Get group details
+          change += ' Created new group.'
         end
 
-        begin
-          grp.add_member(project)
-        rescue Exception => e
-          errors << { row: row, message: e.message }
-          next
-        end
-        success << { row: row, message: "#{change}Added #{username} to #{grp.name}." }
+        # Update group details
+        grp.tutorial = tutorial
+        grp.capacity_adjustment = row['capacity_adjustment'].strip.to_i unless row['capacity_adjustment'].nil?
+        grp.save!
+
+        success << { row: row, message: "Setup #{grp.name}.#{change}" }
       rescue Exception => e
         errors << { row: row, message: e.message }
       end
@@ -1097,16 +1137,96 @@ class Unit < ApplicationRecord
     }
   end
 
+  def import_student_groups_from_csv(group_set, file)
+    success = []
+    errors = []
+    ignored = []
+
+    logger.info "Starting import of group for #{group_set.name} for #{code}"
+
+    data = read_file_to_str(file)
+
+    CSV.parse(data,
+              headers: true,
+              header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
+              converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
+      next if row[0] =~ /^(group_name)|(name)/ # Skip header
+
+      begin
+        missing = missing_headers(row, %w(group_name username))
+        if missing.count > 0
+          errors << { row: row, message: "Missing headers: #{missing.join(', ')}" }
+          next
+        end
+
+        # Get name from csv
+        group_name = row['group_name'].strip unless row['group_name'].nil?
+
+        # Find or create the group object
+        grp = group_set.groups.find_by(name: group_name)
+
+        if row['username'].nil?
+          ignored << { row: row, message: "#{change}Skipping row with missing username" }
+          next
+        end
+
+        username = row['username'].downcase.strip unless row['username'].nil?
+
+        user = User.where(username: username).first
+
+        if user.nil?
+          errors << { row: row, message: "Unable to find user #{username}" }
+          next
+        end
+
+        project = students.where('user_id = :id', id: user.id).first
+
+        if project.nil?
+          errors << { row: row, message: "Student #{username} is not enrolled in #{code}" }
+          next
+        end
+
+        if group_set.keep_groups_in_same_class && !project.enrolled_in?(grp.tutorial)
+          project.enrol_in(grp.tutorial)
+        end
+
+        grp.add_member(project)
+
+        success << { row: row, message: "Added #{username} to #{grp.name}." }
+      rescue Exception => e
+        errors << { row: row, message: e.message }
+      end
+    end
+
+    {
+      success: success,
+      ignored: ignored,
+      errors:  errors
+    }
+  end
+
+  # Export all groups in the group set
   def export_groups_to_csv(group_set)
     CSV.generate do |row|
-      row << %w(group_name group_number username tutorial)
+      row << %w(group_name capacity_adjustment tutorial campus)
+      group_set.groups.each do |grp|
+        row << [grp.name, grp.capacity_adjustment, grp.tutorial.abbreviation, grp.tutorial.campus.present? ? grp.tutorial.campus.abbreviation : '']
+      end
+    end
+  end
+
+  # Export all students in groups
+  def export_student_groups_to_csv(group_set)
+    CSV.generate do |row|
+      row << %w(group_name username)
       group_set.groups.each do |grp|
         grp.projects.each do |project|
-          row << [grp.name, grp.number, project.student.username, grp.tutorial.abbreviation]
+          row << [grp.name, project.student.username]
         end
       end
     end
   end
+
 
   # def import_tutorials_from_csv(file)
   #   CSV.foreach(file) do |row|
@@ -1159,7 +1279,9 @@ class Unit < ApplicationRecord
     errors = []
     ignored = []
 
-    CSV.parse(file,
+    data = read_file_to_str(file)
+
+    CSV.parse(data,
               headers: true,
               header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip.tr(' ', '_').to_sym unless hdr.nil? }],
               converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]
@@ -1251,8 +1373,8 @@ class Unit < ApplicationRecord
           'INNER JOIN users ON projects.user_id = users.id',
           'INNER JOIN task_definitions ON task_definitions.unit_id = units.id',
           'LEFT OUTER JOIN tutorial_streams ON tutorial_streams.unit_id = units.id',
-          'LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id AND (tutorial_enrolments.tutorial_stream_id = tutorial_streams.id OR tutorial_enrolments.tutorial_stream_id IS NULL)',
-          'LEFT OUTER JOIN tutorials ON tutorials.id = tutorial_enrolments.tutorial_id',
+          'LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id',
+          'LEFT OUTER JOIN tutorials ON tutorials.id = tutorial_enrolments.tutorial_id AND (tutorials.tutorial_stream_id = tutorial_streams.id OR tutorials.tutorial_stream_id IS NULL)',
           'LEFT OUTER JOIN tasks ON tasks.task_definition_id = task_definitions.id AND projects.id = tasks.project_id',
           'LEFT OUTER JOIN task_statuses ON tasks.task_status_id = task_statuses.id',
           'LEFT OUTER JOIN group_memberships ON group_memberships.project_id = projects.id AND group_memberships.active = TRUE',
@@ -1262,7 +1384,7 @@ class Unit < ApplicationRecord
           'users.last_name as last_name', 'projects.target_grade', 'users.email as email', 'compile_portfolio', 'portfolio_production_date', 'grade', 'grade_rationale',
           *td_select,
           # Get tutorial for each stream in unit
-          *streams.map { |s| "MAX(CASE WHEN tutorial_enrolments.tutorial_stream_id = #{s.id} OR tutorial_enrolments.tutorial_stream_id IS NULL THEN tutorials.abbreviation ELSE NULL END) AS tutorial_#{s.id}" },
+          *streams.map { |s| "MAX(CASE WHEN tutorials.tutorial_stream_id = #{s.id} OR tutorials.tutorial_stream_id IS NULL THEN tutorials.abbreviation ELSE NULL END) AS tutorial_#{s.id}" },
           # Get tutorial for case when no stream
           "MAX(CASE WHEN tutorial_streams.id IS NULL THEN tutorials.abbreviation ELSE NULL END) AS tutorial",
           *grp_sets.map { |gs| "MAX(CASE WHEN groups.group_set_id = #{gs.id} THEN groups.name ELSE NULL END) AS grp_#{gs.id}" }
@@ -1723,9 +1845,17 @@ class Unit < ApplicationRecord
         grade: t.grade,
         quality_pts: t.quality_pts,
         num_new_comments: t.number_unread,
-        similar_to_count: plagiarism_counts[t.task_id]
+        similar_to_count: plagiarism_counts[t.task_id],
+        pinned: t.pinned,
+        has_extensions: t.has_extensions
       }
     end
+  end
+
+  def tutorial_enrolment_subquery
+    tutorial_enrolments.
+      joins(:tutorial).
+      select('tutorials.tutorial_stream_id as tutorial_stream_id', 'tutorials.id as tutorial_id', 'project_id').to_sql
   end
 
   #
@@ -1734,19 +1864,44 @@ class Unit < ApplicationRecord
   def get_all_tasks_for(user)
     student_tasks.
       joins(:task_status).
-      joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id AND (tutorial_enrolments.tutorial_stream_id = task_definitions.tutorial_stream_id OR tutorial_enrolments.tutorial_stream_id IS NULL)').
-      joins("LEFT JOIN task_comments ON task_comments.task_id = tasks.id").
+      joins("LEFT OUTER JOIN (#{tutorial_enrolment_subquery}) as sq ON sq.project_id = projects.id AND (sq.tutorial_stream_id = task_definitions.tutorial_stream_id OR sq.tutorial_stream_id IS NULL)").
+      joins("LEFT JOIN task_comments ON task_comments.task_id = tasks.id AND (task_comments.type IS NULL OR task_comments.type <> 'TaskStatusComment')").
       joins("LEFT JOIN comments_read_receipts crr ON crr.task_comment_id = task_comments.id AND crr.user_id = #{user.id}").
+      joins("LEFT JOIN task_pins ON task_pins.task_id = tasks.id AND task_pins.user_id = #{user.id}").
       select(
-        'tutorial_enrolments.tutorial_id AS tutorial_id', 'tutorial_enrolments.tutorial_stream_id AS tutorial_stream_id',
-        'tasks.id', 'SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) as number_unread', 'project_id', 'tasks.id as task_id',
-        'task_definition_id', 'task_definitions.start_date as start_date', 'task_statuses.id as status_id',
-        'completion_date', 'times_assessed', 'submission_date', 'portfolio_evidence', 'tasks.grade as grade', 'quality_pts'
+        'sq.tutorial_id AS tutorial_id',
+        'sq.tutorial_stream_id AS tutorial_stream_id',
+        'tasks.id',
+        "SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) as number_unread",
+        'COUNT(distinct task_pins.task_id) != 0 as pinned',
+        "SUM(case when task_comments.date_extension_assessed IS NULL AND task_comments.type = 'ExtensionComment' AND NOT task_comments.id IS NULL THEN 1 ELSE 0 END) > 0 as has_extensions",
+        'project_id',
+        'tasks.id as task_id',
+        'task_definition_id',
+        'task_definitions.start_date as start_date',
+        'task_statuses.id as status_id',
+        'completion_date',
+        'times_assessed',
+        'submission_date',
+        'portfolio_evidence',
+        'tasks.grade as grade',
+        'quality_pts'
       ).
       group(
-        'tutorial_enrolments.tutorial_id', 'tutorial_enrolments.tutorial_stream_id',
-        'task_statuses.id', 'project_id', 'tasks.id', 'task_definition_id', 'task_definitions.start_date', 'status_id',
-        'completion_date', 'times_assessed', 'submission_date', 'portfolio_evidence', 'grade', 'quality_pts'
+        'sq.tutorial_id',
+        'sq.tutorial_stream_id',
+        'task_statuses.id',
+        'project_id',
+        'tasks.id',
+        'task_definition_id',
+        'task_definitions.start_date',
+        'status_id',
+        'completion_date',
+        'times_assessed',
+        'submission_date',
+        'portfolio_evidence',
+        'grade',
+        'quality_pts'
       )
   end
 
@@ -1772,8 +1927,8 @@ class Unit < ApplicationRecord
   #
   def tasks_for_task_inbox(user)
     get_all_tasks_for(user)
-      .having('task_statuses.id IN (:ids) OR SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) > 0', ids: [ TaskStatus.ready_to_mark, TaskStatus.need_help ])
-      .order('submission_date ASC, MAX(task_comments.created_at) ASC, task_definition_id ASC')
+      .having('task_statuses.id IN (:ids) OR COUNT(task_pins.task_id) > 0 OR SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) > 0', ids: [ TaskStatus.ready_to_mark, TaskStatus.need_help ])
+      .order('pinned DESC, submission_date ASC, MAX(task_comments.created_at) ASC, task_definition_id ASC')
   end
 
   #
@@ -1789,8 +1944,9 @@ class Unit < ApplicationRecord
   def task_status_stats
     data = student_tasks.
            joins(:task_status).
-           joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id AND (tutorial_enrolments.tutorial_stream_id = task_definitions.tutorial_stream_id OR tutorial_enrolments.tutorial_stream_id IS NULL)').
-           select('tutorial_enrolments.tutorial_stream_id AS stream_id', 'tutorial_enrolments.tutorial_id AS tutorial_id', 'task_definition_id', 'task_statuses.id as status_id', 'COUNT(tasks.id) as num_tasks').
+           joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id').
+           joins('LEFT OUTER JOIN tutorials ON tutorials.id = tutorial_enrolments.tutorial_id AND (tutorials.tutorial_stream_id = task_definitions.tutorial_stream_id OR tutorials.tutorial_stream_id IS NULL)').
+           select('tutorials.tutorial_stream_id AS stream_id', 'tutorial_enrolments.tutorial_id AS tutorial_id', 'task_definition_id', 'task_statuses.id as status_id', 'COUNT(tasks.id) as num_tasks').
            where('task_status_id > 1').
            group('stream_id', 'tutorial_id', 'tasks.task_definition_id', 'status_id').
            map do |r|
@@ -1845,9 +2001,12 @@ class Unit < ApplicationRecord
   # aiming for a grade in this indicated unit.
   #
   def student_target_grade_stats
-    data = active_projects
-            .joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id')
-            .select('tutorial_enrolments.tutorial_stream_id as tutorial_stream_id, tutorial_enrolments.tutorial_id as tutorial_id, projects.target_grade, COUNT(projects.id) as num').group('tutorial_enrolments.tutorial_id, tutorial_enrolments.tutorial_stream_id, projects.target_grade').order('tutorial_enrolments.tutorial_id, projects.target_grade').map { |r| { tutorial_id: r.tutorial_id, tutorial_stream_id: r.tutorial_stream_id, grade: r.target_grade, num: r.num } }
+    data = active_projects.
+      joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id').
+      joins('LEFT OUTER JOIN tutorials ON tutorials.id = tutorial_enrolments.tutorial_id').
+      select('tutorials.tutorial_stream_id as tutorial_stream_id, tutorial_enrolments.tutorial_id as tutorial_id, projects.target_grade, COUNT(projects.id) as num').group('tutorial_enrolments.tutorial_id, tutorials.tutorial_stream_id, projects.target_grade').
+      order('tutorial_enrolments.tutorial_id, projects.target_grade').
+      map { |r| { tutorial_id: r.tutorial_id, tutorial_stream_id: r.tutorial_stream_id, grade: r.target_grade, num: r.num } }
   end
 
   #
@@ -1863,10 +2022,11 @@ class Unit < ApplicationRecord
   #
   def _student_task_completion_data_base
     data = student_tasks
-           .joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = tasks.project_id AND (tutorial_enrolments.tutorial_stream_id = task_definitions.tutorial_stream_id OR tutorial_enrolments.tutorial_stream_id IS NULL)')
-           .select('tutorial_enrolments.tutorial_stream_id as tutorial_stream_id', 'tutorial_enrolments.tutorial_id as tutorial_id', 'projects.target_grade as target_grade', 'tasks.project_id', 'Count(tasks.id) as num')
+           .joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = tasks.project_id')
+           .joins('LEFT OUTER JOIN tutorials ON tutorials.id = tutorial_enrolments.tutorial_id AND (tutorials.tutorial_stream_id = task_definitions.tutorial_stream_id OR tutorials.tutorial_stream_id IS NULL)')
+           .select('tutorials.tutorial_stream_id as tutorial_stream_id', 'tutorial_enrolments.tutorial_id as tutorial_id', 'projects.target_grade as target_grade', 'tasks.project_id', 'Count(tasks.id) as num')
            .where('task_status_id = :complete', complete: TaskStatus.complete.id)
-           .group('tutorial_enrolments.tutorial_id', 'tutorial_enrolments.tutorial_stream_id', 'projects.target_grade', 'tasks.project_id')
+           .group('tutorial_enrolments.tutorial_id', 'tutorials.tutorial_stream_id', 'projects.target_grade', 'tasks.project_id')
            .order('tutorial_enrolments.tutorial_id')
     data.map { |r| { tutorial_id: r.tutorial_id, tutorial_stream_id: r.tutorial_stream_id, grade: r.target_grade, project: r.project_id, num: r.num } }
   end
@@ -1937,10 +2097,11 @@ class Unit < ApplicationRecord
     data = student_tasks
            .joins(task_definition: :learning_outcome_task_links)
            .joins(:task_status)
-           .joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id AND (tutorial_enrolments.tutorial_stream_id = task_definitions.tutorial_stream_id OR tutorial_enrolments.tutorial_stream_id IS NULL)')
-           .select('tutorial_enrolments.tutorial_stream_id as tutorial_stream_id, tutorial_enrolments.tutorial_id as tutorial_id, projects.id as project_id, task_statuses.id as status_id, task_definitions.target_grade, learning_outcome_task_links.learning_outcome_id, learning_outcome_task_links.rating, COUNT(tasks.id) as num')
+           .joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id')
+           .joins('LEFT OUTER JOIN tutorials ON tutorials.id = tutorial_enrolments.tutorial_id AND (tutorials.tutorial_stream_id = task_definitions.tutorial_stream_id OR tutorials.tutorial_stream_id IS NULL)')
+           .select('tutorials.tutorial_stream_id as tutorial_stream_id, tutorial_enrolments.tutorial_id as tutorial_id, projects.id as project_id, task_statuses.id as status_id, task_definitions.target_grade, learning_outcome_task_links.learning_outcome_id, learning_outcome_task_links.rating, COUNT(tasks.id) as num')
            .where('projects.started = TRUE AND learning_outcome_task_links.task_id is NULL')
-           .group('tutorial_enrolments.tutorial_id, tutorial_enrolments.tutorial_stream_id, projects.id, task_statuses.id, task_definitions.target_grade, learning_outcome_task_links.learning_outcome_id, learning_outcome_task_links.rating')
+           .group('tutorial_enrolments.tutorial_id, tutorials.tutorial_stream_id, projects.id, task_statuses.id, task_definitions.target_grade, learning_outcome_task_links.learning_outcome_id, learning_outcome_task_links.rating')
            .order('tutorial_enrolments.tutorial_id, projects.id')
            .map do |r|
       {
@@ -1962,7 +2123,7 @@ class Unit < ApplicationRecord
       working_on_it:      0.0,
       need_help:          0.0,
       redo:               0.1,
-      do_not_resubmit:    0.1,
+      feedback_exceeded:    0.1,
       fix_and_resubmit:   0.3,
       time_exceeded:      0.5,
       ready_to_mark:      0.7,
@@ -2423,49 +2584,49 @@ class Unit < ApplicationRecord
           # Copy over the updated/marked files to the file system
           zip.each do |file|
             # Skip processing marking file
-            next if File.basename(file.name) == 'marks.csv' || File.basename(file.name) == 'readme.txt'
+            next if File.basename(file[:name]) == 'marks.csv' || File.basename(file[:name]) == 'readme.txt'
 
             # Test filename pattern
-            if (/.*-\d+.pdf/i =~ File.basename(file.name)) != 0
-              if file.name[-1] != '/'
-                ignored << { row: "File #{file.name}", message: 'Does not appear to be a task PDF.' }
+            if (/.*-\d+.pdf/i =~ File.basename(file[:name])) != 0
+              if file[:name][-1] != '/'
+                ignored << { row: "File #{file[:name]}", message: 'Does not appear to be a task PDF.' }
               end
               next
             end
-            if (/\._.*/ =~ File.basename(file.name)) == 0
-              ignored << { row: "File #{file.name}", message: 'Does not appear to be a task PDF.' }
+            if (/\._.*/ =~ File.basename(file[:name])) == 0
+              ignored << { row: "File #{file[:name]}", message: 'Does not appear to be a task PDF.' }
               next
             end
 
             # Extract the id from the filename
-            task_id_from_filename = File.basename(file.name, '.pdf').split('-').last
+            task_id_from_filename = File.basename(file[:name], '.pdf').split('-').last
             task = Task.find_by(id: task_id_from_filename)
             if task.nil?
-              ignored << { row: "File #{file.name}", message: 'Unable to find associated task.' }
+              ignored << { row: "File #{file[:name]}", message: 'Unable to find associated task.' }
               next
             end
 
             # Ensure that this task's id is inside entry_data
             task_entry = entry_data.select { |t| t['task'] == task.task_definition.abbreviation.tr(',', '_') && t['username'] == task.project.user.username }.first
             if task_entry.nil?
-              # error!({"error" => "File #{file.name} has a mismatch of task id ##{task.id} (this task id does not exist in marks.csv)"}, 403)
-              errors << { row: "File #{file.name}", message: "Task id #{task.id} not in marks.csv" }
+              # error!({"error" => "File #{file[:name]} has a mismatch of task id ##{task.id} (this task id does not exist in marks.csv)"}, 403)
+              errors << { row: "File #{file[:name]}", message: "Task id #{task.id} not in marks.csv" }
               next
             end
 
             if task.unit != self
-              errors << { row: "File #{file.name}", message: 'This task does not relate to this unit.' }
+              errors << { row: "File #{file[:name]}", message: 'This task does not relate to this unit.' }
               next
             end
 
             # Can the user assess this task?
             unless AuthorisationHelpers.authorise? user, task, :put
-              errors << { row: "File #{file.name}", error: "You do not have permission to assess task with id #{task.id}" }
+              errors << { row: "File #{file[:name]}", error: "You do not have permission to assess task with id #{task.id}" }
               next
             end
 
             # Read into the task's portfolio_evidence path the new file
-            tmp_file = File.join(tmp_dir, File.basename(file.name))
+            tmp_file = File.join(tmp_dir, File.basename(file[:name]))
             task.portfolio_evidence = task.final_pdf_path
 
             # get file out of zip... to tmp_file
@@ -2474,13 +2635,13 @@ class Unit < ApplicationRecord
             # copy tmp_file to dest
             if FileHelper.copy_pdf(tmp_file, task.portfolio_evidence)
               if task.group.nil?
-                success << { row: "File #{file.name}", message: "Replace PDF of task #{task.task_definition.abbreviation} for #{task.student.name}" }
+                success << { row: "File #{file[:name]}", message: "Replace PDF of task #{task.task_definition.abbreviation} for #{task.student.name}" }
               else
-                success << { row: "File #{file.name}", message: "Replace PDF of group task #{task.task_definition.abbreviation} for #{task.group.name}" }
+                success << { row: "File #{file[:name]}", message: "Replace PDF of group task #{task.task_definition.abbreviation} for #{task.group.name}" }
               end
               FileUtils.rm tmp_file
             else
-              errors << { row: "File #{file.name}", message: 'The file does not appear to be a valid PDF.' }
+              errors << { row: "File #{file[:name]}", message: 'The file does not appear to be a valid PDF.' }
               next
             end
           end
@@ -2502,6 +2663,7 @@ class Unit < ApplicationRecord
   end
 
   def send_weekly_status_emails(summary_stats)
+    return unless send_notifications
 
     summary_stats[:unit] = self
     summary_stats[:unit_week_comments] = comments.where("task_comments.created_at > :start AND task_comments.created_at < :end", start: summary_stats[:week_start], end: summary_stats[:week_end]).count
@@ -2523,7 +2685,7 @@ class Unit < ApplicationRecord
       project.send_weekly_status_email(summary_stats, days_from_start_of_unit > 28 && days_to_end_of_unit > 14 )
     end
 
-    summary_stats[:num_students_without_tutors] = active_projects.where(tutorial_id: nil).count
+    summary_stats[:num_students_without_tutors] = active_projects.joins('LEFT OUTER JOIN tutorial_enrolments on tutorial_enrolments.project_id = projects.id').where('tutorial_enrolments.tutorial_id' => nil).count
 
     staff.each do |ur|
       ur.populate_summary_stats(summary_stats)

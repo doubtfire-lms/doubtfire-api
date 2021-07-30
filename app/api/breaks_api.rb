@@ -25,7 +25,8 @@ module Api
       start_date = params[:start_date]
       number_of_weeks = params[:number_of_weeks]
 
-      teaching_period.add_break(start_date, number_of_weeks)
+      result = teaching_period.add_break(start_date, number_of_weeks)
+      present result, with: Api::Entities::BreakEntity
     end
 
     desc 'Update a break in the teaching period'
@@ -45,7 +46,8 @@ module Api
       start_date = params[:start_date]
       number_of_weeks = params[:number_of_weeks]
 
-      teaching_period.update_break(id, start_date, number_of_weeks)
+      result = teaching_period.update_break(id, start_date, number_of_weeks)
+      present result, with: Api::Entities::BreakEntity
     end
 
     desc 'Get all the breaks in the Teaching Period'
@@ -55,35 +57,23 @@ module Api
       end
 
       teaching_period = TeachingPeriod.find(params[:teaching_period_id])
-      teaching_period.breaks
+      present teaching_period.breaks, with: Api::Entities::BreakEntity
     end
 
-    desc "Get a break's details"
-    get '/breaks/:id' do
-      break_details = Break.find(params[:id])
-      unless authorise? current_user, User, :get_teaching_periods
-        error!({ error: "Couldn't find Break with id=#{params[:id]}" }, 403)
-      end
-      break_details
-    end
-
-    desc 'Get all the breaks'
-    get '/breaks' do
-      unless authorise? current_user, User, :get_teaching_periods
-        error!({ error: 'Not authorised to get breaks' }, 403)
-      end
-      result = Break.all
-      result
-    end
-
-    desc 'Delete a break'
-    delete '/breaks/:id' do
+    desc 'Remove a break from a teaching period'
+    delete '/teaching_periods/:teaching_period_id/breaks/:id' do
       unless authorise? current_user, User, :handle_teaching_period
         error!({ error: 'Not authorised to delete a break' }, 403)
       end
 
-      break_id = params[:id]
-      Break.find(break_id).destroy
+      # Find the Teaching Period to update break
+      teaching_period = TeachingPeriod.find(params[:teaching_period_id])
+
+      id = params[:id]
+      the_break = teaching_period.breaks.find(id)
+
+      the_break.destroy
+      present the_break.destroyed?, with: Grape::Presenters::Presenter
     end
   end
 end

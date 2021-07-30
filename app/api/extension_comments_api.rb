@@ -15,7 +15,8 @@ module Api
       task_definition = project.unit.task_definitions.find(params[:task_definition_id])
       task = project.task_for_task_definition(task_definition)
 
-      unless authorise? current_user, task, :request_extension
+      # check permissions using specific permission has with addition of request extension if allowed in unit
+      unless authorise? current_user, task, :request_extension, ->(role, perm_hash, other) { task.specific_permission_hash(role, perm_hash, other) }
         error!({ error: 'Not authorised to request an extension for this task' }, 403)
       end
 

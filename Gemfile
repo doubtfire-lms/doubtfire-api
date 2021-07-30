@@ -11,7 +11,7 @@ ruby_versions = {
 ruby ruby_versions[(ENV['RAILS_ENV'] || 'development').to_sym]
 
 # The venerable, almighty Rails
-gem 'rails', '6.0.0'
+gem 'rails', '~>6.1.0'
 
 group :development, :test do
   gem 'database_cleaner'
@@ -22,15 +22,19 @@ group :development, :test do
   gem 'better_errors'
   gem 'rails_best_practices'
   gem 'thin'
-  gem 'rubocop', '0.46.0'
+  gem 'rubocop'
+  gem 'rubocop-faker'
+  gem 'rubocop-rails'
 end
 
 group :development, :test, :staging do
   # Generators for population
   gem 'factory_bot_rails'
   gem 'factory_bot'
-  gem 'faker', '~>1.9.1'
-  gem "minitest-rails", github: "blowmage/minitest-rails"
+  gem 'faker'
+  gem 'minitest-rails'
+  gem 'minitest-around'
+  gem 'webmock'
 end
 
 group :production do
@@ -49,7 +53,7 @@ gem 'json-jwt', '1.7.0'
 # Student submission
 gem 'coderay'
 gem 'ruby-filemagic'
-gem 'rmagick', '~> 2.15' # require: false #already included in other gems - remove to avoid duplicate errors
+gem 'rmagick', '~> 4.1' # require: false #already included in other gems - remove to avoid duplicate errors
 gem 'rubyzip'
 
 # Plagarism detection
@@ -59,9 +63,10 @@ gem 'moss_ruby', '>= 1.1.2'
 gem 'rails-latex', '>2.3'
 
 # API
-gem 'grape', '1.2.4'
+gem 'grape'
 gem 'active_model_serializers', '~> 0.10.0'
 gem 'grape-active_model_serializers', '~> 1.3.2'
+gem 'grape-entity'
 gem 'grape-swagger'
 gem 'grape-swagger-rails'
 
@@ -75,5 +80,8 @@ gem 'dotenv-rails'
 # Excel support
 gem 'roo', '~> 2.7.0'
 gem 'roo-xls'
+
+# webcal generation
+gem 'icalendar', '~> 2.5', '>= 2.5.3'
 
 gem 'rest-client', '~> 2.0'

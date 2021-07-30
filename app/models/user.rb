@@ -20,15 +20,6 @@ class User < ApplicationRecord
   # Authentication
   ###
 
-  # Auth token encryption settings
-  attr_encrypted :auth_token,
-                 key: Doubtfire::Application.secrets.secret_key_attr,
-                 encode: true,
-                 attribute: 'authentication_token',
-                 algorithm: 'aes-256-cbc',
-                 mode: :single_iv_and_salt,
-                 insecure_mode: true
-
   # User authentication config
   if AuthenticationHelpers.aaf_auth?
     #
@@ -94,68 +85,22 @@ class User < ApplicationRecord
   end
 
   #
-  # Extends an existing auth_token if needed
-  #
-  def extend_authentication_token(remember)
-    # Extending a nil token will just create one first
-    if auth_token.nil?
-      generate_authentication_token! false
-      return
-    end
-
-    # Default expire time
-    expiry_time = Time.zone.now + 2.hours
-
-    # Extended expiry times only apply to students and convenors
-    if remember
-      student_expiry_time = Time.zone.now + 2.weeks
-      tutor_expiry_time = Time.zone.now + 1.week
-      expiry_time =
-        if role == Role.student || role == :student
-          student_expiry_time
-        elsif role == Role.tutor || role == :tutor
-          tutor_expiry_time
-        else
-          expiry_time
-        end
-    end
-
-    self.auth_token_expiry = expiry_time
-    save
-  end
-
-  #
   # Force-generates a new authentication token, regardless of whether or not
   # it is actually expired
   #
-  def generate_authentication_token!(remember)
-    # Loop until new unique auth token is found
-    token = loop do
-      token = Devise.friendly_token
-      break token unless User.find_by_auth_token(token)
-    end
-    # Set and return new auth token
-    self.auth_token = token
-    extend_authentication_token(remember)
-    save
-    token
+  def generate_authentication_token!(remember = false)
+    # Ensure this user is saved... so it has an id
+    self.save unless self.persisted?
+    AuthToken.generate(self, remember)
   end
 
   #
   # Generate an authentication token that will expire in 30 seconds
   #
   def generate_temporary_authentication_token!
-    generate_authentication_token!(false)
-    self.auth_token_expiry = Time.zone.now + 30.seconds
-  end
-
-  #
-  # Deletes authentication token
-  #
-  def reset_authentication_token!
-    self.auth_token = nil
-    self.auth_token_expiry = Time.zone.now - 1.week
-    save
+    # Ensure this user is saved... so it has an id
+    self.save unless self.persisted?
+    AuthToken.generate(self, false, Time.zone.now + 30.seconds)
   end
 
   #
@@ -163,6 +108,19 @@ class User < ApplicationRecord
   #
   def authentication_token_expired?
     auth_token_expiry.nil? || auth_token_expiry <= Time.zone.now
+  end
+
+  #
+  # Returns authentication of the user
+  #
+  def token_for_text?(a_token)
+    list_tokens = []
+    self.auth_tokens.each do |token|
+      if a_token == token.authentication_token
+          return token
+      end
+    end
+    return nil
   end
 
   ###
@@ -173,6 +131,8 @@ class User < ApplicationRecord
   belongs_to  :role # Foreign Key
   has_many    :unit_roles, dependent: :destroy
   has_many    :projects
+  has_many    :auth_tokens
+  has_one     :webcal, dependent: :destroy
 
   # Model validations/constraints
   validates :first_name,  presence: true
@@ -383,6 +343,11 @@ class User < ApplicationRecord
     false
   end
 
+  # Get all of the currently valid auth tokens
+  def valid_auth_tokens
+    auth_tokens.where("auth_token_expiry > :now", now: Time.zone.now)
+  end
+
   def name
     fn = first_name.split(' ').first
     # fn = nickname
@@ -436,9 +401,12 @@ class User < ApplicationRecord
     errors = []
     ignored = []
 
-    CSV.parse(file,                 headers: true,
-                                    header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip.tr(' ', '_') unless hdr.nil? } ],
-                                    converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
+    data = FileHelper.read_file_to_str(file)
+
+    CSV.parse(data,
+              headers: true,
+              header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip.tr(' ', '_') unless hdr.nil? } ],
+              converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
       next if row[0] =~ /(email)|(username)/
 
       begin

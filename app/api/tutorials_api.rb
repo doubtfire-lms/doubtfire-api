@@ -20,7 +20,6 @@ module Api
         optional :campus_id, type: Integer, desc: 'Id of the campus'
         optional :capacity, type: Integer, desc: 'Capacity of the tutorial'
         optional :meeting_time, type: String, desc: 'Time of the tutorial'
-        optional :tutorial_stream_abbr, type: String, desc: 'Abbreviation of the tutorial stream'
       end
     end
     put '/tutorials/:id' do
@@ -31,12 +30,6 @@ module Api
       unless authorise? current_user, tutorial.unit, :add_tutorial
         error!({ error: "Cannot update tutorial with id=#{params[:id]} - not authorised" }, 403)
       end
-
-      # Update Tutorial Stream
-      tutorial_stream_abbr = tut_params[:tutorial_stream_abbr]
-      tutorial_stream = tutorial.unit.tutorial_streams.find_by!(abbreviation: tutorial_stream_abbr) unless tutorial_stream_abbr.nil?
-      tutorial.tutorial_stream = tutorial_stream
-      tutorial.save!
 
       tutorial_parameters = ActionController::Parameters.new(params)
                                                         .require(:tutorial)
@@ -54,8 +47,12 @@ module Api
         tutorial.assign_tutor(tutor)
       end
 
+      if tutorial_parameters[:campus_id] == -1
+        tutorial_parameters[:campus_id] = nil
+      end
+
       tutorial.update!(tutorial_parameters)
-      tutorial
+      present tutorial, with: Api::Entities::TutorialEntity
     end
 
     desc 'Create tutorial'
@@ -81,14 +78,15 @@ module Api
       end
 
       tutor = User.find(tut_params[:tutor_id])
-      campus = Campus.find(tut_params[:campus_id])
+      campus = tut_params[:campus_id] == -1 ? nil : Campus.find(tut_params[:campus_id])
 
       # Set Tutorial Stream if available
       tutorial_stream_abbr = tut_params[:tutorial_stream_abbr]
       tutorial_stream = unit.tutorial_streams.find_by!(abbreviation: tutorial_stream_abbr) unless tutorial_stream_abbr.nil?
 
       tutorial = unit.add_tutorial(tut_params[:meeting_day], tut_params[:meeting_time], tut_params[:meeting_location], tutor, campus, tut_params[:capacity], tut_params[:abbreviation], tutorial_stream)
-      tutorial
+
+      present tutorial, with: Api::Entities::TutorialEntity
     end
 
     desc 'Delete a tutorial'
@@ -103,7 +101,7 @@ module Api
       end
 
       tutorial.destroy!
-      tutorial
+      present true, with: Grape::Presenters::Presenter
     end
   end
 end

@@ -9,12 +9,28 @@ namespace :submission do
   end
 
   def is_executing?
-    tmp_file = rake_executing_marker_file
-    File.exist?(tmp_file)
+    pid_file = rake_executing_marker_file
+    return false unless File.exist?(pid_file)
+
+    # Check that the pid matches something running...
+    begin
+      pid = File.read(pid_file).to_i
+      raise Errno::ESRCH if pid == 0
+      Process.getpgid( pid )
+      true
+    rescue Errno::ESRCH
+      # clean up old running file
+      end_executing
+      false
+    end
   end
 
   def start_executing
-    FileUtils.touch(rake_executing_marker_file)
+    pid_file = rake_executing_marker_file
+    FileUtils.touch(pid_file)
+    File.open pid_file, "w" do |f|
+      f.write Process.pid
+    end
   end
 
   def end_executing
@@ -24,13 +40,16 @@ namespace :submission do
   task generate_pdfs: :environment do
     if is_executing?
       logger.error 'Skip generate pdf -- already executing'
+      puts 'Skip generate pdf -- already executing'
     else
       start_executing
+      my_source = PortfolioEvidence.move_to_pid_folder
+      end_executing
 
       begin
-        logger.info 'Starting generate pdf'
+        logger.info "Starting generate pdf - #{Process.pid}"
 
-        PortfolioEvidence.process_new_to_pdf
+        PortfolioEvidence.process_new_to_pdf(my_source)
 
         projects_to_compile = Project.where(compile_portfolio: true)
         projects_to_compile.each do |project|
@@ -52,8 +71,10 @@ namespace :submission do
           end
         end
       ensure
-        logger.info 'Ending generate pdf'
-        end_executing
+        logger.info "Ending generate pdf - #{Process.pid}"
+        if Dir.entries(my_source).count == 2 # . and ..
+          FileUtils.rmdir my_source
+        end
       end
     end
   end

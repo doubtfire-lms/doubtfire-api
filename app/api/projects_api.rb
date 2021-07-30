@@ -26,10 +26,6 @@ module Api
       data = projects.
                  joins(:unit).
                  joins(:user).
-                 joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id').
-                 joins('LEFT OUTER JOIN tutorials ON tutorial_enrolments.tutorial_id = tutorials.id').
-                 joins('LEFT OUTER JOIN unit_roles AS tutor_role ON tutorials.unit_role_id = tutor_role.id').
-                 joins('LEFT OUTER JOIN users AS tutor ON tutor.id = tutor_role.user_id').
                  select( 'projects.*',
                           'units.name AS unit_name', 'units.id AS unit_id', 'units.code AS unit_code', 'units.start_date AS start_date', 'units.end_date AS end_date', 'units.teaching_period_id AS teaching_period_id', 'units.active AS active',
                           "#{student_name} AS student_name"
@@ -44,15 +40,15 @@ module Api
           project_id: row['id'],
           campus_id: row['campus_id'],
           target_grade: row['target_grade'],
-          has_portfolio: row['has_portfolio'],
-          start_date: row['start_date'],
-          end_date: row['end_date'],
+          has_portfolio: !row['portfolio_production_date'].nil?,
+          start_date: row['start_date'].strftime('%Y-%m-%d'),
+          end_date: row['end_date'].strftime('%Y-%m-%d'),
           teaching_period_id: row['teaching_period_id'],
           active: row['active'].is_a?(Numeric) ? row['active'] != 0 : row['active']
         }
       end
 
-      ActiveModel::Serializer::CollectionSerializer.new(result, serializer: ShallowProjectSerializer)
+      present result, with: Grape::Presenters::Presenter
     end
 
     desc 'Get project'
@@ -68,16 +64,16 @@ module Api
         error!({ error: "Couldn't find Project with id=#{params[:id]}" }, 403)
       end
 
-      Thread.current[:user] = current_user
-      project
+      present project, with: Api::Entities::ProjectEntity, user: current_user
     end
 
     desc 'Update a project'
     params do
       optional :trigger,            type: String,  desc: 'The update trigger'
-      optional :campus_id,          type: Integer, desc: 'Campus this project is part of'
+      optional :campus_id,          type: Integer, desc: 'Campus this project is part of, or -1 for no campus'
       optional :enrolled,           type: Boolean, desc: 'Enrol or withdraw this project'
       optional :target_grade,       type: Integer, desc: 'New target grade'
+      optional :submitted_grade,    type: Integer, desc: 'New submitted grade'
       optional :compile_portfolio,  type: Boolean, desc: 'Schedule a construction of the portfolio'
       optional :grade,              type: Integer, desc: 'New grade'
       optional :old_grade,          type: Integer, desc: 'Old grade to check it has not changed...'
@@ -101,7 +97,7 @@ module Api
         unless authorise? current_user, project, :change_campus
           error!({ error: "You cannot change the campus for project #{params[:id]}" }, 403)
         end
-        project.campus_id = params[:campus_id]
+        project.campus_id = params[:campus_id] == -1 ? nil : params[:campus_id]
         project.save!
       elsif !params[:enrolled].nil?
         unless authorise? current_user, project.unit, :change_project_enrolment
@@ -115,6 +111,16 @@ module Api
         end
 
         project.target_grade = params[:target_grade]
+        project.save
+      elsif !params[:submitted_grade].nil?
+        unless authorise? current_user, project, :change
+          error!({ error: "You do not have permissions to change Project with id=#{params[:id]}" }, 403)
+        end
+        if project.has_portfolio
+          error!({ error: "You cannot change your submitted grade after portfolio submission"}, 403)
+        end
+
+        project.submitted_grade = params[:submitted_grade]
         project.save
       elsif !params[:grade].nil?
         unless authorise? current_user, project, :assess
@@ -145,8 +151,7 @@ module Api
         project.save
       end
 
-      Thread.current[:user] = current_user
-      project
+      Api::Entities::ProjectEntity.represent(project, only: [ :campus_id, :enrolled, :target_grade, :submitted_grade, :compile_portfolio, :portfolio_available, :uses_draft_learning_summary, :stats, :burndown_chart_data ])
     end # put
 
     desc 'Enrol a student in a unit, creating them a project'
@@ -172,7 +177,7 @@ module Api
         if proj.nil?
           error!({ error: 'Error adding student to unit' }, 403)
         else
-          {
+          result = {
             project_id: proj.id,
             enrolled: proj.enrolled,
             first_name: proj.student.first_name,
@@ -188,6 +193,7 @@ module Api
             has_portfolio: false,
             stats: '0|1|0|0|0|0|0|0|0|0|0'
           }
+          present result, with: Grape::Presenters::Presenter
         end
       else
         error!({ error: "Couldn't find Unit with id=#{params[:unit_id]}" }, 403)

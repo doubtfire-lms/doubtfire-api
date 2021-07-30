@@ -2,15 +2,15 @@
 # of editing this file, please use the migrations feature of Active Record to
 # incrementally modify your database, and then regenerate this schema definition.
 #
-# This file is the source Rails uses to define your schema when running `rails
-# db:schema:load`. When creating a new database, `rails db:schema:load` tends to
+# This file is the source Rails uses to define your schema when running `bin/rails
+# db:schema:load`. When creating a new database, `bin/rails db:schema:load` tends to
 # be faster and is potentially less error prone than running all of your
 # migrations from scratch. Old migrations may fail to apply correctly if those
 # migrations use external dependencies or application code.
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2020_01_07_041946) do
+ActiveRecord::Schema.define(version: 2021_04_13_044542) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -22,6 +22,14 @@ ActiveRecord::Schema.define(version: 2020_01_07_041946) do
     t.datetime "updated_at", null: false
     t.index ["abbreviation"], name: "index_activity_types_on_abbreviation", unique: true
     t.index ["name"], name: "index_activity_types_on_name", unique: true
+  end
+
+  create_table "auth_tokens", force: :cascade do |t|
+    t.string "encrypted_authentication_token", limit: 255, null: false
+    t.string "encrypted_authentication_token_iv", limit: 255
+    t.datetime "auth_token_expiry", null: false
+    t.integer "user_id"
+    t.index ["user_id"], name: "index_auth_tokens_on_user_id"
   end
 
   create_table "breaks", force: :cascade do |t|
@@ -72,7 +80,8 @@ ActiveRecord::Schema.define(version: 2020_01_07_041946) do
     t.boolean "keep_groups_in_same_class", default: false
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.index ["unit_id"], name: "index_group_sets_on_unit_id"
+    t.integer "capacity"
+    t.boolean "locked", default: false, null: false
   end
 
   create_table "group_submissions", id: :serial, force: :cascade do |t|
@@ -84,13 +93,14 @@ ActiveRecord::Schema.define(version: 2020_01_07_041946) do
     t.integer "task_definition_id"
   end
 
-  create_table "groups", id: :serial, force: :cascade do |t|
+  create_table "groups", force: :cascade do |t|
     t.integer "group_set_id"
     t.integer "tutorial_id"
     t.string "name", limit: 255
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.integer "number", null: false
+    t.integer "capacity_adjustment", default: 0, null: false
+    t.boolean "locked", default: false, null: false
   end
 
   create_table "learning_outcome_task_links", force: :cascade do |t|
@@ -153,6 +163,8 @@ ActiveRecord::Schema.define(version: 2020_01_07_041946) do
     t.integer "grade", default: 0
     t.string "grade_rationale", limit: 4096
     t.integer "campus_id"
+    t.integer "submitted_grade"
+    t.boolean "uses_draft_learning_summary", default: false, null: false
     t.index ["campus_id"], name: "index_projects_on_campus_id"
     t.index ["enrolled"], name: "index_projects_on_enrolled"
     t.index ["unit_id"], name: "index_projects_on_unit_id"
@@ -171,7 +183,6 @@ ActiveRecord::Schema.define(version: 2020_01_07_041946) do
     t.integer "user_id", null: false
     t.string "comment", limit: 4096
     t.datetime "created_at", null: false
-    t.boolean "is_new", default: true
     t.integer "recipient_id"
     t.string "content_type"
     t.string "attachment_extension"
@@ -186,7 +197,9 @@ ActiveRecord::Schema.define(version: 2020_01_07_041946) do
     t.integer "task_status_id"
     t.integer "extension_weeks"
     t.string "extension_response"
+    t.integer "reply_to_id"
     t.index ["discussion_comment_id"], name: "index_task_comments_on_discussion_comment_id"
+    t.index ["reply_to_id"], name: "index_task_comments_on_reply_to_id"
     t.index ["task_id"], name: "index_task_comments_on_task_id"
   end
 
@@ -225,7 +238,15 @@ ActiveRecord::Schema.define(version: 2020_01_07_041946) do
     t.index ["task_id"], name: "index_task_engagements_on_task_id"
   end
 
-  create_table "task_statuses", id: :serial, force: :cascade do |t|
+  create_table "task_pins", force: :cascade do |t|
+    t.integer "task_id", null: false
+    t.integer "user_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["task_id", "user_id"], name: "index_task_pins_on_task_id_and_user_id", unique: true
+  end
+
+  create_table "task_statuses", force: :cascade do |t|
     t.string "name", limit: 255
     t.string "description", limit: 255
     t.datetime "created_at", null: false
@@ -284,12 +305,9 @@ ActiveRecord::Schema.define(version: 2020_01_07_041946) do
     t.datetime "updated_at", null: false
     t.integer "project_id", null: false
     t.integer "tutorial_id", null: false
-    t.integer "tutorial_stream_id"
     t.index ["project_id"], name: "index_tutorial_enrolments_on_project_id"
     t.index ["tutorial_id", "project_id"], name: "index_tutorial_enrolments_on_tutorial_id_and_project_id", unique: true
     t.index ["tutorial_id"], name: "index_tutorial_enrolments_on_tutorial_id"
-    t.index ["tutorial_stream_id", "project_id"], name: "index_tutorial_enrolments_on_tutorial_stream_id_and_project_id", unique: true
-    t.index ["tutorial_stream_id"], name: "index_tutorial_enrolments_on_tutorial_stream_id"
   end
 
   create_table "tutorial_streams", force: :cascade do |t|
@@ -315,7 +333,7 @@ ActiveRecord::Schema.define(version: 2020_01_07_041946) do
     t.string "code", limit: 255
     t.integer "unit_role_id"
     t.string "abbreviation", limit: 255
-    t.integer "capacity"
+    t.integer "capacity", default: -1
     t.integer "campus_id"
     t.integer "tutorial_stream_id"
     t.index ["campus_id"], name: "index_tutorials_on_campus_id"
@@ -331,9 +349,13 @@ ActiveRecord::Schema.define(version: 2020_01_07_041946) do
     t.datetime "updated_at", null: false
     t.integer "role_id"
     t.integer "unit_id"
+    t.index ["role_id"], name: "index_unit_roles_on_role_id"
+    t.index ["tutorial_id"], name: "index_unit_roles_on_tutorial_id"
+    t.index ["unit_id"], name: "index_unit_roles_on_unit_id"
+    t.index ["user_id"], name: "index_unit_roles_on_user_id"
   end
 
-  create_table "units", id: :serial, force: :cascade do |t|
+  create_table "units", force: :cascade do |t|
     t.string "name", limit: 255
     t.string "description", limit: 4096
     t.datetime "start_date"
@@ -345,6 +367,14 @@ ActiveRecord::Schema.define(version: 2020_01_07_041946) do
     t.datetime "last_plagarism_scan"
     t.integer "teaching_period_id"
     t.integer "main_convenor_id"
+    t.boolean "auto_apply_extension_before_deadline", default: true, null: false
+    t.boolean "send_notifications", default: true, null: false
+    t.boolean "enable_sync_timetable", default: true, null: false
+    t.boolean "enable_sync_enrolments", default: true, null: false
+    t.integer "draft_task_definition_id"
+    t.boolean "allow_student_extension_requests", default: true, null: false
+    t.integer "extension_weeks_on_resubmit_request", default: 1, null: false
+    t.boolean "allow_student_change_tutorial", default: true, null: false
     t.index ["teaching_period_id"], name: "index_units_on_teaching_period_id"
   end
 
@@ -365,9 +395,7 @@ ActiveRecord::Schema.define(version: 2020_01_07_041946) do
     t.string "last_name", limit: 255
     t.string "username", limit: 255
     t.string "nickname", limit: 255
-    t.string "authentication_token", limit: 255
     t.string "unlock_token", limit: 255
-    t.datetime "auth_token_expiry"
     t.integer "role_id", default: 0
     t.boolean "receive_task_notifications", default: true
     t.boolean "receive_feedback_notifications", default: true
@@ -376,22 +404,42 @@ ActiveRecord::Schema.define(version: 2020_01_07_041946) do
     t.boolean "has_run_first_time_setup", default: false
     t.string "login_id"
     t.string "student_id"
-    t.index ["authentication_token"], name: "index_users_on_authentication_token", unique: true
     t.index ["login_id"], name: "index_users_on_login_id", unique: true
   end
 
+  create_table "webcal_unit_exclusions", force: :cascade do |t|
+    t.integer "webcal_id", null: false
+    t.integer "unit_id", null: false
+    t.index ["unit_id", "webcal_id"], name: "index_webcal_unit_exclusions_on_unit_id_and_webcal_id", unique: true
+  end
+
+  create_table "webcals", force: :cascade do |t|
+    t.string "guid", limit: 36, null: false
+    t.boolean "include_start_dates", default: false, null: false
+    t.integer "user_id"
+    t.integer "reminder_time"
+    t.string "reminder_unit"
+    t.index ["guid"], name: "index_webcals_on_guid", unique: true
+    t.index ["user_id"], name: "index_webcals_on_user_id", unique: true
+  end
+
+  add_foreign_key "auth_tokens", "users"
   add_foreign_key "breaks", "teaching_periods"
   add_foreign_key "comments_read_receipts", "task_comments"
   add_foreign_key "comments_read_receipts", "users"
   add_foreign_key "projects", "campuses"
   add_foreign_key "task_comments", "users", column: "recipient_id"
   add_foreign_key "task_definitions", "tutorial_streams"
+  add_foreign_key "task_pins", "tasks"
+  add_foreign_key "task_pins", "users"
   add_foreign_key "tutorial_enrolments", "projects"
-  add_foreign_key "tutorial_enrolments", "tutorial_streams"
   add_foreign_key "tutorial_enrolments", "tutorials"
   add_foreign_key "tutorial_streams", "activity_types"
   add_foreign_key "tutorial_streams", "units"
   add_foreign_key "tutorials", "campuses"
   add_foreign_key "tutorials", "tutorial_streams"
   add_foreign_key "units", "teaching_periods"
+  add_foreign_key "webcal_unit_exclusions", "units"
+  add_foreign_key "webcal_unit_exclusions", "webcals"
+  add_foreign_key "webcals", "users"
 end

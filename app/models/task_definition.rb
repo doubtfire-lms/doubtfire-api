@@ -7,12 +7,15 @@ class TaskDefinition < ApplicationRecord
   end
 
   before_destroy :delete_associated_files
-  after_update :move_files_on_abbreviation_change, if: :abbreviation_changed?
+  before_update :move_files_on_abbreviation_change, if: :abbreviation_changed?
+  before_update :remove_old_group_submissions, if: :has_removed_group?
 
   # Model associations
   belongs_to :unit # Foreign key
   belongs_to :group_set
   belongs_to :tutorial_stream
+
+  has_one :draft_task_definition_unit, foreign_key: 'draft_task_definition_id', class_name: 'Unit', dependent: :nullify
 
   has_many :tasks, dependent:  :destroy # Destroying a task definition will also nuke any instances
   has_many :group_submissions, dependent: :destroy # Destroying a task definition will also nuke any group submissions
@@ -35,6 +38,8 @@ class TaskDefinition < ApplicationRecord
   validate :ensure_no_submissions, if: :has_change_group_status?
   validate :unit_must_be_same
   validate :tutorial_stream_present?
+
+  validates :weighting, presence: true
 
   def unit_must_be_same
     if unit.present? and tutorial_stream.present? and not unit.eql? tutorial_stream.unit
@@ -95,9 +100,19 @@ class TaskDefinition < ApplicationRecord
     group_set_id != group_set_id_was
   end
 
+  def has_removed_group?
+    has_change_group_status? && group_set_id.nil?
+  end
+
   def ensure_no_submissions
     if tasks.where("submission_date IS NOT NULL").count() > 0
       errors.add( :group_set, "Unable to change group status of task as submissions exist" )
+    end
+  end
+
+  def remove_old_group_submissions
+    if group_set_id.nil? && group_submissions.count > 0
+      group_submissions.destroy_all
     end
   end
 
@@ -409,14 +424,14 @@ class TaskDefinition < ApplicationRecord
     new_task = false
     abbreviation = row[:abbreviation].strip
     name = row[:name].strip
-    tutorial_stream = unit.tutorial_streams.find_by_abbr_or_name(row[:tutorial_stream])
-    target_date = unit.date_for_week_and_day row[:target_week].to_i, row[:target_day]
+    tutorial_stream = unit.tutorial_streams.find_by_abbr_or_name("#{row[:tutorial_stream]}".strip)
+    target_date = unit.date_for_week_and_day row[:target_week].to_i, "#{row[:target_day]}".strip
     return [nil, false, "Unable to determine target date for #{abbreviation} -- need week number, and day short text eg. 'Wed'"] if target_date.nil?
 
-    start_date = unit.date_for_week_and_day row[:start_week].to_i, row[:start_day]
+    start_date = unit.date_for_week_and_day row[:start_week].to_i, "#{row[:start_day]}".strip
     return [nil, false, "Unable to determine start date for #{abbreviation} -- need week number, and day short text eg. 'Wed'"] if start_date.nil?
 
-    due_date = unit.date_for_week_and_day row[:due_week].to_i, row[:due_day]
+    due_date = unit.date_for_week_and_day row[:due_week].to_i, "#{row[:due_day]}".strip
 
     result = TaskDefinition.find_by(unit_id: unit.id, abbreviation: abbreviation)
 
@@ -435,18 +450,18 @@ class TaskDefinition < ApplicationRecord
     result.name                        = name
     result.unit_id                     = unit.id
     result.abbreviation                = abbreviation
-    result.description                 = row[:description]
+    result.description                 = "#{row[:description]}".strip
     result.weighting                   = row[:weighting].to_i
     result.target_grade                = row[:target_grade].to_i
-    result.restrict_status_updates     = %w(Yes y Y yes true TRUE 1).include? row[:restrict_status_updates]
+    result.restrict_status_updates     = %w(Yes y Y yes true TRUE 1).include? "#{row[:restrict_status_updates]}".strip
     result.max_quality_pts             = row[:max_quality_pts].to_i
-    result.is_graded                   = %w(Yes y Y yes true TRUE 1).include? row[:is_graded]
+    result.is_graded                   = %w(Yes y Y yes true TRUE 1).include? "#{row[:is_graded]}".strip
     result.start_date                  = start_date
     result.target_date                 = target_date
     result.upload_requirements         = row[:upload_requirements]
     result.due_date                    = due_date
 
-    result.plagiarism_warn_pct         = row[:plagiarism_warn_pct]
+    result.plagiarism_warn_pct         = row[:plagiarism_warn_pct].to_i
     result.plagiarism_checks           = row[:plagiarism_checks]
 
     if row[:group_set].present?

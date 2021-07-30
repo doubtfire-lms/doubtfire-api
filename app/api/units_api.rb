@@ -2,6 +2,7 @@ require 'grape'
 require 'unit_serializer'
 require 'mime-check-helpers'
 require 'csv_helper'
+require 'entities/unit_entity'
 
 module Api
   class UnitsApi < Grape::API
@@ -9,7 +10,6 @@ module Api
     helpers AuthorisationHelpers
     helpers MimeCheckHelpers
     helpers CsvHelper
-
 
     before do
       authenticated?
@@ -38,7 +38,7 @@ module Api
 
       units = units.where('active = true') unless params[:include_in_active]
 
-      ActiveModel::Serializer::CollectionSerializer.new(units, each_serializer: ShallowUnitSerializer)
+      present units, with: Api::Entities::UnitEntity, user: current_user
     end
 
     desc "Get a unit's details"
@@ -50,22 +50,29 @@ module Api
       #
       # Unit uses user from thread to limit exposure
       #
-      Thread.current[:user] = current_user
-      unit
+      present unit, with: Api::Entities::UnitEntity, user: current_user
     end
 
     desc 'Update unit'
     params do
       requires :id, type: Integer, desc: 'The unit id to update'
       requires :unit, type: Hash do
-        optional :name
-        optional :code
-        optional :description
-        optional :active
-        optional :teaching_period_id
-        optional :start_date
-        optional :end_date
-        optional :main_convenor_id
+        optional :name, type: String
+        optional :code, type: String
+        optional :description, type: String
+        optional :active, type: Boolean
+        optional :teaching_period_id, type: Integer
+        optional :start_date, type: Date
+        optional :end_date, type: Date
+        optional :main_convenor_id, type: Integer
+        optional :auto_apply_extension_before_deadline, type: Boolean, desc: 'Indicates if extensions before the deadline should be automatically applied'
+        optional :send_notifications, type: Boolean, desc: 'Indicates if emails should be sent on updates each week'
+        optional :enable_sync_timetable, type: Boolean, desc: 'Sync to timetable automatically if supported by deployment'
+        optional :enable_sync_enrolments, type: Boolean, desc: 'Sync student enrolments automatically if supported by deployment'
+        optional :draft_task_definition_id, type: Integer, desc: 'Indicates the ID of the task definition used as the "draft learning summary task"'
+        optional :allow_student_extension_requests, type: Boolean, desc: 'Can turn on/off student extension requests', default: true
+        optional :allow_student_change_tutorial, type: Boolean, desc: 'Can turn on/off student ability to change tutorials', default: true
+        optional :extension_weeks_on_resubmit_request, type: Integer, desc: 'Determines the number of weeks extension on a resubmit request', default: 1
 
         mutually_exclusive :teaching_period_id,:start_date
         all_or_none_of :start_date, :end_date
@@ -85,26 +92,56 @@ module Api
                                                             :end_date,
                                                             :teaching_period_id,
                                                             :active,
-                                                            :main_convenor_id
+                                                            :main_convenor_id,
+                                                            :auto_apply_extension_before_deadline,
+                                                            :send_notifications,
+                                                            :enable_sync_timetable,
+                                                            :enable_sync_enrolments,
+                                                            :draft_task_definition_id,
+                                                            :allow_student_extension_requests,
+                                                            :extension_weeks_on_resubmit_request,
+                                                            :allow_student_change_tutorial
                                                           )
 
       if unit.teaching_period_id.present? && unit_parameters.key?(:start_date)
         unit.teaching_period = nil
       end
 
+      if unit_parameters[:draft_task_definition_id].present?
+        # Ensure the task definition belongs to unit
+        unless unit.task_definitions.exists?(unit_parameters[:draft_task_definition_id])
+          error!({ error: 'Draft task definition ID does not belong to unit' }, 403)
+        end
+
+        # Validate that the task only has 1 upload requirement and it is a document
+        task = TaskDefinition.find(unit_parameters[:draft_task_definition_id])
+        if task.upload_requirements.length != 1 || task.upload_requirements.first['type'] != "document"
+          error!({ error: 'Task definition should contain only a single document upload' }, 403)
+        end
+      end
+              
       unit.update!(unit_parameters)
-      unit_parameters
+      present unit_parameters, with: Grape::Presenters::Presenter
     end
 
     desc 'Create unit'
     params do
       requires :unit, type: Hash do
-        requires :name
-        requires :code
-        optional :teaching_period_id
-        optional :description
-        optional :start_date
-        optional :end_date
+        requires :name, type: String
+        requires :code, type: String
+        optional :description, type: String
+        optional :active, type: Boolean
+        optional :teaching_period_id, type: Integer
+        optional :start_date, type: Date
+        optional :end_date, type: Date
+        optional :main_convenor_id, type: Integer
+        optional :auto_apply_extension_before_deadline, type: Boolean, desc: 'Indicates if extensions before the deadline should be automatically applied', default: true
+        optional :send_notifications, type: Boolean, desc: 'Indicates if emails should be sent on updates each week', default: true
+        optional :enable_sync_timetable, type: Boolean, desc: 'Sync to timetable automatically if supported by deployment', default: true
+        optional :enable_sync_enrolments, type: Boolean, desc: 'Sync student enrolments automatically if supported by deployment', default: true
+        optional :allow_student_extension_requests, type: Boolean, desc: 'Can turn on/off student extension requests', default: true
+        optional :extension_weeks_on_resubmit_request, type: Integer, desc: 'Determines the number of weeks extension on a resubmit request', default: 1
+        optional :allow_student_change_tutorial, type: Boolean, desc: 'Can turn on/off student ability to change tutorials', default: true
 
         mutually_exclusive :teaching_period_id,:start_date
         mutually_exclusive :teaching_period_id,:end_date
@@ -123,7 +160,14 @@ module Api
                                                       :teaching_period_id,
                                                       :description,
                                                       :start_date,
-                                                      :end_date
+                                                      :end_date,
+                                                      :auto_apply_extension_before_deadline,
+                                                      :send_notifications,
+                                                      :enable_sync_timetable,
+                                                      :enable_sync_enrolments,
+                                                      :allow_student_extension_requests,
+                                                      :extension_weeks_on_resubmit_request,
+                                                      :allow_student_change_tutorial
                                                     )
 
       if unit_parameters[:description].nil?
@@ -151,7 +195,7 @@ module Api
 
       # Employ current user as convenor
       unit.employ_staff(current_user, Role.convenor)
-      ShallowUnitSerializer.new(unit)
+      present unit, with: Api::Entities::UnitEntity, user: current_user
     end
 
     desc 'Rollover unit'
@@ -178,6 +222,8 @@ module Api
       else
         unit.rollover(nil, params[:start_date], params[:end_date])
       end
+
+      present unit, with: Api::Entities::UnitEntity, user: current_user
     end
 
     desc 'Download the tasks that are awaiting feedback for a unit'
@@ -189,7 +235,7 @@ module Api
       end
 
       tasks = unit.tasks_awaiting_feedback(current_user)
-      unit.tasks_as_hash(tasks)
+      present unit.tasks_as_hash(tasks), with: Grape::Presenters::Presenter
     end
 
     desc 'Download the tasks that should be listed under the task inbox'
@@ -201,19 +247,7 @@ module Api
       end
 
       tasks = unit.tasks_for_task_inbox(current_user)
-      unit.tasks_as_hash(tasks)
-    end
-
-    desc 'Download the tasks that should be listed under the task inbox'
-    get '/units/:id/tasks/inbox' do
-      unit = Unit.find(params[:id])
-
-      unless authorise? current_user, unit, :provide_feedback
-        error!({ error: 'Not authorised to provide feedback for this unit' }, 403)
-      end
-
-      tasks = unit.tasks_for_task_inbox
-      unit.tasks_as_hash(tasks)
+      present unit.tasks_as_hash(tasks), with: Grape::Presenters::Presenter
     end
 
     desc 'Download the grades for a unit'
@@ -232,7 +266,7 @@ module Api
 
     desc 'Upload CSV of all the students in a unit'
     params do
-      requires :file, type: Rack::Multipart::UploadedFile, desc: 'CSV upload file.'
+      requires :file, type: File, desc: 'CSV upload file.'
     end
     post '/csv/units/:id' do
       unit = Unit.find(params[:id])
@@ -252,7 +286,7 @@ module Api
 
     desc 'Upload CSV with the students to un-enrol from the unit'
     params do
-      requires :file, type: Rack::Multipart::UploadedFile, desc: 'CSV upload file.'
+      requires :file, type: File, desc: 'CSV upload file.'
     end
     post '/csv/units/:id/withdraw' do
       unit = Unit.find(params[:id])
@@ -269,7 +303,8 @@ module Api
       ensure_csv! path
 
       # Actually withdraw...
-      unit.unenrol_users_from_csv(File.new(path))
+      response = unit.unenrol_users_from_csv(File.new(path))
+      present response, with: Grape::Presenters::Presenter
     end
 
     desc 'Download CSV of all students in this unit'
@@ -305,7 +340,7 @@ module Api
         error!({ error: "Not authorised to download stats of student tasks in #{unit.code}" }, 403)
       end
 
-      unit.student_target_grade_stats
+      present unit.student_target_grade_stats, with: Grape::Presenters::Presenter
     end
 
     desc 'Download stats related to the status of students with tasks'
@@ -315,7 +350,7 @@ module Api
         error!({ error: "Not authorised to download stats of student tasks in #{unit.code}" }, 403)
       end
 
-      unit.task_status_stats
+      present unit.task_status_stats, with: Grape::Presenters::Presenter
     end
 
     desc 'Download stats related to the number of completed tasks'
@@ -325,7 +360,7 @@ module Api
         error!({ error: "Not authorised to download stats of student tasks in #{unit.code}" }, 403)
       end
 
-      unit.student_task_completion_stats
+      present unit.student_task_completion_stats, with: Grape::Presenters::Presenter
     end
 
     desc 'Download stats related to the number of tasks assessed by each tutor'

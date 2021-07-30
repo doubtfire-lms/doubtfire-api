@@ -29,10 +29,9 @@ Doubtfire::Application.configure do
   # Expands the lines which load the assets
   config.assets.debug = true
 
-  # TODO: Remove the if check here
   # Use the doubtfire logger instead of the default one
   if Rails.env.development?
-    require 'doubtfire_logger'
+    require './app/helpers/doubtfire_logger'
     config.logger = DoubtfireLogger.logger
   end
 

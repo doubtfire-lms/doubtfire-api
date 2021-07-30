@@ -13,7 +13,7 @@ class UnitsTest < ActiveSupport::TestCase
     keys = %w(id student_id email first_name last_name username nickname receive_task_notifications
            receive_portfolio_notifications receive_feedback_notifications opt_in_to_research has_run_first_time_setup)
 
-    assert_json_matches_model(actual_user, expected_user, keys)
+    assert_json_matches_model(expected_user, actual_user, keys)
   end
 
   def create_user
@@ -31,18 +31,67 @@ class UnitsTest < ActiveSupport::TestCase
   # GET tests
   # ========================================================================
 
+  # Get users' details
   def test_get_users
-    get with_auth_token '/api/users'
+
+    # Add username and auth_token to Header
+    add_auth_header_for(user: User.first)
+
+    get '/api/users'
+    expected_data = User.all
+
+    # Check if the request get through
     assert_equal 200, last_response.status
+
+    # Check if the GET returned the exact number of users
+    assert_equal expected_data.count, last_response_body.count
+
+    # What are the keys we expect in the data that match the model - so we can check these
+    response_keys = %w(first_name last_name email student_id nickname receive_task_notifications receive_portfolio_notifications receive_feedback_notifications opt_in_to_research has_run_first_time_setup)
+
+    # Loop through all of the responses
+    last_response_body.each do | data |
+      # Find the matching user, by id from response
+      user = User.find(data['id'])
+      # Match json with object
+      assert_json_matches_model(user, data, response_keys)
+    end
   end
 
+  # Get a user's details
+  def test_get_a_users_details
+    expected_user = User.second
+
+    # Add username and auth_token to Header
+    add_auth_header_for(user: User.first)
+
+    # perform the GET 
+    get "/api/users/#{expected_user.id}"
+    returned_user = last_response_body
+
+    # Check if the call succeeds
+    assert_equal 200, last_response.status
+    
+    # Check the returned details match as expected
+    response_keys = %w(first_name last_name email student_id nickname receive_task_notifications receive_portfolio_notifications receive_feedback_notifications opt_in_to_research has_run_first_time_setup)
+    assert_json_matches_model(expected_user, returned_user, response_keys)
+  end
+  
   def test_get_convenors
-    get with_auth_token '/api/users/convenors'
+
+    # Add username and auth_token to Header
+    add_auth_header_for(user: User.first)
+
+    get '/api/users/convenors'
     assert_equal 200, last_response.status
   end
 
   def test_get_tutors
-    get with_auth_token '/api/users/tutors'
+
+    # Add username and auth_token to Header
+    add_auth_header_for(user: User.first)
+
+    get '/api/users/tutors'
     assert_equal 200, last_response.status
   end
 
@@ -72,9 +121,11 @@ class UnitsTest < ActiveSupport::TestCase
     pre_count = User.all.length
 
     data_to_post = {
-        user: create_user,
-        auth_token: auth_token
+        user: create_user
     }
+
+    # Add username and auth_token to Header
+    add_auth_header_for(user: User.first)
 
     post_json '/api/users', data_to_post
 
@@ -87,9 +138,11 @@ class UnitsTest < ActiveSupport::TestCase
     pre_count = User.all.length
 
     data_to_post = {
-        user: create_user,
-        auth_token: auth_token
+        user: create_user
     }
+
+    # Add username and auth_token to Header
+    add_auth_header_for(user: User.first)
 
     post_json '/api/users', data_to_post
     assert_equal pre_count + 1, User.all.length
@@ -107,9 +160,11 @@ class UnitsTest < ActiveSupport::TestCase
     user = create_user
 
     data_to_post = {
-        user: user,
-        auth_token: auth_token
+        user: user
     }
+
+    # Add username and auth_token to Header
+    add_auth_header_for(user: User.first)
 
     post_json '/api/users', data_to_post
     assert_equal pre_count + 1, User.all.length
@@ -128,9 +183,11 @@ class UnitsTest < ActiveSupport::TestCase
     user = create_user
 
     data_to_post = {
-        user: user,
-        auth_token: auth_token
+        user: user
     }
+
+    # Add username and auth_token to Header
+    add_auth_header_for(user: User.first)
 
     post_json '/api/users', data_to_post
     assert_equal pre_count + 1, User.all.length
@@ -155,9 +212,11 @@ class UnitsTest < ActiveSupport::TestCase
       user[:email] = email
 
       data_to_post = {
-          user: user,
-          auth_token: auth_token
+          user: user
       }
+
+      # Add username and auth_token to Header
+      add_auth_header_for(user: User.first)
 
       post_json '/api/users', data_to_post
       # Successful assertion of same length again means no record was created
@@ -175,9 +234,11 @@ class UnitsTest < ActiveSupport::TestCase
       next if key == :nickname # Nickname can be empty
       user2[key] = ''
       data_to_post = {
-          user: user2,
-          auth_token: auth_token
+          user: user2
       }
+
+      # Add username and auth_token to Header
+      add_auth_header_for(user: User.first)
 
       post_json '/api/users', data_to_post
       # Successful assertion of same length again means no record was created
@@ -194,9 +255,11 @@ class UnitsTest < ActiveSupport::TestCase
     user[:system_role] = role
 
     data_to_post = {
-        user: user,
-        auth_token: auth_token
+        user: user
     }
+
+    # Add username and auth_token to Header
+    add_auth_header_for(user: User.first)
 
     post_json '/api/users', data_to_post
     # Successful assertion of same length again means no record was created
@@ -213,9 +276,16 @@ class UnitsTest < ActiveSupport::TestCase
     user = create_user
 
     data_to_post = {
-        user: user,
-        auth_token: token
+        user: user
     }
+
+    # Add username and auth_token to Header
+    add_auth_header_for(user: User.first, auth_token: token)
+
+    # Override header to empty auth_token
+    if token == ''
+      header 'auth_token',''
+    end
 
     post_json '/api/users', data_to_post
     # Successful assertion of same length again means no record was created
@@ -236,9 +306,11 @@ class UnitsTest < ActiveSupport::TestCase
     user[:email] = 'different@email.com'
 
     data_to_put = {
-        user: user,
-        auth_token: auth_token
+        user: user
     }
+
+    # Add username and auth_token to Header
+    add_auth_header_for(user: User.first)
 
     put_json '/api/users/2', data_to_put
     assert_users_model_response User.find_by(email: 'different@email.com').as_json, user.as_json
@@ -250,9 +322,11 @@ class UnitsTest < ActiveSupport::TestCase
     user[:email] = User.third.email
 
     data_to_put = {
-        user: user,
-        auth_token: auth_token
+        user: user
     }
+
+    # Add username and auth_token to Header
+    add_auth_header_for(user: User.first)
 
     put_json '/api/users/2', data_to_put
     assert_equal 400, last_response.status
@@ -268,9 +342,11 @@ class UnitsTest < ActiveSupport::TestCase
       user[:email] = email
 
       data_to_put = {
-          user: user,
-          auth_token: auth_token
+          user: user
       }
+
+      # Add username and auth_token to Header
+      add_auth_header_for(user: User.first)
 
       put_json '/api/users/2', data_to_put
       assert_equal 400, last_response.status
@@ -282,9 +358,11 @@ class UnitsTest < ActiveSupport::TestCase
     user[:email] = ''
 
     data_to_put = {
-        user: user,
-        auth_token: auth_token
+        user: user
     }
+
+    # Add username and auth_token to Header
+    add_auth_header_for(user: User.first)
 
     put_json '/api/users/2', data_to_put
     assert_equal 400, last_response.status
@@ -295,9 +373,15 @@ class UnitsTest < ActiveSupport::TestCase
     user[:email] = ''
 
     data_to_put = {
-        user: user,
-        auth_token: token
+        user: user
     }
+
+    # Add username and auth_token to Header
+    add_auth_header_for(user: User.first, auth_token: token)
+
+    if token == ''
+      header 'auth_token',token
+    end
 
     put_json '/api/users/2', data_to_put
     assert_equal 419, last_response.status

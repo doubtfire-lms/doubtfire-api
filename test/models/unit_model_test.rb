@@ -1,8 +1,10 @@
 require 'test_helper'
 require 'grade_helper'
+require './lib/helpers/database_populator'
 
 class UnitModelTest < ActiveSupport::TestCase
   include TestHelpers::JsonHelper
+  include TestHelpers::TestFileHelper
 
   setup do
     @unit = FactoryBot.create :unit, code: 'COS10001', with_students: false, task_count: 0, tutorials: 0, outcome_count: 0, staff_count: 0, campus_count: 0, teaching_period: TeachingPeriod.find(3)
@@ -232,7 +234,7 @@ class UnitModelTest < ActiveSupport::TestCase
     assert_equal project.enrolled, projects.first[:enrolled]
 
     # Ensure there are matching number of streams
-    assert_equal unit.tutorial_streams.count, projects.first[:tutorial_streams].count
+    assert_equal unit.tutorial_streams.count, projects.first[:tutorial_enrolments].count
 
     # Now test with project without tutorial enrolments
     project2 = FactoryBot.create(:project, unit: unit, campus: campus)
@@ -249,12 +251,12 @@ class UnitModelTest < ActiveSupport::TestCase
     assert projects.select{|p| p[:project_id] == project2.id}.first.present?
 
     # Ensure there are matching number of streams
-    assert_equal unit.tutorial_streams.count, projects.last[:tutorial_streams].count
+    assert_equal unit.tutorial_streams.count, projects.last[:tutorial_enrolments].count
 
     unit.tutorial_streams.each do |s|
       unit.projects.each do |p|
-        proj_tute_enrolment = p.tutorial_enrolments.where(tutorial_stream_id: s.id).first
-        data_tute_enrolment = projects.select{|ps| ps[:project_id] == p.id}.first[:tutorial_streams].select{|te| te[:stream] == s.abbreviation}.map{|te| te[:tutorial]}.first
+        proj_tute_enrolment = p.tutorial_enrolment_for_stream(s)
+        data_tute_enrolment = projects.select{|ps| ps[:project_id] == p.id}.first[:tutorial_enrolments].select{|te| te[:stream_abbr] == s.abbreviation}.map{|te| te[:tutorial_id]}.first
 
         # if there is a enrolment for this project...
         if proj_tute_enrolment.present?
@@ -284,7 +286,11 @@ class UnitModelTest < ActiveSupport::TestCase
 
         # Test basic details
         assert_equal project.student.username, entry['username'], entry.inspect
-        assert_equal project.student.student_id, entry['student_id'], entry.inspect
+        if project.student.student_id.present?
+          assert_equal project.student.student_id, entry['student_id'], entry.inspect
+        else
+          assert_nil entry['student_id'], entry.inspect
+        end
         assert_equal project.student.email, entry['email'], entry.inspect
 
         # Test task status
@@ -293,13 +299,21 @@ class UnitModelTest < ActiveSupport::TestCase
           assert_equal task.task_status.name, entry[td.abbreviation.downcase], "#{td.abbreviation} --> #{entry.inspect}"
 
           assert_equal("#{task.quality_pts}", entry["#{td.abbreviation.downcase} stars"], "#{td.abbreviation} stars --> #{entry.inspect}") if td.has_stars? && task.quality_pts != -1
-          assert_equal(GradeHelper.short_grade_for(task.grade), entry["#{td.abbreviation.downcase} grade"], "#{td.abbreviation} --> #{entry.inspect}") if td.is_graded?
+          if task.grade.present?
+            assert_equal(GradeHelper.short_grade_for(task.grade), entry["#{td.abbreviation.downcase} grade"], "#{td.abbreviation} --> #{entry.inspect}") if td.is_graded?
+          else
+            assert_nil(entry["#{td.abbreviation.downcase} grade"], "#{td.abbreviation} --> #{entry.inspect}") if td.is_graded?
+          end
           assert_equal(task.contribution_pts, (entry["#{td.abbreviation.downcase} contribution"].nil? ? 3 : Integer(entry["#{td.abbreviation.downcase} contribution"])), "#{td.abbreviation} contrib --> #{entry.inspect}") if td.is_group_task?
         end
 
         # Test tutorial streams
         unit.tutorial_streams.each do |ts|
-          assert_equal (project.tutorial_for_stream(ts).present? ? project.tutorial_for_stream(ts).abbreviation : nil), entry[ts.abbreviation.downcase], {entry: entry.inspect, stream: ts.abbreviation, proj_tut: project.tutorial_for_stream(ts)}
+          if project.tutorial_for_stream(ts).present?
+            assert_equal project.tutorial_for_stream(ts).abbreviation, entry[ts.abbreviation.downcase], {entry: entry.inspect, stream: ts.abbreviation, proj_tut: project.tutorial_for_stream(ts)}
+          else
+            assert_nil entry[ts.abbreviation.downcase], {entry: entry.inspect, stream: ts.abbreviation, proj_tut: project.tutorial_for_stream(ts)}
+          end
         end
     end
   end
@@ -349,6 +363,7 @@ class UnitModelTest < ActiveSupport::TestCase
     CSV.parse(csv_str, headers: true, return_headers: false,
       header_converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '').downcase unless body.nil? }],
       converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |entry|
+        assert_json_limit_keys_to_exactly %w(unit_code campus username student_id preferred_name first_name last_name email tutorial), entry.to_hash
         assert_equal 9, entry.count, entry
         user = User.find_by(username: entry['username'])
         assert user.present?, "Unable to find user from #{entry}"
@@ -356,22 +371,122 @@ class UnitModelTest < ActiveSupport::TestCase
         project = unit.projects.find_by(user_id: user.id)
         assert project.present?, entry
 
-        assert_json_matches_model(entry, user, %w( username student_id first_name last_name email))
+        assert_json_matches_model(user, entry, %w( username student_id first_name last_name email))
 
         campus = Campus.find_by_abbr_or_name entry['campus']
         assert campus.present?, entry
         assert_equal project.campus, campus, entry
 
-        assert_equal user.nickname, entry['preferred_name'], entry
+        if user.nickname.present?
+          assert_equal user.nickname, entry['preferred_name'], entry
+        else
+          assert_nil entry['preferred_name'], entry
+        end
 
         tutorial = unit.tutorials.find_by(abbreviation: entry['tutorial'])
-        assert tutorial.present?, entry['tutorial']
-        assert_equal project.tutorial_enrolments.first.tutorial, tutorial, entry
+        if entry['tutorial'].present?
+          assert tutorial.present?, entry.inspect
+          assert_equal project.tutorial_enrolments.first.tutorial, tutorial, entry
+        else
+          assert_nil tutorial
+          assert_nil project.tutorial_enrolments.first
+        end
+
 
         rows += 1
     end
 
     assert_equal unit.active_projects.count, rows, "Expected number or rows in csv - #{csv_str}"
+  end
+
+  def test_import_users
+    unit = FactoryBot.create(:unit, code: 'SIT101', stream_count: 0, with_students: false, tutorials: 0)
+    t1 = unit.add_tutorial(
+      'Monday',
+      '8:00am',
+      'TBA',
+      unit.main_convenor_user,
+      Campus.find_by(abbreviation: 'B'),
+      10,
+      'LA1-01'
+    )
+    t2 = unit.add_tutorial(
+      'Monday',
+      '8:00am',
+      'TBA',
+      unit.main_convenor_user,
+      Campus.find_by(abbreviation: 'C'),
+      10,
+      'LA1-03'
+    )
+    assert_equal 0, unit.projects.count
+
+    assert_not_nil t1.campus
+    assert_not_nil t2.campus
+
+    result = unit.import_users_from_csv test_file_path('SIT101-Enrol-Students.csv')
+    unit.reload
+    assert_equal 1, result[:errors].count, result.inspect
+    assert_equal 1, result[:ignored].count, result.inspect
+    assert_equal 10, unit.projects.count, result.inspect
+
+    assert_equal Campus.find_by(abbreviation: 'C'), User.find_by(username: 'import_8').projects.find_by(unit_id: unit.id).campus
+
+    assert_equal 3, t1.projects.count, result.inspect
+    assert_equal 3, t2.projects.count
+
+    unit.destroy!
+  end
+
+  def test_import_users_streamed
+    unit = FactoryBot.create(:unit, code: 'SIT101', stream_count: 0, with_students: false, tutorials: 0)
+    s1 = unit.add_tutorial_stream('Stream 1', 'Prc01', ActivityType.first)
+    s2 = unit.add_tutorial_stream('Stream 2', 'Stu01', ActivityType.first)
+
+    t1 = unit.add_tutorial(
+      'Monday',
+      '8:00am',
+      'TBA',
+      unit.main_convenor_user,
+      Campus.find_by(abbreviation: 'B'),
+      10,
+      'LA1-01',
+      s1
+    )
+    t2 = unit.add_tutorial(
+      'Monday',
+      '8:00am',
+      'TBA',
+      unit.main_convenor_user,
+      Campus.find_by(abbreviation: 'C'),
+      10,
+      'LA1-03',
+      s1
+    )
+    t3 = unit.add_tutorial(
+      'Monday',
+      '8:00am',
+      'TBA',
+      unit.main_convenor_user,
+      nil,
+      10,
+      'LA1-02',
+      s2
+    )
+
+    assert_equal 0, unit.projects.count
+
+    result = unit.import_users_from_csv test_file_path('SIT101-Enrol-Students-Stream.csv')
+    unit.reload
+    assert_equal 0, result[:errors].count, result.inspect
+    assert_equal 0, result[:ignored].count, result.inspect
+    assert_equal 8, unit.projects.count, result.inspect
+
+    assert_equal 4, t1.projects.count
+    assert_equal 4, t2.projects.count
+    assert_equal 8, t3.projects.count
+
+    unit.destroy!
   end
 
   def test_change_main_convenor_success

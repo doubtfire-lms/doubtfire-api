@@ -1,0 +1,36 @@
+{
+  "activities": [
+    {
+      "subject_code": "SIT999_B_D_2",
+      "activity_group_code": "Cls01",
+      "activity_code": "01",
+      "day_of_week": "Tue",
+      "start_time": "16:00",
+      "duration": 120,
+      "week_pattern": "000000000000000000000000000000111110111111000000000000000000000000000000000",
+      "campus": "T",
+      "location": "-",
+      "staff": "NAME, Staff",
+      "description": "Class 1",
+      "status": "READ ONLY",
+      "start_date": "16\/12\/2019",
+      "splus_reference": "SIT999_B_D_T2 Cls01\/01"
+    },
+    {
+      "subject_code": "SIT999_B_D_2",
+      "activity_group_code": "Prac01",
+      "activity_code": "01",
+      "day_of_week": "Wed",
+      "start_time": "17:00",
+      "duration": 120,
+      "week_pattern": "000000000000000000000000000000111110111111000000000000000000000000000000000",
+      "campus": "T",
+      "location": "-",
+      "staff": "NAME, Staff",
+      "description": "Practical 1",
+      "status": "READ ONLY",
+      "start_date": "16\/12\/2019",
+      "splus_reference": "SIT999_B_D_T2 Cls01\/01"
+    }
+  ]
+}
