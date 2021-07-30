@@ -7,6 +7,11 @@ module Api
       helpers GenerateHelpers
       helpers AuthenticationHelpers
       helpers AuthorisationHelpers
+      include LogHelper
+
+      def self.logger
+        LogHelper.logger
+      end
 
       before do
         authenticated?
@@ -16,11 +21,13 @@ module Api
       params do
         optional :file0, type: Rack::Multipart::UploadedFile, desc: 'file 0.'
         optional :file1, type: Rack::Multipart::UploadedFile, desc: 'file 1.'
+        # This API accepts more than 2 files, file0 and file1 were probably just used by Alex to test the API 3 years ago on swagger, according to Jake. Naughty Alex.
         optional :contributions, type: JSON, desc: "Contribution details JSON, eg: [ { project_id: 1, pct:'0.44', pts: 4 }, ... ]"
         optional :alignment_data, type: JSON, desc: "Data for task alignment, eg: [ { ilo_id: 1, rating: 5, rationale: 'Hello' }, ... ]"
         optional :trigger, type: String, desc: 'Can be need_help to indicate upload is not a ready to mark submission'
       end
       post '/projects/:id/task_def_id/:task_definition_id/submission' do
+
         project = Project.find(params[:id])
         task_definition = project.unit.task_definitions.find(params[:task_definition_id])
 
@@ -38,7 +45,7 @@ module Api
         trigger = if params[:trigger] && params[:trigger].tr('"\'', '') == 'need_help'
                     'need_help'
                   else
-                    'ready_to_mark'
+                    'ready_for_feedback'
                   end
 
         alignments = params[:alignment_data]
@@ -49,6 +56,14 @@ module Api
         # Copy files to be PDFed
         task.accept_submission(current_user, scoop_files(params, upload_reqs), student, self, params[:contributions], trigger, alignments)
 
+        overseer_assessment = OverseerAssessment.create_for(task)
+        if overseer_assessment.present?
+          logger.info "Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id} was performed"
+          comment = overseer_assessment.send_to_overseer
+          return { updated_task: TaskUpdateSerializer.new(task), comment: comment }
+        end
+
+        logger.info "Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id} was not performed"
         TaskUpdateSerializer.new(task)
       end # post
 
@@ -110,6 +125,135 @@ module Api
           { result: 'false' }
         end
       end # put
+
+      desc 'Get the timestamps of the last 10 submissions of a task'
+      get '/projects/:id/task_def_id/:task_definition_id/submissions/timestamps' do
+        project = Project.find(params[:id])
+        task_definition = project.unit.task_definitions.find(params[:task_definition_id])
+
+        unless authorise? current_user, project, :get_submission
+          error!({ error: "Not authorised to get task '#{task_definition.name}'" }, 401)
+        end
+
+        task = project.task_for_task_definition(task_definition)
+
+        unless task
+          error!({ error: "A submission for this task definition have never been created" }, 401)
+        end
+
+        path = FileHelper.task_submission_identifier_path(:done, task)
+        unless File.exist? path
+          error!({ error: "No submissions found for project: '#{params[:id]}' task: '#{params[:task_def_id]}'" }, 401)
+        end
+
+        OverseerAssessment.where(task_id: task.id).order(submission_timestamp: :desc).limit(10)
+      end
+
+      desc 'Get the result of the submission of a task made at the given timestamp'
+      get '/projects/:id/task_def_id/:task_definition_id/submissions/timestamps/:timestamp' do
+        project = Project.find(params[:id])
+        task_definition = project.unit.task_definitions.find(params[:task_definition_id])
+
+        unless authorise? current_user, project, :get_submission
+          error!({ error: "Not authorised to get task '#{task_definition.name}'" }, 401)
+        end
+
+        task = project.task_for_task_definition(task_definition)
+
+        unless task
+          error!({ error: "A submission for this task definition have never been created" }, 401)
+        end
+
+        timestamp = params[:timestamp]
+
+        path = FileHelper.task_submission_identifier_path_with_timestamp(:done, task, timestamp)
+        unless File.exist? path
+          error!({ error: "No submissions found for project: '#{params[:id]}' task: '#{params[:task_def_id]}' and timestamp: '#{timestamp}'" }, 401)
+        end
+
+        unless File.exist? "#{path}/output.txt"
+          error!({ error: "Either the assessment didn't finish or an output wasn't generated. Please contact your unit chair" }, 401)
+        end
+
+        result = []
+        result << { label: 'output', result: File.read("#{path}/output.txt") }
+
+        if project.role_for(current_user) == :student
+          return result
+        end
+
+        if File.exist? "#{path}/build-diff.txt"
+          result << { label: 'build-diff', result: File.read("#{path}/build-diff.txt") }
+        end
+
+        if File.exist? "#{path}/run-diff.txt"
+          result << { label: 'run-diff', result: File.read("#{path}/run-diff.txt") }
+        end
+
+        result
+      end
+
+      desc 'Get the result of the submission of a task made last'
+      get '/projects/:id/task_def_id/:task_definition_id/submissions/latest' do
+        project = Project.find(params[:id])
+        task_definition = project.unit.task_definitions.find(params[:task_definition_id])
+
+        unless authorise? current_user, project, :get_submission
+          error!({ error: "Not authorised to get task '#{task_definition.name}'" }, 401)
+        end
+
+        task = project.task_for_task_definition(task_definition)
+
+        unless task
+          error!({ error: "A submission for this task definition have never been created" }, 401)
+        end
+
+        path = FileHelper.task_submission_identifier_path(:done, task)
+        unless File.exist? path
+          error!({ error: "No submissions found for project: '#{params[:id]}' task: '#{params[:task_def_id]}'" }, 401)
+        end
+
+        path = "#{path}/#{FileHelper.latest_submission_timestamp_entry_in_dir(path)}"
+
+        unless File.exist? "#{path}/output.txt"
+          error!({ error: "Either the assessment didn't finish or an output wasn't generated. Please contact your unit chair" }, 401)
+        end
+
+        result = []
+        result << { label: 'output', result: File.read("#{path}/output.txt") }
+
+        if project.role_for(current_user) == :student
+          return result
+        end
+
+        if File.exist? "#{path}/build-diff.txt"
+          result << { label: 'build-diff', result: File.read("#{path}/build-diff.txt") }
+        end
+
+        if File.exist? "#{path}/run-diff.txt"
+          result << { label: 'run-diff', result: File.read("#{path}/run-diff.txt") }
+        end
+
+        result
+      end
+
+      # TODO: Remove the dependency on units - figure out how to authorise
+      desc 'Get the list of supported overseer images'
+      get '/units/:unit_id/overseer/docker/images' do
+        unless Doubtfire::Application.config.overseer_enabled
+          error!({ error: 'Overseer is not enabled' }, 403)
+          return
+        end
+
+        unit = Unit.find(params[:unit_id])
+
+        unless authorise? current_user, unit, :add_task_def
+          error!({ error: 'Not authorised to download task details of unit' }, 403)
+        end
+        {
+          result: Doubtfire::Application.config.overseer_images
+        }
+      end
     end
   end
 end

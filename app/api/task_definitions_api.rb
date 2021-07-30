@@ -8,6 +8,7 @@ module Api
     helpers AuthorisationHelpers
     helpers FileHelper
     helpers MimeCheckHelpers
+    helpers Submission::GenerateHelpers
 
     before do
       authenticated?
@@ -32,6 +33,8 @@ module Api
         requires :plagiarism_warn_pct,      type: Integer,  desc: 'The percent at which to record and warn about plagiarism'
         requires :is_graded,                type: Boolean,  desc: 'Whether or not this task definition is a graded task'
         requires :max_quality_pts,          type: Integer,  desc: 'A range for quality points when quality is assessed'
+        optional :assessment_enabled,       type: Boolean,  desc: 'Enable or disable assessment'
+        optional :overseer_image_id,        type: Integer,  desc: 'The id of the Docker image for overseer'
       end
     end
     post '/units/:unit_id/task_definitions/' do
@@ -59,7 +62,9 @@ module Api
                                                   :plagiarism_checks,
                                                   :plagiarism_warn_pct,
                                                   :is_graded,
-                                                  :max_quality_pts
+                                                  :max_quality_pts,
+                                                  :assessment_enabled,
+                                                  :overseer_image_id
                                                 )
 
       task_params[:unit_id] = unit.id
@@ -105,6 +110,8 @@ module Api
         optional :plagiarism_warn_pct,      type: Integer,  desc: 'The percent at which to record and warn about plagiarism'
         optional :is_graded,                type: Boolean,  desc: 'Whether or not this task definition is a graded task'
         optional :max_quality_pts,          type: Integer,  desc: 'A range for quality points when quality is assessed'
+        optional :assessment_enabled,       type: Boolean,  desc: 'Enable or disable assessment'
+        optional :overseer_image_id,        type: Integer,  desc: 'The id of the Docker image name for overseer'
       end
     end
     put '/units/:unit_id/task_definitions/:id' do
@@ -131,7 +138,9 @@ module Api
                                                   :plagiarism_checks,
                                                   :plagiarism_warn_pct,
                                                   :is_graded,
-                                                  :max_quality_pts
+                                                  :max_quality_pts,
+                                                  :assessment_enabled,
+                                                  :overseer_image_id
                                                 )
 
       # Ensure changes to a TD defined as a "draft task definition" are validated
@@ -251,6 +260,52 @@ module Api
       task_def.add_task_sheet(file[:tempfile].path)
     end
 
+    desc 'Test overseer assessment for a given task'
+    params do
+      requires :unit_id, type: Integer, desc: 'The related unit'
+      requires :task_def_id, type: Integer, desc: 'The related task definition'
+      optional :file0, type: Rack::Multipart::UploadedFile, desc: 'file 0.'
+      optional :file1, type: Rack::Multipart::UploadedFile, desc: 'file 1.'
+      # This API accepts more than 2 files, file0 and file1 are just examples.
+    end
+    post '/units/:unit_id/task_definitions/:task_def_id/test_overseer_assessment' do
+      logger.info "********* - Starting overseer test"
+      return 'Overseer is not enabled' if !Doubtfire::Application.config.overseer_enabled
+
+      unit = Unit.find(params[:unit_id])
+
+      unless authorise? current_user, unit, :perform_overseer_assessment_test
+        error!({ error: 'Not authorised to test overseer assessment of tasks of this unit' }, 403)
+      end
+
+      task_definition = unit.task_definitions.find(params[:task_def_id])
+
+      project = Project.where(unit: unit, user: current_user).first
+
+      if project.nil?
+        # Create a project for the unit chair
+        project = unit.enrol_student(current_user, Campus.first)
+      end
+
+      task = project.task_for_task_definition(task_definition)
+
+      upload_reqs = task.upload_requirements
+
+      # Copy files to be PDFed
+      task.accept_submission(current_user, scoop_files(params, upload_reqs), current_user, self, nil, 'ready_for_feedback', nil)
+
+      logger.info "********* - about to perform overseer submission"
+      overseer_assessment = OverseerAssessment.create_for(task)
+      if overseer_assessment.present?
+        comment = overseer_assessment.send_to_overseer
+        logger.info "Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id} was performed"
+        return { updated_task: TaskUpdateSerializer.new(task), comment: comment, project_id: project.id }
+      end
+
+      logger.info "Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id} was not performed"
+      { updated_task: TaskUpdateSerializer.new(task), project_id: project.id }
+    end
+
     desc 'Remove the task sheet for a given task'
     params do
       requires :unit_id, type: Integer, desc: 'The related unit'
@@ -313,6 +368,48 @@ module Api
 
       # Actually remove...
       task_def.remove_task_resources
+      task_def
+    end
+
+    desc 'Upload the task assessment resources for a given task'
+    params do
+      requires :unit_id, type: Integer, desc: 'The related unit'
+      requires :task_def_id, type: Integer, desc: 'The related task definition'
+      requires :file, type: Rack::Multipart::UploadedFile, desc: 'The task assessment resources zip'
+    end
+    post '/units/:unit_id/task_definitions/:task_def_id/task_assessment_resources' do
+      unit = Unit.find(params[:unit_id])
+
+      unless authorise? current_user, unit, :add_task_def
+        error!({ error: 'Not authorised to upload task assessment resources of unit' }, 403)
+      end
+
+      task_def = unit.task_definitions.find(params[:task_def_id])
+
+      file_path = params[:file][:tempfile].path
+
+      check_mime_against_list! file_path, 'zip', ['application/zip', 'multipart/x-gzip', 'multipart/x-zip', 'application/x-gzip', 'application/octet-stream']
+
+      # Actually import...
+      task_def.add_task_assessment_resources(file_path)
+    end
+
+    desc 'Remove the task assessment resources for a given task'
+    params do
+      requires :unit_id, type: Integer, desc: 'The related unit'
+      requires :task_def_id, type: Integer, desc: 'The related task definition'
+    end
+    delete '/units/:unit_id/task_definitions/:task_def_id/task_assessment_resources' do
+      unit = Unit.find(params[:unit_id])
+
+      unless authorise? current_user, unit, :add_task_def
+        error!({ error: 'Not authorised to remove task assessment resources of unit' }, 403)
+      end
+
+      task_def = unit.task_definitions.find(params[:task_def_id])
+
+      # Actually remove...
+      task_def.remove_task_assessment_resources
       task_def
     end
 
@@ -434,6 +531,33 @@ module Api
         path = task_def.task_resources
         content_type 'application/octet-stream'
         header['Content-Disposition'] = "attachment; filename=#{task_def.abbreviation}-resources.zip"
+      else
+        path = Rails.root.join('public', 'resources', 'FileNotFound.pdf')
+        content_type 'application/pdf'
+        header['Content-Disposition'] = 'attachment; filename=FileNotFound.pdf'
+      end
+
+      env['api.format'] = :binary
+      File.read(path)
+    end
+
+    desc 'Download the task assessment resources'
+    params do
+      requires :unit_id, type: Integer, desc: 'The unit to upload tasks for'
+      requires :task_def_id, type: Integer, desc: 'The task definition to get the assessment resources of'
+    end
+    get '/units/:unit_id/task_definitions/:task_def_id/task_assessment_resources' do
+      unit = Unit.find(params[:unit_id])
+      task_def = unit.task_definitions.find(params[:task_def_id])
+
+      unless authorise? current_user, unit, :add_task_def
+        error!({ error: 'Not authorised to download task details of unit' }, 403)
+      end
+
+      if task_def.has_task_assessment_resources?
+        path = task_def.task_assessment_resources
+        content_type 'application/octet-stream'
+        header['Content-Disposition'] = "attachment; filename=#{task_def.abbreviation}-assessment-resources.zip"
       else
         path = Rails.root.join('public', 'resources', 'FileNotFound.pdf')
         content_type 'application/pdf'

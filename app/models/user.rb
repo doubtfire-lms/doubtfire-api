@@ -295,7 +295,9 @@ class User < ActiveRecord::Base
       :handle_campuses,
       :handle_activity_types,
       :get_teaching_periods,
-      :rollover
+      :rollover,
+      :admin_overseer,
+      :use_overseer
     ]
 
     # What can convenors do with users?
@@ -311,7 +313,8 @@ class User < ActiveRecord::Base
       :act_tutor,
       :convene_units,
       :download_stats,
-      :get_teaching_periods
+      :get_teaching_periods,
+      :use_overseer
     ]
 
     # What can tutors do with users?

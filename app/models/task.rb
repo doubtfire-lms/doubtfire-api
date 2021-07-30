@@ -105,8 +105,9 @@ class Task < ActiveRecord::Base
   has_many :reverse_plagiarism_match_links, class_name: 'PlagiarismMatchLink', dependent: :destroy, inverse_of: :other_task, foreign_key: 'other_task_id'
   has_many :learning_outcome_task_links, dependent: :destroy # links to learning outcomes
   has_many :learning_outcomes, through: :learning_outcome_task_links
-  has_many :task_engagements
-  has_many :task_submissions
+  has_many :task_engagements, dependent: :destroy
+  has_many :task_submissions, dependent: :destroy
+  has_many :overseer_assessments, dependent: :destroy
 
   delegate :unit, to: :project
   delegate :student, to: :project
@@ -181,7 +182,7 @@ class Task < ActiveRecord::Base
     else
       File.exist? File.join(FileHelper.student_work_dir(:new), id.to_s)
     end
-    # portfolio_evidence == nil && ready_to_mark?
+    # portfolio_evidence == nil && ready_for_feedback?
   end
 
   # Get the raw extension date - with extensions representing weeks
@@ -245,7 +246,7 @@ class Task < ActiveRecord::Base
     if update(extensions: self.extensions + weeks_to_extend)
       # Was the task previously assessed as time exceeded? ... with the extension should this change?
       if self.task_status == TaskStatus.time_exceeded && submitted_before_due?
-        update(task_status: TaskStatus.ready_to_mark)
+        update(task_status: TaskStatus.ready_for_feedback)
         add_status_comment(by_user, self.task_status)
       end
 
@@ -281,15 +282,15 @@ class Task < ActiveRecord::Base
   end
 
   def task_submission_closed?
-    complete? || discuss_or_demonstrate? || do_not_resubmit? || fail?
+    complete? || discuss_or_demonstrate? || feedback_exceeded? || fail?
   end
 
-  def ready_to_mark?
-    status == :ready_to_mark
+  def ready_for_feedback?
+    status == :ready_for_feedback
   end
 
   def ready_or_complete?
-    [:complete, :discuss, :demonstrate, :ready_to_mark].include? status
+    [:complete, :discuss, :demonstrate, :ready_for_feedback].include? status
   end
 
   def submitted_status?
@@ -300,8 +301,8 @@ class Task < ActiveRecord::Base
     status == :fix_and_resubmit
   end
 
-  def do_not_resubmit?
-    status == :do_not_resubmit
+  def feedback_exceeded?
+    status == :feedback_exceeded
   end
 
   def redo?
@@ -317,7 +318,7 @@ class Task < ActiveRecord::Base
   end
 
   def reviewable?
-    has_pdf && (ready_to_mark? || need_help?)
+    has_pdf && (ready_for_feedback? || need_help?)
   end
 
   def status
@@ -378,7 +379,7 @@ class Task < ActiveRecord::Base
     case status
     when nil
       return nil
-    when TaskStatus.ready_to_mark
+    when TaskStatus.ready_for_feedback
       submit by_user
     when TaskStatus.not_started, TaskStatus.need_help, TaskStatus.working_on_it
       add_status_comment(by_user, status)
@@ -545,11 +546,11 @@ class Task < ActiveRecord::Base
   def submit(by_user, submit_date = Time.zone.now)
     self.submission_date  = submit_date
 
-    add_status_comment(by_user, TaskStatus.ready_to_mark)
+    add_status_comment(by_user, TaskStatus.ready_for_feedback)
 
     # If it is submitted before the due date...
     if submitted_before_due?
-      self.task_status = TaskStatus.ready_to_mark
+      self.task_status = TaskStatus.ready_for_feedback
     else
       assess TaskStatus.time_exceeded, by_user
       add_status_comment(project.tutor_for(task_definition), self.task_status)
@@ -577,7 +578,7 @@ class Task < ActiveRecord::Base
   def assessed?
     redo? ||
       fix_and_resubmit? ||
-      do_not_resubmit? ||
+      feedback_exceeded? ||
       fail? ||
       complete?
   end
@@ -767,17 +768,24 @@ class Task < ActiveRecord::Base
     end
   end
 
+  def has_new_files?
+    File.directory? student_work_dir(:new, false)
+  end
+
+  def has_done_file?
+    File.exists? zip_file_path_for_done_task
+  end
+
   #
   # Compress the done files for a student - includes cover page and work uploaded
   #
-  def compress_new_to_done
-    task_dir = student_work_dir(:new, false)
+  def compress_new_to_done(task_dir: student_work_dir(:new, false), zip_file_path: nil, rm_task_dir: true)
     begin
       # Ensure that this task is the submitter task for a  group_task... otherwise
       # remove this submission
       raise "Multiple team member submissions received at the same time. Please ensure that only one member submits the task." if group_task? && self != group_submission.submitter_task
 
-      zip_file = zip_file_path_for_done_task
+      zip_file = zip_file_path || zip_file_path_for_done_task
       return false if zip_file.nil? || (!Dir.exist? task_dir)
 
       FileUtils.rm(zip_file) if File.exist? zip_file
@@ -805,10 +813,14 @@ class Task < ActiveRecord::Base
         end
       end
     ensure
-      FileUtils.rm_rf(task_dir)
+      FileUtils.rm_rf(task_dir) if rm_task_dir
     end
 
     true
+  end
+
+  def copy_done_to(path)
+    FileUtils.cp zip_file_path_for_done_task, path
   end
 
   def clear_in_process
@@ -841,7 +853,7 @@ class Task < ActiveRecord::Base
   #
   # Move folder over from new or done -> in_process returns true on success
   #
-  def move_files_to_in_process
+  def move_files_to_in_process(source_folder)
     # find and clear out old dir
     in_process_dir = student_work_dir(:in_process, false)
 
@@ -855,25 +867,24 @@ class Task < ActiveRecord::Base
       Dir.chdir(pwd)
     end
 
-    from_dir = student_work_dir(:new, false)
+    # Zip new submission and store in done files (will remove from_dir) - ensure trailing /
+    from_dir = File.join(source_folder, id.to_s) + "/"
     if Dir.exist?(from_dir)
       # save new files in done folder
-      return false unless compress_new_to_done
+      return false unless compress_new_to_done(task_dir: from_dir)
     end
 
+    # Get the zip file path...
     zip_file = zip_file_path_for_done_task
     if zip_file && File.exist?(zip_file)
-      extract_file_from_done FileHelper.student_work_dir(:new), '*', lambda { |_task, to_path, name|
+      # extract to root in process dir - as it contains the folder in the zip file
+      extract_file_from_done FileHelper.student_work_dir(:in_process), '*', lambda { |_task, to_path, name|
         "#{to_path}#{name}"
       }
-      return false unless Dir.exist?(from_dir)
+      return Dir.exist?(in_process_dir)
     else
       return false
     end
-
-    # Move files from new to in process
-    FileHelper.move_files(from_dir, in_process_dir)
-    true
   end
 
   def __output_filename__(in_dir, idx, type)
@@ -985,8 +996,9 @@ class Task < ActiveRecord::Base
     end
   end
 
-  def convert_submission_to_pdf
-    return false unless move_files_to_in_process
+  # Convert a submission to pdf - the source folder is the root folder in which the submission folder will be found (not the submission folder itself)
+  def convert_submission_to_pdf(source_folder = FileHelper.student_work_dir(:new))
+    return false unless move_files_to_in_process(source_folder)
 
     begin
       tac = TaskAppController.new
@@ -1071,7 +1083,7 @@ class Task < ActiveRecord::Base
   #
   # The student has uploaded new work...
   #
-  def create_submission_and_trigger_state_change(user, propagate = true, contributions = nil, trigger = 'ready_to_mark', initial_task = nil)
+  def create_submission_and_trigger_state_change(user, propagate = true, contributions = nil, trigger = 'ready_for_feedback', initial_task = nil)
     if group_task? && propagate
       if contributions.nil? # even distribution
         contribs = group.projects.map { |proj| { project: proj, pct: 100 / group.projects.count, pts: 3 } }
@@ -1086,7 +1098,7 @@ class Task < ActiveRecord::Base
       self.submission_date = Time.zone.now
 
       # This task is now ready to submit - trigger a transition if not in final state
-      unless discuss_or_demonstrate? || complete? || do_not_resubmit? || fail?
+      unless discuss_or_demonstrate? || complete? || feedback_exceeded? || fail?
         trigger_transition trigger: trigger, by_user: user, group_transition: group_task? && initial_task != self
       end
 
@@ -1118,6 +1130,10 @@ class Task < ActiveRecord::Base
 
   #
   # Moves submission into place
+  # - from -- tmp upload files
+  # - to "in_process" folder
+  #
+  # Checks to make sure that the files match what we expect
   #
   def accept_submission(current_user, files, _student, ui, contributions, trigger, alignments)
     #
@@ -1156,8 +1172,10 @@ class Task < ActiveRecord::Base
       end
     end
 
+    # Ready to accept... so create the submission and update the task status
     create_submission_and_trigger_state_change(current_user, true, contributions, trigger, self)
 
+    # Update the alignments - across groups if needed
     unless alignments.nil?
       if group_task?
         ensured_group_submission.propogate_alignments_from_submission(alignments)
@@ -1186,7 +1204,7 @@ class Task < ActiveRecord::Base
     end
 
     #
-    # Now copy over the temp directory over to the enqueued directory
+    # Now copy over the temp directory over to the enqueued directory (in process)
     #
     enqueued_dir = File.join(FileHelper.student_work_dir(:new, nil, true), id.to_s)
 
@@ -1196,13 +1214,15 @@ class Task < ActiveRecord::Base
       FileUtils.mkdir_p enqueued_dir
     end
 
+    # Move files into place
     logger.debug "Moving source files from #{tmp_dir} into #{enqueued_dir}"
     FileUtils.mv Dir.glob(File.join(tmp_dir,'*.*')), enqueued_dir, force: true
-
+    
+    # Delete the tmp dir
     logger.debug "Deleting student work dir: #{tmp_dir}"
     FileUtils.rm_rf tmp_dir if File.exists? tmp_dir
 
-    logger.debug "Submission accepted! Status for task #{id} is now #{trigger}"
+    logger.info "Submission accepted! Status for task #{id} is now #{trigger}"
   end
 
   private
