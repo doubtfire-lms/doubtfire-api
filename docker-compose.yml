@@ -85,6 +85,7 @@ services:
   doubtfire-web:
     container_name: doubtfire-web
     build: ../doubtfire-web
+    command: npm start
     ports:
       - "4200:4200"
     mem_limit: 5gb
@@ -93,6 +94,7 @@ services:
     volumes:
       - ../doubtfire-web:/doubtfire-web
       - ../doubtfire-web/dist:/doubtfire-web/dist
+      - /doubtfire-web/node_modules
 
   doubtfire-overseer:
     container_name: doubtfire-overseer
