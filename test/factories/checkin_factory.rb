@@ -3,6 +3,8 @@
 FactoryBot.define do
 
   factory :check_in do
-    room_number { Faker::Lorem.characters(5) }
+    room
+    id_card
+    checkin_at { Time.zone.now - 5.seconds }
   end
 end

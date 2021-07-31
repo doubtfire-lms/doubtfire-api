@@ -2,8 +2,6 @@
 
 FactoryBot.define do
   factory :id_card do
-    id_card
-    room
-    checkin_at { Faker::Time.backward }
+    card_number { Faker::Lorem.characters(number: 15) }
   end
 end

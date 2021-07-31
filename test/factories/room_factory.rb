@@ -3,6 +3,6 @@
 FactoryBot.define do
 
   factory :room do
-    room_number { Faker::Lorem.characters(5) }
+    room_number { Faker::Lorem.characters(number: 5) }
   end
 end
