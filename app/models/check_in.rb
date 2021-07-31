@@ -1,4 +1,4 @@
-class CheckIn < ActiveRecord::Base
+class CheckIn < ApplicationRecord
   belongs_to :room
   belongs_to :id_card
 

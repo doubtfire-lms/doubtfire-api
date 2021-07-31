@@ -15,7 +15,7 @@ ActiveRecord::Schema.define(version: 2021_07_25_051039) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
-  create_table "activity_types", force: :cascade do |t|
+  create_table "activity_types", id: :serial, force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
     t.datetime "created_at", null: false
@@ -24,7 +24,7 @@ ActiveRecord::Schema.define(version: 2021_07_25_051039) do
     t.index ["name"], name: "index_activity_types_on_name", unique: true
   end
 
-  create_table "auth_tokens", force: :cascade do |t|
+  create_table "auth_tokens", id: :serial, force: :cascade do |t|
     t.string "encrypted_authentication_token", limit: 255, null: false
     t.string "encrypted_authentication_token_iv", limit: 255
     t.datetime "auth_token_expiry", null: false
@@ -32,14 +32,14 @@ ActiveRecord::Schema.define(version: 2021_07_25_051039) do
     t.index ["user_id"], name: "index_auth_tokens_on_user_id"
   end
 
-  create_table "breaks", force: :cascade do |t|
+  create_table "breaks", id: :serial, force: :cascade do |t|
     t.datetime "start_date", null: false
     t.integer "number_of_weeks", null: false
     t.integer "teaching_period_id"
     t.index ["teaching_period_id"], name: "index_breaks_on_teaching_period_id"
   end
 
-  create_table "campuses", force: :cascade do |t|
+  create_table "campuses", id: :serial, force: :cascade do |t|
     t.string "name", null: false
     t.integer "mode", null: false
     t.string "abbreviation", null: false
@@ -49,23 +49,22 @@ ActiveRecord::Schema.define(version: 2021_07_25_051039) do
     t.index ["name"], name: "index_campuses_on_name", unique: true
   end
 
-  add_index "campuses", ["abbreviation"], name: "index_campuses_on_abbreviation", unique: true, using: :btree
-  add_index "campuses", ["active"], name: "index_campuses_on_active", using: :btree
-  add_index "campuses", ["name"], name: "index_campuses_on_name", unique: true, using: :btree
-
-  create_table "check_ins", force: :cascade do |t|
-    t.integer  "id_card_id",  null: false
-    t.integer  "room_id",     null: false
-    t.string   "seat"
-    t.datetime "checkin_at",  null: false
+  create_table "check_ins", id: :serial, force: :cascade do |t|
+    t.integer "id_card_id", null: false
+    t.integer "room_id", null: false
+    t.string "seat"
+    t.datetime "checkin_at", null: false
     t.datetime "checkout_at"
   end
 
-  create_table "comments_read_receipts", force: :cascade do |t|
+  create_table "comments_read_receipts", id: :serial, force: :cascade do |t|
     t.integer "task_comment_id", null: false
     t.integer "user_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["task_comment_id", "user_id"], name: "index_comments_read_receipts_on_task_comment_id_and_user_id", unique: true
+    t.index ["task_comment_id"], name: "index_comments_read_receipts_on_task_comment_id"
+    t.index ["user_id"], name: "index_comments_read_receipts_on_user_id"
   end
 
   create_table "discussion_comments", id: :serial, force: :cascade do |t|
@@ -94,6 +93,7 @@ ActiveRecord::Schema.define(version: 2021_07_25_051039) do
     t.datetime "updated_at"
     t.integer "capacity"
     t.boolean "locked", default: false, null: false
+    t.index ["unit_id"], name: "index_group_sets_on_unit_id"
   end
 
   create_table "group_submissions", id: :serial, force: :cascade do |t|
@@ -105,7 +105,7 @@ ActiveRecord::Schema.define(version: 2021_07_25_051039) do
     t.integer "task_definition_id"
   end
 
-  create_table "groups", force: :cascade do |t|
+  create_table "groups", id: :serial, force: :cascade do |t|
     t.integer "group_set_id"
     t.integer "tutorial_id"
     t.string "name", limit: 255
@@ -115,12 +115,12 @@ ActiveRecord::Schema.define(version: 2021_07_25_051039) do
     t.boolean "locked", default: false, null: false
   end
 
-  create_table "id_cards", force: :cascade do |t|
+  create_table "id_cards", id: :serial, force: :cascade do |t|
     t.integer "user_id"
-    t.string  "card_number", null: false
+    t.string "card_number", null: false
   end
 
-  create_table "learning_outcome_task_links", force: :cascade do |t|
+  create_table "learning_outcome_task_links", id: :serial, force: :cascade do |t|
     t.text "description"
     t.integer "rating"
     t.integer "task_definition_id"
@@ -162,7 +162,7 @@ ActiveRecord::Schema.define(version: 2021_07_25_051039) do
     t.index ["task_id"], name: "index_plagiarism_match_links_on_task_id"
   end
 
-  create_table "projects", force: :cascade do |t|
+  create_table "projects", id: :serial, force: :cascade do |t|
     t.integer "unit_id"
     t.string "project_role", limit: 255
     t.datetime "created_at", null: false
@@ -188,18 +188,18 @@ ActiveRecord::Schema.define(version: 2021_07_25_051039) do
     t.index ["user_id"], name: "index_projects_on_user_id"
   end
 
-  create_table "roles", force: :cascade do |t|
+  create_table "roles", id: :serial, force: :cascade do |t|
     t.string "name", limit: 255
     t.text "description"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
 
-  create_table "rooms", force: :cascade do |t|
+  create_table "rooms", id: :serial, force: :cascade do |t|
     t.string "room_number", null: false
   end
 
-  create_table "task_comments", force: :cascade do |t|
+  create_table "task_comments", id: :serial, force: :cascade do |t|
     t.integer "task_id", null: false
     t.integer "user_id", null: false
     t.string "comment", limit: 4096
@@ -224,7 +224,7 @@ ActiveRecord::Schema.define(version: 2021_07_25_051039) do
     t.index ["task_id"], name: "index_task_comments_on_task_id"
   end
 
-  create_table "task_definitions", force: :cascade do |t|
+  create_table "task_definitions", id: :serial, force: :cascade do |t|
     t.integer "unit_id"
     t.string "name", limit: 255
     t.string "description", limit: 4096
@@ -259,7 +259,7 @@ ActiveRecord::Schema.define(version: 2021_07_25_051039) do
     t.index ["task_id"], name: "index_task_engagements_on_task_id"
   end
 
-  create_table "task_pins", force: :cascade do |t|
+  create_table "task_pins", id: :serial, force: :cascade do |t|
     t.integer "task_id", null: false
     t.integer "user_id", null: false
     t.datetime "created_at", null: false
@@ -267,7 +267,7 @@ ActiveRecord::Schema.define(version: 2021_07_25_051039) do
     t.index ["task_id", "user_id"], name: "index_task_pins_on_task_id_and_user_id", unique: true
   end
 
-  create_table "task_statuses", force: :cascade do |t|
+  create_table "task_statuses", id: :serial, force: :cascade do |t|
     t.string "name", limit: 255
     t.string "description", limit: 255
     t.datetime "created_at", null: false
@@ -321,7 +321,7 @@ ActiveRecord::Schema.define(version: 2021_07_25_051039) do
     t.index ["period", "year"], name: "index_teaching_periods_on_period_and_year", unique: true
   end
 
-  create_table "tutorial_enrolments", force: :cascade do |t|
+  create_table "tutorial_enrolments", id: :serial, force: :cascade do |t|
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "project_id", null: false
@@ -331,7 +331,7 @@ ActiveRecord::Schema.define(version: 2021_07_25_051039) do
     t.index ["tutorial_id"], name: "index_tutorial_enrolments_on_tutorial_id"
   end
 
-  create_table "tutorial_streams", force: :cascade do |t|
+  create_table "tutorial_streams", id: :serial, force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
     t.datetime "created_at", null: false
@@ -344,7 +344,7 @@ ActiveRecord::Schema.define(version: 2021_07_25_051039) do
     t.index ["unit_id"], name: "index_tutorial_streams_on_unit_id"
   end
 
-  create_table "tutorials", force: :cascade do |t|
+  create_table "tutorials", id: :serial, force: :cascade do |t|
     t.integer "unit_id"
     t.string "meeting_day", limit: 255
     t.string "meeting_time", limit: 255
@@ -357,14 +357,14 @@ ActiveRecord::Schema.define(version: 2021_07_25_051039) do
     t.integer "capacity", default: -1
     t.integer "campus_id"
     t.integer "tutorial_stream_id"
-    t.integer  "room_id"
+    t.integer "room_id"
     t.index ["campus_id"], name: "index_tutorials_on_campus_id"
     t.index ["tutorial_stream_id"], name: "index_tutorials_on_tutorial_stream_id"
     t.index ["unit_id"], name: "index_tutorials_on_unit_id"
     t.index ["unit_role_id"], name: "index_tutorials_on_unit_role_id"
   end
 
-  create_table "unit_roles", force: :cascade do |t|
+  create_table "unit_roles", id: :serial, force: :cascade do |t|
     t.integer "user_id"
     t.integer "tutorial_id"
     t.datetime "created_at", null: false
@@ -377,7 +377,7 @@ ActiveRecord::Schema.define(version: 2021_07_25_051039) do
     t.index ["user_id"], name: "index_unit_roles_on_user_id"
   end
 
-  create_table "units", force: :cascade do |t|
+  create_table "units", id: :serial, force: :cascade do |t|
     t.string "name", limit: 255
     t.string "description", limit: 4096
     t.datetime "start_date"
@@ -400,7 +400,7 @@ ActiveRecord::Schema.define(version: 2021_07_25_051039) do
     t.index ["teaching_period_id"], name: "index_units_on_teaching_period_id"
   end
 
-  create_table "users", force: :cascade do |t|
+  create_table "users", id: :serial, force: :cascade do |t|
     t.string "email", limit: 255, default: "", null: false
     t.string "encrypted_password", limit: 255, default: "", null: false
     t.string "reset_password_token", limit: 255
@@ -429,13 +429,13 @@ ActiveRecord::Schema.define(version: 2021_07_25_051039) do
     t.index ["login_id"], name: "index_users_on_login_id", unique: true
   end
 
-  create_table "webcal_unit_exclusions", force: :cascade do |t|
+  create_table "webcal_unit_exclusions", id: :serial, force: :cascade do |t|
     t.integer "webcal_id", null: false
     t.integer "unit_id", null: false
     t.index ["unit_id", "webcal_id"], name: "index_webcal_unit_exclusions_on_unit_id_and_webcal_id", unique: true
   end
 
-  create_table "webcals", force: :cascade do |t|
+  create_table "webcals", id: :serial, force: :cascade do |t|
     t.string "guid", limit: 36, null: false
     t.boolean "include_start_dates", default: false, null: false
     t.integer "user_id"
