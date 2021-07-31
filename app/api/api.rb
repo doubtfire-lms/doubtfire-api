@@ -49,7 +49,8 @@ module Api
     mount Api::ActivityTypesPublicApi
     mount Api::AuthenticationApi
     mount Api::BreaksApi
-    mount Api::CheckinsApi
+    mount Api::IotrackPublicApi
+    mount Api::IotrackAuthenticatedApi
     mount Api::DiscussionCommentApi
     mount Api::ExtensionCommentsApi
     mount Api::GroupSetsApi
@@ -85,6 +86,7 @@ module Api
     AuthenticationHelpers.add_auth_to Api::DiscussionCommentApi
     AuthenticationHelpers.add_auth_to Api::ExtensionCommentsApi
     AuthenticationHelpers.add_auth_to Api::GroupSetsApi
+    AuthenticationHelpers.add_auth_to Api::IotrackAuthenticatedApi
     AuthenticationHelpers.add_auth_to Api::LearningOutcomesApi
     AuthenticationHelpers.add_auth_to Api::LearningAlignmentApi
     AuthenticationHelpers.add_auth_to Api::ProjectsApi

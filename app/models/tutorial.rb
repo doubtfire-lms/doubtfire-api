@@ -75,6 +75,11 @@ class Tutorial < ApplicationRecord
     projects.where('enrolled = true').count
   end
 
+  def in_session
+    # TODO: Implement logic
+    true
+  end
+
   private
   def can_destroy?
     active_enrolment_count = num_students
