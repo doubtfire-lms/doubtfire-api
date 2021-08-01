@@ -1,6 +1,6 @@
 require 'test_helper'
 
-class StudentsApiTest < ActiveSupport::TestCase
+class IoTrackApiTest < ActiveSupport::TestCase
   include Rack::Test::Methods
   include TestHelpers::AuthHelper
   include TestHelpers::JsonHelper
@@ -14,7 +14,6 @@ class StudentsApiTest < ActiveSupport::TestCase
     card = FactoryBot.create(:id_card)
 
     json_data = { card_id: card.card_number, room_number: room.room_number }
-
     post_json '/api/iotrack/check-in-out', json_data
 
     assert_equal 201, last_response.status
@@ -26,7 +25,6 @@ class StudentsApiTest < ActiveSupport::TestCase
     room = FactoryBot.create(:room)
 
     json_data = { card_id: 'non-existent-card', room_number: room.room_number }
-
     post_json '/api/iotrack/check-in-out', json_data
 
     assert_equal 201, last_response.status
@@ -38,12 +36,10 @@ class StudentsApiTest < ActiveSupport::TestCase
   def test_check_in_records_correct_checkin_at_timestamp
     room = FactoryBot.create(:room)
     card = FactoryBot.create(:id_card)
-
-    json_data = { card_id: card.card_number, room_number: room.room_number }
-
     freeze_time
     expected_time = Time.zone.now
 
+    json_data = { card_id: card.card_number, room_number: room.room_number }
     post_json '/api/iotrack/check-in-out', json_data
 
     assert_equal 201, last_response.status
@@ -57,7 +53,6 @@ class StudentsApiTest < ActiveSupport::TestCase
     checkin = FactoryBot.create(:check_in, room: room, id_card: card)
 
     json_data = { card_id: card.card_number, room_number: room.room_number }
-
     post_json '/api/iotrack/check-in-out', json_data
 
     assert_equal 201, last_response.status
@@ -68,12 +63,10 @@ class StudentsApiTest < ActiveSupport::TestCase
     room = FactoryBot.create(:room)
     card = FactoryBot.create(:id_card)
     checkin = FactoryBot.create(:check_in, room: room, id_card: card)
-
-    json_data = { card_id: card.card_number, room_number: room.room_number }
-
     freeze_time
     expected_time = Time.zone.now
 
+    json_data = { card_id: card.card_number, room_number: room.room_number }
     post_json '/api/iotrack/check-in-out', json_data
 
     assert_equal 201, last_response.status
@@ -81,11 +74,45 @@ class StudentsApiTest < ActiveSupport::TestCase
     assert_equal checkin.reload.checkout_at, expected_time
   end
 
-  # def test_seat_assignment_records_seat_correctly_when_there_is_a_current_checkin_session
-  #   # TODO
-  # end
+  def test_seat_assignment_records_seat_correctly_when_there_is_a_current_checkin_session
+    room = FactoryBot.create(:room)
+    user = FactoryBot.create(:user)
+    card = FactoryBot.create(:id_card, user: user)
+    checkin = FactoryBot.create(:check_in, room: room, id_card: card)
+    seat_number = '9'
 
-  # def test_seat_assignment_fails_when_there_is_no_current_checkin_session
-  #   # TODO
-  # end
+    add_auth_header_for(user: user)
+    json_data = { room_number: room.room_number, seat_number: seat_number }
+    post_json '/api/iotrack/assing-seat', json_data
+
+    assert_equal 201, last_response.status
+    assert_equal checkin.reload.seat, seat_number
+  end
+
+  def test_seat_assignment_fails_when_there_is_no_current_checkin_session
+    room = FactoryBot.create(:room)
+    user = FactoryBot.create(:user)
+    card = FactoryBot.create(:id_card, user: user)
+    seat_number = '9'
+
+    add_auth_header_for(user: user)
+    json_data = { room_number: room.room_number, seat_number: seat_number }
+    post_json '/api/iotrack/assing-seat', json_data
+
+    assert_equal 403, last_response.status
+  end
+
+  def test_seat_assignment_fails_when_the_id_card_does_not_have_an_associated_user
+    room = FactoryBot.create(:room)
+    user = FactoryBot.create(:user)
+    card = FactoryBot.create(:id_card)
+    checkin = FactoryBot.create(:check_in, room: room, id_card: card)
+    seat_number = '9'
+
+    add_auth_header_for(user: user)
+    json_data = { room_number: room.room_number, seat_number: seat_number }
+    post_json '/api/iotrack/assing-seat', json_data
+
+    assert_equal 403, last_response.status
+  end
 end

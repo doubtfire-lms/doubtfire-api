@@ -60,11 +60,31 @@ module Api
         end
       end
 
-      # TODO: At least one of timie_limit or tutorial is required
-
       room.checkout_all tutorial, params[:time_limit]
+    end
 
-      # MEETING: How would I know if the student is in the tutorial or not? Note that an ID Card is not necessarily attached to a student
+    desc 'Assign seat to a check in record'
+    params do
+      requires :room_number, type: String, desc: 'The room number that the seat is at'
+      requires :seat_number, type: String, desc: 'The seat number to assign to the check in record'
+    end
+    post '/iotrack/assing-seat' do
+      unless current_user.is_student?
+        error!({ error: "Only Students can perform this action" }, 403)
+      end
+
+      room = Room.find_by room_number: params[:room_number]
+
+      unless room.present?
+        error!({ error: "Couldn't find a room with number #{params[:room_number]}" }, 403)
+      end
+
+      unless (checkin = CheckIn.only_active.includes(id_card: :user).where(room: room).where(user: { id: current_user.id }).first).present?
+        error!({ error: "Couldn't find an active check in record for you at room #{params[:room_number]}. If you did swipe your card, your student card might not be linked to your OnTrack account. Please ask your tutor for help." }, 403)
+      end
+
+      checkin.seat = params[:seat_number]
+      checkin.save
     end
   end
 end

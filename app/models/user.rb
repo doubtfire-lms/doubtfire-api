@@ -158,6 +158,10 @@ class User < ApplicationRecord
     self[:username] = name.downcase
   end
 
+  def is_student?
+    role_id == Role.student_id
+  end
+
   def has_student_capability?
     true
   end
