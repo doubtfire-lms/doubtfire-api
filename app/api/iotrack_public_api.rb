@@ -17,7 +17,7 @@ module Api
         error!({ error: "Couldn't find a room with number #{params[:room_number]}" }, 403)
       end
 
-      if record = CheckIn.where(id_card: id_card, room: room).only_active.first.present?
+      if (record = CheckIn.where(id_card: id_card, room: room).only_active.first).present?
         record.checkout_at = Time.zone.now
         record.save
       else
