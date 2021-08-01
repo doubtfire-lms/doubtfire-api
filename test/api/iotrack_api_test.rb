@@ -59,6 +59,21 @@ class IoTrackApiTest < ActiveSupport::TestCase
     assert_equal last_response_body['checked_out'], true
   end
 
+  def test_check_out_changes_timestamp_if_checkout_timestamp_was_in_the_future
+    room = FactoryBot.create(:room)
+    card = FactoryBot.create(:id_card)
+    checkin = FactoryBot.create(:check_in, checkout_at: Time.zone.now + 1.year, room: room, id_card: card)
+    freeze_time
+    expected_time = Time.zone.now
+
+    json_data = { card_id: card.card_number, room_number: room.room_number }
+    post_json '/api/iotrack/check-in-out', json_data
+
+    assert_equal 201, last_response.status
+    assert_equal last_response_body['checked_out'], true
+    assert_equal checkin.reload.checkout_at, expected_time
+  end
+
   def test_check_out_records_correct_checkout_timestamp
     room = FactoryBot.create(:room)
     card = FactoryBot.create(:id_card)
