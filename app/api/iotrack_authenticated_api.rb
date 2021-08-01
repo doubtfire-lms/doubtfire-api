@@ -15,7 +15,7 @@ module Api
     end
     get '/iotrack/check-ins' do
       unless authorise? current_user, User, :act_tutor
-        error!({ error: "...." }, 403)
+        error!({ error: "Only Tutors can perform this action" }, 403)
       end
 
       room = Room.find_by room_number: params[:room_number]
