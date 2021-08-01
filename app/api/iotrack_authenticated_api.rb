@@ -1,5 +1,4 @@
 require 'grape'
-require 'project_serializer'
 
 module Api
   class IotrackAuthenticatedApi < Grape::API
