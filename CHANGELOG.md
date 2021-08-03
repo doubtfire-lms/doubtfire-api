@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [5.0.0-rc1](https://github.com/doubtfire-lms/doubtfire-deploy/compare/v2.0.0...v5.0.0-rc1) (2021-08-03)
+
+
+### Bug Fixes
+
+* Correctly assign webcal reminder descriptions. Fixes [#316](https://github.com/doubtfire-lms/doubtfire-deploy/issues/316) ([fa178b7](https://github.com/doubtfire-lms/doubtfire-deploy/commit/fa178b793090de80dd2359258e81d90354dac114))
+* Ensure Deakin star activities only include associated teaching period ([1e3e981](https://github.com/doubtfire-lms/doubtfire-deploy/commit/1e3e981d2bff0ae714c527143cd18307a1a9a6c9))
+* Remove harcoded user ID in webcal exclusion update ([d7e66aa](https://github.com/doubtfire-lms/doubtfire-deploy/commit/d7e66aa353dd88da98d51c30732ad4ad674090da))
+* Run migration ChangeDoNotResubmit ([6354aff](https://github.com/doubtfire-lms/doubtfire-deploy/commit/6354affa6162a474c7caf6fb2ee769e204727340))
+
 ## 2.0.0 (2021-07-29)
 
 
