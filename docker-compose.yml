@@ -99,7 +99,7 @@ services:
   doubtfire-overseer:
     container_name: doubtfire-overseer
     build:
-      context: ../overseer
+      context: ../doubtfire-overseer
     command: bundle exec ruby ./app.rb
     depends_on:
       - doubtfire-mq
@@ -114,7 +114,7 @@ services:
 
     volumes:
       # App's code path - not required in final image
-      - ../overseer/:/app
+      - ../doubtfire-overseer/:/app
 
       # Host path for writing the output of execution - required.
       # TODO: Test by mounting an actual XFS volume.
