@@ -2,6 +2,64 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [5.0.0-0](https://github.com/macite/doubtfire-deploy/compare/v4.0.0...v5.0.0-0) (2021-08-04)
+
+
+### Features
+
+* Add ability to init production ([bd200e6](https://github.com/macite/doubtfire-deploy/commit/bd200e6295db8f55dbcd77f6bad6b462a4e98964))
+
+
+### Bug Fixes
+
+* Add missing comma in unit.rb ([36c4fac](https://github.com/macite/doubtfire-deploy/commit/36c4fac7c04b50e4db1f7de12540a9206e858660))
+* Add missing self keyword ([f4be643](https://github.com/macite/doubtfire-deploy/commit/f4be643108b30cf43877d3342341837288712f46))
+* Add rescue/ensure block to ontrack_receive_action ([53d8d3c](https://github.com/macite/doubtfire-deploy/commit/53d8d3cf0dfe5353cdfd73bcf222088efea2bdea))
+* align overseer assessment with single assessment comment ([25dbaf8](https://github.com/macite/doubtfire-deploy/commit/25dbaf802a410863d44db26192511788988728ee))
+* Allow protocol to be included in host configuration ([142d80d](https://github.com/macite/doubtfire-deploy/commit/142d80d78a71d5fd33a87bbd64e0f348f15e8d58))
+* Change password back to what it was ([73e6bd8](https://github.com/macite/doubtfire-deploy/commit/73e6bd884f6a558dba1a099f20e235558f5a1a1b))
+* correct convert submission to pdf to use new folder by default ([a4ed642](https://github.com/macite/doubtfire-deploy/commit/a4ed642cf4c4db29b01e14319a3652314126c972))
+* correct development redirect url on aaf auth ([badf14f](https://github.com/macite/doubtfire-deploy/commit/badf14f43542bd30759708d68a3756d0801d4cbc))
+* correct hard coded path to overseer instance ([627d257](https://github.com/macite/doubtfire-deploy/commit/627d2576616be6e7de52d17cc106deb1df105d35))
+* correct overseer env settings in compose ([1daabe8](https://github.com/macite/doubtfire-deploy/commit/1daabe800ef1cafd36b2391dfcdce2e8e03012dd))
+* correct port for developemnt to use 3000 ([778442d](https://github.com/macite/doubtfire-deploy/commit/778442d146ad7db35f7182ae5d9be53bab44aabe))
+* Correct request in skip prod to use STDIN ([6c2c8ef](https://github.com/macite/doubtfire-deploy/commit/6c2c8ef0d1d985b151f38995c430bebbcc892158))
+* Download the task assessment resources authorisation ([d2ae227](https://github.com/macite/doubtfire-deploy/commit/d2ae2274d9f73067b5972ccf251933e7077773eb))
+* Ensure docker image installs bundler ([26110d7](https://github.com/macite/doubtfire-deploy/commit/26110d7eddae3e490c76ff3b6363912bd82ab2ea))
+* ensure tasks with assessments can be destroyed cleanly ([e322b8d](https://github.com/macite/doubtfire-deploy/commit/e322b8d21bbc99a63a928ef9b5b6b7e4bed34bc8))
+* ensure that init does not add task status twice ([86d9dd4](https://github.com/macite/doubtfire-deploy/commit/86d9dd41605fea50d30a4a07bc742ab123d74b8c))
+* ensure two newlines between comment text in assessment comment ([3dd7021](https://github.com/macite/doubtfire-deploy/commit/3dd7021ea5c1bc1329f674669ef7f95a6f96fb2e))
+* File permissions for overseer to operate upon ([e3708aa](https://github.com/macite/doubtfire-deploy/commit/e3708aa03f0fb273a0642b7544115b842d97e8d7))
+* Gemfile.lock revision for bunny-pub-sub ([c5b137a](https://github.com/macite/doubtfire-deploy/commit/c5b137afe473e4a23da4857f81eb87b715dda904))
+* Include :has_task_assessment_resources? ([6975790](https://github.com/macite/doubtfire-deploy/commit/69757903ab217f4f96efdb6f9c095523ffd03953))
+* Let config.overseer_images exist without OVERSEER_ENABLED flag ([56e6874](https://github.com/macite/doubtfire-deploy/commit/56e687422e9987858058b078688603f0835d4b04))
+* Missing `sm_instance` method error ([94fd461](https://github.com/macite/doubtfire-deploy/commit/94fd46166a4bfe96ce988f323c309d040a6fe73e))
+* New assessment API bugs ([0f4273c](https://github.com/macite/doubtfire-deploy/commit/0f4273c3a39d8fd8d0117720f9fc3e18c076ae84))
+* Quotes in application.rb ([d55ec13](https://github.com/macite/doubtfire-deploy/commit/d55ec134928bc5994dd4539d2144c71532e9b9b9))
+* Remove breaking empty test ([97a9c3d](https://github.com/macite/doubtfire-deploy/commit/97a9c3df1025aa7587f4c5fce5929fe2271a8ebc))
+* Remove bundle exec rake db:setup step ([fcc7e26](https://github.com/macite/doubtfire-deploy/commit/fcc7e267227a5d6238fd817d1d480b71f9dc3082))
+* Remove clutter from submission API ([15f0361](https://github.com/macite/doubtfire-deploy/commit/15f0361d8a15dd8885a0dfc082ac5af9e1f8ec02))
+* Require bunny-pub-sub in all environments ([bf75374](https://github.com/macite/doubtfire-deploy/commit/bf753749b99a58e2af5731b8519c54b5fa7a5d3d))
+* Routes param description for docker_image_name_tag ([eec9ed3](https://github.com/macite/doubtfire-deploy/commit/eec9ed399407d1b2d7fd9bd4f8e8e06ef4faea88))
+* Set default units.assessment_enabled to true ([d2b1c89](https://github.com/macite/doubtfire-deploy/commit/d2b1c89211daf4d746d1b753bcbc7dd40b924507))
+* Strip path till submission history for easy mounting ([c3d43b0](https://github.com/macite/doubtfire-deploy/commit/c3d43b01c1a4d9fdc2b68ca048c4a364bdf03f4a))
+* Strip till /doubtfire-api instead ([e0b599c](https://github.com/macite/doubtfire-deploy/commit/e0b599c9012fcf7f24d4166e22119e4d23d27103))
+* Switch task definition to use docker image model ([68212eb](https://github.com/macite/doubtfire-deploy/commit/68212eb7093cdb4b36b678e8125a770cb64e29b3))
+* Task comments generation ([91eacae](https://github.com/macite/doubtfire-deploy/commit/91eacae50a5b5989e975034421bf65378efef963))
+* Task status error ([01a0f9e](https://github.com/macite/doubtfire-deploy/commit/01a0f9edceae11674898abf1700f055ba20d97f9))
+* test moving file into place ([fe0681d](https://github.com/macite/doubtfire-deploy/commit/fe0681d5c40965f64ac481255106bbeb340bbf49))
+* Typo in application.rb ([9e8e930](https://github.com/macite/doubtfire-deploy/commit/9e8e9301e6a437f8b7705eacd059ea19c9c92599))
+* Update bunny-pub-sub version ([6e3cbe5](https://github.com/macite/doubtfire-deploy/commit/6e3cbe557959e28823b558ec7bdc514beb4579bf))
+* Update bunny-pub-sub version in Gemfile.lock ([971eb80](https://github.com/macite/doubtfire-deploy/commit/971eb802a37871296228fdfca02a8347f85f1fa6))
+* Update config in compose to include production ([941ea1c](https://github.com/macite/doubtfire-deploy/commit/941ea1c2b760f5a4fdcda9f80632f16471efcfca))
+* Update overseer actions to work with new structure ([96836d2](https://github.com/macite/doubtfire-deploy/commit/96836d200dbcdc9bc1c11e4e99dc09e71890b7c4))
+* Update overseer config to use new fixed settings ([a520b64](https://github.com/macite/doubtfire-deploy/commit/a520b64a53e026caa8828777ac998fd5218a01f8))
+* Uploading new files replaces existing files in student_work/new/task_id folder ([a8a4563](https://github.com/macite/doubtfire-deploy/commit/a8a4563fa372479e4b61c4a9646d19753e711702))
+* Validation for docker_image_name_tag now respects nil values ([23408f7](https://github.com/macite/doubtfire-deploy/commit/23408f76b6d173ff5e36c8a8072096f234e8af1b))
+* Validators for docker_image_name_tag ([372fe97](https://github.com/macite/doubtfire-deploy/commit/372fe97235584a291b4a8ddb97d109d4cfe50595))
+* Variable name ([5303ceb](https://github.com/macite/doubtfire-deploy/commit/5303ceb48be6d9e768a67560b84bd5a8e20c2f7c))
+* YAML Docker image name, disable image ([3fe985b](https://github.com/macite/doubtfire-deploy/commit/3fe985bc6fc8b223eb9e6f8c5927d0def4612f64))
+
 ## [5.0.0-rc1](https://github.com/doubtfire-lms/doubtfire-deploy/compare/v2.0.0...v5.0.0-rc1) (2021-08-03)
 
 
