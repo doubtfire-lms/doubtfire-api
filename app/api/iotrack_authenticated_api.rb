@@ -86,5 +86,30 @@ module Api
       checkin.seat = params[:seat_number]
       checkin.save
     end
+
+    desc 'Assign user to Id card'
+    params do
+      requires :id_card_id, type: String, desc: 'The ID of an ID Card'
+      requires :username, type: String, desc: 'The username of the student'
+    end
+    post '/iotrack/assign-user-to-id-card' do
+      unless authorise? current_user, User, :act_tutor
+        error!({ error: "Only Tutors can perform this action" }, 403)
+      end
+
+      id_card = IdCard.find params[:id_card_id]
+
+      unless id_card.present?
+        error!({ error: "Couldn't find an id card with id #{params[:id_card_id]}" }, 403)
+      end
+
+      user = User.find_by username params[:username]
+
+      unless user.present?
+        error!({ error: "Couldn't find a user with username #{params[:username]}" }, 403)
+      end
+
+      id_card.user = user
+    end
   end
 end
