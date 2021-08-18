@@ -88,7 +88,6 @@ services:
     command: npm start
     ports:
       - "4200:4200"
-    mem_limit: 5gb
     depends_on:
       - doubtfire-api
     volumes:
