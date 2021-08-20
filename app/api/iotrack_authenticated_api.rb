@@ -41,7 +41,7 @@ module Api
       optional :time_limit, type: Integer, desc: 'The max number of minutes to exclude check ins after'
       at_least_one_of :tutorial_id, :time_limit
     end
-    post '/iotrack/checkout-everyone-not-in-tutorial' do
+    put '/iotrack/checkout-everyone-not-in-tutorial' do
       room = Room.find_by room_number: params[:room_number]
 
       unless room.present?
@@ -70,7 +70,7 @@ module Api
       requires :room_number, type: String, desc: 'The room number that the seat is at'
       requires :seat_number, type: String, desc: 'The seat number to assign to the check in record'
     end
-    post '/iotrack/assing-seat' do
+    put '/iotrack/assing-seat' do
       unless current_user.is_student?
         error!({ error: "Only Students can perform this action" }, 403)
       end
@@ -94,7 +94,7 @@ module Api
       requires :id_card_id, type: String, desc: 'The ID of an ID Card'
       requires :username, type: String, desc: 'The username of the student'
     end
-    post '/iotrack/assign-user-to-id-card' do
+    put '/iotrack/assign-user-to-id-card' do
       unless authorise? current_user, User, :act_tutor
         error!({ error: "Only Tutors can perform this action" }, 403)
       end
