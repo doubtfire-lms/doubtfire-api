@@ -9,6 +9,32 @@ module Api
       authenticated?
     end
 
+    desc 'Checkout a specific checkin record'
+    params do
+      requires :checkin_id, type: String, desc: 'The id of the checkin record'
+    end
+    put '/iotrack/checkout/:checkin_id' do
+      unless authorise? current_user, User, :act_tutor
+        error!({ error: "Only Tutors can perform this action" }, 403)
+      end
+
+      checkin = CheckIn.find params[:checkin_id]
+
+      unless checkin.present?
+        error!({ error: "Couldn't find a check-in with number #{params[:checkin]}" }, 403)
+      end
+
+      checkin.checkout_at = Time.zone.now
+      checkin.save
+
+      {
+        id: checkin.id,
+        card: checkin.id_card.id,
+        seat: checkin.seat,
+        username: checkin.id_card.user.present? ? checkin.id_card.user.username : nil
+      }
+    end
+
     desc 'Get checked in students for a room'
     params do
       requires :room_number, type: String, desc: 'The room number to get checked in students for'
