@@ -32,12 +32,12 @@ module Api
       end
     end
 
-    # TODO: checkout every one in the room not in this tutorial
-    desc 'Checkout Everyone in the room who is not assigned to this tutorial'
+    desc 'Checkout Everyone in the room according to the provided parameters'
     params do
       requires :room_number, type: String, desc: 'The room number to checkout students from'
-      optional :tutorial_id, type: String, desc: 'The Tutorial to leave its students checked at to the room'
-      optional :time_limit, type: Integer, desc: 'The max number of minutes ..'
+      optional :tutorial_id, type: String, desc: 'The Tutorial to leave its students checked in at to the room'
+      optional :time_limit, type: Integer, desc: 'The max number of minutes to exclude check ins after'
+      at_least_one_of :tutorial_id, :time_limit
     end
     post '/iotrack/checkout-everyone-not-in-tutorial' do
       room = Room.find_by room_number: params[:room_number]

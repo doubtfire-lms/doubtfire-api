@@ -132,6 +132,8 @@ class User < ApplicationRecord
   has_many    :unit_roles, dependent: :destroy
   has_many    :projects
   has_many    :auth_tokens
+  has_many    :id_cards, dependent: :destroy
+  has_many    :check_ins, through: :id_cards
   has_one     :webcal, dependent: :destroy
 
   # Model validations/constraints
