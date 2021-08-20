@@ -26,8 +26,10 @@ module Api
 
       CheckIn.where(room: room).only_active.includes(id_card: :user).map do |checkin|
         {
+          id: checkin.id,
           card: checkin.id_card.id,
-          user: checkin.id_card.user.present? ? checkin.id_card.user.username : nil
+          seat: checkin.seat,
+          username: checkin.id_card.user.present? ? checkin.id_card.user.username : nil
         }
       end
     end
@@ -111,6 +113,13 @@ module Api
 
       id_card.user = user
       id_card.save
+      
+      {
+        id: checkin.id
+        card: checkin.id_card.id,
+        seat: checkin.seat,
+        username: checkin.id_card.user.username
+      }
     end
   end
 end
