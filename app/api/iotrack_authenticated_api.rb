@@ -141,7 +141,7 @@ module Api
       id_card.save
       
       {
-        id: checkin.id
+        id: checkin.id,
         card: checkin.id_card.id,
         seat: checkin.seat,
         username: checkin.id_card.user.username
