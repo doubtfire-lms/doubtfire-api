@@ -110,6 +110,7 @@ module Api
       end
 
       id_card.user = user
+      id_card.save
     end
   end
 end
