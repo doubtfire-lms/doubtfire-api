@@ -9,7 +9,7 @@ class Room < ApplicationRecord
       to_checkout = to_checkout.where.not(id: exclude)
     end
 
-    if time_limit.present?
+    if time_limit.present? && time_limit > 0
       to_checkout = to_checkout.where("checkin_at < ?", Time.zone.now - time_limit.minutes)
     end
 
