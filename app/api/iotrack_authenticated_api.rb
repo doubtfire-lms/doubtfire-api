@@ -131,7 +131,7 @@ module Api
         error!({ error: "Couldn't find an id card with id #{params[:id_card_id]}" }, 403)
       end
 
-      user = User.find_by username params[:username]
+      user = User.find_by username: params[:username]
 
       unless user.present?
         error!({ error: "Couldn't find a user with username #{params[:username]}" }, 403)
