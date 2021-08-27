@@ -139,13 +139,6 @@ module Api
 
       id_card.user = user
       id_card.save
-      
-      {
-        id: checkin.id,
-        card: checkin.id_card.id,
-        seat: checkin.seat,
-        username: checkin.id_card.user.username
-      }
     end
   end
 end
