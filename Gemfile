@@ -2,10 +2,10 @@ source 'https://rubygems.org'
 
 # Ruby versions for various enviornments
 ruby_versions = {
-  development:  '~>2.3.1',
-  test:         '~>2.3.1',
-  staging:      '~>2.3.1',
-  production:   '~>2.3.1'
+  development:  '~>2.3.8',
+  test:         '~>2.3.8',
+  staging:      '~>2.3.8',
+  production:   '~>2.3.8'
 }
 # Get the ruby version for the current enviornment
 ruby ruby_versions[(ENV['RAILS_ENV'] || 'development').to_sym]
@@ -22,7 +22,6 @@ group :development, :test do
   gem 'better_errors'
   gem 'rails_best_practices'
   gem 'thin'
-  gem 'rubocop', '0.46.0'
   gem 'factory_bot_rails'
 end
 
@@ -48,6 +47,7 @@ end
 gem 'devise', '~> 4.1.1'
 gem 'devise_ldap_authenticatable'
 gem 'json-jwt', '1.7.0'
+gem 'ruby-saml', '~> 1.11.0'
 
 # Student submission
 gem 'coderay'

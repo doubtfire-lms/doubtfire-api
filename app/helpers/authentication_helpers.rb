@@ -58,6 +58,14 @@ module AuthenticationHelpers
   #
   # Returns true iff using AAF devise auth strategy
   #
+  def saml?
+    return true
+    Doubtfire::Application.config.auth_method == :saml
+  end
+
+  #
+  # Returns true iff using AAF devise auth strategy
+  #
   def aaf_auth?
     Doubtfire::Application.config.auth_method == :aaf
   end
