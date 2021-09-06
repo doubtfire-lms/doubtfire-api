@@ -16,7 +16,7 @@ module Api
     #
     # Sign in - only mounted if AAF auth is NOT used
     #
-    if AuthenticationHelpers.aaf_auth? or AuthenticationHelpers.saml?
+    if AuthenticationHelpers.aaf_auth? or AuthenticationHelpers.saml_auth?
       desc 'Sign in'
       params do
         requires :username, type: String, desc: 'User username'
@@ -84,82 +84,38 @@ module Api
     end
 
     #
-    # AAF JWT callback - only mounted if AAF auth is used
+    # AAF JWT callback - only mounted if AAF SAML is used
+    # This isn't really a JWT, we will treat it as if it's a SAML response
     #
-    desc 'SAML2.0 auth'
-    params do
-      requires :SAMLResponse, type: String, desc: 'Data provided for further processing.'
-    end
-    post '/auth/jwt' do
-      # puts "test"
-      # puts request.headers
-      # puts request.params
-
-      settings = OneLogin::RubySaml::Settings.new
-
-      settings.assertion_consumer_service_url = "http://localhost:3000/api/auth/jwt"
-      settings.sp_entity_id                   = "urn:auth0:dev-ye2lxmau:test-doubtfire-connection"
-      settings.idp_sso_target_url             = "https://dev-ye2lxmau.us.auth0.com/login/callback"
-      settings.idp_cert           =
-      %{-----BEGIN CERTIFICATE-----
-      MIIDETCCAfmgAwIBAgIJZNKEj+ZsGELyMA0GCSqGSIb3DQEBCwUAMCYxJDAiBgNV
-      BAMTG3Rlc3QtZG91YnRmaXJlLmF1LmF1dGgwLmNvbTAeFw0yMTA4MjkwNDQ0MDda
-      Fw0zNTA1MDgwNDQ0MDdaMCYxJDAiBgNVBAMTG3Rlc3QtZG91YnRmaXJlLmF1LmF1
-      dGgwLmNvbTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMTUWHcOGLKH
-      wzs5OJbpibDNqzYu/03YfzxgetCtQqXIenqCpQX03SGVBXi7HMEkggTc5lhD3TWZ
-      qrdp+RtocxpMMzDoesLco0hLNfNmXeIce+8Q5kVoppmJC5UHQ67cO0NGXfplf3c5
-      utkyZSLHy27P9kF1hu/FndbuocQPerHOyrJXsjKtIjAML2/jVmstjhdnZDl9WYG6
-      oVRd/nXx2dFGcDLtzQ8R77H3uW2a4DHKYv4hUZUlenp50ATLsiHWbUEoAkIHH7VK
-      ryiBNwTniTAKJZUXto9Pe+XdQP2BM4O5Ga7gFCsO1urK+xgunmb6WATXqxN5jGMG
-      49ZDtyuSR5sCAwEAAaNCMEAwDwYDVR0TAQH/BAUwAwEB/zAdBgNVHQ4EFgQU19lB
-      04GXg9MWY/cWof8wiI7e9a4wDgYDVR0PAQH/BAQDAgKEMA0GCSqGSIb3DQEBCwUA
-      A4IBAQCM1QuQTUbEE3FCZcHbl7HgmnUi/N38ELggh3cVIENnb07XjYh42uW2KGQA
-      VEY0JJQSiPh1dEFLWbnpbe9uKsEaNwHdREvPgrSeB2CPnzTLFKZ8Per6icONRotd
-      KQP5TXBLZXms+WdBTawvWG0sgvGtLP0EZ9WnMjhGZshnpecYMqzQZ80HT8ZwdFkY
-      5h08tGl3PU0s0+T91+sQR91MLoNI4X2JoIw59p2G1J2AGOh9Oueh+3Z8NrrmsNii
-      T7TwYoip7pHyT7TWPX93EGL4Q5R38ATnOXthiQCXdwBZE2DPYPjjAj546Y+MOilp
-      DWiJIt0izMtMFcO1rWmWoLzBTL7H
-      -----END CERTIFICATE-----}
-      settings.name_identifier_format         = "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress"
-
-      # Optional for most SAML IdPs
-      settings.authn_context = "urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport"
-      # settings.allowed_clock_drift = 1.second
-
-      # Optional. Describe according to IdP specification (if supported) which attributes the SP desires to receive in SAMLResponse.
-      # settings.attributes_index = 5
-      # Optional. Describe an attribute consuming service for support of additional attributes.
-      # settings.attribute_consuming_service.configure do
-      #   service_name "Service"
-      #   service_index 5
-      #   add_attribute :name => "Name", :name_format => "Name Format", :friendly_name => "Friendly Name"
-      # end
-
-      # request = OneLogin::RubySaml::Authrequest.new
-      # redirect_to(request.create(settings))
-
-      # def consume
-      response = OneLogin::RubySaml::Response.new(params[:SAMLResponse], :allowed_clock_drift => 1.second, :settings => settings)
-      response.settings = settings
-
-      # We validate the SAML Response and check if the user already exists in the system
-      if response.is_valid?
-        puts response
-        login_id = response.name_id
-        attributes = response.attributes
-        puts
-        puts attributes
-        # email = response.mail
-        # authorize_success, log the user
-        # session[:userid] = response.nameid
-        # session[:attributes] = response.attributes
-      else
-        # authorize_failure  # This method shows an error message
-        y response.errors
-        # List of errors is available in response.errors array
+    if AuthenticationHelpers.saml_auth?
+      desc 'SAML2.0 auth'
+      params do
+        requires :SAMLResponse, type: String, desc: 'Data provided for further processing.'
       end
-      # end
-      # "test"
+      post '/auth/jwt' do
+        # def consume
+        response = OneLogin::RubySaml::Response.new(params[:SAMLResponse], :allowed_clock_drift => 1.second, :settings => settings)
+        response.settings = settings
+
+        # We validate the SAML Response and check if the user already exists in the system
+        if response.is_valid?
+          puts response
+          login_id = response.name_id
+          attributes = response.attributes
+          puts
+          puts attributes
+          # email = response.mail
+          # authorize_success, log the user
+          # session[:userid] = response.nameid
+          # session[:attributes] = response.attributes
+        else
+          # authorize_failure  # This method shows an error message
+          y response.errors
+          # List of errors is available in response.errors array
+        end
+        # end
+        # "test"
+      end
     end
 
     #
@@ -263,13 +219,17 @@ module Api
     desc 'Authentication method configuration'
     get '/auth/method' do
       response = {
-        method: "saml"
+        method: "SAML2"
       }
-      puts response
-      response[:redirect_to] = "https://test-doubtfire.au.auth0.com/samlp/YxIdKTlw4sBYWkel3cFC3N7NRiVwTI6F"
+      # response[:redirect_to] = "https://test-doubtfire.au.auth0.com/samlp/YxIdKTlw4sBYWkel3cFC3N7NRiVwTI6F"
+      request = OneLogin::RubySaml::Authrequest.new
+      test_response = request.create(AuthenticationHelpers.saml_settings)
+      # test_response[:method]= "SAML2"
+      puts test_response
+      # response[:redirect_to] = "https://login.microsoftonline.com/352fcd02-3f33-4048-b702-fce5d36deb78/saml2"
       # response[:redirect_to] = Doubtfire::Application.config.aaf[:redirect_url]
 
-      response
+      test_response
     end
 
     #
