@@ -48,42 +48,14 @@ module Doubtfire
 
     # ==> SAML2.0 authentication
     if config.auth_method == :saml
-      # URL of the issuer (i.e., https://rapid.[test.]aaf.edu.au)
-      config.saml[:target_url] = 'localhost:4200/api/auth/jwt'
+      # URL to return the SAML response to (e.g., 'https://doubtfire.edu/api/auth/jwt'
+      config.saml[:consumer_target_url] = ENV['DF_SAML_SSO_CONSUMER_TARGET_URL']
+
       # URL of the registered application (e.g., https://doubtfire.unifoo.edu.au)
-      config.saml[:entity_id] = 'urn:auth0:dev-ye2lxmau:test-doubtfire-connection'
-      # The secure URL within your application that AAF Rapid Connect should
-      # POST responses to (e.g., https://doubtfire.unifoo.edu.au/auth/jwt)
-      config.saml[:callback_url] = 'localhost:4200/api/auth/jwt'
-      # URL of the unique url provided by rapid connect used for redirect
-      # (e.g., https://rapid.aaf.edu.au/jwt/authnrequest/auresearch/XXXXXXX)
-      config.saml[:redirect_url] = ENV['DF_AAF_UNIQUE_URL']
-      # URL of the identity provider (e.g., https://unifoo.edu.au/idp/shibboleth)
-      config.saml[:identity_provider_url] = 'https://test-doubtfire.au.auth0.com/samlp/YxIdKTlw4sBYWkel3cFC3N7NRiVwTI6F'
-      # The URL to redirect to after a signout
-      # config.saml[:auth_signout_url] = ENV['DF_AAF_AUTH_SIGNOUT_URL']
-      # Redirection URL to use on front-end
-      config.saml[:redirect_url] += "https://test-doubtfire.au.auth0.com/samlp/YxIdKTlw4sBYWkel3cFC3N7NRiVwTI6F"
-      # Check we have all values
-      config.saml[:idf_cert_fingerprint] = %{-----BEGIN CERTIFICATE-----
-      MIIDETCCAfmgAwIBAgIJZNKEj+ZsGELyMA0GCSqGSIb3DQEBCwUAMCYxJDAiBgNV
-      BAMTG3Rlc3QtZG91YnRmaXJlLmF1LmF1dGgwLmNvbTAeFw0yMTA4MjkwNDQ0MDda
-      Fw0zNTA1MDgwNDQ0MDdaMCYxJDAiBgNVBAMTG3Rlc3QtZG91YnRmaXJlLmF1LmF1
-      dGgwLmNvbTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMTUWHcOGLKH
-      wzs5OJbpibDNqzYu/03YfzxgetCtQqXIenqCpQX03SGVBXi7HMEkggTc5lhD3TWZ
-      qrdp+RtocxpMMzDoesLco0hLNfNmXeIce+8Q5kVoppmJC5UHQ67cO0NGXfplf3c5
-      utkyZSLHy27P9kF1hu/FndbuocQPerHOyrJXsjKtIjAML2/jVmstjhdnZDl9WYG6
-      oVRd/nXx2dFGcDLtzQ8R77H3uW2a4DHKYv4hUZUlenp50ATLsiHWbUEoAkIHH7VK
-      ryiBNwTniTAKJZUXto9Pe+XdQP2BM4O5Ga7gFCsO1urK+xgunmb6WATXqxN5jGMG
-      49ZDtyuSR5sCAwEAAaNCMEAwDwYDVR0TAQH/BAUwAwEB/zAdBgNVHQ4EFgQU19lB
-      04GXg9MWY/cWof8wiI7e9a4wDgYDVR0PAQH/BAQDAgKEMA0GCSqGSIb3DQEBCwUA
-      A4IBAQCM1QuQTUbEE3FCZcHbl7HgmnUi/N38ELggh3cVIENnb07XjYh42uW2KGQA
-      VEY0JJQSiPh1dEFLWbnpbe9uKsEaNwHdREvPgrSeB2CPnzTLFKZ8Per6icONRotd
-      KQP5TXBLZXms+WdBTawvWG0sgvGtLP0EZ9WnMjhGZshnpecYMqzQZ80HT8ZwdFkY
-      5h08tGl3PU0s0+T91+sQR91MLoNI4X2JoIw59p2G1J2AGOh9Oueh+3Z8NrrmsNii
-      T7TwYoip7pHyT7TWPX93EGL4Q5R38ATnOXthiQCXdwBZE2DPYPjjAj546Y+MOilp
-      DWiJIt0izMtMFcO1rWmWoLzBTL7H
-      -----END CERTIFICATE-----}
+      config.saml[:entity_id] = ENV['DF_SAML_SSO_SP_ENTITY_ID']
+
+      # The IDP SAML login URL, (e.g., "https://login.microsoftonline.com/352fcd02-3f33-4048-b702-fce5d36deb78/saml2")
+      config.saml[:idp_sso_target_url] = ENV['DF_SAML_SSO_IDP_TARGET_URL']
     end
 
     # ==> AAF authentication
