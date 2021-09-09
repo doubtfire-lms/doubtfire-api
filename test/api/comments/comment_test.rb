@@ -500,7 +500,7 @@ class CommentTest < ActiveSupport::TestCase
     td.save!
 
     data_to_post = {
-      trigger: 'ready_to_mark'
+      trigger: 'ready_for_feedback'
     }
 
     # Add auth_token and username to header
@@ -511,7 +511,7 @@ class CommentTest < ActiveSupport::TestCase
     assert_equal 201, last_response.status
 
     task = project.task_for_task_definition(td)
-    assert_equal TaskStatus.ready_to_mark, task.task_status
+    assert_equal TaskStatus.ready_for_feedback, task.task_status
 
     refute task.comments.last.new_for?(user)
     refute task.comments.last.new_for?(project.tutor_for(td))

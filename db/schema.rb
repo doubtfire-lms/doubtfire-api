@@ -125,6 +125,25 @@ ActiveRecord::Schema.define(version: 2021_04_13_044542) do
     t.index ["unit_id"], name: "index_learning_outcomes_on_unit_id"
   end
 
+  create_table "overseer_assessments", force: :cascade do |t|
+    t.integer  "task_id",              limit: 4,               null: false
+    t.string   "submission_timestamp", limit: 255,             null: false
+    t.string   "result_task_status",   limit: 255
+    t.integer  "status",               limit: 4,   default: 0, null: false
+    t.datetime "created_at",                                   null: false
+    t.datetime "updated_at",                                   null: false
+  end
+
+  add_index "overseer_assessments", ["task_id", "submission_timestamp"], name: "index_overseer_assessments_on_task_id_and_submission_timestamp", unique: true, using: :btree
+  add_index "overseer_assessments", ["task_id"], name: "index_overseer_assessments_on_task_id", using: :btree
+
+  create_table "overseer_images", force: :cascade do |t|
+    t.string   "name",       limit: 255, null: false
+    t.string   "tag",        limit: 255, null: false
+    t.datetime "created_at",             null: false
+    t.datetime "updated_at",             null: false
+  end
+
   create_table "logins", id: :serial, force: :cascade do |t|
     t.datetime "timestamp"
     t.integer "user_id"
@@ -198,6 +217,7 @@ ActiveRecord::Schema.define(version: 2021_04_13_044542) do
     t.integer "extension_weeks"
     t.string "extension_response"
     t.integer "reply_to_id"
+    t.integer  "overseer_assessment_id"
     t.index ["discussion_comment_id"], name: "index_task_comments_on_discussion_comment_id"
     t.index ["reply_to_id"], name: "index_task_comments_on_reply_to_id"
     t.index ["task_id"], name: "index_task_comments_on_task_id"
@@ -225,6 +245,8 @@ ActiveRecord::Schema.define(version: 2021_04_13_044542) do
     t.boolean "is_graded", default: false
     t.integer "max_quality_pts", default: 0
     t.integer "tutorial_stream_id"
+    t.boolean  "assessment_enabled",                                  default: false
+    t.integer  "overseer_image_id",
     t.index ["tutorial_stream_id"], name: "index_task_definitions_on_tutorial_stream_id"
     t.index ["unit_id"], name: "index_task_definitions_on_unit_id"
   end
@@ -375,6 +397,8 @@ ActiveRecord::Schema.define(version: 2021_04_13_044542) do
     t.boolean "allow_student_extension_requests", default: true, null: false
     t.integer "extension_weeks_on_resubmit_request", default: 1, null: false
     t.boolean "allow_student_change_tutorial", default: true, null: false
+    t.boolean  "assessment_enabled", default: true
+    t.integer  "overseer_image_id",
     t.index ["teaching_period_id"], name: "index_units_on_teaching_period_id"
   end
 
@@ -427,6 +451,7 @@ ActiveRecord::Schema.define(version: 2021_04_13_044542) do
   add_foreign_key "breaks", "teaching_periods"
   add_foreign_key "comments_read_receipts", "task_comments"
   add_foreign_key "comments_read_receipts", "users"
+  add_foreign_key "overseer_assessments", "tasks"
   add_foreign_key "projects", "campuses"
   add_foreign_key "task_comments", "users", column: "recipient_id"
   add_foreign_key "task_definitions", "tutorial_streams"

@@ -99,7 +99,7 @@ namespace :db do
             when 98..99
               DatabasePopulator.assess_task(proj, task, tutor, TaskStatus.redo, complete_date)
             else
-              DatabasePopulator.assess_task(proj, task, tutor, TaskStatus.ready_to_mark, complete_date)
+              DatabasePopulator.assess_task(proj, task, tutor, TaskStatus.ready_for_feedback, complete_date)
             end
           else
             complete_date = unit.start_date + i * time_to_complete_task + rand(7..10).days
@@ -114,7 +114,7 @@ namespace :db do
             when 0..3
               DatabasePopulator.assess_task(proj, task, tutor, TaskStatus.complete, complete_date)
             when 4..60
-              DatabasePopulator.assess_task(proj, task, tutor, TaskStatus.ready_to_mark, complete_date)
+              DatabasePopulator.assess_task(proj, task, tutor, TaskStatus.ready_for_feedback, complete_date)
             when 61..70
               DatabasePopulator.assess_task(proj, task, tutor, TaskStatus.discuss, complete_date)
             when 71..80
@@ -126,7 +126,7 @@ namespace :db do
             when 99
               DatabasePopulator.assess_task(proj, task, tutor, TaskStatus.redo, complete_date)
             else
-              DatabasePopulator.assess_task(proj, task, tutor, TaskStatus.ready_to_mark, complete_date)
+              DatabasePopulator.assess_task(proj, task, tutor, TaskStatus.ready_for_feedback, complete_date)
             end
           end
 

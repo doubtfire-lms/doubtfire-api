@@ -8,7 +8,7 @@ Doubtfire Offline Marking Package
 
 3. A student may decide that their work is:
 
-    * Ready to Mark (or 'rtm'), or
+    * Ready for Feedback (or 'rff'), or
     * Needs Help (or 'needs_help').
 
    This is indicated in the "Status" column for the respective task row in the

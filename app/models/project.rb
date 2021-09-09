@@ -577,7 +577,7 @@ class Project < ApplicationRecord
     red_pct = ((project_task_counts.fail_count + project_task_counts.feedback_exceeded_count + project_task_counts.time_exceeded_count) / total_task_counts[target_grade]).signif(2)
     orange_pct = ((project_task_counts.redo_count + project_task_counts.need_help_count + project_task_counts.fix_and_resubmit_count) / total_task_counts[target_grade]).signif(2)
     green_pct = ((project_task_counts.discuss_count + project_task_counts.demonstrate_count + project_task_counts.complete_count) / total_task_counts[target_grade]).signif(2)
-    blue_pct = (project_task_counts.ready_to_mark_count / total_task_counts[target_grade]).signif(2)
+    blue_pct = (project_task_counts.ready_for_feedback_count / total_task_counts[target_grade]).signif(2)
     grey_pct = (1 - red_pct - orange_pct - green_pct - blue_pct).signif(2)
 
     order_scale = green_pct * 100 + blue_pct * 100 + orange_pct * 10 - red_pct

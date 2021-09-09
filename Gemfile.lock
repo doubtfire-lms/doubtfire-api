@@ -1,3 +1,10 @@
+GIT
+  remote: https://github.com/doubtfire-overseer/bunny-pub-sub
+  revision: 5e4f1acc99f0b1fd9a5fe3cbce6c8c55d94f7f1b
+  specs:
+    bunny-pub-sub (0.0.9)
+      bunny (~> 2.14)
+
 GEM
   remote: https://rubygems.org/
   specs:
@@ -355,6 +362,7 @@ DEPENDENCIES
   active_model_serializers (~> 0.10.0)
   attr_encrypted (~> 3.1.0)
   better_errors
+  bunny-pub-sub (= 0.0.9)!
   byebug
   ci_reporter
   coderay
@@ -376,9 +384,9 @@ DEPENDENCIES
   minitest-around
   minitest-rails
   moss_ruby (>= 1.1.2)
-  mysql2
+  mysql2 (= 0.4.10)
   passenger (= 4.0.42)
-  pg
+  pg (~> 0.18)
   rack-cors
   rails (~> 6.1.0)
   rails-latex (> 2.3)

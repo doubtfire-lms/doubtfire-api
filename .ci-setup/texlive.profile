@@ -1,4 +1,4 @@
-selected_scheme scheme-full
+selected_scheme scheme-small
 TEXDIR /tmp/texlive
 TEXMFCONFIG ~/.texlive/texmf-config
 TEXMFHOME ~/texmf

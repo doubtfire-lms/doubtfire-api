@@ -175,7 +175,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     td.save!
 
     data_to_post = {
-      trigger: 'ready_to_mark'
+      trigger: 'ready_for_feedback'
     }
 
     data_to_post = with_file('test_files/submissions/00_question.pdf', 'application/pdf', data_to_post)
@@ -229,7 +229,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     td.save!
 
     data_to_post = {
-      trigger: 'ready_to_mark'
+      trigger: 'ready_for_feedback'
     }
 
     data_to_post = with_file('test_files/submissions/00_question.pdf', 'application/pdf', data_to_post)

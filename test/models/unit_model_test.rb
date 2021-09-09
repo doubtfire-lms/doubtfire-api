@@ -151,7 +151,7 @@ class UnitModelTest < ActiveSupport::TestCase
         when 1..20
           DatabasePopulator.assess_task(student, task, tutor, TaskStatus.complete, td.due_date + 1.week)
         when 21..40
-          DatabasePopulator.assess_task(student, task, tutor, TaskStatus.ready_to_mark, td.due_date + 1.week)
+          DatabasePopulator.assess_task(student, task, tutor, TaskStatus.ready_for_feedback, td.due_date + 1.week)
         when 41..50
           DatabasePopulator.assess_task(student, task, tutor, TaskStatus.time_exceeded, td.due_date + 1.week)
         when 51..60

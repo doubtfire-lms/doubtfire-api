@@ -176,7 +176,7 @@ FactoryBot.define do
             task = p.task_for_task_definition td
             tutor = p.tutor_for(td)
 
-            unless [TaskStatus.ready_to_mark, TaskStatus.need_help, TaskStatus.working_on_it].include? ts
+            unless [TaskStatus.ready_for_feedback, TaskStatus.need_help, TaskStatus.working_on_it].include? ts
               DatabasePopulator.assess_task(p, task, tutor, ts,  td.start_date + 1.week)
             else
               DatabasePopulator.assess_task(p, task, p.student, ts,  td.start_date + 1.week)

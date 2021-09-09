@@ -32,7 +32,7 @@ class FeedbackTest < ActiveSupport::TestCase
   def test_tasks_for_task_inbox
     unit = FactoryBot.create(:unit, perform_submissions: true, unenrolled_student_count: 0, part_enrolled_student_count: 0, tutorials: 2, staff_count: 2)
 
-    expected_count = unit.tasks.where(task_status: [ TaskStatus.ready_to_mark, TaskStatus.need_help ]).count
+    expected_count = unit.tasks.where(task_status: [ TaskStatus.ready_for_feedback, TaskStatus.need_help ]).count
 
     unit.teaching_staff.each do |user|
       expected_response = unit.tasks_for_task_inbox(user)

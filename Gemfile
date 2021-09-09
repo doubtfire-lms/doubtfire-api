@@ -2,10 +2,10 @@ source 'https://rubygems.org'
 
 # Ruby versions for various enviornments
 ruby_versions = {
-  development:  '~>2.6',
-  test:         '~>2.6',
-  staging:      '~>2.6',
-  production:   '~>2.3.1'
+  development:  '~>2.6.7',
+  test:         '~>2.6.7',
+  staging:      '~>2.6.7',
+  production:   '~>2.6.7'
 }
 # Get the ruby version for the current enviornment
 ruby ruby_versions[(ENV['RAILS_ENV'] || 'development').to_sym]
@@ -17,8 +17,6 @@ group :development, :test do
   gem 'database_cleaner'
   gem 'byebug'
   gem 'simplecov', require: false
-  gem 'pg'
-  gem 'hirb'
   gem 'better_errors'
   gem 'rails_best_practices'
   gem 'thin'
@@ -37,13 +35,23 @@ group :development, :test, :staging do
   gem 'webmock'
 end
 
-group :production do
+# Optional passenger gem
+# usage: bundle --with-env=passenger
+group :passenger do
   gem 'passenger', '= 4.0.42'
 end
 
-group :production, :staging do
-  gem 'mysql2'
+# Database
+gem 'mysql2', '0.4.10'
+
+# Webserver - included in development and test and optionally in production
+# usage: bundle --with-env=webserver
+group :development, :test, :webserver do
+  gem 'thin'
 end
+
+# Extend irb for better output
+gem 'hirb'
 
 # Authentication
 gem 'devise', '~> 4.7.1'
@@ -76,6 +84,7 @@ gem 'rack-cors', require: 'rack/cors'
 gem 'ci_reporter'
 gem 'require_all', '>=1.3.3'
 gem 'dotenv-rails'
+gem 'bunny-pub-sub', '0.0.9', git: 'https://github.com/doubtfire-overseer/bunny-pub-sub'
 
 # Excel support
 gem 'roo', '~> 2.7.0'

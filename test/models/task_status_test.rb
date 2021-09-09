@@ -44,7 +44,7 @@ class TaskStatusTest < ActiveSupport::TestCase
     project = unit.active_projects.first
 
     data_to_post = {
-      trigger: 'ready_to_mark'
+      trigger: 'ready_for_feedback'
     }
 
     add_auth_header_for(user: project.student)
@@ -81,9 +81,10 @@ class TaskStatusTest < ActiveSupport::TestCase
 
       assert_equal TaskStatus.status_for_name('demonstrate').name,TaskStatus.demonstrate.name
       assert_equal TaskStatus.status_for_name('demo').name,TaskStatus.demonstrate.name
-      assert_equal TaskStatus.status_for_name('ready to mark').name,TaskStatus.ready_to_mark.name
-      assert_equal TaskStatus.status_for_name('ready_to_mark').name,TaskStatus.ready_to_mark.name
-      assert_equal TaskStatus.status_for_name('rtm').name,TaskStatus.ready_to_mark.name
+      assert_equal TaskStatus.status_for_name('ready to mark').name,TaskStatus.ready_for_feedback.name
+      assert_equal TaskStatus.status_for_name('ready_for_feedback').name,TaskStatus.ready_for_feedback.name
+      assert_equal TaskStatus.status_for_name('rtm').name,TaskStatus.ready_for_feedback.name
+      assert_equal TaskStatus.status_for_name('rff').name,TaskStatus.ready_for_feedback.name
 
       assert_equal TaskStatus.status_for_name('fail').name,TaskStatus.fail.name
       assert_equal TaskStatus.status_for_name('not_started').name,TaskStatus.not_started.name

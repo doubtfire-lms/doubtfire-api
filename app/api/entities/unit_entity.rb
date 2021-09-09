@@ -103,6 +103,10 @@ module Api
       end
 
       expose :active
+
+      expose :overseer_image_id
+      expose :assessment_enabled
+
       expose :auto_apply_extension_before_deadline
       expose :send_notifications
       expose :enable_sync_enrolments
