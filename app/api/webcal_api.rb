@@ -105,7 +105,7 @@ module Api
             Unit
               .joins(:projects)
               .where(
-                projects: { user_id: 7 },
+                projects: { user_id: user.id },
                 units: { id: webcal_params[:unit_exclusions], active: true }
               )
               .pluck(:id)

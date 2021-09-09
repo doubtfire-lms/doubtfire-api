@@ -93,7 +93,7 @@ class TasksTest < ActiveSupport::TestCase
     td.save!
 
     data_to_post = {
-      trigger: 'ready_to_mark'
+      trigger: 'ready_for_feedback'
     }
 
     project = unit.active_projects.first
@@ -134,7 +134,7 @@ class TasksTest < ActiveSupport::TestCase
     td.save!
 
     data_to_post = {
-      trigger: 'ready_to_mark'
+      trigger: 'ready_for_feedback'
     }
 
     # Get the first student - who now has this task
@@ -185,7 +185,7 @@ class TasksTest < ActiveSupport::TestCase
     assert_equal 2, task.extensions
     assert task.submitted_before_due?
 
-    assert_equal TaskStatus.ready_to_mark, task.task_status
+    assert_equal TaskStatus.ready_for_feedback, task.task_status
 
     td.destroy
   end
@@ -212,7 +212,7 @@ class TasksTest < ActiveSupport::TestCase
     td.save!
 
     data_to_post = {
-      trigger: 'ready_to_mark'
+      trigger: 'ready_for_feedback'
     }
 
     # Get the first student - who now has this task
@@ -252,7 +252,7 @@ class TasksTest < ActiveSupport::TestCase
     assert_equal 2, task.extensions
     assert task.submitted_before_due?
 
-    assert_equal TaskStatus.ready_to_mark, task.task_status
+    assert_equal TaskStatus.ready_for_feedback, task.task_status
 
     td.destroy
   end

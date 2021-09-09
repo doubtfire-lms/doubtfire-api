@@ -10,7 +10,7 @@ class UnitsTest < ActiveSupport::TestCase
   end
 
   setup do
-    @student = FactoryBot.create(:user, :student)
+    @student = FactoryBot.create(:user, :student, enrol_in: 2)
   end
 
   teardown do
@@ -18,7 +18,6 @@ class UnitsTest < ActiveSupport::TestCase
   end
 
   test 'Setting enabled creates or destroys webcal' do
-
     # Enable webcal
     add_auth_header_for user: @student
     put_json '/api/webcal', { webcal: { enabled: true } }
@@ -42,6 +41,10 @@ class UnitsTest < ActiveSupport::TestCase
   end
 
   test 'Enabled with sensible defaults' do
+
+    # Ensure webcal disabled
+    put_json '/api/webcal', with_auth_token({ webcal: { enabled: false } }, @student)
+
     # Enable webcal
     add_auth_header_for user: @student
     put_json '/api/webcal', { webcal: { enabled: true } }
@@ -56,14 +59,14 @@ class UnitsTest < ActiveSupport::TestCase
   end
 
   test 'should_change_guid changes guid' do
-
-    # Create webcal, get GUID
-    prev_guid = @student.create_webcal(guid: SecureRandom.uuid).guid
+    # Enable webcal, get GUID
+    put_json '/api/webcal', with_auth_token({ webcal: { enabled: true } }, @student)
+    prev_guid = last_response_body['guid']
 
     # Request GUID change
     add_auth_header_for user: @student
     put_json '/api/webcal', { webcal: { should_change_guid: true } }
-    current_guid = @student.webcal.reload.guid
+    current_guid = last_response_body['guid']
 
     # Ensure GUID changed
     assert_not_equal prev_guid, current_guid
@@ -72,11 +75,12 @@ class UnitsTest < ActiveSupport::TestCase
   end
 
   test 'Ical endpoint is public and serves webcal with corect content type' do
-    # Create webcal
-    webcal = @student.create_webcal(guid: SecureRandom.uuid)
+    # Enable webcal, get GUID
+    put_json '/api/webcal', with_auth_token({ webcal: { enabled: true } }, @student)
+    guid = last_response_body['guid']
 
     # Retrieve ical _without auth_
-    get "/api/webcal/#{webcal.guid}"
+    get "/api/webcal/#{guid}"
 
     # Ensure correct content type
     assert_equal 200, last_response.status
@@ -84,10 +88,10 @@ class UnitsTest < ActiveSupport::TestCase
   end
 
   test 'Reminder must be specified with both time & unit' do
-    # Create webcal
-    webcal = @student.create_webcal(guid: SecureRandom.uuid)
-
     add_auth_header_for user: @student
+
+    # Enable webcal
+    put_json '/api/webcal', { webcal: { enabled: true } }
 
     # Specify only time
     put_json '/api/webcal', { webcal: { reminder: { time: 5 } } }
@@ -98,11 +102,41 @@ class UnitsTest < ActiveSupport::TestCase
     assert 400, last_response.status
 
     # Specify both time & unit
-    put_json '/api/webcal', { webcal: { reminder: { time: 5, unit: 'D' } } }
-    assert 200, last_response.status
+    Webcal.valid_time_units.each_with_index { |u, i|
+      t = i + 1
 
-    webcal.reload
-    assert_equal 5, webcal.reminder_time
-    assert_equal 'D', webcal.reminder_unit
+      put_json '/api/webcal', { webcal: { reminder: { time: t, unit: u } } }
+      assert 200, last_response.status
+
+      assert_not_nil last_response_body['reminder']
+      assert_equal t, last_response_body['reminder']['time']
+      assert_equal u, last_response_body['reminder']['unit']
+    }
+  end
+
+  test 'Can update unit exclusions' do
+    add_auth_header_for user: @student
+
+    # Enable webcal, get webcal ID
+    put_json '/api/webcal', { webcal: { enabled: true } }
+    id = last_response_body['id']
+
+    # Exclude all units
+    enrolled_units = @student.projects.joins(:unit).where(units: { active: true }).map(&:unit_id)
+    put_json '/api/webcal', { webcal: { unit_exclusions: enrolled_units } }
+    assert_equal enrolled_units.sort, last_response_body['unit_exclusions'].sort
+
+    # Try exclude unit that student isn't enrolled in
+    other_units = Unit.where.not(id: enrolled_units).map(&:id)
+
+    put_json '/api/webcal', { webcal: { unit_exclusions: other_units } }
+    assert_equal [], last_response_body['unit_exclusions']
+
+    put_json '/api/webcal', { webcal: { unit_exclusions: enrolled_units + other_units } }
+    assert_equal enrolled_units.sort, last_response_body['unit_exclusions'].sort
+
+    # Include all units
+    put_json '/api/webcal', { webcal: { unit_exclusions: [] } }
+    assert_equal [], last_response_body['unit_exclusions']
   end
 end

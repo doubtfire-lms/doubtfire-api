@@ -45,6 +45,7 @@ module Api
     #
     # Mount the api modules
     #
+    mount Api::Admin::OverseerAdminApi
     mount Api::ActivityTypesAuthenticatedApi
     mount Api::ActivityTypesPublicApi
     mount Api::AuthenticationApi
@@ -79,6 +80,8 @@ module Api
     #
     # Add auth details to all end points
     #
+    AuthenticationHelpers.add_auth_to Api::Admin::OverseerAdminApi
+
     AuthenticationHelpers.add_auth_to Api::ActivityTypesAuthenticatedApi
     AuthenticationHelpers.add_auth_to Api::BreaksApi
     AuthenticationHelpers.add_auth_to Api::DiscussionCommentApi

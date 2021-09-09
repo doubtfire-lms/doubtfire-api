@@ -67,7 +67,7 @@ class GroupsApiTest < ActiveSupport::TestCase
     comment.assess_extension(tutor, true)
 
     data_to_post = {
-      trigger: 'ready_to_mark'
+      trigger: 'ready_for_feedback'
     }
 
     data_to_post = with_file('test_files/submissions/test.sql', 'text/plain', data_to_post)
@@ -78,7 +78,7 @@ class GroupsApiTest < ActiveSupport::TestCase
     group.reload
     group.projects.each do |proj|
         task = proj.task_for_task_definition(td)
-        assert_equal TaskStatus.ready_to_mark, task.task_status
+        assert_equal TaskStatus.ready_for_feedback, task.task_status
     end
 
     td.destroy

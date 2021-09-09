@@ -216,7 +216,7 @@ class ExtensionTest < ActiveSupport::TestCase
     td.save!
 
     data_to_post = {
-      trigger: 'ready_to_mark'
+      trigger: 'ready_for_feedback'
     }
 
     # Get the first student - who now has this task
@@ -230,7 +230,7 @@ class ExtensionTest < ActiveSupport::TestCase
 
     # Get the task... check it is ready for feedback
     task = project.task_for_task_definition(td)
-    assert_equal TaskStatus.ready_to_mark, task.task_status
+    assert_equal TaskStatus.ready_for_feedback, task.task_status
     assert_equal 3, task.weeks_can_extend
     assert task.can_apply_for_extension?
 

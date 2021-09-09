@@ -59,7 +59,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     td.save!
 
     data_to_post = {
-      trigger: 'ready_to_mark'
+      trigger: 'ready_for_feedback'
     }
 
     data_to_post = with_file('test_files/submissions/unbelievable.gif', 'image/gif', data_to_post)
@@ -104,7 +104,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     td.save!
 
     data_to_post = {
-      trigger: 'ready_to_mark'
+      trigger: 'ready_for_feedback'
     }
 
     data_to_post = with_file('test_files/submissions/unbelievable.gif', 'image/gif', data_to_post)
@@ -118,7 +118,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     assert_equal 201, last_response.status
 
     task = project.task_for_task_definition(td)
-    task.move_files_to_in_process
+    task.move_files_to_in_process(FileHelper.student_work_dir(:in_process))
 
     assert File.exists? "#{Doubtfire::Application.config.student_work_dir}/in_process/#{task.id}/000-image.jpg"
 
@@ -146,7 +146,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     td.save!
 
     data_to_post = {
-      trigger: 'ready_to_mark'
+      trigger: 'ready_for_feedback'
     }
 
     data_to_post = with_file('test_files/submissions/Swinburne.jpg', 'image/jpg', data_to_post)
@@ -191,7 +191,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     td.save!
 
     data_to_post = {
-      trigger: 'ready_to_mark'
+      trigger: 'ready_for_feedback'
     }
 
     data_to_post = with_file('test_files/submissions/Swinburne.jpg', 'image/jpg', data_to_post)
@@ -222,7 +222,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     unit.save
 
     data_to_post = {
-      trigger: 'ready_to_mark'
+      trigger: 'ready_for_feedback'
     }
 
     data_to_post = with_file('test_files/unit_files/sample-learning-summary.pdf', 'application/pdf', data_to_post)
@@ -268,7 +268,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     assert File.exists? path
 
     data_to_post = {
-      trigger: 'ready_to_mark'
+      trigger: 'ready_for_feedback'
     }
 
     data_to_post = with_file('test_files/unit_files/sample-learning-summary.pdf', 'application/pdf', data_to_post)

@@ -510,6 +510,7 @@ class DatabasePopulator
   # Generate tasks statuses
   #
   def generate_task_statuses
+    return if TaskStatus.count > 0
     echo "-> Generating task statuses"
     statuses = {
       "Not Started": "You have not yet started this task.",
@@ -520,7 +521,7 @@ class DatabasePopulator
       "Feedback Exceeded": "This task must be fixed and included in your portfolio, but no additional feedback will be provided.",
       "Redo": "This task needs to be redone.",
       "Discuss": "Your work looks good, discuss it with your tutor to complete.",
-      "Ready to Mark": "This task is ready for the tutor to assess to provide feedback.",
+      "Ready for Feedback": "This task is ready for the tutor to assess to provide feedback.",
       "Demonstrate": "Your work looks good, demonstrate it to your tutor to complete.",
       "Fail": "You did not successfully demonstrate the required learning in this task.",
       "Time Exceeded": "You did not submit or complete the task before the appropriate deadline."
