@@ -953,6 +953,7 @@ class Task < ActiveRecord::Base
     elsif %w(c h idc).include?(extn) then 'c'
     elsif ['cpp', 'hpp', 'c++', 'h++', 'cc', 'cxx', 'cp'].include?(extn) then 'cpp'
     elsif ['java'].include?(extn) then 'java'
+    elsif ['ipynb'].include?(extn) then 'ipynb'
     elsif %w(js json ts).include?(extn) then 'js'
     elsif ['html', 'rhtml'].include?(extn) then 'html'
     elsif %w(css scss).include?(extn) then 'css'
