@@ -42,7 +42,7 @@ group :passenger do
 end
 
 # Database
-gem 'mysql2', '0.4.10'
+gem 'mysql2', '~>0.5.0'
 
 # Webserver - included in development and test and optionally in production
 # usage: bundle --with-env=webserver
