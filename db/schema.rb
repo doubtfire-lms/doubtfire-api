@@ -246,7 +246,7 @@ ActiveRecord::Schema.define(version: 2021_04_13_044542) do
     t.integer "max_quality_pts", default: 0
     t.integer "tutorial_stream_id"
     t.boolean  "assessment_enabled",                                  default: false
-    t.integer  "overseer_image_id",
+    t.integer  "overseer_image_id"
     t.index ["tutorial_stream_id"], name: "index_task_definitions_on_tutorial_stream_id"
     t.index ["unit_id"], name: "index_task_definitions_on_unit_id"
   end
@@ -398,7 +398,7 @@ ActiveRecord::Schema.define(version: 2021_04_13_044542) do
     t.integer "extension_weeks_on_resubmit_request", default: 1, null: false
     t.boolean "allow_student_change_tutorial", default: true, null: false
     t.boolean  "assessment_enabled", default: true
-    t.integer  "overseer_image_id",
+    t.integer  "overseer_image_id"
     t.index ["teaching_period_id"], name: "index_units_on_teaching_period_id"
   end
 
