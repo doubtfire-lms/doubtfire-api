@@ -1,4 +1,4 @@
-class TutorialStream < ActiveRecord::Base
+class TutorialStream < ApplicationRecord
   belongs_to :activity_type
   belongs_to :unit
 
