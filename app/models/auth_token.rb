@@ -1,4 +1,4 @@
-class AuthToken < ActiveRecord::Base
+class AuthToken < ApplicationRecord
 
   belongs_to :user
 
