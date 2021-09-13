@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2021_07_28_004516) do
+ActiveRecord::Schema.define(version: 2021_09_10_074614) do
 
   create_table "activity_types", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
     t.string "name", null: false
@@ -25,13 +25,15 @@ ActiveRecord::Schema.define(version: 2021_07_28_004516) do
     t.string "encrypted_authentication_token", null: false
     t.string "encrypted_authentication_token_iv"
     t.datetime "auth_token_expiry", null: false
-    t.references :user
+    t.bigint "user_id"
+    t.index ["user_id"], name: "index_auth_tokens_on_user_id"
   end
 
   create_table "breaks", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
     t.datetime "start_date", null: false
     t.integer "number_of_weeks", null: false
-    t.references :teaching_period
+    t.bigint "teaching_period_id"
+    t.index ["teaching_period_id"], name: "index_breaks_on_teaching_period_id"
   end
 
   create_table "campuses", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
@@ -45,11 +47,13 @@ ActiveRecord::Schema.define(version: 2021_07_28_004516) do
   end
 
   create_table "comments_read_receipts", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
-    t.references :task_comment, null: false
-    t.references :user, null: false
+    t.bigint "task_comment_id", null: false
+    t.bigint "user_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["task_comment_id", "user_id"], name: "index_comments_read_receipts_on_task_comment_id_and_user_id", unique: true
+    t.index ["task_comment_id"], name: "index_comments_read_receipts_on_task_comment_id"
+    t.index ["user_id"], name: "index_comments_read_receipts_on_user_id"
   end
 
   create_table "discussion_comments", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
@@ -61,15 +65,17 @@ ActiveRecord::Schema.define(version: 2021_07_28_004516) do
   end
 
   create_table "group_memberships", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
-    t.references :group
-    t.references :project
+    t.bigint "group_id"
+    t.bigint "project_id"
     t.boolean "active", default: true
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.index ["group_id"], name: "index_group_memberships_on_group_id"
+    t.index ["project_id"], name: "index_group_memberships_on_project_id"
   end
 
   create_table "group_sets", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
-    t.references :unit
+    t.bigint "unit_id"
     t.string "name"
     t.boolean "allow_students_to_create_groups", default: true
     t.boolean "allow_students_to_manage_groups", default: true
@@ -78,60 +84,72 @@ ActiveRecord::Schema.define(version: 2021_07_28_004516) do
     t.datetime "updated_at"
     t.integer "capacity"
     t.boolean "locked", default: false, null: false
+    t.index ["unit_id"], name: "index_group_sets_on_unit_id"
   end
 
   create_table "group_submissions", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
-    t.references :group
+    t.bigint "group_id"
     t.string "notes"
-    t.references :submitted_by_project
+    t.bigint "submitted_by_project_id"
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.references :task_definition
+    t.bigint "task_definition_id"
+    t.index ["group_id"], name: "index_group_submissions_on_group_id"
+    t.index ["submitted_by_project_id"], name: "index_group_submissions_on_submitted_by_project_id"
+    t.index ["task_definition_id"], name: "index_group_submissions_on_task_definition_id"
   end
 
   create_table "groups", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
-    t.references :group_set
-    t.references :tutorial
+    t.bigint "group_set_id"
+    t.bigint "tutorial_id"
     t.string "name"
     t.datetime "created_at"
     t.datetime "updated_at"
     t.integer "capacity_adjustment", default: 0, null: false
     t.boolean "locked", default: false, null: false
+    t.index ["group_set_id"], name: "index_groups_on_group_set_id"
+    t.index ["tutorial_id"], name: "index_groups_on_tutorial_id"
   end
 
   create_table "learning_outcome_task_links", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
     t.text "description"
     t.integer "rating"
-    t.references :task_definition
-    t.references :task
-    t.references :learning_outcome
+    t.bigint "task_definition_id"
+    t.bigint "task_id"
+    t.bigint "learning_outcome_id"
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.index ["learning_outcome_id"], name: "index_learning_outcome_task_links_on_learning_outcome_id"
+    t.index ["task_definition_id"], name: "index_learning_outcome_task_links_on_task_definition_id"
+    t.index ["task_id"], name: "index_learning_outcome_task_links_on_task_id"
   end
 
   create_table "learning_outcomes", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
-    t.references :unit
+    t.bigint "unit_id"
     t.integer "ilo_number"
     t.string "name"
     t.string "description", limit: 4096
     t.string "abbreviation"
+    t.index ["unit_id"], name: "index_learning_outcomes_on_unit_id"
   end
 
   create_table "logins", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
     t.datetime "timestamp"
-    t.references :user
+    t.bigint "user_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_logins_on_user_id"
   end
 
   create_table "overseer_assessments", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
-    t.references :task, null: false
+    t.bigint "task_id", null: false
     t.string "submission_timestamp", null: false
     t.string "result_task_status"
     t.integer "status", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["task_id", "submission_timestamp"], name: "index_overseer_assessments_on_task_id_and_submission_timestamp", unique: true
+    t.index ["task_id"], name: "index_overseer_assessments_on_task_id"
   end
 
   create_table "overseer_images", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
@@ -142,17 +160,19 @@ ActiveRecord::Schema.define(version: 2021_07_28_004516) do
   end
 
   create_table "plagiarism_match_links", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
-    t.references :task
-    t.references :other_task
+    t.bigint "task_id"
+    t.bigint "other_task_id"
     t.integer "pct"
     t.datetime "created_at"
     t.datetime "updated_at"
     t.string "plagiarism_report_url"
     t.boolean "dismissed", default: false
+    t.index ["other_task_id"], name: "index_plagiarism_match_links_on_other_task_id"
+    t.index ["task_id"], name: "index_plagiarism_match_links_on_task_id"
   end
 
   create_table "projects", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
-    t.references :unit
+    t.bigint "unit_id"
     t.string "project_role"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -165,13 +185,16 @@ ActiveRecord::Schema.define(version: 2021_07_28_004516) do
     t.boolean "compile_portfolio", default: false
     t.date "portfolio_production_date"
     t.integer "max_pct_similar", default: 0
-    t.references :user
+    t.bigint "user_id"
     t.integer "grade", default: 0
     t.string "grade_rationale", limit: 4096
-    t.references :campus
+    t.bigint "campus_id"
     t.integer "submitted_grade"
     t.boolean "uses_draft_learning_summary", default: false, null: false
+    t.index ["campus_id"], name: "index_projects_on_campus_id"
     t.index ["enrolled"], name: "index_projects_on_enrolled"
+    t.index ["unit_id"], name: "index_projects_on_unit_id"
+    t.index ["user_id"], name: "index_projects_on_user_id"
   end
 
   create_table "roles", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
@@ -182,30 +205,38 @@ ActiveRecord::Schema.define(version: 2021_07_28_004516) do
   end
 
   create_table "task_comments", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
-    t.references :task, null: false
-    t.references :user, null: false
+    t.bigint "task_id", null: false
+    t.bigint "user_id", null: false
     t.string "comment", limit: 4096
     t.datetime "created_at", null: false
-    t.references :recipient
+    t.bigint "recipient_id"
     t.string "content_type"
     t.string "attachment_extension"
-    t.references :discussion_comment
+    t.bigint "discussion_comment_id"
     t.string "type"
     t.datetime "time_discussion_started"
     t.datetime "time_discussion_completed"
     t.integer "number_of_prompts"
     t.datetime "date_extension_assessed"
     t.boolean "extension_granted"
-    t.references :assessor
-    t.references :task_status
+    t.bigint "assessor_id"
+    t.bigint "task_status_id"
     t.integer "extension_weeks"
     t.string "extension_response"
-    t.references :reply_to
-    t.references :overseer_assessment
+    t.bigint "reply_to_id"
+    t.bigint "overseer_assessment_id"
+    t.index ["assessor_id"], name: "index_task_comments_on_assessor_id"
+    t.index ["discussion_comment_id"], name: "index_task_comments_on_discussion_comment_id"
+    t.index ["overseer_assessment_id"], name: "index_task_comments_on_overseer_assessment_id"
+    t.index ["recipient_id"], name: "index_task_comments_on_recipient_id"
+    t.index ["reply_to_id"], name: "index_task_comments_on_reply_to_id"
+    t.index ["task_id"], name: "index_task_comments_on_task_id"
+    t.index ["task_status_id"], name: "index_task_comments_on_task_status_id"
+    t.index ["user_id"], name: "index_task_comments_on_user_id"
   end
 
   create_table "task_definitions", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
-    t.references :unit
+    t.bigint "unit_id"
     t.string "name"
     t.string "description", limit: 4096
     t.decimal "weighting", precision: 10
@@ -220,30 +251,37 @@ ActiveRecord::Schema.define(version: 2021_07_28_004516) do
     t.string "plagiarism_report_url"
     t.boolean "plagiarism_updated", default: false
     t.integer "plagiarism_warn_pct", default: 50
-    t.references :group_set
+    t.bigint "group_set_id"
     t.datetime "due_date"
     t.datetime "start_date", null: false
     t.boolean "is_graded", default: false
     t.integer "max_quality_pts", default: 0
-    t.references :tutorial_stream
+    t.bigint "tutorial_stream_id"
     t.boolean "assessment_enabled", default: false
-    t.references :overseer_image
+    t.bigint "overseer_image_id"
+    t.index ["group_set_id"], name: "index_task_definitions_on_group_set_id"
+    t.index ["overseer_image_id"], name: "index_task_definitions_on_overseer_image_id"
+    t.index ["tutorial_stream_id"], name: "index_task_definitions_on_tutorial_stream_id"
+    t.index ["unit_id"], name: "index_task_definitions_on_unit_id"
   end
 
   create_table "task_engagements", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
     t.datetime "engagement_time"
     t.string "engagement"
-    t.references :task
+    t.bigint "task_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["task_id"], name: "index_task_engagements_on_task_id"
   end
 
   create_table "task_pins", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
-    t.references :task, null: false
-    t.references :user, null: false
+    t.bigint "task_id", null: false
+    t.bigint "user_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["task_id", "user_id"], name: "index_task_pins_on_task_id_and_user_id", unique: true
+    t.index ["task_id"], name: "index_task_pins_on_task_id"
+    t.index ["user_id"], name: "index_task_pins_on_user_id"
   end
 
   create_table "task_statuses", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
@@ -257,16 +295,18 @@ ActiveRecord::Schema.define(version: 2021_07_28_004516) do
     t.datetime "submission_time"
     t.datetime "assessment_time"
     t.string "outcome"
-    t.references :task
+    t.bigint "task_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.references :assessor
+    t.bigint "assessor_id"
+    t.index ["assessor_id"], name: "index_task_submissions_on_assessor_id"
+    t.index ["task_id"], name: "index_task_submissions_on_task_id"
   end
 
   create_table "tasks", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
-    t.references :task_definition
-    t.references :project
-    t.references :task_status
+    t.bigint "task_definition_id"
+    t.bigint "project_id"
+    t.bigint "task_status_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.date "completion_date"
@@ -274,7 +314,7 @@ ActiveRecord::Schema.define(version: 2021_07_28_004516) do
     t.boolean "include_in_portfolio", default: true
     t.datetime "file_uploaded_at"
     t.integer "max_pct_similar", default: 0
-    t.references :group_submission
+    t.bigint "group_submission_id"
     t.integer "contribution_pct", default: 100
     t.integer "times_assessed", default: 0
     t.datetime "submission_date"
@@ -283,7 +323,11 @@ ActiveRecord::Schema.define(version: 2021_07_28_004516) do
     t.integer "contribution_pts", default: 3
     t.integer "quality_pts", default: -1
     t.integer "extensions", default: 0, null: false
+    t.index ["group_submission_id"], name: "index_tasks_on_group_submission_id"
     t.index ["project_id", "task_definition_id"], name: "tasks_uniq_proj_task_def", unique: true
+    t.index ["project_id"], name: "index_tasks_on_project_id"
+    t.index ["task_definition_id"], name: "index_tasks_on_task_definition_id"
+    t.index ["task_status_id"], name: "index_tasks_on_task_status_id"
   end
 
   create_table "teaching_periods", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
@@ -298,9 +342,11 @@ ActiveRecord::Schema.define(version: 2021_07_28_004516) do
   create_table "tutorial_enrolments", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.references :project, null: false
-    t.references :tutorial, null: false
+    t.bigint "project_id", null: false
+    t.bigint "tutorial_id", null: false
+    t.index ["project_id"], name: "index_tutorial_enrolments_on_project_id"
     t.index ["tutorial_id", "project_id"], name: "index_tutorial_enrolments_on_tutorial_id_and_project_id", unique: true
+    t.index ["tutorial_id"], name: "index_tutorial_enrolments_on_tutorial_id"
   end
 
   create_table "tutorial_streams", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
@@ -308,35 +354,45 @@ ActiveRecord::Schema.define(version: 2021_07_28_004516) do
     t.string "abbreviation", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.references :activity_type, null: false
-    t.references :unit, null: false
+    t.bigint "activity_type_id", null: false
+    t.bigint "unit_id", null: false
     t.index ["abbreviation", "unit_id"], name: "index_tutorial_streams_on_abbreviation_and_unit_id", unique: true
     t.index ["abbreviation"], name: "index_tutorial_streams_on_abbreviation"
+    t.index ["activity_type_id"], name: "index_tutorial_streams_on_activity_type_id"
     t.index ["name", "unit_id"], name: "index_tutorial_streams_on_name_and_unit_id", unique: true
+    t.index ["unit_id"], name: "index_tutorial_streams_on_unit_id"
   end
 
   create_table "tutorials", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
-    t.references :unit
+    t.bigint "unit_id"
     t.string "meeting_day"
     t.string "meeting_time"
     t.string "meeting_location"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "code"
-    t.references :unit_role
+    t.bigint "unit_role_id"
     t.string "abbreviation"
     t.integer "capacity", default: -1
-    t.references :campus
-    t.references :tutorial_stream
+    t.bigint "campus_id"
+    t.bigint "tutorial_stream_id"
+    t.index ["campus_id"], name: "index_tutorials_on_campus_id"
+    t.index ["tutorial_stream_id"], name: "index_tutorials_on_tutorial_stream_id"
+    t.index ["unit_id"], name: "index_tutorials_on_unit_id"
+    t.index ["unit_role_id"], name: "index_tutorials_on_unit_role_id"
   end
 
   create_table "unit_roles", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
-    t.references :user
-    t.references :tutorial
+    t.bigint "user_id"
+    t.bigint "tutorial_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.references :role
-    t.references :unit
+    t.bigint "role_id"
+    t.bigint "unit_id"
+    t.index ["role_id"], name: "index_unit_roles_on_role_id"
+    t.index ["tutorial_id"], name: "index_unit_roles_on_tutorial_id"
+    t.index ["unit_id"], name: "index_unit_roles_on_unit_id"
+    t.index ["user_id"], name: "index_unit_roles_on_user_id"
   end
 
   create_table "units", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
@@ -349,18 +405,22 @@ ActiveRecord::Schema.define(version: 2021_07_28_004516) do
     t.string "code"
     t.boolean "active", default: true
     t.datetime "last_plagarism_scan"
-    t.references :teaching_period
-    t.references :main_convenor
+    t.bigint "teaching_period_id"
+    t.bigint "main_convenor_id"
     t.boolean "auto_apply_extension_before_deadline", default: true, null: false
     t.boolean "send_notifications", default: true, null: false
     t.boolean "enable_sync_timetable", default: true, null: false
     t.boolean "enable_sync_enrolments", default: true, null: false
-    t.references :draft_task_definition
+    t.bigint "draft_task_definition_id"
     t.boolean "allow_student_extension_requests", default: true, null: false
     t.integer "extension_weeks_on_resubmit_request", default: 1, null: false
     t.boolean "allow_student_change_tutorial", default: true, null: false
     t.boolean "assessment_enabled", default: true
-    t.references :overseer_image
+    t.bigint "overseer_image_id"
+    t.index ["draft_task_definition_id"], name: "index_units_on_draft_task_definition_id"
+    t.index ["main_convenor_id"], name: "index_units_on_main_convenor_id"
+    t.index ["overseer_image_id"], name: "index_units_on_overseer_image_id"
+    t.index ["teaching_period_id"], name: "index_units_on_teaching_period_id"
   end
 
   create_table "users", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
@@ -381,7 +441,7 @@ ActiveRecord::Schema.define(version: 2021_07_28_004516) do
     t.string "username"
     t.string "nickname"
     t.string "unlock_token"
-    t.references :role, default: 0
+    t.integer "role_id", default: 0
     t.boolean "receive_task_notifications", default: true
     t.boolean "receive_feedback_notifications", default: true
     t.boolean "receive_portfolio_notifications", default: true
@@ -389,22 +449,24 @@ ActiveRecord::Schema.define(version: 2021_07_28_004516) do
     t.boolean "has_run_first_time_setup", default: false
     t.string "login_id"
     t.string "student_id"
-    t.index ["login_id"], name: "index_users_on_login_id", unique: true
   end
 
   create_table "webcal_unit_exclusions", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
-    t.references :webcal, null: false
-    t.references :unit, null: false
+    t.bigint "webcal_id", null: false
+    t.bigint "unit_id", null: false
     t.index ["unit_id", "webcal_id"], name: "index_webcal_unit_exclusions_on_unit_id_and_webcal_id", unique: true
+    t.index ["unit_id"], name: "index_webcal_unit_exclusions_on_unit_id"
+    t.index ["webcal_id"], name: "index_webcal_unit_exclusions_on_webcal_id"
   end
 
   create_table "webcals", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
     t.string "guid", limit: 36, null: false
     t.boolean "include_start_dates", default: false, null: false
-    t.references :user
+    t.bigint "user_id"
     t.integer "reminder_time"
     t.string "reminder_unit"
     t.index ["guid"], name: "index_webcals_on_guid", unique: true
+    t.index ["user_id"], name: "index_webcals_on_user_id"
   end
 
   add_foreign_key "auth_tokens", "users"
