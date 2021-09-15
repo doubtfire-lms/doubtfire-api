@@ -962,7 +962,7 @@ class Task < ActiveRecord::Base
     elsif ['xml'].include?(extn) then 'xml'
     elsif ['sql'].include?(extn) then 'sql'
     elsif ['vb'].include?(extn) then 'vbnet'
-    elsif ['txt', 'md', 'rmd', 'rpres','hdl','asm','jack','hack'].include?(extn) then 'text'
+    elsif ['txt', 'md', 'rmd', 'rpres','hdl','asm','jack','hack','tst','out','cmp','vm','sh','bat','class','dat','jar'].include?(extn) then 'text'
     elsif ['tex', 'rnw'].include?(extn) then 'tex'
     elsif ['py'].include?(extn) then 'python'
     elsif ['r'].include?(extn) then 'r'

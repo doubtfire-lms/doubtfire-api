@@ -19,7 +19,9 @@ module FileHelper
     when 'code'
       accept = ['text/x-pascal', 'text/x-c', 'text/x-c++', 'text/plain', 'text/', 'application/javascript', 'text/html',
         'text/css', 'text/x-ruby', 'text/coffeescript', 'text/x-scss', 'application/json', 'text/xml', 'application/xml',
-        'text/x-yaml', 'application/xml', 'text/x-typescript','text/x-vhdl','text/x-asm','text/x-jack','application/x-httpd-php']
+        'text/x-yaml', 'application/xml', 'text/x-typescript','text/x-vhdl','text/x-asm','text/x-jack','application/x-httpd-php',
+        'application/tst','text/x-out','text/x-cmp','text/x-vm','application/x-sh','application/x-bat','application/dat',
+        'application/x-java-class','application/java-archive']
     when 'document'
       accept = [ # -- one day"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         # --"application/msword",
