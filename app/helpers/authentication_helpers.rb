@@ -75,8 +75,6 @@ module AuthenticationHelpers
 
       # Optional for most SAML IdPs
       # settings.authn_context = "urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport"
-
-      settings.allowed_clock_drift = 1.second
       settings
     end
 
