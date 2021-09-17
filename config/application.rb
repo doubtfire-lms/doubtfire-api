@@ -4,6 +4,7 @@ require 'csv'
 require 'yaml'
 require 'grape-active_model_serializers'
 require 'bunny-pub-sub/services_manager'
+require_relative '../lib/assets/ontrack_receive_action.rb'
 
 # Precompile assets before deploying to production
 if defined?(Bundler)
@@ -158,9 +159,21 @@ module Doubtfire
         # This is enough for now:
         DEFAULT_BINDING_KEY: '*.result'
       }
+      
+      pdf_subscriber_config = {
+        RABBITMQ_HOSTNAME: ENV['RABBITMQ_HOSTNAME'],
+        RABBITMQ_USERNAME: ENV['RABBITMQ_USERNAME'],
+        RABBITMQ_PASSWORD: ENV['RABBITMQ_PASSWORD'],
+        EXCHANGE_NAME: 'ontrack',
+        DURABLE_QUEUE_NAME: 'q.tasks',
+        BINDING_KEYS: 'task.submission',
+        DEFAULT_BINDING_KEY: 'task.submission'
+      }
 
       config.sm_instance = ServicesManager.instance
       config.sm_instance.register_client(:ontrack, publisher_config, subscriber_config)
+
+      register_subscriber(pdf_subscriber_config, method(:receive), nil)
     end
 
   end
