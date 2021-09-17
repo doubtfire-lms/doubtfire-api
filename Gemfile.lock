@@ -342,6 +342,7 @@ DEPENDENCIES
   roo-xls
   rubocop (= 0.46.0)
   ruby-filemagic
+  ruby-saml (~> 1.11.0)
   rubyzip
   simplecov
   thin
@@ -351,4 +352,4 @@ RUBY VERSION
    ruby 2.6.7p197
 
 BUNDLED WITH
-   2.0.0.pre.3
+   2.1.4
