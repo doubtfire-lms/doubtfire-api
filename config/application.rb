@@ -49,6 +49,7 @@ module Doubtfire
 
     # ==> SAML2.0 authentication
     if config.auth_method == :saml
+      config.saml = HashWithIndifferentAccess.new
       # URL to return the SAML response to (e.g., 'https://doubtfire.edu/api/auth/jwt'
       config.saml[:consumer_target_url] = ENV['DF_SAML_SSO_CONSUMER_TARGET_URL']
 
