@@ -1,6 +1,7 @@
 require 'grape'
 require 'user_serializer'
 require 'json/jwt'
+require 'onelogin/ruby-saml'
 
 module Api
   #
@@ -15,7 +16,7 @@ module Api
     #
     # Sign in - only mounted if AAF auth is NOT used
     #
-    unless AuthenticationHelpers.aaf_auth?
+    if AuthenticationHelpers.aaf_auth? or AuthenticationHelpers.saml_auth?
       desc 'Sign in'
       params do
         requires :username, type: String, desc: 'User username'
@@ -79,6 +80,41 @@ module Api
 
         # Return user details
         { user: UserSerializer.new(user), auth_token: user.auth_token }
+      end
+    end
+
+    #
+    # AAF JWT callback - only mounted if AAF SAML is used
+    # This isn't really a JWT, we will treat it as if it's a SAML response
+    #
+    if AuthenticationHelpers.saml_auth?
+      desc 'SAML2.0 auth'
+      params do
+        requires :SAMLResponse, type: String, desc: 'Data provided for further processing.'
+      end
+      post '/auth/jwt' do
+        # def consume
+        response = OneLogin::RubySaml::Response.new(params[:SAMLResponse], :allowed_clock_drift => 1.second, :settings => settings)
+        response.settings = settings
+
+        # We validate the SAML Response and check if the user already exists in the system
+        if response.is_valid?
+          puts response
+          login_id = response.name_id
+          attributes = response.attributes
+          puts
+          puts attributes
+          # email = response.mail
+          # authorize_success, log the user
+          # session[:userid] = response.nameid
+          # session[:attributes] = response.attributes
+        else
+          # authorize_failure  # This method shows an error message
+          y response.errors
+          # List of errors is available in response.errors array
+        end
+        # end
+        # "test"
       end
     end
 
@@ -184,10 +220,17 @@ module Api
     desc 'Authentication method configuration'
     get '/auth/method' do
       response = {
-        method: Doubtfire::Application.config.auth_method
+        method: "SAML2"
       }
-      response[:redirect_to] = Doubtfire::Application.config.aaf[:redirect_url] if aaf_auth?
-      response
+      # response[:redirect_to] = "https://test-doubtfire.au.auth0.com/samlp/YxIdKTlw4sBYWkel3cFC3N7NRiVwTI6F"
+      request = OneLogin::RubySaml::Authrequest.new
+      test_response = request.create(AuthenticationHelpers.saml_settings)
+      # test_response[:method]= "SAML2"
+      puts test_response
+      # response[:redirect_to] = "https://login.microsoftonline.com/352fcd02-3f33-4048-b702-fce5d36deb78/saml2"
+      # response[:redirect_to] = Doubtfire::Application.config.aaf[:redirect_url]
+
+      test_response
     end
 
     #
