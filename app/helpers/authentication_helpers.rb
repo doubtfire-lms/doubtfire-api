@@ -1,3 +1,5 @@
+require 'onelogin/ruby-saml'
+
 #
 # The AuthenticationHelpers include functions to check if the user
 # is authenticated and to fetch the current user.
@@ -53,6 +55,31 @@ module AuthenticationHelpers
         desc:     'Authentication token'
       }
     end
+  end
+
+  #
+  # Returns true iff using AAF devise auth strategy
+  #
+  def saml_auth?
+    Doubtfire::Application.config.auth_method == :saml
+  end
+
+  def saml_settings
+    if saml_auth?
+      settings = OneLogin::RubySaml::Settings.new
+
+      settings.assertion_consumer_service_url = Doubtfire::Application.config.saml.consumer_target_url
+      settings.sp_entity_id                   = Doubtfire::Application.config.saml.entity_id
+      settings.idp_sso_target_url             = Doubtfire::Application.config.saml.idp_sso_target_url
+      settings.name_identifier_format         = "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress"
+
+      # Optional for most SAML IdPs
+      # settings.authn_context = "urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport"
+
+      settings.allowed_clock_drift = 1.second
+      settings
+    end
+
   end
 
   #

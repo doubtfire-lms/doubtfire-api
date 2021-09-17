@@ -23,7 +23,7 @@ module Doubtfire
     # are: database, ldap, aaf. It can be overridden using the DF_AUTH_METHOD
     # environment variable.
     config.auth_method = (ENV['DF_AUTH_METHOD'] || :database).to_sym
-    
+
     # ==> Student work directory
     # File server location for storing student's work. Defaults to `student_work`
     # directory under root but is overridden using DF_STUDENT_WORK_DIR environment
@@ -44,8 +44,20 @@ module Doubtfire
     config.institution[:host_url] = Rails.env.development? ? "http://#{config.institution[:host]}/" : "https://#{config.institution[:host]}/"
     config.institution[:settings] = ENV['DF_INSTITUTION_SETTINGS_RB'] if ENV['DF_INSTITUTION_SETTINGS_RB']
     config.institution[:ffmpeg] = ENV['DF_FFMPEG_PATH'] || 'ffmpeg'
-    
+
     require "#{Rails.root}/config/#{config.institution[:settings]}" unless config.institution[:settings].nil?
+
+    # ==> SAML2.0 authentication
+    if config.auth_method == :saml
+      # URL to return the SAML response to (e.g., 'https://doubtfire.edu/api/auth/jwt'
+      config.saml[:consumer_target_url] = ENV['DF_SAML_SSO_CONSUMER_TARGET_URL']
+
+      # URL of the registered application (e.g., https://doubtfire.unifoo.edu.au)
+      config.saml[:entity_id] = ENV['DF_SAML_SSO_SP_ENTITY_ID']
+
+      # The IDP SAML login URL, (e.g., "https://login.microsoftonline.com/352fcd02-3f33-4048-b702-fce5d36deb78/saml2")
+      config.saml[:idp_sso_target_url] = ENV['DF_SAML_SSO_IDP_TARGET_URL']
+    end
 
     # ==> AAF authentication
     # Must require AAF devise authentication method.
