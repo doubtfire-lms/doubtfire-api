@@ -8,18 +8,6 @@ class MoveAuthTokenOutOfUsers < ActiveRecord::Migration[4.2]
     add_reference   :auth_tokens, :user, index: true
     add_foreign_key :auth_tokens, :users
 
-    User.all.
-      map { |u| { token: u.authentication_token, user: u.id, expiry: u.auth_token_expiry } }.
-      select { |d| d[:token].present? }.
-      each do |d|
-        puts d[:token]
-        AuthToken.create!(
-          authentication_token: d[:token],
-          auth_token_expiry: d[:expiry],
-          user_id: d[:user]
-        )
-      end
-
     remove_column :users, :authentication_token
     remove_column :users, :auth_token_expiry
   end
