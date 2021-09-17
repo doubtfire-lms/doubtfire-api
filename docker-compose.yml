@@ -21,9 +21,9 @@ services:
       DF_INSTITUTION_HOST: http://localhost:3000
       DF_INSTITUTION_PRODUCT_NAME: OnTrack
 
-      DF_SECRET_KEY_BASE: test-secret-key
-      DF_SECRET_KEY_ATTR: test-secret-key
-      DF_SECRET_KEY_DEVISE: test-secret-key
+      DF_SECRET_KEY_BASE: test-secret-key-test-secret-key!
+      DF_SECRET_KEY_ATTR: test-secret-key-test-secret-key!
+      DF_SECRET_KEY_DEVISE: test-secret-key-test-secret-key!
 
       # Authentication method - can set to AAF or ldap
       DF_AUTH_METHOD: database
@@ -124,7 +124,7 @@ services:
       # received from OnTrack via RabbitMQ.
       # TODO: Make the path rw by overseer in docker image.
       - ../data/student-work:/student-work
-      
+
   doubtfire-mq:
     container_name: doubtfire-mq
     image: rabbitmq:3.8-management
