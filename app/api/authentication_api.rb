@@ -156,7 +156,7 @@ module Api
           redirect "#{host}/#sign_in?authToken=#{user.auth_token}"
         else
           # authorize_failure  # This method shows an error message
-          y response.errors
+          puts response.errors
           # List of errors is available in response.errors array
         end
         # end
