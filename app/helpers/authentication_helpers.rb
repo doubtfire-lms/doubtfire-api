@@ -66,19 +66,27 @@ module AuthenticationHelpers
 
   def saml_settings
     if saml_auth?
-      settings = OneLogin::RubySaml::Settings.new
 
-      settings.assertion_consumer_service_url = Doubtfire::Application.config.saml[:consumer_target_url]
-      settings.sp_entity_id                   = Doubtfire::Application.config.saml[:entity_id]
-      settings.idp_sso_target_url             = Doubtfire::Application.config.saml[:idp_sso_target_url]
-      settings.idp_slo_target_url             = Doubtfire::Application.config.saml[:idp_sso_target_url]
-      settings.idp_cert                       = Doubtfire::Application.config.saml[:idp_cert]
+      puts "Loading metadata"
 
-      settings.name_identifier_format         = "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress"
+      # idp_metadata_parser = OneLogin::RubySaml::IdpMetadataParser.new.parse
+      idp_options = OneLogin::RubySaml::IdpMetadataParser.new.parse(
+        Doubtfire::Application.config.saml[:idp_sso_configuration_file]
+      )
 
-      # Optional for most SAML IdPs
+      puts "options"
+      puts idp_options
+      p idp_options.inspect
+
+      idp_options.assertion_consumer_service_url = Doubtfire::Application.config.saml[:consumer_target_url]
+      idp_options.sp_entity_id                   = Doubtfire::Application.config.saml[:entity_id]
+      idp_options.idp_sso_target_url             = Doubtfire::Application.config.saml[:idp_sso_target_url]
+      idp_options.idp_slo_target_url             = Doubtfire::Application.config.saml[:idp_sso_target_url]
+
+      idp_options.name_identifier_format         = "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress"
+
       # settings.authn_context = "urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport"
-      settings
+      idp_options
     end
 
   end
