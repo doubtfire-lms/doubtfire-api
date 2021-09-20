@@ -98,11 +98,11 @@ module Api
 
         # We validate the SAML Response and check if the user already exists in the system
         if response.is_valid?
-          puts response
+          logger.info response
           login_id = response.name_id
           attributes = response.attributes
-          puts
-          puts attributes
+          logger.info
+          logger.info attributes
 
           email = attrs[:mail]
 
@@ -156,7 +156,7 @@ module Api
           redirect "#{host}/#sign_in?authToken=#{user.auth_token}"
         else
           # authorize_failure  # This method shows an error message
-          puts response.errors
+          logger.info response.errors
           # List of errors is available in response.errors array
         end
         # end
