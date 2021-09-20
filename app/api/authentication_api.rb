@@ -268,15 +268,11 @@ module Api
       response = {
         method: "SAML2"
       }
-      # response[:redirect_to] = "https://test-doubtfire.au.auth0.com/samlp/YxIdKTlw4sBYWkel3cFC3N7NRiVwTI6F"
-      request = OneLogin::RubySaml::Authrequest.new
-      test_response = request.create(AuthenticationHelpers.saml_settings)
-      # test_response[:method]= "SAML2"
-      puts test_response
-      # response[:redirect_to] = "https://login.microsoftonline.com/352fcd02-3f33-4048-b702-fce5d36deb78/saml2"
-      # response[:redirect_to] = Doubtfire::Application.config.aaf[:redirect_url]
+      # old AAF method temporarily commented out
+      # response[:redirect_to] = Doubtfire::Application.config.saml[:idp_sso_target_url]
 
-      test_response
+      request = OneLogin::RubySaml::Authrequest.new
+      request.create(AuthenticationHelpers.saml_settings)
     end
 
     #
