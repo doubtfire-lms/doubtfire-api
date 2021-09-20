@@ -270,7 +270,8 @@ module Api
       }
       # old AAF method temporarily commented out
       # response[:redirect_to] = Doubtfire::Application.config.saml[:idp_sso_target_url]
-
+      puts "getting saml settings"
+      # puts AuthenticationHelpers.saml_settings
       request = OneLogin::RubySaml::Authrequest.new
       request.create(AuthenticationHelpers.saml_settings)
     end
