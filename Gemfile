@@ -30,6 +30,7 @@ group :development, :test, :staging do
   gem 'factory_bot_rails'
   gem 'factory_bot'
   gem 'faker'
+  gem 'minitest', '~>5.14'
   gem 'minitest-rails'
   gem 'minitest-around'
   gem 'webmock'

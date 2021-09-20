@@ -175,7 +175,7 @@ namespace :db do
   end
 
   desc 'Clear the database and fill with test data'
-  task populate: [:skip_prod, :setup, :migrate] do
+  task populate: [:skip_prod, :drop, :setup, :migrate] do
     scale = ENV['SCALE'] ? ENV['SCALE'].to_sym : :small
     extended = ENV['EXTENDED'] == 'true'
 
