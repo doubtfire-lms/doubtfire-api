@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/doubtfire-overseer/bunny-pub-sub
-  revision: 5e4f1acc99f0b1fd9a5fe3cbce6c8c55d94f7f1b
+  revision: 36f91887a6a3ac648cd0f143d4bfa37adce8538b
   specs:
     bunny-pub-sub (0.0.9)
       bunny (~> 2.14)
@@ -45,9 +45,9 @@ GEM
       minitest (~> 5.1)
       thread_safe (~> 0.3, >= 0.3.4)
       tzinfo (~> 1.1)
-    addressable (2.7.0)
+    addressable (2.8.0)
       public_suffix (>= 2.0.2, < 5.0)
-    amq-protocol (2.3.0)
+    amq-protocol (2.3.2)
     arel (6.0.4)
     ast (2.4.2)
     attr_encrypted (1.4.0)
@@ -61,10 +61,11 @@ GEM
       coderay (>= 1.0.0)
       erubi (>= 1.0.0)
       rack (>= 0.9.0)
-    bindata (2.4.8)
+    bindata (2.4.10)
     builder (3.2.4)
-    bunny (2.14.3)
-      amq-protocol (~> 2.3, >= 2.3.0)
+    bunny (2.19.0)
+      amq-protocol (~> 2.3, >= 2.3.1)
+      sorted_set (~> 1, >= 1.0.2)
     byebug (11.1.3)
     ci_reporter (2.0.0)
       builder (>= 2.1.2)
@@ -73,12 +74,12 @@ GEM
     coderay (1.1.3)
     coercible (1.0.0)
       descendants_tracker (~> 0.0.1)
-    concurrent-ruby (1.1.8)
+    concurrent-ruby (1.1.9)
     crack (0.4.5)
       rexml
     crass (1.0.6)
     daemon_controller (1.2.0)
-    daemons (1.3.1)
+    daemons (1.4.1)
     database_cleaner (1.99.0)
     descendants_tracker (0.0.4)
       thread_safe (~> 0.3, >= 0.3.1)
@@ -91,7 +92,7 @@ GEM
     devise_ldap_authenticatable (0.8.7)
       devise (>= 3.4.1)
       net-ldap (>= 0.16.0)
-    docile (1.3.5)
+    docile (1.4.0)
     domain_name (0.5.20190701)
       unf (>= 0.0.5, < 1.0.0)
     dotenv (2.7.6)
@@ -100,7 +101,6 @@ GEM
       railties (>= 3.2)
     encryptor (1.3.0)
     enumerable-lazy (0.0.2)
-    equalizer (0.0.11)
     erubi (1.10.0)
     erubis (2.7.0)
     eventmachine (1.2.7)
@@ -132,7 +132,7 @@ GEM
     hashie (4.1.0)
     hirb (0.7.3)
     http-accept (1.7.0)
-    http-cookie (1.0.3)
+    http-cookie (1.0.4)
       domain_name (~> 0.5)
     i18n (0.9.5)
       concurrent-ruby (~> 1.0)
@@ -147,16 +147,16 @@ GEM
       multi_json (>= 1.3)
       securecompare
       url_safe_base64
-    loofah (2.9.1)
+    loofah (2.12.0)
       crass (~> 1.0.2)
       nokogiri (>= 1.5.9)
     mail (2.7.1)
       mini_mime (>= 0.1.1)
     mime-types (3.3.1)
       mime-types-data (~> 3.2015)
-    mime-types-data (3.2021.0225)
-    mini_mime (1.1.0)
-    mini_portile2 (2.5.1)
+    mime-types-data (3.2021.0901)
+    mini_mime (1.1.1)
+    mini_portile2 (2.6.1)
     minitest (5.14.4)
     minitest-around (0.5.0)
       minitest (~> 5.0)
@@ -171,8 +171,8 @@ GEM
     mysql2 (0.4.10)
     net-ldap (0.17.0)
     netrc (0.11.0)
-    nokogiri (1.11.5)
-      mini_portile2 (~> 2.5.0)
+    nokogiri (1.12.4)
+      mini_portile2 (~> 2.6.1)
       racc (~> 1.4)
     orm_adapter (0.5.0)
     parser (2.7.2.0)
@@ -208,13 +208,13 @@ GEM
       activesupport (>= 4.2.0, < 5.0)
       nokogiri (~> 1.6)
       rails-deprecated_sanitizer (>= 1.0.1)
-    rails-html-sanitizer (1.3.0)
+    rails-html-sanitizer (1.4.2)
       loofah (~> 2.3)
     rails-latex (2.0.1)
       rails (>= 3.0.0, < 5)
-    rails_best_practices (1.20.0)
+    rails_best_practices (1.21.0)
       activesupport
-      code_analyzer (>= 0.5.1)
+      code_analyzer (>= 0.5.2)
       erubis
       i18n
       json
@@ -227,7 +227,8 @@ GEM
       thor (>= 0.18.1, < 2.0)
     rainbow (2.2.2)
       rake
-    rake (13.0.3)
+    rake (13.0.6)
+    rbtree (0.4.4)
     require_all (3.0.0)
     responders (2.4.1)
       actionpack (>= 4.2.0, < 6.0)
@@ -255,18 +256,23 @@ GEM
     ruby-filemagic (0.7.2)
     ruby-ole (1.2.12.2)
     ruby-progressbar (1.11.0)
-    ruby-saml (1.11.0)
-      nokogiri (>= 1.5.10)
+    ruby-saml (1.13.0)
+      nokogiri (>= 1.10.5)
+      rexml
     rubyzip (1.3.0)
     securecompare (1.0.0)
-    sexp_processor (4.15.2)
+    set (1.0.1)
+    sexp_processor (4.15.3)
     simplecov (0.21.2)
       docile (~> 1.1)
       simplecov-html (~> 0.11)
       simplecov_json_formatter (~> 0.1)
     simplecov-html (0.12.3)
-    simplecov_json_formatter (0.1.2)
-    spreadsheet (1.2.8)
+    simplecov_json_formatter (0.1.3)
+    sorted_set (1.0.3)
+      rbtree
+      set (~> 1.0)
+    spreadsheet (1.2.9)
       ruby-ole
     sprockets (4.0.2)
       concurrent-ruby (~> 1.0)
@@ -275,7 +281,7 @@ GEM
       actionpack (>= 4.0)
       activesupport (>= 4.0)
       sprockets (>= 3.0.0)
-    thin (1.8.0)
+    thin (1.8.1)
       daemons (~> 1.0, >= 1.0.9)
       eventmachine (~> 1.0, >= 1.0.4)
       rack (>= 1, < 3)
@@ -285,18 +291,17 @@ GEM
       thread_safe (~> 0.1)
     unf (0.1.4)
       unf_ext
-    unf_ext (0.0.7.7)
-    unicode-display_width (1.7.0)
+    unf_ext (0.0.8)
+    unicode-display_width (1.8.0)
     url_safe_base64 (0.2.2)
-    virtus (1.0.5)
+    virtus (2.0.0)
       axiom-types (~> 0.1)
       coercible (~> 1.0)
       descendants_tracker (~> 0.0, >= 0.0.3)
-      equalizer (~> 0.0, >= 0.0.9)
     warden (1.2.7)
       rack (>= 1.0)
-    webmock (3.12.2)
-      addressable (>= 2.3.6)
+    webmock (3.14.0)
+      addressable (>= 2.8.0)
       crack (>= 0.3.2)
       hashdiff (>= 0.4.0, < 2.0.0)
 
@@ -340,7 +345,7 @@ DEPENDENCIES
   roo-xls
   rubocop (= 0.46.0)
   ruby-filemagic
-  ruby-saml (~> 1.11.0)
+  ruby-saml (~> 1.13.0)
   rubyzip
   simplecov
   thin
@@ -350,4 +355,4 @@ RUBY VERSION
    ruby 2.6.7p197
 
 BUNDLED WITH
-   2.1.4
+   2.0.0.pre.3
