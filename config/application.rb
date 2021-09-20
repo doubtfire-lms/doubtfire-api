@@ -58,6 +58,8 @@ module Doubtfire
 
       # The IDP SAML login URL, (e.g., "https://login.microsoftonline.com/352fcd02-3f33-4048-b702-fce5d36deb78/saml2")
       config.saml[:idp_sso_target_url] = ENV['DF_SAML_SSO_IDP_TARGET_URL']
+
+      config.saml[:idp_cert] = ENV['DF_SAML_IDP_CERT']
     end
 
     # ==> AAF authentication
