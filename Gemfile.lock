@@ -61,10 +61,10 @@ GEM
       coderay (>= 1.0.0)
       erubi (>= 1.0.0)
       rack (>= 0.9.0)
-    bunny (2.14.3)
-      amq-protocol (~> 2.3, >= 2.3.0)
     bindata (2.4.8)
     builder (3.2.4)
+    bunny (2.14.3)
+      amq-protocol (~> 2.3, >= 2.3.0)
     byebug (11.1.3)
     ci_reporter (2.0.0)
       builder (>= 2.1.2)
@@ -181,7 +181,6 @@ GEM
       daemon_controller (>= 1.2.0)
       rack
       rake (>= 0.8.1)
-    pg (0.21.0)
     powerpack (0.1.3)
     public_suffix (4.0.6)
     racc (1.5.2)
@@ -330,7 +329,6 @@ DEPENDENCIES
   moss_ruby (>= 1.1.2)
   mysql2 (= 0.4.10)
   passenger (= 4.0.42)
-  pg (~> 0.18)
   rack-cors
   rails (= 4.2.8)
   rails-latex (= 2.0.1)
