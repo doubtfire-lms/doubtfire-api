@@ -58,8 +58,9 @@ module Doubtfire
 
       # The IDP SAML login URL, (e.g., "https://login.microsoftonline.com/352fcd02-3f33-4048-b702-fce5d36deb78/saml2")
       config.saml[:idp_sso_target_url] = ENV['DF_SAML_SSO_IDP_TARGET_URL']
-
-      config.saml[:idp_sso_configuration_file] = File.new(File.expand_path(File.join(Rails.root, 'SAML_metadata.xml'))).read
+      ENV['DF_SAML_SSO_XML_CONFIG']
+      config.saml[:idp_sso_cert] = ENV['DF_SAML_SSO_IDP_CERT']
+      # config.saml[:idp_sso_configuration_file] = File.new(File.expand_path(File.join(Rails.root, 'SAML_metadata.xml'))).read
     end
 
     # ==> AAF authentication
