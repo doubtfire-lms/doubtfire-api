@@ -27,7 +27,7 @@ RUN gem install bundler
 
 # Install the Gems
 COPY ./Gemfile ./Gemfile.lock /doubtfire/
-RUN bundle install --without passenger
+RUN bundle install
 
 EXPOSE 3000
 
