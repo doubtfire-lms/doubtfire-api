@@ -36,12 +36,6 @@ group :development, :test, :staging do
   gem 'webmock'
 end
 
-# Optional passenger gem
-# usage: bundle --with-env=passenger
-group :passenger do
-  gem 'passenger', '= 4.0.42'
-end
-
 # Database
 gem 'mysql2', '~>0.5.0'
 
