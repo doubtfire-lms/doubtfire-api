@@ -242,6 +242,9 @@ module Api
       params do
         requires :auth_token, type: String, desc: 'The user\'s temporary auth token'
       end
+    end
+
+    if AuthenticationHelpers.saml_auth? || AuthenticationHelpers.aaf_auth?
       post '/auth' do
         error!({ error: 'Invalid token.' }, 404) if params[:auth_token].nil?
         logger.info "Get user via auth_token from #{request.ip}"
