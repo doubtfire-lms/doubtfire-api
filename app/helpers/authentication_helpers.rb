@@ -95,21 +95,21 @@ module AuthenticationHelpers
   end
 
   #
-  # Returns true iff using AAF devise auth strategy
+  # Returns true if using AAF devise auth strategy
   #
   def aaf_auth?
     Doubtfire::Application.config.auth_method == :aaf
   end
 
   #
-  # Returns true iff using LDAP devise auth strategy
+  # Returns true if using LDAP devise auth strategy
   #
   def ldap_auth?
     Doubtfire::Application.config.auth_method == :ldap
   end
 
   #
-  # Returns true iff using database devise auth strategy
+  # Returns true if using database devise auth strategy
   #
   def db_auth?
     Doubtfire::Application.config.auth_method == :database
