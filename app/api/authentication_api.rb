@@ -93,75 +93,43 @@ module Api
         requires :SAMLResponse, type: String, desc: 'Data provided for further processing.'
       end
       post '/auth/jwt' do
-        # def consume
         response = OneLogin::RubySaml::Response.new(params[:SAMLResponse], :allowed_clock_drift => 1.second, :settings => AuthenticationHelpers.saml_settings)
 
         # We validate the SAML Response and check if the user already exists in the system
-        if response.is_valid?
-          logger.info response
-          login_id = response.name_id
-          attributes = response.attributes
-          logger.info
-          logger.info attributes
+        return error!({ error: 'Invalid SAML response.' }, 401) unless response.is_valid?
 
-          email = attrs[:mail]
+        attributes = response.attributes
 
-          # Lookup using login_id if it exists
-          # Lookup using email otherwise and set login_id
-          # Otherwise create new
-          user = User.find_by(login_id: login_id) ||
-                User.find_by_username(email[/(.*)@/,1]) ||
-                User.find_by(email: email) ||
-                User.find_or_create_by(login_id: login_id) do |new_user|
-                  role = Role.aaf_affiliation_to_role_id(attrs[:edupersonscopedaffiliation])
-                  first_name = (attrs[:givenname] || attrs[:cn]).capitalize
-                  last_name = attrs[:surname].capitalize
-                  username = email.split('@').first
-                  # Some institutions may provide givenname and surname, others
-                  # may only provide common name which we will use as first name
-                  new_user.first_name = first_name
-                  new_user.last_name  = last_name
-                  new_user.email      = email
-                  new_user.username   = username
-                  new_user.nickname   = first_name
-                  new_user.role_id    = role
-                end
+        email = attributes.fetch(/name/)
 
-          # Set login id + username if not yet specified
-          user.login_id = login_id if user.login_id.nil?
-          user.username = username if user.username.nil?
+        login_id = response.name_id || response.nameid
+        logger.debug "Response.name_id or nameid is: " login_id
+        # Lookup using login_id if it exists
+        # Lookup using email otherwise and set login_id
+        # Otherwise create new
+        user = User.find_by(login_id: login_id) ||
+              User.find_by_username(email[/(.*)@/,1]) ||
+              User.find_by(email: email) ||
+              User.find_or_create_by(login_id: login_id) do |new_user|
+                role = attributes.fetch(/role/) || Role.student.id
+                first_name = (attributes.fetch(/givenname/) || attributes.fetch(/cn/)).capitalize
+                last_name = attributes.fetch(/surname/).capitalize
+                username = email.split('@').first
+                # Some institutions may provide givenname and surname, others
+                # may only provide common name which we will use as first name
+                new_user.first_name = first_name
+                new_user.last_name  = last_name
+                new_user.email      = email
+                new_user.username   = username
+                new_user.nickname   = first_name
+                new_user.role_id    = role
+              end
 
-          # Try to authenticate
-          return error!({ error: 'Invalid JSON web token.' }, 401) unless user.authenticate?(jws)
+        # Set login id + username if not yet specified
+        user.login_id = login_id if user.login_id.nil?
+        user.username = username if user.username.nil?
 
-          # Try and save the user once authenticated if new
-          if user.new_record?
-            user.encrypted_password = BCrypt::Password.create('password')
-
-            unless user.valid?
-              error!(error: 'There was an error creating your account in Doubtfire. ' \
-                            'Please get in contact with your unit convenor or the ' \
-                            'Doubtfire administrators.')
-            end
-            user.save
-          end
-
-          # Generate a temporary auth_token for future requests
-          user.generate_temporary_authentication_token!
-
-          # Must redirect to the front-end after sign in
-          protocol = Rails.env.development? ? 'http' : 'https'
-          host = Rails.env.development? ? "#{protocol}://localhost:3000" : Doubtfire::Application.config.institution[:host]
-          host = "#{protocol}://#{host}" unless host.starts_with?('http')
-          redirect "#{host}/#sign_in?authToken=#{user.auth_token}"
-        else
-          # authorize_failure  # This method shows an error message
-          logger.info response.errors
-          # List of errors is available in response.errors array
-        end
-        # end
-        # "test"
-      end
+        create_authenticated_user_and_redirect(user)
     end
 
     #
@@ -212,17 +180,19 @@ module Api
 
         # Try to authenticate
         return error!({ error: 'Invalid JSON web token.' }, 401) unless user.authenticate?(jws)
+        create_authenticated_user_and_redirect(user)
+      end
 
+      def create_authenticated_user_and_redirect(user)
         # Try and save the user once authenticated if new
         if user.new_record?
           user.encrypted_password = BCrypt::Password.create('password')
-
           unless user.valid?
             error!(error: 'There was an error creating your account in Doubtfire. ' \
                           'Please get in contact with your unit convenor or the ' \
                           'Doubtfire administrators.')
           end
-          user.save
+          user.save!
         end
 
         # Generate a temporary auth_token for future requests
@@ -233,6 +203,7 @@ module Api
         host = Rails.env.development? ? "#{protocol}://localhost:3000" : Doubtfire::Application.config.institution[:host]
         host = "#{protocol}://#{host}" unless host.starts_with?('http')
         redirect "#{host}/#sign_in?authToken=#{user.auth_token}"
+        end
       end
 
       #
