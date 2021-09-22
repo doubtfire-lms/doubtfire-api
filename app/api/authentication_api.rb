@@ -103,7 +103,6 @@ module Api
         email = attributes.fetch(/name/)
 
         login_id = response.name_id || response.nameid
-        logger.debug "Response.name_id or nameid is: " login_id
         # Lookup using login_id if it exists
         # Lookup using email otherwise and set login_id
         # Otherwise create new
