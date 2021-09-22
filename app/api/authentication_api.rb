@@ -128,7 +128,27 @@ module Api
         user.login_id = login_id if user.login_id.nil?
         user.username = username if user.username.nil?
 
-        create_authenticated_user_and_redirect(user)
+        # Try and save the user once authenticated if new
+        if user.new_record?
+          user.encrypted_password = BCrypt::Password.create('password')
+          unless user.valid?
+            error!(error: 'There was an error creating your account in Doubtfire. ' \
+                          'Please get in contact with your unit convenor or the ' \
+                          'Doubtfire administrators.')
+          end
+          user.save!
+        end
+
+        # Generate a temporary auth_token for future requests
+        user.generate_temporary_authentication_token!
+
+        # Must redirect to the front-end after sign in
+        protocol = Rails.env.development? ? 'http' : 'https'
+        host = Rails.env.development? ? "#{protocol}://localhost:3000" : Doubtfire::Application.config.institution[:host]
+        host = "#{protocol}://#{host}" unless host.starts_with?('http')
+        redirect "#{host}/#sign_in?authToken=#{user.auth_token}"
+
+      end
     end
 
     #
@@ -179,10 +199,7 @@ module Api
 
         # Try to authenticate
         return error!({ error: 'Invalid JSON web token.' }, 401) unless user.authenticate?(jws)
-        create_authenticated_user_and_redirect(user)
-      end
 
-      def create_authenticated_user_and_redirect(user)
         # Try and save the user once authenticated if new
         if user.new_record?
           user.encrypted_password = BCrypt::Password.create('password')
@@ -202,9 +219,12 @@ module Api
         host = Rails.env.development? ? "#{protocol}://localhost:3000" : Doubtfire::Application.config.institution[:host]
         host = "#{protocol}://#{host}" unless host.starts_with?('http')
         redirect "#{host}/#sign_in?authToken=#{user.auth_token}"
-        end
-      end
 
+
+      end
+    end
+
+    if AuthenticationHelpers.saml_auth? || AuthenticationHelpers.aaf_auth?
       #
       # Respond user details provided a temporary login token
       #
@@ -212,9 +232,6 @@ module Api
       params do
         requires :auth_token, type: String, desc: 'The user\'s temporary auth token'
       end
-    end
-
-    if AuthenticationHelpers.saml_auth? || AuthenticationHelpers.aaf_auth?
       post '/auth' do
         error!({ error: 'Invalid token.' }, 404) if params[:auth_token].nil?
         logger.info "Get user via auth_token from #{request.ip}"
@@ -242,7 +259,7 @@ module Api
         method: Doubtfire::Application.config.auth_method
       }
       if aaf_auth?
-        response[:redirect_to] = Doubtfire::Application.config.aaf[:redirect_url] if
+        response[:redirect_to] = Doubtfire::Application.config.aaf[:redirect_url]
         return response
       elsif saml_auth?
         request = OneLogin::RubySaml::Authrequest.new
