@@ -19,7 +19,6 @@ group :development, :test do
   gem 'simplecov', require: false
   gem 'better_errors'
   gem 'rails_best_practices'
-  gem 'thin'
   gem 'rubocop'
   gem 'rubocop-faker'
   gem 'rubocop-rails'
@@ -40,10 +39,9 @@ end
 gem 'mysql2', '~>0.5.0'
 
 # Webserver - included in development and test and optionally in production
-# usage: bundle --with-env=webserver
-group :development, :test, :webserver do
-  gem 'thin'
-end
+gem 'puma', '~> 5.0'
+
+gem 'bootsnap', '>= 1.4.4', require: false
 
 # Extend irb for better output
 gem 'hirb'
