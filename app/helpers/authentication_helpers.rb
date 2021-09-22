@@ -71,7 +71,7 @@ module AuthenticationHelpers
         settings = OneLogin::RubySaml::Settings.new
         settings.idp_cert                     = Doubtfire::Application.config.saml[:idp_sso_cert]
         settings.name_identifier_format       = Doubtfire::Application.config.saml[:idp_name_identifier_format]
-
+      end
       settings.assertion_consumer_service_url = Doubtfire::Application.config.saml[:assertion_consumer_service_url]
       settings.sp_entity_id                   = Doubtfire::Application.config.saml[:entity_id]
       settings.idp_sso_target_url             = Doubtfire::Application.config.saml[:idp_sso_target_url]
