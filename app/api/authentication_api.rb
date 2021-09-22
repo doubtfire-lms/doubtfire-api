@@ -16,7 +16,7 @@ module Api
     #
     # Sign in - only mounted if AAF auth is NOT used
     #
-    if AuthenticationHelpers.aaf_auth? or AuthenticationHelpers.saml_auth?
+    if not AuthenticationHelpers.aaf_auth? and not AuthenticationHelpers.saml_auth?
       desc 'Sign in'
       params do
         requires :username, type: String, desc: 'User username'
