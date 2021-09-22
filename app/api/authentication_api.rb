@@ -249,6 +249,7 @@ module Api
         return request.create(AuthenticationHelpers.saml_settings)
       else
         response
+      end
     end
 
     #
