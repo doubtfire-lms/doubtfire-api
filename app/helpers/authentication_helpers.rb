@@ -92,6 +92,11 @@ module AuthenticationHelpers
       settings
     end
 
+  #
+  # Returns true if using SAML2.0 auth strategy
+  #
+  def saml_auth?
+    Doubtfire::Application.config.auth_method == :saml
   end
 
   #
