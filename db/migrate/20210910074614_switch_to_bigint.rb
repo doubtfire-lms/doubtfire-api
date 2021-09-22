@@ -127,8 +127,8 @@ class SwitchToBigint < ActiveRecord::Migration[6.1]
     # add_index :breaks, :teaching_period_id
     # add_index :comments_read_receipts, :task_comment_id
     # add_index :comments_read_receipts, :user_id
-    # add_index :group_memberships, :group_id
-    # add_index :group_memberships, :project_id
+    add_index :group_memberships, :group_id
+    add_index :group_memberships, :project_id
     # add_index :group_sets, :unit_id
     add_index :group_submissions, :group_id
     add_index :group_submissions, :submitted_by_project_id
@@ -187,6 +187,8 @@ class SwitchToBigint < ActiveRecord::Migration[6.1]
     # add_index :webcal_unit_exclusions, :webcal_id
     add_index :webcal_unit_exclusions, :unit_id
     # add_index :webcals, :user_id
+
+    remove_index "index_learning_outcome_task_links_on_learning_outcome_id"
   end
 
 end
