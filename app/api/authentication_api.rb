@@ -266,7 +266,7 @@ module Api
     desc 'Authentication method configuration'
     get '/auth/method' do
       response = {
-        method: "SAML2"
+        method: Doubtfire::Application.config.auth_method
       }
       # old AAF method temporarily commented out
       # response[:redirect_to] = Doubtfire::Application.config.saml[:idp_sso_target_url]
