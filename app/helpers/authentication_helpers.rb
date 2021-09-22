@@ -58,39 +58,28 @@ module AuthenticationHelpers
   end
 
   #
-  # Returns true iff using AAF devise auth strategy
+  # Returns the SAML2.0 settings object using information provided as env variables
   #
-  def saml_auth?
-    Doubtfire::Application.config.auth_method == :saml
-  end
-
   def saml_settings
     if saml_auth?
+      metadata_url = Doubtfire::Application.config.saml[:SAML_metadata_url] || nil
 
-      puts "Loading metadata"
+      if metadata_url
+        idp_metadata_parser = OneLogin::RubySaml::IdpMetadataParser.new
+        settings = idp_metadata_parser.parse_remote(metadata_url)
+      else
+        settings = OneLogin::RubySaml::Settings.new
+        settings.idp_cert                     = Doubtfire::Application.config.saml[:idp_sso_cert]
+        settings.name_identifier_format       = Doubtfire::Application.config.saml[:idp_name_identifier_format]
 
-      # idp_metadata_parser = OneLogin::RubySaml::IdpMetadataParser.new.parse
-      # idp_options = OneLogin::RubySaml::IdpMetadataParser.new.parse(
-      #   Doubtfire::Application.config.saml[:idp_sso_configuration_file]
-      # )
-
-      settings = OneLogin::RubySaml::Settings.new
-
-      puts "settings"
-      puts settings
-      p settings.inspect
-
-      settings.assertion_consumer_service_url = Doubtfire::Application.config.saml[:consumer_target_url]
+      settings.assertion_consumer_service_url = Doubtfire::Application.config.saml[:assertion_consumer_service_url]
       settings.sp_entity_id                   = Doubtfire::Application.config.saml[:entity_id]
       settings.idp_sso_target_url             = Doubtfire::Application.config.saml[:idp_sso_target_url]
       settings.idp_slo_target_url             = Doubtfire::Application.config.saml[:idp_sso_target_url]
-      settings.idp_cert                       = Doubtfire::Application.config.saml[:idp_sso_cert]
 
-      settings.name_identifier_format         = "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress"
-
-      # settings.authn_context = "urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport"
       settings
     end
+  end
 
   #
   # Returns true if using SAML2.0 auth strategy
