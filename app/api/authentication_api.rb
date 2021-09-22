@@ -283,6 +283,7 @@ module Api
     get '/auth/signout_url' do
       response = {}
       response[:auth_signout_url] = Doubtfire::Application.config.aaf[:auth_signout_url] if aaf_auth? && Doubtfire::Application.config.aaf[:auth_signout_url].present?
+      response[:auth_signout_url] = Doubtfire::Application.config.saml[:idp_sso_target_url] if aaf_auth? && Doubtfire::Application.config.saml[:idp_sso_target_url].present?
       response
     end
 
