@@ -136,7 +136,7 @@ module Api
                           'Please get in contact with your unit convenor or the ' \
                           'Doubtfire administrators.')
           end
-          user.save!
+          user.save
         end
 
         # Generate a temporary auth_token for future requests
@@ -208,7 +208,7 @@ module Api
                           'Please get in contact with your unit convenor or the ' \
                           'Doubtfire administrators.')
           end
-          user.save!
+          user.save
         end
 
         # Generate a temporary auth_token for future requests
