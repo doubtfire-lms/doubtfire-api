@@ -119,7 +119,7 @@ ActiveRecord::Schema.define(version: 2021_09_10_074614) do
     t.bigint "learning_outcome_id"
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.index ["learning_outcome_id"], name: "index_learning_outcome_task_links_on_learning_outcome_id"
+    t.index ["learning_outcome_id"], name: "learning_outcome_task_links_lo_index"
     t.index ["task_definition_id"], name: "index_learning_outcome_task_links_on_task_definition_id"
     t.index ["task_id"], name: "index_learning_outcome_task_links_on_task_id"
   end
@@ -228,7 +228,7 @@ ActiveRecord::Schema.define(version: 2021_09_10_074614) do
     t.index ["assessor_id"], name: "index_task_comments_on_assessor_id"
     t.index ["discussion_comment_id"], name: "index_task_comments_on_discussion_comment_id"
     t.index ["overseer_assessment_id"], name: "index_task_comments_on_overseer_assessment_id"
-    t.index ["recipient_id"], name: "index_task_comments_on_recipient_id"
+    t.index ["recipient_id"], name: "fk_rails_1dbb49165b"
     t.index ["reply_to_id"], name: "index_task_comments_on_reply_to_id"
     t.index ["task_id"], name: "index_task_comments_on_task_id"
     t.index ["task_status_id"], name: "index_task_comments_on_task_status_id"
@@ -281,7 +281,7 @@ ActiveRecord::Schema.define(version: 2021_09_10_074614) do
     t.datetime "updated_at", null: false
     t.index ["task_id", "user_id"], name: "index_task_pins_on_task_id_and_user_id", unique: true
     t.index ["task_id"], name: "index_task_pins_on_task_id"
-    t.index ["user_id"], name: "index_task_pins_on_user_id"
+    t.index ["user_id"], name: "fk_rails_915df186ed"
   end
 
   create_table "task_statuses", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
@@ -358,7 +358,7 @@ ActiveRecord::Schema.define(version: 2021_09_10_074614) do
     t.bigint "unit_id", null: false
     t.index ["abbreviation", "unit_id"], name: "index_tutorial_streams_on_abbreviation_and_unit_id", unique: true
     t.index ["abbreviation"], name: "index_tutorial_streams_on_abbreviation"
-    t.index ["activity_type_id"], name: "index_tutorial_streams_on_activity_type_id"
+    t.index ["activity_type_id"], name: "fk_rails_14ef80da76"
     t.index ["name", "unit_id"], name: "index_tutorial_streams_on_name_and_unit_id", unique: true
     t.index ["unit_id"], name: "index_tutorial_streams_on_unit_id"
   end
@@ -441,7 +441,7 @@ ActiveRecord::Schema.define(version: 2021_09_10_074614) do
     t.string "username"
     t.string "nickname"
     t.string "unlock_token"
-    t.integer "role_id", default: 0
+    t.bigint "role_id", default: 0
     t.boolean "receive_task_notifications", default: true
     t.boolean "receive_feedback_notifications", default: true
     t.boolean "receive_portfolio_notifications", default: true
@@ -449,6 +449,8 @@ ActiveRecord::Schema.define(version: 2021_09_10_074614) do
     t.boolean "has_run_first_time_setup", default: false
     t.string "login_id"
     t.string "student_id"
+    t.index ["login_id"], name: "index_users_on_login_id", unique: true
+    t.index ["role_id"], name: "index_users_on_role_id"
   end
 
   create_table "webcal_unit_exclusions", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
@@ -456,7 +458,7 @@ ActiveRecord::Schema.define(version: 2021_09_10_074614) do
     t.bigint "unit_id", null: false
     t.index ["unit_id", "webcal_id"], name: "index_webcal_unit_exclusions_on_unit_id_and_webcal_id", unique: true
     t.index ["unit_id"], name: "index_webcal_unit_exclusions_on_unit_id"
-    t.index ["webcal_id"], name: "index_webcal_unit_exclusions_on_webcal_id"
+    t.index ["webcal_id"], name: "fk_rails_d5fab02cb7"
   end
 
   create_table "webcals", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
@@ -466,27 +468,7 @@ ActiveRecord::Schema.define(version: 2021_09_10_074614) do
     t.integer "reminder_time"
     t.string "reminder_unit"
     t.index ["guid"], name: "index_webcals_on_guid", unique: true
-    t.index ["user_id"], name: "index_webcals_on_user_id"
+    t.index ["user_id"], name: "index_webcals_on_user_id", unique: true
   end
 
-  add_foreign_key "auth_tokens", "users"
-  add_foreign_key "breaks", "teaching_periods"
-  add_foreign_key "comments_read_receipts", "task_comments"
-  add_foreign_key "comments_read_receipts", "users"
-  add_foreign_key "overseer_assessments", "tasks"
-  add_foreign_key "projects", "campuses"
-  add_foreign_key "task_comments", "users", column: "recipient_id"
-  add_foreign_key "task_definitions", "tutorial_streams"
-  add_foreign_key "task_pins", "tasks"
-  add_foreign_key "task_pins", "users"
-  add_foreign_key "tutorial_enrolments", "projects"
-  add_foreign_key "tutorial_enrolments", "tutorials"
-  add_foreign_key "tutorial_streams", "activity_types"
-  add_foreign_key "tutorial_streams", "units"
-  add_foreign_key "tutorials", "campuses"
-  add_foreign_key "tutorials", "tutorial_streams"
-  add_foreign_key "units", "teaching_periods"
-  add_foreign_key "webcal_unit_exclusions", "units"
-  add_foreign_key "webcal_unit_exclusions", "webcals"
-  add_foreign_key "webcals", "users"
 end
