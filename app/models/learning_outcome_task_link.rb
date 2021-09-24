@@ -1,4 +1,6 @@
-class LearningOutcomeTaskLink < ActiveRecord::Base
+class LearningOutcomeTaskLink < ApplicationRecord
+  default_scope { all }
+
   belongs_to :task_definition
   belongs_to :task
   belongs_to :learning_outcome
@@ -11,7 +13,7 @@ class LearningOutcomeTaskLink < ActiveRecord::Base
 
   def ensure_relations_unique
     return if learning_outcome.nil? || task_definition.nil?
-
+ 
     if id.nil?
       related_links = LearningOutcomeTaskLink.where('task_definition_id = :task_definition_id AND learning_outcome_id = :learning_outcome_id', task_definition_id: task_definition.id, learning_outcome_id: learning_outcome.id)
     else

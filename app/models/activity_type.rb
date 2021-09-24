@@ -1,4 +1,4 @@
-class ActivityType < ActiveRecord::Base
+class ActivityType < ApplicationRecord
   has_many :tutorial_streams
 
   # Callbacks - methods called are private

@@ -2,7 +2,6 @@ require File.expand_path('../boot', __FILE__)
 require 'rails/all'
 require 'csv'
 require 'yaml'
-require 'grape-active_model_serializers'
 require 'bunny-pub-sub/services_manager'
 
 # Precompile assets before deploying to production
@@ -144,7 +143,6 @@ module Doubtfire
     # Grape Serialization
     config.paths.add 'app/api', glob: '**/*.rb'
     config.autoload_paths += Dir["#{Rails.root}/app"]
-    config.autoload_paths += Dir["#{Rails.root}/app/serializers"]
     config.autoload_paths += Dir[Rails.root.join("app", "models", "{*/}")]
 
     # CORS config

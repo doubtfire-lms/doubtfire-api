@@ -70,7 +70,7 @@ module Api
 
     desc 'Upload CSV of task to outcome alignments'
     params do
-      requires :file, type: Rack::Multipart::UploadedFile, desc: 'CSV upload file.'
+      requires :file, type: File, desc: 'CSV upload file.'
       optional :project_id, type: Integer, desc: 'The id of the student project to upload the alignment to'
     end
     post '/units/:unit_id/learning_alignments/csv' do

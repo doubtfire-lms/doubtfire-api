@@ -1,4 +1,4 @@
-class OverseerAssessment < ActiveRecord::Base
+class OverseerAssessment < ApplicationRecord
   belongs_to :task
 
   has_one :project, through: :task
@@ -34,7 +34,7 @@ class OverseerAssessment < ActiveRecord::Base
     assessment_resources_path = task_definition.task_assessment_resources
 
     return nil if docker_image_name_tag.nil? || docker_image_name_tag.strip.empty?
-  
+
     result = OverseerAssessment.create!(
       task: task,
       status: :not_queued,
@@ -146,7 +146,7 @@ class OverseerAssessment < ActiveRecord::Base
 
     assessment_resources_path = task_definition.task_assessment_resources
 
-    unless  unit.assessment_enabled && 
+    unless  unit.assessment_enabled &&
             task_definition.assessment_enabled &&
             task_definition.has_task_assessment_resources? &&
             (task.has_new_files? || task.has_done_file?)
@@ -215,12 +215,12 @@ class OverseerAssessment < ActiveRecord::Base
   def update_from_output()
     # Update the overseer assessment status
     self.status = :done
-  
+
     yaml_path = "#{output_path}/output.yaml"
-  
+
     if File.exist? yaml_path
       yaml_file = YAML.load_file(yaml_path).with_indifferent_access
-  
+
       comment_txt = ''
       if !yaml_file['build_message'].nil? && !yaml_file['build_message'].strip.empty?
         comment_txt += yaml_file['build_message']
@@ -229,13 +229,13 @@ class OverseerAssessment < ActiveRecord::Base
         comment_txt += "\n\n" unless comment_txt.empty?
         comment_txt += yaml_file['run_message']
       end
-      
+
       if comment_txt.present?
         update_assessment_comment(comment_txt)
       else
         puts 'YAML file doesn\'t contain field `build_message` or `run_message`'
       end
-  
+
       new_status = nil
       if yaml_file['new_status'].present?
         new_status = TaskStatus.status_for_name(yaml_file['new_status'])

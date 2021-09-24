@@ -95,7 +95,7 @@ module Api
 
     desc 'Upload the outcomes for a unit from a csv'
     params do
-      requires :file, type: Rack::Multipart::UploadedFile, desc: 'CSV upload file.'
+      requires :file, type: File, desc: 'CSV upload file.'
       requires :unit_id, type: Integer, desc: 'The unit to upload tasks to'
     end
     post '/units/:unit_id/outcomes/csv' do

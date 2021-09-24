@@ -39,8 +39,11 @@ class StatusTest < ActiveSupport::TestCase
       trigger: 'ready_for_feedback',
     }
 
+    # Add auth_token and username to header
+    add_auth_header_for(user: user)
+
     # Submit
-    post_json with_auth_token("/api/projects/#{project.id}/task_def_id/#{td.id}/submission", user), data_to_post
+    post_json "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
     response = last_response_body
     assert_equal 201, last_response.status
     assert response["status"] == 'time_exceeded', "Error: Submission after deadline... should be time exceeded"
@@ -58,7 +61,7 @@ class StatusTest < ActiveSupport::TestCase
 
     # Task status comments by staff is not marked read by students
     assert te_comment.read_by?(tutor), 'Error: TE status comment should be read by the tutor'
-    refute te_comment.read_by?(user), 'Error: TE status comment should not be read by the student'
+    assert te_comment.read_by?(user), 'Error: TE status comment should be read by the student'
 
     td.destroy!
   end

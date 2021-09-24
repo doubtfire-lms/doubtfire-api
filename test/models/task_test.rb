@@ -7,9 +7,35 @@ class TaskDefinitionTest < ActiveSupport::TestCase
   include Rack::Test::Methods
   include TestHelpers::TestFileHelper
   include TestHelpers::AuthHelper
+  include TestHelpers::JsonHelper
 
   def app
     Rails.application
+  end
+
+  def test_comments_for_user
+    project = FactoryBot.create(:project)
+    unit = project.unit
+    user = project.student
+    convenor = unit.main_convenor_user
+    task_definition = unit.task_definitions.first
+    task = project.task_for_task_definition(task_definition)
+
+    task.add_text_comment(convenor, 'Hello World')
+    task.add_text_comment(convenor, 'Message 2')
+    task.add_text_comment(convenor, 'Last message')
+
+    comments = task.comments_for_user(user)
+    comments.each do |data|
+      assert_equal 1, data.is_new
+    end
+
+    task.mark_comments_as_read user, task.comments
+
+    comments = task.comments_for_user(user)
+    comments.each do |data|
+      assert_equal 0, data.is_new
+    end
   end
 
   def test_pdf_creation_with_gif
@@ -40,9 +66,11 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     project = unit.active_projects.first
 
-    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", with_auth_token(data_to_post)
+    add_auth_header_for user: unit.main_convenor_user
 
-    assert_equal 201, last_response.status
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
+
+    assert_equal 201, last_response.status, last_response_body
 
     task = project.task_for_task_definition(td)
     assert task.convert_submission_to_pdf
@@ -83,12 +111,14 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     project = unit.active_projects.first
 
-    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", with_auth_token(data_to_post)
+    add_auth_header_for user: unit.main_convenor_user
+
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
 
     assert_equal 201, last_response.status
 
     task = project.task_for_task_definition(td)
-    task.move_files_to_in_process(FileHelper.student_work_dir(:in_process))
+    task.move_files_to_in_process(FileHelper.student_work_dir(:new))
 
     assert File.exists? "#{Doubtfire::Application.config.student_work_dir}/in_process/#{task.id}/000-image.jpg"
 
@@ -123,7 +153,9 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     project = unit.active_projects.first
 
-    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", with_auth_token(data_to_post)
+    add_auth_header_for user: unit.main_convenor_user
+
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
 
     assert_equal 201, last_response.status
 
@@ -165,11 +197,13 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     data_to_post = with_file('test_files/submissions/Swinburne.jpg', 'image/jpg', data_to_post)
 
     project = unit.active_projects.first
-    
-    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", with_auth_token(data_to_post)
+
+    add_auth_header_for user: unit.main_convenor_user
+
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
 
     task = project.task_for_task_definition(td)
-    
+
     task.convert_submission_to_pdf
 
     path = task.final_pdf_path
@@ -194,8 +228,10 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     data_to_post = with_file('test_files/unit_files/sample-learning-summary.pdf', 'application/pdf', data_to_post)
 
     project = unit.active_projects.first
-    
-    post "/api/projects/#{project.id}/task_def_id/#{task_def.id}/submission", with_auth_token(data_to_post, user=project.user)
+
+    add_auth_header_for user: project.user
+
+    post "/api/projects/#{project.id}/task_def_id/#{task_def.id}/submission", data_to_post
 
     assert_equal 201, last_response.status
 
@@ -237,7 +273,9 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     data_to_post = with_file('test_files/unit_files/sample-learning-summary.pdf', 'application/pdf', data_to_post)
 
-    post "/api/projects/#{project.id}/task_def_id/#{task_def.id}/submission", with_auth_token(data_to_post, user=project.user)
+    add_auth_header_for user: project.user
+
+    post "/api/projects/#{project.id}/task_def_id/#{task_def.id}/submission", data_to_post
 
     project_task = project.task_for_task_definition(task_def)
 

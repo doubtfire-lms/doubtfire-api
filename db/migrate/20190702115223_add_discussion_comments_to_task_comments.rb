@@ -1,4 +1,4 @@
-class AddDiscussionCommentsToTaskComments < ActiveRecord::Migration
+class AddDiscussionCommentsToTaskComments < ActiveRecord::Migration[4.2]
   def change
     add_column :task_comments, :time_discussion_started, :datetime
     add_column :task_comments, :time_discussion_completed, :datetime

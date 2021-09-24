@@ -2,6 +2,7 @@ require 'grape'
 require 'unit_serializer'
 require 'mime-check-helpers'
 require 'csv_helper'
+require 'entities/unit_entity'
 
 module Api
   class UnitsApi < Grape::API
@@ -9,7 +10,6 @@ module Api
     helpers AuthorisationHelpers
     helpers MimeCheckHelpers
     helpers CsvHelper
-
 
     before do
       authenticated?
@@ -38,7 +38,7 @@ module Api
 
       units = units.where('active = true') unless params[:include_in_active]
 
-      ActiveModel::ArraySerializer.new(units, each_serializer: ShallowUnitSerializer)
+      present units, with: Api::Entities::UnitEntity, user: current_user
     end
 
     desc "Get a unit's details"
@@ -50,8 +50,7 @@ module Api
       #
       # Unit uses user from thread to limit exposure
       #
-      Thread.current[:user] = current_user
-      unit
+      present unit, with: Api::Entities::UnitEntity, user: current_user
     end
 
     desc 'Update unit'
@@ -126,7 +125,7 @@ module Api
       end
               
       unit.update!(unit_parameters)
-      unit_parameters
+      present unit_parameters, with: Grape::Presenters::Presenter
     end
 
     desc 'Create unit'
@@ -200,7 +199,7 @@ module Api
 
       # Employ current user as convenor
       unit.employ_staff(current_user, Role.convenor)
-      ShallowUnitSerializer.new(unit)
+      present unit, with: Api::Entities::UnitEntity, user: current_user
     end
 
     desc 'Rollover unit'
@@ -227,6 +226,8 @@ module Api
       else
         unit.rollover(nil, params[:start_date], params[:end_date])
       end
+
+      present unit, with: Api::Entities::UnitEntity, user: current_user
     end
 
     desc 'Download the tasks that are awaiting feedback for a unit'
@@ -238,7 +239,7 @@ module Api
       end
 
       tasks = unit.tasks_awaiting_feedback(current_user)
-      unit.tasks_as_hash(tasks)
+      present unit.tasks_as_hash(tasks), with: Grape::Presenters::Presenter
     end
 
     desc 'Download the tasks that should be listed under the task inbox'
@@ -250,7 +251,7 @@ module Api
       end
 
       tasks = unit.tasks_for_task_inbox(current_user)
-      unit.tasks_as_hash(tasks)
+      present unit.tasks_as_hash(tasks), with: Grape::Presenters::Presenter
     end
 
     desc 'Download the grades for a unit'
@@ -269,7 +270,7 @@ module Api
 
     desc 'Upload CSV of all the students in a unit'
     params do
-      requires :file, type: Rack::Multipart::UploadedFile, desc: 'CSV upload file.'
+      requires :file, type: File, desc: 'CSV upload file.'
     end
     post '/csv/units/:id' do
       unit = Unit.find(params[:id])
@@ -289,7 +290,7 @@ module Api
 
     desc 'Upload CSV with the students to un-enrol from the unit'
     params do
-      requires :file, type: Rack::Multipart::UploadedFile, desc: 'CSV upload file.'
+      requires :file, type: File, desc: 'CSV upload file.'
     end
     post '/csv/units/:id/withdraw' do
       unit = Unit.find(params[:id])
@@ -306,7 +307,8 @@ module Api
       ensure_csv! path
 
       # Actually withdraw...
-      unit.unenrol_users_from_csv(File.new(path))
+      response = unit.unenrol_users_from_csv(File.new(path))
+      present response, with: Grape::Presenters::Presenter
     end
 
     desc 'Download CSV of all students in this unit'
@@ -342,7 +344,7 @@ module Api
         error!({ error: "Not authorised to download stats of student tasks in #{unit.code}" }, 403)
       end
 
-      unit.student_target_grade_stats
+      present unit.student_target_grade_stats, with: Grape::Presenters::Presenter
     end
 
     desc 'Download stats related to the status of students with tasks'
@@ -352,7 +354,7 @@ module Api
         error!({ error: "Not authorised to download stats of student tasks in #{unit.code}" }, 403)
       end
 
-      unit.task_status_stats
+      present unit.task_status_stats, with: Grape::Presenters::Presenter
     end
 
     desc 'Download stats related to the number of completed tasks'
@@ -362,7 +364,7 @@ module Api
         error!({ error: "Not authorised to download stats of student tasks in #{unit.code}" }, 403)
       end
 
-      unit.student_task_completion_stats
+      present unit.student_task_completion_stats, with: Grape::Presenters::Presenter
     end
 
     desc 'Download stats related to the number of tasks assessed by each tutor'

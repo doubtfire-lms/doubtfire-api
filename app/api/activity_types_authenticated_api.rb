@@ -30,7 +30,7 @@ module Api
       if result.nil?
         error!({ error: 'No activity type added' }, 403)
       else
-        result
+        present result, with: Api::Entities::ActivityTypeEntity
       end
     end
 
@@ -52,7 +52,7 @@ module Api
                                                                       :abbreviation)
 
       activity_type.update!(activity_type_parameters)
-      activity_type
+      present activity_type, with: Api::Entities::ActivityTypeEntity
     end
 
     desc 'Delete an activity type'
@@ -64,7 +64,7 @@ module Api
       activity_type = ActivityType.find(params[:id])
       activity_type.destroy
       error!({ error: activity_type.errors.full_messages.last }, 403) unless activity_type.destroyed?
-      activity_type.destroyed?
+      present activity_type.destroyed?, with: Grape::Presenters::Presenter
     end
   end
 end

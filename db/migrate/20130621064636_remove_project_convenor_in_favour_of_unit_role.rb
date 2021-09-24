@@ -1,4 +1,4 @@
-class RemoveProjectConvenorInFavourOfUnitRole < ActiveRecord::Migration
+class RemoveProjectConvenorInFavourOfUnitRole < ActiveRecord::Migration[4.2]
   def up
     convenor_role = Role.where(name: 'Convenor').first
     ProjectConvenor.all.each do |convenor|

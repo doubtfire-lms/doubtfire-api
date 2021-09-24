@@ -7,9 +7,10 @@ require 'onelogin/ruby-saml'
 # This is used by the grape api.
 #
 module AuthenticationHelpers
-  def warden
-    env['warden']
-  end
+  # def warden
+  #   puts ENV['warden'].inspect
+  #   env['warden']
+  # end
 
   module_function
 
@@ -18,27 +19,43 @@ module AuthenticationHelpers
   # Reads details from the params fetched from the caller context.
   #
   def authenticated?
-    user_by_token = User.find_by_auth_token(params[:auth_token]) if params && params[:auth_token]
+    # Variable to store auth_token if available
+    token_with_value = nil
     # Check warden -- authenticate using DB or LDAP etc.
-    return true if warden.authenticated?
+    # return true if warden.authenticated?
+    auth_param = headers['Auth-Token'] || params['auth_token']
+    user_param = headers['Username'] || params['username']
+
+    # Check for valid auth token  and username in request header
+    user = current_user
+
+    # Authenticate from header or params
+    if auth_param.present? && user_param.present? && user.present?
+      # Get the list of tokens for a user
+      token = user.token_for_text?(auth_param)
+    end
+
     # Check user by token
-    if params[:auth_token] && user_by_token && user_by_token.auth_token_expiry
+    if user.present? && token.present?
+      logger.info("Authenticated #{user.username} from #{request.ip}") if token.auth_token_expiry > Time.zone.now
       # Non-expired token
-      return true if user_by_token.auth_token_expiry > Time.zone.now
+      return true if token.auth_token_expiry > Time.zone.now
+      # Token is timed out - destroy it
+      token.destroy!
       # Time out this token
       error!({ error: 'Authentication token expired.' }, 419)
     else
       # Add random delay then fail
       sleep((200 + rand(200)) / 1000.0)
-      error!({ error: 'Could not authenticate with token. Token invalid.' }, 419)
+      error!({ error: 'Could not authenticate with token. Username or Token invalid.' }, 419)
     end
   end
 
   #
-  # Get the current user either from warden or from the token
+  # Get the current user either from warden or from the header
   #
   def current_user
-    warden.user || User.find_by_auth_token(params[:auth_token])
+    User.find_by_username(headers['Username']) || User.find_by_username(params['username'])
   end
 
   #
@@ -48,10 +65,17 @@ module AuthenticationHelpers
   def add_auth_to(service)
     service.routes.each do |route|
       options = route.instance_variable_get('@options')
-      next if options[:params]['auth_token']
-      options[:params]['auth_token'] = {
+      next if options[:params]['Auth_Token']
+      options[:params]['Username'] = {
         required: true,
         type:     'String',
+        in:       'header',
+        desc:     'Username'
+      }
+      options[:params]['Auth_Token'] = {
+        required: true,
+        type:     'String',
+        in:       'header',
         desc:     'Authentication token'
       }
     end
