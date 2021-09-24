@@ -20,7 +20,7 @@ module Doubtfire
 
     # ==> Authentication Method
     # Authentication method default is database, but possible settings
-    # are: database, ldap, aaf. It can be overridden using the DF_AUTH_METHOD
+    # are: database, ldap, aaf, or saml. It can be overridden using the DF_AUTH_METHOD
     # environment variable.
     config.auth_method = (ENV['DF_AUTH_METHOD'] || :database).to_sym
 
