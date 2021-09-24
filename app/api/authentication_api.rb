@@ -260,13 +260,11 @@ module Api
       }
       if aaf_auth?
         response[:redirect_to] = Doubtfire::Application.config.aaf[:redirect_url]
-        return response
       elsif saml_auth?
         request = OneLogin::RubySaml::Authrequest.new
-        return request.create(AuthenticationHelpers.saml_settings)
-      else
-        response
+        response[:redirect_to] = request.create(AuthenticationHelpers.saml_settings)
       end
+      response
     end
 
     #
