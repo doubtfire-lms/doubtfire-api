@@ -1,4 +1,4 @@
-class Campus < ActiveRecord::Base
+class Campus < ApplicationRecord
   # Relationships
   has_many    :tutorials
   has_many    :projects

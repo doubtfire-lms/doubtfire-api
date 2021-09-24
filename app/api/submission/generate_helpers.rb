@@ -15,13 +15,13 @@ module Api::Submission::GenerateHelpers
     upload_reqs.each do |detail|
       key = detail['key']
       next unless files.key? key
-      files[key].id   = files[key].name
-      files[key].name = detail['name']
-      files[key].type = detail['type']
+      files[key][:id]   = files[key]['name']
+      files[key][:name] = detail['name']
+      files[key][:type] = detail['type']
     end
 
     # File didn't get assigned an id above, then reject it since there was a mismatch
-    files = files.reject { |_key, file| file.id.nil? }
+    files = files.reject { |_key, file| file[:id].nil? }
     error!({ error: 'Upload requirements mismatch with files provided' }, 403) if files.length != upload_reqs.length
 
     # Kill the kvp

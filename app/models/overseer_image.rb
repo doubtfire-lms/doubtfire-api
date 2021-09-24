@@ -1,4 +1,4 @@
-class OverseerImage < ActiveRecord::Base
+class OverseerImage < ApplicationRecord
   # Callbacks - methods called are private
   before_destroy :can_destroy?
 

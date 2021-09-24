@@ -43,5 +43,12 @@ class UserTest < ActiveSupport::TestCase
   def test_invalid_without_last_name
     user = FactoryBot.build(:user, last_name: nil)
     refute user.valid?
-  end 
+  end
+
+  def test_can_create_multiple_auth_tokens
+    user = FactoryBot.create(:user)
+    t1 = user.generate_authentication_token!
+    t2 = user.generate_authentication_token!
+    assert_not_equal t1, t2 
+  end
 end

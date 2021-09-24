@@ -38,16 +38,15 @@ class AuthTest < ActiveSupport::TestCase
     # These match the model object... so can compare in loops
     user_keys = %w(id email first_name last_name username nickname receive_task_notifications receive_portfolio_notifications receive_feedback_notifications opt_in_to_research has_run_first_time_setup)
 
+    # Check the returned user matches the expected database value
     assert_json_matches_model(expected_auth, response_user_data, user_keys)
-
-    user_keys.each { |k| assert response_user_data.key?(k), "Response has key #{k}" }
-    user_keys.each { |k| assert_equal expected_auth[k], response_user_data[k], "Values for key #{k} match" }
 
     # Check other values returned
     assert_equal expected_auth.name, response_user_data['name'], 'Names match'
     assert_equal expected_auth.role.name, response_user_data['system_role'], 'Roles match'
 
-    assert_equal expected_auth.auth_token, actual_auth['auth_token']
+    # User has the token - count of matching tokens for that user is 1
+    assert_equal 1, expected_auth.auth_tokens.select{|t| t.authentication_token == actual_auth['auth_token']}.count
   end
 
   # Test auth when username is invalid
@@ -101,7 +100,7 @@ class AuthTest < ActiveSupport::TestCase
     
     # 400 response code means missing username and password
     assert_equal 400, last_response.status
-    assert actual_auth.key? 'error'
+    assert actual_auth.key?('error'), actual_auth.inspect
   end
 
   # Test auth with tutor role
@@ -154,26 +153,28 @@ class AuthTest < ActiveSupport::TestCase
 
   # Test put for authentication token
   def test_auth_put
-    data_to_put = {
-      username: 'acain',
-      password: 'password'
-    }
-    put_json "/api/auth/#{auth_token}", data_to_put
+    add_auth_header_for(user: User.first)
+    put_json "/api/auth", nil
+
     actual_auth = last_response_body['auth_token']
-    expected_auth = User.first.auth_token
+    expected_auth = auth_token
     # Check to see if the response auth token matches the auth token that was sent through in put
     assert_equal expected_auth, actual_auth
+  end
+
+  def test_auth_using_query_string
+    put_json "/api/auth?Username=#{User.first.username}&Auth-Token=#{auth_token(User.first)}", nil
+    assert_equal 200, last_response.status, last_response_body
   end
   
   # Test invalid authentication token
   def test_fail_auth_put
-    data_to_put = {
-      username: 'acain',
-    }
-    
-    put_json "/api/auth/1234", data_to_put
+    # Override data to set custom username or token in header
+    # Add authentication token to header
+    add_auth_header_for(user: User.first, auth_token: '1234')
+    put_json "/api/auth", nil
     actual_auth = last_response_body
-    expected_auth = User.first.auth_token
+    expected_auth = auth_token
     
     # 404 response code means invalid token
     assert_equal 404, last_response.status
@@ -184,13 +185,11 @@ class AuthTest < ActiveSupport::TestCase
     
   # Test invalid username for valid authentication token
   def test_fail_username_put
-    data_to_put = {
-      username: 'acain123'
-    }
-    
-    put_json "/api/auth/#{auth_token}", data_to_put
+    # Add authentication token to header
+    add_auth_header_for(user: User.first, username: 'acain123')
+    put_json "/api/auth", nil
     actual_auth = last_response_body
-    expected_auth = User.first.auth_token
+    expected_auth = auth_token
     
     # 404 response code means invalid token
     assert_equal 404, last_response.status
@@ -199,19 +198,20 @@ class AuthTest < ActiveSupport::TestCase
     assert actual_auth.key? 'error'
   end
 
-
   # Test valid username for empty authentication token
   def test_fail_empty_authKey_put
-    data_to_put = {
-      username: 'acain'
-    }
-    
-    put_json "/api/auth/", data_to_put
+    # Add authentication token to header
+    add_auth_header_for(user: User.first)
+
+    # Overwrite header for empty auth_token
+    header 'auth_token',''
+
+    put_json "/api/auth/", nil
     actual_auth = last_response_body
-    expected_auth = User.first.auth_token
+    expected_auth = auth_token
     
-    # 405 response code means empty token
-    assert_equal 405, last_response.status
+    # 404 response code means invalid token
+    assert_equal 404, last_response.status
     
     # Check to see if the response is invalid
     assert actual_auth.key? 'error'
@@ -219,31 +219,49 @@ class AuthTest < ActiveSupport::TestCase
   
   # Test empty request
   def test_fail_empty_body_put
-    data_to_put = {
-    }
-
-    put_json "/api/auth/#{auth_token}", data_to_put
+    put_json "/api/auth", nil
     actual_auth = last_response_body
-    expected_auth = User.first.auth_token
+    expected_auth = auth_token
     
     # 400 response code means empty body
-    assert_equal 400, last_response.status
+    assert_equal 404, last_response.status
     
     # Check to see if the response is invalid
     assert actual_auth.key? 'error'
   end
-  # End PUT tests
-  # --------------------------------------------------------------------------- #
+  # # End PUT tests
+  # # --------------------------------------------------------------------------- #
 
-  # --------------------------------------------------------------------------- #
-  # DELETE tests
+  # # --------------------------------------------------------------------------- #
+  # # DELETE tests
 
   # Test for deleting authentication token
   def test_auth_delete
-    # Get the auth token needed for delete test
-    delete "/api/auth/#{auth_token}.json", 'CONTENT_TYPE' => 'application/json'
-    # 200 response code means success!
-    assert_equal 200, last_response.status
+    # Add authentication token to header
+    add_auth_header_for(user: User.first)
+
+    delete "/api/auth", nil 
+    # 204 response code means success!
+    assert_equal 204, last_response.status
+  end
+
+  def test_token_signout_works_with_multiple
+    user = FactoryBot.create(:user)
+    # Create 2 auth tokens
+    t1 = user.generate_authentication_token!
+    t2 = user.generate_authentication_token!
+    
+    # Set custom headers for request
+    # Add authentication token to header
+    add_auth_header_for(username: user.username, auth_token: t1.authentication_token)
+    
+    # Sign out one
+    delete "/api/auth.json"
+    
+    t2.reload
+    refute t2.destroyed?
+
+    assert_raises(ActiveRecord::RecordNotFound) { t1.reload }
   end
   # End DELETE tests
   # --------------------------------------------------------------------------- #

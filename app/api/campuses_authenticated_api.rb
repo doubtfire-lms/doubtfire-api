@@ -34,7 +34,7 @@ module Api
       if result.nil?
         error!({ error: 'No campus added.' }, 403)
       else
-        result
+        present result, with: Api::Entities::CampusEntity
       end
     end
 
@@ -60,7 +60,7 @@ module Api
                                                                       :active)
 
       campus.update!(campus_parameters)
-      campus
+      present campus, with: Api::Entities::CampusEntity
     end
 
     desc 'Delete a campus'
@@ -72,7 +72,7 @@ module Api
       campus = Campus.find(params[:id])
       campus.destroy
       error!({ error: campus.errors.full_messages.last }, 403) unless campus.destroyed?
-      campus.destroyed?
+      present campus.destroyed?, with: Grape::Presenters::Presenter
     end
   end
 end

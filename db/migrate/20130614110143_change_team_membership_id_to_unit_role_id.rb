@@ -1,4 +1,4 @@
-class ChangeTeamMembershipIdToUnitRoleId < ActiveRecord::Migration
+class ChangeTeamMembershipIdToUnitRoleId < ActiveRecord::Migration[4.2]
   def change
     rename_column :projects, :team_membership_id, :unit_role_id
 

@@ -1,3 +1,3 @@
-class TaskEngagement < ActiveRecord::Base
+class TaskEngagement < ApplicationRecord
   belongs_to :task
 end

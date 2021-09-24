@@ -10,6 +10,58 @@ class CommentTest < ActiveSupport::TestCase
     Rails.application
   end
 
+  def test_get_comments
+    project = FactoryBot.create(:project)
+    unit = project.unit
+    user = project.student
+    convenor = unit.main_convenor_user
+    task_definition = unit.task_definitions.first
+    task = project.task_for_task_definition(task_definition)
+
+    add_auth_header_for user: user
+    get "/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments"
+
+    assert_equal 200, last_response.status, last_response_body
+    assert_equal 0, last_response_body.length, last_response_body.inspect
+
+    task.add_text_comment(convenor, 'Hello World')
+    task.add_text_comment(convenor, 'Message 2')
+    task.add_text_comment(convenor, 'Last message')
+
+    get "/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments"
+
+    assert_equal 200, last_response.status, last_response_body
+    assert_equal 3, last_response_body.length, last_response_body.inspect
+
+    keys = %w(id comment has_attachment type is_new reply_to_id author recipient created_at recipient_read_time)
+    keys_test = %w(id comment reply_to_id)
+
+    last_response_body.each do |resp|
+      assert_json_limit_keys_to_exactly keys, resp
+      comment = TaskComment.find(resp['id'])
+      assert_json_matches_model comment, resp, keys_test
+      assert resp['is_new'], resp.inspect
+    end
+
+    # Test they are now read...
+    get "/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments"
+
+    assert_equal 200, last_response.status, last_response_body
+    assert_equal 3, last_response_body.length, last_response_body.inspect
+
+    keys = %w(id comment has_attachment type is_new reply_to_id author recipient created_at recipient_read_time)
+    keys_test = %w(id comment reply_to_id)
+
+    last_response_body.each do |resp|
+      assert_json_limit_keys_to_exactly keys, resp
+      comment = TaskComment.find(resp['id'])
+      assert_json_matches_model comment, resp, keys_test
+      refute resp['is_new'], resp.inspect
+    end
+
+    task.add_text_comment(user, 'Response')
+  end
+
   def test_student_post_comment
     project = Project.first
     user = project.student
@@ -21,7 +73,10 @@ class CommentTest < ActiveSupport::TestCase
 
     comment_data = { comment: 'Hello World' }
 
-    post_json with_auth_token("/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", user), comment_data
+    # Add auth_token and username to header
+    add_auth_header_for(user: user)
+
+    post_json "/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", comment_data
 
     assert_equal 201, last_response.status
 
@@ -54,8 +109,11 @@ class CommentTest < ActiveSupport::TestCase
 
     comment_data = { comment: 'Hello World' }
 
+    # Add auth_token and username to header
+    add_auth_header_for(user: user)
+
     # Post original comment and check that it was successful
-    post_json with_auth_token("/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", user), comment_data
+    post_json "/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", comment_data
     assert_equal 201, last_response.status
 
     expected_response = {
@@ -68,9 +126,12 @@ class CommentTest < ActiveSupport::TestCase
       recipient: { 'id' => tutor.id }
     }
 
+    # Add auth_token and username to header
+    add_auth_header_for(user: user)
+
     # Student responding to self
     comment_data = { comment: 'Responding!', reply_to_id: TaskComment.last.id }
-    post_json with_auth_token("/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", user), comment_data
+    post_json "/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", comment_data
     assert_equal 201, last_response.status
     assert_json_matches_model expected_response, last_response_body, %w(comment type is_new reply_to_id)
 
@@ -83,9 +144,13 @@ class CommentTest < ActiveSupport::TestCase
       author: { 'id' => user.id },
       recipient: { 'id' => tutor.id }
     }
+
+    # Add auth_token and username to header
+    add_auth_header_for(user: user)
+
     # Tutor responding to student
     comment_data = { comment: 'Responding again!', reply_to_id: TaskComment.last.id }
-    post_json with_auth_token("/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", tutor), comment_data
+    post_json "/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", comment_data
     assert_equal 201, last_response.status
 
     # check each is the same
@@ -101,9 +166,12 @@ class CommentTest < ActiveSupport::TestCase
     task_definition = unit.task_definitions.first
     tutor = project.tutor_for(task_definition)
 
+    # Add auth_token and username to header
+    add_auth_header_for(user: user)
+
     comment_data = { comment: 'Responding!', reply_to_id: -1 }
 
-    post_json with_auth_token("/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", user), comment_data
+    post_json "/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", comment_data
 
     assert_equal 404, last_response.status
   end
@@ -118,11 +186,17 @@ class CommentTest < ActiveSupport::TestCase
 
     task_definition = unit.task_definitions.first
 
-    post_json with_auth_token("/api/projects/#{project_1.id}/task_def_id/#{task_definition.id}/comments", student_1), comment: 'Hello World'
+    # Add auth_token and username to header
+    add_auth_header_for(user: student_1)
+
+    post_json "/api/projects/#{project_1.id}/task_def_id/#{task_definition.id}/comments", comment: 'Hello World'
     assert_equal 201, last_response.status
     id = last_response_body['id']
 
-    post_json with_auth_token("/api/projects/#{project_1.id}/task_def_id/#{task_definition.id}/comments", student_2), comment: 'Hello World', reply_to_id: id
+    # Add auth_token and username to header
+    add_auth_header_for(user: student_2)
+
+    post_json "/api/projects/#{project_1.id}/task_def_id/#{task_definition.id}/comments", comment: 'Hello World', reply_to_id: id
     assert_equal 403, last_response.status
   end
 
@@ -135,18 +209,22 @@ class CommentTest < ActiveSupport::TestCase
     task_definition_1 = unit.task_definitions.first
     task_definition_2 = unit.task_definitions.second
 
-    post_json with_auth_token("/api/projects/#{project_1.id}/task_def_id/#{task_definition_1.id}/comments", student_1), comment: 'Hello World'
+    # Add auth_token and username to header
+    add_auth_header_for(user: student_1)
+
+    post_json "/api/projects/#{project_1.id}/task_def_id/#{task_definition_1.id}/comments", comment: 'Hello World'
     assert_equal 201, last_response.status
     id = last_response_body['id']
 
-    post_json with_auth_token("/api/projects/#{project_1.id}/task_def_id/#{task_definition_2.id}/comments", student_1), comment: 'Hello World', reply_to_id: id
+    # Add auth_token and username to header
+    add_auth_header_for(user: student_1)
+
+    post_json "/api/projects/#{project_1.id}/task_def_id/#{task_definition_2.id}/comments", comment: 'Hello World', reply_to_id: id
     assert_equal 404, last_response.status
   end
 
   def test_student_reply_to_other_student_in_same_group
-    campus = FactoryBot.create(:campus)
     unit = FactoryBot.create :unit
-    # project_1 = FactoryBot.create(:project, unit: unit, campus: campus)
 
     group_set = GroupSet.create!(name: 'test_student_reply_to_other_student_in_same_group', unit: unit)
     group_set.save!
@@ -179,16 +257,24 @@ class CommentTest < ActiveSupport::TestCase
                             group_set: group_set)
     td.save!
 
+    # Add auth_token and username to header
+    add_auth_header_for(user: group.projects.first.student)
+
     # Student 1 in group post first comment
-    # post_json with_auth_token("/api/projects/#{project.id}/task_def_id/#{td.id}/comments", unit.active_projects[0].student), comment: 'Hello World'
-    # assert_equal last_response, "test"
-    # assert_equal 201, last_response.status
-    # id = last_response_body['id']
+    post_json "/api/projects/#{project.id}/task_def_id/#{td.id}/comments", comment: 'Hello World'
+    assert_equal 'Hello World', last_response_body['comment']
+
+    assert_equal 201, last_response.status
+    id = last_response_body['id']
+
+    # Add auth_token and username to header
+    project = group.projects.second
+    add_auth_header_for(user: project.student)
 
     # Student 2 in group replies
-    # post_json with_auth_token("/api/projects/#{project.id}/task_def_id/#{td.id}/comments", unit.active_projects[1].student), comment: 'Hello World 2', reply_to_id: id
-    # assert_equal last_response, "test"
-    # assert_equal 201, last_response.status
+    post_json "/api/projects/#{project.id}/task_def_id/#{td.id}/comments", comment: 'Hello World 2', reply_to_id: id
+    assert_equal 'Hello World 2', last_response_body['comment'], last_response_body.inspect
+    assert_equal 201, last_response.status
   end
 
   def test_student_reply_to_other_student_in_different_group
@@ -213,14 +299,20 @@ class CommentTest < ActiveSupport::TestCase
 
     td = FactoryBot.create(:task_definition, unit: unit, group_set: group_set)
 
+    # Add auth_token and username to header
+    add_auth_header_for(user: unit.active_projects[0].student)
+
     # Student 1 in group post first comment
-    post_json with_auth_token("/api/projects/#{project.id}/task_def_id/#{td.id}/comments", unit.active_projects[0].student), comment: 'Hello World'
+    post_json "/api/projects/#{project.id}/task_def_id/#{td.id}/comments", comment: 'Hello World'
     # assert_equal last_response, "test"
     assert_equal 201, last_response.status
     id = last_response_body['id']
 
+    # Add auth_token and username to header
+    add_auth_header_for(user: unit.active_projects[1].student)
+
     # Student 2 in group 2 replies
-    post_json with_auth_token("/api/projects/#{project.id}/task_def_id/#{td.id}/comments", unit.active_projects[1].student), comment: 'Hello World 2', reply_to_id: id
+    post_json "/api/projects/#{project.id}/task_def_id/#{td.id}/comments", comment: 'Hello World 2', reply_to_id: id
     # assert_equal last_response, "test"
     assert_equal 403, last_response.status
   end
@@ -233,8 +325,11 @@ class CommentTest < ActiveSupport::TestCase
     student_1 = project_1.student
     task_definition_1 = unit_1.task_definitions.first
 
+    # Add auth_token and username to header
+    add_auth_header_for(user: student_1)
+
     # Student makes a comment on task 1 in unit 1
-    post_json with_auth_token("/api/projects/#{project_1.id}/task_def_id/#{task_definition_1.id}/comments", student_1), comment: 'Hello World'
+    post_json "/api/projects/#{project_1.id}/task_def_id/#{task_definition_1.id}/comments", comment: 'Hello World'
     assert_equal 201, last_response.status
     id = last_response_body['id']
 
@@ -243,8 +338,11 @@ class CommentTest < ActiveSupport::TestCase
     task_definition_2 = unit_2.task_definitions.first
     unit_2.employ_staff(User.first, Role.convenor)
 
+    # Add auth_token and username to header
+    add_auth_header_for(user: User.first)
+
     # Convenor replies to that comment in a different unit/projet
-    post_json with_auth_token("/api/projects/#{project_2.id}/task_def_id/#{task_definition_2.id}/comments", User.first), comment: 'Hello World', reply_to_id: id
+    post_json "/api/projects/#{project_2.id}/task_def_id/#{task_definition_2.id}/comments", comment: 'Hello World', reply_to_id: id
     assert_equal 404, last_response.status
   end
 
@@ -256,9 +354,12 @@ class CommentTest < ActiveSupport::TestCase
 
     pre_count = TaskComment.count
 
+    # Add auth_token and username to header
+    add_auth_header_for(user: user)
+
     comment_data = { attachment: upload_file('test_files/submissions/Deakin_Logo.jpeg', 'image/jpeg') }
 
-    post with_auth_token("/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", user), comment_data
+    post "/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", comment_data
 
     assert_equal 201, last_response.status
 
@@ -280,9 +381,12 @@ class CommentTest < ActiveSupport::TestCase
 
     pre_count = TaskComment.count
 
+    # Add auth_token and username to header
+    add_auth_header_for(user: user)
+
     comment_data = { attachment: upload_file('test_files/submissions/unbelievable.gif', 'image/gif') }
 
-    post with_auth_token("/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", user), comment_data
+    post "/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", comment_data
 
     assert_equal 201, last_response.status
 
@@ -305,9 +409,12 @@ class CommentTest < ActiveSupport::TestCase
 
     pre_count = TaskComment.count
 
+    # Add auth_token and username to header
+    add_auth_header_for(user: User.first)
+
     comment_data = { attachment: upload_file('test_files/submissions/00_question.pdf', 'application/pdf') }
 
-    post with_auth_token("/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", user), comment_data
+    post "/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", comment_data
 
     assert_equal 201, last_response.status
 
@@ -330,9 +437,12 @@ class CommentTest < ActiveSupport::TestCase
 
     pre_count = TaskComment.count
 
+    # Add auth_token and username to header
+    add_auth_header_for(user: user)
+
     comment_data = { attachment: upload_file('test_files/submissions/00_question.pdf', 'application/pdf') }
 
-    post with_auth_token("/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", user), comment_data
+    post "/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", comment_data
 
     assert_equal 201, last_response.status
 
@@ -354,9 +464,12 @@ class CommentTest < ActiveSupport::TestCase
 
     pre_count = TaskComment.count
 
+    # Add auth_token and username to header
+    add_auth_header_for(user: user)
+
     comment_data = { attachment: upload_file('test_files/submissions/boo.png', 'image/png') }
 
-    post with_auth_token("/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", user), comment_data
+    post "/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", comment_data
 
     assert_equal 500, last_response.status
 
@@ -390,12 +503,18 @@ class CommentTest < ActiveSupport::TestCase
       trigger: 'ready_for_feedback'
     }
 
+    # Add auth_token and username to header
+    add_auth_header_for(user: user)
+
     # Make a submission for this student
-    post_json with_auth_token("/api/projects/#{project.id}/task_def_id/#{td.id}/submission", user), data_to_post
+    post_json "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
     assert_equal 201, last_response.status
 
     task = project.task_for_task_definition(td)
     assert_equal TaskStatus.ready_for_feedback, task.task_status
+
+    refute task.comments.last.new_for?(user)
+    refute task.comments.last.new_for?(project.tutor_for(td))
 
     td.destroy!
   end

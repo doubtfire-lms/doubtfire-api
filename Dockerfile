@@ -27,9 +27,9 @@ RUN gem install bundler -v 1.17.3
 
 # Install the Gems
 COPY ./Gemfile ./Gemfile.lock /doubtfire/
-RUN bundle install --without passenger
+RUN bundle install
 
 EXPOSE 3000
 
 ENV RAILS_ENV development
-CMD bundle exec rails s
+CMD bundle exec rake db:migrate && bundle exec rails s -b 0.0.0.0

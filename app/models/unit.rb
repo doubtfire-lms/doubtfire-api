@@ -5,7 +5,7 @@ require 'moss_ruby'
 require 'csv_helper'
 require 'grade_helper'
 
-class Unit < ActiveRecord::Base
+class Unit < ApplicationRecord
   include ApplicationHelper
   include FileHelper
   include LogHelper
@@ -326,7 +326,7 @@ class Unit < ActiveRecord::Base
     end.map { |e| e == 0 ? 1 : e }
 
     # Get the task stats for a student as a subquery so that it is independent of the main query
-    # otherwise an attempt at a higher level task can exclude the student from the student list! 
+    # otherwise an attempt at a higher level task can exclude the student from the student list!
     subquery = projects.
       joins(tasks: :task_definition).
       where(
@@ -337,7 +337,7 @@ class Unit < ActiveRecord::Base
         "projects.id AS project_id",
         *TaskStatus.all.map { |s| "SUM(CASE WHEN tasks.task_status_id = #{s.id} THEN 1 ELSE 0 END) AS #{s.status_key}_count" },
       ).to_sql
-    
+
     q = projects
         .joins(:user)
         .joins('LEFT OUTER JOIN tasks ON projects.id = tasks.project_id')
@@ -913,7 +913,7 @@ class Unit < ActiveRecord::Base
 
     CSV.generate do |csv|
       csv <<  %w(unit_code campus username student_id preferred_name first_name last_name email) +
-              (streams.count > 0 ? streams.map{ |t| t.abbreviation } : ['Tutorial'])
+              (streams.count > 0 ? streams.map{ |t| t.abbreviation } : ['tutorial'])
 
       active_projects.
         joins(
@@ -1101,7 +1101,7 @@ class Unit < ActiveRecord::Base
         grp = group_set.groups.find_or_create_by(name: group_name)
 
         # Find the tutorial
-        tutorial_abbr = row['tutorial'].strip unless row['tutorial'].nil?  
+        tutorial_abbr = row['tutorial'].strip unless row['tutorial'].nil?
         tutorial = tutorial_with_abbr(tutorial_abbr)
 
         if tutorial.nil?
@@ -1877,38 +1877,38 @@ class Unit < ActiveRecord::Base
       joins("LEFT JOIN comments_read_receipts crr ON crr.task_comment_id = task_comments.id AND crr.user_id = #{user.id}").
       joins("LEFT JOIN task_pins ON task_pins.task_id = tasks.id AND task_pins.user_id = #{user.id}").
       select(
-        'sq.tutorial_id AS tutorial_id', 
+        'sq.tutorial_id AS tutorial_id',
         'sq.tutorial_stream_id AS tutorial_stream_id',
-        'tasks.id', 
+        'tasks.id',
         "SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) as number_unread",
         'COUNT(distinct task_pins.task_id) != 0 as pinned',
         "SUM(case when task_comments.date_extension_assessed IS NULL AND task_comments.type = 'ExtensionComment' AND NOT task_comments.id IS NULL THEN 1 ELSE 0 END) > 0 as has_extensions",
-        'project_id', 
+        'project_id',
         'tasks.id as task_id',
-        'task_definition_id', 
-        'task_definitions.start_date as start_date', 
+        'task_definition_id',
+        'task_definitions.start_date as start_date',
         'task_statuses.id as status_id',
-        'completion_date', 
-        'times_assessed', 
-        'submission_date', 
-        'portfolio_evidence', 
-        'tasks.grade as grade', 
+        'completion_date',
+        'times_assessed',
+        'submission_date',
+        'portfolio_evidence',
+        'tasks.grade as grade',
         'quality_pts'
       ).
       group(
-        'sq.tutorial_id', 
+        'sq.tutorial_id',
         'sq.tutorial_stream_id',
-        'task_statuses.id', 
-        'project_id', 
-        'tasks.id', 
-        'task_definition_id', 
-        'task_definitions.start_date', 
+        'task_statuses.id',
+        'project_id',
+        'tasks.id',
+        'task_definition_id',
+        'task_definitions.start_date',
         'status_id',
-        'completion_date', 
-        'times_assessed', 
-        'submission_date', 
-        'portfolio_evidence', 
-        'grade', 
+        'completion_date',
+        'times_assessed',
+        'submission_date',
+        'portfolio_evidence',
+        'grade',
         'quality_pts'
       )
   end
@@ -2526,11 +2526,11 @@ class Unit < ActiveRecord::Base
     errors = []
     ignored = []
 
-    type = mime_type(file.tempfile.path)
+    type = mime_type(file["tempfile"].path)
 
     # check mime is correct before uploading
     accept = ['text/', 'text/plain', 'text/csv', 'application/zip', 'multipart/x-gzip', 'multipart/x-zip', 'application/x-gzip', 'application/octet-stream']
-    unless mime_in_list?(file.tempfile.path, accept)
+    unless mime_in_list?(file["tempfile"].path, accept)
       errors << { row: {}, message: "File given is not a zip or csv file - detected #{type}" }
       return {
         success:  success,
@@ -2540,7 +2540,7 @@ class Unit < ActiveRecord::Base
     end
 
     if type.start_with?('text/', 'text/plain', 'text/csv')
-      update_task_status_from_csv(user, File.open(file.tempfile.path).read, success, ignored, errors)
+      update_task_status_from_csv(user, File.open(file["tempfile"].path).read, success, ignored, errors)
     else
       # files are extracted to a temp dir first
       i = 0
@@ -2556,7 +2556,7 @@ class Unit < ActiveRecord::Base
       FileUtils.mkdir_p(tmp_dir)
 
       begin
-        Zip::File.open(file.tempfile.path) do |zip|
+        Zip::File.open(file["tempfile"].path) do |zip|
           # Find the marking file within the directory tree
           marking_file = zip.glob('**/marks.csv').first
 
@@ -2592,49 +2592,49 @@ class Unit < ActiveRecord::Base
           # Copy over the updated/marked files to the file system
           zip.each do |file|
             # Skip processing marking file
-            next if File.basename(file.name) == 'marks.csv' || File.basename(file.name) == 'readme.txt'
+            next if File.basename(file[:name]) == 'marks.csv' || File.basename(file[:name]) == 'readme.txt'
 
             # Test filename pattern
-            if (/.*-\d+.pdf/i =~ File.basename(file.name)) != 0
-              if file.name[-1] != '/'
-                ignored << { row: "File #{file.name}", message: 'Does not appear to be a task PDF.' }
+            if (/.*-\d+.pdf/i =~ File.basename(file[:name])) != 0
+              if file[:name][-1] != '/'
+                ignored << { row: "File #{file[:name]}", message: 'Does not appear to be a task PDF.' }
               end
               next
             end
-            if (/\._.*/ =~ File.basename(file.name)) == 0
-              ignored << { row: "File #{file.name}", message: 'Does not appear to be a task PDF.' }
+            if (/\._.*/ =~ File.basename(file[:name])) == 0
+              ignored << { row: "File #{file[:name]}", message: 'Does not appear to be a task PDF.' }
               next
             end
 
             # Extract the id from the filename
-            task_id_from_filename = File.basename(file.name, '.pdf').split('-').last
+            task_id_from_filename = File.basename(file[:name], '.pdf').split('-').last
             task = Task.find_by(id: task_id_from_filename)
             if task.nil?
-              ignored << { row: "File #{file.name}", message: 'Unable to find associated task.' }
+              ignored << { row: "File #{file[:name]}", message: 'Unable to find associated task.' }
               next
             end
 
             # Ensure that this task's id is inside entry_data
             task_entry = entry_data.select { |t| t['task'] == task.task_definition.abbreviation.tr(',', '_') && t['username'] == task.project.user.username }.first
             if task_entry.nil?
-              # error!({"error" => "File #{file.name} has a mismatch of task id ##{task.id} (this task id does not exist in marks.csv)"}, 403)
-              errors << { row: "File #{file.name}", message: "Task id #{task.id} not in marks.csv" }
+              # error!({"error" => "File #{file[:name]} has a mismatch of task id ##{task.id} (this task id does not exist in marks.csv)"}, 403)
+              errors << { row: "File #{file[:name]}", message: "Task id #{task.id} not in marks.csv" }
               next
             end
 
             if task.unit != self
-              errors << { row: "File #{file.name}", message: 'This task does not relate to this unit.' }
+              errors << { row: "File #{file[:name]}", message: 'This task does not relate to this unit.' }
               next
             end
 
             # Can the user assess this task?
             unless AuthorisationHelpers.authorise? user, task, :put
-              errors << { row: "File #{file.name}", error: "You do not have permission to assess task with id #{task.id}" }
+              errors << { row: "File #{file[:name]}", error: "You do not have permission to assess task with id #{task.id}" }
               next
             end
 
             # Read into the task's portfolio_evidence path the new file
-            tmp_file = File.join(tmp_dir, File.basename(file.name))
+            tmp_file = File.join(tmp_dir, File.basename(file[:name]))
             task.portfolio_evidence = task.final_pdf_path
 
             # get file out of zip... to tmp_file
@@ -2643,19 +2643,19 @@ class Unit < ActiveRecord::Base
             # copy tmp_file to dest
             if FileHelper.copy_pdf(tmp_file, task.portfolio_evidence)
               if task.group.nil?
-                success << { row: "File #{file.name}", message: "Replace PDF of task #{task.task_definition.abbreviation} for #{task.student.name}" }
+                success << { row: "File #{file[:name]}", message: "Replace PDF of task #{task.task_definition.abbreviation} for #{task.student.name}" }
               else
-                success << { row: "File #{file.name}", message: "Replace PDF of group task #{task.task_definition.abbreviation} for #{task.group.name}" }
+                success << { row: "File #{file[:name]}", message: "Replace PDF of group task #{task.task_definition.abbreviation} for #{task.group.name}" }
               end
               FileUtils.rm tmp_file
             else
-              errors << { row: "File #{file.name}", message: 'The file does not appear to be a valid PDF.' }
+              errors << { row: "File #{file[:name]}", message: 'The file does not appear to be a valid PDF.' }
               next
             end
           end
         end
       rescue
-        # FileUtils.cp(file.tempfile.path, Doubtfire::Application.config.student_work_dir)
+        # FileUtils.cp(file["tempfile"].path, Doubtfire::Application.config.student_work_dir)
         raise
       end
 

@@ -25,7 +25,7 @@ module FileHelper
         # --"application/msword",
         'application/pdf'
       ]
-      valid = pdf_valid? file.tempfile.path
+      valid = pdf_valid? file["tempfile"].path
     when 'audio'
       accept = ['audio/', 'video/webm', 'application/ogg', 'application/octet-stream']
     when 'comment_attachment'
@@ -37,7 +37,7 @@ module FileHelper
       return false
     end
 
-    mime_in_list?(file.tempfile.path, accept) && valid
+    mime_in_list?(file["tempfile"].path, accept) && valid
   end
 
   #
