@@ -44,7 +44,7 @@ services:
       # Database settings - for test env
       DF_TEST_DB_ADAPTER: mysql2
       DF_TEST_DB_HOST: doubtfire-dev-db
-      DF_TEST_DB_DATABASE: doubtfire-test
+      DF_TEST_DB_DATABASE: doubtfire-dev
       DF_TEST_DB_USERNAME: dfire
       DF_TEST_DB_PASSWORD: pwd
 
