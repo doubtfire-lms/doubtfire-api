@@ -7,10 +7,6 @@ require 'onelogin/ruby-saml'
 # This is used by the grape api.
 #
 module AuthenticationHelpers
-  # def warden
-  #   puts ENV['warden'].inspect
-  #   env['warden']
-  # end
 
   module_function
 
@@ -19,16 +15,8 @@ module AuthenticationHelpers
   # Reads details from the params fetched from the caller context.
   #
   def authenticated?
-    # Variable to store auth_token if available
-    token_with_value = nil
-    # Check warden -- authenticate using DB or LDAP etc.
-    # return true if warden.authenticated?
     auth_param = headers['Auth-Token'] || headers['Auth_Token'] || headers['auth_token'] || params['auth_token'] || params['Auth_Token']
     user_param = headers['Username'] || params['username']
-
-    logger.debug "params.inspect: #{params.inspect}"
-    logger.debug "headers.inspect: #{headers.inspect}"
-    logger.debug "auth_param: #{auth_param}"
 
     # Check for valid auth token  and username in request header
     user = current_user
@@ -37,22 +25,21 @@ module AuthenticationHelpers
     if auth_param.present? && user_param.present? && user.present?
       # Get the list of tokens for a user
       token = user.token_for_text?(auth_param)
-      logger.debug "token is #{token}"
     end
 
     # Check user by token
     if user.present? && token.present?
-      logger.info("Authenticated #{user.username} from #{request.ip}") if token.auth_token_expiry > Time.zone.now
-      logger.debug "Non-expired token"
-      return true if token.auth_token_expiry > Time.zone.now
+      if token.auth_token_expiry > Time.zone.now
+        logger.info("Authenticated #{user.username} from #{request.ip}")
+        return true
+      end
 
-      # Token is timed out - destroy it
+      # Token is timed out - destroy it and throw error
       token.destroy!
-      # Time out this token
       error!({ error: 'Authentication token expired.' }, 419)
     else
       # Add random delay then fail
-      sleep((200 + rand(200)) / 1000.0)
+      sleep(rand(200..399) / 1000.0)
       error!({ error: 'Could not authenticate with token. Username or Token invalid.' }, 419)
     end
   end
@@ -72,17 +59,18 @@ module AuthenticationHelpers
     service.routes.each do |route|
       options = route.instance_variable_get('@options')
       next if options[:params]['Auth_Token']
+
       options[:params]['Username'] = {
         required: true,
-        type:     'String',
-        in:       'header',
-        desc:     'Username'
+        type: 'String',
+        in: 'header',
+        desc: 'Username'
       }
       options[:params]['Auth_Token'] = {
         required: true,
-        type:     'String',
-        in:       'header',
-        desc:     'Authentication token'
+        type: 'String',
+        in: 'header',
+        desc: 'Authentication token'
       }
     end
   end
@@ -91,24 +79,24 @@ module AuthenticationHelpers
   # Returns the SAML2.0 settings object using information provided as env variables
   #
   def saml_settings
-    if saml_auth?
-      metadata_url = Doubtfire::Application.config.saml[:SAML_metadata_url] || nil
+    return unless saml_auth?
 
-      if metadata_url
-        idp_metadata_parser = OneLogin::RubySaml::IdpMetadataParser.new
-        settings = idp_metadata_parser.parse_remote(metadata_url)
-      else
-        settings = OneLogin::RubySaml::Settings.new
-        settings.idp_cert                     = Doubtfire::Application.config.saml[:idp_sso_cert]
-        settings.name_identifier_format       = Doubtfire::Application.config.saml[:idp_name_identifier_format]
-      end
-      settings.assertion_consumer_service_url = Doubtfire::Application.config.saml[:assertion_consumer_service_url]
-      settings.sp_entity_id                   = Doubtfire::Application.config.saml[:entity_id]
-      settings.idp_sso_target_url             = Doubtfire::Application.config.saml[:idp_sso_target_url]
-      settings.idp_slo_target_url             = Doubtfire::Application.config.saml[:idp_sso_target_url]
+    metadata_url = Doubtfire::Application.config.saml[:SAML_metadata_url] || nil
 
-      settings
+    if metadata_url
+      idp_metadata_parser = OneLogin::RubySaml::IdpMetadataParser.new
+      settings = idp_metadata_parser.parse_remote(metadata_url)
+    else
+      settings = OneLogin::RubySaml::Settings.new
+      settings.idp_cert                     = Doubtfire::Application.config.saml[:idp_sso_cert]
+      settings.name_identifier_format       = Doubtfire::Application.config.saml[:idp_name_identifier_format]
     end
+    settings.assertion_consumer_service_url = Doubtfire::Application.config.saml[:assertion_consumer_service_url]
+    settings.sp_entity_id                   = Doubtfire::Application.config.saml[:entity_id]
+    settings.idp_sso_target_url             = Doubtfire::Application.config.saml[:idp_sso_target_url]
+    settings.idp_slo_target_url             = Doubtfire::Application.config.saml[:idp_sso_target_url]
+
+    settings
   end
 
   #
