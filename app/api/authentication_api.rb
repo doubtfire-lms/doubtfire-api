@@ -123,7 +123,7 @@ module Api
 
         # Try and save the user once authenticated if new
         if user.new_record?
-          user.encrypted_password = BCrypt::Password.create('password')
+          user.encrypted_password = BCrypt::Password.create(SecureRandom.hex(32))
           unless user.valid?
             error!(error: 'There was an error creating your account in Doubtfire. ' \
                           'Please get in contact with your unit convenor or the ' \
