@@ -68,6 +68,8 @@ module Api
           user.save
         end
 
+        logger.info "Login #{username} from #{request.ip}"
+
         # Return user details
         present :user, user, with: Api::Entities::UserEntity
         present :auth_token, user.generate_authentication_token!(remember).authentication_token
@@ -94,6 +96,8 @@ module Api
         attrs = jwt['https://aaf.edu.au/attributes']
         login_id = jwt[:sub]
         email = attrs[:mail]
+
+        logger.info "Authenticate #{email} from #{request.ip}"
 
         # Lookup using login_id if it exists
         # Lookup using email otherwise and set login_id
@@ -138,6 +142,8 @@ module Api
         # Generate a temporary auth_token for future requests
         user.generate_temporary_authentication_token!
 
+        logger.info "Redirecting #{username} from #{request.ip}"
+
         # Must redirect to the front-end after sign in
         protocol = Rails.env.development? ? 'http' : 'https'
         host = Rails.env.development? ? "#{protocol}://localhost:3000" : Doubtfire::Application.config.institution[:host]
@@ -166,6 +172,8 @@ module Api
           # Invalidate the token and regenrate a new one
           token.destroy!
           token = user.generate_authentication_token! true
+
+          logger.info "Login #{params[:username]} from #{request.ip}"
 
           # Respond user details with new auth token
           present :user, user, with: Api::Entities::UserEntity
@@ -201,14 +209,14 @@ module Api
     #
     desc 'Allow tokens to be updated',
     {
-      headers: 
+      headers:
       {
-        "username" => 
+        "username" =>
         {
           description: "User username",
           required: true
         },
-        "auth_token" => 
+        "auth_token" =>
         {
           description: "The user\'s temporary auth token",
           required: true
@@ -223,7 +231,7 @@ module Api
       user_param = headers['Username'] || params['Username']
 
       error!({ error: 'Invalid token/username.' }, 404) if token_param.nil? || user_param.nil?
-      
+
       logger.info "Update token #{token_param} from #{request.ip} for #{user_param}"
 
       # Find user
@@ -238,9 +246,9 @@ module Api
         if token.auth_token_expiry > Time.zone.now
           token.extend_token remember
         end
-        
+
         # Return extended auth token
-        present :auth_token, token.authentication_token 
+        present :auth_token, token.authentication_token
       end
     end
 
@@ -249,14 +257,14 @@ module Api
     #
     desc 'Sign out',
     {
-      headers: 
+      headers:
       {
-        "username" => 
+        "username" =>
         {
           description: "User username",
           required: true
         },
-        "auth_token" => 
+        "auth_token" =>
         {
           description: "The user\'s temporary auth token",
           required: true
