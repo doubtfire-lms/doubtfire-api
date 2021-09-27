@@ -23,8 +23,12 @@ module AuthenticationHelpers
     token_with_value = nil
     # Check warden -- authenticate using DB or LDAP etc.
     # return true if warden.authenticated?
-    auth_param = headers['Auth-Token'] || params['auth_token']
+    auth_param = headers['Auth-Token'] || headers['Auth_Token'] || headers['auth_token'] || params['auth_token'] || params['Auth_Token']
     user_param = headers['Username'] || params['username']
+
+    logger.debug "params.inspect: #{params.inspect}"
+    logger.debug "headers.inspect: #{headers.inspect}"
+    logger.debug "auth_param: #{auth_param}"
 
     # Check for valid auth token  and username in request header
     user = current_user
@@ -33,13 +37,15 @@ module AuthenticationHelpers
     if auth_param.present? && user_param.present? && user.present?
       # Get the list of tokens for a user
       token = user.token_for_text?(auth_param)
+      logger.debug "token is #{token}"
     end
 
     # Check user by token
     if user.present? && token.present?
       logger.info("Authenticated #{user.username} from #{request.ip}") if token.auth_token_expiry > Time.zone.now
-      # Non-expired token
+      logger.debug "Non-expired token"
       return true if token.auth_token_expiry > Time.zone.now
+
       # Token is timed out - destroy it
       token.destroy!
       # Time out this token
