@@ -85,7 +85,8 @@ module Api
         requires :SAMLResponse, type: String, desc: 'Data provided for further processing.'
       end
       post '/auth/jwt' do
-        response = OneLogin::RubySaml::Response.new(params[:SAMLResponse], :allowed_clock_drift => 1.second, :settings => AuthenticationHelpers.saml_settings)
+        response = OneLogin::RubySaml::Response.new(params[:SAMLResponse], allowed_clock_drift: 1.second,
+                                                                           settings: AuthenticationHelpers.saml_settings)
 
         # We validate the SAML Response and check if the user already exists in the system
         return error!({ error: 'Invalid SAML response.' }, 401) unless response.is_valid?
@@ -99,22 +100,22 @@ module Api
         # Lookup using email otherwise and set login_id
         # Otherwise create new
         user = User.find_by(login_id: login_id) ||
-              User.find_by_username(email[/(.*)@/,1]) ||
-              User.find_by(email: email) ||
-              User.find_or_create_by(login_id: login_id) do |new_user|
-                role = attributes.fetch(/role/) || Role.student.id
-                first_name = (attributes.fetch(/givenname/) || attributes.fetch(/cn/)).capitalize
-                last_name = attributes.fetch(/surname/).capitalize
-                username = email.split('@').first
-                # Some institutions may provide givenname and surname, others
-                # may only provide common name which we will use as first name
-                new_user.first_name = first_name
-                new_user.last_name  = last_name
-                new_user.email      = email
-                new_user.username   = username
-                new_user.nickname   = first_name
-                new_user.role_id    = role
-              end
+               User.find_by_username(email[/(.*)@/, 1]) ||
+               User.find_by(email: email) ||
+               User.find_or_create_by(login_id: login_id) do |new_user|
+                 role = attributes.fetch(/role/) || Role.student.id
+                 first_name = (attributes.fetch(/givenname/) || attributes.fetch(/cn/)).capitalize
+                 last_name = attributes.fetch(/surname/).capitalize
+                 username = email.split('@').first
+                 # Some institutions may provide givenname and surname, others
+                 # may only provide common name which we will use as first name
+                 new_user.first_name = first_name
+                 new_user.last_name  = last_name
+                 new_user.email      = email
+                 new_user.username   = username
+                 new_user.nickname   = first_name
+                 new_user.role_id    = role
+               end
 
         # Set login id + username if not yet specified
         user.login_id = login_id if user.login_id.nil?
@@ -269,8 +270,14 @@ module Api
     desc 'Authentication signout URL'
     get '/auth/signout_url' do
       response = {}
-      response[:auth_signout_url] = Doubtfire::Application.config.aaf[:auth_signout_url] if aaf_auth? && Doubtfire::Application.config.aaf[:auth_signout_url].present?
-      response[:auth_signout_url] = Doubtfire::Application.config.saml[:idp_sso_target_url] if saml_auth? && Doubtfire::Application.config.saml[:idp_sso_target_url].present?
+      if aaf_auth? && Doubtfire::Application.config.aaf[:auth_signout_url].present?
+        response[:auth_signout_url] =
+          Doubtfire::Application.config.aaf[:auth_signout_url]
+      end
+      if saml_auth? && Doubtfire::Application.config.saml[:idp_sso_target_url].present?
+        response[:auth_signout_url] =
+          Doubtfire::Application.config.saml[:idp_sso_target_url]
+      end
       present response, with: Grape::Presenters::Presenter
     end
 
@@ -278,21 +285,21 @@ module Api
     # Update the expiry of an existing authentication token
     #
     desc 'Allow tokens to be updated',
-    {
-      headers:
-      {
-        "username" =>
-        {
-          description: "User username",
-          required: true
-        },
-        "auth_token" =>
-        {
-          description: "The user\'s temporary auth token",
-          required: true
-        }
-      }
-    }
+         {
+           headers:
+           {
+             'username' =>
+             {
+               description: 'User username',
+               required: true
+             },
+             'auth_token' =>
+             {
+               description: "The user\'s temporary auth token",
+               required: true
+             }
+           }
+         }
     params do
       optional :remember, type: Boolean, desc: 'User has requested to remember login', default: false
     end
@@ -313,9 +320,7 @@ module Api
       if token.nil? || user.nil? || user.username != user_param
         error!({ error: 'Invalid token.' }, 404)
       else
-        if token.auth_token_expiry > Time.zone.now
-          token.extend_token remember
-        end
+        token.extend_token remember if token.auth_token_expiry > Time.zone.now
 
         # Return extended auth token
         present :auth_token, token.authentication_token
@@ -326,21 +331,21 @@ module Api
     # Sign out
     #
     desc 'Sign out',
-    {
-      headers:
-      {
-        "username" =>
-        {
-          description: "User username",
-          required: true
-        },
-        "auth_token" =>
-        {
-          description: "The user\'s temporary auth token",
-          required: true
-        }
-      }
-    }
+         {
+           headers:
+           {
+             'username' =>
+             {
+               description: 'User username',
+               required: true
+             },
+             'auth_token' =>
+             {
+               description: "The user\'s temporary auth token",
+               required: true
+             }
+           }
+         }
     delete '/auth' do
       user = User.find_by_username(headers['Username'])
       token = user.token_for_text?(headers['Auth-Token']) unless user.nil?
