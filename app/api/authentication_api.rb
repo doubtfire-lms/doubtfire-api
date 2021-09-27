@@ -133,14 +133,13 @@ module Api
         end
 
         # Generate a temporary auth_token for future requests
-        user.generate_temporary_authentication_token!
+        onetime_token = user.generate_temporary_authentication_token!
 
         # Must redirect to the front-end after sign in
         protocol = Rails.env.development? ? 'http' : 'https'
         host = Rails.env.development? ? "#{protocol}://localhost:3000" : Doubtfire::Application.config.institution[:host]
         host = "#{protocol}://#{host}" unless host.starts_with?('http')
-        redirect "#{host}/#sign_in?authToken=#{user.auth_token}"
-
+        redirect "#{host}/#sign_in?authToken=#{onetime_token.authentication_token}&username=#{user.username}"
       end
     end
 
@@ -205,15 +204,13 @@ module Api
         end
 
         # Generate a temporary auth_token for future requests
-        user.generate_temporary_authentication_token!
+        onetime_token = user.generate_temporary_authentication_token!
 
         # Must redirect to the front-end after sign in
         protocol = Rails.env.development? ? 'http' : 'https'
         host = Rails.env.development? ? "#{protocol}://localhost:3000" : Doubtfire::Application.config.institution[:host]
         host = "#{protocol}://#{host}" unless host.starts_with?('http')
-        redirect "#{host}/#sign_in?authToken=#{user.auth_token}"
-
-
+        redirect "#{host}/#sign_in?authToken=#{onetime_token.authentication_token}&username=#{user.username}"
       end
     end
 
