@@ -164,7 +164,7 @@ class TeachingPeriod < ApplicationRecord
   def can_destroy?
     return true if units.count == 0
     errors.add :base, "Cannot delete teaching period with units"
-    false
+    throw :abort
   end
 
   def validate_active_until_after_end_date

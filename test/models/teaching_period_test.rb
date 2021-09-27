@@ -198,9 +198,7 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     unit = Unit.create(data)
 
     assert tp.units.count > 0
-    assert_raises ActiveRecord::InvalidForeignKey do
-      tp.destroy
-    end
+    tp.destroy
 
     assert_not tp.destroyed?
   end
