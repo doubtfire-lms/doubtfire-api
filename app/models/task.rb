@@ -962,7 +962,7 @@ class Task < ActiveRecord::Base
     elsif ['xml'].include?(extn) then 'xml'
     elsif ['sql'].include?(extn) then 'sql'
     elsif ['vb'].include?(extn) then 'vbnet'
-    elsif ['txt', 'md', 'rmd', 'rpres'].include?(extn) then 'text'
+    elsif ['txt', 'md', 'rmd', 'rpres','hdl','asm','jack','hack','tst','cmp','vm','sh','bat','dat'].include?(extn) then 'text'
     elsif ['tex', 'rnw'].include?(extn) then 'tex'
     elsif ['py'].include?(extn) then 'python'
     elsif ['r'].include?(extn) then 'r'
@@ -994,7 +994,8 @@ class Task < ActiveRecord::Base
         pdf_text = tac.make_pdf
       rescue => e
 
-        # Try again... with convert to ascii
+        # Try again... with convert to ascic
+        #
         tac2 = TaskAppController.new
         tac2.init(self, true)
 
