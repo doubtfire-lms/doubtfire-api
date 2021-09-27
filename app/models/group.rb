@@ -257,10 +257,6 @@ class Group < ApplicationRecord
     gs
   end
 
-  def has_change_group_tutorial?
-    tutorial_id != tutorial_id_was
-  end
-
   def limit_members_to_tutorial?
     group_set.keep_groups_in_same_class
   end
