@@ -93,9 +93,8 @@ module Api
 
         attributes = response.attributes
 
-        email = attributes.fetch(/name/)
-
         login_id = response.name_id || response.nameid
+        email = login_id
         # Lookup using login_id if it exists
         # Lookup using email otherwise and set login_id
         # Otherwise create new
@@ -194,7 +193,7 @@ module Api
 
         # Try and save the user once authenticated if new
         if user.new_record?
-          user.encrypted_password = BCrypt::Password.create('password')
+          user.encrypted_password = BCrypt::Password.create(SecureRandom.hex(32))
           unless user.valid?
             error!(error: 'There was an error creating your account in Doubtfire. ' \
                           'Please get in contact with your unit convenor or the ' \
@@ -252,12 +251,13 @@ module Api
       response = {
         method: Doubtfire::Application.config.auth_method
       }
-      if aaf_auth?
-        response[:redirect_to] = Doubtfire::Application.config.aaf[:redirect_url]
-      elsif saml_auth?
-        request = OneLogin::RubySaml::Authrequest.new
-        response[:redirect_to] = request.create(AuthenticationHelpers.saml_settings)
-      end
+      response[:redirect_to] =
+        if aaf_auth?
+          Doubtfire::Application.config.aaf[:redirect_url]
+        elsif saml_auth?
+          request = OneLogin::RubySaml::Authrequest.new
+          request.create(AuthenticationHelpers.saml_settings)
+        end
       present response, with: Grape::Presenters::Presenter
     end
 
@@ -267,14 +267,12 @@ module Api
     desc 'Authentication signout URL'
     get '/auth/signout_url' do
       response = {}
-      if aaf_auth? && Doubtfire::Application.config.aaf[:auth_signout_url].present?
-        response[:auth_signout_url] =
+      response[:auth_signout_url] =
+        if aaf_auth? && Doubtfire::Application.config.aaf[:auth_signout_url].present?
           Doubtfire::Application.config.aaf[:auth_signout_url]
-      end
-      if saml_auth? && Doubtfire::Application.config.saml[:idp_sso_target_url].present?
-        response[:auth_signout_url] =
+        elsif saml_auth? && Doubtfire::Application.config.saml[:idp_sso_target_url].present?
           Doubtfire::Application.config.saml[:idp_sso_target_url]
-      end
+        end
       present response, with: Grape::Presenters::Presenter
     end
 
