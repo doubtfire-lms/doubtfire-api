@@ -84,6 +84,8 @@ class UnitModelTest < ActiveSupport::TestCase
       assert other
       assert_equal link.rating, other.rating, "rating does not match for #{link.task_definition.abbreviation} - #{link.learning_outcome.abbreviation}"
     end
+
+    unit2.destroy!
   end
 
   test 'rollover of tasks have same start week and day' do
@@ -100,6 +102,8 @@ class UnitModelTest < ActiveSupport::TestCase
       assert_equal td.start_day, td2.start_day, "#{td.abbreviation} not on same day"
       assert_equal td.start_week, td2.start_week, "#{td.abbreviation} not in same week"
     end
+
+    unit2.destroy!
   end
 
   test 'rollover of tasks have same target week and day' do
@@ -111,6 +115,31 @@ class UnitModelTest < ActiveSupport::TestCase
       td2 = unit2.task_definitions.find_by_abbreviation(td.abbreviation)
       assert_equal td.target_day, td2.target_day, "#{td.abbreviation} not on same day"
       assert_equal td.target_week, td2.target_week, "#{td.abbreviation} not targetting same week"
+    end
+
+    unit2.destroy!
+  end
+
+  def test_updating_unit_dates_propogates_to_tasks
+    @unit.teaching_period = nil
+    @unit.save!
+
+    @unit.import_tasks_from_csv File.open(Rails.root.join('test_files',"#{@unit.code}-Tasks.csv"))
+
+    pre_update_details = @unit.task_definitions.map{|td| { id: td.id, start_week: td.start_week, target_week: td.target_week, due_week: td.due_week } }
+
+    @unit.start_date = @unit.start_date + 1.week
+    @unit.save!
+
+    @unit.reload
+
+    pre_update_details.each do |data|
+      td = @unit.task_definitions.find(data[:id])
+      td.reload
+
+      assert_equal data[:start_week], td.start_week, "start week for #{td.abbreviation} -- should be #{data[:start_week]} was #{td.start_week}"
+      assert_equal data[:target_week], td.target_week, "target week for #{td.abbreviation} -- should be #{data[:target_week]} was #{td.target_week}"
+      assert_equal data[:due_week], td.due_week, "due week for #{td.abbreviation} -- should be #{data[:due_week]} was #{td.due_week}"
     end
   end
 
