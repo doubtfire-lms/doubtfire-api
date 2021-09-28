@@ -7,8 +7,9 @@ class TaskDefinition < ApplicationRecord
   end
 
   before_destroy :delete_associated_files
-  before_update :move_files_on_abbreviation_change, if: :abbreviation_changed?
-  before_update :remove_old_group_submissions, if: :has_removed_group?
+
+  after_update :move_files_on_abbreviation_change, if: :saved_change_to_abbreviation?
+  after_update :remove_old_group_submissions, if: :has_removed_group?
 
   # Model associations
   belongs_to :unit # Foreign key
@@ -36,7 +37,7 @@ class TaskDefinition < ApplicationRecord
   validate :plagiarism_checks, :check_plagiarism_format
   validates :description, length: { maximum: 4095, allow_blank: true }
 
-  validate :ensure_no_submissions, if: :has_change_group_status?
+  validate :ensure_no_submissions, if: :will_save_change_to_group_set_id?
   validate :unit_must_be_same
   validate :tutorial_stream_present?
 
@@ -97,12 +98,8 @@ class TaskDefinition < ApplicationRecord
     new_td
   end
 
-  def has_change_group_status?
-    group_set_id != group_set_id_was
-  end
-
   def has_removed_group?
-    has_change_group_status? && group_set_id.nil?
+    saved_change_to_group_set_id? && group_set_id.nil?
   end
 
   def ensure_no_submissions
@@ -118,16 +115,17 @@ class TaskDefinition < ApplicationRecord
   end
 
   def move_files_on_abbreviation_change
-    if File.exists? task_sheet_with_abbreviation(abbreviation_was)
-      FileUtils.mv(task_sheet_with_abbreviation(abbreviation_was), task_sheet())
+    old_abbr = saved_change_to_abbreviation[0] # 0 is original abbreviation
+    if File.exists? task_sheet_with_abbreviation(old_abbr)
+      FileUtils.mv(task_sheet_with_abbreviation(old_abbr), task_sheet())
     end
 
-    if File.exists? task_resources_with_abbreviation(abbreviation_was)
-      FileUtils.mv(task_resources_with_abbreviation(abbreviation_was), task_resources())
+    if File.exists? task_resources_with_abbreviation(old_abbr)
+      FileUtils.mv(task_resources_with_abbreviation(old_abbr), task_resources())
     end
 
-    if File.exists? task_assessment_resources_with_abbreviation(abbreviation_was)
-      FileUtils.mv(task_assessment_resources_with_abbreviation(abbreviation_was), task_assessment_resources())
+    if File.exists? task_assessment_resources_with_abbreviation(old_abbr)
+      FileUtils.mv(task_assessment_resources_with_abbreviation(old_abbr), task_assessment_resources())
     end
   end
 

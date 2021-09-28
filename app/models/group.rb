@@ -77,7 +77,7 @@ class Group < ApplicationRecord
   def ensure_no_submissions
     return true if group_submissions.count.zero?
     errors[:base] << 'Cannot delete group while it has submissions.'
-    false
+    throw :abort
   end
 
   def specific_permission_hash(role, perm_hash, _other)
