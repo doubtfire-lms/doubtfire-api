@@ -1280,7 +1280,7 @@ class Unit < ApplicationRecord
     if teaching_period.present?
       teaching_period.week_number(date)
     else
-      ((date - start_date) / 1.week).floor
+      ((date - start_date) / 1.week).floor + 1
     end
   end
 
