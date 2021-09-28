@@ -402,6 +402,14 @@ class TaskDefinition < ApplicationRecord
     end
   end
 
+  # Update all task dates by date_diff
+  def propogate_date_changes date_diff
+    self.start_date += date_diff
+    self.target_date += date_diff
+    self.due_date += date_diff unless self.due_date.nil?
+    self.save!
+  end
+
   def to_csv_row
     TaskDefinition.csv_columns
                   .reject { |col| [:start_week, :start_day, :target_week, :target_day, :due_week, :due_day, :upload_requirements, :plagiarism_checks, :group_set, :tutorial_stream].include? col }
