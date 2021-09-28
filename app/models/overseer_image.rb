@@ -15,6 +15,6 @@ class OverseerImage < ApplicationRecord
   def can_destroy?
     return true if units.count == 0 && task_definitions.count == 0
     errors.add :base, "Cannot delete overseer image with associated units and/or task definitions"
-    false
+    throw :abort
   end
 end
