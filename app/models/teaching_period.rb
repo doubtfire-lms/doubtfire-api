@@ -1,4 +1,4 @@
-class TeachingPeriod < ActiveRecord::Base
+class TeachingPeriod < ApplicationRecord
   # Relationships
   has_many :units
   has_many :breaks, dependent: :delete_all
@@ -57,7 +57,7 @@ class TeachingPeriod < ActiveRecord::Base
       if date >= a_break.start_date
         # we are in or after the break, so calculated week needs to
         # be reduced by this break
-        
+
         if date >= a_break.end_date
           # past the end of the break...
           result -= a_break.number_of_weeks
@@ -112,7 +112,7 @@ class TeachingPeriod < ActiveRecord::Base
     start_day_num = start_date.wday
 
     result = week_start + (day_num - start_day_num).days
-    
+
     for a_break in breaks do
       if result >= a_break.start_date && result < a_break.end_date
         # we are in or after the break, so calculated date is
@@ -131,19 +131,19 @@ class TeachingPeriod < ActiveRecord::Base
   def rollover(rollover_to, search_forward=true,rollover_inactive=false)
     if rollover_to.start_date < Time.zone.now || rollover_to.start_date <= start_date
       self.errors.add(:base, "Units can only be rolled over to future teaching periods")
-      
+
       false
     else
       units_to_rollover = units
 
       unless rollover_inactive
-        units_to_rollover = units_to_rollover.where(active: true) 
-      end 
+        units_to_rollover = units_to_rollover.where(active: true)
+      end
 
       if search_forward
         ftp = future_teaching_periods.where("start_date < :date", date: rollover_to.start_date).order(start_date: "desc")
 
-        units_to_rollover = units_to_rollover.map do |u| 
+        units_to_rollover = units_to_rollover.map do |u|
           ftp.map{|tp| tp.units.where(code: u.code).first }.select{|u| u.present?}.first || u
         end
       end
@@ -164,7 +164,7 @@ class TeachingPeriod < ActiveRecord::Base
   def can_destroy?
     return true if units.count == 0
     errors.add :base, "Cannot delete teaching period with units"
-    false
+    throw :abort
   end
 
   def validate_active_until_after_end_date
@@ -180,8 +180,8 @@ class TeachingPeriod < ActiveRecord::Base
   end
 
   def propogate_date_changes
-    return unless start_date_changed? || end_date_changed?
-    
+    return unless saved_change_to_start_date? || saved_change_to_end_date?
+
     units.each do |u|
       u.update(start_date: self.start_date, end_date: self.end_date)
     end

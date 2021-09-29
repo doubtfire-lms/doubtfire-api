@@ -1,4 +1,4 @@
-class AddStartedToProjects < ActiveRecord::Migration
+class AddStartedToProjects < ActiveRecord::Migration[4.2]
   def change
     add_column :projects, :started, :boolean
 

@@ -13,15 +13,20 @@ class FeedbackTest < ActiveSupport::TestCase
     unit = FactoryBot.create(:unit, perform_submissions: true, unenrolled_student_count: 0, part_enrolled_student_count: 0)
 
     unit.teaching_staff.each do |user|
-      expected_response = unit.tasks_awaiting_feedback(user)
+      expected_response_ids = unit.tasks_awaiting_feedback(user).map { |data| data['id'] }
 
-      get with_auth_token "/api/units/#{unit.id}/feedback", user
+      # Add auth_token and username to header
+      add_auth_header_for(user: user)
+
+      get "/api/units/#{unit.id}/feedback"
 
       assert_equal 200, last_response.status
 
+      assert_equal expected_response_ids.count, last_response_body.count
+
       # check each is the same
-      last_response_body.zip(expected_response).each do |response, expected|
-        assert_json_matches_model expected, response, ['id']
+      last_response_body.each do |response|
+        assert_includes expected_response_ids, response['id']
       end
     end
   end
@@ -34,7 +39,10 @@ class FeedbackTest < ActiveSupport::TestCase
     unit.teaching_staff.each do |user|
       expected_response = unit.tasks_for_task_inbox(user)
 
-      get with_auth_token "/api/units/#{unit.id}/tasks/inbox", user
+      # Add auth_token and username to header
+      add_auth_header_for(user: user)
+
+      get "/api/units/#{unit.id}/tasks/inbox"
 
       assert_equal 200, last_response.status
 

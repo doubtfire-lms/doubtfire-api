@@ -19,9 +19,8 @@ module Api
 
       desc 'Upload and generate doubtfire-task-specific submission document'
       params do
-        optional :file0, type: Rack::Multipart::UploadedFile, desc: 'file 0.'
-        optional :file1, type: Rack::Multipart::UploadedFile, desc: 'file 1.'
-        # This API accepts more than 2 files, file0 and file1 were probably just used by Alex to test the API 3 years ago on swagger, according to Jake. Naughty Alex.
+        optional :file0, type: File, desc: 'file 0.'
+        optional :file1, type: File, desc: 'file 1.'
         optional :contributions, type: JSON, desc: "Contribution details JSON, eg: [ { project_id: 1, pct:'0.44', pts: 4 }, ... ]"
         optional :alignment_data, type: JSON, desc: "Data for task alignment, eg: [ { ilo_id: 1, rating: 5, rationale: 'Hello' }, ... ]"
         optional :trigger, type: String, desc: 'Can be need_help to indicate upload is not a ready to mark submission'
@@ -64,7 +63,8 @@ module Api
         end
 
         logger.info "Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id} was not performed"
-        TaskUpdateSerializer.new(task)
+
+        present task, with: Api::Entities::TaskEntity, update_only: true
       end # post
 
       desc 'Retrieve submission document included for the task id'
@@ -99,6 +99,7 @@ module Api
 
         if params[:as_attachment]
           header['Content-Disposition'] = "attachment; filename=#{filename}"
+          header['Access-Control-Expose-Headers'] = 'Content-Disposition'
         end
 
         # Set download headers...
@@ -120,10 +121,12 @@ module Api
         task = project.task_for_task_definition(task_definition)
 
         if task && PortfolioEvidence.recreate_task_pdf(task)
-          { result: 'done' }
+          result = 'done'
         else
-          { result: 'false' }
+          result = 'false'
         end
+
+        present :result, result, with: Grape::Presenters::Presenter
       end # put
 
       desc 'Get the timestamps of the last 10 submissions of a task'

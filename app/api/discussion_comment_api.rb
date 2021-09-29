@@ -13,7 +13,7 @@ module Api
     desc 'Add a new discussion comment to a task'
     params do
       requires :attachments, type: Array do
-        requires type: Rack::Multipart::UploadedFile, desc: 'audio prompts.'
+        requires type: File, desc: 'audio prompts.'
       end
     end
     post '/projects/:project_id/task_def_id/:task_definition_id/discussion_comments' do
@@ -29,8 +29,8 @@ module Api
 
       for attached_file in attached_files do
         if attached_file.present?
-          error!(error: 'Attachment is empty.') unless File.size?(attached_file.tempfile.path).present?
-          error!(error: 'Attachment exceeds the maximum attachment size of 30MB.') unless File.size?(attached_file.tempfile.path) < 30_000_000
+          error!(error: 'Attachment is empty.') unless File.size?(attached_file["tempfile"].path).present?
+          error!(error: 'Attachment exceeds the maximum attachment size of 30MB.') unless File.size?(attached_file["tempfile"].path) < 30_000_000
         end
       end
 
@@ -174,7 +174,7 @@ module Api
 
     desc 'Reply to a discussion comment of a task'
     params do
-      requires :attachment, type: Rack::Multipart::UploadedFile, desc: 'discussion reply.'
+      requires :attachment, type: File, desc: 'discussion reply.'
     end
     post '/projects/:project_id/task_def_id/:task_definition_id/comments/:task_comment_id/discussion_comment/reply' do
       project = Project.find(params[:project_id])
@@ -188,8 +188,8 @@ module Api
       attached_file = params[:attachment]
 
       if attached_file.present?
-        error!(error: 'Attachment is empty.') unless File.size?(attached_file.tempfile.path).present?
-        error!(error: 'Attachment exceeds the maximum attachment size of 30MB.') unless File.size?(attached_file.tempfile.path) < 30_000_000
+        error!(error: 'Attachment is empty.') unless File.size?(attached_file["tempfile"].path).present?
+        error!(error: 'Attachment exceeds the maximum attachment size of 30MB.') unless File.size?(attached_file["tempfile"].path) < 30_000_000
       end
 
       logger.info("#{current_user.username} - added a reply to the discussion comment #{params[:discussion_comment_id]} for task #{task.id} (#{task_definition.abbreviation})")

@@ -1,4 +1,4 @@
-class OverseerImage < ActiveRecord::Base
+class OverseerImage < ApplicationRecord
   # Callbacks - methods called are private
   before_destroy :can_destroy?
 
@@ -15,6 +15,6 @@ class OverseerImage < ActiveRecord::Base
   def can_destroy?
     return true if units.count == 0 && task_definitions.count == 0
     errors.add :base, "Cannot delete overseer image with associated units and/or task definitions"
-    false
+    throw :abort
   end
 end

@@ -1,4 +1,4 @@
-class ChangeDoNotResubmit < ActiveRecord::Migration
+class ChangeDoNotResubmit < ActiveRecord::Migration[4.2]
   def change
     if TaskStatus.count > 0
       dnr = TaskStatus.feedback_exceeded

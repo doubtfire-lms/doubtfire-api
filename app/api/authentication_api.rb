@@ -1,6 +1,6 @@
 require 'grape'
-require 'user_serializer'
 require 'json/jwt'
+require 'entities/user_entity'
 
 module Api
   #
@@ -68,17 +68,11 @@ module Api
           user.save
         end
 
-        # Revise an auth_token for future requests
-        if user.authentication_token_expired?
-          # Create a new token
-          user.generate_authentication_token! remember
-        else
-          # Extend the existing token's time
-          user.extend_authentication_token remember
-        end
+        logger.info "Login #{username} from #{request.ip}"
 
         # Return user details
-        { user: UserSerializer.new(user), auth_token: user.auth_token }
+        present :user, user, with: Api::Entities::UserEntity
+        present :auth_token, user.generate_authentication_token!(remember).authentication_token
       end
     end
 
@@ -102,6 +96,8 @@ module Api
         attrs = jwt['https://aaf.edu.au/attributes']
         login_id = jwt[:sub]
         email = attrs[:mail]
+
+        logger.info "Authenticate #{email} from #{request.ip}"
 
         # Lookup using login_id if it exists
         # Lookup using email otherwise and set login_id
@@ -146,6 +142,8 @@ module Api
         # Generate a temporary auth_token for future requests
         user.generate_temporary_authentication_token!
 
+        logger.info "Redirecting #{username} from #{request.ip}"
+
         # Must redirect to the front-end after sign in
         protocol = Rails.env.development? ? 'http' : 'https'
         host = Rails.env.development? ? "#{protocol}://localhost:3000" : Doubtfire::Application.config.institution[:host]
@@ -158,6 +156,7 @@ module Api
       #
       desc 'Get user details from an authentication token'
       params do
+        requires :username, type: String, desc: 'The user\'s username'
         requires :auth_token, type: String, desc: 'The user\'s temporary auth token'
       end
       post '/auth' do
@@ -166,14 +165,19 @@ module Api
 
         # Authenticate that the token is okay
         if authenticated?
-          user = User.find_by_auth_token(params[:auth_token])
+          user = User.find_by_username(params[:username])
+          token = user.token_for_text?(params[:auth_token]) unless user.nil?
+          error!({ error: 'Invalid token.' }, 404) if token.nil?
 
           # Invalidate the token and regenrate a new one
-          user.reset_authentication_token!
-          user.generate_authentication_token! true
+          token.destroy!
+          token = user.generate_authentication_token! true
+
+          logger.info "Login #{params[:username]} from #{request.ip}"
 
           # Respond user details with new auth token
-          { user: UserSerializer.new(user), auth_token: user.auth_token }
+          present :user, user, with: Api::Entities::UserEntity
+          present :auth_token, token.authentication_token
         end
       end
     end
@@ -187,7 +191,7 @@ module Api
         method: Doubtfire::Application.config.auth_method
       }
       response[:redirect_to] = Doubtfire::Application.config.aaf[:redirect_url] if aaf_auth?
-      response
+      present response, with: Grape::Presenters::Presenter
     end
 
     #
@@ -197,51 +201,86 @@ module Api
     get '/auth/signout_url' do
       response = {}
       response[:auth_signout_url] = Doubtfire::Application.config.aaf[:auth_signout_url] if aaf_auth? && Doubtfire::Application.config.aaf[:auth_signout_url].present?
-      response
+      present response, with: Grape::Presenters::Presenter
     end
 
     #
-    # Update token
+    # Update the expiry of an existing authentication token
     #
-    desc 'Allow tokens to be updated'
+    desc 'Allow tokens to be updated',
+    {
+      headers:
+      {
+        "username" =>
+        {
+          description: "User username",
+          required: true
+        },
+        "auth_token" =>
+        {
+          description: "The user\'s temporary auth token",
+          required: true
+        }
+      }
+    }
     params do
-      requires :username, type: String,  desc: 'User username'
       optional :remember, type: Boolean, desc: 'User has requested to remember login', default: false
     end
-    put '/auth/:auth_token' do
-      error!({ error: 'Invalid token.' }, 404) if params[:auth_token].nil?
-      logger.info "Update token #{params[:username]} from #{request.ip}"
+    put '/auth' do
+      token_param = headers['Auth-Token'] || params['Auth-Token']
+      user_param = headers['Username'] || params['Username']
+
+      error!({ error: 'Invalid token/username.' }, 404) if token_param.nil? || user_param.nil?
+
+      logger.info "Update token #{token_param} from #{request.ip} for #{user_param}"
 
       # Find user
-      user = User.find_by_auth_token(params[:auth_token])
+      user = User.find_by_username(user_param)
+      token = user.token_for_text?(token_param) unless user.nil?
       remember = params[:remember] || false
 
       # Token does not match user
-      if user.nil? || user.username != params[:username]
+      if token.nil? || user.nil? || user.username != user_param
         error!({ error: 'Invalid token.' }, 404)
       else
-        if user.auth_token_expiry > Time.zone.now && user.auth_token_expiry < Time.zone.now + 1.hour
-          user.reset_authentication_token!
-          user.generate_authentication_token! remember
+        if token.auth_token_expiry > Time.zone.now
+          token.extend_token remember
         end
+
         # Return extended auth token
-        { auth_token: user.auth_token }
+        present :auth_token, token.authentication_token
       end
     end
 
     #
     # Sign out
     #
-    desc 'Sign out'
-    delete '/auth/:auth_token' do
-      user = User.find_by_auth_token(params[:auth_token])
+    desc 'Sign out',
+    {
+      headers:
+      {
+        "username" =>
+        {
+          description: "User username",
+          required: true
+        },
+        "auth_token" =>
+        {
+          description: "The user\'s temporary auth token",
+          required: true
+        }
+      }
+    }
+    delete '/auth' do
+      user = User.find_by_username(headers['Username'])
+      token = user.token_for_text?(headers['Auth-Token']) unless user.nil?
 
-      if user
+      if token.present?
         logger.info "Sign out #{user.username} from #{request.ip}"
-        user.reset_authentication_token!
+        token.destroy!
       end
 
-      nil
+      present nil
     end
   end
 end

@@ -1,4 +1,5 @@
 # Read about factories at https://github.com/thoughtbot/factory_bot
+require './lib/helpers/database_populator'
 
 FactoryBot.define do
 
@@ -18,7 +19,7 @@ FactoryBot.define do
 
   factory :learning_outcome do
     unit
-    name                      { Faker::Lorem.unique.words(3).join(' ') }
+    name                      { Faker::Lorem.unique.words(number: 3).join(' ') }
     sequence(:abbreviation)   { |n| "ULO-#{n}" }
     sequence(:ilo_number)     { |n| n }
     description               { Faker::Lorem.sentence }
@@ -49,14 +50,15 @@ FactoryBot.define do
       perform_submissions         { false }
       staff_count                 { 1 }
       inactive_student_count      { 1 }
+      task_alignment_links        { 0 }
     end
 
-    name            { Faker::Lorem.unique.words(2).join(' ') }
+    name            { Faker::Lorem.unique.words(number: 2).join(' ') }
     description     { Faker::Lorem.sentence }
     teaching_period { nil }
     start_date      { teaching_period.present? ? teaching_period.start_date : Time.zone.now - 3.weeks }
     end_date        { teaching_period.present? ? teaching_period.end_date : Time.zone.now + 14.weeks - 3.weeks }
-    code            { "SIT#{Faker::Number.unique.number(3)}" }
+    code            { "SIT#{Faker::Number.unique.number(digits: 3)}" }
     active          { true }
     auto_apply_extension_before_deadline { true }
     send_notifications { true }
@@ -82,13 +84,19 @@ FactoryBot.define do
 
       campuses = create_list(:campus, eval.campus_count)
       create_list(:group_set, group_sets, unit: unit)
-      create_list(:learning_outcome, eval.outcome_count, unit: unit)
+      outcomes = create_list(:learning_outcome, eval.outcome_count, unit: unit)
       tutorial_streams = create_list(:tutorial_stream, eval.stream_count, unit: unit)
       task_definitions = create_list(:task_definition, task_count, unit: unit)
 
       if eval.set_one_of_each_task
         task_definitions[1].update(max_quality_pts: 5)
         task_definitions[2].update(is_graded: true)
+      end
+
+      while unit.task_outcome_alignments.count < eval.task_alignment_links do
+        td = task_definitions.sample
+        o = outcomes.sample
+        LearningOutcomeTaskLink.create task_definition: td, learning_outcome: o, rating: (1..5).to_a.sample, description: "Justification"
       end
 
       campuses.each do |c|

@@ -9,24 +9,37 @@ module Api
 
     prefix 'api'
     format :json
-    formatter :json, Grape::Formatter::ActiveModelSerializers
+
+    before do
+      header['Access-Control-Allow-Origin'] = '*'
+      header['Access-Control-Request-Method'] = '*'
+    end
 
     rescue_from :all do |e|
       case e
       when ActiveRecord::RecordInvalid, Grape::Exceptions::ValidationErrors
-        error!(e.message, 400)
+        message = e.message
+        status = 400
+      when ActiveRecord::InvalidForeignKey
+        message = "This operation has been rejected as it would break data integrity. Ensure that related values are deleted or updated before trying again."
+        status = 400
       when Grape::Exceptions::MethodNotAllowed
-        error!(e.message, 405)
+        message = e.message
+        status = 405
       when ActiveRecord::RecordNotDestroyed
-        error!(e.message, 400)
+        message = e.message
+        status = 400
       when ActiveRecord::RecordNotFound
-        error!("Unable to find requested #{e.message[/(Couldn't find )(.*)( with)/,2]}", 404)
+        message = "Unable to find requested #{e.message[/(Couldn't find )(.*)( with)/,2]}"
+        status = 404
       else
         logger.error "Unhandled exception: #{e.class}"
         logger.error e.inspect
         logger.error e.backtrace.join("\n")
-        error!("Sorry... something went wrong with your request.", 500)
+        message = "Sorry... something went wrong with your request."
+        status = 500
       end
+      Rack::Response.new( {error: message}.to_json, status, { 'Content-type' => 'text/error' } )
     end
 
     #
@@ -62,6 +75,7 @@ module Api
     mount Api::UnitsApi
     mount Api::UsersApi
     mount Api::WebcalApi
+    mount Api::WebcalPublicApi
 
     #
     # Add auth details to all end points
@@ -91,16 +105,27 @@ module Api
     AuthenticationHelpers.add_auth_to Api::UsersApi
     AuthenticationHelpers.add_auth_to Api::UnitRolesApi
     AuthenticationHelpers.add_auth_to Api::UnitsApi
+    AuthenticationHelpers.add_auth_to Api::WebcalApi
+
+    # add_swagger_documentation format: :json,
+    #                           hide_documentation_path: false,
+    #                           api_version: 'v1',
+    #                           info: {
+    #                             title: "Horses and Hussars",
+    #                             description: "Demo app for dev of grape swagger 2.0"
+    #                           },
+    #                           mount_path: 'swagger_doc'
 
     add_swagger_documentation \
       base_path: nil,
-      add_version: false,
+      api_version: 'v1',
       hide_documentation_path: true,
       info: {
         title: 'Doubtfire API Documentaion',
         description: 'Doubtfire is a modern, lightweight learning management system.',
         license: 'AGPL v3.0',
         license_url: 'https://github.com/doubtfire-lms/doubtfire-api/blob/master/LICENSE'
-      }
+      },
+      mount_path: 'swagger_doc'
   end
 end
