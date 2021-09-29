@@ -1,4 +1,4 @@
-class AddAssessorToTaskSubmission < ActiveRecord::Migration
+class AddAssessorToTaskSubmission < ActiveRecord::Migration[4.2]
   def self.up
     add_column :task_submissions, :assessor_id, :integer
   end

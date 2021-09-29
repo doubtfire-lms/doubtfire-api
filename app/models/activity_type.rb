@@ -1,4 +1,4 @@
-class ActivityType < ActiveRecord::Base
+class ActivityType < ApplicationRecord
   has_many :tutorial_streams
 
   # Callbacks - methods called are private
@@ -46,6 +46,6 @@ class ActivityType < ActiveRecord::Base
   def can_destroy?
     return true if tutorial_streams.count == 0
     errors.add :base, "Cannot delete activity type with associated tutorial_streams"
-    false
+    throw :abort
   end
 end

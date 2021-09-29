@@ -3,7 +3,7 @@
 
 require 'user_serializer'
 
-class ShallowUnitRoleSerializer < ActiveModel::Serializer
+class ShallowUnitRoleSerializer < DoubtfireSerializer
   attributes :id, :role
 
   def role
@@ -11,7 +11,7 @@ class ShallowUnitRoleSerializer < ActiveModel::Serializer
   end
 end
 
-class UnitRoleSerializer < ActiveModel::Serializer
+class UnitRoleSerializer < DoubtfireSerializer
   attributes :id, :role, :user_id, :unit_id, :unit_name, :name, :unit_code, :start_date, :end_date, :teaching_period_id, :active
 
   # has_one :user, serializer: ShallowUserSerializer

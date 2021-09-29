@@ -1,6 +1,6 @@
 require 'date'
 
-class Task < ActiveRecord::Base
+class Task < ApplicationRecord
   include ApplicationHelper
   include LogHelper
   include GradeHelper
@@ -127,7 +127,7 @@ class Task < ActiveRecord::Base
   end
 
   def has_requested_extension?
-    extensions > extensions_was && extensions > 0
+    extensions > 0 && will_save_change_to_extensions? && extensions > extensions_in_database
   end
 
   def must_have_quality_pts
@@ -162,6 +162,33 @@ class Task < ActiveRecord::Base
     comments.each do |comment|
       comment.mark_as_unread(user)
     end
+  end
+
+  def comments_for_user(user)
+    TaskComment.
+      joins('JOIN users AS authors ON authors.id = task_comments.user_id').
+      joins('JOIN users AS recipients ON recipients.id = task_comments.recipient_id').
+      joins("LEFT JOIN comments_read_receipts u_crr ON u_crr.task_comment_id = task_comments.id AND u_crr.user_id = #{user.id}").
+      joins("LEFT JOIN comments_read_receipts r_crr ON r_crr.task_comment_id = task_comments.id AND r_crr.user_id = recipients.id").
+      where('task_comments.task_id = :task_id', task_id: self.id).
+      order('created_at ASC').
+      select(
+        'task_comments.id AS id',
+        'task_comments.comment AS comment',
+        'task_comments.content_type AS content_type',
+        "case when u_crr.created_at IS NULL then 1 else 0 end AS is_new",
+        'r_crr.created_at AS recipient_read_time',
+        'task_comments.created_at AS created_at',
+        'authors.id AS author_id',
+        'authors.first_name AS author_first_name',
+        'authors.last_name AS author_last_name',
+        'authors.email AS author_email',
+        'recipients.id AS recipient_id',
+        'recipients.first_name AS recipient_first_name',
+        'recipients.last_name AS recipient_last_name',
+        'recipients.email AS recipient_email',
+        'task_comments.reply_to_id AS reply_to_id'
+      )
   end
 
   def current_plagiarism_match_links
@@ -515,7 +542,7 @@ class Task < ActiveRecord::Base
         # we have an existing submission
         if submission.assessment_time.nil?
           # and it hasn't been assessed yet...
-          submission.update_attributes submission_attributes
+          submission.update submission_attributes
           submission.save
         else
           # it was assessed... so lets create a new assessment
@@ -853,7 +880,7 @@ class Task < ActiveRecord::Base
   #
   # Move folder over from new or done -> in_process returns true on success
   #
-  def move_files_to_in_process(source_folder)
+  def move_files_to_in_process(source_folder = FileHelper.student_work_dir(:new))
     # find and clear out old dir
     in_process_dir = student_work_dir(:in_process, false)
 
@@ -1141,7 +1168,7 @@ class Task < ActiveRecord::Base
     # id, name, filename, type, tempfile
     #
     files.each do |file|
-      ui.error!({ 'error' => "Missing file data for '#{file.name}'" }, 403) if file.id.nil? || file.name.nil? || file.filename.nil? || file.type.nil? || file.tempfile.nil?
+      ui.error!({ 'error' => "Missing file data for '#{file[:name]}'" }, 403) if file[:id].nil? || file[:name].nil? || file[:filename].nil? || file[:type].nil? || file["tempfile"].nil?
     end
 
     # Ensure group if group task
@@ -1153,22 +1180,22 @@ class Task < ActiveRecord::Base
     if group_task? && group_submission && group_submission.processing_pdf? && group_submission.submitter_task != self
       ui.error!({ 'error' => "#{group_submission.submitter_task.project.student.name} has just submitted this task. Only one team member needs to submit this task, so check back soon to see what was uploaded." }, 403)
     end
-    # file.key            = "file0"
-    # file.name           = front end name for file
-    # file.tempfile.path  = actual file dir
-    # file.filename       = their name for the file
+    # file[:key]            = "file0"
+    # file[:name]           = front end name for file
+    # file["tempfile"].path  = actual file dir
+    # file[:filename]       = their name for the file
 
     #
     # Confirm subtype categories using filemagic
     #
     files.each_with_index do |file, index|
-      logger.debug "Accepting submission (file #{index + 1} of #{files.length}) - checking file type for #{file.tempfile.path}"
-      unless FileHelper.accept_file(file, file.name, file.type)
-        ui.error!({ 'error' => "'#{file.name}' is not a valid #{file.type} file" }, 403)
+      logger.debug "Accepting submission (file #{index + 1} of #{files.length}) - checking file type for #{file["tempfile"].path}"
+      unless FileHelper.accept_file(file, file[:name], file[:type])
+        ui.error!({ 'error' => "'#{file[:name]}' is not a valid #{file[:type]} file" }, 403)
       end
 
-      if File.size(file.tempfile.path) > 10_000_000
-        ui.error!({ 'error' => "'#{file.name}' exceeds the 10MB file limit. Try compressing or reformat and submit again." }, 403)
+      if File.size(file["tempfile"].path) > 10_000_000
+        ui.error!({ 'error' => "'#{file[:name]}' exceeds the 10MB file limit. Try compressing or reformat and submit again." }, 403)
       end
     end
 
@@ -1199,8 +1226,8 @@ class Task < ActiveRecord::Base
     portfolio_evidence = nil
 
     files.each_with_index.map do |file, idx|
-      output_filename = File.join(tmp_dir, "#{idx.to_s.rjust(3, '0')}-#{file.type}#{File.extname(file.filename).downcase}")
-      FileUtils.cp file.tempfile.path, output_filename
+      output_filename = File.join(tmp_dir, "#{idx.to_s.rjust(3, '0')}-#{file[:type]}#{File.extname(file[:filename]).downcase}")
+      FileUtils.cp file["tempfile"].path, output_filename
     end
 
     #
@@ -1217,7 +1244,7 @@ class Task < ActiveRecord::Base
     # Move files into place
     logger.debug "Moving source files from #{tmp_dir} into #{enqueued_dir}"
     FileUtils.mv Dir.glob(File.join(tmp_dir,'*.*')), enqueued_dir, force: true
-    
+
     # Delete the tmp dir
     logger.debug "Deleting student work dir: #{tmp_dir}"
     FileUtils.rm_rf tmp_dir if File.exists? tmp_dir

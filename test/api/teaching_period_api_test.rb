@@ -55,8 +55,11 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     tp = TeachingPeriod.first
     to_update = tp.breaks.first
 
+    # Add username and auth_token to Header
+    add_auth_header_for(user: User.first)
+
     # The api call we are testing
-    put_json with_auth_token("/api/teaching_periods/#{tp.id}/breaks/#{to_update.id}"), { number_of_weeks: 5 }
+    put_json "/api/teaching_periods/#{tp.id}/breaks/#{to_update.id}", { number_of_weeks: 5 }
 
     to_update.reload
     assert_equal 5, to_update.number_of_weeks
@@ -66,8 +69,12 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     tp = TeachingPeriod.first
     to_update = TeachingPeriod.last.breaks.first
     num_weeks = to_update.number_of_weeks
+
+    # Add username and auth_token to Header
+    add_auth_header_for(user: User.first)
+
     # The api call we are testing
-    put_json with_auth_token("/api/teaching_periods/#{tp.id}/breaks/#{to_update.id}"), { number_of_weeks: num_weeks + 1 }
+    put_json "/api/teaching_periods/#{tp.id}/breaks/#{to_update.id}", { number_of_weeks: num_weeks + 1 }
 
     assert_equal 404, last_response.status
 
@@ -82,9 +89,11 @@ class TeachingPeriodTest < ActiveSupport::TestCase
 
     # data to replace
     data_to_put = {
-      teaching_period: FactoryBot.build(:teaching_period),
-      auth_token: auth_token
+      teaching_period: FactoryBot.build(:teaching_period)
     }
+
+    # Add username and auth_token to Header
+    add_auth_header_for(user: User.first)
 
     # Update teaching period with id = 1
     put_json "/api/teaching_periods/#{tp.id}", data_to_put
@@ -117,12 +126,14 @@ class TeachingPeriodTest < ActiveSupport::TestCase
 
     # Create a dummy teaching period 
     data_to_put = {
-      teaching_period: FactoryBot.build(:teaching_period),
-      auth_token: auth_token
+      teaching_period: FactoryBot.build(:teaching_period)
     }
 
+    # Add username and auth_token to Header
+    add_auth_header_for(user: user)
+
     # Perform PUT, but the student user does not have permissions to put it
-    put_json "/api/teaching_periods/#{teaching_period.id}", with_auth_token(data_to_put, user)
+    put_json "/api/teaching_periods/#{teaching_period.id}", data_to_put
 
     # Check if the put does not get through
     assert_equal 403, last_response.status
@@ -139,9 +150,11 @@ class TeachingPeriodTest < ActiveSupport::TestCase
 
     # the dummy teaching period that we want to post/create
     data_to_post = {
-      teaching_period: FactoryBot.build(:teaching_period),
-      auth_token: auth_token
+      teaching_period: FactoryBot.build(:teaching_period)
     }
+
+    # Add username and auth_token to Header
+    add_auth_header_for(user: User.first)
 
     # perform the POST
     post_json '/api/teaching_periods', data_to_post
@@ -174,8 +187,11 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     # number of teaching periods before delete
     number_of_tp = TeachingPeriod.count
 
+    # Add username and auth_token to Header
+    add_auth_header_for(user: User.first)
+
     # perform the delete
-    delete_json with_auth_token"/api/teaching_periods/#{teaching_period.id}"
+    delete_json "/api/teaching_periods/#{teaching_period.id}"
 
     # Check if the delete get through
     assert_equal 200, last_response.status
@@ -199,8 +215,11 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     # Number of teaching periods before deletion
     number_of_tp = TeachingPeriod.count
 
+    # Add username and auth_token to Header
+    add_auth_header_for(user: user)
+
     # perform the delete
-    delete_json with_auth_token("/api/teaching_periods/#{id_of_tp}", user)
+    delete_json "/api/teaching_periods/#{id_of_tp}"
 
     # check if the delete does not get through
     assert_equal 403, last_response.status

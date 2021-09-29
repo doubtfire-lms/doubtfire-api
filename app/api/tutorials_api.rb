@@ -52,7 +52,7 @@ module Api
       end
 
       tutorial.update!(tutorial_parameters)
-      tutorial
+      present tutorial, with: Api::Entities::TutorialEntity
     end
 
     desc 'Create tutorial'
@@ -85,7 +85,8 @@ module Api
       tutorial_stream = unit.tutorial_streams.find_by!(abbreviation: tutorial_stream_abbr) unless tutorial_stream_abbr.nil?
 
       tutorial = unit.add_tutorial(tut_params[:meeting_day], tut_params[:meeting_time], tut_params[:meeting_location], tutor, campus, tut_params[:capacity], tut_params[:abbreviation], tutorial_stream)
-      tutorial
+
+      present tutorial, with: Api::Entities::TutorialEntity
     end
 
     desc 'Delete a tutorial'
@@ -100,7 +101,7 @@ module Api
       end
 
       tutorial.destroy!
-      tutorial
+      present true, with: Grape::Presenters::Presenter
     end
   end
 end

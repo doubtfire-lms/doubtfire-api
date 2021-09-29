@@ -22,6 +22,8 @@ namespace :maintenance do
         end
       end
     end
+
+    AuthToken.destroy_old_tokens
   end
 
   desc 'Export auth tokens for migration from 5.x to 6.x'

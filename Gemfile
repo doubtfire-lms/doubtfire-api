@@ -11,7 +11,7 @@ ruby_versions = {
 ruby ruby_versions[(ENV['RAILS_ENV'] || 'development').to_sym]
 
 # The venerable, almighty Rails
-gem 'rails', '4.2.8'
+gem 'rails', '~>6.1.0'
 
 group :development, :test do
   gem 'database_cleaner'
@@ -19,40 +19,35 @@ group :development, :test do
   gem 'simplecov', require: false
   gem 'better_errors'
   gem 'rails_best_practices'
-  gem 'rubocop', '0.46.0'
+  gem 'rubocop'
+  gem 'rubocop-faker'
+  gem 'rubocop-rails'
 end
 
 group :development, :test, :staging do
   # Generators for population
   gem 'factory_bot_rails'
   gem 'factory_bot'
-  gem 'faker', '~>1.9.1'
+  gem 'faker'
   gem 'minitest', '~>5.14'
   gem 'minitest-rails'
   gem 'minitest-around'
   gem 'webmock'
 end
 
-# Optional passenger gem
-# usage: bundle --with-env=passenger
-group :passenger do
-  gem 'passenger', '= 4.0.42'
-end
-
 # Database
-gem 'mysql2', '0.4.10'
+gem 'mysql2', '~>0.5.0'
 
 # Webserver - included in development and test and optionally in production
-# usage: bundle --with-env=webserver
-group :development, :test, :webserver do
-  gem 'thin'
-end
+gem 'puma', '~> 5.0'
+
+gem 'bootsnap', '>= 1.4.4', require: false
 
 # Extend irb for better output
 gem 'hirb'
 
 # Authentication
-gem 'devise', '~> 4.4.0'
+gem 'devise', '~> 4.7.1'
 gem 'devise_ldap_authenticatable'
 gem 'json-jwt', '1.7.0'
 
@@ -66,16 +61,18 @@ gem 'rubyzip'
 gem 'moss_ruby', '>= 1.1.2'
 
 # Latex
-gem 'rails-latex', '=2.0.1'
+gem 'rails-latex', '>2.3'
 
 # API
-gem 'grape', '~> 0.16.2'
-gem 'active_model_serializers', '~> 0.9.0'
+gem 'grape'
+gem 'active_model_serializers', '~> 0.10.0'
 gem 'grape-active_model_serializers', '~> 1.3.2'
+gem 'grape-entity'
 gem 'grape-swagger'
+gem 'grape-swagger-rails'
 
 # Miscellaneous
-gem 'attr_encrypted', '~> 1.4.0'
+gem 'attr_encrypted', '~> 3.1.0'
 gem 'rack-cors', require: 'rack/cors'
 gem 'ci_reporter'
 gem 'require_all', '>=1.3.3'

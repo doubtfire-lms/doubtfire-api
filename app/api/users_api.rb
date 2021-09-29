@@ -192,7 +192,7 @@ module Api
 
     desc 'Upload CSV of users'
     params do
-      requires :file, type: Rack::Multipart::UploadedFile, desc: 'CSV upload file.'
+      requires :file, type: File, desc: 'CSV upload file.'
     end
     post '/csv/users' do
       unless authorise? current_user, User, :upload_csv

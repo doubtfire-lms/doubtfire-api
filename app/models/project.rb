@@ -4,13 +4,13 @@ class Float
   end
 end
 
-class Fixnum
+class Integer
   def signif(signs)
-    Float("%.#{signs}f" % self)
+    Float(self)
   end
 end
 
-class Project < ActiveRecord::Base
+class Project < ApplicationRecord
   include ApplicationHelper
   include LogHelper
   include DbHelpers
@@ -36,9 +36,9 @@ class Project < ActiveRecord::Base
 
   validates :grade_rationale, length: { maximum: 4095, allow_blank: true }
 
-  validate :tutorial_enrolment_same_campus, if: :campus_id_changed?
+  validate :tutorial_enrolment_same_campus, if: :will_save_change_to_enrolled?
 
-  after_update :check_withdraw_from_groups, if: :enrolled_changed?
+  after_update :check_withdraw_from_groups, if: :saved_change_to_enrolled?
 
   #
   # Permissions around project data
@@ -143,9 +143,9 @@ class Project < ActiveRecord::Base
       first
   end
 
-  # Check tutorial membership if there is a campus change 
+  # Check tutorial membership if there is a campus change
   def tutorial_enrolment_same_campus
-    return unless enrolled && campus_id.present? && campus_id_changed?
+    return unless enrolled && campus_id.present? && will_save_change_to_campus_id?
     if tutorial_enrolments.joins(:tutorial).where('tutorials.campus_id <> :cid', cid: campus_id).count > 0
       errors.add(:campus, "does not match with tutorial enrolments.")
     end
@@ -310,11 +310,11 @@ class Project < ActiveRecord::Base
     assigned_task_defs_for_grade(target).
       order("start_date ASC, abbreviation ASC").
       map { |td|
-          if has_task_for_task_definition? td 
+          if has_task_for_task_definition? td
             task = task_for_task_definition(td)
-            {task_definition: td, task: task, status: task.status } 
+            {task_definition: td, task: task, status: task.status }
           else
-            {task_definition: td, task: nil, status: :not_started } 
+            {task_definition: td, task: nil, status: :not_started }
           end
         }.
       select { |r| [:not_started, :redo, :need_help, :working_on_it, :fix_and_resubmit, :demonstrate, :discuss].include? r[:status] }
@@ -678,7 +678,7 @@ class Project < ActiveRecord::Base
     FileUtils.mkdir_p(portfolio_tmp_dir)
     result = {
       kind: kind,
-      name: file.filename
+      name: file[:filename]
     }
 
     # copy up the learning summary report as first -- otherwise use files to determine idx
@@ -702,7 +702,7 @@ class Project < ActiveRecord::Base
     end
 
     dest_file = portfolio_tmp_file_name(result)
-    FileUtils.cp file.tempfile.path, File.join(portfolio_tmp_dir, dest_file)
+    FileUtils.cp file["tempfile"].path, File.join(portfolio_tmp_dir, dest_file)
     result
   end
 
@@ -939,16 +939,17 @@ class Project < ActiveRecord::Base
   def can_destroy?
     return true if tutorial_enrolments.count == 0
     errors.add :base, "Cannot delete project with enrolments"
-    false
+    throw :abort
   end
 
   # If someone withdraws from a unit, make sure they are removed from groups
   def check_withdraw_from_groups
-    return unless enrolled && ! enrolled_was
+    # return if enrolled was not changed... or we are now not enrolled
+    return unless enrolled && ! saved_change_to_enrolled[0] # 0 is the old value of enrolled before update
 
     group_memberships.each do |gm|
       next unless gm.active
-      
+
       if ! gm.valid? || gm.group.beyond_capacity?
         gm.update(active: false)
       end

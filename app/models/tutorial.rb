@@ -1,4 +1,4 @@
-class Tutorial < ActiveRecord::Base
+class Tutorial < ApplicationRecord
   # Model associations
   belongs_to :unit # Foreign key
   belongs_to :unit_role # Foreign key
@@ -80,6 +80,6 @@ class Tutorial < ActiveRecord::Base
     return true if active_enrolment_count == 0 && groups.count == 0
     errors.add :base, "Cannot delete tutorial with enrolments" if active_enrolment_count > 0
     errors.add :base, "Cannot delete tutorial with groups" if groups.count > 0
-    false
+    throw :abort
   end
 end

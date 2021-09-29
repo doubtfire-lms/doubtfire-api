@@ -34,10 +34,10 @@ class WebcalTest < ActiveSupport::TestCase
   teardown do
     @webcal.destroy
     @student.destroy
-    @campus.destroy
     @old_unit.destroy
     @current_unit_1.destroy
     @current_unit_2.destroy
+    @campus.destroy
   end
 
   test 'Includes only task definitions of current units' do
