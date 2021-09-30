@@ -69,6 +69,8 @@ module Api
           user.save
         end
 
+        logger.info "Login #{username} from #{request.ip}"
+
         # Return user details
         present :user, user, with: Api::Entities::UserEntity
         present :auth_token, user.generate_authentication_token!(remember).authentication_token
@@ -163,6 +165,8 @@ module Api
         login_id = jwt[:sub]
         email = attrs[:mail]
 
+        logger.info "Authenticate #{email} from #{request.ip}"
+
         # Lookup using login_id if it exists
         # Lookup using email otherwise and set login_id
         # Otherwise create new
@@ -205,6 +209,8 @@ module Api
         # Generate a temporary auth_token for future requests
         onetime_token = user.generate_temporary_authentication_token!
 
+        logger.info "Redirecting #{username} from #{request.ip}"
+
         # Must redirect to the front-end after sign in
         protocol = Rails.env.development? ? 'http' : 'https'
         host = Rails.env.development? ? "#{protocol}://localhost:3000" : Doubtfire::Application.config.institution[:host]
@@ -235,6 +241,8 @@ module Api
           # Invalidate the token and regenrate a new one
           token.destroy!
           token = user.generate_authentication_token! true
+
+          logger.info "Login #{params[:username]} from #{request.ip}"
 
           # Respond user details with new auth token
           present :user, user, with: Api::Entities::UserEntity
@@ -280,21 +288,21 @@ module Api
     # Update the expiry of an existing authentication token
     #
     desc 'Allow tokens to be updated',
-         {
-           headers:
-           {
-             'username' =>
-             {
-               description: 'User username',
-               required: true
-             },
-             'auth_token' =>
-             {
-               description: "The user\'s temporary auth token",
-               required: true
-             }
-           }
-         }
+    {
+      headers:
+      {
+        "username" =>
+        {
+          description: "User username",
+          required: true
+        },
+        "auth_token" =>
+        {
+          description: "The user\'s temporary auth token",
+          required: true
+        }
+      }
+    }
     params do
       optional :remember, type: Boolean, desc: 'User has requested to remember login', default: false
     end
@@ -326,21 +334,21 @@ module Api
     # Sign out
     #
     desc 'Sign out',
-         {
-           headers:
-           {
-             'username' =>
-             {
-               description: 'User username',
-               required: true
-             },
-             'auth_token' =>
-             {
-               description: "The user\'s temporary auth token",
-               required: true
-             }
-           }
-         }
+    {
+      headers:
+      {
+        "username" =>
+        {
+          description: "User username",
+          required: true
+        },
+        "auth_token" =>
+        {
+          description: "The user\'s temporary auth token",
+          required: true
+        }
+      }
+    }
     delete '/auth' do
       user = User.find_by_username(headers['Username'])
       token = user.token_for_text?(headers['Auth-Token']) unless user.nil?

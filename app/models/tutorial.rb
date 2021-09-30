@@ -80,6 +80,6 @@ class Tutorial < ApplicationRecord
     return true if active_enrolment_count == 0 && groups.count == 0
     errors.add :base, "Cannot delete tutorial with enrolments" if active_enrolment_count > 0
     errors.add :base, "Cannot delete tutorial with groups" if groups.count > 0
-    false
+    throw :abort
   end
 end
