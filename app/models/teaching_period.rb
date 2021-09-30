@@ -17,7 +17,7 @@ class TeachingPeriod < ApplicationRecord
 
   validate :validate_end_date_after_start_date, :validate_active_until_after_end_date
 
-  before_update :propogate_date_changes
+  after_update :propogate_date_changes
 
   # Public methods
 
@@ -164,7 +164,7 @@ class TeachingPeriod < ApplicationRecord
   def can_destroy?
     return true if units.count == 0
     errors.add :base, "Cannot delete teaching period with units"
-    false
+    throw :abort
   end
 
   def validate_active_until_after_end_date
@@ -180,7 +180,7 @@ class TeachingPeriod < ApplicationRecord
   end
 
   def propogate_date_changes
-    return unless start_date_changed? || end_date_changed?
+    return unless saved_change_to_start_date? || saved_change_to_end_date?
 
     units.each do |u|
       u.update(start_date: self.start_date, end_date: self.end_date)

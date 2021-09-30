@@ -77,7 +77,7 @@ class Group < ApplicationRecord
   def ensure_no_submissions
     return true if group_submissions.count.zero?
     errors[:base] << 'Cannot delete group while it has submissions.'
-    false
+    throw :abort
   end
 
   def specific_permission_hash(role, perm_hash, _other)
@@ -255,10 +255,6 @@ class Group < ApplicationRecord
     # ensure that original task is reloaded... update will have effected a different object
     submitter_task.reload
     gs
-  end
-
-  def has_change_group_tutorial?
-    tutorial_id != tutorial_id_was
   end
 
   def limit_members_to_tutorial?

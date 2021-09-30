@@ -46,6 +46,6 @@ class ActivityType < ApplicationRecord
   def can_destroy?
     return true if tutorial_streams.count == 0
     errors.add :base, "Cannot delete activity type with associated tutorial_streams"
-    false
+    throw :abort
   end
 end

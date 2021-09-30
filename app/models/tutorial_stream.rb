@@ -4,7 +4,7 @@ class TutorialStream < ApplicationRecord
 
   # Callbacks - methods called are private
   after_create :handle_associated_task_defs
-  before_destroy :can_destroy?
+  before_destroy :can_destroy?, prepend: true
 
   has_many :tutorials, dependent: :destroy
   has_many :task_definitions, -> { order 'start_date ASC, abbreviation ASC' }
@@ -26,7 +26,7 @@ class TutorialStream < ApplicationRecord
     return true if task_definitions.empty?
     if unit.tutorial_streams.count > 2
       errors.add :base, "cannot be deleted as it has task definitions associated with it, and it is not the last (or second last) tutorial stream"
-      false
+      throw :abort
     elsif unit.tutorial_streams.count.eql? 2
       other_tutorial_stream = (self.eql? unit.tutorial_streams.first) ? unit.tutorial_streams.second : unit.tutorial_streams.first
       task_definitions.update_all(tutorial_stream_id: other_tutorial_stream.id)

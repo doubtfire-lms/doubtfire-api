@@ -127,7 +127,7 @@ class Task < ApplicationRecord
   end
 
   def has_requested_extension?
-    extensions > extensions_was && extensions > 0
+    extensions > 0 && will_save_change_to_extensions? && extensions > extensions_in_database
   end
 
   def must_have_quality_pts

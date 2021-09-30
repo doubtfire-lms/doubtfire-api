@@ -105,6 +105,8 @@ class Unit < ApplicationRecord
     delete_associated_files
   end
 
+  after_update :propogate_date_changes_to_tasks, if: :saved_change_to_start_date?
+
   # Model associations.
   # When a Unit is destroyed, any TaskDefinitions, Tutorials, and ProjectConvenor instances will also be destroyed.
   has_many :projects, dependent: :destroy # projects first to remove tasks
@@ -1278,7 +1280,7 @@ class Unit < ApplicationRecord
     if teaching_period.present?
       teaching_period.week_number(date)
     else
-      ((date - start_date) / 1.week).floor
+      ((date - start_date) / 1.week).floor + 1
     end
   end
 
@@ -2711,5 +2713,18 @@ private
     FileUtils.rm_rf FileHelper.unit_dir(self)
     FileUtils.rm_rf FileHelper.unit_portfolio_dir(self)
     FileUtils.cd FileHelper.student_work_dir
+  end
+
+  def propogate_date_changes_to_tasks
+    return unless saved_change_to_start_date?
+
+    # Get the time from the old start date to the new start date.
+    # using... new - old ... if moved forward in time new > old
+    # so diff is positive and added to each task definition moves task definitions forward
+    date_diff = saved_change_to_start_date[1] - saved_change_to_start_date[0]
+
+    task_definitions.each do |td|
+      td.propogate_date_changes date_diff
+    end
   end
 end

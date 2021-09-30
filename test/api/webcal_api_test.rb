@@ -41,9 +41,10 @@ class UnitsTest < ActiveSupport::TestCase
   end
 
   test 'Enabled with sensible defaults' do
+    add_auth_header_for user: @student
 
     # Ensure webcal disabled
-    put_json '/api/webcal', with_auth_token({ webcal: { enabled: false } }, @student)
+    put_json '/api/webcal', { webcal: { enabled: false } }
 
     # Enable webcal
     add_auth_header_for user: @student
@@ -59,8 +60,9 @@ class UnitsTest < ActiveSupport::TestCase
   end
 
   test 'should_change_guid changes guid' do
+    add_auth_header_for user: @student
     # Enable webcal, get GUID
-    put_json '/api/webcal', with_auth_token({ webcal: { enabled: true } }, @student)
+    put_json '/api/webcal', { webcal: { enabled: true } }
     prev_guid = last_response_body['guid']
 
     # Request GUID change
@@ -75,8 +77,9 @@ class UnitsTest < ActiveSupport::TestCase
   end
 
   test 'Ical endpoint is public and serves webcal with corect content type' do
+    add_auth_header_for user: @student
     # Enable webcal, get GUID
-    put_json '/api/webcal', with_auth_token({ webcal: { enabled: true } }, @student)
+    put_json '/api/webcal', { webcal: { enabled: true } }
     guid = last_response_body['guid']
 
     # Retrieve ical _without auth_

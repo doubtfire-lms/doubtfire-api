@@ -53,6 +53,6 @@ class Campus < ApplicationRecord
   def can_destroy?
     return true if projects.count == 0 and tutorials.count == 0
     errors.add :base, "Cannot delete campus with projects and tutorials"
-    false
+    throw :abort
   end
 end
