@@ -2,7 +2,7 @@ require "test_helper"
 
 class DeakinConfigTest < ActiveSupport::TestCase
   include TestHelpers::TestFileHelper
-  include DbHelpers 
+  include DbHelpers
 
   def setup
     @@backup = Doubtfire::Application.config.institution_settings
@@ -25,6 +25,8 @@ class DeakinConfigTest < ActiveSupport::TestCase
   end
 
   def test_sync_deakin_unit
+    WebMock.reset_executed_requests!
+
     # Setup enrolments stub
     raw_enrolment_file = File.new(test_file_path("deakin/enrolment_sample.json"))
     enrolment_stub = stub_request(:get, /#{ENV['DF_INSTITUTION_SETTINGS_SYNC_BASE_URL']}.*/).to_return(body: raw_enrolment_file, status: 200)
