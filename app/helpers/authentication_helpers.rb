@@ -1,3 +1,5 @@
+require 'onelogin/ruby-saml'
+
 #
 # The AuthenticationHelpers include functions to check if the user
 # is authenticated and to fetch the current user.
@@ -5,10 +7,6 @@
 # This is used by the grape api.
 #
 module AuthenticationHelpers
-  # def warden
-  #   puts ENV['warden'].inspect
-  #   env['warden']
-  # end
 
   module_function
 
@@ -17,11 +15,7 @@ module AuthenticationHelpers
   # Reads details from the params fetched from the caller context.
   #
   def authenticated?
-    # Variable to store auth_token if available
-    token_with_value = nil
-    # Check warden -- authenticate using DB or LDAP etc.
-    # return true if warden.authenticated?
-    auth_param = headers['Auth-Token'] || params['auth_token']
+    auth_param = headers['Auth-Token'] || headers['Auth_Token'] || headers['auth_token'] || params['auth_token'] || params['Auth_Token']
     user_param = headers['Username'] || params['username']
 
     # Check for valid auth token  and username in request header
@@ -35,16 +29,17 @@ module AuthenticationHelpers
 
     # Check user by token
     if user.present? && token.present?
-      logger.info("Authenticated #{user.username} from #{request.ip}") if token.auth_token_expiry > Time.zone.now
-      # Non-expired token
-      return true if token.auth_token_expiry > Time.zone.now
-      # Token is timed out - destroy it
+      if token.auth_token_expiry > Time.zone.now
+        logger.info("Authenticated #{user.username} from #{request.ip}")
+        return true
+      end
+
+      # Token is timed out - destroy it and throw error
       token.destroy!
-      # Time out this token
       error!({ error: 'Authentication token expired.' }, 419)
     else
       # Add random delay then fail
-      sleep((200 + rand(200)) / 1000.0)
+      sleep(rand(200..399) / 1000.0)
       error!({ error: 'Could not authenticate with token. Username or Token invalid.' }, 419)
     end
   end
@@ -64,37 +59,69 @@ module AuthenticationHelpers
     service.routes.each do |route|
       options = route.instance_variable_get('@options')
       next if options[:params]['Auth_Token']
+
       options[:params]['Username'] = {
         required: true,
-        type:     'String',
-        in:       'header',
-        desc:     'Username'
+        type: 'String',
+        in: 'header',
+        desc: 'Username'
       }
       options[:params]['Auth_Token'] = {
         required: true,
-        type:     'String',
-        in:       'header',
-        desc:     'Authentication token'
+        type: 'String',
+        in: 'header',
+        desc: 'Authentication token'
       }
     end
   end
 
   #
-  # Returns true iff using AAF devise auth strategy
+  # Returns the SAML2.0 settings object using information provided as env variables
+  #
+  def saml_settings
+    return unless saml_auth?
+
+    metadata_url = Doubtfire::Application.config.saml[:SAML_metadata_url] || nil
+
+    if metadata_url
+      idp_metadata_parser = OneLogin::RubySaml::IdpMetadataParser.new
+      settings = idp_metadata_parser.parse_remote(metadata_url)
+    else
+      settings = OneLogin::RubySaml::Settings.new
+      settings.idp_cert                     = Doubtfire::Application.config.saml[:idp_sso_cert]
+      settings.name_identifier_format       = Doubtfire::Application.config.saml[:idp_name_identifier_format]
+    end
+    settings.assertion_consumer_service_url = Doubtfire::Application.config.saml[:assertion_consumer_service_url]
+    settings.sp_entity_id                   = Doubtfire::Application.config.saml[:entity_id]
+    settings.idp_sso_target_url             = Doubtfire::Application.config.saml[:idp_sso_target_url]
+    settings.idp_slo_target_url             = Doubtfire::Application.config.saml[:idp_sso_target_url]
+
+    settings
+  end
+
+  #
+  # Returns true if using SAML2.0 auth strategy
+  #
+  def saml_auth?
+    Doubtfire::Application.config.auth_method == :saml
+  end
+
+  #
+  # Returns true if using AAF devise auth strategy
   #
   def aaf_auth?
     Doubtfire::Application.config.auth_method == :aaf
   end
 
   #
-  # Returns true iff using LDAP devise auth strategy
+  # Returns true if using LDAP devise auth strategy
   #
   def ldap_auth?
     Doubtfire::Application.config.auth_method == :ldap
   end
 
   #
-  # Returns true iff using database devise auth strategy
+  # Returns true if using database devise auth strategy
   #
   def db_auth?
     Doubtfire::Application.config.auth_method == :database

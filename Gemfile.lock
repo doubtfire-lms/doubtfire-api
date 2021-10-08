@@ -200,7 +200,6 @@ GEM
       mime-types-data (~> 3.2015)
     mime-types-data (3.2021.0901)
     mini_mime (1.1.1)
-    mini_portile2 (2.6.1)
     minitest (5.14.4)
     minitest-around (0.5.0)
       minitest (~> 5.0)
@@ -219,7 +218,6 @@ GEM
     netrc (0.11.0)
     nio4r (2.5.8)
     nokogiri (1.12.4)
-      mini_portile2 (~> 2.6.1)
       racc (~> 1.4)
     orm_adapter (0.5.0)
     parallel (1.21.0)
@@ -315,6 +313,9 @@ GEM
     ruby-filemagic (0.7.2)
     ruby-ole (1.2.12.2)
     ruby-progressbar (1.11.0)
+    ruby-saml (1.13.0)
+      nokogiri (>= 1.10.5)
+      rexml
     ruby2_keywords (0.0.5)
     rubyzip (1.3.0)
     securecompare (1.0.0)
@@ -329,7 +330,7 @@ GEM
     sorted_set (1.0.3)
       rbtree
       set (~> 1.0)
-    spreadsheet (1.2.9)
+    spreadsheet (1.3.0)
       ruby-ole
     sprockets (4.0.2)
       concurrent-ruby (~> 1.0)
@@ -403,6 +404,7 @@ DEPENDENCIES
   rubocop-faker
   rubocop-rails
   ruby-filemagic
+  ruby-saml (~> 1.13.0)
   rubyzip
   simplecov
   webmock
@@ -411,4 +413,4 @@ RUBY VERSION
    ruby 2.6.7p197
 
 BUNDLED WITH
-   2.2.27
+   2.2.28

@@ -19,7 +19,7 @@ module Doubtfire
 
     # ==> Authentication Method
     # Authentication method default is database, but possible settings
-    # are: database, ldap, aaf. It can be overridden using the DF_AUTH_METHOD
+    # are: database, ldap, aaf, or saml. It can be overridden using the DF_AUTH_METHOD
     # environment variable.
     config.auth_method = (ENV['DF_AUTH_METHOD'] || :database).to_sym
 
@@ -45,6 +45,47 @@ module Doubtfire
     config.institution[:ffmpeg] = ENV['DF_FFMPEG_PATH'] || 'ffmpeg'
 
     require "#{Rails.root}/config/#{config.institution[:settings]}" unless config.institution[:settings].nil?
+
+    # ==> SAML2.0 authentication
+    if config.auth_method == :saml
+      config.saml = HashWithIndifferentAccess.new
+      # URL of the XML SAML Metadata (if available).
+      config.saml[:SAML_metadata_url] = ENV['DF_SAML_METADATA_URL']
+      # URL to return the SAML response to (e.g., 'https://doubtfire.edu/api/auth/jwt'
+      config.saml[:assertion_consumer_service_url] = ENV['DF_SAML_CONSUMER_SERVICE_URL']
+      # URL of the registered application (e.g., https://doubtfire.unifoo.edu.au)
+      config.saml[:entity_id] = ENV['DF_SAML_SP_ENTITY_ID']
+      # The IDP SAML login URL, (e.g., "https://login.microsoftonline.com/xxxx/saml2")
+      config.saml[:idp_sso_target_url] = ENV['DF_SAML_IDP_TARGET_URL']
+
+      # The SAML response certificate and name format (if no XML URL metadata is provided)
+      if config.saml[:SAML_metadata_url].nil?
+        config.saml[:idp_sso_cert] = ENV['DF_SAML_IDP_CERT']
+
+        # One of urn:oasis:names:tc:SAML:2.0:nameid-format:persistent, urn:oasis:names:tc:SAML:2.0:nameid-format:transient, urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress
+        #        urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified, urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName, urn:oasis:names:tc:SAML:1.1:nameid-format:WindowsDomainQualifiedName
+        #        urn:oasis:names:tc:SAML:2.0:nameid-format:kerberos, urn:oasis:names:tc:SAML:2.0:nameid-format:entity
+        config.saml[:idp_name_identifier_format] = ENV['DF_SAML_IDP_SAML_NAME_IDENTIFIER_FORMAT'] || "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress"
+      end
+
+      # Check we have all values
+      # always need:
+      if config.saml[:assertion_consumer_service_url].nil? ||
+      config.saml[:entity_id].nil? ||
+      config.saml[:idp_sso_target_url].nil?
+        raise "Invalid values specified to saml, check the following environment variables: \n"\
+        "  key                          => variable set?\n"\
+        "  DF_SAML_CONSUMER_SERVICE_URL            => #{!ENV['DF_SAML_CONSUMER_SERVICE_URL'].nil?}\n"\
+        "  DF_SAML_SP_ENTITY_ID          => #{!ENV['DF_SAML_SP_ENTITY_ID'].nil?}\n"\
+        "  DF_SAML_IDP_TARGET_URL          => #{!ENV['DF_SAML_IDP_TARGET_URL'].nil?}\n"
+      end
+
+      # If there's no XML url, we need the cert
+      if config.saml[:SAML_metadata_url].nil? &&
+         config.saml[:idp_sso_cert].nil?
+       raise "Missing IDP certificate for SAML config: \n"
+     end
+    end
 
     # ==> AAF authentication
     # Must require AAF devise authentication method.
