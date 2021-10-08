@@ -310,40 +310,52 @@ Prefix     | Description                                                        
 `test/`    | Test addition or enhancement                                              | `test/unit-tests-for-new-feature-x`
 
 ## Writing Commit Messages
+## Commit Styles
+Commit Message Format
+
+We have very precise rules over how our Git commit messages must be formatted. This format leads to easier to read commit history.
+
+Each commit message consists of a header, a body, and a footer.
+```
+<header>
+<BLANK LINE>
+<body>
+<BLANK LINE>
+<footer>
+```
+The `header` is mandatory and must conform to the Commit Message Header format.
+
+The `body` is mandatory for all commits except for those of type "docs". When the body is present it must be at least 20 characters long and must conform to the Commit Message Body format.
+
+The `footer` is optional. The Commit Message Footer format describes what the footer is used for and the structure it must have.
+
+Any line of the commit message cannot be longer than 100 characters.
+```
+Commit Message Header
+<type>(<scope>): <short summary>
+  │       │             │
+  │       │             └─⫸ Summary in present tense. Not capitalized. No period at the end.
+  │       │
+  │       └─⫸ Commit Scope (optional): animations|common|style|forms|http|router|service-worker|
+  │                                     upgrade|changelog|dev-infra|docs-infra|migrations|
+  │
+  └─⫸ Commit Type: build|ci|docs|feat|fix|perf|refactor|test
+```
+The `<type>` and `<summary>` fields are mandatory, the (<scope>) field is optional.
+
+Type
+Must be one of the following:
+
+**build**: Changes that affect the build system or external dependencies (example scopes: gulp, broccoli, npm)
+**ci**: Changes to our CI configuration files and scripts (example scopes: Circle, BrowserStack, SauceLabs)
+**docs**: Documentation only changes
+**feat**: A new feature
+**fix**: A bug fix
+**perf**: A code change that improves performance
+**refactor**: A code change that neither fixes a bug nor adds a feature
+**test**: Adding missing tests or correcting existing tests
 
 Parts of this section have been adapted from Chris Beam's post, [How to Write Good Commit Messages](http://chris.beams.io/posts/git-commit/).
-
-When writing commits, try to follow this guide:
-
-### Prefix your commit subject line with a tag
-
-Each one of your commit messages should be prefixed with one of the following:
-
-Tag        | Description                                                               | Example
------------|---------------------------------------------------------------------------|--------------------------------------------------------------------
-`NEW`      | New feature was added                                                     | **NEW:** Add unit outcome alignment tab
-`​FIX`      | A bug was fixed                                                           | **FIX:** Amend typo throwing error
-`​​ENHANCE`  | Improvement to existing feature, but not visual enhancement (See `LOOKS`) | **ENHANCE:** Calculate time between classes to show on timetable
-`​LOOKS`    | UI Refinement, but not functional change (See `ENHANCE`)                  | **LOOKS:** Make plagiarism tab consistent with other tabs
-`​QUALITY`  | Refactoring of existing code                                              | **QUALITY:** Make directives in consistent format with eachother
-`​DOC`      | Documentation-related changes                                             | **DOC:** Write guide on writing commit messages
-`CONFIG`   | Project configuration changes                                             | **CONFIG:** Add new scheme for UI automation testing
-`​SPEED`    | Performance-related improvements                                          | **SPEED:** Reduce time needed to batch process PDF submissions
-`TEST`     | Test addition or enhancement                                              | **TEST:** Add unit tests for tutorial administration
-
-### Formatting your message
-
-Capitalise your commit messages and do not end the subject line with a period
-
-```
-FIX: Change the behaviour of the logging system
-```
-
-and not
-
-```
-fix: change the behaviour of the logging system.
-```
 
 ### Use the imperative mood in your commit subject line
 
@@ -352,31 +364,6 @@ Write your commits in the imperative mood and not the indicative mood
 - "Fix a bug" and **not** "Fix*ed* a bug"
 - "Change the behaviour of Y" and **not** "*Changed* the behaviour of Y"
 - "Add new API methods" and **not** "Sweet new API methods"
-
-A properly formed git commit subject line should always be able to complete the following sentence:
-
-> If applied, this commit will **your subject line here**
->
-> If applied, this commit will **fix a bug**
->
-> If applied, this commit will **change the behaviour of Y**
-
-and not
-
-> If applied, this commit will **sweet new API methods**
-
-
-### Subject and body lines
-
-Write a commit subject, and explain that commit on a new line (if need be):
-
-```
-FIX: Derezz the master control program
-
-MCP turned out to be evil and had become intent on world domination.
-This commit throws Tron's disc into MCP (causing its deresolution)
-and turns it back into a chess game.
-```
 
 Keep the subject line (top line) concise; keep it **within 50 characters**.
 
