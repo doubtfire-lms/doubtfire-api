@@ -1,0 +1,100 @@
+"""
+Export a notebook to a one page PDF
+"""
+import asyncio
+import os
+import tempfile
+
+import concurrent.futures
+
+import nbformat
+import nbconvert
+
+
+
+from traitlets import Bool, default
+
+import PyPDF2
+
+from nbconvert.exporters import HTMLExporter
+from nbconvert.exporters import TemplateExporter
+
+
+
+
+async def notebook_to_pdf(
+    html_notebook, pdf_path, pyppeteer_args=None,
+):
+
+    with tempfile.NamedTemporaryFile(suffix=".ipynb") as f:
+        f.write(html_notebook.encode())
+        f.flush()
+        heading_positions = await html_to_pdf(f.name, pdf_path, pyppeteer_args)
+
+    return heading_positions
+
+
+class PDFExporter(TemplateExporter):
+    """Convert a notebook to a PDF
+
+    Expose this package's functionality to nbconvert
+    """
+
+    enabled = True
+    # a thread pool to run our async event loop. We use our own
+    # because `from_notebook_node` isn't async but sometimes is called
+    # inside a tornado app that already has an event loop
+    pool = concurrent.futures.ThreadPoolExecutor()
+
+    export_from_notebook = "PDF via ipynb"
+
+    @default("file_extension")
+    def _file_extension_default(self):
+        return ".pdf"
+
+
+    # This value is used to inform browsers about the mimetype of the file
+    # when people download the file we generated
+    output_mimetype = "application/pdf"
+
+    no_sandbox = Bool(True, help=("Disable chrome sandboxing."),).tag(config=True)
+
+    def from_notebook_node(self, notebook, resources=None, **kwargs):
+        
+
+
+        # if it is unset or an empty value, set it
+        if resources.get("ipywidgets_base_url", "") == "":
+            resources["ipywidgets_base_url"] = "https://unpkg.com/"
+
+        with tempfile.TemporaryDirectory(suffix="nb-as-pdf") as name:
+            pdf_fname = os.path.join(name, "output.pdf")
+            pdf_fname2 = os.path.join(name, "output-with-attachment.pdf")
+            pyppeteer_args = ["--no-sandbox"] if self.no_sandbox else None
+
+            heading_positions = self.pool.submit(
+                asyncio.run,
+                notebook_to_pdf(
+                    pdf_fname, pyppeteer_args=pyppeteer_args,
+                ),
+            ).result()
+            resources["output_extension"] = ".pdf"
+
+            finish_pdf(
+                pdf_fname,
+                pdf_fname2,
+                {
+                    "file_name": f"{resources['metadata']['name']}.ipynb",
+                    "contents": nbformat.writes(notebook).encode("utf-8"),
+                },
+                heading_positions,
+            )
+
+            with open(pdf_fname2, "rb") as f:
+                pdf_bytes = f.read()
+
+        # This sets the mimetype to what we really want (PDF) after all the
+        # template loading is over (for which it needs to be set to HTML)
+        self.output_mimetype = "application/pdf"
+
+        return (pdf_bytes, resources)
