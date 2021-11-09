@@ -2,15 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
-## [5.0.0-2](https://github.com/macite/doubtfire-deploy/compare/v5.0.0-1...v5.0.0-2) (2021-08-09)
+### [5.0.1](https://github.com/macite/doubtfire-deploy/compare/v5.0.0...v5.0.1) (2021-10-27)
 
-## [5.0.0-1](https://github.com/macite/doubtfire-deploy/compare/v5.0.0-0...v5.0.0-1) (2021-08-05)
-
-## [5.0.0-0](https://github.com/macite/doubtfire-deploy/compare/v4.0.0...v5.0.0-0) (2021-08-04)
+## [5.0.0](https://github.com/macite/doubtfire-deploy/compare/v5.0.0-2...v5.0.0) (2021-10-13)
 
 
 ### Features
 
+* add ability to export auth tokens for migration from 5 to 6 ([b40bdd9](https://github.com/macite/doubtfire-deploy/commit/b40bdd96924f0e308850f72d27440e0d305c0759))
 * Add ability to init production ([bd200e6](https://github.com/macite/doubtfire-deploy/commit/bd200e6295db8f55dbcd77f6bad6b462a4e98964))
 
 
