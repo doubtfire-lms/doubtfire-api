@@ -22,6 +22,7 @@ group :development, :test do
   gem 'rubocop-faker'
   gem 'rubocop-rails'
   gem 'simplecov', require: false
+  gem 'listen'
 end
 
 group :development, :test, :staging do
