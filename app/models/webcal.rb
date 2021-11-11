@@ -1,6 +1,6 @@
 require 'icalendar'
 
-class Webcal < ActiveRecord::Base
+class Webcal < ApplicationRecord
 
   belongs_to :user
 

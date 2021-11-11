@@ -1,7 +1,7 @@
-class TutorialEnrolment < ActiveRecord::Base
+class TutorialEnrolment < ApplicationRecord
   belongs_to :tutorial
   belongs_to :project
-  
+
   has_one :tutorial_stream, through: :tutorial
 
   validates :tutorial, presence: true
@@ -9,7 +9,7 @@ class TutorialEnrolment < ActiveRecord::Base
 
   # Always add a unique index to the DB to prevent new records from passing the validations when checked at the same time before being written
   validates_uniqueness_of :tutorial, :scope => :project, message: 'already exists for the selected student'
-  
+
   # Ensure only one tutorial stream per stream
   validate :ensure_only_one_tutorial_per_stream, on: :create
 

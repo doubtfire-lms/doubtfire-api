@@ -24,7 +24,7 @@ module Api
         error!({ error: 'You do not have permission to read these task details' }, 403)
       end
 
-      unit.student_tasks.
+      result = unit.student_tasks.
           joins(:task_status).
           joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id').
           joins('LEFT OUTER JOIN tutorials ON tutorial_enrolments.tutorial_id = tutorials.id AND (tutorials.tutorial_stream_id = task_definitions.tutorial_stream_id OR tutorials.tutorial_stream_id IS NULL)').
@@ -45,6 +45,8 @@ module Api
               tutorial_stream_id: r.tutorial_stream_id
             }
           end
+
+      present result, with: Grape::Presenters::Presenter
     end
 
     desc 'Refresh the most frequently changed task details for a project - allowing easy refresh of student details'
@@ -78,8 +80,8 @@ module Api
       if params[:task_definition_id].present?
         result = result.first
       end
-      
-      result
+
+      present result, with: Grape::Presenters::Presenter
     end
 
     desc 'Get a similarity match for a given task'
@@ -155,10 +157,13 @@ module Api
         other_student_hash[:pct]       = other_match_link.pct
         other_student_hash[:dismissed] = other_match_link.dismissed
       end
-      {
+
+      result = {
         student: student_hash,
         other_student: other_student_hash
       }
+
+      present result, with: Grape::Presenters::Presenter
     end
 
     desc 'Dismiss a similarity match for a given task'
@@ -192,7 +197,7 @@ module Api
 
       match_link.dismissed = params[:dismissed]
       match_link.save!
-      match_link.dismissed
+      present match_link.dismissed, with: Grape::Presenters::Presenter
     end
 
     desc 'Pin a task to the user\'s task inbox'
@@ -207,6 +212,8 @@ module Api
       end
 
       TaskPin.find_or_create_by(task: task, user: current_user)
+
+      present true, Grape::Presenters::Presenter
     end
 
     desc 'Unpin a task from the user\'s task inbox'
@@ -215,6 +222,7 @@ module Api
     end
     delete '/tasks/:id/pin' do
       TaskPin.find_by!(user: current_user, task_id: params[:id]).destroy
+      present true, Grape::Presenters::Presenter
     end
 
     desc 'Update a task using its related project and task definition'
@@ -239,7 +247,7 @@ module Api
         # if trigger supplied...
         unless params[:trigger].nil?
           # Check if they should be using portfolio_evidence api
-          if needs_upload_docs && params[:trigger] == 'ready_to_mark'
+          if needs_upload_docs && params[:trigger] == 'ready_for_feedback'
             error!({ error: 'Cannot set this task status to ready to mark without uploading documents.' }, 403)
           end
 
@@ -266,7 +274,7 @@ module Api
           task.save
         end
 
-        TaskUpdateSerializer.new(task)
+        present task, with: Api::Entities::TaskEntity, include_other_projects: true, update_only: true
       else
         error!({ error: "Couldn't find Task with id=#{params[:id]}" }, 403)
       end
@@ -293,17 +301,19 @@ module Api
         task = project.task_for_task_definition(task_definition)
 
         # return the details as json
-        {
+        result = {
           has_pdf: task.has_pdf,
           submission_date: task.submission_date,
           processing_pdf: task.processing_pdf?
         }
       else
-        {
+        result = {
           has_pdf: false,
           processing_pdf: false
         }
       end
+
+      present result, with: Grape::Presenters::Presenter
     end
 
     desc 'Get the files associated with a submission'

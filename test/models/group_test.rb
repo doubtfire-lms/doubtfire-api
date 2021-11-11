@@ -11,6 +11,7 @@ class GroupModelTest < ActiveSupport::TestCase
 
     assert_includes(group1.projects,project)
     assert_equal group1.group_memberships.count, 1
+    project.unit.destroy
   end
 
   def test_hides_inactive_members
@@ -23,6 +24,7 @@ class GroupModelTest < ActiveSupport::TestCase
     group1.remove_member project
     #test project removed correctly
     refute_includes(group1.projects,project)
+    project.unit.destroy
   end
 
   def test_allow_student_to_rejoin
@@ -37,6 +39,7 @@ class GroupModelTest < ActiveSupport::TestCase
 
     assert_includes(group1.projects,project)
     assert_equal group1.group_memberships.count, 1
+    project.unit.destroy
   end
 
   def test_knows_past_members
@@ -47,12 +50,14 @@ class GroupModelTest < ActiveSupport::TestCase
     group1.add_member project1
     group1.add_member project2
     group1.remove_member project1
-    
+
     refute_includes(group1.projects,project1)
     assert_includes(group1.past_projects,project1)
     assert_includes(group1.projects,project2)
     refute_includes(group1.past_projects,project2)
     assert_equal group1.group_memberships.count, 2
+
+    project1.unit.destroy
   end
 
   def test_capacity_ranges
@@ -64,6 +69,8 @@ class GroupModelTest < ActiveSupport::TestCase
     refute gs.valid?
     gs.capacity = 0
     refute gs.valid?
+
+    gs.unit.destroy
   end
 
   def test_at_capacity
@@ -76,23 +83,32 @@ class GroupModelTest < ActiveSupport::TestCase
 
     gs.update(capacity: 2)
 
+    group1.reload
     assert group1.at_capacity?
 
     project = FactoryBot.create :project, unit: unit
     group1.add_member project
 
     assert group1.at_capacity?
+
     gs.update(capacity: 3)
+    group1.reload
     assert group1.at_capacity?
+
     gs.update(capacity: 4)
+    group1.reload
     refute group1.at_capacity?
+
     gs.update(capacity: nil)
+    group1.reload
     refute group1.at_capacity?
+
+    unit.destroy
   end
 
   def test_switch_tutorial
     unit = FactoryBot.create :unit, group_sets: 1, groups: [{gs: 0, students: 0}]
-    
+
     gs = unit.group_sets.first
     gs.update keep_groups_in_same_class: true, allow_students_to_manage_groups: true
     group1 = gs.groups.first
@@ -104,14 +120,16 @@ class GroupModelTest < ActiveSupport::TestCase
     group1.add_member p2
 
     tutorial = FactoryBot.create :tutorial, unit: unit, campus: nil
-    
+
     refute p1.enrolled_in? tutorial
     refute p2.enrolled_in? tutorial
-    
+
     group1.switch_to_tutorial tutorial
-    
+
     assert p1.enrolled_in? tutorial
     assert p2.enrolled_in? tutorial
+
+    unit.destroy
   end
 
   def test_submit_with_others_having_extensions
@@ -151,7 +169,7 @@ class GroupModelTest < ActiveSupport::TestCase
 
     p2 = group.projects.second
     p3 = group.projects.last
-    
+
     t1 = p1.task_for_task_definition(td)
     t2 = p2.task_for_task_definition(td)
     t3 = p3.task_for_task_definition(td)
@@ -167,7 +185,7 @@ class GroupModelTest < ActiveSupport::TestCase
 
     assert_equal 0, t2.extensions
 
-    t2.create_submission_and_trigger_state_change(t2.student, true, nil, 'ready_to_mark')
+    t2.create_submission_and_trigger_state_change(t2.student, true, nil, 'ready_for_feedback')
 
     t2.reload
     t1.reload
@@ -176,8 +194,8 @@ class GroupModelTest < ActiveSupport::TestCase
     assert t2.valid?
     assert_equal 2, t1.extensions
     assert_equal 0, t2.extensions
-    assert_equal :ready_to_mark, t1.status
-    assert_equal :ready_to_mark, t2.status
+    assert_equal :ready_for_feedback, t1.status
+    assert_equal :ready_for_feedback, t2.status
     assert_equal 1, t1.comments.count, t1.comments.map {|c| c.comment }
     assert_equal 1, t2.comments.count, t2.comments.map {|c| c.comment }
     assert_equal 0, t3.comments.count, t3.comments.map {|c| c.comment }
@@ -203,7 +221,7 @@ class GroupModelTest < ActiveSupport::TestCase
   end
 
   def test_late_submission_does_not_override_complete_tasks
-    test_unit = FactoryBot.create :unit, group_sets: 1, groups: [{gs: 0, students: 3}], task_count: 0
+    test_unit = FactoryBot.create :unit, group_sets: 1, groups: [{gs: 0, students: 3}], task_count: 0, unenrolled_student_count: 0, part_enrolled_student_count: 0
 
     td = FactoryBot.create :task_definition, unit: test_unit, group_set: test_unit.group_sets.first, upload_requirements: [ ], start_date: Time.zone.now + 1.day
 
@@ -225,14 +243,14 @@ class GroupModelTest < ActiveSupport::TestCase
       { project_id: p3.id, pct: 0, pts: 3 }
     ]
 
-    t2.create_submission_and_trigger_state_change(t2.student, true, contributions, 'ready_to_mark')
+    t2.create_submission_and_trigger_state_change(t2.student, true, contributions, 'ready_for_feedback')
 
     t1.reload
     t2.reload
     t3.reload
 
-    assert_equal :ready_to_mark, t1.status
-    assert_equal :ready_to_mark, t2.status
+    assert_equal :ready_for_feedback, t1.status
+    assert_equal :ready_for_feedback, t2.status
     assert_equal :not_started, t3.status
 
     assert_equal 2, t1.group_submission.projects.count
@@ -253,7 +271,7 @@ class GroupModelTest < ActiveSupport::TestCase
       { project_id: p3.id, pct: 34, pts: 3 }
     ]
 
-    t3.create_submission_and_trigger_state_change(t3.student, true, contributions, 'ready_to_mark')
+    t3.create_submission_and_trigger_state_change(t3.student, true, contributions, 'ready_for_feedback')
 
     t1.reload
     t2.reload
@@ -261,9 +279,11 @@ class GroupModelTest < ActiveSupport::TestCase
 
     assert_equal :complete, t1.status
     assert_equal :complete, t2.status
-    assert_equal :ready_to_mark, t3.status
+    assert_equal :ready_for_feedback, t3.status
 
     assert_equal 1, t3.group_submission.projects.count
+
+    test_unit.destroy
   end
 
   def test_new_member_late_submission_does_not_override_complete_tasks
@@ -291,15 +311,15 @@ class GroupModelTest < ActiveSupport::TestCase
       { project_id: p3.id, pct: 34, pts: 3 }
     ]
 
-    t3.create_submission_and_trigger_state_change(t3.student, true, contributions, 'ready_to_mark')
+    t3.create_submission_and_trigger_state_change(t3.student, true, contributions, 'ready_for_feedback')
 
     t1.reload
     t2.reload
     t3.reload
 
-    assert_equal :ready_to_mark, t1.status
-    assert_equal :ready_to_mark, t2.status
-    assert_equal :ready_to_mark, t3.status
+    assert_equal :ready_for_feedback, t1.status
+    assert_equal :ready_for_feedback, t2.status
+    assert_equal :ready_for_feedback, t3.status
 
     t1.trigger_transition trigger: 'complete', by_user: tutor
 
@@ -320,7 +340,7 @@ class GroupModelTest < ActiveSupport::TestCase
       { project_id: p4.id, pct: 25, pts: 3 }
     ]
 
-    t4.create_submission_and_trigger_state_change(t4.student, true, contributions, 'ready_to_mark')
+    t4.create_submission_and_trigger_state_change(t4.student, true, contributions, 'ready_for_feedback')
 
     t1.reload
     t2.reload
@@ -330,14 +350,15 @@ class GroupModelTest < ActiveSupport::TestCase
     assert_equal :complete, t1.status
     assert_equal :complete, t2.status
     assert_equal :complete, t3.status
-    assert_equal :ready_to_mark, t4.status
+    assert_equal :ready_for_feedback, t4.status
 
     assert_equal 1, t4.group_submission.projects.count
+    test_unit.destroy
   end
 
   def test_group_toggle_enrolment
     unit = FactoryBot.create :unit, group_sets: 1, groups: [{gs: 0, students: 0}]
-    
+
     gs = unit.group_sets.first
     gs.update keep_groups_in_same_class: true, allow_students_to_manage_groups: false, capacity: 2
 
@@ -357,39 +378,49 @@ class GroupModelTest < ActiveSupport::TestCase
 
     # check we can reenrol the student
     assert p2.update(enrolled: true)
-    
+
     assert group1.at_capacity? # they are in the right tutorial
+    unit.destroy
   end
 
   def test_group_toggle_enrolment_at_capacity
     unit = FactoryBot.create :unit, group_sets: 1, groups: [{gs: 0, students: 0}]
-    
+
+    # Only 2 students per group
     gs = unit.group_sets.first
     gs.update capacity: 2
 
+    # Get the first group
     group1 = gs.groups.first
 
+    # And 3 people for the group...
     p1 = group1.tutorial.projects[0]
     p2 = group1.tutorial.projects[1]
     p3 = group1.tutorial.projects[2]
 
+    # Add the first two
     group1.add_member p1
     group1.add_member p2
 
+    # It is at capacity
     assert group1.at_capacity?
 
+    # Unenrol p2... so no longer at capacity
     p2.update(enrolled: false)
-
     refute group1.at_capacity?
 
+    # A new member joins group 1... back at capacity
     group1.add_member p3
-
     assert group1.at_capacity?
 
     # check we can reenrol the student
     assert p2.update(enrolled: true)
-    
+
+    # p2 should no longer be in group 1
+    group1.reload
+
     assert_equal 2, group1.projects.count # they are in the right tutorial
+    unit.destroy
   end
 
   def test_group_delete_clears_members
@@ -405,9 +436,10 @@ class GroupModelTest < ActiveSupport::TestCase
     group.add_member(m1)
 
     assert_equal 1, m1.group_memberships.count
-    
+
     group.destroy
 
     assert_equal 0, m1.group_memberships.count
+    unit.destroy
   end
 end

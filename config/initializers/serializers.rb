@@ -3,5 +3,5 @@ ActiveSupport.on_load(:active_model_serializers) do
   ActiveModel::Serializer.root = false
 
   # Disable for ArraySerializer
-  ActiveModel::ArraySerializer.root = false
+  ActiveModel::Serializer::CollectionSerializer.root = false
 end

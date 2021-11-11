@@ -1,4 +1,4 @@
-class CreateOutcomeTaskLinks < ActiveRecord::Migration
+class CreateOutcomeTaskLinks < ActiveRecord::Migration[4.2]
   def change
     create_table :learning_outcome_task_links do |t|
       t.text :description

@@ -1,4 +1,4 @@
-class CommentsReadReceipts < ActiveRecord::Base
+class CommentsReadReceipts < ApplicationRecord
   validates :user, presence: true
   validates :task_comment, presence: true
 

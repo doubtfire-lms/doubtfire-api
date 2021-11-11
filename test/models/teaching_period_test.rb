@@ -4,7 +4,7 @@ class TeachingPeriodTest < ActiveSupport::TestCase
 
   # Ensure that at the start there are 3 teaching periods
   def test_check_periods_are_created
-    assert_equal 3, TeachingPeriod.count, 'There are 3 teaching periods initially' 
+    assert_equal 3, TeachingPeriod.count, 'There are 3 teaching periods initially'
   end
 
   # Check that units cannot be created with both TP and custom dates
@@ -84,36 +84,36 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     refute tp.valid?
 
   end
-  
+
   test 'week 1 is first week of teaching period' do
     tp = TeachingPeriod.first
-    
+
     assert_equal 1, tp.week_number(tp.start_date)
   end
 
   test 'weeks advance with calendar weeks' do
     tp = TeachingPeriod.first
-    
+
     assert_equal 2, tp.week_number(tp.start_date + 1.week)
   end
 
   test 'weeks advance with breaks' do
     tp = TeachingPeriod.find(1)
-    
+
     assert_equal tp.week_number(tp.breaks.first.start_date) + 1, tp.week_number(tp.breaks.first.end_date)
     assert_equal tp.week_number(tp.breaks.first.start_date), tp.week_number(tp.breaks.first.start_date + 1.day)
   end
 
   test 'can map week number to date' do
     tp = TeachingPeriod.first
-    
+
     assert_equal tp.start_date, tp.date_for_week(1)
     assert_equal tp.start_date + 1.week, tp.date_for_week(2)
   end
 
   test 'can map week and day to date' do
     tp = TeachingPeriod.first
-    
+
     assert_equal tp.start_date + 1.day, tp.date_for_week_and_day(1, 'Tue')
     assert_equal tp.start_date + 2.day + 1.week, tp.date_for_week_and_day(2, 'Wed')
     assert_equal tp.start_date + 3.day + 2.week, tp.date_for_week_and_day(3, 'Thu')
@@ -124,7 +124,7 @@ class TeachingPeriodTest < ActiveSupport::TestCase
 
   test 'can map week and day to date after break' do
     tp = TeachingPeriod.find(2)
-    
+
     start_of_break = tp.breaks.first.start_date
     end_of_break = tp.breaks.first.end_date
     break_in_cal_week = ((start_of_break - tp.start_date) / 1.week).ceil + 1 # as mon break
@@ -134,7 +134,7 @@ class TeachingPeriodTest < ActiveSupport::TestCase
 
   test 'Test date for week and day where day ends on break' do
     tp = TeachingPeriod.find(1)
-    
+
     start_of_break = tp.breaks.first.start_date
     end_of_break = tp.breaks.first.end_date
     break_in_cal_week = ((start_of_break - tp.start_date) / 1.week).ceil # no + 1 as fri
@@ -145,14 +145,14 @@ class TeachingPeriodTest < ActiveSupport::TestCase
 
   test 'can map week number to date across breaks' do
     tp = TeachingPeriod.find(2)
-    
+
     break_in_cal_week = ((tp.breaks.first.start_date - tp.start_date) / 1.week).ceil + 1 # + 1 as mon break
     assert_equal tp.breaks.first.start_date + tp.breaks.first.number_of_weeks.week, tp.date_for_week(break_in_cal_week)
   end
 
   test 'can map week number to date across breaks starting friday' do
     tp = TeachingPeriod.find(1)
-    
+
     break_in_cal_week = ((tp.breaks.first.start_date - tp.start_date) / 1.week).ceil # no +1 as Fri
     assert_equal tp.breaks.first.start_date - 4.days, tp.date_for_week(break_in_cal_week)
     assert_equal tp.breaks.first.start_date + tp.breaks.first.number_of_weeks.week + 3.days, tp.date_for_week(break_in_cal_week + 1)
@@ -160,7 +160,7 @@ class TeachingPeriodTest < ActiveSupport::TestCase
 
   test 'week number works with mult-week breaks' do
     tp = TeachingPeriod.find(3)
-    
+
     assert_equal tp.week_number(tp.breaks.first.start_date) + 1, tp.week_number(tp.breaks.first.end_date)
     assert_equal 2, tp.breaks.first.number_of_weeks
   end
@@ -176,7 +176,7 @@ class TeachingPeriodTest < ActiveSupport::TestCase
 
     assert_equal tp.date_for_week(5), tp.breaks.first.monday_after_break
   end
-  
+
   test 'cannot destroy teaching period with units' do
     data = {
       year: 2019,
@@ -198,7 +198,6 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     unit = Unit.create(data)
 
     assert tp.units.count > 0
-
     tp.destroy
 
     assert_not tp.destroyed?
@@ -259,22 +258,23 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     tp = TeachingPeriod.create(data)
     assert tp.valid?
 
-    data = {
+    unit_data = {
       name: 'Unit with TP - to update',
       code: 'TEST113',
       teaching_period: tp,
       description: 'Unit in TP to update dates',
     }
 
-    unit = Unit.create(data)
+    unit = Unit.create(unit_data)
 
     assert unit.valid?
 
-    tp.update(start_date: Date.parse('2018-01-02'))
+    tp.update!(start_date: Date.parse('2018-01-02'))
 
     assert tp.valid?
-    unit.reload
-    assert unit.valid?
+
+    unit = Unit.includes(:teaching_period).find(unit.id)
+    assert unit.valid?, unit.errors.inspect
 
     tp.update(end_date: Date.parse('2018-02-02'))
 
@@ -312,7 +312,7 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     assert_equal 1, tp3.units.count
 
     u3 = tp3.units.first
-    
+
     u1.reload
     u2.reload
     u3.reload
@@ -334,7 +334,7 @@ class TeachingPeriodTest < ActiveSupport::TestCase
 
     u1.active = false
     u1.save
-    
+
     assert_equal 2, tp1.units.count
     assert_equal 0, tp2.units.count
 
@@ -352,7 +352,7 @@ class TeachingPeriodTest < ActiveSupport::TestCase
 
     u1.active = false
     u1.save
-    
+
     assert_equal 2, tp1.units.count
     assert_equal 0, tp2.units.count
 
