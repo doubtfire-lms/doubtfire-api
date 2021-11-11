@@ -1,15 +1,6 @@
-FROM ubuntu:18.04
+FROM ruby:2.6.7-buster
 
-RUN apt-get update && apt-get install -y curl git
-ENV PATH /root/.rbenv/bin:/root/.rbenv/shims:$PATH
-RUN curl -fsSL https://github.com/rbenv/rbenv-installer/raw/master/bin/rbenv-installer | bash
-
-# Dependencies to build Ruby (https://github.com/rbenv/ruby-build/wiki#suggested-build-environment)
-# Uses libssl 1.0 for old Ruby (https://github.com/rbenv/ruby-build/wiki#openssl-usrincludeopensslasn1_mach102-error-error-this-file-is-obsolete-please-update-your-software)
-RUN apt-get update && apt-get install -y autoconf bison build-essential libssl1.0-dev libyaml-dev libreadline6-dev zlib1g-dev libncurses5-dev libffi-dev libgdbm5 libgdbm-dev
-RUN rbenv install 2.3.1 && rbenv global 2.3.1
-RUN gem update --system
-RUN gem install bundler:1.17.3 && rbenv rehash
+ARG API_HOME=.
 
 # DEBIAN_FRONTEND=noninteractive is required to install tzdata in non interactive way
 ENV DEBIAN_FRONTEND noninteractive
@@ -19,22 +10,26 @@ RUN apt-get update && apt-get install -y \
   imagemagick \
   libmagic-dev \
   libmagickwand-dev \
-  libmysqlclient-dev \
+  libmariadb-dev \
   libpq-dev \
-  python-pygments \
+  python3-pygments \
   tzdata \
   wget
 
-RUN mkdir /doubtfire-api
-WORKDIR /doubtfire-api
+# Setup the folder where we will deploy the code
+WORKDIR /doubtfire
 
-COPY ./.ci-setup/ /doubtfire-api/.ci-setup/
+COPY ./.ci-setup/ /doubtfire/.ci-setup/
 RUN ./.ci-setup/texlive-install.sh
 ENV PATH /tmp/texlive/bin/x86_64-linux:$PATH
 
-COPY Gemfile Gemfile.lock /doubtfire-api/
-RUN bundle install --without production
+RUN gem install bundler -v 1.17.3
 
-CMD bundle exec rails s
+# Install the Gems
+COPY ./Gemfile ./Gemfile.lock /doubtfire/
+RUN bundle install --without passenger
 
 EXPOSE 3000
+
+ENV RAILS_ENV development
+CMD bundle exec rake db:migrate && bundle exec rails s -b 0.0.0.0

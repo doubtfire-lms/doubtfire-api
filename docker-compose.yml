@@ -1,43 +1,128 @@
-version: '2'
+version: '3'
 services:
-  api:
+  doubtfire-api:
     container_name: doubtfire-api
     build: .
     ports:
       - "3000:3000"
     volumes:
-      - ./:/doubtfire-api
-      - /doubtfire-api/.bundle
-      - /doubtfire-api/tmp
-    links:
-      - web
+      - ./:/doubtfire
+      - .bundle:/doubtfire/.bundle
+      - ../data/tmp:/doubtfire/tmp
+      - ../data/student-work:/student-work
     depends_on:
-      - db
+      - dev-db
+      - doubtfire-mq
     environment:
-      DATABASE_URL: 'postgresql://itig:d872$$dh@db:5432/doubtfire_dev'
       RAILS_ENV: 'development'
 
-  db:
-    container_name: doubtfire-db
-    image: postgres
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_PASSWORD: d872$$dh
-      POSTGRES_USER: itig
+      DF_STUDENT_WORK_DIR: /student-work
+      DF_INSTITUTION_HOST: http://localhost:3000
+      DF_INSTITUTION_PRODUCT_NAME: OnTrack
 
-  web:
+      DF_SECRET_KEY_BASE: test-secret-key
+      DF_SECRET_KEY_ATTR: test-secret-key
+      DF_SECRET_KEY_DEVISE: test-secret-key
+
+      # Authentication method - can set to AAF or ldap
+      DF_AUTH_METHOD: database
+      DF_AAF_ISSUER_URL: https://rapid.test.aaf.edu.au
+      DF_AAF_AUDIENCE_URL: http://localhost:3000
+      DF_AAF_CALLBACK_URL: http://localhost:3000/api/auth/jwt
+      DF_AAF_IDENTITY_PROVIDER_URL: https://signon-uat.deakin.edu.au/idp/shibboleth
+      DF_AAF_UNIQUE_URL: https://rapid.test.aaf.edu.au/jwt/authnrequest/research/Ag4EJJhjf0zXHqlKvKZEbg
+      DF_AAF_AUTH_SIGNOUT_URL: https://sync-uat.deakin.edu.au/auth/logout
+      DF_SECRET_KEY_AAF: v4~LMFLzzwRGZdju\5QBa@FiHIN9
+
+      # Database settings - for development env
+      DF_DEV_DB_ADAPTER: mysql2
+      DF_DEV_DB_HOST: doubtfire-dev-db
+      DF_DEV_DB_DATABASE: doubtfire-dev
+      DF_DEV_DB_USERNAME: dfire
+      DF_DEV_DB_PASSWORD: pwd
+
+      # Database settings - for test env
+      DF_TEST_DB_ADAPTER: mysql2
+      DF_TEST_DB_HOST: doubtfire-dev-db
+      DF_TEST_DB_DATABASE: doubtfire-test
+      DF_TEST_DB_USERNAME: dfire
+      DF_TEST_DB_PASSWORD: pwd
+
+      # Database settings - for test env
+      DF_PRODUCTION_DB_ADAPTER: mysql2
+      DF_PRODUCTION_DB_HOST: doubtfire-dev-db
+      DF_PRODUCTION_DB_DATABASE: doubtfire-dev
+      DF_PRODUCTION_DB_USERNAME: dfire
+      DF_PRODUCTION_DB_PASSWORD: pwd
+
+      # Overseer
+      OVERSEER_ENABLED: 1
+      RABBITMQ_HOSTNAME: doubtfire-mq
+      RABBITMQ_USERNAME: secure_credentials
+      RABBITMQ_PASSWORD: secure_credentials
+
+  dev-db:
+    container_name: doubtfire-dev-db
+    image: mariadb
+    environment:
+      MYSQL_ROOT_PASSWORD: db-root-password
+      MYSQL_DATABASE: doubtfire-dev
+      MYSQL_USER: dfire
+      MYSQL_PASSWORD: pwd
+    volumes:
+      - ../data/database:/var/lib/mysql
+
+  doubtfire-web:
     container_name: doubtfire-web
     build: ../doubtfire-web
-    environment:
-      DF_DOCKER_MACHINE_IP: api
+    command: npm start
     ports:
-      - "4200:4200" # Angular 6
-      - "8000:8000" # Angular 1
-      - "8080:8080" # Angular 1
+      - "4200:4200"
+    depends_on:
+      - doubtfire-api
     volumes:
       - ../doubtfire-web:/doubtfire-web
-      - /doubtfire-web/bin
-      - /doubtfire-web/build
+      - ../doubtfire-web/dist:/doubtfire-web/dist
       - /doubtfire-web/node_modules
-      - /doubtfire-web/vendor
+
+  doubtfire-overseer:
+    container_name: doubtfire-overseer
+    build:
+      context: ../doubtfire-overseer
+    command: bundle exec ruby ./app.rb
+    depends_on:
+      - doubtfire-mq
+    restart: on-failure
+    environment:
+      DOCKER_HOST: host.docker.internal
+      RABBITMQ_HOSTNAME: doubtfire-mq
+      RABBITMQ_USERNAME: secure_credentials
+      RABBITMQ_PASSWORD: secure_credentials
+      CONTAINER_NAME: overseer-container
+      HOST_XFS_VOLUME: ${PWD}/../data/overseer-instances/1
+
+    volumes:
+      # App's code path - not required in final image
+      - ../doubtfire-overseer/:/app
+
+      # Host path for writing the output of execution - required.
+      # TODO: Test by mounting an actual XFS volume.
+      - ../data/overseer-instances/1:/home/overseer/work-dir
+      # Path for reading OnTrack files from - required.
+      # TODO: Map this directly to a constant path that can be written to,
+      # as the path will be a part of the messages
+      # received from OnTrack via RabbitMQ.
+      # TODO: Make the path rw by overseer in docker image.
+      - ../data/student-work:/student-work
+      
+  doubtfire-mq:
+    container_name: doubtfire-mq
+    image: rabbitmq:3.8-management
+    ports:
+      - 15672:15672
+    volumes:
+      - ../data/rabbitmq/data/:/var/lib/rabbitmq
+      - ../data/rabbitmq/log/:/var/log/rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: secure_credentials
+      RABBITMQ_DEFAULT_PASS: secure_credentials
