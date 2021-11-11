@@ -62,7 +62,7 @@
 }
 
 \definecolor{complete}{rgb}{0.357, 0.718, 0.357}
-\definecolor{rtm}{rgb}{0.0,0.47,0.84}
+\definecolor{rff}{rgb}{0.0,0.47,0.84}
 
 \definecolor{notstarted}{rgb}{0.8,0.8,0.8}
 \definecolor{workingonit}{rgb}{0.922, 0.561, 0.024}

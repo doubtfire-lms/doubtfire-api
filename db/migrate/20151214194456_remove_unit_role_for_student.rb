@@ -1,4 +1,4 @@
-class RemoveUnitRoleForStudent < ActiveRecord::Migration
+class RemoveUnitRoleForStudent < ActiveRecord::Migration[4.2]
   def change
   	add_column :projects, :tutorial_id, :integer
   	add_column :projects, :user_id, :integer

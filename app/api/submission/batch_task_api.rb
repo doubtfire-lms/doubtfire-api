@@ -49,7 +49,7 @@ module Api
 
       desc 'Upload submission documents for the given unit and user id'
       params do
-        requires :file, type: Rack::Multipart::UploadedFile, desc: 'batch file upload'
+        requires :file, type: File, desc: 'batch file upload'
         requires :unit_id, type: Integer, desc: 'Unit ID to upload marked submissions to.'
         optional :user_id, type: Integer, desc: 'User ID to upload marked submissions to (optional; will use current_user otherwise).'
       end

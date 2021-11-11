@@ -1,4 +1,4 @@
-class CreateBreak < ActiveRecord::Migration
+class CreateBreak < ActiveRecord::Migration[4.2]
   def change
     create_table :breaks do |t|
       t.datetime        :start_date,        null: false

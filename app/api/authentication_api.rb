@@ -1,6 +1,7 @@
 require 'grape'
-require 'user_serializer'
 require 'json/jwt'
+require 'onelogin/ruby-saml'
+require 'entities/user_entity'
 
 module Api
   #
@@ -15,7 +16,7 @@ module Api
     #
     # Sign in - only mounted if AAF auth is NOT used
     #
-    unless AuthenticationHelpers.aaf_auth?
+    if !AuthenticationHelpers.aaf_auth? && !AuthenticationHelpers.saml_auth?
       desc 'Sign in'
       params do
         requires :username, type: String, desc: 'User username'
@@ -68,17 +69,78 @@ module Api
           user.save
         end
 
-        # Revise an auth_token for future requests
-        if user.authentication_token_expired?
-          # Create a new token
-          user.generate_authentication_token! remember
-        else
-          # Extend the existing token's time
-          user.extend_authentication_token remember
-        end
+        logger.info "Login #{username} from #{request.ip}"
 
         # Return user details
-        { user: UserSerializer.new(user), auth_token: user.auth_token }
+        present :user, user, with: Api::Entities::UserEntity
+        present :auth_token, user.generate_authentication_token!(remember).authentication_token
+      end
+    end
+
+    #
+    # AAF JWT callback - only mounted if AAF SAML is used
+    # This isn't really a JWT, we will treat it as if it's a SAML response
+    #
+    if AuthenticationHelpers.saml_auth?
+      desc 'SAML2.0 auth'
+      params do
+        requires :SAMLResponse, type: String, desc: 'Data provided for further processing.'
+      end
+      post '/auth/jwt' do
+        response = OneLogin::RubySaml::Response.new(params[:SAMLResponse], allowed_clock_drift: 1.second,
+                                                                           settings: AuthenticationHelpers.saml_settings)
+
+        # We validate the SAML Response and check if the user already exists in the system
+        return error!({ error: 'Invalid SAML response.' }, 401) unless response.is_valid?
+
+        attributes = response.attributes
+
+        login_id = response.name_id || response.nameid
+        email = login_id
+        # Lookup using login_id if it exists
+        # Lookup using email otherwise and set login_id
+        # Otherwise create new
+        user = User.find_by(login_id: login_id) ||
+               User.find_by_username(email[/(.*)@/, 1]) ||
+               User.find_by(email: email) ||
+               User.find_or_create_by(login_id: login_id) do |new_user|
+                 role = attributes.fetch(/role/) || Role.student.id
+                 first_name = (attributes.fetch(/givenname/) || attributes.fetch(/cn/)).capitalize
+                 last_name = attributes.fetch(/surname/).capitalize
+                 username = email.split('@').first
+                 # Some institutions may provide givenname and surname, others
+                 # may only provide common name which we will use as first name
+                 new_user.first_name = first_name
+                 new_user.last_name  = last_name
+                 new_user.email      = email
+                 new_user.username   = username
+                 new_user.nickname   = first_name
+                 new_user.role_id    = role
+               end
+
+        # Set login id + username if not yet specified
+        user.login_id = login_id if user.login_id.nil?
+        user.username = username if user.username.nil?
+
+        # Try and save the user once authenticated if new
+        if user.new_record?
+          user.encrypted_password = BCrypt::Password.create(SecureRandom.hex(32))
+          unless user.valid?
+            error!(error: 'There was an error creating your account in Doubtfire. ' \
+                          'Please get in contact with your unit convenor or the ' \
+                          'Doubtfire administrators.')
+          end
+          user.save
+        end
+
+        # Generate a temporary auth_token for future requests
+        onetime_token = user.generate_temporary_authentication_token!
+
+        # Must redirect to the front-end after sign in
+        protocol = Rails.env.development? ? 'http' : 'https'
+        host = Rails.env.development? ? "#{protocol}://localhost:3000" : Doubtfire::Application.config.institution[:host]
+        host = "#{protocol}://#{host}" unless host.starts_with?('http')
+        redirect "#{host}/#sign_in?authToken=#{onetime_token.authentication_token}&username=#{user.username}"
       end
     end
 
@@ -103,11 +165,13 @@ module Api
         login_id = jwt[:sub]
         email = attrs[:mail]
 
+        logger.info "Authenticate #{email} from #{request.ip}"
+
         # Lookup using login_id if it exists
         # Lookup using email otherwise and set login_id
         # Otherwise create new
         user = User.find_by(login_id: login_id) ||
-               User.find_by_username(email[/(.*)@/,1]) ||
+               User.find_by_username(email[/(.*)@/, 1]) ||
                User.find_by(email: email) ||
                User.find_or_create_by(login_id: login_id) do |new_user|
                  role = Role.aaf_affiliation_to_role_id(attrs[:edupersonscopedaffiliation])
@@ -133,8 +197,7 @@ module Api
 
         # Try and save the user once authenticated if new
         if user.new_record?
-          user.encrypted_password = BCrypt::Password.create('password')
-
+          user.encrypted_password = BCrypt::Password.create(SecureRandom.hex(32))
           unless user.valid?
             error!(error: 'There was an error creating your account in Doubtfire. ' \
                           'Please get in contact with your unit convenor or the ' \
@@ -144,19 +207,25 @@ module Api
         end
 
         # Generate a temporary auth_token for future requests
-        user.generate_temporary_authentication_token!
+        onetime_token = user.generate_temporary_authentication_token!
+
+        logger.info "Redirecting #{username} from #{request.ip}"
 
         # Must redirect to the front-end after sign in
         protocol = Rails.env.development? ? 'http' : 'https'
-        host = Rails.env.development? ? 'localhost:8000' : Doubtfire::Application.config.institution[:host]
-        redirect "#{protocol}://#{host}/#sign_in?authToken=#{user.auth_token}"
+        host = Rails.env.development? ? "#{protocol}://localhost:3000" : Doubtfire::Application.config.institution[:host]
+        host = "#{protocol}://#{host}" unless host.starts_with?('http')
+        redirect "#{host}/#sign_in?authToken=#{onetime_token.authentication_token}&username=#{user.username}"
       end
+    end
 
+    if AuthenticationHelpers.saml_auth? || AuthenticationHelpers.aaf_auth?
       #
       # Respond user details provided a temporary login token
       #
       desc 'Get user details from an authentication token'
       params do
+        requires :username, type: String, desc: 'The user\'s username'
         requires :auth_token, type: String, desc: 'The user\'s temporary auth token'
       end
       post '/auth' do
@@ -165,14 +234,19 @@ module Api
 
         # Authenticate that the token is okay
         if authenticated?
-          user = User.find_by_auth_token(params[:auth_token])
+          user = User.find_by_username(params[:username])
+          token = user.token_for_text?(params[:auth_token]) unless user.nil?
+          error!({ error: 'Invalid token.' }, 404) if token.nil?
 
           # Invalidate the token and regenrate a new one
-          user.reset_authentication_token!
-          user.generate_authentication_token! true
+          token.destroy!
+          token = user.generate_authentication_token! true
+
+          logger.info "Login #{params[:username]} from #{request.ip}"
 
           # Respond user details with new auth token
-          { user: UserSerializer.new(user), auth_token: user.auth_token }
+          present :user, user, with: Api::Entities::UserEntity
+          present :auth_token, token.authentication_token
         end
       end
     end
@@ -185,8 +259,14 @@ module Api
       response = {
         method: Doubtfire::Application.config.auth_method
       }
-      response[:redirect_to] = Doubtfire::Application.config.aaf[:redirect_url] if aaf_auth?
-      response
+      response[:redirect_to] =
+        if aaf_auth?
+          Doubtfire::Application.config.aaf[:redirect_url]
+        elsif saml_auth?
+          request = OneLogin::RubySaml::Authrequest.new
+          request.create(AuthenticationHelpers.saml_settings)
+        end
+      present response, with: Grape::Presenters::Presenter
     end
 
     #
@@ -195,52 +275,90 @@ module Api
     desc 'Authentication signout URL'
     get '/auth/signout_url' do
       response = {}
-      response[:auth_signout_url] = Doubtfire::Application.config.aaf[:auth_signout_url] if aaf_auth? && Doubtfire::Application.config.aaf[:auth_signout_url].present?
-      response
+      response[:auth_signout_url] =
+        if aaf_auth? && Doubtfire::Application.config.aaf[:auth_signout_url].present?
+          Doubtfire::Application.config.aaf[:auth_signout_url]
+        elsif saml_auth? && Doubtfire::Application.config.saml[:idp_sso_target_url].present?
+          Doubtfire::Application.config.saml[:idp_sso_target_url]
+        end
+      present response, with: Grape::Presenters::Presenter
     end
 
     #
-    # Update token
+    # Update the expiry of an existing authentication token
     #
-    desc 'Allow tokens to be updated'
+    desc 'Allow tokens to be updated',
+    {
+      headers:
+      {
+        "username" =>
+        {
+          description: "User username",
+          required: true
+        },
+        "auth_token" =>
+        {
+          description: "The user\'s temporary auth token",
+          required: true
+        }
+      }
+    }
     params do
-      requires :username, type: String,  desc: 'User username'
       optional :remember, type: Boolean, desc: 'User has requested to remember login', default: false
     end
-    put '/auth/:auth_token' do
-      error!({ error: 'Invalid token.' }, 404) if params[:auth_token].nil?
-      logger.info "Update token #{params[:username]} from #{request.ip}"
+    put '/auth' do
+      token_param = headers['Auth-Token'] || params['Auth-Token']
+      user_param = headers['Username'] || params['Username']
+
+      error!({ error: 'Invalid token/username.' }, 404) if token_param.nil? || user_param.nil?
+
+      logger.info "Update token #{token_param} from #{request.ip} for #{user_param}"
 
       # Find user
-      user = User.find_by_auth_token(params[:auth_token])
+      user = User.find_by_username(user_param)
+      token = user.token_for_text?(token_param) unless user.nil?
       remember = params[:remember] || false
 
       # Token does not match user
-      if user.nil? || user.username != params[:username]
+      if token.nil? || user.nil? || user.username != user_param
         error!({ error: 'Invalid token.' }, 404)
       else
-        if user.auth_token_expiry > Time.zone.now && user.auth_token_expiry < Time.zone.now + 1.hour
-          user.reset_authentication_token!
-          user.generate_authentication_token! remember
-        end
+        token.extend_token remember if token.auth_token_expiry > Time.zone.now
+
         # Return extended auth token
-        { auth_token: user.auth_token }
+        present :auth_token, token.authentication_token
       end
     end
 
     #
     # Sign out
     #
-    desc 'Sign out'
-    delete '/auth/:auth_token' do
-      user = User.find_by_auth_token(params[:auth_token])
+    desc 'Sign out',
+    {
+      headers:
+      {
+        "username" =>
+        {
+          description: "User username",
+          required: true
+        },
+        "auth_token" =>
+        {
+          description: "The user\'s temporary auth token",
+          required: true
+        }
+      }
+    }
+    delete '/auth' do
+      user = User.find_by_username(headers['Username'])
+      token = user.token_for_text?(headers['Auth-Token']) unless user.nil?
 
-      if user
+      if token.present?
         logger.info "Sign out #{user.username} from #{request.ip}"
-        user.reset_authentication_token!
+        token.destroy!
       end
 
-      nil
+      present nil
     end
   end
 end

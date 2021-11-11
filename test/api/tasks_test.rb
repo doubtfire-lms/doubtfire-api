@@ -13,7 +13,10 @@ class TasksTest < ActiveSupport::TestCase
     # The GET we are testing
     unit = FactoryBot.create(:unit, perform_submissions: true)
 
-    get with_auth_token "/api/tasks?unit_id=#{unit.id}", unit.main_convenor_user
+    # Add username and auth_token to Header
+    add_auth_header_for(user: unit.main_convenor_user)
+
+    get "/api/tasks?unit_id=#{unit.id}"
     expected_data = unit.student_tasks.where('task_status_id > ?', 1)
 
     assert_equal expected_data.count, last_response_body.count
@@ -25,7 +28,11 @@ class TasksTest < ActiveSupport::TestCase
       tutorial = t.project.tutorial_for(t.task_definition)
       if tutorial.present?
         assert_equal tutorial.id, r['tutorial_id']
-        assert_equal tutorial.tutorial_stream_id, r['tutorial_stream_id']
+        if tutorial.tutorial_stream_id.nil?
+          assert_nil r['tutorial_stream_id']
+        else
+          assert_equal tutorial.tutorial_stream_id, r['tutorial_stream_id']
+        end
       else
         assert_nil r['tutorial_id']
         assert_nil r['tutorial_stream_id']
@@ -37,7 +44,10 @@ class TasksTest < ActiveSupport::TestCase
     # The GET we are testing
     unit = FactoryBot.create(:unit, perform_submissions: true, stream_count: 1, campus_count: 2)
 
-    get with_auth_token "/api/tasks?unit_id=#{unit.id}", unit.main_convenor_user
+    # Add username and auth_token to Header
+    add_auth_header_for(user: unit.main_convenor_user)
+
+    get "/api/tasks?unit_id=#{unit.id}"
     expected_data = unit.student_tasks.where('task_status_id > ?', 1)
 
     assert_equal expected_data.count, last_response_body.count
@@ -49,7 +59,11 @@ class TasksTest < ActiveSupport::TestCase
       tutorial = t.project.tutorial_for(t.task_definition)
       if tutorial.present?
         assert_equal tutorial.id, r['tutorial_id']
-        assert_equal tutorial.tutorial_stream_id, r['tutorial_stream_id']
+        if tutorial.tutorial_stream_id.nil?
+          assert_nil r['tutorial_stream_id']
+        else
+          assert_equal tutorial.tutorial_stream_id, r['tutorial_stream_id']
+        end
       else
         assert_nil r['tutorial_id']
         assert_nil r['tutorial_stream_id']
@@ -79,12 +93,15 @@ class TasksTest < ActiveSupport::TestCase
     td.save!
 
     data_to_post = {
-      trigger: 'ready_to_mark'
+      trigger: 'ready_for_feedback'
     }
 
     project = unit.active_projects.first
 
-    post_json with_auth_token("/api/projects/#{project.id}/task_def_id/#{td.id}/submission", unit.tutors.first), data_to_post
+    # Add username and auth_token to Header
+    add_auth_header_for(user: unit.tutors.first)
+
+    post_json "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
 
     assert_equal 201, last_response.status
 
@@ -117,15 +134,18 @@ class TasksTest < ActiveSupport::TestCase
     td.save!
 
     data_to_post = {
-      trigger: 'ready_to_mark'
+      trigger: 'ready_for_feedback'
     }
 
     # Get the first student - who now has this task
     project = unit.active_projects.first
     tutor = project.tutor_for(td)
 
+    # Add username and auth_token to Header
+    add_auth_header_for(user: tutor)
+
     # Make a submission for this student
-    post with_auth_token("/api/projects/#{project.id}/task_def_id/#{td.id}/submission", tutor), data_to_post    
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
     assert_equal 201, last_response.status
 
     # Get the task... check it is now time exceeded
@@ -140,8 +160,11 @@ class TasksTest < ActiveSupport::TestCase
       weeks_requested: 2
     }
 
+    # Add username and auth_token to Header
+    add_auth_header_for(user: project.student)
+
     # Apply for an extension
-    post "/api/projects/#{project.id}/task_def_id/#{td.id}/request_extension", with_auth_token(data_to_post, project.student)
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/request_extension", data_to_post
     assert_equal 201, last_response.status
 
     # Reload to get new details
@@ -162,7 +185,7 @@ class TasksTest < ActiveSupport::TestCase
     assert_equal 2, task.extensions
     assert task.submitted_before_due?
 
-    assert_equal TaskStatus.ready_to_mark, task.task_status
+    assert_equal TaskStatus.ready_for_feedback, task.task_status
 
     td.destroy
   end
@@ -189,15 +212,18 @@ class TasksTest < ActiveSupport::TestCase
     td.save!
 
     data_to_post = {
-      trigger: 'ready_to_mark'
+      trigger: 'ready_for_feedback'
     }
 
     # Get the first student - who now has this task
     project = unit.active_projects.first
     tutor = project.tutor_for(td)
 
+    # Add username and auth_token to Header
+    add_auth_header_for(user: tutor)
+
     # Make a submission for this student
-    post with_auth_token("/api/projects/#{project.id}/task_def_id/#{td.id}/submission", tutor), data_to_post    
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
     assert_equal 201, last_response.status
 
     # Get the task... check it is now time exceeded
@@ -212,8 +238,11 @@ class TasksTest < ActiveSupport::TestCase
       weeks_requested: 2
     }
 
+    # Add username and auth_token to Header
+    add_auth_header_for(user: project.student)
+
     # Apply for an extension
-    post "/api/projects/#{project.id}/task_def_id/#{td.id}/request_extension", with_auth_token(data_to_post, project.student)
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/request_extension", data_to_post
     assert_equal 201, last_response.status
 
     # After extension... no more extensions are possible
@@ -223,7 +252,7 @@ class TasksTest < ActiveSupport::TestCase
     assert_equal 2, task.extensions
     assert task.submitted_before_due?
 
-    assert_equal TaskStatus.ready_to_mark, task.task_status
+    assert_equal TaskStatus.ready_for_feedback, task.task_status
 
     td.destroy
   end
@@ -241,28 +270,35 @@ class TasksTest < ActiveSupport::TestCase
     unit.employ_staff(tutor, Role.tutor)
     unit.enrol_student(student, FactoryBot.create(:campus))
 
+    add_auth_header_for user: convenor
+
     # Convenor tries to pin task
-    post with_auth_token("/api/tasks/#{task.id}/pin", convenor)
+    post "/api/tasks/#{task.id}/pin"
     assert_equal last_response.status, 201
 
     # Convenor tries to unpin task
-    delete with_auth_token("/api/tasks/#{task.id}/pin", convenor)
+    delete "/api/tasks/#{task.id}/pin"
     assert_equal last_response.status, 200
 
+    add_auth_header_for user: tutor
+
     # Tutor tries to pin task
-    post with_auth_token("/api/tasks/#{task.id}/pin", tutor)
+    post "/api/tasks/#{task.id}/pin"
     assert_equal last_response.status, 201
 
     # Tutor tries to unpin task
-    delete with_auth_token("/api/tasks/#{task.id}/pin", tutor)
+    delete "/api/tasks/#{task.id}/pin"
     assert_equal last_response.status, 200
 
+    add_auth_header_for user: student
+
     # Student tries to pin task
-    post with_auth_token("/api/tasks/#{task.id}/pin", student)
+    post "/api/tasks/#{task.id}/pin"
     assert_equal last_response.status, 403
 
+    add_auth_header_for user: admin
     # Admin tries to pin task
-    post with_auth_token("/api/tasks/#{task.id}/pin", admin)
+    post "/api/tasks/#{task.id}/pin"
     assert_equal last_response.status, 403
   end
 
@@ -279,20 +315,25 @@ class TasksTest < ActiveSupport::TestCase
     other_unit = FactoryBot.create(:unit, student_count: 1, task_count: 1, perform_submissions: true)
     other_task = other_unit.tasks.first
 
+    add_auth_header_for user: convenor
+
     # Convenor tries to pin task of unit that they are assigned to
-    post with_auth_token("/api/tasks/#{task.id}/pin", convenor)
+    post "/api/tasks/#{task.id}/pin"
     assert_equal last_response.status, 201
 
     # Tutor tries to pin task of unit that they are assigned to
-    post with_auth_token("/api/tasks/#{task.id}/pin", tutor)
+    add_auth_header_for user: tutor
+    post "/api/tasks/#{task.id}/pin"
     assert_equal last_response.status, 201
 
     # Convenor tries to pin task of unit that they are not assigned to
-    post with_auth_token("/api/tasks/#{other_task.id}/pin", convenor)
+    add_auth_header_for user: convenor
+    post "/api/tasks/#{other_task.id}/pin"
     assert_equal last_response.status, 403
 
     # Tutor tries to pin task of unit that they are not assigned to
-    post with_auth_token("/api/tasks/#{other_task.id}/pin", tutor)
+    add_auth_header_for user: tutor
+    post "/api/tasks/#{other_task.id}/pin"
     assert_equal last_response.status, 403
   end
 
@@ -303,19 +344,20 @@ class TasksTest < ActiveSupport::TestCase
     td1 = unit.task_definitions.first
 
     task1 = s.task_for_task_definition td1
-    
+
     tutor = FactoryBot.create(:user, :tutor)
     unit.employ_staff(tutor, Role.tutor)
 
     task1.add_text_comment s.student, "Message"
 
     # Tutor pins task 1
-    post with_auth_token("/api/tasks/#{task1.id}/pin", tutor)
+    add_auth_header_for user: tutor
+    post "/api/tasks/#{task1.id}/pin"
 
     assert TaskPin.find_by user: tutor, task: task1
 
     # Tutor retrieves task inbox
-    get with_auth_token("/api/units/#{unit.id}/tasks/inbox", tutor)
+    get "/api/units/#{unit.id}/tasks/inbox"
 
     # Assert that task1 is pinned, task2 isn't
     assert last_response_body.count == 1

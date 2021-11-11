@@ -40,15 +40,17 @@ class TaskStatusTest < ActiveSupport::TestCase
       task_definition_id: td.id,
       task_status_id: 12
     )
-
     # Get the first student - who now has this task
     project = unit.active_projects.first
 
     data_to_post = {
-      trigger: 'ready_to_mark'
+      trigger: 'ready_for_feedback'
     }
+
+    add_auth_header_for(user: project.student)
+
     # Make a submission for this student
-    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", with_auth_token(data_to_post)
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
 
     # Get the exceeded exceeded task and check it is now time exceeded
     #task = project.task_for_task_definition(td)
@@ -79,9 +81,10 @@ class TaskStatusTest < ActiveSupport::TestCase
 
       assert_equal TaskStatus.status_for_name('demonstrate').name,TaskStatus.demonstrate.name
       assert_equal TaskStatus.status_for_name('demo').name,TaskStatus.demonstrate.name
-      assert_equal TaskStatus.status_for_name('ready to mark').name,TaskStatus.ready_to_mark.name
-      assert_equal TaskStatus.status_for_name('ready_to_mark').name,TaskStatus.ready_to_mark.name
-      assert_equal TaskStatus.status_for_name('rtm').name,TaskStatus.ready_to_mark.name
+      assert_equal TaskStatus.status_for_name('ready to mark').name,TaskStatus.ready_for_feedback.name
+      assert_equal TaskStatus.status_for_name('ready_for_feedback').name,TaskStatus.ready_for_feedback.name
+      assert_equal TaskStatus.status_for_name('rtm').name,TaskStatus.ready_for_feedback.name
+      assert_equal TaskStatus.status_for_name('rff').name,TaskStatus.ready_for_feedback.name
 
       assert_equal TaskStatus.status_for_name('fail').name,TaskStatus.fail.name
       assert_equal TaskStatus.status_for_name('not_started').name,TaskStatus.not_started.name
@@ -89,7 +92,7 @@ class TaskStatusTest < ActiveSupport::TestCase
       assert_equal TaskStatus.status_for_name('ns').name,TaskStatus.not_started.name
       assert_equal TaskStatus.status_for_name('time exceeded').name,TaskStatus.time_exceeded.name
       assert_equal TaskStatus.status_for_name('time_exceeded').name,TaskStatus.time_exceeded.name
-      assert_equal TaskStatus.status_for_name(''), nil
+      assert_nil TaskStatus.status_for_name('')
   end
 
   def test_staff_assigned_statuses

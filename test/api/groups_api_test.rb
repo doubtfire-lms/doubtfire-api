@@ -56,7 +56,10 @@ class GroupsApiTest < ActiveSupport::TestCase
     project = group.projects.first
     tutor = project.tutor_for(td)
 
-    post "/api/projects/#{project.id}/task_def_id/#{td.id}/request_extension", with_auth_token(data_to_post, project.student)
+    # Add username and auth_token to Header
+    add_auth_header_for(user: project.student)
+
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/request_extension", data_to_post
     comment_id = last_response_body["id"]
     assert_equal 201, last_response.status, last_response_body
 
@@ -64,18 +67,18 @@ class GroupsApiTest < ActiveSupport::TestCase
     comment.assess_extension(tutor, true)
 
     data_to_post = {
-      trigger: 'ready_to_mark'
+      trigger: 'ready_for_feedback'
     }
 
     data_to_post = with_file('test_files/submissions/test.sql', 'text/plain', data_to_post)
 
-    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", with_auth_token(data_to_post, project.student)
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
     assert_equal 201, last_response.status
 
     group.reload
     group.projects.each do |proj|
         task = proj.task_for_task_definition(td)
-        assert_equal TaskStatus.ready_to_mark, task.task_status
+        assert_equal TaskStatus.ready_for_feedback, task.task_status
     end
 
     td.destroy
@@ -112,7 +115,10 @@ class GroupsApiTest < ActiveSupport::TestCase
 
     comment_data = { comment: "Hello World" }
 
-    post_json with_auth_token("/api/projects/#{project.id}/task_def_id/#{td.id}/comments", project.student), comment_data
+     # Add username and auth_token to Header
+    add_auth_header_for(user: project.student)
+
+    post_json "/api/projects/#{project.id}/task_def_id/#{td.id}/comments", comment_data
 
     assert_equal 201, last_response.status
 
@@ -156,7 +162,10 @@ class GroupsApiTest < ActiveSupport::TestCase
 
     comment_data = { attachment: upload_file('test_files/submissions/00_question.pdf', 'application/pdf') }
 
-    post with_auth_token("/api/projects/#{project.id}/task_def_id/#{td.id}/comments", project.student), comment_data
+    # Add username and auth_token to Header
+    add_auth_header_for(user: project.student)
+
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/comments", comment_data
 
     assert_equal 201, last_response.status
     assert File.exists?(TaskComment.last.attachment_path)
@@ -196,7 +205,10 @@ class GroupsApiTest < ActiveSupport::TestCase
 
     comment_data = { attachment: upload_file('test_files/submissions/00_question.pdf', 'application/pdf') }
 
-    post with_auth_token("/api/projects/#{project.id}/task_def_id/#{td.id}/comments", project.student), comment_data
+    # Add username and auth_token to Header
+    add_auth_header_for(user: project.student)
+
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/comments", comment_data
 
     assert_equal 201, last_response.status
 
@@ -224,14 +236,17 @@ class GroupsApiTest < ActiveSupport::TestCase
       }
     }
 
+    # Add username and auth_token to Header
+    add_auth_header_for(user: unit.main_convenor_user)
+
     # Create group set
-    post with_auth_token("/api/units/#{unit.id}/group_sets", unit.main_convenor_user), gs_data
+    post "/api/units/#{unit.id}/group_sets", gs_data
     assert_equal 201, last_response.status, last_response_body
     gs_response = last_response_body
     assert_equal 1, unit.group_sets.count
 
     # Create group
-    post with_auth_token("/api/units/#{unit.id}/group_sets/#{gs_response['id']}/groups", unit.main_convenor_user), group_data
+    post "/api/units/#{unit.id}/group_sets/#{gs_response['id']}/groups", group_data
     assert_equal 201, last_response.status, last_response_body
     group_response = last_response_body
     assert_equal 1, unit.group_sets.first.groups.count
@@ -239,7 +254,10 @@ class GroupsApiTest < ActiveSupport::TestCase
     # Add a group member (the student does it...)
     project = unit.active_projects.first
 
-    post with_auth_token("/api/units/#{unit.id}/group_sets/#{gs_response['id']}/groups/#{group_response['id']}/members", project.student), {project_id: project.id}
+    # Add username and auth_token to Header
+    add_auth_header_for(user: project.student)
+
+    post "/api/units/#{unit.id}/group_sets/#{gs_response['id']}/groups/#{group_response['id']}/members", {project_id: project.id}
 
     assert_equal 201, last_response.status
     assert_equal 1, unit.group_sets.first.groups.first.group_memberships.count
@@ -247,7 +265,10 @@ class GroupsApiTest < ActiveSupport::TestCase
     # Add another group member (the student does it...)
     project = unit.active_projects.second
 
-    post with_auth_token("/api/units/#{unit.id}/group_sets/#{gs_response['id']}/groups/#{group_response['id']}/members", project.student), {project_id: project.id}
+    # Add username and auth_token to Header
+    add_auth_header_for(user: project.student)
+
+    post "/api/units/#{unit.id}/group_sets/#{gs_response['id']}/groups/#{group_response['id']}/members", {project_id: project.id}
 
     assert_equal 201, last_response.status, last_response_body
     assert_equal 2, unit.group_sets.first.groups.first.group_memberships.count
@@ -255,7 +276,7 @@ class GroupsApiTest < ActiveSupport::TestCase
     # Exceed capacity (the student does it...)
     project = unit.active_projects.last
 
-    post with_auth_token("/api/units/#{unit.id}/group_sets/#{gs_response['id']}/groups/#{group_response['id']}/members", project.student), {project_id: project.id}
+    post "/api/units/#{unit.id}/group_sets/#{gs_response['id']}/groups/#{group_response['id']}/members", {project_id: project.id}
 
     assert_equal 403, last_response.status, last_response_body
     assert_equal 2, unit.group_sets.first.groups.first.group_memberships.count
@@ -264,13 +285,19 @@ class GroupsApiTest < ActiveSupport::TestCase
     tutor = FactoryBot.create(:user, :tutor)
     unit.employ_staff tutor, Role.tutor
 
-    post with_auth_token("/api/units/#{unit.id}/group_sets/#{gs_response['id']}/groups/#{group_response['id']}/members", tutor), {project_id: project.id}
+    # Add username and auth_token to Header
+    add_auth_header_for(user: tutor)
+
+    post "/api/units/#{unit.id}/group_sets/#{gs_response['id']}/groups/#{group_response['id']}/members", {project_id: project.id}
 
     assert_equal 403, last_response.status, last_response_body
     assert_equal 2, unit.group_sets.first.groups.first.group_memberships.count
+
+    # Add username and auth_token to Header
+    add_auth_header_for(user: unit.main_convenor_user)
     
     # Try again as convenor
-    post with_auth_token("/api/units/#{unit.id}/group_sets/#{gs_response['id']}/groups/#{group_response['id']}/members", unit.main_convenor_user), {project_id: project.id}
+    post "/api/units/#{unit.id}/group_sets/#{gs_response['id']}/groups/#{group_response['id']}/members", {project_id: project.id}
 
     assert_equal 201, last_response.status, last_response_body
     assert_equal 3, unit.group_sets.first.groups.first.group_memberships.count
@@ -280,8 +307,11 @@ class GroupsApiTest < ActiveSupport::TestCase
     unit = FactoryBot.create :unit, group_sets: 1, groups: [{ gs: 0, students: 2}]
     assert_equal 2, unit.groups.first.group_memberships.count
 
+    # Add username and auth_token to Header
+    add_auth_header_for(user: unit.main_convenor_user)
+
     # Get the groups for the first group set
-    get with_auth_token("/api/units/#{unit.id}/group_sets/#{unit.group_sets.first.id}/groups", unit.main_convenor_user)
+    get "/api/units/#{unit.id}/group_sets/#{unit.group_sets.first.id}/groups"
     assert_equal 200, last_response.status
     assert_equal 2, last_response_body.first['student_count'], last_response_body
   end
@@ -303,9 +333,12 @@ class GroupsApiTest < ActiveSupport::TestCase
     
     refute p1.enrolled_in? tutorial
     refute p2.enrolled_in? tutorial
-    
-    put "/api/units/#{unit.id}/group_sets/#{gs.id}/groups/#{group1.id}", with_auth_token({ group: {tutorial_id: tutorial.id} }, unit.main_convenor_user)
 
+    # Add username and auth_token to Header
+    add_auth_header_for(user: unit.main_convenor_user)
+    
+    put "/api/units/#{unit.id}/group_sets/#{gs.id}/groups/#{group1.id}", { group: {tutorial_id: tutorial.id} }
+    
     assert 201, last_response.status
 
     p1.reload
@@ -336,7 +369,8 @@ class GroupsApiTest < ActiveSupport::TestCase
     refute p1.enrolled_in? tutorial
     refute p2.enrolled_in? tutorial
     
-    put "/api/units/#{unit.id}/group_sets/#{gs.id}/groups/#{group1.id}", with_auth_token({ group: {tutorial_id: tutorial.id} }, unit.main_convenor_user)
+    add_auth_header_for(user: unit.main_convenor_user)
+    put "/api/units/#{unit.id}/group_sets/#{gs.id}/groups/#{group1.id}", { group: {tutorial_id: tutorial.id} }
 
     assert 201, last_response.status
 
@@ -375,7 +409,8 @@ class GroupsApiTest < ActiveSupport::TestCase
 
     refute group1.at_capacity?
 
-    put "/api/units/#{unit.id}/group_sets/#{gs.id}/groups/#{group1.id}", with_auth_token({ group: {tutorial_id: tutorial.id} }, unit.main_convenor_user)
+    add_auth_header_for(user: unit.main_convenor_user)
+    put "/api/units/#{unit.id}/group_sets/#{gs.id}/groups/#{group1.id}", { group: {tutorial_id: tutorial.id} }
 
     assert 201, last_response.status
 
