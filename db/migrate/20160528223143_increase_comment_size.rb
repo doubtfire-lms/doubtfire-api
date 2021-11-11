@@ -1,4 +1,4 @@
-class IncreaseCommentSize < ActiveRecord::Migration
+class IncreaseCommentSize < ActiveRecord::Migration[4.2]
   def change
       change_column :task_comments, :comment, :string, :limit => 4096
       change_column :learning_outcomes, :description, :string, :limit => 4096

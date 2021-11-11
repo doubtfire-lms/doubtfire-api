@@ -11,7 +11,11 @@ class UnitRolesTest < ActiveSupport::TestCase
 
   # GET /api/units_roles
   def test_get_unit_roles
-    get with_auth_token '/api/unit_roles'
+
+    # Add username and auth_token to Header
+    add_auth_header_for(user: User.first)
+
+    get '/api/unit_roles'
     # UnitRole.joins(:role, :unit).where("user_id = :user_id and roles.name <> 'Student'", user_id: user.id)
 
     assert_equal last_response.status, 200
@@ -28,8 +32,11 @@ class UnitRolesTest < ActiveSupport::TestCase
     # # newly created unit's main convenor
     # expected_ur = unit.employ_staff, Role.convenor
 
+    # Add username and auth_token to Header
+    add_auth_header_for(user: unit.main_convenor_user)
+
     # perform the GET
-    get (with_auth_token"/api/unit_roles/#{expected_ur.id}", unit.main_convenor_user)
+    get "/api/unit_roles/#{expected_ur.id}"
     returned_ur = last_response_body
 
     # Check if the call succeeds
@@ -49,7 +56,10 @@ class UnitRolesTest < ActiveSupport::TestCase
       role: 'asdf'
     }
 
-    post '/api/unit_roles', with_auth_token(to_post)
+    # Add username and auth_token to Header
+    add_auth_header_for(user: User.first)
+
+    post '/api/unit_roles', to_post
     assert_equal last_response.status, 403
     assert_equal num_of_unit_roles, UnitRole.all.count
   end
@@ -61,7 +71,11 @@ class UnitRolesTest < ActiveSupport::TestCase
       user_id: 1,
       role: 'tutor'
     }
-    post '/api/unit_roles', with_auth_token(to_post)
+
+    # Add username and auth_token to Header
+    add_auth_header_for(user: User.first)
+
+    post '/api/unit_roles', to_post
 
     assert_equal last_response.status, 201
     assert_equal num_of_unit_roles, UnitRole.all.count
@@ -80,8 +94,11 @@ class UnitRolesTest < ActiveSupport::TestCase
 
     number_of_ur = UnitRole.count
 
+    # Add username and auth_token to Header
+    add_auth_header_for(user: User.first)
+
     # perform the delete
-    delete_json with_auth_token"/api/unit_roles/#{unit_role.id}"
+    delete_json "/api/unit_roles/#{unit_role.id}"
 
     # Check if the delete get through
     assert_equal 200, last_response.status
@@ -103,8 +120,11 @@ class UnitRolesTest < ActiveSupport::TestCase
 
     number_of_ur = UnitRole.count
 
+    # Add username and auth_token to Header
+    add_auth_header_for(user: student)
+
     # perform the delete
-    delete_json with_auth_token("/api/unit_roles/#{id_of_ur}", student)
+    delete_json "/api/unit_roles/#{id_of_ur}"
 
     # check if the delete does not get through
     assert_equal 403, last_response.status
@@ -124,8 +144,11 @@ class UnitRolesTest < ActiveSupport::TestCase
 
     initial_id = unit.main_convenor_id
 
+    # Add username and auth_token to Header
+    add_auth_header_for(user: unit.main_convenor_user)
+
     # Test delete... of main convenor role
-    delete with_auth_token("/api/unit_roles/#{initial_id}", unit.main_convenor_user)
+    delete "/api/unit_roles/#{initial_id}"
 
     assert_equal 400, last_response.status, last_response.inspect
 
@@ -138,7 +161,8 @@ class UnitRolesTest < ActiveSupport::TestCase
     unit.reload
 
     # Now it can work...
-    delete with_auth_token("/api/unit_roles/#{initial_id}", unit.main_convenor_user)
+
+    delete "/api/unit_roles/#{initial_id}"
     assert_equal 200, last_response.status, last_response.inspect
     refute UnitRole.where(id: initial_id).present?
   end

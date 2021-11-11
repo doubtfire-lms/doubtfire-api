@@ -1,4 +1,4 @@
-class AddRecipientToTaskComment < ActiveRecord::Migration
+class AddRecipientToTaskComment < ActiveRecord::Migration[4.2]
   def change
     add_column :task_comments, :is_new, :boolean, default: true
 

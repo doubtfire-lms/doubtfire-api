@@ -1,7 +1,7 @@
 #
 # Tracks each group's submissions.
 #
-class GroupSubmission < ActiveRecord::Base
+class GroupSubmission < ApplicationRecord
   include LogHelper
 
   belongs_to :group

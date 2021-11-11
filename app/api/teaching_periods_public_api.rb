@@ -22,7 +22,9 @@ module Api
           active_until: c.active_until
         }
       end
-      result
+
+      content_type 'text/plain'
+      body result
     end
   end
 end

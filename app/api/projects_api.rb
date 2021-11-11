@@ -32,7 +32,7 @@ module Api
                         )
 
       # Now map the data to structure for json to return
-      data.map do |row|
+      result = data.map do |row|
         {
           unit_id: row['unit_id'],
           unit_code: row['unit_code'],
@@ -40,14 +40,15 @@ module Api
           project_id: row['id'],
           campus_id: row['campus_id'],
           target_grade: row['target_grade'],
-          submitted_grade: row['submitted_grade'],
-          has_portfolio: row['has_portfolio'],
-          start_date: row['start_date'],
-          end_date: row['end_date'],
+          has_portfolio: !row['portfolio_production_date'].nil?,
+          start_date: row['start_date'].strftime('%Y-%m-%d'),
+          end_date: row['end_date'].strftime('%Y-%m-%d'),
           teaching_period_id: row['teaching_period_id'],
           active: row['active'].is_a?(Numeric) ? row['active'] != 0 : row['active']
         }
       end
+
+      present result, with: Grape::Presenters::Presenter
     end
 
     desc 'Get project'
@@ -63,8 +64,7 @@ module Api
         error!({ error: "Couldn't find Project with id=#{params[:id]}" }, 403)
       end
 
-      Thread.current[:user] = current_user
-      project
+      present project, with: Api::Entities::ProjectEntity, user: current_user
     end
 
     desc 'Update a project'
@@ -151,8 +151,7 @@ module Api
         project.save
       end
 
-      Thread.current[:user] = current_user
-      project
+      Api::Entities::ProjectEntity.represent(project, only: [ :campus_id, :enrolled, :target_grade, :submitted_grade, :compile_portfolio, :portfolio_available, :uses_draft_learning_summary, :stats, :burndown_chart_data ])
     end # put
 
     desc 'Enrol a student in a unit, creating them a project'
@@ -178,7 +177,7 @@ module Api
         if proj.nil?
           error!({ error: 'Error adding student to unit' }, 403)
         else
-          {
+          result = {
             project_id: proj.id,
             enrolled: proj.enrolled,
             first_name: proj.student.first_name,
@@ -194,6 +193,7 @@ module Api
             has_portfolio: false,
             stats: '0|1|0|0|0|0|0|0|0|0|0'
           }
+          present result, with: Grape::Presenters::Presenter
         end
       else
         error!({ error: "Couldn't find Unit with id=#{params[:unit_id]}" }, 403)

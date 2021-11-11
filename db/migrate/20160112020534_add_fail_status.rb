@@ -1,4 +1,4 @@
-class AddFailStatus < ActiveRecord::Migration
+class AddFailStatus < ActiveRecord::Migration[4.2]
   def change
     # if the other status are there...
     if TaskStatus.complete && TaskStatus.all.count == 10

@@ -11,7 +11,8 @@ module TestHelpers
     # POSTs a hash data as JSON with content-type "application/json"
     #
     def post_json(endpoint, data)
-      post URI.encode(endpoint), data.to_json, 'CONTENT_TYPE' => 'application/json'
+      header 'CONTENT_TYPE', 'application/json'
+      post URI.encode(endpoint), data.to_json
     end
 
     #
@@ -25,15 +26,42 @@ module TestHelpers
     # PUTs a hash data as JSON with content-type "application/json"
     #
     def delete_json(endpoint)
-      delete URI.encode(endpoint), 'CONTENT_TYPE' => 'application/json'
+      header 'CONTENT_TYPE', 'application/json'
+      delete URI.encode(endpoint)
     end
 
     #
     # Assert that a JSON response matches the model and keys provided
-    #
-    def assert_json_matches_model(model, response_json, keys)
-      keys.each { |k| assert response_json.key?(k), "Response missing key #{k} - #{response_json}" }
-      keys.each { |k| assert_equal model[k], response_json[k], "Values for key #{k} do not match - #{response_json}" }
+    # - key data is either a hash that maps response to model keys, or a list of keys to match
+    def assert_json_matches_model(model, response_json, keys_data)
+      if keys_data.instance_of? Hash
+        response_keys = keys_data.keys.map {|k| k.to_s }
+        keys = keys_data
+      else
+        response_keys = keys_data
+        keys = keys_data.map { |i| [i, i] }.to_h
+      end
+      response_keys.each { |k| assert response_json.key?(k), "Response missing key #{k} - #{response_json}" }
+      response_keys.each { |k|
+        mk = keys[k] || keys[k.to_sym]
+        value = model.is_a?(Hash) ? (model[mk].nil? ? model[mk.to_sym] : model[mk]) : model.send(mk)
+        if ! value.nil?
+          assert_equal value, response_json[k], "Values for model key #{mk} does not matach value of response key #{k} - #{response_json}"
+        else
+          assert_nil response_json[k], "Values for key #{k} is not nil - #{response_json}"
+        end
+      }
+    end
+
+    def assert_json_limit_keys_to(keys, response_json)
+      response_json.keys.each do |k|
+        assert keys.include?(k), "Unexpected key in response: #{k} -- #{response_json.inspect}"
+      end
+    end
+
+    def assert_json_limit_keys_to_exactly(keys, response_json)
+      assert_equal keys.count, response_json.keys.count, "Incorrect number of keys: #{response_json.inspect}"
+      assert_json_limit_keys_to keys, response_json
     end
 
     #

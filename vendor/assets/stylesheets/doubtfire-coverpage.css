@@ -44,7 +44,7 @@ dl::after {
 pre { font-family: Menlo, Monaco, Consolas, "Courier New", monospace; display: inline; font-size: 14px; }
 footer { margin-top: 550px; padding-top: 5px; font-size: 10px; color: #888; text-align: right; border-top: 1px solid #eee; }
 
-button.task-status.ready-to-mark {
+button.task-status.ready-for-feedback {
   background-color: #0079D8;
   color: white;
 }
