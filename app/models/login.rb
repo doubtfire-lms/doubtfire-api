@@ -1,3 +1,3 @@
-class Login < ActiveRecord::Base
+class Login < ApplicationRecord
   belongs_to :user
 end

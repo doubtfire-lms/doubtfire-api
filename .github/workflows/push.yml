@@ -1,0 +1,30 @@
+name: test-doubtfire-api
+on: [push,pull_request]
+jobs:
+  run-unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Build base Doubtfire image
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: false
+          load: true
+          tags: doubtfire-core:local
+      - name: Create database and run rake tests
+        uses: addnab/docker-run-action@v3
+        with:
+          image: doubtfire-core:local
+          options: -v ${{ github.workspace }}:/doubtfire -e RAILS_ENV=test -e DF_STUDENT_WORK_DIR=/student-work -e DF_INSTITUTION_HOST=http://localhost:3000 -e DF_INSTITUTION_PRODUCT_NAME=OnTrack -e DF_SECRET_KEY_BASE='test-secret-key-test-secret-key!' -e DF_SECRET_KEY_ATTR='test-secret-key-test-secret-key!' -e DF_SECRET_KEY_DEVISE='test-secret-key-test-secret-key!' -e DF_TEST_DB_ADAPTER=mysql2 -e DF_TEST_DB_HOST=localhost -e DF_TEST_DB_DATABASE=doubtfire-test -e DF_TEST_DB_USERNAME=dfire -e DF_TEST_DB_PASSWORD=pwd -e OVERSEER_ENABLED=0
+          run:  |
+            echo "Install mariadb"
+            apt -y install mariadb-server mariadb-client
+            echo "Run mariadb"
+            service mysql start
+            mysql -uroot -e "CREATE USER 'dfire'@'localhost' IDENTIFIED BY 'pwd'; GRANT ALL PRIVILEGES ON *.* TO 'dfire'@'localhost'; FLUSH PRIVILEGES;"
+            echo "Setting up database"
+            bundle exec rake db:populate
+            echo "Running rake tests"
+            TERM=xterm bundle exec rails test

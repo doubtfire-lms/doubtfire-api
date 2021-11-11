@@ -1,19 +1,21 @@
 require 'json'
 
-class TaskDefinition < ActiveRecord::Base
+class TaskDefinition < ApplicationRecord
   # Record triggers - before associations
   after_update do |_td|
     clear_related_plagiarism if plagiarism_checks.empty? && has_plagiarism?
   end
 
   before_destroy :delete_associated_files
-  after_update :move_files_on_abbreviation_change, if: :abbreviation_changed?
+
+  after_update :move_files_on_abbreviation_change, if: :saved_change_to_abbreviation?
   after_update :remove_old_group_submissions, if: :has_removed_group?
 
   # Model associations
   belongs_to :unit # Foreign key
   belongs_to :group_set
   belongs_to :tutorial_stream
+  belongs_to :overseer_image
 
   has_one :draft_task_definition_unit, foreign_key: 'draft_task_definition_id', class_name: 'Unit', dependent: :nullify
 
@@ -35,7 +37,7 @@ class TaskDefinition < ActiveRecord::Base
   validate :plagiarism_checks, :check_plagiarism_format
   validates :description, length: { maximum: 4095, allow_blank: true }
 
-  validate :ensure_no_submissions, if: :has_change_group_status?
+  validate :ensure_no_submissions, if: :will_save_change_to_group_set_id?
   validate :unit_must_be_same
   validate :tutorial_stream_present?
 
@@ -96,12 +98,8 @@ class TaskDefinition < ActiveRecord::Base
     new_td
   end
 
-  def has_change_group_status?
-    group_set_id != group_set_id_was
-  end
-
   def has_removed_group?
-    has_change_group_status? && group_set_id.nil?
+    saved_change_to_group_set_id? && group_set_id.nil?
   end
 
   def ensure_no_submissions
@@ -117,13 +115,23 @@ class TaskDefinition < ActiveRecord::Base
   end
 
   def move_files_on_abbreviation_change
-    if File.exists? task_sheet_with_abbreviation(abbreviation_was)
-      FileUtils.mv(task_sheet_with_abbreviation(abbreviation_was), task_sheet())
+    old_abbr = saved_change_to_abbreviation[0] # 0 is original abbreviation
+    if File.exists? task_sheet_with_abbreviation(old_abbr)
+      FileUtils.mv(task_sheet_with_abbreviation(old_abbr), task_sheet())
     end
 
-    if File.exists? task_resources_with_abbreviation(abbreviation_was)
-      FileUtils.mv(task_resources_with_abbreviation(abbreviation_was), task_resources())
+    if File.exists? task_resources_with_abbreviation(old_abbr)
+      FileUtils.mv(task_resources_with_abbreviation(old_abbr), task_resources())
     end
+
+    if File.exists? task_assessment_resources_with_abbreviation(old_abbr)
+      FileUtils.mv(task_assessment_resources_with_abbreviation(old_abbr), task_assessment_resources())
+    end
+  end
+
+  def docker_image_name_tag
+    return nil if overseer_image.nil?
+    overseer_image.tag
   end
 
   def plagiarism_checks
@@ -394,6 +402,14 @@ class TaskDefinition < ActiveRecord::Base
     end
   end
 
+  # Update all task dates by date_diff
+  def propogate_date_changes date_diff
+    self.start_date += date_diff
+    self.target_date += date_diff
+    self.due_date += date_diff unless self.due_date.nil?
+    self.save!
+  end
+
   def to_csv_row
     TaskDefinition.csv_columns
                   .reject { |col| [:start_week, :start_day, :target_week, :target_day, :due_week, :due_day, :upload_requirements, :plagiarism_checks, :group_set, :tutorial_stream].include? col }
@@ -450,7 +466,7 @@ class TaskDefinition < ActiveRecord::Base
     result.name                        = name
     result.unit_id                     = unit.id
     result.abbreviation                = abbreviation
-    result.description                 = "#{row[:description]}".strip 
+    result.description                 = "#{row[:description]}".strip
     result.weighting                   = row[:weighting].to_i
     result.target_grade                = row[:target_grade].to_i
     result.restrict_status_updates     = %w(Yes y Y yes true TRUE 1).include? "#{row[:restrict_status_updates]}".strip
@@ -496,6 +512,10 @@ class TaskDefinition < ActiveRecord::Base
     File.exist? task_resources
   end
 
+  def has_task_assessment_resources?
+    File.exist? task_assessment_resources
+  end
+
   def has_task_sheet?
     File.exist? task_sheet
   end
@@ -528,6 +548,18 @@ class TaskDefinition < ActiveRecord::Base
     end
   end
 
+  def add_task_assessment_resources(file)
+    FileUtils.mv file, task_assessment_resources
+    # TODO: Use FACL instead in future.
+    `chmod 755 #{task_assessment_resources}`
+  end
+
+  def remove_task_assessment_resources()
+    if has_task_assessment_resources?
+      FileUtils.rm task_assessment_resources
+    end
+  end
+
   # Get the path to the task sheet - using the current abbreviation
   def task_sheet
     task_sheet_with_abbreviation(abbreviation)
@@ -535,6 +567,10 @@ class TaskDefinition < ActiveRecord::Base
 
   def task_resources
     task_resources_with_abbreviation(abbreviation)
+  end
+
+  def task_assessment_resources
+    task_assessment_resources_with_abbreviation(abbreviation)
   end
 
   def related_tasks_with_files(consolidate_groups = true)
@@ -563,6 +599,7 @@ class TaskDefinition < ActiveRecord::Base
     def delete_associated_files()
       remove_task_sheet()
       remove_task_resources()
+      remove_task_assessment_resources()
     end
 
     # Calculate the path to the task sheet using the provided abbreviation
@@ -589,6 +626,19 @@ class TaskDefinition < ActiveRecord::Base
 
       result_with_sanitised_path = "#{task_path}#{FileHelper.sanitized_path(abbr)}.zip"
       result_with_sanitised_file = "#{task_path}#{FileHelper.sanitized_filename(abbr)}.zip"
+
+      if File.exist? result_with_sanitised_path
+        result_with_sanitised_path
+      else
+        result_with_sanitised_file
+      end
+    end
+
+    def task_assessment_resources_with_abbreviation(abbr)
+      task_path = FileHelper.task_file_dir_for_unit unit, create = true
+
+      result_with_sanitised_path = "#{task_path}#{FileHelper.sanitized_path(abbr)}-assessment.zip"
+      result_with_sanitised_file = "#{task_path}#{FileHelper.sanitized_filename(abbr)}-assessment.zip"
 
       if File.exist? result_with_sanitised_path
         result_with_sanitised_path

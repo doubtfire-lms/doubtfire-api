@@ -1,4 +1,4 @@
-class Role < ActiveRecord::Base
+class Role < ApplicationRecord
 
   #
   # Override find to ensure that role objects are cached - these do not change

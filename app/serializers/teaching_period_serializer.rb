@@ -1,7 +1,7 @@
 # Doubtfire will deprecate ActiveModelSerializer in the future.
 # Instead, write a serialize method on the model.
 
-class TeachingPeriodSerializer < ActiveModel::Serializer
+class TeachingPeriodSerializer < DoubtfireSerializer
   attributes :id, :period, :year, :start_date, :end_date, :active_until, :active, :breaks, :units
 
   def active

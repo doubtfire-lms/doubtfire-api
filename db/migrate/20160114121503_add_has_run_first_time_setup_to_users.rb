@@ -1,4 +1,4 @@
-class AddHasRunFirstTimeSetupToUsers < ActiveRecord::Migration
+class AddHasRunFirstTimeSetupToUsers < ActiveRecord::Migration[4.2]
   def up
     add_column :users, :has_run_first_time_setup, :boolean, default: false
   end

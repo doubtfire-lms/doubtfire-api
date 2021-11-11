@@ -26,7 +26,7 @@ module FileHelper
         # --"application/msword",
         'application/pdf'
       ]
-      valid = pdf_valid? file.tempfile.path
+      valid = pdf_valid? file["tempfile"].path
     when 'audio'
       accept = ['audio/', 'video/webm', 'application/ogg', 'application/octet-stream']
     when 'comment_attachment'
@@ -38,7 +38,7 @@ module FileHelper
       return false
     end
 
-    mime_in_list?(file.tempfile.path, accept) && valid
+    mime_in_list?(file["tempfile"].path, accept) && valid
   end
 
   #
@@ -471,6 +471,23 @@ module FileHelper
     TimeoutHelper.system_try_within 20, "Failed to process audio submission - timeout", "#{path} -loglevel quiet -y -i #{input_path} -ac 1 -ar 16000 -sample_fmt s16 #{output_path}"
   end
 
+  def sorted_timestamp_entries_in_dir(path)
+    Dir.entries(path).reject{|entry| entry !~ /\d+/}.sort_by { |x| File.basename(x) }.reverse
+  end
+
+  def latest_submission_timestamp_entry_in_dir(path)
+    sorted_timestamp_entries_in_dir(path)[0]
+  end
+
+  def task_submission_identifier_path(type, task)
+    file_server = Doubtfire::Application.config.student_work_dir
+    "#{file_server}/submission_history/#{sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}", task.project.student.username.to_s, type.to_s, task.id.to_s)}"
+  end
+
+  def task_submission_identifier_path_with_timestamp(type, task, timestamp)
+    "#{task_submission_identifier_path(type, task)}/#{timestamp.to_s}"
+  end
+
   # Export functions as module functions
   module_function :accept_file
   module_function :sanitized_path
@@ -506,4 +523,8 @@ module FileHelper
   module_function :write_entries_to_zip
   module_function :ensure_utf8_code
   module_function :process_audio
+  module_function :sorted_timestamp_entries_in_dir
+  module_function :latest_submission_timestamp_entry_in_dir
+  module_function :task_submission_identifier_path
+  module_function :task_submission_identifier_path_with_timestamp
 end

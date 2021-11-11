@@ -1,5 +1,6 @@
 require 'test_helper'
 require 'grade_helper'
+require './lib/helpers/database_populator'
 
 class UnitModelTest < ActiveSupport::TestCase
   include TestHelpers::JsonHelper
@@ -83,6 +84,8 @@ class UnitModelTest < ActiveSupport::TestCase
       assert other
       assert_equal link.rating, other.rating, "rating does not match for #{link.task_definition.abbreviation} - #{link.learning_outcome.abbreviation}"
     end
+
+    unit2.destroy!
   end
 
   test 'rollover of tasks have same start week and day' do
@@ -99,6 +102,8 @@ class UnitModelTest < ActiveSupport::TestCase
       assert_equal td.start_day, td2.start_day, "#{td.abbreviation} not on same day"
       assert_equal td.start_week, td2.start_week, "#{td.abbreviation} not in same week"
     end
+
+    unit2.destroy!
   end
 
   test 'rollover of tasks have same target week and day' do
@@ -110,6 +115,31 @@ class UnitModelTest < ActiveSupport::TestCase
       td2 = unit2.task_definitions.find_by_abbreviation(td.abbreviation)
       assert_equal td.target_day, td2.target_day, "#{td.abbreviation} not on same day"
       assert_equal td.target_week, td2.target_week, "#{td.abbreviation} not targetting same week"
+    end
+
+    unit2.destroy!
+  end
+
+  def test_updating_unit_dates_propogates_to_tasks
+    @unit.teaching_period = nil
+    @unit.save!
+
+    @unit.import_tasks_from_csv File.open(Rails.root.join('test_files',"#{@unit.code}-Tasks.csv"))
+
+    pre_update_details = @unit.task_definitions.map{|td| { id: td.id, start_week: td.start_week, target_week: td.target_week, due_week: td.due_week } }
+
+    @unit.start_date = @unit.start_date + 1.week
+    @unit.save!
+
+    @unit.reload
+
+    pre_update_details.each do |data|
+      td = @unit.task_definitions.find(data[:id])
+      td.reload
+
+      assert_equal data[:start_week], td.start_week, "start week for #{td.abbreviation} -- should be #{data[:start_week]} was #{td.start_week}"
+      assert_equal data[:target_week], td.target_week, "target week for #{td.abbreviation} -- should be #{data[:target_week]} was #{td.target_week}"
+      assert_equal data[:due_week], td.due_week, "due week for #{td.abbreviation} -- should be #{data[:due_week]} was #{td.due_week}"
     end
   end
 
@@ -150,7 +180,7 @@ class UnitModelTest < ActiveSupport::TestCase
         when 1..20
           DatabasePopulator.assess_task(student, task, tutor, TaskStatus.complete, td.due_date + 1.week)
         when 21..40
-          DatabasePopulator.assess_task(student, task, tutor, TaskStatus.ready_to_mark, td.due_date + 1.week)
+          DatabasePopulator.assess_task(student, task, tutor, TaskStatus.ready_for_feedback, td.due_date + 1.week)
         when 41..50
           DatabasePopulator.assess_task(student, task, tutor, TaskStatus.time_exceeded, td.due_date + 1.week)
         when 51..60
@@ -285,7 +315,11 @@ class UnitModelTest < ActiveSupport::TestCase
 
         # Test basic details
         assert_equal project.student.username, entry['username'], entry.inspect
-        assert_equal project.student.student_id, entry['student_id'], entry.inspect
+        if project.student.student_id.present?
+          assert_equal project.student.student_id, entry['student_id'], entry.inspect
+        else
+          assert_nil entry['student_id'], entry.inspect
+        end
         assert_equal project.student.email, entry['email'], entry.inspect
 
         # Test task status
@@ -294,13 +328,21 @@ class UnitModelTest < ActiveSupport::TestCase
           assert_equal task.task_status.name, entry[td.abbreviation.downcase], "#{td.abbreviation} --> #{entry.inspect}"
 
           assert_equal("#{task.quality_pts}", entry["#{td.abbreviation.downcase} stars"], "#{td.abbreviation} stars --> #{entry.inspect}") if td.has_stars? && task.quality_pts != -1
-          assert_equal(GradeHelper.short_grade_for(task.grade), entry["#{td.abbreviation.downcase} grade"], "#{td.abbreviation} --> #{entry.inspect}") if td.is_graded?
+          if task.grade.present?
+            assert_equal(GradeHelper.short_grade_for(task.grade), entry["#{td.abbreviation.downcase} grade"], "#{td.abbreviation} --> #{entry.inspect}") if td.is_graded?
+          else
+            assert_nil(entry["#{td.abbreviation.downcase} grade"], "#{td.abbreviation} --> #{entry.inspect}") if td.is_graded?
+          end
           assert_equal(task.contribution_pts, (entry["#{td.abbreviation.downcase} contribution"].nil? ? 3 : Integer(entry["#{td.abbreviation.downcase} contribution"])), "#{td.abbreviation} contrib --> #{entry.inspect}") if td.is_group_task?
         end
 
         # Test tutorial streams
         unit.tutorial_streams.each do |ts|
-          assert_equal (project.tutorial_for_stream(ts).present? ? project.tutorial_for_stream(ts).abbreviation : nil), entry[ts.abbreviation.downcase], {entry: entry.inspect, stream: ts.abbreviation, proj_tut: project.tutorial_for_stream(ts)}
+          if project.tutorial_for_stream(ts).present?
+            assert_equal project.tutorial_for_stream(ts).abbreviation, entry[ts.abbreviation.downcase], {entry: entry.inspect, stream: ts.abbreviation, proj_tut: project.tutorial_for_stream(ts)}
+          else
+            assert_nil entry[ts.abbreviation.downcase], {entry: entry.inspect, stream: ts.abbreviation, proj_tut: project.tutorial_for_stream(ts)}
+          end
         end
     end
   end
@@ -350,6 +392,7 @@ class UnitModelTest < ActiveSupport::TestCase
     CSV.parse(csv_str, headers: true, return_headers: false,
       header_converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '').downcase unless body.nil? }],
       converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |entry|
+        assert_json_limit_keys_to_exactly %w(unit_code campus username student_id preferred_name first_name last_name email tutorial), entry.to_hash
         assert_equal 9, entry.count, entry
         user = User.find_by(username: entry['username'])
         assert user.present?, "Unable to find user from #{entry}"
@@ -363,11 +406,21 @@ class UnitModelTest < ActiveSupport::TestCase
         assert campus.present?, entry
         assert_equal project.campus, campus, entry
 
-        assert_equal user.nickname, entry['preferred_name'], entry
+        if user.nickname.present?
+          assert_equal user.nickname, entry['preferred_name'], entry
+        else
+          assert_nil entry['preferred_name'], entry
+        end
 
         tutorial = unit.tutorials.find_by(abbreviation: entry['tutorial'])
-        assert tutorial.present?, entry['tutorial']
-        assert_equal project.tutorial_enrolments.first.tutorial, tutorial, entry
+        if entry['tutorial'].present?
+          assert tutorial.present?, entry.inspect
+          assert_equal project.tutorial_enrolments.first.tutorial, tutorial, entry
+        else
+          assert_nil tutorial
+          assert_nil project.tutorial_enrolments.first
+        end
+
 
         rows += 1
     end
@@ -410,7 +463,7 @@ class UnitModelTest < ActiveSupport::TestCase
 
     assert_equal 3, t1.projects.count, result.inspect
     assert_equal 3, t2.projects.count
-    
+
     unit.destroy!
   end
 
@@ -461,7 +514,7 @@ class UnitModelTest < ActiveSupport::TestCase
     assert_equal 4, t1.projects.count
     assert_equal 4, t2.projects.count
     assert_equal 8, t3.projects.count
-    
+
     unit.destroy!
   end
 

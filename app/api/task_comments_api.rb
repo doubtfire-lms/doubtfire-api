@@ -12,10 +12,10 @@ module Api
     desc 'Add a new comment to a task'
     params do
       optional :comment, type: String, desc: 'The comment text to add to the task'
-      optional :attachment, type: Rack::Multipart::UploadedFile, desc: 'Image, sound, PDF or video comment file'
+      optional :attachment, type: File, desc: 'Image, sound, PDF or video comment file'
       optional :reply_to_id, type: Integer, desc: 'The comment to which this comment is replying'
     end
-    post '/projects/:project_id/task_def_id/:task_definition_id/comments' do
+    post '/projects/:project_id/task_def_id/:task_definition_id/comments', serializer: TaskCommentSerializer do
       project = Project.find(params[:project_id])
       task_definition = project.unit.task_definitions.find(params[:task_definition_id])
 
@@ -28,8 +28,8 @@ module Api
       reply_to_id = params[:reply_to_id]
 
       if attached_file.present?
-        error!(error: 'Attachment is empty.') unless File.size?(attached_file.tempfile.path).present?
-        error!(error: 'Attachment exceeds the maximum attachment size of 30MB.') unless File.size?(attached_file.tempfile.path) < 30_000_000
+        error!({error: "Attachment is empty."}) unless File.size?(attached_file["tempfile"].path).present?
+        error!({error: "Attachment exceeds the maximum attachment size of 30MB."}) unless File.size?(attached_file["tempfile"].path) < 30_000_000
       end
 
       task = project.task_for_task_definition(task_definition)
@@ -37,7 +37,7 @@ module Api
 
       if reply_to_id.present?
         originalTaskComment = TaskComment.find(reply_to_id)
-        error!(error: 'You do not have permission to read the replied comment') unless authorise? current_user, originalTaskComment.project, :get
+        error!(error: 'You do not have permission to read the replied comment') unless authorise?(current_user, originalTaskComment.project, :get) || (task.group_task? && task.group.role_for(current_user) != nil)
         error!(error: 'Original comment is not in this task.') unless task.all_comments.find(reply_to_id).present?
       end
 
@@ -135,7 +135,8 @@ module Api
         task = project.task_for_task_definition(task_definition)
 
         comments = task.all_comments.order('created_at ASC')
-        result = comments.map { |c| c.serialize(current_user) }
+        result = task.comments_for_user(current_user)
+        result.each do |d| end # cache results...
 
         # mark every comment type except for DiscussionComments so we don't mark it as read.
         comments_to_mark_as_read = comments.where("TYPE is null OR TYPE != 'DiscussionComment'")
@@ -143,7 +144,7 @@ module Api
       else
         result = []
       end
-      result
+      present result, with: Api::Entities::CommentEntity, current_user: current_user
     end
 
     desc 'Delete a comment'

@@ -1,4 +1,4 @@
-class AddTimesAssessed < ActiveRecord::Migration
+class AddTimesAssessed < ActiveRecord::Migration[4.2]
   def change
   	add_column :tasks, :times_assessed, :integer, default: 0
   	add_column :tasks, :submission_date, :datetime

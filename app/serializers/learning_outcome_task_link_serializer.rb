@@ -1,7 +1,7 @@
 # Doubtfire will deprecate ActiveModelSerializer in the future.
 # Instead, write a serialize method on the model.
 
-class LearningOutcomeTaskLinkSerializer < ActiveModel::Serializer
+class LearningOutcomeTaskLinkSerializer < DoubtfireSerializer
   attributes :id,
              :description,
              :rating,

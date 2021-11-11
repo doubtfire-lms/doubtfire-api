@@ -1,4 +1,4 @@
-class Campus < ActiveRecord::Base
+class Campus < ApplicationRecord
   # Relationships
   has_many    :tutorials
   has_many    :projects
@@ -53,6 +53,6 @@ class Campus < ActiveRecord::Base
   def can_destroy?
     return true if projects.count == 0 and tutorials.count == 0
     errors.add :base, "Cannot delete campus with projects and tutorials"
-    false
+    throw :abort
   end
 end
