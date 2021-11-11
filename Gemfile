@@ -2,28 +2,24 @@ source 'https://rubygems.org'
 
 # Ruby versions for various enviornments
 ruby_versions = {
-  development:  '~>2.3.1',
-  test:         '~>2.3.1',
-  staging:      '~>2.3.1',
-  production:   '~>2.3.1'
+  development:  '~>2.6.7',
+  test:         '~>2.6.7',
+  staging:      '~>2.6.7',
+  production:   '~>2.6.7'
 }
 # Get the ruby version for the current enviornment
 ruby ruby_versions[(ENV['RAILS_ENV'] || 'development').to_sym]
 
 # The venerable, almighty Rails
-gem 'rails', '4.2.6'
+gem 'rails', '4.2.8'
 
 group :development, :test do
   gem 'database_cleaner'
   gem 'byebug'
   gem 'simplecov', require: false
-  gem 'pg'
-  gem 'hirb'
   gem 'better_errors'
   gem 'rails_best_practices'
-  gem 'thin'
   gem 'rubocop', '0.46.0'
-  gem 'factory_bot_rails'
 end
 
 group :development, :test, :staging do
@@ -31,21 +27,32 @@ group :development, :test, :staging do
   gem 'factory_bot_rails'
   gem 'factory_bot'
   gem 'faker', '~>1.9.1'
+  gem 'minitest', '~>5.14'
   gem 'minitest-rails'
   gem 'minitest-around'
   gem 'webmock'
 end
 
-group :production do
+# Optional passenger gem
+# usage: bundle --with-env=passenger
+group :passenger do
   gem 'passenger', '= 4.0.42'
 end
 
-group :production, :staging do
-  gem 'mysql2'
+# Database
+gem 'mysql2', '0.4.10'
+
+# Webserver - included in development and test and optionally in production
+# usage: bundle --with-env=webserver
+group :development, :test, :webserver do
+  gem 'thin'
 end
 
+# Extend irb for better output
+gem 'hirb'
+
 # Authentication
-gem 'devise', '~> 4.1.1'
+gem 'devise', '~> 4.4.0'
 gem 'devise_ldap_authenticatable'
 gem 'json-jwt', '1.7.0'
 
@@ -62,7 +69,7 @@ gem 'moss_ruby', '>= 1.1.2'
 gem 'rails-latex', '=2.0.1'
 
 # API
-gem 'grape', '0.16.2'
+gem 'grape', '~> 0.16.2'
 gem 'active_model_serializers', '~> 0.9.0'
 gem 'grape-active_model_serializers', '~> 1.3.2'
 gem 'grape-swagger'
@@ -73,6 +80,7 @@ gem 'rack-cors', require: 'rack/cors'
 gem 'ci_reporter'
 gem 'require_all', '>=1.3.3'
 gem 'dotenv-rails'
+gem 'bunny-pub-sub', '0.0.9', git: 'https://github.com/doubtfire-overseer/bunny-pub-sub'
 
 # Excel support
 gem 'roo', '~> 2.7.0'

@@ -1,17 +1,17 @@
 development:
-  adapter: postgresql
-  database: doubtfire_dev
-  username: itig
-  password: d872$dh
-  host:  localhost
+  adapter:      <%= ENV['DF_DEV_DB_ADAPTER'] %>
+  database:     <%= ENV['DF_DEV_DB_DATABASE'] %>
+  username:     <%= ENV['DF_DEV_DB_USERNAME'] %>
+  password:     <%= ENV['DF_DEV_DB_PASSWORD'] %>
+  host:         <%= ENV['DF_DEV_DB_HOST']     %>
   min_messages: warning
 
 test:
-  adapter: <%= ENV['USE_MYSQL'].present? ? 'mysql2' : 'postgresql' %>
-  database: doubtfire_dev_test
-  username: itig
-  password: d872$dh
-  host: localhost
+  adapter:      <%= ENV['DF_TEST_DB_ADAPTER'] %>
+  database:     <%= ENV['DF_TEST_DB_DATABASE'] %>
+  username:     <%= ENV['DF_TEST_DB_USERNAME'] %>
+  password:     <%= ENV['DF_TEST_DB_PASSWORD'] %>
+  host:         <%= ENV['DF_TEST_DB_HOST']     %>
   min_messages: warning
 
 staging:
