@@ -1,44 +1,27 @@
 ![Doubtfire Logo](http://puu.sh/lyClF/fde5bfbbe7.png)
 
-# Doubtfire API  [![Build Status](https://travis-ci.org/doubtfire-lms/doubtfire-api.svg?branch=development)](https://travis-ci.org/doubtfire-lms/doubtfire-api) [![CircleCI](https://circleci.com/gh/doubtfire-lms/doubtfire-api/tree/development.svg?style=svg)](https://circleci.com/gh/doubtfire-lms/doubtfire-api/tree/development)
+# Doubtfire API  [![test-doubtfire-api](https://github.com/doubtfire-lms/doubtfire-api/actions/workflows/push.yml/badge.svg)](https://github.com/doubtfire-lms/doubtfire-api/actions/workflows/push.yml)
 
-A modern, lightweight learning management system.
+Doubtfire is a feedback-driven learning support system.
 
 ## Table of Contents
 
-1. [Getting Started](#getting-started)
-  1. [Install Script](#install-script)
-  2. [Manual Install](#manual-install)
-2. [Environment Variables](#environment-variables)
-3. [Getting up and Running](#getting-up-and-running)
-4. [Running Rake Tasks](#running-rake-tasks)
-5. [PDF Generation Prerequisites](#pdf-generation-prerequisites)
-6. [Testing](#testing)
-7. [Contributing](#contributing)
-8. [License](#license)
+- [Doubtfire API  ![test-doubtfire-api](https://github.com/doubtfire-lms/doubtfire-api/actions/workflows/push.yml)](#doubtfire-api--)
+  - [Table of Contents](#table-of-contents)
+  - [Getting started](#getting-started)
+    - [Clone Repository](#clone-repository)
+    - [Install script](#install-script)
+    - [Manual install](#manual-install)
+  - [Environment variables](#environment-variables)
+    - [Get it up and running!](#get-it-up-and-running)
+- [Running Rake Tasks](#running-rake-tasks)
+- [Testing](#testing)
+- [Contributing](#contributing)
+- [License](#license)
 
 ## Getting started
 
-### Clone Repository
-
-First, clone the `doubtfire-api` repository to your local machine:
-
-```
-$ git clone https://github.com/doubtfire-lms/doubtfire-api
-```
-
-### Install script
-
-The install script will try to setup the development environment for either macOS or Linux, and can be found in the root of the project as `setup.sh`. Execute it as follows:
-
-```
-$ cd ./doubtfire-api
-$ ./setup.sh
-```
-
-### Manual install
-
-The manual installation guide can be found on the wiki for: [Linux](https://github.com/doubtfire-lms/doubtfire-api/wiki/Manual-install-on-Linux), [macOS](https://github.com/doubtfire-lms/doubtfire-api/wiki/Manual-install-on-macOS), or [Docker](https://github.com/doubtfire-lms/doubtfire-api/wiki/Getting-Started-Using-Docker).
+See [Doubtfire Deploy](https://github.com/doubtfire-lms/doubtfire-deploy) for instructions on deploying, and contributing, to the Doubtfire project.
 
 ## Environment variables
 
