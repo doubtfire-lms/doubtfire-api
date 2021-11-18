@@ -151,7 +151,8 @@ class DatabasePopulator
 
   def generate_admin
     @user_data = {
-      acain: { first_name: 'Andrew', last_name: 'Cain', nickname: 'Macite', role_id: Role.admin_id }
+      acain: { first_name: 'Andrew', last_name: 'Cain', nickname: 'Macite', role_id: Role.admin_id },
+      aadmin: { first_name: 'Admin', last_name: 'Admin', nickname: 'Admin', role_id: Role.admin_id }
     }
   end
   #
