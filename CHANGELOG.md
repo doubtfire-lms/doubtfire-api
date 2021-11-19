@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [5.0.3](https://github.com/macite/doubtfire-deploy/compare/v5.0.2...v5.0.3) (2021-11-19)
+
+
+### Features
+
+* log messages to stdout on all environments ([31041c6](https://github.com/macite/doubtfire-deploy/commit/31041c627de2db7c5e5cc0d3d81ebe68235b5120))
+
+
+### Bug Fixes
+
+* correct error message on submission process fail ([b789239](https://github.com/macite/doubtfire-deploy/commit/b78923996cf0cd4987a54dc1fa563e54abe2ffd1))
+* ensure populator works with init ([89ae68b](https://github.com/macite/doubtfire-deploy/commit/89ae68bc40c75ff6c7fd44a1452df42761592581))
+* update bunny pub sub to fix logging and launch issues ([a3ae105](https://github.com/macite/doubtfire-deploy/commit/a3ae105f45ea699eeae2b16557a91b0209b7116c))
+
 ### [5.0.2](https://github.com/macite/doubtfire-deploy/compare/v5.0.1...v5.0.2) (2021-11-19)
 
 
