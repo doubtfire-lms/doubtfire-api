@@ -75,7 +75,7 @@ gem 'grape-swagger-rails'
 
 # Miscellaneous
 gem 'attr_encrypted', '~> 3.1.0'
-gem 'bunny-pub-sub', '0.0.9', git: 'https://github.com/doubtfire-overseer/bunny-pub-sub'
+gem 'bunny-pub-sub', '0.5.0'
 gem 'ci_reporter'
 gem 'dotenv-rails'
 gem 'rack-cors', require: 'rack/cors'
