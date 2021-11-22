@@ -2676,6 +2676,11 @@ class Unit < ApplicationRecord
     return unless send_notifications
 
     summary_stats[:unit] = self
+    
+    #The Line bellow is meant to get the task due date through the task definition from the task defenition in the unit definition
+
+    #summary_stats[:due] = task_definition.due_date
+
     summary_stats[:unit_week_comments] = comments.where("task_comments.created_at > :start AND task_comments.created_at < :end", start: summary_stats[:week_start], end: summary_stats[:week_end]).count
     summary_stats[:unit_week_engagements] = task_engagements.where("task_engagements.engagement_time > :start AND task_engagements.engagement_time < :end", start: summary_stats[:week_start], end: summary_stats[:week_end]).count
     summary_stats[:revert_count] = 0
