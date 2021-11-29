@@ -62,8 +62,7 @@ class NotificationsMailer < ActionMailer::Base
   end
 
   def top_task_desc(tt)
-    "#{tt[:task_definition].abbreviation} - #{tt[:task_definition].name} #{"Due: "} #{tt[:task_definition].due_date} #{"- which you need to discuss with your tutor" if tt[:status] == :discuss}
-    "
+    "#{tt[:task_definition].abbreviation} - #{tt[:task_definition].name} #{"Due:  "} #{tt[:task_definition].due_date} #{"- which you need to discuss with your tutor" if tt[:status] == :discuss}"
   end
 
   def were_was(num)
