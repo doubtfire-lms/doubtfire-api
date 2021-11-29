@@ -28,23 +28,23 @@ Firstly, here is what you should focus on right now.
 Catch up by completing the following *overdue* task<%="s" if @overdue_top.count > 1%>!
 <%          @overdue_top.each do |ot| %>
 * <%= top_task_desc(ot) %>
-<%          end %>
+<%          end %> #@summarytask.each do |sm| @summarytask[:due](sm)
 <%      end %>
 <%      if @soon_top && @soon_top.count > 0 %>
 Work to get the following task<%="s" if @soon_top.count > 1%> done, as these are *due* soon!
 <%          @soon_top.each do |st| %>
 * <%= top_task_desc(st) %>
 <%          end %>
-<%      end %>
+<%      end %> #@summarytask.each do |sm| @summarytask[:due](sm)
 <%      if @ahead_top && @ahead_top.count > 0 %>
 Get ahead by working on the following task<%="s" if @ahead_top.count > 1%> next!
 <%          @ahead_top.each do |at| %>
 * <%= top_task_desc(at) %>
-<%          end %>
+<%          end %> #@summarytask.each do |sm| @summarytask[:due](sm)
 <%      end %>
 <%  elsif @project.has_portfolio %>
 Its time to Party! You have completed all of the tasks and prepared your portfolio.
-<%  else %>
+<%  else %> 
 Its almost party time... You have completed all of the tasks, now make sure you login and prepare your portfolio.
 <%  end %>
 

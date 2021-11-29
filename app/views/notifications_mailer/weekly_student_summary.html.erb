@@ -54,7 +54,7 @@
     <h1><%= @summary_stats[:unit].name %> - Weekly Summary</h1>
     <p class="subtext"><%= "#{@summary_stats[:week_start].day.ordinalize} #{@summary_stats[:week_start].strftime("%B %Y")}" %> to <%= "#{@summary_stats[:week_end].day.ordinalize} #{@summary_stats[:week_end].strftime("%B %Y")}" %></p>
 
-    <p>Hi <%= @student.first_name %>,</p>
+    <p>Hi <%= @student.first_name %>,</p> 
 <% if @did_revert_to_pass %>
     <p>Hope you had a good week!</p>
     <p>Before we get into the summary, it seems that you are falling behind in your Pass Tasks. It is really important that you catch up with these tasks, as you must have all Pass tasks marked as Complete to Pass the unit. I've reset your Target Grade to Pass for the moment, to help you focus on these tasks. I would like to encourage you to work through the Pass tasks in order to catch up as quickly as you can. Once you have caught up, you can upgrade your Target Grade again, and go back and complete any higher grade tasks you skipped.</p>
@@ -69,12 +69,12 @@
     <p>Here is what you should focus on right now.</p>
 
 <%  if @top_tasks && @top_tasks.count > 0 %>
-<%      if @overdue_top && @overdue_top.count > 0 %>
-    <p>Catch up by completing the following <b>overdue</b> task<%="s" if @overdue_top.count > 1%>!</p>
+<%      if @overdue_top && @overdue_top.count > 0 %> #@summarytask.each do |sm| @summarytask[:due](sm)
+    <p>Catch up by completing the following <b>overdue</b> task<%="s" if @overdue_top.count > 1%>!</p> 
     <ul>
 <%          @overdue_top.each do |ot| %>
         <li><%= top_task_desc(ot) %></li>
-<%          end %>
+<%          end %> #@summarytask.each do |sm| @summarytask[:due](sm)
     </ul>
 <%      end %>
 <%      if @soon_top && @soon_top.count > 0 %>
@@ -82,7 +82,7 @@
     <ul>
 <%          @soon_top.each do |st| %>
         </li><%= top_task_desc(st) %></li>
-<%          end %>
+<%          end %> #@summarytask.each do |sm| @summarytask[:due](sm)
     </ul>
 <%      end %>
 <%      if @ahead_top && @ahead_top.count > 0 %>
@@ -90,7 +90,7 @@
     <ul>
 <%          @ahead_top.each do |at| %>
         <li><%= top_task_desc(at) %></li>
-<%          end %>
+<%          end %> #@summarytask.each do |sm| @summarytask[:due](sm)
     </ul>
 <%      end %>
 <%  elsif @project.has_portfolio %>
