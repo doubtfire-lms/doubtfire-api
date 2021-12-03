@@ -8,4 +8,4 @@ ROOT_PATH=`cd "$APP_PATH"/../..; pwd`
 
 cd "$ROOT_PATH"
 
-RAILS_ENV=production bundle exec rake mailer:send_status_emails
+bundle exec rake mailer:send_status_emails
