@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [5.0.4](https://github.com/macite/doubtfire-deploy/compare/v5.0.3...v5.0.4) (2021-12-06)
+
+
+### Features
+
+* add script to sync enrolments ([bc65722](https://github.com/macite/doubtfire-deploy/commit/bc65722c7c22670f5e522d12c472c75c227c43b6))
+
+
+### Bug Fixes
+
+* remove set environment from scripts ([f3437bd](https://github.com/macite/doubtfire-deploy/commit/f3437bde40d7042080528d57a16428103e260602))
+
 ### [5.0.3](https://github.com/macite/doubtfire-deploy/compare/v5.0.2...v5.0.3) (2021-11-19)
 
 
