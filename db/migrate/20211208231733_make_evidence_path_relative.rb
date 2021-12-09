@@ -4,8 +4,8 @@ class MakeEvidencePathRelative < ActiveRecord::Migration
 
     connection.exec_update(<<-EOQ, "SQL", [])
       UPDATE  tasks
-      SET     portfolio_evidence = REPLACE(portfolio_evidence, '#{root}'', '')
-      WHERE   portfolio_evidence like '#{root}%'
+      SET     portfolio_evidence = REPLACE(portfolio_evidence, '#{root}', '')
+      WHERE  portfolio_evidence like '#{root}%'
     EOQ
   end
 
