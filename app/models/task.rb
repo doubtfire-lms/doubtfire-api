@@ -209,7 +209,6 @@ class Task < ApplicationRecord
     else
       File.exist? File.join(FileHelper.student_work_dir(:new), id.to_s)
     end
-    # portfolio_evidence == nil && ready_for_feedback?
   end
 
   # Get the raw extension date - with extensions representing weeks
@@ -353,7 +352,7 @@ class Task < ApplicationRecord
   end
 
   def has_pdf
-    !portfolio_evidence.nil? && File.exist?(portfolio_evidence) && !processing_pdf?
+    !portfolio_evidence_path.nil? && File.exist?(portfolio_evidence_path) && !processing_pdf?
   end
 
   def log_details
@@ -1002,13 +1001,23 @@ class Task < ApplicationRecord
     elsif ['xml'].include?(extn) then 'xml'
     elsif ['sql'].include?(extn) then 'sql'
     elsif ['vb'].include?(extn) then 'vbnet'
-    elsif ['txt', 'md', 'rmd', 'rpres'].include?(extn) then 'text'
+    elsif ['txt', 'md', 'rmd', 'rpres','hdl','asm','jack','hack','tst','cmp','vm','sh','bat','dat'].include?(extn) then 'text'
     elsif ['tex', 'rnw'].include?(extn) then 'tex'
     elsif ['py'].include?(extn) then 'python'
     elsif ['r'].include?(extn) then 'r'
     else extn
     end
   end
+
+  def portfolio_evidence_path
+    # Add the student work dir to the start of the portfolio evidence
+    File.join(FileHelper.student_work_dir, self.portfolio_evidence) if self.portfolio_evidence.present?
+  end
+
+  def portfolio_evidence_path=(value)
+    # Strip the student work directory to store in database as relative path
+    self.portfolio_evidence = value.present? ? value.sub(FileHelper.student_work_dir,'') : nil
+  end  
 
   def final_pdf_path
     if group_task?
@@ -1035,7 +1044,8 @@ class Task < ApplicationRecord
         pdf_text = tac.make_pdf
       rescue => e
 
-        # Try again... with convert to ascii
+        # Try again... with convert to ascic
+        #
         tac2 = TaskAppController.new
         tac2.init(self, true)
 
@@ -1060,21 +1070,23 @@ class Task < ApplicationRecord
         end
       end
 
+      # save the final pdf path to portfolio evidence - relative to student work folder
       if group_task?
         group_submission.tasks.each do |t|
-          t.portfolio_evidence = final_pdf_path
+          t.portfolio_evidence_path = final_pdf_path
           t.save
         end
         reload
       else
-        self.portfolio_evidence = final_pdf_path
+        self.portfolio_evidence_path = final_pdf_path
       end
 
-      File.open(portfolio_evidence, 'w') do |fout|
+      # Save the file... now using the full path!
+      File.open(portfolio_evidence_path, 'w') do |fout|
         fout.puts pdf_text
       end
 
-      FileHelper.compress_pdf(portfolio_evidence)
+      FileHelper.compress_pdf(portfolio_evidence_path)
 
       # if the task is the draft learning summary task
       if task_definition_id == unit.draft_task_definition_id
@@ -1089,7 +1101,7 @@ class Task < ApplicationRecord
           portfolio_tmp_dir = project.portfolio_temp_path
           FileUtils.mkdir_p(portfolio_tmp_dir)
 
-          FileUtils.cp portfolio_evidence, project.portfolio_tmp_file_path(file_name)
+          FileUtils.cp portfolio_evidence_path, project.portfolio_tmp_file_path(file_name)
           project.uses_draft_learning_summary = true
           project.save
         end
@@ -1221,9 +1233,9 @@ class Task < ApplicationRecord
     FileUtils.mkdir_p(tmp_dir)
 
     #
-    # Set portfolio_evidence to nil while it gets processed
+    # Set portfolio_evidence_path to nil while it gets processed
     #
-    portfolio_evidence = nil
+    self.portfolio_evidence_path = nil
 
     files.each_with_index.map do |file, idx|
       output_filename = File.join(tmp_dir, "#{idx.to_s.rjust(3, '0')}-#{file[:type]}#{File.extname(file[:filename]).downcase}")
@@ -1261,8 +1273,8 @@ class Task < ApplicationRecord
         if zip_file && File.exists?(zip_file)
           FileUtils.rm zip_file
         end
-        if portfolio_evidence.present? && File.exists?(portfolio_evidence)
-          FileUtils.rm portfolio_evidence
+        if portfolio_evidence_path.present? && File.exists?(portfolio_evidence_path)
+          FileUtils.rm portfolio_evidence_path
         end
 
         new_path = FileHelper.student_work_dir(:new, self, false)

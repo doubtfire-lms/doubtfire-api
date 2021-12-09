@@ -32,5 +32,22 @@ Doubtfire::Application.configure do
   # Send deprecation notices to registered listeners
   config.active_support.deprecation = :notify
 
+  require 'doubtfire_logger'
+  config.logger = DoubtfireLogger.logger
   config.log_level = :info
+
+  config.action_mailer.delivery_method = (ENV['DF_MAIL_DELIVERY_METHOD'] || 'smtp').to_sym
+
+  if config.action_mailer.delivery_method == :smtp
+    config.action_mailer.smtp_settings = {
+      address:              (ENV['DF_SMTP_ADDRESS'] || 'localhost'),
+      port:                 (ENV['DF_SMTP_PORT'] || 25),
+      domain:               (ENV['DF_SMTP_DOMAIN']),
+      user_name:            (ENV['DF_SMTP_USERNAME']),
+      password:             (ENV['DF_SMTP_PASSWORD']),
+      authentication:       (ENV['DF_SMTP_AUTHENTICATION'] || 'plain'),
+      enable_starttls_auto: true
+    }
+  end
+
 end

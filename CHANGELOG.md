@@ -2,6 +2,39 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [5.0.4](https://github.com/macite/doubtfire-deploy/compare/v5.0.3...v5.0.4) (2021-12-06)
+
+
+### Features
+
+* add script to sync enrolments ([bc65722](https://github.com/macite/doubtfire-deploy/commit/bc65722c7c22670f5e522d12c472c75c227c43b6))
+
+
+### Bug Fixes
+
+* remove set environment from scripts ([f3437bd](https://github.com/macite/doubtfire-deploy/commit/f3437bde40d7042080528d57a16428103e260602))
+
+### [5.0.3](https://github.com/macite/doubtfire-deploy/compare/v5.0.2...v5.0.3) (2021-11-19)
+
+
+### Features
+
+* log messages to stdout on all environments ([31041c6](https://github.com/macite/doubtfire-deploy/commit/31041c627de2db7c5e5cc0d3d81ebe68235b5120))
+
+
+### Bug Fixes
+
+* correct error message on submission process fail ([b789239](https://github.com/macite/doubtfire-deploy/commit/b78923996cf0cd4987a54dc1fa563e54abe2ffd1))
+* ensure populator works with init ([89ae68b](https://github.com/macite/doubtfire-deploy/commit/89ae68bc40c75ff6c7fd44a1452df42761592581))
+* update bunny pub sub to fix logging and launch issues ([a3ae105](https://github.com/macite/doubtfire-deploy/commit/a3ae105f45ea699eeae2b16557a91b0209b7116c))
+
+### [5.0.2](https://github.com/macite/doubtfire-deploy/compare/v5.0.1...v5.0.2) (2021-11-19)
+
+
+### Bug Fixes
+
+* update bunny pub sub version ([f594bdf](https://github.com/macite/doubtfire-deploy/commit/f594bdfef57323cfb9490584ca955e79b0e07bee))
+
 ### [5.0.1](https://github.com/macite/doubtfire-deploy/compare/v5.0.0...v5.0.1) (2021-10-27)
 
 ## [5.0.0](https://github.com/macite/doubtfire-deploy/compare/v5.0.0-2...v5.0.0) (2021-10-13)

@@ -151,8 +151,7 @@ class DatabasePopulator
 
   def generate_admin
     @user_data = {
-      acain: { first_name: 'Andrew', last_name: 'Cain', nickname: 'Macite', role_id: Role.admin_id },
-      aadmin: { first_name: 'Admin', last_name: 'Admin', nickname: 'Admin', role_id: Role.admin_id }
+      aadmin: { first_name: 'Admin', last_name: 'A', nickname: 'Admin', role_id: Role.admin_id }
     }
   end
   #
@@ -296,7 +295,7 @@ class DatabasePopulator
     @user_data = {
       acain:              {first_name: "Andrew",  last_name: "Cain",          nickname: "Macite",         role_id: Role.admin_id },
       aconvenor:          {first_name: "Clinton", last_name: "Woodward",      nickname: "The Giant",      role_id: Role.convenor_id },
-      aadmin:             {first_name: "Allan",   last_name: "Jones",         nickname: "P-Jiddy",        role_id: Role.admin_id },
+      ajones:             {first_name: "Allan",   last_name: "Jones",         nickname: "P-Jiddy",        role_id: Role.admin_id },
       rwilson:            {first_name: "Reuben",  last_name: "Wilson",        nickname: "Reubs",          role_id: Role.convenor_id },
       atutor:             {first_name: "Akihiro", last_name: "Noguchi",       nickname: "Animations",     role_id: Role.tutor_id },
       acummaudo:          {first_name: "Alex",    last_name: "Cummaudo",      nickname: "DoubtfireDude",  role_id: Role.convenor_id },
@@ -332,7 +331,7 @@ class DatabasePopulator
         tutors: [
           { user: :acain, num: many_tutorials },
           { user: :aconvenor, num: many_tutorials },
-          { user: :aadmin, num: many_tutorials },
+          { user: :ajones, num: many_tutorials },
           { user: :rwilson, num: many_tutorials },
           { user: :acummaudo, num: some_tutorials },
           { user: :atutor, num: many_tutorials },
@@ -345,7 +344,7 @@ class DatabasePopulator
       oop: {
         code: "COS20007",
         name: "Object Oriented Programming",
-        convenors: [ :acain, :aconvenor, :aadmin, :acummaudo ],
+        convenors: [ :acain, :aconvenor, :ajones, :acummaudo ],
         tutors: [
           { user: "tutor_1", num: few_tutorials },
           { user: :angusmorton, num: few_tutorials },
@@ -377,7 +376,7 @@ class DatabasePopulator
         ],
         num_tasks: few_tasks,
         ilos: Faker::Number.between(from: 0, to: 3),
-        students: [ :acain, :aadmin ]
+        students: [ :acain, :ajones ]
       },
     }
     echo_line "-> Defined #{@user_data.length} fixed users and #{@unit_data.length} units"
@@ -484,7 +483,7 @@ class DatabasePopulator
       FileUtils.ln_s(Rails.root.join('test_files', 'unit_files', 'sample-student-submission.pdf'), pdf_path)
     end
 
-    task.portfolio_evidence = pdf_path
+    task.portfolio_evidence_path = pdf_path
     task.save
   end
 

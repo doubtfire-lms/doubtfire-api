@@ -56,7 +56,7 @@ class User < ApplicationRecord
     devise strategy, *devise_keys
   end
 
-  # 
+  #
   # We incorporate password details for local dev server - needed to keep devise happy
   #
   def password
@@ -151,12 +151,12 @@ class User < ApplicationRecord
     User.joins(:unit_roles).where('unit_roles.unit_id = :unit_id and ( unit_roles.role_id = :tutor_role_id or unit_roles.role_id = :convenor_role_id) ', unit_id: unit.id, tutor_role_id: Role.tutor_id, convenor_role_id: Role.convenor_id)
   end
 
-  def username=(name)
-    # strip S or s from start of ids in the form S1234567 or S123456X
-    truncate_s_match = (name =~ /^[Ss]\d{6,10}([Xx]|\d)$/)
-    name[0] = '' if !truncate_s_match.nil? && truncate_s_match.zero?
-    self[:username] = name.downcase
-  end
+  # def username=(name)
+  #   # strip S or s from start of ids in the form S1234567 or S123456X
+  #   truncate_s_match = (name =~ /^[Ss]\d{6,10}([Xx]|\d)$/)
+  #   name[0] = '' if !truncate_s_match.nil? && truncate_s_match.zero?
+  #   self[:username] = name.downcase
+  # end
 
   def has_student_capability?
     true
