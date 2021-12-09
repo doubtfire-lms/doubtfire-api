@@ -1493,7 +1493,7 @@ class Unit < ActiveRecord::Base
                         task.student.username.to_s
                       end
 
-          FileUtils.cp task.portfolio_evidence, File.join(dir, path_part.to_s) + '.pdf'
+          FileUtils.cp task.portfolio_evidence_path, File.join(dir, path_part.to_s) + '.pdf'
         end # each task
 
         # Copy files into zip
@@ -1883,7 +1883,6 @@ class Unit < ActiveRecord::Base
         'completion_date', 
         'times_assessed', 
         'submission_date', 
-        'portfolio_evidence', 
         'tasks.grade as grade', 
         'quality_pts'
       ).
@@ -1899,7 +1898,6 @@ class Unit < ActiveRecord::Base
         'completion_date', 
         'times_assessed', 
         'submission_date', 
-        'portfolio_evidence', 
         'grade', 
         'quality_pts'
       )
@@ -2335,7 +2333,7 @@ class Unit < ActiveRecord::Base
 
         csv_str << "\n#{student.username.tr(',', '_')},#{student.name.tr(',', '_')},#{task.project.tutorial_for(task.task_definition).abbreviation},#{task.task_definition.abbreviation.tr(',', '_')},\"#{task.last_comment_by(task.project.student).gsub(/"/, '""')}\",\"#{task.last_comment_by(user).gsub(/"/, '""')}\",#{mark_col},,,#{task.task_definition.max_quality_pts},"
 
-        src_path = task.portfolio_evidence
+        src_path = task.portfolio_evidence_path
 
         next if src_path.nil? || src_path.empty?
         next unless File.exist? src_path
@@ -2357,7 +2355,7 @@ class Unit < ActiveRecord::Base
         next if grp.nil?
         csv_str << "\nGRP_#{grp.id}_#{subm.id},#{grp.name.tr(',', '_')},#{grp.tutorial.abbreviation},#{task.task_definition.abbreviation.tr(',', '_')},\"#{task.last_comment_not_by(user).gsub(/"/, '""')}\",\"#{task.last_comment_by(user).gsub(/"/, '""')}\",rtm,,#{task.task_definition.max_quality_pts},"
 
-        src_path = task.portfolio_evidence
+        src_path = task.portfolio_evidence_path
 
         next if src_path.nil? || src_path.empty?
         next unless File.exist? src_path
@@ -2625,15 +2623,15 @@ class Unit < ActiveRecord::Base
               next
             end
 
-            # Read into the task's portfolio_evidence path the new file
+            # Copy the new file into the task's portfolio_evidence_path
             tmp_file = File.join(tmp_dir, File.basename(file.name))
-            task.portfolio_evidence = task.final_pdf_path
+            task.portfolio_evidence_path = task.final_pdf_path
 
             # get file out of zip... to tmp_file
             file.extract(tmp_file) { true }
 
             # copy tmp_file to dest
-            if FileHelper.copy_pdf(tmp_file, task.portfolio_evidence)
+            if FileHelper.copy_pdf(tmp_file, task.portfolio_evidence_path)
               if task.group.nil?
                 success << { row: "File #{file.name}", message: "Replace PDF of task #{task.task_definition.abbreviation} for #{task.student.name}" }
               else

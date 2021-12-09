@@ -255,11 +255,11 @@ class Project < ActiveRecord::Base
       .select(
         'SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) as number_unread', 'project_id', 'tasks.id as id',
         'task_definition_id', 'task_statuses.id as status_id',
-        'completion_date', 'times_assessed', 'submission_date', 'portfolio_evidence', 'tasks.grade as grade', 'quality_pts', 'include_in_portfolio', 'grade'
+        'completion_date', 'times_assessed', 'submission_date', 'tasks.grade as grade', 'quality_pts', 'include_in_portfolio', 'grade'
       )
       .group(
         'task_statuses.id', 'tasks.project_id', 'tasks.id', 'task_definition_id', 'status_id',
-        'completion_date', 'times_assessed', 'submission_date', 'portfolio_evidence', 'grade', 'quality_pts',
+        'completion_date', 'times_assessed', 'submission_date', 'grade', 'quality_pts',
         'include_in_portfolio', 'grade'
       )
       .map do |r|

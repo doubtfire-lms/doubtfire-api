@@ -11,9 +11,9 @@ namespace :submission do
 
     Unit.where('active').each do |u|
       u.tasks.where('portfolio_evidence is not NULL').each do |t|
-        if File.exist?(t.portfolio_evidence) && File.size?(t.portfolio_evidence) >= 2_200_000
-          puts "Compressing #{t.portfolio_evidence}"
-          FileHelper.compress_pdf(t.portfolio_evidence)
+        if File.exist?(t.portfolio_evidence_path) && File.size?(t.portfolio_evidence_path) >= 2_200_000
+          puts "Compressing #{t.portfolio_evidence_path}"
+          FileHelper.compress_pdf(t.portfolio_evidence_path)
         end
       end
     end
@@ -27,7 +27,7 @@ namespace :submission do
         done_file = t.zip_file_path_for_done_task
         puts "Checking #{done_file}"
         next unless done_file && File.exist?(done_file) && File.size?(done_file) >= 2_200_000
-        puts "Compressing #{t.portfolio_evidence}"
+        puts "Compressing #{t.zip_file_path_for_done_task}"
         t.move_done_to_new
         t.compress_new_to_done
       end
@@ -46,7 +46,7 @@ namespace :submission do
           u.tasks.where('portfolio_evidence is not NULL').each do |t|
             pdf_file = t.final_pdf_path
             next unless pdf_file && File.exist?(pdf_file) && File.size?(pdf_file) >= 2_200_000
-            puts "  Recreating #{t.portfolio_evidence} was #{File.size?(pdf_file)}"
+            puts "  Recreating #{t.portfolio_evidence_path} was #{File.size?(pdf_file)}"
             t.move_done_to_new
             t.convert_submission_to_pdf
             puts "  ... now #{File.size?(pdf_file)}"

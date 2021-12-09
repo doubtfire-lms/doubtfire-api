@@ -67,7 +67,7 @@ module Api
 
         task = project.task_for_task_definition(task_definition)
 
-        evidence_loc = task.portfolio_evidence
+        evidence_loc = task.portfolio_evidence_path
         student = task.project.student
         unit = task.project.unit
 

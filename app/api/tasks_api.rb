@@ -238,7 +238,7 @@ module Api
 
         # if trigger supplied...
         unless params[:trigger].nil?
-          # Check if they should be using portfolio_evidence api
+          # Check if they should be using portfolio evidence api
           if needs_upload_docs && params[:trigger] == 'ready_to_mark'
             error!({ error: 'Cannot set this task status to ready to mark without uploading documents.' }, 403)
           end

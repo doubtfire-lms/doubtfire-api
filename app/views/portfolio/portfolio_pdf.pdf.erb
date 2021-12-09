@@ -216,7 +216,7 @@ No Tutor
       <% end %>
     \end{tabular}
   <% end %>
-  <% if File.exists? task.portfolio_evidence %>
-    \includepdf[pages={1-}]{<%= task.portfolio_evidence %>}
+  <% if File.exists? task.portfolio_evidence_path %>
+    \includepdf[pages={1-}]{<%= task.portfolio_evidence_path %>}
   <% end %>
 <% end %>
