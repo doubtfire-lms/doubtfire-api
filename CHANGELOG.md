@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [5.0.7](https://github.com/macite/doubtfire-deploy/compare/v5.0.6...v5.0.7) (2021-12-09)
+
+
+### Features
+
+* Add support for files from Elements of Computer Systems ([#333](https://github.com/macite/doubtfire-deploy/issues/333)) ([a3742a5](https://github.com/macite/doubtfire-deploy/commit/a3742a5058dac2c34abd8ea28370e7abbde54c75))
+* make portfolio evidence relative ([701f58c](https://github.com/macite/doubtfire-deploy/commit/701f58c9c30cb54199c823dec34eb63a50264714))
+
+
+### Bug Fixes
+
+* correct convert submission to pdf to use new folder by default ([f216834](https://github.com/macite/doubtfire-deploy/commit/f216834bb2bb8906e823282dba064372a8463ef0))
+* esure changes to portfolio evidence apply to task ([6ade5f1](https://github.com/macite/doubtfire-deploy/commit/6ade5f13d1206d72142a19c2c7984dc46b4fd9ae))
+* remote username mangling ([789fed1](https://github.com/macite/doubtfire-deploy/commit/789fed1c67010ad8c1b8a46a36b3965de3565c7b))
+
 ### [5.0.4](https://github.com/macite/doubtfire-deploy/compare/v5.0.3...v5.0.4) (2021-12-06)
 
 
