@@ -971,12 +971,12 @@ class Task < ActiveRecord::Base
 
   def portfolio_evidence_path
     # Add the student work dir to the start of the portfolio evidence
-    File.join(FileHelper.student_work_dir, portfolio_evidence) if portfolio_evidence.present?
+    File.join(FileHelper.student_work_dir, self.portfolio_evidence) if self.portfolio_evidence.present?
   end
 
   def portfolio_evidence_path=(value)
     # Strip the student work directory to store in database as relative path
-    portfolio_evidence = value.present? ? value.sub(FileHelper.student_work_dir,'') : nil
+    self.portfolio_evidence = value.present? ? value.sub(FileHelper.student_work_dir,'') : nil
   end  
 
   def final_pdf_path
@@ -1189,7 +1189,7 @@ class Task < ActiveRecord::Base
     #
     # Set portfolio_evidence_path to nil while it gets processed
     #
-    portfolio_evidence_path = nil
+    self.portfolio_evidence_path = nil
 
     files.each_with_index.map do |file, idx|
       output_filename = File.join(tmp_dir, "#{idx.to_s.rjust(3, '0')}-#{file.type}#{File.extname(file.filename).downcase}")
