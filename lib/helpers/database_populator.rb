@@ -483,7 +483,7 @@ class DatabasePopulator
       FileUtils.ln_s(Rails.root.join('test_files', 'unit_files', 'sample-student-submission.pdf'), pdf_path)
     end
 
-    task.portfolio_evidence = pdf_path
+    task.portfolio_evidence_path = pdf_path
     task.save
   end
 
