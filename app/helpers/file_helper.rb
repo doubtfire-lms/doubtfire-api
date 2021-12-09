@@ -17,9 +17,10 @@ module FileHelper
     when 'image'
       accept = ['image/png', 'image/gif', 'image/bmp', 'image/tiff', 'image/jpeg', 'image/x-ms-bmp']
     when 'code'
-      accept = ['text/x-pascal', 'text/x-c', 'text/x-c++', 'text/plain', 'text/', 'application/javascript, text/html',
-                'text/css', 'text/x-ruby', 'text/coffeescript', 'text/x-scss', 'application/json', 'text/xml', 'application/xml',
-                'text/x-yaml', 'application/xml', 'text/x-typescript']
+      accept = ['text/x-pascal', 'text/x-c', 'text/x-c++', 'text/plain', 'text/', 'application/javascript', 'text/html',
+        'text/css', 'text/x-ruby', 'text/coffeescript', 'text/x-scss', 'application/json', 'text/xml', 'application/xml',
+        'text/x-yaml', 'application/xml', 'text/x-typescript','text/x-vhdl','text/x-asm','text/x-jack','application/x-httpd-php',
+        'application/tst','text/x-cmp','text/x-vm','application/x-sh','application/x-bat','application/dat']
     when 'document'
       accept = [ # -- one day"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         # --"application/msword",

@@ -1,10 +1,3 @@
-GIT
-  remote: https://github.com/doubtfire-overseer/bunny-pub-sub
-  revision: 36f91887a6a3ac648cd0f143d4bfa37adce8538b
-  specs:
-    bunny-pub-sub (0.0.9)
-      bunny (~> 2.14)
-
 GEM
   remote: https://rubygems.org/
   specs:
@@ -90,6 +83,8 @@ GEM
     bunny (2.19.0)
       amq-protocol (~> 2.3, >= 2.3.1)
       sorted_set (~> 1, >= 1.0.2)
+    bunny-pub-sub (0.5.2)
+      bunny (~> 2.14)
     byebug (11.1.3)
     case_transform (0.2)
       activesupport
@@ -326,7 +321,7 @@ GEM
     ruby2_keywords (0.0.5)
     rubyzip (1.3.0)
     securecompare (1.0.0)
-    set (1.0.1)
+    set (1.0.2)
     sexp_processor (4.15.3)
     simplecov (0.21.2)
       docile (~> 1.1)
@@ -373,7 +368,7 @@ DEPENDENCIES
   attr_encrypted (~> 3.1.0)
   better_errors
   bootsnap (>= 1.4.4)
-  bunny-pub-sub (= 0.0.9)!
+  bunny-pub-sub (= 0.5.2)
   byebug
   ci_reporter
   coderay

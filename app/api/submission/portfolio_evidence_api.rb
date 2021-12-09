@@ -82,7 +82,7 @@ module Api
 
         task = project.task_for_task_definition(task_definition)
 
-        evidence_loc = task.portfolio_evidence
+        evidence_loc = task.portfolio_evidence_path
         student = task.project.student
         unit = task.project.unit
 
@@ -175,7 +175,7 @@ module Api
         end
 
         unless File.exist? "#{path}/output.txt"
-          error!({ error: "Either the assessment didn't finish or an output wasn't generated. Please contact your unit chair" }, 401)
+          error!({ error: "There is no output for this assessment. Either the output wasn't generated, or processing failed. Please review your submission, and discuss with the teaching team if issues persist." }, 401)
         end
 
         result = []
@@ -219,7 +219,7 @@ module Api
         path = "#{path}/#{FileHelper.latest_submission_timestamp_entry_in_dir(path)}"
 
         unless File.exist? "#{path}/output.txt"
-          error!({ error: "Either the assessment didn't finish or an output wasn't generated. Please contact your unit chair" }, 401)
+          error!({ error: "There is no output for this assessment. Either the output wasn't generated, or processing failed. Please review your submission, and discuss with the teaching team if issues persist." }, 401)
         end
 
         result = []

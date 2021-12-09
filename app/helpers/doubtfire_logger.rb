@@ -8,7 +8,10 @@ class DoubtfireLogger < ActiveSupport::Logger
   #                   is a number
   #
   # Rails.logger initialises these as nil, so we will do the same
-  @@logger = DoubtfireLogger.new(Doubtfire::Application.config.paths['log'].first)
+  @@file_logger = ActiveSupport::Logger.new(Doubtfire::Application.config.paths['log'].first)
+  @@console_logger = ActiveSupport::Logger.new(STDOUT)
+
+  @@logger = @@console_logger.extend(ActiveSupport::Logger.broadcast(@@file_logger))
 
   #
   # Singleton logger returned
@@ -17,17 +20,4 @@ class DoubtfireLogger < ActiveSupport::Logger
     @@logger
   end
 
-  #
-  # Override fatal and error to puts to the console
-  # as well as log using Rails
-  #
-  def fatal(msg)
-    puts msg
-    super(msg)
-  end
-
-  def error(msg)
-    puts msg
-    super(msg)
-  end
 end

@@ -90,12 +90,9 @@ Doubtfire::Application.configure do
   # Only use best-standards-support built into browsers
   config.action_dispatch.best_standards_support = :builtin
 
-  # Use the doubtfire logger instead of the default one
-  if Rails.env.development?
-    require './app/helpers/doubtfire_logger'
-    config.logger = DoubtfireLogger.logger
-  end
-
   # Set deterministic randomness, source: https://github.com/stympy/faker#deterministic-random
   Faker::Config.random = Random.new(77)
+
+  require 'doubtfire_logger'
+  config.logger = DoubtfireLogger.logger
 end
