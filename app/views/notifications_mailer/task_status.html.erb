@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style type="text/css">
+    body {
+      font-family: "Lucida Grande", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      color: #333;
+      font-size: 14px;
+      width: 800px;
+      margin: 100px auto 0px auto;
+      font-size: 0.9em;
+    }
+    main {
+      background-image: url('https://<%= @doubtfire_host %>/assets/images/logo.svg');
+      background-size: 3.5em;
+      background-repeat: no-repeat;
+      background-position: 30px 45px;
+      padding: 30px 40px;
+      padding-left: 100px;
+      border: solid 1px #aaa;
+      border-radius: 7px;
+      line-height: 200%;
+      text-align: justify;
+    }
+    .subtext {
+        color: #aaa;
+        font-size: 0.7em;
+        margin-bottom: 10px;
+        margin-top: -10px;
+    }
+    table {
+        overflow: scroll;
+    }
+    footer {
+      text-align: right;
+      margin-top: 10px;
+      color: #aaa;
+      font-size: 0.7em;
+    }
+    a, a:visited {
+      color: #6a97d2;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    h1 {
+      font-size: 1.1em;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1><%= @summary_stats[:unit].name %> - Task Status Updated!</h1>
+    <p class="subtext"><%= "#{@task_engagements.engagement_time[:week_start].day.ordinalize} #{@task_engagements.engagement_time[:week_start].strftime("%B %Y")}" %> to <%= "#{@task_engagements.engagement_time[:week_end].day.ordinalize} #{@task_engagements.engagement_time[:week_end].strftime("%B %Y")}" %></p>
+
+    <p>Hi <%= @student.first_name %>,</p>
+
+<!Need to get all-in-one task.>
+
+<% if @self.task_status == task_status.fix_and_resubmit || @self.task_status == task_status.complete || @self.task_status == task_status.redo || @self.task_status == task_status.fail || @self.task_status == task_status.demonstrate || @self.task_status == task_status.discuss %>
+    
+    <p>Hi there, your task status has been changed. Please have a look at it as soon as possible and taking change if any.</p>
+
+<% end %>
+
+    <p>
+        Cheers, <br />
+        The <%= @doubtfire_product_name %> Team on behalf of <%= @tutor.name %>
+    </p>
+  </main>
+  <footer>
+    <a href="<%= @unsubscribe_url %>">Unsubscribe</a> | Generated with <%= @doubtfire_product_name %>
+  </footer>
+</body>
+</html>

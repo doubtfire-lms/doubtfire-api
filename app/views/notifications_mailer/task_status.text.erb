@@ -1,0 +1,16 @@
+Hi <%= @student.first_name %>,
+
+<% if @self.task_status == task_status.fix_and_resubmit || @self.task_status == task_status.complete || @self.task_status == task_status.redo || @self.task_status == task_status.fail || @self.task_status == task_status.demonstrate || @self.task_status == task_status.discuss %>
+    
+    <p>Hi there, your task status has been changed. Please have a look at it as soon as possible and taking change if any.</p>
+
+<% end %>
+
+Cheers,
+The <%= @doubtfire_product_name %> Team on behalf of <%= @tutor.name %>
+
+---
+
+Visit <%= @unsubscribe_url%> to unsubscribe from these notifications.
+
+Generated with <%= @doubtfire_product_name %>
