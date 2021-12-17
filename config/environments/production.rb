@@ -32,7 +32,7 @@ Doubtfire::Application.configure do
   # Send deprecation notices to registered listeners
   config.active_support.deprecation = :notify
 
-  require 'doubtfire_logger'
+  require_relative 'doubtfire_logger'
   config.logger = DoubtfireLogger.logger
   config.log_level = :info
 

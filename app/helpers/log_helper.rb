@@ -1,5 +1,3 @@
-require 'doubtfire_logger'
-
 #
 # A universal logger
 #
@@ -8,7 +6,7 @@ module LogHelper
   # Logger function returns the singleton logger
   #
   def logger
-    DoubtfireLogger.logger
+    Doubtfire::Application.config.logger
   end
 
   # Export functions as module functions
