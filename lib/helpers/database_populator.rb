@@ -149,11 +149,6 @@ class DatabasePopulator
     ActivityType.create! data
   end
 
-  def generate_admin
-    @user_data = {
-      aadmin: { first_name: 'Admin', last_name: 'A', nickname: 'Admin', role_id: Role.admin_id }
-    }
-  end
   #
   # Generate some users. Pass in an optional filter(s) for:
   # Role.admin, Role.convenor, Role.tutor, Role.student
@@ -294,6 +289,7 @@ class DatabasePopulator
     # Define fixed user data here
     @user_data = {
       acain:              {first_name: "Andrew",  last_name: "Cain",          nickname: "Macite",         role_id: Role.admin_id },
+      aadmin:             {first_name: "Admin",   last_name: "Admin",         nickname: "Admin",          role_id: Role.admin_id },
       aconvenor:          {first_name: "Clinton", last_name: "Woodward",      nickname: "The Giant",      role_id: Role.convenor_id },
       ajones:             {first_name: "Allan",   last_name: "Jones",         nickname: "P-Jiddy",        role_id: Role.admin_id },
       rwilson:            {first_name: "Reuben",  last_name: "Wilson",        nickname: "Reubs",          role_id: Role.convenor_id },
