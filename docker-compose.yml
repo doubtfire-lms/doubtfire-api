@@ -36,21 +36,21 @@ services:
 
       # Database settings - for development env
       DF_DEV_DB_ADAPTER: mysql2
-      DF_DEV_DB_HOST: doubtfire-dev-db
+      DF_DEV_DB_HOST: doubtfire-api-dev-db
       DF_DEV_DB_DATABASE: doubtfire-dev
       DF_DEV_DB_USERNAME: dfire
       DF_DEV_DB_PASSWORD: pwd
 
       # Database settings - for test env
       DF_TEST_DB_ADAPTER: mysql2
-      DF_TEST_DB_HOST: doubtfire-dev-db
+      DF_TEST_DB_HOST: doubtfire-api-dev-db
       DF_TEST_DB_DATABASE: doubtfire-dev
       DF_TEST_DB_USERNAME: dfire
       DF_TEST_DB_PASSWORD: pwd
 
       # Database settings - for test env
       DF_PRODUCTION_DB_ADAPTER: mysql2
-      DF_PRODUCTION_DB_HOST: doubtfire-dev-db
+      DF_PRODUCTION_DB_HOST: doubtfire-api-dev-db
       DF_PRODUCTION_DB_DATABASE: doubtfire-dev
       DF_PRODUCTION_DB_USERNAME: dfire
       DF_PRODUCTION_DB_PASSWORD: pwd
@@ -62,7 +62,7 @@ services:
       RABBITMQ_PASSWORD: secure_credentials
 
   dev-db:
-    container_name: doubtfire-dev-db
+    container_name: doubtfire-api-dev-db
     image: mariadb
     environment:
       MYSQL_ROOT_PASSWORD: db-root-password
