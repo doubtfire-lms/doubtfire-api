@@ -58,11 +58,11 @@ class AuthTest < ActiveSupport::TestCase
     # Get response back for logging in with username 'acain' password 'password'
     post_json '/api/auth.json', data_to_post
     actual_auth = last_response_body
-    
+
     # Check response body doesn't return 'user' and 'auth_token' values
     refute actual_auth.key?('user'), 'User not expected if auth fails'
     refute actual_auth.key?('auth_token'), 'Auth token not expected if auth fails'
-    
+
     # 401 response code means invalid username / password
     assert_equal 401, last_response.status
     assert actual_auth.key? 'error'
@@ -74,7 +74,7 @@ class AuthTest < ActiveSupport::TestCase
       username: 'acain',
       password: 'password1'
     }
-    
+
     # Get response back for logging in with username 'acain' password 'password'
     post_json '/api/auth.json', data_to_post
     actual_auth = last_response_body
@@ -85,19 +85,19 @@ class AuthTest < ActiveSupport::TestCase
 
     assert actual_auth.key? 'error'
   end
-  
+
   # Test auth with empty request body
   def test_fail_empty_request
     data_to_post = ""
-  
+
     # Get response back for logging in with username 'acain' password 'password'
     post_json '/api/auth.json', data_to_post
     actual_auth = last_response_body
-    
+
     # Check response body doesn't return 'user' and 'auth_token' values
     refute actual_auth.key?('user'), 'User not expected if auth fails'
     refute actual_auth.key?('auth_token'), 'Auth token not expected if auth fails'
-    
+
     # 400 response code means missing username and password
     assert_equal 400, last_response.status
     assert actual_auth.key?('error'), actual_auth.inspect
@@ -141,6 +141,7 @@ class AuthTest < ActiveSupport::TestCase
       post_json '/api/auth.json', test_data[:post]
       actual_auth = last_response_body
 
+      assert actual_auth['user'], last_response_body.inspect
       assert_equal test_data[:expect].name, actual_auth['user']['system_role'], 'Roles match expected role'
     end
   end
@@ -166,7 +167,7 @@ class AuthTest < ActiveSupport::TestCase
     put_json "/api/auth?Username=#{User.first.username}&Auth-Token=#{auth_token(User.first)}", nil
     assert_equal 200, last_response.status, last_response_body
   end
-  
+
   # Test invalid authentication token
   def test_fail_auth_put
     # Override data to set custom username or token in header
@@ -175,14 +176,14 @@ class AuthTest < ActiveSupport::TestCase
     put_json "/api/auth", nil
     actual_auth = last_response_body
     expected_auth = auth_token
-    
+
     # 404 response code means invalid token
     assert_equal 404, last_response.status
-    
+
     # Check to see if the response is invalid
     assert actual_auth.key? 'error'
   end
-    
+
   # Test invalid username for valid authentication token
   def test_fail_username_put
     # Add authentication token to header
@@ -190,10 +191,10 @@ class AuthTest < ActiveSupport::TestCase
     put_json "/api/auth", nil
     actual_auth = last_response_body
     expected_auth = auth_token
-    
+
     # 404 response code means invalid token
     assert_equal 404, last_response.status
-    
+
     # Check to see if the response is invalid
     assert actual_auth.key? 'error'
   end
@@ -209,23 +210,23 @@ class AuthTest < ActiveSupport::TestCase
     put_json "/api/auth/", nil
     actual_auth = last_response_body
     expected_auth = auth_token
-    
+
     # 404 response code means invalid token
     assert_equal 404, last_response.status
-    
+
     # Check to see if the response is invalid
     assert actual_auth.key? 'error'
   end
-  
+
   # Test empty request
   def test_fail_empty_body_put
     put_json "/api/auth", nil
     actual_auth = last_response_body
     expected_auth = auth_token
-    
+
     # 400 response code means empty body
     assert_equal 404, last_response.status
-    
+
     # Check to see if the response is invalid
     assert actual_auth.key? 'error'
   end
@@ -240,7 +241,7 @@ class AuthTest < ActiveSupport::TestCase
     # Add authentication token to header
     add_auth_header_for(user: User.first)
 
-    delete "/api/auth", nil 
+    delete "/api/auth", nil
     # 204 response code means success!
     assert_equal 204, last_response.status
   end
@@ -250,14 +251,14 @@ class AuthTest < ActiveSupport::TestCase
     # Create 2 auth tokens
     t1 = user.generate_authentication_token!
     t2 = user.generate_authentication_token!
-    
+
     # Set custom headers for request
     # Add authentication token to header
     add_auth_header_for(username: user.username, auth_token: t1.authentication_token)
-    
+
     # Sign out one
     delete "/api/auth.json"
-    
+
     t2.reload
     refute t2.destroyed?
 
