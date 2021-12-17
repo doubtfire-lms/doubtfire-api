@@ -908,10 +908,26 @@ class Task < ApplicationRecord
       extract_file_from_done FileHelper.student_work_dir(:in_process), '*', lambda { |_task, to_path, name|
         "#{to_path}#{name}"
       }
+
+      # checks for ipynb extension... if true, creates container
+      for item in Dir.entries(in_process_dir)
+        if item.end_with? ".ipynb"
+          
+          `timeout 60 docker run \
+            --restart no \
+            --cpus 1 \
+            --network none \
+            --volume #{in_process_dir}:/app \
+            "ipynb" \
+            /bin/bash -c "jupyter nbconvert --to pdf #{item} --output #{item}.pdf"`
+        end
+      end
+      
       return Dir.exist?(in_process_dir)
     else
       return false
     end
+    
   end
 
   def __output_filename__(in_dir, idx, type)
