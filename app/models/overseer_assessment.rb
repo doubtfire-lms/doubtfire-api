@@ -10,7 +10,7 @@ class OverseerAssessment < ApplicationRecord
 
   validates_uniqueness_of :submission_timestamp, scope: :task_id
 
-  enum status: { not_queued: 0, queued: 1, queue_failed: 2, done: 3 }
+  enum status: { pre_queued: 0, queued: 1, queue_failed: 2, done: 3 }
 
   after_destroy :delete_associated_files
 
@@ -37,7 +37,7 @@ class OverseerAssessment < ApplicationRecord
 
     result = OverseerAssessment.create!(
       task: task,
-      status: :not_queued,
+      status: :pre_queued,
       submission_timestamp: Time.now.utc.to_i
     )
 
