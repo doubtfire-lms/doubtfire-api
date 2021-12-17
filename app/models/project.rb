@@ -321,7 +321,7 @@ class Project < ApplicationRecord
   end
 
   #
-  # Calculate a list of the top 5 task definitions the student should focus on,
+  # Calculate a list of the top task definitions the student should focus on,
   # in order of priority with reason.
   #
   def top_tasks
@@ -341,14 +341,14 @@ class Project < ApplicationRecord
 
     grades = [ "Pass", "Credit", "Distinction", "High Distinction" ]
 
-    for i in 0..3
+    for i in overdue_tasks.counts
       graded_tasks = overdue_tasks.select { |ts| ts[:task_definition].target_grade == i  }
 
       graded_tasks.each do |ts|
-        result << { task_definition: ts[:task_definition], status: ts[:status], reason: :overdue }
+        result << { task_definition: ts[:task_definition], status: ts[:status], reason: :overdue, duedate: ts[:task].due_date }
       end
 
-      return result.slice(0..4) if result.count >= 5
+      #return result.slice(0..4) #if result.count >= 5
     end
 
     #
@@ -356,14 +356,14 @@ class Project < ApplicationRecord
     #
     soon_tasks = task_states.select { |ts| to_target.call(ts) >= Time.zone.today && to_target.call(ts) < Time.zone.today + 7.days }
 
-    for i in 0..3
+    for i in soon_tasks.counts
       graded_tasks = soon_tasks.select { |ts| ts[:task_definition].target_grade == i  }
 
       graded_tasks.each do |ts|
-        result << { task_definition: ts[:task_definition], status: ts[:status], reason: :soon }
+        result << { task_definition: ts[:task_definition], status: ts[:status], reason: :soon, duedate: ts[:task].due_date }
       end
 
-      return result.slice(0..4) if result.count >= 5
+      #return result #.slice(0..4) if result.count >= 5
     end
 
     #
@@ -371,17 +371,17 @@ class Project < ApplicationRecord
     #
     ahead_tasks = task_states.select { |ts| to_target.call(ts) >= Time.zone.today + 7.days }
 
-    for i in 0..3
+    for i in ahead_tasks.counts
       graded_tasks = ahead_tasks.select { |ts| ts[:task_definition].target_grade == i  }
 
       graded_tasks.each do |ts|
-        result << { task_definition: ts[:task_definition], status: ts[:status], reason: :ahead }
+        result << { task_definition: ts[:task_definition], status: ts[:status], reason: :ahead, duedate: ts[:task].due_date }
       end
 
-      return result.slice(0..4) if result.count >= 5
+      #return result.slice(0..4) #if result.count >= 5
     end
 
-    result.slice(0..4)
+    return result #.slice(0..4)
   end
 
   def should_revert_to_pass
