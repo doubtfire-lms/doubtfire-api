@@ -20,7 +20,7 @@ class GroupSubmission < ApplicationRecord
 
       # also remove evidence from group members
       tasks.each do |t|
-        t.portfolio_evidence = null
+        t.portfolio_evidence_path = nil
         t.save
       end
     rescue => e

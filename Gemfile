@@ -22,6 +22,7 @@ group :development, :test do
   gem 'rubocop-faker'
   gem 'rubocop-rails'
   gem 'simplecov', require: false
+  gem 'listen'
 end
 
 group :development, :test, :staging do
@@ -74,11 +75,11 @@ gem 'grape-swagger-rails'
 
 # Miscellaneous
 gem 'attr_encrypted', '~> 3.1.0'
-gem 'bunny-pub-sub', '0.0.9', git: 'https://github.com/doubtfire-overseer/bunny-pub-sub'
 gem 'ci_reporter'
 gem 'dotenv-rails'
 gem 'rack-cors', require: 'rack/cors'
 gem 'require_all', '>=1.3.3'
+gem 'bunny-pub-sub', '0.5.2'
 
 # Excel support
 gem 'roo', '~> 2.7.0'
