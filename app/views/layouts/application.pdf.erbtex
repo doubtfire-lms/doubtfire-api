@@ -1,4 +1,4 @@
-<% @latex_config={:command => "lualatex",:parse_runs => 2} %>
+<% @latex_config={ :recipe => [ {:command => "lualatex",:parse_runs => 2} ] } %>
 \documentclass[11pt,a4paper]{article}
 \usepackage[T1]{fontenc}
 \usepackage{textcomp}

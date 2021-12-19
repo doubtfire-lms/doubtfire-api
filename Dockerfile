@@ -29,6 +29,9 @@ RUN gem install bundler
 COPY ./Gemfile ./Gemfile.lock /doubtfire/
 RUN bundle install
 
+# Copy code locally to allow container to be used without the code volume
+COPY . .
+
 EXPOSE 3000
 
 ENV RAILS_ENV development

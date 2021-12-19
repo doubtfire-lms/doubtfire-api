@@ -33,4 +33,10 @@ Doubtfire::Application.configure do
 
   # Set deterministic randomness, source: https://github.com/stympy/faker#deterministic-random
   Faker::Config.random = Random.new(77)
+
+  require_relative 'doubtfire_logger'
+  config.logger = DoubtfireLogger.logger
+
+  # Logging level (:debug, :info, :warn, :error, :fatal)
+  config.log_level = :warn
 end

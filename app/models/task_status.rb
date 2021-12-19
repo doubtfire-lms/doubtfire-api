@@ -14,18 +14,54 @@ class TaskStatus < ApplicationRecord
     end
   end
 
-  scope :not_started,       -> { TaskStatus.find(1) }
-  scope :complete,          -> { TaskStatus.find(2) }
-  scope :need_help,         -> { TaskStatus.find(3) }
-  scope :working_on_it,     -> { TaskStatus.find(4) }
-  scope :fix_and_resubmit,  -> { TaskStatus.find(5) }
-  scope :feedback_exceeded,   -> { TaskStatus.find(6) }
-  scope :redo,              -> { TaskStatus.find(7) }
-  scope :discuss,           -> { TaskStatus.find(8) }
-  scope :ready_for_feedback,     -> { TaskStatus.find(9) }
-  scope :demonstrate,       -> { TaskStatus.find(10) }
-  scope :fail,              -> { TaskStatus.find(11) }
-  scope :time_exceeded,     -> { TaskStatus.find(12) }
+  def self.not_started
+    TaskStatus.find(1)
+  end
+
+  def self.complete
+    TaskStatus.find(2)
+  end
+
+  def self.need_help
+    TaskStatus.find(3)
+  end
+
+  def self.working_on_it
+    TaskStatus.find(4)
+  end
+
+  def self.fix_and_resubmit
+    TaskStatus.find(5)
+  end
+
+  def self.feedback_exceeded
+    TaskStatus.find(6)
+  end
+
+  def self.redo
+    TaskStatus.find(7)
+  end
+
+  def self.discuss
+    TaskStatus.find(8)
+  end
+
+  def self.ready_for_feedback
+    TaskStatus.find(9)
+  end
+
+  def self.demonstrate
+    TaskStatus.find(10)
+  end
+
+  def self.fail
+    TaskStatus.find(11)
+  end
+
+  def self.time_exceeded
+    TaskStatus.find(12)
+  end
+
 
   def self.status_for_name(name)
     case name.downcase.strip
