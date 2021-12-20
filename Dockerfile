@@ -1,7 +1,5 @@
 FROM ruby:2.6.7-buster
 
-ARG API_HOME=.
-
 # DEBIAN_FRONTEND=noninteractive is required to install tzdata in non interactive way
 ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update && apt-get install -y \
@@ -11,7 +9,6 @@ RUN apt-get update && apt-get install -y \
   libmagic-dev \
   libmagickwand-dev \
   libmariadb-dev \
-  libpq-dev \
   python3-pygments \
   tzdata \
   wget
@@ -23,7 +20,7 @@ COPY ./.ci-setup/ /doubtfire/.ci-setup/
 RUN ./.ci-setup/texlive-install.sh
 ENV PATH /tmp/texlive/bin/x86_64-linux:$PATH
 
-RUN gem install bundler
+RUN gem install bundler -v '~> 2.2.0'
 
 # Install the Gems
 COPY ./Gemfile ./Gemfile.lock /doubtfire/
