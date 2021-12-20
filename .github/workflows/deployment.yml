@@ -3,11 +3,14 @@ on:
   push:
     tags:
       - 'v*'
+    branch:
+      - 'development'
+      - 'main'
   deployment:
   workflow_dispatch:
 jobs:
   docker-api-server:
-    environment: deployment-secrets
+    environment: doubtfire
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
