@@ -4,6 +4,7 @@ on:
     tags:
       - 'v*'
     branches:
+      - '*.x'
       - 'development'
       - 'main'
   deployment:
@@ -46,7 +47,7 @@ jobs:
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
   docker-app-server:
-    environment: deployment-secrets
+    environment: doubtfire
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
