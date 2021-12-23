@@ -46,10 +46,13 @@ module Api
       expose :plagiarism_warn_pct
       expose :restrict_status_updates
       expose :group_set_id
-      expose :has_task_sheet?
-      expose :has_task_resources?
+      expose :has_task_sheet?, as: :has_task_sheet
+      expose :has_task_resources?, as: :has_task_resources
+      expose :has_task_assessment_resources?, as: :has_task_assessment_resources
       expose :is_graded
       expose :max_quality_pts
+      expose :overseer_image_id
+      expose :assessment_enabled
     end
   end
 end
