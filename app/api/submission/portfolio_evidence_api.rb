@@ -144,12 +144,30 @@ module Api
           error!({ error: "A submission for this task definition have never been created" }, 401)
         end
 
-        path = FileHelper.task_submission_identifier_path(:done, task)
-        unless File.exist? path
-          error!({ error: "No submissions found for project: '#{params[:id]}' task: '#{params[:task_def_id]}'" }, 401)
+        OverseerAssessment.where(task_id: task.id).order(submission_timestamp: :desc).limit(10)
+      end
+
+      desc 'Trigger an overseer assessment to run again'
+      put '/projects/:id/task_def_id/:task_definition_id/overseer_assessment/:oa_id/trigger' do
+        project = Project.find(params[:id])
+        task_definition = project.unit.task_definitions.find(params[:task_definition_id])
+
+        unless authorise? current_user, project, :get_submission
+          error!({ error: "Not authorised to get task '#{task_definition.name}'" }, 401)
         end
 
-        OverseerAssessment.where(task_id: task.id).order(submission_timestamp: :desc).limit(10)
+        task = project.task_for_task_definition(task_definition)
+
+        unless task
+          error!({ error: "A submission for this task definition have never been created" }, 401)
+        end
+
+        oa_id = timestamp = params[:oa_id]
+
+        oa = task.overseer_assessments.find(oa_id)
+        result = oa.send_to_overseer
+
+        result
       end
 
       desc 'Get the result of the submission of a task made at the given timestamp'
