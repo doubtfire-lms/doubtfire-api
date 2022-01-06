@@ -1,0 +1,8 @@
+SHELL=/bin/bash
+BASH_ENV=/container.env
+PATH=/tmp/texlive/bin/x86_64-linux:/usr/local/bundle/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bundle/bin
+
+10,15,20,25,30,35,40,45,50,55 * * * * /doubtfire/lib/shell/generate_pdfs.sh > /proc/1/fd/1 2>/proc/1/fd/2
+0 5 * * 1,3,5 /doubtfire/lib/shell/check_plagiarism.sh > /proc/1/fd/1 2>/proc/1/fd/2
+0 7 * * 1 /doubtfire/lib/shell/send_weekly_emails.sh > /proc/1/fd/1 2>/proc/1/fd/2
+0 1 * * * /doubtfire/lib/shell/sync_enrolments.sh > /proc/1/fd/1 2>/proc/1/fd/2

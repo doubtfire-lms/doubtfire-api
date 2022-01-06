@@ -13,7 +13,9 @@ RUN apt-get update && apt-get install -y \
   libmagickwand-dev \
   libmariadb-dev \
   python3-pygments \
-  tzdata
+  tzdata \
+  cron \
+  msmtp-mta bsd-mailx
 
 # Setup the folder where we will deploy the code
 WORKDIR /doubtfire
@@ -36,4 +38,10 @@ ENV PATH /tmp/texlive/bin/x86_64-linux:$PATH
 # Copy doubtfire-api source
 COPY . /doubtfire/
 
-CMD bundle exec rake submission:generate_pdfs
+# Crontab file copied to cron.d directory.
+COPY ./.ci-setup/pdfGen/entry_point.sh /doubtfire/
+COPY ./.ci-setup/pdfGen/crontab /etc/cron.d/container_cronjob
+
+RUN touch /var/log/cron.log
+
+CMD /doubtfire/entry_point.sh
