@@ -1,4 +1,4 @@
-class MakeEvidencePathRelative < ActiveRecord::Migration[4.2]
+class MakeEvidencePathRelative < ActiveRecord::Migration
   def up
     root = FileHelper.student_work_dir
 
