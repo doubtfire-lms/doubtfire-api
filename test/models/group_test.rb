@@ -289,7 +289,7 @@ class GroupModelTest < ActiveSupport::TestCase
   def test_new_member_late_submission_does_not_override_complete_tasks
     test_unit = FactoryBot.create :unit, group_sets: 1, groups: [{gs: 0, students: 3}], task_count: 0
 
-    td = FactoryBot.create :task_definition, unit: test_unit, group_set: test_unit.group_sets.first, upload_requirements: [ ]
+    td = FactoryBot.create :task_definition, unit: test_unit, group_set: test_unit.group_sets.first, upload_requirements: [ ], start_date: Time.zone.now + 1.day
 
     group = test_unit.groups.first
 
