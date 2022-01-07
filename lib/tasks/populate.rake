@@ -175,12 +175,11 @@ namespace :db do
   end
 
   desc 'Clear the database and fill with test data'
-  task populate: [:skip_prod, :drop, :setup, :migrate] do
+  task populate: [:skip_prod, :drop, :setup, :migrate, :init] do
     scale = ENV['SCALE'] ? ENV['SCALE'].to_sym : :small
     extended = ENV['EXTENDED'] == 'true'
 
     dbpop = DatabasePopulator.new scale
-    dbpop.generate_fixed_data
     dbpop.generate_users
     dbpop.generate_units
 
