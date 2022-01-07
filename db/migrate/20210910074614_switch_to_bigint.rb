@@ -1,24 +1,24 @@
 class SwitchToBigint < ActiveRecord::Migration[6.1]
   def change
-    remove_foreign_key "breaks", "teaching_periods"
-    remove_foreign_key "comments_read_receipts", "task_comments"
-    remove_foreign_key "comments_read_receipts", "users"
-    remove_foreign_key "overseer_assessments", "tasks"
-    remove_foreign_key "projects", "campuses"
-    remove_foreign_key "task_comments", "users", column: "recipient_id"
-    remove_foreign_key "task_definitions", "tutorial_streams"
-    remove_foreign_key "task_pins", "tasks"
-    remove_foreign_key "task_pins", "users"
-    remove_foreign_key "tutorial_enrolments", "projects"
-    remove_foreign_key "tutorial_enrolments", "tutorials"
-    remove_foreign_key "tutorial_streams", "activity_types"
-    remove_foreign_key "tutorial_streams", "units"
-    remove_foreign_key "tutorials", "campuses"
-    remove_foreign_key "tutorials", "tutorial_streams"
-    remove_foreign_key "units", "teaching_periods"
-    remove_foreign_key "webcal_unit_exclusions", "units"
-    remove_foreign_key "webcal_unit_exclusions", "webcals"
-    remove_foreign_key "webcals", "users"
+    remove_foreign_key "breaks", "teaching_periods" if ActiveRecord::Base.connection.foreign_key_exists?(:breaks, :teaching_periods)
+    remove_foreign_key "comments_read_receipts", "task_comments" if ActiveRecord::Base.connection.foreign_key_exists?(:comments_read_receipts, :task_comments)
+    remove_foreign_key "comments_read_receipts", "users" if ActiveRecord::Base.connection.foreign_key_exists?(:comments_read_receipts, :users)
+    remove_foreign_key "overseer_assessments", "tasks" if ActiveRecord::Base.connection.foreign_key_exists?(:overseer_assessments, :tasks)
+    remove_foreign_key "projects", "campuses" if ActiveRecord::Base.connection.foreign_key_exists?(:projects, :campuses)
+    remove_foreign_key "task_comments", "users", column: "recipient_id" if ActiveRecord::task_comments.connection.foreign_key_exists?(:breaks, :users)
+    remove_foreign_key "task_definitions", "tutorial_streams" if ActiveRecord::Base.connection.foreign_key_exists?(:task_definitions, :tutorial_streams)
+    remove_foreign_key "task_pins", "tasks" if ActiveRecord::Base.connection.foreign_key_exists?(:task_pins, :tasks)
+    remove_foreign_key "task_pins", "users" if ActiveRecord::Base.connection.foreign_key_exists?(:task_pins, :users)
+    remove_foreign_key "tutorial_enrolments", "projects" if ActiveRecord::Base.connection.foreign_key_exists?(:tutorial_enrolments, :projects)
+    remove_foreign_key "tutorial_enrolments", "tutorials" if ActiveRecord::Base.connection.foreign_key_exists?(:tutorial_enrolments, :tutorials)
+    remove_foreign_key "tutorial_streams", "activity_types" if ActiveRecord::Base.connection.foreign_key_exists?(:tutorial_streams, :activity_types)
+    remove_foreign_key "tutorial_streams", "units" if ActiveRecord::Base.connection.foreign_key_exists?(:tutorial_streams, :units)
+    remove_foreign_key "tutorials", "campuses" if ActiveRecord::Base.connection.foreign_key_exists?(:tutorials, :campuses)
+    remove_foreign_key "tutorials", "tutorial_streams" if ActiveRecord::Base.connection.foreign_key_exists?(:tutorials, :tutorial_streams)
+    remove_foreign_key "units", "teaching_periods" if ActiveRecord::Base.connection.foreign_key_exists?(:units, :teaching_periods)
+    remove_foreign_key "webcal_unit_exclusions", "units" if ActiveRecord::Base.connection.foreign_key_exists?(:webcal_unit_exclusions, :units)
+    remove_foreign_key "webcal_unit_exclusions", "webcals" if ActiveRecord::Base.connection.foreign_key_exists?(:webcal_unit_exclusions, :webcals)
+    remove_foreign_key "webcals", "users" if ActiveRecord::Base.connection.foreign_key_exists?(:webcals, :users)
 
     # Change id columns
     change_column :activity_types, :id, :bigint, unique: true, null: false, auto_increment: true
