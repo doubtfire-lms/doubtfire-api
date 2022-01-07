@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [5.0.8](https://github.com/macite/doubtfire-deploy/compare/v5.0.7...v5.0.8) (2022-01-07)
+
+
+### Bug Fixes
+
+* ensure migration of student work exists on v5 release ([50df840](https://github.com/macite/doubtfire-deploy/commit/50df8400552ee6806fcb27b53a33d0a6289c1ced))
+* update migration for ralls 6 ([d3d7c4a](https://github.com/macite/doubtfire-deploy/commit/d3d7c4a63622ee0479dbfd302e1b8229a69900d4))
+
 ### [5.0.7](https://github.com/macite/doubtfire-deploy/compare/v5.0.6...v5.0.7) (2021-12-09)
 
 
