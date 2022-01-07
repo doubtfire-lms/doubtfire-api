@@ -129,11 +129,12 @@ class UnitsApiTest < ActiveSupport::TestCase
   end
 
   def test_add_tutorial_to_unit
+    unit = FactoryBot.create :unit, with_students: false, stream_count: 0
     count_tutorials = Tutorial.all.length
 
     tutorial = {
-      unit_id: '1',
-      tutor_id: User.first.id,
+      unit_id: unit.id,
+      tutor_id: unit.main_convenor_user.id,
       campus_id: Campus.first.id,
       capacity: 10,
       abbreviation: 'LA011',
@@ -147,7 +148,7 @@ class UnitsApiTest < ActiveSupport::TestCase
     }
 
     # Add username and auth_token to Header
-    add_auth_header_for(user: User.first)
+    add_auth_header_for(user: unit.main_convenor_user)
 
     # perform the post
     post_json '/api/tutorials', data_to_post
@@ -155,6 +156,8 @@ class UnitsApiTest < ActiveSupport::TestCase
     # Check there is a new tutorial
     assert_equal count_tutorials + 1, Tutorial.all.length, last_response_body
     assert_json_matches_model tutorial, last_response_body, ["abbreviation", "capacity", "meeting_location", "meeting_day", "meeting_time"]
+
+    unit.destroy
   end
 
   # End POST tests

@@ -2,17 +2,12 @@ require 'test_helper'
 
 class UserTest < ActiveSupport::TestCase
   setup do
-    # Make it Andrew Cain
     @user = User.first
   end
 
   test 'user authentication post' do
     assert      @user.authenticate? 'password'
     assert_not  @user.authenticate? 'potato'
-  end
-
-  test 'user authentication put' do
-    # Get clarification for testing requirements
   end
 
   test 'create user' do
@@ -34,12 +29,12 @@ class UserTest < ActiveSupport::TestCase
     user = FactoryBot.create(:user)
     assert user.valid?
   end
-  
+
   def test_invalid_without_first_name
     user = FactoryBot.build(:user, first_name: nil)
     refute user.valid?
   end
-  
+
   def test_invalid_without_last_name
     user = FactoryBot.build(:user, last_name: nil)
     refute user.valid?
@@ -49,6 +44,6 @@ class UserTest < ActiveSupport::TestCase
     user = FactoryBot.create(:user)
     t1 = user.generate_authentication_token!
     t2 = user.generate_authentication_token!
-    assert_not_equal t1, t2 
+    assert_not_equal t1, t2
   end
 end
