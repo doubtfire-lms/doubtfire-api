@@ -2,7 +2,7 @@ class MakeEvidencePathRelative < ActiveRecord::Migration
   def up
     root = FileHelper.student_work_dir
 
-    connection.exec_update(<<-EOQ, "SQL")
+    connection.exec_update(<<-EOQ, "SQL", [])
       UPDATE  tasks
       SET     portfolio_evidence = REPLACE(portfolio_evidence, '#{root}', '')
       WHERE   portfolio_evidence like '#{root}%'
