@@ -1,4 +1,6 @@
-require 'faker'
+if Rails.env.development?
+  require 'faker'
+end
 require 'bcrypt'
 require 'json'
 require_all 'lib/helpers'
@@ -50,15 +52,12 @@ class DatabasePopulator
     end
     @scale = scale_data[scale]
 
-    return if Role.count > 0
+    return if User.count > 1
 
     echo_line "-> Scale is set to #{scale}"
 
     @user_cache = {}
     @echo = true
-
-    generate_user_roles
-    generate_task_statuses
 
     # Fixed data contains all fixed units and users created
     generate_fixed_data()
@@ -289,7 +288,6 @@ class DatabasePopulator
     # Define fixed user data here
     @user_data = {
       acain:              {first_name: "Andrew",  last_name: "Cain",          nickname: "Macite",         role_id: Role.admin_id },
-      aadmin:             {first_name: "Admin",   last_name: "Admin",         nickname: "Admin",          role_id: Role.admin_id },
       aconvenor:          {first_name: "Clinton", last_name: "Woodward",      nickname: "The Giant",      role_id: Role.convenor_id },
       ajones:             {first_name: "Allan",   last_name: "Jones",         nickname: "P-Jiddy",        role_id: Role.admin_id },
       rwilson:            {first_name: "Reuben",  last_name: "Wilson",        nickname: "Reubs",          role_id: Role.convenor_id },
@@ -481,52 +479,6 @@ class DatabasePopulator
 
     task.portfolio_evidence_path = pdf_path
     task.save
-  end
-
-  #
-  # Generate roles
-  #
-  def generate_user_roles
-    echo "-> Generating user roles"
-    roles = [
-      { name: 'Student', description: "Students are able to be enrolled into units, and to submit progress for their unit projects." },
-      { name: 'Tutor', description: "Tutors are able to supervise tutorial classes and provide feedback to students, they may also be students in other units" },
-      { name: 'Convenor', description: "Convenors are able to create and manage units, as well as act as tutors and students." },
-      { name: 'Admin', description: "Admin are able to create convenors, and act as convenors, tutors, and students in units." }
-    ]
-
-    roles.each do |role|
-      Role.create!(name: role[:name], description: role[:description])
-      echo "."
-    end
-    echo_line "!"
-  end
-
-  #
-  # Generate tasks statuses
-  #
-  def generate_task_statuses
-    return if TaskStatus.count > 0
-    echo "-> Generating task statuses"
-    statuses = {
-      "Not Started": "You have not yet started this task.",
-      "Complete": "This task has been signed off by your tutor.",
-      "Need Help": "Some help is required in order to complete this task.",
-      "Working On It": "This task is currently being worked on.",
-      "Fix and Resubmit": "This task must be resubmitted after fixing some issues.",
-      "Feedback Exceeded": "This task must be fixed and included in your portfolio, but no additional feedback will be provided.",
-      "Redo": "This task needs to be redone.",
-      "Discuss": "Your work looks good, discuss it with your tutor to complete.",
-      "Ready for Feedback": "This task is ready for the tutor to assess to provide feedback.",
-      "Demonstrate": "Your work looks good, demonstrate it to your tutor to complete.",
-      "Fail": "You did not successfully demonstrate the required learning in this task.",
-      "Time Exceeded": "You did not submit or complete the task before the appropriate deadline."
-    }
-    statuses.each do | name, desc |
-      echo "."
-      TaskStatus.create(name: name, description: desc)
-    end
-    echo_line "!"
   end
 
   def self.generate_portfolio(project)
