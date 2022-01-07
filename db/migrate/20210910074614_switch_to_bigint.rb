@@ -5,7 +5,7 @@ class SwitchToBigint < ActiveRecord::Migration[6.1]
     remove_foreign_key "comments_read_receipts", "users" if ActiveRecord::Base.connection.foreign_key_exists?(:comments_read_receipts, :users)
     remove_foreign_key "overseer_assessments", "tasks" if ActiveRecord::Base.connection.foreign_key_exists?(:overseer_assessments, :tasks)
     remove_foreign_key "projects", "campuses" if ActiveRecord::Base.connection.foreign_key_exists?(:projects, :campuses)
-    remove_foreign_key "task_comments", "users", column: "recipient_id" if ActiveRecord::task_comments.connection.foreign_key_exists?(:breaks, :users)
+    remove_foreign_key "task_comments", "users", column: "recipient_id" if ActiveRecord::Base.connection.foreign_key_exists?(:breaks, :users)
     remove_foreign_key "task_definitions", "tutorial_streams" if ActiveRecord::Base.connection.foreign_key_exists?(:task_definitions, :tutorial_streams)
     remove_foreign_key "task_pins", "tasks" if ActiveRecord::Base.connection.foreign_key_exists?(:task_pins, :tasks)
     remove_foreign_key "task_pins", "users" if ActiveRecord::Base.connection.foreign_key_exists?(:task_pins, :users)
