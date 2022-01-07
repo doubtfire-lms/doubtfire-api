@@ -97,6 +97,9 @@ module Api
 
         login_id = response.name_id || response.nameid
         email = login_id
+
+        logger.info "Authenticate #{email} from #{request.ip}"
+
         # Lookup using login_id if it exists
         # Lookup using email otherwise and set login_id
         # Otherwise create new
@@ -135,6 +138,8 @@ module Api
 
         # Generate a temporary auth_token for future requests
         onetime_token = user.generate_temporary_authentication_token!
+
+        logger.info "Redirecting #{user.username} from #{request.ip}"
 
         # Must redirect to the front-end after sign in
         protocol = Rails.env.development? ? 'http' : 'https'
@@ -209,7 +214,7 @@ module Api
         # Generate a temporary auth_token for future requests
         onetime_token = user.generate_temporary_authentication_token!
 
-        logger.info "Redirecting #{username} from #{request.ip}"
+        logger.info "Redirecting #{user.username} from #{request.ip}"
 
         # Must redirect to the front-end after sign in
         protocol = Rails.env.development? ? 'http' : 'https'
