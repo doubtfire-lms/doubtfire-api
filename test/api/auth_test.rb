@@ -20,10 +20,10 @@ class AuthTest < ActiveSupport::TestCase
   # Test POST for new authentication token
   def test_auth_post
     data_to_post = {
-      username: 'acain',
+      username: 'aadmin',
       password: 'password'
     }
-    # Get response back for logging in with username 'acain' password 'password'
+    # Get response back for logging in with username 'aadmin' password 'password'
     post_json '/api/auth.json', data_to_post
     actual_auth = last_response_body
     expected_auth = User.first
@@ -52,10 +52,10 @@ class AuthTest < ActiveSupport::TestCase
   # Test auth when username is invalid
   def test_fail_username_auth
     data_to_post = {
-      username: 'acain123',
+      username: 'aadmin123',
       password: 'password'
     }
-    # Get response back for logging in with username 'acain' password 'password'
+    # Get response back for logging in with username 'aadmin' password 'password'
     post_json '/api/auth.json', data_to_post
     actual_auth = last_response_body
 
@@ -71,11 +71,11 @@ class AuthTest < ActiveSupport::TestCase
   # Test auth when password is invalid
   def test_fail_password_auth
     data_to_post = {
-      username: 'acain',
+      username: 'aadmin',
       password: 'password1'
     }
 
-    # Get response back for logging in with username 'acain' password 'password'
+    # Get response back for logging in with username 'aadmin' password 'password1'
     post_json '/api/auth.json', data_to_post
     actual_auth = last_response_body
 
@@ -90,7 +90,7 @@ class AuthTest < ActiveSupport::TestCase
   def test_fail_empty_request
     data_to_post = ""
 
-    # Get response back for logging in with username 'acain' password 'password'
+    # Post empty data
     post_json '/api/auth.json', data_to_post
     actual_auth = last_response_body
 
@@ -137,7 +137,7 @@ class AuthTest < ActiveSupport::TestCase
     ]
 
     post_tests.each do |test_data|
-      # Get response back for logging in with username 'acain' password 'password'
+      # Get response back for logging in with above data
       post_json '/api/auth.json', test_data[:post]
       actual_auth = last_response_body
 

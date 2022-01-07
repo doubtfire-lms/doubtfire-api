@@ -188,7 +188,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_not File.directory? path
 
     # Add auth_token and username to header
-    add_auth_header_for(user: User.first)
+    add_auth_header_for(user: unit.main_convenor_user)
 
     post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
 
@@ -237,7 +237,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     project = unit.active_projects.first
 
     # Add auth_token and username to header
-    add_auth_header_for(user: User.first)
+    add_auth_header_for(user: unit.main_convenor_user)
 
     post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
 

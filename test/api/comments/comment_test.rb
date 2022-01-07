@@ -410,7 +410,7 @@ class CommentTest < ActiveSupport::TestCase
     pre_count = TaskComment.count
 
     # Add auth_token and username to header
-    add_auth_header_for(user: User.first)
+    add_auth_header_for(user: user)
 
     comment_data = { attachment: upload_file('test_files/submissions/00_question.pdf', 'application/pdf') }
 

@@ -65,15 +65,16 @@ class UnitRolesTest < ActiveSupport::TestCase
   end
 
   def test_post_unit_roles_not_unique
+    unit = FactoryBot.create :unit, with_students: false, stream_count: 0
     num_of_unit_roles = UnitRole.all.count
     to_post = {
-      unit_id: 1,
-      user_id: 1,
+      unit_id: unit.id,
+      user_id: unit.main_convenor_user.id,
       role: 'tutor'
     }
 
     # Add username and auth_token to Header
-    add_auth_header_for(user: User.first)
+    add_auth_header_for(user: unit.main_convenor_user)
 
     post '/api/unit_roles', to_post
 
@@ -82,6 +83,8 @@ class UnitRolesTest < ActiveSupport::TestCase
 
     assert_equal to_post[:unit_id], last_response_body['unit_id']
     assert_equal to_post[:user_id], last_response_body['user_id']
+
+    unit.destroy
   end
 
   # DELETE tests
