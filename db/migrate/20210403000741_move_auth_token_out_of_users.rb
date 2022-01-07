@@ -15,15 +15,6 @@ class MoveAuthTokenOutOfUsers < ActiveRecord::Migration[4.2]
     add_column :users, :authentication_token, :string,    limit: 255
     add_column :users, :auth_token_expiry,    :datetime
 
-    AuthToken.where("auth_token_expiry > :time", time: Time.zone.now).
-      each do |token|
-        User.connection.exec_query(
-          "UPDATE users SET authentication_token = $1, auth_token_expiry = $2 WHERE id=$3",
-          "--Update Auth Token for #{token.user_id}--",
-          [[nil, token.authentication_token], [nil, token.auth_token_expiry], [nil, token.user_id]]
-        )
-      end
-
     drop_table :auth_tokens
   end
 end
