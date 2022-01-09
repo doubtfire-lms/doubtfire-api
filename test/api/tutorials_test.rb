@@ -171,12 +171,8 @@ class TutorialsTest < ActiveSupport::TestCase
       tutorial: tutorial
     }
 
-    auth_data_to_header = {
-      auth_token: 'Incorrect_Auth_Token'
-    }
-
     # Add username and auth_token to Header
-    add_auth_header_for(auth_data_to_header)
+    add_auth_header_for(auth_token: 'Incorrect_Auth_Token', username: 'aadmin')
 
     # Number of tutorials before POST
     number_of_tutorials = Tutorial.all.length
@@ -963,12 +959,8 @@ class TutorialsTest < ActiveSupport::TestCase
       tutorial: tutorial
     }
 
-    auth_data_to_header = {
-      auth_token: 'Incorrect auth token'
-    }
-
     # Add username and auth_token to Header
-    add_auth_header_for(auth_data_to_header)
+    add_auth_header_for(username: 'aadmin', auth_token: 'Incorrect auth token')
 
     # perform the PUT with incorrect auth token
     put_json "/api/tutorials/#{tutorial_old.id}", data_to_put
@@ -1239,12 +1231,8 @@ class TutorialsTest < ActiveSupport::TestCase
     # Create a dummy tutorial
     tutorial = FactoryBot.create(:tutorial)
 
-    auth_data_to_header = {
-      auth_token: 'incorrect_auth_token'
-    }
-
     # Add username and auth_token to Header
-    add_auth_header_for(auth_data_to_header)
+    add_auth_header_for(username: 'aadmin', auth_token: 'incorrect_auth_token')
 
      # Number of tutorials before DELETE
      number_of_tutorials = Tutorial.all.length

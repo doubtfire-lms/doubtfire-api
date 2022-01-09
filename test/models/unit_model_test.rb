@@ -25,10 +25,10 @@ class UnitModelTest < ActiveSupport::TestCase
     @unit.import_task_files_from_zip Rails.root.join('test_files',"#{@unit.code}-Tasks.zip")
 
     @unit.task_definitions.each do |td|
-      assert File.exists?(td.task_sheet), "#{td.abbreviation} task sheet missing"
+      assert File.exist?(td.task_sheet), "#{td.abbreviation} task sheet missing"
     end
 
-    assert File.exists? @unit.task_definitions.first.task_resources
+    assert File.exist? @unit.task_definitions.first.task_resources
   end
 
   test 'rollover of task files' do
@@ -38,10 +38,10 @@ class UnitModelTest < ActiveSupport::TestCase
     unit2 = @unit.rollover TeachingPeriod.find(2), nil, nil
 
     unit2.task_definitions.each do |td|
-      assert File.exists?(td.task_sheet), 'task sheet is absent'
+      assert File.exist?(td.task_sheet), 'task sheet is absent'
     end
 
-    assert File.exists?(unit2.task_definitions.first.task_resources), 'task resource is absent'
+    assert File.exist?(unit2.task_definitions.first.task_resources), 'task resource is absent'
 
     unit2.destroy
   end
@@ -596,12 +596,12 @@ class UnitModelTest < ActiveSupport::TestCase
     unit.active_projects.each do |p|
       DatabasePopulator.generate_portfolio(p)
       assert p.has_portfolio
-      assert File.exists?(p.portfolio_path)
+      assert File.exist?(p.portfolio_path)
       paths << p.portfolio_path
     end
 
     filename = unit.get_portfolio_zip(unit.main_convenor_user)
-    assert File.exists? filename
+    assert File.exist? filename
     Zip::File.open(filename) do |zip_file|
       assert_equal unit.active_projects.count, zip_file.count
     end
@@ -610,7 +610,7 @@ class UnitModelTest < ActiveSupport::TestCase
     unit.destroy!
 
     paths.each do |path|
-      refute File.exists?(path)
+      refute File.exist?(path)
     end
   end
 

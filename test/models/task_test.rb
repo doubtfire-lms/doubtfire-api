@@ -76,11 +76,11 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     assert task.convert_submission_to_pdf
     path = task.zip_file_path_for_done_task
     assert path
-    assert File.exists? path
-    assert File.exists? task.final_pdf_path
+    assert File.exist? path
+    assert File.exist? task.final_pdf_path
 
     td.destroy
-    assert_not File.exists? path
+    assert_not File.exist? path
   end
 
   def test_image_upload
@@ -120,7 +120,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     task = project.task_for_task_definition(td)
     task.move_files_to_in_process(FileHelper.student_work_dir(:new))
 
-    assert File.exists? "#{Doubtfire::Application.config.student_work_dir}/in_process/#{task.id}/000-image.jpg"
+    assert File.exist? "#{Doubtfire::Application.config.student_work_dir}/in_process/#{task.id}/000-image.jpg"
 
     td.destroy
   end
@@ -163,11 +163,11 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     assert task.convert_submission_to_pdf
     path = task.zip_file_path_for_done_task
     assert path
-    assert File.exists? path
-    assert File.exists? task.final_pdf_path
+    assert File.exist? path
+    assert File.exist? task.final_pdf_path
 
     td.destroy
-    assert_not File.exists? path
+    assert_not File.exist? path
   end
 
   def test_pdf_with_quotes_in_task_title
@@ -207,10 +207,10 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     task.convert_submission_to_pdf
 
     path = task.final_pdf_path
-    assert File.exists? path
+    assert File.exist? path
 
     td.destroy
-    assert_not File.exists? path
+    assert_not File.exist? path
   end
 
   def test_copy_draft_learning_summary
@@ -247,10 +247,10 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     project.reload
     assert project.uses_draft_learning_summary
     path = File.join(project.portfolio_temp_path, '000-document-LearningSummaryReport.pdf')
-    assert File.exists? path
+    assert File.exist? path
 
     unit.destroy
-    assert_not File.exists? path
+    assert_not File.exist? path
   end
 
   def test_draft_learning_summary_wont_copy
@@ -265,7 +265,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     FileUtils.mkdir_p(project.portfolio_temp_path)
 
     FileUtils.cp Rails.root.join('test_files/unit_files/sample-learning-summary.pdf'), path
-    assert File.exists? path
+    assert File.exist? path
 
     data_to_post = {
       trigger: 'ready_for_feedback'
@@ -289,6 +289,6 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     assert_not project.uses_draft_learning_summary
 
     unit.destroy
-    assert_not File.exists? path
+    assert_not File.exist? path
   end
 end
