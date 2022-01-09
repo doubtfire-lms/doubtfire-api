@@ -199,7 +199,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     task = project.task_for_task_definition(td)
 
     assert File.directory? FileHelper.student_work_dir(:new, task, false)
-    assert File.exists? File.join(FileHelper.student_work_dir(:new, task, false), '000-document.pdf')
+    assert File.exist? File.join(FileHelper.student_work_dir(:new, task, false), '000-document.pdf')
 
     task.destroy
 
@@ -247,7 +247,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert task.convert_submission_to_pdf
     path = task.zip_file_path_for_done_task
     assert path
-    assert File.exists? path
+    assert File.exist? path
 
     # Change it to a group task
 
@@ -261,10 +261,10 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     task.task_definition = td
     path = task.zip_file_path_for_done_task
     assert path
-    assert File.exists? path
+    assert File.exist? path
 
     td.destroy
-    assert_not File.exists? path
+    assert_not File.exist? path
   end
 
   def test_task_related_to_task_def

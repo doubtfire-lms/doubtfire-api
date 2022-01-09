@@ -401,18 +401,15 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert_equal 404, last_response.status
   end
 
-  def test_put_update_unit_custom_token(token='abcdef')
+  def test_put_update_unit_custom_token()
     unit= Unit.first
+    token='abcdef'
     data_to_put = {
         unit: unit
     }
 
-    auth_data_to_header = {
-      auth_token: token
-    }
-
     # Add username and auth_token to Header
-    add_auth_header_for(auth_data_to_header)
+    add_auth_header_for(auth_token: token, username: 'aadmin')
 
     put_json '/api/units/1', data_to_put
     assert_equal 419, last_response.status
