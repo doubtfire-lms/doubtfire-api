@@ -51,7 +51,7 @@ class OverseerAssessment < ApplicationRecord
   end
 
   def has_submission_files?
-    File.exists? submission_zip_file_name
+    File.exist? submission_zip_file_name
   end
 
   def submission_zip_file_name
@@ -155,7 +155,7 @@ class OverseerAssessment < ApplicationRecord
       return nil
     end
 
-    unless File.exists? submission_zip_file_name
+    unless File.exist? submission_zip_file_name
       puts "ERROR: Student submission history zip file doesn't exist #{submission_zip_file_name}. Unable to send - OverseerAssessment #{id}"
       return nil
     end
@@ -166,7 +166,7 @@ class OverseerAssessment < ApplicationRecord
       return nil
     end
 
-    unless File.exists? assessment_resources_path
+    unless File.exist? assessment_resources_path
       puts "ERROR: Unable to fine assessment resources - OverseerAssessment #{id}"
       return nil
     end

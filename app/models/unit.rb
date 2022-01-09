@@ -717,7 +717,7 @@ class Unit < ApplicationRecord
         last_name = last_name || first_name
         nickname = nickname || first_name
 
-        if !email =~ /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\z/i
+        if email !~ /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\z/i
           errors << { row: row, message: "Invalid email address (#{email})" }
           next
         end
@@ -1338,12 +1338,12 @@ class Unit < ApplicationRecord
     tutorial_streams.map{|ts| ts.abbreviation }
   end
 
-  def task_completion_csv(options = {})
+  def task_completion_csv
     task_def_by_grade = task_definitions_by_grade
     streams = tutorial_streams
     grp_sets = group_sets
 
-    CSV.generate(options) do |csv|
+    CSV.generate() do |csv|
       # Add header row
       csv << [
         'Student ID',
@@ -1407,7 +1407,7 @@ class Unit < ApplicationRecord
             "#{row['first_name']} #{row['last_name']}",
             GradeHelper.grade_for(row['target_grade']),
             row['email'],
-            row['portfolio_production_date'].present? && !row['compile_portfolio'] && File.exists?(FileHelper.student_portfolio_path(self, row['username'], true)),
+            row['portfolio_production_date'].present? && !row['compile_portfolio'] && File.exist?(FileHelper.student_portfolio_path(self, row['username'], true)),
             row['grade'] > 0 ? row['grade'] : nil,
             row['grade_rationale']
           ] + [1].map do
@@ -1437,7 +1437,7 @@ class Unit < ApplicationRecord
     filename = FileHelper.sanitized_filename("portfolios-#{code}-#{current_user.username}")
     result = "#{FileHelper.tmp_file(filename)}.zip"
 
-    return result if File.exists?(result)
+    return result if File.exist?(result)
     # Create a new zip
     Zip::File.open(result, Zip::File::CREATE) do |zip|
       active_projects.each do |project|
@@ -1462,7 +1462,7 @@ class Unit < ApplicationRecord
     # Get a temp file path
     result = FileHelper.tmp_file("task-resources-#{code}.zip")
 
-    return result if File.exists?(result)
+    return result if File.exist?(result)
 
     # Create a new zip
     Zip::File.open(result, Zip::File::CREATE) do |zip|
@@ -1490,7 +1490,7 @@ class Unit < ApplicationRecord
 
     tasks_with_files = td.related_tasks_with_files
 
-    return result if File.exists?(result)
+    return result if File.exist?(result)
 
     # Create a new zip
     Zip::File.open(result, Zip::File::CREATE) do |zip|
@@ -1523,7 +1523,7 @@ class Unit < ApplicationRecord
 
     tasks_with_files = td.related_tasks_with_files
 
-    return result if File.exists?(result)
+    return result if File.exist?(result)
 
     # Create a new zip
     Zip::File.open(result, Zip::File::CREATE) do |zip|
@@ -2275,8 +2275,8 @@ class Unit < ApplicationRecord
   end
 
   # Used to calculate the number of assessment each tutor has performed
-  def tutor_assessment_csv(options = {})
-    CSV.generate(options) do |csv|
+  def tutor_assessment_csv
+    CSV.generate() do |csv|
       csv << [
         'Username',
         'Tutor Name',
@@ -2322,7 +2322,7 @@ class Unit < ApplicationRecord
 
     output_zip = FileHelper.tmp_file("batch_ready_for_feedback_#{code}_#{user.username}.zip")
 
-    return result if File.exists?(output_zip)
+    return result if File.exist?(output_zip)
 
     # Create a new zip
     Zip::File.open(output_zip, Zip::File::CREATE) do |zip|

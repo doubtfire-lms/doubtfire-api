@@ -473,7 +473,7 @@ class DatabasePopulator
     end
 
     pdf_path = task.final_pdf_path
-    if pdf_path && !File.exists?(pdf_path)
+    if pdf_path && !File.exist?(pdf_path)
       FileUtils.ln_s(Rails.root.join('test_files', 'unit_files', 'sample-student-submission.pdf'), pdf_path)
     end
 
@@ -486,7 +486,7 @@ class DatabasePopulator
     FileUtils.mkdir_p(portfolio_tmp_dir)
 
     lsr_path = File.join(portfolio_tmp_dir, "000-document-LearningSummaryReport.pdf")
-    FileUtils.ln_s(Rails.root.join('test_files', 'unit_files', 'sample-learning-summary.pdf'), lsr_path) unless File.exists? lsr_path
+    FileUtils.ln_s(Rails.root.join('test_files', 'unit_files', 'sample-learning-summary.pdf'), lsr_path) unless File.exist? lsr_path
     project.compile_portfolio = true
     project.create_portfolio
   end
@@ -508,7 +508,7 @@ class DatabasePopulator
   def generate_tasks_for_unit(unit, unit_details)
     echo "----> Generating #{unit_details[:num_tasks]} tasks"
 
-    if File.exists? Rails.root.join('test_files',"#{unit.code}-Tasks.csv")
+    if File.exist? Rails.root.join('test_files',"#{unit.code}-Tasks.csv")
       unit.import_tasks_from_csv File.open(Rails.root.join('test_files',"#{unit.code}-Tasks.csv"))
       unit.import_task_files_from_zip Rails.root.join('test_files',"#{unit.code}-Tasks.zip")
       return
@@ -546,7 +546,7 @@ class DatabasePopulator
     # Create the ILOs
     echo "----> Adding #{unit_details[:ilos]} ILOs"
 
-    if File.exists? Rails.root.join('test_files',"#{unit.code}-Outcomes.csv")
+    if File.exist? Rails.root.join('test_files',"#{unit.code}-Outcomes.csv")
       unit.import_outcomes_from_csv File.open(Rails.root.join('test_files',"#{unit.code}-Outcomes.csv"))
       unit.import_task_alignment_from_csv File.open(Rails.root.join('test_files',"#{unit.code}-Alignment.csv")), nil
       return

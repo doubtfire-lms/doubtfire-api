@@ -116,15 +116,15 @@ class TaskDefinition < ApplicationRecord
 
   def move_files_on_abbreviation_change
     old_abbr = saved_change_to_abbreviation[0] # 0 is original abbreviation
-    if File.exists? task_sheet_with_abbreviation(old_abbr)
+    if File.exist? task_sheet_with_abbreviation(old_abbr)
       FileUtils.mv(task_sheet_with_abbreviation(old_abbr), task_sheet())
     end
 
-    if File.exists? task_resources_with_abbreviation(old_abbr)
+    if File.exist? task_resources_with_abbreviation(old_abbr)
       FileUtils.mv(task_resources_with_abbreviation(old_abbr), task_resources())
     end
 
-    if File.exists? task_assessment_resources_with_abbreviation(old_abbr)
+    if File.exist? task_assessment_resources_with_abbreviation(old_abbr)
       FileUtils.mv(task_assessment_resources_with_abbreviation(old_abbr), task_assessment_resources())
     end
   end
@@ -340,8 +340,8 @@ class TaskDefinition < ApplicationRecord
     end
   end
 
-  def self.to_csv(task_definitions, options = {})
-    CSV.generate(options) do |csv|
+  def self.to_csv(task_definitions)
+    CSV.generate() do |csv|
       csv << csv_columns
       task_definitions.each do |task_definition|
         csv << task_definition.to_csv_row

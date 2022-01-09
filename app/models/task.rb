@@ -799,7 +799,7 @@ class Task < ApplicationRecord
   end
 
   def has_done_file?
-    File.exists? zip_file_path_for_done_task
+    File.exist? zip_file_path_for_done_task
   end
 
   #
@@ -1017,7 +1017,7 @@ class Task < ApplicationRecord
   def portfolio_evidence_path=(value)
     # Strip the student work directory to store in database as relative path
     self.portfolio_evidence = value.present? ? value.sub(FileHelper.student_work_dir,'') : nil
-  end  
+  end
 
   def final_pdf_path
     if group_task?
@@ -1248,7 +1248,7 @@ class Task < ApplicationRecord
     enqueued_dir = File.join(FileHelper.student_work_dir(:new, nil, true), id.to_s)
 
     # Move files into place, deleting existing files if present.
-    if not File.exists? enqueued_dir
+    if not File.exist? enqueued_dir
       logger.debug "Creating student work new dir #{enqueued_dir}"
       FileUtils.mkdir_p enqueued_dir
     end
@@ -1259,7 +1259,7 @@ class Task < ApplicationRecord
 
     # Delete the tmp dir
     logger.debug "Deleting student work dir: #{tmp_dir}"
-    FileUtils.rm_rf tmp_dir if File.exists? tmp_dir
+    FileUtils.rm_rf tmp_dir if File.exist? tmp_dir
 
     logger.info "Submission accepted! Status for task #{id} is now #{trigger}"
   end
@@ -1270,10 +1270,10 @@ class Task < ApplicationRecord
         group_submission.destroy
       else
         zip_file = zip_file_path_for_done_task()
-        if zip_file && File.exists?(zip_file)
+        if zip_file && File.exist?(zip_file)
           FileUtils.rm zip_file
         end
-        if portfolio_evidence_path.present? && File.exists?(portfolio_evidence_path)
+        if portfolio_evidence_path.present? && File.exist?(portfolio_evidence_path)
           FileUtils.rm portfolio_evidence_path
         end
 
