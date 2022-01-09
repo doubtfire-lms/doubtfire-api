@@ -1,4 +1,4 @@
-FROM ruby:2.6.7-buster
+FROM ruby:3.1-buster
 
 # DEBIAN_FRONTEND=noninteractive is required to install tzdata in non interactive way
 ENV DEBIAN_FRONTEND noninteractive

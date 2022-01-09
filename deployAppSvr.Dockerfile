@@ -1,7 +1,7 @@
 #
 # deployAppSrc.Dockerfile - the container used for back end processing
 #
-FROM ruby:2.6.7-buster
+FROM ruby:3.1-buster
 
 # Setup dependencies
 ARG DEBIAN_FRONTEND=noninteractive

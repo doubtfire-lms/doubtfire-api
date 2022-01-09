@@ -7,7 +7,7 @@ class FileHelperTest < ActiveSupport::TestCase
     Dir.mktmpdir do |dir|
       dest_file = "#{dir}#{File.basename(in_file, ".*")}.jpg"
       assert FileHelper.compress_image_to_dest(in_file, dest_file, true)
-      assert File.exists? dest_file
+      assert File.exist? dest_file
     end
   end
 end

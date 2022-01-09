@@ -50,12 +50,7 @@ class CampusesTest < ActiveSupport::TestCase
     }
 
     # auth_token and username added to header
-    auth_data_to_header = {
-      auth_token: auth_token(user_student),
-      username: user_student.username
-    }
-
-    add_auth_header_for(auth_data_to_header)
+    add_auth_header_for(auth_token: auth_token(user_student), username: user_student.username)
 
     post_json "/api/campuses", data_to_post
     assert_equal 403, last_response.status
@@ -85,12 +80,7 @@ class CampusesTest < ActiveSupport::TestCase
     }
 
     # auth_token and username added to header
-    auth_data_to_header = {
-      auth_token: auth_token(user_student),
-      username: user_student.username
-    }
-
-    add_auth_header_for(auth_data_to_header)
+    add_auth_header_for(auth_token: auth_token(user_student), username: user_student.username)
 
     put_json "/api/campuses/#{data_to_put[:campus].id}", data_to_put
     assert_equal 403, last_response.status
@@ -122,12 +112,7 @@ class CampusesTest < ActiveSupport::TestCase
     campus = FactoryBot.create(:campus, mode: 'timetable')
 
     # auth_token and username added to header
-    auth_data_to_header = {
-      auth_token: auth_token(user_student),
-      username: user_student.username
-    }
-
-    add_auth_header_for(auth_data_to_header)
+    add_auth_header_for(auth_token: auth_token(user_student), username: user_student.username)
 
     # perform the delete
     delete_json "/api/campuses/#{campus.id}"
