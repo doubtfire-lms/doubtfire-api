@@ -2,10 +2,10 @@ source 'https://rubygems.org'
 
 # Ruby versions for various enviornments
 ruby_versions = {
-  development: '~>2.6.7',
-  test: '~>2.6.7',
-  staging: '~>2.6.7',
-  production: '~>2.6.7'
+  development: '~>3.1.0',
+  test: '~>3.1.0',
+  staging: '~>3.1.0',
+  production: '~>3.1.0'
 }
 # Get the ruby version for the current enviornment
 ruby ruby_versions[(ENV['RAILS_ENV'] || 'development').to_sym]
@@ -89,3 +89,5 @@ gem 'roo-xls'
 gem 'icalendar', '~> 2.5', '>= 2.5.3'
 
 gem 'rest-client', '~> 2.0'
+
+gem 'net-smtp', require: false

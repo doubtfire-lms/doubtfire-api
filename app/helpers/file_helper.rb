@@ -425,7 +425,7 @@ module FileHelper
         # puts "subdir: #{subdir}"
         write_entries_to_zip(subdir, disk_root_path, zip_root_path, file_path, zip)
       else
-        # puts "Adding file: #{disk_file_path} -- #{File.exists? disk_file_path}"
+        # puts "Adding file: #{disk_file_path} -- #{File.exist? disk_file_path}"
         zip.get_output_stream(zip_file_path) do |f|
           f.puts(File.open(disk_file_path, 'rb').read)
         end

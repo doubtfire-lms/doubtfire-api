@@ -94,11 +94,7 @@ class CsvTest < ActiveSupport::TestCase
     unit_id_to_test = 'string'
 
     # auth_token and username added to header
-    auth_data_to_header = {
-      auth_token: "wrong_token"
-    }
-
-    add_auth_header_for(auth_data_to_header)
+    add_auth_header_for(auth_token: "wrong token", username: 'aadmin')
 
     # perform the get
     get "/api/csv/task_definitions?unit_id=#{unit_id_to_test}"
@@ -157,11 +153,7 @@ class CsvTest < ActiveSupport::TestCase
     }
 
     # auth_token and username added to header
-    auth_data_to_header = {
-      auth_token: "wrong_token"
-    }
-
-    add_auth_header_for(auth_data_to_header)
+    add_auth_header_for(username: 'aadmin', auth_token: "wrong_token")
 
     # perform the POST
     post "/api/csv/task_definitions", data_to_post
@@ -365,13 +357,8 @@ class CsvTest < ActiveSupport::TestCase
 
     unit_id_to_test = '1'
 
-    # auth_token to header
-    auth_data_to_header = {
-      auth_token: 'wrong_token'
-    }
-
     # auth_token and username added to header
-    add_auth_header_for(auth_data_to_header)
+    add_auth_header_for(username: 'aadmin', auth_token: 'wrong_token')
 
     # perform the get
     get "/api/csv/units/#{unit_id_to_test}"
@@ -411,12 +398,7 @@ class CsvTest < ActiveSupport::TestCase
     }
 
     # auth_token and username added to header
-    auth_data_to_header = {
-      auth_token: auth_token(unit.main_convenor_user),
-      username: unit.main_convenor_user.username
-    }
-
-    add_auth_header_for(auth_data_to_header)
+    add_auth_header_for(auth_token: auth_token(unit.main_convenor_user), username: unit.main_convenor_user.username)
 
     # perform the POST
     post "/api/csv/units/#{unit.id}", data_to_post
@@ -439,12 +421,8 @@ class CsvTest < ActiveSupport::TestCase
       file: upload_file_csv('test_files/csv_test_files/COS10001-Students.csv')
     }
 
-        # auth_token and username added to header
-    auth_data_to_header = {
-      auth_token: "wrong_token"
-    }
-
-    add_auth_header_for(auth_data_to_header)
+    # auth_token and username added to header
+    add_auth_header_for(username: 'aadmin', auth_token: "wrong_token")
 
     # perform the POST
     post "/api/csv/units/#{unit.id}", data_to_post
@@ -499,12 +477,7 @@ class CsvTest < ActiveSupport::TestCase
     }
 
     # auth_token and username added to header
-    auth_data_to_header = {
-      auth_token: auth_token(unit.main_convenor_user),
-      username: unit.main_convenor_user.username
-    }
-
-    add_auth_header_for(auth_data_to_header)
+    add_auth_header_for(user: unit.main_convenor_user)
 
     # perform the POST
     post "/api/csv/units/#{unit.id}", data_to_post
@@ -522,12 +495,7 @@ class CsvTest < ActiveSupport::TestCase
     }
 
     # auth_token and username added to header
-    auth_data_to_header = {
-      auth_token: auth_token(unit.main_convenor_user),
-      username: unit.main_convenor_user.username
-    }
-
-    add_auth_header_for(auth_data_to_header)
+    add_auth_header_for(auth_token: auth_token(unit.main_convenor_user), username: unit.main_convenor_user.username)
 
     # perform the POST
     post "/api/csv/units/#{unit.id}", data_to_post
@@ -567,12 +535,7 @@ class CsvTest < ActiveSupport::TestCase
     }
 
     # auth_token and username added to header
-    auth_data_to_header = {
-      auth_token: auth_token(unit.main_convenor_user),
-      username: unit.main_convenor_user.username
-    }
-
-    add_auth_header_for(auth_data_to_header)
+    add_auth_header_for(auth_token: auth_token(unit.main_convenor_user), username: unit.main_convenor_user.username)
 
     user_id_check = unit.projects.last.user_id
 
@@ -598,11 +561,7 @@ class CsvTest < ActiveSupport::TestCase
     }
 
     # auth_token and username added to header
-    auth_data_to_header = {
-      auth_token: 'wrong_token'
-    }
-
-    add_auth_header_for(auth_data_to_header)
+    add_auth_header_for(username: 'aadmin', auth_token: "wrong_token")
 
     # perform the POST to withdraw user from the unit
     post "/api/csv/units/#{unit.id}/withdraw", data_to_post
@@ -620,8 +579,9 @@ class CsvTest < ActiveSupport::TestCase
   #POST /api/csv/units/{id}/withdraw
   def test_csv_upload_students_un_enroll_in_unit_empty_auth_token
 
-        unit = FactoryBot.create(:unit, code: 'COS10001', with_students: false, stream_count: 0)
-    unit.import_users_from_csv test_file_path 'csv_test_files/COS10001-Students.csv'
+    unit = FactoryBot.create(:unit, code: 'COS10001', with_students: false, stream_count: 0)
+    response = unit.import_users_from_csv test_file_path 'csv_test_files/COS10001-Students.csv'
+    assert_equal 1, unit.projects.count, response
 
 
     unit_id_to_test = '1'
@@ -689,7 +649,7 @@ class CsvTest < ActiveSupport::TestCase
     }
 
     # auth_token and username added to header
-    add_auth_header_for(user: User.first)
+    add_auth_header_for(user: unit.main_convenor_user)
 
     user_id_check = unit.projects.last.user_id
 
@@ -886,12 +846,8 @@ class CsvTest < ActiveSupport::TestCase
 
     unit_id_to_test = '1'
 
-   auth_data_to_header = {
-      auth_token: 'wrong_token'
-    }
-
     # Add authentication token to header
-    add_auth_header_for(auth_data_to_header)
+    add_auth_header_for(auth_token: 'wrong_token')
 
     # perform the get
     get "/api/csv/units/#{unit_id_to_test}/task_completion"
@@ -993,12 +949,8 @@ class CsvTest < ActiveSupport::TestCase
 
     unit_id_to_test = '1'
 
-   auth_data_to_header = {
-      auth_token: 'wrong_token'
-    }
-
     # Add authentication token to header
-    add_auth_header_for(auth_data_to_header)
+    add_auth_header_for(username: 'aadmin', auth_token: 'wrong_token')
 
     # perform the get
     get "/api/csv/units/#{unit_id_to_test}/tutor_assessments"
@@ -1049,12 +1001,8 @@ class CsvTest < ActiveSupport::TestCase
   #GET /api/csv/users
   def test_download_csv_all_users_with_incorrect_auth_token
 
-    auth_data_to_header = {
-      auth_token: 'wrong_token'
-    }
-
     # Add authentication token to header
-    add_auth_header_for(auth_data_to_header)
+    add_auth_header_for(username: 'aadmin', auth_token: 'wrong_token')
 
     # perform the get
     get "/api/csv/users"
@@ -1109,12 +1057,8 @@ class CsvTest < ActiveSupport::TestCase
       file: upload_file_csv('test_files/csv_test_files/doubtfire_users.csv')
     }
 
-   auth_data_to_header = {
-      auth_token: 'wrong_token'
-    }
-
     # Add authentication token to header
-    add_auth_header_for(auth_data_to_header)
+    add_auth_header_for(username: 'aadmin', auth_token: 'wrong_token')
 
     # perform the POST to withdraw user from the unit
     post "/api/csv/users", data_to_post

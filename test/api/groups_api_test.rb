@@ -168,7 +168,7 @@ class GroupsApiTest < ActiveSupport::TestCase
     post "/api/projects/#{project.id}/task_def_id/#{td.id}/comments", comment_data
 
     assert_equal 201, last_response.status
-    assert File.exists?(TaskComment.last.attachment_path)
+    assert File.exist?(TaskComment.last.attachment_path)
 
     td.destroy
     group.destroy
@@ -295,7 +295,7 @@ class GroupsApiTest < ActiveSupport::TestCase
 
     # Add username and auth_token to Header
     add_auth_header_for(user: unit.main_convenor_user)
-    
+
     # Try again as convenor
     post "/api/units/#{unit.id}/group_sets/#{gs_response['id']}/groups/#{group_response['id']}/members", {project_id: project.id}
 
@@ -318,7 +318,7 @@ class GroupsApiTest < ActiveSupport::TestCase
 
   def test_group_switch_tutorial
     unit = FactoryBot.create :unit, group_sets: 1, groups: [{gs: 0, students: 0}]
-    
+
     gs = unit.group_sets.first
     gs.update keep_groups_in_same_class: true, allow_students_to_manage_groups: true
     group1 = gs.groups.first
@@ -330,15 +330,15 @@ class GroupsApiTest < ActiveSupport::TestCase
     group1.add_member p2
 
     tutorial = FactoryBot.create :tutorial, unit: unit, campus: nil
-    
+
     refute p1.enrolled_in? tutorial
     refute p2.enrolled_in? tutorial
 
     # Add username and auth_token to Header
     add_auth_header_for(user: unit.main_convenor_user)
-    
+
     put "/api/units/#{unit.id}/group_sets/#{gs.id}/groups/#{group1.id}", { group: {tutorial_id: tutorial.id} }
-    
+
     assert 201, last_response.status
 
     p1.reload
@@ -353,7 +353,7 @@ class GroupsApiTest < ActiveSupport::TestCase
 
   def test_group_switch_tutorial_no_student_management
     unit = FactoryBot.create :unit, group_sets: 1, groups: [{gs: 0, students: 0}]
-    
+
     gs = unit.group_sets.first
     gs.update keep_groups_in_same_class: true, allow_students_to_manage_groups: false
     group1 = gs.groups.first
@@ -365,10 +365,10 @@ class GroupsApiTest < ActiveSupport::TestCase
     group1.add_member p2
 
     tutorial = FactoryBot.create :tutorial, unit: unit, campus: nil
-    
+
     refute p1.enrolled_in? tutorial
     refute p2.enrolled_in? tutorial
-    
+
     add_auth_header_for(user: unit.main_convenor_user)
     put "/api/units/#{unit.id}/group_sets/#{gs.id}/groups/#{group1.id}", { group: {tutorial_id: tutorial.id} }
 
@@ -386,7 +386,7 @@ class GroupsApiTest < ActiveSupport::TestCase
 
   def test_group_switch_tutorial_unenrolled_students
     unit = FactoryBot.create :unit, group_sets: 1, groups: [{gs: 0, students: 0}]
-    
+
     gs = unit.group_sets.first
     gs.update keep_groups_in_same_class: true, allow_students_to_manage_groups: false, capacity: 2
     group1 = gs.groups.first
@@ -400,7 +400,7 @@ class GroupsApiTest < ActiveSupport::TestCase
     assert group1.at_capacity?
 
     tutorial = FactoryBot.create :tutorial, unit: unit, campus: nil
-    
+
     refute p1.enrolled_in? tutorial
     refute p2.enrolled_in? tutorial
 
