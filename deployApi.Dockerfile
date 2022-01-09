@@ -1,7 +1,7 @@
 #
 # deployApi.Dockerfile - the container used to host the API only
 #
-FROM ruby:2.6.7-buster
+FROM ruby:3.1-buster
 
 # Setup dependencies
 ARG DEBIAN_FRONTEND=noninteractive
