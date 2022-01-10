@@ -15,7 +15,7 @@ module Api
       optional :attachment, type: File, desc: 'Image, sound, PDF or video comment file'
       optional :reply_to_id, type: Integer, desc: 'The comment to which this comment is replying'
     end
-    post '/projects/:project_id/task_def_id/:task_definition_id/comments', serializer: TaskCommentSerializer do
+    post '/projects/:project_id/task_def_id/:task_definition_id/comments' do
       project = Project.find(params[:project_id])
       task_definition = project.unit.task_definitions.find(params[:task_definition_id])
 
@@ -57,7 +57,7 @@ module Api
       if result.nil?
         error!({ error: 'No comment added. Comment duplicates last comment, so ignored.' }, 403)
       else
-        result.serialize(current_user)
+        present result, with: Api::Entities::CommentEntity
       end
     end
 

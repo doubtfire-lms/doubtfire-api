@@ -19,11 +19,21 @@ module Api
 
       expose :include_in_portfolio
 
+      # Attributes excluded from update only
+
       expose :pct_similar, unless: :update_only
       expose :similar_to_count, unless: :update_only
       expose :similar_to_dismissed_count, unless: :update_only
 
       expose :num_new_comments, unless: :update_only
+
+      # Attributes only included in "update only"
+
+      expose :new_stats, if: :update_only do |task, options|
+        task.project.task_stats
+      end
+
+      # Attributes only included if include other projects
 
       expose :other_projects, if: :include_other_projects do |task, options|
         if task.group_task? && !task.group.nil?

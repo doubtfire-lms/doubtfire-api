@@ -1,7 +1,3 @@
-# class LearningOutcomeSerializer < DoubtfireSerializer
-#   attributes :id, :ilo_number, :abbreviation, :name, :description
-# end
-
 module Api
   module Entities
     class LearningOutcomeEntity < Grape::Entity

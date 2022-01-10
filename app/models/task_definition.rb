@@ -378,7 +378,7 @@ class TaskDefinition < ApplicationRecord
   # Override due date to return either the final date of the unit, or the set due date
   def due_date
     return self['due_date'] if self['due_date'].present?
-    return unit.end_date
+    return unit.end_date #TODO: use nil as default to improve performance
   end
 
   def due_week
