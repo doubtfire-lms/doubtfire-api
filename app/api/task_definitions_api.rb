@@ -1,5 +1,4 @@
 require 'grape'
-require 'task_serializer'
 require 'mime-check-helpers'
 
 module Api
@@ -299,11 +298,12 @@ module Api
       if overseer_assessment.present?
         comment = overseer_assessment.send_to_overseer
         logger.info "Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id} was performed"
-        return { updated_task: TaskUpdateSerializer.new(task), comment: comment, project_id: project.id }
+      else
+        logger.info "Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id} was not performed"
       end
 
-      logger.info "Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id} was not performed"
-      { updated_task: TaskUpdateSerializer.new(task), project_id: project.id }
+      #todo: Do we  need to return additional details here? e.g. the comment, and project?
+      present task, with: Api::Entities::TaskEntity, include_other_projects: true, update_only: true
     end
 
     desc 'Remove the task sheet for a given task'

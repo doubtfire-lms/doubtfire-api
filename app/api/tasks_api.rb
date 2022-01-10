@@ -1,5 +1,4 @@
 require 'grape'
-require 'task_serializer'
 
 module Api
   class TasksApi < Grape::API

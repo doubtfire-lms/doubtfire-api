@@ -1,5 +1,4 @@
 require 'grape'
-require 'unit_serializer'
 require 'mime-check-helpers'
 require 'csv_helper'
 require 'entities/unit_entity'
@@ -123,7 +122,7 @@ module Api
           error!({ error: 'Task definition should contain only a single document upload' }, 403)
         end
       end
-              
+
       unit.update!(unit_parameters)
       present unit_parameters, with: Grape::Presenters::Presenter
     end

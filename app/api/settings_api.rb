@@ -1,5 +1,4 @@
 require 'grape'
-require 'project_serializer'
 
 module Api
   class SettingsApi < Grape::API
@@ -9,18 +8,22 @@ module Api
     #
     desc 'Return configurable details for the Doubtfire front end'
     get '/settings' do
-      {
+      response = {
         externalName: Doubtfire::Application.config.institution[:product_name],
         overseer_enabled: Doubtfire::Application.config.overseer_enabled
       }
+
+      present response, with: Grape::Presenters::Present
     end
 
     desc 'Return privacy policy details'
     get '/settings/privacy' do
-      {
+      response = {
         privacy:    Doubtfire::Application.config.institution[:privacy],
         plagiarism: Doubtfire::Application.config.institution[:plagiarism]
       }
+
+      present response, with: Grape::Presenters::Present
     end
   end
 end

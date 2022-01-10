@@ -1,11 +1,3 @@
-# class TutorialStreamSerializer < DoubtfireSerializer
-#   attributes :id, :name, :abbreviation, :activity_type
-
-#   def activity_type
-#     object.activity_type.abbreviation
-#   end
-# end
-
 module Api
   module Entities
     class TutorialStreamEntity < Grape::Entity
@@ -13,7 +5,7 @@ module Api
       expose :name
       expose :abbreviation
       expose :activity_type do |stream, options|
-        stream.activity_type.abbreviation
+        stream.activity_type.abbreviation #TODO: cache all activities in the client and just send the code
       end
     end
   end

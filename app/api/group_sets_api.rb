@@ -1,6 +1,5 @@
 require 'grape'
 require 'mime-check-helpers'
-require 'group_serializer'
 
 module Api
   #

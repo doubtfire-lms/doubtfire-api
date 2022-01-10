@@ -11,18 +11,18 @@ module Api
 
     desc 'Get unit roles for authenticated user'
     params do
-      optional :unit_id, type: Integer, desc: 'Get user roles in indicated unit'
+      optional :active_only, type: Boolean, desc: 'Show only active roles'
     end
     get '/unit_roles' do
       return [] unless authorise? current_user, User, :act_tutor
 
-      unit_roles = UnitRole.for_user current_user
+      result = Unit.joins(:unit_roles).where(unit_roles: { user_id: current_user.id })
 
-      if params[:unit_id]
-        unit_roles = unit_roles.where(unit_id: params[:unit_id])
+      if params[:active_only]
+        result = result.where(unit_roles: { active: true })
       end
 
-      ActiveModel::Serializer::CollectionSerializer.new(unit_roles.joins(:unit).select('unit_roles.*', 'units.start_date', 'units.end_date'), each_serializer: UnitRoleSerializer)
+      present result, with: Entities::UnitEntity, summary_only: true, user: current_user
     end
 
     desc 'Delete a unit role'

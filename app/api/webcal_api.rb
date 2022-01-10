@@ -6,6 +6,21 @@ module Api
   class WebcalApi < Grape::API
     helpers AuthenticationHelpers
 
+    helpers do
+      #
+      # Wraps the specified value (expected to be either `nil` or a `Webcal`) in a hash `{ enabled: true | false }` used
+      # to prevent the API returning `null`.
+      #
+      def present_webcal(webcal)
+        if webcal.present?
+          present webcal, with: Api::Entities::WebcalEntity
+        else
+          response = { enabled: false }
+          present response, with: Grape::Presenters::Presenter
+        end
+      end
+    end
+
     # Declare content types
     content_type :txt, 'text/calendar'
 
@@ -13,19 +28,9 @@ module Api
       authenticated?
     end
 
-    helpers do
-      #
-      # Wraps the specified value (expected to be either `nil` or a `Webcal`) in a hash `{ enabled: true | false }` used
-      # to prevent the API returning `null`.
-      #
-      def wrap_webcal(webcal)
-        { enabled: webcal.present? }.merge(webcal.present? ? WebcalSerializer.new(webcal).as_json : {})
-      end
-    end
-
     desc 'Get webcal details of the authenticated user'
     get '/webcal' do
-      wrap_webcal current_user.webcal
+      present_webcal current_user.webcal
     end
 
     desc 'Update webcal details of the authenticated user'
@@ -64,7 +69,10 @@ module Api
         end
       end
 
-      return wrap_webcal(nil) if cal.nil? or cal.destroyed?
+      if cal.nil? || cal.destroyed?
+        present_webcal nil
+        return
+      end
 
       webcal_update_params = {}
 
@@ -114,7 +122,7 @@ module Api
         end
       end
 
-      wrap_webcal cal
+      present_webcal cal
     end
   end
 end
