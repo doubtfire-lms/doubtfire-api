@@ -114,7 +114,6 @@ class User < ApplicationRecord
   # Returns authentication of the user
   #
   def token_for_text?(a_token)
-    list_tokens = []
     self.auth_tokens.each do |token|
       if a_token == token.authentication_token
           return token
@@ -128,7 +127,7 @@ class User < ApplicationRecord
   ###
 
   # Model associations
-  belongs_to  :role # Foreign Key
+  belongs_to  :role, optional: false # Foreign Key
   has_many    :unit_roles, dependent: :destroy
   has_many    :projects
   has_many    :auth_tokens

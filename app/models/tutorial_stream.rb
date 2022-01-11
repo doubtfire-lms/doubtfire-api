@@ -1,6 +1,6 @@
 class TutorialStream < ApplicationRecord
-  belongs_to :activity_type
-  belongs_to :unit
+  belongs_to :activity_type, optional: false
+  belongs_to :unit, optional: false
 
   # Callbacks - methods called are private
   after_create :handle_associated_task_defs

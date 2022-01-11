@@ -52,7 +52,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     initial_count = u.task_definitions.count
 
-    group_set = GroupSet.create!(group_params)
+    group_set = GroupSet.create(group_params)
     group_set.unit = u
     group_set.save!
 

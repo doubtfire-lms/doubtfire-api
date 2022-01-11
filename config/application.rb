@@ -14,6 +14,8 @@ module Doubtfire
   # Doubtfire generic application configuration
   #
   class Application < Rails::Application
+    config.load_defaults 7.0
+
     # Load .env variables
     Dotenv::Railtie.load
 
@@ -132,6 +134,9 @@ module Doubtfire
             "  DF_SECRET_KEY_ATTR           => #{!secrets.secret_key_base.nil?}\n"\
             "  DF_SECRET_KEY_DEVISE         => #{!secrets.secret_key_base.nil?}"
     end
+
+    config.active_record.legacy_connection_handling = false
+
     # Localization
     config.i18n.enforce_available_locales = true
     # Ensure that auth tokens do not appear in log files
@@ -141,9 +146,11 @@ module Doubtfire
       password_confirmation
     )
     # Grape Serialization
-    config.paths.add 'app/api', glob: '**/*.rb'
-    config.autoload_paths += Dir["#{Rails.root}/app"]
-    config.autoload_paths += Dir[Rails.root.join("app", "models", "{*/}")]
+
+    # config.paths.add 'app/api', glob: '**/*.rb'
+    # config.autoload_paths += Dir["#{Rails.root}/app"]
+    # config.autoload_paths += Dir[Rails.root.join("app", "models", "{*/}")]
+    config.eager_load_paths << Rails.root.join('app') << Rails.root.join('app', 'models', 'comments')
 
     # CORS config
     config.middleware.insert_before Warden::Manager, Rack::Cors do

@@ -1,9 +1,9 @@
 class UnitRole < ApplicationRecord
   # Model associations
-  belongs_to :unit    # Foreign key
-  belongs_to :user    # Foreign key
+  belongs_to :unit, optional: false    # Foreign key
+  belongs_to :user, optional: false    # Foreign key
 
-  belongs_to :role    # Foreign key
+  belongs_to :role, optional: false    # Foreign key
 
   has_many :tutorials, class_name: 'Tutorial', dependent: :nullify
   has_many :projects, through: :tutorials

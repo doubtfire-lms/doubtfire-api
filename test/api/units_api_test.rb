@@ -237,8 +237,8 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert actual_unit.key?("my_role"), actual_unit.inspect
     assert_equal expected_unit.role_for(expected_unit.main_convenor_user).name, actual_unit["my_role"]
 
-    if expected_unit.teaching_period_id.present?
-      assert_nil actual_unit["my_role"], actual_unit.inspect
+    if expected_unit.teaching_period_id.nil?
+      assert_nil actual_unit["teaching_period_id"], actual_unit.inspect
     else
       assert_equal expected_unit.teaching_period_id, actual_unit["teaching_period_id"], actual_unit.inspect
     end

@@ -1,8 +1,8 @@
 class PlagiarismMatchLink < ApplicationRecord
   include LogHelper
 
-  belongs_to :task
-  belongs_to :other_task, class_name: 'Task'
+  belongs_to :task, optional: false
+  belongs_to :other_task, class_name: 'Task', optional: false
 
   #
   # Ensure file is also deleted

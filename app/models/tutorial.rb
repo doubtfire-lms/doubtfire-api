@@ -1,9 +1,9 @@
 class Tutorial < ApplicationRecord
   # Model associations
-  belongs_to :unit # Foreign key
-  belongs_to :unit_role # Foreign key
-  belongs_to :campus
-  belongs_to :tutorial_stream
+  belongs_to :unit, optional: false # Foreign key
+  belongs_to :unit_role, optional: true # Foreign key
+  belongs_to :campus, optional: true
+  belongs_to :tutorial_stream, optional: true
 
   has_one    :tutor, through: :unit_role, source: :user
 

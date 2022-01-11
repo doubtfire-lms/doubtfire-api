@@ -15,16 +15,15 @@ class Project < ApplicationRecord
   include LogHelper
   include DbHelpers
 
-  belongs_to :unit
-  belongs_to :user
-  belongs_to :campus
+  belongs_to :unit, optional: false
+  belongs_to :user, optional: false
+  belongs_to :campus, optional: true
 
   # has_one :user, through: :student
   has_many :tasks, dependent: :destroy # Destroying a project will also nuke all of its tasks
 
   has_many :group_memberships, dependent: :destroy
   has_many :groups, -> { where('group_memberships.active = :value', value: true) }, through: :group_memberships
-  has_many :past_groups, -> { where('group_memberships.active = :value', value: false) }, through: :group_memberships, source: 'group'
   has_many :task_engagements, through: :tasks
   has_many :comments, through: :tasks
   has_many :tutorial_enrolments, dependent: :destroy
@@ -856,7 +855,7 @@ class Project < ApplicationRecord
     end
 
     def make_pdf
-      render_to_string(template: '/portfolio/portfolio_pdf.pdf.erb', layout: true)
+      render_to_string(template: '/portfolio/portfolio_pdf', layout: true)
     end
   end
 

@@ -1,6 +1,6 @@
 class TaskStatusComment < TaskComment
 
-  belongs_to :task_status
+  belongs_to :task_status, optional: false
 
   before_create do
     self.content_type = :status

@@ -57,17 +57,6 @@ Doubtfire::Application.configure do
   # Highlight code that triggered database queries in logs.
   config.active_record.verbose_query_logs = true
 
-  # Debug mode disables concatenation and preprocessing of assets.
-  # This option may cause significant delays in view rendering with a large
-  # number of complex assets.
-  config.assets.debug = true
-
-  # Suppress logger output for asset requests.
-  config.assets.quiet = true
-
-  # Do not compress assets
-  config.assets.compress = false
-
   # Raises error for missing translations.
   # config.i18n.raise_on_missing_translations = true
 
@@ -95,4 +84,8 @@ Doubtfire::Application.configure do
 
   require_relative 'doubtfire_logger'
   config.logger = DoubtfireLogger.logger
+
+  config.active_record.encryption.key_derivation_salt = ENV['DF_ENCRYPTION_KEY_DERIVATION_SALT'] || 'U9jurHMfZbMpzlbDTMe5OSAhUJYHla9Z'
+  config.active_record.encryption.deterministic_key = ENV['DF_ENCRYPTION_KEY_DERIVATION_SALT'] || 'zYtzYUlLFaWdvdUO5eIINRT6ZKDddcgx'
+  config.active_record.encryption.primary_key = ENV['DF_ENCRYPTION_KEY_DERIVATION_SALT'] || '92zoF7RJaQ01JEExOgHbP9bRWldNQUz5'
 end
