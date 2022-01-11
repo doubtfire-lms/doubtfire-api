@@ -142,7 +142,8 @@ module Submission
         error!({ error: "A submission for this task definition have never been created" }, 401)
       end
 
-      OverseerAssessment.where(task_id: task.id).order(submission_timestamp: :desc).limit(10)
+      result = OverseerAssessment.where(task_id: task.id).order(submission_timestamp: :desc).limit(10)
+      present result, with: Entities::OverseerAssessmentEntity
     end
 
     desc 'Trigger an overseer assessment to run again'
@@ -165,7 +166,7 @@ module Submission
       oa = task.overseer_assessments.find(oa_id)
       result = oa.send_to_overseer
 
-      result
+      present result, with: Entities::CommentEntity
     end
 
     desc 'Get the result of the submission of a task made at the given timestamp'
@@ -209,7 +210,7 @@ module Submission
         result << { label: 'run-diff', result: File.read("#{path}/run-diff.txt") }
       end
 
-      result
+      present result, with: Grape::Presenters::Presenter
     end
 
     desc 'Get the result of the submission of a task made last'
@@ -242,7 +243,8 @@ module Submission
       result << { label: 'output', result: File.read("#{path}/output.txt") }
 
       if project.role_for(current_user) == :student
-        return result
+        present result, with: Grape::Presenters::Presenter
+        return
       end
 
       if File.exist? "#{path}/build-diff.txt"
@@ -253,7 +255,7 @@ module Submission
         result << { label: 'run-diff', result: File.read("#{path}/run-diff.txt") }
       end
 
-      result
+      present result, with: Grape::Presenters::Presenter
     end
 
     # TODO: Remove the dependency on units - figure out how to authorise
@@ -261,7 +263,6 @@ module Submission
     get '/units/:unit_id/overseer/docker/images' do
       unless Doubtfire::Application.config.overseer_enabled
         error!({ error: 'Overseer is not enabled' }, 403)
-        return
       end
 
       unit = Unit.find(params[:unit_id])
@@ -269,9 +270,12 @@ module Submission
       unless authorise? current_user, unit, :add_task_def
         error!({ error: 'Not authorised to download task details of unit' }, 403)
       end
-      {
+
+      result = {
         result: Doubtfire::Application.config.overseer_images
       }
+
+      present result, with: Grape::Presenters::Presenter
     end
   end
 end

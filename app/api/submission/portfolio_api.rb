@@ -33,7 +33,9 @@ module Submission
       end
 
       # Move file into place
-      project.move_to_portfolio(file, name, kind) # returns details of file
+      result = project.move_to_portfolio(file, name, kind) # returns details of file
+
+      present result, Grape::Presenters::Presenter
     end # post
 
     desc 'Remove a file from the portfolio files for a unit'
@@ -59,6 +61,7 @@ module Submission
 
         project.remove_portfolio_file(idx, kind, name) # returns details of file
       end
+
       nil
     end
 

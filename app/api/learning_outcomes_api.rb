@@ -24,7 +24,7 @@ class LearningOutcomesApi < Grape::API
     end
 
     ilo = unit.add_ilo(params[:name], params[:description], params[:abbreviation])
-    ilo
+    present ilo, with: Entities::LearningOutcomeEntity
   end
 
   desc 'Update ILO'
@@ -54,7 +54,7 @@ class LearningOutcomesApi < Grape::API
                                                   )
     unit.move_ilo(ilo, params[:ilo_number]) if params[:ilo_number]
     ilo.update!(ilo_parameters)
-    ilo
+    present ilo, with: Entities::LearningOutcomeEntity
   end
 
   desc 'Delete an outcome from a unit'

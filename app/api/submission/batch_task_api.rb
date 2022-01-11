@@ -59,7 +59,7 @@ module Submission
         error!({ error: 'Not authorised to batch upload marks' }, 401)
       end
 
-      unit.upload_batch_task_zip_or_csv(current_user, params[:file])
+      present unit.upload_batch_task_zip_or_csv(current_user, params[:file]), with: Grape::Presenters::Presenter
     end # post
   end
 end

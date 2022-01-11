@@ -15,13 +15,13 @@ class UnitRolesApi < Grape::API
   get '/unit_roles' do
     return [] unless authorise? current_user, User, :act_tutor
 
-    result = Unit.joins(:unit_roles).where(unit_roles: { user_id: current_user.id })
+    result = UnitRole.includes(:unit).where(unit_roles: { user_id: current_user.id })
 
     if params[:active_only]
       result = result.where(unit_roles: { active: true })
     end
 
-    present result, with: Entities::UnitEntity, summary_only: true, user: current_user
+    present result, with: Entities::UnitRoleWithUnitEntity
   end
 
   desc 'Delete a unit role'
@@ -43,7 +43,7 @@ class UnitRolesApi < Grape::API
       error!({ error: "Couldn't find UnitRole with id=#{params[:id]}" }, 403)
     end
 
-    unit_role
+    present unit_role, with: Entities::UnitRoleEntity
   end
 
   desc 'Employ a user as a teaching role in a unit'
@@ -69,10 +69,11 @@ class UnitRolesApi < Grape::API
       error!({ error: 'Enrol students as projects not unit roles' }, 403)
     end
 
-    unit.employ_staff(user, role)
+    result = unit.employ_staff(user, role)
+    present result, with: Entities::UnitRoleEntity
   end
 
-  desc 'Update a role '
+  desc 'Update a role'
   params do
     requires :unit_role, type: Hash do
       requires :role_id, type: Integer, desc: 'The role to create with'
@@ -96,6 +97,6 @@ class UnitRolesApi < Grape::API
     end
 
     unit_role.update!(unit_role_parameters)
-    unit_role
+    present unit_role, with: Entities::UnitRoleEntity
   end
 end

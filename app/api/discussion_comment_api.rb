@@ -42,7 +42,8 @@ class DiscussionCommentApi < Grape::API
     end
 
     result = task.add_discussion_comment(current_user, attached_files)
-    result.serialize(current_user)
+
+    present result.serialize(current_user), Grape::Presenters::Presenter
   end
 
   desc 'Get a discussion comment prompt'

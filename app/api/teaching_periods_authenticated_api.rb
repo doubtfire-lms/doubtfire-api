@@ -35,7 +35,7 @@ class TeachingPeriodsAuthenticatedApi < Grape::API
     if result.nil?
       error!({ error: 'No teaching period added.' }, 403)
     else
-      result
+      present result, with: Entities::TeachingPeriodEntity
     end
   end
 
