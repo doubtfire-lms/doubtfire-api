@@ -15,7 +15,7 @@ class UsersApi < Grape::API
       error!({ error: 'Cannot list users - not authorised' }, 403)
     end
 
-    @users = User.all
+    present User.all, with: Entities::UserEntity
   end
 
   desc 'Get user'
@@ -24,7 +24,8 @@ class UsersApi < Grape::API
     unless (user.id == current_user.id) || (authorise? current_user, User, :admin_users)
       error!({ error: "Cannot find User with id #{params[:id]}" }, 403)
     end
-    user
+
+    present user, with: Entities::UserEntity
   end
 
   desc 'Get convenors'
@@ -32,7 +33,8 @@ class UsersApi < Grape::API
     unless authorise? current_user, User, :convene_units
       error!({ error: 'Cannot list convenors - not authorised' }, 403)
     end
-    @user_roles = User.convenors
+
+    present User.convenors, with: Entities::UserEntity
   end
 
   desc 'Get tutors'
@@ -40,7 +42,8 @@ class UsersApi < Grape::API
     unless authorise? current_user, User, :convene_units
       error!({ error: 'Cannot list tutors - not authorised' }, 403)
     end
-    @user_roles = User.tutors
+
+    present User.tutors, with: Entities::UserEntity
   end
 
   desc 'Update a user'
@@ -123,8 +126,7 @@ class UsersApi < Grape::API
 
       # Update changes made to user
       user.update!(user_parameters)
-      user
-
+      present user, with: Entities::UserEntity
     else
       error!({ error: "Cannot modify user with id=#{params[:id]} - not authorised" }, 403)
     end
@@ -185,7 +187,7 @@ class UsersApi < Grape::API
     logger.info "#{current_user.username}: Created new user #{user_parameters[:username]} with role #{new_role.name}"
 
     user = User.create!(user_parameters)
-    user
+    present user, with: Entities::UserEntity
   end
 
   desc 'Upload CSV of users'

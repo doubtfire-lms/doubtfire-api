@@ -28,7 +28,7 @@ class ExtensionCommentsApi < Grape::API
     error!({error:'Extensions cannot be granted beyond task deadline.'}, 403) if duration <= 0
 
     result = task.apply_for_extension(current_user, params[:comment], duration)
-    result.serialize(current_user)
+    present result.serialize(current_user), Grape::Presenters::Presenter
   end
 
   desc 'Assess an extension for a task'
@@ -53,6 +53,6 @@ class ExtensionCommentsApi < Grape::API
         error!({error: 'Error saving extension'}, 403)
       end
     end
-    task_comment.serialize(current_user)
+    present task_comment.serialize(current_user), Grape::Presenters::Presenter
   end
 end

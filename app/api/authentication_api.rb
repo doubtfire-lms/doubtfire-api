@@ -35,7 +35,6 @@ class AuthenticationApi < Grape::API
       # No provided credentials
       if username.nil? || password.nil?
         error!({ error: 'The request must contain the user username and password.' }, 400)
-        return
       end
 
       # User lookup

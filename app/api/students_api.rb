@@ -22,6 +22,7 @@ class StudentsApi < Grape::API
                 else
                   unit.student_query(false)
                 end
+      present result, with: Grape::Presenters::Presenter
     else
       error!({ error: "Couldn't find Unit with id=#{params[:unit_id]}" }, 403)
     end

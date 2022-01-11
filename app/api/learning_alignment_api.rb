@@ -22,13 +22,13 @@ class LearningAlignmentApi < Grape::API
     end
 
     if params[:project_id].nil?
-      return unit.task_outcome_alignments
+      present unit.task_outcome_alignments, with: Entities::TaskOutcomeAlignmentEntity
     else
       proj = unit.projects.find(params[:project_id])
       unless authorise?(current_user, proj, :get)
         error!({ error: 'You are not authorised to access this project.' }, 403)
       end
-      return proj.task_outcome_alignments
+      present proj.task_outcome_alignments, with: Entities::TaskOutcomeAlignmentEntity
     end
   end
 
@@ -139,7 +139,8 @@ class LearningAlignmentApi < Grape::API
       link_parameters[:task_id] = task.id
     end
 
-    LearningOutcomeTaskLink.create! link_parameters
+    result = LearningOutcomeTaskLink.create! link_parameters
+    present result, with: Entities::TaskOutcomeAlignmentEntity
   end
 
   desc 'Update the alignment between a task and unit outcome'
@@ -175,6 +176,7 @@ class LearningAlignmentApi < Grape::API
 
     align.update(link_parameters)
     align.save!
+    present align, with: Entities::TaskOutcomeAlignmentEntity
   end
 
   desc 'Delete the alignment between a task and unit outcome'
@@ -215,7 +217,7 @@ class LearningAlignmentApi < Grape::API
       error!({ error: 'You are not authorised to access these task alignments.' }, 403)
     end
 
-    unit.ilo_progress_class_stats
+    present unit.ilo_progress_class_stats
   end
 
   desc 'Return unit learning alignment values with median stats for each tutorial'
@@ -229,6 +231,6 @@ class LearningAlignmentApi < Grape::API
       error!({ error: 'You are not authorised to access these task alignments.' }, 403)
     end
 
-    unit.ilo_progress_class_details
+    present unit.ilo_progress_class_details
   end
 end

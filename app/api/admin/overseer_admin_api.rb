@@ -34,7 +34,7 @@ module Admin
       if result.nil?
         error!({ error: 'No overseer image added' }, 403)
       else
-        result
+        present result, with: Entities::OverseerImageEntity
       end
     end
 
@@ -61,7 +61,7 @@ module Admin
                                                                       :tag)
 
       overseer_image.update!(overseer_image_params)
-      overseer_image
+      present overseer_image, with: Entities::OverseerImageEntity
     end
 
     desc 'Delete an overseer image'
@@ -73,7 +73,8 @@ module Admin
       overseer_image = OverseerImage.find(params[:id])
       overseer_image.destroy
       error!({ error: overseer_image.errors.full_messages.last }, 403) unless overseer_image.destroyed?
-      overseer_image.destroyed?
+
+      present overseer_image.destroyed?, with: Grape::Presenters::Presenter
     end
 
     desc 'Get all overseer images'
@@ -83,9 +84,9 @@ module Admin
       end
 
       if Doubtfire::Application.config.overseer_enabled
-        OverseerImage.all
+        present OverseerImage.all, with: Entities::OverseerImageEntity
       else
-        []
+        present [], with: Grape::Presenters::Presenter
       end
     end
   end

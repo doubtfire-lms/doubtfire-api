@@ -84,7 +84,7 @@ class TaskDefinitionsApi < Grape::API
     end
 
     task_def.save!
-    task_def
+    present task_def, with: Entities::TaskDefinitionEntity
   end
 
   desc 'Edits the given task definition'
@@ -176,7 +176,7 @@ class TaskDefinitionsApi < Grape::API
       end
     end
 
-    task_def
+    present task_def, with: Entities::TaskDefinitionEntity
   end
 
   desc 'Upload CSV of task definitions to the provided unit'
@@ -230,6 +230,7 @@ class TaskDefinitionsApi < Grape::API
     end
 
     task_def.destroy
+    task_def.destroyed?
   end
 
   desc 'Upload the task sheet for a given task'
@@ -255,6 +256,7 @@ class TaskDefinitionsApi < Grape::API
 
     # Actually import...
     task_def.add_task_sheet(file[:tempfile].path)
+    true
   end
 
   desc 'Test overseer assessment for a given task'
@@ -320,7 +322,7 @@ class TaskDefinitionsApi < Grape::API
 
     # Actually delete...
     task_def.remove_task_sheet()
-    task_def
+    true
   end
 
   desc 'Upload the task resources for a given task'
@@ -348,6 +350,7 @@ class TaskDefinitionsApi < Grape::API
 
     # Actually import...
     task_def.add_task_resources(file_path)
+    true
   end
 
   desc 'Remove the task resources for a given task'
@@ -366,7 +369,7 @@ class TaskDefinitionsApi < Grape::API
 
     # Actually remove...
     task_def.remove_task_resources
-    task_def
+    true
   end
 
   desc 'Upload the task assessment resources for a given task'
@@ -390,6 +393,7 @@ class TaskDefinitionsApi < Grape::API
 
     # Actually import...
     task_def.add_task_assessment_resources(file_path)
+    true
   end
 
   desc 'Remove the task assessment resources for a given task'
@@ -408,7 +412,7 @@ class TaskDefinitionsApi < Grape::API
 
     # Actually remove...
     task_def.remove_task_assessment_resources
-    task_def
+    true
   end
 
   desc 'Upload a zip file containing the task pdfs for a given task'
@@ -458,7 +462,7 @@ class TaskDefinitionsApi < Grape::API
       where('tutorials.tutorial_stream_id = :sid OR tutorials.tutorial_stream_id IS NULL', sid: (stream.present? ? stream.id : nil)).
       select('tutorials.tutorial_stream_id as tutorial_stream_id', 'tutorials.id as tutorial_id', 'project_id').to_sql
 
-    unit.student_tasks.
+    result = unit.student_tasks.
       joins(:project).
       joins(:task_status).
       joins("LEFT OUTER JOIN (#{subquery}) as sq ON sq.project_id = projects.id").
@@ -479,6 +483,8 @@ class TaskDefinitionsApi < Grape::API
         grade: t.grade
       }
     end
+
+    present result, with: Grape::Presenters::Presenter
   end
 
   desc 'Download the task sheet containing the details related to performing that task'
