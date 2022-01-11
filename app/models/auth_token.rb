@@ -1,15 +1,11 @@
 class AuthToken < ApplicationRecord
 
-  belongs_to :user
+  belongs_to :user, optional: false
 
-  validates :encrypted_authentication_token, presence: true
+  encrypts :authentication_token
+
+  validates :authentication_token, presence: true
   validate :ensure_token_unique_for_user, on: :create
-
-  # Auth token encryption settings
-  attr_encrypted :authentication_token,
-    key: Doubtfire::Application.secrets.secret_key_attr[0,32],
-    mode: :per_attribute_iv,
-    algorithm: 'aes-256-gcm'
 
 
   def self.generate(user, remember, expiry_time = Time.zone.now + 2.hours)
