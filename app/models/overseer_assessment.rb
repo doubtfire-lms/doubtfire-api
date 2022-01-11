@@ -1,5 +1,5 @@
 class OverseerAssessment < ApplicationRecord
-  belongs_to :task
+  belongs_to :task, optional: false
 
   has_one :project, through: :task
   has_many :assessment_comments, dependent: :destroy

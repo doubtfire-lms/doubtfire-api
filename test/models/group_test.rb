@@ -9,7 +9,7 @@ class GroupModelTest < ActiveSupport::TestCase
 
     group1.add_member project
 
-    assert_includes(group1.projects,project)
+    assert_includes group1.projects, project
     assert_equal group1.group_memberships.count, 1
     project.unit.destroy
   end
@@ -21,9 +21,10 @@ class GroupModelTest < ActiveSupport::TestCase
     assert group1.valid?
 
     group1.add_member project
+    assert_includes group1.projects, project
     group1.remove_member project
     #test project removed correctly
-    refute_includes(group1.projects,project)
+    refute_includes group1.projects, project
     project.unit.destroy
   end
 

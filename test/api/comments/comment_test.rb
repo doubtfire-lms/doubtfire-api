@@ -120,7 +120,6 @@ class CommentTest < ActiveSupport::TestCase
       'comment' => 'Responding!',
       'has_attachment' => false,
       'type' => 'text',
-      'is_new' => false,
       'reply_to_id' => TaskComment.last.id,
       author: { 'id' => user.id },
       recipient: { 'id' => tutor.id }
@@ -133,13 +132,12 @@ class CommentTest < ActiveSupport::TestCase
     comment_data = { comment: 'Responding!', reply_to_id: TaskComment.last.id }
     post_json "/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", comment_data
     assert_equal 201, last_response.status
-    assert_json_matches_model expected_response, last_response_body, %w(comment type is_new reply_to_id)
+    assert_json_matches_model expected_response, last_response_body, %w(comment type reply_to_id)
 
     expected_response = {
       'comment' => 'Responding again!',
       'has_attachment' => false,
       'type' => 'text',
-      'is_new' => false,
       'reply_to_id' => TaskComment.last.id,
       author: { 'id' => user.id },
       recipient: { 'id' => tutor.id }
@@ -154,7 +152,7 @@ class CommentTest < ActiveSupport::TestCase
     assert_equal 201, last_response.status
 
     # check each is the same
-    assert_json_matches_model expected_response, last_response_body, %w(comment type is_new reply_to_id)
+    assert_json_matches_model expected_response, last_response_body, %w(comment type reply_to_id)
   end
 
   def test_student_post_reply_to_invalid_comment

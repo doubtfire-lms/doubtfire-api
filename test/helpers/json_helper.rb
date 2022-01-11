@@ -47,7 +47,7 @@ module TestHelpers
         mk = keys[k] || keys[k.to_sym]
         value = model.is_a?(Hash) ? (model[mk].nil? ? model[mk.to_sym] : model[mk]) : model.send(mk)
         if ! value.nil?
-          assert_equal value, response_json[k], "Values for model key #{mk} does not matach value of response key #{k} - #{response_json}"
+          assert_equal value, response_json[k], "Values for model key #{mk} does not match value of response key #{k} - #{response_json}"
         else
           assert_nil response_json[k], "Values for key #{k} is not nil - #{response_json}"
         end

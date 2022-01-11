@@ -1,5 +1,5 @@
 class Break < ApplicationRecord
-  belongs_to :teaching_period
+  belongs_to :teaching_period, optional: false
 
   validates :start_date, presence: true
   validates :number_of_weeks, presence: true

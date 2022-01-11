@@ -12,10 +12,10 @@ class TaskDefinition < ApplicationRecord
   after_update :remove_old_group_submissions, if: :has_removed_group?
 
   # Model associations
-  belongs_to :unit # Foreign key
-  belongs_to :group_set
-  belongs_to :tutorial_stream
-  belongs_to :overseer_image
+  belongs_to :unit, optional: false # Foreign key
+  belongs_to :group_set, optional: true
+  belongs_to :tutorial_stream, optional: true
+  belongs_to :overseer_image, optional: true
 
   has_one :draft_task_definition_unit, foreign_key: 'draft_task_definition_id', class_name: 'Unit', dependent: :nullify
 

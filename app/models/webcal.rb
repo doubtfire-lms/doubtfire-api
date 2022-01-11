@@ -2,7 +2,7 @@ require 'icalendar'
 
 class Webcal < ApplicationRecord
 
-  belongs_to :user
+  belongs_to :user, optional: false
 
   has_many :webcal_unit_exclusions, dependent: :destroy
 

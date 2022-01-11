@@ -7,19 +7,19 @@ class TaskComment < ApplicationRecord
   include FileHelper
   include AuthorisationHelpers
 
-  belongs_to :task # Foreign key
-  belongs_to :user
+  belongs_to :task, optional: false # Foreign key
+  belongs_to :user, optional: false
   has_one :unit, through: :task
   has_one :project, through: :task
 
-  belongs_to :recipient, class_name: 'User'
+  belongs_to :recipient, class_name: 'User', optional: false
 
   has_one :discussion_comment, class_name: 'DiscussionComment', required: false
 
   has_many :comments_read_receipts, class_name: 'CommentsReadReceipts', dependent: :destroy, inverse_of: :task_comment
 
   # Can optionally be a reply to a comment
-  belongs_to :task_comment
+  belongs_to :task_comment, optional: true
 
   validates :task, presence: true
   validates :user, presence: true

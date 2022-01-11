@@ -1,5 +1,5 @@
 class GroupSet < ApplicationRecord
-  belongs_to :unit
+  belongs_to :unit, optional: false
   has_many :task_definitions
   has_many :groups, dependent: :destroy
 

@@ -1,8 +1,8 @@
 class Group < ApplicationRecord
   include LogHelper
 
-  belongs_to :group_set
-  belongs_to :tutorial
+  belongs_to :group_set, optional: false
+  belongs_to :tutorial, optional: false
 
   has_many :group_memberships, dependent: :destroy
   has_many :group_submissions
