@@ -39,7 +39,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
   end
 
   def test_group_tasks
-    u = Unit.first
+    u = FactoryBot.create(:unit)
     activity_type = FactoryBot.create(:activity_type)
     u.add_tutorial_stream('Group-Tasks-Test', 'group-tasks-test', activity_type)
 
