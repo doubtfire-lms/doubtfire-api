@@ -5,11 +5,11 @@ module Entities
     expose :user_id
     expose :name do |unit_role, options| unit_role.user.name end
     expose :email do |unit_role, options| unit_role.user.email end
+    expose :unit_id
   end
 
   class UnitRoleWithUnitEntity < UnitRoleEntity
     expose :unit_code do |unit_role, options| unit_role.unit.code end
-    expose :unit_id do |unit_role, options| unit_role.unit.id end
     expose :unit_name do |unit_role, options| unit_role.unit.name end
     expose :start_date do |unit_role, options| unit_role.unit.start_date end
     expose :end_date do |unit_role, options| unit_role.unit.end_date end
