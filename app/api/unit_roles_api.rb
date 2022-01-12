@@ -69,6 +69,10 @@ class UnitRolesApi < Grape::API
       error!({ error: 'Enrol students as projects not unit roles' }, 403)
     end
 
+    unless user.has_tutor_capability?
+      error!({ error: 'The selected user is not a tutor. Please update their system role before adding them' }, 403)
+    end
+
     result = unit.employ_staff(user, role)
     present result, with: Entities::UnitRoleEntity
   end
