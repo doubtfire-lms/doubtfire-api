@@ -25,6 +25,7 @@ Doubtfire::Application.configure do
 
   require_relative 'doubtfire_logger'
   config.logger = DoubtfireLogger.logger
+  Rails.logger = DoubtfireLogger.logger
   config.log_level = :info
 
   config.action_mailer.delivery_method = (ENV['DF_MAIL_DELIVERY_METHOD'] || 'smtp').to_sym
