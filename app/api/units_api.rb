@@ -47,7 +47,7 @@ class UnitsApi < Grape::API
     #
     # Unit uses user from thread to limit exposure
     #
-    present unit, with: Entities::UnitEntity, user: current_user
+    present unit, with: Entities::UnitEntity, user: current_user, in_unit: true
   end
 
   desc 'Update unit'
