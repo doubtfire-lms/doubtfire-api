@@ -12,6 +12,8 @@ class ApiRoot < Grape::API
   before do
     header['Access-Control-Allow-Origin'] = '*'
     header['Access-Control-Request-Method'] = '*'
+
+    Thread.current.thread_variable_set(:ip, request.ip)
   end
 
   rescue_from :all do |e|
@@ -105,15 +107,6 @@ class ApiRoot < Grape::API
   AuthenticationHelpers.add_auth_to UnitRolesApi
   AuthenticationHelpers.add_auth_to UnitsApi
   AuthenticationHelpers.add_auth_to WebcalApi
-
-  # add_swagger_documentation format: :json,
-  #                           hide_documentation_path: false,
-  #                           api_version: 'v1',
-  #                           info: {
-  #                             title: "Horses and Hussars",
-  #                             description: "Demo app for dev of grape swagger 2.0"
-  #                           },
-  #                           mount_path: 'swagger_doc'
 
   add_swagger_documentation \
     base_path: nil,

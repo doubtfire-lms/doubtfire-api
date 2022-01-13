@@ -1,4 +1,4 @@
-class DoubtfireLogger < ActiveSupport::Logger
+class DoubtfireLogger
   # By default, nil is provided
   #
   # Arguments match:
@@ -12,6 +12,14 @@ class DoubtfireLogger < ActiveSupport::Logger
   @@console_logger = ActiveSupport::Logger.new(STDOUT)
 
   @@logger = @@console_logger.extend(ActiveSupport::Logger.broadcast(@@file_logger))
+
+  @@logger.formatter = proc do |severity, datetime, progname, msg|
+    "#{datetime},#{DoubtfireLogger.remote_ip},#{severity}: #{msg}\n"
+  end
+
+  def self.remote_ip
+    Thread.current.thread_variable_get(:ip) || 'unknown'
+  end
 
   #
   # Singleton logger returned

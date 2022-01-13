@@ -36,6 +36,7 @@ Doubtfire::Application.configure do
 
   require_relative 'doubtfire_logger'
   config.logger = DoubtfireLogger.logger
+  Rails.logger = DoubtfireLogger.logger
 
   # Logging level (:debug, :info, :warn, :error, :fatal)
   config.log_level = :warn
