@@ -10,5 +10,6 @@ Doubtfire::Application.configure do
 
   require_relative 'doubtfire_logger'
   config.logger = DoubtfireLogger.logger
+  Rails.logger = DoubtfireLogger.logger
   config.log_level = :info
 end

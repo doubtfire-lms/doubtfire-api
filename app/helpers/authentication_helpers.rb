@@ -48,7 +48,10 @@ module AuthenticationHelpers
   # Get the current user either from warden or from the header
   #
   def current_user
-    User.find_by_username(headers['Username']) || User.find_by_username(params['username'])
+    username = headers['Username'] || params['username']
+    Rails.cache.fetch("user/#{username}", expires_in: 1.hours) do
+      User.find_by_username(username)
+    end
   end
 
   #

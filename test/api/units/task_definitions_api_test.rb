@@ -192,7 +192,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
 
     post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
 
-    assert_equal 201, last_response.status
+    assert_equal 201, last_response.status, last_response_body
 
     assert File.directory? path
 

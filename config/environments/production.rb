@@ -10,15 +10,6 @@ Doubtfire::Application.configure do
   # Disable Rails's static asset server (Apache or nginx will already do this)
   config.serve_static_files = true
 
-  # Compress JavaScripts and CSS
-  config.assets.compress = true
-
-  # Don't fallback to assets pipeline if a precompiled asset is missed
-  config.assets.compile = false
-
-  # Generate digests for assets URLs
-  config.assets.digest = true
-
   # Eager loading on models
   config.eager_load = true
 
@@ -34,6 +25,7 @@ Doubtfire::Application.configure do
 
   require_relative 'doubtfire_logger'
   config.logger = DoubtfireLogger.logger
+  Rails.logger = DoubtfireLogger.logger
   config.log_level = :info
 
   config.action_mailer.delivery_method = (ENV['DF_MAIL_DELIVERY_METHOD'] || 'smtp').to_sym
@@ -49,5 +41,9 @@ Doubtfire::Application.configure do
       enable_starttls_auto: true
     }
   end
+
+  config.active_record.encryption.key_derivation_salt = ENV['DF_ENCRYPTION_KEY_DERIVATION_SALT']
+  config.active_record.encryption.deterministic_key = ENV['DF_ENCRYPTION_DETERMINISTIC_KEY']
+  config.active_record.encryption.primary_key = ENV['DF_ENCRYPTION_PRIMARY_KEY']
 
 end

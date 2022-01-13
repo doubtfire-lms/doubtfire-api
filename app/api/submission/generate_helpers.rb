@@ -1,7 +1,7 @@
 # zipping files
 require 'zip'
 
-module Api::Submission::GenerateHelpers
+module Submission::GenerateHelpers
   #
   # Scoops out a files array from the params provided
   #
