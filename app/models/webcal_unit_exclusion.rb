@@ -1,4 +1,4 @@
 class WebcalUnitExclusion < ApplicationRecord
-  belongs_to :webcal
-  belongs_to :unit
+  belongs_to :webcal, optional: false
+  belongs_to :unit, optional: false
 end

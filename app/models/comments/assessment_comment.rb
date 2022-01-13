@@ -1,6 +1,6 @@
 class AssessmentComment < TaskComment
 
-  belongs_to :overseer_assessment
+  belongs_to :overseer_assessment, optional: false
 
   before_create do
     self.content_type = :assessment

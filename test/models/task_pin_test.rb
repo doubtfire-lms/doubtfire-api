@@ -1,11 +1,8 @@
 require "test_helper"
 
 class TaskPinTest < ActiveSupport::TestCase
-  def task_pin
-    @task_pin ||= TaskPin.new
-  end
 
-  def test_valid
-    assert task_pin.valid?
-  end
+  #TODO: you cannot pin a task that is not your task
+  #TODO: you can pin a task is your task
+
 end

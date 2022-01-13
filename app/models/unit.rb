@@ -131,13 +131,13 @@ class Unit < ApplicationRecord
   has_many :staff, ->     { joins(:role).where('roles.name = :role_convenor or roles.name = :role_tutor', role_convenor: 'Convenor', role_tutor: 'Tutor') }, class_name: 'UnitRole'
 
   # Unit has a teaching period
-  belongs_to :teaching_period
+  belongs_to :teaching_period, optional: true
 
-  belongs_to :main_convenor, class_name: 'UnitRole'
+  belongs_to :main_convenor, class_name: 'UnitRole', optional: true
 
-  belongs_to :draft_task_definition, class_name: 'TaskDefinition'
+  belongs_to :draft_task_definition, class_name: 'TaskDefinition', optional: true
 
-  belongs_to :overseer_image
+  belongs_to :overseer_image, optional: true
 
   validates :name, :description, :start_date, :end_date, presence: true
 

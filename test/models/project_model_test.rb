@@ -100,17 +100,4 @@ class ProjectModelTest < ActiveSupport::TestCase
     assert_equal project_first.main_convenor_user, tutor
   end
 
-  def test_knows_past_groups
-    project = Project.create
-    group1 = FactoryBot.create(:group)
-    group2 = FactoryBot.create(:group)
-
-    group1.add_member project
-    group2.add_member project
-    group1.remove_member project
-
-    assert_includes project.past_groups, group1
-    refute_includes project.past_groups, group2
-  end
-  
 end

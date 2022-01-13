@@ -1,6 +1,6 @@
 class ExtensionComment < TaskComment
 
-  belongs_to :assessor, class_name: 'User'
+  belongs_to :assessor, class_name: 'User', optional: true
 
   def serialize(user)
     json = super(user)

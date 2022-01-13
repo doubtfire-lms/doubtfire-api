@@ -35,13 +35,15 @@ class TaskStatusTest < ActiveSupport::TestCase
       })
     td.save!
 
+    # Get the first student - who now has this task
+    project = unit.active_projects.first
+
     #create a time exceeded task
     tc = Task.create!(
+      project_id: project.id,
       task_definition_id: td.id,
       task_status_id: 12
     )
-    # Get the first student - who now has this task
-    project = unit.active_projects.first
 
     data_to_post = {
       trigger: 'ready_for_feedback'

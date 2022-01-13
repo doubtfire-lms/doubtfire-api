@@ -4,11 +4,12 @@
 class GroupSubmission < ApplicationRecord
   include LogHelper
 
-  belongs_to :group
-  belongs_to :task_definition
+  belongs_to :group, optional: false
+  belongs_to :task_definition, optional: false
+  belongs_to :submitted_by_project, class_name: 'Project', foreign_key: 'submitted_by_project_id', optional: false
+
   has_many :tasks, dependent: :nullify
   has_many :projects, through: :tasks
-  belongs_to :submitted_by_project, class_name: 'Project', foreign_key: 'submitted_by_project_id'
 
   #
   # Ensure file is also deleted

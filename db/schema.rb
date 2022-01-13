@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2021_12_08_231733) do
+ActiveRecord::Schema.define(version: 2022_01_10_052033) do
 
   create_table "activity_types", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
     t.string "name", null: false
@@ -22,10 +22,9 @@ ActiveRecord::Schema.define(version: 2021_12_08_231733) do
   end
 
   create_table "auth_tokens", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
-    t.string "encrypted_authentication_token", null: false
-    t.string "encrypted_authentication_token_iv"
     t.datetime "auth_token_expiry", null: false
     t.bigint "user_id"
+    t.string "authentication_token", null: false
     t.index ["user_id"], name: "index_auth_tokens_on_user_id"
   end
 

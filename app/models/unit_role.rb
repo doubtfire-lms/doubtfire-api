@@ -1,9 +1,9 @@
 class UnitRole < ApplicationRecord
   # Model associations
-  belongs_to :unit    # Foreign key
-  belongs_to :user    # Foreign key
+  belongs_to :unit, optional: false    # Foreign key
+  belongs_to :user, optional: false    # Foreign key
 
-  belongs_to :role    # Foreign key
+  belongs_to :role, optional: false    # Foreign key
 
   has_many :tutorials, class_name: 'Tutorial', dependent: :nullify
   has_many :projects, through: :tutorials
@@ -27,10 +27,6 @@ class UnitRole < ApplicationRecord
 
   scope :tutors,    -> { joins(:role).where('roles.name = :role', role: 'Tutor') }
   scope :convenors, -> { joins(:role).where('roles.name = :role', role: 'Convenor') }
-
-  def self.for_user(user)
-    UnitRole.joins(:role, :unit).where("user_id = :user_id and roles.name <> 'Student'", user_id: user.id)
-  end
 
   def tasks_awaiting_feedback
     tasks.joins(:task_definition).where('projects.enrolled = TRUE AND projects.target_grade >= task_definitions.target_grade AND tasks.task_status_id = :status', status: TaskStatus.ready_for_feedback)

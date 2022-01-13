@@ -1,6 +1,6 @@
 class TutorialEnrolment < ApplicationRecord
-  belongs_to :tutorial
-  belongs_to :project
+  belongs_to :tutorial, optional: false
+  belongs_to :project, optional: false
 
   has_one :tutorial_stream, through: :tutorial
 

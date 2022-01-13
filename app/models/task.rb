@@ -93,10 +93,10 @@ class Task < ApplicationRecord
   before_destroy :delete_associated_files
 
   # Model associations
-  belongs_to :task_definition       # Foreign key
-  belongs_to :project               # Foreign key
-  belongs_to :task_status           # Foreign key
-  belongs_to :group_submission
+  belongs_to :task_definition, optional: false       # Foreign key
+  belongs_to :project, optional: false               # Foreign key
+  belongs_to :task_status, optional: false           # Foreign key
+  belongs_to :group_submission, optional: true
 
   has_one :unit, through: :project
 
@@ -981,7 +981,7 @@ class Task < ApplicationRecord
     end
 
     def make_pdf
-      render_to_string(template: '/task/task_pdf.pdf.erb', layout: true)
+      render_to_string(template: '/task/task_pdf', layout: true)
     end
   end
 

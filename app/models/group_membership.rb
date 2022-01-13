@@ -4,8 +4,8 @@
 class GroupMembership < ApplicationRecord
   include LogHelper
 
-  belongs_to :group
-  belongs_to :project
+  belongs_to :group, optional: false
+  belongs_to :project, optional: false
   has_one :group_set, through: :group
 
   validate :must_be_in_same_tutorial, if: :restricted_to_tutorial?
