@@ -5,7 +5,7 @@ module Entities
     end
 
     def is_staff?(user, unit)
-      [ Role.convenor, Role.tutor, Role.admin ].include? unit.role_for(user)
+      [ Role.convenor_id, Role.tutor_id, Role.admin_id ].include? unit.role_for(user).id
     end
 
     expose :code
