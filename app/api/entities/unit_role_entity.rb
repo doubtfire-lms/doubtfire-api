@@ -5,7 +5,7 @@ module Entities
     expose :user_id
     expose :name do |unit_role, options| unit_role.user.name end
     expose :email do |unit_role, options| unit_role.user.email end
-    expose :unit_id
+    expose :unit_id, unless: :in_unit
   end
 
   class UnitRoleWithUnitEntity < UnitRoleEntity
