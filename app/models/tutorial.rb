@@ -42,8 +42,7 @@ class Tutorial < ApplicationRecord
   end
 
   def tutor
-    result = UnitRole.find_by(id: unit_role_id)
-    result.user unless result.nil?
+    unit_role.user unless unit_role.nil?
   end
 
   def name

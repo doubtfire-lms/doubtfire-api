@@ -10,7 +10,7 @@ module Entities
     expose :tutorial_stream do |tutorial, options|
       tutorial.tutorial_stream.abbreviation unless tutorial.tutorial_stream.nil?
     end
-    expose :num_students
+    expose :num_students #TODO: remove this and request it dynamically when needed
     expose :tutor do |tutorial, options|
       Entities::UserEntity.represent tutorial.tutor, only: [:id, :name]
     end
