@@ -84,6 +84,7 @@ Doubtfire::Application.configure do
 
   require_relative 'doubtfire_logger'
   config.logger = DoubtfireLogger.logger
+  Rails.logger = DoubtfireLogger.logger
 
   config.active_record.encryption.key_derivation_salt = ENV['DF_ENCRYPTION_KEY_DERIVATION_SALT'] || 'U9jurHMfZbMpzlbDTMe5OSAhUJYHla9Z'
   config.active_record.encryption.deterministic_key = ENV['DF_ENCRYPTION_KEY_DERIVATION_SALT'] || 'zYtzYUlLFaWdvdUO5eIINRT6ZKDddcgx'
