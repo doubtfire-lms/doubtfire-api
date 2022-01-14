@@ -26,7 +26,6 @@ class SwitchToBigint < ActiveRecord::Migration[6.1]
     change_column :breaks, :id, :bigint, unique: true, null: false, auto_increment: true
     change_column :campuses, :id, :bigint, unique: true, null: false, auto_increment: true
     change_column :comments_read_receipts, :id, :bigint, unique: true, null: false, auto_increment: true
-    change_column :discussion_comments, :id, :bigint, unique: true, null: false, auto_increment: true
     change_column :group_memberships, :id, :bigint, unique: true, null: false, auto_increment: true
     change_column :group_sets, :id, :bigint, unique: true, null: false, auto_increment: true
     change_column :group_submissions, :id, :bigint, unique: true, null: false, auto_increment: true
