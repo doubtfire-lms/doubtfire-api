@@ -55,14 +55,6 @@ ActiveRecord::Schema.define(version: 2022_01_10_052033) do
     t.index ["user_id"], name: "index_comments_read_receipts_on_user_id"
   end
 
-  create_table "discussion_comments", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
-    t.datetime "time_started"
-    t.datetime "time_completed"
-    t.integer "number_of_prompts"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-  end
-
   create_table "group_memberships", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
     t.bigint "group_id"
     t.bigint "project_id"
