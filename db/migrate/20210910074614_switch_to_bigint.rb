@@ -82,7 +82,6 @@ class SwitchToBigint < ActiveRecord::Migration[6.1]
     change_column :task_comments, :task_id, :bigint
     change_column :task_comments, :user_id, :bigint
     change_column :task_comments, :recipient_id, :bigint
-    change_column :task_comments, :discussion_comment_id, :bigint
     change_column :task_comments, :assessor_id, :bigint
     change_column :task_comments, :task_status_id, :bigint
     change_column :task_comments, :reply_to_id, :bigint
@@ -148,7 +147,6 @@ class SwitchToBigint < ActiveRecord::Migration[6.1]
     # add_index :task_comments, :task_id
     add_index :task_comments, :user_id
     # add_index :task_comments, :recipient_id
-    # add_index :task_comments, :discussion_comment_id
     add_index :task_comments, :assessor_id
     add_index :task_comments, :task_status_id
     # add_index :task_comments, :reply_to_id
