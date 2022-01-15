@@ -192,7 +192,7 @@ class DiscussionCommentApi < Grape::API
       error!(error: 'Attachment exceeds the maximum attachment size of 30MB.') unless File.size?(attached_file["tempfile"].path) < 30_000_000
     end
 
-    logger.info("#{current_user.username} - added a reply to the discussion comment #{params[:discussion_comment_id]} for task #{task.id} (#{task_definition.abbreviation})")
+    logger.info("#{current_user.username} - added a reply to the discussion comment #{params[:task_comment_id]} for task #{task.id} (#{task_definition.abbreviation})")
 
     if attached_file.nil? || attached_file.empty?
       error!({ error: 'Discussion reply is empty, unable to add new reply to discussion comment' }, 403)
