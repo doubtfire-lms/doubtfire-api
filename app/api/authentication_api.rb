@@ -105,7 +105,8 @@ class AuthenticationApi < Grape::API
               User.find_by_username(email[/(.*)@/, 1]) ||
               User.find_by(email: email) ||
               User.find_or_create_by(login_id: login_id) do |new_user|
-                role = attributes.fetch(/role/) || Role.student.id
+                role_response = attributes.fetch(/role/) || attributes.fetch(/userRole/)
+                role = role_response.include?('Staff') ? Role.tutor.id : Role.student.id
                 first_name = (attributes.fetch(/givenname/) || attributes.fetch(/cn/)).capitalize
                 last_name = attributes.fetch(/surname/).capitalize
                 username = email.split('@').first
