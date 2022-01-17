@@ -37,7 +37,7 @@ group :development, :test, :staging do
 end
 
 # Database
-gem 'mysql2', '~>0.5.0'
+gem 'mysql2'
 
 # Webserver - included in development and test and optionally in production
 gem 'puma', '~> 5.5'
@@ -50,7 +50,7 @@ gem 'hirb'
 # Authentication
 gem 'devise'
 gem 'devise_ldap_authenticatable'
-gem 'json-jwt', '1.7.0'
+gem 'json-jwt'
 gem 'ruby-saml', '~> 1.13.0'
 
 # Student submission
