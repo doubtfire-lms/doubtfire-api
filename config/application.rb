@@ -59,6 +59,8 @@ module Doubtfire
       config.saml[:entity_id] = ENV['DF_SAML_SP_ENTITY_ID']
       # The IDP SAML login URL, (e.g., "https://login.microsoftonline.com/xxxx/saml2")
       config.saml[:idp_sso_target_url] = ENV['DF_SAML_IDP_TARGET_URL']
+      # The IDP SAML logout URL, (e.g., "https://login.microsoftonline.com/xxxx/saml2")
+      config.saml[:idp_sso_signout_url] = ENV['DF_SAML_IDP_SIGNOUT_URL']
 
       # The SAML response certificate and name format (if no XML URL metadata is provided)
       if config.saml[:SAML_metadata_url].nil?
@@ -79,6 +81,7 @@ module Doubtfire
         "  key                          => variable set?\n"\
         "  DF_SAML_CONSUMER_SERVICE_URL            => #{!ENV['DF_SAML_CONSUMER_SERVICE_URL'].nil?}\n"\
         "  DF_SAML_SP_ENTITY_ID          => #{!ENV['DF_SAML_SP_ENTITY_ID'].nil?}\n"\
+        "  DF_SAML_IDP_SIGNOUT_URL         => #{!ENV['DF_SAML_IDP_SIGNOUT_URL'].nil?}\n"\
         "  DF_SAML_IDP_TARGET_URL          => #{!ENV['DF_SAML_IDP_TARGET_URL'].nil?}\n"
       end
 

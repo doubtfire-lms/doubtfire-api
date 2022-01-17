@@ -282,8 +282,8 @@ class AuthenticationApi < Grape::API
     response[:auth_signout_url] =
       if aaf_auth? && Doubtfire::Application.config.aaf[:auth_signout_url].present?
         Doubtfire::Application.config.aaf[:auth_signout_url]
-      elsif saml_auth? && Doubtfire::Application.config.saml[:idp_sso_target_url].present?
-        Doubtfire::Application.config.saml[:idp_sso_target_url]
+      elsif saml_auth? && Doubtfire::Application.config.saml[:idp_sso_signout_url].present?
+        Doubtfire::Application.config.saml[:idp_sso_signout_url]
       end
     present response, with: Grape::Presenters::Presenter
   end
