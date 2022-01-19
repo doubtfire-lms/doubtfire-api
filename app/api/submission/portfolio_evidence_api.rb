@@ -56,7 +56,10 @@ module Submission
       if overseer_assessment.present?
         logger.info "Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id} was performed"
         comment = overseer_assessment.send_to_overseer
-        return { updated_task: TaskUpdateSerializer.new(task), comment: comment }
+
+        present :updated_task, task, with: Entities::TaskEntity, update_only: true
+        present :comment, comment, with: Entities::CommentEntity, current_user: current_user
+        return
       end
 
       logger.info "Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id} was not performed"
