@@ -48,7 +48,6 @@ module Submission
       alignments = params[:alignment_data]
       upload_reqs = task.upload_requirements
       student = task.project.student
-      unit = task.project.unit
 
       # Copy files to be PDFed
       task.accept_submission(current_user, scoop_files(params, upload_reqs), student, self, params[:contributions], trigger, alignments)
