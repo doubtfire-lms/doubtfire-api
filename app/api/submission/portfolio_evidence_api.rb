@@ -54,7 +54,7 @@ module Submission
 
       overseer_assessment = OverseerAssessment.create_for(task)
       if overseer_assessment.present?
-        logger.info "Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id} was performed"
+        logger.info "Launching Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id}"
         comment = overseer_assessment.send_to_overseer
 
         present :updated_task, task, with: Entities::TaskEntity, update_only: true
@@ -65,7 +65,8 @@ module Submission
       logger.info "Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id} was not performed"
 
       present task, with: Entities::TaskEntity, update_only: true
-    end # post
+    end
+    # post
 
     desc 'Retrieve submission document included for the task id'
     params do
