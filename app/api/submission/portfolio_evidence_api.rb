@@ -48,22 +48,25 @@ module Submission
       alignments = params[:alignment_data]
       upload_reqs = task.upload_requirements
       student = task.project.student
-      unit = task.project.unit
 
       # Copy files to be PDFed
       task.accept_submission(current_user, scoop_files(params, upload_reqs), student, self, params[:contributions], trigger, alignments)
 
       overseer_assessment = OverseerAssessment.create_for(task)
       if overseer_assessment.present?
-        logger.info "Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id} was performed"
+        logger.info "Launching Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id}"
         comment = overseer_assessment.send_to_overseer
-        return { updated_task: TaskUpdateSerializer.new(task), comment: comment }
+
+        present :updated_task, task, with: Entities::TaskEntity, update_only: true
+        present :comment, comment, with: Entities::CommentEntity, current_user: current_user
+        return
       end
 
       logger.info "Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id} was not performed"
 
       present task, with: Entities::TaskEntity, update_only: true
-    end # post
+    end
+    # post
 
     desc 'Retrieve submission document included for the task id'
     params do

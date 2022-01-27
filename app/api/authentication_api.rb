@@ -105,7 +105,8 @@ class AuthenticationApi < Grape::API
               User.find_by_username(email[/(.*)@/, 1]) ||
               User.find_by(email: email) ||
               User.find_or_create_by(login_id: login_id) do |new_user|
-                role = attributes.fetch(/role/) || Role.student.id
+                role_response = attributes.fetch(/role/) || attributes.fetch(/userRole/)
+                role = role_response.include?('Staff') ? Role.tutor.id : Role.student.id
                 first_name = (attributes.fetch(/givenname/) || attributes.fetch(/cn/)).capitalize
                 last_name = attributes.fetch(/surname/).capitalize
                 username = email.split('@').first
@@ -281,8 +282,8 @@ class AuthenticationApi < Grape::API
     response[:auth_signout_url] =
       if aaf_auth? && Doubtfire::Application.config.aaf[:auth_signout_url].present?
         Doubtfire::Application.config.aaf[:auth_signout_url]
-      elsif saml_auth? && Doubtfire::Application.config.saml[:idp_sso_target_url].present?
-        Doubtfire::Application.config.saml[:idp_sso_target_url]
+      elsif saml_auth? && Doubtfire::Application.config.saml[:idp_sso_signout_url].present?
+        Doubtfire::Application.config.saml[:idp_sso_signout_url]
       end
     present response, with: Grape::Presenters::Presenter
   end
