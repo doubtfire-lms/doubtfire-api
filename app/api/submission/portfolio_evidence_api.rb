@@ -166,7 +166,7 @@ module Submission
       oa = task.overseer_assessments.find(oa_id)
       result = oa.send_to_overseer
 
-      present result, with: Entities::CommentEntity
+      present result, with: Entities::CommentEntity, current_user: current_user
     end
 
     desc 'Get the result of the submission of a task made at the given timestamp'
