@@ -55,10 +55,15 @@ module Submission
       overseer_assessment = OverseerAssessment.create_for(task)
       if overseer_assessment.present?
         logger.info "Launching Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id}"
-        comment = overseer_assessment.send_to_overseer
+
+        response = overseer_assessment.send_to_overseer
+
+        if response[:error].present?
+          error!({ error: response[:error] }, 403)
+        end
 
         present :updated_task, task, with: Entities::TaskEntity, update_only: true
-        present :comment, comment, with: Entities::CommentEntity, current_user: current_user
+        present :comment, response[:comment], with: Entities::CommentEntity, current_user: current_user
         return
       end
 
@@ -167,9 +172,12 @@ module Submission
       oa_id = timestamp = params[:oa_id]
 
       oa = task.overseer_assessments.find(oa_id)
-      result = oa.send_to_overseer
+      response = oa.send_to_overseer
+      if response[:error].present?
+        error!({ error: response[:error] }, 403)
+      end
 
-      present result, with: Entities::CommentEntity, current_user: current_user
+      present response[:comment], with: Entities::CommentEntity, current_user: current_user
     end
 
     desc 'Get the result of the submission of a task made at the given timestamp'
