@@ -296,7 +296,12 @@ class TaskDefinitionsApi < Grape::API
     logger.info "********* - about to perform overseer submission"
     overseer_assessment = OverseerAssessment.create_for(task)
     if overseer_assessment.present?
-      comment = overseer_assessment.send_to_overseer
+      response = overseer_assessment.send_to_overseer
+
+      if response[:error].present?
+        error!({ error: response[:error] }, 403)
+      end
+
       logger.info "Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id} was performed"
     else
       logger.info "Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id} was not performed"
