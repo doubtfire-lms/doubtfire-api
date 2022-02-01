@@ -28,6 +28,7 @@ Doubtfire::Application.configure do
   Rails.logger = DoubtfireLogger.logger
   config.log_level = :info
 
+  config.action_mailer.perform_deliveries = (ENV['DF_MAIL_PERFORM_DELIVERIES'] || 'yes') == 'yes'
   config.action_mailer.delivery_method = (ENV['DF_MAIL_DELIVERY_METHOD'] || 'smtp').to_sym
 
   if config.action_mailer.delivery_method == :smtp
