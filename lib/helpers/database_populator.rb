@@ -30,11 +30,10 @@ class DatabasePopulator
         few_tutorials: 1,
         some_tutorials: 1,
         many_tutorials: 1,
-        max_tutorials: 4,
-        tickets_generated: 10
+        max_tutorials: 4
       },
       large: {
-        min_students: 15,
+        min_students: 50,
         delta_students: 7,
         few_tasks: 10,
         some_tasks: 30,
@@ -42,8 +41,7 @@ class DatabasePopulator
         few_tutorials: 1,
         some_tutorials: 2,
         many_tutorials: 4,
-        max_tutorials: 20,
-        tickets_generated: 50
+        max_tutorials: 20
       }
     }
     accepted_scale_types = scale_data.keys
