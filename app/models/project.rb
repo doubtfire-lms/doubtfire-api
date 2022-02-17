@@ -569,43 +569,43 @@ class Project < ApplicationRecord
   # Project task counts is an object with fail_count, complete_count etc for each status
   def self.create_task_stats_from(total_task_counts, project_task_counts, target_grade)
 
-    TaskStatus.all.each  do |s|
-      project_task_counts["#{s.status_key}_count"] = 0 if project_task_counts["#{s.status_key}_count"].nil?
-    end
+  #   TaskStatus.all.each  do |s|
+  #     project_task_counts["#{s.status_key}_count"] = 0 if project_task_counts["#{s.status_key}_count"].nil?
+  #   end
 
-    red_pct = ((project_task_counts.fail_count + project_task_counts.feedback_exceeded_count + project_task_counts.time_exceeded_count) / total_task_counts[target_grade]).signif(2)
-    orange_pct = ((project_task_counts.redo_count + project_task_counts.need_help_count + project_task_counts.fix_and_resubmit_count) / total_task_counts[target_grade]).signif(2)
-    green_pct = ((project_task_counts.discuss_count + project_task_counts.demonstrate_count + project_task_counts.complete_count) / total_task_counts[target_grade]).signif(2)
-    blue_pct = (project_task_counts.ready_for_feedback_count / total_task_counts[target_grade]).signif(2)
-    grey_pct = (1 - red_pct - orange_pct - green_pct - blue_pct).signif(2)
+  #   red_pct = ((project_task_counts.fail_count + project_task_counts.feedback_exceeded_count + project_task_counts.time_exceeded_count) / total_task_counts[target_grade]).signif(2)
+  #   orange_pct = ((project_task_counts.redo_count + project_task_counts.need_help_count + project_task_counts.fix_and_resubmit_count) / total_task_counts[target_grade]).signif(2)
+  #   green_pct = ((project_task_counts.discuss_count + project_task_counts.demonstrate_count + project_task_counts.complete_count) / total_task_counts[target_grade]).signif(2)
+  #   blue_pct = (project_task_counts.ready_for_feedback_count / total_task_counts[target_grade]).signif(2)
+  #   grey_pct = (1 - red_pct - orange_pct - green_pct - blue_pct).signif(2)
 
-    order_scale = green_pct * 100 + blue_pct * 100 + orange_pct * 10 - red_pct
+  #   order_scale = green_pct * 100 + blue_pct * 100 + orange_pct * 10 - red_pct
 
-    {
-      red_pct: red_pct,
-      grey_pct: grey_pct,
-      orange_pct: orange_pct,
-      blue_pct: blue_pct,
-      green_pct: green_pct,
-      order_scale: order_scale
-    }
-  end
+  #   {
+  #     red_pct: red_pct,
+  #     grey_pct: grey_pct,
+  #     orange_pct: orange_pct,
+  #     blue_pct: blue_pct,
+  #     green_pct: green_pct,
+  #     order_scale: order_scale
+  #   }
+  # end
 
-  def task_stats
-    task_count = [0, 1, 2, 3].map do |e|
-      unit.task_definitions.where("target_grade <= #{e}").count + 0.0
-    end.map { |e| e == 0 ? 1 : e }
+  # def task_stats
+  #   task_count = [0, 1, 2, 3].map do |e|
+  #     unit.task_definitions.where("target_grade <= #{e}").count + 0.0
+  #   end.map { |e| e == 0 ? 1 : e }
 
-    result = assigned_tasks
-        .group('project_id')
-        .select(
-          'project_id',
-          *TaskStatus.all.map { |s| "SUM(CASE WHEN tasks.task_status_id = #{s.id} THEN 1 ELSE 0 END) AS #{s.status_key}_count" }
-        )
-        .map do |t| Project.create_task_stats_from(task_count, t, target_grade) end
-        .first
+  #   result = assigned_tasks
+  #       .group('project_id')
+  #       .select(
+  #         'project_id',
+  #         *TaskStatus.all.map { |s| "SUM(CASE WHEN tasks.task_status_id = #{s.id} THEN 1 ELSE 0 END) AS #{s.status_key}_count" }
+  #       )
+  #       .map do |t| Project.create_task_stats_from(task_count, t, target_grade) end
+  #       .first
 
-    if result.nil?
+  #   if result.nil?
       {
         red_pct: 0,
         grey_pct: 1,
@@ -614,9 +614,9 @@ class Project < ApplicationRecord
         green_pct: 0,
         order_scale: 0
       }
-    else
-      result
-    end
+    # else
+    #   result
+    # end
   end
 
   def assigned_task_defs_for_grade(target)

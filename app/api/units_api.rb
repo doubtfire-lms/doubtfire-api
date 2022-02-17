@@ -35,7 +35,7 @@ class UnitsApi < Grape::API
 
     units = units.where('active = true') unless params[:include_in_active]
 
-    present units, with: Entities::UnitEntity, user: current_user
+    present units, with: Entities::UnitEntity, user: current_user, summary_only: true
   end
 
   desc "Get a unit's details"
