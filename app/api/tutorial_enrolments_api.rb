@@ -39,7 +39,7 @@ class TutorialEnrolmentsApi < Grape::API
   delete '/units/:unit_id/tutorials/:tutorial_abbr/enrolments/:project_id' do
     unit = Unit.find(params[:unit_id])
     project = unit.projects.find(params[:project_id])
-    unless authorise? current_user, project, :change_tutorial
+    unless authorise? current_user, project, :change_tutorial, ->(role, perm_hash, other) { project.specific_permission_hash(role, perm_hash, other) }
       error!({ error: 'Not authorised to change tutorials' }, 403)
     end
 
