@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [6.0.3](https://github.com/macite/doubtfire-deploy/compare/v6.0.2...v6.0.3) (2022-02-25)
+
+
+### Bug Fixes
+
+* ensure enrolments sync script is executable ([23714d0](https://github.com/macite/doubtfire-deploy/commit/23714d0c339082eb02b8f4e9a2759e162c4766f0))
+
 ### [6.0.2](https://github.com/macite/doubtfire-deploy/compare/v6.0.1...v6.0.2) (2022-02-23)
 
 
