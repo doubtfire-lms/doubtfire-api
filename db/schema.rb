@@ -15,21 +15,21 @@ ActiveRecord::Schema.define(version: 2022_01_10_052033) do
   create_table "activity_types", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
     t.index ["abbreviation"], name: "index_activity_types_on_abbreviation", unique: true
     t.index ["name"], name: "index_activity_types_on_name", unique: true
   end
 
   create_table "auth_tokens", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
-    t.datetime "auth_token_expiry", null: false
+    t.datetime "auth_token_expiry", precision: 6, null: false
     t.bigint "user_id"
     t.string "authentication_token", null: false
     t.index ["user_id"], name: "index_auth_tokens_on_user_id"
   end
 
   create_table "breaks", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
-    t.datetime "start_date", null: false
+    t.datetime "start_date", precision: 6, null: false
     t.integer "number_of_weeks", null: false
     t.bigint "teaching_period_id"
     t.index ["teaching_period_id"], name: "index_breaks_on_teaching_period_id"
@@ -48,19 +48,27 @@ ActiveRecord::Schema.define(version: 2022_01_10_052033) do
   create_table "comments_read_receipts", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
     t.bigint "task_comment_id", null: false
     t.bigint "user_id", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
     t.index ["task_comment_id", "user_id"], name: "index_comments_read_receipts_on_task_comment_id_and_user_id", unique: true
     t.index ["task_comment_id"], name: "index_comments_read_receipts_on_task_comment_id"
     t.index ["user_id"], name: "index_comments_read_receipts_on_user_id"
+  end
+
+  create_table "discussion_comments", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
+    t.datetime "time_started", precision: 6
+    t.datetime "time_completed", precision: 6
+    t.integer "number_of_prompts"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
   end
 
   create_table "group_memberships", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
     t.bigint "group_id"
     t.bigint "project_id"
     t.boolean "active", default: true
-    t.datetime "created_at"
-    t.datetime "updated_at"
+    t.datetime "created_at", precision: 6
+    t.datetime "updated_at", precision: 6
     t.index ["group_id"], name: "index_group_memberships_on_group_id"
     t.index ["project_id"], name: "index_group_memberships_on_project_id"
   end
@@ -71,8 +79,8 @@ ActiveRecord::Schema.define(version: 2022_01_10_052033) do
     t.boolean "allow_students_to_create_groups", default: true
     t.boolean "allow_students_to_manage_groups", default: true
     t.boolean "keep_groups_in_same_class", default: false
-    t.datetime "created_at"
-    t.datetime "updated_at"
+    t.datetime "created_at", precision: 6
+    t.datetime "updated_at", precision: 6
     t.integer "capacity"
     t.boolean "locked", default: false, null: false
     t.index ["unit_id"], name: "index_group_sets_on_unit_id"
@@ -82,8 +90,8 @@ ActiveRecord::Schema.define(version: 2022_01_10_052033) do
     t.bigint "group_id"
     t.string "notes"
     t.bigint "submitted_by_project_id"
-    t.datetime "created_at"
-    t.datetime "updated_at"
+    t.datetime "created_at", precision: 6
+    t.datetime "updated_at", precision: 6
     t.bigint "task_definition_id"
     t.index ["group_id"], name: "index_group_submissions_on_group_id"
     t.index ["submitted_by_project_id"], name: "index_group_submissions_on_submitted_by_project_id"
@@ -94,8 +102,8 @@ ActiveRecord::Schema.define(version: 2022_01_10_052033) do
     t.bigint "group_set_id"
     t.bigint "tutorial_id"
     t.string "name"
-    t.datetime "created_at"
-    t.datetime "updated_at"
+    t.datetime "created_at", precision: 6
+    t.datetime "updated_at", precision: 6
     t.integer "capacity_adjustment", default: 0, null: false
     t.boolean "locked", default: false, null: false
     t.index ["group_set_id"], name: "index_groups_on_group_set_id"
@@ -108,8 +116,8 @@ ActiveRecord::Schema.define(version: 2022_01_10_052033) do
     t.bigint "task_definition_id"
     t.bigint "task_id"
     t.bigint "learning_outcome_id"
-    t.datetime "created_at"
-    t.datetime "updated_at"
+    t.datetime "created_at", precision: 6
+    t.datetime "updated_at", precision: 6
     t.index ["learning_outcome_id"], name: "learning_outcome_task_links_lo_index"
     t.index ["task_definition_id"], name: "index_learning_outcome_task_links_on_task_definition_id"
     t.index ["task_id"], name: "index_learning_outcome_task_links_on_task_id"
@@ -125,10 +133,10 @@ ActiveRecord::Schema.define(version: 2022_01_10_052033) do
   end
 
   create_table "logins", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
-    t.datetime "timestamp"
+    t.datetime "timestamp", precision: 6
     t.bigint "user_id"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
     t.index ["user_id"], name: "index_logins_on_user_id"
   end
 
@@ -137,8 +145,8 @@ ActiveRecord::Schema.define(version: 2022_01_10_052033) do
     t.string "submission_timestamp", null: false
     t.string "result_task_status"
     t.integer "status", default: 0, null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
     t.index ["task_id", "submission_timestamp"], name: "index_overseer_assessments_on_task_id_and_submission_timestamp", unique: true
     t.index ["task_id"], name: "index_overseer_assessments_on_task_id"
   end
@@ -146,16 +154,16 @@ ActiveRecord::Schema.define(version: 2022_01_10_052033) do
   create_table "overseer_images", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "tag", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
   end
 
   create_table "plagiarism_match_links", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
     t.bigint "task_id"
     t.bigint "other_task_id"
     t.integer "pct"
-    t.datetime "created_at"
-    t.datetime "updated_at"
+    t.datetime "created_at", precision: 6
+    t.datetime "updated_at", precision: 6
     t.string "plagiarism_report_url"
     t.boolean "dismissed", default: false
     t.index ["other_task_id"], name: "index_plagiarism_match_links_on_other_task_id"
@@ -165,8 +173,8 @@ ActiveRecord::Schema.define(version: 2022_01_10_052033) do
   create_table "projects", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
     t.bigint "unit_id"
     t.string "project_role"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
     t.boolean "started"
     t.string "progress"
     t.string "status"
@@ -191,23 +199,24 @@ ActiveRecord::Schema.define(version: 2022_01_10_052033) do
   create_table "roles", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
     t.string "name"
     t.text "description"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
   end
 
   create_table "task_comments", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
     t.bigint "task_id", null: false
     t.bigint "user_id", null: false
     t.string "comment", limit: 4096
-    t.datetime "created_at", null: false
+    t.datetime "created_at", precision: 6, null: false
     t.bigint "recipient_id"
     t.string "content_type"
     t.string "attachment_extension"
+    t.bigint "discussion_comment_id"
     t.string "type"
-    t.datetime "time_discussion_started"
-    t.datetime "time_discussion_completed"
+    t.datetime "time_discussion_started", precision: 6
+    t.datetime "time_discussion_completed", precision: 6
     t.integer "number_of_prompts"
-    t.datetime "date_extension_assessed"
+    t.datetime "date_extension_assessed", precision: 6
     t.boolean "extension_granted"
     t.bigint "assessor_id"
     t.bigint "task_status_id"
@@ -216,6 +225,7 @@ ActiveRecord::Schema.define(version: 2022_01_10_052033) do
     t.bigint "reply_to_id"
     t.bigint "overseer_assessment_id"
     t.index ["assessor_id"], name: "index_task_comments_on_assessor_id"
+    t.index ["discussion_comment_id"], name: "index_task_comments_on_discussion_comment_id"
     t.index ["overseer_assessment_id"], name: "index_task_comments_on_overseer_assessment_id"
     t.index ["recipient_id"], name: "fk_rails_1dbb49165b"
     t.index ["reply_to_id"], name: "index_task_comments_on_reply_to_id"
@@ -229,9 +239,9 @@ ActiveRecord::Schema.define(version: 2022_01_10_052033) do
     t.string "name"
     t.string "description", limit: 4096
     t.decimal "weighting", precision: 10
-    t.datetime "target_date", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.datetime "target_date", precision: 6, null: false
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
     t.string "abbreviation"
     t.string "upload_requirements", limit: 4096
     t.integer "target_grade", default: 0
@@ -241,8 +251,8 @@ ActiveRecord::Schema.define(version: 2022_01_10_052033) do
     t.boolean "plagiarism_updated", default: false
     t.integer "plagiarism_warn_pct", default: 50
     t.bigint "group_set_id"
-    t.datetime "due_date"
-    t.datetime "start_date", null: false
+    t.datetime "due_date", precision: 6
+    t.datetime "start_date", precision: 6, null: false
     t.boolean "is_graded", default: false
     t.integer "max_quality_pts", default: 0
     t.bigint "tutorial_stream_id"
@@ -255,19 +265,19 @@ ActiveRecord::Schema.define(version: 2022_01_10_052033) do
   end
 
   create_table "task_engagements", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
-    t.datetime "engagement_time"
+    t.datetime "engagement_time", precision: 6
     t.string "engagement"
     t.bigint "task_id"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
     t.index ["task_id"], name: "index_task_engagements_on_task_id"
   end
 
   create_table "task_pins", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
     t.bigint "task_id", null: false
     t.bigint "user_id", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
     t.index ["task_id", "user_id"], name: "index_task_pins_on_task_id_and_user_id", unique: true
     t.index ["task_id"], name: "index_task_pins_on_task_id"
     t.index ["user_id"], name: "fk_rails_915df186ed"
@@ -276,17 +286,17 @@ ActiveRecord::Schema.define(version: 2022_01_10_052033) do
   create_table "task_statuses", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
     t.string "name"
     t.string "description"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
   end
 
   create_table "task_submissions", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
-    t.datetime "submission_time"
-    t.datetime "assessment_time"
+    t.datetime "submission_time", precision: 6
+    t.datetime "assessment_time", precision: 6
     t.string "outcome"
     t.bigint "task_id"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
     t.bigint "assessor_id"
     t.index ["assessor_id"], name: "index_task_submissions_on_assessor_id"
     t.index ["task_id"], name: "index_task_submissions_on_task_id"
@@ -296,18 +306,18 @@ ActiveRecord::Schema.define(version: 2022_01_10_052033) do
     t.bigint "task_definition_id"
     t.bigint "project_id"
     t.bigint "task_status_id"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
     t.date "completion_date"
     t.string "portfolio_evidence"
     t.boolean "include_in_portfolio", default: true
-    t.datetime "file_uploaded_at"
+    t.datetime "file_uploaded_at", precision: 6
     t.integer "max_pct_similar", default: 0
     t.bigint "group_submission_id"
     t.integer "contribution_pct", default: 100
     t.integer "times_assessed", default: 0
-    t.datetime "submission_date"
-    t.datetime "assessment_date"
+    t.datetime "submission_date", precision: 6
+    t.datetime "assessment_date", precision: 6
     t.integer "grade"
     t.integer "contribution_pts", default: 3
     t.integer "quality_pts", default: -1
@@ -321,16 +331,16 @@ ActiveRecord::Schema.define(version: 2022_01_10_052033) do
 
   create_table "teaching_periods", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
     t.string "period", null: false
-    t.datetime "start_date", null: false
-    t.datetime "end_date", null: false
+    t.datetime "start_date", precision: 6, null: false
+    t.datetime "end_date", precision: 6, null: false
     t.integer "year", null: false
-    t.datetime "active_until", null: false
+    t.datetime "active_until", precision: 6, null: false
     t.index ["period", "year"], name: "index_teaching_periods_on_period_and_year", unique: true
   end
 
   create_table "tutorial_enrolments", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
     t.bigint "project_id", null: false
     t.bigint "tutorial_id", null: false
     t.index ["project_id"], name: "index_tutorial_enrolments_on_project_id"
@@ -341,8 +351,8 @@ ActiveRecord::Schema.define(version: 2022_01_10_052033) do
   create_table "tutorial_streams", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
     t.bigint "activity_type_id", null: false
     t.bigint "unit_id", null: false
     t.index ["abbreviation", "unit_id"], name: "index_tutorial_streams_on_abbreviation_and_unit_id", unique: true
@@ -357,8 +367,8 @@ ActiveRecord::Schema.define(version: 2022_01_10_052033) do
     t.string "meeting_day"
     t.string "meeting_time"
     t.string "meeting_location"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
     t.string "code"
     t.bigint "unit_role_id"
     t.string "abbreviation"
@@ -374,8 +384,8 @@ ActiveRecord::Schema.define(version: 2022_01_10_052033) do
   create_table "unit_roles", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
     t.bigint "user_id"
     t.bigint "tutorial_id"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
     t.bigint "role_id"
     t.bigint "unit_id"
     t.index ["role_id"], name: "index_unit_roles_on_role_id"
@@ -387,13 +397,13 @@ ActiveRecord::Schema.define(version: 2022_01_10_052033) do
   create_table "units", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
     t.string "name"
     t.string "description", limit: 4096
-    t.datetime "start_date"
-    t.datetime "end_date"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.datetime "start_date", precision: 6
+    t.datetime "end_date", precision: 6
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
     t.string "code"
     t.boolean "active", default: true
-    t.datetime "last_plagarism_scan"
+    t.datetime "last_plagarism_scan", precision: 6
     t.bigint "teaching_period_id"
     t.bigint "main_convenor_id"
     t.boolean "auto_apply_extension_before_deadline", default: true, null: false
@@ -416,15 +426,15 @@ ActiveRecord::Schema.define(version: 2022_01_10_052033) do
     t.string "email", default: "", null: false
     t.string "encrypted_password", default: "", null: false
     t.string "reset_password_token"
-    t.datetime "reset_password_sent_at"
-    t.datetime "remember_created_at"
+    t.datetime "reset_password_sent_at", precision: 6
+    t.datetime "remember_created_at", precision: 6
     t.integer "sign_in_count", default: 0
-    t.datetime "current_sign_in_at"
-    t.datetime "last_sign_in_at"
+    t.datetime "current_sign_in_at", precision: 6
+    t.datetime "last_sign_in_at", precision: 6
     t.string "current_sign_in_ip"
     t.string "last_sign_in_ip"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
     t.string "first_name"
     t.string "last_name"
     t.string "username"
