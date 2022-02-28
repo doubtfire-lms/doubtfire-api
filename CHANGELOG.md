@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [6.0.4](https://github.com/macite/doubtfire-deploy/compare/v6.0.3...v6.0.4) (2022-02-28)
+
+
+### Bug Fixes
+
+* revert to using serialize with task comments ([371688c](https://github.com/macite/doubtfire-deploy/commit/371688c18a6914fe3fba2ac8cf9b02a7417cc462))
+
 ### [6.0.3](https://github.com/macite/doubtfire-deploy/compare/v6.0.2...v6.0.3) (2022-02-25)
 
 
