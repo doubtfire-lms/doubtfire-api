@@ -56,7 +56,7 @@ class TaskCommentsApi < Grape::API
     if result.nil?
       error!({ error: 'No comment added. Comment duplicates last comment, so ignored.' }, 403)
     else
-      present result, with: Entities::CommentEntity, current_user: current_user
+      present result.serialize(current_user), with: Grape::Presenters::Presenter
     end
   end
 
@@ -134,8 +134,9 @@ class TaskCommentsApi < Grape::API
       task = project.task_for_task_definition(task_definition)
 
       comments = task.all_comments.order('created_at ASC')
-      result = task.comments_for_user(current_user)
-      result.each do |d| end # cache results...
+      result = comments.map { |c| c.serialize(current_user) }
+      # result = task.comments_for_user(current_user)
+      # result.each do |d| end # cache results...
 
       # mark every comment type except for DiscussionComments so we don't mark it as read.
       comments_to_mark_as_read = comments.where("TYPE is null OR TYPE != 'DiscussionComment'")
@@ -143,7 +144,7 @@ class TaskCommentsApi < Grape::API
     else
       result = []
     end
-    present result, with: Entities::CommentEntity, current_user: current_user
+    present result, with: Grape::Presenters::Presenter
   end
 
   desc 'Delete a comment'
@@ -187,6 +188,6 @@ class TaskCommentsApi < Grape::API
     task_comment = task.comments.find(params[:id])
     task_comment.mark_as_unread(current_user)
 
-    present task_comment, with: Entities::CommentEntity, current_user: current_user
+    present task_comment.serialize(current_user), with: Grape::Presenters::Presenter
   end
 end
