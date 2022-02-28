@@ -63,7 +63,7 @@ module Submission
         end
 
         present :updated_task, task, with: Entities::TaskEntity, update_only: true
-        present :comment, response[:comment], with: Entities::CommentEntity, current_user: current_user
+        present :comment, response[:comment].serialize(current_user), with: Grape::Presenters::Presenter
         return
       end
 
@@ -177,7 +177,7 @@ module Submission
         error!({ error: response[:error] }, 403)
       end
 
-      present response[:comment], with: Entities::CommentEntity, current_user: current_user
+      present response[:comment].serialize(current_user), with: Grape::Presenters::Presenter
     end
 
     desc 'Get the result of the submission of a task made at the given timestamp'
