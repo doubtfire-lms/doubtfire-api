@@ -36,7 +36,7 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status
 
     # Check for file
-    assert_equal "attachment; filename=COS10001-Tasks.csv ",last_response.header["content-disposition"]
+    assert_equal "attachment; filename=COS10001-Tasks.csv",last_response.header["content-disposition"]
   end
 
   #2: Testing for unit ID error with empty user ID
