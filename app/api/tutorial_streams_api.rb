@@ -30,7 +30,7 @@ class TutorialStreamsApi < Grape::API
   params do
     optional :name,               type: String,   desc: 'The name of the tutorial stream'
     optional :abbreviation,       type: String,   desc: 'The abbreviation for the tutorial stream'
-    optional :activity_type_abbr, type: String,   desc: 'Abbreviation of the activity type'
+    optional :activity_type, type: String,   desc: 'Abbreviation of the activity type'
   end
   put '/units/:unit_id/tutorial_streams/:tutorial_stream_abbr' do
     unit = Unit.find(params[:unit_id])
@@ -39,8 +39,8 @@ class TutorialStreamsApi < Grape::API
     end
 
     tutorial_stream = unit.tutorial_streams.find_by!(abbreviation: params[:tutorial_stream_abbr])
-    activity_type = ActivityType.find_by!(abbreviation: params[:activity_type_abbr]) if params[:activity_type_abbr].present?
-    unit.update_tutorial_stream(tutorial_stream, params[:name], params[:abbreviation], activity_type)
+    activity_type = ActivityType.find_by!(abbreviation: params[:activity_type]) if params[:activity_type].present?
+    present unit.update_tutorial_stream(tutorial_stream, params[:name], params[:abbreviation], activity_type), with: Entities::TutorialStreamEntity
   end
 
   desc 'Delete a tutorial stream in the unit'
