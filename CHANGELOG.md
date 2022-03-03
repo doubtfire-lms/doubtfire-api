@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [6.0.5](https://github.com/macite/doubtfire-deploy/compare/v6.0.4...v6.0.5) (2022-03-03)
+
+
+### Bug Fixes
+
+* align param and field names in stream put ([919fd60](https://github.com/macite/doubtfire-deploy/commit/919fd605e148ad11a26d7c3fce5f020032d19b2e))
+
 ### [6.0.4](https://github.com/macite/doubtfire-deploy/compare/v6.0.3...v6.0.4) (2022-02-28)
 
 
