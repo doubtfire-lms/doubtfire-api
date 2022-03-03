@@ -89,6 +89,7 @@ class TaskCommentsApi < Grape::API
       # mark as attachment
       if params[:as_attachment]
         header['Content-Disposition'] = "attachment; filename=#{comment.attachment_file_name}"
+        header['Access-Control-Expose-Headers'] = 'Content-Disposition'
       end
 
       # Work out what part to return

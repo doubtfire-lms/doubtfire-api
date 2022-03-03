@@ -87,7 +87,8 @@ class LearningOutcomesApi < Grape::API
     end
 
     content_type 'application/octet-stream'
-    header['Content-Disposition'] = "attachment; filename=#{unit.code}-LearningOutcomes.csv "
+    header['Content-Disposition'] = "attachment; filename=#{unit.code}-LearningOutcomes.csv"
+    header['Access-Control-Expose-Headers'] = 'Content-Disposition'
     env['api.format'] = :binary
     unit.export_learning_outcome_to_csv
   end

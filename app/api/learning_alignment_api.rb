@@ -50,7 +50,8 @@ class LearningAlignmentApi < Grape::API
       end
 
       content_type 'application/octet-stream'
-      header['Content-Disposition'] = "attachment; filename=#{unit.code}-Alignment.csv "
+      header['Content-Disposition'] = "attachment; filename=#{unit.code}-Alignment.csv"
+      header['Access-Control-Expose-Headers'] = 'Content-Disposition'
       env['api.format'] = :binary
       unit.export_task_alignment_to_csv
     else
@@ -60,7 +61,8 @@ class LearningAlignmentApi < Grape::API
       end
 
       content_type 'application/octet-stream'
-      header['Content-Disposition'] = "attachment; filename=#{unit.code}-#{proj.student.name}-Task-Alignment.csv "
+      header['Content-Disposition'] = "attachment; filename=#{unit.code}-#{proj.student.name}-Task-Alignment.csv"
+      header['Access-Control-Expose-Headers'] = 'Content-Disposition'
       env['api.format'] = :binary
 
       proj.export_task_alignment_to_csv

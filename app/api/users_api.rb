@@ -219,7 +219,8 @@ class UsersApi < Grape::API
     end
 
     content_type 'application/octet-stream'
-    header['Content-Disposition'] = 'attachment; filename=doubtfire_users.csv '
+    header['Content-Disposition'] = 'attachment; filename=doubtfire_users.csv'
+    header['Access-Control-Expose-Headers'] = 'Content-Disposition'
     env['api.format'] = :binary
     User.export_to_csv
   end

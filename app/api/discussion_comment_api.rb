@@ -77,6 +77,7 @@ class DiscussionCommentApi < Grape::API
       # mark as attachment
       if params[:as_attachment]
         header['Content-Disposition'] = "attachment; filename=#{prompt_path}"
+        header['Access-Control-Expose-Headers'] = 'Content-Disposition'
       end
 
       # Work out what part to return
@@ -139,6 +140,7 @@ class DiscussionCommentApi < Grape::API
       # mark as attachment
       if params[:as_attachment]
         header['Content-Disposition'] = "attachment; filename=#{response_path}"
+        header['Access-Control-Expose-Headers'] = 'Content-Disposition'
       end
 
       # Work out what part to return
