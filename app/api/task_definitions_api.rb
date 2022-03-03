@@ -216,7 +216,8 @@ class TaskDefinitionsApi < Grape::API
     end
 
     content_type 'application/octet-stream'
-    header['Content-Disposition'] = "attachment; filename=#{unit.code}-Tasks.csv "
+    header['Content-Disposition'] = "attachment; filename=#{unit.code}-Tasks.csv"
+    header['Access-Control-Expose-Headers'] = 'Content-Disposition'
     env['api.format'] = :binary
     unit.task_definitions_csv
   end
@@ -516,6 +517,7 @@ class TaskDefinitionsApi < Grape::API
 
     if params[:as_attachment]
       header['Content-Disposition'] = "attachment; filename=#{filename}"
+      header['Access-Control-Expose-Headers'] = 'Content-Disposition'
     end
 
     content_type 'application/pdf'
@@ -545,6 +547,7 @@ class TaskDefinitionsApi < Grape::API
       content_type 'application/pdf'
       header['Content-Disposition'] = 'attachment; filename=FileNotFound.pdf'
     end
+    header['Access-Control-Expose-Headers'] = 'Content-Disposition'
 
     env['api.format'] = :binary
     File.read(path)
@@ -572,6 +575,7 @@ class TaskDefinitionsApi < Grape::API
       content_type 'application/pdf'
       header['Content-Disposition'] = 'attachment; filename=FileNotFound.pdf'
     end
+    header['Access-Control-Expose-Headers'] = 'Content-Disposition'
 
     env['api.format'] = :binary
     File.read(path)

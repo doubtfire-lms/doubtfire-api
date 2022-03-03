@@ -271,7 +271,8 @@ class UnitsApi < Grape::API
     end
 
     content_type 'application/octet-stream'
-    header['Content-Disposition'] = "attachment; filename=#{unit.code}-Students.csv "
+    header['Content-Disposition'] = "attachment; filename=#{unit.code}-Students.csv"
+    header['Access-Control-Expose-Headers'] = 'Content-Disposition'
     env['api.format'] = :binary
 
     unit.student_grades_csv
@@ -328,7 +329,8 @@ class UnitsApi < Grape::API
     end
 
     content_type 'application/octet-stream'
-    header['Content-Disposition'] = "attachment; filename=#{unit.code}-Students.csv "
+    header['Content-Disposition'] = "attachment; filename=#{unit.code}-Students.csv"
+    header['Access-Control-Expose-Headers'] = 'Content-Disposition'
     env['api.format'] = :binary
     unit.export_users_to_csv
   end
@@ -341,7 +343,8 @@ class UnitsApi < Grape::API
     end
 
     content_type 'application/octet-stream'
-    header['Content-Disposition'] = "attachment; filename=#{unit.code}-TaskCompletion.csv "
+    header['Content-Disposition'] = "attachment; filename=#{unit.code}-TaskCompletion.csv"
+    header['Access-Control-Expose-Headers'] = 'Content-Disposition'
     env['api.format'] = :binary
     unit.task_completion_csv
   end
@@ -384,7 +387,8 @@ class UnitsApi < Grape::API
     end
 
     content_type 'application/octet-stream'
-    header['Content-Disposition'] = "attachment; filename=#{unit.code}-TutorAssessments.csv "
+    header['Content-Disposition'] = "attachment; filename=#{unit.code}-TutorAssessments.csv"
+    header['Access-Control-Expose-Headers'] = 'Content-Disposition'
     env['api.format'] = :binary
 
     unit.tutor_assessment_csv

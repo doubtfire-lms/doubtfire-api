@@ -158,7 +158,8 @@ class GroupSetsApi < Grape::API
     end
 
     content_type 'application/octet-stream'
-    header['Content-Disposition'] = "attachment; filename=#{unit.code}-#{group_set.name}-student-groups.csv "
+    header['Content-Disposition'] = "attachment; filename=#{unit.code}-#{group_set.name}-student-groups.csv"
+    header['Access-Control-Expose-Headers'] = 'Content-Disposition'
     env['api.format'] = :binary
     unit.export_student_groups_to_csv(group_set)
   end
@@ -173,7 +174,8 @@ class GroupSetsApi < Grape::API
     end
 
     content_type 'application/octet-stream'
-    header['Content-Disposition'] = "attachment; filename=#{unit.code}-#{group_set.name}-groups.csv "
+    header['Content-Disposition'] = "attachment; filename=#{unit.code}-#{group_set.name}-groups.csv"
+    header['Access-Control-Expose-Headers'] = 'Content-Disposition'
     env['api.format'] = :binary
     unit.export_groups_to_csv(group_set)
   end

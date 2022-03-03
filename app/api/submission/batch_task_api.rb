@@ -38,6 +38,7 @@ module Submission
       content_type 'application/octet-stream'
       download_id = "#{Time.new.strftime('%Y-%m-%d')}-#{unit.code}-#{current_user.username}"
       header['Content-Disposition'] = "attachment; filename=#{download_id}.zip"
+      header['Access-Control-Expose-Headers'] = 'Content-Disposition'
       env['api.format'] = :binary
 
       out = File.read(output_zip)
