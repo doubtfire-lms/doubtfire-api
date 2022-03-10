@@ -38,6 +38,7 @@ class Project < ApplicationRecord
   validate :tutorial_enrolment_same_campus, if: :will_save_change_to_enrolled?
 
   after_update :check_withdraw_from_groups, if: :saved_change_to_enrolled?
+  after_update :update_task_stats, if: :saved_change_to_target_grade?
 
   #
   # Permissions around project data
@@ -568,45 +569,68 @@ class Project < ApplicationRecord
   # Total task counts must contain an array of the cummulative task counts (with none being 0)
   # Project task counts is an object with fail_count, complete_count etc for each status
   def self.create_task_stats_from(total_task_counts, project_task_counts, target_grade)
+    # check there are tasks...
+    if total_task_counts[target_grade] > 0
+      # For each kind of task status... get counts of that status from the passed project stats
+      (1..TaskStatus.count).each do |status_id|
+        project_task_counts["#{TaskStatus.id_to_key(status_id)}_count"] = 0 if project_task_counts["#{TaskStatus.id_to_key(status_id)}_count"].nil?
+      end
 
-  #   TaskStatus.all.each  do |s|
-  #     project_task_counts["#{s.status_key}_count"] = 0 if project_task_counts["#{s.status_key}_count"].nil?
-  #   end
+      red_pct = ((project_task_counts.fail_count + project_task_counts.feedback_exceeded_count + project_task_counts.time_exceeded_count) / total_task_counts[target_grade]).signif(2)
+      orange_pct = ((project_task_counts.redo_count + project_task_counts.need_help_count + project_task_counts.fix_and_resubmit_count) / total_task_counts[target_grade]).signif(2)
+      green_pct = ((project_task_counts.discuss_count + project_task_counts.demonstrate_count + project_task_counts.complete_count) / total_task_counts[target_grade]).signif(2)
+      blue_pct = (project_task_counts.ready_for_feedback_count / total_task_counts[target_grade]).signif(2)
+      grey_pct = (1 - red_pct - orange_pct - green_pct - blue_pct).signif(2)
 
-  #   red_pct = ((project_task_counts.fail_count + project_task_counts.feedback_exceeded_count + project_task_counts.time_exceeded_count) / total_task_counts[target_grade]).signif(2)
-  #   orange_pct = ((project_task_counts.redo_count + project_task_counts.need_help_count + project_task_counts.fix_and_resubmit_count) / total_task_counts[target_grade]).signif(2)
-  #   green_pct = ((project_task_counts.discuss_count + project_task_counts.demonstrate_count + project_task_counts.complete_count) / total_task_counts[target_grade]).signif(2)
-  #   blue_pct = (project_task_counts.ready_for_feedback_count / total_task_counts[target_grade]).signif(2)
-  #   grey_pct = (1 - red_pct - orange_pct - green_pct - blue_pct).signif(2)
+      order_scale = green_pct * 100 + blue_pct * 100 + orange_pct * 10 - red_pct
+    else
+      red_pct = 0
+      orange_pct = 0
+      green_pct = 0
+      blue_pct = 0
+      grey_pct = 1
+      order_scale = 0
+    end
 
-  #   order_scale = green_pct * 100 + blue_pct * 100 + orange_pct * 10 - red_pct
+    {
+      red_pct: red_pct,
+      grey_pct: grey_pct,
+      orange_pct: orange_pct,
+      blue_pct: blue_pct,
+      green_pct: green_pct,
+      order_scale: order_scale
+    }
+  end
 
-  #   {
-  #     red_pct: red_pct,
-  #     grey_pct: grey_pct,
-  #     orange_pct: orange_pct,
-  #     blue_pct: blue_pct,
-  #     green_pct: green_pct,
-  #     order_scale: order_scale
-  #   }
-  # end
+  # Recalculate the task stats for the project, and store in the
+  # task_stats field
+  def update_task_stats()
 
-  # def task_stats
-  #   task_count = [0, 1, 2, 3].map do |e|
-  #     unit.task_definitions.where("target_grade <= #{e}").count + 0.0
-  #   end.map { |e| e == 0 ? 1 : e }
+    # Get the count of the tasks less than each target grade
+    task_count = unit
+      .task_definitions
+      .select(*(0..3).map { |grade_id| "SUM(CASE WHEN target_grade <= #{grade_id} THEN 1 ELSE 0 END) AS count_#{grade_id}" }) # create columns for each grade
+      .map do |r| # map to array
+        [
+          r['count_0'] || 0,
+          r['count_1'] || 0,
+          r['count_2'] || 0,
+          r['count_3'] || 0
+        ]
+      end
+      .first # there is only one row returned...
 
-  #   result = assigned_tasks
-  #       .group('project_id')
-  #       .select(
-  #         'project_id',
-  #         *TaskStatus.all.map { |s| "SUM(CASE WHEN tasks.task_status_id = #{s.id} THEN 1 ELSE 0 END) AS #{s.status_key}_count" }
-  #       )
-  #       .map do |t| Project.create_task_stats_from(task_count, t, target_grade) end
-  #       .first
 
-  #   if result.nil?
-      {
+    # Get the assigned tasks (those where task grade <= target grade)
+    result = assigned_tasks
+        .select(
+          *(1..TaskStatus.count).map { |status_id| "SUM(CASE WHEN tasks.task_status_id = #{status_id} THEN 1 ELSE 0 END) AS #{TaskStatus.id_to_key(status_id)}_count" }
+        )
+        .map do |t| Project.create_task_stats_from(task_count, t, target_grade) end
+        .first
+
+    if result.nil?
+      result = {
         red_pct: 0,
         grey_pct: 1,
         orange_pct: 0,
@@ -614,9 +638,11 @@ class Project < ApplicationRecord
         green_pct: 0,
         order_scale: 0
       }
-    # else
-    #   result
-    # end
+    else
+      result
+    end
+
+    update(task_stats: result.to_json)
   end
 
   def assigned_task_defs_for_grade(target)

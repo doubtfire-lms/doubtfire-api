@@ -62,6 +62,15 @@ class TaskStatus < ApplicationRecord
     TaskStatus.find(12)
   end
 
+  # Return the count (which equals the largest id) - so that other code can loop thought all statuses without database lookup
+  #
+  # Make sure to update this if/when you add another status!
+  #
+  # Keep this hard coded! Saves cache load time.
+  # Important: count must equal the largest id in the database
+  def self.count
+    12
+  end
 
   def self.status_for_name(name)
     case name.downcase.strip

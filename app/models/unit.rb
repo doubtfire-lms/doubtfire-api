@@ -322,24 +322,6 @@ class Unit < ApplicationRecord
   end
 
   def student_query(limit_to_enrolled)
-    # Get the number of tasks for each grade... with 1 as minimum to avoid / 0
-    task_count = [0, 1, 2, 3].map do |e|
-      task_definitions.where("target_grade <= #{e}").count + 0.0
-    end.map { |e| e == 0 ? 1 : e }
-
-    # Get the task stats for a student as a subquery so that it is independent of the main query
-    # otherwise an attempt at a higher level task can exclude the student from the student list!
-    subquery = projects.
-      joins(tasks: :task_definition).
-      where(
-        'projects.target_grade >= task_definitions.target_grade'
-      ).
-      group('projects.id').
-      select(
-        "projects.id AS project_id",
-        *TaskStatus.all.map { |s| "SUM(CASE WHEN tasks.task_status_id = #{s.id} THEN 1 ELSE 0 END) AS #{s.status_key}_count" },
-      ).to_sql
-
     q = projects
         .joins(:user)
         .joins('LEFT OUTER JOIN tasks ON projects.id = tasks.project_id')
@@ -348,10 +330,10 @@ class Unit < ApplicationRecord
         .joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id')
         .joins('LEFT OUTER JOIN tutorials ON tutorials.id = tutorial_enrolments.tutorial_id')
         .joins('LEFT OUTER JOIN tutorial_streams ON tutorials.tutorial_stream_id = tutorial_streams.id')
-        .joins("LEFT OUTER JOIN (#{subquery}) as sq ON sq.project_id = projects.id")
         .group(
           'projects.id',
           'projects.target_grade',
+          'projects.task_stats',
           'projects.submitted_grade',
           'projects.enrolled',
           'projects.campus_id',
@@ -363,11 +345,11 @@ class Unit < ApplicationRecord
           'projects.compile_portfolio',
           'projects.grade',
           'projects.grade_rationale',
-          *TaskStatus.all.map { |s| "#{s.status_key}_count" },
         )
         .select(
           'projects.id AS project_id',
           'projects.enrolled AS enrolled',
+          'projects.task_stats AS task_stats',
           'projects.campus_id AS campus_id',
           'users.first_name AS first_name',
           'users.last_name AS last_name',
@@ -380,7 +362,6 @@ class Unit < ApplicationRecord
           'projects.grade_rationale AS grade_rationale',
           'projects.portfolio_production_date AS portfolio_production_date',
           'MAX(CASE WHEN plagiarism_match_links.dismissed = FALSE THEN plagiarism_match_links.pct ELSE 0 END) AS plagiarism_match_links_max_pct',
-          *TaskStatus.all.map { |s| "sq.#{s.status_key}_count AS #{s.status_key}_count" },
           # Get tutorial for each stream in unit
           *tutorial_streams.map { |s| "MAX(CASE WHEN tutorials.tutorial_stream_id = #{s.id} OR tutorials.tutorial_stream_id IS NULL THEN tutorials.id ELSE NULL END) AS tutorial_#{s.id}" },
           # Get tutorial for case when no stream
@@ -407,7 +388,7 @@ class Unit < ApplicationRecord
         grade_rationale: t.grade_rationale,
         max_pct_copy: t.plagiarism_match_links_max_pct,
         has_portfolio: !t.portfolio_production_date.nil?,
-        stats: Project.create_task_stats_from(task_count, t, t.target_grade),
+        stats: JSON.parse(t.task_stats),
         tutorial_enrolments: tutorial_streams.map do |s|
           {
             stream_abbr: s.abbreviation,
@@ -484,7 +465,7 @@ class Unit < ApplicationRecord
     Project.create!(
       user_id: user.id,
       unit_id: id,
-      task_stats: '0.0|1.0|0.0|0.0|0.0',
+      task_stats: '0.0|1.0|0.0|0.0|0.0|0.0',
       campus: campus
     )
   end
