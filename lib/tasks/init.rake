@@ -24,7 +24,7 @@ namespace :db do
   # Generate tasks statuses
   #
   def generate_task_statuses
-    return if TaskStatus.count > 0
+    return if TaskStatus.count_by_sql > 0
     puts "-> Generating task statuses"
     statuses = {
       "Not Started": "You have not yet started this task.",
