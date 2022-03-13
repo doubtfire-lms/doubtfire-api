@@ -33,3 +33,7 @@ EXPOSE 3000
 
 ENV RAILS_ENV development
 CMD bundle exec rake db:migrate && bundle exec rails s -b 0.0.0.0
+
+COPY ./docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+ENTRYPOINT ["/docker-entrypoint.sh"]
