@@ -32,4 +32,4 @@ COPY . .
 EXPOSE 3000
 
 ENV RAILS_ENV development
-CMD bundle exec rake db:migrate && bundle exec rails s -b 0.0.0.0
+CMD  rm -f tmp/pids/server.pid && bundle exec rake db:migrate && bundle exec rails s -b 0.0.0.0
