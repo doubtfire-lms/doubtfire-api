@@ -192,7 +192,7 @@ class ProjectsApi < Grape::API
           grade_rationale: proj.grade_rationale,
           max_pct_copy: 0,
           has_portfolio: false,
-          stats: '0|1|0|0|0|0|0|0|0|0|0'
+          stats: Project.DEFAULT_TASK_STATS
         }
         present result, with: Grape::Presenters::Presenter
       end

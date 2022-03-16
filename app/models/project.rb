@@ -565,6 +565,15 @@ class Project < ApplicationRecord
     end
   end
 
+  DEFAULT_TASK_STATS = {
+    red_pct: 0,
+    grey_pct: 1,
+    orange_pct: 0,
+    blue_pct: 0,
+    green_pct: 0,
+    order_scale: 0
+  }.freeze
+
   # Calculate the task stats text to send progress data back to the client
   # Total task counts must contain an array of the cummulative task counts (with none being 0)
   # Project task counts is an object with fail_count, complete_count etc for each status
@@ -629,15 +638,9 @@ class Project < ApplicationRecord
         .map do |t| Project.create_task_stats_from(task_count, t, target_grade) end
         .first
 
+    # There may be no row however... in which case use the defaults
     if result.nil?
-      result = {
-        red_pct: 0,
-        grey_pct: 1,
-        orange_pct: 0,
-        blue_pct: 0,
-        green_pct: 0,
-        order_scale: 0
-      }
+      result = DEFAULT_TASK_STATS
     else
       result
     end
