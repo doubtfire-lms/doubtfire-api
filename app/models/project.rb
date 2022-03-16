@@ -38,7 +38,7 @@ class Project < ApplicationRecord
   validate :tutorial_enrolment_same_campus, if: :will_save_change_to_enrolled?
 
   after_update :check_withdraw_from_groups, if: :saved_change_to_enrolled?
-  after_update :update_task_stats, if: :saved_change_to_target_grade?
+  after_update :update_task_stats, if: :saved_change_to_target_grade? #TODO: consider making this an async task!
 
   #
   # Permissions around project data
@@ -341,13 +341,14 @@ class Project < ApplicationRecord
 
     grades = [ "Pass", "Credit", "Distinction", "High Distinction" ]
 
-    for i in 0..3
+    for i in GradeHelper::RANGE
       graded_tasks = overdue_tasks.select { |ts| ts[:task_definition].target_grade == i  }
 
       graded_tasks.each do |ts|
         result << { task_definition: ts[:task_definition], status: ts[:status], reason: :overdue }
       end
 
+      # pick the top 5
       return result.slice(0..4) if result.count >= 5
     end
 
@@ -356,7 +357,7 @@ class Project < ApplicationRecord
     #
     soon_tasks = task_states.select { |ts| to_target.call(ts) >= Time.zone.today && to_target.call(ts) < Time.zone.today + 7.days }
 
-    for i in 0..3
+    for i in GradeHelper::RANGE
       graded_tasks = soon_tasks.select { |ts| ts[:task_definition].target_grade == i  }
 
       graded_tasks.each do |ts|
@@ -371,7 +372,7 @@ class Project < ApplicationRecord
     #
     ahead_tasks = task_states.select { |ts| to_target.call(ts) >= Time.zone.today + 7.days }
 
-    for i in 0..3
+    for i in GradeHelper::RANGE
       graded_tasks = ahead_tasks.select { |ts| ts[:task_definition].target_grade == i  }
 
       graded_tasks.each do |ts|
@@ -613,12 +614,14 @@ class Project < ApplicationRecord
 
   # Recalculate the task stats for the project, and store in the
   # task_stats field
-  def update_task_stats()
+  def update_task_stats
+    # generate SQL for columns that count the number of tasks per grade
+    count_by_grade = (GradeHelper::RANGE).map { |grade_id| "SUM(CASE WHEN target_grade <= #{grade_id} THEN 1 ELSE 0 END) AS count_#{grade_id}" }
 
-    # Get the count of the tasks less than each target grade
+    # Get the count of the total number of tasks less than each target grade
     task_count = unit
       .task_definitions
-      .select(*(0..3).map { |grade_id| "SUM(CASE WHEN target_grade <= #{grade_id} THEN 1 ELSE 0 END) AS count_#{grade_id}" }) # create columns for each grade
+      .select(*count_by_grade) # create columns for each grade
       .map do |r| # map to array
         [
           r['count_0'] || 0,
@@ -629,13 +632,18 @@ class Project < ApplicationRecord
       end
       .first # there is only one row returned...
 
+    # Generate SQL to get the count of each task status for the project
+    sum_by_status = (1..TaskStatus.count).map do |status_id|
+      "SUM(CASE WHEN tasks.task_status_id = #{status_id} THEN 1 ELSE 0 END) AS #{TaskStatus.id_to_key(status_id)}_count"
+    end
 
     # Get the assigned tasks (those where task grade <= target grade)
+    # sum the task counts by status
+    # and map to json from tasks stats
+    # getting first... as there is only one row returned (the row with sums)
     result = assigned_tasks
-        .select(
-          *(1..TaskStatus.count).map { |status_id| "SUM(CASE WHEN tasks.task_status_id = #{status_id} THEN 1 ELSE 0 END) AS #{TaskStatus.id_to_key(status_id)}_count" }
-        )
-        .map do |t| Project.create_task_stats_from(task_count, t, target_grade) end
+        .select( *sum_by_status )
+        .map {|t| Project.create_task_stats_from(task_count, t, target_grade) }
         .first
 
     # There may be no row however... in which case use the defaults
