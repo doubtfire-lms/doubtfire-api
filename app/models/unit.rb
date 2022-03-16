@@ -371,6 +371,8 @@ class Unit < ApplicationRecord
 
     q = q.where('projects.enrolled = TRUE') if limit_to_enrolled
 
+    map_stats = lambda {|t| begin t.task_stats.present? ? JSON.parse(t.task_stats) : {} rescue {} end}
+
     q.map do |t|
       result = {
         project_id: t.project_id,
@@ -388,7 +390,7 @@ class Unit < ApplicationRecord
         grade_rationale: t.grade_rationale,
         max_pct_copy: t.plagiarism_match_links_max_pct,
         has_portfolio: !t.portfolio_production_date.nil?,
-        stats: JSON.parse(t.task_stats),
+        stats: map_stats.call(t),
         tutorial_enrolments: tutorial_streams.map do |s|
           {
             stream_abbr: s.abbreviation,
@@ -625,7 +627,7 @@ class Unit < ApplicationRecord
         unit_code = row_data[:unit_code]
 
         # Check it is one of the unit codes
-        unless code.split('/').include? unit_code
+        unless code == unit_code || code.split('/').include?(unit_code)
           ignored << { row: row_data[:row], message: "Invalid unit code. #{unit_code} does not match #{code}" }
           next
         end
@@ -2060,8 +2062,6 @@ class Unit < ApplicationRecord
   def student_task_completion_stats
     data = _student_task_completion_data_base
 
-    puts data
-
     result = {}
     result[:unit] = _calculate_task_completion_stats(data)
     result[:tutorial] = {}
@@ -2071,7 +2071,7 @@ class Unit < ApplicationRecord
       result[:tutorial][t.id] = _calculate_task_completion_stats(data.select { |r| r[:tutorial_id] == t.id })
     end
 
-    for i in 0..3 do
+    for i in GradeHelper::RANGE do
       result[:grade][i] = _calculate_task_completion_stats(data.select { |r| r[:grade] == i })
     end
 

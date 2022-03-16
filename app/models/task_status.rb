@@ -2,6 +2,8 @@
 # The status
 # - has a name and a description
 class TaskStatus < ApplicationRecord
+  #TODO: Consider refactoring this class. Is there any point to having this in the database? Could this become an enum?
+
   # Model associations
   has_many :tasks
 

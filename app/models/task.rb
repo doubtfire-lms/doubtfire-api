@@ -116,7 +116,7 @@ class Task < ApplicationRecord
   delegate :target_date, to: :task_definition
   delegate :update_task_stats, to: :project
 
-  after_update :update_task_stats, if: :saved_change_to_task_status_id?
+  after_update :update_task_stats, if: :saved_change_to_task_status_id? #TODO: consider moving to async task
 
   validates :task_definition_id, uniqueness: { scope: :project,
                                                message: 'must be unique within the project' }

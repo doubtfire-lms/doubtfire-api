@@ -7,7 +7,7 @@ FactoryBot.define do
     unit
     name                      { Faker::Lorem.unique.word }
     description               { Faker::Lorem.sentence }
-    target_grade              { rand(0..3) }
+    target_grade              { rand(GradeHelper::RANGE) }
     upload_requirements       { [{'key' => 'file0','name' => 'Imported Code','type' => 'code'}] }
     start_date                { unit.start_date + rand(1..12).weeks }
     sequence(:abbreviation)   { |n| "#{GradeHelper.short_grade_for target_grade}#{((unit.start_date - start_date) / 1.week).floor + 1}.#{n}" }
