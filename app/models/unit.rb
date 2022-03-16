@@ -465,7 +465,7 @@ class Unit < ApplicationRecord
     Project.create!(
       user_id: user.id,
       unit_id: id,
-      task_stats: '0.0|1.0|0.0|0.0|0.0|0.0',
+      task_stats: Project::DEFAULT_TASK_STATS,
       campus: campus
     )
   end
