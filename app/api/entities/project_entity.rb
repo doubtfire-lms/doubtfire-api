@@ -7,7 +7,7 @@ module Entities
     end
     expose :campus_id
     expose :student_name do |project, options|
-      "#{project.student.name}#{project.student.nickname.nil? ? '' : ' (' << project.student.nickname << ')'}"
+      "#{project.student.name}#{project.student.nickname.blank? ? '' : ' (' << project.student.nickname << ')'}"
     end
     expose :enrolled
     expose :target_grade
