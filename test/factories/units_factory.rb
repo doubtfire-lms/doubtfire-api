@@ -171,7 +171,7 @@ FactoryBot.define do
       if eval.perform_submissions
         task_definitions.each_with_index do |td, i|
           unit.active_projects.each_with_index do |p, j|
-            ts = TaskStatus.all[(i + j) % TaskStatus.count_by_sql]
+            ts = TaskStatus.all[(i + j) % TaskStatus.db_count]
             next if ts == TaskStatus.not_started
             task = p.task_for_task_definition td
             tutor = p.tutor_for(td)

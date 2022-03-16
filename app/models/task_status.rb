@@ -62,6 +62,11 @@ class TaskStatus < ApplicationRecord
     TaskStatus.find(12)
   end
 
+  class << self
+    # Provide access to the count from the database via a new db_count method
+    alias_method :db_count, :count
+  end
+
   # Return the count (which equals the largest id) - so that other code can loop thought all statuses without database lookup
   #
   # Make sure to update this if/when you add another status!
