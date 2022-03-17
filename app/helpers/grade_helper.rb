@@ -33,6 +33,10 @@ module GradeHelper
     end
   end
 
+  PASS_VALUE = 0
+  HD_VALUE = 3
+  RANGE = PASS_VALUE..HD_VALUE
+
   module_function :grade_for
   module_function :short_grade_for
 end

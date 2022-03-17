@@ -2,6 +2,8 @@
 # The status
 # - has a name and a description
 class TaskStatus < ApplicationRecord
+  #TODO: Consider refactoring this class. Is there any point to having this in the database? Could this become an enum?
+
   # Model associations
   has_many :tasks
 
@@ -62,6 +64,20 @@ class TaskStatus < ApplicationRecord
     TaskStatus.find(12)
   end
 
+  class << self
+    # Provide access to the count from the database via a new db_count method
+    alias_method :db_count, :count
+  end
+
+  # Return the count (which equals the largest id) - so that other code can loop thought all statuses without database lookup
+  #
+  # Make sure to update this if/when you add another status!
+  #
+  # Keep this hard coded! Saves cache load time.
+  # Important: count must equal the largest id in the database
+  def self.count
+    12
+  end
 
   def self.status_for_name(name)
     case name.downcase.strip
