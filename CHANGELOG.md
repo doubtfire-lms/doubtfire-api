@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [6.0.7](https://github.com/macite/doubtfire-deploy/compare/v6.0.6...v6.0.7) (2022-03-17)
+
+
+### Bug Fixes
+
+* ensure cron tasks are reported via email ([20d6ec0](https://github.com/macite/doubtfire-deploy/commit/20d6ec0f0b99d308e3f1c9371a8f713174a8ed40))
+* ensure sample compose contains institution settings ([0f0185d](https://github.com/macite/doubtfire-deploy/commit/0f0185dc0111da2056e9e7689d051c0d0b1c09e3))
+* ensure TaskStatus.count uses sql where needed ([383a904](https://github.com/macite/doubtfire-deploy/commit/383a9047aa8ce849a302ce40ecadd7848df42b49))
+* ensure there is access to task status count from database ([976ec0a](https://github.com/macite/doubtfire-deploy/commit/976ec0ad2c2e7dff63d65baf45ddc1f342aa7249))
+* post project uses default task stats ([9ba5a50](https://github.com/macite/doubtfire-deploy/commit/9ba5a5069f5c8b8d30e27156dbc0b4914c9fc413))
+* stop empty nicknames from rendering in student_name ([#364](https://github.com/macite/doubtfire-deploy/issues/364)) ([b1a6035](https://github.com/macite/doubtfire-deploy/commit/b1a60356549f14aeb6432c9aec15e0f033732dd8))
+
 ### [6.0.6](https://github.com/macite/doubtfire-deploy/compare/v6.0.5...v6.0.6) (2022-03-03)
 
 
