@@ -624,10 +624,10 @@ class Project < ApplicationRecord
       .select(*count_by_grade) # create columns for each grade
       .map do |r| # map to array
         [
-          r['count_0'] || 0,
-          r['count_1'] || 0,
-          r['count_2'] || 0,
-          r['count_3'] || 0
+          r['count_0'].to_f || 0.0,
+          r['count_1'].to_f || 0.0,
+          r['count_2'].to_f || 0.0,
+          r['count_3'].to_f || 0.0
         ]
       end
       .first # there is only one row returned...
