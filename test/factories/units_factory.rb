@@ -7,7 +7,7 @@ FactoryBot.define do
     unit
     name                      { Faker::Lorem.unique.word }
     description               { Faker::Lorem.sentence }
-    target_grade              { rand(0..3) }
+    target_grade              { rand(GradeHelper::RANGE) }
     upload_requirements       { [{'key' => 'file0','name' => 'Imported Code','type' => 'code'}] }
     start_date                { unit.start_date + rand(1..12).weeks }
     sequence(:abbreviation)   { |n| "#{GradeHelper.short_grade_for target_grade}#{((unit.start_date - start_date) / 1.week).floor + 1}.#{n}" }
@@ -171,7 +171,7 @@ FactoryBot.define do
       if eval.perform_submissions
         task_definitions.each_with_index do |td, i|
           unit.active_projects.each_with_index do |p, j|
-            ts = TaskStatus.all[(i + j) % TaskStatus.count]
+            ts = TaskStatus.all[(i + j) % TaskStatus.db_count]
             next if ts == TaskStatus.not_started
             task = p.task_for_task_definition td
             tutor = p.tutor_for(td)

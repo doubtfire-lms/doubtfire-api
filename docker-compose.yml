@@ -17,6 +17,8 @@ services:
       DF_STUDENT_WORK_DIR: /student-work
       DF_INSTITUTION_HOST: http://localhost:3000
       DF_INSTITUTION_PRODUCT_NAME: OnTrack
+      DF_INSTITUTION_PRODUCT_VERSION: 0.0.1
+      DF_INSTITUTION_NAME: Doubtfire
 
       DF_SECRET_KEY_BASE: test-secret-key-test-secret-key!
       DF_SECRET_KEY_ATTR: test-secret-key-test-secret-key!

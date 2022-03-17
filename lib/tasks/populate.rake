@@ -25,7 +25,7 @@ namespace :db do
         p.tasks.destroy_all
         p.remove_portfolio
 
-        p.target_grade = rand(0..3)
+        p.target_grade = rand(GradeHelper::RANGE)
 
         case rand(1..100)
         when 0..5
