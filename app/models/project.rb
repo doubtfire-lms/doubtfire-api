@@ -104,14 +104,22 @@ class Project < ApplicationRecord
   end
 
   def enrol_in(tutorial)
+    tutorial_enrolment = matching_enrolment(tutorial)
+    return tutorial_enrolment if tutorial_enrolment.present? && tutorial_enrolment.tutorial_id == tutorial.id
+
     # Check if multiple enrolments changing to a single enrolment - due to no stream.
     # No need to delete if only 1, as that would be updated as well.
     if tutorial_enrolments.count > 1 && tutorial.tutorial_stream.nil?
-      # So remove current enrolments
-      tutorial_enrolments.delete_all()
+      begin
+        # So remove current enrolments
+        tutorial_enrolments.destroy_all()
+        # and there is no longer an associated tutorial enrolment
+        tutorial_enrolment = nil
+      rescue ActiveRecord::RecordNotDestroyed => e
+        raise ActiveRecord::RecordNotDestroyed.new("Unable to change tutorial due to group enrolment in current tutorials.", e.record)
+      end
     end
 
-    tutorial_enrolment = matching_enrolment(tutorial)
     if tutorial_enrolment.nil?
       tutorial_enrolment = TutorialEnrolment.new
       tutorial_enrolment.tutorial = tutorial

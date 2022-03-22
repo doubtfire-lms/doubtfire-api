@@ -13,6 +13,202 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
     assert_equal tutorial_enrolment.project.campus, tutorial_enrolment.tutorial.campus
   end
 
+  # Check that changing to a tutorial without a stream works as intended when there is a limited group
+  def test_group_change_on_cloud_tutorial_switch
+    # Create a unit with 2 streams, and a tutorial in each stream
+    unit = FactoryBot.create(:unit, with_students: false, group_sets: 1, stream_count: 2, tutorials: 0)
+
+    # Create the stream tutorials - factory will only create tutorials without streams
+    t1 = Tutorial.create unit: unit, tutorial_stream: unit.tutorial_streams.first, abbreviation: 'T01'
+    t2 = Tutorial.create unit: unit, tutorial_stream: unit.tutorial_streams.last, abbreviation: 'T02'
+    t3 = Tutorial.create unit: unit, tutorial_stream: nil, abbreviation: 'T03'
+
+    # Now make the group fixed, inflexible group
+    grp_set = unit.group_sets.first
+    grp_set.update(keep_groups_in_same_class: true, allow_students_to_manage_groups: false)
+
+    # Make sure the first group is in a stream 1 tutorial
+    grp = Group.create!({group_set: unit.group_sets.first, name: 'test-group', tutorial: t1})
+
+    assert grp_set.keep_groups_in_same_class
+    refute grp_set.allow_students_to_manage_groups
+    assert grp.limit_members_to_tutorial?
+
+    # Enrol a student - enrol in 2 tutorials to trigger destory of enrolments on cloud change
+    # cloud change with 1 tutorial is the same as between tutorials in the same stream
+    project = FactoryBot.create(:project, unit: unit)
+    tutorial_enrolment = project.enrol_in(t1) # the group's tutorial
+    other_enrolment = project.enrol_in(t2)
+
+    # Now enrol in the group
+    grp.add_member project
+
+    # Now you cannot leave...
+    assert_equal :leave_denied, tutorial_enrolment.action_on_student_leave_tutorial
+
+    # So this should fail!
+    assert_raises(ActiveRecord::RecordNotDestroyed, "Unable to change tutorial due to group enrolment in current tutorials.") { other_enrolment = project.enrol_in(t3) }
+
+    # If we make this more flexible...
+    grp_set.update(allow_students_to_manage_groups: true)
+
+    # This should succeed
+    other_enrolment = project.enrol_in(t3)
+
+    # But they are no longer in the group
+    refute grp.has_user(project.student)
+
+    unit.destroy
+  end
+
+  # Check the actions that should occur on changing a tutorial
+  def test_action_leave_tutorial
+    # Create a unit with 2 streams, and a tutorial in each stream
+    unit = FactoryBot.create(:unit, with_students: false, group_sets: 1, stream_count: 1, tutorials: 0)
+
+    # Create the stream tutorials - factory will only create tutorials without streams
+    t1 = Tutorial.create unit: unit, tutorial_stream: unit.tutorial_streams.first, abbreviation: 'T01'
+
+    grp_set = unit.group_sets.first
+
+    # Make sure the first group is in a stream 1 tutorial
+    grp = Group.create!({group_set: unit.group_sets.first, name: 'test-change-streams', tutorial: t1})
+
+    # Check this is currently a flexible group
+    refute grp_set.keep_groups_in_same_class
+    assert grp_set.allow_students_to_manage_groups
+    refute grp.limit_members_to_tutorial?
+
+    # Enrol a student
+    project = FactoryBot.create(:project, unit: unit)
+    tutorial_enrolment = project.enrol_in(t1)
+
+    # Now enrol in the group
+    grp.add_member project
+
+    # This is a flexible group... so leaving has no effect
+    assert_equal :none_can_leave, tutorial_enrolment.action_on_student_leave_tutorial
+
+    # Now make the group fixed
+    grp_set.update(keep_groups_in_same_class: true)
+    grp.reload
+
+    assert grp_set.keep_groups_in_same_class
+    assert grp_set.allow_students_to_manage_groups
+    assert grp.limit_members_to_tutorial?
+
+    # Now you can leave if you remove from the group
+    assert_equal :leave_after_remove_from_group, tutorial_enrolment.action_on_student_leave_tutorial
+
+    # Now make the group more inflexible
+    grp_set.update(allow_students_to_manage_groups: false)
+    assert grp_set.keep_groups_in_same_class
+    refute grp_set.allow_students_to_manage_groups
+    assert grp.limit_members_to_tutorial?
+
+    # Now you cannot leave...
+    assert_equal :leave_denied, tutorial_enrolment.action_on_student_leave_tutorial
+
+    grp.remove_member project
+    assert_equal :none_can_leave, tutorial_enrolment.action_on_student_leave_tutorial
+
+    unit.destroy
+  end
+
+  # Check that changing tutorials in other streams does not break group enrolment in other streams
+  def test_change_tutorial_does_not_break_group_in_other_stream
+    # Create a unit with 2 streams, and a tutorial in each stream
+    unit = FactoryBot.create(:unit, with_students: false, group_sets: 1, stream_count: 3, tutorials: 0)
+
+    # Create the stream tutorials - factory will only create tutorials without streams
+    t1 = Tutorial.create unit: unit, tutorial_stream: unit.tutorial_streams.second, abbreviation: 'T01'
+    t2 = Tutorial.create unit: unit, tutorial_stream: unit.tutorial_streams.first, abbreviation: 'T02'
+    t3 = Tutorial.create unit: unit, tutorial_stream: unit.tutorial_streams.second, abbreviation: 'T03'
+    t4 = Tutorial.create unit: unit, tutorial_stream: unit.tutorial_streams.first, abbreviation: 'T04'
+    t5 = Tutorial.create unit: unit, tutorial_stream: unit.tutorial_streams.last, abbreviation: 'T05'
+    t6 = Tutorial.create unit: unit, tutorial_stream: unit.tutorial_streams.last, abbreviation: 'T06'
+
+    unit.group_sets.first.update(keep_groups_in_same_class: true)
+
+    assert unit.group_sets.first.keep_groups_in_same_class
+
+    # Make sure the first group is in a stream 1 tutorial
+    grp = Group.create!({group_set: unit.group_sets.first, name: 'test-change-streams', tutorial: t1})
+    assert grp.limit_members_to_tutorial?
+
+    # Enrol a student
+    project = FactoryBot.create(:project, unit: unit)
+    tutorial_enrolment = project.enrol_in(t1)
+
+    # Make sure this has all worked
+    assert_equal tutorial_enrolment.project, project
+    assert_equal tutorial_enrolment.tutorial, t1
+    assert tutorial_enrolment.valid?
+
+    # Now enrol in the group
+    grp.add_member project
+
+    project.reload
+    grp.reload
+
+    # Ensure things are still valid
+    assert grp.valid?
+    assert_equal project.group_for_groupset(unit.group_sets.first), grp
+
+    # Enrol in other tutorial and check still in group
+    other_enrolment = project.enrol_in(t2)
+
+    assert tutorial_enrolment.valid?
+    assert other_enrolment.valid?
+    assert_equal t2, other_enrolment.tutorial
+    assert_equal grp, project.group_for_groupset(unit.group_sets.first)
+    assert project.group_membership_for_groupset(unit.group_sets.first).active
+
+    # Now change that enrolment...
+    other_enrolment = project.enrol_in(t4)
+
+    assert tutorial_enrolment.valid?
+    assert other_enrolment.valid?
+    assert_equal t4, other_enrolment.tutorial
+    assert_equal grp, project.group_for_groupset(unit.group_sets.first)
+    assert project.group_membership_for_groupset(unit.group_sets.first).active
+
+    # Enrol in other tutorial and check still in group
+    other_enrolment = project.enrol_in(t5)
+
+    assert tutorial_enrolment.valid?
+    assert other_enrolment.valid?
+    assert_equal t5, other_enrolment.tutorial
+    assert_equal grp, project.group_for_groupset(unit.group_sets.first)
+    assert project.group_membership_for_groupset(unit.group_sets.first).active
+
+    # Now change that enrolment...
+    other_enrolment = project.enrol_in(t6)
+
+    assert tutorial_enrolment.valid?
+    assert other_enrolment.valid?
+    assert_equal t6, other_enrolment.tutorial
+    assert_equal grp, project.group_for_groupset(unit.group_sets.first)
+    assert project.group_membership_for_groupset(unit.group_sets.first).active
+
+    # Check that updating with no change does not remoe group membership
+    updated_enrolment = project.enrol_in(t1)
+
+    project.reload
+    grp.reload
+
+    assert_equal project.group_for_groupset(unit.group_sets.first), grp
+    assert_equal updated_enrolment, tutorial_enrolment
+
+    # Check that moving to another tutorial does remove from group
+    updated_enrolment = project.enrol_in(t3)
+
+    assert_nil project.group_for_groupset(unit.group_sets.first)
+    assert updated_enrolment.valid?
+
+    unit.destroy
+  end
+
   def test_specific_create
     unit = FactoryBot.create(:unit, with_students: false)
     campus = FactoryBot.create(:campus)
