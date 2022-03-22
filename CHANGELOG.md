@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [6.0.8](https://github.com/macite/doubtfire-deploy/compare/v6.0.7...v6.0.8) (2022-03-22)
+
+
+### Bug Fixes
+
+* ensure validation works correctly for tutorial enrolments with restricted groups ([abf9d53](https://github.com/macite/doubtfire-deploy/commit/abf9d5313dee0780b9e653b3c180e501bf6c8ca2))
+
 ### [6.0.7](https://github.com/macite/doubtfire-deploy/compare/v6.0.6...v6.0.7) (2022-03-17)
 
 
