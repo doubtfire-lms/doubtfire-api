@@ -74,7 +74,8 @@ Doubtfire::Application.configure do
   config.action_controller.perform_caching = false
 
   # Logging level (:debug, :info, :warn, :error, :fatal)
-  config.log_level = :debug
+  config.log_level = :warn
+  
 
   # Only use best-standards-support built into browsers
   config.action_dispatch.best_standards_support = :builtin
