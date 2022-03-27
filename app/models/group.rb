@@ -214,8 +214,8 @@ class Group < ApplicationRecord
     raise 'Contributions missing for some group members' unless projects.count == contributors.count
 
     # check pct
-    raise 'Contribution percentages are insufficient.' unless total >= 90
-    raise 'Contribution percentages are excessive.' unless total <= 110
+    # raise 'Contribution percentages are insufficient.' unless total >= 90
+    # raise 'Contribution percentages are excessive.' unless total <= 110
 
     # check group task
     raise 'Group submission only allowed for group tasks.' unless submitter_task.task_definition.group_set
