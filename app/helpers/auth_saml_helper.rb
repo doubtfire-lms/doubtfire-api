@@ -1,7 +1,7 @@
 require 'json/jwt'
 require 'onelogin/ruby-saml'
 
-class AuthSaml
+class AuthSamlHelper
     def auth_saml2 (respSAML)
         response = OneLogin::RubySaml::Response.new(respSAML, allowed_clock_drift: 1.second,
                                                                             settings: AuthenticationHelpers.saml_settings)
