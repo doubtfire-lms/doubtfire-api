@@ -110,6 +110,7 @@ class Unit < ApplicationRecord
   # Model associations.
   # When a Unit is destroyed, any TaskDefinitions, Tutorials, and ProjectConvenor instances will also be destroyed.
   has_many :projects, dependent: :destroy # projects first to remove tasks
+  has_many :focuses, dependent: :destroy
   has_many :active_projects, -> { where enrolled: true }, class_name: 'Project'
   has_many :group_sets, dependent: :destroy # group sets next to remove groups
   has_many :task_definitions, -> { order 'start_date ASC, abbreviation ASC' }, dependent: :destroy

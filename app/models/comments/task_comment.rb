@@ -9,10 +9,14 @@ class TaskComment < ApplicationRecord
 
   belongs_to :task, optional: false # Foreign key
   belongs_to :user, optional: false
+  belongs_to :focus, optional: true
+
   has_one :unit, through: :task
   has_one :project, through: :task
 
   belongs_to :recipient, class_name: 'User', optional: false
+
+
 
   has_one :discussion_comment, class_name: 'DiscussionComment', required: false
 

@@ -22,7 +22,10 @@ class TaskDefinition < ApplicationRecord
   has_many :tasks, dependent:  :destroy # Destroying a task definition will also nuke any instances
   has_many :group_submissions, dependent: :destroy # Destroying a task definition will also nuke any group submissions
   has_many :learning_outcome_task_links, dependent: :destroy # links to learning outcomes
+  has_many :task_definition_required_focuses, dependent: :destroy
+
   has_many :learning_outcomes, -> { where('learning_outcome_task_links.task_id is NULL') }, through: :learning_outcome_task_links # only link staff relations
+  has_many :focuses, through: :task_definition_required_focuses
 
   # Model validations/constraints
   validates :name, uniqueness: { scope:  :unit_id } # task definition names within a unit must be unique
