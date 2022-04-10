@@ -2,7 +2,7 @@ require 'grape'
 require 'json/jwt'
 require 'onelogin/ruby-saml'
 require 'entities/user_entity'
-require 'helpers/auth_saml_helper.rb'
+require 'helpers/auth/auth_saml_helper.rb'
 #
 # Provides the authentication API for Doubtfire.
 # Users can sign in via email and password and receive an auth token
