@@ -86,7 +86,9 @@ class Unit < ApplicationRecord
   end
 
   def role_for(user)
-    if convenors.where('unit_roles.user_id=:id', id: user.id).count == 1
+    if user.nil?
+      nil
+    elsif convenors.where('unit_roles.user_id=:id', id: user.id).count == 1
       Role.convenor
     elsif tutors.where('unit_roles.user_id=:id', id: user.id).count == 1
       Role.tutor

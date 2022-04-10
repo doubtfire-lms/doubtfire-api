@@ -1,11 +1,9 @@
 class AddFocuses < ActiveRecord::Migration[7.0]
   def change
     create_table :focuses do |t|
-      t.string      :abbreviation,    null: false
       t.string      :title,           null: false
       t.string      :description,     null: false
       t.string      :color,           null: false, default: '#000000'
-      t.json        :grade_criteria,  null: false, default: '[]'
 
       t.references  :unit,            null: false
 
@@ -29,6 +27,13 @@ class AddFocuses < ActiveRecord::Migration[7.0]
       t.timestamps                   null: false
     end
 
+    create_table :focus_criteria do |t|
+      t.references  :focus
+
+      t.integer     :grade,       null:false, default: 0
+      t.string      :criteria,    null:false, default: ''
+    end
+
     change_table :task_comments do |t|
       t.references  :focus
 
@@ -36,6 +41,5 @@ class AddFocuses < ActiveRecord::Migration[7.0]
       t.integer     :task_shows_focus,    null:false, default: 0
       t.boolean     :move_on,             null:false, default: false
     end
-
   end
 end
