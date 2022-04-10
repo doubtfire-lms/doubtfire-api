@@ -52,6 +52,7 @@ gem 'devise'
 gem 'devise_ldap_authenticatable'
 gem 'json-jwt'
 gem 'ruby-saml', '~> 1.13.0'
+gem 'hashids'
 
 # Student submission
 gem 'coderay'

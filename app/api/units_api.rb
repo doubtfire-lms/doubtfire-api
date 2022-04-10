@@ -1,6 +1,7 @@
 require 'grape'
 require 'csv_helper'
 require 'entities/unit_entity'
+require 'hashids'
 
 class UnitsApi < Grape::API
   helpers AuthenticationHelpers
@@ -34,6 +35,12 @@ class UnitsApi < Grape::API
     units = Unit.for_user_admin current_user
 
     units = units.where('active = true') unless params[:include_in_active]
+
+    hashid = Hashids.new("unit_salt")
+
+    units.each do |unit|
+        unit.id = hashid.encode(unit.id)
+    end
 
     present units, with: Entities::UnitEntity, user: current_user, summary_only: true
   end
