@@ -2,7 +2,6 @@ require 'grape'
 require 'json/jwt'
 require 'onelogin/ruby-saml'
 require 'entities/user_entity'
-require 'helpers/auth/auth_saml_helper.rb'
 #
 # Provides the authentication API for Doubtfire.
 # Users can sign in via email and password and receive an auth token
@@ -11,6 +10,7 @@ require 'helpers/auth/auth_saml_helper.rb'
 class AuthenticationApi < Grape::API
   helpers LogHelper
   helpers AuthenticationHelpers
+  helpers Auth::AuthSamlHelper
 
   #
   # Sign in - only mounted if AAF auth is NOT used
@@ -86,10 +86,10 @@ class AuthenticationApi < Grape::API
     end
     post '/auth/jwt' do
         # this endpoint is being deprecated and will be removed
-        AuthSAMLHelper.auth_saml2 params[:SAMLResponse]
+        AuthSamlHelper.auth_saml2 params[:SAMLResponse]
     end
     post '/auth/saml2' do
-        AuthSAMLHelper.auth_saml2 params[:SAMLResponse]
+        AuthSamlHelper.auth_saml2 params[:SAMLResponse]
     end
   end
 
