@@ -9,7 +9,10 @@ module Entities
     end
 
     expose :code
-    expose :id
+    expose :id do |unit|
+        hashid = Hashids.new("unit_salt", 8)
+        hashid.encode(unit.id)
+    end
     expose :name
     expose :my_role do |unit, options|
       role = unit.role_for(options[:user])

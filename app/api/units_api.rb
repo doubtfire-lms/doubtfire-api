@@ -22,6 +22,8 @@ class UnitsApi < Grape::API
     end
   end
 
+  hashid = Hashids.new("unit_salt", 8)
+
   desc 'Get units related to the current user for admin purposes'
   params do
     optional :include_in_active, type: Boolean, desc: 'Include units that are not active'
@@ -36,17 +38,13 @@ class UnitsApi < Grape::API
 
     units = units.where('active = true') unless params[:include_in_active]
 
-    hashid = Hashids.new("unit_salt")
-
-    units.each do |unit|
-        unit.id = hashid.encode(unit.id)
-    end
-
     present units, with: Entities::UnitEntity, user: current_user, summary_only: true
   end
 
   desc "Get a unit's details"
   get '/units/:id' do
+    id = params[:id]
+    unit_id = hashid.decode(id)[0]
     unit = Unit.includes(
       {unit_roles: [:role, :user]},
       {task_definitions: :tutorial_stream},
@@ -58,7 +56,7 @@ class UnitsApi < Grape::API
       :group_sets,
       :groups,
       :group_memberships
-    ).find(params[:id])
+  ).find(unit_id)
 
     unless (authorise? current_user, unit, :get_unit) || (authorise? current_user, User, :admin_units)
       error!({ error: "Couldn't find Unit with id=#{params[:id]}" }, 403)
