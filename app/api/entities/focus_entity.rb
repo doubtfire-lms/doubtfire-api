@@ -4,7 +4,8 @@ module Entities
     expose :title
     expose :description
     expose :color
-    expose :grade_criteria
+
+    expose :focus_criteria, using: FocusCriterionEntity
   end
 
   class TaskDefinitionRequiredFocus < Grape::Entity

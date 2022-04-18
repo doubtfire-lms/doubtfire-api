@@ -49,17 +49,22 @@ module Convenor
     desc 'Set a grade criteria for a focus'
     params do
       requires :criteria, type: String, desc: 'The criteria for the indicated grade for the focus'
+      requires :grade, type: Integer, desc: 'The grade for the focus criteria'
     end
-    put '/unit/:unit_id/focuses/:focus_id/grade_criteria/:grade' do
+    put '/unit/:unit_id/focuses/:focus_id/criteria/:grade' do
       unit = Unit.find(params[:unit_id])
 
       unless authorise? current_user, unit, :update
         error!({ error: 'Not authorised to update the grade criteria for this focus' }, 403)
       end
 
+      unless (GradeHelper::RANGE) === params[:grade]
+        error!({error: 'Grade is invalid'}, 403)
+      end
+
       focus = Focus.find(params[:focus_id])
 
-      focus.set_grade_criteria(params[:grade], params[:criteria])
+      focus.set_criteria(params[:grade], params[:criteria])
       focus.save!
 
       present focus, with: Entities::FocusEntity
