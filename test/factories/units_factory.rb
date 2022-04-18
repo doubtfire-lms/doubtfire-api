@@ -33,7 +33,7 @@ FactoryBot.define do
 
   factory :unit do
     transient do
-      with_students               { true }
+      with_students               { false }
       student_count               { 8 }
       unenrolled_student_count    { 1 }
       part_enrolled_student_count { 2 }
@@ -51,6 +51,7 @@ FactoryBot.define do
       staff_count                 { 1 }
       inactive_student_count      { 1 }
       task_alignment_links        { 0 }
+      focus_count                 { 0 }
     end
 
     name            { Faker::Lorem.unique.words(number: 2).join(' ') }
@@ -70,6 +71,7 @@ FactoryBot.define do
       groups = eval.groups.clone
 
       create_list(:unit_role, eval.staff_count, unit: unit)
+      create_list(:focus, eval.focus_count, unit: unit)
 
       if eval.set_one_of_each_task
         group_sets = 1 unless group_sets > 0
