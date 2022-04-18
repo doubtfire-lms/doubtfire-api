@@ -66,7 +66,7 @@ ActiveRecord::Schema.define(version: 2022_04_09_101601) do
   create_table "focus_criteria", charset: "utf8mb4", force: :cascade do |t|
     t.bigint "focus_id"
     t.integer "grade", default: 0, null: false
-    t.string "criteria", default: "", null: false
+    t.string "description", default: "", null: false
     t.index ["focus_id"], name: "index_focus_criteria_on_focus_id"
   end
 

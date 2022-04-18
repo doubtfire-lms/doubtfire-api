@@ -30,8 +30,8 @@ class AddFocuses < ActiveRecord::Migration[7.0]
     create_table :focus_criteria do |t|
       t.references  :focus
 
-      t.integer     :grade,       null:false, default: 0
-      t.string      :criteria,    null:false, default: ''
+      t.integer     :grade,         null:false, default: 0
+      t.string      :description,   null:false, default: ''
     end
 
     change_table :task_comments do |t|
