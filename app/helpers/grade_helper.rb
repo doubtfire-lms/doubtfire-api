@@ -33,8 +33,13 @@ module GradeHelper
     end
   end
 
+  FAIL_VALUE = -1
   PASS_VALUE = 0
+  CREDIT_VALUE = 1
+  DISTINCTION_VALUE = 2
   HD_VALUE = 3
+
+  FULL_RANGE = FAIL_VALUE..HD_VALUE
   RANGE = PASS_VALUE..HD_VALUE
 
   module_function :grade_for

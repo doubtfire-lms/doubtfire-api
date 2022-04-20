@@ -982,6 +982,15 @@ class Project < ApplicationRecord
     NotificationsMailer.weekly_student_summary(self, summary_stats, did_revert_to_pass).deliver_now
   end
 
+  # Get or create the project focus for the indicated unit focus
+  def project_focus_for(focus)
+    ProjectFocus.find_or_create_by(focus: focus, project: self)
+  end
+
+  def award_focus_grade(focus, grade, task, user)
+    project_focus_for(focus).award_grade(grade, task, user)
+  end
+
   private
   def can_destroy?
     return true if tutorial_enrolments.count == 0

@@ -19,13 +19,11 @@ module Convenor
 
     desc 'Create a focus in a unit'
     params do
-      requires :focus, type: Hash do
-        requires :title,        type: String,  desc: 'The title for the focus'
-        requires :description,  type: String,  desc: 'The description for the focus'
-        requires :color,        type: String,  desc: 'The color for the focus'
-      end
+      requires :title,        type: String,  desc: 'The title for the focus'
+      requires :description,  type: String,  desc: 'The description for the focus'
+      requires :color,        type: String,  desc: 'The color for the focus'
     end
-    post '/unit/:unit_id/focuses' do
+    post '/units/:unit_id/focuses' do
       unit = Unit.find(params[:unit_id])
 
       unless authorise? current_user, unit, :update
@@ -33,7 +31,6 @@ module Convenor
       end
 
       focus_params = ActionController::Parameters.new(params)
-                      .require(:focus)
                       .permit(
                         :title,
                         :description,
@@ -46,12 +43,52 @@ module Convenor
       present result, with: Entities::FocusEntity
     end
 
+    desc 'Update a focus in a unit'
+    params do
+      optional :title,        type: String,  desc: 'The title for the focus'
+      optional :description,  type: String,  desc: 'The description for the focus'
+      optional :color,        type: String,  desc: 'The color for the focus'
+    end
+    put '/units/:unit_id/focuses/:focus_id' do
+      unit = Unit.find(params[:unit_id])
+
+      unless authorise? current_user, unit, :update
+        error!({ error: 'Not authorised to update focuses in this unit' }, 403)
+      end
+
+      focus_params = ActionController::Parameters.new(params)
+                      .permit(
+                        :title,
+                        :description,
+                        :color
+                      )
+
+      focus = unit.focuses.find(params[:focus_id])
+
+      focus.update!(focus_params)
+      present focus, with: Entities::FocusEntity
+    end
+
+    desc 'Delete a focus in a unit'
+    delete '/units/:unit_id/focuses/:focus_id' do
+      unit = Unit.find(params[:unit_id])
+
+      unless authorise? current_user, unit, :update
+        error!({ error: 'Not authorised to delete focuses in this unit' }, 403)
+      end
+
+      focus = unit.focuses.find(params[:focus_id])
+
+      focus.destroy!
+      present true, with: Grape::Presenters::Presenter
+    end
+
     desc 'Set a grade criteria for a focus'
     params do
       requires :criteria, type: String, desc: 'The criteria for the indicated grade for the focus'
       requires :grade, type: Integer, desc: 'The grade for the focus criteria'
     end
-    put '/unit/:unit_id/focuses/:focus_id/criteria/:grade' do
+    put '/units/:unit_id/focuses/:focus_id/criteria/:grade' do
       unit = Unit.find(params[:unit_id])
 
       unless authorise? current_user, unit, :update
