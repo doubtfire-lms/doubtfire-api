@@ -40,6 +40,8 @@ class AddFocuses < ActiveRecord::Migration[7.0]
       t.integer     :focus_understanding, null:false, default: 0
       t.integer     :task_shows_focus,    null:false, default: 0
       t.boolean     :move_on,             null:false, default: false
+
+      t.integer     :grade_achieved,      null:false, default: -1
     end
   end
 end
