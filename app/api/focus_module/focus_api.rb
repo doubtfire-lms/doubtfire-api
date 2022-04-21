@@ -16,7 +16,6 @@ module FocusModule
       present focuses, with: Entities::FocusEntity
     end
 
-
     desc 'Create a focus in a unit'
     params do
       requires :title,        type: String,  desc: 'The title for the focus'

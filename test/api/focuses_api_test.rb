@@ -41,6 +41,19 @@ class FocusesApiTest < ActiveSupport::TestCase
     assert_equal focus.focus_criteria.first.description, response['focus_criteria'].first['description']
   end
 
+  def test_get_focus_needs_auth
+    u = FactoryBot.create(:unit, focus_count: 2)
+    user = FactoryBot.create(:user, :student)
+
+    add_auth_header_for user: user
+
+    # Perform the POST
+    get "/api/units/#{u.id}/focuses"
+
+    # Check status
+    assert_equal 403, last_response.status, last_response.body
+  end
+
   def test_post_focus_for_unit
     u = FactoryBot.create(:unit, focus_count: 0)
 
@@ -114,10 +127,10 @@ class FocusesApiTest < ActiveSupport::TestCase
     add_auth_header_for user: user
 
     # Perform the POST
-    put_json "/api/units/#{u.id}/focuses", data_to_put
+    put_json "/api/units/#{u.id}/focuses/#{u.focuses.first.id}", data_to_put
 
     # Check status
-    assert_equal 405, last_response.status, last_response.body
+    assert_equal 403, last_response.status, last_response.body
   end
 
   def test_delete_focus_for_unit
@@ -146,4 +159,69 @@ class FocusesApiTest < ActiveSupport::TestCase
     assert_equal 403, last_response.status, last_response.body
     assert_equal 1, u.focuses.count
   end
+
+  # Test grade criteria
+  def test_put_focus_grade_criteria
+    u = FactoryBot.create(:unit, focus_count: 1)
+
+    add_auth_header_for user: u.main_convenor_user
+
+    focus = u.focuses.first
+    grade = GradeHelper::PASS_VALUE
+
+    data_to_put = {
+      criteria: "Updated Criteria",
+      grade: grade
+    }
+
+    # Perform the POST
+    put_json "/api/units/#{u.id}/focuses/#{focus.id}/criteria/#{grade}", data_to_put
+
+    # Check status
+    assert_equal 200, last_response.status, last_response.body
+    assert_equal data_to_put[:criteria], focus.focus_criteria.where(grade: grade).first.description
+  end
+
+  def test_put_focus_grade_criteria_requires_auth
+    u = FactoryBot.create(:unit, focus_count: 1)
+    user = FactoryBot.create(:user, :student)
+
+    add_auth_header_for user: user
+
+    focus = u.focuses.first
+    grade = GradeHelper::PASS_VALUE
+
+    data_to_put = {
+      criteria: "Updated Criteria",
+      grade: grade
+    }
+
+    # Perform the POST
+    put_json "/api/units/#{u.id}/focuses/#{focus.id}/criteria/#{grade}", data_to_put
+
+    # Check status
+    assert_equal 403, last_response.status, last_response.body
+    refute_equal data_to_put[:criteria], focus.focus_criteria.where(grade: grade).first.description
+  end
+
+  def test_put_focus_grade_criteria_tests_grade_range
+    u = FactoryBot.create(:unit, focus_count: 1)
+
+    add_auth_header_for user: u.main_convenor_user
+
+    focus = u.focuses.first
+    grade = GradeHelper::FAIL_VALUE
+
+    data_to_put = {
+      criteria: "Updated Criteria",
+      grade: grade
+    }
+
+    # Perform the POST
+    put_json "/api/units/#{u.id}/focuses/#{focus.id}/criteria/#{grade}", data_to_put
+
+    # Check status
+    assert_equal 403, last_response.status, last_response.body
+  end
+
 end
