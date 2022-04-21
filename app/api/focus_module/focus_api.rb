@@ -1,11 +1,11 @@
 require 'grape'
 
-module Convenor
+module FocusModule
 
-  class ConvenorFocusApi < ApplicationAuthenticatedApi
+  class FocusApi < ApplicationAuthenticatedApi
 
     desc 'Get focuses associated with a unit'
-    get '/unit/:unit_id/focuses' do
+    get '/units/:unit_id/focuses' do
       unit = Unit.find(params[:unit_id])
 
       unless authorise? current_user, unit, :get_unit
