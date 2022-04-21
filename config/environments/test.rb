@@ -11,7 +11,7 @@ Doubtfire::Application.configure do
   config.static_cache_control = 'public, max-age=3600'
 
   # Eager
-  config.eager_load = false
+  config.eager_load = true
 
   # Show full error reports and disable caching
   config.consider_all_requests_local       = true
