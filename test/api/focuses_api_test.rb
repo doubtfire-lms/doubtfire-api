@@ -9,6 +9,38 @@ class FocusesApiTest < ActiveSupport::TestCase
     Rails.application
   end
 
+  def test_get_focus
+    u = FactoryBot.create(:unit, focus_count: 2)
+    user = FactoryBot.create(:user, :student)
+    u.enrol_student(user, nil)
+
+    add_auth_header_for user: user
+
+    # Perform the POST
+    get "/api/units/#{u.id}/focuses"
+
+    # Check status
+    assert_equal 200, last_response.status, last_response.body
+    assert_equal 2, last_response_body.count
+
+    focus = u.focuses.first
+
+    keys = %w(id title description color focus_criteria)
+
+    assert_json_limit_keys_to_exactly keys, last_response_body.first
+
+    response = last_response_body.first
+
+    assert_equal focus.id, response['id']
+    assert_equal focus.title, response['title']
+    assert_equal focus.description, response['description']
+    assert_equal focus.color, response['color']
+
+    assert_equal focus.focus_criteria.count, response['focus_criteria'].count
+    assert_equal focus.focus_criteria.first.grade, response['focus_criteria'].first['grade']
+    assert_equal focus.focus_criteria.first.description, response['focus_criteria'].first['description']
+  end
+
   def test_post_focus_for_unit
     u = FactoryBot.create(:unit, focus_count: 0)
 
