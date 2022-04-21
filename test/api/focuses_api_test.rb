@@ -313,6 +313,6 @@ class FocusesApiTest < ActiveSupport::TestCase
 
     assert_equal 1, response['task_definitions'].count
     assert_equal 1, response['task_definitions'].first['focuses'].count
-    assert_equal focus.id, response['task_definitions'].first['focuses'].first['id']
+    assert_equal focus.id, response['task_definitions'].first['focuses'].first['focus_id']
   end
 end

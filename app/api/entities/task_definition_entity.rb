@@ -21,6 +21,7 @@ module Entities
     expose :tutorial_stream do |tutorial, options|
       tutorial.tutorial_stream.abbreviation unless tutorial.tutorial_stream.nil?
     end
+
     expose :plagiarism_checks
     expose :plagiarism_report_url
     expose :plagiarism_warn_pct
@@ -33,5 +34,7 @@ module Entities
     expose :max_quality_pts
     expose :overseer_image_id
     expose :assessment_enabled
+
+    expose :task_definition_required_focuses, using: TaskDefinitionRequiredFocusEntity, unless: :summary_only, as: :focuses
   end
 end
