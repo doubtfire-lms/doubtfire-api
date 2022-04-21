@@ -100,7 +100,7 @@ class CommentTest < ActiveSupport::TestCase
 
   def test_replying_to_comments
     campus = FactoryBot.create(:campus)
-    unit = FactoryBot.create(:unit, student_count: 2)
+    unit = FactoryBot.create(:unit, with_students: true, student_count: 2)
     unit.employ_staff(User.first, Role.convenor)
     project = FactoryBot.create(:project, unit: unit, campus: campus)
     user = project.student
@@ -157,7 +157,7 @@ class CommentTest < ActiveSupport::TestCase
 
   def test_student_post_reply_to_invalid_comment
     campus = FactoryBot.create(:campus)
-    unit = FactoryBot.create(:unit, student_count: 2)
+    unit = FactoryBot.create(:unit, with_students: true, student_count: 2)
     unit.employ_staff(User.first, Role.convenor)
     project = FactoryBot.create(:project, unit: unit, campus: campus)
     user = project.student
@@ -176,7 +176,7 @@ class CommentTest < ActiveSupport::TestCase
 
   def test_student_reply_to_student_in_same_unit
     campus = FactoryBot.create(:campus)
-    unit = FactoryBot.create(:unit, student_count: 2)
+    unit = FactoryBot.create(:unit, with_students: true, student_count: 2)
     project_1 = FactoryBot.create(:project, unit: unit, campus: campus)
     project_2 = FactoryBot.create(:project, unit: unit, campus: campus)
     student_1 = project_1.student
@@ -200,7 +200,7 @@ class CommentTest < ActiveSupport::TestCase
 
   def test_student_reply_to_themselve_in_different_task_same_project
     campus = FactoryBot.create(:campus)
-    unit = FactoryBot.create(:unit, student_count: 2)
+    unit = FactoryBot.create(:unit, with_students: true, student_count: 2)
     project_1 = FactoryBot.create(:project, unit: unit, campus: campus)
     student_1 = project_1.student
 
@@ -222,7 +222,7 @@ class CommentTest < ActiveSupport::TestCase
   end
 
   def test_student_reply_to_other_student_in_same_group
-    unit = FactoryBot.create :unit
+    unit = FactoryBot.create :unit, with_students: true
 
     group_set = GroupSet.create!(name: 'test_student_reply_to_other_student_in_same_group', unit: unit)
     group_set.save!
@@ -277,7 +277,7 @@ class CommentTest < ActiveSupport::TestCase
 
   def test_student_reply_to_other_student_in_different_group
     campus = FactoryBot.create(:campus)
-    unit = FactoryBot.create :unit
+    unit = FactoryBot.create :unit, with_students: true
     # project_1 = FactoryBot.create(:project, unit: unit, campus: campus)
 
     group_set = GroupSet.create!(name: 'test_student_reply_to_other_student_in_same_group', unit: unit)
@@ -317,7 +317,7 @@ class CommentTest < ActiveSupport::TestCase
 
   def test_convenor_reply_in_wrong_unit
     campus = FactoryBot.create(:campus)
-    unit_1 = FactoryBot.create(:unit, student_count: 2)
+    unit_1 = FactoryBot.create(:unit, with_students: true, student_count: 2)
     unit_1.employ_staff(User.first, Role.convenor)
     project_1 = FactoryBot.create(:project, unit: unit_1, campus: campus)
     student_1 = project_1.student
@@ -331,7 +331,7 @@ class CommentTest < ActiveSupport::TestCase
     assert_equal 201, last_response.status
     id = last_response_body['id']
 
-    unit_2 = FactoryBot.create(:unit, student_count: 2)
+    unit_2 = FactoryBot.create(:unit, with_students: true, student_count: 2)
     project_2 = FactoryBot.create(:project, unit: unit_2, campus: campus)
     task_definition_2 = unit_2.task_definitions.first
     unit_2.employ_staff(User.first, Role.convenor)

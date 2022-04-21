@@ -10,7 +10,7 @@ class FeedbackTest < ActiveSupport::TestCase
   end
 
   def test_get_awaiting_feedback
-    unit = FactoryBot.create(:unit, perform_submissions: true, unenrolled_student_count: 0, part_enrolled_student_count: 0)
+    unit = FactoryBot.create(:unit, with_students: true, perform_submissions: true, unenrolled_student_count: 0, part_enrolled_student_count: 0)
 
     unit.teaching_staff.each do |user|
       expected_response_ids = unit.tasks_awaiting_feedback(user).map { |data| data['id'] }
@@ -32,7 +32,7 @@ class FeedbackTest < ActiveSupport::TestCase
   end
 
   def test_tasks_for_task_inbox
-    unit = FactoryBot.create(:unit, perform_submissions: true, unenrolled_student_count: 0, part_enrolled_student_count: 0, tutorials: 2, staff_count: 2)
+    unit = FactoryBot.create(:unit, with_students: true, perform_submissions: true, unenrolled_student_count: 0, part_enrolled_student_count: 0, tutorials: 2, staff_count: 2)
 
     expected_count = unit.tasks.where(task_status: [ TaskStatus.ready_for_feedback, TaskStatus.need_help ]).count
 

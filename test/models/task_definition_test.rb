@@ -147,7 +147,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
   end
 
   def test_cannot_change_group_set_with_submissions
-    unit = FactoryBot.create :unit, group_sets: 1, groups: [{gs: 0, students: 3}], task_count: 0
+    unit = FactoryBot.create :unit, with_students: true, group_sets: 1, groups: [{gs: 0, students: 3}], task_count: 0
 
     td = FactoryBot.create :task_definition, unit: unit, group_set: unit.group_sets.first, upload_requirements: [ ], start_date: Time.zone.now + 1.day
 
@@ -169,7 +169,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     # When we change the group setting, and there is some old task interactions
     # make sure group submission details are removed
 
-    unit = FactoryBot.create :unit, group_sets: 1, groups: [{gs: 0, students: 3}], task_count: 0
+    unit = FactoryBot.create :unit, with_students: true, group_sets: 1, groups: [{gs: 0, students: 3}], task_count: 0
 
     td = FactoryBot.create :task_definition, unit: unit, group_set: unit.group_sets.first, upload_requirements: [ ], start_date: Time.zone.now + 1.day
 

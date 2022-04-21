@@ -17,7 +17,7 @@ class GroupsApiTest < ActiveSupport::TestCase
 #   end
 
   def test_group_submission_with_extensions
-    unit = FactoryBot.create :unit
+    unit = FactoryBot.create :unit, with_students: true
 
     group_set = GroupSet.create!({name: 'test_group_submission_with_extensions', unit: unit})
     group_set.save!
@@ -86,7 +86,7 @@ class GroupsApiTest < ActiveSupport::TestCase
   end
 
   def test_comment_on_group_task_without_group
-    unit = FactoryBot.create :unit
+    unit = FactoryBot.create :unit, with_students: true
 
     group_set = GroupSet.create!({name: 'test_comment_without_group', unit: unit})
     group_set.save!
@@ -127,7 +127,7 @@ class GroupsApiTest < ActiveSupport::TestCase
   end
 
   def test_pdf_comment_on_group_task
-    unit = FactoryBot.create :unit
+    unit = FactoryBot.create :unit, with_students: true
 
     group_set = GroupSet.create!({name: 'test_comment_without_group', unit: unit})
     group_set.save!
@@ -176,7 +176,7 @@ class GroupsApiTest < ActiveSupport::TestCase
   end
 
   def test_pdf_comment_on_group_task_without_group
-    unit = FactoryBot.create :unit
+    unit = FactoryBot.create :unit, with_students: true
 
     group_set = GroupSet.create!({name: 'test_comment_without_group', unit: unit})
     group_set.save!
@@ -217,7 +217,7 @@ class GroupsApiTest < ActiveSupport::TestCase
   end
 
   def test_create_group
-    unit = FactoryBot.create :unit
+    unit = FactoryBot.create :unit, with_students: true
 
     gs_data = {
       group_set: {
@@ -304,7 +304,7 @@ class GroupsApiTest < ActiveSupport::TestCase
   end
 
   def test_group_student_count
-    unit = FactoryBot.create :unit, group_sets: 1, groups: [{ gs: 0, students: 2}]
+    unit = FactoryBot.create :unit, with_students: true, group_sets: 1, groups: [{ gs: 0, students: 2}]
     assert_equal 2, unit.groups.first.group_memberships.count
 
     # Add username and auth_token to Header
@@ -317,7 +317,7 @@ class GroupsApiTest < ActiveSupport::TestCase
   end
 
   def test_group_switch_tutorial
-    unit = FactoryBot.create :unit, group_sets: 1, groups: [{gs: 0, students: 0}]
+    unit = FactoryBot.create :unit, with_students: true, group_sets: 1, groups: [{gs: 0, students: 0}]
 
     gs = unit.group_sets.first
     gs.update keep_groups_in_same_class: true, allow_students_to_manage_groups: true
@@ -352,7 +352,7 @@ class GroupsApiTest < ActiveSupport::TestCase
   end
 
   def test_group_switch_tutorial_no_student_management
-    unit = FactoryBot.create :unit, group_sets: 1, groups: [{gs: 0, students: 0}]
+    unit = FactoryBot.create :unit, with_students: true, group_sets: 1, groups: [{gs: 0, students: 0}]
 
     gs = unit.group_sets.first
     gs.update keep_groups_in_same_class: true, allow_students_to_manage_groups: false
@@ -385,7 +385,7 @@ class GroupsApiTest < ActiveSupport::TestCase
   end
 
   def test_group_switch_tutorial_unenrolled_students
-    unit = FactoryBot.create :unit, group_sets: 1, groups: [{gs: 0, students: 0}]
+    unit = FactoryBot.create :unit, with_students: true, group_sets: 1, groups: [{gs: 0, students: 0}]
 
     gs = unit.group_sets.first
     gs.update keep_groups_in_same_class: true, allow_students_to_manage_groups: false, capacity: 2

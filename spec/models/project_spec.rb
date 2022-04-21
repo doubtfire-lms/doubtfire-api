@@ -24,7 +24,7 @@ RSpec.describe Project do
   end
 
   it "can locate a matching task from another project" do
-    unit = FactoryBot.create(:unit, student_count:2)
+    unit = FactoryBot.create(:unit, with_students: true, student_count:2)
     campus = FactoryBot.create(:campus)
 
     u1 = unit.students[0]

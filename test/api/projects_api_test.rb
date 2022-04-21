@@ -22,7 +22,7 @@ class ProjectsApiTest < ActiveSupport::TestCase
   end
 
   def test_get_projects_with_streams_match
-    unit = FactoryBot.create :unit, stream_count: 2, campus_count: 2, tutorials: 2, unenrolled_student_count: 0, part_enrolled_student_count: 0, inactive_student_count: 0
+    unit = FactoryBot.create :unit, with_students: true, stream_count: 2, campus_count: 2, tutorials: 2, unenrolled_student_count: 0, part_enrolled_student_count: 0, inactive_student_count: 0
     project = unit.projects.first
     assert_equal 2, project.tutorial_enrolments.count
 

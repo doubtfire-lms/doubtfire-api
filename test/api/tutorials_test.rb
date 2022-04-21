@@ -634,7 +634,7 @@ class TutorialsTest < ActiveSupport::TestCase
   def test_student_cannot_post_tutorials
     # Create dummy attributes for a tutorial to post
     campus = FactoryBot.create(:campus)
-    unit = FactoryBot.create(:unit)
+    unit = FactoryBot.create(:unit, with_students: true)
     tutor = unit.tutors.first
 
     tutorial = {
@@ -1048,7 +1048,7 @@ class TutorialsTest < ActiveSupport::TestCase
 
     # Create dummy attributes for the tutorial
     campus = FactoryBot.create(:campus)
-    unit = FactoryBot.create(:unit)
+    unit = FactoryBot.create(:unit, with_students: true)
     tutor = unit.tutors.first
 
     tutorial = {
@@ -1252,7 +1252,8 @@ class TutorialsTest < ActiveSupport::TestCase
 
   def test_student_cannot_delete_tutorial
     # Tutorial to delete
-    tutorial = FactoryBot.create (:tutorial)
+    unit = FactoryBot.create(:unit, with_students: true)
+    tutorial = FactoryBot.create(:tutorial, unit: unit)
 
     # Number of tutorials before deletion
     number_of_tutorials = Tutorial.count
@@ -1277,7 +1278,7 @@ class TutorialsTest < ActiveSupport::TestCase
   end
 
   def test_student_change_tutorial
-    unit = FactoryBot.create :unit, student_count: 1, unenrolled_student_count: 0, part_enrolled_student_count: 0, tutorials: 2, inactive_student_count: 0
+    unit = FactoryBot.create :unit, with_students: true, student_count: 1, unenrolled_student_count: 0, part_enrolled_student_count: 0, tutorials: 2, inactive_student_count: 0
 
     project = unit.projects.first
 

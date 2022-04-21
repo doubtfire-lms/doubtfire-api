@@ -214,7 +214,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
   end
 
   def test_copy_draft_learning_summary
-    unit = FactoryBot.create :unit, student_count:1, task_count:0
+    unit = FactoryBot.create :unit, with_students: true, student_count:1, task_count:0
     task_def = FactoryBot.create(:task_definition, unit: unit, upload_requirements: [{'key' => 'file0','name' => 'Draft learning summary','type' => 'document'}])
 
     # Maybe make this call API to set
@@ -254,7 +254,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
   end
 
   def test_draft_learning_summary_wont_copy
-    unit = FactoryBot.create :unit, student_count:1, task_count:0
+    unit = FactoryBot.create :unit, with_students: true, student_count:1, task_count:0
     task_def = FactoryBot.create(:task_definition, unit: unit, upload_requirements: [{'key' => 'file0','name' => 'Draft learning summary','type' => 'document'}])
 
     unit.draft_task_definition = task_def

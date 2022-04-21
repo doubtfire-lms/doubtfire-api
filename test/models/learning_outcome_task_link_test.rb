@@ -48,7 +48,7 @@ class LearningOutcomeTaskLinkTest < ActiveSupport::TestCase
   end
 
   def test_should_allow_multiple_outcome_td_links_when_tasks_included
-    unit = FactoryBot.create(:unit, student_count: 1)
+    unit = FactoryBot.create(:unit, with_students: true, student_count: 1)
 
     task = unit.projects.first.task_for_task_definition(unit.task_definitions.first)
     task_def = task.task_definition
@@ -77,7 +77,7 @@ class LearningOutcomeTaskLinkTest < ActiveSupport::TestCase
   end
 
   def test_rating_should_be_1_to_5
-    unit = FactoryBot.create(:unit, student_count: 1)
+    unit = FactoryBot.create(:unit, with_students: true, student_count: 1)
 
     task_def = unit.task_definitions.first
     lo = unit.learning_outcomes.first

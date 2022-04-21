@@ -75,7 +75,7 @@ class GroupModelTest < ActiveSupport::TestCase
   end
 
   def test_at_capacity
-    unit = FactoryBot.create :unit, group_sets: 1, groups: [{gs: 0, students: 2}]
+    unit = FactoryBot.create :unit, with_students: true, group_sets: 1, groups: [{gs: 0, students: 2}]
     gs = unit.group_sets.first
     group1 = gs.groups.first
     assert group1.valid?
@@ -108,7 +108,7 @@ class GroupModelTest < ActiveSupport::TestCase
   end
 
   def test_switch_tutorial
-    unit = FactoryBot.create :unit, group_sets: 1, groups: [{gs: 0, students: 0}]
+    unit = FactoryBot.create :unit, with_students: true, group_sets: 1, groups: [{gs: 0, students: 0}]
 
     gs = unit.group_sets.first
     gs.update keep_groups_in_same_class: true, allow_students_to_manage_groups: true
@@ -134,7 +134,7 @@ class GroupModelTest < ActiveSupport::TestCase
   end
 
   def test_submit_with_others_having_extensions
-    unit = FactoryBot.create :unit
+    unit = FactoryBot.create :unit, with_students: true
 
     group_set = GroupSet.create!({name: 'test_group_submission_with_extensions', unit: unit})
     group_set.save!
@@ -222,7 +222,7 @@ class GroupModelTest < ActiveSupport::TestCase
   end
 
   def test_late_submission_does_not_override_complete_tasks
-    test_unit = FactoryBot.create :unit, group_sets: 1, groups: [{gs: 0, students: 3}], task_count: 0, unenrolled_student_count: 0, part_enrolled_student_count: 0
+    test_unit = FactoryBot.create :unit, with_students: true, group_sets: 1, groups: [{gs: 0, students: 3}], task_count: 0, unenrolled_student_count: 0, part_enrolled_student_count: 0
 
     td = FactoryBot.create :task_definition, unit: test_unit, group_set: test_unit.group_sets.first, upload_requirements: [ ], start_date: Time.zone.now + 1.day
 
@@ -288,7 +288,7 @@ class GroupModelTest < ActiveSupport::TestCase
   end
 
   def test_new_member_late_submission_does_not_override_complete_tasks
-    test_unit = FactoryBot.create :unit, group_sets: 1, groups: [{gs: 0, students: 3}], task_count: 0
+    test_unit = FactoryBot.create :unit, with_students: true, group_sets: 1, groups: [{gs: 0, students: 3}], task_count: 0
 
     td = FactoryBot.create :task_definition, unit: test_unit, group_set: test_unit.group_sets.first, upload_requirements: [ ], start_date: Time.zone.now + 1.day
 
@@ -358,7 +358,7 @@ class GroupModelTest < ActiveSupport::TestCase
   end
 
   def test_group_toggle_enrolment
-    unit = FactoryBot.create :unit, group_sets: 1, groups: [{gs: 0, students: 0}]
+    unit = FactoryBot.create :unit, with_students: true, group_sets: 1, groups: [{gs: 0, students: 0}]
 
     gs = unit.group_sets.first
     gs.update keep_groups_in_same_class: true, allow_students_to_manage_groups: false, capacity: 2
@@ -385,7 +385,7 @@ class GroupModelTest < ActiveSupport::TestCase
   end
 
   def test_group_toggle_enrolment_at_capacity
-    unit = FactoryBot.create :unit, group_sets: 1, groups: [{gs: 0, students: 0}]
+    unit = FactoryBot.create :unit, with_students: true, group_sets: 1, groups: [{gs: 0, students: 0}]
 
     # Only 2 students per group
     gs = unit.group_sets.first
@@ -425,7 +425,7 @@ class GroupModelTest < ActiveSupport::TestCase
   end
 
   def test_group_delete_clears_members
-    unit = FactoryBot.create :unit
+    unit = FactoryBot.create :unit, with_students: true
 
     group_set = GroupSet.create!({name: 'test group', unit: unit})
     group_set.save!

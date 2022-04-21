@@ -10,7 +10,7 @@ class ExtensionTest < ActiveSupport::TestCase
   end
 
   def test_extension_application
-    unit = FactoryBot.create(:unit)
+    unit = FactoryBot.create(:unit, with_students: true)
     project = unit.projects.first
     user = project.student
 
@@ -84,7 +84,7 @@ class ExtensionTest < ActiveSupport::TestCase
 
   # Test that extension requests are not read by main tutor until they are assessed
   def test_extension_application
-    unit = FactoryBot.create(:unit, auto_apply_extension_before_deadline: false)
+    unit = FactoryBot.create(:unit, with_students: true, auto_apply_extension_before_deadline: false)
     project = unit.projects.first
     user = project.student
     other_tutor = unit.main_convenor_user
@@ -142,7 +142,7 @@ class ExtensionTest < ActiveSupport::TestCase
   end
 
   def test_disallow_student_extensions
-    unit = FactoryBot.create(:unit, allow_student_extension_requests: false)
+    unit = FactoryBot.create(:unit, with_students: true, allow_student_extension_requests: false)
     project = unit.projects.first
     user = project.student
     other_tutor = unit.main_convenor_user
@@ -195,7 +195,7 @@ class ExtensionTest < ActiveSupport::TestCase
   end
 
   def test_extension_on_resubmit
-    unit = FactoryBot.create(:unit, extension_weeks_on_resubmit_request: 2)
+    unit = FactoryBot.create(:unit, with_students: true, extension_weeks_on_resubmit_request: 2)
     td = TaskDefinition.new({
         unit_id: unit.id,
         tutorial_stream: unit.tutorial_streams.first,
@@ -225,7 +225,7 @@ class ExtensionTest < ActiveSupport::TestCase
 
     # Make a submission for this student
     add_auth_header_for user: tutor
-    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post    
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
     assert_equal 201, last_response.status
 
     # Get the task... check it is ready for feedback
@@ -245,7 +245,7 @@ class ExtensionTest < ActiveSupport::TestCase
   end
 
   def test_extension_in_inbox
-    unit = FactoryBot.create(:unit, auto_apply_extension_before_deadline: false, unenrolled_student_count: 0, part_enrolled_student_count: 0, inactive_student_count: 0, tutorials: 2, staff_count: 2)
+    unit = FactoryBot.create(:unit, with_students: true, auto_apply_extension_before_deadline: false, unenrolled_student_count: 0, part_enrolled_student_count: 0, inactive_student_count: 0, tutorials: 2, staff_count: 2)
     project = unit.projects.first
     user = project.student
     tutor = unit.main_convenor_user

@@ -19,7 +19,7 @@ class UnitMailTest < ActionMailer::TestCase
   end
 
   def test_send_portfolio_ready_from_main_convenor
-    unit = FactoryBot.create :unit
+    unit = FactoryBot.create :unit, with_students: true
     convenor = FactoryBot.create :user, :convenor
 
     ur = unit.employ_staff convenor, Role.convenor
@@ -35,7 +35,7 @@ class UnitMailTest < ActionMailer::TestCase
   end
 
   def test_send_portfolio_fail_from_main_convenor
-    unit = FactoryBot.create :unit
+    unit = FactoryBot.create :unit, with_students: true
     convenor = FactoryBot.create :user, :convenor
 
     ur = unit.employ_staff convenor, Role.convenor

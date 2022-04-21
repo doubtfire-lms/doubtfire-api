@@ -11,7 +11,7 @@ class StudentsApiTest < ActiveSupport::TestCase
 
   def test_get_students_with_authorization
     # Create a unit
-    newUnit = FactoryBot.create(:unit)
+    newUnit = FactoryBot.create(:unit, with_students: true)
 
     # Add username and auth_token to Header
     add_auth_header_for(user: newUnit.main_convenor_user)
@@ -35,7 +35,7 @@ class StudentsApiTest < ActiveSupport::TestCase
 
   def test_get_students_without_authorization
     # Create unit
-    newUnit = FactoryBot.create(:unit)
+    newUnit = FactoryBot.create(:unit, with_students: true)
 
     # Obtain a student from unit
     studentUser = newUnit.active_projects.first.student
@@ -65,14 +65,14 @@ class StudentsApiTest < ActiveSupport::TestCase
 
   def test_students_tutorial_enrolments
     # Create unit
-    unit = FactoryBot.create(:unit, stream_count: 2, campus_count: 2)
+    unit = FactoryBot.create(:unit, with_students: true, stream_count: 2, campus_count: 2)
 
     # Add username and auth_token to Header
     add_auth_header_for(user: unit.main_convenor_user)
 
     # The get that we will be testing without parameters.
     get "/api/students/?unit_id=#{unit.id}"
-    
+
     assert_equal 200, last_response.status
     assert_equal unit.active_projects.count, last_response_body.count
 

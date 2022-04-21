@@ -370,7 +370,7 @@ class UnitModelTest < ActiveSupport::TestCase
   end
 
   def test_task_completion_csv_all_td_in_one_stream
-    unit = FactoryBot.create :unit, campus_count: 2, tutorials:1, stream_count:1, task_count:1, student_count:3, unenrolled_student_count: 0, part_enrolled_student_count: 0
+    unit = FactoryBot.create :unit, campus_count: 2, tutorials:1, stream_count:1, task_count:1, with_students: true, student_count:3, unenrolled_student_count: 0, part_enrolled_student_count: 0
 
     unit.tutorial_streams << FactoryBot.create(:tutorial_stream, unit: unit)
     tutorial = FactoryBot.create(:tutorial, unit: unit, tutorial_stream: unit.tutorial_streams.last, campus: Campus.last )

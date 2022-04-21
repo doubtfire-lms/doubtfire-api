@@ -14,7 +14,7 @@ class GroupSetsApiTest < ActiveSupport::TestCase
     new_group_set = FactoryBot.build(:group_set)
 
     # Create a unit
-    new_unit = FactoryBot.create(:unit)
+    new_unit = FactoryBot.create(:unit, with_students: true)
 
     # Obtain a student from the unit
     student_user = new_unit.active_projects.first.student
@@ -38,7 +38,7 @@ class GroupSetsApiTest < ActiveSupport::TestCase
     # A groupSet we want to save
     new_group_set = FactoryBot.build(:group_set)
 
-    # Create a unit 
+    # Create a unit
     new_unit = FactoryBot.create(:unit)
 
     # Data that we want to post
@@ -144,7 +144,7 @@ class GroupSetsApiTest < ActiveSupport::TestCase
     new_unit = new_group.group_set.unit
 
     get "/api/units/#{new_unit.id}/group_sets/#{new_group.group_set_id}/groups"
-    
+
     # Check error code when an unauthorized user tries to get groups in a unit
     assert_equal 419, last_response.status, last_response_body
   end
@@ -214,7 +214,7 @@ class GroupSetsApiTest < ActiveSupport::TestCase
     end
     assert_equal 200, last_response.status
   end
-  
+
   def test_groups_unlocked_upon_creation
 
     unit = FactoryBot.create :unit
@@ -240,14 +240,13 @@ class GroupSetsApiTest < ActiveSupport::TestCase
   end
 
   def test_groups_lockable_only_by_staff
-    unit = FactoryBot.create :unit
-    unit.save!
+    unit = FactoryBot.create :unit, with_students: true
     group_set = GroupSet.create!({name: 'test_groups_lockable_only_by_staff', unit: unit, allow_students_to_manage_groups: true })
     group_set.save!
     group = Group.create!({group_set: group_set, name: 'test_groups_lockable_only_by_staff', tutorial: unit.tutorials.first })
     group.save!
     group.add_member(unit.active_projects[0])
-    
+
     url = "api/units/#{unit.id}/group_sets/#{group_set.id}/groups/#{group.id}"
     lock_data = { group: { locked: true } }
     unlock_data = { group: { locked: false } }

@@ -15,7 +15,7 @@ class TaskStatusTest < ActiveSupport::TestCase
   end
 
   def test_status_chanaged_with_extenssion
-    unit = FactoryBot.create :unit
+    unit = FactoryBot.create :unit, with_students: true
     td = TaskDefinition.new({
         unit_id: unit.id,
         name: 'Task past due - for revert',

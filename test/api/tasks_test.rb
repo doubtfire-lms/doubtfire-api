@@ -11,7 +11,7 @@ class TasksTest < ActiveSupport::TestCase
 
   def test_task_get
     # The GET we are testing
-    unit = FactoryBot.create(:unit, perform_submissions: true)
+    unit = FactoryBot.create(:unit, with_students: true, perform_submissions: true)
 
     # Add username and auth_token to Header
     add_auth_header_for(user: unit.main_convenor_user)
@@ -42,7 +42,7 @@ class TasksTest < ActiveSupport::TestCase
 
   def test_task_get_with_streams
     # The GET we are testing
-    unit = FactoryBot.create(:unit, perform_submissions: true, stream_count: 1, campus_count: 2)
+    unit = FactoryBot.create(:unit, with_students: true, perform_submissions: true, stream_count: 1, campus_count: 2)
 
     # Add username and auth_token to Header
     add_auth_header_for(user: unit.main_convenor_user)
@@ -73,7 +73,7 @@ class TasksTest < ActiveSupport::TestCase
 
 
   def test_time_exceeded_grade
-    unit = FactoryBot.create(:unit)
+    unit = FactoryBot.create(:unit, with_students: true)
     td = TaskDefinition.new({
         unit_id: unit.id,
         tutorial_stream: unit.tutorial_streams.first,
@@ -113,7 +113,7 @@ class TasksTest < ActiveSupport::TestCase
   end
 
   def test_extension_reverts_time_exceeded
-    unit = FactoryBot.create(:unit, auto_apply_extension_before_deadline: false)
+    unit = FactoryBot.create(:unit, with_students: true, auto_apply_extension_before_deadline: false)
     td = TaskDefinition.new({
         unit_id: unit.id,
         tutorial_stream: unit.tutorial_streams.first,
@@ -191,7 +191,7 @@ class TasksTest < ActiveSupport::TestCase
   end
 
   def test_extension_reverts_time_exceeded_auto_apply
-    unit = FactoryBot.create(:unit)
+    unit = FactoryBot.create(:unit, with_students: true)
     td = TaskDefinition.new({
         unit_id: unit.id,
         tutorial_stream: unit.tutorial_streams.first,
@@ -258,7 +258,7 @@ class TasksTest < ActiveSupport::TestCase
   end
 
   def test_convenors_tutors_can_pin_and_unpin_tasks_students_admins_cannot
-    unit = FactoryBot.create(:unit, student_count: 1, task_count: 1, perform_submissions: true)
+    unit = FactoryBot.create(:unit, with_students: true, student_count: 1, task_count: 1, perform_submissions: true)
     task = unit.tasks.first
 
     convenor = FactoryBot.create(:user, :convenor)
@@ -303,7 +303,7 @@ class TasksTest < ActiveSupport::TestCase
   end
 
   def test_convenors_tutors_can_pin_tasks_of_their_units_only
-    unit = FactoryBot.create(:unit, student_count: 1, task_count: 1, perform_submissions: true)
+    unit = FactoryBot.create(:unit, with_students: true, student_count: 1, task_count: 1, perform_submissions: true)
     task = unit.tasks.first
 
     convenor = FactoryBot.create(:user, :convenor)
@@ -312,7 +312,7 @@ class TasksTest < ActiveSupport::TestCase
     unit.employ_staff(convenor, Role.convenor)
     unit.employ_staff(tutor, Role.tutor)
 
-    other_unit = FactoryBot.create(:unit, student_count: 1, task_count: 1, perform_submissions: true)
+    other_unit = FactoryBot.create(:unit, with_students: true, student_count: 1, task_count: 1, perform_submissions: true)
     other_task = other_unit.tasks.first
 
     add_auth_header_for user: convenor
@@ -338,7 +338,7 @@ class TasksTest < ActiveSupport::TestCase
   end
 
   def test_tasks_for_inbox_include_pinned_status
-    unit = FactoryBot.create(:unit, task_count: 2)
+    unit = FactoryBot.create(:unit, with_students: true, task_count: 2)
 
     s = unit.active_projects.first
     td1 = unit.task_definitions.first
