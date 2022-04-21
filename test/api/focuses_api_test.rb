@@ -10,7 +10,7 @@ class FocusesApiTest < ActiveSupport::TestCase
   end
 
   def test_get_focus
-    u = FactoryBot.create(:unit, focus_count: 2)
+    u = FactoryBot.create(:unit, focus_count: 1)
     user = FactoryBot.create(:user, :student)
     u.enrol_student(user, nil)
 
@@ -21,7 +21,7 @@ class FocusesApiTest < ActiveSupport::TestCase
 
     # Check status
     assert_equal 200, last_response.status, last_response.body
-    assert_equal 2, last_response_body.count
+    assert_equal 1, last_response_body.count
 
     focus = u.focuses.first
 
@@ -241,19 +241,19 @@ class FocusesApiTest < ActiveSupport::TestCase
     }
 
     # Perform the POST
-    post_json "/api/units/#{u.id}/task_definitions/#{td.id}/focus", data_to_post
+    post_json "/api/units/#{u.id}/task_definitions/#{td.id}/focuses", data_to_post
 
     # Check status
-    assert_equal 200, last_response.status, last_response.body
+    assert_equal 201, last_response.status, last_response.body
     assert_equal 1, td.task_definition_required_focuses.count
-    assert_contains td.focuses, focus
+    assert_includes td.focuses, focus
 
     # Perform a DELETE
-    delete_json "/api/units/#{u.id}/task_definitions/#{td.id}/focus/#{focus.id}"
+    delete_json "/api/units/#{u.id}/task_definitions/#{td.id}/focuses/#{focus.id}"
 
-    assert_equal 200, last_response.status, last_response.body
+    assert_equal 204, last_response.status, last_response.body
     assert_equal 0, td.task_definition_required_focuses.count
-    refute_contains td.focuses, focus
+    refute_includes td.focuses, focus
   end
 
   def test_post_task_definition_focus_requires_auth
@@ -270,12 +270,11 @@ class FocusesApiTest < ActiveSupport::TestCase
     }
 
     # Perform the POST
-    post_json "/api/units/#{u.id}/task_definitions/#{td.id}/focus", data_to_post
+    post_json "/api/units/#{u.id}/task_definitions/#{td.id}/focuses", data_to_post
 
     # Check status
     assert_equal 403, last_response.status, last_response.body
     assert_equal 0, td.task_definition_required_focuses.count
-    refute_contains td.focuses, focus
   end
 
   def test_delete_task_definition_focus_requires_auth
@@ -290,12 +289,11 @@ class FocusesApiTest < ActiveSupport::TestCase
     td.task_definition_required_focuses.create(focus: focus)
 
     # Perform the POST
-    delete_json "/api/units/#{u.id}/task_definitions/#{td.id}/focus/#{focus.id}"
+    delete_json "/api/units/#{u.id}/task_definitions/#{td.id}/focuses/#{focus.id}"
 
     # Check status
     assert_equal 403, last_response.status, last_response.body
-    assert_equal 0, td.task_definition_required_focuses.count
-    refute_contains td.focuses, focus
+    assert_equal 1, td.task_definition_required_focuses.count
   end
 
   def test_task_definitions_include_focuses
@@ -313,6 +311,6 @@ class FocusesApiTest < ActiveSupport::TestCase
 
     assert_equal 1, response['task_definitions'].count
     assert_equal 1, response['task_definitions'].first['focuses'].count
-    assert_equal focus.id, response['task_definitions'].first['focuses'].first['focus_id']
+    assert_equal focus.id, response['task_definitions'].first['focuses'].first
   end
 end

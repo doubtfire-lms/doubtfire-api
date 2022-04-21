@@ -597,6 +597,15 @@ class TaskDefinition < ApplicationRecord
     tasks_with_files
   end
 
+  def add_focus(focus)
+    self.task_definition_required_focuses.create(focus: focus) unless self.task_definition_required_focuses.where(focus: focus).count > 0
+  end
+
+  def remove_focus(focus)
+    required_focus = self.task_definition_required_focuses.find_by(focus: focus)
+    required_focus.destroy! if required_focus.present?
+  end
+
   private
 
     def delete_associated_files()

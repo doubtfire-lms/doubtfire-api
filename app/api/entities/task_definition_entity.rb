@@ -35,6 +35,10 @@ module Entities
     expose :overseer_image_id
     expose :assessment_enabled
 
-    expose :task_definition_required_focuses, using: TaskDefinitionRequiredFocusEntity, unless: :summary_only, as: :focuses
+    # expose :task_definition_required_focuses, using: TaskDefinitionRequiredFocusEntity, unless: :summary_only, as: :focuses
+
+    expose :focuses, unless: :summary_only do |task_definition, options|
+      task_definition.task_definition_required_focuses.map(&:focus_id)
+    end
   end
 end

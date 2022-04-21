@@ -106,5 +106,45 @@ module FocusModule
       present focus, with: Entities::FocusEntity
     end
 
+    desc 'Add a focus to a task definition'
+    params do
+      requires :focus_id, type: Integer, desc: 'The focus to add to the task definition'
+    end
+    post '/units/:unit_id/task_definitions/:task_definition_id/focuses' do
+      unit = Unit.find(params[:unit_id])
+
+      unless authorise? current_user, unit, :update
+        error!({ error: 'Not authorised to add focuses to this unit' }, 403)
+      end
+
+      task_definition = unit.task_definitions.find(params[:task_definition_id])
+
+      focus = unit.focuses.find(params[:focus_id])
+
+      task_definition.add_focus(focus)
+
+      present task_definition.task_definition_required_focuses, with: Entities::TaskDefinitionRequiredFocusEntity
+    end
+
+    desc 'Remove a focus from a task definition'
+    params do
+      requires :focus_id, type: Integer, desc: 'The focus to add to the task definition'
+    end
+    delete '/units/:unit_id/task_definitions/:task_definition_id/focuses/:focus_id' do
+      unit = Unit.find(params[:unit_id])
+
+      unless authorise? current_user, unit, :update
+        error!({ error: 'Not authorised to add focuses to this unit' }, 403)
+      end
+
+      task_definition = unit.task_definitions.find(params[:task_definition_id])
+
+      focus = unit.focuses.find(params[:focus_id])
+
+      task_definition.remove_focus(focus)
+
+      present task_definition.task_definition_required_focuses, with: Entities::TaskDefinitionRequiredFocusEntity
+    end
+
   end
 end
