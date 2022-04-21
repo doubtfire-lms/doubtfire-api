@@ -191,6 +191,8 @@ class FocusesApiTest < ActiveSupport::TestCase
     focus = u.focuses.first
     grade = GradeHelper::PASS_VALUE
 
+    FocusCriterion.find_or_create_by(focus: focus, grade: grade)
+
     data_to_put = {
       criteria: "Updated Criteria",
       grade: grade
@@ -224,4 +226,93 @@ class FocusesApiTest < ActiveSupport::TestCase
     assert_equal 403, last_response.status, last_response.body
   end
 
+  # Test task definitions
+
+  def test_post_task_definition_focus
+    u = FactoryBot.create(:unit, focus_count: 1)
+    td = u.task_definitions.first
+
+    add_auth_header_for user: u.main_convenor_user
+
+    focus = u.focuses.first
+
+    data_to_post = {
+      focus_id: focus.id
+    }
+
+    # Perform the POST
+    post_json "/api/units/#{u.id}/task_definitions/#{td.id}/focus", data_to_post
+
+    # Check status
+    assert_equal 200, last_response.status, last_response.body
+    assert_equal 1, td.task_definition_required_focuses.count
+    assert_contains td.focuses, focus
+
+    # Perform a DELETE
+    delete_json "/api/units/#{u.id}/task_definitions/#{td.id}/focus/#{focus.id}"
+
+    assert_equal 200, last_response.status, last_response.body
+    assert_equal 0, td.task_definition_required_focuses.count
+    refute_contains td.focuses, focus
+  end
+
+  def test_post_task_definition_focus_requires_auth
+    u = FactoryBot.create(:unit, focus_count: 1)
+    td = u.task_definitions.first
+    user = FactoryBot.create(:user, :student)
+
+    add_auth_header_for user: user
+
+    focus = u.focuses.first
+
+    data_to_post = {
+      focus_id: focus.id
+    }
+
+    # Perform the POST
+    post_json "/api/units/#{u.id}/task_definitions/#{td.id}/focus", data_to_post
+
+    # Check status
+    assert_equal 403, last_response.status, last_response.body
+    assert_equal 0, td.task_definition_required_focuses.count
+    refute_contains td.focuses, focus
+  end
+
+  def test_delete_task_definition_focus_requires_auth
+    u = FactoryBot.create(:unit, focus_count: 1)
+    td = u.task_definitions.first
+    user = FactoryBot.create(:user, :student)
+
+    add_auth_header_for user: user
+
+    focus = u.focuses.first
+
+    td.task_definition_required_focuses.create(focus: focus)
+
+    # Perform the POST
+    delete_json "/api/units/#{u.id}/task_definitions/#{td.id}/focus/#{focus.id}"
+
+    # Check status
+    assert_equal 403, last_response.status, last_response.body
+    assert_equal 0, td.task_definition_required_focuses.count
+    refute_contains td.focuses, focus
+  end
+
+  def test_task_definitions_include_focuses
+    u = FactoryBot.create(:unit, focus_count: 1, task_count: 1)
+    td = u.task_definitions.first
+    focus = u.focuses.first
+
+    td.task_definition_required_focuses.create(focus: focus)
+
+    add_auth_header_for user: u.main_convenor_user
+
+    get "/api/units/#{u.id}"
+
+    response = last_response_body
+
+    assert_equal 1, response['task_definitions'].count
+    assert_equal 1, response['task_definitions'].first['focuses'].count
+    assert_equal focus.id, response['task_definitions'].first['focuses'].first['id']
+  end
 end
