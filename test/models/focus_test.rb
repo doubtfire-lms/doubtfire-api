@@ -42,4 +42,16 @@ class FocusTest < ActiveSupport::TestCase
     refute pf.valid?
     assert_equal 0, p.project_focuses.count
   end
+
+  def test_focus_color_range
+    f = FactoryBot.build(:focus)
+    assert_not_nil f
+    assert f.valid?
+
+    f.color = 15
+    refute f.valid?
+
+    f.color = -1
+    refute f.valid?
+  end
 end

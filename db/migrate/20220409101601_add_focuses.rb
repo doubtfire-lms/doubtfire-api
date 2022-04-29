@@ -3,7 +3,7 @@ class AddFocuses < ActiveRecord::Migration[7.0]
     create_table :focuses do |t|
       t.string      :title,           null: false
       t.string      :description,     null: false
-      t.string      :color,           null: false, default: '#000000'
+      t.integer     :color,           null: false, default: 0
 
       t.references  :unit,            null: false
 
@@ -41,7 +41,7 @@ class AddFocuses < ActiveRecord::Migration[7.0]
       t.integer     :task_shows_focus,    null:false, default: 0
       t.boolean     :move_on,             null:false, default: false
 
-      t.integer     :grade_achieved,      null:false, default: -1
+      t.integer     :grade_achieved,      null:true
     end
   end
 end

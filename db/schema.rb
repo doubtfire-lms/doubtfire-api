@@ -73,7 +73,7 @@ ActiveRecord::Schema.define(version: 2022_04_09_101601) do
   create_table "focuses", charset: "utf8mb4", force: :cascade do |t|
     t.string "title", null: false
     t.string "description", null: false
-    t.string "color", default: "#000000", null: false
+    t.integer "color", default: 0, null: false
     t.bigint "unit_id", null: false
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
@@ -256,7 +256,7 @@ ActiveRecord::Schema.define(version: 2022_04_09_101601) do
     t.integer "focus_understanding", default: 0, null: false
     t.integer "task_shows_focus", default: 0, null: false
     t.boolean "move_on", default: false, null: false
-    t.integer "grade_achieved", default: -1, null: false
+    t.integer "grade_achieved"
     t.index ["assessor_id"], name: "index_task_comments_on_assessor_id"
     t.index ["discussion_comment_id"], name: "index_task_comments_on_discussion_comment_id"
     t.index ["focus_id"], name: "index_task_comments_on_focus_id"

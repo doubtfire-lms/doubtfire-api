@@ -8,7 +8,7 @@ FactoryBot.define do
 
   	sequence(:title) {|id| "Focus #{id}" }
     description { Faker::Lorem.paragraph }
-    color { Faker::Color.hex_color }
+    color { rand(0..14) }
     unit
 
     after :create do |focus, evaluator|
