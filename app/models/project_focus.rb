@@ -35,4 +35,24 @@ class ProjectFocus < ApplicationRecord
     errors.add(:project, 'and focus belong to different units') unless project.unit == focus.unit
   end
 
+  def make_current user, task
+    return if self.current
+
+    self.current = true
+    self.save
+
+    FocusActivateComment.create!(
+      task: task,
+      user: user,
+      focus: self.focus,
+      comment: "Started focusing on #{focus.title}",
+      content_type: :text,
+      recipient: self.project.student
+    )
+  end
+
+  def focus_comments
+    project.comments.where(focus: focus)
+  end
+
 end

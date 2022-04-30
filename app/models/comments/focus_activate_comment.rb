@@ -1,0 +1,3 @@
+class FocusActivateComment < TaskComment
+
+end
