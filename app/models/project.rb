@@ -987,8 +987,9 @@ class Project < ApplicationRecord
     ProjectFocus.find_or_create_by(focus: focus, project: self)
   end
 
-  def award_focus_grade(focus, grade, task, user)
-    project_focus_for(focus).award_grade(grade, task, user)
+  # Award a focus grade, and adjust current if moving on
+  def assess_focus(focus, grade, move_on, task, user)
+    project_focus_for(focus).award_grade(grade, move_on, task, user)
   end
 
   private

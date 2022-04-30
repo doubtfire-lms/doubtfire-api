@@ -6,17 +6,28 @@ class ProjectFocus < ApplicationRecord
 
   validate :unit_must_be_same, on: :create
 
-  def award_grade grade, task, user
+  def award_grade grade, move_on, task, user
+    old_grade = self.grade_achieved
+
     self.grade_achieved = grade
+    self.current &= ! move_on
     self.save
+
+    if old_grade && old_grade > grade
+      message = "Reduced grade from #{GradeHelper::short_grade_for(old_grade)} to #{GradeHelper::short_grade_for(grade)} for focus #{self.focus.title}"
+    else
+      message = "Awarded #{GradeHelper::short_grade_for(grade)} for focus #{self.focus.title}."
+    end
 
     FocusGradeAwardComment.create!(
       task: task,
       user: user,
-      comment: "Awarded grade #{grade} for focus #{self.focus.title}",
+      focus: self.focus,
+      comment: message,
       content_type: :text,
       recipient: self.project.student,
-      grade_achieved: grade
+      grade_achieved: grade,
+      previous_grade: old_grade
     )
   end
 

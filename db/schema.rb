@@ -257,6 +257,7 @@ ActiveRecord::Schema.define(version: 2022_04_09_101601) do
     t.integer "task_shows_focus", default: 0, null: false
     t.boolean "move_on", default: false, null: false
     t.integer "grade_achieved"
+    t.integer "previous_grade"
     t.index ["assessor_id"], name: "index_task_comments_on_assessor_id"
     t.index ["discussion_comment_id"], name: "index_task_comments_on_discussion_comment_id"
     t.index ["focus_id"], name: "index_task_comments_on_focus_id"

@@ -42,6 +42,7 @@ class AddFocuses < ActiveRecord::Migration[7.0]
       t.boolean     :move_on,             null:false, default: false
 
       t.integer     :grade_achieved,      null:true
+      t.integer     :previous_grade,      null:true
     end
   end
 end
