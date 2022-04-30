@@ -83,4 +83,53 @@ class FocusCommentTest < ActiveSupport::TestCase
     assert_equal count + 1, t.comments.count
   end
 
+  def test_can_move_on_from_focus
+    u = FactoryBot.create(:unit, focus_count: 1, with_students: true, student_count: 1)
+
+    p = u.active_projects.first
+    t = p.task_for_task_definition u.task_definitions.first
+    focus = u.focuses.first
+    pf = p.project_focus_for(focus)
+
+    pf.update current: true
+
+    count = t.comments.count
+
+    pf.make_current p.student, t, false
+
+    pf.reload
+
+    assert pf.valid?
+    assert pf.current
+    assert_equal count + 1, t.comments.count
+  end
+
+  def test_comment_only_when_change_of_current
+    u = FactoryBot.create(:unit, focus_count: 1, with_students: true, student_count: 1)
+
+    p = u.active_projects.first
+    t = p.task_for_task_definition u.task_definitions.first
+    focus = u.focuses.first
+    pf = p.project_focus_for(focus)
+
+    count = t.comments.count
+
+    pf.make_current p.student, t, false
+
+    pf.reload
+
+    assert pf.valid?
+    refute pf.current
+    assert_equal count, t.comments.count
+
+    pf.update current: true
+    pf.make_current p.student, t, true
+
+    pf.reload
+
+    assert pf.valid?
+    assert pf.current
+    assert_equal count, t.comments.count
+  end
+
 end
