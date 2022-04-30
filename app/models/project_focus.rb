@@ -24,7 +24,6 @@ class ProjectFocus < ApplicationRecord
       user: user,
       focus: self.focus,
       comment: message,
-      content_type: :text,
       recipient: self.project.student,
       grade_achieved: grade,
       previous_grade: old_grade
@@ -35,18 +34,23 @@ class ProjectFocus < ApplicationRecord
     errors.add(:project, 'and focus belong to different units') unless project.unit == focus.unit
   end
 
-  def make_current user, task
-    return if self.current
+  def make_current user, task, current = true
+    return if self.current == current
 
-    self.current = true
+    self.current = current
     self.save
+
+    if current
+      message = "Started focusing on #{focus.title}"
+    else
+      message = "Stopped focusing on #{focus.title}"
+    end
 
     FocusActivateComment.create!(
       task: task,
       user: user,
       focus: self.focus,
-      comment: "Started focusing on #{focus.title}",
-      content_type: :text,
+      comment: message,
       recipient: self.project.student
     )
   end
