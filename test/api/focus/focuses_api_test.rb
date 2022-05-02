@@ -60,7 +60,7 @@ class FocusesApiTest < ActiveSupport::TestCase
     data_to_post = {
       title: "New Focus",
       description: "New focus description",
-      color: '#ffffff'
+      color: 1
     }
 
     add_auth_header_for user: u.main_convenor_user
@@ -80,7 +80,7 @@ class FocusesApiTest < ActiveSupport::TestCase
     data_to_post = {
       title: "New Focus",
       description: "New focus description",
-      color: '#ffffff'
+      color: 2
     }
 
     user = FactoryBot.create(:user, :student)
@@ -100,7 +100,7 @@ class FocusesApiTest < ActiveSupport::TestCase
     data_to_put = {
       title: "New Focus",
       description: "New focus description",
-      color: '#ffffff'
+      color: 3
     }
 
     add_auth_header_for user: u.main_convenor_user
@@ -120,7 +120,7 @@ class FocusesApiTest < ActiveSupport::TestCase
     data_to_put = {
       title: "New Focus",
       description: "New focus description",
-      color: '#ffffff'
+      color: 4
     }
 
     user = FactoryBot.create(:user, :student)

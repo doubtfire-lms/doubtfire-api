@@ -100,7 +100,7 @@ class FocusCommentTest < ActiveSupport::TestCase
     pf.reload
 
     assert pf.valid?
-    assert pf.current
+    refute pf.current
     assert_equal count + 1, t.comments.count
   end
 

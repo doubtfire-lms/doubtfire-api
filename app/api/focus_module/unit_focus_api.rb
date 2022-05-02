@@ -2,7 +2,7 @@ require 'grape'
 
 module FocusModule
 
-  class FocusApi < ApplicationAuthenticatedApi
+  class UnitFocusApi < ApplicationAuthenticatedApi
 
     desc 'Get focuses associated with a unit'
     get '/units/:unit_id/focuses' do
@@ -20,7 +20,7 @@ module FocusModule
     params do
       requires :title,        type: String,  desc: 'The title for the focus'
       requires :description,  type: String,  desc: 'The description for the focus'
-      requires :color,        type: String,  desc: 'The color for the focus'
+      requires :color,        type: Integer, desc: 'The color for the focus'
     end
     post '/units/:unit_id/focuses' do
       unit = Unit.find(params[:unit_id])
@@ -46,7 +46,7 @@ module FocusModule
     params do
       optional :title,        type: String,  desc: 'The title for the focus'
       optional :description,  type: String,  desc: 'The description for the focus'
-      optional :color,        type: String,  desc: 'The color for the focus'
+      optional :color,        type: Integer, desc: 'The color for the focus'
     end
     put '/units/:unit_id/focuses/:focus_id' do
       unit = Unit.find(params[:unit_id])

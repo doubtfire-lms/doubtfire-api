@@ -53,7 +53,7 @@ class ApiRoot < Grape::API
   mount BreaksApi
   mount DiscussionCommentApi
   mount ExtensionCommentsApi
-  mount FocusModule::FocusApi
+  mount FocusModule::UnitFocusApi
   mount GroupSetsApi
   mount LearningOutcomesApi
   mount LearningAlignmentApi
@@ -88,7 +88,7 @@ class ApiRoot < Grape::API
   AuthenticationHelpers.add_auth_to BreaksApi
   AuthenticationHelpers.add_auth_to DiscussionCommentApi
   AuthenticationHelpers.add_auth_to ExtensionCommentsApi
-  AuthenticationHelpers.add_auth_to FocusModule::FocusApi
+  AuthenticationHelpers.add_auth_to FocusModule::UnitFocusApi
   AuthenticationHelpers.add_auth_to GroupSetsApi
   AuthenticationHelpers.add_auth_to LearningOutcomesApi
   AuthenticationHelpers.add_auth_to LearningAlignmentApi
