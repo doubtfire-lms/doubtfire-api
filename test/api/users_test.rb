@@ -65,18 +65,18 @@ class UnitsTest < ActiveSupport::TestCase
     # Add username and auth_token to Header
     add_auth_header_for(user: User.first)
 
-    # perform the GET 
+    # perform the GET
     get "/api/users/#{expected_user.id}"
     returned_user = last_response_body
 
     # Check if the call succeeds
     assert_equal 200, last_response.status
-    
+
     # Check the returned details match as expected
     response_keys = %w(first_name last_name email student_id nickname receive_task_notifications receive_portfolio_notifications receive_feedback_notifications opt_in_to_research has_run_first_time_setup)
     assert_json_matches_model(expected_user, returned_user, response_keys)
   end
-  
+
   def test_get_convenors
 
     # Add username and auth_token to Header
@@ -389,6 +389,162 @@ class UnitsTest < ActiveSupport::TestCase
 
   def test_put_update_user_empty_token
     test_put_update_user_custom_token ''
+  end
+
+  # ========================================================================
+  # PUT change password
+  # ========================================================================
+
+  def test_put_change_password_by_admin_valid_password
+
+    data_to_put = {
+      id: User.first.id,
+      user: {
+        current_password: 'password',
+        password: 'password1',
+        password_confirmation: 'password1'
+      }
+    }
+
+    # # Add username and auth_token to Header
+    add_auth_header_for(user: User.first)
+
+    put_json '/api/change_password', data_to_put
+    assert_equal 200, last_response.status
+  end
+
+  def test_put_change_password_by_user_valid_password
+
+    data_to_put = {
+      id: User.last.id,
+      user: {
+        current_password: 'password',
+        password: 'password1',
+        password_confirmation: 'password1'
+      }
+    }
+
+    # # Add username and auth_token to Header
+    add_auth_header_for(user: User.first)
+
+    put_json '/api/change_password', data_to_put
+    assert_equal 200, last_response.status
+  end
+
+  def test_put_change_password_invalid_user
+
+    data_to_put = {
+      id: User.first.id,
+      user: {
+        current_password: 'password',
+        password: 'password1',
+        password_confirmation: 'password1'
+      }
+    }
+
+    # # Add username and auth_token to Header
+    add_auth_header_for(user: User.last)
+
+    put_json '/api/change_password', data_to_put
+    assert_equal 200, last_response.status
+  end
+
+  def test_put_change_password_invalid_password
+
+    data_to_put = {
+      id: User.last.id
+    }
+
+    # # Add username and auth_token to Header
+    add_auth_header_for(user: User.first)
+
+    put_json '/api/change_password', data_to_put
+    assert_equal 400, last_response.status
+  end
+
+  def test_put_change_password_invalid_current_password
+
+    data_to_put = {
+      id: User.last.id,
+      user: {
+        current_password: 'password1',
+        password: 'password1',
+        password_confirmation: 'password1'
+      }
+    }
+
+    # # Add username and auth_token to Header
+    add_auth_header_for(user: User.first)
+
+    put_json '/api/change_password', data_to_put
+    assert_equal 401, last_response.status
+  end
+
+  def test_put_change_password_invalid_new_password
+
+    data_to_put = {
+      id: User.last.id,
+      user: {
+        current_password: 'password',
+        password: 'password',
+        password_confirmation: 'password'
+      }
+    }
+
+    # # Add username and auth_token to Header
+    add_auth_header_for(user: User.first)
+
+    put_json '/api/change_password', data_to_put
+    assert_equal 401, last_response.status
+  end
+
+  def test_put_change_password_invalid_confirm_password
+
+    data_to_put = {
+      id: User.last.id,
+      user: {
+        current_password: 'password',
+        password: 'password',
+        password_confirmation: 'passwor'
+      }
+    }
+
+    # # Add username and auth_token to Header
+    add_auth_header_for(user: User.first)
+
+    put_json '/api/change_password', data_to_put
+    assert_equal 401, last_response.status
+  end
+
+  def test_put_user_change_password_custom_token(token = 'asdasd')
+
+    user = {
+      first_name: 'Test',
+      last_name: 'Test',
+      email: 'test@test.org',
+      username: 'metoo',
+      nickname: 'Test',
+      system_role: 'student',
+      password: 'password'
+    }
+    user[:password] = ''
+
+    data_to_put = {
+      user: user
+    }
+    # Add username and auth_token to Header
+    add_auth_header_for(user: User.first, auth_token: token)
+
+    if token == ''
+      header 'auth_token', token
+    end
+
+    put_json '/api/change_password', data_to_put
+    assert_equal 419, last_response.status
+  end
+
+  def test_put_update_user_empty_token
+    test_put_user_change_password_custom_token ''
   end
 
 end

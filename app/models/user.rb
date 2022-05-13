@@ -258,7 +258,8 @@ class User < ApplicationRecord
       :get_teaching_periods,
       :rollover,
       :admin_overseer,
-      :use_overseer
+      :use_overseer,
+      :change_password
     ]
 
     # What can convenors do with users?

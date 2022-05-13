@@ -224,4 +224,47 @@ class UsersApi < Grape::API
     env['api.format'] = :binary
     User.export_to_csv
   end
+
+  desc 'Change password'
+  params do
+    requires :id, type: Integer, desc: 'The user id to update'
+    requires :user, type: Hash do
+      requires :current_password, type: String, desc: 'current password'
+      requires :password, type: String, desc: 'User\'s new password'
+      requires :password_confirmation, type: String, desc: 'password confirmation'
+    end
+  end
+
+  put '/change_password' do
+
+    current_password = params[:user][:current_password]
+    new_password = params[:user][:password]
+    password_confirmation = params[:user][:password_confirmation]
+
+    change_self = (params[:id] == current_user.id)
+    user = User.find(params[:id])
+
+    if change_self || user.role.name.downcase == "admin" || (authorise? current_user, User, :change_password)
+
+      unless user.valid_password?(current_password)
+        error!({ error: 'Your existing password dose not match with current password.' }, 401)
+        return
+      end
+      unless new_password == password_confirmation
+        error!({ error: 'Your password_confirmation dose not match with password.' }, 401)
+        return
+      end
+      unless current_password != new_password
+        error!({ error: 'Your new password is same like existing password.' }, 401)
+        return
+      end
+
+      user.update!(encrypted_password: BCrypt::Password.create(new_password))
+
+      present user, with: Entities::UserEntity
+    else
+      error!({ error: "Cannot modify user with id=#{params[:id]} - not authorised" }, 403)
+    end
+  end
+
 end
