@@ -60,7 +60,7 @@ gem 'ruby-filemagic'
 gem 'rubyzip'
 
 # Plagarism detection
-gem 'moss_ruby', '>= 1.1.2'
+gem 'moss_ruby', '>= 1.1.4'
 
 # Latex
 gem 'rails-latex', '>2.3'
