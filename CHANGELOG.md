@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [6.0.9](https://github.com/macite/doubtfire-deploy/compare/v6.0.8...v6.0.9) (2022-03-27)
+
+
+### Bug Fixes
+
+* remove pct check for group submission ([e23aec5](https://github.com/macite/doubtfire-deploy/commit/e23aec565e0a965c7146cade9a9ca46b031024ad))
+
 ### [6.0.8](https://github.com/macite/doubtfire-deploy/compare/v6.0.7...v6.0.8) (2022-03-22)
 
 
