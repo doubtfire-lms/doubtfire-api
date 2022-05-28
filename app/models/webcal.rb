@@ -23,14 +23,13 @@ class Webcal < ApplicationRecord
 
   #
   # Retrieves `TaskDefinition`s that must be included in the generation of this webcal.
-  # Eager loads all associations used by the `Webcal.to_ical` method.
+  # Eager loads most associations used by the `Webcal.to_ical` method -- still need to get the tasks!
   # Currently executes in just 1 SQL query!
   #
   def task_definitions
     TaskDefinition
       .joins(:unit, unit: :projects)
-      .eager_load(:tasks)
-      .includes(:unit, :tasks, unit: :projects)
+      .includes(:unit, unit: :projects)
       .where(
         projects: { user_id: user_id },
         units: { active: true }
@@ -38,7 +37,6 @@ class Webcal < ApplicationRecord
       .where.not(
         units: { id: WebcalUnitExclusion.where(webcal_id: id).select(:unit_id) } # exclude :webcal_unit_exclusions
       )
-      .where('tasks.project_id is null or tasks.project_id = projects.id')   # eager_load only :tasks of :projects
       .where('? BETWEEN units.start_date AND units.end_date', Time.zone.now) # Current units
       .where('task_definitions.target_grade <= projects.target_grade')       # only :tasks of the targeted_grade or lower
   end
@@ -73,6 +71,9 @@ class Webcal < ApplicationRecord
     ical = Icalendar::Calendar.new
     ical.publish
     ical.prodid = Doubtfire::Application.config.institution[:product_name]
+
+    # load all of the tasks... uses the preloaded project
+    tasks = Task.where(task_definition: task_defs, project: task_defs.map{|t|t.unit.projects.first}.uniq)
 
     # Add iCalendar events for the specified definition.
     task_defs.each do |td|
@@ -110,7 +111,7 @@ class Webcal < ApplicationRecord
         ev.uid = "E-#{td.id}"
         ev.summary = event_name_for_task_definition(td, 'end')
         ev.status = 'CONFIRMED'
-        ev.dtstart = ev.dtend = Icalendar::Values::Date.new(Webcal.end_date_for_task_definition(td).strftime(ev_date_format))
+        ev.dtstart = ev.dtend = Icalendar::Values::Date.new(Webcal.end_date_for_task_definition(td, tasks).strftime(ev_date_format))
 
         Webcal.add_metadata_to_ical_event(ev, td)
 
@@ -137,10 +138,9 @@ class Webcal < ApplicationRecord
   #
   # Returns the target/extended date for the specified task definition.
   #
-  def self.end_date_for_task_definition(task_def)
-      ev_date = task_def.target_date
-      ev_date += (task_def.tasks.first.extensions * 7).day if task_def.tasks.present?
-      return ev_date
+  def self.end_date_for_task_definition(task_def, tasks)
+    task = tasks.select {|t| t.task_definition_id == task_def.id}.first
+    task.present? ? task.due_date : task_def.target_date
   end
 
   #
