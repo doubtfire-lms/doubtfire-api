@@ -8,6 +8,10 @@ module Entities
       [ Role.convenor_id, Role.tutor_id, Role.admin_id ].include? unit.role_for(user).id
     end
 
+    def is_admin_staff?(user, unit)
+      [ Role.convenor_id, Role.admin_id ].include? unit.role_for(user).id
+    end
+
     expose :code
     expose :id
     expose :name
@@ -26,7 +30,7 @@ module Entities
 
     expose :active
 
-    expose :overseer_image_id, unless: :summary_only
+    expose :overseer_image_id, unless: :summary_only, if: lambda { |unit, options|  is_admin_staff?(options[:user], unit) }
     expose :assessment_enabled, unless: :summary_only
 
     expose :auto_apply_extension_before_deadline, unless: :summary_only, if: lambda { |unit, options|  is_staff?(options[:user], unit) }
