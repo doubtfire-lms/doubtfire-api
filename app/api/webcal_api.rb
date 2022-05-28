@@ -19,9 +19,6 @@ class WebcalApi < Grape::API
     end
   end
 
-  # Declare content types
-  content_type :txt, 'text/calendar'
-
   before do
     authenticated?
   end
