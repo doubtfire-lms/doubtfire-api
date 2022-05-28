@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [6.0.10](https://github.com/macite/doubtfire-deploy/compare/v6.0.9...v6.0.10) (2022-05-25)
+
+
+### Bug Fixes
+
+* update moss ruby to read similarity reports ([9500bd4](https://github.com/macite/doubtfire-deploy/commit/9500bd4696218db335ad8f48f980e010d67bfca4))
+
+### [6.0.9](https://github.com/macite/doubtfire-deploy/compare/v6.0.8...v6.0.9) (2022-03-27)
+
+
+### Bug Fixes
+
+* remove pct check for group submission ([e23aec5](https://github.com/macite/doubtfire-deploy/commit/e23aec565e0a965c7146cade9a9ca46b031024ad))
+
 ### [6.0.8](https://github.com/macite/doubtfire-deploy/compare/v6.0.7...v6.0.8) (2022-03-22)
 
 

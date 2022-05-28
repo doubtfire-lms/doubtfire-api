@@ -1753,7 +1753,8 @@ class Unit < ApplicationRecord
 
             # Get server to process files
             logger.debug 'Sending to MOSS...'
-            url = moss.check(to_check, ->(line) { puts line })
+            url = moss.check(to_check, ->(line) { print '.' })
+            puts()
 
             logger.info "MOSS check for #{code} #{td.abbreviation} url: #{url}"
 
