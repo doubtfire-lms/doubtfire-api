@@ -3,10 +3,10 @@ on:
   push:
     tags:
       - 'v*'
-    branches:
-      - '*.x'
-      - 'development'
-      - 'main'
+    # branches:
+    #   - '*.x'
+    #   - 'development'
+    #   - 'main'
   deployment:
   workflow_dispatch:
 jobs:
