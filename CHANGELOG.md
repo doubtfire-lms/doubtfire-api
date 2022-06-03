@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [6.0.12](https://github.com/macite/doubtfire-deploy/compare/v6.0.11...v6.0.12) (2022-06-03)
+
+
+### Bug Fixes
+
+* reinstate recipe but fix parse runs issue ([f5afbfe](https://github.com/macite/doubtfire-deploy/commit/f5afbfe7fe6ebe663f222922d05ba9e54cb3c4c7))
+
+### [6.0.11](https://github.com/macite/doubtfire-deploy/compare/v6.0.10...v6.0.11) (2022-06-02)
+
+
+### Bug Fixes
+
+* only send overseer image id to admin staff ([6201b64](https://github.com/macite/doubtfire-deploy/commit/6201b6427aa88b5435eafa0085fa2eacb078911c))
+* pdf creation latex settings ([4b9e340](https://github.com/macite/doubtfire-deploy/commit/4b9e3406d5582f0baecf3922481a39542f03d3f5))
+* remove defaults from unit update optional parameters ([7eb7f1c](https://github.com/macite/doubtfire-deploy/commit/7eb7f1cf5925c2a2a60aabb93984aaa03aca4412))
+* webcal task selection and api format ([a55f57e](https://github.com/macite/doubtfire-deploy/commit/a55f57e22599002a46d90547e8be3f37a0ccf9a6))
+
 ### [6.0.10](https://github.com/macite/doubtfire-deploy/compare/v6.0.9...v6.0.10) (2022-05-25)
 
 
