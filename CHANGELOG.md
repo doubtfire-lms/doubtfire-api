@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [6.0.12](https://github.com/macite/doubtfire-deploy/compare/v6.0.11...v6.0.12) (2022-06-03)
+
+
+### Bug Fixes
+
+* reinstate recipe but fix parse runs issue ([f5afbfe](https://github.com/macite/doubtfire-deploy/commit/f5afbfe7fe6ebe663f222922d05ba9e54cb3c4c7))
+
 ### [6.0.11](https://github.com/macite/doubtfire-deploy/compare/v6.0.10...v6.0.11) (2022-06-02)
 
 
