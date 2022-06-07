@@ -50,7 +50,7 @@ module AuthenticationHelpers
   def current_user
     username = headers['Username'] || params['username']
     Rails.cache.fetch("user/#{username}", expires_in: 1.hours) do
-      User.find_by_username(username)
+      User.eager_load(:role, :auth_tokens).find_by_username(username)
     end
   end
 
