@@ -15,12 +15,12 @@ class UsersApi < Grape::API
       error!({ error: 'Cannot list users - not authorised' }, 403)
     end
 
-    present User.all, with: Entities::UserEntity
+    present User.all.eager_load(:role), with: Entities::UserEntity
   end
 
   desc 'Get user'
   get '/users/:id', requirements: { id: /[0-9]*/ } do
-    user = User.find(params[:id])
+    user = User.eager_load(:role).find(params[:id])
     unless (user.id == current_user.id) || (authorise? current_user, User, :admin_users)
       error!({ error: "Cannot find User with id #{params[:id]}" }, 403)
     end
