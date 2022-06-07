@@ -44,5 +44,12 @@ class AddFocuses < ActiveRecord::Migration[7.0]
       t.integer     :grade_achieved,      null:true
       t.integer     :previous_grade,      null:true
     end
+
+    change_table :focus_criteria do |t|
+      t.references  :focus
+
+      t.integer     :grade,       null:false, default: 0
+      t.string      :criteria,    null:false, default: ''
+    end
   end
 end
