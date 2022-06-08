@@ -18,15 +18,15 @@ class ProjectsApi < Grape::API
 
     projects = Project.for_user current_user, include_inactive
 
-    student_name = db_concat('users.first_name', "' '", 'users.last_name')
-
     # join in other tables to fetch data
     data = projects.
                 joins(:unit).
                 joins(:user).
                 select( 'projects.*',
                         'units.name AS unit_name', 'units.id AS unit_id', 'units.code AS unit_code', 'units.start_date AS start_date', 'units.end_date AS end_date', 'units.teaching_period_id AS teaching_period_id', 'units.active AS active',
-                        "#{student_name} AS student_name"
+                        'users.first_name AS student_first_name',
+                        'users.last_name AS student_last_name',
+                        'users.nickname AS student_nickname',
                       )
 
     # Now map the data to structure for json to return
@@ -57,12 +57,10 @@ class ProjectsApi < Grape::API
     project = Project.find(params[:id])
 
     if authorise? current_user, project, :get
-      project
+      present project, with: Entities::ProjectEntity, user: current_user
     else
       error!({ error: "Couldn't find Project with id=#{params[:id]}" }, 403)
     end
-
-    present project, with: Entities::ProjectEntity, user: current_user
   end
 
   desc 'Update a project'
@@ -181,9 +179,10 @@ class ProjectsApi < Grape::API
         result = {
           project_id: proj.id,
           enrolled: proj.enrolled,
-          first_name: proj.student.first_name,
-          last_name: proj.student.last_name,
-          student_id: proj.student.username,
+          student_first_name: proj.student.first_name,
+          student_last_name: proj.student.last_name,
+          student_username: proj.student.username,
+          student_user_id: proj.student.id,
           student_email: proj.student.email,
           target_grade: proj.target_grade,
           campus_id: proj.campus_id,
