@@ -140,6 +140,7 @@ class User < ApplicationRecord
   validates :username,    presence: true, uniqueness: { case_sensitive: false }
   validates :email,       presence: true, uniqueness: { case_sensitive: false }, format: {with: /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\z/i}
   validates :student_id,  uniqueness: true, allow_nil: true
+  validate :can_change_to_role?, if: :will_save_change_to_role_id?
 
   # Queries
   scope :tutors,    -> { joins(:role).where('roles.id = :tutor_role or roles.id = :convenor_role or roles.id = :admin_role', tutor_role: Role.tutor_id, convenor_role: Role.convenor_id, admin_role: Role.admin_id) }
@@ -156,6 +157,20 @@ class User < ApplicationRecord
   #   name[0] = '' if !truncate_s_match.nil? && truncate_s_match.zero?
   #   self[:username] = name.downcase
   # end
+
+  def can_change_to_role?
+    new_role = self.role
+
+    fail_if_in_unit_role = [ Role.tutor, Role.convenor ] if new_role == Role.student
+    fail_if_in_unit_role = [ Role.convenor ] if new_role == Role.tutor
+    fail_if_in_unit_role = [] if new_role == Role.admin || new_role == Role.convenor
+
+    for check_role in fail_if_in_unit_role do
+      if unit_roles.where('role_id = :role_id', role_id: check_role.id).count > 0
+        errors.add :role, "cannot be changed to #{new_role.name} because the user has a #{check_role.name} role in a unit"
+      end
+    end
+  end
 
   def has_student_capability?
     true
@@ -315,30 +330,6 @@ class User < ApplicationRecord
 
   def self.role_for(user)
     user.role
-  end
-
-  def role_id=(new_role_id)
-    new_role = Role.find(new_role_id)
-    new_role = Role.student if new_role.nil?
-
-    fail_if_in_unit_role = [ Role.tutor, Role.convenor ] if new_role == Role.student
-    fail_if_in_unit_role = [ Role.convenor ] if new_role == Role.tutor
-    fail_if_in_unit_role = [] if new_role == Role.admin || new_role == Role.convenor
-
-    for check_role in fail_if_in_unit_role do
-      if unit_roles.where('role_id = :role_id', role_id: check_role.id).count > 0
-        return role
-      end
-    end
-
-    self[:role_id] = new_role.id
-  end
-
-  #
-  # Change the user's role - but ensure that it remains valid based on their roles in units
-  #
-  def role=(new_role)
-    self.role_id = new_role.id
   end
 
   def email_required?
