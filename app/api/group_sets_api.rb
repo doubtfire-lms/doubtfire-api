@@ -373,7 +373,7 @@ class GroupSetsApi < Grape::API
       error!({ error: 'Not authorised to get groups for this unit' }, 403)
     end
 
-    present grp.projects, with: Entities::ProjectEntity, only: [:student_id, :project_id, :student_name, :target_grade], user: current_user
+    present grp.projects, with: Entities::ProjectEntity, only: [:student_user_id, :project_id, :student_first_name, :student_last_name, :student_nickname, :target_grade], user: current_user
   end
 
   desc 'Add a group member'
@@ -420,7 +420,7 @@ class GroupSetsApi < Grape::API
 
     gm = grp.add_member(prj)
 
-    present prj, with: Entities::ProjectEntity, only: [:student_id, :project_id, :student_name, :target_grade], user: current_user
+    present prj, with: Entities::ProjectEntity, only: [:student_usern_id, :project_id, :student_first_name, :student_last_name, :student_nickname, :target_grade], user: current_user
   end
 
   desc 'Remove a group member'
