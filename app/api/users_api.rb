@@ -74,7 +74,7 @@ class UsersApi < Grape::API
     # (i.e., user wants to update their own data) or if update_user token
     if change_self || (authorise? current_user, User, :update_user)
 
-      user = User.find(params[:id])
+      user = User.eager_load(:role).find(params[:id])
 
       user_parameters = ActionController::Parameters.new(params)
                                                     .require(:user)
@@ -100,7 +100,7 @@ class UsersApi < Grape::API
       #
       # You cannot change your own permissions
       #
-      if !change_self && params[:user][:system_role] && old_role.id != Role.with_name(params[:user][:system_role]).id
+      if !change_self && params[:user][:system_role] && old_role.name != params[:user][:system_role]
         user_parameters[:role] = params[:user][:system_role]
       end
 
