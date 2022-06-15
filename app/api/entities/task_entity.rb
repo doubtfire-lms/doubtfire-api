@@ -9,12 +9,12 @@ module Entities
     expose :due_date
     expose :extensions
 
-    expose :submission_date
-    expose :completion_date
+    expose :submission_date, expose_nil: false
+    expose :completion_date, expose_nil: false
 
     expose :times_assessed
-    expose :grade
-    expose :quality_pts
+    expose :grade, expose_nil: false
+    expose :quality_pts, expose_nil: false
 
     expose :include_in_portfolio
 
@@ -34,7 +34,7 @@ module Entities
 
     # Attributes only included if include other projects
 
-    expose :other_projects, if: :include_other_projects do |task, options|
+    expose :other_projects, expose_nil: false, if: :include_other_projects do |task, options|
       if task.group_task? && !task.group.nil?
         grp = task.group
         grp.projects.select { |p| p.id != task.project_id }.map { |p| { id: p.id, new_stats: p.task_stats } }

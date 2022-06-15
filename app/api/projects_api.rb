@@ -16,37 +16,37 @@ class ProjectsApi < Grape::API
   get '/projects' do
     include_inactive = params[:include_inactive] || false
 
-    projects = Project.for_user current_user, include_inactive
+    projects = Project.eager_load(:unit, :user).for_user current_user, include_inactive
 
-    # join in other tables to fetch data
-    data = projects.
-                joins(:unit).
-                joins(:user).
-                select( 'projects.*',
-                        'units.name AS unit_name', 'units.id AS unit_id', 'units.code AS unit_code', 'units.start_date AS start_date', 'units.end_date AS end_date', 'units.teaching_period_id AS teaching_period_id', 'units.active AS active',
-                        'users.first_name AS student_first_name',
-                        'users.last_name AS student_last_name',
-                        'users.nickname AS student_nickname',
-                      )
+    # # join in other tables to fetch data
+    # data = projects.
+    #             joins(:unit).
+    #             joins(:user).
+    #             select( 'projects.*',
+    #                     'units.name AS unit_name', 'units.id AS unit_id', 'units.code AS unit_code', 'units.start_date AS start_date', 'units.end_date AS end_date', 'units.teaching_period_id AS teaching_period_id', 'units.active AS active',
+    #                     'users.first_name AS student_first_name',
+    #                     'users.last_name AS student_last_name',
+    #                     'users.nickname AS student_nickname',
+    #                   )
 
-    # Now map the data to structure for json to return
-    result = data.map do |row|
-      {
-        unit_id: row['unit_id'],
-        unit_code: row['unit_code'],
-        unit_name: row['unit_name'],
-        project_id: row['id'],
-        campus_id: row['campus_id'],
-        target_grade: row['target_grade'],
-        has_portfolio: !row['portfolio_production_date'].nil?,
-        start_date: row['start_date'].strftime('%Y-%m-%d'),
-        end_date: row['end_date'].strftime('%Y-%m-%d'),
-        teaching_period_id: row['teaching_period_id'],
-        active: row['active'].is_a?(Numeric) ? row['active'] != 0 : row['active']
-      }
-    end
+    # # Now map the data to structure for json to return
+    # result = data.map do |row|
+    #   {
+    #     unit_id: row['unit_id'],
+    #     unit_code: row['unit_code'],
+    #     unit_name: row['unit_name'],
+    #     project_id: row['id'],
+    #     campus_id: row['campus_id'],
+    #     target_grade: row['target_grade'],
+    #     has_portfolio: !row['portfolio_production_date'].nil?,
+    #     start_date: row['start_date'].strftime('%Y-%m-%d'),
+    #     end_date: row['end_date'].strftime('%Y-%m-%d'),
+    #     teaching_period_id: row['teaching_period_id'],
+    #     active: row['active'].is_a?(Numeric) ? row['active'] != 0 : row['active']
+    #   }
+    # end
 
-    present result, with: Grape::Presenters::Presenter
+    present projects, with: Entities::ProjectEntity, for_student: true, summary_only: true, user: current_user
   end
 
   desc 'Get project'
@@ -57,7 +57,7 @@ class ProjectsApi < Grape::API
     project = Project.find(params[:id])
 
     if authorise? current_user, project, :get
-      present project, with: Entities::ProjectEntity, user: current_user
+      present project, with: Entities::ProjectEntity, user: current_user, for_student: true
     else
       error!({ error: "Couldn't find Project with id=#{params[:id]}" }, 403)
     end
@@ -150,7 +150,7 @@ class ProjectsApi < Grape::API
       project.save
     end
 
-    Entities::ProjectEntity.represent(project, only: [ :campus_id, :enrolled, :target_grade, :submitted_grade, :compile_portfolio, :portfolio_available, :uses_draft_learning_summary, :stats, :burndown_chart_data ])
+    Entities::ProjectEntity.represent(project, only: [ :campus_id, :enrolled, :target_grade, :submitted_grade, :compile_portfolio, :portfolio_available, :uses_draft_learning_summary, :stats, :burndown_chart_data ], for_student: true)
   end # put
 
   desc 'Enrol a student in a unit, creating them a project'

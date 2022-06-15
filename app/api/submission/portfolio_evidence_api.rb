@@ -115,7 +115,7 @@ module Submission
       File.read(evidence_loc)
     end # get
 
-    desc "Request for a task's documents to be re-processed tp recreate the task's PDF"
+    desc "Request for a task's documents to be re-processed to recreate the task's PDF"
     put '/projects/:id/task_def_id/:task_definition_id/submission' do
       project = Project.find(params[:id])
       task_definition = project.unit.task_definitions.find(params[:task_definition_id])

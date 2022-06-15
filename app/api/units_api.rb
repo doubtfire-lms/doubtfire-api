@@ -56,10 +56,12 @@ class UnitsApi < Grape::API
     unless (authorise? current_user, unit, :get_unit) || (authorise? current_user, User, :admin_units)
       error!({ error: "Couldn't find Unit with id=#{params[:id]}" }, 403)
     end
+
     #
     # Unit uses user from thread to limit exposure
     #
-    present unit, with: Entities::UnitEntity, user: current_user, in_unit: true
+    my_role = unit.role_for(current_user)
+    present unit, with: Entities::UnitEntity, my_role: my_role, in_unit: true
   end
 
   desc 'Update unit'
@@ -208,7 +210,7 @@ class UnitsApi < Grape::API
 
     # Employ current user as convenor
     unit.employ_staff(current_user, Role.convenor)
-    present unit, with: Entities::UnitEntity, user: current_user
+    present unit, with: Entities::UnitEntity, my_role: Role.convenor
   end
 
   desc 'Rollover unit'
@@ -236,7 +238,9 @@ class UnitsApi < Grape::API
       unit.rollover(nil, params[:start_date], params[:end_date])
     end
 
-    present unit, with: Entities::UnitEntity, user: current_user
+    my_role = unit.role_for(current_user)
+
+    present unit, with: Entities::UnitEntity, my_role: my_role
   end
 
   desc 'Download the tasks that are awaiting feedback for a unit'

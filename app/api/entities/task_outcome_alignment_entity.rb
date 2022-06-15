@@ -5,6 +5,6 @@ module Entities
     expose :rating
     expose :learning_outcome_id
     expose :task_definition_id
-    expose :task_id
+    expose :task_id, expose_nil: false
   end
 end
