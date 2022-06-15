@@ -59,12 +59,14 @@ class TaskComment < ApplicationRecord
       reply_to_id: self.reply_to_id,
       author: {
         id: self.user.id,
-        name: self.user.name,
+        first_name: self.user.first_name,
+        last_name: self.user.last_name,
         email: self.user.email
       },
       recipient: {
         id: self.recipient.id,
-        name: self.recipient.name,
+        first_name: self.recipient.first_name,
+        last_name: self.recipient.last_name,
         email: self.recipient.email
       },
       created_at: self.created_at,

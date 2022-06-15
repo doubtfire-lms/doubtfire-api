@@ -22,13 +22,15 @@ module Entities
       if data.has_attribute? :author_id
         {
           id: data.author_id,
-          name: "#{data.author_first_name} #{data.author_last_name}",
+          first_name: data.author_first_name,
+          last_name: data.author_last_name,
           email: data.author_email
         }
       else
         {
           id: data.user_id,
-          name: data.user.name,
+          first_name: data.user.first_name,
+          last_name: data.user.last_name,
           email: data.user.email
         }
       end
