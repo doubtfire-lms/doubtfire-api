@@ -53,8 +53,8 @@ module Entities
     expose :staff, using: UnitRoleEntity, unless: :summary_only
     expose :group_sets, using: GroupSetEntity, unless: :summary_only
     expose :groups, using: GroupEntity, unless: :summary_only
-    expose :group_memberships, using: GroupMembershipEntity, unless: :summary_only do |unit, options|
-      unit.group_memberships.where(active: true)
-    end
+    # expose :group_memberships, using: GroupMembershipEntity, unless: :summary_only do |unit, options|
+    #   unit.group_memberships.where(active: true)
+    # end
   end
 end
