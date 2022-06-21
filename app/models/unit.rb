@@ -355,7 +355,8 @@ class Unit < ApplicationRecord
           'users.first_name AS first_name',
           'users.last_name AS last_name',
           'users.nickname AS nickname',
-          'users.username AS student_id',
+          'users.student_id AS student_id',
+          'users.username AS username',
           'users.id AS user_id',
           'users.email AS student_email',
           'projects.target_grade AS target_grade',
@@ -384,6 +385,7 @@ class Unit < ApplicationRecord
         student: {
           id: t.user_id,
           student_id: t.student_id,
+          username: t.username,
           email: t.student_email,
           first_name: t.first_name,
           last_name: t.last_name,
