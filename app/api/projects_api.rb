@@ -177,13 +177,17 @@ class ProjectsApi < Grape::API
         error!({ error: 'Error adding student to unit' }, 403)
       else
         result = {
-          project_id: proj.id,
+          id: proj.id,
           enrolled: proj.enrolled,
-          student_first_name: proj.student.first_name,
-          student_last_name: proj.student.last_name,
-          student_username: proj.student.username,
-          student_user_id: proj.student.id,
-          student_email: proj.student.email,
+          student: {
+            id: proj.student.id,
+            student_id: proj.student.student_id,
+            username: proj.student.username,
+            email: proj.student.email,
+            first_name: proj.student.first_name,
+            last_name: proj.student.last_name,
+            nickname: proj.student.nickname
+          },
           target_grade: proj.target_grade,
           campus_id: proj.campus_id,
           compile_portfolio: false,
