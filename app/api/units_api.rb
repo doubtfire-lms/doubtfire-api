@@ -31,7 +31,7 @@ class UnitsApi < Grape::API
     end
 
     # gets only the units the current user can "see"
-    units = Unit.for_user_admin current_user
+    units = Unit.for_user_admin(current_user)
 
     units = units.where('active = true') unless params[:include_in_active]
 
@@ -210,7 +210,7 @@ class UnitsApi < Grape::API
 
     # Employ current user as convenor
     unit.employ_staff(current_user, Role.convenor)
-    present unit, with: Entities::UnitEntity, my_role: Role.convenor
+    present unit, with: Entities::UnitEntity, my_role: Role.convenor, in_unit: true
   end
 
   desc 'Rollover unit'

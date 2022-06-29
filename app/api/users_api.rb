@@ -43,7 +43,7 @@ class UsersApi < Grape::API
       error!({ error: 'Cannot list tutors - not authorised' }, 403)
     end
 
-    present User.tutors, with: Entities::UserEntity
+    present User.tutors.eager_load(:role), with: Entities::UserEntity
   end
 
   desc 'Update a user'
