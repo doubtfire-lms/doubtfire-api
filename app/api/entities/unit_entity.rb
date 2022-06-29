@@ -5,11 +5,11 @@ module Entities
     end
 
     def is_staff?(my_role)
-      Role.teaching_staff_ids.include? my_role.id
+      Role.teaching_staff_ids.include?(my_role.id) unless my_role.nil?
     end
 
     def is_admin_staff?(my_role)
-      Role.admin_staff_ids.include? my_role.id
+      Role.admin_staff_ids.include?(my_role.id) unless my_role.nil?
     end
 
     expose :code
