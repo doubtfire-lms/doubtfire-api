@@ -8,7 +8,7 @@ module Entities
     expose :abbreviation
     expose :name
     expose :description
-    expose :weighting, as: :weight
+    expose :weighting
     expose :target_grade
 
     with_options(format_with: :date_only) do

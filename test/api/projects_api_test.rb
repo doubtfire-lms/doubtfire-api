@@ -79,7 +79,7 @@ class ProjectsApiTest < ActiveSupport::TestCase
     # Add username and auth_token to Header
     add_auth_header_for(user: user)
 
-    keys = %w(unit_id project_id student_id campus_id student_first_name student_last_name student_nickname enrolled target_grade submitted_grade portfolio_files compile_portfolio portfolio_available uses_draft_learning_summary stats burndown_chart_data tasks tutorial_enrolments groups task_outcome_alignments)
+    keys = %w(unit_id project_id student_id campus_id student_first_name student_last_name student_nickname enrolled target_grade submitted_grade portfolio_files compile_portfolio portfolio_available uses_draft_learning_summary stats tasks tutorial_enrolments groups task_outcome_alignments)
     key_test = keys - %w(unit_id project_id student_id student_first_name student_last_name student_nickname portfolio_available tasks tutorial_enrolments groups task_outcome_alignments stats)
 
     get "/api/projects/#{project.id}"
@@ -135,7 +135,7 @@ class ProjectsApiTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status, last_response_body
     assert_equal user.projects.find(project.id).submitted_grade, 2
 
-    keys = %w(campus_id enrolled target_grade submitted_grade compile_portfolio portfolio_available uses_draft_learning_summary stats burndown_chart_data)
+    keys = %w(campus_id enrolled target_grade submitted_grade compile_portfolio portfolio_available uses_draft_learning_summary stats)
     test_keys = keys - %w(stats)
 
     assert_json_limit_keys_to_exactly keys, last_response_body

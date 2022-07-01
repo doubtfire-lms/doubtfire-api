@@ -150,7 +150,7 @@ class ProjectsApi < Grape::API
       project.save
     end
 
-    Entities::ProjectEntity.represent(project, only: [ :campus_id, :enrolled, :target_grade, :submitted_grade, :compile_portfolio, :portfolio_available, :uses_draft_learning_summary, :stats, :burndown_chart_data ], for_student: true)
+    Entities::ProjectEntity.represent(project, only: [ :campus_id, :enrolled, :target_grade, :submitted_grade, :compile_portfolio, :portfolio_available, :uses_draft_learning_summary, :stats ], for_student: true)
   end # put
 
   desc 'Enrol a student in a unit, creating them a project'
