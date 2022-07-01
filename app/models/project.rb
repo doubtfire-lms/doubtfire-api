@@ -285,7 +285,9 @@ class Project < ApplicationRecord
           quality_pts: r.quality_pts,
           num_new_comments: r.number_unread,
           extensions: t.extensions,
-          due_date: t.due_date
+          due_date: t.due_date,
+          submission_date: t.submission_date,
+          completion_date: t.completion_date
         }
       end
   end
@@ -408,109 +410,6 @@ class Project < ApplicationRecord
     return false unless (Time.zone.today - to_target.call(overdue_tasks.first)).to_i >= 14
 
     return true
-  end
-
-  #
-  # Calculate and return the burndown chart data
-  # returns four lines:
-  # - projected based on previous work marked as at least "ready to assessess"
-  # - target based on task definitions
-  # - done based on work marked as at least "ready to assess"
-  # - complete based on work signed off as complete
-  def burndown_chart_data
-    # Create buckets by week
-    result = [ ]
-
-    # Get the weeks between start and end date as an array
-    # dates = unit.start_date.to_date.step(unit.end_date.to_date + 1.week, step=7).to_a
-    dates = unit.start_date.to_date.step(unit.end_date.to_date + 3.week, 7).to_a
-
-    # Setup the dictionaries to contain the keys and values
-    # key = series name
-    # values = array of [ x, y ] values
-    projected_results = { key: 'Projected', values: [] }
-    target_task_results = { key: 'Target', values: [] }
-    done_task_results = { key: 'To Submit', values: [] }
-    complete_task_results = { key: 'To Complete', values: [] }
-
-    result.push(target_task_results)
-    result.push(projected_results)
-    result.push(done_task_results)
-    result.push(complete_task_results)
-
-    # Get the target task from the unit's task definitions
-    target_tasks = assigned_task_defs
-
-    return if target_tasks.count == 0
-
-    # get total value of all tasks assigned to this project
-    total = target_tasks.map { |td| td.weighting.to_f }.inject(:+)
-
-    # last done task date
-    if ready_or_complete_tasks.empty?
-      last_target_date = unit.start_date
-    else
-      last_target_date = ready_or_complete_tasks.sort { |a, b| a.due_date <=> b.due_date }.last.due_date
-    end
-
-    # today is used to determine when to stop adding done tasks
-    today = reference_date
-
-    # Actual tasks
-    my_tasks = tasks
-
-    # Get the tasks currently marked as done (or ready to mark)
-    done_tasks = tasks_in_submitted_status
-
-    # use weekly completion rate to determine projected progress
-    completion_rate = weekly_completion_rate
-    projected_remaining = total
-
-    # Track which values to add
-    add_target = true
-    add_projected = true
-    add_done = true
-
-    # Iterate over the dates
-    dates.each do |date|
-      # get the target values - those from the task definitions
-      target_val = [ date.to_datetime.to_i,
-                     target_tasks.select { |task_def| (tasks.where(task_definition: task_def).empty? ? task_def.target_date : tasks.where(task_definition: task_def).first.due_date ) > date }.map { |task_def| task_def.weighting.to_f }.inject(:+)]
-      # get the done values - those done up to today, or the end of the unit
-      done_val = [ date.to_datetime.to_i,
-                   done_tasks.select { |task| task.submission_date.present? && task.submission_date <= date }.map { |task| task.task_definition.weighting.to_f }.inject(:+)]
-      # get the completed values - those signed off
-      complete_val = [ date.to_datetime.to_i,
-                       completed_tasks.select { |task| task.completion_date <= date }.map { |task| task.task_definition.weighting.to_f }.inject(:+)]
-      # projected value is based on amount done
-      projected_val = [ date.to_datetime.to_i, projected_remaining / total ]
-
-      # add one week's worth of completion data
-      projected_remaining -= completion_rate
-
-      # if target value then its the %remaining only
-      target_val[1].nil? ? (target_val[1] = 0) : (target_val[1] /= total)
-      # if no done value then value is 100%, otherwise remaining is the total - %done
-      done_val[1] = (done_val[1].nil? ? 1 : (total - done_val[1]) / total)
-      complete_val[1].nil? ? (complete_val[1] = 1) : (complete_val[1] = (total - complete_val[1]) / total)
-
-      # add target, done and projected if appropriate
-      target_task_results[:values].push target_val if add_target
-      if add_done
-        done_task_results[:values].push done_val
-        complete_task_results[:values].push complete_val
-      end
-      projected_results[:values].push projected_val if add_projected
-
-      # stop adding the target values once zero target value is reached
-      add_target = false if add_target && target_val[1] == 0
-      # stop adding the done tasks once past date - (add once for tasks done this week, hence after adding)
-      add_done = false if add_done && date > today
-      # stop adding projected values once projected is complete
-      add_projected = false if add_projected && projected_val[1] <= 0
-    end
-
-    result
   end
 
   def weeks_elapsed(date = nil)

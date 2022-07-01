@@ -1,16 +1,22 @@
 module Entities
   class TaskEntity < Grape::Entity
+    format_with(:date_only) do |date|
+      date.strftime('%Y-%m-%d')
+    end
+
     expose :id
-    expose :project_id
+    expose :project_id, unless: :in_project, expose_nil: false
     expose :task_definition_id
 
     expose :status
 
-    expose :due_date
-    expose :extensions
+    with_options(format_with: :date_only) do
+      expose :due_date
+      expose :submission_date, expose_nil: false
+      expose :completion_date, expose_nil: false
+    end
 
-    expose :submission_date, expose_nil: false
-    expose :completion_date, expose_nil: false
+    expose :extensions
 
     expose :times_assessed
     expose :grade, expose_nil: false

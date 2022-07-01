@@ -17,13 +17,11 @@ module Entities
     expose :uses_draft_learning_summary, unless: :summary_only
 
     expose :task_stats, as: :stats, unless: :for_student
-    expose :burndown_chart_data, unless: :summary_only do | project, options |
-      project.burndown_chart_data
-    end
 
-    expose :tasks, unless: :summary_only do | project, options |
+    expose :tasks, using: TaskEntity, unless: :summary_only do | project, options |
       project.task_details_for_shallow_serializer(options[:user])
     end
+
     expose :tutorial_enrolments, using: TutorialEnrolmentEntity, unless: :summary_only
     expose :groups, using: GroupEntity, unless: :summary_only
     expose :task_outcome_alignments, using: TaskOutcomeAlignmentEntity, unless: :summary_only
