@@ -57,7 +57,7 @@ class ProjectsApi < Grape::API
     project = Project.find(params[:id])
 
     if authorise? current_user, project, :get
-      present project, with: Entities::ProjectEntity, user: current_user, for_student: true
+      present project, with: Entities::ProjectEntity, user: current_user, for_student: true, in_project: true
     else
       error!({ error: "Couldn't find Project with id=#{params[:id]}" }, 403)
     end

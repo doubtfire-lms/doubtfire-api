@@ -35,7 +35,7 @@ class TeachingPeriodsAuthenticatedApi < Grape::API
     if result.nil?
       error!({ error: 'No teaching period added.' }, 403)
     else
-      present result, with: Entities::TeachingPeriodEntity
+      present result, with: Entities::TeachingPeriodEntity, user: current_user
     end
   end
 
@@ -64,7 +64,7 @@ class TeachingPeriodsAuthenticatedApi < Grape::API
                                                                       :active_until)
 
     teaching_period.update!(teaching_period_parameters)
-    teaching_period
+    present teaching_period, with: Entities::TeachingPeriodEntity, user: current_user
   end
 
   desc 'Delete a teaching period'
