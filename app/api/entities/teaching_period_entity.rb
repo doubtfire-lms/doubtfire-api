@@ -11,7 +11,7 @@ module Entities
     end
     expose :breaks, if: :full_details, using: Entities::BreakEntity
     expose :units, if: :full_details do |teaching_period, options|
-      Entities::UnitEntity.represent teaching_period.units, only: [:id, :name, :code, :active]
+      Entities::UnitEntity.represent teaching_period.units, summary_only: true, user: options[:user]
     end
   end
 end
