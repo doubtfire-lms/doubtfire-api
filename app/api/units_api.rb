@@ -233,14 +233,14 @@ class UnitsApi < Grape::API
 
     if teaching_period_id.present?
       tp = TeachingPeriod.find(teaching_period_id)
-      unit.rollover(tp, nil, nil)
+      result = unit.rollover(tp, nil, nil)
     else
-      unit.rollover(nil, params[:start_date], params[:end_date])
+      result = unit.rollover(nil, params[:start_date], params[:end_date])
     end
 
-    my_role = unit.role_for(current_user)
+    my_role = result.role_for(current_user)
 
-    present unit, with: Entities::UnitEntity, my_role: my_role
+    present result, with: Entities::UnitEntity, my_role: my_role, user: current_user
   end
 
   desc 'Download the tasks that are awaiting feedback for a unit'
