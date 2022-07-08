@@ -59,7 +59,7 @@ class TutorialsApi < Grape::API
     requires :tutorial, type: Hash do
       requires :unit_id,              type: Integer,  desc: 'Id of the unit'
       requires :tutor_id,             type: Integer,  desc: 'Id of the tutor'
-      requires :campus_id,            type: Integer,  desc: 'Id of the campus',                               allow_blank: false
+      optional :campus_id,            type: Integer,  desc: 'Id of the campus',                               allow_blank: true
       requires :capacity,             type: Integer,  desc: 'Capacity of the tutorial',                       allow_blank: false
       requires :abbreviation,         type: String,   desc: 'The tutorials code',                             allow_blank: false
       requires :meeting_location,     type: String,   desc: 'The tutorials location',                         allow_blank: false
@@ -77,7 +77,7 @@ class TutorialsApi < Grape::API
     end
 
     tutor = User.find(tut_params[:tutor_id])
-    campus = tut_params[:campus_id] == -1 ? nil : Campus.find(tut_params[:campus_id])
+    campus = tut_params[:campus_id].nil? || tut_params[:campus_id] == -1 ? nil : Campus.find(tut_params[:campus_id])
 
     # Set Tutorial Stream if available
     tutorial_stream_abbr = tut_params[:tutorial_stream_abbr]
