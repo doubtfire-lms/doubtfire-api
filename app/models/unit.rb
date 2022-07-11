@@ -321,7 +321,7 @@ class Unit < ApplicationRecord
     projects
   end
 
-  def student_query(limit_to_enrolled)
+  def student_query(enrolled)
     q = projects
         .joins(:user)
         .joins('LEFT OUTER JOIN tasks ON projects.id = tasks.project_id')
@@ -373,7 +373,11 @@ class Unit < ApplicationRecord
         )
         .order('users.first_name')
 
-    q = q.where('projects.enrolled = TRUE') if limit_to_enrolled
+    if enrolled
+      q = q.where('projects.enrolled = TRUE')
+    else
+      q = q.where('projects.enrolled = FALSE')
+    end
 
     map_stats = lambda {|t| begin t.task_stats.present? ? JSON.parse(t.task_stats) : {} rescue {} end}
 
