@@ -18,7 +18,7 @@ module Entities
     end
 
     expose :upload_requirements
-    expose :tutorial_stream do |tutorial, options|
+    expose :tutorial_stream_abbr do |tutorial, options|
       tutorial.tutorial_stream.abbreviation unless tutorial.tutorial_stream.nil?
     end
     expose :plagiarism_checks
