@@ -78,6 +78,8 @@ class ProjectsApi < Grape::API
   put '/projects/:id' do
     project = Project.find(params[:id])
 
+    for_student = true
+
     if params[:trigger].nil? == false
       if params[:trigger] == 'trigger_week_end'
         if authorise? current_user, project, :trigger_week_end
@@ -93,12 +95,14 @@ class ProjectsApi < Grape::API
       unless authorise? current_user, project, :change_campus
         error!({ error: "You cannot change the campus for project #{params[:id]}" }, 403)
       end
+      for_student = false
       project.campus_id = params[:campus_id] == -1 ? nil : params[:campus_id]
       project.save!
     elsif !params[:enrolled].nil?
       unless authorise? current_user, project.unit, :change_project_enrolment
         error!({ error: "You cannot change the enrolment for project #{params[:id]}" }, 403)
       end
+      for_student = false
       project.enrolled = params[:enrolled]
       project.save
     elsif !params[:target_grade].nil?
@@ -135,6 +139,8 @@ class ProjectsApi < Grape::API
         error!({ error: 'Existing project grade does not match current grade. Refresh project and try again.' }, 403)
       end
 
+      for_student = false
+
       project.grade = params[:grade]
       project.grade_rationale = params[:grade_rationale]
       project.save!
@@ -150,7 +156,7 @@ class ProjectsApi < Grape::API
       project.save
     end
 
-    Entities::ProjectEntity.represent(project, only: [ :campus_id, :enrolled, :target_grade, :submitted_grade, :compile_portfolio, :portfolio_available, :uses_draft_learning_summary, :stats ], for_student: true)
+    Entities::ProjectEntity.represent(project, only: [ :campus_id, :enrolled, :target_grade, :submitted_grade, :compile_portfolio, :portfolio_available, :uses_draft_learning_summary, :stats ], for_student: for_student)
   end # put
 
   desc 'Enrol a student in a unit, creating them a project'
