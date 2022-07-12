@@ -484,6 +484,10 @@ class TaskDefinition < ApplicationRecord
       result.group_set                 = unit.group_sets.where(name: row[:group_set]).first
     end
 
+    if row[:tutorial_stream].present?
+      result.tutorial_stream           = unit.tutorial_streams.where(abbreviation: row[:tutorial_stream]).first
+    end
+
     if result.valid? && (row[:group_set].blank? || result.group_set.present?)
       begin
         result.save
