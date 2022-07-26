@@ -1,4 +1,4 @@
-FROM ruby:3.1-buster
+FROM ruby:3.1-bullseye
 
 # DEBIAN_FRONTEND=noninteractive is required to install tzdata in non interactive way
 ENV DEBIAN_FRONTEND noninteractive
@@ -11,7 +11,8 @@ RUN apt-get update && apt-get install -y \
   libmariadb-dev \
   python3-pygments \
   tzdata \
-  wget
+  wget \
+  libc6-dev
 
 # Setup the folder where we will deploy the code
 WORKDIR /doubtfire
