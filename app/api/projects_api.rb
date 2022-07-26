@@ -54,7 +54,7 @@ class ProjectsApi < Grape::API
     requires :id, type: Integer, desc: 'The id of the project to get'
   end
   get '/projects/:id' do
-    project = Project.find(params[:id])
+    project = Project.eager_load(:unit, :user).find(params[:id])
 
     if authorise? current_user, project, :get
       present project, with: Entities::ProjectEntity, user: current_user, for_student: true, in_project: true
