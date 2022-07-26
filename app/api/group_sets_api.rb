@@ -373,7 +373,7 @@ class GroupSetsApi < Grape::API
       error!({ error: 'Not authorised to get groups for this unit' }, 403)
     end
 
-    present grp.projects, with: Entities::ProjectEntity, only: [:student_user_id, :project_id, :student_first_name, :student_last_name, :student_nickname, :target_grade], user: current_user
+    present grp.projects, with: Entities::ProjectEntity, only: [:student, :id, :target_grade], user: current_user
   end
 
   desc 'Add a group member'
@@ -383,12 +383,12 @@ class GroupSetsApi < Grape::API
     requires :group_id,                           type: Integer,  desc: 'The id of the group'
     requires :project_id,                         type: Integer,  desc: 'The project id of the member'
   end
-  post '/units/:unit_id/group_sets/:group_set_id/groups/:group_id/members' do
+  post '/units/:unit_id/group_sets/:group_set_id/groups/:group_id/members/:project_id' do
     unit = Unit.find(params[:unit_id])
     gs = unit.group_sets.find(params[:group_set_id])
     grp = gs.groups.find(params[:group_id])
 
-    prj = unit.projects.find(params[:project_id])
+    prj = unit.active_projects.find(params[:project_id])
 
     unless authorise? current_user, gs, :join_group, ->(role, perm_hash, other) { gs.specific_permission_hash(role, perm_hash, other) }
       if gs.locked
@@ -420,7 +420,7 @@ class GroupSetsApi < Grape::API
 
     gm = grp.add_member(prj)
 
-    present prj, with: Entities::ProjectEntity, only: [:student_usern_id, :project_id, :student_first_name, :student_last_name, :student_nickname, :target_grade], user: current_user
+    present prj, with: Entities::ProjectEntity, only: [:student_username, :id, :student_first_name, :student_last_name, :student_nickname, :target_grade], user: current_user
   end
 
   desc 'Remove a group member'
