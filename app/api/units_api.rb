@@ -1,12 +1,20 @@
 require 'grape'
 require 'csv_helper'
 require 'entities/unit_entity'
+require 'hashids'
 
 class UnitsApi < Grape::API
   helpers AuthenticationHelpers
   helpers AuthorisationHelpers
   helpers MimeCheckHelpers
   helpers CsvHelper
+
+
+  def self.unit_by_id (id)
+    hashid = Hashids.new("unit_salt", 8)
+    unit_id = hashid.decode(id)[0]
+    return Unit.find(unit_id)
+  end
 
   before do
     authenticated?
@@ -20,6 +28,7 @@ class UnitsApi < Grape::API
       end
     end
   end
+
 
   desc 'Get units related to the current user for admin purposes'
   params do
@@ -40,6 +49,8 @@ class UnitsApi < Grape::API
 
   desc "Get a unit's details"
   get '/units/:id' do
+    hashid = Hashids.new("unit_salt", 8)
+    unit_id = hashid.decode(params[:id])[0]
     unit = Unit.includes(
       {unit_roles: [:role, :user]},
       {task_definitions: :tutorial_stream},
@@ -51,7 +62,7 @@ class UnitsApi < Grape::API
       :group_sets,
       :groups,
       :group_memberships
-    ).find(params[:id])
+  ).find(unit_id)
 
     unless (authorise? current_user, unit, :get_unit) || (authorise? current_user, User, :admin_units)
       error!({ error: "Couldn't find Unit with id=#{params[:id]}" }, 403)
@@ -64,7 +75,7 @@ class UnitsApi < Grape::API
 
   desc 'Update unit'
   params do
-    requires :id, type: Integer, desc: 'The unit id to update'
+    requires :id, type: String, desc: 'The unit id to update'
     requires :unit, type: Hash do
       optional :name, type: String
       optional :code, type: String
@@ -90,7 +101,7 @@ class UnitsApi < Grape::API
     end
   end
   put '/units/:id' do
-    unit = Unit.find(params[:id])
+    unit = UnitsApi.unit_by_id params[:id]
     unless authorise? current_user, unit, :update
       error!({ error: 'Not authorised to update this unit' }, 403)
     end
@@ -115,6 +126,7 @@ class UnitsApi < Grape::API
                                                           :overseer_image_id,
                                                           :assessment_enabled
                                                         )
+    puts unit_parameters
 
     if unit.teaching_period_id.present? && unit_parameters.key?(:start_date)
       unit.teaching_period = nil
@@ -221,8 +233,7 @@ class UnitsApi < Grape::API
     all_or_none_of :start_date, :end_date
   end
   post '/units/:id/rollover' do
-    unit = Unit.find(params[:id])
-
+    unit = UnitsApi.unit_by_id params[:id]
     if !(authorise?( current_user, User, :rollover) || authorise?( current_user, unit, :rollover_unit))
       error!({ error: 'Not authorised to rollover a unit' }, 403)
     end
@@ -241,8 +252,7 @@ class UnitsApi < Grape::API
 
   desc 'Download the tasks that are awaiting feedback for a unit'
   get '/units/:id/feedback' do
-    unit = Unit.find(params[:id])
-
+    unit = UnitsApi.unit_by_id params[:id]
     unless authorise? current_user, unit, :provide_feedback
       error!({ error: 'Not authorised to provide feedback for this unit' }, 403)
     end
@@ -253,8 +263,7 @@ class UnitsApi < Grape::API
 
   desc 'Download the tasks that should be listed under the task inbox'
   get '/units/:id/tasks/inbox' do
-    unit = Unit.find(params[:id])
-
+    unit = UnitsApi.unit_by_id params[:id]
     unless authorise? current_user, unit, :provide_feedback
       error!({ error: 'Not authorised to provide feedback for this unit' }, 403)
     end
@@ -265,7 +274,7 @@ class UnitsApi < Grape::API
 
   desc 'Download the grades for a unit'
   get '/units/:id/grades' do
-    unit = Unit.find(params[:id])
+    unit = UnitsApi.unit_by_id params[:id]
     unless authorise? current_user, unit, :download_grades
       error!({ error: 'Not authorised to download grades for this unit' }, 403)
     end
@@ -283,7 +292,7 @@ class UnitsApi < Grape::API
     requires :file, type: File, desc: 'CSV upload file.'
   end
   post '/csv/units/:id' do
-    unit = Unit.find(params[:id])
+    unit = UnitsApi.unit_by_id params[:id]
     unless authorise? current_user, unit, :upload_csv
       error!({ error: "Not authorised to upload CSV of students to #{unit.code}" }, 403)
     end
@@ -303,7 +312,7 @@ class UnitsApi < Grape::API
     requires :file, type: File, desc: 'CSV upload file.'
   end
   post '/csv/units/:id/withdraw' do
-    unit = Unit.find(params[:id])
+    unit = UnitsApi.unit_by_id params[:id]
     unless authorise? current_user, unit, :upload_csv
       error!({ error: "Not authorised to upload CSV of students to #{unit.code}" }, 403)
     end
@@ -323,7 +332,7 @@ class UnitsApi < Grape::API
 
   desc 'Download CSV of all students in this unit'
   get '/csv/units/:id' do
-    unit = Unit.find(params[:id])
+    unit = UnitsApi.unit_by_id params[:id]
     unless authorise? current_user, unit, :download_unit_csv
       error!({ error: "Not authorised to download CSV of students enrolled in #{unit.code}" }, 403)
     end
@@ -337,7 +346,7 @@ class UnitsApi < Grape::API
 
   desc 'Download CSV of all student tasks in this unit'
   get '/csv/units/:id/task_completion' do
-    unit = Unit.find(params[:id])
+    unit = UnitsApi.unit_by_id params[:id]
     unless authorise? current_user, unit, :download_unit_csv
       error!({ error: "Not authorised to download CSV of student tasks in #{unit.code}" }, 403)
     end
@@ -351,7 +360,7 @@ class UnitsApi < Grape::API
 
   desc 'Download the stats related to the number of students aiming for each grade'
   get '/units/:id/stats/student_target_grade' do
-    unit = Unit.find(params[:id])
+    unit = UnitsApi.unit_by_id params[:id]
     unless authorise? current_user, unit, :download_stats
       error!({ error: "Not authorised to download stats of student tasks in #{unit.code}" }, 403)
     end
@@ -361,7 +370,7 @@ class UnitsApi < Grape::API
 
   desc 'Download stats related to the status of students with tasks'
   get '/units/:id/stats/task_status_pct' do
-    unit = Unit.find(params[:id])
+    unit = UnitsApi.unit_by_id params[:id]
     unless authorise? current_user, unit, :download_stats
       error!({ error: "Not authorised to download stats of student tasks in #{unit.code}" }, 403)
     end
@@ -371,7 +380,7 @@ class UnitsApi < Grape::API
 
   desc 'Download stats related to the number of completed tasks'
   get '/units/:id/stats/task_completion_stats' do
-    unit = Unit.find(params[:id])
+    unit = UnitsApi.unit_by_id params[:id]
     unless authorise? current_user, unit, :download_stats
       error!({ error: "Not authorised to download stats of student tasks in #{unit.code}" }, 403)
     end
@@ -381,7 +390,7 @@ class UnitsApi < Grape::API
 
   desc 'Download stats related to the number of tasks assessed by each tutor'
   get '/csv/units/:id/tutor_assessments' do
-    unit = Unit.find(params[:id])
+    unit = UnitsApi.unit_by_id params[:id]
     unless authorise? current_user, unit, :download_stats
       error!({ error: "Not authorised to download stats of statistics for #{unit.code}" }, 403)
     end

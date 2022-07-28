@@ -159,6 +159,7 @@ GEM
     grape-swagger-rails (0.3.1)
       railties (>= 3.2.12)
     hashdiff (1.0.1)
+    hashids (1.0.6)
     hirb (0.7.3)
     http-accept (1.7.0)
     http-cookie (1.0.5)
@@ -391,6 +392,7 @@ DEPENDENCIES
   grape-entity
   grape-swagger
   grape-swagger-rails
+  hashids
   hirb
   icalendar (~> 2.5, >= 2.5.3)
   json-jwt
