@@ -7,6 +7,9 @@
 # Ignore bundler config
 /.bundle
 
+# Ignore locally installed gems
+vendor/bundle/
+
 # Ignore the default SQLite database.
 /db/*.sqlite3
 
@@ -27,7 +30,7 @@ student-work/
 .env
 .env*
 
-# RubyMine files
+# IDE configs
 .idea/
 .byebug_history
 coverage/
