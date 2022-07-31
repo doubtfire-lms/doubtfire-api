@@ -22,7 +22,7 @@ jobs:
             echo "Install mariadb"
             apt -y install mariadb-server mariadb-client
             echo "Run mariadb"
-            service mysql start
+            service mariadb start
             mysql -uroot -e "CREATE USER 'dfire'@'localhost' IDENTIFIED BY 'pwd'; GRANT ALL PRIVILEGES ON *.* TO 'dfire'@'localhost'; FLUSH PRIVILEGES;"
             echo "Setting up database"
             bundle exec rake db:populate
