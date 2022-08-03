@@ -221,9 +221,14 @@ module FileHelper
 
   def compress_pdf(path, max_size = 2_500_000)
     # trusting path... as it needs to be replaced
-    logger.debug "Compressing PDF #{path} (#{File.size?(path)} bytes) using GhostScript"
     # only compress things over max_size -- defaults to 2.5mb
-    return if File.size?(path) < max_size
+    current_filesize = File.size?(path)
+    if current_filesize < max_size
+      logger.debug "PDF #{path} (#{current_filesize} bytes) is smaller than #{max_size}, skipping compression."
+      return
+    else
+      logger.debug "Compressing PDF #{path} (#{current_filesize} bytes) using GhostScript"
+    end
 
     begin
       tmp_file = File.join(Dir.tmpdir, 'doubtfire', 'compress', "#{File.dirname(path).split(File::Separator).last}-file.pdf")
