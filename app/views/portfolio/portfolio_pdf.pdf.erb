@@ -27,10 +27,15 @@ end
 def task_for_def(td)
   task_for_def_id(td.id)
 end
+
+# array to hold the list of PDF paths we are inserting for annotation extraction with newpax
+document_list = Array.new
 %>
 
 \begin{titlepage}
   <% if @learning_summary_report %>
+    % add learning summary report to the document list for annotation extraction
+    <% document_list.append(@learning_summary_report)%>
     \includepdf[addtotoc={\thepage,section,1,Learning Summary Report,chap:learningsummary},pages={1-}]{<%= @learning_summary_report %>}
   <% end %>
 
@@ -177,6 +182,12 @@ No Tutor
     \phantomsection
     \label{additional_file_<%= f[:idx] %>}
     \addcontentsline{toc}{subsection}{<%= lesc f[:name] %>}
+
+    % add additional PDF files to the document list for annotation extraction
+    <% if f[:kind] == "document" %>
+         <% document_list.append(@project.portfolio_tmp_file_path(f)) %>
+    <% end %>
+
     <%= render partial:"shared/file", locals: {idx: f[:idx] - 1, count: @files.count - 1, name: f[:name], base_path: @base_path, file_name: @project.portfolio_tmp_file_path(f), file_type: f[:kind]} %>
   <% end %>
 <% end %>
@@ -217,6 +228,19 @@ No Tutor
     \end{tabular}
   <% end %>
   <% if File.exists? task.portfolio_evidence_path %>
+    % add task evidence to the document list for annotation extraction
+    <% document_list.append(task.portfolio_evidence_path)%>
     \includepdf[pages={1-}]{<%= task.portfolio_evidence_path %>}
   <% end %>
+<% end %>
+
+% generate lua calls for newpax and insert it in the preamble for annotation extraction
+<% content_for :preamble_newpax do %>
+  \directlua
+  {
+  <% document_list.each do |path| %>
+    % newpax does not allow the .pdf file extension, file paths must be supplied without extension
+    newpax.writenewpax("<%= File.join(File.dirname(path), File.basename(path, File.extname(path))) %>")
+  <% end %>
+  }
 <% end %>

@@ -22,7 +22,20 @@ if ! command -v "$TEX_COMPILER" > /dev/null; then
 
   echo "----------------------------------------"
   echo "Installing additional texlive packages:"
-  tlmgr install fontawesome luatextra luacode minted fvextra catchfile xstring framed lastpage
+  tlmgr install fontawesome luatextra luacode minted fvextra catchfile xstring framed lastpage pdfmanagement-testphase newpax
+
+  echo "----------------------------------------"
+  echo "Patching the newpax package version 0.52 to fix a bug:"
+  if NEWPAX_VERSION=$(tlmgr info --only-installed --data cat-version newpax) ; then
+    if [ "$NEWPAX_VERSION" == "0.52" ]; then
+      echo "Version 0.52 found, patching."
+      patch -d / -p0 < "${APP_PATH}"/newpax.lua.patch
+    else
+      echo "Version $NEWPAX_VERSION found, skipping the patch."
+    fi
+  else
+      echo >&2 "Package newpax not found!"; exit 1;
+  fi
 
   cd ..
 
