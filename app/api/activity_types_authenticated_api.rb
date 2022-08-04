@@ -20,9 +20,9 @@ class ActivityTypesAuthenticatedApi < Grape::API
       error!({ error: 'Not authorised to create an activity type' }, 403)
     end
     activity_type_parameters = ActionController::Parameters.new(params)
-                                                              .require(:activity_type)
-                                                              .permit(:name,
-                                                                    :abbreviation)
+                                                           .require(:activity_type)
+                                                           .permit(:name,
+                                                                   :abbreviation)
 
     result = ActivityType.create!(activity_type_parameters)
 
@@ -46,9 +46,9 @@ class ActivityTypesAuthenticatedApi < Grape::API
       error!({ error: 'Not authorised to update an activity type' }, 403)
     end
     activity_type_parameters = ActionController::Parameters.new(params)
-                                                              .require(:activity_type)
-                                                              .permit(:name,
-                                                                    :abbreviation)
+                                                           .require(:activity_type)
+                                                           .permit(:name,
+                                                                   :abbreviation)
 
     activity_type.update!(activity_type_parameters)
     present activity_type, with: Entities::ActivityTypeEntity

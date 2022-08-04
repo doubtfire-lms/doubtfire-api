@@ -117,7 +117,7 @@ class UsersApi < Grape::API
         action = new_role.id > old_role.id ? :promote_user : :demote_user
 
         # current user not authorised to peform action with new role?
-        unless authorise? current_user, User, action, User.get_change_role_perm_fn, [ old_role.to_sym, new_role.to_sym ]
+        unless authorise? current_user, User, action, User.get_change_role_perm_fn, [old_role.to_sym, new_role.to_sym]
           error!({ error: "Not authorised to #{action} user with id=#{params[:id]} to #{new_role.name}" }, 403)
         end
         # update :role to actual Role object rather than String type
@@ -177,7 +177,7 @@ class UsersApi < Grape::API
     #
     # Check permission to create user with this role
     #
-    unless authorise? current_user, User, :create_user, User.get_change_role_perm_fn, [ :nil, new_role.name.downcase.to_sym ]
+    unless authorise? current_user, User, :create_user, User.get_change_role_perm_fn, [:nil, new_role.name.downcase.to_sym]
       error!({ error: "Not authorised to create new users with role #{new_role.name}" }, 403)
     end
 

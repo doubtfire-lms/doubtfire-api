@@ -22,11 +22,11 @@ class CampusesAuthenticatedApi < Grape::API
       error!({ error: 'Not authorised to create a campus' }, 403)
     end
     campus_parameters = ActionController::Parameters.new(params)
-                                                              .require(:campus)
-                                                              .permit(:name,
-                                                                    :mode,
-                                                                    :abbreviation,
-                                                                    :active)
+                                                    .require(:campus)
+                                                    .permit(:name,
+                                                            :mode,
+                                                            :abbreviation,
+                                                            :active)
 
     result = Campus.create!(campus_parameters)
 
@@ -52,11 +52,11 @@ class CampusesAuthenticatedApi < Grape::API
       error!({ error: 'Not authorised to update a campus' }, 403)
     end
     campus_parameters = ActionController::Parameters.new(params)
-                                                              .require(:campus)
-                                                              .permit(:name,
-                                                                    :mode,
-                                                                    :abbreviation,
-                                                                    :active)
+                                                    .require(:campus)
+                                                    .permit(:name,
+                                                            :mode,
+                                                            :abbreviation,
+                                                            :active)
 
     campus.update!(campus_parameters)
     present campus, with: Entities::CampusEntity

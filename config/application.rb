@@ -75,8 +75,8 @@ module Doubtfire
       # Check we have all values
       # always need:
       if config.saml[:assertion_consumer_service_url].nil? ||
-      config.saml[:entity_id].nil? ||
-      config.saml[:idp_sso_target_url].nil?
+         config.saml[:entity_id].nil? ||
+         config.saml[:idp_sso_target_url].nil?
         raise "Invalid values specified to saml, check the following environment variables: \n"\
         "  key                          => variable set?\n"\
         "  DF_SAML_CONSUMER_SERVICE_URL            => #{!ENV['DF_SAML_CONSUMER_SERVICE_URL'].nil?}\n"\
@@ -88,8 +88,8 @@ module Doubtfire
       # If there's no XML url, we need the cert
       if config.saml[:SAML_metadata_url].nil? &&
          config.saml[:idp_sso_cert].nil?
-       raise "Missing IDP certificate for SAML config: \n"
-     end
+        raise "Missing IDP certificate for SAML config: \n"
+      end
     end
 
     # ==> AAF authentication
@@ -180,7 +180,7 @@ module Doubtfire
 
     if (config.overseer_enabled)
       config.overseer_images = YAML.load_file(Rails.root.join('config/overseer-images.yml')).with_indifferent_access
-      config.has_overseer_image = -> (key){ config.overseer_images['images'].any? { |img| img[:name] == key } }
+      config.has_overseer_image = ->(key) { config.overseer_images['images'].any? { |img| img[:name] == key } }
 
       publisher_config = {
         RABBITMQ_HOSTNAME: ENV['RABBITMQ_HOSTNAME'],
@@ -211,6 +211,5 @@ module Doubtfire
       config.sm_instance = ServicesManager.instance
       config.sm_instance.register_client(:ontrack, publisher_config, subscriber_config)
     end
-
   end
 end

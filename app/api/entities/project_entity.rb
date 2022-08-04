@@ -20,7 +20,7 @@ module Entities
     expose :task_stats, as: :stats
     expose :burndown_chart_data
 
-    expose :tasks do | project, options |
+    expose :tasks do |project, options|
       project.task_details_for_shallow_serializer(options[:user])
     end
     expose :tutorial_enrolments, using: TutorialEnrolmentEntity

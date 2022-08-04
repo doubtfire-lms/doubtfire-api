@@ -120,22 +120,21 @@ class OverseerAssessment < ApplicationRecord
     add_assessment_comment text
   end
 
-
   def send_to_overseer()
-    return {error: "Your task is already queued for processing. Pleasse wait until you receive a response before queueing your task again."} if self.status == :queued
+    return { error: "Your task is already queued for processing. Pleasse wait until you receive a response before queueing your task again." } if self.status == :queued
 
-    #TODO: Check status and do not queue if already queued
+    # TODO: Check status and do not queue if already queued
     puts "********* Sending #{self.id} to overseer"
 
     sm_instance = Doubtfire::Application.config.sm_instance
     if sm_instance.nil?
       puts "ERROR: Unable to get service manager to send message to overseer. Unable to send - OverseerAssessment #{id}"
-      return {error: "Automated feedback is not configured correctly. Please raise an issue with your administrator. ERR:O1" }
+      return { error: "Automated feedback is not configured correctly. Please raise an issue with your administrator. ERR:O1" }
     end
 
     unless has_submission_files?
       puts "ERROR: Attempting to send submission to Overseer without associated submission files - OverseerAssessment #{id}"
-      return {error: "Your submission does not include any files to be processed." }
+      return { error: "Your submission does not include any files to be processed." }
     end
 
     # Proceed only if:
@@ -160,13 +159,13 @@ class OverseerAssessment < ApplicationRecord
 
     unless File.exist? submission_zip_file_name
       puts "ERROR: Student submission history zip file doesn't exist #{submission_zip_file_name}. Unable to send - OverseerAssessment #{id}"
-      return {error: "We no longer have the files associated with this submission. Please test a later submission, or upload your work again." }
+      return { error: "We no longer have the files associated with this submission. Please test a later submission, or upload your work again." }
     end
 
     docker_image_name_tag = task_definition.docker_image_name_tag || unit.docker_image_name_tag
     if docker_image_name_tag.nil? || docker_image_name_tag.strip.empty?
       puts "ERROR: No docker image name. Unable to send - OverseerAssessment #{id}"
-      return {error: "This task is not configured to use automated feedback. Please ask your tutor to check the configuration for the task for the associated Docker image."}
+      return { error: "This task is not configured to use automated feedback. Please ask your tutor to check the configuration for the task for the associated Docker image." }
     end
 
     puts "Sending OverseerAssessment #{id} to message queue"
@@ -193,7 +192,7 @@ class OverseerAssessment < ApplicationRecord
     rescue RuntimeError => e
       puts "ERROR: OverseerAssessment #{id} failed to send: #{e.inspect}"
       self.status = :queue_failed
-      return {error: "We are unable to send your submission to the automated feedback service. Please try again later."}
+      return { error: "We are unable to send your submission to the automated feedback service. Please try again later." }
     ensure
       puts "saving... #{self.status}"
       save!
@@ -255,7 +254,6 @@ class OverseerAssessment < ApplicationRecord
       puts "File #{yaml_path} doesn't exist"
       self.result_task_status = task.status
     end
-
   rescue StandardError => e
     puts ERROR: e
   ensure

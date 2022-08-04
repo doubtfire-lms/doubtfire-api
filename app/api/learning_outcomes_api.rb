@@ -47,11 +47,11 @@ class LearningOutcomesApi < Grape::API
     error!({ error: 'Unable to locate outcome requested.' }, 405) if ilo.nil?
 
     ilo_parameters = ActionController::Parameters.new(params)
-                                                  .permit(
-                                                    :name,
-                                                    :description,
-                                                    :abbreviation
-                                                  )
+                                                 .permit(
+                                                   :name,
+                                                   :description,
+                                                   :abbreviation
+                                                 )
     unit.move_ilo(ilo, params[:ilo_number]) if params[:ilo_number]
     ilo.update!(ilo_parameters)
     present ilo, with: Entities::LearningOutcomeEntity

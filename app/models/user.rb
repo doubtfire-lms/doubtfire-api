@@ -9,6 +9,7 @@ class String
   def titleize()
     result = ActiveSupport::Inflector.titleize(self)
     return self if self.present? && result.blank?
+
     return result
   end
 end
@@ -40,6 +41,7 @@ class User < ApplicationRecord
       # 1. The signed JWT matches the JWT key
       jwt = User.decode_jws(jws)
       return false if jwt.nil?
+
       # 2. The `aud` claim matches the application URL
       aud_ok = jwt['aud'] == Doubtfire::Application.config.aaf[:audience_url]
       # 3. The `iss` claim has the correct issuer URL
@@ -67,7 +69,7 @@ class User < ApplicationRecord
     'password'
   end
 
-  def password= (value)
+  def password=(value)
     self.encrypted_password = BCrypt::Password.create(value)
   end
 
@@ -116,7 +118,7 @@ class User < ApplicationRecord
   def token_for_text?(a_token)
     self.auth_tokens.each do |token|
       if a_token == token.authentication_token
-          return token
+        return token
       end
     end
     return nil
@@ -138,7 +140,7 @@ class User < ApplicationRecord
   validates :last_name,   presence: true
   validates :role_id,     presence: true
   validates :username,    presence: true, uniqueness: { case_sensitive: false }
-  validates :email,       presence: true, uniqueness: { case_sensitive: false }, format: {with: /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\z/i}
+  validates :email,       presence: true, uniqueness: { case_sensitive: false }, format: { with: /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\z/i }
   validates :student_id,  uniqueness: true, allow_nil: true
 
   # Queries
@@ -196,45 +198,45 @@ class User < ApplicationRecord
       admin: {
         # User being assigned is an admin?
         #   An admin current_user can demote them to either a student, tutor or convenor
-        admin: {     student: [ :demote_user  ],
-                     tutor: [ :demote_user ],
-                     convenor: [ :demote_user ] },
+        admin: {     student: [:demote_user],
+                     tutor: [:demote_user],
+                     convenor: [:demote_user] },
         # User being assigned is a convenor?
         #   An admin current_user can demote them to student or tutor
         #   An admin current_user can promote them to an admin
-        convenor: {  student: [ :demote_user  ],
-                     tutor: [ :demote_user  ],
-                     admin: [ :promote_user ] },
+        convenor: {  student: [:demote_user],
+                     tutor: [:demote_user],
+                     admin: [:promote_user] },
         # User being assigned is a tutor?
         #   An admin current_user can demote them to a student
         #   An admin current_user can promote them to a convenor or admin
-        tutor: {     student: [ :demote_user  ],
-                     convenor: [ :promote_user ],
-                     admin: [ :promote_user ] },
+        tutor: {     student: [:demote_user],
+                     convenor: [:promote_user],
+                     admin: [:promote_user] },
         # User being assigned is a student?
         #   An admin current_user can promote them to a tutor, convenor or admin
-        student: {   tutor: [ :promote_user ],
-                     convenor: [ :promote_user ],
-                     admin: [ :promote_user ] },
+        student: {   tutor: [:promote_user],
+                     convenor: [:promote_user],
+                     admin: [:promote_user] },
         # User being assigned has no role?
         #   An admin current_user can create user to any role
-        nil: {       student: [ :create_user  ],
-                     tutor: [ :create_user  ],
-                     convenor: [ :create_user ],
-                     admin: [ :create_user  ] }
+        nil: {       student: [:create_user],
+                     tutor: [:create_user],
+                     convenor: [:create_user],
+                     admin: [:create_user] }
       },
       # The current_user's role is a Convenor
       convenor: {
         # User being assigned is an tutor?
         #   A convenor current_user can demote them to a student
-        tutor: {     student: [ :demote_user  ] },
+        tutor: {     student: [:demote_user] },
         # User being assigned is an student?
         #   A convenor current_user can promote them to a student
-        student: {   tutor: [ :promote_user ] },
+        student: {   tutor: [:promote_user] },
         # User being assigned has no role?
         #   A convenor current_user can create a user to either a student or tutor role
-        nil: {       student: [ :create_user  ],
-                     tutor: [ :create_user  ] }
+        nil: {       student: [:create_user],
+                     tutor: [:create_user] }
       }
     }
 
@@ -321,8 +323,8 @@ class User < ApplicationRecord
     new_role = Role.find(new_role_id)
     new_role = Role.student if new_role.nil?
 
-    fail_if_in_unit_role = [ Role.tutor, Role.convenor ] if new_role == Role.student
-    fail_if_in_unit_role = [ Role.convenor ] if new_role == Role.tutor
+    fail_if_in_unit_role = [Role.tutor, Role.convenor] if new_role == Role.student
+    fail_if_in_unit_role = [Role.convenor] if new_role == Role.tutor
     fail_if_in_unit_role = [] if new_role == Role.admin || new_role == Role.convenor
 
     for check_role in fail_if_in_unit_role do
@@ -407,7 +409,7 @@ class User < ApplicationRecord
 
     CSV.parse(data,
               headers: true,
-              header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip.tr(' ', '_') unless hdr.nil? } ],
+              header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip.tr(' ', '_') unless hdr.nil? }],
               converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
       next if row[0] =~ /(email)|(username)/
 
@@ -428,6 +430,7 @@ class User < ApplicationRecord
         pass_checks = true
         %w(username email role first_name).each do |col|
           next unless row[col].nil? || row[col].empty?
+
           errors << { row: row, message: "The #{col} cannot be blank or empty" }
           pass_checks = false
           break
@@ -451,7 +454,7 @@ class User < ApplicationRecord
         #
         # If the current user is allowed to create a user in this role
         #
-        if AuthorisationHelpers.authorise?(current_user, User, :create_user, User.get_change_role_perm_fn, [ :nil, new_role.to_sym ])
+        if AuthorisationHelpers.authorise?(current_user, User, :create_user, User.get_change_role_perm_fn, [:nil, new_role.to_sym])
           #
           # Find and update or create
           #
@@ -481,7 +484,7 @@ class User < ApplicationRecord
     {
       success: success,
       ignored: ignored,
-      errors:  errors
+      errors: errors
     }
   end
 end

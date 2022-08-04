@@ -14,6 +14,7 @@ namespace :maintenance do
     Dir.foreach(path) do |item|
       fname = "#{path}#{item}"
       next if File.directory?(fname)
+
       if File.mtime(fname) < DateTime.now - time_offset
         begin
           File.delete(fname)
@@ -28,11 +29,11 @@ namespace :maintenance do
 
   desc 'Export auth tokens for migration from 5.x to 6.x'
   task export_auth_tokens: [:environment] do
-    User.all.
-      map { |u| { token: u.auth_token, user: u.id, expiry: u.auth_token_expiry } }.
-      select { |d| d[:token].present? }.
-      each do |d|
-        puts "AuthToken.create!(authentication_token: '#{d[:token].strip}', auth_token_expiry: DateTime.parse('#{d[:expiry]}'), user_id: '#{d[:user]}')"
-      end
+    User.all
+        .map { |u| { token: u.auth_token, user: u.id, expiry: u.auth_token_expiry } }
+        .select { |d| d[:token].present? }
+        .each do |d|
+      puts "AuthToken.create!(authentication_token: '#{d[:token].strip}', auth_token_expiry: DateTime.parse('#{d[:expiry]}'), user_id: '#{d[:user]}')"
+    end
   end
 end
