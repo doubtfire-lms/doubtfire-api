@@ -1,4 +1,3 @@
-
 module Entities
   class WebcalEntity < Grape::Entity
     expose :id, expose_nil: false
