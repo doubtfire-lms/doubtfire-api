@@ -18,10 +18,10 @@ class StudentsApi < Grape::API
 
     if (authorise? current_user, unit, :get_students) || (authorise? current_user, User, :admin_units)
       result = if params[:all].nil? || (!params[:all].nil? && !params[:all])
-                  unit.student_query(true)
-                else
-                  unit.student_query(false)
-                end
+                 unit.student_query(true)
+               else
+                 unit.student_query(false)
+               end
       present result, with: Grape::Presenters::Presenter
     else
       error!({ error: "Couldn't find Unit with id=#{params[:unit_id]}" }, 403)

@@ -41,7 +41,6 @@ Doubtfire::Application.configure do
   # Write them to file instead (under doubtfire-api/tmp/mails)
   config.action_mailer.delivery_method = :file
 
-
   # Print deprecation notices to the Rails logger.
   config.active_support.deprecation = :log
 
@@ -69,7 +68,6 @@ Doubtfire::Application.configure do
 
   # Uncomment if you wish to allow Action Cable access from any origin.
   # config.action_cable.disable_request_forgery_protection = true
-
 
   config.action_controller.perform_caching = false
 

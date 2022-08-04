@@ -16,7 +16,8 @@ namespace :submission do
     begin
       pid = File.read(pid_file).to_i
       raise Errno::ESRCH if pid == 0
-      Process.getpgid( pid )
+
+      Process.getpgid(pid)
       true
     rescue Errno::ESRCH
       # clean up old running file
@@ -62,6 +63,7 @@ namespace :submission do
           end
 
           next unless project.student.receive_portfolio_notifications
+
           logger.info "emailing portfolio notification to #{project.student.name}"
 
           if success
