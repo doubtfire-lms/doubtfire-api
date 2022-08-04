@@ -43,9 +43,7 @@ class PortfolioEvidence
 
     # For each folder in new (i.e., queued folders to process) that matches appropriate name
     new_root_dir = Dir.entries(my_source).select do |f|
-      # rubocop:disable Style/NumericPredicate
       (f =~ /^\d+$/) == 0
-      # rubocop:enable Style/NumericPredicate
     end
     new_root_dir.each do |folder_id|
       begin
