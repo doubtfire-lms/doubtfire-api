@@ -23,6 +23,10 @@ Doubtfire::Application.configure do
   # Send deprecation notices to registered listeners
   config.active_support.deprecation = :notify
 
+  # Remove the Runtime middleware which is responsible for inserting the X-Runtime header
+  # to harden the application against timing attacks and unauthenticated object enumeration
+  config.middleware.delete Rack::Runtime
+
   require_relative 'doubtfire_logger'
   config.logger = DoubtfireLogger.logger
   Rails.logger = DoubtfireLogger.logger
