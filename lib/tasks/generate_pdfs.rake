@@ -38,6 +38,9 @@ namespace :submission do
   end
 
   task generate_pdfs: :environment do
+    # Reduce logging verbosity for the generate_pdfs task in production
+    logger.level = :warn if Rails.configuration.pdfgen_quiet
+
     if is_executing?
       logger.error 'Skip generate pdf -- already executing'
       puts 'Skip generate pdf -- already executing'
