@@ -27,6 +27,9 @@ Doubtfire::Application.configure do
   # to harden the application against timing attacks and unauthenticated object enumeration
   config.middleware.delete Rack::Runtime
 
+  # pdfgen log verbosity
+  config.pdfgen_quiet = true
+
   require_relative 'doubtfire_logger'
   config.logger = DoubtfireLogger.logger
   Rails.logger = DoubtfireLogger.logger
