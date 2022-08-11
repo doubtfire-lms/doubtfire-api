@@ -23,6 +23,10 @@ Doubtfire::Application.configure do
   # Send deprecation notices to registered listeners
   config.active_support.deprecation = :notify
 
+  # Remove the Runtime middleware which is responsible for inserting the X-Runtime header
+  # to harden the application against timing attacks and unauthenticated object enumeration
+  config.middleware.delete Rack::Runtime
+
   # pdfgen log verbosity
   config.pdfgen_quiet = true
 
