@@ -6,7 +6,7 @@ Doubtfire is a feedback-driven learning support system.
 
 ## Table of Contents
 
-- [Doubtfire API  ![test-doubtfire-api](https://github.com/doubtfire-lms/doubtfire-api/actions/workflows/push.yml)](#doubtfire-api--)
+- [Doubtfire API](#doubtfire-api--)
   - [Table of Contents](#table-of-contents)
   - [Getting started](#getting-started)
     - [Clone Repository](#clone-repository)
