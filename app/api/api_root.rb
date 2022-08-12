@@ -31,7 +31,7 @@ class ApiRoot < Grape::API
       message = e.message
       status = 400
     when ActiveRecord::RecordNotFound
-      message = "Unable to find requested #{e.message[/(Couldn't find )(.*)( with)/,2]}"
+      message = "Unable to find requested #{e.message[/(Couldn't find )(.*)( with)/, 2]}"
       status = 404
     else
       logger.error "Unhandled exception: #{e.class}"
@@ -40,7 +40,7 @@ class ApiRoot < Grape::API
       message = "Sorry... something went wrong with your request."
       status = 500
     end
-    Rack::Response.new( {error: message}.to_json, status, { 'Content-type' => 'text/error' } )
+    Rack::Response.new({ error: message }.to_json, status, { 'Content-type' => 'text/error' })
   end
 
   #

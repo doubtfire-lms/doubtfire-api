@@ -14,16 +14,16 @@ ruby ruby_versions[(ENV['RAILS_ENV'] || 'development').to_sym]
 gem 'rails', '~>7.0.0'
 
 group :development, :test do
-  gem "sprockets-rails"
   gem 'better_errors'
   gem 'byebug'
   gem 'database_cleaner'
+  gem 'listen'
   gem 'rails_best_practices'
   gem 'rubocop'
   gem 'rubocop-faker'
   gem 'rubocop-rails'
   gem 'simplecov', require: false
-  gem 'listen'
+  gem "sprockets-rails"
 end
 
 group :development, :test, :staging do
@@ -72,11 +72,11 @@ gem 'grape-swagger'
 gem 'grape-swagger-rails'
 
 # Miscellaneous
+gem 'bunny-pub-sub', '0.5.2'
 gem 'ci_reporter'
 gem 'dotenv-rails'
 gem 'rack-cors', require: 'rack/cors'
 gem 'require_all', '>=1.3.3'
-gem 'bunny-pub-sub', '0.5.2'
 
 # Excel support
 gem 'roo', '~> 2.7.0'

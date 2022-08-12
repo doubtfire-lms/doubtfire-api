@@ -21,13 +21,12 @@ class ProjectsApi < Grape::API
     student_name = db_concat('users.first_name', "' '", 'users.last_name')
 
     # join in other tables to fetch data
-    data = projects.
-                joins(:unit).
-                joins(:user).
-                select( 'projects.*',
-                        'units.name AS unit_name', 'units.id AS unit_id', 'units.code AS unit_code', 'units.start_date AS start_date', 'units.end_date AS end_date', 'units.teaching_period_id AS teaching_period_id', 'units.active AS active',
-                        "#{student_name} AS student_name"
-                      )
+    data = projects
+           .joins(:unit)
+           .joins(:user)
+           .select('projects.*',
+                   'units.name AS unit_name', 'units.id AS unit_id', 'units.code AS unit_code', 'units.start_date AS start_date', 'units.end_date AS end_date', 'units.teaching_period_id AS teaching_period_id', 'units.active AS active',
+                   "#{student_name} AS student_name")
 
     # Now map the data to structure for json to return
     result = data.map do |row|
@@ -115,7 +114,7 @@ class ProjectsApi < Grape::API
         error!({ error: "You do not have permissions to change Project with id=#{params[:id]}" }, 403)
       end
       if project.has_portfolio
-        error!({ error: "You cannot change your submitted grade after portfolio submission"}, 403)
+        error!({ error: "You cannot change your submitted grade after portfolio submission" }, 403)
       end
 
       project.submitted_grade = params[:submitted_grade]
@@ -152,13 +151,13 @@ class ProjectsApi < Grape::API
       project.save
     end
 
-    Entities::ProjectEntity.represent(project, only: [ :campus_id, :enrolled, :target_grade, :submitted_grade, :compile_portfolio, :portfolio_available, :uses_draft_learning_summary, :stats, :burndown_chart_data ])
+    Entities::ProjectEntity.represent(project, only: [:campus_id, :enrolled, :target_grade, :submitted_grade, :compile_portfolio, :portfolio_available, :uses_draft_learning_summary, :stats, :burndown_chart_data])
   end # put
 
   desc 'Enrol a student in a unit, creating them a project'
   params do
     requires :unit_id, type: Integer, desc: 'Unit Id'
-    requires :student_num, type: String,   desc: 'Student Number 7 digit code'
+    requires :student_num, type: String, desc: 'Student Number 7 digit code'
     requires :campus_id, type: Integer, desc: 'Campus this project is part of'
   end
   post '/projects' do

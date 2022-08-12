@@ -7,7 +7,6 @@ require 'onelogin/ruby-saml'
 # This is used by the grape api.
 #
 module AuthenticationHelpers
-
   module_function
 
   #

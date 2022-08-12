@@ -1,6 +1,7 @@
 module CsvHelper
   def csv_date_to_date(date)
     return if date.nil? || date.empty?
+
     date = date.strip
 
     if date !~ /20\d\d\-\d{1,2}\-\d{1,2}$/ # Matches YYYY-mm-dd by default
@@ -27,7 +28,6 @@ module CsvHelper
   def missing_headers(row, headers)
     headers - row.to_hash.keys
   end
-
 
   module_function :csv_date_to_date
   module_function :missing_headers

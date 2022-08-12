@@ -33,6 +33,7 @@ namespace :submission do
           u.tasks.where('portfolio_evidence is not NULL').each do |t|
             pdf_file = t.final_pdf_path
             next unless pdf_file && File.exist?(pdf_file) && File.size?(pdf_file) >= 2_200_000
+
             puts "  Recreating #{t.portfolio_evidence_path} was #{File.size?(pdf_file)}"
             t.move_done_to_new
             t.convert_submission_to_pdf

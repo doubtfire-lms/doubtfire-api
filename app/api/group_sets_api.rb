@@ -37,14 +37,14 @@ class GroupSetsApi < Grape::API
     logger.info "Create group set: #{current_user.username} in #{unit.code} from #{request.ip}"
 
     group_params = ActionController::Parameters.new(params)
-                                                .require(:group_set)
-                                                .permit(
-                                                  :name,
-                                                  :allow_students_to_create_groups,
-                                                  :allow_students_to_manage_groups,
-                                                  :keep_groups_in_same_class,
-                                                  :capacity
-                                                )
+                                               .require(:group_set)
+                                               .permit(
+                                                 :name,
+                                                 :allow_students_to_create_groups,
+                                                 :allow_students_to_manage_groups,
+                                                 :keep_groups_in_same_class,
+                                                 :capacity
+                                               )
 
     group_set = GroupSet.create(group_params)
     group_set.unit = unit
@@ -79,15 +79,15 @@ class GroupSetsApi < Grape::API
     end
 
     group_params = ActionController::Parameters.new(params)
-                                                .require(:group_set)
-                                                .permit(
-                                                  :name,
-                                                  :allow_students_to_create_groups,
-                                                  :allow_students_to_manage_groups,
-                                                  :keep_groups_in_same_class,
-                                                  :capacity,
-                                                  :locked,
-                                                )
+                                               .require(:group_set)
+                                               .permit(
+                                                 :name,
+                                                 :allow_students_to_create_groups,
+                                                 :allow_students_to_manage_groups,
+                                                 :keep_groups_in_same_class,
+                                                 :capacity,
+                                                 :locked,
+                                               )
 
     group_set.update!(group_params)
     present group_set, with: Entities::GroupSetEntity
@@ -125,26 +125,26 @@ class GroupSetsApi < Grape::API
       error!({ error: 'Not authorised to get groups for this unit' }, 403)
     end
 
-    result = group_set.
-      groups.
-      joins('LEFT OUTER JOIN group_memberships ON group_memberships.group_id = groups.id AND group_memberships.active = TRUE').
-      group(
-        'groups.id',
-        'groups.name',
-        'groups.tutorial_id',
-        'groups.group_set_id',
-        'groups.capacity_adjustment',
-        'groups.locked',
-      ).
-      select(
-        'groups.id as id',
-        'groups.name as name',
-        'groups.tutorial_id as tutorial_id',
-        'groups.group_set_id as group_set_id',
-        'groups.capacity_adjustment as capacity_adjustment',
-        'groups.locked as locked',
-        'COUNT(group_memberships.id) as student_count'
-      )
+    result = group_set
+             .groups
+             .joins('LEFT OUTER JOIN group_memberships ON group_memberships.group_id = groups.id AND group_memberships.active = TRUE')
+             .group(
+               'groups.id',
+               'groups.name',
+               'groups.tutorial_id',
+               'groups.group_set_id',
+               'groups.capacity_adjustment',
+               'groups.locked',
+             )
+             .select(
+               'groups.id as id',
+               'groups.name as name',
+               'groups.tutorial_id as tutorial_id',
+               'groups.group_set_id as group_set_id',
+               'groups.capacity_adjustment as capacity_adjustment',
+               'groups.locked as locked',
+               'COUNT(group_memberships.id) as student_count'
+             )
     present result, with: Grape::Presenters::Presenter
   end
 
@@ -200,11 +200,11 @@ class GroupSetsApi < Grape::API
     end
 
     group_params = ActionController::Parameters.new(params)
-                                                .require(:group)
-                                                .permit(
-                                                  :name,
-                                                  :capacity_adjustment
-                                                )
+                                               .require(:group)
+                                               .permit(
+                                                 :name,
+                                                 :capacity_adjustment
+                                               )
 
     # Group with the same name
     unless group_set.groups.where(name: group_params[:name]).empty?
@@ -216,7 +216,7 @@ class GroupSetsApi < Grape::API
     if unit.role_for(current_user) == Role.student
       project = unit.active_projects.find_by(user_id: current_user.id)
       # They cannot already be in a group for this group set
-      error!({error: "You are already in a group for #{group_set.name}"}, 403) unless project.group_for_groupset(group_set).nil?
+      error!({ error: "You are already in a group for #{group_set.name}" }, 403) unless project.group_for_groupset(group_set).nil?
     end
 
     num = group_set.groups.count + 1
@@ -297,13 +297,13 @@ class GroupSetsApi < Grape::API
     end
 
     group_params = ActionController::Parameters.new(params)
-                                                .require(:group)
-                                                .permit(
-                                                  :name,
-                                                  :tutorial_id,
-                                                  :capacity_adjustment,
-                                                  :locked,
-                                                )
+                                               .require(:group)
+                                               .permit(
+                                                 :name,
+                                                 :tutorial_id,
+                                                 :capacity_adjustment,
+                                                 :locked,
+                                               )
 
     # Allow locking only if the current user has permission to do so
     if params[:group][:locked].present? && params[:group][:locked] != grp.locked
@@ -411,11 +411,11 @@ class GroupSetsApi < Grape::API
     end
 
     if grp.locked
-      error!({ error: 'Group is locked, no additional members can be added'}, 403)
+      error!({ error: 'Group is locked, no additional members can be added' }, 403)
     end
 
-    if grp.at_capacity? && ! authorise?(current_user, grp, :can_exceed_capacity)
-      error!({ error: 'Group is at capacity, no additional members can be added'}, 403)
+    if grp.at_capacity? && !authorise?(current_user, grp, :can_exceed_capacity)
+      error!({ error: 'Group is at capacity, no additional members can be added' }, 403)
     end
 
     gm = grp.add_member(prj)
