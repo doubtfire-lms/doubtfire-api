@@ -2,7 +2,7 @@
 # The status
 # - has a name and a description
 class TaskStatus < ApplicationRecord
-  #TODO: Consider refactoring this class. Is there any point to having this in the database? Could this become an enum?
+  # TODO: Consider refactoring this class. Is there any point to having this in the database? Could this become an enum?
 
   # Model associations
   has_many :tasks
@@ -120,19 +120,19 @@ class TaskStatus < ApplicationRecord
 
   def self.id_to_key(id)
     case id
-      when 1 then :not_started
-      when 2 then :complete
-      when 3 then :need_help
-      when 4 then :working_on_it
-      when 5 then :fix_and_resubmit
-      when 6 then :feedback_exceeded
-      when 7 then :redo
-      when 8 then :discuss
-      when 9 then :ready_for_feedback
-      when 10 then :demonstrate
-      when 11 then :fail
-      when 12 then :time_exceeded
-      else :not_started
+    when 1 then :not_started
+    when 2 then :complete
+    when 3 then :need_help
+    when 4 then :working_on_it
+    when 5 then :fix_and_resubmit
+    when 6 then :feedback_exceeded
+    when 7 then :redo
+    when 8 then :discuss
+    when 9 then :ready_for_feedback
+    when 10 then :demonstrate
+    when 11 then :fail
+    when 12 then :time_exceeded
+    else :not_started
     end
   end
 
@@ -149,6 +149,7 @@ class TaskStatus < ApplicationRecord
     return :fail if self == TaskStatus.fail
     return :feedback_exceeded if self == TaskStatus.feedback_exceeded
     return :time_exceeded if self == TaskStatus.time_exceeded
+
     return :not_started
   end
 end

@@ -86,7 +86,7 @@ class AuthenticationApi < Grape::API
     end
     post '/auth/jwt' do
       response = OneLogin::RubySaml::Response.new(params[:SAMLResponse], allowed_clock_drift: 1.second,
-                                                                          settings: AuthenticationHelpers.saml_settings)
+                                                                         settings: AuthenticationHelpers.saml_settings)
 
       # We validate the SAML Response and check if the user already exists in the system
       return error!({ error: 'Invalid SAML response.' }, 401) unless response.is_valid?
@@ -102,23 +102,23 @@ class AuthenticationApi < Grape::API
       # Lookup using email otherwise and set login_id
       # Otherwise create new
       user = User.find_by(login_id: login_id) ||
-              User.find_by_username(email[/(.*)@/, 1]) ||
-              User.find_by(email: email) ||
-              User.find_or_create_by(login_id: login_id) do |new_user|
-                role_response = attributes.fetch(/role/) || attributes.fetch(/userRole/)
-                role = role_response.include?('Staff') ? Role.tutor.id : Role.student.id
-                first_name = (attributes.fetch(/givenname/) || attributes.fetch(/cn/)).capitalize
-                last_name = attributes.fetch(/surname/).capitalize
-                username = email.split('@').first
-                # Some institutions may provide givenname and surname, others
-                # may only provide common name which we will use as first name
-                new_user.first_name = first_name
-                new_user.last_name  = last_name
-                new_user.email      = email
-                new_user.username   = username
-                new_user.nickname   = first_name
-                new_user.role_id    = role
-              end
+             User.find_by_username(email[/(.*)@/, 1]) ||
+             User.find_by(email: email) ||
+             User.find_or_create_by(login_id: login_id) do |new_user|
+               role_response = attributes.fetch(/role/) || attributes.fetch(/userRole/)
+               role = role_response.include?('Staff') ? Role.tutor.id : Role.student.id
+               first_name = (attributes.fetch(/givenname/) || attributes.fetch(/cn/)).capitalize
+               last_name = attributes.fetch(/surname/).capitalize
+               username = email.split('@').first
+               # Some institutions may provide givenname and surname, others
+               # may only provide common name which we will use as first name
+               new_user.first_name = first_name
+               new_user.last_name  = last_name
+               new_user.email      = email
+               new_user.username   = username
+               new_user.nickname   = first_name
+               new_user.role_id    = role
+             end
 
       # Set login id + username if not yet specified
       user.login_id = login_id if user.login_id.nil?
@@ -175,22 +175,22 @@ class AuthenticationApi < Grape::API
       # Lookup using email otherwise and set login_id
       # Otherwise create new
       user = User.find_by(login_id: login_id) ||
-              User.find_by_username(email[/(.*)@/, 1]) ||
-              User.find_by(email: email) ||
-              User.find_or_create_by(login_id: login_id) do |new_user|
-                role = Role.aaf_affiliation_to_role_id(attrs[:edupersonscopedaffiliation])
-                first_name = (attrs[:givenname] || attrs[:cn]).capitalize
-                last_name = attrs[:surname].capitalize
-                username = email.split('@').first
-                # Some institutions may provide givenname and surname, others
-                # may only provide common name which we will use as first name
-                new_user.first_name = first_name
-                new_user.last_name  = last_name
-                new_user.email      = email
-                new_user.username   = username
-                new_user.nickname   = first_name
-                new_user.role_id    = role
-              end
+             User.find_by_username(email[/(.*)@/, 1]) ||
+             User.find_by(email: email) ||
+             User.find_or_create_by(login_id: login_id) do |new_user|
+               role = Role.aaf_affiliation_to_role_id(attrs[:edupersonscopedaffiliation])
+               first_name = (attrs[:givenname] || attrs[:cn]).capitalize
+               last_name = attrs[:surname].capitalize
+               username = email.split('@').first
+               # Some institutions may provide givenname and surname, others
+               # may only provide common name which we will use as first name
+               new_user.first_name = first_name
+               new_user.last_name  = last_name
+               new_user.email      = email
+               new_user.username   = username
+               new_user.nickname   = first_name
+               new_user.role_id    = role
+             end
 
       # Set login id + username if not yet specified
       user.login_id = login_id if user.login_id.nil?
@@ -292,21 +292,21 @@ class AuthenticationApi < Grape::API
   # Update the expiry of an existing authentication token
   #
   desc 'Allow tokens to be updated',
-  {
-    headers:
-    {
-      "username" =>
-      {
-        description: "User username",
-        required: true
-      },
-      "auth_token" =>
-      {
-        description: "The user\'s temporary auth token",
-        required: true
-      }
-    }
-  }
+       {
+         headers:
+         {
+           "username" =>
+           {
+             description: "User username",
+             required: true
+           },
+           "auth_token" =>
+           {
+             description: "The user\'s temporary auth token",
+             required: true
+           }
+         }
+       }
   params do
     optional :remember, type: Boolean, desc: 'User has requested to remember login', default: false
   end
@@ -338,21 +338,21 @@ class AuthenticationApi < Grape::API
   # Sign out
   #
   desc 'Sign out',
-  {
-    headers:
-    {
-      "username" =>
-      {
-        description: "User username",
-        required: true
-      },
-      "auth_token" =>
-      {
-        description: "The user\'s temporary auth token",
-        required: true
-      }
-    }
-  }
+       {
+         headers:
+         {
+           "username" =>
+           {
+             description: "User username",
+             required: true
+           },
+           "auth_token" =>
+           {
+             description: "The user\'s temporary auth token",
+             required: true
+           }
+         }
+       }
   delete '/auth' do
     user = User.find_by_username(headers['Username'])
     token = user.token_for_text?(headers['Auth-Token']) unless user.nil?

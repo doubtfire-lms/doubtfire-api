@@ -1,5 +1,4 @@
 class PortfolioEvidenceMailer < ActionMailer::Base
-
   def add_general
     @doubtfire_host = Doubtfire::Application.config.institution[:host]
     @doubtfire_product_name = Doubtfire::Application.config.institution[:product_name]
@@ -74,7 +73,7 @@ class PortfolioEvidenceMailer < ActionMailer::Base
     return nil if project.nil?
 
     add_general
-    
+
     @student = project.student
     @project = project
     @convenor = project.main_convenor_user

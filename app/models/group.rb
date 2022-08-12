@@ -61,8 +61,7 @@ class Group < ApplicationRecord
       :move_tutorial
     ]
     # What can nil users do with groups?
-    nil_role_permissions = [
-    ]
+    nil_role_permissions = []
 
     # Return permissions hash
     {
@@ -76,6 +75,7 @@ class Group < ApplicationRecord
 
   def ensure_no_submissions
     return true if group_submissions.count.zero?
+
     errors[:base] << 'Cannot delete group while it has submissions.'
     throw :abort
   end
@@ -274,7 +274,7 @@ class Group < ApplicationRecord
   #
   def all_members_in_tutorial?
     group_memberships.each do |member|
-      return false if member.project.enrolled && member.active && ! member.in_group_tutorial?(tutorial)
+      return false if member.project.enrolled && member.active && !member.in_group_tutorial?(tutorial)
     end
     true
   end

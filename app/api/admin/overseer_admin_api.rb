@@ -1,7 +1,6 @@
 require 'grape'
 
 module Admin
-
   class OverseerAdminApi < Grape::API
     helpers AuthenticationHelpers
     helpers AuthorisationHelpers
@@ -25,9 +24,9 @@ module Admin
         error!({ error: 'Overseer is not enabled. Enable Overseer before updating settings.' }, 403)
       end
       overseer_image_params = ActionController::Parameters.new(params)
-                                                              .require(:overseer_image)
-                                                              .permit(:name,
-                                                                      :tag)
+                                                          .require(:overseer_image)
+                                                          .permit(:name,
+                                                                  :tag)
 
       result = OverseerImage.create!(overseer_image_params)
 
@@ -56,9 +55,9 @@ module Admin
       overseer_image = OverseerImage.find(params[:id])
 
       overseer_image_params = ActionController::Parameters.new(params)
-                                                              .require(:overseer_image)
-                                                              .permit(:name,
-                                                                      :tag)
+                                                          .require(:overseer_image)
+                                                          .permit(:name,
+                                                                  :tag)
 
       overseer_image.update!(overseer_image_params)
       present overseer_image, with: Entities::OverseerImageEntity

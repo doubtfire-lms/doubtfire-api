@@ -1,5 +1,4 @@
 class NotificationsMailer < ActionMailer::Base
-
   def add_general
     @doubtfire_host = Doubtfire::Application.config.institution[:host]
     @doubtfire_product_name = Doubtfire::Application.config.institution[:product_name]
@@ -40,9 +39,9 @@ class NotificationsMailer < ActionMailer::Base
 
     @engagements_count = @engagements.count
 
-    @student_engagements = @engagements.select { |e| [TaskStatus.not_started.name, TaskStatus.need_help.name, TaskStatus.working_on_it.name, TaskStatus.ready_for_feedback.name].include? e.engagement  }.count
+    @student_engagements = @engagements.select { |e| [TaskStatus.not_started.name, TaskStatus.need_help.name, TaskStatus.working_on_it.name, TaskStatus.ready_for_feedback.name].include? e.engagement }.count
 
-    @staff_engagements = @engagements.select { |e| [TaskStatus.complete.name, TaskStatus.feedback_exceeded.name, TaskStatus.redo.name, TaskStatus.discuss.name, TaskStatus.demonstrate.name, TaskStatus.fail.name].include? e.engagement  }.count
+    @staff_engagements = @engagements.select { |e| [TaskStatus.complete.name, TaskStatus.feedback_exceeded.name, TaskStatus.redo.name, TaskStatus.discuss.name, TaskStatus.demonstrate.name, TaskStatus.fail.name].include? e.engagement }.count
 
     @task_states = project.tasks.joins(:task_status).select("count(tasks.id) as number, task_statuses.name as status").group("task_statuses.name")
 
@@ -50,9 +49,9 @@ class NotificationsMailer < ActionMailer::Base
     @sent_comments = project.comments.where("user_id = :student_id AND task_comments.created_at > :start", student_id: @student.id, start: Time.zone.today - 7.days).count
 
     @top_tasks = project.top_tasks
-    @overdue_top = @top_tasks.select {|tt| tt[:reason] == :overdue}
-    @soon_top = @top_tasks.select {|tt| tt[:reason] == :soon}
-    @ahead_top = @top_tasks.select {|tt| tt[:reason] == :ahead}
+    @overdue_top = @top_tasks.select { |tt| tt[:reason] == :overdue }
+    @soon_top = @top_tasks.select { |tt| tt[:reason] == :soon }
+    @ahead_top = @top_tasks.select { |tt| tt[:reason] == :ahead }
 
     email_with_name = %("#{@student.name}" <#{@student.email}>)
     tutor_email = %("#{@tutor.name}" <#{@tutor.email}>)
@@ -67,25 +66,25 @@ class NotificationsMailer < ActionMailer::Base
 
   def were_was(num)
     if num == 1
-        "was"
+      "was"
     else
-        "were"
+      "were"
     end
   end
 
   def are_is(num)
     if num == 1
-        "is"
+      "is"
     else
-        "are"
+      "are"
     end
   end
 
   def this_these(num)
     if num == 1
-        "this"
+      "this"
     else
-        "these"
+      "these"
     end
   end
 
