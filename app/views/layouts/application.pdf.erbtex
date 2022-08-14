@@ -10,6 +10,7 @@
 \defaultfontfeatures{Ligatures=TeX}
 
 \usepackage{minted}
+\usepackage{jupnotex}
 \usepackage{graphicx}
 \usepackage[margin=2.0cm]{geometry}
 \usepackage{fancyhdr}
