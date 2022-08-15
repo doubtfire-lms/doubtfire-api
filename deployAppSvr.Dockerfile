@@ -7,7 +7,7 @@ FROM ruby:3.1-buster
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
   ffmpeg \
-  ghostscript \
+  ghostscript qpdf \
   imagemagick \
   libmagic-dev \
   libmagickwand-dev \
