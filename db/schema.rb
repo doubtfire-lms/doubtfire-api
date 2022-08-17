@@ -416,7 +416,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_08_17_123038) do
     t.boolean "allow_student_change_tutorial", default: true, null: false
     t.boolean "assessment_enabled", default: true
     t.bigint "overseer_image_id"
-    t.datetime "portfolio_auto_generation_date", null: false
+    t.datetime "portfolio_auto_generation_date"
     t.index ["draft_task_definition_id"], name: "index_units_on_draft_task_definition_id"
     t.index ["main_convenor_id"], name: "index_units_on_main_convenor_id"
     t.index ["overseer_image_id"], name: "index_units_on_overseer_image_id"
