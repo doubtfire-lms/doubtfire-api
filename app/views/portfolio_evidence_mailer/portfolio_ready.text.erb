@@ -1,5 +1,7 @@
 Hi <%= @student.first_name %>,
 
+<% if @project.portfolio_auto_generated %>Profile generation has been automatically triggered. You can customise your portfolio and recreate up until the due date indicated by the teaching staff.<% end %>
+
 Your portfolio has been compiled and can now be viewed and downloaded from <%= @doubtfire_product_name %>.
 
 Cheers,

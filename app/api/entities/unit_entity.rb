@@ -26,6 +26,7 @@ module Entities
     with_options(format_with: :date_only) do
       expose :start_date
       expose :end_date
+      expose :portfolio_auto_generation_date, unless: :summary_only, if: lambda { |unit, options| is_staff?(options[:user], unit) }, expose_nil: false
     end
 
     expose :active
