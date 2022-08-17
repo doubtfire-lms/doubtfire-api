@@ -991,6 +991,12 @@ class Task < ApplicationRecord
     end
 
     def make_pdf
+      logger.debug "Running QPDF on all documents before rendering to repair any potential broken files."
+      @files.each do |f|
+        if f[:type] == "document"
+          FileHelper.qpdf(f[:path])
+        end
+      end
       render_to_string(template: '/task/task_pdf', layout: true)
     end
   end

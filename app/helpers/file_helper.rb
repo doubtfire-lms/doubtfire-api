@@ -273,6 +273,14 @@ module FileHelper
     FileUtils.rm tmp_file if File.exist? tmp_file
   end
 
+  def qpdf(path)
+    exec = "qpdf \"#{path}\" --replace-input >>/dev/null 2>>/dev/null"
+    logger.debug "Running QPDF on: #{path}"
+    system_try_within 30, "Failed running QPDF on #{path}", exec
+  rescue => e
+    logger.error "Failed to run QPDF on #{path}. Rescued with error:\n\t#{e.message}"
+  end
+
   #
   # Move files between stages - new -> in process -> done
   #
@@ -513,6 +521,7 @@ module FileHelper
   module_function :comment_reply_prompt_path
   module_function :compress_image_to_dest
   module_function :compress_pdf
+  module_function :qpdf
   module_function :move_files
   module_function :pdf_valid?
   module_function :copy_pdf
