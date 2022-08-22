@@ -172,13 +172,13 @@ Lint/UselessAssignment:
 # Offense count: 350
 # Configuration parameters: IgnoredMethods, CountRepeatedAttributes.
 Metrics/AbcSize:
-  Max: 276
+  Enabled: false
 
 # Offense count: 79
 # Configuration parameters: CountComments, CountAsOne, ExcludedMethods, IgnoredMethods.
 # IgnoredMethods: refine
 Metrics/BlockLength:
-  Max: 424
+  Enabled: false
 
 # Offense count: 12
 # Configuration parameters: CountBlocks.
@@ -188,7 +188,7 @@ Metrics/BlockNesting:
 # Offense count: 49
 # Configuration parameters: CountComments, CountAsOne.
 Metrics/ClassLength:
-  Max: 1928
+  Enabled: false
 
 # Offense count: 72
 # Configuration parameters: IgnoredMethods.
@@ -198,12 +198,12 @@ Metrics/CyclomaticComplexity:
 # Offense count: 377
 # Configuration parameters: CountComments, CountAsOne, ExcludedMethods, IgnoredMethods.
 Metrics/MethodLength:
-  Max: 140
+  Enabled: false
 
 # Offense count: 1
 # Configuration parameters: CountComments, CountAsOne.
 Metrics/ModuleLength:
-  Max: 375
+  Enabled: false
 
 # Offense count: 4
 # Configuration parameters: CountKeywordArgs.
@@ -1062,4 +1062,4 @@ Style/ZeroLengthPredicate:
 # Configuration parameters: AllowHeredoc, AllowURI, URISchemes, IgnoreCopDirectives, AllowedPatterns, IgnoredPatterns.
 # URISchemes: http, https
 Layout/LineLength:
-  Max: 1000
+  Enabled: false
