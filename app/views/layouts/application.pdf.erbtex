@@ -10,7 +10,6 @@
 \defaultfontfeatures{Ligatures=TeX}
 
 \usepackage{minted}
-\usepackage{jupnotex}
 \usepackage{graphicx}
 \usepackage[margin=2.0cm]{geometry}
 \usepackage{fancyhdr}
@@ -20,6 +19,7 @@
 \usepackage{colortbl}
 \usepackage{lastpage}
 \usepackage[colorlinks]{hyperref}
+\usepackage{jupnotex}
 \hypersetup{colorlinks,
   linkcolor=black,
   filecolor=black,
