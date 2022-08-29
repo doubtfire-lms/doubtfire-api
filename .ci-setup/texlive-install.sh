@@ -22,7 +22,7 @@ if ! command -v "$TEX_COMPILER" > /dev/null; then
 
   echo "----------------------------------------"
   echo "Installing additional texlive packages:"
-  tlmgr install fontawesome luatextra luacode minted fvextra catchfile xstring framed lastpage pdfmanagement-testphase newpax
+  tlmgr install fontawesome luatextra luacode minted fvextra catchfile xstring framed lastpage pdfmanagement-testphase newpax jupnotex
 
   echo "----------------------------------------"
   echo "Patching the newpax package version 0.52 to fix a bug:"
