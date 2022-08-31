@@ -152,6 +152,9 @@ class Unit < ApplicationRecord
 
   validate :ensure_main_convenor_is_appropriate
 
+  # Portfolio autogen date validations, must be after start date and before or equal to end date
+  validate :autogen_date_within_unit_active_period, if: -> { start_date_changed? || end_date_changed? || teaching_period_id_changed? || portfolio_auto_generation_date_changed? }
+
   scope :current,               -> { current_for_date(Time.zone.now) }
   scope :current_for_date,      ->(date) { where('start_date <= ? AND end_date >= ?', date, date) }
   scope :not_current,           -> { not_current_for_date(Time.zone.now) }
@@ -225,6 +228,12 @@ class Unit < ApplicationRecord
   def validate_end_date_after_start_date
     if end_date.present? && start_date.present? && end_date < start_date
       errors.add(:end_date, "should be after the Start date")
+    end
+  end
+
+  def autogen_date_within_unit_active_period
+    if [start_date, end_date, portfolio_auto_generation_date].all?(&:present?) && !(start_date < portfolio_auto_generation_date && portfolio_auto_generation_date <= end_date)
+      errors.add(:portfolio_auto_generation_date, "should be after unit start date and before unit end date")
     end
   end
 
