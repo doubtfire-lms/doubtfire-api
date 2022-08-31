@@ -20,14 +20,13 @@ class PortfolioEvidence
 
   # Move all tasks to a folder with this process's id in "in_process"
   def self.move_to_pid_folder
-
     # Report old running processes...
-    Dir.entries(student_work_dir(:in_process)).select {|entry| entry.start_with?("pid_")}.each do |entry|
+    Dir.entries(student_work_dir(:in_process)).select { |entry| entry.start_with?("pid_") }.each do |entry|
       puts "Existing process still running or not cleaned up - #{entry}"
     end
 
     pid_folder = File.join(student_work_dir(:in_process), "pid_#{Process.pid}")
-    
+
     # Move everything in "new" to "pid" folder but retain the old "new" folder
     FileHelper.move_files(student_work_dir(:new), pid_folder, true)
     pid_folder
@@ -43,9 +42,7 @@ class PortfolioEvidence
 
     # For each folder in new (i.e., queued folders to process) that matches appropriate name
     new_root_dir = Dir.entries(my_source).select do |f|
-      # rubocop:disable Style/NumericPredicate
       (f =~ /^\d+$/) == 0
-      # rubocop:enable Style/NumericPredicate
     end
     new_root_dir.each do |folder_id|
       begin

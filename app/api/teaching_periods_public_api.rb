@@ -1,7 +1,6 @@
 require 'grape'
 
 class TeachingPeriodsPublicApi < Grape::API
-
   desc "Get a teaching period's details"
   get '/teaching_periods/:id' do
     teaching_period = TeachingPeriod.find(params[:id])

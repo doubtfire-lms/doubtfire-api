@@ -1,12 +1,10 @@
 class AuthToken < ApplicationRecord
-
   belongs_to :user, optional: false
 
   encrypts :authentication_token
 
   validates :authentication_token, presence: true
   validate :ensure_token_unique_for_user, on: :create
-
 
   def self.generate(user, remember, expiry_time = Time.zone.now + 2.hours)
     # Loop until new unique auth token is found
@@ -59,5 +57,4 @@ class AuthToken < ApplicationRecord
       errors.add(:authentication_token, 'already exists for the selected user')
     end
   end
-
 end

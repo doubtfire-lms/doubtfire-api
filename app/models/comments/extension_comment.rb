@@ -1,5 +1,4 @@
 class ExtensionComment < TaskComment
-
   belongs_to :assessor, class_name: 'User', optional: true
 
   def serialize(user)
@@ -45,7 +44,7 @@ class ExtensionComment < TaskComment
       else
         self.extension_response = "Extension granted to #{self.task.due_date.strftime('%a %b %e')}"
       end
-    elsif ! self.task.can_apply_for_extension? && granted
+    elsif !self.task.can_apply_for_extension? && granted
       self.extension_response = "Extension cannot be granted as deadline has been reached"
       errors[:extension] << 'cannot be granted as deadline has been reached'
     else
