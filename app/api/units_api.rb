@@ -12,7 +12,7 @@ class UnitsApi < Grape::API
     authenticated?
 
     if params[:unit]
-      for key in [ :start_date, :end_date ] do
+      for key in [:start_date, :end_date] do
         if params[:unit][key].present?
           date_val = DateTime.parse(params[:unit][key])
           params[:unit][key] = date_val
@@ -41,13 +41,13 @@ class UnitsApi < Grape::API
   desc "Get a unit's details"
   get '/units/:id' do
     unit = Unit.includes(
-      {unit_roles: [:role, :user]},
-      {task_definitions: :tutorial_stream},
+      { unit_roles: [:role, :user] },
+      { task_definitions: :tutorial_stream },
       :learning_outcomes,
-      {tutorial_streams: :activity_type},
-      {tutorials: [:tutor, :tutorial_stream]},
+      { tutorial_streams: :activity_type },
+      { tutorials: [:tutor, :tutorial_stream] },
       :tutorial_enrolments,
-      {staff: [:role, :user]},
+      { staff: [:role, :user] },
       :group_sets,
       :groups,
       :group_memberships
@@ -79,13 +79,14 @@ class UnitsApi < Grape::API
       optional :enable_sync_timetable, type: Boolean, desc: 'Sync to timetable automatically if supported by deployment'
       optional :enable_sync_enrolments, type: Boolean, desc: 'Sync student enrolments automatically if supported by deployment'
       optional :draft_task_definition_id, type: Integer, desc: 'Indicates the ID of the task definition used as the "draft learning summary task"'
+      optional :portfolio_auto_generation_date, type: Date, desc: 'Indicates a date where student portfolio will automatically compile'
       optional :allow_student_extension_requests, type: Boolean, desc: 'Can turn on/off student extension requests'
       optional :allow_student_change_tutorial, type: Boolean, desc: 'Can turn on/off student ability to change tutorials'
       optional :extension_weeks_on_resubmit_request, type: Integer, desc: 'Determines the number of weeks extension on a resubmit request'
       optional :overseer_image_id, type: Integer, desc: 'The id of the docker image used with '
       optional :assessment_enabled, type: Boolean
 
-      mutually_exclusive :teaching_period_id,:start_date
+      mutually_exclusive :teaching_period_id, :start_date
       all_or_none_of :start_date, :end_date
     end
   end
@@ -109,12 +110,12 @@ class UnitsApi < Grape::API
                                                           :enable_sync_timetable,
                                                           :enable_sync_enrolments,
                                                           :draft_task_definition_id,
+                                                          :portfolio_auto_generation_date,
                                                           :allow_student_extension_requests,
                                                           :extension_weeks_on_resubmit_request,
                                                           :allow_student_change_tutorial,
                                                           :overseer_image_id,
-                                                          :assessment_enabled
-                                                        )
+                                                          :assessment_enabled)
 
     if unit.teaching_period_id.present? && unit_parameters.key?(:start_date)
       unit.teaching_period = nil
@@ -154,10 +155,11 @@ class UnitsApi < Grape::API
       optional :enable_sync_enrolments, type: Boolean, desc: 'Sync student enrolments automatically if supported by deployment', default: true
       optional :allow_student_extension_requests, type: Boolean, desc: 'Can turn on/off student extension requests', default: true
       optional :extension_weeks_on_resubmit_request, type: Integer, desc: 'Determines the number of weeks extension on a resubmit request', default: 1
+      optional :portfolio_auto_generation_date, type: Date, desc: 'Indicates a date where student portfolio will automatically compile'
       optional :allow_student_change_tutorial, type: Boolean, desc: 'Can turn on/off student ability to change tutorials', default: true
 
-      mutually_exclusive :teaching_period_id,:start_date
-      mutually_exclusive :teaching_period_id,:end_date
+      mutually_exclusive :teaching_period_id, :start_date
+      mutually_exclusive :teaching_period_id, :end_date
     end
   end
   post '/units' do
@@ -180,6 +182,7 @@ class UnitsApi < Grape::API
                                                     :enable_sync_enrolments,
                                                     :allow_student_extension_requests,
                                                     :extension_weeks_on_resubmit_request,
+                                                    :portfolio_auto_generation_date,
                                                     :allow_student_change_tutorial,
                                                   )
 
@@ -223,7 +226,7 @@ class UnitsApi < Grape::API
   post '/units/:id/rollover' do
     unit = Unit.find(params[:id])
 
-    if !(authorise?( current_user, User, :rollover) || authorise?( current_user, unit, :rollover_unit))
+    if !(authorise?(current_user, User, :rollover) || authorise?(current_user, unit, :rollover_unit))
       error!({ error: 'Not authorised to rollover a unit' }, 403)
     end
 

@@ -19,13 +19,13 @@ class ExtensionCommentsApi < Grape::API
       error!({ error: 'Not authorised to request an extension for this task' }, 403)
     end
 
-    error!({error:'Extension weeks can not be 0.'}, 403) if params[:weeks_requested] == 0
+    error!({ error: 'Extension weeks can not be 0.' }, 403) if params[:weeks_requested] == 0
 
     max_duration = task.weeks_can_extend
     duration = params[:weeks_requested]
     duration = max_duration unless params[:weeks_requested] <= max_duration
 
-    error!({error:'Extensions cannot be granted beyond task deadline.'}, 403) if duration <= 0
+    error!({ error: 'Extensions cannot be granted beyond task deadline.' }, 403) if duration <= 0
 
     result = task.apply_for_extension(current_user, params[:comment], duration)
     present result.serialize(current_user), Grape::Presenters::Presenter
@@ -48,9 +48,9 @@ class ExtensionCommentsApi < Grape::API
 
     unless task_comment.assess_extension(current_user, params[:granted])
       if task_comment.errors.count >= 1
-        error!({error: task_comment.errors.full_messages.first}, 403)
+        error!({ error: task_comment.errors.full_messages.first }, 403)
       else
-        error!({error: 'Error saving extension'}, 403)
+        error!({ error: 'Error saving extension' }, 403)
       end
     end
     present task_comment.serialize(current_user), Grape::Presenters::Presenter

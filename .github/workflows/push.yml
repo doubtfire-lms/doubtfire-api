@@ -1,4 +1,4 @@
-name: Run Unit Tests
+name: Unit Tests
 on: [push, pull_request]
 
 env:
@@ -20,7 +20,7 @@ env:
   DF_ENCRYPTION_KEY_DERIVATION_SALT: "hzPR8D4qpOnAg7VeAhkhWw6JmmzKJB10"
 
 jobs:
-  unit-test-runner:
+  unit-tests:
     runs-on: ubuntu-latest
     services:
       mariadb:

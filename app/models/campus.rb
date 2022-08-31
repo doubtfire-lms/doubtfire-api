@@ -28,7 +28,7 @@ class Campus < ApplicationRecord
   def self.find_by(*args)
     key = args.map { |arg|
       if arg.instance_of? Hash
-        arg.map{|k,v| "#{k}=#{v}"}.join('/')
+        arg.map { |k, v| "#{k}=#{v}" }.join('/')
       else
         arg
       end
@@ -44,6 +44,7 @@ class Campus < ApplicationRecord
   end
 
   private
+
   def invalidate_cache
     Rails.cache.delete("campuses/#{id}")
     Rails.cache.delete("campuses/name=#{name}")
@@ -52,6 +53,7 @@ class Campus < ApplicationRecord
 
   def can_destroy?
     return true if projects.count == 0 and tutorials.count == 0
+
     errors.add :base, "Cannot delete campus with projects and tutorials"
     throw :abort
   end
