@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [6.0.14](https://github.com/macite/doubtfire-deploy/compare/v6.0.13...v6.0.14) (2022-09-05)
+
+### [6.0.13](https://github.com/macite/doubtfire-deploy/compare/v6.0.12...v6.0.13) (2022-09-01)
+
+
+### Features
+
+* add portfolio autogeneration to crontab ([036d763](https://github.com/macite/doubtfire-deploy/commit/036d763e5679a4fb55a844e5888272780cf76dc9))
+* only grant extensions on positive feedback responses ([17d5a98](https://github.com/macite/doubtfire-deploy/commit/17d5a9840366d7546d7e6e2a77cf835f2219d1c3))
+
+
+### Bug Fixes
+
+* address potential csrf vuln ([c5f065a](https://github.com/macite/doubtfire-deploy/commit/c5f065a02abb605d90ba1577ede383e9734537f8))
+* correct the bad tag in email template for the "due soon" ul ([697b7fd](https://github.com/macite/doubtfire-deploy/commit/697b7fdc03b2f1c647bc412a7dcc682a558b7120))
+* ignore locally installed gems ([90cfc9c](https://github.com/macite/doubtfire-deploy/commit/90cfc9c7d6fdf00d900cd799c72b38aa2f0a5666))
+* install and use newpax to preserve links in generated PDFs ([8e65a71](https://github.com/macite/doubtfire-deploy/commit/8e65a714b63ada5ef69c0d87c05d6c761f68d8f6))
+* remove duplicate auto generate call in crontab ([93409dc](https://github.com/macite/doubtfire-deploy/commit/93409dc54e294005e0e215ddd88345b250e88b04))
+
 ### [6.0.12](https://github.com/macite/doubtfire-deploy/compare/v6.0.11...v6.0.12) (2022-06-03)
 
 
