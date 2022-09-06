@@ -19,7 +19,7 @@
 \usepackage{colortbl}
 \usepackage{lastpage}
 \usepackage[colorlinks]{hyperref}
-\usepackage{jupnotex}
+\usepackage{jupynotex}
 \hypersetup{colorlinks,
   linkcolor=black,
   filecolor=black,
@@ -39,6 +39,7 @@
 \AppendGraphicsExtensions{.gif}
 \epstopdfDeclareGraphicsRule{.bmp}{png}{.png}{convert #1 \OutputFile}
 \AppendGraphicsExtensions{.bmp}
+\jupynotex{.ipynb}
 
 \newcommand{\HRule}{\rule{\linewidth}{0.5mm}} % Defines a new command for the horizontal lines, change thickness here
 
