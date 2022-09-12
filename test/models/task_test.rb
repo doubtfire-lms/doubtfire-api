@@ -84,7 +84,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
   end
 
     def test_pdf_creation_with_ipynb
-      unit = Unit.first
+      unit = FactoryBot.create(unit)
       td = TaskDefinition.new({
           unit_id: unit.id,
           tutorial_stream: unit.tutorial_streams.first,
