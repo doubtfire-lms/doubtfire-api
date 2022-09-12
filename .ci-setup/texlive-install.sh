@@ -25,13 +25,12 @@ if ! command -v "$TEX_COMPILER" > /dev/null; then
   tlmgr install fontawesome luatextra luacode minted fvextra catchfile xstring framed lastpage pdfmanagement-testphase newpax
 
   echo "----------------------------------------"
-  echo "Patching the newpax package version 0.52 to fix a bug:"
+  echo "Ensuring the newpax package is sufficiently up to date:"
   if NEWPAX_VERSION=$(tlmgr info --only-installed --data cat-version newpax) ; then
-    if [ "$NEWPAX_VERSION" == "0.52" ]; then
-      echo "Version 0.52 found, patching."
-      patch -d / -p0 < "${APP_PATH}"/newpax.lua.patch
+    if [[ $(echo "$NEWPAX_VERSION < 0.53" | bc) == 1 ]]; then
+      echo >&2 "Package newpax version lower than 0.53 contain several bugs that are now fixed, giving up."; exit 1;
     else
-      echo "Version $NEWPAX_VERSION found, skipping the patch."
+      echo "Version $NEWPAX_VERSION found."
     fi
   else
       echo >&2 "Package newpax not found!"; exit 1;
