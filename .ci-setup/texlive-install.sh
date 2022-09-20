@@ -47,3 +47,5 @@ echo "Installation complete, verifying installation of $TEX_COMPILER."
 command -v "$TEX_COMPILER" >/dev/null 2>&1 || { echo >&2 "$TEX_COMPILER is not found."; exit 1; }
 # Do a test compile recommended by https://www.tug.org/texlive/quickinstall.html
 "$TEX_COMPILER" small2e || { echo >&2 "Failed to process test file with $TEX_COMPILER."; exit 1; }
+# remove test files
+rm small2e.aux small2e.log small2e.pdf
