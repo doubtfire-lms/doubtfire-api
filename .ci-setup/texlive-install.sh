@@ -25,13 +25,12 @@ if ! command -v "$TEX_COMPILER" > /dev/null; then
   tlmgr install fontawesome luatextra luacode minted fvextra catchfile xstring framed lastpage pdfmanagement-testphase newpax
 
   echo "----------------------------------------"
-  echo "Patching the newpax package version 0.52 to fix a bug:"
+  echo "Ensuring the newpax package is sufficiently up to date:"
   if NEWPAX_VERSION=$(tlmgr info --only-installed --data cat-version newpax) ; then
-    if [ "$NEWPAX_VERSION" == "0.52" ]; then
-      echo "Version 0.52 found, patching."
-      patch -d / -p0 < "${APP_PATH}"/newpax.lua.patch
+    if [[ $(echo "$NEWPAX_VERSION < 0.53" | bc) == 1 ]]; then
+      echo >&2 "Package newpax version lower than 0.53 contain several bugs that are now fixed, giving up."; exit 1;
     else
-      echo "Version $NEWPAX_VERSION found, skipping the patch."
+      echo "Version $NEWPAX_VERSION found."
     fi
   else
       echo >&2 "Package newpax not found!"; exit 1;
@@ -48,3 +47,5 @@ echo "Installation complete, verifying installation of $TEX_COMPILER."
 command -v "$TEX_COMPILER" >/dev/null 2>&1 || { echo >&2 "$TEX_COMPILER is not found."; exit 1; }
 # Do a test compile recommended by https://www.tug.org/texlive/quickinstall.html
 "$TEX_COMPILER" small2e || { echo >&2 "Failed to process test file with $TEX_COMPILER."; exit 1; }
+# remove test files
+rm small2e.aux small2e.log small2e.pdf
