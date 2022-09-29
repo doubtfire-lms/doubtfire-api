@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [6.0.17](https://github.com/macite/doubtfire-deploy/compare/v6.0.16...v6.0.17) (2022-09-29)
+
+
+### Bug Fixes
+
+* add term setting to pdf generation to quiet log ([0f4812f](https://github.com/macite/doubtfire-deploy/commit/0f4812f7108c632fa03a74c85b23b38f8548762a))
+
 ### [6.0.16](https://github.com/macite/doubtfire-deploy/compare/v6.0.15...v6.0.16) (2022-09-29)
 
 
