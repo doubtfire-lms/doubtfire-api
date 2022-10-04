@@ -943,6 +943,8 @@ class Project < ApplicationRecord
         fout.puts pdf_text
       end
 
+      FileHelper.compress_pdf(portfolio_path)
+
       logger.info "Created portfolio at #{portfolio_path} - #{log_details}"
 
       self.portfolio_production_date = Time.zone.now
