@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [6.0.18](https://github.com/macite/doubtfire-deploy/compare/v6.0.17...v6.0.18) (2022-10-04)
+
+
+### Bug Fixes
+
+* ensure portfolio PDFs are compressed ([49dbc36](https://github.com/macite/doubtfire-deploy/commit/49dbc366fec3b7c30c00f992bec06245c55e2115))
+
 ### [6.0.17](https://github.com/macite/doubtfire-deploy/compare/v6.0.16...v6.0.17) (2022-09-29)
 
 
