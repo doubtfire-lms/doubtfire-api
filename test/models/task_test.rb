@@ -291,4 +291,19 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     unit.destroy
     assert_not File.exist? path
   end
+
+  def test_grant_extension_days
+    project = FactoryBot.create(:project)
+    unit = project.unit
+    user = project.student
+    convenor = unit.main_convenor_user
+    task_definition = unit.task_definitions.first
+    task = project.task_for_task_definition(task_definition)
+
+    # Test task due is task def due
+    assert_equal task_definition.target_date, task.due_date
+
+    task.grant_extension(convenor, 4) # 4 day extension
+    assert_equal task_definition.target_date + 4.days, task.due_date
+  end
 end

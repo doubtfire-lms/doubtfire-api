@@ -216,7 +216,7 @@ class Task < ApplicationRecord
 
   # Get the raw extension date - with extensions representing weeks
   def raw_extension_date
-    target_date + extensions.weeks
+    target_date + extensions.days
   end
 
   # Get the adjusted extension date, which ensures it is never past the due date
