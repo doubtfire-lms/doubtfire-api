@@ -836,7 +836,7 @@ class Task < ApplicationRecord
       end
 
       # copy all files into zip
-      input_files = Dir.entries(task_dir).select { |f| (f =~ /^\d{3}.(cover|document|code|image)/) == 0 }
+      input_files = Dir.entries(task_dir).select {|f| File.file? File.join(task_dir, f)}
 
       zip_dir = File.dirname(zip_file)
       FileUtils.mkdir_p zip_dir unless Dir.exist? zip_dir
@@ -1253,7 +1253,7 @@ class Task < ApplicationRecord
     self.portfolio_evidence_path = nil
 
     files.each_with_index.map do |file, idx|
-      output_filename = File.join(tmp_dir, "#{idx.to_s.rjust(3, '0')}-#{file[:type]}#{File.extname(file[:filename]).downcase}")
+      output_filename = File.join(tmp_dir, file[:name])
       FileUtils.cp file["tempfile"].path, output_filename
     end
 
