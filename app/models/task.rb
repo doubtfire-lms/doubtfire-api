@@ -836,7 +836,7 @@ class Task < ApplicationRecord
       end
 
       # copy all files into zip
-      input_files = Dir.entries(task_dir).select {|f| File.file? File.join(task_dir, f)}
+      input_files = Dir.entries(task_dir).select { |f| File.file? File.join(task_dir, f) }
 
       zip_dir = File.dirname(zip_file)
       FileUtils.mkdir_p zip_dir unless Dir.exist? zip_dir
