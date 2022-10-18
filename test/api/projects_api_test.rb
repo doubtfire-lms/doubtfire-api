@@ -51,22 +51,19 @@ class ProjectsApiTest < ActiveSupport::TestCase
     # Add username and auth_token to Header
     add_auth_header_for(user: user)
 
-    keys = %w(unit_id unit_code unit_name project_id campus_id target_grade has_portfolio start_date end_date teaching_period_id active)
-    key_test = %w(unit_id campus_id target_grade)
+    keys = %w(id unit campus_id user_id target_grade portfolio_available)
+    key_test = %w(campus_id target_grade)
 
     get '/api/projects'
     assert_equal 2, last_response_body.count, last_response_body
     last_response_body.each do |data|
-      project = user.projects.find(data['project_id'])
+      project = user.projects.find(data['id'])
       assert project.present?, data.inspect
 
       assert_json_limit_keys_to_exactly keys, data
 
-      assert_json_matches_model(project, data, %w(campus_id has_portfolio target_grade campus_id))
-      assert_equal project.unit.name, data['unit_name'], data.inspect
-      assert_equal project.unit.code, data['unit_code'], data.inspect
-
-      assert_json_matches_model(project.unit, data, %w(teaching_period_id active))
+      assert_json_matches_model(project, data, %w(campus_id target_grade campus_id))
+      assert_json_matches_model(project.unit, data['unit'], %w(id code name active))
 
       assert_json_matches_model project, data, key_test
     end
@@ -79,8 +76,8 @@ class ProjectsApiTest < ActiveSupport::TestCase
     # Add username and auth_token to Header
     add_auth_header_for(user: user)
 
-    keys = %w(unit_id project_id student_id campus_id student_first_name student_last_name student_nickname enrolled target_grade submitted_grade portfolio_files compile_portfolio portfolio_available uses_draft_learning_summary stats tasks tutorial_enrolments groups task_outcome_alignments)
-    key_test = keys - %w(unit_id project_id student_id student_first_name student_last_name student_nickname portfolio_available tasks tutorial_enrolments groups task_outcome_alignments stats)
+    keys = %w(id unit unit_id user_id campus_id target_grade submitted_grade portfolio_files compile_portfolio portfolio_available uses_draft_learning_summary tasks tutorial_enrolments groups task_outcome_alignments)
+    key_test = keys - %w(unit user_id portfolio_available tasks tutorial_enrolments groups task_outcome_alignments)
 
     get "/api/projects/#{project.id}"
     assert_equal 200, last_response.status, last_response_body
@@ -107,14 +104,11 @@ class ProjectsApiTest < ActiveSupport::TestCase
     assert_equal 2, last_response_body.count
 
     last_response_body.each do |data|
-      project = user.projects.find(data['project_id'])
+      project = user.projects.find(data['id'])
       assert project.present?, data.inspect
 
-      assert_json_matches_model(project, data, %w(campus_id has_portfolio target_grade campus_id))
-      assert_equal project.unit.name, data['unit_name'], data.inspect
-      assert_equal project.unit.id, data['unit_id'], data.inspect
-      assert_equal project.unit.code, data['unit_code'], data.inspect
-      assert_json_matches_model(project.unit, data, %w(teaching_period_id active))
+      assert_json_matches_model(project, data, %w(campus_id target_grade campus_id))
+      assert_json_matches_model(project.unit, data['unit'], %w(code id name active))
     end
   end
 
@@ -135,11 +129,10 @@ class ProjectsApiTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status, last_response_body
     assert_equal user.projects.find(project.id).submitted_grade, 2
 
-    keys = %w(campus_id enrolled target_grade submitted_grade compile_portfolio portfolio_available uses_draft_learning_summary stats)
-    test_keys = keys - %w(stats)
+    keys = %w(campus_id target_grade submitted_grade compile_portfolio portfolio_available uses_draft_learning_summary)
 
     assert_json_limit_keys_to_exactly keys, last_response_body
-    assert_json_matches_model project, last_response_body, test_keys
+    assert_json_matches_model project, last_response_body, keys
 
     DatabasePopulator.generate_portfolio(project)
 

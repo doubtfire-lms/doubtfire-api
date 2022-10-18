@@ -126,7 +126,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     }
 
     # Add auth_token and username to header
-    add_auth_header_for(user: User.first)
+    add_auth_header_for(user: Unit.first.main_convenor_user)
 
     post "/api/units/#{test_unit.id}/task_definitions/#{test_task_definition.id}/task_sheet", data_to_post
 
@@ -145,7 +145,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     }
 
     # Add auth_token and username to header
-    add_auth_header_for(user: User.first)
+    add_auth_header_for(user: Unit.first.main_convenor_user)
 
     post "/api/units/#{test_unit_id}/task_definitions/#{test_task_definition_id}/task_resources", data_to_post
 
@@ -269,7 +269,6 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
 
   def test_task_related_to_task_def
     unit = FactoryBot.create(:unit, with_students: false)
-    unit.employ_staff(User.first, Role.convenor)
 
     campus = FactoryBot.create(:campus)
     project = FactoryBot.create(:project, unit: unit, campus: campus)
@@ -288,7 +287,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_equal task, unit.student_tasks.first
 
     # Add auth_token and username to header
-    add_auth_header_for(user: User.first)
+    add_auth_header_for(user: unit.main_convenor_user)
 
     # Get the tasks for the first task definition
     get "/api/units/#{unit.id}/task_definitions/#{task_def.id}/tasks"
@@ -301,7 +300,6 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
 
   def test_task_related_to_task_def_when_its_stream_is_null
     unit = FactoryBot.create(:unit, with_students: false)
-    unit.employ_staff(User.first, Role.convenor)
 
     campus = FactoryBot.create(:campus)
     project = FactoryBot.create(:project, unit: unit, campus: campus)
@@ -323,7 +321,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_equal task_second, unit.student_tasks.second
 
     # Add auth_token and username to header
-    add_auth_header_for(user: User.first)
+    add_auth_header_for(user: unit.main_convenor_user)
 
     # Get the tasks for the first task definition
     get "/api/units/#{unit.id}/task_definitions/#{task_def_first.id}/tasks"
@@ -334,7 +332,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_equal task_first.id, last_response_body.first['id']
 
     # Add auth_token and username to header
-    add_auth_header_for(user: User.first)
+    add_auth_header_for(user: unit.main_convenor_user)
 
     # Get the tasks for the second task definition
     get "/api/units/#{unit.id}/task_definitions/#{task_def_second.id}/tasks"
@@ -348,7 +346,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     tutorial_enrolment = project.enrol_in(tutorial)
 
     # Add auth_token and username to header
-    add_auth_header_for(user: User.first)
+    add_auth_header_for(user: unit.main_convenor_user)
 
     # Get the tasks for the first task definition
     get "/api/units/#{unit.id}/task_definitions/#{task_def_first.id}/tasks"
@@ -359,7 +357,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_equal task_first.id, last_response_body.first['id']
 
     # Add auth_token and username to header
-    add_auth_header_for(user: User.first)
+    add_auth_header_for(user: unit.main_convenor_user)
 
     # Get the tasks for the second task definition
     get "/api/units/#{unit.id}/task_definitions/#{task_def_second.id}/tasks"
@@ -372,7 +370,6 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
 
   def test_task_related_to_task_def_when_project_is_in_match_all
     unit = FactoryBot.create(:unit, with_students: false)
-    unit.employ_staff(User.first, Role.convenor)
 
     campus = FactoryBot.create(:campus)
     project = FactoryBot.create(:project, unit: unit, campus: campus)
@@ -396,7 +393,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_equal task_second, unit.student_tasks.second
 
     # Add auth_token and username to header
-    add_auth_header_for(user: User.first)
+    add_auth_header_for(user: unit.main_convenor_user)
 
     # Get the tasks for the first task definition
     get "/api/units/#{unit.id}/task_definitions/#{task_def_first.id}/tasks"
@@ -407,7 +404,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_equal task_first.id, last_response_body.first['id']
 
     # Add auth_token and username to header
-    add_auth_header_for(user: User.first)
+    add_auth_header_for(user: unit.main_convenor_user)
 
     # Get the tasks for the second task definition
     get "/api/units/#{unit.id}/task_definitions/#{task_def_second.id}/tasks"
@@ -425,7 +422,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_nil tutorial.tutorial_stream
 
     # Add auth_token and username to header
-    add_auth_header_for(user: User.first)
+    add_auth_header_for(user: unit.main_convenor_user)
 
     # Get the tasks for the first task definition
     get "/api/units/#{unit.id}/task_definitions/#{task_def_first.id}/tasks"
@@ -436,7 +433,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_equal task_first.id, last_response_body.first['id']
 
     # Add auth_token and username to header
-    add_auth_header_for(user: User.first)
+    add_auth_header_for(user: unit.main_convenor_user)
 
     # Get the tasks for the second task definition
     get "/api/units/#{unit.id}/task_definitions/#{task_def_second.id}/tasks"
@@ -449,7 +446,6 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
 
   def test_task_related_to_task_def_when_multiple_tasks_but_project_is_not_enrolled
     unit = FactoryBot.create(:unit, with_students: false)
-    unit.employ_staff(User.first, Role.convenor)
 
     campus = FactoryBot.create(:campus)
     project = FactoryBot.create(:project, unit: unit, campus: campus)
@@ -472,7 +468,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_equal task_first, unit.student_tasks.first
 
     # Add auth_token and username to header
-    add_auth_header_for(user: User.first)
+    add_auth_header_for(user: unit.main_convenor_user)
 
     # Get the tasks for the first task definition
     get "/api/units/#{unit.id}/task_definitions/#{task_def_first.id}/tasks"
@@ -483,7 +479,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_equal task_first.id, last_response_body.first['id']
 
     # Add auth_token and username to header
-    add_auth_header_for(user: User.first)
+    add_auth_header_for(user: unit.main_convenor_user)
 
     # Get the tasks for the first task definition
     get "/api/units/#{unit.id}/task_definitions/#{task_def_second.id}/tasks"
@@ -496,7 +492,6 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
 
   def test_task_related_to_task_def_when_multiple_tasks_but_project_is_enrolled_for_one
     unit = FactoryBot.create(:unit, with_students: false)
-    unit.employ_staff(User.first, Role.convenor)
 
     campus = FactoryBot.create(:campus)
     project = FactoryBot.create(:project, unit: unit, campus: campus)
@@ -522,7 +517,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_equal task_second, unit.student_tasks.second
 
     # Add auth_token and username to header
-    add_auth_header_for(user: User.first)
+    add_auth_header_for(user: unit.main_convenor_user)
 
     # Get the tasks for the first task definition
     get "/api/units/#{unit.id}/task_definitions/#{task_def_first.id}/tasks"
@@ -533,7 +528,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_equal task_first.id, last_response_body.first['id']
 
     # Add auth_token and username to header
-    add_auth_header_for(user: User.first)
+    add_auth_header_for(user: unit.main_convenor_user)
 
     # Get the tasks for the first task definition
     get "/api/units/#{unit.id}/task_definitions/#{task_def_second.id}/tasks"
@@ -546,7 +541,6 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
 
   def test_task_related_to_task_def_when_project_is_enrolled
     unit = FactoryBot.create(:unit, with_students: false)
-    unit.employ_staff(User.first, Role.convenor)
 
     campus = FactoryBot.create(:campus)
     project = FactoryBot.create(:project, unit: unit, campus: campus)
@@ -590,7 +584,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_equal task_second, unit.student_tasks.second
 
     # Add auth_token and username to header
-    add_auth_header_for(user: User.first)
+    add_auth_header_for(user: unit.main_convenor_user)
 
     # Get the tasks for the first task definition
     get "/api/units/#{unit.id}/task_definitions/#{task_def_first.id}/tasks"
@@ -601,7 +595,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_equal task_first.id, last_response_body.first['id']
 
     # Get the tasks for the second task definition
-    add_auth_header_for user: User.first
+    add_auth_header_for user: unit.main_convenor_user
     get "/api/units/#{unit.id}/task_definitions/#{task_def_second.id}/tasks"
 
     assert_equal 1, last_response_body.count
@@ -628,8 +622,6 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
 
     assert_empty unit.tutorials
     assert_empty unit.task_definitions
-
-    unit.employ_staff(User.first, Role.convenor)
 
     campus_first = FactoryBot.create(:campus)
     campus_second = FactoryBot.create(:campus)
@@ -679,7 +671,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_equal 2, project_third.tasks.count
 
     # Add auth_token and username to header
-    add_auth_header_for(user: User.first)
+    add_auth_header_for(user: unit.main_convenor_user)
 
     # Get the tasks for the first task definition
     get "/api/units/#{unit.id}/task_definitions/#{task_def_first.id}/tasks"
@@ -703,7 +695,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_nil last_response_body.third['tutorial_stream_id']
 
     # Add auth_token and username to header
-    add_auth_header_for(user: User.first)
+    add_auth_header_for(user: unit.main_convenor_user)
 
     # Get the tasks for the first task definition
     get "/api/units/#{unit.id}/task_definitions/#{task_def_second.id}/tasks"
@@ -725,7 +717,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     tutorial_enrolment_third = project_third.enrol_in(tutorial_third)
 
     # Add auth_token and username to header
-    add_auth_header_for(user: User.first)
+    add_auth_header_for(user: unit.main_convenor_user)
 
     # Get the tasks for the first task definition
     get "/api/units/#{unit.id}/task_definitions/#{task_def_first.id}/tasks"
@@ -747,7 +739,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_includes [tutorial_stream_first.id, nil], last_response_body.third['tutorial_stream_id']
 
     # Add auth_token and username to header
-    add_auth_header_for(user: User.first)
+    add_auth_header_for(user: unit.main_convenor_user)
 
     # Get the tasks for the first task definition
     get "/api/units/#{unit.id}/task_definitions/#{task_def_third.id}/tasks"

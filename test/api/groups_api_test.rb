@@ -257,7 +257,7 @@ class GroupsApiTest < ActiveSupport::TestCase
     # Add username and auth_token to Header
     add_auth_header_for(user: project.student)
 
-    post "/api/units/#{unit.id}/group_sets/#{gs_response['id']}/groups/#{group_response['id']}/members", {project_id: project.id}
+    post "/api/units/#{unit.id}/group_sets/#{gs_response['id']}/groups/#{group_response['id']}/members/#{project.id}"
 
     assert_equal 201, last_response.status
     assert_equal 1, unit.group_sets.first.groups.first.group_memberships.count
@@ -268,7 +268,7 @@ class GroupsApiTest < ActiveSupport::TestCase
     # Add username and auth_token to Header
     add_auth_header_for(user: project.student)
 
-    post "/api/units/#{unit.id}/group_sets/#{gs_response['id']}/groups/#{group_response['id']}/members", {project_id: project.id}
+    post "/api/units/#{unit.id}/group_sets/#{gs_response['id']}/groups/#{group_response['id']}/members/#{project.id}"
 
     assert_equal 201, last_response.status, last_response_body
     assert_equal 2, unit.group_sets.first.groups.first.group_memberships.count
@@ -276,7 +276,7 @@ class GroupsApiTest < ActiveSupport::TestCase
     # Exceed capacity (the student does it...)
     project = unit.active_projects.last
 
-    post "/api/units/#{unit.id}/group_sets/#{gs_response['id']}/groups/#{group_response['id']}/members", {project_id: project.id}
+    post "/api/units/#{unit.id}/group_sets/#{gs_response['id']}/groups/#{group_response['id']}/members/#{project.id}"
 
     assert_equal 403, last_response.status, last_response_body
     assert_equal 2, unit.group_sets.first.groups.first.group_memberships.count
@@ -288,7 +288,7 @@ class GroupsApiTest < ActiveSupport::TestCase
     # Add username and auth_token to Header
     add_auth_header_for(user: tutor)
 
-    post "/api/units/#{unit.id}/group_sets/#{gs_response['id']}/groups/#{group_response['id']}/members", {project_id: project.id}
+    post "/api/units/#{unit.id}/group_sets/#{gs_response['id']}/groups/#{group_response['id']}/members/#{project.id}"
 
     assert_equal 403, last_response.status, last_response_body
     assert_equal 2, unit.group_sets.first.groups.first.group_memberships.count
@@ -297,7 +297,7 @@ class GroupsApiTest < ActiveSupport::TestCase
     add_auth_header_for(user: unit.main_convenor_user)
 
     # Try again as convenor
-    post "/api/units/#{unit.id}/group_sets/#{gs_response['id']}/groups/#{group_response['id']}/members", {project_id: project.id}
+    post "/api/units/#{unit.id}/group_sets/#{gs_response['id']}/groups/#{group_response['id']}/members/#{project.id}"
 
     assert_equal 201, last_response.status, last_response_body
     assert_equal 3, unit.group_sets.first.groups.first.group_memberships.count

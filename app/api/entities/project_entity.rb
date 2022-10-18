@@ -4,7 +4,7 @@ module Entities
     expose :campus_id
     expose :student, using: Entities::Minimal::MinimalUserEntity, unless: :for_student
     expose :user_id, if: :for_student
-    expose :unit, if: :for_student, using: Entities::Minimal::MinimalUnitEntity, if: :summary_only
+    expose :unit, if:  lambda { |status, options| options[:for_student] || options[:summary_only]}, using: Entities::Minimal::MinimalUnitEntity
     expose :unit_id, if: :for_student, unless: :summary_only
 
     expose :enrolled, unless: :for_student

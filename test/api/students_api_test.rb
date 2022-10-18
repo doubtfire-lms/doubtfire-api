@@ -23,12 +23,13 @@ class StudentsApiTest < ActiveSupport::TestCase
     assert_equal newUnit.active_projects.all.count,last_response_body.count
 
     # check the response
-    response_keys = %w(first_name last_name)
     last_response_body.each do | data |
-      pro = newUnit.active_projects.find(data['project_id'])
+      pro = newUnit.active_projects.find(data['id'])
       std = pro.student
-      assert_json_matches_model(std, data, response_keys)
-      assert_equal data['student_email'],std['email']
+      assert_equal data['student']['id'],std['id']
+      assert_equal data['student']['first_name'],std['first_name']
+      assert_equal data['student']['last_name'],std['last_name']
+      assert_equal data['student']['email'],std['email']
     end
     assert_equal 200, last_response.status
   end
@@ -72,14 +73,14 @@ class StudentsApiTest < ActiveSupport::TestCase
 
     # The get that we will be testing without parameters.
     get "/api/students/?unit_id=#{unit.id}"
-    
+
     assert_equal 200, last_response.status
     assert_equal unit.active_projects.count, last_response_body.count
 
     last_response_body.each do |data|
+      project = unit.active_projects.find(data['id'])
       assert_equal 2, data['tutorial_enrolments'].count, data.inspect
       data['tutorial_enrolments'].each do |data_ts|
-        project = unit.active_projects.find(data['project_id'])
         stream_abbr = data_ts['stream_abbr']
         tutorial_id = data_ts['tutorial_id']
 
