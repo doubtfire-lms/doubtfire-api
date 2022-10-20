@@ -22,31 +22,6 @@ class UnitRolesTest < ActiveSupport::TestCase
     assert_equal UnitRole.joins(:role, :unit).where("user_id = :user_id and roles.name <> 'Student'", user_id: User.first.id).count, last_response_body.count
   end
 
-  # Get a unit role's details
-  def test_get_a_unit_roles_details
-    # create a unit
-    unit = FactoryBot.create :unit, with_students: false, task_count: 0, tutorials: 0, outcome_count: 0, staff_count: 0, campus_count: 0
-    user = FactoryBot.create :user, :convenor
-    expected_ur = unit.employ_staff user, Role.convenor
-
-    # # newly created unit's main convenor
-    # expected_ur = unit.employ_staff, Role.convenor
-
-    # Add username and auth_token to Header
-    add_auth_header_for(user: unit.main_convenor_user)
-
-    # perform the GET
-    get "/api/unit_roles/#{expected_ur.id}"
-    returned_ur = last_response_body
-
-    # Check if the call succeeds
-    assert_equal 200, last_response.status
-
-    # Check the returned details match as expected
-    response_keys = %w(unit_id user_id)
-    assert_json_matches_model(expected_ur, returned_ur, response_keys)
-  end
-
   def test_post_bad_unit_roles
     num_of_unit_roles = UnitRole.all.count
 
@@ -81,8 +56,8 @@ class UnitRolesTest < ActiveSupport::TestCase
     assert_equal last_response.status, 201
     assert_equal num_of_unit_roles, UnitRole.all.count
 
-    assert_equal to_post[:unit_id], last_response_body['unit_id']
-    assert_equal to_post[:user_id], last_response_body['user_id']
+    assert_equal to_post[:user_id], last_response_body['user']['id']
+    assert_equal 'Convenor', last_response_body['role']
 
     unit.destroy
   end

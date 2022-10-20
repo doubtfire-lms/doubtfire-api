@@ -247,21 +247,22 @@ class UnitsApiTest < ActiveSupport::TestCase
 
     assert actual_unit.key?("tutorial_streams"), actual_unit.inspect
     assert actual_unit.key?("tutorials"), actual_unit.inspect
-    assert actual_unit.key?("tutorial_enrolments"), actual_unit.inspect
+    # assert actual_unit.key?("tutorial_enrolments"), actual_unit.inspect
     assert actual_unit.key?("task_definitions"), actual_unit.inspect
     #TODO: expand tests to check details returned
 
     assert actual_unit.key?("staff"), actual_unit.inspect
     assert_equal expected_unit.staff.count, actual_unit["staff"].count, actual_unit["staff"].inspect
     actual_unit["staff"].each do |staff|
-      keys = %w(id role user_id name email)
+      keys = %w(id role user)
       assert_json_limit_keys_to_exactly keys, staff
       ur = UnitRole.find(staff['id'])
       assert_equal ur.id, staff['id']
       assert_equal ur.role.name, staff['role']
-      assert_equal ur.user.id, staff['user_id']
-      assert_equal ur.user.name, staff['name']
-      assert_equal ur.user.email, staff['email']
+      assert_equal ur.user.id, staff['user']['id']
+      assert_equal ur.user.first_name, staff['user']['first_name']
+      assert_equal ur.user.last_name, staff['user']['last_name']
+      assert_equal ur.user.email, staff['user']['email']
     end
 
     assert actual_unit.key?("group_sets"), actual_unit.inspect
@@ -283,7 +284,7 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert actual_unit.key?("task_outcome_alignments"), actual_unit.inspect
     assert_equal expected_unit.task_outcome_alignments.count, actual_unit["task_outcome_alignments"].count, actual_unit["task_outcome_alignments"].inspect
     actual_unit["task_outcome_alignments"].each do |align|
-      keys = %w(id description rating learning_outcome_id task_definition_id task_id)
+      keys = %w(id description rating learning_outcome_id task_definition_id)
       assert_json_limit_keys_to_exactly keys, align
       assert_json_matches_model LearningOutcomeTaskLink.find(align['id']), align, keys
     end

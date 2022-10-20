@@ -42,7 +42,6 @@ class AuthTest < ActiveSupport::TestCase
     assert_json_matches_model(expected_auth, response_user_data, user_keys)
 
     # Check other values returned
-    assert_equal expected_auth.name, response_user_data['name'], 'Names match'
     assert_equal expected_auth.role.name, response_user_data['system_role'], 'Roles match'
 
     # User has the token - count of matching tokens for that user is 1
