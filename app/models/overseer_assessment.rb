@@ -69,7 +69,7 @@ class OverseerAssessment < ApplicationRecord
     if task.has_new_files?
       puts "Copying new files to submission at: #{zip_file_path}"
       # Generate a zip file for this particular submission with timestamp value and put it here
-      task.compress_new_to_done zip_file_path: zip_file_path, rm_task_dir: false
+      task.compress_new_to_done zip_file_path: zip_file_path, rm_task_dir: false, rename_files: true
     else
       puts "Copying done file to submission at: #{zip_file_path}"
       task.copy_done_to zip_file_path

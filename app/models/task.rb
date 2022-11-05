@@ -813,7 +813,7 @@ class Task < ApplicationRecord
   #
   # Compress the done files for a student - includes cover page and work uploaded
   #
-  def compress_new_to_done(task_dir: student_work_dir(:new, false), zip_file_path: nil, rm_task_dir: true)
+  def compress_new_to_done(task_dir: student_work_dir(:new, false), zip_file_path: nil, rm_task_dir: true, rename_files: false)
     begin
       # Ensure that this task is the submitter task for a  group_task... otherwise
       # remove this submission
@@ -844,7 +844,21 @@ class Task < ApplicationRecord
       Zip::File.open(zip_file, Zip::File::CREATE) do |zip|
         zip.mkdir id.to_s
         input_files.each do |in_file|
-          zip.add "#{id}/#{in_file}", "#{task_dir}#{in_file}"
+          final_name = in_file
+          idx = 0
+          work_dir = student_work_dir(:new, false)
+
+          if rename_files
+            upload_requirements.each do |file_req|
+              output_filename = __output_filename__(work_dir, idx, file_req['type'], file_req['name'], get_name_only: true)
+              if output_filename == in_file
+                final_name  = file_req['name']
+                break
+              end
+              idx +=1
+            end
+          end
+          zip.add "#{id}/#{final_name}", "#{task_dir}#{in_file}"
         end
       end
     ensure
@@ -922,7 +936,7 @@ class Task < ApplicationRecord
     end
   end
 
-  def __output_filename__(in_dir, idx, type)
+  def __output_filename__(in_dir, idx, type, get_name_only: false)
     pwd = FileUtils.pwd
     Dir.chdir(in_dir)
     begin
@@ -935,6 +949,10 @@ class Task < ApplicationRecord
       result = Dir.glob("#{idx.to_s.rjust(3, '0')}-#{type}.*").first
     ensure
       Dir.chdir(pwd)
+    end
+
+    if get_name_only
+      return result
     end
 
     return File.join(in_dir, result) unless result.nil?
