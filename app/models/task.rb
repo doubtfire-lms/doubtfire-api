@@ -852,10 +852,10 @@ class Task < ApplicationRecord
             upload_requirements.each do |file_req|
               output_filename = __output_filename__(work_dir, idx, file_req['type'], file_req['name'], get_name_only: true)
               if output_filename == in_file
-                final_name  = file_req['name']
+                final_name = file_req['name']
                 break
               end
-              idx +=1
+              idx += 1
             end
           end
           zip.add "#{id}/#{final_name}", "#{task_dir}#{in_file}"
