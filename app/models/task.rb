@@ -929,7 +929,7 @@ class Task < ApplicationRecord
     end
   end
 
-  def __output_filename__(in_dir, idx, type, get_name_only: false)
+  def __output_filename__(in_dir, idx, type)
     pwd = FileUtils.pwd
     Dir.chdir(in_dir)
     begin
@@ -942,10 +942,6 @@ class Task < ApplicationRecord
       result = Dir.glob("#{idx.to_s.rjust(3, '0')}-#{type}.*").first
     ensure
       Dir.chdir(pwd)
-    end
-
-    if get_name_only
-      return result
     end
 
     return File.join(in_dir, result) unless result.nil?
