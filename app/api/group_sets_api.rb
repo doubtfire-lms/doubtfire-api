@@ -252,7 +252,7 @@ class GroupSetsApi < Grape::API
       error!({ error: 'Not authorised to upload csv of groups for this unit' }, 403)
     end
 
-    present unit.import_groups_from_csv(group_set, params[:file][:tempfile]), with: Grape.Presenters.Presenter
+    present unit.import_groups_from_csv(group_set, params[:file][:tempfile]), with: Grape::Presenters::Presenter
   end
 
   desc 'Upload a CSV for students in groups in a group set'
@@ -272,7 +272,7 @@ class GroupSetsApi < Grape::API
       error!({ error: 'Not authorised to upload csv of groups for this unit' }, 403)
     end
 
-    present unit.import_student_groups_from_csv(group_set, params[:file][:tempfile]), with: Grape.Presenters.Presenter
+    present unit.import_student_groups_from_csv(group_set, params[:file][:tempfile]), with: Grape::Presenters::Presenter
   end
 
   desc 'Edits the given group'
