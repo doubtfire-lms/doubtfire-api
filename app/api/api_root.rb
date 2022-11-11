@@ -33,6 +33,9 @@ class ApiRoot < Grape::API
     when ActiveRecord::RecordNotFound
       message = "Unable to find requested #{e.message[/(Couldn't find )(.*)( with)/,2]}"
       status = 404
+    when ActionController::ParameterMissing
+      message = "Missing value for #{e.param}"
+      status = 400
     else
       logger.error "Unhandled exception: #{e.class}"
       logger.error e.inspect
