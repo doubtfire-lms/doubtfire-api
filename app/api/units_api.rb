@@ -267,6 +267,18 @@ class UnitsApi < Grape::API
     present unit.tasks_as_hash(tasks), with: Grape::Presenters::Presenter
   end
 
+  desc 'Download the list of tasks that have detected similarities with other work'
+  get '/units/:id/tasks/similarity' do
+    unit = Unit.find(params[:id])
+
+    unless authorise? current_user, unit, :provide_feedback
+      error!({ error: 'Not authorised to provide feedback for this unit' }, 403)
+    end
+
+    tasks = unit.tasks_with_similarity(current_user)
+    present unit.tasks_as_hash(tasks), with: Grape::Presenters::Presenter
+  end
+
   desc 'Download the grades for a unit'
   get '/units/:id/grades' do
     unit = Unit.find(params[:id])

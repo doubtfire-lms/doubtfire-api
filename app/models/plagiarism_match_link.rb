@@ -2,7 +2,7 @@ class PlagiarismMatchLink < ApplicationRecord
   include LogHelper
 
   belongs_to :task, optional: false
-  belongs_to :other_task, class_name: 'Task', optional: false
+  belongs_to :other_task, class_name: 'Task'
 
   #
   # Ensure file is also deleted
@@ -27,15 +27,15 @@ class PlagiarismMatchLink < ApplicationRecord
   end
 
   def other_party
-    PlagiarismMatchLink.where(task_id: other_task.id, other_task_id: task.id).first
+    PlagiarismMatchLink.where(task_id: other_task.id, other_task_id: task.id).first unless other_task.nil?
   end
 
   def other_student
-    other_task.student
+    other_task.student unless other_task.nil?
   end
 
   def other_tutor
-    other_task.project.tutor_for(other_task.task_definition)
+    other_task.project.tutor_for(other_task.task_definition) unless other_task.nil?
   end
 
   delegate :student, to: :task
@@ -50,7 +50,7 @@ class PlagiarismMatchLink < ApplicationRecord
   end
 
   def other_tutorial
-    tute = other_task.project.tutorial_for(other_task.task_definition)
+    tute = other_task.project.tutorial_for(other_task.task_definition) unless other_task.nil?
     tute.nil? ? 'None' : tute.abbreviation
   end
 end

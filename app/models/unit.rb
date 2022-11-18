@@ -1822,22 +1822,11 @@ class Unit < ApplicationRecord
     result
   end
 
-  #
-  # Returns the task ids provided mapped to the number of unresolved
-  # plagiarism detections
-  #
-  def map_task_ids_to_similarity_count(task_ids)
-    PlagiarismMatchLink.where('task_id IN (?)', task_ids)
-                       .where(dismissed: false)
-                       .group(:task_id)
-                       .count
-  end
 
 
 
   def tasks_as_hash(data)
     task_ids = data.map(&:task_id).uniq
-    plagiarism_counts = map_task_ids_to_similarity_count(task_ids)
     data.map do |t|
       {
         id: t.task_id,
@@ -1851,7 +1840,7 @@ class Unit < ApplicationRecord
         grade: t.grade,
         quality_pts: t.quality_pts,
         num_new_comments: t.number_unread,
-        similar_to_count: plagiarism_counts[t.task_id],
+        similar_to_count: t.similar_to_count,
         pinned: t.pinned,
         has_extensions: t.has_extensions
       }
@@ -1874,6 +1863,7 @@ class Unit < ApplicationRecord
       joins("LEFT JOIN task_comments ON task_comments.task_id = tasks.id AND (task_comments.type IS NULL OR task_comments.type <> 'TaskStatusComment')").
       joins("LEFT JOIN comments_read_receipts crr ON crr.task_comment_id = task_comments.id AND crr.user_id = #{user.id}").
       joins("LEFT JOIN task_pins ON task_pins.task_id = tasks.id AND task_pins.user_id = #{user.id}").
+      joins('LEFT OUTER JOIN plagiarism_match_links ON tasks.id = plagiarism_match_links.task_id').
       select(
         'sq.tutorial_id AS tutorial_id',
         'sq.tutorial_stream_id AS tutorial_stream_id',
@@ -1890,7 +1880,8 @@ class Unit < ApplicationRecord
         'times_assessed',
         'submission_date',
         'tasks.grade as grade',
-        'quality_pts'
+        'quality_pts',
+        'SUM(case when plagiarism_match_links.dismissed IS NULL OR plagiarism_match_links.dismissed = TRUE then 0 else 1 end) as similar_to_count'
       ).
       group(
         'sq.tutorial_id',
@@ -1933,6 +1924,12 @@ class Unit < ApplicationRecord
     get_all_tasks_for(user)
       .having('task_statuses.id IN (:ids) OR COUNT(task_pins.task_id) > 0 OR SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) > 0', ids: [ TaskStatus.ready_for_feedback, TaskStatus.need_help ])
       .order('pinned DESC, submission_date ASC, MAX(task_comments.created_at) ASC, task_definition_id ASC')
+  end
+
+  def tasks_with_similarity(user)
+    get_all_tasks_for(user)
+      .having('similar_to_count > 0')
+      .order('submission_date ASC, task_definition_id ASC')
   end
 
   #
