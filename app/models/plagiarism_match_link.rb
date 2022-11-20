@@ -2,7 +2,12 @@ class PlagiarismMatchLink < ApplicationRecord
   include LogHelper
 
   belongs_to :task, optional: false
-  belongs_to :other_task, class_name: 'Task'
+  belongs_to :other_task, class_name: 'Task', optional: true
+
+  validate :ensure_all_details_provided
+
+  validates :kind, presence: true, inclusion: { in: %w(moss tii), message: "%{value} is not a valid kind" }
+  validates :pct, presence: true, inclusion: { in: 0..100, message: "%{value} is not a valid percent" }
 
   #
   # Ensure file is also deleted
@@ -52,5 +57,12 @@ class PlagiarismMatchLink < ApplicationRecord
   def other_tutorial
     tute = other_task.project.tutorial_for(other_task.task_definition) unless other_task.nil?
     tute.nil? ? 'None' : tute.abbreviation
+  end
+
+private
+  def ensure_all_details_provided
+    if self.kind == 'moss' && self.other_task.nil?
+      errors.add(:other_task, "must be provided when storing moss result")
+    end
   end
 end

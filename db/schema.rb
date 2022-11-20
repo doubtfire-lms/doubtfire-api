@@ -166,6 +166,7 @@ ActiveRecord::Schema.define(version: 2022_03_10_092851) do
     t.datetime "updated_at", precision: 6
     t.string "plagiarism_report_url"
     t.boolean "dismissed", default: false
+    t.string "kind"
     t.index ["other_task_id"], name: "index_plagiarism_match_links_on_other_task_id"
     t.index ["task_id"], name: "index_plagiarism_match_links_on_task_id"
   end
