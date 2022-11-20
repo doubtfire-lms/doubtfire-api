@@ -1592,6 +1592,7 @@ class Unit < ApplicationRecord
       plk2.destroy unless plk2.nil?
 
       plk1 = PlagiarismMatchLink.create do |plm|
+        plm.kind = 'moss'
         plm.task = t1
         plm.other_task = t2
         plm.dismissed = false
@@ -1599,6 +1600,7 @@ class Unit < ApplicationRecord
       end
 
       plk2 = PlagiarismMatchLink.create do |plm|
+        plm.kind = 'moss'
         plm.task = t2
         plm.other_task = t1
         plm.dismissed = false
