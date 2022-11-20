@@ -179,9 +179,6 @@ module Doubtfire
     config.overseer_enabled = ENV['OVERSEER_ENABLED'].present? && ENV['OVERSEER_ENABLED'].to_s.downcase != "false" && ENV['OVERSEER_ENABLED'].to_i != 0 ? true : false
 
     if (config.overseer_enabled)
-      config.overseer_images = YAML.load_file(Rails.root.join('config/overseer-images.yml')).with_indifferent_access
-      config.has_overseer_image = -> (key){ config.overseer_images['images'].any? { |img| img[:name] == key } }
-
       publisher_config = {
         RABBITMQ_HOSTNAME: ENV['RABBITMQ_HOSTNAME'],
         RABBITMQ_USERNAME: ENV['RABBITMQ_USERNAME'],
