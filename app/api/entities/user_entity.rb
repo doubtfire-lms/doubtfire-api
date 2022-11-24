@@ -14,6 +14,10 @@ module Entities
     expose :opt_in_to_research, unless: :minimal
     expose :has_run_first_time_setup, unless: :minimal
 
+    expose :accepted_tii_eula, unless: :minimal do |user, options|
+      TurnItIn.eula_version == user.tii_eula_version
+    end
+
     expose :system_role, unless: :minimal do |user, options|
       user.role.name if user.role.present?
     end

@@ -89,4 +89,4 @@ gem 'rest-client', '~> 2.0'
 
 gem 'net-smtp', require: false
 
-gem 'tca_client'
+gem 'tca_client', '1.0.1'
