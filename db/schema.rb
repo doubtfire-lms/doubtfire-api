@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_11_18_070202) do
+ActiveRecord::Schema[7.0].define(version: 2022_11_20_224824) do
   create_table "activity_types", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -258,6 +258,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_18_070202) do
     t.bigint "tutorial_stream_id"
     t.boolean "assessment_enabled", default: false
     t.bigint "overseer_image_id"
+    t.string "tii_group_id"
     t.index ["group_set_id"], name: "index_task_definitions_on_group_set_id"
     t.index ["overseer_image_id"], name: "index_task_definitions_on_overseer_image_id"
     t.index ["tutorial_stream_id"], name: "index_task_definitions_on_tutorial_stream_id"
@@ -322,6 +323,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_18_070202) do
     t.integer "contribution_pts", default: 3
     t.integer "quality_pts", default: -1
     t.integer "extensions", default: 0, null: false
+    t.string "tii_submission_id"
     t.index ["group_submission_id"], name: "index_tasks_on_group_submission_id"
     t.index ["project_id", "task_definition_id"], name: "tasks_uniq_proj_task_def", unique: true
     t.index ["project_id"], name: "index_tasks_on_project_id"
@@ -416,6 +418,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_18_070202) do
     t.boolean "allow_student_change_tutorial", default: true, null: false
     t.boolean "assessment_enabled", default: true
     t.bigint "overseer_image_id"
+    t.string "tii_group_context_id"
     t.index ["draft_task_definition_id"], name: "index_units_on_draft_task_definition_id"
     t.index ["main_convenor_id"], name: "index_units_on_main_convenor_id"
     t.index ["overseer_image_id"], name: "index_units_on_overseer_image_id"
@@ -448,6 +451,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_18_070202) do
     t.boolean "has_run_first_time_setup", default: false
     t.string "login_id"
     t.string "student_id"
+    t.string "tii_eula_version"
     t.index ["login_id"], name: "index_users_on_login_id", unique: true
     t.index ["role_id"], name: "index_users_on_role_id"
   end

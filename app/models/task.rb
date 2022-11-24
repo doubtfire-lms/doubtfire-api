@@ -1267,6 +1267,32 @@ class Task < ApplicationRecord
     logger.info "Submission accepted! Status for task #{id} is now #{trigger}"
   end
 
+  def read_file_from_done(idx)
+    path = FileHelper.zip_file_path_for_done_task(self)
+    return nil unless File.exists? path
+    return nil unless idx >= 0 && idx < upload_requirements.length
+
+    type = upload_requirements[idx]['type']
+
+    required_filename_start = "#{id}/#{idx.to_s.rjust(3, '0')}-#{type}"
+
+    Zip::File.open(path) do |zip_file|
+      zip_file.each do |entry|
+        puts entry
+        puts required_filename_start
+        next unless entry.name.starts_with?(required_filename_start)
+
+        result = ''
+        # Read into memory
+        entry.get_input_stream { |io| result = io.read }
+
+        return result
+      end
+    end
+    # we got to the end so no match
+    nil
+  end
+
   private
     def delete_associated_files
       if group_submission && group_submission.tasks.count <= 1

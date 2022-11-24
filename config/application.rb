@@ -218,11 +218,14 @@ module Doubtfire
       # Setup authorization
       TCAClient.configure do |tii_config|
         # Configure API key authorization: api_key
-        tii_config.api_key['Authorization'] = ENV['TCA_API_KEY']
+        tii_config.api_key['api_key'] = ENV['TCA_API_KEY']
         # Uncomment the following line to set a prefix for the API key, e.g. 'Bearer' (defaults to nil)
-        tii_config.api_key_prefix['Authorization'] = 'Bearer'
+        tii_config.api_key_prefix['api_key'] = 'Bearer'
         tii_config.host = ENV['TCA_HOST']
         tii_config.base_path = 'api/v1'
+        tii_config.server_index = nil
+        require_relative 'environments/doubtfire_logger'
+        tii_config.logger = DoubtfireLogger.logger
       end
     end
   end

@@ -161,6 +161,10 @@ class Unit < ApplicationRecord
   scope :set_active,            -> { where('active = ?', true) }
   scope :set_inactive,          -> { where('active = ?', false) }
 
+  def detailed_name
+    "#{name} #{teaching_period.present? ? teaching_period.detailed_name : start_date.strftime('%Y-%m-%d')}"
+  end
+
   def docker_image_name_tag
     return nil if overseer_image.nil?
     overseer_image.tag

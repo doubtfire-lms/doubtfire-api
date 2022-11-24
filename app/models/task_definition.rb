@@ -114,6 +114,10 @@ class TaskDefinition < ApplicationRecord
     end
   end
 
+  def detailed_name
+    "#{abbreviation} #{name}"
+  end
+
   def move_files_on_abbreviation_change
     old_abbr = saved_change_to_abbreviation[0] # 0 is original abbreviation
     if File.exist? task_sheet_with_abbreviation(old_abbr)
@@ -323,6 +327,10 @@ class TaskDefinition < ApplicationRecord
     # Save
     self['upload_requirements'] = JSON.unparse(json_data)
     self['upload_requirements'] = '[]' if self['upload_requirements'].nil?
+  end
+
+  def number_of_documents
+    upload_requirements.map{|req| req['type'] == 'document' ? 1 : 0}.inject(:+) || 0
   end
 
   def has_plagiarism?
