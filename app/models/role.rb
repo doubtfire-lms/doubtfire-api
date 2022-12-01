@@ -1,5 +1,4 @@
 class Role < ApplicationRecord
-
   #
   # Override find to ensure that role objects are cached - these do not change
   #
@@ -16,7 +15,6 @@ class Role < ApplicationRecord
   def self.teaching_staff_ids
     [self.tutor_id, self.convenor_id, self.admin_id]
   end
-
 
   def self.student
     Role.find(student_id)

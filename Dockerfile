@@ -3,8 +3,9 @@ FROM ruby:3.1-bullseye
 # DEBIAN_FRONTEND=noninteractive is required to install tzdata in non interactive way
 ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update && apt-get install -y \
+  bc \
   ffmpeg \
-  ghostscript \
+  ghostscript qpdf \
   imagemagick \
   libmagic-dev \
   libmagickwand-dev \

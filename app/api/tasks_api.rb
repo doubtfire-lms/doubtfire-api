@@ -22,27 +22,27 @@ class TasksApi < Grape::API
       error!({ error: 'You do not have permission to read these task details' }, 403)
     end
 
-    result = unit.student_tasks.
-        joins(:task_status).
-        joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id').
-        joins('LEFT OUTER JOIN tutorials ON tutorial_enrolments.tutorial_id = tutorials.id AND (tutorials.tutorial_stream_id = task_definitions.tutorial_stream_id OR tutorials.tutorial_stream_id IS NULL)').
-        select(
-          'tasks.id',
-          'task_statuses.id as status_id',
-          'task_definition_id',
-          'tutorials.id AS tutorial_id',
-          'tutorials.tutorial_stream_id AS tutorial_stream_id'
-        ).
-        where('tasks.task_status_id > 1').
-        map do |r|
-          {
-            id: r.id,
-            task_definition_id: r.task_definition_id,
-            status: TaskStatus.id_to_key(r.status_id),
-            tutorial_id: r.tutorial_id,
-            tutorial_stream_id: r.tutorial_stream_id
-          }
-        end
+    result = unit.student_tasks
+                 .joins(:task_status)
+                 .joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id')
+                 .joins('LEFT OUTER JOIN tutorials ON tutorial_enrolments.tutorial_id = tutorials.id AND (tutorials.tutorial_stream_id = task_definitions.tutorial_stream_id OR tutorials.tutorial_stream_id IS NULL)')
+                 .select(
+                   'tasks.id',
+                   'task_statuses.id as status_id',
+                   'task_definition_id',
+                   'tutorials.id AS tutorial_id',
+                   'tutorials.tutorial_stream_id AS tutorial_stream_id'
+                 )
+                 .where('tasks.task_status_id > 1')
+                 .map do |r|
+      {
+        id: r.id,
+        task_definition_id: r.task_definition_id,
+        status: TaskStatus.id_to_key(r.status_id),
+        tutorial_id: r.tutorial_id,
+        tutorial_stream_id: r.tutorial_stream_id
+      }
+    end
 
     present result, with: Grape::Presenters::Presenter
   end
@@ -65,15 +65,15 @@ class TasksApi < Grape::API
       base = base.where('tasks.task_definition_id = :task_definition_id', task_definition_id: params[:task_definition_id])
     end
 
-    result = base.
-      map do |task|
-        {
-          task_definition_id: task.task_definition_id,
-          status: TaskStatus.id_to_key(task.task_status_id),
-          due_date: task.due_date,
-          extensions: task.extensions
-        }
-      end
+    result = base
+             .map do |task|
+      {
+        task_definition_id: task.task_definition_id,
+        status: TaskStatus.id_to_key(task.task_status_id),
+        due_date: task.due_date,
+        extensions: task.extensions
+      }
+    end
 
     if params[:task_definition_id].present?
       result = result.first

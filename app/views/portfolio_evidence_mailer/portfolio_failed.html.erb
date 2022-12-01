@@ -47,8 +47,13 @@
   <main>
     <h1> <%= @doubtfire_product_name %> Notification </h1>
     <p>Hi <%= @student.first_name %>,</p>
+    <% if @project.portfolio_auto_generated %>
+      <p>
+        Profile generation has been automatically triggered. You can customise your portfolio and recreate up until the due date indicated by the teaching staff.
+      </p>
+    <% end %>
     <p>
-        There was an error compiling your portfolio. This usually means that one of your task PDFs is corrupt. Login to <a href="https://<%= @doubtfire_host %>"><%= @doubtfire_product_name %></a> and check each of your task PDFs. Once you have checked that all of the PDFs are valid you can schedule your portfolio to compile again.
+        There was an error compiling your portfolio. This usually means that one of your task PDFs is corrupt. Login to <a href="https://<%= @doubtfire_host %>/#/projects/<%= @project.id%>/portfolio"><%= @doubtfire_product_name %></a> and check each of your task PDFs. Once you have checked that all of the PDFs are valid you can schedule your portfolio to compile again.
     </p>
     <p>
         Cheers, <br />

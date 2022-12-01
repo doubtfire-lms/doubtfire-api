@@ -12,5 +12,5 @@ task skip_prod: [:environment] do
 end
 
 ['db:drop', 'db:reset', 'db:seed'].each do |t|
-    Rake::Task[t].enhance ['skip_prod']
+  Rake::Task[t].enhance ['skip_prod']
 end

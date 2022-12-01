@@ -50,10 +50,10 @@ class WebcalApi < Grape::API
     user = current_user
 
     cal = Webcal
-      .includes(:webcal_unit_exclusions)
-      .where(user_id: user.id)
-      .load
-      .first
+          .includes(:webcal_unit_exclusions)
+          .where(user_id: user.id)
+          .load
+          .first
 
     # Create or destroy the user's webcal, according to the `enabled` parameter.
     if webcal_params.key?(:enabled)

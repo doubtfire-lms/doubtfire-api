@@ -47,8 +47,13 @@
   <main>
     <h1> <%= @doubtfire_product_name %> Notification </h1>
     <p>Hi <%= @student.first_name %>,</p>
+    <% if @project.portfolio_auto_generated %>
+      <p>
+        Profile generation has been automatically triggered. You can customise your portfolio and recreate up until the due date indicated by the teaching staff.
+      </p>
+    <% end %>
     <p>
-        Your portfolio has been compiled and can now be viewed and downloaded from <a href="https://<%= @doubtfire_host %>"><%= @doubtfire_product_name %></a>.
+        Your portfolio has been compiled and can now be viewed and downloaded from <a href="https://<%= @doubtfire_host %>/#/projects/<%= @project.id%>/portfolio"><%= @doubtfire_product_name %></a>.
     </p>
     <p>
         Cheers, <br />

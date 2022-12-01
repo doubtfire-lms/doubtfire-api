@@ -104,7 +104,7 @@ class TaskDefinition < ApplicationRecord
 
   def ensure_no_submissions
     if tasks.where("submission_date IS NOT NULL").count() > 0
-      errors.add( :group_set, "Unable to change group status of task as submissions exist" )
+      errors.add(:group_set, "Unable to change group status of task as submissions exist")
     end
   end
 
@@ -131,6 +131,7 @@ class TaskDefinition < ApplicationRecord
 
   def docker_image_name_tag
     return nil if overseer_image.nil?
+
     overseer_image.tag
   end
 
@@ -194,12 +195,12 @@ class TaskDefinition < ApplicationRecord
   def plagiarism_checks=(req)
     begin
       json_data = if req.class == String
-          # get the ruby objects from the json data
-          JSON.parse(req)
-        else
-          # use the passed in objects
-          req
-        end
+                    # get the ruby objects from the json data
+                    JSON.parse(req)
+                  else
+                    # use the passed in objects
+                    req
+                  end
     rescue
       # Not valid json!
       # Save what we have - validation should raise an error
@@ -284,12 +285,12 @@ class TaskDefinition < ApplicationRecord
   def upload_requirements=(req)
     begin
       json_data = if req.class == String
-          # get the ruby objects from the json data
-          JSON.parse(req)
-        else
-          # use the passed in objects
-          req
-        end
+                    # get the ruby objects from the json data
+                    JSON.parse(req)
+                  else
+                    # use the passed in objects
+                    req
+                  end
     rescue
       # Not valid json
       # Save what we have - validation should raise an error
@@ -378,7 +379,8 @@ class TaskDefinition < ApplicationRecord
   # Override due date to return either the final date of the unit, or the set due date
   def due_date
     return self['due_date'] if self['due_date'].present?
-    return unit.end_date #TODO: use nil as default to improve performance
+
+    return unit.end_date # TODO: use nil as default to improve performance
   end
 
   def due_week
@@ -481,7 +483,7 @@ class TaskDefinition < ApplicationRecord
     result.plagiarism_checks           = row[:plagiarism_checks]
 
     if row[:group_set].present?
-      result.group_set                 = unit.group_sets.where(name: row[:group_set]).first
+      result.group_set = unit.group_sets.where(name: row[:group_set]).first
     end
 
     if row[:tutorial_stream].present?
@@ -505,7 +507,7 @@ class TaskDefinition < ApplicationRecord
       end
     end
 
-    [result, new_task, new_task ? "Added new task definition #{result.abbreviation}." : "Updated existing task #{result.abbreviation}" ]
+    [result, new_task, new_task ? "Added new task definition #{result.abbreviation}." : "Updated existing task #{result.abbreviation}"]
   end
 
   def is_group_task?
@@ -600,54 +602,54 @@ class TaskDefinition < ApplicationRecord
 
   private
 
-    def delete_associated_files()
-      remove_task_sheet()
-      remove_task_resources()
-      remove_task_assessment_resources()
+  def delete_associated_files()
+    remove_task_sheet()
+    remove_task_resources()
+    remove_task_assessment_resources()
+  end
+
+  # Calculate the path to the task sheet using the provided abbreviation
+  # This allows the path to be calculated on abbreviation change to allow files to
+  # be moved
+  def task_sheet_with_abbreviation(abbr)
+    task_path = FileHelper.task_file_dir_for_unit unit, create = true
+
+    result_with_sanitised_path = "#{task_path}#{FileHelper.sanitized_path(abbr)}.pdf"
+    result_with_sanitised_file = "#{task_path}#{FileHelper.sanitized_filename(abbr)}.pdf"
+
+    if File.exist? result_with_sanitised_path
+      result_with_sanitised_path
+    else
+      result_with_sanitised_file
     end
+  end
 
-    # Calculate the path to the task sheet using the provided abbreviation
-    # This allows the path to be calculated on abbreviation change to allow files to
-    # be moved
-    def task_sheet_with_abbreviation(abbr)
-      task_path = FileHelper.task_file_dir_for_unit unit, create = true
+  # Calculate the path to the task sheet using the provided abbreviation
+  # This allows the path to be calculated on abbreviation change to allow files to
+  # be moved
+  def task_resources_with_abbreviation(abbr)
+    task_path = FileHelper.task_file_dir_for_unit unit, create = true
 
-      result_with_sanitised_path = "#{task_path}#{FileHelper.sanitized_path(abbr)}.pdf"
-      result_with_sanitised_file = "#{task_path}#{FileHelper.sanitized_filename(abbr)}.pdf"
+    result_with_sanitised_path = "#{task_path}#{FileHelper.sanitized_path(abbr)}.zip"
+    result_with_sanitised_file = "#{task_path}#{FileHelper.sanitized_filename(abbr)}.zip"
 
-      if File.exist? result_with_sanitised_path
-        result_with_sanitised_path
-      else
-        result_with_sanitised_file
-      end
+    if File.exist? result_with_sanitised_path
+      result_with_sanitised_path
+    else
+      result_with_sanitised_file
     end
+  end
 
-    # Calculate the path to the task sheet using the provided abbreviation
-    # This allows the path to be calculated on abbreviation change to allow files to
-    # be moved
-    def task_resources_with_abbreviation(abbr)
-      task_path = FileHelper.task_file_dir_for_unit unit, create = true
+  def task_assessment_resources_with_abbreviation(abbr)
+    task_path = FileHelper.task_file_dir_for_unit unit, create = true
 
-      result_with_sanitised_path = "#{task_path}#{FileHelper.sanitized_path(abbr)}.zip"
-      result_with_sanitised_file = "#{task_path}#{FileHelper.sanitized_filename(abbr)}.zip"
+    result_with_sanitised_path = "#{task_path}#{FileHelper.sanitized_path(abbr)}-assessment.zip"
+    result_with_sanitised_file = "#{task_path}#{FileHelper.sanitized_filename(abbr)}-assessment.zip"
 
-      if File.exist? result_with_sanitised_path
-        result_with_sanitised_path
-      else
-        result_with_sanitised_file
-      end
+    if File.exist? result_with_sanitised_path
+      result_with_sanitised_path
+    else
+      result_with_sanitised_file
     end
-
-    def task_assessment_resources_with_abbreviation(abbr)
-      task_path = FileHelper.task_file_dir_for_unit unit, create = true
-
-      result_with_sanitised_path = "#{task_path}#{FileHelper.sanitized_path(abbr)}-assessment.zip"
-      result_with_sanitised_file = "#{task_path}#{FileHelper.sanitized_filename(abbr)}-assessment.zip"
-
-      if File.exist? result_with_sanitised_path
-        result_with_sanitised_path
-      else
-        result_with_sanitised_file
-      end
-    end
+  end
 end

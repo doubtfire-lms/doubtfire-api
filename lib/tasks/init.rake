@@ -1,10 +1,10 @@
 namespace :db do
-
   #
   # Generate roles
   #
   def generate_user_roles
     return if Role.count > 0
+
     puts "-> Generating user roles"
     roles = [
       { name: 'Student', description: "Students are able to be enrolled into units, and to submit progress for their unit projects." },
@@ -25,6 +25,7 @@ namespace :db do
   #
   def generate_task_statuses
     return if TaskStatus.db_count > 0
+
     puts "-> Generating task statuses"
     statuses = {
       "Not Started": "You have not yet started this task.",
@@ -40,13 +41,12 @@ namespace :db do
       "Fail": "You did not successfully demonstrate the required learning in this task.",
       "Time Exceeded": "You did not submit or complete the task before the appropriate deadline."
     }
-    statuses.each do | name, desc |
+    statuses.each do |name, desc|
       print "."
       TaskStatus.create(name: name, description: desc)
     end
     puts "!"
   end
-
 
   desc 'Initialise the app with an empty database and only minimal users (the superuser)'
   task init: [:environment] do
@@ -66,7 +66,7 @@ namespace :db do
         role_id: Role.admin_id
       }
       profile[:email]     ||=
-      profile[:username]  ||= username
+        profile[:username] ||= username
       profile[:login_id]  ||= username
 
       if AuthenticationHelpers.db_auth?
