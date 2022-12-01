@@ -27,26 +27,27 @@ module Entities
     with_options(format_with: :date_only) do
       expose :start_date
       expose :end_date
+      expose :portfolio_auto_generation_date, unless: :summary_only, if: lambda { |unit, options| is_staff?(options[:user], unit) }, expose_nil: false
     end
 
     expose :active
 
-    expose :overseer_image_id, unless: :summary_only, if: lambda { |unit, options|  is_admin_staff?(options[:my_role]) }
+    expose :overseer_image_id, unless: :summary_only, if: lambda { |unit, options| is_admin_staff?(options[:my_role]) }
     expose :assessment_enabled, unless: :summary_only
 
     expose :auto_apply_extension_before_deadline, unless: :summary_only, if: lambda { |unit, options|  is_staff?(options[:my_role]) }
-    expose :send_notifications, unless: :summary_only, if: lambda { |unit, options|  is_staff?(options[:my_role]) }
-    expose :enable_sync_enrolments, unless: :summary_only, if: lambda { |unit, options|  is_staff?(options[:my_role]) }
-    expose :enable_sync_timetable, unless: :summary_only, if: lambda { |unit, options|  is_staff?(options[:my_role]) }
-    expose :draft_task_definition_id, unless: :summary_only, if: lambda { |unit, options|  is_staff?(options[:my_role]) }
+    expose :send_notifications, unless: :summary_only, if: lambda { |unit, options| is_staff?(options[:my_role]) }
+    expose :enable_sync_enrolments, unless: :summary_only, if: lambda { |unit, options| is_staff?(options[:my_role]) }
+    expose :enable_sync_timetable, unless: :summary_only, if: lambda { |unit, options| is_staff?(options[:my_role]) }
+    expose :draft_task_definition_id, unless: :summary_only, if: lambda { |unit, options| is_staff?(options[:my_role]) }
     expose :allow_student_extension_requests, unless: :summary_only
-    expose :extension_weeks_on_resubmit_request, unless: :summary_only, if: lambda { |unit, options|  is_staff?(options[:my_role]) }
+    expose :extension_weeks_on_resubmit_request, unless: :summary_only, if: lambda { |unit, options| is_staff?(options[:my_role]) }
     expose :allow_student_change_tutorial, unless: :summary_only
 
     expose :learning_outcomes, using: LearningOutcomeEntity, as: :ilos, unless: :summary_only
     expose :tutorial_streams, using: TutorialStreamEntity, unless: :summary_only
     expose :tutorials, using: TutorialEntity, unless: :summary_only
-    # expose :tutorial_enrolments, using: TutorialEnrolmentEntity, unless: :summary_only, if: lambda { |unit, options|  is_staff?(options[:my_role]) }
+    # expose :tutorial_enrolments, using: TutorialEnrolmentEntity, unless: :summary_only, if: lambda { |unit, options| is_staff?(options[:my_role]) }
 
     expose :task_definitions, using: TaskDefinitionEntity, unless: :summary_only
     expose :task_outcome_alignments, using: TaskOutcomeAlignmentEntity, unless: :summary_only

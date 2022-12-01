@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'tempfile'
 
 class TaskComment < ApplicationRecord
@@ -83,6 +84,7 @@ class TaskComment < ApplicationRecord
     return 'image comment' if content_type == 'image'
     return 'pdf document' if content_type == 'pdf'
     return 'discussion comment' if content_type == 'discussion'
+
     super
   end
 
@@ -99,6 +101,7 @@ class TaskComment < ApplicationRecord
       # On upload all audio comments are converted to wav
       temp = Tempfile.new(['comment', '.wav'])
       return false unless process_audio(file_upload["tempfile"].path, temp.path)
+
       self.attachment_extension = '.wav'
       save
       FileUtils.mv temp.path, attachment_path
@@ -151,7 +154,7 @@ class TaskComment < ApplicationRecord
   end
 
   def new_for?(user)
-    ! read_by? user
+    !read_by? user
   end
 
   def read_by?(user)
@@ -162,5 +165,4 @@ class TaskComment < ApplicationRecord
     read_reciept = CommentsReadReceipts.find_by(user: user, task_comment: self)
     read_reciept&.created_at
   end
-
 end

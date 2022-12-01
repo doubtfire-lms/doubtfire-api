@@ -1,7 +1,6 @@
 require 'grape'
 
 class SettingsApi < Grape::API
-
   #
   # Returns the current auth method
   #
@@ -18,7 +17,7 @@ class SettingsApi < Grape::API
   desc 'Return privacy policy details'
   get '/settings/privacy' do
     response = {
-      privacy:    Doubtfire::Application.config.institution[:privacy],
+      privacy: Doubtfire::Application.config.institution[:privacy],
       plagiarism: Doubtfire::Application.config.institution[:plagiarism]
     }
 

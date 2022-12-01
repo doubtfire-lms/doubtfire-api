@@ -23,6 +23,13 @@ Doubtfire::Application.configure do
   # Send deprecation notices to registered listeners
   config.active_support.deprecation = :notify
 
+  # Remove the Runtime middleware which is responsible for inserting the X-Runtime header
+  # to harden the application against timing attacks and unauthenticated object enumeration
+  config.middleware.delete Rack::Runtime
+
+  # pdfgen log verbosity
+  config.pdfgen_quiet = true
+
   require_relative 'doubtfire_logger'
   config.logger = DoubtfireLogger.logger
   Rails.logger = DoubtfireLogger.logger
@@ -33,12 +40,12 @@ Doubtfire::Application.configure do
 
   if config.action_mailer.delivery_method == :smtp
     config.action_mailer.smtp_settings = {
-      address:              (ENV['DF_SMTP_ADDRESS'] || 'localhost'),
-      port:                 (ENV['DF_SMTP_PORT'] || 25),
-      domain:               (ENV['DF_SMTP_DOMAIN']),
-      user_name:            (ENV['DF_SMTP_USERNAME']),
-      password:             (ENV['DF_SMTP_PASSWORD']),
-      authentication:       (ENV['DF_SMTP_AUTHENTICATION'] || 'plain'),
+      address: (ENV['DF_SMTP_ADDRESS'] || 'localhost'),
+      port: (ENV['DF_SMTP_PORT'] || 25),
+      domain: (ENV['DF_SMTP_DOMAIN']),
+      user_name: (ENV['DF_SMTP_USERNAME']),
+      password: (ENV['DF_SMTP_PASSWORD']),
+      authentication: (ENV['DF_SMTP_AUTHENTICATION'] || 'plain'),
       enable_starttls_auto: true
     }
   end
@@ -46,5 +53,4 @@ Doubtfire::Application.configure do
   config.active_record.encryption.key_derivation_salt = ENV['DF_ENCRYPTION_KEY_DERIVATION_SALT']
   config.active_record.encryption.deterministic_key = ENV['DF_ENCRYPTION_DETERMINISTIC_KEY']
   config.active_record.encryption.primary_key = ENV['DF_ENCRYPTION_PRIMARY_KEY']
-
 end

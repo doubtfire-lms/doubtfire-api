@@ -1,13 +1,14 @@
 #
 # deployAppSrc.Dockerfile - the container used for back end processing
 #
-FROM ruby:3.1-buster
+FROM ruby:3.1-bullseye
 
 # Setup dependencies
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
+  bc \
   ffmpeg \
-  ghostscript \
+  ghostscript qpdf \
   imagemagick \
   libmagic-dev \
   libmagickwand-dev \
