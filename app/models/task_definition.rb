@@ -487,7 +487,7 @@ class TaskDefinition < ApplicationRecord
     end
 
     if row[:tutorial_stream].present?
-      result.tutorial_stream           = unit.tutorial_streams.where(abbreviation: row[:tutorial_stream]).first
+      result.tutorial_stream = unit.tutorial_streams.where(abbreviation: row[:tutorial_stream]).first
     end
 
     if result.valid? && (row[:group_set].blank? || result.group_set.present?)

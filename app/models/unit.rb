@@ -401,7 +401,7 @@ class Unit < ApplicationRecord
           email: t.student_email,
           first_name: t.first_name,
           last_name: t.last_name,
-          nickname: t.nickname,
+          nickname: t.nickname
         },
         target_grade: t.target_grade,
         submitted_grade: t.submitted_grade,

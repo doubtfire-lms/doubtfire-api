@@ -35,7 +35,7 @@ module Entities
     expose :overseer_image_id, unless: :summary_only, if: lambda { |unit, options| is_admin_staff?(options[:my_role]) }
     expose :assessment_enabled, unless: :summary_only
 
-    expose :auto_apply_extension_before_deadline, unless: :summary_only, if: lambda { |unit, options|  is_staff?(options[:my_role]) }
+    expose :auto_apply_extension_before_deadline, unless: :summary_only, if: lambda { |unit, options| is_staff?(options[:my_role]) }
     expose :send_notifications, unless: :summary_only, if: lambda { |unit, options| is_staff?(options[:my_role]) }
     expose :enable_sync_enrolments, unless: :summary_only, if: lambda { |unit, options| is_staff?(options[:my_role]) }
     expose :enable_sync_timetable, unless: :summary_only, if: lambda { |unit, options| is_staff?(options[:my_role]) }
