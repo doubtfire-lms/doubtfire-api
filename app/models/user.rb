@@ -163,8 +163,8 @@ class User < ApplicationRecord
   def can_change_to_role?
     new_role = self.role
 
-    fail_if_in_unit_role = [ Role.tutor, Role.convenor ] if new_role == Role.student
-    fail_if_in_unit_role = [ Role.convenor ] if new_role == Role.tutor
+    fail_if_in_unit_role = [Role.tutor, Role.convenor] if new_role == Role.student
+    fail_if_in_unit_role = [Role.convenor] if new_role == Role.tutor
     fail_if_in_unit_role = [] if new_role == Role.admin || new_role == Role.convenor
 
     for check_role in fail_if_in_unit_role do
