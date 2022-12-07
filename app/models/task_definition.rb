@@ -139,7 +139,7 @@ class TaskDefinition < ApplicationRecord
   end
 
   def plagiarism_checks
-    # Read the JSON string in upload_requirements and convert into ruby objects
+    # Read the JSON string in plagiarism checks and convert into ruby objects
     if self['plagiarism_checks']
       begin
         # Parse into ruby objects
@@ -329,8 +329,25 @@ class TaskDefinition < ApplicationRecord
     self['upload_requirements'] = '[]' if self['upload_requirements'].nil?
   end
 
+  def number_of_uploaded_files
+    upload_requirements.length
+  end
+
   def number_of_documents
     upload_requirements.map{|req| req['type'] == 'document' ? 1 : 0}.inject(:+) || 0
+  end
+
+  # Returns true if the uploaded file is a document
+  def is_document?(idx)
+    return false unless idx >= 0 && idx < upload_requirements.length
+    upload_requirements[idx]['type'] == 'document'
+  end
+
+  # Return the type for the upload at the given index
+  # @param idx the index of the upload requirement
+  def type_for_upload(idx)
+    return nil unless idx >= 0 && idx < upload_requirements.length
+    upload_requirements[idx]['type']
   end
 
   def has_plagiarism?
