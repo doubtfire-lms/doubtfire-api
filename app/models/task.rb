@@ -1267,6 +1267,43 @@ class Task < ApplicationRecord
     logger.info "Submission accepted! Status for task #{id} is now #{trigger}"
   end
 
+  # The name that should be used for the uploaded file (based on index of upload requirements)
+  # @param idx The index of the upload requirement to get the filename for
+  def filename_for_upload(idx)
+    return nil unless idx >= 0 && idx < upload_requirements.length
+    "#{upload_requirements[idx]['name']}#{extension_for_upload(idx)}"
+  end
+
+  def extension_for_upload(idx)
+    filename = filename_in_zip(idx)
+    return nil if filename.nil?
+
+    dot_idx = filename.index('.')
+    return '' if dot_idx.nil?
+    filename[dot_idx..-1]
+  end
+
+  def filename_in_zip(idx)
+    path = FileHelper.zip_file_path_for_done_task(self)
+    return nil unless File.exists? path
+    return nil unless idx >= 0 && idx < upload_requirements.length
+
+    type = upload_requirements[idx]['type']
+
+    required_filename_start = "#{id}/#{idx.to_s.rjust(3, '0')}-#{type}"
+
+    Zip::File.open(path) do |zip_file|
+      zip_file.each do |entry|
+        next unless entry.name.starts_with?(required_filename_start)
+        return entry.name.remove("#{id}/")
+      end
+    end
+
+    nil
+  end
+
+  delegate :number_of_uploaded_files, :number_of_documents, :is_document?, to: :task_definition
+
   def read_file_from_done(idx)
     path = FileHelper.zip_file_path_for_done_task(self)
     return nil unless File.exists? path
@@ -1278,8 +1315,6 @@ class Task < ApplicationRecord
 
     Zip::File.open(path) do |zip_file|
       zip_file.each do |entry|
-        puts entry
-        puts required_filename_start
         next unless entry.name.starts_with?(required_filename_start)
 
         result = ''

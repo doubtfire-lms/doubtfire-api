@@ -123,7 +123,13 @@ class TurnItIn
   end
 
   def self.upload_task_to_submission(task)
+    api_instance = TCAClient::SubmissionApi.new
 
+    for idx in 0..task.number_of_uploaded_files
+      if task.is_document?(idx)
+        result = api_instance.upload_submitted_file(@@x_turnitin_integration_name, @@x_turnitin_integration_version, task.tii_submission_id, "binary/octet-stream", "inline; filename;'#{task.filename_in_zip(idx)}'", task.read_file_from_done(idx))
+      end
+    end
   end
 
   def self.create_submission_for(task, submitter)
