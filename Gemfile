@@ -14,7 +14,6 @@ ruby ruby_versions[(ENV['RAILS_ENV'] || 'development').to_sym]
 gem 'rails', '~>7.0.0'
 
 group :development, :test do
-  gem 'solargraph', require: false
   gem 'better_errors'
   gem 'byebug'
   gem 'database_cleaner'
@@ -24,6 +23,7 @@ group :development, :test do
   gem 'rubocop-faker'
   gem 'rubocop-rails'
   gem 'simplecov', require: false
+  gem 'solargraph', require: false
   gem "sprockets-rails"
 end
 
