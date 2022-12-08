@@ -1,6 +1,6 @@
 SHELL=/bin/bash
 BASH_ENV=/container.env
-PATH=/tmp/texlive/bin/x86_64-linux:/usr/local/bundle/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bundle/bin
+PATH=/tmp/texlive/bin/x86_64-linux:/tmp/texlive/bin/aarch64-linux:/usr/local/bundle/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bundle/bin
 
 10,15,20,25,30,35,40,45,50,55 * * * * /doubtfire/lib/shell/generate_pdfs.sh
 0 5 * * 1,3,5 /doubtfire/lib/shell/check_plagiarism.sh

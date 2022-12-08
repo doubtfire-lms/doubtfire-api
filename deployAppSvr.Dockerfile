@@ -34,7 +34,7 @@ COPY ./Gemfile ./Gemfile.lock /doubtfire/
 RUN bundle install
 
 # Setup path
-ENV PATH /tmp/texlive/bin/x86_64-linux:$PATH
+ENV PATH /tmp/texlive/bin/x86_64-linux:/tmp/texlive/bin/aarch64-linux:$PATH
 
 # Copy doubtfire-api source
 COPY . /doubtfire/
