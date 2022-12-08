@@ -14,6 +14,7 @@ ruby ruby_versions[(ENV['RAILS_ENV'] || 'development').to_sym]
 gem 'rails', '~>7.0.0'
 
 group :development, :test do
+  gem 'solargraph', require: false
   gem 'better_errors'
   gem 'byebug'
   gem 'database_cleaner'
