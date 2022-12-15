@@ -194,6 +194,13 @@ ActiveRecord::Schema[7.0].define(version: 2023_06_03_064217) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "stages", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
+    t.string "title", null: false
+    t.integer "order", null: false
+    t.bigint "task_definition_id"
+    t.index ["task_definition_id"], name: "index_stages_on_task_definition_id"
+  end
+  
   create_table "task_comments", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
     t.bigint "task_id", null: false
     t.bigint "user_id", null: false
