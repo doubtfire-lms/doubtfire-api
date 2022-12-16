@@ -158,13 +158,15 @@ module Doubtfire
       Rails.root.join('app') <<
       Rails.root.join('app', 'models', 'comments') <<
       Rails.root.join('app', 'models', 'turn_it_in') <<
-      Rails.root.join('app', 'models', 'similarity')
+      Rails.root.join('app', 'models', 'similarity') <<
+      Rails.root.join('app', 'models', 'feedback')
 
     config.eager_load_paths <<
       Rails.root.join('app') <<
       Rails.root.join('app', 'models', 'comments') <<
       Rails.root.join('app', 'models', 'turn_it_in') <<
-      Rails.root.join('app', 'models', 'similarity')
+      Rails.root.join('app', 'models', 'similarity')  <<
+      Rails.root.join('app', 'models', 'feedback')
 
     # CORS config
     config.middleware.insert_before Warden::Manager, Rack::Cors do
