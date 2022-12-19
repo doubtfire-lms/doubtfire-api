@@ -323,7 +323,6 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_20_224824) do
     t.integer "contribution_pts", default: 3
     t.integer "quality_pts", default: -1
     t.integer "extensions", default: 0, null: false
-    t.string "tii_submission_id"
     t.index ["group_submission_id"], name: "index_tasks_on_group_submission_id"
     t.index ["project_id", "task_definition_id"], name: "tasks_uniq_proj_task_def", unique: true
     t.index ["project_id"], name: "index_tasks_on_project_id"
@@ -338,6 +337,25 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_20_224824) do
     t.integer "year", null: false
     t.datetime "active_until", null: false
     t.index ["period", "year"], name: "index_teaching_periods_on_period_and_year", unique: true
+  end
+
+  create_table "tii_submissions", charset: "utf8mb4", force: :cascade do |t|
+    t.bigint "task_id", null: false
+    t.bigint "submitted_by_user_id", null: false
+    t.string "filename", null: false
+    t.integer "idx"
+    t.string "submission_id"
+    t.string "similarity_pdf_id"
+    t.datetime "submitted_at"
+    t.datetime "similarity_request_at"
+    t.datetime "next_process_update_at"
+    t.integer "retries", default: 0, null: false
+    t.integer "status", default: 0, null: false
+    t.string "error_message"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["submitted_by_user_id"], name: "index_tii_submissions_on_submitted_by_user_id"
+    t.index ["task_id"], name: "index_tii_submissions_on_task_id"
   end
 
   create_table "tutorial_enrolments", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
@@ -452,6 +470,8 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_20_224824) do
     t.string "login_id"
     t.string "student_id"
     t.string "tii_eula_version"
+    t.datetime "tii_eula_date"
+    t.boolean "tii_eula_version_confirmed", default: false, null: false
     t.index ["login_id"], name: "index_users_on_login_id", unique: true
     t.index ["role_id"], name: "index_users_on_role_id"
   end
