@@ -108,6 +108,9 @@ class Task < ApplicationRecord
   has_many :task_engagements, dependent: :destroy
   has_many :task_submissions, dependent: :destroy
   has_many :overseer_assessments, dependent: :destroy
+  has_many :tii_submissions, dependent: :destroy
+
+  serialize :tii_file_submissions, Hash
 
   delegate :unit, to: :project
   delegate :student, to: :project
@@ -232,6 +235,10 @@ class Task < ApplicationRecord
     raw_extension_date.to_date < task_definition.due_date.to_date
   end
 
+  def tutor
+    project.tutor_for(task_definition)
+  end
+
   # Applying for an extension will create an extension comment
   def apply_for_extension(user, text, weeks)
     extension = ExtensionComment.create
@@ -241,7 +248,7 @@ class Task < ApplicationRecord
     extension.content_type = :extension
     extension.comment = text
     if weeks <= weeks_can_extend
-      extension.recipient = project.tutor_for(task_definition)
+      extension.recipient = tutor
     else
       extension.recipient = unit.main_convenor_user
     end

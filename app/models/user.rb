@@ -475,4 +475,8 @@ class User < ApplicationRecord
       errors:  errors
     }
   end
+
+  def has_accepted_tii_eula?
+    tii_eula_version_confirmed && tii_eula_version == TurnItIn.eula_version
+  end
 end
