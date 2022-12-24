@@ -80,8 +80,8 @@ class TiiSubmission < ApplicationRecord
     # Check to ensure it is a new upload
     # Create a new Submission
     subm = TCAClient::SubmissionApi.new.create_submission(
-      @x_turnitin_integration_name,
-      @x_turnitin_integration_version,
+      TurnItIn.x_turnitin_integration_name,
+      TurnItIn.x_turnitin_integration_version,
       tii_submission_data
     )
 
@@ -180,7 +180,7 @@ class TiiSubmission < ApplicationRecord
     api_instance = TCAClient::SubmissionApi.new
 
     # Get Submission Details
-    api_instance.get_submiddion_details(@x_turnitin_integration_name, @x_turnitin_integration_version, submission_id)
+    api_instance.get_submiddion_details(TurnItIn.x_turnitin_integration_name, TurnItIn.x_turnitin_integration_version, submission_id)
   rescue TCAClient::ApiError => e
     Doubtfire::Application.config.logger.error "Error when calling SubmissionApi->get_submission_details: #{e}"
 
@@ -233,8 +233,8 @@ class TiiSubmission < ApplicationRecord
 
     # Request Similarity Report
     TCAClient::SimilarityApi.new.request_similarity_report(
-      @x_turnitin_integration_name,
-      @x_turnitin_integration_version,
+      TurnItIn.x_turnitin_integration_name,
+      TurnItIn.x_turnitin_integration_version,
       submission_id,
       data
     )
@@ -261,8 +261,8 @@ class TiiSubmission < ApplicationRecord
 
     # Get Similarity Report Status
     TCAClient::SimilarityApi.new.get_similarity_report_results(
-      @x_turnitin_integration_name,
-      @x_turnitin_integration_version,
+      TurnItIn.x_turnitin_integration_name,
+      TurnItIn.x_turnitin_integration_version,
       submission_id
     )
   rescue TCAClient::ApiError => e
@@ -300,8 +300,8 @@ class TiiSubmission < ApplicationRecord
 
     # Get Similarity Report Status
     result = TCAClient::SimilarityApi.new.request_similarity_report_pdf(
-      @x_turnitin_integration_name,
-      @x_turnitin_integration_version,
+      TurnItIn.x_turnitin_integration_name,
+      TurnItIn.x_turnitin_integration_version,
       submission_id,
       generate_similarity_pdf
     )
@@ -381,8 +381,8 @@ class TiiSubmission < ApplicationRecord
 
     # GET download pdf
     result = TCAClient::SimilarityApi.new.download_similarity_report_pdf(
-      @x_turnitin_integration_name,
-      @x_turnitin_integration_version,
+      TurnItIn.x_turnitin_integration_name,
+      TurnItIn.x_turnitin_integration_version,
       submission_id,
       pdf_id
     )
@@ -419,8 +419,8 @@ class TiiSubmission < ApplicationRecord
 
     # Get Similarity Report Status
     result = TCAClient::SimilarityApi.new.get_similarity_report_pdf_status(
-      @x_turnitin_integration_name,
-      @x_turnitin_integration_version,
+      TurnItIn.x_turnitin_integration_name,
+      TurnItIn.x_turnitin_integration_version,
       submission_id,
       pdf_id
     )
@@ -445,8 +445,8 @@ class TiiSubmission < ApplicationRecord
     save
 
     TCAClient::SubmissionApi.new.delete_submission(
-      @x_turnitin_integration_name,
-      @x_turnitin_integration_version,
+      TurnItIn.x_turnitin_integration_name,
+      TurnItIn.x_turnitin_integration_version,
       submission_id
     )
 
