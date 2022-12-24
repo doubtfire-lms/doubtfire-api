@@ -20,13 +20,13 @@ class TurnItIn
     eula = Rails.cache.fetch('tii.eula_version', expires_in: 24.hours) do
       @instance.fetch_eula_version
     end
-    @instance.eula&.version
+    eula&.version
   end
 
   # Return the html for the eula
   def self.eula_html
     Rails.cache.fetch("tii.eula_html.#{TurnItIn.eula_version}", expires_in: 365.days) do
-      fetch_eula_html
+      @instance.fetch_eula_html
     end
   end
 
@@ -51,8 +51,8 @@ class TurnItIn
 
     # Accepts a particular EULA version on behalf of an external user
     result = TCAClient::EULAApi.new.eula_version_id_accept_post(
-      @x_turnitin_integration_name,
-      @x_turnitin_integration_version,
+      TurnItIn.x_turnitin_integration_name,
+      TurnItIn.x_turnitin_integration_version,
       body.version,
       body
     )
@@ -87,8 +87,8 @@ class TurnItIn
 
     # Returns a URL to access Cloud Viewer
     result = TCAClient::SimilarityApi.new.get_similarity_report_url(
-      @x_turnitin_integration_name,
-      @x_turnitin_integration_version,
+      TurnItIn.x_turnitin_integration_name,
+      TurnItIn.x_turnitin_integration_version,
       task.tii_submission_id,
       data
     )
@@ -99,14 +99,12 @@ class TurnItIn
   end
 
 
-
-
-  private
+  @eula = nil
 
   # Connect to tii to get the latest eula details.
   def fetch_eula_version
     api_instance = TCAClient::EULAApi.new
-    api_instance.eula_version_id_get(@x_turnitin_integration_name, @x_turnitin_integration_version, 'latest')
+    api_instance.eula_version_id_get(TurnItIn.x_turnitin_integration_name, TurnItIn.x_turnitin_integration_version, 'latest')
   rescue TCAClient::ApiError => e
     Doubtfire::Application.config.logger.error "Failed to fetch TII EULA version #{e}"
     nil
@@ -115,7 +113,7 @@ class TurnItIn
   # Connect to tii to get the eula html
   def fetch_eula_html
     api_instance = TCAClient::EULAApi.new
-    api_instance.eula_version_id_view_get(@x_turnitin_integration_name, @x_turnitin_integration_version,
+    api_instance.eula_version_id_view_get(TurnItIn.x_turnitin_integration_name, TurnItIn.x_turnitin_integration_version,
                                           TurnItIn.eula_version)
   rescue TCAClient::ApiError => e
     Doubtfire::Application.config.logger.error "Failed to fetch TII EULA version #{e}"
