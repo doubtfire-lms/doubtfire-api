@@ -54,9 +54,7 @@ class UnitRole < ApplicationRecord
       :delete
     ]
     # What can nil users do with unit roles?
-    nil_role_permissions = [
-
-    ]
+    nil_role_permissions = []
 
     # Return permissions hash
     {
@@ -110,16 +108,16 @@ class UnitRole < ApplicationRecord
   # Add data to the summary stats about this staff member
   #
   def populate_summary_stats(summary_stats)
-
     data = {}
 
     data[:staff] = user
     data[:unit_role] = self
 
-    data[:engagements] = task_engagements.
-      where(
-        "task_engagements.engagement_time >= :start AND task_engagements.engagement_time < :end",
-        start: summary_stats[:week_start], end: summary_stats[:week_end])
+    data[:engagements] = task_engagements
+                         .where(
+                           "task_engagements.engagement_time >= :start AND task_engagements.engagement_time < :end",
+                           start: summary_stats[:week_start], end: summary_stats[:week_end]
+                         )
 
     data[:total_engagements_count] = task_engagements.count
     data[:weekly_engagements_count] = data[:engagements].count

@@ -75,8 +75,8 @@ module Doubtfire
       # Check we have all values
       # always need:
       if config.saml[:assertion_consumer_service_url].nil? ||
-      config.saml[:entity_id].nil? ||
-      config.saml[:idp_sso_target_url].nil?
+         config.saml[:entity_id].nil? ||
+         config.saml[:idp_sso_target_url].nil?
         raise "Invalid values specified to saml, check the following environment variables: \n"\
         "  key                          => variable set?\n"\
         "  DF_SAML_CONSUMER_SERVICE_URL            => #{!ENV['DF_SAML_CONSUMER_SERVICE_URL'].nil?}\n"\
@@ -88,8 +88,8 @@ module Doubtfire
       # If there's no XML url, we need the cert
       if config.saml[:SAML_metadata_url].nil? &&
          config.saml[:idp_sso_cert].nil?
-       raise "Missing IDP certificate for SAML config: \n"
-     end
+        raise "Missing IDP certificate for SAML config: \n"
+      end
     end
 
     # ==> AAF authentication

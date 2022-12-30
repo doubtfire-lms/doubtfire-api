@@ -4,7 +4,7 @@ module Entities
     expose :campus_id
     expose :student, using: Entities::Minimal::MinimalUserEntity, unless: :for_student
     expose :user_id, if: :for_student
-    expose :unit, if:  lambda { |status, options| options[:for_student] || options[:summary_only]}, using: Entities::Minimal::MinimalUnitEntity
+    expose :unit, if: ->(status, options) { options[:for_student] || options[:summary_only] }, using: Entities::Minimal::MinimalUnitEntity
     expose :unit_id, if: :for_student, unless: :summary_only
 
     expose :enrolled, unless: :for_student
@@ -18,7 +18,7 @@ module Entities
 
     expose :task_stats, as: :stats, unless: :for_student
 
-    expose :tasks, using: TaskEntity, unless: :summary_only do | project, options |
+    expose :tasks, using: TaskEntity, unless: :summary_only do |project, options|
       project.task_details_for_shallow_serializer(options[:user])
     end
 

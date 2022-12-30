@@ -80,10 +80,10 @@ class UnitRolesApi < Grape::API
     end
 
     unit_role_parameters = ActionController::Parameters.new(params)
-                                                        .require(:unit_role)
-                                                        .permit(
-                                                          :role_id
-                                                        )
+                                                       .require(:unit_role)
+                                                       .permit(
+                                                         :role_id
+                                                       )
 
     if unit_role_parameters[:role_id] == Role.tutor.id && unit_role.role == Role.convenor && unit_role.unit.convenors.count == 1
       error!({ error: 'There must be at least one convenor for the unit' }, 403)

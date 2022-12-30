@@ -3,8 +3,9 @@ FROM ruby:3.1-bullseye
 # DEBIAN_FRONTEND=noninteractive is required to install tzdata in non interactive way
 ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update && apt-get install -y \
+  bc \
   ffmpeg \
-  ghostscript \
+  ghostscript qpdf \
   imagemagick \
   libmagic-dev \
   libmagickwand-dev \
@@ -19,7 +20,7 @@ WORKDIR /doubtfire
 
 COPY ./.ci-setup/ /doubtfire/.ci-setup/
 RUN ./.ci-setup/texlive-install.sh
-ENV PATH /tmp/texlive/bin/x86_64-linux:$PATH
+ENV PATH /tmp/texlive/bin/x86_64-linux:/tmp/texlive/bin/aarch64-linux:$PATH
 
 RUN gem install bundler -v '~> 2.3.18'
 

@@ -190,6 +190,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_20_224824) do
     t.bigint "campus_id"
     t.integer "submitted_grade"
     t.boolean "uses_draft_learning_summary", default: false, null: false
+    t.boolean "portfolio_auto_generated", default: false, null: false
     t.index ["campus_id"], name: "index_projects_on_campus_id"
     t.index ["enrolled"], name: "index_projects_on_enrolled"
     t.index ["unit_id"], name: "index_projects_on_unit_id"
@@ -437,6 +438,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_20_224824) do
     t.boolean "assessment_enabled", default: true
     t.bigint "overseer_image_id"
     t.string "tii_group_context_id"
+    t.datetime "portfolio_auto_generation_date"
     t.index ["draft_task_definition_id"], name: "index_units_on_draft_task_definition_id"
     t.index ["main_convenor_id"], name: "index_units_on_main_convenor_id"
     t.index ["overseer_image_id"], name: "index_units_on_overseer_image_id"

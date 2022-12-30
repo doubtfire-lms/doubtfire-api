@@ -18,9 +18,9 @@ module FileHelper
       accept = ['image/png', 'image/gif', 'image/bmp', 'image/tiff', 'image/jpeg', 'image/x-ms-bmp']
     when 'code'
       accept = ['text/x-pascal', 'text/x-c', 'text/x-c++', 'text/plain', 'text/', 'application/javascript', 'text/html',
-        'text/css', 'text/x-ruby', 'text/coffeescript', 'text/x-scss', 'application/json', 'text/xml', 'application/xml',
-        'text/x-yaml', 'application/xml', 'text/x-typescript','text/x-vhdl','text/x-asm','text/x-jack','application/x-httpd-php',
-        'application/tst','text/x-cmp','text/x-vm','application/x-sh','application/x-bat','application/dat']
+                'text/css', 'text/x-ruby', 'text/coffeescript', 'text/x-scss', 'application/json', 'text/xml', 'application/xml',
+                'text/x-yaml', 'application/xml', 'text/x-typescript', 'text/x-vhdl', 'text/x-asm', 'text/x-jack', 'application/x-httpd-php',
+                'application/tst', 'text/x-cmp', 'text/x-vm', 'application/x-sh', 'application/x-bat', 'application/dat']
     when 'document'
       accept = [ # -- one day"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         # --"application/msword",
@@ -101,6 +101,7 @@ module FileHelper
 
     group = group_submission.group
     return nil unless group
+
     unit = group.unit
 
     if type == :pdf
@@ -112,6 +113,7 @@ module FileHelper
     else # new and in_process -- just have task id -- will link to group when done etc.
       # Add task id to dst if we want task
       raise 'Unable to locate file!' if task.nil?
+
       dst << "#{type}/#{task.id}/"
     end
 
@@ -199,21 +201,21 @@ module FileHelper
   end
 
   def comment_attachment_path(task_comment, attachment_extension)
-    "#{File.join( student_work_dir(:comment, task_comment.task), "#{task_comment.id.to_s}#{attachment_extension}")}"
+    "#{File.join(student_work_dir(:comment, task_comment.task), "#{task_comment.id.to_s}#{attachment_extension}")}"
   end
 
   def comment_prompt_path(task_comment, attachment_extension, count)
-    "#{File.join( student_work_dir(:discussion, task_comment.task), "#{task_comment.id.to_s}_#{count.to_s}#{attachment_extension}")}"
+    "#{File.join(student_work_dir(:discussion, task_comment.task), "#{task_comment.id.to_s}_#{count.to_s}#{attachment_extension}")}"
   end
 
   def comment_reply_prompt_path(discussion_comment, attachment_extension)
-    "#{File.join( student_work_dir(:discussion, discussion_comment.task), "#{discussion_comment.id.to_s}_reply#{attachment_extension}")}"
+    "#{File.join(student_work_dir(:discussion, discussion_comment.task), "#{discussion_comment.id.to_s}_reply#{attachment_extension}")}"
   end
 
   def compress_image_to_dest(source, dest, delete_frames = false)
     exec = "convert -quiet \
             \"#{source}\" \
-            #{ delete_frames ? '-delete 1--1' : ''} -strip -density 72 -quality 85% -resize 2048x2048\\> -resize 48x48\\< \
+            #{delete_frames ? '-delete 1--1' : ''} -strip -density 72 -quality 85% -resize 2048x2048\\> -resize 48x48\\< \
             \"#{dest}\" >>/dev/null 2>>/dev/null"
 
     did_compress = system_try_within 40, 'compressing image using convert', exec
@@ -221,9 +223,14 @@ module FileHelper
 
   def compress_pdf(path, max_size = 2_500_000)
     # trusting path... as it needs to be replaced
-    logger.debug "Compressing PDF #{path} (#{File.size?(path)} bytes) using GhostScript"
     # only compress things over max_size -- defaults to 2.5mb
-    return if File.size?(path) < max_size
+    current_filesize = File.size?(path)
+    if current_filesize < max_size
+      logger.debug "PDF #{path} (#{current_filesize} bytes) is smaller than #{max_size}, skipping compression."
+      return
+    else
+      logger.debug "Compressing PDF #{path} (#{current_filesize} bytes) using GhostScript"
+    end
 
     begin
       tmp_file = File.join(Dir.tmpdir, 'doubtfire', 'compress', "#{File.dirname(path).split(File::Separator).last}-file.pdf")
@@ -259,12 +266,19 @@ module FileHelper
       end
 
       FileUtils.mv tmp_file, path if did_compress
-
     rescue => e
       logger.error "Failed to compress PDF #{path}. Rescued with error:\n\t#{e.message}"
     end
 
     FileUtils.rm tmp_file if File.exist? tmp_file
+  end
+
+  def qpdf(path)
+    exec = "qpdf \"#{path}\" --replace-input >>/dev/null 2>>/dev/null"
+    logger.debug "Running QPDF on: #{path}"
+    system_try_within 30, "Failed running QPDF on #{path}", exec
+  rescue => e
+    logger.error "Failed to run QPDF on #{path}. Rescued with error:\n\t#{e.message}"
   end
 
   #
@@ -302,6 +316,7 @@ module FileHelper
   def pdf_valid?(filename)
     # Scan last 1024 bytes for the EOF mark
     return false unless File.exist? filename
+
     File.open(filename) do |f|
       f.seek -4096, IO::SEEK_END unless f.size <= 4096
       f.read.include? '%%EOF'
@@ -452,7 +467,7 @@ module FileHelper
   #
   def ensure_utf8_code(output_filename, force_ascii)
     # puts "Converting #{output_filename} to utf8"
-    tmp_filename = Dir::Tmpname.create( [ "new", ".code" ] ) { }
+    tmp_filename = Dir::Tmpname.create(["new", ".code"]) {}
 
     # Convert to utf8 from read encoding
     if force_ascii
@@ -472,7 +487,7 @@ module FileHelper
   end
 
   def sorted_timestamp_entries_in_dir(path)
-    Dir.entries(path).reject{|entry| entry !~ /\d+/}.sort_by { |x| File.basename(x) }.reverse
+    Dir.entries(path).reject { |entry| entry !~ /\d+/ }.sort_by { |x| File.basename(x) }.reverse
   end
 
   def latest_submission_timestamp_entry_in_dir(path)
@@ -506,6 +521,7 @@ module FileHelper
   module_function :comment_reply_prompt_path
   module_function :compress_image_to_dest
   module_function :compress_pdf
+  module_function :qpdf
   module_function :move_files
   module_function :pdf_valid?
   module_function :copy_pdf

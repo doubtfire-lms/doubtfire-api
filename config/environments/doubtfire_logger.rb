@@ -27,5 +27,4 @@ class DoubtfireLogger
   def self.logger
     @@logger
   end
-
 end
