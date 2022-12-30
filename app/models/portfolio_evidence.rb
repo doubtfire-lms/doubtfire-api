@@ -27,7 +27,7 @@ class PortfolioEvidence
     end
 
     pid_folder = File.join(student_work_dir(:in_process), "pid_#{Process.pid}")
-    
+
     # Move everything in "new" to "pid" folder but retain the old "new" folder
     FileHelper.move_files(student_work_dir(:new), pid_folder, true)
     pid_folder
@@ -43,9 +43,7 @@ class PortfolioEvidence
 
     # For each folder in new (i.e., queued folders to process) that matches appropriate name
     new_root_dir = Dir.entries(my_source).select do |f|
-      # rubocop:disable Style/NumericPredicate
       (f =~ /^\d+$/) == 0
-      # rubocop:enable Style/NumericPredicate
     end
     new_root_dir.each do |folder_id|
       begin

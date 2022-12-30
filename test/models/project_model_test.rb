@@ -100,4 +100,20 @@ class ProjectModelTest < ActiveSupport::TestCase
     assert_equal project_first.main_convenor_user, tutor
   end
 
+  def test_matching_tasks
+    unit = FactoryBot.create(:unit, student_count:2)
+    campus = Campus.first
+
+    u1 = unit.students[0]
+    u2 = unit.students[1]
+
+    p1 = unit.enrol_student u1, campus
+    p2 = unit.enrol_student u2, campus
+
+    t2 = p2.tasks.first
+    t1 = p1.matching_task t2
+
+    assert_equal t1.task_definition, t2.task_definition
+  end
+
 end
