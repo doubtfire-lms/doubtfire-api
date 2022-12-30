@@ -20,9 +20,8 @@ class PortfolioEvidence
 
   # Move all tasks to a folder with this process's id in "in_process"
   def self.move_to_pid_folder
-
     # Report old running processes...
-    Dir.entries(student_work_dir(:in_process)).select {|entry| entry.start_with?("pid_")}.each do |entry|
+    Dir.entries(student_work_dir(:in_process)).select { |entry| entry.start_with?("pid_") }.each do |entry|
       puts "Existing process still running or not cleaned up - #{entry}"
     end
 

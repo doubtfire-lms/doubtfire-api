@@ -1,3 +1,6 @@
+require 'simplecov'
+SimpleCov.start 'rails'
+
 ENV["RAILS_ENV"] ||= "test"
 require_relative "../config/environment"
 require "rails/test_help"
@@ -5,8 +8,6 @@ require "rails/test_help"
 # Consider setting MT_NO_EXPECTATIONS to not add expectations to Object.
 # ENV["MT_NO_EXPECTATIONS"] = true
 
-require 'simplecov'
-SimpleCov.start 'rails'
 # Setup RAILS_ENV as test and expand config for test environment
 
 raise 'You cannot run this in production' if Rails.env.production?

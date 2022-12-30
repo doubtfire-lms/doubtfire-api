@@ -20,7 +20,7 @@ class TutorialEnrolmentsApi < Grape::API
     error!({ error: "No tutorial with abbreviation #{params[:tutorial_abbr]} exists for the unit" }, 403) unless tutorial.present?
 
     # If the tutorial has a capacity, and we are at that capacity, and the user does not have permissions to exceed capacity...
-    if tutorial.capacity > 0 && tutorial.tutorial_enrolments.count >= tutorial.capacity && ! authorise?(current_user, unit, :exceed_capacity)
+    if tutorial.capacity > 0 && tutorial.tutorial_enrolments.count >= tutorial.capacity && !authorise?(current_user, unit, :exceed_capacity)
       error!({ error: "Tutorial #{params[:tutorial_abbr]} is full and cannot accept further student enrolments" }, 403)
     end
 

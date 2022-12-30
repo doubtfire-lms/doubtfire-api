@@ -1,5 +1,4 @@
 class TaskStatusComment < TaskComment
-
   belongs_to :task_status, optional: false
 
   before_create do
@@ -17,5 +16,4 @@ class TaskStatusComment < TaskComment
     json[:status] = task_status.status_key
     json
   end
-
 end
