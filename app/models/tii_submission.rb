@@ -2,7 +2,7 @@ class TiiSubmission < ApplicationRecord
   belongs_to :submitted_by_user, class_name: 'User'
   belongs_to :task
 
-  def submitted_by= user
+  def submitted_by=(user)
     if user.has_accepted_tii_eula?
       self.submitted_by_user = user
     elsif task.tutor.has_accepted_tii_eula?
@@ -38,7 +38,7 @@ class TiiSubmission < ApplicationRecord
   # case of the need to retry actions. This will ensure submissions progress
   # through turn it in when web hooks fails.
   def continue_process
-    return if has_error? || [:deleted, :similarity_pdf_downloaded].include?(status)
+    return if error? || [:deleted, :similarity_pdf_downloaded].include?(status)
 
     case status
     when :created
@@ -52,7 +52,6 @@ class TiiSubmission < ApplicationRecord
       update_from_submission_status(fetch_tii_submission_status)
     when :submission_complete
       request_similarity_report
-      return
     when :similarity_report_requested
       # check if similarity report is ready - poll
       update_from_similarity_status(fetch_tii_similarity_status)
@@ -64,9 +63,7 @@ class TiiSubmission < ApplicationRecord
       download_similarity_report_pdf
     when :to_delete
       delete_submission
-      return
-    when 'deleted'
-      return
+      # do nothing when 'deleted'
     end
   end
 
@@ -90,7 +87,7 @@ class TiiSubmission < ApplicationRecord
     status = :has_id
     save
 
-    if not submitted_by_user.tii_eula_version_confirmed
+    unless submitted_by_user.tii_eula_version_confirmed
       submitted_by_user.update(tii_eula_version_confirmed: true)
     end
 
@@ -123,7 +120,7 @@ class TiiSubmission < ApplicationRecord
     # Set submitter if not the same as the task owner
     result.submitter = submitted_by_user.username
 
-    if not submitted_by_user.tii_eula_version_confirmed
+    unless submitted_by_user.tii_eula_version_confirmed
       result.eula = TCAClient::EulaAcceptRequest.new(
         user_id: user.username,
         language: 'en-us',
@@ -143,7 +140,7 @@ class TiiSubmission < ApplicationRecord
   end
 
   # Upload all of the document files to the turn it in submission for a task.
-  def upload_file_to_tii()
+  def upload_file_to_tii
     # Ensure we have a submission id and have not uploaded already
     return false unless submission_id.present? && (status == :has_id || status == :created)
     return false if error_message.present?
@@ -165,8 +162,8 @@ class TiiSubmission < ApplicationRecord
     Doubtfire::Application.config.logger.error "Failed to upload submission to turn it in #{id} - #{e}"
 
     handle_error e, [
-      {code: 413, message: 'Invalid submission file size, Submission file must be <= to 100 MB'},
-      { code: 422, message: 'Invalid submission file size, Submission file must be > than 0 MB'},
+      { code: 413, message: 'Invalid submission file size, Submission file must be <= to 100 MB' },
+      { code: 422, message: 'Invalid submission file size, Submission file must be > than 0 MB' },
       { code: 409, message: 'Submission already exists' }
     ]
 
@@ -195,16 +192,16 @@ class TiiSubmission < ApplicationRecord
   # @param [TCAClient::Submission] response - the submission details
   def update_from_submission_status(response)
     case response.status
-    when 'CREATED': #	Submission has been created but no file has been uploaded
+    when 'CREATED' #	Submission has been created but no file has been uploaded
       upload_file_to_tii
-    when 'PROCESSING': # File contents have been uploaded and the submission is being processed
+    when 'PROCESSING' # File contents have been uploaded and the submission is being processed
       retry_request
-      return # do nothing... wait for the webhook
-    when 'COMPLETE': # Submission processing is complete
+      # return # do nothing... wait for the webhook
+    when 'COMPLETE' # Submission processing is complete
       status = :submission_complete
       save
       request_similarity_report
-    when 'ERROR': # An error occurred during submission processing; see error_code for details
+    when 'ERROR' # An error occurred during submission processing; see error_code for details
       error_message = response.error_code
       Doubtfire::Application.config.logger.error "Error with tii submission: #{id} #{error_message}"
       save
@@ -220,12 +217,12 @@ class TiiSubmission < ApplicationRecord
     data = TCAClient::SimilarityPutRequest.new(
       generation_settings:
         TCAClient::SimilarityGenerationSettings.new(
-          search_repositories: [
-            'INTERNET',
-            'SUBMITTED_WORK',
-            'PUBLICATION',
-            'CROSSREF',
-            'CROSSREF_POSTED_CONTENT'
+          search_repositories: %w[
+            INTERNET
+            SUBMITTED_WORK
+            PUBLICATION
+            CROSSREF
+            CROSSREF_POSTED_CONTENT
           ],
           auto_exclude_self_matching_scope: 'GROUP_CONTEXT'
         )
@@ -279,9 +276,9 @@ class TiiSubmission < ApplicationRecord
   # #param [TCAClient::SimilarityMetadata] response - the similarity report status
   def update_from_similarity_status(response)
     case response.status
-    when 'PROCESSING': # Similarity report is being generated
-      return
-    when 'COMPLETE': # Similarity report is complete
+    # when 'PROCESSING' # Similarity report is being generated
+    #   return
+    when 'COMPLETE' # Similarity report is complete
       status = :similarity_report_complete
       save
       request_similarity_report_pdf
@@ -291,7 +288,7 @@ class TiiSubmission < ApplicationRecord
   # Get the pdf id for a similarity report
   #
   # @return [String] the pdf id of the similarity report
-  def request_similarity_report_pdf()
+  def request_similarity_report_pdf
     return false unless status == :similarity_report_complete
 
     generate_similarity_pdf = TCAClient::GenerateSimilarityPDF.new(
@@ -310,7 +307,7 @@ class TiiSubmission < ApplicationRecord
     similarity_pdf_id = result.id
     save
   rescue TCAClient::ApiError => e
-    Doubtfire::Application.config.logger.error  "Error when calling SimilarityApi->get_similarity_report_status: #{id} #{e}"
+    Doubtfire::Application.config.logger.error "Error when calling SimilarityApi->get_similarity_report_status: #{id} #{e}"
 
     handle_error e, [
       { code: 404, message: 'Submission not found in creating similarity report' }
@@ -320,7 +317,7 @@ class TiiSubmission < ApplicationRecord
   end
 
   def retry_request
-    retries++
+    retries += 1
     if retries > 10
       error_message = "excessive retries"
       Doubtfire::Application.config.logger.error "Error with tii submission: #{id} excessive retries"
@@ -331,47 +328,46 @@ class TiiSubmission < ApplicationRecord
     save
   end
 
-  def has_error?
+  def error?
     error_message.present?
   end
 
-  def handle_error(e, codes)
-    case e.error_code
-    when 400:
+  def handle_error(error, codes)
+    case error.error_code
+    when 400
       error_message = 'Request is malformed or missing required data'
       save
       return
-    when 403:
+    when 403
       error_message = 'Not Properly Authenticated'
       save
       return
-    when 429:
+    when 429
       Doubtfire::Application.config.logger.error "Request has been rejected due to rate limiting - tii_submission #{id}"
       return
     end
 
-    for check in codes do
-      if e.error_code == check[:code]
-        error_message = check[:message]
-        save
-        return
-      end
+    codes.each do |check|
+      next unless error.error_code == check[:code]
+
+      error_message = check[:message]
+      save
+      break
     end
   end
 
   # Update the status based on the response from the pdf status api or webhook
   #
-  # @param [TCAClient::SimilarityReportStatus] response - the similarity report status
+  # @param [TCAClient::PdfStatusResponse] response - the similarity report status
   def update_from_pdf_report_status(response)
     case response.status
-    when 'FAILED': # The report failed to be generated
+    when 'FAILED' # The report failed to be generated
       error_message = 'similarity PDF failed to be created'
-    when 'SUCCESS': # Similarity report is complete
+    when 'SUCCESS' # Similarity report is complete
       status = :similarity_pdf_requested
       save
       download_similarity_report_pdf
-    else # pending or unknown...
-
+      # else # pending or unknown...
     end
   end
 
@@ -401,7 +397,7 @@ class TiiSubmission < ApplicationRecord
 
     true
   rescue TCAClient::ApiError => e
-    Doubtfire::Application.config.logger.error  "Error when calling SimilarityApi->download_similarity_report_pdf: #{e}"
+    Doubtfire::Application.config.logger.error "Error when calling SimilarityApi->download_similarity_report_pdf: #{e}"
 
     handle_error e, [
       { code: 404, message: 'Submission not found in downloading similarity pdf' },
@@ -440,7 +436,7 @@ class TiiSubmission < ApplicationRecord
   # Delete the turn it in submission for a task
   #
   # @return [Boolean] true if the submission was deleted, false otherwise
-  def delete_submission()
+  def delete_submission
     submission_status = :to_delete
     save
 

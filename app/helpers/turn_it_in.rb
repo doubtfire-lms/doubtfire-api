@@ -4,16 +4,11 @@
 #
 class TurnItIn
   @instance = TurnItIn.new
+
   @x_turnitin_integration_name = 'formatif-tii'
   @x_turnitin_integration_version = '1.0'
 
-  def self.x_turnitin_integration_name
-    @x_turnitin_integration_name
-  end
-
-  def self.x_turnitin_integration_version
-    @x_turnitin_integration_version
-  end
+  attr_reader :x_turnitin_integration_name, :x_turnitin_integration_version
 
   # Get the current eula - value is refreshed every 24 hours
   def self.eula_version
@@ -50,7 +45,7 @@ class TurnItIn
     )
 
     # Accepts a particular EULA version on behalf of an external user
-    result = TCAClient::EULAApi.new.eula_version_id_accept_post(
+    TCAClient::EULAApi.new.eula_version_id_accept_post(
       TurnItIn.x_turnitin_integration_name,
       TurnItIn.x_turnitin_integration_version,
       body.version,
@@ -69,10 +64,8 @@ class TurnItIn
   # @param task [Task] the task to upload the files for
   def self.submit(task)
     # Create a new submission for each document
-    for idx in 0..task.number_of_uploaded_files.length-1 do
-      if task.is_document?(idx)
-        @instance.submit_document(task, idx)
-      end
+    (0..task.number_of_uploaded_files.length - 1).each do |idx|
+      @instance.submit_document(task, idx) if task.is_document?(idx)
     end
   end
 
@@ -98,13 +91,16 @@ class TurnItIn
     puts "Error when calling SimilarityApi->get_similarity_report_url: #{e}"
   end
 
-
   @eula = nil
 
   # Connect to tii to get the latest eula details.
   def fetch_eula_version
     api_instance = TCAClient::EULAApi.new
-    api_instance.eula_version_id_get(TurnItIn.x_turnitin_integration_name, TurnItIn.x_turnitin_integration_version, 'latest')
+    api_instance.eula_version_id_get(
+      TurnItIn.x_turnitin_integration_name,
+      TurnItIn.x_turnitin_integration_version,
+      'latest'
+    )
   rescue TCAClient::ApiError => e
     Doubtfire::Application.config.logger.error "Failed to fetch TII EULA version #{e}"
     nil
@@ -120,7 +116,7 @@ class TurnItIn
     nil
   end
 
-    # Create or get the group context for a unit. The "group context" is the Turn It In equivalent of a unit.
+  # Create or get the group context for a unit. The "group context" is the Turn It In equivalent of a unit.
   #
   # @param unit [Unit] the unit to create or get the group context for
   # @return [TCAClient::GroupContext] the group context for the unit
@@ -178,14 +174,17 @@ class TurnItIn
 
   # Create a turn it in submission for a document in the task.
   #
-  # @param task [Task] the task to create the turn it in submission for. The task must not already have a turn it in submission associated with it.
+  # @param task [Task] the task to create the turn it in submission for.
+  #   The task must not already have a turn it in submission associated with it.
   # @param idx [Integer] the index of the document to create the turn it in submission for
   # @param submitter [User] the user who is making the submission to turn it in
   # @return [Boolean] true if the submission was created, false otherwise
   def perform_submission(task, idx, submitter)
     # Check to ensure it is a new upload
     last_tii_submission_for_task = task.tii_submissions.last
-    return nil unless last_tii_submission_for_task.nil? || task.file_uploaded_at > last_tii_submission_for_task.created_at
+    unless last_tii_submission_for_task.nil? || task.file_uploaded_at > last_tii_submission_for_task.created_at
+      return nil
+    end
 
     result = TiiSubmission.create(
       task: task,
