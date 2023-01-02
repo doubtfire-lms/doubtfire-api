@@ -480,6 +480,8 @@ class User < ApplicationRecord
   end
 
   def has_accepted_tii_eula?
+    return false unless Doubtfire::Application.config.tii_enabled
+
     tii_eula_version_confirmed && tii_eula_version == TurnItIn.eula_version
   end
 end
