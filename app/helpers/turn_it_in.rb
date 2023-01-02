@@ -5,13 +5,14 @@
 class TurnItIn
   @instance = TurnItIn.new
 
-  @x_turnitin_integration_name = 'formatif-tii'
-  @x_turnitin_integration_version = '1.0'
+  @@x_turnitin_integration_name = 'formatif-tii'
+  @@x_turnitin_integration_version = '1.0'
 
-  attr_reader :x_turnitin_integration_name, :x_turnitin_integration_version
+  cattr_reader :x_turnitin_integration_name, :x_turnitin_integration_version
 
   # Get the current eula - value is refreshed every 24 hours
   def self.eula_version
+    return nil unless Doubtfire::Application.config.tii_enabled
     eula = Rails.cache.fetch('tii.eula_version', expires_in: 24.hours) do
       @instance.fetch_eula_version
     end
@@ -20,6 +21,8 @@ class TurnItIn
 
   # Return the html for the eula
   def self.eula_html
+    return nil unless Doubtfire::Application.config.tii_enabled
+
     Rails.cache.fetch("tii.eula_html.#{TurnItIn.eula_version}", expires_in: 365.days) do
       @instance.fetch_eula_html
     end
@@ -31,6 +34,8 @@ class TurnItIn
   # @param eula_version [String] the version of the eula to accept
   # @return [Boolean] true if the eula was accepted, false otherwise
   def self.accept_eula(user, eula_version = TurnItIn.eula_version)
+    return nil unless Doubtfire::Application.config.tii_enabled
+
     body = TCAClient::EulaAcceptRequest.new(
       user_id: user.username,
       language: 'en-us',
@@ -63,6 +68,8 @@ class TurnItIn
   #
   # @param task [Task] the task to upload the files for
   def self.submit(task)
+    return nil unless Doubtfire::Application.config.tii_enabled
+
     # Create a new submission for each document
     (0..task.number_of_uploaded_files.length - 1).each do |idx|
       @instance.submit_document(task, idx) if task.is_document?(idx)
@@ -70,6 +77,7 @@ class TurnItIn
   end
 
   def self.get_similarity_report_url(task, user)
+    return nil unless Doubtfire::Application.config.tii_enabled
     return nil unless task.tii_submission_id.present?
 
     data = TCAClient::SimilarityViewerUrlSettings.new(
@@ -95,6 +103,8 @@ class TurnItIn
 
   # Connect to tii to get the latest eula details.
   def fetch_eula_version
+    return nil unless Doubtfire::Application.config.tii_enabled
+
     api_instance = TCAClient::EULAApi.new
     api_instance.eula_version_id_get(
       TurnItIn.x_turnitin_integration_name,
@@ -108,6 +118,8 @@ class TurnItIn
 
   # Connect to tii to get the eula html
   def fetch_eula_html
+    return nil unless Doubtfire::Application.config.tii_enabled
+
     api_instance = TCAClient::EULAApi.new
     api_instance.eula_version_id_view_get(TurnItIn.x_turnitin_integration_name, TurnItIn.x_turnitin_integration_version,
                                           TurnItIn.eula_version)
