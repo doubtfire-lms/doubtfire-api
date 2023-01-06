@@ -119,4 +119,45 @@ class TiiModelTest < ActiveSupport::TestCase
 
     assert_requested eula_version_stub, times: 1
   end
+
+  def test_tii_process
+    skip "TurnItIn Integration Tests Skipped" unless Doubtfire::Application.config.tii_enabled
+
+    project = FactoryBot.create(:project)
+    unit = project.unit
+    user = project.student
+    convenor = unit.main_convenor_user
+    task_definition = unit.task_definitions.first
+
+    task_definition.upload_requirements = [ { "key" => 'file0', "name" => 'Document 1', "type" => 'document' }, { "key" => 'file1', "name" => 'Document 2', "type" => 'document' } ]
+
+    assert_equal 2, task_definition.number_of_documents
+
+    task = project.task_for_task_definition(task_definition)
+
+    # Create a submission
+    task.accept_submission user, [
+      {
+        id: 'file0',
+        name: 'Document 1',
+        type: 'document',
+        filename: 'file0.pdf',
+        "tempfile" => File.new('test_files/submissions/1.2P.pdf')
+      },
+      {
+        id: 'file1',
+        name: 'Document 2',
+        type: 'document',
+        filename: 'file1.pdf',
+        "tempfile" => File.new('test_files/submissions/1.2P.pdf')
+      },
+    ], user, nil, nil, 'ready_for_feedback', nil
+
+    assert File.directory?(FileHelper.student_work_dir(:new, task, false))
+    assert task.compress_new_to_done
+    assert File.exist?(task.zip_file_path_for_done_task)
+
+    task.destroy
+    unit.destroy
+  end
 end

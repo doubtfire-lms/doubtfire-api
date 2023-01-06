@@ -7,7 +7,7 @@ FactoryBot.define do
     meeting_location          { "ATC101" }
     sequence(:abbreviation)   { |n| "T#{n}" }
     unit
-    campus
+    campus                    { Campus.offset(rand(Campus.count)).first || create(:campus) }
     tutorial_stream           { nil }
     unit_role                 { unit.staff.sample }
   end
