@@ -89,3 +89,6 @@ gem 'icalendar', '~> 2.5', '>= 2.5.3'
 gem 'rest-client', '~> 2.0'
 
 gem 'net-smtp', require: false
+
+# Async jobs
+gem 'sidekiq'
