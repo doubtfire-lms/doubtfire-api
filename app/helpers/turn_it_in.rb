@@ -7,8 +7,80 @@ class TurnItIn
 
   @@x_turnitin_integration_name = 'formatif-tii'
   @@x_turnitin_integration_version = '1.0'
+  @@global_error = nil
+  @@delay_call_until = nil
 
   cattr_reader :x_turnitin_integration_name, :x_turnitin_integration_version
+
+  # A global error indicates that tii is not configured correctly or a change in the
+  # environment requires that the configuration is updated
+  def self.global_error
+    return nil unless Doubtfire::Application.config.tii_enabled
+
+    Rails.cache.fetch("tii.global_error") do
+      @@global_error
+    end
+  end
+
+  # Update the global error, when present this will block calls to tii until resolved
+  def self.global_error=(value)
+    return unless Doubtfire::Application.config.tii_enabled
+
+    @@global_error = value
+
+    if value.present?
+      Rails.cache.write("tii.global_error", value)
+    else
+      Rails.cache.delete("tii.global_error")
+    end
+  end
+
+  # Indicates if there is a global error that indicates that things should not call tii until resolved
+  def self.global_error?
+    return false unless Doubtfire::Application.config.tii_enabled
+
+    Rails.cache.exist?("tii.global_error") || @@global_error.present?
+  end
+
+  # Indicates that tii can be called, that it is configured and there are no global errors
+  def self.functional?
+    Doubtfire::Application.config.tii_enabled && !TurnItIn.global_error?
+  end
+
+  # Run a call to TCA, handling any errors that occur
+  #
+  # @param action [String] the action that is being performed
+  # @param block [Proc] the block that will be called to perform the call
+  def self.exec_tca_call(action, &block)
+    unless TurnItIn.functional?
+      Doubtfire::Application.config.logger.error "TII failed. #{action}. Turn It In not functional"
+      raise StandardError, "Turn It In not functional"
+    end
+    unless @@delay_call_until.nil? || @@delay_call_until < DateTime.now
+      Doubtfire::Application.config.logger.error "TII failed. #{action}. Turn It In is rate limited"
+      raise StandardError, "Turn It In rate limited"
+    end
+
+    block.call
+  rescue TCAClient::ApiError => e
+    handle_tii_error(action, e)
+    raise
+  end
+
+  # Handle an error raised by a TCA call
+  #
+  # @param action [String] the action that was being performed
+  # @param error [TCAClient::ApiError] the error that was raised
+  def self.handle_tii_error(action, error)
+    Doubtfire::Application.config.logger.error "TII failed. #{action}. #{error}"
+
+    case error.code
+    when 429 # rate limit
+      @delay_call_until = DateTime.now + 1.minute
+    when 403 # forbidden, issue with authentication... do not attempt more tii requests
+      TurnItIn.global_error = [403, error.message]
+    end
+  end
 
   # Get the current eula - value is refreshed every 24 hours
   def self.eula_version
@@ -33,98 +105,73 @@ class TurnItIn
   # @param user [User] the user to accept the eula on behalf of
   # @param eula_version [String] the version of the eula to accept
   # @return [Boolean] true if the eula was accepted, false otherwise
-  def self.accept_eula(user, eula_version = TurnItIn.eula_version)
-    return nil unless Doubtfire::Application.config.tii_enabled
+  def self.accept_eula(user)
+    TurnItIn.exec_tca_call "accept eula for user #{user.id}" do
+      body = TCAClient::EulaAcceptRequest.new(
+        user_id: user.username,
+        language: 'en-us',
+        accepted_timestamp: user.tii_eula_date || DateTime.now,
+        version: user.tii_eula_version
+      )
 
-    body = TCAClient::EulaAcceptRequest.new(
-      user_id: user.username,
-      language: 'en-us',
-      accepted_timestamp: DateTime.now,
-      version: eula_version
-    )
+      # Accepts a particular EULA version on behalf of an external user
+      TCAClient::EULAApi.new.eula_version_id_accept_post(
+        TurnItIn.x_turnitin_integration_name,
+        TurnItIn.x_turnitin_integration_version,
+        body.version,
+        body
+      )
 
-    user.update(
-      tii_eula_version_confirmed: false,
-      tii_eula_date: body.accepted_timestamp,
-      tii_eula_version: eula_version
-    )
-
-    # Accepts a particular EULA version on behalf of an external user
-    TCAClient::EULAApi.new.eula_version_id_accept_post(
-      TurnItIn.x_turnitin_integration_name,
-      TurnItIn.x_turnitin_integration_version,
-      body.version,
-      body
-    )
-
-    user.update(tii_eula_version_confirmed: true)
-    true
-  rescue TCAClient::ApiError => e
-    Doubtfire::Application.config.logger.error "Failed to accept eula for user #{user.id} - #{e}"
-    false
-  end
-
-  # Upload all of the document files to turn it in for a task
-  #
-  # @param task [Task] the task to upload the files for
-  def self.submit(task)
-    return nil unless Doubtfire::Application.config.tii_enabled
-
-    # Create a new submission for each document
-    (0..task.number_of_uploaded_files.length - 1).each do |idx|
-      @instance.submit_document(task, idx) if task.is_document?(idx)
+      user.update(tii_eula_version_confirmed: true)
+      true
     end
-  end
-
-  def self.get_similarity_report_url(task, user)
-    return nil unless Doubtfire::Application.config.tii_enabled
-    return nil unless task.tii_submission_id.present?
-
-    data = TCAClient::SimilarityViewerUrlSettings.new(
-      viewer_user_id: user.username,
-      locale: 'en-US',
-      viewer_default_permission_set: @instance.tii_role_for(task, user)
-    )
-
-    # Returns a URL to access Cloud Viewer
-    result = TCAClient::SimilarityApi.new.get_similarity_report_url(
-      TurnItIn.x_turnitin_integration_name,
-      TurnItIn.x_turnitin_integration_version,
-      task.tii_submission_id,
-      data
-    )
-
-    result.viewer_url
   rescue TCAClient::ApiError => e
-    puts "Error when calling SimilarityApi->get_similarity_report_url: #{e}"
+    user.update(tii_eula_retry: false) if [400, 404].include?(e.error_code)
+
+    # Errors:
+    # 400	Request is malformed or missing required data
+    # 403	Not Properly Authenticated
+    # 429	Request has been rejected due to rate limiting
+    # 500	An unexpected error was encountered
+    #
+    # 404	The EULA version in the given language was not found
+    # 400	The EULA version attempting to be accepted is not valid
+    # 400	The EULA version was not found
+    # 400	The timestamp given is invalid
+    # 400	A required field is missing
+
+    false
+  rescue StandardError => e # Rate limit, or not functional
+    false
   end
 
   @eula = nil
 
   # Connect to tii to get the latest eula details.
   def fetch_eula_version
-    return nil unless Doubtfire::Application.config.tii_enabled
-
-    api_instance = TCAClient::EULAApi.new
-    api_instance.eula_version_id_get(
-      TurnItIn.x_turnitin_integration_name,
-      TurnItIn.x_turnitin_integration_version,
-      'latest'
-    )
-  rescue TCAClient::ApiError => e
-    Doubtfire::Application.config.logger.error "Failed to fetch TII EULA version #{e}"
+    TurnItIn.exec_tca_call 'fetch TII EULA version' do
+      api_instance = TCAClient::EULAApi.new
+      api_instance.eula_version_id_get(
+        TurnItIn.x_turnitin_integration_name,
+        TurnItIn.x_turnitin_integration_version,
+        'latest'
+      )
+    end
+  rescue TCAClient::ApiError || StandardError
     nil
   end
 
   # Connect to tii to get the eula html
   def fetch_eula_html
-    return nil unless Doubtfire::Application.config.tii_enabled
-
-    api_instance = TCAClient::EULAApi.new
-    api_instance.eula_version_id_view_get(TurnItIn.x_turnitin_integration_name, TurnItIn.x_turnitin_integration_version,
-                                          TurnItIn.eula_version)
-  rescue TCAClient::ApiError => e
-    Doubtfire::Application.config.logger.error "Failed to fetch TII EULA version #{e}"
+    TurnItIn.exec_tca_call 'fetch TII EULA html' do
+      api_instance = TCAClient::EULAApi.new
+      api_instance.eula_version_id_view_get(
+        TurnItIn.x_turnitin_integration_name,
+        TurnItIn.x_turnitin_integration_version,
+        TurnItIn.eula_version
+      )
+    end
+  rescue TCAClient::ApiError || StandardError
     nil
   end
 
@@ -193,7 +240,7 @@ class TurnItIn
   # @return [Boolean] true if the submission was created, false otherwise
   def perform_submission(task, idx, submitter)
     # Check to ensure it is a new upload
-    last_tii_submission_for_task = task.tii_submissions.last
+    last_tii_submission_for_task = task.tii_submissions.where(idx: idx).last
     unless last_tii_submission_for_task.nil? || task.file_uploaded_at > last_tii_submission_for_task.created_at
       return nil
     end
@@ -208,8 +255,5 @@ class TurnItIn
     )
     result.continue_process
     result
-  rescue TCAClient::ApiError => e
-    Doubtfire::Application.config.logger.error "Exception when performing a TII submission for task #{task.id}: #{e}"
-    nil
   end
 end

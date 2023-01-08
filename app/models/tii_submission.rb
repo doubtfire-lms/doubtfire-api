@@ -1,7 +1,17 @@
+#freeze_string_literal: true
+
+# Turn It In Submission objects track individual files submitted to turn it in for
+# processing. This will track objects through the process, from submission until
+# we receive the similarity report.
 class TiiSubmission < ApplicationRecord
   belongs_to :submitted_by_user, class_name: 'User'
   belongs_to :task
 
+  # The user who submitted the file. From this we determine who will
+  # submit this to turn it in. It will be the user, their tutor, or
+  # the main convenor of the project.
+  #
+  # @param user [User] the user who is submitting the task
   def submitted_by=(user)
     if user.has_accepted_tii_eula?
       self.submitted_by_user = user
@@ -16,6 +26,7 @@ class TiiSubmission < ApplicationRecord
     save
   end
 
+  # The user who submitted the file to turn it in.
   def submitted_by
     submitted_by_user
   end
@@ -74,27 +85,31 @@ class TiiSubmission < ApplicationRecord
     return true if submission_id.present?
     return false if error_message.present?
 
-    # Check to ensure it is a new upload
-    # Create a new Submission
-    subm = TCAClient::SubmissionApi.new.create_submission(
-      TurnItIn.x_turnitin_integration_name,
-      TurnItIn.x_turnitin_integration_version,
-      tii_submission_data
-    )
+    TurnItIn.exec_tca_call "TiiSubmission #{id} - fetching id" do
+      # Check to ensure it is a new upload
+      # Create a new Submission
+      subm = TCAClient::SubmissionApi.new.create_submission(
+        TurnItIn.x_turnitin_integration_name,
+        TurnItIn.x_turnitin_integration_version,
+        tii_submission_data
+      )
 
-    # Record the submission id
-    submission_id = subm.id
-    status = :has_id
-    save
+      # Record the submission id
+      submission_id = subm.id
+      status = :has_id
+      save
 
-    unless submitted_by_user.tii_eula_version_confirmed
-      submitted_by_user.update(tii_eula_version_confirmed: true)
+      # If we had to indicate the eula was accepted, then we need to update the user
+      unless submitted_by_user.tii_eula_version_confirmed
+        submitted_by_user.update(tii_eula_version_confirmed: true)
+      end
+
+      true
     end
-
-    true
   rescue TCAClient::ApiError => e
-    Doubtfire::Application.config.logger.error "Exception when performing a TII submission for task #{task.id}: #{e}"
     handle_error e
+    false
+  rescue StandardError # rate limit, or not functional
     false
   end
 
@@ -145,22 +160,22 @@ class TiiSubmission < ApplicationRecord
     return false unless submission_id.present? && (status == :has_id || status == :created)
     return false if error_message.present?
 
-    api_instance = TCAClient::SubmissionApi.new
+    TurnItIn.exec_tca_call "TiiSubmission #{id} - uploading file" do
+      api_instance = TCAClient::SubmissionApi.new
 
-    api_instance.upload_submitted_file(
-      TurnItIn.x_turnitin_integration_name,
-      TurnItIn.x_turnitin_integration_version,
-      submission_id,
-      'binary/octet-stream',
-      "inline; filename=#{task.filename_in_zip(idx)}",
-      task.read_file_from_done(idx)
-    )
+      api_instance.upload_submitted_file(
+        TurnItIn.x_turnitin_integration_name,
+        TurnItIn.x_turnitin_integration_version,
+        submission_id,
+        'binary/octet-stream',
+        "inline; filename=#{task.filename_in_zip(idx)}",
+        task.read_file_from_done(idx)
+      )
 
-    submission_status = :uploaded
-    save
+      submission_status = :uploaded
+      save
+    end
   rescue TCAClient::ApiError => e
-    Doubtfire::Application.config.logger.error "Failed to upload submission to turn it in #{id} - #{e}"
-
     handle_error e, [
       { code: 413, message: 'Invalid submission file size, Submission file must be <= to 100 MB' },
       { code: 422, message: 'Invalid submission file size, Submission file must be > than 0 MB' },
@@ -168,21 +183,24 @@ class TiiSubmission < ApplicationRecord
     ]
 
     false
+  rescue StandardError # rate limit, or not functional
+    false
   end
 
   # Get the turn it in status of the file submission
   #
   # @return [TCAClient::Submission] the submission details
   def fetch_tii_submission_status
-    api_instance = TCAClient::SubmissionApi.new
+    TurnItIn.exec_tca_call "TiiSubmission #{id} - fetching submission status" do
+      api_instance = TCAClient::SubmissionApi.new
 
-    # Get Submission Details
-    api_instance.get_submiddion_details(TurnItIn.x_turnitin_integration_name, TurnItIn.x_turnitin_integration_version, submission_id)
+      # Get Submission Details
+      api_instance.get_submiddion_details(TurnItIn.x_turnitin_integration_name, TurnItIn.x_turnitin_integration_version, submission_id)
+    end
   rescue TCAClient::ApiError => e
-    Doubtfire::Application.config.logger.error "Error when calling SubmissionApi->get_submission_details: #{e}"
-
     handle_error e
-
+    nil
+  rescue StandardError # rate limit, or not functional
     nil
   end
 
@@ -214,39 +232,41 @@ class TiiSubmission < ApplicationRecord
   def request_similarity_report
     return false unless submission_status == :submission_complete
 
-    data = TCAClient::SimilarityPutRequest.new(
-      generation_settings:
-        TCAClient::SimilarityGenerationSettings.new(
-          search_repositories: %w[
-            INTERNET
-            SUBMITTED_WORK
-            PUBLICATION
-            CROSSREF
-            CROSSREF_POSTED_CONTENT
-          ],
-          auto_exclude_self_matching_scope: 'GROUP_CONTEXT'
-        )
-    )
+    TurnItIn.exec_tca_call "TiiSubmission #{id} - requesting similarity report" do
+      data = TCAClient::SimilarityPutRequest.new(
+        generation_settings:
+          TCAClient::SimilarityGenerationSettings.new(
+            search_repositories: %w[
+              INTERNET
+              SUBMITTED_WORK
+              PUBLICATION
+              CROSSREF
+              CROSSREF_POSTED_CONTENT
+            ],
+            auto_exclude_self_matching_scope: 'GROUP_CONTEXT'
+          )
+      )
 
-    # Request Similarity Report
-    TCAClient::SimilarityApi.new.request_similarity_report(
-      TurnItIn.x_turnitin_integration_name,
-      TurnItIn.x_turnitin_integration_version,
-      submission_id,
-      data
-    )
+      # Request Similarity Report
+      TCAClient::SimilarityApi.new.request_similarity_report(
+        TurnItIn.x_turnitin_integration_name,
+        TurnItIn.x_turnitin_integration_version,
+        submission_id,
+        data
+      )
 
-    status = :similarity_report_requested
-    save
+      status = :similarity_report_requested
+      save
 
-    true
+      true
+    end
   rescue TCAClient::ApiError => e
-    Doubtfire::Application.config.logger.error "Error when calling SubmissionApi->request_similarity_report: #{e}"
-
     handle_error e, [
       { code: 409, message: 'Submission has not been created yet' }
     ]
 
+    false
+  rescue StandardError # rate limit, or not functional
     false
   end
 
@@ -256,17 +276,18 @@ class TiiSubmission < ApplicationRecord
   def fetch_tii_similarity_status
     return nil unless submission_id.present?
 
-    # Get Similarity Report Status
-    TCAClient::SimilarityApi.new.get_similarity_report_results(
-      TurnItIn.x_turnitin_integration_name,
-      TurnItIn.x_turnitin_integration_version,
-      submission_id
-    )
+    TurnItIn.exec_tca_call "TiiSubmission #{id} - fetching similarity report status" do
+      # Get Similarity Report Status
+      TCAClient::SimilarityApi.new.get_similarity_report_results(
+        TurnItIn.x_turnitin_integration_name,
+        TurnItIn.x_turnitin_integration_version,
+        submission_id
+      )
+    end
   rescue TCAClient::ApiError => e
-    Doubtfire::Application.config.logger.error "Error when calling SimilarityApi->get_similarity_report_results: tii submission #{id} #{e}"
-
     handle_error e
-
+    nil
+  rescue StandardError # rate limit, or not functional
     nil
   end
 
@@ -291,28 +312,29 @@ class TiiSubmission < ApplicationRecord
   def request_similarity_report_pdf
     return false unless status == :similarity_report_complete
 
-    generate_similarity_pdf = TCAClient::GenerateSimilarityPDF.new(
-      locale: 'en-US'
-    )
+    TurnItIn.exec_tca_call "TiiSubmission #{id} - requesting similarity report pdf" do
+      generate_similarity_pdf = TCAClient::GenerateSimilarityPDF.new(
+        locale: 'en-US'
+      )
 
-    # Get Similarity Report Status
-    result = TCAClient::SimilarityApi.new.request_similarity_report_pdf(
-      TurnItIn.x_turnitin_integration_name,
-      TurnItIn.x_turnitin_integration_version,
-      submission_id,
-      generate_similarity_pdf
-    )
+      # Get Similarity Report Status
+      result = TCAClient::SimilarityApi.new.request_similarity_report_pdf(
+        TurnItIn.x_turnitin_integration_name,
+        TurnItIn.x_turnitin_integration_version,
+        submission_id,
+        generate_similarity_pdf
+      )
 
-    status = :similarity_pdf_requested
-    similarity_pdf_id = result.id
-    save
+      status = :similarity_pdf_requested
+      similarity_pdf_id = result.id
+      save
+    end
   rescue TCAClient::ApiError => e
-    Doubtfire::Application.config.logger.error "Error when calling SimilarityApi->get_similarity_report_status: #{id} #{e}"
-
     handle_error e, [
       { code: 404, message: 'Submission not found in creating similarity report' }
     ]
-
+    nil
+  rescue StandardError # rate limit, or not functional
     nil
   end
 
@@ -375,35 +397,36 @@ class TiiSubmission < ApplicationRecord
     return false unless similarity_pdf_id.present?
     return false unless fetch_similarity_pdf_status == 'SUCCESS'
 
-    # GET download pdf
-    result = TCAClient::SimilarityApi.new.download_similarity_report_pdf(
-      TurnItIn.x_turnitin_integration_name,
-      TurnItIn.x_turnitin_integration_version,
-      submission_id,
-      pdf_id
-    )
+    TurnItIn.exec_tca_call "TiiSubmission #{id} - downloading similarity report pdf" do
+      # GET download pdf
+      result = TCAClient::SimilarityApi.new.download_similarity_report_pdf(
+        TurnItIn.x_turnitin_integration_name,
+        TurnItIn.x_turnitin_integration_version,
+        submission_id,
+        pdf_id
+      )
 
-    path = FileHelper.student_work_dir(:plagarism, task)
-    filename = File.join(path, FileHelper.sanitized_filename("#{id}-tii.pdf"))
-    file = File.new(filename, 'wb')
-    begin
-      file.write(result)
-    ensure
-      file.close
+      path = FileHelper.student_work_dir(:plagarism, task)
+      filename = File.join(path, FileHelper.sanitized_filename("#{id}-tii.pdf"))
+      file = File.new(filename, 'wb')
+      begin
+        file.write(result)
+      ensure
+        file.close
+      end
+
+      status = :similarity_pdf_downloaded
+      save
+
+      true
     end
-
-    status = :similarity_pdf_downloaded
-    save
-
-    true
   rescue TCAClient::ApiError => e
-    Doubtfire::Application.config.logger.error "Error when calling SimilarityApi->download_similarity_report_pdf: #{e}"
-
     handle_error e, [
       { code: 404, message: 'Submission not found in downloading similarity pdf' },
       { code: 409, message: 'PDF failed to generate, status FAILED' }
     ]
-
+    false
+  rescue StandardError # rate limit, or not functional
     false
   end
 
@@ -413,23 +436,24 @@ class TiiSubmission < ApplicationRecord
   def fetch_tii_similarity_pdf_status
     return nil unless submission_id.present? && pdf_id.present?
 
-    # Get Similarity Report Status
-    result = TCAClient::SimilarityApi.new.get_similarity_report_pdf_status(
-      TurnItIn.x_turnitin_integration_name,
-      TurnItIn.x_turnitin_integration_version,
-      submission_id,
-      pdf_id
-    )
+    TurnItIn.exec_tca_call "TiiSubmission #{id} - fetching similarity report pdf status" do
+      # Get Similarity Report Status
+      result = TCAClient::SimilarityApi.new.get_similarity_report_pdf_status(
+        TurnItIn.x_turnitin_integration_name,
+        TurnItIn.x_turnitin_integration_version,
+        submission_id,
+        pdf_id
+      )
 
-    result.status
+      result.status
+    end
   rescue TCAClient::ApiError => e
-    Doubtfire::Application.config.logger.error "Error when calling SimilarityApi->get_similarity_report_status: #{e}"
-
     handle_error e, [
       { code: 404, message: 'Submission not found in downloading similarity pdf' },
       { code: 409, message: 'PDF failed to generate, status FAILED' }
     ]
-
+    nil
+  rescue StandardError # rate limit, or not functional
     nil
   end
 
@@ -440,24 +464,25 @@ class TiiSubmission < ApplicationRecord
     submission_status = :to_delete
     save
 
-    TCAClient::SubmissionApi.new.delete_submission(
-      TurnItIn.x_turnitin_integration_name,
-      TurnItIn.x_turnitin_integration_version,
-      submission_id
-    )
+    TurnItIn.exec_tca_call "TiiSubmission #{id} - deleting submission" do
+      TCAClient::SubmissionApi.new.delete_submission(
+        TurnItIn.x_turnitin_integration_name,
+        TurnItIn.x_turnitin_integration_version,
+        submission_id
+      )
 
-    Doubtfire::Application.config.logger.info "Deleted tii submission #{id} for task #{task.id}"
+      Doubtfire::Application.config.logger.info "Deleted tii submission #{id} for task #{task.id}"
 
-    submission_status = :deleted
-    save
+      submission_status = :deleted
+      save
+    end
   rescue TCAClient::ApiError => e
-    Doubtfire::Application.config.logger.error "Exception when deleting TII submission #{id}: #{e}"
-
     handle_error e, [
       { code: 404, message: 'Submission not found in delete submission' },
       { code: 409, message: 'Submission is in an error state' }
     ]
-
+    false
+  rescue StandardError # rate limit, or not functional
     false
   end
 end
