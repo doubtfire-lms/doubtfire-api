@@ -3,6 +3,8 @@ class AddTiiDetails < ActiveRecord::Migration[7.0]
     add_column :users, :tii_eula_version, :string
     add_column :users, :tii_eula_date, :datetime
     add_column :users, :tii_eula_version_confirmed, :boolean, default: false, null: false
+    add_column :users, :tii_eula_retry, :boolean, default: true, null: false
+    add_column :users, :last_eula_retry, :datetime
     add_column :units, :tii_group_context_id, :string
     add_column :task_definitions, :tii_group_id, :string
 
