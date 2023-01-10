@@ -9,12 +9,18 @@ class DoubtfireLogger
   #
   # Rails.logger initialises these as nil, so we will do the same
   @@file_logger = ActiveSupport::Logger.new(Doubtfire::Application.config.paths['log'].first)
-  @@console_logger = ActiveSupport::Logger.new(STDOUT)
 
-  @@logger = @@console_logger.extend(ActiveSupport::Logger.broadcast(@@file_logger))
+  # Ensure logger does not output to stdout in tests
+  if Rails.env.test?
+    @@logger = @@file_logger
+  else
+    @@console_logger = ActiveSupport::Logger.new(STDOUT)
+
+    @@logger = @@console_logger.extend(ActiveSupport::Logger.broadcast(@@file_logger))
+  end
 
   @@logger.formatter = proc do |severity, datetime, progname, msg|
-    "#{datetime},#{DoubtfireLogger.remote_ip},#{severity}: #{msg}\n"
+    "#{datetime},#{DoubtfireLogger.remote_ip},#{severity}: #{msg.gsub(/\n/, '\n')}\n"
   end
 
   def self.remote_ip
