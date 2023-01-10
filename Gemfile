@@ -18,7 +18,7 @@ gem 'rails', '~>7.0'
 group :development, :test do
   gem 'better_errors'
   gem 'byebug'
-  gem 'database_cleaner'
+  gem 'database_cleaner-active_record'
   gem 'listen'
   gem 'rails_best_practices'
   gem 'rubocop'
@@ -36,6 +36,7 @@ group :development, :test, :staging do
   gem 'faker'
   gem 'minitest'
   gem 'minitest-around'
+  gem 'minitest-rails'
   gem 'webmock'
 end
 
