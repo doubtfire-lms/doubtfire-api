@@ -47,6 +47,15 @@ class TurnItIn
     Doubtfire::Application.config.tii_enabled && !TurnItIn.global_error?
   end
 
+  # Indicates that the service is rate limited
+  def self.rate_limited?
+    @@delay_call_until.present? && DateTime.now < @@delay_call_until
+  end
+
+  def self.reset_rate_limit
+    @@delay_call_until = nil
+  end
+
   # Run a call to TCA, handling any errors that occur
   #
   # @param action [String] the action that is being performed
@@ -56,7 +65,7 @@ class TurnItIn
       Doubtfire::Application.config.logger.error "TII failed. #{action}. Turn It In not functional"
       raise StandardError, "Turn It In not functional"
     end
-    unless @@delay_call_until.nil? || @@delay_call_until < DateTime.now
+    if TurnItIn.rate_limited?
       Doubtfire::Application.config.logger.error "TII failed. #{action}. Turn It In is rate limited"
       raise StandardError, "Turn It In rate limited"
     end
@@ -76,7 +85,7 @@ class TurnItIn
 
     case error.code
     when 429 # rate limit
-      @delay_call_until = DateTime.now + 1.minute
+      @@delay_call_until = DateTime.now + 1.minute
     when 403 # forbidden, issue with authentication... do not attempt more tii requests
       TurnItIn.global_error = [403, error.message]
     end
@@ -106,13 +115,19 @@ class TurnItIn
   # @param eula_version [String] the version of the eula to accept
   # @return [Boolean] true if the eula was accepted, false otherwise
   def self.accept_eula(user)
+    user.update(last_eula_retry: DateTime.now)
     TurnItIn.exec_tca_call "accept eula for user #{user.id}" do
       body = TCAClient::EulaAcceptRequest.new(
         user_id: user.username,
         language: 'en-us',
         accepted_timestamp: user.tii_eula_date || DateTime.now,
-        version: user.tii_eula_version
+        version: user.tii_eula_version || TurnItIn.eula_version
       )
+
+      if body.version.nil?
+        Doubtfire::Application.logger.error "TII eula version is nil, user #{id} cannot accept eula"
+        return false
+      end
 
       # Accepts a particular EULA version on behalf of an external user
       TCAClient::EULAApi.new.eula_version_id_accept_post(
@@ -126,7 +141,7 @@ class TurnItIn
       true
     end
   rescue TCAClient::ApiError => e
-    user.update(tii_eula_retry: false) if [400, 404].include?(e.error_code)
+    user.update(tii_eula_retry: false) if [400, 404].include?(e.code)
 
     # Errors:
     # 400	Request is malformed or missing required data

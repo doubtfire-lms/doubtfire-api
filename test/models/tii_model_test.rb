@@ -3,9 +3,7 @@ require 'tca_client'
 require 'json'
 
 class TiiModelTest < ActiveSupport::TestCase
-  def setup
-    WebMock.reset_executed_requests!
-  end
+  include TestHelpers::TiiTestHelper
 
   def test_fetch_eula
     skip "TurnItIn Integration Tests Skipped" unless Doubtfire::Application.config.tii_enabled
@@ -59,16 +57,7 @@ class TiiModelTest < ActiveSupport::TestCase
 </html>'''
 
     eula_version_stub = stub_request(:get, "https://#{ENV['TCA_HOST']}/api/v1/eula/latest").
-    with(
-      headers: {
-            'Accept'=>'application/json',
-            'Authorization'=>"Bearer #{ENV['TCA_API_KEY']}",
-            'Content-Type'=>'application/json',
-            'Expect'=>'',
-            'User-Agent'=>'OpenAPI-Generator/1.0.1/ruby',
-            'X-Turnitin-Integration-Name'=>'formatif-tii',
-            'X-Turnitin-Integration-Version'=>'1.0'
-      }).
+    with(tii_headers).
     to_return(
       body: eula_response,
       status: 200,
@@ -97,16 +86,7 @@ class TiiModelTest < ActiveSupport::TestCase
     skip "TurnItIn Integration Tests Skipped" unless Doubtfire::Application.config.tii_enabled
 
     eula_version_stub = stub_request(:get, "https://#{ENV['TCA_HOST']}/api/v1/eula/latest").
-    with(
-      headers: {
-            'Accept'=>'application/json',
-            'Authorization'=>"Bearer #{ENV['TCA_API_KEY']}",
-            'Content-Type'=>'application/json',
-            'Expect'=>'',
-            'User-Agent'=>'OpenAPI-Generator/1.0.1/ruby',
-            'X-Turnitin-Integration-Name'=>'formatif-tii',
-            'X-Turnitin-Integration-Version'=>'1.0'
-      }).
+    with(tii_headers).
     to_return(
       body: 'An unexpected error was encountered',
       status: 500,
