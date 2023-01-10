@@ -98,8 +98,6 @@ GEM
     crack (0.4.5)
       rexml
     crass (1.0.6)
-    database_cleaner (2.0.1)
-      database_cleaner-active_record (~> 2.0.0)
     database_cleaner-active_record (2.0.1)
       activerecord (>= 5.a)
       database_cleaner-core (~> 2.0.0)
@@ -213,6 +211,9 @@ GEM
     minitest (5.17.0)
     minitest-around (0.5.0)
       minitest (~> 5.0)
+    minitest-rails (7.0.0)
+      minitest (~> 5.10)
+      railties (~> 7.0.0)
     moss_ruby (1.1.4)
       tcp_timeout (~> 0.1.1)
     msgpack (1.6.0)
@@ -423,7 +424,7 @@ DEPENDENCIES
   byebug
   ci_reporter
   coderay
-  database_cleaner
+  database_cleaner-active_record
   devise
   devise_ldap_authenticatable
   dotenv-rails
@@ -440,6 +441,7 @@ DEPENDENCIES
   listen
   minitest
   minitest-around
+  minitest-rails
   moss_ruby (>= 1.1.4)
   mysql2
   net-smtp
