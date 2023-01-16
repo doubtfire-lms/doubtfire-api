@@ -175,3 +175,15 @@ Style/StringChars: # new in 1.12
   Enabled: true
 Style/SwapValues: # new in 1.1
   Enabled: true
+
+# 1.42 cops
+Style/MapToSet:
+  Enabled: true
+Style/MinMaxComparison:
+  Enabled: true
+Style/YodaExpression:
+  Enabled: true
+
+# 1.43 cops
+# Lint/UselessRescue:
+#   Enabled: true

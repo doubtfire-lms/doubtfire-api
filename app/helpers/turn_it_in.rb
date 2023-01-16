@@ -5,6 +5,7 @@
 class TurnItIn
   @instance = TurnItIn.new
 
+  # rubocop:disable Style/ClassVars
   @@x_turnitin_integration_name = 'formatif-tii'
   @@x_turnitin_integration_version = '1.0'
   @@global_error = nil
@@ -90,6 +91,8 @@ class TurnItIn
       TurnItIn.global_error = [403, error.message]
     end
   end
+
+  # rubocop:enable Style/ClassVars
 
   # Get the current eula - value is refreshed every 24 hours
   def self.eula_version

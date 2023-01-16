@@ -411,7 +411,7 @@ class DatabasePopulator
         # day, time, location, tutor_username, abbrev
         tutorial = unit.add_tutorial(
           "#{weekdays.sample}",
-          "#{8 + Faker::Number.between(from: 0, to: 11)}:#{['00', '30'].sample}", # Mon-Fri 8am-7:30pm
+          "#{Faker::Number.between(from: 0, to: 11) + 8}:#{['00', '30'].sample}", # Mon-Fri 8am-7:30pm
           "#{['EN', 'BA'].sample}#{Faker::Number.between(from: 0, to: 6)}0#{Faker::Number.between(from: 0, to: 8)}", # EN###/BA###
           tutor,
           campus,
