@@ -1,4 +1,4 @@
-#freeze_string_literal: true
+# freeze_string_literal: true
 
 # Turn It In Submission objects track individual files submitted to turn it in for
 # processing. This will track objects through the process, from submission until

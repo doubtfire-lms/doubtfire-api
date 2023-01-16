@@ -276,7 +276,7 @@ class Task < ApplicationRecord
 
   # Add an extension to the task
   def grant_extension(by_user, weeks)
-    weeks_to_extend = weeks <= weeks_can_extend ? weeks : weeks_can_extend
+    weeks_to_extend = [weeks, weeks_can_extend].min
     return false unless weeks_to_extend > 0
 
     if update(extensions: self.extensions + weeks_to_extend)

@@ -247,11 +247,7 @@ class Project < ApplicationRecord
   end
 
   def reference_date
-    if application_reference_date > unit.end_date
-      unit.end_date
-    else
-      application_reference_date
-    end
+    [application_reference_date, unit.end_date].min
   end
 
   def task_details_for_shallow_serializer(user)
