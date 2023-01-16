@@ -75,6 +75,13 @@ class ActiveSupport::TestCase
     # Ensure turn it in states is cleared
     TurnItIn.reset_rate_limit
     TurnItIn.global_error = nil
+    Rails.cache.write('tii.eula_version', TCAClient::EulaVersion.new(
+      version: "v1beta",
+      valid_from: "2018-04-30T17:00:00Z",
+      valid_until: nil,
+      url: "https://static.turnitin.com/eula/v1beta/fr-fr/eula.html",
+      available_languages: [ "en-US" ]
+    ))
   end
 
   def teardown

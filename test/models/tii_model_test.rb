@@ -4,9 +4,12 @@ require 'json'
 
 class TiiModelTest < ActiveSupport::TestCase
   include TestHelpers::TiiTestHelper
+  include TestHelpers::TestFileHelper
 
   def test_fetch_eula
     skip "TurnItIn Integration Tests Skipped" unless Doubtfire::Application.config.tii_enabled
+
+    Rails.cache.delete('tii.eula_version')
 
     refute Rails.cache.fetch('tii.eula_version').present?
 
@@ -85,6 +88,8 @@ class TiiModelTest < ActiveSupport::TestCase
   def test_fetch_eula_error_handling
     skip "TurnItIn Integration Tests Skipped" unless Doubtfire::Application.config.tii_enabled
 
+    Rails.cache.delete('tii.eula_version')
+
     eula_version_stub = stub_request(:get, "https://#{ENV['TCA_HOST']}/api/v1/eula/latest").
     with(tii_headers).
     to_return(
@@ -122,14 +127,14 @@ class TiiModelTest < ActiveSupport::TestCase
         name: 'Document 1',
         type: 'document',
         filename: 'file0.pdf',
-        "tempfile" => File.new('test_files/submissions/1.2P.pdf')
+        "tempfile" => File.new(test_file_path('submissions/1.2P.pdf'))
       },
       {
         id: 'file1',
         name: 'Document 2',
         type: 'document',
         filename: 'file1.pdf',
-        "tempfile" => File.new('test_files/submissions/1.2P.pdf')
+        "tempfile" => File.new(test_file_path('submissions/1.2P.pdf'))
       },
     ], user, nil, nil, 'ready_for_feedback', nil
 
