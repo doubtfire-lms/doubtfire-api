@@ -2,9 +2,11 @@ require "test_helper"
 
 class PlagiarismMatchLinkTest < ActiveSupport::TestCase
   def test_kind_string
+    task = FactoryBot.create(:task)
+
     pml = PlagiarismMatchLink.create(
-      task: Task.first,
-      other_task: Task.first,
+      task: task,
+      other_task: task,
       kind: 'tii',
       pct: 10
     )
@@ -25,26 +27,36 @@ class PlagiarismMatchLinkTest < ActiveSupport::TestCase
 
     pml.kind = 'not moss'
     refute pml.valid?, pml.errors.full_messages
+
+  ensure
+    task.project.unit.destroy
   end
 
   # Test that when you create a plagiarism match link, that a moss test needs the other task
   def test_other_details
+    task = FactoryBot.create(:task)
+
     pml = PlagiarismMatchLink.create(
-      task: Task.first,
+      task: task,
       kind: 'moss',
       pct: 10
     )
 
     refute pml.valid?, pml.errors.full_messages
 
-    pml.other_task = Task.first
+    pml.other_task = task
     assert pml.valid?, pml.errors.full_messages
+
+  ensure
+    task.project.unit.destroy
   end
 
   # Test to ensure that pct must be between 0 and 100
   def test_pml_pct
+    task = FactoryBot.create(:task)
+
     pml = PlagiarismMatchLink.create(
-      task: Task.first,
+      task: task,
       kind: 'tii',
       pct: 10
     )
@@ -60,5 +72,8 @@ class PlagiarismMatchLinkTest < ActiveSupport::TestCase
     assert pml.valid?, pml.errors.full_messages
     pml.pct = 100
     assert pml.valid?, pml.errors.full_messages
+
+  ensure
+    task.project.unit.destroy
   end
 end
