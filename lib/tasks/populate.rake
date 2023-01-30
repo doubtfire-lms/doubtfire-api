@@ -174,8 +174,12 @@ namespace :db do
     end
   end
 
+  task log_info: [:environment] do
+    Rails.logger.level = Logger::INFO
+  end
+
   desc 'Clear the database and fill with test data'
-  task populate: [:skip_prod, :drop, :setup, :migrate, :init] do
+  task populate: [:log_info, :skip_prod, :drop, :setup, :migrate, :init] do
     scale = ENV['SCALE'] ? ENV['SCALE'].to_sym : :small
     extended = ENV['EXTENDED'] == 'true'
 
