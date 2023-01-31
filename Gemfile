@@ -11,7 +11,7 @@ ruby_versions = {
 ruby ruby_versions[(ENV['RAILS_ENV'] || 'development').to_sym]
 
 # The venerable, almighty Rails
-gem 'rails', '~>7.0.0'
+gem 'rails', '~>7.0'
 
 group :development, :test do
   gem 'better_errors'
@@ -41,9 +41,9 @@ end
 gem 'mysql2'
 
 # Webserver - included in development and test and optionally in production
-gem 'puma', '~> 5.6'
+gem 'puma'
 
-gem 'bootsnap', '>= 1.4.4', require: false
+gem 'bootsnap', require: false
 
 # Extend irb for better output
 gem 'hirb'
@@ -56,7 +56,7 @@ gem 'ruby-saml', '~> 1.13.0'
 
 # Student submission
 gem 'coderay'
-gem 'rmagick', '~> 4.1' # require: false #already included in other gems - remove to avoid duplicate errors
+gem 'rmagick'
 gem 'ruby-filemagic'
 gem 'rubyzip'
 
@@ -84,8 +84,8 @@ gem 'roo', '~> 2.7.0'
 gem 'roo-xls'
 
 # webcal generation
-gem 'icalendar', '~> 2.5', '>= 2.5.3'
+gem 'icalendar'
 
-gem 'rest-client', '~> 2.0'
+gem 'rest-client'
 
 gem 'net-smtp', require: false
