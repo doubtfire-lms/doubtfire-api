@@ -13,7 +13,7 @@ namespace :db do
   end
 
   desc 'Mark off some of the due tasks'
-  task simulate_signoff: [:skip_prod, :environment] do
+  task simulate_signoff: [:log_info, :skip_prod, :environment] do
     Unit.all.each do |unit|
       current_week = ((Time.zone.now - unit.start_date) / 1.week).floor
 
