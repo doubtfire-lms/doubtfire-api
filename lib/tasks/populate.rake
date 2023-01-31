@@ -13,7 +13,7 @@ namespace :db do
   end
 
   desc 'Mark off some of the due tasks'
-  task simulate_signoff: [:skip_prod, :environment] do
+  task simulate_signoff: [:log_info, :skip_prod, :environment] do
     Unit.all.each do |unit|
       current_week = ((Time.zone.now - unit.start_date) / 1.week).floor
 
@@ -174,8 +174,12 @@ namespace :db do
     end
   end
 
+  task log_info: [:environment] do
+    Rails.logger.level = Logger::INFO
+  end
+
   desc 'Clear the database and fill with test data'
-  task populate: [:skip_prod, :drop, :setup, :migrate, :init] do
+  task populate: [:log_info, :skip_prod, :drop, :setup, :migrate, :init] do
     scale = ENV['SCALE'] ? ENV['SCALE'].to_sym : :small
     extended = ENV['EXTENDED'] == 'true'
 
