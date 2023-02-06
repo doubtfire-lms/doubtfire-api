@@ -64,11 +64,11 @@ class TurnItIn
   def self.exec_tca_call(action, &block)
     unless TurnItIn.functional?
       Doubtfire::Application.config.logger.error "TII failed. #{action}. Turn It In not functional"
-      raise StandardError, "Turn It In not functional"
+      raise TCAClient::ApiError, code: 0, message: "Turn It In not functional"
     end
     if TurnItIn.rate_limited?
       Doubtfire::Application.config.logger.error "TII failed. #{action}. Turn It In is rate limited"
-      raise StandardError, "Turn It In rate limited"
+      raise TCAClient::ApiError, code: 429, message: "Turn It In rate limited"
     end
 
     block.call
@@ -159,8 +159,6 @@ class TurnItIn
     # 400	A required field is missing
 
     false
-  rescue StandardError => e # Rate limit, or not functional
-    false
   end
 
   @eula = nil
@@ -189,7 +187,7 @@ class TurnItIn
         TurnItIn.eula_version
       )
     end
-  rescue TCAClient::ApiError || StandardError
+  rescue TCAClient::ApiError
     nil
   end
 
@@ -197,7 +195,7 @@ class TurnItIn
   #
   # @param unit [Unit] the unit to create or get the group context for
   # @return [TCAClient::GroupContext] the group context for the unit
-  def create_or_get_group_context(unit)
+  def self.create_or_get_group_context(unit)
     unless unit.tii_group_context_id.present?
       unit.tii_group_context_id = SecureRandom.uuid
       unit.save
@@ -214,7 +212,7 @@ class TurnItIn
   #
   # @param task_def [TaskDefinition] the task definition to create or get the group for
   # @return [TCAClient::Group] the group for the task definition
-  def create_or_get_group(task_def)
+  def self.create_or_get_group(task_def)
     unless task_def.tii_group_id.present?
       task_def.tii_group_id = SecureRandom.uuid
       task_def.save
@@ -231,7 +229,7 @@ class TurnItIn
   #
   # @param user [User] the user to get the turn it in user for
   # @return [TCAClient::Users] the turn it in user for the user
-  def tii_user_for(user)
+  def self.tii_user_for(user)
     TCAClient::Users.new(
       id: user.username,
       family_name: user.last_name,
@@ -240,12 +238,23 @@ class TurnItIn
     )
   end
 
-  def tii_role_for(task, user)
+  def self.tii_role_for(task, user)
     user_role = task.role_for(user)
     if [:tutor].include?(user_role) || (user_role.nil? && user.role_id == Role.admin_id)
       'INSTRUCTOR'
     else
       'LEARNER'
+    end
+  end
+
+  # Send all documents to turn it in for checking
+  #
+  # @param task [Task] the task to send the documents for
+  def self.send_documents_to_tii(task, submitter)
+    task.number_of_documents.times do |idx|
+      if task.is_document? idx
+        @instance.send_document_to_tii(task, idx, submitter)
+      end
     end
   end
 
@@ -256,7 +265,7 @@ class TurnItIn
   # @param idx [Integer] the index of the document to create the turn it in submission for
   # @param submitter [User] the user who is making the submission to turn it in
   # @return [Boolean] true if the submission was created, false otherwise
-  def perform_submission(task, idx, submitter)
+  def send_document_to_tii(task, idx, submitter)
     # Check to ensure it is a new upload
     last_tii_submission_for_task = task.tii_submissions.where(idx: idx).last
     unless last_tii_submission_for_task.nil? || task.file_uploaded_at > last_tii_submission_for_task.created_at

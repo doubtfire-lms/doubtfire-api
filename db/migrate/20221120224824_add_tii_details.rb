@@ -26,10 +26,10 @@ class AddTiiDetails < ActiveRecord::Migration[7.0]
       t.integer     :retries, default: 0, null: false
       t.integer     :status, default: 0, null: false
 
-      t.string      :error_message
+      t.integer     :error_code
+      t.string      :custom_error_message
 
-      t.timestamps                  null: false
+      t.timestamps  null: false
     end
-
   end
 end
