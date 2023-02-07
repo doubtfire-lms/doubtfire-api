@@ -82,11 +82,17 @@ class ActiveSupport::TestCase
       url: "https://static.turnitin.com/eula/v1beta/fr-fr/eula.html",
       available_languages: [ "en-US" ]
     ))
+
+    @last_unit_id = Unit.last.id
   end
 
   def teardown
     Rails.cache.clear
     Sidekiq::Job.clear_all
+
+    # Destroy any units there were created so that files are cleaned up
+    Unit.where("id > :last_unit_id", last_unit_id: @last_unit_id).destroy_all
+
     DatabaseCleaner.clean
   end
 

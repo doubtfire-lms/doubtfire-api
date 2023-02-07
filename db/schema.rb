@@ -352,7 +352,8 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_20_224824) do
     t.datetime "next_process_update_at"
     t.integer "retries", default: 0, null: false
     t.integer "status", default: 0, null: false
-    t.string "error_message"
+    t.integer "error_code"
+    t.string "custom_error_message"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["submitted_by_user_id"], name: "index_tii_submissions_on_submitted_by_user_id"
