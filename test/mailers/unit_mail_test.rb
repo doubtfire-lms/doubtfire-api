@@ -16,6 +16,7 @@ class UnitMailTest < ActionMailer::TestCase
     unit.send_weekly_status_emails(summary_stats)
 
     assert_equal unit.active_projects.count + 1, ActionMailer::Base.deliveries.count
+    unit.destroy!
   end
 
   def test_send_portfolio_ready_from_main_convenor
@@ -32,6 +33,8 @@ class UnitMailTest < ActionMailer::TestCase
 
     assert_equal 1, mail.from().count
     assert_equal convenor.email, mail.from().first
+    assert mail.html_part.body.include? "projects/#{project.id}/portfolio"
+    unit.destroy!
   end
 
   def test_send_portfolio_fail_from_main_convenor
@@ -48,6 +51,8 @@ class UnitMailTest < ActionMailer::TestCase
 
     assert_equal 1, mail.from().count
     assert_equal convenor.email, mail.from().first
+    assert mail.html_part.body.include? "projects/#{project.id}/portfolio"
+    unit.destroy!
   end
 
 end

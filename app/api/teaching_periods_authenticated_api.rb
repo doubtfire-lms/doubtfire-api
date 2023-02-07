@@ -23,12 +23,12 @@ class TeachingPeriodsAuthenticatedApi < Grape::API
       error!({ error: 'Not authorised to create a teaching period' }, 403)
     end
     teaching_period_parameters = ActionController::Parameters.new(params)
-                                                              .require(:teaching_period)
-                                                              .permit(:period,
-                                                                      :year,
-                                                                      :start_date,
-                                                                      :end_date,
-                                                                      :active_until)
+                                                             .require(:teaching_period)
+                                                             .permit(:period,
+                                                                     :year,
+                                                                     :start_date,
+                                                                     :end_date,
+                                                                     :active_until)
 
     result = TeachingPeriod.create!(teaching_period_parameters)
 
@@ -56,12 +56,12 @@ class TeachingPeriodsAuthenticatedApi < Grape::API
       error!({ error: 'Not authorised to update a teaching period' }, 403)
     end
     teaching_period_parameters = ActionController::Parameters.new(params)
-                                                              .require(:teaching_period)
-                                                              .permit(:period,
-                                                                      :year,
-                                                                      :start_date,
-                                                                      :end_date,
-                                                                      :active_until)
+                                                             .require(:teaching_period)
+                                                             .permit(:period,
+                                                                     :year,
+                                                                     :start_date,
+                                                                     :end_date,
+                                                                     :active_until)
 
     teaching_period.update!(teaching_period_parameters)
     present teaching_period, with: Entities::TeachingPeriodEntity, user: current_user
@@ -92,6 +92,6 @@ class TeachingPeriodsAuthenticatedApi < Grape::API
     new_teaching_period = TeachingPeriod.find(new_teaching_period_id)
 
     existing_teaching_period = TeachingPeriod.find(params[:existing_teaching_period_id])
-    error!({error: existing_teaching_period.errors.full_messages.first}, 403) unless existing_teaching_period.rollover(new_teaching_period, params[:search_forward], params[:rollover_inactive])
+    error!({ error: existing_teaching_period.errors.full_messages.first }, 403) unless existing_teaching_period.rollover(new_teaching_period, params[:search_forward], params[:rollover_inactive])
   end
 end

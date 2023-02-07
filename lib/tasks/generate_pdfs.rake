@@ -16,7 +16,8 @@ namespace :submission do
     begin
       pid = File.read(pid_file).to_i
       raise Errno::ESRCH if pid == 0
-      Process.getpgid( pid )
+
+      Process.getpgid(pid)
       true
     rescue Errno::ESRCH
       # clean up old running file
@@ -37,7 +38,30 @@ namespace :submission do
     FileUtils.rm(rake_executing_marker_file)
   end
 
+  task portfolio_autogen_check: :environment do
+    # Portfolio generation automation:
+    # Flip compile_portfolio to true for all projects where the following conditions are met:
+    # - associated unit is active
+    # - current date is after configured automatic generation dates for the associated unit
+    # - portfolio compilation has not been requested already
+    # - portfolio is still not available
+    # Additionally, set the portfolio_auto_generated property to true to indicate this is auto-generated
+    Project.joins(:unit)
+           .where(units: { active: true })
+           .where("units.portfolio_auto_generation_date < ?", Date.today)
+           .where(compile_portfolio: false)
+           .reject(&:portfolio_available)
+           .each do |project|
+      project.compile_portfolio = true
+      project.portfolio_auto_generated = true
+      project.save
+    end
+  end
+
   task generate_pdfs: :environment do
+    # Reduce logging verbosity for the generate_pdfs task in production
+    logger.level = :warn if Rails.configuration.pdfgen_quiet
+
     if is_executing?
       logger.error 'Skip generate pdf -- already executing'
       puts 'Skip generate pdf -- already executing'
@@ -62,6 +86,7 @@ namespace :submission do
           end
 
           next unless project.student.receive_portfolio_notifications
+
           logger.info "emailing portfolio notification to #{project.student.name}"
 
           if success

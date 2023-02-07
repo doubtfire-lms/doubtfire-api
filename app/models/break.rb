@@ -35,6 +35,7 @@ class Break < ApplicationRecord
   def first_monday
     return start_date if start_date.wday == 1
     return start_date + 1.day if start_date.wday == 0
+
     return start_date + (8 - start_date.wday).days
   end
 

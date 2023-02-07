@@ -1,7 +1,6 @@
 require 'icalendar'
 
 class Webcal < ApplicationRecord
-
   belongs_to :user, optional: false
 
   has_many :webcal_unit_exclusions, dependent: :destroy
@@ -50,8 +49,8 @@ class Webcal < ApplicationRecord
   def event_name_for_task_definition(task_def, variant = 'end')
     name = "#{task_def.unit.code}: #{task_def.abbreviation}: #{task_def.name}"
     case variant
-      when 'start' then "Start: #{name}"
-      when 'end'   then (include_start_dates ? "End: #{name}" : name)
+    when 'start' then "Start: #{name}"
+    when 'end'   then (include_start_dates ? "End: #{name}" : name)
     end
   end
 
@@ -73,7 +72,7 @@ class Webcal < ApplicationRecord
     ical.prodid = Doubtfire::Application.config.institution[:product_name]
 
     # load all of the tasks... uses the preloaded project
-    tasks = Task.where(task_definition: task_defs, project: task_defs.map{|t|t.unit.projects.first}.uniq)
+    tasks = Task.where(task_definition: task_defs, project: task_defs.map { |t| t.unit.projects.first }.uniq)
 
     # Add iCalendar events for the specified definition.
     task_defs.each do |td|
@@ -139,7 +138,7 @@ class Webcal < ApplicationRecord
   # Returns the target/extended date for the specified task definition.
   #
   def self.end_date_for_task_definition(task_def, tasks)
-    task = tasks.select {|t| t.task_definition_id == task_def.id}.first
+    task = tasks.select { |t| t.task_definition_id == task_def.id }.first
     task.present? ? task.due_date : task_def.target_date
   end
 

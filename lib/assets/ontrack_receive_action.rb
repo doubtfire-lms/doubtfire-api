@@ -27,7 +27,6 @@ def receive(_subscriber_instance, channel, _results_publisher, delivery_info, _p
 
   channel.ack(delivery_info.delivery_tag)
   overseer_assessment.update_from_output
-
 rescue StandardError => e
   logger.error e.inspect
 ensure

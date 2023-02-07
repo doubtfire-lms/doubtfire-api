@@ -2,369 +2,416 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
-### [6.0.12](https://github.com/macite/doubtfire-deploy/compare/v6.0.11...v6.0.12) (2022-06-03)
+### [6.0.18](https://github.com/doubtfire-lms/doubtfire-api/compare/v6.0.17...v6.0.18) (2022-10-04)
 
 
 ### Bug Fixes
 
-* reinstate recipe but fix parse runs issue ([f5afbfe](https://github.com/macite/doubtfire-deploy/commit/f5afbfe7fe6ebe663f222922d05ba9e54cb3c4c7))
+* ensure portfolio PDFs are compressed ([49dbc36](https://github.com/doubtfire-lms/doubtfire-api/commit/49dbc366fec3b7c30c00f992bec06245c55e2115))
 
-### [6.0.11](https://github.com/macite/doubtfire-deploy/compare/v6.0.10...v6.0.11) (2022-06-02)
-
-
-### Bug Fixes
-
-* only send overseer image id to admin staff ([6201b64](https://github.com/macite/doubtfire-deploy/commit/6201b6427aa88b5435eafa0085fa2eacb078911c))
-* pdf creation latex settings ([4b9e340](https://github.com/macite/doubtfire-deploy/commit/4b9e3406d5582f0baecf3922481a39542f03d3f5))
-* remove defaults from unit update optional parameters ([7eb7f1c](https://github.com/macite/doubtfire-deploy/commit/7eb7f1cf5925c2a2a60aabb93984aaa03aca4412))
-* webcal task selection and api format ([a55f57e](https://github.com/macite/doubtfire-deploy/commit/a55f57e22599002a46d90547e8be3f37a0ccf9a6))
-
-### [6.0.10](https://github.com/macite/doubtfire-deploy/compare/v6.0.9...v6.0.10) (2022-05-25)
+### [6.0.17](https://github.com/doubtfire-lms/doubtfire-api/compare/v6.0.16...v6.0.17) (2022-09-29)
 
 
 ### Bug Fixes
 
-* update moss ruby to read similarity reports ([9500bd4](https://github.com/macite/doubtfire-deploy/commit/9500bd4696218db335ad8f48f980e010d67bfca4))
+* add term setting to pdf generation to quiet log ([0f4812f](https://github.com/doubtfire-lms/doubtfire-api/commit/0f4812f7108c632fa03a74c85b23b38f8548762a))
 
-### [6.0.9](https://github.com/macite/doubtfire-deploy/compare/v6.0.8...v6.0.9) (2022-03-27)
-
-
-### Bug Fixes
-
-* remove pct check for group submission ([e23aec5](https://github.com/macite/doubtfire-deploy/commit/e23aec565e0a965c7146cade9a9ca46b031024ad))
-
-### [6.0.8](https://github.com/macite/doubtfire-deploy/compare/v6.0.7...v6.0.8) (2022-03-22)
+### [6.0.16](https://github.com/doubtfire-lms/doubtfire-api/compare/v6.0.15...v6.0.16) (2022-09-29)
 
 
 ### Bug Fixes
 
-* ensure validation works correctly for tutorial enrolments with restricted groups ([abf9d53](https://github.com/macite/doubtfire-deploy/commit/abf9d5313dee0780b9e653b3c180e501bf6c8ca2))
+* remove downstream newpax patch and add version check ([7447c55](https://github.com/doubtfire-lms/doubtfire-api/commit/7447c558d16ea6ca0fcb0b61b5a554ac04c65d3b))
 
-### [6.0.7](https://github.com/macite/doubtfire-deploy/compare/v6.0.6...v6.0.7) (2022-03-17)
-
-
-### Bug Fixes
-
-* ensure cron tasks are reported via email ([20d6ec0](https://github.com/macite/doubtfire-deploy/commit/20d6ec0f0b99d308e3f1c9371a8f713174a8ed40))
-* ensure sample compose contains institution settings ([0f0185d](https://github.com/macite/doubtfire-deploy/commit/0f0185dc0111da2056e9e7689d051c0d0b1c09e3))
-* ensure task stats uses float division ([fc75222](https://github.com/macite/doubtfire-deploy/commit/fc75222d928e6e9e868c7e520ea9d9ee5251cfc8))
-* ensure TaskStatus.count uses sql where needed ([383a904](https://github.com/macite/doubtfire-deploy/commit/383a9047aa8ce849a302ce40ecadd7848df42b49))
-* ensure there is access to task status count from database ([976ec0a](https://github.com/macite/doubtfire-deploy/commit/976ec0ad2c2e7dff63d65baf45ddc1f342aa7249))
-* post project uses default task stats ([9ba5a50](https://github.com/macite/doubtfire-deploy/commit/9ba5a5069f5c8b8d30e27156dbc0b4914c9fc413))
-* stop empty nicknames from rendering in student_name ([#364](https://github.com/macite/doubtfire-deploy/issues/364)) ([b1a6035](https://github.com/macite/doubtfire-deploy/commit/b1a60356549f14aeb6432c9aec15e0f033732dd8))
-
-### [6.0.7](https://github.com/macite/doubtfire-deploy/compare/v6.0.6...v6.0.7) (2022-03-17)
+### [6.0.15](https://github.com/doubtfire-lms/doubtfire-api/compare/v6.0.14...v6.0.15) (2022-09-10)
 
 
 ### Bug Fixes
 
-* ensure cron tasks are reported via email ([20d6ec0](https://github.com/macite/doubtfire-deploy/commit/20d6ec0f0b99d308e3f1c9371a8f713174a8ed40))
-* ensure sample compose contains institution settings ([0f0185d](https://github.com/macite/doubtfire-deploy/commit/0f0185dc0111da2056e9e7689d051c0d0b1c09e3))
-* ensure TaskStatus.count uses sql where needed ([383a904](https://github.com/macite/doubtfire-deploy/commit/383a9047aa8ce849a302ce40ecadd7848df42b49))
-* ensure there is access to task status count from database ([976ec0a](https://github.com/macite/doubtfire-deploy/commit/976ec0ad2c2e7dff63d65baf45ddc1f342aa7249))
-* post project uses default task stats ([9ba5a50](https://github.com/macite/doubtfire-deploy/commit/9ba5a5069f5c8b8d30e27156dbc0b4914c9fc413))
-* stop empty nicknames from rendering in student_name ([#364](https://github.com/macite/doubtfire-deploy/issues/364)) ([b1a6035](https://github.com/macite/doubtfire-deploy/commit/b1a60356549f14aeb6432c9aec15e0f033732dd8))
+* hard-code date in newpax to avoid nil dates ([b0b3db6](https://github.com/doubtfire-lms/doubtfire-api/commit/b0b3db6ee1405620afd884f8f404e42cb05b33f2))
 
-### [6.0.6](https://github.com/macite/doubtfire-deploy/compare/v6.0.5...v6.0.6) (2022-03-03)
+### [6.0.14](https://github.com/doubtfire-lms/doubtfire-api/compare/v6.0.13...v6.0.14) (2022-09-05)
 
-
-### Bug Fixes
-
-* ensure content disposition is accessible on file download ([0f38961](https://github.com/macite/doubtfire-deploy/commit/0f389611ae24fc4bea181ab807974d67b1b26264))
-
-### [6.0.5](https://github.com/macite/doubtfire-deploy/compare/v6.0.4...v6.0.5) (2022-03-03)
-
-
-### Bug Fixes
-
-* align param and field names in stream put ([919fd60](https://github.com/macite/doubtfire-deploy/commit/919fd605e148ad11a26d7c3fce5f020032d19b2e))
-
-### [6.0.4](https://github.com/macite/doubtfire-deploy/compare/v6.0.3...v6.0.4) (2022-02-28)
-
-
-### Bug Fixes
-
-* revert to using serialize with task comments ([371688c](https://github.com/macite/doubtfire-deploy/commit/371688c18a6914fe3fba2ac8cf9b02a7417cc462))
-
-### [6.0.3](https://github.com/macite/doubtfire-deploy/compare/v6.0.2...v6.0.3) (2022-02-25)
-
-
-### Bug Fixes
-
-* ensure enrolments sync script is executable ([23714d0](https://github.com/macite/doubtfire-deploy/commit/23714d0c339082eb02b8f4e9a2759e162c4766f0))
-
-### [6.0.2](https://github.com/macite/doubtfire-deploy/compare/v6.0.1...v6.0.2) (2022-02-23)
-
-
-### Bug Fixes
-
-* ensure students can withdraw from tutorials ([0dcab00](https://github.com/macite/doubtfire-deploy/commit/0dcab0039b5d93509a619058a112f05a615563d8))
-
-### [6.0.1](https://github.com/macite/doubtfire-deploy/compare/v6.0.0...v6.0.1) (2022-02-17)
-
-## [6.0.0](https://github.com/macite/doubtfire-deploy/compare/v5.0.7...v6.0.0) (2022-02-02)
+### [6.0.13](https://github.com/doubtfire-lms/doubtfire-api/compare/v6.0.12...v6.0.13) (2022-09-01)
 
 
 ### Features
 
-* add script to sync enrolments ([e932725](https://github.com/macite/doubtfire-deploy/commit/e932725ca41aac68998a00a69e9e45a993fa6c48))
-* add sprockets to development to host swagger ([b928f78](https://github.com/macite/doubtfire-deploy/commit/b928f78669348f7ca0ce94ecc881f2cad6eefcd2))
-* adjust dockerfile to work without code volume ([54c8d6b](https://github.com/macite/doubtfire-deploy/commit/54c8d6bacfee0233c379961d357fec715bd4dee7))
-* allow configuration to turn off mail sending ([ed8b3af](https://github.com/macite/doubtfire-deploy/commit/ed8b3af4805a6c6f13d9cd049e1afc370dcf6e1a))
-* enhance error reporting from overseer ([b79e4ce](https://github.com/macite/doubtfire-deploy/commit/b79e4ceadcc3a733cb6d809ec73288a1f8866e93))
-* enhance rails logging ([77f76b2](https://github.com/macite/doubtfire-deploy/commit/77f76b25b633e6d5c421e3ee3f2c8d21ffb1e638))
-* move task dates when unit start date changes ([958a263](https://github.com/macite/doubtfire-deploy/commit/958a263eaaf8fddb55ae0b208d6ea3f4f268445b))
-* report errors when attempting to add student as tutor ([7d8571a](https://github.com/macite/doubtfire-deploy/commit/7d8571a4f1ef951342899afcd6bf8b9b12f67fa2))
-* update to rails 7 and rails encrypted attributes ([c99ec09](https://github.com/macite/doubtfire-deploy/commit/c99ec0942ce006361d4d4acfc93a587e584c3f66))
+* add portfolio autogeneration to crontab ([036d763](https://github.com/doubtfire-lms/doubtfire-api/commit/036d763e5679a4fb55a844e5888272780cf76dc9))
+* only grant extensions on positive feedback responses ([17d5a98](https://github.com/doubtfire-lms/doubtfire-api/commit/17d5a9840366d7546d7e6e2a77cf835f2219d1c3))
 
 
 ### Bug Fixes
 
-* Access serialised object now uses object.object ([00e532b](https://github.com/macite/doubtfire-deploy/commit/00e532b4393d78fa0e407396a52d8488eb96a87d))
-* Add content disposition to evidence download ([b47b9ab](https://github.com/macite/doubtfire-deploy/commit/b47b9ab79fec4b6dfb2055a786aaeaeef3616493))
-* Add custom serialiser to support rails 6 ([d051bef](https://github.com/macite/doubtfire-deploy/commit/d051befdebecd41b062de60e84aed70d2b4027b7))
-* Add database populator require to units factory ([29b22b9](https://github.com/macite/doubtfire-deploy/commit/29b22b9d74312f17ce975ef863c1eedcd14f5eb9))
-* Add factory_bot_rails in test,staging ([f4a85d6](https://github.com/macite/doubtfire-deploy/commit/f4a85d66c6dfd194c72c42760a483962e391c8f1))
-* Add headers for application controllers to match grape ([71cc316](https://github.com/macite/doubtfire-deploy/commit/71cc316848743ba6dd10c430d0e0bebfcda3d55d))
-* add idp certificate to saml settings ([e5926fa](https://github.com/macite/doubtfire-deploy/commit/e5926fa9fd42277aee4be7fb81569d712d9995e0))
-* add listen gem for development environment ([1675dbf](https://github.com/macite/doubtfire-deploy/commit/1675dbfcb48b923eada172fba8831b00cb6de799))
-* add missing end from if statement in auth_helpers ([4034dd2](https://github.com/macite/doubtfire-deploy/commit/4034dd2e8be59abc21e1ae8f3e2178b38aa7bc22))
-* add missing end to authentication_api ([28caaab](https://github.com/macite/doubtfire-deploy/commit/28caaab4a93bfc0bc35f1a16028413713b51c3c4))
-* add missing overseer entities ([7f09f50](https://github.com/macite/doubtfire-deploy/commit/7f09f508428ebede4aa7f04d90ef26abe113b3f7))
-* add required config/storage.yml file ([de3df26](https://github.com/macite/doubtfire-deploy/commit/de3df26af99ae1233e9bf42eeddb7727c195ac25))
-* add saml signout URL ([879624c](https://github.com/macite/doubtfire-deploy/commit/879624c799268e6b582f871ac7218d622f0cec6f))
-* add saml to gemfile.lock ([1456597](https://github.com/macite/doubtfire-deploy/commit/145659728c619b07b7c0d74b7de967bc67bb89e1))
-* Add serializer for task comments ([6afa092](https://github.com/macite/doubtfire-deploy/commit/6afa09215b4803a659c74f33b2004d11b2143251))
-* Auth token via user ([6dc53b9](https://github.com/macite/doubtfire-deploy/commit/6dc53b9b27473a98f83b83c8235145d5729ab567))
-* Auth token via user ([75bab1d](https://github.com/macite/doubtfire-deploy/commit/75bab1d49286f863c25d632985ed2f9190de3177))
-* Authenticate auth tokens via User ([ca9edb7](https://github.com/macite/doubtfire-deploy/commit/ca9edb7896a5b8abdb633eec27842afcbcbb8421))
-* Authenticate token via user ([224e5e9](https://github.com/macite/doubtfire-deploy/commit/224e5e953e1613ff5fad6677e0a423bccfb5d1d2))
-* Authenticate tokens via User ([3bcad77](https://github.com/macite/doubtfire-deploy/commit/3bcad77319b918b6c8afafaa4943464c425ddf0e))
-* Check sending headers from auth test ([c8c7ef4](https://github.com/macite/doubtfire-deploy/commit/c8c7ef4da2e294e3049086b31fa1980d75a94fd6))
-* check userRole when creating SAML user ([fce7fbd](https://github.com/macite/doubtfire-deploy/commit/fce7fbdd604b8af5d76a942bb3016145c6f980ff))
-* check userRole when creating SAML user ([bbf7adb](https://github.com/macite/doubtfire-deploy/commit/bbf7adba1a6ddc2e683ca053477a2d59983adee7))
-* consolidate aaf/saml response format ([1a5fcb8](https://github.com/macite/doubtfire-deploy/commit/1a5fcb88bb4ce824fe37ad4361e4185a40714a41))
-* Correct assert json matches update for rails ([14e1aa9](https://github.com/macite/doubtfire-deploy/commit/14e1aa9f98ba3bc7d0bf124c9ff071ce3a59dac3))
-* correct calculation of week number for units outside teaching periods ([591780c](https://github.com/macite/doubtfire-deploy/commit/591780c74bc0238112167ebce0a8259c8280bc18))
-* correct can destroy behaviour for rails 6 ([794b6e4](https://github.com/macite/doubtfire-deploy/commit/794b6e4764d3edbb49cb2d3c49bb1176ed55257a))
-* Correct case of auth params and headers ([d3c0206](https://github.com/macite/doubtfire-deploy/commit/d3c020618d5d10acbe68560204ef11f1dfcfff48))
-* Correct error message response ([4086227](https://github.com/macite/doubtfire-deploy/commit/408622700117f5f8a942ad92f0205d940e46ce4d))
-* Correct exception handling in tests and ensure foreign key breaks are handled in the API ([81856d1](https://github.com/macite/doubtfire-deploy/commit/81856d1f2d94eee6f48325540f0df52b9b636497))
-* Correct group test with missing auth details ([820e255](https://github.com/macite/doubtfire-deploy/commit/820e255564494d83e7512ad614d0bec4674c7b9f))
-* correct issue in foreign key migration ([a70fb57](https://github.com/macite/doubtfire-deploy/commit/a70fb570d2f52f5af91c3e54a99c5d2345f1aa91))
-* Correct issue with double adding user if to auth token ([b3afad6](https://github.com/macite/doubtfire-deploy/commit/b3afad6c64ae1d45775d40dde88189e6fd4a5823))
-* correct issues in schema and migration of discussion comments ([799f5cc](https://github.com/macite/doubtfire-deploy/commit/799f5cc2e413eefce903876238671cb34622a75d))
-* Correct issues with sign out ([e47e05b](https://github.com/macite/doubtfire-deploy/commit/e47e05bee7b52da04fe410fe3f935a163aff4878))
-* Correct json model compare to work with hash ([070e677](https://github.com/macite/doubtfire-deploy/commit/070e677f4a7bf26b35e1b87b516e7712bf44821a))
-* correct key env settings in development ([19d7cc9](https://github.com/macite/doubtfire-deploy/commit/19d7cc9633dfda45b358ac9b74f165f8ddd00cf7))
-* correct logging of aaf login and add to saml ([90d2608](https://github.com/macite/doubtfire-deploy/commit/90d260865c8e87776fbee5195d0ca21060602f00))
-* correct migrate index creation with bigint switch ([81287ea](https://github.com/macite/doubtfire-deploy/commit/81287ea9bc16e8b34731c1fb0dc925115a810680))
-* correct migration of auth token. ([11c3235](https://github.com/macite/doubtfire-deploy/commit/11c3235fd613fbbac26c2f4fdd966ad75b0fb028))
-* Correct populator use of BigDecimal ([f7f5aa3](https://github.com/macite/doubtfire-deploy/commit/f7f5aa3f6999fd2485df6a80da4c959627776be2))
-* Correct reference in auth token migration ([6a4f643](https://github.com/macite/doubtfire-deploy/commit/6a4f6434bb26a3847e6691b113659900586e9ff7))
-* correct remove index migration ([09c402f](https://github.com/macite/doubtfire-deploy/commit/09c402f7ac8ece9108ed5cbbbadbace6633f82ab))
-* correct task definition entity ([0d8f3d1](https://github.com/macite/doubtfire-deploy/commit/0d8f3d1173b68824662fe49b6f087efaf87b2397))
-* Correct typo in user for reminder test ([8609444](https://github.com/macite/doubtfire-deploy/commit/860944409b79e1f8a147695b74c791ff9059f85c))
-* Correct unit model test to work with new environment ([91d29fd](https://github.com/macite/doubtfire-deploy/commit/91d29fd79db130ae06d405f11938592895edbfe0))
-* Correct use of assert nil in task status tests ([63852bb](https://github.com/macite/doubtfire-deploy/commit/63852bb6c61a5398e65a59878ddaa945befdc654))
-* correct use of doubtfire logger ([6ae0220](https://github.com/macite/doubtfire-deploy/commit/6ae0220edff3bc7a2f44035321cbbc236cc5df41))
-* Correct use of present to use with key not using ([4c60841](https://github.com/macite/doubtfire-deploy/commit/4c608418d38b4148e8c16f88e1ab68b36f359dfb))
-* create saml config hash ([f478102](https://github.com/macite/doubtfire-deploy/commit/f4781021290c369709adb3e97c44c06fea5c08ca))
-* Default remember to false on generate token ([62d1785](https://github.com/macite/doubtfire-deploy/commit/62d1785fccb8542de6a8b62a955a7c0262ac3dd9))
-* Delete duplicate .object in serialisers ([4225dbf](https://github.com/macite/doubtfire-deploy/commit/4225dbf5d90aa29cae9efa04257632de9eca631c))
-* don't specify bundler version ([c665cb7](https://github.com/macite/doubtfire-deploy/commit/c665cb729df8b26c81a008001cd4c9dbcd822517))
-* ensure all routes use presenters ([c05b624](https://github.com/macite/doubtfire-deploy/commit/c05b624660d4da63a0f86114115b42965edf0717))
-* ensure authentication token is unique for a user ([eb73851](https://github.com/macite/doubtfire-deploy/commit/eb738510e70093954aa4c890fdabc4ca235fa3cb))
-* Ensure error on invalid token ([314b269](https://github.com/macite/doubtfire-deploy/commit/314b269d71fa6df7dcd9db3d2b78b0a32ada845f))
-* Ensure generate tokens is passed remember value ([0ece967](https://github.com/macite/doubtfire-deploy/commit/0ece967f278db75d48a87ed8177d5270bb4bbb29))
-* ensure init includes aadmin ([faf8255](https://github.com/macite/doubtfire-deploy/commit/faf8255ebc381d920fb3cf029bb5d0ee887f5315))
-* Ensure key is 32 bytes only in encrypted attributes ([9d9eb11](https://github.com/macite/doubtfire-deploy/commit/9d9eb111e5633f8dc86f9a13f73b418d37096fea))
-* ensure migration tests for foreign keys ([fca64c6](https://github.com/macite/doubtfire-deploy/commit/fca64c6b6628c6fe2ffc572e0ad591bfb7fb1e61))
-* Ensure migration works for auth tokens up and down ([7d4dbcd](https://github.com/macite/doubtfire-deploy/commit/7d4dbcdfa18ed7c28402fbe3948a3d9b6e4b5431))
-* ensure overseer comment entity has current user ([91f8430](https://github.com/macite/doubtfire-deploy/commit/91f84300d1a232f3130a533256bfa8dfed5d273a))
-* Ensure pdf generation works for tests ([f06e371](https://github.com/macite/doubtfire-deploy/commit/f06e371aa7ac733a96c187ed7e3e9c751708e249))
-* ensure rake db:init is available for new deployments ([e5e1092](https://github.com/macite/doubtfire-deploy/commit/e5e10924531453407e07e236e080021dab0fa145))
-* Ensure signif works on integers ([011478f](https://github.com/macite/doubtfire-deploy/commit/011478fce31370e03897b0df482276f7a3f5da8d))
-* Ensure status comments are marked as read on create ([171ec76](https://github.com/macite/doubtfire-deploy/commit/171ec76110df0357a2878382e7047ba1fdd5d5ab))
-* Ensure that group tests work with new ([7aa14e6](https://github.com/macite/doubtfire-deploy/commit/7aa14e6e25fe8690a810a56d55976be36ee49eab))
-* Ensure that students can reply to others in group comments ([83bc4d7](https://github.com/macite/doubtfire-deploy/commit/83bc4d73cc1772baab704d266508773218ce0154))
-* Ensure that updating task status returns update only task details ([5c35915](https://github.com/macite/doubtfire-deploy/commit/5c35915fc84b2e17bde0656ca497331f44b6746f))
-* Ensure that user is saved on generate of auth token ([0627780](https://github.com/macite/doubtfire-deploy/commit/062778017ee7d7df6e90f507d0181a96e0e9309a))
-* ensure unit roles always include the unit id ([9b624e5](https://github.com/macite/doubtfire-deploy/commit/9b624e579f8d60bace7d5f0d1a8d04f49b6e474d))
-* Ensure user accessed correctly in unit entity ([98a2d59](https://github.com/macite/doubtfire-deploy/commit/98a2d59334421f0445b7ecdb542d1999df84d816))
-* Ensure using throw abort in before destroy on error ([e503ca2](https://github.com/macite/doubtfire-deploy/commit/e503ca221fba5b12875b6478a7e4e62ac29d2d75))
-* Ensure webcal method use correct auth methods ([71773b6](https://github.com/macite/doubtfire-deploy/commit/71773b6bf17b21c993ab41856a51d7668c89eaa3))
-* Fix and use bundler2.0 in CI ([631d339](https://github.com/macite/doubtfire-deploy/commit/631d339beaec125aeb2e63201609d99e19fa6f48))
-* Fix error when change code to factorybot ([59fc722](https://github.com/macite/doubtfire-deploy/commit/59fc7224be6fcf934d9db660b1f1450372b63148))
-* fix logger syntax error ([e87fcc1](https://github.com/macite/doubtfire-deploy/commit/e87fcc1e00400384d6190afadb21963a7793adc6))
-* Fix Travis CI error ([ae6e151](https://github.com/macite/doubtfire-deploy/commit/ae6e1518dc5c84a2def625771a95ac85529ed31a))
-* fix typos in authentication helper doc ([7cdb854](https://github.com/macite/doubtfire-deploy/commit/7cdb85453bf64bf296f8ca613e6f8ff8cfa4f2fd))
-* Grape now uses *body* to return data update in teaching periods ([a7ebcda](https://github.com/macite/doubtfire-deploy/commit/a7ebcdaee8457d7f98268efe52c393b6a3440034))
-* Grape params are now hash - update file upload field access to read from hash ([b4366fc](https://github.com/macite/doubtfire-deploy/commit/b4366fc2cbab4998e3b4aaf17b6efe4ce7e1f134))
-* improve reliability of get awaiting feedback test ([318c9bc](https://github.com/macite/doubtfire-deploy/commit/318c9bc367986b66e09a95117e91a760f40cddf2))
-* Incorrect use of self to access activee record rows ([8424272](https://github.com/macite/doubtfire-deploy/commit/84242721379b159ad07f9b14bc905f7376a57c76))
-* lock listen gem version ([49c907c](https://github.com/macite/doubtfire-deploy/commit/49c907c88aa4edccae96ad6113a398acbb3ab5f8))
-* Migrate to unit entity and fix unit api tests ([f38c377](https://github.com/macite/doubtfire-deploy/commit/f38c3774ed17153f65291c3c98984b07c5921ae4))
-* pass required username to sign_in page ([58a9fc2](https://github.com/macite/doubtfire-deploy/commit/58a9fc2ecebb902ede084dd3db62d4bb8182f684))
-* read saml config from hash correctly ([0e17743](https://github.com/macite/doubtfire-deploy/commit/0e177433a8ef14420e7d4b955878d944fa96409b))
-* reenforce bundler version in dockerfile ([0d5341b](https://github.com/macite/doubtfire-deploy/commit/0d5341bad96025ab30f3fbe7a4032d6c9e8644fd))
-* remote username mangling ([e7accd9](https://github.com/macite/doubtfire-deploy/commit/e7accd96cfbe18bf8d9a548752edf1a8b3ed9130))
-* remove all use of active model serializers ([f628ff4](https://github.com/macite/doubtfire-deploy/commit/f628ff463306cf018b1304bfd34cfffd02883e86))
-* remove clock drift from settings object ([1d63e9c](https://github.com/macite/doubtfire-deploy/commit/1d63e9c597956eac94f93d3bb39de59cee35ee0b))
-* remove create_and_post_user method ([12237a8](https://github.com/macite/doubtfire-deploy/commit/12237a828ca8bfa5ffba3784d4c92fdc4e642a13))
-* remove down migration data update for auth tokens. ([bbeef86](https://github.com/macite/doubtfire-deploy/commit/bbeef86da00749554af0c8fbf4562b3522152318))
-* remove duplicate index on learning outcomes ([6d23243](https://github.com/macite/doubtfire-deploy/commit/6d23243c38f5d4fe3815d8ffc63a2fdda210799e))
-* remove old bundler version specified ([348b9c2](https://github.com/macite/doubtfire-deploy/commit/348b9c26e67470b917ef0c162df07e3f5994ce2a))
-* remove postgres from Gemfile.lock ([83150d9](https://github.com/macite/doubtfire-deploy/commit/83150d94a3b39341adedc2cbf3964aa852420525))
-* remove references to discussion comment table ([d6507cf](https://github.com/macite/doubtfire-deploy/commit/d6507cf2e6949a8be6af66f1ad8b9b46c9d8126e))
-* Remove return from TaskEntity other projects ([f396596](https://github.com/macite/doubtfire-deploy/commit/f3965963fc6844bd131de3a3be065af02784e2ce))
-* Remove sample html file ([51ef0d6](https://github.com/macite/doubtfire-deploy/commit/51ef0d62d2568e4fc4b84f2dc8f8311bc2c1e8dc))
-* remove task comment foreign key in id migration ([58c264e](https://github.com/macite/doubtfire-deploy/commit/58c264e89c72848ab569b4fb4dc22f53731c2293))
-* Remove trace from group tests ([deed1e7](https://github.com/macite/doubtfire-deploy/commit/deed1e76c7a1374b909e02912e1e748feb8406e5))
-* remove unnecessary access token from action ([c4c34de](https://github.com/macite/doubtfire-deploy/commit/c4c34de1c023de25a72b1a2f685d9c4b2bc654fc))
-* Remove unneeded email from tutor in tutorial ([00f5082](https://github.com/macite/doubtfire-deploy/commit/00f50821217a65244c90d9a6326953be366962c7))
-* remove unused devise routes ([a270d25](https://github.com/macite/doubtfire-deploy/commit/a270d25be16c3c4c9db983f2f9eb67b576f0f15c))
-* rename not_queued enum constant ([55a86e3](https://github.com/macite/doubtfire-deploy/commit/55a86e37b25386bd172809ad9abe9ee8f40e380e))
-* revert gemfile lock ([73721d2](https://github.com/macite/doubtfire-deploy/commit/73721d290d901809a492548e3fde87141246c416))
-* support zeitwerk mode loader ([15e3f96](https://github.com/macite/doubtfire-deploy/commit/15e3f9662493a6c1839aa7daa50cc12a0dc301ec))
-* Switch auth and user to grape entity ([b92d3db](https://github.com/macite/doubtfire-deploy/commit/b92d3dbdca50f7d0a4613327d78138504c801cc5))
-* Switch file access to hash ([38d7a3c](https://github.com/macite/doubtfire-deploy/commit/38d7a3ce953938a61c21d6504a3dd0578cfa81fc))
-* Switch from after to before update where changed used ([3bd7d4b](https://github.com/macite/doubtfire-deploy/commit/3bd7d4bfcbcb35e1113229ee414bfe299ef66b47))
-* Switch from around to before update ([69cbe06](https://github.com/macite/doubtfire-deploy/commit/69cbe069399be64a5fa60370753a4abf6afde837))
-* switch latex config to use recipe ([7e75c15](https://github.com/macite/doubtfire-deploy/commit/7e75c15b14a189f785c50902007fc55b044cf677))
-* switch scopes to methods ([989e8c2](https://github.com/macite/doubtfire-deploy/commit/989e8c297300fc3f0f5782367d4dc5591fe70af1))
-* Switch tutorial api to use new entity ([be9ead0](https://github.com/macite/doubtfire-deploy/commit/be9ead090d6abdef0e12446b7e672a4c4e533758))
-* Update authentication in Sign-out API ([1e843e2](https://github.com/macite/doubtfire-deploy/commit/1e843e2d37d7db49c8870b96778dd2d6f00738dc))
-* update bunny pub sub to fix subscriber launch ([37de3bc](https://github.com/macite/doubtfire-deploy/commit/37de3bccff94cad2be1a607f173ba5580bc10016))
-* Update faker deprecated methods ([f19928d](https://github.com/macite/doubtfire-deploy/commit/f19928d50080a895babec3f496f66d41a50f79d1))
-* update migration for ralls 6 ([348b4b3](https://github.com/macite/doubtfire-deploy/commit/348b4b38619fbf068252c7a470cdb7020bb68a26))
-* Update migration to work with new code on migrate without data loss ([c032ec3](https://github.com/macite/doubtfire-deploy/commit/c032ec3f1eeea20d439258f7718a89a2ca1f1702))
-* update model object to work with ruby 3.1 ([ebc5832](https://github.com/macite/doubtfire-deploy/commit/ebc5832b3ccda6769329b5f4ae701bc351fcf07b))
-* Update status tests based on new read by everyone on status comments ([ebc8694](https://github.com/macite/doubtfire-deploy/commit/ebc8694086730c15a6294079397866d53115244a))
-* Update tutorial enrolments to use new entities ([1fe02c3](https://github.com/macite/doubtfire-deploy/commit/1fe02c328bf4938155e01e70363a88eab120e9d1))
-* Update use of update attributes ([b5e5d46](https://github.com/macite/doubtfire-deploy/commit/b5e5d464d760c18d3881f07783010d7b39780623))
-* Update zip filename access ([77f7b70](https://github.com/macite/doubtfire-deploy/commit/77f7b70a0f488537f30988584c62e28d115d197f))
-* Updated activity types, campuses and csv tests ([5710753](https://github.com/macite/doubtfire-deploy/commit/5710753b95de8805a0aa61fd4122b6e37aa6ca5e))
-* Updated comments and units tests ([e760fff](https://github.com/macite/doubtfire-deploy/commit/e760ffffd8c551c384d9c00b94f61b525e8eeb05))
-* Updated tutorials, unit roles, units and users tests ([8d2035f](https://github.com/macite/doubtfire-deploy/commit/8d2035f6ba3e60968da7063bf3676333c469ae35))
-* Updated unit testing for all /api/activity_types_api_test endpoint ([1df78d9](https://github.com/macite/doubtfire-deploy/commit/1df78d9b5b34e6bd4403fe5e1b360f4e2c6d2638))
-* Updated unit testing for all /api/auth endpoint ([ae3e8cf](https://github.com/macite/doubtfire-deploy/commit/ae3e8cfb3fe4987e0a0ecc969855d17361f7c9c1))
-* Updated Unit tests for groups, projects, students and api ([0aac2de](https://github.com/macite/doubtfire-deploy/commit/0aac2defb2db602b5fd36e22bd4e51a45e4ba4a7))
-* upgrade callbacks and use of _changed? and _was to new rails 6 behaviour ([20f779b](https://github.com/macite/doubtfire-deploy/commit/20f779bfe111c17b81aac940720578eef75a8980))
-* Upgrade ruby version to 2.6 in CI ([7603cb8](https://github.com/macite/doubtfire-deploy/commit/7603cb83d35d41b5fda99d28bb4da9cae7526655))
-* use new Grape Entity model for overseer ([9632b88](https://github.com/macite/doubtfire-deploy/commit/9632b881d1e7d14653742ca5af83094d2a2033fe))
-* use password auth if not aaf or saml ([aee8d6b](https://github.com/macite/doubtfire-deploy/commit/aee8d6bb73e41489093ff189f3cd375f151c04a3))
-* Use presenter in portfolio evidence api ([a8ee43e](https://github.com/macite/doubtfire-deploy/commit/a8ee43e6cea5b21808a925287d44c447bfb54caa))
-* use puts instead of y ([312390e](https://github.com/macite/doubtfire-deploy/commit/312390eda2631142b439e61473fe50d88dc51443))
+* address potential csrf vuln ([c5f065a](https://github.com/doubtfire-lms/doubtfire-api/commit/c5f065a02abb605d90ba1577ede383e9734537f8))
+* correct the bad tag in email template for the "due soon" ul ([697b7fd](https://github.com/doubtfire-lms/doubtfire-api/commit/697b7fdc03b2f1c647bc412a7dcc682a558b7120))
+* ignore locally installed gems ([90cfc9c](https://github.com/doubtfire-lms/doubtfire-api/commit/90cfc9c7d6fdf00d900cd799c72b38aa2f0a5666))
+* install and use newpax to preserve links in generated PDFs ([8e65a71](https://github.com/doubtfire-lms/doubtfire-api/commit/8e65a714b63ada5ef69c0d87c05d6c761f68d8f6))
+* remove duplicate auto generate call in crontab ([93409dc](https://github.com/doubtfire-lms/doubtfire-api/commit/93409dc54e294005e0e215ddd88345b250e88b04))
 
-### [5.0.7](https://github.com/macite/doubtfire-deploy/compare/v5.0.6...v5.0.7) (2021-12-09)
+### [6.0.12](https://github.com/doubtfire-lms/doubtfire-api/compare/v6.0.11...v6.0.12) (2022-06-03)
+
+
+### Bug Fixes
+
+* reinstate recipe but fix parse runs issue ([f5afbfe](https://github.com/doubtfire-lms/doubtfire-api/commit/f5afbfe7fe6ebe663f222922d05ba9e54cb3c4c7))
+
+### [6.0.11](https://github.com/doubtfire-lms/doubtfire-api/compare/v6.0.10...v6.0.11) (2022-06-02)
+
+
+### Bug Fixes
+
+* only send overseer image id to admin staff ([6201b64](https://github.com/doubtfire-lms/doubtfire-api/commit/6201b6427aa88b5435eafa0085fa2eacb078911c))
+* pdf creation latex settings ([4b9e340](https://github.com/doubtfire-lms/doubtfire-api/commit/4b9e3406d5582f0baecf3922481a39542f03d3f5))
+* remove defaults from unit update optional parameters ([7eb7f1c](https://github.com/doubtfire-lms/doubtfire-api/commit/7eb7f1cf5925c2a2a60aabb93984aaa03aca4412))
+* webcal task selection and api format ([a55f57e](https://github.com/doubtfire-lms/doubtfire-api/commit/a55f57e22599002a46d90547e8be3f37a0ccf9a6))
+
+### [6.0.10](https://github.com/doubtfire-lms/doubtfire-api/compare/v6.0.9...v6.0.10) (2022-05-25)
+
+
+### Bug Fixes
+
+* update moss ruby to read similarity reports ([9500bd4](https://github.com/doubtfire-lms/doubtfire-api/commit/9500bd4696218db335ad8f48f980e010d67bfca4))
+
+### [6.0.9](https://github.com/doubtfire-lms/doubtfire-api/compare/v6.0.8...v6.0.9) (2022-03-27)
+
+
+### Bug Fixes
+
+* remove pct check for group submission ([e23aec5](https://github.com/doubtfire-lms/doubtfire-api/commit/e23aec565e0a965c7146cade9a9ca46b031024ad))
+
+### [6.0.8](https://github.com/doubtfire-lms/doubtfire-api/compare/v6.0.7...v6.0.8) (2022-03-22)
+
+
+### Bug Fixes
+
+* ensure validation works correctly for tutorial enrolments with restricted groups ([abf9d53](https://github.com/doubtfire-lms/doubtfire-api/commit/abf9d5313dee0780b9e653b3c180e501bf6c8ca2))
+
+### [6.0.7](https://github.com/doubtfire-lms/doubtfire-api/compare/v6.0.6...v6.0.7) (2022-03-17)
+
+
+### Bug Fixes
+
+* ensure cron tasks are reported via email ([20d6ec0](https://github.com/doubtfire-lms/doubtfire-api/commit/20d6ec0f0b99d308e3f1c9371a8f713174a8ed40))
+* ensure sample compose contains institution settings ([0f0185d](https://github.com/doubtfire-lms/doubtfire-api/commit/0f0185dc0111da2056e9e7689d051c0d0b1c09e3))
+* ensure task stats uses float division ([fc75222](https://github.com/doubtfire-lms/doubtfire-api/commit/fc75222d928e6e9e868c7e520ea9d9ee5251cfc8))
+* ensure TaskStatus.count uses sql where needed ([383a904](https://github.com/doubtfire-lms/doubtfire-api/commit/383a9047aa8ce849a302ce40ecadd7848df42b49))
+* ensure there is access to task status count from database ([976ec0a](https://github.com/doubtfire-lms/doubtfire-api/commit/976ec0ad2c2e7dff63d65baf45ddc1f342aa7249))
+* post project uses default task stats ([9ba5a50](https://github.com/doubtfire-lms/doubtfire-api/commit/9ba5a5069f5c8b8d30e27156dbc0b4914c9fc413))
+* stop empty nicknames from rendering in student_name ([#364](https://github.com/doubtfire-lms/doubtfire-api/issues/364)) ([b1a6035](https://github.com/doubtfire-lms/doubtfire-api/commit/b1a60356549f14aeb6432c9aec15e0f033732dd8))
+
+### [6.0.7](https://github.com/doubtfire-lms/doubtfire-api/compare/v6.0.6...v6.0.7) (2022-03-17)
+
+
+### Bug Fixes
+
+* ensure cron tasks are reported via email ([20d6ec0](https://github.com/doubtfire-lms/doubtfire-api/commit/20d6ec0f0b99d308e3f1c9371a8f713174a8ed40))
+* ensure sample compose contains institution settings ([0f0185d](https://github.com/doubtfire-lms/doubtfire-api/commit/0f0185dc0111da2056e9e7689d051c0d0b1c09e3))
+* ensure TaskStatus.count uses sql where needed ([383a904](https://github.com/doubtfire-lms/doubtfire-api/commit/383a9047aa8ce849a302ce40ecadd7848df42b49))
+* ensure there is access to task status count from database ([976ec0a](https://github.com/doubtfire-lms/doubtfire-api/commit/976ec0ad2c2e7dff63d65baf45ddc1f342aa7249))
+* post project uses default task stats ([9ba5a50](https://github.com/doubtfire-lms/doubtfire-api/commit/9ba5a5069f5c8b8d30e27156dbc0b4914c9fc413))
+* stop empty nicknames from rendering in student_name ([#364](https://github.com/doubtfire-lms/doubtfire-api/issues/364)) ([b1a6035](https://github.com/doubtfire-lms/doubtfire-api/commit/b1a60356549f14aeb6432c9aec15e0f033732dd8))
+
+### [6.0.6](https://github.com/doubtfire-lms/doubtfire-api/compare/v6.0.5...v6.0.6) (2022-03-03)
+
+
+### Bug Fixes
+
+* ensure content disposition is accessible on file download ([0f38961](https://github.com/doubtfire-lms/doubtfire-api/commit/0f389611ae24fc4bea181ab807974d67b1b26264))
+
+### [6.0.5](https://github.com/doubtfire-lms/doubtfire-api/compare/v6.0.4...v6.0.5) (2022-03-03)
+
+
+### Bug Fixes
+
+* align param and field names in stream put ([919fd60](https://github.com/doubtfire-lms/doubtfire-api/commit/919fd605e148ad11a26d7c3fce5f020032d19b2e))
+
+### [6.0.4](https://github.com/doubtfire-lms/doubtfire-api/compare/v6.0.3...v6.0.4) (2022-02-28)
+
+
+### Bug Fixes
+
+* revert to using serialize with task comments ([371688c](https://github.com/doubtfire-lms/doubtfire-api/commit/371688c18a6914fe3fba2ac8cf9b02a7417cc462))
+
+### [6.0.3](https://github.com/doubtfire-lms/doubtfire-api/compare/v6.0.2...v6.0.3) (2022-02-25)
+
+
+### Bug Fixes
+
+* ensure enrolments sync script is executable ([23714d0](https://github.com/doubtfire-lms/doubtfire-api/commit/23714d0c339082eb02b8f4e9a2759e162c4766f0))
+
+### [6.0.2](https://github.com/doubtfire-lms/doubtfire-api/compare/v6.0.1...v6.0.2) (2022-02-23)
+
+
+### Bug Fixes
+
+* ensure students can withdraw from tutorials ([0dcab00](https://github.com/doubtfire-lms/doubtfire-api/commit/0dcab0039b5d93509a619058a112f05a615563d8))
+
+### [6.0.1](https://github.com/doubtfire-lms/doubtfire-api/compare/v6.0.0...v6.0.1) (2022-02-17)
+
+## [6.0.0](https://github.com/doubtfire-lms/doubtfire-api/compare/v5.0.7...v6.0.0) (2022-02-02)
 
 
 ### Features
 
-* Add support for files from Elements of Computer Systems ([#333](https://github.com/macite/doubtfire-deploy/issues/333)) ([a3742a5](https://github.com/macite/doubtfire-deploy/commit/a3742a5058dac2c34abd8ea28370e7abbde54c75))
-* make portfolio evidence relative ([701f58c](https://github.com/macite/doubtfire-deploy/commit/701f58c9c30cb54199c823dec34eb63a50264714))
+* add script to sync enrolments ([e932725](https://github.com/doubtfire-lms/doubtfire-api/commit/e932725ca41aac68998a00a69e9e45a993fa6c48))
+* add sprockets to development to host swagger ([b928f78](https://github.com/doubtfire-lms/doubtfire-api/commit/b928f78669348f7ca0ce94ecc881f2cad6eefcd2))
+* adjust dockerfile to work without code volume ([54c8d6b](https://github.com/doubtfire-lms/doubtfire-api/commit/54c8d6bacfee0233c379961d357fec715bd4dee7))
+* allow configuration to turn off mail sending ([ed8b3af](https://github.com/doubtfire-lms/doubtfire-api/commit/ed8b3af4805a6c6f13d9cd049e1afc370dcf6e1a))
+* enhance error reporting from overseer ([b79e4ce](https://github.com/doubtfire-lms/doubtfire-api/commit/b79e4ceadcc3a733cb6d809ec73288a1f8866e93))
+* enhance rails logging ([77f76b2](https://github.com/doubtfire-lms/doubtfire-api/commit/77f76b25b633e6d5c421e3ee3f2c8d21ffb1e638))
+* move task dates when unit start date changes ([958a263](https://github.com/doubtfire-lms/doubtfire-api/commit/958a263eaaf8fddb55ae0b208d6ea3f4f268445b))
+* report errors when attempting to add student as tutor ([7d8571a](https://github.com/doubtfire-lms/doubtfire-api/commit/7d8571a4f1ef951342899afcd6bf8b9b12f67fa2))
+* update to rails 7 and rails encrypted attributes ([c99ec09](https://github.com/doubtfire-lms/doubtfire-api/commit/c99ec0942ce006361d4d4acfc93a587e584c3f66))
 
 
 ### Bug Fixes
 
-* correct convert submission to pdf to use new folder by default ([f216834](https://github.com/macite/doubtfire-deploy/commit/f216834bb2bb8906e823282dba064372a8463ef0))
-* esure changes to portfolio evidence apply to task ([6ade5f1](https://github.com/macite/doubtfire-deploy/commit/6ade5f13d1206d72142a19c2c7984dc46b4fd9ae))
-* remote username mangling ([789fed1](https://github.com/macite/doubtfire-deploy/commit/789fed1c67010ad8c1b8a46a36b3965de3565c7b))
+* Access serialised object now uses object.object ([00e532b](https://github.com/doubtfire-lms/doubtfire-api/commit/00e532b4393d78fa0e407396a52d8488eb96a87d))
+* Add content disposition to evidence download ([b47b9ab](https://github.com/doubtfire-lms/doubtfire-api/commit/b47b9ab79fec4b6dfb2055a786aaeaeef3616493))
+* Add custom serialiser to support rails 6 ([d051bef](https://github.com/doubtfire-lms/doubtfire-api/commit/d051befdebecd41b062de60e84aed70d2b4027b7))
+* Add database populator require to units factory ([29b22b9](https://github.com/doubtfire-lms/doubtfire-api/commit/29b22b9d74312f17ce975ef863c1eedcd14f5eb9))
+* Add factory_bot_rails in test,staging ([f4a85d6](https://github.com/doubtfire-lms/doubtfire-api/commit/f4a85d66c6dfd194c72c42760a483962e391c8f1))
+* Add headers for application controllers to match grape ([71cc316](https://github.com/doubtfire-lms/doubtfire-api/commit/71cc316848743ba6dd10c430d0e0bebfcda3d55d))
+* add idp certificate to saml settings ([e5926fa](https://github.com/doubtfire-lms/doubtfire-api/commit/e5926fa9fd42277aee4be7fb81569d712d9995e0))
+* add listen gem for development environment ([1675dbf](https://github.com/doubtfire-lms/doubtfire-api/commit/1675dbfcb48b923eada172fba8831b00cb6de799))
+* add missing end from if statement in auth_helpers ([4034dd2](https://github.com/doubtfire-lms/doubtfire-api/commit/4034dd2e8be59abc21e1ae8f3e2178b38aa7bc22))
+* add missing end to authentication_api ([28caaab](https://github.com/doubtfire-lms/doubtfire-api/commit/28caaab4a93bfc0bc35f1a16028413713b51c3c4))
+* add missing overseer entities ([7f09f50](https://github.com/doubtfire-lms/doubtfire-api/commit/7f09f508428ebede4aa7f04d90ef26abe113b3f7))
+* add required config/storage.yml file ([de3df26](https://github.com/doubtfire-lms/doubtfire-api/commit/de3df26af99ae1233e9bf42eeddb7727c195ac25))
+* add saml signout URL ([879624c](https://github.com/doubtfire-lms/doubtfire-api/commit/879624c799268e6b582f871ac7218d622f0cec6f))
+* add saml to gemfile.lock ([1456597](https://github.com/doubtfire-lms/doubtfire-api/commit/145659728c619b07b7c0d74b7de967bc67bb89e1))
+* Add serializer for task comments ([6afa092](https://github.com/doubtfire-lms/doubtfire-api/commit/6afa09215b4803a659c74f33b2004d11b2143251))
+* Auth token via user ([6dc53b9](https://github.com/doubtfire-lms/doubtfire-api/commit/6dc53b9b27473a98f83b83c8235145d5729ab567))
+* Auth token via user ([75bab1d](https://github.com/doubtfire-lms/doubtfire-api/commit/75bab1d49286f863c25d632985ed2f9190de3177))
+* Authenticate auth tokens via User ([ca9edb7](https://github.com/doubtfire-lms/doubtfire-api/commit/ca9edb7896a5b8abdb633eec27842afcbcbb8421))
+* Authenticate token via user ([224e5e9](https://github.com/doubtfire-lms/doubtfire-api/commit/224e5e953e1613ff5fad6677e0a423bccfb5d1d2))
+* Authenticate tokens via User ([3bcad77](https://github.com/doubtfire-lms/doubtfire-api/commit/3bcad77319b918b6c8afafaa4943464c425ddf0e))
+* Check sending headers from auth test ([c8c7ef4](https://github.com/doubtfire-lms/doubtfire-api/commit/c8c7ef4da2e294e3049086b31fa1980d75a94fd6))
+* check userRole when creating SAML user ([fce7fbd](https://github.com/doubtfire-lms/doubtfire-api/commit/fce7fbdd604b8af5d76a942bb3016145c6f980ff))
+* check userRole when creating SAML user ([bbf7adb](https://github.com/doubtfire-lms/doubtfire-api/commit/bbf7adba1a6ddc2e683ca053477a2d59983adee7))
+* consolidate aaf/saml response format ([1a5fcb8](https://github.com/doubtfire-lms/doubtfire-api/commit/1a5fcb88bb4ce824fe37ad4361e4185a40714a41))
+* Correct assert json matches update for rails ([14e1aa9](https://github.com/doubtfire-lms/doubtfire-api/commit/14e1aa9f98ba3bc7d0bf124c9ff071ce3a59dac3))
+* correct calculation of week number for units outside teaching periods ([591780c](https://github.com/doubtfire-lms/doubtfire-api/commit/591780c74bc0238112167ebce0a8259c8280bc18))
+* correct can destroy behaviour for rails 6 ([794b6e4](https://github.com/doubtfire-lms/doubtfire-api/commit/794b6e4764d3edbb49cb2d3c49bb1176ed55257a))
+* Correct case of auth params and headers ([d3c0206](https://github.com/doubtfire-lms/doubtfire-api/commit/d3c020618d5d10acbe68560204ef11f1dfcfff48))
+* Correct error message response ([4086227](https://github.com/doubtfire-lms/doubtfire-api/commit/408622700117f5f8a942ad92f0205d940e46ce4d))
+* Correct exception handling in tests and ensure foreign key breaks are handled in the API ([81856d1](https://github.com/doubtfire-lms/doubtfire-api/commit/81856d1f2d94eee6f48325540f0df52b9b636497))
+* Correct group test with missing auth details ([820e255](https://github.com/doubtfire-lms/doubtfire-api/commit/820e255564494d83e7512ad614d0bec4674c7b9f))
+* correct issue in foreign key migration ([a70fb57](https://github.com/doubtfire-lms/doubtfire-api/commit/a70fb570d2f52f5af91c3e54a99c5d2345f1aa91))
+* Correct issue with double adding user if to auth token ([b3afad6](https://github.com/doubtfire-lms/doubtfire-api/commit/b3afad6c64ae1d45775d40dde88189e6fd4a5823))
+* correct issues in schema and migration of discussion comments ([799f5cc](https://github.com/doubtfire-lms/doubtfire-api/commit/799f5cc2e413eefce903876238671cb34622a75d))
+* Correct issues with sign out ([e47e05b](https://github.com/doubtfire-lms/doubtfire-api/commit/e47e05bee7b52da04fe410fe3f935a163aff4878))
+* Correct json model compare to work with hash ([070e677](https://github.com/doubtfire-lms/doubtfire-api/commit/070e677f4a7bf26b35e1b87b516e7712bf44821a))
+* correct key env settings in development ([19d7cc9](https://github.com/doubtfire-lms/doubtfire-api/commit/19d7cc9633dfda45b358ac9b74f165f8ddd00cf7))
+* correct logging of aaf login and add to saml ([90d2608](https://github.com/doubtfire-lms/doubtfire-api/commit/90d260865c8e87776fbee5195d0ca21060602f00))
+* correct migrate index creation with bigint switch ([81287ea](https://github.com/doubtfire-lms/doubtfire-api/commit/81287ea9bc16e8b34731c1fb0dc925115a810680))
+* correct migration of auth token. ([11c3235](https://github.com/doubtfire-lms/doubtfire-api/commit/11c3235fd613fbbac26c2f4fdd966ad75b0fb028))
+* Correct populator use of BigDecimal ([f7f5aa3](https://github.com/doubtfire-lms/doubtfire-api/commit/f7f5aa3f6999fd2485df6a80da4c959627776be2))
+* Correct reference in auth token migration ([6a4f643](https://github.com/doubtfire-lms/doubtfire-api/commit/6a4f6434bb26a3847e6691b113659900586e9ff7))
+* correct remove index migration ([09c402f](https://github.com/doubtfire-lms/doubtfire-api/commit/09c402f7ac8ece9108ed5cbbbadbace6633f82ab))
+* correct task definition entity ([0d8f3d1](https://github.com/doubtfire-lms/doubtfire-api/commit/0d8f3d1173b68824662fe49b6f087efaf87b2397))
+* Correct typo in user for reminder test ([8609444](https://github.com/doubtfire-lms/doubtfire-api/commit/860944409b79e1f8a147695b74c791ff9059f85c))
+* Correct unit model test to work with new environment ([91d29fd](https://github.com/doubtfire-lms/doubtfire-api/commit/91d29fd79db130ae06d405f11938592895edbfe0))
+* Correct use of assert nil in task status tests ([63852bb](https://github.com/doubtfire-lms/doubtfire-api/commit/63852bb6c61a5398e65a59878ddaa945befdc654))
+* correct use of doubtfire logger ([6ae0220](https://github.com/doubtfire-lms/doubtfire-api/commit/6ae0220edff3bc7a2f44035321cbbc236cc5df41))
+* Correct use of present to use with key not using ([4c60841](https://github.com/doubtfire-lms/doubtfire-api/commit/4c608418d38b4148e8c16f88e1ab68b36f359dfb))
+* create saml config hash ([f478102](https://github.com/doubtfire-lms/doubtfire-api/commit/f4781021290c369709adb3e97c44c06fea5c08ca))
+* Default remember to false on generate token ([62d1785](https://github.com/doubtfire-lms/doubtfire-api/commit/62d1785fccb8542de6a8b62a955a7c0262ac3dd9))
+* Delete duplicate .object in serialisers ([4225dbf](https://github.com/doubtfire-lms/doubtfire-api/commit/4225dbf5d90aa29cae9efa04257632de9eca631c))
+* don't specify bundler version ([c665cb7](https://github.com/doubtfire-lms/doubtfire-api/commit/c665cb729df8b26c81a008001cd4c9dbcd822517))
+* ensure all routes use presenters ([c05b624](https://github.com/doubtfire-lms/doubtfire-api/commit/c05b624660d4da63a0f86114115b42965edf0717))
+* ensure authentication token is unique for a user ([eb73851](https://github.com/doubtfire-lms/doubtfire-api/commit/eb738510e70093954aa4c890fdabc4ca235fa3cb))
+* Ensure error on invalid token ([314b269](https://github.com/doubtfire-lms/doubtfire-api/commit/314b269d71fa6df7dcd9db3d2b78b0a32ada845f))
+* Ensure generate tokens is passed remember value ([0ece967](https://github.com/doubtfire-lms/doubtfire-api/commit/0ece967f278db75d48a87ed8177d5270bb4bbb29))
+* ensure init includes aadmin ([faf8255](https://github.com/doubtfire-lms/doubtfire-api/commit/faf8255ebc381d920fb3cf029bb5d0ee887f5315))
+* Ensure key is 32 bytes only in encrypted attributes ([9d9eb11](https://github.com/doubtfire-lms/doubtfire-api/commit/9d9eb111e5633f8dc86f9a13f73b418d37096fea))
+* ensure migration tests for foreign keys ([fca64c6](https://github.com/doubtfire-lms/doubtfire-api/commit/fca64c6b6628c6fe2ffc572e0ad591bfb7fb1e61))
+* Ensure migration works for auth tokens up and down ([7d4dbcd](https://github.com/doubtfire-lms/doubtfire-api/commit/7d4dbcdfa18ed7c28402fbe3948a3d9b6e4b5431))
+* ensure overseer comment entity has current user ([91f8430](https://github.com/doubtfire-lms/doubtfire-api/commit/91f84300d1a232f3130a533256bfa8dfed5d273a))
+* Ensure pdf generation works for tests ([f06e371](https://github.com/doubtfire-lms/doubtfire-api/commit/f06e371aa7ac733a96c187ed7e3e9c751708e249))
+* ensure rake db:init is available for new deployments ([e5e1092](https://github.com/doubtfire-lms/doubtfire-api/commit/e5e10924531453407e07e236e080021dab0fa145))
+* Ensure signif works on integers ([011478f](https://github.com/doubtfire-lms/doubtfire-api/commit/011478fce31370e03897b0df482276f7a3f5da8d))
+* Ensure status comments are marked as read on create ([171ec76](https://github.com/doubtfire-lms/doubtfire-api/commit/171ec76110df0357a2878382e7047ba1fdd5d5ab))
+* Ensure that group tests work with new ([7aa14e6](https://github.com/doubtfire-lms/doubtfire-api/commit/7aa14e6e25fe8690a810a56d55976be36ee49eab))
+* Ensure that students can reply to others in group comments ([83bc4d7](https://github.com/doubtfire-lms/doubtfire-api/commit/83bc4d73cc1772baab704d266508773218ce0154))
+* Ensure that updating task status returns update only task details ([5c35915](https://github.com/doubtfire-lms/doubtfire-api/commit/5c35915fc84b2e17bde0656ca497331f44b6746f))
+* Ensure that user is saved on generate of auth token ([0627780](https://github.com/doubtfire-lms/doubtfire-api/commit/062778017ee7d7df6e90f507d0181a96e0e9309a))
+* ensure unit roles always include the unit id ([9b624e5](https://github.com/doubtfire-lms/doubtfire-api/commit/9b624e579f8d60bace7d5f0d1a8d04f49b6e474d))
+* Ensure user accessed correctly in unit entity ([98a2d59](https://github.com/doubtfire-lms/doubtfire-api/commit/98a2d59334421f0445b7ecdb542d1999df84d816))
+* Ensure using throw abort in before destroy on error ([e503ca2](https://github.com/doubtfire-lms/doubtfire-api/commit/e503ca221fba5b12875b6478a7e4e62ac29d2d75))
+* Ensure webcal method use correct auth methods ([71773b6](https://github.com/doubtfire-lms/doubtfire-api/commit/71773b6bf17b21c993ab41856a51d7668c89eaa3))
+* Fix and use bundler2.0 in CI ([631d339](https://github.com/doubtfire-lms/doubtfire-api/commit/631d339beaec125aeb2e63201609d99e19fa6f48))
+* Fix error when change code to factorybot ([59fc722](https://github.com/doubtfire-lms/doubtfire-api/commit/59fc7224be6fcf934d9db660b1f1450372b63148))
+* fix logger syntax error ([e87fcc1](https://github.com/doubtfire-lms/doubtfire-api/commit/e87fcc1e00400384d6190afadb21963a7793adc6))
+* Fix Travis CI error ([ae6e151](https://github.com/doubtfire-lms/doubtfire-api/commit/ae6e1518dc5c84a2def625771a95ac85529ed31a))
+* fix typos in authentication helper doc ([7cdb854](https://github.com/doubtfire-lms/doubtfire-api/commit/7cdb85453bf64bf296f8ca613e6f8ff8cfa4f2fd))
+* Grape now uses *body* to return data update in teaching periods ([a7ebcda](https://github.com/doubtfire-lms/doubtfire-api/commit/a7ebcdaee8457d7f98268efe52c393b6a3440034))
+* Grape params are now hash - update file upload field access to read from hash ([b4366fc](https://github.com/doubtfire-lms/doubtfire-api/commit/b4366fc2cbab4998e3b4aaf17b6efe4ce7e1f134))
+* improve reliability of get awaiting feedback test ([318c9bc](https://github.com/doubtfire-lms/doubtfire-api/commit/318c9bc367986b66e09a95117e91a760f40cddf2))
+* Incorrect use of self to access activee record rows ([8424272](https://github.com/doubtfire-lms/doubtfire-api/commit/84242721379b159ad07f9b14bc905f7376a57c76))
+* lock listen gem version ([49c907c](https://github.com/doubtfire-lms/doubtfire-api/commit/49c907c88aa4edccae96ad6113a398acbb3ab5f8))
+* Migrate to unit entity and fix unit api tests ([f38c377](https://github.com/doubtfire-lms/doubtfire-api/commit/f38c3774ed17153f65291c3c98984b07c5921ae4))
+* pass required username to sign_in page ([58a9fc2](https://github.com/doubtfire-lms/doubtfire-api/commit/58a9fc2ecebb902ede084dd3db62d4bb8182f684))
+* read saml config from hash correctly ([0e17743](https://github.com/doubtfire-lms/doubtfire-api/commit/0e177433a8ef14420e7d4b955878d944fa96409b))
+* reenforce bundler version in dockerfile ([0d5341b](https://github.com/doubtfire-lms/doubtfire-api/commit/0d5341bad96025ab30f3fbe7a4032d6c9e8644fd))
+* remote username mangling ([e7accd9](https://github.com/doubtfire-lms/doubtfire-api/commit/e7accd96cfbe18bf8d9a548752edf1a8b3ed9130))
+* remove all use of active model serializers ([f628ff4](https://github.com/doubtfire-lms/doubtfire-api/commit/f628ff463306cf018b1304bfd34cfffd02883e86))
+* remove clock drift from settings object ([1d63e9c](https://github.com/doubtfire-lms/doubtfire-api/commit/1d63e9c597956eac94f93d3bb39de59cee35ee0b))
+* remove create_and_post_user method ([12237a8](https://github.com/doubtfire-lms/doubtfire-api/commit/12237a828ca8bfa5ffba3784d4c92fdc4e642a13))
+* remove down migration data update for auth tokens. ([bbeef86](https://github.com/doubtfire-lms/doubtfire-api/commit/bbeef86da00749554af0c8fbf4562b3522152318))
+* remove duplicate index on learning outcomes ([6d23243](https://github.com/doubtfire-lms/doubtfire-api/commit/6d23243c38f5d4fe3815d8ffc63a2fdda210799e))
+* remove old bundler version specified ([348b9c2](https://github.com/doubtfire-lms/doubtfire-api/commit/348b9c26e67470b917ef0c162df07e3f5994ce2a))
+* remove postgres from Gemfile.lock ([83150d9](https://github.com/doubtfire-lms/doubtfire-api/commit/83150d94a3b39341adedc2cbf3964aa852420525))
+* remove references to discussion comment table ([d6507cf](https://github.com/doubtfire-lms/doubtfire-api/commit/d6507cf2e6949a8be6af66f1ad8b9b46c9d8126e))
+* Remove return from TaskEntity other projects ([f396596](https://github.com/doubtfire-lms/doubtfire-api/commit/f3965963fc6844bd131de3a3be065af02784e2ce))
+* Remove sample html file ([51ef0d6](https://github.com/doubtfire-lms/doubtfire-api/commit/51ef0d62d2568e4fc4b84f2dc8f8311bc2c1e8dc))
+* remove task comment foreign key in id migration ([58c264e](https://github.com/doubtfire-lms/doubtfire-api/commit/58c264e89c72848ab569b4fb4dc22f53731c2293))
+* Remove trace from group tests ([deed1e7](https://github.com/doubtfire-lms/doubtfire-api/commit/deed1e76c7a1374b909e02912e1e748feb8406e5))
+* remove unnecessary access token from action ([c4c34de](https://github.com/doubtfire-lms/doubtfire-api/commit/c4c34de1c023de25a72b1a2f685d9c4b2bc654fc))
+* Remove unneeded email from tutor in tutorial ([00f5082](https://github.com/doubtfire-lms/doubtfire-api/commit/00f50821217a65244c90d9a6326953be366962c7))
+* remove unused devise routes ([a270d25](https://github.com/doubtfire-lms/doubtfire-api/commit/a270d25be16c3c4c9db983f2f9eb67b576f0f15c))
+* rename not_queued enum constant ([55a86e3](https://github.com/doubtfire-lms/doubtfire-api/commit/55a86e37b25386bd172809ad9abe9ee8f40e380e))
+* revert gemfile lock ([73721d2](https://github.com/doubtfire-lms/doubtfire-api/commit/73721d290d901809a492548e3fde87141246c416))
+* support zeitwerk mode loader ([15e3f96](https://github.com/doubtfire-lms/doubtfire-api/commit/15e3f9662493a6c1839aa7daa50cc12a0dc301ec))
+* Switch auth and user to grape entity ([b92d3db](https://github.com/doubtfire-lms/doubtfire-api/commit/b92d3dbdca50f7d0a4613327d78138504c801cc5))
+* Switch file access to hash ([38d7a3c](https://github.com/doubtfire-lms/doubtfire-api/commit/38d7a3ce953938a61c21d6504a3dd0578cfa81fc))
+* Switch from after to before update where changed used ([3bd7d4b](https://github.com/doubtfire-lms/doubtfire-api/commit/3bd7d4bfcbcb35e1113229ee414bfe299ef66b47))
+* Switch from around to before update ([69cbe06](https://github.com/doubtfire-lms/doubtfire-api/commit/69cbe069399be64a5fa60370753a4abf6afde837))
+* switch latex config to use recipe ([7e75c15](https://github.com/doubtfire-lms/doubtfire-api/commit/7e75c15b14a189f785c50902007fc55b044cf677))
+* switch scopes to methods ([989e8c2](https://github.com/doubtfire-lms/doubtfire-api/commit/989e8c297300fc3f0f5782367d4dc5591fe70af1))
+* Switch tutorial api to use new entity ([be9ead0](https://github.com/doubtfire-lms/doubtfire-api/commit/be9ead090d6abdef0e12446b7e672a4c4e533758))
+* Update authentication in Sign-out API ([1e843e2](https://github.com/doubtfire-lms/doubtfire-api/commit/1e843e2d37d7db49c8870b96778dd2d6f00738dc))
+* update bunny pub sub to fix subscriber launch ([37de3bc](https://github.com/doubtfire-lms/doubtfire-api/commit/37de3bccff94cad2be1a607f173ba5580bc10016))
+* Update faker deprecated methods ([f19928d](https://github.com/doubtfire-lms/doubtfire-api/commit/f19928d50080a895babec3f496f66d41a50f79d1))
+* update migration for ralls 6 ([348b4b3](https://github.com/doubtfire-lms/doubtfire-api/commit/348b4b38619fbf068252c7a470cdb7020bb68a26))
+* Update migration to work with new code on migrate without data loss ([c032ec3](https://github.com/doubtfire-lms/doubtfire-api/commit/c032ec3f1eeea20d439258f7718a89a2ca1f1702))
+* update model object to work with ruby 3.1 ([ebc5832](https://github.com/doubtfire-lms/doubtfire-api/commit/ebc5832b3ccda6769329b5f4ae701bc351fcf07b))
+* Update status tests based on new read by everyone on status comments ([ebc8694](https://github.com/doubtfire-lms/doubtfire-api/commit/ebc8694086730c15a6294079397866d53115244a))
+* Update tutorial enrolments to use new entities ([1fe02c3](https://github.com/doubtfire-lms/doubtfire-api/commit/1fe02c328bf4938155e01e70363a88eab120e9d1))
+* Update use of update attributes ([b5e5d46](https://github.com/doubtfire-lms/doubtfire-api/commit/b5e5d464d760c18d3881f07783010d7b39780623))
+* Update zip filename access ([77f7b70](https://github.com/doubtfire-lms/doubtfire-api/commit/77f7b70a0f488537f30988584c62e28d115d197f))
+* Updated activity types, campuses and csv tests ([5710753](https://github.com/doubtfire-lms/doubtfire-api/commit/5710753b95de8805a0aa61fd4122b6e37aa6ca5e))
+* Updated comments and units tests ([e760fff](https://github.com/doubtfire-lms/doubtfire-api/commit/e760ffffd8c551c384d9c00b94f61b525e8eeb05))
+* Updated tutorials, unit roles, units and users tests ([8d2035f](https://github.com/doubtfire-lms/doubtfire-api/commit/8d2035f6ba3e60968da7063bf3676333c469ae35))
+* Updated unit testing for all /api/activity_types_api_test endpoint ([1df78d9](https://github.com/doubtfire-lms/doubtfire-api/commit/1df78d9b5b34e6bd4403fe5e1b360f4e2c6d2638))
+* Updated unit testing for all /api/auth endpoint ([ae3e8cf](https://github.com/doubtfire-lms/doubtfire-api/commit/ae3e8cfb3fe4987e0a0ecc969855d17361f7c9c1))
+* Updated Unit tests for groups, projects, students and api ([0aac2de](https://github.com/doubtfire-lms/doubtfire-api/commit/0aac2defb2db602b5fd36e22bd4e51a45e4ba4a7))
+* upgrade callbacks and use of _changed? and _was to new rails 6 behaviour ([20f779b](https://github.com/doubtfire-lms/doubtfire-api/commit/20f779bfe111c17b81aac940720578eef75a8980))
+* Upgrade ruby version to 2.6 in CI ([7603cb8](https://github.com/doubtfire-lms/doubtfire-api/commit/7603cb83d35d41b5fda99d28bb4da9cae7526655))
+* use new Grape Entity model for overseer ([9632b88](https://github.com/doubtfire-lms/doubtfire-api/commit/9632b881d1e7d14653742ca5af83094d2a2033fe))
+* use password auth if not aaf or saml ([aee8d6b](https://github.com/doubtfire-lms/doubtfire-api/commit/aee8d6bb73e41489093ff189f3cd375f151c04a3))
+* Use presenter in portfolio evidence api ([a8ee43e](https://github.com/doubtfire-lms/doubtfire-api/commit/a8ee43e6cea5b21808a925287d44c447bfb54caa))
+* use puts instead of y ([312390e](https://github.com/doubtfire-lms/doubtfire-api/commit/312390eda2631142b439e61473fe50d88dc51443))
 
-### [5.0.4](https://github.com/macite/doubtfire-deploy/compare/v5.0.3...v5.0.4) (2021-12-06)
+### [5.0.7](https://github.com/doubtfire-lms/doubtfire-api/compare/v5.0.6...v5.0.7) (2021-12-09)
 
 
 ### Features
 
-* add script to sync enrolments ([bc65722](https://github.com/macite/doubtfire-deploy/commit/bc65722c7c22670f5e522d12c472c75c227c43b6))
+* Add support for files from Elements of Computer Systems ([#333](https://github.com/doubtfire-lms/doubtfire-api/issues/333)) ([a3742a5](https://github.com/doubtfire-lms/doubtfire-api/commit/a3742a5058dac2c34abd8ea28370e7abbde54c75))
+* make portfolio evidence relative ([701f58c](https://github.com/doubtfire-lms/doubtfire-api/commit/701f58c9c30cb54199c823dec34eb63a50264714))
 
 
 ### Bug Fixes
 
-* remove set environment from scripts ([f3437bd](https://github.com/macite/doubtfire-deploy/commit/f3437bde40d7042080528d57a16428103e260602))
+* correct convert submission to pdf to use new folder by default ([f216834](https://github.com/doubtfire-lms/doubtfire-api/commit/f216834bb2bb8906e823282dba064372a8463ef0))
+* esure changes to portfolio evidence apply to task ([6ade5f1](https://github.com/doubtfire-lms/doubtfire-api/commit/6ade5f13d1206d72142a19c2c7984dc46b4fd9ae))
+* remote username mangling ([789fed1](https://github.com/doubtfire-lms/doubtfire-api/commit/789fed1c67010ad8c1b8a46a36b3965de3565c7b))
 
-### [5.0.3](https://github.com/macite/doubtfire-deploy/compare/v5.0.2...v5.0.3) (2021-11-19)
+### [5.0.4](https://github.com/doubtfire-lms/doubtfire-api/compare/v5.0.3...v5.0.4) (2021-12-06)
 
 
 ### Features
 
-* log messages to stdout on all environments ([31041c6](https://github.com/macite/doubtfire-deploy/commit/31041c627de2db7c5e5cc0d3d81ebe68235b5120))
+* add script to sync enrolments ([bc65722](https://github.com/doubtfire-lms/doubtfire-api/commit/bc65722c7c22670f5e522d12c472c75c227c43b6))
 
 
 ### Bug Fixes
 
-* correct error message on submission process fail ([b789239](https://github.com/macite/doubtfire-deploy/commit/b78923996cf0cd4987a54dc1fa563e54abe2ffd1))
-* ensure populator works with init ([89ae68b](https://github.com/macite/doubtfire-deploy/commit/89ae68bc40c75ff6c7fd44a1452df42761592581))
-* update bunny pub sub to fix logging and launch issues ([a3ae105](https://github.com/macite/doubtfire-deploy/commit/a3ae105f45ea699eeae2b16557a91b0209b7116c))
+* remove set environment from scripts ([f3437bd](https://github.com/doubtfire-lms/doubtfire-api/commit/f3437bde40d7042080528d57a16428103e260602))
 
-### [5.0.2](https://github.com/macite/doubtfire-deploy/compare/v5.0.1...v5.0.2) (2021-11-19)
-
-
-### Bug Fixes
-
-* update bunny pub sub version ([f594bdf](https://github.com/macite/doubtfire-deploy/commit/f594bdfef57323cfb9490584ca955e79b0e07bee))
-
-### [5.0.1](https://github.com/macite/doubtfire-deploy/compare/v5.0.0...v5.0.1) (2021-10-27)
-
-## [5.0.0](https://github.com/macite/doubtfire-deploy/compare/v5.0.0-2...v5.0.0) (2021-10-13)
+### [5.0.3](https://github.com/doubtfire-lms/doubtfire-api/compare/v5.0.2...v5.0.3) (2021-11-19)
 
 
 ### Features
 
-* add ability to export auth tokens for migration from 5 to 6 ([b40bdd9](https://github.com/macite/doubtfire-deploy/commit/b40bdd96924f0e308850f72d27440e0d305c0759))
-* Add ability to init production ([bd200e6](https://github.com/macite/doubtfire-deploy/commit/bd200e6295db8f55dbcd77f6bad6b462a4e98964))
+* log messages to stdout on all environments ([31041c6](https://github.com/doubtfire-lms/doubtfire-api/commit/31041c627de2db7c5e5cc0d3d81ebe68235b5120))
 
 
 ### Bug Fixes
 
-* Add missing comma in unit.rb ([36c4fac](https://github.com/macite/doubtfire-deploy/commit/36c4fac7c04b50e4db1f7de12540a9206e858660))
-* Add missing self keyword ([f4be643](https://github.com/macite/doubtfire-deploy/commit/f4be643108b30cf43877d3342341837288712f46))
-* Add rescue/ensure block to ontrack_receive_action ([53d8d3c](https://github.com/macite/doubtfire-deploy/commit/53d8d3cf0dfe5353cdfd73bcf222088efea2bdea))
-* align overseer assessment with single assessment comment ([25dbaf8](https://github.com/macite/doubtfire-deploy/commit/25dbaf802a410863d44db26192511788988728ee))
-* Allow protocol to be included in host configuration ([142d80d](https://github.com/macite/doubtfire-deploy/commit/142d80d78a71d5fd33a87bbd64e0f348f15e8d58))
-* Change password back to what it was ([73e6bd8](https://github.com/macite/doubtfire-deploy/commit/73e6bd884f6a558dba1a099f20e235558f5a1a1b))
-* correct convert submission to pdf to use new folder by default ([a4ed642](https://github.com/macite/doubtfire-deploy/commit/a4ed642cf4c4db29b01e14319a3652314126c972))
-* correct development redirect url on aaf auth ([badf14f](https://github.com/macite/doubtfire-deploy/commit/badf14f43542bd30759708d68a3756d0801d4cbc))
-* correct hard coded path to overseer instance ([627d257](https://github.com/macite/doubtfire-deploy/commit/627d2576616be6e7de52d17cc106deb1df105d35))
-* correct overseer env settings in compose ([1daabe8](https://github.com/macite/doubtfire-deploy/commit/1daabe800ef1cafd36b2391dfcdce2e8e03012dd))
-* correct port for developemnt to use 3000 ([778442d](https://github.com/macite/doubtfire-deploy/commit/778442d146ad7db35f7182ae5d9be53bab44aabe))
-* Correct request in skip prod to use STDIN ([6c2c8ef](https://github.com/macite/doubtfire-deploy/commit/6c2c8ef0d1d985b151f38995c430bebbcc892158))
-* Download the task assessment resources authorisation ([d2ae227](https://github.com/macite/doubtfire-deploy/commit/d2ae2274d9f73067b5972ccf251933e7077773eb))
-* Ensure docker image installs bundler ([26110d7](https://github.com/macite/doubtfire-deploy/commit/26110d7eddae3e490c76ff3b6363912bd82ab2ea))
-* ensure tasks with assessments can be destroyed cleanly ([e322b8d](https://github.com/macite/doubtfire-deploy/commit/e322b8d21bbc99a63a928ef9b5b6b7e4bed34bc8))
-* ensure that init does not add task status twice ([86d9dd4](https://github.com/macite/doubtfire-deploy/commit/86d9dd41605fea50d30a4a07bc742ab123d74b8c))
-* ensure two newlines between comment text in assessment comment ([3dd7021](https://github.com/macite/doubtfire-deploy/commit/3dd7021ea5c1bc1329f674669ef7f95a6f96fb2e))
-* File permissions for overseer to operate upon ([e3708aa](https://github.com/macite/doubtfire-deploy/commit/e3708aa03f0fb273a0642b7544115b842d97e8d7))
-* Gemfile.lock revision for bunny-pub-sub ([c5b137a](https://github.com/macite/doubtfire-deploy/commit/c5b137afe473e4a23da4857f81eb87b715dda904))
-* Include :has_task_assessment_resources? ([6975790](https://github.com/macite/doubtfire-deploy/commit/69757903ab217f4f96efdb6f9c095523ffd03953))
-* Let config.overseer_images exist without OVERSEER_ENABLED flag ([56e6874](https://github.com/macite/doubtfire-deploy/commit/56e687422e9987858058b078688603f0835d4b04))
-* Missing `sm_instance` method error ([94fd461](https://github.com/macite/doubtfire-deploy/commit/94fd46166a4bfe96ce988f323c309d040a6fe73e))
-* New assessment API bugs ([0f4273c](https://github.com/macite/doubtfire-deploy/commit/0f4273c3a39d8fd8d0117720f9fc3e18c076ae84))
-* Quotes in application.rb ([d55ec13](https://github.com/macite/doubtfire-deploy/commit/d55ec134928bc5994dd4539d2144c71532e9b9b9))
-* Remove breaking empty test ([97a9c3d](https://github.com/macite/doubtfire-deploy/commit/97a9c3df1025aa7587f4c5fce5929fe2271a8ebc))
-* Remove bundle exec rake db:setup step ([fcc7e26](https://github.com/macite/doubtfire-deploy/commit/fcc7e267227a5d6238fd817d1d480b71f9dc3082))
-* Remove clutter from submission API ([15f0361](https://github.com/macite/doubtfire-deploy/commit/15f0361d8a15dd8885a0dfc082ac5af9e1f8ec02))
-* Require bunny-pub-sub in all environments ([bf75374](https://github.com/macite/doubtfire-deploy/commit/bf753749b99a58e2af5731b8519c54b5fa7a5d3d))
-* Routes param description for docker_image_name_tag ([eec9ed3](https://github.com/macite/doubtfire-deploy/commit/eec9ed399407d1b2d7fd9bd4f8e8e06ef4faea88))
-* Set default units.assessment_enabled to true ([d2b1c89](https://github.com/macite/doubtfire-deploy/commit/d2b1c89211daf4d746d1b753bcbc7dd40b924507))
-* Strip path till submission history for easy mounting ([c3d43b0](https://github.com/macite/doubtfire-deploy/commit/c3d43b01c1a4d9fdc2b68ca048c4a364bdf03f4a))
-* Strip till /doubtfire-api instead ([e0b599c](https://github.com/macite/doubtfire-deploy/commit/e0b599c9012fcf7f24d4166e22119e4d23d27103))
-* Switch task definition to use docker image model ([68212eb](https://github.com/macite/doubtfire-deploy/commit/68212eb7093cdb4b36b678e8125a770cb64e29b3))
-* Task comments generation ([91eacae](https://github.com/macite/doubtfire-deploy/commit/91eacae50a5b5989e975034421bf65378efef963))
-* Task status error ([01a0f9e](https://github.com/macite/doubtfire-deploy/commit/01a0f9edceae11674898abf1700f055ba20d97f9))
-* test moving file into place ([fe0681d](https://github.com/macite/doubtfire-deploy/commit/fe0681d5c40965f64ac481255106bbeb340bbf49))
-* Typo in application.rb ([9e8e930](https://github.com/macite/doubtfire-deploy/commit/9e8e9301e6a437f8b7705eacd059ea19c9c92599))
-* Update bunny-pub-sub version ([6e3cbe5](https://github.com/macite/doubtfire-deploy/commit/6e3cbe557959e28823b558ec7bdc514beb4579bf))
-* Update bunny-pub-sub version in Gemfile.lock ([971eb80](https://github.com/macite/doubtfire-deploy/commit/971eb802a37871296228fdfca02a8347f85f1fa6))
-* Update config in compose to include production ([941ea1c](https://github.com/macite/doubtfire-deploy/commit/941ea1c2b760f5a4fdcda9f80632f16471efcfca))
-* Update overseer actions to work with new structure ([96836d2](https://github.com/macite/doubtfire-deploy/commit/96836d200dbcdc9bc1c11e4e99dc09e71890b7c4))
-* Update overseer config to use new fixed settings ([a520b64](https://github.com/macite/doubtfire-deploy/commit/a520b64a53e026caa8828777ac998fd5218a01f8))
-* Uploading new files replaces existing files in student_work/new/task_id folder ([a8a4563](https://github.com/macite/doubtfire-deploy/commit/a8a4563fa372479e4b61c4a9646d19753e711702))
-* Validation for docker_image_name_tag now respects nil values ([23408f7](https://github.com/macite/doubtfire-deploy/commit/23408f76b6d173ff5e36c8a8072096f234e8af1b))
-* Validators for docker_image_name_tag ([372fe97](https://github.com/macite/doubtfire-deploy/commit/372fe97235584a291b4a8ddb97d109d4cfe50595))
-* Variable name ([5303ceb](https://github.com/macite/doubtfire-deploy/commit/5303ceb48be6d9e768a67560b84bd5a8e20c2f7c))
-* YAML Docker image name, disable image ([3fe985b](https://github.com/macite/doubtfire-deploy/commit/3fe985bc6fc8b223eb9e6f8c5927d0def4612f64))
+* correct error message on submission process fail ([b789239](https://github.com/doubtfire-lms/doubtfire-api/commit/b78923996cf0cd4987a54dc1fa563e54abe2ffd1))
+* ensure populator works with init ([89ae68b](https://github.com/doubtfire-lms/doubtfire-api/commit/89ae68bc40c75ff6c7fd44a1452df42761592581))
+* update bunny pub sub to fix logging and launch issues ([a3ae105](https://github.com/doubtfire-lms/doubtfire-api/commit/a3ae105f45ea699eeae2b16557a91b0209b7116c))
+
+### [5.0.2](https://github.com/doubtfire-lms/doubtfire-api/compare/v5.0.1...v5.0.2) (2021-11-19)
+
+
+### Bug Fixes
+
+* update bunny pub sub version ([f594bdf](https://github.com/doubtfire-lms/doubtfire-api/commit/f594bdfef57323cfb9490584ca955e79b0e07bee))
+
+### [5.0.1](https://github.com/doubtfire-lms/doubtfire-api/compare/v5.0.0...v5.0.1) (2021-10-27)
+
+## [5.0.0](https://github.com/doubtfire-lms/doubtfire-api/compare/v5.0.0-2...v5.0.0) (2021-10-13)
+
+
+### Features
+
+* add ability to export auth tokens for migration from 5 to 6 ([b40bdd9](https://github.com/doubtfire-lms/doubtfire-api/commit/b40bdd96924f0e308850f72d27440e0d305c0759))
+* Add ability to init production ([bd200e6](https://github.com/doubtfire-lms/doubtfire-api/commit/bd200e6295db8f55dbcd77f6bad6b462a4e98964))
+
+
+### Bug Fixes
+
+* Add missing comma in unit.rb ([36c4fac](https://github.com/doubtfire-lms/doubtfire-api/commit/36c4fac7c04b50e4db1f7de12540a9206e858660))
+* Add missing self keyword ([f4be643](https://github.com/doubtfire-lms/doubtfire-api/commit/f4be643108b30cf43877d3342341837288712f46))
+* Add rescue/ensure block to ontrack_receive_action ([53d8d3c](https://github.com/doubtfire-lms/doubtfire-api/commit/53d8d3cf0dfe5353cdfd73bcf222088efea2bdea))
+* align overseer assessment with single assessment comment ([25dbaf8](https://github.com/doubtfire-lms/doubtfire-api/commit/25dbaf802a410863d44db26192511788988728ee))
+* Allow protocol to be included in host configuration ([142d80d](https://github.com/doubtfire-lms/doubtfire-api/commit/142d80d78a71d5fd33a87bbd64e0f348f15e8d58))
+* Change password back to what it was ([73e6bd8](https://github.com/doubtfire-lms/doubtfire-api/commit/73e6bd884f6a558dba1a099f20e235558f5a1a1b))
+* correct convert submission to pdf to use new folder by default ([a4ed642](https://github.com/doubtfire-lms/doubtfire-api/commit/a4ed642cf4c4db29b01e14319a3652314126c972))
+* correct development redirect url on aaf auth ([badf14f](https://github.com/doubtfire-lms/doubtfire-api/commit/badf14f43542bd30759708d68a3756d0801d4cbc))
+* correct hard coded path to overseer instance ([627d257](https://github.com/doubtfire-lms/doubtfire-api/commit/627d2576616be6e7de52d17cc106deb1df105d35))
+* correct overseer env settings in compose ([1daabe8](https://github.com/doubtfire-lms/doubtfire-api/commit/1daabe800ef1cafd36b2391dfcdce2e8e03012dd))
+* correct port for developemnt to use 3000 ([778442d](https://github.com/doubtfire-lms/doubtfire-api/commit/778442d146ad7db35f7182ae5d9be53bab44aabe))
+* Correct request in skip prod to use STDIN ([6c2c8ef](https://github.com/doubtfire-lms/doubtfire-api/commit/6c2c8ef0d1d985b151f38995c430bebbcc892158))
+* Download the task assessment resources authorisation ([d2ae227](https://github.com/doubtfire-lms/doubtfire-api/commit/d2ae2274d9f73067b5972ccf251933e7077773eb))
+* Ensure docker image installs bundler ([26110d7](https://github.com/doubtfire-lms/doubtfire-api/commit/26110d7eddae3e490c76ff3b6363912bd82ab2ea))
+* ensure tasks with assessments can be destroyed cleanly ([e322b8d](https://github.com/doubtfire-lms/doubtfire-api/commit/e322b8d21bbc99a63a928ef9b5b6b7e4bed34bc8))
+* ensure that init does not add task status twice ([86d9dd4](https://github.com/doubtfire-lms/doubtfire-api/commit/86d9dd41605fea50d30a4a07bc742ab123d74b8c))
+* ensure two newlines between comment text in assessment comment ([3dd7021](https://github.com/doubtfire-lms/doubtfire-api/commit/3dd7021ea5c1bc1329f674669ef7f95a6f96fb2e))
+* File permissions for overseer to operate upon ([e3708aa](https://github.com/doubtfire-lms/doubtfire-api/commit/e3708aa03f0fb273a0642b7544115b842d97e8d7))
+* Gemfile.lock revision for bunny-pub-sub ([c5b137a](https://github.com/doubtfire-lms/doubtfire-api/commit/c5b137afe473e4a23da4857f81eb87b715dda904))
+* Include :has_task_assessment_resources? ([6975790](https://github.com/doubtfire-lms/doubtfire-api/commit/69757903ab217f4f96efdb6f9c095523ffd03953))
+* Let config.overseer_images exist without OVERSEER_ENABLED flag ([56e6874](https://github.com/doubtfire-lms/doubtfire-api/commit/56e687422e9987858058b078688603f0835d4b04))
+* Missing `sm_instance` method error ([94fd461](https://github.com/doubtfire-lms/doubtfire-api/commit/94fd46166a4bfe96ce988f323c309d040a6fe73e))
+* New assessment API bugs ([0f4273c](https://github.com/doubtfire-lms/doubtfire-api/commit/0f4273c3a39d8fd8d0117720f9fc3e18c076ae84))
+* Quotes in application.rb ([d55ec13](https://github.com/doubtfire-lms/doubtfire-api/commit/d55ec134928bc5994dd4539d2144c71532e9b9b9))
+* Remove breaking empty test ([97a9c3d](https://github.com/doubtfire-lms/doubtfire-api/commit/97a9c3df1025aa7587f4c5fce5929fe2271a8ebc))
+* Remove bundle exec rake db:setup step ([fcc7e26](https://github.com/doubtfire-lms/doubtfire-api/commit/fcc7e267227a5d6238fd817d1d480b71f9dc3082))
+* Remove clutter from submission API ([15f0361](https://github.com/doubtfire-lms/doubtfire-api/commit/15f0361d8a15dd8885a0dfc082ac5af9e1f8ec02))
+* Require bunny-pub-sub in all environments ([bf75374](https://github.com/doubtfire-lms/doubtfire-api/commit/bf753749b99a58e2af5731b8519c54b5fa7a5d3d))
+* Routes param description for docker_image_name_tag ([eec9ed3](https://github.com/doubtfire-lms/doubtfire-api/commit/eec9ed399407d1b2d7fd9bd4f8e8e06ef4faea88))
+* Set default units.assessment_enabled to true ([d2b1c89](https://github.com/doubtfire-lms/doubtfire-api/commit/d2b1c89211daf4d746d1b753bcbc7dd40b924507))
+* Strip path till submission history for easy mounting ([c3d43b0](https://github.com/doubtfire-lms/doubtfire-api/commit/c3d43b01c1a4d9fdc2b68ca048c4a364bdf03f4a))
+* Strip till /doubtfire-api instead ([e0b599c](https://github.com/doubtfire-lms/doubtfire-api/commit/e0b599c9012fcf7f24d4166e22119e4d23d27103))
+* Switch task definition to use docker image model ([68212eb](https://github.com/doubtfire-lms/doubtfire-api/commit/68212eb7093cdb4b36b678e8125a770cb64e29b3))
+* Task comments generation ([91eacae](https://github.com/doubtfire-lms/doubtfire-api/commit/91eacae50a5b5989e975034421bf65378efef963))
+* Task status error ([01a0f9e](https://github.com/doubtfire-lms/doubtfire-api/commit/01a0f9edceae11674898abf1700f055ba20d97f9))
+* test moving file into place ([fe0681d](https://github.com/doubtfire-lms/doubtfire-api/commit/fe0681d5c40965f64ac481255106bbeb340bbf49))
+* Typo in application.rb ([9e8e930](https://github.com/doubtfire-lms/doubtfire-api/commit/9e8e9301e6a437f8b7705eacd059ea19c9c92599))
+* Update bunny-pub-sub version ([6e3cbe5](https://github.com/doubtfire-lms/doubtfire-api/commit/6e3cbe557959e28823b558ec7bdc514beb4579bf))
+* Update bunny-pub-sub version in Gemfile.lock ([971eb80](https://github.com/doubtfire-lms/doubtfire-api/commit/971eb802a37871296228fdfca02a8347f85f1fa6))
+* Update config in compose to include production ([941ea1c](https://github.com/doubtfire-lms/doubtfire-api/commit/941ea1c2b760f5a4fdcda9f80632f16471efcfca))
+* Update overseer actions to work with new structure ([96836d2](https://github.com/doubtfire-lms/doubtfire-api/commit/96836d200dbcdc9bc1c11e4e99dc09e71890b7c4))
+* Update overseer config to use new fixed settings ([a520b64](https://github.com/doubtfire-lms/doubtfire-api/commit/a520b64a53e026caa8828777ac998fd5218a01f8))
+* Uploading new files replaces existing files in student_work/new/task_id folder ([a8a4563](https://github.com/doubtfire-lms/doubtfire-api/commit/a8a4563fa372479e4b61c4a9646d19753e711702))
+* Validation for docker_image_name_tag now respects nil values ([23408f7](https://github.com/doubtfire-lms/doubtfire-api/commit/23408f76b6d173ff5e36c8a8072096f234e8af1b))
+* Validators for docker_image_name_tag ([372fe97](https://github.com/doubtfire-lms/doubtfire-api/commit/372fe97235584a291b4a8ddb97d109d4cfe50595))
+* Variable name ([5303ceb](https://github.com/doubtfire-lms/doubtfire-api/commit/5303ceb48be6d9e768a67560b84bd5a8e20c2f7c))
+* YAML Docker image name, disable image ([3fe985b](https://github.com/doubtfire-lms/doubtfire-api/commit/3fe985bc6fc8b223eb9e6f8c5927d0def4612f64))
 
 ## [5.0.0-rc1](https://github.com/doubtfire-lms/doubtfire-deploy/compare/v2.0.0...v5.0.0-rc1) (2021-08-03)
 

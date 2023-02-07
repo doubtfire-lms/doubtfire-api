@@ -81,7 +81,7 @@
     <p>Work to get the following task<%="s" if @soon_top.count > 1%> done, as these are <b>due</b> soon!</p>
     <ul>
 <%          @soon_top.each do |st| %>
-        </li><%= top_task_desc(st) %></li>
+        <li><%= top_task_desc(st) %></li>
 <%          end %>
     </ul>
 <%      end %>

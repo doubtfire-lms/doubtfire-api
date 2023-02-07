@@ -51,9 +51,7 @@ class Task < ApplicationRecord
       :request_extension
     ]
     # What can nil users do with tasks?
-    nil_role_permissions = [
-
-    ]
+    nil_role_permissions = []
 
     # Return permissions hash
     {
@@ -67,6 +65,7 @@ class Task < ApplicationRecord
   def role_for(user)
     project_role = project.user_role(user)
     return project_role unless project_role.nil?
+
     logger.debug "Getting role for user #{user.id unless user.nil?}: #{task_definition.abbreviation} #{task_definition.group_set}"
     # check for group member
     if group_task?
@@ -108,6 +107,9 @@ class Task < ApplicationRecord
   has_many :task_engagements, dependent: :destroy
   has_many :task_submissions, dependent: :destroy
   has_many :overseer_assessments, dependent: :destroy
+  has_many :tii_submissions, dependent: :destroy
+
+  serialize :tii_file_submissions, Hash
 
   delegate :unit, to: :project
   delegate :student, to: :project
@@ -116,7 +118,7 @@ class Task < ApplicationRecord
   delegate :target_date, to: :task_definition
   delegate :update_task_stats, to: :project
 
-  after_update :update_task_stats, if: :saved_change_to_task_status_id? #TODO: consider moving to async task
+  after_update :update_task_stats, if: :saved_change_to_task_status_id? # TODO: consider moving to async task
 
   validates :task_definition_id, uniqueness: { scope: :project,
                                                message: 'must be unique within the project' }
@@ -168,14 +170,14 @@ class Task < ApplicationRecord
   end
 
   def comments_for_user(user)
-    TaskComment.
-      joins('JOIN users AS authors ON authors.id = task_comments.user_id').
-      joins('JOIN users AS recipients ON recipients.id = task_comments.recipient_id').
-      joins("LEFT JOIN comments_read_receipts u_crr ON u_crr.task_comment_id = task_comments.id AND u_crr.user_id = #{user.id}").
-      joins("LEFT JOIN comments_read_receipts r_crr ON r_crr.task_comment_id = task_comments.id AND r_crr.user_id = recipients.id").
-      where('task_comments.task_id = :task_id', task_id: self.id).
-      order('created_at ASC').
-      select(
+    TaskComment
+      .joins('JOIN users AS authors ON authors.id = task_comments.user_id')
+      .joins('JOIN users AS recipients ON recipients.id = task_comments.recipient_id')
+      .joins("LEFT JOIN comments_read_receipts u_crr ON u_crr.task_comment_id = task_comments.id AND u_crr.user_id = #{user.id}")
+      .joins("LEFT JOIN comments_read_receipts r_crr ON r_crr.task_comment_id = task_comments.id AND r_crr.user_id = recipients.id")
+      .where('task_comments.task_id = :task_id', task_id: self.id)
+      .order('created_at ASC')
+      .select(
         'task_comments.id AS id',
         'task_comments.comment AS comment',
         'task_comments.content_type AS content_type',
@@ -223,6 +225,7 @@ class Task < ApplicationRecord
   def extension_date
     result = raw_extension_date
     return task_definition.due_date if result > task_definition.due_date
+
     return result
   end
 
@@ -230,6 +233,10 @@ class Task < ApplicationRecord
   # before the task's due date
   def can_apply_for_extension?
     raw_extension_date.to_date < task_definition.due_date.to_date
+  end
+
+  def tutor
+    project.tutor_for(task_definition)
   end
 
   # Applying for an extension will create an extension comment
@@ -241,7 +248,7 @@ class Task < ApplicationRecord
     extension.content_type = :extension
     extension.comment = text
     if weeks <= weeks_can_extend
-      extension.recipient = project.tutor_for(task_definition)
+      extension.recipient = tutor
     else
       extension.recipient = unit.main_convenor_user
     end
@@ -269,7 +276,7 @@ class Task < ApplicationRecord
 
   # Add an extension to the task
   def grant_extension(by_user, weeks)
-    weeks_to_extend = weeks <= weeks_can_extend ? weeks : weeks_can_extend
+    weeks_to_extend = [weeks, weeks_can_extend].min
     return false unless weeks_to_extend > 0
 
     if update(extensions: self.extensions + weeks_to_extend)
@@ -287,6 +294,7 @@ class Task < ApplicationRecord
 
   def due_date
     return target_date if extensions == 0
+
     return extension_date
   end
 
@@ -323,7 +331,7 @@ class Task < ApplicationRecord
   end
 
   def submitted_status?
-    ! [:working_on_it, :not_started, :fix_and_resubmit, :redo, :need_help].include? status
+    ![:working_on_it, :not_started, :fix_and_resubmit, :redo, :need_help].include? status
   end
 
   def fix_and_resubmit?
@@ -368,6 +376,7 @@ class Task < ApplicationRecord
 
   def group
     return nil unless group_task?
+
     # Cannot use group submission as group may change after submission
     # need to locate group via unit's groups
     project.groups.where(group_set_id: task_definition.group_set_id).first
@@ -392,12 +401,12 @@ class Task < ApplicationRecord
     # Ensure that only staff can change from staff assigned status if
     # this is a restricted task
     #
-    return nil if [ :student, :group_member ].include?(role) &&
+    return nil if [:student, :group_member].include?(role) &&
                   task_definition.restrict_status_updates &&
                   task_status.in?(TaskStatus.staff_assigned_statuses)
 
     # Protect closed states from student changes
-    return nil if [ :student, :group_member ].include?(role) && task_submission_closed?
+    return nil if [:student, :group_member].include?(role) && task_submission_closed?
 
     #
     # State transitions based upon the trigger
@@ -435,7 +444,7 @@ class Task < ApplicationRecord
     # if this is a status change of a group task -- and not already doing group update
     if !group_transition && group_task?
       logger.debug "Group task transition for #{group_submission} set to status #{trigger} (id=#{id})"
-      unless [ TaskStatus.working_on_it, TaskStatus.need_help ].include? task_status
+      unless [TaskStatus.working_on_it, TaskStatus.need_help].include? task_status
         ensured_group_submission.propagate_transition self, trigger, by_user, quality
       end
     end
@@ -457,10 +466,10 @@ class Task < ApplicationRecord
     end
 
     grade_map = {
-      'f'  => -1,
-      'p'  => 0,
-      'c'  => 1,
-      'd'  => 2,
+      'f' => -1,
+      'p' => 0,
+      'c' => 1,
+      'd' => 2,
       'hd' => 3
     }
     if task_definition.is_graded
@@ -565,6 +574,7 @@ class Task < ApplicationRecord
 
   def submitted_before_due?
     return true unless due_date.present?
+
     to_same_day_anywhere_on_earth(due_date) >= self.submission_date
   end
 
@@ -573,7 +583,7 @@ class Task < ApplicationRecord
   # Default submission time to current time.
   #
   def submit(by_user, submit_date = Time.zone.now)
-    self.submission_date  = submit_date
+    self.submission_date = submit_date
 
     add_status_comment(by_user, TaskStatus.ready_for_feedback)
 
@@ -670,7 +680,7 @@ class Task < ApplicationRecord
     discussion.number_of_prompts = prompts.count
     discussion.save!
 
-    prompts.each_with_index do |prompt, index |
+    prompts.each_with_index do |prompt, index|
       raise "Unknown comment attachment type" unless FileHelper.accept_file(prompt, "comment attachment discussion audio", "audio")
       raise "Error attaching uploaded file." unless discussion.add_prompt(prompt, index)
     end
@@ -714,6 +724,7 @@ class Task < ApplicationRecord
     result = all_comments.where(user: user).last
 
     return '' if result.nil?
+
     result.comment
   end
 
@@ -732,6 +743,7 @@ class Task < ApplicationRecord
     result = all_comments.where('user_id != :id', id: user.id).last
 
     return '' if result.nil?
+
     result.comment
   end
 
@@ -825,6 +837,7 @@ class Task < ApplicationRecord
         # Ensure all images in submissions are not jpg
         dest_file = "#{task_dir}#{File.basename(img, ".*")}.jpg"
         raise 'Failed to compress an image. Ensure all images are valid.' unless FileHelper.compress_image_to_dest("#{task_dir}#{img}", dest_file, true)
+
         # Cleanup unless the output was the same as the input
         FileUtils.rm("#{task_dir}#{img}") unless dest_file == "#{task_dir}#{img}"
       end
@@ -932,6 +945,7 @@ class Task < ApplicationRecord
     end
 
     return File.join(in_dir, result) unless result.nil?
+
     nil
   end
 
@@ -984,6 +998,12 @@ class Task < ApplicationRecord
     end
 
     def make_pdf
+      logger.debug "Running QPDF on all documents before rendering to repair any potential broken files."
+      @files.each do |f|
+        if f[:type] == "document"
+          FileHelper.qpdf(f[:path])
+        end
+      end
       render_to_string(template: '/task/task_pdf', layout: true)
     end
   end
@@ -1004,7 +1024,7 @@ class Task < ApplicationRecord
     elsif ['xml'].include?(extn) then 'xml'
     elsif ['sql'].include?(extn) then 'sql'
     elsif ['vb'].include?(extn) then 'vbnet'
-    elsif ['txt', 'md', 'rmd', 'rpres','hdl','asm','jack','hack','tst','cmp','vm','sh','bat','dat'].include?(extn) then 'text'
+    elsif ['txt', 'md', 'rmd', 'rpres', 'hdl', 'asm', 'jack', 'hack', 'tst', 'cmp', 'vm', 'sh', 'bat', 'dat'].include?(extn) then 'text'
     elsif ['tex', 'rnw'].include?(extn) then 'tex'
     elsif ['py'].include?(extn) then 'python'
     elsif ['r'].include?(extn) then 'r'
@@ -1019,7 +1039,7 @@ class Task < ApplicationRecord
 
   def portfolio_evidence_path=(value)
     # Strip the student work directory to store in database as relative path
-    self.portfolio_evidence = value.present? ? value.sub(FileHelper.student_work_dir,'') : nil
+    self.portfolio_evidence = value.present? ? value.sub(FileHelper.student_work_dir, '') : nil
   end
 
   def final_pdf_path
@@ -1046,7 +1066,6 @@ class Task < ApplicationRecord
       begin
         pdf_text = tac.make_pdf
       rescue => e
-
         # Try again... with convert to ascic
         #
         tac2 = TaskAppController.new
@@ -1094,7 +1113,7 @@ class Task < ApplicationRecord
       # if the task is the draft learning summary task
       if task_definition_id == unit.draft_task_definition_id
         # if there is a learning summary, execute, if there isn't and a learning summary exists, don't execute
-        if project.uses_draft_learning_summary || project.portfolio_files.select {|f| f[:name] == "LearningSummaryReport.pdf"}.empty?
+        if project.uses_draft_learning_summary || project.portfolio_files.select { |f| f[:name] == "LearningSummaryReport.pdf" }.empty?
           file_name = {
             kind: 'document',
             name: 'LearningSummaryReport.pdf',
@@ -1258,7 +1277,7 @@ class Task < ApplicationRecord
 
     # Move files into place
     logger.debug "Moving source files from #{tmp_dir} into #{enqueued_dir}"
-    FileUtils.mv Dir.glob(File.join(tmp_dir,'*.*')), enqueued_dir, force: true
+    FileUtils.mv Dir.glob(File.join(tmp_dir, '*.*')), enqueued_dir, force: true
 
     # Delete the tmp dir
     logger.debug "Deleting student work dir: #{tmp_dir}"

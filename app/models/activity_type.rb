@@ -21,7 +21,7 @@ class ActivityType < ApplicationRecord
   def self.find_by(*args)
     key = args.map { |arg|
       if arg.instance_of? Hash
-        arg.map{|k,v| "#{k}=#{v}"}.join('/')
+        arg.map { |k, v| "#{k}=#{v}" }.join('/')
       else
         arg
       end
@@ -37,6 +37,7 @@ class ActivityType < ApplicationRecord
   end
 
   private
+
   def invalidate_cache
     Rails.cache.delete("activity_types/#{id}")
     Rails.cache.delete("activity_types/name=#{name}")
@@ -45,6 +46,7 @@ class ActivityType < ApplicationRecord
 
   def can_destroy?
     return true if tutorial_streams.count == 0
+
     errors.add :base, "Cannot delete activity type with associated tutorial_streams"
     throw :abort
   end

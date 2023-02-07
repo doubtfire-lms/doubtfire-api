@@ -33,9 +33,7 @@ class GroupSet < ApplicationRecord
       :create_group
     ]
     # What can nil users do with group sets?
-    nil_role_permissions = [
-
-    ]
+    nil_role_permissions = []
 
     # Return permissions hash
     {
