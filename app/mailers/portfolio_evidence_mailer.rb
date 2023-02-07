@@ -1,5 +1,4 @@
 class PortfolioEvidenceMailer < ActionMailer::Base
-
   def add_general
     @doubtfire_host = Doubtfire::Application.config.institution[:host]
     @doubtfire_product_name = Doubtfire::Application.config.institution[:product_name]
@@ -7,7 +6,7 @@ class PortfolioEvidenceMailer < ActionMailer::Base
   end
 
   def task_pdf_failed(project, tasks)
-    return nil if project.nil? || tasks.nil? || tasks.length.zero?
+    return nil if project.nil? || tasks.nil? || tasks.empty?
 
     add_general
     @student = project.student
@@ -23,7 +22,7 @@ class PortfolioEvidenceMailer < ActionMailer::Base
   end
 
   def task_pdf_ready_message(project, tasks)
-    return nil if project.nil? || tasks.nil? || tasks.length.zero?
+    return nil if project.nil? || tasks.nil? || tasks.empty?
 
     add_general
     @student = project.student
@@ -39,7 +38,7 @@ class PortfolioEvidenceMailer < ActionMailer::Base
   end
 
   def task_feedback_ready(project, tasks)
-    return nil if project.nil? || tasks.nil? || tasks.length.zero?
+    return nil if project.nil? || tasks.nil? || tasks.empty?
 
     add_general
     @student = project.student
@@ -74,7 +73,7 @@ class PortfolioEvidenceMailer < ActionMailer::Base
     return nil if project.nil?
 
     add_general
-    
+
     @student = project.student
     @project = project
     @convenor = project.main_convenor_user

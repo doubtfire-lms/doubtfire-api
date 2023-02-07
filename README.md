@@ -1,12 +1,12 @@
-![Doubtfire Logo](http://puu.sh/lyClF/fde5bfbbe7.png)
+![Doubtfire Logo](https://github.com/doubtfire-lms/doubtfire-web/raw/6.2.x/src/assets/icons/android-chrome-192x192.png)
 
-# Doubtfire API  [![test-doubtfire-api](https://github.com/doubtfire-lms/doubtfire-api/actions/workflows/push.yml/badge.svg)](https://github.com/doubtfire-lms/doubtfire-api/actions/workflows/push.yml)
+# Doubtfire API  [![test-doubtfire-api](https://github.com/doubtfire-lms/doubtfire-api/actions/workflows/push.yml/badge.svg)](https://github.com/doubtfire-lms/doubtfire-api/actions/workflows/push.yml) [![CodeQL](https://github.com/doubtfire-lms/doubtfire-api/actions/workflows/codeql.yml/badge.svg)](https://github.com/doubtfire-lms/doubtfire-api/actions/workflows/codeql.yml) [![RuboCop](https://github.com/doubtfire-lms/doubtfire-api/actions/workflows/rubocop.yml/badge.svg)](https://github.com/doubtfire-lms/doubtfire-api/actions/workflows/rubocop.yml)
 
 Doubtfire is a feedback-driven learning support system.
 
 ## Table of Contents
 
-- [Doubtfire API  ![test-doubtfire-api](https://github.com/doubtfire-lms/doubtfire-api/actions/workflows/push.yml)](#doubtfire-api--)
+- [Doubtfire API](#doubtfire-api--)
   - [Table of Contents](#table-of-contents)
   - [Getting started](#getting-started)
     - [Clone Repository](#clone-repository)

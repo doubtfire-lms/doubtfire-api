@@ -2,7 +2,6 @@ require 'grape'
 require 'icalendar'
 
 class WebcalPublicApi < Grape::API
-
   # Declare content types
   content_type :txt, 'text/calendar'
 
@@ -11,7 +10,6 @@ class WebcalPublicApi < Grape::API
     requires :guid, type: String, desc: 'The GUID of the webcal'
   end
   get '/webcal/:guid' do
-
     # Retrieve the specified webcal.
     webcal = Webcal.find_by!(guid: params[:guid])
 
@@ -21,5 +19,4 @@ class WebcalPublicApi < Grape::API
     # Seve ical.
     present webcal.to_ical.to_ical
   end
-
 end

@@ -308,7 +308,7 @@ class TaskDefinitionsApi < Grape::API
       logger.info "Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id} was not performed"
     end
 
-    #todo: Do we  need to return additional details here? e.g. the comment, and project?
+    # todo: Do we  need to return additional details here? e.g. the comment, and project?
     present task, with: Entities::TaskEntity, include_other_projects: true, update_only: true
   end
 
@@ -462,19 +462,19 @@ class TaskDefinitionsApi < Grape::API
     # What stream does this relate to?
     stream = task_def.tutorial_stream
 
-    subquery = unit.
-      tutorial_enrolments.
-      joins(:tutorial).
-      where('tutorials.tutorial_stream_id = :sid OR tutorials.tutorial_stream_id IS NULL', sid: (stream.present? ? stream.id : nil)).
-      select('tutorials.tutorial_stream_id as tutorial_stream_id', 'tutorials.id as tutorial_id', 'project_id').to_sql
+    subquery = unit
+               .tutorial_enrolments
+               .joins(:tutorial)
+               .where('tutorials.tutorial_stream_id = :sid OR tutorials.tutorial_stream_id IS NULL', sid: (stream.present? ? stream.id : nil))
+               .select('tutorials.tutorial_stream_id as tutorial_stream_id', 'tutorials.id as tutorial_id', 'project_id').to_sql
 
-    result = unit.student_tasks.
-      joins(:project).
-      joins(:task_status).
-      joins("LEFT OUTER JOIN (#{subquery}) as sq ON sq.project_id = projects.id").
-      select('sq.tutorial_stream_id as tutorial_stream_id', 'sq.tutorial_id as tutorial_id', 'project_id', 'tasks.id as id', 'task_definition_id', 'task_statuses.id as status_id', 'completion_date', 'times_assessed', 'submission_date', 'grade').
-      where('task_definition_id = :id', id: params[:task_def_id]).
-      map do |t|
+    result = unit.student_tasks
+                 .joins(:project)
+                 .joins(:task_status)
+                 .joins("LEFT OUTER JOIN (#{subquery}) as sq ON sq.project_id = projects.id")
+                 .select('sq.tutorial_stream_id as tutorial_stream_id', 'sq.tutorial_id as tutorial_id', 'project_id', 'tasks.id as id', 'task_definition_id', 'task_statuses.id as status_id', 'completion_date', 'times_assessed', 'submission_date', 'grade')
+                 .where('task_definition_id = :id', id: params[:task_def_id])
+                 .map do |t|
       {
         project_id: t.project_id,
         id: t.id,

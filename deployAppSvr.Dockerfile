@@ -1,13 +1,14 @@
 #
 # deployAppSrc.Dockerfile - the container used for back end processing
 #
-FROM ruby:3.1-buster
+FROM ruby:3.1-bullseye
 
 # Setup dependencies
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
+  bc \
   ffmpeg \
-  ghostscript \
+  ghostscript qpdf \
   imagemagick \
   libmagic-dev \
   libmagickwand-dev \
@@ -33,7 +34,7 @@ COPY ./Gemfile ./Gemfile.lock /doubtfire/
 RUN bundle install
 
 # Setup path
-ENV PATH /tmp/texlive/bin/x86_64-linux:$PATH
+ENV PATH /tmp/texlive/bin/x86_64-linux:/tmp/texlive/bin/aarch64-linux:$PATH
 
 # Copy doubtfire-api source
 COPY . /doubtfire/

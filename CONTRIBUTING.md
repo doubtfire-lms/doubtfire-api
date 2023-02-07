@@ -1,4 +1,4 @@
-![Doubtfire Logo](http://puu.sh/lyClF/fde5bfbbe7.png)
+![Doubtfire Logo](https://github.com/doubtfire-lms/doubtfire-web/raw/6.2.x/src/assets/icons/android-chrome-192x192.png)
 
 # Contributing to Doubtfire Api
 

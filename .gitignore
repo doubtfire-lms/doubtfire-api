@@ -8,7 +8,10 @@
 /.bundle
 
 # Ignore locally installed gems
-vendor/bundle/
+/vendor/bundle/
+
+# Ignore the bin folder made with the app:update:bin task
+/bin
 
 # Ignore the default SQLite database.
 /db/*.sqlite3
@@ -35,3 +38,4 @@ student-work/
 .byebug_history
 coverage/
 .vscode
+_history

@@ -24,7 +24,6 @@ module Submission
       optional :trigger, type: String, desc: 'Can be need_help to indicate upload is not a ready to mark submission'
     end
     post '/projects/:id/task_def_id/:task_definition_id/submission' do
-
       project = Project.find(params[:id])
       task_definition = project.unit.task_definitions.find(params[:task_definition_id])
 
@@ -94,14 +93,13 @@ module Submission
 
       if task.processing_pdf?
         evidence_loc = Rails.root.join('public', 'resources', 'AwaitingProcessing.pdf')
-        filename='AwaitingProcessing.pdf'
+        filename = 'AwaitingProcessing.pdf'
       elsif evidence_loc.nil?
         evidence_loc = Rails.root.join('public', 'resources', 'FileNotFound.pdf')
-        filename='FileNotFound.pdf'
+        filename = 'FileNotFound.pdf'
       else
-        filename="#{task.task_definition.abbreviation}.pdf"
+        filename = "#{task.task_definition.abbreviation}.pdf"
       end
-
 
       if params[:as_attachment]
         header['Content-Disposition'] = "attachment; filename=#{filename}"

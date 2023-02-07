@@ -10,7 +10,7 @@ module Entities
     expose :tutorial_stream_abbr, expose_nil: false do |tutorial, options|
       tutorial.tutorial_stream.abbreviation unless tutorial.tutorial_stream.nil?
     end
-    expose :num_students #TODO: remove this and request it dynamically when needed
+    expose :num_students # TODO: remove this and request it dynamically when needed
     expose :tutor_id, expose_nil: false do |tutorial, options|
       tutorial.tutor.id unless tutorial.tutor.nil?
     end

@@ -4,6 +4,7 @@ class DiscussionComment < TaskComment
   def status
     return "not started" if not started and not completed
     return "opened" if started and not completed
+
     return "complete"
   end
 
@@ -53,6 +54,7 @@ class DiscussionComment < TaskComment
   def add_prompt(file_upload, _count)
     temp = Tempfile.new(['discussion_comment', '.wav'])
     return false unless process_audio(file_upload["tempfile"].path, temp.path)
+
     save
     logger.info("Saving audio prompt to #{attachment_path(_count)}")
     FileUtils.mv temp.path, attachment_path(_count)
@@ -64,6 +66,7 @@ class DiscussionComment < TaskComment
   def add_reply(reply_attachment)
     temp = Tempfile.new(['discussion_comment_reply', '.wav'])
     return false unless process_audio(reply_attachment["tempfile"].path, temp.path)
+
     mark_discussion_completed
     save
     logger.info("Saving discussion comment reply to #{reply_attachment_path()}")

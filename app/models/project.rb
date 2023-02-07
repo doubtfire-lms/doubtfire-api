@@ -38,7 +38,7 @@ class Project < ApplicationRecord
   validate :tutorial_enrolment_same_campus, if: :will_save_change_to_enrolled?
 
   after_update :check_withdraw_from_groups, if: :saved_change_to_enrolled?
-  after_update :update_task_stats, if: :saved_change_to_target_grade? #TODO: consider making this an async task!
+  after_update :update_task_stats, if: :saved_change_to_target_grade? # TODO: consider making this an async task!
 
   #
   # Permissions around project data
@@ -63,11 +63,9 @@ class Project < ApplicationRecord
       :change_campus
     ]
     # What can convenors do with projects?
-    convenor_role_permissions = [
-    ]
+    convenor_role_permissions = []
     # What can nil users do with projects?
-    nil_role_permissions = [
-    ]
+    nil_role_permissions = []
 
     # Return permissions hash
     {
@@ -140,20 +138,21 @@ class Project < ApplicationRecord
   end
 
   def enrolled_in?(tutorial)
-    tutorial_enrolments.select{|e| e.tutorial_id == tutorial.id}.count > 0 || tutorial_enrolments.where(tutorial_id: tutorial.id).count > 0
+    tutorial_enrolments.select { |e| e.tutorial_id == tutorial.id }.count > 0 || tutorial_enrolments.where(tutorial_id: tutorial.id).count > 0
   end
 
   # Find enrolment in same tutorial stream
   def matching_enrolment(tutorial)
-    tutorial_enrolments.
-      joins(:tutorial).
-      where('tutorials.tutorial_stream_id = :sid OR tutorials.tutorial_stream_id IS NULL OR :sid IS NULL', sid: tutorial.tutorial_stream_id).
-      first
+    tutorial_enrolments
+      .joins(:tutorial)
+      .where('tutorials.tutorial_stream_id = :sid OR tutorials.tutorial_stream_id IS NULL OR :sid IS NULL', sid: tutorial.tutorial_stream_id)
+      .first
   end
 
   # Check tutorial membership if there is a campus change
   def tutorial_enrolment_same_campus
     return unless enrolled && campus_id.present? && will_save_change_to_campus_id?
+
     if tutorial_enrolments.joins(:tutorial).where('tutorials.campus_id <> :cid', cid: campus_id).count > 0
       errors.add(:campus, "does not match with tutorial enrolments.")
     end
@@ -182,23 +181,23 @@ class Project < ApplicationRecord
     current_tutor = nil
     first_tutor = true
 
-    tutorial_enrolments.
-      joins(tutorial: {unit_role: :user}).
-      order('tutor').
-      select("tutorials.abbreviation as tutorial_abbr, #{db_concat('users.first_name', "' '", 'users.last_name')} as tutor").
-      map do |t|
+    tutorial_enrolments
+      .joins(tutorial: { unit_role: :user })
+      .order('tutor')
+      .select("tutorials.abbreviation as tutorial_abbr, #{db_concat('users.first_name', "' '", 'users.last_name')} as tutor")
+      .map do |t|
         result = "#{t.tutor == current_tutor ? '' : "#{first_tutor ? '' : ') '}#{t.tutor} ("}#{t.tutorial_abbr}"
         current_tutor = t.tutor
         first_tutor = false
         result
-      end.join(' ') + ( !first_tutor ? ')' : '')
+      end.join(' ') + (!first_tutor ? ')' : '')
   end
 
   def tutorial_enrolment_for_stream(tutorial_stream)
-    tutorial_enrolments.
-      joins(:tutorial).
-      where('tutorials.tutorial_stream_id = :sid OR tutorials.tutorial_stream_id IS NULL', sid: (tutorial_stream.present? ? tutorial_stream.id : nil)).
-      first
+    tutorial_enrolments
+      .joins(:tutorial)
+      .where('tutorials.tutorial_stream_id = :sid OR tutorials.tutorial_stream_id IS NULL', sid: (tutorial_stream.present? ? tutorial_stream.id : nil))
+      .first
   end
 
   def tutorial_for_stream(tutorial_stream)
@@ -248,11 +247,7 @@ class Project < ApplicationRecord
   end
 
   def reference_date
-    if application_reference_date > unit.end_date
-      unit.end_date
-    else
-      application_reference_date
-    end
+    [application_reference_date, unit.end_date].min
   end
 
   def task_details_for_shallow_serializer(user)
@@ -317,17 +312,17 @@ class Project < ApplicationRecord
   # Get task_definitions and status for the current student for all tasks that are <= the target
   #
   def task_definitions_and_status(target)
-    assigned_task_defs_for_grade(target).
-      order("start_date ASC, abbreviation ASC").
-      map { |td|
-          if has_task_for_task_definition? td
-            task = task_for_task_definition(td)
-            {task_definition: td, task: task, status: task.status }
-          else
-            {task_definition: td, task: nil, status: :not_started }
-          end
-        }.
-      select { |r| [:not_started, :redo, :need_help, :working_on_it, :fix_and_resubmit, :demonstrate, :discuss].include? r[:status] }
+    assigned_task_defs_for_grade(target)
+      .order("start_date ASC, abbreviation ASC")
+      .map { |td|
+      if has_task_for_task_definition? td
+        task = task_for_task_definition(td)
+        { task_definition: td, task: task, status: task.status }
+      else
+        { task_definition: td, task: nil, status: :not_started }
+      end
+    }
+      .select { |r| [:not_started, :redo, :need_help, :working_on_it, :fix_and_resubmit, :demonstrate, :discuss].include? r[:status] }
   end
 
   #
@@ -349,7 +344,7 @@ class Project < ApplicationRecord
     #
     overdue_tasks = task_states.select { |ts| to_target.call(ts) < Time.zone.today }
 
-    grades = [ "Pass", "Credit", "Distinction", "High Distinction" ]
+    grades = ["Pass", "Credit", "Distinction", "High Distinction"]
 
     for i in GradeHelper::RANGE
       graded_tasks = overdue_tasks.select { |ts| ts[:task_definition].target_grade == i  }
@@ -368,7 +363,7 @@ class Project < ApplicationRecord
     soon_tasks = task_states.select { |ts| to_target.call(ts) >= Time.zone.today && to_target.call(ts) < Time.zone.today + 7.days }
 
     for i in GradeHelper::RANGE
-      graded_tasks = soon_tasks.select { |ts| ts[:task_definition].target_grade == i  }
+      graded_tasks = soon_tasks.select { |ts| ts[:task_definition].target_grade == i }
 
       graded_tasks.each do |ts|
         result << { task_definition: ts[:task_definition], status: ts[:status], reason: :soon }
@@ -383,7 +378,7 @@ class Project < ApplicationRecord
     ahead_tasks = task_states.select { |ts| to_target.call(ts) >= Time.zone.today + 7.days }
 
     for i in GradeHelper::RANGE
-      graded_tasks = ahead_tasks.select { |ts| ts[:task_definition].target_grade == i  }
+      graded_tasks = ahead_tasks.select { |ts| ts[:task_definition].target_grade == i }
 
       graded_tasks.each do |ts|
         result << { task_definition: ts[:task_definition], status: ts[:status], reason: :ahead }
@@ -424,6 +419,7 @@ class Project < ApplicationRecord
   def weekly_completion_rate(date = nil)
     # Return a completion rate of 0.0 if the project is yet to have commenced
     return 0.0 if ready_or_complete_tasks.empty?
+
     date ||= reference_date
 
     weeks = weeks_elapsed(date)
@@ -527,17 +523,17 @@ class Project < ApplicationRecord
 
     # Get the count of the total number of tasks less than each target grade
     task_count = unit
-      .task_definitions
-      .select(*count_by_grade) # create columns for each grade
-      .map do |r| # map to array
-        [
-          r['count_0'].to_f || 0.0,
-          r['count_1'].to_f || 0.0,
-          r['count_2'].to_f || 0.0,
-          r['count_3'].to_f || 0.0
-        ]
-      end
-      .first # there is only one row returned...
+                 .task_definitions
+                 .select(*count_by_grade) # create columns for each grade
+                 .map do |r| # map to array
+      [
+        r['count_0'].to_f || 0.0,
+        r['count_1'].to_f || 0.0,
+        r['count_2'].to_f || 0.0,
+        r['count_3'].to_f || 0.0
+      ]
+    end
+                 .first # there is only one row returned...
 
     # Generate SQL to get the count of each task status for the project
     sum_by_status = (1..TaskStatus.count).map do |status_id|
@@ -549,9 +545,9 @@ class Project < ApplicationRecord
     # and map to json from tasks stats
     # getting first... as there is only one row returned (the row with sums)
     result = assigned_tasks
-        .select( *sum_by_status )
-        .map {|t| Project.create_task_stats_from(task_count, t, target_grade) }
-        .first
+             .select(*sum_by_status)
+             .map { |t| Project.create_task_stats_from(task_count, t, target_grade) }
+             .first
 
     # There may be no row however... in which case use the defaults
     if result.nil?
@@ -814,6 +810,7 @@ class Project < ApplicationRecord
 
     filename = "#{portfolio_tmp_dir}/000-document-LearningSummaryReport.pdf"
     return nil unless File.exist? filename
+
     filename
   end
 
@@ -841,6 +838,8 @@ class Project < ApplicationRecord
         fout.puts pdf_text
       end
 
+      FileHelper.compress_pdf(portfolio_path)
+
       logger.info "Created portfolio at #{portfolio_path} - #{log_details}"
 
       self.portfolio_production_date = Time.zone.now
@@ -862,9 +861,9 @@ class Project < ApplicationRecord
     end
   end
 
-  def send_weekly_status_email ( summary_stats, middle_of_unit )
+  def send_weekly_status_email(summary_stats, middle_of_unit)
     did_revert_to_pass = false
-    if middle_of_unit && should_revert_to_pass && ! has_portfolio
+    if middle_of_unit && should_revert_to_pass && !has_portfolio
       self.target_grade = 0
       save
       did_revert_to_pass = true
@@ -874,13 +873,16 @@ class Project < ApplicationRecord
     end
 
     return unless student.receive_feedback_notifications
-    return if has_portfolio && ! middle_of_unit
+    return if has_portfolio && !middle_of_unit
+
     NotificationsMailer.weekly_student_summary(self, summary_stats, did_revert_to_pass).deliver_now
   end
 
   private
+
   def can_destroy?
     return true if tutorial_enrolments.count == 0
+
     errors.add :base, "Cannot delete project with enrolments"
     throw :abort
   end
@@ -888,12 +890,12 @@ class Project < ApplicationRecord
   # If someone withdraws from a unit, make sure they are removed from groups
   def check_withdraw_from_groups
     # return if enrolled was not changed... or we are now not enrolled
-    return unless enrolled && ! saved_change_to_enrolled[0] # 0 is the old value of enrolled before update
+    return unless enrolled && !saved_change_to_enrolled[0] # 0 is the old value of enrolled before update
 
     group_memberships.each do |gm|
       next unless gm.active
 
-      if ! gm.valid? || gm.group.beyond_capacity?
+      if !gm.valid? || gm.group.beyond_capacity?
         gm.update(active: false)
       end
     end

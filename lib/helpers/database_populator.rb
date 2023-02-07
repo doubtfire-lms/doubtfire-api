@@ -159,12 +159,12 @@ class DatabasePopulator
       filter_ids = [filter].flatten.map(&:id)
       filter = Role.where(id: filter_ids)
     else
-      accepted_to_str = Role.all.pluck(:name).map { | s | "Role." << s.downcase }
+      accepted_to_str = Role.all.pluck(:name).map { |s| "Role." << s.downcase }
       throw "Unaccepted filter for generate_users, should be one of #{accepted_to_str}"
     end
 
     echo "--> Generating users with role(s) #{filter.pluck(:name).join(', ')}"
-    users_to_generate = @user_data.select { | user_key, profile | filter.pluck(:id).include? profile[:role_id] }
+    users_to_generate = @user_data.select { |user_key, profile| filter.pluck(:id).include? profile[:role_id] }
 
     # Create each user
     users_to_generate.each do |user_key, profile|
@@ -179,9 +179,9 @@ class DatabasePopulator
         user = User.create!(profile)
       else
         user = User.create!(profile.merge({
-          password: 'password',
-          password_confirmation: 'password'
-        }))
+                                            password: 'password',
+                                            password_confirmation: 'password'
+                                          }))
       end
 
       @user_cache[user_key] = user
@@ -208,7 +208,7 @@ class DatabasePopulator
     many_tutorials = @scale[:many_tutorials]
 
     # Run through the unit_details and initialise their data
-    @unit_data.each do | unit_key, unit_details |
+    @unit_data.each do |unit_key, unit_details|
       echo_line "---> Generating unit #{unit_details[:code]}"
 
       if unit_details[:teaching_period].present?
@@ -223,7 +223,7 @@ class DatabasePopulator
           code: unit_details[:code],
           name: unit_details[:name],
           description: faker_random_sentence(10, 15),
-          start_date: Time.zone.now  - 6.weeks,
+          start_date: Time.zone.now - 6.weeks,
           end_date: 13.weeks.since(Time.zone.now - 6.weeks)
         }
       end
@@ -232,7 +232,7 @@ class DatabasePopulator
         data
       )
       # Assign the convenors for this unit
-      unit_details[:convenors].each do | user_key |
+      unit_details[:convenors].each do |user_key|
         echo_line "----> Adding convenor #{user_key}"
         unit.employ_staff(@user_cache[user_key], Role.convenor)
       end
@@ -285,17 +285,17 @@ class DatabasePopulator
   def generate_fixed_data
     # Define fixed user data here
     @user_data = {
-      acain:              {first_name: "Andrew",  last_name: "Cain",          nickname: "Macite",         role_id: Role.admin_id },
-      aconvenor:          {first_name: "Clinton", last_name: "Woodward",      nickname: "The Giant",      role_id: Role.convenor_id },
-      ajones:             {first_name: "Allan",   last_name: "Jones",         nickname: "P-Jiddy",        role_id: Role.admin_id },
-      rwilson:            {first_name: "Reuben",  last_name: "Wilson",        nickname: "Reubs",          role_id: Role.convenor_id },
-      atutor:             {first_name: "Akihiro", last_name: "Noguchi",       nickname: "Animations",     role_id: Role.tutor_id },
-      acummaudo:          {first_name: "Alex",    last_name: "Cummaudo",      nickname: "DoubtfireDude",  role_id: Role.convenor_id },
-      cliff:              {first_name: "Cliff",   last_name: "Warren",        nickname: "Cliff",          role_id: Role.tutor_id },
-      joostfunkekupper:   {first_name: "Joost",   last_name: "Funke Kupper",  nickname: "Joe",            role_id: Role.tutor_id },
-      angusmorton:        {first_name: "Angus",   last_name: "Morton",        nickname: "Angus",          role_id: Role.tutor_id },
-      "123456X" =>        {first_name: "Fred",    last_name: "Jones",         nickname: "Foo",            role_id: Role.student_id },
-      astudent:           {first_name: "student", last_name: "surname",       nickname: "Foo",            role_id: Role.student_id }
+      acain: { first_name: "Andrew", last_name: "Cain", nickname: "Macite", role_id: Role.admin_id },
+      aconvenor: { first_name: "Clinton", last_name: "Woodward", nickname: "The Giant", role_id: Role.convenor_id },
+      ajones: { first_name: "Allan", last_name: "Jones", nickname: "P-Jiddy", role_id: Role.admin_id },
+      rwilson: { first_name: "Reuben", last_name: "Wilson", nickname: "Reubs", role_id: Role.convenor_id },
+      atutor: { first_name: "Akihiro", last_name: "Noguchi", nickname: "Animations", role_id: Role.tutor_id },
+      acummaudo: { first_name: "Alex", last_name: "Cummaudo", nickname: "DoubtfireDude", role_id: Role.convenor_id },
+      cliff: { first_name: "Cliff",   last_name: "Warren", nickname: "Cliff", role_id: Role.tutor_id },
+      joostfunkekupper: { first_name: "Joost",   last_name: "Funke Kupper", nickname: "Joe", role_id: Role.tutor_id },
+      angusmorton: { first_name: "Angus",   last_name: "Morton",        nickname: "Angus",          role_id: Role.tutor_id },
+      "123456X" => { first_name: "Fred",    last_name: "Jones",         nickname: "Foo",            role_id: Role.student_id },
+      astudent: { first_name: "student", last_name: "surname", nickname: "Foo", role_id: Role.student_id }
     }
     # Add 10 tutors to fixed info
     10.times do |count|
@@ -318,7 +318,7 @@ class DatabasePopulator
       intro_prog: {
         code: "COS10001",
         name: "Introduction to Programming",
-        convenors: [ :acain, :aconvenor ],
+        convenors: [:acain, :aconvenor],
         teaching_period: TeachingPeriod.first,
         tutors: [
           { user: :acain, num: many_tutorials },
@@ -331,12 +331,12 @@ class DatabasePopulator
           { user: :angusmorton, num: some_tutorials },
           { user: :cliff, num: some_tutorials },
         ],
-        students: [ ]
+        students: []
       },
       oop: {
         code: "COS20007",
         name: "Object Oriented Programming",
-        convenors: [ :acain, :aconvenor, :ajones, :acummaudo ],
+        convenors: [:acain, :aconvenor, :ajones, :acummaudo],
         tutors: [
           { user: "tutor_1", num: few_tutorials },
           { user: :angusmorton, num: few_tutorials },
@@ -345,30 +345,30 @@ class DatabasePopulator
         ],
         num_tasks: many_tasks,
         ilos: Faker::Number.between(from: 0, to: 3),
-        students: [ :cliff ]
+        students: [:cliff]
       },
       ai4g: {
         code: "COS30046",
         name: "Artificial Intelligence for Games",
-        convenors: [ :aconvenor ],
+        convenors: [:aconvenor],
         tutors: [
           { user: :aconvenor, num: few_tutorials },
           { user: :cliff, num: few_tutorials },
         ],
         num_tasks: few_tasks,
         ilos: Faker::Number.between(from: 0, to: 3),
-        students: [ :acummaudo ]
+        students: [:acummaudo]
       },
       gameprog: {
         code: "COS30243",
         name: "Game Programming",
-        convenors: [ :aconvenor, :acummaudo ],
+        convenors: [:aconvenor, :acummaudo],
         tutors: [
           { user: :aconvenor, num: few_tutorials },
         ],
         num_tasks: few_tasks,
         ilos: Faker::Number.between(from: 0, to: 3),
-        students: [ :acain, :ajones ]
+        students: [:acain, :ajones]
       },
     }
     echo_line "-> Defined #{@user_data.length} fixed users and #{@unit_data.length} units"
@@ -390,7 +390,7 @@ class DatabasePopulator
     weekdays = %w[Monday Tuesday Wednesday Thursday Friday]
 
     # Create tutorials and enrol students
-    unit_details[:tutors].each do | user_details |
+    unit_details[:tutors].each do |user_details|
       # only up to 4 tutorials for small scale
       break if tutorial_count > max_tutorials
 
@@ -405,13 +405,13 @@ class DatabasePopulator
 
       campus = random_campus
 
-      user_details[:num].times do | count |
+      user_details[:num].times do |count|
         tutorial_count += 1
         tutorial_stream = unit.tutorial_streams.sample
-        #day, time, location, tutor_username, abbrev
+        # day, time, location, tutor_username, abbrev
         tutorial = unit.add_tutorial(
           "#{weekdays.sample}",
-          "#{8 + Faker::Number.between(from: 0, to: 11)}:#{['00', '30'].sample}",    # Mon-Fri 8am-7:30pm
+          "#{Faker::Number.between(from: 0, to: 11) + 8}:#{['00', '30'].sample}", # Mon-Fri 8am-7:30pm
           "#{['EN', 'BA'].sample}#{Faker::Number.between(from: 0, to: 6)}0#{Faker::Number.between(from: 0, to: 8)}", # EN###/BA###
           tutor,
           campus,
@@ -432,7 +432,7 @@ class DatabasePopulator
         end
         # Add fixed students to first tutorial
         if count == 0
-          unit_details[:students].each do | student_key |
+          unit_details[:students].each do |student_key|
             unit.enrol_student(@user_cache[student_key], campus)
           end
         end
@@ -445,6 +445,7 @@ class DatabasePopulator
     alignments = []
     task.unit.learning_outcomes.each do |lo|
       next if rand(0..10) < 7
+
       data = {
         ilo_id: lo.id,
         rating: rand(1..5),
@@ -456,10 +457,11 @@ class DatabasePopulator
     if task.group_task? && task.group.nil?
       return
     end
+
     contributions = nil
 
     task.create_alignments_from_submission(alignments) unless alignments.nil?
-    task.create_submission_and_trigger_state_change(proj.student) #, propagate = true, contributions = contributions, trigger = trigger)
+    task.create_submission_and_trigger_state_change(proj.student) # , propagate = true, contributions = contributions, trigger = trigger)
     task.assess status, tutor, complete_date
 
     if task.task_definition.is_graded?
@@ -467,7 +469,7 @@ class DatabasePopulator
     end
 
     if task.for_definition_with_quality?
-      task.update(quality_pts: rand(0.. task.task_definition.max_quality_pts ))
+      task.update(quality_pts: rand(0..task.task_definition.max_quality_pts))
     end
 
     pdf_path = task.final_pdf_path
@@ -506,16 +508,16 @@ class DatabasePopulator
   def generate_tasks_for_unit(unit, unit_details)
     echo "----> Generating #{unit_details[:num_tasks]} tasks"
 
-    if File.exist? Rails.root.join('test_files',"#{unit.code}-Tasks.csv")
-      unit.import_tasks_from_csv File.open(Rails.root.join('test_files',"#{unit.code}-Tasks.csv"))
-      unit.import_task_files_from_zip Rails.root.join('test_files',"#{unit.code}-Tasks.zip")
+    if File.exist? Rails.root.join('test_files', "#{unit.code}-Tasks.csv")
+      unit.import_tasks_from_csv File.open(Rails.root.join('test_files', "#{unit.code}-Tasks.csv"))
+      unit.import_task_files_from_zip Rails.root.join('test_files', "#{unit.code}-Tasks.zip")
       return
     end
 
     unit_details[:num_tasks].times do |count|
       up_reqs = []
-      Faker::Number.between(from: 1, to: 4).times.each_with_index do | file, idx |
-        up_reqs[idx] = {:key => "file#{idx}", :name => faker_random_sentence(1, 3).capitalize, :type => ["code", "document", "image"].sample }
+      Faker::Number.between(from: 1, to: 4).times.each_with_index do |file, idx|
+        up_reqs[idx] = { :key => "file#{idx}", :name => faker_random_sentence(1, 3).capitalize, :type => ["code", "document", "image"].sample }
       end
       target_date = unit.start_date + ((count + 1) % 12).weeks # Assignment 6 due week 6, etc.
       start_date = target_date - Faker::Number.between(from: 1.0, to: 2.0).weeks
@@ -544,9 +546,9 @@ class DatabasePopulator
     # Create the ILOs
     echo "----> Adding #{unit_details[:ilos]} ILOs"
 
-    if File.exist? Rails.root.join('test_files',"#{unit.code}-Outcomes.csv")
-      unit.import_outcomes_from_csv File.open(Rails.root.join('test_files',"#{unit.code}-Outcomes.csv"))
-      unit.import_task_alignment_from_csv File.open(Rails.root.join('test_files',"#{unit.code}-Alignment.csv")), nil
+    if File.exist? Rails.root.join('test_files', "#{unit.code}-Outcomes.csv")
+      unit.import_outcomes_from_csv File.open(Rails.root.join('test_files', "#{unit.code}-Outcomes.csv"))
+      unit.import_task_alignment_from_csv File.open(Rails.root.join('test_files', "#{unit.code}-Alignment.csv")), nil
       return
     end
 
@@ -558,7 +560,7 @@ class DatabasePopulator
         ilo_number: ilo_number,
         abbreviation: "ILO#{ilo_number}",
         name: faker_random_sentence(1, 4).capitalize,
-        description:  faker_random_sentence(10, 15)
+        description: faker_random_sentence(10, 15)
       )
       ilo_cache[ilo.id] = ilo
       echo "."
