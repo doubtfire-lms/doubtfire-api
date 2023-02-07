@@ -25,12 +25,12 @@ class DatabasePopulator
         min_students: 5,
         delta_students: 2,
         few_tasks: 5,
-        some_tasks: 10,
-        many_tasks: 20,
+        some_tasks: 8,
+        many_tasks: 15,
         few_tutorials: 1,
         some_tutorials: 1,
         many_tutorials: 1,
-        max_tutorials: 4
+        max_tutorials: 2
       },
       large: {
         min_students: 50,

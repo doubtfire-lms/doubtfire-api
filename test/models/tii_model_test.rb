@@ -116,6 +116,8 @@ class TiiModelTest < ActiveSupport::TestCase
 
     task_definition.upload_requirements = [ { "key" => 'file0', "name" => 'Document 1', "type" => 'document' }, { "key" => 'file1', "name" => 'Document 2', "type" => 'document' } ]
 
+    task_definition.save!
+
     assert_equal 2, task_definition.number_of_documents
 
     task = project.task_for_task_definition(task_definition)
@@ -138,9 +140,44 @@ class TiiModelTest < ActiveSupport::TestCase
       },
     ], user, nil, nil, 'ready_for_feedback', nil
 
+    # Check that the submission is going to be progressed
+    assert_equal 1, AcceptSubmissionJob.jobs.count
+    refute File.exist?(task.final_pdf_path)
     assert File.directory?(FileHelper.student_work_dir(:new, task, false))
-    assert task.compress_new_to_done
+
+    # Check accept submission job
+    AcceptSubmissionJob.clear
+
+    response = TCAClient::SimpleSubmissionResponse.new id: '1223'
+
+    submission_request = stub_request(:post, "https://localhost/api/v1/submissions").
+    with(tii_headers).
+    to_return(status: 200, body: response.to_json, headers: {})
+
+    file_upload = stub_request(:put, "https://localhost/api/v1/submissions/1223/original").with {|request| request.body.starts_with?('%PDF-') }.
+    to_return(status: 200, body: "", headers: {})
+
+    job = AcceptSubmissionJob.new
+    job.perform(task.id, user.id)
+
+    assert File.exist?(task.final_pdf_path)
+
+    refute File.directory?(FileHelper.student_work_dir(:new, task, false))
     assert File.exist?(task.zip_file_path_for_done_task)
+
+    subm = TiiSubmission.last
+    assert_equal :uploaded, subm.status_sym
+
+    # Now trigger next step - check if submission is complete
+    subm_status_req = stub_request(:get, "https://localhost/api/v1/submissions/1223").
+      with(tii_headers).
+      to_return(status: 200, body: TCAClient::Submission.new(status: 'PROCESSING').to_hash.to_json())
+
+    subm.continue_process
+
+    assert_requested subm_status_req, times: 1
+    assert_equal :uploaded, subm.status_sym
+    assert_equal 1, subm.retries
 
     task.destroy
     unit.destroy

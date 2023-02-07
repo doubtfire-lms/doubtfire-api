@@ -1042,6 +1042,7 @@ class Task < ApplicationRecord
     self.portfolio_evidence = value.present? ? value.sub(FileHelper.student_work_dir, '') : nil
   end
 
+  # The path to the PDF for this task's submission
   def final_pdf_path
     if group_task?
       return nil if group_submission.nil? || group_submission.task_definition.nil?
@@ -1284,6 +1285,9 @@ class Task < ApplicationRecord
     FileUtils.rm_rf tmp_dir if File.exist? tmp_dir
 
     logger.info "Submission accepted! Status for task #{id} is now #{trigger}"
+
+    # Trigger processing of new submission
+    AcceptSubmissionJob.perform_async(id, current_user.id)
   end
 
   # The name that should be used for the uploaded file (based on index of upload requirements)
@@ -1304,7 +1308,7 @@ class Task < ApplicationRecord
 
   def filename_in_zip(idx)
     path = FileHelper.zip_file_path_for_done_task(self)
-    return nil unless File.exists? path
+    return nil unless File.exist? path
     return nil unless idx >= 0 && idx < upload_requirements.length
 
     type = upload_requirements[idx]['type']
@@ -1325,7 +1329,7 @@ class Task < ApplicationRecord
 
   def read_file_from_done(idx)
     path = FileHelper.zip_file_path_for_done_task(self)
-    return nil unless File.exists? path
+    return nil unless File.exist? path
     return nil unless idx >= 0 && idx < upload_requirements.length
 
     type = upload_requirements[idx]['type']
