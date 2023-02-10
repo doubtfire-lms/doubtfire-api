@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_02_10_023321) do
+ActiveRecord::Schema[7.0].define(version: 2023_02_10_032515) do
   create_table "activity_types", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -42,16 +42,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_10_023321) do
     t.index ["abbreviation"], name: "index_campuses_on_abbreviation", unique: true
     t.index ["active"], name: "index_campuses_on_active"
     t.index ["name"], name: "index_campuses_on_name", unique: true
-  end
-
-  create_table "comments_read_receipts", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
-    t.bigint "task_comment_id", null: false
-    t.bigint "user_id", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["task_comment_id", "user_id"], name: "index_comments_read_receipts_on_task_comment_id_and_user_id", unique: true
-    t.index ["task_comment_id"], name: "index_comments_read_receipts_on_task_comment_id"
-    t.index ["user_id"], name: "index_comments_read_receipts_on_user_id"
   end
 
   create_table "discussion_comments", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
@@ -107,6 +97,16 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_10_023321) do
     t.boolean "locked", default: false, null: false
     t.index ["group_set_id"], name: "index_groups_on_group_set_id"
     t.index ["tutorial_id"], name: "index_groups_on_tutorial_id"
+  end
+
+  create_table "last_message_reads", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "message_id", null: false
+    t.datetime "read_at", null: false
+    t.bigint "context_id", null: false
+    t.integer "context_type", null: false
+    t.index ["message_id"], name: "index_last_message_reads_on_message_id"
+    t.index ["user_id"], name: "index_last_message_reads_on_user_id"
   end
 
   create_table "learning_outcome_task_links", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
@@ -471,4 +471,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_10_023321) do
     t.index ["user_id"], name: "index_webcals_on_user_id", unique: true
   end
 
+  add_foreign_key "last_message_reads", "messages"
+  add_foreign_key "last_message_reads", "users"
 end
