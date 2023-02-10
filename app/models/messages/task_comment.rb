@@ -2,7 +2,7 @@
 
 require 'tempfile'
 
-class TaskComment < ApplicationRecord
+class TaskComment < Message
   include MimeCheckHelpers
   include TimeoutHelper
   include FileHelper
@@ -165,4 +165,11 @@ class TaskComment < ApplicationRecord
     read_reciept = CommentsReadReceipts.find_by(user: user, task_comment: self)
     read_reciept&.created_at
   end
+end
+
+if RAils.env.development?
+  require_dependency 'assessment_comment'
+  require_dependency 'discussion_comment'
+  require_dependency 'task_status_comment'
+  require_dependency 'extension_comment'
 end
