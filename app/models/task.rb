@@ -1357,19 +1357,17 @@ class Task < ApplicationRecord
     if group_submission && group_submission.tasks.count <= 1
       group_submission.destroy
     else
-      zip_file = zip_file_path_for_done_task()
-      if zip_file && File.exist?(zip_file)
-        FileUtils.rm zip_file
-      end
-      if portfolio_evidence_path.present? && File.exist?(portfolio_evidence_path)
-        FileUtils.rm portfolio_evidence_path
-      end
+      zip_file = zip_file_path_for_done_task
+
+      FileUtils.rm(zip_file) if zip_file && File.exist?(zip_file)
+
+      FileUtils.rm(portfolio_evidence_path) if portfolio_evidence_path.present? && File.exist?(portfolio_evidence_path)
 
       new_path = FileHelper.student_work_dir(:new, self, false)
-      if new_path.present? && File.directory?(new_path)
-        FileUtils.rm_rf new_path
-      end
+      FileUtils.rm_rf(new_path) if new_path.present? && File.directory?(new_path)
     end
+
+    TurnItIn.delete_submission(self) if tii_submission_id.present?
   end
 
   # Use the current DateTime to calculate a new DateTime for the last moment of the same
