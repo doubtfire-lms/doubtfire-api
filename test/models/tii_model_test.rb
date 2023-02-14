@@ -114,7 +114,7 @@ class TiiModelTest < ActiveSupport::TestCase
     convenor = unit.main_convenor_user
     task_definition = unit.task_definitions.first
 
-    task_definition.upload_requirements = [ { "key" => 'file0', "name" => 'Document 1', "type" => 'document' }, { "key" => 'file1', "name" => 'Document 2', "type" => 'document' } ]
+    task_definition.upload_requirements = [ { "key" => 'file0', "name" => 'Document 1', "type" => 'document' }, { "key" => 'file1', "name" => 'Document 2', "type" => 'document' }, { "key" => 'file2', "name" => 'Code 1', "type" => 'code' } ]
 
     task_definition.save!
 
@@ -138,6 +138,13 @@ class TiiModelTest < ActiveSupport::TestCase
         filename: 'file1.pdf',
         "tempfile" => File.new(test_file_path('submissions/1.2P.pdf'))
       },
+      {
+        id: 'file2',
+        name: 'Code 1',
+        type: 'code',
+        filename: 'code.cs',
+        "tempfile" => File.new(test_file_path('submissions/program.cs'))
+      },
     ], user, nil, nil, 'ready_for_feedback', nil
 
     # Check that the submission is going to be progressed
@@ -148,36 +155,70 @@ class TiiModelTest < ActiveSupport::TestCase
     # Check accept submission job
     AcceptSubmissionJob.clear
 
-    response = TCAClient::SimpleSubmissionResponse.new id: '1223'
+    response1 = TCAClient::SimpleSubmissionResponse.new id: '1222'
+    response2 = TCAClient::SimpleSubmissionResponse.new id: '1223'
 
     submission_request = stub_request(:post, "https://localhost/api/v1/submissions").
     with(tii_headers).
-    to_return(status: 200, body: response.to_json, headers: {})
+    to_return(
+      {status: 200, body: response1.to_json, headers: {}},
+      {status: 200, body: response2.to_json, headers: {}},
+    )
 
-    file_upload = stub_request(:put, "https://localhost/api/v1/submissions/1223/original").with {|request| request.body.starts_with?('%PDF-') }.
+    file1_upload_req = stub_request(:put, "https://localhost/api/v1/submissions/1223/original").with {|request| request.body.starts_with?('%PDF-') }.
+    to_return(status: 200, body: "", headers: {})
+
+    file2_upload_req = stub_request(:put, "https://localhost/api/v1/submissions/1222/original").with {|request| request.body.starts_with?('%PDF-') }.
     to_return(status: 200, body: "", headers: {})
 
     job = AcceptSubmissionJob.new
     job.perform(task.id, user.id)
+
+    assert_requested submission_request, times: 2
 
     assert File.exist?(task.final_pdf_path)
 
     refute File.directory?(FileHelper.student_work_dir(:new, task, false))
     assert File.exist?(task.zip_file_path_for_done_task)
 
+    # We sent the two documents, but not the code to turn it in
+    assert_requested file1_upload_req, times: 1
+    assert_requested file2_upload_req, times: 1
+
+    # We will progress the 2nd document
     subm = TiiSubmission.last
     assert_equal :uploaded, subm.status_sym
 
-    # Now trigger next step - check if submission is complete
+    # Now trigger next step - processing to complete
+    # Processing will not progress to next step
     subm_status_req = stub_request(:get, "https://localhost/api/v1/submissions/1223").
       with(tii_headers).
-      to_return(status: 200, body: TCAClient::Submission.new(status: 'PROCESSING').to_hash.to_json())
+      to_return(
+        {status: 200, body: TCAClient::Submission.new(status: 'PROCESSING').to_hash.to_json(), headers: {}},
+        {status: 200, body: TCAClient::Submission.new(status: 'COMPLETE').to_hash.to_json(), headers: {}},
+      )
 
+    # Now run for "still processing"
     subm.continue_process
 
     assert_requested subm_status_req, times: 1
-    assert_equal :uploaded, subm.status_sym
+    assert_equal :uploaded, subm.reload.status_sym
     assert_equal 1, subm.retries
+
+    # Now run for processing complete
+
+    similarity_request = stub_request(:put, "https://localhost/api/v1/submissions/1223/similarity").
+    with(tii_headers).
+    with(
+      body: "{\"generation_settings\":{\"search_repositories\":[\"INTERNET\",\"SUBMITTED_WORK\",\"PUBLICATION\",\"CROSSREF\",\"CROSSREF_POSTED_CONTENT\"],\"auto_exclude_self_matching_scope\":\"GROUP_CONTEXT\"}}",
+    ).
+    to_return(status: 200, body: "", headers: {})
+
+    subm.continue_process
+
+    assert_requested subm_status_req, times: 2
+    assert_equal :similarity_report_requested, subm.reload.status_sym
+    assert_equal 0, subm.retries
 
     task.destroy
     unit.destroy

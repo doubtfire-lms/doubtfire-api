@@ -258,13 +258,14 @@ class TiiSubmission < ApplicationRecord
       retry_request
       # return # do nothing... wait for the webhook
     when 'COMPLETE' # Submission processing is complete
-      status = :submission_complete
+      self.retries = 0
+      self.status = :submission_complete
       save
       request_similarity_report
     when 'ERROR' # An error occurred during submission processing; see error_code for details
-      error_code = :custom_tii_error
-      custom_error_message = response.error_code
-      Doubtfire::Application.config.logger.error "Error with tii submission: #{id} #{custom_error_message}"
+      self.error_code = :custom_tii_error
+      self.custom_error_message = response.error_code
+      Doubtfire::Application.config.logger.error "Error with tii submission: #{id} #{self.custom_error_message}"
       save
     end
   end
@@ -298,6 +299,7 @@ class TiiSubmission < ApplicationRecord
         data
       )
 
+      self.retries = 0
       self.status = :similarity_report_requested
       save
 
@@ -378,7 +380,7 @@ class TiiSubmission < ApplicationRecord
   def retry_request
     self.retries += 1
     if self.retries > 10
-      error_code = :excessive_retries
+      self.error_code = :excessive_retries
       Doubtfire::Application.config.logger.error "Error with tii submission: #{id} excessive retries"
     else
       next_process_update_at = Time.zone.now + 30.minutes
@@ -394,25 +396,25 @@ class TiiSubmission < ApplicationRecord
   def handle_error(error, codes)
     case error.error_code
     when 400
-      error_code = :malformed_request
+      self.error_code = :malformed_request
       save
       return
     when 403
-      error_code = :authentication_error
+      self.error_code = :authentication_error
       save
       return
     when 429
       Doubtfire::Application.config.logger.error "Request has been rejected due to rate limiting - tii_submission #{id}"
       return
     when 0
-      error_code = :custom_tii_error
+      self.error_code = :custom_tii_error
       custom_error_message = error.message
     end
 
     codes.each do |check|
       next unless error.error_code == check[:code]
 
-      error_code = check[:symbol]
+      self.error_code = check[:symbol]
       # custom_error_message = check[:message] if check[:message].present?
       save
       break
