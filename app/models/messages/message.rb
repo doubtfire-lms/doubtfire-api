@@ -28,7 +28,8 @@ class Message < ApplicationRecord
 
   # After create, mark as read by user creating
   after_create do
-    mark_as_read(self.user)
+    #TODO: remove this or update last read?
+    # mark_as_read(self.user)
   end
 
   # Delete action - before dependent association
