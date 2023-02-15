@@ -6,11 +6,16 @@ class LastMessageRead < ApplicationRecord
 
   # todo: on update validate that the scope has not changed
 
+  # system message doesn't have an associated context object
+  def is_system_message?
+    message.context_object.nil?
+  end
+
   private
 
   def ensure_only_one_per_user_per_scope
     # all contexts must be able to return the messages they contain
-    if is_system_message
+    if is_system_message?
       # System messages do not have a context - only one place where they are read... so only one of these ever for a user
       errors.add(:user, "User has already got a last read system message") unless LastMessageRead.where(user: user, context_id: nil).empty?
     else
