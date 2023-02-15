@@ -7,6 +7,10 @@ class TaskComment < Message
   belongs_to :task, optional: false # Foreign key
 
   validates :task, presence: true
+
+  def context_object()
+    task
+  end
 end
 
 if Rails.env.development?

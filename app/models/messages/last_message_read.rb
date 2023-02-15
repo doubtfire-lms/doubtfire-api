@@ -1,12 +1,15 @@
 class LastMessageRead < ApplicationRecord
-  # todo: validations
   belongs_to :user, optional: false
   belongs_to :message, optional: false
 
+  validate :ensure_only_one_per_user_per_scope
 
-  # datetime:read_at
-  # bigint:context_id
-  # enum:context_type (0 is task)
+  private
 
-  enum context_type: { task: 0, project: 1, unit: 2, system: 3 }
+  def ensure_only_one_per_user_per_scope
+    # all contexts must be able to return the messages they contain
+    if message.context_object.present? && message.context_object.comments.joins(:last_message_reads).where(last_message_reads: {user: user}).count > 1
+      errors.add(:user, "User has already got a last read message in this scope")
+    end
+  end
 end

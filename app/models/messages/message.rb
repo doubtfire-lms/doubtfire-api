@@ -10,7 +10,10 @@ class Message < ApplicationRecord
 
   belongs_to :recipient, class_name: 'User', optional: false
 
+  #todo: remove and replace with last message reads
   has_many :comments_read_receipts, class_name: 'CommentsReadReceipts', foreign_key: 'task_comment_id',  dependent: :destroy, inverse_of: :task_comment
+
+  has_many :last_message_reads, dependent: :destroy, inverse_of: :message
 
   # This message can
   has_many :message_replies, class_name: 'TaskComment', foreign_key: 'reply_to_id', dependent: :destroy, inverse_of: :reply_to
@@ -23,8 +26,6 @@ class Message < ApplicationRecord
   validates :comment, length: { minimum: 0, maximum: 4095, allow_blank: true }
   validate :valid_reply_to?, on: :create
 
-
-
   # After create, mark as read by user creating
   after_create do
     mark_as_read(self.user)
@@ -32,6 +33,10 @@ class Message < ApplicationRecord
 
   # Delete action - before dependent association
   before_destroy :delete_associated_files
+
+  def context_object
+    nil
+  end
 
   def valid_reply_to?
     if reply_to_id.present?
