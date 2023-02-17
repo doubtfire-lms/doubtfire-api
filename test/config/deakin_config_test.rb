@@ -17,7 +17,7 @@ class DeakinConfigTest < ActiveSupport::TestCase
     Campus.update_all "name = #{db_concat("'Test-'", "name")}, abbreviation = #{db_concat("'-'", "abbreviation")}"
 
     FactoryBot.create(:campus, name: 'Test Sync Campus', abbreviation: 'T')
-    FactoryBot.create(:campus, name: 'Cloud (online)', abbreviation: 'C')
+    FactoryBot.create(:campus, name: 'Online', abbreviation: 'C')
   end
 
   def teardown
@@ -43,10 +43,10 @@ class DeakinConfigTest < ActiveSupport::TestCase
     assert_equal 0, unit.tutorials.count
     assert_equal 0, unit.projects.count
 
-    unit.sync_enrolments()
+    result = unit.sync_enrolments()
 
-    assert_equal 3, unit.projects.count # 3 students and others skipped
-    assert_equal 2, unit.tutorials.count # campus
+    assert_equal 3, unit.projects.count, result # 3 students and others skipped
+    assert_equal 2, unit.tutorials.count, result # campus
 
     assert_requested enrolment_stub
     assert_requested timetable_stub
