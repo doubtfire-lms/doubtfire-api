@@ -502,13 +502,14 @@ class Unit < ApplicationRecord
 
     return if result.nil?
 
-    puts "#{code} - Import success for #{result[:success].count} students" unless result[:success].count == 0
-    puts "#{code} - Skipped #{result[:ignored].count} students" unless result[:ignored].count == 0
-    puts "#{code} - Errors #{result[:errors].count} students" unless result[:errors].count == 0
+    logger.info "#{code} - Import success for #{result[:success].count} students" unless result[:success].count == 0
+    logger.info "#{code} - Skipped #{result[:ignored].count} students" unless result[:ignored].count == 0
+    logger.info "#{code} - Errors #{result[:errors].count} students" unless result[:errors].count == 0
+
     result[:errors].each do |err|
-      puts "#{err[:message]} --> #{err[:row]}"
+      logger.error "#{err[:message]} --> #{err[:row]}"
     end
-    puts "---" unless result[:errors].count == 0
+    logger.info "---" unless result[:errors].count == 0
 
     result
   end
@@ -827,10 +828,10 @@ class Unit < ApplicationRecord
             end
           end
 
-          if !success_message.empty?
-            success << { row: row, message: success_message }
-          else
+          if success_message.empty?
             ignored << { row: row, message: 'No change.' }
+          else
+            success << { row: row, message: success_message }
           end
         else
           errors << { row: row, message: "Student record is invalid. #{project_participant.errors.full_messages.first}" }
@@ -917,8 +918,8 @@ class Unit < ApplicationRecord
     grp_sets = group_sets
 
     CSV.generate do |csv|
-      csv <<  %w(unit_code campus username student_id preferred_name first_name last_name email) +
-              (streams.count > 0 ? streams.map { |t| t.abbreviation } : ['tutorial'])
+      csv <<  (%w(unit_code campus username student_id preferred_name first_name last_name email) +
+              (streams.count > 0 ? streams.map { |t| t.abbreviation } : ['tutorial']))
 
       active_projects
         .joins(
@@ -938,7 +939,7 @@ class Unit < ApplicationRecord
         ).group(
           'projects.id', 'student_id', 'username', 'first_name', 'nickname', 'last_name', 'email', 'campus_abbreviation'
         ).each do |row|
-          csv << [
+          csv << ([
             code,
             row['campus_abbreviation'],
             row['username'],
@@ -953,7 +954,7 @@ class Unit < ApplicationRecord
                 else
                   streams.map { |ts| row["tutorial_#{ts.id}"] }
                 end
-              end.flatten
+              end.flatten)
         end
     end
   end
@@ -1347,7 +1348,7 @@ class Unit < ApplicationRecord
 
     CSV.generate() do |csv|
       # Add header row
-      csv << [
+      csv << ([
         'Student ID',
         'Username',
         'Student Name',
@@ -1365,7 +1366,7 @@ class Unit < ApplicationRecord
                result << "#{task_definition.abbreviation} stars" if task_definition.has_stars?
                result << "#{task_definition.abbreviation} contribution" if task_definition.is_group_task?
                result
-             end.flatten
+             end.flatten)
 
       # Add projects data
       # Get the details to fetch for each task definition...
@@ -1403,7 +1404,7 @@ class Unit < ApplicationRecord
         ).group(
           'projects.id', 'student_id', 'username', 'first_name', 'last_name', 'target_grade', 'email', 'compile_portfolio', 'portfolio_production_date', 'grade', 'grade_rationale'
         ).each do |row|
-          csv << [
+          csv << ([
             row['student_id'],
             row['username'],
             "#{row['first_name']} #{row['last_name']}",
@@ -1426,7 +1427,7 @@ class Unit < ApplicationRecord
             result << row["stars_#{td.id}"] if td.has_stars?
             result << row["people_#{td.id}"] if td.is_group_task?
             result
-          end.flatten
+          end.flatten)
         end
     end
   end
@@ -1701,7 +1702,7 @@ class Unit < ApplicationRecord
       td.plagiarism_checks.each do |check|
         next if check['type'].nil?
 
-        type_data = check['type'].split(' ')
+        type_data = check['type'].split
         next if type_data.nil? || (type_data.length != 2) || (type_data[0] != 'moss')
 
         # extract files matching each pattern
@@ -1746,7 +1747,7 @@ class Unit < ApplicationRecord
         td.plagiarism_checks.each do |check|
           next if check['type'].nil?
 
-          type_data = check['type'].split(' ')
+          type_data = check['type'].split
           next if type_data.nil? || (type_data.length != 2) || (type_data[0] != 'moss')
 
           # Create the MossRuby object
@@ -2004,7 +2005,7 @@ class Unit < ApplicationRecord
 
     data.each do |e|
       unless result[e[:task_definition_id]].key? e[:tutorial_id]
-        result[e[:task_definition_id]] [e[:tutorial_id]] = []
+        result[e[:task_definition_id]][e[:tutorial_id]] = []
       end
 
       result[e[:task_definition_id]][e[:tutorial_id]] << { tutorial_stream_id: e[:tutorial_stream_id], status: e[:status], num: e[:num] }
@@ -2050,11 +2051,11 @@ class Unit < ApplicationRecord
   def _calculate_task_completion_stats(data)
     values = data.map { |r| r[:num] }
 
-    if values && values.length > 0
+    if values && !values.empty?
       values.sort!
 
       median_value = if values.length.even?
-                       ((values[values.length / 2] + values[values.length / 2 - 1]) / 2.0).round(1)
+                       ((values[values.length / 2] + values[(values.length / 2) - 1]) / 2.0).round(1)
                      else
                        values[values.length / 2]
                      end
@@ -2178,7 +2179,7 @@ class Unit < ApplicationRecord
       end
 
       current[:project][e[:learning_outcome_id]] = old_val +
-                                                   e[:rating] * status_weight[e[:status]] * grade_weight[e[:grade]] * e[:num]
+                                                   (e[:rating] * status_weight[e[:status]] * grade_weight[e[:grade]] * e[:num])
     end
 
     # Add last project/tutorial to results
@@ -2213,7 +2214,7 @@ class Unit < ApplicationRecord
         values = values.sort
 
         median_value = if values.length.even?
-                         ((values[values.length / 2] + values[values.length / 2 - 1]) / 2.0).round(1)
+                         ((values[values.length / 2] + values[(values.length / 2) - 1]) / 2.0).round(1)
                        else
                          values[values.length / 2]
                        end
@@ -2490,12 +2491,12 @@ class Unit < ApplicationRecord
         task.trigger_transition(trigger: task_entry['status'], by_user: user, quality: task_entry['new quality'].to_i) # saves task
         task.grade_task(task_entry['new grade']) # try to grade task if need be
 
-        if !(task_entry['new comment'].nil? || task_entry['new comment'].empty?)
+        if task_entry['new comment'].nil? || task_entry['new comment'].empty?
+          success << { row: task_entry, message: "Updated task #{task.task_definition.abbreviation} for #{owner_text}" }
+        else
           task.add_text_comment user, task_entry['new comment']
           success << { row: task_entry, message: "Updated task #{task.task_definition.abbreviation} for #{owner_text}" }
           success << { row: {}, message: "Added comment to #{task.task_definition.abbreviation} for #{owner_text}" }
-        else
-          success << { row: task_entry, message: "Updated task #{task.task_definition.abbreviation} for #{owner_text}" }
         end
       rescue Exception => e
         errors << { row: task_entry, message: e.message }
@@ -2547,7 +2548,7 @@ class Unit < ApplicationRecord
     end
 
     if type.start_with?('text/', 'text/plain', 'text/csv')
-      update_task_status_from_csv(user, File.open(file["tempfile"].path).read, success, ignored, errors)
+      update_task_status_from_csv(user, File.read(file["tempfile"].path), success, ignored, errors)
     else
       # files are extracted to a temp dir first
       i = 0
@@ -2562,108 +2563,103 @@ class Unit < ApplicationRecord
 
       FileUtils.mkdir_p(tmp_dir)
 
-      begin
-        Zip::File.open(file["tempfile"].path) do |zip|
-          # Find the marking file within the directory tree
-          marking_file = zip.glob('**/marks.csv').first
+      Zip::File.open(file["tempfile"].path) do |zip|
+        # Find the marking file within the directory tree
+        marking_file = zip.glob('**/marks.csv').first
 
-          # No marking file found
-          if marking_file.nil?
-            errors << { row: {}, message: 'No marks.csv contained in zip.' }
-            return {
-              success: success,
-              ignored: ignored,
-              errors: errors
-            }
-          end
+        # No marking file found
+        if marking_file.nil?
+          errors << { row: {}, message: 'No marks.csv contained in zip.' }
+          return {
+            success: success,
+            ignored: ignored,
+            errors: errors
+          }
+        end
 
-          # Read the csv
-          csv_str = marking_file.get_input_stream.read
-          csv_str.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless csv_str.nil?
+        # Read the csv
+        csv_str = marking_file.get_input_stream.read
+        csv_str.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless csv_str.nil?
 
-          # Update tasks and email students
-          unless update_task_status_from_csv(user, csv_str, success, ignored, errors)
-            errors << { row: {}, message: 'Aborting import as mark.csv was not processed successfully.' }
-            return {
-              success: success,
-              ignored: ignored,
-              errors: errors
-            }
-          end
+        # Update tasks and email students
+        unless update_task_status_from_csv(user, csv_str, success, ignored, errors)
+          errors << { row: {}, message: 'Aborting import as mark.csv was not processed successfully.' }
+          return {
+            success: success,
+            ignored: ignored,
+            errors: errors
+          }
+        end
 
-          # read keys from CSV - to check that files exist in csv
-          entry_data = CSV.parse(csv_str, headers: true,
-                                          header_converters: [->(i) { i.nil? ? '' : i }, :downcase],
-                                          converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }])
+        # read keys from CSV - to check that files exist in csv
+        entry_data = CSV.parse(csv_str, headers: true,
+                                        header_converters: [->(i) { i.nil? ? '' : i }, :downcase],
+                                        converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }])
 
-          # Copy over the updated/marked files to the file system
-          zip.each do |file|
-            # Skip processing marking file
-            next if File.basename(file[:name]) == 'marks.csv' || File.basename(file[:name]) == 'readme.txt'
+        # Copy over the updated/marked files to the file system
+        zip.each do |file|
+          # Skip processing marking file
+          next if File.basename(file[:name]) == 'marks.csv' || File.basename(file[:name]) == 'readme.txt'
 
-            # Test filename pattern
-            if (/.*-\d+.pdf/i =~ File.basename(file[:name])) != 0
-              if file[:name][-1] != '/'
-                ignored << { row: "File #{file[:name]}", message: 'Does not appear to be a task PDF.' }
-              end
-              next
-            end
-            if (/\._.*/ =~ File.basename(file[:name])) == 0
+          # Test filename pattern
+          if (/.*-\d+.pdf/i =~ File.basename(file[:name])) != 0
+            if file[:name][-1] != '/'
               ignored << { row: "File #{file[:name]}", message: 'Does not appear to be a task PDF.' }
-              next
             end
+            next
+          end
+          if (/\._.*/ =~ File.basename(file[:name])) == 0
+            ignored << { row: "File #{file[:name]}", message: 'Does not appear to be a task PDF.' }
+            next
+          end
 
-            # Extract the id from the filename
-            task_id_from_filename = File.basename(file[:name], '.pdf').split('-').last
-            task = Task.find_by(id: task_id_from_filename)
-            if task.nil?
-              ignored << { row: "File #{file[:name]}", message: 'Unable to find associated task.' }
-              next
-            end
+          # Extract the id from the filename
+          task_id_from_filename = File.basename(file[:name], '.pdf').split('-').last
+          task = Task.find_by(id: task_id_from_filename)
+          if task.nil?
+            ignored << { row: "File #{file[:name]}", message: 'Unable to find associated task.' }
+            next
+          end
 
-            # Ensure that this task's id is inside entry_data
-            task_entry = entry_data.select { |t| t['task'] == task.task_definition.abbreviation.tr(',', '_') && t['username'] == task.project.user.username }.first
-            if task_entry.nil?
-              # error!({"error" => "File #{file[:name]} has a mismatch of task id ##{task.id} (this task id does not exist in marks.csv)"}, 403)
-              errors << { row: "File #{file[:name]}", message: "Task id #{task.id} not in marks.csv" }
-              next
-            end
+          # Ensure that this task's id is inside entry_data
+          task_entry = entry_data.select { |t| t['task'] == task.task_definition.abbreviation.tr(',', '_') && t['username'] == task.project.user.username }.first
+          if task_entry.nil?
+            # error!({"error" => "File #{file[:name]} has a mismatch of task id ##{task.id} (this task id does not exist in marks.csv)"}, 403)
+            errors << { row: "File #{file[:name]}", message: "Task id #{task.id} not in marks.csv" }
+            next
+          end
 
-            if task.unit != self
-              errors << { row: "File #{file[:name]}", message: 'This task does not relate to this unit.' }
-              next
-            end
+          if task.unit != self
+            errors << { row: "File #{file[:name]}", message: 'This task does not relate to this unit.' }
+            next
+          end
 
-            # Can the user assess this task?
-            unless AuthorisationHelpers.authorise? user, task, :put
-              errors << { row: "File #{file[:name]}", error: "You do not have permission to assess task with id #{task.id}" }
-              next
-            end
+          # Can the user assess this task?
+          unless AuthorisationHelpers.authorise? user, task, :put
+            errors << { row: "File #{file[:name]}", error: "You do not have permission to assess task with id #{task.id}" }
+            next
+          end
 
-            # Read into the task's portfolio_evidence path the new file
-            tmp_file = File.join(tmp_dir, File.basename(file[:name]))
-            task.portfolio_evidence_path = task.final_pdf_path
+          # Read into the task's portfolio_evidence path the new file
+          tmp_file = File.join(tmp_dir, File.basename(file[:name]))
+          task.portfolio_evidence_path = task.final_pdf_path
 
-            # get file out of zip... to tmp_file
-            file.extract(tmp_file) { true }
+          # get file out of zip... to tmp_file
+          file.extract(tmp_file) { true }
 
-            # copy tmp_file to dest
-            if FileHelper.copy_pdf(tmp_file, task.portfolio_evidence_path)
-              if task.group.nil?
-                success << { row: "File #{file[:name]}", message: "Replace PDF of task #{task.task_definition.abbreviation} for #{task.student.name}" }
-              else
-                success << { row: "File #{file[:name]}", message: "Replace PDF of group task #{task.task_definition.abbreviation} for #{task.group.name}" }
-              end
-              FileUtils.rm tmp_file
+          # copy tmp_file to dest
+          if FileHelper.copy_pdf(tmp_file, task.portfolio_evidence_path)
+            if task.group.nil?
+              success << { row: "File #{file[:name]}", message: "Replace PDF of task #{task.task_definition.abbreviation} for #{task.student.name}" }
             else
-              errors << { row: "File #{file[:name]}", message: 'The file does not appear to be a valid PDF.' }
-              next
+              success << { row: "File #{file[:name]}", message: "Replace PDF of group task #{task.task_definition.abbreviation} for #{task.group.name}" }
             end
+            FileUtils.rm tmp_file
+          else
+            errors << { row: "File #{file[:name]}", message: 'The file does not appear to be a valid PDF.' }
+            next
           end
         end
-      rescue
-        # FileUtils.cp(file["tempfile"].path, Doubtfire::Application.config.student_work_dir)
-        raise
       end
 
       # Remove the extract dir

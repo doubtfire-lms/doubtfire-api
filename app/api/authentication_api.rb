@@ -302,7 +302,7 @@ class AuthenticationApi < Grape::API
            },
            "auth_token" =>
            {
-             description: "The user\'s temporary auth token",
+             description: "The user's temporary auth token",
              required: true
            }
          }
@@ -348,7 +348,7 @@ class AuthenticationApi < Grape::API
            },
            "auth_token" =>
            {
-             description: "The user\'s temporary auth token",
+             description: "The user's temporary auth token",
              required: true
            }
          }

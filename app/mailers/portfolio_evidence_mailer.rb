@@ -6,7 +6,7 @@ class PortfolioEvidenceMailer < ActionMailer::Base
   end
 
   def task_pdf_failed(project, tasks)
-    return nil if project.nil? || tasks.nil? || tasks.length.zero?
+    return nil if project.nil? || tasks.nil? || tasks.empty?
 
     add_general
     @student = project.student
@@ -22,7 +22,7 @@ class PortfolioEvidenceMailer < ActionMailer::Base
   end
 
   def task_pdf_ready_message(project, tasks)
-    return nil if project.nil? || tasks.nil? || tasks.length.zero?
+    return nil if project.nil? || tasks.nil? || tasks.empty?
 
     add_general
     @student = project.student
@@ -38,7 +38,7 @@ class PortfolioEvidenceMailer < ActionMailer::Base
   end
 
   def task_feedback_ready(project, tasks)
-    return nil if project.nil? || tasks.nil? || tasks.length.zero?
+    return nil if project.nil? || tasks.nil? || tasks.empty?
 
     add_general
     @student = project.student

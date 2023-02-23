@@ -118,7 +118,7 @@ class TaskCommentsApi < Grape::API
       header['Accept-Ranges'] = 'bytes'
 
       # Read the binary data and return
-      IO.binread(comment.attachment_path, content_length, begin_point)
+      File.binread(comment.attachment_path, content_length, begin_point)
     end
   end
 

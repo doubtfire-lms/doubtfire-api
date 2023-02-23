@@ -81,36 +81,32 @@ class TaskStatus < ApplicationRecord
 
   def self.status_for_name(name)
     case name.downcase.strip
-    when 'complete'         then TaskStatus.complete
-    when 'fix_and_resubmit' then TaskStatus.fix_and_resubmit
-    when 'fix and resubmit' then TaskStatus.fix_and_resubmit
-    when 'fix'              then TaskStatus.fix_and_resubmit
-    when 'f'                then TaskStatus.fix
-    when 'do_not_resubmit'  then TaskStatus.feedback_exceeded
-    when 'do not resubmit'  then TaskStatus.feedback_exceeded
-    when 'feedback_exceeded'  then TaskStatus.feedback_exceeded
-    when 'feedback exceeded'  then TaskStatus.feedback_exceeded
-    when 'redo'             then TaskStatus.redo
-    when 'need_help'        then TaskStatus.need_help
-    when 'need help'        then TaskStatus.need_help
-    when 'working_on_it'    then TaskStatus.working_on_it
-    when 'working on it'    then TaskStatus.working_on_it
-    when 'discuss', 'd'     then TaskStatus.discuss
-    when 'demonstrate'      then TaskStatus.demonstrate
-    when 'demo'             then TaskStatus.demonstrate
-    when 'ready for feedback'    then TaskStatus.ready_for_feedback
-    when 'ready_for_feedback'    then TaskStatus.ready_for_feedback
-    when 'ready to mark'    then TaskStatus.ready_for_feedback
-    when 'ready_to_mark'    then TaskStatus.ready_for_feedback
-    when 'rtm'              then TaskStatus.ready_for_feedback
-    when 'rff'              then TaskStatus.ready_for_feedback
-    when 'fail'             then TaskStatus.fail
-    when 'not_started'      then TaskStatus.not_started
-    when 'not started'      then TaskStatus.not_started
-    when 'ns'               then TaskStatus.not_started
-    when 'time exceeded'    then TaskStatus.time_exceeded
-    when 'time_exceeded'    then TaskStatus.time_exceeded
-    else nil
+    when 'complete'
+      TaskStatus.complete
+    when 'fix_and_resubmit', 'fix and resubmit', 'fix', 'f'
+      TaskStatus.fix_and_resubmit
+    when 'do_not_resubmit', 'do not resubmit', 'feedback_exceeded', 'feedback exceeded'
+      TaskStatus.feedback_exceeded
+    when 'redo'
+      TaskStatus.redo
+    when 'need_help', 'need help'
+      TaskStatus.need_help
+    when 'working_on_it', 'working on it'
+      TaskStatus.working_on_it
+    when 'discuss', 'd'
+      TaskStatus.discuss
+    when 'demonstrate', 'demo'
+      TaskStatus.demonstrate
+    when 'ready for feedback', 'ready_for_feedback', 'ready to mark', 'ready_to_mark', 'rtm', 'rff'
+      TaskStatus.ready_for_feedback
+    when 'fail'
+      TaskStatus.fail
+    when 'not_started', 'not started', 'ns'
+      TaskStatus.not_started
+    when 'time exceeded', 'time_exceeded'
+      TaskStatus.time_exceeded
+    else
+      nil
     end
   end
 
@@ -120,7 +116,7 @@ class TaskStatus < ApplicationRecord
 
   def self.id_to_key(id)
     case id
-    when 1 then :not_started
+    # when 1 then :not_started
     when 2 then :complete
     when 3 then :need_help
     when 4 then :working_on_it
