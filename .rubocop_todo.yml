@@ -1051,12 +1051,6 @@ Style/WordArray:
     - 'test/factories/campuses_factory.rb'
     - 'test/models/task_definition_test.rb'
 
-# Offense count: 1
-# This cop supports unsafe autocorrection (--autocorrect-all).
-Style/ZeroLengthPredicate:
-  Exclude:
-    - 'app/models/unit.rb'
-
 # Offense count: 583
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: AllowHeredoc, AllowURI, URISchemes, IgnoreCopDirectives, AllowedPatterns, IgnoredPatterns.

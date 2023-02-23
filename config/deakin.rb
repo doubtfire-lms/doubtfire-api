@@ -9,13 +9,13 @@ class DeakinInstitutionSettings
   end
 
   def initialize()
-    @base_url = ENV['DF_INSTITUTION_SETTINGS_SYNC_BASE_URL']
-    @client_id = ENV['DF_INSTITUTION_SETTINGS_SYNC_CLIENT_ID']
-    @client_secret = ENV['DF_INSTITUTION_SETTINGS_SYNC_CLIENT_SECRET']
+    @base_url = ENV.fetch('DF_INSTITUTION_SETTINGS_SYNC_BASE_URL', nil)
+    @client_id = ENV.fetch('DF_INSTITUTION_SETTINGS_SYNC_CLIENT_ID', nil)
+    @client_secret = ENV.fetch('DF_INSTITUTION_SETTINGS_SYNC_CLIENT_SECRET', nil)
 
-    @star_url = ENV['DF_INSTITUTION_SETTINGS_SYNC_STAR_URL']
-    @star_user = ENV['DF_INSTITUTION_SETTINGS_SYNC_STAR_USER']
-    @star_secret = ENV['DF_INSTITUTION_SETTINGS_SYNC_STAR_SECRET']
+    @star_url = ENV.fetch('DF_INSTITUTION_SETTINGS_SYNC_STAR_URL', nil)
+    @star_user = ENV.fetch('DF_INSTITUTION_SETTINGS_SYNC_STAR_USER', nil)
+    @star_secret = ENV.fetch('DF_INSTITUTION_SETTINGS_SYNC_STAR_SECRET', nil)
   end
 
   def are_callista_headers?(headers)

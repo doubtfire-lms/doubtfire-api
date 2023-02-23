@@ -33,7 +33,7 @@ namespace :submission do
       match_template = {
         url: 'http://moss.stanford.edu/results/375180531/match0-top.html',
         pct: Random.rand(70..100),
-        html: File.open('test_files/link_template.html').read()
+        html: File.read('test_files/link_template.html')
       }
       match = [match_template, match_template]
       # Give me two random distinct students with the same TD
