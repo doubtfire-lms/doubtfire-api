@@ -84,7 +84,7 @@ module FileHelper
   def tmp_file_dir()
     file_server = Doubtfire::Application.config.student_work_dir
     dst = "#{file_server}/tmp/" # trust the server config and passed in type for paths
-    FileUtils.mkdir_p dst if !Dir.exist? dst
+    FileUtils.mkdir_p dst
 
     dst
   end
@@ -106,9 +106,7 @@ module FileHelper
 
     if type == :pdf
       dst << sanitized_path("#{unit.code}-#{unit.id}", "Group-#{group.id}", type.to_s) << '/'
-    elsif type == :done
-      dst << sanitized_path("#{unit.code}-#{unit.id}", "Group-#{group.id}", type.to_s, group_submission.id.to_s) << '/'
-    elsif type == :plagarism
+    elsif [:done, :plagarism].include? type
       dst << sanitized_path("#{unit.code}-#{unit.id}", "Group-#{group.id}", type.to_s, group_submission.id.to_s) << '/'
     else # new and in_process -- just have task id -- will link to group when done etc.
       # Add task id to dst if we want task
@@ -133,16 +131,10 @@ module FileHelper
       dst = "#{file_server}/" # trust the server config and passed in type for paths
 
       if !(type.nil? || task.nil?)
-        if type == :discussion
+        if [:discussion, :pdf, :comment].include? type
           dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}", task.project.student.username.to_s, type.to_s) << '/'
-        elsif type == :pdf
-          dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}", task.project.student.username.to_s, type.to_s) << '/'
-        elsif type == :done
+        elsif [:done, :plagarism].include? type
           dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}", task.project.student.username.to_s, type.to_s, task.id.to_s) << '/'
-        elsif type == :plagarism
-          dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}", task.project.student.username.to_s, type.to_s, task.id.to_s) << '/'
-        elsif type == :comment
-          dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}", task.project.student.username.to_s, type.to_s) << '/'
         else # new and in_process -- just have task id
           # Add task id to dst if we want task
           dst << "#{type}/#{task.id}/"
@@ -270,7 +262,7 @@ module FileHelper
       logger.error "Failed to compress PDF #{path}. Rescued with error:\n\t#{e.message}"
     end
 
-    FileUtils.rm tmp_file if File.exist? tmp_file
+    FileUtils.rm tmp_file
   end
 
   def qpdf(path)
@@ -288,7 +280,7 @@ module FileHelper
     # move into the new dir - and mv files to the in_process_dir
     pwd = FileUtils.pwd
     begin
-      FileUtils.mkdir_p(to_path) unless Dir.exist? to_path
+      FileUtils.mkdir_p(to_path)
       Dir.chdir(from_path)
       FileUtils.mv Dir.glob('*'), to_path, force: true
       Dir.chdir(to_path)
@@ -385,10 +377,10 @@ module FileHelper
   def delete_group_submission(group_submission)
     pdf_file = PortfolioEvidence.final_pdf_path_for_group_submission(group_submission)
     logger.debug "Deleting group submission PDF file #{pdf_file}"
-    FileUtils.rm pdf_file if File.exist? pdf_file
+    FileUtils.rm_f pdf_file
 
     done_file = zip_file_path_for_group_done_task(group_submission)
-    FileUtils.rm done_file if File.exist? done_file
+    FileUtils.rm_f done_file
     self
   end
 
@@ -412,7 +404,7 @@ module FileHelper
     zip_file = zip_file_path_for_done_task(task)
     return if zip_file.nil? || (!Dir.exist? task_dir)
 
-    FileUtils.rm(zip_file) if File.exist? zip_file
+    FileUtils.rm_f(zip_file)
 
     input_files = Dir.entries(task_dir).select { |f| (f =~ /^\d{3}\.(cover|document|code|image)/).zero? }
 
@@ -442,7 +434,7 @@ module FileHelper
       else
         # puts "Adding file: #{disk_file_path} -- #{File.exist? disk_file_path}"
         zip.get_output_stream(zip_file_path) do |f|
-          f.puts(File.open(disk_file_path, 'rb').read)
+          f.puts(File.binread(disk_file_path))
         end
       end
     end
@@ -467,7 +459,7 @@ module FileHelper
   #
   def ensure_utf8_code(output_filename, force_ascii)
     # puts "Converting #{output_filename} to utf8"
-    tmp_filename = Dir::Tmpname.create(["new", ".code"]) {}
+    tmp_filename = Dir::Tmpname.create(["new", ".code"]) { |name| raise Errno::EEXIST if File.exist?(name)  }
 
     # Convert to utf8 from read encoding
     if force_ascii
@@ -487,7 +479,7 @@ module FileHelper
   end
 
   def sorted_timestamp_entries_in_dir(path)
-    Dir.entries(path).reject { |entry| entry !~ /\d+/ }.sort_by { |x| File.basename(x) }.reverse
+    Dir.entries(path).grep(/\d+/).sort_by { |x| File.basename(x) }.reverse
   end
 
   def latest_submission_timestamp_entry_in_dir(path)

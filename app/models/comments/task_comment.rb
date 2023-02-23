@@ -47,7 +47,7 @@ class TaskComment < ApplicationRecord
   end
 
   def delete_associated_files
-    FileUtils.rm attachment_path if File.exist? attachment_path
+    FileUtils.rm_f attachment_path
   end
 
   def serialize(user)

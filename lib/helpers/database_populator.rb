@@ -102,7 +102,7 @@ class DatabasePopulator
 
   def generate_campuses
     data = {
-      name: 'Cloud',
+      name: 'Online',
       mode: 'timetable',
       abbreviation: 'C',
       active: true
