@@ -158,17 +158,17 @@ class TiiModelTest < ActiveSupport::TestCase
     response1 = TCAClient::SimpleSubmissionResponse.new id: '1222'
     response2 = TCAClient::SimpleSubmissionResponse.new id: '1223'
 
-    submission_request = stub_request(:post, "https://localhost/api/v1/submissions").
+    submission_request = stub_request(:post, "https://#{ENV['TCA_HOST']}/api/v1/submissions").
     with(tii_headers).
     to_return(
       {status: 200, body: response1.to_json, headers: {}},
       {status: 200, body: response2.to_json, headers: {}},
     )
 
-    file1_upload_req = stub_request(:put, "https://localhost/api/v1/submissions/1223/original").with {|request| request.body.starts_with?('%PDF-') }.
+    file1_upload_req = stub_request(:put, "https://#{ENV['TCA_HOST']}/api/v1/submissions/1223/original").with {|request| request.body.starts_with?('%PDF-') }.
     to_return(status: 200, body: "", headers: {})
 
-    file2_upload_req = stub_request(:put, "https://localhost/api/v1/submissions/1222/original").with {|request| request.body.starts_with?('%PDF-') }.
+    file2_upload_req = stub_request(:put, "https://#{ENV['TCA_HOST']}/api/v1/submissions/1222/original").with {|request| request.body.starts_with?('%PDF-') }.
     to_return(status: 200, body: "", headers: {})
 
     job = AcceptSubmissionJob.new
@@ -189,9 +189,14 @@ class TiiModelTest < ActiveSupport::TestCase
     subm = TiiSubmission.last
     assert_equal :uploaded, subm.status_sym
 
+    # task destroy will trigger delete of submission
+    delete_request = stub_request(:delete, /https:\/\/#{ENV['TCA_HOST']}\/api\/v1\/submissions\/\d+/).
+    with(tii_headers).
+    to_return(status: 200, body: "", headers: {})
+
     # Now trigger next step - processing to complete
     # Processing will not progress to next step
-    subm_status_req = stub_request(:get, "https://localhost/api/v1/submissions/1223").
+    subm_status_req = stub_request(:get, "https://#{ENV['TCA_HOST']}/api/v1/submissions/1223").
       with(tii_headers).
       to_return(
         {status: 200, body: TCAClient::Submission.new(status: 'PROCESSING').to_hash.to_json(), headers: {}},
@@ -207,7 +212,7 @@ class TiiModelTest < ActiveSupport::TestCase
 
     # Now run for processing complete
 
-    similarity_request = stub_request(:put, "https://localhost/api/v1/submissions/1223/similarity").
+    similarity_request = stub_request(:put, "https://#{ENV['TCA_HOST']}/api/v1/submissions/1223/similarity").
     with(tii_headers).
     with(
       body: "{\"generation_settings\":{\"search_repositories\":[\"INTERNET\",\"SUBMITTED_WORK\",\"PUBLICATION\",\"CROSSREF\",\"CROSSREF_POSTED_CONTENT\"],\"auto_exclude_self_matching_scope\":\"GROUP_CONTEXT\"}}",
@@ -220,7 +225,54 @@ class TiiModelTest < ActiveSupport::TestCase
     assert_equal :similarity_report_requested, subm.reload.status_sym
     assert_equal 0, subm.retries
 
+    # Now check the status of the similarity report
+    # response = TCAClient::SimilarityMetadata.new(
+    #   status: 'PROCESSING'
+    # )
+
+    stub_request(:get, "https://localhost/api/v1/submissions/1223/similarity").
+    with(tii_headers).
+    to_return(
+      { status: 200, body: TCAClient::SimilarityMetadata.new(status: 'PROCESSING').to_hash.to_json, headers: {}},
+      { status: 200, body: TCAClient::SimilarityMetadata.new(status: 'COMPLETE').to_hash.to_json, headers: {}}
+    )
+
+    subm.continue_process
+    assert_equal :similarity_report_requested, subm.reload.status_sym
+
+    similarity_pdf_request = stub_request(:post, "https://localhost/api/v1/submissions/1223/similarity/pdf").
+      with(tii_headers).
+      with(body: "{\"locale\":\"en-US\"}").
+      to_return(status: 200, body: TCAClient::RequestPdfResponse.new(id: '9876').to_hash.to_json, headers: {})
+
+    subm.continue_process
+    assert_equal '9876', subm.reload.similarity_pdf_id
+    assert_equal :similarity_pdf_requested, subm.reload.status_sym
+    assert_requested similarity_pdf_request, times: 1
+
+    # Get the PDF - after asking for status
+
+    pdf_status_request = stub_request(:get, "https://localhost/api/v1/submissions/1223/similarity/pdf/9876/status").
+      with(tii_headers).
+      to_return(
+        {status: 200, body: TCAClient::PdfStatusResponse.new(status: 'PENDING').to_hash.to_json, headers: {}},
+        {status: 200, body: TCAClient::PdfStatusResponse.new(status: 'SUCCESS').to_hash.to_json, headers: {}})
+
+    subm.continue_process
+    assert_equal :similarity_pdf_requested, subm.reload.status_sym
+
+    download_pdf_request = stub_request(:get, "https://localhost/api/v1/submissions/1223/similarity/pdf/9876").
+      with(tii_headers).
+      to_return(status: 200, body: File.read(test_file_path('submissions/1.2P.pdf')), headers: {})
+
+    subm.continue_process
+    assert_equal :similarity_pdf_downloaded, subm.reload.status_sym
+    assert_requested download_pdf_request, times: 1
+    assert File.exist?(subm.similarity_pdf_path)
+
+    # Clean up
     task.destroy
+    assert_requested delete_request, times: 2
     unit.destroy
   end
 end

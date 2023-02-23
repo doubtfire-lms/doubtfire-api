@@ -7,6 +7,8 @@ class TiiSubmission < ApplicationRecord
   belongs_to :submitted_by_user, class_name: 'User'
   belongs_to :task
 
+  before_destroy :delete_submission
+
   def error_message
     return nil if error_code.nil?
 
@@ -79,12 +81,12 @@ class TiiSubmission < ApplicationRecord
     uploaded: 2,
     submission_complete: 3,
     similarity_report_requested: 4,
-    similarity_complete: 5,
-    similarity_pdf_requested: 8,
-    similarity_pdf_available: 9,
-    similarity_pdf_downloaded: 9,
-    to_delete: 6,
-    deleted: 7
+    similarity_report_complete: 5,
+    similarity_pdf_requested: 6,
+    similarity_pdf_available: 7,
+    similarity_pdf_downloaded: 8,
+    to_delete: 9,
+    deleted: 10
   }
 
   def status_sym
@@ -423,22 +425,30 @@ class TiiSubmission < ApplicationRecord
 
   # Update the status based on the response from the pdf status api or webhook
   #
-  # @param [TCAClient::PdfStatusResponse] response - the similarity report status
+  # @param [String] response - the similarity report status
   def update_from_pdf_report_status(response)
-    case response.status
+    case response
     when 'FAILED' # The report failed to be generated
       error_message = 'similarity PDF failed to be created'
     when 'SUCCESS' # Similarity report is complete
       self.status = :similarity_pdf_requested
       save
-      download_similarity_report_pdf
+      download_similarity_report_pdf(true)
       # else # pending or unknown...
     end
   end
 
-  def download_similarity_report_pdf
+  def similarity_pdf_path
+    path = FileHelper.student_work_dir(:plagarism, task)
+    File.join(path, FileHelper.sanitized_filename("#{id}-tii.pdf"))
+  end
+
+  # Download the similarity pdf report.
+  #
+  # @param [Boolean] skip_check - skip the check to see if the report is ready
+  def download_similarity_report_pdf(skip_check = false)
     return false unless similarity_pdf_id.present?
-    return false unless fetch_similarity_pdf_status == 'SUCCESS'
+    return false unless skip_check || fetch_tii_similarity_pdf_status == 'SUCCESS'
 
     TurnItIn.exec_tca_call "TiiSubmission #{id} - downloading similarity report pdf" do
       # GET download pdf
@@ -446,11 +456,10 @@ class TiiSubmission < ApplicationRecord
         TurnItIn.x_turnitin_integration_name,
         TurnItIn.x_turnitin_integration_version,
         submission_id,
-        pdf_id
+        similarity_pdf_id
       )
 
-      path = FileHelper.student_work_dir(:plagarism, task)
-      filename = File.join(path, FileHelper.sanitized_filename("#{id}-tii.pdf"))
+      filename = similarity_pdf_path
       file = File.new(filename, 'wb')
       begin
         file.write(result)
@@ -475,7 +484,7 @@ class TiiSubmission < ApplicationRecord
   #
   # @return [String] the status of the similarity report
   def fetch_tii_similarity_pdf_status
-    return nil unless submission_id.present? && pdf_id.present?
+    return nil unless submission_id.present? && similarity_pdf_id.present?
 
     TurnItIn.exec_tca_call "TiiSubmission #{id} - fetching similarity report pdf status" do
       # Get Similarity Report Status
@@ -483,7 +492,7 @@ class TiiSubmission < ApplicationRecord
         TurnItIn.x_turnitin_integration_name,
         TurnItIn.x_turnitin_integration_version,
         submission_id,
-        pdf_id
+        similarity_pdf_id
       )
 
       result.status

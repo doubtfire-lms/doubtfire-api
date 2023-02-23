@@ -1366,8 +1366,6 @@ class Task < ApplicationRecord
       new_path = FileHelper.student_work_dir(:new, self, false)
       FileUtils.rm_rf(new_path) if new_path.present? && File.directory?(new_path)
     end
-
-    TurnItIn.delete_submission(self) if tii_submission_id.present?
   end
 
   # Use the current DateTime to calculate a new DateTime for the last moment of the same
