@@ -29,9 +29,7 @@ namespace :submission do
   def start_executing
     pid_file = rake_executing_marker_file
     FileUtils.touch(pid_file)
-    File.open pid_file, "w" do |f|
-      f.write Process.pid
-    end
+    File.write(pid_file, Process.pid)
   end
 
   def end_executing

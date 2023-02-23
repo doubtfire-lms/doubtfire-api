@@ -14,10 +14,10 @@ module CsvHelper
       elsif date =~ /\d{1,2}\-\d{1,2}\-\d\d$/ # Matches dd-mm-YY
         date = "20#{date.split('-').reverse.join('-')}"
       elsif date =~ /\d{1,2}\-\d{1,2}\-\d\d \d\d:\d\d:\d\d$/ # Matches dd-mm-YY hh:mm:ss
-        date = date.split(' ').first
+        date = date.split.first
         date = "20#{date.split('-').reverse.join('-')}"
       elsif date =~ /\d{1,2}\/\d{1,2}\/\d\d [\d:]+$/ # Matches dd/mm/YY 00:00:00
-        date = date.split(' ').first
+        date = date.split.first
         date = "20#{date.split('/').reverse.join('-')}"
       end
     end
