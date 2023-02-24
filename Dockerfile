@@ -13,7 +13,18 @@ RUN apt-get update && apt-get install -y \
   python3-pygments \
   tzdata \
   wget \
-  libc6-dev
+  libc6-dev \
+  apt-transport-https \
+  ca-certificates \
+  curl \
+  gnupg2 \
+  software-properties-common
+
+# docker-ce-cli apt dependencies
+RUN curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add -
+RUN add-apt-repository "deb [arch=amd64,arm64] https://download.docker.com/linux/debian $(lsb_release -cs) stable"
+RUN apt-get update
+RUN apt-get -y install docker-ce docker-ce-cli containerd.io
 
 # Setup the folder where we will deploy the code
 WORKDIR /doubtfire
