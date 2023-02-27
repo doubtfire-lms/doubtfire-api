@@ -267,7 +267,12 @@ class Unit < ApplicationRecord
 
     # Duplicate task definitions
     task_definitions.each do |td|
-      td.copy_to(new_unit)
+      new_td = td.copy_to(new_unit)
+
+      # Update default task definition if necessary
+      if self.draft_task_definition == td
+        new_unit.update(draft_task_definition: new_td)
+      end
     end
 
     # Duplicate unit learning outcomes
