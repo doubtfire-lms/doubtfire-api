@@ -359,8 +359,7 @@ class GroupSetsApi < Grape::API
       error!({ error: 'You cannot delete this group' }, 403) unless grp.projects.count.zero? || grp.projects.first.student == current_user
     end
 
-    error!(error: grp.errors[:base].last) unless grp.destroy
-    true
+    grp.destroy!
   end
 
   desc 'Get the members of a group'
