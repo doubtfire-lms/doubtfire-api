@@ -17,8 +17,6 @@ class TaskDefinition < ApplicationRecord
   belongs_to :tutorial_stream, optional: true
   belongs_to :overseer_image, optional: true
 
-  has_one :draft_task_definition_unit, foreign_key: 'draft_task_definition_id', class_name: 'Unit', dependent: :nullify
-
   has_many :tasks, dependent:  :destroy # Destroying a task definition will also nuke any instances
   has_many :group_submissions, dependent: :destroy # Destroying a task definition will also nuke any group submissions
   has_many :learning_outcome_task_links, dependent: :destroy # links to learning outcomes
