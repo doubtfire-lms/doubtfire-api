@@ -22,7 +22,7 @@ WORKDIR /doubtfire
 COPY . /doubtfire/
 
 # Install bundler
-RUN gem install bundler -v '~> 2.2.0'
+RUN gem install bundler -v '2.4.5'
 RUN bundle config set --global without development test staging
 
 # Install the Gems
