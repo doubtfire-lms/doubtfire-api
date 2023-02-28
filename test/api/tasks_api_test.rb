@@ -1,9 +1,10 @@
 require 'test_helper'
 
-class TasksTest < ActiveSupport::TestCase
+class TasksApiTest < ActiveSupport::TestCase
   include Rack::Test::Methods
   include TestHelpers::AuthHelper
   include TestHelpers::JsonHelper
+  include TestHelpers::TestFileHelper
 
   def app
     Rails.application
@@ -363,5 +364,47 @@ class TasksTest < ActiveSupport::TestCase
     assert last_response_body.count == 1
     assert last_response_body[0]['pinned']
   end
+
+  def test_can_submit_ipynb
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 0)
+    td = TaskDefinition.create!({
+        unit_id: unit.id,
+        tutorial_stream: unit.tutorial_streams.first,
+        name: 'Code task',
+        description: 'Code task',
+        weighting: 4,
+        target_grade: 0,
+        start_date: Time.zone.now - 2.weeks,
+        target_date: Time.zone.now + 1.week,
+        abbreviation: 'CodeTask',
+        restrict_status_updates: false,
+        upload_requirements: [ { "key" => 'file0', "name" => 'Shape Class', "type" => 'code' } ],
+        plagiarism_warn_pct: 0.8,
+        is_graded: true,
+        max_quality_pts: 0
+      })
+
+    project = unit.active_projects.first
+
+    # Add username and auth_token to Header
+    add_auth_header_for(user: project.user)
+
+    data_to_post = {
+      trigger: 'ready_for_feedback'
+    }
+
+    data_to_post = with_file('test_files/submissions/vectorial_graph.ipynb', 'application/json', data_to_post)
+
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
+
+    assert_equal 201, last_response.status, last_response_body
+
+    task = project.task_for_task_definition(td)
+    task.convert_submission_to_pdf
+    assert File.exist? task.final_pdf_path
+
+    td.destroy
+  end
+
 
 end

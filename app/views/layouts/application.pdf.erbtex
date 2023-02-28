@@ -1,10 +1,15 @@
-<% @latex_config={ :recipe => [ {:command => "lualatex",:runs => 2} ] } %>
+<% @latex_config={ :recipe => [ {:command => "lualatex",:runs => 2} ], :supporting => Rails.root.join('app', 'views', 'layouts', 'jupynotex.py') } %>
 \DocumentMetadata{uncompress}
 \documentclass[11pt,a4paper]{article}
 \usepackage[T1]{fontenc}
 \usepackage{textcomp}
 \usepackage{shellesc}
 \usepackage{fontawesome}
+\usepackage{tcolorbox}
+
+\newcommand{\jupynotex}[2][-]{
+    \input|"python3 jupynotex.py #2 #1"
+}
 
 \usepackage{luatextra}
 \defaultfontfeatures{Ligatures=TeX}
