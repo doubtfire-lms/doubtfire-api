@@ -109,9 +109,17 @@ No Tutor % Supervisor's Name
     \includegraphics[width=\textwidth]{<%= File.basename(file[:path]) %>}
   <% end %>
 
-  <% if file[:type] == 'code' %>
+  <%
+    if file[:type] == 'code'
+      if (File.extname(file[:path])[1..-1]) != 'ipynb'
+  %>
     \inputminted[breaklines,linenos,breakanywhere,tabsize=4]{<%= Task.pygments_lang(File.extname(file[:path])[1..-1]) %>}{<%= file[:path] %>}
-  <% end %>
+  <%  else %>
+    \jupynotex{<%= file[:path] %>}
+  <%
+      end
+    end
+  %>
 
   <% if file[:type] == 'document' %>
     % add document paths to document_list to generate lua calls to newpax later

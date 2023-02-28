@@ -13,7 +13,8 @@ RUN apt-get update && apt-get install -y \
   python3-pygments \
   tzdata \
   wget \
-  libc6-dev
+  libc6-dev \
+  inkscape
 
 # Setup the folder where we will deploy the code
 WORKDIR /doubtfire
@@ -22,7 +23,7 @@ COPY ./.ci-setup/ /doubtfire/.ci-setup/
 RUN ./.ci-setup/texlive-install.sh
 ENV PATH /tmp/texlive/bin/x86_64-linux:/tmp/texlive/bin/aarch64-linux:$PATH
 
-RUN gem install bundler -v '~> 2.3.18'
+RUN gem install bundler -v '2.4.5'
 
 COPY Gemfile /doubtfire/Gemfile
 COPY Gemfile.lock /doubtfire/Gemfile.lock

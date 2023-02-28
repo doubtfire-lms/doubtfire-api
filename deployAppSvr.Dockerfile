@@ -16,7 +16,8 @@ RUN apt-get update && apt-get install -y \
   python3-pygments \
   tzdata \
   cron \
-  msmtp-mta bsd-mailx
+  msmtp-mta bsd-mailx \
+  inkscape
 
 # Setup the folder where we will deploy the code
 WORKDIR /doubtfire
@@ -26,7 +27,7 @@ COPY ./.ci-setup /doubtfire/.ci-setup
 RUN /doubtfire/.ci-setup/texlive-install.sh
 
 # Install bundler
-RUN gem install bundler -v '~> 2.2.0'
+RUN gem install bundler -v '2.4.5'
 RUN bundle config set --global without development test staging
 
 # Install the Gems
