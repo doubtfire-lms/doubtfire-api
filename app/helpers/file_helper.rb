@@ -6,6 +6,11 @@ module FileHelper
   extend TimeoutHelper
   extend MimeCheckHelpers
 
+  def known_extension?(extn)
+    allow_extensions = %w(pdf ps csv xls xlsx pas cpp c cs h hpp java py js html coffee scss yaml yml xml json ts r rb rmd rnw rhtml rpres tex vb sql txt md jack hack asm hdl tst out cmp vm sh bat dat ipynb css png bmp tiff tif jpeg jpg gif zip gz tar)
+    allow_extensions.include? extn
+  end
+
   #
   # Test if a file should be accepted based on an expected kind
   # - file is passed the file uploaded to Doubtfire (a hash with all relevant data about the file)
@@ -38,7 +43,7 @@ module FileHelper
       return false
     end
 
-    mime_in_list?(file["tempfile"].path, accept) && valid
+    mime_in_list?(file["tempfile"].path, accept) && valid && FileHelper.known_extension?(File.extname(file["tempfile"]).downcase[1..])
   end
 
   #
@@ -262,7 +267,7 @@ module FileHelper
       logger.error "Failed to compress PDF #{path}. Rescued with error:\n\t#{e.message}"
     end
 
-    FileUtils.rm tmp_file
+    FileUtils.rm_f tmp_file
   end
 
   def qpdf(path)
@@ -535,4 +540,5 @@ module FileHelper
   module_function :latest_submission_timestamp_entry_in_dir
   module_function :task_submission_identifier_path
   module_function :task_submission_identifier_path_with_timestamp
+  module_function :known_extension?
 end
