@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [7.0.1](https://github.com/macite/doubtfire-deploy/compare/v7.0.0...v7.0.1) (2023-03-03)
+
+
+### Bug Fixes
+
+* correct issue logging in with SSL ([1886b1d](https://github.com/macite/doubtfire-deploy/commit/1886b1d923199115996f7ecb0c3fc161a55799ac))
+* correct issue with deleting groups errors ([61e8e30](https://github.com/macite/doubtfire-deploy/commit/61e8e30109e5a2615261375531d5138774658357))
+
 ## [7.0.0](https://github.com/macite/doubtfire-deploy/compare/v6.0.18...v7.0.0) (2023-02-23)
 
 
