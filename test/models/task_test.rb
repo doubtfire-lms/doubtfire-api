@@ -333,7 +333,6 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     assert File.exist? path
     assert File.exist? task.final_pdf_path
 
-    byebug
     td.destroy
     assert_not File.exist? path
     unit.destroy!
