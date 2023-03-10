@@ -27,9 +27,9 @@ HIGHLIGHTERS = {
     None: (VERBATIM_BEGIN, VERBATIM_END),
 }
 
-FORMAT_ERROR = r"colback=red!5!white,colframe=red!75!"
+FORMAT_ERROR = r"breakable=unlimited,colback=red!5!white,colframe=red!75!"
 FORMAT_OK = (
-    r"coltitle=red!75!black, colbacktitle=black!10!white, "
+    r"breakable=unlimited,coltitle=red!75!black, colbacktitle=black!10!white, "
     r"halign title=right, fonttitle=\sffamily\mdseries\scshape\footnotesize")
 
 

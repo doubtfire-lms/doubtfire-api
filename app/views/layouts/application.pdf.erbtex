@@ -6,6 +6,7 @@
 \usepackage{shellesc}
 \usepackage{fontawesome}
 \usepackage{tcolorbox}
+\tcbuselibrary{breakable}
 
 \newcommand{\jupynotex}[2][-]{
     \input|"python3 jupynotex.py #2 #1"
