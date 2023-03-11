@@ -27,9 +27,9 @@ HIGHLIGHTERS = {
     None: (VERBATIM_BEGIN, VERBATIM_END),
 }
 
-FORMAT_ERROR = r"breakable=unlimited,colback=red!5!white,colframe=red!75!"
+FORMAT_ERROR = r"enhanced,breakable=unlimited,colback=red!5!white,colframe=red!75!"
 FORMAT_OK = (
-    r"breakable=unlimited,coltitle=red!75!black, colbacktitle=black!10!white, "
+    r"enhanced,breakable=unlimited,coltitle=red!75!black, colbacktitle=black!10!white, "
     r"halign title=right, fonttitle=\sffamily\mdseries\scshape\footnotesize")
 
 
@@ -216,7 +216,7 @@ def main(notebook_path, cells_spec):
         print(r"\begin{{tcolorbox}}[{}, title=Cell {{{:02d}}}]".format(FORMAT_OK, cell))
         print(src)
         if out:
-            print(r"\tcblower")
+            print(r"\tcbline")
             print(out)
         print(r"\end{tcolorbox}")
 
