@@ -30,7 +30,7 @@ class Webcal < ApplicationRecord
       .joins(:unit, unit: :projects)
       .includes(:unit, unit: :projects)
       .where(
-        projects: { user_id: user_id },
+        projects: { user_id: user_id, enrolled: true },
         units: { active: true }
       )
       .where.not(
