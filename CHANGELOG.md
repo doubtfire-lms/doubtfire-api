@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [7.0.4](https://github.com/macite/doubtfire-deploy/compare/v7.0.3...v7.0.4) (2023-03-20)
+
+
+### Features
+
+* pull overseer docker image ([f9efef7](https://github.com/macite/doubtfire-deploy/commit/f9efef716a613eb928cebd30aa80c61fd65a12a2))
+
+
+### Bug Fixes
+
+* ensure teaching period can be removed ([e7dfaaa](https://github.com/macite/doubtfire-deploy/commit/e7dfaaa7d7df4e2191c9e7df071cc7f7807c17e7))
+* log info for docker login ([80ac4de](https://github.com/macite/doubtfire-deploy/commit/80ac4ded27f142451e8379511a87f2457cdbd58a))
+
 ### [7.0.3](https://github.com/macite/doubtfire-deploy/compare/v7.0.2...v7.0.3) (2023-03-10)
 
 
