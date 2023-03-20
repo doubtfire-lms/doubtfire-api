@@ -183,9 +183,9 @@ module Doubtfire
       config.has_overseer_image = ->(key) { config.overseer_images['images'].any? { |img| img[:name] == key } }
 
       docker_config = {
-        DOCKER_PROXY_URL: ENV['DOCKER_PROXY_URL'],
-        DOCKER_TOKEN: ENV['DOCKER_TOKEN'],
-        DOCKER_USER: ENV['DOCKER_USER']
+        DOCKER_PROXY_URL: ENV.fetch('DOCKER_PROXY_URL', nil),
+        DOCKER_TOKEN: ENV.fetch('DOCKER_TOKEN', nil),
+        DOCKER_USER: ENV.fetch('DOCKER_USER', nil)
       }
 
       publisher_config = {
