@@ -182,6 +182,12 @@ module Doubtfire
       config.overseer_images = YAML.load_file(Rails.root.join('config/overseer-images.yml')).with_indifferent_access
       config.has_overseer_image = ->(key) { config.overseer_images['images'].any? { |img| img[:name] == key } }
 
+      docker_config = {
+        DOCKER_PROXY_URL: ENV['DOCKER_PROXY_URL'],
+        DOCKER_TOKEN: ENV['DOCKER_TOKEN'],
+        DOCKER_USER: ENV['DOCKER_USER']
+      }
+
       publisher_config = {
         RABBITMQ_HOSTNAME: ENV.fetch('RABBITMQ_HOSTNAME', nil),
         RABBITMQ_USERNAME: ENV.fetch('RABBITMQ_USERNAME', nil),
@@ -207,6 +213,11 @@ module Doubtfire
         # This is enough for now:
         DEFAULT_BINDING_KEY: '*.result'
       }
+
+      if docker_config[:DOCKER_TOKEN] && docker_config[:DOCKER_PROXY_URL]
+        puts "Logging into docker proxy"
+        `echo \"${DOCKER_TOKEN}\" | docker login --username ${DOCKER_USER} --password-stdin ${DOCKER_PROXY_URL}`
+      end
 
       config.sm_instance = ServicesManager.instance
       config.sm_instance.register_client(:ontrack, publisher_config, subscriber_config)
