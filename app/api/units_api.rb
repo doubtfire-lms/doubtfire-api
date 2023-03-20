@@ -119,8 +119,9 @@ class UnitsApi < Grape::API
                                                           :overseer_image_id,
                                                           :assessment_enabled)
 
-    if unit.teaching_period_id.present? && unit_parameters.key?(:start_date)
+    if unit.teaching_period_id.present? && (unit_parameters.key?(:start_date) || unit_parameters['teaching_period_id'] == -1)
       unit.teaching_period = nil
+      unit_parameters.delete('teaching_period_id')
     end
 
     if unit_parameters[:draft_task_definition_id].present?
