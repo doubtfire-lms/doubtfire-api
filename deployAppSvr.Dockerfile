@@ -36,6 +36,7 @@ RUN apt-get update \
 WORKDIR /doubtfire
 
 # Install LaTex
+ENV CTAN_REPO "https://mirror.aarnet.edu.au/pub/CTAN/"
 COPY ./.ci-setup /doubtfire/.ci-setup
 RUN /doubtfire/.ci-setup/texlive-install.sh
 
