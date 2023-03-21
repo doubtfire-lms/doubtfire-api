@@ -21,6 +21,10 @@ import traceback
 VERBATIM_BEGIN = [r"\begin{minted}[fontsize=\footnotesize,breaklines,breakanywhere,tabsize=4]{md}"]
 VERBATIM_END = [r"\end{minted}"]
 
+# markdown start/end
+MARKDOWN_BEGIN = [r"\begin{markdown}"]
+MARKDOWN_END = [r"\end{markdown}"]
+
 # highlighers for different languages (block beginning and ending)
 HIGHLIGHTERS = {
     'python': ([r'\begin{minted}[fontsize=\footnotesize,breaklines,breakanywhere,tabsize=4]{python}'], [r'\end{minted}']),
@@ -94,8 +98,8 @@ class Notebook:
         lang = nb_data['metadata']['language_info']['name']
         self._highlight_delimiters = HIGHLIGHTERS.get(lang, HIGHLIGHTERS[None])
 
-        # get all cells excluding markdown ones
-        self._cells = [x for x in nb_data['cells'] if x['cell_type'] != 'markdown']
+        # get all cells
+        self._cells = [x for x in nb_data['cells']]
 
     def __len__(self):
         return len(self._cells)
@@ -109,6 +113,10 @@ class Notebook:
             result.extend(begin)
             result.extend(line.rstrip() for line in source)
             result.extend(end)
+        elif content['cell_type'] == 'markdown':
+            result.extend(MARKDOWN_BEGIN)
+            result.extend(line.replace('```markdown', '```md').strip() for line in source)
+            result.extend(MARKDOWN_END)
         else:
             raise ValueError(
                 "Cell type not supported when processing source: {!r}".format(
@@ -162,7 +170,7 @@ class Notebook:
         content = self._cells[cell_idx - 1]
         source = self._proc_src(content)
         output = self._proc_out(content)
-        return source, output
+        return source, output, content['cell_type'] == 'markdown'
 
 
 def _parse_cells(spec, maxlen):
@@ -204,7 +212,7 @@ def main(notebook_path, cells_spec):
 
     for cell in cells:
         try:
-            src, out = nb.get(cell)
+            src, out, md = nb.get(cell)
         except Exception:
             title = "ERROR when parsing cell {}".format(cell)
             print(r"\begin{{tcolorbox}}[{}, title={{{}}}]".format(FORMAT_ERROR, title))
@@ -213,12 +221,15 @@ def main(notebook_path, cells_spec):
             print(r"\end{tcolorbox}")
             continue
 
-        print(r"\begin{{tcolorbox}}[{}, title=Cell {{{:02d}}}]".format(FORMAT_OK, cell))
+        if not md:
+            print(r"\begin{{tcolorbox}}[{}, title=Cell {{{:02d}}}]".format(FORMAT_OK, cell))
         print(src)
         if out:
-            print(r"\tcbline")
+            if not md:
+              print(r"\tcbline")
             print(out)
-        print(r"\end{tcolorbox}")
+        if not md:
+            print(r"\end{tcolorbox}")
 
 
 if __name__ == "__main__":
