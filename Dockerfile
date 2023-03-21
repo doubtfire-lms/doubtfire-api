@@ -32,6 +32,7 @@ RUN apt-get update \
 # Setup the folder where we will deploy the code
 WORKDIR /doubtfire
 
+ENV CTAN_REPO "https://mirror.aarnet.edu.au/pub/CTAN/"
 COPY ./.ci-setup/ /doubtfire/.ci-setup/
 RUN ./.ci-setup/texlive-install.sh
 ENV PATH /tmp/texlive/bin/x86_64-linux:/tmp/texlive/bin/aarch64-linux:$PATH
