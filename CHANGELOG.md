@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [7.0.5](https://github.com/macite/doubtfire-deploy/compare/v7.0.4...v7.0.5) (2023-03-21)
+
+
+### Features
+
+* add support for csv code file upload ([561beb3](https://github.com/macite/doubtfire-deploy/commit/561beb3c7de28a56710f2748f84f8176c8bf9609))
+* handle markdown in ipynb ([358f646](https://github.com/macite/doubtfire-deploy/commit/358f64629097507bde923abda3fe552576eeaaa9))
+
 ### [7.0.4](https://github.com/macite/doubtfire-deploy/compare/v7.0.3...v7.0.4) (2023-03-20)
 
 
