@@ -22,7 +22,7 @@ if ! command -v "$TEX_COMPILER" > /dev/null; then
 
   echo "----------------------------------------"
   echo "Installing additional texlive packages:"
-  tlmgr install fontawesome luatextra luacode minted fvextra catchfile xstring framed lastpage pdfmanagement-testphase newpax tcolorbox environ pdfcol tikzfill
+  tlmgr install fontawesome luatextra luacode minted fvextra catchfile xstring framed lastpage pdfmanagement-testphase newpax tcolorbox environ pdfcol tikzfill markdown paralist csvsimple gobble
 
   echo "----------------------------------------"
   echo "Ensuring the newpax package is sufficiently up to date:"
