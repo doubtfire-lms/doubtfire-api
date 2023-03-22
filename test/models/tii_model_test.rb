@@ -230,7 +230,7 @@ class TiiModelTest < ActiveSupport::TestCase
     #   status: 'PROCESSING'
     # )
 
-    stub_request(:get, "https://localhost/api/v1/submissions/1223/similarity").
+    stub_request(:get, "https://#{ENV['TCA_HOST']}/api/v1/submissions/1223/similarity").
     with(tii_headers).
     to_return(
       { status: 200, body: TCAClient::SimilarityMetadata.new(status: 'PROCESSING').to_hash.to_json, headers: {}},
@@ -240,7 +240,7 @@ class TiiModelTest < ActiveSupport::TestCase
     subm.continue_process
     assert_equal :similarity_report_requested, subm.reload.status_sym
 
-    similarity_pdf_request = stub_request(:post, "https://localhost/api/v1/submissions/1223/similarity/pdf").
+    similarity_pdf_request = stub_request(:post, "https://#{ENV['TCA_HOST']}/api/v1/submissions/1223/similarity/pdf").
       with(tii_headers).
       with(body: "{\"locale\":\"en-US\"}").
       to_return(status: 200, body: TCAClient::RequestPdfResponse.new(id: '9876').to_hash.to_json, headers: {})
@@ -252,7 +252,7 @@ class TiiModelTest < ActiveSupport::TestCase
 
     # Get the PDF - after asking for status
 
-    pdf_status_request = stub_request(:get, "https://localhost/api/v1/submissions/1223/similarity/pdf/9876/status").
+    pdf_status_request = stub_request(:get, "https://#{ENV['TCA_HOST']}/api/v1/submissions/1223/similarity/pdf/9876/status").
       with(tii_headers).
       to_return(
         {status: 200, body: TCAClient::PdfStatusResponse.new(status: 'PENDING').to_hash.to_json, headers: {}},
@@ -261,7 +261,7 @@ class TiiModelTest < ActiveSupport::TestCase
     subm.continue_process
     assert_equal :similarity_pdf_requested, subm.reload.status_sym
 
-    download_pdf_request = stub_request(:get, "https://localhost/api/v1/submissions/1223/similarity/pdf/9876").
+    download_pdf_request = stub_request(:get, "https://#{ENV['TCA_HOST']}/api/v1/submissions/1223/similarity/pdf/9876").
       with(tii_headers).
       to_return(status: 200, body: File.read(test_file_path('submissions/1.2P.pdf')), headers: {})
 
