@@ -433,7 +433,7 @@ class TiiSubmission < ApplicationRecord
     when 'SUCCESS' # Similarity report is complete
       self.status = :similarity_pdf_requested
       save
-      download_similarity_report_pdf(skip_chedk: true)
+      download_similarity_report_pdf(skip_check: true)
       # else # pending or unknown...
     end
   end
