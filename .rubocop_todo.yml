@@ -1704,7 +1704,7 @@ Style/ZeroLengthPredicate:
   Exclude:
     - 'app/models/unit.rb'
 
-# Offense count: 385
+# Offense count: 583
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: AllowHeredoc, AllowURI, URISchemes, IgnoreCopDirectives, AllowedPatterns, IgnoredPatterns.
 # URISchemes: http, https

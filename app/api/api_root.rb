@@ -18,7 +18,7 @@ class ApiRoot < Grape::API
 
   rescue_from :all do |e|
     case e
-    when ActiveRecord::RecordInvalid, Grape::Exceptions::ValidationErrors
+    when ActiveRecord::RecordInvalid, Grape::Exceptions::ValidationErrors, ActiveRecord::RecordNotDestroyed
       message = e.message
       status = 400
     when ActiveRecord::InvalidForeignKey
@@ -27,9 +27,6 @@ class ApiRoot < Grape::API
     when Grape::Exceptions::MethodNotAllowed
       message = e.message
       status = 405
-    when ActiveRecord::RecordNotDestroyed
-      message = e.message
-      status = 400
     when ActiveRecord::RecordNotFound
       message = "Unable to find requested #{e.message[/(Couldn't find )(.*)( with)/, 2]}"
       status = 404

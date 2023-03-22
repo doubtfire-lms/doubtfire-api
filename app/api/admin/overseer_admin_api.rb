@@ -88,5 +88,20 @@ module Admin
         present [], with: Grape::Presenters::Presenter
       end
     end
+
+    desc 'Get overseer image by id and pull image'
+    put '/admin/overseer_images/:id/pull_image' do
+      unless authorise? current_user, User, :admin_overseer
+        error!({ error: 'Not authorised to pull an overseer image' }, 403)
+      end
+      unless Doubtfire::Application.config.overseer_enabled
+        error!({ error: 'Overseer is not enabled. Enable Overseer before updating settings.' }, 403)
+      end
+
+      overseer_image = OverseerImage.find(params[:id])
+      overseer_image.pull_from_docker
+
+      present overseer_image, with: Entities::OverseerImageEntity
+    end
   end
 end

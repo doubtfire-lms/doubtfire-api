@@ -255,7 +255,7 @@ class Task < ApplicationRecord
     extension.save!
 
     # Check and apply either auto extensions, or those requested by staff
-    if unit.auto_apply_extension_before_deadline && weeks <= weeks_can_extend || role_for(user) == :tutor
+    if (unit.auto_apply_extension_before_deadline && weeks <= weeks_can_extend) || role_for(user) == :tutor
       if role_for(user) == :tutor
         extension.assess_extension user, true, true
       else
@@ -829,7 +829,7 @@ class Task < ApplicationRecord
       zip_file = zip_file_path || zip_file_path_for_done_task
       return false if zip_file.nil? || (!Dir.exist? task_dir)
 
-      FileUtils.rm(zip_file) if File.exist? zip_file
+      FileUtils.rm_f(zip_file)
 
       # compress image files
       image_files = Dir.entries(task_dir).select { |f| (f =~ /^\d{3}.(image)/) == 0 }
@@ -846,7 +846,7 @@ class Task < ApplicationRecord
       input_files = Dir.entries(task_dir).select { |f| (f =~ /^\d{3}.(cover|document|code|image)/) == 0 }
 
       zip_dir = File.dirname(zip_file)
-      FileUtils.mkdir_p zip_dir unless Dir.exist? zip_dir
+      FileUtils.mkdir_p zip_dir
 
       Zip::File.open(zip_file, Zip::File::CREATE) do |zip|
         zip.mkdir id.to_s
@@ -1024,7 +1024,7 @@ class Task < ApplicationRecord
     elsif ['xml'].include?(extn) then 'xml'
     elsif ['sql'].include?(extn) then 'sql'
     elsif ['vb'].include?(extn) then 'vbnet'
-    elsif ['txt', 'md', 'rmd', 'rpres', 'hdl', 'asm', 'jack', 'hack', 'tst', 'cmp', 'vm', 'sh', 'bat', 'dat'].include?(extn) then 'text'
+    elsif ['txt', 'md', 'rmd', 'rpres', 'hdl', 'asm', 'jack', 'hack', 'tst', 'cmp', 'vm', 'sh', 'bat', 'dat', 'csv'].include?(extn) then 'text'
     elsif ['tex', 'rnw'].include?(extn) then 'tex'
     elsif ['py'].include?(extn) then 'python'
     elsif ['r'].include?(extn) then 'r'
@@ -1282,7 +1282,7 @@ class Task < ApplicationRecord
 
     # Delete the tmp dir
     logger.debug "Deleting student work dir: #{tmp_dir}"
-    FileUtils.rm_rf tmp_dir if File.exist? tmp_dir
+    FileUtils.rm_rf tmp_dir
 
     logger.info "Submission accepted! Status for task #{id} is now #{trigger}"
 

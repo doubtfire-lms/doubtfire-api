@@ -190,7 +190,7 @@ class Project < ApplicationRecord
         current_tutor = t.tutor
         first_tutor = false
         result
-      end.join(' ') + (!first_tutor ? ')' : '')
+      end.join(' ') + (first_tutor ? '' : ')')
   end
 
   def tutorial_enrolment_for_stream(tutorial_stream)
@@ -220,8 +220,7 @@ class Project < ApplicationRecord
 
   def user_role(user)
     if user == student then :student
-    elsif user.nil? then nil
-    elsif unit.tutors.where(id: user.id).count != 0 then :tutor
+    elsif user.present? && unit.tutors.where(id: user.id).count != 0 then :tutor
     else nil
     end
   end
@@ -495,7 +494,7 @@ class Project < ApplicationRecord
       blue_pct = (project_task_counts.ready_for_feedback_count / total_task_counts[target_grade]).signif(2)
       grey_pct = (1 - red_pct - orange_pct - green_pct - blue_pct).signif(2)
 
-      order_scale = green_pct * 100 + blue_pct * 100 + orange_pct * 10 - red_pct
+      order_scale = (green_pct * 100) + (blue_pct * 100) + (orange_pct * 10) - red_pct
     else
       red_pct = 0
       orange_pct = 0
@@ -681,7 +680,7 @@ class Project < ApplicationRecord
 
     # try to remove the file
     begin
-      FileUtils.rm rm_file if File.exist? rm_file
+      FileUtils.rm_f rm_file
     rescue
     end
   end

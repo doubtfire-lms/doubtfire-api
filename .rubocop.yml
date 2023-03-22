@@ -7,6 +7,7 @@ AllCops:
     - spec/**/*
     - test/**/*
   TargetRubyVersion: 3.1
+  NewCops: disable
 
 Style/HashSyntax:
   EnforcedShorthandSyntax: never
@@ -14,20 +15,9 @@ Style/HashSyntax:
 Metrics/ClassLength:
   Enabled: false
 
-# Metrics/MethodLength:
-#   Max: 50
-
-# Layout/LineLength:
-#   Max: 120
-#   # To make it possible to copy or click on URIs in the code, we allow lines
-#   # containing a URI to be longer than Max.
-#   AllowHeredoc: true
-#   AllowURI: true
-#   URISchemes:
-#     - http
-#     - https
-
 Gemspec/DeprecatedAttributeAssignment: # new in 1.30
+  Enabled: true
+Gemspec/DevelopmentDependencies: # new in 1.44
   Enabled: true
 Gemspec/RequireMFA: # new in 1.23
   Enabled: true
@@ -91,6 +81,8 @@ Lint/UnexpectedBlockArity: # new in 1.5
   Enabled: true
 Lint/UnmodifiedReduceAccumulator: # new in 1.1
   Enabled: true
+Lint/UselessRescue: # new in 1.43
+  Enabled: true
 Lint/UselessRuby2Keywords: # new in 1.23
   Enabled: true
 Naming/BlockForwarding: # new in 1.24
@@ -104,6 +96,8 @@ Style/ArgumentsForwarding: # new in 1.1
 Style/ArrayIntersect: # new in 1.40
   Enabled: true
 Style/CollectionCompact: # new in 1.2
+  Enabled: true
+Style/ComparableClamp: # new in 1.44
   Enabled: true
 Style/ConcatArrayLiterals: # new in 1.41
   Enabled: true
@@ -134,6 +128,10 @@ Style/MagicCommentFormat: # new in 1.35
 Style/MapCompactWithConditionalBlock: # new in 1.30
   Enabled: true
 Style/MapToHash: # new in 1.24
+  Enabled: true
+Style/MapToSet: # new in 1.42
+  Enabled: true
+Style/MinMaxComparison: # new in 1.42
   Enabled: true
 Style/MultilineInPatternThen: # new in 1.16
   Enabled: true
@@ -175,15 +173,3 @@ Style/StringChars: # new in 1.12
   Enabled: true
 Style/SwapValues: # new in 1.1
   Enabled: true
-
-# 1.42 cops
-Style/MapToSet:
-  Enabled: true
-Style/MinMaxComparison:
-  Enabled: true
-Style/YodaExpression:
-  Enabled: true
-
-# 1.43 cops
-# Lint/UselessRescue:
-#   Enabled: true

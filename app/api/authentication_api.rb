@@ -144,7 +144,7 @@ class AuthenticationApi < Grape::API
       protocol = Rails.env.development? ? 'http' : 'https'
       host = Rails.env.development? ? "#{protocol}://localhost:3000" : Doubtfire::Application.config.institution[:host]
       host = "#{protocol}://#{host}" unless host.starts_with?('http')
-      redirect "#{host}/#sign_in?authToken=#{onetime_token.authentication_token}&username=#{user.username}"
+      redirect "#{host}/#/sign_in?authToken=#{onetime_token.authentication_token}&username=#{user.username}"
     end
   end
 
@@ -219,7 +219,7 @@ class AuthenticationApi < Grape::API
       protocol = Rails.env.development? ? 'http' : 'https'
       host = Rails.env.development? ? "#{protocol}://localhost:3000" : Doubtfire::Application.config.institution[:host]
       host = "#{protocol}://#{host}" unless host.starts_with?('http')
-      redirect "#{host}/#sign_in?authToken=#{onetime_token.authentication_token}&username=#{user.username}"
+      redirect "#{host}/#/sign_in?authToken=#{onetime_token.authentication_token}&username=#{user.username}"
     end
   end
 
@@ -302,7 +302,7 @@ class AuthenticationApi < Grape::API
            },
            "auth_token" =>
            {
-             description: "The user\'s temporary auth token",
+             description: "The user's temporary auth token",
              required: true
            }
          }
@@ -348,7 +348,7 @@ class AuthenticationApi < Grape::API
            },
            "auth_token" =>
            {
-             description: "The user\'s temporary auth token",
+             description: "The user's temporary auth token",
              required: true
            }
          }

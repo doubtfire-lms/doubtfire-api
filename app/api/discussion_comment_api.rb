@@ -107,7 +107,7 @@ class DiscussionCommentApi < Grape::API
       header['Accept-Ranges'] = 'bytes'
 
       # Read the binary data and return
-      result = IO.binread(prompt_path, content_length, begin_point)
+      result = File.binread(prompt_path, content_length, begin_point)
       result
     end
   end
@@ -170,7 +170,7 @@ class DiscussionCommentApi < Grape::API
       header['Accept-Ranges'] = 'bytes'
 
       # Read the binary data and return
-      result = IO.binread(response_path, content_length, begin_point)
+      result = File.binread(response_path, content_length, begin_point)
       result
     end
   end

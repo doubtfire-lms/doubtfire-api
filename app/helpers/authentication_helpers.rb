@@ -14,7 +14,7 @@ module AuthenticationHelpers
   # Reads details from the params fetched from the caller context.
   #
   def authenticated?
-    auth_param = headers['Auth-Token'] || headers['Auth_Token'] || headers['auth_token'] || params['auth_token'] || params['Auth_Token']
+    auth_param = headers['Auth-Token'] || params['authToken'] || headers['Auth_Token'] || headers['auth_token'] || params['auth_token'] || params['Auth_Token']
     user_param = headers['Username'] || params['username']
 
     # Check for valid auth token  and username in request header
@@ -34,9 +34,12 @@ module AuthenticationHelpers
       end
 
       # Token is timed out - destroy it and throw error
+      logger.info("Timing out token for #{user.username} from #{request.ip}")
       token.destroy!
       error!({ error: 'Authentication token expired.' }, 419)
     else
+      logger.info("Error logging in for #{user_param} / #{auth_param} from #{request.ip}")
+
       # Add random delay then fail
       sleep(rand(200..399) / 1000.0)
       error!({ error: 'Could not authenticate with token. Username or Token invalid.' }, 419)
@@ -48,9 +51,7 @@ module AuthenticationHelpers
   #
   def current_user
     username = headers['Username'] || params['username']
-    Rails.cache.fetch("user/#{username}", expires_in: 1.hours) do
-      User.eager_load(:role, :auth_tokens).find_by_username(username)
-    end
+    User.eager_load(:role, :auth_tokens).find_by_username(username)
   end
 
   #
