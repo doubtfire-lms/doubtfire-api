@@ -28,18 +28,18 @@ namespace :db do
 
     puts "-> Generating task statuses"
     statuses = {
-      'Not Started': "You have not yet started this task.",
+      "Not Started": "You have not yet started this task.",
       Complete: "This task has been signed off by your tutor.",
-      'Need Help': "Some help is required in order to complete this task.",
-      'Working On It': "This task is currently being worked on.",
-      'Fix and Resubmit': "This task must be resubmitted after fixing some issues.",
-      'Feedback Exceeded': "This task must be fixed and included in your portfolio, but no additional feedback will be provided.",
+      "Need Help": "Some help is required in order to complete this task.",
+      "Working On It": "This task is currently being worked on.",
+      "Fix and Resubmit": "This task must be resubmitted after fixing some issues.",
+      "Feedback Exceeded": "This task must be fixed and included in your portfolio, but no additional feedback will be provided.",
       Redo: "This task needs to be redone.",
       Discuss: "Your work looks good, discuss it with your tutor to complete.",
-      'Ready for Feedback': "This task is ready for the tutor to assess to provide feedback.",
+      "Ready for Feedback": "This task is ready for the tutor to assess to provide feedback.",
       Demonstrate: "Your work looks good, demonstrate it to your tutor to complete.",
       Fail: "You did not successfully demonstrate the required learning in this task.",
-      'Time Exceeded': "You did not submit or complete the task before the appropriate deadline."
+      "Time Exceeded": "You did not submit or complete the task before the appropriate deadline."
     }
     statuses.each do |name, desc|
       print "."

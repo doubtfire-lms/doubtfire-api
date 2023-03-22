@@ -837,7 +837,7 @@ Metrics/AbcSize:
 # Configuration parameters: CountComments, CountAsOne, ExcludedMethods, AllowedMethods, AllowedPatterns, IgnoredMethods.
 # AllowedMethods: refine
 Metrics/BlockLength:
-  Max: 154
+  Max: 200
 
 # Offense count: 12
 # Configuration parameters: CountBlocks.
