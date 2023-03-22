@@ -182,7 +182,8 @@ module Doubtfire
       config.overseer_images = YAML.load_file(Rails.root.join('config/overseer-images.yml')).with_indifferent_access
       config.has_overseer_image = ->(key) { config.overseer_images['images'].any? { |img| img[:name] == key } }
 
-      docker_config = {
+      config.docker_config = {
+        DOCKER_REGISTRY_URL: ENV.fetch('DOCKER_REGISTRY_URL', nil),
         DOCKER_PROXY_URL: ENV.fetch('DOCKER_PROXY_URL', nil),
         DOCKER_TOKEN: ENV.fetch('DOCKER_TOKEN', nil),
         DOCKER_USER: ENV.fetch('DOCKER_USER', nil)
@@ -214,7 +215,7 @@ module Doubtfire
         DEFAULT_BINDING_KEY: '*.result'
       }
 
-      if docker_config[:DOCKER_TOKEN] && docker_config[:DOCKER_PROXY_URL]
+      if config.docker_config[:DOCKER_TOKEN] && config.docker_config[:DOCKER_PROXY_URL]
         logger.info "Logging into docker proxy"
         `echo \"${DOCKER_TOKEN}\" | docker login --username ${DOCKER_USER} --password-stdin ${DOCKER_PROXY_URL}`
       end
