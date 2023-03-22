@@ -216,7 +216,6 @@ module Doubtfire
       }
 
       if config.docker_config[:DOCKER_TOKEN] && config.docker_config[:DOCKER_PROXY_URL]
-        logger.info "Logging into docker proxy"
         `echo \"${DOCKER_TOKEN}\" | docker login --username ${DOCKER_USER} --password-stdin ${DOCKER_PROXY_URL}`
       end
 
