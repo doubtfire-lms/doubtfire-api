@@ -344,7 +344,7 @@ class User < ApplicationRecord
   end
 
   def name
-    fn = first_name.split(' ').first
+    fn = first_name.split.first
     # fn = nickname
     sn = last_name
 

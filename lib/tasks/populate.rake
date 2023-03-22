@@ -14,9 +14,7 @@ namespace :db do
   end
 
   desc 'Mark off some of the due tasks'
-  task simulate_signoff: [:skip_prod, :environment] do
-    Rails.logger.level = :info
-
+  task simulate_signoff: [:log_info, :skip_prod, :environment] do
     Unit.all.each do |unit|
       current_week = ((Time.zone.now - unit.start_date) / 1.week).floor
 
@@ -70,7 +68,7 @@ namespace :db do
           tutor = p.tutor_for(at)
           # if its more than three week past kept up to date...
           if kept_up_to_date >= task.target_date + 2.weeks
-            complete_date = unit.start_date + i * time_to_complete_task + rand(7..14).days
+            complete_date = unit.start_date + (i * time_to_complete_task) + rand(7..14).days
             if complete_date < unit.start_date + 1.week
               complete_date = unit.start_date + 1.week
             elsif complete_date > Time.zone.now
@@ -78,7 +76,7 @@ namespace :db do
             end
             DatabasePopulator.assess_task(proj, task, tutor, TaskStatus.complete, complete_date)
           elsif kept_up_to_date >= task.target_date + 1.week
-            complete_date = unit.start_date + i * time_to_complete_task + rand(7..14).days
+            complete_date = unit.start_date + (i * time_to_complete_task) + rand(7..14).days
             if complete_date < unit.start_date + 1.week
               complete_date = unit.start_date + 1.week
             elsif complete_date > Time.zone.now
@@ -105,7 +103,7 @@ namespace :db do
               DatabasePopulator.assess_task(proj, task, tutor, TaskStatus.ready_for_feedback, complete_date)
             end
           else
-            complete_date = unit.start_date + i * time_to_complete_task + rand(7..10).days
+            complete_date = unit.start_date + (i * time_to_complete_task) + rand(7..10).days
             if complete_date < unit.start_date + 1.week
               complete_date = unit.start_date + 1.week
             elsif complete_date > Time.zone.now
@@ -116,8 +114,6 @@ namespace :db do
             case rand(1..100)
             when 0..3
               DatabasePopulator.assess_task(proj, task, tutor, TaskStatus.complete, complete_date)
-            when 4..60
-              DatabasePopulator.assess_task(proj, task, tutor, TaskStatus.ready_for_feedback, complete_date)
             when 61..70
               DatabasePopulator.assess_task(proj, task, tutor, TaskStatus.discuss, complete_date)
             when 71..80
@@ -177,10 +173,12 @@ namespace :db do
     end
   end
 
-  desc 'Clear the database and fill with test data'
-  task populate: [:skip_prod, :drop, :setup, :migrate, :init] do
-    Rails.logger.level = :info
+  task log_info: [:environment] do
+    Rails.logger.level = Logger::INFO
+  end
 
+  desc 'Clear the database and fill with test data'
+  task populate: [:log_info, :skip_prod, :drop, :setup, :migrate, :init] do
     scale = ENV['SCALE'] ? ENV['SCALE'].to_sym : :small
     extended = ENV['EXTENDED'] == 'true'
 

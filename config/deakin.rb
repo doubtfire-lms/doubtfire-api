@@ -9,13 +9,13 @@ class DeakinInstitutionSettings
   end
 
   def initialize()
-    @base_url = ENV['DF_INSTITUTION_SETTINGS_SYNC_BASE_URL']
-    @client_id = ENV['DF_INSTITUTION_SETTINGS_SYNC_CLIENT_ID']
-    @client_secret = ENV['DF_INSTITUTION_SETTINGS_SYNC_CLIENT_SECRET']
+    @base_url = ENV.fetch('DF_INSTITUTION_SETTINGS_SYNC_BASE_URL', nil)
+    @client_id = ENV.fetch('DF_INSTITUTION_SETTINGS_SYNC_CLIENT_ID', nil)
+    @client_secret = ENV.fetch('DF_INSTITUTION_SETTINGS_SYNC_CLIENT_SECRET', nil)
 
-    @star_url = ENV['DF_INSTITUTION_SETTINGS_SYNC_STAR_URL']
-    @star_user = ENV['DF_INSTITUTION_SETTINGS_SYNC_STAR_USER']
-    @star_secret = ENV['DF_INSTITUTION_SETTINGS_SYNC_STAR_SECRET']
+    @star_url = ENV.fetch('DF_INSTITUTION_SETTINGS_SYNC_STAR_URL', nil)
+    @star_user = ENV.fetch('DF_INSTITUTION_SETTINGS_SYNC_STAR_USER', nil)
+    @star_secret = ENV.fetch('DF_INSTITUTION_SETTINGS_SYNC_STAR_SECRET', nil)
   end
 
   def are_callista_headers?(headers)
@@ -84,8 +84,8 @@ class DeakinInstitutionSettings
     result
   end
 
-  def default_cloud_campus_abbr
-    'Cloud-01'
+  def default_online_campus_abbr
+    'Online-01'
   end
 
   # Multi code units have a stream for unit - and do not sync with star
@@ -206,7 +206,7 @@ class DeakinInstitutionSettings
     Campus.find_by(abbreviation: key)
   end
 
-  def cloud_campus
+  def online_campus
     Campus.find_by(abbreviation: 'C')
   end
 
@@ -275,7 +275,7 @@ class DeakinInstitutionSettings
     end
   end
 
-  def find_cloud_tutorial(unit, tutorial_stats)
+  def find_online_tutorial(unit, tutorial_stats)
     if tutorial_stats.count == 1
       # There is only one... so return it!
       return tutorial_stats.first[:abbreviation]
@@ -383,27 +383,27 @@ class DeakinInstitutionSettings
               next
             end
 
-            is_cloud = (campus == cloud_campus)
+            is_online = (campus == online_campus)
 
-            # Cloud tutorials are allocated to the tutorial with the smallest pct full
+            # Online tutorials are allocated to the tutorial with the smallest pct full
             # We need to determine the stats here before the enrolments.
             # This is not needed for multi unit as we do not setup the tutorials for multi units
 
-            if is_cloud && !multi_unit && unit.enable_sync_timetable
+            if is_online && !multi_unit && unit.enable_sync_timetable
               if unit.tutorials.where(campus_id: campus.id).count == 0
                 unit.add_tutorial(
                   'Asynchronous', # day
                   '', # time
-                  'Cloud', # location
+                  'Online', # location
                   unit.main_convenor_user, # tutor
-                  cloud_campus, # campus
+                  online_campus, # campus
                   -1, # capacity
-                  default_cloud_campus_abbr, # abbrev
+                  default_online_campus_abbr, # abbrev
                   nil # tutorial_stream=nil
                 )
               end
 
-              # Get stats for distribution of students across tutorials - for enrolment of cloud students
+              # Get stats for distribution of students across tutorials - for enrolment of online students
               tutorial_stats = unit.tutorials
                                    .joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.tutorial_id = tutorials.id')
                                    .where(campus_id: campus.id)
@@ -421,7 +421,7 @@ class DeakinInstitutionSettings
                   capacity: row.capacity
                 }
               }
-            end # is cloud
+            end # is online
 
             # For each of the enrolments...
             location['enrolments'].each do |enrolment|
@@ -470,14 +470,14 @@ class DeakinInstitutionSettings
 
               user = sync_student_user_from_callista(row_data)
 
-              # if they are enrolled, but not timetabled and cloud...
-              if is_cloud && row_data[:enrolled] && !multi_unit && unit.enable_sync_timetable && timetable_data[enrolment['studentId']].nil? # Is this a cloud user that we have the user data for?
+              # if they are enrolled, but not timetabled and online...
+              if is_online && row_data[:enrolled] && !multi_unit && unit.enable_sync_timetable && timetable_data[enrolment['studentId']].nil? # Is this an online user that we have the user data for?
                 # try to get their exising data
                 project = unit.projects.where(user_id: user.id).first unless user.nil?
 
                 if project.nil? || project.tutorial_enrolments.count == 0
-                  # not present (so new), or has no enrolment... so we can enrol it into the cloud tutorial
-                  tutorial = find_cloud_tutorial(unit, tutorial_stats)
+                  # not present (so new), or has no enrolment... so we can enrol it into the online tutorial
+                  tutorial = find_online_tutorial(unit, tutorial_stats)
                   row_data[:tutorials] = [tutorial] unless tutorial.nil?
                 end
               end

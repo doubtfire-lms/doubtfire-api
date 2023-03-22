@@ -2,8 +2,8 @@ unit_code,username,first_name,last_name,email,tutorial,campus,Prc01,stu01
 SIT101,import_1,Donnie,Powlowski,import_0@doubtfire.com,,Burwood,LA1-01,LA1-02
 SIT101,import_2,Vallie,Lehner,import_1@doubtfire.com,,Burwood,LA1-01,LA1-02
 SIT101,import_3,Emmanuel,Ondricka,import_2@doubtfire.com,,Burwood,LA1-01,LA1-02
-SIT101,import_4,Hettie,Hermiston,import_3@doubtfire.com,,Cloud,LA1-03,LA1-02
-SIT101,import_5,Dolly,Leuschke,import_4@doubtfire.com,,Cloud,LA1-03,LA1-02
-SIT101,import_6,Dedric,Brekke,import_5@doubtfire.com,,Cloud,LA1-03,LA1-02
-SIT101,import_7,Cliff,Warren,import_6@doubtfire.com,,Cloud,LA1-03,LA1-02
+SIT101,import_4,Hettie,Hermiston,import_3@doubtfire.com,,Online,LA1-03,LA1-02
+SIT101,import_5,Dolly,Leuschke,import_4@doubtfire.com,,Online,LA1-03,LA1-02
+SIT101,import_6,Dedric,Brekke,import_5@doubtfire.com,,Online,LA1-03,LA1-02
+SIT101,import_7,Cliff,Warren,import_6@doubtfire.com,,Online,LA1-03,LA1-02
 SIT101,import_8,New Student,Name,import_8@doubtfire.com,,Burwood,LA1-01,LA1-02

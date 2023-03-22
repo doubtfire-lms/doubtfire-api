@@ -14,7 +14,7 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
   end
 
   # Check that changing to a tutorial without a stream works as intended when there is a limited group
-  def test_group_change_on_cloud_tutorial_switch
+  def test_group_change_on_online_tutorial_switch
     # Create a unit with 2 streams, and a tutorial in each stream
     unit = FactoryBot.create(:unit, with_students: false, group_sets: 1, stream_count: 2, tutorials: 0)
 

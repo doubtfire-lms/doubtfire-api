@@ -2,6 +2,79 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [7.0.7](https://github.com/macite/doubtfire-deploy/compare/v7.0.6...v7.0.7) (2023-03-22)
+
+
+### Features
+
+* add registry for docker pull of images ([8b00a2b](https://github.com/macite/doubtfire-deploy/commit/8b00a2bf95ec4577b082749a333f1573e502973f))
+
+### [7.0.6](https://github.com/macite/doubtfire-deploy/compare/v7.0.5...v7.0.6) (2023-03-21)
+
+### [7.0.5](https://github.com/macite/doubtfire-deploy/compare/v7.0.4...v7.0.5) (2023-03-21)
+
+
+### Features
+
+* add support for csv code file upload ([561beb3](https://github.com/macite/doubtfire-deploy/commit/561beb3c7de28a56710f2748f84f8176c8bf9609))
+* handle markdown in ipynb ([358f646](https://github.com/macite/doubtfire-deploy/commit/358f64629097507bde923abda3fe552576eeaaa9))
+
+### [7.0.4](https://github.com/macite/doubtfire-deploy/compare/v7.0.3...v7.0.4) (2023-03-20)
+
+
+### Features
+
+* pull overseer docker image ([f9efef7](https://github.com/macite/doubtfire-deploy/commit/f9efef716a613eb928cebd30aa80c61fd65a12a2))
+
+
+### Bug Fixes
+
+* ensure teaching period can be removed ([e7dfaaa](https://github.com/macite/doubtfire-deploy/commit/e7dfaaa7d7df4e2191c9e7df071cc7f7807c17e7))
+* log info for docker login ([80ac4de](https://github.com/macite/doubtfire-deploy/commit/80ac4ded27f142451e8379511a87f2457cdbd58a))
+
+### [7.0.3](https://github.com/macite/doubtfire-deploy/compare/v7.0.2...v7.0.3) (2023-03-10)
+
+
+### Bug Fixes
+
+* ensure we can handle long ipynb output ([97e18d5](https://github.com/macite/doubtfire-deploy/commit/97e18d54962f863e830aa13302ade47c026e00d6))
+
+### [7.0.2](https://github.com/macite/doubtfire-deploy/compare/v7.0.1...v7.0.2) (2023-03-03)
+
+### [7.0.1](https://github.com/macite/doubtfire-deploy/compare/v7.0.0...v7.0.1) (2023-03-03)
+
+
+### Bug Fixes
+
+* correct issue logging in with SSL ([1886b1d](https://github.com/macite/doubtfire-deploy/commit/1886b1d923199115996f7ecb0c3fc161a55799ac))
+* correct issue with deleting groups errors ([61e8e30](https://github.com/macite/doubtfire-deploy/commit/61e8e30109e5a2615261375531d5138774658357))
+
+## [7.0.0](https://github.com/macite/doubtfire-deploy/compare/v6.0.18...v7.0.0) (2023-02-23)
+
+
+### Features
+
+* ensure rollover returns new unit details ([3f956ba](https://github.com/macite/doubtfire-deploy/commit/3f956ba6a68e71d8ead6c27a7ee34f78faf1f9b9))
+
+
+### Bug Fixes
+
+* align project create with new entity data ([1d9443a](https://github.com/macite/doubtfire-deploy/commit/1d9443a20b8c0147097f98fcc3e4a3f8c9112134))
+* campus is optional on tutorial create ([f58b1ee](https://github.com/macite/doubtfire-deploy/commit/f58b1eeb0e18bc2df71dd9e38bc04f00e98e8a53))
+* changes in unit entity staff check ([dbe6ba8](https://github.com/macite/doubtfire-deploy/commit/dbe6ba80464d97ca40207fa5f60b95ff6d32f01d))
+* correct links to portfolios in emails ([9ecd555](https://github.com/macite/doubtfire-deploy/commit/9ecd5555675c6ffebf639768587ffbdcccf2d28f))
+* csv import of task definitions ([56927ab](https://github.com/macite/doubtfire-deploy/commit/56927abc258df08432f5fc810355f8778a5c7c3b))
+* ensure creating of new units works ([7fa790f](https://github.com/macite/doubtfire-deploy/commit/7fa790f04e71d278484a6b1ea5710839468e73a4))
+* ensure group imports use presenter ([a4df066](https://github.com/macite/doubtfire-deploy/commit/a4df06630e8c87007c14bbfee9e7b238670443f6))
+* ensure latex works on arm ([ae71686](https://github.com/macite/doubtfire-deploy/commit/ae71686165df4af2ce0813118d9113bc882c856f))
+* ensure missing parameters responds with error ([c7ba812](https://github.com/macite/doubtfire-deploy/commit/c7ba812693b229cc7899f1a952315ad0050444e3))
+* ensure project updates work for staff and students ([e47a001](https://github.com/macite/doubtfire-deploy/commit/e47a001ba245daa1cee9924b39446a9c6ff87f26))
+* ensure ulo class stats works ([e0be10b](https://github.com/macite/doubtfire-deploy/commit/e0be10b46258f0408993a3cb597a43648373537c))
+* lambda syntax issue ([6f9a3dd](https://github.com/macite/doubtfire-deploy/commit/6f9a3dde451fbf74f0d2fae8496008c31b068a46))
+* report error on invalid role change ([8400c38](https://github.com/macite/doubtfire-deploy/commit/8400c382139b7e89fbc1f1d3cc0e7a87efc7b434))
+* return student username and id ([ab94b40](https://github.com/macite/doubtfire-deploy/commit/ab94b405dce65b70645d7f45c02895283c5b52c9))
+* switch cloud to online for Deakin integration ([f6dacfb](https://github.com/macite/doubtfire-deploy/commit/f6dacfbb7257bbcebfdd6de3c3197835c824d6f2))
+
 ### [6.0.18](https://github.com/doubtfire-lms/doubtfire-api/compare/v6.0.17...v6.0.18) (2022-10-04)
 
 

@@ -44,9 +44,9 @@ end
 gem 'mysql2'
 
 # Webserver - included in development and test and optionally in production
-gem 'puma', '~> 6.0'
+gem 'puma'
 
-gem 'bootsnap', '>= 1.4.4', require: false
+gem 'bootsnap', require: false
 
 # Extend irb for better output
 gem 'hirb'
@@ -87,9 +87,9 @@ gem 'roo', '~> 2.7.0'
 gem 'roo-xls'
 
 # webcal generation
-gem 'icalendar', '~> 2.5', '>= 2.5.3'
+gem 'icalendar'
 
-gem 'rest-client', '~> 2.0'
+gem 'rest-client'
 
 gem 'net-smtp', require: false
 

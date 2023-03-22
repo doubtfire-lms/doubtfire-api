@@ -98,25 +98,33 @@ No Tutor % Supervisor's Name
 
 <% @files.each_with_index do |file, idx| %>
   <%  if file != @files.first %>
-  \clearpage
+\clearpage
   <%  end %>
 
-  \fancyhead[L]{ File <%= idx + 1 %> of <%= @files.count %>  }
-  \fancyhead[R]{ <%= lesc @task.upload_requirements[idx]['name'] %>  }
+\fancyhead[L]{ File <%= idx + 1 %> of <%= @files.count %>  }
+\fancyhead[R]{ <%= lesc @task.upload_requirements[idx]['name'] %>  }
 
   <% if file[:type] == 'image' %>
-    \graphicspath{ {<%= @base_path %>} }
-    \includegraphics[width=\textwidth]{<%= File.basename(file[:path]) %>}
+\graphicspath{ {<%= @base_path %>} }
+\includegraphics[width=\textwidth]{<%= File.basename(file[:path]) %>}
   <% end %>
 
-  <% if file[:type] == 'code' %>
-    \inputminted[breaklines,linenos,breakanywhere,tabsize=4]{<%= Task.pygments_lang(File.extname(file[:path])[1..-1]) %>}{<%= file[:path] %>}
-  <% end %>
+  <%
+    if file[:type] == 'code'
+      if (File.extname(file[:path])[1..-1]) != 'ipynb'
+  %>
+\inputminted[breaklines,linenos,breakanywhere,tabsize=4]{<%= Task.pygments_lang(File.extname(file[:path])[1..-1]) %>}{<%= file[:path] %>}
+  <%  else %>
+\jupynotex{<%= file[:path] %>}
+  <%
+      end
+    end
+  %>
 
   <% if file[:type] == 'document' %>
-    % add document paths to document_list to generate lua calls to newpax later
+% add document paths to document_list to generate lua calls to newpax later
     <% document_list.append(file[:path])%>
-    \includepdf[pages={1-}]{<%= file[:path] %>}
+\includepdf[pages={1-}]{<%= file[:path] %>}
   <% end %>
 <% end %>
 
@@ -130,5 +138,3 @@ No Tutor % Supervisor's Name
   <% end %>
   }
 <% end %>
-
- % section hello_world (end) Hello World
