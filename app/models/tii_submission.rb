@@ -48,7 +48,7 @@ class TiiSubmission < ApplicationRecord
     missing_submission: 6,
     generation_failed: 7,
     submission_not_created: 8,
-    submission_not_found_when_creating_similarity_report: 9,
+    submission_not_found_when_creating_similarity_report: 9
   }
 
   # The user who submitted the file. From this we determine who will
@@ -433,7 +433,7 @@ class TiiSubmission < ApplicationRecord
     when 'SUCCESS' # Similarity report is complete
       self.status = :similarity_pdf_requested
       save
-      download_similarity_report_pdf(true)
+      download_similarity_report_pdf(skip_chedk: true)
       # else # pending or unknown...
     end
   end
@@ -446,7 +446,7 @@ class TiiSubmission < ApplicationRecord
   # Download the similarity pdf report.
   #
   # @param [Boolean] skip_check - skip the check to see if the report is ready
-  def download_similarity_report_pdf(skip_check = false)
+  def download_similarity_report_pdf(skip_check: false)
     return false unless similarity_pdf_id.present?
     return false unless skip_check || fetch_tii_similarity_pdf_status == 'SUCCESS'
 
