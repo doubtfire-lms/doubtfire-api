@@ -3,7 +3,7 @@ require 'json'
 class TaskDefinition < ApplicationRecord
   # Record triggers - before associations
   after_update do |_td|
-    clear_related_plagiarism if plagiarism_checks.empty? && has_plagiarism?
+    clear_related_plagiarism if plagiarism_checks.nil? && has_plagiarism?
   end
 
   before_destroy :delete_associated_files
@@ -22,6 +22,9 @@ class TaskDefinition < ApplicationRecord
   has_many :learning_outcome_task_links, dependent: :destroy # links to learning outcomes
   has_many :learning_outcomes, -> { where('learning_outcome_task_links.task_id is NULL') }, through: :learning_outcome_task_links # only link staff relations
 
+  serialize :upload_requirements, JSON
+  serialize :plagiarism_checks, JSON
+
   # Model validations/constraints
   validates :name, uniqueness: { scope:  :unit_id } # task definition names within a unit must be unique
   validates :abbreviation, uniqueness: { scope: :unit_id } # task definition names within a unit must be unique
@@ -29,10 +32,9 @@ class TaskDefinition < ApplicationRecord
   validates :target_grade, inclusion: { in: GradeHelper::RANGE, message: '%{value} is not a valid target grade' }
   validates :max_quality_pts, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 10, message: 'must be between 0 and 10' }
 
-  validates :upload_requirements, length: { maximum: 4095, allow_blank: true }
   validate :upload_requirements, :check_upload_requirements_format
-  validates :plagiarism_checks, length: { maximum: 4095, allow_blank: true }
   validate :plagiarism_checks, :check_plagiarism_format
+
   validates :description, length: { maximum: 4095, allow_blank: true }
 
   validate :ensure_no_submissions, if: :will_save_change_to_group_set_id?
@@ -137,23 +139,9 @@ class TaskDefinition < ApplicationRecord
     overseer_image.tag
   end
 
-  def plagiarism_checks
-    # Read the JSON string in plagiarism checks and convert into ruby objects
-    if self['plagiarism_checks']
-      begin
-        # Parse into ruby objects
-        JSON.parse(self['plagiarism_checks'])
-      rescue
-        # If this fails return the string - validation should then invalidate this object
-        self['plagiarism_checks']
-      end
-    else
-      # If it was empty then return an empty array
-      JSON.parse('[]')
-    end
-  end
-
   def check_plagiarism_format()
+    return if plagiarism_checks.nil?
+
     json_data = self.plagiarism_checks
 
     # ensure we have a structure that is : [ { "key": "...", "type": "...", "pattern": "..."}, { ... } ]
@@ -189,79 +177,24 @@ class TaskDefinition < ApplicationRecord
         return
       end
 
+      # Check only key, type, and pattern keys are present
+      if req.keys.length > 3
+        errors.add(:upload_requirements, "has additional values for item #{i + 1} --> #{req.keys.join(' ')}.")
+      end
+
       # Move to the next check
       i += 1
-    end
-  end
-
-  def plagiarism_checks=(req)
-    begin
-      json_data = if req.class == String
-                    # get the ruby objects from the json data
-                    JSON.parse(req)
-                  else
-                    # use the passed in objects
-                    req
-                  end
-    rescue
-      # Not valid json!
-      # Save what we have - validation should raise an error
-      self['plagiarism_checks'] = req
-      return
-    end
-
-    # Cant process unless it is an array...
-    unless json_data.class == Array
-      # Save what we have - validation should raise an error
-      self['plagiarism_checks'] = req
-      return
-    end
-
-    # Loop through all items in json array
-    i = 0
-    for req in json_data do
-      unless req.class == Hash
-        # Cant process if it is not an object - leave for validation to check
-        next
-      end
-
-      # Delete any other keys
-      req.delete_if { |key, _value| !%w(key type pattern).include? key }
-
-      # Add in check key
-      req['key'] = "check#{i}"
-
-      i += 1
-    end
-
-    # Save
-    self['plagiarism_checks'] = JSON.unparse(json_data)
-    self['plagiarism_checks'] = '[]' if self['plagiarism_checks'].nil?
-  end
-
-  def upload_requirements
-    # Read the JSON string in upload_requirements and convert into ruby objects
-    if self['upload_requirements']
-      begin
-        # convert to ruby objects
-        JSON.parse(self['upload_requirements'])
-      rescue
-        # Its not valid json - so return the string and validation should fail this object
-        self['upload_requirements']
-      end
-    else
-      # Return an empty array as no requirements
-      JSON.parse('[]')
     end
   end
 
   # Validate the format of the upload requirements
   def check_upload_requirements_format()
     json_data = self.upload_requirements
+    return if json_data.nil?
 
-    # ensure we have a structure that is : [ { "key": "...", "name": "...", "type": "..."}, { ... } ]
+    # ensure we have a structure that is : [ { "key": "...", "name": "...", "type": "...", "tii_check": "...", "tii_pct": "..."}, { ... } ]
     unless json_data.class == Array
-      errors.add(:upload_requirements, 'is not in a valid format! Should be [ { "key": "...", "name": "...", "type": "..."}, { ... } ]. Did not contain array.')
+      errors.add(:upload_requirements, 'is not in a valid format! Should be [ { "key": "...", "name": "...", "type": "...", "tii_check": "...", "tii_pct": "..."}, { ... } ]. Did not contain array.')
       return
     end
 
@@ -270,62 +203,23 @@ class TaskDefinition < ApplicationRecord
     for req in json_data do
       # Each requirement is a json object
       unless req.class == Hash
-        errors.add(:upload_requirements, "is not in a valid format! Should be [ { \"key\": \"...\", \"name\": \"...\", \"type\": \"...\"}, { ... } ]. Array did not contain hashes for item #{i + 1}..")
+        errors.add(:upload_requirements, "is not in a valid format! Should be [ { \"key\": \"...\", \"name\": \"...\", \"type\": \"...\", \"tii_check\": \"...\", \"tii_pct\": \"...\"}, { ... } ]. Array did not contain hashes for item #{i + 1}..")
         return
       end
 
       # Check we have the keys we need
       if (!req.key? 'key') || (!req.key? 'name') || (!req.key? 'type')
-        errors.add(:upload_requirements, "is not in a valid format! Should be [ { \"key\": \"...\", \"name\": \"...\", \"type\": \"...\"}, { ... } ]. Missing a key for item #{i + 1}.")
+        errors.add(:upload_requirements, "is not in a valid format! Must contain [ { \"key\": \"...\", \"name\": \"...\", \"type\": \"...\"}, { ... } ]. Missing a key for item #{i + 1}.")
         return
       end
 
-      i += 1
-    end
-  end
-
-  def upload_requirements=(req)
-    begin
-      json_data = if req.class == String
-                    # get the ruby objects from the json data
-                    JSON.parse(req)
-                  else
-                    # use the passed in objects
-                    req
-                  end
-    rescue
-      # Not valid json
-      # Save what we have - validation should raise an error
-      self['upload_requirements'] = req
-      return
-    end
-
-    # cant process unless it is an array
-    unless json_data.class == Array
-      self['upload_requirements'] = req
-      return
-    end
-
-    # Checking each upload requirement - i used to index files and for user errors
-    i = 0
-    for req in json_data do
-      # Cant process unless it is a hash
-      unless req.class == Hash
-        next
+      # Check keys only contain key, type, name, tii_check, and tii_pct
+      unless req.keys.excluding('key', 'type', 'name', 'tii_check', 'tii_pct').empty?
+        errors.add(:upload_requirements, "has additional values for item #{i + 1} --> #{req.keys.join(' ')}.")
       end
 
-      # Delete all other keys...
-      req.delete_if { |key, _value| !%w(key name type).include? key }
-
-      # Set the 'key' to be the matching file
-      req['key'] = "file#{i}"
-
       i += 1
     end
-
-    # Save
-    self['upload_requirements'] = JSON.unparse(json_data)
-    self['upload_requirements'] = '[]' if self['upload_requirements'].nil?
   end
 
   def number_of_uploaded_files
@@ -499,11 +393,11 @@ class TaskDefinition < ApplicationRecord
     result.is_graded                   = %w(Yes y Y yes true TRUE 1).include? "#{row[:is_graded]}".strip
     result.start_date                  = start_date
     result.target_date                 = target_date
-    result.upload_requirements         = row[:upload_requirements]
+    result.upload_requirements         = JSON.parse(row[:upload_requirements]) unless row[:upload_requirements].nil?
     result.due_date                    = due_date
 
     result.plagiarism_warn_pct         = row[:plagiarism_warn_pct].to_i
-    result.plagiarism_checks           = row[:plagiarism_checks]
+    result.plagiarism_checks           = JSON.parse(row[:plagiarism_checks]) unless row[:plagiarism_checks].nil?
 
     if row[:group_set].present?
       result.group_set = unit.group_sets.where(name: row[:group_set]).first

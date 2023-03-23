@@ -41,7 +41,7 @@ class TaskDefinitionsApi < Grape::API
       error!({ error: 'Not authorised to create a task definition of this unit' }, 403)
     end
 
-    params[:task_def][:upload_requirements] = '[]' if params[:task_def][:upload_requirements].nil?
+    params[:task_def][:upload_requirements] = [] if params[:task_def][:upload_requirements].nil?
 
     task_params = ActionController::Parameters.new(params)
                                               .require(:task_def)
@@ -55,8 +55,6 @@ class TaskDefinitionsApi < Grape::API
                                                 :due_date,
                                                 :abbreviation,
                                                 :restrict_status_updates,
-                                                :upload_requirements,
-                                                :plagiarism_checks,
                                                 :plagiarism_warn_pct,
                                                 :is_graded,
                                                 :max_quality_pts,
@@ -65,6 +63,8 @@ class TaskDefinitionsApi < Grape::API
                                               )
 
     task_params[:unit_id] = unit.id
+    task_params[:upload_requirements] = JSON.parse(params[:task_def][:upload_requirements]) unless params[:task_def][:plagiarism_checks].nil?
+    task_params[:plagiarism_checks] = JSON.parse(params[:task_def][:plagiarism_checks]) unless params[:task_def][:plagiarism_checks].nil?
 
     task_def = TaskDefinition.new(task_params)
 
@@ -131,8 +131,6 @@ class TaskDefinitionsApi < Grape::API
                                                 :due_date,
                                                 :abbreviation,
                                                 :restrict_status_updates,
-                                                :upload_requirements,
-                                                :plagiarism_checks,
                                                 :plagiarism_warn_pct,
                                                 :is_graded,
                                                 :max_quality_pts,
@@ -140,10 +138,14 @@ class TaskDefinitionsApi < Grape::API
                                                 :overseer_image_id
                                               )
 
+    task_params[:upload_requirements] = JSON.parse(params[:task_def][:upload_requirements]) unless params[:task_def][:plagiarism_checks].nil?
+    task_params[:plagiarism_checks] = JSON.parse(params[:task_def][:plagiarism_checks]) unless params[:task_def][:plagiarism_checks].nil?
+
+
     # Ensure changes to a TD defined as a "draft task definition" are validated
     if unit.draft_task_definition_id == params[:id]
       if params[:task_def][:upload_requirements]
-        requirements = JSON.parse(params[:task_def][:upload_requirements])
+        requirements = params[:task_def][:upload_requirements]
         if requirements.length != 1 || requirements[0]["type"] != "document"
           error!({ error: 'Task is marked as the draft learning summary task definition. A draft learning summary task can only contain a single document upload.' }, 403)
         end

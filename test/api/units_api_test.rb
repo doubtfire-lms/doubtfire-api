@@ -357,7 +357,7 @@ class UnitsApiTest < ActiveSupport::TestCase
     unit['auto_apply_extension_before_deadline'] = false
     unit['send_notifications'] = false
     data_to_put = {
-      unit:unit
+      unit: unit
     }
 
     # Add username and auth_token to Header
