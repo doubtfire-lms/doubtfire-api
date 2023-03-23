@@ -124,7 +124,7 @@ No Tutor % Supervisor's Name
   <% if file[:type] == 'document' %>
 % add document paths to document_list to generate lua calls to newpax later
     <% document_list.append(file[:path])%>
-\includepdf[pages={1-}]{<%= file[:path] %>}
+\includepdf[pages={1-},fitpaper]{<%= file[:path] %>}
   <% end %>
 <% end %>
 
