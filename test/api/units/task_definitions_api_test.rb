@@ -57,7 +57,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     add_auth_header_for(user: unit.main_convenor_user)
 
     post_json "/api/units/#{unit.id}/task_definitions", data_to_post
-    assert_equal 201, last_response.status, last_response.inspect
+    assert_equal 201, last_response.status, last_response_body
     assert_equal 1, unit.task_definitions.count
 
     td = unit.task_definitions.first
@@ -80,8 +80,8 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
         due_date:                 unit.start_date + 23.days,
         abbreviation:             'P1.2',
         restrict_status_updates:  true,
-        upload_requirements:      '[ { "key": "file0", "name": "Other Class", "type": "document" } ]',
-        plagiarism_checks:        '[]',
+        upload_requirements:      [ { "key": "file0", "name": "Other Class", "type": "document" } ].to_json,
+        plagiarism_checks:        [].to_json,
         plagiarism_warn_pct:      80,
         is_graded:                false,
         max_quality_pts:          0
@@ -138,7 +138,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
 
   def test_post_task_resources
     test_unit_id = Unit.first.id
-    test_task_definition_id = TaskDefinition.first.id
+    test_task_definition_id = Unit.first.task_definitions.first.id
 
     data_to_post = {
       file: upload_file('test_files/2015-08-06-COS10001-acain.zip', 'application/zip')
@@ -149,7 +149,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
 
     post "/api/units/#{test_unit_id}/task_definitions/#{test_task_definition_id}/task_resources", data_to_post
 
-    puts last_response_body if last_response.status == 403
+    puts last_response_body if last_response.status != 201
 
     assert_equal 201, last_response.status
   end
@@ -167,7 +167,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
         target_date: unit.start_date + 2.weeks,
         abbreviation: 'test_submission_creates_folders',
         restrict_status_updates: false,
-        upload_requirements: [ { "key" => 'file0', "name" => 'Shape Class', "type" => 'document' } ],
+        upload_requirements: '[ { "key" => "file0", "name" => "Shape Class", "type" => "document" } ]',
         plagiarism_warn_pct: 0.8,
         is_graded: false,
         max_quality_pts: 0
@@ -773,13 +773,13 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     # Test change upload requirements to a non-document upload
     data_to_put = {
       task_def: {
-        upload_requirements: '[{"key": "file0","name": "Code file","type": "code"}]'
+        upload_requirements: [{"key": "file0","name": "Code file","type": "code"}].to_json
       }
     }
 
     put_json "/api/units/#{unit.id}/task_definitions/#{task_def.id}", data_to_put
 
-    assert_equal 403, last_response.status
+    assert_equal 403, last_response.status, last_response_body
     task_def.reload
     assert_equal upload_reqs, task_def.upload_requirements
 

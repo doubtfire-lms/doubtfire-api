@@ -12,6 +12,7 @@ class TiiUserAcceptEulaJobTest < ActiveSupport::TestCase
     user.accept_tii_eula
 
     assert user.tii_eula_date.present?
+    assert TurnItIn.eula_version.present?
     assert_equal TurnItIn.eula_version, user.tii_eula_version
     refute user.tii_eula_version_confirmed
     refute user.last_eula_retry.present?

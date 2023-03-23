@@ -109,8 +109,6 @@ class Task < ApplicationRecord
   has_many :overseer_assessments, dependent: :destroy
   has_many :tii_submissions, dependent: :destroy
 
-  serialize :tii_file_submissions, Hash
-
   delegate :unit, to: :project
   delegate :student, to: :project
   delegate :upload_requirements, to: :task_definition

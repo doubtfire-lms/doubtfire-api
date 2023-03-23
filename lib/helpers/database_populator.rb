@@ -331,7 +331,9 @@ class DatabasePopulator
           { user: :angusmorton, num: some_tutorials },
           { user: :cliff, num: some_tutorials },
         ],
-        students: []
+        students: [],
+        num_tasks: some_tasks,
+        ilos: Faker::Number.between(from: 1, to: 3),
       },
       oop: {
         code: "COS20007",
@@ -506,31 +508,34 @@ class DatabasePopulator
   # Generates tasks for the given unit
   #
   def generate_tasks_for_unit(unit, unit_details)
-    echo "----> Generating #{unit_details[:num_tasks]} tasks"
+
 
     if File.exist? Rails.root.join('test_files', "#{unit.code}-Tasks.csv")
+      echo "----> Importing tasks from CSV"
       unit.import_tasks_from_csv File.open(Rails.root.join('test_files', "#{unit.code}-Tasks.csv"))
       unit.import_task_files_from_zip Rails.root.join('test_files', "#{unit.code}-Tasks.zip")
       return
     end
 
+    echo "----> Generating #{unit_details[:num_tasks]} tasks"
+
     unit_details[:num_tasks].times do |count|
       up_reqs = []
       Faker::Number.between(from: 1, to: 4).times.each_with_index do |file, idx|
-        up_reqs[idx] = { :key => "file#{idx}", :name => faker_random_sentence(1, 3).capitalize, :type => ["code", "document", "image"].sample }
+        up_reqs << { :key => "file#{idx}", :name => faker_random_sentence(1, 3).capitalize, :type => ["code", "document", "image"].sample }
       end
       target_date = unit.start_date + ((count + 1) % 12).weeks # Assignment 6 due week 6, etc.
       start_date = target_date - Faker::Number.between(from: 1.0, to: 2.0).weeks
       # Make sure at least 30% of the tasks are pass
       target_grade = Faker::Number.between(from: 0, to: 3)
-      task_def = TaskDefinition.create(
+      task_def = TaskDefinition.create!(
         name: "Assignment #{count + 1}",
         abbreviation: "A#{count + 1}",
         unit_id: unit.id,
         description: faker_random_sentence(5, 10),
         weighting: BigDecimal("2"),
         target_date: target_date,
-        upload_requirements: up_reqs.to_json,
+        upload_requirements: up_reqs,
         start_date: start_date,
         target_grade: target_grade
       )
