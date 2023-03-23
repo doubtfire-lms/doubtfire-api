@@ -225,9 +225,12 @@ class TaskDefinitionTest < ActiveSupport::TestCase
       trigger: 'ready_for_feedback'
     }
 
-    data_to_post = with_file('test_files/unit_files/sample-learning-summary.pdf', 'application/pdf', data_to_post)
-
     project = unit.active_projects.first
+
+    path = File.join(project.portfolio_temp_path, '000-document-LearningSummaryReport.pdf')
+    refute File.exist? path
+
+    data_to_post = with_file('test_files/unit_files/sample-learning-summary.pdf', 'application/pdf', data_to_post)
 
     add_auth_header_for user: project.user
 
@@ -246,7 +249,6 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     # Check if pdf was copied over
     project.reload
     assert project.uses_draft_learning_summary
-    path = File.join(project.portfolio_temp_path, '000-document-LearningSummaryReport.pdf')
     assert File.exist? path
 
     unit.destroy
