@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [7.0.8](https://github.com/macite/doubtfire-deploy/compare/v7.0.7...v7.0.8) (2023-03-23)
+
+
+### Features
+
+* skip newpax on pdf generation fail retry ([d463b0d](https://github.com/macite/doubtfire-deploy/commit/d463b0dcb672be953f7072abd796d9c723071bdb))
+* support documents of different size ([d4e1c59](https://github.com/macite/doubtfire-deploy/commit/d4e1c59ef443514eed7697a101dcedba24d20b4b))
+
 ### [7.0.7](https://github.com/macite/doubtfire-deploy/compare/v7.0.6...v7.0.7) (2023-03-22)
 
 
