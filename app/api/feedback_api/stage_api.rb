@@ -2,7 +2,6 @@ require 'grape'
 
 module FeedbackApi
   class StageApi < Grape::API
-
     desc 'Feedback is provided in stages. This endpoint allows you to create a new stage for feedback on tasks for a given task definition.'
     params do
       requires :task_definition_id, type: Integer, desc: 'The task definition to which the stage belongs'
@@ -43,7 +42,7 @@ module FeedbackApi
     desc 'This endpoint allows you to update the name and order of a stage.'
     params do
       optional :title, type: String,  desc: 'The new title for the stage'
-      optional :order, type: Integer,  desc: 'The order value for the stage'
+      optional :order, type: Integer, desc: 'The order value for the stage'
     end
     put '/stages/:id' do
       # Get the stage from the task definition
@@ -72,6 +71,5 @@ module FeedbackApi
 
       stage.destroy!
     end
-
   end
 end

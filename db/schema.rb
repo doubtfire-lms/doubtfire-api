@@ -54,6 +54,23 @@ ActiveRecord::Schema[7.0].define(version: 2023_06_03_064217) do
     t.index ["user_id"], name: "index_comments_read_receipts_on_user_id"
   end
 
+  create_table "criteria", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
+    t.integer "order", null: false
+    t.string "description", null: false
+    t.string "help_text"
+    t.bigint "stage_id"
+    t.index ["stage_id"], name: "index_criteria_on_stage_id"
+  end
+
+  create_table "criterion_options", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
+    t.string "resolved_message_text"
+    t.string "unresolved_message_text"
+    t.bigint "criterion_id"
+    t.bigint "task_status_id"
+    t.index ["criterion_id"], name: "index_criterion_options_on_criterion_id"
+    t.index ["task_status_id"], name: "index_criterion_options_on_task_status_id"
+  end
+
   create_table "discussion_comments", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
     t.datetime "time_started"
     t.datetime "time_completed"
@@ -62,6 +79,15 @@ ActiveRecord::Schema[7.0].define(version: 2023_06_03_064217) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "feedback_comment_templates", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
+    t.string "comment_text_situation", null: false
+    t.string "comment_text_next_action"
+    t.bigint "criterion_option_id"
+    t.bigint "user_id"
+    t.index ["criterion_option_id"], name: "index_feedback_comment_templates_on_criterion_option_id"
+    t.index ["user_id"], name: "index_feedback_comment_templates_on_user_id"
+  end
+  
   create_table "group_memberships", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
     t.bigint "group_id"
     t.bigint "project_id"
@@ -197,7 +223,14 @@ ActiveRecord::Schema[7.0].define(version: 2023_06_03_064217) do
   create_table "stages", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
     t.string "title", null: false
     t.integer "order", null: false
+    t.string "title", null: false
+    t.string "help_text"
+    t.string "entry_message"
+    t.string "exit_message_good"
+    t.string "exit_message_resubmit"
     t.bigint "task_definition_id"
+    t.bigint "feedback_comment_template_id"
+    t.index ["feedback_comment_template_id"], name: "index_stages_on_feedback_comment_template_id"
     t.index ["task_definition_id"], name: "index_stages_on_task_definition_id"
   end
   
@@ -222,8 +255,12 @@ ActiveRecord::Schema[7.0].define(version: 2023_06_03_064217) do
     t.string "extension_response"
     t.bigint "reply_to_id"
     t.bigint "overseer_assessment_id"
+    t.bigint "feedback_comment_template_id"
+    t.bigint "criterion_option_id"
     t.index ["assessor_id"], name: "index_task_comments_on_assessor_id"
+    t.index ["criterion_option_id"], name: "index_task_comments_on_criterion_option_id"
     t.index ["discussion_comment_id"], name: "index_task_comments_on_discussion_comment_id"
+    t.index ["feedback_comment_template_id"], name: "index_task_comments_on_feedback_comment_template_id"
     t.index ["overseer_assessment_id"], name: "index_task_comments_on_overseer_assessment_id"
     t.index ["recipient_id"], name: "fk_rails_1dbb49165b"
     t.index ["reply_to_id"], name: "index_task_comments_on_reply_to_id"

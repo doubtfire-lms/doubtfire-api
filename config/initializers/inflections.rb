@@ -4,6 +4,7 @@
 # (all these examples are active by default):
 ActiveSupport::Inflector.inflections do |inflect|
   inflect.irregular 'campus', 'campuses'
+  inflect.irregular 'criterion', 'criteria'
   #   inflect.plural /^(ox)$/i, '\1en'
   #   inflect.singular /^(ox)en/i, '\1'
   #   inflect.uncountable %w( fish sheep )
