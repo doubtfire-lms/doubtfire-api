@@ -591,7 +591,7 @@ class Task < ApplicationRecord
     else
       assess TaskStatus.time_exceeded, by_user
       add_status_comment(project.tutor_for(task_definition), self.task_status)
-      grade_task -1 if task_definition.is_graded? && self.grade.nil?
+      grade_task(-1) if task_definition.is_graded? && self.grade.nil?
     end
 
     if save!
