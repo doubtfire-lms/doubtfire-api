@@ -86,7 +86,8 @@ class TiiSubmission < ApplicationRecord
     similarity_pdf_available: 7,
     similarity_pdf_downloaded: 8,
     to_delete: 9,
-    deleted: 10
+    deleted: 10,
+    complete_low_similarity: 11
   }
 
   def status_sym
@@ -343,9 +344,14 @@ class TiiSubmission < ApplicationRecord
     # when 'PROCESSING' # Similarity report is being generated
     #   return
     when 'COMPLETE' # Similarity report is complete
-      self.status = :similarity_report_complete
-      save
-      request_similarity_report_pdf
+      if response.overall_match_percentage.present? && response.overall_match_percentage.to_i > task.tii_match_pct(idx)
+        self.status = :similarity_report_complete
+        save
+        request_similarity_report_pdf
+      else
+        self.status = :complete_low_similarity
+        save
+      end
     end
   end
 

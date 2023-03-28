@@ -236,6 +236,19 @@ class TaskDefinition < ApplicationRecord
     upload_requirements[idx]['type'] == 'document'
   end
 
+  # Check if document and has tii check requested
+  def use_tii?(idx)
+    return false unless is_document?(idx) && upload_requirements[idx].key?('tii_check')
+
+    [true, 1, 'true'].include?(upload_requirements[idx]['tii_check'])
+  end
+
+  def tii_match_pct(idx)
+    return 35 unless use_tii?(idx) && upload_requirements[idx].key?('tii_pct')
+
+    upload_requirements[idx]['tii_pct'].to_i
+  end
+
   # Return the type for the upload at the given index
   # @param idx the index of the upload requirement
   def type_for_upload(idx)

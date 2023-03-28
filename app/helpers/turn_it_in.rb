@@ -251,8 +251,8 @@ class TurnItIn
   #
   # @param task [Task] the task to send the documents for
   def self.send_documents_to_tii(task, submitter)
-    task.number_of_documents.times do |idx|
-      if task.is_document? idx
+    task.number_of_uploaded_files.times do |idx|
+      if task.use_tii?(idx)
         @instance.send_document_to_tii(task, idx, submitter)
       end
     end
