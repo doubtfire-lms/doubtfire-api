@@ -1323,7 +1323,7 @@ class Task < ApplicationRecord
     nil
   end
 
-  delegate :number_of_uploaded_files, :number_of_documents, :is_document?, to: :task_definition
+  delegate :number_of_uploaded_files, :number_of_documents, :is_document?, :use_tii?, :tii_match_pct, to: :task_definition
 
   def read_file_from_done(idx)
     path = FileHelper.zip_file_path_for_done_task(self)

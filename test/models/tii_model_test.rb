@@ -114,11 +114,51 @@ class TiiModelTest < ActiveSupport::TestCase
     convenor = unit.main_convenor_user
     task_definition = unit.task_definitions.first
 
-    task_definition.upload_requirements = [ { "key" => 'file0', "name" => 'Document 1', "type" => 'document' }, { "key" => 'file1', "name" => 'Document 2', "type" => 'document' }, { "key" => 'file2', "name" => 'Code 1', "type" => 'code' } ]
+    task_definition.upload_requirements = [
+      {
+        "key" => 'file0',
+        "name" => 'Document 1',
+        "type" => 'document',
+        "tii_check" => true,
+        "tii_pct" => 35
+      },
+      {
+        "key" => 'file1',
+        "name" => 'Document 2',
+        "type" => 'document',
+        "tii_check" => false,
+        "tii_pct" => 35
+      },
+      {
+        "key" => 'file2',
+        "name" => 'Code 1',
+        "type" => 'code',
+        "tii_check" => true,
+        "tii_pct" => 35
+      },
+      {
+        "key" => 'file3',
+        "name" => 'Document 3',
+        "type" => 'document',
+        "tii_check" => true,
+        "tii_pct" => 35
+      },
+      {
+        "key" => 'file4',
+        "name" => 'Document 4',
+        "type" => 'document'
+      }
+    ]
 
     task_definition.save!
 
-    assert_equal 2, task_definition.number_of_documents
+    assert_equal 4, task_definition.number_of_documents
+
+    assert task_definition.use_tii?(0)
+    refute task_definition.use_tii?(1)
+    refute task_definition.use_tii?(2)
+    assert task_definition.use_tii?(3)
+    refute task_definition.use_tii?(4)
 
     task = project.task_for_task_definition(task_definition)
 
@@ -145,6 +185,21 @@ class TiiModelTest < ActiveSupport::TestCase
         filename: 'code.cs',
         "tempfile" => File.new(test_file_path('submissions/program.cs'))
       },
+      {
+        id: 'file3',
+        name: 'Document 3',
+        type: 'document',
+        filename: 'file3.pdf',
+        "tempfile" => File.new(test_file_path('submissions/1.2P.pdf'))
+      },
+      {
+        id: 'file4',
+        name: 'Document 4',
+        type: 'document',
+        filename: 'file4.pdf',
+        "tempfile" => File.new(test_file_path('submissions/1.2P.pdf'))
+      },
+
     ], user, nil, nil, 'ready_for_feedback', nil
 
     # Check that the submission is going to be progressed
@@ -187,6 +242,8 @@ class TiiModelTest < ActiveSupport::TestCase
 
     # We will progress the 2nd document
     subm = TiiSubmission.last
+    subm1 = TiiSubmission.second_to_last
+
     assert_equal :uploaded, subm.status_sym
 
     # task destroy will trigger delete of submission
@@ -234,12 +291,13 @@ class TiiModelTest < ActiveSupport::TestCase
     with(tii_headers).
     to_return(
       { status: 200, body: TCAClient::SimilarityMetadata.new(status: 'PROCESSING').to_hash.to_json, headers: {}},
-      { status: 200, body: TCAClient::SimilarityMetadata.new(status: 'COMPLETE').to_hash.to_json, headers: {}}
+      { status: 200, body: TCAClient::SimilarityMetadata.new(status: 'COMPLETE', overall_match_percentage: 50).to_hash.to_json, headers: {}}
     )
 
     subm.continue_process
     assert_equal :similarity_report_requested, subm.reload.status_sym
 
+    # Next call will request to download PDF as complete...
     similarity_pdf_request = stub_request(:post, "https://#{ENV['TCA_HOST']}/api/v1/submissions/1223/similarity/pdf").
       with(tii_headers).
       with(body: "{\"locale\":\"en-US\"}").
@@ -269,6 +327,32 @@ class TiiModelTest < ActiveSupport::TestCase
     assert_equal :similarity_pdf_downloaded, subm.reload.status_sym
     assert_requested download_pdf_request, times: 1
     assert File.exist?(subm.similarity_pdf_path)
+
+    # Now for submission 1
+    # Stub ssubmission 1 as well
+    subm_status_req = stub_request(:get, "https://#{ENV['TCA_HOST']}/api/v1/submissions/1222").
+      with(tii_headers).
+      to_return(
+        {status: 200, body: TCAClient::Submission.new(status: 'COMPLETE').to_hash.to_json(), headers: {}},
+      )
+    similarity_request = stub_request(:put, "https://#{ENV['TCA_HOST']}/api/v1/submissions/1222/similarity").
+      with(tii_headers).
+      with(
+        body: "{\"generation_settings\":{\"search_repositories\":[\"INTERNET\",\"SUBMITTED_WORK\",\"PUBLICATION\",\"CROSSREF\",\"CROSSREF_POSTED_CONTENT\"],\"auto_exclude_self_matching_scope\":\"GROUP_CONTEXT\"}}",
+      ).
+      to_return(status: 200, body: "", headers: {})
+
+    stub_request(:get, "https://#{ENV['TCA_HOST']}/api/v1/submissions/1222/similarity").
+      with(tii_headers).
+      to_return(
+        { status: 200, body: TCAClient::SimilarityMetadata.new(status: 'COMPLETE', overall_match_percentage: 5).to_hash.to_json, headers: {}}
+      )
+
+    subm1.continue_process
+    assert_equal :similarity_report_requested, subm1.reload.status_sym
+
+    subm1.continue_process
+    assert_equal :complete_low_similarity, subm1.reload.status_sym
 
     # Clean up
     task.destroy
