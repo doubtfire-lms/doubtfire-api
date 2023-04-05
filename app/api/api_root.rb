@@ -68,6 +68,7 @@ class ApiRoot < Grape::API
   mount TeachingPeriodsPublicApi
   mount TeachingPeriodsAuthenticatedApi
   mount Tii::TurnItInApi
+  mount Tii::TurnItInHooksApi
   mount CampusesPublicApi
   mount CampusesAuthenticatedApi
   mount TutorialsApi
