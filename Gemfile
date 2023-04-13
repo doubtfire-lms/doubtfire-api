@@ -98,3 +98,4 @@ gem 'tca_client', '1.0.1'
 
 # Async jobs
 gem 'sidekiq'
+gem 'sidekiq-cron'

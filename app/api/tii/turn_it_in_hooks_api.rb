@@ -21,7 +21,7 @@ module Tii
       digest = OpenSSL::Digest.new('sha256')
 
       # puts data
-      hmac = OpenSSL::HMAC.hexdigest(digest, ENV.fetch('TCA_API_KEY', nil), data.to_json)
+      hmac = OpenSSL::HMAC.hexdigest(digest, ENV.fetch('TCA_SIGNING_KEY', nil), data.to_json)
 
       # puts hmac
       # puts headers['X-Turnitin-Signature']
