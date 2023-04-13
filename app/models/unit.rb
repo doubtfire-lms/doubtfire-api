@@ -816,7 +816,7 @@ class Unit < ApplicationRecord
             end
 
             # update campus if available, and either not provided and available or should be replaced
-            if campus.present? && (user_project.campus_id.nil? || (import_settings[:replace_existing_campus] && user_project.campus_id != campus.id) )
+            if campus.present? && (user_project.campus_id.nil? || (import_settings[:replace_existing_campus] && user_project.campus_id != campus.id))
               user_project.campus_id = campus.id
               user_project.save
               success_message << 'Campus updated.'
