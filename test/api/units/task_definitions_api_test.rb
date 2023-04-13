@@ -167,7 +167,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
         target_date: unit.start_date + 2.weeks,
         abbreviation: 'test_submission_creates_folders',
         restrict_status_updates: false,
-        upload_requirements: '[ { "key" => "file0", "name" => "Shape Class", "type" => "document" } ]',
+        upload_requirements: [ { "key" => "file0", "name" => "Shape Class", "type" => "document" } ],
         plagiarism_warn_pct: 0.8,
         is_graded: false,
         max_quality_pts: 0

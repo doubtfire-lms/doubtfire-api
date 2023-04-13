@@ -349,7 +349,7 @@ class TaskDefinition < ApplicationRecord
       [
         plagiarism_checks.to_json,
         group_set.nil? ? "" : group_set.name,
-        upload_requirements.to_json,
+        upload_requirements.to_s,
         start_week,
         start_day,
         target_week,
