@@ -1,0 +1,9 @@
+# config/schedule.yml
+
+register_webhooks:
+  cron: "every day at 5"
+  class: "TiiRegisterWebHookJob"
+
+progress_turn_it_in_jobs:
+  cron: "every 3 hours"
+  class: "TiiCheckProgressJob"

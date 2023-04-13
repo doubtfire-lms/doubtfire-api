@@ -53,4 +53,7 @@ Doubtfire::Application.configure do
   config.active_record.encryption.key_derivation_salt = ENV.fetch('DF_ENCRYPTION_KEY_DERIVATION_SALT', nil)
   config.active_record.encryption.deterministic_key = ENV.fetch('DF_ENCRYPTION_DETERMINISTIC_KEY', nil)
   config.active_record.encryption.primary_key = ENV.fetch('DF_ENCRYPTION_PRIMARY_KEY', nil)
+
+  # check if turn it in is active
+  TiiRegisterWebHookJob.perform_async if config.tii_enabled
 end

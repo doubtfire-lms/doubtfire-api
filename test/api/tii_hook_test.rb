@@ -54,7 +54,7 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     # puts data.to_json
 
     digest = OpenSSL::Digest.new('sha256')
-    hmac = OpenSSL::HMAC.hexdigest(digest, ENV.fetch('TCA_API_KEY', nil), data.to_json)
+    hmac = OpenSSL::HMAC.hexdigest(digest, ENV.fetch('TCA_SIGNING_KEY', nil), data.to_json)
 
     # Add signature details
     header "X-Turnitin-Signature", hmac
@@ -134,7 +134,7 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     # puts data.to_json
 
     digest = OpenSSL::Digest.new('sha256')
-    hmac = OpenSSL::HMAC.hexdigest(digest, ENV.fetch('TCA_API_KEY', nil), data.to_json)
+    hmac = OpenSSL::HMAC.hexdigest(digest, ENV.fetch('TCA_SIGNING_KEY', nil), data.to_json)
 
     # Add signature details
     header "X-Turnitin-Signature", hmac
@@ -207,7 +207,7 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     # puts data.to_json
 
     digest = OpenSSL::Digest.new('sha256')
-    hmac = OpenSSL::HMAC.hexdigest(digest, ENV.fetch('TCA_API_KEY', nil), data.to_json)
+    hmac = OpenSSL::HMAC.hexdigest(digest, ENV.fetch('TCA_SIGNING_KEY', nil), data.to_json)
 
     # Add signature details
     header "X-Turnitin-Signature", hmac
@@ -267,7 +267,7 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     # puts data.to_json
 
     digest = OpenSSL::Digest.new('sha256')
-    hmac = OpenSSL::HMAC.hexdigest(digest, ENV.fetch('TCA_API_KEY', nil), data.to_json)
+    hmac = OpenSSL::HMAC.hexdigest(digest, ENV.fetch('TCA_SIGNING_KEY', nil), data.to_json)
 
     # Add signature details
     header "X-Turnitin-Signature", hmac
