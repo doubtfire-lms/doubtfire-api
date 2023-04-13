@@ -223,24 +223,7 @@ module Doubtfire
       config.sm_instance.register_client(:ontrack, publisher_config, subscriber_config)
     end
 
-    config.tii_enabled = ENV['TII_ENABLED'].present? && ENV['TII_ENABLED'].to_s.downcase != "false" && ENV['TII_ENABLED'].to_i != 0 ? true : false
-
-    if config.tii_enabled
-      # Turn-it-in TII configuration
-      require 'tca_client'
-
-      # Setup authorization
-      TCAClient.configure do |tii_config|
-        # Configure API key authorization: api_key
-        tii_config.api_key['api_key'] = ENV['TCA_API_KEY']
-        # Uncomment the following line to set a prefix for the API key, e.g. 'Bearer' (defaults to nil)
-        tii_config.api_key_prefix['api_key'] = 'Bearer'
-        tii_config.host = ENV['TCA_HOST']
-        tii_config.base_path = 'api/v1'
-        tii_config.server_index = nil
-        require_relative 'environments/doubtfire_logger'
-        tii_config.logger = DoubtfireLogger.logger
-      end
-    end
+    require_relative '../app/helpers/turn_it_in'
+    TurnItIn.load_config(config)
   end
 end

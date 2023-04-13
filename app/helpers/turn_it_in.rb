@@ -13,6 +13,28 @@ class TurnItIn
 
   cattr_reader :x_turnitin_integration_name, :x_turnitin_integration_version
 
+  def self.load_config(config)
+    config.tii_enabled = ENV['TII_ENABLED'].present? && ENV['TII_ENABLED'].to_s.downcase != "false" && ENV['TII_ENABLED'].to_i != 0 ? true : false
+
+    if config.tii_enabled
+      # Turn-it-in TII configuration
+      require 'tca_client'
+
+      # Setup authorization
+      TCAClient.configure do |tii_config|
+        # Configure API key authorization: api_key
+        tii_config.api_key['api_key'] = ENV['TCA_API_KEY']
+        # Uncomment the following line to set a prefix for the API key, e.g. 'Bearer' (defaults to nil)
+        tii_config.api_key_prefix['api_key'] = 'Bearer'
+        tii_config.host = ENV['TCA_HOST']
+        tii_config.base_path = 'api/v1'
+        tii_config.server_index = nil
+        require_relative '../../config/environments/doubtfire_logger'
+        tii_config.logger = DoubtfireLogger.logger
+      end
+    end
+  end
+
   # A global error indicates that tii is not configured correctly or a change in the
   # environment requires that the configuration is updated
   def self.global_error
