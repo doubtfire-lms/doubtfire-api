@@ -5,6 +5,7 @@ require 'test_helper'
 class TeachingPeriodTest < ActiveSupport::TestCase
   include Rack::Test::Methods
   include TestHelpers::TiiTestHelper
+  include TestHelpers::TestFileHelper
   include TestHelpers::JsonHelper
 
   def app
@@ -74,78 +75,214 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     task.unit.destroy!
   end
 
-# Test the similarity webhook
-def test_similarity_webhook
-  task = FactoryBot.create(:task)
-  user = task.project.user
+  # Test the similarity webhook
+  def test_similarity_webhook
+    task = FactoryBot.create(:task)
+    user = task.project.user
 
-  task.task_definition.upload_requirements = [
-    {
-      "key" => 'file0',
-      "name" => 'Document 1',
-      "type" => 'document',
-      "tii_check" => true,
-      "tii_pct" => 35
-    }
-  ]
-
-  subm = TiiSubmission.create!(
-    submission_id: "e884f478-9757-41c7-80da-37b94ebb2838",
-    status: 'similarity_report_requested',
-    task: task,
-    filename: 'test.doc',
-    idx: 0,
-    submitted_at: Time.zone.now,
-    submitted_by: task.project.user
-  )
-
-  # destroy will trigger delete of submission
-  delete_request = stub_request(:delete, /https:\/\/#{ENV['TCA_HOST']}\/api\/v1\/submissions\/e884f478-9757-41c7-80da-37b94ebb2838/).
-  with(tii_headers).
-  to_return(status: 200, body: "", headers: {})
-
-  data = TCAClient::SimilarityCompleteWebhookRequest.new(
-    "submission_id" => "e884f478-9757-41c7-80da-37b94ebb2838",
-    "overall_match_percentage" => 15,
-    "internet_match_percentage" => 12,
-    "publication_match_percentage" => 10,
-    "submitted_works_match_percentage" => 0,
-    "status" => "COMPLETE",
-    "time_requested" => "2017-11-06T19:14:31.828Z",
-    "time_generated" => "2017-11-06T19:14:45.993Z",
-    "top_source_largest_matched_word_count" => 193,
-    "top_matches" => [
+    task.task_definition.upload_requirements = [
       {
-        "percentage" => 100.0,
-        "submission_id" => "883fbb3a-2825-4a2a-8d24-d52e40673772",
-        "source_type" => "SUBMITTED_WORK",
-        "matched_word_count_total" => 598,
-        "submitted_date" => "2021-05-05",
-        "institution_name" => "Tii Auto TCA Platinum Test Tenant",
-        "name" => "Tii Auto TCA Platinum Test Tenant on 2021-05-05"
+        "key" => 'file0',
+        "name" => 'Document 1',
+        "type" => 'document',
+        "tii_check" => true,
+        "tii_pct" => 35
       }
-    ],
-    "metadata" => {
-      "custom" => "{\"Type\":\"Final Paper\"}"
-    }
-  )
+    ]
 
-  # puts data.to_json
+    subm = TiiSubmission.create!(
+      submission_id: "e884f478-9757-41c7-80da-37b94ebb2838",
+      status: 'similarity_report_requested',
+      task: task,
+      filename: 'test.doc',
+      idx: 0,
+      submitted_at: Time.zone.now,
+      submitted_by: task.project.user
+    )
 
-  digest = OpenSSL::Digest.new('sha256')
-  hmac = OpenSSL::HMAC.hexdigest(digest, ENV.fetch('TCA_API_KEY', nil), data.to_json)
+    # destroy will trigger delete of submission
+    delete_request = stub_request(:delete, /https:\/\/#{ENV['TCA_HOST']}\/api\/v1\/submissions\/e884f478-9757-41c7-80da-37b94ebb2838/).
+    with(tii_headers).
+    to_return(status: 200, body: "", headers: {})
 
-  # Add signature details
-  header "X-Turnitin-Signature", hmac
-  header "X-Turnitin-EventType", "SIMILARITY_COMPLETE"
+    data = TCAClient::SimilarityCompleteWebhookRequest.new(
+      "submission_id" => "e884f478-9757-41c7-80da-37b94ebb2838",
+      "overall_match_percentage" => 15,
+      "internet_match_percentage" => 12,
+      "publication_match_percentage" => 10,
+      "submitted_works_match_percentage" => 0,
+      "status" => "COMPLETE",
+      "time_requested" => "2017-11-06T19:14:31.828Z",
+      "time_generated" => "2017-11-06T19:14:45.993Z",
+      "top_source_largest_matched_word_count" => 193,
+      "top_matches" => [
+        {
+          "percentage" => 100.0,
+          "submission_id" => "883fbb3a-2825-4a2a-8d24-d52e40673772",
+          "source_type" => "SUBMITTED_WORK",
+          "matched_word_count_total" => 598,
+          "submitted_date" => "2021-05-05",
+          "institution_name" => "Tii Auto TCA Platinum Test Tenant",
+          "name" => "Tii Auto TCA Platinum Test Tenant on 2021-05-05"
+        }
+      ],
+      "metadata" => {
+        "custom" => "{\"Type\":\"Final Paper\"}"
+      }
+    )
 
-  post_json '/api/tii_hook', data
+    # puts data.to_json
 
-  assert_equal 201, last_response.status, last_response_body
-  assert_equal :complete_low_similarity, subm.reload.status_sym
+    digest = OpenSSL::Digest.new('sha256')
+    hmac = OpenSSL::HMAC.hexdigest(digest, ENV.fetch('TCA_API_KEY', nil), data.to_json)
 
-  task.unit.destroy!
-end
+    # Add signature details
+    header "X-Turnitin-Signature", hmac
+    header "X-Turnitin-EventType", "SIMILARITY_COMPLETE"
 
+    post_json '/api/tii_hook', data
+
+    assert_equal 201, last_response.status, last_response_body
+    assert_equal :complete_low_similarity, subm.reload.status_sym
+
+    task.unit.destroy!
+  end
+
+  # Test the similarity webhook
+  def test_similarity_webhook
+    task = FactoryBot.create(:task)
+    user = task.project.user
+
+    task.task_definition.upload_requirements = [
+      {
+        "key" => 'file0',
+        "name" => 'Document 1',
+        "type" => 'document',
+        "tii_check" => true,
+        "tii_pct" => 35
+      }
+    ]
+
+    subm = TiiSubmission.create!(
+      submission_id: "e884f478-9757-41c7-80da-37b94ebb2838",
+      status: 'similarity_report_requested',
+      task: task,
+      filename: 'test.doc',
+      idx: 0,
+      submitted_at: Time.zone.now,
+      submitted_by: task.project.user
+    )
+
+    # destroy will trigger delete of submission
+    delete_request = stub_request(:delete, /https:\/\/#{ENV['TCA_HOST']}\/api\/v1\/submissions\/e884f478-9757-41c7-80da-37b94ebb2838/).
+    with(tii_headers).
+    to_return(status: 200, body: "", headers: {})
+
+    data = TCAClient::SimilarityCompleteWebhookRequest.new(
+      "submission_id" => "e884f478-9757-41c7-80da-37b94ebb2838",
+      "overall_match_percentage" => 15,
+      "internet_match_percentage" => 12,
+      "publication_match_percentage" => 10,
+      "submitted_works_match_percentage" => 0,
+      "status" => "COMPLETE",
+      "time_requested" => "2017-11-06T19:14:31.828Z",
+      "time_generated" => "2017-11-06T19:14:45.993Z",
+      "top_source_largest_matched_word_count" => 193,
+      "top_matches" => [
+        {
+          "percentage" => 100.0,
+          "submission_id" => "883fbb3a-2825-4a2a-8d24-d52e40673772",
+          "source_type" => "SUBMITTED_WORK",
+          "matched_word_count_total" => 598,
+          "submitted_date" => "2021-05-05",
+          "institution_name" => "Tii Auto TCA Platinum Test Tenant",
+          "name" => "Tii Auto TCA Platinum Test Tenant on 2021-05-05"
+        }
+      ],
+      "metadata" => {
+        "custom" => "{\"Type\":\"Final Paper\"}"
+      }
+    )
+
+    # puts data.to_json
+
+    digest = OpenSSL::Digest.new('sha256')
+    hmac = OpenSSL::HMAC.hexdigest(digest, ENV.fetch('TCA_API_KEY', nil), data.to_json)
+
+    # Add signature details
+    header "X-Turnitin-Signature", hmac
+    header "X-Turnitin-EventType", "SIMILARITY_COMPLETE"
+
+    post_json '/api/tii_hook', data
+
+    assert_equal 201, last_response.status, last_response_body
+    assert_equal :complete_low_similarity, subm.reload.status_sym
+
+    task.unit.destroy!
+  end
+
+  def test_pdf_status_webhook
+    task = FactoryBot.create(:task)
+    user = task.project.user
+
+    task.task_definition.upload_requirements = [
+      {
+        "key" => 'file0',
+        "name" => 'Document 1',
+        "type" => 'document',
+        "tii_check" => true,
+        "tii_pct" => 35
+      }
+    ]
+
+    subm = TiiSubmission.create!(
+      submission_id: "e884f478-9757-41c7-80da-37b94ebb2838",
+      similarity_pdf_id: "123312",
+      status: 'similarity_report_requested',
+      task: task,
+      filename: 'test.doc',
+      idx: 0,
+      submitted_at: Time.zone.now,
+      submitted_by: task.project.user
+    )
+
+    # destroy will trigger delete of submission
+    delete_request = stub_request(:delete, /https:\/\/#{ENV['TCA_HOST']}\/api\/v1\/submissions\/e884f478-9757-41c7-80da-37b94ebb2838/).
+    with(tii_headers).
+    to_return(status: 200, body: "", headers: {})
+
+    data = TCAClient::PDFStatusWebhookRequest.new(
+      "status" => "SUCCESS",
+      "id" => "e884f478-9757-41c7-80da-37b94ebb2838",
+      "submission_id" => "123312",
+      "metadata" => {
+        "custom" => "{\"Type\":\"Final Paper\"}"
+      }
+    )
+
+    download_pdf_request = stub_request(:get, "https://#{ENV['TCA_HOST']}/api/v1/submissions/e884f478-9757-41c7-80da-37b94ebb2838/similarity/pdf/123312").
+      with(tii_headers).
+      to_return(status: 200, body: File.read(test_file_path('submissions/1.2P.pdf')), headers: {})
+
+    # puts data.to_json
+
+    digest = OpenSSL::Digest.new('sha256')
+    hmac = OpenSSL::HMAC.hexdigest(digest, ENV.fetch('TCA_API_KEY', nil), data.to_json)
+
+    # Add signature details
+    header "X-Turnitin-Signature", hmac
+    header "X-Turnitin-EventType", "PDF_STATUS"
+
+    post_json '/api/tii_hook', data
+
+    assert_equal 201, last_response.status, last_response_body
+    assert_equal :similarity_pdf_downloaded, subm.reload.status_sym
+
+    assert_requested download_pdf_request, times: 1
+    assert File.exist?(subm.similarity_pdf_path)
+
+    task.unit.destroy!
+    refute File.exist?(subm.similarity_pdf_path)
+  end
 
 end
