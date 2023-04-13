@@ -14,7 +14,7 @@ class TurnItIn
   cattr_reader :x_turnitin_integration_name, :x_turnitin_integration_version
 
   def self.load_config(config)
-    config.tii_enabled = ENV['TII_ENABLED'].present? && ENV['TII_ENABLED'].to_s.downcase != "false" && ENV['TII_ENABLED'].to_i != 0 ? true : false
+    config.tii_enabled = ENV['TII_ENABLED'].present? && ENV['TII_ENABLED'].to_s.downcase != "false" && ENV['TII_ENABLED'].to_i != 0
 
     if config.tii_enabled
       # Turn-it-in TII configuration
@@ -23,10 +23,10 @@ class TurnItIn
       # Setup authorization
       TCAClient.configure do |tii_config|
         # Configure API key authorization: api_key
-        tii_config.api_key['api_key'] = ENV['TCA_API_KEY']
+        tii_config.api_key['api_key'] = ENV.fetch('TCA_API_KEY', nil)
         # Uncomment the following line to set a prefix for the API key, e.g. 'Bearer' (defaults to nil)
         tii_config.api_key_prefix['api_key'] = 'Bearer'
-        tii_config.host = ENV['TCA_HOST']
+        tii_config.host = ENV.fetch('TCA_HOST', nil)
         tii_config.base_path = 'api/v1'
         tii_config.server_index = nil
         require_relative '../../config/environments/doubtfire_logger'
@@ -233,12 +233,12 @@ class TurnItIn
     data = TCAClient::WebhookWithSecret.new(
       signing_secret: ENV.fetch('TCA_SIGNING_KEY', nil),
       url: TurnItIn.webhook_url,
-      event_types: [
-        'SIMILARITY_COMPLETE',
-        'SUBMISSION_COMPLETE',
-        'SIMILARITY_UPDATED',
-        'PDF_STATUS',
-        'GROUP_ATTACHMENT_COMPLETE'
+      event_types: %w[
+        SIMILARITY_COMPLETE
+        SUBMISSION_COMPLETE
+        SIMILARITY_UPDATED
+        PDF_STATUS
+        GROUP_ATTACHMENT_COMPLETE
       ]
     ) # WebhookWithSecret |
 
