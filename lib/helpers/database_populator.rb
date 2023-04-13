@@ -508,8 +508,6 @@ class DatabasePopulator
   # Generates tasks for the given unit
   #
   def generate_tasks_for_unit(unit, unit_details)
-
-
     if File.exist? Rails.root.join('test_files', "#{unit.code}-Tasks.csv")
       echo "----> Importing tasks from CSV"
       unit.import_tasks_from_csv File.open(Rails.root.join('test_files', "#{unit.code}-Tasks.csv"))

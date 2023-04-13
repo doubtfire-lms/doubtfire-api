@@ -141,7 +141,6 @@ class TaskDefinitionsApi < Grape::API
     task_params[:upload_requirements] = JSON.parse(params[:task_def][:upload_requirements]) unless params[:task_def][:plagiarism_checks].nil?
     task_params[:plagiarism_checks] = JSON.parse(params[:task_def][:plagiarism_checks]) unless params[:task_def][:plagiarism_checks].nil?
 
-
     # Ensure changes to a TD defined as a "draft task definition" are validated
     if unit.draft_task_definition_id == params[:id]
       if params[:task_def][:upload_requirements]
