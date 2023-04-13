@@ -20,10 +20,10 @@ module Tii
       data = JSON.parse(env['api.request.input'])
       digest = OpenSSL::Digest.new('sha256')
 
-      # puts data
+      puts data
       hmac = OpenSSL::HMAC.hexdigest(digest, ENV.fetch('TCA_API_KEY', nil), data.to_json)
 
-      # puts hmac
+      puts hmac
       # puts headers['X-Turnitin-Signature']
 
       # if hmac != headers["X-Turnitin-Signature"]
@@ -38,8 +38,12 @@ module Tii
         instance = TiiSubmission.find_by(submission_id: subm.id)
 
         instance&.update_from_submission_status(subm)
-      when 'SIMILARITY_COMPLETE'
-      when 'SIMILARITY_UPDATED'
+      when 'SIMILARITY_COMPLETE', 'SIMILARITY_UPDATED'
+        siml = TCAClient::SimilarityCompleteWebhookRequest.new(data)
+
+        instance = TiiSubmission.find_by(submission_id: siml.submission_id)
+
+        instance&.update_from_similarity_status(siml)
       when 'PDF_STATUS'
       when 'GROUP_ATTACHMENT_COMPLETE'
 
