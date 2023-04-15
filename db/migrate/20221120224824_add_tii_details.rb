@@ -31,5 +31,24 @@ class AddTiiDetails < ActiveRecord::Migration[7.0]
 
       t.timestamps  null: false
     end
+
+    create_table :tii_group_attachments do |t|
+      t.references  :task_definition, null: false
+
+      t.string      :filename, null: false
+
+      t.string      :group_attachment_id
+      t.string      :file_sha1_digest
+
+      t.integer     :retries, default: 0, null: false
+      t.integer     :status, default: 0, null: false
+
+      t.datetime    :next_process_update_at
+
+      t.integer     :error_code
+      t.string      :custom_error_message
+
+      t.timestamps  null: false
+    end
   end
 end

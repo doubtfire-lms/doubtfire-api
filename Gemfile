@@ -94,7 +94,7 @@ gem 'rest-client'
 gem 'net-smtp', require: false
 
 # Turn it in
-gem 'tca_client', '1.0.1'
+gem 'tca_client', '1.0.4'
 
 # Async jobs
 gem 'sidekiq'

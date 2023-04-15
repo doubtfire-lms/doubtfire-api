@@ -8,6 +8,8 @@ class TiiCheckProgressJob
 
   def perform
     check_awaiting_user_eula_accept
+    progress_submissions
+    progress_attachments
   end
 
   # Check users awaiting eula accept and process their eula acceptance
@@ -19,5 +21,21 @@ class TiiCheckProgressJob
     users_waiting.each do |user|
       TurnItIn.accept_eula(user)
     end
+  end
+
+  def progress_submissions
+    # Get submissions that have been submitted but not yet processed
+    submissions = TiiSubmission.where(error_code: nil).where('next_process_update_at < :date', date: Time.zone.now)
+
+    # Continue processing each submission
+    submissions.each(&:continue_process)
+  end
+
+  def progress_attachments
+    # Get attachments that have been submitted but not yet processed
+    attachments = TiiAttachment.where(error_code: nil).where('next_process_update_at < :date', date: Time.zone.now)
+
+    # Continue processing each attachment
+    attachments.each(&:continue_process)
   end
 end

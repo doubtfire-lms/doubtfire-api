@@ -22,6 +22,8 @@ class TaskDefinition < ApplicationRecord
   has_many :learning_outcome_task_links, dependent: :destroy # links to learning outcomes
   has_many :learning_outcomes, -> { where('learning_outcome_task_links.task_id is NULL') }, through: :learning_outcome_task_links # only link staff relations
 
+  has_many :tii_group_attachments, dependent: :destroy
+
   serialize :upload_requirements, JSON
   serialize :plagiarism_checks, JSON
 
@@ -528,6 +530,21 @@ class TaskDefinition < ApplicationRecord
     end
 
     tasks_with_files
+  end
+
+  # Read a file from the task definition resources.
+  #
+  # @param filename [String] The name of the file to read from the zipfile.
+  # @return [String] The contents of the file, or nil if the file does not exist.
+  def read_file_from_resources(filename)
+    return nil unless has_task_resources?
+
+    Zip::File.open(task_resources) do |zip_file|
+      entry = zip_file.glob(filename).first
+      return entry.get_input_stream.read if entry
+    end
+
+    nil
   end
 
   private
