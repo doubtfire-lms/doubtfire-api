@@ -45,7 +45,7 @@ class FeedbackTest < ActiveSupport::TestCase
 
       get "/api/units/#{unit.id}/tasks/inbox"
 
-      assert_equal 200, last_response.status
+      assert_equal 200, last_response.status, last_response_body
       assert_equal expected_count, last_response_body.count, last_response_body
 
       # check each is the same
@@ -58,8 +58,6 @@ class FeedbackTest < ActiveSupport::TestCase
 
       assert_equal 200, last_response.status
       assert_equal unit.task_definitions.first.tasks.where("task_status_id > 1").count, last_response_body.count, last_response_body
-
-      unit.destroy!
     end
     unit.destroy
   end
