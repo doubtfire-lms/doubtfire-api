@@ -472,9 +472,37 @@ class TaskDefinitionsApi < Grape::API
     result = unit.student_tasks
                  .joins(:project)
                  .joins(:task_status)
+                 .joins("LEFT JOIN task_comments ON task_comments.task_id = tasks.id AND (task_comments.type IS NULL OR task_comments.type <> 'TaskStatusComment')")
                  .joins("LEFT OUTER JOIN (#{subquery}) as sq ON sq.project_id = projects.id")
-                 .select('sq.tutorial_stream_id as tutorial_stream_id', 'sq.tutorial_id as tutorial_id', 'project_id', 'tasks.id as id', 'task_definition_id', 'task_statuses.id as status_id', 'completion_date', 'times_assessed', 'submission_date', 'grade')
+                 .select(
+                   'sq.tutorial_stream_id as tutorial_stream_id',
+                   'sq.tutorial_id as tutorial_id',
+                   'project_id',
+                   'tasks.id as id',
+                   'task_definition_id',
+                   'task_statuses.id as status_id',
+                   'completion_date',
+                   'times_assessed',
+                   'submission_date',
+                   'grade',
+                   'quality_pts',
+                   "SUM(case when task_comments.date_extension_assessed IS NULL AND task_comments.type = 'ExtensionComment' AND NOT task_comments.id IS NULL THEN 1 ELSE 0 END) > 0 as has_extensions"
+                 )
                  .where('task_definition_id = :id', id: params[:task_def_id])
+                 .group(
+                   'sq.tutorial_id',
+                   'sq.tutorial_stream_id',
+                   'task_statuses.id',
+                   'project_id',
+                   'tasks.id',
+                   'task_definition_id',
+                   'status_id',
+                   'completion_date',
+                   'times_assessed',
+                   'submission_date',
+                   'grade',
+                   'quality_pts'
+                 )
                  .map do |t|
       {
         project_id: t.project_id,
@@ -487,7 +515,9 @@ class TaskDefinitionsApi < Grape::API
         submission_date: t.submission_date,
         times_assessed: t.times_assessed,
         similar_to_count: t.similar_to_count,
-        grade: t.grade
+        grade: t.grade,
+        quality_pts: t.quality_pts,
+        has_extensions: t.has_extensions
       }
     end
 

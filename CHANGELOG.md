@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [7.0.9](https://github.com/macite/doubtfire-deploy/compare/v7.0.8...v7.0.9) (2023-04-04)
+
+
+### Features
+
+* ensure campus changes can be synced ([5f02f5b](https://github.com/macite/doubtfire-deploy/commit/5f02f5bc36c97e61d68d5e67bed27822df290d8e))
+
+
+### Bug Fixes
+
+* ensure markdown works with invalid latex ([58965dd](https://github.com/macite/doubtfire-deploy/commit/58965dd799d1a073ddb59c76d1a9af2edfe871db))
+
+### [7.0.8](https://github.com/macite/doubtfire-deploy/compare/v7.0.7...v7.0.8) (2023-03-23)
+
+
+### Features
+
+* skip newpax on pdf generation fail retry ([d463b0d](https://github.com/macite/doubtfire-deploy/commit/d463b0dcb672be953f7072abd796d9c723071bdb))
+* support documents of different size ([d4e1c59](https://github.com/macite/doubtfire-deploy/commit/d4e1c59ef443514eed7697a101dcedba24d20b4b))
+
 ### [7.0.7](https://github.com/macite/doubtfire-deploy/compare/v7.0.6...v7.0.7) (2023-03-22)
 
 

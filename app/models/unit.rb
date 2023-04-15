@@ -565,6 +565,7 @@ class Unit < ApplicationRecord
       #   missing_headers_lambda - lambda to check if row is missing key data
       #   fetch_row_data_lambda - lambda to convert row from csv to required import data
       #   replace_existing_tutorial - boolean to indicate if tutorials in csv override ones in doubtfire
+      #   replace_existing_campus - boolean to indicate if campus in csv override ones in doubtfire
       import_settings = {
         missing_headers_lambda: ->(row) {
           missing_headers(row, %w(unit_code username student_id first_name last_name email campus))
@@ -590,7 +591,8 @@ class Unit < ApplicationRecord
             campus: row['campus']
           }
         },
-        replace_existing_tutorial: true
+        replace_existing_tutorial: true,
+        replace_existing_campus: true
       }
     end
 
@@ -631,10 +633,17 @@ class Unit < ApplicationRecord
   #     -:last_name
   #     -:nickname
   #     -:email
-  #     -:tutorial_code
+  #     -:tutorial_codes
   #     -:enrolled (boolean)
+  #     -:campus
   # This will ensure that there is only one listing per student in the data that
   # is then used to update the student enrolments.
+  #
+  # Settings include:
+  #   missing_headers_lambda - lambda to check if row is missing key data
+  #   fetch_row_data_lambda - lambda to convert row from csv to required import data
+  #   replace_existing_tutorial - boolean to indicate if tutorials in csv override ones in doubtfire
+  #   replace_existing_campus - boolean to indicate if campus in csv override ones in doubtfire
   def sync_enrolment_with(enrolment_data, import_settings, result)
     # Get lists for reporting results
     success = result[:success]
@@ -701,6 +710,7 @@ class Unit < ApplicationRecord
   # Import settings is:
   # - A hash
   # - :replace_existing_tutorial boolean
+  # - :replace_existing_campus boolean
   #
   # Returns hash with :success, :ignored, :errors
   def update_student_enrolments(changes, import_settings, result)
@@ -806,10 +816,11 @@ class Unit < ApplicationRecord
             unless user_project.enrolled
               user_project.enrolled = true
               user_project.save
-              success_message << 'Changed enrolment.'
+              success_message << 'Re-enrolled student.'
             end
-            # update campus if not provided and available
-            if user_project.campus_id.nil? && campus.present?
+
+            # update campus if available, and either not provided and available or should be replaced
+            if campus.present? && (user_project.campus_id.nil? || (import_settings[:replace_existing_campus] && user_project.campus_id != campus.id))
               user_project.campus_id = campus.id
               user_project.save
               success_message << 'Campus updated.'
