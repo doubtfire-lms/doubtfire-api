@@ -345,6 +345,21 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_22_095242) do
     t.index ["period", "year"], name: "index_teaching_periods_on_period_and_year", unique: true
   end
 
+  create_table "tii_group_attachments", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "task_definition_id", null: false
+    t.string "filename", null: false
+    t.string "group_attachment_id"
+    t.string "file_sha1_digest"
+    t.integer "retries", default: 0, null: false
+    t.integer "status", default: 0, null: false
+    t.datetime "next_process_update_at"
+    t.integer "error_code"
+    t.string "custom_error_message"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["task_definition_id"], name: "index_tii_group_attachments_on_task_definition_id"
+  end
+
   create_table "tii_submissions", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.bigint "task_id", null: false
     t.bigint "submitted_by_user_id", null: false

@@ -51,7 +51,11 @@ module Tii
 
         instance&.update_from_pdf_report_status(req.status)
       when 'GROUP_ATTACHMENT_COMPLETE'
+        req = TCAClient::GroupAttachmentResponse.new(data)
 
+        instance = TiiGroupAttachment.find_by(group_attachment_id: req.id)
+
+        instance&.update_from_attachment_status(req)
       else
         logger.error("TII: unknown event type #{headers['X-Turnitin-EventType']}")
       end

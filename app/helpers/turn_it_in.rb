@@ -281,7 +281,7 @@ class TurnItIn
     TCAClient::Group.new(
       id: task_def.tii_group_id,
       name: task_def.detailed_name,
-      type: 'FOLDER'
+      type: 'ASSIGNMENT'
     )
   end
 
@@ -342,5 +342,26 @@ class TurnItIn
     )
     result.continue_process
     result
+  end
+
+  # Send all doc and docx files from the task resources to turn it in
+  # as group attachments.
+  #
+  # @param task_def [TaskDefinition] the task definition to send the group attachments for
+  def self.send_group_attachments_to_tii(task_def)
+    return unless task_def.tii_group_id.present?
+    return unless task_def.has_task_resources?
+
+    # loop through files in the task resources zip file
+    Zip::File.open(task_def.task_resources) do |zip_file|
+      zip_file.each do |entry|
+        next unless entry.file?
+        next unless entry.name.end_with?('.doc', '.docx')
+        next if entry.name.include?('__MACOSX')
+        next if entry.size < 50
+
+        TiiGroupAttachment.create_from_task_definition(task_def, entry.name)
+      end
+    end
   end
 end

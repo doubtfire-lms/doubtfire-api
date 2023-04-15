@@ -285,4 +285,49 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     refute File.exist?(subm.similarity_pdf_path)
   end
 
+  # Test the group_attachment webhook
+  def test_group_attachment_webhook
+    td = FactoryBot.create(:task_definition)
+    user = td.unit.main_convenor_user
+
+    TurnItIn.create_or_get_group(td)
+
+    grp_attachment = TiiGroupAttachment.create(
+      task_definition: td,
+      filename: 'TestWordDoc.docx',
+      status: :created,
+      file_sha1_digest: 'test'
+    )
+
+    grp_attachment.update(group_attachment_id: "16c45fbe-25f5-458b-9a4c-c3deeaff8af4")
+
+    data = TCAClient::GroupAttachmentResponse.new(
+        "id": grp_attachment.group_attachment_id,
+        "title": "large2",
+        "status": "COMPLETE",
+        "template": true
+    )
+
+    # puts data.to_json
+
+    digest = OpenSSL::Digest.new('sha256')
+    hmac = OpenSSL::HMAC.hexdigest(digest, ENV.fetch('TCA_SIGNING_KEY', nil), data.to_json)
+
+    # Add signature details
+    header "X-Turnitin-Signature", hmac
+    header "X-Turnitin-EventType", "GROUP_ATTACHMENT_COMPLETE"
+
+    post_json '/api/tii_hook', data
+
+    assert_equal 201, last_response.status, last_response_body
+    assert_equal :complete, grp_attachment.reload.status_sym
+
+    delete_stub = stub_request(:delete, "https://localhost/api/v1/groups/#{td.tii_group_id}/attachments/#{grp_attachment.group_attachment_id}").
+    with(tii_headers).
+    to_return(status: 200, body: "", headers: {})
+    td.unit.destroy!
+
+    assert_requested delete_stub, times: 1
+  end
+
 end
