@@ -104,6 +104,7 @@ class Unit < ApplicationRecord
   end
 
   after_update :propogate_date_changes_to_tasks, if: :saved_change_to_start_date?
+  after_update :check_and_update_tii_attachments, if: :saved_change_to_start_date?
 
   # Model associations.
   # When a Unit is destroyed, any TaskDefinitions, Tutorials, and ProjectConvenor instances will also be destroyed.
@@ -1480,7 +1481,7 @@ class Unit < ApplicationRecord
   end
 
   #
-  # Create a temp zip file with all student portfolios
+  # Create a temp zip file with all task resources
   #
   def get_task_resources_zip
     # Get a temp file path
@@ -1844,6 +1845,9 @@ class Unit < ApplicationRecord
             file.extract ("#{task_path}#{FileHelper.sanitized_filename(td.abbreviation)}#{File.extname(file.name)}") { true }
             result[:success] << { row: file.name, message: "Added as task #{td.abbreviation}" }
             found = true
+
+            # Update task resources in turn it in
+            TiiGroupAttachmentJob.perform_async(td.id) if File.extname(file.name) == '.zip' && td.has_tii_checks?
             break
           end
 
@@ -2749,5 +2753,13 @@ class Unit < ApplicationRecord
     task_definitions.each do |td|
       td.propogate_date_changes date_diff
     end
+  end
+
+  # If we added tii checks, then upload associated attachment files if needed
+  def check_and_update_tii_attachments
+    return unless has_tii_checks?
+    return if had_tii_checks_before_last_save?
+
+    TiiGroupAttachmentJob.perform_async(self.id)
   end
 end

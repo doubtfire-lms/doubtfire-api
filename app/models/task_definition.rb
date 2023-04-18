@@ -92,7 +92,8 @@ class TaskDefinition < ApplicationRecord
     end
 
     if has_task_resources?
-      FileUtils.cp(task_resources, new_td.task_resources)
+      # Copy the task resources, and trigger tii integration if needed
+      new_td.add_task_resources(task_resources, true)
     end
 
     new_td.save!
@@ -249,6 +250,21 @@ class TaskDefinition < ApplicationRecord
     return 35 unless use_tii?(idx) && upload_requirements[idx].key?('tii_pct')
 
     upload_requirements[idx]['tii_pct'].to_i
+  end
+
+  # Does the task definition have any Turnitin checks?
+  #
+  # @return [Boolean] true if there are any Turnitin checks
+  def has_tii_checks?
+    Doubtfire::Application.config.tii_enabled &&
+      !upload_requirements.empty? &&
+      ((0..upload_requirements.length - 1).map{|i| use_tii?(i)}.inject(:|) || false)
+  end
+
+  def had_tii_checks_before_last_save?
+    Doubtfire::Application.config.tii_enabled &&
+      !upload_requirements_before_last_save.empty? &&
+      ((0..upload_requirements_before_last_save.length - 1).map{|i| use_tii?(i)}.inject(:|) || false)
   end
 
   # Return the type for the upload at the given index
@@ -476,13 +492,23 @@ class TaskDefinition < ApplicationRecord
     end
   end
 
-  def add_task_resources(file)
-    FileUtils.mv file, task_resources
+  # Move task resources into place
+  def add_task_resources(file, copy = false)
+    if copy
+      FileUtils.cp file, task_resources
+    else
+      FileUtils.mv file, task_resources
+    end
+
+    # If TII is enabled, then we need to great group attachments
+    TiiGroupAttachmentJob.perform_async(self.id) if has_tii_checks?
   end
 
   def remove_task_resources()
     if has_task_resources?
       FileUtils.rm task_resources
+
+      group_attachments.destroy_all if has_tii_checks?
     end
   end
 

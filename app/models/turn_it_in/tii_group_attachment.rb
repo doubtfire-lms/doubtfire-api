@@ -35,20 +35,29 @@ class TiiGroupAttachment < ApplicationRecord
     status.to_sym
   end
 
-  def self.create_from_task_definition(task_definition, filename)
+  def self.find_or_create_from_task_definition(task_definition, filename)
     contents = task_definition.read_file_from_resources(filename)
     return nil if contents.nil?
 
     digest = Digest::SHA1.hexdigest(contents)
 
-    result = TiiGroupAttachment.create(
+    result = TiiGroupAttachment.where(
       task_definition: task_definition,
-      filename: filename,
-      status: :created,
-      file_sha1_digest: digest
-    )
+      filename: filename
+    ).first
 
-    result.fetch_tii_group_attachment_id
+    unless result.present? && result.file_sha1_digest == digest
+      # doesn't exist, or was changed, so create a new attachment
+      result = TiiGroupAttachment.create(
+        task_definition: task_definition,
+        filename: filename,
+        status: :created,
+        file_sha1_digest: digest
+      )
+
+      result.fetch_tii_group_attachment_id
+    end
+
     result
   end
 
