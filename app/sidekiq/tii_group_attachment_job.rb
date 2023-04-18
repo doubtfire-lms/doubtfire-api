@@ -8,6 +8,6 @@ class TiiGroupAttachmentJob
   # Upload new group attachment for provided templates for a given task definition
   def perform(task_def_id)
     td = TaskDefinition.find(task_def_id)
-    TurnItIn.send_group_attachments_to_tii(td)
+    TurnItIn.send_group_attachments_to_tii(td) if td.has_tii_checks?
   end
 end

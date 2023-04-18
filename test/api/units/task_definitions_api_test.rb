@@ -141,7 +141,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     test_task_definition_id = Unit.first.task_definitions.first.id
 
     data_to_post = {
-      file: upload_file('test_files/2015-08-06-COS10001-acain.zip', 'application/zip')
+      file: upload_file('test_files/TestWordDoc.docx.zip', 'application/zip')
     }
 
     # Add auth_token and username to header
@@ -149,9 +149,10 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
 
     post "/api/units/#{test_unit_id}/task_definitions/#{test_task_definition_id}/task_resources", data_to_post
 
-    puts last_response_body if last_response.status != 201
+    assert_equal 201, last_response.status, last_response_body
 
-    assert_equal 201, last_response.status
+    assert_equal 1, TiiGroupAttachmentJob.jobs.count
+    TiiGroupAttachmentJob.drain
   end
 
   def test_submission_creates_folders

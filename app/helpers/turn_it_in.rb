@@ -360,7 +360,7 @@ class TurnItIn
         next if entry.name.include?('__MACOSX')
         next if entry.size < 50
 
-        TiiGroupAttachment.create_from_task_definition(task_def, entry.name)
+        TiiGroupAttachment.find_or_create_from_task_definition(task_def, entry.name)
       end
     end
   end
