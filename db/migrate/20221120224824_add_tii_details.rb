@@ -3,8 +3,6 @@ class AddTiiDetails < ActiveRecord::Migration[7.0]
     add_column :users, :tii_eula_version, :string
     add_column :users, :tii_eula_date, :datetime
     add_column :users, :tii_eula_version_confirmed, :boolean, default: false, null: false
-    add_column :users, :tii_eula_retry, :boolean, default: true, null: false
-    add_column :users, :last_eula_retry, :datetime
     add_column :units, :tii_group_context_id, :string
     add_column :task_definitions, :tii_group_id, :string
 
@@ -20,14 +18,8 @@ class AddTiiDetails < ActiveRecord::Migration[7.0]
 
       t.datetime    :submitted_at
       t.datetime    :similarity_request_at
-      t.datetime    :next_process_update_at
 
-
-      t.integer     :retries, default: 0, null: false
       t.integer     :status, default: 0, null: false
-
-      t.integer     :error_code
-      t.string      :custom_error_message
 
       t.timestamps  null: false
     end
@@ -40,15 +32,27 @@ class AddTiiDetails < ActiveRecord::Migration[7.0]
       t.string      :group_attachment_id
       t.string      :file_sha1_digest
 
-      t.integer     :retries, default: 0, null: false
       t.integer     :status, default: 0, null: false
+
+      t.timestamps  null: false
+    end
+
+    create_table :tii_actions do |t|
+      t.references  :entity, polymorphic: true
+
+      t.string      :type
+      t.boolean     :complete, default: false, null: false
+      t.integer     :retries, default: 0, null: false
 
       t.datetime    :next_process_update_at
 
       t.integer     :error_code
       t.string      :custom_error_message
 
-      t.timestamps  null: false
+      t.json        :log, default: []
+      t.json        :params, default: {}
+
+      t.timestamps
     end
   end
 end

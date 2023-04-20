@@ -33,7 +33,7 @@ class TiiCheckProgressJob
 
   def progress_attachments
     # Get attachments that have been submitted but not yet processed
-    attachments = TiiAttachment.where(error_code: nil).where('next_process_update_at < :date', date: Time.zone.now)
+    attachments = TiiGroupAttachment.where(error_code: nil).where('next_process_update_at < :date', date: Time.zone.now)
 
     # Continue processing each attachment
     attachments.each(&:continue_process)

@@ -160,6 +160,34 @@ class TiiModelTest < ActiveSupport::TestCase
     assert task_definition.use_tii?(3)
     refute task_definition.use_tii?(4)
 
+    # Make sure group is created by changes to upload requirements
+    assert_equal 1, TiiActionJob.jobs.size
+    assert TiiAction.where(entity: task_definition).exists?
+    assert_equal task_definition, TiiActionUpdateTiiGroup.last.entity
+
+    # Stub requests to create the group
+    grp_put_stub = stub_request(:put, %r[https://localhost/api/v1/groups.*]).
+    with(tii_headers).
+    to_return(status: 200, body: "", headers: {})
+
+    TiiActionJob.drain
+
+    # This should have put the group and created the group id
+    assert_requested grp_put_stub, times: 1
+    assert task_definition.reload.tii_group_id.present?
+    assert TiiActionUpdateTiiGroup.last.complete
+
+    # Lets add task resources + template
+    task_definition.add_task_resources('test_files/TestWordDoc.docx.zip', copy: true)
+
+    assert task_definition.has_task_resources?
+    assert_equal 1, TiiActionJob.jobs.size
+    assert_equal task_definition, TiiActionUploadTaskResources.last.entity
+
+    # Test upload of gorup attachments elsewhere.. so just clear them here
+    TiiActionJob.clear
+
+    # Now... lets upload a submission
     task = project.task_for_task_definition(task_definition)
 
     # Create a submission
@@ -208,8 +236,6 @@ class TiiModelTest < ActiveSupport::TestCase
     assert File.directory?(FileHelper.student_work_dir(:new, task, false))
 
     # Check accept submission job
-    AcceptSubmissionJob.clear
-
     response1 = TCAClient::SimpleSubmissionResponse.new id: '1222'
     response2 = TCAClient::SimpleSubmissionResponse.new id: '1223'
 
@@ -226,8 +252,8 @@ class TiiModelTest < ActiveSupport::TestCase
     file2_upload_req = stub_request(:put, "https://#{ENV['TCA_HOST']}/api/v1/submissions/1222/original").with {|request| request.body.starts_with?('%PDF-') }.
     to_return(status: 200, body: "", headers: {})
 
-    job = AcceptSubmissionJob.new
-    job.perform(task.id, user.id)
+    # Run the accept submission job - and check it all worked
+    AcceptSubmissionJob.drain
 
     assert_requested submission_request, times: 2
 
@@ -236,13 +262,22 @@ class TiiModelTest < ActiveSupport::TestCase
     refute File.directory?(FileHelper.student_work_dir(:new, task, false))
     assert File.exist?(task.zip_file_path_for_done_task)
 
+    # We will progress the 2 submissions...
+    subm = TiiSubmission.last
+    subm1 = TiiSubmission.second_to_last
+
+    submAct = TiiActionUploadSubmission.last
+    subm1Act = TiiActionUploadSubmission.second_to_last
+
+    # Run the upload to tii action
+    assert_equal 1, TiiActionJob.jobs.count
+    assert_equal subm, submAct.entity
+    assert_equal subm1, subm1Act.entity
+    TiiActionJob.drain
+
     # We sent the two documents, but not the code to turn it in
     assert_requested file1_upload_req, times: 1
     assert_requested file2_upload_req, times: 1
-
-    # We will progress the 2nd document
-    subm = TiiSubmission.last
-    subm1 = TiiSubmission.second_to_last
 
     assert_equal :uploaded, subm.status_sym
 

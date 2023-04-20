@@ -345,16 +345,30 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_22_095242) do
     t.index ["period", "year"], name: "index_teaching_periods_on_period_and_year", unique: true
   end
 
+  create_table "tii_actions", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.string "entity_type"
+    t.bigint "entity_id"
+    t.string "type"
+    t.boolean "complete", default: false, null: false
+    t.integer "retries", default: 0, null: false
+    t.datetime "next_process_update_at"
+    t.integer "error_code"
+    t.string "custom_error_message"
+    t.text "log", size: :long, default: "[]", collation: "utf8mb4_bin"
+    t.text "params", size: :long, default: "{}", collation: "utf8mb4_bin"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_type", "entity_id"], name: "index_tii_actions_on_entity"
+    t.check_constraint "json_valid(`log`)", name: "log"
+    t.check_constraint "json_valid(`params`)", name: "params"
+  end
+
   create_table "tii_group_attachments", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.bigint "task_definition_id", null: false
     t.string "filename", null: false
     t.string "group_attachment_id"
     t.string "file_sha1_digest"
-    t.integer "retries", default: 0, null: false
     t.integer "status", default: 0, null: false
-    t.datetime "next_process_update_at"
-    t.integer "error_code"
-    t.string "custom_error_message"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["task_definition_id"], name: "index_tii_group_attachments_on_task_definition_id"
@@ -369,11 +383,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_22_095242) do
     t.string "similarity_pdf_id"
     t.datetime "submitted_at"
     t.datetime "similarity_request_at"
-    t.datetime "next_process_update_at"
-    t.integer "retries", default: 0, null: false
     t.integer "status", default: 0, null: false
-    t.integer "error_code"
-    t.string "custom_error_message"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["submitted_by_user_id"], name: "index_tii_submissions_on_submitted_by_user_id"
@@ -495,8 +505,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_22_095242) do
     t.string "tii_eula_version"
     t.datetime "tii_eula_date"
     t.boolean "tii_eula_version_confirmed", default: false, null: false
-    t.boolean "tii_eula_retry", default: true, null: false
-    t.datetime "last_eula_retry"
     t.index ["login_id"], name: "index_users_on_login_id", unique: true
     t.index ["role_id"], name: "index_users_on_role_id"
   end
