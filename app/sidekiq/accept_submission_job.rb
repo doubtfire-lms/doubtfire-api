@@ -1,7 +1,7 @@
 class AcceptSubmissionJob
   include Sidekiq::Job
 
-  def perform(task_id, user_id)
+  def perform(task_id, user_id, accepted_tii_eula)
     task = Task.find(task_id)
     user = User.find(user_id)
 
@@ -10,7 +10,7 @@ class AcceptSubmissionJob
 
     # When converted, we can now send documents to turn it in for checking
     if TurnItIn.functional?
-      TurnItIn.send_documents_to_tii(task, user)
+      task.send_documents_to_tii(user, accepted_tii_eula: accepted_tii_eula)
     end
 
     # rescue to raise error message to avoid unnecessary retry

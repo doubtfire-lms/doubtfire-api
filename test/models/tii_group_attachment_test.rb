@@ -26,7 +26,7 @@ class TiiGroupAttachmentTest < ActiveSupport::TestCase
     assert td.has_task_resources?
 
     gaid = SecureRandom.uuid
-    req_copy = stub_request(:post, "https://localhost/api/v1/groups/#{td.tii_group_id}/attachments").
+    req_copy = stub_request(:post, "https://#{ENV['TCA_HOST']}/api/v1/groups/#{td.tii_group_id}/attachments").
     with(tii_headers).
     with(body: "{\"title\":\"TestWordDoc copy.docx\",\"template\":false}").
     to_return(
@@ -37,7 +37,7 @@ class TiiGroupAttachmentTest < ActiveSupport::TestCase
       headers: {}
     )
 
-    req_first = stub_request(:post, "https://localhost/api/v1/groups/#{td.tii_group_id}/attachments").
+    req_first = stub_request(:post, "https://#{ENV['TCA_HOST']}/api/v1/groups/#{td.tii_group_id}/attachments").
     with(tii_headers).
     with(body: "{\"title\":\"TestWordDoc.docx\",\"template\":false}").
     to_return(
@@ -76,7 +76,7 @@ class TiiGroupAttachmentTest < ActiveSupport::TestCase
     assert_equal 0, ga.retries
     assert_requested upload_stub, times: 1
 
-    get_status_stub = stub_request(:get, "https://localhost/api/v1/groups/#{td.tii_group_id}/attachments/#{ga.group_attachment_id}").
+    get_status_stub = stub_request(:get, "https://#{ENV['TCA_HOST']}/api/v1/groups/#{td.tii_group_id}/attachments/#{ga.group_attachment_id}").
       with(tii_headers).
       to_return(
         {

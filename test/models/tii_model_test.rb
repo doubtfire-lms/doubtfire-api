@@ -150,8 +150,22 @@ class TiiModelTest < ActiveSupport::TestCase
       }
     ]
 
+    # Stub requests to create the group
+    grp_put_stub = stub_request(:put, %r[https://#{ENV['TCA_HOST']}/api/v1/groups.*]).
+    with(tii_headers).
+    to_return(status: 200, body: "", headers: {})
+
+    # Saving task def will trigger TII group creation
     task_definition.save!
 
+    # This should have put the group and created the group id
+    assert_requested grp_put_stub, times: 1
+    assert task_definition.reload.tii_group_id.present?
+    assert TiiActionUpdateTiiGroup.last.complete
+    assert TiiAction.where(entity: task_definition).exists?
+    assert_equal task_definition, TiiActionUpdateTiiGroup.last.entity
+
+    # Test that the task def is setup correctly
     assert_equal 4, task_definition.number_of_documents
 
     assert task_definition.use_tii?(0)
@@ -160,32 +174,25 @@ class TiiModelTest < ActiveSupport::TestCase
     assert task_definition.use_tii?(3)
     refute task_definition.use_tii?(4)
 
-    # Make sure group is created by changes to upload requirements
-    assert_equal 1, TiiActionJob.jobs.size
-    assert TiiAction.where(entity: task_definition).exists?
-    assert_equal task_definition, TiiActionUpdateTiiGroup.last.entity
+    # Adding task resources will trigger creation and upload of the group attachments
+    post_grp_attachment_stub = stub_request(:post, "https://#{ENV['TCA_HOST']}/api/v1/groups/#{task_definition.tii_group_id}/attachments").
+      with(tii_headers).
+      with(body: "{\"title\":\"TestWordDoc.docx\",\"template\":false}").
+      to_return(status: 200, body: TCAClient::AddGroupAttachmentResponse.new(id: SecureRandom.uuid).to_json, headers: {})
 
-    # Stub requests to create the group
-    grp_put_stub = stub_request(:put, %r[https://localhost/api/v1/groups.*]).
-    with(tii_headers).
-    to_return(status: 200, body: "", headers: {})
-
-    TiiActionJob.drain
-
-    # This should have put the group and created the group id
-    assert_requested grp_put_stub, times: 1
-    assert task_definition.reload.tii_group_id.present?
-    assert TiiActionUpdateTiiGroup.last.complete
+    upload_stub = stub_request(:put, %r[https://#{ENV['TCA_HOST']}/api/v1/groups/#{task_definition.tii_group_id}/attachments/.*/original]).
+      with(tii_headers).
+      with(headers: {'Content-Type'=>'binary/octet-stream'}).
+      to_return(status: 200, body: '{ "message": "Successfully uploaded file for attachment ..." }', headers: {})
 
     # Lets add task resources + template
     task_definition.add_task_resources('test_files/TestWordDoc.docx.zip', copy: true)
 
     assert task_definition.has_task_resources?
-    assert_equal 1, TiiActionJob.jobs.size
-    assert_equal task_definition, TiiActionUploadTaskResources.last.entity
+    assert_equal TiiGroupAttachment.last, TiiActionUploadTaskResources.last.entity
 
-    # Test upload of gorup attachments elsewhere.. so just clear them here
-    TiiActionJob.clear
+    assert_requested post_grp_attachment_stub, times: 1
+    assert_requested upload_stub, times: 1
 
     # Now... lets upload a submission
     task = project.task_for_task_definition(task_definition)
@@ -228,7 +235,7 @@ class TiiModelTest < ActiveSupport::TestCase
         "tempfile" => File.new(test_file_path('submissions/1.2P.pdf'))
       },
 
-    ], user, nil, nil, 'ready_for_feedback', nil
+    ], user, nil, nil, 'ready_for_feedback', nil, accepted_tii_eula: true
 
     # Check that the submission is going to be progressed
     assert_equal 1, AcceptSubmissionJob.jobs.count
@@ -246,34 +253,33 @@ class TiiModelTest < ActiveSupport::TestCase
       {status: 200, body: response2.to_json, headers: {}},
     )
 
-    file1_upload_req = stub_request(:put, "https://#{ENV['TCA_HOST']}/api/v1/submissions/1223/original").with {|request| request.body.starts_with?('%PDF-') }.
-    to_return(status: 200, body: "", headers: {})
+    file1_upload_req = stub_request(:put, "https://#{ENV['TCA_HOST']}/api/v1/submissions/1223/original").
+      with {|request| request.body.starts_with?('%PDF-') }.
+      to_return(status: 200, body: "", headers: {})
 
-    file2_upload_req = stub_request(:put, "https://#{ENV['TCA_HOST']}/api/v1/submissions/1222/original").with {|request| request.body.starts_with?('%PDF-') }.
-    to_return(status: 200, body: "", headers: {})
+    file2_upload_req = stub_request(:put, "https://#{ENV['TCA_HOST']}/api/v1/submissions/1222/original").
+      with {|request| request.body.starts_with?('%PDF-') }.
+      to_return(status: 200, body: "", headers: {})
 
     # Run the accept submission job - and check it all worked
     AcceptSubmissionJob.drain
-
-    assert_requested submission_request, times: 2
 
     assert File.exist?(task.final_pdf_path)
 
     refute File.directory?(FileHelper.student_work_dir(:new, task, false))
     assert File.exist?(task.zip_file_path_for_done_task)
 
+    assert_requested submission_request, times: 2
+
     # We will progress the 2 submissions...
     subm = TiiSubmission.last
     subm1 = TiiSubmission.second_to_last
 
-    submAct = TiiActionUploadSubmission.last
-    subm1Act = TiiActionUploadSubmission.second_to_last
+    subm_act = TiiActionUploadSubmission.last
+    subm1_act = TiiActionUploadSubmission.second_to_last
 
-    # Run the upload to tii action
-    assert_equal 1, TiiActionJob.jobs.count
-    assert_equal subm, submAct.entity
-    assert_equal subm1, subm1Act.entity
-    TiiActionJob.drain
+    assert_equal subm, subm_act.entity
+    assert_equal subm1, subm1_act.entity
 
     # We sent the two documents, but not the code to turn it in
     assert_requested file1_upload_req, times: 1
@@ -296,14 +302,13 @@ class TiiModelTest < ActiveSupport::TestCase
       )
 
     # Now run for "still processing"
-    subm.continue_process
+    subm_act.perform
 
     assert_requested subm_status_req, times: 1
     assert_equal :uploaded, subm.reload.status_sym
-    assert_equal 1, subm.retries
+    assert_equal 1, subm_act.reload.retries
 
     # Now run for processing complete
-
     similarity_request = stub_request(:put, "https://#{ENV['TCA_HOST']}/api/v1/submissions/1223/similarity").
     with(tii_headers).
     with(
@@ -311,11 +316,11 @@ class TiiModelTest < ActiveSupport::TestCase
     ).
     to_return(status: 200, body: "", headers: {})
 
-    subm.continue_process
+    subm_act.perform
 
     assert_requested subm_status_req, times: 2
     assert_equal :similarity_report_requested, subm.reload.status_sym
-    assert_equal 0, subm.retries
+    assert_equal 0, subm_act.reload.retries
 
     # Now check the status of the similarity report
     # response = TCAClient::SimilarityMetadata.new(
@@ -329,7 +334,7 @@ class TiiModelTest < ActiveSupport::TestCase
       { status: 200, body: TCAClient::SimilarityMetadata.new(status: 'COMPLETE', overall_match_percentage: 50).to_hash.to_json, headers: {}}
     )
 
-    subm.continue_process
+    subm_act.perform
     assert_equal :similarity_report_requested, subm.reload.status_sym
 
     # Next call will request to download PDF as complete...
@@ -338,7 +343,7 @@ class TiiModelTest < ActiveSupport::TestCase
       with(body: "{\"locale\":\"en-US\"}").
       to_return(status: 200, body: TCAClient::RequestPdfResponse.new(id: '9876').to_hash.to_json, headers: {})
 
-    subm.continue_process
+    subm_act.perform
     assert_equal '9876', subm.reload.similarity_pdf_id
     assert_equal :similarity_pdf_requested, subm.reload.status_sym
     assert_requested similarity_pdf_request, times: 1
@@ -351,14 +356,14 @@ class TiiModelTest < ActiveSupport::TestCase
         {status: 200, body: TCAClient::PdfStatusResponse.new(status: 'PENDING').to_hash.to_json, headers: {}},
         {status: 200, body: TCAClient::PdfStatusResponse.new(status: 'SUCCESS').to_hash.to_json, headers: {}})
 
-    subm.continue_process
+    subm_act.perform
     assert_equal :similarity_pdf_requested, subm.reload.status_sym
 
     download_pdf_request = stub_request(:get, "https://#{ENV['TCA_HOST']}/api/v1/submissions/1223/similarity/pdf/9876").
       with(tii_headers).
-      to_return(status: 200, body: File.read(test_file_path('submissions/1.2P.pdf')), headers: {})
+      to_return(status: 200, body: File.read(test_file_path('NotAPdf.pdf')), headers: {})
 
-    subm.continue_process
+    subm_act.perform
     assert_equal :similarity_pdf_downloaded, subm.reload.status_sym
     assert_requested download_pdf_request, times: 1
     assert File.exist?(subm.similarity_pdf_path)
@@ -383,10 +388,10 @@ class TiiModelTest < ActiveSupport::TestCase
         { status: 200, body: TCAClient::SimilarityMetadata.new(status: 'COMPLETE', overall_match_percentage: 5).to_hash.to_json, headers: {}}
       )
 
-    subm1.continue_process
+    subm1_act.perform
     assert_equal :similarity_report_requested, subm1.reload.status_sym
 
-    subm1.continue_process
+    subm1_act.perform
     assert_equal :complete_low_similarity, subm1.reload.status_sym
 
     # Clean up

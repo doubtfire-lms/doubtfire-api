@@ -293,7 +293,7 @@ class TaskDefinitionsApi < Grape::API
     upload_reqs = task.upload_requirements
 
     # Copy files to be PDFed
-    task.accept_submission(current_user, scoop_files(params, upload_reqs), current_user, self, nil, 'ready_for_feedback', nil)
+    task.accept_submission(current_user, scoop_files(params, upload_reqs), current_user, self, nil, 'ready_for_feedback', nil, accepted_tii_eula: false)
 
     logger.info "********* - about to perform overseer submission"
     overseer_assessment = OverseerAssessment.create_for(task)

@@ -20,7 +20,11 @@ class TiiActionUpdateTiiGroup < TiiAction
       report_generation: 'IMMEDIATELY_AND_DUE_DATE'
     )
 
-    exec_tca_call "create or update group #{entity.tii_group_id} for task definition #{entity.id}", [] do
+    error_code = [
+      { code: 404, message: 'Assessment not found in turn it in' }
+    ]
+
+    exec_tca_call "create or update group #{entity.tii_group_id} for task definition #{entity.id}", error_code do
       TCAClient::GroupsApi.new.groups_group_id_put(
         TurnItIn.x_turnitin_integration_name,
         TurnItIn.x_turnitin_integration_version,
@@ -32,11 +36,8 @@ class TiiActionUpdateTiiGroup < TiiAction
       self.complete = entity.save
       # Save action
       save
+
+      entity.send_group_attachments_to_tii if params.key?("add_group_attachment") && params["add_group_attachment"]
     end
-  rescue TCAClient::ApiError => e
-    handle_error e, [
-      { code: 404, message: 'Assessment not found in turn it in' }
-    ]
-    nil
   end
 end

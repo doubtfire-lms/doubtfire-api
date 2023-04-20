@@ -125,6 +125,8 @@ class Task < ApplicationRecord
 
   validate :extensions_must_end_with_due_date, if: :has_requested_extension?
 
+  include TaskTiiModule
+
   def for_definition_with_quality?
     task_definition.has_stars?
   end
@@ -1197,7 +1199,7 @@ class Task < ApplicationRecord
   #
   # Checks to make sure that the files match what we expect
   #
-  def accept_submission(current_user, files, _student, ui, contributions, trigger, alignments)
+  def accept_submission(current_user, files, _student, ui, contributions, trigger, alignments, accepted_tii_eula: false)
     #
     # Ensure that each file in files has the following attributes:
     # id, name, filename, type, tempfile
@@ -1286,8 +1288,8 @@ class Task < ApplicationRecord
 
     logger.info "Submission accepted! Status for task #{id} is now #{trigger}"
 
-    # Trigger processing of new submission
-    AcceptSubmissionJob.perform_async(id, current_user.id)
+    # Trigger processing of new submission - async
+    AcceptSubmissionJob.perform_async(id, current_user.id, accepted_tii_eula)
   end
 
   # The name that should be used for the uploaded file (based on index of upload requirements)

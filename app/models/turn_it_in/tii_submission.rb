@@ -44,8 +44,6 @@ class TiiSubmission < ApplicationRecord
     similarity_pdf_requested: 6,
     similarity_pdf_available: 7,
     similarity_pdf_downloaded: 8,
-    to_delete: 9,
-    deleted: 10,
     complete_low_similarity: 11
   }
 
@@ -58,30 +56,17 @@ class TiiSubmission < ApplicationRecord
     File.join(path, FileHelper.sanitized_filename("#{id}-tii.pdf"))
   end
 
+  private
+
   # Delete the turn it in submission for a task
   #
   # @return [Boolean] true if the submission was deleted, false otherwise
   def delete_submission
-    self.status = :to_delete
-    save
-
-    TurnItIn.exec_tca_call "TiiSubmission #{id} - deleting submission" do
-      TCAClient::SubmissionApi.new.delete_submission(
-        TurnItIn.x_turnitin_integration_name,
-        TurnItIn.x_turnitin_integration_version,
-        submission_id
-      )
-
-      Doubtfire::Application.config.logger.info "Deleted tii submission #{id} for task #{task.id}"
-
-      self.status = :deleted
-      save_and_reset_retry
-    end
-  rescue TCAClient::ApiError => e
-    handle_error e, [
-      { code: 404, message: 'Submission not found in delete submission' },
-      { code: 409, message: 'Submission is in an error state' }
-    ]
-    false
+    TiiActionDeleteSubmission.create(
+      entity: nil,
+      params: {
+        submission_id: submission_id
+      }
+    ).perform
   end
 end

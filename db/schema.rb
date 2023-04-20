@@ -353,7 +353,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_22_095242) do
     t.integer "retries", default: 0, null: false
     t.datetime "next_process_update_at"
     t.integer "error_code"
-    t.string "custom_error_message"
+    t.text "custom_error_message"
     t.text "log", size: :long, default: "[]", collation: "utf8mb4_bin"
     t.text "params", size: :long, default: "{}", collation: "utf8mb4_bin"
     t.datetime "created_at", null: false

@@ -47,7 +47,7 @@ class AddTiiDetails < ActiveRecord::Migration[7.0]
       t.datetime    :next_process_update_at
 
       t.integer     :error_code
-      t.string      :custom_error_message
+      t.text        :custom_error_message
 
       t.json        :log, default: []
       t.json        :params, default: {}
