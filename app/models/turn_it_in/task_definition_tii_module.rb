@@ -1,3 +1,6 @@
+# freeze_string_literal: true
+
+# Provides Turnitin integration functionality for TaskDefinitions
 module TaskDefinitionTiiModule
   # Check if document and has tii check requested
   def use_tii?(idx, upload_requirements_data = upload_requirements)
@@ -15,17 +18,17 @@ module TaskDefinitionTiiModule
   # Does the task definition have any Turnitin checks?
   #
   # @return [Boolean] true if there are any Turnitin checks
-  def has_tii_checks?
+  def tii_checks?
     Doubtfire::Application.config.tii_enabled &&
       !upload_requirements.empty? &&
-      ((0..upload_requirements.length - 1).map{|i| use_tii?(i)}.inject(:|) || false)
+      ((0..upload_requirements.length - 1).map { |i| use_tii?(i) }.inject(:|) || false)
   end
 
   def had_tii_checks_before_last_save?
     Doubtfire::Application.config.tii_enabled &&
       upload_requirements_before_last_save.present? &&
       !upload_requirements_before_last_save.empty? &&
-      ((0..upload_requirements_before_last_save.length - 1).map{|i| use_tii?(i, upload_requirements_before_last_save)}.inject(:|) || false)
+      ((0..upload_requirements_before_last_save.length - 1).map { |i| use_tii?(i, upload_requirements_before_last_save) }.inject(:|) || false)
   end
 
   # Send all doc and docx files from the task resources to turn it in
@@ -67,7 +70,7 @@ module TaskDefinitionTiiModule
 
   # If we added tii checks, then upload associated attachment files if needed
   def check_and_update_tii_status
-    return unless has_tii_checks?
+    return unless tii_checks?
     return if had_tii_checks_before_last_save?
 
     # Make sure that we have a group context
@@ -75,16 +78,13 @@ module TaskDefinitionTiiModule
 
     if tii_group_id.present?
       # We already have the group - so just create the attachments
-      TiiGroupAttachmentJob.perform_async(self.id)
-      # TODO: REplave with TiiAction...
-      argh
+      send_group_attachments_to_tii
     else
       # Trigger the update - which creates action if needed
       TiiActionUpdateTiiGroup.create(
         entity: self,
         params: { add_group_attachment: true }
-      ).perform_async
+      ).perform
     end
   end
-
 end

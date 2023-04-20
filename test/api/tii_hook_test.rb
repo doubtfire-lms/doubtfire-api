@@ -322,7 +322,7 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     assert_equal 201, last_response.status, last_response_body
     assert_equal :complete, grp_attachment.reload.status_sym
 
-    delete_stub = stub_request(:delete, "https://localhost/api/v1/groups/#{td.tii_group_id}/attachments/#{grp_attachment.group_attachment_id}").
+    delete_stub = stub_request(:delete, "https://#{ENV['TCA_HOST']}/api/v1/groups/#{td.tii_group_id}/attachments/#{grp_attachment.group_attachment_id}").
     with(tii_headers).
     to_return(status: 200, body: "", headers: {})
     td.unit.destroy!

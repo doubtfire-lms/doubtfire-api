@@ -2,15 +2,17 @@
 
 # Keep track of the group attachments uploaded from task resources
 class TiiActionUploadTaskResources < TiiAction
+  delegate :status, :status_sym, :tii_group_id, :task_definition, :filename, to: :entity
+
   def run
-    unless entity.tii_group_id.present?
-      save_and_log_custom_error "Group id does not exist for task definition #{entity.task_definition.id} - cannot upload group attachments"
+    unless tii_group_id.present?
+      save_and_log_custom_error "Group id does not exist for task definition #{task_definition.id} - cannot upload group attachments"
       return
     end
 
     return if error? || [:deleted, :complete].include?(status)
 
-    case entity.status_sym
+    case status_sym
     when :created
       # get the id and upload, then request similarity report
       fetch_tii_group_attachment_id && upload_attachment_to_tii
@@ -38,11 +40,15 @@ class TiiActionUploadTaskResources < TiiAction
       template: false
     )
 
-    exec_tca_call "TiiGroupAttachment #{entity.id} - fetching id" do
+    error_code = [
+      { code: 404, message: 'Assessment not found in turn it in' }
+    ]
+
+    exec_tca_call "TiiGroupAttachment #{entity.id} - fetching id", error_code do
       resp = TCAClient::GroupsApi.new.add_group_attachment(
         TurnItIn.x_turnitin_integration_name,
         TurnItIn.x_turnitin_integration_version,
-        entity.tii_group_id,
+        tii_group_id,
         data
       )
 
@@ -50,35 +56,29 @@ class TiiActionUploadTaskResources < TiiAction
       entity.status = :has_id
       save_and_reset_retry
     end
-  rescue TCAClient::ApiError => e
-    handle_error e, [
-      { code: 404, message: 'Assessment not found in turn it in' }
-    ]
-    false
   end
 
   def upload_attachment_to_tii
-    exec_tca_call "TiiGroupAttachment #{entity.id} - uploading attachment" do
-      TCAClient::GroupsApi.new.upload_group_attachment(
-        TurnItIn.x_turnitin_integration_name,
-        TurnItIn.x_turnitin_integration_version,
-        entity.tii_group_id,
-        entity.group_attachment_id,
-        "Content-Disposition: inline; filename=\"#{filename}\"",
-        entity.task_definition.read_file_from_resources(filename)
-      )
-
-      entity.status = :uploaded
-      save_and_reset_retry
-    end
-  rescue TCAClient::ApiError => e
-    handle_error e, [
+    error_codes = [
       { code: 413, symbol: :invalid_submission_size_too_large },
       { code: 422, symbol: :invalid_submission_size_empty },
       { code: 409, symbol: :missing_submission },
       { code: 404, message: "Assessment not found in TurnItIn" }
     ]
-    false
+
+    exec_tca_call "TiiGroupAttachment #{entity.id} - uploading attachment", error_codes do
+      TCAClient::GroupsApi.new.upload_group_attachment(
+        TurnItIn.x_turnitin_integration_name,
+        TurnItIn.x_turnitin_integration_version,
+        tii_group_id,
+        entity.group_attachment_id,
+        "Content-Disposition: inline; filename=\"#{filename}\"",
+        task_definition.read_file_from_resources(filename)
+      )
+
+      entity.status = :uploaded
+      save_and_reset_retry
+    end
   end
 
   # Get the status of a group attachment
@@ -93,13 +93,11 @@ class TiiActionUploadTaskResources < TiiAction
         self.group_attachment_id
       )
     end
-  rescue TCAClient::ApiError => e
-    handle_error e
-    nil
   end
 
   def update_from_attachment_status(response)
     return if response.nil?
+
     case response.status
     when 'COMPLETE'
       self.status = :complete

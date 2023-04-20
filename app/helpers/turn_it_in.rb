@@ -270,47 +270,6 @@ class TurnItIn
     end
   end
 
-  # Send all documents to turn it in for checking
-  #
-  # @param task [Task] the task to send the documents for
-  def self.send_documents_to_tii(task, submitter)
-    task.number_of_uploaded_files.times do |idx|
-      if task.use_tii?(idx)
-        @instance.send_document_to_tii(task, idx, submitter)
-      end
-    end
-  end
-
-  # Create a turn it in submission for a document in the task.
-  #
-  # @param task [Task] the task to create the turn it in submission for.
-  #   The task must not already have a turn it in submission associated with it.
-  # @param idx [Integer] the index of the document to create the turn it in submission for
-  # @param submitter [User] the user who is making the submission to turn it in
-  # @return [Boolean] true if the submission was created, false otherwise
-  def send_document_to_tii(task, idx, submitter)
-    # Check to ensure it is a new upload
-    last_tii_submission_for_task = task.tii_submissions.where(idx: idx).last
-    unless last_tii_submission_for_task.nil? || task.file_uploaded_at > last_tii_submission_for_task.created_at
-      return nil
-    end
-
-    result = TiiSubmission.create(
-      task: task,
-      idx: idx,
-      filename: task.filename_for_upload(idx),
-      submitted_at: Time.zone.now,
-      status: :created,
-      submitted_by_user: submitter
-    )
-
-    TiiActionUploadSubmission.create(
-      entity: result
-    ).perform_async
-
-    result
-  end
-
   private
 
   def logger

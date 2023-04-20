@@ -44,9 +44,7 @@ class TiiGroupAttachment < ApplicationRecord
 
       TiiActionUploadTaskResources.create(
         entity: result
-      ).perform_async
-
-      # result.fetch_tii_group_attachment_id
+      ).perform
     end
 
     result
@@ -61,6 +59,6 @@ class TiiGroupAttachment < ApplicationRecord
         group_id: tii_group_id,
         group_attachment_id: group_attachment_id
       }
-    ).perform_async
+    ).perform
   end
 end

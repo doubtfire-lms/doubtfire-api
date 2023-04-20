@@ -477,7 +477,7 @@ class TaskDefinition < ApplicationRecord
     end
 
     # If TII is enabled, then we need to great group attachments
-    if has_tii_checks?
+    if tii_checks?
       send_group_attachments_to_tii
     end
   end
@@ -486,7 +486,7 @@ class TaskDefinition < ApplicationRecord
     if has_task_resources?
       FileUtils.rm task_resources
 
-      group_attachments.destroy_all if has_tii_checks?
+      group_attachments.destroy_all if tii_checks?
     end
   end
 

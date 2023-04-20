@@ -2,7 +2,7 @@
 
 # Keep track of submission uploaded due to task submission
 class TiiActionUploadSubmission < TiiAction
-  delegate :status_sym, :status, :submission_id, :submitted_by_user, :task, :idx, :similarity_pdf_id, :similarity_pdf_path, to: entity
+  delegate :status_sym, :status, :submission_id, :submitted_by_user, :task, :idx, :similarity_pdf_id, :similarity_pdf_path, :filename, to: :entity
 
   # Run is designed to be run in a background job, polling in
   # case of the need to retry actions. This will ensure submissions progress
@@ -48,13 +48,19 @@ class TiiActionUploadSubmission < TiiAction
     return true if submission_id.present?
     return false if error_message.present?
 
+    # Get the submission data
+    data = tii_submission_data
+
+    # If we don't have data, then we can't create a submission - fail as no one accepted EULA
+    return false unless data.present?
+
     exec_tca_call "TiiSubmission #{entity.id} - fetching id" do
       # Check to ensure it is a new upload
       # Create a new Submission
       subm = TCAClient::SubmissionApi.new.create_submission(
         TurnItIn.x_turnitin_integration_name,
         TurnItIn.x_turnitin_integration_version,
-        tii_submission_data
+        data
       )
 
       # Record the submission id
@@ -71,9 +77,6 @@ class TiiActionUploadSubmission < TiiAction
 
       true
     end
-  rescue TCAClient::ApiError => e
-    handle_error e
-    false
   end
 
   # Create a turn it in submission for a task document.
@@ -98,9 +101,9 @@ class TiiActionUploadSubmission < TiiAction
     # Set submitter if not the same as the task owner
     result.submitter = submitted_by_user.username
 
-    unless submitted_by_user.tii_eula_version_confirmed
+    unless submitted_by_user.tii_eula_version_confirmed || (params.key?("accepted_tii_eula") && params["accepted_tii_eula"])
       save_and_log_custom_error "None of the student, tutor, or unit lead have accepted the EULA for Turnitin"
-      return
+      return nil
       # result.eula = TCAClient::EulaAcceptRequest.new(
       #   user_id: submitted_by_user.username,
       #   language: 'en-us',
@@ -122,10 +125,16 @@ class TiiActionUploadSubmission < TiiAction
   # Upload all of the document files to the turn it in submission for a task.
   def upload_file_to_tii
     # Ensure we have a submission id and have not uploaded already
-    return false unless submission_id.present? && (status_sym == :has_id || status_sym == :created)
-    return false if error_message.present?
+    return unless submission_id.present? && (status_sym == :has_id || status_sym == :created)
+    return if error_message.present?
 
-    exec_tca_call "TiiSubmission #{entity.id} - uploading file" do
+    error_codes = [
+      { code: 413, symbol: :invalid_submission_size_too_large },
+      { code: 422, symbol: :invalid_submission_size_empty },
+      { code: 409, symbol: :missing_submission }
+    ]
+
+    exec_tca_call "TiiSubmission #{entity.id} - uploading file", error_codes do
       api_instance = TCAClient::SubmissionApi.new
 
       api_instance.upload_submitted_file(
@@ -139,35 +148,29 @@ class TiiActionUploadSubmission < TiiAction
 
       entity.status = :uploaded
       entity.save
-      save_and_reset_retry
+      save_and_reschedule
     end
-  rescue TCAClient::ApiError => e
-    handle_error e, [
-      { code: 413, symbol: :invalid_submission_size_too_large },
-      { code: 422, symbol: :invalid_submission_size_empty },
-      { code: 409, symbol: :missing_submission }
-    ]
-
-    false
   end
 
   # Get the turn it in status of the file submission
   #
   # @return [TCAClient::Submission] the submission details
   def fetch_tii_submission_status
-    exec_tca_call "TiiSubmission #{entity.id} - fetching submission status" do
+    error_code = [
+      { code: 404, symbol: :missing_submission },
+      { code: 409, symbol: :generation_failed }
+    ]
+
+    exec_tca_call "TiiSubmission #{entity.id} - fetching submission status", error_code do
       api_instance = TCAClient::SubmissionApi.new
 
       # Get Submission Details
-      api_instance.get_submiddion_details(
+      api_instance.get_submission_details(
         TurnItIn.x_turnitin_integration_name,
         TurnItIn.x_turnitin_integration_version,
         submission_id
       )
     end
-  rescue TCAClient::ApiError => e
-    handle_error e
-    nil
   end
 
   # Update the turn it in submission status based on the status from
@@ -175,6 +178,7 @@ class TiiActionUploadSubmission < TiiAction
   #
   # @param [TCAClient::Submission] response - the submission details
   def update_from_submission_status(response)
+    # Response can be nil, if the request fails
     return if response.nil?
 
     case response.status
@@ -200,9 +204,13 @@ class TiiActionUploadSubmission < TiiAction
   #
   # @return [boolean] true if the report was requested, false otherwise
   def request_similarity_report
-    return false unless status_sym == :submission_complete
+    return unless status_sym == :submission_complete
 
-    exec_tca_call "TiiSubmission #{entity.id} - requesting similarity report" do
+    error_code = [
+      { code: 409, symbol: :submission_not_created }
+    ]
+
+    exec_tca_call "TiiSubmission #{entity.id} - requesting similarity report", error_code do
       data = TCAClient::SimilarityPutRequest.new(
         generation_settings:
           TCAClient::SimilarityGenerationSettings.new(
@@ -226,17 +234,11 @@ class TiiActionUploadSubmission < TiiAction
       )
 
       self.retries = 0
-      self.status = :similarity_report_requested
-      save_and_reset_retry
+      entity.status = :similarity_report_requested
+      entity.save
 
-      true
+      save_and_reschedule
     end
-  rescue TCAClient::ApiError => e
-    handle_error e, [
-      { code: 409, symbol: :submission_not_created }
-    ]
-
-    false
   end
 
   # Get the similarity report status
@@ -253,9 +255,6 @@ class TiiActionUploadSubmission < TiiAction
         submission_id
       )
     end
-  rescue TCAClient::ApiError => e
-    handle_error e
-    nil
   end
 
   # Update the similarity report status based on the status from
@@ -263,6 +262,9 @@ class TiiActionUploadSubmission < TiiAction
   #
   # #param [TCAClient::SimilarityMetadata] response - the similarity report status
   def update_from_similarity_status(response)
+    # Response can be nil, if the request fails
+    return if response.nil?
+
     case response.status
     # when 'PROCESSING' # Similarity report is being generated
     #   return
@@ -270,14 +272,16 @@ class TiiActionUploadSubmission < TiiAction
       if response.overall_match_percentage.present? && response.overall_match_percentage.to_i > task.tii_match_pct(idx)
         entity.status = :similarity_report_complete
         entity.save
+
+        # Reset for new request
         save_and_reset_retry
+
         request_similarity_report_pdf
       else
         entity.status = :complete_low_similarity
         entity.save
 
-        self.complete = true
-        save_and_reset_retry
+        save_and_reset_retry(success: true)
       end
     end
   end
@@ -288,7 +292,11 @@ class TiiActionUploadSubmission < TiiAction
   def request_similarity_report_pdf
     return false unless status_sym == :similarity_report_complete
 
-    exec_tca_call "TiiSubmission #{entity.id} - requesting similarity report pdf" do
+    error_codes = [
+      { code: 404, symbol: :submission_not_found_when_creating_similarity_report }
+    ]
+
+    exec_tca_call "TiiSubmission #{entity.id} - requesting similarity report pdf", error_codes do
       generate_similarity_pdf = TCAClient::GenerateSimilarityPDF.new(
         locale: 'en-US'
       )
@@ -307,11 +315,6 @@ class TiiActionUploadSubmission < TiiAction
 
       save_and_reset_retry
     end
-  rescue TCAClient::ApiError => e
-    handle_error e, [
-      { code: 404, symbol: :submission_not_found_when_creating_similarity_report }
-    ]
-    nil
   end
 
   # Update the status based on the response from the pdf status api or webhook
@@ -337,7 +340,12 @@ class TiiActionUploadSubmission < TiiAction
     return false unless similarity_pdf_id.present?
     return false unless skip_check || fetch_tii_similarity_pdf_status == 'SUCCESS'
 
-    exec_tca_call "TiiSubmission #{entity.id} - downloading similarity report pdf" do
+    error_codes = [
+      { code: 404, symbol: :missing_submission },
+      { code: 409, symbol: :generation_failed }
+    ]
+
+    exec_tca_call "TiiSubmission #{entity.id} - downloading similarity report pdf", error_codes do
       # GET download pdf
       result = TCAClient::SimilarityApi.new.download_similarity_report_pdf(
         TurnItIn.x_turnitin_integration_name,
@@ -360,12 +368,6 @@ class TiiActionUploadSubmission < TiiAction
 
       true
     end
-  rescue TCAClient::ApiError => e
-    handle_error e, [
-      { code: 404, symbol: :missing_submission },
-      { code: 409, symbol: :generation_failed }
-    ]
-    false
   end
 
   # Get the similarity report status for a task
@@ -374,7 +376,12 @@ class TiiActionUploadSubmission < TiiAction
   def fetch_tii_similarity_pdf_status
     return nil unless submission_id.present? && similarity_pdf_id.present?
 
-    exec_tca_call "TiiSubmission #{entity.id} - fetching similarity report pdf status" do
+    error_codes = [
+      { code: 404, message: 'Submission not found in downloading similarity pdf' },
+      { code: 409, message: 'PDF failed to generate, status FAILED' }
+    ]
+
+    exec_tca_call "TiiSubmission #{entity.id} - fetching similarity report pdf status", error_codes do
       # Get Similarity Report Status
       result = TCAClient::SimilarityApi.new.get_similarity_report_pdf_status(
         TurnItIn.x_turnitin_integration_name,
@@ -385,11 +392,5 @@ class TiiActionUploadSubmission < TiiAction
 
       result.status
     end
-  rescue TCAClient::ApiError => e
-    handle_error e, [
-      { code: 404, message: 'Submission not found in downloading similarity pdf' },
-      { code: 409, message: 'PDF failed to generate, status FAILED' }
-    ]
-    nil
   end
 end

@@ -6,7 +6,7 @@ class TiiCWebhooksJobTest < ActiveSupport::TestCase
 
   def test_register_webhooks
     # Will ask for current webhooks
-    list_webhooks_stub = stub_request(:get, "https://localhost/api/v1/webhooks").
+    list_webhooks_stub = stub_request(:get, "https://#{ENV['TCA_HOST']}/api/v1/webhooks").
     with(tii_headers).
     to_return(
       status: 200,
@@ -33,7 +33,7 @@ class TiiCWebhooksJobTest < ActiveSupport::TestCase
       headers: {})
 
     # and will register the webhooks
-    register_webhooks_stub = stub_request(:post, "https://localhost/api/v1/webhooks").
+    register_webhooks_stub = stub_request(:post, "https://#{ENV['TCA_HOST']}/api/v1/webhooks").
     with(tii_headers).
     with(
       body: TCAClient::WebhookWithSecret.new(
@@ -59,7 +59,7 @@ class TiiCWebhooksJobTest < ActiveSupport::TestCase
 
   def test_do_not_register_if_registered
     # Will ask for current webhooks
-    list_webhooks_stub = stub_request(:get, "https://localhost/api/v1/webhooks").
+    list_webhooks_stub = stub_request(:get, "https://#{ENV['TCA_HOST']}/api/v1/webhooks").
     with(tii_headers).
     to_return(
       status: 200,
@@ -86,7 +86,7 @@ class TiiCWebhooksJobTest < ActiveSupport::TestCase
       headers: {})
 
     # and will register the webhooks
-    register_webhooks_stub = stub_request(:post, "https://localhost/api/v1/webhooks").
+    register_webhooks_stub = stub_request(:post, "https://#{ENV['TCA_HOST']}/api/v1/webhooks").
     with(tii_headers).
     with(
       body: TCAClient::WebhookWithSecret.new(

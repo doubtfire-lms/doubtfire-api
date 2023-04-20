@@ -1846,7 +1846,7 @@ class Unit < ApplicationRecord
             found = true
 
             # Update task resources in turn it in
-            TiiGroupAttachmentJob.perform_async(td.id) if File.extname(file.name) == '.zip' && td.has_tii_checks?
+            td.send_group_attachments_to_tii if File.extname(file.name) == '.zip' && td.tii_checks?
             break
           end
 
