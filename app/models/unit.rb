@@ -104,7 +104,6 @@ class Unit < ApplicationRecord
   end
 
   after_update :propogate_date_changes_to_tasks, if: :saved_change_to_start_date?
-  after_update :check_and_update_tii_attachments, if: :saved_change_to_start_date?
 
   # Model associations.
   # When a Unit is destroyed, any TaskDefinitions, Tutorials, and ProjectConvenor instances will also be destroyed.
@@ -2753,13 +2752,5 @@ class Unit < ApplicationRecord
     task_definitions.each do |td|
       td.propogate_date_changes date_diff
     end
-  end
-
-  # If we added tii checks, then upload associated attachment files if needed
-  def check_and_update_tii_attachments
-    return unless has_tii_checks?
-    return if had_tii_checks_before_last_save?
-
-    TiiGroupAttachmentJob.perform_async(self.id)
   end
 end

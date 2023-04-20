@@ -6,11 +6,21 @@ class TiiGroupAttachmentTest < ActiveSupport::TestCase
   include TestHelpers::TiiTestHelper
   include TestHelpers::TestFileHelper
 
+  def test_can_get_task_def_tii_group_without_update
+    td = FactoryBot.create(:task_definition)
+
+    refute td.tii_group_id.present?
+
+    td.create_or_get_tii_group
+
+    assert td.tii_group_id.present?
+  end
+
   def test_group_attachment_process
     # Create a task definition
     td = FactoryBot.create(:task_definition)
-    TurnItIn.create_or_get_group(td)
 
+    # "Upload" task resources
     FileUtils.cp test_file_path('TaskDefResources.zip'), td.task_resources
 
     assert td.has_task_resources?

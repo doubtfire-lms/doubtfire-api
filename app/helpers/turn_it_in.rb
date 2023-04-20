@@ -79,26 +79,6 @@ class TurnItIn
     @@delay_call_until = nil
   end
 
-  # Run a call to TCA, handling any errors that occur
-  #
-  # @param action [String] the action that is being performed
-  # @param block [Proc] the block that will be called to perform the call
-  def self.exec_tca_call(action, &block)
-    unless TurnItIn.functional?
-      Doubtfire::Application.config.logger.error "TII failed. #{action}. Turn It In not functional"
-      raise TCAClient::ApiError, code: 0, message: "Turn It In not functional"
-    end
-    if TurnItIn.rate_limited?
-      Doubtfire::Application.config.logger.error "TII failed. #{action}. Turn It In is rate limited"
-      raise TCAClient::ApiError, code: 429, message: "Turn It In rate limited"
-    end
-
-    block.call
-  rescue TCAClient::ApiError => e
-    handle_tii_error(action, e)
-    raise
-  end
-
   # Handle an error raised by a TCA call
   #
   # @param action [String] the action that was being performed
@@ -268,23 +248,6 @@ class TurnItIn
     )
   end
 
-  # Create or get the group for a task definition. The "group" is the Turn It In equivalent of an assignment.
-  #
-  # @param task_def [TaskDefinition] the task definition to create or get the group for
-  # @return [TCAClient::Group] the group for the task definition
-  def self.create_or_get_group(task_def)
-    unless task_def.tii_group_id.present?
-      task_def.tii_group_id = SecureRandom.uuid
-      task_def.save
-    end
-
-    TCAClient::Group.new(
-      id: task_def.tii_group_id,
-      name: task_def.detailed_name,
-      type: 'ASSIGNMENT'
-    )
-  end
-
   # Get the turn it in user for a user
   #
   # @param user [User] the user to get the turn it in user for
@@ -340,28 +303,17 @@ class TurnItIn
       status: :created,
       submitted_by_user: submitter
     )
-    result.continue_process
+
+    TiiActionUploadSubmission.create(
+      entity: result
+    ).perform_async
+
     result
   end
 
-  # Send all doc and docx files from the task resources to turn it in
-  # as group attachments.
-  #
-  # @param task_def [TaskDefinition] the task definition to send the group attachments for
-  def self.send_group_attachments_to_tii(task_def)
-    return unless task_def.tii_group_id.present?
-    return unless task_def.has_task_resources?
+  private
 
-    # loop through files in the task resources zip file
-    Zip::File.open(task_def.task_resources) do |zip_file|
-      zip_file.each do |entry|
-        next unless entry.file?
-        next unless entry.name.end_with?('.doc', '.docx')
-        next if entry.name.include?('__MACOSX')
-        next if entry.size < 50
-
-        TiiGroupAttachment.find_or_create_from_task_definition(task_def, entry.name)
-      end
-    end
+  def logger
+    Doubtfire::Application.config.logger
   end
 end

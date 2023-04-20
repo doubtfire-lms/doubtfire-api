@@ -290,7 +290,7 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     td = FactoryBot.create(:task_definition)
     user = td.unit.main_convenor_user
 
-    TurnItIn.create_or_get_group(td)
+    td.create_or_get_tii_group
 
     grp_attachment = TiiGroupAttachment.create(
       task_definition: td,

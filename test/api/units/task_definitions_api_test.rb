@@ -138,7 +138,9 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
 
   def test_post_task_resources
     test_unit_id = Unit.first.id
-    test_task_definition_id = Unit.first.task_definitions.first.id
+    td = Unit.first.task_definitions.first
+
+    test_task_definition_id = td.id
 
     data_to_post = {
       file: upload_file('test_files/TestWordDoc.docx.zip', 'application/zip')
@@ -151,6 +153,23 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
 
     assert_equal 201, last_response.status, last_response_body
 
+    # No tii check in task def, so no job should be created
+    assert_equal 0, TiiGroupAttachmentJob.jobs.count
+
+    # Add tii check to task definition
+    td.upload_requirements = [
+      {
+        key: 'file0',
+        name: 'Report x',
+        tii_check: true,
+        type: 'document',
+        tii_pct: 35
+      }
+    ]
+
+    td.save!
+
+    # Saving the task definition triggers group attachments to be updated
     assert_equal 1, TiiGroupAttachmentJob.jobs.count
     TiiGroupAttachmentJob.drain
   end

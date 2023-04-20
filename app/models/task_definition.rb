@@ -10,6 +10,7 @@ class TaskDefinition < ApplicationRecord
 
   after_update :move_files_on_abbreviation_change, if: :saved_change_to_abbreviation?
   after_update :remove_old_group_submissions, if: :has_removed_group?
+  after_update :check_and_update_tii_status, if: :saved_change_to_upload_requirements?
 
   # Model associations
   belongs_to :unit, optional: false # Foreign key
@@ -23,6 +24,7 @@ class TaskDefinition < ApplicationRecord
   has_many :learning_outcomes, -> { where('learning_outcome_task_links.task_id is NULL') }, through: :learning_outcome_task_links # only link staff relations
 
   has_many :tii_group_attachments, dependent: :destroy
+  has_many :tii_actions, as: :entity, dependent: :destroy
 
   serialize :upload_requirements, JSON
   serialize :plagiarism_checks, JSON
@@ -44,6 +46,8 @@ class TaskDefinition < ApplicationRecord
   validate :tutorial_stream_present?
 
   validates :weighting, presence: true
+
+  include TaskDefinitionTiiModule
 
   def unit_must_be_same
     if unit.present? and tutorial_stream.present? and not unit.eql? tutorial_stream.unit
@@ -237,34 +241,6 @@ class TaskDefinition < ApplicationRecord
   def is_document?(idx)
     return false unless idx >= 0 && idx < upload_requirements.length
     upload_requirements[idx]['type'] == 'document'
-  end
-
-  # Check if document and has tii check requested
-  def use_tii?(idx)
-    return false unless is_document?(idx) && upload_requirements[idx].key?('tii_check')
-
-    [true, 1, 'true'].include?(upload_requirements[idx]['tii_check'])
-  end
-
-  def tii_match_pct(idx)
-    return 35 unless use_tii?(idx) && upload_requirements[idx].key?('tii_pct')
-
-    upload_requirements[idx]['tii_pct'].to_i
-  end
-
-  # Does the task definition have any Turnitin checks?
-  #
-  # @return [Boolean] true if there are any Turnitin checks
-  def has_tii_checks?
-    Doubtfire::Application.config.tii_enabled &&
-      !upload_requirements.empty? &&
-      ((0..upload_requirements.length - 1).map{|i| use_tii?(i)}.inject(:|) || false)
-  end
-
-  def had_tii_checks_before_last_save?
-    Doubtfire::Application.config.tii_enabled &&
-      !upload_requirements_before_last_save.empty? &&
-      ((0..upload_requirements_before_last_save.length - 1).map{|i| use_tii?(i)}.inject(:|) || false)
   end
 
   # Return the type for the upload at the given index
@@ -493,7 +469,7 @@ class TaskDefinition < ApplicationRecord
   end
 
   # Move task resources into place
-  def add_task_resources(file, copy = false)
+  def add_task_resources(file, copy: false)
     if copy
       FileUtils.cp file, task_resources
     else
@@ -501,7 +477,9 @@ class TaskDefinition < ApplicationRecord
     end
 
     # If TII is enabled, then we need to great group attachments
-    TiiGroupAttachmentJob.perform_async(self.id) if has_tii_checks?
+    if has_tii_checks?
+      send_group_attachments_to_tii
+    end
   end
 
   def remove_task_resources()
