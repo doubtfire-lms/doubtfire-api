@@ -85,7 +85,7 @@ class TiiActionUploadTaskResources < TiiAction
   #
   # @return [TCAClient::GroupAttachmentResponse] the status of the group attachment
   def fetch_tii_attachment_status
-    TurnItIn.exec_tca_call "TiiGroupAttachment #{id} - fetching attachment status" do
+    exec_tca_call "TiiGroupAttachment #{id} - fetching attachment status" do
       TCAClient::GroupsApi.new.get_group_attachment(
         TurnItIn.x_turnitin_integration_name,
         TurnItIn.x_turnitin_integration_version,

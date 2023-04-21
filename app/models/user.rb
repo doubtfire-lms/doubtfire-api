@@ -17,6 +17,8 @@ end
 class User < ApplicationRecord
   include AuthenticationHelpers
 
+  include UserTiiModule
+
   ###
   # Authentication
   ###
@@ -477,24 +479,5 @@ class User < ApplicationRecord
       ignored: ignored,
       errors: errors
     }
-  end
-
-  # Accept the turn it in eula
-  #
-  # @param [String] eula_version The version of the eula that was accepted
-  def accept_tii_eula(eula_version = TurnItIn.eula_version)
-    update(
-      tii_eula_version_confirmed: false,
-      tii_eula_date: DateTime.now,
-      tii_eula_version: eula_version
-    )
-
-    TiiUserAcceptEulaJob.perform_async(id)
-  end
-
-  def has_accepted_tii_eula?
-    return false unless Doubtfire::Application.config.tii_enabled
-
-    tii_eula_version_confirmed && tii_eula_version == TurnItIn.eula_version
   end
 end
