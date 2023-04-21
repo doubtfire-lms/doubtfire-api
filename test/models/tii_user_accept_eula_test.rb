@@ -1,10 +1,12 @@
 require 'test_helper'
 
-class TiiUserAcceptEulaJobTest < ActiveSupport::TestCase
+class TiiUserAcceptEulaTest < ActiveSupport::TestCase
   include TestHelpers::TiiTestHelper
 
   def test_can_accept_tii_eula
     setup_tii_eula
+
+    assert TurnItIn.eula_version.present?
 
     user = FactoryBot.create(:user)
 
@@ -12,11 +14,10 @@ class TiiUserAcceptEulaJobTest < ActiveSupport::TestCase
     user.accept_tii_eula
 
     assert user.tii_eula_date.present?
-    assert TurnItIn.eula_version.present?
     assert_equal TurnItIn.eula_version, user.tii_eula_version
     refute user.tii_eula_version_confirmed
-    refute user.last_eula_retry.present?
-    assert_equal 1, TiiUserAcceptEulaJob.jobs.count
+
+    assert_equal 1, TiiActionJob.jobs.count
 
     # Prepare stub for call when eula is accepted
     stub_request(:post, "https://#{ENV['TCA_HOST']}/api/v1/eula/v1beta/accept").
@@ -24,7 +25,7 @@ class TiiUserAcceptEulaJobTest < ActiveSupport::TestCase
     to_return(status: 200, body: "", headers: {})
 
     # Run the job
-    TiiUserAcceptEulaJob.drain
+    TiiActionJob.drain
 
     # Reload our copy of user
     user.reload
@@ -41,9 +42,16 @@ class TiiUserAcceptEulaJobTest < ActiveSupport::TestCase
     # Queue job to accept eula
     user.accept_tii_eula
 
-    refute user.last_eula_retry.present?
+    # Get the action tracking this progress...
+    action = TiiActionAcceptEula.last
 
-    assert_equal 1, TiiUserAcceptEulaJob.jobs.count
+    refute action.complete
+    assert action.retry
+
+    refute user.tii_eula_version_confirmed
+
+    assert_equal 1, TiiActionJob.jobs.count
+    assert_equal user, action.entity
 
     # Prepare stub for call when eula is accepted and it fails
     accept_stub = stub_request(:post, "https://#{ENV['TCA_HOST']}/api/v1/eula/v1beta/accept").
@@ -51,21 +59,34 @@ class TiiUserAcceptEulaJobTest < ActiveSupport::TestCase
     to_return(
       {status: 500, body: "", headers: {} },
       {status: 400, body: "", headers: {} }, # should not reschedule
-      {status: 200, body: "", headers: {} }, # should not occur
+      {status: 200, body: "", headers: {} },
     )
 
     # Run the job
-    TiiUserAcceptEulaJob.drain
+    TiiActionJob.drain # First and second fail... first will retry... and be drained
+    action.reload
+
+    assert_requested accept_stub, times: 2
+    refute action.complete
+    refute action.retry
+
+    # Reset to retry with check progress sweep
+    action.update(last_run: DateTime.now - 31.minutes, retry: true)
+
+    refute user.reload.tii_eula_version_confirmed
+
+    TiiCheckProgressJob.new.perform # Third time is a success... via check progress sweep
+    action.reload
+
+    assert_requested accept_stub, times: 3
+    assert action.complete
+    refute action.retry
 
     # Reload our copy of user
     user.reload
 
-    assert_requested accept_stub, times: 2
-
-    # Ensure that eula is confirmed
-    refute user.tii_eula_version_confirmed
-    assert user.last_eula_retry.present?
-    refute user.tii_eula_retry
+    # Ensure that eula is not yet confirmed
+    assert user.tii_eula_version_confirmed
   end
 
   def test_eula_accept_rate_limit
@@ -82,22 +103,24 @@ class TiiUserAcceptEulaJobTest < ActiveSupport::TestCase
     user = FactoryBot.create(:user)
     # Queue job to accept eula
     user.accept_tii_eula
+    action = TiiActionAcceptEula.last
 
     # Perform manually
-    TiiUserAcceptEulaJob.jobs.clear
-    job = TiiUserAcceptEulaJob.new
-    job.perform(user.id)
+    TiiActionJob.jobs.clear
+
+    action.perform
 
     assert_requested accept_stub, times: 1
     assert TurnItIn.rate_limited?
 
-    job.perform(user.id)
     # Call does not go to tii as limit applied
+    action.perform
     assert_requested accept_stub, times: 1
 
     # When cleared, the job will run
     TurnItIn.reset_rate_limit
-    job.perform(user.id)
+
+    action.perform
     assert_requested accept_stub, times: 2
   end
 
@@ -109,22 +132,28 @@ class TiiUserAcceptEulaJobTest < ActiveSupport::TestCase
       with(tii_headers).
       to_return(
         {status: 403, body: "", headers: {} },
-        {status: 200, body: "", headers: {} }, # should not occur
+        {status: 200, body: "", headers: {} }, # should not occur, until end
       )
 
     user = FactoryBot.create(:user)
     # Queue job to accept eula
     user.accept_tii_eula
 
+    action = TiiActionAcceptEula.last
+
+    # Make sure we have the right action
+    assert_equal user, action.entity
+
     # Perform manually
-    TiiUserAcceptEulaJob.jobs.clear
-    job = TiiUserAcceptEulaJob.new
-    job.perform(user.id)
+    TiiActionJob.jobs.clear
+    action.perform
 
     assert_requested accept_stub, times: 1
     refute TurnItIn.functional?
 
-    job.perform(user.id)
+    refute action.retry
+
+    action.perform
     # Call does not go to tii as limit applied
     assert_requested accept_stub, times: 1
 
@@ -133,7 +162,7 @@ class TiiUserAcceptEulaJobTest < ActiveSupport::TestCase
     assert TurnItIn.functional?
 
     # When cleared, the job will run
-    job.perform(user.id)
+    action.perform
     assert_requested accept_stub, times: 2
   end
 end

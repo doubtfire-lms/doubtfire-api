@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_03_22_095242) do
+ActiveRecord::Schema[7.0].define(version: 2023_04_20_224824) do
   create_table "activity_types", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -351,14 +351,17 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_22_095242) do
     t.string "type"
     t.boolean "complete", default: false, null: false
     t.integer "retries", default: 0, null: false
-    t.datetime "next_process_update_at"
+    t.datetime "last_run"
+    t.boolean "retry", default: true, null: false
     t.integer "error_code"
     t.text "custom_error_message"
     t.text "log", size: :long, default: "[]", collation: "utf8mb4_bin"
     t.text "params", size: :long, default: "{}", collation: "utf8mb4_bin"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["complete"], name: "index_tii_actions_on_complete"
     t.index ["entity_type", "entity_id"], name: "index_tii_actions_on_entity"
+    t.index ["retry"], name: "index_tii_actions_on_retry"
     t.check_constraint "json_valid(`log`)", name: "log"
     t.check_constraint "json_valid(`params`)", name: "params"
   end

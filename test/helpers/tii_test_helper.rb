@@ -20,6 +20,12 @@ module TestHelpers
     end
 
     def setup_tii_eula
+      TiiActionFetchEula.create!(
+        last_run: DateTime.now,
+        complete: true,
+        retry: false
+      )
+
       Rails.cache.fetch('tii.eula_version') do
         TCAClient::EulaVersion.new(
           version: "v1beta",

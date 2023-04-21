@@ -72,7 +72,7 @@ class TiiActionUploadSubmission < TiiAction
 
       # If we had to indicate the eula was accepted, then we need to update the user
       unless submitted_by_user.tii_eula_version_confirmed
-        submitted_by_user.update(tii_eula_version_confirmed: true)
+        submitted_by_user.confirm_eula_version(TurnItIn.eula_version, DateTime.now)
       end
 
       true
@@ -101,15 +101,19 @@ class TiiActionUploadSubmission < TiiAction
     # Set submitter if not the same as the task owner
     result.submitter = submitted_by_user.username
 
-    unless submitted_by_user.tii_eula_version_confirmed || (params.key?("accepted_tii_eula") && params["accepted_tii_eula"])
+    unless submitted_by_user.accepted_tii_eula? || (params.key?("accepted_tii_eula") && params["accepted_tii_eula"])
       save_and_log_custom_error "None of the student, tutor, or unit lead have accepted the EULA for Turnitin"
       return nil
-      # result.eula = TCAClient::EulaAcceptRequest.new(
-      #   user_id: submitted_by_user.username,
-      #   language: 'en-us',
-      #   accepted_timestamp: submitted_by_user.tii_eula_date,
-      #   version: submitted_by_user.tii_eula_version
-      # )
+    end
+
+    # Add eula acceptance details to submission, if required
+    if submitted_by_user.accepted_tii_eula? && !submitted_by_user.tii_eula_version_confirmed
+      result.eula = TCAClient::EulaAcceptRequest.new(
+        user_id: submitted_by_user.username,
+        language: 'en-us',
+        accepted_timestamp: submitted_by_user.tii_eula_date || DateTime.now,
+        version: submitted_by_user.tii_eula_version || TurnItIn.tii_eula_version
+      )
     end
 
     result.metadata.submitter = TurnItIn.tii_user_for(submitted_by_user)

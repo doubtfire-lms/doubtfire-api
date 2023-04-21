@@ -44,7 +44,8 @@ class AddTiiDetails < ActiveRecord::Migration[7.0]
       t.boolean     :complete, default: false, null: false
       t.integer     :retries, default: 0, null: false
 
-      t.datetime    :next_process_update_at
+      t.datetime    :last_run
+      t.boolean     :retry, default: true, null: false
 
       t.integer     :error_code
       t.text        :custom_error_message
@@ -53,6 +54,9 @@ class AddTiiDetails < ActiveRecord::Migration[7.0]
       t.json        :params, default: {}
 
       t.timestamps
+
+      t.index :retry
+      t.index :complete
     end
   end
 end

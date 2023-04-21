@@ -99,9 +99,14 @@ class TurnItIn
   # Get the current eula - value is refreshed every 24 hours
   def self.eula_version
     return nil unless Doubtfire::Application.config.tii_enabled
-    eula = Rails.cache.fetch('tii.eula_version', expires_in: 24.hours) do
-      @instance.fetch_eula_version
+
+    unless Rails.cache.exist?('tii.eula_version')
+      action = TiiActionFetchEula.last || TiiActionFetchEula.create
+      action.perform
     end
+
+    eula = Rails.cache.fetch('tii.eula_version')
+
     eula&.version
   end
 
@@ -109,88 +114,7 @@ class TurnItIn
   def self.eula_html
     return nil unless Doubtfire::Application.config.tii_enabled
 
-    Rails.cache.fetch("tii.eula_html.#{TurnItIn.eula_version}", expires_in: 365.days) do
-      @instance.fetch_eula_html
-    end
-  end
-
-  # Accept the provided eula version
-  #
-  # @param user [User] the user to accept the eula on behalf of
-  # @param eula_version [String] the version of the eula to accept
-  # @return [Boolean] true if the eula was accepted, false otherwise
-  def self.accept_eula(user)
-    user.update(last_eula_retry: DateTime.now)
-    TurnItIn.exec_tca_call "accept eula for user #{user.id}" do
-      body = TCAClient::EulaAcceptRequest.new(
-        user_id: user.username,
-        language: 'en-us',
-        accepted_timestamp: user.tii_eula_date || DateTime.now,
-        version: user.tii_eula_version || TurnItIn.eula_version
-      )
-
-      if body.version.nil?
-        Doubtfire::Application.logger.error "TII eula version is nil, user #{id} cannot accept eula"
-        return false
-      end
-
-      # Accepts a particular EULA version on behalf of an external user
-      TCAClient::EULAApi.new.eula_version_id_accept_post(
-        TurnItIn.x_turnitin_integration_name,
-        TurnItIn.x_turnitin_integration_version,
-        body.version,
-        body
-      )
-
-      user.update(tii_eula_version_confirmed: true)
-      true
-    end
-  rescue TCAClient::ApiError => e
-    user.update(tii_eula_retry: false) if [400, 404].include?(e.code)
-
-    # Errors:
-    # 400	Request is malformed or missing required data
-    # 403	Not Properly Authenticated
-    # 429	Request has been rejected due to rate limiting
-    # 500	An unexpected error was encountered
-    #
-    # 404	The EULA version in the given language was not found
-    # 400	The EULA version attempting to be accepted is not valid
-    # 400	The EULA version was not found
-    # 400	The timestamp given is invalid
-    # 400	A required field is missing
-
-    false
-  end
-
-  @eula = nil
-
-  # Connect to tii to get the latest eula details.
-  def fetch_eula_version
-    TurnItIn.exec_tca_call 'fetch TII EULA version' do
-      api_instance = TCAClient::EULAApi.new
-      api_instance.eula_version_id_get(
-        TurnItIn.x_turnitin_integration_name,
-        TurnItIn.x_turnitin_integration_version,
-        'latest'
-      )
-    end
-  rescue TCAClient::ApiError || StandardError
-    nil
-  end
-
-  # Connect to tii to get the eula html
-  def fetch_eula_html
-    TurnItIn.exec_tca_call 'fetch TII EULA html' do
-      api_instance = TCAClient::EULAApi.new
-      api_instance.eula_version_id_view_get(
-        TurnItIn.x_turnitin_integration_name,
-        TurnItIn.x_turnitin_integration_version,
-        TurnItIn.eula_version
-      )
-    end
-  rescue TCAClient::ApiError
-    nil
+    Rails.cache.fetch("tii.eula_html.#{TurnItIn.eula_version}")
   end
 
   # Return the url used for webhook callbacks

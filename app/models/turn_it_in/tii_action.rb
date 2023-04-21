@@ -4,8 +4,22 @@
 # all actions to be retried if they fail, and manages this process.
 class TiiAction < ApplicationRecord
 
-  enum action: {
-    task_def_create_group: 0
+  enum error_code: {
+    task_def_create_group: 0,
+    no_user_with_accepted_eula: 1,
+    excessive_retries: 2,
+    malformed_request: 3,
+    authentication_error: 4,
+    missing_submission: 5,
+    missing_group: 6,
+    generation_failed: 7,
+    invalid_submission_size_too_large: 8,
+    invalid_submission_size_empty: 9,
+    existing_submission: 10,
+    submission_not_found_when_creating_similarity_report: 11,
+    rate_limited: 12,
+    service_not_available: 13,
+    custom_tii_error: 14
   }
 
   # Belongs to an entity that is trying to perform an action with turn it in
@@ -13,7 +27,7 @@ class TiiAction < ApplicationRecord
   # - TaskDefinition: create group
   # - TiiSubmission: create submission
   # - TiiGroupAttachment: upload attachment
-  belongs_to :entity, polymorphic: true
+  belongs_to :entity, polymorphic: true, optional: true
 
   serialize :params, JSON
   serialize :log, JSON
@@ -23,14 +37,32 @@ class TiiAction < ApplicationRecord
   end
 
   # Runs the action, and handles any errors that occur
+  #
+  # @return value returned by running the action, or nil if the action failed
   def perform
     self.log << { date: Time.zone.now, message: "Started #{type}" }
-    run
+    self.last_run = Time.zone.now
+    self.retry = false # reset retry flag
+    self.log = [] if self.complete # reset log if complete... and performing again
+    self.complete = false # reset complete flag
+
+    result = run
     self.log << { date: Time.zone.now, message: "#{type} Ended" }
     save
+
+    result
   rescue StandardError => e
     save_and_log_custom_error e&.to_s
-    logger.error e&.to_s
+
+    if Rails.env.development? || Rails.env.test?
+      puts e.inspect
+    end
+
+    nil
+  end
+
+  def error_code_sym
+    error_code.to_sym
   end
 
   # Use the error code or the custom error message to return the error message (or nil if no error)
@@ -62,6 +94,10 @@ class TiiAction < ApplicationRecord
       'Submission already exists'
     when :submission_not_found_when_creating_similarity_report
       'Submission not found in creating similarity report'
+    when :rate_limited
+      'Turn It In integration is rate limited at the moment, we will try again later'
+    when :service_not_available
+      'Turn It In services is not available at the moment, we will try again later'
     else
       self.custom_error_message
     end
@@ -76,18 +112,13 @@ class TiiAction < ApplicationRecord
 
   def save_and_reschedule(reset_retry: true)
     self.retries = 0 if reset_retry
-    self.next_process_update_at = Time.zone.now + 30.minutes
+    self.retry = true
     save
   end
 
   # Save the submission or attachment, resetting the retry count if needed
   def save_and_reset_retry(success: true)
-    # if we had to retry...
-    unless self.next_process_update_at.nil?
-      self.retries = 0
-      self.next_process_update_at = nil
-    end
-
+    self.retries = 0
     self.complete = success if success
 
     save
@@ -103,16 +134,20 @@ class TiiAction < ApplicationRecord
   # Retry the request in 30 minutes, up to 10 times
   def retry_request
     self.retries += 1
+
     if self.retries > 10
       self.error_code = :excessive_retries
-      Doubtfire::Application.config.logger.error "Error with tii action: #{action} #{id} excessive retries"
     else
-      self.next_process_update_at = Time.zone.now + 30.minutes
+      self.retry = true
+
+      # We try in 15 minutes
+      TiiActionJob.perform_at(Time.zone.now + 15.minutes, id)
     end
   end
 
   def handle_error(error, codes = [])
-    case error.is_a?(TCAClient::ApiError) ? error.code : error.error_code
+    received_error_code = error.is_a?(TCAClient::ApiError) ? error.code : error.error_code
+    case received_error_code
     when 400
       self.error_code = :malformed_request
       return
@@ -120,10 +155,11 @@ class TiiAction < ApplicationRecord
       self.error_code = :authentication_error
       return
     when 429
-      logger.error "Request has been rejected due to rate limiting - tii_submission #{id}"
+      self.error_code = :rate_limited
       retry_request
       return
-    when 503, 504 # service unavailable, gateway timeout
+    when 500, 503, 504 # service unavailable, gateway timeout
+      self.error_code = :service_not_available
       retry_request
       return
     when 0
@@ -133,7 +169,7 @@ class TiiAction < ApplicationRecord
     end
 
     return if codes.find do |check|
-                next unless error.error_code == check[:code]
+                next unless received_error_code == check[:code]
 
                 self.error_code = check.key?(:symbol) ? check[:symbol] : :custom_tii_error
                 self.custom_error_message = check[:message] if check.key?(:message)
@@ -153,6 +189,8 @@ class TiiAction < ApplicationRecord
     self.custom_error_message = message
     log_error
     save
+
+    logger.error message
   end
 
   def log_error
@@ -165,12 +203,10 @@ class TiiAction < ApplicationRecord
   # @param block [Proc] the block that will be called to perform the call
   def exec_tca_call(description, codes = [], &block)
     unless TurnItIn.functional?
-      logger.error "TII failed. #{description}. Turn It In not functional"
-      raise TCAClient::ApiError, code: 0, message: "Turn It In not functional"
+      raise TCAClient::ApiError, code: 0, message: "Turn It In not functiona: #{description}"
     end
     if TurnItIn.rate_limited?
-      logger.error "TII failed. #{description}. Turn It In is rate limited"
-      raise TCAClient::ApiError, code: 429, message: "Turn It In rate limited"
+      raise TCAClient::ApiError, code: 429, message: "Turn It In rate limited: #{description}"
     end
 
     self.log << { date: Time.zone.now, message: description }
