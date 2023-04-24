@@ -122,7 +122,6 @@ class TurnItIn
     "#{Doubtfire::Application.config.institution[:host_url]}api/tii_hook"
   end
 
-
   # Create or get the group context for a unit. The "group context" is the Turn It In equivalent of a unit.
   #
   # @param unit [Unit] the unit to create or get the group context for

@@ -292,6 +292,11 @@ class TiiModelTest < ActiveSupport::TestCase
     with(tii_headers).
     to_return(status: 200, body: "", headers: {})
 
+    # and delete of attachments
+    delete_Attachment_request = stub_request(:delete, %r[https://localhost/api/v1/groups/1/attachments/.*]).
+      with(tii_headers).
+      to_return(status: 200, body: "", headers: {})
+
     # Now trigger next step - processing to complete
     # Processing will not progress to next step
     subm_status_req = stub_request(:get, "https://#{ENV['TCA_HOST']}/api/v1/submissions/1223").
