@@ -301,6 +301,10 @@ class TeachingPeriodTest < ActiveSupport::TestCase
 
     grp_attachment.update(group_attachment_id: "16c45fbe-25f5-458b-9a4c-c3deeaff8af4")
 
+    delete_stub = stub_request(:delete, %r[https://#{ENV['TCA_HOST']}/api/v1/groups/#{td.tii_group_id}/attachments/.*]).
+      with(tii_headers).
+      to_return(status: 200, body: "", headers: {})
+
     data = TCAClient::GroupAttachmentResponse.new(
         "id": grp_attachment.group_attachment_id,
         "title": "large2",
@@ -322,9 +326,6 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     assert_equal 201, last_response.status, last_response_body
     assert_equal :complete, grp_attachment.reload.status_sym
 
-    delete_stub = stub_request(:delete, "https://#{ENV['TCA_HOST']}/api/v1/groups/#{td.tii_group_id}/attachments/#{grp_attachment.group_attachment_id}").
-    with(tii_headers).
-    to_return(status: 200, body: "", headers: {})
     td.unit.destroy!
 
     assert_requested delete_stub, times: 1
