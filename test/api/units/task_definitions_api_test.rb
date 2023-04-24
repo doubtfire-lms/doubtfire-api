@@ -201,6 +201,10 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_requested post_attachment_stub, times: 1
     assert_requested upload_stub, times: 1
 
+    stub_request(:delete, %r[https://localhost/api/v1/groups/1/attachments/.*]).
+      with(tii_headers).
+      to_return(status: 200, body: "", headers: {})
+
     td.destroy!
   end
 
