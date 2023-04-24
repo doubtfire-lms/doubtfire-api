@@ -122,38 +122,6 @@ class TurnItIn
     "#{Doubtfire::Application.config.institution[:host_url]}api/tii_hook"
   end
 
-  # List all webhooks currently registered
-  def self.list_all_webhooks
-    TurnItIn.exec_tca_call 'list all webhooks' do
-      TCAClient::WebhookApi.new.webhooks_get(
-        TurnItIn.x_turnitin_integration_name,
-        TurnItIn.x_turnitin_integration_version
-      )
-    end
-  end
-
-  # Register our webhook for all tii events
-  def self.register_webhook
-    data = TCAClient::WebhookWithSecret.new(
-      signing_secret: ENV.fetch('TCA_SIGNING_KEY', nil),
-      url: TurnItIn.webhook_url,
-      event_types: %w[
-        SIMILARITY_COMPLETE
-        SUBMISSION_COMPLETE
-        SIMILARITY_UPDATED
-        PDF_STATUS
-        GROUP_ATTACHMENT_COMPLETE
-      ]
-    ) # WebhookWithSecret |
-
-    TurnItIn.exec_tca_call 'register webhook' do
-      TCAClient::WebhookApi.new.webhooks_post(
-        TurnItIn.x_turnitin_integration_name,
-        TurnItIn.x_turnitin_integration_version,
-        data
-      )
-    end
-  end
 
   # Create or get the group context for a unit. The "group context" is the Turn It In equivalent of a unit.
   #

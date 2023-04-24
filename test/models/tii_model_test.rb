@@ -186,7 +186,7 @@ class TiiModelTest < ActiveSupport::TestCase
       to_return(status: 200, body: '{ "message": "Successfully uploaded file for attachment ..." }', headers: {})
 
     # Lets add task resources + template
-    task_definition.add_task_resources('test_files/TestWordDoc.docx.zip', copy: true)
+    task_definition.add_task_resources(test_file_path('TestWordDoc.docx.zip'), copy: true)
 
     assert task_definition.has_task_resources?
     assert_equal TiiGroupAttachment.last, TiiActionUploadTaskResources.last.entity

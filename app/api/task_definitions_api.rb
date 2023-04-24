@@ -356,7 +356,7 @@ class TaskDefinitionsApi < Grape::API
     check_mime_against_list! file_path, 'zip', ['application/zip', 'multipart/x-gzip', 'multipart/x-zip', 'application/x-gzip', 'application/octet-stream']
 
     # Actually import...
-    task_def.add_task_resources(file_path)
+    task_def.add_task_resources(file_path, copy: false)
     true
   end
 

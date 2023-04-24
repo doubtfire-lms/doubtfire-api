@@ -9,7 +9,7 @@ class TiiActionUpdateTiiGroup < TiiAction
     end
 
     # Generate id but do not save until put is complete
-    entity.tii_group_id = SecureRandom.uuid
+    entity.tii_group_id |= SecureRandom.uuid
 
     data = TCAClient::AggregateGroup.new(
       id: entity.tii_group_id,
