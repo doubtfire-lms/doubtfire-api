@@ -97,7 +97,7 @@ class TaskDefinition < ApplicationRecord
 
     if has_task_resources?
       # Copy the task resources, and trigger tii integration if needed
-      new_td.add_task_resources(task_resources, true)
+      new_td.add_task_resources(task_resources, copy: true)
     end
 
     new_td.save!
@@ -486,7 +486,7 @@ class TaskDefinition < ApplicationRecord
     if has_task_resources?
       FileUtils.rm task_resources
 
-      group_attachments.destroy_all if tii_checks?
+      tii_group_attachments.destroy_all if tii_checks?
     end
   end
 

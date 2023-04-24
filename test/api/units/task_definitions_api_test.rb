@@ -5,6 +5,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
   include TestHelpers::AuthHelper
   include TestHelpers::JsonHelper
   include TestHelpers::TestFileHelper
+  include TestHelpers::TiiTestHelper
 
   def app
     Rails.application
@@ -142,6 +143,8 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
 
     test_task_definition_id = td.id
 
+    start_count = TiiActionUploadTaskResources.count
+
     data_to_post = {
       file: upload_file('test_files/TestWordDoc.docx.zip', 'application/zip')
     }
@@ -154,7 +157,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_equal 201, last_response.status, last_response_body
 
     # No tii check in task def, so no job should be created
-    assert_equal 0, TiiGroupAttachmentJob.jobs.count
+    assert_equal start_count, TiiActionUploadTaskResources.count
 
     # Add tii check to task definition
     td.upload_requirements = [
@@ -167,11 +170,38 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
       }
     ]
 
+    # Save will trigger TII integration
+    create_tii_group_stub = stub_request(:put, %r[https://localhost/api/v1/groups/.*]).
+      with(tii_headers).
+      with(body: %r[.*id.*.*name.*type.*ASSIGNMENT.*group_context.*id.*name.*due_date.*report_generation.*IMMEDIATELY_AND_DUE_DATE.*]).
+      to_return(status: 200, body: "", headers: {})
+
+    post_attachment_stub = stub_request(:post, %r[https://localhost/api/v1/groups/.*/attachments]).
+      with(tii_headers).
+      with(body: "{\"title\":\"TestWordDoc.docx\",\"template\":false}").
+      to_return(
+        status: 200,
+        body: TCAClient::AddGroupAttachmentResponse.new(
+          id: SecureRandom.uuid
+        ).to_json,
+        headers: {}
+      )
+
+    upload_stub = stub_request(:put, %r[https://localhost/api/v1/groups/.*/attachments/.*/original]).
+      with(tii_headers).
+      with(headers: {'Content-Type'=>'binary/octet-stream'}).
+      to_return(status: 200, body: '{ "message": "Successfully uploaded file for attachment ..." }', headers: {})
+
+
     td.save!
 
     # Saving the task definition triggers group attachments to be updated
-    assert_equal 1, TiiGroupAttachmentJob.jobs.count
-    TiiGroupAttachmentJob.drain
+    assert_equal start_count + 1, TiiActionUploadTaskResources.count
+    assert_requested create_tii_group_stub, times: 1
+    assert_requested post_attachment_stub, times: 1
+    assert_requested upload_stub, times: 1
+
+    td.destroy!
   end
 
   def test_submission_creates_folders

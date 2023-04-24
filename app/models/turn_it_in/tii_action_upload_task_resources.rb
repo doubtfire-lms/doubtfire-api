@@ -2,7 +2,27 @@
 
 # Keep track of the group attachments uploaded from task resources
 class TiiActionUploadTaskResources < TiiAction
-  delegate :status, :status_sym, :tii_group_id, :task_definition, :filename, to: :entity
+  delegate :status, :status_sym, :tii_group_id, :task_definition, :filename, :group_attachment_id, to: :entity
+
+  def update_from_attachment_status(response)
+    return if response.nil?
+
+    case response.status
+    when 'COMPLETE'
+      entity.status = :complete
+      entity.save
+
+      self.complete = true
+      save_and_reset_retry
+    when 'ERROR'
+      self.error_code = :custom_tii_error
+      self.custom_error_message = response.error_code
+      Doubtfire::Application.config.logger.error "Error with tii submission: #{id} #{self.custom_error_message}"
+      save_and_reset_retry
+    end
+  end
+
+  private
 
   def run
     unless tii_group_id.present?
@@ -29,8 +49,6 @@ class TiiActionUploadTaskResources < TiiAction
     end
   end
 
-  private
-
   def fetch_tii_group_attachment_id
     return true if entity.group_attachment_id.present?
     return false if error_message.present?
@@ -54,6 +72,8 @@ class TiiActionUploadTaskResources < TiiAction
 
       entity.group_attachment_id = resp.id
       entity.status = :has_id
+      entity.save
+
       save_and_reset_retry
     end
   end
@@ -71,12 +91,13 @@ class TiiActionUploadTaskResources < TiiAction
         TurnItIn.x_turnitin_integration_name,
         TurnItIn.x_turnitin_integration_version,
         tii_group_id,
-        entity.group_attachment_id,
+        group_attachment_id,
         "Content-Disposition: inline; filename=\"#{filename}\"",
         task_definition.read_file_from_resources(filename)
       )
 
-      entity.status = :uploaded
+      entity.update(status: :uploaded)
+
       save_and_reset_retry
     end
   end
@@ -90,24 +111,8 @@ class TiiActionUploadTaskResources < TiiAction
         TurnItIn.x_turnitin_integration_name,
         TurnItIn.x_turnitin_integration_version,
         task_definition.tii_group_id,
-        self.group_attachment_id
+        group_attachment_id
       )
     end
   end
-
-  def update_from_attachment_status(response)
-    return if response.nil?
-
-    case response.status
-    when 'COMPLETE'
-      self.status = :complete
-      save_and_reset_retry
-    when 'ERROR'
-      self.error_code = :custom_tii_error
-      self.custom_error_message = response.error_code
-      Doubtfire::Application.config.logger.error "Error with tii submission: #{id} #{self.custom_error_message}"
-      save_and_reset_retry
-    end
-  end
-
 end

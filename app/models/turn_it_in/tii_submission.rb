@@ -16,16 +16,13 @@ class TiiSubmission < ApplicationRecord
   #
   # @param user [User] the user who is submitting the task
   def submitted_by=(user)
-    if user.accepted_tii_eula?
-      self.submitted_by_user = user
-    elsif task.tutor.accepted_tii_eula?
-      self.submitted_by_user = task.tutor
-    elsif task.project.main_convenor_user.accepted_tii_eula?
-      self.submitted_by_user = task.project.main_convenor_user
-    else
-      self.submitted_by_user = user
-      self.error_code = :no_user_with_accepted_eula
-    end
+    self.submitted_by_user = if !user.accepted_tii_eula? && task.tutor.accepted_tii_eula?
+                               task.tutor
+                             elsif !user.accepted_tii_eula? && task.project.main_convenor_user.accepted_tii_eula?
+                               task.project.main_convenor_user
+                             else
+                               user
+                             end
     save
   end
 

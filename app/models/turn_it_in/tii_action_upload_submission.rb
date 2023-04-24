@@ -4,6 +4,24 @@
 class TiiActionUploadSubmission < TiiAction
   delegate :status_sym, :status, :submission_id, :submitted_by_user, :task, :idx, :similarity_pdf_id, :similarity_pdf_path, :filename, to: :entity
 
+  # Update the status based on the response from the pdf status api or webhook
+  #
+  # @param [String] response - the similarity report status
+  def update_from_pdf_report_status(response)
+    case response
+    when 'FAILED' # The report failed to be generated
+      error_message = 'similarity PDF failed to be created'
+    when 'SUCCESS' # Similarity report is complete
+      entity.status = :similarity_pdf_requested
+      entity.save
+      save_and_reset_retry
+      download_similarity_report_pdf(skip_check: true)
+      # else # pending or unknown...
+    end
+  end
+
+  private
+
   # Run is designed to be run in a background job, polling in
   # case of the need to retry actions. This will ensure submissions progress
   # through turn it in when web hooks fails.
@@ -38,8 +56,6 @@ class TiiActionUploadSubmission < TiiAction
       # do nothing when 'deleted'
     end
   end
-
-  private
 
   # Call tii and get a new submission id
   #
@@ -318,22 +334,6 @@ class TiiActionUploadSubmission < TiiAction
       entity.save
 
       save_and_reset_retry
-    end
-  end
-
-  # Update the status based on the response from the pdf status api or webhook
-  #
-  # @param [String] response - the similarity report status
-  def update_from_pdf_report_status(response)
-    case response
-    when 'FAILED' # The report failed to be generated
-      error_message = 'similarity PDF failed to be created'
-    when 'SUCCESS' # Similarity report is complete
-      entity.status = :similarity_pdf_requested
-      entity.save
-      save_and_reset_retry
-      download_similarity_report_pdf(skip_check: true)
-      # else # pending or unknown...
     end
   end
 

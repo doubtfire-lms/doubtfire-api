@@ -17,8 +17,33 @@ class TiiGroupAttachmentTest < ActiveSupport::TestCase
   end
 
   def test_group_attachment_process
+    initial_group_attachment_count = TiiGroupAttachment.count
+    initial_action_count = TiiActionUploadTaskResources.count
+
     # Create a task definition
     td = FactoryBot.create(:task_definition)
+
+    td.upload_requirements = [
+      {
+        "key" => 'file0',
+        "name" => 'Document 1',
+        "type" => 'document',
+        "tii_check" => true,
+        "tii_pct" => 35
+      }
+    ]
+
+    # Save will trigger TII integration
+    create_tii_group_stub = stub_request(:put, %r[https://localhost/api/v1/groups/.*]).
+    with(tii_headers).
+    with(body: %r[.*id.*.*name.*type.*ASSIGNMENT.*group_context.*id.*name.*due_date.*report_generation.*IMMEDIATELY_AND_DUE_DATE.*]).
+    to_return(status: 200, body: "", headers: {})
+
+    delete_stub = stub_request(:delete, %r[https://localhost/api/v1/groups/1/attachments/.*]).
+      with(tii_headers).
+      to_return(status: 200, body: "", headers: {})
+
+    td.save
 
     # "Upload" task resources
     FileUtils.cp test_file_path('TaskDefResources.zip'), td.task_resources
@@ -51,31 +76,37 @@ class TiiGroupAttachmentTest < ActiveSupport::TestCase
       }
     )
 
-    TurnItIn.send_group_attachments_to_tii(td)
+    upload_stub = stub_request(:put, %r[https://localhost/api/v1/groups/.*/attachments/.*/original]).
+      with(tii_headers).
+      with(headers: {'Content-Type'=>'binary/octet-stream'}).
+      to_return(status: 200, body: '{ "message": "Successfully uploaded file for attachment ..." }', headers: {})
 
+    # Will trigger TII integration - create and send attachments
+    # 2 - group attachment for the files and
+    # 2 - action objects to track progress
+    td.send_group_attachments_to_tii
+
+    # Should trigger the two calls...
     assert_requested req_copy, times: 1
     assert_requested req_first, times: 1
 
-    assert_equal 1, TiiGroupAttachment.where(task_definition: td, status: :has_id, group_attachment_id: gaid).count
-    assert_equal 1, TiiGroupAttachment.where(task_definition: td, status: :has_id).count
-    assert_equal 1, TiiGroupAttachment.where(task_definition: td, status: :created, group_attachment_id: nil).count
+    # We have the details of the attachments
+    assert_equal initial_group_attachment_count + 2, TiiGroupAttachment.count, "There should be 2 attachments created"
+    assert_equal initial_action_count + 2, TiiActionUploadTaskResources.count, "There should be 2 actions created"
 
-    ga = TiiGroupAttachment.where(task_definition: td, status: :created).first
-    assert_equal "TestWordDoc.docx", ga.filename
-    assert_equal 1, ga.retries
+    # One action should have its it... and we have recorded this...
+    assert_equal 1, TiiGroupAttachment.where(task_definition: td, group_attachment_id: gaid).count
+    assert_equal 1, TiiGroupAttachment.where(task_definition: td, group_attachment_id: nil, status: :created).count
 
-    upload_stub = stub_request(:put, %r[.*]).
-      with(tii_headers).
-      with(headers: {'Content-Type'=>'binary/octet-stream'}).
-      with(body: %r[.*]).
-      to_return(status: 200, body: '{ "message": "Successfully uploaded file for attachment ..." }', headers: {})
+    # Get the group attachment and action objects for the attachment to upload
+    ga = TiiGroupAttachment.where(task_definition: td, group_attachment_id: gaid).first
+    action = TiiActionUploadTaskResources.where(entity: ga).last
 
-    # Get id and upload attachment
-    ga.continue_process
-    assert_equal :uploaded, ga.reload.status_sym
-    assert_equal 0, ga.retries
+    assert_equal "TestWordDoc copy.docx", ga.filename
     assert_requested upload_stub, times: 1
+    assert :complete, action.status_sym
 
+    # Now test failed action
     get_status_stub = stub_request(:get, "https://#{ENV['TCA_HOST']}/api/v1/groups/#{td.tii_group_id}/attachments/#{ga.group_attachment_id}").
       with(tii_headers).
       to_return(
@@ -107,31 +138,38 @@ class TiiGroupAttachmentTest < ActiveSupport::TestCase
       )
 
     # Check status
-    ga.continue_process
+    action.perform
 
     assert_requested get_status_stub, times: 1
     assert_equal :uploaded, ga.reload.status_sym
 
     # Check status
-    ga.continue_process
+    action.perform
 
     assert_requested get_status_stub, times: 2
     assert_equal :complete, ga.reload.status_sym
+    assert action.complete
 
-    # Check status
-    ga.update_from_attachment_status(ga.fetch_tii_attachment_status)
+    # Reset and check status again to test error
+    ga.status = :uploaded
+    action.complete = false
+
+    ga.save
+    action.save
+
+    refute action.reload.complete
+    refute_equal :complete, ga.reload.status_sym
+
+    action.perform
 
     assert_requested get_status_stub, times: 3
-    assert_equal 'TOO_LITTLE_TEXT', ga.error_message
-    assert_equal :custom_tii_error, ga.error_code.to_sym
-    assert ga.error?
-
-    delete_stub = stub_request(:delete, %r[.*]).
-    with(tii_headers).
-    to_return(status: 200, body: "", headers: {})
+    assert_equal 'TOO_LITTLE_TEXT', action.error_message
+    assert_equal :custom_tii_error, action.error_code.to_sym
+    assert action.error?
 
     td.unit.destroy!
 
-    assert_requested delete_stub, times: 2
+    assert_requested delete_stub, times: 1
+    assert_equal initial_group_attachment_count, TiiGroupAttachment.count
   end
 end
