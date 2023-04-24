@@ -20,6 +20,62 @@ class TiiActionUploadSubmission < TiiAction
     end
   end
 
+  # Update the turn it in submission status based on the status from
+  # the web hook or the API request.
+  #
+  # @param [TCAClient::Submission] response - the submission details
+  def update_from_submission_status(response)
+    # Response can be nil, if the request fails
+    return if response.nil?
+
+    case response.status
+    when 'CREATED' #	Submission has been created but no file has been uploaded
+      upload_file_to_tii
+    when 'PROCESSING' # File contents have been uploaded and the submission is being processed
+      retry_request
+      # return # do nothing... wait for the webhook
+    when 'COMPLETE' # Submission processing is complete
+      entity.status = :submission_complete
+      entity.save
+      save_and_reset_retry
+
+      request_similarity_report
+    when 'ERROR' # An error occurred during submission processing; see error_code for details
+      save_and_log_custom_error response.error_code
+      Doubtfire::Application.config.logger.error "Error with tii submission: #{id} #{self.custom_error_message}"
+      save_and_reset_retry
+    end
+  end
+
+  # Update the similarity report status based on the status from
+  # the web hook or the API request.
+  #
+  # #param [TCAClient::SimilarityMetadata] response - the similarity report status
+  def update_from_similarity_status(response)
+    # Response can be nil, if the request fails
+    return if response.nil?
+
+    case response.status
+    # when 'PROCESSING' # Similarity report is being generated
+    #   return
+    when 'COMPLETE' # Similarity report is complete
+      if response.overall_match_percentage.present? && response.overall_match_percentage.to_i > task.tii_match_pct(idx)
+        entity.status = :similarity_report_complete
+        entity.save
+
+        # Reset for new request
+        save_and_reset_retry
+
+        request_similarity_report_pdf
+      else
+        entity.status = :complete_low_similarity
+        entity.save
+
+        save_and_reset_retry(success: true)
+      end
+    end
+  end
+
   private
 
   # Run is designed to be run in a background job, polling in
@@ -193,33 +249,6 @@ class TiiActionUploadSubmission < TiiAction
     end
   end
 
-  # Update the turn it in submission status based on the status from
-  # the web hook or the API request.
-  #
-  # @param [TCAClient::Submission] response - the submission details
-  def update_from_submission_status(response)
-    # Response can be nil, if the request fails
-    return if response.nil?
-
-    case response.status
-    when 'CREATED' #	Submission has been created but no file has been uploaded
-      upload_file_to_tii
-    when 'PROCESSING' # File contents have been uploaded and the submission is being processed
-      retry_request
-      # return # do nothing... wait for the webhook
-    when 'COMPLETE' # Submission processing is complete
-      entity.status = :submission_complete
-      entity.save
-      save_and_reset_retry
-
-      request_similarity_report
-    when 'ERROR' # An error occurred during submission processing; see error_code for details
-      save_and_log_custom_error response.error_code
-      Doubtfire::Application.config.logger.error "Error with tii submission: #{id} #{self.custom_error_message}"
-      save_and_reset_retry
-    end
-  end
-
   # Request to generate a similarity report for a task
   #
   # @return [boolean] true if the report was requested, false otherwise
@@ -274,35 +303,6 @@ class TiiActionUploadSubmission < TiiAction
         TurnItIn.x_turnitin_integration_version,
         submission_id
       )
-    end
-  end
-
-  # Update the similarity report status based on the status from
-  # the web hook or the API request.
-  #
-  # #param [TCAClient::SimilarityMetadata] response - the similarity report status
-  def update_from_similarity_status(response)
-    # Response can be nil, if the request fails
-    return if response.nil?
-
-    case response.status
-    # when 'PROCESSING' # Similarity report is being generated
-    #   return
-    when 'COMPLETE' # Similarity report is complete
-      if response.overall_match_percentage.present? && response.overall_match_percentage.to_i > task.tii_match_pct(idx)
-        entity.status = :similarity_report_complete
-        entity.save
-
-        # Reset for new request
-        save_and_reset_retry
-
-        request_similarity_report_pdf
-      else
-        entity.status = :complete_low_similarity
-        entity.save
-
-        save_and_reset_retry(success: true)
-      end
     end
   end
 
