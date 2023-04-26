@@ -185,6 +185,10 @@ class TiiModelTest < ActiveSupport::TestCase
       with(headers: {'Content-Type'=>'binary/octet-stream'}).
       to_return(status: 200, body: '{ "message": "Successfully uploaded file for attachment ..." }', headers: {})
 
+    delete_stub = stub_request(:delete, %r[https://#{ENV['TCA_HOST']}/api/v1/groups/#{task_definition.tii_group_id}/attachments/.*]).
+      with(tii_headers).
+      to_return(status: 200, body: "", headers: {})
+
     # Lets add task resources + template
     task_definition.add_task_resources(test_file_path('TestWordDoc.docx.zip'), copy: true)
 
@@ -289,8 +293,8 @@ class TiiModelTest < ActiveSupport::TestCase
 
     # task destroy will trigger delete of submission
     delete_request = stub_request(:delete, /https:\/\/#{ENV['TCA_HOST']}\/api\/v1\/submissions\/\d+/).
-    with(tii_headers).
-    to_return(status: 200, body: "", headers: {})
+      with(tii_headers).
+      to_return(status: 200, body: "", headers: {})
 
     # and delete of attachments
     delete_Attachment_request = stub_request(:delete, %r[https://localhost/api/v1/groups/1/attachments/.*]).
@@ -380,6 +384,7 @@ class TiiModelTest < ActiveSupport::TestCase
       to_return(
         {status: 200, body: TCAClient::Submission.new(status: 'COMPLETE').to_hash.to_json(), headers: {}},
       )
+
     similarity_request = stub_request(:put, "https://#{ENV['TCA_HOST']}/api/v1/submissions/1222/similarity").
       with(tii_headers).
       with(

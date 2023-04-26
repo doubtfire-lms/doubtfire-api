@@ -34,6 +34,8 @@ class ApiRoot < Grape::API
       message = "Missing value for #{e.param}"
       status = 400
     else
+      puts e.inspect unless Rails.env.production?
+
       logger.error "Unhandled exception: #{e.class}"
       logger.error e.inspect
       logger.error e.backtrace.join("\n")

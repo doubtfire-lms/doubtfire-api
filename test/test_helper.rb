@@ -69,7 +69,7 @@ class ActiveSupport::TestCase
   def setup
     Faker::UniqueGenerator.clear
     DatabaseCleaner.start
-    WebMock.reset_executed_requests!
+    WebMock.reset!
     Sidekiq::Testing.fake!
 
     # Ensure turn it in states is cleared
