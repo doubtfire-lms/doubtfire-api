@@ -29,6 +29,8 @@ class TiiAction < ApplicationRecord
   # - TiiGroupAttachment: upload attachment
   belongs_to :entity, polymorphic: true, optional: true
 
+  validate :entity_must_be_unique_within_type_on_create, on: :create
+
   serialize :params, JSON
   serialize :log, JSON
 
@@ -121,7 +123,7 @@ class TiiAction < ApplicationRecord
     self.retries = 0
     self.complete = success if success
 
-    save
+    save!
   end
 
   private
@@ -218,5 +220,12 @@ class TiiAction < ApplicationRecord
     save # Error is logged in exec_tca_call
 
     nil
+  end
+
+  def entity_must_be_unique_within_type_on_create
+    # Unique if none already exist
+    return if entity.nil? || self.class.where(entity_id: entity_id, entity_type: entity_type, type: type).count == 0
+
+    errors.add(:entity, 'must be unique within the action')
   end
 end

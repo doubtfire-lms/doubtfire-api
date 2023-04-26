@@ -36,28 +36,28 @@ module Tii
         subm = TCAClient::SubmissionCompleteWebhookRequest.new(data)
 
         instance = TiiSubmission.find_by(submission_id: subm.id)
-        action = TiiActionUploadSubmission.where(entity: instance).last || TiiActionUploadSubmission.create(entity: instance) unless instance.nil?
+        action = TiiActionUploadSubmission.find_or_create_by(entity: instance) unless instance.nil?
 
         action&.update_from_submission_status(subm)
       when 'SIMILARITY_COMPLETE', 'SIMILARITY_UPDATED'
         siml = TCAClient::SimilarityCompleteWebhookRequest.new(data)
 
         instance = TiiSubmission.find_by(submission_id: siml.submission_id)
-        action = TiiActionUploadSubmission.where(entity: instance).last || TiiActionUploadSubmission.create(entity: instance) unless instance.nil?
+        action = TiiActionUploadSubmission.find_or_create_by(entity: instance) unless instance.nil?
 
         action&.update_from_similarity_status(siml)
       when 'PDF_STATUS'
         req = TCAClient::PDFStatusWebhookRequest.new(data)
 
         instance = TiiSubmission.find_by(submission_id: req.id)
-        action = TiiActionUploadSubmission.where(entity: instance).last || TiiActionUploadSubmission.create(entity: instance) unless instance.nil?
+        action = TiiActionUploadSubmission.find_or_create_by(entity: instance) unless instance.nil?
 
         action&.update_from_pdf_report_status(req.status)
       when 'GROUP_ATTACHMENT_COMPLETE'
         req = TCAClient::GroupAttachmentResponse.new(data)
 
         instance = TiiGroupAttachment.find_by(group_attachment_id: req.id)
-        action = TiiActionUploadTaskResources.where(entity: instance).last || TiiActionUploadTaskResources.create(entity: instance) unless instance.nil?
+        action = TiiActionUploadTaskResources.find_or_create_by(entity: instance) unless instance.nil?
 
         action&.update_from_attachment_status(req)
       else

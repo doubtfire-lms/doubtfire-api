@@ -141,6 +141,17 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     test_unit_id = Unit.first.id
     td = Unit.first.task_definitions.first
 
+    td.upload_requirements = [
+      {
+        key: 'file0',
+        name: 'Report x',
+        tii_check: false,
+        type: 'document',
+        tii_pct: 35
+      }
+    ]
+    td.save!
+
     test_task_definition_id = td.id
 
     start_count = TiiActionUploadTaskResources.count
@@ -192,6 +203,9 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
       with(headers: {'Content-Type'=>'binary/octet-stream'}).
       to_return(status: 200, body: '{ "message": "Successfully uploaded file for attachment ..." }', headers: {})
 
+    delete_stub = stub_request(:delete, %r[https://localhost/api/v1/groups/.*/attachments/.*]).
+      with(tii_headers).
+      to_return(status: 200, body: "", headers: {})
 
     td.save!
 
@@ -200,12 +214,10 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_requested create_tii_group_stub, times: 1
     assert_requested post_attachment_stub, times: 1
     assert_requested upload_stub, times: 1
-
-    stub_request(:delete, %r[https://localhost/api/v1/groups/1/attachments/.*]).
-      with(tii_headers).
-      to_return(status: 200, body: "", headers: {})
+    assert_requested delete_stub, times: 0
 
     td.destroy!
+    assert_requested delete_stub, times: 1
   end
 
   def test_submission_creates_folders
