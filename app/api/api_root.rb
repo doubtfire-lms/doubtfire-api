@@ -69,8 +69,11 @@ class ApiRoot < Grape::API
   mount TasksApi
   mount TeachingPeriodsPublicApi
   mount TeachingPeriodsAuthenticatedApi
+
   mount Tii::TurnItInApi
   mount Tii::TurnItInHooksApi
+  mount Tii::TiiGroupAttachmentApi
+
   mount CampusesPublicApi
   mount CampusesAuthenticatedApi
   mount TutorialsApi
@@ -103,7 +106,10 @@ class ApiRoot < Grape::API
   AuthenticationHelpers.add_auth_to TaskCommentsApi
   AuthenticationHelpers.add_auth_to TaskDefinitionsApi
   AuthenticationHelpers.add_auth_to TeachingPeriodsAuthenticatedApi
+
   AuthenticationHelpers.add_auth_to Tii::TurnItInApi
+  AuthenticationHelpers.add_auth_to Tii::TiiGroupAttachmentApi
+
   AuthenticationHelpers.add_auth_to CampusesAuthenticatedApi
   AuthenticationHelpers.add_auth_to TutorialsApi
   AuthenticationHelpers.add_auth_to TutorialStreamsApi
