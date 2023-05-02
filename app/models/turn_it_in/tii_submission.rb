@@ -59,11 +59,13 @@ class TiiSubmission < ApplicationRecord
   #
   # @return [Boolean] true if the submission was deleted, false otherwise
   def delete_submission
-    TiiActionDeleteSubmission.create(
-      entity: nil,
-      params: {
-        submission_id: submission_id
-      }
-    ).perform
+    if submission_id.present?
+      TiiActionDeleteSubmission.create(
+        entity: nil,
+        params: {
+          submission_id: submission_id
+        }
+      ).perform
+    end
   end
 end
