@@ -73,6 +73,7 @@ class ApiRoot < Grape::API
   mount Tii::TurnItInApi
   mount Tii::TurnItInHooksApi
   mount Tii::TiiGroupAttachmentApi
+  mount Tii::TiiActionApi
 
   mount CampusesPublicApi
   mount CampusesAuthenticatedApi
@@ -109,6 +110,7 @@ class ApiRoot < Grape::API
 
   AuthenticationHelpers.add_auth_to Tii::TurnItInApi
   AuthenticationHelpers.add_auth_to Tii::TiiGroupAttachmentApi
+  AuthenticationHelpers.add_auth_to Tii::TiiActionApi
 
   AuthenticationHelpers.add_auth_to CampusesAuthenticatedApi
   AuthenticationHelpers.add_auth_to TutorialsApi
