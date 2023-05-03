@@ -11,6 +11,7 @@ class TaskDefinition < ApplicationRecord
   after_update :move_files_on_abbreviation_change, if: :saved_change_to_abbreviation?
   after_update :remove_old_group_submissions, if: :has_removed_group?
   after_update :check_and_update_tii_status, if: :saved_change_to_upload_requirements?
+  after_update :update_tii_group, if: :saved_change_to_due_date?
 
   # Model associations
   belongs_to :unit, optional: false # Foreign key
