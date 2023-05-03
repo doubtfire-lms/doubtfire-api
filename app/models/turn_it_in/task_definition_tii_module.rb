@@ -81,10 +81,16 @@ module TaskDefinitionTiiModule
       send_group_attachments_to_tii
     else
       # Trigger the update - which creates action if needed
-      TiiActionUpdateTiiGroup.create(
-        entity: self,
-        params: { add_group_attachment: true }
-      ).perform
+      action = TiiActionUpdateTiiGroup.find_or_create_by(entity: self)
+      action.params = { add_group_attachment: true }
+      action.perform
     end
+  end
+
+  def update_tii_group
+    return unless tii_group_id.present?
+
+    action = TiiActionUpdateTiiGroup.find_or_create_by(entity: self)
+    action.perform
   end
 end

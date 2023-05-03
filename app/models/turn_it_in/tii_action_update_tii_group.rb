@@ -3,13 +3,8 @@
 # Track updating of a group (assignment / task definition) in TurnItIn
 class TiiActionUpdateTiiGroup < TiiAction
   def run
-    if entity.tii_group_id.present?
-      save_and_log_custom_error "Group id exists for task definition #{entity.id}"
-      return
-    end
-
     # Generate id but do not save until put is complete
-    entity.tii_group_id |= SecureRandom.uuid
+    entity.tii_group_id = SecureRandom.uuid unless entity.tii_group_id.present?
 
     data = TCAClient::AggregateGroup.new(
       id: entity.tii_group_id,
@@ -32,12 +27,14 @@ class TiiActionUpdateTiiGroup < TiiAction
         data
       )
 
+      # Send attachments to TII
+      entity.send_group_attachments_to_tii if params.key?("add_group_attachment") && params["add_group_attachment"]
+
       # Save the task definition and complete if save succeeds
       self.complete = entity.save
+      params = {} if self.complete
       # Save action
       save
-
-      entity.send_group_attachments_to_tii if params.key?("add_group_attachment") && params["add_group_attachment"]
     end
   end
 end

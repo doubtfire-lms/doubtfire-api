@@ -174,6 +174,15 @@ class TiiModelTest < ActiveSupport::TestCase
     assert task_definition.use_tii?(3)
     refute task_definition.use_tii?(4)
 
+    pre_id = task_definition.tii_group_id
+    # Change the due date of the task and check update
+    task_definition.due_date = task_definition.due_date + 1.day
+    task_definition.save
+
+    assert TiiActionUpdateTiiGroup.last.complete
+    assert_requested grp_put_stub, times: 2
+    assert_equal pre_id, task_definition.reload.tii_group_id
+
     # Adding task resources will trigger creation and upload of the group attachments
     post_grp_attachment_stub = stub_request(:post, "https://#{ENV['TCA_HOST']}/api/v1/groups/#{task_definition.tii_group_id}/attachments").
       with(tii_headers).
