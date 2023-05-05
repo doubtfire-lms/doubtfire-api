@@ -20,6 +20,7 @@ class AddTiiDetails < ActiveRecord::Migration[7.0]
       t.datetime    :similarity_request_at
 
       t.integer     :status, default: 0, null: false
+      t.integer     :overall_match_percentage
 
       t.timestamps  null: false
     end

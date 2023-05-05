@@ -59,6 +59,8 @@ class TiiActionUploadSubmission < TiiAction
     # when 'PROCESSING' # Similarity report is being generated
     #   return
     when 'COMPLETE' # Similarity report is complete
+      entity.overall_match_percentage = response.overall_match_percentage
+
       if response.overall_match_percentage.present? && response.overall_match_percentage.to_i > task.tii_match_pct(idx)
         entity.status = :similarity_report_complete
         entity.save
