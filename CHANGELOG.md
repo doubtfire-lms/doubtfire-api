@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [7.0.10](https://github.com/macite/doubtfire-deploy/compare/v7.0.9...v7.0.10) (2023-05-05)
+
+
+### Features
+
+* ensure task explorer gets extensions ([f72b378](https://github.com/macite/doubtfire-deploy/commit/f72b378c3326c392c33af2dd44a991137e57be3c))
+
+
+### Bug Fixes
+
+* ensure extension checks allow audio upload ([dc33fc7](https://github.com/macite/doubtfire-deploy/commit/dc33fc7b7022395c1a69d7a23362f5ebfe11a1b6))
+* exclude tasks from withdrawn units in webcal feed ([bcd29fb](https://github.com/macite/doubtfire-deploy/commit/bcd29fba2623136456c11e0dbff7ea61544eb08c))
+
 ### [7.0.9](https://github.com/macite/doubtfire-deploy/compare/v7.0.8...v7.0.9) (2023-04-04)
 
 
