@@ -21,6 +21,7 @@ class AddTiiDetails < ActiveRecord::Migration[7.0]
 
       t.integer     :status, default: 0, null: false
       t.integer     :overall_match_percentage
+      t.boolean     :flagged, default: false, null: false
 
       t.timestamps  null: false
     end

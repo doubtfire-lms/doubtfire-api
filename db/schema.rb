@@ -387,6 +387,8 @@ ActiveRecord::Schema[7.0].define(version: 2023_04_20_224824) do
     t.datetime "submitted_at"
     t.datetime "similarity_request_at"
     t.integer "status", default: 0, null: false
+    t.integer "overall_match_percentage"
+    t.boolean "flagged", default: false, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["submitted_by_user_id"], name: "index_tii_submissions_on_submitted_by_user_id"

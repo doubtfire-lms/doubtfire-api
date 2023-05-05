@@ -42,6 +42,8 @@ class TiiAction < ApplicationRecord
   #
   # @return value returned by running the action, or nil if the action failed
   def perform
+    self.error_code = nil if self.retry && error?
+
     self.log << { date: Time.zone.now, message: "Started #{type}" }
     self.last_run = Time.zone.now
     self.retry = false # reset retry flag
