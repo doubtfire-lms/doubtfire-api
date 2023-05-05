@@ -359,12 +359,22 @@ class TiiModelTest < ActiveSupport::TestCase
     similarity_pdf_request = stub_request(:post, "https://#{ENV['TCA_HOST']}/api/v1/submissions/1223/similarity/pdf").
       with(tii_headers).
       with(body: "{\"locale\":\"en-US\"}").
-      to_return(status: 200, body: TCAClient::RequestPdfResponse.new(id: '9876').to_hash.to_json, headers: {})
+      to_return(
+        {status: 500, body: 'error', headers: {}},
+        {status: 200, body: TCAClient::RequestPdfResponse.new(id: '9876').to_hash.to_json, headers: {}}
+      )
+
+    # Check we got the submission details
+    subm_act.perform
+    assert_equal :similarity_report_complete, subm.reload.status_sym
+    assert subm.flagged
+    assert_equal 50, subm.overall_match_percentage
+    assert_requested similarity_pdf_request, times: 1
 
     subm_act.perform
     assert_equal '9876', subm.reload.similarity_pdf_id
     assert_equal :similarity_pdf_requested, subm.reload.status_sym
-    assert_requested similarity_pdf_request, times: 1
+    assert_requested similarity_pdf_request, times: 2
 
     # Get the PDF - after asking for status
 

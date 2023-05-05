@@ -63,6 +63,7 @@ class TiiActionUploadSubmission < TiiAction
 
       if response.overall_match_percentage.present? && response.overall_match_percentage.to_i > task.tii_match_pct(idx)
         entity.status = :similarity_report_complete
+        entity.flagged = true
         entity.save
 
         # Reset for new request
@@ -71,6 +72,7 @@ class TiiActionUploadSubmission < TiiAction
         request_similarity_report_pdf
       else
         entity.status = :complete_low_similarity
+        entity.flagged = false
         entity.save
 
         save_and_reset_retry(success: true)
