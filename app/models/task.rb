@@ -987,6 +987,7 @@ class Task < ApplicationRecord
     attr_accessor :files
     attr_accessor :base_path
     attr_accessor :image_path
+    attr_accessor :include_pax
 
     def init(task, is_retry)
       @task = task
@@ -995,6 +996,7 @@ class Task < ApplicationRecord
       @image_path = Rails.root.join('public', 'assets', 'images')
       @institution_name = Doubtfire::Application.config.institution[:name]
       @doubtfire_product_name = Doubtfire::Application.config.institution[:product_name]
+      @include_pax = !is_retry
     end
 
     def make_pdf
