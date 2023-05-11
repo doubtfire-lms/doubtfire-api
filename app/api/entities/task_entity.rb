@@ -26,9 +26,7 @@ module Entities
 
     # Attributes excluded from update only
 
-    expose :pct_similar, unless: :update_only
-    expose :similar_to_count, unless: :update_only
-    expose :similar_to_dismissed_count, unless: :update_only
+    expose :similarity_flag, unless: :update_only
 
     expose :num_new_comments, unless: :update_only
 

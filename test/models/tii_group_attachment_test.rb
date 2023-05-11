@@ -39,7 +39,7 @@ class TiiGroupAttachmentTest < ActiveSupport::TestCase
     with(body: %r[.*id.*.*name.*type.*ASSIGNMENT.*group_context.*id.*name.*due_date.*report_generation.*IMMEDIATELY_AND_DUE_DATE.*]).
     to_return(status: 200, body: "", headers: {})
 
-    delete_stub = stub_request(:delete, %r[https://localhost/api/v1/groups/1/attachments/.*]).
+    delete_stub = stub_request(:delete, %r[https://localhost/api/v1/groups/.*/attachments/.*]).
       with(tii_headers).
       to_return(status: 200, body: "", headers: {})
 

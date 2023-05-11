@@ -339,6 +339,7 @@ class TiiModelTest < ActiveSupport::TestCase
     assert_requested subm_status_req, times: 2
     assert_equal :similarity_report_requested, subm.reload.status_sym
     assert_equal 0, subm_act.reload.retries
+    refute subm.reload.tii_task_similarity.present?
 
     # Now check the status of the similarity report
     # response = TCAClient::SimilarityMetadata.new(
@@ -367,7 +368,9 @@ class TiiModelTest < ActiveSupport::TestCase
     # Check we got the submission details
     subm_act.perform
     assert_equal :similarity_report_complete, subm.reload.status_sym
-    assert subm.flagged
+
+    assert subm.reload.tii_task_similarity.present?
+    assert subm.reload.tii_task_similarity.flagged
     assert_equal 50, subm.overall_match_percentage
     assert_requested similarity_pdf_request, times: 1
 

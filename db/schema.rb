@@ -160,19 +160,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_04_20_224824) do
     t.datetime "last_pulled_date"
   end
 
-  create_table "plagiarism_match_links", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
-    t.bigint "task_id"
-    t.bigint "other_task_id"
-    t.integer "pct"
-    t.datetime "created_at"
-    t.datetime "updated_at"
-    t.string "plagiarism_report_url"
-    t.boolean "dismissed", default: false
-    t.string "kind"
-    t.index ["other_task_id"], name: "index_plagiarism_match_links_on_other_task_id"
-    t.index ["task_id"], name: "index_plagiarism_match_links_on_task_id"
-  end
-
   create_table "projects", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
     t.bigint "unit_id"
     t.string "project_role"
@@ -186,7 +173,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_04_20_224824) do
     t.integer "target_grade", default: 0
     t.boolean "compile_portfolio", default: false
     t.date "portfolio_production_date"
-    t.integer "max_pct_similar", default: 0
     t.bigint "user_id"
     t.integer "grade", default: 0
     t.string "grade_rationale", limit: 4096
@@ -290,6 +276,21 @@ ActiveRecord::Schema[7.0].define(version: 2023_04_20_224824) do
     t.index ["user_id"], name: "fk_rails_915df186ed"
   end
 
+  create_table "task_similarities", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
+    t.bigint "task_id"
+    t.bigint "other_task_id"
+    t.integer "pct"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.string "plagiarism_report_url"
+    t.boolean "flagged", default: false, null: false
+    t.string "type"
+    t.bigint "tii_submission_id"
+    t.index ["other_task_id"], name: "index_task_similarities_on_other_task_id"
+    t.index ["task_id"], name: "index_task_similarities_on_task_id"
+    t.index ["tii_submission_id"], name: "index_task_similarities_on_tii_submission_id"
+  end
+
   create_table "task_statuses", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
     t.string "name"
     t.string "description"
@@ -319,7 +320,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_04_20_224824) do
     t.string "portfolio_evidence"
     t.boolean "include_in_portfolio", default: true
     t.datetime "file_uploaded_at"
-    t.integer "max_pct_similar", default: 0
     t.bigint "group_submission_id"
     t.integer "contribution_pct", default: 100
     t.integer "times_assessed", default: 0
@@ -379,6 +379,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_04_20_224824) do
 
   create_table "tii_submissions", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.bigint "task_id", null: false
+    t.bigint "tii_task_similarity_id"
     t.bigint "submitted_by_user_id", null: false
     t.string "filename", null: false
     t.integer "idx"
@@ -388,11 +389,11 @@ ActiveRecord::Schema[7.0].define(version: 2023_04_20_224824) do
     t.datetime "similarity_request_at"
     t.integer "status", default: 0, null: false
     t.integer "overall_match_percentage"
-    t.boolean "flagged", default: false, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["submitted_by_user_id"], name: "index_tii_submissions_on_submitted_by_user_id"
     t.index ["task_id"], name: "index_tii_submissions_on_task_id"
+    t.index ["tii_task_similarity_id"], name: "index_tii_submissions_on_tii_task_similarity_id"
   end
 
   create_table "tutorial_enrolments", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|

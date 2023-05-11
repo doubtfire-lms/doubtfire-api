@@ -244,6 +244,8 @@ class DatabasePopulator
       generate_tutorial_streams_for(unit)
       generate_tutorials_and_enrol_students_for_unit(unit, unit_details)
     end
+
+    add_similarities
   end
 
   def generate_tutorial_streams_for(unit)
@@ -441,6 +443,59 @@ class DatabasePopulator
         echo_line "!"
       end
     end
+  end
+
+  def add_similarities
+    unit = Unit.first
+    project = unit.projects.first
+    task = project.task_for_task_definition(unit.task_definitions.first)
+
+    other_project = unit.projects.second
+    other_task = other_project.task_for_task_definition(unit.task_definitions.first)
+
+    similarity = TiiTaskSimilarity.create!(
+      task: task,
+      pct: 80,
+      flagged: true,
+      tii_submission: TiiSubmission.create!(
+        task: task,
+        idx: 0,
+        filename: 'test.doc',
+        status: :similarity_pdf_downloaded,
+        submitted_by_user: unit.main_convenor_user
+      )
+    )
+    FileUtils.cp Rails.root.join('test_files/unit_files/sample-learning-summary.pdf'), similarity.similarity_pdf_path
+
+    similarity = TiiTaskSimilarity.create!(
+      task: task,
+      pct: 10,
+      flagged: false,
+      tii_submission: TiiSubmission.create!(
+        task: task,
+        idx: 1,
+        filename: 'test.doc',
+        status: :similarity_pdf_downloaded,
+        submitted_by_user: unit.main_convenor_user
+      )
+    )
+    FileUtils.cp Rails.root.join('test_files/unit_files/sample-learning-summary.pdf'), similarity.similarity_pdf_path
+
+    similarity = MossTaskSimilarity.create!(
+      task: task,
+      pct: 80,
+      flagged: true,
+      other_task: other_task
+    )
+    FileUtils.cp Rails.root.join('test_files/similarity.html'), similarity.html_path
+
+    similarity = MossTaskSimilarity.create!(
+      task: other_task,
+      pct: 30,
+      flagged: true,
+      other_task: task
+    )
+    FileUtils.cp Rails.root.join('test_files/similarity.html'), similarity.html_path
   end
 
   def self.assess_task(proj, task, tutor, status, complete_date)

@@ -6,8 +6,21 @@ class AddTiiDetails < ActiveRecord::Migration[7.0]
     add_column :units, :tii_group_context_id, :string
     add_column :task_definitions, :tii_group_id, :string
 
+    rename_table :plagiarism_match_links, :task_similarities
+
+    add_column :task_similarities, :type, :string
+    rename_column :task_similarities, :dismissed, :flagged
+
+    remove_column :tasks, :max_pct_similar
+    remove_column :projects, :max_pct_similar
+
+    TaskSimilarity.update_all(type: 'MossTaskSimilarity')
+    # TaskSimilarity.update_all('flagged = not flagged')
+
     create_table :tii_submissions do |t|
       t.references  :task, null: false
+      t.references  :tii_task_similarity, null: true
+
       t.bigint      :submitted_by_user_id, null: false
       t.index       :submitted_by_user_id
       t.string      :filename, null: false
@@ -21,10 +34,11 @@ class AddTiiDetails < ActiveRecord::Migration[7.0]
 
       t.integer     :status, default: 0, null: false
       t.integer     :overall_match_percentage
-      t.boolean     :flagged, default: false, null: false
 
       t.timestamps  null: false
     end
+
+    add_reference :task_similarities, :tii_submission, null: true
 
     create_table :tii_group_attachments do |t|
       t.references  :task_definition, null: false

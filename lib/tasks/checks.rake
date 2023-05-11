@@ -69,8 +69,7 @@ namespace :submission do
           puts ' ------------------------------------------------------------ '
           puts "  Starting Plagiarism Check for #{unit.name}"
           puts ' ------------------------------------------------------------ '
-          unit.check_plagiarism
-          unit.update_plagiarism_stats
+          unit.check_moss_similarity
         end
         puts ' ------------------------------------------------------------ '
         puts ' done.'
