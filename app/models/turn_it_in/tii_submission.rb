@@ -7,6 +7,7 @@ class TiiSubmission < ApplicationRecord
   belongs_to :submitted_by_user, class_name: 'User'
   belongs_to :task
   has_many :tii_actions, as: :entity, dependent: :destroy
+  has_one :tii_task_similarity, dependent: :destroy
 
   before_destroy :delete_submission
 

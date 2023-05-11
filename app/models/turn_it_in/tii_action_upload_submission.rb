@@ -61,22 +61,24 @@ class TiiActionUploadSubmission < TiiAction
     when 'COMPLETE' # Similarity report is complete
       entity.overall_match_percentage = response.overall_match_percentage
 
-      if response.overall_match_percentage.present? && response.overall_match_percentage.to_i > task.tii_match_pct(idx)
-        entity.status = :similarity_report_complete
-        entity.flagged = true
-        entity.save
+      flag = response.overall_match_percentage.present? && response.overall_match_percentage.to_i > task.tii_match_pct(idx)
 
-        # Reset for new request
-        save_and_reset_retry
+      # Update the status of the entity
+      entity.update(status: flag ? :similarity_report_complete : :complete_low_similarity)
 
-        request_similarity_report_pdf
-      else
-        entity.status = :complete_low_similarity
-        entity.flagged = false
-        entity.save
-
-        save_and_reset_retry(success: true)
+      # Create the similarity record
+      TiiTaskSimilarity.find_or_initialize_by task: entity.task do |similarity|
+        similarity.pct = response.overall_match_percentage
+        similarity.tii_submission = entity
+        similarity.flagged = flag
+        similarity.save
       end
+
+      # Reset for new request
+      save_and_reset_retry
+
+      # Request the PDF if flagged
+      request_similarity_report_pdf if flag
     end
   end
 

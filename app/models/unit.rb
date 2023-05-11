@@ -165,6 +165,7 @@ class Unit < ApplicationRecord
   scope :set_inactive,          -> { where('active = ?', false) }
 
   include UnitTiiModule
+  include UnitSimilarityModule
 
   def detailed_name
     "#{name} #{teaching_period.present? ? teaching_period.detailed_name : start_date.strftime('%Y-%m-%d')}"
@@ -347,7 +348,7 @@ class Unit < ApplicationRecord
         .joins(:user)
         .joins('LEFT OUTER JOIN tasks ON projects.id = tasks.project_id')
         .joins('LEFT JOIN task_definitions ON tasks.task_definition_id = task_definitions.id')
-        .joins('LEFT OUTER JOIN plagiarism_match_links ON tasks.id = plagiarism_match_links.task_id')
+        .joins('LEFT OUTER JOIN task_similarities ON tasks.id = task_similarities.task_id')
         .joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id')
         .joins('LEFT OUTER JOIN tutorials ON tutorials.id = tutorial_enrolments.tutorial_id')
         .joins('LEFT OUTER JOIN tutorial_streams ON tutorials.tutorial_stream_id = tutorial_streams.id')
@@ -386,7 +387,7 @@ class Unit < ApplicationRecord
           'projects.grade AS grade',
           'projects.grade_rationale AS grade_rationale',
           'projects.portfolio_production_date AS portfolio_production_date',
-          'MAX(CASE WHEN plagiarism_match_links.dismissed = FALSE THEN plagiarism_match_links.pct ELSE 0 END) AS plagiarism_match_links_max_pct',
+          'MAX(CASE WHEN task_similarities.flagged THEN task_similarities.pct ELSE 0 END) AS task_similarities_max_pct',
           # Get tutorial for each stream in unit
           *tutorial_streams.map { |s| "MAX(CASE WHEN tutorials.tutorial_stream_id = #{s.id} OR tutorials.tutorial_stream_id IS NULL THEN tutorials.id ELSE NULL END) AS tutorial_#{s.id}" },
           # Get tutorial for case when no stream
@@ -421,7 +422,7 @@ class Unit < ApplicationRecord
         compile_portfolio: t.compile_portfolio,
         grade: t.grade,
         grade_rationale: t.grade_rationale,
-        max_pct_copy: t.plagiarism_match_links_max_pct,
+        max_pct_copy: t.task_similarities_max_pct,
         has_portfolio: !t.portfolio_production_date.nil?,
         stats: map_stats.call(t),
         tutorial_enrolments: tutorial_streams.map do |s|
@@ -1615,106 +1616,6 @@ class Unit < ApplicationRecord
     tasks.where(task_definition_id: task_def.id)
   end
 
-  def create_plagiarism_link(t1, t2, match)
-    plk1 = PlagiarismMatchLink.where(task_id: t1.id, other_task_id: t2.id).first
-    plk2 = PlagiarismMatchLink.where(task_id: t2.id, other_task_id: t1.id).first
-
-    if plk1.nil? || plk2.nil?
-      # Delete old links between tasks
-      plk1.destroy unless plk1.nil? ## will delete its pair
-      plk2.destroy unless plk2.nil?
-
-      plk1 = PlagiarismMatchLink.create do |plm|
-        plm.kind = 'moss'
-        plm.task = t1
-        plm.other_task = t2
-        plm.dismissed = false
-        plm.pct = match[0][:pct]
-      end
-
-      plk2 = PlagiarismMatchLink.create do |plm|
-        plm.kind = 'moss'
-        plm.task = t2
-        plm.other_task = t1
-        plm.dismissed = false
-        plm.pct = match[1][:pct]
-      end
-    else
-      # puts "#{plk1.pct} != #{match[0][:pct]}, #{plk1.pct != match[0][:pct]}"
-      # puts "#{plk1.dismissed}"
-      plk1.dismissed = false unless plk1.pct == match[0][:pct]
-      plk2.dismissed = false unless plk2.pct == match[1][:pct]
-      # puts "#{plk1.dismissed}"
-      plk1.pct = match[0][:pct]
-      plk2.pct = match[1][:pct]
-    end
-
-    plk1.plagiarism_report_url = match[0][:url]
-    plk2.plagiarism_report_url = match[1][:url]
-
-    plk1.save!
-    plk2.save!
-
-    FileHelper.save_plagiarism_html(plk1, match[0][:html])
-    FileHelper.save_plagiarism_html(plk2, match[1][:html])
-  end
-
-  def update_plagiarism_stats
-    moss_key = Doubtfire::Application.secrets.secret_key_moss
-    raise "No moss key set. Check ENV['DF_SECRET_KEY_MOSS'] first." if moss_key.nil?
-
-    moss = MossRuby.new(moss_key)
-
-    task_definitions.where(plagiarism_updated: true).find_each do |td|
-      td.plagiarism_updated = false
-      td.save
-
-      # Get results
-      url = td.plagiarism_report_url
-      logger.debug "Processing MOSS results #{url}"
-
-      warn_pct = td.plagiarism_warn_pct
-      warn_pct = 50 if warn_pct.nil?
-
-      results = moss.extract_results(url, warn_pct, ->(line) { puts line })
-
-      # Use results
-      results.each do |match|
-        next if match[0][:pct] < warn_pct && match[1][:pct] < warn_pct
-
-        task_id_1 = /.*\/(\d+)\/$/.match(match[0][:filename])[1]
-        task_id_2 = /.*\/(\d+)\/$/.match(match[1][:filename])[1]
-
-        t1 = Task.find(task_id_1)
-        t2 = Task.find(task_id_2)
-
-        if t1.nil? || t2.nil?
-          logger.error "Could not find tasks #{task_id_1} or #{task_id_2} for plagiarism stats check!"
-          next
-        end
-
-        if td.group_set # its a group task
-          g1_tasks = t1.group_submission.tasks
-          g2_tasks = t2.group_submission.tasks
-
-          g1_tasks.each do |gt1|
-            g2_tasks.each do |gt2|
-              create_plagiarism_link(gt1, gt2, match)
-            end
-          end
-
-        else # just link the individuals...
-          create_plagiarism_link(t1, t2, match)
-        end
-      end # end of each result
-    end # for each task definition where it needs to be updated
-
-    self.last_plagarism_scan = Time.zone.now
-    save!
-
-    self
-  end
-
   #
   # Extract all done files related to a task definition matching a pattern into a given directory.
   # Returns an array of files
@@ -1740,87 +1641,6 @@ class Unit < ApplicationRecord
           MossRuby.add_file(to_check, "**/#{pattern}")
         end
       end
-    end
-
-    self
-  end
-
-  #
-  # Pass tasks on to plagarism detection software and setup links between students
-  #
-  def check_plagiarism(force = false)
-    # Get each task...
-    return unless active
-
-    # need pwd to restore after cding into submission folder (so the files do not have full path)
-    pwd = FileUtils.pwd
-
-    begin
-      logger.info "Checking plagiarsm for unit #{code} - #{name} (id=#{id})"
-      task_definitions.each do |td|
-        next if td.plagiarism_checks.empty?
-
-        # Is there anything to check?
-
-        logger.debug "Checking plagiarism for #{td.name} (id=#{td.id})"
-        tasks = tasks_for_definition(td)
-        tasks_with_files = tasks.select(&:has_pdf)
-        next unless tasks_with_files.count > 1 && (tasks.where('tasks.file_uploaded_at > ?', last_plagarism_scan).select(&:has_pdf).count > 0 || td.updated_at > last_plagarism_scan || force)
-
-        # There are new tasks, check these
-
-        logger.debug 'Contacting MOSS for new checks'
-        td.plagiarism_checks.each do |check|
-          next if check['type'].nil?
-
-          type_data = check['type'].split
-          next if type_data.nil? || (type_data.length != 2) || (type_data[0] != 'moss')
-
-          # Create the MossRuby object
-          moss_key = Doubtfire::Application.secrets.secret_key_moss
-          raise "No moss key set. Check ENV['DF_SECRET_KEY_MOSS'] first." if moss_key.nil?
-
-          moss = MossRuby.new(moss_key)
-
-          # Set options  -- the options will already have these default values
-          moss.options[:max_matches] = 7
-          moss.options[:directory_submission] = true
-          moss.options[:show_num_matches] = 500
-          moss.options[:experimental_server] = false
-          moss.options[:comment] = ''
-          moss.options[:language] = type_data[1]
-
-          tmp_path = File.join(Dir.tmpdir, 'doubtfire', "check-#{id}-#{td.id}")
-
-          begin
-            # Create a file hash, with the files to be processed
-            to_check = MossRuby.empty_file_hash
-            add_done_files_for_plagiarism_check_of(td, tmp_path, force, to_check)
-
-            FileUtils.chdir(tmp_path)
-
-            # Get server to process files
-            logger.debug 'Sending to MOSS...'
-            url = moss.check(to_check, ->(line) { print '.' })
-            puts()
-
-            logger.info "MOSS check for #{code} #{td.abbreviation} url: #{url}"
-
-            td.plagiarism_report_url = url
-            td.plagiarism_updated = true
-            td.save
-          rescue => e
-            logger.error "Failed to check plagiarism for task #{td.name} (id=#{td.id}). Error: #{e.message}"
-          ensure
-            FileUtils.chdir(pwd)
-            FileUtils.rm_rf tmp_path
-          end
-        end
-      end
-      self.last_plagarism_scan = Time.zone.now
-      save!
-    ensure
-      FileUtils.chdir(pwd) if FileUtils.pwd != pwd
     end
 
     self
@@ -1884,7 +1704,7 @@ class Unit < ApplicationRecord
         grade: t.grade,
         quality_pts: t.quality_pts,
         num_new_comments: t.number_unread,
-        similar_to_count: t.similar_to_count,
+        similarity_flag: t.similar_to_count > 0,
         pinned: t.pinned,
         has_extensions: t.has_extensions
       }
@@ -1907,7 +1727,7 @@ class Unit < ApplicationRecord
       joins("LEFT JOIN task_comments ON task_comments.task_id = tasks.id AND (task_comments.type IS NULL OR task_comments.type <> 'TaskStatusComment')").
       joins("LEFT JOIN comments_read_receipts crr ON crr.task_comment_id = task_comments.id AND crr.user_id = #{user.id}").
       joins("LEFT JOIN task_pins ON task_pins.task_id = tasks.id AND task_pins.user_id = #{user.id}").
-      joins('LEFT OUTER JOIN plagiarism_match_links ON tasks.id = plagiarism_match_links.task_id').
+      joins('LEFT OUTER JOIN task_similarities ON tasks.id = task_similarities.task_id').
       select(
         'sq.tutorial_id AS tutorial_id',
         'sq.tutorial_stream_id AS tutorial_stream_id',
@@ -1925,7 +1745,7 @@ class Unit < ApplicationRecord
         'submission_date',
         'tasks.grade as grade',
         'quality_pts',
-        'SUM(case when plagiarism_match_links.dismissed IS NULL OR plagiarism_match_links.dismissed = TRUE then 0 else 1 end) as similar_to_count'
+        'SUM(case when task_similarities.flagged then 1 else 0 end) as similar_to_count'
       ).
       group(
         'sq.tutorial_id',
@@ -1968,12 +1788,6 @@ class Unit < ApplicationRecord
     get_all_tasks_for(user)
       .having('task_statuses.id IN (:ids) OR COUNT(task_pins.task_id) > 0 OR SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) > 0', ids: [TaskStatus.ready_for_feedback, TaskStatus.need_help])
       .order('pinned DESC, submission_date ASC, MAX(task_comments.created_at) ASC, task_definition_id ASC')
-  end
-
-  def tasks_with_similarity(user)
-    get_all_tasks_for(user)
-      .having('similar_to_count > 0')
-      .order('submission_date ASC, task_definition_id ASC')
   end
 
   #

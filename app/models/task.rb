@@ -100,8 +100,8 @@ class Task < ApplicationRecord
   has_one :unit, through: :project
 
   has_many :comments, class_name: 'TaskComment', dependent: :destroy, inverse_of: :task
-  has_many :plagiarism_match_links, class_name: 'PlagiarismMatchLink', dependent: :destroy, inverse_of: :task
-  has_many :reverse_plagiarism_match_links, class_name: 'PlagiarismMatchLink', dependent: :destroy, inverse_of: :other_task, foreign_key: 'other_task_id'
+  has_many :task_similarities, class_name: 'TaskSimilarity', dependent: :destroy, inverse_of: :task
+  has_many :reverse_task_similarities, class_name: 'MossTaskSimilarity', dependent: :destroy, inverse_of: :other_task, foreign_key: 'other_task_id'
   has_many :learning_outcome_task_links, dependent: :destroy # links to learning outcomes
   has_many :learning_outcomes, through: :learning_outcome_task_links
   has_many :task_engagements, dependent: :destroy
@@ -196,8 +196,8 @@ class Task < ApplicationRecord
       )
   end
 
-  def current_plagiarism_match_links
-    plagiarism_match_links.where(dismissed: false)
+  def current_task_similarities
+    task_similarities.where(dismissed: false)
   end
 
   def self.for_unit(unit_id)
@@ -747,23 +747,6 @@ class Task < ApplicationRecord
     result.comment
   end
 
-  # Indicates what is the largest % similarity is for this task
-  def pct_similar
-    if current_plagiarism_match_links.order(pct: :desc).first.nil?
-      0
-    else
-      current_plagiarism_match_links.order(pct: :desc).first.pct
-    end
-  end
-
-  def similar_to_count
-    plagiarism_match_links.count
-  end
-
-  def similar_to_dismissed_count
-    plagiarism_match_links.where('dismissed = TRUE').count
-  end
-
   def student_work_dir(type, create = true)
     if group_task?
       # New submissions need to use the path of this task
@@ -1167,8 +1150,8 @@ class Task < ApplicationRecord
       end
 
       # Destroy the links to ensure we test new files
-      plagiarism_match_links.each(&:destroy)
-      reverse_plagiarism_match_links(&:destroy)
+      task_similarities.each(&:destroy)
+      reverse_task_similarities(&:destroy)
 
       save
     end

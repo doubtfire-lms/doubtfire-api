@@ -12,7 +12,6 @@
 # SupportedStyles: outdent, indent
 Layout/AccessModifierIndentation:
   Exclude:
-    - 'app/models/plagiarism_match_link.rb'
     - 'app/models/unit.rb'
 
 # Offense count: 10
@@ -140,7 +139,6 @@ Layout/EmptyLinesAroundAccessModifier:
   Exclude:
     - 'app/models/activity_type.rb'
     - 'app/models/campus.rb'
-    - 'app/models/plagiarism_match_link.rb'
     - 'app/models/project.rb'
     - 'app/models/task.rb'
     - 'app/models/tutorial.rb'
@@ -1230,7 +1228,6 @@ Style/InverseMethods:
     - 'app/api/entities/task_entity.rb'
     - 'app/api/submission/generate_helpers.rb'
     - 'app/helpers/file_helper.rb'
-    - 'app/models/plagiarism_match_link.rb'
     - 'app/models/unit.rb'
 
 # Offense count: 15
@@ -1393,7 +1390,6 @@ Style/PercentLiteralDelimiters:
     - 'app/helpers/file_helper.rb'
     - 'app/models/learning_outcome.rb'
     - 'app/models/learning_outcome_task_link.rb'
-    - 'app/models/plagiarism_match_link.rb'
     - 'app/models/task.rb'
     - 'app/models/task_definition.rb'
     - 'app/models/unit.rb'
@@ -1422,7 +1418,6 @@ Style/RedundantArgument:
 Style/RedundantBegin:
   Exclude:
     - 'app/helpers/timeout_helper.rb'
-    - 'app/models/plagiarism_match_link.rb'
     - 'app/models/task_definition.rb'
     - 'app/models/unit.rb'
 
@@ -1535,7 +1530,6 @@ Style/RescueStandardError:
     - 'app/helpers/file_helper.rb'
     - 'app/helpers/timeout_helper.rb'
     - 'app/models/group_submission.rb'
-    - 'app/models/plagiarism_match_link.rb'
     - 'app/models/portfolio_evidence.rb'
     - 'app/models/project.rb'
     - 'app/models/task.rb'
@@ -1556,7 +1550,6 @@ Style/SafeNavigation:
     - 'app/api/entities/tutorial_entity.rb'
     - 'app/api/entities/unit_entity.rb'
     - 'app/helpers/file_helper.rb'
-    - 'app/models/plagiarism_match_link.rb'
     - 'app/models/project.rb'
     - 'app/models/task.rb'
     - 'app/models/tutorial.rb'

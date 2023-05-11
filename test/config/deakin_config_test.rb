@@ -4,7 +4,7 @@ class DeakinConfigTest < ActiveSupport::TestCase
   include TestHelpers::TestFileHelper
   include DbHelpers
 
-  def setup
+  setup do
     @@backup = Doubtfire::Application.config.institution_settings
 
     ENV['DF_INSTITUTION_SETTINGS_SYNC_BASE_URL'] = 'https://test.com/enrolment'

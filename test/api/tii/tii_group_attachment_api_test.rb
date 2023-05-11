@@ -13,7 +13,7 @@ class TiiGroupAttachmentApiTest < ActiveSupport::TestCase
     Rails.application
   end
 
-  def setup
+  setup do
     @task_def = FactoryBot.create(:task_definition,
       unit: FactoryBot.create(:unit, with_students: false, task_count: 0)
     )
@@ -84,6 +84,8 @@ class TiiGroupAttachmentApiTest < ActiveSupport::TestCase
   end
 
   def test_can_trigger_upload_group_attachments_for_task_definition
+    TiiActionJob.jobs.clear
+
     # Add auth_token and username to header
     add_auth_header_for(user: @unit.main_convenor_user)
 

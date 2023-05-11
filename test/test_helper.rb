@@ -66,7 +66,7 @@ class ActiveSupport::TestCase
   # Support rollback of db changes after all tests
   DatabaseCleaner.strategy = :transaction
 
-  def setup
+  setup do
     Faker::UniqueGenerator.clear
     DatabaseCleaner.start
     WebMock.reset!
@@ -86,7 +86,7 @@ class ActiveSupport::TestCase
     @last_unit_id = Unit.last.id
   end
 
-  def teardown
+  teardown do
     Rails.cache.clear
     Sidekiq::Job.clear_all
 

@@ -3,7 +3,7 @@ require 'json'
 class TaskDefinition < ApplicationRecord
   # Record triggers - before associations
   after_update do |_td|
-    clear_related_plagiarism if plagiarism_checks.nil? && has_plagiarism?
+    clear_related_plagiarism if plagiarism_checks.nil? && moss_similarities?
   end
 
   before_destroy :delete_associated_files
@@ -49,6 +49,7 @@ class TaskDefinition < ApplicationRecord
   validates :weighting, presence: true
 
   include TaskDefinitionTiiModule
+  include TaskDefinitionSimilarityModule
 
   def unit_must_be_same
     if unit.present? and tutorial_stream.present? and not unit.eql? tutorial_stream.unit
@@ -249,21 +250,6 @@ class TaskDefinition < ApplicationRecord
   def type_for_upload(idx)
     return nil unless idx >= 0 && idx < upload_requirements.length
     upload_requirements[idx]['type']
-  end
-
-  def has_plagiarism?
-    PlagiarismMatchLink.joins(:task).where('tasks.task_definition_id' => id).count > 0
-  end
-
-  def clear_related_plagiarism
-    # delete old plagiarism links
-    logger.info "Deleting old links for task definition #{id} - #{abbreviation}"
-    PlagiarismMatchLink.joins(:task).where('tasks.task_definition_id' => id).find_each do |plnk|
-      begin
-        PlagiarismMatchLink.find(plnk.id).destroy!
-      rescue
-      end
-    end
   end
 
   def self.to_csv(task_definitions)

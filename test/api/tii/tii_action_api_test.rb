@@ -2,7 +2,7 @@
 
 require 'test_helper'
 
-class TiiGroupAttachmentApiTest < ActiveSupport::TestCase
+class TiiActionApiTest < ActiveSupport::TestCase
   include Rack::Test::Methods
   include TestHelpers::AuthHelper
   include TestHelpers::TiiTestHelper
@@ -13,24 +13,23 @@ class TiiGroupAttachmentApiTest < ActiveSupport::TestCase
     Rails.application
   end
 
-  def setup
+  setup do
     TiiAction.delete_all
 
     setup_tii_eula
 
     # Create a task definition with two attachments
-    @task_def = FactoryBot.create(:task_definition,
-      unit: FactoryBot.create(:unit, with_students: false, task_count: 0), upload_requirements: [
-        {
-          'key' => 'file0',
-          'name' => 'My document',
-          'type' => 'document',
-          'tii_check' => 'true',
-          'tii_pct' => '10'
-        }]
-    )
+    @unit = FactoryBot.create(:unit, with_students: false, task_count: 0)
 
-    @unit = @task_def.unit
+    @task_def = FactoryBot.create(:task_definition, unit: @unit, upload_requirements: [
+      {
+        'key' => 'file0',
+        'name' => 'My document',
+        'type' => 'document',
+        'tii_check' => 'true',
+        'tii_pct' => '10'
+      }
+    ])
 
     ga1 = TiiGroupAttachment.create(
       task_definition: @task_def,
@@ -79,11 +78,11 @@ class TiiGroupAttachmentApiTest < ActiveSupport::TestCase
       submitted_by_user: @convenor
     )
 
-    TiiActionUploadSubmission.find_or_create_by(entity: sub1).inspect
-    TiiActionUploadSubmission.find_or_create_by(entity: sub2).inspect
+    TiiActionUploadSubmission.find_or_create_by(entity: sub1)
+    TiiActionUploadSubmission.find_or_create_by(entity: sub2)
   end
 
-  def teardown
+  teardown do
     @unit.destroy!
   end
 

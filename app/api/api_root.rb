@@ -67,6 +67,7 @@ class ApiRoot < Grape::API
   mount TaskCommentsApi
   mount TaskDefinitionsApi
   mount TasksApi
+  mount Similarity::TaskSimilarityApi
   mount TeachingPeriodsPublicApi
   mount TeachingPeriodsAuthenticatedApi
 
@@ -104,6 +105,7 @@ class ApiRoot < Grape::API
   AuthenticationHelpers.add_auth_to Submission::PortfolioEvidenceApi
   AuthenticationHelpers.add_auth_to Submission::BatchTaskApi
   AuthenticationHelpers.add_auth_to TasksApi
+  AuthenticationHelpers.add_auth_to Similarity::TaskSimilarityApi
   AuthenticationHelpers.add_auth_to TaskCommentsApi
   AuthenticationHelpers.add_auth_to TaskDefinitionsApi
   AuthenticationHelpers.add_auth_to TeachingPeriodsAuthenticatedApi

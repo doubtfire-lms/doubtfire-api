@@ -78,12 +78,12 @@ class FeedbackTest < ActiveSupport::TestCase
     assert_equal expected_count, last_response_body.count, last_response_body
 
     task = unit.tasks.last
-    PlagiarismMatchLink.create! do |pml|
+    MossTaskSimilarity.create! do |pml|
       pml.task = task
       pml.pct = 50
       pml.plagiarism_report_url = 'test'
-      pml.dismissed = false
-      pml.kind = 'tii'
+      pml.flagged = true
+      pml.other_task = task
     end
 
     expected_count = 1
