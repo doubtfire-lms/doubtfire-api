@@ -15,6 +15,73 @@ class UnitModelTest < ActiveSupport::TestCase
     @unit.destroy
   end
 
+  def test_sync_unit
+    import_settings = {
+      replace_existing_campus: false,
+      replace_existing_tutorial: false
+    }
+
+    student = FactoryBot.create :user, :student
+    campus2 = FactoryBot.create :campus
+
+    student_list = [
+      {
+        unit_code: 'COS10001',
+        username: student.username,
+        student_id: student.student_id,
+        first_name: student.first_name,
+        last_name: student.last_name,
+        nickname: student.nickname,
+        email: student.email,
+        tutorials: [],
+        enrolled: true,
+        campus: Campus.first.abbreviation
+      }
+    ]
+
+    result = {
+      success: [],
+      ignored: [],
+      errors: []
+    }
+
+    @unit.sync_enrolment_with(student_list, import_settings, result)
+
+    assert_equal 0, result[:ignored].count, result.inspect
+    assert_equal 0, result[:errors].count, result.inspect
+    assert_equal 1, result[:success].count, result.inspect
+
+    result[:success].clear
+
+    student_list[0][:campus] = campus2.abbreviation
+
+    @unit.sync_enrolment_with(student_list, import_settings, result)
+
+    assert_equal 1, result[:ignored].count, result.inspect
+    assert_equal 0, result[:errors].count, result.inspect
+    assert_equal 0, result[:success].count, result.inspect
+
+    assert_equal 1, @unit.projects.count
+    assert_equal Campus.first, @unit.projects.first.campus, result.inspect
+
+    result[:ignored].clear
+
+    import_settings[:replace_existing_campus] = true
+
+    @unit.sync_enrolment_with(student_list, import_settings, result)
+
+    assert_equal 0, result[:ignored].count, result.inspect
+    assert_equal 0, result[:errors].count, result.inspect
+    assert_equal 1, result[:success].count, result.inspect
+
+    assert_equal @unit.projects.first.campus, campus2, result.inspect
+
+    result[:success].clear
+
+    @unit.projects.first.destroy
+    campus2.destroy!
+  end
+
   def test_import_tasks_worked
     @unit.import_tasks_from_csv File.open(Rails.root.join('test_files',"#{@unit.code}-Tasks.csv"))
     assert_equal 36, @unit.task_definitions.count, 'imported all task definitions'

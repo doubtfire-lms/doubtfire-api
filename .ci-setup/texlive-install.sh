@@ -4,13 +4,15 @@ set -e
 APP_PATH="$(readlink -f "$(dirname "$0")")"
 TEX_COMPILER=lualatex
 
+CTAN_REPO="https://mirror.aarnet.edu.au/pub/CTAN/systems/texlive/tlnet"
+
 # See if there is a cached version of TL available
 # shellcheck disable=SC2155
 export PATH="/tmp/texlive/bin/$(uname -m)-linux:$PATH"
 if ! command -v "$TEX_COMPILER" > /dev/null; then
   echo "----------------------------------------"
   echo "Downloading texlive installer archive from CTAN:"
-  wget https://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz
+  wget "$CTAN_REPO/install-tl-unx.tar.gz"
   tar -xzf install-tl-unx.tar.gz
   cd install-tl-20*
 
@@ -18,7 +20,11 @@ if ! command -v "$TEX_COMPILER" > /dev/null; then
   echo "Installing texlive using profile:"
   cat "${APP_PATH}"/texlive.profile
   echo
-  ./install-tl --profile="${APP_PATH}/texlive.profile"
+  ./install-tl --profile="${APP_PATH}/texlive.profile" -repository "$CTAN_REPO"
+
+  echo "----------------------------------------"
+  echo "Set tlmgr repository:"
+  tlmgr option repository "$CTAN_REPO"
 
   echo "----------------------------------------"
   echo "Installing additional texlive packages:"
