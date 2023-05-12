@@ -2,6 +2,48 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [7.0.10](https://github.com/macite/doubtfire-deploy/compare/v7.0.9...v7.0.10) (2023-05-05)
+
+
+### Features
+
+* ensure task explorer gets extensions ([f72b378](https://github.com/macite/doubtfire-deploy/commit/f72b378c3326c392c33af2dd44a991137e57be3c))
+
+
+### Bug Fixes
+
+* ensure extension checks allow audio upload ([dc33fc7](https://github.com/macite/doubtfire-deploy/commit/dc33fc7b7022395c1a69d7a23362f5ebfe11a1b6))
+* exclude tasks from withdrawn units in webcal feed ([bcd29fb](https://github.com/macite/doubtfire-deploy/commit/bcd29fba2623136456c11e0dbff7ea61544eb08c))
+
+### [7.0.9](https://github.com/macite/doubtfire-deploy/compare/v7.0.8...v7.0.9) (2023-04-04)
+
+
+### Features
+
+* ensure campus changes can be synced ([5f02f5b](https://github.com/macite/doubtfire-deploy/commit/5f02f5bc36c97e61d68d5e67bed27822df290d8e))
+
+
+### Bug Fixes
+
+* ensure markdown works with invalid latex ([58965dd](https://github.com/macite/doubtfire-deploy/commit/58965dd799d1a073ddb59c76d1a9af2edfe871db))
+
+### [7.0.8](https://github.com/macite/doubtfire-deploy/compare/v7.0.7...v7.0.8) (2023-03-23)
+
+
+### Features
+
+* skip newpax on pdf generation fail retry ([d463b0d](https://github.com/macite/doubtfire-deploy/commit/d463b0dcb672be953f7072abd796d9c723071bdb))
+* support documents of different size ([d4e1c59](https://github.com/macite/doubtfire-deploy/commit/d4e1c59ef443514eed7697a101dcedba24d20b4b))
+
+### [7.0.7](https://github.com/macite/doubtfire-deploy/compare/v7.0.6...v7.0.7) (2023-03-22)
+
+
+### Features
+
+* add registry for docker pull of images ([8b00a2b](https://github.com/macite/doubtfire-deploy/commit/8b00a2bf95ec4577b082749a333f1573e502973f))
+
+### [7.0.6](https://github.com/macite/doubtfire-deploy/compare/v7.0.5...v7.0.6) (2023-03-21)
+
 ### [7.0.5](https://github.com/macite/doubtfire-deploy/compare/v7.0.4...v7.0.5) (2023-03-21)
 
 

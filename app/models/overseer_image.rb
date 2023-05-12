@@ -20,9 +20,13 @@ class OverseerImage < ApplicationRecord
       return false
     end
 
-    # TODO: add global repository ... #{global_registry_setting}#{tag}... so you can add a global registry without it being added to the tag name
+    # Load registry details
+    registry = Doubtfire::Application.config.docker_config[:DOCKER_PROXY_URL]
+    registry = "#{registry}/" if registry.present? && !registry.end_with?('/')
+    registry = "" if registry.nil?
+
     self.last_pulled_date = Time.zone.now
-    cmd = "docker pull #{tag}"
+    cmd = "docker pull #{registry}#{tag}"
     out_text, error_text, exit_status = Open3.capture3(cmd)
     self.pulled_image_text = "#{cmd}\n#{out_text}\n#{error_text}"
 

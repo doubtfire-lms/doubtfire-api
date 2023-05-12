@@ -19,5 +19,5 @@
 %>
 
 <% if file_type == 'document' %>
-  \includepdf[pages={1-}]{<%= file_name %>}
+  \includepdf[pages={1-},fitpaper]{<%= file_name %>}
 <% end %>

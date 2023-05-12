@@ -225,7 +225,7 @@ class ExtensionTest < ActiveSupport::TestCase
 
     # Make a submission for this student
     add_auth_header_for user: tutor
-    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post    
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
     assert_equal 201, last_response.status
 
     # Get the task... check it is ready for feedback
@@ -245,7 +245,7 @@ class ExtensionTest < ActiveSupport::TestCase
   end
 
   def test_extension_in_inbox
-    unit = FactoryBot.create(:unit, auto_apply_extension_before_deadline: false, unenrolled_student_count: 0, part_enrolled_student_count: 0, inactive_student_count: 0, tutorials: 2, staff_count: 2)
+    unit = FactoryBot.create(:unit, auto_apply_extension_before_deadline: false, unenrolled_student_count: 0, part_enrolled_student_count: 0, inactive_student_count: 0, tutorials: 2, staff_count: 2, task_count:0)
     project = unit.projects.first
     user = project.student
     tutor = unit.main_convenor_user
@@ -293,6 +293,15 @@ class ExtensionTest < ActiveSupport::TestCase
     assert_equal 1, inbox.count, inbox.inspect
 
     assert inbox[0][:has_extensions], inbox.inspect
+
+    # Test task explorer
+    add_auth_header_for user: tutor
+    get "/api/units/#{unit.id}/task_definitions/#{td.id}/tasks"
+
+    assert_equal 200, last_response.status
+    assert_equal 1, last_response_body.count, last_response_body
+
+    assert last_response_body[0]['has_extensions'], last_response_body.inspect
 
     td.destroy!
     unit.destroy!

@@ -44,14 +44,21 @@ class FeedbackTest < ActiveSupport::TestCase
 
       get "/api/units/#{unit.id}/tasks/inbox"
 
-      assert_equal 200, last_response.status
-
+      assert_equal 200, last_response.status, last_response_body
       assert_equal expected_count, last_response_body.count, last_response_body
 
       # check each is the same
       last_response_body.zip(expected_response).each do |response, expected|
         assert_json_matches_model expected, response, ['id']
       end
+
+      # Test task explorer
+      get "/api/units/#{unit.id}/task_definitions/#{unit.task_definitions.first.id}/tasks"
+
+      assert_equal 200, last_response.status
+      assert_equal unit.task_definitions.first.tasks.where("task_status_id > 1").count, last_response_body.count, last_response_body
     end
+
+    unit.destroy!
   end
 end
