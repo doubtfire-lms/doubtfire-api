@@ -23,6 +23,28 @@ module Similarity
       present task.task_similarities, with: Similarity::Entities::TaskSimilarityEntity, my_role: task.unit.role_for(current_user)
     end
 
+    desc 'Update a task similarity - switching flag only'
+    params do
+      requires :id, type: Integer, desc: 'ID of similarity to update.'
+      requires :task_id, type: Integer, desc: 'ID of task to update similarity for.'
+      requires :flagged, type: Boolean, desc: 'Whether or not to flag the similarity.'
+    end
+    put '/tasks/:task_id/similarities/:id' do
+      unless authenticated?
+        error!({ error: "Not authorised to download details for task" }, 401)
+      end
+      task = Task.find(params[:task_id])
+
+      unless authorise? current_user, task, :delete_plagiarism
+        error!({ error: "Not authorised to update details for this similarity" }, 401)
+      end
+
+      similarity = task.task_similarities.find(params[:id])
+      similarity.update(flagged: params[:flagged])
+
+      present similarity, with: Similarity::Entities::TaskSimilarityEntity, my_role: task.unit.role_for(current_user)
+    end
+
     desc 'Get contents of a similarity by part index'
     params do
       optional :as_attachment, type: Boolean, desc: 'Whether or not to download file as attachment. Default is false.'
