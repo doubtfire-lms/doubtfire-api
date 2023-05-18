@@ -35,7 +35,7 @@ class TaskDefinition < ApplicationRecord
   validates :abbreviation, uniqueness: { scope: :unit_id } # task definition names within a unit must be unique
 
   validates :target_grade, inclusion: { in: GradeHelper::RANGE, message: '%{value} is not a valid target grade' }
-  validates :max_quality_pts, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 10, message: 'must be between 0 and 10' }
+  validates :max_quality_pts, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 100, message: 'must be between 0 and 100' }
 
   validate :upload_requirements, :check_upload_requirements_format
   validate :plagiarism_checks, :check_plagiarism_format
@@ -188,7 +188,7 @@ class TaskDefinition < ApplicationRecord
 
       # Check only key, type, and pattern keys are present
       if req.keys.length > 3
-        errors.add(:upload_requirements, "has additional values for item #{i + 1} --> #{req.keys.join(' ')}.")
+        errors.add(:plagiarism_checks, "has additional values for item #{i + 1} --> #{req.keys.join(' ')}.")
       end
 
       # Move to the next check
