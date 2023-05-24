@@ -777,6 +777,9 @@ class Project < ApplicationRecord
     attr_accessor :portfolio_tasks
     attr_accessor :task_defs
     attr_accessor :outcomes
+    attr_accessor :files
+    attr_accessor :institution_name
+    attr_accessor :doubtfire_product_name
 
     def init(project, is_retry)
       @student = project.student
