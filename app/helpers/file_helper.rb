@@ -1,5 +1,6 @@
 require 'zip'
 require 'tmpdir'
+require 'open3'
 
 module FileHelper
   extend LogHelper
@@ -270,6 +271,30 @@ module FileHelper
     end
 
     FileUtils.rm_f tmp_file
+  end
+
+  def pages_in_pdf(path)
+    exec = "strings < #{path} | sed -n 's|.*/Count -\\{0,1\\}\\([0-9]\\{1,\\}\\).*|\\1|p' | sort -rn | head -n 1"
+
+    out_text, error_text, exit_status = Open3.capture3(exec)
+    result = if exit_status == 0
+               out_text.to_i
+             else
+               0
+             end
+
+    # if no pages found.. try with qpdf
+    if result == 0
+      exec = "qpdf --show-npages #{path}"
+
+      out_text, error_text, exit_status = Open3.capture3(exec)
+      result = out_text.to_i if exit_status == 0
+    end
+
+    result
+  rescue => e
+    logger.error "Failed to run QPDF on #{path}. Rescued with error:\n\t#{e.message}"
+    0
   end
 
   def qpdf(path)
@@ -543,4 +568,5 @@ module FileHelper
   module_function :task_submission_identifier_path
   module_function :task_submission_identifier_path_with_timestamp
   module_function :known_extension?
+  module_function :pages_in_pdf
 end

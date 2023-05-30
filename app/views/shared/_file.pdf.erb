@@ -19,5 +19,9 @@
 %>
 
 <% if file_type == 'document' %>
-  \includepdf[pages={1-},fitpaper]{<%= file_name %>}
+    <%
+    for page_idx in 1..FileHelper.pages_in_pdf(file_name) do %>
+\includepdf[pages={<%= page_idx %>-<%= page_idx %>},fitpaper]{<%= file_name %>}
+    <% end # end for  %>
+
 <% end %>
