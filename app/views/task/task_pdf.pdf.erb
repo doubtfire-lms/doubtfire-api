@@ -124,9 +124,12 @@ No Tutor % Supervisor's Name
   <% if file[:type] == 'document' %>
 % add document paths to document_list to generate lua calls to newpax later
     <% document_list.append(file[:path]) unless !@include_pax %>
-\includepdf[pages={1-},fitpaper]{<%= file[:path] %>}
-  <% end %>
-<% end %>
+    <%
+    for page_idx in 1..FileHelper.pages_in_pdf(file[:path]) do %>
+\includepdf[pages={<%= page_idx %>-<%= page_idx %>},fitpaper]{<%= file[:path] %>}
+    <% end # end for  %>
+  <% end # end if  %>
+<% end # list of documents %>
 
 <%
   # generate lua calls for newpax and insert it in the preamble for annotation extraction
