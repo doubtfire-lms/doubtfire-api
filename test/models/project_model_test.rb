@@ -1,6 +1,7 @@
 require "test_helper"
 
 class ProjectModelTest < ActiveSupport::TestCase
+  include TestHelpers::TestFileHelper
 
   def test_tutor_for_task_def_when_tutorial_stream_is_present
     unit = FactoryBot.create(:unit, with_students: false)
@@ -112,5 +113,82 @@ class ProjectModelTest < ActiveSupport::TestCase
 
     assert_equal t1.task_definition, t2.task_definition
   end
+
+  def test_create_empty_portfolio
+    project = FactoryBot.create(:project)
+    unit = project.unit
+
+    project.update compile_portfolio: true
+    assert project.compile_portfolio
+
+    project.create_portfolio
+    refute project.reload.compile_portfolio
+    assert project.has_portfolio
+    assert File.exist?(project.portfolio_path)
+
+    unit.destroy!
+  end
+
+  def test_create_portfolio_with_lsr
+    project = FactoryBot.create(:project)
+    unit = project.unit
+
+    project.update compile_portfolio: true
+    assert project.compile_portfolio
+
+    project.move_to_portfolio( {
+      filename: "LearningSummaryReport.pdf",
+      'tempfile' => File.new(test_file_path("submissions/1.2P.pdf"))
+    }, "LearningSummaryReport", "document")
+
+    project.create_portfolio
+    refute project.reload.compile_portfolio
+    assert project.has_portfolio
+    assert File.exist?(project.portfolio_path)
+
+    unit.destroy!
+  end
+
+  def test_create_portfolio_with_additional_files
+    project = FactoryBot.create(:project)
+    unit = project.unit
+
+    project.update compile_portfolio: true
+    assert project.compile_portfolio
+
+    project.move_to_portfolio( {
+      filename: "LearningSummaryReport.pdf",
+      'tempfile' => File.new(test_file_path("submissions/1.2P.pdf"))
+    }, "LearningSummaryReport", "document")
+
+    project.move_to_portfolio( {
+      filename: "1.2P.pdf",
+      'tempfile' => File.new(test_file_path("submissions/1.2P.pdf"))
+    }, "1.2P.pdf", "document")
+
+    project.move_to_portfolio( {
+      filename: "logo.jpeg",
+      'tempfile' => File.new(test_file_path("submissions/Deakin_Logo.jpeg"))
+    }, "logo.jpeg", "image")
+
+    project.move_to_portfolio( {
+      filename: "program.cs",
+      'tempfile' => File.new(test_file_path("submissions/program.cs"))
+    }, "program.cs", "code")
+
+    project.move_to_portfolio( {
+      filename: "vectorial_graph.ipynb",
+      'tempfile' => File.new(test_file_path("submissions/vectorial_graph.ipynb"))
+    }, "vectorial_graph.ipynb", "code")
+
+    project.create_portfolio
+    refute project.reload.compile_portfolio
+    assert project.has_portfolio
+
+    assert File.exist?(project.portfolio_path)
+
+    unit.destroy!
+  end
+
 
 end
