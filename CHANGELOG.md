@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [7.0.13](https://github.com/macite/doubtfire-deploy/compare/v7.0.12...v7.0.13) (2023-05-31)
+
+
+### Bug Fixes
+
+* switch pdf compression to qpdf ([30a401f](https://github.com/macite/doubtfire-deploy/commit/30a401f649444e6d873612aa55919a7e7a173471))
+
+### [7.0.12](https://github.com/macite/doubtfire-deploy/compare/v7.0.11...v7.0.12) (2023-05-30)
+
+
+### Bug Fixes
+
+* improve handling of pdf pages ([a79dc81](https://github.com/macite/doubtfire-deploy/commit/a79dc81865737658985bd045585623245d806459))
+
 ### [7.0.11](https://github.com/macite/doubtfire-deploy/compare/v7.0.10...v7.0.11) (2023-05-24)
 
 

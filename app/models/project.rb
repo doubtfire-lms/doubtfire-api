@@ -816,6 +816,10 @@ class Project < ApplicationRecord
     filename
   end
 
+  def compress_portfolio
+    FileHelper.compress_pdf(portfolio_path, max_size: 20_000_000, timeout_seconds: 120)
+  end
+
   def create_portfolio
     return false unless compile_portfolio
 
@@ -840,7 +844,7 @@ class Project < ApplicationRecord
         fout.puts pdf_text
       end
 
-      FileHelper.compress_pdf(portfolio_path)
+      compress_portfolio
 
       logger.info "Created portfolio at #{portfolio_path} - #{log_details}"
 

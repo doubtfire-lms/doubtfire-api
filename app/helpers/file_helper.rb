@@ -1,5 +1,6 @@
 require 'zip'
 require 'tmpdir'
+require 'open3'
 
 module FileHelper
   extend LogHelper
@@ -220,21 +221,39 @@ module FileHelper
     did_compress = system_try_within 40, 'compressing image using convert', exec
   end
 
-  def compress_pdf(path, max_size = 2_500_000)
+  def compress_pdf(path, max_size: 2_500_000, timeout_seconds: 30)
     # trusting path... as it needs to be replaced
     # only compress things over max_size -- defaults to 2.5mb
+
     current_filesize = File.size?(path)
     if current_filesize < max_size
       logger.debug "PDF #{path} (#{current_filesize} bytes) is smaller than #{max_size}, skipping compression."
       return
-    else
-      logger.debug "Compressing PDF #{path} (#{current_filesize} bytes) using GhostScript"
     end
 
     begin
-      tmp_file = File.join(Dir.tmpdir, 'doubtfire', 'compress', "#{File.dirname(path).split(File::Separator).last}-file.pdf")
       FileUtils.mkdir_p(File.join(Dir.tmpdir, 'doubtfire', 'compress'))
 
+      tmp_file = File.join(Dir.tmpdir, 'doubtfire', 'compress', "#{File.dirname(path).split(File::Separator).last}-file.pdf")
+
+      # Pass 1 - qpdf
+      logger.debug "Compressing PDF #{path} (#{current_filesize} bytes) using qpdf"
+      exec = "qpdf --recompress-flate --object-streams=generate #{path} #{tmp_file} >>/dev/null 2>>/dev/null"
+      did_compress = system_try_within timeout_seconds, 'compressing PDF using qpdf', exec
+
+      if did_compress
+        if File.size?(tmp_file) < current_filesize
+          FileUtils.mv tmp_file, path
+        else
+          FileUtils.rm_f tmp_file
+        end
+      end
+
+      return did_compress if File.size?(path) < max_size
+
+      # Pass 2 - ghostscript
+
+      logger.debug "Compressing PDF #{path} (#{current_filesize} bytes) using gs"
       exec = "gs -sDEVICE=pdfwrite \
                  -dDetectDuplicateImages=true \
                  -dPDFSETTINGS=/printer \
@@ -246,30 +265,42 @@ module FileHelper
                  >>/dev/null 2>>/dev/null"
 
       # try with ghostscript
-      did_compress = system_try_within 30, 'compressing PDF using ghostscript', exec
+      did_compress = system_try_within timeout_seconds, 'compressing PDF using ghostscript', exec
 
       unless did_compress
-        logger.info "Failed to compress PDF #{path} using GhostScript. Trying with convert"
-
-        exec = "convert \"#{path}\" \
-                -compress Zip \
-                \"#{tmp_file}\" \
-                >>/dev/null 2>>/dev/null"
-
-        # try with convert
-        did_compress = system_try_within 40, 'compressing PDF using convert', exec
-
-        unless did_compress
-          logger.error "Failed to compress PDF #{path} using convert. Cannot compress this PDF. Command was:\n\t#{exec}"
-        end
+        logger.error "Failed to compress PDF #{path} using convert. Cannot compress this PDF. Command was:\n\t#{exec}"
       end
 
-      FileUtils.mv tmp_file, path if did_compress
+      FileUtils.mv tmp_file, path if did_compress && File.size?(tmp_file) < current_filesize
     rescue => e
       logger.error "Failed to compress PDF #{path}. Rescued with error:\n\t#{e.message}"
     end
 
     FileUtils.rm_f tmp_file
+  end
+
+  def pages_in_pdf(path)
+    exec = "strings < #{path} | sed -n 's|.*/Count -\\{0,1\\}\\([0-9]\\{1,\\}\\).*|\\1|p' | sort -rn | head -n 1"
+
+    out_text, error_text, exit_status = Open3.capture3(exec)
+    result = if exit_status == 0
+               out_text.to_i
+             else
+               0
+             end
+
+    # if no pages found.. try with qpdf
+    if result == 0
+      exec = "qpdf --show-npages #{path}"
+
+      out_text, error_text, exit_status = Open3.capture3(exec)
+      result = out_text.to_i if exit_status == 0
+    end
+
+    result
+  rescue => e
+    logger.error "Failed to run QPDF on #{path}. Rescued with error:\n\t#{e.message}"
+    0
   end
 
   def qpdf(path)
@@ -543,4 +574,5 @@ module FileHelper
   module_function :task_submission_identifier_path
   module_function :task_submission_identifier_path_with_timestamp
   module_function :known_extension?
+  module_function :pages_in_pdf
 end
