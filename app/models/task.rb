@@ -803,7 +803,7 @@ class Task < ApplicationRecord
   #
   # Compress the done files for a student - includes cover page and work uploaded
   #
-  def compress_new_to_done(task_dir: student_work_dir(:new, false), zip_file_path: nil, rm_task_dir: true)
+  def compress_new_to_done(task_dir: student_work_dir(:new, false), zip_file_path: nil, rm_task_dir: true, rename_files: false)
     begin
       # Ensure that this task is the submitter task for a  group_task... otherwise
       # remove this submission
@@ -834,7 +834,14 @@ class Task < ApplicationRecord
       Zip::File.open(zip_file, Zip::File::CREATE) do |zip|
         zip.mkdir id.to_s
         input_files.each do |in_file|
-          zip.add "#{id}/#{in_file}", "#{task_dir}#{in_file}"
+          final_name = in_file
+
+          if rename_files
+            index = in_file.to_i
+            file = upload_requirements[index]
+            final_name = file['name']
+          end
+          zip.add "#{id}/#{final_name}", "#{task_dir}#{in_file}"
         end
       end
     ensure

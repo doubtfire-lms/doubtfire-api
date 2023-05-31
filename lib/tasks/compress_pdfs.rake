@@ -21,6 +21,21 @@ namespace :submission do
     logger.info 'End compress pdf'
   end
 
+  task compress_portfolios: :environment do
+    logger.info 'Starting compress portfolios'
+    puts 'Starting compress portfolios'
+
+    Unit.where('active').each do |u|
+      puts "Unit #{u.name}"
+      u.projects.select { |p| p.has_portfolio && File.exist?(p.portfolio_path) && File.size?(p.portfolio_path) >= 20_000_000 }.each do |p|
+        puts "    Compressing #{p.portfolio_path}"
+        FileHelper.compress_pdf(p.portfolio_path)
+      end
+    end
+
+    logger.info 'End compress portfolios'
+  end
+
   task recreate_large_pdfs: :environment do
     if is_executing?
       puts 'Skip recreate large pdfs -- already executing'

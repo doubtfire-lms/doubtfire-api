@@ -777,6 +777,9 @@ class Project < ApplicationRecord
     attr_accessor :portfolio_tasks
     attr_accessor :task_defs
     attr_accessor :outcomes
+    attr_accessor :files
+    attr_accessor :institution_name
+    attr_accessor :doubtfire_product_name
 
     def init(project, is_retry)
       @student = project.student
@@ -813,6 +816,10 @@ class Project < ApplicationRecord
     filename
   end
 
+  def compress_portfolio
+    FileHelper.compress_pdf(portfolio_path, max_size: 20_000_000, timeout_seconds: 120)
+  end
+
   def create_portfolio
     return false unless compile_portfolio
 
@@ -837,7 +844,7 @@ class Project < ApplicationRecord
         fout.puts pdf_text
       end
 
-      FileHelper.compress_pdf(portfolio_path)
+      compress_portfolio
 
       logger.info "Created portfolio at #{portfolio_path} - #{log_details}"
 

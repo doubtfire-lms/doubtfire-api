@@ -36,7 +36,12 @@ document_list = Array.new
   <% if @learning_summary_report %>
     % add learning summary report to the document list for annotation extraction
     <% document_list.append(@learning_summary_report)%>
-    \includepdf[addtotoc={\thepage,section,1,Learning Summary Report,chap:learningsummary},pages={1-}]{<%= @learning_summary_report %>}
+  \includepdf[addtotoc={\thepage,section,1,Learning Summary Report,chap:learningsummary},pages={1-1},fitpaper]{<%= @learning_summary_report %>}
+
+    <% for page_idx in 2..FileHelper.pages_in_pdf(@learning_summary_report) do %>
+  \includepdf[pages={<%= page_idx %>-<%= page_idx %>},fitpaper]{<%= @learning_summary_report %>}
+    <% end # end for  %>
+
   <% end %>
 
   \thispagestyle{title}
@@ -230,7 +235,9 @@ No Tutor
   <% if File.exist? task.portfolio_evidence_path %>
     % add task evidence to the document list for annotation extraction
     <% document_list.append(task.portfolio_evidence_path)%>
-    \includepdf[pages={1-}]{<%= task.portfolio_evidence_path %>}
+    <% for page_idx in 1..FileHelper.pages_in_pdf(task.portfolio_evidence_path) do %>
+\includepdf[pages={<%= page_idx %>-<%= page_idx %>},fitpaper]{<%= task.portfolio_evidence_path %>}
+    <% end # end for  %>
   <% end %>
 <% end %>
 
