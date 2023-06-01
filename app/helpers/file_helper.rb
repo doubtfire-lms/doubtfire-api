@@ -222,6 +222,8 @@ module FileHelper
   end
 
   def compress_pdf(path, max_size: 2_500_000, timeout_seconds: 30)
+    return unless File.exist? path
+
     # trusting path... as it needs to be replaced
     # only compress things over max_size -- defaults to 2.5mb
 
@@ -242,7 +244,7 @@ module FileHelper
       did_compress = system_try_within timeout_seconds, 'compressing PDF using qpdf', exec
 
       if did_compress
-        if File.size?(tmp_file) < current_filesize
+        if File.exist?(tmp_file) && File.size?(tmp_file) < current_filesize
           FileUtils.mv tmp_file, path
         else
           FileUtils.rm_f tmp_file
@@ -280,24 +282,10 @@ module FileHelper
   end
 
   def pages_in_pdf(path)
-    exec = "strings < #{path} | sed -n 's|.*/Count -\\{0,1\\}\\([0-9]\\{1,\\}\\).*|\\1|p' | sort -rn | head -n 1"
+    exec = "qpdf --show-npages #{path}"
 
     out_text, error_text, exit_status = Open3.capture3(exec)
-    result = if exit_status == 0
-               out_text.to_i
-             else
-               0
-             end
-
-    # if no pages found.. try with qpdf
-    if result == 0
-      exec = "qpdf --show-npages #{path}"
-
-      out_text, error_text, exit_status = Open3.capture3(exec)
-      result = out_text.to_i if exit_status == 0
-    end
-
-    result
+    result = out_text.to_i if exit_status == 0
   rescue => e
     logger.error "Failed to run QPDF on #{path}. Rescued with error:\n\t#{e.message}"
     0
