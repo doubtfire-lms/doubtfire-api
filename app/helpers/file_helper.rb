@@ -222,6 +222,8 @@ module FileHelper
   end
 
   def compress_pdf(path, max_size: 2_500_000, timeout_seconds: 30)
+    return unless File.exist? path
+
     # trusting path... as it needs to be replaced
     # only compress things over max_size -- defaults to 2.5mb
 
@@ -242,7 +244,7 @@ module FileHelper
       did_compress = system_try_within timeout_seconds, 'compressing PDF using qpdf', exec
 
       if did_compress
-        if File.size?(tmp_file) < current_filesize
+        if File.exist?(tmp_file) && File.size?(tmp_file) < current_filesize
           FileUtils.mv tmp_file, path
         else
           FileUtils.rm_f tmp_file
