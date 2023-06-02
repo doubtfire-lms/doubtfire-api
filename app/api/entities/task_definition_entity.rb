@@ -22,10 +22,12 @@ module Entities
     end
 
     expose :upload_requirements do |task_definition, options|
-      return task_definition.upload_requirements if staff?(options[:my_role])
-
-      # Filter out turn it in details
-      task_definition.upload_requirements.map { |r| r.except('tii_check', 'tii_pct') }
+      if staff?(options[:my_role])
+        task_definition.upload_requirements
+      else
+        # Filter out turn it in details
+        task_definition.upload_requirements.map { |r| r.except('tii_check', 'tii_pct') }
+      end
     end
 
     expose :tutorial_stream_abbr do |task_definition, options|

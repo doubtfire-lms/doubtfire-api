@@ -3,16 +3,19 @@ class AddTiiDetails < ActiveRecord::Migration[7.0]
     add_column :users, :tii_eula_version, :string
     add_column :users, :tii_eula_date, :datetime
     add_column :users, :tii_eula_version_confirmed, :boolean, default: false, null: false
+
     add_column :units, :tii_group_context_id, :string
+
     add_column :task_definitions, :tii_group_id, :string
+    add_column :task_definitions, :moss_language, :string
 
     rename_table :plagiarism_match_links, :task_similarities
 
     add_column :task_similarities, :type, :string
     rename_column :task_similarities, :dismissed, :flagged
 
-    remove_column :tasks, :max_pct_similar
-    remove_column :projects, :max_pct_similar
+    remove_column :tasks, :max_pct_similar, :integer
+    remove_column :projects, :max_pct_similar, :integer
 
     TaskSimilarity.update_all(type: 'MossTaskSimilarity')
     # TaskSimilarity.update_all('flagged = not flagged')
@@ -73,6 +76,19 @@ class AddTiiDetails < ActiveRecord::Migration[7.0]
 
       t.index :retry
       t.index :complete
+    end
+
+    TaskDefinition.find_in_batches do |batch|
+      batch.each do |task_definition|
+        next unless task_definition.plagiarism_checks.present? && task_definition.plagiarism_checks.any?
+
+        task_definition.update(moss_language: task_definition.plagiarism_checks.first['type'])
+        task_definition.upload_requirements.each do |upload_requirement|
+          next unless upload_requirement['type'] == 'code'
+          upload_requirement['tii_check'] = true
+        end
+        task_definition.save
+      end
     end
   end
 end

@@ -441,17 +441,6 @@ class Unit < ApplicationRecord
   end
 
   #
-  # Last date/time of scan
-  #
-  def last_plagarism_scan
-    if self[:last_plagarism_scan].nil?
-      DateTime.new(2000, 1, 1)
-    else
-      self[:last_plagarism_scan]
-    end
-  end
-
-  #
   # Returns the email of the first convenor or the first administrator if there
   # are no convenors
   #
@@ -1614,36 +1603,6 @@ class Unit < ApplicationRecord
   #
   def tasks_for_definition(task_def)
     tasks.where(task_definition_id: task_def.id)
-  end
-
-  #
-  # Extract all done files related to a task definition matching a pattern into a given directory.
-  # Returns an array of files
-  #
-  def add_done_files_for_plagiarism_check_of(td, tmp_path, force, to_check)
-    tasks = tasks_for_definition(td)
-    tasks_with_files = td.related_tasks_with_files
-
-    # check number of files, and they are new
-    if tasks_with_files.count > 1 && (tasks.where('tasks.file_uploaded_at > ?', last_plagarism_scan).select(&:has_pdf).count > 0 || td.updated_at > last_plagarism_scan || force)
-      td.plagiarism_checks.each do |check|
-        next if check['type'].nil?
-
-        type_data = check['type'].split
-        next if type_data.nil? || (type_data.length != 2) || (type_data[0] != 'moss')
-
-        # extract files matching each pattern
-        # -- each pattern
-        check['pattern'].split('|').each do |pattern|
-          tasks_with_files.each do |t|
-            t.extract_file_from_done(tmp_path, pattern, ->(_task, to_path, name) { File.join(to_path.to_s, t.student.username.to_s, name.to_s) })
-          end
-          MossRuby.add_file(to_check, "**/#{pattern}")
-        end
-      end
-    end
-
-    self
   end
 
   def import_task_files_from_zip(zip_file)
