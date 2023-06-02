@@ -56,11 +56,13 @@ namespace :submission do
     end
   end
 
-  TeachingPeriod.where("start_date < :today && active_until > :today", today: Date.today).each do |teaching_period|
-    teaching_period.units.each do |unit|
-      unit.projects.each do |project|
-        # We have a learning summary but not a portfolio
-        if !project.compile_portfolio && !project.portfolio_available && project.learning_summary_report_path.present? && File.exist?(project.learning_summary_report_path) && !project.uses_draft_learning_summary
+  task create_missing_portfolios: :environment do
+    TeachingPeriod.where("start_date < :today && active_until > :today", today: Date.today).each do |teaching_period|
+      teaching_period.units.each do |unit|
+        unit.projects.each do |project|
+          # We have a learning summary but not a portfolio
+          next unless !project.compile_portfolio && !project.portfolio_available && project.learning_summary_report_path.present? && File.exist?(project.learning_summary_report_path) && !project.uses_draft_learning_summary
+
           puts "Project #{project.id} has a learning summary but no portfolio"
           project.update compile_portfolio: true
           project.create_portfolio
