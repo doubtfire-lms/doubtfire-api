@@ -196,8 +196,12 @@ class TaskDefinition < ApplicationRecord
     end
   end
 
+  def glob_for_upload_requirement(idx)
+    "#{idx.to_s.rjust(3, '0')}-#{upload_requirements[idx]['type']}.*"
+  end
+
   # Validate the format of the upload requirements
-  def check_upload_requirements_format()
+  def check_upload_requirements_format
     json_data = self.upload_requirements
     return if json_data.nil?
 

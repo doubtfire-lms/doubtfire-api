@@ -2,6 +2,17 @@
 
 # Provide moss and tii similarity features in unit class
 module UnitSimilarityModule
+  #
+  # Last date/time of scan
+  #
+  def last_plagarism_scan
+    if self[:last_plagarism_scan].nil?
+      DateTime.new(2000, 1, 1)
+    else
+      self[:last_plagarism_scan]
+    end
+  end
+
   # Pass tasks on to plagarism detection software and setup links between students
   def check_moss_similarity(force: false)
     # Get each task...
@@ -12,8 +23,13 @@ module UnitSimilarityModule
 
     begin
       logger.info "Checking plagiarsm for unit #{code} - #{name} (id=#{id})"
+
       task_definitions.each do |td|
-        next if td.plagiarism_checks.empty?
+        next if td.moss_language.nil? || td.upload_requirements.nil? || td.upload_requirements.select{ |upreq| upreq['type'] == 'code' && upreq['tii_check'] }.empty?
+
+        type_data = td.moss_language.split
+        next if type_data.nil? || (type_data.length != 2) || (type_data[0] != 'moss')
+
 
         # Is there anything to check?
         logger.debug "Checking plagiarism for #{td.name} (id=#{td.id})"
@@ -21,7 +37,7 @@ module UnitSimilarityModule
         tasks_with_files = tasks.select(&:has_pdf)
 
         # Skip if not due yet
-        next if td.due_date < Time.zone.now
+        next if td.due_date > Time.zone.now
 
         # Skip if no files changed
         next unless tasks_with_files.count > 1 &&
@@ -34,50 +50,44 @@ module UnitSimilarityModule
         # There are new tasks, check these
 
         logger.debug 'Contacting MOSS for new checks'
-        td.plagiarism_checks.each do |check|
-          next if check['type'].nil?
 
-          type_data = check['type'].split
-          next if type_data.nil? || (type_data.length != 2) || (type_data[0] != 'moss')
+        # Create the MossRuby object
+        moss_key = Doubtfire::Application.secrets.secret_key_moss
+        raise "No moss key set. Check ENV['DF_SECRET_KEY_MOSS'] first." if moss_key.nil?
 
-          # Create the MossRuby object
-          moss_key = Doubtfire::Application.secrets.secret_key_moss
-          raise "No moss key set. Check ENV['DF_SECRET_KEY_MOSS'] first." if moss_key.nil?
+        moss = MossRuby.new(moss_key)
 
-          moss = MossRuby.new(moss_key)
+        # Set options  -- the options will already have these default values
+        moss.options[:max_matches] = 7
+        moss.options[:directory_submission] = true
+        moss.options[:show_num_matches] = 500
+        moss.options[:experimental_server] = false
+        moss.options[:comment] = ''
+        moss.options[:language] = type_data[1]
 
-          # Set options  -- the options will already have these default values
-          moss.options[:max_matches] = 7
-          moss.options[:directory_submission] = true
-          moss.options[:show_num_matches] = 500
-          moss.options[:experimental_server] = false
-          moss.options[:comment] = ''
-          moss.options[:language] = type_data[1]
+        tmp_path = File.join(Dir.tmpdir, 'doubtfire', "check-#{id}-#{td.id}")
 
-          tmp_path = File.join(Dir.tmpdir, 'doubtfire', "check-#{id}-#{td.id}")
+        begin
+          # Create a file hash, with the files to be processed
+          to_check = MossRuby.empty_file_hash
+          add_done_files_for_plagiarism_check_of(td, tmp_path, to_check, tasks_with_files)
 
-          begin
-            # Create a file hash, with the files to be processed
-            to_check = MossRuby.empty_file_hash
-            add_done_files_for_plagiarism_check_of(td, tmp_path, force, to_check)
+          FileUtils.chdir(tmp_path)
 
-            FileUtils.chdir(tmp_path)
+          # Get server to process files
+          logger.debug 'Sending to MOSS...'
+          url = moss.check(to_check, ->(_) { print '.' })
 
-            # Get server to process files
-            logger.debug 'Sending to MOSS...'
-            url = moss.check(to_check, ->(_) { print '.' })
+          logger.info "MOSS check for #{code} #{td.abbreviation} url: #{url}"
 
-            logger.info "MOSS check for #{code} #{td.abbreviation} url: #{url}"
-
-            td.plagiarism_report_url = url
-            td.plagiarism_updated = true
-            td.save
-          rescue StandardError => e
-            logger.error "Failed to check plagiarism for task #{td.name} (id=#{td.id}). Error: #{e.message}"
-          ensure
-            FileUtils.chdir(pwd)
-            FileUtils.rm_rf tmp_path
-          end
+          td.plagiarism_report_url = url
+          td.plagiarism_updated = true
+          td.save
+        rescue StandardError => e
+          logger.error "Failed to check plagiarism for task #{td.name} (id=#{td.id}). Error: #{e.message}"
+        ensure
+          FileUtils.chdir(pwd)
+          FileUtils.rm_rf tmp_path
         end
       end
       self.last_plagarism_scan = Time.zone.now
@@ -103,15 +113,12 @@ module UnitSimilarityModule
       url = td.plagiarism_report_url
       logger.debug "Processing MOSS results #{url}"
 
-      warn_pct = td.plagiarism_warn_pct
-      warn_pct = 50 if warn_pct.nil?
+      warn_pct = td.plagiarism_warn_pct || 50
 
       results = moss.extract_results(url, warn_pct, ->(line) { puts line })
 
       # Use results
       results.each do |match|
-        next if match[0][:pct] < warn_pct && match[1][:pct] < warn_pct
-
         task_id1 = %r{.*/(\d+)/$}.match(match[0][:filename])[1]
         task_id2 = %r{.*/(\d+)/$}.match(match[1][:filename])[1]
 
@@ -129,12 +136,13 @@ module UnitSimilarityModule
 
           g1_tasks.each do |gt1|
             g2_tasks.each do |gt2|
-              create_plagiarism_link(gt1, gt2, match)
+              create_plagiarism_link(gt1, gt2, match, warn_pct)
             end
           end
 
         else # just link the individuals...
-          create_plagiarism_link(t1, t2, match)
+          byebug
+          create_plagiarism_link(t1, t2, match, warn_pct)
         end
       end
     end
@@ -147,7 +155,7 @@ module UnitSimilarityModule
 
   private
 
-  def create_plagiarism_link(task1, task2, match)
+  def create_plagiarism_link(task1, task2, match, warn_pct)
     plk1 = MossTaskSimilarity.where(task_id: task1.id, other_task_id: task2.id).first
     plk2 = MossTaskSimilarity.where(task_id: task2.id, other_task_id: task1.id).first
 
@@ -157,26 +165,25 @@ module UnitSimilarityModule
       plk2&.destroy
 
       plk1 = MossTaskSimilarity.create do |plm|
-        plm.kind = 'moss'
         plm.task = task1
         plm.other_task = task2
-        plm.flagged = true
         plm.pct = match[0][:pct]
+        plm.flagged = plm.pct >= warn_pct
       end
 
       plk2 = MossTaskSimilarity.create do |plm|
-        plm.kind = 'moss'
         plm.task = task2
         plm.other_task = task1
-        plm.flagged = true
         plm.pct = match[1][:pct]
+        plm.flagged = plm.pct >= warn_pct
       end
     else
       # puts "#{plk1.pct} != #{match[0][:pct]}, #{plk1.pct != match[0][:pct]}"
-      # puts "#{plk1.dismissed}"
-      plk1.flagged = true unless plk1.pct == match[0][:pct]
-      plk2.flagged = true unless plk2.pct == match[1][:pct]
-      # puts "#{plk1.dismissed}"
+
+      # Flag is larger than warn pct and larger than previous pct
+      plk1.flagged = match[0][:pct] >= warn_pct && match[0][:pct] >= plk1.pct
+      plk2.flagged = match[1][:pct] >= warn_pct && match[1][:pct] >= plk2.pct
+
       plk1.pct = match[0][:pct]
       plk2.pct = match[1][:pct]
     end
@@ -189,5 +196,32 @@ module UnitSimilarityModule
 
     FileHelper.save_plagiarism_html(plk1, match[0][:html])
     FileHelper.save_plagiarism_html(plk2, match[1][:html])
+  end
+
+  #
+  # Extract all done files related to a task definition matching a pattern into a given directory.
+  # Returns an array of files
+  #
+  def add_done_files_for_plagiarism_check_of(task_definition, tmp_path, to_check, tasks_with_files)
+    type_data = task_definition.moss_language.split
+    return if type_data.nil? || (type_data.length != 2) || (type_data[0] != 'moss')
+
+    # get each code file for each task
+    task_definition.upload_requirements.each_with_index do |upreq, idx|
+      # only check code files marked for similarity checks
+      next unless upreq['type'] == 'code' && upreq['tii_check']
+
+      pattern = task_definition.glob_for_upload_requirement(idx)
+
+      tasks_with_files.each do |t|
+        t.extract_file_from_done(tmp_path, pattern, ->(_task, to_path, name) { File.join(to_path.to_s, t.student.username.to_s, name.to_s) })
+      end
+
+      # extract files matching each pattern
+      # -- each pattern
+      MossRuby.add_file(to_check, "**/#{pattern}")
+    end
+
+    self
   end
 end
