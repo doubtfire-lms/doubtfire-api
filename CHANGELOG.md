@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [7.0.15](https://github.com/macite/doubtfire-deploy/compare/v7.0.14...v7.0.15) (2023-06-03)
+
+
+### Features
+
+* add script to generate missing portfolios ([375975f](https://github.com/macite/doubtfire-deploy/commit/375975f46d7ebb8d29c6a62b01cc3e90820e4b04))
+
+
+### Bug Fixes
+
+* compress pdf file exists ([8091965](https://github.com/macite/doubtfire-deploy/commit/80919655415890a260c4e95060d20a8dcc686d77))
+* create missing portfolios ([85b965f](https://github.com/macite/doubtfire-deploy/commit/85b965ffd3941aeaf8650ce19098a7b2f5e9649f))
+
 ### [7.0.14](https://github.com/macite/doubtfire-deploy/compare/v7.0.13...v7.0.14) (2023-06-01)
 
 
