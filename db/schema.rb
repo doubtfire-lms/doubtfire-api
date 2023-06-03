@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_02_06_021556) do
+ActiveRecord::Schema[7.0].define(version: 2023_06_03_064217) do
   create_table "activity_types", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -193,6 +193,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_06_021556) do
     t.integer "submitted_grade"
     t.boolean "uses_draft_learning_summary", default: false, null: false
     t.boolean "portfolio_auto_generated", default: false, null: false
+    t.integer "portfolio_generation_pid"
     t.index ["campus_id"], name: "index_projects_on_campus_id"
     t.index ["enrolled"], name: "index_projects_on_enrolled"
     t.index ["unit_id"], name: "index_projects_on_unit_id"
