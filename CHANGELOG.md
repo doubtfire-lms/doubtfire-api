@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [7.0.16](https://github.com/macite/doubtfire-deploy/compare/v7.0.15...v7.0.16) (2023-06-03)
+
+
+### Bug Fixes
+
+* ensure page count work on pdfs with errors ([57b01b3](https://github.com/macite/doubtfire-deploy/commit/57b01b37da246173fb0eccda77c9698692807b60))
+* exclude pax on retry of portfolio creation ([bc75712](https://github.com/macite/doubtfire-deploy/commit/bc7571223928531bd252bc5cb7be9f4827aa64e2))
+* portfolio creation in resouce contention test ([5cdb1e2](https://github.com/macite/doubtfire-deploy/commit/5cdb1e2b1031614c9a02e11d24e05546e988ba70))
+
 ### [7.0.15](https://github.com/macite/doubtfire-deploy/compare/v7.0.14...v7.0.15) (2023-06-03)
 
 
