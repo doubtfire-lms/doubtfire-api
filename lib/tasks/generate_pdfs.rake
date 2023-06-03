@@ -137,40 +137,41 @@ namespace :submission do
 
         # Compile the tasks
         PortfolioEvidence.process_new_to_pdf(my_source)
+
+        # Now compile the portfolios
+        Project.where(compile_portfolio: true, portfolio_generation_pid: Process.pid).each do |project|
+          next unless project.portfolio_generation_pid == Process.pid
+
+          begin
+            success = project.create_portfolio
+          rescue Exception => e
+            logger.error "Failed creating portfolio for project #{project.id}!\n#{e.message}"
+            puts "Failed creating portfolio for project #{project.id}!\n#{e.message}"
+            success = false
+          end
+
+          next unless project.student.receive_portfolio_notifications
+
+          logger.info "emailing portfolio notification to #{project.student.name}"
+
+          if success
+            PortfolioEvidenceMailer.portfolio_ready(project).deliver_now
+          else
+            PortfolioEvidenceMailer.portfolio_failed(project).deliver_now
+          end
+        end
       ensure
+        # Ensure that we clear the pid from the projects so that they can be processed again
+        Project.where(portfolio_generation_pid: Process.pid).update_all(portfolio_generation_pid: nil)
+
         # Remove the processing directory
         if Dir.entries(my_source).count == 2 # . and ..
           FileUtils.rmdir my_source
         end
-      end
 
-      # Now compile the portfolios
-      Project.where(compile_portfolio: true, portfolio_generation_pid: Process.pid).each do |project|
-        next unless project.portfolio_generation_pid == Process.pid
-
-        begin
-          success = project.create_portfolio
-        rescue Exception => e
-          logger.error "Failed creating portfolio for project #{project.id}!\n#{e.message}"
-          puts "Failed creating portfolio for project #{project.id}!\n#{e.message}"
-          success = false
-        end
-
-        next unless project.student.receive_portfolio_notifications
-
-        logger.info "emailing portfolio notification to #{project.student.name}"
-
-        if success
-          PortfolioEvidenceMailer.portfolio_ready(project).deliver_now
-        else
-          PortfolioEvidenceMailer.portfolio_failed(project).deliver_now
-        end
+        logger.info "Ending generate pdf - #{Process.pid}"
       end
     end
-  ensure
-    # Ensure that we clear the pid from the projects so that they can be processed again
-    Project.where(portfolio_generation_pid: Process.pid).update_all(portfolio_generation_pid: nil)
-    logger.info "Ending generate pdf - #{Process.pid}"
   end
 
   # Reuben 07.11.14: Rake script for setting all exisiting portfolio production dates
