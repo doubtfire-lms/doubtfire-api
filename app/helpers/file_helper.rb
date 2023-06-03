@@ -285,7 +285,7 @@ module FileHelper
     exec = "qpdf --show-npages #{path}"
 
     out_text, error_text, exit_status = Open3.capture3(exec)
-    result = out_text.to_i if exit_status == 0
+    result = out_text.to_i # will default to 0 if not a number
   rescue => e
     logger.error "Failed to run QPDF on #{path}. Rescued with error:\n\t#{e.message}"
     0
