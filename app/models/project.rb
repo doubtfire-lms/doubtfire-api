@@ -780,6 +780,7 @@ class Project < ApplicationRecord
     attr_accessor :files
     attr_accessor :institution_name
     attr_accessor :doubtfire_product_name
+    attr_accessor :is_retry
 
     def init(project, is_retry)
       @student = project.student
@@ -794,6 +795,7 @@ class Project < ApplicationRecord
       @outcomes = project.unit.learning_outcomes.order(:ilo_number)
       @institution_name = Doubtfire::Application.config.institution[:name]
       @doubtfire_product_name = Doubtfire::Application.config.institution[:product_name]
+      @is_retry = is_retry
     end
 
     def make_pdf
@@ -833,6 +835,9 @@ class Project < ApplicationRecord
       begin
         pdf_text = pac.make_pdf
       rescue => e
+        # Clear the old text
+        pdf_text = nil
+
         # Try again... with convert to ascii
         pac2 = ProjectAppController.new
         pac2.init(self, true)
