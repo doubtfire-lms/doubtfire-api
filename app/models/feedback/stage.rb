@@ -2,7 +2,6 @@ class Stage < ApplicationRecord
   # Associations
   belongs_to :task_definition
   has_many :criteria, dependent: :destroy
-  has_many :feedback_comment_templates
   has_one :unit, through: :task_definition
 
   # Constraints

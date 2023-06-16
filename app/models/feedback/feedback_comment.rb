@@ -3,5 +3,5 @@ class FeedbackComment < TaskComment
   belongs_to :criterion_option
 
   # Constraints
-  validates :comment_text, presence: true
+  validates :comment, presence: true
 end

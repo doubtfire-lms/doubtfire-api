@@ -11,7 +11,6 @@ class AddTablesForFeedbackEnhancement < ActiveRecord::Migration[7.0]
 
       # Foreign keys
       t.references :task_definition
-      t.references :feedback_comment_template
     end
 
     create_table :criteria do |t| # "criteria" is set as plural of "criterion" in 'doubtfire-api/config/initializers/inflections.rb'

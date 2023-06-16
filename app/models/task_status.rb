@@ -6,6 +6,7 @@ class TaskStatus < ApplicationRecord
 
   # Model associations
   has_many :tasks
+  has_many :criterion_options
 
   #
   # Override find to ensure that task status objects are cached - these do not change

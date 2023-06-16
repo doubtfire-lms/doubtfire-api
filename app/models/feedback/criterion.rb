@@ -4,7 +4,7 @@ class Criterion < ApplicationRecord
   has_many :criterion_options, dependent: :destroy
 
   # Constraints
-  # validates_associated :stage
+  validates_associated :stage
   validates :order, :description, presence: true
   validates :order, numericality: {
     greater_than_or_equal_to: 0, only_integer: true,
