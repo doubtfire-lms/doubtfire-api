@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [7.0.17](https://github.com/macite/doubtfire-deploy/compare/v7.0.16...v7.0.17) (2023-06-17)
+
+
+### Bug Fixes
+
+* ensure unit creation can set convenor ([b6d85ef](https://github.com/macite/doubtfire-deploy/commit/b6d85efa79e3545096d74d8503b0fb95af8232f8))
+
 ### [7.0.16](https://github.com/macite/doubtfire-deploy/compare/v7.0.15...v7.0.16) (2023-06-03)
 
 
