@@ -89,7 +89,7 @@ class UnitsApi < Grape::API
       optional :assessment_enabled, type: Boolean
 
       mutually_exclusive :teaching_period_id, :start_date
-      all_or_none_of :start_date, :end_date
+      mutually_exclusive :teaching_period_id, :end_date
     end
   end
   put '/units/:id' do
@@ -163,6 +163,7 @@ class UnitsApi < Grape::API
 
       mutually_exclusive :teaching_period_id, :start_date
       mutually_exclusive :teaching_period_id, :end_date
+      all_or_none_of :start_date, :end_date
     end
   end
   post '/units' do
