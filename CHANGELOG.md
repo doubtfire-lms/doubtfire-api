@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [7.0.19](https://github.com/macite/doubtfire-deploy/compare/v7.0.18...v7.0.19) (2023-06-20)
+
+
+### Bug Fixes
+
+* auto gen portfolio checks stats and refactor ([92ba764](https://github.com/macite/doubtfire-deploy/commit/92ba764d0f2a6527582042d6181d2a166b1582da))
+* ensure campus valid on import ([5ef73ba](https://github.com/macite/doubtfire-deploy/commit/5ef73baa752bc95330b21bc232d234ee8f59b0d0))
+* ensure unit dates can be edited independently ([2a3d3c1](https://github.com/macite/doubtfire-deploy/commit/2a3d3c193df12ac7f17e86b3ad2d16af27264fae))
+* rollover with portfolio creation date ([2b1352f](https://github.com/macite/doubtfire-deploy/commit/2b1352f25554d79b6feb74159fec0763d15310ca))
+
 ### [7.0.18](https://github.com/macite/doubtfire-deploy/compare/v7.0.17...v7.0.18) (2023-06-18)
 
 ### [7.0.17](https://github.com/macite/doubtfire-deploy/compare/v7.0.16...v7.0.17) (2023-06-17)
