@@ -69,23 +69,8 @@ namespace :submission do
   end
 
   task portfolio_autogen_check: :environment do
-    # Portfolio generation automation:
-    # Flip compile_portfolio to true for all projects where the following conditions are met:
-    # - associated unit is active
-    # - current date is after configured automatic generation dates for the associated unit
-    # - portfolio compilation has not been requested already
-    # - portfolio is still not available
-    # Additionally, set the portfolio_auto_generated property to true to indicate this is auto-generated
-    Project.joins(:unit)
-           .where(units: { active: true })
-           .where("units.portfolio_auto_generation_date < ?", Date.today)
-           .where(compile_portfolio: false)
-           .reject(&:portfolio_available)
-           .each do |project|
-      project.compile_portfolio = true
-      project.portfolio_auto_generated = true
-      project.save
-    end
+    PdfGeneration::ProjectCompilePortfolioModule.projects_awaiting_auto_generation
+                                                .each(:auto_generate_portfolio)
   end
 
   task create_missing_portfolios: :environment do

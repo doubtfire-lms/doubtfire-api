@@ -93,7 +93,7 @@
 <%          end %>
     </ul>
 <%      end %>
-<%  elsif @project.has_portfolio %>
+<%  elsif @project.portfolio_exists? %>
     <p>Its time to Party! You have completed all of the tasks and prepared your portfolio.</p>
 <%  else %>
     <p>Its almost party time... You have completed all of the tasks, now make sure you login and prepare your portfolio.</p>

@@ -110,7 +110,7 @@ class ProjectModelTest < ActiveSupport::TestCase
 
     project.create_portfolio
     refute project.reload.compile_portfolio
-    assert project.has_portfolio
+    assert project.portfolio_exists?
     assert File.exist?(project.portfolio_path)
 
     unit.destroy!
@@ -130,7 +130,7 @@ class ProjectModelTest < ActiveSupport::TestCase
 
     project.create_portfolio
     refute project.reload.compile_portfolio
-    assert project.has_portfolio
+    assert project.portfolio_exists?
     assert File.exist?(project.portfolio_path)
 
     unit.destroy!
@@ -170,7 +170,7 @@ class ProjectModelTest < ActiveSupport::TestCase
 
     project.create_portfolio
     refute project.reload.compile_portfolio
-    assert project.has_portfolio
+    assert project.portfolio_exists?
 
     assert File.exist?(project.portfolio_path)
 
