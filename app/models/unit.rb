@@ -708,6 +708,7 @@ class Unit < ApplicationRecord
   #     -:email
   #     -:tutorials array of [tutorial_code, ...]
   #     -:enrolled
+  #     -:campus
   # Import settings is:
   # - A hash
   # - :replace_existing_tutorial boolean
@@ -772,6 +773,13 @@ class Unit < ApplicationRecord
           next
         end
 
+        # Find the campus
+        campus = campus_data.present? ? Campus.find_by_abbr_or_name(campus_data) : nil
+        if campus_data.present? && campus.nil?
+          errors << { row: row, message: "Unable to find campus (#{campus_data})" }
+          next
+        end
+
         # It is an enrolment... so first find the user
         project_participant = User.find_or_create_by(username: username) do |new_user|
           new_user.first_name         = first_name
@@ -803,7 +811,6 @@ class Unit < ApplicationRecord
 
           # Now find the project for the user
           user_project = projects.where(user_id: project_participant.id).first
-          campus = Campus.find_by_abbr_or_name(campus_data)
 
           # Add the user to the project (if not already in there)
           if user_project.nil?
