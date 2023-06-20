@@ -686,7 +686,7 @@ class UnitModelTest < ActiveSupport::TestCase
 
     unit.active_projects.each do |p|
       DatabasePopulator.generate_portfolio(p)
-      assert p.has_portfolio
+      assert p.portfolio_exists?
       assert File.exist?(p.portfolio_path)
       paths << p.portfolio_path
     end
