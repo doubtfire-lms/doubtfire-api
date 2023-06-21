@@ -51,7 +51,7 @@ module PdfGeneration
         @student = project.student
         @project = project
         @learning_summary_report = project.learning_summary_report_path
-        @files = project.portfolio_files(true, is_retry)
+        @files = project.portfolio_files(ensure_valid: true, force_ascii: is_retry)
         @base_path = project.portfolio_temp_path
         @image_path = Rails.root.join('public', 'assets', 'images')
         @ordered_tasks = project.tasks.joins(:task_definition).order('task_definitions.start_date, task_definitions.abbreviation').where("task_definitions.target_grade <= #{project.target_grade}")
@@ -221,7 +221,7 @@ module PdfGeneration
       result
     end
 
-    def portfolio_files(ensure_valid = false, force_ascii = false)
+    def portfolio_files(ensure_valid: false, force_ascii: false)
       # get path to portfolio dir
       portfolio_tmp_dir = portfolio_temp_path
       return [] unless Dir.exist? portfolio_tmp_dir
@@ -229,7 +229,7 @@ module PdfGeneration
       result = []
 
       Dir.chdir(portfolio_tmp_dir)
-      files = Dir.glob('*').select { |f| (f =~ /^\d{3}\-(cover|document|code|image)/) == 0 }
+      files = Dir.glob('*').select { |f| (f =~ /^\d{3}-(cover|document|code|image)/) == 0 }
       files.each do |file|
         parts = file.split('-')
         idx = parts[0].to_i
@@ -258,7 +258,8 @@ module PdfGeneration
       # try to remove the file
       begin
         FileUtils.rm_f rm_file
-      rescue
+      rescue StandardError
+        logger.error "Failed to remove file #{rm_file} from portfolio tmp folder #{portfolio_tmp_dir}"
       end
     end
 
