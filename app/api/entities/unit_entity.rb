@@ -20,7 +20,11 @@ module Entities
       role = unit.role_for(options[:user]) if role.nil?
       role.name unless role.nil?
     end
-    expose :main_convenor_id
+    expose :main_convenor_id, unless: :summary_only
+    expose :main_convenor_user_id, if: :summary_only do |unit, options|
+      unit.main_convenor.user_id
+    end
+
     expose :description
     expose :teaching_period_id, expose_nil: false
 

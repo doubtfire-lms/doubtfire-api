@@ -35,7 +35,7 @@ document_list = Array.new
 \begin{titlepage}
   <% if @learning_summary_report %>
     % add learning summary report to the document list for annotation extraction
-    <% document_list.append(@learning_summary_report)%>
+    <% document_list.append(@learning_summary_report) unless @is_retry %>
   \includepdf[addtotoc={\thepage,section,1,Learning Summary Report,chap:learningsummary},pages={1-1},fitpaper]{<%= @learning_summary_report %>}
 
     <% for page_idx in 2..FileHelper.pages_in_pdf(@learning_summary_report) do %>
@@ -190,7 +190,7 @@ No Tutor
 
     % add additional PDF files to the document list for annotation extraction
     <% if f[:kind] == "document" %>
-         <% document_list.append(@project.portfolio_tmp_file_path(f)) %>
+         <% document_list.append(@project.portfolio_tmp_file_path(f)) unless @is_retry %>
     <% end %>
 
     <%= render partial:"shared/file", locals: {idx: f[:idx] - 1, count: @files.count - 1, name: f[:name], base_path: @base_path, file_name: @project.portfolio_tmp_file_path(f), file_type: f[:kind]} %>
@@ -234,15 +234,15 @@ No Tutor
   <% end %>
   <% if File.exist? task.portfolio_evidence_path %>
     % add task evidence to the document list for annotation extraction
-    <% document_list.append(task.portfolio_evidence_path)%>
+    <% document_list.append(task.portfolio_evidence_path) unless @is_retry %>
     <% for page_idx in 1..FileHelper.pages_in_pdf(task.portfolio_evidence_path) do %>
 \includepdf[pages={<%= page_idx %>-<%= page_idx %>},fitpaper]{<%= task.portfolio_evidence_path %>}
     <% end # end for  %>
   <% end %>
 <% end %>
 
-% generate lua calls for newpax and insert it in the preamble for annotation extraction
-<% content_for :preamble_newpax do %>
+<% # generate lua calls for newpax and insert it in the preamble for annotation extraction
+content_for :preamble_newpax do %>
   \directlua
   {
   <% document_list.each do |path| %>

@@ -256,6 +256,11 @@ class Unit < ApplicationRecord
       new_unit.end_date = end_date
     end
 
+    if self.portfolio_auto_generation_date.present?
+      # Update the portfolio auto generation date to be the same day of the week and week number as the old date
+      new_unit.portfolio_auto_generation_date = new_unit.date_for_week_and_day(week_number(self.portfolio_auto_generation_date), Date::ABBR_DAYNAMES[self.portfolio_auto_generation_date.wday])
+    end
+
     # Clear main convenor - do not use old role id
     new_unit.main_convenor_id = nil
 
@@ -701,6 +706,7 @@ class Unit < ApplicationRecord
   #     -:email
   #     -:tutorials array of [tutorial_code, ...]
   #     -:enrolled
+  #     -:campus
   # Import settings is:
   # - A hash
   # - :replace_existing_tutorial boolean
@@ -765,6 +771,13 @@ class Unit < ApplicationRecord
           next
         end
 
+        # Find the campus
+        campus = campus_data.present? ? Campus.find_by_abbr_or_name(campus_data) : nil
+        if campus_data.present? && campus.nil?
+          errors << { row: row, message: "Unable to find campus (#{campus_data})" }
+          next
+        end
+
         # It is an enrolment... so first find the user
         project_participant = User.find_or_create_by(username: username) do |new_user|
           new_user.first_name         = first_name
@@ -796,7 +809,6 @@ class Unit < ApplicationRecord
 
           # Now find the project for the user
           user_project = projects.where(user_id: project_participant.id).first
-          campus = Campus.find_by_abbr_or_name(campus_data)
 
           # Add the user to the project (if not already in there)
           if user_project.nil?

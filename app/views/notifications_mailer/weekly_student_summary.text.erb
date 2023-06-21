@@ -42,7 +42,7 @@ Get ahead by working on the following task<%="s" if @ahead_top.count > 1%> next!
 * <%= top_task_desc(at) %>
 <%          end %>
 <%      end %>
-<%  elsif @project.has_portfolio %>
+<%  elsif @project.portfolio_exists? %>
 Its time to Party! You have completed all of the tasks and prepared your portfolio.
 <%  else %>
 Its almost party time... You have completed all of the tasks, now make sure you login and prepare your portfolio.

@@ -9,6 +9,7 @@ class UnitModelTest < ActiveSupport::TestCase
   setup do
     @unit = FactoryBot.create :unit, code: 'COS10001', with_students: false, task_count: 0, tutorials: 0, outcome_count: 0, staff_count: 0, campus_count: 0, teaching_period: TeachingPeriod.find(3)
     @unit.add_tutorial_stream('Import-Tasks', 'import-tasks', ActivityType.first)
+    @unit.update(portfolio_auto_generation_date: @unit.end_date - 1.day)
   end
 
   teardown do
@@ -123,6 +124,15 @@ class UnitModelTest < ActiveSupport::TestCase
 
     assert_not_nil unit2.draft_task_definition
     refute_equal lsr, unit2.draft_task_definition
+
+    unit2.destroy
+  end
+
+  def test_rollover_of_portfolio_generation
+    unit2 = @unit.rollover TeachingPeriod.find(2), nil, nil
+
+    assert unit2.portfolio_auto_generation_date.present?
+    assert unit2.portfolio_auto_generation_date > unit2.start_date && unit2.portfolio_auto_generation_date < unit2.end_date
 
     unit2.destroy
   end
@@ -676,7 +686,7 @@ class UnitModelTest < ActiveSupport::TestCase
 
     unit.active_projects.each do |p|
       DatabasePopulator.generate_portfolio(p)
-      assert p.has_portfolio
+      assert p.portfolio_exists?
       assert File.exist?(p.portfolio_path)
       paths << p.portfolio_path
     end

@@ -398,6 +398,26 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert_equal 404, last_response.status
   end
 
+  # Test can update unit start and end dates
+  def test_put_update_unit_dates
+    # Add username and auth_token to Header
+    add_auth_header_for(user: User.first)
+
+    new_start = Unit.first.start_date - 1.week
+    new_end = Unit.first.end_date - 1.week
+
+    put_json '/api/units/1', { unit: { start_date: new_start } }
+    assert_equal 200, last_response.status, last_response_body
+
+    assert_equal new_start.to_i, Unit.first.start_date.to_i
+
+    put_json '/api/units/1', { unit: { end_date: new_end } }
+    assert_equal 200, last_response.status
+
+    assert_equal new_end.to_i, Unit.first.end_date.to_i
+  end
+
+
   # Test GET for getting a specific unit by invalid id
   def test_fail_units_get_by_id
 

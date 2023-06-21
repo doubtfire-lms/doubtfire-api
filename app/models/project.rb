@@ -15,6 +15,8 @@ class Project < ApplicationRecord
   include LogHelper
   include DbHelpers
 
+  include PdfGeneration::ProjectCompilePortfolioModule
+
   belongs_to :unit, optional: false
   belongs_to :user, optional: false
   belongs_to :campus, optional: true
@@ -288,19 +290,6 @@ class Project < ApplicationRecord
 
   def assigned_tasks
     tasks.joins(:task_definition).where('task_definitions.target_grade <= :target', target: target_grade)
-  end
-
-  def portfolio_tasks
-    # Get assigned tasks that are included in the portfolio
-    tasks = self.tasks.joins(:task_definition).order('task_definitions.target_date, task_definitions.abbreviation').where('tasks.include_in_portfolio = TRUE')
-
-    # Remove the tasks that are not aligned... if there are ILOs
-    unless unit.learning_outcomes.empty?
-      tasks = tasks.select { |t| t.learning_outcome_task_links.count > 0 }
-    end
-
-    # Now select the tasks that and have a PDF... cant include the others...
-    portfolio_tasks = tasks.select(&:has_pdf)
   end
 
   def target_grade=(value)
@@ -590,128 +579,6 @@ class Project < ApplicationRecord
     completed_tasks.sort_by(&:completion_date).last
   end
 
-  #
-  # Portfolio production code
-  #
-  def portfolio_temp_path
-    portfolio_dir = FileHelper.student_portfolio_dir(self.unit, self.student.username, false)
-    portfolio_tmp_dir = File.join(portfolio_dir, 'tmp')
-  end
-
-  def portfolio_tmp_file_name(dict)
-    extn = File.extname(dict[:name])
-    name = File.basename(dict[:name], extn)
-    name = name.tr('.', '_') + extn
-    FileHelper.sanitized_filename("#{dict[:idx].to_s.rjust(3, '0')}-#{dict[:kind]}-#{name}")
-  end
-
-  def portfolio_tmp_file_path(dict)
-    File.join(portfolio_temp_path, portfolio_tmp_file_name(dict))
-  end
-
-  def move_to_portfolio(file, name, kind)
-    # get path to portfolio dir
-    # get path to tmp folder where file parts will be stored
-    portfolio_tmp_dir = portfolio_temp_path
-    FileUtils.mkdir_p(portfolio_tmp_dir)
-    result = {
-      kind: kind,
-      name: file[:filename]
-    }
-
-    # copy up the learning summary report as first -- otherwise use files to determine idx
-    if name == 'LearningSummaryReport' && kind == 'document'
-      result[:idx] = 0
-      result[:name] = 'LearningSummaryReport.pdf'
-
-      # set uses_draft_learning_summary to false, since we uploaded a new learning summary
-      self.uses_draft_learning_summary = false
-      save
-    else
-      Dir.chdir(portfolio_tmp_dir)
-      files = Dir.glob('*')
-      idx = files.map { |a_file| a_file.split('-').first.to_i }.max
-      if idx.nil? || idx < 1
-        idx = 1
-      else
-        idx += 1
-      end
-      result[:idx] = idx
-    end
-
-    dest_file = portfolio_tmp_file_name(result)
-    FileUtils.cp file["tempfile"].path, File.join(portfolio_tmp_dir, dest_file)
-    result
-  end
-
-  def portfolio_files(ensure_valid = false, force_ascii = false)
-    # get path to portfolio dir
-    portfolio_tmp_dir = portfolio_temp_path
-    return [] unless Dir.exist? portfolio_tmp_dir
-
-    result = []
-
-    Dir.chdir(portfolio_tmp_dir)
-    files = Dir.glob('*').select { |f| (f =~ /^\d{3}\-(cover|document|code|image)/) == 0 }
-    files.each do |file|
-      parts = file.split('-')
-      idx = parts[0].to_i
-      kind = parts[1]
-      name = parts.drop(2).join('-')
-      result << { kind: kind, name: name, idx: idx }
-
-      FileHelper.ensure_utf8_code(file, force_ascii) if ensure_valid && kind == "code"
-    end
-
-    result
-  end
-
-  # Remove a file from the portfolio tmp folder
-  def remove_portfolio_file(idx, kind, name)
-    # get path to portfolio dir
-    portfolio_tmp_dir = portfolio_temp_path
-    return unless Dir.exist? portfolio_tmp_dir
-
-    # the file is in the students portfolio tmp dir
-    rm_file = File.join(
-      portfolio_tmp_dir,
-      FileHelper.sanitized_filename("#{idx.to_s.rjust(3, '0')}-#{kind}-#{name}")
-    )
-
-    # try to remove the file
-    begin
-      FileUtils.rm_f rm_file
-    rescue
-    end
-  end
-
-  def portfolio_path
-    FileHelper.student_portfolio_path(self.unit, self.student.username, true)
-  end
-
-  def has_portfolio
-    (!portfolio_production_date.nil?) && portfolio_available
-  end
-
-  def portfolio_status
-    if has_portfolio
-      'YES'
-    elsif compile_portfolio
-      'in process'
-    else
-      'no'
-    end
-  end
-
-  def portfolio_available
-    (File.exist? portfolio_path) && !compile_portfolio
-  end
-
-  def remove_portfolio
-    portfolio = portfolio_path
-    FileUtils.mv portfolio, "#{portfolio}.old" if File.exist?(portfolio)
-  end
-
   def matching_task(other_task)
     task_for_task_definition(other_task.task_definition)
   end
@@ -767,109 +634,9 @@ class Project < ApplicationRecord
     LearningOutcomeTaskLink.export_task_alignment_to_csv(unit, self)
   end
 
-  class ProjectAppController < ApplicationController
-    attr_accessor :student
-    attr_accessor :project
-    attr_accessor :base_path
-    attr_accessor :image_path
-    attr_accessor :learning_summary_report
-    attr_accessor :ordered_tasks
-    attr_accessor :portfolio_tasks
-    attr_accessor :task_defs
-    attr_accessor :outcomes
-    attr_accessor :files
-    attr_accessor :institution_name
-    attr_accessor :doubtfire_product_name
-
-    def init(project, is_retry)
-      @student = project.student
-      @project = project
-      @learning_summary_report = project.learning_summary_report_path
-      @files = project.portfolio_files(true, is_retry)
-      @base_path = project.portfolio_temp_path
-      @image_path = Rails.root.join('public', 'assets', 'images')
-      @ordered_tasks = project.tasks.joins(:task_definition).order('task_definitions.start_date, task_definitions.abbreviation').where("task_definitions.target_grade <= #{project.target_grade}")
-      @portfolio_tasks = project.portfolio_tasks
-      @task_defs = project.unit.task_definitions.order(:start_date)
-      @outcomes = project.unit.learning_outcomes.order(:ilo_number)
-      @institution_name = Doubtfire::Application.config.institution[:name]
-      @doubtfire_product_name = Doubtfire::Application.config.institution[:product_name]
-    end
-
-    def make_pdf
-      render_to_string(template: '/portfolio/portfolio_pdf', layout: true)
-    end
-  end
-
-  #
-  # Return the path to the student's learning summary report.
-  # This returns nil if there is no learning summary report.
-  #
-  def learning_summary_report_path
-    portfolio_tmp_dir = portfolio_temp_path
-
-    return nil unless Dir.exist? portfolio_tmp_dir
-
-    filename = "#{portfolio_tmp_dir}/000-document-LearningSummaryReport.pdf"
-    return nil unless File.exist? filename
-
-    filename
-  end
-
-  def compress_portfolio
-    FileHelper.compress_pdf(portfolio_path, max_size: 20_000_000, timeout_seconds: 120)
-  end
-
-  def create_portfolio
-    return false unless compile_portfolio
-
-    self.compile_portfolio = false
-    save!
-
-    begin
-      pac = ProjectAppController.new
-      pac.init(self, false)
-
-      begin
-        pdf_text = pac.make_pdf
-      rescue => e
-        # Try again... with convert to ascii
-        pac2 = ProjectAppController.new
-        pac2.init(self, true)
-
-        pdf_text = pac2.make_pdf
-      end
-
-      File.open(portfolio_path, 'w') do |fout|
-        fout.puts pdf_text
-      end
-
-      compress_portfolio
-
-      logger.info "Created portfolio at #{portfolio_path} - #{log_details}"
-
-      self.portfolio_production_date = Time.zone.now
-      save
-      return true
-    rescue => e
-      logger.error "Failed to convert portfolio to PDF - #{log_details} -\nError: #{e.message}"
-
-      log_file = e.message.scan(/\/.*\.log/).first
-      if log_file && File.exist?(log_file)
-        begin
-          puts "--- Latex Log ---\n"
-          puts File.read(log_file)
-          puts "---    End    ---\n\n"
-        rescue
-        end
-      end
-      return false
-    end
-  end
-
   def send_weekly_status_email(summary_stats, middle_of_unit)
     did_revert_to_pass = false
-    if middle_of_unit && should_revert_to_pass && !has_portfolio
+    if middle_of_unit && should_revert_to_pass && !portfolio_exists?
       self.target_grade = 0
       save
       did_revert_to_pass = true
@@ -879,7 +646,7 @@ class Project < ApplicationRecord
     end
 
     return unless student.receive_feedback_notifications
-    return if has_portfolio && !middle_of_unit
+    return if portfolio_exists? && !middle_of_unit
 
     NotificationsMailer.weekly_student_summary(self, summary_stats, did_revert_to_pass).deliver_now
   end
