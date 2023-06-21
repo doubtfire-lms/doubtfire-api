@@ -227,6 +227,12 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     project = unit.active_projects.first
 
+    # Check we can't auto generate if we do not have a learning summary report
+    refute project.learning_summary_report_exists?
+    refute project.auto_generate_portfolio
+    refute project.compile_portfolio
+    refute project.portfolio_auto_generated
+
     path = File.join(project.portfolio_temp_path, '000-document-LearningSummaryReport.pdf')
     refute File.exist? path
 
@@ -250,6 +256,22 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     project.reload
     assert project.uses_draft_learning_summary
     assert File.exist? path
+    assert project.learning_summary_report_exists?
+
+    # Check we can auto generate
+    project.auto_generate_portfolio
+    assert project.compile_portfolio
+    assert project.portfolio_auto_generated
+
+    project.compile_portfolio = false
+    project.portfolio_auto_generated = false
+    project.save
+
+    # Check auto generate doesn't work if we are not enrolled
+    project.enrolled = false
+    refute project.auto_generate_portfolio
+    refute project.compile_portfolio
+    refute project.portfolio_auto_generated
 
     unit.destroy
     assert_not File.exist? path
