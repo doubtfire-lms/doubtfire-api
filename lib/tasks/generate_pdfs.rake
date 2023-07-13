@@ -70,7 +70,7 @@ namespace :submission do
 
   task portfolio_autogen_check: :environment do
     PdfGeneration::ProjectCompilePortfolioModule.projects_awaiting_auto_generation
-                                                .each(:auto_generate_portfolio)
+                                                .each(&:auto_generate_portfolio)
   end
 
   task create_missing_portfolios: :environment do
