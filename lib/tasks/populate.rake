@@ -171,6 +171,8 @@ namespace :db do
         p.save
       end
     end
+
+    DatabasePopulator.add_similarities
   end
 
   task log_info: [:environment] do

@@ -245,7 +245,7 @@ class DatabasePopulator
       generate_tutorials_and_enrol_students_for_unit(unit, unit_details)
     end
 
-    add_similarities
+    DatabasePopulator.add_similarities
   end
 
   def generate_tutorial_streams_for(unit)
@@ -445,7 +445,7 @@ class DatabasePopulator
     end
   end
 
-  def add_similarities
+  def self.add_similarities
     unit = Unit.first
     project = unit.projects.first
     task = project.task_for_task_definition(unit.task_definitions.first)
