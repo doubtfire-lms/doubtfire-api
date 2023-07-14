@@ -44,7 +44,7 @@ module AuthenticationHelpers
       sleep(rand(200..399) / 1000.0)
       error!({ error: 'Could not authenticate with token. Username or Token invalid.' }, 419)
     else
-      error!({ error: 'No authentication details provided. Authentication is required to access this resource.' }, 403)
+      error!({ error: 'No authentication details provided. Authentication is required to access this resource.' }, 419)
     end
   end
 
