@@ -10,8 +10,8 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_04_20_224824) do
-  create_table "activity_types", charset: "utf8mb3", collation: "utf8_unicode_ci", force: :cascade do |t|
+ActiveRecord::Schema[7.0].define(version: 2023_06_03_064217) do
+  create_table "activity_types", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
     t.datetime "created_at", null: false
@@ -285,7 +285,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_04_20_224824) do
     t.datetime "created_at"
     t.datetime "updated_at"
     t.string "plagiarism_report_url"
-    t.boolean "flagged", default: false, null: false
+    t.boolean "flagged", default: false
     t.string "type"
     t.bigint "tii_submission_id"
     t.index ["other_task_id"], name: "index_task_similarities_on_other_task_id"
