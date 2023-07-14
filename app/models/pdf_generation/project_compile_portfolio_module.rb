@@ -2,12 +2,14 @@ module PdfGeneration
   module ProjectCompilePortfolioModule
     def projects_awaiting_auto_generation
       Project.joins(:unit)
-             .where(units: { active: true })
-             .where(projects: { enrolled: true })
+             .where(units: { active: true, end_date: Date.today..Float::INFINITY })
+             .where(projects: { enrolled: true, portfolio_production_date: nil })
              .where("units.portfolio_auto_generation_date < ?", Date.today)
              .where(compile_portfolio: false)
              .reject(&:portfolio_available)
     end
+
+    module_function :projects_awaiting_auto_generation
 
     # Automatically generate the portfolio for this project - only when the
     # learning summary exists, the project is enrolled, and the portfolio is not
