@@ -217,7 +217,7 @@ class TasksApi < Grape::API
     # Find the file
     file_loc = FileHelper.zip_file_path_for_done_task(task)
 
-    if file_loc.nil?
+    if file_loc.nil? || !File.exist?(file_loc)
       file_loc = Rails.root.join('public', 'resources', 'FileNotFound.pdf')
       header['Content-Disposition'] = 'attachment; filename=FileNotFound.pdf'
     else
