@@ -172,7 +172,7 @@ class ProjectsApi < Grape::API
           compile_portfolio: false,
           grade: proj.grade,
           grade_rationale: proj.grade_rationale,
-          max_pct_copy: 0,
+          similarity_flag: false,
           has_portfolio: false,
           stats: Project::DEFAULT_TASK_STATS
         }

@@ -427,7 +427,7 @@ class Unit < ApplicationRecord
         compile_portfolio: t.compile_portfolio,
         grade: t.grade,
         grade_rationale: t.grade_rationale,
-        max_pct_copy: t.task_similarities_max_pct,
+        similarity_flag: t.task_similarities_max_pct > 0,
         has_portfolio: !t.portfolio_production_date.nil?,
         stats: map_stats.call(t),
         tutorial_enrolments: tutorial_streams.map do |s|
