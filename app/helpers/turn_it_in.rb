@@ -14,7 +14,7 @@ class TurnItIn
   cattr_reader :x_turnitin_integration_name, :x_turnitin_integration_version
 
   def self.load_config(config)
-    config.tii_enabled = ENV['TII_ENABLED'].present? && ENV['TII_ENABLED'].to_s.downcase != "false" && ENV['TII_ENABLED'].to_i != 0
+    config.tii_enabled = ENV['TII_ENABLED'].present? && (ENV['TII_ENABLED'].to_s.downcase == "true" || ENV['TII_ENABLED'].to_i == 1)
 
     if config.tii_enabled
       # Turn-it-in TII configuration

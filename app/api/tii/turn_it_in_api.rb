@@ -21,7 +21,7 @@ module Tii
         error!({ error: "You are not authorised to accept the EULA on behalf of another user" }, 403)
       end
 
-      present current_user.accept_eula, Grape::Presenters::Presenter
+      present current_user.accept_tii_eula, Grape::Presenters::Presenter
     end
   end
 end
