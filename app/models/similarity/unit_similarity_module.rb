@@ -25,11 +25,10 @@ module UnitSimilarityModule
       logger.info "Checking plagiarsm for unit #{code} - #{name} (id=#{id})"
 
       task_definitions.each do |td|
-        next if td.moss_language.nil? || td.upload_requirements.nil? || td.upload_requirements.select{ |upreq| upreq['type'] == 'code' && upreq['tii_check'] }.empty?
+        next if td.moss_language.nil? || td.upload_requirements.nil? || td.upload_requirements.select { |upreq| upreq['type'] == 'code' && upreq['tii_check'] }.empty?
 
         type_data = td.moss_language.split
         next if type_data.nil? || (type_data.length != 2) || (type_data[0] != 'moss')
-
 
         # Is there anything to check?
         logger.debug "Checking plagiarism for #{td.name} (id=#{td.id})"
@@ -141,7 +140,6 @@ module UnitSimilarityModule
           end
 
         else # just link the individuals...
-          byebug
           create_plagiarism_link(t1, t2, match, warn_pct)
         end
       end
