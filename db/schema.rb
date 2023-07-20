@@ -475,4 +475,44 @@ ActiveRecord::Schema[7.0].define(version: 2023_06_03_064217) do
     t.index ["user_id"], name: "index_webcals_on_user_id", unique: true
   end
 
+  create_table "student_performance", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
+    t.string "school", limit: 2, null: false
+    t.string "student_id", unique: true
+    t.bigint "unit_id"
+    t.references :teaching_period, null: false, foreign_key: true
+    t.references :task, null: false, foreign_key: true
+    t.references :student, null: false, foreign_key: { to_table: :users }
+    t.datetime :submission_time
+    t.datetime :assessment_time
+    t.integer :grade
+    t.integer :contribution_pts, default: 3
+    t.integer :quality_pts, default: -1
+    t.integer :hours, default: 0
+    t.integer :extensions, default: 0, null: false
+    t.string "sex", limit: 1, null: false
+    t.integer "age", null: false
+    t.string "address", limit: 1, null: false
+    t.integer "medu", null: false
+    t.integer "fedu", null: false
+    t.integer "traveltime", null: false
+    t.integer "studytime", null: false
+    t.integer "failures", null: false
+    t.boolean "schoolsup", null: false
+    t.boolean "famsup", null: false
+    t.boolean "activities", null: false
+    t.boolean "higher", null: false
+    t.boolean "internet", null: false
+    t.boolean "romantic", null: false
+    t.integer "famrel", null: false
+    t.integer "freetime", null: false
+    t.integer "goout", null: false
+    t.integer "dalc", null: false
+    t.integer "walc", null: false
+    t.integer "health", null: false
+    t.integer "absences", null: false
+    t.integer "g1", null: false               # First period grade
+    t.integer "g2", null: false               # Second period grade
+    t.integer "g3", null: false	        # Final period grade
+  end
+
 end
