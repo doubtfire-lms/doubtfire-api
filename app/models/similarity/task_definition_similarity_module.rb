@@ -10,7 +10,8 @@ module TaskDefinitionSimilarityModule
     # delete old plagiarism links
     logger.info "Deleting old links for task definition #{id} - #{abbreviation}"
     MossTaskSimilarity.joins(:task).where('tasks.task_definition_id' => id).find_each do |plnk|
-      MossTaskSimilarity.find(plnk.id).destroy!
+      pair = MossTaskSimilarity.find_by(id: plnk.id)
+      pair.destroy! if pair.present?
     end
   end
 end
