@@ -19,6 +19,7 @@ module UserTiiModule
 
   def accepted_tii_eula?
     return false unless Doubtfire::Application.config.tii_enabled
+    return true unless TiiActionFetchFeaturesEnabled.eula_required?
 
     tii_eula_version == TurnItIn.eula_version
   end
