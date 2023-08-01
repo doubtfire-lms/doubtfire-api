@@ -84,7 +84,8 @@ class TaskDefinitionsApi < Grape::API
     end
 
     task_def.save!
-    present task_def, with: Entities::TaskDefinitionEntity
+
+    present task_def, with: Entities::TaskDefinitionEntity, my_role: unit.role_for(current_user)
   end
 
   desc 'Edits the given task definition'
@@ -177,7 +178,7 @@ class TaskDefinitionsApi < Grape::API
       end
     end
 
-    present task_def, with: Entities::TaskDefinitionEntity
+    present task_def, with: Entities::TaskDefinitionEntity, my_role: unit.role_for(current_user)
   end
 
   desc 'Upload CSV of task definitions to the provided unit'

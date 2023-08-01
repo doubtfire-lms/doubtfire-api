@@ -71,13 +71,14 @@ class FeedbackTest < ActiveSupport::TestCase
     # Add auth_token and username to header
     add_auth_header_for(user: user)
 
-    get "/api/units/#{unit.id}/tasks/similarity"
+    task = unit.tasks.last
+
+    get "/api/tasks/#{task.id}/similarities"
 
     assert_equal 200, last_response.status
 
     assert_equal expected_count, last_response_body.count, last_response_body
 
-    task = unit.tasks.last
     MossTaskSimilarity.create! do |pml|
       pml.task = task
       pml.pct = 50
@@ -87,7 +88,7 @@ class FeedbackTest < ActiveSupport::TestCase
     end
 
     expected_count = 1
-    get "/api/units/#{unit.id}/tasks/similarity"
+    get "/api/tasks/#{task.id}/similarities"
 
     assert_equal 200, last_response.status
 
