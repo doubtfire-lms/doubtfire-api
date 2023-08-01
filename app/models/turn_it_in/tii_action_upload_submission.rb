@@ -269,13 +269,7 @@ class TiiActionUploadSubmission < TiiAction
       data = TCAClient::SimilarityPutRequest.new(
         generation_settings:
           TCAClient::SimilarityGenerationSettings.new(
-            search_repositories: %w[
-              INTERNET
-              SUBMITTED_WORK
-              PUBLICATION
-              CROSSREF
-              CROSSREF_POSTED_CONTENT
-            ],
+            search_repositories: TiiActionFetchFeaturesEnabled.search_repositories,
             auto_exclude_self_matching_scope: 'GROUP_CONTEXT'
           )
       )

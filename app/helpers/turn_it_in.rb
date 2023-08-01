@@ -35,6 +35,15 @@ class TurnItIn
     end
   end
 
+  # Launch the tii background jobs
+  def self.launch_tii(with_webhooks: true)
+    TiiRegisterWebHookJob.perform_async if with_webhooks
+
+    (TiiActionFetchFeaturesEnabled.last || TiiActionFetchFeaturesEnabled.create).perform
+
+    (TiiActionFetchEula.last || TiiActionFetchEula.create).perform
+  end
+
   # A global error indicates that tii is not configured correctly or a change in the
   # environment requires that the configuration is updated
   def self.global_error

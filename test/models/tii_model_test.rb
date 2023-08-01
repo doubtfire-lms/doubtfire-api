@@ -105,8 +105,73 @@ class TiiModelTest < ActiveSupport::TestCase
     assert_requested eula_version_stub, times: 1
   end
 
+  def test_tii_features_enabled
+    skip "TurnItIn Integration Tests Skipped" unless Doubtfire::Application.config.tii_enabled
+    TiiActionFetchFeaturesEnabled.destroy_all
+
+    body = '{
+      "similarity": {
+          "viewer_modes": {
+              "match_overview": true,
+              "all_sources": true
+          },
+          "generation_settings": {
+              "search_repositories": [
+                  "INTERNET",
+                  "PUBLICATION",
+                  "CROSSREF",
+                  "CROSSREF_POSTED_CONTENT",
+                  "SUBMITTED_WORK"
+              ],
+              "submission_auto_excludes": true
+          },
+          "view_settings": {
+              "exclude_bibliography": true,
+              "exclude_quotes": true,
+              "exclude_abstract": true,
+              "exclude_methods": true,
+              "exclude_small_matches": true,
+              "exclude_internet": true,
+              "exclude_publications": true,
+              "exclude_crossref": true,
+              "exclude_crossref_posted_content": true,
+              "exclude_submitted_works": true,
+              "exclude_citations": true,
+              "exclude_preprints": true
+          }
+      },
+      "tenant": {
+          "require_eula": true
+      },
+      "product_name": "Turnitin Originality",
+      "access_options": [
+          "NATIVE",
+          "CORE_API",
+          "DRAFT_COACH"
+      ]
+  }'
+
+    feature_stub = stub_request(:get, "https://#{ENV['TCA_HOST']}/api/v1/features-enabled").
+    with(tii_headers).
+    to_return(
+      status: 200,
+      body: body,
+      headers: {
+        'Content-Type' => 'application/json'
+      }
+    )
+
+    # Eula not required if not read
+    assert TiiActionFetchFeaturesEnabled.eula_required?
+
+    assert_equal 1, TiiActionFetchFeaturesEnabled.count
+    assert_requested feature_stub, times: 1
+  end
+
   def test_tii_process
     skip "TurnItIn Integration Tests Skipped" unless Doubtfire::Application.config.tii_enabled
+
+    setup_tii_features_enabled
 
     project = FactoryBot.create(:project)
     unit = project.unit

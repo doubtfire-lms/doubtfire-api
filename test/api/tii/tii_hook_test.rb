@@ -14,6 +14,8 @@ class TeachingPeriodTest < ActiveSupport::TestCase
 
   # Test the submission webhook
   def test_submission_webhook
+    setup_tii_features_enabled
+
     task = FactoryBot.create(:task)
     user = task.project.user
 

@@ -19,6 +19,60 @@ module TestHelpers
       base
     end
 
+    def setup_tii_features_enabled
+      TiiActionFetchFeaturesEnabled.create!(
+        last_run: DateTime.now,
+        complete: true,
+        retry: false
+      )
+
+      Rails.cache.fetch('tii.features_enabled') do
+        TCAClient::FeaturesEnabled.new(
+          {
+            similarity: TCAClient::FeaturesSimilarity.new(
+                viewer_modes: {
+                    match_overview: true,
+                    all_sources: true
+                },
+                generation_settings: TCAClient::FeaturesGenerationSettings.new(
+                    search_repositories: [
+                        'INTERNET',
+                        'SUBMITTED_WORK',
+                        'PUBLICATION',
+                        'CROSSREF',
+                        'CROSSREF_POSTED_CONTENT',
+                    ],
+                    submission_auto_excludes: true
+                  ),
+                view_settings: {
+                    exclude_bibliography: true,
+                    exclude_quotes: true,
+                    exclude_abstract: true,
+                    exclude_methods: true,
+                    exclude_small_matches: true,
+                    exclude_internet: true,
+                    exclude_publications: true,
+                    exclude_crossref: true,
+                    exclude_crossref_posted_content: true,
+                    exclude_submitted_works: true,
+                    exclude_citations: true,
+                    exclude_preprints: true
+                }
+              ),
+            tenant: {
+                require_eula: true
+            },
+            product_name: 'Turnitin Originality',
+            access_options: [
+                'NATIVE',
+                'CORE_API',
+                'DRAFT_COACH'
+            ]
+        }
+      )
+      end
+    end
+
     def setup_tii_eula
       TiiActionFetchEula.create!(
         last_run: DateTime.now,
