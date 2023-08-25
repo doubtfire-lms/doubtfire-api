@@ -2,10 +2,12 @@
 
 # Accept the turn it in end user license agreement for a user
 class TiiActionAcceptEula < TiiAction
-  private
-
   def user
     entity
+  end
+
+  def description
+    "Accept Turnitin EULA for user #{user.name}"
   end
 
   def run

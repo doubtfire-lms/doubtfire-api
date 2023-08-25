@@ -2,6 +2,10 @@
 
 # Fetch the eula version and html from turn it in
 class TiiActionFetchEula < TiiAction
+  def description
+    "Fetch Tii EULA"
+  end
+
   def run
     if fetch_eula_version
       self.complete = true

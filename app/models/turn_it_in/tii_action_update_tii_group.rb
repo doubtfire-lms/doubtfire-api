@@ -2,6 +2,10 @@
 
 # Track updating of a group (assignment / task definition) in TurnItIn
 class TiiActionUpdateTiiGroup < TiiAction
+  def description
+    "Update assessment for #{entity.detailed_name} in #{entity.unit.code}"
+  end
+
   def run
     # Generate id but do not save until put is complete
     entity.tii_group_id = SecureRandom.uuid unless entity.tii_group_id.present?

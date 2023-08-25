@@ -2,6 +2,10 @@
 
 # Fetch the eula version and html from turn it in
 class TiiActionRegisterWebhook < TiiAction
+  def description
+    "Register webhooks"
+  end
+
   private
 
   def run

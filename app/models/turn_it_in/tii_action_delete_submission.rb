@@ -2,6 +2,10 @@
 
 # Delete a group attachment from turn it in
 class TiiActionDeleteSubmission < TiiAction
+  def description
+    "Delete submission #{params['submission_details']}"
+  end
+
   def run
     submission_id = params["submission_id"]
 
