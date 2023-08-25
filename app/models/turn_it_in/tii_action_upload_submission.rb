@@ -18,7 +18,7 @@ class TiiActionUploadSubmission < TiiAction
     when 'SUCCESS' # Similarity report is complete
       entity.status = :similarity_pdf_requested
       entity.save
-      save_and_reset_retry
+      save_progress
       download_similarity_report_pdf(skip_check: true)
       # else # pending or unknown...
     end
@@ -41,13 +41,12 @@ class TiiActionUploadSubmission < TiiAction
     when 'COMPLETE' # Submission processing is complete
       entity.status = :submission_complete
       entity.save
-      save_and_reset_retry
+      save_and_reschedule # Request the similarity report
 
       request_similarity_report
     when 'ERROR' # An error occurred during submission processing; see error_code for details
       save_and_log_custom_error response.error_code
       Doubtfire::Application.config.logger.error "Error with tii submission: #{id} #{self.custom_error_message}"
-      save_and_reset_retry
     end
   end
 
@@ -78,15 +77,16 @@ class TiiActionUploadSubmission < TiiAction
         similarity.save
       end
 
-      # Reset for new request
-      save_and_reset_retry
-
-      # Request the PDF if flagged
-      request_similarity_report_pdf if flag
+      # If we need to get the pdf report... request it
+      if flag
+        save_and_reschedule
+        # Request the PDF if flagged
+        request_similarity_report_pdf
+      else
+        save_and_mark_complete
+      end
     end
   end
-
-  private
 
   # Run is designed to be run in a background job, polling in
   # case of the need to retry actions. This will ensure submissions progress
@@ -150,7 +150,7 @@ class TiiActionUploadSubmission < TiiAction
       entity.status = :has_id
       entity.save
 
-      save_and_reset_retry
+      save_and_reschedule
 
       # If we had to indicate the eula was accepted, then we need to update the user
       unless submitted_by_user.tii_eula_version_confirmed
@@ -337,7 +337,7 @@ class TiiActionUploadSubmission < TiiAction
       entity.similarity_pdf_id = result.id
       entity.save
 
-      save_and_reset_retry
+      save_and_reschedule
     end
   end
 
@@ -363,16 +363,21 @@ class TiiActionUploadSubmission < TiiAction
       )
 
       filename = similarity_pdf_path
-      file = File.new(filename, 'wb')
-      begin
-        file.write(result)
-      ensure
-        file.close
+
+      if result.instance_of? Tempfile
+        FileUtils.mv(result.path, filename)
+      else
+        file = File.new(filename, 'wb')
+        begin
+          file.write(result)
+        ensure
+          file.close
+        end
       end
 
       entity.status = :similarity_pdf_downloaded
       entity.save
-      save_and_reset_retry
+      save_and_mark_complete
 
       true
     end

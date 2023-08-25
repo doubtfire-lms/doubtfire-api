@@ -149,6 +149,10 @@ class Task < ApplicationRecord
     end
   end
 
+  def description
+    "#{task_definition.abbreviation} for #{project.student.username}"
+  end
+
   def all_comments
     if group_submission.nil?
       comments

@@ -16,13 +16,12 @@ class TiiActionUploadTaskResources < TiiAction
       entity.status = :complete
       entity.save
 
-      self.complete = true
-      save_and_reset_retry
+      save_and_mark_complete
     when 'ERROR'
       self.error_code = :custom_tii_error
       self.custom_error_message = response.error_code
       Doubtfire::Application.config.logger.error "Error with tii submission: #{id} #{self.custom_error_message}"
-      save_and_reset_retry
+      save_and_log_custom_error
     end
   end
 
@@ -78,7 +77,7 @@ class TiiActionUploadTaskResources < TiiAction
       entity.status = :has_id
       entity.save
 
-      save_and_reset_retry
+      save_and_reschedule
     end
   end
 
@@ -101,8 +100,7 @@ class TiiActionUploadTaskResources < TiiAction
       )
 
       entity.update(status: :uploaded)
-
-      save_and_reset_retry
+      save_and_reschedule
     end
   end
 
