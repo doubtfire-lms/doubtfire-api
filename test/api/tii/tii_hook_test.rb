@@ -23,6 +23,7 @@ class TeachingPeriodTest < ActiveSupport::TestCase
       submission_id: "e884f478-9757-41c7-80da-37b94ebb2838",
       status: 'uploaded',
       task: task,
+      idx: 0,
       filename: 'test.doc',
       submitted_at: Time.zone.now,
       submitted_by: task.project.user
