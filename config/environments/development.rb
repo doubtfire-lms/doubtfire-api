@@ -15,7 +15,11 @@ Doubtfire::Application.configure do
 
   # Enable/disable caching. By default caching is disabled.
   # Run rails dev:cache to toggle caching.
-  if ENV['CAHCE'] == 'true' || Rails.root.join('tmp', 'caching-dev.txt').exist?
+  if ENV['CACHE'] == 'true' || Rails.root.join('tmp', 'caching-dev.txt').exist?
+    ActiveSupport::Reloader.to_prepare do
+      puts "CLEARING CACHE"
+      Rails.cache.clear
+    end
     config.action_controller.perform_caching = true
     config.action_controller.enable_fragment_cache_logging = true
 

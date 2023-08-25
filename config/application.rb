@@ -153,6 +153,13 @@ module Doubtfire
     # config.paths.add 'app/api', glob: '**/*.rb'
     # config.autoload_paths += Dir["#{Rails.root}/app"]
     # config.autoload_paths += Dir[Rails.root.join("app", "models", "{*/}")]
+
+    config.autoload_paths <<
+      Rails.root.join('app') <<
+      Rails.root.join('app', 'models', 'comments') <<
+      Rails.root.join('app', 'models', 'turn_it_in') <<
+      Rails.root.join('app', 'models', 'similarity')
+
     config.eager_load_paths <<
       Rails.root.join('app') <<
       Rails.root.join('app', 'models', 'comments') <<
