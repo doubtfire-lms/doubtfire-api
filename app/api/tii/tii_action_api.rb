@@ -43,20 +43,15 @@ module Tii
     put '/tii_actions/:id' do
       unit = Unit.find(params[:unit_id]) if params[:unit_id].present?
 
-      unless authorise?(current_user, User, :admin_units) || (unit.present? && authorise?(current_user, unit, :add_task_def))
-        error!({ error: 'Not authorised access turn it in actions' }, 403)
+      unless authorise?(current_user, User, :admin_units)
+        error!({ error: 'Not authorised to retry tasks' }, 403)
       end
 
-      action = if unit.present?
-                 unit.tii_actions.find(params[:id])
-               else
-                 TiiAction.find(params[:id])
-               end
+      action = TiiAction.find(params[:id])
 
       case params[:action]
       when 'retry'
-        error!({ error: 'Action already scheduled' }, 403) if TiiActionJob.jobs.any? { |job| job['args'].first == action.id }
-
+        action.update(retry: true)
         action.perform_async
       else
         error!({ error: 'Invalid action' }, 400)
