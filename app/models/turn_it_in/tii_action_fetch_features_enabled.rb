@@ -2,6 +2,10 @@
 
 # Fetch the eula version and html from turn it in
 class TiiActionFetchFeaturesEnabled < TiiAction
+  def description
+    "Fetch Tii Features Enabled"
+  end
+
   def self.eula_required?
     features = Rails.cache.read('tii.features_enabled')
 

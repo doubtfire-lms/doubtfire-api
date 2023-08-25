@@ -4,6 +4,10 @@
 class TiiActionUploadSubmission < TiiAction
   delegate :status_sym, :status, :submission_id, :submitted_by_user, :task, :idx, :similarity_pdf_id, :similarity_pdf_path, :filename, to: :entity
 
+  def description
+    "Upload #{self.filename} for #{self.task.student.username} from #{self.task.task_definition.abbreviation}"
+  end
+
   # Update the status based on the response from the pdf status api or webhook
   #
   # @param [String] response - the similarity report status
