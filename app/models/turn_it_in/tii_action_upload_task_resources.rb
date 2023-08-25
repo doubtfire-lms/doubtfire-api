@@ -4,6 +4,10 @@
 class TiiActionUploadTaskResources < TiiAction
   delegate :status, :status_sym, :tii_group_id, :task_definition, :filename, :group_attachment_id, to: :entity
 
+  def description
+    "Upload assessment resources #{filename} for #{entity.task_definition.abbreviation} in #{entity.task_definition.unit.code}"
+  end
+
   def update_from_attachment_status(response)
     return if response.nil?
 

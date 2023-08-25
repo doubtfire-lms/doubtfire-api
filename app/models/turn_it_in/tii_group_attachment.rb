@@ -59,7 +59,8 @@ class TiiGroupAttachment < ApplicationRecord
       entity: nil,
       params: {
         group_id: tii_group_id,
-        group_attachment_id: group_attachment_id
+        group_attachment_id: group_attachment_id,
+        description: "Delete assessment attachment - #{filename} in #{task_definition.abbreviation} for #{task_definition.unit.code}"
       }
     ).perform
   end

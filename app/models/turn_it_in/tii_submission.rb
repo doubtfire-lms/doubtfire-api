@@ -64,6 +64,7 @@ class TiiSubmission < ApplicationRecord
       TiiActionDeleteSubmission.create(
         entity: nil,
         params: {
+          submission_details: "Delete submission of #{self.task.filename_for_upload(self.idx)} for #{self.task.description}",
           submission_id: submission_id
         }
       ).perform

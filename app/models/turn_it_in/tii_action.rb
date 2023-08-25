@@ -34,6 +34,10 @@ class TiiAction < ApplicationRecord
   serialize :params, JSON
   serialize :log, JSON
 
+  def description
+    'Generic Turnitin Action'
+  end
+
   def perform_async
     TiiActionJob.perform_async(id)
   end
@@ -43,6 +47,9 @@ class TiiAction < ApplicationRecord
   # @return value returned by running the action, or nil if the action failed
   def perform
     self.error_code = nil if self.retry && error?
+    self.custom_error_message = nil
+
+    self.log = [] if self.complete # reset log if complete... and performing again
 
     self.log << { date: Time.zone.now, message: "Started #{type}" }
     self.last_run = Time.zone.now
@@ -121,10 +128,15 @@ class TiiAction < ApplicationRecord
   end
 
   # Save the submission or attachment, resetting the retry count if needed
-  def save_and_reset_retry(success: true)
+  def save_and_mark_complete
     self.retries = 0
-    self.complete = success if success
+    self.complete = true
 
+    save!
+  end
+
+  def save_progress
+    self.retries = 0
     save!
   end
 
@@ -191,6 +203,7 @@ class TiiAction < ApplicationRecord
   def save_and_log_custom_error(message)
     self.error_code = :custom_tii_error
     self.custom_error_message = message
+    self.complete = false
     log_error
     save
 
