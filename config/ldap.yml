@@ -1,0 +1,20 @@
+development:
+  host: <%= ENV['DF_LDAP_HOST'] %>
+  port: <%= ENV['DF_LDAP_PORT'] %>
+  attribute: <%= ENV['DF_LDAP_ATTRIBUTE'] %>
+  base: <%= ENV['DF_LDAP_BASE'] %>
+  ssl: false
+
+test:
+  host: <%= ENV['DF_LDAP_HOST'] %>
+  port: <%= ENV['DF_LDAP_PORT'] %>
+  attribute: <%= ENV['DF_LDAP_ATTRIBUTE'] %>
+  base: <%= ENV['DF_LDAP_BASE'] %>
+  ssl: false
+
+production:
+  host: <%= ENV['DF_LDAP_HOST'] %>
+  port: <%= ENV['DF_LDAP_PORT'] %>
+  attribute: <%= ENV['DF_LDAP_ATTRIBUTE'] %>
+  base: <%= ENV['DF_LDAP_BASE'] %>
+  ssl: false
