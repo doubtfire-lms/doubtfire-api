@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [7.0.21](https://github.com/macite/doubtfire-deploy/compare/v7.0.20...v7.0.21) (2023-09-04)
+
+
+### Features
+
+* allow admin bind in ldap ([de66236](https://github.com/macite/doubtfire-deploy/commit/de662367d8cb3a291cc00424e25ccf1a6d6587ac))
+
 ### [7.0.20](https://github.com/macite/doubtfire-deploy/compare/v7.0.19...v7.0.20) (2023-08-29)
 
 
