@@ -194,7 +194,7 @@ class TiiActionUploadSubmission < TiiAction
         user_id: submitted_by_user.username,
         language: 'en-us',
         accepted_timestamp: submitted_by_user.tii_eula_date || DateTime.now,
-        version: submitted_by_user.tii_eula_version || TurnItIn.tii_eula_version
+        version: submitted_by_user.tii_eula_version || TurnItIn.eula_version
       )
     end
 
