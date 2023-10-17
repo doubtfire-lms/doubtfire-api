@@ -59,9 +59,9 @@ module TestHelpers
                     exclude_preprints: true
                 }
               ),
-            tenant: {
+            tenant: TCAClient::FeaturesTenant.new({
                 require_eula: true
-            },
+            }),
             product_name: 'Turnitin Originality',
             access_options: [
                 'NATIVE',

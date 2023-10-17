@@ -464,6 +464,17 @@ class TiiModelTest < ActiveSupport::TestCase
     assert_requested download_pdf_request, times: 1
     assert File.exist?(subm.similarity_pdf_path)
 
+    # Get the viewer url
+    viewer_url_request = stub_request(:post, "https://#{ENV['TCA_HOST']}/api/v1/submissions/1223/viewer-url").
+      with(tii_headers).
+      to_return(status: 200, body: TCAClient::SimilarityViewerUrlResponse.new(viewer_url: 'https://viewer.url').to_hash.to_json, headers: {}
+    )
+
+    viewer_act = subm.create_viewer_url(subm.task.tutor)
+
+    assert_requested viewer_url_request, times: 1
+    assert_equal 'https://viewer.url', viewer_act
+
     # Now for submission 1
     # Stub ssubmission 1 as well
     subm_status_req = stub_request(:get, "https://#{ENV['TCA_HOST']}/api/v1/submissions/1222").
