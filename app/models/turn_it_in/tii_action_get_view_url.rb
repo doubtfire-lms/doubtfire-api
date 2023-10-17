@@ -20,7 +20,7 @@ class TiiActionGetViewUrl < TiiAction
   def fetch_view_url
     exec_tca_call 'fetch view url' do
       data = TCAClient::SimilarityViewerUrlSettings.new(
-        viewer_user_id: params[:viewer_tii_id],
+        viewer_user_id: params['viewer_tii_id'] || params[:viewer_tii_id],
         locale: 'en-US',
         viewer_default_permission_set: "INSTRUCTOR"
       )
