@@ -5,7 +5,7 @@ class TiiActionUploadSubmission < TiiAction
   delegate :status_sym, :status, :submission_id, :submitted_by_user, :task, :idx, :similarity_pdf_id, :similarity_pdf_path, :filename, to: :entity
 
   def description
-    "Upload #{self.filename} for #{self.task.student.username} from #{self.task.task_definition.abbreviation}"
+    "Upload #{self.filename} for #{self.task.student.username} from #{self.task.task_definition.abbreviation} (#{self.status} - #{self.next_step})"
   end
 
   # Update the status based on the response from the pdf status api or webhook
@@ -85,6 +85,35 @@ class TiiActionUploadSubmission < TiiAction
       else
         save_and_mark_complete
       end
+    end
+  end
+
+  def next_step
+    case status_sym
+    when :created
+      "getting submission id"
+    when :has_id
+      "awaiting file upload"
+    when :uploaded
+      "awaiting submission processing"
+    when :submission_complete
+      "requesting similarity processing"
+    when :similarity_report_requested
+      "awaiting similarity report generation"
+    when :similarity_report_complete
+      "requesting similarity report"
+    when :similarity_pdf_requested
+      "awaiting similarity report"
+    when :similarity_pdf_available
+      "downloading similarity report"
+    when "similarity_pdf_downloaded"
+      "complete - report available"
+    when :to_delete
+      "awaiting deletion"
+    when :complete_low_similarity
+      "complete - low similarity"
+    else
+      "unknown"
     end
   end
 
