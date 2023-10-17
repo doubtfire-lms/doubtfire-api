@@ -48,7 +48,7 @@ module Similarity
     desc 'Get contents of a similarity by part index'
     params do
       optional :as_attachment, type: Boolean, desc: 'Whether or not to download file as attachment. Default is false.'
-      requires :idx, type: Integer, desc: 'Index of part to download. 0 is the first part, 1 is the second part.'
+      requires :idx, type: Integer, desc: 'Index of part to download. 0 is the first part, 1 is the second part. For MOSS Similarity'
       requires :id, type: Integer, desc: 'ID of similarity to download.'
       requires :task_id, type: Integer, desc: 'ID of task to download similarity for.'
     end
@@ -89,6 +89,31 @@ module Similarity
       env['api.format'] = :binary
 
       File.read(path)
+    end
+
+    desc 'Get viewer url for a turn it in similarity'
+    params do
+      requires :id, type: Integer, desc: 'ID of similarity to get viewer url for.'
+      requires :task_id, type: Integer, desc: 'ID of task to get similarity for.'
+    end
+    get '/tasks/:task_id/similarities/:id/viewer_url' do
+      unless authenticated?
+        error!({ error: "Not authorised to download details for task '#{params[:id]}'" }, 401)
+      end
+      task = Task.find(params[:task_id])
+
+      unless authorise? current_user, task, :view_plagiarism
+        error!({ error: "Not authorised to download details for task '#{params[:id]}'" }, 401)
+      end
+
+      similarity = task.task_similarities.find(params[:id])
+
+      if similarity.present? && similarity.type == 'TiiTaskSimilarity'
+        result = similarity.create_viewer_url(current_user)
+        present result, with: Grape::Presenters::Presenter
+      else
+        error!({ error: "No details to download for task '#{params[:id]}'" }, 404)
+      end
     end
   end
 end

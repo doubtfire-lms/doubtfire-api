@@ -54,6 +54,15 @@ class TiiSubmission < ApplicationRecord
     File.join(path, FileHelper.sanitized_filename("#{id}-tii.pdf"))
   end
 
+  def create_viewer_url(user)
+    TiiActionGetViewUrl.create(
+      entity: self,
+      params: {
+        viewer_tii_id: user.username
+      }
+    ).perform
+  end
+
   private
 
   # Delete the turn it in submission for a task
