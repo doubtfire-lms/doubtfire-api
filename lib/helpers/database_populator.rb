@@ -25,12 +25,12 @@ class DatabasePopulator
         min_students: 5,
         delta_students: 2,
         few_tasks: 5,
-        some_tasks: 10,
-        many_tasks: 20,
+        some_tasks: 8,
+        many_tasks: 15,
         few_tutorials: 1,
         some_tutorials: 1,
         many_tutorials: 1,
-        max_tutorials: 4
+        max_tutorials: 2
       },
       large: {
         min_students: 50,
@@ -244,6 +244,8 @@ class DatabasePopulator
       generate_tutorial_streams_for(unit)
       generate_tutorials_and_enrol_students_for_unit(unit, unit_details)
     end
+
+    DatabasePopulator.add_similarities
   end
 
   def generate_tutorial_streams_for(unit)
@@ -331,7 +333,9 @@ class DatabasePopulator
           { user: :angusmorton, num: some_tutorials },
           { user: :cliff, num: some_tutorials },
         ],
-        students: []
+        students: [],
+        num_tasks: some_tasks,
+        ilos: Faker::Number.between(from: 1, to: 3),
       },
       oop: {
         code: "COS20007",
@@ -411,7 +415,7 @@ class DatabasePopulator
         # day, time, location, tutor_username, abbrev
         tutorial = unit.add_tutorial(
           "#{weekdays.sample}",
-          "#{8 + Faker::Number.between(from: 0, to: 11)}:#{['00', '30'].sample}", # Mon-Fri 8am-7:30pm
+          "#{Faker::Number.between(from: 0, to: 11) + 8}:#{['00', '30'].sample}", # Mon-Fri 8am-7:30pm
           "#{['EN', 'BA'].sample}#{Faker::Number.between(from: 0, to: 6)}0#{Faker::Number.between(from: 0, to: 8)}", # EN###/BA###
           tutor,
           campus,
@@ -439,6 +443,59 @@ class DatabasePopulator
         echo_line "!"
       end
     end
+  end
+
+  def self.add_similarities
+    unit = Unit.first
+    project = unit.projects.first
+    task = project.task_for_task_definition(unit.task_definitions.first)
+
+    other_project = unit.projects.second
+    other_task = other_project.task_for_task_definition(unit.task_definitions.first)
+
+    similarity = TiiTaskSimilarity.create!(
+      task: task,
+      pct: 80,
+      flagged: true,
+      tii_submission: TiiSubmission.create!(
+        task: task,
+        idx: 0,
+        filename: 'test.doc',
+        status: :similarity_pdf_downloaded,
+        submitted_by_user: unit.main_convenor_user
+      )
+    )
+    FileUtils.cp Rails.root.join('test_files/unit_files/sample-learning-summary.pdf'), similarity.similarity_pdf_path
+
+    similarity = TiiTaskSimilarity.create!(
+      task: task,
+      pct: 10,
+      flagged: false,
+      tii_submission: TiiSubmission.create!(
+        task: task,
+        idx: 1,
+        filename: 'test.doc',
+        status: :similarity_pdf_downloaded,
+        submitted_by_user: unit.main_convenor_user
+      )
+    )
+    FileUtils.cp Rails.root.join('test_files/unit_files/sample-learning-summary.pdf'), similarity.similarity_pdf_path
+
+    similarity = MossTaskSimilarity.create!(
+      task: task,
+      pct: 80,
+      flagged: true,
+      other_task: other_task
+    )
+    FileUtils.cp Rails.root.join('test_files/similarity.html'), similarity.html_path
+
+    similarity = MossTaskSimilarity.create!(
+      task: other_task,
+      pct: 30,
+      flagged: true,
+      other_task: task
+    )
+    FileUtils.cp Rails.root.join('test_files/similarity.html'), similarity.html_path
   end
 
   def self.assess_task(proj, task, tutor, status, complete_date)
@@ -506,31 +563,32 @@ class DatabasePopulator
   # Generates tasks for the given unit
   #
   def generate_tasks_for_unit(unit, unit_details)
-    echo "----> Generating #{unit_details[:num_tasks]} tasks"
-
     if File.exist? Rails.root.join('test_files', "#{unit.code}-Tasks.csv")
+      echo "----> Importing tasks from CSV"
       unit.import_tasks_from_csv File.open(Rails.root.join('test_files', "#{unit.code}-Tasks.csv"))
       unit.import_task_files_from_zip Rails.root.join('test_files', "#{unit.code}-Tasks.zip")
       return
     end
 
+    echo "----> Generating #{unit_details[:num_tasks]} tasks"
+
     unit_details[:num_tasks].times do |count|
       up_reqs = []
       Faker::Number.between(from: 1, to: 4).times.each_with_index do |file, idx|
-        up_reqs[idx] = { :key => "file#{idx}", :name => faker_random_sentence(1, 3).capitalize, :type => ["code", "document", "image"].sample }
+        up_reqs << { :key => "file#{idx}", :name => faker_random_sentence(1, 3).capitalize, :type => ["code", "document", "image"].sample }
       end
       target_date = unit.start_date + ((count + 1) % 12).weeks # Assignment 6 due week 6, etc.
       start_date = target_date - Faker::Number.between(from: 1.0, to: 2.0).weeks
       # Make sure at least 30% of the tasks are pass
       target_grade = Faker::Number.between(from: 0, to: 3)
-      task_def = TaskDefinition.create(
+      task_def = TaskDefinition.create!(
         name: "Assignment #{count + 1}",
         abbreviation: "A#{count + 1}",
         unit_id: unit.id,
         description: faker_random_sentence(5, 10),
         weighting: BigDecimal("2"),
         target_date: target_date,
-        upload_requirements: up_reqs.to_json,
+        upload_requirements: up_reqs,
         start_date: start_date,
         target_grade: target_grade
       )

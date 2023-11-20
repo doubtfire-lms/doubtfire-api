@@ -29,6 +29,7 @@ class FeedbackTest < ActiveSupport::TestCase
         assert_includes expected_response_ids, response['id']
       end
     end
+    unit.destroy
   end
 
   def test_tasks_for_task_inbox
@@ -58,7 +59,41 @@ class FeedbackTest < ActiveSupport::TestCase
       assert_equal 200, last_response.status
       assert_equal unit.task_definitions.first.tasks.where("task_status_id > 1").count, last_response_body.count, last_response_body
     end
+    unit.destroy
+  end
 
-    unit.destroy!
+  def test_task_similarity_inbox
+    unit = FactoryBot.create(:unit, perform_submissions: true, unenrolled_student_count: 0, part_enrolled_student_count: 0, tutorials: 2, staff_count: 2)
+
+    expected_count = 0
+    user = unit.main_convenor_user
+
+    # Add auth_token and username to header
+    add_auth_header_for(user: user)
+
+    task = unit.tasks.last
+
+    get "/api/tasks/#{task.id}/similarities"
+
+    assert_equal 200, last_response.status
+
+    assert_equal expected_count, last_response_body.count, last_response_body
+
+    MossTaskSimilarity.create! do |pml|
+      pml.task = task
+      pml.pct = 50
+      pml.plagiarism_report_url = 'test'
+      pml.flagged = true
+      pml.other_task = task
+    end
+
+    expected_count = 1
+    get "/api/tasks/#{task.id}/similarities"
+
+    assert_equal 200, last_response.status
+
+    assert_equal expected_count, last_response_body.count, last_response_body
+
+    unit.destroy
   end
 end

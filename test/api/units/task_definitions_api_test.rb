@@ -5,6 +5,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
   include TestHelpers::AuthHelper
   include TestHelpers::JsonHelper
   include TestHelpers::TestFileHelper
+  include TestHelpers::TiiTestHelper
 
   def app
     Rails.application
@@ -57,7 +58,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     add_auth_header_for(user: unit.main_convenor_user)
 
     post_json "/api/units/#{unit.id}/task_definitions", data_to_post
-    assert_equal 201, last_response.status, last_response.inspect
+    assert_equal 201, last_response.status, last_response_body
     assert_equal 1, unit.task_definitions.count
 
     td = unit.task_definitions.first
@@ -80,8 +81,8 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
         due_date:                 unit.start_date + 23.days,
         abbreviation:             'P1.2',
         restrict_status_updates:  true,
-        upload_requirements:      '[ { "key": "file0", "name": "Other Class", "type": "document" } ]',
-        plagiarism_checks:        '[]',
+        upload_requirements:      [ { "key": "file0", "name": "Other Class", "type": "document" } ].to_json,
+        plagiarism_checks:        [].to_json,
         plagiarism_warn_pct:      80,
         is_graded:                false,
         max_quality_pts:          0
@@ -138,10 +139,25 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
 
   def test_post_task_resources
     test_unit_id = Unit.first.id
-    test_task_definition_id = TaskDefinition.first.id
+    td = Unit.first.task_definitions.first
+
+    td.upload_requirements = [
+      {
+        key: 'file0',
+        name: 'Report x',
+        tii_check: false,
+        type: 'document',
+        tii_pct: 35
+      }
+    ]
+    td.save!
+
+    test_task_definition_id = td.id
+
+    start_count = TiiActionUploadTaskResources.count
 
     data_to_post = {
-      file: upload_file('test_files/2015-08-06-COS10001-acain.zip', 'application/zip')
+      file: upload_file('test_files/TestWordDoc.docx.zip', 'application/zip')
     }
 
     # Add auth_token and username to header
@@ -149,9 +165,59 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
 
     post "/api/units/#{test_unit_id}/task_definitions/#{test_task_definition_id}/task_resources", data_to_post
 
-    puts last_response_body if last_response.status == 403
+    assert_equal 201, last_response.status, last_response_body
 
-    assert_equal 201, last_response.status
+    # No tii check in task def, so no job should be created
+    assert_equal start_count, TiiActionUploadTaskResources.count
+
+    # Add tii check to task definition
+    td.upload_requirements = [
+      {
+        key: 'file0',
+        name: 'Report x',
+        tii_check: true,
+        type: 'document',
+        tii_pct: 35
+      }
+    ]
+
+    # Save will trigger TII integration
+    create_tii_group_stub = stub_request(:put, %r[https://localhost/api/v1/groups/.*]).
+      with(tii_headers).
+      with(body: %r[.*id.*.*name.*type.*ASSIGNMENT.*group_context.*id.*name.*due_date.*report_generation.*IMMEDIATELY_AND_DUE_DATE.*]).
+      to_return(status: 200, body: "", headers: {})
+
+    post_attachment_stub = stub_request(:post, %r[https://localhost/api/v1/groups/.*/attachments]).
+      with(tii_headers).
+      with(body: "{\"title\":\"TestWordDoc.docx\",\"template\":false}").
+      to_return(
+        status: 200,
+        body: TCAClient::AddGroupAttachmentResponse.new(
+          id: SecureRandom.uuid
+        ).to_json,
+        headers: {}
+      )
+
+    upload_stub = stub_request(:put, %r[https://localhost/api/v1/groups/.*/attachments/.*/original]).
+      with(tii_headers).
+      with(headers: {'Content-Type'=>'binary/octet-stream'}).
+      to_return(status: 200, body: '{ "message": "Successfully uploaded file for attachment ..." }', headers: {})
+
+    delete_stub = stub_request(:delete, %r[https://localhost/api/v1/groups/.*/attachments/.*]).
+      with(tii_headers).
+      to_return(status: 200, body: "", headers: {})
+
+    td.save!
+
+    # Saving the task definition triggers group attachments to be updated
+    assert_equal start_count + 1, TiiActionUploadTaskResources.count
+    assert_requested create_tii_group_stub, times: 1
+    assert_requested post_attachment_stub, times: 1
+    assert_requested upload_stub, times: 1
+    assert_requested delete_stub, times: 0
+
+    td.destroy!
+    assert_requested delete_stub, times: 1
   end
 
   def test_submission_creates_folders
@@ -167,7 +233,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
         target_date: unit.start_date + 2.weeks,
         abbreviation: 'test_submission_creates_folders',
         restrict_status_updates: false,
-        upload_requirements: [ { "key" => 'file0', "name" => 'Shape Class', "type" => 'document' } ],
+        upload_requirements: [ { "key" => "file0", "name" => "Shape Class", "type" => "document" } ],
         plagiarism_warn_pct: 0.8,
         is_graded: false,
         max_quality_pts: 0
@@ -773,13 +839,13 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     # Test change upload requirements to a non-document upload
     data_to_put = {
       task_def: {
-        upload_requirements: '[{"key": "file0","name": "Code file","type": "code"}]'
+        upload_requirements: [{"key": "file0","name": "Code file","type": "code"}].to_json
       }
     }
 
     put_json "/api/units/#{unit.id}/task_definitions/#{task_def.id}", data_to_put
 
-    assert_equal 403, last_response.status
+    assert_equal 403, last_response.status, last_response_body
     task_def.reload
     assert_equal upload_reqs, task_def.upload_requirements
 

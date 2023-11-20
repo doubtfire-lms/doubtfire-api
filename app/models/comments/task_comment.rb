@@ -15,8 +15,6 @@ class TaskComment < ApplicationRecord
 
   belongs_to :recipient, class_name: 'User', optional: false
 
-  has_one :discussion_comment, class_name: 'DiscussionComment', required: false
-
   has_many :comments_read_receipts, class_name: 'CommentsReadReceipts', dependent: :destroy, inverse_of: :task_comment
 
   # Can optionally be a reply to a comment

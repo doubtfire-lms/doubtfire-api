@@ -100,13 +100,14 @@ class Task < ApplicationRecord
   has_one :unit, through: :project
 
   has_many :comments, class_name: 'TaskComment', dependent: :destroy, inverse_of: :task
-  has_many :plagiarism_match_links, class_name: 'PlagiarismMatchLink', dependent: :destroy, inverse_of: :task
-  has_many :reverse_plagiarism_match_links, class_name: 'PlagiarismMatchLink', dependent: :destroy, inverse_of: :other_task, foreign_key: 'other_task_id'
+  has_many :task_similarities, class_name: 'TaskSimilarity', dependent: :destroy, inverse_of: :task
+  has_many :reverse_task_similarities, class_name: 'MossTaskSimilarity', dependent: :destroy, inverse_of: :other_task, foreign_key: 'other_task_id'
   has_many :learning_outcome_task_links, dependent: :destroy # links to learning outcomes
   has_many :learning_outcomes, through: :learning_outcome_task_links
   has_many :task_engagements, dependent: :destroy
   has_many :task_submissions, dependent: :destroy
   has_many :overseer_assessments, dependent: :destroy
+  has_many :tii_submissions, dependent: :destroy
 
   delegate :unit, to: :project
   delegate :student, to: :project
@@ -123,6 +124,8 @@ class Task < ApplicationRecord
   validate :must_have_quality_pts, if: :for_definition_with_quality?
 
   validate :extensions_must_end_with_due_date, if: :has_requested_extension?
+
+  include TaskTiiModule
 
   def for_definition_with_quality?
     task_definition.has_stars?
@@ -144,6 +147,10 @@ class Task < ApplicationRecord
     if raw_extension_date.to_date - 7.days >= task_definition.due_date.to_date
       errors.add(:extensions, "have exceeded deadline for task. Work must be submitted within current timeframe. Work submitted after current due date will be assessed in the portfolio")
     end
+  end
+
+  def description
+    "#{task_definition.abbreviation} for #{project.student.username}"
   end
 
   def all_comments
@@ -193,8 +200,8 @@ class Task < ApplicationRecord
       )
   end
 
-  def current_plagiarism_match_links
-    plagiarism_match_links.where(dismissed: false)
+  def current_task_similarities
+    task_similarities.where(dismissed: false)
   end
 
   def self.for_unit(unit_id)
@@ -232,6 +239,10 @@ class Task < ApplicationRecord
     raw_extension_date.to_date < task_definition.due_date.to_date
   end
 
+  def tutor
+    project.tutor_for(task_definition)
+  end
+
   # Applying for an extension will create an extension comment
   def apply_for_extension(user, text, weeks)
     extension = ExtensionComment.create
@@ -241,7 +252,7 @@ class Task < ApplicationRecord
     extension.content_type = :extension
     extension.comment = text
     if weeks <= weeks_can_extend
-      extension.recipient = project.tutor_for(task_definition)
+      extension.recipient = tutor
     else
       extension.recipient = unit.main_convenor_user
     end
@@ -586,7 +597,7 @@ class Task < ApplicationRecord
     else
       assess TaskStatus.time_exceeded, by_user
       add_status_comment(project.tutor_for(task_definition), self.task_status)
-      grade_task -1 if task_definition.is_graded? && self.grade.nil?
+      grade_task(-1) if task_definition.is_graded? && self.grade.nil?
     end
 
     if save!
@@ -738,23 +749,6 @@ class Task < ApplicationRecord
     return '' if result.nil?
 
     result.comment
-  end
-
-  # Indicates what is the largest % similarity is for this task
-  def pct_similar
-    if current_plagiarism_match_links.order(pct: :desc).first.nil?
-      0
-    else
-      current_plagiarism_match_links.order(pct: :desc).first.pct
-    end
-  end
-
-  def similar_to_count
-    plagiarism_match_links.count
-  end
-
-  def similar_to_dismissed_count
-    plagiarism_match_links.where('dismissed = TRUE').count
   end
 
   def student_work_dir(type, create = true)
@@ -1044,6 +1038,7 @@ class Task < ApplicationRecord
     self.portfolio_evidence = value.present? ? value.sub(FileHelper.student_work_dir, '') : nil
   end
 
+  # The path to the PDF for this task's submission
   def final_pdf_path
     if group_task?
       return nil if group_submission.nil? || group_submission.task_definition.nil?
@@ -1155,8 +1150,8 @@ class Task < ApplicationRecord
       end
 
       # Destroy the links to ensure we test new files
-      plagiarism_match_links.each(&:destroy)
-      reverse_plagiarism_match_links(&:destroy)
+      task_similarities.each(&:destroy)
+      reverse_task_similarities(&:destroy)
 
       save
     end
@@ -1187,7 +1182,7 @@ class Task < ApplicationRecord
   #
   # Checks to make sure that the files match what we expect
   #
-  def accept_submission(current_user, files, _student, ui, contributions, trigger, alignments)
+  def accept_submission(current_user, files, _student, ui, contributions, trigger, alignments, accepted_tii_eula: false)
     #
     # Ensure that each file in files has the following attributes:
     # id, name, filename, type, tempfile
@@ -1275,6 +1270,70 @@ class Task < ApplicationRecord
     FileUtils.rm_rf tmp_dir
 
     logger.info "Submission accepted! Status for task #{id} is now #{trigger}"
+
+    # Trigger processing of new submission - async
+    AcceptSubmissionJob.perform_async(id, current_user.id, accepted_tii_eula)
+  end
+
+  # The name that should be used for the uploaded file (based on index of upload requirements)
+  # @param idx The index of the upload requirement to get the filename for
+  def filename_for_upload(idx)
+    return nil unless idx >= 0 && idx < upload_requirements.length
+    "#{upload_requirements[idx]['name']}#{extension_for_upload(idx)}"
+  end
+
+  def extension_for_upload(idx)
+    filename = filename_in_zip(idx)
+    return nil if filename.nil?
+
+    dot_idx = filename.index('.')
+    return '' if dot_idx.nil?
+    filename[dot_idx..-1]
+  end
+
+  def filename_in_zip(idx)
+    path = FileHelper.zip_file_path_for_done_task(self)
+    return nil unless File.exist? path
+    return nil unless idx >= 0 && idx < upload_requirements.length
+
+    type = upload_requirements[idx]['type']
+
+    required_filename_start = "#{id}/#{idx.to_s.rjust(3, '0')}-#{type}"
+
+    Zip::File.open(path) do |zip_file|
+      zip_file.each do |entry|
+        next unless entry.name.starts_with?(required_filename_start)
+        return entry.name.remove("#{id}/")
+      end
+    end
+
+    nil
+  end
+
+  delegate :number_of_uploaded_files, :number_of_documents, :is_document?, :use_tii?, :tii_match_pct, to: :task_definition
+
+  def read_file_from_done(idx)
+    path = FileHelper.zip_file_path_for_done_task(self)
+    return nil unless File.exist? path
+    return nil unless idx >= 0 && idx < upload_requirements.length
+
+    type = upload_requirements[idx]['type']
+
+    required_filename_start = "#{id}/#{idx.to_s.rjust(3, '0')}-#{type}"
+
+    Zip::File.open(path) do |zip_file|
+      zip_file.each do |entry|
+        next unless entry.name.starts_with?(required_filename_start)
+
+        result = ''
+        # Read into memory
+        entry.get_input_stream { |io| result = io.read }
+
+        return result
+      end
+    end
+    # we got to the end so no match
+    nil
   end
 
   private
@@ -1283,18 +1342,14 @@ class Task < ApplicationRecord
     if group_submission && group_submission.tasks.count <= 1
       group_submission.destroy
     else
-      zip_file = zip_file_path_for_done_task()
-      if zip_file && File.exist?(zip_file)
-        FileUtils.rm zip_file
-      end
-      if portfolio_evidence_path.present? && File.exist?(portfolio_evidence_path)
-        FileUtils.rm portfolio_evidence_path
-      end
+      zip_file = zip_file_path_for_done_task
+
+      FileUtils.rm(zip_file) if zip_file && File.exist?(zip_file)
+
+      FileUtils.rm(portfolio_evidence_path) if portfolio_evidence_path.present? && File.exist?(portfolio_evidence_path)
 
       new_path = FileHelper.student_work_dir(:new, self, false)
-      if new_path.present? && File.directory?(new_path)
-        FileUtils.rm_rf new_path
-      end
+      FileUtils.rm_rf(new_path) if new_path.present? && File.directory?(new_path)
     end
   end
 

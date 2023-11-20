@@ -4,6 +4,13 @@ module TestHelpers
   #
   module AuthHelper
     #
+    # Gets the Rails application need to call the api
+    #
+    def app
+      Rails.application
+    end
+
+    #
     # Gets an auth token for the provided user
     #
     def auth_token(user = User.first)
@@ -13,10 +20,10 @@ module TestHelpers
       return user.generate_authentication_token!().authentication_token
     end
 
-    # 
+    #
     # Adds an authentication token and Username to the header
     # This prevents us from having to keep adding the :auth_token
-    # key to any GET/POST/PUT etc. data that is needed 
+    # key to any GET/POST/PUT etc. data that is needed
     #
     def add_auth_header_for(user: User.first, username: nil, auth_token: nil)
       if username.present?

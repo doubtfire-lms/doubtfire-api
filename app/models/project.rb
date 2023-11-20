@@ -256,10 +256,12 @@ class Project < ApplicationRecord
       .joins(:task_status)
       .joins("LEFT JOIN task_comments ON task_comments.task_id = tasks.id AND (task_comments.type IS NULL OR task_comments.type <> 'TaskStatusComment')")
       .joins("LEFT JOIN comments_read_receipts crr ON crr.task_comment_id = task_comments.id AND crr.user_id = #{user.id}")
+      .joins('LEFT OUTER JOIN task_similarities ON tasks.id = task_similarities.task_id')
       .select(
         'SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) as number_unread', 'project_id', 'tasks.id as id',
         'task_definition_id', 'task_statuses.id as status_id',
-        'completion_date', 'times_assessed', 'submission_date', 'tasks.grade as grade', 'quality_pts', 'include_in_portfolio', 'grade'
+        'completion_date', 'times_assessed', 'submission_date', 'tasks.grade as grade', 'quality_pts', 'include_in_portfolio', 'grade',
+        'SUM(case when task_similarities.flagged then 1 else 0 end) as similar_to_count'
       )
       .group(
         'task_statuses.id', 'tasks.project_id', 'tasks.id', 'task_definition_id', 'status_id',
@@ -273,13 +275,11 @@ class Project < ApplicationRecord
           status: TaskStatus.id_to_key(r.status_id),
           task_definition_id: r.task_definition_id,
           include_in_portfolio: r.include_in_portfolio,
-          pct_similar: t.pct_similar,
-          similar_to_count: t.similar_to_count,
-          similar_to_dismissed_count: t.similar_to_dismissed_count,
           times_assessed: r.times_assessed,
           grade: r.grade,
           quality_pts: r.quality_pts,
           num_new_comments: r.number_unread,
+          similarity_flag: AuthorisationHelpers.authorise?(user, t, :view_plagiarism) ? r.similar_to_count > 0 : false,
           extensions: t.extensions,
           due_date: t.due_date,
           submission_date: t.submission_date,

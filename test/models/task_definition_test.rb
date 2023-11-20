@@ -38,6 +38,81 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     td.destroy
   end
 
+  def test_default_tii_settings
+    test_unit = Unit.first
+    td = TaskDefinition.new({
+      unit_id: test_unit.id,
+      tutorial_stream: test_unit.tutorial_streams.first,
+      name: 'Test tii settings',
+      description: 'test def',
+      weighting: 4,
+      target_grade: 0,
+      start_date: test_unit.start_date + 1.week,
+      target_date: test_unit.start_date + 2.weeks,
+      abbreviation: 'TestTiiSettings',
+      restrict_status_updates: false,
+      upload_requirements: [
+        {
+          "key" => 'file0',
+          "name" => 'Document 1',
+          "type" => 'document',
+          "tii_check" => true,
+          "tii_pct" => 5
+        },
+        {
+          "key" => 'file1',
+          "name" => 'Document 2',
+          "type" => 'document',
+          "tii_check" => false,
+          "tii_pct" => 10
+        },
+        {
+          "key" => 'file2',
+          "name" => 'Code 1',
+          "type" => 'code',
+          "tii_check" => true,
+          "tii_pct" => 20
+        },
+        {
+          "key" => 'file3',
+          "name" => 'Image 3',
+          "type" => 'image',
+          "tii_check" => true,
+          "tii_pct" => 30
+        },
+        {
+          "key" => 'file4',
+          "name" => 'Document 4',
+          "type" => 'document'
+        }
+      ],
+      plagiarism_warn_pct: 0.8,
+      is_graded: false,
+      max_quality_pts: 5
+    })
+    td.save!
+
+    assert td.is_document?(0)
+    assert td.is_document?(1)
+    refute td.is_document?(2)
+    refute td.is_document?(3)
+    assert td.is_document?(4)
+
+    assert td.use_tii?(0)
+    refute td.use_tii?(1)
+    refute td.use_tii?(2)
+    refute td.use_tii?(3)
+    refute td.use_tii?(4)
+
+    assert_equal 5, td.tii_match_pct(0)
+    assert_equal 35, td.tii_match_pct(1) # default
+    assert_equal 35, td.tii_match_pct(2)
+    assert_equal 35, td.tii_match_pct(3)
+    assert_equal 35, td.tii_match_pct(4)
+
+    td.destroy
+  end
+
   def test_group_tasks
     u = FactoryBot.create(:unit)
     activity_type = FactoryBot.create(:activity_type)

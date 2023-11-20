@@ -41,7 +41,7 @@ class TaskDefinitionsApi < Grape::API
       error!({ error: 'Not authorised to create a task definition of this unit' }, 403)
     end
 
-    params[:task_def][:upload_requirements] = '[]' if params[:task_def][:upload_requirements].nil?
+    params[:task_def][:upload_requirements] = [] if params[:task_def][:upload_requirements].nil?
 
     task_params = ActionController::Parameters.new(params)
                                               .require(:task_def)
@@ -55,8 +55,6 @@ class TaskDefinitionsApi < Grape::API
                                                 :due_date,
                                                 :abbreviation,
                                                 :restrict_status_updates,
-                                                :upload_requirements,
-                                                :plagiarism_checks,
                                                 :plagiarism_warn_pct,
                                                 :is_graded,
                                                 :max_quality_pts,
@@ -65,6 +63,8 @@ class TaskDefinitionsApi < Grape::API
                                               )
 
     task_params[:unit_id] = unit.id
+    task_params[:upload_requirements] = JSON.parse(params[:task_def][:upload_requirements]) unless params[:task_def][:plagiarism_checks].nil?
+    task_params[:plagiarism_checks] = JSON.parse(params[:task_def][:plagiarism_checks]) unless params[:task_def][:plagiarism_checks].nil?
 
     task_def = TaskDefinition.new(task_params)
 
@@ -84,7 +84,8 @@ class TaskDefinitionsApi < Grape::API
     end
 
     task_def.save!
-    present task_def, with: Entities::TaskDefinitionEntity
+
+    present task_def, with: Entities::TaskDefinitionEntity, my_role: unit.role_for(current_user)
   end
 
   desc 'Edits the given task definition'
@@ -131,8 +132,6 @@ class TaskDefinitionsApi < Grape::API
                                                 :due_date,
                                                 :abbreviation,
                                                 :restrict_status_updates,
-                                                :upload_requirements,
-                                                :plagiarism_checks,
                                                 :plagiarism_warn_pct,
                                                 :is_graded,
                                                 :max_quality_pts,
@@ -140,10 +139,13 @@ class TaskDefinitionsApi < Grape::API
                                                 :overseer_image_id
                                               )
 
+    task_params[:upload_requirements] = JSON.parse(params[:task_def][:upload_requirements]) unless params[:task_def][:plagiarism_checks].nil?
+    task_params[:plagiarism_checks] = JSON.parse(params[:task_def][:plagiarism_checks]) unless params[:task_def][:plagiarism_checks].nil?
+
     # Ensure changes to a TD defined as a "draft task definition" are validated
     if unit.draft_task_definition_id == params[:id]
       if params[:task_def][:upload_requirements]
-        requirements = JSON.parse(params[:task_def][:upload_requirements])
+        requirements = params[:task_def][:upload_requirements]
         if requirements.length != 1 || requirements[0]["type"] != "document"
           error!({ error: 'Task is marked as the draft learning summary task definition. A draft learning summary task can only contain a single document upload.' }, 403)
         end
@@ -176,7 +178,7 @@ class TaskDefinitionsApi < Grape::API
       end
     end
 
-    present task_def, with: Entities::TaskDefinitionEntity
+    present task_def, with: Entities::TaskDefinitionEntity, my_role: unit.role_for(current_user)
   end
 
   desc 'Upload CSV of task definitions to the provided unit'
@@ -292,7 +294,7 @@ class TaskDefinitionsApi < Grape::API
     upload_reqs = task.upload_requirements
 
     # Copy files to be PDFed
-    task.accept_submission(current_user, scoop_files(params, upload_reqs), current_user, self, nil, 'ready_for_feedback', nil)
+    task.accept_submission(current_user, scoop_files(params, upload_reqs), current_user, self, nil, 'ready_for_feedback', nil, accepted_tii_eula: false)
 
     logger.info "********* - about to perform overseer submission"
     overseer_assessment = OverseerAssessment.create_for(task)
@@ -355,7 +357,7 @@ class TaskDefinitionsApi < Grape::API
     check_mime_against_list! file_path, 'zip', ['application/zip', 'multipart/x-gzip', 'multipart/x-zip', 'application/x-gzip', 'application/octet-stream']
 
     # Actually import...
-    task_def.add_task_resources(file_path)
+    task_def.add_task_resources(file_path, copy: false)
     true
   end
 
@@ -473,6 +475,7 @@ class TaskDefinitionsApi < Grape::API
                  .joins(:task_status)
                  .joins("LEFT JOIN task_comments ON task_comments.task_id = tasks.id AND (task_comments.type IS NULL OR task_comments.type <> 'TaskStatusComment')")
                  .joins("LEFT OUTER JOIN (#{subquery}) as sq ON sq.project_id = projects.id")
+                 .joins('LEFT OUTER JOIN task_similarities ON tasks.id = task_similarities.task_id')
                  .select(
                    'sq.tutorial_stream_id as tutorial_stream_id',
                    'sq.tutorial_id as tutorial_id',
@@ -485,7 +488,8 @@ class TaskDefinitionsApi < Grape::API
                    'submission_date',
                    'grade',
                    'quality_pts',
-                   "SUM(case when task_comments.date_extension_assessed IS NULL AND task_comments.type = 'ExtensionComment' AND NOT task_comments.id IS NULL THEN 1 ELSE 0 END) > 0 as has_extensions"
+                   "SUM(case when task_comments.date_extension_assessed IS NULL AND task_comments.type = 'ExtensionComment' AND NOT task_comments.id IS NULL THEN 1 ELSE 0 END) > 0 as has_extensions",
+                   'SUM(case when task_similarities.flagged then 1 else 0 end) as similar_to_count'
                  )
                  .where('task_definition_id = :id', id: params[:task_def_id])
                  .group(
@@ -513,7 +517,7 @@ class TaskDefinitionsApi < Grape::API
         completion_date: t.completion_date,
         submission_date: t.submission_date,
         times_assessed: t.times_assessed,
-        similar_to_count: t.similar_to_count,
+        similarity_flag: t.similar_to_count > 0,
         grade: t.grade,
         quality_pts: t.quality_pts,
         has_extensions: t.has_extensions

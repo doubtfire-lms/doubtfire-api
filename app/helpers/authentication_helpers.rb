@@ -37,12 +37,14 @@ module AuthenticationHelpers
       logger.info("Timing out token for #{user.username} from #{request.ip}")
       token.destroy!
       error!({ error: 'Authentication token expired.' }, 419)
-    else
+    elsif token.present?
       logger.info("Error logging in for #{user_param} / #{auth_param} from #{request.ip}")
 
       # Add random delay then fail
       sleep(rand(200..399) / 1000.0)
       error!({ error: 'Could not authenticate with token. Username or Token invalid.' }, 419)
+    else
+      error!({ error: 'No authentication details provided. Authentication is required to access this resource.' }, 419)
     end
   end
 

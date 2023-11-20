@@ -17,6 +17,8 @@ end
 class User < ApplicationRecord
   include AuthenticationHelpers
 
+  include UserTiiModule
+
   ###
   # Authentication
   ###
@@ -131,8 +133,8 @@ class User < ApplicationRecord
   # Model associations
   belongs_to  :role, optional: false # Foreign Key
   has_many    :unit_roles, dependent: :destroy
-  has_many    :projects
-  has_many    :auth_tokens
+  has_many    :projects, dependent: :destroy
+  has_many    :auth_tokens, dependent: :destroy
   has_one     :webcal, dependent: :destroy
 
   # Model validations/constraints

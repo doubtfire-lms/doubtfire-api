@@ -82,122 +82,6 @@ class TasksApi < Grape::API
     present result, with: Grape::Presenters::Presenter
   end
 
-  desc 'Get a similarity match for a given task'
-  get '/tasks/:id/similarity/:count' do
-    unless authenticated?
-      error!({ error: "Not authorised to download details for task '#{params[:id]}'" }, 401)
-    end
-    task = Task.find(params[:id])
-
-    unless authorise? current_user, task, :get_submission
-      error!({ error: "Not authorised to download details for task '#{params[:id]}'" }, 401)
-    end
-
-    match = params[:count].to_i % task.similar_to_count
-    if match < 0
-      error!({ error: 'Invalid match sequence, must be 0 or larger' }, 403)
-    end
-
-    match_link = task.plagiarism_match_links.order('created_at DESC')[match]
-    return if match_link.nil?
-
-    logger.debug "Plagiarism match link 1: #{match_link}"
-    other_match_link = match_link.other_party
-    logger.debug "Plagiarism match link 2: #{other_match_link}"
-    output = FileHelper.path_to_plagarism_html(match_link)
-
-    if output.nil? || !File.exist?(output)
-      error!({ error: 'No files to download' }, 403)
-    end
-
-    if authorise? current_user, match_link.task, :view_plagiarism
-      student_url = match_link.plagiarism_report_url
-    end
-
-    student_hash = {
-      username: match_link.student.username,
-      email: match_link.student.email,
-      name: match_link.student.name,
-      tutor: match_link.tutor.name,
-      tutorial: match_link.tutorial,
-      html: File.read(output),
-      url: student_url,
-      pct: match_link.pct,
-      dismissed: match_link.dismissed
-    }
-    other_student_hash = {
-      username: nil,
-      email: nil,
-      name: nil,
-      tutor: match_link.other_tutor.name,
-      tutorial: match_link.other_tutorial,
-      html: nil,
-      url: nil,
-      pct: other_match_link.pct,
-      dismissed: other_match_link.dismissed
-    }
-
-    # Check if returning both parties
-    authorised_to_view_both = authorise? current_user, other_match_link.task, :get_submission
-    if authorised_to_view_both
-      other_output = FileHelper.path_to_plagarism_html(other_match_link)
-      if authorise? current_user, other_match_link.task, :view_plagiarism
-        other_student_url = other_match_link.plagiarism_report_url
-      end
-      # Update other_student_hash to include details
-      other_student_hash[:username]  = match_link.other_student.username
-      other_student_hash[:email]     = match_link.other_student.email
-      other_student_hash[:name]      = match_link.other_student.name
-      other_student_hash[:tutor]     = match_link.other_tutor.name
-      other_student_hash[:tutorial]  = match_link.other_tutorial
-      other_student_hash[:html]      = File.read(other_output)
-      other_student_hash[:url]       = other_student_url
-      other_student_hash[:pct]       = other_match_link.pct
-      other_student_hash[:dismissed] = other_match_link.dismissed
-    end
-
-    result = {
-      student: student_hash,
-      other_student: other_student_hash
-    }
-
-    present result, with: Grape::Presenters::Presenter
-  end
-
-  desc 'Dismiss a similarity match for a given task'
-  params do
-    requires :dismissed, type: Boolean, desc: 'Should this similarity be dismissed?'
-    requires :other, type: Boolean, desc: 'This tasks match or its reverse?'
-  end
-  put '/tasks/:id/similarity/:count' do
-    unless authenticated?
-      error!({ error: "Not authorised to access this task '#{params[:id]}'" }, 401)
-    end
-    task = Task.find(params[:id])
-
-    unless authorise? current_user, task, :delete_plagiarism
-      error!({ error: "Not authorised to remove similarity for task '#{params[:id]}'" }, 401)
-    end
-
-    match = params[:count].to_i % task.similar_to_count
-    if match < 0
-      error!({ error: 'Invalid match sequence, must be 0 or larger' }, 403)
-    end
-
-    match_link = task.plagiarism_match_links.order('created_at DESC')[match]
-    return if match_link.nil?
-
-    match_link = match_link.other_party if params[:other]
-
-    logger.info "#{current_user.username} changing plagiarism: setting dismissed for #{task.task_definition.abbreviation} by #{task.student.username} to #{params[:dismissed]}"
-
-    logger.debug "    plagiarism match link 1: #{match_link}"
-
-    match_link.dismissed = params[:dismissed]
-    match_link.save!
-    present match_link.dismissed, with: Grape::Presenters::Presenter
-  end
-
   desc 'Pin a task to the user\'s task inbox'
   params do
     requires :id, type: Integer, desc: 'The ID of the task to be pinned'
@@ -333,7 +217,7 @@ class TasksApi < Grape::API
     # Find the file
     file_loc = FileHelper.zip_file_path_for_done_task(task)
 
-    if file_loc.nil?
+    if file_loc.nil? || !File.exist?(file_loc)
       file_loc = Rails.root.join('public', 'resources', 'FileNotFound.pdf')
       header['Content-Disposition'] = 'attachment; filename=FileNotFound.pdf'
     else

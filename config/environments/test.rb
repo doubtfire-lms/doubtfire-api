@@ -44,4 +44,14 @@ Doubtfire::Application.configure do
   config.active_record.encryption.key_derivation_salt = ENV['DF_ENCRYPTION_KEY_DERIVATION_SALT'] || 'U9jurHMfZbMpzlbDTMe5OSAhUJYHla9Z'
   config.active_record.encryption.deterministic_key = ENV['DF_ENCRYPTION_KEY_DERIVATION_SALT'] || 'zYtzYUlLFaWdvdUO5eIINRT6ZKDddcgx'
   config.active_record.encryption.primary_key = ENV['DF_ENCRYPTION_KEY_DERIVATION_SALT'] || '92zoF7RJaQ01JEExOgHbP9bRWldNQUz5'
+
+  # Set turn it in environment
+  ENV.store('TCA_SIGNING_KEY', 'test')
+  ENV.store('TII_ENABLED', '1')
+  ENV.store('TCA_API_KEY', '1234')
+  ENV.store('TCA_HOST', 'localhost')
+
+  # reload tii config...
+  require_relative '../../app/helpers/turn_it_in'
+  TurnItIn.load_config(config)
 end

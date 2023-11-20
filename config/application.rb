@@ -153,7 +153,18 @@ module Doubtfire
     # config.paths.add 'app/api', glob: '**/*.rb'
     # config.autoload_paths += Dir["#{Rails.root}/app"]
     # config.autoload_paths += Dir[Rails.root.join("app", "models", "{*/}")]
-    config.eager_load_paths << Rails.root.join('app') << Rails.root.join('app', 'models', 'comments')
+
+    config.autoload_paths <<
+      Rails.root.join('app') <<
+      Rails.root.join('app', 'models', 'comments') <<
+      Rails.root.join('app', 'models', 'turn_it_in') <<
+      Rails.root.join('app', 'models', 'similarity')
+
+    config.eager_load_paths <<
+      Rails.root.join('app') <<
+      Rails.root.join('app', 'models', 'comments') <<
+      Rails.root.join('app', 'models', 'turn_it_in') <<
+      Rails.root.join('app', 'models', 'similarity')
 
     # CORS config
     config.middleware.insert_before Warden::Manager, Rack::Cors do
@@ -220,5 +231,8 @@ module Doubtfire
       config.sm_instance = ServicesManager.instance
       config.sm_instance.register_client(:ontrack, publisher_config, subscriber_config)
     end
+
+    require_relative '../app/helpers/turn_it_in'
+    TurnItIn.load_config(config)
   end
 end

@@ -5,10 +5,6 @@ class BreaksApiTest < ActiveSupport::TestCase
   include TestHelpers::AuthHelper
   include TestHelpers::JsonHelper
 
-  def app
-    Rails.application
-  end
-
   #POST TEST
   def test_post_breaks
     teaching_period = FactoryBot.create(:teaching_period)

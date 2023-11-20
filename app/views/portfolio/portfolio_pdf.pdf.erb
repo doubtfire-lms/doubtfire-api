@@ -232,7 +232,7 @@ No Tutor
       <% end %>
     \end{tabular}
   <% end %>
-  <% if File.exists? task.portfolio_evidence_path %>
+  <% if File.exist? task.portfolio_evidence_path %>
     % add task evidence to the document list for annotation extraction
     <% document_list.append(task.portfolio_evidence_path) unless @is_retry %>
     <% for page_idx in 1..FileHelper.pages_in_pdf(task.portfolio_evidence_path) do %>

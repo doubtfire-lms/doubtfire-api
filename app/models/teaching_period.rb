@@ -21,6 +21,10 @@ class TeachingPeriod < ApplicationRecord
 
   # Public methods
 
+  def detailed_name
+    "#{year} #{period}"
+  end
+
   def add_break(start_date, number_of_weeks)
     break_in_teaching_period = Break.new
     break_in_teaching_period.start_date = start_date

@@ -370,17 +370,17 @@ module FileHelper
     result
   end
 
-  def path_to_plagarism_html(match_link)
-    to_dir = student_work_dir(:plagarism, match_link.task)
+  def path_to_plagarism_html(similarity)
+    to_dir = student_work_dir(:plagarism, similarity.task)
 
-    File.join(to_dir, "link_#{match_link.other_task.id}.html")
+    File.join(to_dir, "link_#{similarity.other_task.id}.html")
   end
 
   #
   # Save the passed in html to a file.
   #
-  def save_plagiarism_html(match_link, html)
-    File.open(path_to_plagarism_html(match_link), 'w') do |out_file|
+  def save_plagiarism_html(similarity, html)
+    File.open(path_to_plagarism_html(similarity), 'w') do |out_file|
       out_file.puts html
     end
   end
@@ -388,11 +388,11 @@ module FileHelper
   #
   # Delete the html for a plagarism link
   #
-  def delete_plagarism_html(match_link)
-    rm_file = path_to_plagarism_html(match_link)
+  def delete_plagarism_html(similarity)
+    rm_file = path_to_plagarism_html(similarity)
     if File.exist? rm_file
       FileUtils.rm(rm_file)
-      to_dir = student_work_dir(:plagarism, match_link.task)
+      to_dir = student_work_dir(:plagarism, similarity.task)
 
       FileUtils.rm_rf(to_dir) if Dir[File.join(to_dir, '*.html')].count.zero?
     end

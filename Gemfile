@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 source 'https://rubygems.org'
 
 # Ruby versions for various enviornments
@@ -16,15 +18,15 @@ gem 'rails', '~>7.0'
 group :development, :test do
   gem 'better_errors'
   gem 'byebug'
-  gem 'database_cleaner'
+  gem 'database_cleaner-active_record'
   gem 'listen'
   gem 'rails_best_practices'
   gem 'rubocop'
   gem 'rubocop-faker'
   gem 'rubocop-rails'
   gem 'simplecov', require: false
-  gem 'solargraph', require: false
-  gem "sprockets-rails"
+  gem 'solargraph'
+  gem 'sprockets-rails'
 end
 
 group :development, :test, :staging do
@@ -34,6 +36,7 @@ group :development, :test, :staging do
   gem 'faker'
   gem 'minitest'
   gem 'minitest-around'
+  gem 'minitest-rails'
   gem 'webmock'
 end
 
@@ -89,3 +92,10 @@ gem 'icalendar'
 gem 'rest-client'
 
 gem 'net-smtp', require: false
+
+# Turn it in
+gem 'tca_client', '1.0.4'
+
+# Async jobs
+gem 'sidekiq'
+gem 'sidekiq-cron'

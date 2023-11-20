@@ -3,6 +3,7 @@ require_all 'lib/helpers'
 namespace :db do
   desc 'Mark off some of the due tasks'
   task expand_first_unit: [:skip_prod, :environment] do
+    Rails.logger.level = :info
     unit = Unit.first
     tutes = unit.tutorials
     for student_count in 0..2000
@@ -170,6 +171,8 @@ namespace :db do
         p.save
       end
     end
+
+    DatabasePopulator.add_similarities
   end
 
   task log_info: [:environment] do
