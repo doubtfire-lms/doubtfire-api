@@ -35,7 +35,7 @@ class UnitsApi < Grape::API
 
     units = units.where('active = true') unless params[:include_in_active]
 
-    present units, with: Entities::UnitEntity, user: current_user, summary_only: true
+    present units, with: Entities::UnitEntity, user: current_user, summary_only: true, in_unit: true
   end
 
   desc "Get a unit's details"
@@ -252,7 +252,7 @@ class UnitsApi < Grape::API
 
     my_role = result.role_for(current_user)
 
-    present result, with: Entities::UnitEntity, my_role: my_role, user: current_user
+    present result, with: Entities::UnitEntity, my_role: my_role, user: current_user, in_unit: true
   end
 
   desc 'Download the tasks that are awaiting feedback for a unit'
