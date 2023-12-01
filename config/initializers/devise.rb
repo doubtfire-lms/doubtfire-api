@@ -269,4 +269,6 @@ Devise.setup do |config|
   # ==> Devise secret key
   # Secret key to be used by devise in prod.
   config.secret_key = Doubtfire::Application.secrets.secret_key_devise if Rails.env.production?
+
+  config.ldap_use_admin_to_bind = ENV.fetch('DF_LDAP_USE_ADMIN_TO_BIND', 'false').to_s.downcase != 'false'
 end

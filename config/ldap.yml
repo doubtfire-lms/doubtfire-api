@@ -1,0 +1,26 @@
+development:
+  host: <%= ENV['DF_LDAP_HOST'] %>
+  port: <%= ENV['DF_LDAP_PORT'] %>
+  attribute: <%= ENV['DF_LDAP_ATTRIBUTE'] %>
+  base: <%= ENV['DF_LDAP_BASE'] %>
+  admin_user: <%= ENV['DF_LDAP_ADMIN_USER'] %>
+  admin_password: <%= ENV['DF_LDAP_ADMIN_PWD'] %>
+  ssl: <%= ENV['DF_LDAP_SSL'].to_s.downcase != "false" %>
+
+test:
+  host: <%= ENV['DF_LDAP_HOST'] %>
+  port: <%= ENV['DF_LDAP_PORT'] %>
+  attribute: <%= ENV['DF_LDAP_ATTRIBUTE'] %>
+  base: <%= ENV['DF_LDAP_BASE'] %>
+  admin_user: <%= ENV['DF_LDAP_ADMIN_USER'] %>
+  admin_password: <%= ENV['DF_LDAP_ADMIN_PWD'] %>
+  ssl: <%= ENV['DF_LDAP_SSL'].to_s.downcase != "false" %>
+
+production:
+  host: <%= ENV['DF_LDAP_HOST'] %>
+  port: <%= ENV['DF_LDAP_PORT'] %>
+  attribute: <%= ENV['DF_LDAP_ATTRIBUTE'] %>
+  base: <%= ENV['DF_LDAP_BASE'] %>
+  admin_user: <%= ENV['DF_LDAP_ADMIN_USER'] %>
+  admin_password: <%= ENV['DF_LDAP_ADMIN_PWD'] %>
+  ssl: <%= ENV['DF_LDAP_SSL'].to_s.downcase != "false" %>
