@@ -35,6 +35,7 @@ group :development, :test, :staging do
   gem 'minitest'
   gem 'minitest-around'
   gem 'webmock'
+  gem 'pdf-reader'
 end
 
 # Database
@@ -89,5 +90,3 @@ gem 'icalendar'
 gem 'rest-client'
 
 gem 'net-smtp', require: false
-
-gem 'pdf-reader'
