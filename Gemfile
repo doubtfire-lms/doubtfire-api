@@ -34,8 +34,8 @@ group :development, :test, :staging do
   gem 'faker'
   gem 'minitest'
   gem 'minitest-around'
-  gem 'webmock'
   gem 'pdf-reader'
+  gem 'webmock'
 end
 
 # Database
