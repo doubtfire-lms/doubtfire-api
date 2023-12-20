@@ -109,8 +109,12 @@ module Similarity
       similarity = task.task_similarities.find(params[:id])
 
       if similarity.present? && similarity.type == 'TiiTaskSimilarity'
-        result = similarity.create_viewer_url(current_user)
-        present result, with: Grape::Presenters::Presenter
+        if similarity.ready_for_viewer?
+          result = similarity.create_viewer_url(current_user)
+          present result, with: Grape::Presenters::Presenter
+        else
+          error!({ error: "Similarity report is not yet ready to be viewed for this submission" }, 404)
+        end
       else
         error!({ error: "No details to download for task '#{params[:id]}'" }, 404)
       end

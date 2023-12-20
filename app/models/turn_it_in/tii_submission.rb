@@ -54,11 +54,16 @@ class TiiSubmission < ApplicationRecord
     File.join(path, FileHelper.sanitized_filename("#{id}-tii.pdf"))
   end
 
+  def ready_for_viewer?
+    # We have got an indication the similarity report is ready
+    [:similarity_report_complete, :similarity_pdf_available, :similarity_pdf_downloaded, :similarity_pdf_requested, :complete_low_similarity].include?(status_sym)
+  end
+
   def create_viewer_url(user)
     TiiActionGetViewUrl.create(
       entity: self,
       params: {
-        viewer_tii_id: user.username
+        viewer_user_id: user.id
       }
     ).perform
   end
