@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_06_03_064217) do
+ActiveRecord::Schema[7.0].define(version: 2023_12_05_011958) do
   create_table "activity_types", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -251,6 +251,10 @@ ActiveRecord::Schema[7.0].define(version: 2023_06_03_064217) do
     t.bigint "overseer_image_id"
     t.string "tii_group_id"
     t.string "moss_language"
+    t.boolean "has_test", default: false
+    t.boolean "restrict_attempts", default: false
+    t.integer "delay_restart_minutes"
+    t.boolean "retake_on_resubmit", default: false
     t.index ["group_set_id"], name: "index_task_definitions_on_group_set_id"
     t.index ["overseer_image_id"], name: "index_task_definitions_on_overseer_image_id"
     t.index ["tutorial_stream_id"], name: "index_task_definitions_on_tutorial_stream_id"
@@ -345,6 +349,21 @@ ActiveRecord::Schema[7.0].define(version: 2023_06_03_064217) do
     t.integer "year", null: false
     t.datetime "active_until", null: false
     t.index ["period", "year"], name: "index_teaching_periods_on_period_and_year", unique: true
+  end
+
+  create_table "test_attempts", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "task_id"
+    t.string "name"
+    t.integer "attempt_number", default: 1, null: false
+    t.boolean "pass_status"
+    t.text "exam_data"
+    t.boolean "completed", default: false
+    t.datetime "attempted_at"
+    t.string "cmi_entry", default: "ab-initio"
+    t.string "exam_result"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["task_id"], name: "index_test_attempts_on_task_id"
   end
 
   create_table "tii_actions", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
@@ -535,4 +554,5 @@ ActiveRecord::Schema[7.0].define(version: 2023_06_03_064217) do
     t.index ["user_id"], name: "index_webcals_on_user_id", unique: true
   end
 
+  add_foreign_key "test_attempts", "tasks"
 end
