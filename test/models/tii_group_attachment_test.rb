@@ -163,7 +163,7 @@ class TiiGroupAttachmentTest < ActiveSupport::TestCase
     action.perform
 
     assert_requested get_status_stub, times: 3
-    assert_equal 'TOO_LITTLE_TEXT', action.error_message
+    assert action.error_message.include?('TOO_LITTLE_TEXT')
     assert_equal :custom_tii_error, action.error_code.to_sym
     assert action.error?
 

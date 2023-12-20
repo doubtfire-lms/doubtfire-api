@@ -170,6 +170,9 @@ class TiiAction < ApplicationRecord
     when 403
       self.error_code = :authentication_error
       return
+    when 451
+      self.error_cde = :no_user_with_accepted_eula
+      return
     when 429
       self.error_code = :rate_limited
       retry_request

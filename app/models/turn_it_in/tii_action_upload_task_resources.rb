@@ -18,10 +18,7 @@ class TiiActionUploadTaskResources < TiiAction
 
       save_and_mark_complete
     when 'ERROR'
-      self.error_code = :custom_tii_error
-      self.custom_error_message = response.error_code
-      Doubtfire::Application.config.logger.error "Error with tii submission: #{id} #{self.custom_error_message}"
-      save_and_log_custom_error
+      save_and_log_custom_error "Error with tii submission #{id} - #{response.error_code}"
     end
   end
 
