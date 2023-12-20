@@ -395,7 +395,7 @@ class TiiModelTest < ActiveSupport::TestCase
     similarity_request = stub_request(:put, "https://#{ENV['TCA_HOST']}/api/v1/submissions/1223/similarity").
     with(tii_headers).
     with(
-      body: "{\"generation_settings\":{\"search_repositories\":[\"INTERNET\",\"SUBMITTED_WORK\",\"PUBLICATION\",\"CROSSREF\",\"CROSSREF_POSTED_CONTENT\"],\"auto_exclude_self_matching_scope\":\"GROUP_CONTEXT\"}}",
+      body: "{\"indexing_settings\":{\"add_to_index\":false},\"generation_settings\":{\"search_repositories\":[\"INTERNET\",\"SUBMITTED_WORK\",\"PUBLICATION\",\"CROSSREF\",\"CROSSREF_POSTED_CONTENT\"],\"auto_exclude_self_matching_scope\":\"GROUP_CONTEXT\",\"priority\":\"LOW\"}}",
     ).
     to_return(status: 200, body: "", headers: {})
 
@@ -486,7 +486,7 @@ class TiiModelTest < ActiveSupport::TestCase
     similarity_request = stub_request(:put, "https://#{ENV['TCA_HOST']}/api/v1/submissions/1222/similarity").
       with(tii_headers).
       with(
-        body: "{\"generation_settings\":{\"search_repositories\":[\"INTERNET\",\"SUBMITTED_WORK\",\"PUBLICATION\",\"CROSSREF\",\"CROSSREF_POSTED_CONTENT\"],\"auto_exclude_self_matching_scope\":\"GROUP_CONTEXT\"}}",
+        body: "{\"indexing_settings\":{\"add_to_index\":false},\"generation_settings\":{\"search_repositories\":[\"INTERNET\",\"SUBMITTED_WORK\",\"PUBLICATION\",\"CROSSREF\",\"CROSSREF_POSTED_CONTENT\"],\"auto_exclude_self_matching_scope\":\"GROUP_CONTEXT\",\"priority\":\"LOW\"}}",
       ).
       to_return(status: 200, body: "", headers: {})
 

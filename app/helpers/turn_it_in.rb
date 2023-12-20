@@ -16,6 +16,8 @@ class TurnItIn
   def self.load_config(config)
     config.tii_enabled = ENV['TII_ENABLED'].present? && (ENV['TII_ENABLED'].to_s.downcase == "true" || ENV['TII_ENABLED'].to_i == 1)
 
+    config.tii_add_submissions_to_index = ENV['TII_INDEX_SUBMISSIONS'].present? && (ENV['TII_INDEX_SUBMISSIONS'].to_s.downcase == "true" || ENV['TII_INDEX_SUBMISSIONS'].to_i == 1)
+
     if config.tii_enabled
       # Turn-it-in TII configuration
       require 'tca_client'

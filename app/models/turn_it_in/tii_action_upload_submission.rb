@@ -182,7 +182,7 @@ class TiiActionUploadSubmission < TiiAction
       save_and_reschedule
 
       # If we had to indicate the eula was accepted, then we need to update the user
-      unless submitted_by_user.tii_eula_version_confirmed
+      unless submitted_by_user.eula_accepted_and_confirmed?
         submitted_by_user.confirm_eula_version(TurnItIn.eula_version, DateTime.now)
       end
 
@@ -218,7 +218,7 @@ class TiiActionUploadSubmission < TiiAction
     end
 
     # Add eula acceptance details to submission, if required
-    if submitted_by_user.accepted_tii_eula? && !submitted_by_user.tii_eula_version_confirmed
+    if submitted_by_user.accepted_tii_eula? && !submitted_by_user.eula_accepted_and_confirmed?
       result.eula = TCAClient::EulaAcceptRequest.new(
         user_id: submitted_by_user.username,
         language: 'en-us',
@@ -299,11 +299,18 @@ class TiiActionUploadSubmission < TiiAction
     ]
 
     exec_tca_call "TiiSubmission #{entity.id} - requesting similarity report", error_code do
+      add_to_index = Rails.env.production? && Doubtfire::Application.config.tii_add_submissions_to_index
+
       data = TCAClient::SimilarityPutRequest.new(
+        indexing_settings:
+          TCAClient::IndexingSettings.new(
+            add_to_index: add_to_index,
+          ),
         generation_settings:
           TCAClient::SimilarityGenerationSettings.new(
             search_repositories: TiiActionFetchFeaturesEnabled.search_repositories,
-            auto_exclude_self_matching_scope: 'GROUP_CONTEXT'
+            auto_exclude_self_matching_scope: 'GROUP_CONTEXT',
+            priority: 'LOW'
           )
       )
 

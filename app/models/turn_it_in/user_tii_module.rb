@@ -24,6 +24,10 @@ module UserTiiModule
     tii_eula_version == TurnItIn.eula_version
   end
 
+  def eula_accepted_and_confirmed?
+    accepted_tii_eula? && tii_eula_version_confirmed
+  end
+
   def confirm_eula_version(version, timestamp)
     update(
       tii_eula_version_confirmed: true,
