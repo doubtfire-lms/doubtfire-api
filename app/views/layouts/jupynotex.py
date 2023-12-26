@@ -117,6 +117,8 @@ class Notebook:
             result.extend(MARKDOWN_BEGIN)
             result.extend(line.replace('```markdown', '```md').strip() for line in source)
             result.extend(MARKDOWN_END)
+        elif content['cell_type'] == 'raw':
+            result.extend(_verbatimize(source))
         else:
             raise ValueError(
                 "Cell type not supported when processing source: {!r}".format(
