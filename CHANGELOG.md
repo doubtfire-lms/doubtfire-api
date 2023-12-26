@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [7.0.21](https://github.com/macite/doubtfire-deploy/compare/v7.0.20...v7.0.21) (2023-09-04)
+
+
+### Features
+
+* allow admin bind in ldap ([de66236](https://github.com/macite/doubtfire-deploy/commit/de662367d8cb3a291cc00424e25ccf1a6d6587ac))
+
+### [7.0.20](https://github.com/macite/doubtfire-deploy/compare/v7.0.19...v7.0.20) (2023-08-29)
+
+
+### Bug Fixes
+
+* add processing for raw cells in ipynb ([ebacf38](https://github.com/macite/doubtfire-deploy/commit/ebacf3867aa09dbfad1a9eaa88953cbb418644f8))
+* auto generate rake task ([3bd9107](https://github.com/macite/doubtfire-deploy/commit/3bd91079764ad153f299e2519e7ddbba9377fc8e))
+* ensure devise is setup for ldap auth ([2561a05](https://github.com/macite/doubtfire-deploy/commit/2561a05649b0a3b34420fc2104b0c0b6be1a2fca))
+
 ### [7.0.19](https://github.com/macite/doubtfire-deploy/compare/v7.0.18...v7.0.19) (2023-06-20)
 
 
