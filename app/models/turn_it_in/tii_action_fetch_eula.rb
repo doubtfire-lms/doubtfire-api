@@ -14,6 +14,15 @@ class TiiActionFetchEula < TiiAction
     end
   end
 
+  # Check if an update of the eula is required
+  def update_required
+    last_feature_check = last_run
+
+    !Rails.cache.exist?('tii.eula_version') ||
+      last_feature_check.nil? ||
+      last_feature_check < DateTime.now - 1.day
+  end
+
   # Connect to tii to get the latest eula details.
   def fetch_eula_version
     exec_tca_call 'fetch TII EULA version' do

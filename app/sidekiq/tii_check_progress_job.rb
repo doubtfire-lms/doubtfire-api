@@ -8,19 +8,8 @@ class TiiCheckProgressJob
 
   def perform
     run_waiting_actions
-    check_update_eula
-  end
-
-  # Make sure we have the latest eula version
-  def check_update_eula
-    last_eula_check = TiiActionFetchEula.last&.last_run
-
-    run = !Rails.cache.exist?('tii.eula_version') ||
-          last_eula_check.nil? ||
-          last_eula_check < DateTime.now - 1.day
-
-    # Get or create the
-    (TiiActionFetchEula.last || TiiActionFetchEula.create).perform if run
+    TurnItIn.check_and_update_eula
+    TurnItIn.check_and_update_features
   end
 
   def run_waiting_actions
