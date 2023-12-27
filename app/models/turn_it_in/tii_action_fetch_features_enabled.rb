@@ -41,6 +41,15 @@ class TiiActionFetchFeaturesEnabled < TiiAction
     features.similarity.generation_settings.search_repositories
   end
 
+  # Check if an update of the features is required
+  def update_required
+    last_feature_check = last_run
+
+    !Rails.cache.exist?('tii.features_enabled') ||
+      last_feature_check.nil? ||
+      last_feature_check < DateTime.now - 1.day
+  end
+
   private
 
   def run

@@ -41,9 +41,15 @@ class TurnItIn
   def self.launch_tii(with_webhooks: true)
     TiiRegisterWebHookJob.perform_async if with_webhooks
 
-    (TiiActionFetchFeaturesEnabled.last || TiiActionFetchFeaturesEnabled.create).perform
+    check_and_update_features
+    check_and_update_eula
+  end
 
-    (TiiActionFetchEula.last || TiiActionFetchEula.create).perform
+  # Check if the features are up to date, and update if required
+  def self.check_and_update_features
+    # Get or create the
+    feature_job = TiiActionFetchFeaturesEnabled.last || TiiActionFetchFeaturesEnabled.create
+    feature_job.perform if feature_job.update_required
   end
 
   # A global error indicates that tii is not configured correctly or a change in the
@@ -126,6 +132,13 @@ class TurnItIn
     return nil unless Doubtfire::Application.config.tii_enabled
 
     Rails.cache.fetch("tii.eula_html.#{TurnItIn.eula_version}")
+  end
+
+  # Check if an update of the eula is required, and update when needed
+  def self.check_and_update_eula
+    # Get or create the
+    eula_job = (TiiActionFetchEula.last || TiiActionFetchEula.create)
+    eula_job.perform if eula_job.update_required
   end
 
   # Return the url used for webhook callbacks
