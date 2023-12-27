@@ -26,6 +26,7 @@ RUN apt-get update \
     tzdata \
     cron \
     msmtp-mta bsd-mailx \
+    redis \
     inkscape \
     docker-ce \
     docker-ce-cli \

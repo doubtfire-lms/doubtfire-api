@@ -23,6 +23,7 @@ RUN apt-get update \
     libmagickwand-dev \
     libmariadb-dev \
     tzdata \
+    redis \
     docker-ce \
     docker-ce-cli \
     containerd.io \
