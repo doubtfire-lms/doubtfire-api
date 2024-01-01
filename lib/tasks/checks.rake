@@ -75,7 +75,7 @@ namespace :submission do
         puts ' done.'
       rescue => e
         puts 'Failed with error'
-        puts e.message.to_s
+        puts e.message
       ensure
         end_executing_plagiarism
       end
