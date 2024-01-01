@@ -46,7 +46,7 @@ class TiiActionUploadSubmission < TiiAction
       request_similarity_report
     when 'ERROR' # An error occurred during submission processing; see error_code for details
       save_and_log_custom_error response.error_code
-      Doubtfire::Application.config.logger.error "Error with tii submission: #{id} #{self.custom_error_message}"
+      Rails.logger.error "Error with tii submission: #{id} #{self.custom_error_message}"
     end
   end
 

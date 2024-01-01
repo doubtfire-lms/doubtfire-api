@@ -123,7 +123,7 @@ class TaskSimilarityTest < ActiveSupport::TestCase
         task: task,
         idx: 0,
         filename: 'test.doc',
-        status: :created,
+        status: :similarity_report_complete,
         submitted_by_user: task.unit.main_convenor_user,
         submission_id: 1223
       )

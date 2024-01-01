@@ -14,8 +14,8 @@ module AuthenticationHelpers
   # Reads details from the params fetched from the caller context.
   #
   def authenticated?
-    auth_param = headers['Auth-Token'] || params['authToken'] || headers['Auth_Token'] || headers['auth_token'] || params['auth_token'] || params['Auth_Token']
-    user_param = headers['Username'] || params['username']
+    auth_param = headers['auth-token'] || headers['Auth-Token'] || params['authToken'] || headers['Auth_Token'] || headers['auth_token'] || params['auth_token'] || params['Auth_Token']
+    user_param = headers['username'] || headers['Username'] || params['username']
 
     # Check for valid auth token  and username in request header
     user = current_user
@@ -52,7 +52,7 @@ module AuthenticationHelpers
   # Get the current user either from warden or from the header
   #
   def current_user
-    username = headers['Username'] || params['username']
+    username = headers['username'] || headers['Username'] || params['username']
     User.eager_load(:role, :auth_tokens).find_by_username(username)
   end
 

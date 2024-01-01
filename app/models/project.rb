@@ -12,7 +12,6 @@ end
 
 class Project < ApplicationRecord
   include ApplicationHelper
-  include LogHelper
   include DbHelpers
 
   include PdfGeneration::ProjectCompilePortfolioModule

@@ -82,7 +82,12 @@ FactoryBot.define do
         end
       end
 
-      campuses = create_list(:campus, eval.campus_count)
+      if eval.campus_count > Campus.count
+        create_list(:campus, eval.campus_count - Campus.count)
+      end
+
+      campuses = Campus.all.sample(eval.campus_count)
+
       create_list(:group_set, group_sets, unit: unit)
       outcomes = create_list(:learning_outcome, eval.outcome_count, unit: unit)
       tutorial_streams = create_list(:tutorial_stream, eval.stream_count, unit: unit)
@@ -99,6 +104,7 @@ FactoryBot.define do
         LearningOutcomeTaskLink.create task_definition: td, learning_outcome: o, rating: (1..5).to_a.sample, description: "Justification"
       end
 
+      # Create tutorials at campus in each stream
       campuses.each do |c|
         # loop to 2nd last, unless there are no streams... then loop for all
         break if (c == campuses.last) && tutorial_streams.count > 0
@@ -129,6 +135,7 @@ FactoryBot.define do
 
       # Enrol students
       campuses.each do |c|
+        campus_tutorials = unit.tutorials.where(campus: c)
         (eval.unenrolled_student_count + eval.student_count + eval.part_enrolled_student_count + eval.inactive_student_count).times do |i|
           p = unit.enrol_student( FactoryBot.create(:user, :student), c )
           next if i < eval.unenrolled_student_count
@@ -137,12 +144,12 @@ FactoryBot.define do
             next
           end
 
-          if c.tutorials.first.tutorial_stream.present?
+          if campus_tutorials.first.tutorial_stream.present?
             tutorial_streams.each_with_index do |ts, i|
               p.enrol_in ts.tutorials.where(campus_id: c.id).sample
             end
           else
-            p.enrol_in c.tutorials[i % c.tutorials.count]
+            p.enrol_in campus_tutorials.all[i % campus_tutorials.count]
           end
         end
 

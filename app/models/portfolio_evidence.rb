@@ -1,9 +1,8 @@
 class PortfolioEvidence
   include FileHelper
-  include LogHelper
 
   def self.logger
-    LogHelper.logger
+    Rails.logger
   end
 
   def self.sanitized_path(*paths)

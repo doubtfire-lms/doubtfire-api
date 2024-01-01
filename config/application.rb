@@ -31,6 +31,13 @@ module Doubtfire
     # variable.
     config.student_work_dir = ENV['DF_STUDENT_WORK_DIR'] || "#{Rails.root}/student_work"
 
+    # ==> Load credentials from env
+    credentials.secret_key_base = ENV.fetch('DF_SECRET_KEY_BASE', Rails.env.production? ? nil : '9e010ee2f52af762916406fd2ac488c5694a6cc784777136e657511f8bbc7a73f96d59c0a9a778a0d7cf6406f8ecbf77efe4701dfbd63d8248fc7cc7f32dea97')
+    credentials.secret_key_attr = ENV.fetch('DF_SECRET_KEY_ATTR', Rails.env.production? ? nil : 'e69fc5960ca0e8700844a3a25fe80373b41c0a265d342eba06950113f3766fd983bad9ec51bf36eb615d9711bfe1dd90b8e35f01841b323f604ffee857e32055')
+    credentials.secret_key_devise = ENV.fetch('DF_SECRET_KEY_DEVISE', Rails.env.production? ? nil : 'f4e23c4388dc600e503a09ad057b8271d8fcf4c2cd6723b44f33db638e49075fe96bc545eed9110ded0c5df505625d4e1c838b718349eecf1d39270d0829d5b9')
+    credentials.secret_key_aaf = ENV.fetch('DF_SECRET_KEY_AAF', Rails.env.production? ? nil : 'secretsecret12345')
+    credentials.secret_key_moss = ENV.fetch('DF_SECRET_KEY_MOSS', nil)
+
     # ==> Institution settings
     # Institution YAML and ENV (override) config load
     config.institution = YAML.load_file("#{Rails.root}/config/institution.yml").with_indifferent_access
@@ -128,17 +135,15 @@ module Doubtfire
       end
     end
     # Check secrets set for DF_SECRET_KEY_BASE, DF_SECRET_KEY_ATTR, DF_SECRET_KEY_DEVISE
-    if secrets.secret_key_base.nil? ||
-       secrets.secret_key_attr.nil? ||
-       secrets.secret_key_devise.nil?
+    if credentials.secret_key_base.nil? ||
+       credentials.secret_key_attr.nil? ||
+       credentials.secret_key_devise.nil?
       raise "Required keys are not set, check the following environment variables: \n  " \
             "key                          => variable set?\n  " \
-            "DF_SECRET_KEY_BASE           => #{!secrets.secret_key_base.nil?}\n  " \
-            "DF_SECRET_KEY_ATTR           => #{!secrets.secret_key_base.nil?}\n  " \
-            "DF_SECRET_KEY_DEVISE         => #{!secrets.secret_key_base.nil?}"
+            "DF_SECRET_KEY_BASE           => #{!credentials.secret_key_base.nil?}\n  " \
+            "DF_SECRET_KEY_ATTR           => #{!credentials.secret_key_base.nil?}\n  " \
+            "DF_SECRET_KEY_DEVISE         => #{!credentials.secret_key_base.nil?}"
     end
-
-    config.active_record.legacy_connection_handling = false
 
     # Localization
     config.i18n.enforce_available_locales = true
@@ -231,8 +236,5 @@ module Doubtfire
       config.sm_instance = ServicesManager.instance
       config.sm_instance.register_client(:ontrack, publisher_config, subscriber_config)
     end
-
-    require_relative '../app/helpers/turn_it_in'
-    TurnItIn.load_config(config)
   end
 end

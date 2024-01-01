@@ -15,7 +15,7 @@ class TiiActionFetchEula < TiiAction
   end
 
   # Check if an update of the eula is required
-  def update_required
+  def update_required?
     last_feature_check = last_run
 
     !Rails.cache.exist?('tii.eula_version') ||

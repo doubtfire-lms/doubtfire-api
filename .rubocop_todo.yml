@@ -808,7 +808,6 @@ Lint/UnusedBlockArgument:
     - 'app/api/entities/user_entity.rb'
     - 'app/api/entities/webcal_entity.rb'
     - 'app/models/unit.rb'
-    - 'config/environments/doubtfire_logger.rb'
     - 'lib/helpers/database_populator.rb'
     - 'lib/tasks/checks.rake'
 
@@ -1016,11 +1015,6 @@ Style/ClassEqualityComparison:
     - 'app/helpers/db_helpers.rb'
     - 'app/models/task_definition.rb'
 
-# Offense count: 3
-Style/ClassVars:
-  Exclude:
-    - 'config/environments/doubtfire_logger.rb'
-
 # Offense count: 1
 # This cop supports safe autocorrection (--autocorrect).
 Style/ColonMethodCall:
@@ -1177,7 +1171,6 @@ Style/FrozenStringLiteralComment:
 # This cop supports unsafe autocorrection (--autocorrect-all).
 Style/GlobalStdStream:
   Exclude:
-    - 'config/environments/doubtfire_logger.rb'
     - 'lib/tasks/skip_prod.rake'
 
 # Offense count: 46

@@ -8,7 +8,6 @@ require 'grade_helper'
 class Unit < ApplicationRecord
   include ApplicationHelper
   include FileHelper
-  include LogHelper
   include MimeCheckHelpers
   include CsvHelper
 
@@ -126,6 +125,7 @@ class Unit < ApplicationRecord
   has_many :task_engagements, through: :projects
   has_many :tii_submissions, through: :tasks
   has_many :tii_group_attachments, through: :task_definitions
+  has_many :campuses, through: :tutorials
 
   has_many :convenors, -> { joins(:role).where('roles.name = :role', role: 'Convenor') }, class_name: 'UnitRole'
   has_many :staff, ->     { joins(:role).where('roles.name = :role_convenor or roles.name = :role_tutor', role_convenor: 'Convenor', role_tutor: 'Tutor') }, class_name: 'UnitRole'

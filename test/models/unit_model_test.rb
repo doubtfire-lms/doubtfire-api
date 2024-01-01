@@ -464,7 +464,7 @@ class UnitModelTest < ActiveSupport::TestCase
     unit = FactoryBot.create :unit, campus_count: 2, tutorials:1, stream_count:1, task_count:1, student_count:3, unenrolled_student_count: 0, part_enrolled_student_count: 0
 
     unit.tutorial_streams << FactoryBot.create(:tutorial_stream, unit: unit)
-    tutorial = FactoryBot.create(:tutorial, unit: unit, tutorial_stream: unit.tutorial_streams.last, campus: Campus.last )
+    tutorial = FactoryBot.create(:tutorial, unit: unit, tutorial_stream: unit.tutorial_streams.last, campus: unit.campuses.first )
 
     unit.projects.where(campus: tutorial.campus).first.enrol_in(tutorial)
 
