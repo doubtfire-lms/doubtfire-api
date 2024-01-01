@@ -1,6 +1,4 @@
 class Group < ApplicationRecord
-  include LogHelper
-
   belongs_to :group_set, optional: false
   belongs_to :tutorial, optional: false
 

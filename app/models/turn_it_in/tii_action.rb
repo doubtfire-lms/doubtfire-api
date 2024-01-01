@@ -31,8 +31,8 @@ class TiiAction < ApplicationRecord
 
   validate :entity_must_be_unique_within_type_on_create, on: :create
 
-  serialize :params, JSON
-  serialize :log, JSON
+  serialize :params, coder: JSON
+  serialize :log, coder: JSON
 
   def description
     'Generic Turnitin Action'

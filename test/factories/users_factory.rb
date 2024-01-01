@@ -5,9 +5,15 @@ FactoryBot.define do
     first_name  { Faker::Name.first_name }
     last_name   { Faker::Name.last_name }
     username    { "factory-#{Faker::Internet.unique.username}" }
-    email       { Faker::Internet.unique.safe_email }
+    email       { Faker::Internet.unique.email }
     password    { "password" }
     role        { Role.student }
+
+    before(:create) do |user, eval|
+      while User.where(username: user.username).count > 0
+        user.username = "#{user.username}-#{rand(1000)}"
+      end
+    end
 
     trait :student do
       transient do

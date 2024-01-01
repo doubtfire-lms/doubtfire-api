@@ -43,9 +43,6 @@ Doubtfire::Application.configure do
   # pdfgen log verbosity
   config.pdfgen_quiet = true
 
-  require_relative 'doubtfire_logger'
-  config.logger = DoubtfireLogger.logger
-  Rails.logger = DoubtfireLogger.logger
   config.log_level = :info
 
   config.action_mailer.perform_deliveries = (ENV['DF_MAIL_PERFORM_DELIVERIES'] || 'yes') == 'yes'
@@ -53,12 +50,12 @@ Doubtfire::Application.configure do
 
   if config.action_mailer.delivery_method == :smtp
     config.action_mailer.smtp_settings = {
-      address: (ENV['DF_SMTP_ADDRESS'] || 'localhost'),
-      port: (ENV['DF_SMTP_PORT'] || 25),
+      address: ENV.fetch('DF_SMTP_ADDRESS', 'localhost'),
+      port: ENV.fetch('DF_SMTP_PORT', 25),
       domain: ENV.fetch('DF_SMTP_DOMAIN', nil),
       user_name: ENV.fetch('DF_SMTP_USERNAME', nil),
       password: ENV.fetch('DF_SMTP_PASSWORD', nil),
-      authentication: (ENV['DF_SMTP_AUTHENTICATION'] || 'plain'),
+      authentication: ENV.fetch('DF_SMTP_AUTHENTICATION', 'plain'),
       enable_starttls_auto: true
     }
   end

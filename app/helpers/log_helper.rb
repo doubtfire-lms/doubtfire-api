@@ -1,12 +1,13 @@
 #
-# A universal logger
+# Adds a logger function to make it easier to log
+# using the standard logger.
 #
 module LogHelper
   #
   # Logger function returns the singleton logger
   #
   def logger
-    Doubtfire::Application.config.logger
+    Rails.logger
   end
 
   # Export functions as module functions

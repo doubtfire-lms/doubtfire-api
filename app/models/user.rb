@@ -30,7 +30,7 @@ class User < ApplicationRecord
     # could be decoded
     #
     def self.decode_jws(jws)
-      JSON::JWT.decode(jws.to_s, Doubtfire::Application.secrets.secret_key_aaf)
+      JSON::JWT.decode(jws.to_s, Doubtfire::Application.credentials.secret_key_aaf)
     rescue
       nil
     end

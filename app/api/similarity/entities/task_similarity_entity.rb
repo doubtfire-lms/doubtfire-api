@@ -9,6 +9,9 @@ module Similarity
       expose :type
       expose :flagged
       expose :pct
+      expose :ready_for_viewer do |similarity, _options|
+        similarity.ready_for_viewer?
+      end
 
       expose :parts do |similarity, options|
         result = [

@@ -271,4 +271,7 @@ Devise.setup do |config|
   config.secret_key = Doubtfire::Application.secrets.secret_key_devise if Rails.env.production?
 
   config.ldap_use_admin_to_bind = ENV.fetch('DF_LDAP_USE_ADMIN_TO_BIND', 'false').to_s.downcase != 'false'
+
+  config.responder.error_status = :unprocessable_entity
+  config.responder.redirect_status = :see_other
 end

@@ -34,10 +34,6 @@ Doubtfire::Application.configure do
   # Set deterministic randomness, source: https://github.com/stympy/faker#deterministic-random
   Faker::Config.random = Random.new(77)
 
-  require_relative 'doubtfire_logger'
-  config.logger = DoubtfireLogger.logger
-  Rails.logger = DoubtfireLogger.logger
-
   # Logging level (:debug, :info, :warn, :error, :fatal)
   config.log_level = :warn
 
@@ -50,8 +46,4 @@ Doubtfire::Application.configure do
   ENV.store('TII_ENABLED', '1')
   ENV.store('TCA_API_KEY', '1234')
   ENV.store('TCA_HOST', 'localhost')
-
-  # reload tii config...
-  require_relative '../../app/helpers/turn_it_in'
-  TurnItIn.load_config(config)
 end

@@ -311,8 +311,8 @@ class AuthenticationApi < Grape::API
     optional :remember, type: Boolean, desc: 'User has requested to remember login', default: false
   end
   put '/auth' do
-    token_param = headers['Auth-Token'] || params['Auth-Token']
-    user_param = headers['Username'] || params['Username']
+    token_param = headers['auth-token'] || headers['Auth-Token'] || params['Auth-Token']
+    user_param = headers['username'] || headers['Username'] || params['Username'] || params['username']
 
     error!({ error: 'Invalid token/username.' }, 404) if token_param.nil? || user_param.nil?
 
@@ -354,8 +354,8 @@ class AuthenticationApi < Grape::API
          }
        }
   delete '/auth' do
-    user = User.find_by_username(headers['Username'])
-    token = user.token_for_text?(headers['Auth-Token']) unless user.nil?
+    user = User.find_by_username(headers['username'] || headers['Username'])
+    token = user.token_for_text?(headers['auth-token'] || headers['Auth-Token']) unless user.nil?
 
     if token.present?
       logger.info "Sign out #{user.username} from #{request.ip}"

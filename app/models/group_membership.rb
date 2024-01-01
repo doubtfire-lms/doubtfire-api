@@ -2,7 +2,6 @@
 # Records which students are in this group... used to determine the related students on submission
 #
 class GroupMembership < ApplicationRecord
-  include LogHelper
 
   belongs_to :group, optional: false
   belongs_to :project, optional: false

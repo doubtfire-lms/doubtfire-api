@@ -27,8 +27,8 @@ class TaskDefinition < ApplicationRecord
   has_many :tii_group_attachments, dependent: :destroy
   has_many :tii_actions, as: :entity, dependent: :destroy
 
-  serialize :upload_requirements, JSON
-  serialize :plagiarism_checks, JSON
+  serialize :upload_requirements, coder: JSON
+  serialize :plagiarism_checks, coder: JSON
 
   # Model validations/constraints
   validates :name, uniqueness: { scope:  :unit_id } # task definition names within a unit must be unique

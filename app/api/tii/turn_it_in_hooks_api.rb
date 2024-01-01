@@ -24,14 +24,14 @@ module Tii
       hmac = OpenSSL::HMAC.hexdigest(digest, ENV.fetch('TCA_SIGNING_KEY', nil), data.to_json)
 
       # puts hmac
-      # puts headers['X-Turnitin-Signature']
+      # puts headers['x-turnitin-signature']
 
-      # if hmac != headers["X-Turnitin-Signature"]
-      #   logger.error("TII: HMAC does not match")
-      #   error!('Signature did not match in webhook request', 401)
-      # end
+      if hmac != headers["x-turnitin-signature"]
+        logger.error("TII: HMAC does not match")
+        error!('Signature did not match in webhook request', 401)
+      end
 
-      case headers["X-Turnitin-Eventtype"]
+      case headers["x-turnitin-eventtype"]
       when 'SUBMISSION_COMPLETE'
         subm = TCAClient::SubmissionCompleteWebhookRequest.new(data)
 

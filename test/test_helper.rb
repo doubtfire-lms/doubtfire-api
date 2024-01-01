@@ -41,9 +41,9 @@ require 'rails/test_help'
 require 'database_cleaner/active_record'
 
 class ActiveSupport::TestCase
-  ActiveRecord::Migration.check_pending!
+  ActiveRecord::Migration.check_all_pending!
 
-  extend MiniTest::Spec::DSL
+  extend Minitest::Spec::DSL
 
   # Inclide FactoryBot
   include FactoryBot::Syntax::Methods
@@ -67,7 +67,6 @@ class ActiveSupport::TestCase
   DatabaseCleaner.strategy = :transaction
 
   setup do
-    Faker::UniqueGenerator.clear
     DatabaseCleaner.start
     WebMock.reset!
     Sidekiq::Testing.fake!
@@ -75,13 +74,9 @@ class ActiveSupport::TestCase
     # Ensure turn it in states is cleared
     TurnItIn.reset_rate_limit
     TurnItIn.global_error = nil
-    Rails.cache.write('tii.eula_version', TCAClient::EulaVersion.new(
-      version: "v1beta",
-      valid_from: "2018-04-30T17:00:00Z",
-      valid_until: nil,
-      url: "https://static.turnitin.com/eula/v1beta/fr-fr/eula.html",
-      available_languages: [ "en-US" ]
-    ))
+
+    TestHelpers::TiiTestHelper.setup_tii_eula
+    TestHelpers::TiiTestHelper.setup_tii_features_enabled
 
     @last_unit_id = Unit.last.id
   end
@@ -94,9 +89,6 @@ class ActiveSupport::TestCase
     Unit.where("id > :last_unit_id", last_unit_id: @last_unit_id).destroy_all
 
     DatabaseCleaner.clean
+    Faker::UniqueGenerator.clear
   end
-
-  # register_spec_type self do |desc|
-  #   desc < ApplicationRecord if desc_is_a? Class
-  # end
 end

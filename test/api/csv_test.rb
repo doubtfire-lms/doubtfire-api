@@ -36,7 +36,7 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status
 
     # Check for file
-    assert_equal "attachment; filename=COS10001-Tasks.csv",last_response.header["content-disposition"]
+    assert_equal "attachment; filename=COS10001-Tasks.csv",last_response.headers["content-disposition"]
   end
 
   #2: Testing for unit ID error with empty user ID
@@ -316,7 +316,7 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status
 
     # Check for file
-    assert_equal "attachment; filename=COS10001-Students.csv",last_response.header["content-disposition"]
+    assert_equal "attachment; filename=COS10001-Students.csv",last_response.headers["content-disposition"]
   end
 
   #18: Testing for unit ID error with string unit ID
@@ -789,7 +789,7 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status
 
     # Check for file
-    assert_equal "attachment; filename=COS10001-TaskCompletion.csv",last_response.header["content-disposition"]
+    assert_equal "attachment; filename=COS10001-TaskCompletion.csv",last_response.headers["content-disposition"]
   end
 
   #41: Testing for unit ID error with empty user ID
@@ -893,7 +893,7 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status
 
     # Check for file
-    assert_equal "attachment; filename=COS10001-TutorAssessments.csv",last_response.header["content-disposition"]
+    assert_equal "attachment; filename=COS10001-TutorAssessments.csv",last_response.headers["content-disposition"]
   end
 
   #47: Testing for unit ID error with empty user ID
@@ -994,7 +994,7 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status
 
     # Check for file
-    assert_equal "attachment; filename=doubtfire_users.csv",last_response.header["content-disposition"]
+    assert_equal "attachment; filename=doubtfire_users.csv",last_response.headers["content-disposition"]
   end
 
   #53: Testing for authentication failure with incorrect token

@@ -42,7 +42,7 @@ class TiiActionFetchFeaturesEnabled < TiiAction
   end
 
   # Check if an update of the features is required
-  def update_required
+  def update_required?
     last_feature_check = last_run
 
     !Rails.cache.exist?('tii.features_enabled') ||

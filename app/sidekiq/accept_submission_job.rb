@@ -1,5 +1,6 @@
 class AcceptSubmissionJob
   include Sidekiq::Job
+  include LogHelper
 
   def perform(task_id, user_id, accepted_tii_eula)
     task = Task.find(task_id)
@@ -12,7 +13,7 @@ class AcceptSubmissionJob
     if TurnItIn.functional?
       task.send_documents_to_tii(user, accepted_tii_eula: accepted_tii_eula)
     end
-
-    # rescue to raise error message to avoid unnecessary retry
+  rescue StandardError => e # to raise error message to avoid unnecessary retry
+    logger.error e
   end
 end

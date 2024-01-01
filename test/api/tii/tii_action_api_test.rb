@@ -78,8 +78,8 @@ class TiiActionApiTest < ActiveSupport::TestCase
       submitted_by_user: @convenor
     )
 
-    TiiActionUploadSubmission.find_or_create_by(entity: sub1)
-    TiiActionUploadSubmission.find_or_create_by(entity: sub2)
+    TiiActionUploadSubmission.find_or_create_by(entity: sub1).update(retry: false)
+    TiiActionUploadSubmission.find_or_create_by(entity: sub2).update(retry: false)
   end
 
   teardown do
@@ -166,10 +166,15 @@ class TiiActionApiTest < ActiveSupport::TestCase
     TiiActionJob.clear
     add_auth_header_for(user: User.where(role: Role.admin).first)
     action = TiiActionUploadSubmission.last
+    # Ensure retry is false
+    action.update(retry: false)
+
+    refute action.retry
 
     put_json "/api/tii_actions/#{action.id}", { 'action': 'retry' }
     assert_equal 200, last_response.status
 
+    # Ensure 2nd put does not cause action to be scheduled twice
     put_json "/api/tii_actions/#{action.id}", { 'action': 'retry' }
     assert_equal 403, last_response.status
 

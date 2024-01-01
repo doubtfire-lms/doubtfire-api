@@ -97,20 +97,6 @@ Doubtfire::Application.configure do
   # pdfgen log verbosity
   config.pdfgen_quiet = false
 
-  require_relative 'doubtfire_logger'
-  config.logger = DoubtfireLogger.logger
-  Rails.logger = DoubtfireLogger.logger
-
-  if config.tii_enabled
-    # Turn-it-in TII configuration
-    require 'tca_client'
-
-    # Setup authorization
-    TCAClient.configure do |tii_config|
-      tii_config.debugging = true
-    end
-  end
-
   config.active_record.encryption.key_derivation_salt = ENV['DF_ENCRYPTION_KEY_DERIVATION_SALT'] || 'U9jurHMfZbMpzlbDTMe5OSAhUJYHla9Z'
   config.active_record.encryption.deterministic_key = ENV['DF_ENCRYPTION_DETERMINISTIC_KEY'] || 'zYtzYUlLFaWdvdUO5eIINRT6ZKDddcgx'
   config.active_record.encryption.primary_key = ENV['DF_ENCRYPTION_PRIMARY_KEY'] || '92zoF7RJaQ01JEExOgHbP9bRWldNQUz5'

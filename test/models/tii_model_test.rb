@@ -8,8 +8,7 @@ class TiiModelTest < ActiveSupport::TestCase
 
   def test_fetch_eula
     skip "TurnItIn Integration Tests Skipped" unless Doubtfire::Application.config.tii_enabled
-
-    Rails.cache.delete('tii.eula_version')
+    clear_tii_eula
 
     refute Rails.cache.fetch('tii.eula_version').present?
 
@@ -87,8 +86,7 @@ class TiiModelTest < ActiveSupport::TestCase
 
   def test_fetch_eula_error_handling
     skip "TurnItIn Integration Tests Skipped" unless Doubtfire::Application.config.tii_enabled
-
-    Rails.cache.delete('tii.eula_version')
+    clear_tii_eula
 
     eula_version_stub = stub_request(:get, "https://#{ENV['TCA_HOST']}/api/v1/eula/latest").
     with(tii_headers).
@@ -107,7 +105,7 @@ class TiiModelTest < ActiveSupport::TestCase
 
   def test_tii_features_enabled
     skip "TurnItIn Integration Tests Skipped" unless Doubtfire::Application.config.tii_enabled
-    TiiActionFetchFeaturesEnabled.destroy_all
+    clear_tii_festures_enabled
 
     body = '{
       "similarity": {

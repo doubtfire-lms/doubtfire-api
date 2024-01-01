@@ -2,7 +2,6 @@ require 'date'
 
 class Task < ApplicationRecord
   include ApplicationHelper
-  include LogHelper
   include GradeHelper
 
   #

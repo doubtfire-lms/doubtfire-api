@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 class TaskSimilarity < ApplicationRecord
-  include LogHelper
 
   belongs_to :task, optional: false
 
@@ -16,6 +15,10 @@ class TaskSimilarity < ApplicationRecord
   def tutorial
     tute = task.project.tutorial_for(task.task_definition)
     tute.nil? ? 'None' : tute.abbreviation
+  end
+
+  def ready_for_viewer?
+    false
   end
 
 end

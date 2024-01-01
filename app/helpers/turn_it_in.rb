@@ -31,8 +31,7 @@ class TurnItIn
         tii_config.host = ENV.fetch('TCA_HOST', nil)
         tii_config.base_path = 'api/v1'
         tii_config.server_index = nil
-        require_relative '../../config/environments/doubtfire_logger'
-        tii_config.logger = DoubtfireLogger.logger
+        tii_config.logger = Rails.logger
       end
     end
   end
@@ -49,7 +48,7 @@ class TurnItIn
   def self.check_and_update_features
     # Get or create the
     feature_job = TiiActionFetchFeaturesEnabled.last || TiiActionFetchFeaturesEnabled.create
-    feature_job.perform if feature_job.update_required
+    feature_job.perform if feature_job.update_required?
   end
 
   # A global error indicates that tii is not configured correctly or a change in the
@@ -101,7 +100,7 @@ class TurnItIn
   # @param action [String] the action that was being performed
   # @param error [TCAClient::ApiError] the error that was raised
   def self.handle_tii_error(action, error)
-    Doubtfire::Application.config.logger.error "TII failed. #{action}. #{error}"
+    Rails.logger.error "TII failed. #{action}. #{error}"
 
     case error.code
     when 429 # rate limit
@@ -117,10 +116,8 @@ class TurnItIn
   def self.eula_version
     return nil unless Doubtfire::Application.config.tii_enabled
 
-    unless Rails.cache.exist?('tii.eula_version')
-      action = TiiActionFetchEula.last || TiiActionFetchEula.create
-      action.perform
-    end
+    action = TiiActionFetchEula.last || TiiActionFetchEula.create
+    action.perform if action.update_required?
 
     eula = Rails.cache.fetch('tii.eula_version')
 
@@ -138,7 +135,7 @@ class TurnItIn
   def self.check_and_update_eula
     # Get or create the
     eula_job = (TiiActionFetchEula.last || TiiActionFetchEula.create)
-    eula_job.perform if eula_job.update_required
+    eula_job.perform if eula_job.update_required?
   end
 
   # Return the url used for webhook callbacks
@@ -188,6 +185,6 @@ class TurnItIn
   private
 
   def logger
-    Doubtfire::Application.config.logger
+    Rails.logger
   end
 end
