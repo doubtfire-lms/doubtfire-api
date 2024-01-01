@@ -304,7 +304,7 @@ class TiiActionUploadSubmission < TiiAction
       data = TCAClient::SimilarityPutRequest.new(
         indexing_settings:
           TCAClient::IndexingSettings.new(
-            add_to_index: add_to_index,
+            add_to_index: add_to_index
           ),
         generation_settings:
           TCAClient::SimilarityGenerationSettings.new(

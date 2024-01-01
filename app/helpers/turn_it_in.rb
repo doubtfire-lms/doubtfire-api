@@ -134,7 +134,7 @@ class TurnItIn
   # Check if an update of the eula is required, and update when needed
   def self.check_and_update_eula
     # Get or create the
-    eula_job = (TiiActionFetchEula.last || TiiActionFetchEula.create)
+    eula_job = TiiActionFetchEula.last || TiiActionFetchEula.create
     eula_job.perform if eula_job.update_required?
   end
 

@@ -14,9 +14,11 @@ module Entities
     expose :has_run_first_time_setup, unless: :minimal
 
     expose :accepted_tii_eula, unless: :minimal, if: ->(user, options) { Doubtfire::Application.config.tii_enabled } do |user, options|
-      return true unless TiiActionFetchFeaturesEnabled.eula_required?
-
-      TurnItIn.eula_version == user.tii_eula_version
+      if TiiActionFetchFeaturesEnabled.eula_required?
+        TurnItIn.eula_version == user.tii_eula_version
+      else
+        true
+      end
     end
 
     expose :system_role, unless: :minimal do |user, options|

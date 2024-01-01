@@ -13,8 +13,7 @@ Doubtfire::Application.configure do
       # Report errors to Sentry as warnings
       Sentry.capture_exception exception, level: 'warning',
         tags: { method: method, returning: returning }
-    }
-  }
+    } }
 
   # Full error reports are disabled and caching is turned on
   config.consider_all_requests_local = false

@@ -721,7 +721,7 @@ class Unit < ApplicationRecord
     ignored = result[:ignored]
 
     # now apply the changes...
-    changes.each do |key, row_data|
+    changes.each_value do |row_data|
       begin
         row = row_data[:row]
         username = row_data[:username].downcase
