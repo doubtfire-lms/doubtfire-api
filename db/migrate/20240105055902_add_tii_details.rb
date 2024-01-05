@@ -1,4 +1,4 @@
-class AddTiiDetails < ActiveRecord::Migration[7.0]
+class AddTiiDetails < ActiveRecord::Migration[7.1]
   def change
     add_column :users, :tii_eula_version, :string
     add_column :users, :tii_eula_date, :datetime
@@ -27,7 +27,7 @@ class AddTiiDetails < ActiveRecord::Migration[7.0]
       t.bigint      :submitted_by_user_id, null: false
       t.index       :submitted_by_user_id
       t.string      :filename, null: false
-      t.integer     :idx, nul: false
+      t.integer     :idx, null: false
 
       t.string      :submission_id
       t.string      :similarity_pdf_id
@@ -64,6 +64,7 @@ class AddTiiDetails < ActiveRecord::Migration[7.0]
       t.integer     :retries, default: 0, null: false
 
       t.datetime    :last_run
+      t.datetime    :complete_at
       t.boolean     :retry, default: true, null: false
 
       t.integer     :error_code

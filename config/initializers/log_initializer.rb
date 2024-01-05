@@ -9,7 +9,7 @@ class FormatifFormatter < Logger::Formatter
   # This method is invoked when a log event occurs
   def call(severity, timestamp, _progname, msg)
     remote_ip = Thread.current.thread_variable_get(:ip) || 'unknown'
-    "#{timestamp},#{remote_ip},#{severity}: #{msg.gsub(/\n/, '\n')}\n"
+    "#{timestamp},#{remote_ip},#{severity}: #{msg.to_s.gsub(/\n/, '\n')}\n"
   end
 end
 
