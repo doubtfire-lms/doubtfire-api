@@ -135,8 +135,12 @@ class TiiAction < ApplicationRecord
     save!
   end
 
+  # Record that we have completed a part of the action
+  # Resets the retry count, and mark the part complete at time
+  # to ensure future retries start from the new time.
   def save_progress
     self.retries = 0
+    self.complete_at = DateTime.now
     save!
   end
 
@@ -147,17 +151,17 @@ class TiiAction < ApplicationRecord
     raise "SYSTEM ERROR: method missing"
   end
 
-  # Retry the request in 30 minutes, up to 10 times
+  # Retry the request up to 48 times over 24 hours.
+  # The TiiCheckProgressJob will retry any actions that have not been completed
   def retry_request
     self.retries += 1
 
-    if self.retries > 10
+    last_recorded_complete_time = complete_at || created_at
+
+    if self.retries > 48 && last_recorded_complete_time < DateTime.now - 24.hours
       self.error_code = :excessive_retries
     else
       self.retry = true
-
-      # We try in 15 minutes
-      TiiActionJob.perform_at(Time.zone.now + 15.minutes, id)
     end
   end
 
@@ -173,7 +177,7 @@ class TiiAction < ApplicationRecord
     when 451
       self.error_cde = :no_user_with_accepted_eula
       return
-    when 429
+    when 429 # is not currently used by TCA
       self.error_code = :rate_limited
       retry_request
       return

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2023_12_01_000245) do
+ActiveRecord::Schema[7.1].define(version: 2024_01_05_055902) do
   create_table "activity_types", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -234,10 +234,10 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_01_000245) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "abbreviation"
-    t.text "upload_requirements", size: :long, collation: "utf8mb4_bin"
+    t.string "upload_requirements", limit: 4096
     t.integer "target_grade", default: 0
     t.boolean "restrict_status_updates", default: false
-    t.text "plagiarism_checks", size: :long, collation: "utf8mb4_bin"
+    t.string "plagiarism_checks", limit: 4096
     t.string "plagiarism_report_url"
     t.boolean "plagiarism_updated", default: false
     t.integer "plagiarism_warn_pct", default: 50
@@ -255,8 +255,6 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_01_000245) do
     t.index ["overseer_image_id"], name: "index_task_definitions_on_overseer_image_id"
     t.index ["tutorial_stream_id"], name: "index_task_definitions_on_tutorial_stream_id"
     t.index ["unit_id"], name: "index_task_definitions_on_unit_id"
-    t.check_constraint "json_valid(`plagiarism_checks`)", name: "plagiarism_checks"
-    t.check_constraint "json_valid(`upload_requirements`)", name: "upload_requirements"
   end
 
   create_table "task_engagements", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
@@ -354,6 +352,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_01_000245) do
     t.boolean "complete", default: false, null: false
     t.integer "retries", default: 0, null: false
     t.datetime "last_run"
+    t.datetime "complete_at"
     t.boolean "retry", default: true, null: false
     t.integer "error_code"
     t.text "custom_error_message"
@@ -384,7 +383,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_01_000245) do
     t.bigint "tii_task_similarity_id"
     t.bigint "submitted_by_user_id", null: false
     t.string "filename", null: false
-    t.integer "idx"
+    t.integer "idx", null: false
     t.string "submission_id"
     t.string "similarity_pdf_id"
     t.datetime "submitted_at"

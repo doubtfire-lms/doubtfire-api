@@ -5,5 +5,5 @@ register_webhooks:
   class: "TiiRegisterWebHookJob"
 
 progress_turn_it_in_jobs:
-  cron: "every 3 hours"
+  cron: "every 30 minutes"
   class: "TiiCheckProgressJob"
