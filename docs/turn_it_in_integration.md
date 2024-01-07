@@ -18,3 +18,9 @@ TCA_HOST=https://...
 TCA_API_KEY=...
 TII_INDEX_SUBMISSIONS=true
 ```
+
+Ensure that you have sidekiq running to process the turnitin jobs.
+
+```sh
+bundle exec sidekiq
+```
