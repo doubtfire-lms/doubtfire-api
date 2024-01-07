@@ -116,7 +116,7 @@ module Similarity
           error!({ error: "Similarity report is not yet ready to be viewed for this submission" }, 404)
         end
       else
-        error!({ error: "No details to download for task '#{params[:id]}'" }, 404)
+        similarity.plagiarism_report_url
       end
     end
   end
