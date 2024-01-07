@@ -34,7 +34,6 @@ module Entities
       task_definition.tutorial_stream.abbreviation unless task_definition.tutorial_stream.nil?
     end
     expose :plagiarism_checks, if: ->(unit, options) { staff?(options[:my_role]) }
-    expose :plagiarism_report_url, if: ->(unit, options) { staff?(options[:my_role]) }
     expose :plagiarism_warn_pct, if: ->(unit, options) { staff?(options[:my_role]) }
     expose :restrict_status_updates, if: ->(unit, options) { staff?(options[:my_role]) }
     expose :group_set_id
