@@ -22,7 +22,7 @@ Doubtfire::Application.configure do
         skip_first = false
       else
         puts "CLEARING CACHE"
-        Rails.cache.clear unless in_load
+        Rails.cache.clear
       end
     end
     config.action_controller.perform_caching = true

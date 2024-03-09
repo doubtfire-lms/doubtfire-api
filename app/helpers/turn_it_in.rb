@@ -117,7 +117,7 @@ class TurnItIn
     return nil unless Doubtfire::Application.config.tii_enabled
 
     action = TiiActionFetchEula.last || TiiActionFetchEula.create
-    action.perform if action.update_required?
+    action.fetch_eula_version unless action.eula?
 
     eula = Rails.cache.fetch('tii.eula_version')
 
@@ -135,7 +135,8 @@ class TurnItIn
   def self.check_and_update_eula
     # Get or create the
     eula_job = TiiActionFetchEula.last || TiiActionFetchEula.create
-    eula_job.perform if eula_job.update_required?
+    eula_job.fetch_eula_version unless eula_job.eula? # Load into cache if not loaded
+    eula_job.perform if eula_job.update_required? # Update if needed
   end
 
   # Return the url used for webhook callbacks
