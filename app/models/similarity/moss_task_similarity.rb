@@ -3,7 +3,7 @@
 class MossTaskSimilarity < TaskSimilarity
   belongs_to :other_task, class_name: 'Task'
 
-  def html_path
+  def file_path
     FileHelper.path_to_plagarism_html(self)
   end
 

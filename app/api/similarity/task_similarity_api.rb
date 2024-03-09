@@ -81,14 +81,18 @@ module Similarity
         path = similarity.similarity_pdf_path
       end
 
-      if params[:as_attachment]
-        header['Content-Disposition'] = "attachment; filename=#{filename}"
-        header['Access-Control-Expose-Headers'] = 'Content-Disposition'
+      if File.exist?(path)
+        if params[:as_attachment]
+          header['Content-Disposition'] = "attachment; filename=#{filename}"
+          header['Access-Control-Expose-Headers'] = 'Content-Disposition'
+        end
+
+        env['api.format'] = :binary
+
+        File.read(path)
+      else
+        error!({ error: "No details to download for task '#{params[:id]}'" }, 404)
       end
-
-      env['api.format'] = :binary
-
-      File.read(path)
     end
 
     desc 'Get viewer url for a turn it in similarity'
