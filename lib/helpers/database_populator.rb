@@ -487,7 +487,7 @@ class DatabasePopulator
       flagged: true,
       other_task: other_task
     )
-    FileUtils.cp Rails.root.join('test_files/similarity.html'), similarity.html_path
+    FileUtils.cp Rails.root.join('test_files/similarity.html'), similarity.file_path
 
     similarity = MossTaskSimilarity.create!(
       task: other_task,
@@ -495,7 +495,7 @@ class DatabasePopulator
       flagged: true,
       other_task: task
     )
-    FileUtils.cp Rails.root.join('test_files/similarity.html'), similarity.html_path
+    FileUtils.cp Rails.root.join('test_files/similarity.html'), similarity.file_path
   end
 
   def self.assess_task(proj, task, tutor, status, complete_date)

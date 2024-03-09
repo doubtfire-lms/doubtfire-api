@@ -127,6 +127,10 @@ module FileHelper
     dst
   end
 
+  def student_work_root
+    Doubtfire::Application.config.student_work_dir
+  end
+
   #
   # Generates a path for storing student work
   # type = [:new, :in_process, :done, :pdf, :plagarism]
@@ -530,6 +534,7 @@ module FileHelper
   module_function :tmp_file
   module_function :student_group_work_dir
   module_function :student_work_dir
+  module_function :student_work_root
   module_function :unit_dir
   module_function :unit_portfolio_dir
   module_function :student_portfolio_dir
