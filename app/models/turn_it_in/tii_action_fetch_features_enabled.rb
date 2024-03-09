@@ -64,14 +64,52 @@ class TiiActionFetchFeaturesEnabled < TiiAction
     end
   end
 
-  # Connect to tii to get the features enabled for this institution
+  def feature_yaml_path
+    "#{FileHelper.student_work_root}/tii_feature.yml"
+  end
+
+  def load_feature_yaml
+    require 'yaml' # Built in, no gem required
+    YAML::load_file(feature_yaml_path, permitted_classes: [DateTime, Time, TCAClient::FeaturesEnabled, TCAClient::FeaturesSimilarity, TCAClient::FeaturesViewerModes, TCAClient::FeaturesGenerationSettings, TCAClient::FeaturesSimilarityViewSettings, TCAClient::FeaturesTenant]) if File.exist?(feature_yaml_path)  # Load
+  rescue
+    nil
+  end
+
+  def save_feature_yaml(data)
+    require 'yaml' # Built in, no gem required
+    File.write feature_yaml_path, data.to_yaml
+  end
+
   def fetch_features_enabled
+    # Attempt to load the feature from file
+    data = load_feature_yaml
+    if data && data['features'] && data['expire'] && data['expire'] > DateTime.now
+      # update cache
+      Rails.cache.write('tii.feature_version', data['features'], expires_in: 48.hours)
+      true
+    else
+      fetch_features_enabled_from_tii
+    end
+  end
+
+  # Connect to tii to get the features enabled for this institution
+  def fetch_features_enabled_from_tii
     exec_tca_call 'fetch TII features enabled' do
       api_instance = TCAClient::FeaturesApi.new
       features = api_instance.features_enabled_get(
         TurnItIn.x_turnitin_integration_name,
         TurnItIn.x_turnitin_integration_version
       )
+
+      # Update the feature yaml
+      if features.present?
+        data = {}
+        data['expire'] = DateTime.now + 2.days
+        data['features'] = features
+
+        # Save the eula to a cache file
+        save_feature_yaml(data)
+      end
 
       # return the features
       features
