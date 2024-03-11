@@ -37,7 +37,7 @@ class TestAttemptsApi < Grape::API
 
   # Get latest test or create a new one based on completion status
   desc 'Get latest test or create a new one based on completion status'
-  get 'latest' do
+  get '/test_attempts/latest' do
     test = TestAttempt.order(id: :desc).first
 
     if test.nil?
@@ -69,7 +69,7 @@ class TestAttemptsApi < Grape::API
 
   # Fetch the latest completed test result
   desc 'Get the latest completed test result'
-  get 'completed-latest' do
+  get '/test_attempts/completed-latest' do
     test = TestAttempt.where(completed: true).order(id: :desc).first
 
     if test.nil?
@@ -84,7 +84,7 @@ class TestAttemptsApi < Grape::API
   params do
     requires :id, type: String, desc: 'ID of the test'
   end
-  get ':id' do
+  get '/test_attempts/:id' do
     present TestAttempt.find(params[:id]), with: TestAttemptEntity
   end
 
@@ -117,7 +117,7 @@ class TestAttemptsApi < Grape::API
     optional :cmi_entry, type: String, desc: 'CMI Entry'
     optional :task_id, type: Integer, desc: 'ID of the associated task'
   end
-  put ':id' do
+  put '/test_attempts/:id' do
     test = TestAttempt.find(params[:id])
     test.update!(declared(params, include_missing: false))
     present test, with: TestAttemptEntity
@@ -128,7 +128,7 @@ class TestAttemptsApi < Grape::API
   params do
     requires :id, type: String, desc: 'ID of the test'
   end
-  delete ':id' do
+  delete '/test_attempts/:id' do
     TestAttempt.find(params[:id]).destroy!
   end
 
@@ -137,7 +137,7 @@ class TestAttemptsApi < Grape::API
   params do
     requires :id, type: String, desc: 'ID of the test'
   end
-  put ':id/exam_data' do
+  put '/test_attempts/:id/exam_data' do
     test = TestAttempt.find_by(id: params[:id])
 
     error!('Test not found', 404) unless test
