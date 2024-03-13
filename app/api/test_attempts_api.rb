@@ -41,9 +41,24 @@ class TestAttemptsApi < Grape::API
   end
 
   # Get latest test or create a new one based on completion status
-  desc 'Get latest test or create a new one based on completion status'
+  desc 'Get latest test attempt for a specific task or create a new one based on completion status'
+  params do
+    requires :task_id, type: Integer, desc: 'Task ID to fetch test attempts for'
+  end
   get '/test_attempts/latest' do
-    test = TestAttempt.order(id: :desc).first
+    # Ensure task exists
+    task = Task.find(params[:task_id])
+    if task.nil?
+      error!({ message: 'Task ID is invalid' }, 404)
+      return
+    else
+      test_attempts = TestAttempt.find_by(task_id: :task_id)
+    end
+
+    # Take the latest test attempt if there are any for this task
+    unless test_attempts.nil?
+      test = test_attempts.order(id: :desc).first
+    end
 
     if test.nil?
       test = TestAttempt.create!(
@@ -74,11 +89,26 @@ class TestAttemptsApi < Grape::API
 
   # Fetch the latest completed test result
   desc 'Get the latest completed test result'
+  params do
+    requires :task_id, type: Integer, desc: 'Task ID to fetch completed test attempt for'
+  end
   get '/test_attempts/completed-latest' do
-    test = TestAttempt.where(completed: true).order(id: :desc).first
+    # Ensure task exists
+    task = Task.find(params[:task_id])
+    if task.nil?
+      error!({ message: 'Task ID is invalid' }, 404)
+      return
+    else
+      test_attempts = TestAttempt.find_by(task_id: :task_id)
+    end
+
+    # Take the latest completed test attempt if there are any for this task
+    unless test_attempts.nil?
+      test = test_attempts.where(completed: true).order(id: :desc).first
+    end
 
     if test.nil?
-      error!({ message: 'No completed tests found' }, 404)
+      error!({ message: 'No completed tests found for this task' }, 404)
     else
       present test, with: TestAttemptEntity
     end
