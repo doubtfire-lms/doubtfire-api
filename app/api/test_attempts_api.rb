@@ -3,6 +3,11 @@ require 'grape'
 class TestAttemptsApi < Grape::API
   format :json
 
+  # Enforce authentication
+  before do
+    authenticated?
+  end
+
   # Assigning AuthenticationHelpers
   helpers AuthenticationHelpers
 
