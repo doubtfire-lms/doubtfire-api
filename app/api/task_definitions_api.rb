@@ -614,4 +614,79 @@ class TaskDefinitionsApi < Grape::API
 
     stream_file path
   end
+
+  desc 'Upload the Numbas SCORM-2004 container (zip file) for a task'
+  params do
+    requires :unit_id, type: Integer, desc: 'The related unit'
+    requires :task_def_id, type: Integer, desc: 'The related task definition'
+    requires :file, type: File, desc: 'The Numbas data container'
+  end
+  post '/units/:unit_id/task_definitions/:task_def_id/numbas_data' do
+    unit = Unit.find(params[:unit_id])
+
+    unless authorise? current_user, unit, :add_task_def
+      error!({ error: 'Not authorised to upload numbas test for the unit' }, 403)
+    end
+
+    task_def = unit.task_definitions.find(params[:task_def_id])
+
+    unless params[:file].present?
+      error!({ error: "No file uploaded" }, 403)
+    end
+
+    file_path = params[:file][:tempfile].path
+
+    check_mime_against_list! file_path, 'zip', ['application/zip', 'multipart/x-gzip', 'multipart/x-zip', 'application/x-gzip', 'application/octet-stream']
+
+    # Actually import...
+    task_def.add_numbas_data(file_path)
+    true
+  end
+
+  desc 'Download the Numbas test data'
+  params do
+    requires :unit_id, type: Integer, desc: 'The unit to modify tasks for'
+    requires :task_def_id, type: Integer, desc: 'The task definition to get the Numbas test data of'
+  end
+  get '/units/:unit_id/task_definitions/:task_def_id/numbas_data' do
+    unit = Unit.find(params[:unit_id])
+    task_def = unit.task_definitions.find(params[:task_def_id])
+
+    unless authorise? current_user, unit, :get_unit
+      error!({ error: 'Not authorised to download task details of unit' }, 403)
+    end
+
+    if task_def.has_numbas_data?
+      path = task_def.task_numbas_data
+      content_type 'application/octet-stream'
+      header['Content-Disposition'] = "attachment; filename=#{task_def.abbreviation}-numbas.zip"
+    else
+      path = Rails.root.join('public', 'resources', 'FileNotFound.pdf')
+      content_type 'application/pdf'
+      header['Content-Disposition'] = 'attachment; filename=FileNotFound.pdf'
+    end
+    header['Access-Control-Expose-Headers'] = 'Content-Disposition'
+
+    env['api.format'] = :binary
+    File.read(path)
+  end
+
+  desc 'Remove the Numbas test data for a given task'
+  params do
+    requires :unit_id, type: Integer, desc: 'The related unit'
+    requires :task_def_id, type: Integer, desc: 'The related task definition'
+  end
+  delete '/units/:unit_id/task_definitions/:task_def_id/numbas_data' do
+    unit = Unit.find(params[:unit_id])
+
+    unless authorise? current_user, unit, :add_task_def
+      error!({ error: 'Not authorised to remove task numbas data of unit' }, 403)
+    end
+
+    task_def = unit.task_definitions.find(params[:task_def_id])
+
+    # Actually remove...
+    task_def.remove_numbas_data
+    true
+  end
 end

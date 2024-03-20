@@ -384,6 +384,10 @@ class TaskDefinition < ApplicationRecord
     File.exist? task_sheet
   end
 
+  def has_numbas_data?
+    File.exist? task_numbas_data
+  end
+
   def is_graded?
     is_graded
   end
@@ -436,6 +440,16 @@ class TaskDefinition < ApplicationRecord
     end
   end
 
+  def add_numbas_data(file)
+    FileUtils.mv file, task_numbas_data
+  end
+
+  def remove_numbas_data()
+    if has_numbas_data?
+      FileUtils.rm task_numbas_data
+    end
+  end
+
   # Get the path to the task sheet - using the current abbreviation
   def task_sheet
     task_sheet_with_abbreviation(abbreviation)
@@ -447,6 +461,10 @@ class TaskDefinition < ApplicationRecord
 
   def task_assessment_resources
     task_assessment_resources_with_abbreviation(abbreviation)
+  end
+
+  def task_numbas_data
+    task_numbas_data_with_abbreviation(abbreviation)
   end
 
   def related_tasks_with_files(consolidate_groups = true)
@@ -530,6 +548,22 @@ class TaskDefinition < ApplicationRecord
 
     result_with_sanitised_path = "#{task_path}#{FileHelper.sanitized_path(abbr)}-assessment.zip"
     result_with_sanitised_file = "#{task_path}#{FileHelper.sanitized_filename(abbr)}-assessment.zip"
+
+    if File.exist? result_with_sanitised_path
+      result_with_sanitised_path
+    else
+      result_with_sanitised_file
+    end
+  end
+
+  # Calculate the path to the numbas containzer zip file using the provided abbreviation
+  # This allows the path to be calculated on abbreviation change to allow files to
+  # be moved
+  def task_numbas_data_with_abbreviation(abbr)
+    task_path = FileHelper.task_file_dir_for_unit unit, create = true
+
+    result_with_sanitised_path = "#{task_path}#{FileHelper.sanitized_path(abbr)}.numbas.zip"
+    result_with_sanitised_file = "#{task_path}#{FileHelper.sanitized_filename(abbr)}.numbas.zip"
 
     if File.exist? result_with_sanitised_path
       result_with_sanitised_path

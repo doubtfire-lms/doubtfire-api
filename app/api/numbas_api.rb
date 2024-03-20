@@ -62,18 +62,5 @@ class NumbasApi < Grape::API
       requested_file_path = "#{params[:file_path]}.#{params[:format]}"
       stream_file_from_zip(zip_path, requested_file_path)
     end
-
-    post '/uploadNumbasTest' do
-      # Ensure the uploaded file is present
-      unless params[:file] && params[:file][:tempfile]
-        error!({ error: 'File upload is missing' }, 400)
-      end
-
-      # Use the FileHelper to save the uploaded test
-      save_path = FileHelper.get_numbas_test_path(params[:unit_code], params[:task_definition_id], 'numbas_test.zip')
-      File.binwrite(save_path, params[:file][:tempfile].read)
-
-      { success: true, message: 'File uploaded successfully' }
-    end
   end
 end
