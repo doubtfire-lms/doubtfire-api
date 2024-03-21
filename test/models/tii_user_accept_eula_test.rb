@@ -63,8 +63,21 @@ class TiiUserAcceptEulaTest < ActiveSupport::TestCase
     )
 
     # Run the job
-    TiiActionJob.drain # First and second fail... first will retry... and be drained
+    TiiActionJob.drain # First fail
     action.reload
+
+    assert_requested accept_stub, times: 1
+    refute action.complete
+    assert action.retry
+
+    # Reset to retry with check progress sweep
+    action.update(last_run: DateTime.now - 31.minutes)
+
+    check_job = TiiCheckProgressJob.new
+    check_job.perform # Second fails
+    action.reload
+
+    refute user.reload.tii_eula_version_confirmed
 
     assert_requested accept_stub, times: 2
     refute action.complete
@@ -73,9 +86,7 @@ class TiiUserAcceptEulaTest < ActiveSupport::TestCase
     # Reset to retry with check progress sweep
     action.update(last_run: DateTime.now - 31.minutes, retry: true)
 
-    refute user.reload.tii_eula_version_confirmed
-
-    TiiCheckProgressJob.new.perform # Third time is a success... via check progress sweep
+    check_job.perform # Third time is a success... via check progress sweep
     action.reload
 
     assert_requested accept_stub, times: 3
