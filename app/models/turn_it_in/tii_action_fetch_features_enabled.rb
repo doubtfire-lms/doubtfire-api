@@ -63,6 +63,10 @@ class TiiActionFetchFeaturesEnabled < TiiAction
     features
   end
 
+  def self.feature_yaml_path
+    "#{FileHelper.student_work_root}/tii_feature.yml"
+  end
+
   private
 
   def run
@@ -75,7 +79,7 @@ class TiiActionFetchFeaturesEnabled < TiiAction
   end
 
   def feature_yaml_path
-    "#{FileHelper.student_work_root}/tii_feature.yml"
+    self.class.feature_yaml_path
   end
 
   def load_feature_yaml
