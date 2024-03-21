@@ -39,9 +39,8 @@ class TurnItIn
   # Launch the tii background jobs
   def self.launch_tii(with_webhooks: true)
     TiiRegisterWebHookJob.perform_async if with_webhooks
-
-    check_and_update_features
-    check_and_update_eula
+    load_tii_features
+    load_tii_eula
   end
 
   # Check if the features are up to date, and update if required
@@ -49,6 +48,11 @@ class TurnItIn
     # Get or create the
     feature_job = TiiActionFetchFeaturesEnabled.last || TiiActionFetchFeaturesEnabled.create
     feature_job.perform if feature_job.update_required?
+  end
+
+  def self.load_tii_features
+    feature_job = TiiActionFetchFeaturesEnabled.last || TiiActionFetchFeaturesEnabled.create
+    feature_job.fetch_features_enabled
   end
 
   # A global error indicates that tii is not configured correctly or a change in the
@@ -137,6 +141,11 @@ class TurnItIn
     eula_job = TiiActionFetchEula.last || TiiActionFetchEula.create
     eula_job.fetch_eula_version unless eula_job.eula? # Load into cache if not loaded
     eula_job.perform if eula_job.update_required? # Update if needed
+  end
+
+  def self.load_tii_eula
+    eula_job = TiiActionFetchEula.last || TiiActionFetchEula.create
+    eula_job.fetch_eula_version
   end
 
   # Return the url used for webhook callbacks
