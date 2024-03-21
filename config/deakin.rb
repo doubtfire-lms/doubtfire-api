@@ -265,10 +265,37 @@ class DeakinInstitutionSettings
 
       username_user
     elsif username_user.present? && student_id_user.present?
-      # Both present, but different
+      # Both present, but different...
+      # Most likely updated username with existing student id
+      if username_user.projects.count == 0 && student_id_user.projects.count > 0
+        # Change the student id user to use the new username and email
+        student_id_user.username = username_user.username
+        student_id_user.email = username_user.email
+        student_id_user.login_id = nil
+        student_id_user.auth_tokens.destroy_all
 
-      logger.error("Unable to fix user #{row_data} - both username and student id users present. Need manual fix.")
-      nil
+        # Correct the new username user record - so we mark this as a duplicate and move to the old record
+        username_user.username = "OLD-#{username_user.username}"
+        username_user.email = "DUP-#{username_user.email}"
+        username_user.login_id = nil
+
+        unless username_user.save
+          logger.error("Unable to fix user #{row_data} - username_user.save failed")
+          return nil
+        end
+        username_user.auth_tokens.destroy_all
+
+        unless student_id_user.save
+          logger.error("Unable to fix user #{row_data} - student_id_user.save failed")
+          return nil
+        end
+
+        # We keep the student id user... so return this
+        student_id_user
+      else
+        logger.error("Unable to fix user #{row_data} - both username and student id users present. Need manual fix.")
+        nil
+      end
     else
       logger.error("Unable to fix user #{row_data} - Need manual fix.")
       nil
