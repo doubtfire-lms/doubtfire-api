@@ -27,8 +27,12 @@ class TiiActionFetchEula < TiiAction
     Rails.cache.exist?('tii.eula_version')
   end
 
-  def eula_yaml_path
+  def self.eula_yaml_path
     "#{FileHelper.student_work_root}/tii_eula.yml"
+  end
+
+  def eula_yaml_path
+    self.class.eula_yaml_path
   end
 
   def load_eula_yaml

@@ -20,6 +20,7 @@ module TestHelpers
     end
 
     def clear_tii_festures_enabled
+      FileUtils.rm TiiActionFetchFeaturesEnabled.feature_yaml_path if File.exist?(TiiActionFetchFeaturesEnabled.feature_yaml_path)
       TiiActionFetchFeaturesEnabled.last.destroy
       Rails.cache.delete('tii.features_enabled')
     end
@@ -79,6 +80,8 @@ module TestHelpers
     end
 
     def clear_tii_eula
+      FileUtils.rm TiiActionFetchEula.eula_yaml_path if File.exist?(TiiActionFetchEula.eula_yaml_path)
+
       TiiActionFetchEula.last.destroy
       Rails.cache.delete('tii.eula_version')
     end
