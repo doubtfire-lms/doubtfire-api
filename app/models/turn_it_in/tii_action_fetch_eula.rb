@@ -34,7 +34,7 @@ class TiiActionFetchEula < TiiAction
   def load_eula_yaml
     require 'yaml' # Built in, no gem required
     YAML::load_file(eula_yaml_path, permitted_classes: [Time, DateTime, TCAClient::EulaVersion]) if File.exist?(eula_yaml_path) # Load
-  rescue
+  rescue StandardError
     nil
   end
 
@@ -81,6 +81,7 @@ class TiiActionFetchEula < TiiAction
     if data && data['eula'] && data['expire'] && data['expire'] > DateTime.now
       # update cache
       Rails.cache.write('tii.eula_version', data['eula'], expires_in: 48.hours)
+      fetch_eula_html(data['eula'].version)
       true
     else
       fetch_eula_from_tii
