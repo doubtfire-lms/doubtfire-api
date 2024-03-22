@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [8.0.0-3](https://github.com/macite/doubtfire-deploy/compare/v8.0.0-2...v8.0.0-3) (2024-03-22)
+
+
+### Bug Fixes
+
+* ensure redis is in dockerfile ([c37f5ba](https://github.com/macite/doubtfire-deploy/commit/c37f5ba0e78fbbb6fb1f7423f8b1bbabb557f761))
+* revert new tii action field to text from json ([72a8f18](https://github.com/macite/doubtfire-deploy/commit/72a8f18c31a3b5476f4f7b414b54cf47e3db8087))
+
 ## [8.0.0-2](https://github.com/doubtfire-lms/doubtfire-deploy/compare/v8.0.0-1...v8.0.0-2) (2024-03-22)
 
 
