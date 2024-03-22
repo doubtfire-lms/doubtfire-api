@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [7.0.23](https://github.com/macite/doubtfire-deploy/compare/v7.0.22...v7.0.23) (2024-03-22)
+
+
+### Bug Fixes
+
+* deakin username change for student id ([1445ddf](https://github.com/macite/doubtfire-deploy/commit/1445ddfa26fc207609f40f84e8f8f92145e0e8cc))
+
 ### [7.0.22](https://github.com/macite/doubtfire-deploy/compare/v7.0.21...v7.0.22) (2023-12-01)
 
 
