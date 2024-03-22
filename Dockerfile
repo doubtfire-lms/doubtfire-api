@@ -22,6 +22,7 @@ RUN apt-get update \
     python3-pygments \
     tzdata \
     wget \
+    redis \
     libc6-dev \
     inkscape \
     docker-ce \
