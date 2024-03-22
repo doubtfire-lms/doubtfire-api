@@ -20,7 +20,7 @@ class TiiCheckProgressJob
       action.perform
 
       # Stop if the service is not available
-      break if action.status == :service_not_available
+      break if action.error_code == :service_not_available
 
       # Sleep to ensure requests are performed at a rate of well below 100 per minute
       sleep(2)
