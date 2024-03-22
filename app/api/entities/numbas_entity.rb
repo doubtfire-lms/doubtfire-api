@@ -1,4 +1,3 @@
-
 module Entities
   class NumbasEntity < Grape::Entity
     expose :file_content, documentation: { type: 'string', desc: 'File content' }

@@ -76,7 +76,6 @@ class ApiRoot < Grape::API
   mount Tii::TiiGroupAttachmentApi
   mount Tii::TiiActionApi
 
-
   mount NumbasApi
   mount TestAttemptsApi
   mount CampusesPublicApi

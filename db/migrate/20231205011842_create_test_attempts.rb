@@ -1,7 +1,7 @@
 class CreateTestAttempts < ActiveRecord::Migration[7.0]
   def change
     create_table :test_attempts do |t|
-      t.references :task, foreign_key: true
+      t.references :task
       t.string :name
       t.integer :attempt_number, default: 1, null: false
       t.boolean :pass_status
