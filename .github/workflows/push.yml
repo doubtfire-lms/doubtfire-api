@@ -19,6 +19,7 @@ env:
   DF_ENCRYPTION_DETERMINISTIC_KEY: "anlmuJ6cB3bN3biXRbYvmPsC5ALPFqGG"
   DF_ENCRYPTION_KEY_DERIVATION_SALT: "hzPR8D4qpOnAg7VeAhkhWw6JmmzKJB10"
 
+
 jobs:
   unit-tests:
     runs-on: ubuntu-latest
@@ -34,17 +35,17 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-      - name: Build base doubtfire-api development image
-        uses: docker/build-push-action@v3
-        with:
-          context: .
-          push: false
-          load: true
-          tags: doubtfire-api-development:local
+      # - name: Build base doubtfire-api development image
+      #   uses: docker/build-push-action@v3
+      #   with:
+      #     context: .
+      #     push: false
+      #     load: true
+      #     tags: doubtfire-api-development:local
       - name: Populate database
         uses: addnab/docker-run-action@v3
         with:
-          image: doubtfire-api-development:local
+          image: lmsdoubtfire/formatif-devcontainer:8.3-dev
           options: >
             -v ${{ github.workspace }}:/doubtfire
             -e RAILS_ENV
@@ -67,7 +68,7 @@ jobs:
       - name: Run rake tests
         uses: addnab/docker-run-action@v3
         with:
-          image: doubtfire-api-development:local
+          image: lmsdoubtfire/formatif-devcontainer:8.3-dev
           options: >
             -v ${{ github.workspace }}:/doubtfire
             -e RAILS_ENV
