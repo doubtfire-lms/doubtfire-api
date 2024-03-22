@@ -84,7 +84,7 @@ class TiiActionFetchFeaturesEnabled < TiiAction
 
   def load_feature_yaml
     require 'yaml' # Built in, no gem required
-    YAML::load_file(feature_yaml_path, permitted_classes: [DateTime, Time, TCAClient::FeaturesEnabled, TCAClient::FeaturesSimilarity, TCAClient::FeaturesViewerModes, TCAClient::FeaturesGenerationSettings, TCAClient::FeaturesSimilarityViewSettings, TCAClient::FeaturesTenant]) if File.exist?(feature_yaml_path)  # Load
+    YAML.load_file(feature_yaml_path, permitted_classes: [DateTime, Time, TCAClient::FeaturesEnabled, TCAClient::FeaturesSimilarity, TCAClient::FeaturesViewerModes, TCAClient::FeaturesGenerationSettings, TCAClient::FeaturesSimilarityViewSettings, TCAClient::FeaturesTenant]) if File.exist?(feature_yaml_path) # Load
   rescue StandardError
     nil
   end
