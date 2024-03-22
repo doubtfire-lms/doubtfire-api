@@ -250,10 +250,11 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_28_223908) do
     t.bigint "overseer_image_id"
     t.string "tii_group_id"
     t.string "moss_language"
-    t.boolean "has_test", default: false
-    t.boolean "restrict_attempts", default: false
-    t.integer "delay_restart_minutes"
-    t.boolean "retake_on_resubmit", default: false
+    t.boolean "has_enabled_numbas_test", default: false
+    t.boolean "has_unlimited_retries_for_numbas", default: false
+    t.boolean "has_time_delay_for_numbas", default: false
+    t.boolean "is_numbas_restricted_to_1_attempt", default: false
+    t.string "numbas_time_delay"
     t.index ["group_set_id"], name: "index_task_definitions_on_group_set_id"
     t.index ["overseer_image_id"], name: "index_task_definitions_on_overseer_image_id"
     t.index ["tutorial_stream_id"], name: "index_task_definitions_on_tutorial_stream_id"

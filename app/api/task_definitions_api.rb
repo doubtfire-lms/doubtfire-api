@@ -15,24 +15,29 @@ class TaskDefinitionsApi < Grape::API
   desc 'Add a new task definition to the given unit'
   params do
     requires :task_def, type: Hash do
-      optional :tutorial_stream_abbr,     type: String,   desc: 'The abbreviation of tutorial stream'
-      requires :name,                     type: String,   desc: 'The name of this task def'
-      requires :description,              type: String,   desc: 'The description of this task def'
-      requires :weighting,                type: Integer,  desc: 'The weighting of this task'
-      requires :target_grade,             type: Integer,  desc: 'Minimum grade for task'
-      optional :group_set_id,             type: Integer,  desc: 'Related group set'
-      requires :start_date,               type: Date,     desc: 'The date when the task should be started'
-      requires :target_date,              type: Date,     desc: 'The date when the task is due'
-      optional :due_date,                 type: Date,     desc: 'The deadline date'
-      requires :abbreviation,             type: String,   desc: 'The abbreviation of the task'
-      requires :restrict_status_updates,  type: Boolean,  desc: 'Restrict updating of the status to staff'
-      optional :upload_requirements,      type: String,   desc: 'Task file upload requirements'
-      requires :plagiarism_warn_pct,      type: Integer,  desc: 'The percent at which to record and warn about plagiarism'
-      requires :is_graded,                type: Boolean,  desc: 'Whether or not this task definition is a graded task'
-      requires :max_quality_pts,          type: Integer,  desc: 'A range for quality points when quality is assessed'
-      optional :assessment_enabled,       type: Boolean,  desc: 'Enable or disable assessment'
-      optional :overseer_image_id,        type: Integer,  desc: 'The id of the Docker image for overseer'
-      optional :moss_language,            type: String,   desc: 'The language to use for code similarity checks'
+      optional :tutorial_stream_abbr,               type: String,   desc: 'The abbreviation of tutorial stream'
+      requires :name,                               type: String,   desc: 'The name of this task def'
+      requires :description,                        type: String,   desc: 'The description of this task def'
+      requires :weighting,                          type: Integer,  desc: 'The weighting of this task'
+      requires :target_grade,                       type: Integer,  desc: 'Minimum grade for task'
+      optional :group_set_id,                       type: Integer,  desc: 'Related group set'
+      requires :start_date,                         type: Date,     desc: 'The date when the task should be started'
+      requires :target_date,                        type: Date,     desc: 'The date when the task is due'
+      optional :due_date,                           type: Date,     desc: 'The deadline date'
+      requires :abbreviation,                       type: String,   desc: 'The abbreviation of the task'
+      requires :restrict_status_updates,            type: Boolean,  desc: 'Restrict updating of the status to staff'
+      optional :upload_requirements,                type: String,   desc: 'Task file upload requirements'
+      requires :plagiarism_warn_pct,                type: Integer,  desc: 'The percent at which to record and warn about plagiarism'
+      requires :has_enabled_numbas_test,            type: Boolean,  desc: 'Whether or not Numbas test assessment is enabled for this task'
+      requires :has_unlimited_retries_for_numbas,   type: Boolean,  desc: 'Whether or not the Numbas test can be attempted unlimited times'
+      requires :has_time_delay_for_numbas,          type: Boolean,  desc: 'Whether or not there is a time delay between Numbas test attempts'
+      requires :is_numbas_restricted_to_1_attempt,  type: Boolean,  desc: 'Whether or not the Numbas test is restricted to 1 attempt'
+      requires :numbas_time_delay,                  type: String,   desc: 'The time delay between Numbas test attempts'
+      requires :is_graded,                          type: Boolean,  desc: 'Whether or not this task definition is a graded task'
+      requires :max_quality_pts,                    type: Integer,  desc: 'A range for quality points when quality is assessed'
+      optional :assessment_enabled,                 type: Boolean,  desc: 'Enable or disable assessment'
+      optional :overseer_image_id,                  type: Integer,  desc: 'The id of the Docker image for overseer'
+      optional :moss_language,                      type: String,   desc: 'The language to use for code similarity checks'
     end
   end
   post '/units/:unit_id/task_definitions/' do
@@ -57,6 +62,11 @@ class TaskDefinitionsApi < Grape::API
                                                 :abbreviation,
                                                 :restrict_status_updates,
                                                 :plagiarism_warn_pct,
+                                                :has_enabled_numbas_test,
+                                                :has_unlimited_retries_for_numbas,
+                                                :has_time_delay_for_numbas,
+                                                :is_numbas_restricted_to_1_attempt,
+                                                :numbas_time_delay,
                                                 :is_graded,
                                                 :max_quality_pts,
                                                 :assessment_enabled,
@@ -93,24 +103,29 @@ class TaskDefinitionsApi < Grape::API
   params do
     requires :id, type: Integer, desc: 'The task id to edit'
     requires :task_def, type: Hash do
-      optional :tutorial_stream_abbr,     type: String,   desc: 'The abbreviation of the tutorial stream'
-      optional :name,                     type: String,   desc: 'The name of this task def'
-      optional :description,              type: String,   desc: 'The description of this task def'
-      optional :weighting,                type: Integer,  desc: 'The weighting of this task'
-      optional :target_grade,             type: Integer,  desc: 'Target grade for task'
-      optional :group_set_id,             type: Integer,  desc: 'Related group set'
-      optional :start_date,               type: Date,     desc: 'The date when the task should be started'
-      optional :target_date,              type: Date,     desc: 'The date when the task is due'
-      optional :due_date,                 type: Date,     desc: 'The deadline date'
-      optional :abbreviation,             type: String,   desc: 'The abbreviation of the task'
-      optional :restrict_status_updates,  type: Boolean,  desc: 'Restrict updating of the status to staff'
-      optional :upload_requirements,      type: String,   desc: 'Task file upload requirements'
-      optional :plagiarism_warn_pct,      type: Integer,  desc: 'The percent at which to record and warn about plagiarism'
-      optional :is_graded,                type: Boolean,  desc: 'Whether or not this task definition is a graded task'
-      optional :max_quality_pts,          type: Integer,  desc: 'A range for quality points when quality is assessed'
-      optional :assessment_enabled,       type: Boolean,  desc: 'Enable or disable assessment'
-      optional :overseer_image_id,        type: Integer,  desc: 'The id of the Docker image name for overseer'
-      optional :moss_language,            type: String,   desc: 'The language to use for code similarity checks'
+      optional :tutorial_stream_abbr,               type: String,   desc: 'The abbreviation of the tutorial stream'
+      optional :name,                               type: String,   desc: 'The name of this task def'
+      optional :description,                        type: String,   desc: 'The description of this task def'
+      optional :weighting,                          type: Integer,  desc: 'The weighting of this task'
+      optional :target_grade,                       type: Integer,  desc: 'Target grade for task'
+      optional :group_set_id,                       type: Integer,  desc: 'Related group set'
+      optional :start_date,                         type: Date,     desc: 'The date when the task should be started'
+      optional :target_date,                        type: Date,     desc: 'The date when the task is due'
+      optional :due_date,                           type: Date,     desc: 'The deadline date'
+      optional :abbreviation,                       type: String,   desc: 'The abbreviation of the task'
+      optional :restrict_status_updates,            type: Boolean,  desc: 'Restrict updating of the status to staff'
+      optional :upload_requirements,                type: String,   desc: 'Task file upload requirements'
+      optional :plagiarism_warn_pct,                type: Integer,  desc: 'The percent at which to record and warn about plagiarism'
+      optional :has_enabled_numbas_test,            type: Boolean,  desc: 'Whether or not Numbas test assessment is enabled for this task'
+      optional :has_unlimited_retries_for_numbas,   type: Boolean,  desc: 'Whether or not the Numbas test can be attempted unlimited times'
+      optional :has_time_delay_for_numbas,          type: Boolean,  desc: 'Whether or not there is a time delay between Numbas test attempts'
+      optional :is_numbas_restricted_to_1_attempt,  type: Boolean,  desc: 'Whether or not the Numbas test is restricted to 1 attempt'
+      optional :numbas_time_delay,                  type: String,   desc: 'The time delay between Numbas test attempts'
+      optional :is_graded,                          type: Boolean,  desc: 'Whether or not this task definition is a graded task'
+      optional :max_quality_pts,                    type: Integer,  desc: 'A range for quality points when quality is assessed'
+      optional :assessment_enabled,                 type: Boolean,  desc: 'Enable or disable assessment'
+      optional :overseer_image_id,                  type: Integer,  desc: 'The id of the Docker image name for overseer'
+      optional :moss_language,                      type: String,   desc: 'The language to use for code similarity checks'
     end
   end
   put '/units/:unit_id/task_definitions/:id' do
@@ -134,6 +149,11 @@ class TaskDefinitionsApi < Grape::API
                                                 :abbreviation,
                                                 :restrict_status_updates,
                                                 :plagiarism_warn_pct,
+                                                :has_enabled_numbas_test,
+                                                :has_unlimited_retries_for_numbas,
+                                                :has_time_delay_for_numbas,
+                                                :is_numbas_restricted_to_1_attempt,
+                                                :numbas_time_delay,
                                                 :is_graded,
                                                 :max_quality_pts,
                                                 :assessment_enabled,

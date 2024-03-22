@@ -95,6 +95,10 @@ class TaskDefinition < ApplicationRecord
       new_td.add_task_resources(task_resources, copy: true)
     end
 
+    if has_numbas_data?
+      new_td.add_numbas_data(task_numbas_data, copy: true)
+    end
+
     new_td.save!
 
     new_td
@@ -132,6 +136,10 @@ class TaskDefinition < ApplicationRecord
 
     if File.exist? task_assessment_resources_with_abbreviation(old_abbr)
       FileUtils.mv(task_assessment_resources_with_abbreviation(old_abbr), task_assessment_resources())
+    end
+
+    if File.exist? task_numbas_data_with_abbreviation(old_abbr)
+      FileUtils.mv(task_numbas_data_with_abbreviation(old_abbr), task_numbas_data())
     end
   end
 
@@ -292,7 +300,7 @@ class TaskDefinition < ApplicationRecord
   end
 
   def self.csv_columns
-    [:name, :abbreviation, :description, :weighting, :target_grade, :restrict_status_updates, :max_quality_pts, :is_graded, :plagiarism_warn_pct, :group_set, :upload_requirements, :start_week, :start_day, :target_week, :target_day, :due_week, :due_day, :tutorial_stream]
+    [:name, :abbreviation, :description, :weighting, :target_grade, :restrict_status_updates, :max_quality_pts, :is_graded, :plagiarism_warn_pct, :group_set, :upload_requirements, :has_enabled_numbas_test, :has_unlimited_retries_for_numbas, :has_time_delay_for_numbas, :is_numbas_restricted_to_1_attempt, :numbas_time_delay, :start_week, :start_day, :target_week, :target_day, :due_week, :due_day, :tutorial_stream]
   end
 
   def self.task_def_for_csv_row(unit, row)
@@ -324,21 +332,27 @@ class TaskDefinition < ApplicationRecord
       new_task = true
     end
 
-    result.name                        = name
-    result.unit_id                     = unit.id
-    result.abbreviation                = abbreviation
-    result.description                 = "#{row[:description]}".strip
-    result.weighting                   = row[:weighting].to_i
-    result.target_grade                = row[:target_grade].to_i
-    result.restrict_status_updates     = %w(Yes y Y yes true TRUE 1).include? "#{row[:restrict_status_updates]}".strip
-    result.max_quality_pts             = row[:max_quality_pts].to_i
-    result.is_graded                   = %w(Yes y Y yes true TRUE 1).include? "#{row[:is_graded]}".strip
-    result.start_date                  = start_date
-    result.target_date                 = target_date
-    result.upload_requirements         = JSON.parse(row[:upload_requirements]) unless row[:upload_requirements].nil?
-    result.due_date                    = due_date
+    result.name                               = name
+    result.unit_id                            = unit.id
+    result.abbreviation                       = abbreviation
+    result.description                        = "#{row[:description]}".strip
+    result.weighting                          = row[:weighting].to_i
+    result.target_grade                       = row[:target_grade].to_i
+    result.restrict_status_updates            = %w(Yes y Y yes true TRUE 1).include? "#{row[:restrict_status_updates]}".strip
+    result.max_quality_pts                    = row[:max_quality_pts].to_i
+    result.is_graded                          = %w(Yes y Y yes true TRUE 1).include? "#{row[:is_graded]}".strip
+    result.start_date                         = start_date
+    result.target_date                        = target_date
+    result.upload_requirements                = JSON.parse(row[:upload_requirements]) unless row[:upload_requirements].nil?
+    result.due_date                           = due_date
 
-    result.plagiarism_warn_pct         = row[:plagiarism_warn_pct].to_i
+    result.has_enabled_numbas_test            = %w(Yes y Y yes true TRUE 1).include? "#{row[:has_enabled_numbas_test]}".strip
+    result.has_unlimited_retries_for_numbas   = %w(Yes y Y yes true TRUE 1).include? "#{row[:has_unlimited_retries_for_numbas]}".strip
+    result.has_time_delay_for_numbas          = %w(Yes y Y yes true TRUE 1).include? "#{row[:has_time_delay_for_numbas]}".strip
+    result.is_numbas_restricted_to_1_attempt  = %w(Yes y Y yes true TRUE 1).include? "#{row[:is_numbas_restricted_to_1_attempt]}".strip
+    result.numbas_time_delay                  = "#{row[:numbas_time_delay]}".strip
+
+    result.plagiarism_warn_pct                = row[:plagiarism_warn_pct].to_i
 
     if row[:group_set].present?
       result.group_set = unit.group_sets.where(name: row[:group_set]).first
@@ -386,6 +400,26 @@ class TaskDefinition < ApplicationRecord
 
   def has_numbas_data?
     File.exist? task_numbas_data
+  end
+
+  def has_enabled_numbas_test?
+    has_enabled_numbas_test
+  end
+
+  def has_unlimited_retries_for_numbas?
+    has_unlimited_retries_for_numbas
+  end
+
+  def has_time_delay_for_numbas?
+    has_time_delay_for_numbas
+  end
+
+  def is_numbas_restricted_to_1_attempt?
+    is_numbas_restricted_to_1_attempt
+  end
+
+  def numbas_time_delay?
+    numbas_time_delay
   end
 
   def is_graded?
@@ -440,8 +474,12 @@ class TaskDefinition < ApplicationRecord
     end
   end
 
-  def add_numbas_data(file)
-    FileUtils.mv file, task_numbas_data
+  def add_numbas_data(file, copy: false)
+    if copy
+      FileUtils.cp file, task_numbas_data
+    else
+      FileUtils.mv file, task_numbas_data
+    end
   end
 
   def remove_numbas_data()
@@ -509,6 +547,7 @@ class TaskDefinition < ApplicationRecord
     remove_task_sheet()
     remove_task_resources()
     remove_task_assessment_resources()
+    remove_numbas_data()
   end
 
   # Calculate the path to the task sheet using the provided abbreviation

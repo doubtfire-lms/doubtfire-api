@@ -39,6 +39,12 @@ module Entities
     expose :has_task_sheet?, as: :has_task_sheet
     expose :has_task_resources?, as: :has_task_resources
     expose :has_task_assessment_resources?, as: :has_task_assessment_resources, if: ->(unit, options) { staff?(options[:my_role]) }
+    expose :has_numbas_data?, as: :has_numbas_data
+    expose :has_enabled_numbas_test, if: ->(unit, options) { staff?(options[:my_role]) }
+    expose :has_unlimited_retries_for_numbas, if: ->(unit, options) { staff?(options[:my_role]) }
+    expose :has_time_delay_for_numbas, if: ->(unit, options) { staff?(options[:my_role]) }
+    expose :is_numbas_restricted_to_1_attempt, if: ->(unit, options) { staff?(options[:my_role]) }
+    expose :numbas_time_delay, if: ->(unit, options) { staff?(options[:my_role]) }
     expose :is_graded
     expose :max_quality_pts
     expose :overseer_image_id, if: ->(unit, options) { staff?(options[:my_role]) }
