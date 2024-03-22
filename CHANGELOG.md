@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [8.0.0-2](https://github.com/doubtfire-lms/doubtfire-deploy/compare/v8.0.0-1...v8.0.0-2) (2024-03-22)
+
+
+### Bug Fixes
+
+* remove switch to json db format ([1b789a2](https://github.com/doubtfire-lms/doubtfire-deploy/commit/1b789a2194b745a6f91f8989c12c9387932ca70c))
+
 ## [8.0.0-1](https://github.com/macite/doubtfire-deploy/compare/v8.0.0-0...v8.0.0-1) (2024-03-21)
 
 ## [8.0.0-0](https://github.com/macite/doubtfire-deploy/compare/v7.0.22...v8.0.0-0) (2024-03-21)
