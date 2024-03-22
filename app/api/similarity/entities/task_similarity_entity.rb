@@ -20,7 +20,9 @@ module Similarity
         result = [
           {
             idx: 0,
-            format: has_resource ? (similarity.type == 'MossTaskSimilarity' ? 'html' : 'pdf') : nil,
+            format: if has_resource
+                      similarity.type == 'MossTaskSimilarity' ? 'html' : 'pdf'
+                    end,
             description: "#{similarity.student.name} (#{similarity.student.username}) - #{similarity.pct}%"
           }
         ]

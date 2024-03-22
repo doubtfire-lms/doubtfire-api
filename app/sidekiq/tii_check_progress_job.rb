@@ -27,4 +27,3 @@ class TiiCheckProgressJob
     end
   end
 end
-

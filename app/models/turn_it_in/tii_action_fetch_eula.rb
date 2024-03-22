@@ -37,7 +37,7 @@ class TiiActionFetchEula < TiiAction
 
   def load_eula_yaml
     require 'yaml' # Built in, no gem required
-    YAML::load_file(eula_yaml_path, permitted_classes: [Time, DateTime, TCAClient::EulaVersion]) if File.exist?(eula_yaml_path) # Load
+    YAML.load_file(eula_yaml_path, permitted_classes: [Time, DateTime, TCAClient::EulaVersion]) if File.exist?(eula_yaml_path) # Load
   rescue StandardError
     nil
   end
