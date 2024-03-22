@@ -563,14 +563,25 @@ class DatabasePopulator
   # Generates tasks for the given unit
   #
   def generate_tasks_for_unit(unit, unit_details)
-    if File.exist? Rails.root.join('test_files', "#{unit.code}-Tasks.csv")
-      echo "----> Importing tasks from CSV"
-      unit.import_tasks_from_csv File.open(Rails.root.join('test_files', "#{unit.code}-Tasks.csv"))
-      unit.import_task_files_from_zip Rails.root.join('test_files', "#{unit.code}-Tasks.zip")
+    csv_to_import = Rails.root.join('test_files', "#{unit.code}-Tasks.csv")
+    zip_to_import = Rails.root.join('test_files', "#{unit.code}-Tasks.zip")
+
+    if (File.exist? csv_to_import) && (File.exist? zip_to_import)
+      echo "----> CSV file found, importing tasks from #{csv_to_import} \n"
+      result = unit.import_tasks_from_csv File.open(csv_to_import)
+      unless result[:errors].empty?
+        raise("----> Task import from CSV failed with the following errors: #{result[:errors]} \n")
+      end
+
+      echo "----> Importing task files from #{zip_to_import} \n"
+      result = unit.import_task_files_from_zip zip_to_import
+      unless result[:errors].empty?
+        raise("----> Task files import failed with the following errors: #{result[:errors]} \n")
+      end
       return
     end
 
-    echo "----> Generating #{unit_details[:num_tasks]} tasks"
+    echo "----> Task csv and/or zip file not found, generating #{unit_details[:num_tasks]} tasks \n"
 
     unit_details[:num_tasks].times do |count|
       up_reqs = []
@@ -602,7 +613,7 @@ class DatabasePopulator
   #
   def generate_and_align_ilos_for_unit(unit, unit_details)
     # Create the ILOs
-    echo "----> Adding #{unit_details[:ilos]} ILOs"
+    echo "----> Adding #{unit_details[:ilos]} ILOs\n"
 
     if File.exist? Rails.root.join('test_files', "#{unit.code}-Outcomes.csv")
       unit.import_outcomes_from_csv File.open(Rails.root.join('test_files', "#{unit.code}-Outcomes.csv"))
