@@ -304,8 +304,8 @@ class TaskDefinition < ApplicationRecord
   def self.csv_columns
     [:name, :abbreviation, :description, :weighting, :target_grade, :restrict_status_updates, :max_quality_pts,
      :is_graded, :plagiarism_warn_pct, :group_set, :upload_requirements, :has_enabled_numbas_test,
-     :numbas_time_delay, :numbas_attempt_limit, :start_week, :start_day, :target_week, :target_day, :due_week, :due_day,
-     :tutorial_stream]
+     :has_numbas_time_delay, :numbas_attempt_limit, :start_week, :start_day, :target_week, :target_day, :due_week,
+     :due_day, :tutorial_stream]
   end
 
   def self.task_def_for_csv_row(unit, row)
@@ -352,7 +352,7 @@ class TaskDefinition < ApplicationRecord
     result.due_date                    = due_date
 
     result.has_enabled_numbas_test     = %w(Yes y Y yes true TRUE 1).include? "#{row[:has_enabled_numbas_test]}".strip
-    result.numbas_time_delay           = "#{row[:numbas_time_delay]}".strip
+    result.has_numbas_time_delay       = %w(Yes y Y yes true TRUE 1).include? "#{row[:has_numbas_time_delay]}".strip
     result.numbas_attempt_limit        = row[:numbas_attempt_limit].to_i
 
     result.plagiarism_warn_pct         = row[:plagiarism_warn_pct].to_i
@@ -409,8 +409,8 @@ class TaskDefinition < ApplicationRecord
     has_enabled_numbas_test
   end
 
-  def numbas_time_delay?
-    numbas_time_delay
+  def has_numbas_time_delay?
+    has_numbas_time_delay
   end
 
   def numbas_attempt_limit?
@@ -611,7 +611,7 @@ class TaskDefinition < ApplicationRecord
   def reset_numbas_configs_if_no_zip()
     if !has_numbas_data?
       self.has_enabled_numbas_test = false
-      self.numbas_time_delay = 'no delay'
+      self.has_numbas_time_delay = false
       self.numbas_attempt_limit = 0
     end
   end

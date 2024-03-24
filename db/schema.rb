@@ -251,7 +251,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_28_223908) do
     t.string "tii_group_id"
     t.string "moss_language"
     t.boolean "has_enabled_numbas_test", default: false
-    t.string "numbas_time_delay"
+    t.boolean "has_numbas_time_delay", default: false
     t.integer "numbas_attempt_limit"
     t.index ["group_set_id"], name: "index_task_definitions_on_group_set_id"
     t.index ["overseer_image_id"], name: "index_task_definitions_on_overseer_image_id"

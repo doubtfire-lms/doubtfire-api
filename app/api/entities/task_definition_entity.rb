@@ -41,7 +41,7 @@ module Entities
     expose :has_task_assessment_resources?, as: :has_task_assessment_resources, if: ->(unit, options) { staff?(options[:my_role]) }
     expose :has_numbas_data?, as: :has_numbas_data
     expose :has_enabled_numbas_test, if: ->(unit, options) { staff?(options[:my_role]) }
-    expose :numbas_time_delay, if: ->(unit, options) { staff?(options[:my_role]) }
+    expose :has_numbas_time_delay, if: ->(unit, options) { staff?(options[:my_role]) }
     expose :numbas_attempt_limit, if: ->(unit, options) { staff?(options[:my_role]) }
     expose :is_graded
     expose :max_quality_pts

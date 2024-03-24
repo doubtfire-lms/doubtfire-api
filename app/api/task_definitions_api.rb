@@ -29,7 +29,7 @@ class TaskDefinitionsApi < Grape::API
       optional :upload_requirements,      type: String,   desc: 'Task file upload requirements'
       requires :plagiarism_warn_pct,      type: Integer,  desc: 'The percent at which to record and warn about plagiarism'
       requires :has_enabled_numbas_test,  type: Boolean,  desc: 'Whether or not Numbas test assessment is enabled for this task'
-      requires :numbas_time_delay,        type: String,   desc: 'The time delay between Numbas test attempts'
+      requires :has_numbas_time_delay,    type: Boolean,  desc: 'Whether or not there is an incremental time delay between Numbas test attempts'
       requires :numbas_attempt_limit,     type: Integer,  desc: 'The number of times a Numbas test can be attempted'
       requires :is_graded,                type: Boolean,  desc: 'Whether or not this task definition is a graded task'
       requires :max_quality_pts,          type: Integer,  desc: 'A range for quality points when quality is assessed'
@@ -61,7 +61,7 @@ class TaskDefinitionsApi < Grape::API
                                                 :restrict_status_updates,
                                                 :plagiarism_warn_pct,
                                                 :has_enabled_numbas_test,
-                                                :numbas_time_delay,
+                                                :has_numbas_time_delay,
                                                 :numbas_attempt_limit,
                                                 :is_graded,
                                                 :max_quality_pts,
@@ -113,7 +113,7 @@ class TaskDefinitionsApi < Grape::API
       optional :upload_requirements,      type: String,   desc: 'Task file upload requirements'
       optional :plagiarism_warn_pct,      type: Integer,  desc: 'The percent at which to record and warn about plagiarism'
       optional :has_enabled_numbas_test,  type: Boolean,  desc: 'Whether or not Numbas test assessment is enabled for this task'
-      optional :numbas_time_delay,        type: String,   desc: 'The time delay between Numbas test attempts'
+      optional :has_numbas_time_delay,    type: Boolean,  desc: 'Whether or not there is an incremental time delay between Numbas test attempts'
       optional :numbas_attempt_limit,     type: Integer,  desc: 'The number of times a Numbas test can be attempted'
       optional :is_graded,                type: Boolean,  desc: 'Whether or not this task definition is a graded task'
       optional :max_quality_pts,          type: Integer,  desc: 'A range for quality points when quality is assessed'
@@ -144,7 +144,7 @@ class TaskDefinitionsApi < Grape::API
                                                 :restrict_status_updates,
                                                 :plagiarism_warn_pct,
                                                 :has_enabled_numbas_test,
-                                                :numbas_time_delay,
+                                                :has_numbas_time_delay,
                                                 :numbas_attempt_limit,
                                                 :is_graded,
                                                 :max_quality_pts,
