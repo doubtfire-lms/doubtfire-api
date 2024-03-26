@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [7.0.24](https://github.com/doubtfire-lms/doubtfire-deploy/compare/v7.0.23...v7.0.24) (2024-03-26)
+
+
+### Bug Fixes
+
+* ensure that tagpdf is installed in latex ([d1f2197](https://github.com/doubtfire-lms/doubtfire-deploy/commit/d1f2197e882038ef095b98a4558644e0c4c4bd33))
+
 ### [7.0.23](https://github.com/macite/doubtfire-deploy/compare/v7.0.22...v7.0.23) (2024-03-22)
 
 
