@@ -270,6 +270,7 @@ GEM
       ast (~> 2.4.1)
       racc
     pkg-config (1.5.6)
+    prism (0.24.0)
     psych (5.1.2)
       stringio
     public_suffix (5.0.4)
@@ -388,6 +389,10 @@ GEM
       rubocop (>= 1.33.0, < 2.0)
       rubocop-ast (>= 1.30.0, < 2.0)
     ruby-filemagic (0.7.3)
+    ruby-lsp (0.14.6)
+      language_server-protocol (~> 3.17.0)
+      prism (>= 0.22.0, < 0.25)
+      sorbet-runtime (>= 0.5.10782)
     ruby-ole (1.2.12.2)
     ruby-progressbar (1.13.0)
     ruby-saml (1.13.0)
@@ -428,6 +433,7 @@ GEM
       thor (~> 1.0)
       tilt (~> 2.0)
       yard (~> 0.9, >= 0.9.24)
+    sorbet-runtime (0.5.11307)
     sorted_set (1.0.3)
       rbtree
       set (~> 1.0)
@@ -512,6 +518,7 @@ DEPENDENCIES
   rubocop-faker
   rubocop-rails
   ruby-filemagic
+  ruby-lsp
   ruby-saml (~> 1.13.0)
   rubyzip
   sidekiq
