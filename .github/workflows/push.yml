@@ -33,8 +33,8 @@ jobs:
         options: --health-cmd "/usr/local/bin/healthcheck.sh --connect --innodb_initialized" --health-interval 10s --health-timeout 5s --health-retries 5
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
-      - name: Set up Docker Buildx
+        uses: actions/checkout@v4
+      - name: Set up docker buildx
         uses: docker/setup-buildx-action@v3
       - name: Build base doubtfire-api development image
         uses: docker/build-push-action@v5
@@ -68,7 +68,7 @@ jobs:
             -e DF_ENCRYPTION_DETERMINISTIC_KEY
             -e DF_ENCRYPTION_KEY_DERIVATION_SALT
           run: bundle exec rake db:populate
-      - name: Run rake tests
+      - name: Run unit tests
         uses: addnab/docker-run-action@v3
         with:
           image: doubtfire-api-development:local
