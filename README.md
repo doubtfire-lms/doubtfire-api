@@ -44,6 +44,9 @@ Doubtfire requires multiple environment variables that help define settings abou
 | `DF_INSTITUTION_PLAGIARISM`      | A statement clarifying the terms plagiarism and collusion.                                                                                                                                    | Default statement provided |
 | `DF_INSTITUTION_SETTINGS_RB`      | The path of the institution specific settings rb code - used to map student imports from institutional exports to a format understood by Doubtfire.                                                                                                                | No default |
 | `DF_FFMPEG_PATH`      | The path of to the ffmpeg binary for audio processing.                                                                                                                | ffmpeg |
+| `DF_REDIS_CACHE_URL` | The redis URL for rails used for development and production, ignored in the test env. | `redis://localhost:6379/0` |
+| `DF_REDIS_SIDEKIQ_URL` | The redis URL for sidekiq. A working redis server is **mandatory** for sidekiq in all environments. | `redis://localhost:6379/1` |
+
 
 If you have chosen to use AAF Rapid Connect authentication, then you will also need to provide the following:
 
