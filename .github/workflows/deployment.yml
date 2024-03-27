@@ -2,7 +2,7 @@ name: create-doubtfire-deployment
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
     # branches:
     #   - '*.x'
     #   - 'development'
