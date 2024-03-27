@@ -1,6 +1,14 @@
 name: RuboCop
 
-on: [push, pull_request]
+on:
+  push:
+    paths-ignore:
+      - "*.md"
+      - "docs/**"
+  pull_request:
+    paths-ignore:
+      - "*.md"
+      - "docs/**"
 
 permissions:
   contents: read
