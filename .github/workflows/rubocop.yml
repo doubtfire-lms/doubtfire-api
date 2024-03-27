@@ -1,6 +1,14 @@
 name: RuboCop
 
-on: [push, pull_request]
+on:
+  push:
+    paths-ignore:
+      - "*.md"
+      - "docs/**"
+  pull_request:
+    paths-ignore:
+      - "*.md"
+      - "docs/**"
 
 permissions:
   contents: read
@@ -12,13 +20,13 @@ jobs:
       BUNDLE_WITHOUT: default doc job cable storage ujs test db
 
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-    - name: Set up Ruby 3.1
-      uses: ruby/setup-ruby@v1
-      with:
-        ruby-version: 3.1
-        bundler-cache: true
+      - name: Set up Ruby 3.1
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 3.1
+          bundler-cache: true
 
-    - name: Run RuboCop
-      run: bundle exec rubocop --parallel
+      - name: Run RuboCop
+        run: bundle exec rubocop --parallel

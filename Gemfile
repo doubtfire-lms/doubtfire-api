@@ -24,6 +24,7 @@ group :development, :test do
   gem 'rubocop'
   gem 'rubocop-faker'
   gem 'rubocop-rails'
+  gem 'ruby-lsp'
   gem 'simplecov', require: false
   gem 'solargraph'
   gem 'sprockets-rails'
