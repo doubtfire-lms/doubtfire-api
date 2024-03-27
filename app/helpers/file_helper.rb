@@ -1,6 +1,7 @@
 require 'zip'
 require 'tmpdir'
 require 'open3'
+require 'pdf-reader'
 
 module FileHelper
   extend LogHelper
@@ -340,12 +341,15 @@ module FileHelper
   # Tests if a PDF is valid / corrupt
   #
   def pdf_valid?(filename)
-    # Scan last 1024 bytes for the EOF mark
     return false unless File.exist? filename
-
-    File.open(filename) do |f|
-      f.seek -4096, IO::SEEK_END unless f.size <= 4096
-      f.read.include? '%%EOF'
+    begin
+      reader = PDF::Reader.new(filename)
+    rescue PDF::Reader::MalformedPDFError => e
+      logger.error "Submitted PDF file #{filename} is invalid: #{e.message}"
+      false
+    rescue PDF::Reader::EncryptedPDFError => e
+      logger.error "Submitted PDF file #{filename} is encrypted: #{e.message}"
+      false
     end
   end
 
