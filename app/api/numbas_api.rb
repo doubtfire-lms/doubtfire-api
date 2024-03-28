@@ -5,6 +5,10 @@ class NumbasApi < Grape::API
   # Include the AuthenticationHelpers for authentication functionality
   helpers AuthenticationHelpers
 
+  before do
+    authenticated?
+  end
+
   helpers do
     # Method to stream a file from a zip archive at the specified path
     # @param zip_path [String] the path to the zip archive
@@ -43,24 +47,40 @@ class NumbasApi < Grape::API
     end
   end
 
-  # Define the API namespace
-  namespace :numbas_api do
-    # Use Grape's before hook to check authentication before processing any route
-    before do
-      authenticated?
+  desc 'Start streaming the Numbas test from the index.html'
+  params do
+    requires :unit_id, type: Integer, desc: 'The unit to modify tasks for'
+    requires :task_def_id, type: Integer, desc: 'The task definition to get the Numbas test data of'
+  end
+  get '/units/:unit_id/task_definitions/:task_def_id/numbas_data/index.html' do
+    env['api.format'] = :txt
+    unit = Unit.find(params[:unit_id])
+    task_def = unit.task_definitions.find(params[:task_def_id])
+    if task_def.has_numbas_data?
+      zip_path = task_def.task_numbas_data
+      content_type 'application/octet-stream'
+    else
+      error!({ error: 'Numbas data does not exist.' }, 401)
     end
+    stream_file_from_zip(zip_path, 'index.html')
+  end
 
-    get '/index.html' do
-      env['api.format'] = :txt
-      zip_path = FileHelper.get_numbas_test_path(params[:unit_code], params[:task_definition_id], 'numbas_test.zip')
-      stream_file_from_zip(zip_path, 'index.html')
+  desc 'Start streaming the Numbas test from the specified file'
+  params do
+    requires :unit_id, type: Integer, desc: 'The unit to modify tasks for'
+    requires :task_def_id, type: Integer, desc: 'The task definition to get the Numbas test data of'
+  end
+  get '/units/:unit_id/task_definitions/:task_def_id/numbas_data/*file_path' do
+    env['api.format'] = :txt
+    unit = Unit.find(params[:unit_id])
+    task_def = unit.task_definitions.find(params[:task_def_id])
+    if task_def.has_numbas_data?
+      zip_path = task_def.task_numbas_data
+      content_type 'application/octet-stream'
+    else
+      error!({ error: 'Numbas data does not exist.' }, 401)
     end
-
-    get '*file_path' do
-      env['api.format'] = :txt
-      zip_path = FileHelper.get_numbas_test_path(params[:unit_code], params[:task_definition_id], 'numbas_test.zip')
-      requested_file_path = "#{params[:file_path]}.#{params[:format]}"
-      stream_file_from_zip(zip_path, requested_file_path)
-    end
+    requested_file_path = "#{params[:file_path]}.#{params[:format]}"
+    stream_file_from_zip(zip_path, requested_file_path)
   end
 end
