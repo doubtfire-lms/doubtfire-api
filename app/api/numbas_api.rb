@@ -16,14 +16,16 @@ class NumbasApi < Grape::API
     def stream_file_from_zip(zip_path, file_path)
       file_stream = nil
 
+      logger.debug "Streaming zip file at #{zip_path}"
       # Get an input stream for the requested file within the ZIP archive
       Zip::File.open(zip_path) do |zip_file|
         zip_file.each do |entry|
-          logger.debug "Entry name: #{entry.name}"
           if entry.name == file_path
+            logger.debug "Found file #{file_path} from numbas container"
             file_stream = entry.get_input_stream
             break
           end
+          logger.debug "Requested file #{file_path} not found from numbas container"
         end
       end
 
@@ -47,40 +49,19 @@ class NumbasApi < Grape::API
     end
   end
 
-  desc 'Start streaming the Numbas test from the index.html'
+  desc 'Serve numbas content'
   params do
-    requires :unit_id, type: Integer, desc: 'The unit to modify tasks for'
-    requires :task_def_id, type: Integer, desc: 'The task definition to get the Numbas test data of'
+    requires :task_def_id, type: Integer, desc: 'Task Definition ID to get Numbas test data for'
   end
-  get 'numbas_api/units/:unit_id/task_definitions/:task_def_id/index.html' do
+  get '/numbas_api/:task_def_id/*file_path' do
     env['api.format'] = :txt
-    unit = Unit.find(params[:unit_id])
-    task_def = unit.task_definitions.find(params[:task_def_id])
+    task_def = TaskDefinition.find(params[:task_def_id])
     if task_def.has_numbas_data?
       zip_path = task_def.task_numbas_data
       content_type 'application/octet-stream'
+      stream_file_from_zip(zip_path, params[:file_path])
     else
-      error!({ error: 'Numbas data does not exist.' }, 401)
+      error!({ error: 'Numbas data does not exist.' }, 404)
     end
-    stream_file_from_zip(zip_path, 'index.html')
-  end
-
-  desc 'Start streaming the Numbas test from the specified file'
-  params do
-    requires :unit_id, type: Integer, desc: 'The unit to modify tasks for'
-    requires :task_def_id, type: Integer, desc: 'The task definition to get the Numbas test data of'
-  end
-  get 'numbas_api/units/:unit_id/task_definitions/:task_def_id/*file_path' do
-    env['api.format'] = :txt
-    unit = Unit.find(params[:unit_id])
-    task_def = unit.task_definitions.find(params[:task_def_id])
-    if task_def.has_numbas_data?
-      zip_path = task_def.task_numbas_data
-      content_type 'application/octet-stream'
-    else
-      error!({ error: 'Numbas data does not exist.' }, 401)
-    end
-    requested_file_path = "#{params[:file_path]}.#{params[:format]}"
-    stream_file_from_zip(zip_path, requested_file_path)
   end
 end
