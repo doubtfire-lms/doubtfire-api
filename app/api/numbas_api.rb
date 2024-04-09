@@ -52,7 +52,7 @@ class NumbasApi < Grape::API
     requires :unit_id, type: Integer, desc: 'The unit to modify tasks for'
     requires :task_def_id, type: Integer, desc: 'The task definition to get the Numbas test data of'
   end
-  get '/units/:unit_id/task_definitions/:task_def_id/numbas_data/index.html' do
+  get 'numbas_api/units/:unit_id/task_definitions/:task_def_id/index.html' do
     env['api.format'] = :txt
     unit = Unit.find(params[:unit_id])
     task_def = unit.task_definitions.find(params[:task_def_id])
@@ -70,7 +70,7 @@ class NumbasApi < Grape::API
     requires :unit_id, type: Integer, desc: 'The unit to modify tasks for'
     requires :task_def_id, type: Integer, desc: 'The task definition to get the Numbas test data of'
   end
-  get '/units/:unit_id/task_definitions/:task_def_id/numbas_data/*file_path' do
+  get 'numbas_api/units/:unit_id/task_definitions/:task_def_id/*file_path' do
     env['api.format'] = :txt
     unit = Unit.find(params[:unit_id])
     task_def = unit.task_definitions.find(params[:task_def_id])
