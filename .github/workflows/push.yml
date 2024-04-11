@@ -1,5 +1,13 @@
 name: Unit Tests
-on: [push, pull_request]
+on:
+  push:
+    paths-ignore:
+      - "*.md"
+      - "docs/**"
+  pull_request:
+    paths-ignore:
+      - "*.md"
+      - "docs/**"
 
 env:
   RAILS_ENV: "test"
@@ -33,14 +41,18 @@ jobs:
         options: --health-cmd "/usr/local/bin/healthcheck.sh --connect --innodb_initialized" --health-interval 10s --health-timeout 5s --health-retries 5
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+      - name: Set up docker buildx
+        uses: docker/setup-buildx-action@v3
       - name: Build base doubtfire-api development image
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v5
         with:
           context: .
           push: false
           load: true
           tags: doubtfire-api-development:local
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
       - name: Populate database
         uses: addnab/docker-run-action@v3
         with:
@@ -64,7 +76,7 @@ jobs:
             -e DF_ENCRYPTION_DETERMINISTIC_KEY
             -e DF_ENCRYPTION_KEY_DERIVATION_SALT
           run: bundle exec rake db:populate
-      - name: Run rake tests
+      - name: Run unit tests
         uses: addnab/docker-run-action@v3
         with:
           image: doubtfire-api-development:local
