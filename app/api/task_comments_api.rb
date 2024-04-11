@@ -46,8 +46,9 @@ class TaskCommentsApi < Grape::API
       error!({ error: 'Comment text is empty, unable to add new comment' }, 403) unless text_comment.present?
       result = task.add_text_comment(current_user, text_comment, reply_to_id)
     else
-      unless FileHelper.accept_file(attached_file, 'comment attachment - TaskComment', 'comment_attachment')
-        error!({ error: 'Please upload only images, audio or PDF documents' }, 403)
+      file_result = FileHelper.accept_file(attached_file, 'comment attachment - TaskComment', 'comment_attachment')
+      unless file_result[:accepted]
+        error!({ error: "File is not an accptable format: #{file_result[:msg]}" }, 403)
       end
 
       result = task.add_comment_with_attachment(current_user, attached_file, reply_to_id)
