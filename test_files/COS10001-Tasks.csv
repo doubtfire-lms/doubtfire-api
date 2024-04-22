@@ -35,3 +35,4 @@ High Distinction Task 10.1 - Custom Program,10.1H,Extend your custom program to 
 High Distinction Task 10.2 - Research Report,10.2H,Start working on a research project,8,3,FALSE,"[{""key"":""file0"",""name"":""Research Report Document"",""type"":""document""}]",10,Tue,13,Tue,,,0,FALSE,90,,,import-tasks
 Pass Task 11.1 - Learning Summary Report,11.1P,Summarise your learning from the unit.,4,0,FALSE,"[{""key"":""file0"",""name"":""Learning Summary Report"",""type"":""document""}]",11,Tue,12,Tue,,,0,FALSE,90,,,import-tasks
 Distinction Task 6.2 - Custom Program,6.2D,Start working on your custom program!,16,2,FALSE,"[{""key"":""file0"",""name"":""Program code"",""type"":""code""},{""key"":""file1"",""name"":""Design overview"",""type"":""document""},{""key"":""file2"",""name"":""Screenshot"",""type"":""image""}]",6,Tue,13,Tue,,,5,TRUE,90,,,import-tasks
+Test 10,T10,Test 10 tests the import task bug,1,0,TRUE,[],10,Fri,10,Fri,,,0,FALSE,90,,,import-tasks

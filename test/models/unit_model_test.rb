@@ -85,7 +85,7 @@ class UnitModelTest < ActiveSupport::TestCase
 
   def test_import_tasks_worked
     @unit.import_tasks_from_csv File.open(Rails.root.join('test_files',"#{@unit.code}-Tasks.csv"))
-    assert_equal 36, @unit.task_definitions.count, 'imported all task definitions'
+    assert_equal 37, @unit.task_definitions.count, 'imported all task definitions'
   end
 
   def test_import_task_files
