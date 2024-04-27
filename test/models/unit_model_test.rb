@@ -1,6 +1,7 @@
 require 'test_helper'
 require 'grade_helper'
 require './lib/helpers/database_populator'
+require 'pdf-reader'
 
 class UnitModelTest < ActiveSupport::TestCase
   include TestHelpers::JsonHelper
@@ -97,6 +98,15 @@ class UnitModelTest < ActiveSupport::TestCase
     end
 
     assert File.exist? @unit.task_definitions.first.task_resources
+
+    # extra checks to ensure the filename matching behavior is correct (longest match)
+    td = @unit.task_definitions.find_by(abbreviation: "T1")
+    reader = PDF::Reader.new(td.task_sheet)
+    assert reader.pages[0].text.include? "Task sheet for task T1!"
+
+    td = @unit.task_definitions.find_by(abbreviation: "T10")
+    reader = PDF::Reader.new(td.task_sheet)
+    assert reader.pages[0].text.include? "Task sheet for task T10!"
   end
 
   def test_rollover_of_task_files
