@@ -103,3 +103,6 @@ gem 'sidekiq-cron'
 
 # Redis for sidekiq, caching, and action cable (eventually)
 gem 'redis'
+
+# PDF reader for validating PDF file submissions
+gem 'pdf-reader'

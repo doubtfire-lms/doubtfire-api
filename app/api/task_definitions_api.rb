@@ -253,8 +253,9 @@ class TaskDefinitionsApi < Grape::API
 
     file = params[:file]
 
-    unless FileHelper.accept_file(file, 'task sheet', 'document')
-      error!({ error: "'#{file[:name]}' is not a valid #{file[:type]} file" }, 403)
+    file_result = FileHelper.accept_file(file, 'task sheet', 'document')
+    unless file_result[:accepted]
+      error!({ error: "'#{file[:name]}' is not an acceptable format: #{file_result[:msg]}" }, 403)
     end
 
     # Actually import...
