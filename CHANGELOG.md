@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [7.0.24](https://github.com/doubtfire-lms/doubtfire-deploy/compare/v7.0.23...v7.0.24) (2024-03-26)
+
+
+### Bug Fixes
+
+* ensure that tagpdf is installed in latex ([d1f2197](https://github.com/doubtfire-lms/doubtfire-deploy/commit/d1f2197e882038ef095b98a4558644e0c4c4bd33))
+
+### [7.0.23](https://github.com/macite/doubtfire-deploy/compare/v7.0.22...v7.0.23) (2024-03-22)
+
+
+### Bug Fixes
+
+* deakin username change for student id ([1445ddf](https://github.com/macite/doubtfire-deploy/commit/1445ddfa26fc207609f40f84e8f8f92145e0e8cc))
+
+### [7.0.22](https://github.com/macite/doubtfire-deploy/compare/v7.0.21...v7.0.22) (2023-12-01)
+
+
+### Bug Fixes
+
+* change_task_comment_fail ([a86d1b0](https://github.com/macite/doubtfire-deploy/commit/a86d1b03cfa3db70007785182258c146bc91bc47))
+
 ### [7.0.21](https://github.com/macite/doubtfire-deploy/compare/v7.0.20...v7.0.21) (2023-09-04)
 
 
