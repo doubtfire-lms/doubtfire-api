@@ -1,4 +1,5 @@
 require 'test_helper'
+require 'pdf-reader'
 
 #
 # Contains tests for Task model objects - not accessed via API
@@ -357,19 +358,11 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     assert File.exist? path
     assert File.exist? task.final_pdf_path
 
-    # Check inline latex math display
-    pdf_content = read_pdf_content(task.final_pdf_path)
-    assert_includes pdf_content, "bmi =     weigh2\n                                           height"
+    reader = PDF::Reader.new(task.final_pdf_path)
+    assert reader.pages[3].text.include? "bmi =     weigh2\n                                           height"
 
     td.destroy
     assert_not File.exist? path
     unit.destroy!
   end
-
-  def read_pdf_content(pdf_path)
-    require 'pdf-reader'
-    pdf_reader = PDF::Reader.new(pdf_path)
-    pdf_reader.pages.map(&:text).join("\n")
-  end
-
 end
