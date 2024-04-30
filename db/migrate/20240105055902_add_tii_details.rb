@@ -70,8 +70,8 @@ class AddTiiDetails < ActiveRecord::Migration[7.1]
       t.integer     :error_code
       t.text        :custom_error_message
 
-      t.text        :log, default: []
-      t.text        :params, default: {}
+      t.text        :log, default: "[]"
+      t.text        :params, default: "{}"
 
       t.timestamps
 
