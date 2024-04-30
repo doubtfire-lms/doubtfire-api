@@ -3,13 +3,11 @@ require 'grape'
 class TestAttemptsApi < Grape::API
   format :json
 
-  # Enforce authentication
+  helpers AuthenticationHelpers
+
   before do
     authenticated?
   end
-
-  # Assigning AuthenticationHelpers
-  helpers AuthenticationHelpers
 
   # Handle common exceptions
   rescue_from :all do |e|
@@ -26,18 +24,11 @@ class TestAttemptsApi < Grape::API
     error!({ errors: e.full_messages }, 400)
   end
 
-  # Define the TestAttemptEntity
-  class TestAttemptEntity < Grape::Entity
-    expose :id, :name, :attempt_number, :pass_status, :exam_data, :completed, :cmi_entry
-    expose :task_id, as: :associated_task_id
-    expose :exam_result, :attempted_at
-  end
-
   # Fetch all test results
   desc 'Get all test results'
   get '/test_attempts' do
     tests = TestAttempt.order(id: :desc)
-    present tests, with: TestAttemptEntity
+    present tests, with: Entities::TestAttemptEntity
   end
 
   # Get latest test or create a new one based on completion status
@@ -84,7 +75,7 @@ class TestAttemptsApi < Grape::API
       test.update!(cmi_entry: 'resume')
     end
 
-    present test, with: TestAttemptEntity
+    present test, with: Entities::TestAttemptEntity
   end
 
   # Fetch the latest completed test result
@@ -110,7 +101,7 @@ class TestAttemptsApi < Grape::API
     if test.nil?
       error!({ message: 'No completed tests found for this task' }, 404)
     else
-      present test, with: TestAttemptEntity
+      present test, with: Entities::TestAttemptEntity
     end
   end
 
@@ -120,7 +111,7 @@ class TestAttemptsApi < Grape::API
     requires :id, type: String, desc: 'ID of the test'
   end
   get '/test_attempts/:id' do
-    present TestAttempt.find(params[:id]), with: TestAttemptEntity
+    present TestAttempt.find(params[:id]), with: Entities::TestAttemptEntity
   end
 
   # Create a new test result entry
@@ -138,7 +129,7 @@ class TestAttemptsApi < Grape::API
   end
   post '/test_attempts' do
     test = TestAttempt.create!(declared(params))
-    present test, with: TestAttemptEntity
+    present test, with: Entities::TestAttemptEntity
   end
 
   # Update the details of a specific test result
@@ -156,7 +147,7 @@ class TestAttemptsApi < Grape::API
   put '/test_attempts/:id' do
     test = TestAttempt.find(params[:id])
     test.update!(declared(params, include_missing: false))
-    present test, with: TestAttemptEntity
+    present test, with: Entities::TestAttemptEntity
   end
 
   # Delete a specific test result by ID
