@@ -32,6 +32,7 @@ class TaskDefinitionsApi < Grape::API
       requires :max_quality_pts,          type: Integer,  desc: 'A range for quality points when quality is assessed'
       optional :assessment_enabled,       type: Boolean,  desc: 'Enable or disable assessment'
       optional :overseer_image_id,        type: Integer,  desc: 'The id of the Docker image for overseer'
+      optional :moss_language,            type: String,   desc: 'The language to use for code similarity checks'
     end
   end
   post '/units/:unit_id/task_definitions/' do
@@ -59,7 +60,8 @@ class TaskDefinitionsApi < Grape::API
                                                 :is_graded,
                                                 :max_quality_pts,
                                                 :assessment_enabled,
-                                                :overseer_image_id
+                                                :overseer_image_id,
+                                                :moss_language
                                               )
 
     task_params[:unit_id] = unit.id
@@ -110,6 +112,7 @@ class TaskDefinitionsApi < Grape::API
       optional :max_quality_pts,          type: Integer,  desc: 'A range for quality points when quality is assessed'
       optional :assessment_enabled,       type: Boolean,  desc: 'Enable or disable assessment'
       optional :overseer_image_id,        type: Integer,  desc: 'The id of the Docker image name for overseer'
+      optional :moss_language,            type: String,   desc: 'The language to use for code similarity checks'
     end
   end
   put '/units/:unit_id/task_definitions/:id' do
@@ -136,7 +139,8 @@ class TaskDefinitionsApi < Grape::API
                                                 :is_graded,
                                                 :max_quality_pts,
                                                 :assessment_enabled,
-                                                :overseer_image_id
+                                                :overseer_image_id,
+                                                :moss_language
                                               )
 
     task_params[:upload_requirements] = JSON.parse(params[:task_def][:upload_requirements]) unless params[:task_def][:plagiarism_checks].nil?
@@ -178,6 +182,7 @@ class TaskDefinitionsApi < Grape::API
       end
     end
 
+    puts task_def.upload_requirements
     present task_def, with: Entities::TaskDefinitionEntity, my_role: unit.role_for(current_user)
   end
 
