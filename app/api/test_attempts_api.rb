@@ -35,7 +35,7 @@ class TestAttemptsApi < Grape::API
 
   # Fetch all test results
   desc 'Get all test results'
-  get do
+  get '/test_attempts' do
     tests = TestAttempt.order(id: :desc)
     present tests, with: TestAttemptEntity
   end
@@ -136,7 +136,7 @@ class TestAttemptsApi < Grape::API
     optional :exam_result, type: String, desc: 'Result of the exam'
     optional :attempted_at, type: DateTime, desc: 'Timestamp of the test attempt'
   end
-  post do
+  post '/test_attempts' do
     test = TestAttempt.create!(declared(params))
     present test, with: TestAttemptEntity
   end
@@ -149,6 +149,7 @@ class TestAttemptsApi < Grape::API
     optional :pass_status, type: Boolean, desc: 'Passing status'
     optional :exam_data, type: String, desc: 'Data related to the exam'
     optional :completed, type: Boolean, desc: 'Completion status'
+    optional :exam_result, type: String, desc: 'Exam score'
     optional :cmi_entry, type: String, desc: 'CMI Entry'
     optional :task_id, type: Integer, desc: 'ID of the associated task'
   end
