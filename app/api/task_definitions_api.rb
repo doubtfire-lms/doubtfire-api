@@ -26,7 +26,6 @@ class TaskDefinitionsApi < Grape::API
       requires :abbreviation,             type: String,   desc: 'The abbreviation of the task'
       requires :restrict_status_updates,  type: Boolean,  desc: 'Restrict updating of the status to staff'
       optional :upload_requirements,      type: String,   desc: 'Task file upload requirements'
-      optional :plagiarism_checks,        type: String,   desc: 'The list of checks to perform'
       requires :plagiarism_warn_pct,      type: Integer,  desc: 'The percent at which to record and warn about plagiarism'
       requires :is_graded,                type: Boolean,  desc: 'Whether or not this task definition is a graded task'
       requires :max_quality_pts,          type: Integer,  desc: 'A range for quality points when quality is assessed'
@@ -65,8 +64,7 @@ class TaskDefinitionsApi < Grape::API
                                               )
 
     task_params[:unit_id] = unit.id
-    task_params[:upload_requirements] = JSON.parse(params[:task_def][:upload_requirements]) unless params[:task_def][:plagiarism_checks].nil?
-    task_params[:plagiarism_checks] = JSON.parse(params[:task_def][:plagiarism_checks]) unless params[:task_def][:plagiarism_checks].nil?
+    task_params[:upload_requirements] = JSON.parse(params[:task_def][:upload_requirements]) unless params[:task_def][:upload_requirements].nil?
 
     task_def = TaskDefinition.new(task_params)
 
@@ -106,7 +104,6 @@ class TaskDefinitionsApi < Grape::API
       optional :abbreviation,             type: String,   desc: 'The abbreviation of the task'
       optional :restrict_status_updates,  type: Boolean,  desc: 'Restrict updating of the status to staff'
       optional :upload_requirements,      type: String,   desc: 'Task file upload requirements'
-      optional :plagiarism_checks,        type: String,   desc: 'The list of checks to perform'
       optional :plagiarism_warn_pct,      type: Integer,  desc: 'The percent at which to record and warn about plagiarism'
       optional :is_graded,                type: Boolean,  desc: 'Whether or not this task definition is a graded task'
       optional :max_quality_pts,          type: Integer,  desc: 'A range for quality points when quality is assessed'
@@ -143,8 +140,7 @@ class TaskDefinitionsApi < Grape::API
                                                 :moss_language
                                               )
 
-    task_params[:upload_requirements] = JSON.parse(params[:task_def][:upload_requirements]) unless params[:task_def][:plagiarism_checks].nil?
-    task_params[:plagiarism_checks] = JSON.parse(params[:task_def][:plagiarism_checks]) unless params[:task_def][:plagiarism_checks].nil?
+    task_params[:upload_requirements] = JSON.parse(params[:task_def][:upload_requirements]) unless params[:task_def][:upload_requirements].nil?
 
     # Ensure changes to a TD defined as a "draft task definition" are validated
     if unit.draft_task_definition_id == params[:id]

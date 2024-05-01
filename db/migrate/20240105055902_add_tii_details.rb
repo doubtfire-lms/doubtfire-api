@@ -91,5 +91,7 @@ class AddTiiDetails < ActiveRecord::Migration[7.1]
         task_definition.save
       end
     end
+
+    remove_column :task_definitions, :plagiarism_checks, :string
   end
 end

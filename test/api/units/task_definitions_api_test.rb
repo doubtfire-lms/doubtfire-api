@@ -47,7 +47,6 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
         abbreviation:             'P1.1',
         restrict_status_updates:  false,
         upload_requirements:      '[ { "key": "file0", "name": "Shape Class", "type": "document" } ]',
-        plagiarism_checks:        '[]',
         plagiarism_warn_pct:      80,
         is_graded:                false,
         max_quality_pts:          0
@@ -82,7 +81,6 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
         abbreviation:             'P1.2',
         restrict_status_updates:  true,
         upload_requirements:      [ { "key": "file0", "name": "Other Class", "type": "document" } ].to_json,
-        plagiarism_checks:        [].to_json,
         plagiarism_warn_pct:      80,
         is_graded:                false,
         max_quality_pts:          0
