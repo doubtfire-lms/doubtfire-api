@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [8.0.0-4](https://github.com/macite/doubtfire-deploy/compare/v8.0.0-3...v8.0.0-4) (2024-05-01)
+
+
+### Bug Fixes
+
+* add missing moss language in task def post ([1fa7b0b](https://github.com/macite/doubtfire-deploy/commit/1fa7b0b10f855bc2e23aa27e78ed41ff3e5b4683))
+* correct tii migrationm defaults ([2beb6e8](https://github.com/macite/doubtfire-deploy/commit/2beb6e8599cf6b99992e34548615e7802e7ff141))
+* remove plagiarism checks field ([19107bf](https://github.com/macite/doubtfire-deploy/commit/19107bf87601115ea15036f25634b2ba30e23c7c))
+* remove serialisation of plagiarism checks ([1962cc9](https://github.com/macite/doubtfire-deploy/commit/1962cc96ff46134d756984473d1022792e9ada1a))
+
 ## [8.0.0-3](https://github.com/macite/doubtfire-deploy/compare/v8.0.0-2...v8.0.0-3) (2024-03-22)
 
 
