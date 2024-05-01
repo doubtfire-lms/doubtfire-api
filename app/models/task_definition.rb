@@ -1,11 +1,6 @@
 require 'json'
 
 class TaskDefinition < ApplicationRecord
-  # Record triggers - before associations
-  after_update do |_td|
-    clear_related_plagiarism if plagiarism_checks.nil? && moss_similarities?
-  end
-
   before_destroy :delete_associated_files
 
   after_update :move_files_on_abbreviation_change, if: :saved_change_to_abbreviation?
@@ -28,7 +23,6 @@ class TaskDefinition < ApplicationRecord
   has_many :tii_actions, as: :entity, dependent: :destroy
 
   serialize :upload_requirements, coder: JSON
-  serialize :plagiarism_checks, coder: JSON
 
   # Model validations/constraints
   validates :name, uniqueness: { scope:  :unit_id } # task definition names within a unit must be unique
