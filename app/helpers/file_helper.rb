@@ -578,7 +578,7 @@ module FileHelper
     "#{task_submission_identifier_path(type, task)}/#{timestamp.to_s}"
   end
 
-  # Apply line wrapping to a given file.
+  # Apply line wrapping to a given file, returns true when line wrapping is necessary.
   # The default 160-character limit is about two lines in the rendered PDF.
   # There is also a hard limit of 1000 characters, anything longer will be truncated to 1000 characters.
   def line_wrap(path, width: 160)
@@ -586,21 +586,22 @@ module FileHelper
     dir = File.dirname(path)
     basename = File.basename(path)
     temp_file = Tempfile.new('truncated_file')
-    output = File.join(dir, "#{basename}.tmp")
+    output = Tempfile.new('wrapped_file')
     begin
       logger.debug "Applying hard column width limit of #{hard_limit} to #{path}"
       system("cut -c-#{hard_limit} #{path.shellescape} > #{temp_file.path}", exception: true)
       logger.debug "Applying line wrapping on #{temp_file.path} to limit line width to #{width}"
-      system("fold --width #{width} #{temp_file.path} > #{output}", exception: true)
+      system("fold --width #{width} #{temp_file.path} > #{output.path}", exception: true)
       # compare input and output files, replace the output with a symlink if they are identical
-      system "diff #{path.shellescape} #{output} > /dev/null"
+      system "diff #{path.shellescape} #{output.path} > /dev/null"
       case $CHILD_STATUS.exitstatus
       when 0
         logger.debug "File #{path} does not contain lines longer than #{width}"
-        File.unlink(output)
-        File.symlink(path, output)
+        false
       when 1
         logger.debug "File #{path} contains lines longer than #{width}, line wrapping has been applied"
+        File.copy_stream(output.path, path.shellescape)
+        true
       else
         raise "Error comparing original and line-wrapped files!"
       end
@@ -610,6 +611,8 @@ module FileHelper
   ensure
     temp_file.close
     temp_file.unlink
+    output.close
+    output.unlink
   end
   # Export functions as module functions
   module_function :accept_file

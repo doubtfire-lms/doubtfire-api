@@ -112,20 +112,14 @@ No Tutor % Supervisor's Name
   <%
     if file[:type] == 'code'
       if (File.extname(file[:path])[1..-1]) != 'ipynb'
-      # for code files (except Jupyter Notebook), always use files with the .tmp suffix
-      # if the file has not been modified, it will be a symlink instead
-      # Jupyter Notebooks are not processed with line wraps
-      dir = File.dirname(file[:path])
-      name = File.basename(file[:path])
       pygments_lang = Task.pygments_lang(File.extname(file[:path])[1..-1])
-      wrapped_file = File.join(dir, "#{name}.tmp")
   %>
-    <% unless File.symlink?(wrapped_file) %>
+    <% if file[:truncated] %>
 \begin{tcolorbox}[colback=blue!5!white,colframe=blue!75!black]
   This file has additional line breaks applied by <%= @doubtfire_product_name %> because they contain lines longer than the configured limit. Lines over 1000 characters long have been truncated to limit PDF page count. The orginal submission can be retrieved via the "Download Uploaded Files" function.
 \end{tcolorbox}
     <% end %>
-\inputminted[breaklines,linenos,breakanywhere,tabsize=4]{<%= pygments_lang %>}{<%= wrapped_file %>}
+\inputminted[breaklines,linenos,breakanywhere,tabsize=4]{<%= pygments_lang %>}{<%= file[:path] %>}
   <%  else %>
 \jupynotex{<%= file[:path] %>}
   <%

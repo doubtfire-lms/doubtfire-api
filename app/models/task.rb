@@ -963,11 +963,16 @@ class Task < ApplicationRecord
         logger.error "Error processing task #{log_details} - missing file #{file_req}"
         raise "File `#{file_req['name']}` missing from submission."
       else
-        result << { path: output_filename, type: file_req['type'] }
+        truncated = false
 
         if file_req['type'] == 'code'
           FileHelper.ensure_utf8_code(output_filename, is_retry)
+          extension = File.extname(output_filename)[1..-1]
+          unless extension.eql?("ipynb")
+            truncated = FileHelper.line_wrap(output_filename)
+          end
         end
+        result << { path: output_filename, type: file_req['type'], truncated: truncated }
 
         idx += 1 # next file index
       end
@@ -999,31 +1004,10 @@ class Task < ApplicationRecord
         if f[:type] == "document"
           logger.debug "Running QPDF on #{f[:path]} before rendering to repair any potential broken files."
           FileHelper.qpdf(f[:path])
-        elsif f[:type] == "code"
-          extension = File.extname(f[:path])[1..-1]
-          case extension
-          when "ipynb"
-            logger.debug "File #{f[:path]} is a Jupyter Notebook, not performing line wrapping."
-          else
-            logger.debug "Performing line wrapping on #{f[:path]} before rendering to break up long lines."
-            FileHelper.line_wrap(f[:path])
-          end
         end
       end
       logger.debug "Preprocessing complete, rendering file."
       render_to_string(template: '/task/task_pdf', layout: true)
-    ensure
-      logger.debug "Cleaning up line-wrapped temporary files after rendering."
-      @files.each do |f|
-        next unless f[:type] == "code"
-        name = File.basename(f[:path])
-        dir = File.dirname(f[:path])
-        tempfile_path = File.join(dir, "#{name}.tmp")
-        if File.exist? tempfile_path
-          File.unlink(tempfile_path)
-          logger.debug "Deleted #{tempfile_path}"
-        end
-      end
     end
   end
 
