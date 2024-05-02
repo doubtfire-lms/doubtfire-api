@@ -28,7 +28,6 @@ env:
   DF_ENCRYPTION_KEY_DERIVATION_SALT: "hzPR8D4qpOnAg7VeAhkhWw6JmmzKJB10"
   DF_REDIS_SIDEKIQ_URL: "redis://redis:6379/0"
 
-
 jobs:
   unit-tests:
     runs-on: ubuntu-latest
@@ -62,7 +61,7 @@ jobs:
       - name: Populate database
         uses: addnab/docker-run-action@v3
         with:
-          image: lmsdoubtfire/formatif-devcontainer:8.3-dev
+          image: doubtfire-api-development:local
           options: >
             -v ${{ github.workspace }}:/doubtfire
             -e RAILS_ENV
@@ -86,7 +85,7 @@ jobs:
       - name: Run unit tests
         uses: addnab/docker-run-action@v3
         with:
-          image: lmsdoubtfire/formatif-devcontainer:8.3-dev
+          image: doubtfire-api-development:local
           options: >
             -v ${{ github.workspace }}:/doubtfire
             -e RAILS_ENV
