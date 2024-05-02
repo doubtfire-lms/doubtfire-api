@@ -262,9 +262,9 @@ class Notebook:
                 cfrom, cto = group.split('-')
                 cfrom = 1 if cfrom == '' else int(cfrom)
                 cto = maxlen if cto == '' else int(cto)
-                if cfrom >= cto:
+                if cfrom > cto:
                     raise ValueError(
-                        "Range 'from' need to be smaller than 'to' (got {!r})".format(group))
+                        "Range 'from' needs to be equal to or smaller than 'to' (got {!r})".format(group))
                 cells.update(range(cfrom, cto + 1))
             else:
                 cells.add(int(group))
