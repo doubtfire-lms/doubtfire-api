@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [8.0.0-6](https://github.com/macite/doubtfire-deploy/compare/v8.0.0-5...v8.0.0-6) (2024-05-02)
+
+
+### Features
+
+* add the pdf-reader gem for validating pdf submissions ([71c845b](https://github.com/macite/doubtfire-deploy/commit/71c845bf28fccf28de17ed83e3da1cf243646e7b))
+* implement unit test for pdf validation on submit ([57db1dc](https://github.com/macite/doubtfire-deploy/commit/57db1dc57a75aaf211030ecf78b9252a5d8b583b))
+* improve pdf file validation and detect encrypted pdfs ([dd729cf](https://github.com/macite/doubtfire-deploy/commit/dd729cf31bec115bd0e7018f33a692bd35bb5519))
+
+
+### Bug Fixes
+
+* add redis to the github actions workflow ([9935720](https://github.com/macite/doubtfire-deploy/commit/99357205d42d148f3a6165a96122691680409092))
+* document two new env variables for redis ([749903f](https://github.com/macite/doubtfire-deploy/commit/749903f390a388fac2c2a8652975580611f1e072))
+* implement error reporting in database populator ([136b9f9](https://github.com/macite/doubtfire-deploy/commit/136b9f98151688d3d6a578db1f980b39b3e21514))
+* install ruby-lsp in the development environment ([c57290e](https://github.com/macite/doubtfire-deploy/commit/c57290e4b2f7ba1bab7d600965988489dc3dd5a4))
+* pick up redis url from env for sidekiq if present ([e9628eb](https://github.com/macite/doubtfire-deploy/commit/e9628eb31398719d78508a610a251a785f56a14f))
+* revert to doubtfire local image for unit tests ([73fcbe3](https://github.com/macite/doubtfire-deploy/commit/73fcbe3f5adb603253033e7b126502a5d3c006f1))
+* skip unit tests and linting for documentation updates ([2503fe6](https://github.com/macite/doubtfire-deploy/commit/2503fe61468f8ebe37e54ccb1d0cc2a11387949b))
+
+### [7.0.23](https://github.com/macite/doubtfire-deploy/compare/v8.0.0-2...v7.0.23) (2024-03-22)
+
 ## [8.0.0-5](https://github.com/macite/doubtfire-deploy/compare/v8.0.0-4...v8.0.0-5) (2024-05-02)
 
 
