@@ -358,6 +358,33 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     assert File.exist? path
     assert File.exist? task.final_pdf_path
 
+    # ensure the notice is not included when the notebook doesn't have long lines source code cells
+    reader = PDF::Reader.new(task.final_pdf_path)
+    assert_not reader.pages[1].text.gsub(/\s+/, " ").include? "[The rest of this line has been truncated by the system to improve readability.]"
+
+    # test line wrapping in jupynotex
+    data_to_post = with_file('test_files/submissions/long.ipynb', 'application/json', data_to_post)
+
+    project = unit.active_projects.first
+
+    add_auth_header_for user: unit.main_convenor_user
+
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
+
+    assert_equal 201, last_response.status, last_response_body
+
+    # test submission generation
+    task = project.task_for_task_definition(td)
+    assert task.convert_submission_to_pdf
+    path = task.zip_file_path_for_done_task
+    assert path
+    assert File.exist? path
+    assert File.exist? task.final_pdf_path
+
+    # ensure the notice is included when the notebook has long line in source code cells
+    reader = PDF::Reader.new(task.final_pdf_path)
+    assert reader.pages[1].text.gsub(/\s+/, " ").include? "[The rest of this line has been truncated by the system to improve readability.]"
+
     td.destroy
     assert_not File.exist? path
     unit.destroy!
