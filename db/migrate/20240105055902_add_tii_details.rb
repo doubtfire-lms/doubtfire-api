@@ -17,9 +17,6 @@ class AddTiiDetails < ActiveRecord::Migration[7.1]
     remove_column :tasks, :max_pct_similar, :integer
     remove_column :projects, :max_pct_similar, :integer
 
-    TaskSimilarity.update_all(type: 'MossTaskSimilarity')
-    # TaskSimilarity.update_all('flagged = not flagged')
-
     create_table :tii_submissions do |t|
       t.references  :task, null: false
       t.references  :tii_task_similarity, null: true
@@ -79,11 +76,19 @@ class AddTiiDetails < ActiveRecord::Migration[7.1]
       t.index :complete
     end
 
-    TaskDefinition.find_in_batches do |batch|
-      batch.each do |task_definition|
-        next unless task_definition.plagiarism_checks.present? && task_definition.plagiarism_checks.any?
+    TaskSimilarity.update_all(type: 'MossTaskSimilarity')
+    # TaskSimilarity.update_all('flagged = not flagged')
 
-        task_definition.update(moss_language: task_definition.plagiarism_checks.first['type'])
+    TaskDefinition.find_in_batches do |batch|
+      require 'json'
+
+      batch.each do |task_definition|
+        next unless task_definition.plagiarism_checks.present?
+        plagiarism_checks = JSON.parse(task_definition.plagiarism_checks)
+
+        next unless plagiarism_checks.any?
+
+        task_definition.update(moss_language: plagiarism_checks.first['type'])
         task_definition.upload_requirements.each do |upload_requirement|
           next unless upload_requirement['type'] == 'code'
           upload_requirement['tii_check'] = true
