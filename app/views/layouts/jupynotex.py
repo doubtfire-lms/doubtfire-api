@@ -186,7 +186,7 @@ class Notebook:
         if content['cell_type'] == 'code':
             begin, end = self._highlight_delimiters
             result.extend(begin)
-            result.extend(line.rstrip() for line in source)
+            result.extend(line[:1000] + ' [Rest of this long line has been truncated.] ' * (len(line) > 1000) for line in source)
             result.extend(end)
         else:
             raise ValueError(
