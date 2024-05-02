@@ -79,7 +79,7 @@ gem 'grape-swagger-rails'
 # Miscellaneous
 gem 'bunny-pub-sub', '0.5.2'
 gem 'ci_reporter'
-gem 'dotenv-rails'
+gem 'dotenv'
 gem 'rack-cors', require: 'rack/cors'
 gem 'require_all', '>=1.3.3'
 

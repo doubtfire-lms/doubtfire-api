@@ -17,7 +17,7 @@ module Doubtfire
     config.load_defaults 7.0
 
     # Load .env variables
-    Dotenv::Railtie.load
+    Dotenv::Rails.load
 
     # ==> Authentication Method
     # Authentication method default is database, but possible settings
