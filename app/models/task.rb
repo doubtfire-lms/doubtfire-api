@@ -684,7 +684,8 @@ class Task < ApplicationRecord
     discussion.save!
 
     prompts.each_with_index do |prompt, index|
-      raise "Unknown comment attachment type" unless FileHelper.accept_file(prompt, "comment attachment discussion audio", "audio")
+      file_result = FileHelper.accept_file(prompt, "comment attachment discussion audio", "audio")
+      raise "Comment attachment is not an audio file" unless file_result[:accepted]
       raise "Error attaching uploaded file." unless discussion.add_prompt(prompt, index)
     end
 
@@ -702,11 +703,11 @@ class Task < ApplicationRecord
     comment.task = self
     comment.user = user
     comment.reply_to_id = reply_to_id
-    if FileHelper.accept_file(tempfile, "comment attachment audio test", "audio")
+    if FileHelper.accept_file(tempfile, "comment attachment audio test", "audio")[:accepted]
       comment.content_type = :audio
-    elsif FileHelper.accept_file(tempfile, "comment attachment image test", "image")
+    elsif FileHelper.accept_file(tempfile, "comment attachment image test", "image")[:accepted]
       comment.content_type = :image
-    elsif FileHelper.accept_file(tempfile, "comment attachment pdf", "document")
+    elsif FileHelper.accept_file(tempfile, "comment attachment pdf", "document")[:accepted]
       comment.content_type = :pdf
     else
       raise "Unknown comment attachment type"
@@ -1019,10 +1020,12 @@ class Task < ApplicationRecord
     elsif ['xml'].include?(extn) then 'xml'
     elsif ['sql'].include?(extn) then 'sql'
     elsif ['vb'].include?(extn) then 'vbnet'
-    elsif ['txt', 'md', 'rmd', 'rpres', 'hdl', 'asm', 'jack', 'hack', 'tst', 'cmp', 'vm', 'sh', 'bat', 'dat', 'csv'].include?(extn) then 'text'
+    elsif ['txt', 'md', 'rmd', 'rpres', 'hdl', 'asm', 'jack', 'hack', 'tst', 'cmp', 'vm', 'sh', 'bat', 'dat', 'csv', 'pml'].include?(extn) then 'text'
     elsif ['tex', 'rnw'].include?(extn) then 'tex'
     elsif ['py'].include?(extn) then 'python'
     elsif ['r'].include?(extn) then 'r'
+    # requres unreleased pygments v2.18 https://pygments.org/docs/lexers/#pygments.lexers.c_like.PromelaLexer
+    # elsif ['pml'].include?(extn) then 'promela'
     else extn
     end
   end
@@ -1209,8 +1212,9 @@ class Task < ApplicationRecord
     #
     files.each_with_index do |file, index|
       logger.debug "Accepting submission (file #{index + 1} of #{files.length}) - checking file type for #{file["tempfile"].path}"
-      unless FileHelper.accept_file(file, file[:name], file[:type])
-        ui.error!({ 'error' => "'#{file[:name]}' is not a valid #{file[:type]} file" }, 403)
+      file_result = FileHelper.accept_file(file, file[:name], file[:type])
+      unless file_result[:accepted]
+        ui.error!({ 'error' => "'#{file[:name]}' is invalid: #{file_result[:msg]}" }, 403)
       end
 
       if File.size(file["tempfile"].path) > 10_000_000

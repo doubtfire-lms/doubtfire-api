@@ -21,7 +21,6 @@ All notable changes to this project will be documented in this file. See [standa
 
 ## [8.0.0-3](https://github.com/macite/doubtfire-deploy/compare/v8.0.0-2...v8.0.0-3) (2024-03-22)
 
-
 ### Bug Fixes
 
 * ensure redis is in dockerfile ([c37f5ba](https://github.com/macite/doubtfire-deploy/commit/c37f5ba0e78fbbb6fb1f7423f8b1bbabb557f761))
@@ -96,6 +95,13 @@ All notable changes to this project will be documented in this file. See [standa
 * simulate signoff adds similarities ([74a74e0](https://github.com/macite/doubtfire-deploy/commit/74a74e07dc7a61d56472e19ca49787d8ec2890cb))
 * update save status on actions ([096aee6](https://github.com/macite/doubtfire-deploy/commit/096aee685d2cf0652092b4f87a319de73e1dd1e9))
 * update schema to match migration dates ([5c1afe4](https://github.com/macite/doubtfire-deploy/commit/5c1afe421dd41b8f56284e776ce39996b3f28d71))
+
+### [7.0.23](https://github.com/macite/doubtfire-deploy/compare/v7.0.22...v7.0.23) (2024-03-22)
+
+
+### Bug Fixes
+
+* deakin username change for student id ([1445ddf](https://github.com/macite/doubtfire-deploy/commit/1445ddfa26fc207609f40f84e8f8f92145e0e8cc))
 
 ### [7.0.22](https://github.com/macite/doubtfire-deploy/compare/v7.0.21...v7.0.22) (2023-12-01)
 

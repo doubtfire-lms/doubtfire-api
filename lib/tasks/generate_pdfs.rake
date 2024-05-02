@@ -172,7 +172,7 @@ namespace :submission do
 
     Unit.where('active').each do |u|
       u.tasks.where('portfolio_evidence is not NULL').each do |t|
-        unless FileHelper.pdf_valid?(t.portfolio_evidence_path)
+        unless FileHelper.validate_pdf(t.portfolio_evidence_path)[:valid]
           puts t.portfolio_evidence_path
         end
       end

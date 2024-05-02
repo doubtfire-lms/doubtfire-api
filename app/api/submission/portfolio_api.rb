@@ -28,8 +28,9 @@ module Submission
       kind = params[:kind]
 
       # Check that the file is OK to accept
-      unless FileHelper.accept_file(file, name, kind)
-        error!({ error: "'#{file[:filename]}' is not a valid #{kind} file" }, 403)
+      file_result = FileHelper.accept_file(file, name, kind)
+      unless file_result[:accepted]
+        error!({ error: "'#{file[:filename]}': #{file_result[:msg]}" }, 403)
       end
 
       # Move file into place
