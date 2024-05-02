@@ -126,9 +126,8 @@ class ItemProcessor:
         with open(svg_fname, 'wb') as fh:
             fh.write(raw_svg)
 
-        with open(os.devnull, 'w') as null:
-          cmd = ['inkscape', '--export-text-to-path', '--export-filename={}'.format(pdf_fname), svg_fname]
-          subprocess.run(cmd, stderr=null)
+        cmd = ['rsvg-convert', '--format=pdf', '--output={}'.format(pdf_fname), svg_fname]
+        subprocess.run(cmd)
 
         return pdf_fname
 

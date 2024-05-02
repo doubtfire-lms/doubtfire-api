@@ -24,7 +24,7 @@ RUN apt-get update \
     wget \
     redis \
     libc6-dev \
-    inkscape \
+    librsvg2-bin \
     docker-ce \
     docker-ce-cli \
     containerd.io \

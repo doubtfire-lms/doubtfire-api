@@ -27,7 +27,7 @@ RUN apt-get update \
     cron \
     msmtp-mta bsd-mailx \
     redis \
-    inkscape \
+    librsvg2-bin \
     docker-ce \
     docker-ce-cli \
     containerd.io \
