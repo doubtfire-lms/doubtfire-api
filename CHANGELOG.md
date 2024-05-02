@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [8.0.0-5](https://github.com/macite/doubtfire-deploy/compare/v8.0.0-4...v8.0.0-5) (2024-05-02)
+
+
+### Bug Fixes
+
+* correct updates in TII migration ([d1ab30b](https://github.com/macite/doubtfire-deploy/commit/d1ab30ba666898f556b69db53766124742b4f593))
+
 ## [8.0.0-4](https://github.com/macite/doubtfire-deploy/compare/v8.0.0-3...v8.0.0-4) (2024-05-01)
 
 
