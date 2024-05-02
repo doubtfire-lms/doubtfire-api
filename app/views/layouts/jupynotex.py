@@ -10,6 +10,7 @@
 
 import base64
 import json
+import os
 import re
 import subprocess
 import sys
@@ -125,8 +126,9 @@ class ItemProcessor:
         with open(svg_fname, 'wb') as fh:
             fh.write(raw_svg)
 
-        cmd = ['inkscape', '--export-text-to-path', '--export-pdf={}'.format(pdf_fname), svg_fname]
-        subprocess.run(cmd)
+        with open(os.devnull, 'w') as null:
+          cmd = ['inkscape', '--export-text-to-path', '--export-filename={}'.format(pdf_fname), svg_fname]
+          subprocess.run(cmd, stderr=null)
 
         return pdf_fname
 
