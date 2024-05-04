@@ -3,12 +3,6 @@ require 'grape'
 class TestAttemptsApi < Grape::API
   format :json
 
-  helpers AuthenticationHelpers
-
-  before do
-    authenticated?
-  end
-
   # Handle common exceptions
   rescue_from :all do |e|
     error!({ error: e.message }, 500)
@@ -43,7 +37,7 @@ class TestAttemptsApi < Grape::API
       error!({ message: 'Task ID is invalid' }, 404)
       return
     else
-      test_attempts = TestAttempt.find_by(task_id: :task_id)
+      test_attempts = TestAttempt.where("task_id = ?", params[:task_id])
     end
 
     # Take the latest test attempt if there are any for this task

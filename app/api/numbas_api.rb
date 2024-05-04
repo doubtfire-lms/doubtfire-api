@@ -5,9 +5,9 @@ class NumbasApi < Grape::API
   # Include the AuthenticationHelpers for authentication functionality
   helpers AuthenticationHelpers
 
-  before do
-    authenticated?
-  end
+  # before do
+  #   authenticated?
+  # end
 
   helpers do
     # Method to stream a file from a zip archive at the specified path
@@ -25,7 +25,6 @@ class NumbasApi < Grape::API
             file_stream = entry.get_input_stream
             break
           end
-          logger.debug "Requested file #{file_path} not found from numbas container"
         end
       end
 
