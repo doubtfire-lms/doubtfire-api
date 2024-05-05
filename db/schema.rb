@@ -352,7 +352,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_28_223908) do
     t.string "name"
     t.integer "attempt_number", default: 1, null: false
     t.boolean "pass_status"
-    t.text "exam_data"
+    t.text "suspend_data"
     t.boolean "completed", default: false
     t.datetime "attempted_at"
     t.string "cmi_entry", default: "ab-initio"
