@@ -124,6 +124,10 @@ class TestAttemptsApi < Grape::API
     end
     post do
       test = TestAttempt.create!(params)
+
+      task = Task.find(test.task_id)
+      task.add_numbas_comment(test)
+
       present :data, test, with: Entities::TestAttemptEntity
     end
 
@@ -141,7 +145,11 @@ class TestAttemptsApi < Grape::API
       optional :attempted_at, type: DateTime, desc: 'Timestamp of the test attempt'
     end
     put ':id' do
-      TestAttempt.find(params[:id]).update!(params.except(:id))
+      test = TestAttempt.find(params[:id])
+      test.update!(params.except(:id))
+
+      task = Task.find(test.task_id)
+      task.add_numbas_comment(test)
     end
 
     # Delete a specific test result by ID

@@ -668,6 +668,18 @@ class Task < ApplicationRecord
     comment
   end
 
+  def add_numbas_comment(test)
+    comment = TaskComment.create
+    comment.task = self
+    comment.user = self.tutor
+    comment.comment = "Numbas Attempt #{test.attempt_number} completed with score: #{test.exam_result}"
+    comment.content_type = 'numbas'
+    comment.recipient = project.student
+    comment.save!
+
+    comment
+  end
+  
   def individual_task_or_submitter_of_group_task?
     return true if !group_task? # its individual
     return true unless group.present? # no group yet... so individual
