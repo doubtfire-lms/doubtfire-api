@@ -46,6 +46,12 @@ class TestAttemptsApi < Grape::API
       end
 
       test = test_attempts.order(id: :desc).first
+      
+      attempt_limit = task.task_definition.numbas_attempt_limit
+      if attempt_limit != 0 && test.present? && test.completed == true && test.attempt_number == attempt_limit
+        error!({ message: 'Attempt limit has been reached' }, 400)
+        return
+      end
 
       if test.nil?
         test = TestAttempt.create!(
@@ -125,8 +131,10 @@ class TestAttemptsApi < Grape::API
     post do
       test = TestAttempt.create!(params)
 
-      task = Task.find(test.task_id)
-      task.add_numbas_comment(test)
+      if test.completed == true
+        task = Task.find(test.task_id)
+        task.add_numbas_comment(test)
+      end
 
       present :data, test, with: Entities::TestAttemptEntity
     end
@@ -148,8 +156,10 @@ class TestAttemptsApi < Grape::API
       test = TestAttempt.find(params[:id])
       test.update!(params.except(:id))
 
-      task = Task.find(test.task_id)
-      task.add_numbas_comment(test)
+      if test.completed == true
+        task = Task.find(test.task_id)
+        task.add_numbas_comment(test)
+      end
     end
 
     # Delete a specific test result by ID
