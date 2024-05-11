@@ -33,6 +33,7 @@ class TiiAction < ApplicationRecord
 
   serialize :params, coder: JSON
   serialize :log, coder: JSON
+  attribute :log, default: -> { [] }
 
   def description
     'Generic Turnitin Action'
