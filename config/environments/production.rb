@@ -2,18 +2,6 @@
 Doubtfire::Application.configure do
   # Code is not reloaded between requests
   config.cache_classes = true
-  config.cache_store = :redis_cache_store, { url: ENV.fetch('DF_REDIS_CACHE_URL', 'redis://localhost:6379/0'),
-
-    connect_timeout:    30,  # Defaults to 1 second
-    read_timeout:       0.2, # Defaults to 1 second
-    write_timeout:      0.2, # Defaults to 1 second
-    reconnect_attempts: 2,   # Defaults to 1
-
-    error_handler: lambda { |method:, returning:, exception:|
-      # Report errors to Sentry as warnings
-      Sentry.capture_exception exception, level: 'warning',
-        tags: { method: method, returning: returning }
-    } }
 
   # Full error reports are disabled and caching is turned on
   config.consider_all_requests_local = false
