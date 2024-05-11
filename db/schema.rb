@@ -355,8 +355,8 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_05_055902) do
     t.boolean "retry", default: true, null: false
     t.integer "error_code"
     t.text "custom_error_message"
-    t.text "log", default: "[]"
-    t.text "params", default: "{}"
+    t.text "log"
+    t.string "params", limit: 1024, default: "{}"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["complete"], name: "index_tii_actions_on_complete"
