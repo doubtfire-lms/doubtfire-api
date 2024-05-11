@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [8.0.0-9](https://github.com/macite/doubtfire-deploy/compare/v8.0.0-8...v8.0.0-9) (2024-05-11)
+
+
+### Bug Fixes
+
+* ensure default log in tii actions ([a9959fe](https://github.com/macite/doubtfire-deploy/commit/a9959fef2223ffca41338b15c973b888253225bf))
+* ensure tii launch handles errors so rails can progress ([d7c9c3c](https://github.com/macite/doubtfire-deploy/commit/d7c9c3c8c60b49721aa9cac1f8df6ec716b82422))
+* revert to default cache store ([c3a22bf](https://github.com/macite/doubtfire-deploy/commit/c3a22bfee6e9912fd8b4d331d6a6e6f350b72ffa))
+
 ## [8.0.0-8](https://github.com/macite/doubtfire-deploy/compare/v8.0.0-7...v8.0.0-8) (2024-05-11)
 
 
