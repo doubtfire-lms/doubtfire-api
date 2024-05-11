@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [8.0.0-8](https://github.com/macite/doubtfire-deploy/compare/v8.0.0-7...v8.0.0-8) (2024-05-11)
+
+
+### Bug Fixes
+
+* adjust log and params in tii_actions ([4bfdfb1](https://github.com/macite/doubtfire-deploy/commit/4bfdfb1faf5bbaf45ec7827ec89e4cd231f88dba))
+* update for dotenv 3 ([ef8611f](https://github.com/macite/doubtfire-deploy/commit/ef8611f917b198064a891f81c02408ff081e977b))
+
 ## [8.0.0-7](https://github.com/macite/doubtfire-deploy/compare/v8.0.0-6...v8.0.0-7) (2024-05-02)
 
 ## [8.0.0-6](https://github.com/macite/doubtfire-deploy/compare/v8.0.0-5...v8.0.0-6) (2024-05-02)
