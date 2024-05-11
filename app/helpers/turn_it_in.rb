@@ -41,6 +41,8 @@ class TurnItIn
     TiiRegisterWebHookJob.perform_async if with_webhooks
     load_tii_features
     load_tii_eula
+  rescue StandardError => e
+    Rails.logger.error "Error launching TII: #{e}"
   end
 
   # Check if the features are up to date, and update if required
