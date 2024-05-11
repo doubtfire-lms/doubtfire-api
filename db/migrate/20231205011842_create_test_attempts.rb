@@ -2,15 +2,13 @@ class CreateTestAttempts < ActiveRecord::Migration[7.0]
   def change
     create_table :test_attempts do |t|
       t.references :task
-      t.string :name
+      t.datetime :attempted_time, null:false
       t.integer :attempt_number, default: 1, null: false
-      t.boolean :pass_status
-      t.text :suspend_data
-      t.boolean :completed, default: false
-      t.datetime :attempted_at
-      t.string :cmi_entry, default: "ab-initio"
-      t.string :exam_result
-      t.timestamps
+      t.boolean :terminated, default: false
+      t.boolean :completion_status, default: false
+      t.boolean :success_status, default: false
+      t.float :score_scaled, default: 0
+      t.text :cmi_datamodel, default: "{}", null: false
     end
   end
 end

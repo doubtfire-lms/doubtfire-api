@@ -23,176 +23,102 @@ class TestAttemptsApi < Grape::API
   end
 
   resources :test_attempts do
-    # Fetch all test results, ordered by ID in descending order
-    desc 'Get all test results'
-    get do
-      tests = TestAttempt.order(id: :desc)
-      present :data, tests, with: Entities::TestAttemptEntity
-    end
-
-    # Get latest test or create a new one based on completion status
-    desc 'Get latest test attempt for a specific task or create a new one based on completion status'
+    desc 'Get all test results for a task'
     params do
       requires :task_id, type: Integer, desc: 'Task ID to fetch test attempts for'
     end
-    get 'latest' do
+    get ':task_id' do
+      task = Task.find(params[:task_id])
+      if task.nil?
+        error!({ message: 'Task ID is invalid' }, 404)
+        return
+      else
+        attempts = TestAttempt.where("task_id = ?", params[:task_id])
+      end
+      tests = attempts.order(id: :desc)
+      present tests, with: Entities::TestAttemptEntity
+    end
+
+    desc 'Get the latest test result'
+    params do
+      requires :task_id, type: Integer, desc: 'Task ID to fetch the latest test attempt for'
+      optional :completed, type: Boolean, desc: 'Get the latest completed test?'
+    end
+    get ':task_id/latest' do
       # Ensure task exists
       task = Task.find(params[:task_id])
       if task.nil?
         error!({ message: 'Task ID is invalid' }, 404)
         return
       else
-        test_attempts = TestAttempt.where("task_id = ?", params[:task_id])
+        attempts = TestAttempt.where("task_id = ?", params[:task_id])
       end
 
-      test = test_attempts.order(id: :desc).first
-      
-      attempt_limit = task.task_definition.numbas_attempt_limit
-      if attempt_limit != 0 && test.present? && test.completed == true && test.attempt_number == attempt_limit
-        error!({ message: 'Attempt limit has been reached' }, 400)
-        return
-      end
+      test = if params[:completed]
+               attempts.where(completion_status: true).order(id: :desc).first
+             else
+               attempts.order(id: :desc).first
+             end
 
       if test.nil?
-        test = TestAttempt.create!(
-          name: "First Test",
-          attempt_number: 1,
-          pass_status: false,
-          suspend_data: nil,
-          completed: false,
-          cmi_entry: 'ab-initio',
-          attempted_at: DateTime.now,
-          task_id: params[:task_id]
-        )
-      elsif test.completed
-        test = TestAttempt.create!(
-          name: "New Attempt",
-          attempt_number: test.attempt_number + 1,
-          pass_status: false,
-          suspend_data: nil,
-          completed: false,
-          cmi_entry: 'ab-initio',
-          attempted_at: DateTime.now,
-          task_id: params[:task_id]
-        )
+        error!({ message: 'No tests found for this task' }, 404)
       else
-        test.update!(cmi_entry: 'resume')
+        present test, with: Entities::TestAttemptEntity
       end
-
-      present :data, test, with: Entities::TestAttemptEntity
     end
 
-    # Fetch the latest completed test result
-    desc 'Get the latest completed test result'
+    desc 'Review a completed session'
     params do
-      requires :task_id, type: Integer, desc: 'Task ID to fetch completed test attempt for'
+      requires :task_id, type: Integer, desc: 'Task ID to fetch the latest test attempt for'
+      requires :session_id, type: Integer, desc: 'Test attempt ID to review'
     end
-    get 'completed-latest' do
-      # Ensure task exists
-      task = Task.find(params[:task_id])
-      if task.nil?
-        error!({ message: 'Task ID is invalid' }, 404)
+    get ':task_id/review/:session_id' do
+      session = TestAttempt.find(params[:session_id])
+      if session.nil?
+        error!({ message: 'Session ID is invalid' }, 404)
         return
       else
-        test_attempts = TestAttempt.where("task_id = ?", params[:task_id])
+        # TODO: do review stuff
+        # TODO: add review permission flag to taskdef
       end
-
-      test = test_attempts.where(completed: true).order(id: :desc).first
-
-      if test.nil?
-        error!({ message: 'No completed tests found for this task' }, 404)
-      else
-        present :data, test, with: Entities::TestAttemptEntity
-      end
+      present test, with: Entities::TestAttemptEntity
     end
 
-    # Fetch a specific test result by ID
-    desc 'Get a specific test result'
+    desc 'Initiate a new test session'
     params do
-      requires :id, type: String, desc: 'ID of the test'
-    end
-    get ':id' do
-      present TestAttempt.find(params[:id]), with: Entities::TestAttemptEntity
-    end
-
-    # Create a new test result entry
-    desc 'Create a new test result'
-    params do
-      requires :name, type: String, desc: 'Name of the test'
-      requires :attempt_number, type: Integer, desc: 'Number of attempts'
-      requires :pass_status, type: Boolean, desc: 'Passing status'
-      requires :suspend_data, type: String, desc: 'Suspended data in JSON'
-      requires :completed, type: Boolean, desc: 'Completion status'
-      optional :cmi_entry, type: String, desc: 'CMI Entry', default: "ab-initio"
-      optional :exam_result, type: String, desc: 'Result of the exam'
-      optional :attempted_at, type: DateTime, desc: 'Timestamp of the test attempt'
       requires :task_id, type: Integer, desc: 'ID of the associated task'
     end
-    post do
+    post ':task_id/session' do
       test = TestAttempt.create!(params)
-
-      if test.completed == true
-        task = Task.find(test.task_id)
-        task.add_numbas_comment(test)
-      end
-
-      present :data, test, with: Entities::TestAttemptEntity
+      present test, with: Entities::TestAttemptEntity
     end
 
-    # Update the details of a specific test result
-    desc 'Update a test result'
+    desc 'Update an existing session'
     params do
-      requires :id, type: String, desc: 'ID of the test'
-      optional :name, type: String, desc: 'Name of the test'
-      optional :attempt_number, type: Integer, desc: 'Number of attempts'
-      optional :pass_status, type: Boolean, desc: 'Passing status'
-      optional :suspend_data, type: String, desc: 'Suspended data in JSON'
-      optional :completed, type: Boolean, desc: 'Completion status'
-      optional :exam_result, type: String, desc: 'Exam score'
-      optional :cmi_entry, type: String, desc: 'CMI Entry'
-      optional :attempted_at, type: DateTime, desc: 'Timestamp of the test attempt'
+      requires :task_id, type: Integer, desc: 'ID of the associated task'
+      requires :id, type: String, desc: 'ID of the test attempt'
+      optional :cmi_datamodel, type: String, desc: 'JSON CMI datamodel to update'
+      optional :terminated, type: Boolean, desc: 'Terminate the current session'
     end
-    put ':id' do
+    patch ':task_id/session/:id' do
+      session_data = ActionController::Parameters.new(params).permit(:cmi_datamodel, :terminated)
       test = TestAttempt.find(params[:id])
-      test.update!(params.except(:id))
-
-      if test.completed == true
-        task = Task.find(test.task_id)
-        task.add_numbas_comment(test)
-      end
+      test.update!(session_data)
+      test.save!
+      present test, with: Entities::TestAttemptEntity
     end
 
-    # Delete a specific test result by ID
-    desc 'Delete a test result'
+    desc 'Delete a test attempt'
     params do
-      requires :id, type: String, desc: 'ID of the test'
+      requires :task_id, type: Integer, desc: 'ID of the associated task'
+      requires :id, type: String, desc: 'ID of the test attempt'
     end
-    delete ':id' do
-      TestAttempt.find(params[:id]).destroy!
-    end
+    delete ':task_id/:id' do
+      raise NotImplementedError
+      # TODO: fix permissions before enabling this
 
-    # Update the suspend_data of a specific test result
-    desc 'Update suspend data for a test result'
-    params do
-      requires :id, type: String, desc: 'ID of the test'
-      requires :suspend_data, type: Hash, desc: 'Suspend data to be saved'
-    end
-    put ':id/suspend' do
-      test = TestAttempt.find_by(id: params[:id])
-
-      error!('Test not found', 404) unless test
-
-      suspend_data = params[:suspend_data].to_json
-
-      begin
-        JSON.parse(suspend_data)
-        test.update!(suspend_data: suspend_data)
-        { message: 'Suspend data updated successfully', test: test }
-      rescue JSON::ParserError
-        error!('Invalid JSON provided', 400)
-      rescue => e
-        error!(e.message, 500)
-      end
+      # test = TestAttempt.find(params[:id])
+      # test.destroy!
     end
   end
 end

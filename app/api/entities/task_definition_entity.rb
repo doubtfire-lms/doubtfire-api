@@ -39,10 +39,11 @@ module Entities
     expose :has_task_sheet?, as: :has_task_sheet
     expose :has_task_resources?, as: :has_task_resources
     expose :has_task_assessment_resources?, as: :has_task_assessment_resources, if: ->(unit, options) { staff?(options[:my_role]) }
-    expose :has_numbas_data?, as: :has_numbas_data
-    expose :has_enabled_numbas_test
-    expose :has_numbas_time_delay, if: ->(unit, options) { staff?(options[:my_role]) }
-    expose :numbas_attempt_limit, if: ->(unit, options) { staff?(options[:my_role]) }
+    expose :has_scorm_data?, as: :has_scorm_data
+    expose :scorm_enabled
+    expose :scorm_allow_review
+    expose :scorm_time_delay_enabled, if: ->(unit, options) { staff?(options[:my_role]) }
+    expose :scorm_attempt_limit, if: ->(unit, options) { staff?(options[:my_role]) }
     expose :is_graded
     expose :max_quality_pts
     expose :overseer_image_id, if: ->(unit, options) { staff?(options[:my_role]) }

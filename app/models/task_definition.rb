@@ -95,8 +95,8 @@ class TaskDefinition < ApplicationRecord
       new_td.add_task_resources(task_resources, copy: true)
     end
 
-    if has_numbas_data?
-      new_td.add_numbas_data(task_numbas_data, copy: true)
+    if has_scorm_data?
+      new_td.add_scorm_data(task_scorm_data, copy: true)
     end
 
     new_td.save!
@@ -138,8 +138,8 @@ class TaskDefinition < ApplicationRecord
       FileUtils.mv(task_assessment_resources_with_abbreviation(old_abbr), task_assessment_resources())
     end
 
-    if File.exist? task_numbas_data_with_abbreviation(old_abbr)
-      FileUtils.mv(task_numbas_data_with_abbreviation(old_abbr), task_numbas_data())
+    if File.exist? task_scorm_data_with_abbreviation(old_abbr)
+      FileUtils.mv(task_scorm_data_with_abbreviation(old_abbr), task_scorm_data())
     end
   end
 
@@ -301,8 +301,8 @@ class TaskDefinition < ApplicationRecord
 
   def self.csv_columns
     [:name, :abbreviation, :description, :weighting, :target_grade, :restrict_status_updates, :max_quality_pts,
-     :is_graded, :plagiarism_warn_pct, :group_set, :upload_requirements, :has_enabled_numbas_test,
-     :has_numbas_time_delay, :numbas_attempt_limit, :start_week, :start_day, :target_week, :target_day, :due_week,
+     :is_graded, :plagiarism_warn_pct, :group_set, :upload_requirements, :scorm_enabled,
+     :scorm_time_delay_enabled, :scorm_attempt_limit, :start_week, :start_day, :target_week, :target_day, :due_week,
      :due_day, :tutorial_stream]
   end
 
@@ -349,9 +349,9 @@ class TaskDefinition < ApplicationRecord
     result.upload_requirements         = JSON.parse(row[:upload_requirements]) unless row[:upload_requirements].nil?
     result.due_date                    = due_date
 
-    result.has_enabled_numbas_test     = %w(Yes y Y yes true TRUE 1).include? "#{row[:has_enabled_numbas_test]}".strip
-    result.has_numbas_time_delay       = %w(Yes y Y yes true TRUE 1).include? "#{row[:has_numbas_time_delay]}".strip
-    result.numbas_attempt_limit        = row[:numbas_attempt_limit].to_i
+    result.scorm_enabled     = %w(Yes y Y yes true TRUE 1).include? "#{row[:scorm_enabled]}".strip
+    result.scorm_time_delay_enabled       = %w(Yes y Y yes true TRUE 1).include? "#{row[:scorm_time_delay_enabled]}".strip
+    result.scorm_attempt_limit        = row[:scorm_attempt_limit].to_i
 
     result.plagiarism_warn_pct         = row[:plagiarism_warn_pct].to_i
 
@@ -399,20 +399,20 @@ class TaskDefinition < ApplicationRecord
     File.exist? task_sheet
   end
 
-  def has_numbas_data?
-    File.exist? task_numbas_data
+  def has_scorm_data?
+    File.exist? task_scorm_data
   end
 
-  def has_enabled_numbas_test?
-    has_enabled_numbas_test
+  def scorm_enabled?
+    scorm_enabled
   end
 
-  def has_numbas_time_delay?
-    has_numbas_time_delay
+  def scorm_time_delay_enabled?
+    scorm_time_delay_enabled
   end
 
-  def numbas_attempt_limit?
-    numbas_attempt_limit
+  def scorm_attempt_limit?
+    scorm_attempt_limit
   end
 
   def is_graded?
@@ -467,20 +467,20 @@ class TaskDefinition < ApplicationRecord
     end
   end
 
-  def add_numbas_data(file, copy: false)
+  def add_scorm_data(file, copy: false)
     if copy
-      FileUtils.cp file, task_numbas_data
+      FileUtils.cp file, task_scorm_data
     else
-      FileUtils.mv file, task_numbas_data
+      FileUtils.mv file, task_scorm_data
     end
   end
 
-  def remove_numbas_data()
-    if has_numbas_data?
-      FileUtils.rm task_numbas_data
+  def remove_scorm_data()
+    if has_scorm_data?
+      FileUtils.rm task_scorm_data
     end
 
-    reset_numbas_config()
+    reset_scorm_config()
   end
 
   # Get the path to the task sheet - using the current abbreviation
@@ -496,8 +496,8 @@ class TaskDefinition < ApplicationRecord
     task_assessment_resources_with_abbreviation(abbreviation)
   end
 
-  def task_numbas_data
-    task_numbas_data_with_abbreviation(abbreviation)
+  def task_scorm_data
+    task_scorm_data_with_abbreviation(abbreviation)
   end
 
   def related_tasks_with_files(consolidate_groups = true)
@@ -542,7 +542,7 @@ class TaskDefinition < ApplicationRecord
     remove_task_sheet()
     remove_task_resources()
     remove_task_assessment_resources()
-    remove_numbas_data()
+    remove_scorm_data()
   end
 
   # Calculate the path to the task sheet using the provided abbreviation
@@ -590,14 +590,14 @@ class TaskDefinition < ApplicationRecord
     end
   end
 
-  # Calculate the path to the numbas containzer zip file using the provided abbreviation
+  # Calculate the path to the SCORM containzer zip file using the provided abbreviation
   # This allows the path to be calculated on abbreviation change to allow files to
   # be moved
-  def task_numbas_data_with_abbreviation(abbr)
+  def task_scorm_data_with_abbreviation(abbr)
     task_path = FileHelper.task_file_dir_for_unit unit, create = true
 
-    result_with_sanitised_path = "#{task_path}#{FileHelper.sanitized_path(abbr)}.numbas.zip"
-    result_with_sanitised_file = "#{task_path}#{FileHelper.sanitized_filename(abbr)}.numbas.zip"
+    result_with_sanitised_path = "#{task_path}#{FileHelper.sanitized_path(abbr)}.scorm.zip"
+    result_with_sanitised_file = "#{task_path}#{FileHelper.sanitized_filename(abbr)}.scorm.zip"
 
     if File.exist? result_with_sanitised_path
       result_with_sanitised_path
@@ -606,9 +606,9 @@ class TaskDefinition < ApplicationRecord
     end
   end
 
-  def reset_numbas_config()
-    self.has_enabled_numbas_test = false
-    self.has_numbas_time_delay = false
-    self.numbas_attempt_limit = 0
+  def reset_scorm_config()
+    self.scorm_enabled = false
+    self.scorm_time_delay_enabled = false
+    self.scorm_attempt_limit = 0
   end
 end

@@ -1,2 +1,2 @@
-name,abbreviation,description,weighting,target_grade,restrict_status_updates,max_quality_pts,is_graded,plagiarism_warn_pct,plagiarism_checks,group_set,upload_requirements,start_week,start_day,target_week,target_day,due_week,due_day,has_enabled_numbas_test,has_numbas_time_delay,numbas_attempt_limit
+name,abbreviation,description,weighting,target_grade,restrict_status_updates,max_quality_pts,is_graded,plagiarism_warn_pct,plagiarism_checks,group_set,upload_requirements,start_week,start_day,target_week,target_day,due_week,due_day,scorm_enabled,scorm_time_delay_enabled,scorm_attempt_limit
 Assignment 12,A12,rerum ut fugit saepe ipsa in quidem,2,0,FALSE,0,FALSE,50,[],,"[{""key"":""file0"",""name"":""Assumenda accusamus quas"",""type"":""image""}]",-1,Sat,1,Mon,13,Mon,,,

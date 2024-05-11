@@ -250,9 +250,10 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_28_223908) do
     t.bigint "overseer_image_id"
     t.string "tii_group_id"
     t.string "moss_language"
-    t.boolean "has_enabled_numbas_test", default: false
-    t.boolean "has_numbas_time_delay", default: false
-    t.integer "numbas_attempt_limit"
+    t.boolean "scorm_enabled", default: false
+    t.boolean "scorm_allow_review", default: false
+    t.boolean "scorm_time_delay_enabled", default: false
+    t.integer "scorm_attempt_limit"
     t.index ["group_set_id"], name: "index_task_definitions_on_group_set_id"
     t.index ["overseer_image_id"], name: "index_task_definitions_on_overseer_image_id"
     t.index ["tutorial_stream_id"], name: "index_task_definitions_on_tutorial_stream_id"
@@ -349,16 +350,13 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_28_223908) do
 
   create_table "test_attempts", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.bigint "task_id"
-    t.string "name"
+    t.datetime "attempted_time", null: false
     t.integer "attempt_number", default: 1, null: false
-    t.boolean "pass_status"
-    t.text "suspend_data"
-    t.boolean "completed", default: false
-    t.datetime "attempted_at"
-    t.string "cmi_entry", default: "ab-initio"
-    t.string "exam_result"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.boolean "terminated", default: false
+    t.boolean "completion_status", default: false
+    t.boolean "success_status", default: false
+    t.float "score_scaled", default: 0.0
+    t.text "cmi_datamodel", default: "{}", null: false
     t.index ["task_id"], name: "index_test_attempts_on_task_id"
   end
 

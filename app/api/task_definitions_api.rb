@@ -28,9 +28,9 @@ class TaskDefinitionsApi < Grape::API
       requires :restrict_status_updates,  type: Boolean,  desc: 'Restrict updating of the status to staff'
       optional :upload_requirements,      type: String,   desc: 'Task file upload requirements'
       requires :plagiarism_warn_pct,      type: Integer,  desc: 'The percent at which to record and warn about plagiarism'
-      requires :has_enabled_numbas_test,  type: Boolean,  desc: 'Whether or not Numbas test assessment is enabled for this task'
-      requires :has_numbas_time_delay,    type: Boolean,  desc: 'Whether or not there is an incremental time delay between Numbas test attempts'
-      requires :numbas_attempt_limit,     type: Integer,  desc: 'The number of times a Numbas test can be attempted'
+      requires :scorm_enabled, type: Boolean, desc: 'Whether SCORM assessment is enabled for this task'
+      requires :scorm_time_delay_enabled, type: Boolean, desc: 'Whether there is an incremental time delay between SCORM test attempts'
+      requires :scorm_attempt_limit, type: Integer, desc: 'The number of times a SCORM test can be attempted'
       requires :is_graded,                type: Boolean,  desc: 'Whether or not this task definition is a graded task'
       requires :max_quality_pts,          type: Integer,  desc: 'A range for quality points when quality is assessed'
       optional :assessment_enabled,       type: Boolean,  desc: 'Enable or disable assessment'
@@ -60,9 +60,9 @@ class TaskDefinitionsApi < Grape::API
                                                 :abbreviation,
                                                 :restrict_status_updates,
                                                 :plagiarism_warn_pct,
-                                                :has_enabled_numbas_test,
-                                                :has_numbas_time_delay,
-                                                :numbas_attempt_limit,
+                                                :scorm_enabled,
+                                                :scorm_time_delay_enabled,
+                                                :scorm_attempt_limit,
                                                 :is_graded,
                                                 :max_quality_pts,
                                                 :assessment_enabled,
@@ -112,9 +112,9 @@ class TaskDefinitionsApi < Grape::API
       optional :restrict_status_updates,  type: Boolean,  desc: 'Restrict updating of the status to staff'
       optional :upload_requirements,      type: String,   desc: 'Task file upload requirements'
       optional :plagiarism_warn_pct,      type: Integer,  desc: 'The percent at which to record and warn about plagiarism'
-      optional :has_enabled_numbas_test,  type: Boolean,  desc: 'Whether or not Numbas test assessment is enabled for this task'
-      optional :has_numbas_time_delay,    type: Boolean,  desc: 'Whether or not there is an incremental time delay between Numbas test attempts'
-      optional :numbas_attempt_limit,     type: Integer,  desc: 'The number of times a Numbas test can be attempted'
+      optional :scorm_enabled, type: Boolean, desc: 'Whether or not SCORM test assessment is enabled for this task'
+      optional :scorm_time_delay_enabled, type: Boolean, desc: 'Whether or not there is an incremental time delay between SCORM test attempts'
+      optional :scorm_attempt_limit, type: Integer, desc: 'The number of times a SCORM test can be attempted'
       optional :is_graded,                type: Boolean,  desc: 'Whether or not this task definition is a graded task'
       optional :max_quality_pts,          type: Integer,  desc: 'A range for quality points when quality is assessed'
       optional :assessment_enabled,       type: Boolean,  desc: 'Enable or disable assessment'
@@ -143,9 +143,9 @@ class TaskDefinitionsApi < Grape::API
                                                 :abbreviation,
                                                 :restrict_status_updates,
                                                 :plagiarism_warn_pct,
-                                                :has_enabled_numbas_test,
-                                                :has_numbas_time_delay,
-                                                :numbas_attempt_limit,
+                                                :scorm_enabled,
+                                                :scorm_time_delay_enabled,
+                                                :scorm_attempt_limit,
                                                 :is_graded,
                                                 :max_quality_pts,
                                                 :assessment_enabled,
@@ -627,17 +627,17 @@ class TaskDefinitionsApi < Grape::API
     stream_file path
   end
 
-  desc 'Upload the Numbas SCORM-2004 container (zip file) for a task'
+  desc 'Upload the SCORM container (zip file) for a task'
   params do
     requires :unit_id, type: Integer, desc: 'The related unit'
     requires :task_def_id, type: Integer, desc: 'The related task definition'
-    requires :file, type: File, desc: 'The Numbas data container'
+    requires :file, type: File, desc: 'The SCORM data container'
   end
-  post '/units/:unit_id/task_definitions/:task_def_id/numbas_data' do
+  post '/units/:unit_id/task_definitions/:task_def_id/scorm_data' do
     unit = Unit.find(params[:unit_id])
 
     unless authorise? current_user, unit, :add_task_def
-      error!({ error: 'Not authorised to upload numbas test for the unit' }, 403)
+      error!({ error: 'Not authorised to upload SCORM data for the unit' }, 403)
     end
 
     task_def = unit.task_definitions.find(params[:task_def_id])
@@ -651,16 +651,16 @@ class TaskDefinitionsApi < Grape::API
     check_mime_against_list! file_path, 'zip', ['application/zip', 'multipart/x-gzip', 'multipart/x-zip', 'application/x-gzip', 'application/octet-stream']
 
     # Actually import...
-    task_def.add_numbas_data(file_path)
+    task_def.add_scorm_data(file_path)
     true
   end
 
-  desc 'Download the Numbas test data'
+  desc 'Download the SCORM test data'
   params do
     requires :unit_id, type: Integer, desc: 'The unit to modify tasks for'
-    requires :task_def_id, type: Integer, desc: 'The task definition to get the Numbas test data of'
+    requires :task_def_id, type: Integer, desc: 'The task definition to get the SCORM test data of'
   end
-  get '/units/:unit_id/task_definitions/:task_def_id/numbas_data' do
+  get '/units/:unit_id/task_definitions/:task_def_id/scorm_data' do
     unit = Unit.find(params[:unit_id])
     task_def = unit.task_definitions.find(params[:task_def_id])
 
@@ -668,10 +668,10 @@ class TaskDefinitionsApi < Grape::API
       error!({ error: 'Not authorised to download task details of unit' }, 403)
     end
 
-    if task_def.has_numbas_data?
-      path = task_def.task_numbas_data
+    if task_def.has_scorm_data?
+      path = task_def.task_scorm_data
       content_type 'application/octet-stream'
-      header['Content-Disposition'] = "attachment; filename=#{task_def.abbreviation}-numbas.zip"
+      header['Content-Disposition'] = "attachment; filename=#{task_def.abbreviation}-scorm.zip"
     else
       path = Rails.root.join('public', 'resources', 'FileNotFound.pdf')
       content_type 'application/pdf'
@@ -683,22 +683,22 @@ class TaskDefinitionsApi < Grape::API
     File.read(path)
   end
 
-  desc 'Remove the Numbas test data for a given task'
+  desc 'Remove the SCORM test data for a given task'
   params do
     requires :unit_id, type: Integer, desc: 'The related unit'
     requires :task_def_id, type: Integer, desc: 'The related task definition'
   end
-  delete '/units/:unit_id/task_definitions/:task_def_id/numbas_data' do
+  delete '/units/:unit_id/task_definitions/:task_def_id/scorm_data' do
     unit = Unit.find(params[:unit_id])
 
     unless authorise? current_user, unit, :add_task_def
-      error!({ error: 'Not authorised to remove task numbas data of unit' }, 403)
+      error!({ error: 'Not authorised to remove task SCORM data of unit' }, 403)
     end
 
     task_def = unit.task_definitions.find(params[:task_def_id])
 
     # Actually remove...
-    task_def.remove_numbas_data
+    task_def.remove_scorm_data
     true
   end
 end

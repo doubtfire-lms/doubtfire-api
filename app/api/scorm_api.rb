@@ -1,7 +1,7 @@
 require 'grape'
 require 'zip'
 require 'mime/types'
-class NumbasApi < Grape::API
+class ScormApi < Grape::API
   # Include the AuthenticationHelpers for authentication functionality
   helpers AuthenticationHelpers
 
@@ -20,11 +20,10 @@ class NumbasApi < Grape::API
       # Get an input stream for the requested file within the ZIP archive
       Zip::File.open(zip_path) do |zip_file|
         zip_file.each do |entry|
-          if entry.name == file_path
-            logger.debug "Found file #{file_path} from numbas container"
-            file_stream = entry.get_input_stream
-            break
-          end
+          next unless entry.name == file_path
+          logger.debug "Found file #{file_path} from SCORM container"
+          file_stream = entry.get_input_stream
+          break
         end
       end
 
@@ -48,19 +47,19 @@ class NumbasApi < Grape::API
     end
   end
 
-  desc 'Serve numbas content'
+  desc 'Serve SCORM content'
   params do
-    requires :task_def_id, type: Integer, desc: 'Task Definition ID to get Numbas test data for'
+    requires :task_def_id, type: Integer, desc: 'Task Definition ID to get SCORM test data for'
   end
-  get '/numbas_api/:task_def_id/*file_path' do
+  get '/scorm/:task_def_id/*file_path' do
     env['api.format'] = :txt
     task_def = TaskDefinition.find(params[:task_def_id])
-    if task_def.has_numbas_data?
-      zip_path = task_def.task_numbas_data
+    if task_def.has_scorm_data?
+      zip_path = task_def.task_scorm_data
       content_type 'application/octet-stream'
       stream_file_from_zip(zip_path, params[:file_path])
     else
-      error!({ error: 'Numbas data does not exist.' }, 404)
+      error!({ error: 'SCORM data does not exist.' }, 404)
     end
   end
 end

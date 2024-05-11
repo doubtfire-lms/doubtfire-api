@@ -50,9 +50,9 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
         plagiarism_warn_pct:      80,
         is_graded:                false,
         max_quality_pts:          0,
-        has_enabled_numbas_test:  false,
-        has_numbas_time_delay:    true,
-        numbas_attempt_limit:     0
+        scorm_enabled:  false,
+        scorm_time_delay_enabled:    true,
+        scorm_attempt_limit:     0
       }
     }
 
