@@ -152,7 +152,7 @@ class TurnItIn
 
   # Return the url used for webhook callbacks
   def self.webhook_url
-    "#{Doubtfire::Application.config.institution[:host_url]}api/tii_hook"
+    "#{Doubtfire::Application.config.institution[:host]}/api/tii_hook"
   end
 
   # Create or get the group context for a unit. The "group context" is the Turn It In equivalent of a unit.
