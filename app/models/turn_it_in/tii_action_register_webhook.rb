@@ -10,6 +10,7 @@ class TiiActionRegisterWebhook < TiiAction
 
   def run
     register_webhook if need_to_register_webhook?
+    self.complete = true
   end
 
   def need_to_register_webhook?
