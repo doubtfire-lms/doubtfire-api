@@ -1,3 +1,3 @@
-name,abbreviation,description,weighting,target_grade,restrict_status_updates,max_quality_pts,is_graded,plagiarism_warn_pct,plagiarism_checks,group_set,upload_requirements,start_week,start_day,target_week,target_day,due_week,due_day,tutorial_stream,scorm_enabled,scorm_time_delay_enabled,scorm_attempt_limit
+name,abbreviation,description,weighting,target_grade,restrict_status_updates,max_quality_pts,is_graded,plagiarism_warn_pct,plagiarism_checks,group_set,upload_requirements,start_week,start_day,target_week,target_day,due_week,due_day,tutorial_stream,scorm_enabled,scorm_allow_review,scorm_time_delay_enabled,scorm_attempt_limit
 Group Import 1,1GI,Test Description - Import,16,0,FALSE,0,FALSE,80,[],Group Work,[],0,Mon,1,Sun,2,Wed,group-tasks-test,,,
 Missing Group,2GI,Test Description - Import FAIL,16,0,FALSE,0,FALSE,80,[],Group Work1,[],0,Mon,1,Sun,2,Wed,group-tasks-test,,,

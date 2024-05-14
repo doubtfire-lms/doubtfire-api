@@ -28,9 +28,10 @@ class TaskDefinitionsApi < Grape::API
       requires :restrict_status_updates,  type: Boolean,  desc: 'Restrict updating of the status to staff'
       optional :upload_requirements,      type: String,   desc: 'Task file upload requirements'
       requires :plagiarism_warn_pct,      type: Integer,  desc: 'The percent at which to record and warn about plagiarism'
-      requires :scorm_enabled, type: Boolean, desc: 'Whether SCORM assessment is enabled for this task'
-      requires :scorm_time_delay_enabled, type: Boolean, desc: 'Whether there is an incremental time delay between SCORM test attempts'
-      requires :scorm_attempt_limit, type: Integer, desc: 'The number of times a SCORM test can be attempted'
+      requires :scorm_enabled,            type: Boolean,  desc: 'Whether SCORM assessment is enabled for this task'
+      requires :scorm_allow_review,       type: Boolean,  desc: 'Whether a student is allowed to review their completed test attempts'
+      requires :scorm_time_delay_enabled, type: Boolean,  desc: 'Whether there is an incremental time delay between SCORM test attempts'
+      requires :scorm_attempt_limit,      type: Integer,  desc: 'The number of times a SCORM test can be attempted'
       requires :is_graded,                type: Boolean,  desc: 'Whether or not this task definition is a graded task'
       requires :max_quality_pts,          type: Integer,  desc: 'A range for quality points when quality is assessed'
       optional :assessment_enabled,       type: Boolean,  desc: 'Enable or disable assessment'
@@ -61,6 +62,7 @@ class TaskDefinitionsApi < Grape::API
                                                 :restrict_status_updates,
                                                 :plagiarism_warn_pct,
                                                 :scorm_enabled,
+                                                :scorm_allow_review,
                                                 :scorm_time_delay_enabled,
                                                 :scorm_attempt_limit,
                                                 :is_graded,
@@ -112,9 +114,10 @@ class TaskDefinitionsApi < Grape::API
       optional :restrict_status_updates,  type: Boolean,  desc: 'Restrict updating of the status to staff'
       optional :upload_requirements,      type: String,   desc: 'Task file upload requirements'
       optional :plagiarism_warn_pct,      type: Integer,  desc: 'The percent at which to record and warn about plagiarism'
-      optional :scorm_enabled, type: Boolean, desc: 'Whether or not SCORM test assessment is enabled for this task'
-      optional :scorm_time_delay_enabled, type: Boolean, desc: 'Whether or not there is an incremental time delay between SCORM test attempts'
-      optional :scorm_attempt_limit, type: Integer, desc: 'The number of times a SCORM test can be attempted'
+      optional :scorm_enabled,            type: Boolean,  desc: 'Whether or not SCORM test assessment is enabled for this task'
+      optional :scorm_allow_review,       type: Boolean,  desc: 'Whether a student is allowed to review their completed test attempts'
+      optional :scorm_time_delay_enabled, type: Boolean,  desc: 'Whether or not there is an incremental time delay between SCORM test attempts'
+      optional :scorm_attempt_limit,      type: Integer,  desc: 'The number of times a SCORM test can be attempted'
       optional :is_graded,                type: Boolean,  desc: 'Whether or not this task definition is a graded task'
       optional :max_quality_pts,          type: Integer,  desc: 'A range for quality points when quality is assessed'
       optional :assessment_enabled,       type: Boolean,  desc: 'Enable or disable assessment'
@@ -144,6 +147,7 @@ class TaskDefinitionsApi < Grape::API
                                                 :restrict_status_updates,
                                                 :plagiarism_warn_pct,
                                                 :scorm_enabled,
+                                                :scorm_allow_review,
                                                 :scorm_time_delay_enabled,
                                                 :scorm_attempt_limit,
                                                 :is_graded,
