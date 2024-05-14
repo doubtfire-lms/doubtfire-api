@@ -90,7 +90,24 @@ class TestAttemptsApi < Grape::API
       requires :task_id, type: Integer, desc: 'ID of the associated task'
     end
     post ':task_id/session' do
-      test = TestAttempt.create!(params)
+      task = Task.find(params[:task_id])
+      if task.nil?
+        error!({ message: 'Task ID is invalid' }, 404)
+        return
+      else
+        attempts = TestAttempt.where("task_id = ?", params[:task_id])
+      end
+
+      # check attempt limit
+      test_count = attempts.count
+      limit = task.task_definition.scorm_attempt_limit
+      if test_count > limit && limit != 0
+        error!({ message: 'Attempt limit has been reached' }, 400)
+        return
+      end
+
+      metadata = params.merge(attempt_number: test_count + 1)
+      test = TestAttempt.create!(metadata)
       present test, with: Entities::TestAttemptEntity
     end
 
