@@ -78,6 +78,7 @@ class TestAttemptsApi < Grape::API
         error!({ message: 'Session ID is invalid' }, 404)
         return
       else
+        logger.debug "Request to review test session #{params[:session_id]}"
         # TODO: do review stuff
         # TODO: add review permission flag to taskdef
       end
