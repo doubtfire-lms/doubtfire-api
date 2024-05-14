@@ -88,14 +88,15 @@ class TestAttempt < ApplicationRecord
     write_attribute(:cmi_datamodel, new_data.to_json)
   end
 
-  def resume
-    # check cmi.completion_status is not completed
-    # set cmi.entry to resume
-  end
-
   def review
-    # set cmi.entry to resume
-    # set cmi.mode to review
+    dm = JSON.parse(self.cmi_datamodel)
+    if dm['cmi.completion_status'] != 'completed'
+      raise "Cannot review incomplete attempts!"
+    end
+
+    # when review is requested change the mode to review
+    dm['cmi.mode'] = 'review'
+    write_attribute(:cmi_datamodel, dm.to_json)
   end
 
   def pass_override

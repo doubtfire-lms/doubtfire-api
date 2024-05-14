@@ -79,7 +79,7 @@ class TestAttemptsApi < Grape::API
         return
       else
         logger.debug "Request to review test session #{params[:session_id]}"
-        # TODO: do review stuff
+        session.review
         # TODO: add review permission flag to taskdef
       end
       present test, with: Entities::TestAttemptEntity
@@ -104,8 +104,15 @@ class TestAttemptsApi < Grape::API
     patch ':task_id/session/:id' do
       session_data = ActionController::Parameters.new(params).permit(:cmi_datamodel, :terminated)
       test = TestAttempt.find(params[:id])
-      test.update!(session_data)
-      test.save!
+
+      unless test.terminated
+        test.update!(session_data)
+        test.save!
+        if params[:terminated]
+          task = Task.find(test.task_id)
+          task.add_scorm_comment(test)
+        end
+      end
       present test, with: Entities::TestAttemptEntity
     end
 

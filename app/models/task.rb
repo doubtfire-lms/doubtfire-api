@@ -672,7 +672,7 @@ class Task < ApplicationRecord
     comment = TaskComment.create
     comment.task = self
     comment.user = self.tutor
-    comment.comment = "Test Attempt #{test.attempt_number} completed with score: #{test.exam_result}"
+    comment.comment = "Test Attempt #{test.attempt_number} completed with score: #{format("%.2f", test.score_scaled * 100)}%"
     comment.content_type = 'scorm'
     comment.recipient = project.student
     comment.save!
