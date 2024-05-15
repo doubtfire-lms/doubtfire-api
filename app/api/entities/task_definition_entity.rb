@@ -42,8 +42,8 @@ module Entities
     expose :has_scorm_data?, as: :has_scorm_data
     expose :scorm_enabled
     expose :scorm_allow_review
-    expose :scorm_time_delay_enabled, if: ->(unit, options) { staff?(options[:my_role]) }
-    expose :scorm_attempt_limit, if: ->(unit, options) { staff?(options[:my_role]) }
+    expose :scorm_time_delay_enabled
+    expose :scorm_attempt_limit
     expose :is_graded
     expose :max_quality_pts
     expose :overseer_image_id, if: ->(unit, options) { staff?(options[:my_role]) }
