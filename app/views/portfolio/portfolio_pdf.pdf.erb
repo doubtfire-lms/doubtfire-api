@@ -33,16 +33,21 @@ document_list = Array.new
 %>
 
 \begin{titlepage}
-  <% if @learning_summary_report %>
-    % add learning summary report to the document list for annotation extraction
-    <% document_list.append(@learning_summary_report) unless @is_retry %>
-  \includepdf[addtotoc={\thepage,section,1,Learning Summary Report,chap:learningsummary},pages={1-1},fitpaper]{<%= @learning_summary_report %>}
-
-    <% for page_idx in 2..FileHelper.pages_in_pdf(@learning_summary_report) do %>
-  \includepdf[pages={<%= page_idx %>-<%= page_idx %>},fitpaper]{<%= @learning_summary_report %>}
-    <% end # end for  %>
-
-  <% end %>
+<% if @learning_summary_report
+    # add learning summary report to the document list for annotation extraction
+    document_list.append(@learning_summary_report) unless @is_retry %>
+\includepdf[addtotoc={\thepage,section,1,Learning Summary Report,chap:learningsummary},pages={1-1},fitpaper]{<%= @learning_summary_report %>}
+<%
+    if FileHelper.pages_in_pdf(@learning_summary_report) > 30
+%>
+\includepdf[pages={2-},fitpaper]{<%= @learning_summary_report %>}
+<%  else
+      for page_idx in 2..FileHelper.pages_in_pdf(@learning_summary_report) do %>
+\includepdf[pages={<%= page_idx %>-<%= page_idx %>},fitpaper]{<%= @learning_summary_report %>}
+<%    end # end for
+    end # if long LSR
+  end # if there is a learning summary
+%>
 
   \thispagestyle{title}
   \center
@@ -78,7 +83,7 @@ document_list = Array.new
 \begin{minipage}{0.4\textwidth}
 \begin{flushright} \large
 \emph{Tutor:} \\
-<%  if not @project.main_convenor_user.nil? %>
+<%  unless @project.main_convenor_user.nil? %>
 <%=   lesc @project.main_convenor_user.first_name %> \textsc{<%= lesc @project.main_convenor_user.last_name %>}
 <%  else %>
 No Tutor
@@ -232,14 +237,22 @@ No Tutor
       <% end %>
     \end{tabular}
   <% end %>
-  <% if File.exists? task.portfolio_evidence_path %>
-    % add task evidence to the document list for annotation extraction
-    <% document_list.append(task.portfolio_evidence_path) unless @is_retry %>
-    <% for page_idx in 1..FileHelper.pages_in_pdf(task.portfolio_evidence_path) do %>
+
+<% if File.exist? task.portfolio_evidence_path
+    # add task evidence to the document list for annotation extraction
+    document_list.append(task.portfolio_evidence_path) unless @is_retry
+
+    # embed in its entirety if more than 30 pages, otherwise embed page by page
+    if FileHelper.pages_in_pdf(task.portfolio_evidence_path) > 30
+  %>
+\includepdf[pages={1-},fitpaper]{<%= task.portfolio_evidence_path %>}
+  <% else %>
+      <% for page_idx in 1..FileHelper.pages_in_pdf(task.portfolio_evidence_path) do %>
 \includepdf[pages={<%= page_idx %>-<%= page_idx %>},fitpaper]{<%= task.portfolio_evidence_path %>}
-    <% end # end for  %>
-  <% end %>
-<% end %>
+      <% end # end for
+    end # end if many pages
+  end # end if file exists
+end # portfolio tasks %>
 
 <% # generate lua calls for newpax and insert it in the preamble for annotation extraction
 content_for :preamble_newpax do %>
