@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [7.0.25](https://github.com/doubtfire-lms/doubtfire-deploy/compare/v7.0.24...v7.0.25) (2024-05-20)
+
+
+### Bug Fixes
+
+* ensure portfolio tasks more likely to work with long files ([e9d6641](https://github.com/doubtfire-lms/doubtfire-deploy/commit/e9d66411690482f446dfdb1d53d705435eb22aea))
+* skip unit tests and linting for documentation updates ([399d109](https://github.com/doubtfire-lms/doubtfire-deploy/commit/399d1098aef2788545a22c1d3e768b0fe61a74cf))
+
 ### [7.0.24](https://github.com/doubtfire-lms/doubtfire-deploy/compare/v7.0.23...v7.0.24) (2024-03-26)
 
 
