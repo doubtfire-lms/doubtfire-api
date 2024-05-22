@@ -150,9 +150,9 @@ class UnitRole < ApplicationRecord
 
   def ensure_valid_user_for_role
     if is_convenor?
-      errors.add :user, 'must have a role that id able to administer units (request admin to adjust user role)' unless user.has_convenor_capability?
+      errors.add :user, 'must have a role that is able to administer units (request admin to adjust user role)' unless user.has_convenor_capability?
     else
-      errors.add :user, 'must have a role that id able to teach units (request admin to adjust user role)' unless user.has_tutor_capability?
+      errors.add :user, 'must have a role that is able to teach units (request admin to adjust user role)' unless user.has_tutor_capability?
     end
   end
 
