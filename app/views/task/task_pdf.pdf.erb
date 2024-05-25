@@ -112,8 +112,14 @@ No Tutor % Supervisor's Name
   <%
     if file[:type] == 'code'
       if (File.extname(file[:path])[1..-1]) != 'ipynb'
+      pygments_lang = Task.pygments_lang(File.extname(file[:path])[1..-1])
   %>
-\inputminted[breaklines,linenos,breakanywhere,tabsize=4]{<%= Task.pygments_lang(File.extname(file[:path])[1..-1]) %>}{<%= file[:path] %>}
+    <% if file[:truncated] %>
+\begin{tcolorbox}[colback=blue!5!white,colframe=blue!75!black]
+  This file has additional line breaks applied by <%= @doubtfire_product_name %> because they contain lines longer than the configured limit. Lines over 1000 characters long have been truncated to limit PDF page count. The orginal submission can be retrieved via the "Download Uploaded Files" function.
+\end{tcolorbox}
+    <% end %>
+\inputminted[breaklines,linenos,breakanywhere,tabsize=4]{<%= pygments_lang %>}{<%= file[:path] %>}
   <%  else %>
 \jupynotex{<%= file[:path] %>}
   <%
