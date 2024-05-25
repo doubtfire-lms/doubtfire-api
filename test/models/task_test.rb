@@ -358,6 +358,10 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     assert File.exist? path
     assert File.exist? task.final_pdf_path
 
+    # Test if latex math was rendered properly
+    reader = PDF::Reader.new(task.final_pdf_path)
+    assert reader.pages[3].text.include? "bmi =     weigh2\n                                           height"
+
     # ensure the notice is not included when the notebook doesn't have long lines source code cells
     reader = PDF::Reader.new(task.final_pdf_path)
     assert_not reader.pages[1].text.gsub(/\s+/, " ").include? "[The rest of this line has been truncated by the system to improve readability.]"
