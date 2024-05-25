@@ -13,7 +13,7 @@
     \input|"python3 jupynotex.py #2 #1"
 }
 
-\usepackage[fencedCode,hashEnumerators]{markdown}
+\usepackage[fencedCode,hashEnumerators,pipeTables,texMathDollars]{markdown}
 
 \usepackage{luatextra}
 \defaultfontfeatures{Ligatures=TeX}
