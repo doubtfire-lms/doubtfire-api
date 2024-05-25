@@ -79,6 +79,23 @@ All notable changes to this project will be documented in this file. See [standa
 * update save status on actions ([096aee6](https://github.com/macite/doubtfire-deploy/commit/096aee685d2cf0652092b4f87a319de73e1dd1e9))
 * update schema to match migration dates ([5c1afe4](https://github.com/macite/doubtfire-deploy/commit/5c1afe421dd41b8f56284e776ce39996b3f28d71))
 
+### [7.0.26](https://github.com/doubtfire-lms/doubtfire-deploy/compare/v7.0.25...v7.0.26) (2024-05-21)
+
+### [7.0.25](https://github.com/doubtfire-lms/doubtfire-deploy/compare/v7.0.24...v7.0.25) (2024-05-20)
+
+
+### Bug Fixes
+
+* ensure portfolio tasks more likely to work with long files ([e9d6641](https://github.com/doubtfire-lms/doubtfire-deploy/commit/e9d66411690482f446dfdb1d53d705435eb22aea))
+* skip unit tests and linting for documentation updates ([399d109](https://github.com/doubtfire-lms/doubtfire-deploy/commit/399d1098aef2788545a22c1d3e768b0fe61a74cf))
+
+### [7.0.24](https://github.com/doubtfire-lms/doubtfire-deploy/compare/v7.0.23...v7.0.24) (2024-03-26)
+
+
+### Bug Fixes
+
+* ensure that tagpdf is installed in latex ([d1f2197](https://github.com/doubtfire-lms/doubtfire-deploy/commit/d1f2197e882038ef095b98a4558644e0c4c4bd33))
+
 ### [7.0.23](https://github.com/macite/doubtfire-deploy/compare/v7.0.22...v7.0.23) (2024-03-22)
 
 
