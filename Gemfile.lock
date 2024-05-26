@@ -1,6 +1,7 @@
 GEM
   remote: https://rubygems.org/
   specs:
+    Ascii85 (1.1.1)
     actioncable (7.0.4.3)
       actionpack (= 7.0.4.3)
       activesupport (= 7.0.4.3)
@@ -69,6 +70,7 @@ GEM
     addressable (2.8.1)
       public_suffix (>= 2.0.2, < 6.0)
     aes_key_wrap (1.1.0)
+    afm (0.2.2)
     amq-protocol (2.3.2)
     ast (2.4.2)
     backport (1.2.0)
@@ -78,6 +80,7 @@ GEM
       coderay (>= 1.0.0)
       erubi (>= 1.0.0)
       rack (>= 0.9.0)
+    bigdecimal (3.1.8)
     bindata (2.4.15)
     bootsnap (1.16.0)
       msgpack (~> 1.2)
@@ -170,6 +173,7 @@ GEM
     grape-swagger-rails (0.3.1)
       railties (>= 3.2.12)
     hashdiff (1.0.1)
+    hashery (2.1.2)
     hirb (0.7.3)
     http-accept (1.7.0)
     http-cookie (1.0.5)
@@ -242,6 +246,12 @@ GEM
     parallel (1.22.1)
     parser (3.2.1.1)
       ast (~> 2.4.1)
+    pdf-reader (2.12.0)
+      Ascii85 (~> 1.0)
+      afm (~> 0.2.1)
+      hashery (~> 2.0)
+      ruby-rc4
+      ttfunk
     pkg-config (1.5.1)
     public_suffix (5.0.1)
     puma (6.1.1)
@@ -340,6 +350,7 @@ GEM
     ruby-filemagic (0.7.3)
     ruby-ole (1.2.12.2)
     ruby-progressbar (1.13.0)
+    ruby-rc4 (0.1.5)
     ruby-saml (1.13.0)
       nokogiri (>= 1.10.5)
       rexml
@@ -384,6 +395,8 @@ GEM
     thor (1.2.1)
     tilt (2.1.0)
     timeout (0.3.2)
+    ttfunk (1.8.0)
+      bigdecimal (~> 3.1)
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
     unf (0.1.4)
@@ -436,6 +449,7 @@ DEPENDENCIES
   moss_ruby (>= 1.1.4)
   mysql2
   net-smtp
+  pdf-reader
   puma
   rack-cors
   rails (~> 7.0)

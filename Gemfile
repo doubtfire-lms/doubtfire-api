@@ -89,3 +89,5 @@ gem 'icalendar'
 gem 'rest-client'
 
 gem 'net-smtp', require: false
+
+gem 'pdf-reader'
