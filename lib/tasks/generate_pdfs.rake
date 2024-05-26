@@ -50,8 +50,9 @@ namespace :submission do
   end
 
   def should_run?
-    # Only run if there are not more than 4 processes running
-    old_executing(true).count < 4
+    # Only run if there are not more than 3 processes running
+    max_processes = Rails.configuration.pdfgen_max_processes || 2
+    old_executing(true).count < max_processes
   end
 
   def clean_up_failed_runs
@@ -103,13 +104,15 @@ namespace :submission do
 
       # Rescue any projects that were orphaned by a previous process
       Project.where('NOT portfolio_generation_pid IS NULL').group(:portfolio_generation_pid).select('MIN(portfolio_generation_pid) as pid').map { |r| r['pid'] }.each do |pid|
-        next if pid == Process.pid
+        next if is_process_running?(pid)
 
+        # That process is not running... so pick up portfolios here
         Project.where(portfolio_generation_pid: pid).update_all(portfolio_generation_pid: Process.pid)
       end
 
       # Secure portfolios
       Project.where(compile_portfolio: true, portfolio_generation_pid: nil)
+             .limit(10)
              .update_all(portfolio_generation_pid: Process.pid)
 
       # Clean up any old failed runs - now after I have the files I need :)
