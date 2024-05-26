@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [7.0.27](https://github.com/macite/doubtfire-deploy/compare/v7.0.26...v7.0.27) (2024-05-26)
+
+
+### Bug Fixes
+
+* display latex math properly in jupyter notebooks ([71f43fa](https://github.com/macite/doubtfire-deploy/commit/71f43faed021e2b644ec742e23c71937ca8a38c4))
+* limit portfolio pdf generation ([10c6698](https://github.com/macite/doubtfire-deploy/commit/10c6698126ca5102362ec20d785a1cc8e6adc946))
+* limit task pdf pages to 100 in portfolio ([621af14](https://github.com/macite/doubtfire-deploy/commit/621af1421a744c4c8b253d5195fd2ab1a21a495a))
+
 ### [7.0.26](https://github.com/doubtfire-lms/doubtfire-deploy/compare/v7.0.25...v7.0.26) (2024-05-21)
 
 ### [7.0.25](https://github.com/doubtfire-lms/doubtfire-deploy/compare/v7.0.24...v7.0.25) (2024-05-20)
