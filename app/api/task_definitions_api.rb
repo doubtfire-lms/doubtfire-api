@@ -26,12 +26,12 @@ class TaskDefinitionsApi < Grape::API
       requires :abbreviation,             type: String,   desc: 'The abbreviation of the task'
       requires :restrict_status_updates,  type: Boolean,  desc: 'Restrict updating of the status to staff'
       optional :upload_requirements,      type: String,   desc: 'Task file upload requirements'
-      optional :plagiarism_checks,        type: String,   desc: 'The list of checks to perform'
       requires :plagiarism_warn_pct,      type: Integer,  desc: 'The percent at which to record and warn about plagiarism'
       requires :is_graded,                type: Boolean,  desc: 'Whether or not this task definition is a graded task'
       requires :max_quality_pts,          type: Integer,  desc: 'A range for quality points when quality is assessed'
       optional :assessment_enabled,       type: Boolean,  desc: 'Enable or disable assessment'
       optional :overseer_image_id,        type: Integer,  desc: 'The id of the Docker image for overseer'
+      optional :moss_language,            type: String,   desc: 'The language to use for code similarity checks'
     end
   end
   post '/units/:unit_id/task_definitions/' do
@@ -59,12 +59,12 @@ class TaskDefinitionsApi < Grape::API
                                                 :is_graded,
                                                 :max_quality_pts,
                                                 :assessment_enabled,
-                                                :overseer_image_id
+                                                :overseer_image_id,
+                                                :moss_language
                                               )
 
     task_params[:unit_id] = unit.id
-    task_params[:upload_requirements] = JSON.parse(params[:task_def][:upload_requirements]) unless params[:task_def][:plagiarism_checks].nil?
-    task_params[:plagiarism_checks] = JSON.parse(params[:task_def][:plagiarism_checks]) unless params[:task_def][:plagiarism_checks].nil?
+    task_params[:upload_requirements] = JSON.parse(params[:task_def][:upload_requirements]) unless params[:task_def][:upload_requirements].nil?
 
     task_def = TaskDefinition.new(task_params)
 
@@ -104,12 +104,12 @@ class TaskDefinitionsApi < Grape::API
       optional :abbreviation,             type: String,   desc: 'The abbreviation of the task'
       optional :restrict_status_updates,  type: Boolean,  desc: 'Restrict updating of the status to staff'
       optional :upload_requirements,      type: String,   desc: 'Task file upload requirements'
-      optional :plagiarism_checks,        type: String,   desc: 'The list of checks to perform'
       optional :plagiarism_warn_pct,      type: Integer,  desc: 'The percent at which to record and warn about plagiarism'
       optional :is_graded,                type: Boolean,  desc: 'Whether or not this task definition is a graded task'
       optional :max_quality_pts,          type: Integer,  desc: 'A range for quality points when quality is assessed'
       optional :assessment_enabled,       type: Boolean,  desc: 'Enable or disable assessment'
       optional :overseer_image_id,        type: Integer,  desc: 'The id of the Docker image name for overseer'
+      optional :moss_language,            type: String,   desc: 'The language to use for code similarity checks'
     end
   end
   put '/units/:unit_id/task_definitions/:id' do
@@ -136,11 +136,11 @@ class TaskDefinitionsApi < Grape::API
                                                 :is_graded,
                                                 :max_quality_pts,
                                                 :assessment_enabled,
-                                                :overseer_image_id
+                                                :overseer_image_id,
+                                                :moss_language
                                               )
 
-    task_params[:upload_requirements] = JSON.parse(params[:task_def][:upload_requirements]) unless params[:task_def][:plagiarism_checks].nil?
-    task_params[:plagiarism_checks] = JSON.parse(params[:task_def][:plagiarism_checks]) unless params[:task_def][:plagiarism_checks].nil?
+    task_params[:upload_requirements] = JSON.parse(params[:task_def][:upload_requirements]) unless params[:task_def][:upload_requirements].nil?
 
     # Ensure changes to a TD defined as a "draft task definition" are validated
     if unit.draft_task_definition_id == params[:id]
@@ -178,6 +178,7 @@ class TaskDefinitionsApi < Grape::API
       end
     end
 
+    puts task_def.upload_requirements
     present task_def, with: Entities::TaskDefinitionEntity, my_role: unit.role_for(current_user)
   end
 

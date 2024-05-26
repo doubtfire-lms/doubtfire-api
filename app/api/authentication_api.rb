@@ -141,9 +141,11 @@ class AuthenticationApi < Grape::API
       logger.info "Redirecting #{user.username} from #{request.ip}"
 
       # Must redirect to the front-end after sign in
-      protocol = Rails.env.development? ? 'http' : 'https'
-      host = Rails.env.development? ? "#{protocol}://localhost:3000" : Doubtfire::Application.config.institution[:host]
-      host = "#{protocol}://#{host}" unless host.starts_with?('http')
+      host = Doubtfire::Application.config.institution[:host]
+      unless host.starts_with?('http')
+        protocol = Rails.env.development? ? 'http' : 'https'
+        host = "#{protocol}://#{host}"
+      end
       redirect "#{host}/#/sign_in?authToken=#{onetime_token.authentication_token}&username=#{user.username}"
     end
   end
@@ -216,9 +218,11 @@ class AuthenticationApi < Grape::API
       logger.info "Redirecting #{user.username} from #{request.ip}"
 
       # Must redirect to the front-end after sign in
-      protocol = Rails.env.development? ? 'http' : 'https'
-      host = Rails.env.development? ? "#{protocol}://localhost:3000" : Doubtfire::Application.config.institution[:host]
-      host = "#{protocol}://#{host}" unless host.starts_with?('http')
+      host = Doubtfire::Application.config.institution[:host]
+      unless host.starts_with?('http')
+        protocol = Rails.env.development? ? 'http' : 'https'
+        host = "#{protocol}://#{host}"
+      end
       redirect "#{host}/#/sign_in?authToken=#{onetime_token.authentication_token}&username=#{user.username}"
     end
   end

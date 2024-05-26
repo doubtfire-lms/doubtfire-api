@@ -41,6 +41,8 @@ class TurnItIn
     TiiRegisterWebHookJob.perform_async if with_webhooks
     load_tii_features
     load_tii_eula
+  rescue StandardError => e
+    Rails.logger.error "Error launching TII: #{e}"
   end
 
   # Check if the features are up to date, and update if required
@@ -150,7 +152,7 @@ class TurnItIn
 
   # Return the url used for webhook callbacks
   def self.webhook_url
-    "#{Doubtfire::Application.config.institution[:host_url]}api/tii_hook"
+    "#{Doubtfire::Application.config.institution[:host]}/api/tii_hook"
   end
 
   # Create or get the group context for a unit. The "group context" is the Turn It In equivalent of a unit.

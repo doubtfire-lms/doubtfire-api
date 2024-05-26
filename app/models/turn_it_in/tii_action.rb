@@ -33,6 +33,7 @@ class TiiAction < ApplicationRecord
 
   serialize :params, coder: JSON
   serialize :log, coder: JSON
+  attribute :log, default: -> { [] }
 
   def description
     'Generic Turnitin Action'
@@ -49,12 +50,12 @@ class TiiAction < ApplicationRecord
     self.error_code = nil if self.retry && error?
     self.custom_error_message = nil
 
-    self.log = [] if self.complete # reset log if complete... and performing again
+    self.log = [] if self.log.nil? || self.log.empty? || self.complete # reset log if complete... and performing again
 
     self.log << { date: Time.zone.now, message: "Started #{type}" }
     self.last_run = Time.zone.now
+
     self.retry = false # reset retry flag
-    self.log = [] if self.complete # reset log if complete... and performing again
     self.complete = false # reset complete flag
 
     result = run

@@ -2,6 +2,80 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [8.0.0](https://github.com/macite/doubtfire-deploy/compare/v8.0.0-11...v8.0.0) (2024-05-23)
+
+
+### Bug Fixes
+
+* correct typos in unit role needed for teaching role ([f808ad4](https://github.com/macite/doubtfire-deploy/commit/f808ad437f424f40a4eb68d5218ddf4317ba44b6))
+
+## [8.0.0-11](https://github.com/macite/doubtfire-deploy/compare/v8.0.0-10...v8.0.0-11) (2024-05-13)
+
+## [8.0.0-10](https://github.com/macite/doubtfire-deploy/compare/v8.0.0-9...v8.0.0-10) (2024-05-13)
+
+
+### Bug Fixes
+
+* host url for turn it in integration ([3cd67d7](https://github.com/macite/doubtfire-deploy/commit/3cd67d7c58916cda429d3c0266942cfc2c0ef878))
+
+## [8.0.0-9](https://github.com/macite/doubtfire-deploy/compare/v8.0.0-8...v8.0.0-9) (2024-05-11)
+
+
+### Bug Fixes
+
+* ensure default log in tii actions ([a9959fe](https://github.com/macite/doubtfire-deploy/commit/a9959fef2223ffca41338b15c973b888253225bf))
+* ensure tii launch handles errors so rails can progress ([d7c9c3c](https://github.com/macite/doubtfire-deploy/commit/d7c9c3c8c60b49721aa9cac1f8df6ec716b82422))
+* revert to default cache store ([c3a22bf](https://github.com/macite/doubtfire-deploy/commit/c3a22bfee6e9912fd8b4d331d6a6e6f350b72ffa))
+
+## [8.0.0-8](https://github.com/macite/doubtfire-deploy/compare/v8.0.0-7...v8.0.0-8) (2024-05-11)
+
+
+### Bug Fixes
+
+* adjust log and params in tii_actions ([4bfdfb1](https://github.com/macite/doubtfire-deploy/commit/4bfdfb1faf5bbaf45ec7827ec89e4cd231f88dba))
+* update for dotenv 3 ([ef8611f](https://github.com/macite/doubtfire-deploy/commit/ef8611f917b198064a891f81c02408ff081e977b))
+
+## [8.0.0-7](https://github.com/macite/doubtfire-deploy/compare/v8.0.0-6...v8.0.0-7) (2024-05-02)
+
+## [8.0.0-6](https://github.com/macite/doubtfire-deploy/compare/v8.0.0-5...v8.0.0-6) (2024-05-02)
+
+
+### Features
+
+* add the pdf-reader gem for validating pdf submissions ([71c845b](https://github.com/macite/doubtfire-deploy/commit/71c845bf28fccf28de17ed83e3da1cf243646e7b))
+* implement unit test for pdf validation on submit ([57db1dc](https://github.com/macite/doubtfire-deploy/commit/57db1dc57a75aaf211030ecf78b9252a5d8b583b))
+* improve pdf file validation and detect encrypted pdfs ([dd729cf](https://github.com/macite/doubtfire-deploy/commit/dd729cf31bec115bd0e7018f33a692bd35bb5519))
+
+
+### Bug Fixes
+
+* add redis to the github actions workflow ([9935720](https://github.com/macite/doubtfire-deploy/commit/99357205d42d148f3a6165a96122691680409092))
+* document two new env variables for redis ([749903f](https://github.com/macite/doubtfire-deploy/commit/749903f390a388fac2c2a8652975580611f1e072))
+* implement error reporting in database populator ([136b9f9](https://github.com/macite/doubtfire-deploy/commit/136b9f98151688d3d6a578db1f980b39b3e21514))
+* install ruby-lsp in the development environment ([c57290e](https://github.com/macite/doubtfire-deploy/commit/c57290e4b2f7ba1bab7d600965988489dc3dd5a4))
+* pick up redis url from env for sidekiq if present ([e9628eb](https://github.com/macite/doubtfire-deploy/commit/e9628eb31398719d78508a610a251a785f56a14f))
+* revert to doubtfire local image for unit tests ([73fcbe3](https://github.com/macite/doubtfire-deploy/commit/73fcbe3f5adb603253033e7b126502a5d3c006f1))
+* skip unit tests and linting for documentation updates ([2503fe6](https://github.com/macite/doubtfire-deploy/commit/2503fe61468f8ebe37e54ccb1d0cc2a11387949b))
+
+### [7.0.23](https://github.com/macite/doubtfire-deploy/compare/v8.0.0-2...v7.0.23) (2024-03-22)
+
+## [8.0.0-5](https://github.com/macite/doubtfire-deploy/compare/v8.0.0-4...v8.0.0-5) (2024-05-02)
+
+
+### Bug Fixes
+
+* correct updates in TII migration ([d1ab30b](https://github.com/macite/doubtfire-deploy/commit/d1ab30ba666898f556b69db53766124742b4f593))
+
+## [8.0.0-4](https://github.com/macite/doubtfire-deploy/compare/v8.0.0-3...v8.0.0-4) (2024-05-01)
+
+
+### Bug Fixes
+
+* add missing moss language in task def post ([1fa7b0b](https://github.com/macite/doubtfire-deploy/commit/1fa7b0b10f855bc2e23aa27e78ed41ff3e5b4683))
+* correct tii migrationm defaults ([2beb6e8](https://github.com/macite/doubtfire-deploy/commit/2beb6e8599cf6b99992e34548615e7802e7ff141))
+* remove plagiarism checks field ([19107bf](https://github.com/macite/doubtfire-deploy/commit/19107bf87601115ea15036f25634b2ba30e23c7c))
+* remove serialisation of plagiarism checks ([1962cc9](https://github.com/macite/doubtfire-deploy/commit/1962cc96ff46134d756984473d1022792e9ada1a))
+
 ## [8.0.0-3](https://github.com/macite/doubtfire-deploy/compare/v8.0.0-2...v8.0.0-3) (2024-03-22)
 
 ### Bug Fixes

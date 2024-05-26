@@ -17,7 +17,7 @@ module Doubtfire
     config.load_defaults 7.0
 
     # Load .env variables
-    Dotenv::Railtie.load
+    Dotenv::Rails.load
 
     # ==> Authentication Method
     # Authentication method default is database, but possible settings
@@ -47,9 +47,8 @@ module Doubtfire
     config.institution[:product_name] = ENV['DF_INSTITUTION_PRODUCT_NAME'] if ENV['DF_INSTITUTION_PRODUCT_NAME']
     config.institution[:privacy] = ENV['DF_INSTITUTION_PRIVACY'] if ENV['DF_INSTITUTION_PRIVACY']
     config.institution[:plagiarism] = ENV['DF_INSTITUTION_PLAGIARISM'] if ENV['DF_INSTITUTION_PLAGIARISM']
-    # Institution host becomes localhost in all but prod
-    config.institution[:host] = 'localhost:3000' if Rails.env.development?
-    config.institution[:host_url] = Rails.env.development? ? "http://#{config.institution[:host]}/" : "https://#{config.institution[:host]}/"
+    # Institution host becomes localhost in development
+    config.institution[:host] ||= 'http://localhost:3000' if Rails.env.development?
     config.institution[:settings] = ENV['DF_INSTITUTION_SETTINGS_RB'] if ENV['DF_INSTITUTION_SETTINGS_RB']
     config.institution[:ffmpeg] = ENV['DF_FFMPEG_PATH'] || 'ffmpeg'
 

@@ -237,7 +237,6 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_05_055902) do
     t.string "upload_requirements", limit: 4096
     t.integer "target_grade", default: 0
     t.boolean "restrict_status_updates", default: false
-    t.string "plagiarism_checks", limit: 4096
     t.string "plagiarism_report_url"
     t.boolean "plagiarism_updated", default: false
     t.integer "plagiarism_warn_pct", default: 50
@@ -356,15 +355,13 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_05_055902) do
     t.boolean "retry", default: true, null: false
     t.integer "error_code"
     t.text "custom_error_message"
-    t.text "log", size: :long, default: "[]", collation: "utf8mb4_bin"
-    t.text "params", size: :long, default: "{}", collation: "utf8mb4_bin"
+    t.text "log"
+    t.string "params", limit: 1024, default: "{}"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["complete"], name: "index_tii_actions_on_complete"
     t.index ["entity_type", "entity_id"], name: "index_tii_actions_on_entity"
     t.index ["retry"], name: "index_tii_actions_on_retry"
-    t.check_constraint "json_valid(`log`)", name: "log"
-    t.check_constraint "json_valid(`params`)", name: "params"
   end
 
   create_table "tii_group_attachments", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
