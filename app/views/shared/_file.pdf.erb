@@ -18,9 +18,10 @@
   end
 %>
 
-<% if file_type == 'document' %>
-    <%
-    for page_idx in 1..FileHelper.pages_in_pdf(file_name) do %>
+<% if file_type == 'document'
+    max_pages = [100,FileHelper.pages_in_pdf(file_name)].min
+
+    for page_idx in 1..max_pages do %>
 \includepdf[pages={<%= page_idx %>-<%= page_idx %>},fitpaper]{<%= file_name %>}
     <% end # end for  %>
 
