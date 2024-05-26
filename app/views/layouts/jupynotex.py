@@ -20,19 +20,23 @@ import traceback
 
 
 # basic verbatim start/end
-VERBATIM_BEGIN = [r"\begin{footnotesize}", r"\begin{verbatim}"]
-VERBATIM_END = [r"\end{verbatim}", r"\end{footnotesize}"]
+VERBATIM_BEGIN = [r"\begin{minted}[fontsize=\footnotesize,breaklines,breakanywhere,tabsize=4]{md}"]
+VERBATIM_END = [r"\end{minted}"]
+
+# markdown start/end
+MARKDOWN_BEGIN = [r"\begin{markdown}"]
+MARKDOWN_END = [r"\end{markdown}"]
 
 # highlighers for different languages (block beginning and ending)
 HIGHLIGHTERS = {
-    'python': ([r'\begin{minted}[fontsize=\footnotesize]{python}'], [r'\end{minted}']),
+    'python': ([r'\begin{minted}[fontsize=\footnotesize,breaklines,breakanywhere,tabsize=4]{python}'], [r'\end{minted}']),
     None: (VERBATIM_BEGIN, VERBATIM_END),
 }
 
 # the different formats to be used when error or all ok
 FORMAT_ERROR = r"enhanced,breakable=unlimited,colback=red!5!white,colframe=red!75!"
 FORMAT_OK = (
-    r"enhanced,breakable=unlimited,coltitle=red!75!black,colbacktitle=black!10!white, "
+    r"enhanced,breakable=unlimited,coltitle=red!75!black, colbacktitle=black!10!white, "
     r"halign title=right, fonttitle=\sffamily\mdseries\scshape\footnotesize")
 
 # a little mark to put in the continuation line(s) when text is wrapped
@@ -169,8 +173,8 @@ class Notebook:
         lang = nb_data['metadata']['language_info']['name']
         self._highlight_delimiters = HIGHLIGHTERS.get(lang, HIGHLIGHTERS[None])
 
-        # get all cells excluding markdown ones
-        self._cells = [x for x in nb_data['cells'] if x['cell_type'] != 'markdown']
+        # get all cells
+        self._cells = [x for x in nb_data['cells']]
 
     def _validate_config(self, config):
         """Validate received configuration."""
@@ -246,7 +250,7 @@ class Notebook:
         content = self._cells[cell_idx - 1]
         source = self._proc_src(content)
         output = self._proc_out(content)
-        return source, output
+        return source, output, content['cell_type'] == 'markdown'
 
     def parse_cells(self, spec):
         """Convert the cells spec to a range of ints."""
@@ -298,7 +302,7 @@ def main(notebook_path, cells_spec, config_options):
 
     for cell in cells:
         try:
-            src, out = nb.get(cell)
+            src, out, md = nb.get(cell)
         except Exception:
             title = "ERROR when parsing cell {}".format(cell)
             print(r"\begin{{tcolorbox}}[{}, title={{{}}}]".format(FORMAT_ERROR, title))
