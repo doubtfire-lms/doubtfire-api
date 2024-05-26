@@ -31,6 +31,7 @@ HIGHLIGHTERS = {
     None: (VERBATIM_BEGIN, VERBATIM_END),
 }
 
+# the different formats to be used when error or all ok
 FORMAT_ERROR = r"enhanced,breakable=unlimited,colback=red!5!white,colframe=red!75!"
 FORMAT_OK = (
     r"enhanced,breakable=unlimited,coltitle=red!75!black, colbacktitle=black!10!white, "
@@ -118,7 +119,9 @@ class Notebook:
             result.extend(line.replace('```markdown', '```md').strip() for line in source)
             result.extend(MARKDOWN_END)
         elif content['cell_type'] == 'raw':
-            result.extend(_verbatimize(source))
+            result.extend(VERBATIM_BEGIN)
+            result.extend(textwrap.fill(line[:1000] + ' [The rest of this line has been truncated by the system to improve readability.] ' * (len(line) > 1000), width=90, subsequent_indent='    ') for line in source)
+            result.extend(VERBATIM_END)
         else:
             raise ValueError(
                 "Cell type not supported when processing source: {!r}".format(
@@ -144,9 +147,9 @@ class Notebook:
                 else:
                     result.extend(_verbatimize(data["text/plain"]))
             elif output_type == 'stream':
-                result.extend(_verbatimize(x.rstrip() for x in item["text"]))
-            elif output_type == 'display_data':
-                result.append(_include_image_content(item['data']))
+                more_content = processor.process_plain_text(item["text"])
+                if len(more_content) > 120:
+                    more_content = more_content[:100] + ["..."] + more_content[-20:]
             elif output_type == 'error':
                 raw_traceback = item['traceback']
                 tback_lines = []
@@ -173,7 +176,6 @@ class Notebook:
         source = self._proc_src(content)
         output = self._proc_out(content)
         return source, output, content['cell_type'] == 'markdown'
-
 
 def _parse_cells(spec, maxlen):
     """Convert the cells spec to a range of ints."""
@@ -224,14 +226,16 @@ def main(notebook_path, cells_spec):
             continue
 
         if not md:
-            print(r"\begin{{tcolorbox}}[{}, title=Cell {{{:02d}}}]".format(FORMAT_OK, cell))
+          print(r"\begin{{tcolorbox}}[{}, title=Cell {{{:02d}}}]".format(FORMAT_OK, cell))
+
         print(src)
+
         if out:
             if not md:
-              print(r"\tcbline")
+              print(r"\tcblower")
             print(out)
         if not md:
-            print(r"\end{tcolorbox}")
+          print(r"\end{tcolorbox}")
 
 
 if __name__ == "__main__":
