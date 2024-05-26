@@ -30,9 +30,9 @@ HIGHLIGHTERS = {
 }
 
 # the different formats to be used when error or all ok
-FORMAT_ERROR = r"colback=red!5!white,colframe=red!75!"
+FORMAT_ERROR = r"enhanced,breakable=unlimited,colback=red!5!white,colframe=red!75!"
 FORMAT_OK = (
-    r"coltitle=red!75!black, colbacktitle=black!10!white, "
+    r"enhanced,breakable=unlimited,coltitle=red!75!black,colbacktitle=black!10!white, "
     r"halign title=right, fonttitle=\sffamily\mdseries\scshape\footnotesize")
 
 # a little mark to put in the continuation line(s) when text is wrapped
@@ -189,6 +189,14 @@ class Notebook:
             result.extend(begin)
             result.extend(textwrap.fill(line[:1000] + ' [The rest of this line has been truncated by the system to improve readability.] ' * (len(line) > 1000), width=90, subsequent_indent='    ') for line in source)
             result.extend(end)
+        elif content['cell_type'] == 'markdown':
+            result.extend(MARKDOWN_BEGIN)
+            result.extend(line.replace('```markdown', '```md').strip() for line in source)
+            result.extend(MARKDOWN_END)
+        elif content['cell_type'] == 'raw':
+            result.extend(VERBATIM_BEGIN)
+            result.extend(textwrap.fill(line[:1000] + ' [The rest of this line has been truncated by the system to improve readability.] ' * (len(line) > 1000), width=90, subsequent_indent='    ') for line in source)
+            result.extend(VERBATIM_END)
         else:
             raise ValueError(
                 "Cell type not supported when processing source: {!r}".format(
@@ -210,6 +218,8 @@ class Notebook:
                 more_content = processor.get_item_data(item)
             elif output_type == 'stream':
                 more_content = processor.process_plain_text(item["text"])
+                if len(more_content) > 120:
+                    more_content = more_content[:100] + ["..."] + more_content[-20:]
             elif output_type == 'error':
                 raw_traceback = item['traceback']
                 tback_lines = []
@@ -298,12 +308,17 @@ def main(notebook_path, cells_spec, config_options):
             print(r"\end{tcolorbox}")
             continue
 
-        print(r"\begin{{tcolorbox}}[{}, title=Cell {{{:02d}}}]".format(FORMAT_OK, cell))
+        if not md:
+          print(r"\begin{{tcolorbox}}[{}, title=Cell {{{:02d}}}]".format(FORMAT_OK, cell))
+
         print(src)
+
         if out:
-            print(r"\tcblower")
+            if not md:
+              print(r"\tcblower")
             print(out)
-        print(r"\end{tcolorbox}")
+        if not md:
+          print(r"\end{tcolorbox}")
 
 
 if __name__ == "__main__":
