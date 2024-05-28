@@ -286,6 +286,7 @@ class DatabasePopulator
     # Define fixed user data here
     @user_data = {
       acain: { first_name: "Andrew", last_name: "Cain", nickname: "Macite", role_id: Role.admin_id },
+      aauditor: { first_name: "Auditor", last_name: "Auditor", nickname: "Auditor", role_id: Role.auditor_id },
       aconvenor: { first_name: "Clinton", last_name: "Woodward", nickname: "The Giant", role_id: Role.convenor_id },
       ajones: { first_name: "Allan", last_name: "Jones", nickname: "P-Jiddy", role_id: Role.admin_id },
       rwilson: { first_name: "Reuben", last_name: "Wilson", nickname: "Reubs", role_id: Role.convenor_id },

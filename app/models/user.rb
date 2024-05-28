@@ -145,9 +145,10 @@ class User < ApplicationRecord
   validate :can_change_to_role?, if: :will_save_change_to_role_id?
 
   # Queries
-  scope :tutors,    -> { joins(:role).where('roles.id = :tutor_role or roles.id = :convenor_role or roles.id = :admin_role', tutor_role: Role.tutor_id, convenor_role: Role.convenor_id, admin_role: Role.admin_id) }
-  scope :convenors, -> { joins(:role).where('roles.id = :convenor_role or roles.id = :admin_role', convenor_role: Role.convenor_id, admin_role: Role.admin_id) }
-  scope :admins,    -> { joins(:role).where('roles.id = :admin_role', admin_role: Role.admin_id) }
+  scope :tutors,    -> { joins(:role).where('roles.id = :tutor_role or roles.id = :convenor_role or roles.id = :admin_role or roles.id = :auditor_role', tutor_role: Role.tutor_id, convenor_role: Role.convenor_id, admin_role: Role.admin_id, auditor_role: Role.auditor_id) }
+  scope :convenors, -> { joins(:role).where('roles.id = :convenor_role or roles.id = :admin_role or roles.id = :auditor_role', convenor_role: Role.convenor_id, admin_role: Role.admin_id, auditor_role: Role.auditor_id) }
+  scope :admins,    -> { joins(:role).where('roles.id = :admin_role or roles.id = :auditor_role', admin_role: Role.admin_id, auditor_role: Role.auditor_id) }
+  scope :auditors,  -> { joins(:role).where('roles.id = :auditor_role', auditor_role: Role.auditor_id) }
 
   def self.teaching(unit)
     User.joins(:unit_roles).where('unit_roles.unit_id = :unit_id and ( unit_roles.role_id = :tutor_role_id or unit_roles.role_id = :convenor_role_id) ', unit_id: unit.id, tutor_role_id: Role.tutor_id, convenor_role_id: Role.convenor_id)
@@ -165,7 +166,7 @@ class User < ApplicationRecord
 
     fail_if_in_unit_role = [Role.tutor, Role.convenor] if new_role == Role.student
     fail_if_in_unit_role = [Role.convenor] if new_role == Role.tutor
-    fail_if_in_unit_role = [] if new_role == Role.admin || new_role == Role.convenor
+    fail_if_in_unit_role = [] if new_role == Role.admin || new_role == Role.convenor || new_role == Role.auditor
 
     for check_role in fail_if_in_unit_role do
       if unit_roles.where('role_id = :role_id', role_id: check_role.id).count > 0
@@ -187,7 +188,11 @@ class User < ApplicationRecord
   end
 
   def has_admin_capability?
-    role_id == Role.admin_id
+    role_id == Role.admin_id || has_auditor_capability?
+  end
+
+  def has_auditor_capability?
+    role_id == Role.auditor_id
   end
 
   def self.get_change_role_perm_fn
@@ -215,30 +220,42 @@ class User < ApplicationRecord
         #   An admin current_user can demote them to either a student, tutor or convenor
         admin: {     student: [:demote_user],
                      tutor: [:demote_user],
-                     convenor: [:demote_user] },
+                     convenor: [:demote_user],
+                     auditor: [:demote_user] },
+        # User being assigned is an auditor?
+        #   An admin current_user can demote them to either a student, tutor or convenor
+        #   An admin current_user can promote them to an admin
+        auditor: {   student: [:demote_user],
+                     tutor: [:demote_user],
+                     convenor: [:demote_user],
+                     admin: [:promote_user] },
         # User being assigned is a convenor?
         #   An admin current_user can demote them to student or tutor
-        #   An admin current_user can promote them to an admin
+        #   An admin current_user can promote them to an admin or auditor
         convenor: {  student: [:demote_user],
                      tutor: [:demote_user],
-                     admin: [:promote_user] },
+                     admin: [:promote_user],
+                     auditor: [:promote_user] },
         # User being assigned is a tutor?
         #   An admin current_user can demote them to a student
-        #   An admin current_user can promote them to a convenor or admin
+        #   An admin current_user can promote them to a convenor, admin or auditor
         tutor: {     student: [:demote_user],
                      convenor: [:promote_user],
-                     admin: [:promote_user] },
+                     admin: [:promote_user],
+                     auditor: [:promote_user] },
         # User being assigned is a student?
-        #   An admin current_user can promote them to a tutor, convenor or admin
+        #   An admin current_user can promote them to a tutor, convenor, admin or auditor
         student: {   tutor: [:promote_user],
                      convenor: [:promote_user],
-                     admin: [:promote_user] },
+                     admin: [:promote_user],
+                     auditor: [:promote_user] },
         # User being assigned has no role?
         #   An admin current_user can create user to any role
         nil: {       student: [:create_user],
                      tutor: [:create_user],
                      convenor: [:create_user],
-                     admin: [:create_user] }
+                     admin: [:create_user],
+                     auditor: [:create_user] }
       },
       # The current_user's role is a Convenor
       convenor: {
@@ -278,6 +295,19 @@ class User < ApplicationRecord
       :use_overseer
     ]
 
+    # What can auditors do with users?
+    auditor_role_permissions = [
+      :list_users,
+      :download_system_csv,
+      :download_unit_csv,
+      :act_tutor,
+      :admin_users,
+      :audit_units,
+      :download_stats,
+      :get_teaching_periods,
+      :use_overseer
+    ]
+
     # What can convenors do with users?
     convenor_role_permissions = [
       :promote_user,
@@ -312,6 +342,7 @@ class User < ApplicationRecord
     {
       change_role: change_role_permissions,
       admin: admin_role_permissions,
+      auditor: auditor_role_permissions,
       convenor: convenor_role_permissions,
       tutor: tutor_role_permissions,
       student: student_role_permissions

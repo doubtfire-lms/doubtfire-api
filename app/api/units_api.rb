@@ -26,7 +26,7 @@ class UnitsApi < Grape::API
     optional :include_in_active, type: Boolean, desc: 'Include units that are not active'
   end
   get '/units' do
-    unless authorise? current_user, User, :convene_units
+    unless (authorise? current_user, User, :convene_units) || (authorise? current_user, User, :audit_units)
       error!({ error: 'Unable to list units' }, 403)
     end
 

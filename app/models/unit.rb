@@ -70,6 +70,15 @@ class Unit < ApplicationRecord
       :exceed_capacity
     ]
 
+    # What can auditors do with units?
+    auditor_role_permissions = [
+      :get_unit,
+      :get_students,
+      :download_stats,
+      :download_unit_csv,
+      :download_grades
+    ]
+
     # What can other users do with units?
     nil_role_permissions = []
 
@@ -79,6 +88,7 @@ class Unit < ApplicationRecord
       tutor: tutor_role_permissions,
       convenor: convenor_role_permissions,
       admin: admin_role_permissions,
+      auditor: auditor_role_permissions,
       nil: nil_role_permissions
     }
   end
@@ -90,6 +100,8 @@ class Unit < ApplicationRecord
       Role.tutor
     elsif active_projects.where('projects.user_id=:id', id: user.id).count == 1
       Role.student
+    elsif user.has_auditor_capability?
+      Role.auditor
     elsif user.has_admin_capability?
       Role.admin
     else

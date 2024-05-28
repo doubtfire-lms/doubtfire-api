@@ -30,7 +30,7 @@ class UsersApi < Grape::API
 
   desc 'Get convenors'
   get '/users/convenors' do
-    unless authorise? current_user, User, :convene_units
+    unless (authorise? current_user, User, :convene_units) || (authorise? current_user, User, :audit_units)
       error!({ error: 'Cannot list convenors - not authorised' }, 403)
     end
 
@@ -39,7 +39,7 @@ class UsersApi < Grape::API
 
   desc 'Get tutors'
   get '/users/tutors' do
-    unless authorise? current_user, User, :convene_units
+    unless (authorise? current_user, User, :convene_units) || (authorise? current_user, User, :audit_units)
       error!({ error: 'Cannot list tutors - not authorised' }, 403)
     end
 
@@ -55,7 +55,7 @@ class UsersApi < Grape::API
       optional :email, type: String, desc: 'New email address for user'
       optional :student_id, type: String, desc: 'New student_id for user'
       optional :nickname, type: String, desc: 'New nickname for user'
-      optional :system_role, type: String, desc: 'New role for user [Admin, Convenor, Tutor, Student]'
+      optional :system_role, type: String, desc: 'New role for user [Admin, Auditor, Convenor, Tutor, Student]'
       optional :receive_task_notifications, type: Boolean, desc: 'Allow user to be sent task notifications'
       optional :receive_portfolio_notifications, type: Boolean, desc: 'Allow user to be sent portfolio notifications'
       optional :receive_feedback_notifications, type: Boolean, desc: 'Allow user to be sent feedback notifications'
@@ -141,7 +141,7 @@ class UsersApi < Grape::API
       optional :student_id, type: String, desc: 'New student_id for user'
       requires :username, type: String,   desc: 'New username for user'
       requires :nickname, type: String,   desc: 'New nickname for user'
-      requires :system_role, type: String, desc: 'New system role for user [Admin, Convenor, Tutor, Student]'
+      requires :system_role, type: String, desc: 'New system role for user [Admin, Auditor, Convenor, Tutor, Student]'
     end
   end
   post '/users' do

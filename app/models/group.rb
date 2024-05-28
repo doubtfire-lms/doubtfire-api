@@ -60,12 +60,17 @@ class Group < ApplicationRecord
       :can_exceed_capacity,
       :move_tutorial
     ]
+    # What can auditors do with groups?
+    auditor_role_permissions = [
+      :get_members
+    ]
     # What can nil users do with groups?
     nil_role_permissions = []
 
     # Return permissions hash
     {
       admin: admin_role_permissions,
+      auditor: auditor_role_permissions,
       convenor: convenor_role_permissions,
       tutor: tutor_role_permissions,
       student: student_role_permissions,
