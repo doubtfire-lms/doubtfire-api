@@ -50,6 +50,20 @@ class Task < ApplicationRecord
       :assess_extension,
       :request_extension
     ]
+    # What can admins do with tasks?
+    admin_role_permissions = [
+      :get,
+      :get_submission,
+      :view_plagiarism,
+      :get_discussion
+    ]
+    # What can auditors do with tasks?
+    auditor_role_permissions = [
+      :get,
+      :get_submission,
+      :view_plagiarism,
+      :get_discussion
+    ]
     # What can nil users do with tasks?
     nil_role_permissions = []
 
@@ -58,6 +72,8 @@ class Task < ApplicationRecord
       student: student_role_permissions,
       tutor: tutor_role_permissions,
       convenor: convenor_role_permissions,
+      admin: admin_role_permissions,
+      auditor: auditor_role_permissions,
       nil: nil_role_permissions
     }
   end
