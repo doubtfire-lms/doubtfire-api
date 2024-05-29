@@ -34,6 +34,10 @@ module Doubtfire
     # Limit number of pdf generators to run at once
     config.pdfgen_max_processes = ENV['DF_MAX_PDF_GEN_PROCESSES'] || 2
 
+    # Date range for auditors to view
+    config.auditor_unit_start_after = ENV.fetch('DF_AUDITOR_UNIT_START_AFTER', nil)
+    config.auditor_unit_start_before = ENV.fetch('DF_AUDITOR_UNIT_START_BEFORE', nil)
+
     # ==> Institution settings
     # Institution YAML and ENV (override) config load
     config.institution = YAML.load_file("#{Rails.root}/config/institution.yml").with_indifferent_access

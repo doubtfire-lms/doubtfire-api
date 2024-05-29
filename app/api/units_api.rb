@@ -26,7 +26,7 @@ class UnitsApi < Grape::API
     optional :include_in_active, type: Boolean, desc: 'Include units that are not active'
   end
   get '/units' do
-    unless (authorise? current_user, User, :convene_units) || (authorise? current_user, User, :audit_units)
+    unless authorise? current_user, User, :get_all_units
       error!({ error: 'Unable to list units' }, 403)
     end
 
@@ -190,10 +190,14 @@ class UnitsApi < Grape::API
                                                     :allow_student_change_tutorial,
                                                   )
 
-    # Identify main convenor
-    main_convenor_user = unit_parameters[:main_convenor_user_id].present? ? User.find(unit_parameters[:main_convenor_user_id]) : main_convenor_user = current_user
+    # Identify main convenor - ensure they have the correct role
+    main_convenor_user = unit_parameters[:main_convenor_user_id].present? ? User.find(unit_parameters[:main_convenor_user_id]) : current_user
 
-    unless authorise? current_user, User, :convene_units
+    unless main_convenor_user.present?
+      error!({ error: 'Main convenor user not found' }, 403)
+    end
+
+    unless authorise? main_convenor_user, User, :convene_units
       error!({ error: 'Main convenor is not authorised to manage units' }, 403)
     end
 
@@ -259,7 +263,7 @@ class UnitsApi < Grape::API
   get '/units/:id/feedback' do
     unit = Unit.find(params[:id])
 
-    unless authorise? current_user, unit, :provide_feedback
+    unless authorise? current_user, unit, :get_students
       error!({ error: 'Not authorised to provide feedback for this unit' }, 403)
     end
 
@@ -271,7 +275,7 @@ class UnitsApi < Grape::API
   get '/units/:id/tasks/inbox' do
     unit = Unit.find(params[:id])
 
-    unless authorise? current_user, unit, :provide_feedback
+    unless authorise? current_user, unit, :get_students
       error!({ error: 'Not authorised to provide feedback for this unit' }, 403)
     end
 

@@ -188,7 +188,7 @@ class User < ApplicationRecord
   end
 
   def has_admin_capability?
-    role_id == Role.admin_id || has_auditor_capability?
+    role_id == Role.admin_id
   end
 
   def has_auditor_capability?
@@ -200,10 +200,10 @@ class User < ApplicationRecord
       from_role = other[0]
       to_role = other[1]
 
-      (chg_roles = perm_hash[:change_role]) &&
-        (role_hash = chg_roles[role]) &&
-        (from_role_hash = role_hash[from_role]) &&
-        from_role_hash[to_role]
+      (chg_roles = perm_hash[:change_role]) && # get the change role hash - ensure it exists
+        (role_hash = chg_roles[role]) && # get the role from...
+        (from_role_hash = role_hash[from_role]) && # get the role to from within the role from
+        from_role_hash[to_role] # the permissions allowed
     end
   end
 
@@ -216,33 +216,33 @@ class User < ApplicationRecord
     change_role_permissions = {
       # The current_user's role is an Administrator
       admin: {
-        # User being assigned is an admin?
+        # User being changed is an admin?
         #   An admin current_user can demote them to either a student, tutor or convenor
         admin: {     student: [:demote_user],
                      tutor: [:demote_user],
                      convenor: [:demote_user],
                      auditor: [:demote_user] },
-        # User being assigned is an auditor?
+        # User being changed is an auditor?
         #   An admin current_user can demote them to either a student, tutor or convenor
         #   An admin current_user can promote them to an admin
-        auditor: {   student: [:demote_user],
-                     tutor: [:demote_user],
-                     convenor: [:demote_user],
+        auditor: {   student: [:promote_user],
+                     tutor: [:promote_user],
+                     convenor: [:promote_user],
                      admin: [:promote_user] },
-        # User being assigned is a convenor?
-        #   An admin current_user can demote them to student or tutor
-        #   An admin current_user can promote them to an admin or auditor
+        # User being changed is a convenor?
+        #   An admin current_user can demote them to student or tutor or auditor
+        #   An admin current_user can promote them to an admin
         convenor: {  student: [:demote_user],
                      tutor: [:demote_user],
                      admin: [:promote_user],
-                     auditor: [:promote_user] },
-        # User being assigned is a tutor?
-        #   An admin current_user can demote them to a student
+                     auditor: [:demote_user] },
+        # User being changed is a tutor?
+        #   An admin current_user can demote them to a student or auditor
         #   An admin current_user can promote them to a convenor, admin or auditor
         tutor: {     student: [:demote_user],
                      convenor: [:promote_user],
                      admin: [:promote_user],
-                     auditor: [:promote_user] },
+                     auditor: [:demote_user] },
         # User being assigned is a student?
         #   An admin current_user can promote them to a tutor, convenor, admin or auditor
         student: {   tutor: [:promote_user],
@@ -275,22 +275,29 @@ class User < ApplicationRecord
     # What can admins do with users?
     admin_role_permissions = [
       :create_user,
-      :upload_csv,
       :list_users,
+      :update_user,
+      :get_user,
+
+      :upload_csv,
       :download_system_csv,
       :download_unit_csv,
-      :update_user,
+
       :create_unit,
-      :act_tutor,
       :admin_units,
-      :admin_users,
       :convene_units,
-      :download_stats,
+      :get_all_units,
+      :get_staff_list,
+      :rollover,
+
+      :get_unit_roles,
+
       :handle_teaching_period,
       :handle_campuses,
       :handle_activity_types,
+
       :get_teaching_periods,
-      :rollover,
+
       :admin_overseer,
       :use_overseer
     ]
@@ -298,12 +305,13 @@ class User < ApplicationRecord
     # What can auditors do with users?
     auditor_role_permissions = [
       :list_users,
-      :download_system_csv,
-      :download_unit_csv,
-      :act_tutor,
-      :admin_users,
+      :get_staff_list,
+
+      :get_unit_roles,
+      :get_all_units,
+
       :audit_units,
-      :download_stats,
+
       :get_teaching_periods,
       :use_overseer
     ]
@@ -318,16 +326,16 @@ class User < ApplicationRecord
       :upload_csv,
       :download_unit_csv,
       :create_unit,
-      :act_tutor,
+      :get_unit_roles,
       :convene_units,
-      :download_stats,
+      :get_staff_list,
       :get_teaching_periods,
       :use_overseer
     ]
 
     # What can tutors do with users?
     tutor_role_permissions = [
-      :act_tutor,
+      :get_unit_roles,
       :download_unit_csv,
       :get_teaching_periods
     ]

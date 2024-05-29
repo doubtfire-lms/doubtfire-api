@@ -8,14 +8,6 @@ class Role < ApplicationRecord
     end
   end
 
-  def self.admin_staff_ids
-    [self.convenor_id, self.admin_id, self.auditor_id]
-  end
-
-  def self.teaching_staff_ids
-    [self.tutor_id, self.convenor_id, self.admin_id, self.auditor_id]
-  end
-
   def self.student
     Role.find(student_id)
   end

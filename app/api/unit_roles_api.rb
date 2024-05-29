@@ -13,7 +13,7 @@ class UnitRolesApi < Grape::API
     optional :active_only, type: Boolean, desc: 'Show only active roles'
   end
   get '/unit_roles' do
-    return [] unless authorise? current_user, User, :act_tutor
+    return [] unless authorise? current_user, User, :get_unit_roles
 
     result = UnitRole.includes(:unit).where(unit_roles: { user_id: current_user.id })
 

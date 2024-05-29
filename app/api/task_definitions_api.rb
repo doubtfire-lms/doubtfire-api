@@ -452,7 +452,7 @@ class TaskDefinitionsApi < Grape::API
   end
   get '/units/:unit_id/task_definitions/:task_def_id/tasks' do
     unit = Unit.find(params[:unit_id])
-    unless authorise? current_user, unit, :provide_feedback
+    unless authorise? current_user, unit, :get_students
       error!({ error: 'Not authorised to access tasks for this unit' }, 403)
     end
 

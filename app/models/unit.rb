@@ -75,10 +75,7 @@ class Unit < ApplicationRecord
     auditor_role_permissions = [
       :get_unit,
       :get_students,
-      :provide_feedback,
       :download_stats,
-      :download_unit_csv,
-      :download_grades
     ]
 
     # What can other users do with units?
@@ -322,8 +319,13 @@ class Unit < ApplicationRecord
   def self.for_user_admin(user)
     if user.has_admin_capability?
       Unit.all
+    elsif user.has_auditor_capability?
+      # Limit range of units that the auditor has access to
+      earliest_unit_date = Doubtfire::Application.config.auditor_unit_start_after || (Date.today - 1.year)
+      latest_unit_date = Doubtfire::Application.config.auditor_unit_start_after || (Date.today - 10.weeks)
+      Unit.all.where('start_date >= :earliest_unit_date AND start_date <= :latest_unit_date', earliest_unit_date: Date.today, latest_unit_date: 1.year.from_now)
     else
-      Unit.joins(:unit_roles).where('unit_roles.user_id = :user_id and unit_roles.role_id = :convenor_role', user_id: user.id, convenor_role: Role.convenor.id)
+      Unit.joins(:unit_roles).where('unit_roles.user_id = :user_id AND unit_roles.role_id = :convenor_role', user_id: user.id, convenor_role: Role.convenor.id)
     end
   end
 

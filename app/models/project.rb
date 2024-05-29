@@ -64,8 +64,6 @@ class Project < ApplicationRecord
       :assess,
       :change_campus
     ]
-    # What can convenors do with projects?
-    convenor_role_permissions = []
     # What can admins do with projects?
     admin_role_permissions = [
       :get,
