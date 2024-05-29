@@ -229,7 +229,7 @@ class LearningAlignmentApi < Grape::API
   get '/units/:unit_id/learning_alignments/class_details' do
     unit = Unit.find(params[:unit_id])
 
-    unless authorise?(current_user, unit, :provide_feedback)
+    unless authorise?(current_user, unit, :get_students)
       error!({ error: 'You are not authorised to access these task alignments.' }, 403)
     end
 

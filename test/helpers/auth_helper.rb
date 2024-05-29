@@ -13,10 +13,10 @@ module TestHelpers
       return user.generate_authentication_token!().authentication_token
     end
 
-    # 
+    #
     # Adds an authentication token and Username to the header
     # This prevents us from having to keep adding the :auth_token
-    # key to any GET/POST/PUT etc. data that is needed 
+    # key to any GET/POST/PUT etc. data that is needed
     #
     def add_auth_header_for(user: User.first, username: nil, auth_token: nil)
       if username.present?
@@ -32,8 +32,13 @@ module TestHelpers
       end
     end
 
+    def clear_auth_header
+      header 'username', nil
+      header 'auth_token', nil
+    end
 
     module_function :auth_token
     module_function :add_auth_header_for
+    module_function :clear_auth_header
   end
 end
