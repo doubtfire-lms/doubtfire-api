@@ -35,8 +35,7 @@ module Doubtfire
     config.pdfgen_max_processes = ENV['DF_MAX_PDF_GEN_PROCESSES'] || 2
 
     # Date range for auditors to view
-    config.auditor_unit_start_after = ENV.fetch('DF_AUDITOR_UNIT_START_AFTER', nil)
-    config.auditor_unit_start_before = ENV.fetch('DF_AUDITOR_UNIT_START_BEFORE', nil)
+    config.auditor_unit_access_years = ENV.fetch('DF_AUDITOR_UNIT_ACCESS_YEARS', 2).years
 
     # ==> Institution settings
     # Institution YAML and ENV (override) config load

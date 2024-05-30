@@ -320,9 +320,8 @@ class Unit < ApplicationRecord
       Unit.all
     elsif user.has_auditor_capability?
       # Limit range of units that the auditor has access to
-      earliest_unit_date = Doubtfire::Application.config.auditor_unit_start_after || (Date.today - 1.year)
-      latest_unit_date = Doubtfire::Application.config.auditor_unit_start_before || (Date.today - 10.weeks)
-      Unit.all.where('start_date >= :earliest_unit_date AND start_date <= :latest_unit_date', earliest_unit_date: earliest_unit_date, latest_unit_date: latest_unit_date)
+      earliest_unit_start_date = Date.today - Doubtfire::Application.config.auditor_unit_access_years
+      Unit.all.where('start_date >= :earliest_unit_start_date AND end_date < :today', earliest_unit_start_date: earliest_unit_start_date, today: DateTime.now)
     else
       Unit.joins(:unit_roles).where('unit_roles.user_id = :user_id AND unit_roles.role_id = :convenor_role', user_id: user.id, convenor_role: Role.convenor.id)
     end
