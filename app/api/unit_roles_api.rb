@@ -29,7 +29,7 @@ class UnitRolesApi < Grape::API
     unit_role = UnitRole.find(params[:id])
 
     unless (authorise? current_user, unit_role.unit, :employ_staff) || (authorise? current_user, User, :admin_units)
-      error!({ error: "Couldn't find UnitRole with id=#{params[:id]}" }, 403)
+      error!({ error: "You do not have permission to perform this action" }, 403)
     end
 
     unit_role.destroy!
