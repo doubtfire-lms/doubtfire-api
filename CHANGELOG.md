@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [7.0.28](https://github.com/macite/doubtfire-deploy/compare/v7.0.27...v7.0.28) (2024-05-31)
+
+
+### Features
+
+* add auditor role ([4a345c4](https://github.com/macite/doubtfire-deploy/commit/4a345c452fdce50b83c1bdacfdc2051f1c2d379e))
+* allow admins to edit groups ([43c40cd](https://github.com/macite/doubtfire-deploy/commit/43c40cdc62383b16a266012cb3bb4bc4fc7cb452))
+
+
+### Bug Fixes
+
+* adjust method for determining auditor units ([f6881f1](https://github.com/macite/doubtfire-deploy/commit/f6881f17976664f96f2dc802c22b2581f7620896))
+* allow admins to view projects ([9442394](https://github.com/macite/doubtfire-deploy/commit/94423946d837312e45a9151061ac94ef2138cee2))
+* allow admins to view tasks ([5959c89](https://github.com/macite/doubtfire-deploy/commit/5959c893c8a153b84550d5410967958e1dbacd24))
+* ensure auditor role is correct for units ([661fcc1](https://github.com/macite/doubtfire-deploy/commit/661fcc10a70450f5d2e22a72fdeecffc5bdd2216))
+
 ### [7.0.27](https://github.com/macite/doubtfire-deploy/compare/v7.0.26...v7.0.27) (2024-05-26)
 
 
