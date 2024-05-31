@@ -98,7 +98,9 @@ class Unit < ApplicationRecord
       Role.tutor
     elsif active_projects.where('projects.user_id=:id', id: user.id).count == 1
       Role.student
-    elsif user.has_auditor_capability?
+    elsif user.has_auditor_capability? &&
+          start_date >= Date.today - Doubtfire::Application.config.auditor_unit_access_years &&
+          end_date < DateTime.now
       Role.auditor
     elsif user.has_admin_capability?
       Role.admin
