@@ -74,7 +74,7 @@ class TestAttempt < ApplicationRecord
       raise "Terminated entries should not be updated"
     end
 
-    # set cmi.entry to resume if the session is in progress
+    # set cmi.entry to resume if the attempt is in progress
     if new_data['cmi.completion_status'] == 'incomplete'
       new_data['cmi.entry'] = 'resume'
     end

@@ -22,128 +22,119 @@ class TestAttemptsApi < Grape::API
     error!({ errors: e.full_messages }, 400)
   end
 
-  resources :test_attempts do
-    desc 'Get all test results for a task'
-    params do
-      requires :task_id, type: Integer, desc: 'Task ID to fetch test attempts for'
-    end
-    get ':task_id' do
-      task = Task.find(params[:task_id])
-      if task.nil?
-        error!({ message: 'Task ID is invalid' }, 404)
-        return
-      else
-        attempts = TestAttempt.where("task_id = ?", params[:task_id])
-      end
-      tests = attempts.order(id: :desc)
-      present tests, with: Entities::TestAttemptEntity
-    end
+  desc 'Get all test results for a task'
+  params do
+    requires :project_id, type: Integer, desc: 'The id of the project with the task'
+    requires :task_definition_id, type: Integer, desc: 'The id of the task definition related to the task'
+  end
+  get '/projects/:project_id/task_def_id/:task_definition_id/test_attempts' do
+    project = Project.find(params[:project_id])
+    task_definition = project.unit.task_definitions.find(params[:task_definition_id])
+    task = project.task_for_task_definition(task_definition)
 
-    desc 'Get the latest test result'
-    params do
-      requires :task_id, type: Integer, desc: 'Task ID to fetch the latest test attempt for'
-      optional :completed, type: Boolean, desc: 'Get the latest completed test?'
-    end
-    get ':task_id/latest' do
-      # Ensure task exists
-      task = Task.find(params[:task_id])
-      if task.nil?
-        error!({ message: 'Task ID is invalid' }, 404)
-        return
-      else
-        attempts = TestAttempt.where("task_id = ?", params[:task_id])
-      end
+    attempts = TestAttempt.where("task_id = ?", task.id)
+    tests = attempts.order(id: :desc)
+    present tests, with: Entities::TestAttemptEntity
+  end
 
-      test = if params[:completed]
-               attempts.where(completion_status: true).order(id: :desc).first
-             else
-               attempts.order(id: :desc).first
-             end
+  desc 'Get the latest test result'
+  params do
+    requires :project_id, type: Integer, desc: 'The id of the project with the task'
+    requires :task_definition_id, type: Integer, desc: 'The id of the task definition related to the task'
+    optional :completed, type: Boolean, desc: 'Get the latest completed test?'
+  end
+  get '/projects/:project_id/task_def_id/:task_definition_id/test_attempts/latest' do
+    project = Project.find(params[:project_id])
+    task_definition = project.unit.task_definitions.find(params[:task_definition_id])
+    task = project.task_for_task_definition(task_definition)
 
-      if test.nil?
-        error!({ message: 'No tests found for this task' }, 404)
-      else
-        present test, with: Entities::TestAttemptEntity
-      end
-    end
+    attempts = TestAttempt.where("task_id = ?", task.id)
 
-    desc 'Review a completed session'
-    params do
-      requires :task_id, type: Integer, desc: 'Task ID to fetch the latest test attempt for'
-      requires :session_id, type: Integer, desc: 'Test attempt ID to review'
-    end
-    get ':task_id/review/:session_id' do
-      session = TestAttempt.find(params[:session_id])
-      if session.nil?
-        error!({ message: 'Session ID is invalid' }, 404)
-        return
-      else
-        logger.debug "Request to review test session #{params[:session_id]}"
-        session.review
-        # TODO: add review permission flag to taskdef
-      end
+    test = if params[:completed]
+             attempts.where(completion_status: true).order(id: :desc).first
+           else
+             attempts.order(id: :desc).first
+           end
+
+    if test.nil?
+      error!({ message: 'No tests found for this task' }, 404)
+    else
       present test, with: Entities::TestAttemptEntity
     end
+  end
 
-    desc 'Initiate a new test session'
-    params do
-      requires :task_id, type: Integer, desc: 'ID of the associated task'
+  desc 'Review a completed attempt'
+  params do
+    requires :id, type: Integer, desc: 'Test attempt ID to review'
+  end
+  get 'test_attempts/:id/review' do
+    attempt = TestAttempt.find(params[:id])
+    if attempt.nil?
+      error!({ message: 'Test attempt ID is invalid' }, 404)
+      return
+    else
+      logger.debug "Request to review test attempt #{params[:id]}"
+      attempt.review
+      # TODO: add review permission flag to taskdef
     end
-    post ':task_id/session' do
-      task = Task.find(params[:task_id])
-      if task.nil?
-        error!({ message: 'Task ID is invalid' }, 404)
-        return
-      else
-        attempts = TestAttempt.where("task_id = ?", params[:task_id])
+    present test, with: Entities::TestAttemptEntity
+  end
+
+  desc 'Initiate a new test attempt'
+  params do
+    requires :project_id, type: Integer, desc: 'The id of the project with the task'
+    requires :task_definition_id, type: Integer, desc: 'The id of the task definition related to the task'
+  end
+  post '/projects/:project_id/task_def_id/:task_definition_id/test_attempts' do
+    project = Project.find(params[:project_id])
+    task_definition = project.unit.task_definitions.find(params[:task_definition_id])
+    task = project.task_for_task_definition(task_definition)
+
+    attempts = TestAttempt.where("task_id = ?", task.id)
+
+    # check attempt limit
+    test_count = attempts.count
+    limit = task.task_definition.scorm_attempt_limit
+    if test_count > limit && limit != 0
+      error!({ message: 'Attempt limit has been reached' }, 400)
+      return
+    end
+
+    metadata = params.merge(attempt_number: test_count + 1)
+    test = TestAttempt.create!(metadata)
+    present test, with: Entities::TestAttemptEntity
+  end
+
+  desc 'Update an existing attempt'
+  params do
+    requires :id, type: String, desc: 'ID of the test attempt'
+    optional :cmi_datamodel, type: String, desc: 'JSON CMI datamodel to update'
+    optional :terminated, type: Boolean, desc: 'Terminate the current attempt'
+  end
+  patch 'test_attempts/:id' do
+    attempt_data = ActionController::Parameters.new(params).permit(:cmi_datamodel, :terminated)
+    test = TestAttempt.find(params[:id])
+
+    unless test.terminated
+      test.update!(attempt_data)
+      test.save!
+      if params[:terminated]
+        task = Task.find(test.task_id)
+        task.add_scorm_comment(test)
       end
-
-      # check attempt limit
-      test_count = attempts.count
-      limit = task.task_definition.scorm_attempt_limit
-      if test_count > limit && limit != 0
-        error!({ message: 'Attempt limit has been reached' }, 400)
-        return
-      end
-
-      metadata = params.merge(attempt_number: test_count + 1)
-      test = TestAttempt.create!(metadata)
-      present test, with: Entities::TestAttemptEntity
     end
+    present test, with: Entities::TestAttemptEntity
+  end
 
-    desc 'Update an existing session'
-    params do
-      requires :task_id, type: Integer, desc: 'ID of the associated task'
-      requires :id, type: String, desc: 'ID of the test attempt'
-      optional :cmi_datamodel, type: String, desc: 'JSON CMI datamodel to update'
-      optional :terminated, type: Boolean, desc: 'Terminate the current session'
-    end
-    patch ':task_id/session/:id' do
-      session_data = ActionController::Parameters.new(params).permit(:cmi_datamodel, :terminated)
-      test = TestAttempt.find(params[:id])
+  desc 'Delete a test attempt'
+  params do
+    requires :id, type: String, desc: 'ID of the test attempt'
+  end
+  delete 'test_attempts/:id' do
+    raise NotImplementedError
+    # TODO: fix permissions before enabling this
 
-      unless test.terminated
-        test.update!(session_data)
-        test.save!
-        if params[:terminated]
-          task = Task.find(test.task_id)
-          task.add_scorm_comment(test)
-        end
-      end
-      present test, with: Entities::TestAttemptEntity
-    end
-
-    desc 'Delete a test attempt'
-    params do
-      requires :task_id, type: Integer, desc: 'ID of the associated task'
-      requires :id, type: String, desc: 'ID of the test attempt'
-    end
-    delete ':task_id/:id' do
-      raise NotImplementedError
-      # TODO: fix permissions before enabling this
-
-      # test = TestAttempt.find(params[:id])
-      # test.destroy!
-    end
+    # test = TestAttempt.find(params[:id])
+    # test.destroy!
   end
 end
