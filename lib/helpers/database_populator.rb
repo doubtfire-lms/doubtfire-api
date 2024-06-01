@@ -510,7 +510,7 @@ class DatabasePopulator
     echo "----> Generating #{unit_details[:num_tasks]} tasks"
 
     csv_to_import = Rails.root.join('test_files', "#{unit.code}-Tasks.csv")
-    zip_to_import = Rails.root.join('test_files', "#{unit.code}-TaskFiles.zip")
+    zip_to_import = Rails.root.join('test_files', "#{unit.code}-Tasks.zip")
 
     if (File.exist? csv_to_import) && (File.exist? zip_to_import)
       echo "----> CSV file found, importing tasks from #{csv_to_import} \n"

@@ -197,10 +197,19 @@ class UnitsApiTest < ActiveSupport::TestCase
     atutor = User.find_by(username: 'atutor')
     astudent = User.find_by(username: 'astudent')
 
-    Doubtfire::Application.config.auditor_unit_start_before = Date.today
+    Doubtfire::Application.config.auditor_unit_access_years = 2.years
 
     # Test auditor can get all - except old
-    test_unit = FactoryBot.create :unit, start_date: 3.years.ago, end_date: 3.years.ago + 10.weeks, with_students: false, task_count: 0
+    start_before = DateTime.now - Doubtfire::Application.config.auditor_unit_access_years - 1.year
+    start_inside = DateTime.now - Doubtfire::Application.config.auditor_unit_access_years + 1.week
+
+    end_inside = DateTime.now - 1.week
+    end_after = DateTime.now + 1.week
+
+    test_unit_before = FactoryBot.create :unit, start_date: start_before, end_date: end_inside, with_students: false, task_count: 0
+    test_unit_inside = FactoryBot.create :unit, start_date: start_inside, end_date: end_inside, with_students: false, task_count: 0
+    test_unit_after = FactoryBot.create :unit, start_date: start_inside, end_date: end_after, with_students: false, task_count: 0
+
     total_units = Unit.count
 
     # Test admin can get all
@@ -209,13 +218,25 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status
     assert_equal total_units, last_response_body.count
 
+    assert last_response_body.map { |r| r['id'] }.include? test_unit_inside.id
+    assert last_response_body.map { |r| r['id'] }.include? test_unit_before.id
+    assert last_response_body.map { |r| r['id'] }.include? test_unit_after.id
+
     add_auth_header_for(user: aauditor)
     get '/api/units', { include_in_active: true }
     assert_equal 200, last_response.status
-    assert_equal total_units - 1, last_response_body.count
+
+    assert last_response_body.map { |r| r['id'] }.include? test_unit_inside.id
+    refute last_response_body.map { |r| r['id'] }.include? test_unit_before.id
+    refute last_response_body.map { |r| r['id'] }.include? test_unit_after.id
 
     # Test convenor can not get all
     add_auth_header_for(user: aconvenor)
+    get '/api/units'
+    assert_equal 403, last_response.status
+
+    # Test tutor can not get all
+    add_auth_header_for(user: atutor)
     get '/api/units'
     assert_equal 403, last_response.status
 

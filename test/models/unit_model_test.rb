@@ -85,13 +85,13 @@ class UnitModelTest < ActiveSupport::TestCase
   end
 
   def test_import_tasks_worked
-    @unit.import_tasks_from_csv File.open(Rails.root.join('test_files',"#{@unit.code}-Tasks.csv"))
+    @unit.import_tasks_from_csv File.open(Rails.root.join('test_files', "#{@unit.code}-Tasks.csv"))
     assert_equal 37, @unit.task_definitions.count, 'imported all task definitions'
   end
 
   def test_import_task_files
-    @unit.import_tasks_from_csv File.open(Rails.root.join('test_files',"#{@unit.code}-Tasks.csv"))
-    @unit.import_task_files_from_zip Rails.root.join('test_files',"#{@unit.code}-Tasks.zip")
+    @unit.import_tasks_from_csv File.open(Rails.root.join('test_files', "#{@unit.code}-Tasks.csv"))
+    @unit.import_task_files_from_zip Rails.root.join('test_files', "#{@unit.code}-Tasks.zip")
 
     @unit.task_definitions.each do |td|
       assert File.exist?(td.task_sheet), "#{td.abbreviation} task sheet missing"
@@ -110,8 +110,8 @@ class UnitModelTest < ActiveSupport::TestCase
   end
 
   def test_rollover_of_task_files
-    @unit.import_tasks_from_csv File.open(Rails.root.join('test_files',"#{@unit.code}-Tasks.csv"))
-    @unit.import_task_files_from_zip Rails.root.join('test_files',"#{@unit.code}-Tasks.zip")
+    @unit.import_tasks_from_csv File.open(Rails.root.join('test_files', "#{@unit.code}-Tasks.csv"))
+    @unit.import_task_files_from_zip Rails.root.join('test_files', "#{@unit.code}-Tasks.zip")
 
     unit2 = @unit.rollover TeachingPeriod.find(2), nil, nil
 
