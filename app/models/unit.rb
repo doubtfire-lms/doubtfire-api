@@ -1860,7 +1860,8 @@ class Unit < ApplicationRecord
         file_name = File.basename(file.name)
         if (File.extname(file.name) == '.pdf') || (File.extname(file.name) == '.zip')
           found = false
-          task_definitions.each do |td|
+          # sort task definitions by longest abbreviation to ensure longest matches
+          task_definitions.sort_by{ |td| -td.abbreviation.size }.each do |td|
             next unless /^#{td.abbreviation}/ =~ file_name
 
             file.extract ("#{task_path}#{FileHelper.sanitized_filename(td.abbreviation)}#{File.extname(file.name)}") { true }

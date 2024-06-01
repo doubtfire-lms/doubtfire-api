@@ -509,9 +509,26 @@ class DatabasePopulator
   def generate_tasks_for_unit(unit, unit_details)
     echo "----> Generating #{unit_details[:num_tasks]} tasks"
 
-    if File.exist? Rails.root.join('test_files', "#{unit.code}-Tasks.csv")
-      unit.import_tasks_from_csv File.open(Rails.root.join('test_files', "#{unit.code}-Tasks.csv"))
-      unit.import_task_files_from_zip Rails.root.join('test_files', "#{unit.code}-Tasks.zip")
+    csv_to_import = Rails.root.join('test_files', "#{unit.code}-Tasks.csv")
+    zip_to_import = Rails.root.join('test_files', "#{unit.code}-TaskFiles.zip")
+
+    if (File.exist? csv_to_import) && (File.exist? zip_to_import)
+      echo "----> CSV file found, importing tasks from #{csv_to_import} \n"
+      result = unit.import_tasks_from_csv(File.open(csv_to_import))
+      unless result[:errors].empty?
+        raise("----> Task import from CSV failed with the following errors: #{result[:errors]} \n")
+      end
+
+      echo "----> Importing task files from #{zip_to_import} \n"
+      result = unit.import_task_files_from_zip zip_to_import
+      unless result[:errors].empty?
+        raise("----> Task files import failed with the following errors: #{result[:errors]} \n")
+      end
+
+      unless result[:ignored].empty?
+        echo "----> Task files import ignored the following files: #{result[:ignored]} \n"
+      end
+
       return
     end
 
