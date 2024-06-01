@@ -578,6 +578,9 @@ class DatabasePopulator
       unless result[:errors].empty?
         raise("----> Task files import failed with the following errors: #{result[:errors]} \n")
       end
+      unless result[:ignored].empty?
+        echo "----> Task files import ignored the following files: #{result[:ignored]} \n"
+      end
       return
     end
 
