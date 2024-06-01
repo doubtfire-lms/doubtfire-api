@@ -123,6 +123,7 @@ class Task < ApplicationRecord
   has_many :task_submissions, dependent: :destroy
   has_many :overseer_assessments, dependent: :destroy
   has_many :tii_submissions, dependent: :destroy
+  has_many :test_attempts, dependent: :destroy
 
   delegate :unit, to: :project
   delegate :student, to: :project
@@ -663,18 +664,6 @@ class Task < ApplicationRecord
     comment.content_type = :text
     comment.recipient = user == project.student ? project.tutor_for(task_definition) : project.student
     comment.reply_to_id = reply_to_id
-    comment.save!
-
-    comment
-  end
-
-  def add_scorm_comment(test)
-    comment = TaskComment.create
-    comment.task = self
-    comment.user = self.tutor
-    comment.comment = "Test Attempt #{test.attempt_number} completed with score: #{format("%.2f", test.score_scaled * 100)}%"
-    comment.content_type = 'scorm'
-    comment.recipient = project.student
     comment.save!
 
     comment

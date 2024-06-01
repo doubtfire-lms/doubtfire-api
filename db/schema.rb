@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_05_28_223908) do
+ActiveRecord::Schema[7.1].define(version: 2024_06_01_103707) do
   create_table "activity_types", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -215,6 +215,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_28_223908) do
     t.string "extension_response"
     t.bigint "reply_to_id"
     t.bigint "overseer_assessment_id"
+    t.integer "test_attempt_id"
     t.index ["assessor_id"], name: "index_task_comments_on_assessor_id"
     t.index ["discussion_comment_id"], name: "index_task_comments_on_discussion_comment_id"
     t.index ["overseer_assessment_id"], name: "index_task_comments_on_overseer_assessment_id"
@@ -222,6 +223,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_28_223908) do
     t.index ["reply_to_id"], name: "index_task_comments_on_reply_to_id"
     t.index ["task_id"], name: "index_task_comments_on_task_id"
     t.index ["task_status_id"], name: "index_task_comments_on_task_status_id"
+    t.index ["test_attempt_id"], name: "index_task_comments_on_test_attempt_id"
     t.index ["user_id"], name: "index_task_comments_on_user_id"
   end
 

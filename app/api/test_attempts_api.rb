@@ -77,7 +77,7 @@ class TestAttemptsApi < Grape::API
       attempt.review
       # TODO: add review permission flag to taskdef
     end
-    present test, with: Entities::TestAttemptEntity
+    present attempt, with: Entities::TestAttemptEntity
   end
 
   desc 'Initiate a new test attempt'
@@ -100,7 +100,7 @@ class TestAttemptsApi < Grape::API
       return
     end
 
-    metadata = params.merge(attempt_number: test_count + 1)
+    metadata = { task_id: task.id, attempt_number: test_count + 1 }
     test = TestAttempt.create!(metadata)
     present test, with: Entities::TestAttemptEntity
   end
@@ -110,19 +110,25 @@ class TestAttemptsApi < Grape::API
     requires :id, type: String, desc: 'ID of the test attempt'
     optional :cmi_datamodel, type: String, desc: 'JSON CMI datamodel to update'
     optional :terminated, type: Boolean, desc: 'Terminate the current attempt'
+    optional :success_status, type: Boolean, desc: 'Override the success status of the current attempt'
   end
   patch 'test_attempts/:id' do
-    attempt_data = ActionController::Parameters.new(params).permit(:cmi_datamodel, :terminated)
     test = TestAttempt.find(params[:id])
 
-    unless test.terminated
-      test.update!(attempt_data)
-      test.save!
-      if params[:terminated]
-        task = Task.find(test.task_id)
-        task.add_scorm_comment(test)
+    if params[:success_status].present?
+      test.override_success_status(params[:success_status])
+    else
+      attempt_data = ActionController::Parameters.new(params).permit(:cmi_datamodel, :terminated)
+
+      unless test.terminated
+        test.update!(attempt_data)
+        test.save!
+        if params[:terminated]
+          test.add_scorm_comment
+        end
       end
     end
+
     present test, with: Entities::TestAttemptEntity
   end
 
@@ -131,10 +137,9 @@ class TestAttemptsApi < Grape::API
     requires :id, type: String, desc: 'ID of the test attempt'
   end
   delete 'test_attempts/:id' do
-    raise NotImplementedError
     # TODO: fix permissions before enabling this
 
-    # test = TestAttempt.find(params[:id])
-    # test.destroy!
+    test = TestAttempt.find(params[:id])
+    test.destroy!
   end
 end

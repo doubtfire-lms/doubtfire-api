@@ -2,6 +2,11 @@ require 'json'
 require 'time'
 
 class TestAttempt < ApplicationRecord
+  belongs_to :task, optional: false
+
+  has_one :scorm_comment, dependent: :destroy
+
+  validates :task_id, presence: true
 
   def self.permissions
     # TODO: this is all wrong, students should not be able to delete test attempts
@@ -99,8 +104,36 @@ class TestAttempt < ApplicationRecord
     write_attribute(:cmi_datamodel, dm.to_json)
   end
 
-  def pass_override
-    # TODO: implement tutor override pass
+  def override_success_status(new_success_status)
+    dm = JSON.parse(self.cmi_datamodel)
+    dm['cmi.success_status'] = (new_success_status ? 'passed' : 'failed')
+    write_attribute(:cmi_datamodel, dm.to_json)
+    self.success_status = dm['cmi.success_status'] == 'passed'
+    self.save!
+    self.update_scorm_comment
   end
 
+  def add_scorm_comment
+    comment = ScormComment.create
+    comment.task = task
+    comment.user = task.tutor
+    comment.comment = "Test attempt #{self.attempt_number} #{self.success_status ? 'passed' : 'failed'} with score: #{(self.score_scaled * 100).to_i}%"
+    comment.recipient = task.student
+    comment.test_attempt = self
+    comment.save!
+
+    comment
+  end
+
+  def update_scorm_comment
+    if self.scorm_comment.present?
+      self.scorm_comment.comment = "Test attempt #{self.attempt_number} #{self.success_status ? 'passed' : 'failed'} with score: #{(self.score_scaled * 100).to_i}%"
+      self.scorm_comment.save!
+
+      return self.scorm_comment
+    end
+
+    puts "WARN: Unexpected need to create scorm comment for test attempt: #{self.id}"
+    add_scorm_comment
+  end
 end
