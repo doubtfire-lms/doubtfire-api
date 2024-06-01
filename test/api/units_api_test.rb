@@ -200,7 +200,7 @@ class UnitsApiTest < ActiveSupport::TestCase
     Doubtfire::Application.config.auditor_unit_start_before = Date.today
 
     # Test auditor can get all - except old
-    test_unit = FactoryBot.create :unit, start_date: 2.years.ago, end_date: 2.years.ago + 10.weeks, with_students: false, task_count: 0
+    test_unit = FactoryBot.create :unit, start_date: 3.years.ago, end_date: 3.years.ago + 10.weeks, with_students: false, task_count: 0
     total_units = Unit.count
 
     # Test admin can get all

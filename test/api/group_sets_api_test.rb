@@ -38,7 +38,7 @@ class GroupSetsApiTest < ActiveSupport::TestCase
     # A groupSet we want to save
     new_group_set = FactoryBot.build(:group_set)
 
-    # Create a unit 
+    # Create a unit
     new_unit = FactoryBot.create(:unit)
 
     # Data that we want to post
@@ -58,11 +58,11 @@ class GroupSetsApiTest < ActiveSupport::TestCase
     response_keys = %w(name allow_students_to_create_groups allow_students_to_manage_groups keep_groups_in_same_class)
     response_group_set = GroupSet.find(last_response_body['id'])
     assert_json_matches_model(response_group_set, last_response_body, response_keys)
-    assert_equal new_unit.id,response_group_set.unit.id
-    assert_equal new_group_set.name,response_group_set.name
-    assert_equal new_group_set.allow_students_to_create_groups,response_group_set.allow_students_to_create_groups
-    assert_equal new_group_set.allow_students_to_manage_groups,response_group_set.allow_students_to_manage_groups
-    assert_equal new_group_set.keep_groups_in_same_class,response_group_set.keep_groups_in_same_class
+    assert_equal new_unit.id, response_group_set.unit.id
+    assert_equal new_group_set.name, response_group_set.name
+    assert_equal new_group_set.allow_students_to_create_groups, response_group_set.allow_students_to_create_groups
+    assert_equal new_group_set.allow_students_to_manage_groups, response_group_set.allow_students_to_manage_groups
+    assert_equal new_group_set.keep_groups_in_same_class, response_group_set.keep_groups_in_same_class
   end
 
   def test_post_add_a_group_to_a_group_set_of_a_unit_without_authorization
@@ -83,12 +83,12 @@ class GroupSetsApiTest < ActiveSupport::TestCase
       unit_id: new_unit.id,
       group_set_id: new_group_set.id,
       group: {
-        name:new_group.name,
-        tutorial_id:new_tutorial.id
+        name: new_group.name,
+        tutorial_id: new_tutorial.id
       }
     }
 
-    add_auth_header_for user: User.first
+    add_auth_header_for user: User.find_by(username: 'student_1')
 
     # perform the POST
     post_json "/api/units/#{new_unit.id}/group_sets/#{new_group_set.id}/groups", data_to_post
@@ -144,7 +144,7 @@ class GroupSetsApiTest < ActiveSupport::TestCase
     new_unit = new_group.group_set.unit
 
     get "/api/units/#{new_unit.id}/group_sets/#{new_group.group_set_id}/groups"
-    
+
     # Check error code when an unauthorized user tries to get groups in a unit
     assert_equal 419, last_response.status, last_response_body
   end
@@ -160,10 +160,10 @@ class GroupSetsApiTest < ActiveSupport::TestCase
 
     get "/api/units/#{new_unit.id}/group_sets/#{new_group.group_set_id}/groups"
 
-    #check returning number of groups
+    # check returning number of groups
     assert_equal new_group.group_set.groups.count, last_response_body.count
 
-    #Check response
+    # Check response
     response_keys = %w(id name)
     last_response_body.each do | data |
       grp = Group.find(data['id'])
@@ -182,7 +182,7 @@ class GroupSetsApiTest < ActiveSupport::TestCase
     # Obtain the unit from the group
     new_unit = new_group.group_set.unit
 
-    add_auth_header_for user: User.first
+    add_auth_header_for user: User.find_by(username: 'student_1')
 
     get "/api/units/#{new_unit.id}/group_sets/#{new_group_set.id}/groups"
     # Check error code
@@ -214,7 +214,7 @@ class GroupSetsApiTest < ActiveSupport::TestCase
     end
     assert_equal 200, last_response.status
   end
-  
+
   def test_groups_unlocked_upon_creation
 
     unit = FactoryBot.create :unit
@@ -247,7 +247,7 @@ class GroupSetsApiTest < ActiveSupport::TestCase
     group = Group.create!({group_set: group_set, name: 'test_groups_lockable_only_by_staff', tutorial: unit.tutorials.first })
     group.save!
     group.add_member(unit.active_projects[0])
-    
+
     url = "api/units/#{unit.id}/group_sets/#{group_set.id}/groups/#{group.id}"
     lock_data = { group: { locked: true } }
     unlock_data = { group: { locked: false } }
