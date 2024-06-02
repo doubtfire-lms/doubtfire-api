@@ -456,7 +456,7 @@ class Project < ApplicationRecord
     hash.each { |key, value| hash[key] = (hash[key] < 0.01 ? 0.0 : (value / total).signif(2)) }
 
     total = 0.0
-    hash.each { |_key, value| total += value }
+    hash.each_value { |value| total += value }
 
     if total != 1.0
       dif = 1.0 - total
