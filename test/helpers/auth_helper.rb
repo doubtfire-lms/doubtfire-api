@@ -39,8 +39,13 @@ module TestHelpers
       end
     end
 
+    def clear_auth_header
+      header 'username', nil
+      header 'auth_token', nil
+    end
 
     module_function :auth_token
     module_function :add_auth_header_for
+    module_function :clear_auth_header
   end
 end

@@ -168,8 +168,7 @@ class UnitsApiTest < ActiveSupport::TestCase
 
   # Test GET for getting all units
   def test_units_get
-
-    # Add username and auth_token to Header
+    # Add username and auth_token to Header - aadmin
     add_auth_header_for(user: User.first)
 
     get '/api/units'
@@ -191,9 +190,69 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert_equal expected_unit.end_date.to_date, actual_unit['end_date'].to_date
   end
 
+  def test_permissions_on_get
+    aadmin = User.find_by(username: 'aadmin')
+    aauditor = FactoryBot.create :user, :auditor
+    aconvenor = User.find_by(username: 'aconvenor')
+    atutor = User.find_by(username: 'atutor')
+    astudent = User.find_by(username: 'astudent')
+
+    Doubtfire::Application.config.auditor_unit_access_years = 2.years
+
+    # Test auditor can get all - except old
+    start_before = DateTime.now - Doubtfire::Application.config.auditor_unit_access_years - 1.year
+    start_inside = DateTime.now - Doubtfire::Application.config.auditor_unit_access_years + 1.week
+
+    end_inside = DateTime.now - 1.week
+    end_after = DateTime.now + 1.week
+
+    test_unit_before = FactoryBot.create :unit, start_date: start_before, end_date: end_inside, with_students: false, task_count: 0
+    test_unit_inside = FactoryBot.create :unit, start_date: start_inside, end_date: end_inside, with_students: false, task_count: 0
+    test_unit_after = FactoryBot.create :unit, start_date: start_inside, end_date: end_after, with_students: false, task_count: 0
+
+    total_units = Unit.count
+
+    # Test admin can get all
+    add_auth_header_for(user: aadmin)
+    get '/api/units', { include_in_active: true }
+    assert_equal 200, last_response.status
+    assert_equal total_units, last_response_body.count
+
+    assert last_response_body.map { |r| r['id'] }.include? test_unit_inside.id
+    assert last_response_body.map { |r| r['id'] }.include? test_unit_before.id
+    assert last_response_body.map { |r| r['id'] }.include? test_unit_after.id
+
+    add_auth_header_for(user: aauditor)
+    get '/api/units', { include_in_active: true }
+    assert_equal 200, last_response.status
+
+    assert last_response_body.map { |r| r['id'] }.include? test_unit_inside.id
+    refute last_response_body.map { |r| r['id'] }.include? test_unit_before.id
+    refute last_response_body.map { |r| r['id'] }.include? test_unit_after.id
+
+    # Test convenor can not get all
+    add_auth_header_for(user: aconvenor)
+    get '/api/units'
+    assert_equal 403, last_response.status
+
+    # Test tutor can not get all
+    add_auth_header_for(user: atutor)
+    get '/api/units'
+    assert_equal 403, last_response.status
+
+    # Test students cannot get all
+    add_auth_header_for(user: astudent)
+    get '/api/units'
+    assert_equal 403, last_response.status
+
+    # Test no auth cannot get all
+    clear_auth_header
+    get '/api/units'
+    assert_equal 419, last_response.status
+  end
+
   # Test GET for getting a specific unit by id
   def test_units_get_by_id
-
     # Add username and auth_token to Header
     add_auth_header_for(user: User.first)
 
@@ -419,10 +478,8 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert_equal new_end.to_i, Unit.first.end_date.to_i
   end
 
-
   # Test GET for getting a specific unit by invalid id
   def test_fail_units_get_by_id
-
     # Add username and auth_token to Header
     add_auth_header_for(user: User.first)
 
@@ -431,10 +488,10 @@ class UnitsApiTest < ActiveSupport::TestCase
   end
 
   def test_put_update_unit_custom_token()
-    unit= Unit.first
-    token='abcdef'
+    unit = Unit.first
+    token = 'abcdef'
     data_to_put = {
-        unit: unit
+      unit: unit
     }
 
     # Add username and auth_token to Header
@@ -445,16 +502,16 @@ class UnitsApiTest < ActiveSupport::TestCase
   end
 
   def test_put_update_unit_empty_token
-    unit= Unit.first
+    unit = Unit.first
     data_to_put = {
-        unit: unit
+      unit: unit
     }
 
     # Add username and auth_token to Header
     add_auth_header_for(user: User.first)
 
     # Override header for empty string
-    header 'auth_token',''
+    header 'auth_token', ''
 
     put_json '/api/units/1', data_to_put
     assert_equal 419, last_response.status
@@ -489,7 +546,7 @@ class UnitsApiTest < ActiveSupport::TestCase
   end
 
   def test_draft_learning_summary_upload_requirements
-    unit = FactoryBot.create :unit, student_count:1, task_count:0
+    unit = FactoryBot.create :unit, student_count: 1, task_count: 0
     task_def_code = FactoryBot.create(:task_definition, unit: unit, upload_requirements: [{'key' => 'file0','name' => 'Code file','type' => 'code'}])
     task_def_doc = FactoryBot.create(:task_definition, unit: unit, upload_requirements: [{'key' => 'file0','name' => 'Draft learning summary','type' => 'document'}])
     task_def_doc_code = FactoryBot.create(:task_definition, unit: unit, upload_requirements: [{'key' => 'file0','name' => 'Draft learning summary','type' => 'document'}, {'key' => 'file1','name' => 'Code file','type' => 'code'}])

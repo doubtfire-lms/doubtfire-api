@@ -25,7 +25,7 @@ class TaskDownloadsController < ApplicationController
 
     unit = Unit.find(params[:id])
 
-    unless authorise? current_user, unit, :provide_feedback
+    unless authorise? current_user, unit, :get_students
       error!({ error: "Not authorised to download tasks for unit '#{params[:id]}'" }, 401)
     end
 

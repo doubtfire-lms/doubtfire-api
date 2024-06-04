@@ -16,7 +16,7 @@ class StudentsApi < Grape::API
   get '/students' do
     unit = Unit.find(params[:unit_id])
 
-    if (authorise? current_user, unit, :get_students) || (authorise? current_user, User, :admin_units)
+    if authorise? current_user, unit, :get_students
       result = if params[:withdrawn].nil? || (!params[:withdrawn].nil? && !params[:withdrawn])
                  unit.student_query(true)
                else

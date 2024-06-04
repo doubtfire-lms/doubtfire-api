@@ -38,6 +38,12 @@ module Doubtfire
     credentials.secret_key_aaf = ENV.fetch('DF_SECRET_KEY_AAF', Rails.env.production? ? nil : 'secretsecret12345')
     credentials.secret_key_moss = ENV.fetch('DF_SECRET_KEY_MOSS', nil)
 
+    # Limit number of pdf generators to run at once
+    config.pdfgen_max_processes = ENV['DF_MAX_PDF_GEN_PROCESSES'] || 2
+
+    # Date range for auditors to view
+    config.auditor_unit_access_years = ENV.fetch('DF_AUDITOR_UNIT_ACCESS_YEARS', 2).years
+
     # ==> Institution settings
     # Institution YAML and ENV (override) config load
     config.institution = YAML.load_file("#{Rails.root}/config/institution.yml").with_indifferent_access

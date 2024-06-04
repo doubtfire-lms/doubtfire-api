@@ -6,6 +6,7 @@ class TaskDefinitionsApi < Grape::API
   helpers FileHelper
   helpers MimeCheckHelpers
   helpers Submission::GenerateHelpers
+  helpers FileStreamHelper
 
   before do
     authenticated?
@@ -456,7 +457,7 @@ class TaskDefinitionsApi < Grape::API
   end
   get '/units/:unit_id/task_definitions/:task_def_id/tasks' do
     unit = Unit.find(params[:unit_id])
-    unless authorise? current_user, unit, :provide_feedback
+    unless authorise? current_user, unit, :get_students
       error!({ error: 'Not authorised to access tasks for this unit' }, 403)
     end
 
@@ -557,8 +558,7 @@ class TaskDefinitionsApi < Grape::API
     end
 
     content_type 'application/pdf'
-    env['api.format'] = :binary
-    File.read(path)
+    stream_file path
   end
 
   desc 'Download the task resources'
@@ -585,8 +585,7 @@ class TaskDefinitionsApi < Grape::API
     end
     header['Access-Control-Expose-Headers'] = 'Content-Disposition'
 
-    env['api.format'] = :binary
-    File.read(path)
+    stream_file path
   end
 
   desc 'Download the task assessment resources'
@@ -613,7 +612,6 @@ class TaskDefinitionsApi < Grape::API
     end
     header['Access-Control-Expose-Headers'] = 'Content-Disposition'
 
-    env['api.format'] = :binary
-    File.read(path)
+    stream_file path
   end
 end

@@ -69,6 +69,13 @@ class Unit < ApplicationRecord
       :exceed_capacity
     ]
 
+    # What can auditors do with units?
+    auditor_role_permissions = [
+      :get_unit,
+      :get_students,
+      :download_stats,
+    ]
+
     # What can other users do with units?
     nil_role_permissions = []
 
@@ -78,6 +85,7 @@ class Unit < ApplicationRecord
       tutor: tutor_role_permissions,
       convenor: convenor_role_permissions,
       admin: admin_role_permissions,
+      auditor: auditor_role_permissions,
       nil: nil_role_permissions
     }
   end
@@ -89,6 +97,10 @@ class Unit < ApplicationRecord
       Role.tutor
     elsif active_projects.where('projects.user_id=:id', id: user.id).count == 1
       Role.student
+    elsif user.has_auditor_capability? &&
+          start_date >= Date.today - Doubtfire::Application.config.auditor_unit_access_years &&
+          end_date < DateTime.now
+      Role.auditor
     elsif user.has_admin_capability?
       Role.admin
     else
@@ -317,8 +329,12 @@ class Unit < ApplicationRecord
   def self.for_user_admin(user)
     if user.has_admin_capability?
       Unit.all
+    elsif user.has_auditor_capability?
+      # Limit range of units that the auditor has access to
+      earliest_unit_start_date = Date.today - Doubtfire::Application.config.auditor_unit_access_years
+      Unit.all.where('start_date >= :earliest_unit_start_date AND end_date < :today', earliest_unit_start_date: earliest_unit_start_date, today: DateTime.now)
     else
-      Unit.joins(:unit_roles).where('unit_roles.user_id = :user_id and unit_roles.role_id = :convenor_role', user_id: user.id, convenor_role: Role.convenor.id)
+      Unit.joins(:unit_roles).where('unit_roles.user_id = :user_id AND unit_roles.role_id = :convenor_role', user_id: user.id, convenor_role: Role.convenor.id)
     end
   end
 
@@ -1634,7 +1650,7 @@ class Unit < ApplicationRecord
         if (File.extname(file.name) == '.pdf') || (File.extname(file.name) == '.zip')
           found = false
           # sort task definitions by longest abbreviation to ensure longest matches
-          task_definitions.sort_by{ |td| -td.abbreviation.size }.each do |td|
+          task_definitions.sort_by { |td| -td.abbreviation.size }.each do |td|
             next unless /^#{td.abbreviation}/ =~ file_name
 
             file.extract ("#{task_path}#{FileHelper.sanitized_filename(td.abbreviation)}#{File.extname(file.name)}") { true }

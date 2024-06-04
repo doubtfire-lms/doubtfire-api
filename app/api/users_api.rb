@@ -21,7 +21,7 @@ class UsersApi < Grape::API
   desc 'Get user'
   get '/users/:id', requirements: { id: /[0-9]*/ } do
     user = User.eager_load(:role).find(params[:id])
-    unless (user.id == current_user.id) || (authorise? current_user, User, :admin_users)
+    unless (user.id == current_user.id) || (authorise? current_user, User, :get_user)
       error!({ error: "Cannot find User with id #{params[:id]}" }, 403)
     end
 
@@ -30,7 +30,7 @@ class UsersApi < Grape::API
 
   desc 'Get convenors'
   get '/users/convenors' do
-    unless authorise? current_user, User, :convene_units
+    unless authorise? current_user, User, :get_staff_list
       error!({ error: 'Cannot list convenors - not authorised' }, 403)
     end
 
@@ -39,7 +39,7 @@ class UsersApi < Grape::API
 
   desc 'Get tutors'
   get '/users/tutors' do
-    unless authorise? current_user, User, :convene_units
+    unless authorise? current_user, User, :get_staff_list
       error!({ error: 'Cannot list tutors - not authorised' }, 403)
     end
 
@@ -55,7 +55,7 @@ class UsersApi < Grape::API
       optional :email, type: String, desc: 'New email address for user'
       optional :student_id, type: String, desc: 'New student_id for user'
       optional :nickname, type: String, desc: 'New nickname for user'
-      optional :system_role, type: String, desc: 'New role for user [Admin, Convenor, Tutor, Student]'
+      optional :system_role, type: String, desc: 'New role for user [Admin, Auditor, Convenor, Tutor, Student]'
       optional :receive_task_notifications, type: Boolean, desc: 'Allow user to be sent task notifications'
       optional :receive_portfolio_notifications, type: Boolean, desc: 'Allow user to be sent portfolio notifications'
       optional :receive_feedback_notifications, type: Boolean, desc: 'Allow user to be sent feedback notifications'
@@ -114,7 +114,14 @@ class UsersApi < Grape::API
         if new_role.nil?
           error!({ error: "No such role name #{user_parameters[:role]}" }, 403)
         end
-        action = new_role.id > old_role.id ? :promote_user : :demote_user
+
+        if old_role == Role.auditor
+          action - :promote_user
+        elsif new_role == Role.auditor
+          action = old_role == Role.student ? :promote_user : :demote_user
+        else
+          action = new_role.id > old_role.id ? :promote_user : :demote_user
+        end
 
         # current user not authorised to peform action with new role?
         unless authorise? current_user, User, action, User.get_change_role_perm_fn, [old_role.to_sym, new_role.to_sym]
@@ -141,7 +148,7 @@ class UsersApi < Grape::API
       optional :student_id, type: String, desc: 'New student_id for user'
       requires :username, type: String,   desc: 'New username for user'
       requires :nickname, type: String,   desc: 'New nickname for user'
-      requires :system_role, type: String, desc: 'New system role for user [Admin, Convenor, Tutor, Student]'
+      requires :system_role, type: String, desc: 'New system role for user [Admin, Auditor, Convenor, Tutor, Student]'
     end
   end
   post '/users' do

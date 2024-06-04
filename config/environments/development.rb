@@ -43,6 +43,13 @@ Doubtfire::Application.configure do
     config.cache_store = :null_store
   end
 
+  # Ensure cache is cleared on reload
+  unless Rails.application.config.cache_classes
+    Rails.autoloaders.main.on_unload do |klass, _abspath|
+      Rails.cache.clear
+    end
+  end
+
   # Store uploaded files on the local file system (see config/storage.yml for options).
   # config.active_storage.service = :local
 

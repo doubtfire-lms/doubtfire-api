@@ -37,6 +37,7 @@ class GroupSet < ApplicationRecord
 
     # Return permissions hash
     {
+      admin: convenor_role_permissions,
       convenor: convenor_role_permissions,
       tutor: tutor_role_permissions,
       student: student_role_permissions,

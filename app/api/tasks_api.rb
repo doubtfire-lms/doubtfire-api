@@ -3,6 +3,7 @@ require 'grape'
 class TasksApi < Grape::API
   helpers AuthenticationHelpers
   helpers AuthorisationHelpers
+  helpers FileStreamHelper
 
   before do
     authenticated?
@@ -227,9 +228,8 @@ class TasksApi < Grape::API
 
     # Set download headers...
     content_type 'application/octet-stream'
-    env['api.format'] = :binary
 
     # Return the file data
-    File.read(file_loc)
+    stream_file file_loc
   end
 end

@@ -25,8 +25,8 @@ class TaskSubmissionPdfsController < ApplicationController
 
     unit = Unit.find(params[:id])
 
-    unless authorise? current_user, unit, :provide_feedback
-      error!({ error: "Not authorised to download  student PDFs for unit '#{params[:id]}'" }, 401)
+    unless authorise? current_user, unit, :get_students
+      error!({ error: "Not authorised to download student PDFs for unit '#{params[:id]}'" }, 401)
     end
 
     td = unit.task_definitions.find(params[:task_def_id])

@@ -288,6 +288,7 @@ class DatabasePopulator
     # Define fixed user data here
     @user_data = {
       acain: { first_name: "Andrew", last_name: "Cain", nickname: "Macite", role_id: Role.admin_id },
+      aauditor: { first_name: "Auditor", last_name: "Auditor", nickname: "Auditor", role_id: Role.auditor_id },
       aconvenor: { first_name: "Clinton", last_name: "Woodward", nickname: "The Giant", role_id: Role.convenor_id },
       ajones: { first_name: "Allan", last_name: "Jones", nickname: "P-Jiddy", role_id: Role.admin_id },
       rwilson: { first_name: "Reuben", last_name: "Wilson", nickname: "Reubs", role_id: Role.convenor_id },
@@ -568,7 +569,7 @@ class DatabasePopulator
 
     if (File.exist? csv_to_import) && (File.exist? zip_to_import)
       echo "----> CSV file found, importing tasks from #{csv_to_import} \n"
-      result = unit.import_tasks_from_csv File.open(csv_to_import)
+      result = unit.import_tasks_from_csv(File.open(csv_to_import))
       unless result[:errors].empty?
         raise("----> Task import from CSV failed with the following errors: #{result[:errors]} \n")
       end
@@ -578,9 +579,11 @@ class DatabasePopulator
       unless result[:errors].empty?
         raise("----> Task files import failed with the following errors: #{result[:errors]} \n")
       end
+
       unless result[:ignored].empty?
         echo "----> Task files import ignored the following files: #{result[:ignored]} \n"
       end
+
       return
     end
 

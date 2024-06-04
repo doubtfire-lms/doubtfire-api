@@ -240,21 +240,22 @@ No Tutor
 
 <% if File.exist? task.portfolio_evidence_path
     # add task evidence to the document list for annotation extraction
-    document_list.append(task.portfolio_evidence_path) unless @is_retry
+    max_pages = FileHelper.pages_in_pdf(task.portfolio_evidence_path)
 
-    # embed in its entirety if more than 30 pages, otherwise embed page by page
-    if FileHelper.pages_in_pdf(task.portfolio_evidence_path) > 30
-  %>
-\includepdf[pages={1-},fitpaper]{<%= task.portfolio_evidence_path %>}
-  <% else %>
-      <% for page_idx in 1..FileHelper.pages_in_pdf(task.portfolio_evidence_path) do %>
+    # Limit to 100 pages
+    if max_pages > 100
+      max_pages = 100
+    else
+      document_list.append(task.portfolio_evidence_path) unless @is_retry
+    end
+
+    for page_idx in 1..max_pages do %>
 \includepdf[pages={<%= page_idx %>-<%= page_idx %>},fitpaper]{<%= task.portfolio_evidence_path %>}
-      <% end # end for
-    end # end if many pages
+<%  end # end for
   end # end if file exists
-end # portfolio tasks %>
+end # portfolio tasks do
 
-<% # generate lua calls for newpax and insert it in the preamble for annotation extraction
+# generate lua calls for newpax and insert it in the preamble for annotation extraction
 content_for :preamble_newpax do %>
   \directlua
   {
