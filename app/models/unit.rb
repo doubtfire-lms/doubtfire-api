@@ -739,7 +739,7 @@ class Unit < ApplicationRecord
     ignored = result[:ignored]
 
     # now apply the changes...
-    changes.each do |key, row_data|
+    changes.each_value do |row_data|
       begin
         row = row_data[:row]
         username = row_data[:username].downcase
@@ -1861,7 +1861,7 @@ class Unit < ApplicationRecord
         if (File.extname(file.name) == '.pdf') || (File.extname(file.name) == '.zip')
           found = false
           # sort task definitions by longest abbreviation to ensure longest matches
-          task_definitions.sort_by{ |td| -td.abbreviation.size }.each do |td|
+          task_definitions.sort_by { |td| -td.abbreviation.size }.each do |td|
             next unless /^#{td.abbreviation}/ =~ file_name
 
             file.extract ("#{task_path}#{FileHelper.sanitized_filename(td.abbreviation)}#{File.extname(file.name)}") { true }
