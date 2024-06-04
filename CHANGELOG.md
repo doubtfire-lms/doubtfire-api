@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [7.0.29](https://github.com/doubtfire-lms/doubtfire-deploy/compare/v7.0.28...v7.0.29) (2024-06-01)
+
+
+### Bug Fixes
+
+* task file import ([#438](https://github.com/doubtfire-lms/doubtfire-deploy/issues/438)) ([7366328](https://github.com/doubtfire-lms/doubtfire-deploy/commit/73663281adf4fbd4bb2e104d7d73acb4ae6da397))
+
 ### [7.0.28](https://github.com/macite/doubtfire-deploy/compare/v7.0.27...v7.0.28) (2024-05-31)
 
 
