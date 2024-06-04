@@ -5,6 +5,7 @@ module Submission
     helpers GenerateHelpers
     helpers AuthenticationHelpers
     helpers AuthorisationHelpers
+    helpers FileStreamHelper
     include LogHelper
 
     def self.logger
@@ -108,9 +109,8 @@ module Submission
 
       # Set download headers...
       content_type 'application/pdf'
-      env['api.format'] = :binary
 
-      File.read(evidence_loc)
+      stream_file evidence_loc
     end # get
 
     desc "Request for a task's documents to be re-processed to recreate the task's PDF"
