@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [7.0.31](https://github.com/macite/doubtfire-deploy/compare/v7.0.30...v7.0.31) (2024-06-05)
+
+
+### Bug Fixes
+
+* ensure range headers are accessible for clients ([5e47839](https://github.com/macite/doubtfire-deploy/commit/5e47839db51486cc2ed81e22dbd963e60481400b))
+
 ### [7.0.30](https://github.com/macite/doubtfire-deploy/compare/v7.0.29...v7.0.30) (2024-06-04)
 
 
