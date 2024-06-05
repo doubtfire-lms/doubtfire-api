@@ -72,7 +72,8 @@ class TasksApi < Grape::API
         task_definition_id: task.task_definition_id,
         status: TaskStatus.id_to_key(task.task_status_id),
         due_date: task.due_date,
-        extensions: task.extensions
+        extensions: task.extensions,
+        scorm_extensions: task.scorm_extensions
       }
     end
 

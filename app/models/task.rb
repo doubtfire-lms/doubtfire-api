@@ -18,6 +18,7 @@ class Task < ApplicationRecord
       :start_discussion,
       :get_discussion,
       :make_discussion_reply,
+      :request_scorm_extension,
       # :request_extension -- depends on settings in unit. See specific_permission_hash method
     ]
     # What can tutors do with tasks?
@@ -34,7 +35,9 @@ class Task < ApplicationRecord
       :delete_discussion,
       :get_discussion,
       :assess_extension,
-      :request_extension
+      :assess_scorm_extension,
+      :request_extension,
+      :request_scorm_extension
     ]
     # What can convenors do with tasks?
     convenor_role_permissions = [
@@ -47,7 +50,9 @@ class Task < ApplicationRecord
       :delete_plagiarism,
       :get_discussion,
       :assess_extension,
-      :request_extension
+      :assess_scorm_extension,
+      :request_extension,
+      :request_scorm_extension
     ]
     # What can admins do with tasks?
     admin_role_permissions = [
@@ -306,6 +311,33 @@ class Task < ApplicationRecord
         add_status_comment(by_user, self.task_status)
       end
 
+      return true
+    else
+      return false
+    end
+  end
+
+  # Applying for a scorm extension will create a scorm extension comment
+  def apply_for_scorm_extension(user, text)
+    extension = ScormExtensionComment.create
+    extension.task = self
+    extension.user = user
+    extension.content_type = :scorm_extension
+    extension.comment = text
+    extension.recipient = unit.main_convenor_user
+    extension.save!
+
+    # Check and apply those requested by staff
+    if role_for(user) == :tutor
+      extension.assess_scorm_extension user, true
+    end
+
+    extension
+  end
+
+  # Add a scorm extension to the task
+  def grant_scorm_extension(by_user)
+    if update(scorm_extensions: self.scorm_extensions + 1)
       return true
     else
       return false

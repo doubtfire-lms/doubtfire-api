@@ -292,6 +292,7 @@ class Project < ApplicationRecord
           num_new_comments: r.number_unread,
           similarity_flag: AuthorisationHelpers.authorise?(user, t, :view_plagiarism) ? r.similar_to_count > 0 : false,
           extensions: t.extensions,
+          scorm_extensions: t.scorm_extensions,
           due_date: t.due_date,
           submission_date: t.submission_date,
           completion_date: t.completion_date

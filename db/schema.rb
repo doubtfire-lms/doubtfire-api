@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_06_01_103707) do
+ActiveRecord::Schema[7.1].define(version: 2024_06_03_020127) do
   create_table "activity_types", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -334,6 +334,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_06_01_103707) do
     t.integer "contribution_pts", default: 3
     t.integer "quality_pts", default: -1
     t.integer "extensions", default: 0, null: false
+    t.integer "scorm_extensions", default: 0, null: false
     t.index ["group_submission_id"], name: "index_tasks_on_group_submission_id"
     t.index ["project_id", "task_definition_id"], name: "tasks_uniq_proj_task_def", unique: true
     t.index ["project_id"], name: "index_tasks_on_project_id"

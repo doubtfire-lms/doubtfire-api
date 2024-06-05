@@ -55,6 +55,7 @@ class ApiRoot < Grape::API
   mount BreaksApi
   mount DiscussionCommentApi
   mount ExtensionCommentsApi
+  mount ScormExtensionCommentsApi
   mount GroupSetsApi
   mount LearningOutcomesApi
   mount LearningAlignmentApi
@@ -98,6 +99,7 @@ class ApiRoot < Grape::API
   AuthenticationHelpers.add_auth_to BreaksApi
   AuthenticationHelpers.add_auth_to DiscussionCommentApi
   AuthenticationHelpers.add_auth_to ExtensionCommentsApi
+  AuthenticationHelpers.add_auth_to ScormExtensionCommentsApi
   AuthenticationHelpers.add_auth_to GroupSetsApi
   AuthenticationHelpers.add_auth_to LearningOutcomesApi
   AuthenticationHelpers.add_auth_to LearningAlignmentApi
