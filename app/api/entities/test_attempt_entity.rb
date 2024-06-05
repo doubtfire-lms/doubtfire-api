@@ -3,7 +3,6 @@ module Entities
     expose :id
     expose :task_id
     expose :attempted_time
-    expose :attempt_number
     expose :terminated
     expose :success_status
     expose :score_scaled

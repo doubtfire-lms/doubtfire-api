@@ -94,14 +94,13 @@ class TestAttemptsApi < Grape::API
 
     # check attempt limit
     test_count = attempts.count
-    limit = task.task_definition.scorm_attempt_limit
-    if test_count > limit && limit != 0
+    limit = task.task_definition.scorm_attempt_limit + task.scorm_extensions
+    if limit != 0 && test_count == limit
       error!({ message: 'Attempt limit has been reached' }, 400)
       return
     end
 
-    metadata = { task_id: task.id, attempt_number: test_count + 1 }
-    test = TestAttempt.create!(metadata)
+    test = TestAttempt.create!({ task_id: task.id })
     present test, with: Entities::TestAttemptEntity
   end
 

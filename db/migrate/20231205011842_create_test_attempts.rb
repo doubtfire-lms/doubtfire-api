@@ -3,7 +3,6 @@ class CreateTestAttempts < ActiveRecord::Migration[7.0]
     create_table :test_attempts do |t|
       t.references :task
       t.datetime :attempted_time, null:false
-      t.integer :attempt_number, default: 1, null: false
       t.boolean :terminated, default: false
       t.boolean :completion_status, default: false
       t.boolean :success_status, default: false

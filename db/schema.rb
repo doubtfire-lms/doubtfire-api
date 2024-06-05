@@ -354,7 +354,6 @@ ActiveRecord::Schema[7.1].define(version: 2024_06_03_020127) do
   create_table "test_attempts", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.bigint "task_id"
     t.datetime "attempted_time", null: false
-    t.integer "attempt_number", default: 1, null: false
     t.boolean "terminated", default: false
     t.boolean "completion_status", default: false
     t.boolean "success_status", default: false

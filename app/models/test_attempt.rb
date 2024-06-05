@@ -43,7 +43,6 @@ class TestAttempt < ApplicationRecord
 
   # extra non-cmi metadata
   # t.datetime :attempted_time, null:false
-  # t.integer :attempt_number, default: 1, null: false
   # t.boolean :terminated, default: false
 
   # fields that must be synced from cmi data whenever it's updated
@@ -91,6 +90,11 @@ class TestAttempt < ApplicationRecord
     self.score_scaled = new_data['cmi.score.scaled']
 
     write_attribute(:cmi_datamodel, new_data.to_json)
+  end
+
+  def attempt_number
+    attempts = TestAttempt.where("task_id = ?", self.task_id)
+    attempts.count
   end
 
   def review
