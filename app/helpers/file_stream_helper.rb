@@ -38,6 +38,7 @@ module FileStreamHelper
 
     # Return the requested content
     content_length = end_point - begin_point + 1
+    header['Access-Control-Expose-Headers'] = 'Content-Range,Accept-Ranges'
     header['Content-Range'] = "bytes #{begin_point}-#{end_point}/#{file_size}"
     header['Content-Length'] = content_length.to_s
     header['Accept-Ranges'] = 'bytes'
