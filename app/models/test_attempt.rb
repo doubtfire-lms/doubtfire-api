@@ -4,28 +4,32 @@ require 'time'
 class TestAttempt < ApplicationRecord
   belongs_to :task, optional: false
 
+  has_one :task_definition, through: :task
+
   has_one :scorm_comment, dependent: :destroy
+
+  delegate :role_for, to: :task
+  delegate :student, to: :task
 
   validates :task_id, presence: true
 
   def self.permissions
     # TODO: this is all wrong, students should not be able to delete test attempts
     student_role_permissions = [
-      :create,
-      :view_own,
-      :delete_own
+      :update_attempt
+      # :review_own_attempt --  depends on task def settings. See specific_permission_hash method
     ]
 
     tutor_role_permissions = [
-      :create,
-      :view_own,
-      :delete_own
+      :review_other_attempt,
+      :override_success_status,
+      :delete_attempt
     ]
 
     convenor_role_permissions = [
-      :create,
-      :view_own,
-      :delete_own
+      :review_other_attempt,
+      :override_success_status,
+      :delete_attempt
     ]
 
     nil_role_permissions = []
@@ -36,6 +40,15 @@ class TestAttempt < ApplicationRecord
       convenor: convenor_role_permissions,
       nil: nil_role_permissions
     }
+  end
+
+  # Used to adjust the review own attempt permission based on task def setting
+  def specific_permission_hash(role, perm_hash, _other)
+    result = perm_hash[role] unless perm_hash.nil?
+    if result && role == :student && task_definition.scorm_allow_review
+      result << :review_own_attempt
+    end
+    result
   end
 
   # task

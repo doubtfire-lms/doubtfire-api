@@ -5,9 +5,9 @@ class TestAttemptsApi < Grape::API
 
   helpers AuthenticationHelpers
 
-  # before do
-  #   authenticated?
-  # end
+  before do
+    authenticated?
+  end
 
   # Handle common exceptions
   rescue_from :all do |e|
@@ -30,6 +30,11 @@ class TestAttemptsApi < Grape::API
   get '/projects/:project_id/task_def_id/:task_definition_id/test_attempts' do
     project = Project.find(params[:project_id])
     task_definition = project.unit.task_definitions.find(params[:task_definition_id])
+
+    unless authorise? current_user, project, :get_submission
+      error!({ error: "Not authorized to get scorm attempts for task" }, 403)
+    end
+
     task = project.task_for_task_definition(task_definition)
 
     attempts = TestAttempt.where("task_id = ?", task.id)
@@ -46,6 +51,11 @@ class TestAttemptsApi < Grape::API
   get '/projects/:project_id/task_def_id/:task_definition_id/test_attempts/latest' do
     project = Project.find(params[:project_id])
     task_definition = project.unit.task_definitions.find(params[:task_definition_id])
+
+    unless authorise? current_user, project, :get_submission
+      error!({ error: "Not authorized to get latest scorm attempt for task" }, 403)
+    end
+
     task = project.task_for_task_definition(task_definition)
 
     attempts = TestAttempt.where("task_id = ?", task.id)
@@ -68,16 +78,27 @@ class TestAttemptsApi < Grape::API
     requires :id, type: Integer, desc: 'Test attempt ID to review'
   end
   get 'test_attempts/:id/review' do
-    attempt = TestAttempt.find(params[:id])
-    if attempt.nil?
+    test = TestAttempt.find(params[:id])
+
+    key = if current_user == test.student
+            :review_own_attempt
+          else
+            :review_other_attempt
+          end
+
+    unless authorise? current_user, test, key, ->(role, perm_hash, other) { test.specific_permission_hash(role, perm_hash, other) }
+      error!({ error: 'Not authorised to review this scorm attempt' }, 403)
+    end
+
+    if test.nil?
       error!({ message: 'Test attempt ID is invalid' }, 404)
       return
     else
       logger.debug "Request to review test attempt #{params[:id]}"
-      attempt.review
+      test.review
       # TODO: add review permission flag to taskdef
     end
-    present attempt, with: Entities::TestAttemptEntity
+    present test, with: Entities::TestAttemptEntity
   end
 
   desc 'Initiate a new test attempt'
@@ -89,6 +110,11 @@ class TestAttemptsApi < Grape::API
     project = Project.find(params[:project_id])
     task_definition = project.unit.task_definitions.find(params[:task_definition_id])
     task = project.task_for_task_definition(task_definition)
+
+    # check permissions using specific permission has with addition of make scorm attempt if scorm is enabled in task def
+    unless authorise? current_user, task, :make_scorm_attempt, ->(role, perm_hash, other) { task.specific_permission_hash(role, perm_hash, other) }
+      error!({ error: 'Not authorised to make a scorm attempt for this task' }, 403)
+    end
 
     attempts = TestAttempt.where("task_id = ?", task.id)
 
@@ -115,8 +141,16 @@ class TestAttemptsApi < Grape::API
     test = TestAttempt.find(params[:id])
 
     if params[:success_status].present?
+      unless authorise? current_user, test, :override_success_status
+        error!({ error: 'Not authorised to override the success status of this scorm attempt' }, 403)
+      end
+
       test.override_success_status(params[:success_status])
     else
+      unless authorise? current_user, test, :update_attempt
+        error!({ error: 'Not authorised to update this scorm attempt' }, 403)
+      end
+
       attempt_data = ActionController::Parameters.new(params).permit(:cmi_datamodel, :terminated)
 
       unless test.terminated
@@ -136,9 +170,12 @@ class TestAttemptsApi < Grape::API
     requires :id, type: String, desc: 'ID of the test attempt'
   end
   delete 'test_attempts/:id' do
-    # TODO: fix permissions before enabling this
-
     test = TestAttempt.find(params[:id])
+
+    unless authorise? current_user, test, :delete_attempt
+      error!({ error: 'Not authorised to delete this scorm attempt' }, 403)
+    end
+
     test.destroy!
   end
 end

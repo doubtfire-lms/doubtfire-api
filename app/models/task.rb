@@ -20,6 +20,7 @@ class Task < ApplicationRecord
       :make_discussion_reply,
       :request_scorm_extension,
       # :request_extension -- depends on settings in unit. See specific_permission_hash method
+      # :make_scorm_attempt -- depends on task def settings. See specific_permission_hash method
     ]
     # What can tutors do with tasks?
     tutor_role_permissions = [
@@ -99,11 +100,14 @@ class Task < ApplicationRecord
   end
 
   # Used to adjust the request extension permission in units that do not
-  # allow students to request extensions
+  # allow students to request extensions and the make scorm attempt permission
   def specific_permission_hash(role, perm_hash, _other)
     result = perm_hash[role] unless perm_hash.nil?
     if result && role == :student && unit.allow_student_extension_requests
       result << :request_extension
+    end
+    if result && role == :student && task_definition.scorm_enabled
+      result << :make_scorm_attempt
     end
     result
   end
