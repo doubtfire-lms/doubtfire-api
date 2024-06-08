@@ -37,6 +37,8 @@ module Doubtfire
     # Date range for auditors to view
     config.auditor_unit_access_years = ENV.fetch('DF_AUDITOR_UNIT_ACCESS_YEARS', 2).years
 
+    config.student_import_weeks_before = ENV.fetch('DF_IMPORT_STUDENTS_WEEKS_BEFPRE', 1).weeks
+
     # ==> Institution settings
     # Institution YAML and ENV (override) config load
     config.institution = YAML.load_file(Rails.root.join('config/institution.yml').to_s).with_indifferent_access

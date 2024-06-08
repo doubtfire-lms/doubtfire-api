@@ -449,7 +449,7 @@ class TaskDefinitionsApi < Grape::API
   desc 'Download the tasks related to a task definition'
   params do
     requires :unit_id, type: Integer, desc: 'The unit containing the task definition'
-    requires :task_def_id, type: Integer, desc: 'The task definition''s id'
+    requires :task_def_id, type: Integer, desc: "The task definition's id"
   end
   get '/units/:unit_id/task_definitions/:task_def_id/tasks' do
     unit = Unit.find(params[:unit_id])
