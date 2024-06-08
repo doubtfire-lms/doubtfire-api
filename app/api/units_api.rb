@@ -47,7 +47,6 @@ class UnitsApi < Grape::API
       { tutorial_streams: :activity_type },
       { tutorials: [:tutor, :tutorial_stream] },
       :tutorial_enrolments,
-      { staff: [:role, :user] },
       :group_sets,
       :groups,
       :group_memberships
@@ -193,7 +192,7 @@ class UnitsApi < Grape::API
     # Identify main convenor - ensure they have the correct role
     main_convenor_user = unit_parameters[:main_convenor_user_id].present? ? User.find(unit_parameters[:main_convenor_user_id]) : current_user
 
-    unless main_convenor_user.present?
+    if main_convenor_user.blank?
       error!({ error: 'Main convenor user not found' }, 403)
     end
 
@@ -209,7 +208,7 @@ class UnitsApi < Grape::API
     if teaching_period_id.blank?
       if unit_parameters[:start_date].nil?
         start_date = Date.parse('Monday')
-        delta = start_date > Date.today ? 0 : 7
+        delta = start_date > Time.zone.today ? 0 : 7
         unit_parameters[:start_date] = start_date + delta
       end
 
@@ -308,7 +307,7 @@ class UnitsApi < Grape::API
       error!({ error: "Not authorised to upload CSV of students to #{unit.code}" }, 403)
     end
 
-    unless params[:file].present?
+    if params[:file].blank?
       error!({ error: "No file uploaded" }, 403)
     end
 
@@ -328,7 +327,7 @@ class UnitsApi < Grape::API
       error!({ error: "Not authorised to upload CSV of students to #{unit.code}" }, 403)
     end
 
-    unless params[:file].present?
+    if params[:file].blank?
       error!({ error: "No file uploaded" }, 403)
     end
 

@@ -8,7 +8,7 @@ class TutorialEnrolment < ApplicationRecord
   validates :project,  presence: true
 
   # Always add a unique index to the DB to prevent new records from passing the validations when checked at the same time before being written
-  validates_uniqueness_of :tutorial, :scope => :project, message: 'already exists for the selected student'
+  validates :tutorial, uniqueness: { :scope => :project, message: 'already exists for the selected student' }
 
   # Ensure only one tutorial stream per stream
   validate :ensure_only_one_tutorial_per_stream, on: :create
@@ -90,7 +90,7 @@ class TutorialEnrolment < ApplicationRecord
     result = :none_can_leave
 
     # Now get the group
-    project.groups.where(tutorial_id: for_tutorial_id || tutorial_id).each do |grp|
+    project.groups.where(tutorial_id: for_tutorial_id || tutorial_id).find_each do |grp|
       # You can move if the tutorial allows it
       next unless grp.limit_members_to_tutorial?
 
@@ -129,7 +129,7 @@ class TutorialEnrolment < ApplicationRecord
       abbr = Tutorial.find(id_from).abbreviation
       errors.add(:groups, "require #{project.student.name} to be in tutorial #{abbr}")
     else # leave after remove from group
-      project.groups.where(tutorial_id: id_from).each do |grp|
+      project.groups.where(tutorial_id: id_from).find_each do |grp|
         # Skip groups that can be in other tutorials
         next unless grp.limit_members_to_tutorial?
 
@@ -145,7 +145,7 @@ class TutorialEnrolment < ApplicationRecord
 
   # Check group removal on delete
   def remove_from_groups_on_destroy
-    project.groups.where(tutorial_id: tutorial_id).each do |grp|
+    project.groups.where(tutorial_id: tutorial_id).find_each do |grp|
       # Skip groups that can be in other tutorials
       next unless grp.limit_members_to_tutorial?
 

@@ -206,7 +206,7 @@ class UsersApi < Grape::API
       error!({ error: 'Not authorised to upload CSV of users' }, 403)
     end
 
-    unless params[:file].present?
+    if params[:file].blank?
       error!({ error: "No file uploaded" }, 403)
     end
 

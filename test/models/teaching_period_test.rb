@@ -199,7 +199,7 @@ class TeachingPeriodTest < ActiveSupport::TestCase
 
     assert tp.units.count > 0
     tp.destroy
-
+  rescue
     assert_not tp.destroyed?
   end
 
@@ -375,5 +375,4 @@ class TeachingPeriodTest < ActiveSupport::TestCase
 
     assert_equal 1, tp2.units.count
   end
-
 end

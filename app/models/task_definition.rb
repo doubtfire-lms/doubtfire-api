@@ -440,7 +440,7 @@ class TaskDefinition < ApplicationRecord
     new_task = false
     abbreviation = row[:abbreviation].strip
     name = row[:name].strip
-    tutorial_stream = unit.tutorial_streams.find_by_abbr_or_name("#{row[:tutorial_stream]}".strip)
+    tutorial_stream = unit.tutorial_streams.find_by('abbreviation = :name OR name = :name', name: "#{row[:tutorial_stream]}".strip)
     target_date = unit.date_for_week_and_day row[:target_week].to_i, "#{row[:target_day]}".strip
     return [nil, false, "Unable to determine target date for #{abbreviation} -- need week number, and day short text eg. 'Wed'"] if target_date.nil?
 

@@ -29,7 +29,7 @@ module Doubtfire
     # File server location for storing student's work. Defaults to `student_work`
     # directory under root but is overridden using DF_STUDENT_WORK_DIR environment
     # variable.
-    config.student_work_dir = ENV['DF_STUDENT_WORK_DIR'] || "#{Rails.root}/student_work"
+    config.student_work_dir = ENV['DF_STUDENT_WORK_DIR'] || Rails.root.join('student_work').to_s
 
     # Limit number of pdf generators to run at once
     config.pdfgen_max_processes = ENV['DF_MAX_PDF_GEN_PROCESSES'] || 2
@@ -39,7 +39,7 @@ module Doubtfire
 
     # ==> Institution settings
     # Institution YAML and ENV (override) config load
-    config.institution = YAML.load_file("#{Rails.root}/config/institution.yml").with_indifferent_access
+    config.institution = YAML.load_file(Rails.root.join('config/institution.yml').to_s).with_indifferent_access
     config.institution[:name] = ENV['DF_INSTITUTION_NAME'] if ENV['DF_INSTITUTION_NAME']
     config.institution[:email_domain] = ENV['DF_INSTITUTION_EMAIL_DOMAIN'] if ENV['DF_INSTITUTION_EMAIL_DOMAIN']
     config.institution[:host] = ENV['DF_INSTITUTION_HOST'] if ENV['DF_INSTITUTION_HOST']
@@ -52,7 +52,7 @@ module Doubtfire
     config.institution[:settings] = ENV['DF_INSTITUTION_SETTINGS_RB'] if ENV['DF_INSTITUTION_SETTINGS_RB']
     config.institution[:ffmpeg] = ENV['DF_FFMPEG_PATH'] || 'ffmpeg'
 
-    require "#{Rails.root}/config/#{config.institution[:settings]}" unless config.institution[:settings].nil?
+    require Rails.root.join("config/#{config.institution[:settings]}").to_s unless config.institution[:settings].nil?
 
     # ==> SAML2.0 authentication
     if config.auth_method == :saml
@@ -159,7 +159,7 @@ module Doubtfire
     # config.paths.add 'app/api', glob: '**/*.rb'
     # config.autoload_paths += Dir["#{Rails.root}/app"]
     # config.autoload_paths += Dir[Rails.root.join("app", "models", "{*/}")]
-    config.eager_load_paths << Rails.root.join('app') << Rails.root.join('app', 'models', 'comments')
+    config.eager_load_paths << Rails.root.join('app') << Rails.root.join('app/models/comments')
 
     # CORS config
     config.middleware.insert_before Warden::Manager, Rack::Cors do

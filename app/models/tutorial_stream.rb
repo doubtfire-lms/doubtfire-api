@@ -7,7 +7,9 @@ class TutorialStream < ApplicationRecord
   before_destroy :can_destroy?, prepend: true
 
   has_many :tutorials, dependent: :destroy
-  has_many :task_definitions, -> { order 'start_date ASC, abbreviation ASC' }
+  has_many :task_definitions, dependent: :restrict_with_exception, inverse_of: :tutorial_stream
+
+  # Validations - methods called are private
 
   validates :unit, presence: true
   validates :activity_type, presence: true
@@ -16,10 +18,6 @@ class TutorialStream < ApplicationRecord
   # This is to prevent new records from passing the validations when checked at the same time before being written
   validates :name,         presence: true, uniqueness: { scope: :unit, message: "%{value} already exists in this unit" }
   validates :abbreviation, presence: true, uniqueness: { scope: :unit, message: "%{value} already exists in this unit" }
-
-  def self.find_by_abbr_or_name(data)
-    TutorialStream.find_by(abbreviation: data) || TutorialStream.find_by(name: data)
-  end
 
   private
 
@@ -31,7 +29,7 @@ class TutorialStream < ApplicationRecord
       throw :abort
     elsif unit.tutorial_streams.count.eql? 2
       other_tutorial_stream = (self.eql? unit.tutorial_streams.first) ? unit.tutorial_streams.second : unit.tutorial_streams.first
-      task_definitions.update_all(tutorial_stream_id: other_tutorial_stream.id)
+      task_definitions.find_each { |td| td.update(tutorial_stream_id: other_tutorial_stream.id) }
       task_definitions.clear
       true
     elsif unit.tutorial_streams.count.eql? 1
@@ -45,7 +43,7 @@ class TutorialStream < ApplicationRecord
     return if unit.task_definitions.empty? or unit.tutorial_streams.count > 1
 
     if unit.task_definitions.exists? and unit.tutorial_streams.count.eql? 1
-      unit.task_definitions.update_all(tutorial_stream_id: id)
+      unit.task_definitions.find_each { |td| td.update(tutorial_stream_id: id) }
     end
   end
 end

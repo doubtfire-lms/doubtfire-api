@@ -29,7 +29,7 @@ class DiscussionCommentApi < Grape::API
 
     for attached_file in attached_files do
       if attached_file.present?
-        error!(error: 'Attachment is empty.') unless File.size?(attached_file["tempfile"].path).present?
+        error!(error: 'Attachment is empty.') if File.size?(attached_file["tempfile"].path).blank?
         error!(error: 'Attachment exceeds the maximum attachment size of 30MB.') unless File.size?(attached_file["tempfile"].path) < 30_000_000
       end
     end
@@ -38,7 +38,7 @@ class DiscussionCommentApi < Grape::API
 
     logger.info("#{current_user.username} - added discussion comment for task #{task.id} (#{task_definition.abbreviation})")
 
-    if attached_files.nil? || attached_files.empty?
+    if attached_files.blank?
       error!({ error: 'Audio prompts are empty, unable to add new discussion comment' }, 403)
     end
 
@@ -191,13 +191,13 @@ class DiscussionCommentApi < Grape::API
     attached_file = params[:attachment]
 
     if attached_file.present?
-      error!(error: 'Attachment is empty.') unless File.size?(attached_file["tempfile"].path).present?
+      error!(error: 'Attachment is empty.') if File.size?(attached_file["tempfile"].path).blank?
       error!(error: 'Attachment exceeds the maximum attachment size of 30MB.') unless File.size?(attached_file["tempfile"].path) < 30_000_000
     end
 
     logger.info("#{current_user.username} - added a reply to the discussion comment #{params[:task_comment_id]} for task #{task.id} (#{task_definition.abbreviation})")
 
-    if attached_file.nil? || attached_file.empty?
+    if attached_file.blank?
       error!({ error: 'Discussion reply is empty, unable to add new reply to discussion comment' }, 403)
     end
 

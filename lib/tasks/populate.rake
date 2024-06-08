@@ -14,7 +14,7 @@ namespace :db do
 
   desc 'Mark off some of the due tasks'
   task simulate_signoff: [:log_info, :skip_prod, :environment] do
-    Unit.all.each do |unit|
+    Unit.all.find_each do |unit|
       current_week = ((Time.zone.now - unit.start_date) / 1.week).floor
 
       unit.students.each do |proj|
@@ -158,7 +158,7 @@ namespace :db do
 
             pdf_path = task.final_pdf_path
             if pdf_path
-              FileUtils.ln_s(Rails.root.join('test_files', 'unit_files', 'sample-student-submission.pdf'), pdf_path)
+              FileUtils.ln_s(Rails.root.join('test_files/unit_files/sample-student-submission.pdf'), pdf_path)
             end
           end
         end

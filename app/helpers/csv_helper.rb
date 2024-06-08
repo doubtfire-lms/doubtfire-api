@@ -1,6 +1,6 @@
 module CsvHelper
   def csv_date_to_date(date)
-    return if date.nil? || date.empty?
+    return if date.blank?
 
     date = date.strip
 

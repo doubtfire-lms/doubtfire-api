@@ -5,7 +5,7 @@ class TaskStatus < ApplicationRecord
   # TODO: Consider refactoring this class. Is there any point to having this in the database? Could this become an enum?
 
   # Model associations
-  has_many :tasks
+  has_many :tasks, dependent: :restrict_with_exception
 
   #
   # Override find to ensure that task status objects are cached - these do not change

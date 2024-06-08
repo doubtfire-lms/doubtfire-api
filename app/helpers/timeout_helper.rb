@@ -25,7 +25,7 @@ module TimeoutHelper
   #
   def system_try_within(sec, timeout_message, command)
     # shell script to kill command after timeout
-    timeout_exec = Rails.root.join('lib', 'shell', 'timeout.sh')
+    timeout_exec = Rails.root.join('lib/shell/timeout.sh')
     result = false
     try_within sec, timeout_message do
       result = system "#{timeout_exec} -t #{sec} nice -n 10 #{command}"

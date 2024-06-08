@@ -66,7 +66,7 @@ class UnitRole < ApplicationRecord
   end
 
   def self.tasks_to_review(user)
-    Tutorial.find_by_user(user)
+    Tutorial.find_by(user: user)
             .map(&:projects)
             .flatten
             .map(&:tasks)

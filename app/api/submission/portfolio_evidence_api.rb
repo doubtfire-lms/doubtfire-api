@@ -92,10 +92,10 @@ module Submission
       unit = task.project.unit
 
       if task.processing_pdf?
-        evidence_loc = Rails.root.join('public', 'resources', 'AwaitingProcessing.pdf')
+        evidence_loc = Rails.root.join('public/resources/AwaitingProcessing.pdf')
         filename = 'AwaitingProcessing.pdf'
       elsif evidence_loc.nil?
-        evidence_loc = Rails.root.join('public', 'resources', 'FileNotFound.pdf')
+        evidence_loc = Rails.root.join('public/resources/FileNotFound.pdf')
         filename = 'FileNotFound.pdf'
       else
         filename = "#{task.task_definition.abbreviation}.pdf"

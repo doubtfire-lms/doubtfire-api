@@ -582,7 +582,7 @@ class Task < ApplicationRecord
   end
 
   def submitted_before_due?
-    return true unless due_date.present?
+    return true if due_date.blank?
 
     to_same_day_anywhere_on_earth(due_date) >= self.submission_date
   end
@@ -660,7 +660,7 @@ class Task < ApplicationRecord
 
   def individual_task_or_submitter_of_group_task?
     return true if !group_task? # its individual
-    return true unless group.present? # no group yet... so individual
+    return true if group.blank? # no group yet... so individual
 
     ensured_group_submission.submitted_by? self.project # return true if submitted by this project
   end
@@ -1009,7 +1009,7 @@ class Task < ApplicationRecord
       @task = task
       @files = task.in_process_files_for_task(is_retry)
       @base_path = task.student_work_dir(:in_process, false)
-      @image_path = Rails.root.join('public', 'assets', 'images')
+      @image_path = Rails.root.join('public/assets/images')
       @institution_name = Doubtfire::Application.config.institution[:name]
       @doubtfire_product_name = Doubtfire::Application.config.institution[:product_name]
       @include_pax = !is_retry
@@ -1099,9 +1099,11 @@ class Task < ApplicationRecord
           if log_file && File.exist?(log_file)
             # puts "exists"
             begin
+              # rubocop:disable Rails/Output
               puts "--- Latex Log ---\n"
               puts File.read(log_file)
               puts "---    End    ---\n\n"
+              # rubocop:enable Rails/Output
             rescue
             end
           end

@@ -226,9 +226,7 @@ class Project < ApplicationRecord
     (tutorial.present? and tutorial.tutor.present?) ? tutorial.tutor : main_convenor_user
   end
 
-  def main_convenor_user
-    unit.main_convenor_user
-  end
+  delegate :main_convenor_user, to: :unit
 
   def user_role(user)
     if user == student then :student

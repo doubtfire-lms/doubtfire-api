@@ -20,7 +20,10 @@ group :development, :test do
   gem 'listen'
   gem 'rails_best_practices'
   gem 'rubocop'
+  gem 'rubocop-factory_bot'
   gem 'rubocop-faker'
+  gem 'rubocop-minitest'
+  gem 'rubocop-performance'
   gem 'rubocop-rails'
   gem 'simplecov', require: false
   gem 'solargraph', require: false

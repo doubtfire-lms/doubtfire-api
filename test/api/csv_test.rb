@@ -668,6 +668,7 @@ class CsvTest < ActiveSupport::TestCase
   def test_csv_upload_students_un_enroll_in_unit_xlsx
 
     unit = FactoryBot.create(:unit, code: 'COS10001', with_students: false, stream_count: 0)
+
     unit.import_users_from_csv test_file_path 'csv_test_files/COS10001-Students.csv'
 
     unit_id_to_test = unit.id
@@ -717,8 +718,8 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal true, Project.where(user_id: user_id_check).last.enrolled
   end
 
-  #38: Testing for CSV upload failure due to no file
-  #POST /api/csv/units/{id}/withdraw
+  # 38: Testing for CSV upload failure due to no file
+  # POST /api/csv/units/{id}/withdraw
   def test_csv_upload_students_un_enroll_in_unit_no_file
 
     unit = FactoryBot.create(:unit, code: 'COS10001', with_students: false, stream_count: 0)
@@ -865,8 +866,8 @@ class CsvTest < ActiveSupport::TestCase
     # Add authentication token to header
     add_auth_header_for(user: User.first)
 
-    #Override header for empty auth_token
-    header 'auth_token',''
+    # Override header for empty auth_token
+    header 'auth_token', ''
 
     # perform the get
     get "/api/csv/units/#{unit_id_to_test}/task_completion"
@@ -877,10 +878,9 @@ class CsvTest < ActiveSupport::TestCase
 
   # #####--------------GET tests - Download stats related to the number of tasks assessed by each tutor------------######
 
-  #46: Testing for CSV download of stats related to number of tasks assessed by each tutor
-  #GET /api/csv/units/{id}/tutor_assessments
+  # 46: Testing for CSV download of stats related to number of tasks assessed by each tutor
+  # GET /api/csv/units/{id}/tutor_assessments
   def test_download_csv_stats_tutor_assessed
-
     unit_id_to_test = '1'
 
     # Add authentication token to header

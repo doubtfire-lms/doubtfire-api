@@ -79,8 +79,8 @@ module Submission
       evidence_loc = project.portfolio_path
 
       if evidence_loc.nil? || File.exist?(evidence_loc) == false
-        evidence_loc = Rails.root.join('public', 'resources', 'FileNotFound.pdf')
-        filename = "FileNotFound.pdf"
+        evidence_loc = Rails.root.join('public/resources/FileNotFound.pdf')
+        filename = 'FileNotFound.pdf'
       else
         filename = "#{project.unit.code}-#{project.student.username}-portfolio.pdf"
       end

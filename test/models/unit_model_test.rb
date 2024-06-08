@@ -503,7 +503,7 @@ class UnitModelTest < ActiveSupport::TestCase
 
         assert_json_matches_model(user, entry, %w( username student_id first_name last_name email))
 
-        campus = Campus.find_by_abbr_or_name entry['campus']
+        campus = Campus.find_by('abbreviation = :name OR name = :name', name: entry['campus'])
         assert campus.present?, entry
         assert_equal project.campus, campus, entry
 

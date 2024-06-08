@@ -1,6 +1,6 @@
 class TeachingPeriod < ApplicationRecord
   # Relationships
-  has_many :units
+  has_many :units, dependent: :restrict_with_exception
   has_many :breaks, dependent: :delete_all
 
   # Callbacks - methods called are private

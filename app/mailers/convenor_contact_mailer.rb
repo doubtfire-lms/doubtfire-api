@@ -1,4 +1,4 @@
-class ConvenorContactMailer < ActionMailer::Base
+class ConvenorContactMailer < ApplicationMailer
   def request_project_membership(user, _convenor, unit, _first_name, _last_name)
     @doubtfire_product_name = Doubtfire::Application.config.institution[:product_name]
 

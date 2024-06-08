@@ -33,10 +33,11 @@ class WebcalTest < ActiveSupport::TestCase
 
   teardown do
     @webcal.destroy
-    @student.destroy
+    @old_project.destroy
     @old_unit.destroy
     @current_unit_1.destroy
     @current_unit_2.destroy
+    @student.destroy
     @campus.destroy
   end
 
@@ -159,7 +160,7 @@ class WebcalTest < ActiveSupport::TestCase
     checks.each do |check|
       @webcal.update(reminder_time: time, reminder_unit: check[:unit])
       cal = @webcal.to_ical
-  
+
       per_task_def.call do |td, ev|
 
         assert_equal 1, ev.alarms.count, 'Error: Specified alarm does not exist.'
