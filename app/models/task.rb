@@ -341,7 +341,7 @@ class Task < ApplicationRecord
 
   # Add a scorm extension to the task
   def grant_scorm_extension(by_user)
-    if update(scorm_extensions: self.scorm_extensions + 1)
+    if update(scorm_extensions: self.scorm_extensions + task_definition.scorm_attempt_limit)
       return true
     else
       return false
