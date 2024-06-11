@@ -96,7 +96,6 @@ class TestAttemptsApi < Grape::API
     else
       logger.debug "Request to review test attempt #{params[:id]}"
       test.review
-      # TODO: add review permission flag to taskdef
     end
     present test, with: Entities::TestAttemptEntity
   end
@@ -117,6 +116,18 @@ class TestAttemptsApi < Grape::API
     end
 
     attempts = TestAttempt.where("task_id = ?", task.id)
+
+    # check if last attempt is complete
+    last_attempt = attempts.order(id: :desc).first
+    if last_attempt.completion_status == false
+      error!({ message: 'An attempt is still ongoing. Cannot initiate new attempt.' }, 400)
+      return
+    end
+
+    # check if last attempt is a pass
+    if last_attempt.success_status == true
+      error!({ message: 'User has passed the SCORM test. Cannot initiate more attempts.' }, 400)
+    end
 
     # check attempt limit
     test_count = attempts.count
