@@ -105,11 +105,6 @@ class TestAttempt < ApplicationRecord
     write_attribute(:cmi_datamodel, new_data.to_json)
   end
 
-  def attempt_number
-    attempts = TestAttempt.where("task_id = ?", self.task_id)
-    attempts.count
-  end
-
   def review
     dm = JSON.parse(self.cmi_datamodel)
     if dm['cmi.completion_status'] != 'completed'
@@ -134,7 +129,7 @@ class TestAttempt < ApplicationRecord
     comment = ScormComment.create
     comment.task = task
     comment.user = task.tutor
-    comment.comment = "Test attempt #{self.attempt_number} #{self.success_status ? 'passed' : 'failed'} with score: #{(self.score_scaled * 100).to_i}%"
+    comment.comment = "Test attempt #{self.success_status ? 'passed' : 'failed'} with score: #{(self.score_scaled * 100).to_i}%"
     comment.recipient = task.student
     comment.test_attempt = self
     comment.save!
@@ -144,7 +139,7 @@ class TestAttempt < ApplicationRecord
 
   def update_scorm_comment
     if self.scorm_comment.present?
-      self.scorm_comment.comment = "Test attempt #{self.attempt_number} #{self.success_status ? 'passed' : 'failed'} with score: #{(self.score_scaled * 100).to_i}%"
+      self.scorm_comment.comment = "Test attempt #{self.success_status ? 'passed' : 'failed'} with score: #{(self.score_scaled * 100).to_i}%"
       self.scorm_comment.save!
 
       return self.scorm_comment
