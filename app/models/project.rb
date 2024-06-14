@@ -678,7 +678,7 @@ class Project < ApplicationRecord
     group_memberships.each do |gm|
       next unless gm.active
 
-      if !gm.valid? || gm.group.beyond_capacity?
+      if gm.invalid? || gm.group.beyond_capacity?
         gm.update(active: false)
       end
     end

@@ -1703,7 +1703,9 @@ class Unit < ApplicationRecord
       warn_pct = td.plagiarism_warn_pct
       warn_pct = 50 if warn_pct.nil?
 
+      # rubocop:disable Rails/Output
       results = moss.extract_results(url, warn_pct, ->(line) { puts line })
+      # rubocop:enable Rails/Output
 
       # Use results
       results.each do |match|

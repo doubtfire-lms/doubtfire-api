@@ -340,7 +340,7 @@ class Task < ApplicationRecord
   end
 
   def submitted_status?
-    ![:working_on_it, :not_started, :fix_and_resubmit, :redo, :need_help].include? status
+    [:working_on_it, :not_started, :fix_and_resubmit, :redo, :need_help].exclude? status
   end
 
   def fix_and_resubmit?

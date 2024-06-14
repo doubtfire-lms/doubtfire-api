@@ -222,7 +222,7 @@ class TaskDefinition < ApplicationRecord
       end
 
       # Delete any other keys
-      req.delete_if { |key, _value| !%w(key type pattern).include? key }
+      req.delete_if { |key, _value| %w(key type pattern).exclude? key }
 
       # Add in check key
       req['key'] = "check#{i}"
@@ -311,7 +311,7 @@ class TaskDefinition < ApplicationRecord
       end
 
       # Delete all other keys...
-      req.delete_if { |key, _value| !%w(key name type).include? key }
+      req.delete_if { |key, _value| %w(key name type).exclude? key }
 
       # Set the 'key' to be the matching file
       req['key'] = "file#{i}"
@@ -588,7 +588,7 @@ class TaskDefinition < ApplicationRecord
         if t.group.nil?
           result = false
         else
-          result = !seen_groups.include?(t.group)
+          result = seen_groups.exclude?(t.group)
           seen_groups << t.group if result
         end
         result
