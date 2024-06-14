@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [7.0.32](https://github.com/macite/doubtfire-deploy/compare/v7.0.31...v7.0.32) (2024-06-14)
+
+
+### Features
+
+* configure num weeks before start for student import ([d4af8bf](https://github.com/macite/doubtfire-deploy/commit/d4af8bfad8da84940dc27838f5c261f7b565d11a))
+
+
+### Bug Fixes
+
+* ensure convenor users can get a list of the units they admin ([17ed1cb](https://github.com/macite/doubtfire-deploy/commit/17ed1cb52d48dac4b9587fea5a91488699351317))
+
 ### [7.0.31](https://github.com/macite/doubtfire-deploy/compare/v7.0.30...v7.0.31) (2024-06-05)
 
 
