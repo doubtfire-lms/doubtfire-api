@@ -115,6 +115,7 @@ module Similarity
       if similarity.present? && similarity.type == 'TiiTaskSimilarity'
         if similarity.ready_for_viewer?
           result = similarity.create_viewer_url(current_user)
+          error!({ error: 'Report viewer not currently available, please try again later' }, 503) if result.blank?
           present result, with: Grape::Presenters::Presenter
         else
           error!({ error: "Similarity report is not yet ready to be viewed for this submission" }, 404)
