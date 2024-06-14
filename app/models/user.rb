@@ -318,6 +318,7 @@ class User < ApplicationRecord
 
     # What can convenors do with users?
     convenor_role_permissions = [
+      :get_all_units,
       :promote_user,
       :list_users,
       :create_user,
