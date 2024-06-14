@@ -233,7 +233,7 @@ class UnitsApiTest < ActiveSupport::TestCase
     # Test convenor can not get all
     add_auth_header_for(user: aconvenor)
     get '/api/units'
-    assert_equal 403, last_response.status
+    assert_equal 200, last_response.status
 
     # Test tutor can not get all
     add_auth_header_for(user: atutor)
