@@ -24,6 +24,7 @@ class TiiActionUpdateTiiGroup < TiiAction
     ]
 
     exec_tca_call "create or update group #{entity.tii_group_id} for task definition #{entity.id}", error_code do
+      # Update the due date
       TCAClient::GroupsApi.new.groups_group_id_put(
         TurnItIn.x_turnitin_integration_name,
         TurnItIn.x_turnitin_integration_version,
