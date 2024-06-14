@@ -185,6 +185,15 @@ class TurnItIn
     )
   end
 
+  def self.tii_user_for_group(grp)
+    TCAClient::Users.new(
+      id: "group-#{grp.id}",
+      family_name: 'Submission',
+      given_name: 'Group',
+      email: user.email
+    )
+  end
+
   def self.tii_role_for(task, user)
     user_role = task.role_for(user)
     if [:tutor].include?(user_role) || (user_role.nil? && user.role_id == Role.admin_id)

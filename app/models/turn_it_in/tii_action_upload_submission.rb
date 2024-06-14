@@ -199,8 +199,9 @@ class TiiActionUploadSubmission < TiiAction
 
     # Setup the task owners
     if task.group_task?
-      result.owner = task.group_submission.submitter_task.student.username
-      result.metadata.owners = task.group_submission.tasks.map { |t| @instance.tii_user_for(t.student) }
+      grp = Task.group
+      result.owner = "group-#{grp.id}"
+      result.metadata.owners = [TurnItIn.tii_user_for_group(task.group_submission.submitter_task.student.email)]
     else
       result.owner = task.student.username
       result.metadata.owners = [TurnItIn.tii_user_for(task.student)]
