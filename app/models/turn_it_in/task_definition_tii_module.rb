@@ -37,6 +37,8 @@ module TaskDefinitionTiiModule
     return unless tii_group_id.present?
     return unless has_task_resources?
 
+    count = 0
+
     # loop through files in the task resources zip file
     Zip::File.open(task_resources) do |zip_file|
       zip_file.each do |entry|
@@ -44,6 +46,11 @@ module TaskDefinitionTiiModule
         next unless entry.name.end_with?('.doc', '.docx')
         next if entry.name.include?('__MACOSX')
         next if entry.size < 50
+
+        # TODO: This is a hack as TII limits the number of attachments to 3
+        #       We need to merge documents into a single file...
+        count += 1
+        break if count > 3
 
         TiiGroupAttachment.find_or_create_from_task_definition(self, entry.name)
       end
@@ -77,7 +84,7 @@ module TaskDefinitionTiiModule
     TurnItIn.create_or_get_group_context(unit)
 
     if tii_group_id.present?
-      # We already have the group - so just create the attachments
+      # We already have the group - so just create/send the attachments
       send_group_attachments_to_tii
     else
       # Trigger the update - which creates action if needed
@@ -91,6 +98,7 @@ module TaskDefinitionTiiModule
     return unless tii_group_id.present?
 
     action = TiiActionUpdateTiiGroup.find_or_create_by(entity: self)
+    action.params = { update_due_date: true }
     action.perform
   end
 end
