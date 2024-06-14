@@ -548,7 +548,6 @@ class TaskDefinitionsApi < Grape::API
 
     if params[:as_attachment]
       header['Content-Disposition'] = "attachment; filename=#{filename}"
-      header['Access-Control-Expose-Headers'] = 'Content-Disposition'
     end
 
     content_type 'application/pdf'
@@ -577,7 +576,6 @@ class TaskDefinitionsApi < Grape::API
       content_type 'application/pdf'
       header['Content-Disposition'] = 'attachment; filename=FileNotFound.pdf'
     end
-    header['Access-Control-Expose-Headers'] = 'Content-Disposition'
 
     stream_file path
   end
@@ -604,7 +602,6 @@ class TaskDefinitionsApi < Grape::API
       content_type 'application/pdf'
       header['Content-Disposition'] = 'attachment; filename=FileNotFound.pdf'
     end
-    header['Access-Control-Expose-Headers'] = 'Content-Disposition'
 
     stream_file path
   end

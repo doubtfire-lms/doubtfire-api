@@ -31,6 +31,7 @@ module FileStreamHelper
       begin_point = 0
       end_point = 10_485_760
     else
+      header['Access-Control-Expose-Headers'] = 'Content-Disposition' if header.key?('Content-Disposition')
       sendfile file_path
 
       return
@@ -38,7 +39,7 @@ module FileStreamHelper
 
     # Return the requested content
     content_length = end_point - begin_point + 1
-    header['Access-Control-Expose-Headers'] = 'Content-Range,Accept-Ranges'
+    header['Access-Control-Expose-Headers'] = header.key?('Content-Disposition') ? 'Content-Disposition,Content-Range,Accept-Ranges' : 'Content-Range,Accept-Ranges'
     header['Content-Range'] = "bytes #{begin_point}-#{end_point}/#{file_size}"
     header['Content-Length'] = content_length.to_s
     header['Accept-Ranges'] = 'bytes'

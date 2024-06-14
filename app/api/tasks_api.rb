@@ -340,7 +340,6 @@ class TasksApi < Grape::API
     else
       header['Content-Disposition'] = "attachment; filename=#{project.student.username}-#{task.task_definition.abbreviation}.zip"
     end
-    header['Access-Control-Expose-Headers'] = 'Content-Disposition'
 
     # Set download headers...
     content_type 'application/octet-stream'

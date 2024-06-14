@@ -3,6 +3,7 @@ require 'grape'
 class TaskCommentsApi < Grape::API
   helpers AuthenticationHelpers
   helpers AuthorisationHelpers
+  helpers FileStreamHelper
 
   before do
     authenticated?
@@ -89,36 +90,9 @@ class TaskCommentsApi < Grape::API
       # mark as attachment
       if params[:as_attachment]
         header['Content-Disposition'] = "attachment; filename=#{comment.attachment_file_name}"
-        header['Access-Control-Expose-Headers'] = 'Content-Disposition'
       end
 
-      # Work out what part to return
-      file_size = File.size(comment.attachment_path)
-      begin_point = 0
-      end_point = file_size - 1
-
-      # Was it asked for just a part of the file?
-      if request.headers['Range']
-        # indicate partial content
-        status 206
-
-        # extract part desired from the content
-        if request.headers['Range'] =~ /bytes\=(\d+)\-(\d*)/
-          begin_point = Regexp.last_match(1).to_i
-          end_point = Regexp.last_match(2).to_i if Regexp.last_match(2).present?
-        end
-
-        end_point = file_size - 1 unless end_point < file_size - 1
-      end
-
-      # Return the requested content
-      content_length = end_point - begin_point + 1
-      header['Content-Range'] = "bytes #{begin_point}-#{end_point}/#{file_size}"
-      header['Content-Length'] = content_length.to_s
-      header['Accept-Ranges'] = 'bytes'
-
-      # Read the binary data and return
-      File.binread(comment.attachment_path, content_length, begin_point)
+      stream_file comment.attachment_path
     end
   end
 

@@ -5,6 +5,7 @@ require 'grape'
 class DiscussionCommentApi < Grape::API
   helpers AuthenticationHelpers
   helpers AuthorisationHelpers
+  helpers FileStreamHelper
 
   before do
     authenticated?
@@ -78,37 +79,9 @@ class DiscussionCommentApi < Grape::API
       # mark as attachment
       if params[:as_attachment]
         header['Content-Disposition'] = "attachment; filename=#{prompt_path}"
-        header['Access-Control-Expose-Headers'] = 'Content-Disposition'
       end
 
-      # Work out what part to return
-      file_size = File.size(prompt_path)
-      begin_point = 0
-      end_point = file_size - 1
-
-      # Was it asked for just a part of the file?
-      if request.headers['Range']
-        # indicate partial content
-        status 206
-
-        # extract part desired from the content
-        if request.headers['Range'] =~ /bytes\=(\d+)\-(\d*)/
-          begin_point = Regexp.last_match(1).to_i
-          end_point = Regexp.last_match(2).to_i if Regexp.last_match(2).present?
-        end
-
-        end_point = file_size - 1 unless end_point < file_size - 1
-      end
-
-      # Return the requested content
-      content_length = end_point - begin_point + 1
-      header['Content-Range'] = "bytes #{begin_point}-#{end_point}/#{file_size}"
-      header['Content-Length'] = content_length.to_s
-      header['Accept-Ranges'] = 'bytes'
-
-      # Read the binary data and return
-      result = File.binread(prompt_path, content_length, begin_point)
-      result
+      stream_file prompt_path
     end
   end
 
@@ -140,38 +113,10 @@ class DiscussionCommentApi < Grape::API
 
       # mark as attachment
       if params[:as_attachment]
-        header['Content-Disposition'] = "attachment; filename=#{response_path}"
-        header['Access-Control-Expose-Headers'] = 'Content-Disposition'
+        header['Content-Disposition'] = "attachment; filename=response.ogg"
       end
 
-      # Work out what part to return
-      file_size = File.size(response_path)
-      begin_point = 0
-      end_point = file_size - 1
-
-      # Was it asked for just a part of the file?
-      if request.headers['Range']
-        # indicate partial content
-        status 206
-
-        # extract part desired from the content
-        if request.headers['Range'] =~ /bytes\=(\d+)\-(\d*)/
-          begin_point = Regexp.last_match(1).to_i
-          end_point = Regexp.last_match(2).to_i if Regexp.last_match(2).present?
-        end
-
-        end_point = file_size - 1 unless end_point < file_size - 1
-      end
-
-      # Return the requested content
-      content_length = end_point - begin_point + 1
-      header['Content-Range'] = "bytes #{begin_point}-#{end_point}/#{file_size}"
-      header['Content-Length'] = content_length.to_s
-      header['Accept-Ranges'] = 'bytes'
-
-      # Read the binary data and return
-      result = File.binread(response_path, content_length, begin_point)
-      result
+      stream_file response_path
     end
   end
 
