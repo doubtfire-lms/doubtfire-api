@@ -145,7 +145,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     task_defs_csv = CSV.parse unit.task_definitions_csv, headers: true
     task_defs_csv.each do |task_def_csv|
       task_def = unit.task_definitions.find_by(abbreviation: task_def_csv['abbreviation'])
-      keys_to_ignore = ['tutorial_stream', 'start_week', 'start_day', 'target_week', 'target_day', 'due_week', 'due_day', 'scorm_enabled', 'scorm_allow_review', 'scorm_time_delay_enabled', 'scorm_attempt_limit']
+      keys_to_ignore = ['tutorial_stream', 'start_week', 'start_day', 'target_week', 'target_day', 'due_week', 'due_day', 'scorm_enabled', 'scorm_allow_review', 'scorm_bypass_test', 'scorm_time_delay_enabled', 'scorm_attempt_limit']
       task_def_csv.each do |key, value|
         unless keys_to_ignore.include?(key)
           assert_equal(task_def[key].to_s, value)

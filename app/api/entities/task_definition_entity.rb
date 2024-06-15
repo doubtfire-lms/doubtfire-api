@@ -42,6 +42,7 @@ module Entities
     expose :has_scorm_data?, as: :has_scorm_data
     expose :scorm_enabled
     expose :scorm_allow_review
+    expose :scorm_bypass_test
     expose :scorm_time_delay_enabled
     expose :scorm_attempt_limit
     expose :is_graded

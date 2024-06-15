@@ -254,6 +254,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_06_03_020127) do
     t.string "moss_language"
     t.boolean "scorm_enabled", default: false
     t.boolean "scorm_allow_review", default: false
+    t.boolean "scorm_bypass_test", default: false
     t.boolean "scorm_time_delay_enabled", default: false
     t.integer "scorm_attempt_limit"
     t.index ["group_set_id"], name: "index_task_definitions_on_group_set_id"

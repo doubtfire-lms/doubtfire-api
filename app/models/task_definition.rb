@@ -301,8 +301,8 @@ class TaskDefinition < ApplicationRecord
 
   def self.csv_columns
     [:name, :abbreviation, :description, :weighting, :target_grade, :restrict_status_updates, :max_quality_pts,
-     :is_graded, :plagiarism_warn_pct, :group_set, :upload_requirements, :scorm_enabled,
-     :scorm_allow_review, :scorm_time_delay_enabled, :scorm_attempt_limit, :start_week, :start_day, :target_week,
+     :is_graded, :plagiarism_warn_pct, :group_set, :upload_requirements, :scorm_enabled, :scorm_allow_review,
+     :scorm_bypass_test, :scorm_time_delay_enabled, :scorm_attempt_limit, :start_week, :start_day, :target_week,
      :target_day, :due_week, :due_day, :tutorial_stream]
   end
 
@@ -351,6 +351,7 @@ class TaskDefinition < ApplicationRecord
 
     result.scorm_enabled               = %w(Yes y Y yes true TRUE 1).include? "#{row[:scorm_enabled]}".strip
     result.scorm_allow_review          = %w(Yes y Y yes true TRUE 1).include? "#{row[:scorm_allow_review]}".strip
+    result.scorm_bypass_test           = %w(Yes y Y yes true TRUE 1).include? "#{row[:scorm_bypass_test]}".strip
     result.scorm_time_delay_enabled    = %w(Yes y Y yes true TRUE 1).include? "#{row[:scorm_time_delay_enabled]}".strip
     result.scorm_attempt_limit         = row[:scorm_attempt_limit].to_i
 
@@ -410,6 +411,10 @@ class TaskDefinition < ApplicationRecord
 
   def scorm_allow_review?
     scorm_allow_review
+  end
+
+  def scorm_bypass_test?
+    scorm_bypass_test
   end
 
   def scorm_time_delay_enabled?
@@ -614,6 +619,7 @@ class TaskDefinition < ApplicationRecord
   def reset_scorm_config()
     self.scorm_enabled = false
     self.scorm_allow_review = false
+    self.scorm_bypass_test = false
     self.scorm_time_delay_enabled = false
     self.scorm_attempt_limit = 0
   end

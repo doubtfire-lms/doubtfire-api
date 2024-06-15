@@ -52,6 +52,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
         max_quality_pts:          0,
         scorm_enabled:            false,
         scorm_allow_review:       false,
+        scorm_bypass_test:        false,
         scorm_time_delay_enabled: true,
         scorm_attempt_limit:      0
       }

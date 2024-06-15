@@ -30,6 +30,7 @@ class TaskDefinitionsApi < Grape::API
       requires :plagiarism_warn_pct,      type: Integer,  desc: 'The percent at which to record and warn about plagiarism'
       requires :scorm_enabled,            type: Boolean,  desc: 'Whether SCORM assessment is enabled for this task'
       requires :scorm_allow_review,       type: Boolean,  desc: 'Whether a student is allowed to review their completed test attempts'
+      requires :scorm_bypass_test,        type: Boolean,  desc: 'Whether a student is allowed to upload files before passing SCORM test'
       requires :scorm_time_delay_enabled, type: Boolean,  desc: 'Whether there is an incremental time delay between SCORM test attempts'
       requires :scorm_attempt_limit,      type: Integer,  desc: 'The number of times a SCORM test can be attempted'
       requires :is_graded,                type: Boolean,  desc: 'Whether or not this task definition is a graded task'
@@ -63,6 +64,7 @@ class TaskDefinitionsApi < Grape::API
                                                 :plagiarism_warn_pct,
                                                 :scorm_enabled,
                                                 :scorm_allow_review,
+                                                :scorm_bypass_test,
                                                 :scorm_time_delay_enabled,
                                                 :scorm_attempt_limit,
                                                 :is_graded,
@@ -116,6 +118,7 @@ class TaskDefinitionsApi < Grape::API
       optional :plagiarism_warn_pct,      type: Integer,  desc: 'The percent at which to record and warn about plagiarism'
       optional :scorm_enabled,            type: Boolean,  desc: 'Whether or not SCORM test assessment is enabled for this task'
       optional :scorm_allow_review,       type: Boolean,  desc: 'Whether a student is allowed to review their completed test attempts'
+      optional :scorm_bypass_test,        type: Boolean,  desc: 'Whether a student is allowed to upload files before passing SCORM test'
       optional :scorm_time_delay_enabled, type: Boolean,  desc: 'Whether or not there is an incremental time delay between SCORM test attempts'
       optional :scorm_attempt_limit,      type: Integer,  desc: 'The number of times a SCORM test can be attempted'
       optional :is_graded,                type: Boolean,  desc: 'Whether or not this task definition is a graded task'
@@ -148,6 +151,7 @@ class TaskDefinitionsApi < Grape::API
                                                 :plagiarism_warn_pct,
                                                 :scorm_enabled,
                                                 :scorm_allow_review,
+                                                :scorm_bypass_test,
                                                 :scorm_time_delay_enabled,
                                                 :scorm_attempt_limit,
                                                 :is_graded,
