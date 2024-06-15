@@ -18,6 +18,11 @@ class ScormExtensionCommentsApi < Grape::API
       error!({ error: 'Not authorised to request a scorm extension for this task' }, 403)
     end
 
+    if task_definition.scorm_attempt_limit == 0
+      error!({ message: 'This task allows unlimited attempts to complete the test' }, 400)
+      return
+    end
+
     result = task.apply_for_scorm_extension(current_user, params[:comment])
     present result.serialize(current_user), Grape::Presenters::Presenter
   end
