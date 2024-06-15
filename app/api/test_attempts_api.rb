@@ -116,21 +116,22 @@ class TestAttemptsApi < Grape::API
     end
 
     attempts = TestAttempt.where("task_id = ?", task.id)
+    test_count = attempts.count
 
     # check if last attempt is complete
     last_attempt = attempts.order(id: :desc).first
-    if last_attempt.completion_status == false
+    if test_count > 0 && last_attempt.terminated == false
       error!({ message: 'An attempt is still ongoing. Cannot initiate new attempt.' }, 400)
       return
     end
 
     # check if last attempt is a pass
-    if last_attempt.success_status == true
+    if test_count > 0 && last_attempt.success_status == true
       error!({ message: 'User has passed the SCORM test. Cannot initiate more attempts.' }, 400)
+      return
     end
 
     # check attempt limit
-    test_count = attempts.count
     limit = task.task_definition.scorm_attempt_limit + task.scorm_extensions
     if limit != 0 && test_count == limit
       error!({ message: 'Attempt limit has been reached' }, 400)
