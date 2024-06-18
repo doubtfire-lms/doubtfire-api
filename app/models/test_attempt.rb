@@ -129,7 +129,7 @@ class TestAttempt < ApplicationRecord
     comment = ScormComment.create
     comment.task = task
     comment.user = task.tutor
-    comment.comment = "Test attempt #{self.success_status ? 'passed' : 'failed'} with score: #{(self.score_scaled * 100).to_i}%"
+    comment.comment = success_status_description
     comment.recipient = task.student
     comment.test_attempt = self
     comment.save!
@@ -139,7 +139,7 @@ class TestAttempt < ApplicationRecord
 
   def update_scorm_comment
     if self.scorm_comment.present?
-      self.scorm_comment.comment = "Test attempt #{self.success_status ? 'passed' : 'failed'} with score: #{(self.score_scaled * 100).to_i}%"
+      self.scorm_comment.comment = success_status_description
       self.scorm_comment.save!
 
       return self.scorm_comment
@@ -147,5 +147,15 @@ class TestAttempt < ApplicationRecord
 
     puts "WARN: Unexpected need to create scorm comment for test attempt: #{self.id}"
     add_scorm_comment
+  end
+
+  def success_status_description
+    if self.success_status && self.score_scaled == 1
+      "Passed without mistakes"
+    elsif self.success_status && self.score_scaled < 1
+      "Passed"
+    else
+      "Unsuccessful"
+    end
   end
 end
