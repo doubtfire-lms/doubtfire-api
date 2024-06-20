@@ -979,11 +979,16 @@ class Task < ApplicationRecord
         logger.error "Error processing task #{log_details} - missing file #{file_req}"
         raise "File `#{file_req['name']}` missing from submission."
       else
-        result << { path: output_filename, type: file_req['type'] }
+        truncated = false
 
         if file_req['type'] == 'code'
           FileHelper.ensure_utf8_code(output_filename, is_retry)
+          extension = File.extname(output_filename)[1..-1]
+          unless extension.eql?("ipynb")
+            truncated = FileHelper.line_wrap(output_filename)
+          end
         end
+        result << { path: output_filename, type: file_req['type'], truncated: truncated }
 
         idx += 1 # next file index
       end
@@ -1010,12 +1015,14 @@ class Task < ApplicationRecord
     end
 
     def make_pdf
-      logger.debug "Running QPDF on all documents before rendering to repair any potential broken files."
+      logger.debug "Rendering PDF for a task, preprocessing attachments."
       @files.each do |f|
         if f[:type] == "document"
+          logger.debug "Running QPDF on #{f[:path]} before rendering to repair any potential broken files."
           FileHelper.qpdf(f[:path])
         end
       end
+      logger.debug "Preprocessing complete, rendering file."
       render_to_string(template: '/task/task_pdf', layout: true)
     end
   end

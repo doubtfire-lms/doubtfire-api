@@ -10,7 +10,7 @@
 \tcbuselibrary{skins}
 
 \newcommand{\jupynotex}[2][-]{
-    \input|"python3 jupynotex.py #2 #1"
+    \input|"python3 jupynotex.py '#2' '#1' '95'"
 }
 
 \usepackage[fencedCode,hashEnumerators,pipeTables,texMathDollars]{markdown}

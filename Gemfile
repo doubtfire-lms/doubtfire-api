@@ -107,5 +107,8 @@ gem 'sidekiq-cron'
 # Redis for sidekiq, caching, and action cable (eventually)
 gem 'redis'
 
+# shellwords for safely escaping strings
+gem 'shellwords'
+
 # PDF reader for validating PDF file submissions
 gem 'pdf-reader'

@@ -421,6 +421,7 @@ GEM
     rubyzip (1.3.0)
     set (1.1.0)
     sexp_processor (4.17.1)
+    shellwords (0.2.0)
     sidekiq (7.2.4)
       concurrent-ruby (< 2)
       connection_pool (>= 2.3.0)
@@ -549,6 +550,7 @@ DEPENDENCIES
   ruby-lsp
   ruby-saml (~> 1.13.0)
   rubyzip
+  shellwords
   sidekiq
   sidekiq-cron
   simplecov
