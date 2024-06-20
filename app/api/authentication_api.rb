@@ -358,7 +358,7 @@ class AuthenticationApi < Grape::API
          }
        }
   delete '/auth' do
-    user = User.find_by_username(headers['username'] || headers['Username'])
+    user = User.find_by(username: headers['username'] || headers['Username'])
     token = user.token_for_text?(headers['auth-token'] || headers['Auth-Token']) unless user.nil?
 
     if token.present?

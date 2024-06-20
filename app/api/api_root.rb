@@ -34,7 +34,9 @@ class ApiRoot < Grape::API
       message = "Missing value for #{e.param}"
       status = 400
     else
+      # rubocop:disable Rails/Output
       puts e.inspect unless Rails.env.production?
+      # rubocop:enable Rails/Output
 
       logger.error "Unhandled exception: #{e.class}"
       logger.error e.inspect

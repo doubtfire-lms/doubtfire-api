@@ -53,7 +53,7 @@ class TiiGroupAttachment < ApplicationRecord
   private
 
   def delete_attachment
-    return unless group_attachment_id.present?
+    return if group_attachment_id.blank?
 
     TiiActionDeleteGroupAttachment.create(
       entity: nil,

@@ -8,7 +8,7 @@ class TiiActionUpdateTiiGroup < TiiAction
 
   def run
     # Generate id but do not save until put is complete
-    entity.tii_group_id = SecureRandom.uuid unless entity.tii_group_id.present?
+    entity.tii_group_id = SecureRandom.uuid if entity.tii_group_id.blank?
 
     data = TCAClient::AggregateGroup.new(
       id: entity.tii_group_id,

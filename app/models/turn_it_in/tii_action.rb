@@ -50,7 +50,7 @@ class TiiAction < ApplicationRecord
     self.error_code = nil if self.retry && error?
     self.custom_error_message = nil
 
-    self.log = [] if self.log.nil? || self.log.empty? || self.complete # reset log if complete... and performing again
+    self.log = [] if self.log.blank? || self.complete # reset log if complete... and performing again
 
     self.log << { date: Time.zone.now, message: "Started #{type}" }
     self.last_run = Time.zone.now
@@ -67,7 +67,7 @@ class TiiAction < ApplicationRecord
     save_and_log_custom_error e&.to_s
 
     if Rails.env.development? || Rails.env.test?
-      puts e.inspect
+      Rails.logger.debug e.inspect
     end
 
     nil

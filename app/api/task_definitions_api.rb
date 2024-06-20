@@ -177,7 +177,6 @@ class TaskDefinitionsApi < Grape::API
       end
     end
 
-    puts task_def.upload_requirements
     present task_def, with: Entities::TaskDefinitionEntity, my_role: unit.role_for(current_user)
   end
 

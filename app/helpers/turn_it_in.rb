@@ -3,8 +3,6 @@
 # Class to interact with the Turn It In similarity api
 #
 class TurnItIn
-  @instance = TurnItIn.new
-
   # rubocop:disable Style/ClassVars
   @@x_turnitin_integration_name = 'formatif-tii'
   @@x_turnitin_integration_version = '1.0'
@@ -160,7 +158,7 @@ class TurnItIn
   # @param unit [Unit] the unit to create or get the group context for
   # @return [TCAClient::GroupContext] the group context for the unit
   def self.create_or_get_group_context(unit)
-    unless unit.tii_group_context_id.present?
+    if unit.tii_group_context_id.blank?
       unit.tii_group_context_id = SecureRandom.uuid
       unit.save
     end

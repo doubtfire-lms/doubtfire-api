@@ -9,7 +9,7 @@ class TiiActionDeleteSubmission < TiiAction
   def run
     submission_id = params["submission_id"]
 
-    unless submission_id.present?
+    if submission_id.blank?
       save_and_log_custom_error "Group Attachment id or Group id does not exist - cannot delete group attachment"
       return
     end

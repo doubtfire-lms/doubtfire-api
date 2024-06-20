@@ -163,7 +163,7 @@ class TiiActionUploadSubmission < TiiAction
     data = tii_submission_data
 
     # If we don't have data, then we can't create a submission - fail as no one accepted EULA
-    return false unless data.present?
+    return false if data.blank?
 
     exec_tca_call "TiiSubmission #{entity.id} - fetching id" do
       # Check to ensure it is a new upload
@@ -335,7 +335,7 @@ class TiiActionUploadSubmission < TiiAction
   #
   # @return [TCAClient::SimilarityMetadata] the similarity report status
   def fetch_tii_similarity_status
-    return nil unless submission_id.present?
+    return nil if submission_id.blank?
 
     exec_tca_call "TiiSubmission #{entity.id} - fetching similarity report status" do
       # Get Similarity Report Status
@@ -382,7 +382,7 @@ class TiiActionUploadSubmission < TiiAction
   #
   # @param [Boolean] skip_check - skip the check to see if the report is ready
   def download_similarity_report_pdf(skip_check: false)
-    return false unless similarity_pdf_id.present?
+    return false if similarity_pdf_id.blank?
     return false unless skip_check || fetch_tii_similarity_pdf_status == 'SUCCESS'
 
     error_codes = [

@@ -34,7 +34,7 @@ module TaskDefinitionTiiModule
   # Send all doc and docx files from the task resources to turn it in
   # as group attachments.
   def send_group_attachments_to_tii
-    return unless tii_group_id.present?
+    return if tii_group_id.blank?
     return unless has_task_resources?
 
     count = 0
@@ -63,7 +63,7 @@ module TaskDefinitionTiiModule
   # @return [TCAClient::Group] the group for the task definition
   def create_or_get_tii_group
     # if there is no group id, create one (but not register with tii)
-    unless self.tii_group_id.present?
+    if self.tii_group_id.blank?
       self.tii_group_id = SecureRandom.uuid
       self.save
     end
@@ -95,7 +95,7 @@ module TaskDefinitionTiiModule
   end
 
   def update_tii_group
-    return unless tii_group_id.present?
+    return if tii_group_id.blank?
 
     action = TiiActionUpdateTiiGroup.find_or_create_by(entity: self)
     action.params = { update_due_date: true }

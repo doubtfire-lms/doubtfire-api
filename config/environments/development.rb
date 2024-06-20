@@ -21,7 +21,9 @@ Doubtfire::Application.configure do
       if skip_first
         skip_first = false
       else
+        # rubocop:disable Rails/Output
         puts "CLEARING CACHE"
+        # rubocop:enable Rails/Output
         Rails.cache.clear
       end
     end
@@ -45,7 +47,7 @@ Doubtfire::Application.configure do
 
   # Ensure cache is cleared on reload
   unless Rails.application.config.cache_classes
-    Rails.autoloaders.main.on_unload do |klass, _abspath|
+    Rails.autoloaders.main.on_unload do |_klass, _abspath|
       Rails.cache.clear
     end
   end
