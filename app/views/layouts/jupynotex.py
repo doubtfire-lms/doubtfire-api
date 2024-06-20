@@ -252,13 +252,12 @@ class Notebook:
         output = self._proc_out(content)
         return source, output, content['cell_type'] == 'markdown'
 
-def _parse_cells(spec, maxlen):
-    """Convert the cells spec to a range of ints."""
-    if not spec:
-        raise ValueError("Empty cells spec not allowed")
-    if set(spec) - set('0123456789-,'):
-        raise ValueError(
-            "Found forbidden characters in cells definition (allowed digits, '-' and ',')")
+    def parse_cells(self, spec):
+        """Convert the cells spec to a range of ints."""
+        if not spec:
+            raise ValueError("Empty cells spec not allowed")
+
+        maxlen = len(self._cells)
 
         cells = set()
         options = {}

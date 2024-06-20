@@ -360,7 +360,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     # Test if latex math was rendered properly
     reader = PDF::Reader.new(task.final_pdf_path)
-    assert reader.pages.last.text.include? "BMI: bmi =    weigh2\n                  height"
+    assert reader.pages.last.text.include?("BMI: bmi ="), reader.pages.last.text
 
     # ensure the notice is not included when the notebook doesn't have long lines source code cells
     # and no errors

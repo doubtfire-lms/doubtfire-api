@@ -22,13 +22,12 @@ class Project < ApplicationRecord
 
   # has_one :user, through: :student
   has_many :tasks, dependent: :destroy # Destroying a project will also nuke all of its tasks
-
   has_many :group_memberships, dependent: :destroy
+  has_many :tutorial_enrolments, dependent: :destroy
+
   has_many :groups, -> { where('group_memberships.active = :value', value: true) }, through: :group_memberships
   has_many :task_engagements, through: :tasks
   has_many :comments, through: :tasks
-  has_many :tutorial_enrolments, dependent: :destroy
-
   has_many :learning_outcome_task_links, through: :tasks
 
   # Callbacks - methods called are private
