@@ -220,7 +220,7 @@ class GroupSetsApi < Grape::API
     end
 
     num = group_set.groups.count + 1
-    while group_params[:name].nil? || group_params[:name].empty? || group_set.groups.where(name: group_params[:name]).count > 0
+    while group_params[:name].blank? || group_set.groups.where(name: group_params[:name]).count > 0
       group_params[:name] = "Group #{num}"
       num += 1
     end

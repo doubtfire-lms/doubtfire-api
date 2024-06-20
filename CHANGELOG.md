@@ -57,8 +57,6 @@ All notable changes to this project will be documented in this file. See [standa
 * revert to doubtfire local image for unit tests ([73fcbe3](https://github.com/macite/doubtfire-deploy/commit/73fcbe3f5adb603253033e7b126502a5d3c006f1))
 * skip unit tests and linting for documentation updates ([2503fe6](https://github.com/macite/doubtfire-deploy/commit/2503fe61468f8ebe37e54ccb1d0cc2a11387949b))
 
-### [7.0.23](https://github.com/macite/doubtfire-deploy/compare/v8.0.0-2...v7.0.23) (2024-03-22)
-
 ## [8.0.0-5](https://github.com/macite/doubtfire-deploy/compare/v8.0.0-4...v8.0.0-5) (2024-05-02)
 
 

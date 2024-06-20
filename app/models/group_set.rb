@@ -1,6 +1,6 @@
 class GroupSet < ApplicationRecord
   belongs_to :unit, optional: false
-  has_many :task_definitions
+  has_many :task_definitions, dependent: :nullify
   has_many :groups, dependent: :destroy
 
   validates :name, uniqueness: {
@@ -37,6 +37,7 @@ class GroupSet < ApplicationRecord
 
     # Return permissions hash
     {
+      admin: convenor_role_permissions,
       convenor: convenor_role_permissions,
       tutor: tutor_role_permissions,
       student: student_role_permissions,

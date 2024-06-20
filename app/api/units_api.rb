@@ -26,7 +26,7 @@ class UnitsApi < Grape::API
     optional :include_in_active, type: Boolean, desc: 'Include units that are not active'
   end
   get '/units' do
-    unless authorise? current_user, User, :convene_units
+    unless authorise? current_user, User, :get_all_units
       error!({ error: 'Unable to list units' }, 403)
     end
 
@@ -47,7 +47,6 @@ class UnitsApi < Grape::API
       { tutorial_streams: :activity_type },
       { tutorials: [:tutor, :tutorial_stream] },
       :tutorial_enrolments,
-      { staff: [:role, :user] },
       :group_sets,
       :groups,
       :group_memberships
@@ -190,10 +189,14 @@ class UnitsApi < Grape::API
                                                     :allow_student_change_tutorial,
                                                   )
 
-    # Identify main convenor
-    main_convenor_user = unit_parameters[:main_convenor_user_id].present? ? User.find(unit_parameters[:main_convenor_user_id]) : main_convenor_user = current_user
+    # Identify main convenor - ensure they have the correct role
+    main_convenor_user = unit_parameters[:main_convenor_user_id].present? ? User.find(unit_parameters[:main_convenor_user_id]) : current_user
 
-    unless authorise? current_user, User, :convene_units
+    if main_convenor_user.blank?
+      error!({ error: 'Main convenor user not found' }, 403)
+    end
+
+    unless authorise? main_convenor_user, User, :convene_units
       error!({ error: 'Main convenor is not authorised to manage units' }, 403)
     end
 
@@ -205,7 +208,7 @@ class UnitsApi < Grape::API
     if teaching_period_id.blank?
       if unit_parameters[:start_date].nil?
         start_date = Date.parse('Monday')
-        delta = start_date > Date.today ? 0 : 7
+        delta = start_date > Time.zone.today ? 0 : 7
         unit_parameters[:start_date] = start_date + delta
       end
 
@@ -259,7 +262,7 @@ class UnitsApi < Grape::API
   get '/units/:id/feedback' do
     unit = Unit.find(params[:id])
 
-    unless authorise? current_user, unit, :provide_feedback
+    unless authorise? current_user, unit, :get_students
       error!({ error: 'Not authorised to provide feedback for this unit' }, 403)
     end
 
@@ -271,7 +274,7 @@ class UnitsApi < Grape::API
   get '/units/:id/tasks/inbox' do
     unit = Unit.find(params[:id])
 
-    unless authorise? current_user, unit, :provide_feedback
+    unless authorise? current_user, unit, :get_students
       error!({ error: 'Not authorised to provide feedback for this unit' }, 403)
     end
 
@@ -304,7 +307,7 @@ class UnitsApi < Grape::API
       error!({ error: "Not authorised to upload CSV of students to #{unit.code}" }, 403)
     end
 
-    unless params[:file].present?
+    if params[:file].blank?
       error!({ error: "No file uploaded" }, 403)
     end
 
@@ -324,7 +327,7 @@ class UnitsApi < Grape::API
       error!({ error: "Not authorised to upload CSV of students to #{unit.code}" }, 403)
     end
 
-    unless params[:file].present?
+    if params[:file].blank?
       error!({ error: "No file uploaded" }, 403)
     end
 

@@ -10,7 +10,8 @@ namespace :db do
       { name: 'Student', description: "Students are able to be enrolled into units, and to submit progress for their unit projects." },
       { name: 'Tutor', description: "Tutors are able to supervise tutorial classes and provide feedback to students, they may also be students in other units" },
       { name: 'Convenor', description: "Convenors are able to create and manage units, as well as act as tutors and students." },
-      { name: 'Admin', description: "Admin are able to create convenors, and act as convenors, tutors, and students in units." }
+      { name: 'Admin', description: "Admin are able to create convenors, and act as convenors, tutors, and students in units." },
+      { name: 'Auditor', description: "Auditors are able to view only everything an admin can." }
     ]
 
     roles.each do |role|

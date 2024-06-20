@@ -5,6 +5,7 @@ module Submission
     helpers GenerateHelpers
     helpers AuthenticationHelpers
     helpers AuthorisationHelpers
+    helpers FileStreamHelper
 
     before do
       authenticated?
@@ -80,22 +81,21 @@ module Submission
       evidence_loc = project.portfolio_path
 
       if evidence_loc.nil? || File.exist?(evidence_loc) == false
-        evidence_loc = Rails.root.join('public', 'resources', 'FileNotFound.pdf')
-        filename = "FileNotFound.pdf"
+        evidence_loc = Rails.root.join('public/resources/FileNotFound.pdf')
+        filename = 'FileNotFound.pdf'
       else
         filename = "#{project.unit.code}-#{project.student.username}-portfolio.pdf"
       end
 
       if params[:as_attachment]
         header['Content-Disposition'] = "attachment; filename=#{filename}"
-        header['Access-Control-Expose-Headers'] = 'Content-Disposition'
       end
 
       # Set download headers...
       content_type 'application/pdf'
       env['api.format'] = :binary
 
-      File.read(evidence_loc)
+      stream_file evidence_loc
     end # get
 
     # "Retrieve portfolios for a unit" done using controller

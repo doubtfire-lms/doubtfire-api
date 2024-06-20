@@ -1,6 +1,7 @@
 require 'test_helper'
 require 'grade_helper'
 require './lib/helpers/database_populator'
+require 'pdf-reader'
 
 class UnitModelTest < ActiveSupport::TestCase
   include TestHelpers::JsonHelper
@@ -84,24 +85,33 @@ class UnitModelTest < ActiveSupport::TestCase
   end
 
   def test_import_tasks_worked
-    @unit.import_tasks_from_csv File.open(Rails.root.join('test_files',"#{@unit.code}-Tasks.csv"))
-    assert_equal 36, @unit.task_definitions.count, 'imported all task definitions'
+    @unit.import_tasks_from_csv File.open(Rails.root.join('test_files', "#{@unit.code}-Tasks.csv"))
+    assert_equal 37, @unit.task_definitions.count, 'imported all task definitions'
   end
 
   def test_import_task_files
-    @unit.import_tasks_from_csv File.open(Rails.root.join('test_files',"#{@unit.code}-Tasks.csv"))
-    @unit.import_task_files_from_zip Rails.root.join('test_files',"#{@unit.code}-Tasks.zip")
+    @unit.import_tasks_from_csv File.open(Rails.root.join('test_files', "#{@unit.code}-Tasks.csv"))
+    @unit.import_task_files_from_zip Rails.root.join('test_files', "#{@unit.code}-Tasks.zip")
 
     @unit.task_definitions.each do |td|
       assert File.exist?(td.task_sheet), "#{td.abbreviation} task sheet missing"
     end
 
     assert File.exist? @unit.task_definitions.first.task_resources
+
+    # extra checks to ensure the filename matching behavior is correct (longest match)
+    td = @unit.task_definitions.find_by(abbreviation: "T1")
+    reader = PDF::Reader.new(td.task_sheet)
+    assert reader.pages[0].text.include? "Task sheet for task T1!"
+
+    td = @unit.task_definitions.find_by(abbreviation: "T10")
+    reader = PDF::Reader.new(td.task_sheet)
+    assert reader.pages[0].text.include? "Task sheet for task T10!"
   end
 
   def test_rollover_of_task_files
-    @unit.import_tasks_from_csv File.open(Rails.root.join('test_files',"#{@unit.code}-Tasks.csv"))
-    @unit.import_task_files_from_zip Rails.root.join('test_files',"#{@unit.code}-Tasks.zip")
+    @unit.import_tasks_from_csv File.open(Rails.root.join('test_files', "#{@unit.code}-Tasks.csv"))
+    @unit.import_task_files_from_zip Rails.root.join('test_files', "#{@unit.code}-Tasks.zip")
 
     unit2 = @unit.rollover TeachingPeriod.find(2), nil, nil
 
@@ -493,7 +503,7 @@ class UnitModelTest < ActiveSupport::TestCase
 
         assert_json_matches_model(user, entry, %w( username student_id first_name last_name email))
 
-        campus = Campus.find_by_abbr_or_name entry['campus']
+        campus = Campus.find_by('abbreviation = :name OR name = :name', name: entry['campus'])
         assert campus.present?, entry
         assert_equal project.campus, campus, entry
 

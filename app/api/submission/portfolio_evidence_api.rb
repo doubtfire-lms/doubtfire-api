@@ -5,6 +5,7 @@ module Submission
     helpers GenerateHelpers
     helpers AuthenticationHelpers
     helpers AuthorisationHelpers
+    helpers FileStreamHelper
     include LogHelper
 
     def self.logger
@@ -93,10 +94,10 @@ module Submission
       unit = task.project.unit
 
       if task.processing_pdf?
-        evidence_loc = Rails.root.join('public', 'resources', 'AwaitingProcessing.pdf')
+        evidence_loc = Rails.root.join('public/resources/AwaitingProcessing.pdf')
         filename = 'AwaitingProcessing.pdf'
       elsif evidence_loc.nil?
-        evidence_loc = Rails.root.join('public', 'resources', 'FileNotFound.pdf')
+        evidence_loc = Rails.root.join('public/resources/FileNotFound.pdf')
         filename = 'FileNotFound.pdf'
       else
         filename = "#{task.task_definition.abbreviation}.pdf"
@@ -104,14 +105,12 @@ module Submission
 
       if params[:as_attachment]
         header['Content-Disposition'] = "attachment; filename=#{filename}"
-        header['Access-Control-Expose-Headers'] = 'Content-Disposition'
       end
 
       # Set download headers...
       content_type 'application/pdf'
-      env['api.format'] = :binary
 
-      File.read(evidence_loc)
+      stream_file evidence_loc
     end # get
 
     desc "Request for a task's documents to be re-processed to recreate the task's PDF"

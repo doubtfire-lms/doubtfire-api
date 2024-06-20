@@ -15,7 +15,7 @@ Doubtfire::Application.configure do
 
   # Enable/disable caching. By default caching is disabled.
   # Run rails dev:cache to toggle caching.
-  if ENV['CACHE'] == 'true' || Rails.root.join('tmp', 'caching-dev.txt').exist?
+  if ENV['CACHE'] == 'true' || Rails.root.join('tmp/caching-dev.txt').exist?
     skip_first = true
     ActiveSupport::Reloader.to_prepare do
       if skip_first
@@ -41,6 +41,13 @@ Doubtfire::Application.configure do
     config.action_controller.perform_caching = false
 
     config.cache_store = :null_store
+  end
+
+  # Ensure cache is cleared on reload
+  unless Rails.application.config.cache_classes
+    Rails.autoloaders.main.on_unload do |klass, _abspath|
+      Rails.cache.clear
+    end
   end
 
   # Store uploaded files on the local file system (see config/storage.yml for options).

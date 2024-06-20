@@ -1,4 +1,5 @@
 require 'test_helper'
+require 'pdf-reader'
 
 #
 # Contains tests for Task model objects - not accessed via API

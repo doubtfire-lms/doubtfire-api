@@ -63,8 +63,16 @@ class Project < ApplicationRecord
       :assess,
       :change_campus
     ]
-    # What can convenors do with projects?
-    convenor_role_permissions = []
+    # What can admins do with projects?
+    admin_role_permissions = [
+      :get,
+      :get_submission
+    ]
+    # What can auditors do with projects?
+    auditor_role_permissions = [
+      :get,
+      :get_submission
+    ]
     # What can nil users do with projects?
     nil_role_permissions = []
 
@@ -72,6 +80,8 @@ class Project < ApplicationRecord
     {
       student: student_role_permissions,
       tutor: tutor_role_permissions,
+      admin: admin_role_permissions,
+      auditor: auditor_role_permissions,
       nil: nil_role_permissions
     }
   end
@@ -215,13 +225,13 @@ class Project < ApplicationRecord
     (tutorial.present? and tutorial.tutor.present?) ? tutorial.tutor : main_convenor_user
   end
 
-  def main_convenor_user
-    unit.main_convenor_user
-  end
+  delegate :main_convenor_user, to: :unit
 
   def user_role(user)
     if user == student then :student
     elsif user.present? && unit.tutors.where(id: user.id).count != 0 then :tutor
+    elsif user.present? && user.role.id == Role.admin_id then :admin
+    elsif user.present? && user.role.id == Role.auditor_id then :auditor
     else nil
     end
   end
@@ -667,7 +677,7 @@ class Project < ApplicationRecord
     group_memberships.each do |gm|
       next unless gm.active
 
-      if !gm.valid? || gm.group.beyond_capacity?
+      if gm.invalid? || gm.group.beyond_capacity?
         gm.update(active: false)
       end
     end

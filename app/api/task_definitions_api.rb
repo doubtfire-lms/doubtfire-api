@@ -6,6 +6,7 @@ class TaskDefinitionsApi < Grape::API
   helpers FileHelper
   helpers MimeCheckHelpers
   helpers Submission::GenerateHelpers
+  helpers FileStreamHelper
 
   before do
     authenticated?
@@ -140,13 +141,11 @@ class TaskDefinitionsApi < Grape::API
                                                 :moss_language
                                               )
 
-    task_params[:upload_requirements] = JSON.parse(params[:task_def][:upload_requirements]) unless params[:task_def][:upload_requirements].nil?
-
-    # Ensure changes to a TD defined as a "draft task definition" are validated
+    # Ensure changes to a TD defined as a 'draft task definition' are validated
     if unit.draft_task_definition_id == params[:id]
       if params[:task_def][:upload_requirements]
-        requirements = params[:task_def][:upload_requirements]
-        if requirements.length != 1 || requirements[0]["type"] != "document"
+        requirements = JSON.parse(params[:task_def][:upload_requirements])
+        if requirements.length != 1 || requirements[0]['type'] != 'document'
           error!({ error: 'Task is marked as the draft learning summary task definition. A draft learning summary task can only contain a single document upload.' }, 403)
         end
       end
@@ -194,8 +193,8 @@ class TaskDefinitionsApi < Grape::API
       error!({ error: 'Not authorised to upload CSV of tasks' }, 403)
     end
 
-    unless params[:file].present?
-      error!({ error: "No file uploaded" }, 403)
+    if params[:file].blank?
+      error!({ error: 'No file uploaded' }, 403)
     end
 
     path = params[:file][:tempfile].path
@@ -273,7 +272,7 @@ class TaskDefinitionsApi < Grape::API
     # This API accepts more than 2 files, file0 and file1 are just examples.
   end
   post '/units/:unit_id/task_definitions/:task_def_id/test_overseer_assessment' do
-    logger.info "********* - Starting overseer test"
+    logger.info '********* - Starting overseer test'
     return 'Overseer is not enabled' if !Doubtfire::Application.config.overseer_enabled
 
     unit = Unit.find(params[:unit_id])
@@ -298,7 +297,7 @@ class TaskDefinitionsApi < Grape::API
     # Copy files to be PDFed
     task.accept_submission(current_user, scoop_files(params, upload_reqs), current_user, self, nil, 'ready_for_feedback', nil, accepted_tii_eula: false)
 
-    logger.info "********* - about to perform overseer submission"
+    logger.info '********* - about to perform overseer submission'
     overseer_assessment = OverseerAssessment.create_for(task)
     if overseer_assessment.present?
       response = overseer_assessment.send_to_overseer
@@ -350,8 +349,8 @@ class TaskDefinitionsApi < Grape::API
 
     task_def = unit.task_definitions.find(params[:task_def_id])
 
-    unless params[:file].present?
-      error!({ error: "No file uploaded" }, 403)
+    if params[:file].blank?
+      error!({ error: 'No file uploaded' }, 403)
     end
 
     file_path = params[:file][:tempfile].path
@@ -437,8 +436,8 @@ class TaskDefinitionsApi < Grape::API
       error!({ error: 'Not authorised to upload tasks of unit' }, 403)
     end
 
-    unless params[:file].present?
-      error!({ error: "No file uploaded" }, 403)
+    if params[:file].blank?
+      error!({ error: 'No file uploaded' }, 403)
     end
 
     file = params[:file][:tempfile].path
@@ -456,7 +455,7 @@ class TaskDefinitionsApi < Grape::API
   end
   get '/units/:unit_id/task_definitions/:task_def_id/tasks' do
     unit = Unit.find(params[:unit_id])
-    unless authorise? current_user, unit, :provide_feedback
+    unless authorise? current_user, unit, :get_students
       error!({ error: 'Not authorised to access tasks for this unit' }, 403)
     end
 
@@ -547,18 +546,16 @@ class TaskDefinitionsApi < Grape::API
       path = task_def.task_sheet
       filename = "#{task_def.unit.code}-#{task_def.abbreviation}.pdf"
     else
-      path = Rails.root.join('public', 'resources', 'FileNotFound.pdf')
-      filename = "FileNotFound.pdf"
+      path = Rails.root.join('public/resources/FileNotFound.pdf')
+      filename = 'FileNotFound.pdf'
     end
 
     if params[:as_attachment]
       header['Content-Disposition'] = "attachment; filename=#{filename}"
-      header['Access-Control-Expose-Headers'] = 'Content-Disposition'
     end
 
     content_type 'application/pdf'
-    env['api.format'] = :binary
-    File.read(path)
+    stream_file path
   end
 
   desc 'Download the task resources'
@@ -579,14 +576,12 @@ class TaskDefinitionsApi < Grape::API
       content_type 'application/octet-stream'
       header['Content-Disposition'] = "attachment; filename=#{task_def.abbreviation}-resources.zip"
     else
-      path = Rails.root.join('public', 'resources', 'FileNotFound.pdf')
+      path = Rails.root.join('public/resources/FileNotFound.pdf')
       content_type 'application/pdf'
       header['Content-Disposition'] = 'attachment; filename=FileNotFound.pdf'
     end
-    header['Access-Control-Expose-Headers'] = 'Content-Disposition'
 
-    env['api.format'] = :binary
-    File.read(path)
+    stream_file path
   end
 
   desc 'Download the task assessment resources'
@@ -607,13 +602,11 @@ class TaskDefinitionsApi < Grape::API
       content_type 'application/octet-stream'
       header['Content-Disposition'] = "attachment; filename=#{task_def.abbreviation}-assessment-resources.zip"
     else
-      path = Rails.root.join('public', 'resources', 'FileNotFound.pdf')
+      path = Rails.root.join('public/resources/FileNotFound.pdf')
       content_type 'application/pdf'
       header['Content-Disposition'] = 'attachment; filename=FileNotFound.pdf'
     end
-    header['Access-Control-Expose-Headers'] = 'Content-Disposition'
 
-    env['api.format'] = :binary
-    File.read(path)
+    stream_file path
   end
 end

@@ -8,14 +8,6 @@ class Role < ApplicationRecord
     end
   end
 
-  def self.admin_staff_ids
-    [self.convenor_id, self.admin_id]
-  end
-
-  def self.teaching_staff_ids
-    [self.tutor_id, self.convenor_id, self.admin_id]
-  end
-
   def self.student
     Role.find(student_id)
   end
@@ -30,6 +22,10 @@ class Role < ApplicationRecord
 
   def self.admin
     Role.find(admin_id)
+  end
+
+  def self.auditor
+    Role.find(auditor_id)
   end
 
   def to_sym
@@ -66,10 +62,16 @@ class Role < ApplicationRecord
     4
   end
 
+  def self.auditor_id
+    5
+  end
+
   def self.with_name(name)
     case name
     when /[Aa]dmin/
       admin
+    when /[Aa]uditor/
+      auditor
     when /[Cc]onvenor/
       convenor
     when /[Tt]utor/

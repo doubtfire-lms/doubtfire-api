@@ -3,6 +3,7 @@ require 'grape'
 class TaskCommentsApi < Grape::API
   helpers AuthenticationHelpers
   helpers AuthorisationHelpers
+  helpers FileStreamHelper
 
   before do
     authenticated?
@@ -27,7 +28,7 @@ class TaskCommentsApi < Grape::API
     reply_to_id = params[:reply_to_id]
 
     if attached_file.present?
-      error!({ error: "Attachment is empty." }) unless File.size?(attached_file["tempfile"].path).present?
+      error!({ error: "Attachment is empty." }) if File.size?(attached_file["tempfile"].path).blank?
       error!({ error: "Attachment exceeds the maximum attachment size of 30MB." }) unless File.size?(attached_file["tempfile"].path) < 30_000_000
     end
 
@@ -37,13 +38,13 @@ class TaskCommentsApi < Grape::API
     if reply_to_id.present?
       originalTaskComment = TaskComment.find(reply_to_id)
       error!(error: 'You do not have permission to read the replied comment') unless authorise?(current_user, originalTaskComment.project, :get) || (task.group_task? && task.group.role_for(current_user) != nil)
-      error!(error: 'Original comment is not in this task.') unless task.all_comments.find(reply_to_id).present?
+      error!(error: 'Original comment is not in this task.') if task.all_comments.find(reply_to_id).blank?
     end
 
     logger.info("#{current_user.username} - added comment for task #{task.id} (#{task_definition.abbreviation})")
 
-    if attached_file.nil? || attached_file.empty?
-      error!({ error: 'Comment text is empty, unable to add new comment' }, 403) unless text_comment.present?
+    if attached_file.blank?
+      error!({ error: 'Comment text is empty, unable to add new comment' }, 403) if text_comment.blank?
       result = task.add_text_comment(current_user, text_comment, reply_to_id)
     else
       file_result = FileHelper.accept_file(attached_file, 'comment attachment - TaskComment', 'comment_attachment')
@@ -90,36 +91,9 @@ class TaskCommentsApi < Grape::API
       # mark as attachment
       if params[:as_attachment]
         header['Content-Disposition'] = "attachment; filename=#{comment.attachment_file_name}"
-        header['Access-Control-Expose-Headers'] = 'Content-Disposition'
       end
 
-      # Work out what part to return
-      file_size = File.size(comment.attachment_path)
-      begin_point = 0
-      end_point = file_size - 1
-
-      # Was it asked for just a part of the file?
-      if request.headers['Range']
-        # indicate partial content
-        status 206
-
-        # extract part desired from the content
-        if request.headers['Range'] =~ /bytes\=(\d+)\-(\d*)/
-          begin_point = Regexp.last_match(1).to_i
-          end_point = Regexp.last_match(2).to_i if Regexp.last_match(2).present?
-        end
-
-        end_point = file_size - 1 unless end_point < file_size - 1
-      end
-
-      # Return the requested content
-      content_length = end_point - begin_point + 1
-      header['Content-Range'] = "bytes #{begin_point}-#{end_point}/#{file_size}"
-      header['Content-Length'] = content_length.to_s
-      header['Accept-Ranges'] = 'bytes'
-
-      # Read the binary data and return
-      File.binread(comment.attachment_path, content_length, begin_point)
+      stream_file comment.attachment_path
     end
   end
 

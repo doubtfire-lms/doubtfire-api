@@ -50,8 +50,9 @@ namespace :submission do
   end
 
   def should_run?
-    # Only run if there are not more than 4 processes running
-    old_executing(true).count < 4
+    # Only run if there are not more than 3 processes running
+    max_processes = Rails.configuration.pdfgen_max_processes || 2
+    old_executing(true).count < max_processes
   end
 
   def clean_up_failed_runs
@@ -74,7 +75,7 @@ namespace :submission do
   end
 
   task create_missing_portfolios: :environment do
-    TeachingPeriod.where("start_date < :today && active_until > :today", today: Date.today).each do |teaching_period|
+    TeachingPeriod.where("start_date < :today && active_until > :today", today: Time.zone.today).find_each do |teaching_period|
       teaching_period.units.each do |unit|
         unit.projects.each do |project|
           # We have a learning summary but not a portfolio
@@ -103,14 +104,18 @@ namespace :submission do
 
       # Rescue any projects that were orphaned by a previous process
       Project.where('NOT portfolio_generation_pid IS NULL').group(:portfolio_generation_pid).select('MIN(portfolio_generation_pid) as pid').map { |r| r['pid'] }.each do |pid|
-        next if pid == Process.pid
+        next if is_process_running?(pid)
 
-        Project.where(portfolio_generation_pid: pid).update_all(portfolio_generation_pid: Process.pid)
+        # That process is not running... so pick up portfolios here
+        Project.where(portfolio_generation_pid: pid).find_each { |p| p.update(portfolio_generation_pid: Process.pid) }
       end
 
       # Secure portfolios
       Project.where(compile_portfolio: true, portfolio_generation_pid: nil)
-             .update_all(portfolio_generation_pid: Process.pid)
+             .limit(10)
+             .find_each do |p|
+               p.update(portfolio_generation_pid: Process.pid)
+             end
 
       # Clean up any old failed runs - now after I have the files I need :)
       clean_up_failed_runs
@@ -124,7 +129,7 @@ namespace :submission do
         PortfolioEvidence.process_new_to_pdf(my_source)
 
         # Now compile the portfolios
-        Project.where(compile_portfolio: true, portfolio_generation_pid: Process.pid).each do |project|
+        Project.where(compile_portfolio: true, portfolio_generation_pid: Process.pid).find_each do |project|
           next unless project.portfolio_generation_pid == Process.pid
 
           begin
@@ -147,7 +152,9 @@ namespace :submission do
         end
       ensure
         # Ensure that we clear the pid from the projects so that they can be processed again
-        Project.where(portfolio_generation_pid: Process.pid).update_all(portfolio_generation_pid: nil)
+        Project.where(portfolio_generation_pid: Process.pid).find_each do |p|
+          p.update(portfolio_generation_pid: nil)
+        end
 
         # Remove the processing directory
         if Dir.entries(my_source).count == 2 # . and ..
@@ -170,8 +177,8 @@ namespace :submission do
   task check_task_pdfs: :environment do
     logger.info 'Starting check of PDF tasks'
 
-    Unit.where('active').each do |u|
-      u.tasks.where('portfolio_evidence is not NULL').each do |t|
+    Unit.where('active').find_each do |u|
+      u.tasks.where('portfolio_evidence is not NULL').find_each do |t|
         unless FileHelper.validate_pdf(t.portfolio_evidence_path)[:valid]
           puts t.portfolio_evidence_path
         end

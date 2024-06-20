@@ -41,5 +41,9 @@ FactoryBot.define do
       role      { Role.convenor }
     end
 
+    trait :auditor do
+      role      { Role.auditor }
+    end
+
   end
 end

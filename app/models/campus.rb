@@ -1,7 +1,7 @@
 class Campus < ApplicationRecord
   # Relationships
-  has_many    :tutorials
-  has_many    :projects
+  has_many    :tutorials, dependent: :restrict_with_exception
+  has_many    :projects, dependent: :restrict_with_exception
 
   # Callbacks - methods called are private
   before_destroy :can_destroy?
@@ -12,7 +12,7 @@ class Campus < ApplicationRecord
   validates :mode,         presence: true
   validates :abbreviation, presence: true, uniqueness: true
 
-  validates_inclusion_of :active, :in => [true, false]
+  validates :active, inclusion: { :in => [true, false] }
 
   after_destroy :invalidate_cache
   after_save :invalidate_cache
@@ -37,10 +37,6 @@ class Campus < ApplicationRecord
     Rails.cache.fetch("campuses/#{key}", expires_in: 12.hours) do
       super
     end
-  end
-
-  def self.find_by_abbr_or_name(data)
-    Campus.find_by(abbreviation: data) || Campus.find_by(name: data)
   end
 
   private

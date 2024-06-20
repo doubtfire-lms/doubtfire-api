@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_01_05_055902) do
+ActiveRecord::Schema[7.0].define(version: 2024_06_03_111953) do
   create_table "activity_types", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -82,6 +82,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_05_055902) do
     t.datetime "updated_at"
     t.integer "capacity"
     t.boolean "locked", default: false, null: false
+    t.index ["name", "unit_id"], name: "index_group_sets_on_name_and_unit_id", unique: true
     t.index ["unit_id"], name: "index_group_sets_on_unit_id"
   end
 
@@ -106,6 +107,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_05_055902) do
     t.integer "capacity_adjustment", default: 0, null: false
     t.boolean "locked", default: false, null: false
     t.index ["group_set_id"], name: "index_groups_on_group_set_id"
+    t.index ["name", "group_set_id"], name: "index_groups_on_name_and_group_set_id", unique: true
     t.index ["tutorial_id"], name: "index_groups_on_tutorial_id"
   end
 
@@ -128,6 +130,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_05_055902) do
     t.string "name"
     t.string "description", limit: 4096
     t.string "abbreviation"
+    t.index ["abbreviation", "unit_id"], name: "index_learning_outcomes_on_abbreviation_and_unit_id", unique: true
     t.index ["unit_id"], name: "index_learning_outcomes_on_unit_id"
   end
 
@@ -158,6 +161,8 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_05_055902) do
     t.text "pulled_image_text"
     t.integer "pulled_image_status"
     t.datetime "last_pulled_date"
+    t.index ["name"], name: "index_overseer_images_on_name", unique: true
+    t.index ["tag"], name: "index_overseer_images_on_tag", unique: true
   end
 
   create_table "projects", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
@@ -250,7 +255,9 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_05_055902) do
     t.bigint "overseer_image_id"
     t.string "tii_group_id"
     t.string "moss_language"
+    t.index ["abbreviation", "unit_id"], name: "index_task_definitions_on_abbreviation_and_unit_id", unique: true
     t.index ["group_set_id"], name: "index_task_definitions_on_group_set_id"
+    t.index ["name", "unit_id"], name: "index_task_definitions_on_name_and_unit_id", unique: true
     t.index ["overseer_image_id"], name: "index_task_definitions_on_overseer_image_id"
     t.index ["tutorial_stream_id"], name: "index_task_definitions_on_tutorial_stream_id"
     t.index ["unit_id"], name: "index_task_definitions_on_unit_id"
@@ -431,6 +438,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_05_055902) do
     t.integer "capacity", default: -1
     t.bigint "campus_id"
     t.bigint "tutorial_stream_id"
+    t.index ["abbreviation", "unit_id"], name: "index_tutorials_on_abbreviation_and_unit_id", unique: true
     t.index ["campus_id"], name: "index_tutorials_on_campus_id"
     t.index ["tutorial_stream_id"], name: "index_tutorials_on_tutorial_stream_id"
     t.index ["unit_id"], name: "index_tutorials_on_unit_id"
@@ -509,8 +517,11 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_05_055902) do
     t.string "tii_eula_version"
     t.datetime "tii_eula_date"
     t.boolean "tii_eula_version_confirmed", default: false, null: false
+    t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["login_id"], name: "index_users_on_login_id", unique: true
     t.index ["role_id"], name: "index_users_on_role_id"
+    t.index ["student_id"], name: "index_users_on_student_id", unique: true
+    t.index ["username"], name: "index_users_on_username", unique: true
   end
 
   create_table "webcal_unit_exclusions", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|

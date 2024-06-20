@@ -3,7 +3,7 @@ class Group < ApplicationRecord
   belongs_to :tutorial, optional: false
 
   has_many :group_memberships, dependent: :destroy
-  has_many :group_submissions
+  has_many :group_submissions, dependent: :restrict_with_exception
   has_many :projects, -> { where('group_memberships.active = :value and projects.enrolled = true', value: true) }, through: :group_memberships
   has_many :past_projects, -> { where('group_memberships.active = :value', value: false) }, through: :group_memberships, source: 'project'
   has_one :unit, through: :group_set
@@ -58,12 +58,17 @@ class Group < ApplicationRecord
       :can_exceed_capacity,
       :move_tutorial
     ]
+    # What can auditors do with groups?
+    auditor_role_permissions = [
+      :get_members
+    ]
     # What can nil users do with groups?
     nil_role_permissions = []
 
     # Return permissions hash
     {
       admin: admin_role_permissions,
+      auditor: auditor_role_permissions,
       convenor: convenor_role_permissions,
       tutor: tutor_role_permissions,
       student: student_role_permissions,

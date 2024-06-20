@@ -5,11 +5,11 @@ module Entities
     end
 
     def is_staff?(my_role)
-      Role.teaching_staff_ids.include?(my_role.id) unless my_role.nil?
+      [Role.tutor_id, Role.convenor_id, Role.admin_id, Role.auditor_id].include?(my_role.id) unless my_role.nil?
     end
 
-    def is_admin_staff?(my_role)
-      Role.admin_staff_ids.include?(my_role.id) unless my_role.nil?
+    def can_read_unit_config?(my_role)
+      [Role.convenor_id, Role.admin_id, Role.auditor_id].include?(my_role.id) unless my_role.nil?
     end
 
     expose :code
@@ -36,7 +36,7 @@ module Entities
 
     expose :active
 
-    expose :overseer_image_id, unless: :summary_only, if: lambda { |unit, options| is_admin_staff?(options[:my_role]) }
+    expose :overseer_image_id, unless: :summary_only, if: lambda { |unit, options| can_read_unit_config?(options[:my_role]) }
     expose :assessment_enabled, unless: :summary_only
 
     expose :auto_apply_extension_before_deadline, unless: :summary_only, if: lambda { |unit, options| is_staff?(options[:my_role]) }
@@ -56,7 +56,7 @@ module Entities
     expose :tutorials, using: TutorialEntity, unless: :summary_only
     # expose :tutorial_enrolments, using: TutorialEnrolmentEntity, unless: :summary_only, if: lambda { |unit, options| is_staff?(options[:my_role]) }
 
-    expose :task_definitions, using: TaskDefinitionEntity, unless: :summary_only
+    expose :ordered_task_definitions, as: :task_definitions, using: TaskDefinitionEntity, unless: :summary_only
     expose :task_outcome_alignments, using: TaskOutcomeAlignmentEntity, unless: :summary_only
     expose :group_sets, using: GroupSetEntity, unless: :summary_only
     expose :groups, using: GroupEntity, unless: :summary_only

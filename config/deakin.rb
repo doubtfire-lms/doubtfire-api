@@ -312,7 +312,7 @@ class DeakinInstitutionSettings
     # Get the first one
     # Return its abbreviation
     list = tutorial_stats.sort_by { |r|
-      capacity = r[:capacity].present? ? r[:capacity] : 0
+      capacity = r[:capacity].presence || 0
       capacity = 10000 if capacity <= 0
       (r[:enrolment_count] + r[:added]) / capacity
     }
@@ -340,7 +340,7 @@ class DeakinInstitutionSettings
     # subsequently withdrawn
     already_enrolled = {}
 
-    unless tp.present?
+    if tp.blank?
       logger.error "Failing to sync unit #{unit.code} as not in teaching period"
       return
     end

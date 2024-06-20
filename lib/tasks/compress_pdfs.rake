@@ -9,8 +9,8 @@ namespace :submission do
     logger.info 'Starting compress pdf'
     puts 'Starting compress pdf'
 
-    Unit.where('active').each do |u|
-      u.tasks.where('portfolio_evidence is not NULL').each do |t|
+    Unit.where('active').find_each do |u|
+      u.tasks.where('portfolio_evidence is not NULL').find_each do |t|
         if File.exist?(t.portfolio_evidence_path) && File.size?(t.portfolio_evidence_path) >= 2_200_000
           puts "Compressing #{t.portfolio_evidence_path}"
           FileHelper.compress_pdf(t.portfolio_evidence_path)
@@ -25,7 +25,7 @@ namespace :submission do
     logger.info 'Starting compress portfolios'
     puts 'Starting compress portfolios'
 
-    Unit.where('active').each do |u|
+    Unit.where('active').find_each do |u|
       puts "Unit #{u.name}"
       u.projects.select { |p| p.portfolio_exists? && File.exist?(p.portfolio_path) && File.size?(p.portfolio_path) >= 20_000_000 }.each do |p|
         puts "    Compressing #{p.portfolio_path}"
@@ -44,8 +44,8 @@ namespace :submission do
       start_executing
 
       begin
-        Unit.where('active').each do |u|
-          u.tasks.where('portfolio_evidence is not NULL').each do |t|
+        Unit.where('active').find_each do |u|
+          u.tasks.where('portfolio_evidence is not NULL').find_each do |t|
             pdf_file = t.final_pdf_path
             next unless pdf_file && File.exist?(pdf_file) && File.size?(pdf_file) >= 2_200_000
 

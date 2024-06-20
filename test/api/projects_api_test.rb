@@ -6,6 +6,7 @@ class ProjectsApiTest < ActiveSupport::TestCase
   include Rack::Test::Methods
   include TestHelpers::AuthHelper
   include TestHelpers::JsonHelper
+  include TestHelpers::TestFileHelper
 
   def app
     Rails.application
@@ -33,7 +34,6 @@ class ProjectsApiTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status
     assert_equal 1, last_response_body.count, last_response_body
   end
-
 
   def test_projects_returns_correct_number_of_projects
     user = FactoryBot.create(:user, :student, enrol_in: 2)
@@ -142,5 +142,54 @@ class ProjectsApiTest < ActiveSupport::TestCase
 
     assert_not_equal user.projects.find(project.id).submitted_grade, 1
     assert_equal 403, last_response.status
+  end
+
+  def test_download_portfolio
+    project = FactoryBot.create(:project)
+    unit = project.unit
+
+    project.portfolio_production_date = Time.zone.now
+    project.save
+
+    `fallocate -l 10M #{project.portfolio_path}`
+
+    assert File.exist?(project.portfolio_path)
+    assert project.portfolio_exists?
+
+    data_to_put = {
+      as_attachment: true
+    }
+
+    add_auth_header_for(user: project.student)
+
+    get "/api/submission/project/#{project.id}/portfolio", data_to_put
+    assert_equal 200, last_response.status
+    assert last_response.header['Content-Disposition'].starts_with?('attachment; filename=')
+    assert_equal 'Content-Disposition', last_response.header['Access-Control-Expose-Headers']
+    assert last_response.header['Content-Type'] == 'application/pdf'
+    assert 10_485_760, last_response.length
+
+    `fallocate -l 11M #{project.portfolio_path}`
+    get "/api/submission/project/#{project.id}/portfolio", data_to_put
+    assert_equal 206, last_response.status
+    assert 10_485_760, last_response.length
+
+    data_to_put = {
+      as_attachment: false
+    }
+
+    add_auth_header_for(user: project.student)
+    header 'range', 'bytes=1000-1500'
+
+    get "/api/submission/project/#{project.id}/portfolio", data_to_put
+    assert 500, last_response.length
+    assert_equal 206, last_response.status
+    assert_nil last_response.header['Content-Disposition']
+    assert_equal 'Content-Range,Accept-Ranges', last_response.header['Access-Control-Expose-Headers']
+    assert last_response.header['Content-Type'] == 'application/pdf'
+
+    unit.destroy!
+  ensure
+    FileUtils.rm_f(project.portfolio_path)
   end
 end

@@ -53,7 +53,7 @@ module AuthenticationHelpers
   #
   def current_user
     username = headers['username'] || headers['Username'] || params['username']
-    User.eager_load(:role, :auth_tokens).find_by_username(username)
+    User.eager_load(:role, :auth_tokens).find_by(username: username)
   end
 
   #
