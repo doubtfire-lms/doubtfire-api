@@ -1198,7 +1198,7 @@ class TutorialsTest < ActiveSupport::TestCase
 
     # Check on error of incorrect tutorial ID
     assert_equal 404, last_response.status
-    assert_equal 'id is invalid', last_response_body['error']
+    assert last_response.body.include?('Not Found'), last_response.body
   end
 
   def test_delete_tutorials_with_empty_auth_token

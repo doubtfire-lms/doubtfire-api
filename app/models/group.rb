@@ -4,8 +4,10 @@ class Group < ApplicationRecord
 
   has_many :group_memberships, dependent: :destroy
   has_many :group_submissions, dependent: :destroy
+
   has_many :projects, -> { where('group_memberships.active = :value and projects.enrolled = true', value: true) }, through: :group_memberships
   has_many :past_projects, -> { where('group_memberships.active = :value', value: false) }, through: :group_memberships, source: 'project'
+
   has_one :unit, through: :group_set
   has_one :tutor, through: :tutorial
 

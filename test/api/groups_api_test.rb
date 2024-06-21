@@ -81,6 +81,9 @@ class GroupsApiTest < ActiveSupport::TestCase
         assert_equal TaskStatus.ready_for_feedback, task.task_status
     end
 
+    # ensure groupset has groups to destroy
+    group_set.reload
+
     td.destroy
     group_set.destroy
   end

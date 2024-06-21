@@ -366,7 +366,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     # and no errors
     reader.pages.each do |page|
       assert_not page.text.include? 'The rest of this line has been truncated by the system to improve readability.'
-      assert_not page.text.include? 'ERROR when parsing'
+      assert_not page.text.include?('ERROR when parsing'), page.text
     end
 
     # test line wrapping in jupynotex

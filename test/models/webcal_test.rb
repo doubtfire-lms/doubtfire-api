@@ -111,11 +111,11 @@ class WebcalTest < ActiveSupport::TestCase
   end
 
   test 'Includes events with extended date if available' do
-
     # Apply for an extension on one task
     td = @current_unit_1.task_definitions.first
     task = @current_project_1.task_for_task_definition(td)
     comment = task.apply_for_extension(@student, 'extension', 1)
+    comment.assess_extension(task.tutor, true)
 
     # Detect corresponding Ical event
     cal = @webcal.to_ical
