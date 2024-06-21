@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.0.2](https://github.com/macite/doubtfire-deploy/compare/v8.0.1...v8.0.2) (2024-06-21)
+
+
+### Bug Fixes
+
+* ensure file stream has a string path ([fa5ca52](https://github.com/macite/doubtfire-deploy/commit/fa5ca52b1e2470fbb2537e15259f30946b1e8a54))
+
 ### [8.0.1](https://github.com/macite/doubtfire-deploy/compare/v7.0.32...v8.0.1) (2024-06-21)
 
 
