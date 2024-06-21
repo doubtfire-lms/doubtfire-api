@@ -3,6 +3,8 @@ module FileStreamHelper
   # file_path is the path to the file to be streamed
   # this will set the headers and return the content
   def stream_file(file_path)
+    # Ensure we have a file path string
+    file_path = file_path.to_s
     # Work out what part to return
     file_size = File.size(file_path)
     begin_point = 0
