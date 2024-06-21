@@ -2,6 +2,167 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.0.1](https://github.com/macite/doubtfire-deploy/compare/v7.0.32...v8.0.1) (2024-06-21)
+
+
+### Bug Fixes
+
+* correct handling of group submissions ([931c9dd](https://github.com/macite/doubtfire-deploy/commit/931c9dd4280e31e935f796bf1d349add1b431c63))
+* correct ipynb code ([9e2056d](https://github.com/macite/doubtfire-deploy/commit/9e2056d8d721325683d115db2356fbca8f7380c7))
+* correct issues with missing rsvg convert and identified test problems ([2024350](https://github.com/macite/doubtfire-deploy/commit/2024350f8080928597bad2b00f6aacd7a6a1be1f))
+* correct merge issues to ensure tests pass ([192bd41](https://github.com/macite/doubtfire-deploy/commit/192bd4175607f8ac2efa1acb6f029883a3bdcea1))
+* correct typos in unit role needed for teaching role ([f808ad4](https://github.com/macite/doubtfire-deploy/commit/f808ad437f424f40a4eb68d5218ddf4317ba44b6))
+* ensure error reported when viewer not available ([2aaacb6](https://github.com/macite/doubtfire-deploy/commit/2aaacb6e9c181b260e9c7f62f362dd1da2ab98ad))
+* ensure ipynb handles markdown, raw, and long output ([955ca0b](https://github.com/macite/doubtfire-deploy/commit/955ca0bf844ad673a445e04012e6950a07f748d8))
+* handle long, raw, and markdown ipynb ([609b49b](https://github.com/macite/doubtfire-deploy/commit/609b49bf1b73af9eeeb66e4788c7d6dffbca94fa))
+* limit to 3 group attachments in tii upload ([5252639](https://github.com/macite/doubtfire-deploy/commit/525263903a11af362d78b82c8065a665024a3a1f))
+* reinstate teaching staff ids ([167eb1a](https://github.com/macite/doubtfire-deploy/commit/167eb1a144ad667d00a8b7c9a469115943048fc4))
+* task file import ([#438](https://github.com/macite/doubtfire-deploy/issues/438)) ([8f37943](https://github.com/macite/doubtfire-deploy/commit/8f379430fd48b0449ef21f680165e4323cad1750))
+* truncate long lines in PDF conversion ([#439](https://github.com/macite/doubtfire-deploy/issues/439)) ([2425997](https://github.com/macite/doubtfire-deploy/commit/2425997305afb4f6a7964a7cd689a04418828ea1))
+
+## [8.0.0-11](https://github.com/macite/doubtfire-deploy/compare/v8.0.0-10...v8.0.0-11) (2024-05-13)
+
+## [8.0.0-10](https://github.com/macite/doubtfire-deploy/compare/v8.0.0-9...v8.0.0-10) (2024-05-13)
+
+
+### Bug Fixes
+
+* host url for turn it in integration ([3cd67d7](https://github.com/macite/doubtfire-deploy/commit/3cd67d7c58916cda429d3c0266942cfc2c0ef878))
+
+## [8.0.0-9](https://github.com/macite/doubtfire-deploy/compare/v8.0.0-8...v8.0.0-9) (2024-05-11)
+
+
+### Bug Fixes
+
+* ensure default log in tii actions ([a9959fe](https://github.com/macite/doubtfire-deploy/commit/a9959fef2223ffca41338b15c973b888253225bf))
+* ensure tii launch handles errors so rails can progress ([d7c9c3c](https://github.com/macite/doubtfire-deploy/commit/d7c9c3c8c60b49721aa9cac1f8df6ec716b82422))
+* revert to default cache store ([c3a22bf](https://github.com/macite/doubtfire-deploy/commit/c3a22bfee6e9912fd8b4d331d6a6e6f350b72ffa))
+
+## [8.0.0-8](https://github.com/macite/doubtfire-deploy/compare/v8.0.0-7...v8.0.0-8) (2024-05-11)
+
+
+### Bug Fixes
+
+* adjust log and params in tii_actions ([4bfdfb1](https://github.com/macite/doubtfire-deploy/commit/4bfdfb1faf5bbaf45ec7827ec89e4cd231f88dba))
+* display latex math properly in jupyter notebooks ([ba6d615](https://github.com/macite/doubtfire-deploy/commit/ba6d61506a5f699aed299658f9a664123fdaf57b))
+* update for dotenv 3 ([ef8611f](https://github.com/macite/doubtfire-deploy/commit/ef8611f917b198064a891f81c02408ff081e977b))
+
+## [8.0.0-7](https://github.com/macite/doubtfire-deploy/compare/v8.0.0-6...v8.0.0-7) (2024-05-02)
+
+## [8.0.0-6](https://github.com/macite/doubtfire-deploy/compare/v8.0.0-5...v8.0.0-6) (2024-05-02)
+
+
+### Bug Fixes
+
+* revert to doubtfire local image for unit tests ([73fcbe3](https://github.com/macite/doubtfire-deploy/commit/73fcbe3f5adb603253033e7b126502a5d3c006f1))
+
+## [8.0.0-5](https://github.com/macite/doubtfire-deploy/compare/v8.0.0-4...v8.0.0-5) (2024-05-02)
+
+
+### Bug Fixes
+
+* correct updates in TII migration ([d1ab30b](https://github.com/macite/doubtfire-deploy/commit/d1ab30ba666898f556b69db53766124742b4f593))
+
+## [8.0.0-4](https://github.com/macite/doubtfire-deploy/compare/v7.0.24...v8.0.0-4) (2024-05-01)
+
+
+### Features
+
+* add the pdf-reader gem for validating pdf submissions ([71c845b](https://github.com/macite/doubtfire-deploy/commit/71c845bf28fccf28de17ed83e3da1cf243646e7b))
+* implement unit test for pdf validation on submit ([57db1dc](https://github.com/macite/doubtfire-deploy/commit/57db1dc57a75aaf211030ecf78b9252a5d8b583b))
+* improve pdf file validation and detect encrypted pdfs ([dd729cf](https://github.com/macite/doubtfire-deploy/commit/dd729cf31bec115bd0e7018f33a692bd35bb5519))
+
+
+### Bug Fixes
+
+* add missing moss language in task def post ([1fa7b0b](https://github.com/macite/doubtfire-deploy/commit/1fa7b0b10f855bc2e23aa27e78ed41ff3e5b4683))
+* add redis to the github actions workflow ([9935720](https://github.com/macite/doubtfire-deploy/commit/99357205d42d148f3a6165a96122691680409092))
+* correct tii migrationm defaults ([2beb6e8](https://github.com/macite/doubtfire-deploy/commit/2beb6e8599cf6b99992e34548615e7802e7ff141))
+* document two new env variables for redis ([749903f](https://github.com/macite/doubtfire-deploy/commit/749903f390a388fac2c2a8652975580611f1e072))
+* implement error reporting in database populator ([136b9f9](https://github.com/macite/doubtfire-deploy/commit/136b9f98151688d3d6a578db1f980b39b3e21514))
+* install ruby-lsp in the development environment ([c57290e](https://github.com/macite/doubtfire-deploy/commit/c57290e4b2f7ba1bab7d600965988489dc3dd5a4))
+* pick up redis url from env for sidekiq if present ([e9628eb](https://github.com/macite/doubtfire-deploy/commit/e9628eb31398719d78508a610a251a785f56a14f))
+* remove plagiarism checks field ([19107bf](https://github.com/macite/doubtfire-deploy/commit/19107bf87601115ea15036f25634b2ba30e23c7c))
+* remove serialisation of plagiarism checks ([1962cc9](https://github.com/macite/doubtfire-deploy/commit/1962cc96ff46134d756984473d1022792e9ada1a))
+* skip unit tests and linting for documentation updates ([2503fe6](https://github.com/macite/doubtfire-deploy/commit/2503fe61468f8ebe37e54ccb1d0cc2a11387949b))
+
+## [8.0.0-3](https://github.com/macite/doubtfire-deploy/compare/v7.0.23...v8.0.0-3) (2024-03-22)
+
+
+### Bug Fixes
+
+* ensure redis is in dockerfile ([c37f5ba](https://github.com/macite/doubtfire-deploy/commit/c37f5ba0e78fbbb6fb1f7423f8b1bbabb557f761))
+* revert new tii action field to text from json ([72a8f18](https://github.com/macite/doubtfire-deploy/commit/72a8f18c31a3b5476f4f7b414b54cf47e3db8087))
+
+## [8.0.0-2](https://github.com/macite/doubtfire-deploy/compare/v8.0.0-1...v8.0.0-2) (2024-03-22)
+
+
+### Bug Fixes
+
+* remove switch to json db format ([1b789a2](https://github.com/macite/doubtfire-deploy/commit/1b789a2194b745a6f91f8989c12c9387932ca70c))
+
+## [8.0.0-1](https://github.com/macite/doubtfire-deploy/compare/v8.0.0-0...v8.0.0-1) (2024-03-21)
+
+## [8.0.0-0](https://github.com/macite/doubtfire-deploy/compare/v7.0.22...v8.0.0-0) (2024-03-21)
+
+
+### Features
+
+* add ability to adjust similarity flag ([339acf8](https://github.com/macite/doubtfire-deploy/commit/339acf8d741ff8d53b9cf1bb7a00e88907d8a183))
+* add ability to fetch tii viewer url ([002bb07](https://github.com/macite/doubtfire-deploy/commit/002bb07972f9364eea74563af66efa8f783c2c2e))
+* add api to interact with tii group attachments ([f286302](https://github.com/macite/doubtfire-deploy/commit/f2863020a3619f097c182c98b1392e5c05e7c7c0))
+* add similarity report webhook ([07157f9](https://github.com/macite/doubtfire-deploy/commit/07157f9f0c6bbbc8d07b37807562b0ec00606c97))
+* add submission tii hook ([3f1c8ca](https://github.com/macite/doubtfire-deploy/commit/3f1c8ca1e9ef25b010c7a9061b986ce514775a71))
+* add tii submission to enable retry ([e38e884](https://github.com/macite/doubtfire-deploy/commit/e38e88423779a0d92cfe22eb96cc4e3d5ac07582))
+* add upload tii group attachment ([aa10e35](https://github.com/macite/doubtfire-deploy/commit/aa10e35c45920ef0504dd9073a1c38470cae39da))
+* allow score to 100 for tasks ([757d184](https://github.com/macite/doubtfire-deploy/commit/757d1845a48f5ec967b7094940b50e2bd4478ab4))
+* asynchronously process submissions ([5a1ab9c](https://github.com/macite/doubtfire-deploy/commit/5a1ab9c051e054f7a30f6a1958c78f14b226d365))
+* cache tii details in files ([ae2208c](https://github.com/macite/doubtfire-deploy/commit/ae2208c344c0959382e833557ccc69227e471da3))
+* can fetch and retry tii actions ([81ee714](https://github.com/macite/doubtfire-deploy/commit/81ee714c7c0043502100758accc3d526ee3d73e9))
+* check tii features ([21a0fcc](https://github.com/macite/doubtfire-deploy/commit/21a0fcc324f184e0de416fa7091f1e57ba33f329))
+* delay generation for a short period to allow sidekiq to handle ([a53a998](https://github.com/macite/doubtfire-deploy/commit/a53a9980c56556b3e65321ac8e0ca455ea9f2ce6))
+* ensure correct error when no token ([0aa8e71](https://github.com/macite/doubtfire-deploy/commit/0aa8e7130551a2f6e4c76302179a13aadb720344))
+* ensure eula loads from file where possible ([aa4d7e8](https://github.com/macite/doubtfire-deploy/commit/aa4d7e86649f60cce5ebbbcb5f403b64e31315f9))
+* ensure only high similarity for tii reported ([4c4e55a](https://github.com/macite/doubtfire-deploy/commit/4c4e55a9b8febc2d18954a4baf8de1d5993341de))
+* ensure turn it in viewer only available when report ready ([124558f](https://github.com/macite/doubtfire-deploy/commit/124558f6c2c28d14e8fd47fb7e5ab0fac09425d0))
+* move cache to redis to share across instances ([63ab5b2](https://github.com/macite/doubtfire-deploy/commit/63ab5b27a8b142209dd6bcf9aa148ada56a04a91))
+* pdf report web hook ([355b375](https://github.com/macite/doubtfire-deploy/commit/355b37582b2d430d66c2aafc1cc545c049fd5d78))
+* record max similarity percent and flag high tii submissions ([9f56be9](https://github.com/macite/doubtfire-deploy/commit/9f56be9a1fc562f0429ce73b7aab0ce4b7775c23))
+* record overall match percent in tii submission ([f0bd981](https://github.com/macite/doubtfire-deploy/commit/f0bd981ffe6aa967093ed7ce992b37a81aa7a4e3))
+* register turn it in webhooks ([b3fbc45](https://github.com/macite/doubtfire-deploy/commit/b3fbc45c759b34f7ab31bc251e1f441e3a0dbe36))
+* report tii presence via settings api ([5354584](https://github.com/macite/doubtfire-deploy/commit/5354584db125c4186cf23643ad672fadab367f9d))
+* report tii upload action status ([6dadc16](https://github.com/macite/doubtfire-deploy/commit/6dadc1630d5a88dbba69c3d05092a25d21653fd2))
+* trigger tii group attachment on change ([4adee6b](https://github.com/macite/doubtfire-deploy/commit/4adee6bafa71b9a2db91970932a84a517bf72c2c))
+* update group on due date change ([98187f1](https://github.com/macite/doubtfire-deploy/commit/98187f1b5c4a5751ddd2c051e93cfc9cdba6fbfd))
+
+
+### Bug Fixes
+
+* add description to tii actions ([039ca1a](https://github.com/macite/doubtfire-deploy/commit/039ca1a40f6ccfeb671de5f2400a58b71c210b5d))
+* change load of tii eula and feature to use file cache ([d17c5d6](https://github.com/macite/doubtfire-deploy/commit/d17c5d6fa69a7916a19807fe645bdcb3b8c1f428))
+* change tii batch upload to limit submission rate ([984524f](https://github.com/macite/doubtfire-deploy/commit/984524fbc3c04c04337137672554c25c8ea6c0de))
+* correct latex packages for texlive 2024 ([1e52ea5](https://github.com/macite/doubtfire-deploy/commit/1e52ea5a01e514f29eabae6ee6de655dd527ed79))
+* create missing portfolios ([259baa6](https://github.com/macite/doubtfire-deploy/commit/259baa6dd863122eccaec3d88d7fdfaaf1bb97e4))
+* ensure endpoint can accept eula ([f8a69a7](https://github.com/macite/doubtfire-deploy/commit/f8a69a72bf9a8a425d4f0d63fa1f36112390ac8a))
+* ensure file download returns something ([3439bab](https://github.com/macite/doubtfire-deploy/commit/3439babcd521155f1c78d76f71717c0645c23d95))
+* ensure similarities without files work in ui ([bbbedb7](https://github.com/macite/doubtfire-deploy/commit/bbbedb7e2dfecf96c7a31e628e6f3824bdbb033d))
+* ensure staff before tutorial data ([953068e](https://github.com/macite/doubtfire-deploy/commit/953068e219df6c3722a44389deca837d3cd47380))
+* ensure tests work and address tii check list items ([3dc5cb1](https://github.com/macite/doubtfire-deploy/commit/3dc5cb1f37ee1707da8b3f42f39b1bd43b2e5f09))
+* ensure tii initializer loads correctly ([0339ce5](https://github.com/macite/doubtfire-deploy/commit/0339ce5e1fa76e82bb82bf2b516f1ae990944e27))
+* ensure we can get the report url for moss reports ([582d13a](https://github.com/macite/doubtfire-deploy/commit/582d13a292f56e7d6294fb636b1aeb4228b98426))
+* ensure we do not ask to accept eula if not required ([3df2ade](https://github.com/macite/doubtfire-deploy/commit/3df2ade168970741b80413f396dbb6b312124cf0))
+* ensure we send indexing and eula details in viewer and submissions ([38d4059](https://github.com/macite/doubtfire-deploy/commit/38d4059bf2f301896c27fea83d635b496c218a0a))
+* eula link in upload action ([96e8bce](https://github.com/macite/doubtfire-deploy/commit/96e8bce8354026865a7792a62acc8898c7d18dee))
+* get tii user details for viewer url ([c7de571](https://github.com/macite/doubtfire-deploy/commit/c7de57158aa630fe62f430c247ad277baba49e5a))
+* no auth mirrors timeout ([b83f09c](https://github.com/macite/doubtfire-deploy/commit/b83f09c3b10f3d93216c34d1adb642d43c82476b))
+* only admin can retry tii actions ([7e019cc](https://github.com/macite/doubtfire-deploy/commit/7e019cc34005d8de6b69f6c4475a79e4e2ceff37))
+* remove debugging ([c6d067a](https://github.com/macite/doubtfire-deploy/commit/c6d067aed1dd6b283615a12706a7e9ed4c452052))
+* remove max pct similar ([87bc428](https://github.com/macite/doubtfire-deploy/commit/87bc42888d28fe6911fd25281845e54ab290bd8f))
+* rescue missing action in job ([ea84ac2](https://github.com/macite/doubtfire-deploy/commit/ea84ac21fbfbf72cb476458261f943e1a8ddbf4f))
+* simulate signoff adds similarities ([74a74e0](https://github.com/macite/doubtfire-deploy/commit/74a74e07dc7a61d56472e19ca49787d8ec2890cb))
+* update save status on actions ([096aee6](https://github.com/macite/doubtfire-deploy/commit/096aee685d2cf0652092b4f87a319de73e1dd1e9))
+* update schema to match migration dates ([5c1afe4](https://github.com/macite/doubtfire-deploy/commit/5c1afe421dd41b8f56284e776ce39996b3f28d71))
+
 ## [8.0.0](https://github.com/macite/doubtfire-deploy/compare/v8.0.0-11...v8.0.0) (2024-05-23)
 
 
