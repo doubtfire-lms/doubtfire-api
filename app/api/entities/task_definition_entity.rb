@@ -21,7 +21,7 @@ module Entities
       expose :start_date
     end
 
-    expose :upload_requirements do |task_definition, options|
+    expose :upload_requirements, expose_nil: false do |task_definition, options|
       if staff?(options[:my_role])
         task_definition.upload_requirements
       else
@@ -35,14 +35,14 @@ module Entities
     end
     expose :plagiarism_warn_pct, if: ->(unit, options) { staff?(options[:my_role]) }
     expose :restrict_status_updates, if: ->(unit, options) { staff?(options[:my_role]) }
-    expose :group_set_id
+    expose :group_set_id, expose_nil: false
     expose :has_task_sheet?, as: :has_task_sheet
     expose :has_task_resources?, as: :has_task_resources
     expose :has_task_assessment_resources?, as: :has_task_assessment_resources, if: ->(unit, options) { staff?(options[:my_role]) }
     expose :is_graded
     expose :max_quality_pts
-    expose :overseer_image_id, if: ->(unit, options) { staff?(options[:my_role]) }
+    expose :overseer_image_id, if: ->(unit, options) { staff?(options[:my_role]) }, expose_nil: false
     expose :assessment_enabled, if: ->(unit, options) { staff?(options[:my_role]) }
-    expose :moss_language, if: ->(unit, options) { staff?(options[:my_role]) }
+    expose :moss_language, if: ->(unit, options) { staff?(options[:my_role]) }, expose_nil: false
   end
 end
