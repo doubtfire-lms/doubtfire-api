@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.0.3](https://github.com/macite/doubtfire-deploy/compare/v8.0.2...v8.0.3) (2024-06-25)
+
+
+### Bug Fixes
+
+* export task definition to csv ([793b734](https://github.com/macite/doubtfire-deploy/commit/793b73466fa468f1cb51ed69a07d1c8701dff3a8))
+* limit exposure of nil for task def fields ([fc1bcfd](https://github.com/macite/doubtfire-deploy/commit/fc1bcfd88407f877d6ed7fadc6f70a8dad0e279f))
+
 ### [8.0.2](https://github.com/macite/doubtfire-deploy/compare/v8.0.1...v8.0.2) (2024-06-21)
 
 
