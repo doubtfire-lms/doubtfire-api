@@ -278,7 +278,7 @@ class TaskDefinition < ApplicationRecord
                   .map { |column| attributes[column.to_s] } +
       [
         group_set.nil? ? "" : group_set.name,
-        upload_requirements.to_s,
+        upload_requirements.to_json,
         start_week,
         start_day,
         target_week,
