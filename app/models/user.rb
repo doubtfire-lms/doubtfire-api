@@ -108,6 +108,15 @@ class User < ApplicationRecord
   end
 
   #
+  # Generate an authentication token for scorm asset retrieval
+  #
+  def generate_scorm_authentication_token!
+    # Ensure this user is saved... so it has an id
+    self.save unless self.persisted?
+    AuthToken.generate(self, false, Time.zone.now + 2.hours, 'scorm')
+  end
+
+  #
   # Returns whether the authentication token has expired
   #
   def authentication_token_expired?
@@ -344,8 +353,8 @@ class User < ApplicationRecord
 
     # What can students do with users?
     student_role_permissions = [
-      :get_teaching_periods
-
+      :get_teaching_periods,
+      :get_scorm_test
     ]
 
     # Return the permissions hash

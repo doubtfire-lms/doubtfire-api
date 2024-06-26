@@ -4,10 +4,11 @@ require 'mime/types'
 class ScormApi < Grape::API
   # Include the AuthenticationHelpers for authentication functionality
   helpers AuthenticationHelpers
+  helpers AuthorisationHelpers
 
-  # before do
-  #   authenticated?
-  # end
+  before do
+    authenticated?
+  end
 
   helpers do
     # Method to stream a file from a zip archive at the specified path
@@ -51,7 +52,11 @@ class ScormApi < Grape::API
   params do
     requires :task_def_id, type: Integer, desc: 'Task Definition ID to get SCORM test data for'
   end
-  get '/scorm/:task_def_id/*file_path' do
+  get '/scorm/:task_def_id/:username/:auth_token/*file_path' do
+    unless authorise? current_user, User, :get_scorm_test
+      error!({ error: 'You cannot access SCORM tests' }, 403)
+    end
+
     env['api.format'] = :txt
     task_def = TaskDefinition.find(params[:task_def_id])
     if task_def.has_scorm_data?

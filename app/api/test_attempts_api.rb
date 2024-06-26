@@ -4,6 +4,7 @@ class TestAttemptsApi < Grape::API
   format :json
 
   helpers AuthenticationHelpers
+  helpers AuthorisationHelpers
 
   before do
     authenticated?
