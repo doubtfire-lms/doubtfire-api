@@ -216,7 +216,7 @@ module FileHelper
     dst = "#{file_server}/" # trust the server config and passed in type for paths
     dst << sanitized_path("#{unit_code}-#{unit_id}") << '/'
 
-    FileUtils.mkdir_p dst if create && (!Dir.exist?(dst))
+    FileUtils.mkdir_p dst if create && !Dir.exist?(dst)
 
     dst
   end
