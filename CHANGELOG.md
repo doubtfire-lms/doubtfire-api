@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.0.5](https://github.com/macite/doubtfire-deploy/compare/v8.0.4...v8.0.5) (2024-06-27)
+
+
+### Bug Fixes
+
+* ensure new units can have a different main convenor ([44b6566](https://github.com/macite/doubtfire-deploy/commit/44b656605e44a529078656ba9174b843056e0e31))
+
 ### [8.0.4](https://github.com/macite/doubtfire-deploy/compare/v8.0.3...v8.0.4) (2024-06-27)
 
 
