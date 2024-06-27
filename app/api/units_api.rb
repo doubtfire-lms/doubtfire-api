@@ -189,8 +189,13 @@ class UnitsApi < Grape::API
                                                     :allow_student_change_tutorial,
                                                   )
 
+    # Ensure the user is authorised to convene units
+    unless authorise? current_user, User, :convene_units
+      error!({ error: 'You are not authorised to manage units' }, 403)
+    end
+
     # Identify main convenor - ensure they have the correct role
-    main_convenor_user = unit_parameters[:main_convenor_user_id].present? ? User.find(unit_parameters[:main_convenor_user_id]) : current_user
+    main_convenor_user = params[:unit][:main_convenor_user_id].present? ? User.find(params[:unit][:main_convenor_user_id]) : current_user
 
     if main_convenor_user.blank?
       error!({ error: 'Main convenor user not found' }, 403)
