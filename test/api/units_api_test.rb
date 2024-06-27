@@ -49,6 +49,82 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert_equal expected_unit[:name], Unit.last.name
   end
 
+  # Test POST for creating new unit
+  def test_units_post_other_main_convenor
+    data_to_post = {
+      unit: {
+        name: 'Intro to Social Skills',
+        code: 'JRRW40003',
+        start_date: '2016-05-14',
+        end_date: '2017-05-14',
+        main_convenor_user_id: 2
+      }
+    }
+    expected_unit = data_to_post[:unit]
+    unit_count = Unit.all.length
+
+    # Add username and auth_token to Header
+    add_auth_header_for(user: User.first)
+
+    # The post that we will be testing.
+    post_json '/api/units.json', data_to_post
+
+    assert_equal 201, last_response.status, last_response_body
+
+    # Check to see if the unit's name matches what was expected
+    actual_unit = last_response_body
+
+    assert_equal expected_unit[:name], actual_unit['name']
+    assert_equal expected_unit[:code], actual_unit['code']
+    assert_equal expected_unit[:start_date], actual_unit['start_date']
+    assert_equal expected_unit[:end_date], actual_unit['end_date']
+
+    assert_equal unit_count + 1, Unit.all.count
+    assert_equal expected_unit[:name], Unit.last.name
+
+    assert_equal 2, Unit.last.main_convenor_user.id
+  end
+
+  # Test POST for creating new unit - but with student main convenor
+  def test_units_post_other_main_convenor_not_permitted
+    data_to_post = {
+      unit: {
+        name: 'Intro to Social Skills',
+        code: 'JRRW40003',
+        start_date: '2016-05-14',
+        end_date: '2017-05-14',
+        main_convenor_user_id: User.where(role: Role.student).first.id
+      }
+    }
+
+    # Add username and auth_token to Header
+    add_auth_header_for(user: User.first)
+
+    # The post that we will be testing.
+    post_json '/api/units.json', data_to_post
+    assert_equal 403, last_response.status, last_response_body
+  end
+
+  # Test POST for creating new unit
+  def test_units_post_other_main_convenor_not_permitted_for_student
+    data_to_post = {
+      unit: {
+        name: 'Intro to Social Skills',
+        code: 'JRRW40003',
+        start_date: '2016-05-14',
+        end_date: '2017-05-14',
+        main_convenor_user_id: User.where(role: Role.convenor).first.id
+      }
+    }
+
+    # Add username and auth_token to Header
+    add_auth_header_for(user: User.where(role: Role.student).first)
+
+    # The post that we will be testing.
+    post_json '/api/units.json', data_to_post
+    assert_equal 403, last_response.status, last_response_body
+  end
+
   def create_unit
     {
       name:'Intro to Social Skills',
