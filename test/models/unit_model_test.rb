@@ -715,4 +715,47 @@ class UnitModelTest < ActiveSupport::TestCase
     end
   end
 
+  def test_change_unit_code_moves_files
+    unit = FactoryBot.create :unit, student_count: 1, unenrolled_student_count: 0, inactive_student_count: 0, task_count: 1, tutorials: 1, outcome_count: 0, staff_count: 0, campus_count: 1
+
+    td = unit.task_definitions.first
+    assert_not File.exist?(td.task_sheet)
+    FileUtils.touch(td.task_sheet)
+    assert File.exist?(td.task_sheet)
+
+    old_path = td.task_sheet
+
+    # also check tasks
+    p = unit.projects.first
+    task = p.task_for_task_definition(td)
+    task_pdf = task.final_pdf_path
+    task.portfolio_evidence_path = task_pdf
+    task.save!
+    FileUtils.touch(task_pdf)
+
+    assert File.exist?(task_pdf)
+    assert task_pdf.include?(unit.code)
+    assert task_pdf.include?(unit.id.to_s)
+
+    unit.code = "New-#{unit.code}"
+    unit.save!
+
+    td.reload
+    task.reload
+
+    assert_not_equal old_path, td.task_sheet
+    assert_not File.exist?(old_path), "Old file still exists"
+    assert File.exist?(td.task_sheet), "New file does not exist"
+
+    assert_not_equal task.final_pdf_path, task_pdf
+    assert_not File.exist?(task_pdf), "Old task file still exists"
+    assert File.exist?(task.final_pdf_path), "New task file does not exist"
+
+    assert_equal task.final_pdf_path, task.portfolio_evidence_path
+    assert File.exist?(task.portfolio_evidence_path), "Portfolio evidence file does not exist = #{task.portfolio_evidence_path}"
+    assert task.has_pdf
+
+    unit.destroy!
+  end
+
 end

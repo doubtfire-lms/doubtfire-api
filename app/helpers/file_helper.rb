@@ -211,14 +211,18 @@ module FileHelper
     dst
   end
 
-  def unit_dir(unit, create = true)
+  def dir_for_unit_code_and_id(unit_code, unit_id, create = true)
     file_server = Doubtfire::Application.config.student_work_dir
     dst = "#{file_server}/" # trust the server config and passed in type for paths
-    dst << sanitized_path("#{unit.code}-#{unit.id}") << '/'
+    dst << sanitized_path("#{unit_code}-#{unit_id}") << '/'
 
-    FileUtils.mkdir_p dst if create && (!Dir.exist? dst)
+    FileUtils.mkdir_p dst if create && (!Dir.exist?(dst))
 
     dst
+  end
+
+  def unit_dir(unit, create = true)
+    dir_for_unit_code_and_id(unit.code, unit.id, create)
   end
 
   def unit_portfolio_dir(unit, create = true)
@@ -624,6 +628,7 @@ module FileHelper
   module_function :student_group_work_dir
   module_function :student_work_dir
   module_function :student_work_root
+  module_function :dir_for_unit_code_and_id
   module_function :unit_dir
   module_function :unit_portfolio_dir
   module_function :student_portfolio_dir

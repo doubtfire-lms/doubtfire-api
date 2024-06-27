@@ -114,6 +114,7 @@ class Unit < ApplicationRecord
     delete_associated_files
   end
 
+  after_update :move_files_on_code_change, if: :saved_change_to_code?
   after_update :propogate_date_changes_to_tasks, if: :saved_change_to_start_date?
 
   # Model associations.
@@ -2567,5 +2568,19 @@ class Unit < ApplicationRecord
     task_definitions.each do |td|
       td.propogate_date_changes date_diff
     end
+  end
+
+  def move_files_on_code_change
+    return unless saved_change_to_code?
+
+    old_dir = FileHelper.dir_for_unit_code_and_id(saved_change_to_code[0], id, false)
+    if File.exist? old_dir
+      new_dir = FileHelper.unit_dir(self, false)
+      FileUtils.mv(old_dir, new_dir) unless File.exist?(new_dir)
+    end
+
+    # rubocop:disable Rails/SkipsModelValidations
+    tasks.update_all("portfolio_evidence = REPLACE(portfolio_evidence, '#{saved_change_to_code[0]}-#{id}', '#{code}-#{id}')")
+    # rubocop:enable Rails/SkipsModelValidations
   end
 end
