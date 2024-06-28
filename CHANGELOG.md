@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.0.6](https://github.com/macite/doubtfire-deploy/compare/v8.0.5...v8.0.6) (2024-06-28)
+
+
+### Bug Fixes
+
+* ensure upload requirements works in edit ([61f35ce](https://github.com/macite/doubtfire-deploy/commit/61f35cecf8b4af9ab520bfcc9bde72a0d11c7481))
+
 ### [8.0.5](https://github.com/macite/doubtfire-deploy/compare/v8.0.4...v8.0.5) (2024-06-27)
 
 
