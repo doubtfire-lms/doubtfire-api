@@ -63,9 +63,9 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     td = unit.task_definitions.first
 
     assert_json_matches_model td, last_response_body, all_task_def_keys
+    assert_equal [{ "key" => "file0", "name" => "Shape Class", "type" => "document" }], td.upload_requirements
     assert_equal unit.tutorial_streams.first.id, td.tutorial_stream_id
     assert_equal 4, td.weighting
-
 
     data_to_put = {
       task_def: {
@@ -97,6 +97,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
 
     assert_json_matches_model td, last_response_body, all_task_def_keys
     assert_equal unit.tutorial_streams.last.id, td.tutorial_stream_id
+    assert_equal [{ "key" => "file0", "name" => "Other Class", "type" => "document" }], td.upload_requirements
     assert_equal 2, td.weighting
   end
 
