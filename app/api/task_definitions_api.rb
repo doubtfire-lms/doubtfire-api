@@ -42,8 +42,6 @@ class TaskDefinitionsApi < Grape::API
       error!({ error: 'Not authorised to create a task definition of this unit' }, 403)
     end
 
-    params[:task_def][:upload_requirements] = [] if params[:task_def][:upload_requirements].nil?
-
     task_params = ActionController::Parameters.new(params)
                                               .require(:task_def)
                                               .permit(
@@ -61,11 +59,13 @@ class TaskDefinitionsApi < Grape::API
                                                 :max_quality_pts,
                                                 :assessment_enabled,
                                                 :overseer_image_id,
-                                                :moss_language
+                                                :moss_language,
+                                                :upload_requirements,
+                                                :unit_id
                                               )
 
     task_params[:unit_id] = unit.id
-    task_params[:upload_requirements] = JSON.parse(params[:task_def][:upload_requirements]) unless params[:task_def][:upload_requirements].nil?
+    task_params[:upload_requirements] = params[:task_def][:upload_requirements].present? ? JSON.parse(params[:task_def][:upload_requirements]) : []
 
     task_def = TaskDefinition.new(task_params)
 
@@ -138,13 +138,16 @@ class TaskDefinitionsApi < Grape::API
                                                 :max_quality_pts,
                                                 :assessment_enabled,
                                                 :overseer_image_id,
-                                                :moss_language
+                                                :moss_language,
+                                                :upload_requirements
                                               )
+
+    task_params[:upload_requirements] = params[:task_def][:upload_requirements].present? ? JSON.parse(params[:task_def][:upload_requirements]) : []
 
     # Ensure changes to a TD defined as a 'draft task definition' are validated
     if unit.draft_task_definition_id == params[:id]
-      if params[:task_def][:upload_requirements]
-        requirements = JSON.parse(params[:task_def][:upload_requirements])
+      if task_params[:upload_requirements]
+        requirements = task_params[:upload_requirements]
         if requirements.length != 1 || requirements[0]['type'] != 'document'
           error!({ error: 'Task is marked as the draft learning summary task definition. A draft learning summary task can only contain a single document upload.' }, 403)
         end
