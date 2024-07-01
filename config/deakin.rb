@@ -84,10 +84,6 @@ class DeakinInstitutionSettings
     result
   end
 
-  def default_online_campus_abbr
-    'Online-01'
-  end
-
   # Multi code units have a stream for unit - and do not sync with star
   def setup_multi_code_streams unit
     logger.info("Setting up multi unit for #{unit.code}")
@@ -416,39 +412,46 @@ class DeakinInstitutionSettings
             # We need to determine the stats here before the enrolments.
             # This is not needed for multi unit as we do not setup the tutorials for multi units
 
-            if is_online && !multi_unit && unit.enable_sync_timetable
-              if unit.tutorials.where(campus_id: campus.id).count == 0
-                unit.add_tutorial(
-                  'Asynchronous', # day
-                  '', # time
-                  'Online', # location
-                  unit.main_convenor_user, # tutor
-                  online_campus, # campus
-                  -1, # capacity
-                  default_online_campus_abbr, # abbrev
-                  nil # tutorial_stream=nil
-                )
-              end
+            # TODO: redesign online tutorial enrolements
+            # if is_online && !multi_unit && unit.enable_sync_timetable
+            #   if unit.tutorials.where(campus_id: campus.id).count == 0
+            #     # Add an online campus tutorial to each tutorial stream that has an allocated task
 
-              # Get stats for distribution of students across tutorials - for enrolment of online students
-              tutorial_stats = unit.tutorials
-                                   .joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.tutorial_id = tutorials.id')
-                                   .where(campus_id: campus.id)
-                                   .select(
-                                     'tutorials.abbreviation AS abbreviation',
-                                     'capacity',
-                                     'COUNT(tutorial_enrolments.id) AS enrolment_count'
-                                   )
-                                   .group('tutorials.abbreviation', 'capacity')
-                                   .map { |row|
-                {
-                  abbreviation: row.abbreviation,
-                  enrolment_count: row.enrolment_count,
-                  added: 0.0, # float to force float division in % full calc
-                  capacity: row.capacity
-                }
-              }
-            end # is online
+            #     streams_to_add = unit.tutorial_streams.select { |ts| ts.tutorials.count > 0 }
+
+            #     streams_to_add.each do |stream|
+            #       unit.add_tutorial(
+            #         'Asynchronous', # day
+            #         '', # time
+            #         'Online', # location
+            #         unit.main_convenor_user, # tutor
+            #         online_campus, # campus
+            #         -1, # capacity
+            #         "#{stream.abbreviation}-online-01", # abbrev
+            #         stream # tutorial_stream=nil
+            #       )
+            #     end
+            #   end
+
+            #   # Get stats for distribution of students across tutorials - for enrolment of online students
+            #   tutorial_stats = unit.tutorials
+            #                        .joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.tutorial_id = tutorials.id')
+            #                        .where(campus_id: campus.id)
+            #                        .select(
+            #                          'tutorials.abbreviation AS abbreviation',
+            #                          'capacity',
+            #                          'COUNT(tutorial_enrolments.id) AS enrolment_count'
+            #                        )
+            #                        .group('tutorials.abbreviation', 'capacity')
+            #                        .map { |row|
+            #     {
+            #       abbreviation: row.abbreviation,
+            #       enrolment_count: row.enrolment_count,
+            #       added: 0.0, # float to force float division in % full calc
+            #       capacity: row.capacity
+            #     }
+            #   }
+            # end # is online
 
             # For each of the enrolments...
             location['enrolments'].each do |enrolment|
@@ -497,17 +500,18 @@ class DeakinInstitutionSettings
 
               user = sync_student_user_from_callista(row_data)
 
-              # if they are enrolled, but not timetabled and online...
-              if is_online && row_data[:enrolled] && !multi_unit && unit.enable_sync_timetable && timetable_data[enrolment['studentId']].nil? # Is this an online user that we have the user data for?
-                # try to get their exising data
-                project = unit.projects.where(user_id: user.id).first unless user.nil?
+              # TODO: redesign online tutorial enrolements
+              # # if they are enrolled, but not timetabled and online...
+              # if is_online && row_data[:enrolled] && !multi_unit && unit.enable_sync_timetable && timetable_data[enrolment['studentId']].nil? # Is this an online user that we have the user data for?
+              #   # try to get their exising data
+              #   project = unit.projects.where(user_id: user.id).first unless user.nil?
 
-                if project.nil? || project.tutorial_enrolments.count == 0
-                  # not present (so new), or has no enrolment... so we can enrol it into the online tutorial
-                  tutorial = find_online_tutorial(unit, tutorial_stats)
-                  row_data[:tutorials] = [tutorial] unless tutorial.nil?
-                end
-              end
+              #   if project.nil? || project.tutorial_enrolments.count == 0
+              #     # not present (so new), or has no enrolment... so we can enrol it into the online tutorial
+              #     tutorial = find_online_tutorial(unit, tutorial_stats)
+              #     row_data[:tutorials] = [tutorial] unless tutorial.nil?
+              #   end
+              # end
 
               student_list << row_data
             end

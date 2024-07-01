@@ -46,7 +46,7 @@ class DeakinConfigTest < ActiveSupport::TestCase
     result = unit.sync_enrolments()
 
     assert_equal 3, unit.projects.count, result # 3 students and others skipped
-    assert_equal 2, unit.tutorials.count, result # campus
+    assert_equal 1, unit.tutorials.count, result # campus
 
     assert_requested enrolment_stub
     assert_requested timetable_stub
