@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.0.7](https://github.com/macite/doubtfire-deploy/compare/v8.0.6...v8.0.7) (2024-07-01)
+
+
+### Bug Fixes
+
+* remove sync of online students at deakin ([2b64bce](https://github.com/macite/doubtfire-deploy/commit/2b64bcef3b74882403d2b04a9da80a7d0e8c68b6))
+
 ### [8.0.6](https://github.com/macite/doubtfire-deploy/compare/v8.0.5...v8.0.6) (2024-06-28)
 
 
