@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.0.8](https://github.com/doubtfire-lms/doubtfire-deploy/compare/v8.0.7...v8.0.8) (2024-07-01)
+
+
+### Features
+
+* provide task to archive pdfs ([9e85c21](https://github.com/doubtfire-lms/doubtfire-deploy/commit/9e85c2186880a374d5306a8aa4e6eccc108239ff))
+
+## [8.1.0](https://github.com/doubtfire-lms/doubtfire-deploy/compare/v8.0.7...v8.1.0) (2024-07-01)
+
+
+### Features
+
+* provide task to archive pdfs ([9e85c21](https://github.com/doubtfire-lms/doubtfire-deploy/commit/9e85c2186880a374d5306a8aa4e6eccc108239ff))
+
 ### [8.0.7](https://github.com/macite/doubtfire-deploy/compare/v8.0.6...v8.0.7) (2024-07-01)
 
 
