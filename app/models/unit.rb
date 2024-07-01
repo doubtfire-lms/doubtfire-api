@@ -2549,6 +2549,13 @@ class Unit < ApplicationRecord
     summary_stats[:staff] = {}
   end
 
+  def archive_submissions(out)
+    out.puts "Unit: #{code} - #{name}"
+    projects.each do |project|
+      project.archive_submissions(out)
+    end
+  end
+
   private
 
   def delete_associated_files

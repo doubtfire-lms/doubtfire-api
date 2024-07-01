@@ -659,6 +659,13 @@ class Project < ApplicationRecord
     NotificationsMailer.weekly_student_summary(self, summary_stats, did_revert_to_pass).deliver_now
   end
 
+  def archive_submissions(out)
+    out.puts " - Archiving submissions for project #{id}"
+    tasks.each(&:archive_submission)
+
+    FileUtils.rm_f(portfolio_path) if portfolio_available
+  end
+
   private
 
   def can_destroy?

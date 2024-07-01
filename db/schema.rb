@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_06_03_111953) do
+ActiveRecord::Schema[7.1].define(version: 2024_07_01_221318) do
   create_table "activity_types", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -482,6 +482,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_06_03_111953) do
     t.bigint "overseer_image_id"
     t.datetime "portfolio_auto_generation_date"
     t.string "tii_group_context_id"
+    t.boolean "archived", default: false
     t.index ["draft_task_definition_id"], name: "index_units_on_draft_task_definition_id"
     t.index ["main_convenor_id"], name: "index_units_on_main_convenor_id"
     t.index ["overseer_image_id"], name: "index_units_on_overseer_image_id"

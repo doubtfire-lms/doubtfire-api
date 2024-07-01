@@ -1364,6 +1364,10 @@ class Task < ApplicationRecord
     nil
   end
 
+  def archive_submission
+    FileUtils.rm_f(portfolio_evidence_path) if has_pdf
+  end
+
   private
 
   def delete_associated_files

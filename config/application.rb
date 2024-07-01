@@ -35,9 +35,12 @@ module Doubtfire
     config.pdfgen_max_processes = ENV['DF_MAX_PDF_GEN_PROCESSES'] || 2
 
     # Date range for auditors to view
-    config.auditor_unit_access_years = ENV.fetch('DF_AUDITOR_UNIT_ACCESS_YEARS', 2).years
+    config.auditor_unit_access_years = ENV.fetch('DF_AUDITOR_UNIT_ACCESS_YEARS', 2).to_f * 1.year
 
-    config.student_import_weeks_before = ENV.fetch('DF_IMPORT_STUDENTS_WEEKS_BEFPRE', 1).weeks
+    # Period for which to keep units
+    config.unit_archive_after_period = ENV.fetch('DF_UNIT_ARCHIVE_PERIOD', 2).to_f * 1.year
+
+    config.student_import_weeks_before = ENV.fetch('DF_IMPORT_STUDENTS_WEEKS_BEFPRE', 1).to_f * 1.week
 
     # ==> Load credentials from env
     credentials.secret_key_base = ENV.fetch('DF_SECRET_KEY_BASE', Rails.env.production? ? nil : '9e010ee2f52af762916406fd2ac488c5694a6cc784777136e657511f8bbc7a73f96d59c0a9a778a0d7cf6406f8ecbf77efe4701dfbd63d8248fc7cc7f32dea97')

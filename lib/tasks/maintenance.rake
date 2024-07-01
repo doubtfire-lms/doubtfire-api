@@ -27,13 +27,19 @@ namespace :maintenance do
     AuthToken.destroy_old_tokens
   end
 
-  desc 'Export auth tokens for migration from 5.x to 6.x'
-  task export_auth_tokens: [:environment] do
-    User.all
-        .map { |u| { token: u.auth_token, user: u.id, expiry: u.auth_token_expiry } }
-        .select { |d| d[:token].present? }
-        .each do |d|
-      puts "AuthToken.create!(authentication_token: '#{d[:token].strip}', auth_token_expiry: DateTime.parse('#{d[:expiry]}'), user_id: '#{d[:user]}')"
+  desc 'Remove PDFs from old submissions and archive units'
+  task archive_submissions: [:environment] do
+    archive_period = Doubtfire::Application.config.unit_archive_after_period
+    return if archive_period <= 1.year
+
+    Unit.where(archived: false).where('end_date < :archive_before', archive_before: DateTime.now - archive_period).find_each do |unit|
+      puts "Are you sure you want to archive #{unit.detailed_name}? (Yes to confirm): "
+      response = $stdin.gets.chomp
+
+      next unless response == 'Yes'
+
+      unit.archive_submissions($stdout)
+      unit.update(archived: true)
     end
   end
 end
