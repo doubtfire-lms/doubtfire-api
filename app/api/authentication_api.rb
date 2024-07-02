@@ -378,8 +378,8 @@ class AuthenticationApi < Grape::API
       end
 
       token = current_user.auth_tokens.find_by(token_type: 'scorm')
-      if token.auth_token_expiry <= Time.zone.now
-        token.destroy!
+      if token.nil? || token.auth_token_expiry <= Time.zone.now
+        token&.destroy
         token = current_user.generate_scorm_authentication_token!
       end
 
