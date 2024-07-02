@@ -14,7 +14,6 @@ class TestAttempt < ApplicationRecord
   validates :task_id, presence: true
 
   def self.permissions
-    # TODO: this is all wrong, students should not be able to delete test attempts
     student_role_permissions = [
       :update_attempt
       # :review_own_attempt --  depends on task def settings. See specific_permission_hash method
