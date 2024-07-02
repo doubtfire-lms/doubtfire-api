@@ -93,7 +93,6 @@ class TestAttemptsApi < Grape::API
 
     if test.nil?
       error!({ message: 'Test attempt ID is invalid' }, 404)
-      return
     else
       logger.debug "Request to review test attempt #{params[:id]}"
       test.review
@@ -153,6 +152,10 @@ class TestAttemptsApi < Grape::API
   patch 'test_attempts/:id' do
     test = TestAttempt.find(params[:id])
 
+    if test.nil?
+      error!({ message: 'Test attempt ID is invalid' }, 404)
+    end
+
     if params[:success_status].present?
       unless authorise? current_user, test, :override_success_status
         error!({ error: 'Not authorised to override the success status of this scorm attempt' }, 403)
@@ -189,6 +192,10 @@ class TestAttemptsApi < Grape::API
       error!({ error: 'Not authorised to delete this scorm attempt' }, 403)
     end
 
-    test.destroy!
+    if test.nil?
+      error!({ message: 'Test attempt ID is invalid' }, 404)
+    else
+      test.destroy!
+    end
   end
 end
