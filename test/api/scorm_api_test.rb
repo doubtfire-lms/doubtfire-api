@@ -66,7 +66,6 @@ class ScormApiTest < ActiveSupport::TestCase
     assert_equal 'text/javascript', last_response.content_type
 
     tutor = FactoryBot.create(:user, :tutor, username: :test_tutor)
-    unit.employ_staff(tutor, Role.tutor)
 
     # When the user is unauthorised
     get "/api/scorm/#{td.id}/#{tutor.username}/#{auth_token(tutor)}/index.html"

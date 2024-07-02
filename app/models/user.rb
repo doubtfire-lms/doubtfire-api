@@ -341,20 +341,22 @@ class User < ApplicationRecord
       :convene_units,
       :get_staff_list,
       :get_teaching_periods,
-      :use_overseer
+      :use_overseer,
+      :get_scorm_token
     ]
 
     # What can tutors do with users?
     tutor_role_permissions = [
       :get_unit_roles,
       :download_unit_csv,
-      :get_teaching_periods
+      :get_teaching_periods,
+      :get_scorm_token
     ]
 
     # What can students do with users?
     student_role_permissions = [
       :get_teaching_periods,
-      :get_scorm_test
+      :get_scorm_token
     ]
 
     # Return the permissions hash

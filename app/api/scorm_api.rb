@@ -53,12 +53,13 @@ class ScormApi < Grape::API
     requires :task_def_id, type: Integer, desc: 'Task Definition ID to get SCORM test data for'
   end
   get '/scorm/:task_def_id/:username/:auth_token/*file_path' do
-    unless authorise? current_user, User, :get_scorm_test
-      error!({ error: 'You cannot access SCORM tests' }, 403)
+    task_def = TaskDefinition.find(params[:task_def_id])
+
+    unless authorise? current_user, task_def.unit, :get_unit
+      error!({ error: 'You cannot access SCORM tests of unit' }, 403)
     end
 
     env['api.format'] = :txt
-    task_def = TaskDefinition.find(params[:task_def_id])
     if task_def.has_scorm_data?
       zip_path = task_def.task_scorm_data
       content_type 'application/octet-stream'

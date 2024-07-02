@@ -373,8 +373,8 @@ class AuthenticationApi < Grape::API
   desc 'Get SCORM authentication token'
   get '/auth/scorm' do
     if authenticated?
-      unless authorise? current_user, User, :get_scorm_test
-        error!({ error: 'You cannot access SCORM tests' }, 403)
+      unless authorise? current_user, User, :get_scorm_token
+        error!({ error: 'You cannot get SCORM tokens' }, 403)
       end
 
       token = current_user.auth_tokens.find_by(token_type: 'scorm')

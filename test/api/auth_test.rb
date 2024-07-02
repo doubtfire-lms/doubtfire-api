@@ -270,9 +270,9 @@ class AuthTest < ActiveSupport::TestCase
   # # SCORM auth test
 
   def test_scorm_auth
-    tutor = FactoryBot.create(:user, :tutor)
+    admin = FactoryBot.create(:user, :admin)
 
-    add_auth_header_for(user: tutor)
+    add_auth_header_for(user: admin)
 
     # When user is unauthorised
     get "api/auth/scorm"
