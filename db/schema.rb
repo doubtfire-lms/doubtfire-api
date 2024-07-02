@@ -257,7 +257,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_06_18_135038) do
     t.boolean "scorm_allow_review", default: false
     t.boolean "scorm_bypass_test", default: false
     t.boolean "scorm_time_delay_enabled", default: false
-    t.integer "scorm_attempt_limit"
+    t.integer "scorm_attempt_limit", default: 0
     t.index ["group_set_id"], name: "index_task_definitions_on_group_set_id"
     t.index ["overseer_image_id"], name: "index_task_definitions_on_overseer_image_id"
     t.index ["tutorial_stream_id"], name: "index_task_definitions_on_tutorial_stream_id"

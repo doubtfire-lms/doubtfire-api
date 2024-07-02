@@ -301,9 +301,9 @@ class TaskDefinition < ApplicationRecord
 
   def self.csv_columns
     [:name, :abbreviation, :description, :weighting, :target_grade, :restrict_status_updates, :max_quality_pts,
-     :is_graded, :plagiarism_warn_pct, :group_set, :upload_requirements, :scorm_enabled, :scorm_allow_review,
-     :scorm_bypass_test, :scorm_time_delay_enabled, :scorm_attempt_limit, :start_week, :start_day, :target_week,
-     :target_day, :due_week, :due_day, :tutorial_stream]
+     :is_graded, :plagiarism_warn_pct, :scorm_enabled, :scorm_allow_review, :scorm_bypass_test, :scorm_time_delay_enabled,
+     :scorm_attempt_limit, :group_set, :upload_requirements, :start_week, :start_day, :target_week, :target_day,
+     :due_week, :due_day, :tutorial_stream]
   end
 
   def self.task_def_for_csv_row(unit, row)
