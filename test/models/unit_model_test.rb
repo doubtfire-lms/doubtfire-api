@@ -113,7 +113,7 @@ class UnitModelTest < ActiveSupport::TestCase
     @unit.import_tasks_from_csv File.open(Rails.root.join('test_files', "#{@unit.code}-Tasks.csv"))
     @unit.import_task_files_from_zip Rails.root.join('test_files', "#{@unit.code}-Tasks.zip")
 
-    unit2 = @unit.rollover TeachingPeriod.find(2), nil, nil
+    unit2 = @unit.rollover TeachingPeriod.find(2), nil, nil, nil
 
     unit2.task_definitions.each do |td|
       assert File.exist?(td.task_sheet), 'task sheet is absent'
@@ -130,7 +130,7 @@ class UnitModelTest < ActiveSupport::TestCase
     @unit.draft_task_definition = lsr
     @unit.save
 
-    unit2 = @unit.rollover TeachingPeriod.find(2), nil, nil
+    unit2 = @unit.rollover TeachingPeriod.find(2), nil, nil, nil
 
     assert_not_nil unit2.draft_task_definition
     refute_equal lsr, unit2.draft_task_definition
@@ -139,7 +139,7 @@ class UnitModelTest < ActiveSupport::TestCase
   end
 
   def test_rollover_of_portfolio_generation
-    unit2 = @unit.rollover TeachingPeriod.find(2), nil, nil
+    unit2 = @unit.rollover TeachingPeriod.find(2), nil, nil, nil
 
     assert unit2.portfolio_auto_generation_date.present?
     assert unit2.portfolio_auto_generation_date > unit2.start_date && unit2.portfolio_auto_generation_date < unit2.end_date
@@ -157,7 +157,7 @@ class UnitModelTest < ActiveSupport::TestCase
       groups: [ { gs: 0, students: 2} ],
       group_tasks: [ { idx: 0, gs: 0 }] )
 
-    unit2 = unit.rollover TeachingPeriod.find(2), nil, nil
+    unit2 = unit.rollover TeachingPeriod.find(2), nil, nil, nil
 
     assert_equal 1, unit2.group_sets.count
     assert_not_equal unit2.group_sets.first, unit.group_sets.first
@@ -172,7 +172,7 @@ class UnitModelTest < ActiveSupport::TestCase
     @unit.import_outcomes_from_csv File.open(Rails.root.join('test_files',"#{@unit.code}-Outcomes.csv"))
     @unit.import_task_alignment_from_csv File.open(Rails.root.join('test_files',"#{@unit.code}-Alignment.csv")), nil
 
-    unit2 = @unit.rollover TeachingPeriod.find(2), nil, nil
+    unit2 = @unit.rollover TeachingPeriod.find(2), nil, nil, nil
 
     assert @unit.task_outcome_alignments.count > 0
     assert_equal @unit.task_outcome_alignments.count, unit2.task_outcome_alignments.count
@@ -192,7 +192,7 @@ class UnitModelTest < ActiveSupport::TestCase
   def test_rollover_of_tasks_have_same_start_week_and_day
     @unit.import_tasks_from_csv File.open(Rails.root.join('test_files',"#{@unit.code}-Tasks.csv"))
 
-    unit2 = @unit.rollover TeachingPeriod.find(2), nil, nil
+    unit2 = @unit.rollover TeachingPeriod.find(2), nil, nil, nil
 
     assert_equal 3, @unit.teaching_period_id
     assert_equal 2, unit2.teaching_period_id
@@ -210,7 +210,7 @@ class UnitModelTest < ActiveSupport::TestCase
   def test_rollover_of_tasks_have_same_target_week_and_day
     @unit.import_tasks_from_csv File.open(Rails.root.join('test_files',"#{@unit.code}-Tasks.csv"))
 
-    unit2 = @unit.rollover TeachingPeriod.find(2), nil, nil
+    unit2 = @unit.rollover TeachingPeriod.find(2), nil, nil, nil
 
     @unit.task_definitions.each do |td|
       td2 = unit2.task_definitions.find_by_abbreviation(td.abbreviation)
@@ -247,7 +247,7 @@ class UnitModelTest < ActiveSupport::TestCase
   test 'rollover of tasks have same due week and day' do
     @unit.import_tasks_from_csv File.open(Rails.root.join('test_files',"#{@unit.code}-Tasks.csv"))
 
-    unit2 = @unit.rollover TeachingPeriod.find(2), nil, nil
+    unit2 = @unit.rollover TeachingPeriod.find(2), nil, nil, nil
 
     @unit.task_definitions.each do |td|
       td2 = unit2.task_definitions.find_by_abbreviation(td.abbreviation)
@@ -255,7 +255,6 @@ class UnitModelTest < ActiveSupport::TestCase
       assert_equal td.due_week, td2.due_week, "#{td.abbreviation} not due same week"
     end
   end
-
 
   test 'ensure valid response from unit ilo data' do
     @unit.import_tasks_from_csv File.open(Rails.root.join('test_files',"#{@unit.code}-Tasks.csv"))
@@ -756,6 +755,68 @@ class UnitModelTest < ActiveSupport::TestCase
     assert task.has_pdf
 
     unit.destroy!
+  end
+
+  test 'rollover to set dates' do
+    start_date = Time.zone.now
+    end_date = start_date + 14.weeks
+
+    unit2 = @unit.rollover(nil, start_date, end_date, nil)
+
+    assert_equal @unit.code, unit2.code
+    assert_in_delta start_date, unit2.start_date, 1.hour
+    assert_in_delta end_date, unit2.end_date, 1.hour
+
+    unit2.destroy
+  end
+
+  test 'rollover to new code with dates' do
+    start_date = Time.zone.now
+    end_date = start_date + 14.weeks
+
+    unit2 = @unit.rollover(nil, start_date, end_date, 'NEWCODE-1')
+
+    assert_not_equal @unit.code, unit2.code
+    assert_equal 'NEWCODE-1', unit2.code
+    assert_in_delta start_date, unit2.start_date, 1.hour
+    assert_in_delta end_date, unit2.end_date, 1.hour
+
+    unit2.destroy
+  end
+
+  test 'rollover to new code with teaching period' do
+    @unit.import_tasks_from_csv File.open(Rails.root.join('test_files', "#{@unit.code}-Tasks.csv"))
+    @unit.import_task_files_from_zip Rails.root.join('test_files', "#{@unit.code}-Tasks.zip")
+
+    tp = TeachingPeriod.find(2)
+
+    unit2 = @unit.rollover(tp, nil, nil, 'NEWCODE-1')
+
+    assert_not_equal @unit.code, unit2.code
+    assert_equal 'NEWCODE-1', unit2.code
+    assert_equal tp, unit2.teaching_period
+
+    unit2.task_definitions.each do |td|
+      assert File.exist?(td.task_sheet), 'task sheet is absent'
+    end
+
+    assert File.exist?(unit2.task_definitions.first.task_resources), 'task resource is absent'
+
+    # can rollover in the same teaching period with a new code
+    unit3 = unit2.rollover(tp, nil, nil, 'NEWCODE-2')
+
+    assert_not_equal unit2.code, unit3.code
+    assert_equal 'NEWCODE-2', unit3.code
+    assert_equal tp, unit3.teaching_period
+
+    unit3.task_definitions.each do |td|
+      assert File.exist?(td.task_sheet), 'task sheet is absent'
+    end
+
+    assert File.exist?(unit3.task_definitions.first.task_resources), 'task resource is absent'
+
+    unit2.destroy
+    unit3.destroy
   end
 
 end

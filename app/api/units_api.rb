@@ -235,9 +235,10 @@ class UnitsApi < Grape::API
 
   desc 'Rollover unit'
   params do
-    optional :teaching_period_id
-    optional :start_date
-    optional :end_date
+    optional :teaching_period_id, type: Integer, desc: 'The teaching period to rollover to'
+    optional :start_date, type: Date, desc: 'The start date of the new unit'
+    optional :end_date, type: Date, desc: 'The end date of the new unit'
+    optional :new_unit_code, type: String, desc: 'The unit code for the new unit'
 
     exactly_one_of :teaching_period_id, :start_date
     all_or_none_of :start_date, :end_date
@@ -253,9 +254,9 @@ class UnitsApi < Grape::API
 
     if teaching_period_id.present?
       tp = TeachingPeriod.find(teaching_period_id)
-      result = unit.rollover(tp, nil, nil)
+      result = unit.rollover(tp, nil, nil, params[:new_unit_code])
     else
-      result = unit.rollover(nil, params[:start_date], params[:end_date])
+      result = unit.rollover(nil, params[:start_date], params[:end_date], params[:new_unit_code])
     end
 
     my_role = result.role_for(current_user)

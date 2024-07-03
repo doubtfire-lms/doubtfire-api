@@ -271,12 +271,15 @@ class Unit < ApplicationRecord
     end
   end
 
-  def rollover(teaching_period, start_date, end_date)
+  def rollover(teaching_period, start_date, end_date, new_code)
     new_unit = self.dup
+
+    new_unit.code = new_code if new_code.present?
 
     if teaching_period.present?
       new_unit.teaching_period = teaching_period
     else
+      new_unit.teaching_period = nil
       new_unit.start_date = start_date
       new_unit.end_date = end_date
     end
