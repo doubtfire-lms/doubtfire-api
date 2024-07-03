@@ -161,7 +161,7 @@ class Unit < ApplicationRecord
   validate :validate_end_date_after_start_date
   validate :ensure_teaching_period_dates_match, if: :has_teaching_period?
 
-  validate :ensure_main_convenor_is_appropriate
+  validate :ensure_main_convenor_is_appropriate, if: :main_convenor_id_changed?
 
   # Portfolio autogen date validations, must be after start date and before or equal to end date
   validate :autogen_date_within_unit_active_period, if: -> { start_date_changed? || end_date_changed? || teaching_period_id_changed? || portfolio_auto_generation_date_changed? }
