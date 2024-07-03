@@ -11,6 +11,7 @@ require 'entities/user_entity'
 class AuthenticationApi < Grape::API
   helpers LogHelper
   helpers AuthenticationHelpers
+  helpers AuthorisationHelpers
 
   #
   # Sign in - only mounted if AAF auth is NOT used
@@ -367,5 +368,22 @@ class AuthenticationApi < Grape::API
     end
 
     present nil
+  end
+
+  desc 'Get SCORM authentication token'
+  get '/auth/scorm' do
+    if authenticated?
+      unless authorise? current_user, User, :get_scorm_token
+        error!({ error: 'You cannot get SCORM tokens' }, 403)
+      end
+
+      token = current_user.auth_tokens.find_by(token_type: 'scorm')
+      if token.nil? || token.auth_token_expiry <= Time.zone.now
+        token&.destroy
+        token = current_user.generate_scorm_authentication_token!
+      end
+
+      present :scorm_auth_token, token.authentication_token
+    end
   end
 end

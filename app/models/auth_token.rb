@@ -6,7 +6,7 @@ class AuthToken < ApplicationRecord
   validates :authentication_token, presence: true
   validate :ensure_token_unique_for_user, on: :create
 
-  def self.generate(user, remember, expiry_time = Time.zone.now + 2.hours)
+  def self.generate(user, remember, expiry_time = Time.zone.now + 2.hours, token_type = 'general')
     # Loop until new unique auth token is found
     token = loop do
       token = Devise.friendly_token
@@ -16,6 +16,7 @@ class AuthToken < ApplicationRecord
     # Create a new AuthToken with this value
     result = AuthToken.new(user_id: user.id)
     result.authentication_token = token
+    result.token_type = token_type
     result.extend_token(remember, expiry_time, false)
     result.save!
     result
