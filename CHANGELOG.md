@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.0.9](https://github.com/macite/doubtfire-deploy/compare/v8.0.8...v8.0.9) (2024-07-03)
+
+
+### Features
+
+* allow new unit code to be provided to rollover ([7f3b752](https://github.com/macite/doubtfire-deploy/commit/7f3b7529a9c8ee0a8800e28aa1504f221f80bc5d))
+
+
+### Bug Fixes
+
+* ensure main convenor validation on change only ([52450be](https://github.com/macite/doubtfire-deploy/commit/52450bec9039fda80f6f8a6d3a742adc8def8d77))
+* remove rollover teaching period ([eacbac1](https://github.com/macite/doubtfire-deploy/commit/eacbac1f659e09252ab24a4fc9e0d5a02d811a00))
+* streamline archiving units in maintenance task ([e740d82](https://github.com/macite/doubtfire-deploy/commit/e740d8218478b6ef27795fc15093082c07e0c69a))
+
 ### [8.0.8](https://github.com/doubtfire-lms/doubtfire-deploy/compare/v8.0.7...v8.0.8) (2024-07-01)
 
 
