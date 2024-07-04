@@ -26,7 +26,7 @@ module Entities
         task_definition.upload_requirements
       else
         # Filter out turn it in details
-        task_definition.upload_requirements.map { |r| r.except('tii_check', 'tii_pct') }
+        task_definition.upload_requirements.map { |r| r.except('tii_check', 'tii_pct') } unless task_definition.upload_requirements.nil?
       end
     end
 
