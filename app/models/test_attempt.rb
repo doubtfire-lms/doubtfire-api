@@ -66,7 +66,7 @@ class TestAttempt < ApplicationRecord
   # t.text :cmi_datamodel, default: "{}", null: false
 
   after_initialize if: :new_record? do
-    self.attempted_time = Time.now
+    self.attempted_time = Time.zone.now
     task = Task.find(self.task_id)
     learner_name = task.project.student.name
     learner_id = task.project.student.student_id
@@ -112,13 +112,13 @@ class TestAttempt < ApplicationRecord
 
     # when review is requested change the mode to review
     dm['cmi.mode'] = 'review'
-    write_attribute(:cmi_datamodel, dm.to_json)
+    self[:cmi_datamodel] = dm.to_json
   end
 
   def override_success_status(new_success_status)
     dm = JSON.parse(self.cmi_datamodel)
     dm['cmi.success_status'] = (new_success_status ? 'passed' : 'failed')
-    write_attribute(:cmi_datamodel, dm.to_json)
+    self[:cmi_datamodel] = dm.to_json
     self.success_status = dm['cmi.success_status'] == 'passed'
     self.save!
     self.update_scorm_comment
@@ -144,7 +144,7 @@ class TestAttempt < ApplicationRecord
       return self.scorm_comment
     end
 
-    puts "WARN: Unexpected need to create scorm comment for test attempt: #{self.id}"
+    logger.warn "WARN: Unexpected need to create scorm comment for test attempt: #{self.id}"
     add_scorm_comment
   end
 

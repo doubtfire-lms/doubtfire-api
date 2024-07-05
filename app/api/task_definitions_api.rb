@@ -647,7 +647,7 @@ class TaskDefinitionsApi < Grape::API
 
     task_def = unit.task_definitions.find(params[:task_def_id])
 
-    unless params[:file].present?
+    if params[:file].blank?
       error!({ error: "No file uploaded" }, 403)
     end
 
@@ -678,7 +678,7 @@ class TaskDefinitionsApi < Grape::API
       content_type 'application/octet-stream'
       header['Content-Disposition'] = "attachment; filename=#{task_def.abbreviation}-scorm.zip"
     else
-      path = Rails.root.join('public', 'resources', 'FileNotFound.pdf')
+      path = Rails.root.join('public/resources/FileNotFound.pdf')
       content_type 'application/pdf'
       header['Content-Disposition'] = 'attachment; filename=FileNotFound.pdf'
     end

@@ -14,7 +14,7 @@ class ScormExtensionComment < TaskComment
   end
 
   # Make sure we can access super's version of mark_as_read for assess extension
-  alias :super_mark_as_read :mark_as_read
+  alias super_mark_as_read mark_as_read
 
   # Allow individual staff and the student to read this... but stop
   # the main tutor reading without assessing. As only the main tutor
