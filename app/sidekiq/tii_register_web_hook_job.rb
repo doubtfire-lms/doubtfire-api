@@ -6,6 +6,8 @@ class TiiRegisterWebHookJob
   include Sidekiq::Job
 
   def perform
+    return unless TurnItIn.enabled?
+
     (TiiActionRegisterWebhook.last || TiiActionRegisterWebhook.create).perform
   end
 end

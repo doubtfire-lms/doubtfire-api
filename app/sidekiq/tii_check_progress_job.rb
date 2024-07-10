@@ -7,6 +7,8 @@ class TiiCheckProgressJob
   include Sidekiq::Job
 
   def perform
+    return unless TurnItIn.enabled?
+
     run_waiting_actions
     TurnItIn.check_and_update_eula
     TurnItIn.check_and_update_features
