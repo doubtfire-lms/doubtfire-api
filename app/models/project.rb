@@ -656,7 +656,11 @@ class Project < ApplicationRecord
     return unless student.receive_feedback_notifications
     return if portfolio_exists? && !middle_of_unit
 
-    NotificationsMailer.weekly_student_summary(self, summary_stats, did_revert_to_pass).deliver_now
+    begin
+      NotificationsMailer.weekly_student_summary(self, summary_stats, did_revert_to_pass).deliver_now
+    rescue StandardError => e
+      logger.error "Failed to send weekly status email for project #{id}!\n#{e.message}"
+    end
   end
 
   def archive_submissions(out)

@@ -144,10 +144,14 @@ namespace :submission do
 
           logger.info "emailing portfolio notification to #{project.student.name}"
 
-          if success
-            PortfolioEvidenceMailer.portfolio_ready(project).deliver_now
-          else
-            PortfolioEvidenceMailer.portfolio_failed(project).deliver_now
+          begin
+            if success
+              PortfolioEvidenceMailer.portfolio_ready(project).deliver_now
+            else
+              PortfolioEvidenceMailer.portfolio_failed(project).deliver_now
+            end
+          rescue StandardError => e
+            logger.error "Failed to send portfolio email for project #{project.id}!\n#{e.message}"
           end
         end
       ensure
@@ -158,7 +162,7 @@ namespace :submission do
 
         # Remove the processing directory
         if Dir.entries(my_source).count == 2 # . and ..
-          FileUtils.rmdir my_source
+          FileUtils.rmdir(my_source)
         end
 
         logger.info "Ending generate pdf - #{Process.pid}"
