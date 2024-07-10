@@ -11,6 +11,10 @@ class TurnItIn
 
   cattr_reader :x_turnitin_integration_name, :x_turnitin_integration_version
 
+  def self.enabled?
+    Doubtfire::Application.config.tii_enabled
+  end
+
   def self.load_config(config)
     config.tii_enabled = ENV['TII_ENABLED'].present? && (ENV['TII_ENABLED'].to_s.downcase == "true" || ENV['TII_ENABLED'].to_i == 1)
 
@@ -58,7 +62,7 @@ class TurnItIn
   # A global error indicates that tii is not configured correctly or a change in the
   # environment requires that the configuration is updated
   def self.global_error
-    return nil unless Doubtfire::Application.config.tii_enabled
+    return nil unless TurnItIn.enabled?
 
     Rails.cache.fetch("tii.global_error") do
       @@global_error
@@ -67,7 +71,7 @@ class TurnItIn
 
   # Update the global error, when present this will block calls to tii until resolved
   def self.global_error=(value)
-    return unless Doubtfire::Application.config.tii_enabled
+    return unless TurnItIn.enabled?
 
     @@global_error = value
 
@@ -80,7 +84,7 @@ class TurnItIn
 
   # Indicates if there is a global error that indicates that things should not call tii until resolved
   def self.global_error?
-    return false unless Doubtfire::Application.config.tii_enabled
+    return false unless TurnItIn.enabled?
 
     Rails.cache.exist?("tii.global_error") || @@global_error.present?
   end
@@ -118,7 +122,7 @@ class TurnItIn
 
   # Get the current eula - value is refreshed every 24 hours
   def self.eula_version
-    return nil unless Doubtfire::Application.config.tii_enabled
+    return nil unless TurnItIn.enabled?
 
     action = TiiActionFetchEula.last || TiiActionFetchEula.create
     action.fetch_eula_version unless action.eula?
@@ -130,7 +134,7 @@ class TurnItIn
 
   # Return the html for the eula
   def self.eula_html
-    return nil unless Doubtfire::Application.config.tii_enabled
+    return nil unless TurnItIn.enabled?
 
     Rails.cache.fetch("tii.eula_html.#{TurnItIn.eula_version}")
   end
