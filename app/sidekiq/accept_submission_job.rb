@@ -3,6 +3,13 @@ class AcceptSubmissionJob
   include LogHelper
 
   def perform(task_id, user_id, accepted_tii_eula)
+    begin
+      # Ensure cwd is valid...
+      FileUtils.cd(Rails.root)
+    rescue StandardError => e
+      logger.error e
+    end
+
     task = Task.find(task_id)
     user = User.find(user_id)
 
