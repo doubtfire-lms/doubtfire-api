@@ -1,0 +1,43 @@
+{
+  "unitEnrolments": [
+    {
+      "unitCode": "SIT724",
+      "unitTitle": "RESEARCH PROJECT",
+      "teachingPeriod": {
+        "type": "trimester",
+        "period": "2",
+        "year": "2024"
+      },
+      "locations": [
+        {
+          "name": "Test Sync Campus",
+          "enrolments": [
+            {
+              "studentId": 11111000,
+              "title": "MR",
+              "surname": "TEST",
+              "givenNames": "TEST",
+              "preferredName": "TEST",
+              "email": "test@deakin.edu.au",
+              "courseCode": "S464",
+              "unitClass": "X",
+              "status": "Discontinued"
+            },
+            {
+              "studentId": 222220000,
+              "title": "MR",
+              "surname": "TEST",
+              "givenNames": "TEST",
+              "preferredName": "TEST",
+              "email": "test1@deakin.edu.au",
+              "courseCode": "S464",
+              "unitClass": "X",
+              "status": "Enrolled"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+
