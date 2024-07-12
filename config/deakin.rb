@@ -131,7 +131,19 @@ class DeakinInstitutionSettings
     url = "#{@star_url}/#{server}/rest/activities"
 
     logger.info("Fetching #{unit.name} timetable from #{url}")
-    response = RestClient.post(url, { username: @star_user, password: @star_secret, where_clause: "subject_code LIKE '#{unit.code}%_#{tp.period.last}'" })
+
+    # Try to contact the server up to 3 times...
+    for i in 0..2 do
+      begin
+        response = RestClient.post(url, { username: @star_user, password: @star_secret, where_clause: "subject_code LIKE '#{unit.code}%_#{tp.period.last}'" })
+        break if response.code == 200
+        logger.error "Error in sync #{unit.code} - #{response.code}"
+      rescue StandardError => e
+        logger.error "Error in sync #{unit.code} - #{e.message}"
+      end
+
+      sleep(5 + (5 * i)) # wait 5+ seconds before retrying
+    end
 
     if response.code == 200
       jsonData = JSON.parse(response.body)
@@ -350,13 +362,28 @@ class DeakinInstitutionSettings
         timetable_data = {}
       end
 
+      # Get the list of students
+      student_list = []
+
       for code in codes do
         # Get URL to enrolment data for this code
         url = "#{@base_url}?academicYear=#{tp.year}&periodType=trimester&period=#{tp.period.last}&unitCode=#{code}"
         logger.info("Requesting #{url}")
 
         # Get json from enrolment server
-        response = RestClient.get(url, headers = { "client_id" => @client_id, "client_secret" => @client_secret })
+
+        # Try to contact the server up to 3 times...
+        for i in 0..2 do
+          begin
+            response = RestClient.get(url, headers = { "client_id" => @client_id, "client_secret" => @client_secret })
+            break if response.code == 200
+            logger.error "Error in sync #{unit.code} - #{response.code}"
+            sleep(5 + (5 * i)) # wait 5+ seconds before retrying
+          rescue StandardError => e
+            logger.error "Error in sync #{unit.code} - #{e.message}"
+            sleep(5)
+          end
+        end
 
         # Check we get a valid response
         if response.code == 200
@@ -380,9 +407,6 @@ class DeakinInstitutionSettings
           end
 
           logger.info "Syncing enrolment for #{code} - #{tp.year} #{tp.period}"
-
-          # Get the list of students
-          student_list = []
 
           # Get the timetable data ()
           if multi_unit
@@ -493,6 +517,11 @@ class DeakinInstitutionSettings
               # Record details for students already enrolled to work with multi-units
               if row_data[:enrolled]
                 already_enrolled[row_data[:username]] = true
+
+                if multi_unit
+                  # Ensure student list does not already contain this student as a withdrawal
+                  student_list.delete_if { |student| student[:username] == row_data[:username] }
+                end
               elsif already_enrolled[row_data[:username]]
                 # skip to the next enrolment... this person was enrolled in an earlier unit nested within this unit... so skip this row as it would result in withdrawal
                 next
@@ -517,16 +546,17 @@ class DeakinInstitutionSettings
             end
           end
 
-          import_settings = {
-            replace_existing_tutorial: false
-          }
-
-          # Now get unit to sync
-          unit.sync_enrolment_with(student_list, import_settings, result)
         else
           logger.error "Failed to sync #{unit.code} - #{response}"
         end # if response 200
       end # for each code
+
+      import_settings = {
+        replace_existing_tutorial: false
+      }
+
+      # Now get unit to sync
+      unit.sync_enrolment_with(student_list, import_settings, result)
     rescue Exception => e
       logger.error "Failed to sync unit: #{e.message}"
     end
@@ -551,7 +581,17 @@ class DeakinInstitutionSettings
 
     unit.tutorial_streams.each do |tutorial_stream|
       logger.info("Fetching #{tutorial_stream.abbreviation} from #{url}")
-      response = RestClient.post(url, { username: @star_user, password: @star_secret, where_clause: "subject_code LIKE '#{unit.code}%' AND activity_group_code LIKE '#{tutorial_stream.abbreviation}'" })
+      for i in 0..2 do
+        begin
+          response = RestClient.post(url, { username: @star_user, password: @star_secret, where_clause: "subject_code LIKE '#{unit.code}%' AND activity_group_code LIKE '#{tutorial_stream.abbreviation}'" })
+          break if response.code == 200
+          logger.error "Error in sync #{unit.code} - #{response.code}"
+        rescue StandardError => e
+          logger.error "Error in sync #{unit.code} - #{e.message}"
+        end
+
+        sleep(5 + (5 * i)) # wait 5+ seconds before retrying
+      end
 
       if response.code == 200
         jsonData = JSON.parse(response.body)
