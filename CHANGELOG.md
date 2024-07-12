@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.0.10](https://github.com/doubtfire-lms/doubtfire-deploy/compare/v8.0.9...v8.0.10) (2024-07-10)
+
+
+### Bug Fixes
+
+* ensure failure to send email is handled ([32b1d9f](https://github.com/doubtfire-lms/doubtfire-deploy/commit/32b1d9f94c225e326ed7fbc111565fa75de3ec00))
+* ensure logger only logs to stdout in development ([e3fab0d](https://github.com/doubtfire-lms/doubtfire-deploy/commit/e3fab0d897bac82dcc14d3ff4b3948245a203b1c))
+* ensure sidekiq moves to Rails root before task pdf creation ([bb29f84](https://github.com/doubtfire-lms/doubtfire-deploy/commit/bb29f84c8c4808886cf84b89069a622308d7b859))
+* ensure task definitions render when upload requirements are nil ([6373eee](https://github.com/doubtfire-lms/doubtfire-deploy/commit/6373eee8ab38f5b1c79be5e88302c1880e36cc90))
+* ensure turn it in actions only occur when tii enabled ([5b8f5d3](https://github.com/doubtfire-lms/doubtfire-deploy/commit/5b8f5d35f520f7e59ddfe53d795200f45882c517))
+* guard access of pwd incase pwd is invalid ([58d8281](https://github.com/doubtfire-lms/doubtfire-deploy/commit/58d828193ee4448df15d4fcc391d2a1a22338efc))
+* turn it in enabled property ([a49fc8c](https://github.com/doubtfire-lms/doubtfire-deploy/commit/a49fc8c042d608f109706278f933071e0f058ed2))
+
 ### [8.0.9](https://github.com/macite/doubtfire-deploy/compare/v8.0.8...v8.0.9) (2024-07-03)
 
 

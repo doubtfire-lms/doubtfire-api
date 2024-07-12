@@ -83,10 +83,14 @@ class PortfolioEvidence
     # end
 
     errors.each do |project, tasks|
-      logger.info "checking email for project #{project.id}"
-      if project.student.receive_task_notifications
-        logger.info "emailing task notification to #{project.student.name}"
+      logger.debug "checking email for project #{project.id}"
+      next unless project.student.receive_task_notifications
+
+      logger.info "emailing task notification to #{project.student.name}"
+      begin
         PortfolioEvidenceMailer.task_pdf_failed(project, tasks).deliver
+      rescue StandardError => e
+        logger.error "Failed to send task pdf failed email for project #{project.id}!\n#{e.message}"
       end
     end
   end

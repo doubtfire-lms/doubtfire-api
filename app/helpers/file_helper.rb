@@ -361,7 +361,13 @@ module FileHelper
   # - only_before = date for files to move (only if retain from is true)
   def move_files(from_path, to_path, retain_from = false, only_before = nil)
     # move into the new dir - and mv files to the in_process_dir
-    pwd = FileUtils.pwd
+    begin
+      pwd = FileUtils.pwd
+    rescue
+      # if no pwd, reset to the root
+      pwd = Rails.root
+    end
+
     begin
       FileUtils.mkdir_p(to_path)
       Dir.chdir(from_path)
