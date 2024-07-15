@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.0.12](https://github.com/macite/doubtfire-deploy/compare/v8.0.11...v8.0.12) (2024-07-15)
+
+
+### Features
+
+* allow register webhooks to be controlled via config ([e01ed19](https://github.com/macite/doubtfire-deploy/commit/e01ed1940ecc7f91c66ea9d22ebbacae04ce7b70))
+
 ### [8.0.11](https://github.com/macite/doubtfire-deploy/compare/v8.0.10...v8.0.11) (2024-07-12)
 
 
