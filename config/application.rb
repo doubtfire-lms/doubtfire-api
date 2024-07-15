@@ -42,6 +42,8 @@ module Doubtfire
 
     config.student_import_weeks_before = ENV.fetch('DF_IMPORT_STUDENTS_WEEKS_BEFPRE', 1).to_f * 1.week
 
+    config.log_to_stdout = ENV['DF_LOG_TO_STDOUT'].present? && (ENV['DF_LOG_TO_STDOUT'].to_s.downcase == "true" || ENV['DF_LOG_TO_STDOUT'].to_i == 1)
+
     # ==> Load credentials from env
     credentials.secret_key_base = ENV.fetch('DF_SECRET_KEY_BASE', Rails.env.production? ? nil : '9e010ee2f52af762916406fd2ac488c5694a6cc784777136e657511f8bbc7a73f96d59c0a9a778a0d7cf6406f8ecbf77efe4701dfbd63d8248fc7cc7f32dea97')
     credentials.secret_key_attr = ENV.fetch('DF_SECRET_KEY_ATTR', Rails.env.production? ? nil : 'e69fc5960ca0e8700844a3a25fe80373b41c0a265d342eba06950113f3766fd983bad9ec51bf36eb615d9711bfe1dd90b8e35f01841b323f604ffee857e32055')
