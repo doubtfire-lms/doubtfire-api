@@ -91,7 +91,7 @@ class TurnItIn
 
   # Indicates that tii can be called, that it is configured and there are no global errors
   def self.functional?
-    Doubtfire::Application.config.tii_enabled && !TurnItIn.global_error?
+    TurnItIn.enabled? && !TurnItIn.global_error?
   end
 
   # Indicates that the service is rate limited

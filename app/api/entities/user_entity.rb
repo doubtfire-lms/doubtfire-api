@@ -13,7 +13,7 @@ module Entities
     expose :opt_in_to_research, unless: :minimal
     expose :has_run_first_time_setup, unless: :minimal
 
-    expose :accepted_tii_eula, unless: :minimal, if: ->(user, options) { Doubtfire::Application.config.tii_enabled } do |user, options|
+    expose :accepted_tii_eula, unless: :minimal, if: ->(user, options) { TurnItIn.enabled? } do |user, options|
       if TiiActionFetchFeaturesEnabled.eula_required?
         TurnItIn.eula_version == user.tii_eula_version
       else
