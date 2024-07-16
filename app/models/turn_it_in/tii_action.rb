@@ -128,6 +128,11 @@ class TiiAction < ApplicationRecord
     error_code.present?
   end
 
+  def perform_retry
+    save_and_reschedule
+    perform_async
+  end
+
   def save_and_reschedule(reset_retry: true)
     self.retries = 0 if reset_retry
     self.retry = true
