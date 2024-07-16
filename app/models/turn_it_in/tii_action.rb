@@ -60,6 +60,12 @@ class TiiAction < ApplicationRecord
 
     result = run
     self.log << { date: Time.zone.now, message: "#{type} Ended" }
+
+    # Ensure log does not get too long!
+    if self.log.size > 25
+      self.log = self.log.last(25)
+    end
+
     save
 
     result
