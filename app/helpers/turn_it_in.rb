@@ -15,12 +15,17 @@ class TurnItIn
     Doubtfire::Application.config.tii_enabled
   end
 
+  def self.register_webhooks?
+    Doubtfire::Application.config.tii_register_webhook
+  end
+
   def self.load_config(config)
     config.tii_enabled = ENV['TII_ENABLED'].present? && (ENV['TII_ENABLED'].to_s.downcase == "true" || ENV['TII_ENABLED'].to_i == 1)
 
-    config.tii_add_submissions_to_index = ENV['TII_INDEX_SUBMISSIONS'].present? && (ENV['TII_INDEX_SUBMISSIONS'].to_s.downcase == "true" || ENV['TII_INDEX_SUBMISSIONS'].to_i == 1)
-
     if config.tii_enabled
+      config.tii_add_submissions_to_index = ENV['TII_INDEX_SUBMISSIONS'].present? && (ENV['TII_INDEX_SUBMISSIONS'].to_s.downcase == "true" || ENV['TII_INDEX_SUBMISSIONS'].to_i == 1)
+      config.tii_register_webhook = ENV['TII_REGISTER_WEBHOOK'].present? && (ENV['TII_REGISTER_WEBHOOK'].to_s.downcase == "true" || ENV['TII_REGISTER_WEBHOOK'].to_i == 1)
+
       # Turn-it-in TII configuration
       require 'tca_client'
 
@@ -40,7 +45,7 @@ class TurnItIn
 
   # Launch the tii background jobs
   def self.launch_tii(with_webhooks: true)
-    TiiRegisterWebHookJob.perform_async if with_webhooks
+    TiiRegisterWebHookJob.perform_async if with_webhooks && TurnItIn.register_webhooks?
     load_tii_features
     load_tii_eula
   rescue StandardError => e
@@ -89,9 +94,15 @@ class TurnItIn
     Rails.cache.exist?("tii.global_error") || @@global_error.present?
   end
 
+  # Clear a global error
+  def self.clear_global_error
+    @@global_error = nil
+    Rails.cache.delete("tii.global_error")
+  end
+
   # Indicates that tii can be called, that it is configured and there are no global errors
   def self.functional?
-    Doubtfire::Application.config.tii_enabled && !TurnItIn.global_error?
+    TurnItIn.enabled? && !TurnItIn.global_error?
   end
 
   # Indicates that the service is rate limited

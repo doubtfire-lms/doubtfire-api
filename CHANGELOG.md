@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.0.12](https://github.com/macite/doubtfire-deploy/compare/v8.0.11...v8.0.12) (2024-07-15)
+
+
+### Features
+
+* allow register webhooks to be controlled via config ([e01ed19](https://github.com/macite/doubtfire-deploy/commit/e01ed1940ecc7f91c66ea9d22ebbacae04ce7b70))
+
+### [8.0.11](https://github.com/macite/doubtfire-deploy/compare/v8.0.10...v8.0.11) (2024-07-12)
+
+
+### Features
+
+* ensure deakin sync retries failed connections ([d4808b0](https://github.com/macite/doubtfire-deploy/commit/d4808b0f9d2653a02e56f868a9f0d9bec6e53826))
+
 ### [8.0.10](https://github.com/doubtfire-lms/doubtfire-deploy/compare/v8.0.9...v8.0.10) (2024-07-10)
 
 

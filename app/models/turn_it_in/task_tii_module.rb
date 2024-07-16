@@ -21,7 +21,7 @@ module TaskTiiModule
         filename: filename_for_upload(idx),
         submitted_at: Time.zone.now,
         status: :created,
-        submitted_by_user: submitter
+        submitted_by: submitter
       )
 
       # and start its processing

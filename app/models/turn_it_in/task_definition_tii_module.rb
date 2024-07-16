@@ -19,13 +19,13 @@ module TaskDefinitionTiiModule
   #
   # @return [Boolean] true if there are any Turnitin checks
   def tii_checks?
-    Doubtfire::Application.config.tii_enabled &&
+    TurnItIn.enabled? &&
       !upload_requirements.empty? &&
       ((0..upload_requirements.length - 1).map { |i| use_tii?(i) }.inject(:|) || false)
   end
 
   def had_tii_checks_before_last_save?
-    Doubtfire::Application.config.tii_enabled &&
+    TurnItIn.enabled? &&
       upload_requirements_before_last_save.present? &&
       !upload_requirements_before_last_save.empty? &&
       ((0..upload_requirements_before_last_save.length - 1).map { |i| use_tii?(i, upload_requirements_before_last_save) }.inject(:|) || false)
