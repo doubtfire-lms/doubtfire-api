@@ -5,6 +5,8 @@ class TiiCWebhooksJobTest < ActiveSupport::TestCase
   include TestHelpers::TiiTestHelper
 
   def test_register_webhooks
+    Doubtfire::Application.config.tii_register_webhook = true
+
     # Will ask for current webhooks
     list_webhooks_stub = stub_request(:get, "https://#{ENV['TCA_HOST']}/api/v1/webhooks").
     with(tii_headers).
@@ -58,6 +60,8 @@ class TiiCWebhooksJobTest < ActiveSupport::TestCase
   end
 
   def test_do_not_register_if_registered
+    Doubtfire::Application.config.tii_register_webhook = true
+
     # Will ask for current webhooks
     list_webhooks_stub = stub_request(:get, "https://#{ENV['TCA_HOST']}/api/v1/webhooks").
     with(tii_headers).
