@@ -9,6 +9,8 @@ class TiiCheckProgressJob
   def perform
     return unless TurnItIn.enabled?
 
+    TurnItIn.check_and_retry_submissions_with_updated_eula
+
     run_waiting_actions
     TurnItIn.check_and_update_eula
     TurnItIn.check_and_update_features

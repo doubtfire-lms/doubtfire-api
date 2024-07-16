@@ -205,6 +205,16 @@ class TurnItIn
     end
   end
 
+  # Check and retry any failed tii submissions, where it was due to no accepted EULA
+  def self.check_and_retry_submissions_with_updated_eula
+    TiiActionUploadSubmission
+      .where(
+        complete: false,
+        custom_error_message: TiiActionUploadSubmission::NO_USER_ACCEPTED_EULA_ERROR
+      )
+      .find_each(&:attempt_retry_on_no_eula)
+  end
+
   private
 
   def logger

@@ -124,6 +124,7 @@ class TiiAction < ApplicationRecord
 
   def save_and_reschedule(reset_retry: true)
     self.retries = 0 if reset_retry
+    self.error_code = nil # reset error code
     self.retry = true
     save
   end

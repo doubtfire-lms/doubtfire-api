@@ -4,6 +4,8 @@
 class TiiActionUploadSubmission < TiiAction
   delegate :status_sym, :status, :submission_id, :submitted_by_user, :task, :idx, :similarity_pdf_id, :similarity_pdf_path, :filename, to: :entity
 
+  NO_USER_ACCEPTED_EULA_ERROR = 'None of the student, tutor, or unit lead have accepted the EULA for Turnitin'.freeze
+
   def description
     "Upload #{self.filename} for #{self.task.student.username} from #{self.task.task_definition.abbreviation} (#{self.status} - #{self.next_step})"
   end
@@ -214,7 +216,7 @@ class TiiActionUploadSubmission < TiiAction
     result.submitter = submitted_by_user.username
 
     unless submitted_by_user.accepted_tii_eula? || (params.key?("accepted_tii_eula") && params["accepted_tii_eula"])
-      save_and_log_custom_error "None of the student, tutor, or unit lead have accepted the EULA for Turnitin"
+      save_and_log_custom_error NO_USER_ACCEPTED_EULA_ERROR
       return nil
     end
 
@@ -443,4 +445,26 @@ class TiiActionUploadSubmission < TiiAction
       result.status
     end
   end
+
+  # If this submission is not progressing due to a user not accepting the EULA, then
+  # check if the user has accepted the EULA now and retry
+  def attempt_retry_on_no_eula
+    if self.retry == false && status_sym == :created && error_message == NO_USER_ACCEPTED_EULA_ERROR
+      # If the student has now submitted the eula...
+      unless entity.submitted_by.accepted_tii_eula?
+        # Try reassigning the submitted_by so that it checks for tutor
+        # or convenor eula
+        entity.submitted_by = entity.submitted_by_user
+      end
+
+      # If we can submit from someone...
+      if submitted_by_user.accepted_tii_eula?
+        # Save any changes to the entity
+        entity.save
+        save_and_reschedule
+      end
+
+    end
+  end
+
 end
