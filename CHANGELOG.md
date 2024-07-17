@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.0.13](https://github.com/macite/doubtfire-deploy/compare/v8.0.12...v8.0.13) (2024-07-17)
+
+
+### Features
+
+* add env var to configure log to stdout ([0bf29eb](https://github.com/macite/doubtfire-deploy/commit/0bf29eb79824cfab89a6f4ce5ce15d89f1a77ca5))
+* check that old tii submissions upload when eula accepted ([6b08013](https://github.com/macite/doubtfire-deploy/commit/6b08013b423ae990c34224fdd6c358b08026e9f0))
+
+
+### Bug Fixes
+
+* check need to register webhooks in tii action ([ebbacb9](https://github.com/macite/doubtfire-deploy/commit/ebbacb90cd1602b04489d2d41ee9723d13a75852))
+* ensure tii module looks for appropriate user ([4dae884](https://github.com/macite/doubtfire-deploy/commit/4dae884dd29bf443d64654e36134e09e570ce31e))
+* ensure webhook test will register hooks ([be21763](https://github.com/macite/doubtfire-deploy/commit/be21763e2b486df0181da1a87ffbddcfb7407388))
+* limit tii action log to 25 entries ([03e9214](https://github.com/macite/doubtfire-deploy/commit/03e9214182e07561100b051cbed6e82191cc8750))
+* merge student records for deakin students ([4f3979b](https://github.com/macite/doubtfire-deploy/commit/4f3979ba4c00a0040f4899e33e48cd950cb6e833))
+* tii action retry resets retries ([789fbad](https://github.com/macite/doubtfire-deploy/commit/789fbada30f8d91cfaff732a4392ecb12d346e3f))
+
 ### [8.0.12](https://github.com/macite/doubtfire-deploy/compare/v8.0.11...v8.0.12) (2024-07-15)
 
 
