@@ -273,37 +273,36 @@ class DeakinInstitutionSettings
 
       username_user
     elsif username_user.present? && student_id_user.present?
-      # Both present, but different...
-      # Most likely updated username with existing student id
-      if username_user.projects.count == 0 && student_id_user.projects.count > 0
-        # Change the student id user to use the new username and email
-        student_id_user.username = username_user.username
-        student_id_user.email = username_user.email
-        student_id_user.login_id = nil
-        student_id_user.auth_tokens.destroy_all
 
-        # Correct the new username user record - so we mark this as a duplicate and move to the old record
-        username_user.username = "OLD-#{username_user.username}"
-        username_user.email = "DUP-#{username_user.email}"
-        username_user.login_id = nil
-
-        unless username_user.save
-          logger.error("Unable to fix user #{row_data} - username_user.save failed")
-          return nil
-        end
-        username_user.auth_tokens.destroy_all
-
-        unless student_id_user.save
-          logger.error("Unable to fix user #{row_data} - student_id_user.save failed")
-          return nil
-        end
-
-        # We keep the student id user... so return this
-        student_id_user
-      else
-        logger.error("Unable to fix user #{row_data} - both username and student id users present. Need manual fix.")
-        nil
+      # Check if the username user student id contains the student id
+      unless username_user.student_id.blank? || username_user.student_id.include?(student_id_user.student_id)
+        logger.error("Unable to fix user #{row_data} - username user has an unrelated student id. Cannot merge records - Need manual fix.")
+        return nil
       end
+
+      # Both present, but different...
+      # Merge them into the username user, as the student id user does not have the new username
+
+      # Change the username user...
+      username_user.student_id = student_id_user.student_id
+
+      # Correct the older student id record
+      student_id_user.student_id = "DUP-#{student_id_user.student_id}"
+
+      # Save student id user first - free student id from duplicate error
+      unless student_id_user.save
+        logger.error("Unable to fix user #{row_data} - student_id_user.save failed")
+        return nil
+      end
+
+      # Update the username user
+      unless username_user.save
+        logger.error("Unable to fix user #{row_data} - username_user.save failed")
+        return nil
+      end
+
+      # We keep the student id user... so return this
+      username_user
     else
       logger.error("Unable to fix user #{row_data} - Need manual fix.")
       nil
