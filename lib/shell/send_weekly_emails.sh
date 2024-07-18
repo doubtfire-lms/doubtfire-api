@@ -8,4 +8,4 @@ ROOT_PATH=`cd "$APP_PATH"/../..; pwd`
 
 cd "$ROOT_PATH"
 
-bundle exec rake mailer:send_status_emails
+DF_LOG_TO_STDOUT=true rails mailer:send_status_emails
