@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.0.14](https://github.com/macite/doubtfire-deploy/compare/v8.0.13...v8.0.14) (2024-07-18)
+
+
+### Features
+
+* allow logging to stdout using env var ([7d47eda](https://github.com/macite/doubtfire-deploy/commit/7d47eda6affafb6056d391a101c39670e3a1b7f6))
+
+
+### Bug Fixes
+
+* add logging info to debug hmac issues ([de3ec39](https://github.com/macite/doubtfire-deploy/commit/de3ec392612470a1103f6a04c737775965e58ccf))
+
 ### [8.0.13](https://github.com/macite/doubtfire-deploy/compare/v8.0.12...v8.0.13) (2024-07-17)
 
 
