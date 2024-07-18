@@ -15,7 +15,7 @@ class TiiUserAcceptEulaTest < ActiveSupport::TestCase
 
     assert user.tii_eula_date.present?
     assert_equal TurnItIn.eula_version, user.tii_eula_version
-    refute user.tii_eula_version_confirmed
+    assert_not user.tii_eula_version_confirmed
 
     assert_equal 1, TiiActionJob.jobs.count
 
@@ -35,6 +35,7 @@ class TiiUserAcceptEulaTest < ActiveSupport::TestCase
   end
 
   def test_eula_accept_will_retry
+    TiiAction.destroy_all
     setup_tii_eula
 
     user = FactoryBot.create(:user)
@@ -45,10 +46,10 @@ class TiiUserAcceptEulaTest < ActiveSupport::TestCase
     # Get the action tracking this progress...
     action = TiiActionAcceptEula.last
 
-    refute action.complete
+    assert_not action.complete
     assert action.retry
 
-    refute user.tii_eula_version_confirmed
+    assert_not user.tii_eula_version_confirmed
 
     assert_equal 1, TiiActionJob.jobs.count
     assert_equal user, action.entity
@@ -67,7 +68,7 @@ class TiiUserAcceptEulaTest < ActiveSupport::TestCase
     action.reload
 
     assert_requested accept_stub, times: 1
-    refute action.complete
+    assert_not action.complete
     assert action.retry
 
     # Reset to retry with check progress sweep
@@ -77,11 +78,11 @@ class TiiUserAcceptEulaTest < ActiveSupport::TestCase
     check_job.perform # Second fails
     action.reload
 
-    refute user.reload.tii_eula_version_confirmed
+    assert_not user.reload.tii_eula_version_confirmed
 
     assert_requested accept_stub, times: 2
-    refute action.complete
-    refute action.retry
+    assert_not action.complete
+    assert_not action.retry
 
     # Reset to retry with check progress sweep
     action.update(last_run: DateTime.now - 31.minutes, retry: true)
@@ -91,7 +92,7 @@ class TiiUserAcceptEulaTest < ActiveSupport::TestCase
 
     assert_requested accept_stub, times: 3
     assert action.complete
-    refute action.retry
+    assert_not action.retry
 
     # Reload our copy of user
     user.reload
@@ -160,9 +161,9 @@ class TiiUserAcceptEulaTest < ActiveSupport::TestCase
     action.perform
 
     assert_requested accept_stub, times: 1
-    refute TurnItIn.functional?
+    assert_not TurnItIn.functional?
 
-    refute action.retry
+    assert_not action.retry
 
     action.perform
     # Call does not go to tii as limit applied
