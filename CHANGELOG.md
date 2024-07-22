@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.0.15](https://github.com/macite/doubtfire-deploy/compare/v8.0.14...v8.0.15) (2024-07-22)
+
+
+### Bug Fixes
+
+* correct turn it in hmac calculation ([a249662](https://github.com/macite/doubtfire-deploy/commit/a249662d6866a80cf03c5793bc4816a766ad2b97))
+* ensure pax header is not included in tex on 2nd pass ([1b2a43c](https://github.com/macite/doubtfire-deploy/commit/1b2a43c0bfe45019b69bbf1952373709c09b67c5))
+
 ### [8.0.14](https://github.com/macite/doubtfire-deploy/compare/v8.0.13...v8.0.14) (2024-07-18)
 
 
