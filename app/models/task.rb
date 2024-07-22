@@ -1149,7 +1149,7 @@ class Task < ApplicationRecord
     rescue => e
       clear_in_process
       trigger_transition trigger: 'fix', by_user: project.tutor_for(task_definition)
-      add_text_comment project.tutor_for(task_definition), "**Automated Comment**: Something went wrong with your submission. Check the files and resubmit this task. #{e.message.to_s}"
+      add_text_comment project.tutor_for(task_definition), "**Automated Comment**: Something went wrong with your submission. Check the files and resubmit this task. #{e.message}"
       raise e
     end
   end
