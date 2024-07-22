@@ -732,7 +732,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     folder = FileHelper.student_work_dir(:new, task)
 
     # Copy the file in
-    FileUtils.cp('test_files/submissions/corrupted.pdf', "#{folder}/001-code.cs")
+    FileUtils.cp(Rails.root.join('test_files/submissions/corrupted.pdf'), "#{folder}/001-code.cs")
 
     begin
       assert_not task.convert_submission_to_pdf(log_to_stdout: false)

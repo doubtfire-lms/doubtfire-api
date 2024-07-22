@@ -6,7 +6,7 @@ class TiiCheckProgressJobTest < ActiveSupport::TestCase
 
   def test_check_eula_change
     TiiAction.delete_all
-
+    setup_tii_features_enabled
     setup_tii_eula
 
     # Create a task definition with two attachments
@@ -217,6 +217,7 @@ class TiiCheckProgressJobTest < ActiveSupport::TestCase
 
   def test_waits_to_process_action
     setup_tii_eula
+    setup_tii_features_enabled
 
     # Will test with user eula
     user = FactoryBot.create(:user)

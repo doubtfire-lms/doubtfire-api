@@ -4,6 +4,7 @@ class TiiUserAcceptEulaTest < ActiveSupport::TestCase
   include TestHelpers::TiiTestHelper
 
   def test_can_accept_tii_eula
+    setup_tii_features_enabled
     setup_tii_eula
 
     assert TurnItIn.eula_version.present?
@@ -36,6 +37,7 @@ class TiiUserAcceptEulaTest < ActiveSupport::TestCase
 
   def test_eula_accept_will_retry
     TiiAction.destroy_all
+    setup_tii_features_enabled
     setup_tii_eula
 
     user = FactoryBot.create(:user)
@@ -102,6 +104,7 @@ class TiiUserAcceptEulaTest < ActiveSupport::TestCase
   end
 
   def test_eula_accept_rate_limit
+    setup_tii_features_enabled
     setup_tii_eula
 
     # Prepare stub for call when eula is accepted and it fails
@@ -137,6 +140,7 @@ class TiiUserAcceptEulaTest < ActiveSupport::TestCase
   end
 
   def test_eula_respects_global_errors
+    setup_tii_features_enabled
     setup_tii_eula
 
     # Prepare stub for call when eula is accepted and it fails

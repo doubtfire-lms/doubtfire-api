@@ -15,7 +15,7 @@ class TiiActionApiTest < ActiveSupport::TestCase
 
   setup do
     TiiAction.delete_all
-
+    setup_tii_features_enabled
     setup_tii_eula
 
     # Create a task definition with two attachments
