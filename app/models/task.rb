@@ -1078,7 +1078,7 @@ class Task < ApplicationRecord
   end
 
   # Convert a submission to pdf - the source folder is the root folder in which the submission folder will be found (not the submission folder itself)
-  def convert_submission_to_pdf(source_folder = FileHelper.student_work_dir(:new))
+  def convert_submission_to_pdf(source_folder: FileHelper.student_work_dir(:new), log_to_stdout: true)
     return false unless move_files_to_in_process(source_folder)
 
     begin
@@ -1100,7 +1100,7 @@ class Task < ApplicationRecord
 
           log_file = e.message.scan(/\/.*\.log/).first
           # puts "log file is ... #{log_file}"
-          if log_file && File.exist?(log_file)
+          if log_to_stdout && log_file && File.exist?(log_file)
             # puts "exists"
             begin
               # rubocop:disable Rails/Output
@@ -1148,8 +1148,8 @@ class Task < ApplicationRecord
       return true
     rescue => e
       clear_in_process
-
       trigger_transition trigger: 'fix', by_user: project.tutor_for(task_definition)
+      add_text_comment project.tutor_for(task_definition), "**Automated Comment**: Something went wrong with your submission. Check the files and resubmit this task. #{e.message.to_s}"
       raise e
     end
   end

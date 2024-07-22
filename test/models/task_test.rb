@@ -74,7 +74,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     assert_equal 201, last_response.status, last_response_body
 
     task = project.task_for_task_definition(td)
-    assert task.convert_submission_to_pdf
+    assert task.convert_submission_to_pdf(log_to_stdout: false)
     path = task.zip_file_path_for_done_task
     assert path
     assert File.exist? path
@@ -161,7 +161,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     assert_equal 201, last_response.status
 
     task = project.task_for_task_definition(td)
-    assert task.convert_submission_to_pdf
+    assert task.convert_submission_to_pdf(log_to_stdout: false)
     path = task.zip_file_path_for_done_task
     assert path
     assert File.exist? path
@@ -205,7 +205,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     task = project.task_for_task_definition(td)
 
-    task.convert_submission_to_pdf
+    task.convert_submission_to_pdf(log_to_stdout: false)
 
     path = task.final_pdf_path
     assert File.exist? path
@@ -251,7 +251,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     assert project_task.processing_pdf?
 
     # Generate pdf for task
-    assert project_task.convert_submission_to_pdf
+    assert project_task.convert_submission_to_pdf(log_to_stdout: false)
 
     # Check if pdf was copied over
     project.reload
@@ -308,7 +308,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     assert project_task.processing_pdf?
 
     # Generate pdf for task
-    assert project_task.convert_submission_to_pdf
+    assert project_task.convert_submission_to_pdf(log_to_stdout: false)
 
     # Check if the file was moved to portfolio
     assert_not project.uses_draft_learning_summary
@@ -352,7 +352,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     assert_equal 201, last_response.status, last_response_body
 
     task = project.task_for_task_definition(td)
-    assert task.convert_submission_to_pdf
+    assert task.convert_submission_to_pdf(log_to_stdout: false)
     path = task.zip_file_path_for_done_task
     assert path
     assert File.exist? path
@@ -377,7 +377,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     assert_equal 201, last_response.status, last_response_body
 
     # test submission generation
-    assert task.convert_submission_to_pdf
+    assert task.convert_submission_to_pdf(log_to_stdout: false)
     path = task.zip_file_path_for_done_task
     assert path
     assert File.exist? path
@@ -394,7 +394,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     assert_equal 201, last_response.status, last_response_body
 
     # test submission generation
-    assert task.convert_submission_to_pdf
+    assert task.convert_submission_to_pdf(log_to_stdout: false)
     path = task.zip_file_path_for_done_task
     assert path
     assert File.exist? path
@@ -446,7 +446,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     # test submission generation
     task = project.task_for_task_definition(td)
-    assert task.convert_submission_to_pdf
+    assert task.convert_submission_to_pdf(log_to_stdout: false)
     path = task.zip_file_path_for_done_task
     assert path
     assert File.exist? path
@@ -469,7 +469,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     # test submission generation
     task = project.task_for_task_definition(td)
-    assert task.convert_submission_to_pdf
+    assert task.convert_submission_to_pdf(log_to_stdout: false)
     path = task.zip_file_path_for_done_task
     assert path
     assert File.exist? path
@@ -520,7 +520,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     # test submission generation
     task = project.task_for_task_definition(td)
-    assert task.convert_submission_to_pdf
+    assert task.convert_submission_to_pdf(log_to_stdout: false)
     path = task.zip_file_path_for_done_task
     assert path
     assert File.exist? path
@@ -543,7 +543,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     # test submission generation
     task = project.task_for_task_definition(td)
-    assert task.convert_submission_to_pdf
+    assert task.convert_submission_to_pdf(log_to_stdout: false)
     path = task.zip_file_path_for_done_task
     assert path
     assert File.exist? path
@@ -594,7 +594,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     # test submission generation
     task = project.task_for_task_definition(td)
-    assert task.convert_submission_to_pdf
+    assert task.convert_submission_to_pdf(log_to_stdout: false)
     path = task.zip_file_path_for_done_task
     assert path
     assert File.exist? path
@@ -617,7 +617,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     # test submission generation
     task = project.task_for_task_definition(td)
-    assert task.convert_submission_to_pdf
+    assert task.convert_submission_to_pdf(log_to_stdout: false)
     path = task.zip_file_path_for_done_task
     assert path
     assert File.exist? path
@@ -631,6 +631,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     assert_not File.exist? path
     unit.destroy!
   end
+
   def test_pdf_validation_on_submit
     unit = FactoryBot.create(:unit, student_count: 1, task_count: 0)
     td = TaskDefinition.new({
@@ -689,7 +690,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     assert_equal 201, last_response.status, last_response_body
 
     task = project.task_for_task_definition(td)
-    assert task.convert_submission_to_pdf
+    assert task.convert_submission_to_pdf(log_to_stdout: false)
     path = task.zip_file_path_for_done_task
     assert path
     assert File.exist? path
@@ -698,5 +699,52 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     td.destroy
     assert_not File.exist? path
     unit.destroy!
+  end
+
+  def test_pdf_creation_fails_on_invalid_pdf
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 0)
+    td = TaskDefinition.new({
+        unit_id: unit.id,
+        tutorial_stream: unit.tutorial_streams.first,
+        name: 'PDF Test Task',
+        description: 'Test task',
+        weighting: 4,
+        target_grade: 0,
+        start_date: unit.start_date + 1.week,
+        target_date: unit.start_date + 2.weeks,
+        abbreviation: 'PDFTestTask',
+        restrict_status_updates: false,
+        upload_requirements: [ { "key" => 'file0', "name" => 'A pdf file', "type" => 'code' } ],
+        plagiarism_warn_pct: 0.8,
+        is_graded: false,
+        max_quality_pts: 0
+      })
+    td.save!
+
+    data_to_post = {
+      trigger: 'ready_for_feedback'
+    }
+
+    project = unit.active_projects.first
+
+    task = project.task_for_task_definition(td)
+
+    folder = FileHelper.student_work_dir(:new, task)
+
+    # Copy the file in
+    FileUtils.cp('test_files/submissions/corrupted.pdf', "#{folder}/001-code.cs")
+
+    begin
+      assert_not task.convert_submission_to_pdf(log_to_stdout: false)
+    rescue StandardError => e
+      task.reload
+
+      assert_equal 2, task.comments.count
+      assert task.comments.last.comment.starts_with?('**Automated Comment**:')
+      assert task.comments.last.comment.include?(e.message.to_s)
+
+      td.destroy
+      unit.destroy!
+    end
   end
 end
