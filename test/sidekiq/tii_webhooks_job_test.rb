@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'test_helper'
-class TiiCWebhooksJobTest < ActiveSupport::TestCase
+class TiiWebhooksJobTest < ActiveSupport::TestCase
   include TestHelpers::TiiTestHelper
 
   def test_register_webhooks
@@ -112,5 +112,50 @@ class TiiCWebhooksJobTest < ActiveSupport::TestCase
 
     assert_requested list_webhooks_stub, times: 1
     assert_requested register_webhooks_stub, times: 0
+  end
+
+  def test_can_remove_webhooks
+    # Will ask for current webhooks
+    list_webhooks_stub = stub_request(:get, "https://#{ENV['TCA_HOST']}/api/v1/webhooks").
+    with(tii_headers).
+    to_return(
+      status: 200,
+      body: [
+        TCAClient::Webhook.new(
+          "id" => "f5d62573-277d-4725-b557-c64877ddf6c7",
+          "url" => "https://myschool.sweetlms.com/turnitin-callbacks",
+          "description" => "my first webhook",
+          "created_time" => "2017-10-20T13:39:53.816Z",
+          "event_types" => [
+            "SUBMISSION_COMPLETE"
+          ]
+        ),
+        TCAClient::Webhook.new(
+          "id" => "another-id",
+          "url" => TurnItIn.webhook_url,
+          "description" => "my second webhook",
+          "created_time" => "2017-10-20T13:39:53.816Z",
+          "event_types" => [
+            "SUBMISSION_COMPLETE"
+          ]
+        )
+      ].to_json,
+      headers: {}
+    )
+
+    delete_webhook_1_stub = stub_request(:delete, "https://#{ENV['TCA_HOST']}/api/v1/webhooks/f5d62573-277d-4725-b557-c64877ddf6c7")
+                            .with(tii_headers)
+                            .to_return(status: 200, body: "", headers: {})
+
+    delete_webhook_2_stub = stub_request(:delete, "https://#{ENV['TCA_HOST']}/api/v1/webhooks/another-id")
+                            .with(tii_headers)
+                            .to_return(status: 200, body: "", headers: {})
+
+    action = TiiActionRegisterWebhook.last || TiiActionRegisterWebhook.create
+    action.remove_webhooks
+
+    assert_requested list_webhooks_stub, times: 1
+    assert_requested delete_webhook_1_stub, times: 1
+    assert_requested delete_webhook_2_stub, times: 1
   end
 end

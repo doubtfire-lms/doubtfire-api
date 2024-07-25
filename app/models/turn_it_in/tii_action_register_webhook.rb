@@ -6,6 +6,22 @@ class TiiActionRegisterWebhook < TiiAction
     "Register webhooks"
   end
 
+  def remove_webhooks
+    # Get all webhooks
+    webhooks = list_all_webhooks
+
+    # Delete each of the webhooks
+    webhooks.each do |webhook|
+      exec_tca_call 'delete webhook' do
+        TCAClient::WebhookApi.new.delete_webhook(
+          TurnItIn.x_turnitin_integration_name,
+          TurnItIn.x_turnitin_integration_version,
+          webhook.id
+        )
+      end
+    end
+  end
+
   private
 
   def run
