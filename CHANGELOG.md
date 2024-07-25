@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.0.18](https://github.com/macite/doubtfire-deploy/compare/v8.0.17...v8.0.18) (2024-07-25)
+
+
+### Features
+
+* add ability to manually remove webhooks from rails console ([7e9adaa](https://github.com/macite/doubtfire-deploy/commit/7e9adaa50b8db70fb488ae3a489ad521dac5e28a))
+
+
+### Bug Fixes
+
+* ensure tii signing secret is sent as a base64 string ([efa6692](https://github.com/macite/doubtfire-deploy/commit/efa669273bc8aa56ecfced4d63ab0f9af4649273))
+
 ### [8.0.17](https://github.com/macite/doubtfire-deploy/compare/v8.0.16...v8.0.17) (2024-07-22)
 
 ### [8.0.16](https://github.com/macite/doubtfire-deploy/compare/v8.0.15...v8.0.16) (2024-07-22)
