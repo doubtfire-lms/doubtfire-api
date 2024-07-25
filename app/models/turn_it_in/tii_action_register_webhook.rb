@@ -44,7 +44,7 @@ class TiiActionRegisterWebhook < TiiAction
 
   def register_webhook
     data = TCAClient::WebhookWithSecret.new(
-      signing_secret: ENV.fetch('TCA_SIGNING_KEY', nil),
+      signing_secret: Base64.encode64(ENV.fetch('TCA_SIGNING_KEY', nil)),
       url: TurnItIn.webhook_url,
       event_types: %w[
         SIMILARITY_COMPLETE

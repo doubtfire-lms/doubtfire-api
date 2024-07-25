@@ -35,22 +35,22 @@ class TiiWebhooksJobTest < ActiveSupport::TestCase
       headers: {})
 
     # and will register the webhooks
-    register_webhooks_stub = stub_request(:post, "https://#{ENV['TCA_HOST']}/api/v1/webhooks").
-    with(tii_headers).
-    with(
-      body: TCAClient::WebhookWithSecret.new(
-        signing_secret: ENV.fetch('TCA_SIGNING_KEY', nil),
-        url: TurnItIn.webhook_url,
-        event_types: [
-          'SIMILARITY_COMPLETE',
-          'SUBMISSION_COMPLETE',
-          'SIMILARITY_UPDATED',
-          'PDF_STATUS',
-          'GROUP_ATTACHMENT_COMPLETE'
-        ]
-      ).to_json,
-    ).
-    to_return(status: 200, body: "", headers: {})
+    register_webhooks_stub = stub_request(:post, "https://#{ENV['TCA_HOST']}/api/v1/webhooks")
+                             .with(tii_headers)
+                             .with(
+                               body: TCAClient::WebhookWithSecret.new(
+                                 signing_secret: Base64.encode64(ENV.fetch('TCA_SIGNING_KEY', nil)),
+                                 url: TurnItIn.webhook_url,
+                                 event_types: [
+                                   'SIMILARITY_COMPLETE',
+                                   'SUBMISSION_COMPLETE',
+                                   'SIMILARITY_UPDATED',
+                                   'PDF_STATUS',
+                                   'GROUP_ATTACHMENT_COMPLETE'
+                                 ]
+                               ).to_json
+                             )
+                             .to_return(status: 200, body: "", headers: {})
 
     job = TiiRegisterWebHookJob.new
     job.perform
