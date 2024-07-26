@@ -176,6 +176,26 @@ class TaskDefinition < ApplicationRecord
         errors.add(:upload_requirements, "has additional values for item #{i + 1} --> #{req.keys.join(' ')}.")
       end
 
+      # Check the name matches a valid filename format
+      unless req['name'].match?(/^[a-zA-Z0-9_\- \.]+$/)
+        errors.add(:upload_requirements, "the name for item #{i + 1} does not seem to be a valid filename --> #{req['name']}.")
+      end
+
+      # Check the type is either document or image or code
+      unless %w(document image code).include? req['type']
+        errors.add(:upload_requirements, "the type for item #{i + 1} is not valid --> #{req['type']}.")
+      end
+
+      # Check that tii check is a boolean
+      unless req['tii_check'].blank? || [true, false].include?(req['tii_check'])
+        errors.add(:upload_requirements, "the tii_check for item #{i + 1} is not a boolean --> #{req['tii_check']}.")
+      end
+
+      # Check that tii_pct is a non-negative number
+      unless req['tii_pct'].blank? || (req['tii_pct'].is_a?(Numeric) && req['tii_pct'] >= 0)
+        errors.add(:upload_requirements, "the tii_pct for item #{i + 1} is not a non-negative number --> #{req['tii_pct']}.")
+      end
+
       i += 1
     end
   end

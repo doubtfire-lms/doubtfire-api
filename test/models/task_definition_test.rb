@@ -266,8 +266,130 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     t1.reload
 
     assert_nil t1.group_submission
-
+  ensure
     unit.destroy
   end
 
+  def test_upload_req_format
+    u = FactoryBot.create :unit, task_count: 0, with_students: false
+    td = FactoryBot.create :task_definition, unit: u, upload_requirements: [], start_date: Time.zone.now + 1.day
+
+    td.upload_requirements =
+      [
+        {
+          "key" => 'file0',
+          "name" => 'Document 1',
+          "type" => 'document',
+          "tii_check" => true,
+          "tii_pct" => 5
+        }
+      ]
+    assert td.valid?
+
+    td.upload_requirements =
+      [
+        {
+          "key" => 'file0',
+          "name" => 'Document 1',
+          "type" => 'document'
+        }
+      ]
+    assert td.valid?, 'tii check and pct not required'
+
+    td.upload_requirements =
+      [
+        {
+          "name" => 'Document 1',
+          "type" => 'document',
+          "tii_check" => true,
+          "tii_pct" => 5
+        }
+      ]
+
+    assert_not td.valid?, 'missing key'
+
+    td.upload_requirements =
+      [
+        {
+          "key" => 'file0',
+          "type" => 'document',
+          "tii_check" => true,
+          "tii_pct" => 5
+        }
+      ]
+    assert_not td.valid?, 'missing name'
+
+    td.upload_requirements =
+      [
+        {
+          "key" => 'file0',
+          "name" => 'Document 1',
+          "tii_check" => true,
+          "tii_pct" => 5
+        }
+      ]
+    assert_not td.valid?, 'missing type'
+
+    td.upload_requirements =
+      [
+        {
+          "key" => 'file0',
+          "name" => 'Document 1',
+          "type" => 'document',
+          "other" => true,
+          "tii_pct" => 5
+        }
+      ]
+    assert_not td.valid?, 'unknown key'
+
+    td.upload_requirements =
+      [
+        {
+          "key" => 'file0',
+          "name" => 'Document 1',
+          "type" => 'other',
+          "tii_check" => true,
+          "tii_pct" => 5
+        }
+      ]
+    assert_not td.valid?, 'unknown type'
+
+    td.upload_requirements =
+      [
+        {
+          "key" => 'file0',
+          "name" => 'Document 1',
+          "type" => 'document',
+          "tii_check" => 'test',
+          "tii_pct" => 5
+        }
+      ]
+    assert_not td.valid?, 'tii_check not boolean'
+
+    td.upload_requirements =
+      [
+        {
+          "key" => 'file0',
+          "name" => 'Document 1',
+          "type" => 'document',
+          "tii_check" => true,
+          "tii_pct" => 'test'
+        }
+      ]
+    assert_not td.valid?, 'tii_pct not integer'
+
+    td.upload_requirements =
+      [
+        {
+          "key" => 'file0',
+          "name" => "\tnot a filename",
+          "type" => 'document',
+          "tii_check" => true,
+          "tii_pct" => 5
+        }
+      ]
+    assert_not td.valid?, 'name not valid filename'
+  ensure
+    u.destroy
+  end
 end
