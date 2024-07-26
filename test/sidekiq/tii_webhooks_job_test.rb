@@ -5,6 +5,9 @@ class TiiWebhooksJobTest < ActiveSupport::TestCase
   include TestHelpers::TiiTestHelper
 
   def test_register_webhooks
+    setup_tii_eula
+    setup_tii_features_enabled
+
     Doubtfire::Application.config.tii_register_webhook = true
 
     # Will ask for current webhooks
@@ -32,14 +35,17 @@ class TiiWebhooksJobTest < ActiveSupport::TestCase
           ]
         )
       ].to_json,
-      headers: {})
+      headers: {}
+    )
+
+    ENV['TCA_SIGNING_KEY'] = 'TESTING'
 
     # and will register the webhooks
     register_webhooks_stub = stub_request(:post, "https://#{ENV['TCA_HOST']}/api/v1/webhooks")
                              .with(tii_headers)
                              .with(
                                body: TCAClient::WebhookWithSecret.new(
-                                 signing_secret: Base64.encode64(ENV.fetch('TCA_SIGNING_KEY', nil)).tr("\n", '' ),
+                                 signing_secret: Base64.encode64(ENV.fetch('TCA_SIGNING_KEY', nil)).tr("\n", ''),
                                  url: TurnItIn.webhook_url,
                                  event_types: [
                                    'SIMILARITY_COMPLETE',

@@ -850,6 +850,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     task.task_status = TaskStatus.not_started
     task.save!
+    task.reload
 
     # Now... lets upload a submission with no files
     task.accept_submission user, [], user, self, nil, 'ready_for_feedback', nil
@@ -860,7 +861,16 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     # Now... lets upload a submission with too many files
     begin
-      task.accept_submission user, [], user, self, nil, 'ready_for_feedback', nil
+      task.accept_submission user,
+        [
+          {
+            id: 'file0',
+            name: 'Document 1',
+            type: 'document',
+            filename: 'file0.pdf',
+            "tempfile" => File.new(test_file_path('submissions/1.2P.pdf'))
+          }
+        ], user, self, nil, 'ready_for_feedback', nil
       assert false, 'Should have raised an error with too many files submitted'
     rescue StandardError => e
       assert_equal :not_started, task.status

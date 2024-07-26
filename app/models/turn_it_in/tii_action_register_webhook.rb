@@ -41,10 +41,11 @@ class TiiActionRegisterWebhook < TiiAction
   end
 
   def register_webhook
-    raise "TCA_SIGNING_KEY is not set" if data.signing_secret.nil?
+    key = ENV.fetch('TCA_SIGNING_KEY', nil)
+    raise "TCA_SIGNING_KEY is not set" if key.nil?
 
     data = TCAClient::WebhookWithSecret.new(
-      signing_secret: Base64.encode64(ENV.fetch('TCA_SIGNING_KEY', nil)).tr("\n", ''),
+      signing_secret: Base64.encode64(key).tr("\n", ''),
       url: TurnItIn.webhook_url,
       event_types: %w[
         SIMILARITY_COMPLETE
