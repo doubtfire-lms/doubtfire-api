@@ -17,8 +17,8 @@ class TiiCheckProgressJobTest < ActiveSupport::TestCase
         'key' => 'file0',
         'name' => 'My document',
         'type' => 'document',
-        'tii_check' => 'true',
-        'tii_pct' => '10'
+        'tii_check' => true,
+        'tii_pct' => 10
       }
     ])
 
@@ -150,8 +150,8 @@ class TiiCheckProgressJobTest < ActiveSupport::TestCase
         'key' => 'file0',
         'name' => 'My document',
         'type' => 'document',
-        'tii_check' => 'true',
-        'tii_pct' => '10'
+        'tii_check' => true,
+        'tii_pct' => 10
       }
     ])
 

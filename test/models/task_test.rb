@@ -10,7 +10,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
   include TestHelpers::AuthHelper
   include TestHelpers::JsonHelper
 
-  def error! msg
+  def error! msg, code
     raise msg
   end
 
