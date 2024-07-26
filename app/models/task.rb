@@ -1210,6 +1210,11 @@ class Task < ApplicationRecord
   # Checks to make sure that the files match what we expect
   #
   def accept_submission(current_user, files, _student, ui, contributions, trigger, alignments, accepted_tii_eula: false)
+    # Ensure all of the files are present
+    if files.nil? || files.length != task_definition.number_of_uploaded_files
+      ui.error!({ 'error' => 'Some files are missing from the submission upload' }, 403)
+    end
+
     #
     # Ensure that each file in files has the following attributes:
     # id, name, filename, type, tempfile

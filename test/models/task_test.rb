@@ -10,6 +10,10 @@ class TaskDefinitionTest < ActiveSupport::TestCase
   include TestHelpers::AuthHelper
   include TestHelpers::JsonHelper
 
+  def error! msg
+    raise msg
+  end
+
   def app
     Rails.application
   end
@@ -745,6 +749,121 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
       td.destroy
       unit.destroy!
+    end
+  end
+
+  def test_accept_files_checks_they_all_exist
+    project = FactoryBot.create(:project)
+    unit = project.unit
+    user = project.student
+    convenor = unit.main_convenor_user
+    task_definition = unit.task_definitions.first
+
+    task_definition.upload_requirements = [
+      {
+        "key" => 'file0',
+        "name" => 'Document 1',
+        "type" => 'document'
+      },
+      {
+        "key" => 'file1',
+        "name" => 'Document 2',
+        "type" => 'document'
+      },
+      {
+        "key" => 'file2',
+        "name" => 'Code 1',
+        "type" => 'code'
+      },
+      {
+        "key" => 'file3',
+        "name" => 'Document 3',
+        "type" => 'document'
+      },
+      {
+        "key" => 'file4',
+        "name" => 'Document 4',
+        "type" => 'document'
+      }
+    ]
+
+    # Saving task def
+    task_definition.save!
+
+    # Test that the task def is setup correctly
+    assert_equal 5, task_definition.number_of_uploaded_files
+
+    # Now... lets upload a submission
+    task = project.task_for_task_definition(task_definition)
+
+    # Create a submission - but no files!
+    begin
+      task.accept_submission user, [], user, self, nil, 'ready_for_feedback', nil
+      assert false, 'Should have raised an error with no files submitted'
+    rescue StandardError => e
+      assert_equal :not_started, task.status
+    end
+
+    # Create a submission
+    task.accept_submission user, [
+      {
+        id: 'file0',
+        name: 'Document 1',
+        type: 'document',
+        filename: 'file0.pdf',
+        "tempfile" => File.new(test_file_path('submissions/1.2P.pdf'))
+      },
+      {
+        id: 'file1',
+        name: 'Document 2',
+        type: 'document',
+        filename: 'file1.pdf',
+        "tempfile" => File.new(test_file_path('submissions/1.2P.pdf'))
+      },
+      {
+        id: 'file2',
+        name: 'Code 1',
+        type: 'code',
+        filename: 'code.cs',
+        "tempfile" => File.new(test_file_path('submissions/program.cs'))
+      },
+      {
+        id: 'file3',
+        name: 'Document 3',
+        type: 'document',
+        filename: 'file3.pdf',
+        "tempfile" => File.new(test_file_path('submissions/1.2P.pdf'))
+      },
+      {
+        id: 'file4',
+        name: 'Document 4',
+        type: 'document',
+        filename: 'file4.pdf',
+        "tempfile" => File.new(test_file_path('submissions/1.2P.pdf'))
+      }
+    ], user, self, nil, 'ready_for_feedback', nil, accepted_tii_eula: true
+
+    assert_equal :ready_for_feedback, task.status
+
+    task_definition.upload_requirements = []
+    task_definition.save!
+
+    task.task_status = TaskStatus.not_started
+    task.save!
+
+    # Now... lets upload a submission with no files
+    task.accept_submission user, [], user, self, nil, 'ready_for_feedback', nil
+    assert_equal :ready_for_feedback, task.status
+
+    task.task_status = TaskStatus.not_started
+    task.save!
+
+    # Now... lets upload a submission with too many files
+    begin
+      task.accept_submission user, [], user, self, nil, 'ready_for_feedback', nil
+      assert false, 'Should have raised an error with too many files submitted'
+    rescue StandardError => e
+      assert_equal :not_started, task.status
     end
   end
 end
