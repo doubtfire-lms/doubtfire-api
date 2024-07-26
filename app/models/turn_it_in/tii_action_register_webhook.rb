@@ -22,8 +22,6 @@ class TiiActionRegisterWebhook < TiiAction
     end
   end
 
-  private
-
   def run
     register_webhook if TurnItIn.register_webhooks? && need_to_register_webhook?
     self.complete = true
@@ -43,8 +41,10 @@ class TiiActionRegisterWebhook < TiiAction
   end
 
   def register_webhook
+    raise "TCA_SIGNING_KEY is not set" if data.signing_secret.nil?
+
     data = TCAClient::WebhookWithSecret.new(
-      signing_secret: Base64.encode64(ENV.fetch('TCA_SIGNING_KEY', nil)),
+      signing_secret: Base64.encode64(ENV.fetch('TCA_SIGNING_KEY', nil)).tr("\n", ''),
       url: TurnItIn.webhook_url,
       event_types: %w[
         SIMILARITY_COMPLETE
@@ -54,8 +54,6 @@ class TiiActionRegisterWebhook < TiiAction
         GROUP_ATTACHMENT_COMPLETE
       ]
     ) # WebhookWithSecret |
-
-    raise "TCA_SIGNING_KEY is not set" if data.signing_secret.nil?
 
     exec_tca_call 'register webhook' do
       TCAClient::WebhookApi.new.webhooks_post(
