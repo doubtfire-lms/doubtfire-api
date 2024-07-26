@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.0.19](https://github.com/macite/doubtfire-deploy/compare/v8.0.18...v8.0.19) (2024-07-26)
+
+
+### Bug Fixes
+
+* ensure accept submission checks number of files ([cea12e5](https://github.com/macite/doubtfire-deploy/commit/cea12e5bee7ba7b954bdeff1c5257d2c9c9a841a))
+* remove newlines from signing key base64 encoding ([d84856b](https://github.com/macite/doubtfire-deploy/commit/d84856b8e90126e34cb34e4d405acc462af7e147))
+
 ### [8.0.18](https://github.com/macite/doubtfire-deploy/compare/v8.0.17...v8.0.18) (2024-07-25)
 
 
