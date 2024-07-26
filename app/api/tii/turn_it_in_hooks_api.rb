@@ -21,11 +21,11 @@ module Tii
       data = JSON.parse(raw_data)
       digest = OpenSSL::Digest.new('sha256')
 
-      logger.info("TII_HOOK_DEBUG:#{raw_data}")
+      logger.debug("TII_HOOK_DEBUG:#{raw_data}")
       hmac = OpenSSL::HMAC.hexdigest(digest, ENV.fetch('TCA_SIGNING_KEY', nil), raw_data)
 
-      logger.info("TII_HOOK_DEBUG:#{hmac}")
-      logger.info("TII_HOOK_DEBUG:#{headers['x-turnitin-signature']}")
+      logger.debug("TII_HOOK_DEBUG:#{hmac}")
+      logger.debug("TII_HOOK_DEBUG:#{headers['x-turnitin-signature']}")
 
       if hmac != headers["x-turnitin-signature"]
         logger.error("TII: HMAC does not match")
