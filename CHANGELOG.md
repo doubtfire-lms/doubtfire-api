@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.0.20](https://github.com/macite/doubtfire-deploy/compare/v8.0.19...v8.0.20) (2024-07-29)
+
+
+### Bug Fixes
+
+* webhook registration key check ([70f095c](https://github.com/macite/doubtfire-deploy/commit/70f095c3bb762b73738344f6902cfd53e11daf0b))
+
 ### [8.0.19](https://github.com/macite/doubtfire-deploy/compare/v8.0.18...v8.0.19) (2024-07-26)
 
 
