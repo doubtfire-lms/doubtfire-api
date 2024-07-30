@@ -22,7 +22,7 @@ class PortfolioEvidence
     pid_folder = File.join(student_work_dir(:in_process), "pid_#{Process.pid}")
 
     # Move everything in "new" to "pid" folder but retain the old "new" folder
-    FileHelper.move_files(student_work_dir(:new), pid_folder, true, DateTime.now - 1.minute)
+    FileHelper.move_files(student_work_dir(:new), pid_folder, true, DateTime.now - 30.minutes)
     pid_folder
   end
 
