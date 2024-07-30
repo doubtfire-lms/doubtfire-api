@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.0.21](https://github.com/macite/doubtfire-deploy/compare/v8.0.20...v8.0.21) (2024-07-30)
+
+
+### Bug Fixes
+
+* delay pdf generation to ensure sufficient time for async task to run ([6753d80](https://github.com/macite/doubtfire-deploy/commit/6753d803a573c3ced9fb58ef202486cc69d3329c))
+
 ### [8.0.20](https://github.com/macite/doubtfire-deploy/compare/v8.0.19...v8.0.20) (2024-07-29)
 
 
