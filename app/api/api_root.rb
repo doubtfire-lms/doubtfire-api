@@ -33,6 +33,9 @@ class ApiRoot < Grape::API
     when ActionController::ParameterMissing
       message = "Missing value for #{e.param}"
       status = 400
+    when ActiveRecord::ConnectionTimeoutError
+      message = 'There is currently high load on the system. Please wait a moment and try again.'
+      status = 503
     else
       # rubocop:disable Rails/Output
       puts e.inspect unless Rails.env.production?
