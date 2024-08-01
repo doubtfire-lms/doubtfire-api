@@ -227,12 +227,24 @@ class Task < ApplicationRecord
     Task.joins(:project).where('projects.user_id = ?', user.id)
   end
 
-  def processing_pdf?
+  def folder_exists_in_new?
     if group_task? && group_submission
       File.exist? File.join(FileHelper.student_work_dir(:new), group_submission.submitter_task.id.to_s)
     else
       File.exist? File.join(FileHelper.student_work_dir(:new), id.to_s)
     end
+  end
+
+  def folder_exists_in_process?
+    if group_task? && group_submission
+      File.exist? File.join(FileHelper.student_work_dir(:in_process), group_submission.submitter_task.id.to_s)
+    else
+      File.exist? File.join(FileHelper.student_work_dir(:in_process), id.to_s)
+    end
+  end
+
+  def processing_pdf?
+    folder_exists_in_new? || folder_exists_in_process?
   end
 
   # Get the raw extension date - with extensions representing weeks
@@ -832,12 +844,10 @@ class Task < ApplicationRecord
       zip_file = zip_file_path || zip_file_path_for_done_task
       return false if zip_file.nil? || (!Dir.exist? task_dir)
 
-      FileUtils.rm_f(zip_file)
-
-      # compress image files
+      # compress image files - convert to jpg
       image_files = Dir.entries(task_dir).select { |f| (f =~ /^\d{3}.(image)/) == 0 }
       image_files.each do |img|
-        # Ensure all images in submissions are not jpg
+        # Ensure all images in submissions are jpg
         dest_file = "#{task_dir}#{File.basename(img, ".*")}.jpg"
         raise 'Failed to compress an image. Ensure all images are valid.' unless FileHelper.compress_image_to_dest("#{task_dir}#{img}", dest_file, true)
 
@@ -845,9 +855,20 @@ class Task < ApplicationRecord
         FileUtils.rm("#{task_dir}#{img}") unless dest_file == "#{task_dir}#{img}"
       end
 
-      # copy all files into zip
       input_files = Dir.entries(task_dir).select { |f| (f =~ /^\d{3}.(cover|document|code|image)/) == 0 }
 
+      if input_files.length != task_definition.number_of_uploaded_files
+        logger.error "Error processing task #{log_details} - missing files expected #{task_definition.number_of_uploaded_files} got #{input_files.length}"
+        logger.error "Files found: #{input_files}"
+        return false
+      end
+
+      logger.info "Creating new zip file for task #{id} in #{zip_file}"
+
+      # We have what looks like a good submission, remove old zip
+      FileUtils.rm_f(zip_file)
+
+      # copy all files into zip
       zip_dir = File.dirname(zip_file)
       FileUtils.mkdir_p zip_dir
 
@@ -878,7 +899,7 @@ class Task < ApplicationRecord
   def clear_in_process
     in_process_dir = student_work_dir(:in_process, false)
     if Dir.exist? in_process_dir
-      Dir.chdir(FileUtils.student_work_dir) if FileUtils.pwd == in_process_dir
+      Dir.chdir(FileHelper.student_work_root) if FileUtils.pwd == in_process_dir
       FileUtils.rm_rf in_process_dir
     end
   end
@@ -923,7 +944,10 @@ class Task < ApplicationRecord
     from_dir = File.join(source_folder, id.to_s) + "/"
     if Dir.exist?(from_dir)
       # save new files in done folder
-      return false unless compress_new_to_done(task_dir: from_dir)
+      unless compress_new_to_done(task_dir: from_dir)
+        logger.error "Error processing task #{log_details} - failed to compress new files"
+        return false
+      end
     end
 
     # Get the zip file path...
@@ -1079,7 +1103,12 @@ class Task < ApplicationRecord
 
   # Convert a submission to pdf - the source folder is the root folder in which the submission folder will be found (not the submission folder itself)
   def convert_submission_to_pdf(source_folder: FileHelper.student_work_dir(:new), log_to_stdout: true)
-    return false unless move_files_to_in_process(source_folder)
+    logger.info "Converting task #{self.id} to pdf"
+
+    unless move_files_to_in_process(source_folder)
+      logger.error("Failed to move files for #{log_details} to in process")
+      return false
+    end
 
     begin
       tac = TaskAppController.new
@@ -1134,6 +1163,8 @@ class Task < ApplicationRecord
 
       FileHelper.compress_pdf(portfolio_evidence_path)
 
+      logger.info("PDF created for task #{self.id}")
+
       # if the task is the draft learning summary task
       if task_definition_id == unit.draft_task_definition_id
         # if there is a learning summary, execute, if there isn't and a learning summary exists, don't execute
@@ -1143,14 +1174,13 @@ class Task < ApplicationRecord
       end
 
       save
-
-      clear_in_process
       return true
     rescue => e
-      clear_in_process
       trigger_transition trigger: 'fix', by_user: project.tutor_for(task_definition)
       add_text_comment project.tutor_for(task_definition), "**Automated Comment**: Something went wrong with your submission. Check the files and resubmit this task. #{e.message}"
       raise e
+    ensure
+      clear_in_process
     end
   end
 
@@ -1209,7 +1239,12 @@ class Task < ApplicationRecord
   #
   # Checks to make sure that the files match what we expect
   #
-  def accept_submission(current_user, files, _student, ui, contributions, trigger, alignments, accepted_tii_eula: false)
+  def accept_submission(current_user, files, ui, contributions, trigger, alignments, accepted_tii_eula: false)
+    # Ensure there is not a submission already in process
+    if processing_pdf?
+      ui.error!({ 'error' => 'A submission is already being processed. Please wait for the current submission process to complete.' }, 403)
+    end
+
     # Ensure all of the files are present
     if files.nil? || files.length != task_definition.number_of_uploaded_files
       ui.error!({ 'error' => 'Some files are missing from the submission upload' }, 403)

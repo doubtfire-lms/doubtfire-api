@@ -311,7 +311,7 @@ class TiiModelTest < ActiveSupport::TestCase
         "tempfile" => File.new(test_file_path('submissions/1.2P.pdf'))
       },
 
-    ], user, nil, nil, 'ready_for_feedback', nil, accepted_tii_eula: true
+    ], nil, nil, 'ready_for_feedback', nil, accepted_tii_eula: true
 
     # Check that the submission is going to be progressed
     assert_equal 1, AcceptSubmissionJob.jobs.count

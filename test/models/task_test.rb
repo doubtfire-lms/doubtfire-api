@@ -10,8 +10,13 @@ class TaskDefinitionTest < ActiveSupport::TestCase
   include TestHelpers::AuthHelper
   include TestHelpers::JsonHelper
 
-  def error! msg, code
-    raise msg
+  def error!(msg, _code)
+    raise StandardError, msg
+  end
+
+  def clear_submission(task)
+    FileUtils.rm_rf(FileHelper.student_work_dir(:new, task, false))
+    FileUtils.rm_rf(FileHelper.student_work_dir(:in_process, task, false))
   end
 
   def app
@@ -798,7 +803,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     # Create a submission - but no files!
     begin
-      task.accept_submission user, [], user, self, nil, 'ready_for_feedback', nil
+      task.accept_submission user, [], self, nil, 'ready_for_feedback', nil
       assert false, 'Should have raised an error with no files submitted'
     rescue StandardError => e
       assert_equal :not_started, task.status
@@ -841,7 +846,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
         filename: 'file4.pdf',
         "tempfile" => File.new(test_file_path('submissions/1.2P.pdf'))
       }
-    ], user, self, nil, 'ready_for_feedback', nil, accepted_tii_eula: true
+    ], self, nil, 'ready_for_feedback', nil, accepted_tii_eula: true
 
     assert_equal :ready_for_feedback, task.status
 
@@ -852,8 +857,10 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     task.save!
     task.reload
 
+    clear_submission(task)
+
     # Now... lets upload a submission with no files
-    task.accept_submission user, [], user, self, nil, 'ready_for_feedback', nil
+    task.accept_submission user, [], self, nil, 'ready_for_feedback', nil
     assert_equal :ready_for_feedback, task.status
 
     task.task_status = TaskStatus.not_started
@@ -870,10 +877,154 @@ class TaskDefinitionTest < ActiveSupport::TestCase
             filename: 'file0.pdf',
             "tempfile" => File.new(test_file_path('submissions/1.2P.pdf'))
           }
-        ], user, self, nil, 'ready_for_feedback', nil
+        ], self, nil, 'ready_for_feedback', nil
       assert false, 'Should have raised an error with too many files submitted'
     rescue StandardError => e
       assert_equal :not_started, task.status
     end
+  end
+
+  def test_cannot_upload_with_existing_upload_in_process
+    project = FactoryBot.create(:project)
+    unit = project.unit
+    user = project.student
+    convenor = unit.main_convenor_user
+    task_definition = unit.task_definitions.first
+
+    task_definition.upload_requirements = [
+      {
+        "key" => 'file0',
+        "name" => 'Document 1',
+        "type" => 'document'
+      }
+    ]
+
+    # Saving task def
+    task_definition.save!
+
+    # Now... lets upload a submission
+    task = project.task_for_task_definition(task_definition)
+
+    # Create a submission
+    task.accept_submission user, [
+      {
+        id: 'file0',
+        name: 'Document 1',
+        type: 'document',
+        filename: 'file0.pdf',
+        "tempfile" => File.new(test_file_path('submissions/1.2P.pdf'))
+      }
+    ], self, nil, 'ready_for_feedback', nil, accepted_tii_eula: true
+
+    assert_equal :ready_for_feedback, task.status
+
+    # Now... try uploading again
+    begin
+      task.accept_submission user,
+        [
+          {
+            id: 'file0',
+            name: 'Document 1',
+            type: 'document',
+            filename: 'file0.pdf',
+            "tempfile" => File.new(test_file_path('submissions/1.2P.pdf'))
+          }
+        ], self, nil, 'ready_for_feedback', nil
+      assert false, 'Should have raised an error with existing upload in process'
+    rescue StandardError => e
+      assert_includes e.message, 'A submission is already being processed. Please wait for the current submission process to complete.'
+      assert_equal :ready_for_feedback, task.status
+    end
+
+    FileHelper.move_files(FileHelper.student_work_dir(:new, task, false), FileHelper.student_work_dir(:in_process, task, false), false)
+
+    begin
+      task.accept_submission user,
+        [
+          {
+            id: 'file0',
+            name: 'Document 1',
+            type: 'document',
+            filename: 'file0.pdf',
+            "tempfile" => File.new(test_file_path('submissions/1.2P.pdf'))
+          }
+        ], self, nil, 'ready_for_feedback', nil
+      assert false, 'Should have raised an error with existing upload in process'
+    rescue StandardError => e
+      assert_includes e.message, 'A submission is already being processed. Please wait for the current submission process to complete.'
+      assert_equal :ready_for_feedback, task.status
+    end
+
+    FileUtils.rm_rf(FileHelper.student_work_dir(:in_process, task, false))
+
+    assert_not task.processing_pdf?
+
+    # Create a submission
+    task.accept_submission user, [
+      {
+        id: 'file0',
+        name: 'Document 1',
+        type: 'document',
+        filename: 'file0.pdf',
+        "tempfile" => File.new(test_file_path('submissions/1.2P.pdf'))
+      }
+    ], self, nil, 'ready_for_feedback', nil, accepted_tii_eula: true
+
+    assert_equal :ready_for_feedback, task.status
+  ensure
+    unit.destroy
+  end
+
+  def test_check_files_on_task_move
+    project = FactoryBot.create(:project)
+    unit = project.unit
+    user = project.student
+    convenor = unit.main_convenor_user
+    task_definition = unit.task_definitions.first
+
+    task_definition.upload_requirements = [
+      {
+        "key" => 'file0',
+        "name" => 'Document 1',
+        "type" => 'document'
+      }
+    ]
+
+    # Saving task def
+    task_definition.save!
+
+    # Now... lets upload a submission
+    task = project.task_for_task_definition(task_definition)
+
+    # Create a submission
+    task.accept_submission user, [
+      {
+        id: 'file0',
+        name: 'Document 1',
+        type: 'document',
+        filename: 'file0.pdf',
+        "tempfile" => File.new(test_file_path('submissions/1.2P.pdf'))
+      }
+    ], self, nil, 'ready_for_feedback', nil, accepted_tii_eula: true
+
+    # Test that we can move to in process
+    assert task.move_files_to_in_process
+    assert_not File.exist? FileHelper.student_work_dir(:new, task, false)
+    assert File.exist? FileHelper.student_work_dir(:in_process, task, false)
+
+    # Test that we can move back to new
+    FileHelper.move_files(FileHelper.student_work_dir(:in_process, task, false), FileHelper.student_work_dir(:new, task, false), false)
+    assert File.exist? FileHelper.student_work_dir(:new, task, false)
+    assert_not File.exist? FileHelper.student_work_dir(:in_process, task, false)
+
+    # Delete a file and try to compress
+    FileUtils.rm("#{FileHelper.student_work_dir(:new, task)}/000-document.pdf")
+
+    assert_not task.compress_new_to_done
+
+    FileHelper.student_work_dir(:new, task, true)
+    assert_not task.move_files_to_in_process
+  ensure
+    unit.destroy
   end
 end
