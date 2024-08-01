@@ -40,7 +40,7 @@ module FileStreamHelper
     end
 
     # Return the requested content
-    content_length = end_point - begin_point + 1
+    content_length = [end_point - begin_point + 1, 0].max # Ensure we don't attempt to read a negative length
     header['Access-Control-Expose-Headers'] = header.key?('Content-Disposition') ? 'Content-Disposition,Content-Range,Accept-Ranges' : 'Content-Range,Accept-Ranges'
     header['Content-Range'] = "bytes #{begin_point}-#{end_point}/#{file_size}"
     header['Content-Length'] = content_length.to_s
