@@ -53,22 +53,20 @@ module Submission
       # Copy files to be PDFed
       task.accept_submission(current_user, scoop_files(params, upload_reqs), student, self, params[:contributions], trigger, alignments, accepted_tii_eula: params[:accepted_tii_eula])
 
-      overseer_assessment = OverseerAssessment.create_for(task)
-      if overseer_assessment.present?
-        logger.info "Launching Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id}"
+      if task.overseer_enabled?
+        overseer_assessment = OverseerAssessment.create_for(task)
+        if overseer_assessment.present?
+          logger.info "Launching Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id}"
 
-        response = overseer_assessment.send_to_overseer
+          response = overseer_assessment.send_to_overseer
 
-        if response[:error].present?
-          error!({ error: response[:error] }, 403)
+          if response[:error].present?
+            error!({ error: response[:error] }, 403)
+          end
+        else
+          logger.info "Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id} was not performed"
         end
-
-        present :updated_task, task, with: Entities::TaskEntity, update_only: true
-        present :comment, response[:comment].serialize(current_user), with: Grape::Presenters::Presenter
-        return
       end
-
-      logger.info "Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id} was not performed"
 
       present task, with: Entities::TaskEntity, update_only: true
     end

@@ -1373,6 +1373,13 @@ class Task < ApplicationRecord
     FileUtils.rm_f(portfolio_evidence_path) if has_pdf
   end
 
+  def overseer_enabled?
+    return  unit.assessment_enabled &&
+            task_definition.assessment_enabled &&
+            task_definition.has_task_assessment_resources? &&
+            (has_new_files? || has_done_file?)
+  end
+
   private
 
   def delete_associated_files

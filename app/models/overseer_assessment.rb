@@ -26,10 +26,7 @@ class OverseerAssessment < ApplicationRecord
     task_definition = task.task_definition
     unit = task_definition.unit
 
-    return nil unless unit.assessment_enabled
-    return nil unless task_definition.assessment_enabled
-    return nil unless task_definition.has_task_assessment_resources?
-    return nil unless task.has_new_files? || task.has_done_file?
+    return nil unless task.overseer_enabled?
 
     docker_image_name_tag = task_definition.docker_image_name_tag || unit.docker_image_name_tag
     assessment_resources_path = task_definition.task_assessment_resources
