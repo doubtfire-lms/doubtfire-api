@@ -42,7 +42,15 @@ module Doubtfire
 
     config.student_import_weeks_before = ENV.fetch('DF_IMPORT_STUDENTS_WEEKS_BEFPRE', 1).to_f * 1.week
 
-    config.log_to_stdout = ENV['DF_LOG_TO_STDOUT'].present? && (ENV['DF_LOG_TO_STDOUT'].to_s.downcase == "true" || ENV['DF_LOG_TO_STDOUT'].to_i == 1)
+    def self.fetch_boolean_env(name)
+      %w'true 1'.include?(ENV.fetch(name, 'false').downcase)
+    end
+
+    # ==> Log to stdout
+    config.log_to_stdout = Application.fetch_boolean_env('DF_LOG_TO_STDOUT')
+
+    # Have rails report errors and log messages to the following email address where present
+    config.email_errors_to = ENV.fetch('DF_EMAIL_ERRORS_TO', nil)
 
     # ==> Load credentials from env
     credentials.secret_key_base = ENV.fetch('DF_SECRET_KEY_BASE', Rails.env.production? ? nil : '9e010ee2f52af762916406fd2ac488c5694a6cc784777136e657511f8bbc7a73f96d59c0a9a778a0d7cf6406f8ecbf77efe4701dfbd63d8248fc7cc7f32dea97')
