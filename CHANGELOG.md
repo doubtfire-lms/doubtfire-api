@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.0.22](https://github.com/macite/doubtfire-deploy/compare/v8.0.21...v8.0.22) (2024-08-01)
+
+
+### Features
+
+* add email on accept submission error ([1e3acd4](https://github.com/macite/doubtfire-deploy/commit/1e3acd4e64af2f41227c03b8fa53ab71811dac20))
+* report high usage on database timeout ([8139f41](https://github.com/macite/doubtfire-deploy/commit/8139f41207a2a2b38f6560cc254d8e65bce40988))
+
+
+### Bug Fixes
+
+* add awaiting processing pdf ([3e0a1ba](https://github.com/macite/doubtfire-deploy/commit/3e0a1bac485322b6f7936fd3c244cdc5594ca9b1))
+* avoid attempts to read negative size in file stream helper ([758a51d](https://github.com/macite/doubtfire-deploy/commit/758a51dfb9f8c5bc2cf2471caf5b8c0875467971))
+* change zip of new upload to avoid loss ([218afb9](https://github.com/macite/doubtfire-deploy/commit/218afb9291b6864c3ede03b4f74bceaef81b339f))
+* ensure scoop files checks files are a hash ([33ee3ce](https://github.com/macite/doubtfire-deploy/commit/33ee3cecd6e8317cd54f51c4e1e4314725b5085c))
+* only try overseer assessment when overseer enabled ([e3d36c2](https://github.com/macite/doubtfire-deploy/commit/e3d36c27cffbeb8e56dc6c2b085665c5d91cd9ce))
+
 ### [8.0.21](https://github.com/macite/doubtfire-deploy/compare/v8.0.20...v8.0.21) (2024-07-30)
 
 
