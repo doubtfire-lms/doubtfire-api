@@ -29,7 +29,7 @@ class AcceptSubmissionJob
 
       begin
         # Notify system admin
-        mail = ErrorLogMailer.error_message("Failed to convert submission to PDF for task #{task.id} by user #{user.id}", e)
+        mail = ErrorLogMailer.error_message('Accept Submission', "Failed to convert submission to PDF for task #{task.id} by user #{user.id}", e)
         mail.deliver if mail.present?
 
         logger.error e
@@ -41,7 +41,7 @@ class AcceptSubmissionJob
     end
 
     # When converted, we can now send documents to turn it in for checking
-    if TurnItIn.functional?
+    if TurnItIn.enabled?
       task.send_documents_to_tii(user, accepted_tii_eula: accepted_tii_eula)
     end
   rescue StandardError => e # to raise error message to avoid unnecessary retry

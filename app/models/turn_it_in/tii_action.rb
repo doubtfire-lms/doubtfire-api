@@ -239,8 +239,8 @@ class TiiAction < ApplicationRecord
   # @param description [String] the description of the action that is being performed
   # @param block [Proc] the block that will be called to perform the call
   def exec_tca_call(description, codes = [], &block)
-    unless TurnItIn.functional?
-      raise TCAClient::ApiError, code: 0, message: "Turn It In not functiona: #{description}"
+    unless TurnItIn.enabled?
+      raise TCAClient::ApiError, code: 0, message: "Turn It In not enabled: #{description}"
     end
     if TurnItIn.rate_limited?
       raise TCAClient::ApiError, code: 429, message: "Turn It In rate limited: #{description}"

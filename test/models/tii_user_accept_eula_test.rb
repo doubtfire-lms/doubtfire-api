@@ -138,47 +138,4 @@ class TiiUserAcceptEulaTest < ActiveSupport::TestCase
     action.perform
     assert_requested accept_stub, times: 2
   end
-
-  def test_eula_respects_global_errors
-    setup_tii_features_enabled
-    setup_tii_eula
-
-    # Prepare stub for call when eula is accepted and it fails
-    accept_stub = stub_request(:post, "https://#{ENV['TCA_HOST']}/api/v1/eula/v1beta/accept").
-      with(tii_headers).
-      to_return(
-        {status: 403, body: "", headers: {} },
-        {status: 200, body: "", headers: {} }, # should not occur, until end
-      )
-
-    user = FactoryBot.create(:user)
-    # Queue job to accept eula
-    user.accept_tii_eula
-
-    action = TiiActionAcceptEula.last
-
-    # Make sure we have the right action
-    assert_equal user, action.entity
-
-    # Perform manually
-    TiiActionJob.jobs.clear
-    action.perform
-
-    assert_requested accept_stub, times: 1
-    assert_not TurnItIn.functional?
-
-    assert_not action.retry
-
-    action.perform
-    # Call does not go to tii as limit applied
-    assert_requested accept_stub, times: 1
-
-    # Clear global error
-    TurnItIn.global_error = nil
-    assert TurnItIn.functional?
-
-    # When cleared, the job will run
-    action.perform
-    assert_requested accept_stub, times: 2
-  end
 end

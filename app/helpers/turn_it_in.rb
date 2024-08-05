@@ -6,7 +6,6 @@ class TurnItIn
   # rubocop:disable Style/ClassVars
   @@x_turnitin_integration_name = 'formatif-tii'
   @@x_turnitin_integration_version = '1.0'
-  @@global_error = nil
   @@delay_call_until = nil
 
   cattr_reader :x_turnitin_integration_name, :x_turnitin_integration_version
@@ -64,47 +63,6 @@ class TurnItIn
     feature_job.fetch_features_enabled
   end
 
-  # A global error indicates that tii is not configured correctly or a change in the
-  # environment requires that the configuration is updated
-  def self.global_error
-    return nil unless TurnItIn.enabled?
-
-    Rails.cache.fetch("tii.global_error") do
-      @@global_error
-    end
-  end
-
-  # Update the global error, when present this will block calls to tii until resolved
-  def self.global_error=(value)
-    return unless TurnItIn.enabled?
-
-    @@global_error = value
-
-    if value.present?
-      Rails.cache.write("tii.global_error", value)
-    else
-      Rails.cache.delete("tii.global_error")
-    end
-  end
-
-  # Indicates if there is a global error that indicates that things should not call tii until resolved
-  def self.global_error?
-    return false unless TurnItIn.enabled?
-
-    Rails.cache.exist?("tii.global_error") || @@global_error.present?
-  end
-
-  # Clear a global error
-  def self.clear_global_error
-    @@global_error = nil
-    Rails.cache.delete("tii.global_error")
-  end
-
-  # Indicates that tii can be called, that it is configured and there are no global errors
-  def self.functional?
-    TurnItIn.enabled? && !TurnItIn.global_error?
-  end
-
   # Indicates that the service is rate limited
   def self.rate_limited?
     @@delay_call_until.present? && DateTime.now < @@delay_call_until
@@ -124,8 +82,12 @@ class TurnItIn
     case error.code
     when 429 # rate limit
       @@delay_call_until = DateTime.now + 1.minute
-    when 403 # forbidden, issue with authentication... do not attempt more tii requests
-      TurnItIn.global_error = [403, error.message]
+    when 403 # forbidden, issue with authentication... notify admin
+      begin
+        ErrorLogMailer.error_message('TII Credentials', "TII Error: #{error.message}", error).deliver
+      rescue StandardError => e
+        Rails.logger.error "Failed to send error email: #{e}"
+      end
     end
   end
 
