@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.0.23](https://github.com/macite/doubtfire-deploy/compare/v8.0.22...v8.0.23) (2024-08-05)
+
+
+### Bug Fixes
+
+* ensure folders are removed when we move files with file helper ([cbec03d](https://github.com/macite/doubtfire-deploy/commit/cbec03d9e148e5d3fbead9b88621f6c06d368371))
+* remove global error and report failures to admin user for tii ([842f233](https://github.com/macite/doubtfire-deploy/commit/842f233d210345682d051e77cc3ddedb98baadc9))
+
 ### [8.0.22](https://github.com/macite/doubtfire-deploy/compare/v8.0.21...v8.0.22) (2024-08-01)
 
 
