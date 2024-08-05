@@ -265,4 +265,55 @@ class AuthTest < ActiveSupport::TestCase
   end
   # End DELETE tests
   # --------------------------------------------------------------------------- #
+
+  # # --------------------------------------------------------------------------- #
+  # # SCORM auth test
+
+  def test_scorm_auth
+    admin = FactoryBot.create(:user, :admin)
+
+    add_auth_header_for(user: admin)
+
+    # When user is unauthorised
+    get "api/auth/scorm"
+    assert_equal 403, last_response.status
+
+    student = FactoryBot.create(:user, :student)
+
+    student.auth_tokens.where(token_type: 'scorm').destroy_all
+
+    add_auth_header_for(user: student)
+
+    # When user is authorised and no prior scorm tokens exist
+    get "api/auth/scorm"
+    assert_equal 200, last_response.status
+    assert last_response_body["scorm_auth_token"]
+    assert student.auth_tokens.where(token_type: 'scorm').count == 1
+
+    first_token = last_response_body["scorm_auth_token"]
+
+    add_auth_header_for(user: student)
+
+    # When previous valid scorm token exists
+    get "api/auth/scorm"
+    assert_equal 200, last_response.status
+    assert last_response_body["scorm_auth_token"] == first_token
+
+    old_token = student.auth_tokens.find_by(token_type: 'scorm')
+    old_token.auth_token_expiry = Time.zone.now - 1.day
+    old_token.save!
+
+    add_auth_header_for(user: student)
+
+    # When previous expired scorm token exists
+    get "api/auth/scorm"
+    assert_equal 200, last_response.status
+    assert last_response_body["scorm_auth_token"] != first_token
+    assert_raises ActiveRecord::RecordNotFound do
+      student.auth_tokens.find(old_token.id)
+    end
+  end
+
+  # End SCORM auth test
+  # --------------------------------------------------------------------------- #
 end

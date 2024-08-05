@@ -24,6 +24,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_07_01_221318) do
     t.datetime "auth_token_expiry", null: false
     t.bigint "user_id"
     t.string "authentication_token", null: false
+    t.string "token_type", null: false
     t.index ["user_id"], name: "index_auth_tokens_on_user_id"
   end
 
@@ -220,6 +221,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_07_01_221318) do
     t.string "extension_response"
     t.bigint "reply_to_id"
     t.bigint "overseer_assessment_id"
+    t.integer "test_attempt_id"
     t.index ["assessor_id"], name: "index_task_comments_on_assessor_id"
     t.index ["discussion_comment_id"], name: "index_task_comments_on_discussion_comment_id"
     t.index ["overseer_assessment_id"], name: "index_task_comments_on_overseer_assessment_id"
@@ -227,6 +229,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_07_01_221318) do
     t.index ["reply_to_id"], name: "index_task_comments_on_reply_to_id"
     t.index ["task_id"], name: "index_task_comments_on_task_id"
     t.index ["task_status_id"], name: "index_task_comments_on_task_status_id"
+    t.index ["test_attempt_id"], name: "index_task_comments_on_test_attempt_id"
     t.index ["user_id"], name: "index_task_comments_on_user_id"
   end
 
@@ -255,6 +258,11 @@ ActiveRecord::Schema[7.1].define(version: 2024_07_01_221318) do
     t.bigint "overseer_image_id"
     t.string "tii_group_id"
     t.string "moss_language"
+    t.boolean "scorm_enabled", default: false
+    t.boolean "scorm_allow_review", default: false
+    t.boolean "scorm_bypass_test", default: false
+    t.boolean "scorm_time_delay_enabled", default: false
+    t.integer "scorm_attempt_limit", default: 0
     t.index ["abbreviation", "unit_id"], name: "index_task_definitions_on_abbreviation_and_unit_id", unique: true
     t.index ["group_set_id"], name: "index_task_definitions_on_group_set_id"
     t.index ["name", "unit_id"], name: "index_task_definitions_on_name_and_unit_id", unique: true
@@ -335,6 +343,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_07_01_221318) do
     t.integer "contribution_pts", default: 3
     t.integer "quality_pts", default: -1
     t.integer "extensions", default: 0, null: false
+    t.integer "scorm_extensions", default: 0, null: false
     t.index ["group_submission_id"], name: "index_tasks_on_group_submission_id"
     t.index ["project_id", "task_definition_id"], name: "tasks_uniq_proj_task_def", unique: true
     t.index ["project_id"], name: "index_tasks_on_project_id"
@@ -349,6 +358,17 @@ ActiveRecord::Schema[7.1].define(version: 2024_07_01_221318) do
     t.integer "year", null: false
     t.datetime "active_until", null: false
     t.index ["period", "year"], name: "index_teaching_periods_on_period_and_year", unique: true
+  end
+
+  create_table "test_attempts", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "task_id"
+    t.datetime "attempted_time", null: false
+    t.boolean "terminated", default: false
+    t.boolean "completion_status", default: false
+    t.boolean "success_status", default: false
+    t.float "score_scaled", default: 0.0
+    t.text "cmi_datamodel", default: "{}", null: false
+    t.index ["task_id"], name: "index_test_attempts_on_task_id"
   end
 
   create_table "tii_actions", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
