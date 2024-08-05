@@ -376,7 +376,7 @@ module FileHelper
       begin
         # remove from_path as files are now "in process"
         # these can be retained when the old folder wants to be kept
-        FileUtils.rm_r(from_path) unless retain_from
+        FileUtils.rm_rf(from_path) unless retain_from
       rescue
         logger.warn "failed to rm #{from_path}"
       end
