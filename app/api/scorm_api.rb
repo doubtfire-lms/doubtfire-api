@@ -7,7 +7,7 @@ class ScormApi < Grape::API
   helpers AuthorisationHelpers
 
   before do
-    authenticated?
+    authenticated? :scorm
   end
 
   helpers do

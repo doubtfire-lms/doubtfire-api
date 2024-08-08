@@ -13,7 +13,7 @@ module AuthenticationHelpers
   # Checks if the requested user is authenticated.
   # Reads details from the params fetched from the caller context.
   #
-  def authenticated?
+  def authenticated?(token_type = :general)
     auth_param = headers['auth-token'] || headers['Auth-Token'] || params['authToken'] || headers['Auth_Token'] || headers['auth_token'] || params['auth_token'] || params['Auth_Token']
     user_param = headers['username'] || headers['Username'] || params['username']
 
@@ -23,7 +23,7 @@ module AuthenticationHelpers
     # Authenticate from header or params
     if auth_param.present? && user_param.present? && user.present?
       # Get the list of tokens for a user
-      token = user.token_for_text?(auth_param)
+      token = user.token_for_text?(auth_param, token_type)
     end
 
     # Check user by token

@@ -242,9 +242,9 @@ class AuthenticationApi < Grape::API
       logger.info "Get user via auth_token from #{request.ip}"
 
       # Authenticate that the token is okay
-      if authenticated?
+      if authenticated?(:login)
         user = User.find_by(username: params[:username])
-        token = user.token_for_text?(params[:auth_token]) unless user.nil?
+        token = user.token_for_text?(params[:auth_token], :login) unless user.nil?
         error!({ error: 'Invalid token.' }, 404) if token.nil?
 
         # Invalidate the token and regenrate a new one
@@ -325,7 +325,7 @@ class AuthenticationApi < Grape::API
 
     # Find user
     user = User.find_by(username: user_param)
-    token = user.token_for_text?(token_param) unless user.nil?
+    token = user.token_for_text?(token_param, :general) unless user.nil?
     remember = params[:remember] || false
 
     # Token does not match user
@@ -360,7 +360,7 @@ class AuthenticationApi < Grape::API
        }
   delete '/auth' do
     user = User.find_by(username: headers['username'] || headers['Username'])
-    token = user.token_for_text?(headers['auth-token'] || headers['Auth-Token']) unless user.nil?
+    token = user.token_for_text?(headers['auth-token'] || headers['Auth-Token'], :general) unless user.nil?
 
     if token.present?
       logger.info "Sign out #{user.username} from #{request.ip}"
@@ -372,12 +372,12 @@ class AuthenticationApi < Grape::API
 
   desc 'Get SCORM authentication token'
   get '/auth/scorm' do
-    if authenticated?
+    if authenticated?(:general)
       unless authorise? current_user, User, :get_scorm_token
         error!({ error: 'You cannot get SCORM tokens' }, 403)
       end
 
-      token = current_user.auth_tokens.find_by(token_type: 'scorm')
+      token = current_user.auth_tokens.find_by(token_type: :scorm)
       if token.nil? || token.auth_token_expiry <= Time.zone.now
         token&.destroy
         token = current_user.generate_scorm_authentication_token!

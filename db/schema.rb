@@ -24,7 +24,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_07_01_221318) do
     t.datetime "auth_token_expiry", null: false
     t.bigint "user_id"
     t.string "authentication_token", null: false
-    t.string "token_type", null: false
+    t.integer "token_type", default: 0, null: false
     t.index ["user_id"], name: "index_auth_tokens_on_user_id"
   end
 

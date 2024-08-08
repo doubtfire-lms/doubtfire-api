@@ -95,7 +95,7 @@ class User < ApplicationRecord
   def generate_authentication_token!(remember = false)
     # Ensure this user is saved... so it has an id
     self.save unless self.persisted?
-    AuthToken.generate(self, remember)
+    AuthToken.generate(self, remember) # default timeout, and general token
   end
 
   #
@@ -104,16 +104,16 @@ class User < ApplicationRecord
   def generate_temporary_authentication_token!
     # Ensure this user is saved... so it has an id
     self.save unless self.persisted?
-    AuthToken.generate(self, false, Time.zone.now + 30.seconds)
+    # Generate a short duration login token
+    AuthToken.generate(self, false, Time.zone.now + 30.seconds, :login)
   end
 
   #
   # Generate an authentication token for scorm asset retrieval
   #
   def generate_scorm_authentication_token!
-    # Ensure this user is saved... so it has an id
-    self.save unless self.persisted?
-    AuthToken.generate(self, false, Time.zone.now + 2.hours, 'scorm')
+    # generate a timed scorm token
+    AuthToken.generate(self, false, Time.zone.now + 2.hours, :scorm)
   end
 
   #
@@ -126,8 +126,11 @@ class User < ApplicationRecord
   #
   # Returns authentication of the user
   #
-  def token_for_text?(a_token)
-    self.auth_tokens.each do |token|
+  def token_for_text?(a_token, token_type)
+    tokens_to_check = self.auth_tokens
+    tokens_to_check = tokens_to_check.where(token_type: token_type) if token_type.present?
+
+    tokens_to_check.each do |token|
       if a_token == token.authentication_token
         return token
       end
@@ -310,7 +313,9 @@ class User < ApplicationRecord
       :get_teaching_periods,
 
       :admin_overseer,
-      :use_overseer
+      :use_overseer,
+
+      :get_scorm_token
     ]
 
     # What can auditors do with users?
@@ -324,7 +329,8 @@ class User < ApplicationRecord
       :audit_units,
 
       :get_teaching_periods,
-      :use_overseer
+      :use_overseer,
+      :get_scorm_token
     ]
 
     # What can convenors do with users?
