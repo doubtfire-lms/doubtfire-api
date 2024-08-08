@@ -66,8 +66,66 @@ module PdfGeneration
       end
 
       def make_pdf
-        render_to_string(template: '/portfolio/portfolio_pdf', layout: true)
+        logger.debug "Running make_pdf: (portfolio)"
+
+        # Render the portfolio layout
+        tex_string = render_to_string(template: '/portfolio/portfolio_pdf', layout: true)
+
+        # Create a new working directory to save input.tex into
+        workdir_name = "#{Process.pid}-#{Thread.current.hash}"
+        workdir = Rails.root.join("tmp", "texlive-latex", workdir_name)
+        FileUtils.mkdir_p(workdir);
+
+        # Copy jupynotex.py over into the working directory
+        FileUtils.cp(Rails.root.join('app', 'views', 'layouts', 'jupynotex.py'), workdir)
+
+        # Save tex_string as input.tex into the workdir
+        File.open(workdir.join("input.tex"), 'w') do |fout|
+          fout.puts tex_string
+        end
+
+        # TODO: clean up pathnames
+        container_name = "1-formatif-texlive-container"
+        latex_build_path = "/texlive/shell/latex-build.sh" # mounted path on the texlive container, as defined in .devcontainer/docker-compose.yml
+        latex_pdf_output_dir = workdir_name
+        latex_input_file_path = File.join(workdir_name, "input.tex")
+
+        # Docker command to execute the build script in texlive container
+        command = "sudo docker exec -it #{container_name} #{latex_build_path} #{latex_pdf_output_dir} #{latex_input_file_path}"
+
+        logger.debug "Executing system command: #{command}"
+
+        success = nil
+        Process.waitpid(
+          fork do
+            begin
+              # Execute the Docker command
+              success = system(command)
+              Process.exit! 1 unless success
+            rescue
+              logger.info "PDF Generation failed: #{success}"
+            ensure
+              Process.exit! 1
+            end
+          end
+        )
+
+        # TODO: verify that input.pdf now exists in the workdir, otherwise throw error
+
+        # unless success
+        #   logger.error "Docker command failed: #{command}"
+        #   return "Error generating PDF"
+        # end
+
+        # Read the generated PDF file and return it as a string
+        pdf_string = File.read(workdir.join("input.pdf"))
+
+        # Delete temporary workdir containing input.tex/input.pdf and logs
+        # FileUtils.rm_rf(workdir) 
+
+        pdf_string
       end
+
     end
 
     # Create the portfolio for this project
