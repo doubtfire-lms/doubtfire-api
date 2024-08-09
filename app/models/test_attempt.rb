@@ -107,7 +107,7 @@ class TestAttempt < ApplicationRecord
   def review
     dm = JSON.parse(self.cmi_datamodel)
     if dm['cmi.completion_status'] != 'completed'
-      raise "Cannot review incomplete attempts!"
+      raise StandardError, 'Cannot review incomplete attempts!'
     end
 
     # when review is requested change the mode to review

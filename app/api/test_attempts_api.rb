@@ -82,7 +82,11 @@ class TestAttemptsApi < Grape::API
       error!({ message: 'Test attempt ID is invalid' }, 404)
     else
       logger.debug "Request to review test attempt #{params[:id]}"
-      test.review
+      begin
+        test.review
+      rescue StandardError => e
+        error!({ message: e.message }, 403)
+      end
     end
     present test, with: Entities::TestAttemptEntity
   end

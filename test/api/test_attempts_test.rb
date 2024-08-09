@@ -215,7 +215,7 @@ class TestAttemptsTest < ActiveSupport::TestCase
 
     # When attempt is incomplete
     get "api/test_attempts/#{attempt.id}/review"
-    assert_equal 500, last_response.status
+    assert_equal 403, last_response.status
 
     dm = JSON.parse(attempt.cmi_datamodel)
     dm['cmi.completion_status'] = 'completed'
