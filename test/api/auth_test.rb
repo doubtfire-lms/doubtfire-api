@@ -281,7 +281,7 @@ class AuthTest < ActiveSupport::TestCase
     # All users can access scorm resources
     get "api/auth/scorm"
     assert_equal 200, last_response.status
-    assert_equal 1, student.auth_tokens.where(token_type: :scorm).count
+    assert_equal 1, admin.auth_tokens.where(token_type: :scorm).count
 
     student = FactoryBot.create(:user, :student)
 

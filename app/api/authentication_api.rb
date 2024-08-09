@@ -72,7 +72,7 @@ class AuthenticationApi < Grape::API
 
       # Return user details
       present :user, user, with: Entities::UserEntity
-      present :auth_token, user.generate_authentication_token!(remember).authentication_token
+      present :auth_token, user.generate_authentication_token!(remember: remember).authentication_token
     end
   end
 
@@ -238,18 +238,18 @@ class AuthenticationApi < Grape::API
       requires :auth_token, type: String, desc: 'The user\'s temporary auth token'
     end
     post '/auth' do
-      error!({ error: 'Invalid token.' }, 404) if params[:auth_token].nil?
-      logger.info "Get user via auth_token from #{request.ip}"
+      error!({ error: 'Invalid authentication details.' }, 404) if params[:auth_token].blank? || params[:username].blank?
+      logger.info "Get user via auth_token from #{request.ip} - #{params[:username]}"
 
       # Authenticate that the token is okay
       if authenticated?(:login)
         user = User.find_by(username: params[:username])
         token = user.token_for_text?(params[:auth_token], :login) unless user.nil?
-        error!({ error: 'Invalid token.' }, 404) if token.nil?
+        error!({ error: 'Invalid authentication details.' }, 404) if token.nil?
 
         # Invalidate the token and regenrate a new one
         token.destroy!
-        token = user.generate_authentication_token! true
+        token = user.generate_authentication_token!
 
         logger.info "Login #{params[:username]} from #{request.ip}"
 

@@ -92,28 +92,24 @@ class User < ApplicationRecord
   # Force-generates a new authentication token, regardless of whether or not
   # it is actually expired
   #
-  def generate_authentication_token!(remember = false)
+  def generate_authentication_token!(remember: false, expiry: Time.zone.now + 2.hours, token_type: :general)
     # Ensure this user is saved... so it has an id
     self.save unless self.persisted?
-    AuthToken.generate(self, remember) # default timeout, and general token
+    AuthToken.generate(self, remember, expiry, token_type)
   end
 
   #
   # Generate an authentication token that will expire in 30 seconds
   #
   def generate_temporary_authentication_token!
-    # Ensure this user is saved... so it has an id
-    self.save unless self.persisted?
-    # Generate a short duration login token
-    AuthToken.generate(self, false, Time.zone.now + 30.seconds, :login)
+    generate_authentication_token!(expiry: Time.zone.now + 30.seconds, token_type: :login)
   end
 
   #
   # Generate an authentication token for scorm asset retrieval
   #
   def generate_scorm_authentication_token!
-    # generate a timed scorm token
-    AuthToken.generate(self, false, Time.zone.now + 2.hours, :scorm)
+    generate_authentication_token!(token_type: :scorm)
   end
 
   #

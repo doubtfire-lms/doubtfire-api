@@ -40,35 +40,42 @@ class ScormApiTest < ActiveSupport::TestCase
     td.save!
 
     # When the task def does not have SCORM data
-    get "/api/scorm/#{td.id}/#{user.username}/#{auth_token(user)}/index.html"
+    get "/api/scorm/#{td.id}/#{user.username}/#{auth_token(user, :scorm)}/index.html"
     assert_equal 404, last_response.status
 
     td.add_scorm_data(test_file_path('numbas.zip'), copy: true)
     td.save!
 
     # When the file is missing
-    get "/api/scorm/#{td.id}/#{user.username}/#{auth_token(user)}/index1.html"
+    get "/api/scorm/#{td.id}/#{user.username}/#{auth_token(user, :scorm)}/index1.html"
     assert_equal 404, last_response.status
 
     # When the file is present - html
-    get "/api/scorm/#{td.id}/#{user.username}/#{auth_token(user)}/index.html"
+    get "/api/scorm/#{td.id}/#{user.username}/#{auth_token(user, :scorm)}/index.html"
     assert_equal 200, last_response.status
     assert_equal 'text/html', last_response.content_type
 
+    # Cannot access with the wrong token type
+    get "/api/scorm/#{td.id}/#{user.username}/#{auth_token(user, :general)}/index.html"
+    assert_equal 419, last_response.status
+
+    get "/api/scorm/#{td.id}/#{user.username}/#{auth_token(user, :login)}/index.html"
+    assert_equal 419, last_response.status
+
     # When the file is present - css
-    get "/api/scorm/#{td.id}/#{user.username}/#{auth_token(user)}/styles.css"
+    get "/api/scorm/#{td.id}/#{user.username}/#{auth_token(user, :scorm)}/styles.css"
     assert_equal 200, last_response.status
     assert_equal 'text/css', last_response.content_type
 
     # When the file is present - js
-    get "/api/scorm/#{td.id}/#{user.username}/#{auth_token(user)}/scripts.js"
+    get "/api/scorm/#{td.id}/#{user.username}/#{auth_token(user, :scorm)}/scripts.js"
     assert_equal 200, last_response.status
     assert_equal 'text/javascript', last_response.content_type
 
     tutor = FactoryBot.create(:user, :tutor, username: :test_tutor)
 
     # When the user is unauthorised
-    get "/api/scorm/#{td.id}/#{tutor.username}/#{auth_token(tutor)}/index.html"
+    get "/api/scorm/#{td.id}/#{tutor.username}/#{auth_token(tutor, :scorm)}/index.html"
     assert_equal 403, last_response.status
 
     tutor.destroy!
