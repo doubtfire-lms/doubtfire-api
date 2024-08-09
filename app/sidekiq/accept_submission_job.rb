@@ -23,7 +23,7 @@ class AcceptSubmissionJob
         begin
           PortfolioEvidenceMailer.task_pdf_failed(project, [task]).deliver
         rescue StandardError => e
-          logger.error "Failed to send task pdf failed email for project #{project.id}!\n#{e.message}"
+          logger.error "Failed to send task pdf failed email for project #{task.project.id}!\n#{e.message}"
         end
       end
 
@@ -46,5 +46,6 @@ class AcceptSubmissionJob
     end
   rescue StandardError => e # to raise error message to avoid unnecessary retry
     logger.error e
+    task.clear_in_process
   end
 end

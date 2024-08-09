@@ -902,6 +902,9 @@ class Task < ApplicationRecord
       Dir.chdir(FileHelper.student_work_root) if FileUtils.pwd == in_process_dir
       FileUtils.rm_rf in_process_dir
     end
+
+  rescue StandardError => e
+    logger.error "Error clearing in process directory for task #{log_details} - #{e.message}"
   end
 
   #
