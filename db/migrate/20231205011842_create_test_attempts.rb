@@ -7,7 +7,7 @@ class CreateTestAttempts < ActiveRecord::Migration[7.0]
       t.boolean :completion_status, default: false
       t.boolean :success_status, default: false
       t.float :score_scaled, default: 0
-      t.text :cmi_datamodel, default: "{}", null: false
+      t.text :cmi_datamodel
     end
   end
 end

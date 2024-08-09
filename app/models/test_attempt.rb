@@ -63,7 +63,7 @@ class TestAttempt < ApplicationRecord
   # t.float :score_scaled, default: 0
 
   # scorm datamodel
-  # t.text :cmi_datamodel, default: "{}", null: false
+  # t.text :cmi_datamodel
 
   after_initialize if: :new_record? do
     self.attempted_time = Time.zone.now

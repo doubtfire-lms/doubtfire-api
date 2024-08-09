@@ -368,7 +368,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_07_01_221318) do
     t.boolean "completion_status", default: false
     t.boolean "success_status", default: false
     t.float "score_scaled", default: 0.0
-    t.text "cmi_datamodel", default: "{}", null: false
+    t.text "cmi_datamodel"
     t.index ["task_id"], name: "index_test_attempts_on_task_id"
   end
 
