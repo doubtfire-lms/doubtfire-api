@@ -10,26 +10,13 @@ class TestAttemptsApi < Grape::API
     authenticated?
   end
 
-  # Handle common exceptions
-  rescue_from :all do |e|
-    error!({ error: e.message }, 500)
-  end
-
-  rescue_from ActiveRecord::RecordNotFound do |e|
-    error!({ error: e.message }, 404)
-  end
-
-  rescue_from Grape::Exceptions::ValidationErrors do |e|
-    error!({ errors: e.full_messages }, 400)
-  end
-
   desc 'Get all test results for a task'
   params do
     requires :project_id, type: Integer, desc: 'The id of the project with the task'
     requires :task_definition_id, type: Integer, desc: 'The id of the task definition related to the task'
   end
   get '/projects/:project_id/task_def_id/:task_definition_id/test_attempts' do
-    project = Project.find(params[:project_id])
+    project = Project.preload(:unit).find(params[:project_id])
     task_definition = project.unit.task_definitions.find(params[:task_definition_id])
 
     unless authorise? current_user, project, :get_submission
@@ -38,7 +25,7 @@ class TestAttemptsApi < Grape::API
 
     task = project.task_for_task_definition(task_definition)
 
-    attempts = TestAttempt.where("task_id = ?", task.id)
+    attempts = TestAttempt.where(task_id: task.id)
     tests = attempts.order(id: :desc)
     present tests, with: Entities::TestAttemptEntity
   end
@@ -133,7 +120,7 @@ class TestAttemptsApi < Grape::API
 
     # check attempt limit
     limit = task.task_definition.scorm_attempt_limit + task.scorm_extensions
-    if limit != 0 && test_count == limit
+    if limit != 0 && test_count >= limit
       error!({ message: 'Attempt limit has been reached' }, 400)
       return
     end
