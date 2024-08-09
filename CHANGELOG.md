@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.0.25](https://github.com/macite/doubtfire-deploy/compare/v8.0.24...v8.0.25) (2024-08-09)
+
+
+### Bug Fixes
+
+* ensure schema has index for auth token type ([7d3e4d3](https://github.com/macite/doubtfire-deploy/commit/7d3e4d369e66815b422faf46f8924397600266f1))
+* ensure test attempt review exception is handled ([bb3590c](https://github.com/macite/doubtfire-deploy/commit/bb3590c14c5c66191833fa98ee6c6eeebc2a3d78))
+* logging of fail to send message in accept submission ([38abe9e](https://github.com/macite/doubtfire-deploy/commit/38abe9eeb7dedf8f7d26b7b1c659be94d9c42d4a))
+* remove default from cmi_datamodel in test attempt ([ccb20dc](https://github.com/macite/doubtfire-deploy/commit/ccb20dc5c1efea2e5d0331026bc17d39dda3db11))
+
 ### [8.0.24](https://github.com/doubtfire-lms/doubtfire-deploy/compare/v8.0.23...v8.0.24) (2024-08-09)
 
 
