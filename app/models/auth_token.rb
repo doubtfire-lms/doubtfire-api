@@ -6,16 +6,23 @@ class AuthToken < ApplicationRecord
   validates :authentication_token, presence: true
   validate :ensure_token_unique_for_user, on: :create
 
-  def self.generate(user, remember, expiry_time = Time.zone.now + 2.hours)
+  enum token_type: {
+    general: 0,
+    login: 1,
+    scorm: 2
+  }
+
+  def self.generate(user, remember, expiry_time = Time.zone.now + 2.hours, token_type = :general)
     # Loop until new unique auth token is found
     token = loop do
       token = Devise.friendly_token
-      break token unless user.token_for_text?(token)
+      break token unless user.token_for_text?(token, token_type)
     end
 
     # Create a new AuthToken with this value
     result = AuthToken.new(user_id: user.id)
     result.authentication_token = token
+    result.token_type = token_type
     result.extend_token(remember, expiry_time, false)
     result.save!
     result
@@ -53,7 +60,7 @@ class AuthToken < ApplicationRecord
   end
 
   def ensure_token_unique_for_user
-    if user.token_for_text?(authentication_token)
+    if user.token_for_text?(authentication_token, nil)
       errors.add(:authentication_token, 'already exists for the selected user')
     end
   end
