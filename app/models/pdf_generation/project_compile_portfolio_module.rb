@@ -104,19 +104,19 @@ module PdfGeneration
             rescue
               logger.info "PDF Generation failed: #{success}"
             ensure
-              Process.exit!(1)
+              Process.exit!(0) if clean_exit 
             end
           end
         )
 
         status = $?.exitstatus
   
-        if status == 0 && File.exists(File.join(workdir, "input.pdf"))
+        if status == 0 && File.exist?(File.join(workdir, "input.pdf"))
           # Read the generated PDF file and return it as a string
           pdf_string = File.read(workdir.join("input.pdf"))
           
           # Delete temporary workdir containing input.tex/input.pdf and logs
-          FileUtils.rm_rf(workdir) # TODO: .pygtex files are still in use and aren't removed in this call
+          FileUtils.rm_rf(workdir) # TODO: .pygtex files are still in use and aren't always removed in this call
         else
           # TODO: raise exception
           logger.error "PDF Generation failed with exit status: #{status}"
