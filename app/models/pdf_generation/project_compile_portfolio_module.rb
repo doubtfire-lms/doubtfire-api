@@ -68,6 +68,8 @@ module PdfGeneration
       def make_pdf
         logger.debug "Running make_pdf: (portfolio)"
 
+        # TODO: move pdf layout -> tex -> pdf generation into shared module/class
+
         # Render the portfolio layout
         tex_string = render_to_string(template: '/portfolio/portfolio_pdf', layout: true)
 
@@ -93,35 +95,34 @@ module PdfGeneration
         # Docker command to execute the build script in texlive container
         command = "sudo docker exec -it #{container_name} #{latex_build_path} #{latex_pdf_output_dir} #{latex_input_file_path}"
 
-        logger.debug "Executing system command: #{command}"
-
-        success = nil
         Process.waitpid(
           fork do
             begin
+              logger.debug "Executing system command: #{command}"
+
               # Execute the Docker command
-              success = system(command)
-              Process.exit! 1 unless success
+              clean_exit = system(command)
+              Process.exit!(1) unless clean_exit
             rescue
               logger.info "PDF Generation failed: #{success}"
             ensure
-              Process.exit! 1
+              Process.exit!(1)
             end
           end
         )
 
-        # TODO: verify that input.pdf now exists in the workdir, otherwise throw error
-
-        # unless success
-        #   logger.error "Docker command failed: #{command}"
-        #   return "Error generating PDF"
-        # end
-
-        # Read the generated PDF file and return it as a string
-        pdf_string = File.read(workdir.join("input.pdf"))
-
-        # Delete temporary workdir containing input.tex/input.pdf and logs
-        # FileUtils.rm_rf(workdir) 
+        status = $?.exitstatus
+  
+        if status == 0 && File.exists(File.join(workdir, "input.pdf"))
+          # Read the generated PDF file and return it as a string
+          pdf_string = File.read(workdir.join("input.pdf"))
+          
+          # Delete temporary workdir containing input.tex/input.pdf and logs
+          FileUtils.rm_rf(workdir) # TODO: .pygtex files are still in use and aren't removed in this call
+        else
+          # TODO: raise exception
+          logger.error "PDF Generation failed with exit status: #{status}"
+        end
 
         pdf_string
       end

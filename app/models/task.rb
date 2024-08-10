@@ -1023,7 +1023,64 @@ class Task < ApplicationRecord
         end
       end
       logger.debug "Preprocessing complete, rendering file."
-      render_to_string(template: '/task/task_pdf', layout: true)
+
+      # TODO: move pdf layout -> tex -> pdf generation into shared module/class
+
+      # Render the task layout
+      tex_string = render_to_string(template: '/task/task_pdf', layout: true)
+
+      # Create a new working directory to save input.tex into
+      workdir_name = "#{Process.pid}-#{Thread.current.hash}"
+      workdir = Rails.root.join("tmp", "texlive-latex", workdir_name)
+      FileUtils.mkdir_p(workdir);
+
+      # Copy jupynotex.py over into the working directory
+      FileUtils.cp(Rails.root.join('app', 'views', 'layouts', 'jupynotex.py'), workdir)
+
+      # Save tex_string as input.tex into the workdir
+      File.open(workdir.join("input.tex"), 'w') do |fout|
+        fout.puts tex_string
+      end
+
+      # TODO: clean up pathnames
+      container_name = "1-formatif-texlive-container"
+      latex_build_path = "/texlive/shell/latex-build.sh" # mounted path on the texlive container, as defined in .devcontainer/docker-compose.yml
+      latex_pdf_output_dir = workdir_name
+      latex_input_file_path = File.join(workdir_name, "input.tex")
+
+      # Docker command to execute the build script in texlive container
+      command = "sudo docker exec -it #{container_name} #{latex_build_path} #{latex_pdf_output_dir} #{latex_input_file_path}"
+
+      Process.waitpid(
+        fork do
+          begin
+            logger.debug "Executing system command: #{command}"
+
+            # Execute the Docker command
+            clean_exit = system(command)
+            Process.exit!(1) unless clean_exit
+          rescue
+            logger.info "PDF Generation failed: #{success}"
+          ensure
+            Process.exit!(1)
+          end
+        end
+      )
+
+      status = $?.exitstatus
+
+      if status == 0 && File.exists(File.join(workdir, "input.pdf"))
+        # Read the generated PDF file and return it as a string
+        pdf_string = File.read(workdir.join("input.pdf"))
+        
+        # Delete temporary workdir containing input.tex/input.pdf and logs
+        FileUtils.rm_rf(workdir) # TODO: .pygtex files are still in use and aren't removed in this call
+      else
+        # TODO: raise exception
+        logger.error "PDF Generation failed with exit status: #{status}"
+      end
+
+      pdf_string
     end
   end
 
