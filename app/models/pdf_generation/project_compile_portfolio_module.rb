@@ -68,7 +68,7 @@ module PdfGeneration
       def make_pdf
         logger.debug "Running make_pdf: (portfolio)"
 
-        # TODO: move pdf layout -> tex -> pdf generation into shared module/class
+        # TODO: move pdf layout -> tex -> pdf generation into shared module/class (duplicated in models/task.rb)
 
         # Render the portfolio layout
         tex_string = render_to_string(template: '/portfolio/portfolio_pdf', layout: true)
@@ -89,11 +89,9 @@ module PdfGeneration
         # TODO: clean up pathnames
         container_name = "1-formatif-texlive-container"
         latex_build_path = "/texlive/shell/latex-build.sh" # mounted path on the texlive container, as defined in .devcontainer/docker-compose.yml
-        latex_pdf_output_dir = workdir_name
-        latex_input_file_path = File.join(workdir_name, "input.tex")
 
         # Docker command to execute the build script in texlive container
-        command = "sudo docker exec -it #{container_name} #{latex_build_path} #{latex_pdf_output_dir} #{latex_input_file_path}"
+        command = "sudo docker exec -it #{container_name} #{latex_build_path} #{workdir_name}"
 
         Process.waitpid(
           fork do

@@ -1,19 +1,11 @@
 #!/bin/sh
 
-OUTPUT_DIR=$1
-INPUT_FILE=$2
+# Name of the working directory
+WORK_DIR=$1 
 
-# OUTPUT_DIR and INPUT_FILE contain the name of the working directory.
-# Example:
-#
-# OUTPUT_DIR = "123-567890"
-# INPUT_FILE = "123-567890/input.tex"
+cd /workdir/texlive-latex/${WORK_DIR}
 
-cd /workdir/texlive-latex/${OUTPUT_DIR}
-
-# TODO: add back -halt-on-error and fix .pygtex related errors
-/bin/bash -c "lualatex -output-directory /workdir/texlive-latex/${OUTPUT_DIR} -shell-escape -interaction=batchmode /workdir/texlive-latex/${INPUT_FILE}"
-
-echo "Running lualatex a second time to remove the temporary last page..."
-
-/bin/bash -c "lualatex -output-directory /workdir/texlive-latex/${OUTPUT_DIR} -shell-escape -interaction=batchmode /workdir/texlive-latex/${INPUT_FILE}"
+# TODO: debug test file submissions: '002-code.cs', 'java_with_invalid_unicode.java', 'long.ipynb' ... (are they supposed to fail lualatex compile?)
+/bin/bash -c "lualatex -shell-escape -interaction=batchmode -halt-on-error input.tex"
+echo "Running lualatex a second time to remove temporary last page..."
+/bin/bash -c "lualatex -shell-escape -interaction=batchmode -halt-on-error input.tex"
