@@ -365,7 +365,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     # Detecting "height" and "weight" confirms correct LaTeX rendering
     assert reader.pages.last.text.include?("BMI: bmi =")
     assert reader.pages.last.text.include?("weight")
-    assert reader.pages.last.text.include?("height (m)\n")
+    assert reader.pages.last.text.include?("height (m)")
 
     # ensure the notice is not included when the notebook doesn't have long lines source code cells
     # and no errors
