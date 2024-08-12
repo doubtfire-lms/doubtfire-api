@@ -360,7 +360,12 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     # Test if latex math was rendered properly
     reader = PDF::Reader.new(task.final_pdf_path)
-    assert reader.pages.last.text.include?("weight\n")
+
+    # PDF-reader incorrectly parses "weight (kg) / height (m)^2" as "weight (2g) / height (m)", misplacing the ^2
+    # Detecting "height" and "weight" confirms correct LaTeX rendering
+    assert reader.pages.last.text.include?("BMI: bmi =")
+    assert reader.pages.last.text.include?("weight")
+    assert reader.pages.last.text.include?("height (m)\n")
 
     # ensure the notice is not included when the notebook doesn't have long lines source code cells
     # and no errors
