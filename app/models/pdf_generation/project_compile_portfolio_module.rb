@@ -35,6 +35,8 @@ module PdfGeneration
 
     # This class scaffolds the creation of the portfolio - mapping the required data into the erb template
     class ProjectAppController < ApplicationController
+      include LatexHelper
+
       attr_accessor :student,
                     :project,
                     :base_path,
@@ -67,62 +69,7 @@ module PdfGeneration
 
       def make_pdf
         logger.debug "Running make_pdf: (portfolio)"
-
-        # TODO: move pdf layout -> tex -> pdf generation into shared module/class (duplicated in models/task.rb)
-
-        # Render the portfolio layout
-        tex_string = render_to_string(template: '/portfolio/portfolio_pdf', layout: true)
-
-        # Create a new working directory to save input.tex into
-        workdir_name = "portfolio-#{Process.pid}-#{Thread.current.hash}-#{project.id}"
-        workdir = Rails.root.join("tmp", "texlive-latex", workdir_name)
-        FileUtils.mkdir_p(workdir);
-
-        # Copy jupynotex.py over into the working directory
-        FileUtils.cp(Rails.root.join('app', 'views', 'layouts', 'jupynotex.py'), workdir)
-
-        # Save tex_string as input.tex into the workdir
-        File.open(workdir.join("input.tex"), 'w') do |fout|
-          fout.puts tex_string
-        end
-
-        # TODO: clean up pathnames
-        container_name = "1-formatif-texlive-container"
-        latex_build_path = "/texlive/shell/latex-build.sh" # mounted path on the texlive container, as defined in .devcontainer/docker-compose.yml
-
-        # Docker command to execute the build script in texlive container
-        command = "sudo docker exec -it #{container_name} #{latex_build_path} #{workdir_name}"
-
-        Process.waitpid(
-          fork do
-            begin
-              logger.debug "Executing system command: #{command}"
-
-              # Execute the Docker command
-              clean_exit = system(command)
-              Process.exit!(1) unless clean_exit
-            rescue
-              logger.info "PDF Generation failed: #{success}"
-            ensure
-              Process.exit!(0) if clean_exit
-            end
-          end
-        )
-
-        status = $?.exitstatus
-
-        if status == 0 && File.exist?(File.join(workdir, "input.pdf"))
-          # Read the generated PDF file and return it as a string
-          pdf_string = File.read(workdir.join("input.pdf"))
-
-          # Delete temporary workdir containing input.tex/input.pdf and logs
-          # FileUtils.rm_rf(workdir) # TODO: .pygtex files are still in use and aren't always removed in this call
-        else
-          # TODO: raise exception
-          logger.error "PDF Generation failed with exit status: #{status}"
-        end
-
-        pdf_string
+        generate_pdf(template: "/portfolio/portfolio_pdf", unique_render_id: "portfolio-#{project.id}")
       end
 
     end
