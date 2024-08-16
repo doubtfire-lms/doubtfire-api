@@ -24,6 +24,6 @@ if [ -f "input.log" ]; then
   cp input.log ../
 fi
 
-# Remove /work directory - leaving input.pdf, input.log, and
+# Remove /work directory, preserving input.pdf + input.log + original input files
 cd ..
 rm -rf work
