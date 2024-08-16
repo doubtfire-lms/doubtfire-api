@@ -46,7 +46,7 @@ module LatexHelper
       pdf_string = File.read(workdir.join("input.pdf"))
 
       # Delete temporary workdir containing input.tex/input.pdf and logs
-      # FileUtils.rm_rf(workdir) # TODO: .pygtex files are still in use and aren't always removed in this call
+      FileUtils.rm_rf(workdir)
     else
       # TODO: raise exception
       logger.error "PDF Generation failed with exit status: #{status}"
