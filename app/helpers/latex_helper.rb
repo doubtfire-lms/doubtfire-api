@@ -1,8 +1,7 @@
 module LatexHelper
   def generate_pdf(template:, unique_render_id:)
-    # TODO: clean up pathnames - environment vars?
-    container_name = "1-formatif-texlive-container"
-    latex_build_path = "/texlive/shell/latex-build.sh" # mounted path on the texlive container, as defined in .devcontainer/docker-compose.yml
+    container_name = ENV.fetch('LATEX_CONTAINER_NAME', nil)
+    latex_build_path = ENV.fetch('LATEX_BUILD_PATH', nil)
 
     logger.debug "Running make_pdf: (#{template})"
 
