@@ -48,8 +48,7 @@ module LatexHelper
       # Delete temporary workdir containing input.tex/input.pdf and logs
       FileUtils.rm_rf(workdir)
     else
-      # TODO: raise exception
-      logger.error "PDF Generation failed with exit status: #{status}"
+      raise "PDF Generation failed. See tmp/texlive-latex/#{workdir_name}/input.log for details."
     end
 
     pdf_string
