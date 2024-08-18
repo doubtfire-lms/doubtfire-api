@@ -177,7 +177,10 @@ class Unit < ApplicationRecord
   scope :set_inactive,          -> { where('active = ?', false) }
 
   include UnitTiiModule
-  include UnitSimilarityModule
+
+  ## Change this back to the OG unit_similarity_module once the jplag version is working. i.e., copy the jplag ver into the OG
+  require_relative 'similarity/JPlag/unit_similarity_module_jplag'
+  include UnitSimilarityModuleJPLAG
 
   def detailed_name
     "#{name} #{teaching_period.present? ? teaching_period.detailed_name : start_date.strftime('%Y-%m-%d')}"
