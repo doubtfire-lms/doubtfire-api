@@ -1,3 +1,4 @@
+require 'English'
 module LatexHelper
   def generate_pdf(template:, unique_render_id:)
     container_name = ENV.fetch('LATEX_CONTAINER_NAME', nil)
@@ -38,9 +39,7 @@ module LatexHelper
       end
     )
 
-    status = $?.exitstatus
-
-    if status == 0 && File.exist?(File.join(workdir, "input.pdf"))
+    if $CHILD_STATUS.exitstatus == 0 && File.exist?(File.join(workdir, "input.pdf"))
       # Read the generated PDF file and return it as a string
       pdf_string = File.read(workdir.join("input.pdf"))
 
