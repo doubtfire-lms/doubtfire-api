@@ -13,11 +13,6 @@ module UnitSimilarityModuleJPLAG
     end
   end
 
-  def force_remove_container
-    puts "Removing container forcibly: jplag"
-    `docker container rm -vf jplag`
-  end
-
   # Pass tasks on to plagarism detection software and setup links between students
   def check_jplag_similarity(force: false)
     # Get each task...
@@ -28,15 +23,12 @@ module UnitSimilarityModuleJPLAG
     begin
       logger.info "Checking plagiarsm for unit #{code} - #{name} (id=#{id})"
 
+      ### Section for JPLAG WIP ###
       # submissions_path = File.join(Dir.tmpdir, 'doubtfire', "check-#{id}-#{td.id}")
-      submissions_path = "student-work/#{code}-#{id}"
-      # `docker run --volume formatif_student-work_compose:/student-work --volume jplag_data:/jplag --name jplag`
-      puts "Starting JPLAG container to run on student-work/#{code}-#{id}"
-      `sudo docker compose -f /workspace/.devcontainer/docker-compose.yml run jplag java -jar /jplag/jplag-5.1.0-jar-with-dependencies.jar #{submissions_path} --similarity-threshold=0.8 -r result`
-      #`sudo docker compose -f /workspace/.devcontainer/docker-compose.yml run jplag java -jar /jplag/jplag-5.1.0-jar-with-dependencies.jar #{submissions_path} --similarity-threshold=0.8 -r result`
-      #`sudo docker start jplag && sudo docker exec -ti jplag -jar jplag-5.1.0-jar-with-dependencies.jar #{submissions_path}/#{code}-#{id} --similarity-threshold=0.8 -r result`
-      #`sudo docker run --name jplag my_jplag_image /bin/bash -c 'java -jar "jplag-5.1.0-jar-with-dependencies.jar" #{submissions_path}/#{code}-#{id} --similarity-threshold=0.8 -r result'`
-      #force_remove_container
+      # submissions_path = "/student-work/#{code}-#{id}"
+      `sudo docker exec jplag java -jar /jplag/jplag-5.1.0-jar-with-dependencies.jar /student-work/new -l csharp --similarity-threshold=0.8 -r /results/result_#{code}`
+      # puts "Starting JPLAG container to run on student-work/#{code}-#{id}"
+      # `sudo docker exec jplag java -jar /jplag/jplag-5.1.0-jar-with-dependencies.jar /student-work -l csharp --similarity-threshold=0.8 -r result `
 
       task_definitions.each do |td|
         next if td.moss_language.nil? || td.upload_requirements.nil? || td.upload_requirements.select { |upreq| upreq['type'] == 'code' && upreq['tii_check'] }.empty?
