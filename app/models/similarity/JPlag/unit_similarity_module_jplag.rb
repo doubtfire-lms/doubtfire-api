@@ -20,17 +20,22 @@ module UnitSimilarityModuleJPLAG
 
     # need pwd to restore after cding into submission folder (so the files do not have full path)
     pwd = FileUtils.pwd
+
+    # making temp directory for jplag
+    root_work_dir = Rails.root.join("tmp", "jplag", "#{code}-#{id}")
+    FileUtils.mkdir_p(root_work_dir)
     begin
       logger.info "Checking plagiarsm for unit #{code} - #{name} (id=#{id})"
 
       ### Section for JPLAG WIP ###
       # submissions_path = File.join(Dir.tmpdir, 'doubtfire', "check-#{id}-#{td.id}")
-      # submissions_path = "/student-work/#{code}-#{id}"
-      `sudo docker exec jplag java -jar /jplag/jplag-5.1.0-jar-with-dependencies.jar /student-work/new -l csharp --similarity-threshold=0.8 -r /results/result_#{code}`
+
       # puts "Starting JPLAG container to run on student-work/#{code}-#{id}"
       # `sudo docker exec jplag java -jar /jplag/jplag-5.1.0-jar-with-dependencies.jar /student-work -l csharp --similarity-threshold=0.8 -r result `
 
       task_definitions.each do |td|
+        tasks_dir = root_work_dir.join(td.id.to_s)
+        FileUtils.mkdir_p(tasks_dir)
         next if td.moss_language.nil? || td.upload_requirements.nil? || td.upload_requirements.select { |upreq| upreq['type'] == 'code' && upreq['tii_check'] }.empty?
 
         type_data = td.moss_language.split
@@ -40,21 +45,28 @@ module UnitSimilarityModuleJPLAG
         logger.debug "Checking plagiarism for #{td.name} (id=#{td.id})"
         tasks = tasks_for_definition(td)
         tasks_with_files = tasks.select(&:has_pdf)
+        run_jplag_on_done_files(td, tasks_dir, tasks_with_files)
+        #tasks_with_files.each do |t|
+        #  submissions_dir = tasks_dir.join(t.student.username)
+        #  FileUtils.mkdir_p(submissions_dir)
+        #  pattern = t.upload_requirements.select
+        #  t.extract_file_from_done(submissions_dir, pattern, ->(_task, to_path, name) { File.join(to_path.to_s, name.to_s) })
+        #end
 
         # Skip if not due yet
-        next if td.due_date > Time.zone.now
+        #next if td.due_date > Time.zone.now
 
         # Skip if no files changed
-        next unless tasks_with_files.count > 1 &&
-                    (
-                      tasks.where('tasks.file_uploaded_at > ?', last_plagarism_scan).select(&:has_pdf).count > 0 ||
-                      td.updated_at > last_plagarism_scan ||
-                      force
-                    )
+        #next unless tasks_with_files.count > 1 &&
+        #            (
+        #              tasks.where('tasks.file_uploaded_at > ?', last_plagarism_scan).select(&:has_pdf).count > 0 ||
+        #              td.updated_at > last_plagarism_scan ||
+        #              force
+        #            )
 
         # There are new tasks, check these
 
-        logger.debug 'Contacting MOSS for new checks'
+        # logger.debug 'Contacting MOSS for new checks'
 
         # Create the MossRuby object
         # moss_key = Doubtfire::Application.secrets.secret_key_moss
@@ -222,6 +234,28 @@ module UnitSimilarityModuleJPLAG
       # extract files matching each pattern
       # -- each pattern
       MossRuby.add_file(to_check, "**/#{pattern}")
+    end
+
+    self
+  end
+
+  def run_jplag_on_done_files(task_definition, tasks_dir, tasks_with_files)
+    type_data = task_definition.moss_language.split
+    return if type_data.nil? || (type_data.length != 2) || (type_data[0] != 'moss')
+
+    # get each code file for each task
+    task_definition.upload_requirements.each_with_index do |upreq, idx|
+      # only check code files marked for similarity checks
+      next unless upreq['type'] == 'code' && upreq['tii_check']
+
+      pattern = task_definition.glob_for_upload_requirement(idx)
+
+      tasks_with_files.each do |t|
+        t.extract_file_from_done(tasks_dir, pattern, ->(_task, to_path, name) { File.join(to_path.to_s, t.student.username.to_s, name.to_s) })
+      end
+      puts "Starting JPLAG container to run on #{tasks_dir}"
+      tasks_dir_split = tasks_dir.to_s.split('/workspace/doubtfire-api')[1]
+      `sudo docker exec jplag java -jar /jplag/jplag-5.1.0-jar-with-dependencies.jar #{tasks_dir_split} -l csharp --similarity-threshold=0.8 -r /results/result`
     end
 
     self
