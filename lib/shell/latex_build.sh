@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# This script is copied into the TeX Live container and remotely executed by run_latex.sh
+
 OUTPUT_DIR=$1
 
 cd /workdir/texlive-latex/${OUTPUT_DIR}

@@ -1025,7 +1025,7 @@ class Task < ApplicationRecord
         end
       end
       logger.debug "Preprocessing complete, rendering file."
-      generate_pdf(template: "/task/task_pdf", unique_render_id: "task-#{task.id}")
+      generate_pdf(template: "/task/task_pdf")
     end
   end
 
