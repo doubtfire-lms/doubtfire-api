@@ -79,7 +79,9 @@ services:
 
   texlive:
     container_name: doubtfire-texlive
-    build: texlive.Dockerfile
+    build: 
+      context: .
+      dockerfile: texlive.Dockerfile
     volumes:
       - ../data/student-work:/student-work
       - ./public/assets/images:/doubtfire/public/assets/images
