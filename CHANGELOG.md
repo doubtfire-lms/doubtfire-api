@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.0.26](https://github.com/macite/doubtfire-deploy/compare/v8.0.23...v8.0.26) (2024-08-26)
+
+
+### Bug Fixes
+
+* logging of fail to send message in accept submission ([38abe9e](https://github.com/macite/doubtfire-deploy/commit/38abe9eeb7dedf8f7d26b7b1c659be94d9c42d4a))
+* use system timeout command with timeout helper ([b77147c](https://github.com/macite/doubtfire-deploy/commit/b77147c791396e202bbf2e01eb60385a1ae6cd7b))
+
 ### [8.0.23](https://github.com/macite/doubtfire-deploy/compare/v8.0.22...v8.0.23) (2024-08-05)
 
 
