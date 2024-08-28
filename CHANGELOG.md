@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.0.28](https://github.com/macite/doubtfire-deploy/compare/v8.0.27...v8.0.28) (2024-08-28)
+
+
+### Bug Fixes
+
+* ensure that TII can log multiple similarity issues for each task ([55aa194](https://github.com/macite/doubtfire-deploy/commit/55aa1940b418d5bcb7d43663d5453e7cc6f8610a))
+
 ### [8.0.27](https://github.com/macite/doubtfire-deploy/compare/v8.0.26...v8.0.27) (2024-08-28)
 
 
