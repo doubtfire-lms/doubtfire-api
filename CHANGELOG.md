@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.0.29](https://github.com/macite/doubtfire-deploy/compare/v8.0.28...v8.0.29) (2024-08-28)
+
+
+### Bug Fixes
+
+* correct email reporting of pdf errors in sidekiq ([ff2686a](https://github.com/macite/doubtfire-deploy/commit/ff2686ab0074c5f9442debdaddc9fce02dcdae54))
+
 ### [8.0.28](https://github.com/macite/doubtfire-deploy/compare/v8.0.27...v8.0.28) (2024-08-28)
 
 
