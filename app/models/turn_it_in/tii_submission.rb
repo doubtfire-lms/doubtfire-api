@@ -68,6 +68,13 @@ class TiiSubmission < ApplicationRecord
     ).perform
   end
 
+  # Should we flag this task for high similarity?
+  #
+  # @return [Boolean] true if the task should be flagged, false otherwise
+  def should_flag?
+    overall_match_percentage > task.tii_match_pct(idx)
+  end
+
   private
 
   # Delete the turn it in submission for a task
