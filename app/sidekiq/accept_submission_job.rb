@@ -16,7 +16,7 @@ class AcceptSubmissionJob
     begin
       logger.info "Accepting submission for task #{task.id} by user #{user.id}"
       # Convert submission to PDF
-      task.convert_submission_to_pdf(log_to_stdout: false)
+      task.convert_submission_to_pdf(log_to_stdout: true)
     rescue StandardError => e
       # Send email to student if task pdf failed
       if task.project.student.receive_task_notifications
