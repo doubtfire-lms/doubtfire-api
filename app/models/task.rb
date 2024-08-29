@@ -1343,7 +1343,7 @@ class Task < ApplicationRecord
     logger.info "Submission accepted! Status for task #{id} is now #{trigger}"
 
     # Trigger processing of new submission - async
-    AcceptSubmissionJob.perform_in(5.seconds, id, current_user.id, accepted_tii_eula)
+    AcceptSubmissionJob.perform_async(id, current_user.id, accepted_tii_eula)
   end
 
   # The name that should be used for the uploaded file (based on index of upload requirements)
