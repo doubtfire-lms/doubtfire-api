@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.0.31](https://github.com/doubtfire-lms/doubtfire-deploy/compare/v8.0.30...v8.0.31) (2024-08-29)
+
+
+### Bug Fixes
+
+* ensure sidekiq logs latex errors to stdout ([78151b3](https://github.com/doubtfire-lms/doubtfire-deploy/commit/78151b3c00f768ee83dd6838628eee2163bd6cde))
+* limit sidekiq concurrency to 1 ([0046562](https://github.com/doubtfire-lms/doubtfire-deploy/commit/004656216508f5469b234f3024c0d95a19d3b014))
+* revert delay in sidekiq pdf generation ([904ca34](https://github.com/doubtfire-lms/doubtfire-deploy/commit/904ca3432cf777f88121e1cd1cf59284c628e1cf))
+
 ### [8.0.30](https://github.com/doubtfire-lms/doubtfire-deploy/compare/v8.0.29...v8.0.30) (2024-08-29)
 
 
