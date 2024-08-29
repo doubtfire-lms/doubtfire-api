@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.0.30](https://github.com/doubtfire-lms/doubtfire-deploy/compare/v8.0.29...v8.0.30) (2024-08-29)
+
+
+### Bug Fixes
+
+* add short delay for accept submission job ([b3861ff](https://github.com/doubtfire-lms/doubtfire-deploy/commit/b3861ff2f44467e135a92427141844f9d33d6164))
+
 ### [8.0.29](https://github.com/macite/doubtfire-deploy/compare/v8.0.28...v8.0.29) (2024-08-28)
 
 
