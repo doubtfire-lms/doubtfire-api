@@ -14,17 +14,26 @@ module UnitSimilarityModule
   end
 
   # Pass tasks on to plagarism detection software and setup links between students
-  def check_moss_similarity(force: false)
+  def check_similarity(force: false)
     # Get each task...
     return unless active
 
     # need pwd to restore after cding into submission folder (so the files do not have full path)
     pwd = FileUtils.pwd
 
+    # making temp directory for unit - jplag
+    root_work_dir = Rails.root.join("tmp", "jplag", "#{code}-#{id}")
+    unit_code = "#{code}-#{id}"
+    FileUtils.mkdir_p(root_work_dir)
+
     begin
       logger.info "Checking plagiarsm for unit #{code} - #{name} (id=#{id})"
 
       task_definitions.each do |td|
+        # making temp directory for each task - jplag
+        tasks_dir = root_work_dir.join(td.id.to_s)
+        FileUtils.mkdir_p(tasks_dir)
+
         next if td.moss_language.nil? || td.upload_requirements.nil? || td.upload_requirements.select { |upreq| upreq['type'] == 'code' && upreq['tii_check'] }.empty?
 
         type_data = td.moss_language.split
@@ -34,6 +43,9 @@ module UnitSimilarityModule
         logger.debug "Checking plagiarism for #{td.name} (id=#{td.id})"
         tasks = tasks_for_definition(td)
         tasks_with_files = tasks.select(&:has_pdf)
+
+        #JPLAG
+        run_jplag_on_done_files(td, tasks_dir, tasks_with_files, unit_code)
 
         # Skip if not due yet
         next if td.due_date > Time.zone.now
@@ -218,6 +230,29 @@ module UnitSimilarityModule
       # extract files matching each pattern
       # -- each pattern
       MossRuby.add_file(to_check, "**/#{pattern}")
+    end
+
+    self
+  end
+
+  # JPLAG Function - extracts "done" files for each task and packages them into a directory for JPLAG to run on
+  def run_jplag_on_done_files(task_definition, tasks_dir, tasks_with_files, unit_code)
+    type_data = task_definition.moss_language.split
+    return if type_data.nil? || (type_data.length != 2) || (type_data[0] != 'moss')
+
+    # get each code file for each task
+    task_definition.upload_requirements.each_with_index do |upreq, idx|
+      # only check code files marked for similarity checks
+      next unless upreq['type'] == 'code' && upreq['tii_check']
+
+      pattern = task_definition.glob_for_upload_requirement(idx)
+
+      tasks_with_files.each do |t|
+        t.extract_file_from_done(tasks_dir, pattern, ->(_task, to_path, name) { File.join(to_path.to_s, t.student.username.to_s, name.to_s) })
+      end
+      puts "Starting JPLAG container to run on #{tasks_dir}"
+      tasks_dir_split = tasks_dir.to_s.split('/workspace/doubtfire-api')[1]
+      `sudo docker exec jplag java -jar /jplag/jplag-5.1.0-jar-with-dependencies.jar #{tasks_dir_split} -l #{type_data[1]} --similarity-threshold=0.8 -r /jplag/results/#{unit_code}_#{task_definition.id}-result`
     end
 
     self
