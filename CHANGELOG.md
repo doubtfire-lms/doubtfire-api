@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.0.32](https://github.com/macite/doubtfire-deploy/compare/v8.0.31...v8.0.32) (2024-09-05)
+
+
+### Features
+
+* add support for upload of vue components ([7c85aaf](https://github.com/macite/doubtfire-deploy/commit/7c85aaf1e1080554f4132bd7da18c1e67e2d2aea))
+
 ### [8.0.31](https://github.com/doubtfire-lms/doubtfire-deploy/compare/v8.0.30...v8.0.31) (2024-08-29)
 
 
