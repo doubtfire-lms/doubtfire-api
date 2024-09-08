@@ -20,6 +20,9 @@ class TaskComment < ApplicationRecord
   # Can optionally be a reply to a comment
   belongs_to :task_comment, optional: true
 
+  # Can be a comment for different types of entities e.g. Test Attempt, Overseer Assessment
+  belongs_to :commentable, polymorphic: true, optional: true
+
   validates :task, presence: true
   validates :user, presence: true
   validates :recipient, presence: true
