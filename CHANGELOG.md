@@ -2,6 +2,58 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.0.32](https://github.com/macite/doubtfire-deploy/compare/v8.0.31...v8.0.32) (2024-09-05)
+
+
+### Features
+
+* add support for upload of vue components ([7c85aaf](https://github.com/macite/doubtfire-deploy/commit/7c85aaf1e1080554f4132bd7da18c1e67e2d2aea))
+
+### [8.0.31](https://github.com/doubtfire-lms/doubtfire-deploy/compare/v8.0.30...v8.0.31) (2024-08-29)
+
+
+### Bug Fixes
+
+* ensure sidekiq logs latex errors to stdout ([78151b3](https://github.com/doubtfire-lms/doubtfire-deploy/commit/78151b3c00f768ee83dd6838628eee2163bd6cde))
+* limit sidekiq concurrency to 1 ([0046562](https://github.com/doubtfire-lms/doubtfire-deploy/commit/004656216508f5469b234f3024c0d95a19d3b014))
+* revert delay in sidekiq pdf generation ([904ca34](https://github.com/doubtfire-lms/doubtfire-deploy/commit/904ca3432cf777f88121e1cd1cf59284c628e1cf))
+
+### [8.0.30](https://github.com/doubtfire-lms/doubtfire-deploy/compare/v8.0.29...v8.0.30) (2024-08-29)
+
+
+### Bug Fixes
+
+* add short delay for accept submission job ([b3861ff](https://github.com/doubtfire-lms/doubtfire-deploy/commit/b3861ff2f44467e135a92427141844f9d33d6164))
+
+### [8.0.29](https://github.com/macite/doubtfire-deploy/compare/v8.0.28...v8.0.29) (2024-08-28)
+
+
+### Bug Fixes
+
+* correct email reporting of pdf errors in sidekiq ([ff2686a](https://github.com/macite/doubtfire-deploy/commit/ff2686ab0074c5f9442debdaddc9fce02dcdae54))
+
+### [8.0.28](https://github.com/macite/doubtfire-deploy/compare/v8.0.27...v8.0.28) (2024-08-28)
+
+
+### Bug Fixes
+
+* ensure that TII can log multiple similarity issues for each task ([55aa194](https://github.com/macite/doubtfire-deploy/commit/55aa1940b418d5bcb7d43663d5453e7cc6f8610a))
+
+### [8.0.27](https://github.com/macite/doubtfire-deploy/compare/v8.0.26...v8.0.27) (2024-08-28)
+
+
+### Bug Fixes
+
+* correct link to error log mailer and add test ([312f22e](https://github.com/macite/doubtfire-deploy/commit/312f22eacead8b8d666116df52a7c11e49ce1794))
+
+### [8.0.26](https://github.com/macite/doubtfire-deploy/compare/v8.0.23...v8.0.26) (2024-08-26)
+
+
+### Bug Fixes
+
+* logging of fail to send message in accept submission ([38abe9e](https://github.com/macite/doubtfire-deploy/commit/38abe9eeb7dedf8f7d26b7b1c659be94d9c42d4a))
+* use system timeout command with timeout helper ([b77147c](https://github.com/macite/doubtfire-deploy/commit/b77147c791396e202bbf2e01eb60385a1ae6cd7b))
+
 ### [8.0.25](https://github.com/macite/doubtfire-deploy/compare/v8.0.24...v8.0.25) (2024-08-09)
 
 

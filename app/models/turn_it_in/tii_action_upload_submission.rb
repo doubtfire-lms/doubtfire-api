@@ -17,8 +17,8 @@ class TiiActionUploadSubmission < TiiAction
     case response
     when 'FAILED' # The report failed to be generated
       error_message = 'similarity PDF failed to be created'
-    when 'SUCCESS' # Similarity report is complete
-      entity.status = :similarity_pdf_requested
+    when 'SUCCESS' # Similarity report is complete - pdf is available
+      entity.status = :similarity_pdf_available
       entity.save
       save_progress
       download_similarity_report_pdf(skip_check: true)
@@ -64,17 +64,15 @@ class TiiActionUploadSubmission < TiiAction
     # when 'PROCESSING' # Similarity report is being generated
     #   return
     when 'COMPLETE' # Similarity report is complete
-      entity.overall_match_percentage = response.overall_match_percentage
-
-      flag = response.overall_match_percentage.present? && response.overall_match_percentage.to_i > task.tii_match_pct(idx)
-
       # Update the status of the entity
-      entity.update(status: flag ? :similarity_report_complete : :complete_low_similarity)
+      entity.overall_match_percentage = response.overall_match_percentage.present? ? response.overall_match_percentage.to_i : -1
+      flag = entity.should_flag?
+      entity.status = flag ? :similarity_report_complete : :complete_low_similarity
+      entity.save
 
-      # Create the similarity record
-      TiiTaskSimilarity.find_or_initialize_by task: entity.task do |similarity|
-        similarity.pct = response.overall_match_percentage
-        similarity.tii_submission = entity
+      # Create the similarity record - for task and this turn it in submission
+      TiiTaskSimilarity.find_or_initialize_by task: entity.task, tii_submission: entity do |similarity|
+        similarity.pct = entity.overall_match_percentage # record percentage
         similarity.flagged = flag
         similarity.save
       end
@@ -108,7 +106,7 @@ class TiiActionUploadSubmission < TiiAction
       "awaiting similarity report"
     when :similarity_pdf_available
       "downloading similarity report"
-    when "similarity_pdf_downloaded"
+    when :similarity_pdf_downloaded
       "complete - report available"
     when :to_delete
       "awaiting deletion"
