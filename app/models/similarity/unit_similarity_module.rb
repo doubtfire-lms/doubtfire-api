@@ -51,7 +51,7 @@ module UnitSimilarityModule
         logger.debug 'Contacting MOSS for new checks'
 
         # Create the MossRuby object
-        moss_key = Doubtfire::Application.secrets.secret_key_moss
+        moss_key = Doubtfire::Application.credentials.secret_key_moss
         raise "No moss key set. Check ENV['DF_SECRET_KEY_MOSS'] first." if moss_key.nil?
 
         moss = MossRuby.new(moss_key)
@@ -99,7 +99,7 @@ module UnitSimilarityModule
   end
 
   def update_plagiarism_stats
-    moss_key = Doubtfire::Application.secrets.secret_key_moss
+    moss_key = Doubtfire::Application.credentials.secret_key_moss
     raise "No moss key set. Check ENV['DF_SECRET_KEY_MOSS'] first." if moss_key.nil?
 
     moss = MossRuby.new(moss_key)
