@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.0.33](https://github.com/macite/doubtfire-deploy/compare/v8.0.32...v8.0.33) (2024-09-13)
+
+
+### Bug Fixes
+
+* correct access to moss and devise secrets ([8fae9c6](https://github.com/macite/doubtfire-deploy/commit/8fae9c6f02a08e27daa141d448a4dae0ef62b241))
+
 ### [8.0.32](https://github.com/macite/doubtfire-deploy/compare/v8.0.31...v8.0.32) (2024-09-05)
 
 
